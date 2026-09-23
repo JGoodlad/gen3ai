@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,268-line file. **The ledger itself is append-only and is never edited by this**;
+21,272-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**684 headings · 629 dated · 2026-08-01 → 2026-09-23 · ledger 21,268 lines.**
+**685 headings · 630 dated · 2026-08-01 → 2026-09-23 · ledger 21,272 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -704,3 +704,4 @@ rename.
   - `L21252` · `2026-09-23` · OPS · 🚨 **INCIDENT — EIGHT RUN DIRECTORIES DESTROYED BY THE ORCHESTRATOR'S WORKTREE CLEANUP: the v9 generation ladder gen1–gen7 (`ai_v9_01` … `ai_v9_08`, Aug 4–11). No copy exists; their weights, snapshot pools, eval traces, TensorBoard logs and ladder games are gone. Every banked NUMBER about them survives.**
   - `L21259` · `2026-09-23` · OPS · **RUST CORE PROGRAM, PHASE 0: the baseline is banked, and §3.4's "hardest piece" is TRACTABLE — the work is the READING, not the parser.**
   - `L21265` · `2026-09-23` · OPS · **TWO GUARDS LANDED — `main.best_response_gap` treats same-archetype exploiters of one target as REPLICATES (`26015897`, F3 closed), and worktree removal REFUSES when it would destroy run data (`a7495906`, the incident's P1 closed)**
+  - `L21269` · `2026-09-23` · OPS · **CURATED/PROMOTED SPLIT LANDED (`33da2cf6`, `gen3_curated_sample_split_v1`) — `data/teams/sample/` is again EXACTLY the 32 teams Smogon's ADV OU sample thread links; the 40 fleet teams have their own role; TWO training inputs change, and no measurement series has a boundary**
