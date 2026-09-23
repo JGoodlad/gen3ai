@@ -690,12 +690,11 @@ impl crate::state::BattleState {
                     // strike's `move_used`.
                     self.log.set_next_move_from("Pursuit");
                     self.pursuit_strike = true;
-                    // SPIKE (`event_spike`, OFF by default): the strike is the PURSUER's move,
-                    // nested inside the switcher's action.
-                    #[cfg(feature = "event_spike")]
-                    let spike_prev = std::mem::replace(
-                        &mut self.log.spike.scope,
-                        crate::event_spike::Scope::Move(pside),
+                    // The strike is the PURSUER's move, nested inside the switcher's action
+                    // (`gen3_core_events_v1`: the source scope of every line the strike emits).
+                    let scope_prev = std::mem::replace(
+                        &mut self.log.scope,
+                        crate::core_events::Scope::Move(pside as u8),
                     );
                     let res = self.run_move(
                         MoveAction { side: pside, slot: pslot, move_index: pmi, struggle: false },
@@ -703,10 +702,7 @@ impl crate::state::BattleState {
                         false,
                         dex,
                     );
-                    #[cfg(feature = "event_spike")]
-                    {
-                        self.log.spike.scope = spike_prev;
-                    }
+                    self.log.scope = scope_prev;
                     self.pursuit_strike = false; // belt-and-braces (run_move already cleared it)
                     if res.landed {
                         // The strike's in-`tryMoveHit` `eachEvent('Update')` (draws on a

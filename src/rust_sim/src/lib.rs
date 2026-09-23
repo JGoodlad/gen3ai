@@ -106,10 +106,9 @@ pub mod damage;
 pub mod dex;
 pub mod driver_timing;
 pub mod event;
-/// SPIKE (`rust_core_phase0_2026-09-23`): source-emitted typed events. Feature-gated OFF by
-/// default — no production binary contains it. See `designs/endstate/program_rust_core.md`.
-#[cfg(feature = "event_spike")]
-pub mod event_spike;
+/// The Rust core's typed event layer (`gen3_core_events_v1`, Rust Core Program M1): typed lines,
+/// the per-side reading projection, `parse`, and the persisted record.
+pub mod core_events;
 pub mod json;
 pub mod prng;
 pub mod protocol;

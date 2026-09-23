@@ -200,6 +200,17 @@ def resolve_search_driver_bin() -> str:
     return _resolve_rust_bin("search_driver", _SEARCH_ENV_OVERRIDE, "--impl rust")
 
 
+def resolve_core_events_bin() -> str:
+    """Return an absolute path to the Rust ``core_events`` binary, building it if needed.
+
+    The Rust Core Program's M1 tool (`gen3_core_events_v1`): it replays recorded battles through
+    the core and prints its typed events per viewer — the Rust side of the parity harness
+    (``agents.battle.rust_core_parity``). Never a training transport. ``$POKESIM_CORE_EVENTS_BIN``
+    overrides, exactly like its siblings.
+    """
+    return _resolve_rust_bin("core_events", "POKESIM_CORE_EVENTS_BIN", "the rust core parity harness")
+
+
 def resolve_and_publish_sim_bridge_bin() -> str:
     """Resolve the Rust binary ONCE and publish it to the env for every child process.
 

@@ -353,12 +353,30 @@ pub struct BridgeChunks {
     /// [`BridgeSession::clear_chunks`], which deliberately carries it across a branch's chunk
     /// reset. Costs one `split('|')` per emitted line and nothing when nobody reads it.
     pub observed: [crate::view::SideObservation; 2],
+    /// Core tracking (`gen3_core_events_v1`), on only for a session built with core recording:
+    /// per side, one entry per shipped line (in flatten order) naming the SOURCE record the line
+    /// was derived from, `None` for a side-only frame (a request, an error, a reframed rule).
+    pub core: Option<[Vec<Option<u32>>; 2]>,
 }
 
 impl BridgeChunks {
     /// Push ONE chunk (a non-empty batch of lines) to `side`. An empty batch is a
     /// no-op (the sim never flushes an empty chunk to a side).
     fn push_chunk(&mut self, side: usize, lines: Vec<String>) {
+        if let Some(core) = &mut self.core {
+            core[side].extend(std::iter::repeat(None).take(lines.len()));
+        }
+        self.push_chunk_lines(side, lines);
+    }
+    /// [`Self::push_chunk`] for lines derived from source records: `srcs[i]` is line `i`'s.
+    fn push_chunk_src(&mut self, side: usize, lines: Vec<String>, srcs: Vec<Option<u32>>) {
+        debug_assert_eq!(lines.len(), srcs.len());
+        if let Some(core) = &mut self.core {
+            core[side].extend(srcs);
+        }
+        self.push_chunk_lines(side, lines);
+    }
+    fn push_chunk_lines(&mut self, side: usize, lines: Vec<String>) {
         if !lines.is_empty() {
             for line in &lines {
                 let owner_is_self = ident_owner(line) == Some(side);
@@ -1202,7 +1220,7 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
         let (_outcome, lines) = st.run_full_battle_logged(&[], dex);
         lines
     };
-    let framing = reframe(&raw_framing, &opts.format_id);
+    let framing = reframe_indexed(&raw_framing, &opts.format_id);
     // The framing splits into 3 chunks at the two `|player|` lines (probe-verified vs
     // the Node bridge): [`|t:|`+`|gametype`] from `>start`, [`|player|p1|…`] from
     // `>player p1`, and [`|player|p2|…` … `|turn|1`] from `>player p2`.
@@ -1239,7 +1257,7 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
         }
 
         // The log batch flushed since the previous boundary → ONE chunk per side.
-        emit_log_batch_chunk(&mut chunks, &log[prev_log_len..], report_percent);
+        emit_log_batch_chunk(&mut chunks, &log[prev_log_len..], prev_log_len, report_percent);
         prev_log_len = log.len();
 
         if ended {
@@ -1721,7 +1739,7 @@ impl BridgeSession {
     ) -> Result<BridgeSession, String> {
         let mut battle = Battle::start_with_switchins(opts, dex)?;
         battle.state_mut().ok_or("no state")?.quick_claw_roll = quick_claw_roll;
-        Self::new_from_battle(battle, opts, dex)
+        Self::new_from_battle(battle, opts, dex, false)
     }
 
     /// Build a session from a RAW `>start` seed, running the FULL turn-0 CONSTRUCTION
@@ -1731,12 +1749,56 @@ impl BridgeSession {
     /// `sim_bridge` binary uses (poke-env sends the raw seed); it REPLACES the old pure
     /// `advance_seed_for_construction` seed hack.
     pub fn new_construct_turn0(opts: &BattleOptions, dex: &Dex) -> Result<BridgeSession, String> {
-        Self::new_from_battle(Battle::start_with_turn0_construction(opts, dex)?, opts, dex)
+        Self::new_from_battle(Battle::start_with_turn0_construction(opts, dex)?, opts, dex, false)
+    }
+
+    /// [`Self::new_with_quick_claw`] with the CORE's source recording on (`gen3_core_events_v1`):
+    /// every omniscient line keeps its typed [`crate::core_events::SourceRec`] and every shipped
+    /// per-side line its source index, so [`Self::core_events`] can build the step path's
+    /// [`crate::core_events::CoreEvent`]s. The emitted bytes are identical to the plain session.
+    pub fn new_core(opts: &BattleOptions, quick_claw_roll: bool, dex: &Dex) -> Result<BridgeSession, String> {
+        let mut battle = Battle::start_with_switchins(opts, dex)?;
+        battle.state_mut().ok_or("no state")?.quick_claw_roll = quick_claw_roll;
+        Self::new_from_battle(battle, opts, dex, true)
+    }
+
+    /// [`Self::new_construct_turn0`] (the live `sim_bridge` path, raw `>start` seed) with the
+    /// core's source recording on.
+    pub fn new_construct_turn0_core(opts: &BattleOptions, dex: &Dex) -> Result<BridgeSession, String> {
+        Self::new_from_battle(Battle::start_with_turn0_construction(opts, dex)?, opts, dex, true)
+    }
+
+    /// Whether this session records for the core.
+    pub fn is_core(&self) -> bool {
+        self.chunks.core.is_some()
+    }
+
+    /// Every line `side` has been shipped so far, in order (the chunks flattened).
+    pub fn side_lines(&self, side: usize) -> Vec<String> {
+        self.chunks.side_chunks(side).flat_map(|c| c.lines.iter().cloned()).collect()
+    }
+
+    /// The typed omniscient source records (a core session only).
+    pub fn source_recs(&self) -> Option<&[crate::core_events::SourceRec]> {
+        self.battle.state()?.log.source_recs()
+    }
+
+    /// The STEP path's per-side [`crate::core_events::CoreEvent`]s for `side` (a core session
+    /// only): each shipped line re-derived from its typed source record and REFUSED unless it
+    /// renders to the shipped bytes, with per-side conservation checked (`core_events::side`).
+    pub fn core_events(&self, side: usize) -> Result<Vec<crate::core_events::CoreEvent>, String> {
+        let core = self.chunks.core.as_ref().ok_or("not a core session (use new_core / new_construct_turn0_core)")?;
+        let recs = self.source_recs().ok_or("no source records")?;
+        let shipped: Vec<(String, Option<u32>)> = self.side_lines(side).into_iter().zip(core[side].iter().copied()).collect();
+        if shipped.len() != core[side].len() {
+            return Err(format!("p{}: {} shipped lines but {} tracked", side + 1, shipped.len(), core[side].len()));
+        }
+        crate::core_events::side::step_events(recs, &shipped, side as u8, self.report_percent)
     }
 
     /// The shared session body: emit + chunk the framing from an already-constructed
     /// battle, then advance to the first request boundary.
-    fn new_from_battle(mut battle: Battle, opts: &BattleOptions, dex: &Dex) -> Result<BridgeSession, String> {
+    fn new_from_battle(mut battle: Battle, opts: &BattleOptions, dex: &Dex, core: bool) -> Result<BridgeSession, String> {
         // Percent HP fold applies only in non-debug formats (gen3ou); a `debug:true`
         // format (gen3customgame) sets `reportExactHP` → both sides see exact HP.
         let report_percent = !format_is_debug(&opts.format_id);
@@ -1745,11 +1807,17 @@ impl BridgeSession {
         let raw_framing: Vec<crate::protocol::ProtocolLine> = {
             let bs = battle.state_mut().ok_or("no state")?;
             bs.log.enable();
+            if core {
+                bs.log.record_core();
+            }
             bs.emit_framing(dex);
             bs.log.lines().to_vec()
         };
-        let framing = reframe(&raw_framing, &opts.format_id);
+        let framing = reframe_indexed(&raw_framing, &opts.format_id);
         let mut chunks = BridgeChunks::default();
+        if core {
+            chunks.core = Some([Vec::new(), Vec::new()]);
+        }
         emit_framing_chunks(&mut chunks, &framing, report_percent);
         let prev_log_len = raw_framing.len();
         let mut sess = BridgeSession {
@@ -1819,7 +1887,7 @@ impl BridgeSession {
             let lines = bs.log.lines();
             (lines[self.prev_log_len..].to_vec(), lines.len())
         };
-        emit_log_batch_chunk(&mut self.chunks, &delta, self.report_percent);
+        emit_log_batch_chunk(&mut self.chunks, &delta, self.prev_log_len, self.report_percent);
         self.prev_log_len = new_len;
         self.ended = true;
         self.forfeit_winner = Some(winner);
@@ -1930,7 +1998,10 @@ impl BridgeSession {
         // SEEN is cumulative from turn 1 and is not a property of the suffix. Resetting it here
         // would make every branch's one-sided view claim the opponent's team is unrevealed.
         let observed = std::mem::take(&mut self.chunks.observed);
-        self.chunks = BridgeChunks { chunks: Vec::new(), observed };
+        // A core session's tracking restarts with the chunks (its step events then describe a
+        // SUFFIX, which `core_events` refuses on per-side conservation — a branch is not a record).
+        let core = self.chunks.core.as_ref().map(|_| [Vec::new(), Vec::new()]);
+        self.chunks = BridgeChunks { chunks: Vec::new(), observed, core };
     }
 
     /// What `side` has been told about the mons it does not own — the reveal half of
@@ -2022,7 +2093,7 @@ impl BridgeSession {
                     let lines = bs.log.lines();
                     (lines[self.prev_log_len..].to_vec(), lines.len())
                 };
-                emit_log_batch_chunk(&mut self.chunks, &delta, self.report_percent);
+                emit_log_batch_chunk(&mut self.chunks, &delta, self.prev_log_len, self.report_percent);
                 self.prev_log_len = new_len;
                 if self.driver.is_ended() {
                     self.ended = true;
@@ -2351,12 +2422,12 @@ pub fn run_full_battle_bridge_incremental_with_quick_claw(
 /// Split the reframed framing lines into the 3 `getPlayerStreams` chunks per side and
 /// push them (HP-folded): chunk 1 `[|t:|, |gametype]` (`>start`), chunk 2 `[|player|p1]`
 /// (`>player p1`), chunk 3 the rest through `|turn|1` (`>player p2`).
-fn emit_framing_chunks(chunks: &mut BridgeChunks, framing: &[String], report_percent: bool) {
+fn emit_framing_chunks(chunks: &mut BridgeChunks, framing: &[(String, Option<u32>)], report_percent: bool) {
     // Boundaries: chunk 2 STARTS at the first `|player|` line, chunk 3 at the second.
     let player_idxs: Vec<usize> = framing
         .iter()
         .enumerate()
-        .filter(|(_, l)| l.starts_with("|player|"))
+        .filter(|(_, l)| l.0.starts_with("|player|"))
         .map(|(i, _)| i)
         .collect();
     // Robust to a non-standard framing: fall back to one chunk if the two `|player|`
@@ -2365,14 +2436,14 @@ fn emit_framing_chunks(chunks: &mut BridgeChunks, framing: &[String], report_per
         (Some(&a), Some(&b)) => (a, b),
         _ => (framing.len(), framing.len()),
     };
-    let segments: [&[String]; 3] = [&framing[..b1], &framing[b1..b2], &framing[b2..]];
+    let segments: [&[(String, Option<u32>)]; 3] = [&framing[..b1], &framing[b1..b2], &framing[b2..]];
     for seg in segments {
         for side in 0..2 {
-            let folded: Vec<String> = seg
+            let (folded, srcs): (Vec<String>, Vec<Option<u32>>) = seg
                 .iter()
-                .filter_map(|line| derive_side(line, side, None, report_percent))
-                .collect();
-            chunks.push_chunk(side, folded);
+                .filter_map(|(line, src)| derive_side(line, side, None, report_percent).map(|l| (l, *src)))
+                .unzip();
+            chunks.push_chunk_src(side, folded, srcs);
         }
     }
 }
@@ -2383,12 +2454,14 @@ fn emit_framing_chunks(chunks: &mut BridgeChunks, framing: &[String], report_per
 fn emit_log_batch_chunk(
     chunks: &mut BridgeChunks,
     batch: &[crate::protocol::ProtocolLine],
+    base: usize,
     report_percent: bool,
 ) {
     for side in 0..2 {
         let mut out: Vec<String> = Vec::new();
+        let mut srcs: Vec<Option<u32>> = Vec::new();
         let mut last_switch_side: Option<usize> = None;
-        for line in batch {
+        for (i, line) in batch.iter().enumerate() {
             let l = &line.0;
             if l.starts_with("|switch|") || l.starts_with("|drag|") {
                 last_switch_side = ident_owner(l);
@@ -2401,9 +2474,10 @@ fn emit_log_batch_chunk(
             };
             if let Some(folded) = derive_side(l, side, hint_owner, report_percent) {
                 out.push(folded);
+                srcs.push(Some((base + i) as u32));
             }
         }
-        chunks.push_chunk(side, out);
+        chunks.push_chunk_src(side, out, srcs);
     }
 }
 
@@ -2551,21 +2625,27 @@ const GEN3OU_RULES: &[&str] = &[
 /// `run_full_battle_logged` framing to gen3ou before byte-diffing it against the real
 /// gen3ou omniscient capture (`gen3_omniscient_byte_fuzz_v1`).
 pub fn reframe(raw: &[crate::protocol::ProtocolLine], format_id: &str) -> Vec<String> {
+    reframe_indexed(raw, format_id).into_iter().map(|(l, _)| l).collect()
+}
+
+/// [`reframe`], with each output line's SOURCE index into `raw` (`None` for a line the reframe
+/// SUBSTITUTED — the OU tier and rule list, which are the format's frames, not the engine's).
+pub fn reframe_indexed(raw: &[crate::protocol::ProtocolLine], format_id: &str) -> Vec<(String, Option<u32>)> {
     if !format_id.contains("gen3ou") {
-        return raw.iter().map(|l| l.0.clone()).collect();
+        return raw.iter().enumerate().map(|(i, l)| (l.0.clone(), Some(i as u32))).collect();
     }
-    let mut out: Vec<String> = Vec::with_capacity(raw.len() + GEN3OU_RULES.len());
-    for l in raw {
+    let mut out: Vec<(String, Option<u32>)> = Vec::with_capacity(raw.len() + GEN3OU_RULES.len());
+    for (i, l) in raw.iter().enumerate() {
         let s = &l.0;
         if s == "|tier|[Gen 3] Custom Game" {
-            out.push(GEN3OU_TIER.to_string());
+            out.push((GEN3OU_TIER.to_string(), None));
         } else if s == "|rule|HP Percentage Mod: HP is shown in percentages" {
             // Replace the lone Custom-Game HP% rule with the full OU rule list.
             for r in GEN3OU_RULES {
-                out.push((*r).to_string());
+                out.push(((*r).to_string(), None));
             }
         } else {
-            out.push(s.clone());
+            out.push((s.clone(), Some(i as u32)));
         }
     }
     out

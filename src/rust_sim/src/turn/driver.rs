@@ -213,16 +213,15 @@ impl crate::state::BattleState {
                 );
             }
             let action = queue.remove(0);
-            // SPIKE (`event_spike`, OFF by default): the SOURCE answer to "which action owns
-            // the lines this emits" — see `crate::event_spike::Scope`.
-            #[cfg(feature = "event_spike")]
+            // The SOURCE answer to "which action owns the lines this emits" (`gen3_core_events_v1`,
+            // `crate::core_events::Scope`) — a plain field write on the builder, no draw.
             {
-                use crate::event_spike::Scope;
-                self.log.spike.scope = match &action {
-                    QAction::Move { side, .. } | QAction::BeforeTurnMove { side, .. } => Scope::Move(*side),
+                use crate::core_events::Scope;
+                self.log.scope = match &action {
+                    QAction::Move { side, .. } | QAction::BeforeTurnMove { side, .. } => Scope::Move(*side as u8),
                     QAction::Switch { side, .. }
                     | QAction::InstaSwitch { side, .. }
-                    | QAction::RunSwitch { side } => Scope::Switch(*side),
+                    | QAction::RunSwitch { side } => Scope::Switch(*side as u8),
                     QAction::Residual => Scope::Residual,
                     QAction::BeforeTurn => Scope::Other,
                 };
@@ -553,11 +552,8 @@ impl crate::state::BattleState {
                 }
             }
 
-            // SPIKE (`event_spike`, OFF by default): the runAction TAIL is no action's scope.
-            #[cfg(feature = "event_spike")]
-            {
-                self.log.spike.scope = crate::event_spike::Scope::Other;
-            }
+            // The runAction TAIL (faint messages) is no action's scope (`gen3_core_events_v1`).
+            self.log.scope = crate::core_events::Scope::Other;
             // --- runAction tail (battle.ts:2357-2424). ---
             // faintMessages: set `fainted`, decrement pokemonLeft, then checkWin.
             let any_faint = self.process_faints(dex);

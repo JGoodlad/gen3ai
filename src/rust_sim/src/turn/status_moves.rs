@@ -1821,8 +1821,7 @@ impl crate::state::BattleState {
             // Color Change precedent; the internal key is UPPERCASE).
             if self.logging() {
                 let user = self.mon_ref(_side, _slot, dex);
-                self.log
-                    .push_raw(format!("|-start|{user}|typechange|{}", pick.display_name()));
+                self.log.typechange(&user, pick.display_name(), None);
             }
             return MoveResolution::done(false, false, false);
         }
@@ -2129,7 +2128,7 @@ impl crate::state::BattleState {
                     // unrepresentable rather than something each emitter must remember.
                     .map(|m| m.display_name().to_string())
                     .unwrap_or_default();
-                self.log.volatile_start(&target, &format!("Disable|{mv_name}"));
+                self.log.volatile_start_detail(&target, "Disable", &mv_name);
             }
             return MoveResolution::done(false, false, false);
         }
@@ -2877,7 +2876,7 @@ impl crate::state::BattleState {
         if move_id == "haze" {
             // [EMIT] the ONE `|-clearallboost` field line (before the silent per-mon clears).
             if self.logging() {
-                self.log.push_raw("|-clearallboost".to_string());
+                self.log.clearallboost();
             }
             // clearBoosts() on BOTH actives (getAllActive — incl. the USER's own boosts).
             for (s, sl) in [(_side, _slot), (foe, foe_slot)] {
@@ -3642,8 +3641,7 @@ impl crate::state::BattleState {
                     let user = self.mon_ref(side, slot, dex);
                     let ability_name =
                         dex.ability(&ability_id).map(|a| a.name.clone()).unwrap_or(ability_id);
-                    self.log
-                        .push_raw(format!("|-fail|{user}|[from] ability: {ability_name}|[of] {user}"));
+                    self.log.fail_from_ability_of(&user, &ability_name);
                 }
                 return MoveResolution::done(false, false, false);
             }
@@ -3689,20 +3687,12 @@ impl crate::state::BattleState {
         // [EMIT] `|-heal|<user>|<HP> slp|[silent]` — Rest's full heal, with the `[silent]`
         // tag (Showdown suppresses the client message; the HP field carries the new `slp`
         // status token, e.g. `524/524 slp`). Emitted AFTER the `-status` (the sim sets the
-        // status then heals). The `[silent]` cause has no `[from]`; render it via a bare
-        // tag helper (push the raw line — the HP-with-status is formatted by `hp_status`).
+        // status then heals). The `[silent]` cause has no `[from]` (the typed `heal_silent`;
+        // the HP-with-status is formatted by `hp_status`).
         if self.logging() {
             let user = self.mon_ref(side, slot, dex);
             let hp = self.hp_status(side, slot);
-            // SPIKE (`event_spike`, OFF by default): type this raw push at its source.
-            #[cfg(feature = "event_spike")]
-            self.log.spike.stage(crate::event_spike::Typed::Heal {
-                mon: crate::event_spike::Mon::of(&user),
-                hp: (hp.hp, hp.maxhp),
-                cause: None,
-                of: None,
-            });
-            self.log.push_raw(format!("|-heal|{user}|{hp}|[silent]"));
+            self.log.heal_silent(&user, &hp);
         }
 
         // (7) Status move → not missed, NOT landed (no in-tryMoveHit Update shuffle).

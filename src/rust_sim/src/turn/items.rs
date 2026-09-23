@@ -18,7 +18,7 @@ impl crate::state::BattleState {
         self.sides[side].pokemon[slot].item = String::new();
         if self.logging() {
             let m = self.mon_ref(side, slot, dex);
-            self.log.push_raw(format!("|-enditem|{m}|{display}|[eat]"));
+            self.log.enditem_eat(&m, &display);
         }
         display
     }
@@ -67,8 +67,8 @@ impl crate::state::BattleState {
         if self.logging() {
             // [EMIT] `|-enditem|<mon>|White Herb` then `|-clearnegativeboost|<mon>|[silent]`.
             let m = self.mon_ref(side, slot, dex);
-            self.log.push_raw(format!("|-enditem|{m}|White Herb"));
-            self.log.push_raw(format!("|-clearnegativeboost|{m}|[silent]"));
+            self.log.enditem(&m, "White Herb");
+            self.log.clearnegativeboost_silent(&m);
         }
     }
 
@@ -198,11 +198,10 @@ impl crate::state::BattleState {
             let m = self.mon_ref(side, slot, dex);
             let stat_tok = crate::protocol::STAT_TOKENS[stat];
             if delta > 0 {
-                self.log
-                    .push_raw(format!("|-boost|{m}|{stat_tok}|{delta}|[from] item: {item_name}"));
+                self.log.boost_from_item(&m, stat_tok, delta as i32, &item_name);
             } else {
                 // At the +6 cap: the delta-0 `-boost` line, NO `[from] item:` cause.
-                self.log.push_raw(format!("|-boost|{m}|{stat_tok}|0"));
+                self.log.boost_raw(&m, stat_tok, 0);
             }
         }
     }
@@ -306,7 +305,7 @@ impl crate::state::BattleState {
                             .map(|mv| mv.display_name().to_string())
                             .unwrap_or_default();
                         let m = self.mon_ref(side, slot, dex);
-                        self.log.push_raw(format!("|-activate|{m}|item: {name}|{move_name}|[consumed]"));
+                        self.log.activate_item_consumed(&m, &name, &move_name);
                     }
                 }
             }

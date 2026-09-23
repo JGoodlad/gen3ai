@@ -109,8 +109,30 @@ read the row you are about to edit.**
 | `search.rs` | DONE, validated | The search + replay KERNELS (`gen3_rust_search_driver_v1`): the aux PRNG, `Record::parse`, `build_to_turn`, `resolve_turn*`, the `outcome_of`/`pre_state` renderers. Pure helpers. |
 | `bin/search_driver.rs` | DONE, validated | The drop-in replacement for BOTH node offline drivers — the persistent `{id, cmd}` search server AND the one-shot `mode` replay verbs. Dispatch is on the KEY. An `expand_many` may carry **`side`** to ELIDE the one-sided payload the caller will not read (`gen3_expand_many_side_elision_v1`). |
 | `driver_timing.rs` | DONE | OPT-IN per-phase wall accounting inside `expand_many` (`POKESIM_SEARCH_TIMING=1`). **Off it renders the empty string**, so an un-set build is byte-identical and the cross-impl parity harness is unaffected. |
-| `event_spike.rs` (+ `bin/event_spike.rs`) | SPIKE, feature-gated | Compiled ONLY under the cargo feature `event_spike` (OFF by default — no production binary contains it or its hooks): a typed source-event `Sink` on `ProtocolBuilder`, one record per committed line, with the engine's action scope. The Rust Core Program's Phase-0 spike; record + verdict: [`designs/research_state/measurements/rust_core_phase0_2026-09-23/README.md`](../../designs/research_state/measurements/rust_core_phase0_2026-09-23/README.md), plan: [`designs/endstate/program_rust_core.md`](../../designs/endstate/program_rust_core.md). |
+| `core_events/` (+ `bin/core_events.rs`) | M1 BUILT, not used by training | The Rust Core's typed event layer (`gen3_core_events_v1`): every omniscient line is a typed `Line` whose text is its rendering; one side's stream → `CoreEvent`s carrying `Gen3Battle`'s reading; `parse(lines)`; the persisted record. Detail: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md). |
 | `view.rs` | DONE, validated | The ONE-SIDED VIEW readout (`gen3_one_sided_view_v1`) — the PROJECTION of the omniscient board onto what one side has OBSERVED, in the shape `LiveView` holds, plus the per-side reveal fold it rides on. The obs-legal counterpart of `pre_state`. Contract + deferrals: [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md). |
+
+## The core's event layer — typed at the source (`gen3_core_events_v1`)
+
+The Rust Core Program's M1 ([`designs/endstate/program_rust_core.md`](../../designs/endstate/program_rust_core.md)).
+**Every `ProtocolBuilder` method builds a typed `core_events::Line` and the text is its
+`render()`** — one representation, no raw-string escape hatch. Recording (the per-line
+`SourceRec` with the engine's action `Scope`, and the bridge's per-side source tracking) is ON only
+in a session built by `BridgeSession::new_core` / `new_construct_turn0_core`; `sim_bridge` never
+does, so training ships the same bytes and uses none of it. Full contract, the 11 named reading
+rules and the record format: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md).
+
+🚨 **A new emit form is a typed method, and it must be CANONICAL**: `Line::parse(render(l)) == l`
+(a `|` inside one field is two fields — `volatile_start_detail`, not a pipe-joined string). Every
+corpus battle checks it (`tests/core_events_test.rs`, and `core_events` refuses otherwise).
+
+🚨 **The keyword table is GENERATED** from `agents/battle/battle_event.py`:
+`python -m agents.battle.rust_core_schema --write` after any `MESSAGE_POLICY` / `EventKind` /
+value-schema change (`rust_core_schema_test.py` fails the day it is stale).
+
+| gate | what it proves |
+|---|---|
+| `tests/core_events_test.rs` (`cargo test`) | on the protocol capture corpus, every byte-fuzz fixture, the trapping golden and the turn-limit golden: canonical source records (one per line), the step path re-derives the shipped bytes with per-side conservation, `parse(side text) == step`; recording changes no byte |
 
 ## The callable surface (battle.rs) maps to the existing bridge
 

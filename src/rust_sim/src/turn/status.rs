@@ -311,8 +311,7 @@ impl crate::state::BattleState {
         if self.logging() {
             let mon_ref = self.mon_ref(side, slot, dex);
             let src_ref = self.mon_ref(src_side, src_slot, dex);
-            self.log
-                .push_raw(format!("|-start|{mon_ref}|Attract|[from] ability: Cute Charm|[of] {src_ref}"));
+            self.log.volatile_start_from_ability_of(&mon_ref, "Attract", "Cute Charm", &src_ref);
         }
     }
 
@@ -343,8 +342,7 @@ impl crate::state::BattleState {
         // [EMIT] `|-start|<mon>|typechange|<Type>|[from] ability: Color Change`.
         if self.logging() {
             let mon_ref = self.mon_ref(side, slot, dex);
-            self.log
-                .push_raw(format!("|-start|{mon_ref}|typechange|{}|[from] ability: Color Change", t.display_name()));
+            self.log.typechange(&mon_ref, t.display_name(), Some("Color Change"));
         }
     }
 
@@ -601,7 +599,7 @@ impl crate::state::BattleState {
             // gen3ou): `|-message|Sleep Clause Mod activated.` + a per-battle-deduped
             // `|-hint|…` (rulesets.js:6028-6029). Draw-free / observation-only.
             if self.logging() {
-                self.log.push_raw("|-message|Sleep Clause Mod activated.");
+                self.log.clause_message("Sleep Clause Mod activated.");
                 self.log.hint("Sleep Clause Mod prevents players from putting more than one of their opponent's Pok\u{e9}mon to sleep at a time", false); // rulesets.ts:1395 — no `once` → fires on EVERY block
             }
             return;
@@ -622,7 +620,7 @@ impl crate::state::BattleState {
             // [EMIT] the Freeze Clause Mod block line (gen3ou): `|-message|Freeze Clause
             // activated.` (rulesets.js:6099 — NO hint, unlike Sleep Clause). Draw-free.
             if self.logging() {
-                self.log.push_raw("|-message|Freeze Clause activated.");
+                self.log.clause_message("Freeze Clause activated.");
             }
             return;
         }

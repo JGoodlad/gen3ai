@@ -180,7 +180,10 @@ byte-differential gate and the `write_line` drop-in.
 *(The leaf keeps the append-only / PRNG-free rule, the nickname-ident hazard and the
 disabled-by-default guarantee; this is the unabridged bullet.)*
 
-- **The emit API** (`protocol.rs`): `ProtocolBuilder` is an **append-only, PRNG-free** line
+- **The emit API** (`protocol.rs`): every method builds the line as a TYPED
+  `core_events::Line` and the text is its `render()` (`gen3_core_events_v1` — there is no raw-string
+  `push_raw`; a new form is a new typed method, constructed canonically — see
+  [`core_events.md`](core_events.md)). `ProtocolBuilder` is an **append-only, PRNG-free** line
   buffer on `BattleState` (the `log` field) — with ONE sim-mirroring exception:
   `attr_last_move_still()`, the port of `Battle.attrLastMove('[still]')` (blank the last `|move|`
   line's target + append `|[still]`), for fail forms the sim itself decides RETROACTIVELY, after

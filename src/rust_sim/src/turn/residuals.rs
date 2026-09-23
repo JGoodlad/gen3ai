@@ -2326,15 +2326,7 @@ impl crate::state::BattleState {
                 if self.logging() && healed {
                     let m = self.mon_ref(seeder_side, seeder_slot, dex);
                     let hp = self.hp_status(seeder_side, seeder_slot);
-                    // SPIKE (`event_spike`, OFF by default): type this raw push at its source.
-                    #[cfg(feature = "event_spike")]
-                    self.log.spike.stage(crate::event_spike::Typed::Heal {
-                        mon: crate::event_spike::Mon::of(&m),
-                        hp: (hp.hp, hp.maxhp),
-                        cause: None,
-                        of: None,
-                    });
-                    self.log.push_raw(format!("|-heal|{m}|{hp}|[silent]"));
+                    self.log.heal_silent(&m, &hp);
                 }
             }
         }

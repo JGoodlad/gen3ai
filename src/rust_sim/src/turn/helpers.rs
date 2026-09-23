@@ -779,9 +779,8 @@ impl crate::state::BattleState {
                         let consumed =
                             to_id(&self.sides[foe].pokemon[foe_slot].item).is_empty();
                         if set_white_herb && consumed {
-                            self.log.push_raw(format!("|-enditem|{foe_ref}|White Herb"));
-                            self.log
-                                .push_raw(format!("|-clearnegativeboost|{foe_ref}|[silent]"));
+                            self.log.enditem(&foe_ref, "White Herb");
+                            self.log.clearnegativeboost_silent(&foe_ref);
                         }
                     }
                 }
