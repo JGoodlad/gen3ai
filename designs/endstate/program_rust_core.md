@@ -59,6 +59,14 @@ defects**. Every estimate below carries a 1.5× surprise allowance at that rate.
 
 ### M1 — Typed events at the source, all kinds, + the parity harness (Tier 1a, part 1)
 
+**Status (2026-09-23): BUILT, not used by training** — every omniscient line is a typed `Line` whose
+text is its rendering (the spike feature deleted; production bytes proven identical by the port's
+gates), one side's stream → `CoreEvent`s carrying `Gen3Battle`'s reading (11 named rules),
+`parse(lines)` with `parse(emit(step)) == step`, the record `gen3_core_event_v1`, and slice E of the
+harness at COMMIT + MILESTONE tiers, 0 residual. Both prerequisites closed (the turn-limit tie,
+`gen3_turn_limit_tie_v1`; the `ViewEventFolder` reset, `gen3_view_fold_turn_reset_v1`). Contract:
+`designs/rust_sim/core_events.md`; measurements: `research_state/measurements/rust_core_m1_2026-09-23/`.
+
 **What crosses.** Every omniscient line is emitted by a TYPED `ProtocolBuilder` method (today 17
 `push_raw` call sites bypass them; 3 are in the spike's subset and were typed there). The core
 holds, per line, a `CoreEvent` = the source facts (actor, target, the `[from]`/`[of]` cause, exact

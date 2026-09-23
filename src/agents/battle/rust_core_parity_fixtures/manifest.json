@@ -1,0 +1,26 @@
+{
+ "policy_keys": [
+  [
+   100,
+   150
+  ],
+  [
+   6000,
+   6050
+  ]
+ ],
+ "pool_sha256": "910073304a9ffd9664e5721ad00f95d6f7a855af35e7939585fcbe549af67caf",
+ "production_sha256": "0a3b758ba8370da4395fcbf1985a645cd30656a2f6aea8e23f66eb73c77df7d3",
+ "protocol_per_scenario": 2,
+ "random_keys": [
+  [
+   0,
+   200
+  ],
+  [
+   5000,
+   5200
+  ]
+ ],
+ "schema": "gen3_core_parity_manifest_v1"
+}

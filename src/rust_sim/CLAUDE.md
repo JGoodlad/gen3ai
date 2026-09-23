@@ -133,6 +133,8 @@ value-schema change (`rust_core_schema_test.py` fails the day it is stale).
 | gate | what it proves |
 |---|---|
 | `tests/core_events_test.rs` (`cargo test`) | on the protocol capture corpus, every byte-fuzz fixture, the trapping golden and the turn-limit golden: canonical source records (one per line), the step path re-derives the shipped bytes with per-side conservation, `parse(side text) == step`; recording changes no byte |
+| `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` | the COMMIT tier: the core's readings == `Gen3Battle`'s, per viewer, per event, type-strict, no allowlist; the golden records round-trip byte-identically and re-parse |
+| `… rust_core_parity_test.py -m slow -q -n 2` | the MILESTONE tier (2 × 200 random + 2 × 50 policy battles played live, the protocol corpus × 2, every byte-fuzz fixture) |
 
 ## The callable surface (battle.rs) maps to the existing bridge
 

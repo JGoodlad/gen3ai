@@ -235,6 +235,22 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   parity harness. Gate: `offline_feed_test.py` (`sim`) — a live bridge battle's log == the offline
   feed's, every event, every field, both viewers, plus conservation (the transport's `|init|battle`
   room line is fed too).
+- **`rust_core_parity.py` (+ `_test.py`) — the Rust Core parity harness, slice E (events)**
+  (`gen3_core_parity_events_v1`, the Rust Core Program's M1). The Rust core's READING projection
+  (`src/rust_sim/src/core_events/`) against THIS layer's `Gen3Battle`, per viewer, per event,
+  `seq · turn · kind · side · actor · target · value · raw`, type-strict, NO allowlist — both fed the
+  same per-side text (the core replays a recorded input log through the production bridge session;
+  `Gen3Battle` is fed through `offline_feed`). COMMIT tier in the routine gate (~2 s: the recorded
+  `rust_core_parity_fixtures/commit_tier.json.gz`, the four-shape byte-fuzz fixtures, one battle per
+  protocol scenario, + the golden RECORD corpus's round trip); MILESTONE tier `slow` (2 × 200 random
+  + 2 × 50 `production`-policy battles played live, the protocol corpus × 2, every byte-fuzz fixture;
+  pinned by `rust_core_parity_fixtures/manifest.json`). 🚨 **This layer is now the ORACLE of a second
+  implementation**: a change to `_build_event` / `_capture_pre` / the schema, or to a poke-env
+  transition they read, fails the COMMIT tier the day it lands — mirror it in
+  `src/rust_sim/src/core_events/reading.rs` in the same change (or behind a flag OFF in
+  `production_config.json`). And `battle_event.py`'s tables are GENERATED into Rust:
+  `python -m agents.battle.rust_core_schema --write` (`rust_core_schema_test.py` fails when stale).
+  Contract: [`designs/rust_sim/core_events.md`](../../../designs/rust_sim/core_events.md).
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,
