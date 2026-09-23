@@ -1,0 +1,202 @@
+Only in patched/poke_env/data: __pycache__
+diff -ru a/poke_env/environment/abstract_battle.py b/poke_env/environment/abstract_battle.py
+--- a/poke_env/environment/abstract_battle.py	2026-09-14 08:20:15.642368952 -0700
++++ b/poke_env/environment/abstract_battle.py	2026-09-22 15:01:43.763338079 -0700
+@@ -404,7 +404,20 @@
+             return
+         elif event[1] in ["drag", "switch"]:
+             pokemon, details, hp_status = event[2:5]
+-            self.switch(pokemon, details, hp_status)
++            # H18 PATCH — `|switch|IDENT|DETAILS|HP|[from] Baton Pass` is the ONLY thing the
++            # protocol ever says about the passed stat stages and volatiles. Slicing
++            # `event[2:5]` alone throws the tag away before anyone can look at it. A `drag`
++            # (a phaze) is not a self-switch and never carries the tag, so keying on the tag
++            # rather than the keyword is both sufficient and safe.
++            self.switch(
++                pokemon,
++                details,
++                hp_status,
++                from_baton_pass=any(
++                    tag.startswith("[from]") and "baton pass" in tag.lower()
++                    for tag in event[5:]
++                ),
++            )
+         elif event[1] == "-damage":
+             pokemon, hp_status = event[2:4]
+             self.get_pokemon(pokemon).damage(hp_status)
+@@ -916,7 +929,13 @@
+             self.logger.warning("swap method in Battle is not implemented")
+ 
+     @abstractmethod
+-    def switch(self, pokemon_str: str, details: str, hp_status: str):
++    def switch(
++        self,
++        pokemon_str: str,
++        details: str,
++        hp_status: str,
++        from_baton_pass: bool = False,
++    ):
+         pass
+ 
+     def tied(self):
+diff -ru a/poke_env/environment/battle.py b/poke_env/environment/battle.py
+--- a/poke_env/environment/battle.py	2026-09-14 08:20:15.642431349 -0700
++++ b/poke_env/environment/battle.py	2026-09-22 15:01:43.763005685 -0700
+@@ -131,20 +131,37 @@
+                     if not pokemon.active:
+                         self._available_switches.append(pokemon)
+ 
+-    def switch(self, pokemon_str: str, details: str, hp_status: str):
++    def switch(
++        self,
++        pokemon_str: str,
++        details: str,
++        hp_status: str,
++        from_baton_pass: bool = False,
++    ):
+         identifier = pokemon_str.split(":")[0][:2]
+ 
+         if identifier == self._player_role:
+-            if self.active_pokemon:
+-                self.active_pokemon.switch_out()
++            outgoing = self.active_pokemon
+         else:
+-            if self.opponent_active_pokemon:
+-                self.opponent_active_pokemon.switch_out()
++            outgoing = self.opponent_active_pokemon
++
++        # H18 PATCH — a Baton Pass hands the entrant the passer's stat stages and its
++        # copyable volatiles, and the protocol says so ONLY through the `[from] Baton Pass`
++        # tag on this line. Snapshot BEFORE `switch_out`, which is what wipes it.
++        snapshot = (
++            outgoing.baton_pass_snapshot()
++            if (from_baton_pass and outgoing is not None)
++            else None
++        )
++        if outgoing is not None:
++            outgoing.switch_out()
+ 
+         pokemon = self.get_pokemon(pokemon_str, details=details)
+ 
+         pokemon.switch_in(details=details)
+         pokemon.set_hp_status(hp_status)
++        if snapshot is not None:
++            pokemon.apply_baton_pass(snapshot)
+ 
+     @property
+     def active_pokemon(self) -> Optional[Pokemon]:
+diff -ru a/poke_env/environment/double_battle.py b/poke_env/environment/double_battle.py
+--- a/poke_env/environment/double_battle.py	2026-09-14 08:20:15.642509405 -0700
++++ b/poke_env/environment/double_battle.py	2026-09-22 15:01:43.763128175 -0700
+@@ -212,7 +212,13 @@
+                         if self.reviving and not pokemon.active and pokemon.fainted:
+                             self._available_switches[pokemon_index].append(pokemon)
+ 
+-    def switch(self, pokemon_str: str, details: str, hp_status: str):
++    def switch(
++        self,
++        pokemon_str: str,
++        details: str,
++        hp_status: str,
++        from_baton_pass: bool = False,
++    ):
+         pokemon_identifier = pokemon_str.split(":")[0][:3]
+         player_identifier = pokemon_identifier[:2]
+         team = (
+@@ -221,11 +227,20 @@
+             else self._opponent_active_pokemon
+         )
+         pokemon_out = team.pop(pokemon_identifier, None)
++        # H18 PATCH — see Battle.switch. Singles is what gen3ou runs; this keeps the
++        # doubles subclass signature-compatible and correct rather than silently lossy.
++        snapshot = (
++            pokemon_out.baton_pass_snapshot()
++            if (from_baton_pass and pokemon_out is not None)
++            else None
++        )
+         if pokemon_out is not None:
+             pokemon_out.switch_out()
+         pokemon_in = self.get_pokemon(pokemon_str, details=details)
+         pokemon_in.switch_in()
+         pokemon_in.set_hp_status(hp_status)
++        if snapshot is not None:
++            pokemon_in.apply_baton_pass(snapshot)
+         team[pokemon_identifier] = pokemon_in
+ 
+     def _swap(self, pokemon_str: str, slot: str):
+diff -ru a/poke_env/environment/effect.py b/poke_env/environment/effect.py
+--- a/poke_env/environment/effect.py	2026-09-14 08:20:15.642577313 -0700
++++ b/poke_env/environment/effect.py	2026-09-22 15:01:43.762684493 -0700
+@@ -777,3 +777,33 @@
+ }
+ 
+ _ACTION_COUNTER_EFFECTS: Set[Effect] = {Effect.RAGE, Effect.STOCKPILE}
++
++
++#: H18 PATCH — the volatiles Baton Pass carries to the entrant, alongside the stat stages.
++#: Ported verbatim from the gen3ai fork (`src/poke_env/battle/effect.py`, 2026-08-23).
++#: Showdown's `Pokemon.copyVolatileFrom` (`sim/pokemon.ts:1249`) assigns `this.boosts =
++#: pokemon.boosts` and shallow-copies every volatile whose condition is not `noCopy`, and
++#: emits NOTHING for any of it. An ALLOW-list, not the sim's copy-unless-noCopy default,
++#: because `Pokemon._effects` also absorbs ability/item announcements that have no business
++#: riding a pass: it can only under-copy, never invent.
++BATON_PASS_COPIED_EFFECTS = frozenset(
++    {
++        Effect.SUBSTITUTE,
++        Effect.LEECH_SEED,
++        Effect.CONFUSION,
++        Effect.CURSE,
++        Effect.PERISH0,
++        Effect.PERISH1,
++        Effect.PERISH2,
++        Effect.PERISH3,
++        Effect.INGRAIN,
++        Effect.FOCUS_ENERGY,
++        Effect.CHARGE,
++        Effect.BIND,
++        Effect.CLAMP,
++        Effect.FIRE_SPIN,
++        Effect.SAND_TOMB,
++        Effect.WHIRLPOOL,
++        Effect.WRAP,
++    }
++)
+diff -ru a/poke_env/environment/pokemon.py b/poke_env/environment/pokemon.py
+--- a/poke_env/environment/pokemon.py	2026-09-14 08:20:15.642822032 -0700
++++ b/poke_env/environment/pokemon.py	2026-09-22 15:01:43.762901740 -0700
+@@ -434,6 +434,30 @@
+         self._first_turn = True
+         self._revealed = True
+ 
++    def baton_pass_snapshot(self):
++        """H18 PATCH — everything Baton Pass carries to the entrant, read off the PASSER.
++
++        Must be taken BEFORE :meth:`switch_out`, which clears exactly the state we need.
++        """
++        from poke_env.environment.effect import BATON_PASS_COPIED_EFFECTS
++
++        return (
++            dict(self._boosts),
++            {e: c for e, c in self._effects.items() if e in BATON_PASS_COPIED_EFFECTS},
++        )
++
++    def apply_baton_pass(self, snapshot):
++        """H18 PATCH — apply a :meth:`baton_pass_snapshot` to this (entering) mon.
++
++        Showdown never re-emits the passed state: the `[from] Baton Pass` tag on the
++        `|switch|` line is the entire protocol trace, so a client that does not do this
++        LOSES it.
++        """
++        boosts, effects = snapshot
++        self._boosts = dict(boosts)
++        for effect, counter in effects.items():
++            self._effects[effect] = counter
++
+     def switch_out(self):
+         self._active = False
+         self.clear_boosts()
+Only in patched/poke_env/environment: __pycache__
+Only in patched/poke_env/player: __pycache__
+Only in patched/poke_env/ps_client: __pycache__
+Only in patched/poke_env: __pycache__
+Only in patched/poke_env/teambuilder: __pycache__

@@ -1,0 +1,41 @@
+{
+  "_README": [
+    "H18 — the Baton Pass bias cell. A COPY of designs/ops/anchors.json with exactly three",
+    "changes, so the committed config is never edited:",
+    "  1. opponents.metamon.cache_dir -> a SHADOW cache (symlinks to the real one) that also",
+    "     holds the `bp_enriched` team set: the 20 Baton-Pass-carrying pool teams drawn by",
+    "     random.Random(20260922).sample(sorted(157 BP teams), 20).",
+    "  2. opponents.metamon.team_sets.home -> `bp_enriched` (away is untouched `competitive`).",
+    "  3. our_team_sources.home -> the SAME 20 files as a dir, so both sides draw the same set",
+    "     and `team_source_asymmetry` can see any residual mismatch. They are the pool's own",
+    "     EXPORTED pastes (complete Hidden Power IV lines, nickname-free) — hazards H2/H3.",
+    "opponents.metamon.python is DELIBERATELY a path that does not exist: the arm is chosen by",
+    "$GEN3AI_METAMON_PYTHON, and a cell launched without it must REFUSE by name rather than",
+    "quietly run the installed (unpatched) interpreter. That exact slip happened once here."
+  ],
+  "showdown": { "node": "node", "port_range": [9500, 9599] },
+  "opponents": {
+    "metamon": {
+      "checkout": "/home/goodlad/dev/metamon",
+      "python": "/home/goodlad/.claude/jobs/9ab51de6/tmp/h18/MUST_SET_GEN3AI_METAMON_PYTHON_PER_ARM",
+      "cache_dir": "/home/goodlad/.claude/jobs/9ab51de6/tmp/h18/cache",
+      "agents": {
+        "SmallRL": {"checkpoint": 40, "params": 13938567},
+        "SyntheticRLV2": {"checkpoint": 48, "params": 200894911}
+      },
+      "team_sets": { "home": "bp_enriched", "away": "competitive" }
+    },
+    "foulplay": {
+      "checkout": "/home/goodlad/dev/foul-play",
+      "python": "/home/goodlad/dev/foul-play/.conda/bin/python",
+      "team_dirs": {
+        "home": "gen3/ou/gen3ai_pool",
+        "away": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"
+      }
+    }
+  },
+  "our_team_sources": {
+    "home": {"kind": "dir", "path": "/home/goodlad/.claude/jobs/9ab51de6/tmp/h18/enriched"},
+    "away": {"kind": "dir", "path": "/home/goodlad/dev/metamon/cache/teams/competitive/gen3ou"}
+  }
+}
