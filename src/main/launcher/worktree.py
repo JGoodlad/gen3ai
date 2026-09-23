@@ -19,7 +19,8 @@ from typing import Callable, Optional
 from main.exit_codes import TrainExitCode
 from main.launcher.checkpoint import run_dir_for_checkpoint
 from main.train.fork_lr import is_same_run_checkpoint
-from utils.git import get_git_hash, get_repo_root
+from utils import worktree_guard
+from utils.git import get_git_hash, get_main_repo_root, get_repo_root
 
 _WORKTREE_PREFIX = "launcher-"
 
@@ -345,10 +346,35 @@ def _classify_worktree(path: str) -> "tuple[str, str]":
     return "remove", f"owner pid {owner.get('pid')} is gone"
 
 
+def _run_data_held(repo_root: str, path: str) -> "str | None":
+    """Why removing ``path`` would destroy RUN DATA, or None — ``utils.worktree_guard``, the one
+    check ``scripts/land.sh`` runs too (incident 2026-09-23: eight run dirs lived inside worktrees
+    behind main-checkout ``models/`` symlinks, and a forced removal deleted them).
+
+    A pin never holds a run in normal operation — the child inherits the LAUNCHER's cwd, so a
+    relative ``models/<run>`` lands in the main checkout — but a launcher started from inside a
+    worktree, or an absolute ``--run-dir`` into one, would put it there. FAIL-SAFE like the owner
+    check: a guard that cannot run keeps the tree.
+    """
+    try:
+        main_root = get_main_repo_root(repo_root)
+    except Exception:
+        main_root = repo_root
+    try:
+        hazards = worktree_guard.find_hazards(main_root, path)
+    except Exception as exc:          # GuardError, OSError, a git failure — keep the tree
+        return f"the run-data guard could not check it ({exc})"
+    if not hazards:
+        return None
+    more = f" (+{len(hazards) - 2} more)" if len(hazards) > 2 else ""
+    return "it holds RUN DATA: " + "; ".join(h.line() for h in hazards[:2]) + more
+
+
 def _prune_stale_launcher_worktrees(
     repo_root: str, report: Optional[Callable[[str], None]] = None
 ) -> None:
-    """Remove launcher-* worktrees whose OWNER IS DEAD. A live owner's tree is never touched.
+    """Remove launcher-* worktrees whose OWNER IS DEAD. A live owner's tree is never touched,
+    and neither is a dead owner's tree that holds run data (:func:`_run_data_held`).
 
     ``report`` receives one line per worktree KEPT (naming the owning pid) and one per
     removal, so a startup that leaves debris behind says so instead of looking like a no-op.
@@ -370,6 +396,10 @@ def _prune_stale_launcher_worktrees(
         verdict, reason = _classify_worktree(path)
         if verdict == "keep":
             say(f"[worktree] KEPT {os.path.basename(path)} - {reason}")
+            continue
+        held = _run_data_held(repo_root, path) if os.path.isdir(path) else None
+        if held:
+            say(f"[worktree] KEPT {os.path.basename(path)} - {reason}, but {held}")
             continue
         subprocess.run(
             ["git", "worktree", "remove", "--force", path],
@@ -416,6 +446,10 @@ def _create_run_worktree(
     src_dir = os.path.join(tmp, "src")
 
     def cleanup() -> None:
+        held = _run_data_held(repo_root, tmp) if os.path.isdir(tmp) else None
+        if held:
+            print(f"[worktree] NOT removing {tmp} - {held}", file=sys.stderr)
+            return
         subprocess.run(
             ["git", "worktree", "remove", "--force", tmp],
             capture_output=True, cwd=repo_root,

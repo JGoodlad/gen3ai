@@ -11,7 +11,18 @@
 #   1. GATES, run INSIDE the worktree — ruff (F,E9) · mypy · the `src/*_gate_test.py` statics.
 #   2. `git push origin <branch>:main` from the MAIN checkout.
 #   3. `git pull --ff-only origin main` — so the main checkout is not left behind its own remote.
-#   4. `git worktree remove --force <worktree>` + prune + delete the local branch.
+#   4. `git worktree remove --force <worktree>` + prune + delete the local branch — but only
+#      after the RUN-DATA GUARD (`python -m utils.worktree_guard`) finds nothing to lose.
+#
+# WHY STEP 4 HAS A GUARD (incident 2026-09-23). Early launcher worktrees wrote run directories
+# INSIDE the worktree and left only a SYMLINK in the main checkout's `models/`; `models/` is
+# gitignored, so a clean `git status` hid them and `git worktree remove --force` destroyed eight
+# runs. The guard REFUSES the removal when (a) any `models/` entry of the main checkout is a symlink
+# resolving into the worktree, or (b) the worktree's untracked + ignored content, minus an
+# allowlist of build/cache paths, exceeds 50 MiB. It runs AFTER the push: the code is landed
+# either way, and a refusal keeps the worktree and its branch and exits 3. It fails CLOSED — a
+# guard that cannot run is a refusal. Tested at the blocked state by
+# `src/utils/worktree_guard_test.py`, which drives this script end to end in a throwaway repo.
 #
 # WHY THE GATES ARE NOT PIPED. On 2026-09-06 a `pytest | tail` swallowed a ruff F811 and a
 # duplicate definition landed on main as `00772d05`. Every gate here runs unpiped under
@@ -50,7 +61,10 @@ WHAT IT DOES
     1. gates, inside the worktree   ruff (F,E9) + mypy + src/*_gate_test.py
     2. git push origin <branch>:main        from the main checkout
     3. git pull --ff-only origin main       so main is not left behind
-    4. git worktree remove --force + prune + delete the local branch
+    4. RUN-DATA GUARD, then git worktree remove --force + prune + delete the
+       local branch. The guard REFUSES (worktree and branch kept, exit 3) when a
+       main-checkout models/ symlink resolves into the worktree, or when its
+       untracked/ignored content outside the build/cache allowlist exceeds 50 MiB
 
     Any gate failure exits 1 WITHOUT pushing. It never force-pushes; a rejected
     non-fast-forward push means someone else landed first — rebase the worktree on
@@ -61,6 +75,8 @@ ENVIRONMENT
 
 EXIT
     0  landed        1  a gate failed, or the push was rejected        2  bad usage
+    3  landed, but the worktree was NOT removed: it holds run data (or the guard
+       could not run) — move or delete the data, then remove it by hand
 EOF
 }
 
@@ -70,6 +86,11 @@ esac
 
 BRANCH="$1"
 WORKTREE="${2:-}"
+# Absolute from here on: step 4 runs after `cd "$MAIN_CHECKOUT"`, where a relative path would name
+# a different directory (or none) — and the guard must inspect exactly the tree being removed.
+if [ -n "$WORKTREE" ]; then
+    WORKTREE="$(cd "$WORKTREE" && pwd)" || { echo "no such worktree: ${2}" >&2; exit 2; }
+fi
 
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
@@ -130,6 +151,15 @@ fi
 git push -q origin "$BRANCH":main
 git pull -q --ff-only origin main
 if [ -n "$WORKTREE" ]; then
+    # 4a. THE RUN-DATA GUARD — from the MAIN checkout's src/ (just fast-forwarded, so it is at
+    # least as new as the branch that landed), via -m and never by file path (see the module).
+    if ! PYTHONPATH="$MAIN_CHECKOUT/src" "$PY" -m utils.worktree_guard \
+            --main "$MAIN_CHECKOUT" "$WORKTREE"; then
+        echo "LANDED, but the worktree was NOT removed: $WORKTREE (branch $BRANCH kept)." >&2
+        echo "  Move or delete the data the guard names, then remove it by hand." >&2
+        git log --oneline -1
+        exit 3
+    fi
     git worktree remove --force "$WORKTREE"
 fi
 git worktree prune

@@ -185,6 +185,15 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   | no owner file (pre-fix worktree), mtime < 24 h | **KEEP** — may be a live pre-fix run |
   | no owner file, mtime > 24 h (`_LEGACY_ORPHAN_MAX_AGE_S`) | remove — abandoned |
   | the directory no longer exists | remove — the case git's own prune handles |
+  | any "remove" above, but the tree holds **RUN DATA** (`utils.worktree_guard`) | **KEEP**, and say what it holds |
+
+  🚨 **The last row, and the atexit `cleanup()`, run the SAME guard `scripts/land.sh` runs**
+  (`_run_data_held`, 2026-09-23): refuse when a main-checkout `models/` symlink resolves into the
+  tree, or when its untracked + ignored content outside the build/cache allowlist exceeds 50 MiB.
+  In normal operation a pin never holds a run — the child inherits the launcher's cwd, so
+  `models/<run>` lands in the main checkout — but a launcher started from INSIDE a worktree put
+  eight v9 runs in theirs, and a forced removal of those worktrees destroyed them (ledger
+  2026-09-23). A guard that cannot run keeps the tree. Gate: `worktree_prune_test.py` (e).
 
   It **reports every decision** through a `report` callable (`state.add_event` from the
   launcher, `print` standalone), naming the owning pid on each skip — a startup that leaves

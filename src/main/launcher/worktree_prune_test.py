@@ -215,6 +215,53 @@ def test_a_non_launcher_worktree_is_ignored(repo, tmp_path, monkeypatch):
                        cwd=repo, capture_output=True)
 
 
+# ---------------------------------------------------------------------------------------
+# (e) a DEAD owner's tree that holds RUN DATA is kept — the 2026-09-23 incident's shape
+#     (a run dir inside a worktree, a symlink to it in the main checkout's models/), through
+#     the same `utils.worktree_guard` check scripts/land.sh runs. Both fail on the pre-guard code.
+# ---------------------------------------------------------------------------------------
+
+def _plant_run_behind_a_models_symlink(repo, path):
+    run = os.path.join(path, "models", "pretend_run")
+    os.makedirs(run)
+    with open(os.path.join(run, "final_model.zip"), "wb") as f:
+        f.write(b"weights")
+    os.makedirs(os.path.join(repo, "models"), exist_ok=True)
+    link = os.path.join(repo, "models", "pretend_run")
+    os.symlink(run, link)
+    return run, link
+
+
+def test_e_a_dead_owners_tree_holding_run_data_is_KEPT(repo, monkeypatch):
+    path, cleanup = _make_worktree(repo, monkeypatch)
+    run, link = _plant_run_behind_a_models_symlink(repo, path)
+    try:
+        with open(wt._owner_path(path), "w") as f:
+            json.dump({"pid": _a_dead_pid(), "proc_starttime": "12345"}, f)
+        lines = []
+        wt._prune_stale_launcher_worktrees(repo, report=lines.append)
+        assert os.path.isfile(os.path.join(run, "final_model.zip")), (
+            "a dead owner's worktree holding a run was deleted — the 2026-09-23 incident")
+        assert path in _listed(repo)
+        assert any("KEPT" in ln and "RUN DATA" in ln and link in ln for ln in lines), lines
+    finally:
+        os.remove(link)
+        cleanup()
+
+
+def test_e_cleanup_refuses_a_tree_holding_run_data(repo, monkeypatch, capsys):
+    path, cleanup = _make_worktree(repo, monkeypatch)
+    run, link = _plant_run_behind_a_models_symlink(repo, path)
+    try:
+        cleanup()
+        assert os.path.isfile(os.path.join(run, "final_model.zip"))
+        assert "NOT removing" in capsys.readouterr().err
+    finally:
+        os.remove(link)
+        cleanup()
+    assert not os.path.isdir(path), "with the link gone the same cleanup must proceed"
+
+
 def test_cleanup_removes_both_the_worktree_and_its_claim(repo, monkeypatch):
     path, cleanup = _make_worktree(repo, monkeypatch)
     cleanup()

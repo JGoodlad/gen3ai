@@ -190,7 +190,11 @@ bash scripts/land.sh myfeature ../gen3ai-myfeature
 `scripts/land.sh` is the landing path, and it is four steps in a fixed order: run the static
 gates **inside the worktree**, `git push origin myfeature:main` from the main checkout,
 `git pull --ff-only` there so main is not left behind its own remote, then remove the worktree and
-the branch. Any gate failure exits without pushing. It never force-pushes — a rejected
+the branch — unless the run-data guard (`python -m utils.worktree_guard`) finds a main-checkout
+`models/` symlink into the worktree, or more than 50 MiB of untracked/ignored non-build content in
+it, in which case the code is landed but the worktree and branch are KEPT and it exits 3 (a
+2026-09-23 forced removal destroyed eight run directories that lived inside worktrees). Any gate
+failure exits without pushing. It never force-pushes — a rejected
 non-fast-forward means someone landed first, so rebase the worktree on `main`, resolve, and run it
 again. Run the routine gate yourself before you call it; the script gates statics, not the suite.
 

@@ -139,7 +139,13 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   append-only files (`CHANGELOG.md`, `ledger.md`, `CLAUDE.md` tails) are resolved by KEEPING BOTH
   SIDES; then **`scripts/land.sh <branch> [worktree]`** (`--help` for the contract) runs ruff + mypy
   + every `src/*_gate_test.py` static IN THE WORKTREE and refuses to push on any failure, pushes
-  `<branch>:main`, syncs main, removes the worktree. It derives the main checkout from
+  `<branch>:main`, syncs main, and removes the worktree ONLY if the run-data guard
+  (`utils.worktree_guard`) passes — 🚨 a main-checkout `models/` symlink into the worktree, or
+  >50 MiB of untracked/ignored non-build content in it, keeps the worktree and branch and exits 3
+  AFTER the push (the 2026-09-23 incident: eight run dirs lived inside worktrees behind `models/`
+  symlinks, invisible to `git status`). Move or delete what it names, then remove the tree by hand;
+  a manual `git worktree remove` gets the same check from `python -m utils.worktree_guard --main
+  <main> <worktree>` first. It derives the main checkout from
   `git rev-parse --git-common-dir` and re-execs itself out of the worktree before deleting it, so it
   is safe to invoke from the tree it is about to remove. `cd` back to the main checkout afterwards
   (the worktree you stood in is gone), and remove a worktree only after checking that no process is
