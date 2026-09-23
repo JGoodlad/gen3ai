@@ -62,6 +62,7 @@ from typing import List, Optional
 
 from utils.bridge.sim_bridge_bin import bridge_spawn_argv
 from utils.team_loader.loader import TeamLoader
+from utils.team_loader.pins import pre_split_sample_teams
 from utils.teambuilder import Gen3Teambuilder
 
 _READ_TIMEOUT_S = 20.0
@@ -148,7 +149,7 @@ def _choice_for(chunk: str) -> Optional[str]:
 
 def _teams():
     loader = TeamLoader()
-    return loader.get_sample_teams() or loader.get_all_teams()
+    return pre_split_sample_teams(loader)   # pinned by sha: byte-identical input across the 2026-09-23 split (utils.team_loader.pins)
 
 
 def run_case(impl: str, *, end_via: str, verbose: bool = True) -> dict:

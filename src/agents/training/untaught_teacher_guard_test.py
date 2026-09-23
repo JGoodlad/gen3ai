@@ -105,8 +105,10 @@ def test_the_two_substituted_era2_teams_are_clean_and_the_originals_were_not():
     shas = untaught_team_shas()
 
     def sha(h):
-        return hashlib.sha1(
-            repo_path(f"data/teams/sample/{h}.txt").read_text().strip().encode()).hexdigest()[:10]
+        # `0972146213a667c9` was relocated to data/teams/superseded/ (2026-09-23), byte-identical
+        from utils.team_loader.relocations import resolve_team_file
+        path = resolve_team_file(str(repo_path(f"data/teams/sample/{h}.txt")), quiet=True)
+        return hashlib.sha1(open(path).read().strip().encode()).hexdigest()[:10]
 
     for was in ("9909f2e98e981ccc", "f7ba5702fe856292"):
         assert sha(was) in shas, f"{was} should still be an untaught-8 member"

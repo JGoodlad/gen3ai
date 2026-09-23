@@ -60,9 +60,10 @@ from agents.training.reward_manager import Gen3RewardManager, RewardConfig
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder, _install_team_rng
+from utils.team_loader.pins import measurement_bias_teams
 
 
-def _build_trainee_tb(cfg: dict, all_teams, sample_teams):
+def _build_trainee_tb(cfg: dict, all_teams, bias_teams):
     """The TRAINEE's eval teambuilder. When the run pins the trainee to one team
     (``--trainee-team`` → ``cfg['trainee_team_str']``, the raw Showdown export), eval MUST measure
     the model piloting THAT team — the worker used to hardcode the default full-pool builder here,
@@ -74,7 +75,7 @@ def _build_trainee_tb(cfg: dict, all_teams, sample_teams):
         # a LIST = the distillation/multi-team case (sample among the taught teams, as training does);
         # a plain str = the single --trainee-team pin.
         return Gen3Teambuilder(list(team_str) if isinstance(team_str, (list, tuple)) else [team_str])
-    return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
+    return Gen3Teambuilder(all_teams, bias_teams=bias_teams, bias_prob=0.1)
 
 
 def _sentinel_tb(trainee_tb, opp_tb, sentinel_greedy: bool):
@@ -82,8 +83,9 @@ def _sentinel_tb(trainee_tb, opp_tb, sentinel_greedy: bool):
     (greedy) regime, else the historical unbiased pool builder.
 
     🚨 THE ASYMMETRY THIS CLOSES WAS INVISIBLE AND SYSTEMATIC (gen3_eval_sentinel_greedy_default_v1,
-    2026-09-07). The trainee draws from ``Gen3Teambuilder(all_teams, bias_teams=sample_teams,
-    bias_prob=0.1)`` — a 10% tilt toward the curated sample teams — while the sentinel drew from the
+    2026-09-07). The trainee draws from ``Gen3Teambuilder(all_teams, bias_teams=<the frozen
+    measurement set>, bias_prob=0.1)`` — a 10% tilt toward the pre-split 72 sample teams
+    (``utils.team_loader.pins.measurement_bias_teams``) — while the sentinel drew from the
     flat ``Gen3Teambuilder(all_teams)``. The dense snapshot ladder gives BOTH sides the biased
     builder, so an eval sentinel edge and a ladder edge for the SAME frozen pair were two different
     experiments; measured over the 60 pairs both sources covered on ``ai_v12_02_winprob_critic``,
@@ -298,8 +300,11 @@ def _run(cfg: dict) -> None:
     mappings = load_mappings()
     loader = TeamLoader()
     all_teams = loader.get_all_teams()
-    sample_teams = loader.get_sample_teams()
-    trainee_tb = _build_trainee_tb(cfg, all_teams, sample_teams)
+    # The MEASUREMENT bias set — frozen at the pre-split 72, NOT training's curated 32
+    # (`gen3_curated_sample_split_v1`): eval/elo, win_rate_vs_pool and the ladder's reuse of
+    # eval-measured pairs stay one regime across 2026-09-23. See `utils.team_loader.pins`.
+    bias_teams = measurement_bias_teams(loader)
+    trainee_tb = _build_trainee_tb(cfg, all_teams, bias_teams)
     opp_tb = Gen3Teambuilder(all_teams)
 
     port = cfg.get("port")

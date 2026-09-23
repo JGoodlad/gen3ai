@@ -167,7 +167,9 @@ def check_teacher_spec(spec, *, resolve_wildcard=None, check_paths: bool = True,
                 "nothing while every log line still reads as a running fold. Name its team files, "
                 "or point ':*' at a run that pinned --trainee-team(s).")
         for team_file in (teams if check_paths else ()):
-            if not os.path.isfile(team_file):
+            # a recorded path relocated since (data/teams/relocations.json) is not a missing file
+            from utils.team_loader.relocations import resolve_team_file
+            if not os.path.isfile(resolve_team_file(team_file, quiet=True)):
                 out.append(
                     f"--distill-teacher: teacher {teacher!r} names team file {team_file!r}, which "
                     "does not exist.")

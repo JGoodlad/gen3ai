@@ -1,14 +1,47 @@
 import os
 import json
 
+#: The ROLE of a ``teams.json`` manifest is named by the FIRST directory under ``data/teams/`` that
+#: holds it — never by a substring test (the old rule was ``"sample" in root``, which any future
+#: folder with "sample" anywhere in its path would have silently joined).
+#:
+#: * ``sample``     — EXACTLY the teams linked from the first post of Smogon's ADV OU sample-teams
+#:                    thread, written ONLY by ``tools/sample_team_downloader`` (the curated set).
+#: * ``promoted``   — pool teams promoted by ``python -m main.promote_teams`` so they can be legal
+#:                    ``--exploiter`` trainees (the 2026-08-31 40-team fleet draw). NOT curated.
+#: * ``superseded`` — a former Smogon sample paste that the thread has since REPLACED with a newer
+#:                    paste of the same team. Kept on disk because archived runs recorded its path
+#:                    and fingerprint; never drawn (not in ``get_all_teams()``).
+#: * anything else  — ``other``: bulk-downloaded / hand-added pool teams.
+ROLE_SAMPLE = "sample"
+ROLE_PROMOTED = "promoted"
+ROLE_SUPERSEDED = "superseded"
+ROLE_OTHER = "other"
+_NAMED_ROLES = (ROLE_SAMPLE, ROLE_PROMOTED, ROLE_SUPERSEDED)
+
+
+def manifest_role(manifest_dir, base_dir="data/teams"):
+    """The role of the ``teams.json`` in ``manifest_dir`` — see the table above. Shared with
+    ``main.promote_teams.load_pool`` so the promotion tool's mirror of this loader cannot drift."""
+    rel = os.path.relpath(os.path.abspath(manifest_dir), os.path.abspath(base_dir))
+    top = rel.replace(os.sep, "/").split("/")[0]
+    return top if top in _NAMED_ROLES else ROLE_OTHER
+
+
 class TeamLoader:
     """
     A utility class to load Pokémon teams from the data/teams directory.
-    Supports categorized loading for sample teams and community/dump teams.
+
+    Every team is listed in exactly one ``teams.json`` manifest, and the manifest's folder names its
+    ROLE (:func:`manifest_role`). The pool (``get_all_teams()``) is ``sample + promoted + other``,
+    in that order — the order the pre-split loader produced, so an index into the pool is stable.
+    ``superseded`` teams are loaded but are NOT in the pool.
     """
     def __init__(self, base_dir="data/teams"):
         self.base_dir = base_dir
         self.sample_teams = []
+        self.promoted_teams = []
+        self.superseded_teams = []
         self.other_teams = []
         self._load_teams()
 
@@ -17,6 +50,9 @@ class TeamLoader:
         if not os.path.exists(self.base_dir):
             print(f"Warning: Base directory {self.base_dir} does not exist.")
             return
+
+        by_role = {ROLE_SAMPLE: self.sample_teams, ROLE_PROMOTED: self.promoted_teams,
+                   ROLE_SUPERSEDED: self.superseded_teams, ROLE_OTHER: self.other_teams}
 
         # Defense-in-depth against a malformed manifest that references the same file more than
         # once (the per-Pokémon Yak Attack bug — fixed at the acquisition layer in
@@ -34,6 +70,7 @@ class TeamLoader:
                     print(f"Error loading {json_path}: {e}")
                     continue
 
+                target = by_role[manifest_role(root, self.base_dir)]
                 manifest_dups = 0
                 for entry in meta:
                     # Skip invalid teams if the metadata flag is present
@@ -67,12 +104,7 @@ class TeamLoader:
 
                             with open(full_path, "r") as f:
                                 team_text = f.read().strip()
-
-                            # Categorize based on the folder structure
-                            if "sample" in root:
-                                self.sample_teams.append(team_text)
-                            else:
-                                self.other_teams.append(team_text)
+                            target.append(team_text)
                         else:
                             print(f"Warning: Team file not found: {rel_file_path} (resolved to {full_path})")
                     except Exception as e:
@@ -85,16 +117,40 @@ class TeamLoader:
                           f"(tools/others_team_downloader) to collapse the manifest.")
 
     def get_sample_teams(self):
-        """Returns only the curated sample teams."""
+        """The CURATED set: exactly Smogon's ADV OU sample teams (``data/teams/sample/``)."""
         return self.sample_teams
 
+    def get_training_bias_teams(self):
+        """The teams the DEFAULT trainee builder over-draws (``bias_prob``, 10%): the curated
+        Smogon set. Named separately from :meth:`get_sample_teams` so the role is explicit at the
+        call site; since 2026-09-23 (``gen3_curated_sample_split_v1``) it is the 32 curated teams,
+        where the pre-split loader handed it all 72 (curated + promoted)."""
+        return self.sample_teams
+
+    def get_promoted_teams(self):
+        """Pool teams promoted by ``python -m main.promote_teams`` (``data/teams/promoted/``)."""
+        return self.promoted_teams
+
+    def get_superseded_teams(self):
+        """Former Smogon sample pastes the thread has replaced (``data/teams/superseded/``). NOT in
+        the pool — kept because archived runs pinned them."""
+        return self.superseded_teams
+
+    def get_exploiter_trainee_teams(self):
+        """Every team an ``--exploiter`` run may pilot: curated + promoted + superseded. The promoted
+        teams exist precisely to be legal trainees; superseded pastes stay legal so every archived
+        exploiter argv that pinned one still validates."""
+        return self.sample_teams + self.promoted_teams + self.superseded_teams
+
     def get_other_teams(self):
-        """Returns teams that are not in the sample category."""
+        """Pool teams that are neither curated nor promoted (bulk-downloaded / hand-added)."""
         return self.other_teams
 
     def get_all_teams(self):
-        """Returns all discovered teams."""
-        return self.sample_teams + self.other_teams
+        """The POOL: curated + promoted + other, in that (pre-split) order. Excludes superseded."""
+        return self.sample_teams + self.promoted_teams + self.other_teams
 
     def __repr__(self):
-        return f"<TeamLoader(samples={len(self.sample_teams)}, others={len(self.other_teams)})>"
+        return (f"<TeamLoader(samples={len(self.sample_teams)}, "
+                f"promoted={len(self.promoted_teams)}, others={len(self.other_teams)}, "
+                f"superseded={len(self.superseded_teams)})>")

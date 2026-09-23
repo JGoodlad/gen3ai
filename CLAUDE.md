@@ -396,6 +396,8 @@ When you land an architecture change: update `ARCHITECTURE.md` in the same pass,
 
 🚨 **ALL priors must be Smogon-derived; only the MODEL gets bias against the pool** (owner rule 2026-08-15). Anything the network READS must trace to Smogon, ground-truth labels or ladder replays. Pool structure may enter only *implicitly*, through training against pool opponents. The 719-team pool may MEASURE structure but **never ships as a prior**.
 
+🚨 **`data/teams/` has ROLES, one per top folder** (`gen3_curated_sample_split_v1`): `sample/` is EXACTLY Smogon's 32 (the training bias — `get_training_bias_teams()`), `promoted/` the 40 exploiter trainees, `superseded/` a retired paste outside the pool; the 719-team pool is sample + promoted + other. A golden, benchmark or cross-run meter must read a sha-pinned list (`utils.team_loader.pins`), never `get_sample_teams()`, and a RECORDED team path is opened through `resolve_team_file`. Table: `tools/CLAUDE.md`.
+
 🚨 **A forme SHARES its base species' `num`**, and the obs species channel and every `table[species.num]` buffer are num-keyed — num-indexed consumers MUST iterate `gen3_data.species.base_form_ids()`.
 
 Per-file schemas: `src/agents/gen3_data/CLAUDE.md`. Acquisition: `tools/CLAUDE.md`.

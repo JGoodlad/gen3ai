@@ -14,18 +14,36 @@ split.
 | `pokemon_data_extractor/sync.py` | poke-env pokedex + static moves/natures/`learnset.json` + `GenData` type chart; Showdown `abilities.ts` / `items.ts` / `aliases.ts` | `data/pokemon/gen3_{species,moves,abilities,items,type_chart,natures,learnset,move_aliases}.json` |
 | `smogon_stats_downloader/sync.py` | Smogon monthly chaos JSON (12-month window) | `data/pokemon/gen3_smogon_stats.json` |
 | `smogon_stats_downloader/compute_priors.py` | the aggregated stats + pokedex | `data/pokemon/gen3_{ability,hidden_power,move,item,spread,teammate}_priors.json` |
-| `sample_team_downloader/sync.py` | Smogon forum sample-team thread | `data/teams/sample/` |
+| `sample_team_downloader/sync.py` | Smogon forum sample-team thread (first post) | `data/teams/sample/` (its ONLY writer) + `data/teams/superseded/` |
 | `others_team_downloader/sync.py` | PokePaste dumps | `data/teams/others/` |
 
-⚠️ **`data/teams/sample/` has a SECOND writer that is not in this table.**
-`python -m main.promote_teams` promotes a seed-recorded random draw of already-downloaded pool teams
-into the curated set, and de-lists each from its source `teams.json` so the pool total is unchanged.
-It is a *promotion* tool, not an acquisition tool — it knows no upstream and downloads nothing —
-which is why it lives in `src/main/` rather than here. The interaction to know about:
-`sample_team_downloader/sync.py` rebuilds `data/teams/sample/teams.json` **from the forum thread
-alone**, so a re-sync would silently drop every promoted entry. Check for
-`data/teams/sample/PROMOTION_MANIFEST.json` before running it, and re-promote from that manifest's
-recorded seed afterwards.
+### `data/teams/` — one ROLE per top folder (`gen3_curated_sample_split_v1`, 2026-09-23)
+
+`utils.team_loader.TeamLoader` names a manifest's role by its TOP folder (`manifest_role`), never by a
+substring:
+
+| Folder | Role | Writer | In the pool (`get_all_teams`)? |
+|---|---|---|---|
+| `sample/` | EXACTLY the teams the Smogon thread's first post links (32) — the CURATED set, and the training bias (`get_training_bias_teams`) | `sample_team_downloader/sync.py` only | yes |
+| `promoted/` | pool teams promoted to be legal `--exploiter` trainees (40, the 2026-08-31 fleet draw + `PROMOTION_MANIFEST.{json,md}`) | `python -m main.promote_teams` (lives in `src/main/`: it knows no upstream) | yes |
+| `superseded/` | a former sample paste the thread REPLACED (1: Curse RestLax `0972146213a667c9`) — kept because archived runs pinned it | the sync, when a paste drops out of the thread | **no** |
+| `others/…` | bulk-downloaded (`other`) | `others_team_downloader/sync.py` | yes |
+| `specialist/` | hand-added pins for `--trainee-team` | by hand | **no** — it has no `teams.json` |
+
+`get_exploiter_trainee_teams()` = sample + promoted + superseded is what the `--exploiter` guard
+checks. Until 2026-09-23 the promoted teams lived IN `sample/`, which made them part of the training
+bias and made a re-sync silently drop them; neither is possible now — the sync REFUSES a manifest
+holding an entry it did not write. A file that leaves a folder is recorded in
+`data/teams/relocations.json` (old → new, append-only), and every reader of a RECORDED team path
+goes through `utils.team_loader.resolve_team_file`, so archived argvs naming
+`data/teams/sample/<promoted>.txt` still load the same bytes. Goldens, benchmarks and the cross-run
+measurement instruments read `utils.team_loader.pins.PRE_SPLIT_SAMPLE_72` (by sha), never
+`get_sample_teams()`. ⚠️ `specialist/` holds 3 byte-copies of sample teams (`tss_starmie` =
+`f6229d2c867e21d6`, `cm_pass_celebi` = `a3ca232f030ef625`, `trap_magneton` = `7036a0a1dcb59a19`);
+it has no manifest, so they are not loaded twice. ⚠️ The POOL does hold two PACK-identical pairs
+(same team, different paste text — content sha differs, so nothing dedupes them, and each draws at
+double weight): curated `01cb64e16c` (Blue Offense) = promoted `dbbfac7bd5`, and curated
+`569ebae46d` (Jolteon Starmie Spikes Stack) = other `355789e24b` (measured 2026-09-23).
 
 ## `pokemon_data_extractor` — the reference-data extractor
 
@@ -234,11 +252,11 @@ dedupe, so `others/yak_attack/teams.json` had 1122 rows over 185 files (174 vali
 yak_attack ~66% of **every** training and eval team draw (pool 1601 over 719 unique). Fix
 (`gen3_team_pool_dedupe`): `others_team_downloader/sync.py::collapse_duplicate_teams` collapses rows
 by `id` before writing (name strips the `"<Mon>/"` prefix, `valid` = AND over the group, `errors` =
-union, idempotent), so a re-run can't reproduce it; the deduped pool is **719 unique teams (32
-sample + 687 others)**. `TeamLoader._load_teams` also dedupes by resolved file path as
+union, idempotent), so a re-run can't reproduce it; the deduped pool was **719 unique teams (32
+sample + 687 others)** — today 719 = 32 curated + 40 promoted + 647 others (see the role table). `TeamLoader._load_teams` also dedupes by resolved file path as
 defense-in-depth (loud warning if a manifest references a file twice). Guards:
 `src/utils/team_loader/team_manifest_test.py` (data-contract: one-entry-per-file over all manifests
-+ collapse-fn units) and `loader_test.py` (synthetic per-mon dedupe + the 32/687/719 count pin). A
++ collapse-fn units) and `loader_test.py` (synthetic per-mon dedupe + the 32/40/647/719 count pin). A
 changed team pool is a **data-distribution change** (training *and* eval) — land it at a clean
 retrain boundary, never mid-A/B.
 

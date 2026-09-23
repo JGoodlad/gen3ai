@@ -22,7 +22,9 @@ import json
 from dataclasses import dataclass, field
 
 # The default trainee mix (the historical behavior): full pool with a 10% bias draw from the
-# curated sample teams. Kept as named constants so the spec and the legacy construction can't drift.
+# training-bias teams (``TeamLoader.get_training_bias_teams()`` — Smogon's curated 32 since
+# ``gen3_curated_sample_split_v1``, 2026-09-23; all 72 of the then-overloaded sample/ before).
+# Kept as named constants so the spec and the legacy construction can't drift.
 DEFAULT_TRAINEE_BIAS_PROB = 0.1
 
 
@@ -33,8 +35,8 @@ class TeamSource:
 
     kinds:
       * ``pool``           — uniform draws from the full team pool (the opponent default)
-      * ``default_biased`` — full pool with a ``bias_prob`` draw from the sample teams (the
-                             trainee default; reproduces the historical builder byte-for-byte)
+      * ``default_biased`` — full pool with a ``bias_prob`` draw from the training-bias teams
+                             (the trainee default; ``build``'s second argument)
       * ``pinned``         — ONE fixed team (``--trainee-team``); ``pin_str`` is the raw
                              Showdown export, ``pin_file`` its provenance
       * ``pin_biased``     — the pinned team with prob ``bias_prob``, else a pool draw (the
@@ -65,7 +67,7 @@ class TeamSource:
             if self.pin_file is None and self.pin_files:
                 object.__setattr__(self, "pin_file", self.pin_files[0])
 
-    def build(self, all_teams, sample_teams, team_pfsp="off",
+    def build(self, all_teams, bias_teams, team_pfsp="off",
               team_pfsp_cap=3.0, team_pfsp_floor=0.05):
         """The side's Gen3Teambuilder. Parity contract: ``pool`` == the historical opponent
         builder, ``default_biased`` == the historical trainee builder, ``pinned`` == the
@@ -78,7 +80,7 @@ class TeamSource:
         if self.kind == "pool":
             return Gen3Teambuilder(all_teams, **_tp)
         if self.kind == "default_biased":
-            return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=self.bias_prob, **_tp)
+            return Gen3Teambuilder(all_teams, bias_teams=bias_teams, bias_prob=self.bias_prob, **_tp)
         if self.kind == "pinned":
             return Gen3Teambuilder([self.pin_str], **_tp)
         if self.kind == "pin_multi":
@@ -186,17 +188,22 @@ class MatchupSpec:
     @classmethod
     def from_args(cls, args) -> "MatchupSpec":
         """The single CLI → matchup mapping. Reads the pinned team file here (one place)."""
+        # A team path is RECORDED as typed (pin_file/pin_files feed the provenance and spec_hash, and
+        # an inherited argv must not read as a regime change) but OPENED through the relocation map,
+        # so an archived run's `data/teams/sample/<promoted>.txt` still loads after the 2026-09-23
+        # curated/promoted split (`utils.team_loader.relocations`).
+        from utils.team_loader.relocations import resolve_team_file
         pin_str = None
         if getattr(args, "trainee_teams", None):
             # a small FIXED SET, sampled uniformly (the multi-team exploiter, --trainee-teams f1,f2,..)
             files = [f.strip() for f in args.trainee_teams.split(",") if f.strip()]
             strs = []
             for fp in files:
-                with open(fp, "r", encoding="utf-8") as f:
+                with open(resolve_team_file(fp), "r", encoding="utf-8") as f:
                     strs.append(f.read())
             trainee = TeamSource(kind="pin_multi", pin_strs=tuple(strs), pin_files=tuple(files))
         elif getattr(args, "trainee_team", None):
-            with open(args.trainee_team, "r", encoding="utf-8") as f:
+            with open(resolve_team_file(args.trainee_team), "r", encoding="utf-8") as f:
                 pin_str = f.read()
             trainee = TeamSource(kind="pinned", pin_file=args.trainee_team, pin_str=pin_str)
         else:
@@ -235,7 +242,7 @@ class MatchupSpec:
             _strs, _files = [], []
             for _t, _teams in _dp:
                 for _f in _teams:
-                    with open(_f, "r", encoding="utf-8") as _fh:
+                    with open(resolve_team_file(_f), "r", encoding="utf-8") as _fh:
                         _strs.append(_fh.read())
                     _files.append(_f)
             if _strs:
@@ -255,27 +262,33 @@ class MatchupSpec:
         )
 
 
-def sample_team_shas(sample_teams) -> "set[str]":
-    """Strip-normalized sha1[:10] of each curated sample team — the fingerprint set an exploiter
-    trainee must belong to. Strip-normalized because ``TeamLoader`` strips files but a pin is read
-    raw (a trailing newline must not spoof a mismatch); matches ``team_archetypes.team_sha``."""
-    return {hashlib.sha1(t.strip().encode()).hexdigest()[:10] for t in sample_teams}
+def team_shas(teams) -> "set[str]":
+    """Strip-normalized sha1[:10] of each team — the fingerprint set a pin is checked against.
+    Strip-normalized because ``TeamLoader`` strips files but a pin is read raw (a trailing newline
+    must not spoof a mismatch); matches ``team_archetypes.team_sha``."""
+    return {hashlib.sha1(t.strip().encode()).hexdigest()[:10] for t in teams}
 
 
-def validate_exploiter_trainee_is_sample(spec: "MatchupSpec", sample_teams) -> None:
-    """The EXPLOITER team-source guarantee: an exploiter must ever pilot only a VETTED sample team —
-    the curated, tournament-proven set (``data/teams/sample/``) — never an arbitrary or
-    bulk-downloaded ``other`` team. Raises ``ValueError`` when a ``mix_kind == 'exploiter'`` run
-    pins a trainee team whose (strip-normalized) fingerprint is not in the sample set; the caller
-    turns it into a startup FATAL. Out of scope (returns quietly): a non-exploiter run, or an
-    exploiter with an UNPINNED trainee (a full-pool generalist exploiter, not a single-team
-    specialist — it isn't "using a team" to constrain). Covers the single-pin ``pinned`` /
-    ``pin_biased`` kinds; a future multi-team exploiter pool must validate every member likewise."""
+def validate_exploiter_trainee_is_vetted(spec: "MatchupSpec", exploiter_trainee_teams) -> None:
+    """The EXPLOITER team-source guarantee: an exploiter may pilot only a team from the
+    EXPLOITER-TRAINEE set — ``TeamLoader().get_exploiter_trainee_teams()``, i.e. Smogon's curated
+    sample teams (``data/teams/sample/``) + the teams promoted for this role by
+    ``python -m main.promote_teams`` (``data/teams/promoted/``) + superseded former sample pastes
+    (``data/teams/superseded/``, kept so every archived exploiter argv still validates) — never an
+    arbitrary bulk-downloaded ``other`` team. Raises ``ValueError`` when a
+    ``mix_kind == 'exploiter'`` run pins a trainee team whose (strip-normalized) fingerprint is not
+    in that set; the caller turns it into a startup FATAL. Out of scope (returns quietly): a
+    non-exploiter run, or an exploiter with an UNPINNED trainee (a full-pool generalist exploiter,
+    not a single-team specialist — it isn't "using a team" to constrain). Every member of a
+    ``pin_multi`` set is checked.
+
+    Until 2026-09-23 this was ``validate_exploiter_trainee_is_sample`` and read
+    ``get_sample_teams()``, because the promoted teams were stored IN ``data/teams/sample/`` — one
+    folder doing two jobs (``gen3_curated_sample_split_v1``)."""
     if spec.mix_kind != "exploiter":
         return
     ts = spec.trainee_teams
-    shas = sample_team_shas(sample_teams)
-    # each pinned member (single or multi) must be a vetted sample team
+    shas = team_shas(exploiter_trainee_teams)
     if ts.kind == "pin_multi":
         members = list(zip(ts.pin_files or [None] * len(ts.pin_strs), ts.pin_strs))
     elif ts.kind in ("pinned", "pin_biased") and ts.pin_str:
@@ -287,10 +300,12 @@ def validate_exploiter_trainee_is_sample(spec: "MatchupSpec", sample_teams) -> N
         if pin not in shas:
             raise ValueError(
                 f"exploiter trainee team {pin_file or '<inline>'!r} (sha {pin}) is NOT one of the "
-                f"{len(shas)} curated SAMPLE teams. Exploiters must only ever pilot a vetted, "
-                "tournament-proven sample team (a subset of data/teams/sample/) — bulk-downloaded / "
-                "hand-crafted teams are not allowed here. Pick a sample team, or promote this one into "
-                "the sample set first if it is proven.")
+                f"{len(shas)} vetted exploiter-trainee teams (Smogon's curated sample teams in "
+                "data/teams/sample/, the teams promoted into data/teams/promoted/, and the "
+                "superseded sample pastes in data/teams/superseded/). A bulk-downloaded or "
+                "hand-crafted team may not be an exploiter trainee: pick one of those, promote this "
+                "one first (python -m main.promote_teams), or pass --allow-nonsample-trainee for a "
+                "capacity study.")
 
 
 #: The UNTAUGHT-8 manifest — the campaign's off-slice competence meter
@@ -430,7 +445,11 @@ def read_recorded_trainee_teams(path: str, *, require_teams: bool = False) -> "l
                 "(cli_args has neither trainee_teams nor trainee_team) — it was not a "
                 "specialist/exploiter run.")
         return []
-    files = [x.strip() for x in str(raw).split(",") if x.strip()]
+    # Recorded paths are immutable; a file RELOCATED since (data/teams/relocations.json — the
+    # 2026-09-23 curated/promoted split moved 41) is followed to its new home, byte-identical, so
+    # the fingerprint check below still binds. The RESOLVED paths are returned: every caller opens them.
+    from utils.team_loader.relocations import resolve_team_file
+    files = [resolve_team_file(x.strip()) for x in str(raw).split(",") if x.strip()]
     for f in files:
         if not os.path.isfile(f):
             raise FileNotFoundError(

@@ -14,8 +14,9 @@ from utils.team_loader import TeamLoader
 
 @pytest.fixture(scope="module")
 def teams():
+    from utils.team_loader.pins import measurement_bias_teams
     loader = TeamLoader()
-    return loader.get_all_teams(), loader.get_sample_teams()
+    return loader.get_all_teams(), measurement_bias_teams(loader)   # what `_run` passes
 
 
 @pytest.fixture(scope="module")

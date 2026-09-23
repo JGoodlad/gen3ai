@@ -54,7 +54,7 @@ from agents.battle.gen3_battle import Gen3Battle
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
 from agents.training.episode_tracker import EpisodeTracker
 from utils.bridge.local_battle_runner import run_local_battles
-from utils.team_loader import TeamLoader
+from utils.team_loader.pins import pre_split_sample_teams
 from utils.teambuilder import Gen3Teambuilder
 
 BATTLE_FORMAT = "gen3ou"
@@ -270,7 +270,7 @@ async def main(battles: int, profile_at_turn: int, reps: int, top: int, seed: in
     # lockstep. The module seed stays for any other global consumer in the import graph.
     random.seed(seed)
     ts = int(time.time()) % 100000
-    pool = TeamLoader().get_sample_teams() or TeamLoader().get_all_teams()
+    pool = pre_split_sample_teams()   # pinned by sha: byte-identical input across the 2026-09-23 split (utils.team_loader.pins)
     if not pool:
         print("no gen3ou teams found under data/teams", file=sys.stderr)
         return 1

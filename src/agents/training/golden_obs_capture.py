@@ -43,7 +43,7 @@ from agents.battle.live_view import LegalActions
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
 from agents.training.episode_tracker import EpisodeTracker
 from utils.bridge.local_battle_runner import run_local_battles
-from utils.team_loader import TeamLoader
+from utils.team_loader.pins import pre_split_sample_teams
 from utils.teambuilder import Gen3Teambuilder
 
 BATTLE_FORMAT = "gen3ou"
@@ -131,7 +131,10 @@ async def _capture() -> List[np.ndarray]:
     from agents.observation import moves as _moves_enc
     _moves_enc._CATEGORY_VAL_CACHE.clear()
 
-    pool = (TeamLoader().get_sample_teams() or TeamLoader().get_all_teams())[:N_TEAMS]
+    # The first N_TEAMS of the PRE-SPLIT sample list, by sha — the teams this golden was captured
+    # on. `get_sample_teams()` was re-defined on 2026-09-23 (curated 32 only); reading it here
+    # would silently re-define the committed fixture the next time the curated set moves.
+    pool = pre_split_sample_teams()[:N_TEAMS]
     if not pool:
         raise RuntimeError("no gen3ou teams under data/teams")
     p1 = _DetPlayer(

@@ -175,7 +175,17 @@ Pool-derived (a committed calibration artifact, same pattern):
   record). Derived by `python -m agents.training.team_archetypes` (a k-means cross-tab prints as
   the unsupervised sanity check); consumed by league targeting (the `trap_core` exploiter
   shortlist) and future archetype-aware team sampling. Loader:
-  `agents.training.team_archetypes.load_team_archetypes`.
+  `agents.training.team_archetypes.load_team_archetypes`. Its `is_sample` flag marks the 32
+  CURATED Smogon teams (`TeamLoader.get_sample_teams()`), which is what the committed file has always
+  held. ⚠️ The artifact predates the 2026-09-23 re-sync: it keys the SUPERSEDED Curse RestLax paste
+  (`45995e432f`), and the thread's replacement paste (`1808014a9a`) has no row, so
+  `lookup_team` returns `None` for it until the artifact is regenerated (a regeneration is itself a
+  data change — it re-keys that one team).
+
+Team folders are NOT part of this facade — `utils.team_loader.TeamLoader` reads them, one ROLE per
+top folder of `data/teams/` (`sample/` = exactly Smogon's thread = the training bias; `promoted/` =
+exploiter trainees; `superseded/` = retired sample pastes, outside the pool; everything else = `other`).
+The role table and the relocation map live in `tools/CLAUDE.md`.
 
 All are loaded once (lazy singletons) and raise `FileNotFoundError` / `ValueError` if missing or
 empty. The data layer is poke-env-free; the only poke-env touches left in the battle layer are a

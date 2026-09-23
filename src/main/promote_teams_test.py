@@ -166,32 +166,56 @@ def test_promotion_moves_a_team_it_does_not_duplicate_it(tree):
     pool = pt.load_pool(tree)
     picks = pt.draw_teams(pool, set(), 4, 3, None).accepted
     _promote(tree, picks)
-    counts = pt.check_invariants(tree, expect_sample=3 + 4, expect_total=33)   # raises on a dupe
-    assert counts == {"total": 33, "sample": 7, "other": 26}
+    counts = pt.check_invariants(tree, expect_promoted=4, expect_total=33,
+                                 expect_sample=3)                           # raises on a dupe
+    assert counts == {"total": 33, "sample": 3, "promoted": 4, "other": 26}
     after = pt.load_pool(tree)
     for sha in picks:
-        assert after[sha].category == "sample"
-        assert after[sha].rel_path == f"data/teams/sample/{sha}.txt"
+        assert after[sha].category == "promoted"
+        assert after[sha].rel_path == f"data/teams/promoted/{sha}.txt"
+
+
+def test_a_promotion_never_touches_the_curated_sample_folder(tree):
+    """`data/teams/sample/` is EXACTLY Smogon's thread (gen3_curated_sample_split_v1): a promotion
+    must leave its manifest and its files byte-identical, and the loader's CURATED set unchanged."""
+    sample = os.path.join(tree, "data", "teams", "sample")
+    before = {f: open(os.path.join(sample, f), "rb").read() for f in sorted(os.listdir(sample))}
+    pool = pt.load_pool(tree)
+    _promote(tree, pt.draw_teams(pool, set(), 5, 21, None).accepted)
+    after = {f: open(os.path.join(sample, f), "rb").read() for f in sorted(os.listdir(sample))}
+    assert after == before
+    from utils.team_loader import TeamLoader
+    with pt._chdir(tree):
+        loader = TeamLoader()
+    assert len(loader.get_sample_teams()) == 3 and len(loader.get_promoted_teams()) == 5
+    assert len(loader.get_exploiter_trainee_teams()) == 8
 
 
 def test_promotion_is_idempotent(tree):
     pool = pt.load_pool(tree)
     picks = pt.draw_teams(pool, set(), 3, 11, None).accepted
     _promote(tree, picks)
-    first = json.loads((open(os.path.join(tree, "data/teams/sample/teams.json"))).read())
+    first = json.loads((open(os.path.join(tree, "data/teams/promoted/teams.json"))).read())
 
     pool2 = pt.load_pool(tree)
     actions = pt.plan_promotion(tree, pool2, picks)
-    assert {a.kind for a in actions} == {"already_curated"}      # already IN the sample manifest
+    assert {a.kind for a in actions} == {"already_promoted"}     # already IN the promoted manifest
     pt.apply_promotion(tree, pool2, actions, _fake_arch(pool2), 11, "now")
-    assert json.loads(open(os.path.join(tree, "data/teams/sample/teams.json")).read()) == first
-    pt.check_invariants(tree, expect_sample=6, expect_total=33)
+    assert json.loads(open(os.path.join(tree, "data/teams/promoted/teams.json")).read()) == first
+    pt.check_invariants(tree, expect_promoted=3, expect_total=33, expect_sample=3)
+
+
+def test_a_curated_sample_team_drawn_is_already_curated_not_copied(tree):
+    pool = pt.load_pool(tree)
+    curated = [s for s, t in pool.items() if t.category == "sample"]
+    assert [a.kind for a in pt.plan_promotion(tree, pool, curated)] == ["already_curated"] * 3
 
 
 def test_a_dest_holding_a_different_team_is_refused(tree):
     pool = pt.load_pool(tree)
     sha = pt.draw_teams(pool, set(), 1, 2, None).accepted[0]
-    dest = os.path.join(tree, "data", "teams", "sample", f"{sha}.txt")
+    dest = os.path.join(tree, "data", "teams", "promoted", f"{sha}.txt")
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
     open(dest, "w").write("Blissey @ Leftovers\n- Softboiled\n")
     with pytest.raises(RuntimeError, match="REFUSING to overwrite"):
         pt.plan_promotion(tree, pool, [sha])
@@ -200,7 +224,8 @@ def test_a_dest_holding_a_different_team_is_refused(tree):
 def test_a_dest_already_holding_the_same_team_is_a_noop(tree):
     pool = pt.load_pool(tree)
     sha = pt.draw_teams(pool, set(), 1, 2, None).accepted[0]
-    dest = os.path.join(tree, "data", "teams", "sample", f"{sha}.txt")
+    dest = os.path.join(tree, "data", "teams", "promoted", f"{sha}.txt")
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
     open(dest, "w").write(pool[sha].text)
     assert [a.kind for a in pt.plan_promotion(tree, pool, [sha])] == ["already_promoted"]
 
@@ -210,9 +235,9 @@ def test_the_promoted_manifest_entry_carries_its_provenance(tree):
     sha = pt.draw_teams(pool, set(), 1, 4, None).accepted[0]
     src = pool[sha].rel_path
     _promote(tree, [sha], seed=4242)
-    entry = next(e for e in json.loads(open(os.path.join(tree, "data/teams/sample/teams.json")).read())
+    entry = next(e for e in json.loads(open(os.path.join(tree, "data/teams/promoted/teams.json")).read())
                  if e["id"] == sha)
-    assert entry["file"] == f"teams/sample/{sha}.txt"
+    assert entry["file"] == f"teams/promoted/{sha}.txt"
     assert entry["promoted"] == {"from": src, "seed": 4242, "at": "now",
                                  "by": "python -m main.promote_teams"}
     assert os.path.exists(os.path.join(tree, src)), "the source .txt must survive — only the entry moves"
@@ -283,16 +308,66 @@ def test_the_tool_keys_teams_with_team_sha_and_nothing_else(tmp_path):
 
 # ── against the real tree ───────────────────────────────────────────────────────────────────────
 
+def _superseded_swaps():
+    """``[(old_sha, new_sha), ...]`` — each curated paste the thread REPLACED since a draw, from
+    ``data/teams/superseded/teams.json`` (written by the sample-team sync)."""
+    from utils.paths import repo_path
+    path = repo_path("data", "teams", "superseded", "teams.json")
+    out = []
+    for e in json.loads(path.read_text()):
+        old = team_sha(repo_path("data", e["file"]).read_text())
+        new = team_sha(repo_path("data", "teams", "sample",
+                                 f"{e['superseded']['replaced_by']}.txt").read_text())
+        out.append((old, new))
+    return out
+
+
+def _pool_as_of_2026_08_31(pool):
+    """The pool the 2026-08-31 draws ran on: today's, with each superseded paste swapped back.
+    `draw_teams` reads only the keys, so the key set IS the historical pool."""
+    keys = set(pool)
+    for old, new in _superseded_swaps():
+        keys = (keys - {new}) | {old}
+    return {k: None for k in keys}
+
+
 def test_the_committed_exclusion_artifact_is_coherent_with_the_real_pool():
+    """Since the 2026-09-23 re-sync one excluded team — the SUPERSEDED Curse RestLax paste, which
+    rev-4 had pinned — is no longer in the pool (it lives in data/teams/superseded/), and its
+    replacement paste is not excluded. ⚠️ So a future draw could land on the new paste of a TAUGHT
+    team: it is a curated sample team, so the draw records it as `already_curated` rather than
+    promoting it, but it would still take a fleet slot. Re-derive the exclusions before a new draw."""
     from utils.paths import repo_path
     excl = pt.load_exclusions(str(repo_path("designs", "ai_v12", "promotion_exclusions.json")))
     pool = pt.load_pool(str(repo_path()))
     assert len(pool) == 719, "the pool moved — re-verify the slate and the exclusions before drawing"
-    assert set(excl.union) <= set(pool), "an exclusion names a team that is not in the pool"
+    swaps = _superseded_swaps()
+    assert swaps == [("45995e432f", "1808014a9a")]
+    assert set(excl.union) <= set(pool) | {old for old, _ in swaps}, \
+        "an exclusion names a team that is neither in the pool nor a superseded paste"
+    assert set(excl.union) - set(pool) == {"45995e432f"}
     assert len(excl.union) == 26
     assert excl.counts == {"taught_F5": 9, "taught_F6": 12, "rev4_pending": 24,
                            "held_out_instruments": 2}
-    assert len(pool) - len(excl.union) == 693
+    assert len(_pool_as_of_2026_08_31(pool)) - len(excl.union) == 693     # the 2026-08-31 figure
+    assert len([s for s in pool if s not in excl.as_set()]) == 694       # today: + the new paste
+
+
+def test_the_committed_promotion_reproduces_and_is_exactly_the_promoted_folder():
+    """The 2026-08-31 draw (seed 1383414976) re-run on the pool it ran on reproduces the manifest,
+    and ``data/teams/promoted/`` holds exactly those 40 teams — the move lost and added nothing."""
+    from utils.paths import repo_path
+    from utils.team_loader import TeamLoader
+    man = json.loads(repo_path("data", "teams", "promoted", "PROMOTION_MANIFEST.json").read_text())
+    pool = pt.load_pool(str(repo_path()))
+    res = pt.draw_teams(_pool_as_of_2026_08_31(pool), set(man["exclusions"]["shas"]),
+                        man["n_requested"], man["seed"], None)
+    drawn = [r["sha"] for r in man["draw"]]
+    assert res.accepted == drawn
+    with pt._chdir(str(repo_path())):
+        promoted = [team_sha(t) for t in TeamLoader().get_promoted_teams()]
+    assert promoted == drawn
+    assert {s for s, t in pool.items() if t.category == "promoted"} == set(drawn)
 
 
 def test_the_committed_exclusions_agree_with_recorded_run_provenance():
@@ -341,7 +416,7 @@ def test_the_demo_dry_run_manifest_is_the_committed_seed():
         pytest.skip("no committed demo draw")
     man = json.loads(open(demo).read())
     excl = pt.load_exclusions(str(repo_path("designs", "ai_v12", "promotion_exclusions.json")))
-    pool = pt.load_pool(str(repo_path()))
+    pool = _pool_as_of_2026_08_31(pt.load_pool(str(repo_path())))   # the pool it was drawn on
     res = pt.draw_teams(pool, excl.as_set(), man["n_requested"], man["seed"], None)
     assert res.accepted == [r["sha"] for r in man["draw"]]
 

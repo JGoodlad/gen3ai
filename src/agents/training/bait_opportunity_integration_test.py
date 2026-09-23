@@ -198,7 +198,10 @@ _US_TEAM, _THEM_TEAM = "023a2d47648b85e6", "0972146213a667c9"
 
 
 def _pinned_team(stem: str) -> str:
-    p = pathlib.Path("data/teams/sample") / f"{stem}.txt"
+    # the pin is a RECORDED path: `0972146213a667c9` (the superseded Curse RestLax paste) moved to
+    # data/teams/superseded/ on 2026-09-23, byte-identical — follow the relocation, same battle
+    from utils.team_loader.relocations import resolve_team_file
+    p = pathlib.Path(resolve_team_file(f"data/teams/sample/{stem}.txt"))
     assert p.exists(), (f"pinned team {p} is gone — re-pin the pair (see the note above; the "
                         f"requirement is a matchup where our attacks meet an immunity)")
     return p.read_text()

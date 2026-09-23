@@ -112,23 +112,27 @@ def test_loader_dedupes_per_mon_manifest(mock_teams_structure):
 
 
 def test_loader_real_counts_pin():
-    """Pin the real committed pool against the per-mon-collapse fix.
+    """Pin the real committed pool against the per-mon-collapse fix AND the role split.
 
-    Derived (not hand-counted): each manifest contributes its distinct valid+present files.
-    After collapsing the Yak Attack manifest to one-entry-per-team this was samples=32,
-    others=687, all=719 (was others=1569/all=1601 with the per-mon inflation — Yak Attack alone
-    was 1056 of the 1569 'others', i.e. ~66% of all draws). The 2026-08-31 40-team promotion
-    (`python -m main.promote_teams`, seed 1383414976) MOVED 40 teams from the others manifests into
-    `data/teams/sample/`, so the pins are now samples=72, others=647, all=719 — the total is
-    invariant under a promotion, which is what the third assert protects. If the validity policy
-    ever shifts these by a few, update the pins below to match the derived number it prints.
+    Derived (not hand-counted): each manifest contributes its distinct valid+present files, to the
+    role its TOP folder names (``manifest_role``). After collapsing the Yak Attack manifest to
+    one-entry-per-team this was samples=32, others=687, all=719 (was others=1569/all=1601 with the
+    per-mon inflation — Yak Attack alone was 1056 of the 1569 'others', i.e. ~66% of all draws). The
+    2026-08-31 40-team promotion (`python -m main.promote_teams`, seed 1383414976) MOVED 40 teams
+    from the others manifests into what was then `data/teams/sample/` (72/647/719). The 2026-09-23
+    split (`gen3_curated_sample_split_v1`) moved them on to `data/teams/promoted/` and re-synced
+    `sample/` to exactly Smogon's thread: samples=32, promoted=40, others=647, all=719, plus 1
+    SUPERSEDED paste outside the pool. The total is invariant under both, which is what the
+    all == 719 assert protects. If the validity policy ever shifts these by a few, update the pins
+    below to match the derived number it prints.
     """
+    from utils.team_loader import manifest_role
     repo = get_repo_root()
     old_cwd = os.getcwd()
     os.chdir(repo)
     try:
         # Independently derive the expected counts straight from the manifests, deduped by file.
-        seen, exp_sample, exp_other = set(), 0, 0
+        seen, exp = set(), {"sample": 0, "promoted": 0, "superseded": 0, "other": 0}
         for manifest in sorted(glob.glob("data/teams/**/teams.json", recursive=True)):
             root = os.path.dirname(manifest)
             for entry in json.load(open(manifest)):
@@ -144,19 +148,17 @@ def test_loader_real_counts_pin():
                 if key in seen:
                     continue
                 seen.add(key)
-                if "sample" in root:
-                    exp_sample += 1
-                else:
-                    exp_other += 1
+                exp[manifest_role(root)] += 1
 
         loader = TeamLoader()
-        assert len(loader.get_sample_teams()) == exp_sample
-        assert len(loader.get_other_teams()) == exp_other
-        assert len(loader.get_all_teams()) == exp_sample + exp_other
+        assert len(loader.get_sample_teams()) == exp["sample"]
+        assert len(loader.get_promoted_teams()) == exp["promoted"]
+        assert len(loader.get_superseded_teams()) == exp["superseded"]
+        assert len(loader.get_other_teams()) == exp["other"]
+        assert len(loader.get_all_teams()) == exp["sample"] + exp["promoted"] + exp["other"]
 
-        # Documented absolute pins (the post-fix distribution). Derived == documented.
-        assert exp_sample == 72, f"sample teams = {exp_sample}, expected 72"
-        assert exp_other == 647, f"other teams = {exp_other}, expected 647"
-        assert exp_sample + exp_other == 719
+        # Documented absolute pins (the post-split distribution). Derived == documented.
+        assert exp == {"sample": 32, "promoted": 40, "superseded": 1, "other": 647}, exp
+        assert exp["sample"] + exp["promoted"] + exp["other"] == 719
     finally:
         os.chdir(old_cwd)

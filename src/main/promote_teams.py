@@ -1,13 +1,21 @@
-"""Promote a seed-recorded RANDOM draw of validated pool teams into the curated sample set.
+"""Promote a seed-recorded RANDOM draw of validated pool teams into the EXPLOITER-TRAINEE set.
 
 The 40-team fleet needs 40 legal exploiter trainees, and ``--exploiter`` refuses any trainee that
-is not in ``data/teams/sample/`` (``matchup_spec.validate_exploiter_trainee_is_sample``). The owner
+is not a vetted team (``matchup_spec.validate_exploiter_trainee_is_vetted`` over
+``TeamLoader.get_exploiter_trainee_teams()`` = curated sample + promoted + superseded). The owner
 ruling (ledger 2026-08-30) is that the fleet is drawn **at random** from the validated pool rather
 than ranked or hand-picked, so the result is an unbiased estimate of pool-wide transferability.
 This tool is that draw, made reproducible and auditable:
 
     exclusions (taught ∪ rev-4-pending ∪ held-out)  →  seeded shuffle  →  local validation
-        →  copy into data/teams/sample/  →  PROMOTION_MANIFEST.{md,json}
+        →  copy into data/teams/promoted/  →  PROMOTION_MANIFEST.{md,json}
+
+🚨 **A promoted team is NOT a curated team.** ``data/teams/sample/`` is EXACTLY Smogon's thread
+(``tools/sample_team_downloader`` is its only writer); promotions land in ``data/teams/promoted/``
+with its own ``teams.json``. Until 2026-09-23 they were copied INTO ``sample/``, which silently
+made the 40 fleet teams part of the training bias set and made the sample-team sync unsafe to
+re-run (``gen3_curated_sample_split_v1``; the 2026-08-31 promotion was moved, byte-identical, and
+``data/teams/relocations.json`` maps its old paths).
 
 Usage:
   python -m main.promote_teams --dry-run                 # plan only, touches nothing
@@ -21,9 +29,9 @@ Usage:
 THREE things here are load-bearing and easy to get wrong:
 
 * **The pool universe is the MANIFESTS, not the .txt files.** ``TeamLoader`` loads only teams listed
-  in a ``teams.json``, deduped by resolved path. So promoting = copying the file into ``sample/``,
-  ADDING it to ``sample/teams.json``, and REMOVING it from the source manifest. Skip that last step
-  and the team is loaded twice — once as `sample`, once as `other` — which doubles exactly the fleet
+  in a ``teams.json``, deduped by resolved path. So promoting = copying the file into ``promoted/``,
+  ADDING it to ``promoted/teams.json``, and REMOVING it from the source manifest. Skip that last step
+  and the team is loaded twice — once as `promoted`, once as `other` — which doubles exactly the fleet
   teams' opponent-draw weight. That is the ``yak_attack`` 66%-of-draws defect, re-created on the
   very teams the experiment measures. The source ``.txt`` is left on disk (nothing else reads it);
   only the manifest entry moves, so the change is reversible from the manifest alone.
@@ -58,6 +66,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
 
 from agents.training.team_archetypes import load_team_archetypes, team_sha
 from utils.paths import repo_path, repo_root
+from utils.team_loader.loader import ROLE_PROMOTED, ROLE_SAMPLE, ROLE_SUPERSEDED, manifest_role
 
 MANIFEST_JSON = "PROMOTION_MANIFEST.json"
 MANIFEST_MD = "PROMOTION_MANIFEST.md"
@@ -80,7 +89,7 @@ class PoolTeam:
     text: str
     rel_path: str          # repo-relative, e.g. data/teams/others/giraffe/abc.txt
     manifest: str          # repo-relative path of the teams.json that lists it
-    category: str          # "sample" | "other" — TeamLoader's own rule: "sample" in the manifest dir
+    category: str          # "sample" | "promoted" | "other" — TeamLoader's own rule (manifest_role)
     entry: Dict[str, Any]  # the manifest entry verbatim
 
 
@@ -98,7 +107,8 @@ def load_pool(root: str) -> Dict[str, PoolTeam]:
     """Every team ``TeamLoader`` would load, keyed by ``team_sha``, but carrying its FILE PATH.
 
     A verbatim mirror of ``utils.team_loader.TeamLoader._load_teams`` (manifest walk, ``valid: False``
-    skip, dedup by resolved path with first-occurrence-wins) — ``TeamLoader`` returns only text, and
+    skip, dedup by resolved path with first-occurrence-wins, the SAME ``manifest_role`` rule, and
+    ``superseded/`` left out of the pool) — ``TeamLoader`` returns only text, and
     promotion needs to know which file and which manifest a team came from. ``_cross_check_pool``
     proves the mirror still agrees at runtime, so a drift is caught rather than assumed away.
     """
@@ -107,6 +117,9 @@ def load_pool(root: str) -> Dict[str, PoolTeam]:
     seen: set = set()
     for cur, _dirs, files in sorted(os.walk(teams_dir)):
         if "teams.json" not in files:
+            continue
+        role = manifest_role(cur, teams_dir)
+        if role == ROLE_SUPERSEDED:        # not in the pool (TeamLoader.get_all_teams excludes it)
             continue
         json_path = os.path.join(cur, "teams.json")
         with open(json_path) as fh:
@@ -129,7 +142,7 @@ def load_pool(root: str) -> Dict[str, PoolTeam]:
             pool[team_sha(text)] = PoolTeam(
                 sha=team_sha(text), text=text,
                 rel_path=os.path.relpath(full, root), manifest=os.path.relpath(json_path, root),
-                category="sample" if "sample" in cur else "other", entry=entry)
+                category=role, entry=entry)
     return pool
 
 
@@ -419,14 +432,17 @@ class Action:
 
 
 def plan_promotion(root: str, pool: Dict[str, PoolTeam], accepted: Sequence[str]) -> List[Action]:
-    sample_dir = os.path.join(root, "data", "teams", "sample")
+    promoted_dir = os.path.join(root, "data", "teams", "promoted")
     actions: List[Action] = []
     for sha in accepted:
         t = pool[sha]
-        if t.category == "sample":
+        if t.category == ROLE_SAMPLE:
             actions.append(Action(sha, "already_curated", t.rel_path, t.rel_path, None))
             continue
-        dest = os.path.join(sample_dir, f"{sha}.txt")
+        if t.category == ROLE_PROMOTED:
+            actions.append(Action(sha, "already_promoted", t.rel_path, t.rel_path, None))
+            continue
+        dest = os.path.join(promoted_dir, f"{sha}.txt")
         rel_dest = os.path.relpath(dest, root)
         if os.path.exists(dest):
             existing = open(dest).read()
@@ -442,21 +458,24 @@ def plan_promotion(root: str, pool: Dict[str, PoolTeam], accepted: Sequence[str]
 
 def apply_promotion(root: str, pool: Dict[str, PoolTeam], actions: Sequence[Action],
                     arch: Dict[str, Any], seed: int, stamp: str) -> None:
-    """Copy the files, then MOVE each team's manifest entry from its source into sample/teams.json."""
-    sample_manifest = os.path.join(root, "data", "teams", "sample", "teams.json")
-    with open(sample_manifest) as fh:
-        sample_meta = json.load(fh)
-    have = {e.get("file") for e in sample_meta}
+    """Copy the files, then MOVE each team's manifest entry from its source into promoted/teams.json."""
+    promoted_manifest = os.path.join(root, "data", "teams", "promoted", "teams.json")
+    os.makedirs(os.path.dirname(promoted_manifest), exist_ok=True)
+    promoted_meta: List[Dict[str, Any]] = []
+    if os.path.exists(promoted_manifest):
+        with open(promoted_manifest) as fh:
+            promoted_meta = json.load(fh)
+    have = {e.get("file") for e in promoted_meta}
 
     by_source: Dict[str, List[Action]] = {}
     for a in actions:
-        if a.kind == "already_curated":
+        if a.kind == "already_curated" or (a.kind == "already_promoted" and a.source_manifest is None):
             continue
         shutil.copyfile(os.path.join(root, a.src), os.path.join(root, a.dest))
         rel = a.dest.split("data/", 1)[1]           # teams.json `file` is relative to data/
         if rel not in have:
             src_entry = pool[a.sha].entry
-            sample_meta.append({
+            promoted_meta.append({
                 "id": a.sha,
                 "name": src_entry.get("name") or f"promoted {a.sha}",
                 "format": src_entry.get("format", DEFAULT_FORMAT),
@@ -470,10 +489,10 @@ def apply_promotion(root: str, pool: Dict[str, PoolTeam], actions: Sequence[Acti
         if a.source_manifest:
             by_source.setdefault(a.source_manifest, []).append(a)
 
-    # ORDER MATTERS: ADD to sample/teams.json first, DE-LIST from the sources after. A crash between
+    # ORDER MATTERS: ADD to promoted/teams.json first, DE-LIST from the sources after. A crash between
     # the two then leaves a team in BOTH manifests — a duplicate, which `check_invariants` shouts
     # about. The other order leaves it in NEITHER, which is a team silently gone from the pool.
-    _write_json(sample_manifest, sample_meta)
+    _write_json(promoted_manifest, promoted_meta)
     for manifest_rel, group in by_source.items():
         path = os.path.join(root, manifest_rel)
         with open(path) as fh:
@@ -488,7 +507,8 @@ def _write_json(path: str, obj: Any) -> None:
         fh.write(json.dumps(obj, indent=2))
 
 
-def check_invariants(root: str, expect_sample: int, expect_total: int) -> Dict[str, int]:
+def check_invariants(root: str, expect_promoted: int, expect_total: int,
+                     expect_sample: Optional[int] = None) -> Dict[str, int]:
     """Re-load through ``TeamLoader`` and prove the promotion moved teams instead of copying them.
 
     The failure this exists for is silent: a promoted team left in BOTH manifests is loaded twice and
@@ -497,22 +517,28 @@ def check_invariants(root: str, expect_sample: int, expect_total: int) -> Dict[s
     from utils.team_loader import TeamLoader
     with _chdir(root):
         loader = TeamLoader()
-    allt, samp = loader.get_all_teams(), loader.get_sample_teams()
+    allt, prom = loader.get_all_teams(), loader.get_promoted_teams()
     shas = [team_sha(t) for t in allt]
     dupes = [s for s, c in Counter(shas).items() if c > 1]
     if dupes:
         raise RuntimeError(f"{len(dupes)} team(s) are now loaded TWICE (e.g. {dupes[:5]}) — a promoted "
                            "team was left in its source manifest, doubling its draw weight.")
-    if len(allt) != expect_total or len(samp) != expect_sample:
+    samp = loader.get_sample_teams()
+    if (len(allt) != expect_total or len(prom) != expect_promoted
+            or (expect_sample is not None and len(samp) != expect_sample)):
         raise RuntimeError(f"post-promotion counts wrong: {len(allt)} total (want {expect_total}), "
-                           f"{len(samp)} sample (want {expect_sample})")
-    return {"total": len(allt), "sample": len(samp), "other": len(loader.get_other_teams())}
+                           f"{len(prom)} promoted (want {expect_promoted}), {len(samp)} sample"
+                           + (f" (want {expect_sample}, a promotion never touches it)"
+                              if expect_sample is not None else ""))
+    return {"total": len(allt), "sample": len(samp), "promoted": len(prom),
+            "other": len(loader.get_other_teams())}
 
 
 # ── manifest ────────────────────────────────────────────────────────────────────────────────────
 
 def _source_folder(rel_path: str) -> str:
-    """`data/teams/others/giraffe/x.txt` -> `giraffe`; `data/teams/sample/x.txt` -> `sample`.
+    """`data/teams/others/giraffe/x.txt` -> `giraffe`; `data/teams/sample/x.txt` -> `sample`;
+    `data/teams/promoted/x.txt` -> `promoted`.
 
     The AUTHOR folder, not `others` — a fleet drawn deep into one author inherits that author's
     building habits as surely as it would inherit one archetype (S1 §"source-folder spread").
@@ -621,7 +647,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--draw-only", action="store_true",
                    help="write the manifest but do NOT promote (review-then-promote)")
     p.add_argument("--manifest-dir", default=None,
-                   help="where the manifest is written (default data/teams/sample/)")
+                   help="where the manifest is written (default data/teams/promoted/)")
     p.add_argument("--no-validate", action="store_true",
                    help="skip local validation (a DRAW-SHAPE check only — never for a real promotion)")
     p.add_argument("--force", action="store_true",
@@ -676,7 +702,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     seed = args.seed if args.seed is not None else secrets.randbelow(2 ** 31)
     stamp = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
-    manifest_dir = args.manifest_dir or os.path.join(root, "data", "teams", "sample")
+    manifest_dir = args.manifest_dir or os.path.join(root, "data", "teams", "promoted")
 
     pool = load_pool(root)
     _cross_check_pool(root, pool)
@@ -687,7 +713,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     validator = None
     if not args.no_validate:
-        control = next((t.text for t in pool.values() if t.category == "sample"), None)
+        control = next((t.text for t in pool.values() if t.category == ROLE_SAMPLE), None)
         validator = make_validator(args.format, control)
     else:
         print("⚠️  --no-validate: this draw is a SHAPE CHECK, not a promotion-grade draw.")
@@ -734,11 +760,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
 
     n_new = sum(1 for a in actions if a.kind == "copy")
-    before = len(pool), sum(1 for t in pool.values() if t.category == "sample")
+    n_prom = sum(1 for t in pool.values() if t.category == ROLE_PROMOTED)
+    n_samp = sum(1 for t in pool.values() if t.category == ROLE_SAMPLE)
     apply_promotion(root, pool, actions, arch, seed, stamp)
-    counts = check_invariants(root, expect_sample=before[1] + n_new, expect_total=before[0])
-    print(f"promoted {n_new} team(s) into data/teams/sample/ — TeamLoader now sees "
-          f"{counts['total']} total / {counts['sample']} sample / {counts['other']} other, no duplicates")
+    counts = check_invariants(root, expect_promoted=n_prom + n_new, expect_total=len(pool),
+                              expect_sample=n_samp)
+    print(f"promoted {n_new} team(s) into data/teams/promoted/ — TeamLoader now sees "
+          f"{counts['total']} total / {counts['sample']} curated sample / {counts['promoted']} "
+          f"promoted / {counts['other']} other, no duplicates")
     return 0
 
 

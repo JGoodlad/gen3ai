@@ -535,7 +535,7 @@ def fit_ladder(run_dir: str, base: float | None = None, *,
 
 
 # ── playing a frozen pair (bridge, no server) ───────────────────────────────────────────────
-def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample_teams,
+def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, bias_teams,
                concurrency, impl, compile_extractor=True):
     """Round-robin one frozen pair on the bridge; return (wins_a, games_finished).
 
@@ -567,7 +567,7 @@ def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample
         # racing it, and the ~10-20s compile is repaid within the first ladder rung.
         maybe_compile_extractor(model, compile_extractor, label=f"ladder:{step}", hide_cuda=True)
         return RLPlayer(
-            model=model, team=Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1),
+            model=model, team=Gen3Teambuilder(all_teams, bias_teams=bias_teams, bias_prob=0.1),
             battle_format="gen3ou", server_configuration=LocalhostServerConfiguration,
             mappings=mappings, account_configuration=AccountConfiguration(f"L{tag}", "pw"),
             stochastic=False, start_listening=False)  # greedy = a stable frozen yardstick
@@ -591,14 +591,17 @@ def _measure_missing(run_dir, target_pairs, n_games, concurrency, impl):
         return 0
     mappings = load_mappings()
     cv = current_model_version(mappings)
+    from utils.team_loader.pins import measurement_bias_teams
     loader = TeamLoader()
     all_teams = loader.get_all_teams()
-    sample_teams = loader.get_sample_teams()
+    # frozen MEASUREMENT bias set (the pre-split 72) — the SAME builder the eval worker plays, which
+    # is what lets `ingest_eval_measured_pairs` reuse an eval edge; see `utils.team_loader.pins`
+    bias_teams = measurement_bias_teams(loader)
     played = 0
     for a, b in todo:
         try:
             wins_a, finished = _play_pair(run_dir, a, b, n_games, mappings, cv, all_teams,
-                                          sample_teams, concurrency, impl)
+                                          bias_teams, concurrency, impl)
             _append_game(run_dir, a, b, wins_a, finished)
             played += 1
             print(f"[ladder] {a//1_000_000}M vs {b//1_000_000}M: {wins_a}/{finished}", flush=True)

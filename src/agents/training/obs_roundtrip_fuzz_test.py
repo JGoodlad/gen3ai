@@ -50,6 +50,7 @@ from agents.training.obs_materializer import materialize_from_record
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.bridge.reconstruction import ReconstructionRecord, register_trace_prefix
 from utils.team_loader import TeamLoader
+from utils.team_loader.pins import pre_split_sample_teams
 from utils.teambuilder import Gen3Teambuilder
 
 BATTLE_FORMAT = "gen3ou"
@@ -156,9 +157,11 @@ def record_fixture_battle(out_dir: str, *, key: int = 0, tag: str = "Fx", impl: 
     fixed. No server; the bridge runs in-process."""
     import json
 
-    pool = TeamLoader().get_all_teams()
-    assert pool, "no gen3ou teams under data/teams"
-    t1, t2 = pool[key % len(pool)], pool[(key + 1) % len(pool)]
+    # teams pinned BY SHA (the first 72 of the pre-split pool, `utils.team_loader.pins`), so a
+    # team-folder change can never quietly swap the battle a collected test was written against
+    pool = pre_split_sample_teams()
+    assert key + 1 < len(pool), f"key {key} runs past the {len(pool)} pinned fixture teams"
+    t1, t2 = pool[key], pool[key + 1]
     trainee = RecordingFuzzPlayer(
         out_dir=out_dir, rng_seed=1000 + key, battle_format=BATTLE_FORMAT, team=t1,
         account_configuration=AccountConfiguration(f"{tag}t{key}", "pw"),

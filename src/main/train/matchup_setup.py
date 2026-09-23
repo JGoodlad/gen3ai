@@ -29,6 +29,7 @@ from main.train.run_io import _run_arch_toggles
 from poke_env.player import SimpleHeuristicsPlayer
 from utils.teambuilder import Gen3Teambuilder
 from utils.team_loader import TeamLoader
+from utils.team_loader.relocations import resolve_team_file
 
 
 @dataclasses.dataclass
@@ -77,7 +78,7 @@ def apply_distill_team_bias(args, all_teams, trainee_teambuilder):
     for _tp, _tfs in _pairs:
         _sets = []
         for _tf in _tfs:
-            with open(_tf, encoding="utf-8") as _df:
+            with open(resolve_team_file(_tf), encoding="utf-8") as _df:
                 _s = _df.read()
             _team_strs.append(_s)
             if _loss_on:
@@ -109,10 +110,14 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     """Load the team pool, declare the matchup, and resolve every opponent source."""
     # Load all teams using the new TeamLoader
     loader = TeamLoader()
-    sample_teams = loader.get_sample_teams()
+    # THE TRAINING BIAS SET (`gen3_curated_sample_split_v1`, 2026-09-23): the default trainee builder
+    # over-draws Smogon's 32 curated sample teams. Before the split it over-drew all 72 teams then in
+    # data/teams/sample/ (the 32 + the 40 promoted exploiter trainees) — a TRAINING-INPUT change.
+    bias_teams = loader.get_training_bias_teams()
     all_teams = loader.get_all_teams()
-    
-    emit(f"📦 {len(sample_teams)} sample teams (bias) / {len(all_teams)} total loaded")
+
+    emit(f"📦 {len(bias_teams)} curated sample teams (training bias) / {len(all_teams)} total loaded "
+         f"(+{len(loader.get_promoted_teams())} promoted exploiter trainees in the pool)")
 
     # THE MATCHUP — declared ONCE (`MatchupSpec.from_args`, designs/ai_v8/design_matchup_config.md)
     # and consumed everywhere: BOTH teambuilders come from the spec (trainee/opponent independent BY
@@ -120,10 +125,11 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # Events panel echoes it, and metadata.json records it (+ spec_hash, the measurement-regime tag).
     # SPECIALIST MODE (--trainee-team) pins ONLY the trainee source; opponents keep the full pool.
     matchup = MatchupSpec.from_args(args)
-    # EXPLOITER team-source guarantee: an exploiter may ONLY EVER pilot a vetted sample team (the
-    # curated, tournament-proven set) — never a bulk-downloaded `other` team. FATAL otherwise (a
-    # deliberate startup gate, like the stable-opponent arch check). Non-exploiter / unpinned runs
-    # are unaffected; the existing TSS specialist pin IS a sample team, so it passes.
+    # EXPLOITER team-source guarantee: an exploiter may ONLY EVER pilot a VETTED team — the
+    # exploiter-trainee set (curated sample + promoted + superseded pastes,
+    # `TeamLoader.get_exploiter_trainee_teams`) — never a bulk-downloaded `other` team. FATAL
+    # otherwise (a deliberate startup gate, like the stable-opponent arch check). Non-exploiter /
+    # unpinned runs are unaffected.
     if getattr(args, "allow_nonsample_trainee", False):
         # RESEARCH override: skip the vetted-sample gate so an exploiter can pilot whole-POOL z-near
         # teams (anchor on a sample, nearest neighbors from all 719 teams). Use for capacity studies
@@ -132,8 +138,8 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
               "pilot non-sample pool teams (research/capacity mode).")
     else:
         try:
-            from agents.training.matchup_spec import validate_exploiter_trainee_is_sample
-            validate_exploiter_trainee_is_sample(matchup, sample_teams)
+            from agents.training.matchup_spec import validate_exploiter_trainee_is_vetted
+            validate_exploiter_trainee_is_vetted(matchup, loader.get_exploiter_trainee_teams())
         except ValueError as _e:
             print(f"\n[Exploiter] FATAL: {_e}")
             sys.stdout.flush()
@@ -164,7 +170,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # Team-side PFSP threads ONLY into the TRAINEE builder (opponent teams aren't win-rate-sampled);
     # "off" (default) is byte-identical construction.
     trainee_teambuilder = matchup.trainee_teams.build(
-        all_teams, sample_teams,
+        all_teams, bias_teams,
         team_pfsp=args.team_pfsp, team_pfsp_cap=args.team_pfsp_cap,
         team_pfsp_floor=args.team_pfsp_floor)
     # Team-blocked episodes: hold each drawn trainee team for N consecutive episodes — the
@@ -172,7 +178,7 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # (opponent draws stay per-episode); 1 = off, byte-identical. Training-only, not version-locked.
     if args.team_block_episodes > 1:
         trainee_teambuilder.set_block_episodes(args.team_block_episodes)
-    opponent_teambuilder = matchup.opponent_teams.build(all_teams, sample_teams)
+    opponent_teambuilder = matchup.opponent_teams.build(all_teams, bias_teams)
     trainee_teambuilder = apply_distill_team_bias(args, all_teams, trainee_teambuilder)
     for _ln in matchup.summary_lines():
         emit(_ln)

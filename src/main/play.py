@@ -142,7 +142,8 @@ def build_teambuilder(team_file: Optional[str], pool: bool) -> Gen3Teambuilder:
     """The team(s) we play. A ladder account should be pinned to ONE team so its rating
     measures a single matchup distribution; `--team-pool` is the multi-team arm."""
     if team_file:
-        with open(team_file) as f:
+        from utils.team_loader.relocations import resolve_team_file
+        with open(resolve_team_file(team_file)) as f:
             return Gen3Teambuilder(f.read())
     if pool:
         from utils.team_loader import TeamLoader

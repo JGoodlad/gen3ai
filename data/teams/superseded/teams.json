@@ -1,0 +1,17 @@
+[
+  {
+    "url": "https://pokepast.es/0972146213a667c9",
+    "name": "Curse RestLax ForreDol",
+    "author": "ABR",
+    "category": "Stall",
+    "id": "0972146213a667c9",
+    "file": "teams/superseded/0972146213a667c9.txt",
+    "source": "https://pokepast.es/0972146213a667c9",
+    "superseded": {
+      "at": "2026-09-23",
+      "replaced_by": "04e417ef9822abe9",
+      "thread": "https://www.smogon.com/forums/threads/adv-ou-sample-teams.3687813/",
+      "by": "tools/sample_team_downloader/sync.py"
+    }
+  }
+]
