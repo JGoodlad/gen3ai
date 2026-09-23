@@ -20926,3 +20926,128 @@ DEFECT · NAMED NOT REFUSED (the row's prescription was keyed to a retired axis)
 THE CWD · `checkargs` PINNED PATH AUTHORITATIVE AGAIN**.
 
 **Orchestrator's reading (2026-09-22).** The Foul Play hazard that blocked every multi-game challenge half since the derisk was our defect: poke-env releases its battle semaphore when a battle STARTS, so it fired the next challenge 0.4 s into the current game and a peer that drops PMs while battling never saw it. One join on the battle-count queue fixes it, on the base `Player` so the connect-or-raise guard survives; 10/10 Foul Play games on the Rust front end, the broken half 5/5. Metamon's challenger-role recursion is the mirror defect on their side (serialized acceptor, pipelined challenger) and is now NAMED rather than crashed on, with only the `mixed` cell refused — the agent declined the backlog row's prescription to refuse on the role axis, correctly, since that would have voided half of every standing read for a post-game teardown that costs no games. `--out` has no relative default, and `checkargs` strips a recorded program token and checks pinned-checkout completeness on disk. Tag: **OPS · Foul Play multi-game 10/10 on rust · H14 was ours · Metamon recursion named, mixed cell refused · checkargs ×2**.
+
+### 2026-09-22 · OPS · **D10 LANDED — the port emits the intermediate-request view (`gen3_view_at_intermediate_v1`)**
+
+**2026-09-22 — SEARCH: D10 is CLOSED, every searched arm is now on ONE road, and the "17.2% of
+the wall" this campaign ordered the work on was NOT recoverable wall.** `gen3_view_at_intermediate_v1`:
+a ply that KOs one of our mons — or whose trapped switch is refused — opens a SECOND request
+inside the same `expand_many` arm, which the port answers from its follow-up policy, so `view_pN`
+described the board one decision PAST the row `materialize_branches` returns and 17% of arms fell
+back to the protocol road. The port now also emits **`view_pN_at`**, the ordered board at each
+decision it resolved internally (captured at the top of the `resolve_turn_sourced` iteration that
+round opened), and the view road serves such an arm from `view_pN_at[0]` folded over a CHUNK-level
+cut of the arm's own protocol — a chunk boundary because `Player._handle_battle_message` parses a
+whole message before dispatching the request, so a line-level cut would stop earlier than the
+protocol road does. **The port gained no poke-env rule** (the contract's split held): the two
+rules the close needed were both fixed in Python, and BOTH were found by the gate rather than by
+reading code — `|error|[Unavailable choice]` is intercepted by the player but ROUTED to
+`Gen3Battle.record_choice_rejected`, so `ViewEventFolder` dropped a `CHOICE_REJECTED` event the
+live log has and moved ~200 obs cells through the H-B event window; and **`Pokemon.faint` does
+not clear boosts while the sim does** (eleven cases over seven fixture battles, every one a mon
+FAINTED and still ACTIVE, stages the ply's own), so the light board now keeps a boost ledger and
+`view_adapter._restore_fainted_boosts` rewrites fainted mons only. Neither is visible on an
+ordinary arm, because there the replacement switch happens inside the ply and clears the
+difference. **GATES:** `cargo test` 759 green with a capture pin and its NEGATIVE twin
+(fault-injected: capturing on iteration 0 fails both); the one-sided-view sweep on **THREE fresh
+24-battle seeds — 614 / 620 / 654 comparisons, 43 / 42 / 49 D10 arms SERVED, ZERO `successor.*`
+divergences** (the residue is the §4b read-model classes, present on a base-worktree control
+run too); `event_fold_parity` on 24 fresh battles, 489 plies and **41 D10 cuts**, zero
+divergence, the cut asserted to materialise exactly ONE further row on the protocol road;
+`search_impl_parity` PASS on TWO fresh node goldens with one more value-aware allowlist entry
+(`<absent>` only). **MEASURED** as an interleaved A/B on the same 10 banked decisions, twice,
+on a CPU-starved box whose load rose monotonically through the sequence (20.8 → 33.2 on 16 cpus,
+so every NOW run carried the heavier box): **`view_fallback_intermediate` 117 → 0** at wide B
+and 2 → 0 at B = 1, `view_arms` 567 → 684. Control-normalised (view ÷ the protocol road run back
+to back), wide B moves **~2-4%** and B = 1 **~25%**. 🚨 **THE RETRACTION: a PHASE SHARE IS NOT A
+SAVING.** D10's 17.2% was the cost of serving those arms at all, not waste — moving 117 of 684
+arms onto a ~4.2 ms/arm path refunds nearly the whole 16.4% the view road's breakdown attributed
+to the branch fork. The win at B = 1 is real and structural (the fallback forced a second
+poke-env prefix replay to serve ONE arm); the win at wide B is ROAD CONSISTENCY — a cell measured
+with a silent 17% protocol contamination was measuring a blend.
+
+**Orchestrator's reading (D10).** The agent retracted the premise it was dispatched on: a 17 % phase share was the cost of SERVING those arms, not recoverable wall, so wide-B moves 2–4 % and B = 1 moves ~25 % (where the fallback forced a second prefix replay). What wide B buys is road consistency — a `--materializer view` cell no longer runs 17 % of its arms on the other road, so it is no longer a blend. Two poke-env presentation rules the port could not supply surfaced on the cut (a routed `CHOICE_REJECTED`, and fainted mons keeping their boosts in poke-env where the sim clears them) — both now in Python per the contract, both invisible on an ordinary arm. Rule for the file: **a phase share is not a saving; only the gap between the slow road and the cheap road is recoverable.** Tag: **OPS · D10 closed · fallback 117 → 0 · wide 2–4 %, B = 1 ~25 % · two presentation rules found by the gate**.
+
+### 2026-09-22 · OPS (MAJOR) · **THE PLAYOFF ARM ACTS — its recorded blocker was wrong twice, and the extractor's per-forward stash is NOT thread-safe**
+
+**2026-09-22 — THE `playoff` ARM IS UNBLOCKED, AND ITS RECORDED BLOCKER WAS WRONG TWICE.** The P1
+row said `prefix_gate_failed` on 72 of 73 decisions; the 2026-09-22 re-measurement said
+`root_failed` on 51/63 (node search driver) and 60/63 (rust). On a correctly-provisioned worktree
+at HEAD the row's own repro produces **ZERO of either, on BOTH drivers, which agree decision for
+decision** — and `root_failed` turns out to be easy to manufacture from the ENVIRONMENT (an
+unresolvable search-driver child: no `POKESIM_SEARCH_DRIVER_BIN` and no worktree `target/` on
+rust, no `deps/pokemon-showdown/dist` symlink on node, where `conftest.py`'s guard does not run
+for a CLI invocation), after which the arm silently becomes its own `base` control. **FOUR
+DEFECTS CLOSED, 14 gates, each failing on revert.** (1) `c823b11c` — `root_failed` now NAMES what
+`open_root` raised (`_no_arm_detail` → `diagnostics["error"]` → the row's CLASSED
+`fallback_errors`, pooled per cell and printed), and `root_failure_refusal` closes the hole the
+other two guards left open: a decision whose root raised never reaches a screen, so
+`playoff_error_refusal` and `short_r_refusal` both saw `attempted == 0` on exactly the row that
+needed a refusal. (2) `d5c465fd` — 🚨 **`ValueThreatInject shape mismatch: tokens (1, 6) vs rows
+(9, 6)` is a CROSS-THREAD STASH READ**, not a batch-shape bug on the successor obs.
+`Gen3FeaturesExtractor` keeps its whole per-forward contract on `self` and the mirror runs
+`SearchEngine.choose` in an executor worker while the unsearched side — and every playoff rollout
+player — decides on POKE_LOOP against the SAME model object. Measured: two threads, one real
+extractor, 2,400 interleaved forwards ⇒ **1,063 failures in seven classes**, and ⚠️ **the crash is
+the LUCKY case** — two B=1 forwards corrupt each other's belief logits, threat rows and P(win)
+silently. Fixed with an OPT-IN re-entrant forward guard installed where the second thread is made;
+training and the compiled graph are byte-unchanged, and the gate asserts OUTPUT BYTES against a
+single-threaded control. (3) `4d75cfe3` — 🚨 **the "first-orientation livelock" is NOT a
+livelock**: the same game FINISHES at **246.6 s** (a WIN, 60 decisions) with the cap raised and
+nothing else changed, so `_PER_BATTLE_TIMEOUT = 180.0` — a TOTAL-DURATION cap on a workload whose
+duration is an ARGV parameter — was deleting half of every side-swapped playoff cell, and the row
+it left read `dec=0` because a timed-out battle's decisions were discarded. Both per-battle bounds
+are now caller-sized from the cell's realized per-decision cost, `ProgressDeadline` REPORTS the
+repeating frame (`LIVELOCK CONFIRMED … the same frame t3:error` vs `NOT A LIVELOCK: the work
+ADVANCED through D distinct frames`) instead of asserting one, and a timed-out battle keeps its
+decisions. (4) `569f64ec` — `prefix_gate_failed:9` beside `worlds_gate_failed:0` was one
+`continue`: the width counters were summed over SEARCHED decisions only, and a gated-out decision
+is by definition a fallback. The counters now sum to the decision count by construction, and
+`worlds_open_failed` — folded nowhere at all — is carried beside the gate counter. **THE ARM NOW
+ACTS**: one mirror game per orientation at the registered operating point (`--playoff-se-k 0.5`,
+R = 4, `--budget 120`, widths 6/4/2) on the rust search driver — the first playoff cell ever run
+there — gives **51 searched decisions, 22 changed, 33 playoffs PLAYED of 70 screened, 19
+inconclusive, 0 no-budget, 0 errored, realized R = 4.00 exactly**, zero gate failures and zero
+driver failures. ⛔ **No strength claim**: n = 1 swap-pair. ⚠️ Both playoff games exceed the old
+180 s bound, one by 5.2× (933 s), so under it this measurement could not have been taken at all;
+and the arm costs **25.1 s per adjudicated decision**, i.e. ~100 CPU-hours for a 200-pair battery.
+Record: `designs/research_state/measurements/playoff_repair_2026-09-22/`.
+
+**Orchestrator's reading (the playoff repair).** The arm's recorded blocker was wrong twice (the prefix gate, then `root_failed`); at HEAD the repro produces neither on either driver, and `root_failed` is manufactured by an unresolvable driver child, after which the arm silently becomes its own `base` — now refused on the first game. **The finding that outranks the playoff: `Gen3FeaturesExtractor` keeps its per-forward contract on `self` and is NOT thread-safe** — 2,400 interleaved forwards produced 1,063 failures in seven classes, the crash being the lucky case and silent corruption of belief logits, threat rows and P(win) the unlucky one. The opt-in re-entrant guard is installed where the mirror builds players; training and the compiled graph are byte-unchanged. Any past measurement that ran two B = 1 forwards on one model from two threads — the mirror's unsearched side beside a search, every playoff rollout player — is suspect in a way no number reveals; the batteries of 2026-09-19/20 were already VOID for the tag collision, so nothing banked changes, but the class is now closed. The 180 s per-battle cap was deleting half of every side-swapped playoff cell (a timed-out battle's decisions were discarded, reading `dec=0`). Cost at the registered operating point: 25.1 s per adjudicated decision, ~100 CPU-h for a 200-pair battery — affordable now, and NOT dispatched: search is wound down and the batteries await the owner's word. Tag: **OPS (MAJOR) · the playoff arm ACTS on rust · extractor forward stash not thread-safe (guarded) · the 180 s cap was a measurement bug · 25 s per adjudicated decision**.
+
+### 2026-09-22 · OPS · **THE SEARCH-TEACHER COMPOSITION GATE — its verdict was never recorded, and a label is not reproducible by construction**
+
+**2026-09-22 — the search-teacher composition gate's verdict was never RECORDED, and its
+labels are not reproducible.** The two backlog rows dispatched for this pass were already closed
+(`49fb43ce` built the composition gate 2026-09-07; `e22c1236` moved selection out of `_on_step`
+2026-09-08), so there was no inline selection to fix and no gate to build. The real hole was one
+layer out: `designs/ops/slow_tier_status.json` carried **no row** for
+`test_search_teacher_runs_multiple_cycles_end_to_end_on_rust`, so the `sim`+`slow` gate that
+proves the whole ExIt pipeline composes on rust had never been run under the recorder — and a
+deselected test cannot fail. It now records **pass, 572.45 s, contention 2.1**: 30,000 steps,
+**5 cycle launches / 4 collects / 5 corrections**, every worker config `"impl": "rust"`, and the
+teacher's total cost to the training step re-measured at **0.46 s over the whole run**
+(`worker-spawn` worst 115.9 ms, which is `model.save`) against the **48.1 s / 350.2 s per cycle**
+the inline defect cost. Three assertions were added that the gate lacked: the **SEARCHED count
+per cycle** (the status histogram's total must equal the candidates selection offered — a cycle
+that quietly searched 2 of 8 was previously indistinguishable from an honest zero-yield cycle,
+because missing candidates emit no status key at all), the AWR loss being **non-zero rather than
+merely present**, and a per-cycle wall table. **The parity half returned a negative result that
+is worth more than the gate**: there is no `--search-impl` flag (the engine flows from
+`--use-bridge`), and byte-identical cross-impl labels are impossible by construction — the
+confirm rollouts' sim dice ARE deterministic (`fresh_seeds` is a sha256 of
+`battle_tag:inv:cf`) and the trainee plays greedy, but a reloaded **checkpoint opponent plays
+stochastic at temp 1.0 with no `torch.manual_seed` anywhere in the confirm path**, so a label's
+`advantage` — and the `ok`/`gate_failed` verdict the Wilson bound produces — is a fresh draw on
+every run at FIXED impl. A label-identity gate is therefore only well-posed on the BOT-opponent
+configuration, which is deterministic end to end. `search_impl_parity.py` itself could not be
+run: its `tmp/search_golden_node.json` is absent from every checkout, as the ledger already
+notes.
+
+**Orchestrator's reading (the composition gate).** Both backlog rows were stale — selection left `_on_step` on 2026-09-08 and the gate landed on 09-07 — and the dispatch premise was mine to check. The real hole was that a `sim`+`slow` gate's verdict had never been recorded, so a failure there could not fail the routine gate; it now records a pass with three assertions it had been green without checking. The new P1 matters beyond parity: the confirm rollouts' checkpoint opponent is unseeded, so a search-teacher cycle's YIELD is a random variable unrelated to the policy — any yield comparison across arms is void until it is seeded. Tag: **OPS · composition gate recorded · selection was already off the critical path · P1: unseeded confirm RNG**.
+
+### 2026-09-22 · OPS · **THE LADDER REFIT AUDIT — 68 of 93 committed `ladder.json` files move under the current recipe (newest node reads HIGH in 65; median max |Δ| 53 Elo, largest 256); the v9 generation ladder reverses 21 of 153 orderings; the flywheel era's banked numbers are UNCHANGED; `main.elo refit --apply` is built and NOT run on the archive (`7db504ac`)**
+
+Record `designs/research_state/measurements/ladder_refit_audit_2026-09-22/` — 93 per-run JSONs, the ordering table, the per-run table. Every run with a `snapshot_ladder/` has its `games.jsonl` (5,235 pair rows), so every refit is `--fit-only` and plays nothing. The 68/25 split is exactly the `3e6875a5` boundary (sentinel edges dropped); the newest node moves > 10 Elo on 39 runs and NEGATIVE on 65 of the 68 movers — committed files read high, as rule 24 predicted; `ai_v12_02_winprob_critic` 2057.3 → 1984.2 = −73.1 reproduces the known case to the decimal. Ordering: the v9 generation ladder reverses 21 of 153 pairwise orderings (`gen13` 7th → 2nd; `gen1 vs gen7` −14.9 → +10.7); E-substrate, R2, R3/R4, the v12 ladder cells and all of v13 are unchanged; globally 363 of 4,278 pairs flip; the argmax node moves on 33 of 93. Two extra findings: `ai_v9_51_fdF_p2c_0826`'s 18M and 24M nodes are UNRATEABLE under the current recipe (they were carried on sentinel edges alone), and four runs' committed pair counts include snapshots since groomed off disk. **The era's banked claims (2026-09-06 onward):** only `ai_v12_02`'s 09-08 numbers move (−38 to −73; its entry already carried the caveat); the v12 ladder cells and every flywheel-era number checked the count key before quoting and are confirmed at 0.0. 🚨 The real exposure is OLDER than the grepped window — the v9 generation ladder (2026-08-04 → 08-20); re-reading those entries under the current recipe is not done. **The tool:** `python -m main.elo refit <run>` (read-only) / `--apply` (writes the stamped fit, keeps `ladder.pre_recipe.json`, refuses to clobber, no-op when current); `main.elo <run>` withholds the dense headline on a stale stamp and names the fix. Applying it to the archive is the owner's or Training Run's call; a live arm is refit at run END. No ledger entry is edited — the new reading is appended beside the old.
+
+**Orchestrator's reading.** Every dense-ladder Elo quoted before 2026-09-08 read high by a run-specific amount, the v9 generation ordering is not the ordering we believed, and none of the flywheel era's claims move. The apply is deferred to the owner (93 fits, ~1 s total, nothing played); the v9 re-read is a backlog row, not a dispatch. Tag: **OPS · 68/93 ladder files move · v9 ordering reverses 21/153 · flywheel era unchanged · apply deferred to the owner**.
