@@ -51,8 +51,8 @@ def test_the_condition_field_parses_to_poke_envs_own_hp_fraction():
     assert _split_condition("52/100 par") == (0.52, "PAR")
     # OUR side states true integers; the fraction is the same quantity either way.
     assert _split_condition("123/321")[0] == pytest.approx(123 / 321)
-    # A faint clears the status, exactly as `Pokemon.faint` does.
-    assert _split_condition("0 fnt") == (0.0, None)
+    # A faint reads FNT, exactly as `Pokemon.faint` sets it.
+    assert _split_condition("0 fnt") == (0.0, "FNT")
     assert _split_condition("0") == (0.0, None)
 
 

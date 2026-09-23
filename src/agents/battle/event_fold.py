@@ -101,16 +101,19 @@ class _LightStatus:
 
 
 def _split_condition(cond: str) -> Tuple[float, Optional[str]]:
-    """``"52/100 par"`` → ``(0.52, "PAR")``; ``"0 fnt"`` → ``(0.0, None)``.
+    """``"52/100 par"`` → ``(0.52, "PAR")``; ``"0 fnt"`` → ``(0.0, "FNT")``.
 
     This is the wire's own spelling of ``Pokemon.current_hp_fraction`` — ``current_hp / max_hp``
     — and the numerator/denominator are exactly the pair poke-env stores, for our side (true
-    integers) and the opponent's (the gen3ou ``ceil%`` fold) alike. A fainted mon reads 0.0 and
-    poke-env clears its status, which ``Pokemon.faint`` does too."""
+    integers) and the opponent's (the gen3ou ``ceil%`` fold) alike. A fainted mon reads 0.0 with
+    status FNT: ``set_hp_status("0 fnt")`` calls ``Pokemon.faint``, which sets ``Status.FNT``
+    (`gen3_view_fold_poke_env_status_v1` — this used to clear it)."""
     parts = str(cond).strip().split(" ")
     hp_part = parts[0]
     status = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
-    if status == "fnt" or hp_part == "0":
+    if status == "fnt":
+        return 0.0, "FNT"
+    if hp_part == "0":
         return 0.0, None
     if "/" in hp_part:
         num, _, den = hp_part.partition("/")
@@ -416,6 +419,12 @@ class ViewEventFolder(Gen3Battle):
         if keyword == "turn":
             if len(sm) > 2 and sm[2].isdigit():
                 self._turn = int(sm[2])
+            # poke-env's `end_turn` CLOSES the move scope (`abstract_battle.py:1634`), so an outcome
+            # line before the new turn's first `|move|` (a switch-in Intimidate blocked by Clear
+            # Body) is owned by no side. Missing here until `gen3_view_fold_turn_reset_v1` (the
+            # Rust Core Program's Phase-0 finding F2): a fold spanning `|turn|` — depth >= 2, or
+            # one ply crossing a turn — read that line as the last mover's.
+            self._current_move_user_side = None
             return
         if keyword == "move":
             # The resolving side owns every following |-crit| / |-miss| / |-fail| /
@@ -450,39 +459,40 @@ class ViewEventFolder(Gen3Battle):
                 return
             hp, status = _split_condition(sm[3] if len(sm) > 3 else "")
             mon.hp_fraction = hp
-            # A `|-damage|` line RESTATES the status; poke-env's `set_hp_status` writes it, and
-            # clears nothing when the field is absent.
-            if status:
-                mon.status = _LightStatus(status)
-            elif hp == 0.0:
-                mon.status = None
+            # An HP line RESTATES the status, and poke-env's `set_hp_status` writes it EITHER WAY:
+            # the field's status when it has one, None when it does not.
+            mon.status = _LightStatus(status) if status else None
             return
         if keyword == "-status":
             mon = self._get_light(sm[2] if len(sm) > 2 else None)
             if mon is not None and len(sm) > 3 and sm[3]:
                 mon.status = _LightStatus(sm[3].strip().upper())
             return
-        if keyword in ("-curestatus", "-cureteam"):
-            if keyword == "-cureteam":
-                for m in self._mons.values():
+        if keyword == "-cureteam":
+            # `team.cure_status()` over the NAMED side's team only — and `Pokemon.cure_status()`
+            # with no argument leaves a fainted mon's FNT (`gen3_view_fold_poke_env_status_v1`;
+            # this used to cure every mon on both sides).
+            role = sm[2][:2] if len(sm) > 2 else ""
+            for key, m in self._mons.items():
+                if key[:2] == role and not (m.status and m.status.name == "FNT"):
                     m.status = None
-                return
+            return
+        if keyword == "-curestatus":
+            # `Pokemon.cure_status(status)` clears only when the named status IS the current one.
             mon = self._get_light(sm[2] if len(sm) > 2 else None)
-            if mon is not None:
+            named = sm[3].strip().upper() if len(sm) > 3 else ""
+            if mon is not None and mon.status is not None and mon.status.name == named:
                 mon.status = None
             return
         if keyword == "faint":
             mon = self._get_light(sm[2] if len(sm) > 2 else None)
             if mon is not None:
                 mon.hp_fraction = 0.0
-                mon.status = None
+                mon.status = _LightStatus("FNT")         # `Pokemon.faint` sets Status.FNT
             return
-        if keyword in ("detailschange", "-formechange"):
-            mon = self._get_light(sm[2] if len(sm) > 2 else None)
-            species = self._species_from_details(sm[3] if len(sm) > 3 else "")
-            if mon is not None and species:
-                mon.species = species
-            return
+        # `-formechange` / `detailschange` are `Pokemon.forme_change`, which updates the dex row
+        # with `store_species=False`: the SPECIES a later event names stays the base one
+        # (`gen3_view_fold_poke_env_status_v1`; this used to rename a Forecast Castform).
 
     @staticmethod
     def _species_from_details(details: str) -> Optional[str]:

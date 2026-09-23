@@ -219,7 +219,22 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   and which side's move is resolving) with a light dict folded from the same lines. That is why
   the per-arm cost is neither a poke-env parse nor a battle-graph clone. Differential gate:
   `event_fold_parity_fuzz_test.py`, field by field including `raw`. The consumer is
-  `agents/training/view_successor.py`.
+  `agents/training/view_successor.py`. 🚨 **Every light-board transition mirrors a named poke-env
+  line, and that gate cannot see the ones that only bite ACROSS a `|turn|`** — it seeds at depth 1
+  and folds one ply. `event_fold_test.py` pins them on constructed protocol against `Gen3Battle`:
+  `|turn|` CLOSES the move scope (`end_turn`, `gen3_view_fold_turn_reset_v1`, the Rust Core
+  Program's finding F2 — a start-of-turn Intimidate→Clear Body `-fail` read as the last mover's at
+  depth ≥ 2), and the status/species rules (`gen3_view_fold_poke_env_status_v1`): a faint is FNT,
+  an HP line with no status token CLEARS the status, `-curestatus` clears only the named status,
+  `-cureteam` cures only the named side's living mons, and `-formechange` never renames the species.
+- **`offline_feed.py` — one side's recorded protocol into a `Gen3Battle`, no `Player`, no loop**
+  (`gen3_offline_feed_v1`). `feed_chunk(battle, chunk)` is a DISPATCH MIRROR of
+  `Player._handle_battle_message` (request → `parse_request`, win/tie → `won_by`/`tied`,
+  `[Unavailable choice]` → `record_choice_rejected`, the player's `MESSAGES_TO_IGNORE` read from the
+  class, `bigerror` dropped, the rest → `parse_message`). It is the Python half of the Rust Core
+  parity harness. Gate: `offline_feed_test.py` (`sim`) — a live bridge battle's log == the offline
+  feed's, every event, every field, both viewers, plus conservation (the transport's `|init|battle`
+  room line is fed too).
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,
