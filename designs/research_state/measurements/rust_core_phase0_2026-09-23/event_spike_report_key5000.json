@@ -1,0 +1,398 @@
+{
+ "battles_ok": 149,
+ "battles_refused": 1,
+ "wall_s": 25.0,
+ "python_move_suffix_synthetics": 494,
+ "ruled_source_synthetics": 494,
+ "untyped_source_lines": {},
+ "raw": [
+  {
+   "kind": "CANT",
+   "__matched__": 1864
+  },
+  {
+   "kind": "CRIT",
+   "__matched__": 834
+  },
+  {
+   "kind": "CURESTATUS",
+   "__matched__": 654,
+   "status": 66
+  },
+  {
+   "kind": "DAMAGE",
+   "__matched__": 28390
+  },
+  {
+   "kind": "DRAG",
+   "__matched__": 712
+  },
+  {
+   "kind": "FAIL",
+   "__matched__": 3606,
+   "side": 16,
+   "actor": 16
+  },
+  {
+   "kind": "FAINT",
+   "__matched__": 3026
+  },
+  {
+   "kind": "HEAL",
+   "__matched__": 27810
+  },
+  {
+   "kind": "IMMUNE",
+   "__matched__": 1108,
+   "from": 4
+  },
+  {
+   "kind": "MISS",
+   "__matched__": 494,
+   "target": 432
+  },
+  {
+   "kind": "MOVE",
+   "__matched__": 24096,
+   "target": 1912
+  },
+  {
+   "kind": "RESISTED",
+   "__matched__": 3452
+  },
+  {
+   "kind": "STATUS",
+   "__matched__": 1402
+  },
+  {
+   "kind": "SUPEREFFECTIVE",
+   "__matched__": 1968
+  },
+  {
+   "kind": "SWITCH",
+   "__matched__": 17376
+  }
+ ],
+ "ruled": [
+  {
+   "kind": "CANT",
+   "__matched__": 1864
+  },
+  {
+   "kind": "CRIT",
+   "__matched__": 834
+  },
+  {
+   "kind": "CURESTATUS",
+   "__matched__": 654
+  },
+  {
+   "kind": "DAMAGE",
+   "__matched__": 28390
+  },
+  {
+   "kind": "DRAG",
+   "__matched__": 712
+  },
+  {
+   "kind": "FAIL",
+   "__matched__": 3606
+  },
+  {
+   "kind": "FAINT",
+   "__matched__": 3026
+  },
+  {
+   "kind": "HEAL",
+   "__matched__": 27810
+  },
+  {
+   "kind": "IMMUNE",
+   "__matched__": 1108
+  },
+  {
+   "kind": "MISS",
+   "__matched__": 988
+  },
+  {
+   "kind": "MOVE",
+   "__matched__": 24096
+  },
+  {
+   "kind": "RESISTED",
+   "__matched__": 3452
+  },
+  {
+   "kind": "STATUS",
+   "__matched__": 1402
+  },
+  {
+   "kind": "SUPEREFFECTIVE",
+   "__matched__": 1968
+  },
+  {
+   "kind": "SWITCH",
+   "__matched__": 17376
+  }
+ ],
+ "parse_back": {
+  "cant facts_ok": 932,
+  "crit facts_ok": 417,
+  "curestatus facts_ok": 327,
+  "damage facts_ok": 14195,
+  "drag facts_ok": 356,
+  "fail facts_ok": 1803,
+  "faint facts_ok": 1513,
+  "heal facts_ok": 13905,
+  "immune facts_ok": 554,
+  "miss facts_ok": 247,
+  "move facts_ok": 12048,
+  "outcome_owner ok": 5731,
+  "resisted facts_ok": 1726,
+  "status facts_ok": 701,
+  "supereffective facts_ok": 984,
+  "switch facts_ok": 8688
+ },
+ "raw_examples": {
+  "MISS.target": [
+   {
+    "battle": "key5001/p1",
+    "source": "porygon2",
+    "python": "salamence",
+    "scope": "move:p1",
+    "src_line": "|-miss|p1a: Salamence|p2a: Porygon2",
+    "py_line": "|-miss|p1a: Salamence|p2a: Porygon2"
+   },
+   {
+    "battle": "key5001/p2",
+    "source": "porygon2",
+    "python": "salamence",
+    "scope": "move:p1",
+    "src_line": "|-miss|p1a: Salamence|p2a: Porygon2",
+    "py_line": "|-miss|p1a: Salamence|p2a: Porygon2"
+   },
+   {
+    "battle": "key5004/p1",
+    "source": "metagross",
+    "python": "salamence",
+    "scope": "move:p1",
+    "src_line": "|-miss|p1a: Salamence|p2a: Metagross",
+    "py_line": "|-miss|p1a: Salamence|p2a: Metagross"
+   },
+   {
+    "battle": "key5004/p2",
+    "source": "metagross",
+    "python": "salamence",
+    "scope": "move:p1",
+    "src_line": "|-miss|p1a: Salamence|p2a: Metagross",
+    "py_line": "|-miss|p1a: Salamence|p2a: Metagross"
+   }
+  ],
+  "MOVE.target": [
+   {
+    "battle": "key5002/p1",
+    "source": "swampert",
+    "python": "snorlax",
+    "scope": "move:p1",
+    "src_line": "|move|p1a: Swampert|Refresh||[still]",
+    "py_line": "|move|p1a: Swampert|Refresh||[still]"
+   },
+   {
+    "battle": "key5002/p2",
+    "source": "swampert",
+    "python": "snorlax",
+    "scope": "move:p1",
+    "src_line": "|move|p1a: Swampert|Refresh||[still]",
+    "py_line": "|move|p1a: Swampert|Refresh||[still]"
+   },
+   {
+    "battle": "key5004/p1",
+    "source": "starmie",
+    "python": "salamence",
+    "scope": "move:p2",
+    "src_line": "|move|p2a: Starmie|Recover||[still]",
+    "py_line": "|move|p2a: Starmie|Recover||[still]"
+   },
+   {
+    "battle": "key5004/p1",
+    "source": "starmie",
+    "python": "snorlax",
+    "scope": "move:p2",
+    "src_line": "|move|p2a: Starmie|Recover||[still]",
+    "py_line": "|move|p2a: Starmie|Recover||[still]"
+   }
+  ],
+  "FAIL.side": [
+   {
+    "battle": "key5028/p1",
+    "source": null,
+    "python": "ours",
+    "scope": "switch:p1",
+    "src_line": "|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross",
+    "py_line": "|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross"
+   },
+   {
+    "battle": "key5028/p2",
+    "source": null,
+    "python": "opp",
+    "scope": "switch:p1",
+    "src_line": "|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross",
+    "py_line": "|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross"
+   },
+   {
+    "battle": "key5029/p1",
+    "source": null,
+    "python": "opp",
+    "scope": "switch:p1",
+    "src_line": "|-fail|p2a: Regirock|unboost|[from] ability: Clear Body|[of] p2a: Regirock",
+    "py_line": "|-fail|p2a: Regirock|unboost|[from] ability: Clear Body|[of] p2a: Regirock"
+   },
+   {
+    "battle": "key5029/p1",
+    "source": null,
+    "python": "ours",
+    "scope": "switch:p2",
+    "src_line": "|-fail|p1a: Regirock|unboost|[from] ability: Clear Body|[of] p1a: Regirock",
+    "py_line": "|-fail|p1a: Regirock|unboost|[from] ability: Clear Body|[of] p1a: Regirock"
+   }
+  ],
+  "FAIL.actor": [
+   {
+    "battle": "key5028/p1",
+    "source": null,
+    "python": "salamence",
+    "scope": "switch:p1",
+    "src_line": "|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross",
+    "py_line": "|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross"
+   },
+   {
+    "battle": "key5028/p2",
+    "source": null,
+    "python": "salamence",
+    "scope": "switch:p1",
+    "src_line": "|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross",
+    "py_line": "|-fail|p2a: Metagross|unboost|[from] ability: Clear Body|[of] p2a: Metagross"
+   },
+   {
+    "battle": "key5029/p1",
+    "source": null,
+    "python": "regirock",
+    "scope": "switch:p1",
+    "src_line": "|-fail|p2a: Regirock|unboost|[from] ability: Clear Body|[of] p2a: Regirock",
+    "py_line": "|-fail|p2a: Regirock|unboost|[from] ability: Clear Body|[of] p2a: Regirock"
+   },
+   {
+    "battle": "key5029/p1",
+    "source": null,
+    "python": "regirock",
+    "scope": "switch:p2",
+    "src_line": "|-fail|p1a: Regirock|unboost|[from] ability: Clear Body|[of] p1a: Regirock",
+    "py_line": "|-fail|p1a: Regirock|unboost|[from] ability: Clear Body|[of] p1a: Regirock"
+   }
+  ],
+  "IMMUNE.from": [
+   {
+    "battle": "key5032/p1",
+    "source": "ability: Immunity",
+    "python": null,
+    "scope": "move:p2",
+    "src_line": "|-immune|p1a: Snorlax|[from] ability: Immunity",
+    "py_line": "|-immune|p1a: Snorlax|[from] ability: Immunity"
+   },
+   {
+    "battle": "key5032/p2",
+    "source": "ability: Immunity",
+    "python": null,
+    "scope": "move:p2",
+    "src_line": "|-immune|p1a: Snorlax|[from] ability: Immunity",
+    "py_line": "|-immune|p1a: Snorlax|[from] ability: Immunity"
+   },
+   {
+    "battle": "key5041/p1",
+    "source": "ability: Volt Absorb",
+    "python": null,
+    "scope": "move:p2",
+    "src_line": "|-immune|p1a: Jolteon|[from] ability: Volt Absorb",
+    "py_line": "|-immune|p1a: Jolteon|[from] ability: Volt Absorb"
+   },
+   {
+    "battle": "key5041/p2",
+    "source": "ability: Volt Absorb",
+    "python": null,
+    "scope": "move:p2",
+    "src_line": "|-immune|p1a: Jolteon|[from] ability: Volt Absorb",
+    "py_line": "|-immune|p1a: Jolteon|[from] ability: Volt Absorb"
+   }
+  ],
+  "CURESTATUS.status": [
+   {
+    "battle": "key5036/p1",
+    "source": null,
+    "python": "[from] move: Aromatherapy",
+    "scope": "move:p2",
+    "src_line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "py_line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy"
+   },
+   {
+    "battle": "key5036/p1",
+    "source": null,
+    "python": "[from] move: Aromatherapy",
+    "scope": "move:p2",
+    "src_line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "py_line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy"
+   },
+   {
+    "battle": "key5036/p1",
+    "source": null,
+    "python": "[from] move: Aromatherapy",
+    "scope": "move:p2",
+    "src_line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "py_line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy"
+   },
+   {
+    "battle": "key5036/p1",
+    "source": null,
+    "python": "[from] move: Aromatherapy",
+    "scope": "move:p2",
+    "src_line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy",
+    "py_line": "|-cureteam|p2a: Blissey|[from] move: Aromatherapy"
+   }
+  ]
+ },
+ "ruled_examples": {},
+ "parse_back_examples": {},
+ "reading_rules": {
+  "R1_outcome_owner_is_last_move_line": [
+   "an outcome line (-crit/-miss/-fail/-immune/-resisted/-supereffective) belongs to the side of the most recent |move| line, reset only at |turn| \u2014 NOT to the action the sim is running",
+   "poke_env/battle/abstract_battle.py:711 (set) / :1634 (end_turn reset); agents/battle/gen3_battle.py:716,733"
+  ],
+  "R2_immune_owner_fallback": [
+   "an -immune/-resisted/-supereffective with no open move is owned by the side OPPOSITE the named defender",
+   "agents/battle/gen3_battle.py:735-738"
+  ],
+  "R3_miss_target_is_user": [
+   "a MISS/FAIL event's target is the mon NAMED at index 2 \u2014 for -miss that is the USER",
+   "agents/battle/gen3_battle.py:717,727"
+  ],
+  "R4_still_move_target_is_foe_active": [
+   "a [still] move (empty target field) is given the other side's ACTIVE as its target",
+   "agents/battle/gen3_battle.py:532-539"
+  ],
+  "R5_miss_suffix_synthetic": [
+   "|move|\u2026|[miss] emits a SECOND MISS event (from='move-suffix') beside the standalone |-miss| line \u2014 one miss is two MISS events in the log",
+   "agents/battle/gen3_battle.py:272-274,488-502"
+  ],
+  "R7_effectiveness_drops_cause": [
+   "an -immune/-resisted/-supereffective event carries only its multiplier: the line's [from] ability: <X> (Levitate / Immunity / Volt Absorb \u2026) is NOT on the event",
+   "agents/battle/gen3_battle.py:744-749 (value={'multiplier': \u2026} only)"
+  ],
+  "R8_cureteam_status_is_the_from_clause": [
+   "a -cureteam event's `status` is sm[3] verbatim \u2014 for gen3 Aromatherapy that is the string '[from] move: Aromatherapy', not a status",
+   "agents/battle/gen3_battle.py:687-691"
+  ],
+  "R6_hp_presentation": [
+   "HP is the viewer's rendering: own side x/maxhp exact, opponent ceil(100x/maxhp)/100 (99 if <max), 0 when fainted",
+   "src/rust_sim/src/bridge.rs::hp_percent + fold_hp_line; poke_env Pokemon.current_hp_fraction"
+  ]
+ }
+}

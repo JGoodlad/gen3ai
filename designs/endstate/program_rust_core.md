@@ -1,0 +1,300 @@
+# Program — the Rust core: milestones, gates, and the one cutover
+
+**Status: PLAN, authored 2026-09-23 at the owner's request (Phase 0 of the RUST CORE PROGRAM).**
+Explicit-only, like every document in `endstate/`: update it on the owner's word. It implements
+[`design_three_tier_environment.md`](design_three_tier_environment.md) (the end state; its §7 is the
+ordering this plan re-cuts) and is licensed on **unification** grounds — the owner's goal is "a low
+tech debt, robust, performant and unified approach; search will be on the table in our true end
+state". The before-numbers every milestone reports against, the event-attribution spike and the
+tech-debt inventory are in
+[`../research_state/measurements/rust_core_phase0_2026-09-23/`](../research_state/measurements/rust_core_phase0_2026-09-23/README.md).
+
+---
+
+## 0. What Phase 0 changed about the plan
+
+| Phase-0 result | what it changes |
+|---|---|
+| **The §3.4 hazard is not a parser problem.** Source-typed events for 15 of the 35 event kinds (16 of the 51 EVENT keywords; **82% of all event lines by volume**) equal `Gen3Battle`'s reading on 297 real bridge battles × 2 viewers — **259,782 per-viewer event comparisons, 0 residual, 0 unmatched** — once **8 named poke-env READING rules** are applied. Every rule is text-derivable, and the sim's own truth for the one attribution field the protocol does not print (which move owns an outcome line) is recovered from line order by a 4-token reset rule on **12,850 / 12,850** outcome lines | Tier 1a is no longer "the hardest step" on the parser side. The work is the READING RULES (how many, and which flip to the truth at a retrain) — so the plan front-loads a rule inventory and makes the core emit BOTH the truth and the reading |
+| **The event schema is lossier than the source.** The reading drops the `[of]` of 2,608 Recoil / Leech Seed / drain lines, the `[from] ability:` of every immune-by-ability, gives a `-miss` the USER as its target, a `[still]` move the FOE as its target, and writes one miss as TWO MISS events | The core's event is a SUPERSET: truth fields + the reading projection. `gen3_event_value_schema_v1` is kept verbatim on the projection; the truth fields are additive and read by nothing until a retrain chooses them |
+| **The searched decision is ~87% not-the-engine.** View road, wide B: rust engine ≈ 4% (+ an unsplit 8.5% `open_root`), transport/JSON 10%, **Python glue + trackers + folds 59% (66% with the event/prefix folds)** | The design's §7 decision point reads LICENSED (> 50%) on its own terms, as a record only — the owner licensed the program on unification |
+| **Tier 2 does not free the CPU the design says it does.** A compiled B = 1 opponent forward is 2.4–4.6 ms on this box at load 30–35 (0.98 ms on record at a quieter box); at the live arm's 445 steps/s, and assuming EVERY opponent is a network, that is **0.4–2.1 cores of 16**, not "sixty-four cores" | Tier 2's case is unification, the batched search leaf and — decisively — that **N envs per process cannot exist without it** (48 per-env B = 1 compiled graphs inside one Rust env process is not a thing). Its TRAINING use therefore rides the one cutover with Tier 1; its non-training users may adopt early |
+| Two latent defects surfaced (a `ViewEventFolder` that never resets the move owner at `\|turn\|`, reachable at the default search depth 3; the port PANICS at 1,000 committed turns where the pinned Showdown TIES) | Both become prerequisites of the milestone whose gate would otherwise trip on them (§5) |
+
+---
+
+## 1. The operating model — build alongside, one cutover, one deletion pass
+
+*(Owner amendment, 2026-09-23. It replaces the flag / flip / delete-per-milestone discipline.)*
+
+1. **BUILD ALONGSIDE.** The Rust core is built to completion as a path TRAINING DOES NOT USE. While
+   it is under construction the Python path is simply the product; two paths cost us only when
+   both are IN USE. **No default flips in the training loop mid-program.**
+2. **CONTINUOUS PARITY GATE from the first milestone.** Every milestone adds its SLICE (events,
+   views + legality, trackers, obs, env) to ONE byte-parity harness against the Python path, on a
+   fixed, reproducible corpus. The cheap tier lives in the routine gate, so a research change to
+   the Python side (a new obs feature, a flag, a tracker fix) breaks parity THE DAY IT LANDS and is
+   mirrored while it is small (§3).
+3. **ONE CUTOVER.** When the core is complete, the CUTOVER tier (§3) is the gate. Training switches
+   ONCE, between research reads, with a ledger entry naming the commit.
+4. **ONE DELETION PASS** right after the cutover removes the old production path — the per-milestone
+   lists in §4 are that pass's MANIFEST. **Named oracles survive:** poke-env + `Gen3Battle` + the
+   read-models (event and view parity), the Python encoder until two full seeds are byte-clean
+   post-cutover, and node Showdown + the differential fuzzers (they gate the SIMULATOR, which this
+   program does not change).
+5. **Early adopters.** A non-training consumer MAY move to the core before the cutover **iff** it is
+   clearly lower-risk AND it REMOVES a duplicate path rather than adding one. Exactly one qualifies:
+   **search** (§2, M2), whose materializer today runs TWO roads plus a fallback between them. The
+   prober, anchors and the ladder client do NOT: each reads the same Python path training reads,
+   so moving one early would ADD a path — they move after the cutover (M7).
+
+---
+
+## 2. The milestones
+
+Sizes are **agent-days**, calibrated to two measured rates: the one-sided view (a fraction of
+Tier 1a) took **2 agent-days and found 4 contract changes** no reading predicted; the Phase-0 spike
+typed 15 event kinds and built its harness in **~½ agent-day and found 8 reading rules + 2 latent
+defects**. Every estimate below carries a 1.5× surprise allowance at that rate.
+
+### M1 — Typed events at the source, all kinds, + the parity harness (Tier 1a, part 1)
+
+**What crosses.** Every omniscient line is emitted by a TYPED `ProtocolBuilder` method (today 17
+`push_raw` call sites bypass them; 3 are in the spike's subset and were typed there). The core
+holds, per line, a `CoreEvent` = the source facts (actor, target, the `[from]`/`[of]` cause, exact
+HP, the ENGINE's action scope) + its **reading projection** (the `BattleEvent` a given viewer's
+`Gen3Battle` would build — `gen3_event_value_schema_v1` verbatim, including the move-suffix
+synthetic MISS/FAIL). `parse(lines) -> Vec<CoreEvent>` (the design's entry 2) lands in the same
+milestone, because the spike showed it is cheap and it is what the ladder client and the prober
+will stand on. Conservation moves to the source: **one record per committed line, refused otherwise**
+(the spike's binary already refuses a mismatch).
+
+**Prerequisites.** (a) Showdown's turn-limit TIE in the port (`sim/battle.ts:1836` ties at turn >
+1000 and warns from 500; the port panics at 1,000 committed turns — **3 of 300** random-player
+battles hit it in Phase 0, so a 70k-battle cutover corpus would hit it ~700 times). (b) The
+`ViewEventFolder` move-owner reset (§5 F2), so the Python oracle the gate compares against is right.
+
+**Gate.** Slice E of the parity harness at COMMIT + MILESTONE tiers (§3): per viewer, per event,
+`seq · turn · kind · side · actor · target · value · raw` equal to `Gen3Battle`'s; plus the
+Rust-internal `parse(emit(step)) == step` on the same corpus; plus the 22-scenario protocol corpus
+(`src/rust_sim/tests/protocol_test.rs`'s goldens) because random battles never exercised four
+ambiguity-prone shapes — Damp's `[of]` cant, a slot-less future-move `-miss`, a Heal Bell bench
+`-curestatus`, `[from] lockedmove` (0 occurrences in 297 battles). **Size: 3–4 agent-days** (35 of the 51
+keywords remain, the fiddly half — ITEM/ENDITEM/ABILITY/VOLATILE/ACTIVATE `[from]`/`[of]` merges,
+CLEARBOOST's seven-keyword `op`, SIDE refs — plus the harness infrastructure). **Unlocks:** the
+typed stream every later slice folds; nothing in production changes.
+
+### M2 — `BattleVersion` + `present()` + legality (Tier 1a, part 2) — search adopts
+
+**What crosses.** The persistent version (omniscient board + events + `parent`), per-side
+`OneSidedView` computed by `present(board, events, side)` whose every poke-env rule is NAMED, tested
+alone and pinned to the line it mirrors (the nine of `designs/rust_sim/one_sided_view.md` §2, the
+D6–D9 deferrals, and the THREE open read-model findings of its §4b — the own-side sleep-counter
+drift, the opponent ability disclosed by a `[from] ability:` clause, the missing `substitute` — which
+must CLOSE here because the gate has no allowlist). `legal_actions(side)` from the raw `|request|`.
+Each reading-vs-truth choice is a flag defaulting to the READING.
+
+**Gate.** Slice V (the whole `LiveView` graph + `LegalActions` per decision, both viewers) at
+COMMIT + MILESTONE; `parse` reproduces board + events + both views version-by-version.
+**Size: 5–7 agent-days.**
+
+**Early adoption — SEARCH.** `SearchConfig.materializer` gains `core`; a searched decision's
+successors come from versions. This DELETES a duplicate path rather than adding one: the protocol
+road, the view road's D10 fallback and its depth-≥2 fallback (a D10 leaf carries `fork=None` today
+because the port has no board AT the intermediate decision; a version does) all become deletable.
+Condition: no live arm runs the search teacher (`SearchTeacherCallback` is inside the trainer);
+the adoption is its own ledger entry and every search number after it is stamped `materializer=core`.
+Gate for the adoption: the existing `materializer_parity_integration_test`,
+`fork_sharing_parity_integration_test` and `one_sided_view_parity_fuzz_test` run with `core` as a
+third road, identical decisions and obs bytes.
+
+### M3 — Trackers and `TurnDelta` as version methods (Tier 1b)
+
+**What crosses.** `EpisodeTracker.record_context` / `advance_window` (recency, pair history, the
+32-row event window, the progress clock), the choice-band, Hidden-Power, sleep and wish beliefs,
+`TurnDelta.build_from_events`; fields on the version, folded at construction, shared by a fork (the
+pinned-pickle tracker thaw — 16.9% of the searched decision today — becomes a pointer copy).
+
+**Gate.** Slice T: tracker state, `TurnDelta` fields AND the reward manager's per-decision reward
+(Python reward code fed the core's `TurnDelta`) equal per decision; the existing
+`turn_delta_fold_equivalence_fuzz_test` shape re-pointed at the core. **Size: 4–5 agent-days**
+(2,985 LOC of trackers).
+
+### M4 — The encoder (Tier 1c) — last, by design
+
+**What crosses.** `encode(side, &mut [f32; 2501])` with the layout GENERATED from
+`agents/observation/constants.py` into a checked-in Rust table pinned by an `arch_tables`-style test
+(the design's §9 Q4 — the checked-in table is simpler and matches `arch_tables`). The dex/belief
+tables come from `data/` exactly as the Python facade reads them.
+
+**Gate.** Slice O: the 2501-dim row `np.array_equal` per decision, both viewers, at COMMIT +
+MILESTONE, plus every obs golden; `obs_build_benchmark.py` gains a core row. **Size: 6–9
+agent-days** (5,481 LOC, 20 sub-encoders, the largest byte-parity burden). Search now takes rows
+from `successors()`; the `expand_many` JSON, the view JSON and `view_adapter` leave its path.
+
+### T2 — The inference tier (independent track; interleaves anywhere after M1)
+
+**What crosses.** One process owning every loaded network; `score(model_id, rows, masks, mode)`;
+bucketed, padded, timer-flushed. Non-training consumers adopt as each is gated — the search leaf,
+`main.anchors`, the prober, the cf label factory, the offline meters — and each consumer's OLD
+per-consumer load+forward code is deleted in its adoption commit (that is what makes early adoption
+remove a path). Its TRAINING use (the pool opponents) rides the M6 cutover: it is a prerequisite of
+M5, not a separate flip.
+
+**Gate.** Greedy actions byte-identical and a max|Δ| bar on a NAMED tensor (the runbook's
+5.07e-07 does not say which; Phase 0 measured 1.91e-06 on the logits) against the per-env compiled path on
+a fixed banked obs set; a service throughput benchmark. **Size: 4–6 agent-days.** **Measured
+price it is judged against** (Phase 0 (b), one torch thread, loads 30–35): compiled B = 1 CPU
+2.44–4.64 ms/call (6.5–7.3× over eager), a B = 48 CPU batch 0.92–1.26 ms/row — so even on CPU,
+batching is 2.6–3.7× per row (4.5× at four threads).
+
+### M5 — N envs per process, successors, the Rust env (Tier 1, env shape)
+
+**What crosses.** A Rust env process stepping N battles, writing obs rows + masks into shared
+rollout columns, opponents on T2. `successors(side, k)` = fork, step, present, encode, **plus an
+optional leaf hook** (§6). Built alongside: selected only by the parity and throughput harnesses,
+never by a research arm.
+
+**Gate.** Slice N (env level): obs rows, masks, rewards and dones equal the Python `Gen3Env` on
+recorded battles with both sides scripted from the recording; a depth-3 successor slice (search's
+default depth) equal to the protocol road; training throughput at `--n-envs 48` measured as an
+interleaved A/B against the current path. **Size: 5–8 agent-days.**
+
+### M6 — THE CUTOVER, then the DELETION PASS
+
+The CUTOVER tier (§3) green; the `--debug` smoke; **the first two minutes of a real launch** on a
+throwaway run dir (the only test of the preload layer, and after M5 of the Rust env's startup);
+training throughput non-regression. Then training switches once, between research reads, with a
+ledger entry; `metadata.json` records the env core and its commit. The deletion pass (§4) follows in
+the next commit series. **Size: 2–3 agent-days** (the campaign is wall time, not agent time), plus
+the deletion pass ~2 agent-days.
+
+### M7 — The ladder client, the prober and anchors on the core (after the cutover)
+
+`play.py` becomes parse → version → encode → T2 → act (design §7 step 9), gated by
+`ladder_drift_scan` and a Metamon / Foul Play anchor cell whose actions are byte-identical to the
+Python client's; the prober walks versions instead of re-parsing traces. Removes the last
+production use of poke-env. **Size: 3–4 agent-days.**
+
+**Program total: ≈ 38–56 agent-days** of build, gating and deletion, wall time dominated by the
+gates. The order M1 → M2 → M3 → M4 → M5 → M6 is forced (each slice folds the previous one's
+output); T2 interleaves after M1.
+
+---
+
+## 3. The parity gate — three tiers, cost proportional to the decision it guards
+
+*(Owner amendment 2, 2026-09-23.)* ONE harness, `rust_core_parity` (proposed:
+`src/agents/battle/rust_core_parity_test.py` + a corpus module), with one SLICE per milestone
+(E events · V views + legality · T trackers + `TurnDelta` + reward · O obs · N env + successors).
+Every slice compares the core against the Python path run under **`designs/production_config.json`**
+(the production surface, read via `agents.training.baselines.production_config()`), both viewers,
+every decision, **no allowlist** — a divergence fails and prints its census.
+
+**Measured basis for the times below** (Phase 0, this box): the spike's play + replay + two-viewer
+event diff ran **297 battles in ~49 s single-process at load ≈ 25 (0.16 s/battle)**; a Python obs
+build is 0.52–0.66 ms cold per decision (`obs_build_benchmark`); a random-player battle has ≈ 90
+decisions a side; a compiled B = 1 policy forward is 1–4.6 ms. "Loaded" = the usual training arm
+sharing the box (load 20–35 on 16 cpus).
+
+| tier | runs | corpus | reproducibility | expected wall (idle / loaded) | command (proposed) |
+|---|---|---|---|---|---|
+| **COMMIT** | inside the ROUTINE gate, every change | **8 battles**: 6 seeded-random pairings over 6 distinct pool teams + 2 production-policy battles; RECORDED (the `__RECON__` input log: seed, packed teams, command list), committed as a gzip fixture (~50 KB) | nothing is re-played by players: both paths re-derive from the recorded input log, so no player RNG is involved; the fixture carries the pool-team hashes and the gate REFUSES if the core or the pool no longer reproduces the recorded chunks (the spike's byte check) | **~5–8 s / ~10–15 s** (all slices; E alone ≈ 2 s) | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` (unmarked) |
+| **MILESTONE** | marked `slow`; verdict merged into `designs/ops/slow_tier_status.json` so a recorded FAIL turns the routine gate red. Run when a Rust milestone lands AND when a Python change touches a covered area (`agents/battle`, `agents/observation`, the tracker files, `agents/action`) | **2 seeds × 200 seeded-random battles** (key ranges 0–199 and 5000–5199, the Phase-0 recipe) **+ 2 × 50 production-policy battles** (the `production` baseline checkpoint, `gen3_policy_sample_rng_v1`-seeded sampling) **+ the 22-scenario protocol corpus × 2 seeds** | the key recipe: teams by pool index `key`, `key+1`; player RNG 1000+key / 2000+key; sim seed `[11+key, 22+key, 33+key, 44+key]`; concurrency 1; the forfeit at `StallConfig().threshold` so no battle reaches the 1,000-turn limit. A manifest (pool content hash, checkpoint sha256, key ranges) is committed; the gate REFUSES on a manifest mismatch — a pool change regenerates the manifest in the same commit | **~3–5 min / ~8–12 min** at `-n 2` (E+V+T+O); ≤ 30 min once slice N adds depth-3 successors | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -m slow -q -n 2` |
+| **CUTOVER** | ONCE, before training switches, box otherwise idle, all cores | **the full team pool**: every one of the 719 teams × 25 seeded opponents × **both seeds** × two policy families (seeded-random; the production checkpoint at T = 1) = **71,900 battles**, whole-battle byte identity of events, views, legality, trackers, `TurnDelta`/reward and the 2501-dim obs at every decision, both viewers; depth-3 successors on 2% of decisions; then the `--debug` smoke and the **first two minutes of a real launch** | the same key recipe over the full pool; the manifest + every `__RECON__` record banked in the cutover record dir, so any failing battle is re-runnable alone | ≈ 25 core-h → **~2 h on 14 idle cores**; 24 h budgeted so the first failure can be fixed and the WHOLE campaign re-run, not the failing slice | `python3 -m main.rust_core_cutover --manifest <dir>/manifest.json --jobs 14 --out <dir>` |
+
+### Keeping the COMMIT tier cheap
+
+* **No players.** Both paths re-derive from a recorded input log: the core replays it in-process;
+  the Python reference replays the per-side protocol into `Gen3Battle` + the read-models + the
+  trackers + the encoder offline — the materializer's shape, without poke-env's async Player loop.
+* **One core call per battle** (a binary like the spike's `event_spike`, JSON out) until M5 decides
+  the in-process binding; the core side of a fixture can be cached keyed on (core binary hash,
+  fixture hash) — the Python side is never cached, because it is the side research changes.
+* **Eight battles is enough for "the day it lands"** because the tier's job is to catch a changed
+  DEFAULT behaviour, which touches every decision; the MILESTONE tier is where rare shapes live.
+
+### How a deliberate Python change propagates
+
+1. **The gate compares under the production config.** A research change that only adds a flag,
+   OFF in `production_config.json`, keeps parity by construction — research is not blocked.
+2. **A change to default behaviour fails COMMIT the same day.** The author mirrors it in Rust in the
+   same change when it is small (the expected case — an encoder cell, a tracker rule), or lands it
+   behind a flag OFF by default. Either way the harness's **flag-coverage table** (every
+   obs/tracker/event-affecting flag in `agents/model/flag_registry.py` + the training parser)
+   marks each flag `core: implemented` or lists it in a declared **`RUST_CORE_PENDING`** set with a
+   date. This is a set of FLAGS, never of divergences: the tiers run the production config and
+   print the pending set on every run; **the CUTOVER tier refuses unless the set is empty** (every
+   pending flag implemented in Rust or deleted).
+3. **Layout changes propagate mechanically.** The Rust layout table is generated from
+   `agents/observation/constants.py` and pinned by a routine test, so a new obs block fails that pin
+   before it fails a byte comparison.
+4. **Data changes propagate through `data/`.** The core's dex and belief tables read the same files
+   the Python facade reads; a `tools/` regeneration is picked up by both.
+
+---
+
+## 4. The cutover's DELETION MANIFEST (one pass, after M6)
+
+Each row names the milestone whose slice made it deletable. LOC from Phase 0 (d).
+
+| from | deleted | LOC | notes |
+|---|---|---|---|
+| M1 | `agents/battle/event_fold.py` (`ViewEventFolder`) | 494 | the core's events serve every successor |
+| M2 | `agents/battle/view_adapter.py` (`LiveView.from_view_json`, `ViewBattle`); `agents/training/view_successor.py`; the `view_pN` / `view_pN_at` / `pN_chunks` JSON of `search_driver` (`view.rs`'s JSON render); the `view_fallback_*` counters; `search_impl_parity.py`'s view allowlist entries | 617 + 500 | the view road |
+| M2 | the PROTOCOL road: `obs_materializer.materialize_branches*`, `open_branch_fork`, `_PlayerSnapshot`, `_ReplayObsPlayer`; `--materializer` values `protocol` / `view` | most of 1,020 | the replay-for-counterfactual half of `obs_materializer` that the prober still uses moves to M7 |
+| M3 | `agents/training/clone_pins.py`; `ViewSuccessorFactory._clone_tracker`; `training/turn_delta_legacy.py` (test-only today) | 149 + 327 | the tracker fork becomes a pointer copy |
+| M4 | the Python pipeline's PERF layers — `observation/assembler.py` (incremental cache), the `live_view()` memo (`_state_epoch`, the request-change door), the `live_view_build_micros` memos | ~600 (assembler 498) | the Python encoder SURVIVES as the oracle; its perf scaffolding does not (a simpler oracle is a better oracle) |
+| M4 | `utils/bridge/search_session.py`'s JSON protocol (`open_root` / `expand_many`), `search_driver`'s search verbs, `driver_timing.rs`; node `search_driver.js` / `replay_driver.js` / `replay_kernels.js` once nothing diffs against them | 405 + 785 (node) + 128 + the driver verbs | search runs in-process on versions |
+| M5 / T2 | `--compile-opponents`, `--compile-opponents-preload`, `--compile-opponents-strict` (+ their `--no-` forms); `agents/model/compile_opponents.py`, `compile_preload.py`, `compile_prewarm.py`; the per-env model cache in `snapshot_pool.py` | 673 + the cache | opponents are T2 catalogue entries |
+| M5 | `SubprocVecEnv` construction in `main/train/env_factory.py`; `agents/training/async_vec_env.py` and `--async-rollout` ("the batch is whatever is ready at the flush" survives as T2's timer); the per-env bridge child for training (`utils/bridge/bridge_session.py`, `battle_stream_client.py`); `--use-bridge` (`node`/`off` for training) | 287 + 810 + the factory half | the forkserver and the per-env process retire |
+| M5 | `agents/training/gen3_env.py` + `wrappers.py`'s per-env opponent plumbing | most of 1,711 | the env is a struct in the Rust env process |
+| M7 | the Python ladder client path in `play.py`; the prober's trace re-parse | — | after M7 poke-env has no production user |
+
+**Survivors (named oracles, not debt):** `src/poke_env/` + `agents/battle/gen3_battle.py` +
+`battle_event.py` + `live_view.py` / `turn_view.py` (event and view parity); the Python encoder until
+two full seeds are byte-clean post-cutover (design §9 Q3 then decides); node Showdown,
+`local_sim_bridge.js` and the differential fuzzers + e2e capstone (they gate the simulator);
+`ws_frontend` (the third-party transport).
+
+---
+
+## 5. Findings Phase 0 hands to the plan
+
+| id | finding | where it lands |
+|---|---|---|
+| F1 | The port PANICS at 1,000 committed turns (`turn/driver.rs::BATTLE_TURN_CAP`); the pinned Showdown TIES at turn > 1000 and emits `\|bigerror\|` auto-tie warnings from turn 500 (`sim/battle.ts:1836-1848`). 3 of 300 random-player battles reached it | M1 prerequisite (port fix, byte-gated by a scenario golden) |
+| F2 | `ViewEventFolder._apply("turn")` does not reset `_current_move_user_side`, which poke-env's `end_turn` does (`abstract_battle.py:1634`). Reproduced on a 7-line protocol: a start-of-turn Intimidate→Clear Body `-fail` reads `side=ours` on the fold vs `None` live. Reachable at depth ≥ 2 (`branch()` after a folded ply) — `SearchConfig.max_depth` defaults to 3, and `event_fold_parity_fuzz_test` seeds at depth 1 only | M1 prerequisite (two-line Python fix + a depth-2 case in the fold gate) — or a tech-debt row now |
+| F3 | The event schema drops source facts (§0 row 2) | M1 — the core carries truth + reading |
+| F4 | Tier 2's CPU saving is 0.4–2.1 cores at the live rate (§0 row 4) | T2's case is restated: unification, search leaf, prerequisite of M5 |
+| F5 | The design's §1 table says "~89 % gradient, ~11 % rollout" while the runbook's compile measurement moved end-to-end FPS **+33 %** from the opponent forward alone — both cannot describe the same shape | measure at M5 before claiming a throughput number |
+
+---
+
+## 6. Search in the end state — what `successors()` must leave room for
+
+Search is IN the end state and is not optimised for today (it is not providing value now because
+of low discrimination between states). The interface decisions that keep a leaf pluggable later:
+
+* `successors(side, k, leaf: Option<&dyn Leaf>)` returns version HANDLES plus, when a leaf is given,
+  the leaf's scores — so a tree is versions + a batch, and no successor is ever serialised.
+* `Leaf` is a trait whose one implementation today is "encode rows → T2 `score(model_id, rows,
+  masks, mode=value)`"; a rollout leaf (the 1,222 CPU-h battery the design prices) is a second
+  implementation stepping versions to terminal, batching its forwards through the same T2 call.
+* Determinization stays in Python until a milestone measures it: a world is a version built from a
+  different opponent team, which `BattleVersion` supports by construction (the view of `side` does
+  not depend on the unrevealed opponent mons).
+* Every search number is stamped with the road it ran on (`materializer`), so the M2 adoption is
+  visible in every table after it.
+
+---
+
+## 7. Which path a research number ran on, milestone by milestone
+
+| landing | training numbers | search numbers | offline meters / anchors |
+|---|---|---|---|
+| M1, M3, M4 (built alongside) | unchanged — Python path | unchanged | unchanged |
+| M2 search adoption (ledger entry) | unchanged | `materializer=core` from that entry | unchanged |
+| T2 non-training adoptions (one entry each) | unchanged | the leaf on T2 | each meter stamps `inference: service`; greedy actions proven byte-identical, so the numbers are value-neutral |
+| **M6 CUTOVER** (ledger entry, between reads) | **every number after it runs on the core**; `metadata.json` records the env core + commit; a resume pinned to a pre-cutover commit stays on Python (the launcher's pin), so no run spans the cutover without a re-pin | core | core for training-side evals |
+| M7 | — | — | anchors / ladder stamp `client: core` |

@@ -1,0 +1,39 @@
+### expand_many_split_wide_r1  start 2026-09-23T12:56:05-07:00  15.73 21.11 18.02 14/2417 73735
+
+EXPAND_MANY PROFILE  (road=view, honest arm, m_opp=3, k_worlds=4)
+  contention: load average 15.73/21.11/18.02 on 16 cpus (box looks idle). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+  🚨 ratios are the claim.
+
+
+10 decisions, 684 expand_many arms, 31 batches
+decision wall: 268.0 ms
+
+phase                                         ms/arm   % of expand_many   % of decision
+----------------------------------------------------------------------------------------
+rust: sim (snapshot + resolve_turn)           0.1872              23.9%            4.8%
+rust: one_sided_view x2 (emit + JSON)         0.0428               5.5%            1.1%
+rust: p1/p2 chunk arrays                      0.0134               1.7%            0.3%
+rust: outcome/requests/child/tail             0.0032               0.4%            0.1%
+transport (pipe + scheduler)                  0.0467               6.0%            1.2%
+py: request dumps + write                     0.0055               0.7%            0.1%
+py: json.loads(reply)                         0.2549              32.5%            6.5%
+py: ExpandedNode dict walk                    0.2234              28.5%            5.7%
+----------------------------------------------------------------------------------------
+expand_many TOTAL                             0.7847             100.0%           20.0%
+
+REPLY PAYLOAD CENSUS (bytes actually on the pipe)
+  request lines: 0.10 MB total, 3,242 B/batch
+  reply lines:   13.21 MB total, 19,319 B/arm
+
+  field                     B/arm   % of reply
+  view_p1                   9,589        49.6%
+  requests                  4,163        21.6%
+  p1_chunks                 3,321        17.2%
+  view_p1_at                1,826         9.4%
+  outcome                     350         1.8%
+  choices_used                 52         0.3%
+  ended                         5         0.0%
+  stuck                         5         0.0%
+  node_id                       5         0.0%
+  label                         2         0.0%
+### end 2026-09-23T12:56:12-07:00  18.87 21.68 18.22 46/2408 73849

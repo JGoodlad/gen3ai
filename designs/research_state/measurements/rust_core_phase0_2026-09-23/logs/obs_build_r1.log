@@ -1,0 +1,94 @@
+### obs_build_r1  start 2026-09-23T12:56:19-07:00  23.60 22.59 18.55 10/2415 73984
+
+⚠️  [obs-build benchmark] THE BOX IS BUSY — these numbers are not comparable to an idle-box baseline.
+    contention: load average 23.60/22.59/18.55 on 16 cpus (CPU-STARVED, expect ~1.5x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+    Absolute timings are inflated ~1.5x. Re-run idle before recording a result, or treat this as a same-load A/B only.
+
+Obs-build benchmark — gen3ou — searching for a turn>=25 decision (≤200 battles, reps=400, top=22, seed=0)
+
+==============================================================================
+PER-DECISION OBS BUILD BENCHMARK  (obs dim 2501, turn 25, opp mons w/ revealed moves 4/6)
+==============================================================================
+  full per-decision obs build  :   0.656 ms   [COLD: view memo dropped each rep — the production mix, and the comparable series]
+    state_encoder.encode       :   0.540 ms  (  82%)
+    [live_view() alone         :   0.111 ms  (  17%)]
+  encode with the view memo WARM:   0.422 ms  (  64%)  [what encode costs when record/mask already built the view]
+  INCREMENTAL encode (assembler), view memo COLD:
+    cache invalidated each rep :   0.536 ms  (  82%)  [a full rebuild THROUGH the assembler — the episode's first decision]
+    cache WARM                 :   0.287 ms  (  44%)  [speedup vs COLD full: 2.29x]
+    cache WARM + view memo WARM:   0.160 ms  (  24%)  [THE PRODUCTION SHAPE — record() already built the view; vs 0.422 ms before: 2.64x]
+    ⚠️ the warm series re-encodes ONE decision, so its dirty set is the same every
+       rep — an OPTIMISTIC bound. trainer_turn_benchmark walks real consecutive
+       decisions and is the honest end-to-end number.
+
+  NOTE: absolute ms scale with machine load; the component ratios and the
+        cProfile ranking below are the load-stable signal.
+  NOTE: the reps loop re-encodes ONE decision, so a memo would be 100% warm from
+        rep 2 — every series above except the last drops it first. Judge
+        calls/encode from the COLD cProfile block below.
+
+  [COLD full rebuild] Top 22 by tottime — the series comparable to history:
+         1578401 function calls in 0.687 seconds
+
+   Ordered by: internal time
+   List reduced from 157 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    12800    0.063    0.000    0.093    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/assembler.py:79(write_event_row)
+     4800    0.057    0.000    0.126    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/moves.py:72(encode)
+     4800    0.055    0.000    0.150    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/battle/live_view.py:174(from_pokemon)
+     4800    0.046    0.000    0.271    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/pokemon.py:87(encode)
+      400    0.038    0.000    0.701    0.002 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/state_encoder.py:157(encode)
+   311200    0.031    0.000    0.034    0.000 {method 'get' of 'dict' objects}
+    14400    0.028    0.000    0.039    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/training/episode_tracker.py:310(pair_values)
+     4800    0.018    0.000    0.034    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/types.py:27(encode)
+     4800    0.014    0.000    0.022    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/battle/live_view.py:196(<listcomp>)
+     4800    0.014    0.000    0.019    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/species.py:25(encode)
+     4800    0.012    0.000    0.017    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/training/episode_tracker.py:122(values)
+    39200    0.011    0.000    0.014    0.000 /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/enum.py:193(__get__)
+     4800    0.010    0.000    0.017    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/items.py:25(encode)
+    21600    0.010    0.000    0.016    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/gen3_data/moves.py:161(get)
+      400    0.010    0.000    0.013    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/wish_belief.py:42(build_wish_pending)
+     4800    0.010    0.000    0.021    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/abilities.py:67(encode)
+    34800    0.009    0.000    0.009    0.000 {built-in method numpy.zeros}
+    24000    0.009    0.000    0.014    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/gen3_data/species.py:61(get)
+   110400    0.008    0.000    0.008    0.000 {built-in method builtins.len}
+    17600    0.008    0.000    0.010    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/poke_env/battle/pokemon.py:1468(type_2)
+   100800    0.008    0.000    0.008    0.000 {method 'append' of 'list' objects}
+    15200    0.007    0.000    0.021    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/poke_env/battle/move.py:1035(moves)
+
+
+
+  [WARM incremental] Top 22 by tottime — WHAT PRODUCTION RUNS:
+         520001 function calls in 0.215 seconds
+
+   Ordered by: internal time
+   List reduced from 136 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      400    0.029    0.000    0.215    0.001 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/state_encoder.py:157(encode)
+    14400    0.028    0.000    0.039    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/training/episode_tracker.py:310(pair_values)
+   140800    0.013    0.000    0.013    0.000 {method 'get' of 'dict' objects}
+      800    0.012    0.000    0.026    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/moves.py:72(encode)
+     4800    0.010    0.000    0.015    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/training/episode_tracker.py:122(values)
+      800    0.009    0.000    0.055    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/pokemon.py:87(encode)
+      400    0.006    0.000    0.014    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/reactive.py:99(encode)
+    89600    0.006    0.000    0.006    0.000 {method 'append' of 'list' objects}
+      800    0.006    0.000    0.008    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/assembler.py:79(write_event_row)
+      800    0.005    0.000    0.008    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/active_context.py:36(encode)
+      800    0.003    0.000    0.007    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/types.py:27(encode)
+      400    0.003    0.000    0.016    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/battle/live_view.py:512(from_battle)
+    12000    0.003    0.000    0.005    0.000 /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/enum.py:193(__get__)
+      400    0.003    0.000    0.005    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/global_env.py:47(encode)
+      400    0.003    0.000    0.006    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/assembler.py:215(prepare)
+    23600    0.003    0.000    0.003    0.000 {built-in method builtins.max}
+     6000    0.003    0.000    0.005    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/gen3_data/moves.py:161(get)
+     2000    0.003    0.000    0.004    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/battle/live_view.py:523(<genexpr>)
+      800    0.003    0.000    0.003    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/species.py:25(encode)
+     8800    0.002    0.000    0.002    0.000 {built-in method numpy.zeros}
+      400    0.002    0.000    0.011    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/assembler.py:422(update_window)
+      800    0.002    0.000    0.003    0.000 /home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/agents/observation/items.py:25(encode)
+
+
+
+### end 2026-09-23T12:56:25-07:00  23.23 22.53 18.55 5/2418 74094

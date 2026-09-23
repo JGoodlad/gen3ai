@@ -1,0 +1,45 @@
+### decision_wide_protocol_r2  start 2026-09-23T12:54:41-07:00  31.24 24.32 18.64 50/2417 71106
+
+SEARCHED-DECISION BENCHMARK  (honest arm, m_opp=3, k_worlds=4, impl=rust)
+  contention: load average 31.24/24.32/18.64 on 16 cpus (CPU-STARVED, expect ~2.0x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+  traces: /home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/eval_traces  (4665 banked battles)
+  🚨 ratios are the claim; absolute ms scale with whatever else the box is doing.
+
+  turn  13  arms= 18  worlds=1/1  protocol=    90.0 ms
+  turn  28  arms= 15  worlds=1/1  protocol=    99.9 ms
+  turn  11  arms= 84  worlds=4/4  protocol=   284.4 ms
+  turn  20  arms=108  worlds=4/4  protocol=   557.4 ms
+  turn  15  arms= 84  worlds=4/4  protocol=   287.0 ms
+  turn  11  arms= 96  worlds=4/4  protocol=   337.2 ms
+  turn  19  arms= 96  worlds=4/4  protocol=   462.2 ms
+  turn  16  arms= 84  worlds=4/4  protocol=   313.1 ms
+  turn  14  arms= 72  worlds=4/4  protocol=   415.1 ms
+  turn  13  arms= 27  worlds=1/1  protocol=   127.1 ms
+
+  DECISIONS: 10
+        road   arms   ms/decision     ms/arm
+    protocol    684         300.1      4.760
+
+  PHASE BREAKDOWN — protocol road   (exclusive wall, summed over 10 decisions / 684 arms)
+  phase                                    ms total    ms/arm   % dec
+  snapshot restore (protocol)                 738.0     1.079   24.8%
+  port expand_many (rust)                     515.4     0.754   17.3%
+  protocol arms (materialize_branches_from)      428.7     0.627   14.4%
+  encode (obs)                                324.5     0.474   10.9%
+  port open_root (rust)                       199.6     0.292    6.7%
+  decision encode/track                       182.7     0.267    6.1%
+  protocol prefix replay (open_branch_fork)      135.0     0.197    4.5%
+  action mask                                 117.4     0.172    3.9%
+  action_choices / map_actions_at             107.6     0.157    3.6%
+  replay player build                          26.9     0.039    0.9%
+  snapshot freeze (protocol)                   20.0     0.029    0.7%
+  poke-env protocol feed                        0.8     0.001    0.0%
+  python glue (uninstrumented)                176.7     0.258    5.9%
+  SPANS (INCLUSIVE, so they overlap the rows above) — protocol
+    protocol prefix replay (open_branch_fork)      234.4 ms    7.9% of decision wall
+    protocol arms (materialize_branches_from)     1847.2 ms   62.1% of decision wall
+    port open_root (rust)                     199.6 ms    6.7% of decision wall
+    port expand_many (rust)                   515.4 ms   17.3% of decision wall
+
+  contention: load average 29.46/24.07/18.59 on 16 cpus (CPU-STARVED, expect ~2.0x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+### end 2026-09-23T12:54:48-07:00  29.46 24.07 18.59 6/2424 71263

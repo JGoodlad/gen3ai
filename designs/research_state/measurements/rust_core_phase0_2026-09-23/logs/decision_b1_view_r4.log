@@ -1,0 +1,47 @@
+### decision_b1_view_r4  start 2026-09-23T12:55:24-07:00  22.55 23.12 18.49 5/2411 72334
+
+SEARCHED-DECISION BENCHMARK  (honest arm, m_opp=1, k_worlds=1, impl=rust)
+  contention: load average 21.23/22.84/18.42 on 16 cpus (CPU-STARVED, expect ~1.3x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+  traces: /home/goodlad/dev/gen3ai/models/ai_v12_02_winprob_critic/eval_traces  (4665 banked battles)
+  🚨 ratios are the claim; absolute ms scale with whatever else the box is doing.
+
+  turn  13  arms=  1  worlds=1/1  view=    22.0 ms
+  turn  28  arms=  1  worlds=1/1  view=    33.8 ms
+  turn  11  arms=  1  worlds=1/1  view=    19.3 ms
+  turn  20  arms=  1  worlds=1/1  view=    23.0 ms
+  turn  15  arms=  1  worlds=1/1  view=    22.1 ms
+  turn  11  arms=  1  worlds=1/1  view=    23.4 ms
+  turn  19  arms=  1  worlds=1/1  view=    23.7 ms
+  turn  16  arms=  1  worlds=1/1  view=    23.7 ms
+  turn  14  arms=  1  worlds=1/1  view=    22.0 ms
+  turn  13  arms=  1  worlds=1/1  view=    25.2 ms
+
+  DECISIONS: 10
+        road   arms   ms/decision     ms/arm
+        view     10          23.2     23.228
+  view_arms=10  fallback_intermediate=0  fallback_no_payload=0
+
+  PHASE BREAKDOWN — view road   (exclusive wall, summed over 10 decisions / 10 arms)
+  phase                                    ms total    ms/arm   % dec
+  port open_root (rust)                        74.2     7.416   31.1%
+  prefix replay (open_view_fork)               54.2     5.418   22.7%
+  decision encode/track                        20.7     2.069    8.7%
+  action mask                                  16.6     1.662    7.0%
+  port expand_many (rust)                       5.7     0.573    2.4%
+  replay player build                           4.7     0.474    2.0%
+  tracker fork (thaw)                           3.6     0.362    1.5%
+  encode (obs)                                  3.5     0.345    1.4%
+  view_adapter read-models                      3.3     0.326    1.4%
+  action_choices / map_actions_at               1.5     0.153    0.6%
+  event fold (ply protocol)                     0.9     0.087    0.4%
+  successor context                             0.5     0.050    0.2%
+  event-fold branch                             0.1     0.015    0.1%
+  poke-env protocol feed                        0.0     0.001    0.0%
+  python glue (uninstrumented)                 48.8     4.883   20.5%
+  SPANS (INCLUSIVE, so they overlap the rows above) — view
+    prefix replay (open_view_fork)             97.7 ms   41.0% of decision wall
+    port open_root (rust)                      74.2 ms   31.1% of decision wall
+    port expand_many (rust)                     5.7 ms    2.4% of decision wall
+
+  contention: load average 21.23/22.84/18.42 on 16 cpus (CPU-STARVED, expect ~1.3x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+### end 2026-09-23T12:55:27-07:00  21.23 22.84 18.42 5/2418 72476

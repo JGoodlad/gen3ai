@@ -1,0 +1,16 @@
+[file-size]    1196  src/main/train/combination_checks.py
+[file-size]    1182  src/agents/model/damage_op_blocks.py
+[file-size]    1136  src/agents/training/distill_anchor_test.py
+[file-size]    1127  src/main/prober/model.py
+[file-size]    1119  src/agents/training/selfplay_callback.py
+[file-size]    1065  src/agents/model/damage_op_pairwise.py
+[file-size]    1054  src/agents/training/gen3_env.py
+[file-size]    1028  src/agents/model/extractor_build.py
+[file-size]    1026  src/agents/model/damage_op.py
+[file-size]    1020  src/agents/training/obs_materializer.py
+[file-size]    1010  src/agents/training/baselines.py
+[file-size]    1008  src/main/launcher/run.py
+[file-size]    1008  src/agents/training/episode_tracker.py
+[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                    [100%][0m
+[32m[32m[1m21 passed[0m[32m in 1.33s[0m[0m
+[1;32mAll checks passed![0m

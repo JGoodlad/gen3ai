@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,259-line file. **The ledger itself is append-only and is never edited by this**;
+21,264-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**682 headings · 627 dated · 2026-08-01 → 2026-09-23 · ledger 21,259 lines.**
+**683 headings · 628 dated · 2026-08-01 → 2026-09-23 · ledger 21,264 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -702,3 +702,4 @@ rename.
   - `L21242` · `2026-09-23` · OPS · **STATE LINE FOR THE RESTART — GPU IDLE SINCE 04:15 PT, NOTHING RUNNING, EVERYTHING BANKED.**
   - `L21246` · `2026-09-23` · OPS · **POPULATION LOOP ROUND 1 IS REGISTERED, NOT LAUNCHED — B (the loop: G0 +8M at its own frozen 0.20×, the two offense exploiters of G0 as stable opponents at share 0.40, PFSP on, retirement off, no distillation) against C (the control: B's argv with the share at 0.0), each read by a fresh offense exploiter at arm A's exact recipe; arm A ALREADY EXISTS as `ai_v13_18_teach5_offense_hidose`, so D_e = 1.78× and round 0 costs nothing.**
   - `L21252` · `2026-09-23` · OPS · 🚨 **INCIDENT — EIGHT RUN DIRECTORIES DESTROYED BY THE ORCHESTRATOR'S WORKTREE CLEANUP: the v9 generation ladder gen1–gen7 (`ai_v9_01` … `ai_v9_08`, Aug 4–11). No copy exists; their weights, snapshot pools, eval traces, TensorBoard logs and ladder games are gone. Every banked NUMBER about them survives.**
+  - `L21259` · `2026-09-23` · OPS · **RUST CORE PROGRAM, PHASE 0: the baseline is banked, and §3.4's "hardest piece" is TRACTABLE — the work is the READING, not the parser.**

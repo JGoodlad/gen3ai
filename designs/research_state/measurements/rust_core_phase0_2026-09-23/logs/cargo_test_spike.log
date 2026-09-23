@@ -1,0 +1,21 @@
+### cargo test --features event_spike --lib event_spike start 2026-09-23T13:24:08-07:00
+   Compiling pokesim v0.0.0 (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/rust_sim)
+warning: unused import: `super::*`
+   --> src/dex/moves.rs:485:9
+    |
+485 |     use super::*;
+    |         ^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `pokesim` (lib test) generated 1 warning (run `cargo fix --lib -p pokesim --tests` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 6.16s
+     Running unittests src/lib.rs (target/spike/release/deps/pokesim-8453e5f1860615f0)
+
+running 2 tests
+test event_spike::tests::jsonl_escapes_and_renders_every_record ... ok
+test event_spike::tests::one_record_per_commit_and_pending_is_consumed ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 138 filtered out; finished in 0.00s
+
+### exit 0 end 2026-09-23T13:24:14-07:00

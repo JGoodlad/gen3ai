@@ -1,0 +1,50 @@
+battles: 297
+       53  cant reason=Focus Punch
+        6  cant reason=ability: Truant
+       63  cant reason=flinch
+      191  cant reason=frz
+      220  cant reason=move: Taunt
+      878  cant reason=par
+        1  cant reason=recharge
+      650  cant reason=slp
+      391  damage cause class: Leech Seed
+     2099  damage cause class: Recoil
+    11601  damage cause class: Sandstorm
+     2378  damage cause class: Spikes
+      638  damage cause class: brn
+        6  damage cause class: confusion
+     1637  damage cause class: psn
+      391  damage with [of] (Leech Seed)
+     2099  damage with [of] (Recoil)
+       86  fail [from] ability: Clear Body
+        5  heal cause class: ability
+      113  heal cause class: drain
+    29158  heal cause class: item
+      244  heal cause class: move
+        4  heal with [of] (ability: Volt Absorb)
+        1  heal with [of] (ability: Water Absorb)
+      113  heal with [of] (drain)
+       93  move [from] Pursuit
+        6  move [from] Sleep Talk
+        2  move [from] Snatch
+      593  move [miss] (announce or retro)
+     3998  move [still] / empty target
+    12764  outcome scope: move
+        5  outcome scope: other
+       81  outcome scope: switch
+      129  switch [from] Baton Pass
+     2062  typed cant
+      848  typed crit
+      710  typed curestatus
+    32326  typed damage
+      909  typed drag
+     4515  typed fail
+     2985  typed faint
+    30708  typed heal
+     1328  typed immune
+      593  typed miss
+    27192  typed move
+     3628  typed resisted
+     1432  typed status
+     1938  typed supereffective
+    18124  typed switch

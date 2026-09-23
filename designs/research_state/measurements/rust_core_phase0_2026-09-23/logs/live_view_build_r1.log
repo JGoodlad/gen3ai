@@ -1,0 +1,18 @@
+### live_view_build_r1  start 2026-09-23T12:56:25-07:00  23.23 22.53 18.55 5/2418 74096
+
+⚠️  [live-view build benchmark] THE BOX IS BUSY — these numbers are not comparable to an idle-box baseline.
+    contention: load average 23.23/22.53/18.55 on 16 cpus (CPU-STARVED, expect ~1.5x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+    Absolute timings are inflated ~1.5x. Re-run idle before recording a result, or treat this as a same-load A/B only.
+
+board: turn 100, 12 mons, 44 revealed moves (6 ours / 6 opp)
+arms agree on all 12 mons ✓
+  round 0 (new,ref): new 0.1055 ms   ref 0.1371 ms   ratio 1.299x
+  round 1 (ref,new): new 0.1068 ms   ref 0.1411 ms   ratio 1.322x
+  round 2 (new,ref): new 0.1087 ms   ref 0.1313 ms   ratio 1.209x
+  round 3 (ref,new): new 0.1092 ms   ref 0.1384 ms   ratio 1.268x
+  round 4 (new,ref): new 0.1144 ms   ref 0.1437 ms   ratio 1.256x
+  round 5 (ref,new): new 0.1123 ms   ref 0.1435 ms   ratio 1.278x
+
+  MEDIAN: new 0.1089 ms   ref 0.1398 ms   RATIO 1.273x
+  PYTHON CALLS / build (sys.setprofile, load-free): new 723.0  ref 1139.0   (-36.5%)
+### end 2026-09-23T12:56:31-07:00  25.86 23.09 18.75 34/2412 74172

@@ -213,6 +213,20 @@ impl crate::state::BattleState {
                 );
             }
             let action = queue.remove(0);
+            // SPIKE (`event_spike`, OFF by default): the SOURCE answer to "which action owns
+            // the lines this emits" — see `crate::event_spike::Scope`.
+            #[cfg(feature = "event_spike")]
+            {
+                use crate::event_spike::Scope;
+                self.log.spike.scope = match &action {
+                    QAction::Move { side, .. } | QAction::BeforeTurnMove { side, .. } => Scope::Move(*side),
+                    QAction::Switch { side, .. }
+                    | QAction::InstaSwitch { side, .. }
+                    | QAction::RunSwitch { side } => Scope::Switch(*side),
+                    QAction::Residual => Scope::Residual,
+                    QAction::BeforeTurn => Scope::Other,
+                };
+            }
 
             // --- Run the action body. A move/residual may faint a mon (HP zeroed,
             //     `fainted` set by process_faints which we call as faintMessages). ---
@@ -539,6 +553,11 @@ impl crate::state::BattleState {
                 }
             }
 
+            // SPIKE (`event_spike`, OFF by default): the runAction TAIL is no action's scope.
+            #[cfg(feature = "event_spike")]
+            {
+                self.log.spike.scope = crate::event_spike::Scope::Other;
+            }
             // --- runAction tail (battle.ts:2357-2424). ---
             // faintMessages: set `fainted`, decrement pokemonLeft, then checkWin.
             let any_faint = self.process_faints(dex);

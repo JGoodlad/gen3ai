@@ -609,6 +609,10 @@ src/rust_sim/
       bridge_replay.rs    # the PER-SIDE/|request| fuzzer's replayer; --ab is the byte differential vs the
                           #   recorded real getPlayerStreams + the SEED ANCHOR
       scan_move_probe.rs  # the move-coverage scanner's engine-side probe (construction + run reachability)
+      event_spike.rs      # SPIKE (cargo feature `event_spike`, OFF by default): replays a recorded battle
+                          #   and prints one SOURCE-typed event record per omniscient line (rust_core_phase0)
+    event_spike.rs        # SPIKE (feature `event_spike` only): the typed source-event Sink ProtocolBuilder
+                          #   carries under the feature; no production binary contains it
   tests/
     prng_golden.rs        # differential vs real prng.js (~2900 assertions)
     dex_test.rs           # parity vs agents.gen3_data (~1500 assertions) + smoke

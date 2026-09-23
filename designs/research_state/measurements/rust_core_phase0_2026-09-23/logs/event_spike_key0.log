@@ -1,0 +1,212 @@
+### spike key0=0 start 2026-09-23T13:11:30-07:00 19.95 26.97 24.17 7/2503 93466
+  key0: ok  turns=128  recs=1550  py_events=885/888
+  key1: ok  turns=92  recs=1250  py_events=751/766
+  key2: ok  turns=91  recs=1225  py_events=736/731
+  key3: ok  turns=128  recs=1542  py_events=872/870
+  key4: ok  turns=75  recs=927  py_events=524/526
+  key5: ok  turns=51  recs=693  py_events=408/412
+  key6: ok  turns=67  recs=885  py_events=518/517
+  key7: ok  turns=43  recs=529  py_events=284/282
+  key8: ok  turns=38  recs=500  py_events=282/285
+  key9: ok  turns=45  recs=625  py_events=375/369
+  key10: ok  turns=179  recs=2244  py_events=1349/1346
+  key11: ok  turns=77  recs=930  py_events=515/513
+  key12: ok  turns=296  recs=3621  py_events=2190/2151
+  key13: ok  turns=200  recs=2451  py_events=1392/1425
+  key14: ok  turns=119  recs=1285  py_events=665/641
+  key15: ok  turns=121  recs=1276  py_events=631/638
+  key16: ok  turns=256  recs=2637  py_events=1317/1318
+  key17: ok  turns=62  recs=792  py_events=454/448
+  key18: ok  turns=27  recs=352  py_events=185/193
+  key19: ok  turns=318  recs=3947  py_events=2539/2528
+  key20: ok  turns=50  recs=671  py_events=391/385
+  key21: ok  turns=40  recs=514  py_events=278/284
+  key22: ok  turns=33  recs=406  py_events=213/208
+  key23: ok  turns=37  recs=463  py_events=245/246
+  key24: ok  turns=50  recs=666  py_events=388/392
+  key25: ok  turns=77  recs=1049  py_events=629/623
+  key26: ok  turns=20  recs=271  py_events=145/145
+  key27: ok  turns=25  recs=357  py_events=199/199
+  key28: ok  turns=68  recs=884  py_events=512/508
+  key29: ok  turns=50  recs=731  py_events=453/455
+  key30: ok  turns=34  recs=479  py_events=279/281
+  key31: ok  turns=66  recs=832  py_events=467/468
+  key32: ok  turns=59  recs=801  py_events=476/469
+  key33: ok  turns=59  recs=778  py_events=448/455
+  key34: ok  turns=56  recs=633  py_events=323/313
+  key35: ok  turns=83  recs=1050  py_events=605/610
+  key36: ok  turns=199  recs=2422  py_events=1418/1455
+  key37: ok  turns=72  recs=956  py_events=565/565
+  key38: ok  turns=35  recs=470  py_events=264/268
+  key39: ok  turns=73  recs=788  py_events=403/391
+  key40: ok  turns=47  recs=598  py_events=335/334
+  key41: ok  turns=53  recs=735  py_events=440/443
+  key42: ok  turns=50  recs=686  py_events=415/407
+  key43: ok  turns=43  recs=637  py_events=397/397
+  key44: ok  turns=46  recs=629  py_events=372/372
+  key45: ok  turns=54  recs=742  py_events=441/444
+  key46: ok  turns=37  recs=465  py_events=254/254
+  key47: ok  turns=36  recs=411  py_events=202/205
+  key48: ok  turns=67  recs=687  py_events=329/320
+  key49: ok  turns=94  recs=1063  py_events=568/568
+  key50: ok  turns=74  recs=829  py_events=427/432
+  key51: PLAY FAILED RuntimeError: local_sim_bridge error: run_full_battle runaway: >1000 committed turns without game-end (self.turn=1001) — a non-terminating battle (stalemate the forfeit failed to end)
+  key52: ok  turns=112  recs=1404  py_events=815/810
+  key53: ok  turns=85  recs=1096  py_events=639/645
+  key54: ok  turns=39  recs=536  py_events=314/315
+  key55: ok  turns=33  recs=481  py_events=285/282
+  key56: ok  turns=40  recs=579  py_events=350/350
+  key57: ok  turns=32  recs=482  py_events=286/291
+  key58: ok  turns=39  recs=524  py_events=305/295
+  key59: ok  turns=47  recs=667  py_events=403/410
+  key60: ok  turns=78  recs=1095  py_events=658/663
+  key61: ok  turns=30  recs=368  py_events=188/183
+  key62: ok  turns=38  recs=478  py_events=264/258
+  key63: ok  turns=52  recs=678  py_events=391/391
+  key64: ok  turns=60  recs=858  py_events=516/527
+  key65: ok  turns=43  recs=601  py_events=356/342
+  key66: ok  turns=29  recs=382  py_events=209/213
+  key67: ok  turns=50  recs=648  py_events=369/370
+  key68: ok  turns=53  recs=708  py_events=405/414
+  key69: ok  turns=53  recs=666  py_events=370/368
+  key70: ok  turns=59  recs=783  py_events=459/454
+  key71: ok  turns=34  recs=464  py_events=266/266
+  key72: ok  turns=25  recs=340  py_events=189/189
+  key73: ok  turns=54  recs=698  py_events=399/400
+  key74: ok  turns=33  recs=440  py_events=249/248
+  key75: ok  turns=39  recs=498  py_events=278/280
+  key76: ok  turns=40  recs=538  py_events=315/313
+  key77: ok  turns=60  recs=744  py_events=421/422
+  key78: ok  turns=66  recs=823  py_events=459/459
+  key79: ok  turns=83  recs=979  py_events=542/538
+  key80: ok  turns=233  recs=2738  py_events=1579/1588
+  key81: ok  turns=37  recs=473  py_events=262/262
+  key82: ok  turns=53  recs=624  py_events=324/334
+  key83: ok  turns=51  recs=662  py_events=377/365
+  key84: ok  turns=32  recs=435  py_events=239/242
+  key85: ok  turns=39  recs=483  py_events=246/254
+  key86: ok  turns=25  recs=318  py_events=163/159
+  key87: ok  turns=32  recs=416  py_events=231/231
+  key88: ok  turns=122  recs=1392  py_events=749/755
+  key89: ok  turns=47  recs=593  py_events=327/323
+  key90: ok  turns=26  recs=340  py_events=181/183
+  key91: ok  turns=24  recs=315  py_events=168/166
+  key92: ok  turns=40  recs=529  py_events=300/296
+  key93: ok  turns=38  recs=531  py_events=312/313
+  key94: ok  turns=34  recs=449  py_events=254/248
+  key95: ok  turns=53  recs=732  py_events=429/431
+  key96: ok  turns=141  recs=1792  py_events=1063/1041
+  key97: ok  turns=118  recs=1474  py_events=851/868
+  key98: ok  turns=84  recs=1038  py_events=576/581
+  key99: ok  turns=72  recs=794  py_events=408/389
+  key100: ok  turns=47  recs=485  py_events=229/229
+  key101: ok  turns=40  recs=536  py_events=303/307
+  key102: ok  turns=31  recs=448  py_events=271/272
+  key103: ok  turns=51  recs=711  py_events=426/434
+  key104: ok  turns=48  recs=657  py_events=391/381
+  key105: ok  turns=65  recs=882  py_events=523/518
+  key106: ok  turns=82  recs=1057  py_events=620/610
+  key107: ok  turns=103  recs=1356  py_events=816/814
+  key108: ok  turns=69  recs=871  py_events=498/501
+  key109: ok  turns=84  recs=1145  py_events=695/695
+  key110: ok  turns=70  recs=954  py_events=574/574
+  key111: ok  turns=55  recs=738  py_events=431/436
+  key112: ok  turns=46  recs=625  py_events=367/361
+  key113: ok  turns=74  recs=919  py_events=527/526
+  key114: ok  turns=106  recs=1327  py_events=773/772
+  key115: ok  turns=63  recs=774  py_events=432/436
+  key116: ok  turns=97  recs=1104  py_events=575/584
+  key117: ok  turns=241  recs=2637  py_events=1474/1481
+  key118: ok  turns=101  recs=1352  py_events=810/820
+  key119: ok  turns=61  recs=832  py_events=499/498
+  key120: ok  turns=53  recs=717  py_events=424/420
+  key121: ok  turns=245  recs=3016  py_events=1793/1816
+  key122: ok  turns=225  recs=2671  py_events=1543/1531
+  key123: ok  turns=53  recs=686  py_events=382/392
+  key124: ok  turns=203  recs=2405  py_events=1402/1396
+  key125: ok  turns=230  recs=2790  py_events=1707/1612
+  key126: ok  turns=248  recs=2960  py_events=1707/1720
+  key127: ok  turns=52  recs=700  py_events=410/408
+  key128: ok  turns=227  recs=2697  py_events=1534/1603
+  key129: ok  turns=84  recs=1024  py_events=573/576
+  key130: ok  turns=76  recs=968  py_events=561/560
+  key131: ok  turns=242  recs=2505  py_events=1271/1279
+  key132: ok  turns=141  recs=1767  py_events=1038/1023
+  key133: ok  turns=226  recs=2739  py_events=1622/1635
+  key134: ok  turns=72  recs=804  py_events=406/409
+  key135: ok  turns=89  recs=971  py_events=504/495
+  key136: ok  turns=138  recs=1467  py_events=740/753
+  key137: ok  turns=97  recs=1023  py_events=503/512
+  key138: PLAY FAILED RuntimeError: local_sim_bridge error: run_full_battle runaway: >1000 committed turns without game-end (self.turn=1001) — a non-terminating battle (stalemate the forfeit failed to end)
+  key139: ok  turns=109  recs=1357  py_events=775/780
+  key140: ok  turns=62  recs=850  py_events=510/507
+  key141: ok  turns=58  recs=775  py_events=460/460
+  key142: ok  turns=225  recs=2712  py_events=1600/1582
+  key143: ok  turns=71  recs=858  py_events=477/477
+  key144: ok  turns=284  recs=3313  py_events=1935/1965
+  key145: ok  turns=53  recs=708  py_events=414/416
+  key146: ok  turns=57  recs=756  py_events=442/441
+  key147: ok  turns=37  recs=506  py_events=290/286
+  key148: ok  turns=39  recs=575  py_events=350/354
+  key149: ok  turns=85  recs=1147  py_events=691/686
+{
+ "battles_ok": 148,
+ "battles_refused": 2,
+ "wall_s": 23.9,
+ "python_move_suffix_synthetics": 692,
+ "ruled_source_synthetics": 692,
+ "untyped_source_lines": {}
+}
+
+RAW (source vs reading)
+   {'kind': 'CANT', '__matched__': 2260}
+   {'kind': 'CRIT', '__matched__': 862}
+   {'kind': 'CURESTATUS', '__matched__': 766, 'status': 108}
+   {'kind': 'DAMAGE', '__matched__': 36262}
+   {'kind': 'DRAG', '__matched__': 1106}
+   {'kind': 'FAIL', '__matched__': 5424, 'side': 8, 'actor': 8}
+   {'kind': 'FAINT', '__matched__': 2944}
+   {'kind': 'HEAL', '__matched__': 33606}
+   {'kind': 'IMMUNE', '__matched__': 1548, 'from': 26}
+   {'kind': 'MISS', '__matched__': 692, 'target': 544}
+   {'kind': 'MOVE', '__matched__': 30288, 'target': 2904}
+   {'kind': 'RESISTED', '__matched__': 3804}
+   {'kind': 'STATUS', '__matched__': 1462}
+   {'kind': 'SUPEREFFECTIVE', '__matched__': 1908}
+   {'kind': 'SWITCH', '__matched__': 18872}
+
+RULED (source + reading rules)
+   {'kind': 'CANT', '__matched__': 2260}
+   {'kind': 'CRIT', '__matched__': 862}
+   {'kind': 'CURESTATUS', '__matched__': 766}
+   {'kind': 'DAMAGE', '__matched__': 36262}
+   {'kind': 'DRAG', '__matched__': 1106}
+   {'kind': 'FAIL', '__matched__': 5424}
+   {'kind': 'FAINT', '__matched__': 2944}
+   {'kind': 'HEAL', '__matched__': 33606}
+   {'kind': 'IMMUNE', '__matched__': 1548}
+   {'kind': 'MISS', '__matched__': 1384}
+   {'kind': 'MOVE', '__matched__': 30288}
+   {'kind': 'RESISTED', '__matched__': 3804}
+   {'kind': 'STATUS', '__matched__': 1462}
+   {'kind': 'SUPEREFFECTIVE', '__matched__': 1908}
+   {'kind': 'SWITCH', '__matched__': 18872}
+
+PARSE-BACK
+   ('parse_back', 'cant', 'facts_ok') 1130
+   ('parse_back', 'crit', 'facts_ok') 431
+   ('parse_back', 'curestatus', 'facts_ok') 383
+   ('parse_back', 'damage', 'facts_ok') 18131
+   ('parse_back', 'drag', 'facts_ok') 553
+   ('parse_back', 'fail', 'facts_ok') 2712
+   ('parse_back', 'faint', 'facts_ok') 1472
+   ('parse_back', 'heal', 'facts_ok') 16803
+   ('parse_back', 'immune', 'facts_ok') 774
+   ('parse_back', 'miss', 'facts_ok') 346
+   ('parse_back', 'move', 'facts_ok') 15144
+   ('parse_back', 'outcome_owner', 'ok') 7119
+   ('parse_back', 'resisted', 'facts_ok') 1902
+   ('parse_back', 'status', 'facts_ok') 731
+   ('parse_back', 'supereffective', 'facts_ok') 954
+   ('parse_back', 'switch', 'facts_ok') 9436
+### end 2026-09-23T13:11:55-07:00 15.79 25.43 23.73 9/2504 94232

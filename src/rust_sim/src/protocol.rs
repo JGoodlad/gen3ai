@@ -104,6 +104,25 @@ impl Choice {
     }
 }
 
+// ── SPIKE (`rust_core_phase0_2026-09-23`) ───────────────────────────────────────────
+// `spike!` stages a typed source record for the NEXT committed line. Without the
+// `event_spike` feature it expands to NOTHING (its argument is never even type-checked), so
+// the default build — every production binary — is unchanged. See `crate::event_spike`.
+#[cfg(feature = "event_spike")]
+macro_rules! spike {
+    ($self:ident, $t:expr) => {
+        if $self.enabled {
+            #[allow(unused_imports)]
+            use crate::event_spike::{cause_str, Mon, Typed};
+            $self.spike.stage($t)
+        }
+    };
+}
+#[cfg(not(feature = "event_spike"))]
+macro_rules! spike {
+    ($self:ident, $t:expr) => {};
+}
+
 /// A mon reference, rendered `p<N><pos>: <Nickname>` — gen-3 singles is always
 /// position `a`. The `name` is the on-field IDENTIFIER = the packed set's NICKNAME
 /// (Showdown's `Pokemon.name` = `set.name || species.name`), e.g. `Electhor` for a
@@ -238,6 +257,9 @@ pub struct ProtocolBuilder {
     /// (`idx >= flush_boundary`) so the gate is a no-op for them. PRNG-free,
     /// state-free, emission-only.
     flush_boundary: usize,
+    /// SPIKE only (`--features event_spike`): the typed source-event sink.
+    #[cfg(feature = "event_spike")]
+    pub spike: crate::event_spike::Sink,
 }
 
 impl ProtocolBuilder {
@@ -248,6 +270,8 @@ impl ProtocolBuilder {
             hints_shown: std::collections::HashSet::new(),
             pending_move_from: None,
             flush_boundary: 0,
+            #[cfg(feature = "event_spike")]
+            spike: Default::default(),
         }
     }
 
@@ -292,6 +316,8 @@ impl ProtocolBuilder {
         // reset the send boundary (the next batch has no already-sent prior-turn move line
         // until a fresh `|turn|` marker re-arms it). `gen3_omniscient_byte_fuzz_v1` class A.
         self.flush_boundary = 0;
+        #[cfg(feature = "event_spike")]
+        self.spike.drained(self.lines.len());
         std::mem::take(&mut self.lines)
     }
 
@@ -300,6 +326,15 @@ impl ProtocolBuilder {
     pub fn push_raw(&mut self, line: impl Into<String>) {
         if self.enabled {
             self.lines.push(ProtocolLine(line.into()));
+            #[cfg(feature = "event_spike")]
+            {
+                let l = self.lines.last().map(|l| l.0.clone()).unwrap_or_default();
+                self.spike.commit(&l);
+            }
+        }
+        #[cfg(feature = "event_spike")]
+        if !self.enabled {
+            self.spike.drop_pending();
         }
     }
 
@@ -348,6 +383,10 @@ impl ProtocolBuilder {
         self.push_raw("|");
     }
     pub fn turn(&mut self, n: u32) {
+        #[cfg(feature = "event_spike")]
+        {
+            self.spike.turn = n;
+        }
         self.push_raw(format!("|turn|{n}"));
         // Model the sim's SEND boundary: the `|turn|N` marker is the point Showdown streams
         // the accumulated batch, so every line up to and including it is "sent". Point the
@@ -387,6 +426,9 @@ impl ProtocolBuilder {
         }
         // Consume the one-shot `[from] <Effect>` attr (the Sleep Talk called move).
         let from = self.pending_move_from.take();
+        spike!(self, Typed::Move { user: Mon::of(user), move_name: move_name.to_string(),
+            target: if still { None } else { target.map(Mon::of) }, from: from.clone(),
+            miss: miss && !still && target.is_some() });
         let mut s = format!("|move|{user}|{move_name}|");
         if still {
             // Empty target field + [still] (e.g. Protect: `|move|…|Protect||[still]`).
@@ -443,6 +485,8 @@ impl ProtocolBuilder {
             let mut s = parts.join("|");
             s.push_str("|[still]");
             line.0 = s;
+            #[cfg(feature = "event_spike")]
+            self.spike.retro(idx, false, true);
         }
     }
 
@@ -479,6 +523,8 @@ impl ProtocolBuilder {
                 return;
             }
             self.lines[idx].0.push_str("|[miss]");
+            #[cfg(feature = "event_spike")]
+            self.spike.retro(idx, true, false);
         }
     }
 
@@ -525,19 +571,23 @@ impl ProtocolBuilder {
     /// gender/shiny only when present. A gen-3-singles L100 genderless mon shows just
     /// the species name.
     pub fn switch(&mut self, mon: &MonRef, details: &str, hp: &HpStatus) {
+        spike!(self, Typed::Switch { mon: Mon::of(mon), details: details.to_string(), hp: (hp.hp, hp.maxhp), from: None });
         self.push_raw(format!("|switch|{mon}|{details}|{hp}"));
     }
     /// `|switch|<mon>|<Details>|<HP>|[from] <Effect>` — a switch carrying a `[from]` tag
     /// (`gen3_move_coverage_batch3_v1`, the BATON PASS entry: `[from] Baton Pass`).
     pub fn switch_from(&mut self, mon: &MonRef, details: &str, hp: &HpStatus, effect: &str) {
+        spike!(self, Typed::Switch { mon: Mon::of(mon), details: details.to_string(), hp: (hp.hp, hp.maxhp), from: Some(effect.to_string()) });
         self.push_raw(format!("|switch|{mon}|{details}|{hp}|[from] {effect}"));
     }
     /// `|drag|<mon>|<Details>|<HP>` — identical grammar to `switch`; the FORCED
     /// (Roar/Whirlwind) entry.
     pub fn drag(&mut self, mon: &MonRef, details: &str, hp: &HpStatus) {
+        spike!(self, Typed::Drag { mon: Mon::of(mon), details: details.to_string(), hp: (hp.hp, hp.maxhp) });
         self.push_raw(format!("|drag|{mon}|{details}|{hp}"));
     }
     pub fn faint(&mut self, mon: &MonRef) {
+        spike!(self, Typed::Faint { mon: Mon::of(mon) });
         self.push_raw(format!("|faint|{mon}"));
     }
 
@@ -545,6 +595,7 @@ impl ProtocolBuilder {
     /// `|-damage|<mon>|<HP>[|[from] <cause>]`. The residual forms carry a `[from]`
     /// cause (`Sandstorm`/`psn`/`brn`/`tox`/`Spikes`/`Leech Seed`).
     pub fn damage(&mut self, mon: &MonRef, hp: &HpStatus, from: Option<&Cause>) {
+        spike!(self, Typed::Damage { mon: Mon::of(mon), hp: (hp.hp, hp.maxhp), cause: from.map(cause_str), of: None });
         match from {
             Some(c) => self.push_raw(format!("|-damage|{mon}|{hp}|{c}")),
             None => self.push_raw(format!("|-damage|{mon}|{hp}")),
@@ -555,12 +606,14 @@ impl ProtocolBuilder {
     /// (`gen3_pp_tracking_v1`) emits `|-damage|<user>|<HP>|[from] Recoil|[of] <target>`
     /// (the target of the Struggle is the `[of]` source), matching the golden exactly.
     pub fn damage_of(&mut self, mon: &MonRef, hp: &HpStatus, from: &Cause, of: &MonRef) {
+        spike!(self, Typed::Damage { mon: Mon::of(mon), hp: (hp.hp, hp.maxhp), cause: Some(cause_str(from)), of: Some(Mon::of(of)) });
         self.push_raw(format!("|-damage|{mon}|{hp}|{from}|[of] {of}"));
     }
     /// `|-heal|<mon>|<HP>[|[from] <cause>]` (Leftovers carries `[from] item:
     /// Leftovers`; a self-heal move / Leech-Seed heal has no `[from]` here in the
     /// Phase-1 set — recovery moves are still deferred).
     pub fn heal(&mut self, mon: &MonRef, hp: &HpStatus, from: Option<&Cause>) {
+        spike!(self, Typed::Heal { mon: Mon::of(mon), hp: (hp.hp, hp.maxhp), cause: from.map(cause_str), of: None });
         match from {
             Some(c) => self.push_raw(format!("|-heal|{mon}|{hp}|{c}")),
             None => self.push_raw(format!("|-heal|{mon}|{hp}")),
@@ -571,36 +624,43 @@ impl ProtocolBuilder {
     /// Drain) emits `|-heal|<user>|<HP>|[from] drain|[of] <target>` (the drained mon is the
     /// `[of]` source), matching the sim exactly.
     pub fn heal_of(&mut self, mon: &MonRef, hp: &HpStatus, from: &Cause, of: &MonRef) {
+        spike!(self, Typed::Heal { mon: Mon::of(mon), hp: (hp.hp, hp.maxhp), cause: Some(cause_str(from)), of: Some(Mon::of(of)) });
         self.push_raw(format!("|-heal|{mon}|{hp}|{from}|[of] {of}"));
     }
     /// `|-heal|<mon>|<HP>|[from] move: Wish|[wisher] <name>` — the WISH delayed heal
     /// (`gen3_move_coverage_batch3_v1`). The `[wisher]` clause carries the CASTER's display
     /// name (stored at cast, so it survives the wisher fainting / switching / phazing).
     pub fn heal_wish(&mut self, mon: &MonRef, hp: &HpStatus, wisher: &str) {
+        spike!(self, Typed::Heal { mon: Mon::of(mon), hp: (hp.hp, hp.maxhp), cause: Some("move: Wish".to_string()), of: None });
         self.push_raw(format!("|-heal|{mon}|{hp}|[from] move: Wish|[wisher] {wisher}"));
     }
 
     // ── Effectiveness / crit / miss / immune ────────────────────────────────────
     /// `|-supereffective|<mon>` — `<mon>` is the DEFENDER.
     pub fn supereffective(&mut self, mon: &MonRef) {
+        spike!(self, Typed::Outcome { op: "supereffective", mon: Mon::of(mon), cause: None });
         self.push_raw(format!("|-supereffective|{mon}"));
     }
     /// `|-resisted|<mon>` — the DEFENDER.
     pub fn resisted(&mut self, mon: &MonRef) {
+        spike!(self, Typed::Outcome { op: "resisted", mon: Mon::of(mon), cause: None });
         self.push_raw(format!("|-resisted|{mon}"));
     }
     /// `|-crit|<mon>` — a critical hit on the DEFENDER.
     pub fn crit(&mut self, mon: &MonRef) {
+        spike!(self, Typed::Outcome { op: "crit", mon: Mon::of(mon), cause: None });
         self.push_raw(format!("|-crit|{mon}"));
     }
     /// `|-immune|<mon>` — effectiveness 0. (The ability form carrying `[from]
     /// ability:` is a later phase — the Phase-1 capture immune lines are bare.)
     pub fn immune(&mut self, mon: &MonRef) {
+        spike!(self, Typed::Outcome { op: "immune", mon: Mon::of(mon), cause: None });
         self.push_raw(format!("|-immune|{mon}"));
     }
     /// `|-immune|<mon>|[from] ability: <Ability>` — immunity granted by an ABILITY
     /// (`gen3_ability_batch2_v1`, Soundproof blocking a sound move). Observation-only.
     pub fn immune_from_ability(&mut self, mon: &MonRef, ability: &str) {
+        spike!(self, Typed::Outcome { op: "immune", mon: Mon::of(mon), cause: Some(format!("ability: {ability}")) });
         self.push_raw(format!("|-immune|{mon}|[from] ability: {ability}"));
     }
     /// `|-immune|<mon>|<effect>|[from] ability: <Ability>` — an ability blocking a specific
@@ -609,10 +669,12 @@ impl ProtocolBuilder {
     /// sits BETWEEN the mon and the `[from]`, which the plain `immune_from_ability` omits.
     /// Observation-only.
     pub fn immune_effect_from_ability(&mut self, mon: &MonRef, effect: &str, ability: &str) {
+        spike!(self, Typed::Outcome { op: "immune", mon: Mon::of(mon), cause: Some(format!("ability: {ability}")) });
         self.push_raw(format!("|-immune|{mon}|{effect}|[from] ability: {ability}"));
     }
     /// `|-miss|<user>[|<target>]` — paired with the `|move|…|[miss]`.
     pub fn miss(&mut self, user: &MonRef, target: Option<&MonRef>) {
+        spike!(self, Typed::Miss { user: Some(Mon::of(user)), user_raw: None, target: target.map(Mon::of) });
         match target {
             Some(t) => self.push_raw(format!("|-miss|{user}|{t}")),
             None => self.push_raw(format!("|-miss|{user}")),
@@ -628,6 +690,7 @@ impl ProtocolBuilder {
     /// always produces. The caller renders the correct form via
     /// [`crate::state::BattleState::mon_toref`]. Observation-only.
     pub fn miss_raw_user(&mut self, user: &str, target: &MonRef) {
+        spike!(self, Typed::Miss { user: None, user_raw: Some(user.to_string()), target: Some(Mon::of(target)) });
         self.push_raw(format!("|-miss|{user}|{target}"));
     }
 
@@ -636,6 +699,7 @@ impl ProtocolBuilder {
     /// `brn`/`par`/`slp`/`frz`/`psn`/`tox`. A self-inflicted status (Rest) carries
     /// `[from] move: Rest`; a foe-inflicted status has no `[from]`.
     pub fn status(&mut self, mon: &MonRef, status: &str, from: Option<&Cause>) {
+        spike!(self, Typed::Status { mon: Mon::of(mon), status: status.to_string(), cause: from.map(cause_str), of: None });
         match from {
             Some(c) => self.push_raw(format!("|-status|{mon}|{status}|{c}")),
             None => self.push_raw(format!("|-status|{mon}|{status}")),
@@ -647,11 +711,13 @@ impl ProtocolBuilder {
     /// reflecting a status back to the SOURCE. `src` is the ability HOLDER (the mon whose
     /// ability caused it). Observation-only.
     pub fn status_from_ability(&mut self, mon: &MonRef, status: &str, ability: &str, src: &MonRef) {
+        spike!(self, Typed::Status { mon: Mon::of(mon), status: status.to_string(), cause: Some(format!("ability: {ability}")), of: Some(Mon::of(src)) });
         self.push_raw(format!("|-status|{mon}|{status}|[from] ability: {ability}|[of] {src}"));
     }
     /// `|-curestatus|<mon>|<status>[|[msg]]` — a status is CURED (wake / thaw / Rest
     /// natural wake). `[msg]` shows the client message (a natural sleep/freeze wake).
     pub fn curestatus(&mut self, mon: &MonRef, status: &str, msg: bool) {
+        spike!(self, Typed::CureStatus { mon: Some(Mon::of(mon)), ident_raw: None, status: status.to_string(), cause: None });
         if msg {
             self.push_raw(format!("|-curestatus|{mon}|{status}|[msg]"));
         } else {
@@ -663,6 +729,7 @@ impl ProtocolBuilder {
     /// a SIDE ref (`p<N>: <PlayerName>`), the active as a mon ref (`p<N>a: <Name>`); the
     /// caller passes the pre-formatted ident string.
     pub fn curestatus_silent(&mut self, ident: &str, status: &str) {
+        spike!(self, Typed::CureStatus { mon: None, ident_raw: Some(ident.to_string()), status: status.to_string(), cause: None });
         self.push_raw(format!("|-curestatus|{ident}|{status}|[silent]"));
     }
     /// `|-curestatus|<mon>|<status>|[from] ability: <Ability>|[silent]` — a status cured by
@@ -670,12 +737,14 @@ impl ProtocolBuilder {
     /// BEFORE the outgoing mon's replacement `|switch|`/`|drag|` line. Silent (the client
     /// only sees the mon leave). Observation-only.
     pub fn curestatus_from_ability_silent(&mut self, mon: &MonRef, status: &str, ability: &str) {
+        spike!(self, Typed::CureStatus { mon: Some(Mon::of(mon)), ident_raw: None, status: status.to_string(), cause: Some(format!("ability: {ability}")) });
         self.push_raw(format!("|-curestatus|{mon}|{status}|[from] ability: {ability}|[silent]"));
     }
     /// `|-cureteam|<mon>|[from] move: Aromatherapy` — Aromatherapy's team-cure banner
     /// (`gen3_move_coverage_batch2_v1`; unlike Heal Bell, Aromatherapy emits NO per-mon
     /// `-curestatus` line — a single `-cureteam` covers the whole side).
     pub fn cureteam_aromatherapy(&mut self, mon: &MonRef) {
+        spike!(self, Typed::CureStatus { mon: Some(Mon::of(mon)), ident_raw: None, status: String::new(), cause: Some("move: Aromatherapy".to_string()) });
         self.push_raw(format!("|-cureteam|{mon}|[from] move: Aromatherapy"));
     }
     /// `|-sideend|<side>|<Effect>` — a side condition ENDS naturally at its duration expiry
@@ -689,6 +758,7 @@ impl ProtocolBuilder {
     /// roll; the line is emitted BEFORE the user's own `|move|` line. Probe:
     /// `harness/probe_sacredfire_defrost.js`).
     pub fn curestatus_from_move(&mut self, mon: &MonRef, status: &str, move_name: &str) {
+        spike!(self, Typed::CureStatus { mon: Some(Mon::of(mon)), ident_raw: None, status: status.to_string(), cause: Some(format!("move: {move_name}")) });
         self.push_raw(format!("|-curestatus|{mon}|{status}|[from] move: {move_name}"));
     }
     /// `|cant|<mon>|<reason>[|<MoveName>]` — a blocked action (full-para / asleep /
@@ -699,9 +769,11 @@ impl ProtocolBuilder {
     /// ABILITY HOLDER (`mon`), the reason is `ability: Damp`, the move name, and `[of]` the
     /// move's user. Mirrors `this.add("cant", damp_holder, "ability: Damp", move, [of] user)`.
     pub fn cant_of_move(&mut self, mon: &MonRef, reason: &str, move_name: &str, of: &MonRef) {
+        spike!(self, Typed::Cant { mon: Mon::of(mon), reason: reason.to_string(), move_name: Some(move_name.to_string()), of: Some(Mon::of(of)) });
         self.push_raw(format!("|cant|{mon}|{reason}|{move_name}|[of] {of}"));
     }
     pub fn cant(&mut self, mon: &MonRef, reason: &str, move_name: Option<&str>) {
+        spike!(self, Typed::Cant { mon: Mon::of(mon), reason: reason.to_string(), move_name: move_name.map(str::to_string), of: None });
         match move_name {
             Some(m) => self.push_raw(format!("|cant|{mon}|{reason}|{m}")),
             None => self.push_raw(format!("|cant|{mon}|{reason}")),
@@ -819,6 +891,7 @@ impl ProtocolBuilder {
     /// port dropped Hyper Cutter's `Attack` token → an omniscient byte divergence on any
     /// Intimidate/Charm/Feather-Dance-into-Hyper-Cutter matchup.
     pub fn fail_unboost_from_ability(&mut self, mon: &MonRef, ability: &str, stat: Option<&str>) {
+        spike!(self, Typed::Fail { mon: Mon::of(mon), cause: Some(format!("ability: {ability}")) });
         match stat {
             Some(s) => self.push_raw(format!("|-fail|{mon}|unboost|{s}|[from] ability: {ability}|[of] {mon}")),
             None => self.push_raw(format!("|-fail|{mon}|unboost|[from] ability: {ability}|[of] {mon}")),
@@ -861,6 +934,7 @@ impl ProtocolBuilder {
     /// `|-fail|<mon>[|<detail>][|[weak]]` — a move/effect that failed. `detail` = e.g.
     /// `move: Substitute` (the Substitute-too-weak fail carries the `[weak]` tag).
     pub fn fail(&mut self, mon: &MonRef, detail: Option<&str>, weak: bool) {
+        spike!(self, Typed::Fail { mon: Mon::of(mon), cause: None });
         let mut s = format!("|-fail|{mon}");
         if let Some(d) = detail {
             s.push('|');
@@ -895,6 +969,7 @@ impl ProtocolBuilder {
     /// uproarer) — UPROAR's field-wide sleep block (`gen3_uproar_v1`). Probe-captured: the
     /// `[msg]` appears ONLY for the uproarer itself, not for anyone else it protects.
     pub fn fail_slp_from_uproar(&mut self, mon: &MonRef, is_uproarer: bool) {
+        spike!(self, Typed::Fail { mon: Mon::of(mon), cause: Some("Uproar".to_string()) });
         if is_uproarer {
             self.push_raw(format!("|-fail|{mon}|slp|[from] Uproar|[msg]"));
         } else {
@@ -914,6 +989,7 @@ impl ProtocolBuilder {
     /// `[partiallytrapped]` tag trails it. Probe-verified for all six carriers
     /// (`harness/probe_ptrap_edges.js` section L).
     pub fn damage_partially_trapped(&mut self, mon: &MonRef, hp: &HpStatus, move_name: &str) {
+        spike!(self, Typed::Damage { mon: Mon::of(mon), hp: (hp.hp, hp.maxhp), cause: Some(format!("move: {move_name}")), of: None });
         self.push_raw(format!("|-damage|{mon}|{hp}|[from] move: {move_name}|[partiallytrapped]"));
     }
     /// `|-end|<mon>|<Move>|[partiallytrapped][|[silent]]` — the PARTIAL-TRAP release

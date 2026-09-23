@@ -3694,6 +3694,14 @@ impl crate::state::BattleState {
         if self.logging() {
             let user = self.mon_ref(side, slot, dex);
             let hp = self.hp_status(side, slot);
+            // SPIKE (`event_spike`, OFF by default): type this raw push at its source.
+            #[cfg(feature = "event_spike")]
+            self.log.spike.stage(crate::event_spike::Typed::Heal {
+                mon: crate::event_spike::Mon::of(&user),
+                hp: (hp.hp, hp.maxhp),
+                cause: None,
+                of: None,
+            });
             self.log.push_raw(format!("|-heal|{user}|{hp}|[silent]"));
         }
 

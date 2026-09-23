@@ -1,0 +1,1323 @@
+### cargo test (default features) start 2026-09-23T13:23:26-07:00 13.93 21.55 23.33 5/2409 103373
+   Compiling pokesim v0.0.0 (/home/goodlad/dev/gen3ai/.claude/worktrees/agent-a2fa0c18a85b042e0/src/rust_sim)
+warning: unused import: `super::*`
+   --> src/dex/moves.rs:485:9
+    |
+485 |     use super::*;
+    |         ^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `pokesim` (lib test) generated 1 warning (run `cargo fix --lib -p pokesim --tests` to apply 1 suggestion)
+warning: function `a_move_is_revealed_only_once_it_is_used_and_carries_its_SIGHTING_COUNT` should have a snake case name
+   --> tests/one_sided_view_test.rs:170:4
+    |
+170 | fn a_move_is_revealed_only_once_it_is_used_and_carries_its_SIGHTING_COUNT() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `a_move_is_revealed_only_once_it_is_used_and_carries_its_sighting_count`
+    |
+    = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: function `a_volatile_is_carried_as_the_ANNOUNCED_name_with_its_turn_and_restart_counts` should have a snake case name
+   --> tests/one_sided_view_test.rs:222:4
+    |
+222 | fn a_volatile_is_carried_as_the_ANNOUNCED_name_with_its_turn_and_restart_counts() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `a_volatile_is_carried_as_the_announced_name_with_its_turn_and_restart_counts`
+
+warning: function `every_move_and_ability_id_is_in_SHOWDOWN_ID_FORM` should have a snake case name
+   --> tests/one_sided_view_test.rs:344:4
+    |
+344 | fn every_move_and_ability_id_is_in_SHOWDOWN_ID_FORM() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `every_move_and_ability_id_is_in_showdown_id_form`
+
+warning: function `a_mid_turn_faint_captures_the_view_AT_its_replacement_request` should have a snake case name
+   --> tests/one_sided_view_test.rs:390:4
+    |
+390 | fn a_mid_turn_faint_captures_the_view_AT_its_replacement_request() {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `a_mid_turn_faint_captures_the_view_at_its_replacement_request`
+
+warning: `pokesim` (test "one_sided_view_test") generated 4 warnings
+    Finished `release` profile [optimized] target(s) in 28.62s
+     Running unittests src/lib.rs (target/release/deps/pokesim-bd24f2e34e024b08)
+
+running 138 tests
+test bridge::tests::parse_choice_accepts_the_sim_s_bare_verbs ... ok
+test damage::tests::boost_table ... ok
+test damage::tests::chain_modify_matches_sim ... ok
+test damage::tests::modify_fixed_point ... ok
+test damage::tests::randomizer_spread ... ok
+test damage::tests::type_stage_recovery ... ok
+test bridge::tests::switch_and_move_ident_tokens_use_the_nickname_not_the_species ... ok
+test dex::abilities::tests::ability_batch4_fields_parse ... ok
+test bridge::tests::name_choices_resolve_to_the_same_slots_incl_typed_hidden_power ... ok
+test dex::abilities::tests::ability_dmg_mod_fields_parse ... ok
+test dex::abilities::tests::ability_batch1_fields_parse ... ok
+test bridge::tests::a_forfeit_emits_the_win_line_to_both_sides_not_a_bare_end ... ok
+test dex::abilities::tests::ability_status_immune_fields_parse ... ok
+test dex::abilities::tests::ability_wonder_guard_field_parses ... ok
+test dex::abilities::tests::ability_batch2_fields_parse ... ok
+test damage::tests::move_input_from_dex_maps_fields ... ok
+test bridge::tests::resolve_auto_choice_matches_showdown_on_lock_and_struggle ... ok
+test bridge::tests::taunt_forced_struggle_bridge_battle_completes_not_wedges ... ok
+test dex::abilities::tests::ability_batch3_fields_parse ... ok
+test bridge::tests::struggle_name_choice_resolves_to_move_zero_not_a_wedge ... ok
+test bridge::tests::an_unresolvable_name_choice_is_fatal_not_an_endless_re_request ... ok
+test driver_timing::tests::a_disabled_clock_accumulates_nothing_but_does_not_panic ... ok
+test damage::tests::crit_ignores_attacker_negative_boost ... ok
+test dex::items::tests::item_berry_effect_fields_parse ... ok
+test dex::alias_tests::move_aliases_resolve_to_the_canonical_move ... ok
+test bridge::tests::switch_by_nickname_resolves_like_showdown_chooseswitch ... ok
+test driver_timing::tests::a_disabled_clock_renders_no_field_at_all ... ok
+test driver_timing::tests::the_rendered_field_is_the_documented_shape ... ok
+test bridge::tests::chunked_flatten_equals_flat_streams ... ok
+test dex::batch5_tests::taunt_blocks_sleep_talk_but_not_the_variable_bp_or_reactive_families ... ok
+test event::tests::speed_sort_higher_priority_and_order_win ... ok
+test event::tests::speed_sort_orders_distinct_speeds_fast_first_no_draw ... ok
+test event::tests::speed_sort_tie_group_draws_fisher_yates_exactly ... ok
+test json::tests::empty_containers_and_escapes ... ok
+test event::tests::speed_sort_partial_tie_only_shuffles_the_tied_group ... ok
+test json::tests::parses_nested ... ok
+test prng::tests::generate_seed_is_fresh_and_well_formed ... ok
+test prng::tests::sodium_first_draw_matches_showdown ... ok
+test prng::tests::validate_seed_matches_showdown_accept_set ... ok
+test protocol::tests::attr_last_move_still_rewrites_the_most_recent_move_line ... ok
+test protocol::tests::boost_by_sign_and_stat_token ... ok
+test dex::items::tests::item_mechanics_fields_parse ... ok
+test protocol::tests::cause_renders_ability_and_move ... ok
+test protocol::tests::cause_renders_item_and_bare ... ok
+test protocol::tests::curestatus_and_cant_forms ... ok
+test dex::items::tests::item_acc_mod_fields_parse ... ok
+test dex::moves::hidden_power_name_tests::raw_name_callers_are_an_enumerated_allowlist ... ok
+test protocol::tests::fail_weak_and_sidestart_start_end_activate_forms ... ok
+test protocol::tests::hint_dedup_follows_the_once_param ... ok
+test protocol::tests::hp_status_renders_the_three_variants ... ok
+test protocol::tests::mon_ref_and_side_ref_split ... ok
+test protocol::tests::move_still_and_miss_forms ... ok
+test prng::tests::gen5_decimal_roundtrips ... ok
+test protocol::tests::phase3_forms_and_the_miss_retro_edit ... ok
+test protocol::tests::ability_intimidate_boost_detail ... ok
+test protocol::tests::rest_silent_heal_line_with_status_hp ... ok
+test protocol::tests::disabled_builder_emits_nothing ... ok
+test protocol::tests::status_from_variants ... ok
+test protocol::tests::weather_set_and_upkeep_forms ... ok
+test json::tests::rejects_trailing_garbage ... ok
+test dex::items::tests::item_proc_fields_parse ... ok
+test dex::pp_tests::max_pp_is_base_pp_times_eight_fifths_gen3 ... ok
+test dex::moves::hidden_power_name_tests::display_name_collapses_every_typed_hidden_power ... ok
+test event::tests::trace_copyable_covers_every_gen3_ability ... ok
+test turn::tests::clear_body_blocks_the_foe_stat_drop ... ok
+test bridge::tests::a_bridge_battle_reaching_struggle_completes_not_wedges ... ok
+test turn::tests::crit_ratio_is_data_driven ... ok
+test turn::tests::confusion_secondary_own_tempo_skips_the_duration_draw ... ok
+test dex::abilities::tests::ability_acc_mod_fields_parse ... ok
+test stats::tests::empty_nature_computes_the_neutral_stats ... ok
+test stats::tests::a_nonempty_unknown_nature_still_errors ... ok
+test turn::tests::confusion_secondary_already_confused_skips_the_duration_draw ... ok
+test turn::tests::consecutive_protect_draws_one_stall_roll_and_escalates ... ok
+test turn::tests::confusion_self_hit_draws_chance_plus_one_random16 ... ok
+test turn::tests::confusion_secondary_draws_random_100_then_random_2_6 ... ok
+test turn::tests::both_survive_draws_quick_claw ... ok
+test turn::tests::gen3_status_type_immunity_rules ... ok
+test turn::tests::dragon_dance_boosts_speed_but_leaves_cached_speed_stale ... ok
+test turn::tests::disable_makes_the_one_slot_unusable_but_leaves_the_rest ... ok
+test turn::tests::insomnia_blocks_slp_in_customgame_draw_free ... ok
+test turn::tests::effective_accuracy_matches_sim_probe ... ok
+test turn::tests::faster_ohko_skips_slower_and_quickclaw ... ok
+test turn::tests::immune_move_draws_only_accuracy ... ok
+test turn::tests::disable_into_no_last_move_draws_only_accuracy_no_duration ... ok
+test turn::tests::deferred_fixed_damage_move_panics_fail_loud - should panic ... ok
+test turn::tests::first_protect_draws_nothing_and_sets_counter_two ... ok
+test turn::tests::freeze_draws_one_thaw_roll ... ok
+test turn::tests::insomnia_blocks_slp_in_gen3ou_drawing_the_size2_clause_shuffle ... ok
+test turn::tests::effective_speed_boost_and_para ... ok
+test turn::tests::endure_first_use_draw_free_sets_the_volatile_and_shared_stall_counter ... ok
+test turn::tests::limber_does_not_block_a_non_par_status ... ok
+test turn::tests::last_mon_double_ko_is_a_tie ... ok
+test turn::tests::moonlight_weather_conditional_heal_amounts ... ok
+test turn::tests::paralysis_pass_then_full_move_plus_secondary ... ok
+test turn::tests::early_bird_double_decrements_the_sleep_counter ... ok
+test turn::tests::post_faint_replacement_continues_to_win ... ok
+test turn::tests::disable_draws_accuracy_plus_one_random_2_6_and_stores_the_sim_duration_per_branch ... ok
+test turn::tests::protect_does_not_block_the_protectors_own_move ... ok
+test turn::tests::protect_blocks_foe_move_after_its_accuracy_draw ... ok
+test turn::tests::magma_armor_blocks_frz_before_the_setstatus_shuffle ... ok
+test turn::tests::disable_ticks_down_and_expires_at_the_residual_draw_free ... ok
+test turn::tests::recover_at_full_hp_fails_draw_free ... ok
+test turn::tests::flinch_aborts_draw_free ... ok
+test turn::tests::paralysis_full_para_draws_only_the_para_roll ... ok
+test turn::tests::landed_secondary_draws_one_random_100_after_damage ... ok
+test turn::tests::sleep_counter_is_draw_free_and_wakes ... ok
+test turn::tests::self_boost_clamps_at_plus_six ... ok
+test turn::tests::snore_panics_fail_loud - should panic ... ok
+test turn::tests::spikes_ko_on_switch_in_zeroes_hp_draw_free ... ok
+test turn::tests::set_status_shuffle_is_gen3ou_only ... ok
+test turn::tests::spikes_move_increments_foe_side_draw_free_and_caps_at_three ... ok
+test turn::tests::shield_dust_defender_suppresses_the_secondary_draw ... ok
+test turn::tests::rest_in_gen3ou_draws_the_setstatus_shuffle_then_random_2_6 ... ok
+test turn::tests::self_boost_move_applies_the_boost_draw_free ... ok
+test turn::tests::rest_full_heal_fixed_sleep_three_and_cure_draws_one_random_2_6_customgame ... ok
+test turn::tests::spore_draws_accuracy_then_sleep_random_2_6 ... ok
+test turn::tests::rest_at_full_hp_fails_without_sleeping ... ok
+test turn::tests::recover_heals_half_maxhp_draw_free ... ok
+test turn::tests::taunt_draws_only_accuracy_and_applies_the_volatile_draw_free_duration ... ok
+test turn::tests::taunt_ticks_down_and_expires_at_the_residual_draw_free ... ok
+test turn::tests::sleep_clause_blocks_second_sleep_no_duration_draw ... ok
+test turn::tests::snatch_cast_sets_the_volatile_draw_free ... ok
+test turn::tests::try_set_status_gates_already_statused_and_type_immune ... ok
+test turn::tests::taunt_forces_struggle_when_only_status_moves_remain ... ok
+test turn::tests::spikes_switch_in_flying_and_levitate_take_zero ... ok
+test turn::tests::thunder_wave_into_ground_is_immune_accuracy_only ... ok
+test turn::tests::thunder_wave_draws_only_accuracy_and_applies_par ... ok
+test turn::tests::stat_drop_and_self_boost_apply_the_structured_spec ... ok
+test turn::tests::unmodeled_multi_secondary_panics - should panic ... ok
+test turn::tests::taunt_makes_status_moves_unusable_but_leaves_attacks ... ok
+test turn::tests::taunt_disable_last_move_clear_on_switch_out ... ok
+test turn::tests::spikes_switch_in_damage_grounded_per_layer_draw_free ... ok
+test turn::tests::tri_attack_draws_random_100_then_sample_random_3 ... ok
+test turn::tests::trick_swaps_the_two_items_and_never_lands ... ok
+test turn::tests::water_absorb_heals_on_hit_but_not_on_a_miss ... ok
+test turn::tests::switch_swaps_team_positions ... ok
+test turn::tests::voluntary_switch_resolves_before_move ... ok
+test turn::tests::weather_speed_swift_swim_folds_x2_in_rain ... ok
+
+test result: ok. 138 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+     Running unittests src/bin/ab_replay.rs (target/release/deps/ab_replay-91ff6669950cdff4)
+
+running 18 tests
+test a1_allowlist_tests::ab_11_20_form_nickname_differs_species_same_is_allowlisted ... ok
+test a1_allowlist_tests::clause4_different_weather_prefix_fails ... ok
+test a1_allowlist_tests::clause2_two_line_diff_fails ... ok
+test a1_allowlist_tests::clause5_same_slot_of_not_a_flip_fails ... ok
+test a1_allowlist_tests::clause6_wrong_of_to_a_real_different_species_mon_fails ... ok
+test a1_allowlist_tests::filter_bytes_drops_the_bigerror_stall_warning ... ok
+test a1_allowlist_tests::mirror_of_flip_is_allowlisted_only_at_a_speed_tie ... ok
+test a1_allowlist_tests::non_framing_line_type_fails ... ok
+test anchor_tests::a_missing_draw_still_fails ... ok
+test anchor_tests::a_port_stream_that_ends_early_still_fails ... ok
+test anchor_tests::a_reordered_pair_still_fails ... ok
+test anchor_tests::a_zero_draw_duplicate_checkpoint_is_tolerated ... ok
+test anchor_tests::an_empty_port_stream_fails_rather_than_vacuously_passing ... ok
+test anchor_tests::an_extra_port_checkpoint_is_tolerated_and_maps_past_it ... ok
+test anchor_tests::an_empty_sim_stream_aligns_to_nothing ... ok
+test anchor_tests::an_injected_extra_draw_still_fails ... ok
+test anchor_tests::identical_streams_align_one_to_one ... ok
+test anchor_tests::several_extras_in_one_gap_are_tolerated ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/bridge_replay.rs (target/release/deps/bridge_replay-97da23f3ebc7363c)
+
+running 39 tests
+test a2_anchor_tests::a_desync_is_not_masked_by_a_coincidental_later_reappearance ... ok
+test a2_anchor_tests::a_genuine_value_shift_is_still_caught ... ok
+test a2_anchor_tests::a_group_with_both_a_zero_draw_and_a_nonzero_extra_is_tolerated ... ok
+test a2_anchor_tests::a_missing_draw_that_shifts_a_value_is_caught ... ok
+test a2_anchor_tests::a_legit_shared_zero_draw_decision_aligns_normally ... ok
+test a2_anchor_tests::a_real_desync_that_shifts_the_whole_tail_is_still_caught ... ok
+test a2_anchor_tests::exact_match_is_clean ... ok
+test a2_anchor_tests::extra_nonzero_draw_boundary_is_tolerated ... ok
+test a2_anchor_tests::extra_zero_draw_boundary_is_tolerated ... ok
+test a2_anchor_tests::multiple_isolated_extra_groups_across_a_battle_are_tolerated ... ok
+test perside_construction_mirror_flip_tests::a_changed_ability_prefix_fails ... ok
+test perside_construction_mirror_flip_tests::a_changed_weather_prefix_fails ... ok
+test perside_construction_mirror_flip_tests::a_distinct_speed_pair_fails_clause_1 ... ok
+test perside_construction_mirror_flip_tests::a_mislabeled_of_name_inconsistent_with_the_roster_fails ... ok
+test perside_construction_mirror_flip_tests::a_missing_framing_line_fails ... ok
+test perside_construction_mirror_flip_tests::a_non_framing_line_diff_fails_clause_3 ... ok
+test perside_construction_mirror_flip_tests::a_same_slot_nickname_change_is_a_real_bug_not_allowlisted ... ok
+test perside_construction_mirror_flip_tests::a_single_line_unboost_mistarget_breaks_the_multiset_and_is_not_allowlisted ... ok
+test perside_construction_mirror_flip_tests::a_wrong_of_to_a_real_different_species_mon_fails ... ok
+test perside_construction_mirror_flip_tests::identical_windows_are_not_a_flip ... ok
+test perside_construction_mirror_flip_tests::tyranitar_weather_of_flip_is_allowlisted_at_a_speed_tie ... ok
+test perside_construction_mirror_flip_tests::salamence_intimidate_permutation_is_allowlisted ... ok
+test perside_construction_order_flip_tests::a_changed_ability_fails_the_multiset ... ok
+test perside_construction_order_flip_tests::a_changed_weather_id_fails_the_multiset ... ok
+test perside_construction_order_flip_tests::a_distinct_speed_pair_fails_clause_1 ... ok
+test perside_construction_order_flip_tests::a_content_flipped_weather_of_fails_the_multiset ... ok
+test perside_construction_order_flip_tests::a_dropped_framing_line_fails_the_multiset ... ok
+test perside_construction_order_flip_tests::a_non_framing_line_moved_fails_clause_3 ... ok
+test perside_construction_order_flip_tests::identical_windows_are_not_a_flip ... ok
+test perside_construction_order_flip_tests::the_construction_order_flip_is_allowlisted_at_a_speed_tie ... ok
+test perside_construction_order_flip_tests::the_framing_window_stops_at_turn_one ... ok
+test perside_request_residual_tests::a_differing_numeric_base_power_on_both_sides_is_not_allowlisted ... ok
+test perside_request_residual_tests::a_correct_curse_slot_does_not_rewrite_a_later_move_target ... ok
+test perside_request_residual_tests::a_genuine_request_diff_is_not_allowlisted ... ok
+test perside_request_residual_tests::a_ghost_curse_target_normal_is_not_rewritten ... ok
+test perside_request_residual_tests::frustration_bp_alias_at_the_clamped_bp_of_one_is_allowlisted ... ok
+test perside_request_residual_tests::curse_plus_return_cooccurrence_is_allowlisted ... ok
+test perside_request_residual_tests::return_alias_alone_is_allowlisted_as_return102 ... ok
+test perside_request_residual_tests::the_bp_alias_strip_only_touches_the_alias_token ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/scan_move_probe.rs (target/release/deps/scan_move_probe-30c81d4a510a42ce)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/search_driver.rs (target/release/deps/search_driver-1a975f6e80ef63c4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/sim_bridge.rs (target/release/deps/sim_bridge-051a6eeac79282a2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/ability_batch1_test.rs (target/release/deps/ability_batch1_test-618930501145149b)
+
+running 1 test
+test ability_batch1_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/ability_batch2_test.rs (target/release/deps/ability_batch2_test-3fd796fd4f863d35)
+
+running 1 test
+test ability_batch2_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/ability_batch4_test.rs (target/release/deps/ability_batch4_test-ca2ae21b1072c003)
+
+running 2 tests
+test ability_batch4_golden_is_byte_reproducible ... ok
+test ability_batch4_golden_matches_showdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/ability_dmgmod_test.rs (target/release/deps/ability_dmgmod_test-038ea508d7be0e36)
+
+running 1 test
+test ability_dmgmod_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/accuracy_test.rs (target/release/deps/accuracy_test-3bc6eddcf7094c9d)
+
+running 1 test
+test accuracy_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/battle_test.rs (target/release/deps/battle_test-1a268d01eded4588)
+
+running 1 test
+test battle_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/berry_batch3_test.rs (target/release/deps/berry_batch3_test-4c3343a3b3369460)
+
+running 1 test
+test berry_batch3_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/bridge_choice_reject_test.rs (target/release/deps/bridge_choice_reject_test-ac390a14d233fde0)
+
+running 11 tests
+test a_move_locked_request_still_rejects_an_out_of_range_slot ... ok
+test an_out_of_range_move_slot_is_invalid_with_no_re_request ... ok
+test a_forced_struggle_still_accepts_the_slot_it_offers ... ok
+test a_disabled_move_is_unavailable_and_re_requests_that_side_only ... ok
+test a_forced_struggle_substitutes_rather_than_rejecting ... ok
+test a_disabled_return_rejects_by_its_bare_name ... ok
+test a_move_locked_mon_is_never_rejected_for_its_only_offered_move ... ok
+test a_forced_struggle_request_still_rejects_an_out_of_range_slot ... ok
+test a_disabled_typed_hidden_power_rejects_by_its_bare_name ... ok
+test an_ordinary_disabled_move_still_rejects_by_its_display_name ... ok
+test a_switch_into_the_active_is_invalid_with_no_re_request ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/bridge_clone_branch_test.rs (target/release/deps/bridge_clone_branch_test-b2939082a9e6cdbe)
+
+running 7 tests
+test diverging_clones_leave_the_parent_bit_for_bit_unchanged ... ok
+test clear_chunks_makes_a_branch_emit_exactly_the_suffix ... ok
+test two_snapshots_advanced_identically_match_each_other_and_the_original ... ok
+test boundary_accessors_track_a_partially_answered_move_request ... ok
+test a_rejected_switch_holds_the_boundary_open_and_reissues_the_request ... ok
+test winner_and_request_kind_report_the_terminal_state ... ok
+test reseeding_a_clone_leaves_the_parents_dice_stream_untouched ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/bridge_corpus_test.rs (target/release/deps/bridge_corpus_test-a495b940f49b0a2a)
+
+running 1 test
+test bridge_corpus_replays_clean ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+
+     Running tests/bridge_test.rs (target/release/deps/bridge_test-691a87a884f4e5b4)
+
+running 12 tests
+test timing_bridge_incremental_linear_vs_genesis_quadratic ... ignored
+test resume_reseed_keeps_the_prefix_and_rerolls_the_suffix ... ok
+test thief_that_steals_a_choice_band_locks_the_request ... ok
+test tricked_a_choice_band_after_moving_does_not_lock_the_request ... ok
+test return_renders_the_numeric_bp_alias_in_all_three_request_forms ... ok
+test bridge_trapping_streams_byte_equal ... ok
+test the_alias_number_is_the_computed_bp_not_a_hardcoded_102 ... ok
+test moving_while_holding_a_tricked_choice_band_does_lock_the_request ... ok
+test recharge_last_mon_request_carries_trapped_true ... ok
+test bridge_golden_parses ... ok
+test bridge_capture_streams_prefix_byte_equal ... ok
+test bridge_incremental_matches_genesis_replay ... ok
+
+test result: ok. 11 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.80s
+
+     Running tests/byte_fuzz_corpus_test.rs (target/release/deps/byte_fuzz_corpus_test-4d485e9d5c0084aa)
+
+running 1 test
+test byte_fuzz_corpus_replays_clean ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.10s
+
+     Running tests/confusion_family_golden_test.rs (target/release/deps/confusion_family_golden_test-eafff701ed05ceb5)
+
+running 2 tests
+test confusion_family_golden_covers_both_accuracy_branches ... ok
+test confusion_family_golden_matches_showdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/confusion_family_test.rs (target/release/deps/confusion_family_test-9cf886817d9fc4cd)
+
+running 7 tests
+test safeguard_wards_the_family_without_a_user_fail ... ok
+test own_tempo_is_immune_with_the_confusion_token ... ok
+test teeter_dance_announce_renders_the_foe_not_the_user ... ok
+test soundproof_blocks_supersonic_but_not_sweet_kiss ... ok
+test confusion_family_plain_hit_starts_confusion ... ok
+test a_substitute_blocks_every_confusion_move ... ok
+test confusion_family_seed_matches_showdown ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests/damage_test.rs (target/release/deps/damage_test-b40bb4fe90e1b6a6)
+
+running 2 tests
+test damage_golden_matches_showdown ... ok
+test damage_smoke ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/dex_test.rs (target/release/deps/dex_test-0109fb4b9eb41d06)
+
+running 2 tests
+test dex_parity_matches_facade ... ok
+test dex_smoke ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/e2e_fuzz_test.rs (target/release/deps/e2e_fuzz_test-1ef8e4da14ae7d8a)
+
+running 4 tests
+test e2e_diag ... ignored
+test e2e_trace_log ... ignored
+test e2e_trace_one ... ignored
+test e2e_fuzz_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests/explosion_test.rs (target/release/deps/explosion_test-608e71513999a0cf)
+
+running 1 test
+test explosion_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/fire_thaw_ko_test.rs (target/release/deps/fire_thaw_ko_test-be2f825528b7eb95)
+
+running 2 tests
+test a_fire_move_the_frozen_target_survives_still_thaws_it ... ok
+test a_fire_move_that_kos_a_frozen_target_leaves_the_freeze_on_the_corpse ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/fixeddamage_test.rs (target/release/deps/fixeddamage_test-f54171db28e96269)
+
+running 1 test
+test fixeddamage_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/flashfire_test.rs (target/release/deps/flashfire_test-a49d9f2d31c4d604)
+
+running 3 tests
+test flash_fire_boost_exact_max_roll ... ok
+test flashfire_golden_matches_showdown ... ok
+test flash_fire_light_screen_chain_combine_exact ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/focus_energy_golden_test.rs (target/release/deps/focus_energy_golden_test-793f9af91019288e)
+
+running 2 tests
+test focus_energy_golden_crit_rate_shows_the_volatile_is_read ... ok
+test focus_energy_golden_matches_showdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/focus_energy_test.rs (target/release/deps/focus_energy_test-2444b87a138b97a0)
+
+running 4 tests
+test a_second_cast_fails_with_the_still_form ... ok
+test snatch_steals_focus_energy ... ok
+test a_plain_cast_starts_focus_energy ... ok
+test focus_energy_actually_raises_the_crit_rate ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.88s
+
+     Running tests/forecast_test.rs (target/release/deps/forecast_test-eb7a486e285e08cd)
+
+running 1 test
+test forecast_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/fullbattle_test.rs (target/release/deps/fullbattle_test-811ff972ad91b93c)
+
+running 1 test
+test fullbattle_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/handler_audit_test.rs (target/release/deps/handler_audit_test-09b6e7dd38ee7a90)
+
+running 1 test
+test handler_audit_gate ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.70s
+
+     Running tests/haze_test.rs (target/release/deps/haze_test-366a4de819ff416c)
+
+running 1 test
+test haze_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/item_mods_test.rs (target/release/deps/item_mods_test-107be3a1130e1cf8)
+
+running 1 test
+test item_mods_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/leechseed_test.rs (target/release/deps/leechseed_test-faf395b7d2b821cc)
+
+running 1 test
+test leechseed_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/lens1_review_test.rs (target/release/deps/lens1_review_test-f45f8084f0cb1226)
+
+running 4 tests
+test f2_fireblast_into_flashfire_hit_and_miss ... ok
+test f3_thunder_into_voltabsorb_land_and_miss ... ok
+test f2_hydropump_into_waterabsorb_miss_and_land ... ok
+test f1_leechseed_into_substitute_still_fail ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/liquidooze_test.rs (target/release/deps/liquidooze_test-6eed8b7dcd31f8cf)
+
+running 1 test
+test liquidooze_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/movecoverage_batch1_test.rs (target/release/deps/movecoverage_batch1_test-7d01332ffe7bfdd9)
+
+running 1 test
+test movecoverage_batch1_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/movecoverage_batch2_test.rs (target/release/deps/movecoverage_batch2_test-4ae7435b8e60ffac)
+
+running 1 test
+test movecoverage_batch2_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests/movecoverage_batch3_test.rs (target/release/deps/movecoverage_batch3_test-f57f0f5bdf7f6268)
+
+running 1 test
+test movecoverage_batch3_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/movecoverage_batch4_test.rs (target/release/deps/movecoverage_batch4_test-c1e2b6f196a06266)
+
+running 1 test
+test movecoverage_batch4_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/movecoverage_batch4b_test.rs (target/release/deps/movecoverage_batch4b_test-6f49e7c9af0b4a65)
+
+running 1 test
+test movecoverage_batch4b_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/movecoverage_batch4c_test.rs (target/release/deps/movecoverage_batch4c_test-ce417e3760dc4f71)
+
+running 1 test
+test movecoverage_batch4c_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests/movecoverage_batch5_test.rs (target/release/deps/movecoverage_batch5_test-044199eb4ae935c8)
+
+running 1 test
+test movecoverage_batch5_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/movecoverage_batch6_test.rs (target/release/deps/movecoverage_batch6_test-560ebc9b2b11fbbd)
+
+running 1 test
+test movecoverage_batch6_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/movecoverage_snatch_test.rs (target/release/deps/movecoverage_snatch_test-1e7dfaacd83b2311)
+
+running 1 test
+test movecoverage_snatch_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/naturalcure_test.rs (target/release/deps/naturalcure_test-4bdefe25803329bd)
+
+running 1 test
+test naturalcure_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/one_sided_view_test.rs (target/release/deps/one_sided_view_test-26db23251527dbcb)
+
+running 11 tests
+test every_move_and_ability_id_is_in_SHOWDOWN_ID_FORM ... ok
+test the_reveal_fold_survives_clear_chunks_and_the_snapshot ... ok
+test the_owner_sees_exact_hp_and_its_spread_while_the_watcher_sees_the_percent_fold ... ok
+test a_volatile_is_carried_as_the_ANNOUNCED_name_with_its_turn_and_restart_counts ... ok
+test the_view_hides_every_unrevealed_opposing_mon_that_pre_state_shows ... ok
+test a_mid_turn_faint_captures_the_view_AT_its_replacement_request ... ok
+test an_own_bench_mon_reads_unrevealed_until_it_switches_in ... ok
+test a_move_is_revealed_only_once_it_is_used_and_carries_its_SIGHTING_COUNT ... ok
+test an_ordinary_turn_captures_no_intermediate_view ... ok
+test the_wall_holds_symmetrically_for_p2 ... ok
+test the_reveal_key_is_the_protocol_ident_name ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/phaze_test.rs (target/release/deps/phaze_test-42aa1b609c46d080)
+
+running 1 test
+test phaze_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests/pp_struggle_test.rs (target/release/deps/pp_struggle_test-5f21fe11b75c604f)
+
+running 1 test
+test pp_struggle_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/prng_golden.rs (target/release/deps/prng_golden-b0bbf46795734d06)
+
+running 1 test
+test prng_matches_showdown_golden ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/protect_move_test.rs (target/release/deps/protect_move_test-8e37d7358d487e1f)
+
+running 1 test
+test protect_move_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/protocol_byte_fuzz_test.rs (target/release/deps/protocol_byte_fuzz_test-4689d7ad805e8fe7)
+
+running 22 tests
+test protect_before_soundproof_for_a_sound_status_move ... ok
+test protect_blocks_status_move_before_the_immune_report ... ok
+test hyper_cutter_unboost_fail_carries_the_attack_stat_token ... ok
+test color_change_typechange_uses_display_cased_type ... ok
+test ally_side_move_renders_the_user_as_the_move_target ... ok
+test recover_at_full_hp_emits_still_and_fail_heal ... ok
+test charge_selfko_emits_no_charge_end_line ... ok
+test natural_cure_emits_curestatus_on_switch_out ... ok
+test speed_boost_residual_emits_the_ability_announce ... ok
+test solar_beam_lockedmove_clause_has_a_space ... ok
+test knock_off_hint_fires_once_per_battle ... ok
+test toxic_residual_damage_reports_from_psn ... ok
+test confusion_berry_emits_a_single_start_confusion ... ok
+test stat_drop_blocked_by_substitute_emits_still_and_fail ... ok
+test beat_up_emits_per_strike_activate_in_customgame ... ok
+test effect_spore_sleep_status_is_bare_not_ability_attributed ... ok
+test future_sight_resolving_against_a_fainted_slot_emits_the_hint ... ok
+test typed_hidden_power_renders_bare_name_in_the_move_line ... ok
+test shiny_mon_shows_the_shiny_details_flag ... ok
+test sleep_move_status_carries_from_move ... ok
+test pursuit_interrupt_move_announce_carries_from_pursuit ... ok
+test toxic_into_steel_reports_immune ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/protocol_test.rs (target/release/deps/protocol_test-e7390f2204491651)
+
+running 1 test
+test protocol_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/recovery_move_test.rs (target/release/deps/recovery_move_test-d571d6f9d3a50c77)
+
+running 1 test
+test recovery_move_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/regression_test.rs (target/release/deps/regression_test-28374f5ddbedb99b)
+
+running 367 tests
+test aromatherapy_cures_the_whole_team_draw_free ... ok
+test arena_trap_does_not_trap_flying_or_levitate ... ok
+test armed_counter_and_mirror_coat_respect_the_return_fire_type_immunity ... ok
+test beat_up_hit_cancels_the_targets_focus_punch ... ok
+test baton_pass_transfers_the_substitute_to_the_entrant ... ok
+test acc_stage_drop_flips_hit_to_miss ... ok
+test beat_up_ko_mid_sequence_stops_the_multihit_no_quick_claw ... ok
+test a_non_trapping_move_still_builds_fine ... ok
+test beat_up_volatile_clears_on_switch_out ... ok
+test a_ditto_without_transform_builds_fine ... ok
+test beat_up_mirror_speed_tie_draws_the_per_strike_and_residual_shuffles ... ok
+test baton_pass_transfers_the_boosts_to_the_entrant ... ok
+test baton_pass_with_no_bench_fails_draw_free ... ok
+test baton_pass_transfers_the_leech_seed_to_the_entrant ... ok
+test beat_up_with_no_eligible_party_fizzles_drawing_only_accuracy ... ok
+test arena_trap_rejects_a_grounded_foes_switch_draw_free ... ok
+test beat_up_strike_into_a_focus_band_holder_draws_the_focus_band_roll ... ok
+test a_landed_uproar_wakes_both_actives ... ok
+test baton_pass_copies_stall_and_pursuit_so_the_entrant_residual_ties ... ok
+test battle_armor_prevents_the_crit_but_draws_the_roll ... ok
+test burn_dot_self_ko_ends_before_foe_leftovers ... ok
+test choice_band_sleep_talk_works_once_then_fails_on_the_lock ... ok
+test belly_drum_hp_boundary_and_the_atk_cap_fail ... ok
+test beat_up_full_side_strikes_once_per_healthy_teammate ... ok
+test brick_break_removes_reflect_and_deals_full_damage ... ok
+test brick_break_into_a_ghost_does_not_clear_screens ... ok
+test choice_lock_only_draws_no_disable_move_shuffle ... ok
+test berry_thresholds_eat_at_exact_equality ... ok
+test both_sides_light_screen_residual_draws_the_handler_sort_shuffle ... ok
+test charge_doubles_the_next_electric_move_and_is_consumed_by_any_move ... ok
+test bare_hidden_power_executes_as_the_typed_damaging_move ... ok
+test bright_powder_drops_attacker_accuracy ... ok
+test cloud_nine_switch_out_fires_the_weatherchange_shuffle ... ok
+test cloud_nine_faint_fires_the_weatherchange_shuffle ... ok
+test chlorophyll_speed_doubles_and_flips_the_first_mover_in_sun ... ok
+test both_sides_safeguard_ties_the_side_residual_and_draws_the_shuffle ... ok
+test charge_is_consumed_by_the_baton_pass_move_itself ... ok
+test castform_mirror_forme_order_follows_the_weatherchange_shuffle ... ok
+test confusion_self_hit_applies_choice_band ... ok
+test confusion_self_hit_behind_a_sub_hits_the_mon_not_the_sub ... ok
+test confusion_self_hit_with_two_screens_draws_the_modify_damage_phase1_shuffle ... ok
+test cloud_nine_suppresses_the_sandstorm_chip ... ok
+test color_change_overrides_the_types_for_later_chart_reads ... ok
+test confuse_ray_starts_confusion_then_fails_on_an_already_confused_target ... ok
+test compound_eyes_lifts_shaky_move_accuracy ... ok
+test clear_body_does_not_announce_when_the_drop_is_already_capped ... ok
+test contact_proc_does_not_fire_behind_a_surviving_substitute ... ok
+test conversion_samples_a_live_slot_type_the_user_does_not_have ... ok
+test cloud_nine_leaving_formes_the_castform_via_the_ending_exclusion ... ok
+test curse_ghost_pays_half_hp_and_lays_the_curse_on_the_foe ... ok
+test conversion_2_picks_a_resisting_type_in_the_typedex_order ... ok
+test curse_residual_chips_the_cursed_foe_a_quarter_maxhp ... ok
+test conversion_2_fails_draw_free_with_no_target_last_move ... ok
+test conversion2_candidate_order_is_the_typedex_order ... ok
+test conversion_with_no_eligible_slot_fails_draw_free ... ok
+test curse_recurse_into_an_already_cursed_foe_fails_draw_free ... ok
+test curse_non_ghost_self_boosts_atk_def_and_drops_spe ... ok
+test destiny_bond_is_not_triggered_by_a_residual_ko ... ok
+test counter_mirror_speed_tie_draws_the_before_turn_and_residual_ties ... ok
+test disable_of_a_mimic_overwritten_slot_fails_leaving_the_copied_move_usable ... ok
+test disable_duration_stored_per_branch_matches_sim ... ok
+test cute_charm_attracts_and_the_attract_cants_gender_gated_after_the_roll ... ok
+test doom_desire_resolve_ko_defers_the_quick_claw ... ok
+test doom_desire_resolves_last_in_the_residual_order ... ok
+test damp_cancels_explosion_no_self_ko ... ok
+test disable_start_line_hides_the_hidden_power_type ... ok
+test destiny_bond_mutual_faint_is_a_tie ... ok
+test defense_curl_raises_defense_and_sets_the_volatile ... ok
+test def_side_stat_items_fold_into_the_stat_chain ... ok
+test counter_returns_double_the_physical_hit_and_resets_each_turn ... ok
+test disable_into_a_zero_pp_lastmove_fails_draws_but_no_volatile ... ok
+test doom_desire_double_cast_fails_draw_free_but_deducts_pp ... ok
+test double_kick_is_a_fixed_two_strike_multihit_no_count_draw ... ok
+test destiny_bond_window_closes_at_the_next_move_attempt ... ok
+test double_faint_processes_corpses_in_enqueue_order ... ok
+test double_replacement_cascade_does_not_rechip_the_other_sides_entrant ... ok
+test double_team_raises_evasion_and_folds_into_the_accuracy_roll ... ok
+test double_replacement_castform_and_intimidate_order_by_entrant_speed ... ok
+test effect_spore_samples_a_status_onto_the_attacker ... ok
+test dream_eater_is_immune_against_an_awake_target ... ok
+test double_screen_physical_hit_draws_the_modify_damage_phase1_shuffle ... ok
+test encore_fail_split_draws_differ_by_the_duration_callback ... ok
+test encore_plus_choice_lock_draws_the_disable_move_shuffle ... ok
+test double_edge_recoils_a_third_of_the_damage_dealt ... ok
+test facade_status_doubles_bp_and_composes ... ok
+test explosion_into_a_ghost_the_user_still_faints ... ok
+test endeavor_ghost_immunity_and_substitute_break_no_carry ... ok
+test endure_does_not_clamp_a_future_move_resolve ... ok
+test doom_desire_and_future_sight_cast_idle_resolve_snapshot ... ok
+test explosion_into_a_protect_the_user_still_faints ... ok
+test encore_zero_pp_ends_early_and_rejects_the_zero_pp_lastmove ... ok
+test eruption_scales_with_hp_exactly_like_water_spout ... ok
+test explosion_breaks_a_substitute_and_the_user_still_faints ... ok
+test fainted_replacement_sort_clears_status_and_boosts ... ok
+test endure_clamps_fixed_damage_but_not_the_burn_residual ... ok
+test encored_mon_sleep_talk_fails_draw_free_via_ontryhit ... ok
+test fake_out_works_on_the_first_action_and_is_gated_after ... ok
+test endeavor_sets_target_hp_to_users_and_fails_at_equality_zero_draw ... ok
+test fainted_swift_swim_corpse_sorts_at_plain_speed ... ok
+test false_swipe_never_kos_and_leaves_exactly_one_hp ... ok
+test endure_survives_at_one_hp_and_rides_the_shared_stall_ladder ... ok
+test fake_out_survives_a_turn_whose_action_was_cancelled_by_a_faint ... ok
+test fixed_damage_contact_hit_fires_the_contact_proc ... ok
+test fixed_damage_is_countered_and_beat_up_arms_mirror_coat_with_the_last_strike ... ok
+test faster_encore_stores_rolled_and_overrides_the_queued_move ... ok
+test fixed_damage_hit_cancels_a_queued_focus_punch ... ok
+test flail_band_boundary_bp200_vs_bp150 ... ok
+test flash_fire_boosts_the_holders_own_fire_move ... ok
+test flash_fire_clears_on_switch_out ... ok
+test focus_band_zero_damage_hit_does_not_arm_counter ... ok
+test flash_fire_arms_on_a_landed_fire_hit_but_not_on_a_miss ... ok
+test forced_replacement_recaches_speed_seed ... ok
+test fixed_damage_into_a_substitute ... ok
+test forecast_formes_on_the_weather_set_and_reverts_at_the_expiry ... ok
+test forced_replacement_resume_runs_the_post_replacement_move_decision ... ok
+test forecast_castform_builds_now_that_forecast_is_modeled ... ok
+test flash_fire_still_absorbs_hidden_power_fire ... ok
+test focus_punch_lands_when_the_user_keeps_focus ... ok
+test fury_cutter_doubles_each_consecutive_use_and_lapses_after_one_gap ... ok
+test flamethrower_does_thaw_a_frozen_defender ... ok
+test gen4_named_incense_is_x1_2_bp_chain_not_x1_1 ... ok
+test gen3_lightball_is_spa_only_x2 ... ok
+test giga_drain_heals_half_the_damage_dealt ... ok
+test grounded_ghost_is_trapped_by_arena_trap_in_showdown_gen3 ... ok
+test freeze_clause_blocks_the_second_freeze_in_gen3ou ... ok
+test hidden_power_bp_weight_order_and_boundaries ... ok
+test haze_clears_both_actives_boosts_including_the_users_own ... ok
+test formed_castform_reverts_on_switch_out_and_reformes_on_reentry ... ok
+test forecast_start_window_forme_is_draw_free_and_typed ... ok
+test hail_move_sets_chips_and_expires_on_a_tied_mirror ... ok
+test guts_unstatused_gets_no_boost ... ok
+test frozen_defrost_move_bypasses_the_cant_and_thaws ... ok
+test frozen_flash_fire_holder_is_not_fire_immune ... ok
+test focus_punch_cancelled_by_a_prior_hit_draws_nothing ... ok
+test haze_with_no_boosts_is_draw_free_like_splash ... ok
+test hidden_power_bp_is_iv_derived_not_flat_seventy ... ok
+test focus_band_survives_a_lethal_move_hit_at_one_hp ... ok
+test focus_punch_mirror_speed_tie_draws_the_beforeturnmove_and_residual_ties ... ok
+test insomnia_blocks_sleep_draw_free ... ok
+test intimidate_entrant_does_not_drop_a_forced_replacement_foe ... ok
+test guts_is_x1_5_and_suppresses_the_burn_halve ... ok
+test hyper_beam_hit_locks_then_recharges_draw_free_then_clears ... ok
+test hyper_beam_ko_still_locks_across_the_force_switch ... ok
+test icicle_spear_variable_multihit_draws_one_count_sample ... ok
+test imprison_cants_a_shared_move_without_spending_pp ... ok
+test huge_power_is_x2_atk_physical_only ... ok
+test hyper_beam_miss_does_not_lock ... ok
+test heal_bell_cures_team_but_skips_a_soundproof_ally ... ok
+test intimidate_into_clear_body_is_a_noop ... ok
+test immunity_blocks_tox_but_not_burn ... ok
+test hustle_atk_x1_5_and_accuracy_x0_8 ... ok
+test inner_focus_blocks_the_flinch_at_the_apply_but_draws_the_roll ... ok
+test hidden_power_fire_does_not_thaw_a_frozen_defender ... ok
+test leech_residual_order_leftovers_sand_burn ... ok
+test leech_handler_tie_at_equal_speed_draws_one_shuffle ... ok
+test jump_kick_crashes_through_a_protect_block ... ok
+test limber_blocks_paralysis_draw_free ... ok
+test imprison_fails_when_no_move_is_shared ... ok
+test jump_kick_miss_crashes_the_user_with_crit_and_roll_draws ... ok
+test knocked_off_attacker_thief_takes_nothing ... ok
+test knock_off_removes_the_targets_item_draw_free ... ok
+test light_screen_sets_a_five_turn_side_condition_draw_free ... ok
+test liquid_ooze_drain_reversal_can_ko_the_drainer ... ok
+test intimidate_into_a_substitute_is_a_noop ... ok
+test leftovers_heal_order_follows_the_slot_condition_gather ... ok
+test leech_seeder_fainted_skips_the_drain ... ok
+test knock_off_blocked_by_sticky_hold ... ok
+test liquid_ooze_reverses_a_drain_heal_into_damage_on_the_drainer ... ok
+test marvel_scale_is_a_defender_side_def_boost ... ok
+test kings_rock_appends_the_trailing_flinch_secondary ... ok
+test mean_look_firm_traps_the_ghost_until_the_trapper_leaves ... ok
+test mimic_used_by_a_transformed_mon_fails ... ok
+test memento_lands_zero_draw_with_the_foe_move_cancelled_and_protect_blocks_it ... ok
+test mimic_of_hidden_power_uses_the_mimickers_own_type ... ok
+test liquid_ooze_reverses_the_leech_seed_drain_onto_the_seeder ... ok
+test modeled_and_inert_items_still_build_fine ... ok
+test minus_boosts_spa_when_the_foe_active_has_plus ... ok
+test lum_eats_immediately_inside_set_status_before_the_holders_move ... ok
+test magnet_pull_traps_steel_only ... ok
+test low_kick_weight_ladder_is_draw_neutral ... ok
+test magma_armor_blocks_freeze ... ok
+test move_alias_wisp_resolves_and_runs_will_o_wisp ... ok
+test multihit_ko_on_the_first_strike_stops_the_loop_no_quick_claw ... ok
+test minimize_doubles_a_flagged_move_but_leaves_others_alone ... ok
+test mutual_explosion_is_a_double_faint_tie ... ok
+test mustrecharge_duration_two_runs_faintmessages_so_perish_faint_precedes_upkeep ... ok
+test mimic_overlays_the_slot_and_reverts_on_switch_out ... ok
+test natural_cure_is_a_no_op_on_a_faint ... ok
+test modeled_near_neighbour_moves_still_build_fine ... ok
+test multihit_into_both_sides_light_screen_draws_the_modify_damage_phase1_shuffle_per_strike ... ok
+test nicknamed_mon_renders_nickname_in_every_ident_not_species ... ok
+test natural_cure_phaze_drag_cures_the_dragged_out_mon ... ok
+test para_while_active_keeps_full_cached_speed_seed ... ok
+test pain_split_averages_with_the_maxhp_clamp_and_a_sub_blocks_it ... ok
+test partial_trap_is_baton_passed_to_the_entrant ... ok
+test partial_trap_firm_trap_blocks_the_victims_switch ... ok
+test partial_trap_rapid_spin_clears_it_with_the_non_silent_end ... ok
+test partial_trap_plus_block_ties_the_endturn_trap_event_sort ... ok
+test no_usable_move_forces_struggle_and_struggle_recoil_is_gen3_quarter_damage_dealt ... ok
+test perish_gathered_before_a_later_protect_matches_the_sim_tick_order ... ok
+test per_side_choice_acceptance_maps_split_accept_boundaries_to_the_sims_seeds ... ok
+test partial_trap_releases_silently_when_the_trapper_leaves ... ok
+test natural_cure_cures_status_on_voluntary_switch_out ... ok
+test paralyzed_user_on_the_recharge_turn_draws_no_para_roll ... ok
+test partial_trap_duration_expiry_beats_the_trapper_gone_release ... ok
+test partial_trap_substitute_blocks_the_volatile_and_the_duration_draw ... ok
+test partial_trap_wrap_lifecycle_matches_the_sim ... ok
+test partial_trap_substitute_frees_it_with_the_silent_end ... ok
+test night_shade_into_a_normal_is_immune ... ok
+test overheat_self_drops_spa_and_draws_the_selfdrops_random_100 ... ok
+test perish_mirror_ties_each_residual_and_the_mutual_perish_out_is_a_tie ... ok
+test perish_song_ticks_to_the_faint_and_a_pivot_clears_the_counter ... ok
+test phaze_blocked_by_protect_draws_no_sample_and_leaves_the_target ... ok
+test pursuit_interrupt_into_a_pressure_switcher_deducts_an_extra_pp ... ok
+test phaze_draws_accuracy_then_n1_sample_seed ... ok
+test phaze_fail_draws_only_accuracy_no_sample_seed ... ok
+test pursuit_interrupt_into_entry_hazards ... ok
+test pressure_does_not_add_pp_for_an_allyteam_move ... ok
+test pursuit_does_not_faint_a_low_hp_baton_pass_passer ... ok
+test psych_up_copies_all_stages_verbatim_overwriting_the_users_own ... ok
+test pursuit_normal_when_the_foe_stays_is_a_plain_bp40_hit ... ok
+test pressure_adds_pp_for_a_foeside_spikes_move ... ok
+test pursuit_does_not_intercept_a_baton_pass_selfswitch ... ok
+test pp_decrements_on_use_draw_free ... ok
+test pursuit_that_kos_the_switcher_still_brings_in_the_replacement ... ok
+test pressure_does_not_add_pp_for_a_nonghost_curse ... ok
+test pursuit_interrupt_strikes_the_switcher_at_double_bp_never_miss ... ok
+test pressure_decrements_two_pp ... ok
+test quick_claw_proc_makes_the_slow_holder_move_first_seed ... ok
+test phaze_drag_into_a_spikes_ko_chains_a_replacement ... ok
+test pursuit_speed_tie_interrupt_draws_the_post_strike_each_event ... ok
+test pinch_bp_boost_fires_at_exactly_one_third_hp ... ok
+test rain_dance_sets_a_five_turn_timed_rain_draw_free ... ok
+test polkadot_and_pink_bow_price_the_direct_bp_boost ... ok
+test rain_dish_heals_each_end_of_turn_in_rain ... ok
+test rage_boosts_attack_when_the_foe_hits_inside_the_window ... ok
+test rain_dance_into_an_already_active_rain_fails_draw_free ... ok
+test refresh_cures_self_paralysis_draw_free ... ok
+test revenge_doubles_after_being_damaged_by_the_target ... ok
+test rejected_switch_to_a_fainted_slot_is_skipped_draw_free ... ok
+test rock_head_negates_double_edge_recoil ... ok
+test safeguard_cast_blocks_status_then_expires_on_the_fifth_turn ... ok
+test rough_skin_recoils_the_attacker_draw_free ... ok
+test reactive_wrong_category_hits_do_not_arm ... ok
+test roar_drags_a_trapped_mon_out ... ok
+test rapid_spin_clears_the_users_own_spikes_and_leech_seed ... ok
+test safeguard_does_not_block_your_own_rest ... ok
+test sand_upkeep_line_emitted_under_cloud_nine_before_leech_damage ... ok
+test recoil_is_computed_on_the_post_focus_band_damage ... ok
+test seismic_toss_deals_user_level_damage ... ok
+test secret_power_keeps_its_base_paralysis_secondary_with_no_terrain ... ok
+test rollout_doubles_per_execution_and_defense_curl_doubles_it_again ... ok
+test safeguard_blocks_a_yawn_cast_but_not_a_pending_yawn_resolve ... ok
+test sand_attack_drops_accuracy_and_is_not_ground_immune ... ok
+test screech_drops_the_foe_defense_by_two_after_its_accuracy_roll ... ok
+test recycle_restores_an_eaten_berry_but_not_a_knocked_off_item ... ok
+test return_frustration_happiness_extremes_are_draw_neutral ... ok
+test sand_veil_grants_sandstorm_chip_immunity ... ok
+test rest_into_a_sleep_immune_ability_fails_draw_free ... ok
+test residual_gather_order_status_before_leftovers ... ok
+test sleep_clause_exempts_a_self_rest_sleeper_from_blocking_a_foe_sleep_move ... ok
+test screech_blocked_by_clear_body_draws_accuracy_but_no_drop ... ok
+test skill_swap_exchanges_abilities_without_refiring_on_start ... ok
+test seismic_toss_into_a_ghost_is_immune_accuracy_only_seed ... ok
+test self_boost_secondary_still_applies_through_a_sub ... ok
+test sleep_talk_called_roar_drags_the_foe ... ok
+test slower_encore_stores_rolled_plus_one ... ok
+test skill_swap_fails_on_wonder_guard_and_on_identical_abilities ... ok
+test shadow_tag_traps_a_flying_foe_draw_free ... ok
+test shed_skin_rolls_once_per_statused_residual ... ok
+test shield_dust_behind_a_substitute_still_draws_the_secondary ... ok
+test sleep_talk_skipped_time_restores_on_switch_in ... ok
+test sitrus_eats_at_the_half_threshold_in_the_leftovers_slot ... ok
+test sleep_talk_n1_sample_and_empty_pool ... ok
+test sleep_talk_zero_pp_pick_wastes_the_turn_after_the_sample ... ok
+test solar_beam_full_para_on_the_charge_turn_no_charge_no_pp ... ok
+test solar_beam_rain_halves_the_bp_state_only ... ok
+test snatch_mirror_draws_the_residual_duration_tie_shuffle ... ok
+test snatch_does_not_steal_thunder_wave ... ok
+test sleep_breaks_the_lock_in_without_confusing_the_user ... ok
+test solar_beam_charges_then_fires_then_recharges_fresh ... ok
+test snatch_steals_rest_snatcher_sleeps_and_draws_the_sleep_roll ... ok
+test souldew_boosts_both_spa_and_spd ... ok
+test soundproof_blocks_a_damaging_sound_move ... ok
+test solar_beam_sun_skip_fires_immediately ... ok
+test soundproof_immune_to_sing ... ok
+test snatch_slow_snatcher_still_steals_priority_plus_four ... ok
+test smelling_salts_doubles_on_a_paralyzed_target_and_cures_it ... ok
+test speed_boost_raises_the_spe_stage_by_one_each_active_turn ... ok
+test spider_web_survives_a_baton_pass_and_dies_with_the_trapper ... ok
+test snatch_steal_of_a_pressure_victim_deducts_an_extra_snatch_pp ... ok
+test snatch_fast_steals_swords_dance ... ok
+test static_contact_proc_paralyzes_the_attacker ... ok
+test substitute_break_does_not_carry_excess_to_the_mon ... ok
+test suppressed_hail_expiry_draws_the_unconditional_weatherchange_shuffle ... ok
+test suction_cups_blocks_the_roar_drag_no_sample ... ok
+test starf_pinch_draws_the_sample_and_boosts_plus_two ... ok
+test taunt_does_not_block_a_bare_hidden_power ... ok
+test thunder_sun_base_accuracy_fifty_lowers_the_hit_threshold ... ok
+test stick_boosts_farfetchd_crit_ratio_by_two ... ok
+test sun_blocks_freeze_secondary_draw_free ... ok
+test taunt_and_disable_onbeforemove_priority_vs_paralysis ... ok
+test thunder_rain_never_miss_skips_the_accuracy_draw ... ok
+test the_construction_fail_loud_seam_is_empty_but_still_wired ... ok
+test switch_details_emit_level_suffix_only_when_not_l100 ... ok
+test trace_draws_the_n1_sample_and_copies_the_foes_ability ... ok
+test toxic_stage_resets_on_switch_in ... ok
+test the_lock_in_family_locks_for_its_rolled_duration_then_confuses ... ok
+test taunt_blocks_status_move_selection_for_the_sim_window_draw_free ... ok
+test torment_adds_the_disable_move_tie_shuffle_draw ... ok
+test taunt_plus_disable_forces_struggle ... ok
+test sub_absorbed_hit_does_not_arm_counter ... ok
+test substitute_absorbs_a_hit_but_the_secondary_random_100_still_draws ... ok
+test transform_copies_the_ability_without_refiring_its_on_start ... ok
+test sun_rain_weather_turn_tie_draws_the_eachevent_weather_shuffle_seed ... ok
+test transform_copies_the_ability ... ok
+test trace_of_liquid_ooze_does_not_panic_and_reverses_the_drain ... ok
+test trace_of_wonder_guard_does_not_panic_and_blocks_a_neutral_move ... ok
+test switch_into_a_tie_under_sand_draws_the_weather_change_shuffle_seed ... ok
+test tox_stage_resets_when_the_runswitch_runs ... ok
+test traced_status_immune_ability_cures_the_status_on_update ... ok
+test transform_carriers_build_now_that_transform_is_modeled ... ok
+test tox_stage_persists_when_the_runswitch_is_cancelled ... ok
+test synchronize_reflects_paralysis_to_the_caster ... ok
+test transform_copies_through_a_substitute ... ok
+test transform_copies_the_target_with_the_ppups_maxpp_ladder ... ok
+test torment_blocks_the_last_used_move_and_is_permanent ... ok
+test transform_reverts_on_faint ... ok
+test transform_ident_stays_the_base_species_without_a_nickname ... ok
+test transform_request_json_is_byte_identical_to_the_sim ... ok
+test thief_steals_the_targets_item_when_attacker_is_itemless ... ok
+test water_spout_at_one_hp_clamps_the_base_power_to_one ... ok
+test uproar_locks_the_user_for_its_rolled_duration_and_spends_pp_once ... ok
+test water_spout_variable_bp_is_draw_neutral ... ok
+test unmodeled_items_fail_loud_at_construction ... ok
+test trick_into_a_substitute_fails_and_does_not_swap ... ok
+test tri_attack_into_a_sub_draws_random_100_but_not_the_sample_random_3 ... ok
+test weather_ball_category_follows_the_type_seen_by_counter_and_mirror_coat ... ok
+test uproar_blocks_sleep_field_wide_with_the_msg_attr_only_for_itself ... ok
+test trick_away_a_choice_band_releases_the_users_choice_lock ... ok
+test twineedle_draws_its_secondary_per_strike_and_poisons ... ok
+test transform_into_an_already_transformed_target_fails_draw_free ... ok
+test weather_ball_retypes_and_doubles_power_per_weather ... ok
+test transform_reverts_on_switch_out_keeping_its_own_used_pp ... ok
+test white_herb_restores_a_foe_charm_stat_drop ... ok
+test white_herb_restores_a_lead_intimidate_drop_during_construction ... ok
+test white_herb_self_drop_restores_then_single_use ... ok
+test will_o_wisp_into_flash_fire_is_absorbed ... ok
+test weather_ball_is_reverted_by_a_weather_suppressor ... ok
+test truant_loafs_every_other_turn_draw_free ... ok
+test trick_swap_immune_and_fail_all_draw_only_accuracy_and_quick_claw ... ok
+test wish_is_slot_keyed_and_survives_a_switch ... ok
+test wish_heals_half_maxhp_the_turn_after_cast ... ok
+test wonder_guard_status_move_bypasses_then_super_effective_connects ... ok
+test wonder_guard_leech_seed_residual_kos_the_one_hp_shedinja ... ok
+test yawn_resolve_draws_the_sleep_random_2_6_at_the_next_turn_end ... ok
+test wonder_guard_blocks_a_neutral_move_drawing_only_accuracy ... ok
+test white_herb_restores_a_mid_battle_intimidate_drop_via_run_switch ... ok
+test wish_double_cast_fails_and_the_pending_wish_resolves ... ok
+test wish_residual_fires_at_order_7_saving_a_low_hp_mon_from_the_sand_chip ... ok
+test white_herb_does_not_trigger_when_the_net_leaves_no_negative_stage ... ok
+test yawn_resolve_is_blocked_by_the_sleep_clause_in_gen3ou ... ok
+test wonder_guard_blocks_a_resisted_never_miss_move_drawing_nothing ... ok
+test wrap_family_builds_now_that_the_partial_trap_is_modeled ... ok
+test yawn_mirror_residual_handler_ties_and_draws_the_shuffle ... ok
+test yawn_recast_into_a_pending_yawn_does_not_reset_the_duration ... ok
+test wrong_species_holder_gets_no_boost ... ok
+
+test result: ok. 367 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s
+
+     Running tests/replay_driver_test.rs (target/release/deps/replay_driver_test-b5cb9459fbc05ae2)
+
+running 14 tests
+test an_unknown_mode_is_an_error_not_a_silent_success ... ok
+test turn_1_opens_on_a_freshly_constructed_session ... ok
+test a_single_shot_source_falls_to_the_followup_instead_of_re_sending ... ok
+test a_cmd_request_still_gets_the_persistent_envelope_and_the_process_stays_alive ... ok
+test recorded_queues_splits_by_side_stops_at_forcelose_and_caps ... ok
+test a_one_shot_reroll_at_turn_1_opens_the_first_decision ... ok
+test open_root_opens_turn_1_on_the_persistent_protocol ... ok
+test a_turn_1_faint_still_gets_its_forced_replacement ... ok
+test a_recorded_queue_pulls_the_next_entry_when_the_first_is_refused ... ok
+test build_to_turn_1_applies_no_commands ... ok
+test a_failing_one_shot_exits_one_with_an_error_object ... ok
+test a_one_shot_reroll_at_turn_1_reports_the_boundary_turn_in_pre_state ... ok
+test a_mode_request_answers_once_and_exits_zero_with_no_trailing_newline ... ok
+test an_invalid_turn_is_rejected_before_any_battle_is_built ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests/residual_faint_test.rs (target/release/deps/residual_faint_test-e76c004ad727f8c6)
+
+running 2 tests
+test weather_chip_ko_is_not_revived_by_own_leftovers ... ok
+test residual_ko_under_tie_skips_trailing_draws ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/review_confusion_boost_tri.rs (target/release/deps/review_confusion_boost_tri-5423ea0fdde6229f)
+
+running 1 test
+test confusion_boost_tri_seed_parity ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/search_driver_test.rs (target/release/deps/search_driver_test-878c4a90be06abb6)
+
+running 5 tests
+test pick_uniform_matches_js_and_uses_exactly_one_draw ... ok
+test aux_rng_matches_the_js_draw_tables ... ok
+test random_choice_is_deterministic_per_seed_and_always_legal ... ok
+test a_wedged_turn_is_reported_stuck_after_nodes_exact_iteration_count ... ok
+test two_arms_from_one_node_diverge_and_leave_the_parent_untouched ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/search_side_elision_test.rs (target/release/deps/search_side_elision_test-fade58a3137f2d78)
+
+running 4 tests
+test a_request_without_side_renders_every_field_in_its_historical_order ... ok
+test asking_for_p1_only_drops_p2_and_leaves_p1_byte_identical ... ok
+test asking_for_p2_only_drops_p1_and_leaves_p2_byte_identical ... ok
+test an_unrecognised_side_is_refused_rather_than_silently_meaning_both ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/secondary_test.rs (target/release/deps/secondary_test-5b9c6f56000e0a27)
+
+running 1 test
+test secondary_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/setup_move_test.rs (target/release/deps/setup_move_test-c30d9d8b12bc7fa0)
+
+running 1 test
+test setup_move_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/sim_bridge_seed_test.rs (target/release/deps/sim_bridge_seed_test-f6a1ba22b229dac9)
+
+running 8 tests
+test b2_seedless_battle_emits_recon ... ok
+test b1_seedless_minted_seed_is_not_the_construct_default ... ok
+test b1_seedless_starts_run_distinct_battles ... ok
+test b4_unparseable_resume_reseed_fails_loud ... ok
+test b4_resume_reseed_accepts_the_string_seed_its_producer_emits ... ok
+test b3_array_and_string_seed_forms_are_identical ... ok
+test b3_sodium_seed_is_honoured_and_reproducible ... ok
+test b3_unparseable_seed_fails_loud ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/species_formes_test.rs (target/release/deps/species_formes_test-f94c44af03de5066)
+
+running 4 tests
+test a_packed_forme_team_constructs ... ok
+test unown_cosmetic_formes_clone_the_base ... ok
+test deoxys_formes_carry_their_own_base_stats ... ok
+test castform_weather_formes_are_describable ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/spikes_test.rs (target/release/deps/spikes_test-fe133316155d8502)
+
+running 1 test
+test spikes_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/spread_stat_drop_golden_test.rs (target/release/deps/spread_stat_drop_golden_test-de54f668ec80e4ec)
+
+running 2 tests
+test spread_stat_drop_golden_covers_its_branches ... ok
+test spread_stat_drop_golden_matches_showdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/spread_stat_drop_test.rs (target/release/deps/spread_stat_drop_test-cb525103e4ecda23)
+
+running 4 tests
+test a_spread_drop_at_the_floor_emits_the_delta_zero_line ... ok
+test soundproof_blocks_growl_but_not_leer ... ok
+test the_boost_immunity_abilities_gate_a_spread_drop ... ok
+test every_spread_stat_drop_lands_on_the_foe_and_announces_the_foe ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/state_test.rs (target/release/deps/state_test-b0a8bd5a37bd0b7c)
+
+running 2 tests
+test state_smoke ... ok
+test state_golden_matches_showdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/stats_test.rs (target/release/deps/stats_test-adcdf9d001bee627)
+
+running 2 tests
+test stats_smoke ... ok
+test stats_golden_matches_showdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/status_move_test.rs (target/release/deps/status_move_test-b54a38e3afb16e0a)
+
+running 1 test
+test status_move_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/statusimmune_test.rs (target/release/deps/statusimmune_test-13fbd32f7f70be86)
+
+running 2 tests
+test statusimmune_golden_is_byte_reproducible ... ok
+test statusimmune_golden_matches_showdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/substitute_test.rs (target/release/deps/substitute_test-7debb4872e0d98a7)
+
+running 2 tests
+test breaking_a_substitute_leaves_the_substitutebroken_volatile_until_switch_out ... ok
+test substitute_golden_matches_showdown ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/switchin_test.rs (target/release/deps/switchin_test-e8dc8bd6b1697638)
+
+running 3 tests
+test switchin_golden_matches_showdown ... ok
+test switchin_handlers_smoke ... ok
+test switchin_dispatch_is_draw_free ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/taunt_disable_test.rs (target/release/deps/taunt_disable_test-0038d143359439cc)
+
+running 1 test
+test taunt_disable_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/team_test.rs (target/release/deps/team_test-20b301ee3e94bd6e)
+
+running 2 tests
+test team_smoke ... ok
+test team_golden_roundtrip ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/trapping_test.rs (target/release/deps/trapping_test-5e41ab4dceef2667)
+
+running 1 test
+test trapping_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/trick_test.rs (target/release/deps/trick_test-9f35f4f5a0a4c1ce)
+
+running 1 test
+test trick_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/turn0_construction_test.rs (target/release/deps/turn0_construction_test-63e41c2966c32d1a)
+
+running 9 tests
+test speed_tie_unspecified_gender_composes_samples_and_shuffles ... ok
+test speed_tie_explicit_gender_draws_the_endturn_shuffles ... ok
+test turn0_distinct_speed_emits_the_faster_lead_intimidate_first ... ok
+test distinct_speed_unspecified_gender_draws_the_gender_samples ... ok
+test weather_setter_speed_tie_draws_the_weatherchange_shuffle ... ok
+test gender_samples_only_ratiod_bench_mons_in_team_order ... ok
+test distinct_speed_explicit_gender_draws_only_the_quick_claw ... ok
+test turn0_speed_tie_mirror_emits_the_intimidate_block_in_the_drawn_order ... ok
+test turn0_weather_setter_tie_emits_the_lines_in_the_order_the_board_agrees_with ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/turn_test.rs (target/release/deps/turn_test-1e0ac6c64364f90c)
+
+running 1 test
+test turn_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/whiteherb_test.rs (target/release/deps/whiteherb_test-b69c078349cc22ad)
+
+running 1 test
+test whiteherb_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/wonderguard_test.rs (target/release/deps/wonderguard_test-fb227e5b2a427f80)
+
+running 1 test
+test wonderguard_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/writeline_test.rs (target/release/deps/writeline_test-09fe5381b6ce9c52)
+
+running 1 test
+test writeline_stream_matches_showdown_per_write ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+
+     Running tests/yawn_test.rs (target/release/deps/yawn_test-df184f5f3b81caa9)
+
+running 1 test
+test yawn_golden_matches_showdown ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests pokesim
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+### exit 0 end 2026-09-23T13:24:08-07:00 25.26 23.21 23.80 5/2393 108159
+### rebuild production bins (default features) 2026-09-23T13:24:14-07:00
+    Finished `release` profile [optimized] target(s) in 0.00s
+### build exit 0

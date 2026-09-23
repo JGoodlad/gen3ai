@@ -200,14 +200,16 @@ one tech-debt list; nothing on it is dispatched without the owner's word.
 
 ## `endstate/` — the END-STATE designs, explicit-only, not scheduled
 
-Two documents authored 2026-09-22 at the owner's request, stating where the system is heading so the
-next profile has something to decide against. Neither is a commitment; each carries an ordering
-with gates and a decision point. **Explicit-only** (like every `design_*.md`): update on the owner's
-word, never as a side effect of a landing.
+Two END-STATE documents authored 2026-09-22 at the owner's request, stating where the system is
+heading so the next profile has something to decide against — neither is a commitment; each
+carries an ordering with gates and a decision point — plus the owner-requested PROGRAM that
+schedules the environment one (2026-09-23). **Explicit-only** (like every `design_*.md`): update on
+the owner's word, never as a side effect of a landing.
 
 | file | states |
 |---|---|
 | [`endstate/design_three_tier_environment.md`](endstate/design_three_tier_environment.md) | the ENVIRONMENT end state — a Rust battle core (`BattleVersion`: omniscient board + per-side view + typed event history, persistent, buildable from the sim OR from a parsed log), one inference tier (bucketed, padded, timer-flushed), the learner unchanged; poke-env retires to a parity oracle; the crossing order, encoder last, with a decision point after D10 + `expand_many` |
+| [`endstate/program_rust_core.md`](endstate/program_rust_core.md) | the RUST CORE PROGRAM that implements the environment end state — build alongside, a three-tier continuous parity gate (commit / milestone / cutover), ONE cutover and ONE deletion pass; milestones M1 events → M2 versions + views (search adopts) → M3 trackers → M4 encoder → M5 N envs per process, the inference tier as an interleaving track, and the cutover's deletion manifest. Its Phase-0 baseline + event-attribution spike: [`research_state/measurements/rust_core_phase0_2026-09-23/`](research_state/measurements/rust_core_phase0_2026-09-23/README.md) |
 | [`endstate/design_model_management.md`](endstate/design_model_management.md) | the MODEL end state — one complete record per model (the missing `optimisation` / `ecology` / `eval_regime` blocks), a registry with ROLES and admission policies as code (teacher ⇐ transfer gate, never head-to-head), the population loop with `main.best_response_gap` as its meter, the comparator rule made structural, ratings under one recipe, anchors with hazards attached; what exists today and the September gaps each part closes |
 
 ## Folder conventions

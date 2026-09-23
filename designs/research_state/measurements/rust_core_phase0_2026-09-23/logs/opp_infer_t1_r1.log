@@ -1,0 +1,273 @@
+### opp_infer_t1_r1 start 2026-09-23T13:09:29-07:00 34.79 29.96 24.49 65/2893 86760
+  obs: 48 REAL banked decisions from /home/goodlad/dev/gen3ai/models/ai_v13_21_wcont_b/eval_traces/step_76000032/staller_v2/loss_s1_003_states.npz
+OPPONENT INFERENCE (CPU, torch threads=1, model=/home/goodlad/dev/gen3ai/models/ai_v13_21_wcont_b/snapshots/snapshot_000072000000.zip)
+  contention: load average 34.08/29.89/24.50 on 16 cpus (CPU-STARVED, expect ~2.1x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+[CompileExtractor] phase0-bench: ON — median 18.33 -> 2.62 ms (7.0x, cache /tmp/gen3ai_inductor_cache)
+  compile applied=True  (compile + its own gate: 84.8 s)
+
+🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬
+🧬 [DEEP TRACE — 3 turns ending at 13:10:59]
+============================================================
+
+────────────────────────────────────────────────────────────
+  turn -2 (oldest)   |  Turn: 23.0 | Weather: SAND | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross            psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp:   0.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp:   0.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2     [actv]  normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: sandstream        moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos               electric/flying     hp:  37.0%  status: none     90/90/85/125/90/100
+    item: leftovers          ably: pressure          moves: ['thunderbolt', 'thunderwave']
+[OPP 1] swampert             ground/water        hp:   0.0%  status: none     100/110/90/85/90/60
+    item: itm-unkn           ably: torrent           moves: []
+[OPP 2] tyranitar    [actv]  dark/rock           hp:  27.0%  status: none     100/134/110/95/100/61
+    item: leftovers          ably: sandstream        moves: ['doubleedge', 'earthquake', 'rockslide']
+
+Fainted: 2 (Us) / 1 (Them)
+
+────────────────────────────────────────────────────────────
+  turn -1   |  Turn: 23.0 | Weather: SAND | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross            psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp:   0.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp:   0.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2     [actv]  normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: sandstream        moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos               electric/flying     hp:  37.0%  status: none     90/90/85/125/90/100
+    item: leftovers          ably: pressure          moves: ['thunderbolt', 'thunderwave']
+[OPP 1] swampert             ground/water        hp:   0.0%  status: none     100/110/90/85/90/60
+    item: itm-unkn           ably: torrent           moves: []
+[OPP 2] tyranitar    [actv]  dark/rock           hp:  27.0%  status: none     100/134/110/95/100/61
+    item: leftovers          ably: sandstream        moves: ['doubleedge', 'earthquake', 'rockslide']
+
+Fainted: 2 (Us) / 1 (Them)
+
+────────────────────────────────────────────────────────────
+  turn 0 (current)   |  Turn: 23.0 | Weather: SAND | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross            psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp:   0.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp:   0.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2     [actv]  normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: sandstream        moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos               electric/flying     hp:  37.0%  status: none     90/90/85/125/90/100
+    item: leftovers          ably: pressure          moves: ['thunderbolt', 'thunderwave']
+[OPP 1] swampert             ground/water        hp:   0.0%  status: none     100/110/90/85/90/60
+    item: itm-unkn           ably: torrent           moves: []
+[OPP 2] tyranitar    [actv]  dark/rock           hp:  27.0%  status: none     100/134/110/95/100/61
+    item: leftovers          ably: sandstream        moves: ['doubleedge', 'earthquake', 'rockslide']
+
+Fainted: 2 (Us) / 1 (Them)
+============================================================
+
+  max|Δlogits| eager vs compiled at B=1: 1.91e-06
+
+🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬
+🧬 [DEEP TRACE — 3 turns ending at 13:13:23]
+============================================================
+
+────────────────────────────────────────────────────────────
+  turn -2 (oldest)   |  Turn: 23.0 | Weather: SAND | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross            psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp:   0.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp:   0.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2     [actv]  normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: sandstream        moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos               electric/flying     hp:  37.0%  status: none     90/90/85/125/90/100
+    item: leftovers          ably: pressure          moves: ['thunderbolt', 'thunderwave']
+[OPP 1] swampert             ground/water        hp:   0.0%  status: none     100/110/90/85/90/60
+    item: itm-unkn           ably: torrent           moves: []
+[OPP 2] tyranitar    [actv]  dark/rock           hp:  27.0%  status: none     100/134/110/95/100/61
+    item: leftovers          ably: sandstream        moves: ['doubleedge', 'earthquake', 'rockslide']
+
+Fainted: 2 (Us) / 1 (Them)
+
+────────────────────────────────────────────────────────────
+  turn -1   |  Turn: 23.0 | Weather: SAND | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross            psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp:   0.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp:   0.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2     [actv]  normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: sandstream        moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos               electric/flying     hp:  37.0%  status: none     90/90/85/125/90/100
+    item: leftovers          ably: pressure          moves: ['thunderbolt', 'thunderwave']
+[OPP 1] swampert             ground/water        hp:   0.0%  status: none     100/110/90/85/90/60
+    item: itm-unkn           ably: torrent           moves: []
+[OPP 2] tyranitar    [actv]  dark/rock           hp:  27.0%  status: none     100/134/110/95/100/61
+    item: leftovers          ably: sandstream        moves: ['doubleedge', 'earthquake', 'rockslide']
+
+Fainted: 2 (Us) / 1 (Them)
+
+────────────────────────────────────────────────────────────
+  turn 0 (current)   |  Turn: 23.0 | Weather: SAND | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross            psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp:   0.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp:   0.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2     [actv]  normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: sandstream        moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos               electric/flying     hp:  37.0%  status: none     90/90/85/125/90/100
+    item: leftovers          ably: pressure          moves: ['thunderbolt', 'thunderwave']
+[OPP 1] swampert             ground/water        hp:   0.0%  status: none     100/110/90/85/90/60
+    item: itm-unkn           ably: torrent           moves: []
+[OPP 2] tyranitar    [actv]  dark/rock           hp:  27.0%  status: none     100/134/110/95/100/61
+    item: leftovers          ably: sandstream        moves: ['doubleedge', 'earthquake', 'rockslide']
+
+Fainted: 2 (Us) / 1 (Them)
+============================================================
+
+
+🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬🧬
+🧬 [DEEP TRACE — 3 turns ending at 13:13:28]
+============================================================
+
+────────────────────────────────────────────────────────────
+  turn -2 (oldest)   |  Turn: 1.0 | Weather: NONE | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross    [actv]  psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp: 100.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp: 100.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2             normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: trace             moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos       [actv]  electric/flying     hp: 100.0%  status: none     90/90/85/125/90/100
+    item: itm-unkn           ably: pressure          moves: []
+
+Fainted: 0 (Us) / 0 (Them)
+
+────────────────────────────────────────────────────────────
+  turn -1   |  Turn: 1.0 | Weather: NONE | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross    [actv]  psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp: 100.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp: 100.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2             normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: trace             moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos       [actv]  electric/flying     hp: 100.0%  status: none     90/90/85/125/90/100
+    item: itm-unkn           ably: pressure          moves: []
+
+Fainted: 0 (Us) / 0 (Them)
+
+────────────────────────────────────────────────────────────
+  turn 0 (current)   |  Turn: 1.0 | Weather: NONE | Spikes: 0/0
+────────────────────────────────────────────────────────────
+Active ctx — Boosts: {} | Volatiles: []
+
+--- TEAMS ---
+[OUR 0] metagross    [actv]  psychic/steel       hp: 100.0%  status: none     80/135/130/95/90/70
+    item: leftovers          ably: clearbody         moves: ['explosion', 'hiddenpower(fire)', 'meteormash', 'psychic']
+[OUR 1] swampert             ground/water        hp: 100.0%  status: none     100/110/90/85/90/60
+    item: leftovers          ably: torrent           moves: ['curse', 'earthquake', 'hydropump', 'icebeam']
+[OUR 2] celebi               grass/psychic       hp: 100.0%  status: none     100/100/100/100/100/100
+    item: leftovers          ably: naturalcure       moves: ['calmmind', 'gigadrain', 'leechseed', 'psychic']
+[OUR 3] raikou               electric/unknown    hp: 100.0%  status: none     90/85/75/115/100/115
+    item: leftovers          ably: pressure          moves: ['calmmind', 'hiddenpower(grass)', 'rest', 'thunderbolt']
+[OUR 4] charizard            fire/flying         hp: 100.0%  status: none     78/84/78/109/85/100
+    item: leftovers          ably: blaze             moves: ['fireblast', 'focuspunch', 'hiddenpower(grass)', 'substitute']
+[OUR 5] porygon2             normal/unknown      hp: 100.0%  status: none     85/80/90/105/95/60
+    item: leftovers          ably: trace             moves: ['icebeam', 'recover', 'thunderbolt', 'toxic']
+------------------------------
+[OPP 0] zapdos       [actv]  electric/flying     hp: 100.0%  status: none     90/90/85/125/90/100
+    item: itm-unkn           ably: pressure          moves: []
+
+Fainted: 0 (Us) / 0 (Them)
+============================================================
+
+  arm                 median ms/call  ms per ROW   (rounds=7, each a min over 20 calls)
+  eager B=1                   30.036     30.0361
+  compiled B=1                 4.635      4.6355
+  eager B=48                  87.276      1.8183
+  compiled B=48               60.393      1.2582
+  compiled/eager at B=1: 6.48x   B=48 batch per-row vs compiled B=1: 2.5x (eager batch), 3.7x (compiled batch)
+  contention: load average 33.01/28.99/25.23 on 16 cpus (CPU-STARVED, expect ~2.1x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+### end 2026-09-23T13:14:01-07:00 30.61 28.61 25.15 61/2897 96635
