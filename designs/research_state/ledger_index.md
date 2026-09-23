@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,245-line file. **The ledger itself is append-only and is never edited by this**;
+21,251-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**680 headings · 625 dated · 2026-08-01 → 2026-09-23 · ledger 21,245 lines.**
+**681 headings · 626 dated · 2026-08-01 → 2026-09-23 · ledger 21,251 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -700,3 +700,4 @@ rename.
   - `L21195` · `2026-09-23` · MEASURED (MAJOR) · 🚨 **ROW 2 COMPLETES THE LADDER: THE WIDE TARGETS BOUGHT NOTHING ON-SLICE — THEY LOST MORE THERE THAN OFF-SLICE. On the teacher's OWN five teams at +12M: K=1 −6.55 pp (n.d.) · K=3 −12.50 · K=11 −17.10, both OUTSIDE at BOTH floors, and C1 is OUTSIDE at ALL THREE DEPTHS (−10.55 pp at +12M) where off-slice it was NOT DETECTED. The damage CONCENTRATES where the loss fires, and it grows with the width of the target.**
   - `L21217` · `2026-09-23` · MEASURED (MAJOR) · 🚨 **THE SHARE-MATCHED ARM CLOSES THE CONFOUND — AND THE CONFOUND WAS SUPPRESSING THE EFFECT, NOT CREATING IT. Raising the wide target's pull from 0.118 to 0.199 MORE THAN DOUBLED its cost relative to top-1: SM − K=1 = −11.12 pp [−14.69, −7.56] OUTSIDE, against the original K=11's −4.62 (n.d.). Cost rises with target width AND with pull. There is no reading in which the ladder's result was an artifact.**
   - `L21242` · `2026-09-23` · OPS · **STATE LINE FOR THE RESTART — GPU IDLE SINCE 04:15 PT, NOTHING RUNNING, EVERYTHING BANKED.**
+  - `L21246` · `2026-09-23` · OPS · **POPULATION LOOP ROUND 1 IS REGISTERED, NOT LAUNCHED — B (the loop: G0 +8M at its own frozen 0.20×, the two offense exploiters of G0 as stable opponents at share 0.40, PFSP on, retirement off, no distillation) against C (the control: B's argv with the share at 0.0), each read by a fresh offense exploiter at arm A's exact recipe; arm A ALREADY EXISTS as `ai_v13_18_teach5_offense_hidose`, so D_e = 1.78× and round 0 costs nothing.**

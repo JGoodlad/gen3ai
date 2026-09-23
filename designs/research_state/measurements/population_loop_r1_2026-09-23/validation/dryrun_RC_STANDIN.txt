@@ -1,0 +1,29 @@
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FORK of /home/goodlad/dev/gen3ai/models/ai_v13_16_teach5_offense_dist
+  run dir     : models/ai_v13_25_popr1_read_ctrl_STANDIN   [would be created]
+  --model     : models/ai_v13_16_teach5_offense_dist/final_model.zip
+  pin         : 6eb9c776940ed6040ddb90acfbc28b038457fc42  (source: pin_commit)
+                ↳ research: ent05 PASSES — --ent-coef 0.05 reproduces v8's entropy regime at 10M (H_end 1.086, still rising); the flywheel pair runs at 0.05 in both arms; conditioning read dispatched
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  ✅ argv validated against PINNED parser @6eb9c776 via the pinned build_parser() [mode=build_parser, 627 options, 1.5s]
+  steps       : --steps 111,219,200 vs checkpoint at 103,219,200 (sidecar) → +8,000,000 steps
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3
+  transport   : in-process bridge [rust] (no Showdown server)
+  restarts    : every 3.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  effective   : argv overlaid on /home/goodlad/dev/gen3ai/models/ai_v13_16_teach5_offense_dist/model_config.json (56 unset flag(s) INHERITED)
+      --distill-teacher      None         (from the argv)
+      --distill-target       'kl'         (INHERITED)
+      --distill-coef         0.0          (from the argv)
+      --distill-topk         1            (INHERITED)
+      --grad-accum-steps     32           (from the argv)
+      --fork-lr              0.00025      (from the argv)
+      --fork-lr-freeze       True         (from the argv)
+  (child-only: architecture compatibility (check_compatible against the checkpoint's model_config.json))
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  ARCH SURFACE vs designs/production_config.json  [production_config@360f8378dd90]
+    ✓ every ARCH-surface key matches the production mirror (39 of 51 registry toggles are the ARCH surface; 9 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.

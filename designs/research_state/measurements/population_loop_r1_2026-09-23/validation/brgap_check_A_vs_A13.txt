@@ -1,0 +1,7 @@
+
+[best_response_gap] REFUSAL (unmatched_dose) — REFUSING the comparison — the exploiters are not matched:
+  DOSE MISMATCH — ai_v13_18_teach5_offense_hidose vs ai_v13_13_exploit5_offense: 3.815e-08 vs 8.392e-09 (4.55x apart, tolerance 10%)
+
+  A best-response gap is a property of (the generalist, the exploiter's budget, its dose, its regime). Comparing two rounds that differ on any of those attributes to the GENERALIST what belongs to the exploiter — which is exactly how the 2026-09-21 era-2/era-1 read was confounded, by a 4.5x dose gap nobody registered (--fork-lr unset, the new parent's annealed rate inherited).
+  Pass --allow-unmatched to print it anyway; the mismatch is then carried in the header and in the JSON, and belongs in every quote of the number.
+

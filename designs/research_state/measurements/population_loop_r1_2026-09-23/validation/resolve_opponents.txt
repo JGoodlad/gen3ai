@@ -1,0 +1,19 @@
+== B/C --stable-opponents: models/ai_v13_18_teach5_offense_hidose/final_model.zip,models/ai_v13_13_exploit5_offense/final_model.zip
+   ext_ai_v13_18_teach5_offense_hidose
+      zip   /home/goodlad/dev/gen3ai/models/ai_v13_18_teach5_offense_hidose/final_model.zip
+      step  103,219,200   rung explicit_zip / explicit_zip
+      arch  gen3_critic_route_wave_v1   teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+   ext_ai_v13_13_exploit5_offense
+      zip   /home/goodlad/dev/gen3ai/models/ai_v13_13_exploit5_offense/final_model.zip
+      step  103,219,200   rung explicit_zip / explicit_zip
+      arch  gen3_critic_route_wave_v1   teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+== A2 --exploiter (G0): models/ai_v13_12_plateau/final_model.zip
+   ext_ai_v13_12_plateau
+      zip   /home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip
+      step  95,158,272   rung explicit_zip / explicit_zip
+      arch  gen3_critic_route_wave_v1   teams (none — pilots the shared POOL)
+== stand-in reader --exploiter: models/ai_v13_16_teach5_offense_dist/final_model.zip
+   ext_ai_v13_16_teach5_offense_dist
+      zip   /home/goodlad/dev/gen3ai/models/ai_v13_16_teach5_offense_dist/final_model.zip
+      step  103,219,200   rung explicit_zip / explicit_zip
+      arch  gen3_critic_route_wave_v1   teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
