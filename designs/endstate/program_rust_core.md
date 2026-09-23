@@ -84,6 +84,29 @@ keywords remain, the fiddly half — ITEM/ENDITEM/ABILITY/VOLATILE/ACTIVATE `[fr
 CLEARBOOST's seven-keyword `op`, SIDE refs — plus the harness infrastructure). **Unlocks:** the
 typed stream every later slice folds; nothing in production changes.
 
+**The persisted RECORD (added 2026-09-23, owner request).** The log has two lives: as STRUCTURE (in
+memory, needed wherever the encoder runs, search included, because the observation carries a
+32-event window and every tracker is a fold over events) and as a RECORD (written out and re-read
+by evals, the prober, replay and online-play archives; never by search). M1 fixes the record's
+format, because it is where silent drift would enter AFTER the cutover:
+- **What is stored:** the per-side protocol TEXT as received or emitted (the authority; §6b) plus
+  the typed `CoreEvent` stream derived from it, with a header carrying `event_schema` (e.g.
+  `gen3_core_event_v1`), the core commit, the producing path (`step` or `parse`), the viewer side,
+  and the Showdown version, when a real server produced the text. Storing both the text and the
+  typed stream means any future parser can re-derive, and any disagreement is a diff rather than a
+  mystery.
+- **How it is read:** only through the core (`parse` for the text; a versioned deserialiser for the
+  typed stream). A reader facing an unknown `event_schema` REFUSES; it never guesses.
+- **How it evolves:** a schema change bumps `event_schema` and ships a MIGRATION that re-derives the
+  typed stream from the stored text. That is the reason the text is kept: old records are re-parsed,
+  never hand-edited.
+- **Gate:** a committed golden corpus of records (the commit-tier battles plus the 22 protocol
+  scenarios) must round-trip byte-identically (write → read → write) and must re-parse from its
+  stored text to the stored typed stream, on every commit. A new schema must pass a
+  migrate-then-compare on the whole golden corpus.
+- **Scope:** only persistence points pay for it (the end of an eval game, an online game, a prober
+  export). A search successor is never serialised.
+
 ### M2 — `BattleVersion` + `present()` + legality (Tier 1a, part 2) — search adopts
 
 **What crosses.** The persistent version (omniscient board + events + `parent`), per-side
@@ -288,6 +311,35 @@ of low discrimination between states). The interface decisions that keep a leaf 
   visible in every table after it.
 
 ---
+
+## 6b. Which source is authoritative — and playing against a REAL Showdown server
+
+**The truth is "what happened in the battle".** It has two representations: typed events (the
+structured form) and protocol text (the serialised form). Which one is AUTHORITATIVE depends on who
+runs the battle:
+- **Our simulator runs it** (training, self-play eval, search): the transition is the authority.
+  The typed events are emitted AT the transition; the text is a rendering of them and is produced
+  only when something needs it (a record, a gate, a websocket client).
+- **Someone else's server runs it** (the ladder, a third-party anchor): the server is the
+  authority, and all we receive is ONE SIDE's text stream. The core `parse`s it into the same typed
+  events. There is no omniscient board: the opponent's unrevealed mons and exact HP (Showdown sends
+  the foe's HP as a percentage) are unknown. So a parse-built version carries the per-side view
+  and the events, and its omniscient board is partial by construction. That is enough, because
+  the encoder reads only the side's view.
+
+**Why the two cannot disagree: a chain of two proven equalities.**
+1. *Our emitted text == Showdown's text for the same battle.* This is the port's existing contract,
+   proven byte-for-byte against real Node Showdown by the protocol-emission phases, the e2e capstone
+   and the differential fuzzers.
+2. *`parse(our emitted text) == the typed events we emitted.*` This is M1's round-trip gate, at all
+   three tiers.
+
+Together: parsing Showdown's text yields exactly what our simulator would have typed for that
+battle, so a model acting on the ladder sees the same events it trained on. **The link the chain
+does not cover is server VERSION drift**: the public server runs Showdown master, while we pin a
+commit. That is covered by three guards: `ladder_drift_scan` before every live session; the parser
+REFUSING an unknown keyword (by design; a silent skip would be worse than a lost game); and the
+Showdown version stamped into every online record, so a later re-parse knows which dialect it reads.
 
 ## 7. Which path a research number ran on, milestone by milestone
 
