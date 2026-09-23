@@ -253,7 +253,7 @@ ranged 0.34–0.59 across twelve seeds). [ledger 2026-09-20 · *THE CONTINUATION
 decision points, 0 silent substitutions, byte-identical across Showdown pins), but Metamon's upstream poke-env clears boosts
 on a Baton Pass switch (our fork fixed it 2026-08-23), so it under-reads passed setup on both sides — 13/871 decisions here,
 8/21 of its teams and 157/719 of ours carry the move. Every Metamon win rate is OPTIMISTIC for us by an amount not yet
-measured (SOP H18; the patched-vs-unpatched cell is dispatched). [ledger 2026-09-22 · *METAMON OBSERVATION FAITHFULNESS*]
+measured — **SIZED the same day (`h18_baton_pass_bias_2026-09-22/`, 2×2×400 patched vs unpatched, paired): |bias| < 0.02 on both Metamon's teams and a Baton-Pass-enriched set, NOT DETECTED; the era's anchor numbers stand with that bound attached.** [ledger 2026-09-22 · *METAMON OBSERVATION FAITHFULNESS*; *H18 SIZED*]
 
 Two consequences:
 

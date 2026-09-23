@@ -21051,3 +21051,42 @@ notes.
 Record `designs/research_state/measurements/ladder_refit_audit_2026-09-22/` — 93 per-run JSONs, the ordering table, the per-run table. Every run with a `snapshot_ladder/` has its `games.jsonl` (5,235 pair rows), so every refit is `--fit-only` and plays nothing. The 68/25 split is exactly the `3e6875a5` boundary (sentinel edges dropped); the newest node moves > 10 Elo on 39 runs and NEGATIVE on 65 of the 68 movers — committed files read high, as rule 24 predicted; `ai_v12_02_winprob_critic` 2057.3 → 1984.2 = −73.1 reproduces the known case to the decimal. Ordering: the v9 generation ladder reverses 21 of 153 pairwise orderings (`gen13` 7th → 2nd; `gen1 vs gen7` −14.9 → +10.7); E-substrate, R2, R3/R4, the v12 ladder cells and all of v13 are unchanged; globally 363 of 4,278 pairs flip; the argmax node moves on 33 of 93. Two extra findings: `ai_v9_51_fdF_p2c_0826`'s 18M and 24M nodes are UNRATEABLE under the current recipe (they were carried on sentinel edges alone), and four runs' committed pair counts include snapshots since groomed off disk. **The era's banked claims (2026-09-06 onward):** only `ai_v12_02`'s 09-08 numbers move (−38 to −73; its entry already carried the caveat); the v12 ladder cells and every flywheel-era number checked the count key before quoting and are confirmed at 0.0. 🚨 The real exposure is OLDER than the grepped window — the v9 generation ladder (2026-08-04 → 08-20); re-reading those entries under the current recipe is not done. **The tool:** `python -m main.elo refit <run>` (read-only) / `--apply` (writes the stamped fit, keeps `ladder.pre_recipe.json`, refuses to clobber, no-op when current); `main.elo <run>` withholds the dense headline on a stale stamp and names the fix. Applying it to the archive is the owner's or Training Run's call; a live arm is refit at run END. No ledger entry is edited — the new reading is appended beside the old.
 
 **Orchestrator's reading.** Every dense-ladder Elo quoted before 2026-09-08 read high by a run-specific amount, the v9 generation ordering is not the ordering we believed, and none of the flywheel era's claims move. The apply is deferred to the owner (93 fits, ~1 s total, nothing played); the v9 re-read is a backlog row, not a dispatch. Tag: **OPS · 68/93 ladder files move · v9 ordering reverses 21/153 · flywheel era unchanged · apply deferred to the owner**.
+
+### 2026-09-22 · MEASUREMENT · **H18 SIZED — the Baton Pass bias in every Metamon anchor number is |bias| < 0.02**
+
+**2026-09-22 — H18 SIZED: the Baton Pass bias is BELOW ±0.02 on our anchor win rate; branch (c),
+NOT DETECTED on either team set.** Pre-registered (`6cc2f304`) before the first measured game,
+discharging the `metamon_obs_faithfulness_2026-09-22` §8 backlog row. `metamon:SmallRL` ckpt 40,
+greedy-vs-greedy with both regimes verified per decision, arm W
+(`ai_v13_02_flywheel_winprob` @ 75,005,952), `--server rust`, `--seed-base 20260922
+--team-seed 20260914`, **400 games per arm per team set, 1,600 games**, CPU-only. Arms: **U** =
+Metamon's upstream poke-env 0.8.3.3 as installed; **P** = a SHADOW COPY of that package carrying
+our fork's 2026-08-23 Baton Pass fix, ported (5 files, +105/−8) — the shared env was never
+edited and each peer log records `poke_env.__file__`. Team sets: `competitive` **away** (8/20
+teams carry Baton Pass) and a **Baton-Pass-ENRICHED** 20-team draw from the 157/719 pool teams
+that carry it (`random.Random(20260922)`, teams named in the artifact). **Results — U away
+0.5550 [0.506, 0.603] / P away 0.5500 [0.501, 0.598]; U enriched 0.6550 [0.607, 0.700] /
+P enriched 0.6575 [0.610, 0.702]**, all four cells `status OK`, `regime_verified_decisions true`,
+`argmax_match_rate 1.0000`, `team_source_asymmetry false`, `n_defaults 0`. **Contrast P − U:
+away −0.0050, Newcombe [−0.0736, +0.0636]; enriched +0.0025 [−0.0631, +0.0681] — both NOT
+DETECTED.** The arms play the SAME battles at matched seeds, so the PAIRED read is the powered
+one: away −0.0050 [−0.0189, +0.0089] (McNemar p = 0.73), enriched +0.0025 [−0.0152, +0.0202]
+(p = 1.00). **So the BIAS on an unpatched anchor number is +0.005 [−0.009, +0.019] (away) and
+−0.0025 [−0.020, +0.015] (enriched) — under ±0.02, i.e. below the 0.020 eval-draw floor and 13×
+below this cell's 10M→75M budget effect. The era's anchor numbers need NO correction; they need
+this bound attached.** 🚨 **The null is not an inert patch:** the ported fix changed the outcome
+of **21 of 800 matched battles and every one of the 21 contained a Baton Pass that actually
+carried state** (away 8/8, enriched 13/13), with the flips going both ways (away b=5/c=3,
+enriched b=6/c=7) — the defect is real and reachable but is not a systematic handicap.
+**Exposure, measured over all 1,600 captures:** a state-carrying pass occurs in **51/400 (12.8%)**
+of away games and **99/400 (24.8%)** of enriched games, so the per-EXPOSURE bound is only ±0.22
+/ ±0.14. **Second finding — the VOLATILE half of the mechanism fires and is LARGER than the boost
+half on the enriched set** (80 volatile-carrying passes vs 66 boost-carrying; 3 of the 13 enriched
+divergences were Substitute-only), so H18's boost-named exposure UNDERCOUNTS it. **Third finding —
+Metamon's post-game `RecursionError` (H17) occurred in the half where Metamon ACCEPTS, not
+challenges**, so `main.anchors` left `peer_exit_notes` empty and a known upstream cause reads as
+undiagnosed; games unaffected (400/400 recorded, regime verified over 10,829 decisions). Control:
+`U away` reproduces the standing cell at **0.5550 vs the banked 0.5533 (n = 1200)**. Artifact:
+`designs/research_state/measurements/h18_baton_pass_bias_2026-09-22/`.
+
+**Orchestrator's reading (2026-09-22).** The hazard was real (the patch flipped 21 of 800 matched battles and every one contained a state-carrying pass) and its effect on the anchor is NOT DETECTED with a paired bound of ±0.02 on both team sets — below the eval-draw floor and thirteen times below the cell's own budget effect. The era's anchor numbers stand with this bound attached and need no correction footnote. Two amendments folded into the SOP's H18: the volatile half of the carry-over (Substitute and friends) is the larger half on the enriched set, and the per-exposure bound is wide (±0.14 to ±0.22) because a state-carrying pass happens in one game in four at most. The env-var pilot that silently ran the unpatched interpreter is the third instance this week of "a default that yields silently"; its fix (an unset var is a named refusal) is the right shape. Tag: **MEASURED · H18 bias < 0.02, n.d. both team sets · anchors stand · volatile half is the larger**.
