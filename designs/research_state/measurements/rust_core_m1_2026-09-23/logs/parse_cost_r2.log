@@ -1,0 +1,6 @@
+{"round": 1, "load_env": 19.1, "load_rust": 19.1, "env_step_ms_median": 4.966, "env_step_ms_mean": 5.249, "parse_us_per_decision": 28.41, "request_us_per_decision": 17.75, "ratio_parse_to_env_step": 0.00572}
+{"round": 2, "load_env": 19.1, "load_rust": 19.1, "env_step_ms_median": 4.633, "env_step_ms_mean": 4.923, "parse_us_per_decision": 31.05, "request_us_per_decision": 20.44, "ratio_parse_to_env_step": 0.0067}
+{"round": 3, "load_env": 19.1, "load_rust": 19.1, "env_step_ms_median": 4.565, "env_step_ms_mean": 4.786, "parse_us_per_decision": 30.07, "request_us_per_decision": 19.38, "ratio_parse_to_env_step": 0.00659}
+{"round": 4, "load_env": 20.0, "load_rust": 20.8, "env_step_ms_median": 4.813, "env_step_ms_mean": 4.998, "parse_us_per_decision": 30.82, "request_us_per_decision": 20.01, "ratio_parse_to_env_step": 0.0064}
+{"round": 5, "load_env": 20.8, "load_rust": 20.8, "env_step_ms_median": 4.395, "env_step_ms_mean": 4.398, "parse_us_per_decision": 31.16, "request_us_per_decision": 20.38, "ratio_parse_to_env_step": 0.00709}
+{"rounds": 5, "decisions_per_round_rust": 1380, "lines_per_decision": 12.51, "median_ratio": 0.00659, "median_parse_us": 30.82, "median_env_step_ms": 4.633}

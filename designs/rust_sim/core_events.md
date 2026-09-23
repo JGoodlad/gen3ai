@@ -150,7 +150,7 @@ readings against the log of a `Gen3Battle` fed the same per-side text through `o
 
 | tier | corpus |
 |---|---|
-| COMMIT | `commit_tier.json.gz` (6 seeded-random battles over 12 pool teams + 2 `production`-policy battles, recorded input logs, the chunk bytes pinned by digest) + the six byte-fuzz fixtures that carry the four shapes random battles never reach + the first battle of each protocol capture scenario |
+| COMMIT | `commit_tier.json.gz` (6 seeded-random battles over 12 pool teams + 2 `production`-policy battles, recorded input logs, the chunk bytes pinned by digest) + the six byte-fuzz fixtures that carry the four shapes random battles never reach + the first battle of each protocol capture scenario + the Forecast class sweep (`-formechange`) + a constructed Ditto (`-transform`) — 45 battles, 16,980 events, ~2 s |
 | MILESTONE | 2 × 200 seeded-random (keys 0-199, 5000-5199) and 2 × 50 `production`-policy battles PLAYED live — the live `Gen3Battle` logs must ALSO equal the offline feed's — + the protocol corpus × 2 seeds + every byte-fuzz fixture; the pool hash and the checkpoint sha256 are pinned in `rust_core_parity_fixtures/manifest.json` and the tier refuses on a mismatch (`… write-manifest` in the same commit) |
 
 🚨 **The four ambiguity-prone shapes live in the BYTE-FUZZ corpus, not the protocol capture
@@ -167,4 +167,7 @@ there and everything before it is still checked.
 `designs/research_state/measurements/rust_core_m1_2026-09-23/` (`core_events --bench-parse`):
 incremental `Line::parse` + the reading fold of one side's stream, per decision (≈ 12.5 lines, the
 `|request|` included), in-process Rust, no IPC — against a `Gen3Env.step` wall on the rust bridge
-with random legal actions (no policy forward).
+with random legal actions (no policy forward). Measured 2026-09-23 at load 19-21: **21.6-30.8 µs
+per decision, 0.66-0.76 % of a random-action env step** (medians of two 5-round interleaved runs;
+the `|request|` JSON is ~60-70 % of it). The MILESTONE tier's first full run: 622 battles, 1,244
+viewers, 609,019 events, 0 divergences.

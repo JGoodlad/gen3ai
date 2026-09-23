@@ -1,0 +1,14 @@
+
+✅ 0 divergences — 200 battles, 400 viewers, 478408 per-side lines, 249088 events compared
+.
+✅ 0 divergences — 200 battles, 400 viewers, 464622 per-side lines, 239720 events compared
+.
+✅ 0 divergences — 50 battles, 100 viewers, 83681 per-side lines, 43823 events compared
+.
+✅ 0 divergences — 50 battles, 100 viewers, 52079 per-side lines, 26171 events compared
+.
+✅ 0 divergences — 122 battles, 244 viewers, 104048 per-side lines, 50217 events compared
+.
+slow-tier status: 5 row(s) recorded into /home/goodlad/dev/gen3ai-wt/rust-core-m1/designs/ops/slow_tier_status.json
+5 passed, 4 deselected in 316.79s (0:05:16)
+EXIT 0
