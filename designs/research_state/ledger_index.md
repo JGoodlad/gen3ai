@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,241-line file. **The ledger itself is append-only and is never edited by this**;
+21,245-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**679 headings · 624 dated · 2026-08-01 → 2026-09-23 · ledger 21,241 lines.**
+**680 headings · 625 dated · 2026-08-01 → 2026-09-23 · ledger 21,245 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -699,3 +699,4 @@ rename.
   - `L21165` · `2026-09-22` · MEASURED (MAJOR) · 🚨 **THE DOSE ACCOUNT IS DEAD, AND IT DIED BACKWARDS. At era-1's 1.78× the teacher is NOT ADMITTED by −7.15 pp [−11.00, −4.15] on its own five teams, −14.69 pp [−16.25, −13.12] OUTSIDE the floor off-slice, and its head-to-head gap is UNCHANGED at +14.00 pp against the 0.39× arm's +15.75. 4.55× more dose bought NO more exploitation and cost ~7 pp of piloting skill and ~15 pp of off-slice competence. The registration's own branch (d) fires: the dose is ACTIVELY HARMFUL on this parent; report, launch nothing. FIVE TEACHERS BUILT, FIVE REFUSED.**
   - `L21195` · `2026-09-23` · MEASURED (MAJOR) · 🚨 **ROW 2 COMPLETES THE LADDER: THE WIDE TARGETS BOUGHT NOTHING ON-SLICE — THEY LOST MORE THERE THAN OFF-SLICE. On the teacher's OWN five teams at +12M: K=1 −6.55 pp (n.d.) · K=3 −12.50 · K=11 −17.10, both OUTSIDE at BOTH floors, and C1 is OUTSIDE at ALL THREE DEPTHS (−10.55 pp at +12M) where off-slice it was NOT DETECTED. The damage CONCENTRATES where the loss fires, and it grows with the width of the target.**
   - `L21217` · `2026-09-23` · MEASURED (MAJOR) · 🚨 **THE SHARE-MATCHED ARM CLOSES THE CONFOUND — AND THE CONFOUND WAS SUPPRESSING THE EFFECT, NOT CREATING IT. Raising the wide target's pull from 0.118 to 0.199 MORE THAN DOUBLED its cost relative to top-1: SM − K=1 = −11.12 pp [−14.69, −7.56] OUTSIDE, against the original K=11's −4.62 (n.d.). Cost rises with target width AND with pull. There is no reading in which the ladder's result was an artifact.**
+  - `L21242` · `2026-09-23` · OPS · **STATE LINE FOR THE RESTART — GPU IDLE SINCE 04:15 PT, NOTHING RUNNING, EVERYTHING BANKED.**
