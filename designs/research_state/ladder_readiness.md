@@ -95,11 +95,43 @@ the backlog, not fixed:
 
 | Crash | Where | Rate |
 |---|---|---|
-| poke-env `Unhandled move message format` on a Metronome-called move (`|move|…|[from] Metronome` with a self target) | Metamon node smoke | 2 of 710 battles |
+| poke-env `Unhandled move message format` on a Metronome-called move (`|move|…|[from] Metronome` with a self target) — **FIXED by class, see below** | Metamon node smoke | 2 of 710 battles |
 | (same) | human sample | 4 of 20,000 logs |
 | `KeyError: SideCondition.SPIKES` in `side_end` | human sample | 4 of 20,000 |
 | an unclassified `|N|` keyword | human sample | 3 |
 | a spectator-side `p2's team already has 6 pokemons` | human sample | 3 |
+
+### Called moves: the Metronome crash, fixed by class (2026-09-24)
+
+gen3 announces a move that another move called as `|move|<user>|<called>|<target>|[from] <Caller>`,
+with the caller's BARE name, and may append `[still]`, `[miss]` (once or twice) or `[notarget]`.
+poke-env knew only the modern `[from]move: Metronome` spelling. So every Metronome, Assist and Nature
+Power call crashed the parse, and a live game would have been lost on the timer. The whole class was
+enumerated by PLAYING the real gen3 sim (`src/rust_sim/harness/probe_called_move_shapes.js`: 1,500
+battles, 25,419 sourced `|move|` lines, 31 distinct shapes across nine sources). Each shape is pinned,
+and the pins fail on the old parser. poke-env and the Rust core's reading now handle all of them
+(`gen3_called_move_reading_v1`, `designs/rust_sim/present.md` §3).
+
+The reading was checked against the sim, not against poke-env:
+
+- The called move is not the caller's own, so it is not revealed.
+- It costs no PP. gen3 charges no Pressure for a sourced move; measured, Metronome's PP is the same
+  against a Pressure foe.
+
+A node-bridge battle that uses Metronome, Assist and Nature Power, with the full observation encoded
+at every decision, is the end-to-end pin.
+
+### The ladder-usage corpus and the full Metamon smoke (2026-09-24)
+
+The fuzz and parity gates now play a third team source: the Metamon `hl_05_26` public-ladder teams,
+filtered to what the Rust engine can play (22,813 of 22,862; `designs/ops/testing.md` → THREE TEAM
+SOURCES). On first contact it found two engine bugs that no pool team can reach: lock-in
+continuations lacked `[from] lockedmove`, and Rollout kept its lock across a miss. Both are fixed.
+The full smoke plays every one of the 22,862 teams once on the node bridge, both players encoding
+every decision (`python -m main.ladder_usage_smoke`). **Measured 2026-09-24: 11,431 of 11,431
+battles finished with 0 failures, 2,030,753 decisions encoded.** The seven battles in which
+Metronome called a move all crash on the pre-fix tree. Record:
+`designs/research_state/measurements/ladder_usage_smoke_2026-09-24/`.
 
 ### Latency: ~3 500× of margin
 

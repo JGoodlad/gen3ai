@@ -1,0 +1,12 @@
+{
+ "bridge": "node",
+ "players": "seeded-random (1000+key / 2000+key), full embed_battle every decision",
+ "registered_n": 11431,
+ "schema": "gen3_ladder_usage_smoke_v1",
+ "seed": 20260924,
+ "sim_seed": "[11+key, 22+key, 33+key, 44+key]",
+ "src": "/home/goodlad/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou",
+ "teams": 22862,
+ "unit_size": 50,
+ "units": 229
+}

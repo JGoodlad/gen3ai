@@ -1,0 +1,81 @@
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=ladder master_seed=20260924 run_id=rmufzzde5 chunk=12
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_12_16
+TEAM	ab_12_16	p1	Zapdos||Leftovers|Pressure|BatonPass,Thunderbolt,HiddenPower,Roar|Modest|,,,220,88,200|N||||,Dark,,,,]Metagross||Leftovers|ClearBody|MeteorMash,RockSlide,Explosion,Earthquake|Adamant|252,176,80,,,|N||||]Tyranitar||Leftovers|SandStream|DragonDance,HiddenPower,RockSlide,Earthquake|Quiet|248,,,212,,48|||||,Dark,,,,]Celebi||Leftovers|NaturalCure|HiddenPower,LeechSeed,Recover,GigaDrain|Modest|252,,148,72,,36|N|,0,,30,,30|||,Fire,,,,]Snorlax||Leftovers|Immunity|BodySlam,Curse,Rest,DoubleEdge|Adamant|,252,252,,4,|||||]Gengar||Leftovers|Levitate|WillOWisp,Taunt,Thunderbolt,DestinyBond|Timid|168,,,,164,176|||||
+TEAM	ab_12_16	p2	Blissey||Leftovers|NaturalCure|Aromatherapy,Thunderbolt,SoftBoiled,SeismicToss|Modest|,,252,252,,4|F||||]Claydol||Leftovers|Levitate|ShadowBall,Earthquake,RapidSpin,Explosion|Adamant|252,216,,32,,8|N||||]Skarmory||Leftovers|KeenEye|Spikes,Roar,Protect,Toxic|Careful|252,,,,252,4|||||]Dusclops||Leftovers|Pressure|WillOWisp,Imprison,Rest,ShadowBall|Careful|252,,56,,200,|||||]Suicune||Leftovers|Pressure|Roar,Surf,CalmMind,Rest|Bold|240,,252,,,16|N||||]Dugtrio||ChoiceBand|ArenaTrap|Earthquake,BeatUp,Screech,AerialAce|Jolly|4,252,,,,252|||||
+INIT	ab_12_16	12445,29761,2497,47806	709736209	1
+DEC	ab_12_16	0	move	0	0	s1	m0	20574,33259,51638,63929	Metagross	364	364	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_12_16	1	move	0	0	s2	m0	19132,8017,24842,9664	Tyranitar	403	403	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_12_16	2	move	0	0	m3	m3	15625,37365,37820,27367	Tyranitar	328	403	0	-	0	0	0	0	0	0	6	Blissey	446	651	0	-	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_12_16	3	move	0	0	m2	m2	33267,8876,52497,39450	Tyranitar	353	403	0	-	0	0	0	0	0	0	6	Blissey	528	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_12_16	4	move	0	0	m3	m3	15281,9366,42561,14409	Tyranitar	278	403	0	-	0	0	0	0	0	0	6	Blissey	336	651	0	-	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_12_16	5	move	0	0	m0	m0	50972,62908,54527,58512	Tyranitar	303	403	0	-	1	0	0	0	1	0	6	Blissey	336	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_12_16	6	move	0	0	m1	m3	21842,1110,14259,8695	Tyranitar	228	403	0	-	1	0	0	0	1	0	6	Blissey	255	651	0	-	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_12_16	7	move	0	0	m1	m1	46704,33826,22270,6143	Tyranitar	67	403	0	-	1	0	0	0	1	0	6	Blissey	168	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_12_16	8	move	0	0	m0	m0	30381,455,35126,36190	Tyranitar	92	403	0	-	2	0	0	0	2	0	6	Blissey	168	651	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_12_16	9	move	0	0	m3	m0	22434,43898,26519,20387	Tyranitar	92	403	0	-	2	0	0	0	2	0	6	Blissey	0	651	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_12_16	10	switch	0	1	-	s4	37622,49093,51692,17682	Tyranitar	117	403	0	-	2	0	0	0	2	0	6	Suicune	401	401	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_12_16	11	move	0	0	m1	s5	61198,13877,61877,2438	Tyranitar	142	403	0	-	2	0	0	0	2	0	6	Dugtrio	61	212	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_12_16	12	move	0	0	m2	m2	49592,30153,61785,30757	Tyranitar	142	403	0	-	2	-2	0	0	2	0	6	Dugtrio	0	212	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_12_16	13	switch	0	1	-	s2	6503,24719,65217,53852	Tyranitar	167	403	0	-	2	-2	0	0	2	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_12_16	14	move	0	0	m1	m0	35132,44673,1993,26160	Tyranitar	192	403	0	-	2	-2	0	0	2	0	6	Skarmory	305	334	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_12_16	15	move	0	0	m3	m2	43581,53404,50430,28269	Tyranitar	217	403	0	-	2	-2	0	0	2	0	6	Skarmory	325	334	0	-	0	0	0	0	0	0	4	p2	1	0	0	0	0
+DEC	ab_12_16	16	move	0	0	m3	m3	4622,554,31619,60118	Tyranitar	217	403	0	tox	2	-2	0	0	2	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_12_16	17	move	0	0	m3	m1	8479,41456,52779,31498	Gengar	303	303	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_12_16	18	move	0	0	s4	m1	58808,37804,51578,13855	Gengar	303	303	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	1	0	0	0	0
+DEC	ab_12_16	19	move	0	0	m3	m0	3540,64357,29485,36862	Gengar	303	303	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	2	0	0	0	1
+DEC	ab_12_16	20	move	0	0	m3	m0	3942,37341,60193,23545	Gengar	303	303	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	3	0	0	0	1
+DEC	ab_12_16	21	move	0	0	m1	m3	7794,29563,3194,52163	Gengar	303	303	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	22	move	0	0	m0	m0	38872,7498,42130,55334	Gengar	258	303	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	23	move	0	0	m1	m0	3184,64210,28411,31464	Gengar	258	303	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	24	move	0	0	m0	m0	15180,18079,25388,12079	Gengar	208	303	0	-	0	0	0	0	0	0	6	Skarmory	334	334	0	-	0	0	0	0	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	25	move	0	0	m3	s5	52298,42396,58398,25422	Gengar	208	303	0	-	0	0	0	0	0	0	6	Suicune	401	401	0	-	0	0	0	0	0	0	4	p2	3	0	0	0	1
+DEC	ab_12_16	26	move	0	0	s1	m2	15443,58233,57962,35465	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Suicune	401	401	0	-	0	0	1	1	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	27	move	0	0	m1	m2	53857,15503,27100,56420	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Suicune	190	401	0	-	0	0	2	2	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	28	move	0	0	m2	m3	34310,63980,63863,39515	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Suicune	401	401	0	slp	0	0	2	2	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	29	move	0	0	m2	m2	43717,33995,25964,50239	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Suicune	360	401	0	slp	0	0	2	2	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	30	move	0	0	m1	s5	32296,64508,40173,42578	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Skarmory	59	334	0	-	0	0	0	0	0	0	4	p2	3	0	0	0	0
+DEC	ab_12_16	31	move	0	0	m3	s3	35337,48797,31495,22855	Zapdos	321	321	0	-	0	0	0	0	0	0	6	Suicune	360	401	0	slp	0	0	0	0	0	0	4	p2	3	0	0	0	0
+DEC	ab_12_16	32	move	0	0	s1	s3	21975,47064,56772,54982	Gengar	208	303	0	-	0	0	0	0	0	0	6	Skarmory	79	334	0	-	0	0	0	0	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	33	move	0	0	m3	m2	62912,49909,24546,61576	Gengar	208	303	0	-	0	0	0	0	0	0	6	Skarmory	99	334	0	-	0	0	0	0	0	0	4	p2	3	0	0	0	1
+DEC	ab_12_16	34	move	0	0	m0	m3	45712,43688,48759,36453	Gengar	208	303	0	-	0	0	0	0	0	0	6	Skarmory	78	334	0	brn	0	0	0	0	0	0	4	p1	3	0	0	0	0
+DEC	ab_12_16	35	move	0	0	m2	m3	41375,48394,44208,39849	Gengar	208	303	0	-	0	0	0	0	0	0	6	Skarmory	0	334	1	fnt	0	0	0	0	0	0	3	p1	3	0	0	0	0
+DEC	ab_12_16	36	switch	0	1	-	s5	55711,45773,12992,31088	Gengar	208	303	0	-	0	0	0	0	0	0	6	Dusclops	284	284	0	-	0	0	0	0	0	0	3	none	3	0	0	0	0
+DEC	ab_12_16	37	move	0	0	m3	m1	48662,43724,39203,30707	Gengar	208	303	0	-	0	0	0	0	0	0	6	Dusclops	284	284	0	-	0	0	0	0	0	0	3	p1	3	0	0	0	1
+DEC	ab_12_16	38	move	0	0	m0	m2	48662,43724,39203,30707	Gengar	208	303	0	-	0	0	0	0	0	0	6	Dusclops	284	284	0	-	0	0	0	0	0	0	3	none	3	0	0	0	0
+DEC	ab_12_16	39	move	0	0	m2	m0	3578,22840,29924,62833	Gengar	208	303	0	-	0	0	0	0	0	0	6	Dusclops	284	284	0	slp	0	0	0	0	0	0	3	p1	3	0	0	0	0
+DEC	ab_12_16	40	move	0	0	m0	s3	3578,22840,29924,62833	Gengar	208	303	0	-	0	0	0	0	0	0	6	Dusclops	284	284	0	slp	0	0	0	0	0	0	3	none	3	0	0	0	0
+DEC	ab_12_16	41	move	0	0	s5	m1	39633,25656,2027,60760	Tyranitar	117	403	0	tox	0	0	0	0	0	0	6	Suicune	360	401	0	slp	0	0	0	0	0	0	3	p1	3	0	0	0	0
+DEC	ab_12_16	42	move	0	0	m2	m3	48503,55993,48861,49759	Tyranitar	92	403	0	tox	0	0	0	0	0	0	6	Suicune	288	401	0	slp	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_12_16	43	move	0	0	m1	m2	16630,14597,32625,7922	Tyranitar	42	403	0	tox	0	0	0	0	0	0	6	Suicune	312	401	0	slp	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_12_16	44	move	0	0	m3	m1	24954,20378,52353,13159	Tyranitar	0	403	1	fnt	0	0	0	0	0	0	5	Suicune	245	401	0	slp	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_12_16	45	switch	1	0	s2	-	20903,36190,44915,1382	Metagross	273	364	0	-	0	0	0	0	0	0	5	Suicune	245	401	0	slp	0	0	0	0	0	0	3	none	3	0	0	0	0
+DEC	ab_12_16	46	move	0	0	m3	m1	64349,54440,15936,35994	Metagross	295	364	0	-	0	0	0	0	0	0	5	Suicune	155	401	0	slp	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_12_16	47	move	0	0	m3	m3	1363,62179,16759,40137	Metagross	317	364	0	-	0	0	0	0	0	0	5	Suicune	316	401	0	slp	0	0	0	0	0	0	3	p2	3	0	0	0	0
+DEC	ab_12_16	48	move	0	0	m2	m3	58497,11917,30917,3394	Metagross	0	364	1	fnt	0	0	0	0	0	0	4	Suicune	0	401	1	fnt	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_12_16	49	switch	1	1	s4	s3	27219,37751,20171,11213	Snorlax	289	461	0	-	0	0	0	0	0	0	4	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	none	3	0	0	0	0
+DEC	ab_12_16	50	move	0	0	s5	m3	63693,31782,32602,39844	Gengar	208	303	0	-	0	0	0	0	0	0	4	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	51	move	0	0	m1	s1	45914,60197,15085,11958	Gengar	208	303	0	-	0	0	0	0	0	0	4	Claydol	324	324	0	-	0	0	0	0	0	0	2	p2	3	0	0	0	0
+DEC	ab_12_16	52	move	0	0	m0	m1	19860,26285,10964,35483	Gengar	208	303	0	-	0	0	0	0	0	0	4	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	53	move	0	0	m3	m1	39370,49362,59546,29973	Gengar	208	303	0	-	0	0	0	0	0	0	4	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	1
+DEC	ab_12_16	54	move	0	0	m2	m0	59893,32708,20586,54752	Gengar	0	303	1	fnt	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	55	switch	1	0	s3	-	41165,48643,16353,57379	Celebi	303	404	0	-	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	none	3	0	0	0	0
+DEC	ab_12_16	56	move	0	0	m0	m1	8248,55209,50679,60360	Celebi	249	404	0	-	0	0	0	0	0	0	3	Claydol	287	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	57	move	0	0	m3	m1	17584,6447,23943,36329	Celebi	203	404	0	-	0	0	0	0	0	0	3	Claydol	170	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	58	move	0	0	m1	m0	27731,62360,41574,19607	Celebi	78	404	0	-	0	0	0	0	0	0	3	Claydol	190	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	59	move	0	0	m2	m0	26764,58323,62837,36234	Celebi	158	404	0	-	0	0	0	0	0	0	3	Claydol	210	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	60	move	0	0	m2	m0	56432,48191,34353,24697	Celebi	235	404	0	-	0	0	0	0	0	0	3	Claydol	230	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	61	move	0	0	m0	m1	36660,58982,24803,62118	Celebi	184	404	0	-	0	0	0	0	0	0	3	Claydol	200	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	62	move	0	0	m1	m2	60982,25103,54984,14277	Celebi	167	404	0	-	0	0	0	0	0	0	3	Claydol	220	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	63	move	0	0	m1	m0	5793,52281,46593,1107	Celebi	91	404	0	-	0	0	0	0	0	0	3	Claydol	200	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	64	move	0	0	m1	m2	3670,35215,17076,19446	Celebi	77	404	0	-	0	0	0	0	0	0	3	Claydol	220	324	0	-	0	0	0	0	0	0	2	p1	3	0	0	0	0
+DEC	ab_12_16	65	move	0	0	s5	m3	10784,60906,7751,15067	Snorlax	0	461	1	fnt	0	0	0	0	0	0	2	Claydol	0	324	1	fnt	0	0	0	0	0	0	1	p1	3	0	0	0	0
+DEC	ab_12_16	66	switch	1	1	s1	s1	60884,10688,4285,2602	Zapdos	321	321	0	-	0	0	0	0	0	0	2	Dusclops	284	284	0	slp	0	0	0	0	0	0	1	none	3	0	0	0	0
+DEC	ab_12_16	67	move	0	0	m2	m3	61493,29079,13593,27934	Zapdos	321	321	0	-	0	0	0	0	0	0	2	Dusclops	173	284	0	slp	0	0	0	0	0	0	1	p1	3	0	0	0	0
+DEC	ab_12_16	68	move	0	0	m2	m1	32306,48341,55014,43218	Zapdos	321	321	0	-	0	0	0	0	0	0	2	Dusclops	55	284	0	-	0	0	0	0	0	0	1	p1	3	0	0	0	0
+DEC	ab_12_16	69	move	0	0	m3	m0	45212,13323,4225,25031	Zapdos	281	321	0	brn	0	0	0	0	0	0	2	Dusclops	55	284	0	-	0	0	0	0	0	0	1	p2	3	0	0	0	0
+DEC	ab_12_16	70	move	0	0	m3	m1	7594,31307,42819,1377	Zapdos	241	321	0	brn	0	0	0	0	0	0	2	Dusclops	55	284	0	-	0	0	0	0	0	0	1	p2	3	0	0	0	0
+DEC	ab_12_16	71	move	0	0	m1	m1	62820,3123,52338,64229	Zapdos	241	321	0	brn	0	0	0	0	0	0	2	Dusclops	0	284	1	-	0	0	0	0	0	0	0	p1	3	0	0	0	0
+END	ab_12_16	1	p1

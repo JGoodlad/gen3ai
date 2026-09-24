@@ -1,0 +1,30 @@
+{
+ "registration": {
+  "bridge": "node",
+  "players": "seeded-random (1000+key / 2000+key), full embed_battle every decision",
+  "registered_n": 11431,
+  "schema": "gen3_ladder_usage_smoke_v1",
+  "seed": 20260924,
+  "sim_seed": "[11+key, 22+key, 33+key, 44+key]",
+  "src": "/home/goodlad/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou",
+  "teams": 22862,
+  "unit_size": 50,
+  "units": 229
+ },
+ "summary": {
+  "battles": 11431,
+  "battles_with_a_called_move": 373,
+  "called_move_lines": {
+   "Metronome": 26,
+   "Sleep Talk": 1568
+  },
+  "decisions": 2030753,
+  "failed": 0,
+  "failure_classes": {},
+  "failure_examples": {},
+  "finished": 11431,
+  "heal_bell_battles": 309,
+  "ok": 11431,
+  "wall_s_total": 18886.7
+ }
+}
