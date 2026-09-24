@@ -60,14 +60,17 @@ def gengar_lead(speed: str, hp: str, *, our_side: str = "p1", pursuit: bool = Fa
     (no effect, reveals EQ) except on turn 1 of the +1 arms, where it Dragon Dances (reveals DD).
 
     speed: fast0 (TTar +0, STD Gengar 308 > 213) | slow1 (TTar +1: 319 > STD 308) | fast1 (TTar +1, FAST
-    Gengar 335 > 319)."""
+    Gengar 335 > 319) | slow2 (TTar +2 after a second Dragon Dance: 426 > 308; family R2, high HP only)."""
     fast_gengar = speed == "fast1"
-    boosted = speed in ("slow1", "fast1")
+    boosted = speed in ("slow1", "fast1", "slow2")
     g = GL_TURNS[hp]
     turns = []
     for i, gm in enumerate(g):
         tm = "move dragondance" if (boosted and i == 0) else "move earthquake"
         turns.append(([gm], [tm]))
+    if speed == "slow2":        # R2 (owner addition): a second Dragon Dance -> +2 (426 > 308); high HP only
+        assert hp == "high", hp
+        turns.append((["move firepunch"], ["move dragondance"]))
     T = len(turns) + 1
     fam = "DG" if our_side == "p1" else "DT"
     prem = "move dragondance" if our_side == "p1" else "move explosion"
@@ -76,7 +79,8 @@ def gengar_lead(speed: str, hp: str, *, our_side: str = "p1", pursuit: bool = Fa
         sid=sid, family=fam, our_side=our_side,
         p1=TM.team_D_ours(lead="gengar", fast=fast_gengar), p2=TM.team_D_opp(pursuit=pursuit),
         turns=turns, T=T, premise=prem,
-        expect={"p1_active": "gengar", "p2_active": "tyranitar", "p2_boost_spe": 1 if boosted else 0,
+        expect={"p1_active": "gengar", "p2_active": "tyranitar",
+                "p2_boost_spe": 2 if speed == "slow2" else (1 if boosted else 0),
                 "p2_hp_band": HP_BANDS[hp], "p1_status": None, "p2_status": None,
                 "p1_first": speed in ("fast0", "fast1")},
         factors={"speed": speed, "ttar_hp": hp, "pursuit": "unrevealed" if pursuit else "absent",
@@ -160,6 +164,10 @@ def all_states() -> List[StateSpec]:
         out.append(gengar_lead(speed, hp, our_side="p2"))
     for lv in ("low", "high"):
         out.append(blissey_state(lv))
+    # family R (owner addition, amendment 1): R2's +2 board joins the GL core; R1/R3 live in r_family.py
+    out.append(gengar_lead("slow2", "high"))
+    import r_family  # noqa: E402
+    out += r_family.r_states()
     try:
         import lure  # noqa: E402
         out += lure.lure_states()

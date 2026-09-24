@@ -38,7 +38,7 @@ import tlib  # noqa: E402
 
 # REGISTERED n (PREDICTION.md): rollouts per (state, regime, action)
 R_CORE = 48          # DG_GL_*, DT_*, B_*
-R_SECONDARY = 24     # DG_SL_*, L*
+R_SECONDARY = 24     # DG_SL_*, L*, R* (amendment 1)
 BLOCK = 4
 LINE_TIMEOUT_S = 900.0
 KEEP = ("|move|", "|-damage|", "|faint|", "|-boost|", "|cant|", "|switch|", "|-fail|", "|-miss|", "|-crit|",
@@ -46,13 +46,13 @@ KEEP = ("|move|", "|-damage|", "|faint|", "|-boost|", "|cant|", "|switch|", "|-f
 
 
 def regimes_for(sid, fam):
-    if fam == "L" or sid.startswith("DG_SL_"):
+    if fam in ("L", "R") or sid.startswith("DG_SL_"):
         return ["live"]
     return ["live", "premise"]
 
 
 def r_for(sid, fam):
-    return R_SECONDARY if (fam == "L" or sid.startswith("DG_SL_")) else R_CORE
+    return R_SECONDARY if (fam in ("L", "R") or sid.startswith("DG_SL_")) else R_CORE
 
 
 def units(man):

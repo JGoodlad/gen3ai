@@ -247,3 +247,26 @@ def make_rl(model, *, prefix: str, stochastic: bool = True, temperature: float =
                server_configuration=LocalhostServerConfiguration, mappings=_MAPPINGS,
                account_configuration=_acct(prefix), start_listening=False, max_concurrent_battles=1,
                stochastic=stochastic, temperature=temperature, policy_seed=policy_seed)
+
+
+@torch.no_grad()
+def opp_belief(model, obs: np.ndarray, mask: np.ndarray, move_names: Dict[int, str], item_names: Dict[int, str],
+               k_moves: int = 12, k_items: int = 5, want_moves=(), want_items=()) -> dict:
+    """The opp-ACTIVE slot's belief stashes after one forward: move belief (sigmoid, top-k + requested ids),
+    item belief (softmax, top-k + requested), and the believed DERIVED stats [atk, def, spa, spd, spe]."""
+    pin = {"observation": torch.as_tensor(obs[None]).float(), "action_mask": torch.as_tensor(mask[None]).float()}
+    model.policy.predict_values(pin)
+    fe = model.policy.features_extractor
+    st = fe.stash
+    act = fe.last_opp_active_local
+    a = int(act[0].item()) if act is not None else 0
+    mv = torch.sigmoid(st.move_belief_logits[0, a]).numpy()
+    it = torch.softmax(st.item_logits[0, a].double(), -1).numpy()
+    sp = st.spread_belief[0, a].numpy().tolist() if getattr(st, "spread_belief", None) is not None else None
+    top_m = [(move_names.get(int(i), str(int(i))), float(mv[i])) for i in np.argsort(-mv)[:k_moves]]
+    top_i = [(item_names.get(int(i), str(int(i))), float(it[i])) for i in np.argsort(-it)[:k_items]]
+    inv_m = {v: k for k, v in move_names.items()}
+    inv_i = {v: k for k, v in item_names.items()}
+    return {"active_slot": a, "top_moves": top_m, "top_items": top_i, "spread_derived": sp,
+            "moves": {m: float(mv[inv_m[m]]) for m in want_moves if m in inv_m},
+            "items": {i: float(it[inv_i[i]]) for i in want_items if i in inv_i}}

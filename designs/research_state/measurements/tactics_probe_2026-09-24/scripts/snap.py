@@ -97,6 +97,11 @@ def check(snap: Dict, expect: Dict) -> list:
                 got = snap["p1"]["team"].get(sp)
                 if got is None or not (band[0] <= got <= band[1]):
                     bad.append(f"p1 {sp} hp {got} not in {band}")
+        elif k == "p2_team_hp":
+            for sp, band in v.items():
+                got = snap["p2"]["team"].get(sp)
+                if got is None or not (band[0] <= got <= band[1]):
+                    bad.append(f"p2 {sp} hp {got} not in {band}")
         else:
             bad.append(f"unknown predicate {k}")
     return bad

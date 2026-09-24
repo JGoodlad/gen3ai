@@ -115,6 +115,19 @@ def main():
                         mv["hiddenpower"]["num"]]
                 entry["belief_nums"] = {"lure": nums[0], "std": nums[1], "hiddenpower": nums[2]}
             entry["readout"] = {t: tlib.readout(m, box["obs"], box["mask"], nums) for t, m in models.items()}
+            if spec.family == "R":
+                # the opp-active belief stashes (amendment 1: the role family's belief side)
+                mnames = {r["num"]: k for k, r in mv.items() if "num" in r}
+                inames = {r["num"]: k for k, r in load_mappings().get("items", {}).items() if "num" in r}
+                if not inames:
+                    items_json = json.load(open(os.path.join(os.getcwd(), "data/pokemon/gen3_items.json")))
+                    inames = {r["num"]: k for k, r in items_json.items() if "num" in r}
+                entry["opp_belief"] = {t: tlib.opp_belief(
+                    m, box["obs"], box["mask"], mnames, inames,
+                    want_moves=("pursuit", "crunch", "earthquake", "rockslide", "doubleedge", "hiddenpowerflying",
+                                "hiddenpowerbug", "substitute", "toxic", "taunt", "protect", "roar"),
+                    want_items=("choiceband", "leftovers", "liechiberry", "lumberry"))
+                    for t, m in models.items()}
             if spec.family == "L":
                 fe = models["G0"].policy.features_extractor
                 sp = load_mappings()["species"][spec.factors["species"]]["num"]

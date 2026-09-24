@@ -187,3 +187,67 @@ for progress and health only. `analyze.py` runs once, at the registered n, and w
 * A 36-rollout cost pilot on `DG_GL_fast0_high` LIVE (r = 0–3, separate directory, EXCLUDED from the
   verdict): all ok, 3.8 s per rollout; its turn-T lines showed the G0 Tyranitar choosing Dragon Dance in
   all four draws and Explosion denying it. No rollout score was read.
+
+---
+
+## Amendment 1 (2026-09-24, owner addition: family R, ROLES). Registered BEFORE any number of any family was read
+
+**What changed and why.** The owner added a third question mid-run: does the policy / critic PRICE a
+Pokémon's role, and know that a role's value depends on the opponent's roster? Thirteen states were
+added (`scripts/r_family.py`, and one board in `scripts/states.py`), found and proven exactly like the
+others (`out/seeds.json`; all 13 pass every predicate at T, none refused). The original 39 states, their
+endpoints and their predictions are UNCHANGED. The rollouts of the original 39 were already running
+when this was written; none of their rows has been read (only row counts, for progress).
+
+**States.**
+
+| State | T | Model plays | Board |
+|---|---|---|---|
+| `R1_entry` | 1 | our Swampert (SkarmBliss) | vs their Choice Band Aerodactyl lead (the `9283210847f806ee` sample set verbatim: Jolly 224 Atk / 32 SpD / 252 Spe, EQ / Rock Slide / Double-Edge / HP Bug; 393 Spe in-sim). The BELIEF read |
+| `R1_{alive,fainted}_sk{healthy,weak}` | 4 | our Skarmory vs their Zapdos (Zapdos took one Hydro Pump in every arm: 75–80%) | Aerodactyl ALIVE (retreated turn 1, full HP) or FAINTED (Hydro Pump KO turn 1) × our Skarmory HEALTHY (100%) or nearly GONE (21–22%, a Thunderbolt). Residual asymmetry: in the FAINTED arms our Swampert took a Hidden Power Ice (76%) |
+| `DG_GL_slow2_high` | 3 | our Gengar | the DG high-HP board at **+2** (426 Spe; two Dragon Dances). With `DG_GL_fast0_high` (+0) and `DG_GL_slow1_high` (+1) it is the **R2** series. It joins the DG core (LIVE + PREMISE, R = 48) |
+| `R3_pursuit` | 1 | our special Pursuit Tyranitar (`e541f7be8713393c`: Crunch / Pursuit / Fire Blast / Brick Break) | vs their Gengar lead (SkarmBliss) |
+| `R3_{alive,fainted}` | 3 | our fresh Tyranitar vs their Swampert | their Gengar retreated from our Choice Band Metagross on turn 1 (ALIVE, full HP; their Swampert took the Meteor Mash: 83%) or stayed and was KO'd (FAINTED; Swampert 100%, our Metagross took a Thunderbolt: 63%) |
+| `R3m_lead_{gengar,blissey}` | 1 | the SkarmBliss side (p2) | our Pursuit Tyranitar leads vs their Gengar / their Blissey: P(Pursuit) on OUR Tyranitar |
+| `R3m_swin_{gengar,blissey}` | 2 | the SkarmBliss side (p2) | our Tyranitar SWITCHES IN on their Gengar / their Blissey |
+
+**Oracle.** LIVE only, R = **24** per (state, action), except `DG_GL_slow2_high` (DG core: LIVE + PREMISE,
+R = 48). ~3,500 more rollouts. Same continuation policy (G0, T = 1), CRN, scoring and INCONCLUSIVE rule.
+**Extra readout (R states only):** the opp-active belief stashes (move belief top-12 and named moves,
+item belief top-5 and named items, believed derived stats).
+
+Let V̄ = Σ_a π_G0(a)·Q(a) (the state's oracle value under the continuation policy's own first move) and
+Q* = max_a Q(a). "Stay" = any move of the active mon (as opposed to a switch).
+
+**Endpoints and rules.**
+* **R1a (belief):** P_M(Choice Band) (Smogon prior 0.761) and the top-4 believed moves.
+  **OFFENSIVE LEAN** iff P(Choice Band) ≥ 0.5 AND the top-4 believed moves are all attacking moves.
+* **R1b (critic prices the check):** the interaction I_V = [V_M(alive, healthy) − V_M(alive, weak)] −
+  [V_M(fainted, healthy) − V_M(fainted, weak)]; the same on the oracle (I_Q on V̄ and on Q*, independent
+  bootstrap over the four states). **CRITIC ROLE-PRICED** iff I_V ≥ +0.03. The oracle's I_Q says whether
+  the role really is worth something on these boards (DETECTED iff its CI excludes 0).
+* **R1c (policy keeps the check):** Δπ_stay = π(stay | alive, healthy) − π(stay | fainted, healthy).
+  **PRESERVES THE CHECK** iff Δπ_stay ≤ −0.05; compared with the oracle's A_stay = max_stay Q − max_switch Q.
+* **R2 (threat priced):** V_M at +0 / +1 / +2. **THREAT PRICED** iff V decreases monotonically and
+  V(+0) − V(+2) ≥ 0.05; the oracle V̄ and Q* series beside it; the policy's mass on {switch to Swampert
+  or Skarmory}, {Explosion}, {attacks} per boost (the denial is available only at +0).
+* **R3 (role depends on the roster):** V_M(R3_alive) vs V_M(R3_fainted); Δπ_stay = π(stay | alive) −
+  π(stay | fainted): **ROLE-AWARE** iff ≤ −0.05 (Tyranitar preserved while the Gengar it exists to trap
+  is alive), read against the oracle's A_stay in each. `R3_pursuit`: π(Pursuit) and A_Pursuit.
+* **R3m (belief mirror):** b = P_M(Pursuit on our Tyranitar), Smogon prior 0.134. **RAISES** iff
+  b(front = Gengar) − b(front = Blissey) ≥ 0.05, at the LEAD pair and at the SWITCH-IN pair. Normative
+  note, registered here: gen 3 has NO team preview, so a set cannot depend on the opponent's roster; at
+  the LEAD pair the right answer is NO rise. After a Tyranitar switches INTO a Gengar, a rise is licensed
+  by the player's behaviour, not by the roster.
+
+**Predictions (amendment 1).**
+13. **R1a:** OFFENSIVE LEAN in all three models (the item prior alone is 0.76 Choice Band).
+14. **R1b:** the critic is NOT role-priced: |I_V| < 0.03 in all three; V(alive) < V(fainted) in both
+    Skarmory arms (material). The oracle's I_Q is positive but NOT DETECTED at R = 24.
+15. **R1c:** NO preservation (|Δπ_stay| < 0.05).
+16. **R2:** THREAT PRICED in all three (V falls by ≥ 0.05 from +0 to +2); at +2 the policy puts ≥ 0.5 on
+    switching to Swampert or Skarmory.
+17. **R3:** V(alive) < V(fainted) in all three; NOT ROLE-AWARE (|Δπ_stay| < 0.05); at `R3_pursuit`
+    π(Pursuit) < π(Crunch).
+18. **R3m:** NO rise at the LEAD pair (correct) and NO rise at the SWITCH-IN pair (the behavioural
+    evidence is not read), |Δb| < 0.05 in both.
