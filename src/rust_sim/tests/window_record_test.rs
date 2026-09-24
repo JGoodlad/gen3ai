@@ -124,6 +124,8 @@ fn fixtures() -> Vec<(&'static str, Run)> {
         ("taunt_encore_disable", taunt_encore_disable()),
         ("protect", protect()),
         ("perish", perish()),
+        ("explosion_cuts_turn", explosion_cuts_turn()),
+        ("recoil_cuts_softboiled", recoil_cuts_softboiled()),
     ]
 }
 
@@ -255,6 +257,22 @@ fn perish() -> Run {
                                (0, "move 2"), (1, "move 1"), (0, "switch 2"), (1, "switch 2"), (0, "move 1"), (1, "move 1")])
 }
 
+fn explosion_cuts_turn() -> Run {
+    // A FASTER Electrode explodes into a Snorlax that SURVIVES: the Electrode's own faint cuts the
+    // turn (gen 3), so the Snorlax's chosen Curse never happens.
+    let p1 = team(&[set("electrode", "", "static", "explosion", 30), set("snorlax", "", "immunity", "rest", 100)]);
+    let p2 = team(&[set("snorlax", "", "immunity", "curse", 100), set("blissey", "", "naturalcure", "softboiled", 100)]);
+    play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "switch 2"), (0, "move 1"), (1, "move 1")])
+}
+
+fn recoil_cuts_softboiled() -> Run {
+    // A FASTER 1-HP Double-Edge user (speed 116) hits a slower Snorlax (96) that SURVIVES; the
+    // user's recoil faint cuts the turn, so the Snorlax's chosen Softboiled never happens.
+    let p1 = team(&[set("shedinja", "", "wonderguard", "doubleedge", 100), set("blissey", "", "naturalcure", "softboiled", 100)]);
+    let p2 = team(&[set("snorlax", "", "immunity", "softboiled", 100), set("blissey", "", "naturalcure", "softboiled", 100)]);
+    play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "switch 2"), (0, "move 1"), (1, "move 1")])
+}
+
 // ------------------------------------------------------------------ finders
 
 fn mon(side: &str, sp: &str) -> pokesim::trackers::record::Mon {
@@ -299,7 +317,7 @@ fn a_faster_ko_denies_the_opponents_move_right_after_the_ko_and_hides_its_choice
     let a1 = actions(&r, 0);
     let (why, choice) = denied(&a1, &mon("opp", "rattata"));
     assert_eq!(choice, &Choice::Opp);
-    let DenialWhy::FaintedFirst { by, .. } = why;
+    let DenialWhy::FaintedFirst { by, .. } = why else { panic!("{why:?}") };
     assert_eq!(by.as_ref().map(|(m, mv)| (m.species.as_str(), mv.as_str())), Some(("mewtwo", "psychic")));
     let ko = position(&a1, |a| is_move(a, "psychic"));
     assert!(matches!(&a1[ko + 1].kind, ActionKind::Denied { .. }), "the denial sits right after the KO: {a1:#?}");
@@ -314,7 +332,7 @@ fn a_faster_ko_denies_the_opponents_move_right_after_the_ko_and_hides_its_choice
 fn an_explosion_first_denies_the_target_and_records_both_faints_with_their_causes() {
     let r = explosion_first();
     let a1 = actions(&r, 0);
-    let DenialWhy::FaintedFirst { by, .. } = denied(&a1, &mon("opp", "rattata")).0;
+    let DenialWhy::FaintedFirst { by, .. } = denied(&a1, &mon("opp", "rattata")).0 else { panic!("not fainted-first") };
     assert_eq!(by.as_ref().map(|(_, mv)| mv.as_str()), Some("explosion"));
     let f = faints(&r, 0);
     assert_eq!(f, vec![("electrode".into(), Cause::SelfKo), ("rattata".into(), Cause::Direct)], "both faints, in order");
@@ -324,7 +342,7 @@ fn an_explosion_first_denies_the_target_and_records_both_faints_with_their_cause
 fn a_double_edge_trade_denies_the_target_and_the_recoil_ko_is_attributed() {
     let r = double_edge();
     let a1 = actions(&r, 0);
-    let DenialWhy::FaintedFirst { by, .. } = denied(&a1, &mon("opp", "rattata")).0;
+    let DenialWhy::FaintedFirst { by, .. } = denied(&a1, &mon("opp", "rattata")).0 else { panic!("not fainted-first") };
     assert_eq!(by.as_ref().map(|(_, mv)| mv.as_str()), Some("doubleedge"));
     assert_eq!(faints(&r, 0), vec![("rattata".into(), Cause::Direct), ("shedinja".into(), Cause::Recoil)]);
 }
@@ -405,6 +423,37 @@ fn the_opponents_denied_choice_never_reaches_a_viewer() {
         }
     }
     assert!(own >= 5 && opp >= 5, "non-vacuity: {own} own / {opp} opponent denials");
+}
+
+/// A turn-cut denial of `actor` in viewer `side`'s record: (the faint that cut it, its cause, choice).
+fn turn_cut(r: &Run, side: usize, actor: &pokesim::trackers::record::Mon) -> (pokesim::trackers::record::Mon, Cause, Choice) {
+    actions(r, side)
+        .into_iter()
+        .find_map(|a| match a.kind {
+            ActionKind::Denied { actor: x, why: DenialWhy::TurnCut { by_faint, cause }, choice } if x == *actor => Some((by_faint, cause, choice)),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("no turn-cut denial of {actor:?}: {:#?}", actions(r, side)))
+}
+
+#[test]
+fn a_self_ko_explosion_cuts_the_turn_and_denies_the_survivors_move() {
+    let r = explosion_cuts_turn();
+    // the Snorlax survived — it is NOT a fainted-first denial, it is the gen-3 turn cut
+    assert_eq!(faints(&r, 0), vec![("electrode".into(), Cause::SelfKo)], "only the exploder fainted");
+    assert_eq!(turn_cut(&r, 0, &mon("opp", "snorlax")), (mon("ours", "electrode"), Cause::SelfKo, Choice::Opp));
+    assert_eq!(turn_cut(&r, 1, &mon("ours", "snorlax")).2, Choice::Own(Some("move 1".into())), "the denied side keeps its choice");
+    // and the Curse really never ran (the sim's truth, not the record's assumption)
+    assert!(!actions(&r, 1).iter().any(|a| a.turn == 1 && is_move(a, "curse")), "Curse must not have been used on turn 1");
+}
+
+#[test]
+fn a_recoil_self_ko_cuts_the_turn_and_denies_softboiled() {
+    let r = recoil_cuts_softboiled();
+    assert_eq!(faints(&r, 0), vec![("shedinja".into(), Cause::Recoil)]);
+    assert_eq!(turn_cut(&r, 0, &mon("opp", "snorlax")), (mon("ours", "shedinja"), Cause::Recoil, Choice::Opp));
+    assert_eq!(turn_cut(&r, 1, &mon("ours", "snorlax")).2, Choice::Own(Some("move 1".into())));
+    assert!(!actions(&r, 1).iter().any(|a| a.turn == 1 && is_move(a, "softboiled")));
 }
 
 // ------------------------------------------------------------------ E12 mechanics

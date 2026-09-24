@@ -276,6 +276,22 @@ def _field_of(path: str) -> str:
     return ".".join(parts[:2])
 
 
+def boundary_violations(window: Sequence[Mapping]) -> List[Tuple[int, Any]]:
+    """The INFORMATION BOUNDARY on one viewer's native record: a denied or refused opponent action
+    carries ``"choice": "opp"`` and nothing else (the viewer never saw what the opponent chose); one
+    of our own carries ``{"own": …}``. Returns ``(action index, action)`` for every violation."""
+    out = []
+    for i, a in enumerate(window):
+        if a.get("kind") not in ("denied", "cant"):
+            continue
+        side = (a.get("actor") if a["kind"] == "denied" else a.get("mon"))[0]
+        ch = a.get("choice")
+        ok = ch == "opp" if side == "opp" else (isinstance(ch, dict) and set(ch) == {"own"})
+        if not ok:
+            out.append((i, a))
+    return out
+
+
 def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: Sequence[Sequence[Mapping]],
                    census: TrackerCensus, teams: Optional[Mapping[str, str]] = None,
                    format_id: str = "gen3ou", ended: Optional[Mapping[str, Any]] = None) -> None:
@@ -318,6 +334,8 @@ def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: 
                 census.diverge("[ALIGN] the core decided at a different chunk", (where, cap["after"]))
                 continue
             census.decisions += 1
+            for j, act in boundary_violations(cap.get("window") or ()):
+                census.diverge("[BOUNDARY] a denial's choice crosses the information boundary", (where, j, act))
             tr.advance(0)
             tr.record(b, mask, legal=legal)
             delta = tr.update_progress_clock(b, legal)

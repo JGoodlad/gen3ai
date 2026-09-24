@@ -279,6 +279,34 @@ def test_the_tracker_slice_catches_a_phaze_labelled_as_a_choice(monkeypatch):
     assert any(k.startswith("[TRACKER] label") for k in t.divergences), t.render()
 
 
+def test_the_information_boundary_holds_on_the_core_record_and_the_check_has_teeth(monkeypatch):
+    """ACTION DENIAL's information boundary at the SLICE level: every denied / refused action in
+    the core's native record over the COMMIT corpus carries ``"opp"`` for an opponent (the viewer
+    never saw the opponent's choice) and ``{"own": …}`` for our own — and the check FAILS on a real
+    opponent denial whose choice is made to leak."""
+    seen = {"opp": [], "ours": []}
+
+    def take(_b, res):
+        for viewer in res.get("trackers") or []:
+            for cap in viewer:
+                for a in cap.get("window") or ():
+                    if a["kind"] in ("denied", "cant"):
+                        seen[(a["actor"] if a["kind"] == "denied" else a["mon"])[0]].append(a)
+
+    t = T.TrackerCensus()
+    P.check_battles(P.commit_corpus(), P.Census(), trackers=t, on_result=take)
+    assert not [k for k in t.divergences if k.startswith("[BOUNDARY]")], t.render()
+    assert len(seen["opp"]) >= 20 and len(seen["ours"]) >= 20, {k: len(v) for k, v in seen.items()}
+    assert T.boundary_violations(seen["opp"] + seen["ours"]) == []
+    leak = dict(seen["opp"][0], choice={"own": "move 1"})
+    assert T.boundary_violations([leak]) == [(0, leak)]
+    hidden = dict(seen["ours"][0], choice="opp")
+    assert T.boundary_violations([hidden]) == [(0, hidden)]
+    # and slice T itself runs the check: a record that leaks FAILS the gate
+    t = _commit_trackers_with(monkeypatch, T, "boundary_violations", lambda w: [(0, leak)])
+    assert any(k.startswith("[BOUNDARY]") for k in t.divergences), t.render()
+
+
 # ---------------------------------------------------------------------------
 # MILESTONE tier (slices E + V on the same played battles)
 # ---------------------------------------------------------------------------

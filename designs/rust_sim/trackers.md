@@ -46,9 +46,21 @@ CONSUMERS, never the layout.
 
 **ACTION DENIAL.** A chosen action that never happened is one of: a `Cant` with `then_moved == false`
 (REFUSED), a `Denied { FaintedFirst }` (the actor fainted before its turn — found at the faint, placed
-right after the denying action, with that action's mover and move), or a `Blocked` effect on the
+right after the denying action, with that action's mover and move), a `Denied { TurnCut }` (the
+actor did NOT faint, but a faint earlier in the turn CUT it — below), or a `Blocked` effect on the
 move whose target Protect / Detect took away. A turn's actors are the actives at its `|turn|` line;
 a residual faint is never a denial (every actor has acted by then).
+
+🚨 **The gen-3 TURN CUT.** In gen-3 singles ANY faint during the action phase cancels EVERY remaining
+queued action (`sim/battle.ts` `faintMessages` → `queue.cancelAction` over all actives, ~2606-2616;
+the port implements the same cut in `turn/switch.rs` and `turn/driver.rs`). So a faster self-KO —
+Explosion / Self-Destruct, a recoil KO, a confusion self-hit KO, a Rough Skin KO — denies the
+SURVIVOR's chosen action even though nothing touched it. The record closes the action phase at the
+first residual, `|upkeep|`, `|turn|` or the battle's end (not at a mid-turn decision — the forced
+switch's request comes before the phase ends), and inserts one `Denied { TurnCut { by_faint, cause } }`
+per turn actor that neither acted nor fainted, right after the first faint's action (move ORDER).
+Fixtures: `a_self_ko_explosion_cuts_the_turn_and_denies_the_survivors_move`,
+`a_recoil_self_ko_cuts_the_turn_and_denies_softboiled`.
 
 **One rule the port had to take from poke-env, not from the decision window.** The Hidden-Power
 belief observes `battle.opp_last_damaging_move`: poke-env's PENDING damaging move (captured at the
@@ -57,8 +69,8 @@ lands in the same turn (`_set_effectiveness`, incl. Flash Fire's `|-start|`), TU
 that just resolved. That spans the whole turn, so a window that opened at a mid-turn forced switch
 does not contain it. The core keeps the same two slots on `BoardReading`
 (`pending_damaging` / `last_damaging` / `last_damaging_move`). A window-scoped reading (the rule
-`view_successor.view_context._to_dme` uses) diverged from training at 57 of 1,838 COMMIT decisions
-before this port — see §5.
+`view_successor.view_context._to_dme` uses) diverged from training on the HP belief at 57 of 1,838
+COMMIT decisions before this port — see §5.
 
 ## 2. On the version — shared by a fork
 
@@ -78,9 +90,10 @@ version ended at one of the side's decisions. The trackers are opt-in (`root_wit
 ## 3. The native record — what happened, in order, with attribution
 
 **Status: BUILT, emitted per decision by `core_events --trackers` (`window`), read by nothing yet.
-Gated by 20 constructed fixtures (`tests/window_record_test.rs`), each FAILING if its mechanic is
+Gated by 22 constructed fixtures (`tests/window_record_test.rs`), each FAILING if its mechanic is
 flattened: the six denial shapes (a faster KO, Explosion first, a Double-Edge recoil trade, a flinch,
-full paralysis, a Destiny Bond trade — which is two faints and NO denial), Baton Pass, Roar into
+full paralysis, a Destiny Bond trade — which is two faints and NO denial), the two gen-3 TURN CUTS
+(an Explosion self-KO and a recoil self-KO, each denying the survivor), Baton Pass, Roar into
 Spikes, a Spikes KO on entry and the free switch after it, Pursuit on a switch, Thief / Trick /
 Knock Off, Sleep Talk, the five gen-3 callers, Rapid Spin, charge and recharge, a lost Focus Punch,
 Wish / Substitute / Protect, Taunt, Perish Song — and the information boundary over all of them.**
@@ -96,7 +109,7 @@ flattened:
 | `Switch` | the entrant, the mon it replaced, and WHY it entered: `Lead`, `Chosen`, `Replacement { fainted }` (the FREE switch after a faint), `BatonPass { passer, boosts, volatiles }` (exactly what was passed) |
 | `Drag` | the dragged-in mon, the mon it replaced, WHO forced it and with what move (Roar / Whirlwind) |
 | `Cant` | a REFUSED action — the reason (`par` / `slp` / `frz` / `flinch` / `recharge` / `Focus Punch` / `Taunt` / `Disable` / `damp` / `nopp` …), the move it was prevented from (only when the PUBLIC line names it), who blocked it, the choice as this side knows it, and `then_moved` (the mon moved later this turn — Sleep Talk through sleep: the line is kept, the action was NOT denied) |
-| `Denied` | a chosen action that never happened because the actor FAINTED FIRST — the cause and the action that denied it, placed right after that action (move ORDER) |
+| `Denied` | a chosen action that never happened: `FaintedFirst` (the actor fainted before its turn — the cause and the action that denied it) or `TurnCut` (the gen-3 cut: the turn's first faint and its cause), placed right after the denying action (move ORDER) |
 | `Refused` | the server refused a choice (`\|error\|`: trapped, disabled …) |
 | `Residual` | the end-of-turn block |
 
@@ -112,7 +125,10 @@ move's hits are separate effects), charge (`Prepare`) and recharge.
 `BattleVersion::note_choice`) and only THAT the opponent was denied. `record::Choice` is
 `Own(Option<String>)` or `Opp` — `Opp` carries no data, so no code path can put the opponent's
 chosen move into a viewer's record, and a record built from one side's stream sees nothing the
-other side cannot (`present()`'s guarantee, for the record).
+other side cannot (`present()`'s guarantee, for the record). The boundary is also checked at the
+SLICE level: slice T runs `rust_core_parity_trackers.boundary_violations` on every decision's record
+(`[BOUNDARY]` divergence — an opponent `Cant` / `Denied` whose choice is not `"opp"`, or one of ours
+without `{"own": …}`), so COMMIT, MILESTONE and the tracker fuzz all fail on a leak.
 
 ## 4. Slice T — the gate
 

@@ -63,6 +63,12 @@ pub enum DenialWhy {
     /// The actor fainted before its turn came: outsped and KOed, Explosion / Self-Destruct, a
     /// recoil-free KO; `by` is the action that KOed it (its mover and move).
     FaintedFirst { cause: Cause, by: Option<(Mon, String)> },
+    /// The actor did NOT faint, but a faint earlier in the turn CUT the turn: in gen-3 singles any
+    /// faint cancels every remaining queued action (`faintMessages` → `queue.cancelAction` over all
+    /// actives, `sim/battle.ts:2606-2616`; the port's `turn/switch.rs`), so a faster Explosion,
+    /// a recoil self-KO or a KO of anyone denies every actor still waiting. `by_faint` is the first
+    /// faint of the turn and its cause.
+    TurnCut { by_faint: Mon, cause: Cause },
 }
 
 /// What one action WAS.
@@ -219,6 +225,10 @@ pub struct RecordBuilder {
     baton_pending: [Option<String>; 2],
     /// Denials found at a faint, placed after the current action once it closes.
     pending_denials: Vec<Action>,
+    /// The turn's first faint in its ACTION phase: (the action index holding it, the mon, its cause).
+    first_faint: Option<(usize, Mon, Cause)>,
+    /// The turn's action phase is over (the residual block opened, `|upkeep`, or a decision).
+    actions_closed: bool,
 }
 
 fn rel(viewer: u8, side: u8) -> Rel {
@@ -310,6 +320,7 @@ impl RecordBuilder {
         let of = line.of_source().map(|i| self.mon_of(i));
         match line.kw {
             Kw::Turn => {
+                self.close_actions();
                 self.close_turn();
                 if let Some(Field::Text(t)) = line.field(0) {
                     self.turn = t.parse().unwrap_or(self.turn);
@@ -317,8 +328,13 @@ impl RecordBuilder {
                 self.turn_actors = self.active.clone();
                 self.acted = [false, false];
                 self.own_choice = None;
+                self.first_faint = None;
+                self.actions_closed = false;
             }
-            Kw::Win | Kw::Tie => self.close_turn(),
+            Kw::Win | Kw::Tie => {
+                self.close_actions();
+                self.close_turn();
+            }
             Kw::Move => {
                 let Some(id) = line.ident(0) else { return };
                 let user = self.mon_of(id);
@@ -446,7 +462,7 @@ impl RecordBuilder {
                 let reason = first(K::ChoiceRejected).and_then(ev::reason).map(str::to_string);
                 self.open(ActionKind::Refused { reason }, scope);
             }
-            Kw::Upkeep => {}
+            Kw::Upkeep => self.close_actions(),
             _ => {
                 let cause = self.cause_of(line);
                 // The step path KNOWS the residual block (the engine's scope); a parsed stream
@@ -457,6 +473,7 @@ impl RecordBuilder {
                 };
                 if residual && !ev.readings.is_empty()
                     && !matches!(self.window.actions.last().map(|a| &a.kind), Some(ActionKind::Residual)) {
+                    self.close_actions();
                     self.open(ActionKind::Residual, scope);
                 }
                 self.effects(ev, on, of, cause);
@@ -484,6 +501,41 @@ impl RecordBuilder {
     fn mark_acted(&mut self, abs: u8, species: &str) {
         if self.turn_actors[abs as usize].as_deref() == Some(species) {
             self.acted[abs as usize] = true;
+        }
+    }
+
+    /// The turn's ACTION phase is over: every turn actor that neither acted nor fainted, in a turn a
+    /// faint CUT, was denied by that faint (the gen-3 cancel-all rule) — placed right after the
+    /// action that holds the first faint (after any fainted-first denial of that same action).
+    fn close_actions(&mut self) {
+        if self.actions_closed || self.turn == 0 {
+            return;
+        }
+        self.actions_closed = true;
+        self.flush_denials();
+        let Some((at, by, cause)) = self.first_faint.clone() else { return };
+        for abs in 0..2u8 {
+            let s = abs as usize;
+            let Some(actor) = self.turn_actors[s].clone() else { continue };
+            if self.acted[s] {
+                continue;
+            }
+            self.acted[s] = true;
+            let mut i = (at + 1).min(self.window.actions.len());
+            while i < self.window.actions.len() && matches!(self.window.actions[i].kind, ActionKind::Denied { .. }) {
+                i += 1;
+            }
+            let denied = Action {
+                turn: self.turn,
+                kind: ActionKind::Denied {
+                    actor: Mon { side: rel(self.viewer, abs), species: actor },
+                    why: DenialWhy::TurnCut { by_faint: by.clone(), cause: cause.clone() },
+                    choice: self.choice_for(abs),
+                },
+                effects: Vec::new(),
+                scope: None,
+            };
+            self.window.actions.insert(i, denied);
         }
     }
 
@@ -591,6 +643,10 @@ impl RecordBuilder {
                         // DENIED action — placed right after the action that denied it.
                         let s = side as usize;
                         let residual = matches!(self.window.actions.last().map(|a| &a.kind), Some(ActionKind::Residual));
+                        if self.turn > 0 && !residual && !self.actions_closed && self.first_faint.is_none() {
+                            let at = self.window.actions.len().saturating_sub(1);
+                            self.first_faint = Some((at, Mon { side: rel(self.viewer, side), species: sp.clone() }, cause.clone()));
+                        }
                         if self.turn > 0 && !residual && !self.acted[s] && self.turn_actors[s].as_deref() == Some(sp.as_str()) {
                             self.acted[s] = true;
                             let by = match self.window.actions.last().map(|a| &a.kind) {
@@ -657,6 +713,12 @@ impl RecordBuilder {
 
     /// Close the window at a decision: the actions since the previous one.
     pub fn take(&mut self) -> Window {
+        // A decision INSIDE a turn ends its action phase only when a faint cut it (the forced
+        // replacement); the move request at a turn's START, or a Baton Pass's mid-turn switch
+        // decision (the turn goes on), must not.
+        if self.first_faint.is_some() {
+            self.close_actions();
+        }
         self.flush_denials();
         self.last_damage.clear();
         std::mem::take(&mut self.window)
@@ -821,6 +883,15 @@ impl Window {
                     mon_json(out, blocked_by);
                     choice_json(out, choice);
                     out.push_str(&format!(",\"then_moved\":{then_moved}"));
+                }
+                ActionKind::Denied { actor, why: DenialWhy::TurnCut { by_faint, cause }, choice } => {
+                    out.push_str("\"denied\",\"actor\":");
+                    mon_json(out, &Some(actor.clone()));
+                    out.push_str(",\"why\":\"turn_cut\",\"cause\":");
+                    cause_json(out, cause);
+                    out.push_str(",\"by_faint\":");
+                    mon_json(out, &Some(by_faint.clone()));
+                    choice_json(out, choice);
                 }
                 ActionKind::Denied { actor, why: DenialWhy::FaintedFirst { cause, by }, choice } => {
                     out.push_str("\"denied\",\"actor\":");
