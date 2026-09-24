@@ -336,6 +336,13 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   decisions were put to the owner in chat only, with no push, no timer and no default taken, and
   the CPU lane sat idle behind them overnight. In off hours a question that lives only in chat
   is not a decision request. PUSH it, schedule the wake, and act.
+  **ANY TIME I AM HARD BLOCKED, day or night (owner, 2026-09-24):** push-notify and schedule the
+  15-minute wake, whether the block is a decision, a failed precondition or anything else. Assume
+  that at NIGHT the owner will not see the push at all, so the default is what actually happens.
+  **If no goal-related path can be picked, fall back to near-zero-quota work that keeps the box
+  useful:** run the fuzz tests and fuzz scripts (CPU busy, ~0 quota, and they find real bugs),
+  continue the plateaued arm on the GPU, or the next queued cell. An idle CPU or GPU while I wait
+  is never the default.
 - **Alerting is Remote Control only** (owner, 2026-09-06 — an external channel, ntfy/Slack/email, was
   declined): a fully dead session cannot reach the owner, and that is accepted. Therefore the OS
   watcher's status file is the record of any unattended period and is the FIRST thing a new session
