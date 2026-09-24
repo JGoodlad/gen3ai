@@ -1,0 +1,20 @@
+ab_pool_protocol (run separately, ab_fuzz.js --mode pool --protocol --format gen3ou --battles 720 --master-seed 20260923):
+[ab_fuzz] GREEN-GATE PASS: 0 non-allowlisted divergences (ok=709, allowlisted=11 by reason {"turn0-construction-speed-tie-attribution":11}).
+
+ab_ourandom_protocol rc=0 wall_s=495 selfcheck_failures=0
+[ab_fuzz] GREEN-GATE PASS: 0 non-allowlisted divergences (ok=400, allowlisted=0 by reason {}).
+ab_randbats_state rc=0 wall_s=369 selfcheck_failures=0
+}
+bridge_ab_pool rc=0 wall_s=464 selfcheck_failures=0
+}
+bridge_ab_trapping rc=0 wall_s=128 selfcheck_failures=0
+}
+sim_bridge_diff_pool rc=0 wall_s=1530 selfcheck_failures=0
+}
+sim_bridge_diff_randbats rc=0 wall_s=914 selfcheck_failures=0
+}
+bridge_ab_pool: cum_battles=400 cum_ok=400 cum_diverged=0 cum_allowlisted=0 cum_panic=0
+bridge_ab_trapping: cum_battles=200 cum_ok=200 cum_diverged=0 cum_allowlisted=0 cum_panic=0
+sim_bridge_diff_pool: "battles":300,"ok":300,"diverged":0,"allowlisted":0,
+sim_bridge_diff_randbats: "battles":150,"ok":150,"diverged":0,"allowlisted":0,
+ab_randbats_state: cum_battles=300 cum_ok=300 cum_diverged=0 cum_panic=0

@@ -1,0 +1,6 @@
+A bin_sha256=3100da16865a11c2 baked=/home/goodlad/dev/gen3ai-wt/esc-base/src/rust_sim marker_strings=0 emission_check_symbols=0
+   stdout_sha256=4d0e37a6f80dcdd3 bytes=20216559 __END__=41 __ERR__=0 stderr_bytes=0
+B bin_sha256=fe887b5816dbdba2 baked=/home/goodlad/dev/gen3ai-wt/emission-selfcheck/src/rust_sim marker_strings=0 emission_check_symbols=0
+   stdout_sha256=4d0e37a6f80dcdd3 bytes=20216559 __END__=41 __ERR__=0 stderr_bytes=0
+C bin_sha256=4f72b5150471355f baked=/home/goodlad/dev/gen3ai-wt/emission-selfcheck/src/rust_sim marker_strings=1 emission_check_symbols=9
+   stdout_sha256=4d0e37a6f80dcdd3 bytes=20216559 __END__=41 __ERR__=0 stderr_bytes=0

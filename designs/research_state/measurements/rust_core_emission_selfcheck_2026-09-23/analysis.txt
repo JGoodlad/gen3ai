@@ -1,0 +1,5 @@
+replay_rows.jsonl: 30 complete triples, load1 10.2–23.6
+  replay_cpu_s   B/A median 0.9957  95% CI [0.9926, 0.9997]  B slower in 10/30  (median A 182.7 ms, B 182.4 ms)
+  replay_cpu_s   C/A median 1.3078  95% CI [1.3033, 1.3131]  C slower in 30/30  (median A 182.7 ms, C 239.3 ms)
+  replay_wall_s  B/A median 0.9959  95% CI [0.9926, 1.0021]  B slower in 12/30  (median A 186.4 ms, B 186.7 ms)
+  replay_wall_s  C/A median 1.3055  95% CI [1.2986, 1.3082]  C slower in 30/30  (median A 186.4 ms, C 241.7 ms)

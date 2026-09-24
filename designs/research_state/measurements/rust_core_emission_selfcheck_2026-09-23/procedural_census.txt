@@ -1,0 +1,10 @@
+✅ 0 divergences — 200 battles, 400 viewers, 377363 per-side lines, 191755 events compared, emission self-check omniscient=172244 per_viewer=346932 split=0 frame=32058
+❌ slice V: 24 divergences in 4 classes at 23 decisions (0.77 per 1,000), 0 refused — 200 battles, 400 viewers, 29783 decisions, 17065193 field comparisons, truth checks {'opp.ability': 107103, 'opp.types': 93708, 'ours.volatiles': 28001, 'opp.volatiles': 29493, 'opp.move-in-moveset': 300556, 'opp.item': 95331, 'opp.consumed-item-not-held': 5299}, core board checks {'BOARD': 5427566}, named rules / unresolved {'UNRESOLVED:tox-stage-benched': 3528, 'V15': 19}, KNOWN poke-env findings (facts) {'PE-V10': 192, 'PE-R1b': 194} (decisions) {'PE-V10': 192, 'PE-R1b': 180}
+        19  [SIM-FACT] ours.moves
+            e.g. ('procedural_9111/p1@t17#c90', 'forretress', 'reading', [('counter', 32, 32), ('earthquake', 16, 16), ('explosion', 7, 8), ('rapidspin', 62, 64)], 'projection', [('counter', 32, 32), ('earthquake', 16, 16), ('explosion', 6, 8), ('rapidspin', 62, 64)])
+         2  [PRESENTATION/V4-volatiles] opp.volatiles
+            e.g. ('procedural_9124/p1@t5#c24', 'alakazam', 'reading', {}, 'projection', {'trick': 0})
+         2  [PRESENTATION/V4-volatiles] ours.volatiles
+            e.g. ('procedural_9124/p2@t5#c25', 'alakazam', 'reading', {}, 'projection', {'trick': 0})
+         1  [PRESENTATION/V3-opp-pp] opp.moves
+            e.g. ('procedural_9146/p1@t45#c198', 'metagross', 'reading', [('meteormash', 15, 16), ('toxic', 16, 16)], 'projection', [('meteormash', 15, 16), ('mimic', 15, 16)])
