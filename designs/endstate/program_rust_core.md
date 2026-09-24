@@ -136,7 +136,8 @@ battle); `present(reading)` over a `BoardReading` — **built from ONE SIDE'S ST
 REFEREE (`check_view`); `legal_actions()` + the 11-dim mask. **`present()` is the TRUE reading**
 (owner directive): where poke-env is wrong about a sim fact the disagreement is a registered
 FINDING (`agents/battle/poke_env_findings.py`) — PE-V10, PE-R1b, PE-V16, all three reaching the
-obs; the fork is not changed. Slice V's core column (present + legality + mask + the board audit)
+obs. **All three FIXED in the fork at `c97358e8` (`gen3_pe_reading_fixes_v1`, owner 2026-09-24; a
+TRAINING-INPUT boundary), and the registry is now EMPTY.** Slice V's core column (present + legality + mask + the board audit)
 is green at COMMIT and MILESTONE with no allowlist but the findings (numbers in the measurement
 record below). **Search adopted it** — `materializer=core` is the default; the three gates run it
 as a third road with the INTEGRITY check on every arm; every battery row is stamped
@@ -367,7 +368,7 @@ Each row names the milestone whose slice made it deletable. LOC from Phase 0 (d)
 | M2 | the view road's RUST half: `view.rs` (`one_sided_view`, `SideObservation`, the reveal fold with `BridgeChunks::observed` / `enable_view_fold`), `tests/one_sided_view_test.rs`, `search::Capture::views` + `Resolved::views_at`, `core_events --views`'s `views` / `truth` payload; `view_adapter.py`'s rules (`ViewBattle` survives — `core_successor` builds on it — until M3); `ViewEventFolder` use in `view_successor.py` (the fold's M1 row stands); the view half of `one_sided_view_parity_fuzz_test.py` and `rust_core_parity_views.py`'s PROJECTION column (the core column stays); `view_materialize_benchmark.py` | ~1,100 Rust + ~700 Python | made deletable by `materializer=core` (M2 adoption) |
 | M2 | search's FALLBACKS: `search.py`'s `view_fallback_intermediate` / `view_fallback_no_payload` and the depth-≥2 protocol fallback; `RealizedWidths`' view counters | ~120 | a core leaf is a version, so there is nothing to fall back from |
 | M4 (owner, 2026-09-24: HELD until M4) | the TYPED SHORTCUT: `CorePath::Typed`, `BridgeSession::typed_side_lines`, `session_from_record_core` in search, `SearchConfig.core_path`, and with them the INTEGRITY mode (its only job is typed == text) | ~250 | measured to save nothing (§6); `core_path=text` is §6c's one observation path |
-| as each fork fix lands | the matching `agents/battle/poke_env_findings.py` entry (PE-V10 / PE-R1b / PE-V16) | 1 entry each | a TRAINING-INPUT change, the owner's call; deleting the entry TIGHTENS slice V |
+| DONE `c97358e8` | the matching `agents/battle/poke_env_findings.py` entry (PE-V10 / PE-R1b / PE-V16), all deleted, registry empty | 1 entry each | a TRAINING-INPUT change, the owner's call; deleting the entry TIGHTENS slice V |
 | M3 | `agents/training/clone_pins.py`; `ViewSuccessorFactory._clone_tracker`; `training/turn_delta_legacy.py` (test-only today) | 149 + 327 | the tracker fork becomes a pointer copy |
 | M3 (decided 2026-09-23) | the SHAPED reward path: `reward_potentials.py`, `reward_bias_terms.py`, the shaped branches of `reward_manager.py` / `reward_composition.py`, and the inert shaped flags (into `designs/deleted_flags.md`), with their tests | ~1,100 + tests | the Rust reward is the win indicator (§2 M3). Until this pass, arm S stays re-runnable as a comparator |
 | after M7 | RESHAPE `BoardReading`: its fields mirror poke-env's `Battle` (`_player_username` …) because slice V compares field by field; design the reading for the view once poke-env has no production user | — | a reshape, not a deletion |
