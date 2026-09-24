@@ -495,6 +495,16 @@ an EQUIVALENCE within the taught floor. On v8's parent the same cell returns **+
 `p_stable = sf·s`. v8 ran 0.35 of self-play, the gen era runs 0.20 — neither is an absolute until
 `sf` is named, and `sf` ramps. A mastered stable opponent silently leaves the challenge bucket.
 
+**The opponent TEAM distribution is also the belief heads' label distribution, and it is narrow
+enough to be memorised.** [MEASURED, `measurements/belief_calibration_2026-09-24/`, 395 paired battles
+per arm, `ai_v13_22_popr1_loop`] Off the pool, the learned belief heads are WORSE than the Smogon
+prior they fuse with: species −1.28 nats [−1.47, −1.10] on Metamon ladder teams (+0.33 on the uniform
+pool, +1.59 on the 5 stable-opponent teams that supply ~36% of that run's labels). The REINJECTED
+revealed-slot move posterior, which reaches decisions, loses −7.8 pp hidden-move recall to the prior
+on ladder teams and does not beat it even on the pool. 15.8% of hidden ladder slots are >0.8-confident
+in a species the opponent does not have. The effect on WIN RATE is unmeasured. [ledger 2026-09-24 ·
+*BELIEF-HEAD CALIBRATION OFF THE POOL*]
+
 ### 2.8 The architecture account is CLOSED
 
 Every leg, all NOT DETECTED or REFUTED [meas: `arch_transfer_2026-09-05/`]:
@@ -1175,6 +1185,7 @@ z=−1.40" rules out >4.5pp, not >0.
 | **Does the MC-only critic target cost more variance than it buys correctness?** | offline: compare the MC label against the bootstrapped return on existing traces and measure each one's variance | ~hours of CPU; **not done** |
 | **What does `--no-hand-shaping` cost in SPEED?** | a short paired A/B at ~2M steps | ~2 GPU-h; would have priced the 75M run |
 | **Does the affine-shaped-critic-beats-the-head result survive reweighting?** | give the affine gauge a weighted form and re-run on the committed baseline | ~a day of build; first item on the design's gap list |
+| **Does the belief heads' off-pool overconfidence cost WIN RATE?** | offline A/B on one checkpoint: the MoveBelief reinjection as trained vs replaced by the pure Smogon prior, both playing Metamon-ladder-team opponents (and pool teams as the control) | ~hours of CPU; the decision input for any belief-training change |
 | **Does an ANCHORED exploiter (KL-to-parent trust region on the teacher) hand the fold a local teacher?** | an anchored arm's untaught win rate should return toward the origin's 0.578 while its on-slice edge holds (~500 battles/teacher set). It is currently indistinguishable from "train exploiters less", which is FREE — so `TC_SHORT` is the honest first test | the meter is cheap; the arm is a build |
 
 ---

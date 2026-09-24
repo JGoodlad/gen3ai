@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,300-line file. **The ledger itself is append-only and is never edited by this**;
+21,304-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**692 headings · 637 dated · 2026-08-01 → 2026-09-24 · ledger 21,300 lines.**
+**693 headings · 638 dated · 2026-08-01 → 2026-09-24 · ledger 21,304 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -712,3 +712,4 @@ rename.
   - `L21289` · `2026-09-23` · MEASUREMENT · **THE WIN-PROB CONTINUATION'S UNTAUGHT GAIN REPLICATES ON A SECOND SEED: `ai_v13_21_wcont_b` (seed 1002) reads +12.94 pp [+10.25, +15.44] over arm W at +12M, OUTSIDE the 3.69 pp floor by both clauses at +3M / +6M / +12M, 8 of 8 teams at every depth (seed 1001: +15.50). The +15.50 pp row is now a two-seed FAMILY claim.**
   - `L21293` · `2026-09-23` · OPS (MAJOR) · **RUST CORE M2 LANDED (`ba7375c4`…`08cf94f4`): `BattleVersion` + `present()` — the TRUE reading, built from one side's stream with no board parameter — + `legal_actions()`; search adopts the core (`materializer=core`); training reads none of it. `sim_bridge` no longer folds the one-sided view: 0.909× pre-M1 CPU [0.876, 0.932], byte-identical.**
   - `L21297` · `2026-09-24` · OPS · **RUST CORE: the EMISSION SELF-CHECK landed (`gen3_core_emission_selfcheck_v1`, `239ebe3e` + record `c121fcd8`) — every emitted line checked at the moment it is emitted; ON in `cargo test` and every fuzzer, compiled OUT of `--release` (0 symbols, byte-identical, replay CPU 0.9957× [0.9926, 0.9997]); 0 self-check failures at milestone scale.**
+  - `L21301` · `2026-09-24` · MEASUREMENT · **BELIEF-HEAD CALIBRATION OFF THE POOL: memorisation DETECTED and NET HARMFUL off-pool. On out-of-pool teams the learned heads are WORSE than the Smogon prior they fuse with: species −1.28 nats [−1.47, −1.10] on Metamon ladder teams, and the REINJECTED revealed-slot move posterior −7.8 pp hidden-move recall [−8.9, −6.6]. 15.8% of ladder hidden slots are >0.8-confident in a species the opponent does not have.**
