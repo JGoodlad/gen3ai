@@ -218,7 +218,11 @@ tables come from `data/` exactly as the Python facade reads them.
 
 **Gate.** Slice O: the 2501-dim row `np.array_equal` per decision, both viewers, at COMMIT +
 MILESTONE, plus every obs golden; `obs_build_benchmark.py` gains a core row. **Size: 6–9
-agent-days** (5,481 LOC, 20 sub-encoders, the largest byte-parity burden). Search now takes rows
+agent-days** (5,481 LOC, 20 sub-encoders, the largest byte-parity burden). **The M4 final gate includes the
+LADDER-USAGE corpus (owner, 2026-09-24):** the filtered Metamon `hl_05_26` gen3ou teams (real
+teams from outside our pool, the surface where the Heal Bell crash hid) join the pool and procedural
+corpora in slices E/V/O and the fuzzers. The corpus lands IN PARALLEL with M3, so it is standing
+before M4's gate runs. Search now takes rows
 from `successors()`; the `expand_many` JSON, the view JSON and `view_adapter` leave its path.
 
 **Transport at M4 (decided 2026-09-23): keep the process and the pipe protocol.** The obs row, the
