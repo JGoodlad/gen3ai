@@ -403,6 +403,88 @@ example, is pinned byte-for-byte by the exhaustive parity test in
 `src/agents/gen3_mechanics_test.py`. Obs-value changes are retrain-class → bump
 `ARCH_SIGNATURE`.
 
+## The volatile vocabulary is SOURCE-DERIVED: crash-don't-drop without the whack-a-mole
+
+`gen3_effects.encode_volatiles` RAISES on an id it has not classified. That's by design, and it
+kept being completed one crash at a time: `doomdesire`, `immunity`, `magmaarmor`, `waterveil`,
+then **`healbell`** (2026-09-24, belief-calibration read, Metamon ladder teams; the pool has no
+Heal Bell). Why it kept happening: poke-env's `-activate` handler calls `start_effect` for ANY
+`|-activate|<mon>|<effect>` it has no special branch for, so a ONE-SHOT announcement lands in
+`mon.effects` beside the real volatiles and stays until switch-out.
+
+**The class is derived, not curated** (`gen3_effect_sources.py`, off the hot path):
+
+1. **Static half.** It scans every `add('-start'|'-activate'|'-singleturn'|'-singlemove', …)` that
+   the gen3 format EXECUTES. That covers `sim/*.ts`, plus `data/{moves,abilities,items,conditions}.ts`
+   through the mod chain gen3 → gen4 → … → gen8 → base, resolved the way `sim/dex.ts` merges it. A
+   mod key shadows its parent's, so gen3's Quick Claw / Lightning Rod / Synchronize / Aromatherapy
+   lines drop out. Entries are kept only for gen3-legal ids (`agents.gen3_data`).
+2. **Executed half.** Every concrete line runs through a REAL `Gen3Battle`, and the id is read back
+   through `LiveView`'s own `_id`. poke-env's branch logic is measured rather than restated.
+
+Every hand-written row in that module carries its reason and is checked against the source by the
+test: computed arguments (`DYNAMIC_EFFECT_EXPANSIONS`), gen-gated `sim/` lines and conditions,
+rule-gated lines (`RULE_GATED_LINES`), and non-obtainable items.
+
+**The classification** (`gen3_effects.py`, each entry with the line that carries its information):
+
+- a **slot** (`GEN3_VOLATILE_TO_SLOT`). `mindreader` is the `lockon` STATE: Showdown adds the
+  same `lockon` volatile for both moves.
+- **`NOT_A_VOLATILE`**. These encode to nothing, and each one's reason names where its consequence
+  arrives:
+
+  | id | Where the consequence arrives |
+  |---|---|
+  | `healbell` | `-curestatus` |
+  | `magnitude` | `-damage` |
+  | `spite` | the PP, on the next request |
+  | `mist` | the `-sidestart` side condition |
+  | `safeguard` | the `-sidestart` side condition |
+  | `focusband` | `-damage` |
+  | `typechange` | the per-mon TYPE block: `type_1`/`type_2` read poke-env's `_temporary_types` |
+
+  It's a named list, not a catch-all: `unknown` and any other id still raise.
+- **owner-pending** (`gen3_effect_sources.PENDING_OWNER_LINES`). gen3 **Mud Sport** and **Water
+  Sport** are real persistent volatiles with no slot. They also have no poke-env `Effect` member, so
+  they land as `unknown`. Their only correct classification changes the layout, so it's the owner's
+  call. Until then they RAISE. Metamon hl_05_26 gen3ou has 0 of 22,862 teams using them.
+
+**Verified NOT to reach the encoder in gen3 OU:**
+
+- **Aromatherapy.** The gen4 mod emits `-cureteam`.
+- **Beat Up.** `-activate|…|move: Beat Up` is gated by `Beat Up Nicknames Mod`, which gen3's
+  `Standard AG` includes. Without that rule it would land as `unknown` and crash, and 11.4% of
+  Metamon teams carry it. The test pins the rule.
+
+**The gates.** Each of these fails on drift:
+
+- `gen3_effects_test.py::test_every_effect_the_gen3_sim_announces_is_classified` plus its siblings
+  (dead entries, stale rows, pending lines still raise).
+- `gen3_effects_bridge_integration_test.py` (`sim`). A scripted node-bridge battle uses Heal Bell,
+  Aromatherapy, Beat Up, Magnitude, Mind Reader, Spite and Conversion, and fully encodes both sides
+  at every decision.
+- `main/ladder_drift_scan.py` runs the same derivation against Showdown **master** (the public
+  server), and pushes every replayed effect and `|cant|` reason through the encoder.
+
+This change is **value-neutral on every state that encoded before**: a newly classified id only
+touches encodes that used to RAISE. Proof: 400 pool battles (30,943 decisions) were byte-identical
+before and after, and the obs goldens pass unchanged. There was no `ARCH_SIGNATURE` bump.
+
+**poke-env reading findings this surfaced.** These were reported, not fixed. poke-env's reading is
+not the spec.
+
+- `|-activate|<mon>|item: Focus Band` does NOT disclose the item. The generic branch only starts an
+  effect, so the opponent's item slot stays unknown after a public reveal. This reaches the obs
+  item block.
+- `|-activate|<target>|move: Spite|<move>|<n>` does NOT apply the PP cut to the opponent's estimated
+  PP. Our own side is corrected by the next `|request|`.
+- MIND_READER is `ends_on_turn`, so it's dropped at the next `|turn|`. LOCK_ON never ends before
+  switch-out. The sim's `lockon` lasts 2 turns (through the user's next move) for both. So the
+  `lockon` bit is never visible at a turn-start decision after Mind Reader, and stays set after a
+  Lock-On is spent.
+- Every one-shot effect stays in `mon.effects` until switch-out, which is why `NOT_A_VOLATILE` has
+  to exist at all.
+
 ## Static typing (mypy)
 
 This package is **type-checked at ZERO errors**, on the same config and the same strictness tier as

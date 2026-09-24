@@ -418,5 +418,5 @@ and the `LegalActions` legality surface against the live server request at every
 every decision asserts memo'd view == fresh rebuild AND obs-warm == obs-with-memo-cleared,
 bit for bit. Its `--format gen3randombattle` arm is where Transform / Forecast forme change
 live; check 2 is **skipped, loudly** there because the obs encoder is gen3ou-scoped and
-fail-loud outside it (a randbats Conversion raises `UnknownVolatileError: typechange`).
+fail-loud outside it (its effect vocabulary is derived for gen3 OU only — `observation/CLAUDE.md` → *The volatile vocabulary is SOURCE-DERIVED*).
 Run both as scripts (no live server — bridge-backed): see the root `CLAUDE.md` Running Tests.

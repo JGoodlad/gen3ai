@@ -59,6 +59,48 @@ chat), `j`/`l`/`n` (spectators). All classified, all CONTROL/COSMETIC, none reac
 ⚠️ **This is a reading of one day's ladder, not a proof about every future one.** Re-run the
 scan before going live; that is what it is for.
 
+### The keyword gate was blind to the ENCODER (closed 2026-09-24)
+
+A known keyword can still carry an effect the observation encoder has never classified.
+`|-activate|<mon>|move: Heal Bell` is one: `-activate` is classified, but poke-env records Heal Bell
+in `mon.effects`, and `gen3_effects.encode_volatiles` RAISED on `healbell`. The belief-calibration
+read found this on Metamon teams, and it would have lost a live game on the timer. It is not rare.
+**14,565 of the 376,410 human gen3ou logs (3.9%) contain a Heal Bell `-activate`.**
+
+What changed:
+
+- **The class is derived from source.** `src/agents/observation/gen3_effect_sources.py` scans every
+  `-start` / `-activate` / `-singleturn` / `-singlemove` the gen3 format executes, and runs each one
+  on a real `Gen3Battle`. Every effect id the result can put in front of the encoder is classified,
+  with the reason (`observation/CLAUDE.md` has the table).
+- **`ladder_drift_scan` gained two ENCODER checks:**
+  - It re-runs that derivation against a sparse clone of Showdown **master**.
+  - It pushes every replayed effect and `|cant|` reason through the encoder.
+
+**Measured 2026-09-24:**
+
+| Check | Result |
+|---|---|
+| Master `a5df8274`, encoder (source) | 67 derived ids, all classified |
+| 200 public replays | 83,051 lines, 57 keywords, 200/200 structurally clean |
+| Encoder (replayed), same 200 replays | 3,484 encodes, 0 failures |
+
+A seeded sample of 20,000 human logs raised **6** encoder failures, and they were the one known
+case. **Mud Sport and Water Sport are still OPEN, pending the owner.** They're persistent volatiles
+with no obs slot, and poke-env has no `Effect` member for them. The only correct fix changes the
+layout. They appear in 48 of 376,410 human logs (0.013%), and **such a game would still crash**.
+
+Other live-crash classes the same runs found. These are not encoder classes. They're reported in
+the backlog, not fixed:
+
+| Crash | Where | Rate |
+|---|---|---|
+| poke-env `Unhandled move message format` on a Metronome-called move (`|move|…|[from] Metronome` with a self target) | Metamon node smoke | 2 of 710 battles |
+| (same) | human sample | 4 of 20,000 logs |
+| `KeyError: SideCondition.SPIKES` in `side_end` | human sample | 4 of 20,000 |
+| an unclassified `|N|` keyword | human sample | 3 |
+| a spectator-side `p2's team already has 6 pokemons` | human sample | 3 |
+
 ### Latency: ~3 500× of margin
 
 The ladder timer (`deps/pokemon-showdown/server/room-battle.ts:41–52`): **150 s starting bank
@@ -162,6 +204,7 @@ file handed to a poke-env we do not control must be **nickname-free**; the expor
 | 11 | **Room-layer keywords a live server can emit and a local sim cannot.** `c:` (timestamped chat), `noinit`, `popup`, `notify`, `tempnotify`, `tempnotifyoff`, `uhtmlchange` were in NEITHER `MESSAGE_POLICY` nor poke-env's `MESSAGES_TO_IGNORE` — each one a `UnknownMessageType` that wedges the battle. | Classified as COSMETIC in both places. **Honest note:** none of these was reproduced on a battle room. Battle rooms set `noLogTimes = true` (`server/rooms.ts:1928`), so ladder chat is the plain `\|c\|` we already ignored — measured, after the opposite was assumed. These are defensive; the drift scan is the evidence that nothing reachable is missing. |
 | 12 | **The `ObservationDebugger` no longer spams a ladder run.** A checkpoint trained with `--log-level periodic` carries a live debugger that `print()`s a full 12-mon board on every forward. `play.py` silences it (as the prober already did); `--debug-obs` keeps it. | Observed in the smoke: megabytes of stdout per battle. |
 | 13 | **A protocol-drift pre-flight gate exists.** `src/main/ladder_drift_scan.py`, exit 0/1, re-runnable, `--offline` for a cached corpus. | It is the only way to check drift against the LIVE server without an account, and it is the check to run before every ladder session. |
+| 13b | **The drift gate checks the ENCODER too** (2026-09-24). An effect id that `gen3_effects` cannot classify crashed the encode with every keyword known (Heal Bell). `ladder_drift_scan` now derives every gen3 effect id from Showdown master's source and requires each one classified. It also encodes every replayed effect and `\|cant\|` reason. `--no-effects` skips the source half offline. | It was the gap that let Heal Bell through. Mud Sport and Water Sport stay open, pending the owner (see above). |
 
 ### SIZED (≥ a day — not built)
 

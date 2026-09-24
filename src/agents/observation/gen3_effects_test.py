@@ -156,7 +156,8 @@ def test_no_dead_volatile_slots_beyond_known_extras():
     """Every classified id is either a derived gen3 volatile (move-driven OR
     ability-activation, both derived from source) or an intentional counter/trap variant
     or a fuzz-confirmed engine extra. No silent dead entries."""
-    derived = _gen3_move_driven_volatiles() | _gen3_ability_activation_volatiles()
+    derived = (_gen3_move_driven_volatiles() | _gen3_ability_activation_volatiles()
+               | set(_derived_encoder_ids()))
     intentional_extras = {
         "perish0", "perish1", "perish2", "perish3",
         "stockpile", "stockpile1", "stockpile2", "stockpile3",
@@ -173,6 +174,188 @@ def test_no_dead_volatile_slots_beyond_known_extras():
             f"{vid!r} is classified but is neither a derived gen3 volatile nor a known "
             f"variant/extra — is it dead?"
         )
+
+
+# --------------------------------------------------------------------------- #
+# THE WHOLE CLASS: every effect the gen3 sim can ANNOUNCE onto a mon (Heal Bell, 2026-09-24).
+# gen3_effect_sources scans every add('-start'|'-activate'|'-singleturn'|'-singlemove', …) the
+# gen3 format executes and EXECUTES each on a real Gen3Battle; these gates fail on drift.
+# --------------------------------------------------------------------------- #
+_SD = _ROOT / "deps/pokemon-showdown"
+_DERIVED_CACHE: dict = {}
+
+
+def _derived_encoder_ids():
+    if "d" not in _DERIVED_CACHE:
+        from agents.observation.gen3_effect_sources import derive_encoder_ids
+        _DERIVED_CACHE["d"] = derive_encoder_ids(_SD)
+    return _DERIVED_CACHE["d"]
+
+
+@pytest.mark.integration  # needs deps/pokemon-showdown checked out
+def test_gen3_mod_chain_is_the_one_the_scan_walks():
+    from agents.observation.gen3_effect_sources import GEN3_MOD_CHAIN, mod_chain
+    assert mod_chain(_SD) == GEN3_MOD_CHAIN
+
+
+@pytest.mark.integration
+def test_every_effect_the_gen3_sim_announces_is_classified():
+    """THE GATE. Every id a gen3-executable protocol line puts into ``LiveView.volatiles`` is a
+    slot or a documented NOT_A_VOLATILE entry — or one of the owner-pending ``unknown`` lines.
+    A new Showdown line, a renamed effect, or a poke-env enum gap fails HERE, not on a ladder."""
+    from agents.observation.gen3_effect_sources import unclassified
+    derived = _derived_encoder_ids()
+    assert len(derived) > 50, f"the scan found only {len(derived)} ids — it broke"
+    bad = unclassified(derived)
+    assert not bad, (
+        "gen3 protocol lines put these ids into LiveView.volatiles and gen3_effects does not "
+        "classify them (encode_volatiles would RAISE mid-battle):\n  "
+        + "\n  ".join(f"{vid}: {srcs}" for vid, srcs in sorted(bad.items())))
+
+
+@pytest.mark.integration
+def test_every_classified_non_slot_id_is_source_derived():
+    """No dead entries: NOT_A_VOLATILE and the same-state aliases each name an id a gen3 line
+    actually produces — a classification that nothing can reach is a guess, not a derivation."""
+    from agents.observation.gen3_effects import NOT_A_VOLATILE, _SAME_STATE_ALIASES
+    derived = set(_derived_encoder_ids())
+    dead = (set(NOT_A_VOLATILE) | set(_SAME_STATE_ALIASES)) - derived
+    assert not dead, f"classified but no gen3 line produces them: {sorted(dead)}"
+
+
+@pytest.mark.integration
+def test_owner_pending_lines_are_live_and_still_raise():
+    """Mud Sport / Water Sport land as ``unknown`` (no poke-env Effect member) and have no slot:
+    the owner's call. They must stay DERIVED (else the entry is stale) and must still RAISE —
+    pending is never a silent drop."""
+    from agents.observation.gen3_effect_sources import PENDING_OWNER_LINES
+    srcs = {(kw, eff) for kw, eff, _ in _derived_encoder_ids().get("unknown", [])}
+    assert srcs == set(PENDING_OWNER_LINES), (srcs, set(PENDING_OWNER_LINES))
+    with pytest.raises(UnknownVolatileError, match="OWNER"):
+        encode_volatiles(["unknown"])
+
+
+@pytest.mark.integration
+def test_every_expansion_and_gate_names_a_live_source_line():
+    """Each hand-written row in gen3_effect_sources is checked against the source it claims:
+    a dynamic expansion / sim gate / rule gate names a line that still exists, a gen-gated
+    condition still exists, the gating RULE is still in gen3 OU, and a not-obtainable item is
+    still a gen-2 `Past` item. A stale row fails instead of quietly widening the gate."""
+    import agents.observation.gen3_effect_sources as S
+
+    raw = []
+    rels = [f"sim/{p.name}" for p in (_SD / "sim").glob("*.ts")]
+    for kind in ("moves", "abilities", "items", "conditions"):
+        rels += [f"data/mods/{m}/{kind}.ts" for m in S.GEN3_MOD_CHAIN] + [f"data/{kind}.ts"]
+    for rel in rels:
+        raw += [e for _, e in S._emissions_in(_SD, rel)]
+    keys3 = {(e.file, e.entry, e.effect_expr) for e in raw}
+    for key in S.DYNAMIC_EFFECT_EXPANSIONS:
+        assert key in keys3, f"DYNAMIC_EFFECT_EXPANSIONS row names no source line: {key}"
+    for key in S.RULE_GATED_LINES:
+        assert key in keys3, f"RULE_GATED_LINES row names no source line: {key}"
+    sim_keys = {(e.file, e.args_expr) for e in raw if e.file.startswith("sim/")}
+    for key in S.SIM_LINE_GATES:
+        assert key in sim_keys, f"SIM_LINE_GATES row names no source line: {key}"
+    cond = (_SD / "data/conditions.ts").read_text(encoding="utf-8")
+    for cid in S.GEN_GATED_CONDITIONS:
+        assert f"\n\t{cid}: {{" in cond, cid
+    # gen3 OU → 'Standard' (gen3 mod) → 'Standard AG', resolved down the mod chain the way the
+    # Dex does (the first mod defining `standardag` wins — gen4's, today).
+    def _ruleset(rid):
+        for mod in S.GEN3_MOD_CHAIN:
+            path = _SD / "data/mods" / mod / "rulesets.ts"
+            txt = path.read_text(encoding="utf-8") if path.exists() else ""
+            head = f"\n\t{rid}: {{"
+            if head in txt:
+                body = txt[txt.index(head):]
+                return body[:body.index("\n\t},")]
+        txt = (_SD / "data/rulesets.ts").read_text(encoding="utf-8")
+        body = txt[txt.index(f"\n\t{rid}: {{"):]
+        return body[:body.index("\n\t},")]
+    formats = (_SD / "config/formats.ts").read_text(encoding="utf-8")
+    ou = formats[formats.index('name: "[Gen 3] OU"'):]
+    ou = ou[:ou.index("},")]
+    assert "'Standard'" in ou and "'Standard AG'" in _ruleset("standard"), (
+        "gen3 OU no longer reaches Standard AG")
+    for rule, _why in S.RULE_GATED_LINES.values():
+        assert f"'{rule}'" in _ruleset("standardag"), f"gen3 Standard AG lost {rule!r}"
+    items = (_SD / "data/items.ts").read_text(encoding="utf-8")
+    for iid in S.NOT_GEN3_OBTAINABLE_ITEMS:
+        body = items[items.index(f"\n\t{iid}: {{"):]
+        body = body[:body.index("\n\t},")]
+        assert "gen: 2," in body and 'isNonstandard: "Past"' in body, iid
+
+
+@pytest.mark.integration
+def test_aromatherapy_is_cureteam_not_a_volatile_in_gen3():
+    """The dispatcher's suspected sibling, REFUTED from source: gen3 inherits the gen4 mod's
+    Aromatherapy, which announces `-cureteam` (a team cure poke-env folds into status) and no
+    `-activate` — so it never reaches ``mon.effects``. The bridge test measures the same."""
+    from agents.observation.gen3_effect_sources import scan_emissions
+    assert not [e for e in scan_emissions(_SD) if e.entry == "aromatherapy"]
+    gen4 = (_SD / "data/mods/gen4/moves.ts").read_text(encoding="utf-8")
+    body = gen4[gen4.index("\n\taromatherapy: {"):]
+    assert "'-cureteam'" in body[:body.index("\n\t},")]
+
+
+# Each classification this change added, EXERCISED on the protocol line the sim emits (fed to a
+# real Gen3Battle, read back through LiveView's own id function) — each FAILS on revert, where
+# the id reached encode_volatiles unclassified and raised.
+_ONE_SHOT_LINES = [
+    ("-activate", "move: Heal Bell", ()),
+    ("-activate", "move: Magnitude", ("7",)),
+    ("-activate", "move: Spite", ("mindreader", "4")),
+    ("-activate", "move: Mist", ()),
+    ("-activate", "move: Safeguard", ()),
+    ("-activate", "item: Focus Band", ()),
+    ("-start", "typechange", ("Electric",)),
+]
+
+
+@pytest.mark.parametrize("kw,effect,extra", _ONE_SHOT_LINES)
+def test_one_shot_line_reaches_the_encoder_and_writes_no_slot(kw, effect, extra):
+    from agents.observation.gen3_effect_sources import effect_ids_for_line
+    from agents.observation.gen3_effects import NOT_A_VOLATILE
+    ids = effect_ids_for_line(kw, effect, extra)
+    assert len(ids) == 1 and next(iter(ids)) in NOT_A_VOLATILE, ids
+    assert encode_volatiles(ids).sum() == 0.0
+    both = encode_volatiles(ids | {"leechseed"})  # a real state beside it is untouched
+    assert both.sum() == 1.0 and both[VOLATILE_SLOTS.index("leechseed")] == 1.0
+
+
+def test_heal_bell_is_the_regression():
+    """The 2026-09-24 crash, by name: `healbell` encodes (to nothing) instead of raising."""
+    assert encode_volatiles(["healbell"]).sum() == 0.0
+
+
+def test_mind_reader_is_the_lock_on_state():
+    """Showdown's Mind Reader adds the SAME `lockon` volatile Lock-On does (moves.ts
+    `source.addVolatile('lockon', target)`); poke-env names it MIND_READER. Lock-On slot."""
+    from agents.observation.gen3_effect_sources import effect_ids_for_line
+    ids = effect_ids_for_line("-activate", "move: Mind Reader", ("[of] p1a: Zappy",))
+    assert ids == {"mindreader"}
+    vec = encode_volatiles(ids)
+    assert vec.sum() == 1.0 and vec[VOLATILE_SLOTS.index("lockon")] == 1.0
+
+
+def test_not_a_volatile_is_not_a_catch_all():
+    """Skipping is per documented id only: `unknown` and an unclassified id still RAISE."""
+    from agents.observation.gen3_effects import NOT_A_VOLATILE
+    assert "unknown" not in NOT_A_VOLATILE
+    with pytest.raises(UnknownVolatileError):
+        encode_volatiles(["unknown"])
+    with pytest.raises(UnknownVolatileError):
+        encode_volatiles(["healbell", "totallybogus"])
+
+
+def test_the_layout_did_not_move():
+    """The classification must not touch the obs layout: VOLATILE_DIM and the slot order are
+    what they were (44 = 41 binary + ability_activated + perish + stockpile)."""
+    assert VOLATILE_DIM == 44
+    assert VOLATILE_SLOTS[-3:] == ("ability_activated", "perish", "stockpile")
+    from agents.observation.gen3_effects import NOT_A_VOLATILE
+    assert not set(NOT_A_VOLATILE) & set(VOLATILE_SLOTS)
 
 
 # --------------------------------------------------------------------------- #

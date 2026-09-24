@@ -113,6 +113,63 @@ _BINARY_VOLATILES: Tuple[str, ...] = (
     "substitute", "taunt", "torment", "trapped", "uproar", "yawn",
 )
 
+# SAME STATE, SECOND NAME. Showdown's Mind Reader adds the very `lockon` volatile Lock-On does
+# (moves.ts `source.addVolatile('lockon', target)` in both), but announces it as
+# `-activate|<user>|move: Mind Reader`, which poke-env records as `Effect.MIND_READER`. It is the
+# lockon STATE ("the user's next move cannot miss"), so it writes the lockon slot.
+_SAME_STATE_ALIASES: Dict[str, str] = {"mindreader": "lockon"}
+
+# NOT-A-VOLATILE — ids that DO reach ``LiveView.volatiles`` but are NOT a volatile state, each with
+# where its information actually lives. poke-env's ``-activate`` handler calls ``start_effect`` for
+# ANY ``|-activate|<mon>|<effect>`` it has no special branch for, so a ONE-SHOT announcement ("Heal
+# Bell rang", "Beat Up hit with this ally") lands in ``mon.effects`` beside the real volatiles and
+# stays there until the mon switches out. Encoding it as a state would be FALSE (nothing persists),
+# and every one of these has its consequence on ANOTHER protocol line the obs already reads.
+#
+# THIS SET IS SOURCE-DERIVED, AND THE TEST PROVES IT. ``gen3_effect_sources`` scans every
+# ``add('-start'|'-activate'|'-singleturn'|'-singlemove', …)`` the gen3 format executes (sim/,
+# data/, the mod chain resolved as the gen3 Dex merges it), EXECUTES each line on a real
+# ``Gen3Battle`` and reads back the id that lands in ``LiveView.volatiles``;
+# ``gen3_effects_test.py`` fails when that set is not covered by GEN3_VOLATILE_TO_SLOT ∪ this map,
+# when an entry here is no longer derived (dead), or when a line lands as ``unknown`` (a poke-env
+# ``Effect`` enum gap no encoder can classify). ``ladder_drift_scan --effects`` re-runs the same
+# derivation against the Showdown the PUBLIC server runs. The whack-a-mole this ends:
+# doomdesire → immunity → magmaarmor → waterveil → healbell (belief-calibration read, 2026-09-24).
+#
+# Skipping these is a documented classification, never a catch-all: an id in neither map still
+# RAISES (crash-don't-drop), and ``unknown`` is deliberately in neither.
+NOT_A_VOLATILE: Dict[str, str] = {
+    "healbell": "ONE-SHOT. `-activate|<user>|move: Heal Bell`; the cures arrive as one "
+                "`-curestatus|<mon>|<status>` per cured team member (gen4 mod onHit → "
+                "`cureStatus`), which poke-env folds into each mon's status",
+    "magnitude": "ONE-SHOT. `-activate|<user>|move: Magnitude|<n>` announces the rolled "
+                 "magnitude; its only consequence is the `-damage` that follows",
+    "spite": "ONE-SHOT. `-activate|<target>|move: Spite|<move>|<pp cut>`; its consequence is a "
+             "PP cut (own side: the next |request| carries it; opponent side: see the poke-env "
+             "finding in observation/CLAUDE.md — poke-env does not apply it)",
+    "mist": "ONE-SHOT. `-activate|<target>|move: Mist` when the side's Mist blocks a stat drop; "
+            "Mist itself is a SIDE condition (`-sidestart`), and the blocked drop is the absence "
+            "of a `-unboost`",
+    "safeguard": "ONE-SHOT. `-activate|<target>|move: Safeguard` when the side's Safeguard blocks "
+                 "a status; Safeguard itself is a SIDE condition (`-sidestart`)",
+    "focusband": "ONE-SHOT. `-activate|<holder>|item: Focus Band` when the band leaves it at 1 HP; "
+                 "the HP arrives as `-damage` (the item disclosure does NOT — a poke-env reading "
+                 "finding, observation/CLAUDE.md)",
+    "typechange": "PERSISTENT, CARRIED ELSEWHERE. `-start|<mon>|typechange|<Type>` (Conversion, "
+                  "Conversion 2, Camouflage, Color Change): poke-env's `start_effect(TYPECHANGE, "
+                  "details)` sets `_temporary_types`, which `Pokemon.type_1/type_2` (the per-mon "
+                  "TYPE block) and `LivePokemon.types` (the damage op) read; switch-out clears "
+                  "both. A volatile bit would duplicate the type block",
+}
+
+# NOT HERE, ON PURPOSE: two derived lines land as the id ``unknown`` because poke-env's ``Effect``
+# enum has no member for them — gen3 Mud Sport (``-start|<mon>|Mud Sport``) and Water Sport
+# (``-start|<mon>|move: Water Sport``). Both are real PERSISTENT volatiles on the user (halve
+# Electric / Fire moves while it is active) with no slot, so their only correct classification
+# changes the obs layout — the OWNER's call. They still RAISE; the derivation test holds them in
+# ``gen3_effect_sources.PENDING_OWNER_LINES`` so no other line can start landing as ``unknown``
+# unnoticed. Seen in 0 of 22,862 Metamon hl_05_26 gen3ou teams (2026-09-24); not in the pool.
+
 # Counter volatiles — every stage maps to the one normalised counter slot. poke-env
 # id-forms (confirmed against the Effect enum): Perish ``perish0..3``, Stockpile
 # ``stockpile`` + ``stockpile1..3``.
@@ -148,20 +205,33 @@ for _v, _lvl in _PERISH_LEVEL.items():
     GEN3_VOLATILE_TO_SLOT[_v] = ("perish", _lvl)
 for _v, _lvl in _STOCKPILE_LEVEL.items():
     GEN3_VOLATILE_TO_SLOT[_v] = ("stockpile", _lvl)
+for _v, _slot in _SAME_STATE_ALIASES.items():
+    GEN3_VOLATILE_TO_SLOT[_v] = (_slot, 1.0)
+assert not set(NOT_A_VOLATILE) & set(GEN3_VOLATILE_TO_SLOT), "an id is a slot OR not-a-volatile"
 
 
 def encode_volatiles(volatiles: Iterable[str]) -> np.ndarray:
     """Encode an iterable of id-form volatile strings (``LivePokemon.volatiles``) into a
-    fixed :data:`VOLATILE_DIM` vector. **Raises** :class:`UnknownVolatileError` on any
-    volatile without a slot — we crash rather than drop. Empty input → all zeros."""
+    fixed :data:`VOLATILE_DIM` vector. An id in :data:`NOT_A_VOLATILE` is skipped (its
+    information lives on another line — the map says which). **Raises**
+    :class:`UnknownVolatileError` on any other id without a slot — we crash rather than drop.
+    Empty input → all zeros."""
     vec = np.zeros(VOLATILE_DIM, dtype=np.float32)
     for vid in volatiles:
         mapping = GEN3_VOLATILE_TO_SLOT.get(vid)
         if mapping is None:
+            if vid in NOT_A_VOLATILE:
+                continue
             raise UnknownVolatileError(
+                "volatile 'unknown': poke-env's Effect enum has no member for this protocol "
+                "effect (Effect.UNKNOWN). In gen3 the derived cases are Mud Sport and Water "
+                "Sport, persistent states awaiting the OWNER's layout decision "
+                "(gen3_effect_sources.PENDING_OWNER_LINES); anything else is a new gap"
+                if vid == "unknown" else
                 f"volatile {vid!r} has no gen3 encoding slot — classify it in "
-                f"gen3_effects.py (binary / trap / counter) before training. "
-                f"Known: {sorted(GEN3_VOLATILE_TO_SLOT)}"
+                f"gen3_effects.py (a slot, or NOT_A_VOLATILE with where its information "
+                f"lives) before training; gen3_effect_sources derives the whole set from "
+                f"Showdown. Known: {sorted(GEN3_VOLATILE_TO_SLOT)}"
             )
         slot, value = mapping
         idx = _SLOT_INDEX[slot]
