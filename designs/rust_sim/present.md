@@ -136,4 +136,18 @@ tracker cadence and encoder.
 
 ## 6. Measurements and findings
 
-Record: `designs/research_state/measurements/rust_core_m2_2026-09-23/`.
+Record: [`designs/research_state/measurements/rust_core_m2_2026-09-23/`](../research_state/measurements/rust_core_m2_2026-09-23/README.md)
+(interleaved, one binary or road per process, the load stated with every table).
+
+* **Slice V with the core column** (at `969c4e30` — the code of `9f77695d`, before its rebase onto main): MILESTONE 142,360 decisions, 81.7 M field
+  comparisons, 26.2 M board-audit checks, **0 divergences**; COMMIT 1,838 decisions, 0. The
+  findings' rates per 1,000 decisions (pool · `production` policy · procedural): PE-V10 4.64 · 12.27
+  · 6.45; PE-R1b 2.69 · 0.58 · 6.04; PE-V16 0 · 0 · 0.
+* **The core road's cost**: 1.41× the view road's Rust `expand_many` per successor [1.36, 1.48], and
+  the whole searched decision 0.926× [0.920, 0.944] at wide B.
+* **The typed shortcut saves nothing measurable** (fold typed/text 1.019× [0.983, 1.316]; −0.1 % of
+  the decision wall) — the program's §6 records the recommendation to delete it.
+* **Findings** — the D10 leaf is the version AT the intermediate decision, so a forced switch is a
+  non-branchable node on the core road where the old roads expanded it from end-of-turn with the
+  intermediate tokens (a depth ≥ 2 difference, not a parity break: the gates' depth-1 decisions
+  agree); `recorded_exact` is refused on core.

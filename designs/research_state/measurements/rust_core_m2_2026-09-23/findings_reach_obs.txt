@@ -1,0 +1,6 @@
+PE-V10: LiveView opp.active = zapdos boosts {'spa': 1}
+  active_context bytes differing: [4]
+PE-V16: LiveView opp.active = houndoom volatiles {}
+  active_context bytes differing: [25]
+PE-R1b: poke-env status_counter 1 (the sim's stage: 0 — no residual since re-entry)
+  the pokemon block's toxic slot = min(ctr, 8) / 8 → poke-env 0.125 truth 0.0

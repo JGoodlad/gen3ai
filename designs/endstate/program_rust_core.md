@@ -126,21 +126,32 @@ format, because it is where silent drift would enter AFTER the cutover:
 
 ### M2 — `BattleVersion` + `present()` + legality (Tier 1a, part 2) — search adopts
 
-**Status (2026-09-23): slice V BUILT AHEAD of M2, against today's projection** — the TRUTH AUDIT
-(`src/agents/battle/rust_core_parity_views.py`, `gen3_core_parity_views_v1`): at every decision of
-every recorded battle, both viewers, `view.rs::one_sided_view` + the engine truth against the
-`LiveView` + `LegalActions` training builds, every field classified SIM-FACT or a NAMED
-presentation rule (V1–V13, `designs/rust_sim/one_sided_view.md` §2b), no allowlist, at COMMIT and
-MILESTONE on the same played battles as slice E. **The three open read-model findings are CLOSED**
-(root causes in `one_sided_view.md` §4b), with deferral D6 and eleven more projection classes;
-MILESTONE 83,896 decisions / 23.9M field comparisons / 1.94M truth checks, 0 divergences. M2's
-`present()` replaces the producer under this slice; the comparison does not change — and under
-§6c's decision (the training view is parsed from the per-side TEXT) its ENGINE-truth checks are
-what stop a text-derived view from inheriting a reading error the way every poke-env reader did. **It also
-found poke-env READING defects about sim facts (R1–R4 in `one_sided_view.md` §4b) — R1–R3 now FIXED in
-the fork, a TRAINING-INPUT change (`designs/CHANGELOG.md` 2026-09-23)** — and a MILESTONE coverage
-hole: keys 5000–5199 wrapped onto overlapping pool teams (~234 of 719 covered); the random recipe
-now strides the whole pool.
+**Status (2026-09-23): M2 BUILT and LANDED** (`gen3_core_version_v1`, `gen3_core_present_v1`,
+`gen3_core_search_v1`; contract [`designs/rust_sim/present.md`](../rust_sim/present.md)).
+`BattleVersion` (persistent, `Arc` parent, per-transition typed events, memoized per-side view, raw
+request; built by step or by parse, gated `parse == step` version by version on every corpus
+battle); `present(reading)` over a `BoardReading` — **built from ONE SIDE'S STREAM, no board parameter**, the board a
+REFEREE (`check_view`); `legal_actions()` + the 11-dim mask. **`present()` is the TRUE reading**
+(owner directive): where poke-env is wrong about a sim fact the disagreement is a registered
+FINDING (`agents/battle/poke_env_findings.py`) — PE-V10, PE-R1b, PE-V16, all three reaching the
+obs; the fork is not changed. Slice V's core column (present + legality + mask + the board audit)
+is green at COMMIT and MILESTONE with no allowlist but the findings (numbers in the measurement
+record below). **Search adopted it** — `materializer=core` is the default; the three gates run it
+as a third road with the INTEGRITY check on every arm; every battery row is stamped
+`materializer` / `core_path` / `integrity`. The protocol and view roads are NOT deleted (§4 lists
+what now is). Findings: the core road makes a D10 leaf the version AT the intermediate decision (a
+forced switch is non-branchable there, where the old roads expanded it from end-of-turn with the
+intermediate tokens — a depth ≥ 2 semantic difference); `recorded_exact` is refused on core; on
+procedural teams slice V found two VIEW-ROAD projection defects the core does not have (a Trick
+`volatile`, a Mimic-copied move) — the road is on the deletion list. And the training transport no
+longer folds the one-sided view (`gen3_view_fold_opt_in_v1`): post-fix `sim_bridge` CPU is **0.909×
+pre-M1** [0.876, 0.932] with byte-identical output. Measurements:
+[`research_state/measurements/rust_core_m2_2026-09-23/`](../research_state/measurements/rust_core_m2_2026-09-23/README.md).
+
+*Before M2, slice V ran AHEAD of it against the view road's projection* (the truth audit,
+`gen3_core_parity_views_v1`): it CLOSED the three read-model findings (`one_sided_view.md` §4b)
+with deferral D6 and eleven more projection classes, and found poke-env READING defects R1–R4 —
+R1–R3 FIXED in the fork, a TRAINING-INPUT change (`designs/CHANGELOG.md` 2026-09-23).
 
 **What crosses.** The persistent version (omniscient board + events + `parent`), per-side
 `OneSidedView` computed by `present(board, events, side)` whose every poke-env rule is NAMED, tested
@@ -300,6 +311,10 @@ Each row names the milestone whose slice made it deletable. LOC from Phase 0 (d)
 | M1 | `agents/battle/event_fold.py` (`ViewEventFolder`) | 494 | the core's events serve every successor |
 | M2 | `agents/battle/view_adapter.py` (`LiveView.from_view_json`, `ViewBattle`); `agents/training/view_successor.py`; the `view_pN` / `view_pN_at` / `pN_chunks` JSON of `search_driver` (`view.rs`'s JSON render); the `view_fallback_*` counters; `search_impl_parity.py`'s view allowlist entries | 617 + 500 | the view road |
 | M2 | the PROTOCOL road: `obs_materializer.materialize_branches*`, `open_branch_fork`, `_PlayerSnapshot`, `_ReplayObsPlayer`; `--materializer` values `protocol` / `view` | most of 1,020 | the replay-for-counterfactual half of `obs_materializer` that the prober still uses moves to M7 |
+| M2 | the view road's RUST half: `view.rs` (`one_sided_view`, `SideObservation`, the reveal fold with `BridgeChunks::observed` / `enable_view_fold`), `tests/one_sided_view_test.rs`, `search::Capture::views` + `Resolved::views_at`, `core_events --views`'s `views` / `truth` payload; `view_adapter.py`'s rules (`ViewBattle` survives — `core_successor` builds on it — until M3); `ViewEventFolder` use in `view_successor.py` (the fold's M1 row stands); the view half of `one_sided_view_parity_fuzz_test.py` and `rust_core_parity_views.py`'s PROJECTION column (the core column stays); `view_materialize_benchmark.py` | ~1,100 Rust + ~700 Python | made deletable by `materializer=core` (M2 adoption) |
+| M2 | search's FALLBACKS: `search.py`'s `view_fallback_intermediate` / `view_fallback_no_payload` and the depth-≥2 protocol fallback; `RealizedWidths`' view counters | ~120 | a core leaf is a version, so there is nothing to fall back from |
+| M2 (decision input, §6) | the TYPED SHORTCUT, if the owner takes §6's recommendation: `CorePath::Typed`, `BridgeSession::typed_side_lines`, `session_from_record_core` in search, `SearchConfig.core_path`, and with them the INTEGRITY mode (its only job is typed == text) | ~250 | measured to save nothing (§6); `core_path=text` is §6c's one observation path |
+| as each fork fix lands | the matching `agents/battle/poke_env_findings.py` entry (PE-V10 / PE-R1b / PE-V16) | 1 entry each | a TRAINING-INPUT change, the owner's call; deleting the entry TIGHTENS slice V |
 | M3 | `agents/training/clone_pins.py`; `ViewSuccessorFactory._clone_tracker`; `training/turn_delta_legacy.py` (test-only today) | 149 + 327 | the tracker fork becomes a pointer copy |
 | M4 | the Python pipeline's PERF layers — `observation/assembler.py` (incremental cache), the `live_view()` memo (`_state_epoch`, the request-change door), the `live_view_build_micros` memos | ~600 (assembler 498) | the Python encoder SURVIVES as the oracle; its perf scaffolding does not (a simpler oracle is a better oracle) |
 | M4 | `utils/bridge/search_session.py`'s JSON protocol (`open_root` / `expand_many`), `search_driver`'s search verbs, `driver_timing.rs`; node `search_driver.js` / `replay_driver.js` / `replay_kernels.js` once nothing diffs against them | 405 + 785 (node) + 128 + the driver verbs | search runs in-process on versions |
@@ -342,7 +357,37 @@ of low discrimination between states). The interface decisions that keep a leaf 
   different opponent team, which `BattleVersion` supports by construction (the view of `side` does
   not depend on the unrevealed opponent mons).
 * Every search number is stamped with the road it ran on (`materializer`), so the M2 adoption is
-  visible in every table after it.
+  visible in every table after it — and, since M2, with `core_path` and `integrity`.
+
+**M2 RECORDS (2026-09-23, `research_state/measurements/rust_core_m2_2026-09-23/`).**
+
+* **Fork / succession cost, core vs view road** (interleaved, one road per process, the same 10
+  banked decisions of `ai_v12_02_winprob_critic`). Wide B (684 arms, honest arm, m_opp 3,
+  k_worlds 4; load1 10.4–24.6): the core road's Rust `expand_many` costs **1.41× the view road's per
+  successor** [1.36, 1.48] — the version's stream fold, ≈ 0.08 ms/arm — and the whole searched
+  DECISION is **0.926×** [0.920, 0.944]: Python no longer re-derives the view or re-parses the ply.
+  B = 1 (10 arms; load1 15.8–31.1): 1.44× per successor [1.24, 1.69], 1.116× per decision
+  [0.956, 1.276] — not resolved.
+* **B1 — what the TYPED SHORTCUT saves: nothing measurable. A DECISION INPUT.** Typed at the source
+  vs the full text path (render → parse → the stream-only fold), same method: the per-successor
+  fold typed/text **1.019** [0.983, 1.316] at wide B and 0.912 [0.819, 1.087] at B = 1; the whole
+  Rust `expand_many` per arm **1.089** [1.048, 1.229] at wide B — the typed road is DEARER, its
+  session recording a source record for every line; per decision 1.015 [1.004, 1.421] (wide) and
+  0.989 [0.556, 1.220] (B = 1); the shortcut's share of the decision wall **−0.1 %** [−1.1, +0.1].
+  Why: a successor's cost is the board-reading clone + the fold, identical on both paths; `Line::parse`
+  of a ply's ~20–30 lines is a few µs. **Recommendation: DELETE the shortcut** — make
+  `core_path=text` the only path (it is §6c's observation path everywhere else), and with it
+  `CorePath::Typed`, `typed_side_lines`, the search session's source recording and the integrity
+  mode (§4). Not done in M2: the default stays `typed` until the owner rules.
+* **B2 — the INTEGRITY mode.** `SearchConfig.integrity = N` (`--search-integrity N`,
+  `expand_many`'s `integrity`): every Nth core arm is also folded from its text; Rust asserts the two
+  VERSIONS equal (`streams_equal`: board reading, events, view) and Python the encoded obs bytes and
+  mask (`CoreIntegrityError`, naming the decision, the depth and the first differing obs block).
+  **ON (N = 1) in `materializer_parity_integration_test`, `one_sided_view_parity_fuzz_test` and
+  `core_successor_test`; OFF (0) by default in production search**; a number from a sampled run is
+  stamped "integrity-sampled at 1/N". Mismatches found: **0** (teeth:
+  `version_test::the_typed_shortcut_and_the_text_path_fold_the_same_version`'s different-successor
+  case and `core_successor_test`'s tampered `text_view` each fail).
 
 ---
 

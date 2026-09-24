@@ -1,0 +1,10 @@
+30 complete triples; load1 21.6-40.9
+  A: median replay CPU 222.8 ms
+  B: median replay CPU 264.1 ms
+  C: median replay CPU 216.3 ms
+  C/A replay_cpu_s   median 0.9093  95% CI [0.8762, 0.9322]  C slower in 5/30
+  C/A replay_wall_s  median 0.9103  95% CI [0.8815, 0.9582]  C slower in 7/30
+  C/B replay_cpu_s   median 0.8334  95% CI [0.8023, 0.8508]  C slower in 2/30
+  C/B replay_wall_s  median 0.8411  95% CI [0.8205, 0.8635]  C slower in 2/30
+  B/A replay_cpu_s   median 1.0866  95% CI [1.0729, 1.1047]  B slower in 27/30
+  B/A replay_wall_s  median 1.0899  95% CI [1.0740, 1.1033]  B slower in 27/30

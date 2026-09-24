@@ -1,0 +1,20 @@
+[b1] 8 complete triples, arms per run {'view': 10, 'core': 10, 'core-text': 10}, load1 15.8-31.1, argv ['--decisions', '10', '--n-actions', '1', '--m-opp', '1', '--k-worlds', '1', '--arm', 'honest']
+    view       ms/decision     35.4   rust fold ms/arm 0.0000   rust expand_many ms/arm 0.3164
+    core       ms/decision     37.9   rust fold ms/arm 0.1647   rust expand_many ms/arm 0.4474
+    core-text  ms/decision     38.2   rust fold ms/arm 0.1673   rust expand_many ms/arm 0.4259
+    per decision  core / view                    median 1.116  95% CI [0.956, 1.276]  n=8
+    per decision  core / core-text               median 0.989  95% CI [0.556, 1.220]  n=8
+    per successor fold  core / core-text         median 0.912  95% CI [0.819, 1.087]  n=8
+    per successor expand_many  core / core-text  median 0.964  95% CI [0.870, 1.168]  n=8
+    per successor expand_many  core / view       median 1.442  95% CI [1.242, 1.688]  n=8
+    shortcut saving / core decision wall         median 0.000  95% CI [-0.000, 0.001]  n=8
+[wide] 8 complete triples, arms per run {'view': 684, 'core': 684, 'core-text': 684}, load1 10.4-24.6, argv ['--decisions', '10', '--m-opp', '3', '--arm', 'honest', '--k-worlds', '4']
+    view       ms/decision    112.8   rust fold ms/arm 0.0000   rust expand_many ms/arm 0.1376
+    core       ms/decision    104.5   rust fold ms/arm 0.0782   rust expand_many ms/arm 0.1930
+    core-text  ms/decision    102.8   rust fold ms/arm 0.0783   rust expand_many ms/arm 0.1808
+    per decision  core / view                    median 0.926  95% CI [0.920, 0.944]  n=8
+    per decision  core / core-text               median 1.015  95% CI [1.004, 1.421]  n=8
+    per successor fold  core / core-text         median 1.019  95% CI [0.983, 1.316]  n=8
+    per successor expand_many  core / core-text  median 1.089  95% CI [1.048, 1.229]  n=8
+    per successor expand_many  core / view       median 1.408  95% CI [1.361, 1.477]  n=8
+    shortcut saving / core decision wall         median -0.001  95% CI [-0.011, 0.001]  n=8

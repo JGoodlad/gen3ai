@@ -326,6 +326,21 @@ part of R3 no client can see — a mon that leaves the field between its move an
 (Self-Destruct, a phaze) is never re-synced, so our BENCH PP is poke-env's count, a presentation
 rule (V15) the projection does not yet reproduce; procedural teams only so far.
 
+### Since M2: the core reads the TRUTH, and poke-env's remaining errors are FINDINGS
+
+The Rust core's `present()` (`designs/rust_sim/present.md`) does not reproduce a poke-env mistake:
+where poke-env is wrong about a sim fact, the core carries the truth and slice V's core column counts
+the disagreement under a registered finding (`agents/battle/poke_env_findings.py`) — **PE-V10**
+(this projection's V10: a fainted mon's stages), **PE-R1b** (R1b above) and **PE-V16** (poke-env's
+`moved` ends Flash Fire on its holder's own Fire move; the sim keeps it until switch-out). This
+projection (the view road) still reproduces poke-env, which is what its column is compared against.
+
+**Two VIEW-ROAD projection defects found on procedural teams** (`procedural_slice_v.py`, seed 23 —
+outside the MILESTONE corpus; the core column is clean on both): a Trick shown as a `trick`
+volatile, which neither poke-env nor the sim holds (`procedural_9124`, turn 5), and an opponent's
+Mimic-copied move shown as `mimic` where poke-env shows the copied move (`procedural_9146`, turn
+45). Not fixed: the road is on the program's deletion manifest (M2 row).
+
 ### Standing rule
 
 **Run slice V's MILESTONE tier before trusting a change to `view.rs`, `view_adapter.py`,
