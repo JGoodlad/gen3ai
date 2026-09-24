@@ -11,7 +11,7 @@ M6); SEARCH adopts it (`materializer=core`, §4 below).
 | | |
 |---|---|
 | **Version** | `src/rust_sim/src/version.rs` — `BattleVersion`, `SideStream`, `parse_matches_step`, `streams_equal` |
-| **Reading** | `src/rust_sim/src/present/` — `Tracker` (poke-env's `Battle` + `Pokemon` for one side), `present()`, `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` (GENERATED from poke-env) |
+| **Reading** | `src/rust_sim/src/present/` — `BoardReading` (poke-env's `Battle` + `Pokemon` for one side), `present()`, `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` (GENERATED from poke-env) |
 | **Python transport** | `src/agents/battle/core_view.py` (a `LiveView` / `LegalActions` from the core's JSON — no rule applied), `src/agents/training/core_successor.py` (the search successor) |
 | **Gates** | `cargo test` (`present::tests` one pin per rule, `tests/version_test.rs`, `tests/view_fold_opt_in_test.rs`); `src/agents/battle/rust_core_present_test.py` (`sim`: every rule against poke-env ITSELF); slice V (`rust_core_parity_views.py`, COMMIT + MILESTONE); the three search gates with `core` as a road (§5) |
 
@@ -19,8 +19,8 @@ M6); SEARCH adopts it (`materializer=core`, §4 below).
 
 ## 1. The interface rule — the view is built from ONE SIDE'S STREAM, the board is a REFEREE
 
-`present(tracker: &Tracker) -> OneSidedView` has **no board parameter**. A
-`Tracker` is built only from one side's typed lines (its protocol + its own `|request|`s), so a
+`present(reading: &BoardReading) -> OneSidedView` has **no board parameter**. A
+`BoardReading` is built only from one side's typed lines (its protocol + its own `|request|`s), so a
 board-derived fact cannot reach the view by construction — a training-only leak does not compile.
 The omniscient board is used in exactly two places, both outside the view:
 
@@ -34,7 +34,7 @@ The omniscient board is used in exactly two places, both outside the view:
 ## 2. `BattleVersion`
 
 A battle is a chain of immutable versions, one per decision boundary: `parent: Option<Arc<…>>`
-(history; a fork is an `Arc` clone), per side a `SideStream` (the `Tracker` + M1's event `Reader`),
+(history; a fork is an `Arc` clone), per side a `SideStream` (the `BoardReading` + M1's event `Reader`),
 the transition's per-side `CoreEvent`s, a memoized per-side view (`OnceLock`), and the ENGINE (a
 `BridgeSession`, the referee and the stepper; absent on a parse-built version).
 
@@ -46,8 +46,8 @@ the transition's per-side `CoreEvent`s, a memoized per-side view (`OnceLock`), a
 | `root_text` / `child_text` | the same, folding the TEXT (render → `Line::parse`) — the integrity twin |
 | `parse_root` / `parse_step` / `parse_advance` | ONE side's text, no engine — what a real server sends |
 
-**The gate** — `parse_matches_step(step_built, parse_built, side)`: the whole reading board (the
-tracker), the transition's events and the view equal, version by version. `core_events` runs it at
+**The gate** — `parse_matches_step(step_built, parse_built, side)`: the whole board reading (the
+`BoardReading`), the transition's events and the view equal, version by version. `core_events` runs it at
 every step of every corpus battle (both sides), and `tests/version_test.rs` pins the properties one
 battle can show: the chain equals its parse twin; a fork leaves its parent untouched; a compacted
 fork chain equals the linear replay; typed == text (`streams_equal`, with teeth); the audit passes
@@ -73,7 +73,7 @@ deleted and the check tightens.
 | finding | field | poke-env reads | the truth (source) | reaches the obs |
 |---|---|---|---|---|
 | **PE-V10** | `boosts` | a fainted mon keeps its stages until switched out | none — the faint's `clearVolatile` zeroes them (the Rust board) | YES — the fainted active's stages in `active_context` at the forced-switch decision |
-| **PE-R1b** | `status_counter` | +1 per `\|turn\|` while active, so a mon that entered AFTER the residual reads one ahead | the toxic STAGE: residual `[from] psn` chips since its switch-in (the Rust board's `Toxic(stage)`) | YES — the per-mon toxic slot |
+| **PE-R1b** | `status_counter` | +1 per `\|turn\|` while active — ONE AHEAD for a mon that entered after the residual, ONE BEHIND at a decision between the residual and the next `\|turn\|` (an end-of-turn forced replacement); frozen at a faint | the toxic STAGE: residual `[from] psn` chips since its switch-in (the Rust board's `Toxic(stage)`) | YES — the per-mon toxic slot |
 | **PE-V16** | `volatiles` | a damaging Fire move of the holder's own ENDS Flash Fire (`Pokemon.moved`, any gen) | `flashfire` lasts until the holder leaves the field (the Rust board's `flash_fire`, probe-verified; `abilities.ts`) | YES — the `flashfire` binary volatile slot |
 
 **Not findings — INFORMATION LIMITS**, read as poke-env reads them because no client can know
@@ -88,7 +88,7 @@ The board audit (`check_view`) checks every SIM-FACT field against the engine at
 three findings' fields included (Flash Fire joined the audited volatiles) — and names what it
 cannot check (V9, V14, V15) in `rules_fired`.
 
-`legal_actions()` is `LegalActions.from_battle` over the raw `|request|` (the tracker keeps its
+`legal_actions()` is `LegalActions.from_battle` over the raw `|request|` (the `BoardReading` keeps its
 text) and `mask()` the 11-dim mask; slice V compares both to `Gen3ActionMasker` on every decision.
 
 **The poke-env data the reading consults is GENERATED**: `tables.rs` from poke-env's pokedex, move
@@ -115,7 +115,7 @@ tracker cadence and encoder.
   path and no capture rule).
 * **INTEGRITY** (`SearchConfig.integrity = N`, `--search-integrity N`, `expand_many`'s
   `integrity`): every Nth core arm is folded BOTH ways — typed and from the text — the driver
-  asserts the two VERSIONS equal (`streams_equal`: tracker, events, view), and Python encodes both
+  asserts the two VERSIONS equal (`streams_equal`: board reading, events, view), and Python encodes both
   views and asserts the obs bytes and mask equal (`CoreIntegrityError`, naming the decision, the
   depth and the first differing obs block). **ON (N = 1) in every search test, fuzzer and parity
   gate; OFF (0) by default in production**; a sampled N stamps a number "integrity-sampled at 1/N".

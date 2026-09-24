@@ -253,8 +253,13 @@ def test_mimic_leppa_trick_conversion_and_forecast():
 
 
 def test_pe_r1b_the_toxic_counter_is_the_stage_where_poke_env_counts_turns():
-    lines = BASE + ["|-status|p2a: Zapdos|tox", "|-damage|p2a: Zapdos|94/100 tox|[from] psn", "|turn|2",
-                    "|-damage|p2a: Zapdos|82/100 tox|[from] psn", "|turn|3"]
+    mid = BASE + ["|-status|p2a: Zapdos|tox", "|-damage|p2a: Zapdos|94/100 tox|[from] psn", "|turn|2",
+                  "|-damage|p2a: Zapdos|82/100 tox|[from] psn"]
+    # Between the residual and the next |turn| (an end-of-turn forced replacement's decision) the
+    # sim is already at stage 2; poke-env, ticking at |turn|, still reads 1.
+    out = assert_same(mid, known=frozenset({"PE-R1b"}))
+    assert opp(out, "zapdos")["status_counter"] == 2
+    lines = mid + ["|turn|3"]
     out = assert_same(lines)
     assert opp(out, "zapdos")["status_counter"] == 2, "two residual chips: stage 2, as poke-env reads"
     lines += ["|switch|p2a: Snorlax|Snorlax, M|100/100", "|switch|p2a: Zapdos|Zapdos|82/100 tox",
@@ -262,3 +267,5 @@ def test_pe_r1b_the_toxic_counter_is_the_stage_where_poke_env_counts_turns():
     out = assert_same(lines, known=frozenset({"PE-R1b"}))
     assert opp(out, "zapdos")["status_counter"] == 0, "the truth: no residual since re-entry"
     assert reading(lines).live_view().opp.active.status_counter == 1, "poke-env ticked at |turn|"
+    # poke-env FREEZES that count at a faint; the finding follows it there (the slot no longer reads it).
+    assert_same(lines + ["|faint|p2a: Zapdos"], known=frozenset({"PE-R1b"}))

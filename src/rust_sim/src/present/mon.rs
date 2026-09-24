@@ -268,7 +268,7 @@ pub struct PMon {
     pub evs: Option<Vec<i64>>,
     pub nature: Option<String>,
     /// `_last_request` — the roster record `was_illusioned` re-applies.
-    last_request: Option<super::tracker::ReqMon>,
+    last_request: Option<super::board_reading::ReqMon>,
 }
 
 impl PMon {
@@ -327,7 +327,7 @@ impl PMon {
     }
 
     /// `Pokemon(request_pokemon=…)` — `update_from_request(request)`.
-    pub fn from_request(req: &super::tracker::ReqMon, name: Option<String>) -> R<PMon> {
+    pub fn from_request(req: &super::board_reading::ReqMon, name: Option<String>) -> R<PMon> {
         let mut m = PMon::blank();
         m.update_from_request(req)?;
         if name.is_some() {
@@ -483,7 +483,7 @@ impl PMon {
     // ---------------------------------------------------------------- the request
 
     /// `Pokemon.update_from_request(request_pokemon)`.
-    pub fn update_from_request(&mut self, req: &super::tracker::ReqMon) -> R<()> {
+    pub fn update_from_request(&mut self, req: &super::board_reading::ReqMon) -> R<()> {
         self.active = req.active;
         if self.ability().is_none() {
             let base = req.base_ability.as_deref().ok_or("request mon without baseAbility (KeyError)")?;
@@ -600,8 +600,8 @@ impl PMon {
     /// The badly-poisoned STAGE (finding PE-R1b — the truth, not poke-env's count): one residual
     /// toxic chip (a `-damage … [from] psn` on a mon holding `tox`) is one stage, capped at the
     /// sim's 15 (`tox.onResidual` ramps the stage before it chips). poke-env instead ticks the
-    /// counter at every `|turn|` a badly-poisoned mon is active, so a mon that entered AFTER the
-    /// residual reads one ahead of the sim.
+    /// counter at every `|turn|` a badly-poisoned mon is active: one AHEAD of the sim for a mon that
+    /// entered after the residual, one BEHIND between the residual and the next `|turn|`.
     pub fn note_residual_chip(&mut self) {
         if self.status == Some(Status::Tox) {
             self.status_counter = (self.status_counter + 1).min(15);

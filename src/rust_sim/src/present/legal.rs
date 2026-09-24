@@ -1,4 +1,4 @@
-//! [`legal_actions`] — `LegalActions.from_battle` over a [`Tracker`] (the raw `|request|` plus
+//! [`legal_actions`] — `LegalActions.from_battle` over a [`BoardReading`] (the raw `|request|` plus
 //! poke-env's parse of it), and [`mask`] — `Gen3ActionMasker.mask_from_legal`.
 //!
 //! **Hybrid sourcing, kept exactly as the Python surface keeps it** (rule V13): `move_slots` is
@@ -7,7 +7,7 @@
 //! STABLE team order, `trapped` / `maybe_trapped` / `force_switch` / `wait`, and `struggle` =
 //! `any(m.id == "struggle" for m in available_moves)`.
 
-use super::tracker::{truthy, Tracker};
+use super::board_reading::{truthy, BoardReading};
 use crate::core_events::json_out;
 use crate::core_events::jsonval::Val;
 
@@ -28,7 +28,7 @@ pub struct LegalSwitch {
     pub slot: usize,
 }
 
-/// `LegalActions` (minus the `last_request` mirror, which is [`Tracker::last_request_text`]).
+/// `LegalActions` (minus the `last_request` mirror, which is [`BoardReading::last_request_text`]).
 #[derive(Debug, Clone, PartialEq)]
 pub struct LegalActions {
     pub move_slots: Vec<LegalMove>,
@@ -43,7 +43,7 @@ pub struct LegalActions {
 
 /// `LegalActions.from_battle(battle)` — `None` when the side has no request at all (the
 /// `last_request or None` guard makes every field empty; the caller treats it as no decision).
-pub fn legal_actions(t: &Tracker) -> Option<LegalActions> {
+pub fn legal_actions(t: &BoardReading) -> Option<LegalActions> {
     let req = t.last_request.as_ref()?;
     let mut move_slots = Vec::new();
     if let Some(Val::Arr(active)) = req.get("active") {

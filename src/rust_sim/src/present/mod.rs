@@ -4,13 +4,13 @@
 //!
 //! # The model
 //!
-//! * [`Tracker`] is poke-env's `Battle` + `Pokemon` for one side's stream: every transition the
+//! * [`BoardReading`] is poke-env's `Battle` + `Pokemon` for one side's stream: every transition the
 //!   training observation's `LiveView` reads, each mirroring the poke-env method it is named
 //!   after (`AbstractBattle.parse_message`, `Battle.parse_request`, `Battle.switch`,
 //!   `Pokemon.moved` / `set_hp_status` / `start_effect` / …). It is fed TYPED lines
 //!   ([`crate::core_events::Line`]) — from the source on the step path, from `Line::parse` of the
 //!   text on the parse path — so the two paths fold the same values and cannot disagree.
-//! * [`present`] is `LiveView.from_battle` over a tracker: a [`OneSidedView`] in `LiveView`'s own
+//! * [`present`] is `LiveView.from_battle` over a board reading: a [`OneSidedView`] in `LiveView`'s own
 //!   shape. Where poke-env's reading is WRONG about a sim fact the stream establishes, it carries
 //!   the TRUTH — never a rule that reproduces the mistake; the disagreement is a named FINDING
 //!   (`agents/battle/poke_env_findings.py`, `designs/rust_sim/present.md` §3).
@@ -28,35 +28,35 @@
 //!
 //! | rule | the reading | poke-env | site |
 //! |---|---|---|---|
-//! | V1 | an opposing mon has a row once a line NAMED it (a switch shows it; `revealed` from the `\|switch\|`) | `get_pokemon`, `Pokemon.switch_in` | `Tracker::get_pokemon`, `PMon::switch_in` |
-//! | V2 | our slots in `battle.team` order (the first request's roster); theirs in first-named order | `_update_team_from_request`; dict insertion | `Tracker::team` / `opp` |
-//! | V3 | an opposing move's PP = max − uses, a use against a Pressure holder (judged with the ability poke-env held THEN) costing two | `Pokemon.moved` → `Move.use`; `_pressure_on` | `Tracker::pressure_on`, `PMon::moved` |
+//! | V1 | an opposing mon has a row once a line NAMED it (a switch shows it; `revealed` from the `\|switch\|`) | `get_pokemon`, `Pokemon.switch_in` | `BoardReading::get_pokemon`, `PMon::switch_in` |
+//! | V2 | our slots in `battle.team` order (the first request's roster); theirs in first-named order | `_update_team_from_request`; dict insertion | `BoardReading::team` / `opp` |
+//! | V3 | an opposing move's PP = max − uses, a use against a Pressure holder (judged with the ability poke-env held THEN) costing two | `Pokemon.moved` → `Move.use`; `_pressure_on` | `BoardReading::pressure_on`, `PMon::moved` |
 //! | V4 | the volatile fold: start / count / end, `ends_on_turn` dropped at `\|turn\|`, cleared on switch-out and faint, Baton Pass copying `BATON_PASS_COPIED_EFFECTS` | `start_effect` / `end_effect` / `end_turn` / `_clear_effects` / `apply_baton_pass` | `PMon` |
 //! | V5 | the sleep / toxic counter: +1 per `\|move\|` / `\|cant\|` while asleep, +1 per `\|turn\|` while badly poisoned and active; a CHANGED status restarts it (fork R1) | `moved` / `cant_move` / `end_turn` / the `status` setter / `cure_status` / `switch_out` | `PMon` |
 //! | V6 | the protect streak: a count of consecutive stall moves, not the sim's stall denominator | `moved` / `cant_move` / `switch_out` / `start_effect` | `PMon` |
-//! | V7 | an item from `-item` / `-enditem` / the `_check_*_message_for_item` clauses only; `consumed_item` from `-enditem` | the four handlers | `Tracker` |
-//! | V8 | two ability slots (base + temporary), the single-possible-ability inference, Trace's double assignment, the four non-`-ability` disclosures | `Pokemon.ability` + setter, `_update_from_pokedex`, the `-ability` / `-activate` / `-immune` / `_check_*_for_ability` handlers | `PMon`, `Tracker` |
+//! | V7 | an item from `-item` / `-enditem` / the `_check_*_message_for_item` clauses only; `consumed_item` from `-enditem` | the four handlers | `BoardReading` |
+//! | V8 | two ability slots (base + temporary), the single-possible-ability inference, Trace's double assignment, the four non-`-ability` disclosures | `Pokemon.ability` + setter, `_update_from_pokedex`, the `-ability` / `-activate` / `-immune` / `_check_*_for_ability` handlers | `PMon`, `BoardReading` |
 //! | V9 | an opponent's spread / stats / exact HP are unknown | `LivePokemon.from_pokemon(is_own=False)` | `view::mon_view` |
 //! | ~~V10~~ | **FINDING PE-V10** — poke-env keeps a fainted mon's stages until switch-out; the view holds NONE (the sim's faint `clearVolatile`) | `faint()` does not clear boosts | `PMon::faint` |
-//! | V11 | a timed screen is stored as the TURN it started, Spikes as its layers | `_side_start` | `Tracker::side_start` |
-//! | V12 | weather `turns_active` = now − the set turn; permanent iff an `[from] ability:` set | `Gen3Battle._update_weather` | `Tracker::weather` |
+//! | V11 | a timed screen is stored as the TURN it started, Spikes as its layers | `_side_start` | `BoardReading::side_start` |
+//! | V12 | weather `turns_active` = now − the set turn; permanent iff an `[from] ability:` set | `Gen3Battle._update_weather` | `BoardReading::weather` |
 //! | V13 | the legality flags are poke-env's parse of the request | `Battle.parse_request` | `legal` |
 //! | V14 | a TRANSFORMED mon reads the target's dex types / base stats, its KNOWN ability and moves (at 5 PP) and its stages; our own copied ability (R4) is an INFORMATION LIMIT (no stream states it) | `Pokemon.transform` | `PMon::transform` |
-//! | V15 | our BENCHED mons' PP is the sighting counter (only the active one is re-synced from the request, fork R3); a gen-3 request never states a benched mon's PP, an INFORMATION LIMIT (the audit checks the count can only lag) | `_sync_active_pp` | `Tracker::sync_active_pp` |
+//! | V15 | our BENCHED mons' PP is the sighting counter (only the active one is re-synced from the request, fork R3); a gen-3 request never states a benched mon's PP, an INFORMATION LIMIT (the audit checks the count can only lag) | `_sync_active_pp` | `BoardReading::sync_active_pp` |
 //! | V16 | using a damaging Electric move ends Charge (as the sim's `onAfterMove` does). **FINDING PE-V16** — poke-env also ends Flash Fire on a Fire move; the view keeps it (the sim's `flashfire` lasts until the holder leaves the field) | `Pokemon.moved` (silent effect ending) | `PMon::moved` |
-//! | V17 | a request that says a mon is not active re-applies its last record and switches it out (`was_illusioned`); one that says it is, switches it in | `_update_team_from_request` | `Tracker::update_team_from_request` |
-//! | ~~R1b~~ | **FINDING PE-R1b** — poke-env's toxic count ticks per `\|turn\|`, one ahead for a mon that entered after the residual; the view reads the STAGE (the residual `[from] psn` chips since its switch-in) | `Pokemon.end_turn` | `PMon::note_residual_chip` |
+//! | V17 | a request that says a mon is not active re-applies its last record and switches it out (`was_illusioned`); one that says it is, switches it in | `_update_team_from_request` | `BoardReading::update_team_from_request` |
+//! | ~~R1b~~ | **FINDING PE-R1b** — poke-env's toxic count ticks per `\|turn\|`: one ahead for a mon that entered after the residual, one behind between the residual and the next `\|turn\|`; the view reads the STAGE (the residual `[from] psn` chips since its switch-in) | `Pokemon.end_turn` | `PMon::note_residual_chip` |
 
 pub mod audit;
 pub mod dex;
 pub mod legal;
 pub mod mon;
 pub mod tables;
-pub mod tracker;
+pub mod board_reading;
 pub mod view;
 
 pub use legal::{legal_actions, mask, LegalActions};
-pub use tracker::Tracker;
+pub use board_reading::BoardReading;
 pub use audit::{check_view, Audit};
 pub use view::{present, OneSidedView};
 

@@ -1,4 +1,4 @@
-//! [`OneSidedView`] and [`present`] — `LiveView.from_battle` over a [`Tracker`], field by field,
+//! [`OneSidedView`] and [`present`] — `LiveView.from_battle` over a [`BoardReading`], field by field,
 //! with the TRUE reading wherever poke-env's is wrong about a sim fact.
 //!
 //! The view is `agents.battle.live_view.LiveView` in Rust: the same fields, the same spellings,
@@ -8,7 +8,7 @@
 
 use super::dex;
 use super::mon::{PMon, BOOST_KEYS, STAT_KEYS};
-use super::tracker::Tracker;
+use super::board_reading::BoardReading;
 use crate::core_events::json_out;
 
 // 🚨 **`present()` is the TRUE reading** (owner directive, M2): where poke-env's reading is wrong
@@ -96,26 +96,26 @@ pub struct OneSidedView {
 
 type R<T> = Result<T, String>;
 
-/// `present(tracker)` — `LiveView.from_battle` over ONE side's stream, with the true reading where
+/// `present(reading)` — `LiveView.from_battle` over ONE side's stream, with the true reading where
 /// poke-env's is wrong (see above).
 ///
 /// **The signature is the wall.** The only input is the side's stream state (its typed events and
-/// its `|request|` snapshots, folded into the [`Tracker`]); there is no board parameter, so a fact
+/// its `|request|` snapshots, folded into the [`BoardReading`]); there is no board parameter, so a fact
 /// only the referee knows cannot reach the view. The step path's typed shortcut and the parse
-/// path fold the same lines into the same tracker, which is why they cannot disagree, and the
+/// path fold the same lines into the same reading, which is why they cannot disagree, and the
 /// board's only role is to CHECK the result ([`super::audit::check_view`]).
-pub fn present(tracker: &Tracker) -> R<OneSidedView> {
-    let role = tracker.role as usize;
-    let sizes = [tracker.team_size(0), tracker.team_size(1)];
+pub fn present(reading: &BoardReading) -> R<OneSidedView> {
+    let role = reading.role as usize;
+    let sizes = [reading.team_size(0), reading.team_size(1)];
     let side = |own: bool| -> R<SideView> {
-        let team = if own { &tracker.team } else { &tracker.opp };
-        let act = tracker.active_index(own);
+        let team = if own { &reading.team } else { &reading.opp };
+        let act = reading.active_index(own);
         let declared = if own { role } else { 1 - role };
         let mut mons = Vec::with_capacity(team.len());
         for (i, (_, m)) in team.iter().enumerate() {
             mons.push(mon_view(m, act == Some(i), own)?);
         }
-        let conds = &tracker.side_conditions[if own { 0 } else { 1 }];
+        let conds = &reading.side_conditions[if own { 0 } else { 1 }];
         Ok(SideView {
             team_size: sizes[declared].unwrap_or(team.len()),
             active: act,
@@ -123,19 +123,19 @@ pub fn present(tracker: &Tracker) -> R<OneSidedView> {
             side_conditions: conds.iter().map(|(n, v)| (n.to_ascii_lowercase(), *v)).collect(),
         })
     };
-    let w = &tracker.weather;
+    let w = &reading.weather;
     Ok(OneSidedView {
-        turn: tracker.turn,
+        turn: reading.turn,
         weather: WeatherView {
             weather: w.id.clone(),
             is_permanent: w.id.is_some() && w.permanent,
-            turns_active: if w.id.is_some() { tracker.turn.saturating_sub(w.start_turn) } else { 0 },
+            turns_active: if w.id.is_some() { reading.turn.saturating_sub(w.start_turn) } else { 0 },
         },
         ours: side(true)?,
         opp: side(false)?,
-        finished: tracker.finished,
-        won: tracker.won,
-        lost: tracker.won.map(|w| !w),
+        finished: reading.finished,
+        won: reading.won,
+        lost: reading.won.map(|w| !w),
     })
 }
 

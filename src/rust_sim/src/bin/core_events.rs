@@ -421,9 +421,9 @@ fn present_stream() -> i32 {
             s.fold_text(&l)?;
         }
         let view = s.view()?.json();
-        let legal = pokesim::present::legal_actions(&s.tracker).map_or("null".to_string(), |l| l.json());
+        let legal = pokesim::present::legal_actions(&s.board_reading).map_or("null".to_string(), |l| l.json());
         let mut o = format!("{{\"ok\":true,\"error\":null,\"view\":{view},\"legal\":{legal},\"request\":");
-        json_out::opt_str_into(&mut o, s.tracker.last_request_text.as_deref());
+        json_out::opt_str_into(&mut o, s.board_reading.last_request_text.as_deref());
         o.push('}');
         Ok(o)
     })();

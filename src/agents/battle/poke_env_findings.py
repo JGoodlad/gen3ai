@@ -53,8 +53,13 @@ def _pe_v10(reading: Any, core: Any) -> bool:
 
 
 def _pe_r1b(reading: Any, core: Any) -> bool:
-    return (reading.status == core.status == "tox" and bool(core.active)
-            and reading.status_counter == core.status_counter + 1)
+    # poke-env ticks at `|turn|`, the sim at the residual chip: exactly ONE apart — ahead for a mon
+    # that entered after the residual, behind between the residual and the next `|turn|` (an
+    # end-of-turn forced replacement's decision). While the mon is active and badly poisoned, and
+    # after it FAINTS, where poke-env freezes the count it had and the toxic slot no longer reads it.
+    one_apart = abs(reading.status_counter - core.status_counter) == 1
+    return one_apart and ((reading.status == core.status == "tox" and bool(core.active))
+                          or (reading.status == core.status == "fnt"))
 
 
 def _pe_v16(reading: Any, core: Any) -> bool:
@@ -78,16 +83,20 @@ FINDINGS: Dict[str, Finding] = {f.id: f for f in (
         predicate=_pe_v10),
     Finding(
         id="PE-R1b", field="status_counter",
-        title="a badly-poisoned mon that entered after the residual counts one ahead",
-        poke_env_reads="+1 per `|turn|` while active, so a mon that switched in AFTER the residual "
-                       "(a post-faint replacement) reads one more than the sim's stage",
+        title="the toxic count ticks at `|turn|`, the sim's stage at the residual chip",
+        poke_env_reads="+1 per `|turn|` while active: ONE AHEAD of the sim's stage for a mon that "
+                       "switched in after the residual (a post-faint replacement), ONE BEHIND at a "
+                       "decision taken between the residual and the next `|turn|` (an end-of-turn "
+                       "forced replacement)",
         truth="the sim's toxic STAGE: the residual `[from] psn` chips since its switch-in "
               "(`tox.onSwitchIn` resets the stage, `onResidual` ramps it before chipping)",
         source="the Rust board (`Status::Toxic(stage)`) and the stream's residual chips",
         reproduce="|-status|p2a: Zapdos|tox · |-damage|p2a: Zapdos|94/100 tox|[from] psn · |turn|2 · "
                   "|switch|p2a: Snorlax|… · |switch|p2a: Zapdos|Zapdos|94/100 tox · |turn|3  "
-                  "(poke-env 1, the sim 0)",
-        reaches_obs="YES — the per-mon `status_counters` toxic slot (min(ctr, 8) / 8)",
+                  "(poke-env 1, the sim 0); or …|turn|2 · |-damage|p2a: Zapdos|82/100 tox|[from] psn · "
+                  "a forced-switch |request| (poke-env 1, the sim 2)",
+        reaches_obs="YES while it is active — the per-mon `status_counters` toxic slot (min(ctr, 8) / 8); "
+                    "the count poke-env freezes at a faint does not (the slot reads it only under `tox`)",
         obs_blocks=("our_team[[]*[]].status_counters", "opp_team[[]*[]].status_counters"),
         predicate=_pe_r1b),
     Finding(

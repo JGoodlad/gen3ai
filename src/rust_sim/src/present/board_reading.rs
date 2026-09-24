@@ -1,11 +1,11 @@
-//! [`Tracker`] — poke-env's `Battle` (+ `Gen3Battle`'s weather fold) for ONE side's stream: the
+//! [`BoardReading`] — poke-env's `Battle` (+ `Gen3Battle`'s weather fold) for ONE side's stream: the
 //! state HALF of `AbstractBattle.parse_message`, `Battle.parse_request` and the two terminal hooks,
 //! each branch naming the handler it mirrors.
 //!
 //! It is fed exactly what a live `Player` routes to its battle (`agents.battle.offline_feed` is
-//! the Python twin of the dispatch): a `|request|` to [`Tracker::parse_request`], `|win|` / `|tie|`
+//! the Python twin of the dispatch): a `|request|` to [`BoardReading::parse_request`], `|win|` / `|tie|`
 //! to the terminal hooks, the player's own ignores dropped, everything else to
-//! [`Tracker::parse_message`]. Where poke-env RAISES on a line, this returns `Err` — a reading
+//! [`BoardReading::parse_message`]. Where poke-env RAISES on a line, this returns `Err` — a reading
 //! that would crash the live player is refused, never guessed at.
 
 use super::dex;
@@ -86,7 +86,7 @@ pub struct WeatherFold {
 
 /// One side's reading of the battle.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Tracker {
+pub struct BoardReading {
     /// The viewer: 0 = p1.
     pub viewer: u8,
     /// `_player_username` — `won_by` compares against it, the `|player|` handler keys the role.
@@ -131,12 +131,12 @@ fn ident_side(tok: &str) -> Option<u8> {
     }
 }
 
-impl Tracker {
+impl BoardReading {
     /// `offline_feed.new_battle(viewer, names, packed_team=…)`: a battle named for the viewer's
     /// player, its role set up front, and — when given — the `_teambuilder_team` a `Player`
     /// builds from its packed team (the only source of our own spread in a no-preview format).
-    pub fn new(viewer: usize, username: &str, packed_team: Option<&str>) -> R<Tracker> {
-        Ok(Tracker {
+    pub fn new(viewer: usize, username: &str, packed_team: Option<&str>) -> R<BoardReading> {
+        Ok(BoardReading {
             viewer: viewer as u8,
             username: username.to_string(),
             role: viewer as u8,

@@ -6,11 +6,11 @@
 //! * **`parent: Option<Arc<BattleVersion>>`** — history is the parent chain; a fork is an
 //!   `Arc::clone` of the handle, so K successors of one decision share their past;
 //! * **the per-side STREAM state** ([`SideStream`]): the side's typed lines folded into M1's
-//!   reading (the `CoreEvent`s) and into the poke-env reading of the board ([`Tracker`]) — the
+//!   reading (the `CoreEvent`s) and into the poke-env reading of the board ([`BoardReading`]) — the
 //!   ONLY input of the side's view;
 //! * **`events`** — the per-side [`CoreEvent`]s of THIS transition;
 //! * **the view per side**, computed on demand and memoized ([`BattleVersion::view`]);
-//! * **the raw `|request|` per side** (inside the tracker: `last_request_text`), which legality
+//! * **the raw `|request|` per side** (inside the board reading: `last_request_text`), which legality
 //!   is derived from ([`BattleVersion::legal`]);
 //! * **the engine** — the omniscient session the step path advances. It is the REFEREE: nothing
 //!   in the view reads it ([`present`] takes no board); [`BattleVersion::audit`] checks the view
@@ -37,15 +37,15 @@ use crate::core_events::parse::OwnerScan;
 use crate::core_events::reading::Reader;
 use crate::core_events::{is_outcome, CoreEvent, Line, Scope};
 use crate::dex::Dex;
-use crate::present::{check_view, legal_actions, present, Audit, LegalActions, OneSidedView, Tracker};
+use crate::present::{check_view, legal_actions, present, Audit, LegalActions, OneSidedView, BoardReading};
 
 type R<T> = Result<T, String>;
 
 /// One side's stream state: its typed lines folded, in order, into the reading of the events
-/// (M1's [`Reader`] + the outcome-owner scan) and into the reading of the board ([`Tracker`]).
+/// (M1's [`Reader`] + the outcome-owner scan) and into the reading of the board ([`BoardReading`]).
 #[derive(Debug, Clone)]
 pub struct SideStream {
-    pub tracker: Tracker,
+    pub board_reading: BoardReading,
     reader: Reader,
     owners: OwnerScan,
     /// Lines of this side folded so far, whole battle.
@@ -57,7 +57,7 @@ impl SideStream {
     /// fights with `packed_team` (the source of our own spread in gen 3).
     pub fn new(viewer: usize, username: &str, packed_team: Option<&str>) -> R<SideStream> {
         Ok(SideStream {
-            tracker: Tracker::new(viewer, username, packed_team)?,
+            board_reading: BoardReading::new(viewer, username, packed_team)?,
             reader: Reader::new(viewer),
             owners: OwnerScan::default(),
             lines: 0,
@@ -69,7 +69,7 @@ impl SideStream {
     pub fn fold(&mut self, line: Line, src: Option<u32>, scope: Option<Scope>) -> R<CoreEvent> {
         let by_order = self.owners.step(&line);
         let readings = self.reader.feed(&line)?;
-        self.tracker.feed(&line)?;
+        self.board_reading.feed(&line)?;
         let owner = if is_outcome(line.kw) {
             match scope {
                 Some(s) => s.move_side(),
@@ -91,7 +91,7 @@ impl SideStream {
 
     /// The side's view (`present`).
     pub fn view(&self) -> R<OneSidedView> {
-        present(&self.tracker)
+        present(&self.board_reading)
     }
 }
 
@@ -300,7 +300,7 @@ impl BattleVersion {
     }
     /// The raw `|request|` payload `side` holds at this boundary.
     pub fn request(&self, side: usize) -> Option<&str> {
-        self.streams[side].as_ref()?.tracker.last_request_text.as_deref()
+        self.streams[side].as_ref()?.board_reading.last_request_text.as_deref()
     }
     /// `side`'s view (`present`), memoized.
     pub fn view(&self, side: usize) -> R<&OneSidedView> {
@@ -309,7 +309,7 @@ impl BattleVersion {
     }
     /// `side`'s legality at this boundary (`LegalActions.from_battle`).
     pub fn legal(&self, side: usize) -> Option<LegalActions> {
-        legal_actions(&self.streams[side].as_ref()?.tracker)
+        legal_actions(&self.streams[side].as_ref()?.board_reading)
     }
     /// The TRUTH AUDIT of `side`'s view against the engine board.
     pub fn audit(&self, side: usize, dex: &Dex) -> R<Audit> {
@@ -319,7 +319,7 @@ impl BattleVersion {
         // active mon's PP (fork R3); every other own mon's PP is V15's sighting count.
         let synced = self
             .stream(side)
-            .and_then(|s| s.tracker.last_request.as_ref())
+            .and_then(|s| s.board_reading.last_request.as_ref())
             .is_some_and(|r| matches!(r.get("active"), Some(crate::core_events::jsonval::Val::Arr(_))));
         Ok(check_view(view, board, side, dex, synced))
     }
@@ -330,8 +330,8 @@ impl BattleVersion {
 /// INTEGRITY check between the typed shortcut and the text path. `Err` names the first field.
 pub fn streams_equal(a: &BattleVersion, b: &BattleVersion, side: usize) -> R<()> {
     let (x, y) = (a.stream(side).ok_or("no stream")?, b.stream(side).ok_or("no stream")?);
-    if x.tracker != y.tracker {
-        return Err(first_tracker_difference(&x.tracker, &y.tracker));
+    if x.board_reading != y.board_reading {
+        return Err(first_reading_difference(&x.board_reading, &y.board_reading));
     }
     let (ea, eb) = (a.events(side), b.events(side));
     if ea.len() != eb.len() {
@@ -351,23 +351,23 @@ pub fn streams_equal(a: &BattleVersion, b: &BattleVersion, side: usize) -> R<()>
     Ok(())
 }
 
-/// A readable name for the first tracker field two readings disagree on.
-fn first_tracker_difference(a: &Tracker, b: &Tracker) -> String {
+/// A readable name for the first board-reading field two readings disagree on.
+fn first_reading_difference(a: &BoardReading, b: &BoardReading) -> String {
     if a.turn != b.turn {
-        return format!("tracker.turn {} vs {}", a.turn, b.turn);
+        return format!("board_reading.turn {} vs {}", a.turn, b.turn);
     }
     for (own, (ta, tb)) in [(true, (&a.team, &b.team)), (false, (&a.opp, &b.opp))] {
         let who = if own { "ours" } else { "opp" };
         if ta.len() != tb.len() {
-            return format!("tracker.{who}: {} mons vs {}", ta.len(), tb.len());
+            return format!("board_reading.{who}: {} mons vs {}", ta.len(), tb.len());
         }
         for ((ka, ma), (kb, mb)) in ta.iter().zip(tb.iter()) {
             if ka != kb || ma != mb {
-                return format!("tracker.{who}[{ka}]: {ma:?} vs {mb:?}");
+                return format!("board_reading.{who}[{ka}]: {ma:?} vs {mb:?}");
             }
         }
     }
-    "tracker (a battle-level field)".to_string()
+    "board_reading (a battle-level field)".to_string()
 }
 
 /// The parse-reproduces-step gate for ONE boundary: `step` (a step-built version) and `parsed`
@@ -379,7 +379,7 @@ pub fn parse_matches_step(step: &BattleVersion, parsed: &BattleVersion, side: us
         step.stream(side).ok_or("step version lacks the side")?,
         parsed.stream(side).ok_or("parsed version lacks the side")?,
     );
-    if a.tracker != b.tracker {
+    if a.board_reading != b.board_reading {
         return Err(format!("p{}: the parse-built reading board differs from the step-built one", side + 1));
     }
     let (ea, eb) = (step.events(side), parsed.events(side));

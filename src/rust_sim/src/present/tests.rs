@@ -22,8 +22,8 @@ fn request(active: &str, cond_m: &str, cond_s: &str) -> String {
 
 const PREFIX: &[&str] = &["|player|p1|me||", "|player|p2|foe||", "|teamsize|p1|2", "|teamsize|p2|2", "|gen|3", "|start"];
 
-fn run(lines: &[String]) -> Tracker {
-    let mut t = Tracker::new(0, "me", Some(OWN_TEAM)).unwrap();
+fn run(lines: &[String]) -> BoardReading {
+    let mut t = BoardReading::new(0, "me", Some(OWN_TEAM)).unwrap();
     for l in PREFIX {
         t.feed(&Line::parse(l).unwrap()).unwrap();
     }
@@ -199,6 +199,9 @@ fn pe_r1b_the_toxic_counter_is_the_stage() {
     let v = view(&with(&["|-status|p2a: Zapdos|tox", "|-damage|p2a: Zapdos|94/100 tox|[from] psn", "|turn|2",
                          "|switch|p2a: Snorlax|Snorlax|100/100", "|switch|p2a: Zapdos|Zapdos|94/100 tox", "|turn|3"]));
     assert_eq!(opp(&v, "zapdos").status_counter, 0, "no residual since it re-entered");
+    let v = view(&with(&["|-status|p2a: Zapdos|tox", "|-damage|p2a: Zapdos|94/100 tox|[from] psn", "|turn|2",
+                         "|-damage|p2a: Zapdos|82/100 tox|[from] psn"]));
+    assert_eq!(opp(&v, "zapdos").status_counter, 2, "stage 2 already, before the next |turn|");
 }
 
 /// V11 — a screen stores its start turn; Spikes counts layers.

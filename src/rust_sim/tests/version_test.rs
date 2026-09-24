@@ -110,7 +110,7 @@ fn a_compacted_fork_chain_equals_the_linear_replay() {
         assert_eq!(fork.engine().unwrap().side_line_count(1), 0);
         for side in 0..2 {
             assert_eq!(lin.view(side).unwrap(), fork.view(side).unwrap(), "p{} view", side + 1);
-            assert!(lin.stream(side).unwrap().tracker == fork.stream(side).unwrap().tracker);
+            assert!(lin.stream(side).unwrap().board_reading == fork.stream(side).unwrap().board_reading);
         }
     }
 }
