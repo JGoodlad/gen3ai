@@ -346,6 +346,47 @@ of low discrimination between states). The interface decisions that keep a leaf 
 
 ---
 
+## 6a. Worlds: building a board for search from ONE side's view, and the ORACLE that grades it (added 2026-09-23, owner)
+
+Search needs a full board, but a side only has its view. Today's search (`search_dividend/determinize.py`)
+builds worlds by **swap-and-replay**: never-revealed opponent slots are replaced with pool-consistent
+donors (gender-matched so the PRNG draw count holds), the battle is REPLAYED from turn 0 with the same
+seed and choices, and a world is kept only if our side's protocol comes out byte-identical. This is
+exact, but it needs the battle's SEED and its input log, and "uniform over consistent pool teams" is
+the true posterior only because eval draws opponents from our pool. **Neither holds on the ladder.**
+It also carries a measured, negligible leak: a revealed mon keeps its TRUE EVs/nature/item/ability.
+
+**The ladder path, CONSTRUCT-FROM-VIEW (not yet planned; the named prerequisite for any ladder search):**
+1. The parse-built partial version (M2) holds every known fact, including our whole side from `|request|`.
+2. A **world sampler** fills the unknowns from SMOGON-derived priors (the owner's rule), conditioned on
+   the reveals (teammate joint priors, as `ou_random_teams.js` already uses; moves, items and spreads;
+   optionally sharpened by the model's belief heads), then filters by CONSISTENCY with the evidence: an
+   observed damage number the sampled spread cannot produce, a speed order it contradicts, an HP% that
+   does not round from the sampled exact HP. Hidden counters are sampled by the game's rules (sleep
+   turns left given turns slept; confusion, Encore, Disable, Taunt; a pending Wish or Future Sight).
+3. A **mid-battle CONSTRUCT entry point in the port**, where every HP, status counter, boost, volatile,
+   PP count and field condition is SETTABLE, with a fresh seed. The port builds only from turn 0 today.
+4. K worlds searched and combined at the root, belief-weighted, with strategy fusion named as the known
+   weakness (information-set search is the mitigation).
+Cross-checks, in our own battles where the truth exists: **construct(the TRUE full state) must
+reproduce the real version exactly**, which proves the entry point sets every piece of state; and
+construct-from-view worlds are compared in distribution against swap-and-replay worlds.
+
+**The ORACLE yardstick (first-class, never on the ladder).** For any searched decision in our own
+battles, run the same search on the TRUE board (one world) beside the determinized one. Today's
+arms already include `oracle` and `playoff` in `TRUE_WORLD_ARMS`; the core makes this a standing
+measurement, not an arm choice. Report three numbers:
+- **decision agreement:** honest vs oracle, on the same decision;
+- **value regret:** the true-world value of the oracle's choice minus the true-world value of the
+  honest choice;
+- **the dividend gap in games:** oracle arm vs honest arm at matched budget.
+That gap IS the price of hidden information plus our determinization's error, so it measures the
+world sampler directly (and separates it from the irreducible hidden-information floor, probed
+2026-08-22). **The ladder cannot use it BY TYPE:** the oracle needs a step-built version holding
+the board, and a parse-built (ladder) version has none, so an oracle search is unconstructible
+there. Every search number that used the true world is stamped `world=oracle`, which includes any
+`playoff`-arm number, since that arm inherits the oracle's world.
+
 ## 6b. Which source is authoritative — and playing against a REAL Showdown server
 
 **The truth is "what happened in the battle".** It has two representations: typed events (the
