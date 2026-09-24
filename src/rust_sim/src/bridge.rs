@@ -38,7 +38,10 @@ use crate::battle::{Battle, BattleOptions, PackedTeam, PlayerOptions};
 use crate::dex::Dex;
 use crate::prng::PrngSeed;
 use crate::state::{BattleState, MonState, Status};
-use crate::turn::{Choice, FullBattleDriver, ScriptDecision};
+use crate::turn::{Choice, ScriptDecision};
+use crate::engine::{Engine, EngineSink, Request};
+use std::collections::VecDeque;
+use std::sync::Arc;
 
 // ===========================================================================
 // Wire choice tokens (the CMD stream the driver replays).
@@ -698,7 +701,7 @@ fn active_move_display(mv: &str, dex: &Dex, mon: &MonState) -> (String, String) 
 /// id, so the two agree here — and using the collapsing accessor keeps the typed-HP leak
 /// impossible by construction, which is what `raw_name_callers_are_an_enumerated_allowlist`
 /// exists to enforce.)
-fn reject_move_name(mon: &MonState, k: usize, dex: &Dex) -> String {
+pub(crate) fn reject_move_name(mon: &MonState, k: usize, dex: &Dex) -> String {
     let (bare_id, _) = active_move_display(&side_move_id(mon, &mon.set.moves[k]), dex, mon);
     dex.moves(&bare_id).map(|d| d.display_name().to_string()).unwrap_or(bare_id)
 }
@@ -722,7 +725,7 @@ fn reject_move_name(mon: &MonState, k: usize, dex: &Dex) -> String {
 /// item and has a `last_move`, yet the sim adds NO volatile and keeps all four moves
 /// selectable (soak3 `sbd_msb1zfxs_b97`). Fixing the engine's TIMING covers both, so the
 /// workaround is gone; see the AfterMove comment in `turn/driver.rs`.
-fn move_disabled(mon: &MonState, k: usize, dex: &Dex) -> bool {
+pub(crate) fn move_disabled(mon: &MonState, k: usize, dex: &Dex) -> bool {
     !mon.move_usable(k, dex)
 }
 
@@ -760,7 +763,7 @@ fn mon_ident(side: usize, mon: &MonState, dex: &Dex) -> String {
 
 /// The mon's display name — the nickname (`set.name`) when non-empty, else the
 /// species display name.
-fn display_name(mon: &MonState, dex: &Dex) -> String {
+pub(crate) fn display_name(mon: &MonState, dex: &Dex) -> String {
     if !mon.set.name.is_empty() {
         return mon.set.name.clone();
     }
@@ -1075,7 +1078,7 @@ fn serialize_active_with_disabled_source(
 }
 
 /// Whether `side` has ≥1 live, non-active bench mon (mirrors `battle.canSwitch`).
-fn has_live_bench(state: &BattleState, side: usize) -> bool {
+pub(crate) fn has_live_bench(state: &BattleState, side: usize) -> bool {
     let s = &state.sides[side];
     s.pokemon
         .iter()
@@ -1085,7 +1088,7 @@ fn has_live_bench(state: &BattleState, side: usize) -> bool {
 
 /// A per-boundary request kind for one side.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum SideRequest {
+pub(crate) enum SideRequest {
     Move,
     ForceSwitch,
     Wait,
@@ -1110,7 +1113,7 @@ fn build_request(
 /// [`build_request`] plus the post-reject `disabledSource` slot
 /// (`gen3_choice_reject_framing_v1`) — see [`serialize_active_with_disabled_source`].
 #[allow(clippy::too_many_arguments)]
-fn build_request_with_disabled_source(
+pub(crate) fn build_request_with_disabled_source(
     state: &BattleState,
     side: usize,
     kind: SideRequest,
@@ -1462,16 +1465,6 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
 // (above) stays the genesis-replay REFERENCE ORACLE the parity test checks against.
 // ===========================================================================
 
-/// The mid-boundary progress a [`BridgeSession`] persists across CMD feeds (a `move`
-/// request needs BOTH sides' choices, possibly arriving on separate CHOOSE lines; a
-/// trapped reject holds the boundary open).
-#[derive(Clone)]
-struct BoundaryProgress {
-    kinds: [SideRequest; 2],
-    got: [Option<Choice>; 2],
-    need: [bool; 2],
-}
-
 /// The agent-visible request surface at an open boundary — the PUBLIC mirror of the
 /// private [`SideRequest`], using Showdown's `side.requestState` vocabulary
 /// (`'move'` / `'switch'` / `'wait'`).
@@ -1500,277 +1493,75 @@ impl From<SideRequest> for RequestState {
     }
 }
 
-/// A PERSISTENT per-side bridge session over a LIVE battle. It owns the same
-/// `Battle` + [`FullBattleDriver`] stepping primitive [`BattleStream`] uses (the ONE
-/// turn-loop), plus the per-side chunk/log/seed bookkeeping the genesis-replay core
-/// kept in locals. `feed_cmd` appends one CMD and advances the driver to the next
-/// request boundary, emitting ONLY the new chunk — so a battle costs O(N), not O(N²)
-/// (the wedge fix): `sim_bridge` builds ONE session per battle and feeds each CHOOSE
-/// into it, instead of re-running the whole accumulated stream per CHOOSE.
+/// A PERSISTENT per-side bridge session over a LIVE battle: the TRANSPORT wrapped around an
+/// [`Engine`] (`gen3_core_engine_split_v1`). The engine is the battle (the live `Battle`, the ONE
+/// [`FullBattleDriver`] turn loop, the open boundary, the typed requests); this struct is the
+/// wire — the per-side chunk stream with its reframe + HP-privacy fold, the `|request|` JSON
+/// strings exactly as shipped, the command queue, and the committed `script` / seed anchors the
+/// genesis core kept in locals. `feed_cmd` appends one CMD and advances the engine to the next
+/// request boundary, emitting ONLY the new chunk — so a battle costs O(N), not O(N²) (the wedge
+/// fix): `sim_bridge` builds ONE session per battle and feeds each CHOOSE into it.
 ///
 /// **Plain data all the way down — which is what makes [`BridgeSession::snapshot`]
 /// work** (`gen3_bridge_clone_branch_v1`): no `Rc`/`RefCell`/`Box<dyn>`/closures/raw
 /// pointers/lifetimes anywhere beneath this type, so the derived `Clone` is a DEEP,
-/// fully independent paused session — the clone-and-branch primitive a search driver
-/// builds a tree from. Shares the caller's `&Dex` (a `Dex` owns ~16 MB of parsed data —
-/// a per-battle load would be a real regression), so the bridge threads it per method,
-/// unlike the writeline `BattleStream` which owns its Dex for the standalone `new()`
-/// surface; a snapshot therefore costs the BATTLE, not the dex.
+/// fully independent paused session. A [`crate::version::BattleVersion`] owns only the
+/// ENGINE; its fork wraps an engine clone in a fresh transport ([`BridgeSession::resume`]) for as
+/// long as it is being driven, so a fork no longer copies the wire's history. Shares the caller's
+/// `&Dex` (a `Dex` owns ~16 MB of parsed data), threaded per method.
 #[derive(Clone)]
 pub struct BridgeSession {
-    battle: Battle,
-    driver: FullBattleDriver,
-    report_percent: bool,
+    engine: Engine,
     chunks: BridgeChunks,
+    /// The `|request|` line CURRENTLY OUTSTANDING to each side, exactly as shipped (Showdown's
+    /// `side.activeRequest`). Written wherever a request is emitted into `chunks`, cleared when
+    /// the boundary closes / the battle ends — the wire twin of [`Engine::request`].
+    request_json: [Option<Arc<str>>; 2],
+    /// Unconsumed CMDs (fed but not yet answering a boundary — e.g. a partial
+    /// double-replacement, or cmds queued ahead of the boundary that needs them).
+    cmd_buf: VecDeque<Cmd>,
     /// The A2 seed anchor — the makeRequest-boundary seed per committed decision.
     request_seeds: Vec<PrngSeed>,
     /// The committed decisions, in order (parity with the genesis core's `script`).
     script: Vec<ScriptDecision>,
-    /// Cursor into the LIVE battle log (`prev_log_len` in the genesis core).
-    prev_log_len: usize,
-    /// The open boundary's per-side progress, or `None` between boundaries.
-    boundary: Option<BoundaryProgress>,
-    /// The `|request|` line CURRENTLY OUTSTANDING to each side — the port of Showdown's
-    /// `side.activeRequest` (`gen3_bridge_clone_branch_v1`). Written wherever a request is
-    /// emitted into `chunks` (the boundary open, AND the re-request a hidden-trap reject
-    /// re-issues), cleared when the boundary closes / the battle ends. Stored rather than
-    /// rebuilt on demand so [`BridgeSession::active_request_json`] returns the EXACT bytes
-    /// the wire carried — rebuilding could drift from what was sent (the `update`/`noCancel`
-    /// trailing keys depend on how the boundary was reached, not on the current board).
-    active_request: [Option<String>; 2],
-    /// Unconsumed CMDs (fed but not yet answering a boundary — e.g. a partial
-    /// double-replacement, or cmds queued ahead of the boundary that needs them).
-    cmd_buf: std::collections::VecDeque<Cmd>,
-    /// The battle reached its natural WIN/LOSS/TIE end.
-    ended: bool,
-    /// The winner of a [`BridgeSession::forfeit`], if one happened. A forfeit ends the
-    /// battle through the PROTOCOL (it writes the `|win|` pair directly) rather than the
-    /// driver's own win check, so the driver's phase never becomes `Ended` and
-    /// [`BridgeSession::winner`] would otherwise report `None` for a battle that plainly
-    /// has a winner.
-    forfeit_winner: Option<usize>,
-    /// An upstream-desync graceful stop (the R20 `!need[s]` case) — no further advance.
-    stopped: bool,
-    /// A FATAL, non-recoverable condition the live bridge must report as `__ERR__` rather than
-    /// silently spin on (`gen3_bridge_unresolvable_choice_failloud_v1`). Today: a NAME-form wire
-    /// choice that resolves against nothing, or a boundary that keeps rejecting.
-    fatal: Option<String>,
-    /// Consecutive REJECTS at the CURRENT boundary (reset whenever a decision commits). A reject
-    /// re-issues the same request; if the client re-sends a choice that is rejected the same way,
-    /// nothing advances — see `REJECT_STREAK_CAP`.
-    reject_streak: u32,
 }
 
-/// A refused choice, in the two shapes `Side.emitChoiceError` produces
-/// (`gen3_choice_reject_framing_v1`).
-///
-/// The distinction is NOT the message and NOT "how many times it was tried" — it is whether the
-/// refusal MUTATED the request. A mutation makes the sim re-issue the (now-different) request and
-/// tag the error `[Unavailable choice]`; with nothing to re-issue it is `[Invalid choice]` and the
-/// client must re-pick from the request it already holds. Model the condition, not a per-message
-/// verdict, or the next disabler added here will be classified by hand and get it wrong.
-#[derive(Debug, Clone)]
-enum RejectClass {
-    /// No request change ⇒ `[Invalid choice]`, and NOTHING follows.
-    Invalid { message: String },
-    /// The request changed (a slot gained `disabledSource`) ⇒ `[Unavailable choice]` plus a
-    /// re-issued request carrying `"update":true`.
-    Unavailable { message: String, ds_slot: usize },
+/// The transport as an [`EngineSink`]: every engine emission folded into the session's chunks.
+struct Wire<'a> {
+    chunks: &'a mut BridgeChunks,
+    request_json: &'a mut [Option<Arc<str>>; 2],
+    request_seeds: &'a mut Vec<PrngSeed>,
+    script: &'a mut Vec<ScriptDecision>,
+    report_percent: bool,
 }
 
-impl RejectClass {
-    fn message(&self) -> &str {
-        match self {
-            RejectClass::Invalid { message } | RejectClass::Unavailable { message, .. } => message,
+impl EngineSink for Wire<'_> {
+    fn boundary_open(&mut self, state: &BattleState) {
+        // [A2] makeRequest-boundary seed (skip the pre-first-decision boundary).
+        if !self.script.is_empty() {
+            self.request_seeds.push(state.prng_seed());
         }
     }
-
-    /// The exact wire line, byte-for-byte with the sim (probe-measured).
-    fn error_line(&self) -> String {
-        let tag = match self {
-            RejectClass::Invalid { .. } => "[Invalid choice]",
-            RejectClass::Unavailable { .. } => "[Unavailable choice]",
-        };
-        format!("|error|{} {}", tag, self.message())
+    fn log(&mut self, state: &BattleState, from: usize, to: usize) {
+        emit_log_batch_chunk(self.chunks, &state.log.lines()[from..to], from, self.report_percent);
+    }
+    fn request(&mut self, side: usize, _req: &Request, json: &Arc<str>) {
+        self.chunks.push_chunk(side, vec![json.to_string()]);
+        self.request_json[side] = Some(Arc::clone(json));
+    }
+    fn error(&mut self, side: usize, line: String) {
+        self.chunks.push_chunk(side, vec![line]);
+    }
+    fn struggle(&mut self, side: usize, line: String) {
+        self.chunks.push_chunk(side, vec![line]);
+    }
+    fn requests_void(&mut self) {
+        *self.request_json = [None, None];
+    }
+    fn commit(&mut self, dec: ScriptDecision) {
+        self.script.push(dec);
     }
 }
-
-/// Classify a choice this boundary must REFUSE, or `None` when it is legal.
-///
-/// Mirrors `Side.chooseMove` / `Side.chooseSwitch`'s refusal ladder for the cases the bridge can
-/// actually reach. The trapped SWITCH is handled by its own older block in `advance` (it has a
-/// two-phase maybeTrapped→trapped machine this classifier deliberately does not duplicate), so it
-/// is excluded here by the caller.
-///
-/// NOTE the message strings carry a non-ASCII `é` in "Pokémon" — that is the sim's own byte
-/// sequence and must not be "normalized".
-fn classify_reject(
-    state: &BattleState,
-    side: usize,
-    kind: SideRequest,
-    wire: &WireChoice,
-    resolved: &Choice,
-    dex: &Dex,
-) -> Option<RejectClass> {
-    let s = &state.sides[side];
-    let mon = &s.pokemon[s.active];
-    // `pass` — Showdown's `Side.choosePass` (`sim/side.ts:1291`). In gen3 SINGLES it is never
-    // legal: at a move request the active mon is alive and there is no `commanding` volatile, and
-    // at a forced switch `forcedPassesLeft > 0` needs an EMPTY live bench, by which point the
-    // side has already lost and the battle is over (`side.ts:530-536`). Both refusals call
-    // `emitChoiceError` with no update callback, so they render `[Invalid choice]` with NOTHING
-    // following. Checked before the `resolved` match because `Pass` deliberately carries no
-    // resolution — it rides the out-of-range fallback, which would otherwise be reported as a
-    // bogus "doesn't have a move N".
-    if matches!(wire, WireChoice::Pass) {
-        return Some(RejectClass::Invalid {
-            message: match kind {
-                SideRequest::ForceSwitch => format!(
-                    "Can't pass: You need to switch in a Pokémon to replace {}",
-                    display_name(mon, dex)
-                ),
-                _ => format!(
-                    "Can't pass: Your {} must make a move (or switch)",
-                    display_name(mon, dex)
-                ),
-            },
-        });
-    }
-    match resolved {
-        Choice::Move(k) => {
-            // A NUMERIC slot is bounded by what the REQUEST OFFERED, not by the moveset
-            // (`gen3_single_entry_request_slot_reject_v1`). `Side.chooseMove`'s index check runs
-            // FIRST — ahead of both substitution branches below — against
-            // `getMoveRequestData().moves`, and the two shapes that collapse that array to ONE
-            // entry therefore reject `move 2`..`move 4` like any other out-of-range slot.
-            //
-            // Both halves are node-MEASURED, by two different oracles:
-            //   * STRUGGLE — `replay_impl_parity` on a fresh golden, which is a real
-            //     `node replay_driver.js` on a real board: an arm feeding `move 2` to a 0-PP
-            //     Blissey got a SILENT Struggle substitution from the port, and from node
-            //     `|error|[Invalid choice] Can't move: Your Blissey doesn't have a move 2`
-            //     followed by a correction (1 vs 2 `choices_used`, a wholly different arm).
-            //   * LOCK — `harness/probe_single_entry_request_slot.js`, three arms at a
-            //     Solar-Beam CHARGING boundary: `move 1` accepted with NO error, `move 2` and
-            //     `move 4` each `|error|[Invalid choice] Can't move: Your Venusaur doesn't
-            //     have a move N`.
-            //
-            // ⚠️ This must never refuse the ONE action the request DID offer — that shape
-            // (`gen3_locked_choice_never_rejected_v1`) killed two production launches. It
-            // structurally cannot: `offered` is 1 on both branches, so `Move(0)` always passes,
-            // and it is the wire's own numeric token that is bounded, never a resolved name.
-            if let WireChoice::Move(n) = wire {
-                let offered = if mon.move_locked() || mon.must_struggle(dex) {
-                    1
-                } else {
-                    mon.set.moves.len()
-                };
-                if *n >= offered {
-                    return Some(RejectClass::Invalid {
-                        message: format!(
-                            "Can't move: Your {} doesn't have a move {}",
-                            display_name(mon, dex),
-                            n + 1
-                        ),
-                    });
-                }
-            }
-            // FORCED STRUGGLE is a SUBSTITUTION, not a refusal. When every usable slot is gone
-            // (Taunt / Disable / the Choice lock / 0 PP) the sim's request offers only Struggle
-            // and `side.choose` swaps the pick for it — no `|error|`, no re-request. Classifying
-            // it as a disabled-move reject made the incremental path emit an error the genesis
-            // reference (and node) never send: caught by
-            // `bridge_test::bridge_incremental_matches_genesis_replay` on the `taunt_struggle`
-            // scenario, which exists precisely because that wedge shipped once before.
-            if mon.must_struggle(dex) {
-                return None;
-            }
-            // LOCK-IN is the same shape of substitution, and omitting it cost two production
-            // launches. When `move_locked()` (a two-turn move CHARGING, or `must_recharge`) the
-            // request builder emits a SINGLE entry with `trapped:true` and no `pp`/`disabled` key
-            // — the sim's hardLocked shape. So the request offers exactly one action. Falling
-            // through to `move_disabled` below lets the classifier REFUSE that one action, because
-            // `move_usable` models the Choice lock, Disable, Encore, Taunt and PP and knows
-            // nothing about `two_turn`/`must_recharge` (`state.rs`). Disable landing on the
-            // charging slot is enough to trip it.
-            //
-            // The failure is not a stricter parser, it is rust contradicting ITSELF: it offers X
-            // and then rejects X. poke-env re-picks from the same single-entry request, sends the
-            // same token, and `REJECT_STREAK_CAP` fires `__ERR__` — which is not in-band, so it
-            // retires the reader and crashes the whole run. Observed as "9 consecutive rejects of
-            // MoveName(\"solarbeam\")" at ~8 minutes, twice, at load 31 and at load 5 alike.
-            //
-            // A forced choice is not a refusable one. `resolve_choice` already maps the wire name
-            // to `Move(0)` for a locked mon, so the accepted path was always there; only the
-            // classifier was cutting it off. One predicate covers the charge family AND the
-            // recharge mirror, so this also closes fly/dig/bounce and hyperbeam.
-            if mon.move_locked() {
-                return None;
-            }
-            // An out-of-range slot: report the number the CLIENT sent, not the internal
-            // out-of-range fallback `resolve_choice` substitutes.
-            if *k >= mon.set.moves.len() {
-                let shown = match wire {
-                    WireChoice::Move(n) => n + 1,
-                    _ => k + 1,
-                };
-                return Some(RejectClass::Invalid {
-                    message: format!(
-                        "Can't move: Your {} doesn't have a move {}",
-                        display_name(mon, dex),
-                        shown
-                    ),
-                });
-            }
-            if move_disabled(mon, *k, dex) {
-                let name = reject_move_name(mon, *k, dex);
-                return Some(RejectClass::Unavailable {
-                    message: format!(
-                        "Can't move: {}'s {} is disabled",
-                        display_name(mon, dex),
-                        name
-                    ),
-                    ds_slot: *k,
-                });
-            }
-            None
-        }
-        Choice::Switch(n) => {
-            if *n >= s.pokemon.len() {
-                return Some(RejectClass::Invalid {
-                    message: format!(
-                        "Can't switch: You do not have a Pokémon in slot {} to switch to",
-                        n + 1
-                    ),
-                });
-            }
-            if *n == s.active {
-                return Some(RejectClass::Invalid {
-                    message: "Can't switch: You can't switch to an active Pokémon".to_string(),
-                });
-            }
-            if s.pokemon[*n].fainted || s.pokemon[*n].hp == 0 {
-                return Some(RejectClass::Invalid {
-                    message: "Can't switch: You can't switch to a fainted Pokémon".to_string(),
-                });
-            }
-            None
-        }
-    }
-}
-
-/// How many consecutive rejects at ONE boundary before the bridge calls it a no-progress LOOP.
-///
-/// A reject leaves the boundary OPEN and re-issues the request — correct when the client then
-/// picks something else. But an RL policy is DETERMINISTIC given the same request, so if its
-/// action mask disagrees with the port about legality (e.g. the port thinks the active mon is
-/// TRAPPED and the mask does not) it re-sends the SAME switch forever. Measured in a live run:
-/// one child spinning at 46 MB/s of re-requests while its env's `step()` never returned, wedging
-/// the whole vec-env. Real Showdown has the same reject protocol; only the deterministic client
-/// makes it non-terminating, so the BRIDGE must bound it. A handful of rejects is legitimate
-/// (trapped-then-move is a normal two-exchange round), so the cap is generous — it exists to turn
-/// an unbounded spin into a diagnosable error, not to police ordinary rejects.
-const REJECT_STREAK_CAP: u32 = 8;
 
 impl BridgeSession {
     /// Build a session: construct the live battle, emit + chunk the framing, and advance
@@ -1823,6 +1614,40 @@ impl BridgeSession {
         Self::new_from_battle(Battle::start_with_turn0_construction(opts, dex)?, opts, dex, true)
     }
 
+    /// A FRESH transport around `engine` (a fork's clone): no chunk history (the chunks are what
+    /// the engine emits from here, the per-ply SUFFIX a search branch reports), no script, no seed
+    /// anchors, no queued commands, and the outstanding requests rendered from the engine's typed
+    /// values' issued bytes (shared with the engine, never re-rendered). Core tracking is on iff
+    /// the engine records the typed source; the one-sided view fold cannot be enabled (the history
+    /// it would need is not here).
+    pub fn resume(engine: Engine) -> BridgeSession {
+        let request_json = [engine.issued_json(0).cloned(), engine.issued_json(1).cloned()];
+        let chunks = BridgeChunks {
+            chunks: Vec::new(),
+            observed: None,
+            history_complete: false,
+            core: if engine.is_core() { Some([Vec::new(), Vec::new()]) } else { None },
+        };
+        BridgeSession {
+            engine,
+            chunks,
+            request_json,
+            cmd_buf: VecDeque::new(),
+            request_seeds: Vec::new(),
+            script: Vec::new(),
+        }
+    }
+
+    /// The engine this transport wraps.
+    pub fn engine(&self) -> &Engine {
+        &self.engine
+    }
+
+    /// Consume the transport, keeping only its engine (what a version owns).
+    pub fn into_engine(self) -> Engine {
+        self.engine
+    }
+
     /// Whether this session records for the core.
     pub fn is_core(&self) -> bool {
         self.chunks.core.is_some()
@@ -1835,7 +1660,7 @@ impl BridgeSession {
 
     /// The typed omniscient source records (a core session only).
     pub fn source_recs(&self) -> Option<&[crate::core_events::SourceRec]> {
-        self.battle.state()?.log.source_recs()
+        self.engine.battle_state()?.log.source_recs()
     }
 
     /// The number of lines `side` has been shipped since the chunk stream last reset.
@@ -1855,12 +1680,13 @@ impl BridgeSession {
         if texts.len() != core[side].len() {
             return Err(format!("p{}: {} shipped lines but {} tracked", side + 1, texts.len(), core[side].len()));
         }
+        let report_percent = self.engine.report_percent();
         texts
             .iter()
             .zip(core[side].iter())
             .skip(from)
             .map(|(t, s)| {
-                let line = crate::core_events::side::step_line(recs, t, *s, side as u8, self.report_percent)?;
+                let line = crate::core_events::side::step_line(recs, t, *s, side as u8, report_percent)?;
                 Ok((line, *s, s.map(|i| recs[i as usize].scope)))
             })
             .collect()
@@ -1876,52 +1702,47 @@ impl BridgeSession {
         if shipped.len() != core[side].len() {
             return Err(format!("p{}: {} shipped lines but {} tracked", side + 1, shipped.len(), core[side].len()));
         }
-        crate::core_events::side::step_events(recs, &shipped, side as u8, self.report_percent)
+        crate::core_events::side::step_events(recs, &shipped, side as u8, self.engine.report_percent())
     }
 
-    /// The shared session body: emit + chunk the framing from an already-constructed
-    /// battle, then advance to the first request boundary.
-    fn new_from_battle(mut battle: Battle, opts: &BattleOptions, dex: &Dex, core: bool) -> Result<BridgeSession, String> {
-        // Percent HP fold applies only in non-debug formats (gen3ou); a `debug:true`
-        // format (gen3customgame) sets `reportExactHP` → both sides see exact HP.
-        let report_percent = !format_is_debug(&opts.format_id);
-        // Emit the framing INTO the live log (kept, not drained — continuous cursor
-        // coords), exactly the lines `run_full_battle_logged(&[])` produces.
-        let raw_framing: Vec<crate::protocol::ProtocolLine> = {
-            let bs = battle.state_mut().ok_or("no state")?;
-            bs.log.enable();
-            if core {
-                bs.log.record_core();
-            }
-            bs.emit_framing(dex);
-            bs.log.lines().to_vec()
-        };
-        let framing = reframe_indexed(&raw_framing, &opts.format_id);
+    /// The shared session body: build the engine over an already-constructed battle, reframe +
+    /// chunk the framing it logged, then advance to the first request boundary.
+    fn new_from_battle(battle: Battle, opts: &BattleOptions, dex: &Dex, core: bool) -> Result<BridgeSession, String> {
+        let engine = Engine::new(battle, opts, dex, core)?;
+        let report_percent = engine.report_percent();
         let mut chunks = BridgeChunks::default();
         if core {
             chunks.core = Some([Vec::new(), Vec::new()]);
         }
-        emit_framing_chunks(&mut chunks, &framing, report_percent);
-        let prev_log_len = raw_framing.len();
+        {
+            // The framing the engine logged, exactly the lines `run_full_battle_logged(&[])`
+            // produces, rewritten to the format's tier + rules (a TRANSPORT concern).
+            let raw_framing = engine.battle_state().ok_or("no state")?.log.lines();
+            let framing = reframe_indexed(raw_framing, &opts.format_id);
+            emit_framing_chunks(&mut chunks, &framing, report_percent);
+        }
         let mut sess = BridgeSession {
-            battle,
-            driver: FullBattleDriver::new(),
-            report_percent,
+            engine,
             chunks,
+            request_json: [None, None],
+            cmd_buf: VecDeque::new(),
             request_seeds: Vec::new(),
             script: Vec::new(),
-            prev_log_len,
-            boundary: None,
-            active_request: [None, None],
-            cmd_buf: std::collections::VecDeque::new(),
-            ended: false,
-            forfeit_winner: None,
-            stopped: false,
-            fatal: None,
-            reject_streak: 0,
         };
         sess.advance(dex);
         Ok(sess)
+    }
+
+    /// Drive the engine over the queued CMDs with this transport as its sink.
+    fn advance(&mut self, dex: &Dex) {
+        let mut wire = Wire {
+            chunks: &mut self.chunks,
+            request_json: &mut self.request_json,
+            request_seeds: &mut self.request_seeds,
+            script: &mut self.script,
+            report_percent: self.engine.report_percent(),
+        };
+        self.engine.advance(&mut self.cmd_buf, &mut wire, dex);
     }
 
     /// Feed ONE command (the `sim_bridge` per-CHOOSE entry) and advance. O(1) amortized.
@@ -1948,36 +1769,17 @@ impl BridgeSession {
     /// `reset()` lands mid-battle, so that hang is reachable on any episode boundary.
     ///
     /// Mirrors the natural-end path exactly (`turn::driver`'s `TurnLoopStop::Ended` arm writes the
-    /// same `separator()` + `win()` pair into the battle log, and `advance` flushes the delta as
+    /// same `separator()` + `win()` pair into the battle log, and the flush emits the delta as
     /// ONE chunk per side) so the wire bytes are byte-for-byte what a real win produces.
     pub fn forfeit(&mut self, side: usize) {
-        if self.ended {
-            return;
-        }
-        let winner = 1 - side;
-        {
-            let bs = self.battle.state_mut().expect("state");
-            if bs.logging() {
-                bs.log.separator();
-                let name = bs.sides[winner].name.clone();
-                bs.log.win(&name);
-            }
-        }
-        // Flush every log line past the cursor (the win pair, plus any residual the open boundary
-        // had not flushed yet) as ONE chunk per side — the natural-end emission.
-        let (delta, new_len) = {
-            let bs = self.battle.state().expect("state");
-            let lines = bs.log.lines();
-            (lines[self.prev_log_len..].to_vec(), lines.len())
+        let mut wire = Wire {
+            chunks: &mut self.chunks,
+            request_json: &mut self.request_json,
+            request_seeds: &mut self.request_seeds,
+            script: &mut self.script,
+            report_percent: self.engine.report_percent(),
         };
-        emit_log_batch_chunk(&mut self.chunks, &delta, self.prev_log_len, self.report_percent);
-        self.prev_log_len = new_len;
-        self.ended = true;
-        self.forfeit_winner = Some(winner);
-        // The battle is over — whatever request was open is void (mirrors the natural-end
-        // clear in `advance`).
-        self.boundary = None;
-        self.active_request = [None, None];
+        self.engine.forfeit(side, &mut wire);
     }
 
     /// All per-side chunks emitted so far (the `sim_bridge` cursor reads `[emitted..]`).
@@ -1990,24 +1792,23 @@ impl BridgeSession {
     /// `reportExactHP`). Read-only; exposed for [`split_log_lines`], whose shared-form
     /// rendering must agree with the per-side fold.
     pub fn report_percent(&self) -> bool {
-        self.report_percent
+        self.engine.report_percent()
     }
 
     /// The battle reached game-end.
     pub fn is_ended(&self) -> bool {
-        self.ended
+        self.engine.is_ended()
     }
 
-    /// A FATAL condition the caller must surface as `__ERR__` (never spin on). See `fatal`.
+    /// A FATAL condition the caller must surface as `__ERR__` (never spin on).
     pub fn fatal(&self) -> Option<&str> {
-        self.fatal.as_deref()
+        self.engine.fatal()
     }
 
-    /// The A2 seed-anchor list (parity with the genesis core).
     /// The battle's CURRENT turn — the gate for the counterfactual `resumeReseed`
     /// (`gen3_bridge_resume_reseed_v1`). 0 before the battle is built.
     pub fn turn(&self) -> u32 {
-        self.battle.state().map(|st| st.turn).unwrap_or(0)
+        self.engine.turn()
     }
 
     /// Swap the live battle's PRNG mid-battle (`gen3_bridge_resume_reseed_v1`) — the Rust
@@ -2019,17 +1820,13 @@ impl BridgeSession {
     /// re-rolled win-probability an estimate of THAT board rather than a different game.
     /// Applied at the START of the divergence turn, BEFORE that turn's choices commit, exactly
     /// once (the caller owns the once-ness, mirroring the node bridge's `reseeded` latch).
-    ///
-    /// Note this is deliberately NOT `Battle::reseed` (still `todo!()`, alongside
-    /// `serialize`/`deserialize` for the clone-and-branch search path): the incremental
-    /// session owns a live `BattleState` whose `prng` is a plain field, so the bridge's
-    /// counterfactual need does not have to wait on the full snapshot surface.
     pub fn reseed(&mut self, seed: &str) {
-        if let Some(st) = self.battle.state_mut() {
+        if let Some(st) = self.engine.battle_state_mut() {
             st.prng = crate::prng::Prng::new(seed);
         }
     }
 
+    /// The A2 seed-anchor list (parity with the genesis core).
     pub fn request_seeds(&self) -> &[PrngSeed] {
         &self.request_seeds
     }
@@ -2058,8 +1855,8 @@ impl BridgeSession {
     /// rolls the dice the parent would have rolled, which is what makes a branch a
     /// counterfactual of THIS board rather than a different game.
     ///
-    /// Cost is the BATTLE, not the dex: the `&Dex` is threaded per method, never owned
-    /// here, so a snapshot copies a couple of teams' worth of state rather than ~16 MB.
+    /// Cost is the BATTLE plus the transport, not the dex. A fork that needs no transport
+    /// history clones [`Self::engine`] instead ([`Self::resume`]).
     ///
     /// A search driver will typically pair this with [`BridgeSession::clear_chunks`],
     /// so the branch's `chunks()` contains only what the branch itself emitted.
@@ -2071,8 +1868,8 @@ impl BridgeSession {
     /// [`BridgeSession::chunks`] contains ONLY what it emits from here — the per-ply
     /// SUFFIX a search driver returns for one branch.
     ///
-    /// Deliberately does NOT touch `prev_log_len`: that is a cursor into the BATTLE LOG
-    /// (which lines have been folded into chunks yet), not into the chunk stream. Resetting
+    /// Deliberately does NOT touch the engine's log cursor: that is a cursor into the BATTLE
+    /// LOG (which lines have been folded into chunks yet), not into the chunk stream. Resetting
     /// it would re-emit the whole battle's log into the next chunk. Nor does it touch the
     /// battle, the driver, the open boundary, or `request_seeds`/`script`.
     pub fn clear_chunks(&mut self) {
@@ -2131,7 +1928,7 @@ impl BridgeSession {
     /// [`RequestState::Switch`], a top-of-turn request [`RequestState::Move`], and a side
     /// this boundary does not ask reports [`RequestState::Wait`].
     pub fn request_kind(&self, side: usize) -> Option<RequestState> {
-        self.boundary.as_ref().map(|bp| RequestState::from(bp.kinds[side]))
+        self.engine.request_kind(side)
     }
 
     /// Whether `side` has already supplied an ACCEPTED choice for the open boundary — the
@@ -2143,7 +1940,7 @@ impl BridgeSession {
     /// state right after a REJECTED choice, since a reject re-issues the request and leaves
     /// the boundary open.
     pub fn is_choice_done(&self, side: usize) -> bool {
-        self.boundary.as_ref().map(|bp| !bp.need[side]).unwrap_or(true)
+        self.engine.is_choice_done(side)
     }
 
     /// The EXACT `|request|` line last issued to `side` (the bytes the wire carried), or
@@ -2152,9 +1949,9 @@ impl BridgeSession {
     /// Byte-identical to what Showdown's `side.activeRequest` serializes to, because it IS
     /// the string that was pushed into the chunk stream — including the `"update":true`
     /// re-request a hidden-trap REJECT re-issues, which is the frame a search kernel must
-    /// re-pick from after a rejected switch.
+    /// re-pick from after a rejected switch. The engine's typed twin is [`Engine::request`].
     pub fn active_request_json(&self, side: usize) -> Option<&str> {
-        self.active_request[side].as_deref()
+        self.request_json[side].as_deref()
     }
 
     /// Read access to the live battle state — the omniscient referee readout a search
@@ -2162,7 +1959,7 @@ impl BridgeSession {
     /// `None` only if the battle was never constructed, which cannot happen for a session
     /// built by any of the `new*` constructors.
     pub fn battle_state(&self) -> Option<&BattleState> {
-        self.battle.state()
+        self.engine.battle_state()
     }
 
     /// The WINNER's side index (0 = p1, 1 = p2) once the battle has ended, else `None`.
@@ -2172,337 +1969,7 @@ impl BridgeSession {
     /// `None` therefore means EITHER "still playing" OR a gen-3 double-faint TIE — pair it
     /// with [`BridgeSession::is_ended`] to tell those apart.
     pub fn winner(&self) -> Option<usize> {
-        self.driver.winner().or(self.forfeit_winner)
-    }
-
-    /// Advance from the current paused state as far as the buffered CMDs allow: at each
-    /// request boundary emit the log delta + request, consume CMD(s), emit the struggle
-    /// line, feed ONE decision to the driver, repeat — pausing when the CMD buffer runs
-    /// out mid-boundary. Byte-identical (chunks + seeds + script) to the genesis-replay
-    /// core fed the same CMD stream (asserted by the parity test); the incremental engine
-    /// draws the SAME PRNG numbers a genesis replay would, by construction.
-    fn advance(&mut self, dex: &Dex) {
-        // Defensive spin guard (the turn-limit TIE + the driver's `TURN_LIMIT`/`turn_loop` watchdogs are the
-        // real runaway protection; this only catches a logic bug in THIS loop).
-        let mut guard: u64 = 0;
-        loop {
-            guard += 1;
-            if guard > 100_000_000 {
-                panic!("BridgeSession::advance spin guard exceeded (a boundary never resolved)");
-            }
-            if self.stopped || self.ended {
-                return;
-            }
-            // ── Start a new boundary if not mid-boundary. ──
-            if self.boundary.is_none() {
-                // [A2] makeRequest-boundary seed (skip the pre-first-decision boundary).
-                if !self.script.is_empty() {
-                    let seed = self.battle.state().expect("state").prng_seed();
-                    self.request_seeds.push(seed);
-                }
-                // The log delta flushed since the previous boundary → ONE chunk per side.
-                let (delta, new_len) = {
-                    let bs = self.battle.state().expect("state");
-                    let lines = bs.log.lines();
-                    (lines[self.prev_log_len..].to_vec(), lines.len())
-                };
-                emit_log_batch_chunk(&mut self.chunks, &delta, self.prev_log_len, self.report_percent);
-                self.prev_log_len = new_len;
-                if self.driver.is_ended() {
-                    self.ended = true;
-                    // Nothing is outstanding once the battle is over (`side.activeRequest`
-                    // is cleared at the sim's `win`), so the search driver's
-                    // `active_request_json` reads None rather than a stale frame.
-                    self.active_request = [None, None];
-                    return;
-                }
-                // Determine the pending request kind per side from the paused state.
-                let (kinds, no_cancel_forced) = {
-                    let bs = self.battle.state().expect("state");
-                    let force = pending_force(bs);
-                    let is_switch = force[0] || force[1];
-                    let kinds = boundary_kinds(bs, &force, is_switch);
-                    let non_wait = kinds.iter().filter(|k| **k != SideRequest::Wait).count();
-                    (kinds, non_wait < 2)
-                };
-                {
-                    let bs = self.battle.state().expect("state");
-                    let issued =
-                        emit_boundary_request_chunks(&mut self.chunks, bs, &kinds, no_cancel_forced, dex);
-                    // Record what is now OUTSTANDING per side (incl. the `{"wait":true}`
-                    // frame — the sim issues that too).
-                    let [r0, r1] = issued;
-                    self.active_request = [Some(r0), Some(r1)];
-                }
-                self.boundary = Some(BoundaryProgress {
-                    kinds,
-                    got: [None, None],
-                    need: [kinds[0] != SideRequest::Wait, kinds[1] != SideRequest::Wait],
-                });
-            }
-
-            // ── Consume CMD(s) answering this boundary. ──
-            loop {
-                let (need0, need1) = {
-                    let bp = self.boundary.as_ref().expect("boundary");
-                    (bp.need[0], bp.need[1])
-                };
-                if !need0 && !need1 {
-                    break; // boundary satisfied
-                }
-                let cmd = match self.cmd_buf.front() {
-                    Some(c) => c.clone(),
-                    None => return, // PAUSE — out of CMDs; resume on the next fed CMD
-                };
-                let s = cmd.side;
-                if !self.boundary.as_ref().expect("boundary").need[s] {
-                    // A CMD for a side this boundary does NOT request — an UPSTREAM engine
-                    // desync (an extra/missing draw shifted a faint/forced-switch onto a side
-                    // the recorded game did not have here). Stop gracefully (R20) so the seed
-                    // anchor classifies it, instead of crashing.
-                    self.stopped = true;
-                    // ...but for the LIVE bridge, "stop gracefully" means EMIT NOTHING, EVER —
-                    // the child keeps accepting CHOOSE lines and never answers, so poke-env waits
-                    // on a battle message that can never arrive and the env's `step()` hangs until
-                    // its 120s watchdog kills the whole run. Record it as FATAL so `sim_bridge`
-                    // reports `__ERR__` (`gen3_bridge_stopped_failloud_v1`). The OFFLINE replay
-                    // harnesses read `stopped`/the streams and ignore `fatal`, so their
-                    // graceful-classification behaviour is unchanged.
-                    let kinds = self.boundary.as_ref().expect("boundary").kinds;
-                    self.fatal = Some(format!(
-                        "upstream desync: CHOOSE for p{} but this boundary does not request it \
-                         (kinds p1={:?} p2={:?}, needs p1={} p2={}). The bridge would go silent \
-                         forever, so this fails loud.",
-                        s + 1,
-                        kinds[0],
-                        kinds[1],
-                        self.boundary.as_ref().expect("boundary").need[0],
-                        self.boundary.as_ref().expect("boundary").need[1],
-                    ));
-                    return;
-                }
-                // Resolve the wire token (numeric slot OR a NAME) against THIS boundary's
-                // state, exactly like Showdown's `side.chooseMove`/`chooseSwitch`.
-                //
-                // `gen3_bridge_unresolvable_choice_failloud_v1` — a NAME form that resolves
-                // against NOTHING is FATAL, not a reject. The out-of-range fallback below makes
-                // `choice_is_legal` reject the choice, which leaves the boundary open and
-                // re-issues the SAME request; poke-env then re-sends the SAME unmappable name,
-                // forever — an unbounded bridge↔Python spin that pins a core and floods stdout
-                // (measured: 46 MB/s from one child) while the env's `step()` never returns.
-                // The Struggle wedge was ONE instance of this class; rather than wait for the
-                // next one, report it. A NUMERIC out-of-range choice is DIFFERENT: it is a
-                // legitimate, tested reject-and-re-request (the forced-replacement resume gate
-                // and the 0-PP gate both rely on it), and poke-env re-picks from a fresh request,
-                // so it cannot spin — that path is untouched.
-                if matches!(cmd.choice, WireChoice::MoveName(_) | WireChoice::SwitchSpecies(_)) {
-                    let unresolvable = {
-                        let bs = self.battle.state().expect("state");
-                        resolve_choice(bs, s, &cmd.choice).is_none()
-                    };
-                    if unresolvable {
-                        let bs = self.battle.state().expect("state");
-                        let mon = &bs.sides[s].pokemon[bs.sides[s].active];
-                        self.fatal = Some(format!(
-                            "unresolvable choice for p{}: {:?} — active {} has moves {:?}; bench {:?}. \
-                             Re-requesting would loop forever, so this fails loud.",
-                            s + 1,
-                            cmd.choice,
-                            mon.species_id,
-                            mon.set.moves,
-                            bs.sides[s]
-                                .pokemon
-                                .iter()
-                                .enumerate()
-                                .filter(|(i, m)| *i != bs.sides[s].active && !m.fainted)
-                                .map(|(_, m)| m.species_id.clone())
-                                .collect::<Vec<_>>(),
-                        ));
-                        self.stopped = true;
-                        return;
-                    }
-                }
-                let kind_s = self.boundary.as_ref().expect("boundary").kinds[s];
-                let resolved = {
-                    let bs = self.battle.state().expect("state");
-                    resolve_wire(bs, s, kind_s == SideRequest::ForceSwitch, &cmd.choice, dex)
-                        .unwrap_or_else(|| match cmd.choice {
-                            WireChoice::Switch(_) | WireChoice::SwitchSpecies(_) => {
-                                Choice::Switch(bs.sides[s].pokemon.len())
-                            }
-                            _ => Choice::Move(
-                                bs.sides[s].pokemon[bs.sides[s].active].set.moves.len(),
-                            ),
-                        })
-                };
-                self.cmd_buf.pop_front();
-                // Trapped-switch rejection at a MOVE boundary — the `|error|` + (hidden trap)
-                // the re-request are SEPARATE chunks; the side still needs a choice.
-                let (reject, firm) = {
-                    let bs = self.battle.state().expect("state");
-                    let locked = bs.sides[s].pokemon[bs.sides[s].active].move_locked();
-                    let reject = kind_s == SideRequest::Move
-                        && matches!(resolved, Choice::Switch(_))
-                        && ((bs.is_trapped(s, dex) && has_live_bench(bs, s)) || locked);
-                    let firm = locked || bs.trap_is_firm(s, dex);
-                    (reject, firm)
-                };
-                // Every OTHER reject class (`gen3_choice_reject_framing_v1`). The trapped switch
-                // above was the ONLY one the port modelled; an illegal move slot / a switch into
-                // the active-or-fainted-or-nonexistent slot fell through to `bp.got[s]`, and the
-                // driver's legality gate then skipped the decision and re-opened the WHOLE
-                // boundary — emitting no `|error|` and re-requesting BOTH sides.
-                //
-                // PROBE-MEASURED (`harness/probe_choice_reject_framing.js`, the real sim):
-                //   disabled move       -> `[Unavailable choice] Can't move: X's Y is disabled`
-                //                          + a re-request TO THAT SIDE ONLY carrying
-                //                          `"update":true` + `"disabledSource":""` on the slot
-                //   switch into ACTIVE  -> `[Invalid choice] Can't switch: You can't switch to an
-                //                          active Pokémon`, and NOTHING follows
-                //   out-of-range move   -> `[Invalid choice] Can't move: Your X doesn't have a
-                //                          move N`, and NOTHING follows
-                // ...and in EVERY class the NON-offending side receives ZERO lines.
-                //
-                // THE RULE is not "escalate on repeat" (an easy misreading of the two error
-                // classes): `Side.emitChoiceError` emits `[Unavailable choice]` + re-issues the
-                // request IFF its update callback actually CHANGED the request, else
-                // `[Invalid choice]` and nothing. So the DISABLED case re-requests because it
-                // mutates a slot, and the others do not because they mutate nothing.
-                let general = if reject {
-                    None
-                } else {
-                    let bs = self.battle.state().expect("state");
-                    classify_reject(bs, s, kind_s, &cmd.choice, &resolved, dex)
-                };
-                if let Some(rej) = general {
-                    // Same bound as the trapped exchange — a deterministic client re-sending the
-                    // same refused choice must fail loud, not spin (see `REJECT_STREAK_CAP`).
-                    self.reject_streak += 1;
-                    if self.reject_streak > REJECT_STREAK_CAP {
-                        self.fatal = Some(format!(
-                            "no-progress reject loop on p{}: {} consecutive rejects of {:?} at one \
-                             boundary ({}). The client keeps re-sending a choice this boundary \
-                             rejects, so nothing can advance — failing loud instead of spinning.",
-                            s + 1,
-                            self.reject_streak,
-                            cmd.choice,
-                            rej.message(),
-                        ));
-                        self.stopped = true;
-                        return;
-                    }
-                    self.chunks.push_chunk(s, vec![rej.error_line()]);
-                    if let RejectClass::Unavailable { ds_slot, .. } = rej {
-                        // The ONLY class that re-issues. Emitted to `s` ALONE: the other side's
-                        // already-accepted choice stands, so re-asking it would both duplicate a
-                        // request the sim never sends and record a phantom extra pick.
-                        let rereq = {
-                            let bs = self.battle.state().expect("state");
-                            let kind_s = self.boundary.as_ref().expect("boundary").kinds[s];
-                            build_request_with_disabled_source(
-                                bs,
-                                s,
-                                kind_s,
-                                false,
-                                true,
-                                false,
-                                Some(ds_slot),
-                                dex,
-                            )
-                        };
-                        self.chunks.push_chunk(s, vec![rereq.clone()]);
-                        self.active_request[s] = Some(rereq);
-                    }
-                    continue; // side s still needs a choice; the boundary stays open
-                }
-                if reject {
-                    // Bound the reject↔re-request exchange: a deterministic client re-sends the
-                    // same rejected choice forever (`REJECT_STREAK_CAP`).
-                    self.reject_streak += 1;
-                    if self.reject_streak > REJECT_STREAK_CAP {
-                        let bs = self.battle.state().expect("state");
-                        let mon = &bs.sides[s].pokemon[bs.sides[s].active];
-                        self.fatal = Some(format!(
-                            "no-progress reject loop on p{}: {} consecutive rejects of {:?} at one \
-                             boundary (active {}, trapped={}, firm={}, move_locked={}). The client \
-                             keeps re-sending a choice this boundary rejects, so nothing can \
-                             advance — failing loud instead of spinning.",
-                            s + 1,
-                            self.reject_streak,
-                            cmd.choice,
-                            mon.species_id,
-                            bs.is_trapped(s, dex),
-                            firm,
-                            mon.move_locked(),
-                        ));
-                        self.stopped = true;
-                        return;
-                    }
-                    if firm {
-                        self.chunks.push_chunk(
-                            s,
-                            vec!["|error|[Invalid choice] Can't switch: The active Pokémon is trapped"
-                                .to_string()],
-                        );
-                    } else {
-                        self.chunks.push_chunk(
-                            s,
-                            vec!["|error|[Unavailable choice] Can't switch: The active Pokémon is trapped"
-                                .to_string()],
-                        );
-                        let rereq = {
-                            let bs = self.battle.state().expect("state");
-                            build_request(bs, s, SideRequest::Move, true, true, false, dex)
-                        };
-                        self.chunks.push_chunk(s, vec![rereq.clone()]);
-                        // The RE-ISSUED frame supersedes the one this reject answered: the
-                        // boundary is still open and the side must pick again FROM THIS
-                        // request (it now carries `trapped:true` + `"update":true`).
-                        self.active_request[s] = Some(rereq);
-                    }
-                    continue; // side s still needs a choice
-                }
-                // A choice was ACCEPTED — the boundary is making progress, so the streak resets.
-                self.reject_streak = 0;
-                let bp = self.boundary.as_mut().expect("boundary");
-                bp.got[s] = Some(resolved);
-                bp.need[s] = false;
-            }
-
-            // ── Boundary satisfied → struggle announce, commit, feed the driver. ──
-            let bp = self.boundary.take().expect("boundary");
-            // The boundary is CLOSING, so nothing is outstanding until the next one opens
-            // (which re-sets both entries a few lines below, via the loop's top).
-            self.active_request = [None, None];
-            {
-                let bs = self.battle.state().expect("state");
-                for s in 0..2 {
-                    if matches!(bp.got[s], Some(Choice::Move(_))) {
-                        let mon = &bs.sides[s].pokemon[bs.sides[s].active];
-                        if !mon.move_locked() && mon.must_struggle(dex) {
-                            let name = display_name(mon, dex);
-                            self.chunks.push_chunk(
-                                s,
-                                vec![format!("|-activate|p{}a: {}|move: Struggle", s + 1, name)],
-                            );
-                        }
-                    }
-                }
-            }
-            let mut dec = ScriptDecision::default();
-            for s in 0..2 {
-                if let Some(c) = bp.got[s] {
-                    dec.set_side(s, c);
-                }
-            }
-            self.script.push(dec);
-            {
-                let driver = &mut self.driver;
-                let bs = self.battle.state_mut().expect("state");
-                driver.feed(bs, dec, dex);
-            }
-            // loop back → start a new boundary
-        }
+        self.engine.winner()
     }
 }
 
@@ -2529,7 +1996,7 @@ pub fn run_full_battle_bridge_incremental_with_quick_claw(
 ) -> Result<(BridgeChunks, bool, Vec<ScriptDecision>, Vec<PrngSeed>), String> {
     let mut sess = BridgeSession::new_with_quick_claw(opts, quick_claw_roll, dex)?;
     sess.feed_cmds(cmds, dex);
-    Ok((sess.chunks, sess.ended, sess.script, sess.request_seeds))
+    Ok((sess.chunks, sess.engine.is_ended(), sess.script, sess.request_seeds))
 }
 
 /// Split the reframed framing lines into the 3 `getPlayerStreams` chunks per side and
@@ -2775,18 +2242,18 @@ pub fn reframe_indexed(raw: &[crate::protocol::ProtocolLine], format_id: &str) -
 /// Whether `format_id` is a `debug:true` format (the gen3 Custom Game) — such a
 /// battle sets `reportExactHP`, so both per-side streams show EXACT HP (no percent
 /// fold). Mirrors the ONE relevant flag from `[Gen 3] Custom Game`'s definition.
-fn format_is_debug(format_id: &str) -> bool {
+pub(crate) fn format_is_debug(format_id: &str) -> bool {
     format_id.contains("customgame")
 }
 
 /// Which sides are being force-switched at the paused boundary (post-faint
 /// replacement). Reads `SideState.switch_flag` (set by the faint protocol).
-fn pending_force(state: &BattleState) -> [bool; 2] {
+pub(crate) fn pending_force(state: &BattleState) -> [bool; 2] {
     [state.sides[0].switch_flag, state.sides[1].switch_flag]
 }
 
 /// The per-side request kind at this boundary.
-fn boundary_kinds(_state: &BattleState, force: &[bool; 2], is_switch: bool) -> [SideRequest; 2] {
+pub(crate) fn boundary_kinds(_state: &BattleState, force: &[bool; 2], is_switch: bool) -> [SideRequest; 2] {
     if is_switch {
         [
             if force[0] { SideRequest::ForceSwitch } else { SideRequest::Wait },
@@ -3176,7 +2643,7 @@ mod tests {
         let p2 = "Rattata||||splash|Serious||F||||";
         let opts = bridge_opts("gen3customgame", "44317,42357,9927,48760".to_string(), p1, p2);
         let sess = BridgeSession::new(&opts, &dex).expect("session");
-        let st = sess.battle.state().expect("state");
+        let st = sess.battle_state().expect("state");
 
         assert_eq!(
             resolve_choice(st, 0, &WireChoice::SwitchSpecies("Airmure".to_string())),

@@ -105,6 +105,9 @@ pub mod bridge;
 pub mod damage;
 pub mod dex;
 pub mod driver_timing;
+/// The ENGINE half of a bridge session (`gen3_core_engine_split_v1`): the battle, the turn loop,
+/// the open boundary and the TYPED requests — what a `version::BattleVersion` owns.
+pub mod engine;
 /// The EMISSION SELF-CHECK (`gen3_core_emission_selfcheck_v1`): every emitted line round-trips and
 /// every viewer's render is the line that viewer is owed — ON in `cargo test` and the self-check
 /// build, compiled OUT of `cargo build --release`.

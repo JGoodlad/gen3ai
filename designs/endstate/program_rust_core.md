@@ -201,7 +201,11 @@ strength NOT DETECTED (+17.5 Elo to win-prob, one run per arm), and the one cont
 trackers and the prober read it). Any future shaping is model-derived (the held frozen-φ rung, a
 T2 value as the potential), never env code.
 
-**Before M3 starts (M2's hand-off, 2026-09-23):** (1) split `BridgeSession` into an ENGINE (`Battle`,
+**Before M3 starts (M2's hand-off, 2026-09-23):** *(1) DONE 2026-09-24 (`gen3_core_engine_split_v1`:
+`engine::Engine` + the `BridgeSession` transport around it; `sim_bridge` byte-identical on the
+41-battle transcript; a version's fork is 0.950× [0.921, 0.952] the pre-split clone, the transport
+history 3.9 % of it — [`research_state/measurements/rust_core_m3_2026-09-24/`](../research_state/measurements/rust_core_m3_2026-09-24/README.md)).*
+(1) split `BridgeSession` into an ENGINE (`Battle`,
 `FullBattleDriver`, the open boundary and requests as typed values), which `BattleVersion` owns, and
 a TRANSPORT (chunks, the text reframe, request JSON strings, `cmd_buf`, `script` / `request_seeds`),
 which `sim_bridge` wraps around the engine. Today every fork clones `script` and `request_seeds`, and

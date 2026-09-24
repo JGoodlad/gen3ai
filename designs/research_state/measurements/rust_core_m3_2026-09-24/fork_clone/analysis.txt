@@ -1,0 +1,10 @@
+8 complete pairs; load1 7.3-31.1
+  before snapshot (whole compacted session)     median of per-boundary medians:    18660 ns
+  before script+seeds alone                     median of per-boundary medians:      732 ns
+  after engine clone                            median of per-boundary medians:    17513 ns
+  after resume (the fork a version drives)      median of per-boundary medians:    17563 ns
+  after snapshot (whole session, same code)     median of per-boundary medians:    18450 ns
+  resume / before-snapshot       0.950 [0.921, 0.952]  (> 1 in 0/8)
+  engine / before-snapshot       0.947 [0.917, 0.952]  (> 1 in 0/8)
+  script+seeds share of the before fork       0.039 [0.038, 0.039]
+  boundaries per run 3155, mean script length 55.7, mean seed-anchor length 55.7

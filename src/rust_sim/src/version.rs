@@ -12,19 +12,23 @@
 //! * **the view per side**, computed on demand and memoized ([`BattleVersion::view`]);
 //! * **the raw `|request|` per side** (inside the board reading: `last_request_text`), which legality
 //!   is derived from ([`BattleVersion::legal`]);
-//! * **the engine** — the omniscient session the step path advances. It is the REFEREE: nothing
-//!   in the view reads it ([`present`] takes no board); [`BattleVersion::audit`] checks the view
-//!   against it.
+//! * **the engine** — the omniscient battle the step path advances: an [`Engine`] ONLY (the
+//!   battle, the turn loop, the open boundary, the typed requests — `gen3_core_engine_split_v1`),
+//!   never the wire. It is the REFEREE: nothing in the view reads it ([`present`] takes no board);
+//!   [`BattleVersion::audit`] checks the view against it.
 //!
-//! # Two entry points, one state
+//! # Three origins, one state
 //!
-//! * **step** — the simulator's own transition: clone (or move) the engine, feed the choices,
-//!   fold each side's NEW lines, TYPED AT THE SOURCE (the typed shortcut the Rust Core Program's
-//!   §6c licenses by `parse(emit(step)) == step`);
-//! * **parse** — one side's protocol TEXT, all a real server sends: [`BattleVersion::parse_root`]
-//!   and [`BattleVersion::parse_step`] fold `Line::parse` of each line into the SAME
-//!   [`SideStream`]. A parse-built version has one side and no engine (its omniscient board is
-//!   partial by construction — the design's §6b).
+//! * **step** ([`Origin::Step`]) — the simulator's own transition, a FORK: an engine CLONE is
+//!   wrapped in a fresh transport ([`BattleVersion::fork_session`]), driven, and each side's NEW
+//!   lines are folded TYPED AT THE SOURCE (the typed shortcut the Rust Core Program's §6c licenses
+//!   by `parse(emit(step)) == step`); the child keeps the engine and drops the transport;
+//! * **observe** ([`Origin::Observed`]) — a LINEAR replay: the caller drives ONE session and the
+//!   chain folds what it shipped, holding no engine (the caller's session is the referee);
+//! * **parse** ([`Origin::Parse`]) — one side's protocol TEXT, all a real server sends:
+//!   [`BattleVersion::parse_root`] and [`BattleVersion::parse_step`] fold `Line::parse` of each
+//!   line into the SAME [`SideStream`]. A parse-built version has one side and no engine (its
+//!   omniscient board is partial by construction — the design's §6b).
 //!
 //! The gate is that the two agree version by version: every side's stream state (the whole
 //! reading board), its transition events and its view. `core_events --views` runs it on every
@@ -33,6 +37,8 @@
 use std::sync::{Arc, OnceLock};
 
 use crate::bridge::{BridgeSession, Cmd};
+use crate::engine::Engine;
+use crate::state::BattleState;
 use crate::core_events::parse::OwnerScan;
 use crate::core_events::reading::Reader;
 use crate::core_events::{is_outcome, CoreEvent, Line, Scope};
@@ -95,36 +101,40 @@ impl SideStream {
     }
 }
 
+/// How a version came to be — which decides what it can do.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Origin {
+    /// Built by the simulator's own step and OWNING its engine: a fork root or a fork's child
+    /// ([`BattleVersion::root`], [`BattleVersion::step`], [`BattleVersion::child`]). Can step.
+    Step,
+    /// Built by OBSERVING a session the caller drives ([`BattleVersion::observe_root`] /
+    /// [`BattleVersion::observe`]) — a linear replay (the parity harness). It holds no engine:
+    /// the caller's session is the referee ([`BattleVersion::audit_on`]).
+    Observed,
+    /// Built from ONE side's protocol text — what a real server sends. No engine, one side.
+    Parse,
+}
+
 /// One immutable decision boundary of a battle.
 pub struct BattleVersion {
     parent: Option<Arc<BattleVersion>>,
-    /// The referee (step-built versions only). Never read by a view.
-    engine: Option<BridgeSession>,
+    origin: Origin,
+    /// The referee and the stepper (a [`Origin::Step`] version only). Never read by a view. The
+    /// ENGINE alone (`gen3_core_engine_split_v1`): a fork clones the battle, not the wire.
+    engine: Option<Engine>,
     streams: [Option<SideStream>; 2],
     events: [Vec<CoreEvent>; 2],
     views: [OnceLock<R<OneSidedView>>; 2],
-    /// Lines of the ENGINE's current chunk list each side has folded. 0 on a COMPACTED version
-    /// (a fork's child), whose engine keeps no chunk history at all — so a fork copies the board,
-    /// never the battle's text.
+    /// Lines of the OBSERVED session's chunk list each side has folded ([`Origin::Observed`]
+    /// only; 0 otherwise — a fork's transport starts empty, so it copies the board, never the
+    /// battle's text).
     cursor: [usize; 2],
 }
 
 impl BattleVersion {
-    fn new(parent: Option<Arc<BattleVersion>>, engine: Option<BridgeSession>, streams: [Option<SideStream>; 2],
+    fn new(parent: Option<Arc<BattleVersion>>, origin: Origin, engine: Option<Engine>, streams: [Option<SideStream>; 2],
            events: [Vec<CoreEvent>; 2], cursor: [usize; 2]) -> BattleVersion {
-        BattleVersion { parent, engine, streams, events, views: [OnceLock::new(), OnceLock::new()], cursor }
-    }
-
-    /// The ROOT of a step-built chain: `engine` is a CORE session (`BridgeSession::new_core` /
-    /// `new_construct_turn0_core`, or a search root built from a record) at a boundary; `names` /
-    /// `teams` are the two players' (what each side's `Player` knows about itself). Every line
-    /// shipped so far is folded. `compact` drops the engine's chunk history once folded (a search
-    /// tree's root); a linear replay keeps it. `want` names the sides that carry a stream (a search
-    /// reads one side, and every version of its tree then folds that side alone).
-    pub fn root(engine: BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], compact: bool,
-                want: [bool; 2]) -> R<BattleVersion> {
-        let streams = Self::fresh_streams(names, teams, want)?;
-        Self::transition(None, engine, streams, [0, 0], compact)
+        BattleVersion { parent, origin, engine, streams, events, views: [OnceLock::new(), OnceLock::new()], cursor }
     }
 
     fn fresh_streams(names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2]) -> R<[Option<SideStream>; 2]> {
@@ -137,40 +147,58 @@ impl BattleVersion {
         Ok(out)
     }
 
-    /// [`Self::root`] folded from each side's TEXT (the parse path), then COMPACTED — the root of
-    /// a `core_path=text` search tree, whose engine needs no source recording.
-    pub fn root_text(mut engine: BridgeSession, names: [&str; 2], teams: [Option<&str>; 2],
-                     want: [bool; 2]) -> R<BattleVersion> {
-        let mut streams = Self::fresh_streams(names, teams, want)?;
+    /// Fold every line `sess` shipped to each wanted side from `from` on, TYPED at the source.
+    fn fold_typed(sess: &BridgeSession, streams: &mut [Option<SideStream>; 2], from: [usize; 2])
+        -> R<[Vec<CoreEvent>; 2]> {
         let mut events: [Vec<CoreEvent>; 2] = [Vec::new(), Vec::new()];
         for side in 0..2 {
             let Some(s) = streams[side].as_mut() else { continue };
-            for t in engine.side_lines(side) {
-                events[side].push(s.fold_text(&t)?);
-            }
-        }
-        engine.clear_chunks();
-        Ok(Self::new(None, Some(engine), streams, events, [0, 0]))
-    }
-
-    /// Fold every line each side was shipped past `from` (the parent's cursor), TYPED at the
-    /// source; `compact` then drops the engine's chunk history.
-    fn transition(parent: Option<Arc<BattleVersion>>, mut engine: BridgeSession, mut streams: [Option<SideStream>; 2],
-                  from: [usize; 2], compact: bool) -> R<BattleVersion> {
-        let mut events: [Vec<CoreEvent>; 2] = [Vec::new(), Vec::new()];
-        let mut cursor = [0usize; 2];
-        for side in 0..2 {
-            cursor[side] = engine.side_line_count(side);
-            let Some(s) = streams[side].as_mut() else { continue };
-            for (line, src, scope) in engine.typed_side_lines(side, from[side])? {
+            for (line, src, scope) in sess.typed_side_lines(side, from[side])? {
                 events[side].push(s.fold(line, src, scope)?);
             }
         }
-        if compact {
-            engine.clear_chunks();
-            cursor = [0, 0];
+        Ok(events)
+    }
+
+    /// Fold every line `sess` shipped to each wanted side from `from` on, from its TEXT.
+    fn fold_text(sess: &BridgeSession, streams: &mut [Option<SideStream>; 2], from: [usize; 2])
+        -> R<[Vec<CoreEvent>; 2]> {
+        let mut events: [Vec<CoreEvent>; 2] = [Vec::new(), Vec::new()];
+        for side in 0..2 {
+            let Some(s) = streams[side].as_mut() else { continue };
+            for t in sess.side_lines(side).iter().skip(from[side]) {
+                events[side].push(s.fold_text(t)?);
+            }
         }
-        Ok(Self::new(parent, Some(engine), streams, events, cursor))
+        Ok(events)
+    }
+
+    /// The ROOT of a FORK tree: `sess` is a CORE session (`BridgeSession::new_core` /
+    /// `new_construct_turn0_core`, or a search root built from a record) at a boundary; `names` /
+    /// `teams` are the two players' (what each side's `Player` knows about itself). Every line
+    /// shipped so far is folded TYPED, then the transport is dropped — the version owns the ENGINE
+    /// only. `want` names the sides that carry a stream (a search reads one side, and every
+    /// version of its tree then folds that side alone).
+    pub fn root(sess: BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2]) -> R<BattleVersion> {
+        let mut streams = Self::fresh_streams(names, teams, want)?;
+        let events = Self::fold_typed(&sess, &mut streams, [0, 0])?;
+        Ok(Self::new(None, Origin::Step, Some(sess.into_engine()), streams, events, [0, 0]))
+    }
+
+    /// [`Self::root`] folded from each side's TEXT (the parse path) — the root of a
+    /// `core_path=text` search tree, whose engine needs no source recording.
+    pub fn root_text(sess: BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2]) -> R<BattleVersion> {
+        let mut streams = Self::fresh_streams(names, teams, want)?;
+        let events = Self::fold_text(&sess, &mut streams, [0, 0])?;
+        Ok(Self::new(None, Origin::Step, Some(sess.into_engine()), streams, events, [0, 0]))
+    }
+
+    /// The transport a fork of this version is driven through: a CLONE of the engine wrapped in a
+    /// fresh transport ([`BridgeSession::resume`]) — no chunk history, no script, no seed anchors;
+    /// the outstanding requests' issued bytes are shared with the engine, not re-rendered.
+    pub fn fork_session(&self) -> R<BridgeSession> {
+        let e = self.engine.as_ref().ok_or("only a step-built version has an engine to fork")?;
+        Ok(BridgeSession::resume(e.clone()))
     }
 
     /// STEP — a FORK: the child of this version after `cmds` (the parent is untouched and shared).
@@ -181,45 +209,39 @@ impl BattleVersion {
         })
     }
 
-    /// STEP with an arbitrary engine drive (a search arm's follow-up loop, a forfeit): `drive`
-    /// advances a CLONE of the engine; the child folds whatever each side was shipped.
-    pub fn step_with(self: &Arc<Self>, drive: impl FnOnce(&mut BridgeSession) -> R<()>) -> R<Arc<BattleVersion>> {
-        let mut engine = self.engine.as_ref().ok_or("a parse-built version has no engine to step")?.snapshot();
-        drive(&mut engine)?;
-        self.child(engine)
+    /// STEP with an arbitrary drive (a search arm's follow-up loop, a forfeit): `drive` advances a
+    /// fork of the engine inside a fresh transport; the child folds whatever each side was shipped.
+    pub fn step_with(self: &Arc<Self>, drive: impl FnOnce(&mut BridgeSession) -> R<()>)
+        -> R<Arc<BattleVersion>> {
+        let mut sess = self.fork_session()?;
+        drive(&mut sess)?;
+        self.child(sess)
     }
 
-    /// The child of this version whose engine is `engine` — a CLONE of this version's engine that
-    /// the caller has already driven (a search arm snapshots the engine at an intermediate decision
-    /// and again at the end of the turn; each is a child). Folds the lines each side (that this
-    /// version carries a stream for) was shipped since, and COMPACTS the child.
-    pub fn child(self: &Arc<Self>, engine: BridgeSession) -> R<Arc<BattleVersion>> {
-        if let Some(f) = engine.fatal() {
+    /// The child of this version whose transport is `sess` — a [`Self::fork_session`] the caller
+    /// has already driven (a search arm snapshots it at an intermediate decision and again at the
+    /// end of the turn; each is a child). Folds EVERY line the transport shipped (it started empty
+    /// at this version's boundary), TYPED, and keeps only the engine.
+    pub fn child(self: &Arc<Self>, sess: BridgeSession) -> R<Arc<BattleVersion>> {
+        if let Some(f) = sess.fatal() {
             return Err(format!("bridge fatal: {f}"));
         }
-        let streams = [self.streams[0].clone(), self.streams[1].clone()];
-        Ok(Arc::new(Self::transition(Some(Arc::clone(self)), engine, streams, self.cursor, true)?))
+        let mut streams = [self.streams[0].clone(), self.streams[1].clone()];
+        let events = Self::fold_typed(&sess, &mut streams, [0, 0])?;
+        Ok(Arc::new(Self::new(Some(Arc::clone(self)), Origin::Step, Some(sess.into_engine()), streams, events, [0, 0])))
     }
 
     /// [`Self::child`] folded from each side's TEXT instead of typed at the source: the
     /// stream-only path the Rust Core Program's §6c decided every observation comes through. The
     /// search road runs it as `core_path=text`, and its INTEGRITY mode runs both and asserts the
     /// two children equal ([`streams_equal`]). Needs no source recording in the engine.
-    pub fn child_text(self: &Arc<Self>, mut engine: BridgeSession) -> R<Arc<BattleVersion>> {
-        if let Some(f) = engine.fatal() {
+    pub fn child_text(self: &Arc<Self>, sess: BridgeSession) -> R<Arc<BattleVersion>> {
+        if let Some(f) = sess.fatal() {
             return Err(format!("bridge fatal: {f}"));
         }
         let mut streams = [self.streams[0].clone(), self.streams[1].clone()];
-        let mut events: [Vec<CoreEvent>; 2] = [Vec::new(), Vec::new()];
-        for side in 0..2 {
-            let Some(s) = streams[side].as_mut() else { continue };
-            let text = engine.side_lines(side);
-            for t in text.iter().skip(self.cursor[side]) {
-                events[side].push(s.fold_text(t)?);
-            }
-        }
-        engine.clear_chunks();
-        Ok(Arc::new(Self::new(Some(Arc::clone(self)), Some(engine), streams, events, [0, 0])))
+        let events = Self::fold_text(&sess, &mut streams, [0, 0])?;
+        Ok(Arc::new(Self::new(Some(Arc::clone(self)), Origin::Step, Some(sess.into_engine()), streams, events, [0, 0])))
     }
 
     /// Keep only `side`'s stream (a search reads one side; the other's fold is dead weight).
@@ -229,27 +251,41 @@ impl BattleVersion {
         self
     }
 
-    /// STEP — LINEAR: consume this version (its engine is moved, not cloned) and keep no parent
-    /// and the engine's full chunk history. A replay that never revisits a boundary (the parity
-    /// harness's recorded battles) pays no engine copy per decision.
-    pub fn advance_with(mut self, drive: impl FnOnce(&mut BridgeSession) -> R<()>) -> R<BattleVersion> {
-        let mut engine = self.engine.take().ok_or("a parse-built version has no engine to step")?;
-        drive(&mut engine)?;
-        let streams = [self.streams[0].take(), self.streams[1].take()];
-        Self::transition(None, engine, streams, self.cursor, false)
+    /// The ROOT of a LINEAR chain OBSERVING `sess` (a core session the caller drives and keeps —
+    /// its full transport history is the caller's). Every line shipped so far is folded TYPED.
+    pub fn observe_root(sess: &BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2])
+        -> R<BattleVersion> {
+        let mut streams = Self::fresh_streams(names, teams, want)?;
+        let events = Self::fold_typed(sess, &mut streams, [0, 0])?;
+        let cursor = [sess.side_line_count(0), sess.side_line_count(1)];
+        Ok(Self::new(None, Origin::Observed, None, streams, events, cursor))
+    }
+
+    /// LINEAR step: consume this version and fold what `sess` (the session it observes, which the
+    /// caller has driven since) shipped past its cursor. Keeps no parent and copies no engine — a
+    /// replay that never revisits a boundary (the parity harness's recorded battles) pays nothing
+    /// per decision but the fold.
+    pub fn observe(mut self, sess: &BridgeSession) -> R<BattleVersion> {
+        if self.origin != Origin::Observed {
+            return Err("observe is for a version built by observe_root".into());
+        }
+        let mut streams = [self.streams[0].take(), self.streams[1].take()];
+        let events = Self::fold_typed(sess, &mut streams, self.cursor)?;
+        let cursor = [sess.side_line_count(0), sess.side_line_count(1)];
+        Ok(Self::new(None, Origin::Observed, None, streams, events, cursor))
     }
 
     /// The ROOT of a parse-built chain: ONE side's stream and nothing else.
     pub fn parse_root(viewer: usize, username: &str, packed_team: Option<&str>) -> R<BattleVersion> {
         let mut streams = [None, None];
         streams[viewer] = Some(SideStream::new(viewer, username, packed_team)?);
-        Ok(Self::new(None, None, streams, [Vec::new(), Vec::new()], [0, 0]))
+        Ok(Self::new(None, Origin::Parse, None, streams, [Vec::new(), Vec::new()], [0, 0]))
     }
 
     fn only_side(&self) -> R<usize> {
-        match (&self.streams[0], &self.streams[1], &self.engine) {
-            (Some(_), None, None) => Ok(0),
-            (None, Some(_), None) => Ok(1),
+        match (self.origin, &self.streams[0], &self.streams[1]) {
+            (Origin::Parse, Some(_), None) => Ok(0),
+            (Origin::Parse, None, Some(_)) => Ok(1),
             _ => Err("parse_step is for a parse-built (one-side, engine-less) version".into()),
         }
     }
@@ -263,7 +299,7 @@ impl BattleVersion {
         streams[side] = Some(s);
         let mut ev = [Vec::new(), Vec::new()];
         ev[side] = events;
-        Ok(Arc::new(Self::new(Some(Arc::clone(self)), None, streams, ev, [0, 0])))
+        Ok(Arc::new(Self::new(Some(Arc::clone(self)), Origin::Parse, None, streams, ev, [0, 0])))
     }
 
     /// PARSE — linear (consumes this version, keeps no parent).
@@ -275,7 +311,7 @@ impl BattleVersion {
         streams[side] = Some(s);
         let mut ev = [Vec::new(), Vec::new()];
         ev[side] = events;
-        Ok(Self::new(None, None, streams, ev, [0, 0]))
+        Ok(Self::new(None, Origin::Parse, None, streams, ev, [0, 0]))
     }
 
     // ---------------------------------------------------------------- reads
@@ -283,12 +319,15 @@ impl BattleVersion {
     pub fn parent(&self) -> Option<&Arc<BattleVersion>> {
         self.parent.as_ref()
     }
-    /// The referee (step-built versions only). A VIEW never reads it.
-    pub fn engine(&self) -> Option<&BridgeSession> {
+    pub fn origin(&self) -> Origin {
+        self.origin
+    }
+    /// The referee (a [`Origin::Step`] version only). A VIEW never reads it.
+    pub fn engine(&self) -> Option<&Engine> {
         self.engine.as_ref()
     }
-    /// Consume the version, keeping only its engine (a replay's final session).
-    pub fn into_engine(self) -> Option<BridgeSession> {
+    /// Consume the version, keeping only its engine.
+    pub fn into_engine(self) -> Option<Engine> {
         self.engine
     }
     pub fn stream(&self, side: usize) -> Option<&SideStream> {
@@ -311,9 +350,17 @@ impl BattleVersion {
     pub fn legal(&self, side: usize) -> Option<LegalActions> {
         legal_actions(&self.streams[side].as_ref()?.board_reading)
     }
-    /// The TRUTH AUDIT of `side`'s view against the engine board.
+    /// The TRUTH AUDIT of `side`'s view against this version's own engine board.
     pub fn audit(&self, side: usize, dex: &Dex) -> R<Audit> {
-        let board = self.engine.as_ref().and_then(|e| e.battle_state()).ok_or("a parse-built version has no board")?;
+        let board = self.engine.as_ref().and_then(|e| e.battle_state()).ok_or("this version holds no board (audit_on)")?;
+        self.audit_on(side, board, dex)
+    }
+    /// The TRUTH AUDIT of `side`'s view against `board` — the observed session's, for an
+    /// [`Origin::Observed`] version.
+    pub fn audit_on(&self, side: usize, board: &BattleState, dex: &Dex) -> R<Audit> {
+        if self.origin == Origin::Parse {
+            return Err("a parse-built version has no board".into());
+        }
         let view = self.view(side)?;
         // Whether the side's CURRENT request carries an `active` block — the one that re-syncs the
         // active mon's PP (fork R3); every other own mon's PP is V15's sighting count.

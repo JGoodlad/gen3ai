@@ -175,8 +175,9 @@ fn requests_since(sess: &BridgeSession, from: usize) -> [usize; 2] {
 }
 
 
-fn capture(v: &BattleVersion, dex: &Dex, seen: &mut usize, caps: &mut Vec<ViewCap>) -> Result<(), String> {
-    let sess = v.engine().ok_or("a step-built version without an engine")?;
+fn capture(v: &BattleVersion, sess: &BridgeSession, dex: &Dex, seen: &mut usize, caps: &mut Vec<ViewCap>)
+    -> Result<(), String> {
+    let board = sess.battle_state().ok_or("no battle state")?;
     let total = sess.chunks().chunks.len();
     let n = requests_since(sess, *seen);
     *seen = total;
@@ -186,7 +187,7 @@ fn capture(v: &BattleVersion, dex: &Dex, seen: &mut usize, caps: &mut Vec<ViewCa
     let side_json = |s: usize| -> Result<(String, String, String), String> {
         let core = v.view(s)?.json();
         let legal = v.legal(s).map_or("null".to_string(), |l| l.json());
-        let audit = v.audit(s, dex)?.json();
+        let audit = v.audit_on(s, board, dex)?.json();
         Ok((core, legal, audit))
     };
     let (c0, l0, a0) = side_json(0)?;
@@ -208,8 +209,7 @@ type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>);
 /// The M2 gate at ONE transition: each side's parse-built version, fed the same new TEXT the
 /// step-built one folded typed, must agree with it on the whole reading board, the transition's
 /// events and the view (`version::parse_matches_step`).
-fn parse_gate(v: &BattleVersion, parsed: &mut [Option<BattleVersion>; 2]) -> Result<(), String> {
-    let sess = v.engine().ok_or("no engine")?;
+fn parse_gate(v: &BattleVersion, sess: &BridgeSession, parsed: &mut [Option<BattleVersion>; 2]) -> Result<(), String> {
     for side in 0..2 {
         let p = parsed[side].take().ok_or("parse chain lost")?;
         let from = p.stream(side).map_or(0, |s| s.lines);
@@ -232,41 +232,37 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         // (`gen3_view_fold_opt_in_v1` — off unless a reader asks).
         sess.enable_view_fold()?;
     }
-    // The battle is replayed as a CHAIN OF VERSIONS (`gen3_core_version_v1`): each command
-    // advances the engine and folds each side's new lines, typed at the source, into its stream;
-    // a one-side, engine-less parse chain is fed the same text and must agree at every step.
+    // The battle is replayed as a CHAIN OF VERSIONS (`gen3_core_version_v1`) OBSERVING the one
+    // session this replay drives: each command advances the session and the chain folds each
+    // side's new lines, typed at the source, into its stream; a one-side, engine-less parse chain
+    // is fed the same text and must agree at every step.
     let names = [b.opts.p1.name.as_str(), b.opts.p2.name.as_str()];
     let teams = [Some(b.opts.p1.team.0.as_str()), Some(b.opts.p2.team.0.as_str())];
-    let mut v = BattleVersion::root(sess, names, teams, false, [true, true]).map_err(|e| format!("version root: {e}"))?;
+    let mut v = BattleVersion::observe_root(&sess, names, teams, [true, true]).map_err(|e| format!("version root: {e}"))?;
     let mut parsed = [
         Some(BattleVersion::parse_root(0, names[0], teams[0])?),
         Some(BattleVersion::parse_root(1, names[1], teams[1])?),
     ];
-    parse_gate(&v, &mut parsed)?;
+    parse_gate(&v, &sess, &mut parsed)?;
     let mut caps: Vec<ViewCap> = Vec::new();
     let mut seen = 0usize;
     if views {
-        capture(&v, dex, &mut seen, &mut caps)?;
+        capture(&v, &sess, dex, &mut seen, &mut caps)?;
     }
     for c in &b.cmds {
-        let e = v.engine().ok_or("no engine")?;
-        if e.is_ended() {
+        if sess.is_ended() {
             break;
         }
-        let skip = matches!(c, Script::ChooseIfOpen(cmd) if e.is_choice_done(cmd.side));
+        let skip = matches!(c, Script::ChooseIfOpen(cmd) if sess.is_choice_done(cmd.side));
         if skip {
             continue;
         }
-        v = v
-            .advance_with(|e| {
-                match c {
-                    Script::Choose(cmd) | Script::ChooseIfOpen(cmd) => e.feed_cmd(cmd.clone(), dex),
-                    Script::ForceLose(s) => e.forfeit(*s),
-                }
-                Ok(())
-            })
-            .map_err(|e| format!("version step: {e}"))?;
-        if let Some(f) = v.engine().and_then(|e| e.fatal()) {
+        match c {
+            Script::Choose(cmd) | Script::ChooseIfOpen(cmd) => sess.feed_cmd(cmd.clone(), dex),
+            Script::ForceLose(s) => sess.forfeit(*s),
+        }
+        v = v.observe(&sess).map_err(|e| format!("version step: {e}"))?;
+        if let Some(f) = sess.fatal() {
             // A capture golden's blind per-decision script can re-send a rejected choice until
             // the bridge's no-progress cap fails loud (the capture ran into a stall loop): the
             // battle is TRUNCATED there, and everything emitted so far is still checked. A LIVE
@@ -276,12 +272,11 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
             }
             return Err(format!("bridge fatal: {f}"));
         }
-        parse_gate(&v, &mut parsed)?;
+        parse_gate(&v, &sess, &mut parsed)?;
         if views {
-            capture(&v, dex, &mut seen, &mut caps)?;
+            capture(&v, &sess, dex, &mut seen, &mut caps)?;
         }
     }
-    let sess = v.into_engine().ok_or("no engine")?;
     let bs = sess.battle_state().ok_or("no battle state")?;
     let recs = sess.source_recs().ok_or("no source records")?;
     let log = bs.log.lines();

@@ -128,10 +128,12 @@ enum CorePath {
 }
 
 impl Node {
-    fn engine(&self) -> &BridgeSession {
+    /// The paused session of a `protocol` / `view` node. A core node holds a VERSION, whose engine
+    /// is forked through [`BattleVersion::fork_session`] instead.
+    fn engine(&self) -> Result<&BridgeSession, String> {
         match &self.state {
-            NodeState::Plain(s) => s,
-            NodeState::Core(v, _) => v.engine().expect("a step-built version always has an engine"),
+            NodeState::Plain(s) => Ok(s),
+            NodeState::Core(..) => Err("a core node is expanded on the core road (expand_arm_core)".into()),
         }
     }
 }
@@ -551,7 +553,7 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
             let n = [names[0].as_str(), names[1].as_str()];
             let t = [Some(teams[0].as_str()), Some(teams[1].as_str())];
             let v = match path {
-                CorePath::Typed => BattleVersion::root(sess, n, t, true, want)?,
+                CorePath::Typed => BattleVersion::root(sess, n, t, want)?,
                 CorePath::Text => BattleVersion::root_text(sess, n, t, want)?,
             };
             NodeState::Core(Arc::new(v), path)
@@ -677,7 +679,7 @@ fn expand_arm(
             .ok_or_else(|| format!("unknown node {node_id}"))?;
         // Clone the parent and drop its chunk history: what the branch emits from here
         // IS this ply's suffix (the port's answer to Node's `sendUpdates()` + baseline).
-        let mut sess = node.engine().snapshot();
+        let mut sess = node.engine()?.snapshot();
         sess.clear_chunks();
         let resolved: Resolved = if recorded_exact {
             // Reproduce the realized turn EXACTLY (the value_crn anchor). Only the root
@@ -809,7 +811,7 @@ fn expand_arm_core(
         Some(NodeState::Core(v, p)) => (Arc::clone(v), *p),
         _ => return Err(format!("unknown core node {node_id}")),
     };
-    let mut sess = parent.engine().ok_or("core node without an engine")?.snapshot();
+    let mut sess = parent.fork_session()?;
     if seed != "original" {
         sess.reseed(&seed);
     }
@@ -916,7 +918,11 @@ fn expand_arm_core(
         SideWant::Only(s) => leaves[s].as_ref().map(|(v, _)| Arc::clone(v)).expect("wanted"),
         SideWant::Both => end,
     };
-    let requests = if ended { "null".to_string() } else { requests_json(node.engine().expect("step-built")) };
+    let requests = if ended {
+        "null".to_string()
+    } else {
+        requests_json_engine(node.engine().ok_or("a core node without an engine")?, dex)
+    };
     let child_id = if ended {
         None
     } else {
@@ -955,6 +961,18 @@ fn requests_json(sess: &BridgeSession) -> String {
     let one = |side: usize| -> String {
         match sess.active_request_json(side) {
             Some(line) => line.strip_prefix("|request|").unwrap_or(line).to_string(),
+            None => "null".to_string(),
+        }
+    };
+    format!("{{\"p1\":{},\"p2\":{}}}", one(0), one(1))
+}
+
+/// [`requests_json`] for a core node: the engine's TYPED requests rendered against its paused
+/// board — the bytes the wire carried (`tests/engine_split_test.rs` pins the identity).
+fn requests_json_engine(engine: &pokesim::engine::Engine, dex: &Dex) -> String {
+    let one = |side: usize| -> String {
+        match engine.request_json(side, dex) {
+            Some(line) => line.strip_prefix("|request|").unwrap_or(&line).to_string(),
             None => "null".to_string(),
         }
     };

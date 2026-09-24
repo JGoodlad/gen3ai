@@ -10,10 +10,10 @@ M6); SEARCH adopts it (`materializer=core`, §4 below).
 
 | | |
 |---|---|
-| **Version** | `src/rust_sim/src/version.rs` — `BattleVersion`, `SideStream`, `parse_matches_step`, `streams_equal` |
+| **Version** | `src/rust_sim/src/version.rs` — `BattleVersion`, `SideStream`, `Origin`, `parse_matches_step`, `streams_equal`; its engine is `src/rust_sim/src/engine.rs` |
 | **Reading** | `src/rust_sim/src/present/` — `BoardReading` (poke-env's `Battle` + `Pokemon` for one side), `present()`, `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` (GENERATED from poke-env) |
 | **Python transport** | `src/agents/battle/core_view.py` (a `LiveView` / `LegalActions` from the core's JSON — no rule applied), `src/agents/training/core_successor.py` (the search successor) |
-| **Gates** | `cargo test` (`present::tests` one pin per rule, `tests/version_test.rs`, `tests/view_fold_opt_in_test.rs`); `src/agents/battle/rust_core_present_test.py` (`sim`: every rule against poke-env ITSELF); slice V (`rust_core_parity_views.py`, COMMIT + MILESTONE); the three search gates with `core` as a road (§5) |
+| **Gates** | `cargo test` (`present::tests` one pin per rule, `tests/version_test.rs`, `tests/engine_split_test.rs`, `tests/view_fold_opt_in_test.rs`); `src/agents/battle/rust_core_present_test.py` (`sim`: every rule against poke-env ITSELF); slice V (`rust_core_parity_views.py`, COMMIT + MILESTONE); the three search gates with `core` as a road (§5) |
 
 ---
 
@@ -35,23 +35,37 @@ The omniscient board is used in exactly two places, both outside the view:
 
 A battle is a chain of immutable versions, one per decision boundary: `parent: Option<Arc<…>>`
 (history; a fork is an `Arc` clone), per side a `SideStream` (the `BoardReading` + M1's event `Reader`),
-the transition's per-side `CoreEvent`s, a memoized per-side view (`OnceLock`), and the ENGINE (a
-`BridgeSession`, the referee and the stepper; absent on a parse-built version).
+the transition's per-side `CoreEvent`s, a memoized per-side view (`OnceLock`), its `Origin`, and — on
+a step-built version only — the ENGINE (`engine::Engine`, the referee and the stepper).
 
-| constructor | what |
-|---|---|
-| `root(engine, names, teams, compact, want)` | the step-path root; `want` names the sides that carry a stream (a search reads one), `compact` drops the engine's chunk history once folded |
-| `step(cmds)` / `step_with(f)` / `child(engine)` | a FORK: the engine cloned, stepped, its new lines folded TYPED; the child is compacted |
-| `advance_with(f)` | a LINEAR replay step (keeps the history, for the parse gate) |
-| `root_text` / `child_text` | the same, folding the TEXT (render → `Line::parse`) — the integrity twin |
-| `parse_root` / `parse_step` / `parse_advance` | ONE side's text, no engine — what a real server sends |
+**The engine is not the transport** (`gen3_core_engine_split_v1`, the pre-M3 hand-off). A
+`BridgeSession` is an `Engine` (the `Battle`, the `FullBattleDriver` turn loop, the open boundary, the
+requests as TYPED values — `engine::Request`) wrapped in a TRANSPORT (the per-side chunks with their
+reframe + HP-privacy fold, the `|request|` JSON as shipped, the command queue, the committed `script`
+and the seed anchors). The engine advances over a caller-owned command queue and reports every
+emission to an `EngineSink`; the transport is that sink for `sim_bridge` (byte-identical — the
+41-battle transcript gate). A version owns the ENGINE only: a fork clones it and wraps the clone in a
+FRESH transport (`BridgeSession::resume` — no chunks, no script, no seed anchors; the outstanding
+requests' issued bytes SHARED with the engine, which rendered each once at issue) for as long as it is being driven.
+
+| constructor | origin | what |
+|---|---|---|
+| `root(sess, names, teams, want)` | `Step` | a fork tree's root: every line `sess` shipped is folded TYPED, then the transport is dropped; `want` names the sides that carry a stream (a search reads one) |
+| `fork_session()` / `step(cmds, dex)` / `step_with(f)` / `child(sess)` | `Step` | a FORK: an engine clone in a fresh transport, driven, its lines folded TYPED; the child keeps the engine |
+| `root_text` / `child_text` | `Step` | the same, folding the TEXT (render → `Line::parse`) — the integrity twin |
+| `observe_root(&sess, …)` / `observe(&sess)` | `Observed` | a LINEAR replay OBSERVING a session the caller drives (the parity harness): no engine, no copy; the caller's session is the referee (`audit_on(side, board, dex)`) |
+| `parse_root` / `parse_step` / `parse_advance` | `Parse` | ONE side's text, no engine — what a real server sends |
 
 **The gate** — `parse_matches_step(step_built, parse_built, side)`: the whole board reading (the
 `BoardReading`), the transition's events and the view equal, version by version. `core_events` runs it at
 every step of every corpus battle (both sides), and `tests/version_test.rs` pins the properties one
-battle can show: the chain equals its parse twin; a fork leaves its parent untouched; a compacted
-fork chain equals the linear replay; typed == text (`streams_equal`, with teeth); the audit passes
-the truth and catches a tampered view; a parse-built version refuses to step or audit.
+battle can show: the chain equals its parse twin; a fork leaves its parent untouched; a fork chain
+equals the observed linear replay; a fork's transport carries the engine and NO wire history, its
+requests rendered to the parent wire's bytes; typed == text (`streams_equal`, with teeth); the audit
+passes the truth and catches a tampered view; a parse-built version refuses to step or audit.
+`tests/engine_split_test.rs` pins the split itself on the trapping golden and a disabled-move reject:
+at every boundary the typed request renders the shipped bytes, and a resumed engine clone emits the
+same chunks and commits as the full session it was cloned from.
 
 ## 3. `present()` — the TRUE reading; poke-env's mistakes are FINDINGS, never rules
 

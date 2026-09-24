@@ -23,10 +23,19 @@ fn cmd(side: usize, tok: &str) -> Cmd {
     Cmd { side, choice: parse_choice(tok).expect("choice") }
 }
 
-fn root(dex: &Dex, compact: bool) -> BattleVersion {
+fn session(dex: &Dex) -> BridgeSession {
     let opts = bridge_opts("gen3ou", "7,11,13,17".to_string(), P1, P2);
-    let sess = BridgeSession::new_construct_turn0_core(&opts, dex).expect("session");
-    BattleVersion::root(sess, ["P1", "P2"], [Some(P1), Some(P2)], compact, [true, true]).expect("root")
+    BridgeSession::new_construct_turn0_core(&opts, dex).expect("session")
+}
+
+/// A FORK root: the version owns the engine, the transport is dropped.
+fn root(dex: &Dex) -> BattleVersion {
+    BattleVersion::root(session(dex), ["P1", "P2"], [Some(P1), Some(P2)], [true, true]).expect("root")
+}
+
+/// A LINEAR chain's root: the version OBSERVES a session the test drives.
+fn observed(sess: &BridgeSession) -> BattleVersion {
+    BattleVersion::observe_root(sess, ["P1", "P2"], [Some(P1), Some(P2)], [true, true]).expect("root")
 }
 
 /// A fixed script that exercises a switch, damage both ways, status and a stat boost.
@@ -44,7 +53,8 @@ fn script() -> Vec<Vec<Cmd>> {
 #[test]
 fn a_step_built_chain_equals_its_parse_built_twin_version_by_version() {
     let dex = Dex::for_gen(3);
-    let mut v = root(&dex, false);
+    let mut sess = session(&dex);
+    let mut v = observed(&sess);
     let mut parsed = [
         Some(BattleVersion::parse_root(0, "P1", Some(P1)).unwrap()),
         Some(BattleVersion::parse_root(1, "P2", Some(P2)).unwrap()),
@@ -52,19 +62,16 @@ fn a_step_built_chain_equals_its_parse_built_twin_version_by_version() {
     let mut compared = 0;
     for (i, cmds) in std::iter::once(Vec::new()).chain(script()).enumerate() {
         if i > 0 {
-            if v.engine().unwrap().is_ended() {
+            if sess.is_ended() {
                 break;
             }
-            v = v.advance_with(|e| {
-                e.feed_cmds(&cmds, &dex);
-                Ok(())
-            })
-            .unwrap();
+            sess.feed_cmds(&cmds, &dex);
+            v = v.observe(&sess).unwrap();
         }
         for side in 0..2 {
             let p = parsed[side].take().unwrap();
             let from = p.stream(side).unwrap().lines;
-            let text = v.engine().unwrap().side_lines(side);
+            let text = sess.side_lines(side);
             let next = p.parse_advance(&text[from..]).unwrap();
             parse_matches_step(&v, &next, side).unwrap_or_else(|e| panic!("step {i} p{}: {e}", side + 1));
             parsed[side] = Some(next);
@@ -80,7 +87,7 @@ fn a_step_built_chain_equals_its_parse_built_twin_version_by_version() {
 #[test]
 fn a_fork_leaves_its_parent_untouched_and_shares_its_past() {
     let dex = Dex::for_gen(3);
-    let r = Arc::new(root(&dex, true));
+    let r = Arc::new(root(&dex));
     let before = r.view(0).unwrap().json();
     let a = r.step(&[cmd(0, "move 1"), cmd(1, "move 1")], &dex).unwrap();
     let b = r.step(&[cmd(0, "move 2"), cmd(1, "move 1")], &dex).unwrap();
@@ -91,37 +98,60 @@ fn a_fork_leaves_its_parent_untouched_and_shares_its_past() {
 }
 
 #[test]
-fn a_compacted_fork_chain_equals_the_linear_replay() {
+fn a_fork_chain_equals_the_linear_replay() {
     let dex = Dex::for_gen(3);
-    let mut lin = root(&dex, false);
-    let mut fork = Arc::new(root(&dex, true));
-    assert_eq!(fork.engine().unwrap().side_line_count(0), 0, "a compacted version keeps no chunk history");
+    let mut sess = session(&dex);
+    let mut lin = observed(&sess);
+    let mut fork = Arc::new(root(&dex));
+    assert!(lin.engine().is_none(), "an observed version holds no engine — the caller's session is the referee");
+    let mut compared = 0;
     for cmds in script() {
-        if lin.engine().unwrap().is_ended() {
+        if sess.is_ended() {
             break;
         }
-        lin = lin
-            .advance_with(|e| {
-                e.feed_cmds(&cmds, &dex);
-                Ok(())
-            })
-            .unwrap();
+        sess.feed_cmds(&cmds, &dex);
+        lin = lin.observe(&sess).unwrap();
         fork = fork.step(&cmds, &dex).unwrap();
-        assert_eq!(fork.engine().unwrap().side_line_count(1), 0);
         for side in 0..2 {
             assert_eq!(lin.view(side).unwrap(), fork.view(side).unwrap(), "p{} view", side + 1);
             assert!(lin.stream(side).unwrap().board_reading == fork.stream(side).unwrap().board_reading);
+            compared += 1;
         }
+        let board = sess.battle_state().unwrap();
+        assert!(lin.audit_on(0, board, &dex).unwrap().divergences.is_empty());
+    }
+    assert!(compared >= 10, "only {compared} versions compared");
+}
+
+/// `gen3_core_engine_split_v1`: a fork's transport starts EMPTY at the parent's boundary — no
+/// chunk history, no script, no seed anchors — and its outstanding requests are the engine's
+/// typed values rendered to the exact bytes the parent's wire shipped.
+#[test]
+fn a_fork_session_carries_the_engine_and_no_wire_history() {
+    let dex = Dex::for_gen(3);
+    let mut sess = session(&dex);
+    for cmds in script().into_iter().take(3) {
+        sess.feed_cmds(&cmds, &dex);
+    }
+    assert!(sess.script().len() >= 3 && !sess.request_seeds().is_empty(), "non-vacuity: the wire has history");
+    let want = [sess.active_request_json(0).map(str::to_string), sess.active_request_json(1).map(str::to_string)];
+    assert!(want[0].is_some() && want[1].is_some(), "non-vacuity: a boundary is open");
+    let v = Arc::new(BattleVersion::root(sess, ["P1", "P2"], [Some(P1), Some(P2)], [true, true]).unwrap());
+    let f = v.fork_session().unwrap();
+    assert_eq!(f.side_line_count(0) + f.side_line_count(1), 0);
+    assert!(f.script().is_empty() && f.request_seeds().is_empty());
+    for side in 0..2 {
+        assert_eq!(f.active_request_json(side).map(str::to_string), want[side], "p{}", side + 1);
     }
 }
 
 #[test]
 fn the_typed_shortcut_and_the_text_path_fold_the_same_version() {
     let dex = Dex::for_gen(3);
-    let r = Arc::new(root(&dex, true));
+    let r = Arc::new(root(&dex));
     let mut n = 0;
     for cmds in script().into_iter().take(3) {
-        let mut e = r.engine().unwrap().snapshot();
+        let mut e = r.fork_session().unwrap();
         e.feed_cmds(&cmds, &dex);
         let typed = r.child(e.snapshot()).unwrap();
         let text = r.child_text(e).unwrap();
@@ -140,7 +170,7 @@ fn the_typed_shortcut_and_the_text_path_fold_the_same_version() {
 #[test]
 fn the_board_audit_passes_the_truth_and_catches_a_tampered_view() {
     let dex = Dex::for_gen(3);
-    let mut v = Arc::new(root(&dex, true));
+    let mut v = Arc::new(root(&dex));
     for cmds in script().into_iter().take(3) {
         v = v.step(&cmds, &dex).unwrap();
     }
@@ -175,7 +205,7 @@ fn the_board_audit_passes_the_truth_and_catches_a_tampered_view() {
 #[test]
 fn the_audit_names_v15_on_an_unsynced_own_mon_and_keeps_its_teeth() {
     let dex = Dex::for_gen(3);
-    let mut v = Arc::new(root(&dex, true));
+    let mut v = Arc::new(root(&dex));
     for cmds in script().into_iter().take(3) {
         v = v.step(&cmds, &dex).unwrap();
     }
