@@ -191,9 +191,18 @@ pinned-pickle tracker thaw — 16.9% of the searched decision today — becomes 
 progress clock's obs half, recency, pair history, the 32-row event window, the wish and sleep folds,
 the α/β label and the win-indicator reward, folded on the version from one side's stream and shared
 by a fork (`Arc`, copied on the fork's own decision). Slice T green at COMMIT (0 divergences, 1,838
-decisions) — MILESTONE, the native record's fixtures, the fold-equivalence re-point and the fork-cost
-measurement are recorded in [`research_state/measurements/rust_core_m3_2026-09-24/`](../research_state/measurements/rust_core_m3_2026-09-24/README.md)
-as they land.
+decisions) and MILESTONE (5/5 pass, E + V + T, at `493db48f`) and on fresh battles (the
+fold-equivalence fuzz re-pointed at the core, `rust_core_trackers_fuzz_test.py`: 176 battles, 39,110
+decisions, 0 on E, V and T). The
+NATIVE window record (`gen3_core_window_record_v1`: ordered actions + attributed effects, ACTION
+DENIAL incl. the gen-3 TURN CUT — any faint cancels every remaining queued action, so a faster
+self-KO denies the survivor — and the opponent's denied choice unrepresentable by type, checked at
+the slice level too) is gated by 24 constructed fixtures.
+**The tracker fork:** the Rust fold per successor is 0.089 ms, 1.8 % of a wide searched decision
+[0.7, 2.4] — 0.17× [0.07, 0.30] the pinned-pickle thaw ALONE (9.9 % [9.3, 10.3]); search still
+thaws until M4's encoder reads the version's trackers (`SearchConfig.core_trackers` stays OFF).
+**The loss catalogue** (what the frozen `TurnDelta`, the α/β label and the 22-column event window
+flatten, per 1,000 MILESTONE decisions) and the label / clock GIGO findings it surfaced: [`research_state/measurements/rust_core_m3_2026-09-24/`](../research_state/measurements/rust_core_m3_2026-09-24/README.md).
 
 **Gate.** Slice T: the tracker state (every tracker above, every event-window row), the α/β
 opponent-intent LABEL per decision, and the REWARD (the win indicator) equal per decision, both
@@ -212,8 +221,9 @@ Every win-prob-era run trains on `1 TERMINAL + 0 PBRS + 0 BIAS` (`terminal_indic
 `reward_bias_terms.py`, the shaped half of `reward_manager.py`) are **NOT ported**. The evidence is
 enough to not carry shaping forward, NOT enough to say shaping is no better: the flywheel pair read
 strength NOT DETECTED (+17.5 Elo to win-prob, one run per arm), and the one contrary CANDIDATE — arm S's untaught
-+8.3 pp — is confounded by a 1.44× realized dose. `TurnDelta` itself still crosses (intent labels,
-trackers and the prober read it). Any future shaping is model-derived (the held frozen-φ rung, a
++8.3 pp — is confounded by a 1.44× realized dose. `TurnDelta` does NOT cross as a structure (see
+**Gate**): its consumers do, through a projection, and the Python `TurnDelta` survives only as the
+label's oracle until the deletion pass (§4's M3 owner row). Any future shaping is model-derived (the held frozen-φ rung, a
 T2 value as the potential), never env code.
 
 **Before M3 starts (M2's hand-off, 2026-09-23):** *(1) DONE 2026-09-24 (`gen3_core_engine_split_v1`:

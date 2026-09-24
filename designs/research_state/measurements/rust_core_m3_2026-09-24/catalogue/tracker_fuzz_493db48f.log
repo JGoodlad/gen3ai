@@ -1,0 +1,27 @@
+Tracker-equivalence fuzz (core vs EpisodeTracker) — seed 1430675900 — budget 6.0 min
+  battles=8 decisions=1792 rows=53402 divergences=0 refused=0 | denied=42 refused-actions=122 bp=6 drag=62 called=0 multi-faint=12
+  battles=16 decisions=3092 rows=91249 divergences=0 refused=0 | denied=86 refused-actions=292 bp=20 drag=124 called=0 multi-faint=19
+  battles=24 decisions=4626 rows=136568 divergences=0 refused=0 | denied=105 refused-actions=482 bp=38 drag=164 called=0 multi-faint=34
+  battles=32 decisions=5673 rows=166381 divergences=0 refused=0 | denied=139 refused-actions=576 bp=58 drag=174 called=0 multi-faint=45
+  battles=40 decisions=9779 rows=294053 divergences=0 refused=0 | denied=181 refused-actions=1276 bp=60 drag=342 called=0 multi-faint=52
+  battles=48 decisions=11793 rows=354635 divergences=0 refused=0 | denied=223 refused-actions=1564 bp=82 drag=418 called=0 multi-faint=59
+  battles=56 decisions=13460 rows=404235 divergences=0 refused=0 | denied=266 refused-actions=1686 bp=108 drag=442 called=0 multi-faint=75
+  battles=64 decisions=14809 rows=443522 divergences=0 refused=0 | denied=310 refused-actions=1754 bp=110 drag=502 called=0 multi-faint=78
+  battles=72 decisions=15962 rows=476671 divergences=0 refused=0 | denied=350 refused-actions=1860 bp=140 drag=526 called=0 multi-faint=94
+  battles=80 decisions=17513 rows=522594 divergences=0 refused=0 | denied=382 refused-actions=2036 bp=166 drag=602 called=0 multi-faint=105
+  battles=88 decisions=18814 rows=560422 divergences=0 refused=0 | denied=404 refused-actions=2144 bp=178 drag=660 called=0 multi-faint=117
+  battles=96 decisions=20160 rows=599702 divergences=0 refused=0 | denied=444 refused-actions=2258 bp=186 drag=704 called=0 multi-faint=127
+  battles=104 decisions=21533 rows=639832 divergences=0 refused=0 | denied=479 refused-actions=2420 bp=198 drag=764 called=0 multi-faint=138
+  battles=112 decisions=22943 rows=681140 divergences=0 refused=0 | denied=519 refused-actions=2570 bp=208 drag=804 called=0 multi-faint=148
+  battles=120 decisions=23841 rows=706133 divergences=0 refused=0 | denied=559 refused-actions=2612 bp=212 drag=824 called=0 multi-faint=165
+  battles=128 decisions=27375 rows=815503 divergences=0 refused=0 | denied=591 refused-actions=2840 bp=218 drag=998 called=4 multi-faint=173
+  battles=136 decisions=29147 rows=868521 divergences=0 refused=0 | denied=631 refused-actions=3034 bp=230 drag=1104 called=4 multi-faint=182
+  battles=144 decisions=30856 rows=919647 divergences=0 refused=0 | denied=661 refused-actions=3112 bp=230 drag=1220 called=4 multi-faint=191
+  battles=152 decisions=32411 rows=965719 divergences=0 refused=0 | denied=711 refused-actions=3292 bp=236 drag=1322 called=4 multi-faint=198
+  battles=160 decisions=33376 rows=993008 divergences=0 refused=0 | denied=761 refused-actions=3340 bp=246 drag=1326 called=4 multi-faint=207
+  battles=168 decisions=35302 rows=1051000 divergences=0 refused=0 | denied=791 refused-actions=3658 bp=256 drag=1388 called=4 multi-faint=215
+  battles=176 decisions=39110 rows=1168975 divergences=0 refused=0 | denied=827 refused-actions=4900 bp=276 drag=1490 called=4 multi-faint=230
+✅ 0 divergences — 176 battles, 352 viewers, 503065 per-side lines, 262000 events compared, emission self-check omniscient=229759 per_viewer=460396 split=0 frame=45222
+✅ slice V: 0 divergences — 176 battles, 352 viewers, 39110 decisions, 22740938 field comparisons, truth checks {'opp.ability': 148518, 'opp.types': 114367, 'ours.volatiles': 37535, 'opp.volatiles': 38914, 'opp.item': 149271, 'opp.move-in-moveset': 479112, 'opp.consumed-item-not-held': 3474}, core board checks {'BOARD': 7267482}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 176 battles, 352 viewers, 39110 decisions, 1168975 event-window rows, labels {2: 7854, 1: 11510, 0: 19746}, 39110 rewards (352 terminal)
+coverage: {"action:cant": 4904, "action:denied": 827, "action:drag": 1490, "action:framing": 5230, "action:move": 43994, "action:refused": 160, "action:residual": 34290, "action:switch": 28201, "called_move": 4, "denied": 827, "entry:batonpass": 276, "entry:replacement": 3140, "faint_cause:destinybond": 4, "faint_cause:direct": 2104, "faint_cause:leechseed": 10, "faint_cause:perishsong": 14, "faint_cause:recoil": 14, "faint_cause:selfko": 429, "faint_cause:spikes": 205, "faint_cause:status": 140, "faint_cause:weather": 228, "multi_faint_window": 230, "pursuit_on_switch": 68, "refused": 4900}

@@ -1,0 +1,20 @@
+== b1: 8 pairs, 10 arms over 10 decisions (1.0 arms/decision), load1 29.9-43.3
+  decision wall (core road)                 71.85 ms [64.21, 83.83]
+  BEFORE  python thaw / arm                  0.6165 ms [0.5563, 1.362]
+  BEFORE  thaw + python trackers / arm       3.876 ms [3.067, 4.532]
+  BEFORE  share of the searched decision     4.458 % [3.947, 6.371]   (the python-trackers phase includes the ROOT prefix replay's own record/advance calls)
+  BEFORE  THAW-ONLY share (per-successor)    0.7836 % [0.6645, 1.771]
+  AFTER   rust tracker fold / arm            0.0655 ms [0.0469, 0.076]
+  AFTER   share of the searched decision     0.08008 % [0.06906, 0.09882]
+  AFTER / BEFORE per arm                     0.01865 [0.0103, 0.02166]
+  AFTER / THAW-ONLY per arm                  0.1025 [0.0558, 0.1302]
+== wide: 8 pairs, 684 arms over 10 decisions (68.4 arms/decision), load1 25.8-40.5
+  decision wall (core road)                 321.4 ms [260.7, 449.9]
+  BEFORE  python thaw / arm                  0.4616 ms [0.4009, 0.6196]
+  BEFORE  thaw + python trackers / arm       0.6883 ms [0.584, 0.8211]
+  BEFORE  share of the searched decision     13.61 % [13.1, 14.35]   (the python-trackers phase includes the ROOT prefix replay's own record/advance calls)
+  BEFORE  THAW-ONLY share (per-successor)    9.868 % [9.281, 10.34]
+  AFTER   rust tracker fold / arm            0.08856 ms [0.02748, 0.1254]
+  AFTER   share of the searched decision     1.81 % [0.6586, 2.391]
+  AFTER / BEFORE per arm                     0.1301 [0.04854, 0.1774]
+  AFTER / THAW-ONLY per arm                  0.174 [0.06953, 0.3016]
