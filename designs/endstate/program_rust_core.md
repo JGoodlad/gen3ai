@@ -348,6 +348,21 @@ of low discrimination between states). The interface decisions that keep a leaf 
 
 ## 6a. Worlds: building a board for search from ONE side's view, and the ORACLE that grades it (added 2026-09-23, owner)
 
+> **DEFERRED (owner, 2026-09-23): "kick search determinization down the road."** Nothing in this
+> section is scheduled: no world sampler, no construct entry point, no oracle battery. It is recorded
+> so the core leaves room for it. M2's search work is unaffected: search INTEGRITY (strict mode,
+> `parse(emit(step)) == step`) and the shortcut-vs-text measurement are correctness of the search we
+> have, not determinization. **The learned-sampler option, recorded for when this returns:** the
+> production model already predicts every hidden team fact as a MARGINAL (`BeliefHead` species,
+> `MoveBelief`, `HPTypeBelief`, `ItemBelief`, `SpreadBelief`; ARCHITECTURE.md §2, §7), supervised by
+> the true opponent team. A determinizer would add (i) a JOINT, slot-by-slot sampler using those
+> heads as the proposal, filtered for consistency as in step 2; (ii) the non-team hidden state
+> (counters, exact HP given a spread, PP) by RULE, never learned; (iii) a fresh RNG seed per world.
+> Its known hazard: the labels come from the 719-team pool, so the heads can MEMORISE pool teams.
+> That bias is sanctioned for the policy, but it would make every search world a pool team. It must
+> be graded on held-out LADDER replays (e.g. Metamon's `hl_05_26` gen3ou set) and by the oracle
+> yardstick below, against the Smogon-prior sampler.
+
 Search needs a full board, but a side only has its view. Today's search (`search_dividend/determinize.py`)
 builds worlds by **swap-and-replay**: never-revealed opponent slots are replaced with pool-consistent
 donors (gender-matched so the PRNG draw count holds), the battle is REPLAYED from turn 0 with the same
