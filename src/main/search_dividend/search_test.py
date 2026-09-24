@@ -45,13 +45,13 @@ class _FakeSession:
         self.raise_on_open = raise_on_open
         self.opened = []
 
-    def open_root(self, turn, record=None):
+    def open_root(self, turn, record=None, core=None, side=None):
         self.opened.append((turn, record))
         if self.raise_on_open:
             raise self.raise_on_open
         return self.root
 
-    def expand_many(self, arms, *, side=None):
+    def expand_many(self, arms, *, side=None, integrity=0):
         # `side` is accepted and ignored: this double returns nothing, so there is no payload to
         # elide. The KEYWORD has to be here — the production caller always passes it
         # (`gen3_expand_many_side_elision_v1`), and a double whose signature lags the real one
@@ -64,6 +64,9 @@ class _FakeSession:
 
 
 def _engine(arm, **kw):
+    # These doubles answer with VIEW / PROTOCOL payloads, so the engine is pinned to that road
+    # (the core road's own gates are the parity tests and `core_successor_test.py`).
+    kw.setdefault("materializer", "view")
     cfg = SearchConfig(arm=arm, budget_s=1.0, caps=WidthCaps(m_opp=3, k_worlds=2, r_dice=2), **kw)
     return SearchEngine(model=None, mappings=None, cfg=cfg, pool_packed=[])
 
@@ -431,7 +434,7 @@ class _PlySession:
         self.per_ply = list(per_ply)
         self.calls = 0
 
-    def expand_many(self, arms, *, side=None):
+    def expand_many(self, arms, *, side=None, integrity=0):
         # `side` accepted and IGNORED on purpose: this double answers both sides, which is the
         # `impl="node"` shape, and the elision is a rust-driver behaviour with its own gates
         # (`tests/search_side_elision_test.rs`, `side_elision_parity_integration_test.py`).
@@ -554,3 +557,24 @@ def test_the_chunks_a_branch_replays_always_name_the_same_plies_as_its_actions(m
         assert len(chunks) == len(actions) == ply, (
             f"ply {ply}: {len(chunks)} chunk groups for {len(actions)} actions")
     assert node.chunks == ("P1", "P2", "P3")
+
+
+def test_the_core_roads_session_kwargs_travel_only_on_the_core_road():
+    """`gen3_core_search_v1`: `open_root`'s `core` / `side` go to the driver ONLY on the core road.
+    A view / protocol engine sends the historical request — a session with the pre-M2 signature
+    must still open its roots (the routine gate caught the default flip breaking exactly that:
+    every view-road double raised a TypeError that `choose` swallowed as `root_failed`)."""
+    class _Historical:
+        def open_root(self, turn, record=None):
+            return ("root", turn, record)
+
+    class _Core:
+        kw: dict = {}
+
+        def open_root(self, turn, record=None, **kw):
+            _Core.kw = kw
+            return "core-root"
+
+    assert _engine("honest").open_root(_Historical(), 5, "rec", "p1") == ("root", 5, "rec")
+    assert _engine("honest", materializer="core").open_root(_Core(), 5, "rec", "p2") == "core-root"
+    assert _Core.kw == {"core": "typed", "side": "p2"}

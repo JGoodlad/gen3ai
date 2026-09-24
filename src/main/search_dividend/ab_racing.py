@@ -118,7 +118,7 @@ def bank_decision(engine: SearchEngine, *, record, side: str, turn: int,
         meta["opens"] += 1
         t_open = time.monotonic()
         try:
-            root = ss.open_root(turn, record=wrec)
+            root = engine.open_root(ss, turn, wrec, side)
         except Exception as e:                       # noqa: BLE001
             widths.open_s += time.monotonic() - t_open
             meta["open_failed"] += 1

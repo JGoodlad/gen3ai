@@ -722,7 +722,7 @@ class SearchEngine:
                 break
             t_open = time.monotonic()
             try:
-                root = ss.open_root(turn, record=wrec, core=self._core_open(), side=side)
+                root = self.open_root(ss, turn, wrec, side)
             except Exception as e:                   # noqa: BLE001
                 widths.open_s += time.monotonic() - t_open
                 widths.worlds_open_failed += 1
@@ -857,7 +857,7 @@ class SearchEngine:
             world_diag.append(wmeta)
             t_open = time.monotonic()
             try:
-                root = ss.open_root(turn, record=wrec, core=self._core_open(), side=side)
+                root = self.open_root(ss, turn, wrec, side)
             except Exception as e:                   # noqa: BLE001
                 widths.open_s += time.monotonic() - t_open
                 widths.worlds_open_failed += 1
@@ -1065,9 +1065,11 @@ class SearchEngine:
         # is told not to render, quote or ship the other copy. It was 43.0% of the reply bytes.
         # The requested side's payload is byte-identical either way; the other side's slot comes
         # back as a refusing sentinel rather than an empty dict.
+        # The core road's INTEGRITY count travels only on the core road, so a view / protocol
+        # caller sends exactly the historical request.
         core = self.cfg.materializer == "core"
-        expanded = self.session().expand_many(
-            payload, side=ctx.side, integrity=int(self.cfg.integrity) if core else 0)
+        core_kw = {"integrity": int(self.cfg.integrity)} if core else {}
+        expanded = self.session().expand_many(payload, side=ctx.side, **core_kw)
         widths.arms_expanded += len(expanded)
         if deep:
             widths.deep_arms_expanded += len(expanded)
@@ -1392,6 +1394,17 @@ class SearchEngine:
     def _core_open(self) -> Optional[str]:
         """The ``core`` argument of ``open_root``: the fold path on the core road, else ``None``."""
         return self.cfg.core_path if self.cfg.materializer == "core" else None
+
+    def open_root(self, ss, turn: int, record, side: str):
+        """Open a search root for ``side`` on this engine's road. The core road's ``core`` /
+        ``side`` arguments are sent ONLY on the core road (a core tree folds that side's stream);
+        every other road sends the historical request. Every root this engine expands must be
+        opened here — a core engine expanding a root opened without ``core`` would find no
+        ``core_pN`` on its arms."""
+        core = self._core_open()
+        if core is None:
+            return ss.open_root(turn, record=record)
+        return ss.open_root(turn, record=record, core=core, side=side)
 
     def _encoder(self):
         """The observation encoder the VIEW road encodes a successor with — the same

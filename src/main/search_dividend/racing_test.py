@@ -265,8 +265,9 @@ REQ = {"p2": {"active": [{"moves": [{"id": "eq", "move": "Earthquake"}]}]}}
 
 def _engine(strategy="grid", *, racing=RacingConfig(), caps=WidthCaps(m_opp=2, k_worlds=4,
                                                                      r_dice=2)):
+    # The doubles answer with VIEW payloads: the engine is pinned to that road.
     cfg = SearchConfig(arm="oracle", budget_s=100.0, caps=caps, root_strategy=strategy,
-                       racing=racing)
+                       racing=racing, materializer="view")
     return SearchEngine(model=None, mappings=None, cfg=cfg, pool_packed=[])
 
 
@@ -301,11 +302,11 @@ class _Session:
         self.root = root
         self.opened = 0
 
-    def open_root(self, turn, record=None):
+    def open_root(self, turn, record=None, core=None, side=None):
         self.opened += 1
         return self.root
 
-    def expand_many(self, arms, *, side=None):
+    def expand_many(self, arms, *, side=None, integrity=0):
         # `side` accepted and ignored — there is no payload to elide here. The KEYWORD must be
         # accepted because the production caller always sends it
         # (`gen3_expand_many_side_elision_v1`), and a double whose signature lags the real one
@@ -449,7 +450,7 @@ def test_a_dead_driver_on_the_racing_path_is_counted_not_crashed():
     eng = _engine("racing")
 
     class _Dead(_Session):
-        def open_root(self, turn, record=None):
+        def open_root(self, turn, record=None, core=None, side=None):
             raise RuntimeError("driver died")
 
     eng._session = _Dead(None)
