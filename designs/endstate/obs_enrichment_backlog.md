@@ -77,6 +77,27 @@ Batched so that existing checkpoints break once: **P0 Mud Sport / Water Sport sl
 rather than after the cutover, because it does not depend on the Rust core); **E12's** event-block
 reshape from M3's catalogue. Any other entry joins only on its own registered hypothesis (§0 rule 3).
 
+### 1c. E10's shape: correlations LEARNED from what is seen, not a catalogue (owner, 2026-09-24)
+
+The owner: *"Do we have to have a catalog? I would rather it learn correlations from what is seen."*
+So E10 (and any joint set belief) is a LEARNED MIXTURE, not a hand-supplied set catalogue:
+
+- Per opponent slot, K learned "set prototypes": mixture weights π_k(state) and per-component move,
+  item and spread logits, each `Smogon prior ⊕ learned delta` (the cold start stays the Smogon
+  marginal, and no legal move is ever zeroed, so a lure keeps its floor).
+- **Reveals are EXACT evidence:** posterior π'_k ∝ π_k · Π_revealed p_k(m). One parallel pass, no
+  sequential decoding. The policy reads the marginal Σ_k π'_k p_k(m); a sampler (search, when it
+  returns) picks a k and then a coherent set.
+- Trained on the SET-level likelihood of the true opponent set (the label we already have), which is
+  what makes it learn "these moves come together".
+- **Cost, expected small and unmeasured:** K × a marginal head per slot (for example K = 8), with no
+  serial steps. Benchmark it before adoption (model forward at B = 1 CPU and batched GPU). An
+  autoregressive decoder stays the fallback only if K prototypes provably miss real sets.
+- ⚠️ **"Learned from what is seen" means learned from the OPPONENT TEAM DISTRIBUTION.** On the 719-team
+  pool alone it learns the pool's sets: the memorization the 2026-09-24 calibration read measured.
+  This entry therefore depends on the coverage-opponent decision (ladder-like teams in the training
+  mix); tonight's belief win-rate A/B informs that decision.
+
 ## 2. Ordering (recommended, after the cutover)
 
 1. **E1**: the cheapest entry with the clearest new capability, and the owner's own tooltip shows
