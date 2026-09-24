@@ -90,13 +90,16 @@ version ended at one of the side's decisions. The trackers are opt-in (`root_wit
 ## 3. The native record — what happened, in order, with attribution
 
 **Status: BUILT, emitted per decision by `core_events --trackers` (`window`), read by nothing yet.
-Gated by 22 constructed fixtures (`tests/window_record_test.rs`), each FAILING if its mechanic is
+Gated by 24 constructed fixtures (`tests/window_record_test.rs`), each FAILING if its mechanic is
 flattened: the six denial shapes (a faster KO, Explosion first, a Double-Edge recoil trade, a flinch,
 full paralysis, a Destiny Bond trade — which is two faints and NO denial), the two gen-3 TURN CUTS
 (an Explosion self-KO and a recoil self-KO, each denying the survivor), Baton Pass, Roar into
 Spikes, a Spikes KO on entry and the free switch after it, Pursuit on a switch, Thief / Trick /
 Knock Off, Sleep Talk, the five gen-3 callers, Rapid Spin, charge and recharge, a lost Focus Punch,
-Wish / Substitute / Protect, Taunt, Perish Song — and the information boundary over all of them.**
+Wish / Substitute / Protect, Taunt, an Encore that overrides the target's same-turn choice, a Disable
+refusal (seed-searched: gen-3 Disable is a 55 % hit), Perish Song — and the information boundary over
+all of them.** `export_fixtures` (ignored) writes every fixture's inputs as JSON lines, which the M3
+loss catalogue replays through the Python trackers to read what the frozen layouts keep of each.
 
 `record::Window` = the side's decision window as an ORDERED list of `Action`s, each with its ordered
 `Effect`s (`on`, `what`, `cause`, `of`). Built from the side's typed lines (the `[from]` / `[of]` /
@@ -119,7 +122,10 @@ an item, an ability, a move), `SubstituteHit { broke }`, `Blocked` (a move stopp
 Detect — its target lost), faints with their cause (self-KO, Destiny Bond, Perish Song, or the last
 damage), status and cures, boosts, item transitions with direction (`to` on Trick / Thief / Covet),
 side conditions with their layer count, crits, misses, fails, effectiveness PER HIT (a multi-hit
-move's hits are separate effects), charge (`Prepare`) and recharge.
+move's hits are separate effects), charge (`Prepare`) and recharge. A stage change is SIGNED (`Boost
+{ stat, n }`, a drop negative) — the typed event's `amount` already carries the sign, so the record
+must not negate an `|-unboost|` again (the Python event window does exactly that; see the M3 loss
+catalogue).
 
 🚨 **The information boundary is a TYPE.** A viewer knows its OWN denied choice (it sent it —
 `BattleVersion::note_choice`) and only THAT the opponent was denied. `record::Choice` is

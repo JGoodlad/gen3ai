@@ -31,6 +31,8 @@ struct Run {
     /// Per viewer: every closed decision window, then the still-open last one.
     windows: [Vec<Arc<Window>>; 2],
     sess: BridgeSession,
+    /// The battle's INPUTS (p1 team, p2 team, seed, script) — what `export_fixtures` writes.
+    input: (String, String, String, Vec<(usize, String)>),
 }
 
 fn play(p1: &str, p2: &str, seed: &str, script: &[(usize, &str)]) -> Run {
@@ -71,7 +73,9 @@ fn play(p1: &str, p2: &str, seed: &str, script: &[(usize, &str)]) -> Run {
         let open = v.stream(s).and_then(|st| st.trk.as_ref()).map(|t| t.record.current().clone()).expect("trk");
         windows[s].push(Arc::new(open));
     }
-    Run { windows, sess }
+    let input = (p1.to_string(), p2.to_string(), seed.to_string(),
+                 script.iter().map(|(s, t)| (*s, t.to_string())).collect());
+    Run { windows, sess, input }
 }
 
 fn json(w: &Window) -> String {
@@ -126,6 +130,8 @@ fn fixtures() -> Vec<(&'static str, Run)> {
         ("perish", perish()),
         ("explosion_cuts_turn", explosion_cuts_turn()),
         ("recoil_cuts_softboiled", recoil_cuts_softboiled()),
+        ("encore_lands", encore_lands()),
+        ("disable_refuses", disable_refuses().expect("a seed in 1..60 lands the Disable")),
     ]
 }
 
@@ -242,6 +248,25 @@ fn taunt_encore_disable() -> Run {
     let p2 = team(&[set("blissey", "", "naturalcure", "toxic,softboiled", 100), set("snorlax", "", "immunity", "rest", 100)]);
     play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "move 2"), (1, "move 2"), (0, "move 3"), (1, "move 1"),
                                (1, "move 2"), (0, "move 1"), (1, "move 1")])
+}
+
+fn encore_lands() -> Run {
+    // A faster Gengar Encores the Snorlax's Curse; the Snorlax's NEXT chosen Body Slam (turn 2) is
+    // overridden into Curse — the Encore holds the choice.
+    let p1 = team(&[set("gengar", "", "levitate", "encore,splash", 100), set("snorlax", "", "immunity", "rest", 100)]);
+    let p2 = team(&[set("snorlax", "", "immunity", "curse,bodyslam", 100), set("blissey", "", "naturalcure", "softboiled", 100)]);
+    play(&p1, &p2, "1,2,3,4", &[(0, "move 2"), (1, "move 1"), (0, "move 1"), (1, "move 2")])
+}
+
+/// The Snorlax Body Slams (the Ghost is immune), a faster Gengar Disables Body Slam (a 55 % hit
+/// in gen 3 — a deterministic seed search), and the Snorlax's next chosen Body Slam is refused
+/// (`|cant|…|Disable|Body Slam`).
+fn disable_refuses() -> Option<Run> {
+    let p1 = team(&[set("gengar", "", "levitate", "disable,splash", 100), set("snorlax", "", "immunity", "rest", 100)]);
+    let p2 = team(&[set("snorlax", "", "immunity", "bodyslam,curse", 100), set("blissey", "", "naturalcure", "softboiled", 100)]);
+    (1..60).map(|k| play(&p1, &p2, &format!("{k},2,3,4"),
+                          &[(0, "move 2"), (1, "move 1"), (0, "move 1"), (1, "move 1"), (0, "move 2"), (1, "move 1")]))
+        .find(|r| actions(r, 0).iter().any(|a| matches!(&a.kind, ActionKind::Cant { reason, .. } if reason.contains("Disable"))))
 }
 
 fn protect() -> Run {
@@ -371,10 +396,9 @@ fn a_flinch_is_a_refused_action_with_the_opponents_choice_hidden() {
     assert_eq!(refused(1), ("flinch".into(), false, Choice::Own(Some("move 1".into()))));
 }
 
-#[test]
-fn full_paralysis_is_a_refused_action() {
-    // A deterministic seed search: the first seed whose battle shows the paralysed Snorlax fully
-    // paralysed (a 25 % roll) — fixed teams, scripted choices, reproducible.
+/// A deterministic seed search: the first seed whose battle shows the paralysed Snorlax fully
+/// paralysed (a 25 % roll) — fixed teams, scripted choices, reproducible.
+fn full_paralysis() -> Option<(Run, Action)> {
     let p1 = team(&[set("jolteon", "", "voltabsorb", "thunderwave,tackle", 100), set("snorlax", "", "immunity", "rest", 100)]);
     let p2 = team(&[set("snorlax", "", "immunity", "bodyslam,rest", 100), set("blissey", "", "naturalcure", "softboiled", 100)]);
     let script: Vec<(usize, &str)> = std::iter::once([(0, "move 1"), (1, "move 2")])
@@ -386,12 +410,51 @@ fn full_paralysis_is_a_refused_action() {
         let par = actions(&r, 0).into_iter().find(|a| matches!(&a.kind,
             ActionKind::Cant { reason, mon: m, .. } if reason == "par" && *m == mon("opp", "snorlax")));
         if let Some(a) = par {
-            let ActionKind::Cant { mon: m, choice, then_moved, .. } = a.kind else { unreachable!() };
-            assert_eq!((m, choice, then_moved), (mon("opp", "snorlax"), Choice::Opp, false));
-            return;
+            return Some((r, a));
         }
     }
-    panic!("no seed in 1..60 fully paralysed the Snorlax — the fixture must find its event");
+    None
+}
+
+#[test]
+fn full_paralysis_is_a_refused_action() {
+    let (_, a) = full_paralysis().expect("no seed in 1..60 fully paralysed the Snorlax — the fixture must find its event");
+    let ActionKind::Cant { mon: m, choice, then_moved, .. } = a.kind else { unreachable!() };
+    assert_eq!((m, choice, then_moved), (mon("opp", "snorlax"), Choice::Opp, false));
+}
+
+/// Writes every constructed battle's INPUTS as JSON lines to `$WINDOW_FIXTURES_OUT` — the M3
+/// loss catalogue replays them through `core_events` and the Python trackers to read what the
+/// frozen `TurnDelta`, the α/β label and the 22-column event window keep of each mechanic.
+#[test]
+#[ignore = "an export for the M3 catalogue (designs/research_state/measurements/rust_core_m3_2026-09-24/catalogue/e12_fixtures.py)"]
+fn export_fixtures() {
+    use std::io::Write;
+    let path = std::env::var("WINDOW_FIXTURES_OUT").expect("set WINDOW_FIXTURES_OUT");
+    let mut out = std::fs::File::create(&path).expect("create");
+    let mut runs = fixtures();
+    runs.push(("full_paralysis", full_paralysis().expect("paralysis seed").0));
+    for (name, r) in runs {
+        let (p1, p2, seed, script) = &r.input;
+        let mut j = String::new();
+        j.push_str("{\"name\":");
+        pokesim::core_events::json_out::str_into(&mut j, name);
+        for (k, v) in [("p1", p1), ("p2", p2), ("seed", seed)] {
+            j.push_str(&format!(",\"{k}\":"));
+            pokesim::core_events::json_out::str_into(&mut j, v);
+        }
+        j.push_str(",\"script\":[");
+        for (i, (side, tok)) in script.iter().enumerate() {
+            if i > 0 {
+                j.push(',');
+            }
+            j.push_str(&format!("[{side},"));
+            pokesim::core_events::json_out::str_into(&mut j, tok);
+            j.push(']');
+        }
+        j.push_str("]}");
+        writeln!(out, "{j}").expect("write");
+    }
 }
 
 #[test]
@@ -572,6 +635,37 @@ fn taunt_refusals_name_the_refused_move_only_because_the_line_is_public() {
         ActionKind::Cant { mon: m, reason, move_id: Some(mv), choice: Choice::Opp, .. }
             if *m == mon("opp", "blissey") && reason == "move: Taunt" && mv == "toxic")),
             "the refused move is on the PUBLIC `|cant|` line; the choice field stays Opp");
+}
+
+#[test]
+fn encore_is_recorded_on_its_target_and_the_overridden_move_is_the_one_executed() {
+    let r = encore_lands();
+    let acts = actions(&r, 0);
+    let enc = position(&acts, |a| is_move(a, "encore"));
+    assert!(acts[enc].effects.iter().any(|e| matches!(&e.what, What::VolatileStart(v) if v == "Encore")
+                                              && e.on == Some(mon("opp", "snorlax"))),
+            "the Encore volatile on its target: {:?}", acts[enc]);
+    // Curse's three stage changes, SIGNED: the Speed DROP reads -1 (an unboost is not a rise)
+    let curse = &acts[position(&acts, |a| is_move(a, "curse"))];
+    let stages: Vec<(String, i64)> = curse.effects.iter().filter_map(|e| match &e.what {
+        What::Boost { stat, n } => Some((stat.clone(), *n)),
+        _ => None,
+    }).collect();
+    assert_eq!(stages, vec![("spe".into(), -1), ("atk".into(), 1), ("def".into(), 1)]);
+    // turn 2: the Snorlax chose Body Slam; the Encore made it Curse
+    let t2: Vec<&Action> = acts.iter().filter(|a| a.turn == 2 && matches!(&a.kind, ActionKind::Move { .. })).collect();
+    assert!(t2.iter().any(|a| is_move(a, "curse")) && !t2.iter().any(|a| is_move(a, "bodyslam")), "{t2:?}");
+}
+
+#[test]
+fn a_disable_refusal_names_the_disabled_move_and_hides_the_opponents_choice() {
+    let r = disable_refuses().expect("no seed in 1..60 landed the Disable — the fixture must find its event");
+    let cant = |side: usize| actions(&r, side).into_iter().find_map(|a| match a.kind {
+        ActionKind::Cant { mon: m, reason, move_id, choice, .. } if reason.contains("Disable") => Some((m, move_id, choice)),
+        _ => None,
+    }).expect("a Disable refusal");
+    assert_eq!(cant(0), (mon("opp", "snorlax"), Some("bodyslam".into()), Choice::Opp));
+    assert_eq!(cant(1), (mon("ours", "snorlax"), Some("bodyslam".into()), Choice::Own(Some("move 1".into()))));
 }
 
 #[test]

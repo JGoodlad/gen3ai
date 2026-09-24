@@ -560,7 +560,9 @@ impl RecordBuilder {
                 K::Curestatus => What::Cure(ev::status(r).unwrap_or("").to_string()),
                 K::Boost | K::Unboost | K::Setboost => What::Boost {
                     stat: ev::stat(r).unwrap_or("").to_string(),
-                    n: ev::amount(r).unwrap_or(0.0) as i64 * if r.kind == K::Unboost { -1 } else { 1 },
+                    // the typed event's `amount` is already SIGNED (an `|-unboost|` reads negative,
+                    // `core_events::reading`) — negating it again would record every stat DROP as a rise
+                    n: ev::amount(r).unwrap_or(0.0) as i64,
                 },
                 K::Clearboost => What::ClearBoost(ev::s(r, "op").unwrap_or("").to_string()),
                 K::Item | K::Enditem => {
