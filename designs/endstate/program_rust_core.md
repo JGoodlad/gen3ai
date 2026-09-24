@@ -117,12 +117,27 @@ format, because it is where silent drift would enter AFTER the cutover:
 
 ### M2 — `BattleVersion` + `present()` + legality (Tier 1a, part 2) — search adopts
 
+**Status (2026-09-23): slice V BUILT AHEAD of M2, against today's projection** — the TRUTH AUDIT
+(`src/agents/battle/rust_core_parity_views.py`, `gen3_core_parity_views_v1`): at every decision of
+every recorded battle, both viewers, `view.rs::one_sided_view` + the engine truth against the
+`LiveView` + `LegalActions` training builds, every field classified SIM-FACT or a NAMED
+presentation rule (V1–V13, `designs/rust_sim/one_sided_view.md` §2b), no allowlist, at COMMIT and
+MILESTONE on the same played battles as slice E. **The three open read-model findings are CLOSED**
+(root causes in `one_sided_view.md` §4b), with deferral D6 and eleven more projection classes;
+MILESTONE 83,896 decisions / 23.9M field comparisons / 1.94M truth checks, 0 divergences. M2's
+`present()` replaces the producer under this slice; the comparison does not change. **It also
+found poke-env READING defects about sim facts (R1–R4 in `one_sided_view.md` §4b) whose fork fixes
+change what training reads and wait on the orchestrator**, and a MILESTONE coverage hole: keys
+5000–5199 wrap onto pool teams 686–718 and 0–166, so the two random seeds cover ~234 of the 719
+pool teams (the widened recipe rides with those fixes).
+
 **What crosses.** The persistent version (omniscient board + events + `parent`), per-side
 `OneSidedView` computed by `present(board, events, side)` whose every poke-env rule is NAMED, tested
 alone and pinned to the line it mirrors (the nine of `designs/rust_sim/one_sided_view.md` §2, the
 D6–D9 deferrals, and the THREE open read-model findings of its §4b — the own-side sleep-counter
 drift, the opponent ability disclosed by a `[from] ability:` clause, the missing `substitute` — which
-must CLOSE here because the gate has no allowlist). `legal_actions(side)` from the raw `|request|`.
+must CLOSE here because the gate has no allowlist; CLOSED 2026-09-23 on today's projection, see the
+status above). `legal_actions(side)` from the raw `|request|`.
 Each reading-vs-truth choice is a flag defaulting to the READING.
 
 **Gate.** Slice V (the whole `LiveView` graph + `LegalActions` per decision, both viewers) at

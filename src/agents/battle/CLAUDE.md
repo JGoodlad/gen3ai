@@ -199,10 +199,13 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   protocol that produced it, which is what takes the parse off a search successor's per-arm path.
   The objects are the SAME frozen dataclasses, so `strict_api_lock_test.py` is untouched.
   ⚠️ **Half of `LivePokemon` is NOT a projection of sim state** and the adapter exists to say so:
-  an opponent's move PP is a SIGHTING count (doubled against Pressure), `volatiles` is a protocol
-  fold carrying poke-env's `ends_on_turn` / countable rules, `status_counter` and `protect_counter`
-  are poke-env counters with different transitions from the engine's, and the obs SLOT order is the
-  first `|request|`'s roster (ours) / reveal order (theirs). `ViewBattle` additionally feeds the
+  an opponent's move PP is a SIGHTING count (doubled against Pressure, judged with the target's
+  ability AT USE TIME), `volatiles` is a protocol fold whose poke-env lifecycle the adapter REPLAYS
+  from each effect's announcement history (Baton Pass carries included), `status_counter` and
+  `protect_counter` are poke-env counters with different transitions from the engine's, a fainted
+  mon keeps the stages it died with, and the obs SLOT order is the first `|request|`'s roster
+  (ours) / reveal order (theirs) — every one a NAMED reading rule (V1–V13, gated by
+  `rust_core_parity_views.py`). `ViewBattle` additionally feeds the
   four sub-encoders that never took a `live_mon` (`items` / `abilities` / `types` / `moves` —
   deferral D2) from the same read-model, and carries the successor's **whole-battle event log**,
   which is what closes the last two obs deferrals (the pending-Wish pair and the sleep-wake
@@ -251,6 +254,25 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   `production_config.json`). And `battle_event.py`'s tables are GENERATED into Rust:
   `python -m agents.battle.rust_core_schema --write` (`rust_core_schema_test.py` fails when stale).
   Contract: [`designs/rust_sim/core_events.md`](../../../designs/rust_sim/core_events.md).
+- **`rust_core_parity_views.py` — slice V, the TRUTH AUDIT of the training observation path**
+  (`gen3_core_parity_views_v1`). At EVERY decision of every recorded battle, both viewers, the
+  `LiveView` + `LegalActions` training builds (a `Gen3Battle` fed through `offline_feed`, read at
+  the exact chunk `Player._handle_battle_message` dispatches the decision on —
+  `decision_points`) against the port's `one_sided_view` captured at that board
+  (`core_events --views`) AND the ENGINE truth: every field classified SIM-FACT (the projection
+  reads the engine; a divergence is a READING bug on one side) or PRESENTATION (a NAMED rule
+  V1–V13 the projection reproduces, still compared exactly), plus truth checks on every revealed
+  opposing item / ability / move / type and ten sim-state volatiles. Rides `check_battles(…,
+  views=ViewCensus())` — one harness, one core call per battle — at COMMIT (the 10 recorded
+  battles incl. two Baton Pass ones + the in-scope byte-fuzz fixtures, ~2 s) and MILESTONE
+  (`slow`, the same played battles as slice E). gen3ou only; the `gen3customgame` scenarios are
+  counted out of scope. 🚨 **This is the gate a Baton-Pass-class poke-env reading bug fails**: it is
+  the one place the other side of the comparison is the SIM, not another reader of the same
+  `Pokemon` — and it already found three live ones (`designs/rust_sim/one_sided_view.md` §4b
+  R1–R4, fixes pending the orchestrator). Teeth: a re-introduced Baton Pass drop and a misread Spikes
+  layer each FAIL a routine test. `offline_feed.new_battle(…, packed_team=)` mirrors the
+  `Player`'s `_teambuilder_team` (our own spread's only source in gen 3). Contract + the rule table:
+  [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md) §2b / §4a.
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,

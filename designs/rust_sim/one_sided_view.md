@@ -12,9 +12,10 @@ The Python sub-encoders are **unchanged**: only the `LiveView`'s constructor dif
 |---|---|
 | **Rust** | `src/rust_sim/src/view.rs` (`one_sided_view`, `SideObservation`); emitted by `src/bin/search_driver.rs` as `view_p1` / `view_p2` on `open_root` AND on every `expand_many` arm |
 | **Python** | `src/agents/battle/view_adapter.py` (`live_view_from_payload`, `legal_actions_from_payload`, `ViewBattle`); reachable as `LiveView.from_view_json` |
-| **Wall gate** | `src/rust_sim/tests/one_sided_view_test.rs` (9 tests) |
-| **Unit gate** | `src/agents/battle/view_adapter_test.py` (24 tests) |
-| **Differential gate** | `src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`) |
+| **Wall gate** | `src/rust_sim/tests/one_sided_view_test.rs` (22 tests — the wall, the D10 capture, and one pin per reading rule, §2b) |
+| **Unit gate** | `src/agents/battle/view_adapter_test.py` (33 tests, the newer ones checked against poke-env fed the same protocol) |
+| **Differential gate** | `src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`) — the SEARCH road (roots + arms) |
+| **Truth audit** | `src/agents/battle/rust_core_parity_views.py` — slice V of the Rust Core parity harness: this projection AND the engine truth against the `LiveView` training builds at EVERY decision, both viewers (§4a) |
 | **Benchmark** | `src/agents/training/view_materialize_benchmark.py` (the two ROADS on a hand-built arm set) and `src/main/search_dividend/search_decision_benchmark.py` (the real `SearchEngine` over BANKED eval traces, broken into phases) — they answer different questions, keep both |
 
 ---
@@ -49,8 +50,8 @@ in several places is wrong in a way that reads plausible:
 | field | looks like sim state | is actually |
 |---|---|---|
 | `moves` (opponent) | the mon's moveset | the moves this side has WATCHED, each at `max_pp − sightings`, where a sighting against a Pressure holder costs **two** |
-| `volatiles` | the sim's condition set | a fold over `\|-start\|`/`\|-end\|`/`\|-activate\|`/`\|-singleturn\|`/`\|-singlemove\|`, cleared on switch-out and faint, with `ends_on_turn` effects DROPPED at the next `\|turn\|` and `is_turn_countable` ones counting up |
-| `status_counter` | the sim's sleep/toxic counter | `+1` per MOVE-or-CANT while asleep, `+1` per turn while badly poisoned AND active; frozen by a faint; the toxic one (only) reset by a switch-out |
+| `volatiles` | the sim's condition set | a fold over `\|-start\|`/`\|-end\|`/`\|-activate\|`/`\|-singleturn\|`/`\|-singlemove\|`, cleared on switch-out and faint (and by a `\|request\|` `0 fnt`, which re-runs `faint()`), with `ends_on_turn` effects DROPPED at the next `\|turn\|`, `is_turn_countable` ones counting up, and a Baton Pass copying `BATON_PASS_COPIED_EFFECTS` to the entrant |
+| `status_counter` | the sim's sleep/toxic counter | `+1` per `\|move\|`-or-`\|cant\|` LINE while poke-env's OWN `_status` is asleep (a Sleep Talk turn is `+3`), `+1` per turn while badly poisoned AND active; frozen by a faint; the toxic one (only) reset by a switch-out; reset by `-curestatus` of the held status and NOT by a new status (§4b, R1) |
 | `protect_counter` | the sim's `stall` denominator (0→2→4→8) | a plain consecutive-stall-move COUNT that resets on any non-stall move — a different quantity with different transitions |
 | `revealed` | "is on the team" | set by the `\|switch\|` LINE, for BOTH sides alike |
 | team ORDER | the team sheet | our own: the FIRST `\|request\|`'s roster order (Showdown floats the active mon to index 0 on every later one, poke-env's dict does not reorder). The opponent's: REVEAL order |
@@ -67,13 +68,38 @@ Every one of these was found by the differential gate on real boards, not by rea
 
 The port therefore never needs poke-env's dex or its `Effect` enum, and a rule that is really
 poke-env behaviour stays where the library it mirrors lives. Concretely the port sends a volatile's
-announced NAME with its turn/restart counts (never an id, never a counter), a move's SIGHTING count
-keyed by target species (never a `current_pp`), and the raw `|request|` bytes (never a parsed
+announced NAME with its announcement history (never an id, never a counter), a move's SIGHTINGS
+with each target's ability-event index at use time (never a `current_pp`), the stages a fainted
+mon died with (never poke-env's stale ones), and the raw `|request|` bytes (never a parsed
 legality).
 
 🚨 **A corollary worth stating: the port must NOT send its own `protect_counter`, its own
 `status`-counter, or an opponent's true PP even though it has all three.** Each is either a
 different quantity or privileged information, and each read plausible enough to ship.
+
+### 2b. The reading rules, named
+
+Every field of the read-models is classified in `agents/battle/rust_core_parity_views.py`
+(`MON_FIELDS` / `SIDE_FIELDS` / `VIEW_FIELDS` / `LEGAL_FIELDS`) as **SIM-FACT** — the projection
+reads the ENGINE and a divergence is a reading bug on one side — or **PRESENTATION**, which names
+one of these rules (`RULES` there, with the poke-env line each mirrors). A presentation field is
+still compared EXACTLY; the rule is reproduced, never excused.
+
+| rule | the reading | where the projection applies it |
+|---|---|---|
+| V1 | an opposing mon has a row once a `\|switch\|`/`\|drag\|` showed it; own `revealed` off the same line | `SideObservation.order` / `own_seen` |
+| V2 | own slot order = the FIRST `\|request\|`'s roster; opponents' = reveal order | `own_order` / `order` |
+| V3 | an opposing move's PP = `max_pp − sightings`, a sighting costing TWO when `_pressure_on` holds AT USE TIME (the target's ability as poke-env held it then; `_get_target_mon`'s default target for a target-less line and every `all`-target move; a `[from]move:` CALL reveals the called move with no use and charges the caller only its Pressure share) | `MoveObs.sightings` + `view_adapter._move` / `_AbilityAt` |
+| V4 | the volatile fold, its lifecycle replayed from each effect's announcement history; Baton Pass carries | `VolObs.starts` / `bp_carried` + `view_adapter._volatiles` |
+| V5 | poke-env's own `status_counter`, conditioned on poke-env's own `_status` | `MonObservation::pstatus` + `fold_status` |
+| V6 | a consecutive-stall-move count; a faint keeps it, a switch-out zeroes it | `fold_status` |
+| V7 | an opposing item from `-item`/`-enditem` or a `[from] item:` clause on `-damage`/`-heal` only | `observe` |
+| V8 | the two ability slots, the single-ability inference, Trace, and the four non-`-ability` disclosures | `ability_disclosure` + `view_adapter._ability` |
+| V9 | an opponent's spread / stats / exact HP are unknown | `mon_json(own=false)` |
+| V10 | a FAINTED mon keeps the stages it died with until switched out | `MonState::faint_boosts` + `view_adapter._mon` |
+| V11 | a timed screen is stored as the TURN it started, Spikes as its layers | `SideObservation.screens` |
+| V12 | weather `turns_active` = now − the `-weather` set turn | `weather_json` |
+| V13 | the legality flags are poke-env's parse of the request | `legal_actions_from_payload` |
 
 ---
 
@@ -87,21 +113,28 @@ different quantity or privileged information, and each read plausible enough to 
 
 SIDE = {"team_size":n,"active":<species id>|null,"side_conditions":{id:n},"mons":[MON,…]}
 
-MON  = {"species","active","fainted","revealed",
+MON  = {"species",                     # the IDENTITY species — its own, even while Transformed
+        "active","fainted","revealed",
         "hp_fraction","current_hp","max_hp",
         "status","status_counter","protect_counter",
         "types":[…],"moves":[MOVE,…],
         "item","consumed_item",
-        "ability",                       # OURS only — the engine's, i.e. our own |request|'s
-        "ability_events":[{"id","trace"},…],   # THEIRS — announcements in order; id "" = left field
+        "ability",                       # OURS only — the engine's (the BASE one once fainted)
+        "base_ability",                  # OURS only — the set's (poke-env's own base slot)
+        "ability_events":[{"id","trace","if_unknown"},…],  # announcements in order, BOTH sides;
+                                         #   id "" = left the field or fainted (temp slot cleared)
         "boosts":{stat:stage},          # NONZERO stages only, as LiveView keeps them
-        "volatiles":[{"name","turns","restarts"},…],
+        "faint_boosts":{stat:stage}|null,   # the stages it DIED with (V10); null while alive
+        "volatiles":[{"name","starts":[tick,…],"now":tick,"bp_carried":n},…],
         "base_stats":{…},
         "ivs"|null,"evs"|null,"nature"|null,"spread_known",
         "stats":{…}|null}               # null == poke-env's all-None dict (an opponent's)
 
 MOVE = own:     {"id","move_id","current_pp","max_pp"}
-       watched: {"id","move_id","uses","max_pp","uses_vs":{species:n}}
+       watched: {"id","move_id","uses","max_pp","sightings":[SIGHTING,…]}
+SIGHTING = {"mv","called","t","t_own","t_k","d","d_k","n"}   # rule V3: the move (or CALLED
+         # move) whose target type decides Pressure, the named target (species, its side, its
+         # ability-event index at USE time), the default target, and the count of identical ones
 ```
 
 `id` is the poke-env **moves-dict KEY** and `move_id` is the `Move.id` it maps to; they differ for
@@ -185,34 +218,97 @@ test asserts `d10 >= 1` so a fixture whose arms stop KO-ing cannot make the gate
 
 ---
 
-## 4b. ONE OPEN FINDING — an unexplained own-side sleep-counter drift
+## 4a. The TRUTH AUDIT — slice V of the Rust Core parity harness (`gen3_core_parity_views_v1`)
 
-**Measured**: a 14-battle sweep (292 comparisons, 250 branch points) reported
-`ours.<species>.status_counter` **one HIGHER than poke-env**, 9 times, all on ONE battle and one
-mon; the other 13 battles were clean, and 14 targeted diagnostic battles did not reproduce it.
+The search-road gate above compares at three roots and their arms per battle. The truth audit
+compares at **every decision of every recorded battle, for both viewers**, on the TRAINING
+observation path: `core_events --views` replays a recorded input log through the production
+bridge session and captures BOTH `one_sided_view`s plus the ENGINE truth at the end of every write
+that shipped a `|request|`; the reference is a `Gen3Battle` fed each viewer's text through
+`offline_feed` and read at the exact chunk `Player._handle_battle_message` dispatches the decision
+on (`decision_points`). Field by field (§2b's classes), plus the TRUTH checks no projection can
+make: a revealed opposing item / ability / move / type against the OTHER viewer's engine-sourced
+`ours` row, a consumed item no longer held, and ten sim-state volatiles (`TRUTH_VOLATILES`)
+present on the reading exactly when the engine holds them. No allowlist; a decision the two sides
+cannot align is an `[ALIGN]` divergence, never a skip. Scope: gen3ou (the training obs path is
+gen3ou-only); the `gen3customgame` scenario corpora are counted as out of scope and printed.
 
-It is NOT declared residual and the gate is NOT relaxed for it — a systematic break in that field
-must still fail. What is known: poke-env increments the sleep counter in exactly two places
-(`Pokemon.moved` and `Pokemon.cant_move`), both are folded, `cure_status` zeroes it, a faint
-freezes it, and a switch-out resets only the TOXIC one. An extra increment against that set is
-unexplained. The likely shapes to check first are a `|move|` line poke-env routes somewhere that
-does not reach `moved()`, and a sleep applied on the same line it is counted.
+**Why `one_sided_view` is the projection, not the M1 core**: M1's `CoreEvent`s carry the event
+reading and no board; this is the only board projection that exists, and M2's `present()` replaces
+it under the same slice (`designs/endstate/program_rust_core.md` M2).
 
-The COLLECTED test is a fixed battle and is green, so this does not ride main red; the SWEEP is
-where it will reappear. **Run the sweep before trusting a change in this area.**
-
-**Re-measured 2026-09-19** over 24 fresh battles (577 comparisons, 505 branch points): still
-present, 15 occurrences on one battle and one mon — and this time reading one LOWER
-(`protocol=3 view=2`), where the original 14-battle sweep read one HIGHER. A field that drifts in
-BOTH directions is not an off-by-one in one branch; the likeliest remaining shape is a `|move|` or
-`|cant|` line the port's fold attributes to a different sleep episode than poke-env does.
-
-### TWO MORE OPEN FINDINGS from the 2026-09-19 sweeps, same status (failing, not declared)
-
-| what | measured | what is known |
+| tier | corpus | wall (load ~15-20 / 16 cpus) |
 |---|---|---|
-| `opp.<species>.ability` reads `None` on the view road where poke-env has it | 14 occurrences on ONE battle of 14 (a Snorlax reading `immunity`) | poke-env sets an ability from a `[from] ability:` CLAUSE on lines that are not `\|-ability\|` — `_check_damage_message_for_ability`, `_check_heal_message_for_ability`, and the `\|move\|` handler's trailing-clause branch. The port's `ability_events` folds the `\|-ability\|` line only. The fix is in `view.rs`, and it is the same SHAPE as the item finding in §2: scanning the wrong set of lines |
-| own-side `volatiles` missing `substitute` | 1 occurrence over 24 battles (`protocol={'substitute': 0} view={}`) | Not reproduced. One occurrence is not a class; it is recorded so the next sweep can tell "still one" from "now many" |
+| COMMIT (routine gate, `rust_core_parity_test.py`) | the 10 recorded battles (incl. the two **Baton Pass** battles `random_34` — a passed Substitute — and `random_177` — passed Calm Mind stages) + the 3 in-scope byte-fuzz fixtures: **13 battles, 1,838 decisions** | ~2 s (the file ~6 s) |
+| MILESTONE (`slow`, verdicts in `designs/ops/slow_tier_status.json`) | 2 × 200 seeded-random + 2 × 50 `production`-policy battles played live — the same battles slice E runs: **83,896 decisions, 23.9M field comparisons, 1.94M truth checks** | ~70 s check per 200 battles + play |
+
+**Teeth**, each a routine test: re-introducing the pre-2026-08-23 Baton Pass drop FAILS on the
+entrant's SIM-FACT `boosts` and its engine-truth `volatiles`; a misread Spikes layer FAILS on
+`side_conditions`; a dropped capture FAILS as `[ALIGN]`; a read-model field added without a class
+FAILS `test_every_read_model_field_is_classified`.
+
+---
+
+## 4b. The three read-model findings — CLOSED (2026-09-23), and what the truth audit found next
+
+All three were reproduced on FIXED, recorded battles by the Rust Core parity harness's slice V
+(§4a), which runs this projection at EVERY decision rather than at three roots per battle. Each
+was established against the simulator's own board (the engine, cross-checked with the pinned
+Showdown source where the engine and poke-env disagreed), and every one was the PROJECTION's error
+— poke-env's reading was the rule to reproduce:
+
+| finding | root cause (the poke-env line the fold failed to mirror) | fixed by | pinned by |
+|---|---|---|---|
+| own/opp `status_counter` drifting in BOTH directions | **Two mechanisms.** HIGHER: `-cureteam` (Aromatherapy / Heal Bell) → `cure_status()` clears `_status` and not the counter, but the fold kept counting `\|move\|` lines as asleep. LOWER: the `status` SETTER (`-status`) does NOT reset `_status_counter`, while the fold zeroed it — a Rest taken while badly poisoned starts poke-env's sleep count at the toxic count. The fold keyed its increments on its own `-status`-only flag instead of poke-env's `_status` | `view.rs` now mirrors poke-env's `_status` (`MonObservation::pstatus`) through every line that writes it: `-status`, `-curestatus` (only when it names the held status), `-cureteam`, `faint`, the HP token of `-damage` / `-heal` / `-sethp` / `switch`, and every own `\|request\|` roster `condition` | rule V5; `one_sided_view_test::v5_the_status_counter_follows_poke_envs_own_status` |
+| `opp.<species>.ability` reading `None` where poke-env had it (a Snorlax's `immunity`) | poke-env ASSIGNS an ability off four non-`-ability` lines, each at an exact shape: `-immune\|X\|[from] ability: A` (4 fields), `_check_heal_message_for_ability` (6 fields, the healed mon), `_check_damage_message_for_ability` (6 fields, the `[of]` mon), and `-activate\|X\|ability: A` (only `if holder_mon.ability is None`). The Snorlax was `\|-immune\|p1a: Snorlax\|[from] ability: Immunity` | `view.rs::ability_disclosure` + `AbilityEvent::if_unknown`; 360 occurrences over 400 battles → 0 | rule V8; `v8_an_ability_is_disclosed_off_four_non_ability_lines`, `view_adapter_test::test_an_activate_disclosure_fills_the_ability_ONLY_while_it_is_unknown` |
+| own `volatiles` missing `substitute` | **Baton Pass.** The sim's `copyVolatileFrom` and poke-env's `Pokemon.apply_baton_pass` carry `BATON_PASS_COPIED_EFFECTS` to the entrant; the fold wiped the entrant on its `\|switch\|`. The engine truth agrees with poke-env (the entrant holds the Substitute) | `view.rs::baton_pass_carry` flags the passer's volatiles `bp_carried`; the adapter keeps poke-env's copied set | rule V4; `v4_baton_pass_carries_the_passers_volatiles_to_the_entrant`, `view_adapter_test::test_a_BATON_PASSED_volatile_survives_only_if_poke_env_copies_it`, and the COMMIT tier's recorded battle `random_34` |
+
+**The same audit closed eleven more PROJECTION classes** the three-root sweep never reached:
+deferral **D6** (Pressure judged at READ time — each sighting now carries the target's
+ability-event index at USE time, both sides, so an own Porygon2's Traced Pressure counts); a
+move line with NO target charging our active (`_get_target_mon`); an `all`-target move (Perish
+Song) taking the default target; a `[from]move: Sleep Talk` call revealing the called move with no
+use and charging the caller only its Pressure share; a re-announced `ends_on_turn` effect being a
+fresh one (the volatile fold now carries its announcement history and the adapter replays
+poke-env's lifecycle); a fainted own mon's `|request|` `0 fnt` re-running `faint()` (clearing a
+post-KO Destiny Bond); `Pokemon.faint` keeping the protect streak; a fainted mon keeping the stages
+it died with until switched out (`MonState::faint_boosts`, rule V10); a timed screen stored as the
+TURN it started (rule V11); the first decision reading turn 0 (`bs.turn` lags the framing's
+`|turn|1` until the first commit); a fainted Traced mon's ability reverting to its base; and a
+Transformed mon keeping its OWN species as its identity.
+
+### What the truth audit found that is NOT the projection's — poke-env READING defects
+
+These are cases where the ENGINE (the sim's truth) and poke-env disagree about a sim fact and
+poke-env is wrong. The projection reproduces the reading today so the gate stays exact; each fix
+belongs in the vendored fork and **changes what training reads**, so each waits on the
+orchestrator (measured per 1,000 decisions, both viewers):
+
+| defect | truth (and how established) | per 1,000 decisions: pool random (73,605) · `production`-policy (10,291) · procedural (`ou_random_teams.js`, 33,298) |
+|---|---|---|
+| **R1** — the `status` setter never resets `_status_counter`, so a NEW status inherits the previous one's count (Rest while badly poisoned; a re-sleep after a cure the watcher saw only as a bare HP token). The obs's sleep counter AND the 3-dim sleep-wake belief (`K` = cant-turns) read it, so a fresh Rest can read "slept 3 turns, wakes next" with the reliability bit SET | for sleep, the `\|cant\|…\|slp` turns since the sleep began: as-is wrong on **886 of 12,201** asleep-mon decisions (Sleep Talk episodes excluded — the obs already flags those), a reset-on-change setter wrong on **0**. For toxic, the engine's `Toxic(stage)` | **11.09 · 7.48 · 9.22** decisions where an asleep / badly-poisoned mon's counter differs |
+| **R1b** — the toxic counter ticks at every `\|turn\|` a badly-poisoned mon is active, so one that entered AFTER the residual (a post-faint replacement) reads one ahead of the sim's stage | the engine's `Toxic(stage)`: 104 of 6,158 badly-poisoned-mon decisions with R1 fixed | ~1.2 (pool) |
+| **R2** — `-copyboost` is read BACKWARDS: poke-env copies the FIRST ident's stages onto the second, the sim does the reverse (`data/mods/gen5/moves.ts` psychup, which gen 3 inherits: `source.boosts[i] = target.boosts[i]; this.add('-copyboost', source, target)`; `SIM-PROTOCOL.md`'s wording says the opposite and poke-env followed the doc). After a Psych Up BOTH mons' stages read wrong | the engine + the pinned Showdown source | 0 · 0 · **0.27** (1 of the 719 pool teams carries Psych Up) |
+| **R3** — our OWN move PP is a sighting counter never synced to the `\|request\|`'s `pp`, so a PP the sim deducts without poke-env knowing (a foe's Pressure it cannot infer — gen 3 announces Pressure to its owner only, e.g. an Aerodactyl) drifts it HIGH; the old deferral D7, now a measured defect | the `\|request\|` (the sim's word) and the engine | 0 · 0 · **6.19** — and seen on the POOL by the search-road sweep (2 of 24 battles): 3 pool teams carry an un-inferable Pressure Aerodactyl, none of them inside the MILESTONE key range (below) |
+| **R4** — a TRANSFORMED mon's ability / stats / watched moves are poke-env approximations the projection does not yet present (own ability reads the base one — a gen-3 request never states the copied ability) | the engine | 0 · 0 · 0.06 (no pool team carries Transform) |
+
+**Also found by the procedural sweep, and it was the PORT's**: every move lock other than the
+two-turn charge (Rollout, Ice Ball, Outrage, Thrash, Petal Dance, Uproar) shipped a `|request|`
+naming **Solar Beam** on the training transport, which poke-env's live player asserts on (1 crash
+in 200 procedural battles; zero pool exposure; live on the websocket front end every anchor read
+plays over). Established against the pinned Showdown's own requests for all six; FIXED in
+`bridge.rs` and pinned by `tests/locked_request_test.rs` (`gen3_locked_request_move_v1`).
+
+**MILESTONE coverage hole**: keys 5000–5199 wrap (mod 719) onto pool teams 686–718 and 0–166,
+overlapping keys 0–199 — the two random seeds cover ~234 of the 719 pool teams. Widening the recipe
+makes R3 fire in the pool tier, so it lands with R3's fix, not before.
+
+### Standing rule
+
+**Run slice V's MILESTONE tier before trusting a change to `view.rs`, `view_adapter.py`,
+`offline_feed.py`, or any poke-env reading.** The pool alone is not enough: R2, R4 and the locked
+request have ZERO pool exposure and appeared only on the procedural generator's teams, and the
+MILESTONE pool range does not reach R3's.
 
 ## 5. DEFERRALS — what is knowingly not carried
 
@@ -223,8 +319,8 @@ BOTH directions is not an off-by-one in one branch; the likeliest remaining shap
 | **D3** | ✅ **CLOSED for a successor** — the reactive block's **Wish pair** | `reactive.encode` folds `battle.events` through `wish_belief.build_wish_pending`. The fix was not the port's `SideState::wish_pending` at all: the payload was never the problem, the missing LOG was. `ViewBattle` now carries the successor's whole-battle event log (the root's, plus the ply folded by `ViewEventFolder`) and the existing fold runs unchanged. Still OPEN for a BOARD-ONLY caller with no log, which is exactly what the gate's tracker-less comparison is — so the residual is still DECLARED there, and seen there |
 | **D4** | ✅ **CLOSED for a successor** — the 3-dim **sleep-wake belief** | `build_sleep_sources(battle)` reads `battle.events` and `battle.turn` and nothing else, so the same log closes it. Same board-only caveat as D3 |
 | **D5** | ✅ **CLOSED** — the per-decision **TRACKERS** — recency, pair history, the event window, the progress clock, the Hidden-Power block | `gen3_view_successor_v1` — see §7. The ply's events are folded from the arm's OWN one-sided protocol by `agents/battle/event_fold.py`, and the root's `EpisodeTracker` is carried forward and advanced through `record_context` / `advance_window` (the bodies of `record` / `update_progress_clock`, split out rather than copied) |
-| **D6** | Pressure is applied with the ability known at READ time | `_pressure_on` evaluates `target.ability == "pressure"` AT USE TIME, when it may still be undisclosed. The residual is a sighting made before the reveal. (The un-fainted clause is deliberately NOT re-checked at read time: a mon cannot be targeted while fainted, and checking it late lost the whole correction on any board whose Pressure holder had since died — 30 divergences over 80 comparisons) |
-| **D7** | our OWN pp is the wire's, not poke-env's counter | The payload sends the engine's `current_pp`, which is exactly what the `\|request\|` states and what poke-env asserts its own counter against (`check_move_consistency`). When poke-env has not yet identified a Pressure holder its counter drifts one BELOW the wire per sighting, and it is the drifted value the protocol road encodes. Folding our own PP from sightings instead was measured **worse** (the `\|move\|` line names `Hidden Power` while the set token is `hiddenpowerfire`, so the slots do not key against each other) |
+| ~~**D6**~~ | ✅ **CLOSED** — Pressure is judged at USE time | Each sighting carries its target's ability-event index at use time (both sides — our own Traced Pressure counts), and the adapter replays poke-env's two-slot ability rules up to it (rule V3). The un-fainted clause is still not re-checked at read time: a mon cannot be targeted while fainted |
+| **D7** | our OWN pp is the wire's, not poke-env's counter | Now a measured poke-env READING defect (**R3**, §4b): poke-env never syncs our own move PP from the `\|request\|`, so a PP the sim deducts without poke-env knowing (an un-inferable foe Pressure) drifts it HIGH. The payload keeps sending the engine's `current_pp` — the truth — and slice V classifies own PP as SIM-FACT, so the drift FAILS the gate where it occurs (0 per 1,000 on the MILESTONE pool corpus, 6.19 on procedural teams, and present on pool teams outside that corpus). The fix belongs in the fork and waits on the orchestrator |
 | **D8** | Mimic / Transform move overlays on our own side | The own moveset is rendered from `set.moves`; an overlay would need the same resolver the request path uses |
 | **D9** | `Mist` as a side condition | The port models spikes / reflect / lightscreen / safeguard only |
 | ~~**D10**~~ | ✅ **CLOSED** — an arm whose ply resolved an INTERMEDIATE decision | `gen3_view_at_intermediate_v1`. See §5b below |

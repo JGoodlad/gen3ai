@@ -134,8 +134,10 @@ reader keeps int vs float and the exact value. `read` REFUSES an unknown record 
 `reparse` (the migration) re-derives the stream from the text; `check_reparse` is the golden gate.
 
 **Golden corpus**: `src/agents/battle/rust_core_parity_fixtures/records/*.jsonl.gz` — the COMMIT
-tier's 8 battles + the first battle of each of the protocol capture scenarios, both viewers (62
-records; gzip'd because the text carries every `|request|` frame, ~8 MB plain / 600 KB gzip'd).
+tier's first 8 recorded battles + the first battle of each of the protocol capture scenarios, both
+viewers (62 records; gzip'd because the text carries every `|request|` frame, ~8 MB plain / 600 KB
+gzip'd). The two Baton Pass battles slice V added to the fixture are not in it: the record corpus
+gates the FORMAT, and a regeneration rewrites every record's `core_commit`.
 Regenerate: `python -m agents.battle.rust_core_parity write-records`. Gate:
 `rust_core_parity_test.py::test_the_golden_records_round_trip_and_reparse` (`core_events
 --check-records`).
@@ -150,8 +152,12 @@ readings against the log of a `Gen3Battle` fed the same per-side text through `o
 
 | tier | corpus |
 |---|---|
-| COMMIT | `commit_tier.json.gz` (6 seeded-random battles over 12 pool teams + 2 `production`-policy battles, recorded input logs, the chunk bytes pinned by digest) + the six byte-fuzz fixtures that carry the four shapes random battles never reach + the first battle of each protocol capture scenario + the Forecast class sweep (`-formechange`) + a constructed Ditto (`-transform`) — 45 battles, 16,980 events, ~2 s |
+| COMMIT | `commit_tier.json.gz` (6 seeded-random battles over 12 pool teams + 2 `production`-policy battles + 2 seeded-random Baton Pass battles, recorded input logs, the chunk bytes pinned by digest) + the six byte-fuzz fixtures that carry the four shapes random battles never reach + the first battle of each protocol capture scenario + the Forecast class sweep (`-formechange`) + a constructed Ditto (`-transform`) — 47 battles, ~18,600 events, ~2 s |
 | MILESTONE | 2 × 200 seeded-random (keys 0-199, 5000-5199) and 2 × 50 `production`-policy battles PLAYED live — the live `Gen3Battle` logs must ALSO equal the offline feed's — + the protocol corpus × 2 seeds + every byte-fuzz fixture; the pool hash and the checkpoint sha256 are pinned in `rust_core_parity_fixtures/manifest.json` and the tier refuses on a mismatch (`… write-manifest` in the same commit) |
+
+**Slice V rides the same call** (`check_battles(…, views=ViewCensus())`, `core_events --views`):
+the TRUTH AUDIT of the training observation path at every decision, both viewers — contract in
+[`one_sided_view.md`](one_sided_view.md) §4a. One harness, one core call per battle.
 
 🚨 **The four ambiguity-prone shapes live in the BYTE-FUZZ corpus, not the protocol capture
 golden.** Damp's `[of]` cant, the slot-less future-move `-miss`, a bench `-curestatus` and

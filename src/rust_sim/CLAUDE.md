@@ -135,6 +135,7 @@ value-schema change (`rust_core_schema_test.py` fails the day it is stale).
 | `tests/core_events_test.rs` (`cargo test`) | on the protocol capture corpus, every byte-fuzz fixture, the trapping golden and the turn-limit golden: canonical source records (one per line), the step path re-derives the shipped bytes with per-side conservation, `parse(side text) == step`; recording changes no byte |
 | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` | the COMMIT tier: the core's readings == `Gen3Battle`'s, per viewer, per event, type-strict, no allowlist; the golden records round-trip byte-identically and re-parse |
 | `… rust_core_parity_test.py -m slow -q -n 2` | the MILESTONE tier (2 × 200 random + 2 × 50 policy battles played live, the protocol corpus × 2, every byte-fuzz fixture) |
+| `core_events --views` → `rust_core_parity_views.py` (slice V, both tiers) | the TRUTH AUDIT: `one_sided_view` + the engine truth == the `LiveView` training builds, every decision, both viewers (`designs/rust_sim/one_sided_view.md` §4a) |
 
 ## The callable surface (battle.rs) maps to the existing bridge
 
@@ -260,13 +261,22 @@ honest absence). The port gains no poke-env rule from this — the two rules the
 boosts while the sim does) are both fixed in PYTHON, which is what the split in §2 of the contract
 is for.
 
-Gates: `tests/one_sided_view_test.rs` (11 — the WALL against `pre_state` on a board with unrevealed
-mons, the reveal fold surviving `clear_chunks`, the id-form and PP contracts, and the D10 capture
-predicate with its NEGATIVE twin),
-`src/agents/battle/view_adapter_test.py` (24), and the differential
-`src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`; no allowlist, prints a
-census). Full contract, the measured findings and the 9 DEFERRALS:
+Gates: `tests/one_sided_view_test.rs` (22 — the WALL against `pre_state` on a board with unrevealed
+mons, the reveal fold surviving `clear_chunks`, the id-form and PP contracts, the D10 capture
+predicate with its NEGATIVE twin, and one pin per READING RULE V3–V11, each citing the poke-env line
+it mirrors), `src/agents/battle/view_adapter_test.py` (33), the differential
+`src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`; the search road; no allowlist, prints
+a census), and **the TRUTH AUDIT** — slice V of the Rust Core parity harness
+(`src/agents/battle/rust_core_parity_views.py`, fed by `core_events --views`), which compares this
+projection AND the engine truth against the `LiveView` training builds at EVERY decision of every
+recorded battle, both viewers. 🚨 **Change the fold only with slice V's MILESTONE tier green** — its
+first full run closed the three §4b findings and eleven more projection classes, all invisible to
+the three-roots-per-battle search gate. Full contract, the named reading rules and the deferrals:
 [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md).
+
+🚨 **`MonState::faint_boosts` is OBSERVATION-ONLY** — the stages a mon held when it fainted (the
+faint `clearVolatile` zeroes `boosts`), read by nothing in the battle path; the view emits it so
+the adapter can present poke-env's rule that a fainted mon keeps its stages until switched out.
 
 🚨 **`pre_state` VOLATILE NAMES ARE UNVERIFIED.** `pre_state` mirrors Node's `preState` and has no
 consumer today; its `volatiles` list is a RECONSTRUCTION from the port's typed fields, and exactly ONE
@@ -401,7 +411,7 @@ node src/rust_sim/harness/probe_residual_order_rng.js
 node src/rust_sim/harness/probe_phaze_regression_rng.js
 ```
 
-The full bug -> pin map (64 rows), each family's ground-truth probe, and the FEATURE pins for
+The full bug -> pin map (65 rows), each family's ground-truth probe, and the FEATURE pins for
 newly-modelled mechanics:
 [`designs/rust_sim/regression_pins.md`](../../designs/rust_sim/regression_pins.md).
 
