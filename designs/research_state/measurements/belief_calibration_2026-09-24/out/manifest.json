@@ -1,0 +1,3713 @@
+{
+"seed": 20260924,
+"n_battles_per_arm": 400,
+"pool": {
+"n_teams": 719,
+"packed_ok": 719,
+"coverage_predicates_info": {
+"total": 719,
+"import_fail": 0,
+"validator_fail": 0,
+"coverage_fail": 30,
+"pass": 689,
+"reasons": [
+[
+"move:sleeptalk",
+29
+],
+[
+"move:wisp",
+1
+]
+]
+}
+},
+"ladder": {
+"source": "metamon hl_05_26/gen3ou (teams revision v5)",
+"filter": {
+"total": 22862,
+"import_fail": 0,
+"not_six": 0,
+"validator_fail": 0,
+"coverage_fail": 1775,
+"in_pool_species_set": 5933,
+"dup_species_set_within_ladder": 8331,
+"pass": 15154,
+"reasons": [
+[
+"move:sleeptalk",
+1727
+],
+[
+"move:metronome",
+11
+],
+[
+"item:shellbell",
+11
+],
+[
+"move:snore",
+10
+],
+[
+"move:psywave",
+8
+],
+[
+"move:fly",
+3
+],
+[
+"move:blastburn",
+2
+],
+[
+"move:triplekick",
+1
+],
+[
+"move:dig",
+1
+],
+[
+"move:grudge",
+1
+]
+],
+"share_pass": 0.6628466450879188
+},
+"candidates_after_filter": 15154,
+"gen3teambuilder_rejects_in_sample_walk": 0,
+"download": {
+"tool": "metamon.data.download.download_teams('gen3ou','hl_05_26') (Metamon repo 0a00a759, env metamon)",
+"cache_dir": "~/gen3ai_archive/metamon_cache_2026-09-24 (outside the repo)",
+"revision": "v5",
+"n_team_files": 22862,
+"sha256_16_of_sorted_concat_team_files": "97b7314d7b1a106c",
+"sha256_16_index_csv": "e94bc6946eb85e0c"
+}
+},
+"procedural": {
+"generator": {
+"n": 500,
+"dropped_in_pool_species_set": 6,
+"coverage": "[ourandom] 216 gen3ou species; move sampling renormalized over ENGINE-MODELED moves, dropping 0.43% of gen3ou move-slot prior mass (every generated battle therefore plays to COMPLETION)",
+"generator": {
+"teamsKept": 506,
+"teamsRejected": 70,
+"genErrors": 0
+}
+},
+"gen3teambuilder_rejects": 0
+},
+"battles": [
+{
+"i": 0,
+"seed_base": 20260924000,
+"trainee": "46e4f22b44",
+"pool": "5bb665398b",
+"ladder": "22ccf14f9a",
+"procedural": "7b70ed2300",
+"ladder_file": "team_016882.gen3ou_team"
+},
+{
+"i": 1,
+"seed_base": 20260924001,
+"trainee": "63f81c5c58",
+"pool": "992ccced85",
+"ladder": "b8a34b5bcd",
+"procedural": "e30ce27d4a",
+"ladder_file": "team_007813.gen3ou_team"
+},
+{
+"i": 2,
+"seed_base": 20260924002,
+"trainee": "4b1a1c2e58",
+"pool": "a12e56dca3",
+"ladder": "66b6ceb0b2",
+"procedural": "dbc11b54c2",
+"ladder_file": "team_003207.gen3ou_team"
+},
+{
+"i": 3,
+"seed_base": 20260924003,
+"trainee": "2e325a7925",
+"pool": "63e9659a72",
+"ladder": "40a5c67150",
+"procedural": "122bd2ed09",
+"ladder_file": "team_021428.gen3ou_team"
+},
+{
+"i": 4,
+"seed_base": 20260924004,
+"trainee": "273ddc4daf",
+"pool": "fda8ad353a",
+"ladder": "8282f2f7f8",
+"procedural": "0264123950",
+"ladder_file": "team_019050.gen3ou_team"
+},
+{
+"i": 5,
+"seed_base": 20260924005,
+"trainee": "038204d091",
+"pool": "1ca483a3fd",
+"ladder": "e1dabdfcd4",
+"procedural": "3d6a3ccfe0",
+"ladder_file": "team_023122.gen3ou_team"
+},
+{
+"i": 6,
+"seed_base": 20260924006,
+"trainee": "cc6ec1b14b",
+"pool": "7b6a17db5b",
+"ladder": "e19a83ff18",
+"procedural": "3cee57343c",
+"ladder_file": "team_012470.gen3ou_team"
+},
+{
+"i": 7,
+"seed_base": 20260924007,
+"trainee": "2ad1da4e32",
+"pool": "45995e432f",
+"ladder": "9b58bf6d80",
+"procedural": "b431f8401b",
+"ladder_file": "team_006515.gen3ou_team"
+},
+{
+"i": 8,
+"seed_base": 20260924008,
+"trainee": "9c44a67be3",
+"pool": "507fe7fd7b",
+"ladder": "642442286a",
+"procedural": "ce5ba4da94",
+"ladder_file": "team_020375.gen3ou_team"
+},
+{
+"i": 9,
+"seed_base": 20260924009,
+"trainee": "bf1f075963",
+"pool": "95e69273f8",
+"ladder": "362bf28351",
+"procedural": "105a1826d6",
+"ladder_file": "team_015913.gen3ou_team"
+},
+{
+"i": 10,
+"seed_base": 20260924010,
+"trainee": "009e3d0244",
+"pool": "7ad65bac76",
+"ladder": "73ca12eee6",
+"procedural": "d11934618f",
+"ladder_file": "team_020915.gen3ou_team"
+},
+{
+"i": 11,
+"seed_base": 20260924011,
+"trainee": "c349b569ca",
+"pool": "c7a73640c1",
+"ladder": "8e97a70318",
+"procedural": "17ad3ef797",
+"ladder_file": "team_012033.gen3ou_team"
+},
+{
+"i": 12,
+"seed_base": 20260924012,
+"trainee": "9c8b9d4758",
+"pool": "6fb06e8314",
+"ladder": "5807d61f29",
+"procedural": "2712cac3a7",
+"ladder_file": "team_019495.gen3ou_team"
+},
+{
+"i": 13,
+"seed_base": 20260924013,
+"trainee": "79774a0f8a",
+"pool": "beef0decf9",
+"ladder": "1df1a64c38",
+"procedural": "53e62359f7",
+"ladder_file": "team_009125.gen3ou_team"
+},
+{
+"i": 14,
+"seed_base": 20260924014,
+"trainee": "63f81c5c58",
+"pool": "989ed2944b",
+"ladder": "45b6773816",
+"procedural": "87dec3f140",
+"ladder_file": "team_022898.gen3ou_team"
+},
+{
+"i": 15,
+"seed_base": 20260924015,
+"trainee": "02dea8fcb1",
+"pool": "552d5857a3",
+"ladder": "9e0868a0c4",
+"procedural": "2b642df09b",
+"ladder_file": "team_016683.gen3ou_team"
+},
+{
+"i": 16,
+"seed_base": 20260924016,
+"trainee": "21ada0a79f",
+"pool": "03f6a51507",
+"ladder": "cc4c31ff67",
+"procedural": "423bf397f6",
+"ladder_file": "team_023214.gen3ou_team"
+},
+{
+"i": 17,
+"seed_base": 20260924017,
+"trainee": "9420574e38",
+"pool": "6d3a4d0529",
+"ladder": "c1442a2d44",
+"procedural": "bed4fd8401",
+"ladder_file": "team_003096.gen3ou_team"
+},
+{
+"i": 18,
+"seed_base": 20260924018,
+"trainee": "39867352dc",
+"pool": "91c284199a",
+"ladder": "a229d73b4e",
+"procedural": "2c722bcaec",
+"ladder_file": "team_011022.gen3ou_team"
+},
+{
+"i": 19,
+"seed_base": 20260924019,
+"trainee": "84f674121a",
+"pool": "a7bb29d48c",
+"ladder": "9b2a72858d",
+"procedural": "df6dc4888e",
+"ladder_file": "team_000826.gen3ou_team"
+},
+{
+"i": 20,
+"seed_base": 20260924020,
+"trainee": "9c8b9d4758",
+"pool": "1a056904ae",
+"ladder": "9df4594bd1",
+"procedural": "7bd9f47f69",
+"ladder_file": "team_004663.gen3ou_team"
+},
+{
+"i": 21,
+"seed_base": 20260924021,
+"trainee": "593d7fb8a8",
+"pool": "ce61c549f7",
+"ladder": "06588e5e53",
+"procedural": "42b43fff18",
+"ladder_file": "team_020556.gen3ou_team"
+},
+{
+"i": 22,
+"seed_base": 20260924022,
+"trainee": "f577e001c2",
+"pool": "eaa88395e7",
+"ladder": "4878aba7ee",
+"procedural": "ce1784f3e4",
+"ladder_file": "team_010980.gen3ou_team"
+},
+{
+"i": 23,
+"seed_base": 20260924023,
+"trainee": "55ff6899a2",
+"pool": "2c5b1d6abb",
+"ladder": "9c6953aabd",
+"procedural": "c69444d583",
+"ladder_file": "team_017531.gen3ou_team"
+},
+{
+"i": 24,
+"seed_base": 20260924024,
+"trainee": "d666e30308",
+"pool": "8b6b8c8f52",
+"ladder": "99e36e4df8",
+"procedural": "334437f2a0",
+"ladder_file": "team_017185.gen3ou_team"
+},
+{
+"i": 25,
+"seed_base": 20260924025,
+"trainee": "0c2e9c456c",
+"pool": "faf49668ea",
+"ladder": "a005837899",
+"procedural": "0a91454d9e",
+"ladder_file": "team_009580.gen3ou_team"
+},
+{
+"i": 26,
+"seed_base": 20260924026,
+"trainee": "2a5653724d",
+"pool": "8063750596",
+"ladder": "8dbec9ef7f",
+"procedural": "624b56cabb",
+"ladder_file": "team_001396.gen3ou_team"
+},
+{
+"i": 27,
+"seed_base": 20260924027,
+"trainee": "89b0714fa9",
+"pool": "7163ad9387",
+"ladder": "48fec71eb0",
+"procedural": "6aadddbdb3",
+"ladder_file": "team_013020.gen3ou_team"
+},
+{
+"i": 28,
+"seed_base": 20260924028,
+"trainee": "422e86de3e",
+"pool": "0218a196f3",
+"ladder": "ea79c4e572",
+"procedural": "38829fbd91",
+"ladder_file": "team_002988.gen3ou_team"
+},
+{
+"i": 29,
+"seed_base": 20260924029,
+"trainee": "7bc31241c4",
+"pool": "9a360e0047",
+"ladder": "dca051c9f8",
+"procedural": "631573394f",
+"ladder_file": "team_019817.gen3ou_team"
+},
+{
+"i": 30,
+"seed_base": 20260924030,
+"trainee": "97b2f0f9f7",
+"pool": "acc927d5e4",
+"ladder": "d5c250c4ef",
+"procedural": "1e5a4ddea3",
+"ladder_file": "team_014901.gen3ou_team"
+},
+{
+"i": 31,
+"seed_base": 20260924031,
+"trainee": "c0e60903e8",
+"pool": "adfe4b6f4f",
+"ladder": "8359bfc47d",
+"procedural": "f34403608c",
+"ladder_file": "team_022991.gen3ou_team"
+},
+{
+"i": 32,
+"seed_base": 20260924032,
+"trainee": "73267f3960",
+"pool": "aa0cffc5ed",
+"ladder": "7dc3e97c2a",
+"procedural": "487d8fc74a",
+"ladder_file": "team_022081.gen3ou_team"
+},
+{
+"i": 33,
+"seed_base": 20260924033,
+"trainee": "dc1b87ad2a",
+"pool": "637cbb13a2",
+"ladder": "fc70386934",
+"procedural": "1971f537cc",
+"ladder_file": "team_022596.gen3ou_team"
+},
+{
+"i": 34,
+"seed_base": 20260924034,
+"trainee": "0eb6cc1e56",
+"pool": "ad3fccbd45",
+"ladder": "f1eab637cc",
+"procedural": "d82b995b79",
+"ladder_file": "team_007006.gen3ou_team"
+},
+{
+"i": 35,
+"seed_base": 20260924035,
+"trainee": "f21abb7e74",
+"pool": "b672660f60",
+"ladder": "46c158c799",
+"procedural": "c6997a208b",
+"ladder_file": "team_002715.gen3ou_team"
+},
+{
+"i": 36,
+"seed_base": 20260924036,
+"trainee": "66d4e54d51",
+"pool": "4f5a590bab",
+"ladder": "42996a65ef",
+"procedural": "a555728d51",
+"ladder_file": "team_021706.gen3ou_team"
+},
+{
+"i": 37,
+"seed_base": 20260924037,
+"trainee": "e4b2368267",
+"pool": "b2144660b9",
+"ladder": "8f9b69d2eb",
+"procedural": "4b0debf84a",
+"ladder_file": "team_003697.gen3ou_team"
+},
+{
+"i": 38,
+"seed_base": 20260924038,
+"trainee": "a61e1c69f3",
+"pool": "ba5c32f10b",
+"ladder": "fce982c3c0",
+"procedural": "e987c7d1eb",
+"ladder_file": "team_009876.gen3ou_team"
+},
+{
+"i": 39,
+"seed_base": 20260924039,
+"trainee": "3f95b25e9a",
+"pool": "5da222660f",
+"ladder": "f49336df3e",
+"procedural": "d273f431d2",
+"ladder_file": "team_021946.gen3ou_team"
+},
+{
+"i": 40,
+"seed_base": 20260924040,
+"trainee": "01cb64e16c",
+"pool": "b9dac42529",
+"ladder": "74e2dd5398",
+"procedural": "8ae9d3d8d8",
+"ladder_file": "team_000227.gen3ou_team"
+},
+{
+"i": 41,
+"seed_base": 20260924041,
+"trainee": "ad3fccbd45",
+"pool": "fd335d2e74",
+"ladder": "969be69326",
+"procedural": "7f4f3a48ce",
+"ladder_file": "team_017542.gen3ou_team"
+},
+{
+"i": 42,
+"seed_base": 20260924042,
+"trainee": "fda8ad353a",
+"pool": "7a93b5fa43",
+"ladder": "cd70653e4e",
+"procedural": "4fcc234ee5",
+"ladder_file": "team_017624.gen3ou_team"
+},
+{
+"i": 43,
+"seed_base": 20260924043,
+"trainee": "34136817e1",
+"pool": "5aaef19afd",
+"ladder": "20672676be",
+"procedural": "d8035ac6ed",
+"ladder_file": "team_006684.gen3ou_team"
+},
+{
+"i": 44,
+"seed_base": 20260924044,
+"trainee": "7061b8063f",
+"pool": "2d9f93b0dd",
+"ladder": "a4d2d3498f",
+"procedural": "d354ce56e3",
+"ladder_file": "team_014260.gen3ou_team"
+},
+{
+"i": 45,
+"seed_base": 20260924045,
+"trainee": "3bdc4b63dd",
+"pool": "8ac0ff4319",
+"ladder": "513c109020",
+"procedural": "043ad7c6fc",
+"ladder_file": "team_012791.gen3ou_team"
+},
+{
+"i": 46,
+"seed_base": 20260924046,
+"trainee": "992ccced85",
+"pool": "f1b6ba6434",
+"ladder": "22071ed07f",
+"procedural": "e6d005e8d7",
+"ladder_file": "team_008472.gen3ou_team"
+},
+{
+"i": 47,
+"seed_base": 20260924047,
+"trainee": "6d8f5c1c26",
+"pool": "970acf5f37",
+"ladder": "5919543b3e",
+"procedural": "c9ca0d726f",
+"ladder_file": "team_019766.gen3ou_team"
+},
+{
+"i": 48,
+"seed_base": 20260924048,
+"trainee": "61ab86a356",
+"pool": "af923978cf",
+"ladder": "acf6b8b8c1",
+"procedural": "5f98294d3c",
+"ladder_file": "team_011273.gen3ou_team"
+},
+{
+"i": 49,
+"seed_base": 20260924049,
+"trainee": "a3a1c1f5db",
+"pool": "89fcef3b53",
+"ladder": "2a4d7b389b",
+"procedural": "c1a8dfc23c",
+"ladder_file": "team_019634.gen3ou_team"
+},
+{
+"i": 50,
+"seed_base": 20260924050,
+"trainee": "776957eb66",
+"pool": "3b041361a2",
+"ladder": "fcffdfe4f6",
+"procedural": "7243fe70f6",
+"ladder_file": "team_020451.gen3ou_team"
+},
+{
+"i": 51,
+"seed_base": 20260924051,
+"trainee": "fcbade71bc",
+"pool": "37f1678a79",
+"ladder": "dc2da9bd8b",
+"procedural": "ab1d000303",
+"ladder_file": "team_023918.gen3ou_team"
+},
+{
+"i": 52,
+"seed_base": 20260924052,
+"trainee": "2d9c53708a",
+"pool": "63f81c5c58",
+"ladder": "12a837297e",
+"procedural": "a68ba4a5ed",
+"ladder_file": "team_018113.gen3ou_team"
+},
+{
+"i": 53,
+"seed_base": 20260924053,
+"trainee": "5c88ff9ca5",
+"pool": "8569905725",
+"ladder": "f68985f06d",
+"procedural": "0e2e8fbd58",
+"ladder_file": "team_006356.gen3ou_team"
+},
+{
+"i": 54,
+"seed_base": 20260924054,
+"trainee": "3ec9787dfd",
+"pool": "dd460484fc",
+"ladder": "94d9e8ad52",
+"procedural": "8417e8f30d",
+"ladder_file": "team_017793.gen3ou_team"
+},
+{
+"i": 55,
+"seed_base": 20260924055,
+"trainee": "d97c76c6fa",
+"pool": "d0a4d2bcb8",
+"ladder": "167fce61cf",
+"procedural": "ccfdf2dd29",
+"ladder_file": "team_021244.gen3ou_team"
+},
+{
+"i": 56,
+"seed_base": 20260924056,
+"trainee": "80365d55bc",
+"pool": "407d8f3bf3",
+"ladder": "01733cc4d3",
+"procedural": "45c73db386",
+"ladder_file": "team_001924.gen3ou_team"
+},
+{
+"i": 57,
+"seed_base": 20260924057,
+"trainee": "cc6ec1b14b",
+"pool": "747985a50d",
+"ladder": "58ee54d985",
+"procedural": "2c49cd8159",
+"ladder_file": "team_014077.gen3ou_team"
+},
+{
+"i": 58,
+"seed_base": 20260924058,
+"trainee": "d4217399f3",
+"pool": "06d34ddd66",
+"ladder": "0412694a85",
+"procedural": "c3f49b304f",
+"ladder_file": "team_017695.gen3ou_team"
+},
+{
+"i": 59,
+"seed_base": 20260924059,
+"trainee": "0d42c60d9f",
+"pool": "c1fc379c85",
+"ladder": "b0e6af484c",
+"procedural": "9af8f94bbe",
+"ladder_file": "team_004138.gen3ou_team"
+},
+{
+"i": 60,
+"seed_base": 20260924060,
+"trainee": "b456a6cdbf",
+"pool": "c75ccfeb48",
+"ladder": "4c00192200",
+"procedural": "43425fb977",
+"ladder_file": "team_004940.gen3ou_team"
+},
+{
+"i": 61,
+"seed_base": 20260924061,
+"trainee": "1f2724ad08",
+"pool": "30b097e497",
+"ladder": "69ab683a7f",
+"procedural": "3bc52c491f",
+"ladder_file": "team_011692.gen3ou_team"
+},
+{
+"i": 62,
+"seed_base": 20260924062,
+"trainee": "3a0f21f277",
+"pool": "2ca20c6abb",
+"ladder": "b9077827fc",
+"procedural": "858a45ad50",
+"ladder_file": "team_000445.gen3ou_team"
+},
+{
+"i": 63,
+"seed_base": 20260924063,
+"trainee": "4d404a3f37",
+"pool": "1c4e182530",
+"ladder": "36e9860d80",
+"procedural": "52973cdd1d",
+"ladder_file": "team_001379.gen3ou_team"
+},
+{
+"i": 64,
+"seed_base": 20260924064,
+"trainee": "3495ef83ef",
+"pool": "47dc388b25",
+"ladder": "7bbd4b8226",
+"procedural": "b4b61ee8a5",
+"ladder_file": "team_023002.gen3ou_team"
+},
+{
+"i": 65,
+"seed_base": 20260924065,
+"trainee": "55ff6899a2",
+"pool": "77163c65be",
+"ladder": "22b2a3dbfc",
+"procedural": "713a80cfe4",
+"ladder_file": "team_008669.gen3ou_team"
+},
+{
+"i": 66,
+"seed_base": 20260924066,
+"trainee": "8592f335a3",
+"pool": "97b2f0f9f7",
+"ladder": "e06ddba750",
+"procedural": "eab1c0932e",
+"ladder_file": "team_000382.gen3ou_team"
+},
+{
+"i": 67,
+"seed_base": 20260924067,
+"trainee": "f8db46a798",
+"pool": "feea8cd49b",
+"ladder": "d596da6142",
+"procedural": "0da31ec90e",
+"ladder_file": "team_004820.gen3ou_team"
+},
+{
+"i": 68,
+"seed_base": 20260924068,
+"trainee": "8a29df031e",
+"pool": "c349b569ca",
+"ladder": "6d2ce67d41",
+"procedural": "36b5e0b131",
+"ladder_file": "team_007870.gen3ou_team"
+},
+{
+"i": 69,
+"seed_base": 20260924069,
+"trainee": "2158e3da1e",
+"pool": "f6ba38459d",
+"ladder": "71762d160f",
+"procedural": "2bdc71dc78",
+"ladder_file": "team_007196.gen3ou_team"
+},
+{
+"i": 70,
+"seed_base": 20260924070,
+"trainee": "1ca483a3fd",
+"pool": "f6ba38459d",
+"ladder": "ee7f79cc10",
+"procedural": "a4715f253a",
+"ladder_file": "team_020369.gen3ou_team"
+},
+{
+"i": 71,
+"seed_base": 20260924071,
+"trainee": "713faf94e4",
+"pool": "1c1420342b",
+"ladder": "f3f9eaa348",
+"procedural": "0dc9783cb3",
+"ladder_file": "team_020078.gen3ou_team"
+},
+{
+"i": 72,
+"seed_base": 20260924072,
+"trainee": "637cbb13a2",
+"pool": "c43b16ff77",
+"ladder": "ffa19aff77",
+"procedural": "30cc288b22",
+"ladder_file": "team_020052.gen3ou_team"
+},
+{
+"i": 73,
+"seed_base": 20260924073,
+"trainee": "06d34ddd66",
+"pool": "3ab6020379",
+"ladder": "14b1aba0a2",
+"procedural": "0e7cb84b9d",
+"ladder_file": "team_007023.gen3ou_team"
+},
+{
+"i": 74,
+"seed_base": 20260924074,
+"trainee": "f4d8046665",
+"pool": "0d42c60d9f",
+"ladder": "acea50b744",
+"procedural": "dd6f01745f",
+"ladder_file": "team_016767.gen3ou_team"
+},
+{
+"i": 75,
+"seed_base": 20260924075,
+"trainee": "07bbbcc2e0",
+"pool": "06bc79eaba",
+"ladder": "034a052339",
+"procedural": "b7971dea31",
+"ladder_file": "team_018726.gen3ou_team"
+},
+{
+"i": 76,
+"seed_base": 20260924076,
+"trainee": "177d825984",
+"pool": "c42fba0924",
+"ladder": "2c0da00e45",
+"procedural": "a99ee9f639",
+"ladder_file": "team_009111.gen3ou_team"
+},
+{
+"i": 77,
+"seed_base": 20260924077,
+"trainee": "91c284199a",
+"pool": "0a9413339a",
+"ladder": "f64c9f7cdb",
+"procedural": "cb224dddd8",
+"ladder_file": "team_003582.gen3ou_team"
+},
+{
+"i": 78,
+"seed_base": 20260924078,
+"trainee": "5c8ac30e35",
+"pool": "8e7cd7cb0e",
+"ladder": "0b48c3cdea",
+"procedural": "f17dfe6e76",
+"ladder_file": "team_010116.gen3ou_team"
+},
+{
+"i": 79,
+"seed_base": 20260924079,
+"trainee": "24e0e3ade7",
+"pool": "5da222660f",
+"ladder": "d2b207c51d",
+"procedural": "e6347e55f6",
+"ladder_file": "team_000594.gen3ou_team"
+},
+{
+"i": 80,
+"seed_base": 20260924080,
+"trainee": "57589710f4",
+"pool": "ab54c04e46",
+"ladder": "85d0ee5cb4",
+"procedural": "7ee633f3ab",
+"ladder_file": "team_015468.gen3ou_team"
+},
+{
+"i": 81,
+"seed_base": 20260924081,
+"trainee": "17ab3c78a2",
+"pool": "84a2de1943",
+"ladder": "3ae2d70594",
+"procedural": "c68bc9150f",
+"ladder_file": "team_012845.gen3ou_team"
+},
+{
+"i": 82,
+"seed_base": 20260924082,
+"trainee": "445720fed8",
+"pool": "fcbade71bc",
+"ladder": "56aa551d7b",
+"procedural": "aadb681b87",
+"ladder_file": "team_008777.gen3ou_team"
+},
+{
+"i": 83,
+"seed_base": 20260924083,
+"trainee": "3b6584ba40",
+"pool": "f23f64a6b2",
+"ladder": "09758be6f8",
+"procedural": "e6402af9ed",
+"ladder_file": "team_009664.gen3ou_team"
+},
+{
+"i": 84,
+"seed_base": 20260924084,
+"trainee": "0b567f07da",
+"pool": "cafc9f4fb2",
+"ladder": "01d8136aaa",
+"procedural": "2c3375d85b",
+"ladder_file": "team_002943.gen3ou_team"
+},
+{
+"i": 85,
+"seed_base": 20260924085,
+"trainee": "dfc45b9ca6",
+"pool": "4d404a3f37",
+"ladder": "2daf96b0d5",
+"procedural": "241565de7d",
+"ladder_file": "team_022043.gen3ou_team"
+},
+{
+"i": 86,
+"seed_base": 20260924086,
+"trainee": "f29ed69af3",
+"pool": "fa84545955",
+"ladder": "6684aeff0b",
+"procedural": "dc81838118",
+"ladder_file": "team_019176.gen3ou_team"
+},
+{
+"i": 87,
+"seed_base": 20260924087,
+"trainee": "382a9f0e9d",
+"pool": "7bab8a4a2f",
+"ladder": "3d7c59dbb0",
+"procedural": "a9b1e566b0",
+"ladder_file": "team_016455.gen3ou_team"
+},
+{
+"i": 88,
+"seed_base": 20260924088,
+"trainee": "8aa51ef85c",
+"pool": "a265c9e285",
+"ladder": "c4123f1223",
+"procedural": "8654de33aa",
+"ladder_file": "team_021289.gen3ou_team"
+},
+{
+"i": 89,
+"seed_base": 20260924089,
+"trainee": "beaed229c3",
+"pool": "564b9be3ae",
+"ladder": "b147755561",
+"procedural": "af1acceede",
+"ladder_file": "team_008850.gen3ou_team"
+},
+{
+"i": 90,
+"seed_base": 20260924090,
+"trainee": "c90e782cad",
+"pool": "4f21a023ea",
+"ladder": "598c4ee156",
+"procedural": "1b732f7ad1",
+"ladder_file": "team_012578.gen3ou_team"
+},
+{
+"i": 91,
+"seed_base": 20260924091,
+"trainee": "dbbfac7bd5",
+"pool": "164c3e31eb",
+"ladder": "3cc9ef7a12",
+"procedural": "37c4430d33",
+"ladder_file": "team_005281.gen3ou_team"
+},
+{
+"i": 92,
+"seed_base": 20260924092,
+"trainee": "1a056904ae",
+"pool": "97b2f0f9f7",
+"ladder": "24d9b31e6d",
+"procedural": "c18ae3ef05",
+"ladder_file": "team_008289.gen3ou_team"
+},
+{
+"i": 93,
+"seed_base": 20260924093,
+"trainee": "0af19b638a",
+"pool": "6d8f5c1c26",
+"ladder": "5ecc421873",
+"procedural": "b41d347b3b",
+"ladder_file": "team_018170.gen3ou_team"
+},
+{
+"i": 94,
+"seed_base": 20260924094,
+"trainee": "b904dbe059",
+"pool": "2158e3da1e",
+"ladder": "29aaf0ed26",
+"procedural": "c6aa2256e9",
+"ladder_file": "team_021437.gen3ou_team"
+},
+{
+"i": 95,
+"seed_base": 20260924095,
+"trainee": "725daf7716",
+"pool": "91c284199a",
+"ladder": "cabdaa7572",
+"procedural": "b92ed38e4a",
+"ladder_file": "team_009024.gen3ou_team"
+},
+{
+"i": 96,
+"seed_base": 20260924096,
+"trainee": "4941c09659",
+"pool": "d1ed25a242",
+"ladder": "464f01e182",
+"procedural": "0edff5a2d6",
+"ladder_file": "team_005703.gen3ou_team"
+},
+{
+"i": 97,
+"seed_base": 20260924097,
+"trainee": "8f247da388",
+"pool": "19f3d58733",
+"ladder": "b6fa2ee8cd",
+"procedural": "62bddc63c5",
+"ladder_file": "team_015892.gen3ou_team"
+},
+{
+"i": 98,
+"seed_base": 20260924098,
+"trainee": "70e9f6be5f",
+"pool": "e43ea0314c",
+"ladder": "2eec016fa7",
+"procedural": "7f5d105e1a",
+"ladder_file": "team_009995.gen3ou_team"
+},
+{
+"i": 99,
+"seed_base": 20260924099,
+"trainee": "8cc835bd6c",
+"pool": "9ba039ba8a",
+"ladder": "ffca646945",
+"procedural": "e997282048",
+"ladder_file": "team_019546.gen3ou_team"
+},
+{
+"i": 100,
+"seed_base": 20260924100,
+"trainee": "141fdea20e",
+"pool": "80365d55bc",
+"ladder": "ead3096f56",
+"procedural": "8959e9bbdc",
+"ladder_file": "team_015231.gen3ou_team"
+},
+{
+"i": 101,
+"seed_base": 20260924101,
+"trainee": "33a19c476d",
+"pool": "f1b6ba6434",
+"ladder": "d35a3da9cd",
+"procedural": "ded68a660d",
+"ladder_file": "team_001415.gen3ou_team"
+},
+{
+"i": 102,
+"seed_base": 20260924102,
+"trainee": "9d1282cf16",
+"pool": "a577a735b7",
+"ladder": "74c5f48c84",
+"procedural": "5b6d52f304",
+"ladder_file": "team_023224.gen3ou_team"
+},
+{
+"i": 103,
+"seed_base": 20260924103,
+"trainee": "1f69ab9a7b",
+"pool": "a9812f34b9",
+"ladder": "a4de9390ba",
+"procedural": "c4188c2238",
+"ladder_file": "team_020901.gen3ou_team"
+},
+{
+"i": 104,
+"seed_base": 20260924104,
+"trainee": "f7e46432b9",
+"pool": "4dd152e734",
+"ladder": "f33c03a297",
+"procedural": "c112f14f74",
+"ladder_file": "team_002986.gen3ou_team"
+},
+{
+"i": 105,
+"seed_base": 20260924105,
+"trainee": "747985a50d",
+"pool": "2d9f93b0dd",
+"ladder": "8e0b24638e",
+"procedural": "5a43ee61f4",
+"ladder_file": "team_011486.gen3ou_team"
+},
+{
+"i": 106,
+"seed_base": 20260924106,
+"trainee": "d3c1cd0952",
+"pool": "637cbb13a2",
+"ladder": "ea345ef68d",
+"procedural": "c11703d2c4",
+"ladder_file": "team_010636.gen3ou_team"
+},
+{
+"i": 107,
+"seed_base": 20260924107,
+"trainee": "fe733bd556",
+"pool": "2c94aea80a",
+"ladder": "ed44bf6b44",
+"procedural": "700ec08e04",
+"ladder_file": "team_008648.gen3ou_team"
+},
+{
+"i": 108,
+"seed_base": 20260924108,
+"trainee": "9d1282cf16",
+"pool": "e7f8cd4094",
+"ladder": "607a092c5c",
+"procedural": "2c1390c390",
+"ladder_file": "team_013148.gen3ou_team"
+},
+{
+"i": 109,
+"seed_base": 20260924109,
+"trainee": "60eb307b5d",
+"pool": "a673e5b1bd",
+"ladder": "110d3a4654",
+"procedural": "889f619d6c",
+"ladder_file": "team_015862.gen3ou_team"
+},
+{
+"i": 110,
+"seed_base": 20260924110,
+"trainee": "413b155633",
+"pool": "f9de26727a",
+"ladder": "a317adc003",
+"procedural": "0afcbf5abc",
+"ladder_file": "team_014312.gen3ou_team"
+},
+{
+"i": 111,
+"seed_base": 20260924111,
+"trainee": "552d5857a3",
+"pool": "a185b2d193",
+"ladder": "708df709c2",
+"procedural": "941cb4e03d",
+"ladder_file": "team_007663.gen3ou_team"
+},
+{
+"i": 112,
+"seed_base": 20260924112,
+"trainee": "c4ce385786",
+"pool": "bc09f7c1af",
+"ladder": "840d3620b4",
+"procedural": "1eb9992164",
+"ladder_file": "team_020967.gen3ou_team"
+},
+{
+"i": 113,
+"seed_base": 20260924113,
+"trainee": "e7f1d6f7fe",
+"pool": "60eb307b5d",
+"ladder": "42e9e540b8",
+"procedural": "eb9c38ac75",
+"ladder_file": "team_012471.gen3ou_team"
+},
+{
+"i": 114,
+"seed_base": 20260924114,
+"trainee": "04c4890255",
+"pool": "089c41a786",
+"ladder": "a479fdb10e",
+"procedural": "24f572d288",
+"ladder_file": "team_000731.gen3ou_team"
+},
+{
+"i": 115,
+"seed_base": 20260924115,
+"trainee": "47e956d497",
+"pool": "dfdafadcaf",
+"ladder": "1a5c91087f",
+"procedural": "679463c779",
+"ladder_file": "team_013351.gen3ou_team"
+},
+{
+"i": 116,
+"seed_base": 20260924116,
+"trainee": "177de64c50",
+"pool": "d44f2afea1",
+"ladder": "6bfa8ff5c2",
+"procedural": "d38d0f4724",
+"ladder_file": "team_009954.gen3ou_team"
+},
+{
+"i": 117,
+"seed_base": 20260924117,
+"trainee": "0b7f64a077",
+"pool": "065b356b1f",
+"ladder": "9b7dadb675",
+"procedural": "d5aa6d73a6",
+"ladder_file": "team_004289.gen3ou_team"
+},
+{
+"i": 118,
+"seed_base": 20260924118,
+"trainee": "fa84545955",
+"pool": "d3f703b88d",
+"ladder": "52aa1276a5",
+"procedural": "9705388daa",
+"ladder_file": "team_010853.gen3ou_team"
+},
+{
+"i": 119,
+"seed_base": 20260924119,
+"trainee": "bc09f7c1af",
+"pool": "30bf4d3c42",
+"ladder": "58568425db",
+"procedural": "e47632f288",
+"ladder_file": "team_000985.gen3ou_team"
+},
+{
+"i": 120,
+"seed_base": 20260924120,
+"trainee": "031af111f4",
+"pool": "f593373169",
+"ladder": "f24843636e",
+"procedural": "426966c6a7",
+"ladder_file": "team_008328.gen3ou_team"
+},
+{
+"i": 121,
+"seed_base": 20260924121,
+"trainee": "86b4dba186",
+"pool": "62ee755478",
+"ladder": "c344cd72fb",
+"procedural": "6e5086ff0b",
+"ladder_file": "team_023539.gen3ou_team"
+},
+{
+"i": 122,
+"seed_base": 20260924122,
+"trainee": "885c5eb9b4",
+"pool": "8b3bf18fa3",
+"ladder": "2b8778b31d",
+"procedural": "9f02c1471e",
+"ladder_file": "team_022951.gen3ou_team"
+},
+{
+"i": 123,
+"seed_base": 20260924123,
+"trainee": "95e69273f8",
+"pool": "09826f5095",
+"ladder": "ce9fa2889b",
+"procedural": "a2046582d6",
+"ladder_file": "team_002273.gen3ou_team"
+},
+{
+"i": 124,
+"seed_base": 20260924124,
+"trainee": "1f69ab9a7b",
+"pool": "f4aaa21403",
+"ladder": "a086c6ced4",
+"procedural": "604b68669d",
+"ladder_file": "team_022232.gen3ou_team"
+},
+{
+"i": 125,
+"seed_base": 20260924125,
+"trainee": "422a4745c5",
+"pool": "7f52308ad9",
+"ladder": "922b23f49c",
+"procedural": "5515ac4f8c",
+"ladder_file": "team_007083.gen3ou_team"
+},
+{
+"i": 126,
+"seed_base": 20260924126,
+"trainee": "01cb64e16c",
+"pool": "67c0263418",
+"ladder": "e3e1ca655d",
+"procedural": "5da9c43db4",
+"ladder_file": "team_012228.gen3ou_team"
+},
+{
+"i": 127,
+"seed_base": 20260924127,
+"trainee": "ba5c32f10b",
+"pool": "e048c830f7",
+"ladder": "cd059b4a7d",
+"procedural": "c9836d6ecf",
+"ladder_file": "team_010948.gen3ou_team"
+},
+{
+"i": 128,
+"seed_base": 20260924128,
+"trainee": "3b6584ba40",
+"pool": "27e9b8f884",
+"ladder": "253729597c",
+"procedural": "b30376dca4",
+"ladder_file": "team_003432.gen3ou_team"
+},
+{
+"i": 129,
+"seed_base": 20260924129,
+"trainee": "80365d55bc",
+"pool": "4f14b6a7a0",
+"ladder": "002cfed8c0",
+"procedural": "d2eb3112ea",
+"ladder_file": "team_016528.gen3ou_team"
+},
+{
+"i": 130,
+"seed_base": 20260924130,
+"trainee": "3e9bdcee48",
+"pool": "cba7e2c249",
+"ladder": "991ffcfc85",
+"procedural": "b4b7b8bbac",
+"ladder_file": "team_013530.gen3ou_team"
+},
+{
+"i": 131,
+"seed_base": 20260924131,
+"trainee": "3b6584ba40",
+"pool": "f216acd31e",
+"ladder": "ac692bd96b",
+"procedural": "21fb0c9f4f",
+"ladder_file": "team_022300.gen3ou_team"
+},
+{
+"i": 132,
+"seed_base": 20260924132,
+"trainee": "921f372bde",
+"pool": "cd59c8d646",
+"ladder": "83031a13df",
+"procedural": "662a179661",
+"ladder_file": "team_000724.gen3ou_team"
+},
+{
+"i": 133,
+"seed_base": 20260924133,
+"trainee": "bc2f13f222",
+"pool": "30c3654a0c",
+"ladder": "bb42cf705f",
+"procedural": "9080a6bcfe",
+"ladder_file": "team_004922.gen3ou_team"
+},
+{
+"i": 134,
+"seed_base": 20260924134,
+"trainee": "2d58357f00",
+"pool": "42808b709b",
+"ladder": "804924fe2b",
+"procedural": "4211036d3d",
+"ladder_file": "team_021029.gen3ou_team"
+},
+{
+"i": 135,
+"seed_base": 20260924135,
+"trainee": "a847359150",
+"pool": "bc0d1d0860",
+"ladder": "27d0d0225e",
+"procedural": "215bdda178",
+"ladder_file": "team_020785.gen3ou_team"
+},
+{
+"i": 136,
+"seed_base": 20260924136,
+"trainee": "f90a09086e",
+"pool": "8b56be8f73",
+"ladder": "06dd510820",
+"procedural": "6ce0a37a52",
+"ladder_file": "team_012126.gen3ou_team"
+},
+{
+"i": 137,
+"seed_base": 20260924137,
+"trainee": "a3bc0b0470",
+"pool": "f75c5fef49",
+"ladder": "ee13aef98e",
+"procedural": "9bffe709e6",
+"ladder_file": "team_010770.gen3ou_team"
+},
+{
+"i": 138,
+"seed_base": 20260924138,
+"trainee": "97b2f0f9f7",
+"pool": "0d42c60d9f",
+"ladder": "798318acac",
+"procedural": "1edf7584d7",
+"ladder_file": "team_020169.gen3ou_team"
+},
+{
+"i": 139,
+"seed_base": 20260924139,
+"trainee": "f4ba47fff4",
+"pool": "a4c1bfdf04",
+"ladder": "4d59eeb1da",
+"procedural": "a7eb202fce",
+"ladder_file": "team_006089.gen3ou_team"
+},
+{
+"i": 140,
+"seed_base": 20260924140,
+"trainee": "39867352dc",
+"pool": "2c94aea80a",
+"ladder": "5c6aefeffc",
+"procedural": "88b6903dc5",
+"ladder_file": "team_004675.gen3ou_team"
+},
+{
+"i": 141,
+"seed_base": 20260924141,
+"trainee": "46d12c9237",
+"pool": "2b1d8e74a1",
+"ladder": "a5cf7cf765",
+"procedural": "12da2bb1b8",
+"ladder_file": "team_008685.gen3ou_team"
+},
+{
+"i": 142,
+"seed_base": 20260924142,
+"trainee": "e048c830f7",
+"pool": "8f247da388",
+"ladder": "f27fbda503",
+"procedural": "988253371c",
+"ladder_file": "team_018667.gen3ou_team"
+},
+{
+"i": 143,
+"seed_base": 20260924143,
+"trainee": "1f69ab9a7b",
+"pool": "7fb460707b",
+"ladder": "727ce8fe1b",
+"procedural": "9c613803a7",
+"ladder_file": "team_012776.gen3ou_team"
+},
+{
+"i": 144,
+"seed_base": 20260924144,
+"trainee": "70e9f6be5f",
+"pool": "03f6a51507",
+"ladder": "75c5ca9fbd",
+"procedural": "476115b279",
+"ladder_file": "team_005194.gen3ou_team"
+},
+{
+"i": 145,
+"seed_base": 20260924145,
+"trainee": "24db4aacdd",
+"pool": "9c85675c5e",
+"ladder": "c76ebc5b31",
+"procedural": "4fbdf02c28",
+"ladder_file": "team_003074.gen3ou_team"
+},
+{
+"i": 146,
+"seed_base": 20260924146,
+"trainee": "f40ce7a213",
+"pool": "e749409f46",
+"ladder": "694bdce8de",
+"procedural": "cf38cc2db1",
+"ladder_file": "team_002193.gen3ou_team"
+},
+{
+"i": 147,
+"seed_base": 20260924147,
+"trainee": "e897031fa0",
+"pool": "1ca483a3fd",
+"ladder": "648a266eb7",
+"procedural": "33dc7b6350",
+"ladder_file": "team_016971.gen3ou_team"
+},
+{
+"i": 148,
+"seed_base": 20260924148,
+"trainee": "eb308a7fd8",
+"pool": "04c4890255",
+"ladder": "4774cf29d2",
+"procedural": "1cbaf3672f",
+"ladder_file": "team_023456.gen3ou_team"
+},
+{
+"i": 149,
+"seed_base": 20260924149,
+"trainee": "4771662cf7",
+"pool": "fcbade71bc",
+"ladder": "a888481a8e",
+"procedural": "c7bb290ed1",
+"ladder_file": "team_015103.gen3ou_team"
+},
+{
+"i": 150,
+"seed_base": 20260924150,
+"trainee": "713403f9e9",
+"pool": "03f6a51507",
+"ladder": "32bcbd8ea7",
+"procedural": "c57a06e301",
+"ladder_file": "team_005068.gen3ou_team"
+},
+{
+"i": 151,
+"seed_base": 20260924151,
+"trainee": "8cc835bd6c",
+"pool": "25264b98ec",
+"ladder": "86e1ce8625",
+"procedural": "2921b500f8",
+"ladder_file": "team_001019.gen3ou_team"
+},
+{
+"i": 152,
+"seed_base": 20260924152,
+"trainee": "60eb307b5d",
+"pool": "713403f9e9",
+"ladder": "fff91365b8",
+"procedural": "e7689b82d8",
+"ladder_file": "team_016348.gen3ou_team"
+},
+{
+"i": 153,
+"seed_base": 20260924153,
+"trainee": "a8319857c9",
+"pool": "02dea8fcb1",
+"ladder": "e865c1afc3",
+"procedural": "1c13c321e5",
+"ladder_file": "team_007089.gen3ou_team"
+},
+{
+"i": 154,
+"seed_base": 20260924154,
+"trainee": "6c1997a26d",
+"pool": "4dd152e734",
+"ladder": "d04e549b23",
+"procedural": "d7d855d3a4",
+"ladder_file": "team_023528.gen3ou_team"
+},
+{
+"i": 155,
+"seed_base": 20260924155,
+"trainee": "a265c9e285",
+"pool": "1c1420342b",
+"ladder": "096b559798",
+"procedural": "5392a68039",
+"ladder_file": "team_022579.gen3ou_team"
+},
+{
+"i": 156,
+"seed_base": 20260924156,
+"trainee": "11ccca1026",
+"pool": "a1ed746d17",
+"ladder": "1ca2ecaa6f",
+"procedural": "affe9022ae",
+"ladder_file": "team_008095.gen3ou_team"
+},
+{
+"i": 157,
+"seed_base": 20260924157,
+"trainee": "ad2876f90f",
+"pool": "3920a5372e",
+"ladder": "0c6e3f3b2b",
+"procedural": "1089bd7338",
+"ladder_file": "team_021096.gen3ou_team"
+},
+{
+"i": 158,
+"seed_base": 20260924158,
+"trainee": "27e9b8f884",
+"pool": "aa0cffc5ed",
+"ladder": "7a57f38cba",
+"procedural": "57a18a6869",
+"ladder_file": "team_001480.gen3ou_team"
+},
+{
+"i": 159,
+"seed_base": 20260924159,
+"trainee": "3bdc4b63dd",
+"pool": "2ae97f3379",
+"ladder": "089fb8684f",
+"procedural": "bc96318504",
+"ladder_file": "team_018752.gen3ou_team"
+},
+{
+"i": 160,
+"seed_base": 20260924160,
+"trainee": "8cc835bd6c",
+"pool": "57589710f4",
+"ladder": "36028026ae",
+"procedural": "cf145c89cc",
+"ladder_file": "team_000674.gen3ou_team"
+},
+{
+"i": 161,
+"seed_base": 20260924161,
+"trainee": "571140774b",
+"pool": "355789e24b",
+"ladder": "435ae90e1d",
+"procedural": "3cbd4ee50f",
+"ladder_file": "team_014247.gen3ou_team"
+},
+{
+"i": 162,
+"seed_base": 20260924162,
+"trainee": "6633ef6110",
+"pool": "67eea52a8e",
+"ladder": "40e0458f15",
+"procedural": "bc399dfb5b",
+"ladder_file": "team_019968.gen3ou_team"
+},
+{
+"i": 163,
+"seed_base": 20260924163,
+"trainee": "038204d091",
+"pool": "8ac0ff4319",
+"ladder": "7b4e700b97",
+"procedural": "98d08d8023",
+"ladder_file": "team_002221.gen3ou_team"
+},
+{
+"i": 164,
+"seed_base": 20260924164,
+"trainee": "4f14b6a7a0",
+"pool": "d3c61b2fb6",
+"ladder": "92b41f2cc7",
+"procedural": "52895ccdc9",
+"ladder_file": "team_019158.gen3ou_team"
+},
+{
+"i": 165,
+"seed_base": 20260924165,
+"trainee": "6a49f096f0",
+"pool": "a6680f8517",
+"ladder": "099d19e1c3",
+"procedural": "eb79ce8072",
+"ladder_file": "team_001709.gen3ou_team"
+},
+{
+"i": 166,
+"seed_base": 20260924166,
+"trainee": "3555a63299",
+"pool": "c6b830a3f0",
+"ladder": "b44ae6689b",
+"procedural": "1b948dbefe",
+"ladder_file": "team_003418.gen3ou_team"
+},
+{
+"i": 167,
+"seed_base": 20260924167,
+"trainee": "a9edcd1df5",
+"pool": "2f79d254f4",
+"ladder": "3f30fdf6e0",
+"procedural": "d5c0cbe26b",
+"ladder_file": "team_017360.gen3ou_team"
+},
+{
+"i": 168,
+"seed_base": 20260924168,
+"trainee": "2edb3e1d3f",
+"pool": "34136817e1",
+"ladder": "8021c6fb77",
+"procedural": "e4156928ee",
+"ladder_file": "team_011769.gen3ou_team"
+},
+{
+"i": 169,
+"seed_base": 20260924169,
+"trainee": "2c5b1d6abb",
+"pool": "af923978cf",
+"ladder": "4a4c94d80e",
+"procedural": "f0a973b6e0",
+"ladder_file": "team_012159.gen3ou_team"
+},
+{
+"i": 170,
+"seed_base": 20260924170,
+"trainee": "9420574e38",
+"pool": "fed4eee838",
+"ladder": "1b55f6fa62",
+"procedural": "46fbf3ca4c",
+"ladder_file": "team_002436.gen3ou_team"
+},
+{
+"i": 171,
+"seed_base": 20260924171,
+"trainee": "3402c8a23b",
+"pool": "ddcbe3345c",
+"ladder": "6b4dab3698",
+"procedural": "1ca2dad68a",
+"ladder_file": "team_002584.gen3ou_team"
+},
+{
+"i": 172,
+"seed_base": 20260924172,
+"trainee": "c0e60903e8",
+"pool": "c1fc379c85",
+"ladder": "58143a16e0",
+"procedural": "0891db9f4d",
+"ladder_file": "team_000479.gen3ou_team"
+},
+{
+"i": 173,
+"seed_base": 20260924173,
+"trainee": "9fd514a816",
+"pool": "dc94160296",
+"ladder": "b13735d9ea",
+"procedural": "729c2f1107",
+"ladder_file": "team_019481.gen3ou_team"
+},
+{
+"i": 174,
+"seed_base": 20260924174,
+"trainee": "569ebae46d",
+"pool": "c6e5e12614",
+"ladder": "1436489ecd",
+"procedural": "1fecb36fd2",
+"ladder_file": "team_020515.gen3ou_team"
+},
+{
+"i": 175,
+"seed_base": 20260924175,
+"trainee": "a265c9e285",
+"pool": "4c9552cd01",
+"ladder": "a7f72e3e1a",
+"procedural": "296007807b",
+"ladder_file": "team_023965.gen3ou_team"
+},
+{
+"i": 176,
+"seed_base": 20260924176,
+"trainee": "23d22aa4ab",
+"pool": "3997c6d738",
+"ladder": "35216524f7",
+"procedural": "eb1778a275",
+"ladder_file": "team_015376.gen3ou_team"
+},
+{
+"i": 177,
+"seed_base": 20260924177,
+"trainee": "fdd21c18e2",
+"pool": "a917696663",
+"ladder": "5b4d575eae",
+"procedural": "74ce50a6ef",
+"ladder_file": "team_014916.gen3ou_team"
+},
+{
+"i": 178,
+"seed_base": 20260924178,
+"trainee": "cff178f231",
+"pool": "c5bf93d942",
+"ladder": "77028ad0c4",
+"procedural": "553bae3724",
+"ladder_file": "team_018315.gen3ou_team"
+},
+{
+"i": 179,
+"seed_base": 20260924179,
+"trainee": "0fbeec0686",
+"pool": "3402c8a23b",
+"ladder": "734674fe09",
+"procedural": "45ddf44812",
+"ladder_file": "team_005905.gen3ou_team"
+},
+{
+"i": 180,
+"seed_base": 20260924180,
+"trainee": "6a965d803c",
+"pool": "0f6b0404a6",
+"ladder": "c7159caf45",
+"procedural": "a0baefb6f3",
+"ladder_file": "team_009949.gen3ou_team"
+},
+{
+"i": 181,
+"seed_base": 20260924181,
+"trainee": "7bd5abf296",
+"pool": "ee4774caee",
+"ladder": "2bb5dc21b4",
+"procedural": "e111ac04b4",
+"ladder_file": "team_010224.gen3ou_team"
+},
+{
+"i": 182,
+"seed_base": 20260924182,
+"trainee": "cba7e2c249",
+"pool": "2d58357f00",
+"ladder": "b5b532b357",
+"procedural": "9ea3452759",
+"ladder_file": "team_016904.gen3ou_team"
+},
+{
+"i": 183,
+"seed_base": 20260924183,
+"trainee": "2c5b1d6abb",
+"pool": "4c9552cd01",
+"ladder": "5b986a1c8c",
+"procedural": "a057892fa8",
+"ladder_file": "team_023859.gen3ou_team"
+},
+{
+"i": 184,
+"seed_base": 20260924184,
+"trainee": "2d9c53708a",
+"pool": "11ccca1026",
+"ladder": "abfb29af86",
+"procedural": "10e4ac078d",
+"ladder_file": "team_011590.gen3ou_team"
+},
+{
+"i": 185,
+"seed_base": 20260924185,
+"trainee": "7bab8a4a2f",
+"pool": "591321332b",
+"ladder": "5cc1471fe0",
+"procedural": "d7f33ee4ca",
+"ladder_file": "team_008398.gen3ou_team"
+},
+{
+"i": 186,
+"seed_base": 20260924186,
+"trainee": "e048c830f7",
+"pool": "b0aa21d4e3",
+"ladder": "5ffefb4051",
+"procedural": "7714af3aaf",
+"ladder_file": "team_022365.gen3ou_team"
+},
+{
+"i": 187,
+"seed_base": 20260924187,
+"trainee": "91f73d6964",
+"pool": "6dd7059147",
+"ladder": "4a947ac943",
+"procedural": "a034ef164d",
+"ladder_file": "team_001775.gen3ou_team"
+},
+{
+"i": 188,
+"seed_base": 20260924188,
+"trainee": "355789e24b",
+"pool": "970acf5f37",
+"ladder": "8de0d119ae",
+"procedural": "c2c9196221",
+"ladder_file": "team_015820.gen3ou_team"
+},
+{
+"i": 189,
+"seed_base": 20260924189,
+"trainee": "da75e62df1",
+"pool": "3a7978a983",
+"ladder": "1a8fc7e95c",
+"procedural": "41309a6937",
+"ladder_file": "team_015532.gen3ou_team"
+},
+{
+"i": 190,
+"seed_base": 20260924190,
+"trainee": "725daf7716",
+"pool": "b2144660b9",
+"ladder": "d55f74f026",
+"procedural": "fd797cf0c8",
+"ladder_file": "team_006904.gen3ou_team"
+},
+{
+"i": 191,
+"seed_base": 20260924191,
+"trainee": "46d3021c99",
+"pool": "f947eeb25e",
+"ladder": "8e0710b43e",
+"procedural": "b6b5531387",
+"ladder_file": "team_014892.gen3ou_team"
+},
+{
+"i": 192,
+"seed_base": 20260924192,
+"trainee": "03f6a51507",
+"pool": "8312887467",
+"ladder": "51e15feb48",
+"procedural": "8ce2c94ec5",
+"ladder_file": "team_006328.gen3ou_team"
+},
+{
+"i": 193,
+"seed_base": 20260924193,
+"trainee": "6e48a03f05",
+"pool": "6ef6e77850",
+"ladder": "83711ff2b8",
+"procedural": "6265167cb4",
+"ladder_file": "team_012837.gen3ou_team"
+},
+{
+"i": 194,
+"seed_base": 20260924194,
+"trainee": "9d1282cf16",
+"pool": "141fdea20e",
+"ladder": "0f21912333",
+"procedural": "8b0da1439d",
+"ladder_file": "team_003519.gen3ou_team"
+},
+{
+"i": 195,
+"seed_base": 20260924195,
+"trainee": "7c1873fba2",
+"pool": "01cb64e16c",
+"ladder": "dda59ed819",
+"procedural": "7565fef2ac",
+"ladder_file": "team_004004.gen3ou_team"
+},
+{
+"i": 196,
+"seed_base": 20260924196,
+"trainee": "ac34c0c11d",
+"pool": "a78c64ce5b",
+"ladder": "67723e0ca0",
+"procedural": "29aab5bad6",
+"ladder_file": "team_018786.gen3ou_team"
+},
+{
+"i": 197,
+"seed_base": 20260924197,
+"trainee": "b08909ab04",
+"pool": "30c3654a0c",
+"ladder": "9ecd4db33f",
+"procedural": "e74010b0a0",
+"ladder_file": "team_014902.gen3ou_team"
+},
+{
+"i": 198,
+"seed_base": 20260924198,
+"trainee": "13388c8b10",
+"pool": "015e78dda7",
+"ladder": "e4ac8914fb",
+"procedural": "a951bc9025",
+"ladder_file": "team_018621.gen3ou_team"
+},
+{
+"i": 199,
+"seed_base": 20260924199,
+"trainee": "14a29827d3",
+"pool": "f216acd31e",
+"ladder": "77cc7f65c8",
+"procedural": "976e96ad50",
+"ladder_file": "team_019991.gen3ou_team"
+},
+{
+"i": 200,
+"seed_base": 20260924200,
+"trainee": "8e796cacc7",
+"pool": "e5bf5b83b5",
+"ladder": "81f37dda2f",
+"procedural": "c87418e6c1",
+"ladder_file": "team_013026.gen3ou_team"
+},
+{
+"i": 201,
+"seed_base": 20260924201,
+"trainee": "def86feeb1",
+"pool": "b42c0cd84d",
+"ladder": "b10b9d7555",
+"procedural": "24d9faf370",
+"ladder_file": "team_016093.gen3ou_team"
+},
+{
+"i": 202,
+"seed_base": 20260924202,
+"trainee": "9d1282cf16",
+"pool": "63f81c5c58",
+"ladder": "901ad8c02c",
+"procedural": "3141568fc6",
+"ladder_file": "team_000432.gen3ou_team"
+},
+{
+"i": 203,
+"seed_base": 20260924203,
+"trainee": "54daa829c5",
+"pool": "9fd514a816",
+"ladder": "696660c2fd",
+"procedural": "215d60180e",
+"ladder_file": "team_003071.gen3ou_team"
+},
+{
+"i": 204,
+"seed_base": 20260924204,
+"trainee": "11e498234f",
+"pool": "21022d30fb",
+"ladder": "6fd12c4563",
+"procedural": "a270d4ef87",
+"ladder_file": "team_010053.gen3ou_team"
+},
+{
+"i": 205,
+"seed_base": 20260924205,
+"trainee": "169ed55259",
+"pool": "591321332b",
+"ladder": "a5ca3249e5",
+"procedural": "1d0a52223d",
+"ladder_file": "team_019707.gen3ou_team"
+},
+{
+"i": 206,
+"seed_base": 20260924206,
+"trainee": "3ab6020379",
+"pool": "9420574e38",
+"ladder": "d8777ec7f9",
+"procedural": "f4c15d17d7",
+"ladder_file": "team_017822.gen3ou_team"
+},
+{
+"i": 207,
+"seed_base": 20260924207,
+"trainee": "c9a2cef359",
+"pool": "ae1124b4a3",
+"ladder": "5fe209b61e",
+"procedural": "79da4655a4",
+"ladder_file": "team_007674.gen3ou_team"
+},
+{
+"i": 208,
+"seed_base": 20260924208,
+"trainee": "fc908f1bf4",
+"pool": "78b3b6f4a6",
+"ladder": "485c263f44",
+"procedural": "25eef05500",
+"ladder_file": "team_006571.gen3ou_team"
+},
+{
+"i": 209,
+"seed_base": 20260924209,
+"trainee": "17ab3c78a2",
+"pool": "e4b2368267",
+"ladder": "44553c1615",
+"procedural": "aab0bbc089",
+"ladder_file": "team_002710.gen3ou_team"
+},
+{
+"i": 210,
+"seed_base": 20260924210,
+"trainee": "683908e124",
+"pool": "64a691c473",
+"ladder": "f97eddc6c7",
+"procedural": "82b260fa6c",
+"ladder_file": "team_011766.gen3ou_team"
+},
+{
+"i": 211,
+"seed_base": 20260924211,
+"trainee": "4f21a023ea",
+"pool": "2452541c34",
+"ladder": "8745f13d91",
+"procedural": "0af631415b",
+"ladder_file": "team_015228.gen3ou_team"
+},
+{
+"i": 212,
+"seed_base": 20260924212,
+"trainee": "def86feeb1",
+"pool": "def86feeb1",
+"ladder": "1b3e452dad",
+"procedural": "a5e609eacf",
+"ladder_file": "team_015767.gen3ou_team"
+},
+{
+"i": 213,
+"seed_base": 20260924213,
+"trainee": "33a19c476d",
+"pool": "6e751d314c",
+"ladder": "ac359f7212",
+"procedural": "5f7e6b3cc9",
+"ladder_file": "team_023567.gen3ou_team"
+},
+{
+"i": 214,
+"seed_base": 20260924214,
+"trainee": "16cb54accf",
+"pool": "86f8372c99",
+"ladder": "eab11f5139",
+"procedural": "55cdec026b",
+"ladder_file": "team_022223.gen3ou_team"
+},
+{
+"i": 215,
+"seed_base": 20260924215,
+"trainee": "30c3654a0c",
+"pool": "1fca995616",
+"ladder": "10385d864c",
+"procedural": "b9faccf1fc",
+"ladder_file": "team_002878.gen3ou_team"
+},
+{
+"i": 216,
+"seed_base": 20260924216,
+"trainee": "7f9a6ea35e",
+"pool": "9b454d9ea7",
+"ladder": "a739e07e4d",
+"procedural": "0648cc202a",
+"ladder_file": "team_022974.gen3ou_team"
+},
+{
+"i": 217,
+"seed_base": 20260924217,
+"trainee": "571140774b",
+"pool": "0a4404bff9",
+"ladder": "ca83295c13",
+"procedural": "3c5fc92095",
+"ladder_file": "team_003317.gen3ou_team"
+},
+{
+"i": 218,
+"seed_base": 20260924218,
+"trainee": "591321332b",
+"pool": "e897031fa0",
+"ladder": "c0749a68af",
+"procedural": "847c63e7f2",
+"ladder_file": "team_023303.gen3ou_team"
+},
+{
+"i": 219,
+"seed_base": 20260924219,
+"trainee": "53e60239d2",
+"pool": "1f69ab9a7b",
+"ladder": "c8213377f6",
+"procedural": "f515cb3196",
+"ladder_file": "team_001347.gen3ou_team"
+},
+{
+"i": 220,
+"seed_base": 20260924220,
+"trainee": "65741fbe35",
+"pool": "1f69ab9a7b",
+"ladder": "5d386e8b68",
+"procedural": "5ada22c36b",
+"ladder_file": "team_022584.gen3ou_team"
+},
+{
+"i": 221,
+"seed_base": 20260924221,
+"trainee": "a0ac7f0f71",
+"pool": "e7f1d6f7fe",
+"ladder": "0bf43fc5d4",
+"procedural": "ccb16177d1",
+"ladder_file": "team_005790.gen3ou_team"
+},
+{
+"i": 222,
+"seed_base": 20260924222,
+"trainee": "887527eb2e",
+"pool": "63ef787e7a",
+"ladder": "9f9ea138b2",
+"procedural": "eaa941e14c",
+"ladder_file": "team_000956.gen3ou_team"
+},
+{
+"i": 223,
+"seed_base": 20260924223,
+"trainee": "637cbb13a2",
+"pool": "3997c6d738",
+"ladder": "805b0eb12f",
+"procedural": "65e0b43cc4",
+"ladder_file": "team_013396.gen3ou_team"
+},
+{
+"i": 224,
+"seed_base": 20260924224,
+"trainee": "591321332b",
+"pool": "76c0e3e9b3",
+"ladder": "b80af7e30b",
+"procedural": "4e737378f8",
+"ladder_file": "team_010329.gen3ou_team"
+},
+{
+"i": 225,
+"seed_base": 20260924225,
+"trainee": "f581a2606a",
+"pool": "564b9be3ae",
+"ladder": "a41ca494bf",
+"procedural": "2163d5e241",
+"ladder_file": "team_009482.gen3ou_team"
+},
+{
+"i": 226,
+"seed_base": 20260924226,
+"trainee": "d1ed25a242",
+"pool": "9c85675c5e",
+"ladder": "b485c22b88",
+"procedural": "b9956ea756",
+"ladder_file": "team_001064.gen3ou_team"
+},
+{
+"i": 227,
+"seed_base": 20260924227,
+"trainee": "e3d3d79d08",
+"pool": "2e325a7925",
+"ladder": "d4f2902950",
+"procedural": "2e9b9ccf99",
+"ladder_file": "team_023959.gen3ou_team"
+},
+{
+"i": 228,
+"seed_base": 20260924228,
+"trainee": "044da80d78",
+"pool": "bf1f075963",
+"ladder": "16c33e96e5",
+"procedural": "30b6553d4a",
+"ladder_file": "team_012673.gen3ou_team"
+},
+{
+"i": 229,
+"seed_base": 20260924229,
+"trainee": "a3bc0b0470",
+"pool": "9278913bce",
+"ladder": "3467715ad1",
+"procedural": "15bf13442d",
+"ladder_file": "team_001960.gen3ou_team"
+},
+{
+"i": 230,
+"seed_base": 20260924230,
+"trainee": "cdaabc260e",
+"pool": "45bf0e75b0",
+"ladder": "e4f8b5f80f",
+"procedural": "3339a544c4",
+"ladder_file": "team_003767.gen3ou_team"
+},
+{
+"i": 231,
+"seed_base": 20260924231,
+"trainee": "8b3bf18fa3",
+"pool": "8f74a43699",
+"ladder": "d642aa9702",
+"procedural": "72523eed22",
+"ladder_file": "team_016923.gen3ou_team"
+},
+{
+"i": 232,
+"seed_base": 20260924232,
+"trainee": "0a9413339a",
+"pool": "80365d55bc",
+"ladder": "0277265bab",
+"procedural": "cd8cfc3b7d",
+"ladder_file": "team_023510.gen3ou_team"
+},
+{
+"i": 233,
+"seed_base": 20260924233,
+"trainee": "98b691a908",
+"pool": "ac71863ff8",
+"ladder": "21ebe80a85",
+"procedural": "8fe104e5ef",
+"ladder_file": "team_017364.gen3ou_team"
+},
+{
+"i": 234,
+"seed_base": 20260924234,
+"trainee": "7a93b5fa43",
+"pool": "6a9b5dc251",
+"ladder": "6778cb71d6",
+"procedural": "c66411bc01",
+"ladder_file": "team_020346.gen3ou_team"
+},
+{
+"i": 235,
+"seed_base": 20260924235,
+"trainee": "8d4518e872",
+"pool": "273ddc4daf",
+"ladder": "6a4091854e",
+"procedural": "384e347978",
+"ladder_file": "team_004486.gen3ou_team"
+},
+{
+"i": 236,
+"seed_base": 20260924236,
+"trainee": "0714dd1034",
+"pool": "10c30e6765",
+"ladder": "0e6aa36911",
+"procedural": "96baba9ac2",
+"ladder_file": "team_010541.gen3ou_team"
+},
+{
+"i": 237,
+"seed_base": 20260924237,
+"trainee": "b26ed9c8e1",
+"pool": "7a93b5fa43",
+"ladder": "90a8ce59b0",
+"procedural": "75fac21d88",
+"ladder_file": "team_009089.gen3ou_team"
+},
+{
+"i": 238,
+"seed_base": 20260924238,
+"trainee": "f7147a543c",
+"pool": "5913e23f4e",
+"ladder": "1674d5953a",
+"procedural": "d394e087b1",
+"ladder_file": "team_007481.gen3ou_team"
+},
+{
+"i": 239,
+"seed_base": 20260924239,
+"trainee": "09826f5095",
+"pool": "8f247da388",
+"ladder": "e927bf1117",
+"procedural": "f1ed0bf5d9",
+"ladder_file": "team_021666.gen3ou_team"
+},
+{
+"i": 240,
+"seed_base": 20260924240,
+"trainee": "3555a63299",
+"pool": "6ef6e77850",
+"ladder": "ba37f7a1ea",
+"procedural": "897cfebd0b",
+"ladder_file": "team_020372.gen3ou_team"
+},
+{
+"i": 241,
+"seed_base": 20260924241,
+"trainee": "73d6c134ee",
+"pool": "68886bc169",
+"ladder": "830206d9c6",
+"procedural": "0029fc0160",
+"ladder_file": "team_000000.gen3ou_team"
+},
+{
+"i": 242,
+"seed_base": 20260924242,
+"trainee": "177de64c50",
+"pool": "4d404a3f37",
+"ladder": "4e8271f848",
+"procedural": "16a38f77e8",
+"ladder_file": "team_022170.gen3ou_team"
+},
+{
+"i": 243,
+"seed_base": 20260924243,
+"trainee": "2452541c34",
+"pool": "2e24400b4f",
+"ladder": "7c0cf2b216",
+"procedural": "d10b29b81a",
+"ladder_file": "team_012923.gen3ou_team"
+},
+{
+"i": 244,
+"seed_base": 20260924244,
+"trainee": "ad3fccbd45",
+"pool": "715845ed34",
+"ladder": "e6e112dd7f",
+"procedural": "06f76fb862",
+"ladder_file": "team_000088.gen3ou_team"
+},
+{
+"i": 245,
+"seed_base": 20260924245,
+"trainee": "6916e13879",
+"pool": "264df0f172",
+"ladder": "2dc2c95c34",
+"procedural": "14a56c5b80",
+"ladder_file": "team_016505.gen3ou_team"
+},
+{
+"i": 246,
+"seed_base": 20260924246,
+"trainee": "f5a90ce345",
+"pool": "8e796cacc7",
+"ladder": "f30180cf4c",
+"procedural": "c8fdbbe60f",
+"ladder_file": "team_002974.gen3ou_team"
+},
+{
+"i": 247,
+"seed_base": 20260924247,
+"trainee": "dbba4f32fa",
+"pool": "03e0a036a8",
+"ladder": "4efab2ac2b",
+"procedural": "8b2f53286b",
+"ladder_file": "team_001943.gen3ou_team"
+},
+{
+"i": 248,
+"seed_base": 20260924248,
+"trainee": "c90e782cad",
+"pool": "324235812b",
+"ladder": "8d31c3c33f",
+"procedural": "bb5cf49501",
+"ladder_file": "team_006668.gen3ou_team"
+},
+{
+"i": 249,
+"seed_base": 20260924249,
+"trainee": "0af19b638a",
+"pool": "c349b569ca",
+"ladder": "927542bf48",
+"procedural": "6562c2f178",
+"ladder_file": "team_008471.gen3ou_team"
+},
+{
+"i": 250,
+"seed_base": 20260924250,
+"trainee": "5f37779bfa",
+"pool": "759e950444",
+"ladder": "50a0e88b68",
+"procedural": "562deda707",
+"ladder_file": "team_023833.gen3ou_team"
+},
+{
+"i": 251,
+"seed_base": 20260924251,
+"trainee": "ff78d9fb04",
+"pool": "c33a3fc4c5",
+"ladder": "cfb61c298f",
+"procedural": "1b20819dd5",
+"ladder_file": "team_023216.gen3ou_team"
+},
+{
+"i": 252,
+"seed_base": 20260924252,
+"trainee": "58cd9624fc",
+"pool": "70976189bd",
+"ladder": "5411074b5e",
+"procedural": "a8b87c8a30",
+"ladder_file": "team_009909.gen3ou_team"
+},
+{
+"i": 253,
+"seed_base": 20260924253,
+"trainee": "61ab86a356",
+"pool": "10c30e6765",
+"ladder": "e96b419603",
+"procedural": "0e09499aa0",
+"ladder_file": "team_018562.gen3ou_team"
+},
+{
+"i": 254,
+"seed_base": 20260924254,
+"trainee": "e749409f46",
+"pool": "a2838a2394",
+"ladder": "e169549c22",
+"procedural": "127ec7f481",
+"ladder_file": "team_004910.gen3ou_team"
+},
+{
+"i": 255,
+"seed_base": 20260924255,
+"trainee": "f8db46a798",
+"pool": "f2ba9c9cfe",
+"ladder": "730b34add0",
+"procedural": "218be8ef92",
+"ladder_file": "team_023323.gen3ou_team"
+},
+{
+"i": 256,
+"seed_base": 20260924256,
+"trainee": "e5413b298b",
+"pool": "3bdc4b63dd",
+"ladder": "a7596bcf19",
+"procedural": "836a96c1ad",
+"ladder_file": "team_017996.gen3ou_team"
+},
+{
+"i": 257,
+"seed_base": 20260924257,
+"trainee": "1defb7ba39",
+"pool": "27b7b27e8a",
+"ladder": "9ff0517c70",
+"procedural": "339b6c3af6",
+"ladder_file": "team_019224.gen3ou_team"
+},
+{
+"i": 258,
+"seed_base": 20260924258,
+"trainee": "8f010e4c25",
+"pool": "97b2f0f9f7",
+"ladder": "8b625e48df",
+"procedural": "cf3052406a",
+"ladder_file": "team_016047.gen3ou_team"
+},
+{
+"i": 259,
+"seed_base": 20260924259,
+"trainee": "9420574e38",
+"pool": "65741fbe35",
+"ladder": "df2fa85531",
+"procedural": "b6aa40577f",
+"ladder_file": "team_018023.gen3ou_team"
+},
+{
+"i": 260,
+"seed_base": 20260924260,
+"trainee": "47b505374e",
+"pool": "2d58357f00",
+"ladder": "9ee49a4314",
+"procedural": "47025787ab",
+"ladder_file": "team_001300.gen3ou_team"
+},
+{
+"i": 261,
+"seed_base": 20260924261,
+"trainee": "c32e6c07d5",
+"pool": "3ceea3aaaf",
+"ladder": "9cc062a11b",
+"procedural": "e8438efad6",
+"ladder_file": "team_019810.gen3ou_team"
+},
+{
+"i": 262,
+"seed_base": 20260924262,
+"trainee": "dcf9ed84d6",
+"pool": "788d79a3a2",
+"ladder": "5b789eb65f",
+"procedural": "d8e50fc136",
+"ladder_file": "team_011787.gen3ou_team"
+},
+{
+"i": 263,
+"seed_base": 20260924263,
+"trainee": "66d4e54d51",
+"pool": "bd4af7191a",
+"ladder": "a9d9140f14",
+"procedural": "b5f5efcdd6",
+"ladder_file": "team_013844.gen3ou_team"
+},
+{
+"i": 264,
+"seed_base": 20260924264,
+"trainee": "0333a5058e",
+"pool": "2ca20c6abb",
+"ladder": "fc05229209",
+"procedural": "79c26bbc97",
+"ladder_file": "team_020596.gen3ou_team"
+},
+{
+"i": 265,
+"seed_base": 20260924265,
+"trainee": "d0a4d2bcb8",
+"pool": "4636143151",
+"ladder": "5899197111",
+"procedural": "5a72deeb5c",
+"ladder_file": "team_011227.gen3ou_team"
+},
+{
+"i": 266,
+"seed_base": 20260924266,
+"trainee": "79774a0f8a",
+"pool": "9e5eeb2890",
+"ladder": "0bebc3d9f8",
+"procedural": "8961b522f7",
+"ladder_file": "team_020960.gen3ou_team"
+},
+{
+"i": 267,
+"seed_base": 20260924267,
+"trainee": "cba7e2c249",
+"pool": "87c893aa18",
+"ladder": "94e1a9546f",
+"procedural": "e806f345b3",
+"ladder_file": "team_005586.gen3ou_team"
+},
+{
+"i": 268,
+"seed_base": 20260924268,
+"trainee": "2158e3da1e",
+"pool": "e58e4b6b2f",
+"ladder": "83ba6292f2",
+"procedural": "1580cbf849",
+"ladder_file": "team_002234.gen3ou_team"
+},
+{
+"i": 269,
+"seed_base": 20260924269,
+"trainee": "515b43a271",
+"pool": "ee4774caee",
+"ladder": "092bf777d5",
+"procedural": "016596603f",
+"ladder_file": "team_007634.gen3ou_team"
+},
+{
+"i": 270,
+"seed_base": 20260924270,
+"trainee": "d93fa1c626",
+"pool": "f947eeb25e",
+"ladder": "30db02bf3b",
+"procedural": "db8d56c1be",
+"ladder_file": "team_001899.gen3ou_team"
+},
+{
+"i": 271,
+"seed_base": 20260924271,
+"trainee": "e28069562f",
+"pool": "514c43f71f",
+"ladder": "47149b5a18",
+"procedural": "7ded451926",
+"ladder_file": "team_009462.gen3ou_team"
+},
+{
+"i": 272,
+"seed_base": 20260924272,
+"trainee": "4239fc5ba2",
+"pool": "3f95b25e9a",
+"ladder": "77b09b66f2",
+"procedural": "733564839c",
+"ladder_file": "team_023219.gen3ou_team"
+},
+{
+"i": 273,
+"seed_base": 20260924273,
+"trainee": "2a5653724d",
+"pool": "f4ba47fff4",
+"ladder": "b92028c8f2",
+"procedural": "62a9dac6a4",
+"ladder_file": "team_009351.gen3ou_team"
+},
+{
+"i": 274,
+"seed_base": 20260924274,
+"trainee": "e28069562f",
+"pool": "31f8f0041e",
+"ladder": "3c0699730f",
+"procedural": "abb90f2048",
+"ladder_file": "team_015147.gen3ou_team"
+},
+{
+"i": 275,
+"seed_base": 20260924275,
+"trainee": "9726242258",
+"pool": "ac71863ff8",
+"ladder": "9bd9896e53",
+"procedural": "8c50610d6f",
+"ladder_file": "team_012657.gen3ou_team"
+},
+{
+"i": 276,
+"seed_base": 20260924276,
+"trainee": "8f010e4c25",
+"pool": "0d42c60d9f",
+"ladder": "5959d20cfd",
+"procedural": "cc1f7726ff",
+"ladder_file": "team_023932.gen3ou_team"
+},
+{
+"i": 277,
+"seed_base": 20260924277,
+"trainee": "45bf0e75b0",
+"pool": "e050d23078",
+"ladder": "ed0c257550",
+"procedural": "da2ee8e174",
+"ladder_file": "team_023730.gen3ou_team"
+},
+{
+"i": 278,
+"seed_base": 20260924278,
+"trainee": "70e9f6be5f",
+"pool": "8a29df031e",
+"ladder": "688efd0fa4",
+"procedural": "6741b91d8a",
+"ladder_file": "team_011324.gen3ou_team"
+},
+{
+"i": 279,
+"seed_base": 20260924279,
+"trainee": "1410804f79",
+"pool": "6e12f4e836",
+"ladder": "fca4bd057d",
+"procedural": "4de91a546d",
+"ladder_file": "team_005957.gen3ou_team"
+},
+{
+"i": 280,
+"seed_base": 20260924280,
+"trainee": "f3b89f89d5",
+"pool": "f2e1ab6148",
+"ladder": "3c26d53d3b",
+"procedural": "8ec8957af4",
+"ladder_file": "team_014669.gen3ou_team"
+},
+{
+"i": 281,
+"seed_base": 20260924281,
+"trainee": "507fe7fd7b",
+"pool": "2d2e2f776a",
+"ladder": "1029e2ee77",
+"procedural": "3f02258fac",
+"ladder_file": "team_016874.gen3ou_team"
+},
+{
+"i": 282,
+"seed_base": 20260924282,
+"trainee": "750d056194",
+"pool": "9726bf37fc",
+"ladder": "b76203cbd1",
+"procedural": "64834626ee",
+"ladder_file": "team_004956.gen3ou_team"
+},
+{
+"i": 283,
+"seed_base": 20260924283,
+"trainee": "55606a2d26",
+"pool": "003b34b7b9",
+"ladder": "acef2c175c",
+"procedural": "c4d3384c7a",
+"ladder_file": "team_012585.gen3ou_team"
+},
+{
+"i": 284,
+"seed_base": 20260924284,
+"trainee": "bc2f13f222",
+"pool": "bd4af7191a",
+"ladder": "09d0473465",
+"procedural": "fc30e7dae6",
+"ladder_file": "team_013090.gen3ou_team"
+},
+{
+"i": 285,
+"seed_base": 20260924285,
+"trainee": "e08e3c7786",
+"pool": "264df0f172",
+"ladder": "d1041629bc",
+"procedural": "4e03d28f6e",
+"ladder_file": "team_009946.gen3ou_team"
+},
+{
+"i": 286,
+"seed_base": 20260924286,
+"trainee": "407d8f3bf3",
+"pool": "27fe812b28",
+"ladder": "f8b94a9bfa",
+"procedural": "4e22af31b3",
+"ladder_file": "team_008128.gen3ou_team"
+},
+{
+"i": 287,
+"seed_base": 20260924287,
+"trainee": "d3c61b2fb6",
+"pool": "f216acd31e",
+"ladder": "ea202b10f6",
+"procedural": "fa0080e576",
+"ladder_file": "team_001524.gen3ou_team"
+},
+{
+"i": 288,
+"seed_base": 20260924288,
+"trainee": "ff1cfbd368",
+"pool": "015e78dda7",
+"ladder": "58971c55f6",
+"procedural": "49b99f7e9b",
+"ladder_file": "team_009548.gen3ou_team"
+},
+{
+"i": 289,
+"seed_base": 20260924289,
+"trainee": "422a4745c5",
+"pool": "16d681e970",
+"ladder": "6361c7d865",
+"procedural": "25dd362599",
+"ladder_file": "team_003163.gen3ou_team"
+},
+{
+"i": 290,
+"seed_base": 20260924290,
+"trainee": "9b454d9ea7",
+"pool": "0af19b638a",
+"ladder": "48cda98b9c",
+"procedural": "18a9028276",
+"ladder_file": "team_021484.gen3ou_team"
+},
+{
+"i": 291,
+"seed_base": 20260924291,
+"trainee": "f08983eb3b",
+"pool": "b0969b582b",
+"ladder": "6270cd4a12",
+"procedural": "c557411e3d",
+"ladder_file": "team_005768.gen3ou_team"
+},
+{
+"i": 292,
+"seed_base": 20260924292,
+"trainee": "7ad65bac76",
+"pool": "24db4aacdd",
+"ladder": "b3c584e513",
+"procedural": "5c0ae5d6d8",
+"ladder_file": "team_009708.gen3ou_team"
+},
+{
+"i": 293,
+"seed_base": 20260924293,
+"trainee": "c32e6c07d5",
+"pool": "feea8cd49b",
+"ladder": "33cf55eba6",
+"procedural": "55a0a25d43",
+"ladder_file": "team_020349.gen3ou_team"
+},
+{
+"i": 294,
+"seed_base": 20260924294,
+"trainee": "73c123b119",
+"pool": "e43ea0314c",
+"ladder": "3e2f83a434",
+"procedural": "ede06ef2f0",
+"ladder_file": "team_013901.gen3ou_team"
+},
+{
+"i": 295,
+"seed_base": 20260924295,
+"trainee": "58986cbe7b",
+"pool": "0f6b0404a6",
+"ladder": "989933a7d7",
+"procedural": "02589adc0f",
+"ladder_file": "team_006783.gen3ou_team"
+},
+{
+"i": 296,
+"seed_base": 20260924296,
+"trainee": "e4eb9d7c0a",
+"pool": "e897031fa0",
+"ladder": "e406969c52",
+"procedural": "5ad02fd3be",
+"ladder_file": "team_023150.gen3ou_team"
+},
+{
+"i": 297,
+"seed_base": 20260924297,
+"trainee": "8979153b26",
+"pool": "30b097e497",
+"ladder": "9b1a0275a3",
+"procedural": "646b80051e",
+"ladder_file": "team_007381.gen3ou_team"
+},
+{
+"i": 298,
+"seed_base": 20260924298,
+"trainee": "324ed308cc",
+"pool": "3a83154c2a",
+"ladder": "afa731bd2a",
+"procedural": "85df607f80",
+"ladder_file": "team_016856.gen3ou_team"
+},
+{
+"i": 299,
+"seed_base": 20260924299,
+"trainee": "aa0cffc5ed",
+"pool": "a2838a2394",
+"ladder": "ad3fde3410",
+"procedural": "ea5ce53d8d",
+"ladder_file": "team_017202.gen3ou_team"
+},
+{
+"i": 300,
+"seed_base": 20260924300,
+"trainee": "3bdc4b63dd",
+"pool": "623d5a9a63",
+"ladder": "98223b36d3",
+"procedural": "e08e3eb75c",
+"ladder_file": "team_009284.gen3ou_team"
+},
+{
+"i": 301,
+"seed_base": 20260924301,
+"trainee": "b20135805c",
+"pool": "5c8ac30e35",
+"ladder": "2b3a80186f",
+"procedural": "41a887b08b",
+"ladder_file": "team_013381.gen3ou_team"
+},
+{
+"i": 302,
+"seed_base": 20260924302,
+"trainee": "8543cc339d",
+"pool": "73267f3960",
+"ladder": "c08cf5adcb",
+"procedural": "d95ddc8484",
+"ladder_file": "team_016332.gen3ou_team"
+},
+{
+"i": 303,
+"seed_base": 20260924303,
+"trainee": "3495ef83ef",
+"pool": "f93a206e7b",
+"ladder": "9b6af5c7a6",
+"procedural": "ce42d26d59",
+"ladder_file": "team_001581.gen3ou_team"
+},
+{
+"i": 304,
+"seed_base": 20260924304,
+"trainee": "98b691a908",
+"pool": "47b505374e",
+"ladder": "a94a3864e3",
+"procedural": "11afb15703",
+"ladder_file": "team_020130.gen3ou_team"
+},
+{
+"i": 305,
+"seed_base": 20260924305,
+"trainee": "683908e124",
+"pool": "fc511de22b",
+"ladder": "3933d11816",
+"procedural": "d16bcbcad5",
+"ladder_file": "team_018903.gen3ou_team"
+},
+{
+"i": 306,
+"seed_base": 20260924306,
+"trainee": "97b2f0f9f7",
+"pool": "507fe7fd7b",
+"ladder": "e05be3ea14",
+"procedural": "6da9bb0838",
+"ladder_file": "team_014417.gen3ou_team"
+},
+{
+"i": 307,
+"seed_base": 20260924307,
+"trainee": "cf9617f466",
+"pool": "044da80d78",
+"ladder": "60d65934d5",
+"procedural": "dda0223868",
+"ladder_file": "team_014326.gen3ou_team"
+},
+{
+"i": 308,
+"seed_base": 20260924308,
+"trainee": "b9dac42529",
+"pool": "564b9be3ae",
+"ladder": "425fdcbab4",
+"procedural": "c32b368972",
+"ladder_file": "team_023053.gen3ou_team"
+},
+{
+"i": 309,
+"seed_base": 20260924309,
+"trainee": "ac71863ff8",
+"pool": "788d79a3a2",
+"ladder": "eb636f77e6",
+"procedural": "5fd0b51834",
+"ladder_file": "team_015251.gen3ou_team"
+},
+{
+"i": 310,
+"seed_base": 20260924310,
+"trainee": "f21abb7e74",
+"pool": "59eafa73dc",
+"ladder": "2087a31179",
+"procedural": "49a3a93e90",
+"ladder_file": "team_000022.gen3ou_team"
+},
+{
+"i": 311,
+"seed_base": 20260924311,
+"trainee": "d3c1cd0952",
+"pool": "83aee9db7e",
+"ladder": "fa11f8e32a",
+"procedural": "1aa280ce4d",
+"ladder_file": "team_002628.gen3ou_team"
+},
+{
+"i": 312,
+"seed_base": 20260924312,
+"trainee": "8d4518e872",
+"pool": "c1fc379c85",
+"ladder": "6cd0ad7767",
+"procedural": "c13ff994cd",
+"ladder_file": "team_007365.gen3ou_team"
+},
+{
+"i": 313,
+"seed_base": 20260924313,
+"trainee": "f2e1ab6148",
+"pool": "5913e23f4e",
+"ladder": "371680f7c8",
+"procedural": "eb36037e84",
+"ladder_file": "team_009508.gen3ou_team"
+},
+{
+"i": 314,
+"seed_base": 20260924314,
+"trainee": "d93fa1c626",
+"pool": "a61b691c60",
+"ladder": "bb28a70ead",
+"procedural": "09b03b40bf",
+"ladder_file": "team_018981.gen3ou_team"
+},
+{
+"i": 315,
+"seed_base": 20260924315,
+"trainee": "ac71863ff8",
+"pool": "57589710f4",
+"ladder": "6d9fe8166c",
+"procedural": "77b28af208",
+"ladder_file": "team_016688.gen3ou_team"
+},
+{
+"i": 316,
+"seed_base": 20260924316,
+"trainee": "422e86de3e",
+"pool": "9292a21833",
+"ladder": "3d404f565f",
+"procedural": "367c48c1ac",
+"ladder_file": "team_005677.gen3ou_team"
+},
+{
+"i": 317,
+"seed_base": 20260924317,
+"trainee": "8b56be8f73",
+"pool": "c9a2cef359",
+"ladder": "dfc5edf0bf",
+"procedural": "eeb7381bc7",
+"ladder_file": "team_011312.gen3ou_team"
+},
+{
+"i": 318,
+"seed_base": 20260924318,
+"trainee": "46d12c9237",
+"pool": "8063750596",
+"ladder": "bed01fb4f5",
+"procedural": "f8f6bedeab",
+"ladder_file": "team_022352.gen3ou_team"
+},
+{
+"i": 319,
+"seed_base": 20260924319,
+"trainee": "c2998b54a2",
+"pool": "564b9be3ae",
+"ladder": "78ec29a186",
+"procedural": "fd2f59bee0",
+"ladder_file": "team_018334.gen3ou_team"
+},
+{
+"i": 320,
+"seed_base": 20260924320,
+"trainee": "ac34c0c11d",
+"pool": "4f21a023ea",
+"ladder": "905109cccd",
+"procedural": "f4ea7bb765",
+"ladder_file": "team_009569.gen3ou_team"
+},
+{
+"i": 321,
+"seed_base": 20260924321,
+"trainee": "58cd9624fc",
+"pool": "6e2de05458",
+"ladder": "ecc5bf70ae",
+"procedural": "65abf30518",
+"ladder_file": "team_008400.gen3ou_team"
+},
+{
+"i": 322,
+"seed_base": 20260924322,
+"trainee": "b1f5751d22",
+"pool": "8cc835bd6c",
+"ladder": "07b34b7fbb",
+"procedural": "d2482659c3",
+"ladder_file": "team_002698.gen3ou_team"
+},
+{
+"i": 323,
+"seed_base": 20260924323,
+"trainee": "9726242258",
+"pool": "d73776bd00",
+"ladder": "c6fa1acaba",
+"procedural": "49bbc1071a",
+"ladder_file": "team_021708.gen3ou_team"
+},
+{
+"i": 324,
+"seed_base": 20260924324,
+"trainee": "7fb460707b",
+"pool": "a2d1246e4b",
+"ladder": "a87c7f9d65",
+"procedural": "8f324a2b97",
+"ladder_file": "team_018344.gen3ou_team"
+},
+{
+"i": 325,
+"seed_base": 20260924325,
+"trainee": "dabf891ef1",
+"pool": "048182d1e9",
+"ladder": "2138efe5e5",
+"procedural": "e88e2a2699",
+"ladder_file": "team_005422.gen3ou_team"
+},
+{
+"i": 326,
+"seed_base": 20260924326,
+"trainee": "3f2d9340b1",
+"pool": "7b6a17db5b",
+"ladder": "e4a89bcdc2",
+"procedural": "6478ddf398",
+"ladder_file": "team_012328.gen3ou_team"
+},
+{
+"i": 327,
+"seed_base": 20260924327,
+"trainee": "445720fed8",
+"pool": "8e796cacc7",
+"ladder": "9f73c6713e",
+"procedural": "e5942ccda6",
+"ladder_file": "team_000121.gen3ou_team"
+},
+{
+"i": 328,
+"seed_base": 20260924328,
+"trainee": "fe733bd556",
+"pool": "aefda4f946",
+"ladder": "716649a382",
+"procedural": "fdc01f75e6",
+"ladder_file": "team_019009.gen3ou_team"
+},
+{
+"i": 329,
+"seed_base": 20260924329,
+"trainee": "e1a11e33a2",
+"pool": "dbbfac7bd5",
+"ladder": "7853956cc4",
+"procedural": "e8ce55c60a",
+"ladder_file": "team_012054.gen3ou_team"
+},
+{
+"i": 330,
+"seed_base": 20260924330,
+"trainee": "16d681e970",
+"pool": "cf9617f466",
+"ladder": "927cf5c2ed",
+"procedural": "1444d08aa1",
+"ladder_file": "team_013871.gen3ou_team"
+},
+{
+"i": 331,
+"seed_base": 20260924331,
+"trainee": "58986cbe7b",
+"pool": "e094b7fef9",
+"ladder": "1b2d93ee34",
+"procedural": "da6c186540",
+"ladder_file": "team_002703.gen3ou_team"
+},
+{
+"i": 332,
+"seed_base": 20260924332,
+"trainee": "a61b691c60",
+"pool": "4b1a1c2e58",
+"ladder": "6234392186",
+"procedural": "6018579994",
+"ladder_file": "team_023137.gen3ou_team"
+},
+{
+"i": 333,
+"seed_base": 20260924333,
+"trainee": "971a41fc4a",
+"pool": "1defb7ba39",
+"ladder": "84f3a85736",
+"procedural": "126fa1e984",
+"ladder_file": "team_021715.gen3ou_team"
+},
+{
+"i": 334,
+"seed_base": 20260924334,
+"trainee": "a7406f6c97",
+"pool": "177d825984",
+"ladder": "9b5f48bffe",
+"procedural": "842d199188",
+"ladder_file": "team_017476.gen3ou_team"
+},
+{
+"i": 335,
+"seed_base": 20260924335,
+"trainee": "98f41d733e",
+"pool": "015e78dda7",
+"ladder": "2c13422748",
+"procedural": "c661dcc342",
+"ladder_file": "team_003973.gen3ou_team"
+},
+{
+"i": 336,
+"seed_base": 20260924336,
+"trainee": "a8ab2e22f1",
+"pool": "ff78d9fb04",
+"ladder": "2e583df191",
+"procedural": "3a1823ff5a",
+"ladder_file": "team_008219.gen3ou_team"
+},
+{
+"i": 337,
+"seed_base": 20260924337,
+"trainee": "8f247da388",
+"pool": "f4d8046665",
+"ladder": "21c5094f14",
+"procedural": "13d567f929",
+"ladder_file": "team_016770.gen3ou_team"
+},
+{
+"i": 338,
+"seed_base": 20260924338,
+"trainee": "6fb06e8314",
+"pool": "6c5f46bd5c",
+"ladder": "71d170ab05",
+"procedural": "5543d0cd81",
+"ladder_file": "team_022326.gen3ou_team"
+},
+{
+"i": 339,
+"seed_base": 20260924339,
+"trainee": "b2144660b9",
+"pool": "380bcb924f",
+"ladder": "850775b685",
+"procedural": "cf0dbc98e7",
+"ladder_file": "team_006872.gen3ou_team"
+},
+{
+"i": 340,
+"seed_base": 20260924340,
+"trainee": "7e70037939",
+"pool": "28ce7316cb",
+"ladder": "ebb8646d17",
+"procedural": "977d967513",
+"ladder_file": "team_010745.gen3ou_team"
+},
+{
+"i": 341,
+"seed_base": 20260924341,
+"trainee": "747985a50d",
+"pool": "2452541c34",
+"ladder": "73bc96445e",
+"procedural": "3eeefa611e",
+"ladder_file": "team_001354.gen3ou_team"
+},
+{
+"i": 342,
+"seed_base": 20260924342,
+"trainee": "a78c64ce5b",
+"pool": "bc09f7c1af",
+"ladder": "61c56db4c4",
+"procedural": "6c506ae678",
+"ladder_file": "team_011355.gen3ou_team"
+},
+{
+"i": 343,
+"seed_base": 20260924343,
+"trainee": "552a71348c",
+"pool": "038204d091",
+"ladder": "137b200181",
+"procedural": "25ecd36c2d",
+"ladder_file": "team_003974.gen3ou_team"
+},
+{
+"i": 344,
+"seed_base": 20260924344,
+"trainee": "83aee9db7e",
+"pool": "d833064f01",
+"ladder": "a3ce350b07",
+"procedural": "1e4bdd2b65",
+"ladder_file": "team_007290.gen3ou_team"
+},
+{
+"i": 345,
+"seed_base": 20260924345,
+"trainee": "8543cc339d",
+"pool": "878d77a20a",
+"ladder": "dc62bccbc7",
+"procedural": "97ecc4393d",
+"ladder_file": "team_006762.gen3ou_team"
+},
+{
+"i": 346,
+"seed_base": 20260924346,
+"trainee": "74ca797c03",
+"pool": "2c94aea80a",
+"ladder": "26993c19a8",
+"procedural": "7b3c34efa0",
+"ladder_file": "team_014993.gen3ou_team"
+},
+{
+"i": 347,
+"seed_base": 20260924347,
+"trainee": "df3f7a916c",
+"pool": "adfe4b6f4f",
+"ladder": "8b742b4501",
+"procedural": "c6a7c0f5ae",
+"ladder_file": "team_007904.gen3ou_team"
+},
+{
+"i": 348,
+"seed_base": 20260924348,
+"trainee": "54daa829c5",
+"pool": "eff04bb882",
+"ladder": "a96afdd522",
+"procedural": "677f519ccf",
+"ladder_file": "team_016689.gen3ou_team"
+},
+{
+"i": 349,
+"seed_base": 20260924349,
+"trainee": "6a634b6281",
+"pool": "9fd514a816",
+"ladder": "7360e0f70e",
+"procedural": "b89b7c2e5c",
+"ladder_file": "team_000373.gen3ou_team"
+},
+{
+"i": 350,
+"seed_base": 20260924350,
+"trainee": "a4e22468bc",
+"pool": "f216acd31e",
+"ladder": "4795e7ea84",
+"procedural": "bfbe4b43bd",
+"ladder_file": "team_022978.gen3ou_team"
+},
+{
+"i": 351,
+"seed_base": 20260924351,
+"trainee": "f90a09086e",
+"pool": "7f9a6ea35e",
+"ladder": "17bdf07f77",
+"procedural": "9f0614b146",
+"ladder_file": "team_005206.gen3ou_team"
+},
+{
+"i": 352,
+"seed_base": 20260924352,
+"trainee": "65be5d77cb",
+"pool": "c42fba0924",
+"ladder": "bb68650274",
+"procedural": "4849b2d404",
+"ladder_file": "team_002620.gen3ou_team"
+},
+{
+"i": 353,
+"seed_base": 20260924353,
+"trainee": "038204d091",
+"pool": "11ccca1026",
+"ladder": "eb4e3fc0d9",
+"procedural": "84ee48c2ab",
+"ladder_file": "team_017928.gen3ou_team"
+},
+{
+"i": 354,
+"seed_base": 20260924354,
+"trainee": "3b041361a2",
+"pool": "24db4aacdd",
+"ladder": "d17e338398",
+"procedural": "343a9d1d28",
+"ladder_file": "team_019818.gen3ou_team"
+},
+{
+"i": 355,
+"seed_base": 20260924355,
+"trainee": "1d4c4974a0",
+"pool": "a1c06dfd77",
+"ladder": "078ffa3251",
+"procedural": "59fe07db12",
+"ladder_file": "team_004427.gen3ou_team"
+},
+{
+"i": 356,
+"seed_base": 20260924356,
+"trainee": "ac71863ff8",
+"pool": "3997c6d738",
+"ladder": "3ccdfe4e5f",
+"procedural": "3e0e29d6a8",
+"ladder_file": "team_023163.gen3ou_team"
+},
+{
+"i": 357,
+"seed_base": 20260924357,
+"trainee": "0f6b0404a6",
+"pool": "46e4f22b44",
+"ladder": "c6cb52af2d",
+"procedural": "95b8804da0",
+"ladder_file": "team_020770.gen3ou_team"
+},
+{
+"i": 358,
+"seed_base": 20260924358,
+"trainee": "06bc79eaba",
+"pool": "d5e7958148",
+"ladder": "0ad03f261b",
+"procedural": "bec5870bf1",
+"ladder_file": "team_020328.gen3ou_team"
+},
+{
+"i": 359,
+"seed_base": 20260924359,
+"trainee": "abae242d0e",
+"pool": "ac17a9dde5",
+"ladder": "65c0539176",
+"procedural": "a06ec77da5",
+"ladder_file": "team_001856.gen3ou_team"
+},
+{
+"i": 360,
+"seed_base": 20260924360,
+"trainee": "2c5b1d6abb",
+"pool": "1272b8e7b8",
+"ladder": "e62a40df40",
+"procedural": "e1677e2910",
+"ladder_file": "team_017452.gen3ou_team"
+},
+{
+"i": 361,
+"seed_base": 20260924361,
+"trainee": "65741fbe35",
+"pool": "713faf94e4",
+"ladder": "c8d56a858d",
+"procedural": "beb69f5463",
+"ladder_file": "team_022559.gen3ou_team"
+},
+{
+"i": 362,
+"seed_base": 20260924362,
+"trainee": "d73776bd00",
+"pool": "9c8b9d4758",
+"ladder": "4d9a1e3ac6",
+"procedural": "04de16b0e1",
+"ladder_file": "team_017009.gen3ou_team"
+},
+{
+"i": 363,
+"seed_base": 20260924363,
+"trainee": "91f73d6964",
+"pool": "177d825984",
+"ladder": "6b5e9f8ca3",
+"procedural": "28dcc5b472",
+"ladder_file": "team_006638.gen3ou_team"
+},
+{
+"i": 364,
+"seed_base": 20260924364,
+"trainee": "514c43f71f",
+"pool": "187e48f614",
+"ladder": "73a5dd7417",
+"procedural": "167dd18b7d",
+"ladder_file": "team_014602.gen3ou_team"
+},
+{
+"i": 365,
+"seed_base": 20260924365,
+"trainee": "044da80d78",
+"pool": "a9edcd1df5",
+"ladder": "cb294fed1d",
+"procedural": "b25063bc1b",
+"ladder_file": "team_014749.gen3ou_team"
+},
+{
+"i": 366,
+"seed_base": 20260924366,
+"trainee": "c0e60903e8",
+"pool": "46e4f22b44",
+"ladder": "ac6052bcf6",
+"procedural": "8281ade09a",
+"ladder_file": "team_015544.gen3ou_team"
+},
+{
+"i": 367,
+"seed_base": 20260924367,
+"trainee": "0eb6cc1e56",
+"pool": "aa0cffc5ed",
+"ladder": "ed2ae00cbe",
+"procedural": "bcba2a8a14",
+"ladder_file": "team_017983.gen3ou_team"
+},
+{
+"i": 368,
+"seed_base": 20260924368,
+"trainee": "65bfb2e8b4",
+"pool": "e56b8a996f",
+"ladder": "bdd9bbf0b5",
+"procedural": "f25d85856a",
+"ladder_file": "team_023686.gen3ou_team"
+},
+{
+"i": 369,
+"seed_base": 20260924369,
+"trainee": "b655443aa1",
+"pool": "dbba4f32fa",
+"ladder": "6af5acb82d",
+"procedural": "7af38821ec",
+"ladder_file": "team_011198.gen3ou_team"
+},
+{
+"i": 370,
+"seed_base": 20260924370,
+"trainee": "8f010e4c25",
+"pool": "e7f8cd4094",
+"ladder": "995b08fab8",
+"procedural": "f808a49c1f",
+"ladder_file": "team_008543.gen3ou_team"
+},
+{
+"i": 371,
+"seed_base": 20260924371,
+"trainee": "2158e3da1e",
+"pool": "ce4188d4a0",
+"ladder": "a438d037ab",
+"procedural": "4e17c0e082",
+"ladder_file": "team_017612.gen3ou_team"
+},
+{
+"i": 372,
+"seed_base": 20260924372,
+"trainee": "5ea72a6325",
+"pool": "a2838a2394",
+"ladder": "769832bb98",
+"procedural": "282d717d55",
+"ladder_file": "team_003663.gen3ou_team"
+},
+{
+"i": 373,
+"seed_base": 20260924373,
+"trainee": "3495ef83ef",
+"pool": "e3e425a3ac",
+"ladder": "f04516119b",
+"procedural": "fb3548999a",
+"ladder_file": "team_016404.gen3ou_team"
+},
+{
+"i": 374,
+"seed_base": 20260924374,
+"trainee": "0fb4c2c372",
+"pool": "dd460484fc",
+"ladder": "0090c1bae0",
+"procedural": "de46a98304",
+"ladder_file": "team_019612.gen3ou_team"
+},
+{
+"i": 375,
+"seed_base": 20260924375,
+"trainee": "b556092817",
+"pool": "5775f4b3ed",
+"ladder": "59f1467d1e",
+"procedural": "cad13f54b9",
+"ladder_file": "team_020329.gen3ou_team"
+},
+{
+"i": 376,
+"seed_base": 20260924376,
+"trainee": "5aaef19afd",
+"pool": "def86feeb1",
+"ladder": "753f7f4c37",
+"procedural": "71232f5d70",
+"ladder_file": "team_011424.gen3ou_team"
+},
+{
+"i": 377,
+"seed_base": 20260924377,
+"trainee": "3b041361a2",
+"pool": "3ceea3aaaf",
+"ladder": "761022b85b",
+"procedural": "18754fad5d",
+"ladder_file": "team_012067.gen3ou_team"
+},
+{
+"i": 378,
+"seed_base": 20260924378,
+"trainee": "07d2acb4ac",
+"pool": "d4217399f3",
+"ladder": "70528eca2d",
+"procedural": "bbc7ab3d6a",
+"ladder_file": "team_001327.gen3ou_team"
+},
+{
+"i": 379,
+"seed_base": 20260924379,
+"trainee": "1a056904ae",
+"pool": "2d7d8969b3",
+"ladder": "9a7ee248f4",
+"procedural": "b011b8524d",
+"ladder_file": "team_008417.gen3ou_team"
+},
+{
+"i": 380,
+"seed_base": 20260924380,
+"trainee": "c7a73640c1",
+"pool": "57589710f4",
+"ladder": "b22f5c4137",
+"procedural": "57c4607316",
+"ladder_file": "team_013430.gen3ou_team"
+},
+{
+"i": 381,
+"seed_base": 20260924381,
+"trainee": "74b672a9cb",
+"pool": "e30531cd42",
+"ladder": "794a3a35b2",
+"procedural": "805ec42f78",
+"ladder_file": "team_023277.gen3ou_team"
+},
+{
+"i": 382,
+"seed_base": 20260924382,
+"trainee": "8063750596",
+"pool": "971a41fc4a",
+"ladder": "670a04c7a0",
+"procedural": "fb483d2e7e",
+"ladder_file": "team_016595.gen3ou_team"
+},
+{
+"i": 383,
+"seed_base": 20260924383,
+"trainee": "6d1522e50a",
+"pool": "c2998b54a2",
+"ladder": "89803bccb7",
+"procedural": "9bea2dd6f7",
+"ladder_file": "team_019379.gen3ou_team"
+},
+{
+"i": 384,
+"seed_base": 20260924384,
+"trainee": "ddcbe3345c",
+"pool": "aa774f28cc",
+"ladder": "6634d4e8fc",
+"procedural": "41b24490c3",
+"ladder_file": "team_008595.gen3ou_team"
+},
+{
+"i": 385,
+"seed_base": 20260924385,
+"trainee": "5f37779bfa",
+"pool": "98b691a908",
+"ladder": "4a5cde1786",
+"procedural": "0a63b75c87",
+"ladder_file": "team_001671.gen3ou_team"
+},
+{
+"i": 386,
+"seed_base": 20260924386,
+"trainee": "f93a206e7b",
+"pool": "fda8ad353a",
+"ladder": "55bc85dda2",
+"procedural": "96bcab986b",
+"ladder_file": "team_007264.gen3ou_team"
+},
+{
+"i": 387,
+"seed_base": 20260924387,
+"trainee": "90b5361a16",
+"pool": "f2ba9c9cfe",
+"ladder": "81fae41b06",
+"procedural": "da2b6cba71",
+"ladder_file": "team_019500.gen3ou_team"
+},
+{
+"i": 388,
+"seed_base": 20260924388,
+"trainee": "cf9617f466",
+"pool": "4dd152e734",
+"ladder": "cc4c48e03b",
+"procedural": "ac7a7e0c68",
+"ladder_file": "team_012996.gen3ou_team"
+},
+{
+"i": 389,
+"seed_base": 20260924389,
+"trainee": "ac71863ff8",
+"pool": "1d4c4974a0",
+"ladder": "c7baca42cd",
+"procedural": "b513d71b0c",
+"ladder_file": "team_019146.gen3ou_team"
+},
+{
+"i": 390,
+"seed_base": 20260924390,
+"trainee": "dec3de9b12",
+"pool": "2534832821",
+"ladder": "a26a648bab",
+"procedural": "33e66ab0ba",
+"ladder_file": "team_018176.gen3ou_team"
+},
+{
+"i": 391,
+"seed_base": 20260924391,
+"trainee": "e3e425a3ac",
+"pool": "b022e1bc92",
+"ladder": "b21d1a248f",
+"procedural": "713dc0141a",
+"ladder_file": "team_023815.gen3ou_team"
+},
+{
+"i": 392,
+"seed_base": 20260924392,
+"trainee": "3495ef83ef",
+"pool": "46d12c9237",
+"ladder": "75ee3f6594",
+"procedural": "2d30fe3023",
+"ladder_file": "team_015314.gen3ou_team"
+},
+{
+"i": 393,
+"seed_base": 20260924393,
+"trainee": "e702a104eb",
+"pool": "f2ba9c9cfe",
+"ladder": "116ca69da0",
+"procedural": "8793a0595d",
+"ladder_file": "team_010526.gen3ou_team"
+},
+{
+"i": 394,
+"seed_base": 20260924394,
+"trainee": "feea8cd49b",
+"pool": "fe733bd556",
+"ladder": "7dc792e86f",
+"procedural": "4fdd6c530a",
+"ladder_file": "team_010940.gen3ou_team"
+},
+{
+"i": 395,
+"seed_base": 20260924395,
+"trainee": "5c8ac30e35",
+"pool": "108ab795fb",
+"ladder": "4608a4674a",
+"procedural": "23656154cc",
+"ladder_file": "team_009513.gen3ou_team"
+},
+{
+"i": 396,
+"seed_base": 20260924396,
+"trainee": "5ea72a6325",
+"pool": "8b81c129de",
+"ladder": "daf741a14f",
+"procedural": "52799c00fb",
+"ladder_file": "team_017363.gen3ou_team"
+},
+{
+"i": 397,
+"seed_base": 20260924397,
+"trainee": "19f3d58733",
+"pool": "6ebe9ebc4d",
+"ladder": "adc495241d",
+"procedural": "8d2eb8a90c",
+"ladder_file": "team_001273.gen3ou_team"
+},
+{
+"i": 398,
+"seed_base": 20260924398,
+"trainee": "2142e9a80b",
+"pool": "7fa75160eb",
+"ladder": "a4985fe622",
+"procedural": "8dcce5f519",
+"ladder_file": "team_023447.gen3ou_team"
+},
+{
+"i": 399,
+"seed_base": 20260924399,
+"trainee": "4239fc5ba2",
+"pool": "a673e5b1bd",
+"ladder": "68471914c0",
+"procedural": "77ff0d8719",
+"ladder_file": "team_009148.gen3ou_team"
+}
+],
+"model": {
+"path": "models/ai_v13_22_popr1_loop/final_model.zip",
+"sha256_16": "88fc961a819abe5f",
+"num_timesteps": 103219200,
+"pin": "6eb9c776940ed6040ddb90acfbc28b038457fc42",
+"loaded_via": "main.capacity.load_policy -> load_model_snapshot -> check_compatible (no ArchDrift)"
+}
+}
