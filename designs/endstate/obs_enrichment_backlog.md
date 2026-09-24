@@ -98,6 +98,33 @@ So E10 (and any joint set belief) is a LEARNED MIXTURE, not a hand-supplied set 
   This entry therefore depends on the coverage-opponent decision (ladder-like teams in the training
   mix); tonight's belief win-rate A/B informs that decision.
 
+### 1d. The TWO synergy levels, and the owner's rulings on them (2026-09-24)
+
+- **Within-Pokémon (the SET):** moves, item, ability, nature/EVs and Hidden Power type co-vary.
+  E10's prototypes span the WHOLE set, not moves alone. This level transfers across teams, and pool
+  teams already teach reusable sets.
+- **Team composition (the ROSTER):** which species appear together and which roles they split. Gen 3
+  has no team preview, so species are hidden until they switch in. This is where pool memorization
+  concentrates (the calibration read: the species head is −1.28 nats vs the Smogon prior off-pool).
+  It needs breadth: coverage opponents, plus the Smogon teammate prior as the base.
+- **They interact through ROLES** (a revealed Spiker changes what a teammate's set probably is). The
+  entity transformer carries that: each slot's prototype weights are computed FROM its refined token,
+  which has attended to its teammates.
+
+**Owner rulings:**
+1. **No hand-built role exclusivity.** "One Spiker per team" and the like must be LEARNED (through
+   attention), never imposed as a constraint.
+2. **Prototypes are SHARED ACROSS SPECIES** (role-like archetypes that transfer to rare Pokémon),
+   **with enough capacity for per-mon nuance.** For example, a species-conditioned modulation of each
+   shared prototype (species embedding → per-prototype delta, or FiLM), so Tyranitar's "setup
+   sweeper" differs from Salamence's.
+3. **Two meters, always reported separately:** ROSTER (species NLL for unrevealed slots, by number of
+   teammates revealed) and SET (full-set NLL for a known species, by its own reveals). A gain on one
+   must not hide a loss on the other.
+4. **The same synergies on OUR side are PLANNING, not inference** (we know our sets). Whether the
+   policy and value price roles is probed by the tactics probe's ROLE family (§ measurements
+   `tactics_probe_2026-09-24`).
+
 ## 2. Ordering (recommended, after the cutover)
 
 1. **E1**: the cheapest entry with the clearest new capability, and the owner's own tooltip shows
