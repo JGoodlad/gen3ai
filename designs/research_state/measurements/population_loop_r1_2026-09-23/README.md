@@ -1,5 +1,8 @@
 # Population loop round 1 — launch kit + validation evidence (2026-09-23)
 
+> **THE READ (2026-09-24) is [`read/README.md`](read/README.md)** — manipulation check, both KILL guards,
+> the primary Δ, and the §5 branch.
+
 The registration (design, every number's provenance, the bars, the branches, the queue) is
 [`../../population_loop_round1_2026-09-23.md`](../../population_loop_round1_2026-09-23.md). This
 directory holds what the Training Run session needs to launch it, and the proof that each argv

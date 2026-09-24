@@ -1,0 +1,183 @@
+{
+ "what": "\u00a74.1 manipulation check, population loop round 1",
+ "arms": {
+  "B": {
+   "run": "ai_v13_22_popr1_loop",
+   "series": [
+    {
+     "step": 96000000,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      34,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      35,
+      100
+     ]
+    },
+    {
+     "step": 98000016,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      43,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      40,
+      100
+     ]
+    },
+    {
+     "step": 100000032,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      44,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      44,
+      100
+     ]
+    },
+    {
+     "step": 102000000,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      41,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      41,
+      100
+     ]
+    }
+   ],
+   "last_two_pooled": [
+    170,
+    400
+   ],
+   "rate": 0.425
+  },
+  "C": {
+   "run": "ai_v13_23_popr1_ctrl",
+   "series": [
+    {
+     "step": 96000000,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      36,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      33,
+      100
+     ]
+    },
+    {
+     "step": 98000016,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      37,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      35,
+      100
+     ]
+    },
+    {
+     "step": 100000032,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      36,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      40,
+      100
+     ]
+    },
+    {
+     "step": 102000000,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      34,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      26,
+      100
+     ]
+    }
+   ],
+   "last_two_pooled": [
+    136,
+    400
+   ],
+   "rate": 0.34
+  }
+ },
+ "M": {
+  "point": 0.08499999999999996,
+  "ci95": [
+   0.017643841770915852,
+   0.1512799093633464
+  ],
+  "ABSORBED": true
+ },
+ "per_specialist_descriptor": {
+  "ext_ai_v13_18_teach5_offense_hidose": {
+   "B": 0.425,
+   "C": 0.35,
+   "G0": 0.36,
+   "B_minus_C": 0.07500000000000001,
+   "ci95": [
+    -0.0203498840264313,
+    0.16845734077485414
+   ]
+  },
+  "ext_ai_v13_13_exploit5_offense": {
+   "B": 0.425,
+   "C": 0.33,
+   "G0": 0.3425,
+   "B_minus_C": 0.09499999999999997,
+   "ci95": [
+    3.09877747081827e-05,
+    0.18759927198093548
+   ]
+  }
+ }
+}
