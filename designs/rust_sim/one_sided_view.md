@@ -51,7 +51,7 @@ in several places is wrong in a way that reads plausible:
 |---|---|---|
 | `moves` (opponent) | the mon's moveset | the moves this side has WATCHED, each at `max_pp − sightings`, where a sighting against a Pressure holder costs **two** |
 | `volatiles` | the sim's condition set | a fold over `\|-start\|`/`\|-end\|`/`\|-activate\|`/`\|-singleturn\|`/`\|-singlemove\|`, cleared on switch-out and faint (and by a `\|request\|` `0 fnt`, which re-runs `faint()`), with `ends_on_turn` effects DROPPED at the next `\|turn\|`, `is_turn_countable` ones counting up, and a Baton Pass copying `BATON_PASS_COPIED_EFFECTS` to the entrant |
-| `status_counter` | the sim's sleep/toxic counter | `+1` per `\|move\|`-or-`\|cant\|` LINE while poke-env's OWN `_status` is asleep (a Sleep Talk turn is `+3`), `+1` per turn while badly poisoned AND active; frozen by a faint; the toxic one (only) reset by a switch-out; reset by `-curestatus` of the held status and NOT by a new status (§4b, R1) |
+| `status_counter` | the sim's sleep/toxic counter | `+1` per `\|move\|`-or-`\|cant\|` LINE while poke-env's OWN `_status` is asleep (a Sleep Talk turn is `+3`), `+1` per turn while badly poisoned AND active; frozen by a faint; the toxic one (only) reset by a switch-out; reset by `-curestatus` of the held status and by a NEW status (the fork's R1 fix, §4b) |
 | `protect_counter` | the sim's `stall` denominator (0→2→4→8) | a plain consecutive-stall-move COUNT that resets on any non-stall move — a different quantity with different transitions |
 | `revealed` | "is on the team" | set by the `\|switch\|` LINE, for BOTH sides alike |
 | team ORDER | the team sheet | our own: the FIRST `\|request\|`'s roster order (Showdown floats the active mon to index 0 on every later one, poke-env's dict does not reorder). The opponent's: REVEAL order |
@@ -280,9 +280,9 @@ Transformed mon keeping its OWN species as its identity.
 ### What the truth audit found that is NOT the projection's — poke-env READING defects
 
 These are cases where the ENGINE (the sim's truth) and poke-env disagree about a sim fact and
-poke-env is wrong. The projection reproduces the reading today so the gate stays exact; each fix
-belongs in the vendored fork and **changes what training reads**, so each waits on the
-orchestrator (measured per 1,000 decisions, both viewers):
+poke-env is wrong. Each fix belongs in the vendored fork and **changes what training reads**; R1–R3
+are FIXED (a TRAINING-INPUT change, `designs/CHANGELOG.md` 2026-09-23) and the projection follows
+them, R1b and R4 remain (measured per 1,000 decisions, both viewers, before the fixes):
 
 | defect | truth (and how established) | per 1,000 decisions: pool random (73,605) · `production`-policy (10,291) · procedural (`ou_random_teams.js`, 33,298) |
 |---|---|---|
@@ -303,10 +303,10 @@ plays over). Established against the pinned Showdown's own requests for all six;
 overlapping keys 0–199 — the two random seeds cover ~234 of the 719 pool teams. Widening the recipe
 makes R3 fire in the pool tier, so it lands with R3's fix, not before.
 
-**The fixes for R1–R3 exist and are NOT landed**: branch `truth-audit-pokeenv-reading-fixes` —
-the three fork changes, the projection's V5 following R1, a pin per fix that fails on upstream
-(`src/poke_env/battle/reading_fixes_test.py`), and the whole-pool MILESTONE recipe (even keys
-0–718 + odd keys 1–719); its slice V MILESTONE tier is green. Still open after it: R1b, R4, and the
+**R1–R3 are FIXED in the fork** (`pokemon.py` status setter, `abstract_battle.py` `-copyboost`,
+`battle.py` `_sync_active_pp`), the projection's V5 following R1 and `event_fold`'s boost ledger
+following R2, each pinned by `src/poke_env/battle/reading_fixes_test.py` (fails on upstream); the
+MILESTONE random recipe strides the whole pool (even keys 0–718 + odd keys 1–719) and is green. Still open after it: R1b, R4, and the
 part of R3 no client can see — a mon that leaves the field between its move and the next request
 (Self-Destruct, a phaze) is never re-synced, so our BENCH PP is poke-env's count, a presentation
 rule (V15) the projection does not yet reproduce; procedural teams only so far.
@@ -328,7 +328,7 @@ MILESTONE pool range does not reach R3's.
 | **D4** | ✅ **CLOSED for a successor** — the 3-dim **sleep-wake belief** | `build_sleep_sources(battle)` reads `battle.events` and `battle.turn` and nothing else, so the same log closes it. Same board-only caveat as D3 |
 | **D5** | ✅ **CLOSED** — the per-decision **TRACKERS** — recency, pair history, the event window, the progress clock, the Hidden-Power block | `gen3_view_successor_v1` — see §7. The ply's events are folded from the arm's OWN one-sided protocol by `agents/battle/event_fold.py`, and the root's `EpisodeTracker` is carried forward and advanced through `record_context` / `advance_window` (the bodies of `record` / `update_progress_clock`, split out rather than copied) |
 | ~~**D6**~~ | ✅ **CLOSED** — Pressure is judged at USE time | Each sighting carries its target's ability-event index at use time (both sides — our own Traced Pressure counts), and the adapter replays poke-env's two-slot ability rules up to it (rule V3). The un-fainted clause is still not re-checked at read time: a mon cannot be targeted while fainted |
-| **D7** | our OWN pp is the wire's, not poke-env's counter | Now a measured poke-env READING defect (**R3**, §4b): poke-env never syncs our own move PP from the `\|request\|`, so a PP the sim deducts without poke-env knowing (an un-inferable foe Pressure) drifts it HIGH. The payload keeps sending the engine's `current_pp` — the truth — and slice V classifies own PP as SIM-FACT, so the drift FAILS the gate where it occurs (0 per 1,000 on the MILESTONE pool corpus, 6.19 on procedural teams, and present on pool teams outside that corpus). The fix belongs in the fork and waits on the orchestrator |
+| **D7** | our OWN pp is the wire's, not poke-env's counter | Now a measured poke-env READING defect (**R3**, §4b): poke-env never syncs our own move PP from the `\|request\|`, so a PP the sim deducts without poke-env knowing (an un-inferable foe Pressure) drifts it HIGH. The payload keeps sending the engine's `current_pp` — the truth — and slice V classifies own PP as SIM-FACT, so the drift FAILS the gate where it occurs (0 per 1,000 on the MILESTONE pool corpus, 6.19 on procedural teams, and present on pool teams outside that corpus). FIXED in the fork (`Battle._sync_active_pp`), except a mon that leaves the field before its next request |
 | **D8** | Mimic / Transform move overlays on our own side | The own moveset is rendered from `set.moves`; an overlay would need the same resolver the request path uses |
 | **D9** | `Mist` as a side condition | The port models spikes / reflect / lightscreen / safeguard only |
 | ~~**D10**~~ | ✅ **CLOSED** — an arm whose ply resolved an INTERMEDIATE decision | `gen3_view_at_intermediate_v1`. See §5b below |

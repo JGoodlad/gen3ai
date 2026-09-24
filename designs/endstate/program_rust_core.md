@@ -137,10 +137,10 @@ MILESTONE 83,896 decisions / 23.9M field comparisons / 1.94M truth checks, 0 div
 `present()` replaces the producer under this slice; the comparison does not change — and under
 §6c's decision (the training view is parsed from the per-side TEXT) its ENGINE-truth checks are
 what stop a text-derived view from inheriting a reading error the way every poke-env reader did. **It also
-found poke-env READING defects about sim facts (R1–R4 in `one_sided_view.md` §4b) whose fork fixes
-change what training reads and wait on the orchestrator**, and a MILESTONE coverage hole: keys
-5000–5199 wrap onto pool teams 686–718 and 0–166, so the two random seeds cover ~234 of the 719
-pool teams (the widened recipe rides with those fixes).
+found poke-env READING defects about sim facts (R1–R4 in `one_sided_view.md` §4b) — R1–R3 now FIXED in
+the fork, a TRAINING-INPUT change (`designs/CHANGELOG.md` 2026-09-23)** — and a MILESTONE coverage
+hole: keys 5000–5199 wrapped onto overlapping pool teams (~234 of 719 covered); the random recipe
+now strides the whole pool.
 
 **What crosses.** The persistent version (omniscient board + events + `parent`), per-side
 `OneSidedView` computed by `present(board, events, side)` whose every poke-env rule is NAMED, tested

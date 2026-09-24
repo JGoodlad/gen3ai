@@ -269,7 +269,7 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   counted out of scope. 🚨 **This is the gate a Baton-Pass-class poke-env reading bug fails**: it is
   the one place the other side of the comparison is the SIM, not another reader of the same
   `Pokemon` — and it already found three live ones (`designs/rust_sim/one_sided_view.md` §4b
-  R1–R4, fixes pending the orchestrator). Teeth: a re-introduced Baton Pass drop and a misread Spikes
+  R1–R3 FIXED in the fork, a training-input change; R1b / R4 open). Teeth: a re-introduced Baton Pass drop and a misread Spikes
   layer each FAIL a routine test. `offline_feed.new_battle(…, packed_team=)` mirrors the
   `Player`'s `_teambuilder_team` (our own spread's only source in gen 3). Contract + the rule table:
   [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md) §2b / §4a.
