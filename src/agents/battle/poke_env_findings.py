@@ -17,6 +17,9 @@ Each entry records the field, a minimal reproduction, what poke-env reads and th
 the truth is established), whether it reaches the TRAINING INPUT, and its measured rate. The rates
 and the procedure live in ``designs/rust_sim/present.md`` §3 and
 ``designs/research_state/measurements/rust_core_m2_2026-09-23/``.
+
+**Today the registry is EMPTY** (``gen3_pe_reading_fixes_v1`` fixed all three M2 findings in the
+fork), so every comparison above is exact.
 """
 
 from __future__ import annotations
@@ -41,78 +44,23 @@ class Finding:
     #: Whether a difference reaches the 2501-dim observation, and where.
     reaches_obs: str
     #: ``fnmatch`` patterns over the obs block names a difference may touch
-    #: (``one_sided_view_parity_fuzz_test._block_of``: ``context``, ``opp_team[3].status_counters``).
+    #: (``one_sided_view_parity_fuzz_test._block_of``: ``context[0]``, ``opp_team[3].status_counters``).
     obs_blocks: Tuple[str, ...]
     #: ``(reading LivePokemon, core LivePokemon) -> bool`` — True iff THIS finding explains the
     #: difference in :attr:`field` exactly (value-aware).
     predicate: Callable[[Any, Any], bool]
 
 
-def _pe_v10(reading: Any, core: Any) -> bool:
-    return bool(core.fainted and reading.fainted and not dict(core.boosts) and dict(reading.boosts))
-
-
-def _pe_r1b(reading: Any, core: Any) -> bool:
-    # poke-env ticks at `|turn|`, the sim at the residual chip: exactly ONE apart — ahead for a mon
-    # that entered after the residual, behind between the residual and the next `|turn|` (an
-    # end-of-turn forced replacement's decision). While the mon is active and badly poisoned, and
-    # after it FAINTS, where poke-env freezes the count it had and the toxic slot no longer reads it.
-    one_apart = abs(reading.status_counter - core.status_counter) == 1
-    return one_apart and ((reading.status == core.status == "tox" and bool(core.active))
-                          or (reading.status == core.status == "fnt"))
-
-
-def _pe_v16(reading: Any, core: Any) -> bool:
-    r, c = dict(reading.volatiles), dict(core.volatiles)
-    return "flashfire" in c and "flashfire" not in r and {k: v for k, v in c.items() if k != "flashfire"} == r
-
-
-FINDINGS: Dict[str, Finding] = {f.id: f for f in (
-    Finding(
-        id="PE-V10", field="boosts",
-        title="a fainted mon keeps its stat stages",
-        poke_env_reads="the stages it fainted with, until it is switched out (`Pokemon.faint` "
-                       "does not clear boosts; `switch_out` does)",
-        truth="none — the sim's faint `clearVolatile` zeroes `boosts`",
-        source="the Rust board (`MonState::boosts` zeroed at the faint, the stages kept only in "
-               "the observation-only `faint_boosts`) and `sim/pokemon.ts` clearVolatile",
-        reproduce="|-boost|p2a: Zapdos|spa|1  ·  |faint|p2a: Zapdos",
-        reaches_obs="YES — the fainted ACTIVE mon's stages are encoded by `active_context` at the "
-                    "forced-switch decision (e.g. +1 SpA is byte 4 of that block)",
-        obs_blocks=("context",),
-        predicate=_pe_v10),
-    Finding(
-        id="PE-R1b", field="status_counter",
-        title="the toxic count ticks at `|turn|`, the sim's stage at the residual chip",
-        poke_env_reads="+1 per `|turn|` while active: ONE AHEAD of the sim's stage for a mon that "
-                       "switched in after the residual (a post-faint replacement), ONE BEHIND at a "
-                       "decision taken between the residual and the next `|turn|` (an end-of-turn "
-                       "forced replacement)",
-        truth="the sim's toxic STAGE: the residual `[from] psn` chips since its switch-in "
-              "(`tox.onSwitchIn` resets the stage, `onResidual` ramps it before chipping)",
-        source="the Rust board (`Status::Toxic(stage)`) and the stream's residual chips",
-        reproduce="|-status|p2a: Zapdos|tox · |-damage|p2a: Zapdos|94/100 tox|[from] psn · |turn|2 · "
-                  "|switch|p2a: Snorlax|… · |switch|p2a: Zapdos|Zapdos|94/100 tox · |turn|3  "
-                  "(poke-env 1, the sim 0); or …|turn|2 · |-damage|p2a: Zapdos|82/100 tox|[from] psn · "
-                  "a forced-switch |request| (poke-env 1, the sim 2)",
-        reaches_obs="YES while it is active — the per-mon `status_counters` toxic slot (min(ctr, 8) / 8); "
-                    "the count poke-env freezes at a faint does not (the slot reads it only under `tox`)",
-        obs_blocks=("our_team[[]*[]].status_counters", "opp_team[[]*[]].status_counters"),
-        predicate=_pe_r1b),
-    Finding(
-        id="PE-V16", field="volatiles",
-        title="Flash Fire is ended by its holder's own Fire move",
-        poke_env_reads="`Pokemon.moved` silently ends FLASH_FIRE when the holder uses a damaging "
-                       "Fire move, whatever the gen",
-        truth="the `flashfire` volatile lasts until the holder leaves the field (the ability's "
-              "`onEnd` / `clearVolatile`) and boosts every Fire move ×1.5",
-        source="the Rust board (`MonState::flash_fire`, probe-verified vs the resolved gen-3 dist, "
-               "`harness/probe_flashfire_rng.js`) and `data/abilities.ts` flashfire",
-        reproduce="|-start|p2a: Houndoom|ability: Flash Fire  ·  |move|p2a: Houndoom|Flamethrower|p1a: …",
-        reaches_obs="YES — the `flashfire` binary volatile slot of `active_context` (byte 25)",
-        obs_blocks=("context",),
-        predicate=_pe_v16),
-)}
+#: The registry. **EMPTY since ``gen3_pe_reading_fixes_v1``** (2026-09-24, a TRAINING-INPUT change):
+#: the three M2 findings — PE-V10 (a fainted mon kept its stat stages until switch-out), PE-R1b (the
+#: toxic count ticked at ``|turn|`` instead of at the residual chip) and PE-V16 (Flash Fire ended by
+#: its holder's own Fire move) — were FIXED in the fork (``src/poke_env/battle/pokemon.py``,
+#: ``abstract_battle.py``, ``battle.py``; pins in ``poke_env/battle/reading_fixes_test.py``), and
+#: their entries deleted so every check that routes through :func:`explain` tightened to exact
+#: equality. Their record (reproductions, rates) is ``designs/rust_sim/present.md`` §3 and
+#: ``designs/research_state/measurements/rust_core_m2_2026-09-23/``. A NEW finding is registered
+#: here as a :class:`Finding` with a value-aware predicate — never a blanket tolerance.
+FINDINGS: Dict[str, Finding] = {}
 
 
 def explain(field: str, reading: Any, core: Any) -> Optional[str]:

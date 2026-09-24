@@ -70,10 +70,12 @@ RULES: Dict[str, Tuple[str, str, str]] = {
                      "switch-out and faint, `ends_on_turn` dropped at |turn|, countable effects "
                      "counted", "Pokemon.start_effect/end_effect/end_turn/_clear_effects",
                      "view.rs fold_volatiles + view_adapter._volatiles"),
-    "V5-status-counter": ("poke-env's own sleep/toxic counter — see `designs/rust_sim/"
+    "V5-status-counter": ("poke-env's own sleep counter (per |move|/|cant| line) and the toxic "
+                          "STAGE (per residual `[from] psn` chip since the switch-in — the sim's "
+                          "since `gen3_pe_reading_fixes_v1`) — see `designs/rust_sim/"
                           "one_sided_view.md` §4b for its rules and its truth",
-                          "pokemon.py moved/cant_move/end_turn/cure_status/switch_out, the "
-                          "`status` setter", "view.rs fold_status"),
+                          "pokemon.py moved/cant_move/note_residual_chip/cure_status/switch_out, "
+                          "the `status` setter, battle.py switch", "view.rs fold_status"),
     "V6-protect-counter": ("a plain consecutive-stall-move count", "Pokemon.moved/cant_move/"
                            "switch_out", "view.rs fold_status"),
     "V7-item-disclosure": ("an opposing item is known from |-item|/|-enditem| or a `[from] item:` "
@@ -86,10 +88,6 @@ RULES: Dict[str, Tuple[str, str, str]] = {
     "V9-opp-hidden": ("an opponent's spread / stats / exact HP are unknown: ivs/evs/nature None, "
                       "stats all-None, HP as the ceil-% fold", "LivePokemon.from_pokemon "
                       "(is_own=False)", "view.rs mon_json(own=false)"),
-    "V10-faint-boosts": ("a FAINTED mon keeps the stages it fainted with until it is switched "
-                         "out (the sim clears them at the faint)", "pokemon.py faint() does not "
-                         "clear_boosts; switch_out does",
-                         "MonState::faint_boosts + view_adapter._mon"),
     "V11-screens": ("a timed screen is stored as the TURN it started, Spikes as its layer count",
                     "abstract_battle._side_start", "view.rs side_conditions_json"),
     "V12-weather-turns": ("`turns_active` = now − the |-weather| set turn", "LiveView._fold_weather",
@@ -110,7 +108,7 @@ MON_FIELDS: Dict[str, Tuple[str, str, Optional[str]]] = {
     "moves": (SIM, RULE, "V3-opp-pp"),
     "item": (SIM, RULE, "V7-item-disclosure"),
     "ability": (SIM, RULE, "V8-ability-slots"),
-    "boosts": (SIM, SIM, "V10-faint-boosts"),
+    "boosts": (SIM, SIM, None),       # V10 retired: the fork clears them at the faint (PE-V10)
     "volatiles": (RULE, RULE, "V4-volatiles"),
     "base_stats": (SIM, SIM, None),
     "ivs": (SIM, RULE, "V9-opp-hidden"),
@@ -177,8 +175,8 @@ class ViewCensus:
     truth_checks: collections.Counter = field(default_factory=collections.Counter)
     #: The core's TRUTH AUDIT checks (``present::audit::check_view`` against the engine).
     board_checks: collections.Counter = field(default_factory=collections.Counter)
-    #: Per named rule the audit applies (V15) and per UNRESOLVED question, the facts the view held
-    #: differently from the engine, legally. Printed, never a divergence.
+    #: Per named rule the audit applies (V15), the facts the view held differently from the
+    #: engine, legally. Printed, never a divergence.
     rules_fired: collections.Counter = field(default_factory=collections.Counter)
     #: The KNOWN poke-env READING findings (``agents.battle.poke_env_findings``): per finding id,
     #: the core-vs-reading field differences it explains (``known``) and the DECISIONS it touched
@@ -204,7 +202,7 @@ class ViewCensus:
         head = (f"{self.battles} battles, {self.viewers} viewers, {self.decisions} decisions, "
                 f"{self.fields} field comparisons, truth checks {dict(self.truth_checks)}, "
                 f"core board checks {dict(self.board_checks)}, "
-                f"named rules / unresolved {dict(self.rules_fired)}, "
+                f"named rules {dict(self.rules_fired)}, "
                 f"KNOWN poke-env findings (facts) {dict(self.known)} "
                 f"(decisions) {dict(self.known_decisions)}")
         if self.out_of_scope:
@@ -285,8 +283,6 @@ def _cmp_mon(p: LivePokemon, v: LivePokemon, side: str, census: ViewCensus, wher
         cls = own_cls if side == "ours" else opp_cls
         census.fields += 1
         x, y = _mon_value(p, f.name), _mon_value(v, f.name)
-        if f.name == "boosts" and v.fainted:
-            cls = RULE                        # V10: the sim cleared them at the faint
         if column:
             same = _same(x, y)
         elif f.name == "hp_fraction":

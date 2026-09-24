@@ -70,23 +70,43 @@ divergence, and a finding that stops firing fails the pin that expects it. **The
 from M2**: fixing it moves the training-input boundary, the owner's call; when it lands, the entry is
 deleted and the check tightens.
 
-| finding | field | poke-env reads | the truth (source) | reaches the obs |
+**The registry is EMPTY.** M2 registered three findings; all three were FIXED in the fork as
+`gen3_pe_reading_fixes_v1` (2026-09-24, a TRAINING-INPUT change, `designs/CHANGELOG.md`) and their
+entries deleted, so every comparison of the core against poke-env is now exact:
+
+| was | field | upstream poke-env read | the truth (source) — what both read now | fork fix |
 |---|---|---|---|---|
-| **PE-V10** | `boosts` | a fainted mon keeps its stages until switched out | none — the faint's `clearVolatile` zeroes them (the Rust board) | YES — the fainted active's stages in `active_context` at the forced-switch decision |
-| **PE-R1b** | `status_counter` | +1 per `\|turn\|` while active — ONE AHEAD for a mon that entered after the residual, ONE BEHIND at a decision between the residual and the next `\|turn\|` (an end-of-turn forced replacement); frozen at a faint | the toxic STAGE: residual `[from] psn` chips since its switch-in (the Rust board's `Toxic(stage)`) | YES — the per-mon toxic slot |
-| **PE-V16** | `volatiles` | a damaging Fire move of the holder's own ENDS Flash Fire (`Pokemon.moved`, any gen) | `flashfire` lasts until the holder leaves the field (the Rust board's `flash_fire`, probe-verified; `abilities.ts`) | YES — the `flashfire` binary volatile slot |
+| **PE-V10** | `boosts` | a fainted mon kept its stages until switched out | none — the faint's `clearVolatile` zeroes them (`sim/pokemon.ts`; the Rust board) | `Pokemon.faint` clears them |
+| **PE-R1b** | `status_counter` | +1 per `\|turn\|` while active — ONE AHEAD for a mon that entered after the residual, ONE BEHIND at a decision between the residual and the next `\|turn\|`; frozen at a faint | the toxic STAGE: residual `[from] psn` chips since the switch-in, cap 15 (`data/conditions.ts` `tox`; the Rust board's `Toxic(stage)`) | `Pokemon.note_residual_chip` from the `-damage` handler; `Battle.switch` resets it; `end_turn` no longer ticks |
+| **PE-V16** | `volatiles` | a damaging Fire move of the holder's own ENDED Flash Fire (`Pokemon.moved`, any gen) | `flashfire` lasts until the holder leaves the field (`data/abilities.ts`; the Rust board, probe-verified) | the branch in `Pokemon.moved` removed |
+
+All three reached the obs (the fainted active's stages in `active_context`, the per-mon toxic slot,
+the `flashfire` volatile slot). Pins: `src/poke_env/battle/reading_fixes_test.py` (each FAILS on
+upstream), `agents/training/poke_env_gaps/pe_reading_fixes_obs_integration_test.py` (three
+constructed real-Showdown battles read at the obs), and this crate's `present::tests` +
+`rust_core_present_test.py`, which now assert the two readings EQUAL at the truth. The view road
+(`view.rs` / `view_adapter` / `event_fold`) reproduces poke-env and followed: V10 and its boost
+ledger deleted, V5's toxic half on the residual chip.
 
 **Not findings — INFORMATION LIMITS**, read as poke-env reads them because no client can know
 better: V15 (an own mon the current request did not re-sync holds the sighting count of its PP,
 which lags an un-announced Pressure deduction — the audit checks it can only lag) and V14 / R4 (a
-Transformed own mon's copied ability; a gen-3 request states neither). **UNRESOLVED**: a BENCHED
-badly-poisoned mon's counter — the sim stores the stage it left with and resets it on switch-in,
-poke-env and the view read 0; the stored stage never acts again, so neither side is clearly wrong
-(counted by the audit as `UNRESOLVED:tox-stage-benched`, never checked).
+Transformed own mon's copied ability; a gen-3 request states neither).
+
+**A BENCHED badly-poisoned mon's counter — RESOLVED, both sides right** (was UNRESOLVED). The sim
+keeps the stage the mon left with in `effectState.stage`; poke-env and the view read 0. The stored
+value is a DEAD STORE: in the pinned Showdown its only reader is `tox.onResidual`, which runs for
+ACTIVE mons only (`fieldEvent('Residual')`), and every entry runs `tox.onSwitchIn` (stage = 0)
+before any residual (gen 3 inherits `tox` unchanged through gen 4's mod, whose `runSwitch` fires
+`runEvent('SwitchIn')`); no other code reads `.stage`. So 0 is the benched mon's stage in every
+respect that can act — the next chip after its re-entry is 1/16 — and it is what the obs should
+hold (the damage op prices the next tick as `(stage + 1) / 16` on EVERY slot, benched included). It
+is not an information limit (the chips are on the stream); the audit now CHECKS it
+(`status_counter[tox-benched]`: a benched badly-poisoned mon reads 0).
 
 The board audit (`check_view`) checks every SIM-FACT field against the engine at the truth — the
-three findings' fields included (Flash Fire joined the audited volatiles) — and names what it
-cannot check (V9, V14, V15) in `rules_fired`.
+three fixed findings' fields and the benched toxic stage included (Flash Fire joined the audited
+volatiles) — and names what it cannot check (V9, V14, V15) in `rules_fired`.
 
 `legal_actions()` is `LegalActions.from_battle` over the raw `|request|` (the `BoardReading` keeps its
 text) and `mask()` the 11-dim mask; slice V compares both to `Gen3ActionMasker` on every decision.
@@ -128,7 +148,7 @@ tracker cadence and encoder.
 
 | gate | proves |
 |---|---|
-| slice V — COMMIT / MILESTONE (`rust_core_parity_views.py`, via `core_events --views`) | at every decision, both viewers: `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, type-strict, no allowlist but the registered poke-env FINDINGS (§3, value-aware, counted per decision); the board audit; parse == step at every version |
+| slice V — COMMIT / MILESTONE (`rust_core_parity_views.py`, via `core_events --views`) | at every decision, both viewers: `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, type-strict, no allowlist but the registered poke-env FINDINGS (§3, value-aware, counted per decision — none registered today); the board audit; parse == step at every version |
 | `materializer_parity_integration_test.py` | `protocol`, `view` and `core` give identical decisions, values and obs bytes, integrity on |
 | `fork_sharing_parity_integration_test.py` (parametrized `view` / `core`) | one root fork per DECISION, shared across the K worlds, gives the same successor obs bytes as one fork per world — a reused factory leaks nothing between arms |
 | `one_sided_view_parity_fuzz_test.py` (`sim`) | on real bridge battles, the core's root and arm views == the protocol road's `LiveView` |

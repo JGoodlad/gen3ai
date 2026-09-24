@@ -147,8 +147,9 @@ board fact cannot reach it by construction; the omniscient board is a REFEREE (`
 audit slice V runs) and the step path's TYPED shortcut, which the integrity mode checks against the
 text path. 🚨 **`present()` is the TRUE reading — parity with poke-env is not the goal.** Where
 poke-env is wrong about a sim fact the stream establishes, the view carries the truth and the
-disagreement is a registered FINDING (`agents/battle/poke_env_findings.py`: PE-V10, PE-R1b, PE-V16 —
-one field, a value-aware predicate, the reproduction, whether it reaches the obs); never add a rule
+disagreement is a registered FINDING (`agents/battle/poke_env_findings.py` — one field, a
+value-aware predicate, the reproduction, whether it reaches the obs; EMPTY since M2's three,
+PE-V10 / PE-R1b / PE-V16, were fixed in the fork as `gen3_pe_reading_fixes_v1`); never add a rule
 whose only purpose is to reproduce a poke-env mistake, and never fix the fork from here (that moves
 the training input — the owner's call). Search adopts it:
 `materializer=core` (the default) makes every successor a `BattleVersion` (`search_driver`'s

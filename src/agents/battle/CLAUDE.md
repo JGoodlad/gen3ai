@@ -202,10 +202,11 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   an opponent's move PP is a SIGHTING count (doubled against Pressure, judged with the target's
   ability AT USE TIME), `volatiles` is a protocol fold whose poke-env lifecycle the adapter REPLAYS
   from each effect's announcement history (Baton Pass carries included), `status_counter` and
-  `protect_counter` are poke-env counters with different transitions from the engine's, a fainted
-  mon keeps the stages it died with, and the obs SLOT order is the first `|request|`'s roster
-  (ours) / reveal order (theirs) — every one a NAMED reading rule (V1–V13, gated by
-  `rust_core_parity_views.py`). `ViewBattle` additionally feeds the
+  `protect_counter` are poke-env counters with different transitions from the engine's (the toxic
+  half is the sim's stage since `gen3_pe_reading_fixes_v1`), and the obs SLOT order is the first
+  `|request|`'s roster (ours) / reveal order (theirs) — every one a NAMED reading rule (V1–V13, V10
+  retired: a fainted mon holds no stages on either road, so the ply-folded boost ledger that used
+  to restore them at a D10 board is gone; gated by `rust_core_parity_views.py`). `ViewBattle` additionally feeds the
   four sub-encoders that never took a `live_mon` (`items` / `abilities` / `types` / `moves` —
   deferral D2) from the same read-model, and carries the successor's **whole-battle event log**,
   which is what closes the last two obs deferrals (the pending-Wish pair and the sleep-wake
@@ -269,7 +270,8 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   counted out of scope. 🚨 **This is the gate a Baton-Pass-class poke-env reading bug fails**: it is
   the one place the other side of the comparison is the SIM, not another reader of the same
   `Pokemon` — and it already found three live ones (`designs/rust_sim/one_sided_view.md` §4b
-  R1–R3 FIXED in the fork, a training-input change; R1b / R4 open). Teeth: a re-introduced Baton Pass drop and a misread Spikes
+  R1–R3 FIXED in the fork, a training-input change; R1b fixed with M2's findings below; R4 an
+  information limit). Teeth: a re-introduced Baton Pass drop and a misread Spikes
   layer each FAIL a routine test. `offline_feed.new_battle(…, packed_team=)` mirrors the
   `Player`'s `_teambuilder_team` (our own spread's only source in gen 3). Contract + the rule table:
   [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md) §2b / §4a.
@@ -285,9 +287,16 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   whether it reaches the obs, and the obs blocks it may touch. Every comparison of the core against
   poke-env routes through `explain()`; a difference no entry explains is a divergence. 🚨 **Never a
   blanket tolerance, and never fixed from the core's side**: when the fork is fixed (a TRAINING-INPUT
-  change, the owner's call), DELETE the entry and the check tightens. Today: PE-V10 (a fainted mon's
-  stages), PE-R1b (a re-entered badly-poisoned mon's count), PE-V16 (Flash Fire after its holder's
-  Fire move) — all three reach the obs. Contract + rates:
+  change, the owner's call), DELETE the entry and the check tightens. **Today the registry is
+  EMPTY**: M2's three — PE-V10 (a fainted mon kept its stages), PE-R1b (the toxic count ticked at
+  `|turn|`, not at the residual chip), PE-V16 (Flash Fire ended by its holder's Fire move), all
+  reaching the obs — were FIXED in the fork as `gen3_pe_reading_fixes_v1` (2026-09-24, a
+  TRAINING-INPUT change: `pokemon.py` `faint` / `note_residual_chip` / `moved`, `abstract_battle.py`
+  `-damage`, `battle.py` `switch`), so every core-vs-reading comparison is exact. Pins:
+  `poke_env/battle/reading_fixes_test.py` (protocol lines, each FAILS on upstream) +
+  `training/poke_env_gaps/pe_reading_fixes_obs_integration_test.py` (three constructed real-Showdown
+  battles — Curse + Self-Destruct, a Toxic pivot re-entering after the residual, a Flash Fire
+  Houndoom — read at the obs). Contract + rates:
   [`designs/rust_sim/present.md`](../../../designs/rust_sim/present.md) §3.
 - **`core_view.py` — a `LiveView` / `LegalActions` from the Rust core's `present()` JSON**
   (`gen3_core_present_v1`, the Rust Core Program's M2). A pure TRANSPORT: every presentation rule is

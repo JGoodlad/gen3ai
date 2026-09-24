@@ -120,6 +120,12 @@ active flag → 122. The active flag stays the **last** dim of the slot on purpo
 Move slot (11, `moves.py`): `[id, power/200, has_secondary, has_recoil, type_id, category, known,
 current_pp, max_pp, accuracy, never_miss]`.
 
+The two counters are read off the vendored poke-env's `status_counter`: sleep `min(n, 4)/4` (the
+`|cant|`/`|move|` lines since the sleep began), toxic `min(stage, 8)/8` where `stage` is the SIM's
+`tox` stage — the residual `[from] psn` chips since the switch-in, 0 on entry and while benched
+(`gen3_pe_reading_fixes_v1`). A FAINTED active's `active_context` boosts are zero (the sim's faint
+clears them), and the `flashfire` volatile slot stays set until its holder leaves the field.
+
 ### 1.3 Board (reactive) block — 17 dims
 
 **5 raw board scalars, then the request-ordered active moves.** Everything derived is gone

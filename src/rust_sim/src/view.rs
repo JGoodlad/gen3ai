@@ -186,12 +186,13 @@ pub struct MonObservation {
     /// poke-env's `status_counter`, folded (reading rule V5,
     /// `designs/rust_sim/one_sided_view.md` §4b).
     ///
-    /// It is NOT the sim's counter: `Pokemon.moved` AND `Pokemon.cant_move` increment it once per
-    /// `|move|` / `|cant|` LINE while poke-env holds the mon asleep, and `Pokemon.end_turn` once
-    /// per `|turn|` while badly poisoned AND ACTIVE, so a mon the engine has at `Sleep(3)` reads 0
-    /// until it tries to act. Only `cure_status(<the named status>)` and a TOXIC `switch_out`
-    /// reset it — a NEW status does not. The obs normalises it (`min(n,4)/4` asleep, `min(n,8)/8`
-    /// toxic), so the difference is visible in the vector.
+    /// The SLEEP half is NOT the sim's counter: `Pokemon.moved` AND `Pokemon.cant_move` increment
+    /// it once per `|move|` / `|cant|` LINE while poke-env holds the mon asleep, so a mon the
+    /// engine has at `Sleep(3)` reads 0 until it tries to act. The TOXIC half IS the sim's stage
+    /// since the fork's PE-R1b fix (`gen3_pe_reading_fixes_v1`): +1 per residual `[from] psn` chip
+    /// (capped at 15), reset at the switch-in and at a toxic `switch_out`. A NEW status zeroes it
+    /// (the R1 fix), as does `cure_status(<the named status>)`. The obs normalises it
+    /// (`min(n,4)/4` asleep, `min(n,8)/8` toxic).
     pub status_counter: u32,
     /// poke-env's OWN `Pokemon._status` for this mon, as the protocol has written it — `"slp"`,
     /// `"tox"`, `"fnt"`, … or `None`. The counter's increments and resets are conditioned on THIS
@@ -346,18 +347,9 @@ impl SideObservation {
             if let Some(n) = parts.get(2).and_then(|n| n.trim().parse::<u32>().ok()) {
                 self.proto_turn = n;
             }
-            // `Pokemon.end_turn` runs for the ACTIVE mons only (`all_active_pokemons`), and the
-            // only counter it advances in gen 3 is the badly-poisoned one.
-            for (i, on) in [self.on_field[0].clone(), self.on_field[1].clone()].into_iter().enumerate()
-            {
-                let Some(nm) = on else { continue };
-                let map = if i == 0 { &mut self.own_mons } else { &mut self.mons };
-                if let Some(m) = map.get_mut(&nm) {
-                    if m.pstatus_is("tox") {
-                        m.status_counter += 1;
-                    }
-                }
-            }
+            // `Pokemon.end_turn` advances NO status counter: the fork's PE-R1b fix
+            // (`gen3_pe_reading_fixes_v1`) moved the badly-poisoned tick to the residual chip
+            // (`fold_status`'s `-damage` arm).
             return;
         }
         // `|request|{...}` — the FIRST one fixes our own team's obs slot order, and EVERY one
@@ -695,10 +687,22 @@ fn fold_status(e: &mut MonObservation, tag: &str, parts: &[&str]) {
             if let Some(hp) = parts.get(3) {
                 e.set_hp_status(hp);
             }
+            // `AbstractBattle` `-damage` → `Pokemon.note_residual_chip` (the fork's PE-R1b fix,
+            // `gen3_pe_reading_fixes_v1`): a `[from] psn` chip on a mon STILL holding `tox` after
+            // its HP token is one stage of the sim's `tox`, capped at 15. A chip that KOs has
+            // already made the status `fnt`, so it does not count.
+            if tag == "-damage" && e.pstatus_is("tox") && parts.iter().skip(4).any(|t| *t == "[from] psn") {
+                e.status_counter = (e.status_counter + 1).min(15);
+            }
         }
         // `Battle.switch` → `pokemon.set_hp_status(hp_status)` on the ENTRANT. The counter
         // reset belongs to the one going OUT (`switch_out_status`, via `on_field` in `observe`).
         "switch" | "drag" | "replace" => {
+            // `Battle.switch` (the fork's PE-R1b fix): `tox.onSwitchIn` resets the stage — read
+            // off the status the ENTRANT held before this line's HP token.
+            if tag != "replace" && e.pstatus_is("tox") {
+                e.status_counter = 0;
+            }
             if let Some(hp) = parts.get(4) {
                 e.set_hp_status(hp);
             }
@@ -1328,7 +1332,7 @@ fn mon_json(
          \"hp_fraction\":{},\"current_hp\":{},\"max_hp\":{},\
          \"status\":{},\"status_counter\":{},\"protect_counter\":{},\
          \"types\":[{}],\"moves\":{},\"item\":{},\"consumed_item\":{},\"ability\":{},\"base_ability\":{},\"ability_events\":{},\
-         \"boosts\":{},\"faint_boosts\":{},\"volatiles\":{},\"base_stats\":{},{},\"stats\":{}}}",
+         \"boosts\":{},\"volatiles\":{},\"base_stats\":{},{},\"stats\":{}}}",
         json_quote(identity_species(mon)),
         is_active,
         mon.fainted,
@@ -1347,9 +1351,6 @@ fn mon_json(
         base_ability,
         ability_events,
         boosts_json(&mon.boosts),
-        // The stages the mon HELD at its faint (a sim fact the board has zeroed) — the adapter
-        // presents them per reading rule V10, never the port.
-        if mon.fainted { boosts_json(&mon.faint_boosts) } else { "null".to_string() },
         volatiles_json(obs, tick),
         base_stats,
         spread,

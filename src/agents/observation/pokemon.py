@@ -163,7 +163,8 @@ class PokemonEncoder(ObservationEncoder):
         # 9. Status counters (2): sleep duration, toxic severity
         # Gen 3 sleep: 1–4 turns. Sleep Talk/Snore increment the counter but the
         # increment is discarded on switch-out (engine oversight), so this is approximate.
-        # Toxic: resets to 1 on switch-in; practical max ~8 turns before fainting.
+        # Toxic: the sim's STAGE — residual chips since the switch-in, 0 on entry and while
+        # benched (`gen3_pe_reading_fixes_v1`); practical max ~8 before fainting.
         if live_mon is not None:
             is_slp = live_mon.status == "slp"
             is_tox = live_mon.status == "tox"

@@ -361,11 +361,10 @@ def check_point(encoder, road: _ProtocolRoad, payload: dict, where: str, cen: Ce
         return False
     strict = battle.strict_view()
     live_p, legal_p = strict.live, strict.legal
-    # `ledger` is the ply's folded `ViewEventFolder` when the caller has one. It is the view
-    # road's OWN input (the fainted-mon boost restore runs inside `read_models_from_payload`), so
-    # comparing without it at a D10 board would convict a difference production does not have.
-    live_v, legal_v, vbattle = read_models_from_payload(
-        payload, battle_tag=live_p.battle_tag, fainted_boosts=ledger)
+    # `ledger` (the ply's folded `ViewEventFolder`) is accepted for the callers' symmetry and no
+    # longer read: the view road's fainted-mon boost restore was retired with the fork's PE-V10
+    # fix (`gen3_pe_reading_fixes_v1`) — a fainted mon's stages are the payload's, none.
+    live_v, legal_v, vbattle = read_models_from_payload(payload, battle_tag=live_p.battle_tag)
 
     before = sum(cen.declared.values())
     compare_live(live_p, live_v, cen)
@@ -541,6 +540,11 @@ def _block_of(encoder, idx: int) -> str:
         if not (isinstance(shape, tuple) and len(shape) == 2):
             return name
         row, col = divmod(idx - start, shape[1])
+        # Only a TEAM block's rows are per-mon slots. `context` is (2, ACTIVE_CONTEXT_DIM) — one
+        # row per side's active — and naming its columns from the per-mon layout misnamed a boost
+        # byte `context[0].species`, which no finding's `context` pattern could match.
+        if not name.endswith("_team"):
+            return f"{name}[{row}]"
         field = _field_of(lay.get("pokemon") or {}, col)
         return f"{name}[{row}].{field}"
     return "?"

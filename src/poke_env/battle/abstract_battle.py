@@ -693,7 +693,12 @@ class AbstractBattle(ABC):
             )
         elif event[1] == "-damage":
             pokemon, hp_status = event[2:4]
-            self.get_pokemon(pokemon).damage(hp_status)
+            damaged = self.get_pokemon(pokemon)
+            damaged.damage(hp_status)
+            # gen3ai fork (`gen3_pe_reading_fixes_v1`, PE-R1b): the residual toxic chip is what
+            # advances the sim's badly-poisoned stage (see `Pokemon.note_residual_chip`).
+            if "[from] psn" in event[4:]:
+                damaged.note_residual_chip()
             self._check_damage_message_for_item(event)
             self._check_damage_message_for_ability(event)
         elif event[1] == "move":

@@ -164,9 +164,9 @@ fn v9_the_opponent_is_hidden() {
     assert_eq!(m.nature.as_deref(), Some("adamant"));
 }
 
-/// PE-V10 (a poke-env reading FINDING, not a rule): the sim clears a fainted mon's stages at the
-/// faint (`clearVolatile`), so the view holds none; poke-env's `faint()` keeps them until
-/// `switch_out`. Fails on a revert to poke-env's `faint()`.
+/// PE-V10 (was a poke-env reading FINDING; the fork is fixed, `gen3_pe_reading_fixes_v1`): the sim
+/// clears a fainted mon's stages at the faint (`clearVolatile`), so the view holds none. Fails on a
+/// revert to upstream poke-env's `faint()`.
 #[test]
 fn pe_v10_a_fainted_mon_holds_no_stages() {
     let v = view(&with(&["|-boost|p2a: Zapdos|spa|1", "|faint|p2a: Zapdos"]));
@@ -177,7 +177,7 @@ fn pe_v10_a_fainted_mon_holds_no_stages() {
 }
 
 /// PE-V16: the sim's `flashfire` volatile lasts until its holder leaves the field, so the view
-/// keeps Flash Fire through the holder's own Fire move; poke-env's `moved` ends it there.
+/// keeps Flash Fire through the holder's own Fire move (upstream poke-env's `moved` ended it there).
 #[test]
 fn pe_v16_flash_fire_survives_its_holders_fire_move() {
     let ff = |v: &OneSidedView| opp(v, "zapdos").volatiles.iter().any(|(k, _)| k == "flashfire");
@@ -190,7 +190,7 @@ fn pe_v16_flash_fire_survives_its_holders_fire_move() {
 
 /// PE-R1b: a badly-poisoned mon's counter is the sim's STAGE — one per residual chip since its
 /// switch-in — so a mon that entered AFTER the residual reads 0 at the next `|turn|`, where
-/// poke-env (+1 per `|turn|`) reads 1.
+/// upstream poke-env (+1 per `|turn|`) read 1.
 #[test]
 fn pe_r1b_the_toxic_counter_is_the_stage() {
     let v = view(&with(&["|-status|p2a: Zapdos|tox", "|-damage|p2a: Zapdos|94/100 tox|[from] psn", "|turn|2",

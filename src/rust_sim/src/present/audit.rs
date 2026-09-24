@@ -16,9 +16,13 @@
 //!
 //! The view's TRUE readings are plain checks: a fainted mon holds no stages (PE-V10), an ACTIVE
 //! badly-poisoned mon's counter is the engine's stage (PE-R1b), Flash Fire is present exactly when
-//! the engine holds `flashfire` (PE-V16). A BENCHED badly-poisoned mon's counter is UNRESOLVED
-//! (the sim stores the stage it left with and resets it on switch-in; the view reads 0, as
-//! poke-env does): counted in [`Audit::rules_fired`], never checked.
+//! the engine holds `flashfire` (PE-V16) — all three fixed in the fork too
+//! (`gen3_pe_reading_fixes_v1`). A BENCHED badly-poisoned mon's counter is checked against its
+//! EFFECTIVE stage, 0: the sim keeps the stage it left with in `effectState.stage`, but that value
+//! is a DEAD STORE — the only reader is `tox.onResidual`, which runs for active mons only, and every
+//! entry runs `tox.onSwitchIn` (stage = 0) first (`data/conditions.ts`; gen 3 inherits it through
+//! gen 4's mod, whose `runSwitch` fires `SwitchIn`). So 0 is the benched mon's stage in every
+//! respect that can act.
 //!
 //! Plus the revealed-opponent truths no projection can make (the Python slice V's `truth_checks`,
 //! moved here so the board has ONE reader): a disclosed item / ability / move is the engine's, a
@@ -53,8 +57,8 @@ pub const TRUTH_VOLATILES: [(&str, &str); 11] = [
 pub struct Audit {
     pub checks: usize,
     pub divergences: Vec<(String, String)>,
-    /// Per named rule (V15), and per UNRESOLVED question (`UNRESOLVED:tox-stage-benched`), how
-    /// many checked facts the view held differently from the engine, legally. A census, never a
+    /// Per named rule (V15), how many checked facts the view held differently from the engine,
+    /// legally. A census, never a
     /// divergence: it is how a reader sees how often each shapes the obs.
     pub rules_fired: std::collections::BTreeMap<&'static str, usize>,
 }
@@ -239,14 +243,17 @@ fn mon_check(a: &mut Audit, m: &MonView, e: &MonState, own: bool, dex: &Dex, who
         let et = engine_types(e, dex);
         a.check(m.types == et, &cls("types"), || format!("{sp}: view {:?} engine {et:?}", m.types));
     }
-    // The badly-poisoned stage (PE-R1b's truth) on the ACTIVE mon; a benched one is UNRESOLVED.
+    // The badly-poisoned stage (PE-R1b's truth) on the ACTIVE mon; a benched one's EFFECTIVE
+    // stage is 0 (the stored stage is a dead store `tox.onSwitchIn` overwrites before any read).
     if let Some(Status::Toxic(n)) = e.status {
         if !e.fainted && m.active {
             a.check(m.status_counter == n as u32, &cls("status_counter[tox]"), || {
                 format!("{sp}: view {} engine stage {n}", m.status_counter)
             });
-        } else if !e.fainted && m.status_counter != n as u32 {
-            *a.rules_fired.entry("UNRESOLVED:tox-stage-benched").or_default() += 1;
+        } else if !e.fainted {
+            a.check(m.status_counter == 0, &cls("status_counter[tox-benched]"), || {
+                format!("{sp}: view {} benched (effective stage 0; the sim stores {n})", m.status_counter)
+            });
         }
     }
     // The truth of every volatile the protocol announces, on an ACTIVE living mon.

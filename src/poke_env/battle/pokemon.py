@@ -449,8 +449,10 @@ class Pokemon:
 
     def end_turn(self):
         self._active_turns += 1
-        if self._status == Status.TOX:
-            self._status_counter += 1
+        # gen3ai fork (`gen3_pe_reading_fixes_v1`, PE-R1b): the badly-poisoned count is NOT ticked
+        # here. Upstream ticked it at every `|turn|`, which is one AHEAD of the sim for a mon that
+        # entered after the residual and one BEHIND between the residual and the next `|turn|`;
+        # the sim's stage moves at the residual chip — see `note_residual_chip`.
         for effect in list(self.effects.keys()):
             if effect.is_turn_countable:
                 self.effects[effect] += 1
@@ -458,6 +460,11 @@ class Pokemon:
                 self.end_effect(effect.name)
 
     def faint(self):
+        # gen3ai fork (`gen3_pe_reading_fixes_v1`, PE-V10): a faint CLEARS the stat stages — the
+        # sim's faint runs `clearVolatile`, which zeroes `boosts`. Upstream kept them until
+        # `switch_out`, so the replacement decision encoded the dead mon's stages in
+        # `active_context`.
+        self.clear_boosts()
         self._current_hp = 0
         self._status = Status.FNT
         self.temporary_ability = None
@@ -532,14 +539,11 @@ class Pokemon:
             and use
         ):
             self.end_effect("Charge")
-        elif (
-            Effect.FLASH_FIRE in self.effects
-            and isinstance(move, Move)
-            and move.base_power > 0
-            and move.type == PokemonType.FIRE
-            and use
-        ):
-            self.end_effect("Flash Fire")
+        # gen3ai fork (`gen3_pe_reading_fixes_v1`, PE-V16): upstream also ended FLASH_FIRE here on
+        # the holder's own damaging Fire move. No gen's sim does: the `flashfire` volatile lasts
+        # until the holder leaves the field (`data/abilities.ts` flashfire — `onEnd` / the
+        # switch-out `clearVolatile`) and boosts EVERY Fire move ×1.5. `switch_out` / `faint`
+        # clear it through `_clear_effects`.
 
     def prepare(self, move_id: str, target: Optional[Pokemon]):
         ident = Move.retrieve_id(move_id)
@@ -559,6 +563,16 @@ class Pokemon:
             else species_id_str
         )
         self._update_from_pokedex(primal_species, store_species=False)
+
+    def note_residual_chip(self):
+        """gen3ai fork (`gen3_pe_reading_fixes_v1`, PE-R1b): one residual toxic chip — a
+        ``|-damage|…|[from] psn`` on a mon holding TOX, AFTER its HP token is applied — is one
+        stage of the sim's ``tox`` (``onResidual`` ramps ``stage`` before it chips, capped at 15;
+        ``onSwitchIn`` resets it). A chip that KOs leaves the count where it was: the HP token
+        ``0 fnt`` has already made the status FNT. Called by ``AbstractBattle``'s ``-damage``
+        handler."""
+        if self._status == Status.TOX:
+            self._status_counter = min(self._status_counter + 1, 15)
 
     def set_boost(self, stat: str, amount: int):
         assert (

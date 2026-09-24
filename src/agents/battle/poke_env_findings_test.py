@@ -1,9 +1,11 @@
-"""The poke-env findings registry is VALUE-AWARE: each predicate explains exactly its finding's
-difference and nothing near it (a blanket tolerance would pass every case below)."""
+"""The poke-env findings registry: EMPTY since `gen3_pe_reading_fixes_v1`, and the mechanism that
+routes a core-vs-reading difference through it is still VALUE-AWARE (a blanket tolerance would pass
+every case below)."""
 
 from types import SimpleNamespace as NS
 
-from agents.battle.poke_env_findings import FINDINGS, explain, obs_block_explained
+from agents.battle import poke_env_findings as pef
+from agents.battle.poke_env_findings import FINDINGS, Finding, explain, obs_block_explained
 
 
 def mon(**kw):
@@ -12,32 +14,25 @@ def mon(**kw):
     return NS(**base)
 
 
-def test_pe_v10_only_a_fainted_mon_whose_stages_the_truth_cleared():
-    assert explain("boosts", mon(fainted=True, boosts={"spa": 1}), mon(fainted=True)) == "PE-V10"
-    assert explain("boosts", mon(boosts={"spa": 1}), mon()) is None, "a LIVING mon's stages are a sim fact"
-    assert explain("boosts", mon(fainted=True, boosts={"spa": 1}), mon(fainted=True, boosts={"spa": 2})) is None
-
-
-def test_pe_r1b_exactly_one_apart_while_active_or_frozen_at_the_faint():
-    assert explain("status_counter", mon(status="tox", status_counter=1), mon(status="tox")) == "PE-R1b"
-    assert explain("status_counter", mon(status="fnt", status_counter=1), mon(status="fnt")) == "PE-R1b"
-    assert explain("status_counter", mon(status="tox", status_counter=1), mon(status="tox", status_counter=2)) \
-        == "PE-R1b", "one BEHIND between the residual and the next |turn|"
-    assert explain("status_counter", mon(status="tox", status_counter=2), mon(status="tox")) is None, "+2"
-    assert explain("status_counter", mon(status="slp", status_counter=1), mon(status="slp")) is None, "sleep"
-    assert explain("status_counter", mon(status="tox", status_counter=1, active=False),
-                   mon(status="tox", active=False)) is None, "a benched mon's count is not this finding"
-
-
-def test_pe_v16_only_the_missing_flashfire():
-    assert explain("volatiles", mon(volatiles={"confusion": 1}),
-                   mon(volatiles={"confusion": 1, "flashfire": 0})) == "PE-V16"
-    assert explain("volatiles", mon(), mon(volatiles={"flashfire": 0, "taunt": 1})) is None, "a second difference"
-
-
-def test_every_finding_names_its_obs_blocks_and_reach():
-    for f in FINDINGS.values():
-        assert f.obs_blocks and f.reaches_obs and f.reproduce and f.source
-    assert obs_block_explained("opp_team[3].status_counters", ["PE-R1b"])
-    assert not obs_block_explained("opp_team[3].moves", ["PE-R1b"])
+def test_the_registry_is_empty_after_the_fork_fixes():
+    """PE-V10 / PE-R1b / PE-V16 were fixed in the fork; a difference in their fields is now a
+    DIVERGENCE. Re-registering one of them (instead of fixing the regression) fails here."""
+    assert FINDINGS == {}
+    assert explain("boosts", mon(fainted=True, boosts={"spa": 1}), mon(fainted=True)) is None
+    assert explain("status_counter", mon(status="tox", status_counter=1), mon(status="tox")) is None
+    assert explain("volatiles", mon(), mon(volatiles={"flashfire": 0})) is None
     assert not obs_block_explained("context", [])
+
+
+def test_a_registered_finding_explains_exactly_its_own_difference(monkeypatch):
+    """The mechanism, with a planted finding: value-aware on its field, blind to every other."""
+    planted = Finding(
+        id="PE-TEST", field="boosts", title="t", poke_env_reads="r", truth="t", source="s",
+        reproduce="x", reaches_obs="YES", obs_blocks=("context",),
+        predicate=lambda r, c: bool(c.fainted and not dict(c.boosts) and dict(r.boosts)))
+    monkeypatch.setattr(pef, "FINDINGS", {"PE-TEST": planted})
+    assert pef.explain("boosts", mon(fainted=True, boosts={"spa": 1}), mon(fainted=True)) == "PE-TEST"
+    assert pef.explain("boosts", mon(boosts={"spa": 1}), mon()) is None, "a LIVING mon: not it"
+    assert pef.explain("volatiles", mon(fainted=True, boosts={"spa": 1}), mon(fainted=True)) is None
+    assert pef.obs_block_explained("context", ["PE-TEST"])
+    assert not pef.obs_block_explained("opp_team[3].moves", ["PE-TEST"])

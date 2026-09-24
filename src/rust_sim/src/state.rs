@@ -152,12 +152,6 @@ pub struct MonState {
     /// Stat-stage boosts `[atk, def, spa, spd, spe, accuracy, evasion]`, all 0
     /// at construction.
     pub boosts: [i8; BOOST_LEN],
-    /// The stat stages the mon HELD when it fainted — `faintMessages` → `clearVolatile` zeroes
-    /// [`MonState::boosts`] at the faint, and this keeps what was there. OBSERVATION-ONLY (read
-    /// by nothing in the battle path): `view.rs` emits it so the one-sided view can present
-    /// poke-env's reading rule V10 (`Pokemon.faint` keeps a mon's stages until `switch_out`).
-    /// All 0 until the mon faints.
-    pub faint_boosts: [i8; BOOST_LEN],
     /// Whether this mon has fainted (false at construction).
     pub fainted: bool,
     /// The CONFUSION volatile's remaining-turn counter, or `None` (not confused).
@@ -1321,7 +1315,6 @@ impl MonState {
             hidden_power_bp: hp_bp,
             status: None,
             boosts: [0; BOOST_LEN],
-            faint_boosts: [0; BOOST_LEN],
             fainted: false,
             confusion: None,
             flinch: false,

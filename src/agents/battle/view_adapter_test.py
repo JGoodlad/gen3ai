@@ -206,17 +206,16 @@ def test_an_activate_disclosure_fills_the_ability_ONLY_while_it_is_unknown():
     assert live.opp.get("tyranitar").ability == "sandstream"
 
 
-def test_a_FAINTED_mon_still_in_its_slot_shows_the_stages_it_died_with():
-    """V10 — ``Pokemon.faint`` does not clear boosts (``switch_out`` does); the sim zeroes them
-    at the faint and the port keeps them as ``faint_boosts``."""
+def test_a_FAINTED_mon_still_in_its_slot_holds_no_stages():
+    """PE-V10 (`gen3_pe_reading_fixes_v1`): the fork's ``Pokemon.faint`` clears the stages, as the
+    sim's faint ``clearVolatile`` does, so the fainted mon at the replacement decision reads none
+    on both roads — and the adapter no longer honours a stale ``faint_boosts`` key (retired V10)."""
     lines = ["|switch|p2a: Swampert|Swampert, M|100/100", "|-boost|p2a: Swampert|def|1",
              "|-damage|p2a: Swampert|0 fnt", "|faint|p2a: Swampert"]
     want = _read(lines).opp.get("swampert").boosts
-    assert want == {"def": 1}
+    assert want == {}
     row = _mon_row("swampert", active=True, fainted=True, boosts={}, faint_boosts={"def": 1})
     assert dict(live_view_from_payload(_payload([], [row])).opp.get("swampert").boosts) == want
-    benched = dict(row, active=False)
-    assert dict(live_view_from_payload(_payload([], [benched])).opp.get("swampert").boosts) == {}
 
 
 # ---------------------------------------------------------------------------

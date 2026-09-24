@@ -1050,14 +1050,14 @@ survives for an arm with no entry (`impl="node"`, a `recorded_exact` arm). **A D
 carries `fork=None` deliberately** — the rust child `node_id` sits at the END of the arm's turn,
 not at the decision the leaf describes, so a deeper ply must fall back exactly as it did before.
 
-🚨 **TWO poke-env rules the port cannot supply, both found by the gate and both fixed in PYTHON**,
-which is the contract's own split (`designs/rust_sim/one_sided_view.md` §2):
-`|error|[Unavailable choice]` is intercepted by the player but NOT dropped — it is routed to
-`Gen3Battle.record_choice_rejected` — so `ViewEventFolder.fold` mirrors the hook or a trapped
-switch's rejection goes missing from the H-B event window (~200 obs cells); and **`Pokemon.faint`
-does not clear boosts while the sim does**, so the light board keeps a boost LEDGER
-(`ViewEventFolder.fold_boosts`) and `view_adapter._restore_fainted_boosts` puts a FAINTED mon's
-stages back. Both are invisible on an ordinary arm and both fire on a replacement round.
+🚨 **A poke-env rule the port cannot supply, found by the gate and fixed in PYTHON**, which is the
+contract's own split (`designs/rust_sim/one_sided_view.md` §2): `|error|[Unavailable choice]` is
+intercepted by the player but NOT dropped — it is routed to `Gen3Battle.record_choice_rejected` —
+so `ViewEventFolder.fold` mirrors the hook or a trapped switch's rejection goes missing from the
+H-B event window (~200 obs cells); it is invisible on an ordinary arm and fires on a replacement
+round. (A second one — `Pokemon.faint` kept a fainted mon's stages, which the light board's boost
+ledger reproduced at a D10 board — is gone: the fork now clears them at the faint as the sim does,
+`gen3_pe_reading_fixes_v1`, and the ledger was deleted with it.)
 
 🚨 **`EpisodeTracker.record` and `update_progress_clock` are SPLIT, not copied.** `record_context`
 and `advance_window` are their bodies once the context and the event windows exist; `record` /

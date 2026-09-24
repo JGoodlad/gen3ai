@@ -597,11 +597,10 @@ impl PMon {
         self.status = status;
     }
 
-    /// The badly-poisoned STAGE (finding PE-R1b — the truth, not poke-env's count): one residual
-    /// toxic chip (a `-damage … [from] psn` on a mon holding `tox`) is one stage, capped at the
-    /// sim's 15 (`tox.onResidual` ramps the stage before it chips). poke-env instead ticks the
-    /// counter at every `|turn|` a badly-poisoned mon is active: one AHEAD of the sim for a mon that
-    /// entered after the residual, one BEHIND between the residual and the next `|turn|`.
+    /// The badly-poisoned STAGE — `Pokemon.note_residual_chip` (the fork's PE-R1b fix,
+    /// `gen3_pe_reading_fixes_v1`): one residual toxic chip (a `-damage … [from] psn` on a mon
+    /// holding `tox`) is one stage, capped at the sim's 15 (`tox.onResidual` ramps the stage
+    /// before it chips). Upstream poke-env ticked at every `|turn|` instead.
     pub fn note_residual_chip(&mut self) {
         if self.status == Some(Status::Tox) {
             self.status_counter = (self.status_counter + 1).min(15);
@@ -630,8 +629,7 @@ impl PMon {
 
     /// `Pokemon.faint()`: HP 0, FNT, the temporary ability / base stats / Transform / Mimic
     /// dropped, every effect cleared — and the stat stages CLEARED, which is the sim's truth (its
-    /// faint `clearVolatile` zeroes `boosts`). poke-env keeps them until `switch_out`: finding
-    /// PE-V10, reported, not reproduced.
+    /// faint `clearVolatile` zeroes `boosts`; the fork's PE-V10 fix, `gen3_pe_reading_fixes_v1`).
     pub fn faint(&mut self) {
         self.clear_boosts();
         self.current_hp = Some(0);
@@ -708,8 +706,8 @@ impl PMon {
     }
 
     /// `Pokemon.end_turn()` — every `|turn|` for the ACTIVE mons: a turn-countable effect counts,
-    /// an `ends_on_turn` one ends (rule V4). The badly-poisoned stage is NOT ticked here (poke-env
-    /// does — finding PE-R1b); it follows the residual chips ([`Self::note_residual_chip`]).
+    /// an `ends_on_turn` one ends (rule V4). The badly-poisoned stage is NOT ticked here (upstream
+    /// poke-env did — the fork's PE-R1b fix); it follows the residual chips ([`Self::note_residual_chip`]).
     pub fn end_turn(&mut self) {
         let snapshot: Vec<EffectId> = self.effects.iter().map(|(e, _)| *e).collect();
         for e in snapshot {
@@ -815,8 +813,8 @@ impl PMon {
             }
         }
         // Flash Fire is NOT ended by its holder's Fire move: the sim's `flashfire` volatile lasts
-        // until the mon leaves the field (`clearVolatile`), boosting every Fire move. poke-env
-        // ends it here whatever the gen — finding PE-V16, reported, not reproduced.
+        // until the mon leaves the field (`clearVolatile`), boosting every Fire move. Upstream
+        // poke-env ended it here whatever the gen — the fork's PE-V16 fix removed that.
         Ok(())
     }
 

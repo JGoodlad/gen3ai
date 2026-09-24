@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from poke_env.battle.abstract_battle import AbstractBattle
 from poke_env.battle.move import Move
 from poke_env.battle.pokemon import Pokemon
+from poke_env.battle.status import Status
 from poke_env.player.battle_order import DefaultBattleOrder, SingleBattleOrder
 
 
@@ -194,6 +195,9 @@ class Battle(AbstractBattle):
         pokemon = self.get_pokemon(pokemon_str, details=details)
 
         pokemon.switch_in(details=details)
+        # gen3ai fork (`gen3_pe_reading_fixes_v1`, PE-R1b): `tox.onSwitchIn` resets the stage.
+        if pokemon.status == Status.TOX:
+            pokemon._status_counter = 0
         pokemon.set_hp_status(hp_status)
         if snapshot is not None:
             pokemon.apply_baton_pass(snapshot)

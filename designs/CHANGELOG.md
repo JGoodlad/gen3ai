@@ -9646,3 +9646,28 @@ R1 — the `status` setter starts a NEW status at count 0 (upstream carried the 
 counted sightings, so an un-inferable foe Pressure left it high: 7.15 per 1,000 on the whole pool).
 The golden obs fixture was regenerated after a layout diff showed exactly 32 / 991 decisions move,
 in two columns only (the sleep counter and `p_wake` of one own slot).
+
+## 2026-09-24 — TRAINING-INPUT CHANGE: the Rust core M2's poke-env READING findings PE-V10 / PE-R1b / PE-V16 fixed in the fork (`gen3_pe_reading_fixes_v1`; no version bump — dims and weight shapes unchanged)
+
+🚨 **Arms launched from this commit on read a fainted mon's stat stages as NONE, the toxic counter
+as the sim's STAGE, and Flash Fire as lasting until its holder leaves the field, and are NOT
+obs-identical to earlier arms.** Pinned runs execute their pin's vendored `poke_env` and are
+unaffected. The three fork fixes (`designs/rust_sim/present.md` §3), each established against the
+pinned Showdown source and the Rust board, each found by the Rust core's `present()` (M2):
+PE-V10 — `Pokemon.faint` clears the stages, as the sim's faint `clearVolatile` does (upstream kept
+them until switch-out; 4.64 / 12.27 / 6.45 affected decisions per 1,000, pool / `production`
+policy / procedural); PE-R1b — the toxic count moves at the residual `[from] psn` chip
+(`Pokemon.note_residual_chip`, cap 15) and resets at the switch-in, not at `|turn|` (upstream was
+one AHEAD after a post-residual entry and one BEHIND at an end-of-turn forced switch; 2.69 / 0.58 /
+6.04); PE-V16 — a Fire move no longer ends Flash Fire (unobserved in 173,981 decisions; a
+constructed battle pins it). The registry `agents/battle/poke_env_findings.py` is EMPTY, so slice V
+and the present pins compare the core and poke-env exactly. The view road followed (V10 and its
+fainted-boost ledger deleted, V5's toxic half on the residual chip); the core audit now CHECKS a
+benched badly-poisoned mon's counter at its effective stage 0 (the sim's stored stage is a dead
+store — the old UNRESOLVED case). Reward: the opponent-boost PBRS potentials read the opp active's
+stages, so at a replacement decision after the opponent's boosted mon faints they now read 0 one
+decision earlier (the truth); they telescope. The golden obs fixture was regenerated after a
+field-level census showed exactly 4 / 991 decisions move, all in the TOXIC half of an opposing
+mon's `status_counters` (0 → 1/8, the one-behind shape); over a wider 80-battle deterministic set,
+65 / 9,987 decisions move — `context[*].boosts` of a FAINTED active (55) and the toxic slot (10) —
+and nothing else (`designs/research_state/measurements/pe_reading_fixes_2026-09-24/`).

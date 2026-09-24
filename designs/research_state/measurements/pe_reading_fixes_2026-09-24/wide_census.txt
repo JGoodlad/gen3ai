@@ -1,0 +1,48 @@
+captured 9987 decisions -> /tmp/pefix/golden_base_wide.npz
+captured 9987 decisions -> /tmp/pefix/golden_fixed_wide.npz
+decisions: base 9987, fixed 9987; obs dim 2501
+decisions changed: 65 / 9987
+field (declared layout)                       decisions  entries  indices
+context[*].boosts                                    55       87  [1464, 1465, 1466, 1468, 1470, 1471, 1472, 1473, 1522, 1523, 1526, 1528, 1530]
+opp_team[*].status_counters[toxic]                   10       10  [802, 924, 1046]
+   decision  675 idx  802 opp_team[0].status_counters[toxic]: base 0.0000 -> fixed 0.1250  (board: {'species': 'tyranitar', 'status': 'tox', 'status_counter': 1})
+   decision  696 idx  802 opp_team[0].status_counters[toxic]: base 0.0000 -> fixed 0.1250  (board: {'species': 'tyranitar', 'status': 'tox', 'status_counter': 1})
+   decision  842 idx 1046 opp_team[2].status_counters[toxic]: base 0.0000 -> fixed 0.1250  (board: {'species': 'swampert', 'status': 'tox', 'status_counter': 1})
+   decision  850 idx  924 opp_team[1].status_counters[toxic]: base 0.0000 -> fixed 0.1250  (board: {'species': 'blissey', 'status': 'tox', 'status_counter': 1})
+   decision  940 idx 1465 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'claydol', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 1879 idx 1464 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'metagross', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 1879 idx 1472 context[0].boosts: base 0.3333 -> fixed 0.0000  (board: {'species': 'metagross', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 2262 idx  924 opp_team[1].status_counters[toxic]: base 0.1250 -> fixed 0.2500  (board: {'species': 'blissey', 'status': 'tox', 'status_counter': 2})
+   decision 2535 idx 1465 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'suicune', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 2553 idx 1465 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'skarmory', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3666 idx 1464 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'snorlax', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3666 idx 1466 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'snorlax', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3666 idx 1473 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'snorlax', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3675 idx 1471 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'claydol', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3745 idx 1530 context[1].boosts: base 0.3333 -> fixed 0.0000  (board: {'species': 'metagross', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3757 idx 1523 context[1].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'snorlax', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3759 idx 1522 context[1].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'salamence', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3759 idx 1530 context[1].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'salamence', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3770 idx 1526 context[1].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'suicune', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3780 idx 1472 context[0].boosts: base 0.3333 -> fixed 0.0000  (board: {'species': 'metagross', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3782 idx 1522 context[1].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'metagross', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3838 idx 1464 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'metagross', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3887 idx 1468 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'celebi', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3887 idx 1470 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'celebi', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3895 idx 1464 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'metagross', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3927 idx 1468 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'jirachi', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 3927 idx 1470 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'jirachi', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4086 idx 1468 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'suicune', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4086 idx 1470 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'suicune', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4099 idx 1465 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'charizard', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4145 idx 1464 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'salamence', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4145 idx 1472 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'salamence', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4196 idx 1464 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'salamence', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4196 idx 1472 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'salamence', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4289 idx 1465 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'jirachi', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4299 idx 1465 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'claydol', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4313 idx 1464 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'salamence', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4313 idx 1472 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'salamence', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4339 idx 1468 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'raikou', 'fainted': True, 'boosts': {}, 'volatiles': []})
+   decision 4339 idx 1470 context[0].boosts: base 0.1667 -> fixed 0.0000  (board: {'species': 'raikou', 'fainted': True, 'boosts': {}, 'volatiles': []})
+✅ every changed entry is a field these fixes touch, value-aware against its own board

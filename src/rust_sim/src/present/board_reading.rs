@@ -477,7 +477,7 @@ impl BoardReading {
         let m = self.mon_at(at);
         m.switch_in(Some(details))?;
         if m.status == Some(super::dex::Status::Tox) {
-            m.status_counter = 0; // `tox.onSwitchIn` resets the stage (PE-R1b's truth)
+            m.status_counter = 0; // `tox.onSwitchIn` resets the stage (`Battle.switch`, the fork's PE-R1b fix)
         }
         m.set_hp_status(hp_status, false)?;
         if let Some(s) = snapshot {

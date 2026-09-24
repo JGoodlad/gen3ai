@@ -458,8 +458,7 @@ class ViewSuccessorFactory:
         board = self._board.branch()
         events = board.fold(chunks)
         live, legal, vbattle = read_models_from_payload(
-            payload, battle_tag=self._battle_tag, events=self._prior_events + events,
-            fainted_boosts=board)
+            payload, battle_tag=self._battle_tag, events=self._prior_events + events)
         if legal is None or not legal.last_request:
             return None
         mask = Gen3ActionMasker.get_mask(vbattle, legal=legal, live=live).astype(np.int8)

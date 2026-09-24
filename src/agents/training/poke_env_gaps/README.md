@@ -272,7 +272,7 @@ other obs blocks rather than at move attribution. Each is a script: `python <fil
 | File | What it validates against protocol truth |
 |---|---|
 | `abilities_fuzz_test.py` | The `{known, ability1, ability2}` encoding — `AbilitiesEncoder` at three layers |
-| `baton_pass_obs_integration_test.py` | Baton Pass carry-over read at the OBSERVATION. The only pytest-collected file here (`pytestmark = pytest.mark.sim`); the parser itself is pinned by `src/poke_env/battle/baton_pass_carryover_test.py` |
+| `baton_pass_obs_integration_test.py` | Baton Pass carry-over read at the OBSERVATION. A pytest-collected file (`pytestmark = pytest.mark.sim`); the parser itself is pinned by `src/poke_env/battle/baton_pass_carryover_test.py` |
 | `belief_labels_fuzz_test.py` | The hidden-opponent belief LABELS (the privileged training target) on real battle state |
 | `damage_op_fuzz_test.py` | The differentiable DamageOperator's PHYSICS — its predicted gen3 damage band must CONTAIN Showdown's realized damage |
 | `damage_op_probe_fuzz_test.py` | The gold-standard oracle for the same op: its band vs the sim's EXACT realized damage on constructed single-turn scenarios |
@@ -287,6 +287,7 @@ other obs blocks rather than at move attribution. Each is a script: `python <fil
 | `move_id_decode_fuzz_test.py` | Every protocol move decodes, and none is mis-associated (`gen3_typed_hidden_power_ids_v1`) |
 | `obs_assembler_fuzz_test.py` | Incremental obs ≡ full rebuild, BIT-FOR-BIT, at every decision (`gen3_obs_assembler_v1`) |
 | `opponent_pin_fuzz_test.py` | A PINNED opponent really pilots ITS OWN team, per episode (the league fold-back contract) |
+| `pe_reading_fixes_obs_integration_test.py` | `gen3_pe_reading_fixes_v1` read at the OBSERVATION on three constructed real-Showdown battles (`impl="node"`, deterministic players): a fainted active holds no stages (PE-V10), the toxic count is the residual stage at every decision (PE-R1b), Flash Fire survives its holder's own Fire move (PE-V16). pytest-collected (`sim`); the protocol-line pins are `src/poke_env/battle/reading_fixes_test.py` |
 | `pair_history_fuzz_test.py` | Tier H-A (`gen3_pair_history_v1`) — the compiled-history obs blocks |
 | `protect_success_prob_fuzz_test.py` | The Protect-success-odds obs feature (`gen3_protect_odds_v1`) |
 | `recency_fuzz_test.py` | E9 (`gen3_entity_recency_v1`) — the per-mon recency obs block |

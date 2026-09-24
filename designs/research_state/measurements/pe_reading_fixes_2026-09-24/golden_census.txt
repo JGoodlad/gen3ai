@@ -1,0 +1,10 @@
+decisions: base 991, fixed 991; obs dim 2501
+BASE capture vs the committed fixture: 991/991 identical (count 991 vs 991)
+decisions changed: 4 / 991
+field (declared layout)                       decisions  entries  indices
+opp_team[*].status_counters[toxic]                    4        4  [802, 924, 1046]
+   decision  675 idx  802 opp_team[0].status_counters[toxic]: base 0.0000 -> fixed 0.1250  (board: {'species': 'tyranitar', 'status': 'tox', 'status_counter': 1})
+   decision  696 idx  802 opp_team[0].status_counters[toxic]: base 0.0000 -> fixed 0.1250  (board: {'species': 'tyranitar', 'status': 'tox', 'status_counter': 1})
+   decision  842 idx 1046 opp_team[2].status_counters[toxic]: base 0.0000 -> fixed 0.1250  (board: {'species': 'swampert', 'status': 'tox', 'status_counter': 1})
+   decision  850 idx  924 opp_team[1].status_counters[toxic]: base 0.0000 -> fixed 0.1250  (board: {'species': 'blissey', 'status': 'tox', 'status_counter': 1})
+✅ every changed entry is a field these fixes touch, value-aware against its own board

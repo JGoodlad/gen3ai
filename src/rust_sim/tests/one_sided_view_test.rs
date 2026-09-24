@@ -588,7 +588,9 @@ fn v5_the_status_counter_follows_poke_envs_own_status() {
     let obs = fold(&[
         "|switch|p2a: Suicune|Suicune|100/100",
         "|-status|p2a: Suicune|tox",
+        "|-damage|p2a: Suicune|94/100 tox|[from] psn",
         "|turn|2",
+        "|-damage|p2a: Suicune|82/100 tox|[from] psn",
         "|turn|3",
         "|-status|p2a: Suicune|slp|[from] move: Rest",
         "|cant|p2a: Suicune|slp",
@@ -605,6 +607,31 @@ fn v5_the_status_counter_follows_poke_envs_own_status() {
     let m = obs.mon("Swampert", true).unwrap();
     assert_eq!((m.pstatus.as_deref(), m.status_counter), (None, 0),
         "no status ⇒ the move does not count (the fold used to keep counting after -cureteam)");
+}
+
+#[test]
+fn v5_the_toxic_count_is_the_residual_stage() {
+    // The fork's PE-R1b fix (`gen3_pe_reading_fixes_v1`): +1 per `[from] psn` chip on a mon still
+    // holding `tox` (a KO chip does not count), none at `|turn|`, reset at the switch-in — the
+    // sim's `tox` stage. The view road follows the fork it mirrors.
+    let base = [
+        "|switch|p2a: Zapdos|Zapdos|100/100",
+        "|-status|p2a: Zapdos|tox",
+        "|turn|2",
+    ];
+    let obs = fold(&base);
+    assert_eq!(obs.mon("Zapdos", false).unwrap().status_counter, 0, "no chip yet: |turn| does not tick");
+    let mut lines: Vec<&str> = base.to_vec();
+    lines.extend(["|-damage|p2a: Zapdos|94/100 tox|[from] psn", "|turn|3", "|-damage|p2a: Zapdos|82/100 tox|[from] psn"]);
+    let obs = fold(&lines);
+    assert_eq!(obs.mon("Zapdos", false).unwrap().status_counter, 2, "two chips, before the next |turn|");
+    lines.extend(["|switch|p2a: Snorlax|Snorlax, M|100/100", "|faint|p2a: Snorlax",
+                  "|switch|p2a: Zapdos|Zapdos|82/100 tox", "|turn|4"]);
+    let obs = fold(&lines);
+    assert_eq!(obs.mon("Zapdos", false).unwrap().status_counter, 0, "re-entered after the residual: stage 0");
+    lines.extend(["|-damage|p2a: Zapdos|6/100 tox|[from] psn", "|-damage|p2a: Zapdos|0 fnt|[from] psn"]);
+    let obs = fold(&lines);
+    assert_eq!(obs.mon("Zapdos", false).unwrap().status_counter, 1, "the KO chip does not count");
 }
 
 #[test]
@@ -653,13 +680,14 @@ fn v11_a_screen_is_stored_as_the_turn_it_started() {
 }
 
 #[test]
-fn the_first_decision_reads_turn_1_and_every_row_carries_the_faint_fields() {
+fn the_first_decision_reads_turn_1_and_our_rows_carry_the_base_ability() {
     // `bs.turn` stays 0 until the first commit while `|turn|1` is already on the wire (the sim's
     // `this.turn` is 1): the first board read turn 0 on the view road.
     let dex = Dex::for_gen(3);
     let sess = paused(&dex, 0);
     let v = one_sided_view(&sess, 0, &dex).unwrap();
     assert!(v.contains("\"turn\":1,"), "the construction board must read turn 1:\n{}", &v[..80]);
-    // Every mon row carries `faint_boosts` (null while alive) and our rows a `base_ability`.
-    assert!(v.contains("\"faint_boosts\":null") && v.contains("\"base_ability\":\""));
+    // Our rows carry a `base_ability`; no row carries `faint_boosts` (reading rule V10 retired
+    // with the fork's PE-V10 fix, `gen3_pe_reading_fixes_v1` — a fainted mon holds no stages).
+    assert!(!v.contains("faint_boosts") && v.contains("\"base_ability\":\""));
 }

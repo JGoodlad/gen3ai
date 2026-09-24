@@ -91,12 +91,12 @@ still compared EXACTLY; the rule is reproduced, never excused.
 | V2 | own slot order = the FIRST `\|request\|`'s roster; opponents' = reveal order | `own_order` / `order` |
 | V3 | an opposing move's PP = `max_pp − sightings`, a sighting costing TWO when `_pressure_on` holds AT USE TIME (the target's ability as poke-env held it then; `_get_target_mon`'s default target for a target-less line and every `all`-target move; a `[from]move:` CALL reveals the called move with no use and charges the caller only its Pressure share) | `MoveObs.sightings` + `view_adapter._move` / `_AbilityAt` |
 | V4 | the volatile fold, its lifecycle replayed from each effect's announcement history; Baton Pass carries | `VolObs.starts` / `bp_carried` + `view_adapter._volatiles` |
-| V5 | poke-env's own `status_counter`, conditioned on poke-env's own `_status` | `MonObservation::pstatus` + `fold_status` |
+| V5 | poke-env's own `status_counter`, conditioned on poke-env's own `_status` — the sleep half per `\|move\|`/`\|cant\|` line, the toxic half the sim's stage (per residual `[from] psn` chip, reset at the switch-in; `gen3_pe_reading_fixes_v1`) | `MonObservation::pstatus` + `fold_status` |
 | V6 | a consecutive-stall-move count; a faint keeps it, a switch-out zeroes it | `fold_status` |
 | V7 | an opposing item from `-item`/`-enditem` or a `[from] item:` clause on `-damage`/`-heal` only | `observe` |
 | V8 | the two ability slots, the single-ability inference, Trace, and the four non-`-ability` disclosures | `ability_disclosure` + `view_adapter._ability` |
 | V9 | an opponent's spread / stats / exact HP are unknown | `mon_json(own=false)` |
-| V10 | a FAINTED mon keeps the stages it died with until switched out | `MonState::faint_boosts` + `view_adapter._mon` |
+| ~~V10~~ | RETIRED — a FAINTED mon holds NO stages, as the sim's faint `clearVolatile` leaves it; the fork was fixed to match (`gen3_pe_reading_fixes_v1`, PE-V10), so the payload's `boosts` stand and `MonState::faint_boosts`, `view_adapter`'s restore and `event_fold`'s boost ledger are deleted | — |
 | V11 | a timed screen is stored as the TURN it started, Spikes as its layers | `SideObservation.screens` |
 | V12 | weather `turns_active` = now − the `-weather` set turn | `weather_json` |
 | V13 | the legality flags are poke-env's parse of the request | `legal_actions_from_payload` |
@@ -123,8 +123,7 @@ MON  = {"species",                     # the IDENTITY species — its own, even 
         "base_ability",                  # OURS only — the set's (poke-env's own base slot)
         "ability_events":[{"id","trace","if_unknown"},…],  # announcements in order, BOTH sides;
                                          #   id "" = left the field or fainted (temp slot cleared)
-        "boosts":{stat:stage},          # NONZERO stages only, as LiveView keeps them
-        "faint_boosts":{stat:stage}|null,   # the stages it DIED with (V10); null while alive
+        "boosts":{stat:stage},          # NONZERO stages only, as LiveView keeps them (none once fainted)
         "volatiles":[{"name","starts":[tick,…],"now":tick,"bp_carried":n},…],
         "base_stats":{…},
         "ivs"|null,"evs"|null,"nature"|null,"spread_known",
@@ -287,7 +286,8 @@ use and charging the caller only its Pressure share; a re-announced `ends_on_tur
 fresh one (the volatile fold now carries its announcement history and the adapter replays
 poke-env's lifecycle); a fainted own mon's `|request|` `0 fnt` re-running `faint()` (clearing a
 post-KO Destiny Bond); `Pokemon.faint` keeping the protect streak; a fainted mon keeping the stages
-it died with until switched out (`MonState::faint_boosts`, rule V10); a timed screen stored as the
+it died with until switched out (rule V10 — since retired: the fork now clears them at the faint,
+`gen3_pe_reading_fixes_v1`); a timed screen stored as the
 TURN it started (rule V11); the first decision reading turn 0 (`bs.turn` lags the framing's
 `|turn|1` until the first commit); a fainted Traced mon's ability reverting to its base; and a
 Transformed mon keeping its OWN species as its identity.
@@ -302,7 +302,7 @@ them, R1b and R4 remain (measured per 1,000 decisions, both viewers, before the 
 | defect | truth (and how established) | per 1,000 decisions: pool random (73,605) · `production`-policy (10,291) · procedural (`ou_random_teams.js`, 33,298) |
 |---|---|---|
 | **R1** — the `status` setter never resets `_status_counter`, so a NEW status inherits the previous one's count (Rest while badly poisoned; a re-sleep after a cure the watcher saw only as a bare HP token). The obs's sleep counter AND the 3-dim sleep-wake belief (`K` = cant-turns) read it, so a fresh Rest can read "slept 3 turns, wakes next" with the reliability bit SET | for sleep, the `\|cant\|…\|slp` turns since the sleep began: as-is wrong on **886 of 12,201** asleep-mon decisions (Sleep Talk episodes excluded — the obs already flags those), a reset-on-change setter wrong on **0**. For toxic, the engine's `Toxic(stage)` | **11.09 · 7.48 · 9.22** decisions where an asleep / badly-poisoned mon's counter differs |
-| **R1b** — the toxic counter ticks at every `\|turn\|` a badly-poisoned mon is active, so one that entered AFTER the residual (a post-faint replacement) reads one ahead of the sim's stage | the engine's `Toxic(stage)`: 104 of 6,158 badly-poisoned-mon decisions with R1 fixed | ~1.2 (pool) |
+| **R1b** — the toxic counter ticks at every `\|turn\|` a badly-poisoned mon is active, so one that entered AFTER the residual (a post-faint replacement) reads one ahead of the sim's stage (**FIXED 2026-09-24**, `gen3_pe_reading_fixes_v1`, as M2's PE-R1b) | the engine's `Toxic(stage)`: 104 of 6,158 badly-poisoned-mon decisions with R1 fixed | ~1.2 (pool) |
 | **R2** — `-copyboost` is read BACKWARDS: poke-env copies the FIRST ident's stages onto the second, the sim does the reverse (`data/mods/gen5/moves.ts` psychup, which gen 3 inherits: `source.boosts[i] = target.boosts[i]; this.add('-copyboost', source, target)`; `SIM-PROTOCOL.md`'s wording says the opposite and poke-env followed the doc). After a Psych Up BOTH mons' stages read wrong | the engine + the pinned Showdown source | 0 · 0 · **0.27** (1 of the 719 pool teams carries Psych Up) |
 | **R3** — our OWN move PP is a sighting counter never synced to the `\|request\|`'s `pp`, so a PP the sim deducts without poke-env knowing (a foe's Pressure it cannot infer — gen 3 announces Pressure to its owner only, e.g. an Aerodactyl) drifts it HIGH; the old deferral D7, now a measured defect | the `\|request\|` (the sim's word) and the engine | 0 · 0 · **6.19** — and **7.15 on the WHOLE training pool** (465 of 64,991 decisions, 360 battles striding all 719 teams): the MILESTONE key range (below) never reaches the pool teams that trigger it |
 | **R4** — a TRANSFORMED mon's ability / stats / watched moves are poke-env approximations the projection does not yet present (own ability reads the base one — a gen-3 request never states the copied ability) | the engine | 0 · 0 · 0.06 (no pool team carries Transform) |
@@ -321,7 +321,8 @@ makes R3 fire in the pool tier, so it lands with R3's fix, not before.
 **R1–R3 are FIXED in the fork** (`pokemon.py` status setter, `abstract_battle.py` `-copyboost`,
 `battle.py` `_sync_active_pp`), the projection's V5 following R1 and `event_fold`'s boost ledger
 following R2, each pinned by `src/poke_env/battle/reading_fixes_test.py` (fails on upstream); the
-MILESTONE random recipe strides the whole pool (even keys 0–718 + odd keys 1–719) and is green. Still open after it: R1b, R4, and the
+MILESTONE random recipe strides the whole pool (even keys 0–718 + odd keys 1–719) and is green. R1b
+was fixed with M2's findings (below). Still open after it: R4, and the
 part of R3 no client can see — a mon that leaves the field between its move and the next request
 (Self-Destruct, a phaze) is never re-synced, so our BENCH PP is poke-env's count, a presentation
 rule (V15) the projection does not yet reproduce; procedural teams only so far.
@@ -330,10 +331,13 @@ rule (V15) the projection does not yet reproduce; procedural teams only so far.
 
 The Rust core's `present()` (`designs/rust_sim/present.md`) does not reproduce a poke-env mistake:
 where poke-env is wrong about a sim fact, the core carries the truth and slice V's core column counts
-the disagreement under a registered finding (`agents/battle/poke_env_findings.py`) — **PE-V10**
-(this projection's V10: a fainted mon's stages), **PE-R1b** (R1b above) and **PE-V16** (poke-env's
-`moved` ends Flash Fire on its holder's own Fire move; the sim keeps it until switch-out). This
-projection (the view road) still reproduces poke-env, which is what its column is compared against.
+the disagreement under a registered finding (`agents/battle/poke_env_findings.py`). M2 registered
+three — **PE-V10** (this projection's V10: a fainted mon's stages), **PE-R1b** (R1b above) and
+**PE-V16** (poke-env's `moved` ended Flash Fire on its holder's own Fire move; the sim keeps it
+until switch-out) — and all three are FIXED in the fork (`gen3_pe_reading_fixes_v1`, 2026-09-24, a
+TRAINING-INPUT change), so the registry is empty. This projection (the view road) reproduces
+poke-env, which is what its column is compared against, so it followed: V10 retired, V5's toxic half
+moved to the residual chip; it never ended Flash Fire on a Fire move.
 
 **Two VIEW-ROAD projection defects found on procedural teams** (`procedural_slice_v.py`, seed 23 —
 outside the MILESTONE corpus; the core column is clean on both): a Trick shown as a `trick`
@@ -394,17 +398,15 @@ ORDINARY ARM.** Both are poke-env PRESENTATION rules, so both are fixed in Pytho
   intercepted keywords; the missing event lands in the H-B event window and moved **~200 obs
   cells**. It can only appear on a ply whose reject re-opens the request — a D10 arm — which is
   why it survived every sweep until those arms stopped falling back.
-* **`Pokemon.faint` does not clear boosts; the sim does.** Showdown's `clearVolatile` (and the
-  port) zero a mon's stages at the faint, while poke-env drops them only at `switch_out`. On an
-  ordinary arm the replacement switch happens inside the same ply and both roads end at zero; at
-  an INTERMEDIATE decision the board sits exactly between, so the protocol road still shows the
-  dead mon's stages and the payload cannot. **MEASURED: eleven cases over seven fixture battles,
-  every one a mon FAINTED and still ACTIVE**, and the stages were the ply's OWN (an arm that
-  Dragon Danced twice before dying read +2/+3 where its sibling read +1/+2) — so the light board
-  keeps a boost LEDGER folded from this ply's lines (`ViewEventFolder.fold_boosts`, mirroring
-  `AbstractBattle`'s boost branches one for one including the ±6 clamp) and
-  `view_adapter._restore_fainted_boosts` rewrites **FAINTED mons only**. A live mon's stages stay
-  the payload's, which is the sim fact and is right.
+* **A fainted mon's stages — CLOSED by fixing the fork, not the road.** Showdown's `clearVolatile`
+  (and the port) zero a mon's stages at the faint; upstream poke-env dropped them only at
+  `switch_out`, so at an INTERMEDIATE decision the protocol road showed the dead mon's stages and
+  the payload could not (eleven cases over seven fixture battles, every one a mon FAINTED and still
+  ACTIVE). The view road used to reproduce that with a ply-folded boost LEDGER on the light board
+  and a restore of FAINTED mons' stages in `view_adapter`; both were deleted when the fork's
+  `Pokemon.faint` started clearing them (`gen3_pe_reading_fixes_v1`, PE-V10). Leaving the ledger
+  in place against the fixed fork was measured: every D10 arm with a boosted corpse diverged
+  (`one_sided_view_parity_fuzz_test.py`, 6 of 10 fixed-key sweeps RED), 0 after the deletion.
 
 **What it does NOT close.** A D10-served leaf carries **`fork=None`**: the rust child `node_id` it
 is paired with sits at the END of the arm's turn, not at the decision the leaf describes, so a

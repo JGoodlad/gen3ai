@@ -72,6 +72,17 @@ toxic one never moves) and `POKEMON_SLEEP_BELIEF_OFFSET + 1` (`p_wake`). The val
 first decision after a Rest read counter 1/4 (carried from the previous status) where the sim has
 slept 0 turns, and `p_wake` 1.0 where Rest's 2-turn schedule gives 0.0. R2 and R3 do not occur in
 this battle set. Regressions: `poke_env/battle/reading_fixes_test.py` (fails on upstream).
+
+**Regen 2026-09-24** (`gen3_pe_reading_fixes_v1` — the Rust core M2's poke-env findings PE-V10 /
+PE-R1b / PE-V16 fixed in the fork; obs dim unchanged at 2501). Proven confined before this regen by
+`designs/research_state/measurements/pe_reading_fixes_2026-09-24/golden_diff_census.py`: the base
+capture reproduced the committed fixture 991/991; decision count UNCHANGED at 991; **4 / 991
+decisions** differ, every cell the TOXIC half of `status_counters` of an opposing badly-poisoned
+mon (indices 802 / 924 / 1046 = opp slots 0 / 1 / 2, resolved from the layout), each 0 → 1/8 —
+PE-R1b's "one BEHIND" shape, a decision between the residual chip and the next `|turn|`. PE-V10
+and PE-V16 do not occur in this battle set (the same harness over 80 battles / 9,987 decisions
+shows PE-V10 at 55 decisions, `context[*].boosts` of a FAINTED active only; nothing else moves).
+Regressions: `poke_env/battle/reading_fixes_test.py` + `poke_env_gaps/pe_reading_fixes_obs_integration_test.py`.
 """
 import json
 import os

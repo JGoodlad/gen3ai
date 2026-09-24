@@ -573,8 +573,11 @@ species_known flag, sleep_counter_norm, toxic_counter_norm, **spread block (18 d
 activated, Knock Off, Trick, etc.) and `item_id` retains the identity of the consumed item so
 the model knows what was lost. `species_known = 1.0` for all populated slots (own team and
 revealed opponent mons), `0.0` for unseen opponent slots. Sleep counter:
-`min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(turns_poisoned, 8) / 8`
-(practical max before fainting with Leftovers).
+`min(turns_slept, 4) / 4` (Gen 3 max 4 turns); toxic counter: `min(stage, 8) / 8`, where `stage`
+is the sim's `tox` stage — the residual `[from] psn` chips since the switch-in, 0 while benched
+(`gen3_pe_reading_fixes_v1`; it used to tick at `|turn|`, one off the sim after a post-residual
+entry or before the next `|turn|`) — so the NEXT chip is `(stage + 1) / 16` exactly (practical max
+before fainting with Leftovers).
 
 **Sleep-wake belief (3 dims, `gen3_sleep_wake_belief_v1`, layout in `sleep_belief.py`):** zeros
 unless the mon is asleep, else `[sleep_is_deterministic, p_wake, sleep_counter_reliable]`. poke-env

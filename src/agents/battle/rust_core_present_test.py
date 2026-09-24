@@ -9,10 +9,12 @@ are compared field by field, TYPE-strict, with no allowlist — slice V's compar
 recorded corpus may not reach.
 
 🚨 **The core reads the TRUTH, and parity with poke-env is not the goal.** Where poke-env is WRONG
-about a sim fact (a registered finding, :mod:`agents.battle.poke_env_findings` — PE-V10, PE-R1b,
-PE-V16), the pin asserts the core's TRUE value, asserts that poke-env reads differently, and asserts
-the difference is exactly that finding (value-aware) — so the pin fails the day poke-env is fixed
-(delete the finding) or the day the core drifts off the truth.
+about a sim fact (a registered finding, :mod:`agents.battle.poke_env_findings`), the pin asserts the
+core's TRUE value, asserts that poke-env reads differently, and asserts the difference is exactly
+that finding (value-aware) — so the pin fails the day poke-env is fixed (delete the finding) or the
+day the core drifts off the truth. The registry is EMPTY since `gen3_pe_reading_fixes_v1` fixed the
+fork for PE-V10 / PE-R1b / PE-V16; their pins below now assert the two readings are EQUAL at the
+truth, with no finding fired.
 """
 
 from __future__ import annotations
@@ -172,11 +174,12 @@ def test_v9_the_opponent_is_hidden():
     assert_same(BASE + ["|-damage|p2a: Zapdos|54/100", "|-damage|p1a: Metagross|200/301"])
 
 
-def test_pe_v10_a_fainted_mon_holds_no_stages_where_poke_env_keeps_them():
+def test_pe_v10_a_fainted_mon_holds_no_stages():
+    """Fixed in the fork (`gen3_pe_reading_fixes_v1`): both readings hold none at the faint."""
     lines = BASE + ["|-boost|p2a: Zapdos|spa|1", "|faint|p2a: Zapdos"]
-    out = assert_same(lines, known=frozenset({"PE-V10"}))
+    out = assert_same(lines)
     assert opp(out, "zapdos")["boosts"] == {}, "the truth: the faint cleared them"
-    assert dict(reading(lines).live_view().opp.active.boosts) == {"spa": 1}, "poke-env keeps them"
+    assert dict(reading(lines).live_view().opp.active.boosts) == {}, "poke-env: cleared too"
     out = assert_same(lines + ["|switch|p2a: Snorlax|Snorlax, M|100/100"])
     assert opp(out, "zapdos")["boosts"] == {}
 
@@ -216,13 +219,14 @@ def test_v15_a_benched_mons_pp_is_the_sighting_count():
     assert mm["current_pp"] == 14, "synced from the request while active, then kept"
 
 
-def test_pe_v16_flash_fire_survives_its_holders_fire_move_where_poke_env_ends_it():
+def test_pe_v16_flash_fire_survives_its_holders_fire_move():
+    """Fixed in the fork (`gen3_pe_reading_fixes_v1`): both readings keep it to the switch-out."""
     lines = BASE + ["|switch|p2a: Houndoom|Houndoom, M|100/100",
                     "|-start|p2a: Houndoom|ability: Flash Fire",
                     "|move|p2a: Houndoom|Flamethrower|p1a: Metagross"]
-    out = assert_same(lines, known=frozenset({"PE-V16"}))
+    out = assert_same(lines)
     assert "flashfire" in opp(out, "houndoom")["volatiles"], "the truth: it lasts until switch-out"
-    assert "flashfire" not in dict(reading(lines).live_view().opp.active.volatiles), "poke-env ends it"
+    assert "flashfire" in dict(reading(lines).live_view().opp.active.volatiles), "poke-env: kept too"
     lines += ["|switch|p2a: Zapdos|Zapdos|100/100"]
     out = assert_same(lines)
     assert "flashfire" not in opp(out, "houndoom")["volatiles"], "cleared on switch-out"
@@ -252,20 +256,22 @@ def test_mimic_leppa_trick_conversion_and_forecast():
                         "|-formechange|p2a: Castform|Castform-Sunny|[msg]"])
 
 
-def test_pe_r1b_the_toxic_counter_is_the_stage_where_poke_env_counts_turns():
+def test_pe_r1b_the_toxic_counter_is_the_stage():
+    """Fixed in the fork (`gen3_pe_reading_fixes_v1`): both readings count residual chips since
+    the switch-in, at the three shapes where upstream's per-`|turn|` tick disagreed."""
     mid = BASE + ["|-status|p2a: Zapdos|tox", "|-damage|p2a: Zapdos|94/100 tox|[from] psn", "|turn|2",
                   "|-damage|p2a: Zapdos|82/100 tox|[from] psn"]
     # Between the residual and the next |turn| (an end-of-turn forced replacement's decision) the
-    # sim is already at stage 2; poke-env, ticking at |turn|, still reads 1.
-    out = assert_same(mid, known=frozenset({"PE-R1b"}))
+    # sim is already at stage 2 (upstream poke-env read 1).
+    out = assert_same(mid)
     assert opp(out, "zapdos")["status_counter"] == 2
     lines = mid + ["|turn|3"]
     out = assert_same(lines)
     assert opp(out, "zapdos")["status_counter"] == 2, "two residual chips: stage 2, as poke-env reads"
     lines += ["|switch|p2a: Snorlax|Snorlax, M|100/100", "|switch|p2a: Zapdos|Zapdos|82/100 tox",
               "|turn|4"]
-    out = assert_same(lines, known=frozenset({"PE-R1b"}))
+    out = assert_same(lines)
     assert opp(out, "zapdos")["status_counter"] == 0, "the truth: no residual since re-entry"
-    assert reading(lines).live_view().opp.active.status_counter == 1, "poke-env ticked at |turn|"
-    # poke-env FREEZES that count at a faint; the finding follows it there (the slot no longer reads it).
-    assert_same(lines + ["|faint|p2a: Zapdos"], known=frozenset({"PE-R1b"}))
+    assert reading(lines).live_view().opp.active.status_counter == 0, "upstream poke-env read 1"
+    # A faint keeps the count it had (upstream froze its one-ahead count there).
+    assert_same(lines + ["|faint|p2a: Zapdos"])

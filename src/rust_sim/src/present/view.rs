@@ -14,8 +14,8 @@ use crate::core_events::json_out;
 // 🚨 **`present()` is the TRUE reading** (owner directive, M2): where poke-env's reading is wrong
 // about a sim fact the stream can establish, the view carries the truth and the disagreement is a
 // named FINDING (`designs/rust_sim/present.md` §3, `agents/battle/poke_env_findings.py`) — never a
-// rule that reproduces the mistake. Today: PE-V10 (a fainted mon's stages), PE-R1b (a
-// badly-poisoned mon's stage), PE-V16 (Flash Fire after its holder's Fire move). A truth only the
+// rule that reproduces the mistake. Today there are none: M2's three (PE-V10, PE-R1b, PE-V16) were
+// fixed in the fork (`gen3_pe_reading_fixes_v1`), so poke-env now reads what this does. A truth only the
 // omniscient board knows cannot reach the view by construction ([`present`] takes the side's
 // stream and nothing else): our benched mons' PP after an un-announced Pressure (V15) and a
 // Transformed own mon's copied ability (R4) are INFORMATION LIMITS, read as poke-env reads them.
