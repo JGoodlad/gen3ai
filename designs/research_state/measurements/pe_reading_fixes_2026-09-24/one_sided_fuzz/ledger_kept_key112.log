@@ -1,0 +1,9 @@
+❌ 2 divergences in 2 classes over 599 comparisons
+        1  ours.suicune.boosts
+           e.g. ours.suicune: protocol={} view={'spa': 1, 'spd': 1}
+        1  obs[context[0]]
+           e.g. battle-gen3ou-8@t54/arm6/D10mid idx=1468 ndiff=2: protocol=0.0 view=0.1666666716337204
+   [DECLARED residual x2] D3  obs[reactive.wish_floating]
+   [deferred x58] a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake belief reads 0 on the view side (D4 is closed only where a log is supplied — the SUCCESSOR comparison below does supply one)
+   [deferred x1] arm ended / stuck (no successor board to compare)
+branch points compared: 265   (FULL tracker-fed obs at 215 of them; 18 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 265 successors (21 D10), integrity-checked

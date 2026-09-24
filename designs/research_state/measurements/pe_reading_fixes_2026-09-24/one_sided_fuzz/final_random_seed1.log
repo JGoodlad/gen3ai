@@ -1,0 +1,8 @@
+❌ 2 divergences in 2 classes over 632 comparisons
+        1  successor.obs[opp_team[0].hp_block]
+           e.g. battle-gen3ou-2@t28/arm5 idx=828 ndiff=1: protocol=0.0 view=0.00022629258455708623
+        1  core.successor.obs[opp_team[0].hp_block]
+           e.g. battle-gen3ou-2@t28/arm5/core idx=828 ndiff=1 findings=[]: protocol=0.0 view=0.00022629258455708623
+   [DECLARED residual x2] D3  obs[reactive.wish_floating]
+   [deferred x37] a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake belief reads 0 on the view side (D4 is closed only where a log is supplied — the SUCCESSOR comparison below does supply one)
+branch points compared: 276   (FULL tracker-fed obs at 242 of them; 32 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 275 successors (32 D10), integrity-checked

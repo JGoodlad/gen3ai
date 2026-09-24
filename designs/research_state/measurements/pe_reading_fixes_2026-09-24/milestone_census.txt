@@ -1,0 +1,40 @@
+bringing up nodes...
+bringing up nodes...
+
+.....                                                                    [100%]
+==================================== PASSES ====================================
+________ test_milestone_production_policy_battles[policy_keys_100_149] _________
+[gw1] linux -- Python 3.11.15 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3
+----------------------------- Captured stdout call -----------------------------
+
+✅ 0 divergences — 50 battles, 100 viewers, 85267 per-side lines, 44752 events compared, emission self-check omniscient=39051 per_viewer=78492 split=0 frame=6928
+
+✅ slice V: 0 divergences — 50 battles, 100 viewers, 6446 decisions, 3481884 field comparisons, truth checks {'opp.types': 18003, 'ours.volatiles': 6029, 'opp.volatiles': 6412, 'opp.move-in-moveset': 58818, 'opp.item': 20275, 'opp.ability': 17284, 'opp.consumed-item-not-held': 189}, core board checks {'BOARD': 1139035}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+__________ test_milestone_seeded_random_battles[even_keys_whole_pool] __________
+[gw0] linux -- Python 3.11.15 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3
+----------------------------- Captured stdout call -----------------------------
+
+✅ 0 divergences — 360 battles, 720 viewers, 835004 per-side lines, 432442 events compared, emission self-check omniscient=381416 per_viewer=765422 split=0 frame=72904
+
+✅ slice V: 0 divergences — 360 battles, 720 viewers, 64991 decisions, 37551725 field comparisons, truth checks {'opp.ability': 248588, 'opp.types': 197223, 'ours.volatiles': 61786, 'opp.volatiles': 64389, 'opp.move-in-moveset': 762849, 'opp.item': 257227, 'opp.consumed-item-not-held': 4632}, core board checks {'BOARD': 12049356}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+_______ test_milestone_production_policy_battles[policy_keys_6000_6049] ________
+[gw1] linux -- Python 3.11.15 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3
+----------------------------- Captured stdout call -----------------------------
+
+✅ 0 divergences — 50 battles, 100 viewers, 52018 per-side lines, 26146 events compared, emission self-check omniscient=23369 per_viewer=47794 split=0 frame=4362
+
+✅ slice V: 0 divergences — 50 battles, 100 viewers, 3951 decisions, 1930891 field comparisons, truth checks {'opp.ability': 10175, 'opp.types': 8653, 'ours.volatiles': 3523, 'opp.volatiles': 3933, 'opp.item': 9679, 'opp.move-in-moveset': 21522}, core board checks {'BOARD': 650494}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+________________ test_milestone_protocol_and_byte_fuzz_corpora _________________
+[gw1] linux -- Python 3.11.15 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3
+----------------------------- Captured stdout call -----------------------------
+
+✅ 0 divergences — 122 battles, 244 viewers, 104048 per-side lines, 50217 events compared, emission self-check omniscient=47528 per_viewer=94860 split=0 frame=9398
+__________ test_milestone_seeded_random_battles[odd_keys_whole_pool] ___________
+[gw0] linux -- Python 3.11.15 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3
+----------------------------- Captured stdout call -----------------------------
+
+✅ 0 divergences — 360 battles, 720 viewers, 859892 per-side lines, 444922 events compared, emission self-check omniscient=391346 per_viewer=785474 split=0 frame=77437
+
+✅ slice V: 0 divergences — 360 battles, 720 viewers, 67022 decisions, 38763924 field comparisons, truth checks {'opp.ability': 261197, 'opp.types': 199057, 'ours.volatiles': 63777, 'opp.volatiles': 66468, 'opp.move-in-moveset': 796733, 'opp.item': 261703, 'opp.consumed-item-not-held': 5343}, core board checks {'BOARD': 12428930}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+slow-tier status: 5 row(s) recorded into /home/goodlad/dev/gen3ai-wt/pe-reading-fixes/designs/ops/slow_tier_status.json
+5 passed in 544.86s (0:09:04)

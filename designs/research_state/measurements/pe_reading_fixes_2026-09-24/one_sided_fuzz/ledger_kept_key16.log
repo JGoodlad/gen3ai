@@ -1,0 +1,18 @@
+❌ 10 divergences in 7 classes over 638 comparisons
+        3  obs[context[0]]
+           e.g. battle-gen3ou-8@t18/arm6/D10mid idx=1468 ndiff=2: protocol=0.0 view=0.1666666716337204
+        2  obs[context[1]]
+           e.g. battle-gen3ou-3@t17/arm9/D10mid idx=1530 ndiff=1: protocol=0.0 view=0.1666666716337204
+        1  opp.heracross.boosts
+           e.g. opp.heracross: protocol={} view={'spe': 1}
+        1  opp.jirachi.boosts
+           e.g. opp.jirachi: protocol={} view={'spa': 3, 'spd': 3}
+        1  ours.suicune.boosts
+           e.g. ours.suicune: protocol={} view={'spa': 1, 'spd': 1}
+        1  ours.snorlax.boosts
+           e.g. ours.snorlax: protocol={} view={'spd': -1}
+        1  ours.salamence.boosts
+           e.g. ours.salamence: protocol={} view={'atk': 1, 'spe': 1}
+   [DECLARED residual x7] D3  obs[reactive.wish_floating]
+   [deferred x61] a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake belief reads 0 on the view side (D4 is closed only where a log is supplied — the SUCCESSOR comparison below does supply one)
+branch points compared: 280   (FULL tracker-fed obs at 218 of them; 22 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 280 successors (30 D10), integrity-checked

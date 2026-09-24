@@ -161,8 +161,13 @@ Record: [`designs/research_state/measurements/rust_core_m2_2026-09-23/`](../rese
 
 * **Slice V with the core column** (at `969c4e30` — the code of `9f77695d`, before its rebase onto main): MILESTONE 142,360 decisions, 81.7 M field
   comparisons, 26.2 M board-audit checks, **0 divergences**; COMMIT 1,838 decisions, 0. The
-  findings' rates per 1,000 decisions (pool · `production` policy · procedural): PE-V10 4.64 · 12.27
-  · 6.45; PE-R1b 2.69 · 0.58 · 6.04; PE-V16 0 · 0 · 0.
+  findings' rates per 1,000 decisions then (pool · `production` policy · procedural): PE-V10 4.64 ·
+  12.27 · 6.45; PE-R1b 2.69 · 0.58 · 6.04; PE-V16 0 · 0 · 0.
+* **Slice V with the registry EMPTY** (at `c97358e8`, `gen3_pe_reading_fixes_v1`,
+  [`../research_state/measurements/pe_reading_fixes_2026-09-24/`](../research_state/measurements/pe_reading_fixes_2026-09-24/README.md)):
+  MILESTONE 142,410 decisions, 81.7 M field comparisons, 26.3 M board-audit checks (the benched
+  toxic stage now among them), **0 divergences, 0 findings**; COMMIT 1,838 decisions, 0; procedural
+  (seed 23, 29,783 decisions) the core column clean, findings `{}`.
 * **The core road's cost**: 1.41× the view road's Rust `expand_many` per successor [1.36, 1.48], and
   the whole searched decision 0.926× [0.920, 0.944] at wide B.
 * **The typed shortcut saves nothing measurable** (fold typed/text 1.019× [0.983, 1.316]; −0.1 % of

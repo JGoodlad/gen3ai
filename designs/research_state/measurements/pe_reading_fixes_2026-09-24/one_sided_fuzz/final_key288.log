@@ -1,0 +1,3 @@
+✅ no divergence over 649 comparisons
+   [DECLARED residual x3] D3  obs[reactive.wish_floating]
+branch points compared: 282   (FULL tracker-fed obs at 279 of them; 37 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 282 successors (37 D10), integrity-checked

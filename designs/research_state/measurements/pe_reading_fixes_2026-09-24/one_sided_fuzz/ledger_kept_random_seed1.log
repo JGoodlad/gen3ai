@@ -1,0 +1,9 @@
+❌ 2 divergences in 2 classes over 624 comparisons
+        1  ours.salamence.boosts
+           e.g. ours.salamence: protocol={} view={'atk': -1}
+        1  obs[context[0]]
+           e.g. battle-gen3ou-1@t25/arm5/D10mid idx=1465 ndiff=1: protocol=0.0 view=0.1666666716337204
+   [deferred x37] a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake belief reads 0 on the view side (D4 is closed only where a log is supplied — the SUCCESSOR comparison below does supply one)
+   [deferred x1] no legal arm at the root (wait / ended)
+   [DECLARED residual D3: NOT SEEN this run] the reactive Wish pair folds `battle.events`, and THIS comparison thre…
+branch points compared: 276   (FULL tracker-fed obs at 249 of them; 17 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 276 successors (24 D10), integrity-checked

@@ -1,0 +1,8 @@
+❌ 2 divergences in 2 classes over 615 comparisons
+        1  opp.moltres.boosts
+           e.g. opp.moltres: protocol={} view={'spe': 4}
+        1  obs[context[1]]
+           e.g. battle-gen3ou-8@t32/arm9/D10mid idx=1530 ndiff=1: protocol=0.0 view=0.6666666865348816
+   [DECLARED residual x8] D3  obs[reactive.wish_floating]
+   [deferred x48] a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake belief reads 0 on the view side (D4 is closed only where a log is supplied — the SUCCESSOR comparison below does supply one)
+branch points compared: 272   (FULL tracker-fed obs at 227 of them; 12 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 272 successors (23 D10), integrity-checked

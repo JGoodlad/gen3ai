@@ -1,0 +1,2 @@
+at c97358e8 (the fix, rebased on 886ae28f):
+✅ slice V: 0 divergences — 13 battles, 26 viewers, 1838 decisions, 1035734 field comparisons, truth checks {'opp.ability': 6936, 'opp.types': 5166, 'ours.volatiles': 1722, 'opp.volatiles': 1818, 'opp.move-in-moveset': 18984, 'opp.item': 7295}, core board checks {'BOARD': 335488}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}; OUT OF SCOPE (not gen3ou — the training obs path is gen3ou-only): {'gen3customgame': 34}

@@ -1,0 +1,7 @@
+❌ 1 divergences in 1 classes over 617 comparisons
+        1  core.successor.obs[context[0].species]
+           e.g. battle-gen3ou-11@t21/arm6/core-D10 idx=1468 ndiff=2 findings=['PE-V10']: protocol=0.1666666716337204 view=0.0
+   [DECLARED residual x2] D3  obs[reactive.wish_floating]
+   [deferred x2] a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake belief reads 0 on the view side (D4 is closed only where a log is supplied — the SUCCESSOR comparison below does supply one)
+   [KNOWN poke-env finding x1] PE-V10
+branch points compared: 271   (FULL tracker-fed obs at 269 of them; 27 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 270 successors (26 D10), integrity-checked

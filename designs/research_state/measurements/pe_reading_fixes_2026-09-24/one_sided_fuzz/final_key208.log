@@ -1,0 +1,5 @@
+✅ no divergence over 623 comparisons
+   [deferred x20] a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake belief reads 0 on the view side (D4 is closed only where a log is supplied — the SUCCESSOR comparison below does supply one)
+   [deferred x1] no legal arm at the root (wait / ended)
+   [DECLARED residual D3: NOT SEEN this run] the reactive Wish pair folds `battle.events`, and THIS comparison thre…
+branch points compared: 273   (FULL tracker-fed obs at 257 of them; 29 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 273 successors (29 D10), integrity-checked

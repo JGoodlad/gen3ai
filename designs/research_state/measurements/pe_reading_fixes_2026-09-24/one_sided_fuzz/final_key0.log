@@ -1,0 +1,4 @@
+✅ no divergence over 580 comparisons
+   [DECLARED residual x1] D3  obs[reactive.wish_floating]
+   [deferred x72] a mon is ASLEEP and this comparison threads NO event log, so the sleep-wake belief reads 0 on the view side (D4 is closed only where a log is supplied — the SUCCESSOR comparison below does supply one)
+branch points compared: 257   (FULL tracker-fed obs at 202 of them; 9 of those were D10 INTERMEDIATE arms served from view_pN_at[0]); CORE road: 257 successors (18 D10), integrity-checked
