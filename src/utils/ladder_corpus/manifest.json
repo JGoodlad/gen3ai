@@ -1,0 +1,80 @@
+{
+ "data_file": "teams.jsonl.gz",
+ "data_sha256": "231c73ee707513d97fffbaf82016d1b6e6eaaf6cd092b300188fc11ed062f01b",
+ "filter": {
+  "counts": {
+   "duplicate": 0,
+   "engine_unplayable": 49,
+   "import_fail": 0,
+   "kept": 22813,
+   "not_six": 0,
+   "total": 22862,
+   "validator_fail": 0
+  },
+  "engine_unplayable_by_id": {
+   "item:shellbell": 11,
+   "move:blastburn": 2,
+   "move:dig": 1,
+   "move:fly": 3,
+   "move:grudge": 1,
+   "move:metronome": 11,
+   "move:psywave": 9,
+   "move:snore": 10,
+   "move:triplekick": 1
+  },
+  "engine_unplayable_ids": {
+   "ability": [],
+   "item": [
+    "shellbell"
+   ],
+   "move": [
+    "blastburn",
+    "dig",
+    "fly",
+    "grudge",
+    "metronome",
+    "psywave",
+    "snore",
+    "triplekick"
+   ],
+   "species": []
+  },
+  "for_information_generator_coverage_rejects": {
+   "item:shellbell": 11,
+   "move:blastburn": 2,
+   "move:dig": 1,
+   "move:fly": 3,
+   "move:grudge": 1,
+   "move:metronome": 11,
+   "move:psywave": 8,
+   "move:sleeptalk": 1727,
+   "move:snore": 10,
+   "move:triplekick": 1
+  },
+  "heal_bell_teams_kept": 440,
+  "rule": "Teams.import + six Pokemon + TeamValidator('gen3ou') legal + every species / move / item / ability RUNS in the engine (scan_move_probe); exact packed duplicates keep their first file. Nothing else is dropped (Heal Bell teams and pool species-set matches stay IN).",
+  "share_kept": 0.997857
+ },
+ "schema": "gen3_ladder_usage_corpus_v1",
+ "seed": 20260924,
+ "source": {
+  "archive": "~/gen3ai_archive/metamon_cache_2026-09-24/teams/hl_05_26/gen3ou",
+  "files": 22862,
+  "fingerprint_sha256": "b80ce5707b7ebb80ca6e5c0a3841b2a12d1b569accb1e9b5ece5d9bfd5698b8c",
+  "what": "Metamon hl_05_26 gen3ou teams (the public ladder), `teams` revision v5, downloaded 2026-09-24"
+ },
+ "tiers": {
+  "commit": {
+   "n": 16,
+   "sha256": "45feaa26f1b45e173d862de73a5a19a20ffbf022784b09f29a047c400b6b5237"
+  },
+  "full": {
+   "n": 22813,
+   "sha256": "1154f681937c90aed99ceb57dcdc91cc3970d09c399146eaee596b3ca4349b42"
+  },
+  "milestone": {
+   "n": 800,
+   "sha256": "977784fbccad01577fb628989c00ef56fad07d8ff24422911ca31089532fb8ad"
+  }
+ }
+}
