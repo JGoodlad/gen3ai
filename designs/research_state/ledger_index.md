@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,292-line file. **The ledger itself is append-only and is never edited by this**;
+21,296-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**690 headings · 635 dated · 2026-08-01 → 2026-09-23 · ledger 21,292 lines.**
+**691 headings · 636 dated · 2026-08-01 → 2026-09-23 · ledger 21,296 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -710,3 +710,4 @@ rename.
   - `L21281` · `2026-09-23` · OPS (MAJOR) + 🚨 **TRAINING-INPUT CHANGE** · **THE TRUTH AUDIT — slice V of the Rust core parity harness (`gen3_core_parity_views_v1`) compares training's `LiveView` + `LegalActions` with the simulator's projection at EVERY decision, both viewers, with no allowlist: 83,896 decisions / 23.9M field comparisons, 0 divergences. It found THREE poke-env READING bugs in what training reads (R1–R3, fixed in the fork, `65f22334`) and a PORT bug in the training transport (`gen3_locked_request_move_v1`)**
   - `L21285` · `2026-09-23` · MEASUREMENT · **M1 TRANSPORT THROUGHPUT A/B (`dfab2558` vs `7c511161`; record `610fd301`): a REAL but SMALL cost that is mostly NOT M1. The rust `sim_bridge` does +13 % CPU per decision (≈ +10 µs per trainee decision); a pinned env step reads +1.6 % [+0.4, +2.2]; production-shape 8-worker throughput reads +0.2 % [−0.7, +3.6], NOT DETECTED. No reason to hold a post-M1 arm.**
   - `L21289` · `2026-09-23` · MEASUREMENT · **THE WIN-PROB CONTINUATION'S UNTAUGHT GAIN REPLICATES ON A SECOND SEED: `ai_v13_21_wcont_b` (seed 1002) reads +12.94 pp [+10.25, +15.44] over arm W at +12M, OUTSIDE the 3.69 pp floor by both clauses at +3M / +6M / +12M, 8 of 8 teams at every depth (seed 1001: +15.50). The +15.50 pp row is now a two-seed FAMILY claim.**
+  - `L21293` · `2026-09-23` · OPS (MAJOR) · **RUST CORE M2 LANDED (`ba7375c4`…`08cf94f4`): `BattleVersion` + `present()` — the TRUE reading, built from one side's stream with no board parameter — + `legal_actions()`; search adopts the core (`materializer=core`); training reads none of it. `sim_bridge` no longer folds the one-sided view: 0.909× pre-M1 CPU [0.876, 0.932], byte-identical.**
