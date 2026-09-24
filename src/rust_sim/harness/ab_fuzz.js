@@ -27,13 +27,17 @@
 //                        no-op ability, a modeled item, random nature/EVs/IVs,
 //                        level 100 — packed with the real Teams.pack.
 //   pool               — the e2e capstone's 22 filter-clean data/teams/ teams.
+//   ourandom           — gen3ou-RANDBATS (harness/ou_random_teams.js): Smogon-derived, validated.
+//   ladder             — the LADDER-USAGE corpus (harness/ladder_corpus.js): real public-ladder
+//                        teams (Metamon hl_05_26 gen3ou), filtered to what the ENGINE plays;
+//                        `--ladder-tier commit|milestone|full` (default milestone, 800 teams).
 //
 // The modeled-universe predicates (isModeledMove / abilityAllowed / itemAllowed)
 // and the battle driver (runBattle / emitBattle) are REQUIRED from
 // gen_e2e_fuzz.js — one source of truth, no copy-paste drift.
 //
 // USAGE
-//   node src/rust_sim/harness/ab_fuzz.js [--mode randbats|random|pool|ourandom]
+//   node src/rust_sim/harness/ab_fuzz.js [--mode randbats|random|pool|ourandom|ladder]
 //        [--battles N | --hours H]     (default: run until killed)
 //        [--master-seed S]             (default: from time; ALWAYS printed)
 //        [--chunk N]                   (default 25 battles per chunk)
@@ -63,6 +67,7 @@ const { execFileSync, spawnSync } = require('child_process');
 
 const e2e = require('./gen_e2e_fuzz.js');
 const ouRandom = require('./ou_random_teams.js');
+const ladderCorpus = require('./ladder_corpus.js');
 const {
   runBattle, emitBattle, isModeledMove, abilityAllowed, itemAllowed,
   teamFilterClean, loadTeams, mulberry32, randInt, seedFrom, toId, dex3,
@@ -103,6 +108,8 @@ function parseFlags(argv) {
     // the gen3customgame e2e capstone never hits).
     protocol: false,
     format: 'gen3customgame',
+    // `--mode ladder`'s tier of the LADDER-USAGE corpus (`gen3_ladder_usage_corpus_v1`).
+    ladderTier: 'milestone',
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -116,14 +123,19 @@ function parseFlags(argv) {
     else if (a === '--keep-chunks') f.keepChunks = true;
     else if (a === '--protocol') f.protocol = true;
     else if (a === '--format') f.format = next();
+    else if (a === '--ladder-tier') f.ladderTier = next();
     else { console.error(`unknown flag ${a}`); process.exit(2); }
   }
   if (!['gen3customgame', 'gen3ou'].includes(f.format)) {
     console.error(`--format must be gen3customgame|gen3ou, got ${f.format}`);
     process.exit(2);
   }
-  if (!['randbats', 'random', 'pool', 'ourandom'].includes(f.mode)) {
-    console.error(`--mode must be randbats|random|pool|ourandom, got ${f.mode}`);
+  if (!['randbats', 'random', 'pool', 'ourandom', 'ladder'].includes(f.mode)) {
+    console.error(`--mode must be randbats|random|pool|ourandom|ladder, got ${f.mode}`);
+    process.exit(2);
+  }
+  if (!ladderCorpus.TIERS.includes(f.ladderTier)) {
+    console.error(`--ladder-tier must be ${ladderCorpus.TIERS.join('|')}, got ${f.ladderTier}`);
     process.exit(2);
   }
   if (f.masterSeed === null) f.masterSeed = (Date.now() ^ (process.pid * 2654435761)) >>> 0;
@@ -438,7 +450,12 @@ async function main() {
     `chunk=${flags.chunk} battles=${flags.battles ?? '∞'} hours=${flags.hours ?? '∞'} out=${flags.out}`);
   console.error('[ab_fuzz] reproduce with: ' +
     `node src/rust_sim/harness/ab_fuzz.js --mode ${flags.mode} --master-seed ${flags.masterSeed}` +
+    (flags.mode === 'ladder' ? ` --ladder-tier ${flags.ladderTier}` : '') +
+    (flags.protocol ? ` --protocol --format ${flags.format}` : '') +
     (flags.battles ? ` --battles ${flags.battles}` : ''));
+  if (flags.mode === 'ladder') {
+    console.error(`[ab_fuzz] ladder corpus data sha256=${ladderCorpus.manifest().data_sha256}`);
+  }
 
   // Build the Rust replayer once (fast if fresh) — UNLESS an explicit binary was
   // provided via POKESIM_AB_REPLAY_BIN (the isolated byte-fuzz build), in which case we
@@ -462,6 +479,9 @@ async function main() {
   let provider;
   if (flags.mode === 'randbats') provider = makeRandbatsProvider(teamRng, genStats);
   else if (flags.mode === 'pool') provider = makePoolProvider(teamRng, genStats);
+  else if (flags.mode === 'ladder') {
+    provider = ladderCorpus.makeLadderProvider(teamRng, genStats, flags.ladderTier, teamFilterClean);
+  }
   else if (flags.mode === 'ourandom') {
     // gen3ou-RANDBATS: random teams drawn from the REAL gen3ou distribution (Smogon usage +
     // the teammate joint + per-species move/item/ability/spread priors), validated by
@@ -553,7 +573,9 @@ async function main() {
             format: flags.format,
             // `ourandom` PINS Hidden Power to BP 70 by construction (its IV solver), so HP is
             // byte-safe there exactly as it is on the gen3ou-validated pool.
-            allowHiddenPower: flags.mode === 'pool' || flags.mode === 'ourandom',
+            // `ladder` teams are gen3ou-VALIDATED like the pool, and the engine prices Hidden
+            // Power at its IV-true BP (R3), so typed HP is byte-safe there too.
+            allowHiddenPower: flags.mode === 'pool' || flags.mode === 'ourandom' || flags.mode === 'ladder',
           });
         } catch (e) {
           cum.empty++;

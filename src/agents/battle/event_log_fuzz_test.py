@@ -603,20 +603,28 @@ REPORTED_COVERAGE = {
 }
 
 
-async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
+async def main(n_battles: int = 40, max_seconds: "float | None" = None, source: str = "pool",
+               ladder_tier: str = "milestone") -> None:
     ts = int(time.time()) % 100000
     mode = f"{max_seconds:.0f}s time budget" if max_seconds else f"{n_battles} battles"
-    print(f"Event-Log Fuzz — {BATTLE_FORMAT} — {mode}", flush=True)
+    print(f"Event-Log Fuzz — {BATTLE_FORMAT} — {mode} — teams={source}", flush=True)
 
     # Proven recipe (mirrors the poke_env_gaps fuzz tests): our Gen3Battle-backed
     # validator challenges a RandomPlayer opponent. Passwords are set so the server
     # honours the usernames — guest logins race the challenge ("user not found").
     # Both players draw a RANDOM team per battle from the full pool (yield_team
     # re-rolls each game), so N battles cover N movesets — broad effect coverage.
-    pool = _team_pool()
+    if source == "pool":
+        pool = _team_pool()
+        team_a, team_b = Gen3Teambuilder(pool), Gen3Teambuilder(pool)
+    else:  # the ladder corpus / the procedural generator (utils.team_sources)
+        from utils import team_sources
+
+        team_a = team_sources.teambuilder(source, rng_seed=ts, ladder_tier=ladder_tier)
+        team_b = team_sources.teambuilder(source, rng_seed=ts + 1, ladder_tier=ladder_tier)
     fuzz = EventLogFuzzPlayer(
         battle_format=BATTLE_FORMAT,
-        team=Gen3Teambuilder(pool),
+        team=team_a,
         account_configuration=AccountConfiguration(f"ELz{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration, start_listening=False,
         max_concurrent_battles=5,
@@ -624,7 +632,7 @@ async def main(n_battles: int = 40, max_seconds: "float | None" = None) -> None:
     )
     opp = RandomPlayer(
         battle_format=BATTLE_FORMAT,
-        team=Gen3Teambuilder(pool),
+        team=team_b,
         account_configuration=AccountConfiguration(f"ELo{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration, start_listening=False,
         max_concurrent_battles=5,
@@ -713,6 +721,9 @@ if __name__ == "__main__":
                    help="battle count (e.g. 80) or a duration (e.g. 1m, 5m, 15m)")
     p.add_argument("--seconds", type=float, default=None,
                    help="run for this many wall-clock seconds (overrides a duration arg)")
+    from utils import team_sources
+
+    team_sources.add_arguments(p)
     args = p.parse_args()
     max_seconds = args.seconds
     n_battles = 40
@@ -720,4 +731,5 @@ if __name__ == "__main__":
         max_seconds = float(args.n[:-1]) * 60.0
     elif max_seconds is None:
         n_battles = int(args.n)
-    asyncio.run(main(n_battles=n_battles, max_seconds=max_seconds))
+    asyncio.run(main(n_battles=n_battles, max_seconds=max_seconds, source=args.team_source,
+                     ladder_tier=args.ladder_tier))

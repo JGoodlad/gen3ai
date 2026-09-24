@@ -27,7 +27,8 @@
 //
 // USAGE
 //   node src/rust_sim/harness/bridge_ab_fuzz.js
-//        [--mode trapping|randbats|random|pool]   (default trapping)
+//        [--mode trapping|randbats|random|pool|ladder]   (default trapping)
+//        [--ladder-tier commit|milestone|full]   (`--mode ladder`: the LADDER-USAGE corpus tier, default milestone)
 //        [--format gen3customgame|gen3ou]         (default gen3customgame)
 //        [--battles N | --hours H]                (default: run until killed)
 //        [--master-seed S]                        (default: from time; ALWAYS printed)
@@ -51,6 +52,10 @@ const {
   mulberry32, randInt, seedFrom, toId, dex3,
 } = e2e;
 const ab = require('./ab_fuzz.js');
+const ladderCorpus = require('./ladder_corpus.js');
+// `--mode ladder` widens the picker to typed Hidden Power: the corpus is gen3ou-VALIDATED and the
+// engine prices HP at its IV-true BP (R3). Every other mode keeps `isModeledMove`'s default.
+let PICK_HIDDEN_POWER = false;
 
 const PS = path.resolve(__dirname, '../../../deps/pokemon-showdown');
 const { BattleStream, getPlayerStreams } = require(path.join(PS, 'dist/sim/battle-stream'));
@@ -84,6 +89,7 @@ function parseFlags(argv) {
     out: path.join(__dirname, 'bridge_ab_fuzz_out'),
     keepChunks: false,
     trapProb: 0.5,
+    ladderTier: 'milestone',
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -97,10 +103,15 @@ function parseFlags(argv) {
     else if (a === '--out') f.out = path.resolve(next());
     else if (a === '--keep-chunks') f.keepChunks = true;
     else if (a === '--trap-prob') f.trapProb = Number(next());
+    else if (a === '--ladder-tier') f.ladderTier = next();
     else { console.error(`unknown flag ${a}`); process.exit(2); }
   }
-  if (!['trapping', 'randbats', 'random', 'pool'].includes(f.mode)) {
-    console.error(`--mode must be trapping|randbats|random|pool, got ${f.mode}`);
+  if (!['trapping', 'randbats', 'random', 'pool', 'ladder'].includes(f.mode)) {
+    console.error(`--mode must be trapping|randbats|random|pool|ladder, got ${f.mode}`);
+    process.exit(2);
+  }
+  if (!ladderCorpus.TIERS.includes(f.ladderTier)) {
+    console.error(`--ladder-tier must be ${ladderCorpus.TIERS.join('|')}, got ${f.ladderTier}`);
     process.exit(2);
   }
   if (!['gen3customgame', 'gen3ou'].includes(f.format)) {
@@ -306,7 +317,7 @@ function pickModeledLegal(battle, side, rng, isTrapped) {
   for (let k = 0; k < moves.length; k++) {
     if (moves[k].disabled) continue;
     const id = toId(moves[k].id || moves[k].move);
-    if (id === 'struggle' || isModeledMove(id)) modeledSlots.push(k);
+    if (id === 'struggle' || isModeledMove(id, PICK_HIDDEN_POWER)) modeledSlots.push(k);
   }
   const benchSlots = isTrapped ? [] : legalSwitchSlots(battle, side);
   if (modeledSlots.length === 0) {
@@ -422,7 +433,8 @@ async function main() {
     `trap_prob=${flags.trapProb} out=${flags.out}`);
   console.error('[bridge_ab_fuzz] reproduce: ' +
     `node src/rust_sim/harness/bridge_ab_fuzz.js --mode ${flags.mode} --format ${flags.format} ` +
-    `--master-seed ${flags.masterSeed}` + (flags.battles ? ` --battles ${flags.battles}` : ''));
+    `--master-seed ${flags.masterSeed}` + (flags.mode === 'ladder' ? ` --ladder-tier ${flags.ladderTier}` : '') +
+    (flags.battles ? ` --battles ${flags.battles}` : ''));
 
   // Build the Rust replayer ONCE into the ISOLATED target dir (never the shared target/).
   {
@@ -450,6 +462,10 @@ async function main() {
     let single;
     if (flags.mode === 'randbats') single = ab.makeRandbatsProvider(teamRng, genStats);
     else if (flags.mode === 'pool') single = ab.makePoolProvider(teamRng, genStats);
+    else if (flags.mode === 'ladder') {
+      single = ladderCorpus.makeLadderProvider(teamRng, genStats, flags.ladderTier, teamFilterClean);
+      PICK_HIDDEN_POWER = true;
+    }
     else {
       const universe = ab.buildRandomUniverse();
       console.error(`[random] modeled universe: ${universe.eligible.length} species`);

@@ -551,6 +551,18 @@ may carry at most one (`<species> has multiple copies of Hidden Power <type>`).
 
 ---
 
+## `--mode ladder` — the LADDER-USAGE corpus (`gen3_ladder_usage_corpus_v1`, 2026-09-24)
+
+All four fuzzers take `--mode ladder [--ladder-tier commit|milestone|full]`
+(`harness/ladder_corpus.js`): real public-ladder teams (Metamon `hl_05_26` gen3ou), filtered to what
+the ENGINE plays by `scan_move_probe`, the sha256 of the data file checked against the manifest on
+every load. Draws use the fuzzer's seeded team RNG, typed Hidden Power is pickable, and
+`teamFilterClean` (the JS mirror) is reported, never used to drop a team. First contact (before the
+MILESTONE run) found two engine bugs with zero pool exposure, both fixed and pinned: lock-in
+continuations lacked `[from] lockedmove` (`gen3_lockedmove_announce_v1`), and Rollout / Ice Ball
+kept their lock across a turn that computed no damage (`gen3_rollout_lock_duration_v1`). MILESTONE
+counts per fuzzer are in `designs/research_state/measurements/ladder_usage_smoke_2026-09-24/`.
+
 ## `ab_fuzz.js` — the driver, the three team modes, the replayer and the repro format
 
 - **The driver** `harness/ab_fuzz.js` — per chunk (default 25 battles): generate/pick team

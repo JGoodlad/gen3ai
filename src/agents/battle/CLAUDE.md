@@ -246,9 +246,13 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   same per-side text (the core replays a recorded input log through the production bridge session;
   `Gen3Battle` is fed through `offline_feed`). COMMIT tier in the routine gate (~2 s: the recorded
   `rust_core_parity_fixtures/commit_tier.json.gz`, the four-shape byte-fuzz fixtures, one battle per
-  protocol scenario, + the golden RECORD corpus's round trip); MILESTONE tier `slow` (2 × 200 random
-  + 2 × 50 `production`-policy battles played live, the protocol corpus × 2, every byte-fuzz fixture;
-  pinned by `rust_core_parity_fixtures/manifest.json`). 🚨 **This layer is now the ORACLE of a second
+  protocol scenario, + the golden RECORD corpus's round trip); MILESTONE tier `slow` (2 × 360 random
+  + 2 × 50 `production`-policy battles played live, 2 × 150 LADDER-USAGE battles, the protocol
+  corpus × 2, every byte-fuzz fixture; pinned by `rust_core_parity_fixtures/manifest.json`). **Three
+  team sources** (`utils.team_sources`): `play(key, source="ladder" | "procedural")` — slices T and O
+  inherit them by calling `play`; the ladder tier's NAMED known divergences
+  (`LADDER_KNOWN_DIVERGENCES`, each with its backlog row) run in their own test and must still fire
+  (`designs/ops/testing.md` → THREE TEAM SOURCES). 🚨 **This layer is now the ORACLE of a second
   implementation**: a change to `_build_event` / `_capture_pre` / the schema, or to a poke-env
   transition they read, fails the COMMIT tier the day it lands — mirror it in
   `src/rust_sim/src/core_events/reading.rs` in the same change (or behind a flag OFF in
@@ -264,8 +268,8 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   reads the engine; a divergence is a READING bug on one side) or PRESENTATION (a NAMED rule
   V1–V13 the projection reproduces, still compared exactly), plus truth checks on every revealed
   opposing item / ability / move / type and ten sim-state volatiles. Rides `check_battles(…,
-  views=ViewCensus())` — one harness, one core call per battle — at COMMIT (the 10 recorded
-  battles incl. two Baton Pass ones + the in-scope byte-fuzz fixtures, ~2 s) and MILESTONE
+  views=ViewCensus())` — one harness, one core call per battle — at COMMIT (the 12 recorded
+  battles incl. two Baton Pass and two LADDER ones + the in-scope byte-fuzz fixtures, ~2 s) and MILESTONE
   (`slow`, the same played battles as slice E). gen3ou only; the `gen3customgame` scenarios are
   counted out of scope. 🚨 **This is the gate a Baton-Pass-class poke-env reading bug fails**: it is
   the one place the other side of the comparison is the SIM, not another reader of the same

@@ -28,10 +28,16 @@ Slice **V** (views + legality — the TRUTH AUDIT of the training observation pa
 :mod:`agents.battle.rust_core_parity_views`) rides the SAME call: ``check_battles(…,
 views=ViewCensus())`` asks the core for its decision boards too (``core_events --views``).
 * **MILESTONE** (``slow``): 2 seeds × 200 seeded-random battles and 2 × 50 production-policy
-  battles PLAYED live (the live ``Gen3Battle`` logs must also equal the offline feed's), plus the
+  battles PLAYED live (the live ``Gen3Battle`` logs must also equal the offline feed's), 2 × 150
+  seeded-random LADDER battles (the LADDER-USAGE corpus, :mod:`utils.ladder_corpus`), plus the
   22-scenario protocol capture corpus × 2 seeds and every byte-fuzz fixture. The pool content
-  hash and the checkpoint sha256 are pinned in ``rust_core_parity_fixtures/manifest.json`` and the
-  tier REFUSES on a mismatch (a pool change regenerates the manifest in the same commit).
+  hash, the ladder corpus stamp and the checkpoint sha256 are pinned in
+  ``rust_core_parity_fixtures/manifest.json`` and the tier REFUSES on a mismatch (a pool or
+  corpus change regenerates the manifest in the same commit).
+
+**The TEAM-SOURCE hook** (:mod:`utils.team_sources`): :func:`play` takes ``source`` — ``pool``
+(the default recipe), ``ladder`` or ``procedural`` — and every slice that plays battles through it
+(E and V today; T and O as they land) gets all three sources with no code of its own.
 """
 
 from __future__ import annotations
@@ -46,10 +52,11 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Tuple
 
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.offline_feed import feed_chunk, new_battle, player_names
+from utils import team_sources
 from utils.paths import repo_path
 
 FIXTURES = repo_path("src", "agents", "battle", "rust_core_parity_fixtures")
@@ -90,6 +97,33 @@ COMMIT_BATON_PASS_KEYS = (34, 177)
 #: truth audit.)
 MILESTONE_RANDOM_KEYS = (range(0, 720, 2), range(1, 720, 2))
 MILESTONE_POLICY_KEYS = (range(100, 150), range(6000, 6050))
+#: The LADDER-USAGE corpus (``gen3_ladder_usage_corpus_v1``): battle ``key`` plays corpus teams
+#: ``2·key`` and ``2·key+1`` of the MILESTONE tier, so the two ranges play its first 600 teams once
+#: each. The COMMIT tier records two of them (teams 0–3, inside the corpus's COMMIT prefix).
+LADDER_TIER = "milestone"
+MILESTONE_LADDER_KEYS = (range(0, 150), range(150, 300))
+COMMIT_LADDER_KEYS = (0, 1)
+#: The ladder tier's NAMED known divergences — never a blanket skip. ``key -> (class, the census
+#: keys it produces, where it is tracked)``. The MILESTONE gate plays every other key clean and
+#: plays these ON THEIR OWN, where each must STILL diverge in EXACTLY its named census keys: an
+#: entry that outlives its fix (or grows a second class) fails the tier.
+LADDER_KNOWN_DIVERGENCES: Dict[int, Tuple[str, FrozenSet[str], str]] = {
+    173: ("mimic-overlay-projection",
+          frozenset({"[PRESENTATION/V3-opp-pp] opp.moves", "[PRESENTATION/V4-volatiles] opp.volatiles",
+                     "[PRESENTATION/V4-volatiles] ours.volatiles"}),
+          "TECH_DEBT_BACKLOG P3 'The view road does not present a Mimic overlay' — the "
+          "projection (view.rs + view_adapter) keeps `mimic` and folds `-activate|move: Mimic` "
+          "as a volatile where poke-env and the core's present() show the copied move; the view "
+          "road only, retired at M4"),
+    237: ("r3-residue-own-pp-after-faint",
+          frozenset({"[SIM-FACT] ours.moves"}),
+          "TECH_DEBT_BACKLOG P3 'Truth audit R3 residue' — an own mon that faints before its "
+          "next |request| keeps the sighting count of a PP an unrevealed Pressure took (Gengar "
+          "Explosion into a Pressure Aerodactyl that had just switched in); an information limit"),
+    260: ("r3-residue-own-pp-after-faint",
+          frozenset({"[SIM-FACT] ours.moves"}),
+          "the same R3-residue row (a Metagross Explosion into an unrevealed Pressure mon)"),
+}
 
 #: The compared fields of one event (``BattleEvent`` attribute, core JSON key).
 FIELDS = (("seq", "seq"), ("turn", "turn"), ("kind", "kind"), ("side", "side"),
@@ -472,22 +506,8 @@ def pool_hash() -> str:
     return h.hexdigest()
 
 
-OU_RANDOM_TEAMS_JS = repo_path("src", "rust_sim", "harness", "ou_random_teams.js")
-
-
-def procedural_teams(n: int, seed: int) -> List[str]:
-    """``n`` packed gen3ou teams from the PROCEDURAL generator (``ou_random_teams.js --emit``):
-    Smogon-derived, validated by Showdown's own ``TeamValidator('gen3ou')``, reproducible from
-    ``seed`` — the fuzz surface beyond the pool's fixed teams (``src/rust_sim/CLAUDE.md``,
-    ``--mode ourandom``). The teams are not the pool's, so no pool hash pins them; the seed does."""
-    p = subprocess.run(["node", str(OU_RANDOM_TEAMS_JS), "--emit", str(n), "--seed", str(seed)],
-                       capture_output=True, text=True, check=False)
-    if p.returncode != 0:
-        raise RuntimeError(f"ou_random_teams --emit failed: {p.stderr.strip()[-2000:]}")
-    teams = [t for t in p.stdout.splitlines() if t.strip()]
-    if len(teams) != n:
-        raise RuntimeError(f"ou_random_teams --emit returned {len(teams)} teams for {n}")
-    return teams
+#: The procedural generator's teams now come from the shared team-source hook.
+procedural_teams = team_sources.procedural_teams
 
 
 def _players(key: int, tag: str, policy=None, teams: Optional[Tuple[str, str]] = None):
@@ -526,15 +546,24 @@ class LiveBattle:
     chunks: List[Tuple[str, str]]
 
 
+def _label(key: int, policy, teams, source: Optional[str]) -> str:
+    if source in (None, "pool"):
+        return f"{'policy' if policy is not None else 'procedural' if teams else 'random'}_{key}"
+    return f"{'policy_' if policy is not None else ''}{source}_{key}"
+
+
 def play(key: int, tag: str = "Rc", policy=None,
-         teams: Optional[Tuple[str, str]] = None) -> LiveBattle:
+         teams: Optional[Tuple[str, str]] = None, source: Optional[str] = None) -> LiveBattle:
     """Play ONE battle for real over the production rust ``sim_bridge`` (the key recipe: teams
     ``key``/``key+1``, per-player RNG, sim seed ``[11+key, 22+key, 33+key, 44+key]``, concurrency 1)
     and return its input log, the two LIVE battles and the per-side chunks they received.
-    ``teams`` overrides the pool pair (the procedural generator's teams)."""
+    ``teams`` overrides the pool pair; ``source`` (:data:`utils.team_sources.TEAM_SOURCES`) takes
+    the pair from that team source's key recipe instead (``ladder``: :data:`LADDER_TIER`)."""
     from utils.bridge import reconstruction
     from utils.bridge.local_battle_runner import run_local_battles
 
+    if teams is None and source not in (None, "pool"):
+        teams = team_sources.pair(source, key, ladder_tier=LADDER_TIER)
     p1, p2 = _players(key, tag, policy, teams)
     sink: list = []
     asyncio.run(run_local_battles(p1, p2, 1, seed=[11 + key, 22 + key, 33 + key, 44 + key],
@@ -546,7 +575,7 @@ def play(key: int, tag: str = "Rc", policy=None,
         raise RuntimeError(f"no __RECON__ for {b1.battle_tag}")
     players = rec.players()
     battle = RecordedBattle(
-        label=f"{'policy' if policy is not None else 'procedural' if teams else 'random'}_{key}",
+        label=_label(key, policy, teams, source),
         format_id=rec.format_id,
         seed=rec.prng_seed, p1=players["p1"], p2=players["p2"],
         commands=[list(c) for c in rec.commands], chunks_sha=chunks_sha(sink))
@@ -597,10 +626,10 @@ def load_production_policy():
 
 
 def record_commit_fixture(append: bool = False) -> None:
-    """(Re)record the COMMIT tier's 10 battles: 6 seeded-random over 12 distinct pool teams, 2
-    production-policy, 2 seeded-random Baton Pass battles. Every battle's live logs must equal the
-    offline feed's, the core's replay must reproduce its chunks, and BOTH slices (E, V) must be
-    clean, or nothing is written. ``append`` keeps the recorded battles and plays only the keys the
+    """(Re)record the COMMIT tier's 12 battles: 6 seeded-random over 12 distinct pool teams, 2
+    production-policy, 2 seeded-random Baton Pass battles, 2 seeded-random LADDER battles. Every
+    battle's live logs must equal the offline feed's, the core's replay must reproduce its chunks,
+    and BOTH slices (E, V) must be clean, or nothing is written. ``append`` keeps the recorded battles and plays only the keys the
     fixture does not hold yet (a new key never re-records — and so never perturbs — the rest)."""
     from agents.battle.rust_core_parity_views import ViewCensus
 
@@ -609,10 +638,13 @@ def record_commit_fixture(append: bool = False) -> None:
     have = {b.label for b in kept}
     want = [(k, None) for k in COMMIT_RANDOM_KEYS] + [(k, "policy") for k in COMMIT_POLICY_KEYS]
     want += [(k, None) for k in COMMIT_BATON_PASS_KEYS]
-    model = load_production_policy() if any(
-        p and f"policy_{k}" not in have for k, p in want) else None
-    lives = [play(k, policy=model if p else None) for k, p in want
-             if f"{'policy' if p else 'random'}_{k}" not in have]
+    want += [(k, "ladder") for k in COMMIT_LADDER_KEYS]
+    # `kind` is None (seeded-random pool), "policy" (the production checkpoint) or "ladder".
+    todo = [(k, kind) for k, kind in want
+            if _label(k, kind == "policy" or None, None, kind if kind == "ladder" else None) not in have]
+    model = load_production_policy() if any(kind == "policy" for _, kind in todo) else None
+    lives = [play(k, policy=model if kind == "policy" else None,
+                  source="ladder" if kind == "ladder" else None) for k, kind in todo]
     for lv in lives:
         compare_live(lv, census)
     battles = kept + [lv.recorded for lv in lives]
@@ -685,6 +717,13 @@ def check_golden_records() -> List[str]:
     return bad
 
 
+def _ladder_tier_sha256() -> str:
+    from utils import ladder_corpus
+
+    ladder_corpus.verify()
+    return ladder_corpus.manifest()["tiers"][LADDER_TIER]["sha256"]
+
+
 def manifest_now() -> dict:
     """What the MILESTONE tier's corpus resolves to TODAY on this box."""
     _, digest = production_checkpoint()
@@ -694,6 +733,9 @@ def manifest_now() -> dict:
         "production_sha256": digest,
         "random_keys": [[r.start, r.stop, r.step] for r in MILESTONE_RANDOM_KEYS],
         "policy_keys": [[r.start, r.stop] for r in MILESTONE_POLICY_KEYS],
+        "ladder_keys": [[r.start, r.stop] for r in MILESTONE_LADDER_KEYS],
+        "ladder_tier": LADDER_TIER,
+        "ladder_tier_sha256": _ladder_tier_sha256(),
         "protocol_per_scenario": 2,
     }
 

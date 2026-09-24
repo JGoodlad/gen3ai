@@ -429,6 +429,52 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 #                                      mechanic-dense + procedural teams; the fold-equivalence fuzz's shape re-pointed at the core)
 ```
 
+### THREE TEAM SOURCES — the pool, the procedural generator, and the LADDER-USAGE corpus
+
+Every gate that plays teams can play three sources (`utils.team_sources`, `gen3_ladder_usage_corpus_v1`):
+
+| source | what | surface |
+|---|---|---|
+| `pool` (default everywhere) | the 719 training teams | what training plays; one narrow human meta |
+| `procedural` | `src/rust_sim/harness/ou_random_teams.js`, Smogon-derived, `TeamValidator`-legal, seeded | wide, on-format, no human built it |
+| `ladder` | the Metamon `hl_05_26` gen3ou PUBLIC-LADDER teams, filtered to what the ENGINE plays (`src/utils/ladder_corpus/`) | the teams people bring — where the Heal Bell crash hid |
+
+**The corpus is a TEST corpus, never a prior**, and it lives under `src/utils/ladder_corpus/`, NOT
+`data/` (pinned runs read `data/` from main). Filter: `Teams.import` + six Pokemon +
+`TeamValidator('gen3ou')` + every species / move / item / ability RUNS in the engine
+(`scan_move_probe`, the oracle — not the fuzz picker's `isModeledMove`, which rejects Sleep Talk).
+Measured 2026-09-24: **22,813 of 22,862 kept (99.79%)**; 49 dropped, all engine fail-louds (Metronome
+11, Shell Bell 11, Snore 10, Psywave 9, Fly 3, Blast Burn 2, Dig / Grudge / Triple Kick 1); Heal Bell
+teams kept (440). `manifest.json` records the filter, the counts and every tier's sha256; every
+reader (Python and JS) REFUSES a data file that does not match. Rebuild (deterministic, `--check`
+proves the committed bytes reproduce): `python -m utils.ladder_corpus.build`.
+
+| tier | teams | runs in |
+|---|---|---|
+| `commit` | 16 | the COMMIT-tier recorded battles (`ladder_0`, `ladder_1` of the Rust Core parity fixture) |
+| `milestone` | 800 | slice E/V MILESTONE (2 × 150 battles, 600 teams once each) and the fuzzers' default draw |
+| `full` | 22,813 | the CUTOVER tier; `--ladder-tier full` soaks |
+
+```bash
+node src/rust_sim/harness/ab_fuzz.js --mode ladder [--ladder-tier full] --battles 200      # + --protocol --format gen3ou
+node src/rust_sim/harness/bridge_ab_fuzz.js --mode ladder --format gen3ou --battles 100
+node src/rust_sim/harness/gen_sim_bridge_diff.js --mode ladder --format gen3ou --persistent --battles 100
+python3 src/agents/training/obs_roundtrip_fuzz_test.py 20 20 --team-source ladder         # also: event_log /
+#   one_sided_view_parity / live_view_memo fuzz scripts take --team-source {pool,procedural,ladder}
+```
+
+The parity harness's hook is `rust_core_parity.play(key, source="ladder")`, so slices T and O get
+all three sources by calling it. **The ladder MILESTONE tier has NAMED known divergences**
+(`rust_core_parity.LADDER_KNOWN_DIVERGENCES`, each with its backlog row); they run in their own test
+and must still fire in exactly their named classes, so an entry that outlives its fix fails.
+
+**The FULL Metamon smoke** (`python -m main.ladder_usage_smoke`, `gen3_ladder_usage_smoke_v1`) plays
+every one of the 22,862 teams once (11,431 battles, the registered n) on the NODE bridge with both
+players encoding every decision — INCREMENTAL per `ORCHESTRATOR_SOP.md` §2: 50-battle units, rows
+written atomically to a durable directory, resumable (a restarted driver skips the units on disk —
+pinned by `main/ladder_usage_smoke_test.py` and proven by a real kill + resume), detached
+(`run --detach`), `status` for progress, `report` refuses before the registered n.
+
 ### E2E tests (`*_e2e_test.py` / `*_fuzz_e2e_test.py`, require a live server)
 ```bash
 # Start server first: npm run showdown

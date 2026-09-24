@@ -1,4 +1,16 @@
 {
+ "ladder_keys": [
+  [
+   0,
+   150
+  ],
+  [
+   150,
+   300
+  ]
+ ],
+ "ladder_tier": "milestone",
+ "ladder_tier_sha256": "977784fbccad01577fb628989c00ef56fad07d8ff24422911ca31089532fb8ad",
  "policy_keys": [
   [
    100,

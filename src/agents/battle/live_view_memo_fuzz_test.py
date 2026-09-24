@@ -186,12 +186,18 @@ class _MemoCheckPlayer(Player):
         self._trackers.pop(battle.battle_tag, None)
 
 
-async def main(n_battles: int, battle_format: str) -> bool:
+async def main(n_battles: int, battle_format: str, source: str = "pool",
+               ladder_tier: str = "milestone") -> bool:
     # The obs encoder is gen3ou-scoped and fail-loud outside it (a randbats Conversion
     # raises UnknownVolatileError: typechange). That is the ENCODER's coverage tripwire,
     # not a memo defect — so check 2 is skipped, loudly, rather than swallowed.
     check_obs = battle_format == "gen3ou"
-    if battle_format == "gen3ou":
+    if battle_format == "gen3ou" and source != "pool":
+        # the ladder corpus / the procedural generator (utils.team_sources)
+        from utils import team_sources
+
+        team = team_sources.teambuilder(source, rng_seed=0, ladder_tier=ladder_tier)
+    elif battle_format == "gen3ou":
         loader = TeamLoader()
         pool = loader.get_sample_teams() or loader.get_all_teams()
         if not pool:
@@ -244,5 +250,8 @@ if __name__ == "__main__":
     ap.add_argument("n", nargs="?", type=int, default=20, help="battles to play")
     ap.add_argument("--format", default="gen3ou",
                     help="gen3ou (pool teams) or gen3randombattle (forme/Transform corpus)")
+    from utils import team_sources
+
+    team_sources.add_arguments(ap)
     a = ap.parse_args()
-    sys.exit(0 if asyncio.run(main(a.n, a.format)) else 1)
+    sys.exit(0 if asyncio.run(main(a.n, a.format, a.team_source, a.ladder_tier)) else 1)

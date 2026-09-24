@@ -282,23 +282,31 @@ def compare_legal(a: Optional[LegalActions], b: Optional[LegalActions], cen: Cen
 # The two roads
 # ---------------------------------------------------------------------------
 
-def _record_one_battle(out_dir: str, impl: str, fixed_key: Optional[int] = None):
+def _record_one_battle(out_dir: str, impl: str, fixed_key: Optional[int] = None,
+                       source: str = "pool"):
     """A real gen3ou battle. ``fixed_key`` is not None ⇒ the REPRODUCIBLE fixture builder (pinned
     teams, per-player RNG and sim seed) the collected test needs; otherwise a fresh random one,
     which is what the sweep wants."""
     if fixed_key is not None:
         from agents.training.obs_roundtrip_fuzz_test import record_fixture_battle
 
-        return record_fixture_battle(out_dir, key=fixed_key, tag="OV", impl=impl)
+        return record_fixture_battle(out_dir, key=fixed_key, tag="OV", impl=impl, source=source)
     ts = int(time.time() * 1000) % 100000
-    pool = TeamLoader().get_all_teams()
+    if source == "pool":
+        pool = TeamLoader().get_all_teams()
+        team_a, team_b = Gen3Teambuilder(pool), Gen3Teambuilder(pool)
+    else:  # the ladder corpus / the procedural generator (utils.team_sources)
+        from utils import team_sources
+
+        team_a = team_sources.teambuilder(source, rng_seed=ts)
+        team_b = team_sources.teambuilder(source, rng_seed=ts + 1)
     trainee = RecordingFuzzPlayer(
-        out_dir=out_dir, rng_seed=ts, battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+        out_dir=out_dir, rng_seed=ts, battle_format=BATTLE_FORMAT, team=team_a,
         account_configuration=AccountConfiguration(f"OVt{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration,
         start_listening=False, max_concurrent_battles=1)
     opp = RandomPlayer(
-        battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+        battle_format=BATTLE_FORMAT, team=team_b,
         account_configuration=AccountConfiguration(f"OVo{ts}", "pw"),
         server_configuration=LocalhostServerConfiguration,
         start_listening=False, max_concurrent_battles=1)
@@ -572,7 +580,8 @@ CORE_POINTS = 0
 CORE_D10 = 0
 
 def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS,
-        impl: str = "rust", fixed_key: Optional[int] = None) -> Tuple[Census, int, int, int]:
+        impl: str = "rust", fixed_key: Optional[int] = None,
+        source: str = "pool") -> Tuple[Census, int, int, int]:
     cen = Census()
     encoder = get_observation_encoder(load_mappings())
     branch_points = 0
@@ -583,7 +592,7 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
     for b in range(n_battles):
         with tempfile.TemporaryDirectory() as td:
             record, summary, npz = _record_one_battle(
-                td, impl, None if fixed_key is None else fixed_key + b)
+                td, impl, None if fixed_key is None else fixed_key + b, source=source)
         actions = np.asarray(npz["actions"], dtype=int)
         invs = summary["invocations"]
         side = record.side_of(record.trainee_username)
@@ -803,8 +812,11 @@ if __name__ == "__main__":
     ap.add_argument("--fixed-key", type=int, default=None,
                     help="use the REPRODUCIBLE fixture battle(s) from this key instead of fresh "
                          "random ones — what the collected test runs")
+    from utils import team_sources
+
+    team_sources.add_arguments(ap)
     a = ap.parse_args()
-    census, bp, fop, d10 = run(a.n_battles, a.arms, a.turns, a.impl, a.fixed_key)
+    census, bp, fop, d10 = run(a.n_battles, a.arms, a.turns, a.impl, a.fixed_key, a.team_source)
     print(census.render())
     print(f"branch points compared: {bp}   (FULL tracker-fed obs at {fop} of them; "
           f"{d10} of those were D10 INTERMEDIATE arms served from view_pN_at[0]); "

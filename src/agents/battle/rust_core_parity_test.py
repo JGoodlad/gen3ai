@@ -15,10 +15,11 @@ value · raw`` — type-strict, NO allowlist. The corpus, the replay and the com
 * **COMMIT** (routine gate, seconds): the 10 recorded battles of
   ``rust_core_parity_fixtures/commit_tier.json.gz`` + the six byte-fuzz fixtures carrying the four
   ambiguity-prone shapes + the first battle of each of the 22 protocol capture scenarios.
-* **MILESTONE** (``slow``; its verdicts land in ``designs/ops/slow_tier_status.json``): 2 × 200
+* **MILESTONE** (``slow``; its verdicts land in ``designs/ops/slow_tier_status.json``): 2 × 360
   seeded-random and 2 × 50 production-policy battles PLAYED live — the live logs must ALSO equal
-  the offline feed's — plus the protocol corpus × 2 seeds and every byte-fuzz fixture, under the
-  committed manifest (the tier refuses on a mismatch).
+  the offline feed's — 2 × 150 LADDER battles (the LADDER-USAGE corpus; its NAMED known
+  divergences run in their own test and must still fire), plus the protocol corpus × 2 seeds and
+  every byte-fuzz fixture, under the committed manifest (the tier refuses on a mismatch).
 
     python3 -m pytest src/agents/battle/rust_core_parity_test.py -q                # COMMIT
     python3 -m pytest src/agents/battle/rust_core_parity_test.py -m slow -q -n 2   # MILESTONE
@@ -311,10 +312,11 @@ def test_the_information_boundary_holds_on_the_core_record_and_the_check_has_tee
 # MILESTONE tier (slices E + V on the same played battles)
 # ---------------------------------------------------------------------------
 
-def _played(keys: Iterable[int], policy=None) -> Tuple[P.Census, V.ViewCensus, T.TrackerCensus]:
+def _played(keys: Iterable[int], policy=None,
+            source=None) -> Tuple[P.Census, V.ViewCensus, T.TrackerCensus]:
     logging.getLogger("poke-env").setLevel(logging.ERROR)
     census, views, trackers = P.Census(), V.ViewCensus(), T.TrackerCensus()
-    lives = [P.play(k, policy=policy) for k in keys]
+    lives = [P.play(k, policy=policy, source=source) for k in keys]
     for lv in lives:
         P.compare_live(lv, census)
     P.check_battles([lv.recorded for lv in lives], census, views=views, trackers=trackers)
@@ -347,3 +349,34 @@ def test_milestone_protocol_and_byte_fuzz_corpora():
     P.check_manifest()
     census = P.check_battles(P.protocol_battles(2) + P.byte_fuzz_battles(), P.Census())
     _assert_clean(census, min_events=40_000, min_kinds=25)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("seed", [0, 1], ids=["ladder_keys_0_149", "ladder_keys_150_299"])
+def test_milestone_ladder_battles(seed):
+    """The LADDER-USAGE corpus (``gen3_ladder_usage_corpus_v1``): real public-ladder teams, both
+    slices, every decision — the surface the Heal Bell crash hid on. Battle ``key`` plays corpus
+    teams ``2·key`` / ``2·key+1`` of the MILESTONE tier, so the two ranges play 600 teams once each.
+    The NAMED known divergences (``P.LADDER_KNOWN_DIVERGENCES``) run in their own test."""
+    P.check_manifest()
+    keys = [k for k in P.MILESTONE_LADDER_KEYS[seed] if k not in P.LADDER_KNOWN_DIVERGENCES]
+    census, views, trackers = _played(keys, source="ladder")
+    _assert_clean(census, min_events=120_000, min_kinds=24)
+    _assert_views_clean(views, min_decisions=20_000, min_truth=500_000)
+    _assert_trackers_clean(trackers, min_decisions=20_000, min_rows=500_000)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("key", sorted(P.LADDER_KNOWN_DIVERGENCES))
+def test_milestone_ladder_known_divergences_still_fire(key):
+    """Each NAMED exclusion still diverges in EXACTLY its named census keys and nothing else — so
+    the day its class is fixed this fails, and the entry must go (an allowlist entry that outlives
+    its fix misleads every reader after it). Slice E stays fully clean on these battles."""
+    P.check_manifest()
+    name, want, _where = P.LADDER_KNOWN_DIVERGENCES[key]
+    census, views, trackers = _played([key], source="ladder")
+    print("\n" + census.render() + "\n" + views.render() + "\n" + trackers.render())
+    assert not census.divergences and not census.refused, census.render()
+    assert not trackers.divergences and not trackers.refused, trackers.render()
+    assert not views.refused, views.render()
+    assert set(views.divergences) == set(want), (name, dict(views.divergences))

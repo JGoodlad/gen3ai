@@ -25,7 +25,8 @@
 //
 // USAGE
 //   node src/rust_sim/harness/gen_sim_bridge_diff.js
-//        [--mode trapping|randbats|random|pool]   (default randbats)
+//        [--mode trapping|randbats|random|pool|ladder]   (default randbats)
+//        [--ladder-tier commit|milestone|full]   (`--mode ladder`: the LADDER-USAGE corpus tier)
 //        [--format gen3customgame|gen3ou]         (default gen3customgame)
 //        [--battles N]                            (default 150)
 //        [--master-seed S]                        (default from time; ALWAYS printed)
@@ -68,6 +69,10 @@ const { spawn } = require('child_process');
 const e2e = require('./gen_e2e_fuzz.js');
 const { isModeledMove, mulberry32, randInt, seedFrom, toId, dex3 } = e2e;
 const ab = require('./ab_fuzz.js');
+const ladderCorpus = require('./ladder_corpus.js');
+// `--mode ladder` widens the picker to typed Hidden Power: the corpus is gen3ou-VALIDATED and the
+// engine prices HP at its IV-true BP (R3). Every other mode keeps `isModeledMove`'s default.
+let PICK_HIDDEN_POWER = false;
 // NOTE: bridge_ab_fuzz.js has NO require.main guard (requiring it runs its fuzzer), so the
 // trapping matchup provider is inlined below rather than imported.
 
@@ -89,7 +94,7 @@ function parseFlags(argv) {
   const f = {
     mode: 'randbats', format: 'gen3customgame', battles: 150, masterSeed: null,
     persistent: false, trapProb: 0.5, out: path.join(__dirname, 'sim_bridge_diff_out'),
-    verbose: false, extraTrappers: false,
+    verbose: false, extraTrappers: false, ladderTier: 'milestone',
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i]; const next = () => argv[++i];
@@ -104,10 +109,14 @@ function parseFlags(argv) {
     else if (a === '--verbose') f.verbose = true;
     else if (a === '--extra-trappers') f.extraTrappers = true; // Magnet Pull + Shadow Tag (seed-gap)
     else if (a === '--selftest') f.selftest = true;   // allowlist gate-integrity assertions
+    else if (a === '--ladder-tier') f.ladderTier = next(); // `--mode ladder`: the corpus tier
     else { console.error(`unknown flag ${a}`); process.exit(2); }
   }
-  if (!['trapping', 'randbats', 'random', 'pool'].includes(f.mode)) {
-    console.error(`--mode must be trapping|randbats|random|pool`); process.exit(2);
+  if (!['trapping', 'randbats', 'random', 'pool', 'ladder'].includes(f.mode)) {
+    console.error(`--mode must be trapping|randbats|random|pool|ladder`); process.exit(2);
+  }
+  if (!ladderCorpus.TIERS.includes(f.ladderTier)) {
+    console.error(`--ladder-tier must be ${ladderCorpus.TIERS.join('|')}`); process.exit(2);
   }
   if (!['gen3customgame', 'gen3ou'].includes(f.format)) {
     console.error(`--format must be gen3customgame|gen3ou`); process.exit(2);
@@ -505,7 +514,7 @@ function pickModeledLegalReq(req, rng, isTrapped) {
     if (moves[k].pp !== undefined && moves[k].pp <= 0) continue;
     legalSlots.push(k);
     const id = toId(moves[k].id || moves[k].move);
-    if (id === 'struggle' || isModeledMove(id)) modeledSlots.push(k);
+    if (id === 'struggle' || isModeledMove(id, PICK_HIDDEN_POWER)) modeledSlots.push(k);
   }
   const benchSlots = isTrapped ? [] : benchFromReq(req);
   if (modeledSlots.length === 0) {
@@ -828,6 +837,10 @@ function buildPairProvider(flags, teamRng, genStats) {
   let single;
   if (flags.mode === 'randbats') single = ab.makeRandbatsProvider(teamRng, genStats);
   else if (flags.mode === 'pool') single = ab.makePoolProvider(teamRng, genStats);
+  else if (flags.mode === 'ladder') {
+    single = ladderCorpus.makeLadderProvider(teamRng, genStats, flags.ladderTier, e2e.teamFilterClean);
+    PICK_HIDDEN_POWER = true;
+  }
   else {
     const universe = ab.buildRandomUniverse();
     single = ab.makeRandomProvider(teamRng, universe, genStats);
@@ -959,6 +972,7 @@ async function main() {
     `trap_prob=${flags.trapProb} out=${flags.out}`);
   console.error(`[sim_bridge_diff] reproduce: node src/rust_sim/harness/gen_sim_bridge_diff.js ` +
     `--mode ${flags.mode} --format ${flags.format} --battles ${flags.battles} --master-seed ${flags.masterSeed}` +
+    (flags.mode === 'ladder' ? ` --ladder-tier ${flags.ladderTier}` : '') +
     (flags.persistent ? ' --persistent' : ''));
   console.error('[sim_bridge_diff] __RECON__ is EXCLUDED from the diff (drop-in binary defers it; ' +
     'the Python side degrades gracefully). Cross-side p1/p2 interleaving is not asserted (scheduler ' +

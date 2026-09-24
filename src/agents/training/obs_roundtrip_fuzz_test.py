@@ -33,7 +33,6 @@ from __future__ import annotations
 import asyncio
 import os
 import random
-import sys
 import tempfile
 import time
 
@@ -147,18 +146,25 @@ class SeededRandomPlayer(RandomPlayer):
         return orders[self._own_rng.randrange(len(orders))]
 
 
-def record_fixture_battle(out_dir: str, *, key: int = 0, tag: str = "Fx", impl: str = "node"):
+def record_fixture_battle(out_dir: str, *, key: int = 0, tag: str = "Fx", impl: str = "node",
+                          source: str = "pool"):
     """Play ONE **reproducible** real bridge battle and return ``(record, summary, npz)``.
 
     Same battle every run for a given ``key`` — see the antipattern note above. The trainee
     is the recording fuzz player (its own `RandomState`), the opponent is a
     :class:`SeededRandomPlayer`, both teams are pinned by index, and the sim PRNG seed is
-    fixed. No server; the bridge runs in-process."""
+    fixed. No server; the bridge runs in-process. ``source`` (``utils.team_sources``) takes the
+    pair from the ladder corpus or the procedural generator instead of the pool."""
     import json
 
-    pool = TeamLoader().get_all_teams()
-    assert pool, "no gen3ou teams under data/teams"
-    t1, t2 = pool[key % len(pool)], pool[(key + 1) % len(pool)]
+    if source == "pool":
+        pool = TeamLoader().get_all_teams()
+        assert pool, "no gen3ou teams under data/teams"
+        t1, t2 = pool[key % len(pool)], pool[(key + 1) % len(pool)]
+    else:
+        from utils import team_sources
+
+        t1, t2 = team_sources.pair(source, key)
     trainee = RecordingFuzzPlayer(
         out_dir=out_dir, rng_seed=1000 + key, battle_format=BATTLE_FORMAT, team=t1,
         account_configuration=AccountConfiguration(f"{tag}t{key}", "pw"),
@@ -208,26 +214,34 @@ def _verify_battle(prefix: str) -> int:
     return len(live_obs)
 
 
-async def run_phase(n_battles: int, concurrency: int, tag: str) -> int:
+async def run_phase(n_battles: int, concurrency: int, tag: str, source: str = "pool",
+                    ladder_tier: str = "milestone") -> int:
     ts = int(time.time()) % 100000
-    pool = TeamLoader().get_all_teams()
+    if source == "pool":
+        pool = TeamLoader().get_all_teams()
+        team_a, team_b = Gen3Teambuilder(pool), Gen3Teambuilder(pool)
+    else:
+        from utils import team_sources
+
+        team_a = team_sources.teambuilder(source, rng_seed=ts, ladder_tier=ladder_tier)
+        team_b = team_sources.teambuilder(source, rng_seed=ts + 1, ladder_tier=ladder_tier)
     with tempfile.TemporaryDirectory(prefix="obs_roundtrip_") as out_dir:
         trainee = RecordingFuzzPlayer(
             out_dir=out_dir, rng_seed=ts,
-            battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+            battle_format=BATTLE_FORMAT, team=team_a,
             account_configuration=AccountConfiguration(f"ORz{tag}{ts}", "pw"),
             server_configuration=LocalhostServerConfiguration,
             start_listening=False, max_concurrent_battles=max(1, concurrency),
         )
         opp = RandomPlayer(
-            battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool),
+            battle_format=BATTLE_FORMAT, team=team_b,
             account_configuration=AccountConfiguration(f"ORo{tag}{ts}", "pw"),
             server_configuration=LocalhostServerConfiguration,
             start_listening=False, max_concurrent_battles=max(1, concurrency),
         )
 
-        print(f"Obs round-trip fuzz — {n_battles} battles, concurrency={concurrency}",
-              flush=True)
+        print(f"Obs round-trip fuzz — {n_battles} battles, concurrency={concurrency}, "
+              f"teams={source}", flush=True)
         await run_local_battles(trainee, opp, n_battles, concurrency=concurrency)
         assert len(trainee.trace_prefixes) == n_battles, (
             f"expected {n_battles} traces, got {len(trainee.trace_prefixes)}"
@@ -241,15 +255,23 @@ async def run_phase(n_battles: int, concurrency: int, tag: str) -> int:
     return total
 
 
-async def main(n_sequential: int, n_concurrent: int) -> None:
-    total = await run_phase(n_sequential, concurrency=1, tag="s")
-    total += await run_phase(n_concurrent, concurrency=3, tag="c")
+async def main(n_sequential: int, n_concurrent: int, source: str = "pool",
+               ladder_tier: str = "milestone") -> None:
+    total = await run_phase(n_sequential, concurrency=1, tag="s", source=source, ladder_tier=ladder_tier)
+    total += await run_phase(n_concurrent, concurrency=3, tag="c", source=source, ladder_tier=ladder_tier)
     print(f"\nPASS — {n_sequential} sequential + {n_concurrent} concurrent battles, "
           f"{total} decisions: every materialized obs row equals the live row "
           f"bit-for-bit", flush=True)
 
 
 if __name__ == "__main__":
-    n_seq = int(sys.argv[1]) if len(sys.argv) > 1 else 6
-    n_conc = int(sys.argv[2]) if len(sys.argv) > 2 else 6
-    asyncio.run(main(n_seq, n_conc))
+    import argparse
+
+    from utils import team_sources
+
+    ap = argparse.ArgumentParser(description="obs round-trip fuzz (live row == materialized row)")
+    ap.add_argument("n_sequential", nargs="?", type=int, default=6)
+    ap.add_argument("n_concurrent", nargs="?", type=int, default=6)
+    team_sources.add_arguments(ap)
+    a = ap.parse_args()
+    asyncio.run(main(a.n_sequential, a.n_concurrent, a.team_source, a.ladder_tier))

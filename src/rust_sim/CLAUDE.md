@@ -480,7 +480,7 @@ choices, driving the REAL Showdown sim and the port side by side through `src/bi
 saving a **self-contained, standalone-replayable repro** for every divergence. Zero API quota while
 running; every future mechanic layer becomes automatically stress-tested.
 
-- **Three team modes** (`--mode`, default `randbats`): **`randbats`** — Showdown's OWN gen3
+- **Five team modes** (`--mode`, default `randbats`; `ourandom` and `ladder` below): **`randbats`** — Showdown's OWN gen3
   random-battle generator, with sets adapted at the SET level to be port-replayable (adjustment rate
   logged per chunk); **`random`** — the MODELED-UNIVERSE generator, the coverage multiplier that
   flushes out modeled-predicate ↔ engine drift (195 species / 146 distinct moves on its first smoke,
@@ -672,6 +672,34 @@ NEITHER is the training/ladder surface:
 | `pool` | **yes** — the 762 real gen3ou teams | **no**: a FIXED human-built set from a narrow meta, and the committed capstone samples only 220 battles of it |
 | `randbats` | **no** — non-L100 levels, curated movesets, near-uniform items | yes |
 | **`ourandom`** | **yes** | **yes** |
+| **`ladder`** | **yes** — real PUBLIC-LADDER teams | **yes**: 22,813 human-built teams (`--ladder-tier commit\|milestone\|full`) |
+
+### `--mode ladder` — the LADDER-USAGE corpus (`gen3_ladder_usage_corpus_v1`)
+
+All four A/B fuzzers take `--mode ladder` (`harness/ladder_corpus.js`, the JS twin of
+`utils.ladder_corpus`): the Metamon `hl_05_26` gen3ou teams, filtered to what the ENGINE plays
+(`scan_move_probe` — 22,813 of 22,862 kept; the 49 dropped carry Metronome, Shell Bell, Snore,
+Psywave, Fly, Blast Burn, Dig, Grudge or Triple Kick). A team is drawn from the tier with the
+fuzzer's seeded team RNG, so a master seed replays; `teamFilterClean` (the JS mirror) is REPORTED
+against, never used to drop a team, and typed Hidden Power is pickable (the corpus is gen3ou-valid
+and HP is priced at its IV-true BP). The same corpus is slice E/V's third team source
+(`rust_core_parity.play(key, source="ladder")`) and the Python fuzz scripts' `--team-source ladder`.
+The chapter: `designs/ops/testing.md` → THREE TEAM SOURCES.
+
+🚨 **ITS FIRST RUN FOUND A LIVE EMISSION BUG THE POOL COULD NEVER SHOW** (`gen3_lockedmove_announce_v1`):
+every CONTINUATION turn of a lock — Outrage / Thrash / Petal Dance, Uproar, Rollout / Ice Ball —
+announces `|move|<user>|<Move>|<target>|[from] lockedmove` in the sim (`runMove`'s `getLockedMove()`
+branch), and the port emitted the BARE line, so poke-env read each continuation as a fresh use and
+charged a PP for it. 0 pool teams and 0 gen3 randbats sets carry any of those moves. Pinned by
+`protocol_byte_fuzz_test::lockin_continuations_announce_from_lockedmove` (fails on revert). The
+same probe found a MECHANICS bug behind it (`gen3_rollout_lock_duration_v1`): the sim's `rollout`
+volatile is added on the first use with `duration: 1` and refreshed to 2 only by the
+`basePowerCallback` (a turn that computes damage), so a MISS / Protect / a turn the user cannot act
+ENDS the lock at that residual — the next use is fresh (PP paid, bp 30). The port kept the lock
+across a miss (wrong PP, wrong bp, a wrong `trapped` request), and had no residual handler for the
+volatile at all (a NO_ORDER/subOrder-2 duration handler, the Fury Cutter tie group). Pinned by
+`protocol_byte_fuzz_test::rollout_lock_ends_on_a_turn_that_does_not_hit`; rust == node on full
+per-side streams for Rollout / Ice Ball × {plain, paralysing, Protect} foes over 8 seeds each.
 
 **THE MOTIVATING MEASUREMENT.** Both bugs found on 2026-08-17 (ROUND 42's Trace/forecast, ROUND
 43's Substitute/wrap) have **ZERO gen3ou-pool exposure** — 0 of 773 pool files carry Castform, 0
