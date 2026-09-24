@@ -189,6 +189,16 @@ class RealizedWidths:
     # `view_fallback_intermediate` is also 0 met no replacement round at all and says nothing
     # about whether the intermediate path works.
     view_arms_intermediate: int = 0
+    # The CORE road (`gen3_core_search_v1`): arms answered from a Rust-core VERSION, of which how
+    # many had an INTERMEDIATE (D10) leaf — the version AT that decision, not a projection beside
+    # a node one decision past it. The core road has NO fallback: an arm it cannot answer RAISES.
+    core_arms: int = 0
+    core_arms_intermediate: int = 0
+    # The INTEGRITY sampler (`SearchConfig.integrity`): arms whose successor was built BOTH ways
+    # (typed at the source and from the side's text) and asserted byte-equal — view and obs. A
+    # mismatch raises, so the count of mismatches is 0 by construction; a search number carries
+    # "integrity-sampled at 1/N" from `integrity_checked / core_arms`.
+    integrity_checked: int = 0
     # ONE VIEW FORK PER DECISION (`gen3_one_fork_per_decision_v1`). The ply-1 fork is a pure
     # function of the one-sided prefix + our action history, so the K worlds of one decision share
     # it instead of replaying one identical prefix K times. HIT and MISS are counted apart because

@@ -136,6 +136,15 @@ class ExpandedNode:
     # that finds no entry falls back exactly as it did before the field existed.
     view_p1_at: List[dict] = field(default_factory=list)
     view_p2_at: List[dict] = field(default_factory=list)
+    # `materializer=core` (`gen3_core_search_v1`, rust only): the arm's LEAF as a Rust-core
+    # version — `{view, legal, request, events, mid, text_view?}` per asked-for side, the view being
+    # the core's `present()` of the side's own stream (every poke-env reading rule applied in
+    # Rust; `agents.battle.core_view` builds the read-models from it with no rule), `events` the
+    # ply's readings (the tracker input), `mid` whether the leaf is an intermediate (D10)
+    # decision, and `text_view` the same leaf folded the OTHER way when the arm was integrity-
+    # checked. `None` on a non-core node.
+    core_p1: Optional[dict] = None
+    core_p2: Optional[dict] = None
 
 
 class SearchError(RuntimeError):
@@ -295,14 +304,29 @@ class SearchSession:
 
     # -- API ----------------------------------------------------------------
 
-    def open_root(self, turn: int, *, record: "Optional[ReconstructionRecord]" = None) -> RootView:
+    def open_root(self, turn: int, *, record: "Optional[ReconstructionRecord]" = None,
+                  core: Optional[str] = None, side: Optional[str] = None) -> RootView:
         """Reconstruct to the start of turn ``turn`` and snapshot it as the search root. ``record``
         targets a SPECIFIC battle on a reused session (else the one passed to ``__init__``); it also
-        clears the driver's node cache, so a warm process serves many battles' searches in turn."""
+        clears the driver's node cache, so a warm process serves many battles' searches in turn.
+
+        ``core`` (``"typed"`` / ``"text"``, rust only — ``gen3_core_search_v1``) builds the tree of
+        Rust-core BattleVersions instead of bare sessions, each successor folded TYPED at the
+        source or from the side's TEXT; every arm expanded from it then carries ``core_pN``.
+        ``side`` (core only) folds that side's stream alone, at every version of the tree."""
         rec = record if record is not None else self._record
         if rec is None:
             raise SearchError("open_root needs a record (pass record= or construct with one)")
-        out = self._call({"cmd": "open_root", "record": rec.to_dict(), "turn": int(turn)})
+        req: dict = {"cmd": "open_root", "record": rec.to_dict(), "turn": int(turn)}
+        if core is not None:
+            if core not in ("typed", "text"):
+                raise SearchError(f"open_root: core must be 'typed' or 'text', got {core!r}")
+            req["core"] = core
+            if side is not None:
+                if side not in ("p1", "p2"):
+                    raise SearchError(f"open_root: side must be 'p1' or 'p2', got {side!r}")
+                req["side"] = side
+        out = self._call(req)
         return RootView(
             node_id=out["node_id"], requests=out["requests"],
             recorded_choices=out["recorded_choices"], pre_state=out["pre_state"],
@@ -310,7 +334,7 @@ class SearchSession:
             view_p1=out.get("view_p1") or {}, view_p2=out.get("view_p2") or {})
 
     def expand_many(self, arms: Sequence[dict], *,
-                    side: Optional[str] = None) -> List[ExpandedNode]:
+                    side: Optional[str] = None, integrity: int = 0) -> List[ExpandedNode]:
         """Expand N arms from their parent nodes in one round-trip. Each ``arm`` is a dict
         ``{node_id, p1_action, p2_action, seed, label, recorded_exact?, followup?}`` with the
         per-side action semantics of :func:`reconstruction.reroll_turn` (``"recorded"`` only
@@ -345,6 +369,10 @@ class SearchSession:
             if side not in ("p1", "p2"):
                 raise SearchError(f"expand_many: side must be 'p1' or 'p2', got {side!r}")
             req["side"] = side
+        # INTEGRITY (core nodes, `gen3_core_search_v1`): every Nth core arm is folded both ways
+        # (typed + text) and the driver FAILS the call on any disagreement; 0 = off.
+        if integrity:
+            req["integrity"] = int(integrity)
         out = self._call(req)
         return [
             ExpandedNode(
@@ -360,7 +388,8 @@ class SearchSession:
                 # actually sent one — an `ElidedSide` must reach the dataclass INTACT, since
                 # `list()` on it would raise here instead of where a consumer reads it.
                 view_p1_at=_side_payload_list(a, "view_p1_at", side == "p2"),
-                view_p2_at=_side_payload_list(a, "view_p2_at", side == "p1"))
+                view_p2_at=_side_payload_list(a, "view_p2_at", side == "p1"),
+                core_p1=a.get("core_p1"), core_p2=a.get("core_p2"))
             for a in out["arms"]
         ]
 

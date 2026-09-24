@@ -151,6 +151,14 @@ def instrumented():
         _wrap(VS, "view_context", "successor context", patches)
         _wrap(VS, "_choice_map", "action_choices / map_actions_at", patches)
         _wrap(SE.Gen3ObservationEncoder, "encode", "encode (obs)", patches)
+        # --- per arm, CORE road (`gen3_core_search_v1`) ------------------------
+        # `core_successor` imports these by name, so its OWN bindings are the ones to wrap.
+        import agents.training.core_successor as CS
+        _wrap(CS, "live_view_from_core", "core read-models (transport)", patches)
+        _wrap(CS, "legal_actions_from_core", "core read-models (transport)", patches)
+        _wrap(CS, "events_from_readings", "core ply events (readings)", patches)
+        _wrap(CS, "view_context", "successor context", patches)
+        _wrap(CS, "_choice_map", "action_choices / map_actions_at", patches)
         # `view_successor` imports the two names at module import time.
         VS.read_models_from_payload = VA.read_models_from_payload
         yield PH
@@ -219,10 +227,17 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
 # ---------------------------------------------------------------------------
 
 
+#: road name -> (materializer, core_path). ``core`` is the typed shortcut, ``core-text`` the
+#: side's protocol text through ``parse`` — the pair the Rust Core Program's §6 decision reads.
+ROADS = {"protocol": ("protocol", "typed"), "view": ("view", "typed"),
+         "core": ("core", "typed"), "core-text": ("core", "text")}
+
+
 def _cfg(materializer: str, *, m_opp: int, k_worlds: int, arm: str, impl: str) -> SearchConfig:
+    mat, path = ROADS[materializer]
     return SearchConfig(
         arm=arm, budget_s=1e9, seed=7, max_depth=1, search_impl=impl,
-        materializer=materializer,
+        materializer=mat, core_path=path, integrity=0,
         caps=WidthCaps(m_opp=m_opp, k_worlds=k_worlds, r_dice=1))
 
 
@@ -259,7 +274,38 @@ def _pool(limit: int = 40) -> List[str]:
 # ---------------------------------------------------------------------------
 
 
+RUST_T: Dict[str, float] = {}
+
+
+@contextlib.contextmanager
+def rust_timing(on: bool):
+    """Sum the driver's own `timing_us` (``POKESIM_SEARCH_TIMING=1``) over every expand_many."""
+    if not on:
+        yield
+        return
+    import utils.bridge.search_session as SS
+
+    os.environ["POKESIM_SEARCH_TIMING"] = "1"
+    orig = SS.SearchSession._call
+
+    def call(self, payload):
+        out = orig(self, payload)
+        for k, v in (out.get("timing_us") or {}).items():
+            RUST_T[k] = RUST_T.get(k, 0.0) + float(v)
+        return out
+    SS.SearchSession._call = call
+    try:
+        yield
+    finally:
+        SS.SearchSession._call = orig
+
+
 def run(args) -> int:
+    with rust_timing(args.rust_timing):
+        return _run(args)
+
+
+def _run(args) -> int:
     impl = args.impl
     stems = discover(args.traces)
     if not stems:
@@ -379,7 +425,26 @@ def run(args) -> int:
             if v:
                 print(f"    {k:<36} {v * 1000:>10.1f} ms  "
                       f"{100 * v * 1000 / max(dec_tot, 1e-9):>5.1f}% of decision wall")
+    if args.rust_timing:
+        print("\n  RUST DRIVER PHASES (timing_us, summed over the run; `core` = the version fold, "
+              "`core_render` = the leaf's view/legal/events JSON)")
+        for k, v in sorted(RUST_T.items(), key=lambda kv: -kv[1]):
+            print(f"    {k:<14} {v / 1000:>10.1f} ms  {v / 1000 / max(sum(arms.values()), 1):>8.4f} ms/arm")
     print(f"\n  {describe_contention()}")
+    if args.json_out:
+        with open(args.json_out, "a") as fh:
+            for road in roads:
+                fh.write(json.dumps({
+                    "road": road, "decisions": used, "arms": arms[road],
+                    "ms_per_decision_median": statistics.median(wall[road]),
+                    "ms_per_arm_median": statistics.median(per_arm[road]),
+                    "ms_total": sum(wall[road]),
+                    "phases_ms": {k: v * 1000 for k, v in phases[road].items()},
+                    "spans_ms": {k: v * 1000 for k, v in spans[road].items()},
+                    "rust_timing_ms": {k: v / 1000 for k, v in RUST_T.items()},
+                    "m_opp": args.m_opp, "k_worlds": args.k_worlds, "n_actions": args.n_actions,
+                    "arm": args.arm, "load": os.getloadavg(), "contention": describe_contention(),
+                }) + "\n")
     return 0
 
 
@@ -397,7 +462,15 @@ def main() -> int:
     ap.add_argument("--frac", type=float, default=0.55)
     ap.add_argument("--seed", type=int, default=11)
     ap.add_argument("--roads", nargs="+", default=["protocol", "view"],
-                    choices=("protocol", "view"))
+                    choices=tuple(ROADS),
+                    help="ONE road per process for an A/B claim (the two roads in one interpreter "
+                         "are not independent — expand_many_2026-09-22/README.md); `core` is the "
+                         "typed shortcut, `core-text` the text path")
+    ap.add_argument("--rust-timing", action="store_true",
+                    help="set POKESIM_SEARCH_TIMING=1 for the driver child and sum its per-phase "
+                         "`timing_us` (sim / chunks / core fold / core render / …) per road")
+    ap.add_argument("--json-out", default=None,
+                    help="append one JSON row per road (medians, arms, phases, rust timing, load)")
     ap.add_argument("--cprofile", default=None,
                     help="also write a cProfile .prof of the whole run here")
     a = ap.parse_args()

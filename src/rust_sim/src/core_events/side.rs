@@ -86,6 +86,30 @@ fn bridge_frame(line: &Line) -> bool {
     }
 }
 
+/// ONE shipped per-side line, typed on the STEP path: rebuilt from its source record through the
+/// privacy fold ([`side_view`]) and REFUSED unless it renders the exact bytes the bridge shipped;
+/// a side-only frame (no source) is parsed and must be one of the bridge's own frames.
+pub fn step_line(recs: &[SourceRec], text: &str, src: Option<u32>, viewer: u8, report_percent: bool) -> Result<Line, String> {
+    match src {
+        Some(s) => {
+            let rec = recs.get(s as usize).ok_or_else(|| format!("source record {s} out of range"))?;
+            let line = side_view(&rec.line, viewer, report_percent);
+            let rendered = line.render();
+            if rendered != text {
+                return Err(format!("p{}: the typed source renders {rendered:?} but the bridge shipped {text:?}", viewer + 1));
+            }
+            Ok(line)
+        }
+        None => {
+            let line = Line::parse(text).map_err(|e| format!("p{}: {e}", viewer + 1))?;
+            if !bridge_frame(&line) {
+                return Err(format!("p{}: {text:?} has no source record and is not a side-only frame", viewer + 1));
+            }
+            Ok(line)
+        }
+    }
+}
+
 /// The STEP path's [`CoreEvent`]s for one side: `shipped` is that side's per-side lines in order
 /// with the source-record index each was derived from (`None` = a side-only frame).
 pub fn step_events(

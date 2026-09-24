@@ -1789,6 +1789,34 @@ impl BridgeSession {
         self.battle.state()?.log.source_recs()
     }
 
+    /// The number of lines `side` has been shipped since the chunk stream last reset.
+    pub fn side_line_count(&self, side: usize) -> usize {
+        self.chunks.side_chunks(side).map(|c| c.lines.len()).sum()
+    }
+
+    /// `side`'s shipped lines from index `from` on, TYPED on the step path (a core session only):
+    /// each rebuilt from its source record through the privacy fold and refused unless it renders
+    /// the shipped bytes (`core_events::side::step_line`). The typed-at-source shortcut the Rust
+    /// Core Program's §6c licenses by `parse(emit(step)) == step`.
+    pub fn typed_side_lines(&self, side: usize, from: usize)
+        -> Result<Vec<(crate::core_events::Line, Option<u32>, Option<crate::core_events::Scope>)>, String> {
+        let core = self.chunks.core.as_ref().ok_or("not a core session (use new_core / new_construct_turn0_core)")?;
+        let recs = self.source_recs().ok_or("no source records")?;
+        let texts: Vec<&String> = self.chunks.side_chunks(side).flat_map(|c| c.lines.iter()).collect();
+        if texts.len() != core[side].len() {
+            return Err(format!("p{}: {} shipped lines but {} tracked", side + 1, texts.len(), core[side].len()));
+        }
+        texts
+            .iter()
+            .zip(core[side].iter())
+            .skip(from)
+            .map(|(t, s)| {
+                let line = crate::core_events::side::step_line(recs, t, *s, side as u8, self.report_percent)?;
+                Ok((line, *s, s.map(|i| recs[i as usize].scope)))
+            })
+            .collect()
+    }
+
     /// The STEP path's per-side [`crate::core_events::CoreEvent`]s for `side` (a core session
     /// only): each shipped line re-derived from its typed source record and REFUSED unless it
     /// renders to the shipped bytes, with per-side conservation checked (`core_events::side`).

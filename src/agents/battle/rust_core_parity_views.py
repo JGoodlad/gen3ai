@@ -48,6 +48,7 @@ from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 from agents.battle.gen3_battle import Gen3Battle
 from agents.battle.live_view import LegalActions, LivePokemon, LiveView
 from agents.battle.offline_feed import feed_line, new_battle, player_names
+from agents.battle.poke_env_findings import explain
 
 SIM = "SIM-FACT"
 RULE = "PRESENTATION"
@@ -174,6 +175,19 @@ class ViewCensus:
     decisions: int = 0
     fields: int = 0
     truth_checks: collections.Counter = field(default_factory=collections.Counter)
+    #: The core's TRUTH AUDIT checks (``present::audit::check_view`` against the engine).
+    board_checks: collections.Counter = field(default_factory=collections.Counter)
+    #: Per named rule the audit applies (V15) and per UNRESOLVED question, the facts the view held
+    #: differently from the engine, legally. Printed, never a divergence.
+    rules_fired: collections.Counter = field(default_factory=collections.Counter)
+    #: The KNOWN poke-env READING findings (``agents.battle.poke_env_findings``): per finding id,
+    #: the core-vs-reading field differences it explains (``known``) and the DECISIONS it touched
+    #: (``known_decisions``, the per-1,000 numerator). Printed, never a divergence — and never a
+    #: blanket tolerance: a difference no finding's predicate explains is a divergence.
+    known: collections.Counter = field(default_factory=collections.Counter)
+    known_decisions: collections.Counter = field(default_factory=collections.Counter)
+    known_examples: Dict[str, Any] = field(default_factory=dict)
+    _known_seen: set = field(default_factory=set)
     divergences: collections.Counter = field(default_factory=collections.Counter)
     examples: Dict[str, Any] = field(default_factory=dict)
     refused: List[str] = field(default_factory=list)
@@ -188,7 +202,11 @@ class ViewCensus:
 
     def render(self) -> str:
         head = (f"{self.battles} battles, {self.viewers} viewers, {self.decisions} decisions, "
-                f"{self.fields} field comparisons, truth checks {dict(self.truth_checks)}")
+                f"{self.fields} field comparisons, truth checks {dict(self.truth_checks)}, "
+                f"core board checks {dict(self.board_checks)}, "
+                f"named rules / unresolved {dict(self.rules_fired)}, "
+                f"KNOWN poke-env findings (facts) {dict(self.known)} "
+                f"(decisions) {dict(self.known_decisions)}")
         if self.out_of_scope:
             head += (f"; OUT OF SCOPE (not gen3ou — the training obs path is gen3ou-only): "
                      f"{dict(self.out_of_scope)}")
@@ -247,7 +265,20 @@ def _mon_value(m: LivePokemon, name: str) -> Any:
     return v
 
 
-def _cmp_mon(p: LivePokemon, v: LivePokemon, side: str, census: ViewCensus, where: str) -> int:
+def _same(x: Any, y: Any) -> bool:
+    """TYPE-strict equality (an int is not a float, whatever their values) — the core column's
+    rule, the same as slice E's: the core renders the reading, so there is no rounding to excuse."""
+    if type(x) is not type(y):
+        return False
+    if isinstance(x, dict):
+        return x.keys() == y.keys() and all(_same(x[k], y[k]) for k in x)
+    if isinstance(x, (list, tuple)):
+        return len(x) == len(y) and all(_same(a, b) for a, b in zip(x, y))
+    return x == y
+
+
+def _cmp_mon(p: LivePokemon, v: LivePokemon, side: str, census: ViewCensus, where: str,
+             column: str = "") -> int:
     bad = 0
     for f in dc_fields(LivePokemon):
         own_cls, opp_cls, rule = MON_FIELDS[f.name]
@@ -256,30 +287,50 @@ def _cmp_mon(p: LivePokemon, v: LivePokemon, side: str, census: ViewCensus, wher
         x, y = _mon_value(p, f.name), _mon_value(v, f.name)
         if f.name == "boosts" and v.fainted:
             cls = RULE                        # V10: the sim cleared them at the faint
-        if f.name == "hp_fraction":
+        if column:
+            same = _same(x, y)
+        elif f.name == "hp_fraction":
             same = abs(float(x) - float(y)) <= 1e-9
         else:
             same = x == y
+        if not same and column == "core":
+            # The core reads the TRUTH; a difference a KNOWN poke-env finding explains, value-aware,
+            # is that finding — counted, never a divergence (``poke_env_findings``).
+            fid = explain(f.name, p, v)
+            if fid is not None:
+                census.known[fid] += 1
+                census.known_examples.setdefault(fid, (where, side, p.species, x, y))
+                if (fid, where) not in census._known_seen:
+                    census._known_seen.add((fid, where))
+                    census.known_decisions[fid] += 1
+                continue
         if not same:
             tag = f"{cls}{'/' + rule if cls == RULE and rule else ''}"
-            census.diverge(f"[{tag}] {side}.{f.name}", (where, p.species, "reading", x,
-                                                        "projection", y))
+            census.diverge(f"{_col(column)}[{tag}] {side}.{f.name}",
+                           (where, p.species, "reading", x, column or "projection", y))
             bad += 1
     return bad
 
 
+def _col(column: str) -> str:
+    return f"[{column}]" if column else ""
+
+
 def compare_decision(live_p: LiveView, legal_p: Optional[LegalActions], live_v: LiveView,
-                     legal_v: Optional[LegalActions], census: ViewCensus, where: str) -> int:
-    """The reading (``live_p`` / ``legal_p``) against the projection, field by field. Returns
-    the number of divergent fields."""
+                     legal_v: Optional[LegalActions], census: ViewCensus, where: str,
+                     column: str = "") -> int:
+    """The reading (``live_p`` / ``legal_p``) against a column — the port's projection (the view
+    road's, ``column=""``) or the core's ``present()`` (``column="core"``, compared TYPE-strict) —
+    field by field. Returns the number of divergent fields."""
     bad = 0
+    eq = _same if column else (lambda x, y: x == y)
 
     def note(key: str, x: Any, y: Any, cls: str, rule: Optional[str]) -> None:
         nonlocal bad
         census.fields += 1
-        if x != y:
+        if not eq(x, y):
             tag = f"{cls}{'/' + rule if cls == RULE and rule else ''}"
-            census.diverge(f"[{tag}] {key}", (where, "reading", x, "projection", y))
+            census.diverge(f"{_col(column)}[{tag}] {key}", (where, "reading", x, column or "projection", y))
             bad += 1
 
     for k, (cls, rule) in VIEW_FIELDS.items():
@@ -302,12 +353,43 @@ def compare_decision(live_p: LiveView, legal_p: Optional[LegalActions], live_v: 
         by_v = {m.species: m for m in sv.mons}
         for m in sp.mons:
             if m.species in by_v:
-                bad += _cmp_mon(m, by_v[m.species], side, census, where)
+                bad += _cmp_mon(m, by_v[m.species], side, census, where, column)
     if (legal_p is None) != (legal_v is None):
         note("legal[presence]", legal_p is None, legal_v is None, SIM, None)
     elif legal_p is not None and legal_v is not None:
         for k, (cls, rule) in LEGAL_FIELDS.items():
             note(f"legal.{k}", getattr(legal_p, k), getattr(legal_v, k), cls, rule)
+    return bad
+
+
+def core_checks(cap: Mapping[str, Any], vi: int, live_p: LiveView,
+                legal_p: Optional[LegalActions], census: ViewCensus, where: str) -> int:
+    """The CORE column (M2, ``gen3_core_present_v1``): the core's ``present()`` view and legality —
+    built from the viewer's stream ALONE — against the reading, TYPE-strict, every field; its
+    11-bit action mask against ``Gen3ActionMasker.mask_from_legal`` of the reading's legality; and
+    the core's own TRUTH AUDIT of that view against the ENGINE (``present::audit::check_view``).
+    The core reads the TRUTH: a field where poke-env is KNOWN to be wrong is counted under its
+    finding (``agents.battle.poke_env_findings``), value-aware, never as a divergence. Returns
+    divergent checks."""
+    from agents.action.mask_generator import Gen3ActionMasker
+    from agents.battle.core_view import legal_actions_from_core, live_view_from_core
+
+    live_c = live_view_from_core(cap["core"][vi], battle_tag=live_p.battle_tag)
+    legal_json = cap["legal"][vi]
+    legal_c = legal_actions_from_core(legal_json, None)
+    bad = compare_decision(live_p, legal_p, live_c, legal_c, census, where, column="core")
+    if legal_p is not None and legal_json is not None:
+        census.fields += 1
+        want = [int(x) for x in Gen3ActionMasker.mask_from_legal(legal_p)]
+        if legal_json["mask"] != want:
+            census.diverge("[core] mask", (where, "reading", want, "core", legal_json["mask"]))
+            bad += 1
+    audit = cap["audit"][vi]
+    census.board_checks["BOARD"] += int(audit["checks"])
+    census.rules_fired.update(audit.get("rules_fired", {}))
+    for cls, detail in audit["divergences"]:
+        census.diverge(f"[BOARD] {cls}", (where, detail))
+        bad += 1
     return bad
 
 
@@ -427,6 +509,8 @@ def check_views(label: str, chunks: Sequence[Tuple[str, str]], caps: Sequence[Ma
             bad = compare_decision(sv.live, sv.legal, live_v, legal_v, census, where)
             other = "p2" if viewer == "p1" else "p1"
             bad += truth_checks(sv.live, cap[other], cap["truth"], vi, census, where)
+            if "core" in cap:
+                bad += core_checks(cap, vi, sv.live, sv.legal, census, where)
             if bad:
                 census.bad_decisions[label] += 1
             want.remove(cap)

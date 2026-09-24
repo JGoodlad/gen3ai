@@ -701,6 +701,7 @@ def open_view_fork(
     battle_tag: Optional[str] = None,
     mappings=None,
     encoder=None,
+    road: str = "view",
 ) -> "Tuple[Any, Dict[int, str]]":
     """Replay the shared prefix ONCE and return the fork every arm of that decision branches from.
 
@@ -710,9 +711,21 @@ def open_view_fork(
     equivalent to the protocol road's but IS it. What it does not do is the second half: no
     snapshot is frozen, because no arm will restore one.
 
-    Returns ``(ViewSuccessorFactory, {action index: choice string} at the branch decision)``.
+    ``road="core"`` (``gen3_core_search_v1``) returns the CORE road's factory over the same fork:
+    the same tracker and event log, no board (the board is the version the driver holds).
+
+    Returns ``(ViewSuccessorFactory | CoreSuccessorFactory, {action index: choice string} at the
+    branch decision)``.
     """
     from agents.training.view_successor import ViewSuccessorFactory
+
+    factory: Any = ViewSuccessorFactory
+    if road == "core":
+        from agents.training.core_successor import CoreSuccessorFactory
+
+        factory = CoreSuccessorFactory
+    elif road != "view":
+        raise ValueError(f"open_view_fork: road must be 'view' or 'core', got {road!r}")
 
     prefix_actions = [int(a) for a in prefix_actions]
     n_prefix = len(prefix_actions)
@@ -731,7 +744,7 @@ def open_view_fork(
             f"index {n_prefix} — prefix_chunks and prefix_actions disagree, so the arms "
             f"would branch from the wrong state")
     battle = player._battles[tag]
-    return (ViewSuccessorFactory.at_fork(player._get_tracker(battle), battle, encoder),
+    return (factory.at_fork(player._get_tracker(battle), battle, encoder),
             dict(player.action_choices or {}))
 
 

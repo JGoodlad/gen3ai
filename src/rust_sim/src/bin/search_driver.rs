@@ -84,37 +84,68 @@
 
 use std::collections::HashMap;
 use std::io::{self, BufRead, Write};
+use std::sync::Arc;
 
 use pokesim::bridge::BridgeSession;
 use pokesim::dex::Dex;
 use pokesim::driver_timing::{ArmClock, ArmTimings};
 use pokesim::json::Json;
-use pokesim::view::one_sided_view;
 use pokesim::search::{
     aux_rng_from_seed, build_to_turn, json_quote, log_len, outcome_of, pre_state, recorded_queues,
-    recorded_turn_choices, resolve_turn, resolve_turn_exact, resolve_turn_sourced,
-    session_from_record, side_chunk_strings, turn_log, write_cmd, ActionSpec, Record, Resolved,
-    TurnSource, RECORDED_QUEUE_CAP,
+    recorded_turn_choices, resolve_turn, resolve_turn_capturing, resolve_turn_exact, resolve_turn_sourced,
+    session_from_record, session_from_record_core, side_chunk_strings, turn_log, write_cmd, ActionSpec,
+    Capture, Record, Resolved, TurnSource, RECORDED_QUEUE_CAP,
 };
+use pokesim::version::{self, BattleVersion};
+use pokesim::view::one_sided_view;
 
 /// One explored node: a paused session, plus (root only) the record + the index of the
 /// first command turn T did not consume. Only the root carries those, so a depth-1
 /// expand can reproduce the realized turn EXACTLY (`recorded_exact`) for the `value_crn`
 /// faithfulness anchor — off-root there is no alignment to a recorded command stream.
 struct Node {
-    sess: BridgeSession,
+    state: NodeState,
     record: Option<Record>,
     rest_idx: usize,
+}
+
+/// A node's paused battle: a bare engine (the `protocol` / `view` roads), or a
+/// [`BattleVersion`] (`materializer=core`, `gen3_core_search_v1`) — the engine plus each side's
+/// folded stream, so a successor's view is the version's, not a projection beside it.
+enum NodeState {
+    Plain(BridgeSession),
+    Core(Arc<BattleVersion>, CorePath),
+}
+
+/// How a core node's successors fold their lines: TYPED at the source (the shortcut the Rust
+/// Core Program's §6c licenses by `parse(emit(step)) == step`) or from the side's TEXT (the
+/// stream-only path every other observation takes). Chosen at `open_root`; the whole tree runs on
+/// one path so a search number is attributable to one.
+#[derive(Clone, Copy, PartialEq)]
+enum CorePath {
+    Typed,
+    Text,
+}
+
+impl Node {
+    fn engine(&self) -> &BridgeSession {
+        match &self.state {
+            NodeState::Plain(s) => s,
+            NodeState::Core(v, _) => v.engine().expect("a step-built version always has an engine"),
+        }
+    }
 }
 
 struct Server {
     nodes: HashMap<String, Node>,
     counter: u64,
+    /// Core arms seen by the INTEGRITY sampler (1-in-N is `count % N == 0`), process lifetime.
+    integrity_seen: u64,
 }
 
 impl Server {
     fn new() -> Server {
-        Server { nodes: HashMap::new(), counter: 0 }
+        Server { nodes: HashMap::new(), counter: 0, integrity_seen: 0 }
     }
 
     /// `n0`, `n1`, … — MONOTONIC for the process lifetime. A fresh `open_root` drops the
@@ -449,10 +480,31 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
         }
     };
     let rec = Record::parse(req.get("record").ok_or("open_root: missing record")?)?;
+    // `core` (`gen3_core_search_v1`): build the tree of BattleVersions instead of bare sessions,
+    // folding each successor's lines TYPED at the source ("typed") or from the side's TEXT
+    // ("text"). Absent = the historical body, byte for byte.
+    let core = match req.str_at("core") {
+        None => None,
+        Some("typed") => Some(CorePath::Typed),
+        Some("text") => Some(CorePath::Text),
+        Some(other) => return Err(format!("open_root: core must be \"typed\" or \"text\", got \"{other}\"")),
+    };
+    // `side` (core only): the one side whose stream the tree folds — a search reads one side, so
+    // the other's fold would be pure cost at every version. Absent = both.
+    let want = match req.str_at("side") {
+        None => [true, true],
+        Some("p1") => [true, false],
+        Some("p2") => [false, true],
+        Some(other) => return Err(format!("open_root: side must be \"p1\" or \"p2\", got \"{other}\"")),
+    };
     // A fresh root starts a fresh tree; drop the previous search's nodes. ids stay
     // monotonic (see `Server::fresh_id`).
     srv.nodes.clear();
-    let mut sess = session_from_record(&rec, dex)?;
+    let mut sess = if core == Some(CorePath::Typed) {
+        session_from_record_core(&rec, dex)?
+    } else {
+        session_from_record(&rec, dex)?
+    };
     let rest_idx = build_to_turn(&mut sess, &rec, turn, dex)?;
 
     let requests = requests_json(&sess);
@@ -462,19 +514,39 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
     let p2 = chunk_array(&sess, 1);
 
     let node_id = srv.fresh_id();
+    // The core road has no use for the port's projection (its view is the version's own), so a
+    // core root renders none.
+    let views = if core.is_some() {
+        String::new()
+    } else {
+        format!(",\"view_p1\":{},\"view_p2\":{}", one_sided_view(&sess, 0, dex), one_sided_view(&sess, 1, dex))
+    };
     let body = format!(
         "\"node_id\":{},\"requests\":{},\"recorded_choices\":{},\"pre_state\":{},\
-         \"prefix_p1_chunks\":{},\"prefix_p2_chunks\":{},\"view_p1\":{},\"view_p2\":{}",
+         \"prefix_p1_chunks\":{},\"prefix_p2_chunks\":{}{}",
         json_quote(&node_id),
         requests,
         recorded,
         ps,
         p1,
         p2,
-        one_sided_view(&sess, 0, dex),
-        one_sided_view(&sess, 1, dex)
+        views
     );
-    srv.nodes.insert(node_id, Node { sess, record: Some(rec), rest_idx });
+    let state = match core {
+        None => NodeState::Plain(sess),
+        Some(path) => {
+            let names = [rec.p1.name.clone(), rec.p2.name.clone()];
+            let teams = [rec.p1.team.0.clone(), rec.p2.team.0.clone()];
+            let n = [names[0].as_str(), names[1].as_str()];
+            let t = [Some(teams[0].as_str()), Some(teams[1].as_str())];
+            let v = match path {
+                CorePath::Typed => BattleVersion::root(sess, n, t, true, want)?,
+                CorePath::Text => BattleVersion::root_text(sess, n, t, want)?,
+            };
+            NodeState::Core(Arc::new(v), path)
+        }
+    };
+    srv.nodes.insert(node_id, Node { state, record: Some(rec), rest_idx });
     Ok(body)
 }
 
@@ -545,12 +617,27 @@ fn expand_many(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String
     let empty: Vec<Json> = Vec::new();
     let arms = req.get("arms").and_then(Json::as_array).unwrap_or(&empty).to_vec();
     let want = SideWant::parse(req)?;
+    // `integrity` (`gen3_core_search_v1`, core nodes only): every Nth core arm is folded BOTH ways
+    // — typed at the source and from the side's text — and the two versions must agree on the
+    // whole stream state and the view, or the request FAILS naming the arm and the field. 0 = off.
+    let integrity = match req.get("integrity") {
+        None | Some(Json::Null) => 0u64,
+        Some(v) => v.as_f64().filter(|n| *n >= 0.0 && n.fract() == 0.0).ok_or("expand_many: integrity must be a non-negative integer")? as u64,
+    };
     let mut out = Vec::with_capacity(arms.len());
     // `gen3_expand_many_timing_v1` — zero-cost and ZERO-BYTE unless `POKESIM_SEARCH_TIMING=1`.
     let mut timings = ArmTimings::default();
     let whole = ArmClock::start();
     for arm in &arms {
-        out.push(expand_arm(srv, arm, dex, want, &mut timings)?);
+        let node_id = arm.str_at("node_id").ok_or("arm: missing node_id")?;
+        let is_core = matches!(srv.nodes.get(node_id).map(|n| &n.state), Some(NodeState::Core(..)));
+        if is_core {
+            let check = integrity > 0 && srv.integrity_seen % integrity == 0;
+            srv.integrity_seen += 1;
+            out.push(expand_arm_core(srv, arm, dex, want, check, &mut timings)?);
+        } else {
+            out.push(expand_arm(srv, arm, dex, want, &mut timings)?);
+        }
     }
     whole.stop(&mut timings.total_us);
     Ok(format!("\"arms\":[{}]{}", out.join(","), timings.render_field()))
@@ -579,7 +666,7 @@ fn expand_arm(
             .ok_or_else(|| format!("unknown node {node_id}"))?;
         // Clone the parent and drop its chunk history: what the branch emits from here
         // IS this ply's suffix (the port's answer to Node's `sendUpdates()` + baseline).
-        let mut sess = node.sess.snapshot();
+        let mut sess = node.engine().snapshot();
         sess.clear_chunks();
         let resolved: Resolved = if recorded_exact {
             // Reproduce the realized turn EXACTLY (the value_crn anchor). Only the root
@@ -642,7 +729,7 @@ fn expand_arm(
     } else {
         let id = srv.fresh_id();
         sess.clear_chunks();
-        srv.nodes.insert(id.clone(), Node { sess, record: None, rest_idx: 0 });
+        srv.nodes.insert(id.clone(), Node { state: NodeState::Plain(sess), record: None, rest_idx: 0 });
         Some(id)
     };
     clk_tail.stop(&mut timings.render_us);
@@ -665,6 +752,179 @@ fn expand_arm(
         opt_field("view_p2", view_p2.as_deref()),
         opt_field("view_p1_at", view_p1_at.as_deref()),
         opt_field("view_p2_at", view_p2_at.as_deref()),
+    ))
+}
+
+/// ONE arm on the CORE road (`gen3_core_search_v1`): the parent node is a [`BattleVersion`], and
+/// the successor is a version too.
+///
+/// The arm resolves exactly as on the other roads (same clone, same reseed, same follow-up
+/// policy, same draws). What differs is what comes back per wanted side, as `core_pN`:
+///
+/// * `view` / `legal` / `request` — the LEAF version's `present()` view, its legality and its raw
+///   request: the version at the first decision this ply opened for the side (a D10 arm: the
+///   replacement round inside the turn) or at the end of the turn;
+/// * `events` — the readings of the leaf's transition (the ply's `BattleEvent`s, the tracker
+///   input), and `mid` — whether the leaf is an intermediate decision;
+/// * with the INTEGRITY check sampled for this arm, `text_view` — the same leaf folded the OTHER
+///   way (text if the tree is typed, typed if it is text), after the two were asserted equal.
+///
+/// The child NODE is the leaf version of the side the request asked for (`side`), so a deeper ply
+/// branches from the board its leaf describes — including a D10 leaf, which on the other roads
+/// sits beside a node one decision past it. With both sides asked for, the child is the end of
+/// the turn.
+fn expand_arm_core(
+    srv: &mut Server,
+    arm: &Json,
+    dex: &Dex,
+    want: SideWant,
+    check: bool,
+    timings: &mut ArmTimings,
+) -> Result<String, String> {
+    let node_id = arm.str_at("node_id").ok_or("arm: missing node_id")?.to_string();
+    let followup = arm.str_at("followup").unwrap_or("random").to_string();
+    let seed = arm.str_at("seed").unwrap_or("original").to_string();
+    if arm.get("recorded_exact").and_then(Json::as_bool).unwrap_or(false) {
+        return Err("recorded_exact is not served on the core road (the prober's value_crn anchor stays \
+                    on the protocol road until it moves to the core, M7)".into());
+    }
+    let p1_action = arm.str_at("p1_action").unwrap_or("recorded").to_string();
+    let p2_action = arm.str_at("p2_action").unwrap_or("recorded").to_string();
+    let label = render_id(arm.get("label"));
+
+    let clk_sim = ArmClock::start();
+    let (parent, path) = match srv.nodes.get(&node_id).map(|n| &n.state) {
+        Some(NodeState::Core(v, p)) => (Arc::clone(v), *p),
+        _ => return Err(format!("unknown core node {node_id}")),
+    };
+    let mut sess = parent.engine().ok_or("core node without an engine")?.snapshot();
+    if seed != "original" {
+        sess.reseed(&seed);
+    }
+    let mut rng = aux_rng_from_seed(&seed);
+    let spec = [ActionSpec::parse(&p1_action), ActionSpec::parse(&p2_action)];
+    let mut resolved =
+        resolve_turn_capturing(&mut sess, &spec, &followup, &mut rng, dex, Capture { views: false, sessions: true });
+    let mut at = std::mem::take(&mut resolved.sessions_at);
+    clk_sim.stop(&mut timings.sim_us);
+
+    let ended = sess.is_ended();
+    let outcome = outcome_of(&sess, resolved.stuck);
+    let clk_chunks = ArmClock::start();
+    let p1_chunks = want.wants(0).then(|| chunk_array(&sess, 0));
+    let p2_chunks = want.wants(1).then(|| chunk_array(&sess, 1));
+    clk_chunks.stop(&mut timings.chunks_us);
+
+    let fold = |engine: BridgeSession, p: CorePath| -> Result<Arc<BattleVersion>, String> {
+        match p {
+            CorePath::Typed => parent.child(engine),
+            CorePath::Text => parent.child_text(engine),
+        }
+    };
+    let other = |p: CorePath| if p == CorePath::Typed { CorePath::Text } else { CorePath::Typed };
+    let clk_core = ArmClock::start();
+    let end_engine = if check { Some(sess.snapshot()) } else { None };
+    let end = fold(sess, path)?;
+    let mut leaves: [Option<(Arc<BattleVersion>, bool)>; 2] = [None, None];
+    // The engine each INTERMEDIATE leaf was folded from, kept only for the integrity check's twin.
+    let mut mid_engines: [Option<BridgeSession>; 2] = [None, None];
+    for s in 0..2 {
+        if !want.wants(s) {
+            continue;
+        }
+        leaves[s] = Some(if at[s].is_empty() {
+            (Arc::clone(&end), false)
+        } else {
+            let e = at[s].remove(0);
+            if check {
+                mid_engines[s] = Some(e.snapshot());
+            }
+            (fold(e, path)?, true)
+        });
+    }
+    clk_core.stop(&mut timings.core_us);
+
+    // INTEGRITY: the same leaf folded the other way must be the same version, field for field.
+    let clk_check = ArmClock::start();
+    let mut text_views: [Option<String>; 2] = [None, None];
+    if check {
+        for s in 0..2 {
+            let Some((leaf, mid)) = &leaves[s] else { continue };
+            let engine = if *mid {
+                mid_engines[s].take().expect("kept when checking")
+            } else {
+                end_engine.as_ref().expect("taken when checking").snapshot()
+            };
+            let twin = fold(engine, other(path))?;
+            version::streams_equal(leaf, &twin, s).map_err(|e| {
+                format!("INTEGRITY: arm {label} (node {node_id}, p{}, {} leaf): the typed and the text path disagree — {e}",
+                        s + 1, if *mid { "intermediate" } else { "end-of-turn" })
+            })?;
+            text_views[s] = Some(twin.view(s)?.json());
+        }
+    }
+    clk_check.stop(&mut timings.integrity_us);
+
+    let clk_render = ArmClock::start();
+    let mut core_fields = String::new();
+    for s in 0..2 {
+        let Some((leaf, mid)) = &leaves[s] else { continue };
+        let legal = leaf.legal(s).map_or("null".to_string(), |l| l.json());
+        let mut events = String::from("[");
+        let mut first = true;
+        for ev in leaf.events(s) {
+            for r in &ev.readings {
+                if !first {
+                    events.push(',');
+                }
+                first = false;
+                r.json_into(&mut events);
+            }
+        }
+        events.push(']');
+        let mut o = format!(",\"core_p{}\":{{\"view\":{},\"legal\":{},\"request\":", s + 1, leaf.view(s)?.json(), legal);
+        pokesim::core_events::json_out::opt_str_into(&mut o, leaf.request(s));
+        o.push_str(&format!(",\"events\":{events},\"mid\":{mid}"));
+        if let Some(t) = &text_views[s] {
+            o.push_str(&format!(",\"text_view\":{t}"));
+        }
+        o.push('}');
+        core_fields.push_str(&o);
+    }
+    clk_render.stop(&mut timings.core_render_us);
+
+    let used = format!(
+        "{{\"p1\":{},\"p2\":{}}}",
+        string_array(&resolved.used[0]),
+        string_array(&resolved.used[1])
+    );
+    // The child node: the asked-for side's LEAF (the board its leaf describes), or the end of
+    // the turn when both sides were asked for. A finished battle is a leaf with no child.
+    let node = match want {
+        SideWant::Only(s) => leaves[s].as_ref().map(|(v, _)| Arc::clone(v)).expect("wanted"),
+        SideWant::Both => end,
+    };
+    let requests = if ended { "null".to_string() } else { requests_json(node.engine().expect("step-built")) };
+    let child_id = if ended {
+        None
+    } else {
+        let id = srv.fresh_id();
+        srv.nodes.insert(id.clone(), Node { state: NodeState::Core(node, path), record: None, rest_idx: 0 });
+        Some(id)
+    };
+    Ok(format!(
+        "{{\"label\":{},\"node_id\":{},\"ended\":{},\"stuck\":{},\"outcome\":{},\"requests\":{},\
+         \"choices_used\":{}{}{}{}}}",
+        label,
+        child_id.as_deref().map_or("null".to_string(), json_quote),
+        ended,
+        resolved.stuck,
+        outcome,
+        requests,
+        used,
+        opt_field("p1_chunks", p1_chunks.as_deref()),
+        opt_field("p2_chunks", p2_chunks.as_deref()),
+        core_fields,
     ))
 }
 

@@ -111,6 +111,8 @@ read the row you are about to edit.**
 | `driver_timing.rs` | DONE | OPT-IN per-phase wall accounting inside `expand_many` (`POKESIM_SEARCH_TIMING=1`). **Off it renders the empty string**, so an un-set build is byte-identical and the cross-impl parity harness is unaffected. |
 | `core_events/` (+ `bin/core_events.rs`) | M1 BUILT, not used by training | The Rust Core's typed event layer (`gen3_core_events_v1`): every omniscient line is a typed `Line` whose text is its rendering; one side's stream → `CoreEvent`s carrying `Gen3Battle`'s reading; `parse(lines)`; the persisted record. Detail: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md). |
 | `view.rs` | DONE, validated | The ONE-SIDED VIEW readout (`gen3_one_sided_view_v1`) — the PROJECTION of the omniscient board onto what one side has OBSERVED, in the shape `LiveView` holds, plus the per-side reveal fold it rides on. The obs-legal counterpart of `pre_state`. Contract + deferrals: [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md). |
+| `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `Tracker` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` GENERATED from poke-env. Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
+| `version.rs` | M2 BUILT | `BattleVersion` (`gen3_core_version_v1`): the persistent battle state — `Arc` parent, per-side stream (`Tracker` + event `Reader`), per-transition events, memoized views, the engine as REFEREE; built by step (typed at the source) or by parse (one side's text), gated `parse == step` version by version. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 
 ## The core's event layer — typed at the source (`gen3_core_events_v1`)
 
@@ -135,7 +137,25 @@ value-schema change (`rust_core_schema_test.py` fails the day it is stale).
 | `tests/core_events_test.rs` (`cargo test`) | on the protocol capture corpus, every byte-fuzz fixture, the trapping golden and the turn-limit golden: canonical source records (one per line), the step path re-derives the shipped bytes with per-side conservation, `parse(side text) == step`; recording changes no byte |
 | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` | the COMMIT tier: the core's readings == `Gen3Battle`'s, per viewer, per event, type-strict, no allowlist; the golden records round-trip byte-identically and re-parse |
 | `… rust_core_parity_test.py -m slow -q -n 2` | the MILESTONE tier (2 × 200 random + 2 × 50 policy battles played live, the protocol corpus × 2, every byte-fuzz fixture) |
-| `core_events --views` → `rust_core_parity_views.py` (slice V, both tiers) | the TRUTH AUDIT: `one_sided_view` + the engine truth == the `LiveView` training builds, every decision, both viewers (`designs/rust_sim/one_sided_view.md` §4a) |
+| `core_events --views` → `rust_core_parity_views.py` (slice V, both tiers) | the TRUTH AUDIT: `one_sided_view` AND `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, every decision, both viewers; the core's board audit at the reading and the truth; `parse == step` at every version (`designs/rust_sim/one_sided_view.md` §4a, `present.md` §5) |
+
+## The core's VERSION and READING — M2 (`gen3_core_version_v1`, `gen3_core_present_v1`)
+
+**`present(tracker, flags)` takes NO BOARD** — the view is built from one side's stream alone, so a
+board fact cannot reach it by construction; the omniscient board is a REFEREE (`check_view`, the
+audit slice V runs) and the step path's TYPED shortcut, which the integrity mode checks against the
+text path. 🚨 **`present()` is the TRUE reading — parity with poke-env is not the goal.** Where
+poke-env is wrong about a sim fact the stream establishes, the view carries the truth and the
+disagreement is a registered FINDING (`agents/battle/poke_env_findings.py`: PE-V10, PE-R1b, PE-V16 —
+one field, a value-aware predicate, the reproduction, whether it reaches the obs); never add a rule
+whose only purpose is to reproduce a poke-env mistake, and never fix the fork from here (that moves
+the training input — the owner's call). Search adopts it:
+`materializer=core` (the default) makes every successor a `BattleVersion` (`search_driver`'s
+`open_root` `core` / `side`, `expand_many`'s `integrity`). Contract, the rules, the search road, the
+gates: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md).
+
+🚨 **The poke-env tables are GENERATED**: `python -m agents.battle.rust_core_present_tables --write`
+after a poke-env data change (`rust_core_present_tables_test.py` fails the day it is stale).
 
 ## The callable surface (battle.rs) maps to the existing bridge
 

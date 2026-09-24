@@ -53,7 +53,8 @@ class _NeverHits(dict):
 def _engine(pool, *, share: bool, materializer: str = "view") -> SearchEngine:
     cfg = SearchConfig(
         arm="honest", budget_s=1e9, seed=7, max_depth=1, search_impl="rust",
-        materializer=materializer, caps=WidthCaps(m_opp=2, k_worlds=3, r_dice=1))
+        materializer=materializer, integrity=1 if materializer == "core" else 0,
+        caps=WidthCaps(m_opp=2, k_worlds=3, r_dice=1))
     eng = SearchEngine(model=None, mappings=None, cfg=cfg, pool_packed=list(pool))
     eng._score_batch = lambda obs, masks: (                      # type: ignore[assignment]
         np.asarray(obs, dtype=np.float64).sum(axis=1), "fake")
@@ -65,30 +66,44 @@ def _engine(pool, *, share: bool, materializer: str = "view") -> SearchEngine:
 def _run(pool, record, side, turn, our_history, tokens, observed, *, share: bool,
          materializer: str = "view"):
     """``(per-action scores, chosen action, widths, [successor obs bytes, in order])``."""
+    import agents.training.core_successor as CS
     import agents.training.view_successor as VS
 
     seen: List[bytes] = []
-    orig = VS.ViewSuccessorFactory.successor
+    orig_view = VS.ViewSuccessorFactory.successor
+    orig_core = CS.CoreSuccessorFactory.successor
 
-    def recording(self, payload, chunks, action):
-        got = orig(self, payload, chunks, action)
+    def recording_view(self, payload, chunks, action):
+        got = orig_view(self, payload, chunks, action)
         if got is not None:
             seen.append(np.asarray(got.obs, dtype=np.float32).tobytes())
         return got
 
-    VS.ViewSuccessorFactory.successor = recording
+    def recording_core(self, core, action, where=""):
+        got = orig_core(self, core, action, where)
+        if got is not None:
+            seen.append(np.asarray(got.obs, dtype=np.float32).tobytes())
+        return got
+
+    VS.ViewSuccessorFactory.successor = recording_view
+    CS.CoreSuccessorFactory.successor = recording_core
     eng = _engine(pool, share=share, materializer=materializer)
     try:
         res = eng.choose(record=record, side=side, turn=turn, our_history=list(our_history),
                          our_tokens=dict(tokens), observed_our_lines=list(observed),
                          pub=None, policy_action=next(iter(tokens)), opp_true_packed=None)
     finally:
-        VS.ViewSuccessorFactory.successor = orig
+        VS.ViewSuccessorFactory.successor = orig_view
+        CS.CoreSuccessorFactory.successor = orig_core
         eng.close()
     return dict(res.scores or {}), int(res.action), res.widths, seen
 
 
-def test_one_shared_fork_scores_every_world_exactly_as_a_per_world_fork_did():
+@pytest.mark.parametrize("materializer", ["view", "core"])
+def test_one_shared_fork_scores_every_world_exactly_as_a_per_world_fork_did(materializer):
+    """The VIEW road's fork and the CORE road's (`gen3_core_search_v1` — the same tracker fork,
+    no event folder: the ply's events are the version's readings), each shared across worlds
+    against a per-world control. The core road runs with its INTEGRITY check on every arm."""
     import agents.battle.one_sided_view_parity_fuzz_test as G
     from main.search_dividend import determinize as dz
     from main.search_dividend.__main__ import _pool
@@ -120,9 +135,11 @@ def test_one_shared_fork_scores_every_world_exactly_as_a_per_world_fork_did():
         observed = dz.chunks_to_lines(pfx)
 
         ctl_scores, ctl_act, ctl_w, ctl_obs = _run(
-            pool, record, side, turn, our_history, tokens, observed, share=False)
+            pool, record, side, turn, our_history, tokens, observed, share=False,
+            materializer=materializer)
         exp_scores, exp_act, exp_w, exp_obs = _run(
-            pool, record, side, turn, our_history, tokens, observed, share=True)
+            pool, record, side, turn, our_history, tokens, observed, share=True,
+            materializer=materializer)
 
         print(f"  turn {turn}: gated={exp_w.worlds_gated_ok} requested={exp_w.worlds_requested} "
               f"open_failed={exp_w.worlds_open_failed} gate_failed={exp_w.worlds_gate_failed} "
@@ -148,9 +165,13 @@ def test_one_shared_fork_scores_every_world_exactly_as_a_per_world_fork_did():
         assert exp_act == ctl_act, f"turn {turn}: chose {exp_act} shared vs {ctl_act} un-shared"
         assert exp_w.arms_scored == ctl_w.arms_scored
         assert exp_w.view_arms == ctl_w.view_arms
+        assert exp_w.core_arms == ctl_w.core_arms
+        if materializer == "core":
+            assert exp_w.core_arms > 0 and exp_w.integrity_checked == exp_w.core_arms
         print(f"  turn {turn}: worlds={exp_w.worlds_gated_ok} successors={len(exp_obs)} "
               f"fork_hit={exp_w.fork_cache_hit} fork_miss={exp_w.fork_cache_miss} "
-              f"view_arms={exp_w.view_arms}")
+              f"view_arms={exp_w.view_arms} core_arms={exp_w.core_arms} "
+              f"integrity={exp_w.integrity_checked}")
 
     assert compared >= 1, (
         "no decision produced two gated worlds with a view arm — the gate is vacuous")

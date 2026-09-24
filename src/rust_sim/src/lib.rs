@@ -110,11 +110,18 @@ pub mod event;
 /// the per-side reading projection, `parse`, and the persisted record.
 pub mod core_events;
 pub mod json;
+/// The Rust core's per-side READING of the board (`gen3_core_present_v1`, Rust Core Program M2):
+/// poke-env's state tracker as named rules, `present()` → the `LiveView`-shaped view, and the
+/// request's legality + action mask.
+pub mod present;
 pub mod prng;
 pub mod protocol;
 pub mod search;
 pub mod state;
 pub mod view;
+/// The Rust core's persistent battle state (`gen3_core_version_v1`, Rust Core Program M2): one
+/// immutable version per decision boundary, buildable from the sim's step or from one side's text.
+pub mod version;
 pub mod stats;
 pub mod team;
 pub mod turn;

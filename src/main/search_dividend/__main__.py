@@ -93,15 +93,27 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", default="cpu")
     p.add_argument("--impl", default="node", choices=["node", "rust"],
                    help="live battle bridge child")
-    p.add_argument("--search-impl", default="node", choices=["node", "rust"],
-                   help="search-driver child (node is the validated default for open_root)")
-    p.add_argument("--materializer", default="view", choices=["protocol", "view"],
-                   help="WHICH road builds a successor's observation. `view` (the default) reads "
-                        "the rust port's one-sided view payload and folds the ply's events in "
-                        "Python; `protocol` replays the ply through poke-env. Byte-identical "
-                        "where both can answer, and `view` falls back to `protocol` PER ARM with "
-                        "a counter where it cannot — including for every arm under "
-                        "--search-impl node, which emits no view payload.")
+    p.add_argument("--search-impl", default="rust", choices=["node", "rust"],
+                   help="search-driver child (rust, the default, is what --materializer core "
+                        "needs; node is the reference search_impl_parity diffs against)")
+    p.add_argument("--materializer", default="core", choices=["core", "protocol", "view"],
+                   help="WHICH road builds a successor's observation. `core` (the default, the "
+                        "Rust Core Program's M2 adoption) takes each successor from the driver's "
+                        "Rust-core VERSION — its view, legality and ply events — and runs only the "
+                        "trackers + encoder in Python; rust-only, no fallback. `view` reads the "
+                        "port's one-sided projection and folds the ply in Python, falling back to "
+                        "`protocol` per arm; `protocol` replays the ply through poke-env. All three "
+                        "decide identically at depth 1 (the parity gates); every result row is "
+                        "stamped with the road.")
+    p.add_argument("--core-path", default="typed", choices=["typed", "text"],
+                   help="--materializer core only: fold each successor TYPED at the source (the "
+                        "shortcut) or from the side's protocol TEXT (the one path every other "
+                        "observation takes). Stamped on every row.")
+    p.add_argument("--search-integrity", type=int, default=0, metavar="N",
+                   help="--materializer core only: build every Nth successor BOTH ways (typed + "
+                        "text) and assert the view and the encoded obs byte-equal, failing loudly "
+                        "with the decision, depth and field. 0 = off (default), 1 = every arm, "
+                        "N = sampled; the row carries integrity_checked of core_arms.")
     p.add_argument("--leaf-head", default=None, metavar="PATH",
                    help="replace the WIN-PROB head's weights with a state_dict from PATH after "
                         "loading the checkpoint. The win head is a leak-safe SIDE readout (never "
@@ -461,7 +473,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         for budget in ([0.0] if arm == "base" else budgets):
             cfg = SearchConfig(arm=arm, budget_s=budget, caps=caps, score=args.score,
                                search_impl=args.search_impl,
-                               materializer=args.materializer,
+                               materializer=args.materializer, core_path=args.core_path,
+                               integrity=args.search_integrity,
                                honest_swap_moves=args.honest_swap_moves, seed=args.seed,
                                max_depth=args.max_depth,
                                root_strategy=args.root_strategy,

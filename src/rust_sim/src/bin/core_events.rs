@@ -52,6 +52,7 @@ use pokesim::core_events::{CoreEvent, Line};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
 use pokesim::prng::normalize_seed;
+use pokesim::version::{self, BattleVersion};
 use pokesim::{search, view};
 
 struct Battle {
@@ -100,15 +101,20 @@ fn side_of(tok: &str) -> Result<usize, String> {
     }
 }
 
-/// One DECISION-BOARD capture (`--views`, slice V of the parity harness): both sides'
-/// [`one_sided_view`]s and the engine TRUTH, taken at the end of a write that shipped a new
-/// `|request|` to at least one side. `after` = the number of per-side chunks flushed so far, so
-/// the Python reference can feed each viewer exactly the chunks that preceded the board.
+/// One DECISION-BOARD capture (`--views`, slice V of the parity harness), taken at the end of a
+/// write that shipped a new `|request|` to at least one side. `after` = the number of per-side
+/// chunks flushed so far, so the Python reference can feed each viewer exactly the chunks that
+/// preceded the board. Per side: the port's [`one_sided_view`] projection (the view road's), the
+/// CORE's `present()` view (the stream-built reading, M2) and its legality, and the core's TRUTH
+/// AUDIT of that view against the board.
 struct ViewCap {
     after: usize,
     new_request: [bool; 2],
     views: [String; 2],
     truth: String,
+    core: [String; 2],
+    legal: [String; 2],
+    audit: [String; 2],
 }
 
 /// The engine facts a one-sided view does NOT carry but the truth audit compares against: per
@@ -168,48 +174,94 @@ fn requests_since(sess: &BridgeSession, from: usize) -> [usize; 2] {
     n
 }
 
-fn capture(sess: &BridgeSession, dex: &Dex, seen: &mut usize, caps: &mut Vec<ViewCap>) {
+
+fn capture(v: &BattleVersion, dex: &Dex, seen: &mut usize, caps: &mut Vec<ViewCap>) -> Result<(), String> {
+    let sess = v.engine().ok_or("a step-built version without an engine")?;
     let total = sess.chunks().chunks.len();
     let n = requests_since(sess, *seen);
     *seen = total;
     if n == [0, 0] {
-        return;
+        return Ok(());
     }
+    let side_json = |s: usize| -> Result<(String, String, String), String> {
+        let core = v.view(s)?.json();
+        let legal = v.legal(s).map_or("null".to_string(), |l| l.json());
+        let audit = v.audit(s, dex)?.json();
+        Ok((core, legal, audit))
+    };
+    let (c0, l0, a0) = side_json(0)?;
+    let (c1, l1, a1) = side_json(1)?;
     caps.push(ViewCap {
         after: total,
         new_request: [n[0] > 0, n[1] > 0],
         views: [view::one_sided_view(sess, 0, dex), view::one_sided_view(sess, 1, dex)],
         truth: truth_json(sess, dex),
+        core: [c0, c1],
+        legal: [l0, l1],
+        audit: [a0, a1],
     });
+    Ok(())
 }
 
 type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>);
 
+/// The M2 gate at ONE transition: each side's parse-built version, fed the same new TEXT the
+/// step-built one folded typed, must agree with it on the whole reading board, the transition's
+/// events and the view (`version::parse_matches_step`).
+fn parse_gate(v: &BattleVersion, parsed: &mut [Option<BattleVersion>; 2]) -> Result<(), String> {
+    let sess = v.engine().ok_or("no engine")?;
+    for side in 0..2 {
+        let p = parsed[side].take().ok_or("parse chain lost")?;
+        let from = p.stream(side).map_or(0, |s| s.lines);
+        let text = sess.side_lines(side);
+        let next = p.parse_advance(&text[from..]).map_err(|e| format!("parse p{}: {e}", side + 1))?;
+        version::parse_matches_step(v, &next, side).map_err(|e| format!("version parse != step: {e}"))?;
+        parsed[side] = Some(next);
+    }
+    Ok(())
+}
+
 fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool) -> Result<Run, String> {
-    let mut sess = if b.init_seed {
+    let sess = if b.init_seed {
         BridgeSession::new_core(&b.opts, b.quick_claw, dex)?
     } else {
         BridgeSession::new_construct_turn0_core(&b.opts, dex)?
     };
+    // The battle is replayed as a CHAIN OF VERSIONS (`gen3_core_version_v1`): each command
+    // advances the engine and folds each side's new lines, typed at the source, into its stream;
+    // a one-side, engine-less parse chain is fed the same text and must agree at every step.
+    let names = [b.opts.p1.name.as_str(), b.opts.p2.name.as_str()];
+    let teams = [Some(b.opts.p1.team.0.as_str()), Some(b.opts.p2.team.0.as_str())];
+    let mut v = BattleVersion::root(sess, names, teams, false, [true, true]).map_err(|e| format!("version root: {e}"))?;
+    let mut parsed = [
+        Some(BattleVersion::parse_root(0, names[0], teams[0])?),
+        Some(BattleVersion::parse_root(1, names[1], teams[1])?),
+    ];
+    parse_gate(&v, &mut parsed)?;
     let mut caps: Vec<ViewCap> = Vec::new();
     let mut seen = 0usize;
     if views {
-        capture(&sess, dex, &mut seen, &mut caps);
+        capture(&v, dex, &mut seen, &mut caps)?;
     }
     for c in &b.cmds {
-        if sess.is_ended() {
+        let e = v.engine().ok_or("no engine")?;
+        if e.is_ended() {
             break;
         }
-        match c {
-            Script::Choose(cmd) => sess.feed_cmd(cmd.clone(), dex),
-            Script::ChooseIfOpen(cmd) => {
-                if !sess.is_choice_done(cmd.side) {
-                    sess.feed_cmd(cmd.clone(), dex)
-                }
-            }
-            Script::ForceLose(s) => sess.forfeit(*s),
+        let skip = matches!(c, Script::ChooseIfOpen(cmd) if e.is_choice_done(cmd.side));
+        if skip {
+            continue;
         }
-        if let Some(f) = sess.fatal() {
+        v = v
+            .advance_with(|e| {
+                match c {
+                    Script::Choose(cmd) | Script::ChooseIfOpen(cmd) => e.feed_cmd(cmd.clone(), dex),
+                    Script::ForceLose(s) => e.forfeit(*s),
+                }
+                Ok(())
+            })
+            .map_err(|e| format!("version step: {e}"))?;
+        if let Some(f) = v.engine().and_then(|e| e.fatal()) {
             // A capture golden's blind per-decision script can re-send a rejected choice until
             // the bridge's no-progress cap fails loud (the capture ran into a stall loop): the
             // battle is TRUNCATED there, and everything emitted so far is still checked. A LIVE
@@ -219,10 +271,12 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
             }
             return Err(format!("bridge fatal: {f}"));
         }
+        parse_gate(&v, &mut parsed)?;
         if views {
-            capture(&sess, dex, &mut seen, &mut caps);
+            capture(&v, dex, &mut seen, &mut caps)?;
         }
     }
+    let sess = v.into_engine().ok_or("no engine")?;
     let bs = sess.battle_state().ok_or("no battle state")?;
     let recs = sess.source_recs().ok_or("no source records")?;
     let log = bs.log.lines();
@@ -322,8 +376,10 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                         o.push(',');
                     }
                     o.push_str(&format!(
-                        "{{\"after\":{},\"new_request\":[{},{}],\"p1\":{},\"p2\":{},\"truth\":{}}}",
-                        c.after, c.new_request[0], c.new_request[1], c.views[0], c.views[1], c.truth
+                        "{{\"after\":{},\"new_request\":[{},{}],\"p1\":{},\"p2\":{},\"truth\":{},\
+                         \"core\":[{},{}],\"legal\":[{},{}],\"audit\":[{},{}]}}",
+                        c.after, c.new_request[0], c.new_request[1], c.views[0], c.views[1], c.truth,
+                        c.core[0], c.core[1], c.legal[0], c.legal[1], c.audit[0], c.audit[1]
                     ));
                 }
                 o.push(']');
@@ -332,6 +388,50 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
         }
     }
     o
+}
+
+/// `--present-stream`: ONE side's protocol TEXT on stdin → its `present()` view. The first line is
+/// a JSON header `{"viewer":0|1,"username":…,"team":<packed>|null}`; every later line
+/// is a protocol line of that side's stream (the parse path, exactly what a server sends). Prints
+/// ONE JSON object: `{"ok","error","view","legal","request"}`. The pin of every reading rule
+/// against poke-env itself (`agents/battle/rust_core_present_test.py`) runs through it.
+fn present_stream() -> i32 {
+    let stdin = io::stdin();
+    let mut lines = stdin.lock().lines();
+    let head = match lines.next() {
+        Some(Ok(h)) => h,
+        _ => {
+            eprintln!("core_events --present-stream: no header");
+            return 2;
+        }
+    };
+    let res = (|| -> Result<String, String> {
+        let h = Json::parse(&head).map_err(|e| format!("header: {e}"))?;
+        let viewer = h.get("viewer").and_then(|v| v.as_f64()).ok_or("header viewer")? as usize;
+        let username = h.str_at("username").ok_or("header username")?.to_string();
+        let team = h.str_at("team").map(str::to_string);
+        let mut s = version::SideStream::new(viewer, &username, team.as_deref())?;
+        for l in lines {
+            let l = l.map_err(|e| e.to_string())?;
+            s.fold_text(&l)?;
+        }
+        let view = s.view()?.json();
+        let legal = pokesim::present::legal_actions(&s.tracker).map_or("null".to_string(), |l| l.json());
+        let mut o = format!("{{\"ok\":true,\"error\":null,\"view\":{view},\"legal\":{legal},\"request\":");
+        json_out::opt_str_into(&mut o, s.tracker.last_request_text.as_deref());
+        o.push('}');
+        Ok(o)
+    })();
+    match res {
+        Ok(o) => println!("{o}"),
+        Err(e) => {
+            let mut o = String::from("{\"ok\":false,\"error\":");
+            json_out::str_into(&mut o, &e);
+            o.push('}');
+            println!("{o}");
+        }
+    }
+    0
 }
 
 /// `--check-records FILE…`: every record must round-trip byte-identically and re-parse from its
@@ -440,6 +540,9 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.get(1).map(String::as_str) == Some("--check-records") {
         std::process::exit(check_records(&args[2..]));
+    }
+    if args.get(1).map(String::as_str) == Some("--present-stream") {
+        std::process::exit(present_stream());
     }
     let bench_rounds: Option<usize> = if args.get(1).map(String::as_str) == Some("--bench-parse") {
         Some(args.get(2).and_then(|s| s.parse().ok()).unwrap_or(5))

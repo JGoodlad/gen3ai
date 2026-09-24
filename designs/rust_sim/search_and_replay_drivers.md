@@ -247,6 +247,27 @@ search-teacher cycles** whose workers carry `"impl": "rust"`, whose shards come 
 `grad/searchteacher_share` in the TB events). **It found no seam on the first run.**
 `--use-bridge=node` remains the fallback if a cycle misbehaves.
 
+### THE CORE ROAD — a tree of `BattleVersion`s (`gen3_core_search_v1`, the Rust Core Program's M2)
+
+`open_root` takes an optional **`core: "typed" | "text"`** and **`side: "p1" | "p2"`**. With
+`core`, the root is a `BattleVersion` built over a core-recording session
+(`session_from_record_core`), folding only `side`'s stream, and every node is
+`NodeState::Core(version, path)`; without it, the node is the historical engine session and the
+reply is byte-for-byte the old one. On a core node, `expand_many` steps a child VERSION per arm and
+returns, per wanted side, **`core_pN = {view, legal, request, events, mid, text_view?}`** — the
+version's `present()` view, `legal_actions()`, the raw `|request|`, the READINGS of the ply's
+events, and `mid`: the same four AT each intermediate decision the ply resolved itself (D10), built
+from the engine snapshots `resolve_turn_capturing(Capture { views: false, sessions: true })` takes
+there. The child node of a D10 arm IS that intermediate version (a forced replacement is
+non-branchable on this road). `recorded_exact` is REFUSED on a core node.
+
+**`expand_many`'s `integrity: N`** (core nodes only; 0 = off, the production default): every Nth
+arm is ALSO folded from its text (`child_text` / `root_text`), `version::streams_equal` asserts the
+two versions equal — tracker, events, view — and the reply carries the text path's view as
+`text_view`, which Python encodes and byte-compares (`agents/training/core_successor.py`).
+`POKESIM_SEARCH_TIMING=1` adds `core` (the typed fold), `core_render` (the leaf JSON) and
+`integrity` (the twin) to `timing_us`. Contract of the version and the reading: [`present.md`](present.md).
+
 ## The REPLAY family: the one-shot `replay` / `reroll` / `reroll_many` verbs (`gen3_rust_replay_driver_v1`)
 
 The SECOND half of the offline layer, served by the SAME `src/bin/search_driver.rs` binary. It

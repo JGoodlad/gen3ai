@@ -387,6 +387,13 @@ pub fn session_from_record(rec: &Record, dex: &Dex) -> Result<BridgeSession, Str
     BridgeSession::new_construct_turn0(&rec.battle_options(), dex)
 }
 
+/// [`session_from_record`] with the core's SOURCE RECORDING on (`gen3_core_events_v1`) — the
+/// session a `materializer=core` search root is built from, so each successor's lines are typed
+/// at the source. Byte-identical emission (`core_events_test::recording_changes_no_byte_…`).
+pub fn session_from_record_core(rec: &Record, dex: &Dex) -> Result<BridgeSession, String> {
+    BridgeSession::new_construct_turn0_core(&rec.battle_options(), dex)
+}
+
 /// Feed ONE recorded command — Node's `writeCmd`. A `forcelose` entry runs the real
 /// forfeit (the `|win|` pair), everything else is a per-side choice.
 pub fn write_cmd(sess: &mut BridgeSession, cmd: &(String, String), dex: &Dex) -> Result<(), String> {
@@ -569,7 +576,7 @@ pub fn recorded_queues(rec: &Record, from: usize, cap: usize) -> [Vec<String>; 2
 /// The result of resolving ONE joint turn: the choices each side actually committed
 /// (in order, including follow-up rounds a mid-turn faint forced) and whether the turn
 /// failed to settle.
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct Resolved {
     pub used: [Vec<String>; 2],
     pub stuck: bool,
@@ -596,6 +603,32 @@ pub struct Resolved {
     /// rule with no gate is worse than an honest absence — a consumer that finds no entry
     /// falls back exactly as it did before this field existed.
     pub views_at: [Vec<String>; 2],
+    /// The same intermediate decisions as [`Resolved::views_at`], as ENGINE snapshots — what the
+    /// Rust core's search road (`materializer=core`, `gen3_core_search_v1`) makes a
+    /// [`crate::version::BattleVersion`] of, so a D10 leaf IS the version at its decision rather
+    /// than a projection beside a node one decision past it. Captured only by
+    /// [`resolve_turn_capturing`] with `Capture::sessions`; empty otherwise.
+    pub sessions_at: [Vec<BridgeSession>; 2],
+}
+
+impl std::fmt::Debug for Resolved {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Resolved")
+            .field("used", &self.used)
+            .field("stuck", &self.stuck)
+            .field("views_at", &self.views_at)
+            .field("sessions_at", &[self.sessions_at[0].len(), self.sessions_at[1].len()])
+            .finish()
+    }
+}
+
+/// What [`resolve_turn_capturing`] records at each intermediate decision (see
+/// [`Resolved::views_at`]): the view road's one-sided projection, the core road's engine
+/// snapshot, or both.
+#[derive(Debug, Clone, Copy)]
+pub struct Capture {
+    pub views: bool,
+    pub sessions: bool,
 }
 
 /// Reproduce turn T EXACTLY as the original battle did — Node's `resolveTurnExact`.
@@ -682,8 +715,20 @@ pub fn resolve_turn(
     rng: &mut AuxRng,
     dex: &Dex,
 ) -> Resolved {
+    resolve_turn_capturing(sess, spec, followup, rng, dex, Capture { views: true, sessions: false })
+}
+
+/// [`resolve_turn`] with an explicit [`Capture`] of the intermediate decisions.
+pub fn resolve_turn_capturing(
+    sess: &mut BridgeSession,
+    spec: &[ActionSpec; 2],
+    followup: &str,
+    rng: &mut AuxRng,
+    dex: &Dex,
+    capture: Capture,
+) -> Resolved {
     let mut sources = [TurnSource::from_spec(&spec[0]), TurnSource::from_spec(&spec[1])];
-    resolve_turn_sourced(sess, &mut sources, followup, rng, dex)
+    resolve_turn_sourced_with(sess, &mut sources, followup, rng, dex, capture)
 }
 
 /// Where ONE side's start-of-turn choice comes from, in the general form BOTH driver
@@ -756,6 +801,18 @@ pub fn resolve_turn_sourced(
     rng: &mut AuxRng,
     dex: &Dex,
 ) -> Resolved {
+    resolve_turn_sourced_with(sess, sources, followup, rng, dex, Capture { views: true, sessions: false })
+}
+
+/// [`resolve_turn_sourced`] with an explicit [`Capture`] of the intermediate decisions.
+pub fn resolve_turn_sourced_with(
+    sess: &mut BridgeSession,
+    sources: &mut [TurnSource; 2],
+    followup: &str,
+    rng: &mut AuxRng,
+    dex: &Dex,
+    capture: Capture,
+) -> Resolved {
     // BOUNDARY-turn units — see `resolve_turn_exact` for why a raw `sess.turn()` guard
     // truncates turn 1 after its first commit.
     let start_turn = open_boundary_turn(sess);
@@ -784,7 +841,12 @@ pub fn resolve_turn_sourced(
                 if kind == RequestState::Wait || sess.is_choice_done(i) {
                     continue;
                 }
-                out.views_at[i].push(crate::view::one_sided_view(sess, i, dex));
+                if capture.views {
+                    out.views_at[i].push(crate::view::one_sided_view(sess, i, dex));
+                }
+                if capture.sessions {
+                    out.sessions_at[i].push(sess.snapshot());
+                }
             }
         }
         let mut wrote = false;

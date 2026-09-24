@@ -283,11 +283,14 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
     truncated = 0
     gate_failed = 0
     open_failed = 0
+    core = {"core_arms": 0, "core_arms_intermediate": 0, "integrity_checked": 0}
     for d in decisions:
         # THE WIDTH COUNTERS RUN OVER EVERY DECISION. A decision that fell back still OPENED
         # worlds and still burned clock, and the two counters that say so are precisely the ones
         # a fallback row is read for — see the docstring's defect 1.
         w = d.get("widths") or {}
+        for k in core:
+            core[k] += int(w.get(k, 0) or 0)
         truncated += 1 if w.get("deadline_truncated") else 0
         gate_failed += int(w.get("worlds_gate_failed", 0) or 0)
         open_failed += int(w.get("worlds_open_failed", 0) or 0)
@@ -326,6 +329,10 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         # the 2026-09-22 reading could not tell a dead DRIVER from a bad WORLD off the row —
         # `search.py` has kept the two apart since the beginning and the fold threw one away.
         "worlds_open_failed": open_failed,
+        # The CORE road (`gen3_core_search_v1`): successors answered from a Rust-core version, how
+        # many were D10 leaves, and how many the INTEGRITY sampler built both ways — a mismatch
+        # raises, so a row's integrity claim is "`integrity_checked` of `core_arms`, 0 mismatches".
+        **core,
         "realized_mean": {k: (round(sum(v) / len(v), 3) if v else 0.0)
                           for k, v in realized.items()},
         # ADDITIVE (ladder requirement 3, 87a3f91). Zero on every arm but `playoff`, so a row
@@ -547,6 +554,12 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
                 # because `--root-strategy defensive` names its own head and a row recording
                 # "auto" would misdescribe which leaf the cell was measured on.
                 "score_mode": cfg.effective_score(), "search_impl": cfg.search_impl,
+                # WHICH ROAD built every successor (`gen3_core_search_v1`: every search number
+                # after the M2 adoption is stamped `materializer=core`), and — on the core road —
+                # the fold path and the integrity sampling rate (0 = off) the number carries.
+                "materializer": cfg.materializer,
+                "core_path": cfg.core_path if cfg.materializer == "core" else None,
+                "integrity": int(cfg.integrity) if cfg.materializer == "core" else None,
                 "root_strategy": cfg.root_strategy,
                 "max_depth": int(getattr(cfg, "max_depth", 1)),
                 "playoff_rollouts": (int(playoff_cfg.rollouts) if playoff_cfg

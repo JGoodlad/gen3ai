@@ -273,6 +273,32 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   layer each FAIL a routine test. `offline_feed.new_battle(…, packed_team=)` mirrors the
   `Player`'s `_teambuilder_team` (our own spread's only source in gen 3). Contract + the rule table:
   [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md) §2b / §4a.
+  **Since M2 it also checks the core's own reading** (the `core` column of `core_events --views`):
+  `present()` + `legal_actions()` + the 11-dim mask against the same `LiveView` / `LegalActions` /
+  `Gen3ActionMasker`, type-strict, and the core's board audit (`check_view`, `[BOARD]`). The core
+  reads the TRUTH, so a field where poke-env is WRONG is counted under its registered finding —
+  value-aware, per decision — and never as a divergence (below).
+- **`poke_env_findings.py` — the KNOWN poke-env READING findings** (`gen3_poke_env_findings_v1`).
+  Where poke-env's reading is wrong about a sim fact (the Rust board / the pinned Showdown source /
+  the request is the authority), the Rust core's `present()` carries the truth and the disagreement
+  is registered here: ONE field, a VALUE-AWARE predicate, a minimal reproduction, the truth's source,
+  whether it reaches the obs, and the obs blocks it may touch. Every comparison of the core against
+  poke-env routes through `explain()`; a difference no entry explains is a divergence. 🚨 **Never a
+  blanket tolerance, and never fixed from the core's side**: when the fork is fixed (a TRAINING-INPUT
+  change, the owner's call), DELETE the entry and the check tightens. Today: PE-V10 (a fainted mon's
+  stages), PE-R1b (a re-entered badly-poisoned mon's count), PE-V16 (Flash Fire after its holder's
+  Fire move) — all three reach the obs. Contract + rates:
+  [`designs/rust_sim/present.md`](../../../designs/rust_sim/present.md) §3.
+- **`core_view.py` — a `LiveView` / `LegalActions` from the Rust core's `present()` JSON**
+  (`gen3_core_present_v1`, the Rust Core Program's M2). A pure TRANSPORT: every presentation rule is
+  applied in Rust (`src/rust_sim/src/present/`), so nothing here derives a field. Its consumers are
+  search's `materializer=core` (`agents/training/core_successor.py`) and the pins in
+  `rust_core_present_test.py` (`sim`), which feed each reading rule's scenario to BOTH poke-env
+  (through `offline_feed`) and the core (`core_events --present-stream`) and compare field by field.
+  🚨 **The poke-env data the core's reading consults is GENERATED from poke-env**:
+  `python -m agents.battle.rust_core_present_tables --write` after any change to poke-env's pokedex,
+  move table, `Effect` lifecycle sets or `SideCondition` (`rust_core_present_tables_test.py` fails
+  when stale). Contract: [`designs/rust_sim/present.md`](../../../designs/rust_sim/present.md).
 - **`LegalActions` / `LegalMove` / `LegalSwitch`** (`live_view.py`) — the
   **server-authoritative** legality surface, built via `LegalActions.from_battle(battle)`
   (or `strict_view().legal`): per-slot `LegalMove(id, current_pp, max_pp, disabled, target)`,

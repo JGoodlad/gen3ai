@@ -83,6 +83,7 @@ from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 import agents.training.obs_materializer as OM
 from agents.battle.event_fold import ViewEventFolder
 from agents.battle.live_view import LegalActions, LivePokemon, LiveSide, LiveView
+from agents.battle.poke_env_findings import explain, obs_block_explained
 from agents.battle.view_adapter import read_models_from_payload
 from agents.observation.state_encoder import get_observation_encoder, load_mappings
 from agents.training.obs_roundtrip_fuzz_test import RecordingFuzzPlayer
@@ -158,6 +159,10 @@ class Census:
         self.compared = 0
         self.deferred: Counter = Counter()
         self.declared: Counter = Counter()
+        #: KNOWN poke-env reading findings the CORE road's TRUE reading differs by
+        #: (``agents.battle.poke_env_findings``), value-aware: per finding id, the read-model fields
+        #: and (``finding:obs``) the successor obs blocks it explained. Never a divergence.
+        self.known: Counter = Counter()
 
     def note(self, path: str, protocol: Any, view: Any, where: str) -> None:
         hit = _declared(path)
@@ -185,6 +190,8 @@ class Census:
             lines.append(f"   [DECLARED residual x{n}] {key}")
         for reason, n in self.deferred.most_common():
             lines.append(f"   [deferred x{n}] {reason}")
+        for fid, n in self.known.most_common():
+            lines.append(f"   [KNOWN poke-env finding x{n}] {fid}")
         for _pred, did, why in DECLARED_RESIDUAL:
             if not any(k.startswith(did) for k in self.declared):
                 lines.append(f"   [DECLARED residual {did}: NOT SEEN this run] {why[:70]}…")
@@ -195,7 +202,10 @@ class Census:
 # Field-by-field comparison of the read-models
 # ---------------------------------------------------------------------------
 
-def _cmp_mon(a: LivePokemon, b: LivePokemon, path: str, cen: Census) -> None:
+def _cmp_mon(a: LivePokemon, b: LivePokemon, path: str, cen: Census,
+             fired: Optional[set] = None) -> None:
+    """``fired`` (the CORE road only — it reads the TRUTH): a difference a registered poke-env
+    finding explains, value-aware, is recorded there and in ``cen.known``, not as a divergence."""
     for f in dc_fields(LivePokemon):
         x, y = getattr(a, f.name), getattr(b, f.name)
         if f.name == "hp_fraction":
@@ -215,11 +225,17 @@ def _cmp_mon(a: LivePokemon, b: LivePokemon, path: str, cen: Census) -> None:
             continue
         if f.name in ("boosts", "volatiles", "base_stats", "stats"):
             x, y = dict(x), dict(y)
+        if x != y and fired is not None:
+            fid = explain(f.name, a, b)
+            if fid is not None:
+                cen.known[fid] += 1
+                fired.add(fid)
+                continue
         if x != y:
             cen.note(f"{path}.{f.name}", x, y, path)
 
 
-def _cmp_side(a: LiveSide, b: LiveSide, which: str, cen: Census) -> None:
+def _cmp_side(a: LiveSide, b: LiveSide, which: str, cen: Census, fired: Optional[set] = None) -> None:
     if a.team_size != b.team_size:
         cen.note(f"{which}.team_size", a.team_size, b.team_size, which)
     if dict(a.side_conditions) != dict(b.side_conditions):
@@ -232,10 +248,10 @@ def _cmp_side(a: LiveSide, b: LiveSide, which: str, cen: Census) -> None:
         cen.note(f"{which}.mons[order]", sa, sb, which)
         return
     for m1, m2 in zip(a.mons, b.mons):
-        _cmp_mon(m1, m2, f"{which}.{m1.species}", cen)
+        _cmp_mon(m1, m2, f"{which}.{m1.species}", cen, fired)
 
 
-def compare_live(a: LiveView, b: LiveView, cen: Census) -> None:
+def compare_live(a: LiveView, b: LiveView, cen: Census, fired: Optional[set] = None) -> None:
     cen.compared += 1
     if a.turn != b.turn:
         cen.note("turn", a.turn, b.turn, "view")
@@ -245,8 +261,8 @@ def compare_live(a: LiveView, b: LiveView, cen: Census) -> None:
     for f in ("weather", "is_permanent", "turns_active"):
         if getattr(a.weather, f) != getattr(b.weather, f):
             cen.note(f"weather.{f}", getattr(a.weather, f), getattr(b.weather, f), "view")
-    _cmp_side(a.ours, b.ours, "ours", cen)
-    _cmp_side(a.opp, b.opp, "opp", cen)
+    _cmp_side(a.ours, b.ours, "ours", cen, fired)
+    _cmp_side(a.opp, b.opp, "opp", cen, fired)
 
 
 def compare_legal(a: Optional[LegalActions], b: Optional[LegalActions], cen: Census) -> None:
@@ -444,6 +460,71 @@ def check_successor(factory, encoder, arm_road, payload: dict, chunks, action: i
     return ok
 
 
+def check_core(factory, encoder, road, row_road, core: dict, action: int, dec_i: int,
+               where: str, cen: Census) -> bool:
+    """The CORE road (`gen3_core_search_v1`) at ONE branch point — the THIRD road.
+
+    The arm's successor is the driver's Rust-core VERSION: its ``present()`` view (the side's own
+    stream, every poke-env rule applied in Rust) against the protocol road's battle at the SAME
+    decision (``road`` — for a D10 arm the road stopped at the cut, since the core leaf IS the
+    version at the intermediate decision), field by field; then the FULL tracker-fed successor obs
+    and mask from :class:`~agents.training.core_successor.CoreSuccessorFactory` against
+    ``materialize_branches``' own row (``row_road``'s decision ``dec_i``). The arm was expanded
+    with the INTEGRITY check on, so the factory also encodes the text path's view and raises on
+    any byte difference. No declared residual applies to this road: the version carries the log,
+    so the Wish pair and the sleep belief are compared like every other block."""
+    from agents.battle.core_view import legal_actions_from_core, live_view_from_core
+
+    battle = road.battle
+    if battle is None:
+        cen.defer("[core] the protocol replay produced no battle")
+        return False
+    strict = battle.strict_view()
+    live_c = live_view_from_core(core["view"], battle_tag=strict.live.battle_tag)
+    legal_c = legal_actions_from_core(core.get("legal"), core.get("request"))
+    sub = Census()
+    fired: set = set()
+    compare_live(strict.live, live_c, sub, fired)
+    compare_legal(strict.legal, legal_c, sub)
+    cen.compared += sub.compared
+    cen.known.update(sub.known)
+    for path, n in sub.rows.items():
+        cen.rows[f"core.{path}"] += n
+        cen.examples.setdefault(f"core.{path}", f"{where}: {sub.examples[path]}")
+    if sub.rows:
+        return False
+    mats = row_road.player._materialized
+    if len(mats) <= dec_i:
+        cen.defer("[core] the protocol successor produced no decision row")
+        return False
+    got = factory.successor(core, action, where=where)
+    if got is None:
+        cen.defer("[core] the CORE successor reports no decision where the protocol road has one")
+        return False
+    d = mats[dec_i]
+    ok = True
+    if not np.array_equal(np.asarray(d.mask), got.mask):
+        cen.note("core.successor.mask", list(np.asarray(d.mask)), list(got.mask), where)
+        ok = False
+    if d.obs is None:
+        cen.defer("[core] the protocol successor row carries no obs")
+        return False
+    if not np.array_equal(d.obs, got.obs):
+        bad = sorted(int(i) for i in np.flatnonzero(d.obs != got.obs))
+        seen: Dict[str, int] = {}
+        for i in bad:
+            seen.setdefault(_block_of(encoder, i), i)
+        for blk, i in seen.items():
+            if obs_block_explained(blk, fired):
+                # A block a finding that FIRED on this successor's read-model may touch.
+                cen.known[f"{'+'.join(sorted(fired))}:obs"] += 1
+                continue
+            cen.note(f"core.successor.obs[{blk}]", float(d.obs[i]), float(got.obs[i]),
+                     f"{where} idx={i} ndiff={len(bad)} findings={sorted(fired)}")
+            ok = False
+    return ok
+
+
 def _block_of(encoder, idx: int) -> str:
     """Name the block (and, inside a per-mon slot, the FIELD) an index falls in, resolved from the
     DECLARED layout — never a literal.
@@ -482,6 +563,10 @@ def _field_of(slot_layout: Any, col: int) -> str:
 # The run
 # ---------------------------------------------------------------------------
 
+#: The CORE road's compared branch points (and how many were D10 leaves) in the last :func:`run`.
+CORE_POINTS = 0
+CORE_D10 = 0
+
 def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS,
         impl: str = "rust", fixed_key: Optional[int] = None) -> Tuple[Census, int, int, int]:
     cen = Census()
@@ -489,6 +574,8 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
     branch_points = 0
     full_obs_points = 0
     d10_points = 0
+    global CORE_POINTS, CORE_D10
+    CORE_POINTS, CORE_D10 = 0, 0
     for b in range(n_battles):
         with tempfile.TemporaryDirectory() as td:
             record, summary, npz = _record_one_battle(
@@ -502,7 +589,7 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
         if not cand:
             continue
         picks = [cand[int(len(cand) * f)] for f in (0.25, 0.5, 0.75)][:turns]
-        with SearchSession(record, impl=impl) as ss:
+        with SearchSession(record, impl=impl) as ss, SearchSession(record, impl=impl) as cs:
             for anchor in picks:
                 turn = int(invs[anchor]["turn"])
                 try:
@@ -545,10 +632,25 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                            f"{other}_action": opp_rec,
                            "seed": f"{turn},{k + 1},{anchor + 7},{k * 13 + 11}", "label": a}
                           for k, a in enumerate(picks)]
+                # THE CORE ROAD — the same arms, from a Rust-core VERSION root, integrity-checked.
+                croot = cs.open_root(turn, core="typed")
+                cexp = [dict(a, node_id=croot.node_id) for a in expand]
+                core_of = {int(n.label): n for n in cs.expand_many(cexp, side=side, integrity=1)}
+                from agents.training.core_successor import CoreSuccessorFactory
+
+                cfactory = (CoreSuccessorFactory.at_fork(
+                    road.player._get_tracker(road.battle), road.battle, encoder)
+                    if road.battle is not None else None)
                 for node in ss.expand_many(expand):
                     if node.ended or node.stuck:
                         cen.defer("arm ended / stuck (no successor board to compare)")
                         continue
+                    cnode = core_of.get(int(node.label))
+                    if cnode is None or cnode.ended != node.ended:
+                        cen.note("core.arm[presence]", node.ended, getattr(cnode, "ended", None),
+                                 f"{record.battle_tag}@t{turn}/arm{node.label}")
+                        continue
+                    ccore = cnode.core_p1 if side == "p1" else cnode.core_p2
                     payload = node.view_p1 if side == "p1" else node.view_p2
                     suffix = node.p1_chunks if side == "p1" else node.p2_chunks
                     # PAD the action list. `_feed` stops the moment the player is done, and a
@@ -599,15 +701,29 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                         clean_mid = check_point(
                             encoder, mid_road, at[0], where + "/D10mid", cen,
                             ledger=mid_board)
+                        if cfactory is not None and ccore is not None:
+                            if not ccore.get("mid"):
+                                cen.note("core.mid", True, False, where)
+                            elif check_core(cfactory, encoder, mid_road, mid_road, ccore,
+                                            int(node.label), anchor + 1, where + "/core-D10", cen):
+                                CORE_POINTS += 1
+                                CORE_D10 += 1
                         if clean_mid and factory is not None and check_successor(
                                 factory, encoder, mid_road, at[0], head, int(node.label),
                                 anchor + 1, where + "/D10", cen):
                             full_obs_points += 1
                             d10_points += 1
-                    elif clean and factory is not None and check_successor(
-                            factory, encoder, arm_road, payload, suffix, int(node.label),
-                            anchor + 1, where, cen):
-                        full_obs_points += 1
+                    else:
+                        if clean and factory is not None and check_successor(
+                                factory, encoder, arm_road, payload, suffix, int(node.label),
+                                anchor + 1, where, cen):
+                            full_obs_points += 1
+                        if cfactory is not None and ccore is not None:
+                            if ccore.get("mid"):
+                                cen.note("core.mid", False, True, where)
+                            elif check_core(cfactory, encoder, arm_road, arm_road, ccore,
+                                            int(node.label), anchor + 1, where + "/core", cen):
+                                CORE_POINTS += 1
     return cen, branch_points, full_obs_points, d10_points
 
 
@@ -638,6 +754,7 @@ def test_the_one_sided_view_reproduces_the_read_models_and_the_obs():
         f"only {full_obs_points} FULL-observation (tracker-fed) comparisons ran — the D5 half of "
         f"this gate is what licenses `--materializer view`, and a run that never reaches it is "
         f"vacuous about every tracker block (branch points: {branch_points})")
+    assert CORE_POINTS >= 8, f"only {CORE_POINTS} CORE-road successors compared — vacuous"
     assert not cen.rows, "\n" + cen.render()
 
 
@@ -658,7 +775,8 @@ def test_an_intermediate_decision_arm_is_served_from_the_ports_own_board():
     and the gate has gone vacuous, which is why that is an assertion and not a print."""
     cen, branch_points, full_obs_points, d10 = run(n_battles=1, arms=10, turns=3, fixed_key=8)
     print("\n" + cen.render())
-    print(f"branch points: {branch_points}  full-obs: {full_obs_points}  D10 arms: {d10}")
+    print(f"branch points: {branch_points}  full-obs: {full_obs_points}  D10 arms: {d10}  "
+          f"core: {CORE_POINTS} ({CORE_D10} D10)")
     assert d10 >= 1, (
         f"NO D10 arm was served on the fixture battle ({branch_points} branch points, "
         f"{full_obs_points} full-obs) — this gate is VACUOUS about the intermediate-decision "
@@ -666,6 +784,9 @@ def test_an_intermediate_decision_arm_is_served_from_the_ports_own_board():
         f"arms KO one of our mons mid-ply.")
     assert full_obs_points >= 8, (
         f"only {full_obs_points} tracker-fed comparisons ran (branch points: {branch_points})")
+    assert CORE_D10 >= 1, (
+        f"the CORE road served NO D10 leaf on the fixture battle ({CORE_POINTS} core points) — "
+        f"its intermediate-decision version is untested")
     assert not cen.rows, "\n" + cen.render()
 
 
@@ -682,5 +803,6 @@ if __name__ == "__main__":
     census, bp, fop, d10 = run(a.n_battles, a.arms, a.turns, a.impl, a.fixed_key)
     print(census.render())
     print(f"branch points compared: {bp}   (FULL tracker-fed obs at {fop} of them; "
-          f"{d10} of those were D10 INTERMEDIATE arms served from view_pN_at[0])")
+          f"{d10} of those were D10 INTERMEDIATE arms served from view_pN_at[0]); "
+          f"CORE road: {CORE_POINTS} successors ({CORE_D10} D10), integrity-checked")
     sys.exit(1 if census.rows else 0)
