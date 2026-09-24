@@ -105,6 +105,10 @@ pub mod bridge;
 pub mod damage;
 pub mod dex;
 pub mod driver_timing;
+/// The EMISSION SELF-CHECK (`gen3_core_emission_selfcheck_v1`): every emitted line round-trips and
+/// every viewer's render is the line that viewer is owed — ON in `cargo test` and the self-check
+/// build, compiled OUT of `cargo build --release`.
+pub mod emission_check;
 pub mod event;
 /// The Rust core's typed event layer (`gen3_core_events_v1`, Rust Core Program M1): typed lines,
 /// the per-side reading projection, `parse`, and the persisted record.

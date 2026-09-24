@@ -77,7 +77,10 @@ const CRATE = path.resolve(__dirname, '..');
 // ISOLATED target dir — never rebuild the shared target/ (the live ab_replay fuzzer).
 // (overridable so two concurrent investigations never share one target dir / build lock)
 const SIMBRIDGE_TARGET = process.env.POKESIM_SIMBRIDGE_TARGET || '/tmp/pokesim_target_simbridge';
-const RUST_BRIDGE = path.join(SIMBRIDGE_TARGET, 'release/sim_bridge');
+// The EMISSION SELF-CHECK build (`gen3_core_emission_selfcheck_v1`, `src/emission_check.rs`): every
+// emitted line is checked at the moment it is emitted, a failure is a `panic` verdict. Its own
+// profile directory (`selfcheck/`), so it never overwrites a production `release/` binary.
+const RUST_BRIDGE = path.join(SIMBRIDGE_TARGET, 'selfcheck/sim_bridge');
 
 const { Teams } = require(path.join(ROOT, 'deps/pokemon-showdown/dist/sim'));
 
@@ -938,7 +941,7 @@ async function replayRepro(dir) {
 function buildRust() {
   const { spawnSync } = require('child_process');
   const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}`, CARGO_TARGET_DIR: SIMBRIDGE_TARGET };
-  const r = spawnSync('cargo', ['build', '--release', '--bin', 'sim_bridge'], { cwd: CRATE, env, stdio: 'inherit' });
+  const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'sim_bridge'], { cwd: CRATE, env, stdio: 'inherit' });
   if (r.status !== 0) { console.error('[sim_bridge_diff] cargo build failed'); process.exit(1); }
   if (!fs.existsSync(RUST_BRIDGE)) { console.error(`[sim_bridge_diff] rust binary missing: ${RUST_BRIDGE}`); process.exit(1); }
 }
@@ -965,7 +968,7 @@ async function main() {
   {
     const { spawnSync } = require('child_process');
     const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}`, CARGO_TARGET_DIR: SIMBRIDGE_TARGET };
-    const r = spawnSync('cargo', ['build', '--release', '--bin', 'sim_bridge'], { cwd: CRATE, env, stdio: 'inherit' });
+    const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'sim_bridge'], { cwd: CRATE, env, stdio: 'inherit' });
     if (r.status !== 0) { console.error('[sim_bridge_diff] cargo build failed'); process.exit(1); }
   }
   if (!fs.existsSync(RUST_BRIDGE)) { console.error(`[sim_bridge_diff] rust binary missing: ${RUST_BRIDGE}`); process.exit(1); }

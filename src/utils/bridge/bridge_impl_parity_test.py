@@ -73,7 +73,6 @@ from utils.teambuilder import Gen3Teambuilder
 from utils.bridge import local_battle_runner
 from utils.bridge.local_battle_runner import run_local_battles
 from utils.contention import describe_contention
-from utils.paths import src_path
 
 BATTLE_FORMAT = "gen3ou"
 # Short per-battle timeout so an unmodeled-move HANG (some Rust fail-loud paths emit __ERR__ to
@@ -257,8 +256,9 @@ def run(n_battles: int = 60, tol: float = 0.20) -> None:
 def _prebuilt_rust_available() -> bool:
     if os.environ.get("POKESIM_SIM_BRIDGE_BIN"):
         return True
-    shared = src_path("rust_sim", "target", "release", "sim_bridge")
-    return shared.is_file()
+    from utils.bridge.sim_bridge_bin import expected_bin_path
+
+    return expected_bin_path("sim_bridge").is_file()
 
 
 import pytest

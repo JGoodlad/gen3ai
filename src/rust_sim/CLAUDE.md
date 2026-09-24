@@ -110,6 +110,7 @@ read the row you are about to edit.**
 | `bin/search_driver.rs` | DONE, validated | The drop-in replacement for BOTH node offline drivers — the persistent `{id, cmd}` search server AND the one-shot `mode` replay verbs. Dispatch is on the KEY. An `expand_many` may carry **`side`** to ELIDE the one-sided payload the caller will not read (`gen3_expand_many_side_elision_v1`). |
 | `driver_timing.rs` | DONE | OPT-IN per-phase wall accounting inside `expand_many` (`POKESIM_SEARCH_TIMING=1`). **Off it renders the empty string**, so an un-set build is byte-identical and the cross-impl parity harness is unaffected. |
 | `core_events/` (+ `bin/core_events.rs`) | M1 BUILT, not used by training | The Rust Core's typed event layer (`gen3_core_events_v1`): every omniscient line is a typed `Line` whose text is its rendering; one side's stream → `CoreEvent`s carrying `Gen3Battle`'s reading; `parse(lines)`; the persisted record. Detail: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md). |
+| `emission_check.rs` | BUILT; ON in `cargo test` + the fuzzers, compiled OUT of `--release` | The EMISSION SELF-CHECK (`gen3_core_emission_selfcheck_v1`): at every emission, the omniscient line round-trips (`Line::parse(render(l)) == l`), each viewer's render is the line that viewer is owed (the typed `side_view`) and no secret (exact HP, an owner-only line, a one-side frame) reaches the other viewer; a failure panics with the line, both renders and the viewer. Detail: [`designs/rust_sim/emission_selfcheck.md`](../../designs/rust_sim/emission_selfcheck.md). |
 | `view.rs` | DONE, validated | The ONE-SIDED VIEW readout (`gen3_one_sided_view_v1`) — the PROJECTION of the omniscient board onto what one side has OBSERVED, in the shape `LiveView` holds, plus the per-side reveal fold it rides on. The obs-legal counterpart of `pre_state`. 🚨 **The fold is OPT-IN** (`BridgeSession::enable_view_fold`, `gen3_view_fold_opt_in_v1`) — `sim_bridge` never builds it. Contract + deferrals: [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md). |
 | `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `BoardReading` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` GENERATED from poke-env. Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `version.rs` | M2 BUILT | `BattleVersion` (`gen3_core_version_v1`): the persistent battle state — `Arc` parent, per-side stream (`BoardReading` + event `Reader`), per-transition events, memoized views, the engine as REFEREE; built by step (typed at the source) or by parse (one side's text), gated `parse == step` version by version. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
@@ -160,6 +161,32 @@ after a poke-env data change (`rust_core_present_tables_test.py` fails the day i
 🚨 **A TRAINING SESSION BUILDS NO VIEW.** Neither the one-sided view's reveal fold nor any core
 recording runs in `sim_bridge`; a reader opts in (`enable_view_fold`, `new_core`). Pinned by
 `tests/view_fold_opt_in_test.rs` (the constructors + a source scan of `sim_bridge.rs`).
+
+## The EMISSION SELF-CHECK — every line checked as it is emitted (`gen3_core_emission_selfcheck_v1`)
+
+The whole-battle harness (slices E / V) checks a battle after it ends; `src/emission_check.rs`
+checks each line AT ITS EMISSION: the omniscient line is canonical (`ProtocolBuilder::emit` /
+`retro_edit`), each viewer's render parses back to the typed fold it is owed (`bridge::derive_side`,
+`split_log_lines`), each bridge frame parses and belongs to its side (`push_chunk`), and — as its own
+invariant — no secret reaches the other viewer. A failure PANICS with `EMISSION SELF-CHECK FAILED`,
+the line, both renders and the viewer; `sim_bridge` / `search_driver` EXIT (86) on one rather than
+answer `__ERR__`. Detail, the build table and the proof of zero production cost:
+[`designs/rust_sim/emission_selfcheck.md`](../../designs/rust_sim/emission_selfcheck.md).
+
+```bash
+cargo test                                                         # ON (debug_assertions)
+cargo build --profile selfcheck --features emission-selfcheck      # ON, optimized -> target/selfcheck/
+cargo build --release                                              # OFF: every call compiled out
+```
+
+🚨 **Every call site carries `#[cfg(any(debug_assertions, feature = "emission-selfcheck"))]`** —
+`tests/emission_check_test.rs` fails a call without it (production would pay for it). 🚨 **The
+self-check build lives in `target/selfcheck/`, never `target/release/`** — so it cannot overwrite the
+binary a live run execs. Python selects it with `POKESIM_EMISSION_SELFCHECK=1` (set by the root
+`conftest.py` for every pytest session and automatically for a `*fuzz_test.py` run as a script;
+`utils.bridge.sim_bridge_bin.expected_bin_path` for a test that execs a pre-built binary). The four
+A/B fuzzers build it themselves. 🚨 **A regression the check finds gets its own unit test** that
+exercises the exact edge case and FAILS on revert.
 
 ## The callable surface (battle.rs) maps to the existing bridge
 
@@ -469,7 +496,7 @@ running; every future mechanic layer becomes automatically stress-tested.
 - **Run it:** see the README runbook ("A/B differential fuzzer"). Quick start:
   `node src/rust_sim/harness/ab_fuzz.js --mode randbats --hours 12` (overnight),
   `--mode random --battles 200 --master-seed S` (reproducible bounded hunt);
-  replay any repro with `target/release/ab_replay <repro-dir>`.
+  replay any repro with `target/selfcheck/ab_replay <repro-dir>` (the self-check build `ab_fuzz.js` builds).
 - **The root-causing workhorse** is `harness/probe_repro_simtrace.js` — replay ANY saved repro dir
   through the REAL sim with per-draw PRNG call-site instrumentation.
 
@@ -489,8 +516,8 @@ clause-shuffle draw path + the OU framing). Genders are pinned (`pinGenders`) so
 one at construction. Isolated build + run:
 
 ```bash
-CARGO_TARGET_DIR=/tmp/pokesim_target_bytefuzz cargo build --release --bin ab_replay
-POKESIM_AB_REPLAY_BIN=/tmp/pokesim_target_bytefuzz/release/ab_replay \
+CARGO_TARGET_DIR=/tmp/pokesim_target_bytefuzz cargo build --profile selfcheck --features emission-selfcheck --bin ab_replay
+POKESIM_AB_REPLAY_BIN=/tmp/pokesim_target_bytefuzz/selfcheck/ab_replay \
   node src/rust_sim/harness/ab_fuzz.js --mode pool --protocol \
   --format gen3ou --battles 300
 ```

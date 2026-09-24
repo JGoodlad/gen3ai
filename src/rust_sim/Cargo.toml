@@ -22,3 +22,17 @@ path = "src/lib.rs"
 # none — std-only by design (see header).
 
 
+
+[features]
+# The EMISSION SELF-CHECK (`src/emission_check.rs`, `gen3_core_emission_selfcheck_v1`): every
+# emitted line round-trips and every viewer's render is the line that viewer is owed, asserted at
+# the moment of emission. ON in every `debug_assertions` build (so `cargo test`); this feature turns
+# it on in an OPTIMIZED build for the fuzzers and the Python fuzz/parity surface. Production NEVER
+# passes it: `cargo build --release` (what training's resolver builds) compiles every call out.
+emission-selfcheck = []
+
+# The optimized SELF-CHECK build: `cargo build --profile selfcheck --features emission-selfcheck`.
+# Its own output directory (`target/selfcheck/`) is the point — a self-check build can never
+# overwrite `target/release/`, the binaries a live training run execs.
+[profile.selfcheck]
+inherits = "release"

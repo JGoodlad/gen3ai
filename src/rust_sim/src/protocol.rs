@@ -329,7 +329,11 @@ impl ProtocolBuilder {
             return;
         }
         let line = build();
-        self.lines.push(ProtocolLine(line.render()));
+        let text = line.render();
+        // The EMISSION SELF-CHECK (`crate::emission_check`): compiled out of `--release`.
+        #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+        crate::emission_check::check_omniscient(&line, &text);
+        self.lines.push(ProtocolLine(text));
         if let Some(recs) = &mut self.recs {
             recs.push(SourceRec { line, turn: self.cur_turn, scope: self.scope });
         }
@@ -345,7 +349,10 @@ impl ProtocolBuilder {
             assert_eq!(recs[self.drained + idx].line, line, "a source record disagrees with its own text");
         }
         edit(&mut line);
-        self.lines[idx].0 = line.render();
+        let text = line.render();
+        #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+        crate::emission_check::check_omniscient(&line, &text);
+        self.lines[idx].0 = text;
         if let Some(recs) = &mut self.recs {
             recs[self.drained + idx].line = line;
         }

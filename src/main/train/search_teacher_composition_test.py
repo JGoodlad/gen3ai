@@ -184,13 +184,17 @@ import pytest
 
 from utils.contention import (
     ProgressDeadline, ProgressTimeout, cpu_contention_factor, describe_contention, scale_timeout)
+from utils.bridge.sim_bridge_bin import expected_bin_path
 from utils.paths import repo_path, src_path
 
 pytestmark = [pytest.mark.sim, pytest.mark.slow]
 
 #: The cargo line a missing binary is told to run — quoted verbatim from the root ``CLAUDE.md``.
-_CARGO_BUILD = ("cargo build --release --bin sim_bridge --bin search_driver "
-                "--manifest-path src/rust_sim/Cargo.toml")
+def _cargo_build() -> str:
+    """The build the suite is on (the EMISSION SELF-CHECK build under pytest — root conftest)."""
+    from utils.bridge.sim_bridge_bin import build_command
+
+    return build_command("sim_bridge", "search_driver")
 
 #: No output at all for this long (contention-SCALED) means the child is wedged, not slow. Sized to
 #: the longest silent stretch the run legitimately has: a cycle's SELECTION child falsifies every
@@ -229,12 +233,12 @@ def _rust_binaries_or_fail() -> Tuple[str, str]:
     for name, env_var in (("sim_bridge", "POKESIM_SIM_BRIDGE_BIN"),
                           ("search_driver", "POKESIM_SEARCH_DRIVER_BIN")):
         override = os.environ.get(env_var)
-        path = Path(override) if override else src_path("rust_sim") / "target" / "release" / name
+        path = Path(override) if override else expected_bin_path(name)
         if not path.is_file():
             pytest.fail(
                 f"the rust `{name}` binary is not built at {path} — this test gates the "
                 f"search-teacher composition ON RUST and cannot substitute node for it.\n"
-                f"    Build it:  {_CARGO_BUILD}\n"
+                f"    Build it:  {_cargo_build()}\n"
                 f"    (or set ${env_var} to a pre-built binary.)")
         out.append(str(path))
     return out[0], out[1]

@@ -65,7 +65,10 @@ const CRATE = path.resolve(__dirname, '..');
 // as honest scope. An env override lets each worktree run the per-side gate in its own dir;
 // the default is unchanged, so existing invocations are byte-identical.
 const BRIDGE_TARGET = process.env.POKESIM_BRIDGE_TARGET || '/tmp/pokesim_target_bridge';
-const REPLAYER = path.join(BRIDGE_TARGET, 'release/bridge_replay');
+// The EMISSION SELF-CHECK build (`gen3_core_emission_selfcheck_v1`, `src/emission_check.rs`): every
+// emitted line is checked at the moment it is emitted, a failure is a `panic` verdict. Its own
+// profile directory (`selfcheck/`), so it never overwrites a production `release/` binary.
+const REPLAYER = path.join(BRIDGE_TARGET, 'selfcheck/bridge_replay');
 
 function tick() { return new Promise((r) => setTimeout(r, 0)); }
 
@@ -424,7 +427,7 @@ async function main() {
   // Build the Rust replayer ONCE into the ISOLATED target dir (never the shared target/).
   {
     const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}`, CARGO_TARGET_DIR: BRIDGE_TARGET };
-    const r = spawnSync('cargo', ['build', '--release', '--bin', 'bridge_replay'], { cwd: CRATE, env, stdio: 'inherit' });
+    const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'bridge_replay'], { cwd: CRATE, env, stdio: 'inherit' });
     if (r.status !== 0) { console.error('[bridge_ab_fuzz] cargo build failed'); process.exit(1); }
   }
   if (!fs.existsSync(REPLAYER)) { console.error(`[bridge_ab_fuzz] replayer missing: ${REPLAYER}`); process.exit(1); }

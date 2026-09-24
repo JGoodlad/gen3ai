@@ -45,7 +45,10 @@ from pathlib import Path
 # parents[1] while the harness lived in <root>/tmp/; the move (`ede4c79`) left the index
 # behind, so every default path below resolved under src/rust_sim/ and did not exist.
 ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_BIN = ROOT / "src/rust_sim/target/release/search_driver"
+# The EMISSION SELF-CHECK build (`gen3_core_emission_selfcheck_v1`): every emitted line checked at the
+# moment of emission; build it with `cargo build --profile selfcheck --features emission-selfcheck
+# --bin search_driver` (its own `target/selfcheck/`, never the production `release/`).
+DEFAULT_BIN = ROOT / "src/rust_sim/target/selfcheck/search_driver"
 NODE_REPLAY = ROOT / "src/utils/bridge/replay_driver.js"
 NODE_SEARCH = ROOT / "src/utils/bridge/search_driver.js"
 T_LINE = re.compile(r"^\|t:\|.*$", re.M)

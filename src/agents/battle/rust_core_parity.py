@@ -42,6 +42,7 @@ import collections
 import gzip
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -141,10 +142,29 @@ def chunks_sha(chunks: Sequence[Tuple[str, str]]) -> str:
 # the core
 # ---------------------------------------------------------------------------
 
+#: The EMISSION SELF-CHECK's stderr summary (``emission_check::summary``), printed by a
+#: ``core_events`` built with the check on — a production build prints none.
+_SELFCHECK_RE = re.compile(r"^emission_selfcheck omniscient=(\d+) per_viewer=(\d+) split=(\d+) frame=(\d+)$")
+SELFCHECK_KINDS = ("omniscient", "per_viewer", "split", "frame")
+
+
+def selfcheck_counts(stderr: str) -> Optional[Dict[str, int]]:
+    """The self-check counts a ``core_events`` run reported on stderr, or ``None`` when the binary
+    ran without the check (a production build)."""
+    for line in stderr.splitlines():
+        m = _SELFCHECK_RE.match(line.strip())
+        if m:
+            return dict(zip(SELFCHECK_KINDS, map(int, m.groups())))
+    return None
+
+
 def run_core(battles: Sequence[RecordedBattle], record_dir: Optional[str] = None,
-             commit: str = "unknown", views: bool = False) -> List[dict]:
+             commit: str = "unknown", views: bool = False,
+             selfcheck: Optional[collections.Counter] = None) -> List[dict]:
     """Replay ``battles`` through the core in ONE process; one result dict per battle.
-    ``views`` also captures slice V's decision boards (``core_events --views``)."""
+    ``views`` also captures slice V's decision boards (``core_events --views``). ``selfcheck``
+    accumulates the EMISSION SELF-CHECK's counts (``selfcheck["runs_without"]`` counts a process
+    that ran without the check)."""
     from utils.bridge.sim_bridge_bin import resolve_core_events_bin
 
     argv = [resolve_core_events_bin()]
@@ -156,6 +176,12 @@ def run_core(battles: Sequence[RecordedBattle], record_dir: Optional[str] = None
     p = subprocess.run(argv, input=stdin, capture_output=True, text=True, check=False)
     if p.returncode != 0:
         raise RuntimeError(f"core_events failed (exit {p.returncode}): {p.stderr.strip()[-2000:]}")
+    if selfcheck is not None:
+        counts = selfcheck_counts(p.stderr)
+        if counts is None:
+            selfcheck["runs_without"] += 1
+        else:
+            selfcheck.update(counts)
     out = [json.loads(line) for line in p.stdout.splitlines() if line.strip()]
     if len(out) != len(battles):
         raise RuntimeError(f"core_events answered {len(out)} battles for {len(battles)}")
@@ -205,6 +231,8 @@ class Census:
     divergences: collections.Counter = field(default_factory=collections.Counter)
     examples: Dict[str, Any] = field(default_factory=dict)
     refused: List[str] = field(default_factory=list)
+    #: The EMISSION SELF-CHECK's per-kind counts over every core process this census ran.
+    selfcheck: collections.Counter = field(default_factory=collections.Counter)
 
     def diverge(self, key: str, example: Any) -> None:
         self.divergences[key] += 1
@@ -213,6 +241,9 @@ class Census:
     def render(self) -> str:
         head = (f"{self.battles} battles, {self.viewers} viewers, {self.lines} per-side lines, "
                 f"{self.events} events compared")
+        if self.selfcheck:
+            head += ", emission self-check " + " ".join(
+                f"{k}={self.selfcheck[k]}" for k in (*SELFCHECK_KINDS, "runs_without") if k in self.selfcheck)
         if not self.divergences and not self.refused:
             return f"✅ 0 divergences — {head}"
         out = [f"❌ {sum(self.divergences.values())} divergences in {len(self.divergences)} "
@@ -268,7 +299,8 @@ def check_battles(battles: Sequence[RecordedBattle], census: Census,
     step = VIEW_BATCH if views is not None else max(len(battles), 1)
     for lo in range(0, len(battles), step):
         batch = battles[lo:lo + step]
-        results = run_core(batch, record_dir=record_dir, commit=commit, views=views is not None)
+        results = run_core(batch, record_dir=record_dir, commit=commit, views=views is not None,
+                           selfcheck=census.selfcheck)
         for b, res in zip(batch, results):
             census.battles += 1
             if not res["ok"]:

@@ -205,10 +205,13 @@ fn main() {
         let body = match res {
             Ok(Ok(out_body)) => format!("{{\"id\":{id},\"ok\":true,{out_body}}}"),
             Ok(Err(msg)) => format!("{{\"id\":{id},\"ok\":false,\"error\":{}}}", json_quote(&msg)),
-            Err(panic) => format!(
-                "{{\"id\":{id},\"ok\":false,\"error\":{}}}",
-                json_quote(&format!("panic: {}", panic_message(&panic)))
-            ),
+            Err(panic) => {
+                let msg = panic_message(&panic);
+                // A self-check failure is never one bad request: exit (compiled out of `--release`).
+                #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+                pokesim::emission_check::exit_if_failure(&msg);
+                format!("{{\"id\":{id},\"ok\":false,\"error\":{}}}", json_quote(&format!("panic: {msg}")))
+            }
         };
         respond(&mut out, &body);
     }

@@ -237,3 +237,59 @@ def test_rust_bridge_emits_a_parseable_recon_record(tmp_path):
     # `commands` is protocol-faithful: every CHOOSE processed, in order.
     assert record.commands, "commands must record the CHOOSE stream"
     assert all(side in ("p1", "p2") for side, _ in record.commands)
+
+
+# ---------------------------------------------------------------------------
+# The EMISSION SELF-CHECK build (`gen3_core_emission_selfcheck_v1`).
+# ---------------------------------------------------------------------------
+
+
+def test_the_selfcheck_build_lands_in_its_own_directory_never_release():
+    """The production build and the self-check build must never share an output directory: a
+    self-check build into ``target/release/`` would overwrite the binary a live run execs."""
+    prod, prod_dir = sim_bridge_bin.build_argv("sim_bridge", selfcheck=False)
+    chk, chk_dir = sim_bridge_bin.build_argv("sim_bridge", selfcheck=True)
+    assert prod == ["build", "--release", "--bin", "sim_bridge"] and prod_dir == "release"
+    assert chk == ["build", "--profile", "selfcheck", "--features", "emission-selfcheck",
+                   "--bin", "sim_bridge"]
+    assert chk_dir == "selfcheck" != prod_dir
+    assert "emission-selfcheck" not in prod
+
+
+def test_the_switch_selects_the_build_and_keeps_separate_cache_slots(monkeypatch):
+    """``POKESIM_EMISSION_SELFCHECK`` picks the build, and a cached production path is never
+    served to a self-check request (or the reverse)."""
+    monkeypatch.delenv("POKESIM_SIM_BRIDGE_BIN", raising=False)
+    monkeypatch.setattr(sim_bridge_bin, "_rust_bin_cache",
+                        {"sim_bridge": "/prod/sim_bridge", "sim_bridge@selfcheck": "/chk/sim_bridge"})
+    monkeypatch.setenv("POKESIM_EMISSION_SELFCHECK", "1")
+    assert sim_bridge_bin.resolve_sim_bridge_bin() == "/chk/sim_bridge"
+    monkeypatch.setenv("POKESIM_EMISSION_SELFCHECK", "0")
+    assert sim_bridge_bin.resolve_sim_bridge_bin() == "/prod/sim_bridge"
+    monkeypatch.delenv("POKESIM_EMISSION_SELFCHECK")
+    assert sim_bridge_bin.resolve_sim_bridge_bin() == "/prod/sim_bridge"
+
+
+def test_a_fuzz_script_turns_the_selfcheck_on_and_an_explicit_value_wins(monkeypatch):
+    import types
+
+    fake_main = types.ModuleType("__main__")
+    fake_main.__file__ = "/x/src/agents/action/fuzz_test.py"
+    monkeypatch.setitem(__import__("sys").modules, "__main__", fake_main)
+    monkeypatch.delenv("POKESIM_EMISSION_SELFCHECK", raising=False)
+    sim_bridge_bin._auto_selfcheck()
+    assert sim_bridge_bin.selfcheck_requested()
+    monkeypatch.setenv("POKESIM_EMISSION_SELFCHECK", "0")
+    sim_bridge_bin._auto_selfcheck()
+    assert not sim_bridge_bin.selfcheck_requested()
+    fake_main.__file__ = "/x/src/main/train_rl_agent.py"
+    monkeypatch.delenv("POKESIM_EMISSION_SELFCHECK")
+    sim_bridge_bin._auto_selfcheck()
+    assert not sim_bridge_bin.selfcheck_requested(), "a production entry point never turns it on"
+
+
+def test_pytest_sessions_run_the_selfcheck_build():
+    """The root conftest puts every pytest-spawned rust child on the self-check build."""
+    import os
+
+    assert os.environ.get("POKESIM_EMISSION_SELFCHECK") in ("1", "0")

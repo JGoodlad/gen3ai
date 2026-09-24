@@ -105,6 +105,9 @@ fn main() {
                     .map(|s| s.to_string())
                     .or_else(|| panic.downcast_ref::<String>().cloned())
                     .unwrap_or_else(|| "panic".to_string());
+                // A self-check failure is never one bad line: exit (compiled out of `--release`).
+                #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+                pokesim::emission_check::exit_if_failure(&msg);
                 emit_err(&mut out, &msg);
             }
         }

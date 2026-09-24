@@ -77,7 +77,10 @@ const CRATE = path.resolve(__dirname, '..');
 // The isolated byte-fuzz build (CARGO_TARGET_DIR=/tmp/pokesim_target_bytefuzz) is
 // preferred via POKESIM_AB_REPLAY_BIN so a byte run never touches the shared target/
 // used by the live fuzzers (project law). Falls back to the shared target build.
-const REPLAYER = process.env.POKESIM_AB_REPLAY_BIN || path.join(CRATE, 'target/release/ab_replay');
+// The EMISSION SELF-CHECK build (`gen3_core_emission_selfcheck_v1`, `src/emission_check.rs`): every
+// emitted line is checked at the moment it is emitted, a failure is a `panic` verdict. Its own
+// profile directory (`selfcheck/`), so it never overwrites a production `release/` binary.
+const REPLAYER = process.env.POKESIM_AB_REPLAY_BIN || path.join(CRATE, 'target/selfcheck/ab_replay');
 
 const rustMoves = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/pokemon/gen3_moves.json'), 'utf8'));
 const portSpecies = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/pokemon/gen3_species.json'), 'utf8'));
@@ -379,7 +382,7 @@ function chunkHeader(flags, runId, chunkIdx) {
     '# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).',
     `# mode=${flags.mode} master_seed=${flags.masterSeed} run_id=${runId} chunk=${chunkIdx}`,
     '# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).',
-    '# Replay: target/release/ab_replay <this-file>   (one JSON verdict per battle)',
+    '# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)',
   ];
 }
 
@@ -415,7 +418,7 @@ function saveRepro(outDir, runId, flags, battleMeta, verdict, chunkIdx) {
       got: verdict.got === undefined ? null : verdict.got,
       detail: verdict.detail === undefined ? null : verdict.detail,
     },
-    replay_cmd: `src/rust_sim/target/release/ab_replay ${path.relative(ROOT, dir)}`,
+    replay_cmd: `src/rust_sim/target/selfcheck/ab_replay ${path.relative(ROOT, dir)}`,
   };
   fs.writeFileSync(path.join(dir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
   return dir;
@@ -442,7 +445,7 @@ async function main() {
   // must NOT rebuild into the shared target/.
   if (!process.env.POKESIM_AB_REPLAY_BIN) {
     const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}` };
-    const r = spawnSync('cargo', ['build', '--release', '--bin', 'ab_replay'], { cwd: CRATE, env, stdio: 'inherit' });
+    const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'ab_replay'], { cwd: CRATE, env, stdio: 'inherit' });
     if (r.status !== 0) { console.error('[ab_fuzz] cargo build failed'); process.exit(1); }
   } else {
     console.error(`[ab_fuzz] using replayer ${REPLAYER} (no rebuild)`);

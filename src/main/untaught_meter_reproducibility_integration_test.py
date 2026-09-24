@@ -28,7 +28,7 @@ import sys
 import pytest
 
 from agents.training import untaught_meter as engine
-from utils.paths import main_models_dir, repo_root, src_root
+from utils.paths import main_models_dir, src_root
 
 pytestmark = [pytest.mark.sim, pytest.mark.slow]
 
@@ -66,7 +66,9 @@ def _run(models, manifest, out_path) -> dict:
                 "NUMEXPR_NUM_THREADS"):
         env.setdefault(var, "1")
     env.setdefault("GEN3AI_TIMEOUT_SCALE", "8")
-    prebuilt = repo_root() / "src" / "rust_sim" / "target" / "release" / "sim_bridge"
+    from utils.bridge.sim_bridge_bin import expected_bin_path
+
+    prebuilt = expected_bin_path("sim_bridge")     # the build the suite is on (root conftest)
     if "POKESIM_SIM_BRIDGE_BIN" not in env and prebuilt.exists():
         env["POKESIM_SIM_BRIDGE_BIN"] = str(prebuilt)     # never pay a cargo build inside a test
     argv = [sys.executable, "-m", "main.untaught_meter",

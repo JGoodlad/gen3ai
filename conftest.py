@@ -52,6 +52,19 @@ if not os.environ.get("GEN3AI_TEST_ALLOW_THREADS"):
         os.environ[_var] = "1"
 
 
+# --- The EMISSION SELF-CHECK: every rust child a test spawns is the self-check build -------------
+#
+# `gen3_core_emission_selfcheck_v1` (`src/rust_sim/src/emission_check.rs`): in the self-check build
+# every protocol line the port emits is checked AT THE MOMENT it is emitted — it round-trips through
+# the typed `Line`, and each viewer's render is exactly the line that viewer is owed (no secret HP,
+# no owner-only line, at the other side) — and a failure kills the child. `cargo test` has it by
+# `debug_assertions`; this puts every pytest-spawned `sim_bridge` / `search_driver` / `core_events`
+# on it too, through `utils.bridge.sim_bridge_bin`, which then builds `--profile selfcheck` into
+# `target/selfcheck/` (never `target/release/`, the directory a live run's binaries live in).
+# setdefault: an explicit `POKESIM_EMISSION_SELFCHECK=0` (a deliberate production-binary check) wins.
+os.environ.setdefault("POKESIM_EMISSION_SELFCHECK", "1")
+
+
 # --- Tier budget: a slow test may not hide in the cheap tier -------------------------------------
 #
 # The cost tiers (`sim`, `browser`, `e2e` — see the root CLAUDE.md) only pay off if the DEFAULT tier

@@ -42,6 +42,18 @@ def _assert_clean(census: P.Census, min_events: int, min_kinds: int) -> None:
     assert not census.divergences, census.render()
     assert census.events >= min_events, f"only {census.events} events compared — the gate is vacuous"
     assert len(census.kinds) >= min_kinds, f"only {len(census.kinds)} event kinds: {dict(census.kinds)}"
+    _assert_selfcheck_ran(census)
+
+
+def _assert_selfcheck_ran(census: P.Census) -> None:
+    """The corpus ran through the EMISSION SELF-CHECK build (`gen3_core_emission_selfcheck_v1`):
+    every core process reported its counts, and every line was checked. A production
+    `core_events` (no counts) makes this gate refuse rather than pass without the check."""
+    sc = census.selfcheck
+    assert not sc.get("runs_without"), (
+        f"{sc['runs_without']} core_events run(s) had NO emission self-check — the binary is a "
+        "production build; unset POKESIM_CORE_EVENTS_BIN or point it at target/selfcheck/")
+    assert sc.get("omniscient", 0) > 0 and sc.get("per_viewer", 0) >= 2 * sc["omniscient"] * 0.9, dict(sc)
 
 
 # ---------------------------------------------------------------------------

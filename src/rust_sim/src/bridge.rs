@@ -388,6 +388,12 @@ impl BridgeChunks {
     /// Push ONE chunk (a non-empty batch of lines) to `side`. An empty batch is a
     /// no-op (the sim never flushes an empty chunk to a side).
     fn push_chunk(&mut self, side: usize, lines: Vec<String>) {
+        // The EMISSION SELF-CHECK (check 4): a bridge-built frame parses losslessly and belongs to
+        // the side it is shipped to. Compiled out of `--release`.
+        #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+        for l in &lines {
+            crate::emission_check::check_frame(side, l);
+        }
         if let Some(core) = &mut self.core {
             core[side].extend(std::iter::repeat(None).take(lines.len()));
         }
@@ -453,6 +459,25 @@ fn hp_percent(hp: u32, maxhp: u32) -> u32 {
 /// Mod"). A `debug:true` format (gen3customgame) sets `reportExactHP`, so both sides
 /// see exact HP — pass `false` to disable the fold entirely.
 fn derive_side(
+    line: &str,
+    for_side: usize,
+    hint_owner: Option<usize>,
+    report_percent: bool,
+) -> Option<String> {
+    let out = derive_side_unchecked(line, for_side, hint_owner, report_percent);
+    // The EMISSION SELF-CHECK (`crate::emission_check`, check 2): this viewer's render is the TYPED
+    // fold of the line, and no secret reached a viewer it does not belong to. Compiled out of
+    // `--release`.
+    #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+    {
+        let other = derive_side_unchecked(line, 1 - for_side, hint_owner, report_percent);
+        crate::emission_check::check_side(line, for_side, hint_owner, report_percent, out.as_deref(), other.as_deref());
+    }
+    out
+}
+
+/// [`derive_side`] without the self-check (the fold itself).
+fn derive_side_unchecked(
     line: &str,
     for_side: usize,
     hint_owner: Option<usize>,
@@ -2615,6 +2640,8 @@ pub fn split_log_lines(lines: &[crate::protocol::ProtocolLine], report_percent: 
         // Owner-only pair 1: the Pressure `addSplit` reveal.
         if l.starts_with("|-ability|") && l.ends_with("|[silent]") {
             if let Some(owner) = ident_owner(l) {
+                #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+                crate::emission_check::check_split(l, owner, None, report_percent, l, "");
                 out.push(format!("|split|p{}", owner + 1));
                 out.push(l.clone());
                 out.push(String::new());
@@ -2625,6 +2652,8 @@ pub fn split_log_lines(lines: &[crate::protocol::ProtocolLine], report_percent: 
         // preceding switch, mirroring `emit_log_batch_chunk`).
         if l.starts_with("|-hint|") && l.contains("Intimidate does not activate") {
             if let Some(owner) = last_switch_side {
+                #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+                crate::emission_check::check_split(l, owner, Some(owner), report_percent, l, "");
                 out.push(format!("|split|p{}", owner + 1));
                 out.push(l.clone());
                 out.push(String::new());
@@ -2639,11 +2668,15 @@ pub fn split_log_lines(lines: &[crate::protocol::ProtocolLine], report_percent: 
             } else {
                 l.clone()
             };
+            #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+            crate::emission_check::check_split(l, owner, None, report_percent, l, &shared);
             out.push(format!("|split|p{}", owner + 1));
             out.push(l.clone());
             out.push(shared);
             continue;
         }
+        #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+        crate::emission_check::check_broadcast(l, report_percent);
         out.push(l.clone());
     }
     out

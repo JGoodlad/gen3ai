@@ -65,7 +65,13 @@ seams (`bridge_session.py`, `local_battle_runner.py`) exec:
 `resolve_sim_bridge_bin()` honors `$POKESIM_SIM_BRIDGE_BIN` (absolute-path override) first, else
 runs `cargo build --release --bin sim_bridge` in `src/rust_sim` and caches the resulting
 `target/release/sim_bridge`; it raises a clear, actionable error (never a silent fall-back to
-node) if cargo/crate/binary is unavailable.
+node) if cargo/crate/binary is unavailable. Under **`POKESIM_EMISSION_SELFCHECK=1`** — set by the
+root `conftest.py` for every pytest session and automatically for a `*fuzz_test.py` run as a script,
+never by production — every resolver builds the EMISSION SELF-CHECK build instead (`cargo build
+--profile selfcheck --features emission-selfcheck` → `target/selfcheck/<bin>`, its own directory, so
+it can never overwrite the binary a live run execs): every emitted protocol line is checked at the
+moment of emission and a failure kills the child (`designs/rust_sim/emission_selfcheck.md`). A test
+that execs a pre-built binary directly asks `expected_bin_path(name)`, so it runs the same build.
 
 **Honest scope of `rust` (re-audited 2026-08-04) — what works, and the ONE real gap.**
 `__RECON__` (`gen3_bridge_recon_record_v1`) and `resumeReseed` (`gen3_bridge_resume_reseed_v1`) BOTH
@@ -181,7 +187,8 @@ port serves both from ONE binary — so `reconstruction._run_driver` keeps its o
 routes the rust branch through `search_driver_spawn_argv`.
 
 Both resolvers share `_resolve_rust_bin(bin_name, env_var, selector)`: env override first (no
-build), else `cargo build --release --bin <name>` in `src/rust_sim`, cached per bin name across the
+build), else `cargo build --release --bin <name>` in `src/rust_sim` (the self-check build under
+`POKESIM_EMISSION_SELFCHECK=1`, `build_argv`), cached per bin name AND build across the
 process, and a clear actionable error on any failure. **Neither ever falls back to node** — a
 "rust" run that silently became a node run would answer a different question than the one asked.
 

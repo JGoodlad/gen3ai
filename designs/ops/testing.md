@@ -387,15 +387,21 @@ serial when you need `-s`, a debugger, or a readable single failure.
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -q
 ```
 
-⚠️ **A FRESH WORKTREE pays for a `cargo build --release` on its first rust-backed test**, which
+⚠️ **A FRESH WORKTREE pays for a cargo build on its first rust-backed test**, which
 saturates every core and can turn the contention-scaled per-battle timeouts into a wall of
 TIMEOUTs. Observed twice, both times misreading as a rust defect: `bridge_impl_parity` reported 8
 of 12 battles timed out and one transport error, and `better_line[rust]` reported a candidate
 divergence — **both passed on the warm tree with no code change.** Build the binaries first, or
-discount the first run in a new worktree:
+discount the first run in a new worktree. **The suite runs the EMISSION SELF-CHECK build** (the root
+`conftest.py` sets `POKESIM_EMISSION_SELFCHECK=1`, so every rust child is `target/selfcheck/<bin>`:
+every emitted protocol line checked as it is emitted, a failure kills the child —
+`designs/rust_sim/emission_selfcheck.md`), so that is the build to warm:
 ```bash
-cargo build --release --bin sim_bridge --bin search_driver --manifest-path src/rust_sim/Cargo.toml
+cargo build --profile selfcheck --features emission-selfcheck --bin sim_bridge --bin search_driver --bin core_events --manifest-path src/rust_sim/Cargo.toml
 ```
+The fuzz scripts run on it too when run directly (`sim_bridge_bin._auto_selfcheck`: an entry script
+named `*fuzz_test.py`). A benchmark runs the PRODUCTION build (`cargo build --release`) — it measures
+what training pays.
 
 ### Fuzz tests (`*_fuzz_test.py`, run directly as scripts)
 Run battles **in-process via the local BattleStream bridge — no `npm run showdown`

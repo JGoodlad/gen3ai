@@ -192,8 +192,9 @@ A path or flag named deliberately as HISTORY goes in `designs/deleted_flags.md` 
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
-# a fresh worktree pays for a cargo build on its first rust test — build first or discount that run
-cargo build --release --bin sim_bridge --bin search_driver --manifest-path src/rust_sim/Cargo.toml
+# a fresh worktree pays for a cargo build on its first rust test — build first or discount that run.
+# Tests + fuzz scripts run the EMISSION SELF-CHECK build (target/selfcheck/; designs/rust_sim/emission_selfcheck.md)
+cargo build --profile selfcheck --features emission-selfcheck --bin sim_bridge --bin search_driver --bin core_events --manifest-path src/rust_sim/Cargo.toml
 python3 src/agents/action/fuzz_test.py [n_battles]            # + many more: see designs/ops/testing.md
 python3 src/agents/training/obs_build_benchmark.py            # 🚨 MANDATORY before/after any obs change
 python3 src/agents/training/trainer_turn_benchmark.py --pin-battles  # 🚨 --pin-battles for ANY A/B claim

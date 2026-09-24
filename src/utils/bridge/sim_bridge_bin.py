@@ -25,7 +25,9 @@ families via ``_resolve_rust_bin``):
   (and how the wiring verification points at an isolated ``CARGO_TARGET_DIR`` without touching
   the shared ``src/rust_sim/target/``).
 - else ``cargo build --release --bin <name>`` is run in ``src/rust_sim`` and the resulting
-  ``target/release/<name>`` is returned.
+  ``target/release/<name>`` is returned — or, under ``POKESIM_EMISSION_SELFCHECK=1`` (every pytest
+  session and every fuzz script; never production), the EMISSION SELF-CHECK build in
+  ``target/selfcheck/<name>`` (``SELFCHECK_ENV`` below).
 - the resolved path is cached process-wide per binary (the build is idempotent + not free, and
   the spawners hit this on every child spawn), and any failure raises a CLEAR, actionable error
   naming the fix — we NEVER silently fall back to Node (a rust run that quietly became a node
@@ -75,6 +77,40 @@ _RUST_CRATE_DIR = src_path("rust_sim")
 _ENV_OVERRIDE = "POKESIM_SIM_BRIDGE_BIN"
 _SEARCH_ENV_OVERRIDE = "POKESIM_SEARCH_DRIVER_BIN"
 
+#: The EMISSION SELF-CHECK switch (``gen3_core_emission_selfcheck_v1``, ``src/rust_sim/src/
+#: emission_check.rs``). ``"1"`` makes every resolver below build and return the SELF-CHECK binary —
+#: ``cargo build --profile selfcheck --features emission-selfcheck`` → ``target/selfcheck/<bin>`` —
+#: in which every emitted protocol line is checked at the moment it is emitted and a failure kills
+#: the child. The root ``conftest.py`` sets it for every pytest session; :func:`_auto_selfcheck`
+#: sets it for a process whose entry script is a fuzz script. **Production never sets it**, and
+#: the self-check build lives in its OWN directory, so it can never overwrite the
+#: ``target/release/`` binary a live run execs. An explicit ``POKESIM_*_BIN`` override still wins
+#: (point it at a ``target/selfcheck/`` binary to keep the check on).
+SELFCHECK_ENV = "POKESIM_EMISSION_SELFCHECK"
+SELFCHECK_PROFILE = "selfcheck"
+SELFCHECK_FEATURE = "emission-selfcheck"
+
+
+def selfcheck_requested() -> bool:
+    """Whether the resolvers return the self-check build (``$POKESIM_EMISSION_SELFCHECK == "1"``)."""
+    return os.environ.get(SELFCHECK_ENV) == "1"
+
+
+def _auto_selfcheck() -> None:
+    """A FUZZ SCRIPT runs on the self-check build: a process whose entry script is a
+    ``*fuzz_test.py`` / ``*fuzz_e2e_test.py`` (run directly, not via pytest) gets
+    ``POKESIM_EMISSION_SELFCHECK=1`` published to its env at import, so every child and worker
+    it spawns inherits it. An explicit value (``0`` included) is never overridden."""
+    if SELFCHECK_ENV in os.environ:
+        return
+    main = getattr(sys.modules.get("__main__"), "__file__", None) or ""
+    name = os.path.basename(main)
+    if name.endswith("fuzz_test.py") or name.endswith("fuzz_e2e_test.py"):
+        os.environ[SELFCHECK_ENV] = "1"
+
+
+_auto_selfcheck()
+
 # Cache the resolved rust binary paths across the process, keyed by cargo bin name (the build
 # is idempotent, but not free, and the spawners hit this on every child spawn). Guarded so
 # concurrent env workers racing the first spawn don't launch parallel cargo builds.
@@ -98,7 +134,8 @@ def _resolve_rust_bin(bin_name: str, env_var: str, selector: str) -> str:
     error message so the fix instruction names the thing the caller actually typed.
 
     Resolution order: ``$<env_var>`` (absolute, must exist) → cached previous resolution →
-    ``cargo build --release --bin <bin_name>``. Raises ``SimBridgeBinaryError`` with a clear fix
+    ``cargo build --release --bin <bin_name>`` (or, with ``$POKESIM_EMISSION_SELFCHECK == "1"``,
+    the self-check build into ``target/selfcheck/`` — :func:`build_argv`). Raises ``SimBridgeBinaryError`` with a clear fix
     instruction on any failure (missing cargo, missing crate, build error, missing artifact).
     NEVER falls back to Node.
     """
@@ -113,8 +150,10 @@ def _resolve_rust_bin(bin_name: str, env_var: str, selector: str) -> str:
             )
         return str(p.resolve())
 
+    selfcheck = selfcheck_requested()
+    cache_key = f"{bin_name}@{SELFCHECK_PROFILE}" if selfcheck else bin_name
     with _rust_bin_lock:
-        cached = _rust_bin_cache.get(bin_name)
+        cached = _rust_bin_cache.get(cache_key)
         if cached is not None:
             return cached
 
@@ -134,42 +173,71 @@ def _resolve_rust_bin(bin_name: str, env_var: str, selector: str) -> str:
                 f"set {env_var} to a pre-built {bin_name} binary."
             )
 
+        build_args, _ = build_argv(bin_name, selfcheck)
+        shown = " ".join(build_args)
         try:
             proc = subprocess.run(
-                [cargo, "build", "--release", "--bin", bin_name],
+                [cargo, *build_args],
                 cwd=str(_RUST_CRATE_DIR),
                 capture_output=True,
                 text=True,
             )
         except OSError as e:  # pragma: no cover - cargo present but unexecutable
             raise SimBridgeBinaryError(
-                f"failed to invoke `{cargo} build --release --bin {bin_name}` in "
-                f"{_RUST_CRATE_DIR}: {e}"
+                f"failed to invoke `{cargo} {shown}` in {_RUST_CRATE_DIR}: {e}"
             ) from e
         if proc.returncode != 0:
             tail = (proc.stderr or proc.stdout or "").strip()[-2000:]
             raise SimBridgeBinaryError(
-                f"`cargo build --release --bin {bin_name}` failed in {_RUST_CRATE_DIR} "
+                f"`cargo {shown}` failed in {_RUST_CRATE_DIR} "
                 f"(exit {proc.returncode}). Fix the build (or set {env_var} to a "
                 f"pre-built binary). cargo output tail:\n{tail}"
             )
 
-        # Honor a custom CARGO_TARGET_DIR (the verification path points it at an isolated
-        # dir so it never rebuilds the shared src/rust_sim/target/ a live A/B fuzzer execs).
+        bin_path = expected_bin_path(bin_name, selfcheck)
         target_dir = os.environ.get("CARGO_TARGET_DIR")
-        bin_path = (
-            Path(target_dir) / "release" / bin_name
-            if target_dir
-            else _RUST_CRATE_DIR / "target" / "release" / bin_name
-        )
         if not bin_path.is_file():
             raise SimBridgeBinaryError(
                 f"cargo build succeeded but the {bin_name} binary is missing at {bin_path}. "
                 f"(CARGO_TARGET_DIR={target_dir!r}.)"
             )
         resolved = str(bin_path.resolve())
-        _rust_bin_cache[bin_name] = resolved
+        _rust_bin_cache[cache_key] = resolved
         return resolved
+
+
+def expected_bin_path(bin_name: str, selfcheck: Optional[bool] = None) -> Path:
+    """Where the resolver's build puts ``bin_name`` — WITHOUT building. ``selfcheck`` defaults to
+    the current switch, so a test that execs a pre-built binary directly (to avoid paying a cargo
+    build mid-suite) still runs the build the suite is on. Honors ``CARGO_TARGET_DIR`` (the
+    verification path points it at an isolated dir so it never rebuilds the shared
+    ``src/rust_sim/target/`` a live A/B fuzzer execs)."""
+    if selfcheck is None:
+        selfcheck = selfcheck_requested()
+    _, profile_dir = build_argv(bin_name, selfcheck)
+    target_dir = os.environ.get("CARGO_TARGET_DIR")
+    root = Path(target_dir) if target_dir else _RUST_CRATE_DIR / "target"
+    return root / profile_dir / bin_name
+
+
+def build_command(*bin_names: str, selfcheck: Optional[bool] = None) -> str:
+    """The shell command that builds ``bin_names`` where :func:`expected_bin_path` looks."""
+    if selfcheck is None:
+        selfcheck = selfcheck_requested()
+    args, _ = build_argv(bin_names[0], selfcheck)
+    args = args[:-2] + [a for b in bin_names for a in ("--bin", b)]
+    return f"cargo {' '.join(args)} --manifest-path src/rust_sim/Cargo.toml"
+
+
+def build_argv(bin_name: str, selfcheck: bool) -> "tuple[List[str], str]":
+    """The ``cargo`` arguments that build ``bin_name``, and the ``target/`` subdirectory the binary
+    lands in. The production build is ``build --release`` → ``release/``; the SELF-CHECK build is
+    ``build --profile selfcheck --features emission-selfcheck`` → ``selfcheck/`` — a different
+    directory by construction, so neither can overwrite the other's binary."""
+    if selfcheck:
+        return (["build", "--profile", SELFCHECK_PROFILE, "--features", SELFCHECK_FEATURE,
+                 "--bin", bin_name], SELFCHECK_PROFILE)
+    return (["build", "--release", "--bin", bin_name], "release")
 
 
 def resolve_sim_bridge_bin() -> str:
@@ -225,6 +293,12 @@ def resolve_and_publish_sim_bridge_bin() -> str:
     pure path lookup. Idempotent: if the var was already set, we re-publish the same value.
     """
     path = resolve_sim_bridge_bin()
+    if selfcheck_requested() and not os.environ.get(_ENV_OVERRIDE):
+        # The training entry publishes through here. A run launched from a shell that exported
+        # the test-only switch would train on the self-check build — say so, loudly, once.
+        sys.stderr.write(
+            f"⚠️  [BRIDGE=rust] {SELFCHECK_ENV}=1 — this process runs the EMISSION SELF-CHECK "
+            f"build ({path}), not the production release binary. Unset it for a real run.\n")
     os.environ[_ENV_OVERRIDE] = path
     return path
 

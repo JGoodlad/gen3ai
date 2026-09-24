@@ -1,6 +1,8 @@
 # Program — the Rust core: milestones, gates, and the one cutover
 
-**Status: PLAN, authored 2026-09-23 at the owner's request (Phase 0 of the RUST CORE PROGRAM).**
+**Status: PLAN, authored 2026-09-23 at the owner's request (Phase 0 of the RUST CORE PROGRAM).
+M1 and M2 BUILT; the per-emission EMISSION SELF-CHECK (§3) BUILT, ON in every test and fuzzer build,
+compiled out of production.**
 Explicit-only, like every document in `endstate/`: update it on the owner's word. It implements
 [`design_three_tier_environment.md`](design_three_tier_environment.md) (the end state; its §7 is the
 ordering this plan re-cuts) and is licensed on **unification** grounds — the owner's goal is "a low
@@ -308,6 +310,15 @@ sharing the box (load 20–35 on 16 cpus).
 | **COMMIT** | inside the ROUTINE gate, every change | **8 battles**: 6 seeded-random pairings over 6 distinct pool teams + 2 production-policy battles; RECORDED (the `__RECON__` input log: seed, packed teams, command list), committed as a gzip fixture (~50 KB) | nothing is re-played by players: both paths re-derive from the recorded input log, so no player RNG is involved; the fixture carries the pool-team hashes and the gate REFUSES if the core or the pool no longer reproduces the recorded chunks (the spike's byte check) | **~5–8 s / ~10–15 s** (all slices; E alone ≈ 2 s) | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` (unmarked) |
 | **MILESTONE** | marked `slow`; verdict merged into `designs/ops/slow_tier_status.json` so a recorded FAIL turns the routine gate red. Run when a Rust milestone lands AND when a Python change touches a covered area (`agents/battle`, `agents/observation`, the tracker files, `agents/action`) | **2 seeds × 200 seeded-random battles** (key ranges 0–199 and 5000–5199, the Phase-0 recipe) **+ 2 × 50 production-policy battles** (the `production` baseline checkpoint, `gen3_policy_sample_rng_v1`-seeded sampling) **+ the 22-scenario protocol corpus × 2 seeds** | the key recipe: teams by pool index `key`, `key+1`; player RNG 1000+key / 2000+key; sim seed `[11+key, 22+key, 33+key, 44+key]`; concurrency 1; the forfeit at `StallConfig().threshold` so no battle reaches the 1,000-turn limit. A manifest (pool content hash, checkpoint sha256, key ranges) is committed; the gate REFUSES on a manifest mismatch — a pool change regenerates the manifest in the same commit | **~3–5 min / ~8–12 min** at `-n 2` (E+V+T+O); ≤ 30 min once slice N adds depth-3 successors | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -m slow -q -n 2` |
 | **CUTOVER** | ONCE, before training switches, box otherwise idle, all cores | **the full team pool**: every one of the 719 teams × 25 seeded opponents × **both seeds** × two policy families (seeded-random; the production checkpoint at T = 1) = **71,900 battles**, whole-battle byte identity of events, views, legality, trackers, `TurnDelta`/reward and the 2501-dim obs at every decision, both viewers; depth-3 successors on 2% of decisions; then the `--debug` smoke and the **first two minutes of a real launch** | the same key recipe over the full pool; the manifest + every `__RECON__` record banked in the cutover record dir, so any failing battle is re-runnable alone | ≈ 25 core-h → **~2 h on 14 idle cores**; 24 h budgeted so the first failure can be fixed and the WHOLE campaign re-run, not the failing slice | `python3 -m main.rust_core_cutover --manifest <dir>/manifest.json --jobs 14 --out <dir>` |
+
+**The per-emission complement — the EMISSION SELF-CHECK** (`gen3_core_emission_selfcheck_v1`,
+BUILT 2026-09-23; [`designs/rust_sim/emission_selfcheck.md`](../rust_sim/emission_selfcheck.md)).
+The tiers above check a battle after it ends. The self-check checks each line AT ITS EMISSION: the
+omniscient line round-trips through the typed `Line`, each viewer's render is the typed fold that
+viewer is owed, no secret reaches the other viewer, and a failure panics on the exact line with both
+renders. It is ON in `cargo test` and in the `selfcheck` build every fuzzer, every pytest session and
+every fuzz script runs, so every tier and every fuzz run above also runs it; it is compiled out of
+the `--release` build training uses (no symbol, byte-identical output, measured cost in its record).
 
 ### Keeping the COMMIT tier cheap
 

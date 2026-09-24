@@ -31,7 +31,6 @@ from poke_env.ps_client.server_configuration import ServerConfiguration
 from utils.bridge.sim_bridge_bin import _ENV_OVERRIDE
 from utils.bridge.ws_frontend import ShowdownFrontEnd
 from utils.bridge.ws_frontend_replay import BattleCapture, check_capture
-from utils.paths import src_path
 from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder
 
@@ -44,7 +43,9 @@ def _prebuilt_rust_available() -> bool:
     override = os.environ.get(_ENV_OVERRIDE)
     if override and os.path.exists(override):
         return True
-    return os.path.exists(str(src_path("rust_sim", "target", "release", "sim_bridge")))
+    from utils.bridge.sim_bridge_bin import expected_bin_path
+
+    return expected_bin_path("sim_bridge").is_file()
 
 
 async def _one_seeded_battle(impl: str) -> BattleCapture:

@@ -963,7 +963,9 @@ divergence kind and the known-residual allowlist GREEN GATE) · `--format
 gen3customgame|gen3ou` (default gen3customgame). `POKESIM_AB_REPLAY_BIN` points the
 driver at an isolated `ab_replay` build so a byte run never touches the shared
 `target/`. No Showdown server is needed (in-process BattleStream only); the
-driver `cargo build --release --bin ab_replay`s once at startup.
+driver builds the EMISSION SELF-CHECK `ab_replay` once at startup (`cargo build --profile selfcheck
+--features emission-selfcheck --bin ab_replay` → `target/selfcheck/`; every emitted line checked, a
+failure is a `panic` verdict — `designs/rust_sim/emission_selfcheck.md`).
 
 ### Where results land / how to read them
 

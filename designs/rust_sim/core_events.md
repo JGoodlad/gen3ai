@@ -65,7 +65,9 @@ bytes: `Ident` (`p1a: Nick` / slot-less `p1: Nick`), `SideRef` (a side condition
 `Empty`. Everything else is text, so `Line::parse` is LOSSLESS for any line and
 `render(parse(s)) == s`; an unknown keyword is REFUSED (`LineError::UnknownKeyword`). The builder
 constructs every line CANONICALLY (`Line::parse(render(l)) == l`) — gated on every source record
-of every corpus battle (`core_events_test`, and the binary refuses otherwise).
+of every corpus battle (`core_events_test`, and the binary refuses otherwise), and at the MOMENT of
+every emission by the EMISSION SELF-CHECK in every test and fuzzer build, together with each
+viewer's render ([`emission_selfcheck.md`](emission_selfcheck.md)).
 
 ## 3. Source records and the per-side stream (`side.rs`)
 

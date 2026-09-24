@@ -647,4 +647,7 @@ fn main() {
     if let Some(r) = bench_rounds {
         let _ = writeln!(out, "{}", bench_parse(r, &bench_battles, &dex));
     }
+    // The EMISSION SELF-CHECK's counts (stderr; `rust_core_parity` proves the check ran from it).
+    #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+    eprintln!("{}", pokesim::emission_check::summary());
 }
