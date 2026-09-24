@@ -1,0 +1,2492 @@
+{
+ "DG_GL_fast0_high": {
+  "k": 0,
+  "seed": "sodium,bde492142173fe728d131baf8144224a",
+  "snapshot": {
+   "turn": 2,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 373,
+    "hp_max": 387,
+    "hp": 0.9638242894056848,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 0.9638,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "firepunch"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_GL_fast0_mid": {
+  "k": 0,
+  "seed": "sodium,3d889c6f1147058d82a67b0131d0ed61",
+  "snapshot": {
+   "turn": 3,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 261,
+    "hp_max": 387,
+    "hp": 0.6744186046511628,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 0.6744,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_GL_fast0_low": {
+  "k": 1,
+  "seed": "sodium,9c628edbf1ec24181579e38109e99d6a",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 99,
+    "hp_max": 387,
+    "hp": 0.2558139534883721,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 0.2558,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 2
+ },
+ "DG_GL_slow1_high": {
+  "k": 0,
+  "seed": "sodium,d024401c11cff763fbca26d40855f718",
+  "snapshot": {
+   "turn": 2,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragondance"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 372,
+    "hp_max": 387,
+    "hp": 0.9612403100775194,
+    "boosts": {
+     "atk": 1,
+     "spe": 1
+    },
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 319.5,
+    "team": {
+     "tyranitar": 0.9612,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "firepunch"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_GL_slow1_mid": {
+  "k": 0,
+  "seed": "sodium,172e7a1a1ec324af7c33fef9525b6857",
+  "snapshot": {
+   "turn": 3,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragondance",
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 249,
+    "hp_max": 387,
+    "hp": 0.6434108527131783,
+    "boosts": {
+     "atk": 1,
+     "spe": 1
+    },
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 319.5,
+    "team": {
+     "tyranitar": 0.6434,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_GL_slow1_low": {
+  "k": 3,
+  "seed": "sodium,45857c9ce289a7f8e8aab79e33c73231",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragondance",
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 99,
+    "hp_max": 387,
+    "hp": 0.2558139534883721,
+    "boosts": {
+     "atk": 1,
+     "spe": 1
+    },
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 319.5,
+    "team": {
+     "tyranitar": 0.2558,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 4
+ },
+ "DG_GL_fast1_high": {
+  "k": 0,
+  "seed": "sodium,cd810530f35c313d72f8c6f80ce87252",
+  "snapshot": {
+   "turn": 2,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 335,
+    "eff_speed": 335.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragondance"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 372,
+    "hp_max": 387,
+    "hp": 0.9612403100775194,
+    "boosts": {
+     "atk": 1,
+     "spe": 1
+    },
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 319.5,
+    "team": {
+     "tyranitar": 0.9612,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "firepunch"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_GL_fast1_mid": {
+  "k": 0,
+  "seed": "sodium,99159c897612159b28191bb4dfda4ad8",
+  "snapshot": {
+   "turn": 3,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 335,
+    "eff_speed": 335.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragondance",
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 247,
+    "hp_max": 387,
+    "hp": 0.6382428940568475,
+    "boosts": {
+     "atk": 1,
+     "spe": 1
+    },
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 319.5,
+    "team": {
+     "tyranitar": 0.6382,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_GL_fast1_low": {
+  "k": 4,
+  "seed": "sodium,5817f529d76049a4956c47d1c308beef",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 335,
+    "eff_speed": 335.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragondance",
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 100,
+    "hp_max": 387,
+    "hp": 0.25839793281653745,
+    "boosts": {
+     "atk": 1,
+     "spe": 1
+    },
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 319.5,
+    "team": {
+     "tyranitar": 0.2584,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 5
+ },
+ "DG_SL_K1": {
+  "k": 1,
+  "seed": "sodium,5e4f5d89d5a38351c5ac4fba9bae9174",
+  "snapshot": {
+   "turn": 3,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake",
+     "rockslide"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 387,
+    "hp_max": 387,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 1.0,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [],
+    "foe_revealed_species": [
+     "gengar",
+     "skarmory"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 2
+ },
+ "DG_SL_K2": {
+  "k": 0,
+  "seed": "sodium,e000a71f9fd65d613a34007bd21d11ef",
+  "snapshot": {
+   "turn": 3,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "skarmory": 0.7455,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake",
+     "rockslide"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 387,
+    "hp_max": 387,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 1.0,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [],
+    "foe_revealed_species": [
+     "gengar",
+     "skarmory"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_SL_K3": {
+  "k": 0,
+  "seed": "sodium,5db2a9f550e66094fc78ec58dddc6aff",
+  "snapshot": {
+   "turn": 3,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake",
+     "pursuit"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 387,
+    "hp_max": 387,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 1.0,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [],
+    "foe_revealed_species": [
+     "gengar",
+     "skarmory"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_SL_K4": {
+  "k": 0,
+  "seed": "sodium,73473680a2547d431816785da31dd566",
+  "snapshot": {
+   "turn": 3,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake",
+     "rockslide"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 387,
+    "hp_max": 387,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 1.0,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [],
+    "foe_revealed_species": [
+     "gengar",
+     "skarmory"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_SL_K5a": {
+  "k": 0,
+  "seed": "sodium,464a47dea751d3dd10006cccc71b6f2e",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "skarmory": 0.7515,
+     "gengar": 1.0,
+     "swampert": 0.5486,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "doubleedge",
+     "earthquake",
+     "rockslide"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 328,
+    "hp_max": 387,
+    "hp": 0.8475452196382429,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 0.8475,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [],
+    "foe_revealed_species": [
+     "gengar",
+     "skarmory",
+     "swampert"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DG_SL_K5b": {
+  "k": 2,
+  "seed": "sodium,40508aabba92b51f7be9196006eb2c7d",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 0.7107,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake",
+     "rockslide"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 366,
+    "hp_max": 387,
+    "hp": 0.9457364341085271,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 0.9457,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [],
+    "foe_revealed_species": [
+     "gengar",
+     "skarmory",
+     "swampert"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 3
+ },
+ "DT_GL_fast0_low": {
+  "k": 1,
+  "seed": "sodium,9c628edbf1ec24181579e38109e99d6a",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 99,
+    "hp_max": 387,
+    "hp": 0.2558139534883721,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 0.2558,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 2
+ },
+ "DT_GL_fast0_high": {
+  "k": 0,
+  "seed": "sodium,bde492142173fe728d131baf8144224a",
+  "snapshot": {
+   "turn": 2,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 373,
+    "hp_max": 387,
+    "hp": 0.9638242894056848,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 213.0,
+    "team": {
+     "tyranitar": 0.9638,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "firepunch"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "DT_GL_fast1_low": {
+  "k": 4,
+  "seed": "sodium,5817f529d76049a4956c47d1c308beef",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 335,
+    "eff_speed": 335.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragondance",
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 100,
+    "hp_max": 387,
+    "hp": 0.25839793281653745,
+    "boosts": {
+     "atk": 1,
+     "spe": 1
+    },
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 319.5,
+    "team": {
+     "tyranitar": 0.2584,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 5
+ },
+ "DT_GL_slow1_low": {
+  "k": 3,
+  "seed": "sodium,45857c9ce289a7f8e8aab79e33c73231",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "gengar",
+    "hp_abs": 323,
+    "hp_max": 323,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 308,
+    "eff_speed": 308.0,
+    "team": {
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragondance",
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 99,
+    "hp_max": 387,
+    "hp": 0.2558139534883721,
+    "boosts": {
+     "atk": 1,
+     "spe": 1
+    },
+    "status": null,
+    "spe_stat": 213,
+    "eff_speed": 319.5,
+    "team": {
+     "tyranitar": 0.2558,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "metagross": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 4
+ },
+ "B_low": {
+  "k": 2,
+  "seed": "sodium,dd4c68f5a32672ac08eea92f079d4795",
+  "snapshot": {
+   "turn": 5,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "tyranitar",
+    "hp_abs": 52,
+    "hp_max": 387,
+    "hp": 0.1343669250645995,
+    "boosts": {
+     "atk": -1
+    },
+    "status": null,
+    "spe_stat": 205,
+    "eff_speed": 205.0,
+    "team": {
+     "tyranitar": 0.1344,
+     "zapdos": 1.0,
+     "metagross": 1.0,
+     "swampert": 1.0,
+     "jirachi": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [],
+    "foe_revealed_species": [
+     "blissey",
+     "salamence"
+    ]
+   },
+   "p2": {
+    "active": "blissey",
+    "hp_abs": 489,
+    "hp_max": 651,
+    "hp": 0.7511520737327189,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 153,
+    "eff_speed": 153.0,
+    "team": {
+     "salamence": 1.0,
+     "blissey": 0.7512,
+     "tyranitar": 1.0,
+     "skarmory": 1.0,
+     "metagross": 1.0,
+     "claydol": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 3
+ },
+ "B_high": {
+  "k": 0,
+  "seed": "sodium,8c92177d04a98ba4ea83ccbf081dade8",
+  "snapshot": {
+   "turn": 3,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "tyranitar",
+    "hp_abs": 157,
+    "hp_max": 387,
+    "hp": 0.40568475452196384,
+    "boosts": {
+     "atk": -1
+    },
+    "status": null,
+    "spe_stat": 205,
+    "eff_speed": 205.0,
+    "team": {
+     "tyranitar": 0.4057,
+     "zapdos": 1.0,
+     "metagross": 1.0,
+     "swampert": 1.0,
+     "jirachi": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [],
+    "foe_revealed_species": [
+     "blissey",
+     "salamence"
+    ]
+   },
+   "p2": {
+    "active": "blissey",
+    "hp_abs": 480,
+    "hp_max": 651,
+    "hp": 0.7373271889400922,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 153,
+    "eff_speed": 153.0,
+    "team": {
+     "salamence": 1.0,
+     "blissey": 0.7373,
+     "tyranitar": 1.0,
+     "skarmory": 1.0,
+     "metagross": 1.0,
+     "claydol": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p1_first": true,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L1_pre_lure": {
+  "k": 0,
+  "seed": "sodium,619196f1214384cac94cdb867329fb5f",
+  "snapshot": {
+   "turn": 2,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 651,
+    "hp_max": 651,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 1.0,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "rockslide"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 329,
+    "hp_max": 385,
+    "hp": 0.8545454545454545,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 200,
+    "eff_speed": 200.0,
+    "team": {
+     "tyranitar": 0.8545,
+     "zapdos": 1.0,
+     "metagross": 1.0,
+     "celebi": 1.0,
+     "swampert": 1.0,
+     "charizard": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L1_pre_std": {
+  "k": 0,
+  "seed": "sodium,619196f1214384cac94cdb867329fb5f",
+  "snapshot": {
+   "turn": 2,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 651,
+    "hp_max": 651,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 1.0,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "rockslide"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 329,
+    "hp_max": 385,
+    "hp": 0.8545454545454545,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 200,
+    "eff_speed": 200.0,
+    "team": {
+     "tyranitar": 0.8545,
+     "zapdos": 1.0,
+     "metagross": 1.0,
+     "celebi": 1.0,
+     "swampert": 1.0,
+     "charizard": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L2_pre_lure": {
+  "k": 0,
+  "seed": "sodium,d8afc1c4157151045d02fbe501f28659",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 497,
+    "hp_max": 651,
+    "hp": 0.7634408602150538,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 0.7634,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "metagross"
+    ]
+   },
+   "p2": {
+    "active": "metagross",
+    "hp_abs": 319,
+    "hp_max": 342,
+    "hp": 0.9327485380116959,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 194,
+    "eff_speed": 194.0,
+    "team": {
+     "metagross": 0.9327,
+     "tyranitar": 1.0,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L2_pre_std": {
+  "k": 0,
+  "seed": "sodium,d8afc1c4157151045d02fbe501f28659",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 497,
+    "hp_max": 651,
+    "hp": 0.7634408602150538,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 0.7634,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "earthquake"
+    ],
+    "foe_revealed_species": [
+     "metagross"
+    ]
+   },
+   "p2": {
+    "active": "metagross",
+    "hp_abs": 319,
+    "hp_max": 342,
+    "hp": 0.9327485380116959,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 194,
+    "eff_speed": 194.0,
+    "team": {
+     "metagross": 0.9327,
+     "tyranitar": 1.0,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L2_post": {
+  "k": 0,
+  "seed": "sodium,f55b069b2fcda98aa7612544d7d179e7",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 628,
+    "hp_max": 651,
+    "hp": 0.9646697388632872,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 0.9647,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderpunch"
+    ],
+    "foe_revealed_species": [
+     "metagross"
+    ]
+   },
+   "p2": {
+    "active": "metagross",
+    "hp_abs": 315,
+    "hp_max": 342,
+    "hp": 0.9210526315789473,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 194,
+    "eff_speed": 194.0,
+    "team": {
+     "metagross": 0.9211,
+     "tyranitar": 1.0,
+     "zapdos": 1.0,
+     "swampert": 1.0,
+     "snorlax": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L3_pre_lure": {
+  "k": 0,
+  "seed": "sodium,25b48114bf989b3f65cb666453056f8d",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 609,
+    "hp_max": 651,
+    "hp": 0.9354838709677419,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 0.9355,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p2": {
+    "active": "gengar",
+    "hp_abs": 281,
+    "hp_max": 281,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 300,
+    "eff_speed": 300.0,
+    "team": {
+     "gengar": 1.0,
+     "tyranitar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "zapdos": 1.0,
+     "aerodactyl": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "toxic"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L3_pre_std": {
+  "k": 0,
+  "seed": "sodium,25b48114bf989b3f65cb666453056f8d",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 609,
+    "hp_max": 651,
+    "hp": 0.9354838709677419,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 0.9355,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "thunderbolt"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p2": {
+    "active": "gengar",
+    "hp_abs": 281,
+    "hp_max": 281,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 300,
+    "eff_speed": 300.0,
+    "team": {
+     "gengar": 1.0,
+     "tyranitar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "zapdos": 1.0,
+     "aerodactyl": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "toxic"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L3_post": {
+  "k": 0,
+  "seed": "sodium,cd53db89a48bd2823e14900b34e63e84",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 408,
+    "hp_max": 651,
+    "hp": 0.6267281105990783,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 0.6267,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "focuspunch"
+    ],
+    "foe_revealed_species": [
+     "gengar"
+    ]
+   },
+   "p2": {
+    "active": "gengar",
+    "hp_abs": 281,
+    "hp_max": 281,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 300,
+    "eff_speed": 300.0,
+    "team": {
+     "gengar": 1.0,
+     "tyranitar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "zapdos": 1.0,
+     "aerodactyl": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "toxic"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L4_pre_lure": {
+  "k": 0,
+  "seed": "sodium,e0f678dd1c3a40df779910e30ef1c6e8",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "swampert",
+    "hp_abs": 298,
+    "hp_max": 401,
+    "hp": 0.743142144638404,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 150,
+    "eff_speed": 150.0,
+    "team": {
+     "swampert": 0.7431,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "psychic"
+    ],
+    "foe_revealed_species": [
+     "celebi"
+    ]
+   },
+   "p2": {
+    "active": "celebi",
+    "hp_abs": 232,
+    "hp_max": 341,
+    "hp": 0.6803519061583577,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 310,
+    "eff_speed": 310.0,
+    "team": {
+     "celebi": 0.6804,
+     "tyranitar": 1.0,
+     "registeel": 1.0,
+     "swampert": 1.0,
+     "raikou": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "swampert"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L4_pre_std": {
+  "k": 0,
+  "seed": "sodium,e0f678dd1c3a40df779910e30ef1c6e8",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "swampert",
+    "hp_abs": 298,
+    "hp_max": 401,
+    "hp": 0.743142144638404,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 150,
+    "eff_speed": 150.0,
+    "team": {
+     "swampert": 0.7431,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "psychic"
+    ],
+    "foe_revealed_species": [
+     "celebi"
+    ]
+   },
+   "p2": {
+    "active": "celebi",
+    "hp_abs": 232,
+    "hp_max": 341,
+    "hp": 0.6803519061583577,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 310,
+    "eff_speed": 310.0,
+    "team": {
+     "celebi": 0.6804,
+     "tyranitar": 1.0,
+     "registeel": 1.0,
+     "swampert": 1.0,
+     "raikou": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "swampert"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L5_pre_lure": {
+  "k": 0,
+  "seed": "sodium,f7ba3ffc0c683c3e5af826058ab790e2",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "skarmory",
+    "hp_abs": 289,
+    "hp_max": 334,
+    "hp": 0.8652694610778443,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 177,
+    "eff_speed": 177.0,
+    "team": {
+     "skarmory": 0.8653,
+     "tyranitar": 1.0,
+     "blissey": 1.0,
+     "metagross": 1.0,
+     "salamence": 1.0,
+     "claydol": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p2": {
+    "active": "blissey",
+    "hp_abs": 651,
+    "hp_max": 651,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 1.0,
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [
+     "spikes"
+    ],
+    "foe_revealed_species": [
+     "skarmory"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L5_pre_std": {
+  "k": 0,
+  "seed": "sodium,f7ba3ffc0c683c3e5af826058ab790e2",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "skarmory",
+    "hp_abs": 289,
+    "hp_max": 334,
+    "hp": 0.8652694610778443,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 177,
+    "eff_speed": 177.0,
+    "team": {
+     "skarmory": 0.8653,
+     "tyranitar": 1.0,
+     "blissey": 1.0,
+     "metagross": 1.0,
+     "salamence": 1.0,
+     "claydol": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p2": {
+    "active": "blissey",
+    "hp_abs": 651,
+    "hp_max": 651,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 1.0,
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [
+     "spikes"
+    ],
+    "foe_revealed_species": [
+     "skarmory"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L5_post": {
+  "k": 0,
+  "seed": "sodium,8bcda4ae8be4a294c93fbfeae32a38c3",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "skarmory",
+    "hp_abs": 182,
+    "hp_max": 334,
+    "hp": 0.5449101796407185,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 177,
+    "eff_speed": 177.0,
+    "team": {
+     "skarmory": 0.5449,
+     "tyranitar": 1.0,
+     "blissey": 1.0,
+     "metagross": 1.0,
+     "salamence": 1.0,
+     "claydol": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "fireblast"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p2": {
+    "active": "blissey",
+    "hp_abs": 651,
+    "hp_max": 651,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 1.0,
+     "gengar": 1.0,
+     "skarmory": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [
+     "spikes"
+    ],
+    "foe_revealed_species": [
+     "skarmory"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L6_pre_lure": {
+  "k": 0,
+  "seed": "sodium,5f0fc23cbf61549d4445b8e4ecc3af44",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "skarmory",
+    "hp_abs": 289,
+    "hp_max": 334,
+    "hp": 0.8652694610778443,
+    "boosts": {
+     "atk": -1
+    },
+    "status": null,
+    "spe_stat": 176,
+    "eff_speed": 176.0,
+    "team": {
+     "skarmory": 0.8653,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragonclaw"
+    ],
+    "foe_revealed_species": [
+     "salamence"
+    ]
+   },
+   "p2": {
+    "active": "salamence",
+    "hp_abs": 330,
+    "hp_max": 330,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 299,
+    "eff_speed": 299.0,
+    "team": {
+     "salamence": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "skarmory": 1.0,
+     "metagross": 1.0,
+     "claydol": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [
+     "spikes"
+    ],
+    "foe_revealed_species": [
+     "skarmory"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L6_pre_std": {
+  "k": 0,
+  "seed": "sodium,5f0fc23cbf61549d4445b8e4ecc3af44",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "skarmory",
+    "hp_abs": 289,
+    "hp_max": 334,
+    "hp": 0.8652694610778443,
+    "boosts": {
+     "atk": -1
+    },
+    "status": null,
+    "spe_stat": 176,
+    "eff_speed": 176.0,
+    "team": {
+     "skarmory": 0.8653,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "dragonclaw"
+    ],
+    "foe_revealed_species": [
+     "salamence"
+    ]
+   },
+   "p2": {
+    "active": "salamence",
+    "hp_abs": 330,
+    "hp_max": 330,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 299,
+    "eff_speed": 299.0,
+    "team": {
+     "salamence": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "skarmory": 1.0,
+     "metagross": 1.0,
+     "claydol": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [
+     "spikes"
+    ],
+    "foe_revealed_species": [
+     "skarmory"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L6_post": {
+  "k": 0,
+  "seed": "sodium,a060e21f3b11d389b499c5397d902373",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "skarmory",
+    "hp_abs": 233,
+    "hp_max": 334,
+    "hp": 0.6976047904191617,
+    "boosts": {
+     "atk": -1
+    },
+    "status": null,
+    "spe_stat": 176,
+    "eff_speed": 176.0,
+    "team": {
+     "skarmory": 0.6976,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "hydropump"
+    ],
+    "foe_revealed_species": [
+     "salamence"
+    ]
+   },
+   "p2": {
+    "active": "salamence",
+    "hp_abs": 330,
+    "hp_max": 330,
+    "hp": 1.0,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 299,
+    "eff_speed": 299.0,
+    "team": {
+     "salamence": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "skarmory": 1.0,
+     "metagross": 1.0,
+     "claydol": 1.0
+    },
+    "side_conditions": [
+     "spikes"
+    ],
+    "foe_revealed_moves": [
+     "spikes"
+    ],
+    "foe_revealed_species": [
+     "skarmory"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L1_post": {
+  "k": 0,
+  "seed": "sodium,0bb448f3b7f283f297f9c8114866b29a",
+  "snapshot": {
+   "turn": 2,
+   "weather": [
+    "sandstorm"
+   ],
+   "p1": {
+    "active": "blissey",
+    "hp_abs": 612,
+    "hp_max": 651,
+    "hp": 0.9400921658986175,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 182,
+    "eff_speed": 182.0,
+    "team": {
+     "blissey": 0.9401,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "swampert": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "hiddenpower"
+    ],
+    "foe_revealed_species": [
+     "tyranitar"
+    ]
+   },
+   "p2": {
+    "active": "tyranitar",
+    "hp_abs": 330,
+    "hp_max": 385,
+    "hp": 0.8571428571428571,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 200,
+    "eff_speed": 200.0,
+    "team": {
+     "tyranitar": 0.8571,
+     "zapdos": 1.0,
+     "metagross": 1.0,
+     "celebi": 1.0,
+     "swampert": 1.0,
+     "charizard": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "blissey"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ },
+ "L4_post": {
+  "k": 0,
+  "seed": "sodium,4d259650ce81bc3bdb7311d8e55d1644",
+  "snapshot": {
+   "turn": 2,
+   "weather": [],
+   "p1": {
+    "active": "swampert",
+    "hp_abs": 391,
+    "hp_max": 401,
+    "hp": 0.9750623441396509,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 150,
+    "eff_speed": 150.0,
+    "team": {
+     "swampert": 0.9751,
+     "skarmory": 1.0,
+     "gengar": 1.0,
+     "blissey": 1.0,
+     "tyranitar": 1.0,
+     "starmie": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "hiddenpower"
+    ],
+    "foe_revealed_species": [
+     "celebi"
+    ]
+   },
+   "p2": {
+    "active": "celebi",
+    "hp_abs": 218,
+    "hp_max": 341,
+    "hp": 0.6392961876832844,
+    "boosts": {},
+    "status": null,
+    "spe_stat": 310,
+    "eff_speed": 310.0,
+    "team": {
+     "celebi": 0.6393,
+     "tyranitar": 1.0,
+     "registeel": 1.0,
+     "swampert": 1.0,
+     "raikou": 1.0,
+     "salamence": 1.0
+    },
+    "side_conditions": [],
+    "foe_revealed_moves": [
+     "icebeam"
+    ],
+    "foe_revealed_species": [
+     "swampert"
+    ]
+   },
+   "p1_first": false,
+   "speed_tie": false
+  },
+  "tried": 1
+ }
+}

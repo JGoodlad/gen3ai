@@ -1,0 +1,1476 @@
+{
+"summary": {
+"explosion_on_ttar": {
+"n": 120,
+"noncrit_min": 104,
+"noncrit_max": 123,
+"n_crit": 7,
+"crit_min": 211,
+"crit_max": 243
+},
+"de_on_blissey": {
+"n": 120,
+"noncrit_min": 264,
+"noncrit_max": 311,
+"n_crit": 7,
+"crit_min": 534,
+"crit_max": 609
+},
+"de_recoil": {
+"n": 120,
+"noncrit_min": 88,
+"noncrit_max": 103,
+"n_crit": 7,
+"crit_min": 178,
+"crit_max": 203
+}
+},
+"rows": {
+"explosion_on_ttar": [
+{
+"dmg": 110,
+"crit": false
+},
+{
+"dmg": 211,
+"crit": true
+},
+{
+"dmg": 109,
+"crit": false
+},
+{
+"dmg": 123,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 111,
+"crit": false
+},
+{
+"dmg": 109,
+"crit": false
+},
+{
+"dmg": 108,
+"crit": false
+},
+{
+"dmg": 111,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 116,
+"crit": false
+},
+{
+"dmg": 109,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 226,
+"crit": true
+},
+{
+"dmg": 104,
+"crit": false
+},
+{
+"dmg": 110,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 123,
+"crit": false
+},
+{
+"dmg": 236,
+"crit": true
+},
+{
+"dmg": 123,
+"crit": false
+},
+{
+"dmg": 123,
+"crit": false
+},
+{
+"dmg": 116,
+"crit": false
+},
+{
+"dmg": 123,
+"crit": false
+},
+{
+"dmg": 110,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 119,
+"crit": false
+},
+{
+"dmg": 113,
+"crit": false
+},
+{
+"dmg": 118,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 119,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 104,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 113,
+"crit": false
+},
+{
+"dmg": 120,
+"crit": false
+},
+{
+"dmg": 113,
+"crit": false
+},
+{
+"dmg": 104,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 107,
+"crit": false
+},
+{
+"dmg": 243,
+"crit": true
+},
+{
+"dmg": 104,
+"crit": false
+},
+{
+"dmg": 107,
+"crit": false
+},
+{
+"dmg": 120,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 110,
+"crit": false
+},
+{
+"dmg": 120,
+"crit": false
+},
+{
+"dmg": 214,
+"crit": true
+},
+{
+"dmg": 111,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 221,
+"crit": true
+},
+{
+"dmg": 216,
+"crit": true
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 107,
+"crit": false
+},
+{
+"dmg": 111,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 118,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 107,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 109,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 111,
+"crit": false
+},
+{
+"dmg": 118,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 104,
+"crit": false
+},
+{
+"dmg": 116,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 107,
+"crit": false
+},
+{
+"dmg": 109,
+"crit": false
+},
+{
+"dmg": 120,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 107,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 111,
+"crit": false
+},
+{
+"dmg": 104,
+"crit": false
+},
+{
+"dmg": 120,
+"crit": false
+},
+{
+"dmg": 108,
+"crit": false
+},
+{
+"dmg": 119,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 118,
+"crit": false
+},
+{
+"dmg": 108,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 110,
+"crit": false
+},
+{
+"dmg": 113,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 108,
+"crit": false
+},
+{
+"dmg": 104,
+"crit": false
+},
+{
+"dmg": 104,
+"crit": false
+},
+{
+"dmg": 105,
+"crit": false
+},
+{
+"dmg": 120,
+"crit": false
+},
+{
+"dmg": 115,
+"crit": false
+},
+{
+"dmg": 109,
+"crit": false
+},
+{
+"dmg": 119,
+"crit": false
+},
+{
+"dmg": 107,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 123,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 110,
+"crit": false
+},
+{
+"dmg": 116,
+"crit": false
+},
+{
+"dmg": 109,
+"crit": false
+},
+{
+"dmg": 121,
+"crit": false
+},
+{
+"dmg": 114,
+"crit": false
+},
+{
+"dmg": 123,
+"crit": false
+},
+{
+"dmg": 108,
+"crit": false
+},
+{
+"dmg": 118,
+"crit": false
+},
+{
+"dmg": 113,
+"crit": false
+},
+{
+"dmg": 118,
+"crit": false
+}
+],
+"de_on_blissey": [
+{
+"dmg": 553,
+"crit": true
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 292,
+"crit": false
+},
+{
+"dmg": 264,
+"crit": false
+},
+{
+"dmg": 286,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 559,
+"crit": true
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 295,
+"crit": false
+},
+{
+"dmg": 311,
+"crit": false
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 279,
+"crit": false
+},
+{
+"dmg": 279,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 311,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 270,
+"crit": false
+},
+{
+"dmg": 279,
+"crit": false
+},
+{
+"dmg": 292,
+"crit": false
+},
+{
+"dmg": 311,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 279,
+"crit": false
+},
+{
+"dmg": 292,
+"crit": false
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 292,
+"crit": false
+},
+{
+"dmg": 298,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 264,
+"crit": false
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 295,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 283,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 283,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 292,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 603,
+"crit": true
+},
+{
+"dmg": 286,
+"crit": false
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 270,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 283,
+"crit": false
+},
+{
+"dmg": 572,
+"crit": true
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 311,
+"crit": false
+},
+{
+"dmg": 289,
+"crit": false
+},
+{
+"dmg": 264,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 279,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 289,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 541,
+"crit": true
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 311,
+"crit": false
+},
+{
+"dmg": 286,
+"crit": false
+},
+{
+"dmg": 270,
+"crit": false
+},
+{
+"dmg": 264,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 279,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 286,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 270,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 289,
+"crit": false
+},
+{
+"dmg": 311,
+"crit": false
+},
+{
+"dmg": 283,
+"crit": false
+},
+{
+"dmg": 298,
+"crit": false
+},
+{
+"dmg": 298,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 295,
+"crit": false
+},
+{
+"dmg": 311,
+"crit": false
+},
+{
+"dmg": 270,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 289,
+"crit": false
+},
+{
+"dmg": 286,
+"crit": false
+},
+{
+"dmg": 292,
+"crit": false
+},
+{
+"dmg": 270,
+"crit": false
+},
+{
+"dmg": 609,
+"crit": true
+},
+{
+"dmg": 289,
+"crit": false
+},
+{
+"dmg": 307,
+"crit": false
+},
+{
+"dmg": 264,
+"crit": false
+},
+{
+"dmg": 279,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 283,
+"crit": false
+},
+{
+"dmg": 286,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 289,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 295,
+"crit": false
+},
+{
+"dmg": 276,
+"crit": false
+},
+{
+"dmg": 295,
+"crit": false
+},
+{
+"dmg": 311,
+"crit": false
+},
+{
+"dmg": 283,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 301,
+"crit": false
+},
+{
+"dmg": 279,
+"crit": false
+},
+{
+"dmg": 534,
+"crit": true
+},
+{
+"dmg": 289,
+"crit": false
+},
+{
+"dmg": 304,
+"crit": false
+},
+{
+"dmg": 267,
+"crit": false
+},
+{
+"dmg": 273,
+"crit": false
+},
+{
+"dmg": 286,
+"crit": false
+}
+],
+"de_recoil": [
+{
+"recoil": 184,
+"crit": true
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 97,
+"crit": false
+},
+{
+"recoil": 88,
+"crit": false
+},
+{
+"recoil": 95,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 186,
+"crit": true
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 98,
+"crit": false
+},
+{
+"recoil": 103,
+"crit": false
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 93,
+"crit": false
+},
+{
+"recoil": 93,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 103,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 90,
+"crit": false
+},
+{
+"recoil": 93,
+"crit": false
+},
+{
+"recoil": 97,
+"crit": false
+},
+{
+"recoil": 103,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 93,
+"crit": false
+},
+{
+"recoil": 97,
+"crit": false
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 97,
+"crit": false
+},
+{
+"recoil": 99,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 88,
+"crit": false
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 98,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 94,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 94,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 97,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 201,
+"crit": true
+},
+{
+"recoil": 95,
+"crit": false
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 90,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 94,
+"crit": false
+},
+{
+"recoil": 190,
+"crit": true
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 103,
+"crit": false
+},
+{
+"recoil": 96,
+"crit": false
+},
+{
+"recoil": 88,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 93,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 96,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 180,
+"crit": true
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 103,
+"crit": false
+},
+{
+"recoil": 95,
+"crit": false
+},
+{
+"recoil": 90,
+"crit": false
+},
+{
+"recoil": 88,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 93,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 95,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 90,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 96,
+"crit": false
+},
+{
+"recoil": 103,
+"crit": false
+},
+{
+"recoil": 94,
+"crit": false
+},
+{
+"recoil": 99,
+"crit": false
+},
+{
+"recoil": 99,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 98,
+"crit": false
+},
+{
+"recoil": 103,
+"crit": false
+},
+{
+"recoil": 90,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 96,
+"crit": false
+},
+{
+"recoil": 95,
+"crit": false
+},
+{
+"recoil": 97,
+"crit": false
+},
+{
+"recoil": 90,
+"crit": false
+},
+{
+"recoil": 203,
+"crit": true
+},
+{
+"recoil": 96,
+"crit": false
+},
+{
+"recoil": 102,
+"crit": false
+},
+{
+"recoil": 88,
+"crit": false
+},
+{
+"recoil": 93,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 94,
+"crit": false
+},
+{
+"recoil": 95,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 96,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 98,
+"crit": false
+},
+{
+"recoil": 92,
+"crit": false
+},
+{
+"recoil": 98,
+"crit": false
+},
+{
+"recoil": 103,
+"crit": false
+},
+{
+"recoil": 94,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 100,
+"crit": false
+},
+{
+"recoil": 93,
+"crit": false
+},
+{
+"recoil": 178,
+"crit": true
+},
+{
+"recoil": 96,
+"crit": false
+},
+{
+"recoil": 101,
+"crit": false
+},
+{
+"recoil": 89,
+"crit": false
+},
+{
+"recoil": 91,
+"crit": false
+},
+{
+"recoil": 95,
+"crit": false
+}
+]
+}
+}
