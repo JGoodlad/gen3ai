@@ -20,8 +20,13 @@ RECORDED (a digest in the fixture) — the gate refuses if the core no longer re
 Corpora (``python -m agents.battle.rust_core_parity --help``):
 
 * **COMMIT** (``rust_core_parity_fixtures/commit_tier.json.gz``): 6 seeded-random battles over 12
-  distinct pool teams + 2 production-policy battles, recorded once; plus the byte-fuzz fixtures
-  that carry the four ambiguity-prone shapes. Seconds; routine gate.
+  distinct pool teams + 2 production-policy battles + 2 seeded-random Baton Pass battles, recorded
+  once; plus the byte-fuzz fixtures that carry the four ambiguity-prone shapes. Seconds; routine
+  gate.
+
+Slice **V** (views + legality — the TRUTH AUDIT of the training observation path,
+:mod:`agents.battle.rust_core_parity_views`) rides the SAME call: ``check_battles(…,
+views=ViewCensus())`` asks the core for its decision boards too (``core_events --views``).
 * **MILESTONE** (``slow``): 2 seeds × 200 seeded-random battles and 2 × 50 production-policy
   battles PLAYED live (the live ``Gen3Battle`` logs must also equal the offline feed's), plus the
   22-scenario protocol capture corpus × 2 seeds and every byte-fuzz fixture. The pool content
@@ -72,6 +77,10 @@ SHAPE_FIXTURES = (
 #: The COMMIT tier's recorded battles: 6 seeded-random (12 distinct pool teams) + 2 policy.
 COMMIT_RANDOM_KEYS = (0, 2, 4, 6, 8, 10)
 COMMIT_POLICY_KEYS = (20, 22)
+#: + 2 seeded-random BATON PASS battles, so the class that motivated slice V is pinned in the
+#: routine gate forever: key 177 passes Calm Mind stages (the entrant reads spa+2/spd+2 in the
+#: SIM), key 34 passes a Substitute (the §4b "missing `substitute`" finding's own board).
+COMMIT_BATON_PASS_KEYS = (34, 177)
 #: The MILESTONE tier's key ranges (the Phase-0 recipe) and policy keys, two seeds each.
 MILESTONE_RANDOM_KEYS = (range(0, 200), range(5000, 5200))
 MILESTONE_POLICY_KEYS = (range(100, 150), range(6000, 6050))
@@ -128,11 +137,14 @@ def chunks_sha(chunks: Sequence[Tuple[str, str]]) -> str:
 # ---------------------------------------------------------------------------
 
 def run_core(battles: Sequence[RecordedBattle], record_dir: Optional[str] = None,
-             commit: str = "unknown") -> List[dict]:
-    """Replay ``battles`` through the core in ONE process; one result dict per battle."""
+             commit: str = "unknown", views: bool = False) -> List[dict]:
+    """Replay ``battles`` through the core in ONE process; one result dict per battle.
+    ``views`` also captures slice V's decision boards (``core_events --views``)."""
     from utils.bridge.sim_bridge_bin import resolve_core_events_bin
 
     argv = [resolve_core_events_bin()]
+    if views:
+        argv.append("--views")
     if record_dir:
         argv += ["--record-dir", record_dir, "--commit", commit]
     stdin = "\n".join(line for b in battles for line in b.script()) + "\n"
@@ -233,21 +245,41 @@ def compare_viewer(core_events: List[dict], ref: Gen3Battle, label: str, census:
                                                         "|".join(e.raw)))
 
 
+#: Battles per ``core_events`` process when slice V is on: a view capture is ~40 KB per decision
+#: board, so a whole milestone corpus in one stdout would be gigabytes held at once.
+VIEW_BATCH = 16
+
+
 def check_battles(battles: Sequence[RecordedBattle], census: Census,
-                  record_dir: Optional[str] = None, commit: str = "unknown") -> Census:
-    """Run the core on ``battles``, check each against its recorded bytes and its references."""
-    for b, res in zip(battles, run_core(battles, record_dir=record_dir, commit=commit)):
-        census.battles += 1
-        if not res["ok"]:
-            census.refused.append(f"{b.label}: {res['error']}")
-            continue
-        chunks = core_chunks(res)
-        if b.chunks_sha is not None and chunks_sha(chunks) != b.chunks_sha:
-            census.refused.append(f"{b.label}: the core no longer reproduces the recorded chunks")
-            continue
-        for i, viewer in enumerate(("p1", "p2")):
-            compare_viewer(res["viewers"][i], reference(chunks, viewer), f"{b.label}/{viewer}",
-                           census)
+                  record_dir: Optional[str] = None, commit: str = "unknown",
+                  views: "Optional[Any]" = None) -> Census:
+    """Run the core on ``battles``, check each against its recorded bytes and its references.
+
+    ``views`` (a :class:`agents.battle.rust_core_parity_views.ViewCensus`) also runs slice V —
+    the TRUTH AUDIT of every decision's ``LiveView`` — on the SAME core replay."""
+    if views is not None:
+        from agents.battle.rust_core_parity_views import check_views
+
+    step = VIEW_BATCH if views is not None else max(len(battles), 1)
+    for lo in range(0, len(battles), step):
+        batch = battles[lo:lo + step]
+        results = run_core(batch, record_dir=record_dir, commit=commit, views=views is not None)
+        for b, res in zip(batch, results):
+            census.battles += 1
+            if not res["ok"]:
+                census.refused.append(f"{b.label}: {res['error']}")
+                continue
+            chunks = core_chunks(res)
+            if b.chunks_sha is not None and chunks_sha(chunks) != b.chunks_sha:
+                census.refused.append(f"{b.label}: the core no longer reproduces the recorded chunks")
+                continue
+            for i, viewer in enumerate(("p1", "p2")):
+                compare_viewer(res["viewers"][i], reference(chunks, viewer), f"{b.label}/{viewer}",
+                               census)
+            if views is not None:
+                check_views(b.label, chunks, res.get("views") or [], views,
+                            teams={"p1": b.p1["team"], "p2": b.p2["team"]},
+                            format_id=b.format_id)
     return census
 
 
@@ -390,15 +422,36 @@ def pool_hash() -> str:
     return h.hexdigest()
 
 
-def _players(key: int, tag: str, policy=None):
+OU_RANDOM_TEAMS_JS = repo_path("src", "rust_sim", "harness", "ou_random_teams.js")
+
+
+def procedural_teams(n: int, seed: int) -> List[str]:
+    """``n`` packed gen3ou teams from the PROCEDURAL generator (``ou_random_teams.js --emit``):
+    Smogon-derived, validated by Showdown's own ``TeamValidator('gen3ou')``, reproducible from
+    ``seed`` — the fuzz surface beyond the pool's fixed teams (``src/rust_sim/CLAUDE.md``,
+    ``--mode ourandom``). The teams are not the pool's, so no pool hash pins them; the seed does."""
+    p = subprocess.run(["node", str(OU_RANDOM_TEAMS_JS), "--emit", str(n), "--seed", str(seed)],
+                       capture_output=True, text=True, check=False)
+    if p.returncode != 0:
+        raise RuntimeError(f"ou_random_teams --emit failed: {p.stderr.strip()[-2000:]}")
+    teams = [t for t in p.stdout.splitlines() if t.strip()]
+    if len(teams) != n:
+        raise RuntimeError(f"ou_random_teams --emit returned {len(teams)} teams for {n}")
+    return teams
+
+
+def _players(key: int, tag: str, policy=None, teams: Optional[Tuple[str, str]] = None):
     from poke_env import AccountConfiguration
     from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
     from agents.training.obs_roundtrip_fuzz_test import SeededRandomPlayer
     from utils.team_loader import TeamLoader
 
-    pool = TeamLoader().get_all_teams()
-    t1, t2 = pool[key % len(pool)], pool[(key + 1) % len(pool)]
+    if teams is not None:
+        t1, t2 = teams
+    else:
+        pool = TeamLoader().get_all_teams()
+        t1, t2 = pool[key % len(pool)], pool[(key + 1) % len(pool)]
     common = dict(battle_format="gen3ou", server_configuration=LocalhostServerConfiguration,
                   start_listening=False, max_concurrent_battles=1, battle_class=Gen3Battle)
     if policy is None:
@@ -423,14 +476,16 @@ class LiveBattle:
     chunks: List[Tuple[str, str]]
 
 
-def play(key: int, tag: str = "Rc", policy=None) -> LiveBattle:
+def play(key: int, tag: str = "Rc", policy=None,
+         teams: Optional[Tuple[str, str]] = None) -> LiveBattle:
     """Play ONE battle for real over the production rust ``sim_bridge`` (the key recipe: teams
     ``key``/``key+1``, per-player RNG, sim seed ``[11+key, 22+key, 33+key, 44+key]``, concurrency 1)
-    and return its input log, the two LIVE battles and the per-side chunks they received."""
+    and return its input log, the two LIVE battles and the per-side chunks they received.
+    ``teams`` overrides the pool pair (the procedural generator's teams)."""
     from utils.bridge import reconstruction
     from utils.bridge.local_battle_runner import run_local_battles
 
-    p1, p2 = _players(key, tag, policy)
+    p1, p2 = _players(key, tag, policy, teams)
     sink: list = []
     asyncio.run(run_local_battles(p1, p2, 1, seed=[11 + key, 22 + key, 33 + key, 44 + key],
                                   impl="rust", chunk_sink=sink))
@@ -441,7 +496,8 @@ def play(key: int, tag: str = "Rc", policy=None) -> LiveBattle:
         raise RuntimeError(f"no __RECON__ for {b1.battle_tag}")
     players = rec.players()
     battle = RecordedBattle(
-        label=f"{'policy' if policy is not None else 'random'}_{key}", format_id=rec.format_id,
+        label=f"{'policy' if policy is not None else 'procedural' if teams else 'random'}_{key}",
+        format_id=rec.format_id,
         seed=rec.prng_seed, p1=players["p1"], p2=players["p2"],
         commands=[list(c) for c in rec.commands], chunks_sha=chunks_sha(sink))
     return LiveBattle(battle, b1, b2, list(sink))
@@ -490,20 +546,31 @@ def load_production_policy():
     return model
 
 
-def record_commit_fixture() -> None:
-    """(Re)record the COMMIT tier's 8 battles: 6 seeded-random over 12 distinct pool teams, 2
-    production-policy. Every battle's live logs must equal the offline feed's and the core's
-    replay must reproduce its chunks, or nothing is written."""
+def record_commit_fixture(append: bool = False) -> None:
+    """(Re)record the COMMIT tier's 10 battles: 6 seeded-random over 12 distinct pool teams, 2
+    production-policy, 2 seeded-random Baton Pass battles. Every battle's live logs must equal the
+    offline feed's, the core's replay must reproduce its chunks, and BOTH slices (E, V) must be
+    clean, or nothing is written. ``append`` keeps the recorded battles and plays only the keys the
+    fixture does not hold yet (a new key never re-records — and so never perturbs — the rest)."""
+    from agents.battle.rust_core_parity_views import ViewCensus
+
     census = Census()
-    lives = [play(key) for key in COMMIT_RANDOM_KEYS]
-    model = load_production_policy()
-    lives += [play(key, policy=model) for key in COMMIT_POLICY_KEYS]
+    kept = load_commit_fixture() if append else []
+    have = {b.label for b in kept}
+    want = [(k, None) for k in COMMIT_RANDOM_KEYS] + [(k, "policy") for k in COMMIT_POLICY_KEYS]
+    want += [(k, None) for k in COMMIT_BATON_PASS_KEYS]
+    model = load_production_policy() if any(
+        p and f"policy_{k}" not in have for k, p in want) else None
+    lives = [play(k, policy=model if p else None) for k, p in want
+             if f"{'policy' if p else 'random'}_{k}" not in have]
     for lv in lives:
         compare_live(lv, census)
-    battles = [lv.recorded for lv in lives]
-    check_battles(battles, census)
+    battles = kept + [lv.recorded for lv in lives]
+    views = ViewCensus()
+    check_battles(battles, census, views=views)
     print(census.render())
-    if census.divergences or census.refused:
+    print(views.render())
+    if census.divergences or census.refused or views.divergences or views.refused:
         raise SystemExit("not written: the recorded battles do not pass the gate")
     FIXTURES.mkdir(parents=True, exist_ok=True)
     payload = {"schema": "gen3_core_parity_commit_fixture_v1", "pool_sha256": pool_hash(),
@@ -597,14 +664,16 @@ def check_manifest() -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("record-commit", help="(re)record the COMMIT tier fixture")
+    rc = sub.add_parser("record-commit", help="(re)record the COMMIT tier fixture")
+    rc.add_argument("--append", action="store_true",
+                    help="keep the recorded battles; play only keys the fixture lacks")
     sub.add_parser("write-manifest", help="(re)write the MILESTONE tier manifest")
     sub.add_parser("write-records", help="(re)write the golden record corpus")
     c = sub.add_parser("check", help="run the COMMIT tier corpus and print the census")
     c.add_argument("--record-dir", default=None)
     a = ap.parse_args(argv)
     if a.cmd == "record-commit":
-        record_commit_fixture()
+        record_commit_fixture(append=a.append)
         return 0
     if a.cmd == "write-records":
         return write_golden_records()

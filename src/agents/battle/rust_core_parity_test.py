@@ -1,4 +1,9 @@
-"""The Rust Core parity gate, slice E (events) — ``gen3_core_parity_events_v1``.
+"""The Rust Core parity gate — slice E (events, ``gen3_core_parity_events_v1``) and slice V (views
++ legality, the TRUTH AUDIT, ``gen3_core_parity_views_v1`` — :mod:`rust_core_parity_views`).
+
+Slice V's tests below: the COMMIT-tier gate, its TEETH (a re-introduced Baton Pass drop and a
+misread Spikes layer each FAIL; a dropped capture FAILS as ``[ALIGN]``), and the classification
+completeness check; the MILESTONE tests run both slices on the same played battles.
 
 The core's READING projection (``src/rust_sim/src/core_events/``) against ``Gen3Battle``'s event log
 of the same per-side text, per viewer, per event, ``seq · turn · kind · side · actor · target ·
@@ -21,11 +26,12 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Iterable
+from typing import Iterable, Tuple
 
 import pytest
 
 from agents.battle import rust_core_parity as P
+from agents.battle import rust_core_parity_views as V
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
@@ -97,24 +103,120 @@ def test_the_golden_records_round_trip_and_reparse():
 
 
 # ---------------------------------------------------------------------------
-# MILESTONE tier
+# slice V — the TRUTH AUDIT: every decision's LiveView + LegalActions, both viewers
 # ---------------------------------------------------------------------------
 
-def _played(keys: Iterable[int], policy=None) -> P.Census:
+def _assert_views_clean(views: V.ViewCensus, min_decisions: int, min_truth: int) -> None:
+    print("\n" + views.render())
+    assert not views.refused, views.render()
+    assert not views.divergences, views.render()
+    assert views.decisions >= min_decisions, f"only {views.decisions} decisions — vacuous"
+    assert sum(views.truth_checks.values()) >= min_truth, dict(views.truth_checks)
+
+
+def _baton_pass_battles():
+    fx = {b.label: b for b in P.load_commit_fixture()}
+    return [fx[f"random_{k}"] for k in P.COMMIT_BATON_PASS_KEYS]
+
+
+def test_commit_tier_views_equal_liveview():
+    """Slice V at the COMMIT tier: the projection (``one_sided_view`` + the named reading rules)
+    and the engine truth against the LiveView training builds, at every decision of every
+    in-scope battle, both viewers — the recorded battles INCLUDING the two Baton Pass ones."""
+    views = V.ViewCensus()
+    P.check_battles(P.commit_corpus(), P.Census(), views=views)
+    _assert_views_clean(views, min_decisions=1_700, min_truth=35_000)
+    assert views.battles >= 13, f"only {views.battles} in-scope battles"
+
+
+def test_the_view_slice_catches_a_dropped_baton_pass(monkeypatch):
+    """TEETH, the motivating class: re-introduce poke-env's pre-2026-08-23 behaviour (a Baton
+    Pass carries NOTHING to the entrant) and the gate must FAIL on the SIM-FACT boosts of the
+    entrant AND on the engine-truth volatiles (the passed Substitute)."""
+    from poke_env.battle.pokemon import Pokemon
+
+    monkeypatch.setattr(Pokemon, "apply_baton_pass", lambda self, snapshot: None)
+    views = V.ViewCensus()
+    P.check_battles(_baton_pass_battles(), P.Census(), views=views)
+    keys = set(views.divergences)
+    print(views.render())
+    assert any(k.startswith("[SIM-FACT]") and k.endswith(".boosts") for k in keys), keys
+    assert any(k.startswith("[TRUTH]") and k.endswith(".volatiles") for k in keys), keys
+
+
+def test_the_view_slice_catches_a_misread_hazard_layer(monkeypatch):
+    """TEETH, a second sim-fact class: poke-env stores a Spikes stack as the TURN it started
+    (as for a screen) instead of its layer count — the gate must FAIL on side_conditions."""
+    from poke_env.battle.abstract_battle import AbstractBattle
+    from poke_env.battle.side_condition import SideCondition
+
+    real = AbstractBattle._side_start
+
+    def misread(self, side, condition_str):
+        conds = self.side_conditions if side[:2] == self._player_role else self.opponent_side_conditions
+        if SideCondition.from_showdown_message(condition_str) is SideCondition.SPIKES:
+            conds[SideCondition.SPIKES] = self.turn
+            return
+        real(self, side, condition_str)
+
+    monkeypatch.setattr(AbstractBattle, "_side_start", misread)
+    views = V.ViewCensus()
+    P.check_battles(P.load_commit_fixture(), P.Census(), views=views)
+    assert any(k.startswith("[SIM-FACT]") and k.endswith("side_conditions")
+               for k in views.divergences), views.render()
+
+
+def test_the_view_slice_refuses_a_decision_it_cannot_align():
+    """A decision the reading takes where the core shipped no request (or the reverse) is an
+    [ALIGN] divergence, never a silent skip."""
+    b = P.load_commit_fixture()[0]
+    res = P.run_core([b], views=True)[0]
+    caps = [c for i, c in enumerate(res["views"]) if i != 5]
+    views = V.ViewCensus()
+    V.check_views(b.label, P.core_chunks(res), caps, views,
+                  teams={"p1": b.p1["team"], "p2": b.p2["team"]})
+    assert any(k.startswith("[ALIGN]") for k in views.divergences), views.render()
+
+
+def test_every_read_model_field_is_classified():
+    """A field added to ``LivePokemon`` / ``LegalActions`` must be classified SIM-FACT or
+    PRESENTATION (with a named rule) before the gate will run — no field rides unclassified."""
+    from dataclasses import fields
+
+    from agents.battle.live_view import LegalActions, LivePokemon
+
+    assert {f.name for f in fields(LivePokemon)} == set(V.MON_FIELDS)
+    assert {f.name for f in fields(LegalActions)} - {"last_request"} == set(V.LEGAL_FIELDS)
+    for table in (V.SIDE_FIELDS, V.VIEW_FIELDS, V.LEGAL_FIELDS):
+        for cls, rule in table.values():
+            assert cls in (V.SIM, V.RULE) and (rule is None or rule in V.RULES), (cls, rule)
+    for own, opp, rule in V.MON_FIELDS.values():
+        assert {own, opp} <= {V.SIM, V.RULE} and (rule is None or rule in V.RULES)
+        assert V.RULE not in (own, opp) or rule is not None, "a PRESENTATION field needs a rule"
+    print(V.field_census())
+
+
+# ---------------------------------------------------------------------------
+# MILESTONE tier (slices E + V on the same played battles)
+# ---------------------------------------------------------------------------
+
+def _played(keys: Iterable[int], policy=None) -> Tuple[P.Census, V.ViewCensus]:
     logging.getLogger("poke-env").setLevel(logging.ERROR)
-    census = P.Census()
+    census, views = P.Census(), V.ViewCensus()
     lives = [P.play(k, policy=policy) for k in keys]
     for lv in lives:
         P.compare_live(lv, census)
-    return P.check_battles([lv.recorded for lv in lives], census)
+    P.check_battles([lv.recorded for lv in lives], census, views=views)
+    return census, views
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("seed", [0, 1], ids=["keys_0_199", "keys_5000_5199"])
 def test_milestone_seeded_random_battles(seed):
     P.check_manifest()
-    census = _played(P.MILESTONE_RANDOM_KEYS[seed])
+    census, views = _played(P.MILESTONE_RANDOM_KEYS[seed])
     _assert_clean(census, min_events=100_000, min_kinds=24)
+    _assert_views_clean(views, min_decisions=30_000, min_truth=700_000)
 
 
 @pytest.mark.slow
@@ -122,8 +224,9 @@ def test_milestone_seeded_random_battles(seed):
 def test_milestone_production_policy_battles(seed):
     P.check_manifest()
     model = P.load_production_policy()
-    census = _played(P.MILESTONE_POLICY_KEYS[seed], policy=model)
+    census, views = _played(P.MILESTONE_POLICY_KEYS[seed], policy=model)
     _assert_clean(census, min_events=5_000, min_kinds=15)
+    _assert_views_clean(views, min_decisions=3_000, min_truth=50_000)
 
 
 @pytest.mark.slow

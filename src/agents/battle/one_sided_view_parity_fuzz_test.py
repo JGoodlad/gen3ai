@@ -29,13 +29,12 @@ and counted rather than reduced to one failing assert. Two things it can be: a m
 port did not send something poke-env tracks) or the WALL (the port sent something poke-env has not
 been told); the census shows both values, so the direction is readable.
 
-**Exactly TWO classes are DECLARED residual** (:data:`DECLARED_RESIDUAL`), each naming its
-deferral in ``designs/rust_sim/one_sided_view.md``, each matched by a NARROW path predicate, and
-each PRINTED with its count on every run. Everything else fails. The narrowness is the point and
-it is enforced by construction: the Wish entry matches only the two reactive columns the layout
-DECLARES (never "an obs difference"), and the PP entry matches only a ``current_pp`` disagreement
-on a watched moveset — the move id list and every ``max_pp`` are still compared strictly, so a
-wrong revealed-move SET cannot hide behind it.
+**Exactly ONE class is DECLARED residual** (:data:`DECLARED_RESIDUAL`), naming its deferral in
+``designs/rust_sim/one_sided_view.md``, matched by a NARROW path predicate, and PRINTED with its
+count on every run. Everything else fails. The narrowness is the point and it is enforced by
+construction: the Wish entry matches only the two reactive columns the layout DECLARES (never "an
+obs difference"). The second entry this gate used to carry — D6, an opponent's ``current_pp``
+judged against Pressure at READ time — is CLOSED (reading rule V3 judges it at USE time).
 
 **TWO ENTRY POINTS, and the split is the project's fuzz rule.** A fuzz SCRIPT wants a new battle
 every run; a pytest-collected TEST wants the SAME battle every run. So:
@@ -51,12 +50,11 @@ every run; a pytest-collected TEST wants the SAME battle every run. So:
 parity harnesses carry, and for the same measured reason: three findings appeared only on the
 second or third seed.
 
-⚠️ **THREE OPEN FINDINGS the sweep can surface**, none declared residual and all left FAILING on
-purpose — the own-side ``status_counter`` drift (which now drifts in BOTH directions), an opponent
-``ability`` poke-env took from a ``[from] ability:`` clause on a non-``-ability`` line, and one
-own-side missing ``substitute`` volatile. Every one is a READ-MODEL class, so each makes
-:func:`check_successor` SKIP rather than fail — the tracker road is not implicated by any of them.
-``designs/rust_sim/one_sided_view.md`` §4b has what is ruled out for each.
+The three read-model findings this sweep used to surface (the ``status_counter`` drift, an
+opponent ability disclosed off a non-``-ability`` line, a missing Baton-Passed ``substitute``) are
+CLOSED — root-caused and pinned by the Rust Core parity harness's slice V
+(``rust_core_parity_views.py``), which runs the same projection at EVERY decision of hundreds of
+battles. ``designs/rust_sim/one_sided_view.md`` §4b has each root cause.
 
     export PYTHONPATH=$PYTHONPATH:src
     python src/agents/battle/one_sided_view_parity_fuzz_test.py [n_battles] [--arms K]
@@ -123,11 +121,10 @@ DECLARED_RESIDUAL = (
      "is why `check_successor` compares the Wish columns strictly. The port's own "
      "`SideState::wish_pending` was never needed — the payload was not the problem, the missing "
      "LOG was."),
-    (lambda p: p.startswith("opp.") and p.endswith(".moves[current_pp]"), "D6",
-     "Pressure is applied with the ability known at READ time, while `_pressure_on` evaluates it "
-     "AT USE TIME — so a sighting made before the reveal is counted at 1 PP instead of 2. The "
-     "move ids and every max_pp are still compared strictly."),
 )
+# D6 (Pressure judged at READ time) is CLOSED — each sighting now carries the target's
+# ability-event index AT USE TIME (reading rule V3, `designs/rust_sim/one_sided_view.md` §2b), so
+# an opponent's `current_pp` is compared strictly like every other field.
 
 
 def _declared(path: str):

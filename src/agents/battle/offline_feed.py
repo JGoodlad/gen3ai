@@ -48,15 +48,25 @@ def player_names(lines: Iterable[str]) -> dict:
 
 
 def new_battle(viewer: str, names: dict, battle_tag: str = "battle-gen3ou-offline",
-               logger: Optional[logging.Logger] = None) -> Gen3Battle:
+               logger: Optional[logging.Logger] = None,
+               packed_team: Optional[str] = None) -> Gen3Battle:
     """A fresh battle for ``viewer`` ("p1"/"p2"), named so the ``|player|`` lines resolve the role.
 
     ``AbstractBattle.parse_message``'s ``player`` branch sets the role by comparing each line's
     name to the battle's username, so the username must be the viewer's name as the stream spells
     it. The role is also set up front, which is what ``bc/log_reader`` does.
+
+    ``packed_team`` mirrors ``Player._create_battle``'s ``battle._teambuilder_team =
+    Teambuilder.parse_packed_team(self._current_packed_team)`` — the ONLY source of our own
+    IVs / EVs / nature in a no-preview format (``parse_request`` backfills them from it). A feed
+    that omits it reads every own spread as ``None``, which no live player ever does.
     """
     b = Gen3Battle(battle_tag, names[viewer], logger or _LOG, gen=3)
     b._player_role = viewer
+    if packed_team:
+        from poke_env.teambuilder.teambuilder import Teambuilder
+
+        b._teambuilder_team = Teambuilder.parse_packed_team(packed_team)
     return b
 
 
