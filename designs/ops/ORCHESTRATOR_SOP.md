@@ -329,6 +329,13 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   unless you say otherwise". Schedule the 15-minute wake, then act on the default and log it in the
   ledger. This is the one relaxation of "never push routine progress": a DECISION request may be
   pushed whenever it arises.
+  **How to pick the default (owner, 2026-09-24):** the option MOST RELATED TO THE GOAL. A GIGO fix
+  is taken (fix it); the next build step in the owner's queue is taken (grind it); a TASTE or design
+  CALL, one with no goal-derived answer (e.g. whether to delete a measured-neutral path now or
+  later), is DEFERRED and left for the owner. **The failure this corrects (2026-09-23/24):** three
+  decisions were put to the owner in chat only, with no push, no timer and no default taken, and
+  the CPU lane sat idle behind them overnight. In off hours a question that lives only in chat
+  is not a decision request. PUSH it, schedule the wake, and act.
 - **Alerting is Remote Control only** (owner, 2026-09-06 — an external channel, ntfy/Slack/email, was
   declined): a fully dead session cannot reach the owner, and that is accepted. Therefore the OS
   watcher's status file is the record of any unattended period and is the FIRST thing a new session
