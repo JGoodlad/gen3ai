@@ -266,7 +266,13 @@ arm is ALSO folded from its text (`child_text` / `root_text`), `version::streams
 two versions equal — tracker, events, view — and the reply carries the text path's view as
 `text_view`, which Python encodes and byte-compares (`agents/training/core_successor.py`).
 `POKESIM_SEARCH_TIMING=1` adds `core` (the typed fold), `core_render` (the leaf JSON) and
-`integrity` (the twin) to `timing_us`. Contract of the version and the reading: [`present.md`](present.md).
+`integrity` (the twin) to `timing_us`.
+
+**Capture is explicit.** `resolve_turn` / `resolve_turn_sourced` capture NOTHING (`Capture::NONE`);
+the view road asks for `Capture { views: true }` on a session whose reveal fold is ON
+(`enable_view_fold`, done by `open_root` for a non-core root), the core road for
+`Capture { sessions: true }`, and the replay verbs for none. Contract of the version and the reading:
+[`present.md`](present.md).
 
 ## The REPLAY family: the one-shot `replay` / `reroll` / `reroll_many` verbs (`gen3_rust_replay_driver_v1`)
 

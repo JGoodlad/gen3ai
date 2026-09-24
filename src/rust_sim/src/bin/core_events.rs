@@ -194,7 +194,7 @@ fn capture(v: &BattleVersion, dex: &Dex, seen: &mut usize, caps: &mut Vec<ViewCa
     caps.push(ViewCap {
         after: total,
         new_request: [n[0] > 0, n[1] > 0],
-        views: [view::one_sided_view(sess, 0, dex), view::one_sided_view(sess, 1, dex)],
+        views: [view::one_sided_view(sess, 0, dex)?, view::one_sided_view(sess, 1, dex)?],
         truth: truth_json(sess, dex),
         core: [c0, c1],
         legal: [l0, l1],
@@ -222,11 +222,16 @@ fn parse_gate(v: &BattleVersion, parsed: &mut [Option<BattleVersion>; 2]) -> Res
 }
 
 fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool) -> Result<Run, String> {
-    let sess = if b.init_seed {
+    let mut sess = if b.init_seed {
         BridgeSession::new_core(&b.opts, b.quick_claw, dex)?
     } else {
         BridgeSession::new_construct_turn0_core(&b.opts, dex)?
     };
+    if views {
+        // Slice V compares the view road's projection too, so this replay folds reveals
+        // (`gen3_view_fold_opt_in_v1` — off unless a reader asks).
+        sess.enable_view_fold()?;
+    }
     // The battle is replayed as a CHAIN OF VERSIONS (`gen3_core_version_v1`): each command
     // advances the engine and folds each side's new lines, typed at the source, into its stream;
     // a one-side, engine-less parse chain is fed the same text and must agree at every step.

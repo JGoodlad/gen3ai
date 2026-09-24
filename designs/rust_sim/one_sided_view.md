@@ -175,6 +175,21 @@ suffix, while what a side has SEEN is cumulative from turn 1. Resetting it would
 claim the opponent's team is unrevealed. Pinned by
 `one_sided_view_test::the_reveal_fold_survives_clear_chunks_and_the_snapshot`.
 
+🚨 **The fold is OFF unless a reader turns it on** (`gen3_view_fold_opt_in_v1`):
+`BridgeChunks::observed` is `None` in every constructor, and a session that will call
+`one_sided_view` calls `BridgeSession::enable_view_fold()` — LAZILY, folding the chunk history
+shipped so far and every later line (it REFUSES after a `clear_chunks` with the fold off, since the
+history would then start mid-battle). `one_sided_view` returns `Err` on a fold-less session rather
+than a view claiming nothing was revealed. The readers that enable it: `search_driver`'s view and
+protocol roots, and `core_events --views`. **`sim_bridge` never does**: it paid the fold on every
+shipped line — ≈ 60 % of M1's +13 % per-decision Rust CPU
+(`designs/research_state/measurements/m1_transport_throughput_2026-09-23/`) — and after the gate the
+recorded-transcript replay reads **0.909× the pre-M1 CPU** (95 % CI 0.876–0.932) and **0.833× the
+pre-fix CPU**, with byte-identical stdout
+(`designs/research_state/measurements/rust_core_m2_2026-09-23/view_fold/`). Pinned by
+`tests/view_fold_opt_in_test.rs` (the constructors, a source scan of `sim_bridge.rs`, the late
+enable, and byte identity with the fold on).
+
 ---
 
 ## 4. The GATE and what it reads

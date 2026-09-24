@@ -110,7 +110,7 @@ read the row you are about to edit.**
 | `bin/search_driver.rs` | DONE, validated | The drop-in replacement for BOTH node offline drivers — the persistent `{id, cmd}` search server AND the one-shot `mode` replay verbs. Dispatch is on the KEY. An `expand_many` may carry **`side`** to ELIDE the one-sided payload the caller will not read (`gen3_expand_many_side_elision_v1`). |
 | `driver_timing.rs` | DONE | OPT-IN per-phase wall accounting inside `expand_many` (`POKESIM_SEARCH_TIMING=1`). **Off it renders the empty string**, so an un-set build is byte-identical and the cross-impl parity harness is unaffected. |
 | `core_events/` (+ `bin/core_events.rs`) | M1 BUILT, not used by training | The Rust Core's typed event layer (`gen3_core_events_v1`): every omniscient line is a typed `Line` whose text is its rendering; one side's stream → `CoreEvent`s carrying `Gen3Battle`'s reading; `parse(lines)`; the persisted record. Detail: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md). |
-| `view.rs` | DONE, validated | The ONE-SIDED VIEW readout (`gen3_one_sided_view_v1`) — the PROJECTION of the omniscient board onto what one side has OBSERVED, in the shape `LiveView` holds, plus the per-side reveal fold it rides on. The obs-legal counterpart of `pre_state`. Contract + deferrals: [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md). |
+| `view.rs` | DONE, validated | The ONE-SIDED VIEW readout (`gen3_one_sided_view_v1`) — the PROJECTION of the omniscient board onto what one side has OBSERVED, in the shape `LiveView` holds, plus the per-side reveal fold it rides on. The obs-legal counterpart of `pre_state`. 🚨 **The fold is OPT-IN** (`BridgeSession::enable_view_fold`, `gen3_view_fold_opt_in_v1`) — `sim_bridge` never builds it. Contract + deferrals: [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md). |
 | `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `Tracker` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` GENERATED from poke-env. Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `version.rs` | M2 BUILT | `BattleVersion` (`gen3_core_version_v1`): the persistent battle state — `Arc` parent, per-side stream (`Tracker` + event `Reader`), per-transition events, memoized views, the engine as REFEREE; built by step (typed at the source) or by parse (one side's text), gated `parse == step` version by version. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 
@@ -156,6 +156,10 @@ gates: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md).
 
 🚨 **The poke-env tables are GENERATED**: `python -m agents.battle.rust_core_present_tables --write`
 after a poke-env data change (`rust_core_present_tables_test.py` fails the day it is stale).
+
+🚨 **A TRAINING SESSION BUILDS NO VIEW.** Neither the one-sided view's reveal fold nor any core
+recording runs in `sim_bridge`; a reader opts in (`enable_view_fold`, `new_core`). Pinned by
+`tests/view_fold_opt_in_test.rs` (the constructors + a source scan of `sim_bridge.rs`).
 
 ## The callable surface (battle.rs) maps to the existing bridge
 

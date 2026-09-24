@@ -92,7 +92,7 @@ use pokesim::driver_timing::{ArmClock, ArmTimings};
 use pokesim::json::Json;
 use pokesim::search::{
     aux_rng_from_seed, build_to_turn, json_quote, log_len, outcome_of, pre_state, recorded_queues,
-    recorded_turn_choices, resolve_turn, resolve_turn_capturing, resolve_turn_exact, resolve_turn_sourced,
+    recorded_turn_choices, resolve_turn_capturing, resolve_turn_exact, resolve_turn_sourced_with,
     session_from_record, session_from_record_core, side_chunk_strings, turn_log, write_cmd, ActionSpec,
     Capture, Record, Resolved, TurnSource, RECORDED_QUEUE_CAP,
 };
@@ -361,7 +361,8 @@ fn resolve_arm(
             TurnSource::from_replay_spec(p1_action, &q[0]),
             TurnSource::from_replay_spec(p2_action, &q[1]),
         ];
-        resolve_turn_sourced(&mut sess, &mut sources, followup, &mut rng, dex)
+        // A replay verb renders no view, so it captures none (and its session has no fold).
+        resolve_turn_sourced_with(&mut sess, &mut sources, followup, &mut rng, dex, Capture::NONE)
     };
 
     Ok(format!(
@@ -503,7 +504,14 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
     let mut sess = if core == Some(CorePath::Typed) {
         session_from_record_core(&rec, dex)?
     } else {
-        session_from_record(&rec, dex)?
+        // The view / protocol roads read `one_sided_view` at every node, so their tree folds
+        // reveals (`gen3_view_fold_opt_in_v1`); a core tree's view is the version's own (the
+        // text path's root lands here too and folds nothing it does not read).
+        let mut s = session_from_record(&rec, dex)?;
+        if core.is_none() {
+            s.enable_view_fold()?;
+        }
+        s
     };
     let rest_idx = build_to_turn(&mut sess, &rec, turn, dex)?;
 
@@ -519,7 +527,7 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
     let views = if core.is_some() {
         String::new()
     } else {
-        format!(",\"view_p1\":{},\"view_p2\":{}", one_sided_view(&sess, 0, dex), one_sided_view(&sess, 1, dex))
+        format!(",\"view_p1\":{},\"view_p2\":{}", one_sided_view(&sess, 0, dex)?, one_sided_view(&sess, 1, dex)?)
     };
     let body = format!(
         "\"node_id\":{},\"requests\":{},\"recorded_choices\":{},\"pre_state\":{},\
@@ -682,7 +690,8 @@ fn expand_arm(
             }
             let mut rng = aux_rng_from_seed(&seed);
             let spec = [ActionSpec::parse(&p1_action), ActionSpec::parse(&p2_action)];
-            resolve_turn(&mut sess, &spec, &followup, &mut rng, dex)
+            // The view road renders `view_pN_at` from the D10 captures (its session folds).
+            resolve_turn_capturing(&mut sess, &spec, &followup, &mut rng, dex, Capture { views: true, sessions: false })
         };
         (sess, resolved)
     };
@@ -703,8 +712,8 @@ fn expand_arm(
     // protocol text that used to be the only way to reach it. Rendered BEFORE `clear_chunks`
     // below (which is chunk-only anyway; the reveal fold is cumulative and survives it).
     let clk_view = ArmClock::start();
-    let view_p1 = want.wants(0).then(|| one_sided_view(&sess, 0, dex));
-    let view_p2 = want.wants(1).then(|| one_sided_view(&sess, 1, dex));
+    let view_p1 = want.wants(0).then(|| one_sided_view(&sess, 0, dex)).transpose()?;
+    let view_p2 = want.wants(1).then(|| one_sided_view(&sess, 1, dex)).transpose()?;
     // D10 (`gen3_view_at_intermediate_v1`) — the boards at the decisions this ply resolved
     // INTERNALLY, in order, per side. Empty on the ordinary arm; one entry when the ply's
     // faint forced a replacement round, which the two roads otherwise describe one decision

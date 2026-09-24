@@ -597,7 +597,10 @@ pub struct Resolved {
     /// lines side `i`'s suffix carries MINUS the last one — the quantity
     /// `agents.training.view_successor.intermediate_decisions` reads off the protocol.
     ///
-    /// 🚨 **Populated by [`resolve_turn_sourced`] only.** [`resolve_turn_exact`] leaves it
+    /// 🚨 **Populated only under `Capture::views`** ([`resolve_turn_capturing`] /
+    /// [`resolve_turn_sourced_with`], on a session whose reveal fold is on —
+    /// `BridgeSession::enable_view_fold`); the plain wrappers capture nothing.
+    /// [`resolve_turn_exact`] leaves it
     /// empty: its source answers every round from the record, it has no production consumer
     /// on this path (`recorded_exact` arms are the `value_crn` anchor), and a second capture
     /// rule with no gate is worse than an honest absence — a consumer that finds no entry
@@ -629,6 +632,11 @@ impl std::fmt::Debug for Resolved {
 pub struct Capture {
     pub views: bool,
     pub sessions: bool,
+}
+
+impl Capture {
+    /// Capture nothing — what [`resolve_turn`] / [`resolve_turn_sourced`] use.
+    pub const NONE: Capture = Capture { views: false, sessions: false };
 }
 
 /// Reproduce turn T EXACTLY as the original battle did — Node's `resolveTurnExact`.
@@ -715,7 +723,7 @@ pub fn resolve_turn(
     rng: &mut AuxRng,
     dex: &Dex,
 ) -> Resolved {
-    resolve_turn_capturing(sess, spec, followup, rng, dex, Capture { views: true, sessions: false })
+    resolve_turn_capturing(sess, spec, followup, rng, dex, Capture::NONE)
 }
 
 /// [`resolve_turn`] with an explicit [`Capture`] of the intermediate decisions.
@@ -801,7 +809,7 @@ pub fn resolve_turn_sourced(
     rng: &mut AuxRng,
     dex: &Dex,
 ) -> Resolved {
-    resolve_turn_sourced_with(sess, sources, followup, rng, dex, Capture { views: true, sessions: false })
+    resolve_turn_sourced_with(sess, sources, followup, rng, dex, Capture::NONE)
 }
 
 /// [`resolve_turn_sourced`] with an explicit [`Capture`] of the intermediate decisions.
@@ -842,7 +850,12 @@ pub fn resolve_turn_sourced_with(
                     continue;
                 }
                 if capture.views {
-                    out.views_at[i].push(crate::view::one_sided_view(sess, i, dex));
+                    // A caller that asks for views owns a session with the fold on
+                    // (`BridgeSession::enable_view_fold`); asking without it is a wiring bug.
+                    out.views_at[i].push(
+                        crate::view::one_sided_view(sess, i, dex)
+                            .expect("Capture::views needs the session's view fold (enable_view_fold)"),
+                    );
                 }
                 if capture.sessions {
                     out.sessions_at[i].push(sess.snapshot());

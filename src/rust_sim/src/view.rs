@@ -969,12 +969,18 @@ pub fn to_id(s: &str) -> String {
 ///  "ours":SIDE,"opp":SIDE,"request":<the |request| payload>|null}
 /// SIDE = {"team_size":n,"active":<species id>|null,"side_conditions":{id:n},"mons":[MON,…]}
 /// ```
-pub fn one_sided_view(sess: &BridgeSession, side: usize, dex: &Dex) -> String {
+///
+/// Needs the session's reveal fold ([`BridgeSession::enable_view_fold`], off by default so the
+/// training transport never pays it — `gen3_view_fold_opt_in_v1`); without it this REFUSES rather
+/// than render a view that claims nothing was ever revealed.
+pub fn one_sided_view(sess: &BridgeSession, side: usize, dex: &Dex) -> Result<String, String> {
     let Some(st) = sess.battle_state() else {
-        return "null".to_string();
+        return Ok("null".to_string());
     };
     let opp = 1 - side;
-    let obs = sess.observed(side);
+    let obs = sess
+        .observed(side)
+        .ok_or("one_sided_view: the session's view fold is off (call BridgeSession::enable_view_fold)")?;
     let ended = sess.is_ended();
     let (won, lost) = match (ended, sess.winner()) {
         (false, _) => ("null".to_string(), "null".to_string()),
@@ -995,7 +1001,7 @@ pub fn one_sided_view(sess: &BridgeSession, side: usize, dex: &Dex) -> String {
     // inherited the lag. Measured by the parity harness's slice V on every battle's first
     // decision; a search root never opens at turn 1, which is why the search gate never saw it.
     let turn = st.turn.max(1);
-    format!(
+    Ok(format!(
         "{{\"side\":\"p{}\",\"turn\":{},\"finished\":{},\"won\":{},\"lost\":{},\
          \"weather\":{},\"ours\":{},\"opp\":{},\"request\":{}}}",
         side + 1,
@@ -1007,7 +1013,7 @@ pub fn one_sided_view(sess: &BridgeSession, side: usize, dex: &Dex) -> String {
         side_json(st, side, side, obs, dex, !ended),
         side_json(st, opp, side, obs, dex, !ended),
         request,
-    )
+    ))
 }
 
 fn weather_json(st: &BattleState, turn: u32) -> String {

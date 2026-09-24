@@ -26,7 +26,10 @@ use pokesim::battle::BattleOptions;
 use pokesim::bridge::{bridge_opts, parse_choice, BridgeSession, Cmd, RequestState};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
-use pokesim::search::{aux_rng_from_seed, pre_state, resolve_turn_sourced, Resolved, TurnSource};
+use pokesim::search::{aux_rng_from_seed, pre_state, resolve_turn_sourced_with, Capture, Resolved, TurnSource};
+
+/// The view road's capture (its sessions fold reveals — `gen3_view_fold_opt_in_v1`).
+const VIEWS: Capture = Capture { views: true, sessions: false };
 use pokesim::view::one_sided_view;
 
 /// Three mons a side, all with two damaging moves. THREE so that after one switch there is
@@ -48,6 +51,7 @@ fn cmd(side: usize, tok: &str) -> Cmd {
 /// really is a branch point.
 fn paused(dex: &Dex, turns: usize) -> BridgeSession {
     let mut sess = BridgeSession::new(&opts(), dex).expect("session");
+    sess.enable_view_fold().unwrap();
     for _ in 0..turns {
         sess.feed_cmd(cmd(0, "move 1"), dex);
         sess.feed_cmd(cmd(1, "move 1"), dex);
@@ -65,7 +69,7 @@ fn paused(dex: &Dex, turns: usize) -> BridgeSession {
 }
 
 fn view(sess: &BridgeSession, side: usize, dex: &Dex) -> Json {
-    let raw = one_sided_view(sess, side, dex);
+    let raw = one_sided_view(sess, side, dex).unwrap();
     Json::parse(&raw).unwrap_or_else(|e| panic!("view_p{} is not JSON: {e}\n{raw}", side + 1))
 }
 
@@ -87,7 +91,7 @@ fn species_list(v: &Json, which: &str) -> Vec<String> {
 fn the_view_hides_every_unrevealed_opposing_mon_that_pre_state_shows() {
     let dex = Dex::for_gen(3);
     let sess = paused(&dex, 3);
-    let raw_p1 = one_sided_view(&sess, 0, &dex);
+    let raw_p1 = one_sided_view(&sess, 0, &dex).unwrap();
     let v1 = view(&sess, 0, &dex);
 
     let seen = species_list(&v1, "opp");
@@ -120,7 +124,7 @@ fn the_view_hides_every_unrevealed_opposing_mon_that_pre_state_shows() {
 fn the_wall_holds_symmetrically_for_p2() {
     let dex = Dex::for_gen(3);
     let sess = paused(&dex, 3);
-    let raw = one_sided_view(&sess, 1, &dex).to_ascii_lowercase();
+    let raw = one_sided_view(&sess, 1, &dex).unwrap().to_ascii_lowercase();
     let v2 = view(&sess, 1, &dex);
     assert_eq!(species_list(&v2, "opp"), vec!["blissey".to_string()]);
     for s in ["regice", "skarmory"] {
@@ -170,6 +174,7 @@ fn the_owner_sees_exact_hp_and_its_spread_while_the_watcher_sees_the_percent_fol
 fn a_move_is_revealed_only_once_it_is_used_and_carries_its_SIGHTING_COUNT() {
     let dex = Dex::for_gen(3);
     let mut sess = BridgeSession::new(&opts(), &dex).expect("session");
+    sess.enable_view_fold().unwrap();
     // Before any move resolves, p1 has seen p2's lead switch in but no move.
     let v0 = view(&sess, 0, &dex);
     assert!(
@@ -299,7 +304,7 @@ fn the_reveal_key_is_the_protocol_ident_name() {
         .flat_map(|c| c.lines.iter())
         .any(|l| l.starts_with(&format!("|switch|p2a: {name}|")));
     assert!(saw, "p1 never received a |switch| naming p2's lead as {name:?}");
-    assert!(sess.observed(0).is_revealed(&name), "the fold did not key on that token");
+    assert!(sess.observed(0).unwrap().is_revealed(&name), "the fold did not key on that token");
     assert_eq!(pokesim::view::ident_name("p2a: Blissey"), Some("Blissey".to_string()));
     assert_eq!(pokesim::view::ident_name("p1: Suicune"), Some("Suicune".to_string()));
     assert_eq!(pokesim::view::ident_name("Sandstorm"), None);
@@ -355,7 +360,7 @@ fn every_move_and_ability_id_is_in_SHOWDOWN_ID_FORM() {
     // structural check, so it is pinned here.
     let dex = Dex::for_gen(3);
     let sess = paused(&dex, 1);
-    let raw = one_sided_view(&sess, 0, &dex);
+    let raw = one_sided_view(&sess, 0, &dex).unwrap();
     // The `request` tail is the WIRE's own bytes spliced in verbatim (`"move":"Tackle"` is
     // display-form there BY CONTRACT), so the check is scoped to the projected board.
     let board = raw.split(",\"request\":").next().expect("board half");
@@ -380,16 +385,17 @@ const NUKE_P1_TEAM: &str =
     "Rayquaza|||NoAbility|thunderbolt|Serious|,,,252,,252|N||||]Regice|||NoAbility|tackle|Serious|252,,252,,,|N||||";
 
 /// Resolve one whole turn from the pre-commit turn-1 boundary with both sides on an explicit
-/// move, returning the settled session and what `resolve_turn_sourced` captured.
+/// move, returning the settled session and what `resolve_turn_sourced_with` captured.
 fn glass_turn(dex: &Dex) -> (BridgeSession, Resolved) {
     let opts = bridge_opts("gen3customgame", SEED.to_string(), NUKE_P1_TEAM, GLASS_P2_TEAM);
     let mut sess = BridgeSession::new_construct_turn0(&opts, dex).expect("session");
+    sess.enable_view_fold().unwrap();
     let mut sources = [
         TurnSource::from_replay_spec("move 1", &[]),
         TurnSource::from_replay_spec("move 1", &[]),
     ];
     let mut rng = aux_rng_from_seed("1,2,3,4");
-    let out = resolve_turn_sourced(&mut sess, &mut sources, "random", &mut rng, dex);
+    let out = resolve_turn_sourced_with(&mut sess, &mut sources, "random", &mut rng, dex, VIEWS);
     (sess, out)
 }
 
@@ -429,7 +435,7 @@ fn a_mid_turn_faint_captures_the_view_AT_its_replacement_request() {
         "a forceSwitch request carries no `active` block — this is the wrong request:\n{at}");
     // And it is a DIFFERENT board from the one the arm finally renders, which is the entire
     // reason the field exists. Equality here would mean the capture fired after the fact.
-    let after = one_sided_view(&sess, 1, &dex);
+    let after = one_sided_view(&sess, 1, &dex).unwrap();
     assert_ne!(at, &after, "the captured view equals the post-turn view — nothing was gained");
     assert!(at.contains("\"turn\":1"), "the capture must be the turn-1 board:\n{at}");
     assert!(after.contains("\"turn\":2"), "the post-turn view must be turn 2:\n{after}");
@@ -448,7 +454,7 @@ fn an_ordinary_turn_captures_no_intermediate_view() {
         TurnSource::from_replay_spec("move 1", &[]),
     ];
     let mut rng = aux_rng_from_seed("5,6,7,8");
-    let out = resolve_turn_sourced(&mut sess, &mut sources, "random", &mut rng, &dex);
+    let out = resolve_turn_sourced_with(&mut sess, &mut sources, "random", &mut rng, &dex, VIEWS);
     assert!(!out.stuck, "the turn must settle");
     // NON-VACUITY: the turn really did run (both sides committed exactly one choice).
     assert_eq!(out.used[0].len(), 1, "p1 used {:?}", out.used[0]);
@@ -652,7 +658,7 @@ fn the_first_decision_reads_turn_1_and_every_row_carries_the_faint_fields() {
     // `this.turn` is 1): the first board read turn 0 on the view road.
     let dex = Dex::for_gen(3);
     let sess = paused(&dex, 0);
-    let v = one_sided_view(&sess, 0, &dex);
+    let v = one_sided_view(&sess, 0, &dex).unwrap();
     assert!(v.contains("\"turn\":1,"), "the construction board must read turn 1:\n{}", &v[..80]);
     // Every mon row carries `faint_boosts` (null while alive) and our rows a `base_ability`.
     assert!(v.contains("\"faint_boosts\":null") && v.contains("\"base_ability\":\""));
