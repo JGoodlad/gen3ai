@@ -201,6 +201,8 @@ impl crate::state::BattleState {
                 // its PLAIN 145 (tying a 145 Swalot corpse → the shuffle draw), not a
                 // stale 580. (The alive-outgoing boost clear lives in `execute_switch`;
                 // this is the FAINT-path mirror.)
+                // Keep what the corpse HELD (observation-only — `MonState::faint_boosts`).
+                mon.faint_boosts = mon.boosts;
                 mon.boosts = [0; crate::state::BOOST_LEN];
                 // `faintMessages` → `clearVolatile` drops the faintee's volatiles. The LEECH
                 // SEED volatile clears here (a fainted seeded mon is no longer seeded — the

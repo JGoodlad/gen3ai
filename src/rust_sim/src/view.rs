@@ -66,13 +66,34 @@ use crate::state::{BattleState, MonState, Status, Weather};
 pub struct MoveObs {
     pub id: String,
     pub uses: u32,
-    /// Sightings keyed by the TARGET's ident name. poke-env decrements a watched move by TWO
-    /// when the target has Pressure (`_pressure_on`), and whether it does depends on the
-    /// ABILITY as poke-env knows it — which includes its single-possible-ability inference (a
-    /// gen-3 Zapdos reads `pressure` before anything disclosed it). So the target is carried
-    /// across and the decision is made in `agents.battle.view_adapter`, against the read-model's
-    /// own abilities.
-    pub uses_vs: BTreeMap<String, u32>,
+    /// Every sighting that may cost an EXTRA PP, with the count of identical ones. poke-env
+    /// decrements a watched move by TWO when `_pressure_on` holds — the target's ABILITY as
+    /// poke-env knows it AT USE TIME (single-possible-ability inference, a Trace overlay, a
+    /// switch-out clearing that overlay), against a foe-targeting move. So the sighting carries
+    /// everything that decision needs and the adapter makes it (`view_adapter._move`).
+    pub sightings: BTreeMap<Sighting, u32>,
+}
+
+/// One `|move|` line's Pressure inputs (reading rule V3). The two targets are both carried
+/// because `Battle._get_target_mon` picks between them by the move's target TYPE, which is
+/// poke-env's dex, not the port's: an `all`-target move (Perish Song, Haze, the weather moves)
+/// and a line with no target field take the OTHER side's active (`dflt`), everything else the
+/// named `target`. Each carries the index into that mon's `ability_events` at USE time, so the
+/// adapter replays exactly the ability poke-env held then.
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Sighting {
+    /// The move whose target type and Pressure decide the extra PP — the move itself, or the
+    /// CALLED move of a `[from]move: Sleep Talk` / Metronome line.
+    pub mv: String,
+    /// A called sighting costs the caller NOTHING unless `_pressure_on` holds for the called
+    /// move (`Move.use(pressure, overridden=True)` decrements `1 + pressure − 1`); a plain one
+    /// has already been counted in `uses`.
+    pub called: bool,
+    pub target: String,
+    pub target_own: bool,
+    pub target_k: usize,
+    pub dflt: String,
+    pub dflt_k: usize,
 }
 
 /// One entry in [`MonObservation::ability_events`]. `id` empty = the mon left the field.
@@ -80,21 +101,32 @@ pub struct MoveObs {
 pub struct AbilityEvent {
     pub id: String,
     pub trace: bool,
+    /// poke-env assigns this one ONLY while the mon's ability reads `None` (the `-activate`
+    /// handler's `if holder_mon.ability is None` guard) — whether it does is the adapter's
+    /// question, because it depends on the single-possible-ability inference.
+    pub if_unknown: bool,
 }
 
-/// One announced volatile, with the two counters poke-env's rules need.
+/// One announced volatile — its ANNOUNCEMENT HISTORY, which is what poke-env's rules consume.
 ///
-/// `turns` is `|turn|` boundaries since it was announced and `restarts` is re-announcements.
-/// Neither is a poke-env value — they are the INPUTS its rules consume: `Pokemon.end_turn`
-/// removes an `ends_on_turn` effect and increments an `is_turn_countable` one, while
-/// `start_effect` increments an `is_action_countable` one on re-announcement. Which effect is
-/// which lives in poke-env's `Effect` enum, so the decision is made in
-/// `agents.battle.view_adapter` and only the raw material crosses.
+/// `starts` holds the side's `|turn|` tick at each announcement (`-start` / `-activate` /
+/// `-singleturn` / `-singlemove`, re-announcements included). poke-env's lifecycle is a function
+/// of exactly that history and the ticks since: `start_effect` creates the effect at 0 when it is
+/// absent and increments an `is_action_countable` one when present; `Pokemon.end_turn` (every
+/// `|turn|`) increments an `is_turn_countable` one and DELETES an `ends_on_turn` one — so a
+/// Protect re-announced a turn after its first `-singleturn` is a FRESH effect, not a restart of
+/// the first (a two-counter summary read it as expired). Which effect is which lives in poke-env's
+/// `Effect` enum, so the adapter replays the history (`view_adapter._volatiles`).
+///
+/// `bp_carried` > 0 marks the first `bp_carried` starts as INHERITED through Baton Pass: the
+/// entrant received the passer's volatile, and the adapter keeps it only when poke-env's
+/// `BATON_PASS_COPIED_EFFECTS` holds it (`Pokemon.apply_baton_pass`, the sim's
+/// `copyVolatileFrom`) — the §4b "missing `substitute`" finding.
 #[derive(Debug, Clone, Default)]
 pub struct VolObs {
     pub name: String,
-    pub turns: u32,
-    pub restarts: u32,
+    pub starts: Vec<u32>,
+    pub bp_carried: u32,
 }
 
 /// What ONE side has been TOLD — the protocol-derived half of the view.
@@ -137,21 +169,39 @@ pub struct SideObservation {
     /// request. Emitting the port's own `sides[i].pokemon` order permuted all six 122-dim own
     /// slots; measured against poke-env on real boards.
     pub own_order: Vec<String>,
+    /// `|turn|` lines seen — the tick every volatile's `starts` are stamped with.
+    pub tick: u32,
+    /// The protocol's own turn number (`|turn|N`), which is what poke-env stamps a screen with.
+    pub proto_turn: u32,
+    /// Timed side conditions as poke-env stores them — `[own, foe]`, condition id → the TURN it
+    /// started (`abstract_battle._side_start`: `conditions[c] = self.turn`, only when absent;
+    /// `side_end` pops it). Reading rule V11: the engine keeps REMAINING turns, a different
+    /// quantity (a Light Screen read `4` where poke-env had `25`).
+    pub screens: [BTreeMap<String, u32>; 2],
 }
 
 /// The per-mon half of [`SideObservation`].
 #[derive(Debug, Clone, Default)]
 pub struct MonObservation {
-    /// poke-env's `status_counter`, folded.
+    /// poke-env's `status_counter`, folded (reading rule V5,
+    /// `designs/rust_sim/one_sided_view.md` §4b).
     ///
-    /// It is NOT the sim's counter: `Pokemon.moved` increments it once per MOVE while asleep and
-    /// `Pokemon.end_turn` once per turn while badly poisoned AND ACTIVE, so a mon the engine has
-    /// at `Sleep(3)` reads 0 in poke-env until it tries to act. The obs normalises it
-    /// (`min(n,4)/4` asleep, `min(n,8)/8` toxic), so the difference is visible in the vector.
+    /// It is NOT the sim's counter: `Pokemon.moved` AND `Pokemon.cant_move` increment it once per
+    /// `|move|` / `|cant|` LINE while poke-env holds the mon asleep, and `Pokemon.end_turn` once
+    /// per `|turn|` while badly poisoned AND ACTIVE, so a mon the engine has at `Sleep(3)` reads 0
+    /// until it tries to act. Only `cure_status(<the named status>)` and a TOXIC `switch_out`
+    /// reset it — a NEW status does not. The obs normalises it (`min(n,4)/4` asleep, `min(n,8)/8`
+    /// toxic), so the difference is visible in the vector.
     pub status_counter: u32,
-    /// Which counter is running: `Some(true)` = asleep, `Some(false)` = badly poisoned,
-    /// `None` = neither (no status, cured, or FAINTED).
-    pub counting: Option<bool>,
+    /// poke-env's OWN `Pokemon._status` for this mon, as the protocol has written it — `"slp"`,
+    /// `"tox"`, `"fnt"`, … or `None`. The counter's increments and resets are conditioned on THIS
+    /// (not on the engine's status), because poke-env conditions them on its own field, and the
+    /// two differ exactly where a line clears a status without naming it (`-cureteam`, an HP
+    /// token with no status). Written by every line poke-env writes `_status` from: `-status`,
+    /// `-curestatus` (only when it names the held status), `-cureteam` (the named side's
+    /// non-fainted mons), `faint`, the HP field of `-damage` / `-heal` / `-sethp` / `switch` /
+    /// `drag` / `replace`, and — our own side — every `|request|` roster `condition`.
+    pub pstatus: Option<String>,
     /// poke-env's `protect_counter` — the number of consecutive stall moves this mon has USED.
     ///
     /// 🚨 **Not the sim's stall counter, which is a different quantity.** `MonState::protect_counter`
@@ -186,16 +236,16 @@ pub struct MonObservation {
 }
 
 impl MonObservation {
-    fn start_volatile(&mut self, raw: &str) {
+    fn start_volatile(&mut self, raw: &str, tick: u32) {
         let v = raw.strip_prefix("move: ").unwrap_or(raw);
         if v.is_empty() {
             return;
         }
         if let Some(existing) = self.volatiles.iter_mut().find(|x| x.name == v) {
-            existing.restarts += 1;
+            existing.starts.push(tick);
             return;
         }
-        self.volatiles.push(VolObs { name: v.to_string(), turns: 0, restarts: 0 });
+        self.volatiles.push(VolObs { name: v.to_string(), starts: vec![tick], bp_carried: 0 });
     }
 
     fn end_volatile(&mut self, raw: &str) {
@@ -203,27 +253,58 @@ impl MonObservation {
         self.volatiles.retain(|x| x.name != v);
     }
 
-    fn note_status(&mut self, status: &str) {
-        self.status_counter = 0;
-        self.counting = match status {
-            "slp" => Some(true),
-            "tox" => Some(false),
-            _ => None,
-        };
+    fn pstatus_is(&self, s: &str) -> bool {
+        self.pstatus.as_deref() == Some(s)
+    }
+
+    /// The `Pokemon.status` SETTER (`-status`): writes `_status` and leaves `_status_counter`
+    /// alone — so a Rest taken while badly poisoned starts its sleep count at the toxic count
+    /// (a poke-env READING defect against the sim, recorded in `one_sided_view.md` §4b; this
+    /// fold reproduces the reading, it does not correct it).
+    fn set_pstatus(&mut self, status: &str) {
+        self.pstatus = Some(status.to_string());
+    }
+
+    /// `Pokemon.set_hp_status`: `"0 fnt"` is a faint; an `hp status` token writes the status;
+    /// a bare `hp` CLEARS it. None of the three touches the counter.
+    fn set_hp_status(&mut self, hp: &str) {
+        let hp = hp.trim();
+        if hp == "0 fnt" {
+            self.note_faint();
+        } else if let Some((_, st)) = hp.split_once(' ') {
+            self.pstatus = Some(st.to_string());
+        } else {
+            self.pstatus = None;
+        }
     }
 
     /// `Pokemon.faint()` sets `_status = Status.FNT` and leaves `_status_counter` alone, so the
     /// counter FREEZES at its last value and neither the per-turn toxic tick nor `switch_out`'s
     /// toxic reset can touch it again. Clearing the counter here instead read an own Heracross at
     /// 0 where poke-env had 1 — the reset fired when its replacement switched in.
+    /// ...and `faint()` does not touch `_protect_counter` either: a mon that Protected and then
+    /// fainted before moving again still reads its streak at the replacement decision
+    /// (`switch_out` is what zeroes it). Zeroing it here read an own Swampert at 0 where
+    /// poke-env had 1 (parity harness slice V, `random_44`).
     fn note_faint(&mut self) {
-        self.counting = None;
-        self.protect_counter = 0;
+        self.pstatus = Some("fnt".to_string());
     }
 
-    fn clear_status(&mut self) {
-        self.status_counter = 0;
-        self.counting = None;
+    /// `Pokemon.cure_status(status)`: only when `status` IS the held status does it clear it AND
+    /// zero the counter; any other named status is a no-op.
+    fn cure_named(&mut self, status: &str) {
+        if self.pstatus_is(status) {
+            self.pstatus = None;
+            self.status_counter = 0;
+        }
+    }
+
+    /// `Pokemon.cure_status()` with no status (`-cureteam`): clears a non-fainted mon's status
+    /// and leaves the counter alone.
+    fn cure_unnamed(&mut self) {
+        if !self.pstatus_is("fnt") {
+            self.pstatus = None;
+        }
     }
 
     fn note_item(&mut self, id: String) {
@@ -259,10 +340,9 @@ impl SideObservation {
 
         // `|turn|N` carries no ident and is the tick poke-env's `Pokemon.end_turn` runs on.
         if *tag == "turn" {
-            for m in self.mons.values_mut().chain(self.own_mons.values_mut()) {
-                for v in m.volatiles.iter_mut() {
-                    v.turns += 1;
-                }
+            self.tick += 1;
+            if let Some(n) = parts.get(2).and_then(|n| n.trim().parse::<u32>().ok()) {
+                self.proto_turn = n;
             }
             // `Pokemon.end_turn` runs for the ACTIVE mons only (`all_active_pokemons`), and the
             // only counter it advances in gen 3 is the badly-poisoned one.
@@ -271,18 +351,41 @@ impl SideObservation {
                 let Some(nm) = on else { continue };
                 let map = if i == 0 { &mut self.own_mons } else { &mut self.mons };
                 if let Some(m) = map.get_mut(&nm) {
-                    if m.counting == Some(false) {
+                    if m.pstatus_is("tox") {
                         m.status_counter += 1;
                     }
                 }
             }
             return;
         }
-        // `|request|{...}` — the FIRST one fixes our own team's obs slot order.
+        // `|request|{...}` — the FIRST one fixes our own team's obs slot order, and EVERY one
+        // writes each own mon's `_status` from its roster `condition`
+        // (`Pokemon.update_from_request` → `set_hp_status(condition)`).
         if *tag == "request" {
             if self.own_order.is_empty() {
                 self.own_order = request_roster_names(line);
             }
+            for (name, cond) in request_roster_conditions(line) {
+                let m = self.own_mons.entry(name).or_default();
+                m.set_hp_status(&cond);
+                // `set_hp_status("0 fnt")` calls `faint()` AGAIN, which `_clear_effects()` —
+                // so an effect a line re-attached to the corpse after its faint (the
+                // `|-activate|…|move: Destiny Bond` that follows the KO) is gone by the decision.
+                if cond.trim() == "0 fnt" {
+                    m.volatiles.clear();
+                }
+            }
+            return;
+        }
+        // `|-cureteam|pNa: X|…` — `for mon in team.values(): mon.cure_status()` over the NAMED
+        // side's team as poke-env holds it (for the foe: the mons it has seen).
+        if *tag == "-cureteam" {
+            let own_side = owner_is_self;
+            let map = if own_side { &mut self.own_mons } else { &mut self.mons };
+            for m in map.values_mut() {
+                m.cure_unnamed();
+            }
+            // (no further fold for this line: it names the user, and nothing below reads it)
             return;
         }
 
@@ -313,7 +416,62 @@ impl SideObservation {
         let Some(ident) = parts.get(2) else { return };
         let Some(name) = ident_name(ident) else { return };
 
+        // ABILITY DISCLOSURES off lines that are NOT `|-ability|` (reading rule V8; the §4b
+        // finding "opp ability reads None where poke-env has it"). poke-env writes a mon's ability
+        // from four more handlers, each with its own exact shape — see [`ability_disclosure`].
+        // An own mon's announcements are folded too: our own `ability` field is the engine's,
+        // but a Pressure decision on a watched move replays the ability poke-env held AT USE
+        // TIME, and a Traced Pressure on our own Porygon2 is exactly that case.
+        if let Some((holder, id, if_unknown)) = ability_disclosure(&parts) {
+            let line_side = ident.trim_start().get(..2);
+            let holder_side = holder.trim_start().get(..2);
+            let holder_is_self = if holder_side == line_side { owner_is_self } else { !owner_is_self };
+            if let Some(hname) = ident_name(holder) {
+                let ev = AbilityEvent { id, trace: false, if_unknown };
+                if holder_is_self {
+                    self.own_mons.entry(hname).or_default().ability_events.push(ev);
+                } else {
+                    self.entry(&hname).ability_events.push(ev);
+                }
+            }
+        }
+        // `Pokemon.faint()` clears `temporary_ability` exactly as `switch_out` does (and the sim's
+        // faint `clearVolatile` restores the base ability) — so a fainted Traced mon reads its
+        // BASE ability again at the replacement decision. The same empty-id marker both sides.
+        if *tag == "faint" {
+            let map = if owner_is_self { &mut self.own_mons } else { &mut self.mons };
+            map.entry(name.clone()).or_default().ability_events.push(AbilityEvent::default());
+        }
+
+        // `|-sidestart|pN: Player|Reflect` / `|-sideend|…` — reading rule V11. A timed condition
+        // is stored as the turn it STARTED (only when absent); Spikes is a layer COUNT, which the
+        // engine holds exactly, so only the timed ones are folded here.
+        if matches!(*tag, "-sidestart" | "-sideend") {
+            if let Some(cond) = parts.get(3) {
+                let id = side_condition_id(cond);
+                let map = &mut self.screens[if owner_is_self { 0 } else { 1 }];
+                if *tag == "-sideend" {
+                    map.remove(&id);
+                } else if id != "spikes" {
+                    let turn = self.proto_turn;
+                    map.entry(id).or_insert(turn);
+                }
+            }
+            return;
+        }
+
         if owner_is_self {
+            if *tag == "-ability" {
+                if let Some(ab) = parts.get(3) {
+                    let trace = parts
+                        .iter()
+                        .skip(4)
+                        .any(|t| t.trim().starts_with("[from] ability: Trace"));
+                    self.own_mons.entry(name.clone()).or_default().ability_events.push(
+                        AbilityEvent { id: to_id(ab), trace, if_unknown: false },
+                    );
+                }
+            }
             if matches!(*tag, "-item" | "-enditem") {
                 if let Some(item) = parts.get(3) {
                     let id = to_id(item);
@@ -326,28 +484,39 @@ impl SideObservation {
                     }
                 }
             }
+            let mut carried: Vec<VolObs> = Vec::new();
             if matches!(*tag, "switch" | "drag" | "replace") {
                 self.own_seen.insert(name.clone());
                 if let Some(prev) = self.on_field[0].replace(name.clone()) {
                     if prev != name {
                         let p = self.own_mons.entry(prev).or_default();
+                        if from_baton_pass(&parts) {
+                            carried = baton_pass_carry(&p.volatiles);
+                        }
                         p.volatiles.clear();
                         switch_out_status(p);
+                        p.ability_events.push(AbilityEvent::default());
                     }
                 }
             }
+            let tick = self.tick;
             let e = self.own_mons.entry(name).or_default();
             fold_status(e, tag, &parts);
-            fold_volatiles(e, tag, &parts);
+            fold_volatiles(e, tag, &parts, tick);
+            e.volatiles.extend(carried);
             return;
         }
 
+        let mut carried: Vec<VolObs> = Vec::new();
         match *tag {
             "switch" | "drag" | "replace" => {
                 self.entry(&name);
                 if let Some(prev) = self.on_field[1].replace(name.clone()) {
                     if prev != name {
                         let p = self.entry(&prev);
+                        if from_baton_pass(&parts) {
+                            carried = baton_pass_carry(&p.volatiles);
+                        }
                         p.volatiles.clear();
                         switch_out_status(p);
                         // `Pokemon.switch_out` clears `temporary_ability`; which announcement
@@ -358,29 +527,56 @@ impl SideObservation {
             }
             "move" => {
                 if let Some(raw_move) = parts.get(3) {
-                    if move_reveals(&parts) {
-                        let id = to_id(raw_move);
-                        if !id.is_empty() && id != "struggle" && id != "recharge" && id != "fight"
-                        {
-                            let tgt = parts
-                                .get(4)
-                                .and_then(|t| ident_name(t))
-                                .unwrap_or_default();
-                            let e = self.entry(&name);
-                            let slot = match e.moves.iter_mut().find(|m| m.id == id) {
-                                Some(m) => m,
-                                None => {
-                                    e.moves.push(MoveObs {
-                                        id,
-                                        uses: 0,
-                                        uses_vs: BTreeMap::new(),
-                                    });
-                                    e.moves.last_mut().expect("just pushed")
-                                }
-                            };
-                            slot.uses += 1;
-                            *slot.uses_vs.entry(tgt).or_insert(0) += 1;
+                    let id = to_id(raw_move);
+                    // `Battle._get_target_mon`: a move line with NO target (absent, or the empty
+                    // field a `[still]` / `[notarget]` fail prints) targets the OTHER side's
+                    // active — i.e. OUR active, for a foe's move. That is the mon `_pressure_on`
+                    // charges a second PP against; dropping the sighting's target instead lost it
+                    // (a Will-O-Wisp that failed into our asleep Pressure Zapdos read 1 PP high).
+                    let dflt = self.on_field[0].clone().unwrap_or_default();
+                    let named = parts.get(4).filter(|t| ident_name(t).is_some());
+                    let (target, target_own) = match named {
+                        // a foe's line: its ident's side is the FOE's, so a named target on the
+                        // other prefix is ours
+                        Some(t) => (
+                            ident_name(t).unwrap_or_default(),
+                            t.trim_start().get(..2) != ident.trim_start().get(..2),
+                        ),
+                        None => (dflt.clone(), true),
+                    };
+                    let k_of = |own: bool, n: &str| -> usize {
+                        let m = if own { self.own_mons.get(n) } else { self.mons.get(n) };
+                        m.map_or(0, |m| m.ability_events.len())
+                    };
+                    let mut s = Sighting {
+                        mv: id.clone(),
+                        called: false,
+                        target_k: k_of(target_own, &target),
+                        dflt_k: k_of(true, &dflt),
+                        target,
+                        target_own,
+                        dflt,
+                    };
+                    let callable =
+                        !id.is_empty() && id != "struggle" && id != "recharge" && id != "fight";
+                    if let Some(caller) = called_from(&parts) {
+                        // `|move|X|Called|…|[from]move: Sleep Talk` (and Metronome): poke-env runs
+                        // `mon.moved(Called, use=False, reveal=…)` — the called move is REVEALED
+                        // (Sleep Talk only) with NO use — then
+                        // `mon.moves[caller].use(pressure, overridden=True)`, which charges the
+                        // CALLER one PP only when `_pressure_on` holds for the CALLED move. So the
+                        // called sighting crosses on the caller, keyed by the called move, and the
+                        // adapter decides Pressure against the called move's target.
+                        let e = self.entry(&name);
+                        if callable && caller == "sleeptalk" {
+                            move_slot(e, &id);
                         }
+                        s.called = true;
+                        *move_slot(e, &caller).sightings.entry(s).or_insert(0) += 1;
+                    } else if callable && move_reveals(&parts) {
+                        let slot = move_slot(self.entry(&name), &id);
+                        slot.uses += 1;
+                        *slot.sightings.entry(s).or_insert(0) += 1;
                     }
                 }
             }
@@ -406,15 +602,43 @@ impl SideObservation {
                         .any(|t| t.trim().starts_with("[from] ability: Trace"));
                     self.entry(&name)
                         .ability_events
-                        .push(AbilityEvent { id: to_id(ab), trace });
+                        .push(AbilityEvent { id: to_id(ab), trace, if_unknown: false });
                 }
             }
             _ => {}
         }
+        let tick = self.tick;
         let e = self.entry(&name);
         fold_status(e, tag, &parts);
-        fold_volatiles(e, tag, &parts);
+        fold_volatiles(e, tag, &parts, tick);
+        e.volatiles.extend(carried);
     }
+}
+
+/// `|switch|…|[from] Baton Pass` — the tag `abstract_battle` reads (`from_baton_pass=any(tag
+/// .startswith("[from]") and "baton pass" in tag.lower() for tag in event[5:])`).
+fn from_baton_pass(parts: &[&str]) -> bool {
+    parts
+        .iter()
+        .skip(5)
+        .any(|t| t.starts_with("[from]") && t.to_ascii_lowercase().contains("baton pass"))
+}
+
+/// The passer's volatiles as the ENTRANT inherits them (`Pokemon.apply_baton_pass`): every one
+/// crosses, flagged as carried, and the adapter keeps those in `BATON_PASS_COPIED_EFFECTS`.
+fn baton_pass_carry(passer: &[VolObs]) -> Vec<VolObs> {
+    passer
+        .iter()
+        .map(|v| VolObs { bp_carried: v.starts.len() as u32, ..v.clone() })
+        .collect()
+}
+
+/// poke-env's `SideCondition.from_showdown_message` id, as `LiveView` keys it
+/// (`Light Screen` / `move: Light Screen` → `light_screen`).
+fn side_condition_id(raw: &str) -> String {
+    let v = raw.trim();
+    let v = v.strip_prefix("move: ").unwrap_or(v);
+    v.to_ascii_lowercase().replace(' ', "_")
 }
 
 /// poke-env's `_PROTECT_COUNTER_MOVES`, narrowed to the three that exist in gen 3.
@@ -439,32 +663,50 @@ fn move_line_failed(parts: &[&str]) -> bool {
 /// counter is deliberately NOT reset — gen 3 sleep persists across a pivot, and poke-env models
 /// that by resetting only the toxic one.
 fn switch_out_status(e: &mut MonObservation) {
-    if e.counting == Some(false) {
+    if e.pstatus_is("tox") {
         e.status_counter = 0;
     }
     e.protect_counter = 0;
 }
 
-/// poke-env's `status_counter` bookkeeping, identical for both sides.
+/// poke-env's `status_counter` bookkeeping, identical for both sides (reading rule V5). Every
+/// arm names the poke-env line it mirrors; `-cureteam` and the `|request|` roster are in
+/// `observe` (they are not about the line's own ident).
 fn fold_status(e: &mut MonObservation, tag: &str, parts: &[&str]) {
     match tag {
+        // `abstract_battle` `-status` → the `status` setter: no counter reset.
         "-status" => {
             if let Some(st) = parts.get(3) {
-                e.note_status(st.trim());
+                e.set_pstatus(st.trim());
             }
         }
-        "-curestatus" => e.clear_status(),
+        // `-curestatus` → `cure_status(status)`.
+        "-curestatus" => {
+            if let Some(st) = parts.get(3) {
+                e.cure_named(st.trim());
+            }
+        }
         "faint" => e.note_faint(),
-        // A `|switch|` names the mon coming IN; the counter reset belongs to the one going
-        // OUT and is done by the `on_field` bookkeeping in `observe` (same shape as the
-        // volatile clear). Nothing to do for the entrant, whose counter is already whatever it
-        // carried the last time it was on the field — poke-env keeps it.
-        "switch" | "drag" | "replace" => {}
+        // `-damage` → `damage` → `set_hp_status`; `-heal` → `set_hp_status`; `-sethp` →
+        // `set_hp` → `set_hp_status`. The HP token carries (or omits) the status.
+        "-damage" | "-heal" | "-sethp" => {
+            if let Some(hp) = parts.get(3) {
+                e.set_hp_status(hp);
+            }
+        }
+        // `Battle.switch` → `pokemon.set_hp_status(hp_status)` on the ENTRANT. The counter
+        // reset belongs to the one going OUT (`switch_out_status`, via `on_field` in `observe`).
+        "switch" | "drag" | "replace" => {
+            if let Some(hp) = parts.get(4) {
+                e.set_hp_status(hp);
+            }
+        }
         // `Pokemon.moved` AND `Pokemon.cant_move` both do
         // `if self._status == Status.SLP: self._status_counter += 1` — a sleeping mon that is
-        // TOLD it cannot move counts that turn exactly like one that acted.
+        // TOLD it cannot move counts that turn exactly like one that acted, and EVERY `|move|`
+        // line counts (a Sleep Talk turn is `cant` + `move Sleep Talk` + the called move).
         "move" | "cant" => {
-            if e.counting == Some(true) {
+            if e.pstatus_is("slp") {
                 e.status_counter += 1;
             }
             // `Pokemon.moved`: the stall streak advances on a stall move that was not flagged
@@ -482,7 +724,7 @@ fn fold_status(e: &mut MonObservation, tag: &str, parts: &[&str]) {
 }
 
 /// The volatile fold, identical for both sides (see [`MonObservation::volatiles`]).
-fn fold_volatiles(e: &mut MonObservation, tag: &str, parts: &[&str]) {
+fn fold_volatiles(e: &mut MonObservation, tag: &str, parts: &[&str], tick: u32) {
     match tag {
         // poke-env clears every effect on switch-out and on faint. The INCOMING mon is wiped
         // too (it arrives clean); the OUTGOING one is handled by the `on_field` bookkeeping in
@@ -490,7 +732,7 @@ fn fold_volatiles(e: &mut MonObservation, tag: &str, parts: &[&str]) {
         "switch" | "drag" | "replace" | "faint" => e.volatiles.clear(),
         "-start" | "-activate" | "-singleturn" | "-singlemove" => {
             if let Some(raw) = parts.get(3) {
-                e.start_volatile(raw);
+                e.start_volatile(raw, tick);
             }
         }
         "-end" => {
@@ -502,7 +744,7 @@ fn fold_volatiles(e: &mut MonObservation, tag: &str, parts: &[&str]) {
             // poke-env's one SILENT starter: `|move|IDENT|Minimize` adds MINIMIZE with no
             // `|-start|` of its own (`abstract_battle.parse_message`).
             if parts.get(3).map(|m| m.trim().eq_ignore_ascii_case("minimize")) == Some(true) {
-                e.start_volatile("MINIMIZE");
+                e.start_volatile("MINIMIZE", tick);
             }
         }
         _ => {}
@@ -543,6 +785,115 @@ fn request_roster_names(line: &str) -> Vec<String> {
         rest = &rest[j..];
     }
     out
+}
+
+/// `(ident name, condition)` for every roster entry of a `|request|` line, in order — the
+/// `side.pokemon[i].ident` / `.condition` pairs `Pokemon.update_from_request` reads. Scanned like
+/// [`request_roster_names`]: each entry's `"condition"` is the first one after its `"ident"`.
+fn request_roster_conditions(line: &str) -> Vec<(String, String)> {
+    let (ni, nc) = ("\"ident\":\"", "\"condition\":\"");
+    let mut out = Vec::new();
+    let mut rest = line;
+    while let Some(i) = rest.find(ni) {
+        rest = &rest[i + ni.len()..];
+        let Some(j) = rest.find('"') else { break };
+        let name = ident_name(&rest[..j]);
+        rest = &rest[j..];
+        let Some(k) = rest.find(nc) else { break };
+        // the condition must belong to THIS entry: no later ident may sit between them
+        if rest.find(ni).map_or(false, |x| x < k) {
+            continue;
+        }
+        let after = &rest[k + nc.len()..];
+        let Some(e) = after.find('"') else { break };
+        if let Some(n) = name {
+            out.push((n, after[..e].to_string()));
+        }
+        rest = &after[e..];
+    }
+    out
+}
+
+/// An ability poke-env ASSIGNS off a line other than `|-ability|`: `(holder ident, ability id,
+/// only-if-unknown)`. The four `abstract_battle` paths, each at poke-env's EXACT shape (a length
+/// check is part of the rule — a `-heal` with no `[of]` discloses nothing):
+///
+/// * `_check_damage_message_for_ability` — `|-damage|X|hp|[from] ability: A|[of] Y` (6 fields):
+///   `Y.ability = A` (Rough Skin, …);
+/// * `_check_heal_message_for_ability` — `|-heal|X|hp|[from] ability: A|[of] Y` (6 fields):
+///   `X.ability = A` (Water / Volt Absorb);
+/// * `-immune` — `|-immune|X|[from] ability: A` (4 fields): `X.ability = A` (Levitate, Volt
+///   Absorb, Immunity, …);
+/// * `-activate` — `|-activate|X|ability: A|…[of] Y…`: the `[of]` holder (else X), and ONLY
+///   `if holder_mon.ability is None`. The Dancer / Mummy / Wandering Spirit / Symbiosis branches
+///   precede it and never reach it.
+fn ability_disclosure<'a>(parts: &[&'a str]) -> Option<(&'a str, String, bool)> {
+    let tag = *parts.get(1)?;
+    let from_ability = |t: &str| t.starts_with("[from] ability:").then(|| to_id(&t["[from] ability:".len()..]));
+    match tag {
+        "-damage" if parts.len() == 6 && parts[5].starts_with("[of]") => {
+            let id = from_ability(parts[4])?;
+            Some((parts[5]["[of]".len()..].trim(), id, false))
+        }
+        "-heal" if parts.len() == 6 => {
+            let id = from_ability(parts[4])?;
+            if id == "hospitality" {
+                return Some((parts[5].trim_start_matches("[of] ").trim(), id, false));
+            }
+            Some((parts[2], id, false))
+        }
+        "-immune" if parts.len() == 4 => Some((parts[2], from_ability(parts[3])?, false)),
+        "-activate" if parts.len() >= 4 && !parts[2].is_empty() => {
+            let eff = parts[3].strip_prefix("ability: ")?;
+            if matches!(eff, "Dancer" | "Mummy" | "Wandering Spirit" | "Symbiosis") {
+                return None;
+            }
+            let holder = parts[4..]
+                .iter()
+                .find_map(|t| t.strip_prefix("[of] "))
+                .unwrap_or(parts[2]);
+            Some((holder, to_id(eff), true))
+        }
+        _ => None,
+    }
+}
+
+/// The move slot `id` on `e`, created (revealed, 0 uses) when absent — `Pokemon._add_move`.
+fn move_slot<'a>(e: &'a mut MonObservation, id: &str) -> &'a mut MoveObs {
+    if let Some(i) = e.moves.iter().position(|m| m.id == id) {
+        return &mut e.moves[i];
+    }
+    e.moves.push(MoveObs { id: id.to_string(), ..MoveObs::default() });
+    e.moves.last_mut().expect("just pushed")
+}
+
+/// The CALLER of a `|move|` line whose LAST field — after the `[miss]` / `[still]` /
+/// `[notarget]` / `[spread]` / `[anim]` suffixes poke-env strips first — is `[from] move: M` /
+/// `[from]move: M` (or the legacy `[from] Sleep Talk`), as an id: the one position
+/// `abstract_battle`'s move handler reads it from. `None` for every other line (a
+/// `lockedmove` / Mirror Move / Snatch clause is not a caller: poke-env neither reveals nor uses
+/// those, see [`move_reveals`]).
+fn called_from(parts: &[&str]) -> Option<String> {
+    let mut end = parts.len();
+    while end > 4 {
+        let t = parts[end - 1].trim();
+        if matches!(t, "[miss]" | "[still]" | "[notarget]")
+            || t.starts_with("[spread]")
+            || t.starts_with("[anim]")
+        {
+            end -= 1;
+        } else {
+            break;
+        }
+    }
+    let last = parts.get(end.checked_sub(1)?)?.trim();
+    if end <= 4 {
+        return None;
+    }
+    if last == "[from] Sleep Talk" {
+        return Some("sleeptalk".into());
+    }
+    last.strip_prefix("[from] move: ").or_else(|| last.strip_prefix("[from]move: ")).map(to_id)
 }
 
 /// Does this `|move|` line REVEAL the move to the watcher?
@@ -635,22 +986,29 @@ pub fn one_sided_view(sess: &BridgeSession, side: usize, dex: &Dex) -> String {
         Some(line) => line.strip_prefix("|request|").unwrap_or(line).to_string(),
         None => "null".to_string(),
     };
+    // THE TURN THE PROTOCOL HAS ANNOUNCED. The driver bumps `bs.turn` EAGERLY at every turn end
+    // (with the `|turn|N+1` it emits), but the FIRST `|turn|1` is emitted by the construction
+    // framing while `bs.turn` stays 0 until the first commit — so the turn-1 board read 0 where
+    // the sim (`this.turn`) and poke-env both hold 1, and every weather `turns_active` on it
+    // inherited the lag. Measured by the parity harness's slice V on every battle's first
+    // decision; a search root never opens at turn 1, which is why the search gate never saw it.
+    let turn = st.turn.max(1);
     format!(
         "{{\"side\":\"p{}\",\"turn\":{},\"finished\":{},\"won\":{},\"lost\":{},\
          \"weather\":{},\"ours\":{},\"opp\":{},\"request\":{}}}",
         side + 1,
-        st.turn,
+        turn,
         ended,
         won,
         lost,
-        weather_json(st),
+        weather_json(st, turn),
         side_json(st, side, side, obs, dex, !ended),
         side_json(st, opp, side, obs, dex, !ended),
         request,
     )
 }
 
-fn weather_json(st: &BattleState) -> String {
+fn weather_json(st: &BattleState, turn: u32) -> String {
     let Some(w) = st.field.weather else {
         return "{\"weather\":null,\"is_permanent\":false,\"turns_active\":0}".to_string();
     };
@@ -664,7 +1022,7 @@ fn weather_json(st: &BattleState) -> String {
     // from the `|-weather|` event's turn and knows nothing about the sim's countdown. Deriving it
     // from `weather_turns` works only for MOVE weather (5 - remaining) and reads 0 forever for
     // ability weather, which is why `Field::weather_start_turn` exists.
-    let turns_active = st.turn.saturating_sub(st.field.weather_start_turn);
+    let turns_active = turn.saturating_sub(st.field.weather_start_turn);
     format!(
         "{{\"weather\":{},\"is_permanent\":{},\"turns_active\":{}}}",
         json_quote(weather_id(w)),
@@ -726,36 +1084,37 @@ fn side_json(
         }
         let mon_obs = obs.mon(&name, is_own);
         let revealed = if is_own { obs.own_seen.contains(&name) || is_active } else { true };
-        rows.push(mon_json(st, mon, is_active, is_own, revealed, mon_obs, dex, running));
+        rows.push(mon_json(st, mon, is_active, is_own, revealed, mon_obs, dex, running, viewer, obs.tick));
         if is_active {
-            active_species = json_quote(&mon.species_id);
+            active_species = json_quote(identity_species(mon));
         }
     }
     format!(
         "{{\"team_size\":{},\"active\":{},\"side_conditions\":{},\"mons\":[{}]}}",
         sd.pokemon.len(),
         active_species,
-        side_conditions_json(sd),
+        side_conditions_json(sd, &obs.screens[if is_own { 0 } else { 1 }]),
         rows.join(","),
     )
 }
 
-fn side_conditions_json(sd: &crate::state::SideState) -> String {
+fn side_conditions_json(sd: &crate::state::SideState, started: &BTreeMap<String, u32>) -> String {
     let mut parts: Vec<String> = Vec::new();
     // poke-env keys `side_conditions` by the lowercased SideCondition enum NAME and stores
-    // Spikes as a LAYER count while the timed screens store the turn they started; the four
-    // below are every side condition gen 3 has that the port models.
+    // Spikes as a LAYER count while the timed screens store the TURN THEY STARTED (reading rule
+    // V11). PRESENCE is the engine's (a sim fact); a timed screen's VALUE is the protocol's start
+    // turn from the reveal fold — the engine's remaining-turn counter is a different quantity,
+    // and is emitted only if the fold somehow missed the `-sidestart`, so the parity gate sees it.
     if sd.spikes > 0 {
         parts.push(format!("\"spikes\":{}", sd.spikes));
     }
-    if sd.reflect > 0 {
-        parts.push(format!("\"reflect\":{}", sd.reflect));
-    }
-    if sd.light_screen > 0 {
-        parts.push(format!("\"light_screen\":{}", sd.light_screen));
-    }
-    if sd.safeguard > 0 {
-        parts.push(format!("\"safeguard\":{}", sd.safeguard));
+    for (id, remaining) in
+        [("reflect", sd.reflect), ("light_screen", sd.light_screen), ("safeguard", sd.safeguard)]
+    {
+        if remaining > 0 {
+            let v = started.get(id).copied().unwrap_or(remaining as u32);
+            parts.push(format!("\"{id}\":{v}"));
+        }
     }
     format!("{{{}}}", parts.join(","))
 }
@@ -770,6 +1129,8 @@ fn mon_json(
     obs: Option<&MonObservation>,
     dex: &Dex,
     running: bool,
+    viewer: usize,
+    tick: u32,
 ) -> String {
     let sp = dex.species(&mon.species_id);
     let base_stats = match sp {
@@ -841,19 +1202,37 @@ fn mon_json(
             .iter()
             .map(|m| {
                 let maxpp = dex.moves(&m.id).map(|d| (d.pp as u32) * 8 / 5).unwrap_or(0);
-                let vs: Vec<String> = m
-                    .uses_vs
+                // `own` below is the TARGET's side from the VIEWER's seat: our mons are
+                // `sides[viewer]`. Resolving the species per side is what keeps a MIRROR (both
+                // teams running Zapdos) from reading the wrong one's ability.
+                let sp_of = |name: &str, target_own: bool| {
+                    species_of_ident(st, name, dex, if target_own { viewer } else { 1 - viewer })
+                };
+                let sightings: Vec<String> = m
+                    .sightings
                     .iter()
-                    .filter(|(k, _)| !k.is_empty())
-                    .map(|(k, n)| format!("{}:{}", json_quote(&species_of_ident(st, k, dex)), n))
+                    .map(|(s, n)| {
+                        format!(
+                            "{{\"mv\":{},\"called\":{},\"t\":{},\"t_own\":{},\"t_k\":{},\
+                             \"d\":{},\"d_k\":{},\"n\":{}}}",
+                            json_quote(&s.mv),
+                            s.called,
+                            json_quote(&sp_of(&s.target, s.target_own)),
+                            s.target_own,
+                            s.target_k,
+                            json_quote(&sp_of(&s.dflt, true)),
+                            s.dflt_k,
+                            n
+                        )
+                    })
                     .collect();
                 format!(
-                    "{{\"id\":{},\"move_id\":{},\"uses\":{},\"max_pp\":{},\"uses_vs\":{{{}}}}}",
+                    "{{\"id\":{},\"move_id\":{},\"uses\":{},\"max_pp\":{},\"sightings\":[{}]}}",
                     json_quote(&m.id),
                     json_quote(&m.id),
                     m.uses,
                     maxpp,
-                    vs.join(",")
+                    sightings.join(",")
                 )
             })
             .collect();
@@ -879,18 +1258,33 @@ fn mon_json(
         .map_or("null".to_string(), |i| json_quote(&i));
     // OURS: the engine's, which is what our own `|request|` states. THEIRS: the announcement
     // EVENTS — `view_adapter` replays poke-env's two-slot rules over them.
+    // A FAINTED mon's ability is its BASE one: the sim's faint runs `clearVolatile`, which sets
+    // `ability = baseAbility` (`sim/pokemon.ts` clearVolatile), and poke-env's `faint()` clears the
+    // temporary slot. The port reverts a Trace only at the switch-out (`turn/switch.rs`), so a
+    // Porygon2 that died holding a Traced Intimidate read `intimidate` on the replacement board.
     let ability = if own {
-        let id = to_id(&mon.ability);
+        let id = to_id(if mon.fainted { &mon.set.ability } else { &mon.ability });
         if id.is_empty() { "null".to_string() } else { json_quote(&id) }
     } else {
         "null".to_string()
     };
+    // OURS: the set's ability — poke-env's own BASE slot (the single-ability inference or the
+    // request's `baseAbility`, which agree for any legal set). The adapter replays our own
+    // `ability_events` over it when a watched move's Pressure needs the ability at USE time.
+    let base_ability = if own { json_quote(&to_id(&mon.set.ability)) } else { "null".to_string() };
     let ability_events = {
         let rows: Vec<String> = obs
             .map(|o| o.ability_events.as_slice())
             .unwrap_or(&[])
             .iter()
-            .map(|e| format!("{{\"id\":{},\"trace\":{}}}", json_quote(&e.id), e.trace))
+            .map(|e| {
+                format!(
+                    "{{\"id\":{},\"trace\":{},\"if_unknown\":{}}}",
+                    json_quote(&e.id),
+                    e.trace,
+                    e.if_unknown
+                )
+            })
             .collect();
         format!("[{}]", rows.join(","))
     };
@@ -925,9 +1319,9 @@ fn mon_json(
         "{{\"species\":{},\"active\":{},\"fainted\":{},\"revealed\":{},\
          \"hp_fraction\":{},\"current_hp\":{},\"max_hp\":{},\
          \"status\":{},\"status_counter\":{},\"protect_counter\":{},\
-         \"types\":[{}],\"moves\":{},\"item\":{},\"consumed_item\":{},\"ability\":{},\"ability_events\":{},\
-         \"boosts\":{},\"volatiles\":{},\"base_stats\":{},{},\"stats\":{}}}",
-        json_quote(&mon.species_id),
+         \"types\":[{}],\"moves\":{},\"item\":{},\"consumed_item\":{},\"ability\":{},\"base_ability\":{},\"ability_events\":{},\
+         \"boosts\":{},\"faint_boosts\":{},\"volatiles\":{},\"base_stats\":{},{},\"stats\":{}}}",
+        json_quote(identity_species(mon)),
         is_active,
         mon.fainted,
         revealed,
@@ -942,9 +1336,13 @@ fn mon_json(
         item,
         consumed,
         ability,
+        base_ability,
         ability_events,
-        boosts_json(mon),
-        volatiles_json(obs),
+        boosts_json(&mon.boosts),
+        // The stages the mon HELD at its faint (a sim fact the board has zeroed) — the adapter
+        // presents them per reading rule V10, never the port.
+        if mon.fainted { boosts_json(&mon.faint_boosts) } else { "null".to_string() },
+        volatiles_json(obs, tick),
         base_stats,
         spread,
         stats,
@@ -953,15 +1351,23 @@ fn mon_json(
 
 /// The SPECIES id behind a protocol ident NAME, on either side. `""` when nothing matches (a
 /// target the viewer never saw) — the Python side then simply has no ability for it.
-fn species_of_ident(st: &BattleState, name: &str, dex: &Dex) -> String {
-    for side in 0..2 {
-        for m in &st.sides[side].pokemon {
-            if display_name(m, dex) == name {
-                return m.species_id.clone();
-            }
+fn species_of_ident(st: &BattleState, name: &str, dex: &Dex, side: usize) -> String {
+    for m in &st.sides[side].pokemon {
+        if display_name(m, dex) == name {
+            return identity_species(m).to_string();
         }
     }
     String::new()
+}
+
+/// The mon's IDENTITY species — its own, even while TRANSFORMED. The engine's `species_id`
+/// becomes the target's on Transform (the sim's `setSpecies(…, isTransform)`), but the ident, the
+/// request `details` and poke-env's `Pokemon.species` all keep the mon's own (`transform()` only
+/// overlays types / ability / moves / boosts / base stats). A Smeargle that Transformed into
+/// Starmie read `starmie` as its row, active slot and species key — so the two roads disagreed
+/// about WHICH mon was on the field (found by the procedural-generator milestone sweep).
+fn identity_species(mon: &MonState) -> &str {
+    mon.transform.as_ref().map_or(mon.species_id.as_str(), |t| t.base_species_id.as_str())
 }
 
 /// The mon's CURRENT types (a Conversion / Forecast override wins over the dex row).
@@ -1008,10 +1414,9 @@ fn status_json(mon: &MonState, _is_active: bool, _running: bool) -> String {
 
 const BOOST_NAMES: [&str; 7] = ["atk", "def", "spa", "spd", "spe", "accuracy", "evasion"];
 
-fn boosts_json(mon: &MonState) -> String {
+fn boosts_json(stages: &[i8; crate::state::BOOST_LEN]) -> String {
     // `LiveView` keeps only the NONZERO stages (`{k: v for k, v in mon.boosts.items() if v}`).
-    let parts: Vec<String> = mon
-        .boosts
+    let parts: Vec<String> = stages
         .iter()
         .enumerate()
         .filter(|(_, v)| **v != 0)
@@ -1028,17 +1433,19 @@ fn boosts_json(mon: &MonState) -> String {
 /// action-countable effects). Both live in poke-env, so both are applied by
 /// `agents.battle.view_adapter`, and this side sends the input to that function rather than a
 /// guess at its output.
-fn volatiles_json(obs: Option<&MonObservation>) -> String {
+fn volatiles_json(obs: Option<&MonObservation>, now: u32) -> String {
     let parts: Vec<String> = obs
         .map(|o| o.volatiles.as_slice())
         .unwrap_or(&[])
         .iter()
         .map(|v| {
+            let starts: Vec<String> = v.starts.iter().map(|t| t.to_string()).collect();
             format!(
-                "{{\"name\":{},\"turns\":{},\"restarts\":{}}}",
+                "{{\"name\":{},\"starts\":[{}],\"now\":{},\"bp_carried\":{}}}",
                 json_quote(&v.name),
-                v.turns,
-                v.restarts
+                starts.join(","),
+                now,
+                v.bp_carried
             )
         })
         .collect();

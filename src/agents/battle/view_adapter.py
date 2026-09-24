@@ -63,7 +63,8 @@ def _possible_abilities(species: str) -> List[str]:
     return [to_id_str(a) for a in entry.get("abilities", {}).values()]
 
 
-def _ability(species: str, revealed: Optional[str], events=()) -> Optional[str]:
+def _ability(species: str, revealed: Optional[str], events=(),
+             base_slot: Optional[str] = None) -> Optional[str]:
     """poke-env PRESENTATION RULE 1 — the ability the tracker would be holding.
 
     Three poke-env behaviours, replayed here because all three are the library's and none is the
@@ -81,11 +82,17 @@ def _ability(species: str, revealed: Optional[str], events=()) -> Optional[str]:
        only on the THIRD fresh seed.
 
     ``revealed`` is the OWN side's engine value (our own ``|request|`` states it); ``events`` is
-    the watched side's announcement list, an empty ``id`` marking a switch-out."""
+    the watched side's announcement list, an empty ``id`` marking a switch-out or a faint (both
+    clear the temporary slot). ``base_slot`` seeds the base slot instead of the inference — our
+    OWN mon's, which poke-env fills from the request's ``baseAbility``; it is how a watched
+    move's Pressure is decided against our own mon's ability AT USE TIME."""
     if revealed:
         return revealed
-    poss = _possible_abilities(species)
-    base: Optional[str] = poss[0] if len(poss) == 1 else None
+    if base_slot is not None:
+        base: Optional[str] = base_slot
+    else:
+        poss = _possible_abilities(species)
+        base = poss[0] if len(poss) == 1 else None
     temp: Optional[str] = None
 
     def assign(value: str) -> None:
@@ -99,6 +106,12 @@ def _ability(species: str, revealed: Optional[str], events=()) -> Optional[str]:
         eid = str(ev.get("id") or "")
         if not eid:
             temp = None                      # `Pokemon.switch_out`
+            continue
+        if ev.get("if_unknown"):
+            # The `-activate|X|ability: A` handler: `if holder_mon.ability is None:
+            # holder_mon.ability = A` — the getter (temporary first), inference included.
+            if (temp if temp is not None else base) is None:
+                assign(eid)
             continue
         if ev.get("trace") and (temp or base) != "trace":
             # The `-ability` handler's Trace special case: it un-sets whichever slot is occupied,
@@ -118,9 +131,14 @@ def _volatiles(announced) -> Dict[str, int]:
     ``LivePokemon.volatiles`` is ``{_id(effect): counter}`` over ``Pokemon.effects``, which is a
     FOLD over ``|-start|`` / ``|-end|`` / ``|-activate|`` / ``|-singleturn|`` / ``|-singlemove|``
     (plus the silent Minimize), cleared on switch-out and faint. The port folds the same lines and
-    sends each announcement with its raw name, the number of ``|turn|`` boundaries since, and the
-    number of re-announcements. THREE poke-env-owned rules are applied here, and all three are
-    properties of the ``Effect`` enum rather than of the simulator:
+    sends each volatile's raw name with its ANNOUNCEMENT HISTORY — the ``|turn|`` tick of every
+    announcement and the tick now — and this REPLAYS poke-env's lifecycle over it (reading rule
+    V4): ``start_effect`` creates at 0 or counts an ``is_action_countable`` restart,
+    ``end_turn`` counts an ``is_turn_countable`` one and deletes an ``ends_on_turn`` one — so a
+    Protect re-announced a turn after its first is a fresh effect. A Baton-Passed history
+    (``bp_carried``) survives only for ``BATON_PASS_COPIED_EFFECTS`` (``apply_baton_pass``).
+    The poke-env-owned rules applied here are properties of the ``Effect`` enum rather than of
+    the simulator:
 
     * ``Effect.from_showdown_message`` — the name normalisation (strips ``move:`` / ``ability:``
       prefixes, maps aliases onto the enum), then the id form ``_id`` uses
@@ -132,31 +150,67 @@ def _volatiles(announced) -> Dict[str, int]:
       Disable, Encore, the partial traps), ``start_effect`` increments an ``is_action_countable``
       one per re-announcement (Rage, Stockpile), and everything else stays 0.
     """
-    from poke_env.battle.effect import Effect
+    from poke_env.battle.effect import BATON_PASS_COPIED_EFFECTS, Effect
 
     out: Dict[str, int] = {}
     for v in announced:
-        if isinstance(v, str):          # tolerate the bare-name form
-            name, turns, restarts = v, 0, 0
+        if isinstance(v, str):          # tolerate the bare-name form: one start, now
+            name, starts, now, carried = v, [0], 0, 0
         else:
             name = str(v["name"])
-            turns = int(v.get("turns", 0))
-            restarts = int(v.get("restarts", 0))
+            starts = [int(t) for t in v.get("starts", ())]
+            now = int(v.get("now", starts[-1] if starts else 0))
+            carried = int(v.get("bp_carried", 0))
         effect = Effect.from_showdown_message(name)
-        if effect.ends_on_turn and turns >= 1:
-            continue
-        if effect.is_turn_countable:
-            counter = turns
-        elif effect.is_action_countable:
-            counter = restarts
-        else:
-            counter = 0
-        out[effect.name.lower().replace("_", "")] = counter
+        if carried and effect not in BATON_PASS_COPIED_EFFECTS:
+            starts = starts[carried:]      # the pass did not copy it; later announcements stand
+        present, counter, last = False, 0, None
+
+        def ticks(n: int) -> None:
+            nonlocal present, counter
+            for _ in range(n):
+                if not present:
+                    return
+                if effect.is_turn_countable:
+                    counter += 1
+                if effect.ends_on_turn:
+                    present = False
+
+        for s in starts:
+            if last is not None:
+                ticks(s - last)
+            if not present:
+                present, counter = True, 0
+            elif effect.is_action_countable:
+                counter += 1
+            last = s
+        if last is not None:
+            ticks(now - last)
+        if present:
+            out[effect.name.lower().replace("_", "")] = counter
     return out
 
 
-def _move(m: Mapping[str, Any],
-          abilities: "Optional[Mapping[str, Optional[str]]]" = None) -> LiveMove:
+class _AbilityAt:
+    """poke-env's view of a mon's ability AT A PAST MOMENT — the mon's ability events replayed up
+    to the index a sighting recorded (reading rule V3: ``_pressure_on`` reads ``target.ability``
+    when the move is USED). Rows are looked up per SIDE, so a mirror match cannot cross them."""
+
+    def __init__(self, payload: Mapping[str, Any]) -> None:
+        self._rows = {
+            own: {str(r["species"]): r for r in (payload.get(which) or {}).get("mons", ())}
+            for own, which in ((True, "ours"), (False, "opp"))}
+
+    def __call__(self, species: str, own: bool, k: int) -> Optional[str]:
+        row = self._rows[own].get(species)
+        if row is None:
+            return None
+        events = list(row.get("ability_events") or ())[:k]
+        return _ability(species, None, events,
+                        base_slot=row.get("base_ability") if own else None)
+
+
+def _move(m: Mapping[str, Any], ability_at: "Optional[_AbilityAt]" = None) -> LiveMove:
     """One move slot. An OWN mon's row carries the true ``current_pp``; a WATCHED mon's carries
     the SIGHTING COUNT instead, because poke-env's ``Move.current_pp`` for an opponent is a
     counter it keeps itself (``Pokemon.moved`` calls ``move.use()`` for either side), not
@@ -178,11 +232,24 @@ def _move(m: Mapping[str, Any],
         return LiveMove(id=str(m["id"]), current_pp=int(m["current_pp"]), max_pp=int(m["max_pp"]))
     max_pp = int(m["max_pp"])
     dec = int(m["uses"])
-    vs = m.get("uses_vs") or {}
-    if vs and abilities and _targets_a_foe(str(m.get("move_id") or m["id"])):
-        for species, n in vs.items():
-            if abilities.get(species) == "pressure":
-                dec += int(n)
+    # Every sighting that may cost ONE MORE PP: `_pressure_on(user, move, presumed_target)`,
+    # decided with the ability poke-env held AT USE TIME. A plain sighting's base PP is already
+    # in `uses`; a CALLED one (`[from]move: Sleep Talk` / Metronome) costs the caller only this
+    # extra — `Move.use(pressure, overridden=True)` = `1 + pressure − 1`.
+    for s in m.get("sightings") or ():
+        if ability_at is None:
+            break
+        ttype = _target_type(str(s["mv"]))
+        if not _pressure_target_type(str(s["mv"]), ttype):
+            continue
+        # `Battle._get_target_mon`: an `all`-target move ignores the named target and takes the
+        # OTHER side's active — the `d` default, which is also what a line with no target named.
+        if ttype == "all":
+            species, own, k = str(s["d"]), True, int(s["d_k"])
+        else:
+            species, own, k = str(s["t"]), bool(s["t_own"]), int(s["t_k"])
+        if species and ability_at(species, own, k) == "pressure":
+            dec += int(s["n"])
     return LiveMove(id=str(m["id"]), current_pp=max(max_pp - dec, 0), max_pp=max_pp)
 
 
@@ -192,23 +259,45 @@ _PRESSURE_TARGETS = frozenset(
     {"all", "allAdjacent", "allAdjacentFoes", "any", "normal", "randomNormal", "scripted"})
 
 
-def _targets_a_foe(move_id: str) -> bool:
+def _move_entry(move_id: str) -> Optional[Mapping[str, Any]]:
     from poke_env.battle.move import Move
     from poke_env.data.gen_data import GenData
 
-    entry = GenData.from_gen(3).moves.get(Move.retrieve_id(move_id))
+    return GenData.from_gen(3).moves.get(Move.retrieve_id(move_id))
+
+
+def _target_type(move_id: str) -> Optional[str]:
+    entry = _move_entry(move_id)
+    return entry["target"] if entry else None
+
+
+def _pressure_target_type(move_id: str, ttype: Optional[str]) -> bool:
+    """The second half of ``_pressure_on``: a foe-directed target type, or ``mustpressure``."""
+    entry = _move_entry(move_id)
     if not entry:
         return False
-    return entry["target"] in _PRESSURE_TARGETS or "mustpressure" in entry.get("flags", {})
+    return ttype in _PRESSURE_TARGETS or "mustpressure" in entry.get("flags", {})
 
 
-def _mon(row: Mapping[str, Any], own: bool, abilities=None) -> LivePokemon:
+def _targets_a_foe(move_id: str) -> bool:
+    return _pressure_target_type(move_id, _target_type(move_id))
+
+
+def _mon(row: Mapping[str, Any], own: bool, ability_at: "Optional[_AbilityAt]" = None) -> LivePokemon:
     species = str(row["species"])
-    moves = tuple(sorted((_move(m, abilities) for m in row.get("moves", [])), key=lambda m: m.id))
+    moves = tuple(sorted((_move(m, ability_at) for m in row.get("moves", [])), key=lambda m: m.id))
     raw_stats = row.get("stats")
     stats: Dict[str, Optional[int]] = (
         {k: int(v) for k, v in raw_stats.items()} if raw_stats else dict(_EMPTY_STATS)
     )
+    # poke-env PRESENTATION RULE V10 — ``Pokemon.faint`` does NOT clear a mon's stages
+    # (``switch_out`` does), while the sim zeroes them at the faint. So a FAINTED mon still in
+    # its slot — the replacement decision — reads the stages it DIED with, which the port keeps
+    # as ``faint_boosts``; once its replacement has come in (it is no longer ``active``) poke-env
+    # has run ``switch_out`` and it reads none.
+    boosts = row.get("boosts") or {}
+    if row.get("fainted") and row.get("active") and row.get("faint_boosts") is not None:
+        boosts = row["faint_boosts"]
     ivs = row.get("ivs")
     evs = row.get("evs")
     return LivePokemon(
@@ -222,7 +311,7 @@ def _mon(row: Mapping[str, Any], own: bool, abilities=None) -> LivePokemon:
         moves=moves,
         item=row.get("item"),
         ability=_ability(species, row.get("ability"), row.get("ability_events")),
-        boosts={k: int(v) for k, v in (row.get("boosts") or {}).items()},
+        boosts={k: int(v) for k, v in boosts.items()},
         volatiles=_volatiles(row.get("volatiles") or ()),
         base_stats={k: int(v) for k, v in (row.get("base_stats") or {}).items()},
         ivs=tuple(int(v) for v in ivs) if ivs is not None else None,
@@ -238,8 +327,9 @@ def _mon(row: Mapping[str, Any], own: bool, abilities=None) -> LivePokemon:
     )
 
 
-def _side(block: Mapping[str, Any], own: bool, abilities=None) -> LiveSide:
-    mons = tuple(_mon(r, own, abilities) for r in block.get("mons", []))
+def _side(block: Mapping[str, Any], own: bool,
+          ability_at: "Optional[_AbilityAt]" = None) -> LiveSide:
+    mons = tuple(_mon(r, own, ability_at) for r in block.get("mons", []))
     active = next((m for m in mons if m.active), None)
     return LiveSide(
         team_size=int(block.get("team_size", len(mons))),
@@ -260,18 +350,14 @@ def live_view_from_payload(payload: Mapping[str, Any], *, battle_tag: str = "") 
         is_permanent=bool(w.get("is_permanent", False)),
         turns_active=int(w.get("turns_active", 0) or 0),
     )
-    # Pressure needs the ABILITY of the move's target, inference included, so resolve every
-    # known ability once before the per-move pass (a mon's own ability never depends on a move).
-    abilities: Dict[str, Optional[str]] = {}
-    for which in ("ours", "opp"):
-        for r in (payload.get(which) or {}).get("mons", ()):
-            sp = str(r["species"])
-            abilities[sp] = _ability(sp, r.get("ability"), r.get("ability_events"))
+    # Pressure needs the ABILITY of each sighting's target AS POKE-ENV HELD IT AT USE TIME
+    # (inference, a Trace overlay, a switch-out clearing it) — resolved per side, per sighting.
+    ability_at = _AbilityAt(payload)
     return LiveView(
         turn=int(payload["turn"]),
         weather=weather,
-        ours=_side(payload["ours"], True, abilities),
-        opp=_side(payload["opp"], False, abilities),
+        ours=_side(payload["ours"], True, ability_at),
+        opp=_side(payload["opp"], False, ability_at),
         battle_tag=battle_tag,
         finished=bool(payload.get("finished", False)),
         won=payload.get("won"),

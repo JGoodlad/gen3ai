@@ -120,12 +120,12 @@ def test_an_ends_on_turn_volatile_is_DROPPED_once_a_turn_boundary_has_passed():
 
     assert Effect.FOCUS_PUNCH.ends_on_turn, "fixture: Focus Punch must be an ends_on_turn effect"
     fresh = live_view_from_payload(_payload(
-        [], [_mon_row("snorlax", volatiles=[{"name": "move: Focus Punch", "turns": 0,
-                                             "restarts": 0}])]))
+        [], [_mon_row("snorlax", volatiles=[{"name": "move: Focus Punch", "starts": [3],
+                                             "now": 3}])]))
     assert "focuspunch" in fresh.opp.get("snorlax").volatiles
     stale = live_view_from_payload(_payload(
-        [], [_mon_row("snorlax", volatiles=[{"name": "move: Focus Punch", "turns": 1,
-                                             "restarts": 0}])]))
+        [], [_mon_row("snorlax", volatiles=[{"name": "move: Focus Punch", "starts": [3],
+                                             "now": 4}])]))
     assert stale.opp.get("snorlax").volatiles == {}
 
 
@@ -136,8 +136,8 @@ def test_a_turn_countable_volatile_carries_its_TURN_count_and_the_rest_carry_zer
     assert not Effect.LEECH_SEED.is_turn_countable, "fixture: Leech Seed must not be"
     live = live_view_from_payload(_payload([], [_mon_row(
         "blissey",
-        volatiles=[{"name": "move: Taunt", "turns": 2, "restarts": 0},
-                   {"name": "move: Leech Seed", "turns": 4, "restarts": 0}])]))
+        volatiles=[{"name": "move: Taunt", "starts": [3], "now": 5},
+                   {"name": "move: Leech Seed", "starts": [1], "now": 5}])]))
     vol = live.opp.get("blissey").volatiles
     assert vol == {"taunt": 2, "leechseed": 0}
 
@@ -147,8 +147,76 @@ def test_an_action_countable_volatile_carries_its_RESTART_count():
 
     assert Effect.STOCKPILE.is_action_countable, "fixture: Stockpile must be action-countable"
     live = live_view_from_payload(_payload([], [_mon_row(
-        "swampert", volatiles=[{"name": "Stockpile", "turns": 1, "restarts": 2}])]))
+        "swampert", volatiles=[{"name": "Stockpile", "starts": [1, 2, 2], "now": 2}])]))
     assert live.opp.get("swampert").volatiles == {"stockpile": 2}
+
+
+# The rules below are checked against poke-env ITSELF: the same protocol is fed to a
+# `Gen3Battle`, and the adapter must present exactly what that battle's `LiveView` holds.
+
+def _read(lines, viewer="p1"):
+    """poke-env's LiveView after ``lines`` (a viewer battle, no Player)."""
+    from agents.battle.offline_feed import feed_line, new_battle
+
+    b = new_battle(viewer, {"p1": "A", "p2": "B"})
+    for ln in ["|player|p1|A||", "|player|p2|B||", *lines]:
+        feed_line(b, ln)
+    return b.live_view()
+
+
+def test_a_single_turn_effect_announced_again_after_a_turn_is_a_FRESH_one():
+    """V4 — ``Pokemon.end_turn`` deletes an ``ends_on_turn`` effect, so a Protect used again
+    after a ``|turn|`` is a new effect. A two-counter summary (``turns`` since the FIRST
+    announcement) read it as expired at the very board it was up on."""
+    lines = ["|switch|p2a: Skarmory|Skarmory|100/100", "|-singleturn|p2a: Skarmory|Protect",
+             "|turn|2", "|-singleturn|p2a: Skarmory|Protect"]
+    want = _read(lines).opp.get("skarmory").volatiles
+    assert want == {"protect": 0}, "fixture: poke-env holds the fresh Protect"
+    live = live_view_from_payload(_payload([], [_mon_row(
+        "skarmory", volatiles=[{"name": "Protect", "starts": [0, 1], "now": 1}])]))
+    assert live.opp.get("skarmory").volatiles == want
+
+
+def test_a_BATON_PASSED_volatile_survives_only_if_poke_env_copies_it():
+    """V4 — ``Pokemon.apply_baton_pass`` copies ``BATON_PASS_COPIED_EFFECTS`` (Substitute: yes;
+    Taunt: no). The port carries every passer volatile flagged ``bp_carried``; the filter is
+    poke-env's. The §4b "missing `substitute`" finding was the entrant losing this."""
+    lines = ["|switch|p2a: Celebi|Celebi|100/100", "|-start|p2a: Celebi|Substitute",
+             "|-start|p2a: Celebi|move: Taunt",
+             "|switch|p2a: Charizard|Charizard, M|100/100|[from] Baton Pass"]
+    want = _read(lines).opp.get("charizard").volatiles
+    assert want == {"substitute": 0}, f"fixture: poke-env copies Substitute only, got {want}"
+    live = live_view_from_payload(_payload([], [_mon_row("charizard", volatiles=[
+        {"name": "Substitute", "starts": [0], "now": 0, "bp_carried": 1},
+        {"name": "Taunt", "starts": [0], "now": 0, "bp_carried": 1}])]))
+    assert live.opp.get("charizard").volatiles == want
+
+
+def test_an_activate_disclosure_fills_the_ability_ONLY_while_it_is_unknown():
+    """V8 — ``-activate|X|ability: A`` assigns ``if holder_mon.ability is None``: a Snorlax
+    (Immunity / Thick Fat) learns it, a single-ability Tyranitar keeps its inference."""
+    lines = ["|switch|p2a: Snorlax|Snorlax, M|100/100", "|-activate|p2a: Snorlax|ability: Immunity"]
+    assert _read(lines).opp.get("snorlax").ability == "immunity"
+    ev = [{"id": "immunity", "trace": False, "if_unknown": True}]
+    live = live_view_from_payload(_payload([], [_mon_row("snorlax", ability_events=ev),
+                                                _mon_row("tyranitar", ability_events=[
+                                                    {"id": "unnerve", "trace": False,
+                                                     "if_unknown": True}])]))
+    assert live.opp.get("snorlax").ability == "immunity"
+    assert live.opp.get("tyranitar").ability == "sandstream"
+
+
+def test_a_FAINTED_mon_still_in_its_slot_shows_the_stages_it_died_with():
+    """V10 — ``Pokemon.faint`` does not clear boosts (``switch_out`` does); the sim zeroes them
+    at the faint and the port keeps them as ``faint_boosts``."""
+    lines = ["|switch|p2a: Swampert|Swampert, M|100/100", "|-boost|p2a: Swampert|def|1",
+             "|-damage|p2a: Swampert|0 fnt", "|faint|p2a: Swampert"]
+    want = _read(lines).opp.get("swampert").boosts
+    assert want == {"def": 1}
+    row = _mon_row("swampert", active=True, fainted=True, boosts={}, faint_boosts={"def": 1})
+    assert dict(live_view_from_payload(_payload([], [row])).opp.get("swampert").boosts) == want
+    benched = dict(row, active=False)
+    assert dict(live_view_from_payload(_payload([], [benched])).opp.get("swampert").boosts) == {}
 
 
 # ---------------------------------------------------------------------------
@@ -160,10 +228,16 @@ def _pp_of(live, side, species, move_id):
     return next(m.current_pp for m in mon.moves if m.id == move_id)
 
 
+def _sight(mv, target, n, *, own=True, k=0, dflt=None, called=False):
+    """One sighting in the shape `view.rs` emits (reading rule V3)."""
+    return {"mv": mv, "called": called, "t": target, "t_own": own, "t_k": k,
+            "d": dflt if dflt is not None else target, "d_k": k, "n": n}
+
+
 def test_a_WATCHED_move_reports_max_pp_minus_the_sightings():
     live = live_view_from_payload(_payload([], [_mon_row(
         "skarmory", moves=[{"id": "drillpeck", "move_id": "drillpeck", "uses": 3,
-                            "max_pp": 32, "uses_vs": {}}])]))
+                            "max_pp": 32, "sightings": []}])]))
     assert _pp_of(live, "opp", "skarmory", "drillpeck") == 29
 
 
@@ -172,10 +246,10 @@ def test_a_move_aimed_at_a_PRESSURE_holder_costs_TWO_per_sighting():
     fires depends on the ability poke-env KNOWS — inference included — so the payload carries the
     sightings by target and the decision is made against the read-model."""
     live = live_view_from_payload(_payload(
-        [_mon_row("zapdos", spread_known=True)],   # gen3 Zapdos: Pressure, inferred
+        [_mon_row("zapdos", spread_known=True, base_ability="pressure")],
         [_mon_row("skarmory", moves=[{"id": "drillpeck", "move_id": "drillpeck", "uses": 3,
-                                      "max_pp": 32, "uses_vs": {"zapdos": 3}}])]))
-    assert live.ours.get("zapdos").ability == "pressure", "fixture: the inference must fire"
+                                      "max_pp": 32,
+                                      "sightings": [_sight("drillpeck", "zapdos", 3)]}])]))
     assert _pp_of(live, "opp", "skarmory", "drillpeck") == 26
 
 
@@ -183,10 +257,54 @@ def test_a_SELF_targeting_move_is_never_pressured():
     """``_pressure_on`` gates on the move's ``target`` — Swords Dance (``self``) is exempt even
     when the foe holds Pressure, which is what makes the rule a gate rather than a multiplier."""
     live = live_view_from_payload(_payload(
-        [_mon_row("zapdos")],
+        [_mon_row("zapdos", base_ability="pressure")],
         [_mon_row("heracross", moves=[{"id": "swordsdance", "move_id": "swordsdance", "uses": 2,
-                                       "max_pp": 48, "uses_vs": {"zapdos": 2}}])]))
+                                       "max_pp": 48,
+                                       "sightings": [_sight("swordsdance", "zapdos", 2)]}])]))
     assert _pp_of(live, "opp", "heracross", "swordsdance") == 46
+
+
+def test_PRESSURE_is_judged_with_the_ability_poke_env_held_AT_USE_TIME():
+    """V3 (the old deferral D6, CLOSED) — ``_pressure_on`` reads ``target.ability`` when the move
+    is USED. Our Porygon2 had Traced Pressure (event 1) and has since pivoted (event 2 clears
+    the overlay): the sighting at index 1 costs two, poke-env's own count agrees."""
+    lines = ["|switch|p1a: Porygon2|Porygon2|100/100", "|switch|p2a: Raikou|Raikou|100/100",
+             "|-ability|p1a: Porygon2|Pressure|Trace|[from] ability: Trace|[of] p2a: Raikou",
+             "|move|p2a: Raikou|Thunderbolt|p1a: Porygon2",
+             "|switch|p1a: Skarmory|Skarmory, M|100/100"]
+    want = [m.current_pp for m in _read(lines).opp.get("raikou").moves]
+    assert want == [22], f"fixture: poke-env charges Pressure at use time, got {want}"
+    p2 = _mon_row("porygon2", base_ability="trace", ability_events=[
+        {"id": "pressure", "trace": True}, {"id": "", "trace": False}])
+    live = live_view_from_payload(_payload([p2], [_mon_row("raikou", moves=[
+        {"id": "thunderbolt", "move_id": "thunderbolt", "uses": 1, "max_pp": 24,
+         "sightings": [_sight("thunderbolt", "porygon2", 1, k=1)]}])]))
+    assert _pp_of(live, "opp", "raikou", "thunderbolt") == want[0]
+
+
+def test_an_ALL_target_move_is_charged_against_the_default_target():
+    """V3 — ``Battle._get_target_mon`` ignores the named target of an ``all``-target move
+    (Perish Song names its user) and takes the other side's active."""
+    live = live_view_from_payload(_payload(
+        [_mon_row("zapdos", base_ability="pressure")],
+        [_mon_row("celebi", moves=[{"id": "perishsong", "move_id": "perishsong", "uses": 1,
+                                    "max_pp": 8, "sightings": [
+                                        _sight("perishsong", "celebi", 1, own=False,
+                                               dflt="zapdos")]}])]))
+    assert _pp_of(live, "opp", "celebi", "perishsong") == 6
+
+
+def test_a_CALLED_move_costs_the_caller_only_its_pressure_share():
+    """V3 — ``Move.use(pressure, overridden=True)`` decrements ``1 + pressure − 1``: a Sleep Talk
+    that calls Rest costs nothing more; one that calls Surf into Pressure costs one."""
+    moves = [{"id": "sleeptalk", "move_id": "sleeptalk", "uses": 2, "max_pp": 16, "sightings": [
+        _sight("rest", "suicune", 1, own=False, called=True, dflt="zapdos"),
+        _sight("surf", "zapdos", 1, called=True)]},
+        {"id": "rest", "move_id": "rest", "uses": 0, "max_pp": 16, "sightings": []}]
+    live = live_view_from_payload(_payload(
+        [_mon_row("zapdos", base_ability="pressure")], [_mon_row("suicune", moves=moves)]))
+    assert _pp_of(live, "opp", "suicune", "sleeptalk") == 13
+    assert _pp_of(live, "opp", "suicune", "rest") == 16
 
 
 def test_an_OWN_move_reports_the_engines_pp_verbatim():
@@ -243,7 +361,7 @@ def test_a_MIRROR_match_does_not_let_one_sides_row_overwrite_the_others():
     ours = _mon_row("metagross", moves=[
         {"id": "hiddenpower", "move_id": "hiddenpowerfire", "current_pp": 24, "max_pp": 24}])
     opp = _mon_row("metagross", moves=[
-        {"id": "hiddenpower", "move_id": "hiddenpower", "uses": 1, "max_pp": 24, "uses_vs": {}}])
+        {"id": "hiddenpower", "move_id": "hiddenpower", "uses": 1, "max_pp": 24, "sightings": []}])
     payload = _payload([ours], [opp])
     live, _, vb = read_models_from_payload(payload)
     assert vb.team["metagross"].moves["hiddenpower"].id == "hiddenpowerfire"

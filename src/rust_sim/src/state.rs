@@ -152,6 +152,12 @@ pub struct MonState {
     /// Stat-stage boosts `[atk, def, spa, spd, spe, accuracy, evasion]`, all 0
     /// at construction.
     pub boosts: [i8; BOOST_LEN],
+    /// The stat stages the mon HELD when it fainted — `faintMessages` → `clearVolatile` zeroes
+    /// [`MonState::boosts`] at the faint, and this keeps what was there. OBSERVATION-ONLY (read
+    /// by nothing in the battle path): `view.rs` emits it so the one-sided view can present
+    /// poke-env's reading rule V10 (`Pokemon.faint` keeps a mon's stages until `switch_out`).
+    /// All 0 until the mon faints.
+    pub faint_boosts: [i8; BOOST_LEN],
     /// Whether this mon has fainted (false at construction).
     pub fainted: bool,
     /// The CONFUSION volatile's remaining-turn counter, or `None` (not confused).
@@ -1315,6 +1321,7 @@ impl MonState {
             hidden_power_bp: hp_bp,
             status: None,
             boosts: [0; BOOST_LEN],
+            faint_boosts: [0; BOOST_LEN],
             fainted: false,
             confusion: None,
             flinch: false,
@@ -1463,6 +1470,21 @@ impl MonState {
             || self.locked_move.is_some()
             // ROLLOUT / ICE BALL lock for 5 executions (`gen3_rollout_defensecurl_v1`).
             || self.rollout.is_some()
+    }
+
+    /// The move SLOT a lock holds the mon to (`gen3_locked_request_move_v1`) — the two-turn
+    /// charge, the Outrage / Thrash / Petal Dance lock, Rollout / Ice Ball, or Uproar, i.e.
+    /// Showdown's `lockedMove`. `None` for Recharge (a pseudo-move with no slot) and for an
+    /// unlocked mon. The ONE place both the locked `|request|` entry and the wire's
+    /// `move <name>` resolution read it: each used to read the two-turn slot only, so every
+    /// later lock requested "Solar Beam" and refused its own move by name.
+    pub fn locked_slot(&self) -> Option<usize> {
+        self.two_turn
+            .filter(|t| t.charging)
+            .map(|t| t.move_index)
+            .or(self.locked_move.map(|(_, s)| s))
+            .or(self.rollout.map(|(_, s)| s))
+            .or(self.uproar.map(|(_, s)| s))
     }
 
     /// The current PP of move slot `k` (`gen3_pp_tracking_v1`), or `0` for an

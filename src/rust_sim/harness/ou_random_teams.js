@@ -372,3 +372,43 @@ function selftest() {
 }
 
 if (require.main === module && process.argv.includes('--selftest')) selftest();
+
+// ── `--emit N --seed S`: N packed gen3ou-random teams, one per line, REPRODUCIBLE ──────────────
+//
+// The universe is built EXACTLY as `ab_fuzz.js --mode ourandom` builds it (the same three
+// predicates), and the team RNG is the same seeded mulberry32 — so a seed names a fixed team list.
+// Consumed by the Rust Core parity harness's MILESTONE tier
+// (`agents.battle.rust_core_parity.procedural_teams`), which plays them through the production
+// rust bridge. The coverage banner goes to stderr, the teams to stdout.
+//
+//   node src/rust_sim/harness/ou_random_teams.js --emit 100 --seed 7
+function emit(n, seed) {
+  const e2e = require('./gen_e2e_fuzz.js');
+  const fuzz = require('./ab_fuzz.js');
+  const portSpecies = JSON.parse(fs.readFileSync(path.join(DATA, 'gen3_species.json'), 'utf8'));
+  const universe = buildOuUniverse({
+    isModeledMove: (m) => e2e.isModeledMove(m, true),
+    modeledItem: (it) => e2e.MODELED_ITEMS.has(toId(it)),
+    allowedAbility: (sid, a) => {
+      const ok = fuzz.speciesAllowedAbility(sid);
+      return !!ok && ok.includes(toId(a));
+    },
+    portSpecies,
+  });
+  console.error(describeCoverage(universe));
+  let a = seed >>> 0;
+  const rng = () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const stats = { setsTotal: 0, teamsKept: 0, teamsRejected: 0, genErrors: 0, rejectReasons: new Map() };
+  const next = makeOuRandomProvider(rng, stats, universe);
+  for (let i = 0; i < n; i++) process.stdout.write(next().packed + '\n');
+}
+
+if (require.main === module && process.argv.includes('--emit')) {
+  const at = (flag) => Number(process.argv[process.argv.indexOf(flag) + 1]);
+  emit(at('--emit'), process.argv.includes('--seed') ? at('--seed') : 1);
+}

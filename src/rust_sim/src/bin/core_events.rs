@@ -33,6 +33,10 @@
 //!
 //! `--check-records FILE…` instead checks persisted records (round trip + re-parse), one line each.
 //!
+//! `--views` also captures, at the end of every write that shipped a new `|request|`, BOTH
+//! sides' `one_sided_view` and the engine truth (`"views":[{"after","new_request","p1","p2",
+//! "truth"},…]`) — slice V of the parity harness (`agents.battle.rust_core_parity_views`).
+//!
 //! `--record-dir DIR [--commit SHA]` also writes each side's persisted record
 //! (`DIR/<label>.p1.jsonl`, `…p2.jsonl`, `core_events::record`), re-reading every file it wrote
 //! and refusing unless it round-trips byte-identically and re-parses from its text.
@@ -48,6 +52,7 @@ use pokesim::core_events::{CoreEvent, Line};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
 use pokesim::prng::normalize_seed;
+use pokesim::{search, view};
 
 struct Battle {
     label: String,
@@ -95,12 +100,102 @@ fn side_of(tok: &str) -> Result<usize, String> {
     }
 }
 
-fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str) -> Result<(BridgeSession, [Vec<CoreEvent>; 2]), String> {
+/// One DECISION-BOARD capture (`--views`, slice V of the parity harness): both sides'
+/// [`one_sided_view`]s and the engine TRUTH, taken at the end of a write that shipped a new
+/// `|request|` to at least one side. `after` = the number of per-side chunks flushed so far, so
+/// the Python reference can feed each viewer exactly the chunks that preceded the board.
+struct ViewCap {
+    after: usize,
+    new_request: [bool; 2],
+    views: [String; 2],
+    truth: String,
+}
+
+/// The engine facts a one-sided view does NOT carry but the truth audit compares against: per
+/// side, per mon (engine roster order), the SIM's volatile set (`search::volatile_names` — the
+/// typed fields) and its raw status counter. Read by `agents.battle.rust_core_parity_views`.
+fn truth_json(sess: &BridgeSession, dex: &Dex) -> String {
+    use pokesim::state::Status;
+    let Some(st) = sess.battle_state() else { return "null".into() };
+    let mut o = String::from("[");
+    for (s, sd) in st.sides.iter().enumerate() {
+        if s > 0 {
+            o.push(',');
+        }
+        o.push('[');
+        for (i, m) in sd.pokemon.iter().enumerate() {
+            if i > 0 {
+                o.push(',');
+            }
+            let (status, counter) = match m.status {
+                Some(Status::Sleep(n)) => ("slp", n as i64),
+                Some(Status::Toxic(n)) => ("tox", n as i64),
+                Some(Status::Burn) => ("brn", 0),
+                Some(Status::Paralysis) => ("par", 0),
+                Some(Status::Freeze) => ("frz", 0),
+                Some(Status::Poison) => ("psn", 0),
+                None => ("", 0),
+            };
+            o.push_str("{\"name\":");
+            json_out::str_into(&mut o, &view::display_name(m, dex));
+            o.push_str(",\"species\":");
+            json_out::str_into(&mut o, &m.species_id);
+            o.push_str(&format!(
+                ",\"active\":{},\"status\":\"{status}\",\"status_n\":{counter},\"sleep_skipped\":{},\"vol\":[",
+                i == sd.active && !m.fainted,
+                m.sleep_skipped
+            ));
+            for (k, v) in search::volatile_names(m).iter().enumerate() {
+                if k > 0 {
+                    o.push(',');
+                }
+                json_out::str_into(&mut o, v);
+            }
+            o.push_str("]}");
+        }
+        o.push(']');
+    }
+    o.push(']');
+    o
+}
+
+/// `|request|` lines shipped to each side in `chunks[from..]`.
+fn requests_since(sess: &BridgeSession, from: usize) -> [usize; 2] {
+    let mut n = [0usize; 2];
+    for c in sess.chunks().chunks.iter().skip(from) {
+        n[c.side] += c.lines.iter().filter(|l| l.starts_with("|request|")).count();
+    }
+    n
+}
+
+fn capture(sess: &BridgeSession, dex: &Dex, seen: &mut usize, caps: &mut Vec<ViewCap>) {
+    let total = sess.chunks().chunks.len();
+    let n = requests_since(sess, *seen);
+    *seen = total;
+    if n == [0, 0] {
+        return;
+    }
+    caps.push(ViewCap {
+        after: total,
+        new_request: [n[0] > 0, n[1] > 0],
+        views: [view::one_sided_view(sess, 0, dex), view::one_sided_view(sess, 1, dex)],
+        truth: truth_json(sess, dex),
+    });
+}
+
+type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>);
+
+fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool) -> Result<Run, String> {
     let mut sess = if b.init_seed {
         BridgeSession::new_core(&b.opts, b.quick_claw, dex)?
     } else {
         BridgeSession::new_construct_turn0_core(&b.opts, dex)?
     };
+    let mut caps: Vec<ViewCap> = Vec::new();
+    let mut seen = 0usize;
+    if views {
+        capture(&sess, dex, &mut seen, &mut caps);
+    }
     for c in &b.cmds {
         if sess.is_ended() {
             break;
@@ -123,6 +218,9 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str) -> Result<
                 break;
             }
             return Err(format!("bridge fatal: {f}"));
+        }
+        if views {
+            capture(&sess, dex, &mut seen, &mut caps);
         }
     }
     let bs = sess.battle_state().ok_or("no battle state")?;
@@ -165,10 +263,10 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str) -> Result<
         }
         out[side] = step;
     }
-    Ok((sess, out))
+    Ok((sess, out, caps))
 }
 
-fn render(b: &Battle, res: Result<(BridgeSession, [Vec<CoreEvent>; 2]), String>) -> String {
+fn render(b: &Battle, res: Result<Run, String>) -> String {
     let mut o = String::from("{\"label\":");
     json_out::str_into(&mut o, &b.label);
     match res {
@@ -177,7 +275,7 @@ fn render(b: &Battle, res: Result<(BridgeSession, [Vec<CoreEvent>; 2]), String>)
             json_out::str_into(&mut o, &e);
             o.push('}');
         }
-        Ok((sess, viewers)) => {
+        Ok((sess, viewers, caps)) => {
             o.push_str(",\"ok\":true,\"error\":null,\"ended\":");
             o.push_str(if sess.is_ended() { "true" } else { "false" });
             o.push_str(",\"truncated\":");
@@ -216,7 +314,21 @@ fn render(b: &Battle, res: Result<(BridgeSession, [Vec<CoreEvent>; 2]), String>)
                 }
                 o.push(']');
             }
-            o.push_str("]}");
+            o.push(']');
+            if !caps.is_empty() {
+                o.push_str(",\"views\":[");
+                for (i, c) in caps.iter().enumerate() {
+                    if i > 0 {
+                        o.push(',');
+                    }
+                    o.push_str(&format!(
+                        "{{\"after\":{},\"new_request\":[{},{}],\"p1\":{},\"p2\":{},\"truth\":{}}}",
+                        c.after, c.new_request[0], c.new_request[1], c.views[0], c.views[1], c.truth
+                    ));
+                }
+                o.push(']');
+            }
+            o.push('}');
         }
     }
     o
@@ -257,7 +369,7 @@ fn bench_parse(rounds: usize, battles: &[Battle], dex: &Dex) -> String {
     use std::time::Instant;
     let mut streams: Vec<(usize, Vec<Vec<String>>)> = Vec::new();
     for b in battles {
-        let (sess, _) = match run(b, dex, None, "bench") {
+        let (sess, _, _) = match run(b, dex, None, "bench", false) {
             Ok(x) => x,
             Err(e) => return format!("{{\"error\":{:?}}}", e),
         };
@@ -336,6 +448,7 @@ fn main() {
     };
     let mut bench_battles: Vec<Battle> = Vec::new();
     let mut record_dir: Option<String> = None;
+    let mut views = false;
     let mut commit = "unknown".to_string();
     let mut i = if bench_rounds.is_some() { args.len() } else { 1 };
     while i < args.len() {
@@ -344,6 +457,7 @@ fn main() {
                 record_dir = args.get(i + 1).cloned();
                 i += 1;
             }
+            "--views" => views = true,
             "--commit" => {
                 commit = args.get(i + 1).cloned().unwrap_or_default();
                 i += 1;
@@ -408,7 +522,7 @@ fn main() {
                         bench_battles.push(b);
                         return Ok(());
                     }
-                    let res = run(&b, &dex, record_dir.as_deref(), &commit);
+                    let res = run(&b, &dex, record_dir.as_deref(), &commit, views);
                     let _ = writeln!(out, "{}", render(&b, res));
                     let _ = out.flush();
                     n += 1;

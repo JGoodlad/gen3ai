@@ -230,16 +230,16 @@ pub fn resolve_choice(state: &BattleState, side: usize, choice: &WireChoice) -> 
                 return Some(Choice::Move(0));
             }
             // MOVE-LOCKED request (`gen3_move_coverage_batch4c_v1`): the request offered a
-            // SINGLE pseudo/locked entry, so the wire's `move recharge` / `move solarbeam`
-            // resolves to slot 1 of the REQUEST = the engine's Move(0) (the sim accepts
-            // both `move 1` and `move recharge` — probed). Matched against the entry's id.
+            // SINGLE pseudo/locked entry, so the wire's `move recharge` / `move solarbeam` /
+            // `move rollout` resolves to slot 1 of the REQUEST = the engine's Move(0) (the sim
+            // accepts both `move 1` and the name — probed). Matched against the entry's id,
+            // which is `locked_slot()`'s move for every lock (`gen3_locked_request_move_v1`).
             if mon.move_locked() {
                 let locked_id = if mon.must_recharge {
                     "recharge".to_string()
                 } else {
-                    mon.two_turn
-                        .as_ref()
-                        .and_then(|t| mon.set.moves.get(t.move_index))
+                    mon.locked_slot()
+                        .and_then(|k| mon.set.moves.get(k))
                         .map(|m| crate::dex::to_id(m))
                         .unwrap_or_default()
                 };
@@ -861,12 +861,18 @@ fn serialize_active_with_disabled_source(
         let entry = if mon.must_recharge {
             "{\"move\":\"Recharge\",\"id\":\"recharge\"}".to_string()
         } else {
+            // The LOCKED move — whichever lock `move_locked()` found holds the slot:
+            // the two-turn charge, the Outrage/Thrash/Petal Dance lock, Rollout/Ice Ball, or
+            // Uproar (`getMoveRequestData`'s `lockedMove`). 🚨 This used to read `two_turn` ONLY
+            // and fall back to "solarbeam", so every lock admitted after the two-turn class
+            // rendered `{"move":"Solar Beam","id":"solarbeam"}` — a request poke-env's live
+            // player ASSERTS on (`available_moves_from_request`), found by the Rust Core parity
+            // harness's procedural-generator sweep (`gen3_locked_request_move_v1`).
             let mid = mon
-                .two_turn
-                .as_ref()
-                .and_then(|t| mon.set.moves.get(t.move_index))
+                .locked_slot()
+                .and_then(|k| mon.set.moves.get(k))
                 .cloned()
-                .unwrap_or_else(|| "solarbeam".to_string());
+                .expect("move_locked() implies a locked slot");
             // (No move in the two-turn/recharge family is a Hidden Power or a
             // Return/Frustration, so this renders the plain dex name either way — matching
             // `getMoveRequestData`'s hard-locked branch, which applies neither suffix.)

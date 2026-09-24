@@ -203,9 +203,13 @@ fn a_move_is_revealed_only_once_it_is_used_and_carries_its_SIGHTING_COUNT() {
         Some(24.0),
         "Headbutt 15 * 8/5 = 24"
     );
-    // The sighting is keyed by the TARGET's species — the Pressure correction's input.
-    let vs = arr[0].get("uses_vs").expect("uses_vs");
-    assert_eq!(vs.get("blissey").and_then(Json::as_f64), Some(1.0));
+    // The sighting carries the TARGET's species and its ability-event index AT USE TIME, plus the
+    // default target — the Pressure correction's inputs (reading rule V3).
+    let s = arr[0].get("sightings").and_then(Json::as_array).expect("sightings");
+    assert_eq!(s.len(), 1);
+    assert_eq!(s[0].str_at("t"), Some("blissey"));
+    assert_eq!(s[0].get("t_own").and_then(|b| b.as_bool()), Some(true));
+    assert_eq!(s[0].get("n").and_then(Json::as_f64), Some(1.0));
 
     // …and p1's OWN copy of the same move is at the REAL pp, one use down.
     let own = active_row(&v1, "ours");
@@ -237,7 +241,10 @@ fn a_volatile_is_carried_as_the_ANNOUNCED_name_with_its_turn_and_restart_counts(
     let v = &obs.mon("Blissey", false).expect("seen").volatiles;
     assert_eq!(v.len(), 1);
     assert_eq!(v[0].name, "Taunt", "the `move: ` prefix is stripped, the NAME is kept");
-    assert_eq!((v[0].turns, v[0].restarts), (2, 0));
+    // The announcement HISTORY (the tick of each start) and the tick now — poke-env's lifecycle
+    // is replayed over them in the adapter (reading rule V4).
+    assert_eq!(v[0].starts, vec![0]);
+    assert_eq!(obs.tick, 2);
 
     // A `|switch|` names the mon coming IN — the volatile clear belongs to the one going OUT.
     obs.observe("|switch|p2a: Zapdos|Zapdos|100/100", false);
@@ -448,4 +455,204 @@ fn an_ordinary_turn_captures_no_intermediate_view() {
     assert_eq!(out.used[1].len(), 1, "p2 used {:?}", out.used[1]);
     assert!(out.views_at[0].is_empty() && out.views_at[1].is_empty(),
         "an ordinary turn captured a view: p1={:?} p2={:?}", out.views_at[0], out.views_at[1]);
+}
+
+// ===========================================================================
+// 5 — THE READING RULES (`designs/rust_sim/one_sided_view.md` §2b), each pinned to the poke-env
+//     line it mirrors. Every one was found by the parity harness's slice V
+//     (`agents/battle/rust_core_parity_views.py`) on a real board; these are the constructed pins.
+// ===========================================================================
+
+/// A p1-seat observation fed protocol lines — p1 lines are ours, everything else theirs.
+fn fold(lines: &[&str]) -> pokesim::view::SideObservation {
+    let mut obs = pokesim::view::SideObservation::default();
+    for l in lines {
+        let own = l.split('|').nth(2).map_or(false, |i| i.trim_start().starts_with("p1"));
+        obs.observe(l, own);
+    }
+    obs
+}
+
+fn sightings<'a>(obs: &'a pokesim::view::SideObservation, mon: &str, mv: &str)
+    -> Vec<(&'a pokesim::view::Sighting, u32)> {
+    let m = obs.mon(mon, false).expect("watched mon");
+    let slot = m.moves.iter().find(|x| x.id == mv).expect("move slot");
+    slot.sightings.iter().map(|(s, n)| (s, *n)).collect()
+}
+
+#[test]
+fn v3_a_move_line_with_no_target_charges_our_active() {
+    // `Battle._get_target_mon` (battle.py:51-59): no target string ⇒ the OTHER side's active.
+    // A `[still]` fail prints an EMPTY target field; `_pressure_on` then charges our active.
+    let obs = fold(&[
+        "|switch|p1a: Zapdos|Zapdos|100/100",
+        "|switch|p2a: Moltres|Moltres|100/100",
+        "|move|p2a: Moltres|Will-O-Wisp||[still]",
+    ]);
+    let s = sightings(&obs, "Moltres", "willowisp");
+    assert_eq!(s.len(), 1);
+    assert_eq!((s[0].0.target.as_str(), s[0].0.target_own), ("Zapdos", true));
+}
+
+#[test]
+fn v3_a_sleep_talk_call_reveals_the_called_move_with_no_use() {
+    // abstract_battle.py:879-882 — `mon.moved(Called, use=False)` then
+    // `mon.moves[caller].use(pressure, overridden=True)` (move.py:129-136: 1 + pressure - 1).
+    let obs = fold(&[
+        "|switch|p1a: Skarmory|Skarmory|100/100",
+        "|switch|p2a: Suicune|Suicune|100/100",
+        "|move|p2a: Suicune|Sleep Talk|p2a: Suicune",
+        "|move|p2a: Suicune|Rest|p2a: Suicune|[from]move: Sleep Talk",
+    ]);
+    let m = obs.mon("Suicune", false).unwrap();
+    let rest = m.moves.iter().find(|x| x.id == "rest").expect("the called move is REVEALED");
+    assert_eq!(rest.uses, 0, "…but NOT used (the view read one PP low before this rule)");
+    let talk = m.moves.iter().find(|x| x.id == "sleeptalk").unwrap();
+    assert_eq!(talk.uses, 1);
+    assert!(talk.sightings.keys().any(|s| s.called && s.mv == "rest"),
+        "the called sighting rides the CALLER, keyed by the called move");
+}
+
+#[test]
+fn v3_a_sighting_records_the_targets_ability_index_at_use_time() {
+    // `_pressure_on` reads `target.ability` WHEN THE MOVE IS USED. Our Porygon2 Traced Pressure
+    // (`-ability … [from] ability: Trace`), was hit, then pivoted (switch_out clears the overlay):
+    // the adapter must judge the sighting at index 1, not at the read-time index 2.
+    let obs = fold(&[
+        "|switch|p1a: Porygon2|Porygon2|100/100",
+        "|switch|p2a: Raikou|Raikou|100/100",
+        "|-ability|p1a: Porygon2|Pressure|Trace|[from] ability: Trace|[of] p2a: Raikou",
+        "|move|p2a: Raikou|Hidden Power|p1a: Porygon2",
+        "|switch|p1a: Skarmory|Skarmory|100/100",
+    ]);
+    let s = sightings(&obs, "Raikou", "hiddenpower");
+    assert_eq!((s[0].0.target.as_str(), s[0].0.target_own, s[0].0.target_k), ("Porygon2", true, 1));
+    assert_eq!(obs.mon("Porygon2", true).unwrap().ability_events.len(), 2, "+ the switch-out marker");
+}
+
+#[test]
+fn v4_a_reannounced_single_turn_effect_keeps_its_announcement_history() {
+    // `Pokemon.end_turn` DELETES an `ends_on_turn` effect at `|turn|`; a later `-singleturn` is a
+    // FRESH start (pokemon.py start_effect), not a restart — so both ticks must cross.
+    let obs = fold(&[
+        "|switch|p2a: Skarmory|Skarmory|100/100",
+        "|-singleturn|p2a: Skarmory|Protect",
+        "|turn|2",
+        "|-singleturn|p2a: Skarmory|Protect",
+    ]);
+    let v = &obs.mon("Skarmory", false).unwrap().volatiles;
+    assert_eq!((v.len(), v[0].starts.clone(), obs.tick), (1, vec![0, 1], 1));
+}
+
+#[test]
+fn v4_baton_pass_carries_the_passers_volatiles_to_the_entrant() {
+    // battle.py:160-177 → `Pokemon.apply_baton_pass`; the sim's `copyVolatileFrom`. The §4b
+    // "own `volatiles` missing `substitute`" finding: the fold wiped the entrant instead.
+    let obs = fold(&[
+        "|switch|p2a: Celebi|Celebi|100/100",
+        "|-start|p2a: Celebi|Substitute",
+        "|switch|p2a: Charizard|Charizard, M|100/100|[from] Baton Pass",
+    ]);
+    let v = &obs.mon("Charizard", false).unwrap().volatiles;
+    assert_eq!(v.len(), 1);
+    assert_eq!((v[0].name.as_str(), v[0].bp_carried), ("Substitute", 1));
+    assert!(obs.mon("Celebi", false).unwrap().volatiles.is_empty(), "the passer is cleared");
+}
+
+#[test]
+fn v4_a_fainted_own_mons_request_condition_clears_its_effects() {
+    // `update_from_request` → `set_hp_status("0 fnt")` → `faint()` → `_clear_effects()`: the
+    // Destiny Bond `-activate` that FOLLOWS the KO is gone by the decision.
+    let obs = fold(&[
+        "|switch|p1a: Gengar|Gengar, M|56/303",
+        "|-singlemove|p1a: Gengar|Destiny Bond",
+        "|faint|p1a: Gengar",
+        "|-activate|p1a: Gengar|move: Destiny Bond",
+        r#"|request|{"forceSwitch":[true],"side":{"pokemon":[{"ident":"p1: Gengar","condition":"0 fnt"}]}}"#,
+    ]);
+    assert!(obs.mon("Gengar", true).unwrap().volatiles.is_empty());
+}
+
+#[test]
+fn v5_the_status_counter_follows_poke_envs_own_status() {
+    // pokemon.py: `moved`/`cant_move` +1 while SLP; the `status` SETTER does NOT reset the
+    // counter (a Rest taken while badly poisoned carries the toxic count — a poke-env READING
+    // defect, reproduced here, not corrected: `one_sided_view.md` §4b); `-cureteam` →
+    // `cure_status()` clears the status and NOT the counter; `-curestatus X` resets both.
+    let obs = fold(&[
+        "|switch|p2a: Suicune|Suicune|100/100",
+        "|-status|p2a: Suicune|tox",
+        "|turn|2",
+        "|turn|3",
+        "|-status|p2a: Suicune|slp|[from] move: Rest",
+        "|cant|p2a: Suicune|slp",
+    ]);
+    let m = obs.mon("Suicune", false).unwrap();
+    assert_eq!((m.pstatus.as_deref(), m.status_counter), (Some("slp"), 3));
+    let obs = fold(&[
+        "|switch|p1a: Swampert|Swampert, M|404/404",
+        "|-status|p1a: Swampert|slp|[from] move: Rest",
+        "|-cureteam|p1a: Blissey|[from] move: Aromatherapy",
+        "|move|p1a: Swampert|Ice Beam|p2a: Blissey",
+    ]);
+    let m = obs.mon("Swampert", true).unwrap();
+    assert_eq!((m.pstatus.as_deref(), m.status_counter), (None, 0),
+        "no status ⇒ the move does not count (the fold used to keep counting after -cureteam)");
+}
+
+#[test]
+fn v6_a_faint_keeps_the_protect_streak() {
+    // `Pokemon.faint` leaves `_protect_counter`; `switch_out` is what zeroes it.
+    let obs = fold(&[
+        "|switch|p1a: Swampert|Swampert, M|404/404",
+        "|move|p1a: Swampert|Protect|p1a: Swampert",
+        "|-damage|p1a: Swampert|0 fnt",
+        "|faint|p1a: Swampert",
+    ]);
+    assert_eq!(obs.mon("Swampert", true).unwrap().protect_counter, 1);
+}
+
+#[test]
+fn v8_an_ability_is_disclosed_off_four_non_ability_lines() {
+    // abstract_battle: `-immune` (4 fields), `_check_heal_message_for_ability` (6 fields, the
+    // HEALED mon), `_check_damage_message_for_ability` (6 fields, the `[of]` mon), and `-activate`
+    // (only while unknown). A 5-field `-heal` discloses NOTHING — the length is part of the rule.
+    let obs = fold(&[
+        "|switch|p1a: Sharpedo|Sharpedo, M|100/100",
+        "|switch|p2a: Snorlax|Snorlax, M|100/100",
+        "|-immune|p2a: Snorlax|[from] ability: Immunity",
+        "|-heal|p2a: Snorlax|100/100|[from] ability: Water Absorb",
+        "|-damage|p1a: Sharpedo|88/100|[from] ability: Rough Skin|[of] p2a: Snorlax",
+        "|-activate|p2a: Snorlax|ability: Thick Fat",
+    ]);
+    let ev = &obs.mon("Snorlax", false).unwrap().ability_events;
+    let got: Vec<(&str, bool)> = ev.iter().map(|e| (e.id.as_str(), e.if_unknown)).collect();
+    assert_eq!(got, vec![("immunity", false), ("roughskin", false), ("thickfat", true)]);
+}
+
+#[test]
+fn v11_a_screen_is_stored_as_the_turn_it_started() {
+    // `abstract_battle._side_start`: a timed condition stores `self.turn` (only when absent).
+    let obs = fold(&[
+        "|turn|25",
+        "|-sidestart|p2: Foe|move: Light Screen",
+        "|turn|26",
+        "|-sidestart|p1: Me|Reflect",
+    ]);
+    assert_eq!(obs.screens[1].get("light_screen"), Some(&25));
+    assert_eq!(obs.screens[0].get("reflect"), Some(&26));
+    let obs = fold(&["|turn|3", "|-sidestart|p2: Foe|Safeguard", "|-sideend|p2: Foe|Safeguard"]);
+    assert!(obs.screens[1].is_empty());
+}
+
+#[test]
+fn the_first_decision_reads_turn_1_and_every_row_carries_the_faint_fields() {
+    // `bs.turn` stays 0 until the first commit while `|turn|1` is already on the wire (the sim's
+    // `this.turn` is 1): the first board read turn 0 on the view road.
+    let dex = Dex::for_gen(3);
+    let sess = paused(&dex, 0);
+    let v = one_sided_view(&sess, 0, &dex);
+    assert!(v.contains("\"turn\":1,"), "the construction board must read turn 1:\n{}", &v[..80]);
+    // Every mon row carries `faint_boosts` (null while alive) and our rows a `base_ability`.
+    assert!(v.contains("\"faint_boosts\":null") && v.contains("\"base_ability\":\""));
 }
