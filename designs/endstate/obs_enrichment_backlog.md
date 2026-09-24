@@ -45,6 +45,37 @@ it IS).
 | **E10** | **A STATE-DEPENDENT posterior for the opponent's HIDDEN move slots** (moved from `designs/ops/TECH_DEBT_BACKLOG.md` 2026-09-24, where it was filed P2: *The HIDDEN-slot MoveBelief posterior is a state-INDEPENDENT constant*) | yes: a Smogon mixture over the T0 species prior, built from inputs the model already computes | the HIDDEN-slot MoveBelief posterior is a state-INDEPENDENT constant (max deviation 0.0 over 57k decisions; belief-calibration read, 2026-09-24) | the Smogon mixture beats the constant in every arm (recall@4 0.28 vs 0.10 on pool) → belief calibration; a structural gap on an input the policy reads | M; a TRAINING-INPUT change, the owner's call. It does not need the Rust core, so whether rule 1's after-the-cutover ordering binds it is also the owner's call |
 | **E11** | **`[of]` attribution on damage/heal lines** — who caused it (moved from `designs/ops/TECH_DEBT_BACKLOG.md` 2026-09-24, where it was filed P3: *Reading vs truth for `[of]` (M1 rule R9)*) | yes: `[of]` is on the public line | poke-env's reading DISCARDS it; the core carries the truth beside the reading (M1 rule R9) | the model cannot see who caused residual damage/healing on those lines → overlaps **E2** (per-cause HP accounting); decide at the next retrain whether to flip the reading to the truth, as a registered experiment (it changes the obs) | S, owner-gated, retrain-class |
 
+### 1a. E12: MECHANIC COVERAGE, the long-term requirement (owner, 2026-09-24)
+
+The owner: *"roar, baton pass, thief, spikes sack, etc. should all be covered in what we care about
+long term."* This is not one fact but a COVERAGE requirement on the native event record (Rust core
+M3's per-action/effect record list) and on whatever reshaped event block the next obs arch change
+ships. Each mechanic below must be REPRESENTED FAITHFULLY, with attribution, rather than flattened.
+Each gets a constructed-battle fixture that fails if it is flattened:
+
+| mechanic | what must survive into the record |
+|---|---|
+| **Roar / Whirlwind (phazing)** | the switch was FORCED, not chosen; who forced it; the dragged-in mon is REVEALED; entry-hazard chip on the dragged mon attributed to Spikes, with the layer count. Phazing to rack up Spikes damage is a core gen3 plan |
+| **Baton Pass** | WHAT was passed: each boost stage, Substitute and its HP, and the other passed volatiles (confusion, Focus Energy, Leech Seed, Curse, Ingrain, Mean Look trapping, Perish count, Lock-On); the receiver; a pass into Spikes |
+| **Item transfer / removal**: Thief, Covet, Trick, Knock Off | the item moved or removed, FROM whom TO whom, and the REVEAL of both items (`item_transition` exists, E5; verify it carries direction and both sides) |
+| **Sacking** (a deliberate sacrifice, including a "Spikes sack" and a hazard KO on entry) | the faint cause (move / hazard / recoil / residual / Destiny Bond / Perish / self-KO), the FREE switch that follows a faint, and the Spikes layers at that moment |
+| **Pursuit on a switching target** | the hit landed BEFORE the switch, attributed to the switch |
+| **Trade KOs**: Explosion / Self-Destruct, Destiny Bond, Perish Song | MULTIPLE faints in one window, each with its cause and order |
+| **Called moves**: Metronome, Sleep Talk, Assist, Mirror Move, Nature Power | caller → called, both ids; labels must record the CALLED move where the intent is the call |
+| **Rapid Spin** | the hazards cleared, and trapping/Leech Seed removed |
+| **Wish / Substitute / Encore / Disable / Taunt / Focus Punch / charge and recharge turns** | the pending effect and its target; refusals with their reason |
+
+**Status:** M3 (running) builds the native record to cover these and catalogues every case where the
+frozen TurnDelta, the α/β intent labels and the current 22-column event window flatten or lose one,
+with rates. That catalogue decides which columns the next obs arch change adds.
+
+### 1b. The NEXT obs arch change batch (one retrain boundary, not several)
+
+Batched so that existing checkpoints break once: **P0 Mud Sport / Water Sport slots**
+(TECH_DEBT_BACKLOG (a)); **E10** (a state-dependent hidden-slot move posterior; recommended here
+rather than after the cutover, because it does not depend on the Rust core); **E12's** event-block
+reshape from M3's catalogue. Any other entry joins only on its own registered hypothesis (§0 rule 3).
+
 ## 2. Ordering (recommended, after the cutover)
 
 1. **E1**: the cheapest entry with the clearest new capability, and the owner's own tooltip shows
