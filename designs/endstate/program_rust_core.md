@@ -188,6 +188,25 @@ pinned-pickle tracker thaw — 16.9% of the searched decision today — becomes 
 `turn_delta_fold_equivalence_fuzz_test` shape re-pointed at the core. **Size: 4–5 agent-days**
 (2,985 LOC of trackers).
 
+**The REWARD in slice T is the WIN INDICATOR alone (decided 2026-09-23, orchestrator; owner consulted).**
+Every win-prob-era run trains on `1 TERMINAL + 0 PBRS + 0 BIAS` (`terminal_indicator`, `victory_value`
+1.0; the 11 shaped flags recorded `inert_reward_flags`), so the shaped terms (`reward_potentials.py`,
+`reward_bias_terms.py`, the shaped half of `reward_manager.py`) are **NOT ported**. The evidence is
+enough to not carry shaping forward, NOT enough to say shaping is no better: the flywheel pair read
+strength NOT DETECTED (+17.5 Elo to win-prob, one run per arm), and the one contrary CANDIDATE — arm S's untaught
++8.3 pp — is confounded by a 1.44× realized dose. `TurnDelta` itself still crosses (intent labels,
+trackers and the prober read it). Any future shaping is model-derived (the held frozen-φ rung, a
+T2 value as the potential), never env code.
+
+**Before M3 starts (M2's hand-off, 2026-09-23):** (1) split `BridgeSession` into an ENGINE (`Battle`,
+`FullBattleDriver`, the open boundary and requests as typed values), which `BattleVersion` owns, and
+a TRANSPORT (chunks, the text reframe, request JSON strings, `cmd_buf`, `script` / `request_seeds`),
+which `sim_bridge` wraps around the engine. Today every fork clones `script` and `request_seeds`, and
+both grow with battle length (UNMEASURED); M5 needs the engine without the transport anyway.
+(2) Replace `Result<T, String>` with a `CoreError` enum that separates refusals mirroring a poke-env
+exception class (which the parity gate compares), malformed input, and engine faults. Today a
+refusal and a bug are indistinguishable strings.
+
 ### M4 — The encoder (Tier 1c) — last, by design
 
 **What crosses.** `encode(side, &mut [f32; 2501])` with the layout GENERATED from
@@ -199,6 +218,16 @@ tables come from `data/` exactly as the Python facade reads them.
 MILESTONE, plus every obs golden; `obs_build_benchmark.py` gains a core row. **Size: 6–9
 agent-days** (5,481 LOC, 20 sub-encoders, the largest byte-parity burden). Search now takes rows
 from `successors()`; the `expand_many` JSON, the view JSON and `view_adapter` leave its path.
+
+**Transport at M4 (decided 2026-09-23): keep the process and the pipe protocol.** The obs row, the
+11-dim mask and the training-only label keys (ARCHITECTURE.md §7, taken from the board the Rust side
+holds) travel in the reply; Python wraps them with `np.frombuffer`. At M4 the pipe is not the cost:
+a production `Gen3Env.step` is ~3–4 ms, and the Python that M2–M4 remove dominates it, while a
+10 KB row adds ~1 µs to a round trip that already exists (`m1_transport_throughput_2026-09-23`).
+A shared mmap would save only that copy, not the round trip. The pipe also keeps crash isolation,
+exact binary pinning (`POKESIM_SIM_BRIDGE_BIN`) and a replayable transcript. **Encoder
+invariants:** test and fuzz builds NaN-fill the row before `encode`, so a skipped slot is visible;
+release builds zero-fill. A wrong dtype, shape or contiguity is REFUSED, never silently converted.
 
 ### T2 — The inference tier (independent track; interleaves anywhere after M1)
 
@@ -227,6 +256,15 @@ never by a research arm.
 recorded battles with both sides scripted from the recording; a depth-3 successor slice (search's
 default depth) equal to the protocol road; training throughput at `--n-envs 48` measured as an
 interleaved A/B against the current path. **Size: 5–8 agent-days.**
+
+**Transport at M5 is decided BY BENCHMARK:** in-process FFI, EnvPool-style (the Rust library steps N
+envs on its own threads with the GIL released and fills the learner's NumPy arrays, so there is no
+IPC and no shared-memory segment), against a separate Rust env process that writes into shared memory
+and signals once per BATCH. Once Python leaves the per-decision loop, a per-env round trip becomes
+a real fraction of the step. Prerequisites: `trainer_turn_benchmark.py` must default to the Rust
+bridge first (TECH_DEBT_BACKLOG P2); if FFI wins, every build stamps the module with its commit and
+source hash, and Python REFUSES a mismatch at import. Python imports whichever `.so` comes first on
+`sys.path`, which is the 09-09 rust-target incident's class.
 
 ### M6 — THE CUTOVER, then the DELETION PASS
 
@@ -316,6 +354,8 @@ Each row names the milestone whose slice made it deletable. LOC from Phase 0 (d)
 | M2 (decision input, §6) | the TYPED SHORTCUT, if the owner takes §6's recommendation: `CorePath::Typed`, `BridgeSession::typed_side_lines`, `session_from_record_core` in search, `SearchConfig.core_path`, and with them the INTEGRITY mode (its only job is typed == text) | ~250 | measured to save nothing (§6); `core_path=text` is §6c's one observation path |
 | as each fork fix lands | the matching `agents/battle/poke_env_findings.py` entry (PE-V10 / PE-R1b / PE-V16) | 1 entry each | a TRAINING-INPUT change, the owner's call; deleting the entry TIGHTENS slice V |
 | M3 | `agents/training/clone_pins.py`; `ViewSuccessorFactory._clone_tracker`; `training/turn_delta_legacy.py` (test-only today) | 149 + 327 | the tracker fork becomes a pointer copy |
+| M3 (decided 2026-09-23) | the SHAPED reward path: `reward_potentials.py`, `reward_bias_terms.py`, the shaped branches of `reward_manager.py` / `reward_composition.py`, and the inert shaped flags (into `designs/deleted_flags.md`), with their tests | ~1,100 + tests | the Rust reward is the win indicator (§2 M3). Until this pass, arm S stays re-runnable as a comparator |
+| after M7 | RESHAPE `BoardReading`: its fields mirror poke-env's `Battle` (`_player_username` …) because slice V compares field by field; design the reading for the view once poke-env has no production user | — | a reshape, not a deletion |
 | M4 | the Python pipeline's PERF layers — `observation/assembler.py` (incremental cache), the `live_view()` memo (`_state_epoch`, the request-change door), the `live_view_build_micros` memos | ~600 (assembler 498) | the Python encoder SURVIVES as the oracle; its perf scaffolding does not (a simpler oracle is a better oracle) |
 | M4 | `utils/bridge/search_session.py`'s JSON protocol (`open_root` / `expand_many`), `search_driver`'s search verbs, `driver_timing.rs`; node `search_driver.js` / `replay_driver.js` / `replay_kernels.js` once nothing diffs against them | 405 + 785 (node) + 128 + the driver verbs | search runs in-process on versions |
 | M5 / T2 | `--compile-opponents`, `--compile-opponents-preload`, `--compile-opponents-strict` (+ their `--no-` forms); `agents/model/compile_opponents.py`, `compile_preload.py`, `compile_prewarm.py`; the per-env model cache in `snapshot_pool.py` | 673 + the cache | opponents are T2 catalogue entries |
