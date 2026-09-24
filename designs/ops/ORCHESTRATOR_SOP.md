@@ -104,8 +104,9 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   re-invocation re-reads the whole conversation) — block-wait on a completion signal instead (§7).
 - **Tech-debt work is never dispatched automatically** (owner, 2026-09-06 — *"I will help you do
   that"*): decompositions, doc restructures, flag deletions, era flips, backfills and retention are
-  PROPOSED as rows in [`TECH_DEBT_BACKLOG.md`](TECH_DEBT_BACKLOG.md) with a one-line cost/benefit and
-  dispatched on the owner's word — EXCEPT the **week-end burn-down**: whatever quota remains before
+  PROPOSED as rows in [`TECH_DEBT_BACKLOG.md`](TECH_DEBT_BACKLOG.md) with a one-line cost/benefit (in
+  their CATEGORY, at their tier-then-size position — the file's header says how) and dispatched on
+  the owner's word — EXCEPT the **week-end burn-down**: whatever quota remains before
   the weekly reset (Tuesdays ~14:00 PT; read it with `check_usage.py`) is spent on that list,
   ACCEPTED rows top-down by criticality tier then size, as a standing housekeeping procedure, PACED
   to reach **95% of the weekly quota by Tuesday ~08:00 PT** and stopping there (owner, 2026-09-06;
