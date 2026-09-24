@@ -118,6 +118,26 @@ constructed real-Showdown battles read at the obs), and this crate's `present::t
 (`view.rs` / `view_adapter` / `event_fold`) reproduces poke-env and followed: V10 and its boost
 ledger deleted, V5's toxic half on the residual chip.
 
+**The CALLED-MOVE class — fixed in the fork AND mirrored here (`gen3_called_move_reading_v1`).**
+gen3's `useMoveInner` announces a move another move called in the BARE form
+`|move|<user>|<called>|<target>|[from] <Caller>` and `attrLastMove` may append `[still]` (which blanks
+the target), `[miss]` (twice, seen) or `[notarget]` after it. Upstream poke-env knew only the
+modern `[from]move: Metronome`, so a Metronome / Assist / Nature Power call RAISED `Unhandled move
+message format` (a live ladder game lost on the timer), and a `[still]`-blanked one was silently
+added to the actor's OWN moveset. The truth, from the sim: the called move is not the actor's
+(Metronome draws from the dex, Assist from a teammate, Nature Power is always Swift in gen 3), is
+not revealed, and costs no PP anywhere — gen 3 charges no Pressure for a sourced move (measured:
+Metronome's PP is the same against a Pressure foe). `GEN3_BARE_MOVE_CALLERS` joins the random
+callers to the Magic Coat / Mirror Move / Snatch branch, and `_canonical_from_tail` puts a
+multi-flag tail in the order the single-pass strip consumes; `BoardReading::move_line` mirrors both
+(`is_gen3_bare_move_caller`, `canonical_from_tail`). Every shape is one the real sim emitted
+(`harness/probe_called_move_shapes.js`: 1,500 battles, 25,419 sourced `|move|` lines, 31 shapes);
+pins: `poke_env/battle/called_move_reading_test.py` (23 fail on upstream), `present::called_move_tests`,
+`rust_core_present_test.py`, and the node-bridge battle `agents/battle/called_move_bridge_integration_test.py`
+(both players encode every decision; p2's reading of p1's caller PP equals p1's own `|request|`).
+Not a training-input change: every line it changes used to raise (or, for the `[still]` shape, only
+Metronome / Assist / Nature Power reach it — none is on a pool team or engine-playable).
+
 **Not findings — INFORMATION LIMITS**, read as poke-env reads them because no client can know
 better: V15 (an own mon the current request did not re-sync holds the sighting count of its PP,
 which lags an un-announced Pressure deduction — the audit checks it can only lag) and V14 / R4 (a

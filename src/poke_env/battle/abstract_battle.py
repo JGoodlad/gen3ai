@@ -16,6 +16,38 @@ from poke_env.data import GenData, to_id_str
 from poke_env.data.replay_template import REPLAY_TEMPLATE
 from poke_env.teambuilder.teambuilder_pokemon import TeambuilderPokemon
 
+#: gen3ai fork (`gen3_called_move_reading_v1`): the RANDOM move-callers in the BARE form gen3's
+#: `useMoveInner` writes (`[from] ${this.dex.conditions.get(sourceEffect).name}`, no `move:`
+#: prefix): `|move|<user>|<called>|<target>|[from] Metronome`. Upstream knew only the modern
+#: `[from]move: Metronome` form, so every Metronome / Assist / Nature Power call crashed the parse
+#: (`Unhandled move message format`) — or, when `[still]` had blanked the target, was silently
+#: added to the actor's OWN moveset. The rest of the gen3 move-call class (`[from] Sleep Talk`,
+#: `[from] Mirror Move`, `[from] Magic Coat`, `[from] Snatch`, `[from] Pursuit`,
+#: `[from] lockedmove`) was already handled; the class and every tail shape the gen3 sim emits is
+#: enumerated by `src/rust_sim/harness/probe_called_move_shapes.js` and pinned by
+#: `src/poke_env/battle/called_move_reading_test.py`.
+GEN3_BARE_MOVE_CALLERS = frozenset(
+    f"[from]{sep}{name}"
+    for name in ("Metronome", "Assist", "Nature Power")
+    for sep in (" ", "")
+)
+
+#: The `attrLastMove` failure flags that can trail a `[from]` clause.
+_TRAILING_FLAGS = ("[notarget]", "[still]", "[miss]")
+
+
+def _canonical_from_tail(event: List[str]) -> List[str]:
+    """``event`` with a MULTI-flag tail after its ``[from]`` clause put in the one order the
+    move handler's single-pass strip consumes (``[notarget]``, ``[still]``, ``[miss]`` — each
+    once). Every other line is returned unchanged (the same list object)."""
+    for j in range(5, len(event)):
+        if event[j].startswith("[from]"):
+            tail = event[j + 1:]
+            if len(tail) < 2 or not all(t in _TRAILING_FLAGS for t in tail):
+                return event
+            return event[: j + 1] + [t for t in _TRAILING_FLAGS if t in tail]
+    return event
+
 
 class DamagingMoveEvent(NamedTuple):
     """Per-side snapshot of the last damaging move resolved this turn.
@@ -717,6 +749,15 @@ class AbstractBattle(ABC):
                 "ours" if pokemon[:2] == self._player_role else "opp"
             )
 
+            # gen3ai fork (`gen3_called_move_reading_v1`): the sim appends `attrLastMove` flags
+            # AFTER a `[from]` clause, in whatever order the move's failure path took, and can
+            # append one TWICE (`…|[from] Metronome|[miss]|[miss]`). The single-pass strip below
+            # removes at most one of each, in one order, so such a tail stranded a flag in front
+            # of the `[from]` handlers and the line crashed (or, with a `[still]`-blanked target,
+            # was silently read as the actor's OWN move). Only a line whose tail after `[from]`
+            # is two or more of these flags is touched.
+            event = _canonical_from_tail(event)
+
             for move_failed_suffix in ["[miss]", "[still]", "[notarget]"]:
                 if event[-1] == move_failed_suffix:
                     event = event[:-1]
@@ -802,13 +843,20 @@ class AbstractBattle(ABC):
                 "[from] Mirror Move",
                 "[from] Snatch",
                 "[from]Snatch",
-            }:
+            } or event[-1] in GEN3_BARE_MOVE_CALLERS:
                 # The actor is shown "using" a move that is not its own: Magic Coat
                 # / Mirror Move bounce or reflect the original, and Snatch makes the
                 # snatcher execute the status move it stole. In every case the move
                 # must NOT be attributed to the actor's revealed moveset (reveal) and
                 # the actor's own last-used move must stay marked (use) — otherwise a
                 # Snatch Blissey would read as "knows Soft-Boiled/Calm Mind/...".
+                # gen3ai fork (`gen3_called_move_reading_v1`): the RANDOM callers join the
+                # class — Metronome / Assist / Nature Power, in gen3's BARE form. The called
+                # move is not the actor's (Metronome draws from the whole dex, Assist from a
+                # TEAMMATE, Nature Power is always Swift), so it is neither revealed nor used,
+                # and no Pressure PP is charged anywhere: gen3 `useMoveInner` skips the
+                # Pressure deduction for any sourced move but Pursuit (measured: a Metronome
+                # user's PP is the same against a Pressure foe as against any other).
                 use = False
                 reveal = False
                 event = event[:-1]

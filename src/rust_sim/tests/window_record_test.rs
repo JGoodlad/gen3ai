@@ -687,18 +687,18 @@ fn parse_record(lines: &[&str]) -> Window {
 
 #[test]
 fn every_gen3_caller_is_recorded_as_caller_then_called_or_refused_as_poke_env_refuses() {
-    // The gen-3 form is `[from] <Name>` (`data/mods/gen3/scripts.ts:165`). poke-env reads Sleep Talk
-    // and Mirror Move and RAISES `ValueError` on Metronome, Assist and Nature Power (a P1 poke-env
-    // reading finding, `designs/ops/TECH_DEBT_BACKLOG.md`); the core's reading refuses those with
-    // the SAME class — this pin FLIPS the day the fork reads them.
+    // The gen-3 form is `[from] <Name>` (`data/mods/gen3/scripts.ts:165`). poke-env RAISED
+    // `ValueError` on Metronome, Assist and Nature Power until `gen3_called_move_reading_v1` fixed
+    // the fork (and the core's `BoardReading`) by class; this pin has FLIPPED: all five callers
+    // are now read, each as the caller then the called move.
     let head = ["|player|p1|P1||", "|player|p2|P2||", "|teamsize|p1|1", "|teamsize|p2|1", "|gen|3", "|start",
                 "|switch|p1a: Clefable|Clefable|100/100", "|switch|p2a: Snorlax|Snorlax|100/100", "|turn|1"];
     for (caller, called, read) in [
         ("Sleep Talk", "Body Slam", true),
         ("Mirror Move", "Body Slam", true),
-        ("Metronome", "Thunderbolt", false),
-        ("Assist", "Ice Beam", false),
-        ("Nature Power", "Swift", false),
+        ("Metronome", "Thunderbolt", true),
+        ("Assist", "Ice Beam", true),
+        ("Nature Power", "Swift", true),
     ] {
         let caller_line = format!("|move|p1a: Clefable|{caller}|p1a: Clefable");
         let called_line = format!("|move|p1a: Clefable|{called}|p2a: Snorlax|[from] {caller}");

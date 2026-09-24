@@ -955,6 +955,10 @@ impl BoardReading {
         let (mut use_, mut reveal, mut failed, mut spread) = (true, true, false, false);
         let mut overridden: Option<String> = None;
         let last = |ev: &Vec<String>| ev.last().cloned().unwrap_or_default();
+        // `_canonical_from_tail` (`gen3_called_move_reading_v1`): a tail of two or more
+        // `attrLastMove` flags after the `[from]` clause is put in the order the single-pass strip
+        // below consumes, each flag once (`…|[from] Metronome|[miss]|[miss]` is a real gen3 shape).
+        canonical_from_tail(&mut ev);
         for suffix in ["[miss]", "[still]", "[notarget]"] {
             if last(&ev) == suffix {
                 ev.pop();
@@ -1014,7 +1018,12 @@ impl BoardReading {
                 _ => return Err(refuse(PyExc::ValueError, format!("Unhandled [from] ability message - ability {ab:?} (ValueError)"))),
             }
         }
-        if matches!(last(&ev).as_str(), "[from] Magic Coat" | "[from] Mirror Move" | "[from] Snatch" | "[from]Snatch") {
+        // The RANDOM callers (`GEN3_BARE_MOVE_CALLERS`, `gen3_called_move_reading_v1`) join the
+        // class: the called move is not the actor's, so it is neither revealed nor used, and gen3
+        // charges no Pressure PP for a sourced move.
+        if matches!(last(&ev).as_str(), "[from] Magic Coat" | "[from] Mirror Move" | "[from] Snatch" | "[from]Snatch")
+            || is_gen3_bare_move_caller(&last(&ev))
+        {
             use_ = false;
             reveal = false;
             ev.pop();
@@ -1316,4 +1325,28 @@ fn available_moves_from_request(mon: &PMon, ar: &Val) -> R<Vec<String>> {
         }
     }
     Ok(out)
+}
+
+/// `GEN3_BARE_MOVE_CALLERS` (`gen3_called_move_reading_v1`): the random move-callers in the BARE
+/// form gen3's `useMoveInner` writes — `[from] Metronome` / `[from] Assist` / `[from] Nature
+/// Power`, with or without the space.
+pub fn is_gen3_bare_move_caller(tag: &str) -> bool {
+    let Some(rest) = tag.strip_prefix("[from]") else { return false };
+    let name = rest.strip_prefix(' ').unwrap_or(rest);
+    matches!(name, "Metronome" | "Assist" | "Nature Power")
+}
+
+/// `_canonical_from_tail` (`gen3_called_move_reading_v1`): a multi-flag tail after the `[from]`
+/// clause becomes `[notarget]`, `[still]`, `[miss]` (each present flag once); any other line is
+/// left as it is.
+pub fn canonical_from_tail(ev: &mut Vec<String>) {
+    const FLAGS: [&str; 3] = ["[notarget]", "[still]", "[miss]"];
+    let Some(j) = (5..ev.len()).find(|&j| ev[j].starts_with("[from]")) else { return };
+    let tail = &ev[j + 1..];
+    if tail.len() < 2 || !tail.iter().all(|t| FLAGS.contains(&t.as_str())) {
+        return;
+    }
+    let keep: Vec<String> = FLAGS.iter().filter(|f| tail.iter().any(|t| t == *f)).map(|f| f.to_string()).collect();
+    ev.truncate(j + 1);
+    ev.extend(keep);
 }

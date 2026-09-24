@@ -62,3 +62,5 @@ pub use view::{present, OneSidedView};
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod called_move_tests;

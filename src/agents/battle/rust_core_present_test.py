@@ -320,3 +320,30 @@ def test_malformed_input_is_not_reported_as_a_refusal():
     out = core_raw(BASE + ['|request|{"side":'])
     assert not out["ok"]
     assert out["core_error"]["kind"] == "malformed" and out["core_error"]["class"] is None, out
+
+
+@pytest.mark.parametrize("called", [
+    "|move|p2a: Clefable|Thunderbolt|p1a: Metagross|[from] Metronome",
+    "|move|p2a: Clefable|Swords Dance|p2a: Clefable|[from] Metronome",
+    "|move|p2a: Clefable|Slack Off||[from] Metronome|[still]",
+    "|move|p2a: Clefable|Super Fang|p1a: Metagross|[from] Metronome|[miss]|[miss]",
+    "|move|p2a: Clefable|Nature Power|p2a: Clefable|[from] Metronome",
+])
+def test_called_move_class_metronome(called):
+    """`gen3_called_move_reading_v1`: a Metronome-called move (gen3's BARE `[from] Metronome`,
+    every tail shape the sim emits) — the core and poke-env agree the called move is neither
+    revealed nor charged (it crashed poke-env's parse before the fix)."""
+    out = assert_same(BASE + ["|switch|p2a: Clefable|Clefable, F|100/100",
+                              "|move|p2a: Clefable|Metronome|p2a: Clefable", called])
+    assert [(m["id"], m["current_pp"]) for m in opp(out, "clefable")["moves"]] == [("metronome", 15)]
+
+
+@pytest.mark.parametrize("caller,called", [
+    ("Assist", "|move|p2a: Clefable|Explosion|p1a: Metagross|[from] Assist"),
+    ("Assist", "|move|p2a: Clefable|Roar||[from] Assist|[still]"),
+    ("Nature Power", "|move|p2a: Clefable|Swift|p1a: Metagross|[from] Nature Power|[miss]"),
+])
+def test_called_move_class_assist_and_nature_power(caller, called):
+    out = assert_same(BASE + ["|switch|p2a: Clefable|Clefable, F|100/100",
+                              f"|move|p2a: Clefable|{caller}|p2a: Clefable", called])
+    assert [m["id"] for m in opp(out, "clefable")["moves"]] == [caller.lower().replace(" ", "")]

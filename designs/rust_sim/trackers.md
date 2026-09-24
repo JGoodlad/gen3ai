@@ -166,10 +166,11 @@ choice — each FAILS.
 - **The engine does not model Metronome, Mirror Move, Assist or Nature Power** (`scan_move_probe`:
   `panic`); their record fixtures are PARSE-path (hand-written protocol, the gen-3 form
   `[from] <Name>`, `data/mods/gen3/scripts.ts:165`), not step-built battles.
-- **poke-env RAISES on three of the five gen-3 callers** — Metronome, Assist and Nature Power
-  (`ValueError: Unhandled move message format`); it reads Sleep Talk and Mirror Move. The core's
-  reading refuses the same three with the same class (pinned; flips the day the fork reads them).
-  `TECH_DEBT_BACKLOG.md`'s P1 names Metronome only.
+- **All five gen-3 callers are READ** (`gen3_called_move_reading_v1`): poke-env raised
+  `ValueError: Unhandled move message format` on Metronome, Assist and Nature Power until the fork
+  and the core's `BoardReading` were fixed by class; the pin
+  (`every_gen3_caller_is_recorded_as_caller_then_called_or_refused_as_poke_env_refuses`) has
+  flipped — each is recorded as the caller, then the called move with `called_by`.
 
 The loss catalogue — every case the frozen `TurnDelta`, the α/β label and the 22-column event window
 flatten or lose, with rates over the MILESTONE corpus — is in
