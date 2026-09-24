@@ -52,6 +52,15 @@ tech-debt inventory are in
 
 ## 2. The milestones
 
+> **ORDER CHANGED (owner, 2026-09-23): the CUTOVER comes BEFORE M5.** Sequence: M1 → M2 → M3 → M4
+> → **M6, the cutover, in TODAY'S env shape** (process-per-env; training's observation built by the
+> core through `parse` per §6c) → the deletion pass → **M5 (N envs per process) only after that**,
+> as its own later change with its own gate. Why: the switch to Rust for training is derisked by
+> changing ONE thing at a time. The cutover swaps what builds the observation while the process
+> model stays fixed; M5 then changes the process model on a Rust-built observation that is already
+> proven. **M5 is not started until the owner says so.** T2 (the inference tier) is M5's prerequisite,
+> so it waits with M5 unless a non-training consumer adopts it earlier.
+
 Sizes are **agent-days**, calibrated to two measured rates: the one-sided view (a fraction of
 Tier 1a) took **2 agent-days and found 4 contract changes** no reading predicted; the Phase-0 spike
 typed 15 event kinds and built its harness in **~½ agent-day and found 8 reading rules + 2 latent
