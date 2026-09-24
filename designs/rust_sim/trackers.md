@@ -14,7 +14,7 @@ fork shares its parent's and pays only for its own decision.
 | **Trackers** | `src/rust_sim/src/trackers/mod.rs` (`SideTrackers`, `TrackerState`, `IntentLabel`, `reward`), `history.rs` (recency, pair history, the event window, the wish and sleep folds), `clock.rs` (the progress clock), `hp_belief.rs` (the Hidden-Power belief), `delta.rs` (the context + the `TurnDelta` PROJECTION), `turnview.rs` (the frozen per-side turn fold), `ev.rs` (typed accessors over a reading) |
 | **Native record** | `src/rust_sim/src/trackers/record.rs` (`Window` = ordered `Action`s, each with ordered `Effect`s; `Choice`, `DenialWhy`) |
 | **Version** | `SideStream::with_trackers` / `BattleVersion::{root_with, observe_root_with, parse_root_with}`; `BattleVersion::{decision, trackers, note_choice}` |
-| **Gates** | slice T (`agents/battle/rust_core_parity_trackers.py`, COMMIT + MILESTONE in `rust_core_parity_test.py`) |
+| **Gates** | slice T (`agents/battle/rust_core_parity_trackers.py`, COMMIT + MILESTONE in `rust_core_parity_test.py`; FRESH battles: `rust_core_trackers_fuzz_test.py`); the native record's fixtures `tests/window_record_test.rs` |
 
 ---
 
@@ -44,6 +44,12 @@ frozen and its obs frames were deleted (`gen3_frame_deletion_v1`); the core keep
 `delta::DeltaProjection` — the fields the clock and the label read — and slice T gates those
 CONSUMERS, never the layout.
 
+**ACTION DENIAL.** A chosen action that never happened is one of: a `Cant` with `then_moved == false`
+(REFUSED), a `Denied { FaintedFirst }` (the actor fainted before its turn — found at the faint, placed
+right after the denying action, with that action's mover and move), or a `Blocked` effect on the
+move whose target Protect / Detect took away. A turn's actors are the actives at its `|turn|` line;
+a residual faint is never a denial (every actor has acted by then).
+
 **One rule the port had to take from poke-env, not from the decision window.** The Hidden-Power
 belief observes `battle.opp_last_damaging_move`: poke-env's PENDING damaging move (captured at the
 `|move|` of a Physical/Special move), PROMOTED when an effectiveness emission for the defender
@@ -71,8 +77,13 @@ version ended at one of the side's decisions. The trackers are opt-in (`root_wit
 
 ## 3. The native record — what happened, in order, with attribution
 
-**Status: BUILT, emitted per decision by `core_events --trackers` (`window`), read by nothing yet;
-its per-mechanic constructed fixtures and the loss catalogue land in the next commit.**
+**Status: BUILT, emitted per decision by `core_events --trackers` (`window`), read by nothing yet.
+Gated by 20 constructed fixtures (`tests/window_record_test.rs`), each FAILING if its mechanic is
+flattened: the six denial shapes (a faster KO, Explosion first, a Double-Edge recoil trade, a flinch,
+full paralysis, a Destiny Bond trade — which is two faints and NO denial), Baton Pass, Roar into
+Spikes, a Spikes KO on entry and the free switch after it, Pursuit on a switch, Thief / Trick /
+Knock Off, Sleep Talk, the five gen-3 callers, Rapid Spin, charge and recharge, a lost Focus Punch,
+Wish / Substitute / Protect, Taunt, Perish Song — and the information boundary over all of them.**
 
 `record::Window` = the side's decision window as an ORDERED list of `Action`s, each with its ordered
 `Effect`s (`on`, `what`, `cause`, `of`). Built from the side's typed lines (the `[from]` / `[of]` /
@@ -84,7 +95,7 @@ flattened:
 | `Move` | user, move id, the CALLER (`called_by`: Sleep Talk / Metronome / Mirror Move / Assist / Nature Power / Snatch), the target, `pursuit_on_switch`, `locked` (Thrash / Outrage / a charged move's release), `still` |
 | `Switch` | the entrant, the mon it replaced, and WHY it entered: `Lead`, `Chosen`, `Replacement { fainted }` (the FREE switch after a faint), `BatonPass { passer, boosts, volatiles }` (exactly what was passed) |
 | `Drag` | the dragged-in mon, the mon it replaced, WHO forced it and with what move (Roar / Whirlwind) |
-| `Cant` | a REFUSED action — the reason (`par` / `slp` / `frz` / `flinch` / `recharge` / `Focus Punch` / `Taunt` / `Disable` / `damp` / `nopp` …), the move it was prevented from, who blocked it, the choice as this side knows it |
+| `Cant` | a REFUSED action — the reason (`par` / `slp` / `frz` / `flinch` / `recharge` / `Focus Punch` / `Taunt` / `Disable` / `damp` / `nopp` …), the move it was prevented from (only when the PUBLIC line names it), who blocked it, the choice as this side knows it, and `then_moved` (the mon moved later this turn — Sleep Talk through sleep: the line is kept, the action was NOT denied) |
 | `Denied` | a chosen action that never happened because the actor FAINTED FIRST — the cause and the action that denied it, placed right after that action (move ORDER) |
 | `Refused` | the server refused a choice (`\|error\|`: trapped, disabled …) |
 | `Residual` | the end-of-turn block |
@@ -131,7 +142,12 @@ choice — each FAILS.
   trackers take poke-env's turn-spanning rule. Not fixed (search's Python successor is on the M4
   deletion path).
 - **The engine does not model Metronome, Mirror Move, Assist or Nature Power** (`scan_move_probe`:
-  `panic`); their record fixtures are PARSE-path (hand-written protocol), not step-built battles.
+  `panic`); their record fixtures are PARSE-path (hand-written protocol, the gen-3 form
+  `[from] <Name>`, `data/mods/gen3/scripts.ts:165`), not step-built battles.
+- **poke-env RAISES on three of the five gen-3 callers** — Metronome, Assist and Nature Power
+  (`ValueError: Unhandled move message format`); it reads Sleep Talk and Mirror Move. The core's
+  reading refuses the same three with the same class (pinned; flips the day the fork reads them).
+  `TECH_DEBT_BACKLOG.md`'s P1 names Metronome only.
 
 The loss catalogue — every case the frozen `TurnDelta`, the α/β label and the 22-column event window
 flatten or lose, with rates over the MILESTONE corpus — is in

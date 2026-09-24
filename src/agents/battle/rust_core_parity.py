@@ -290,13 +290,15 @@ VIEW_BATCH = 16
 
 def check_battles(battles: Sequence[RecordedBattle], census: Census,
                   record_dir: Optional[str] = None, commit: str = "unknown",
-                  views: "Optional[Any]" = None, trackers: "Optional[Any]" = None) -> Census:
+                  views: "Optional[Any]" = None, trackers: "Optional[Any]" = None,
+                  on_result: "Optional[Any]" = None) -> Census:
     """Run the core on ``battles``, check each against its recorded bytes and its references.
 
     ``views`` (a :class:`agents.battle.rust_core_parity_views.ViewCensus`) also runs slice V —
     the TRUTH AUDIT of every decision's ``LiveView`` — on the SAME core replay. ``trackers`` (a
     :class:`agents.battle.rust_core_parity_trackers.TrackerCensus`) also runs slice T — the
-    per-decision tracker state, the α/β label and the reward — on it too."""
+    per-decision tracker state, the α/β label and the reward — on it too. ``on_result(battle, res)``
+    sees each raw ``core_events`` result (a fuzz reads the native record's coverage from it)."""
     if views is not None:
         from agents.battle.rust_core_parity_views import check_views
     if trackers is not None:
@@ -308,6 +310,8 @@ def check_battles(battles: Sequence[RecordedBattle], census: Census,
         results = run_core(batch, record_dir=record_dir, commit=commit, views=views is not None,
                            selfcheck=census.selfcheck, trackers=trackers is not None)
         for b, res in zip(batch, results):
+            if on_result is not None:
+                on_result(b, res)
             census.battles += 1
             if not res["ok"]:
                 census.refused.append(f"{b.label}: {res['error']}")

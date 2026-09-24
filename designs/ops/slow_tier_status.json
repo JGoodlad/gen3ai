@@ -3,42 +3,42 @@
  "tests": {
   "src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_100_149]": {
    "status": "pass",
-   "commit": "c97358e8478b548fd60aca337e8bb74efc519aaf",
-   "at": "2026-09-24T17:01:42Z",
-   "duration_s": 192.59,
-   "contention": 1.27,
+   "commit": "0d2f58bed53416380a33bc69c9e6880398c6d283",
+   "at": "2026-09-24T19:58:03Z",
+   "duration_s": 345.24,
+   "contention": 2.59,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_6000_6049]": {
    "status": "pass",
-   "commit": "c97358e8478b548fd60aca337e8bb74efc519aaf",
-   "at": "2026-09-24T17:01:42Z",
-   "duration_s": 124.85,
-   "contention": 1.27,
+   "commit": "0d2f58bed53416380a33bc69c9e6880398c6d283",
+   "at": "2026-09-24T19:58:03Z",
+   "duration_s": 232.63,
+   "contention": 2.59,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_protocol_and_byte_fuzz_corpora": {
    "status": "pass",
-   "commit": "c97358e8478b548fd60aca337e8bb74efc519aaf",
-   "at": "2026-09-24T17:01:42Z",
-   "duration_s": 4.74,
-   "contention": 1.27,
+   "commit": "0d2f58bed53416380a33bc69c9e6880398c6d283",
+   "at": "2026-09-24T19:58:03Z",
+   "duration_s": 8.55,
+   "contention": 2.59,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[even_keys_whole_pool]": {
    "status": "pass",
-   "commit": "c97358e8478b548fd60aca337e8bb74efc519aaf",
-   "at": "2026-09-24T17:01:42Z",
-   "duration_s": 273.89,
-   "contention": 1.27,
+   "commit": "0d2f58bed53416380a33bc69c9e6880398c6d283",
+   "at": "2026-09-24T19:58:03Z",
+   "duration_s": 616.24,
+   "contention": 2.59,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[odd_keys_whole_pool]": {
    "status": "pass",
-   "commit": "c97358e8478b548fd60aca337e8bb74efc519aaf",
-   "at": "2026-09-24T17:01:42Z",
-   "duration_s": 269.12,
-   "contention": 1.27,
+   "commit": "0d2f58bed53416380a33bc69c9e6880398c6d283",
+   "at": "2026-09-24T19:58:03Z",
+   "duration_s": 669.39,
+   "contention": 2.59,
    "detail": ""
   },
   "src/agents/model/build_arch_viewer_render_integration_test.py::test_dark_is_the_default_with_no_hash": {
@@ -698,5 +698,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-24T17:01:42Z"
+ "last_written": "2026-09-24T19:58:03Z"
 }

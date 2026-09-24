@@ -229,9 +229,12 @@ def test_commit_tier_trackers_equal_episode_tracker():
     """Slice T at the COMMIT tier: the core's trackers (folded on the version from the viewer's
     stream) == the EpisodeTracker training drives, at every decision, both viewers, field by field
     — plus the α/β label and the win-indicator reward."""
-    t = T.TrackerCensus()
-    P.check_battles(P.commit_corpus(), P.Census(), trackers=t)
+    t, views = T.TrackerCensus(), V.ViewCensus()
+    # slice V rides the SAME replay: with the trackers on, a decision hands its `present()` view to
+    # the version's memo, and slice V is what holds that view to the reading
+    P.check_battles(P.commit_corpus(), P.Census(), trackers=t, views=views)
     _assert_trackers_clean(t, min_decisions=1_700, min_rows=40_000)
+    _assert_views_clean(views, min_decisions=1_700, min_truth=35_000)
 
 
 def _commit_trackers_with(monkeypatch, target, name, fn) -> T.TrackerCensus:

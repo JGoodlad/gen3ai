@@ -96,6 +96,7 @@ use pokesim::search::{
     session_from_record, session_from_record_core, side_chunk_strings, turn_log, write_cmd, ActionSpec,
     Capture, Record, Resolved, TurnSource, RECORDED_QUEUE_CAP,
 };
+use pokesim::trackers::clock::ClockConfig;
 use pokesim::version::{self, BattleVersion};
 use pokesim::view::one_sided_view;
 
@@ -503,6 +504,13 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
         Some("p2") => [false, true],
         Some(other) => return Err(format!("open_root: side must be \"p1\" or \"p2\", got \"{other}\"")),
     };
+    // `trackers` (core, typed only — `gen3_core_trackers_v1`): every version of the tree folds the
+    // per-decision TRACKERS of its wanted sides (a fork shares its parent's, copied only at its
+    // own decision). Read by nothing yet but the cost measurement; M4's encoder will read them.
+    let trackers = req.get("trackers").and_then(Json::as_bool).unwrap_or(false);
+    if trackers && core != Some(CorePath::Typed) {
+        return Err("open_root: trackers are served on the typed core road only".into());
+    }
     // A fresh root starts a fresh tree; drop the previous search's nodes. ids stay
     // monotonic (see `Server::fresh_id`).
     srv.nodes.clear();
@@ -553,7 +561,7 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
             let n = [names[0].as_str(), names[1].as_str()];
             let t = [Some(teams[0].as_str()), Some(teams[1].as_str())];
             let v = match path {
-                CorePath::Typed => BattleVersion::root(sess, n, t, want)?,
+                CorePath::Typed => BattleVersion::root_with(sess, n, t, want, trackers.then(ClockConfig::default))?,
                 CorePath::Text => BattleVersion::root_text(sess, n, t, want)?,
             };
             NodeState::Core(Arc::new(v), path)

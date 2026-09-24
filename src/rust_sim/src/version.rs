@@ -157,9 +157,22 @@ pub struct BattleVersion {
 }
 
 impl BattleVersion {
-    fn new(parent: Option<Arc<BattleVersion>>, origin: Origin, engine: Option<Engine>, streams: [Option<SideStream>; 2],
+    fn new(parent: Option<Arc<BattleVersion>>, origin: Origin, engine: Option<Engine>, mut streams: [Option<SideStream>; 2],
            events: [Vec<CoreEvent>; 2], cursor: [usize; 2]) -> BattleVersion {
-        BattleVersion { parent, origin, engine, streams, events, views: [OnceLock::new(), OnceLock::new()], cursor }
+        let views = [OnceLock::new(), OnceLock::new()];
+        // A decision taken at THIS boundary already computed the side's view — the memo adopts it.
+        for side in 0..2 {
+            let Some(s) = streams[side].as_mut() else { continue };
+            let first = s.lines - events[side].len();
+            if let Some(d) = s.trk.as_mut().and_then(|t| t.last.as_mut()) {
+                if d.line >= first && d.line + 1 == s.lines {
+                    if let Some(v) = d.view.take() {
+                        let _ = views[side].set(Ok(v));
+                    }
+                }
+            }
+        }
+        BattleVersion { parent, origin, engine, streams, events, views, cursor }
     }
 
     fn fresh_streams(names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2], trk: Option<ClockConfig>)

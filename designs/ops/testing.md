@@ -424,6 +424,9 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 #                                  utils/bridge/reroll_many_parity_fuzz_test.py (batched reroll_many == per-call reroll_turn, bit-for-bit obs)
 #                                  utils/bridge/search_clone_parity_fuzz_test.py (serializeBattle clone == reroll_many, bit-for-bit obs + value_crn anchor + depth-2)
 #                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
+#                                  battle/rust_core_trackers_fuzz_test.py [--minutes N] (slice T on FRESH battles: the Rust core's
+#                                      per-decision trackers / α-β label / reward == EpisodeTracker, + slices E and V, pool +
+#                                      mechanic-dense + procedural teams; the fold-equivalence fuzz's shape re-pointed at the core)
 ```
 
 ### E2E tests (`*_e2e_test.py` / `*_fuzz_e2e_test.py`, require a live server)

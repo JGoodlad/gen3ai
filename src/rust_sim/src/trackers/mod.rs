@@ -272,6 +272,10 @@ pub struct Decision {
     pub window: std::sync::Arc<record::Window>,
     /// The reward of the transition into this decision (the win indicator).
     pub reward: f64,
+    /// The side's view at the decision (`present()`), handed to the version's memo so it is
+    /// computed once (the request is the side's last line of the transition, so it IS the view at
+    /// the version's boundary).
+    pub view: Option<crate::present::OneSidedView>,
 }
 
 /// The opt-in tracker half of a side's stream (`gen3_core_trackers_v1`). A fork CLONES this
@@ -333,7 +337,8 @@ impl TrackerState {
         });
         std::sync::Arc::make_mut(&mut self.trackers).decide(&view, Some(&legal), &pending, dm, dex())?;
         let window = std::sync::Arc::new(self.record.take());
-        self.last = Some(Decision { line, window, reward: reward(&view) });
+        let reward = reward(&view);
+        self.last = Some(Decision { line, window, reward, view: Some(view) });
         Ok(())
     }
 }

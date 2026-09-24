@@ -305,7 +305,8 @@ class SearchSession:
     # -- API ----------------------------------------------------------------
 
     def open_root(self, turn: int, *, record: "Optional[ReconstructionRecord]" = None,
-                  core: Optional[str] = None, side: Optional[str] = None) -> RootView:
+                  core: Optional[str] = None, side: Optional[str] = None,
+                  trackers: bool = False) -> RootView:
         """Reconstruct to the start of turn ``turn`` and snapshot it as the search root. ``record``
         targets a SPECIFIC battle on a reused session (else the one passed to ``__init__``); it also
         clears the driver's node cache, so a warm process serves many battles' searches in turn.
@@ -313,7 +314,9 @@ class SearchSession:
         ``core`` (``"typed"`` / ``"text"``, rust only — ``gen3_core_search_v1``) builds the tree of
         Rust-core BattleVersions instead of bare sessions, each successor folded TYPED at the
         source or from the side's TEXT; every arm expanded from it then carries ``core_pN``.
-        ``side`` (core only) folds that side's stream alone, at every version of the tree."""
+        ``side`` (core only) folds that side's stream alone, at every version of the tree.
+        ``trackers`` (typed core only, ``gen3_core_trackers_v1``) folds the per-decision TRACKERS on
+        every version too — read by nothing yet but the fork-cost measurement."""
         rec = record if record is not None else self._record
         if rec is None:
             raise SearchError("open_root needs a record (pass record= or construct with one)")
@@ -326,6 +329,8 @@ class SearchSession:
                 if side not in ("p1", "p2"):
                     raise SearchError(f"open_root: side must be 'p1' or 'p2', got {side!r}")
                 req["side"] = side
+            if trackers:
+                req["trackers"] = True
         out = self._call(req)
         return RootView(
             node_id=out["node_id"], requests=out["requests"],

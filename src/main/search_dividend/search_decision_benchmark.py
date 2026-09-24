@@ -144,6 +144,10 @@ def instrumented():
         _wrap(OM._ReplayObsPlayer, "_choice_map", "action_choices / map_actions_at", patches)
         # --- per arm, VIEW road ---------------------------------------------
         _wrap(VS.ViewSuccessorFactory, "_clone_tracker", "tracker fork (thaw)", patches)
+        # the Python trackers' per-successor fold — with the thaw, what M3's trackers replace
+        import agents.training.episode_tracker as ET
+        _wrap(ET.EpisodeTracker, "record_context", "python trackers (record_context)", patches)
+        _wrap(ET.EpisodeTracker, "advance_window", "python trackers (advance_window)", patches)
         _wrap(EF.ViewEventFolder, "fold", "event fold (ply protocol)", patches)
         _wrap(EF.ViewEventFolder, "branch", "event-fold branch", patches)
         _wrap(VA, "read_models_from_payload", "view_adapter read-models", patches)
@@ -229,15 +233,17 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
 
 #: road name -> (materializer, core_path). ``core`` is the typed shortcut, ``core-text`` the
 #: side's protocol text through ``parse`` — the pair the Rust Core Program's §6 decision reads.
+#: ``core-trk`` is ``core`` with the Rust core's per-decision TRACKERS folded on every version
+#: (``SearchConfig.core_trackers``, ``gen3_core_trackers_v1``) — the M3 fork-cost A/B.
 ROADS = {"protocol": ("protocol", "typed"), "view": ("view", "typed"),
-         "core": ("core", "typed"), "core-text": ("core", "text")}
+         "core": ("core", "typed"), "core-text": ("core", "text"), "core-trk": ("core", "typed")}
 
 
 def _cfg(materializer: str, *, m_opp: int, k_worlds: int, arm: str, impl: str) -> SearchConfig:
     mat, path = ROADS[materializer]
     return SearchConfig(
         arm=arm, budget_s=1e9, seed=7, max_depth=1, search_impl=impl,
-        materializer=mat, core_path=path, integrity=0,
+        materializer=mat, core_path=path, integrity=0, core_trackers=(materializer == "core-trk"),
         caps=WidthCaps(m_opp=m_opp, k_worlds=k_worlds, r_dice=1))
 
 

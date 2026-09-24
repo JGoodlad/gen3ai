@@ -139,6 +139,10 @@ class SearchConfig:
     #: and parity gate), N = sampled — cheap enough to leave on in a battery, so a number can carry
     #: "integrity-sampled at 1/N, 0 mismatches" (``RealizedWidths.integrity_checked``).
     integrity: int = 0
+    #: ``materializer="core"``, ``core_path="typed"`` only: fold the per-decision TRACKERS on every
+    #: version of the tree (``gen3_core_trackers_v1``, ``designs/rust_sim/trackers.md``). OFF: nothing
+    #: reads them before M4's encoder; ON only to measure the fork's tracker cost.
+    core_trackers: bool = False
     honest_swap_moves: bool = False     # axis M — see determinize.swap_unused_moves
     seed: int = 0
     # The iterative-deepening CAP, not a target: the wall-clock budget governs the realized depth,
@@ -1404,6 +1408,9 @@ class SearchEngine:
         core = self._core_open()
         if core is None:
             return ss.open_root(turn, record=record)
+        if self.cfg.core_trackers:
+            # sent ONLY when on, so the default core request stays the historical one
+            return ss.open_root(turn, record=record, core=core, side=side, trackers=True)
         return ss.open_root(turn, record=record, core=core, side=side)
 
     def _encoder(self):

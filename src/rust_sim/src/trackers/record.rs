@@ -89,7 +89,10 @@ pub enum ActionKind {
     /// The mon could not act — a DENIED action, REFUSED: the reason (`par`, `slp`, `frz`, `flinch`,
     /// `recharge`, `Focus Punch`, `nopp`, `Taunt`, `Disable`, `damp` …), the move it was prevented
     /// from, who blocked it, and the choice as this side knows it.
-    Cant { mon: Mon, reason: String, move_id: Option<String>, blocked_by: Option<Mon>, choice: Choice },
+    Cant { mon: Mon, reason: String, move_id: Option<String>, blocked_by: Option<Mon>, choice: Choice,
+           /// The same mon MOVED later this turn (Sleep Talk / Snore through sleep): the line is the
+           /// truth, but the action was not denied. A `Cant` with `then_moved == false` IS a denial.
+           then_moved: bool },
     /// A DENIED action that left no line of its own: the actor was chosen for this turn and never
     /// acted (placed right after the action that denied it, in move order).
     Denied { actor: Mon, why: DenialWhy, choice: Choice },
@@ -211,8 +214,11 @@ pub struct RecordBuilder {
     turn_actors: [Option<String>; 2],
     /// Whether each side's turn actor has acted (moved, chose a switch, or was refused).
     acted: [bool; 2],
-    /// Faints this turn: (absolute side, species, index of the action whose effects hold it).
-    faints: Vec<(u8, String, usize)>,
+    /// A Baton Pass used by each side and not yet completed by its switch (the pass opens a
+    /// decision, so the switch arrives in the NEXT window).
+    baton_pending: [Option<String>; 2],
+    /// Denials found at a faint, placed after the current action once it closes.
+    pending_denials: Vec<Action>,
 }
 
 fn rel(viewer: u8, side: u8) -> Rel {
@@ -253,7 +259,13 @@ impl RecordBuilder {
     }
 
     fn open(&mut self, kind: ActionKind, scope: Option<Scope>) {
+        self.flush_denials();
         self.window.actions.push(Action { turn: self.turn, kind, effects: Vec::new(), scope });
+    }
+
+    fn flush_denials(&mut self) {
+        let d = std::mem::take(&mut self.pending_denials);
+        self.window.actions.extend(d);
     }
 
     fn cur(&mut self) -> &mut Action {
@@ -326,6 +338,20 @@ impl RecordBuilder {
                 let locked = matches!(line.from_cause(), Some(LCause::Bare(s)) if s == "lockedmove");
                 let target = line.ident(2).map(|i| self.mon_of(i));
                 self.mark_acted(id.side, &user.species);
+                let turn = self.turn;
+                for a in self.window.actions.iter_mut().rev() {
+                    if a.turn != turn {
+                        break;
+                    }
+                    if let ActionKind::Cant { mon, then_moved, .. } = &mut a.kind {
+                        if *mon == user {
+                            *then_moved = true;
+                        }
+                    }
+                }
+                if mid == "batonpass" {
+                    self.baton_pending[id.side as usize] = Some(user.species.clone());
+                }
                 self.open(
                     ActionKind::Move {
                         user,
@@ -354,7 +380,8 @@ impl RecordBuilder {
                     None => self.names.push((key, species.clone())),
                 }
                 let s = id.side as usize;
-                let out = self.active[s].take();
+                let mut out = self.active[s].take();
+                let mut out_fainted: Option<String> = None;
                 let to = Mon { side: rel(self.viewer, id.side), species: species.clone() };
                 if line.kw == Kw::Drag {
                     // the phazer: the latest move of the OTHER side this turn
@@ -372,13 +399,17 @@ impl RecordBuilder {
                     let entry = if self.turn == 0 {
                         Entry::Lead
                     } else if let Some(f) = self.fainted_pending[s].take() {
+                        out_fainted = Some(f.clone());
                         Entry::Replacement { fainted: f }
-                    } else if let Some(passer) = self.baton_passer(to.side) {
-                        let (boosts, volatiles) = passed(before, id.side, out.as_deref());
+                    } else if let Some(passer) = self.baton_pending[s].take() {
+                        let (boosts, volatiles) = passed(before, id.side, Some(passer.as_str()));
                         Entry::BatonPass { passer, boosts, volatiles }
                     } else {
                         Entry::Chosen
                     };
+                    if out.is_none() {
+                        out = out_fainted;
+                    }
                     if matches!(entry, Entry::Chosen | Entry::BatonPass { .. }) {
                         if let Some(o) = out.clone() {
                             self.mark_acted(id.side, &o);
@@ -409,7 +440,7 @@ impl RecordBuilder {
                 let abs = if actor.side == rel(self.viewer, id.side) { id.side } else { 1 - id.side };
                 self.mark_acted(abs, &actor.species);
                 let choice = self.choice_for(abs);
-                self.open(ActionKind::Cant { mon: actor, reason, move_id, blocked_by, choice }, scope);
+                self.open(ActionKind::Cant { mon: actor, reason, move_id, blocked_by, choice, then_moved: false }, scope);
             }
             Kw::Error if first(K::ChoiceRejected).is_some() => {
                 let reason = first(K::ChoiceRejected).and_then(ev::reason).map(str::to_string);
@@ -418,8 +449,14 @@ impl RecordBuilder {
             Kw::Upkeep => {}
             _ => {
                 let cause = self.cause_of(line);
-                let residual = line.from_cause().is_some_and(residual_cause) || (line.kw == Kw::Weather && line.has_tag("[upkeep]"));
-                if residual && !matches!(self.window.actions.last().map(|a| &a.kind), Some(ActionKind::Residual)) {
+                // The step path KNOWS the residual block (the engine's scope); a parsed stream
+                // recognises it by its causes.
+                let residual = match scope {
+                    Some(sc) => sc == Scope::Residual,
+                    None => line.from_cause().is_some_and(residual_cause) || (line.kw == Kw::Weather && line.has_tag("[upkeep]")),
+                };
+                if residual && !ev.readings.is_empty()
+                    && !matches!(self.window.actions.last().map(|a| &a.kind), Some(ActionKind::Residual)) {
                     self.open(ActionKind::Residual, scope);
                 }
                 self.effects(ev, on, of, cause);
@@ -450,61 +487,9 @@ impl RecordBuilder {
         }
     }
 
-    /// Close the current turn: every turn actor that never acted and FAINTED is a denied action,
-    /// inserted right after the action whose effects hold its faint.
+    /// A turn ends: nothing carries over but what the NEXT turn's actors are (set at `|turn|`).
     fn close_turn(&mut self) {
-        if self.turn == 0 {
-            self.faints.clear();
-            return;
-        }
-        let mut inserts: Vec<(usize, Action)> = Vec::new();
-        for abs in 0..2u8 {
-            let s = abs as usize;
-            let Some(actor) = self.turn_actors[s].clone() else { continue };
-            if self.acted[s] {
-                continue;
-            }
-            let Some(&(_, _, at)) = self.faints.iter().find(|(fs, sp, _)| *fs == abs && *sp == actor) else { continue };
-            let Some(a) = self.window.actions.get(at) else { continue };
-            let cause = a
-                .effects
-                .iter()
-                .find(|e| e.what == What::Faint && e.on.as_ref().is_some_and(|m| m.species == actor && m.side == rel(self.viewer, abs)))
-                .map_or(Cause::Direct, |e| e.cause.clone());
-            let by = match &a.kind {
-                ActionKind::Move { user, id, .. } => Some((user.clone(), id.clone())),
-                _ => None,
-            };
-            let denied = Action {
-                turn: a.turn,
-                kind: ActionKind::Denied {
-                    actor: Mon { side: rel(self.viewer, abs), species: actor },
-                    why: DenialWhy::FaintedFirst { cause, by },
-                    choice: self.choice_for(abs),
-                },
-                effects: Vec::new(),
-                scope: None,
-            };
-            inserts.push((at + 1, denied));
-        }
-        inserts.sort_by_key(|(i, _)| std::cmp::Reverse(*i));
-        for (i, a) in inserts {
-            let i = i.min(self.window.actions.len());
-            self.window.actions.insert(i, a);
-        }
-        self.faints.clear();
-    }
-
-    /// The same side's Baton Pass that this switch completes (the side's latest action this turn).
-    fn baton_passer(&self, side: Rel) -> Option<String> {
-        self.window.actions.iter().rev().find_map(|a| match &a.kind {
-            ActionKind::Move { user, id, .. } if a.turn == self.turn && user.side == side => {
-                (id == "batonpass").then(|| user.species.clone())
-            }
-            ActionKind::Switch { to, .. } | ActionKind::Drag { to, .. } if to.side == side => Some(String::new()),
-            _ => None,
-        })
-        .filter(|s| !s.is_empty())
+        self.flush_denials();
     }
 
     fn effects(&mut self, ev: &CoreEvent, on: Option<Mon>, of: Option<Mon>, cause: Cause) {
@@ -580,7 +565,10 @@ impl RecordBuilder {
                 K::Miss => What::Miss,
                 K::Fail => What::Fail,
                 K::Immune | K::Resisted | K::Supereffective => What::Effectiveness(ev::multiplier(r).unwrap_or(1.0)),
-                K::Prepare => What::Prepare(ev::s(r, "move").unwrap_or("").to_string()),
+                K::Prepare => What::Prepare(match line.field(1) {
+                    Some(Field::Text(t)) => crate::core_events::to_id(t),
+                    _ => String::new(),
+                }),
                 K::Mustrecharge => What::MustRecharge,
                 K::Transform => What::Transform,
                 K::Formechange => What::FormeChange,
@@ -599,8 +587,27 @@ impl RecordBuilder {
                     }
                     What::Faint => {
                         cause = self.faint_cause(side, &sp);
-                        let at = self.window.actions.len().saturating_sub(1);
-                        self.faints.push((side, sp.clone(), at));
+                        // A turn ACTOR fainting before it acted, outside the residual block, is a
+                        // DENIED action — placed right after the action that denied it.
+                        let s = side as usize;
+                        let residual = matches!(self.window.actions.last().map(|a| &a.kind), Some(ActionKind::Residual));
+                        if self.turn > 0 && !residual && !self.acted[s] && self.turn_actors[s].as_deref() == Some(sp.as_str()) {
+                            self.acted[s] = true;
+                            let by = match self.window.actions.last().map(|a| &a.kind) {
+                                Some(ActionKind::Move { user, id, .. }) => Some((user.clone(), id.clone())),
+                                _ => None,
+                            };
+                            self.pending_denials.push(Action {
+                                turn: self.turn,
+                                kind: ActionKind::Denied {
+                                    actor: Mon { side: rel(self.viewer, side), species: sp.clone() },
+                                    why: DenialWhy::FaintedFirst { cause: cause.clone(), by },
+                                    choice: self.choice_for(side),
+                                },
+                                effects: Vec::new(),
+                                scope: None,
+                            });
+                        }
                         self.fainted_pending[side as usize] = Some(sp.clone());
                         if self.active[side as usize].as_deref() == Some(sp.as_str()) {
                             self.active[side as usize] = None;
@@ -642,8 +649,15 @@ impl RecordBuilder {
             .map_or(Cause::Direct, |(_, c)| c.clone())
     }
 
+    /// The window still OPEN (the actions since the side's last decision) — a battle's last turn
+    /// has no decision to close it.
+    pub fn current(&self) -> &Window {
+        &self.window
+    }
+
     /// Close the window at a decision: the actions since the previous one.
     pub fn take(&mut self) -> Window {
+        self.flush_denials();
         self.last_damage.clear();
         std::mem::take(&mut self.window)
     }
@@ -796,7 +810,7 @@ impl Window {
                     out.push_str(",\"by_move\":");
                     json_out::opt_str_into(out, by_move.as_deref());
                 }
-                ActionKind::Cant { mon, reason, move_id, blocked_by, choice } => {
+                ActionKind::Cant { mon, reason, move_id, blocked_by, choice, then_moved } => {
                     out.push_str("\"cant\",\"mon\":");
                     mon_json(out, &Some(mon.clone()));
                     out.push_str(",\"reason\":");
@@ -806,6 +820,7 @@ impl Window {
                     out.push_str(",\"blocked_by\":");
                     mon_json(out, blocked_by);
                     choice_json(out, choice);
+                    out.push_str(&format!(",\"then_moved\":{then_moved}"));
                 }
                 ActionKind::Denied { actor, why: DenialWhy::FaintedFirst { cause, by }, choice } => {
                     out.push_str("\"denied\",\"actor\":");
