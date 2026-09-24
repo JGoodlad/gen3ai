@@ -29,6 +29,7 @@ use super::parse::parse;
 use super::schema::EventKind;
 use super::jsonval::Val;
 use super::{json_out, CoreEvent, Reading, Rel, Value};
+use crate::core_error::{fault, malformed, CoreError, CoreResult};
 
 /// The record kind tag.
 pub const RECORD_KIND: &str = "gen3ai_core_record";
@@ -117,92 +118,92 @@ pub fn write(r: &Record) -> String {
 
 /// Read a record. REFUSES an unknown record kind / `event_schema`, a malformed line, a line
 /// count that disagrees with the header, and a stored text that no longer parses.
-pub fn read(text: &str) -> Result<Record, String> {
+pub fn read(text: &str) -> CoreResult<Record> {
     let mut lines = text.lines();
-    let head = lines.next().ok_or("empty record")?;
-    let h = Val::parse(head).map_err(|e| format!("header: {e}"))?;
-    let kind = h.str_at("record").ok_or("header: no `record` kind")?;
+    let head = lines.next().ok_or_else(|| malformed("empty record"))?;
+    let h = Val::parse(head).map_err(|e| malformed(format!("header: {e}")))?;
+    let kind = h.str_at("record").ok_or_else(|| malformed("header: no `record` kind"))?;
     if kind != RECORD_KIND {
-        return Err(format!("not a core record (`record` = {kind:?})"));
+        return Err(malformed(format!("not a core record (`record` = {kind:?})")));
     }
-    let schema = h.str_at("event_schema").ok_or("header: no `event_schema`")?;
+    let schema = h.str_at("event_schema").ok_or_else(|| malformed("header: no `event_schema`"))?;
     if schema != EVENT_SCHEMA {
-        return Err(format!(
+        return Err(malformed(format!(
             "REFUSED: event_schema {schema:?} is not this reader's {EVENT_SCHEMA:?} — migrate the record by re-parsing its text, never guess"
-        ));
+        )));
     }
     let path = match h.str_at("path") {
         Some("step") => Path::Step,
         Some("parse") => Path::Parse,
-        other => return Err(format!("header: bad path {other:?}")),
+        other => return Err(malformed(format!("header: bad path {other:?}"))),
     };
     let viewer = match h.str_at("viewer") {
         Some("p1") => 0,
         Some("p2") => 1,
-        other => return Err(format!("header: bad viewer {other:?}")),
+        other => return Err(malformed(format!("header: bad viewer {other:?}"))),
     };
     let header = Header {
         event_schema: schema.to_string(),
-        core_commit: h.str_at("core_commit").ok_or("header: no core_commit")?.to_string(),
+        core_commit: h.str_at("core_commit").ok_or_else(|| malformed("header: no core_commit"))?.to_string(),
         path,
         viewer,
-        format: h.str_at("format").ok_or("header: no format")?.to_string(),
+        format: h.str_at("format").ok_or_else(|| malformed("header: no format"))?.to_string(),
         showdown_version: match h.get("showdown_version") {
             Some(Val::Str(s)) => Some(s.clone()),
             Some(Val::Null) | None => None,
-            Some(v) => return Err(format!("header: bad showdown_version {v:?}")),
+            Some(v) => return Err(malformed(format!("header: bad showdown_version {v:?}"))),
         },
-        battle: h.str_at("battle").ok_or("header: no battle")?.to_string(),
+        battle: h.str_at("battle").ok_or_else(|| malformed("header: no battle"))?.to_string(),
     };
     let n = match h.get("lines") {
         Some(Val::Int(n)) => *n as usize,
-        _ => return Err("header: no line count".into()),
+        _ => return Err(malformed("header: no line count")),
     };
     let mut events = Vec::with_capacity(n);
     for (k, l) in lines.enumerate() {
-        let v = Val::parse(l).map_err(|e| format!("line {k}: {e}"))?;
+        let v = Val::parse(l).map_err(|e| malformed(format!("line {k}: {e}")))?;
         let idx = match v.get("i") {
             Some(Val::Int(i)) if *i as usize == k => k as u32,
-            other => return Err(format!("line {k}: bad index {other:?}")),
+            other => return Err(malformed(format!("line {k}: bad index {other:?}"))),
         };
-        let text = v.str_at("text").ok_or_else(|| format!("line {k}: no text"))?;
-        let line = Line::parse(text).map_err(|e| format!("line {k}: {e}"))?;
+        let text = v.str_at("text").ok_or_else(|| malformed(format!("line {k}: no text")))?;
+        let line = Line::parse(text).map_err(|e| CoreError::from(e).context(format!("line {k}: ")))?;
         let owner = match v.get("owner") {
             Some(Val::Int(o)) if *o == 0 || *o == 1 => Some(*o as u8),
             Some(Val::Null) => None,
-            other => return Err(format!("line {k}: bad owner {other:?}")),
+            other => return Err(malformed(format!("line {k}: bad owner {other:?}"))),
         };
         let readings = match v.get("readings") {
-            Some(Val::Arr(rs)) => rs.iter().map(reading_of).collect::<Result<Vec<_>, _>>().map_err(|e| format!("line {k}: {e}"))?,
-            _ => return Err(format!("line {k}: no readings")),
+            Some(Val::Arr(rs)) => rs.iter().map(reading_of).collect::<Result<Vec<_>, _>>().map_err(|e| CoreError::from(e).context(format!("line {k}: ")))?,
+            _ => return Err(malformed(format!("line {k}: no readings"))),
         };
         events.push(CoreEvent { idx, line, src: None, owner, readings });
     }
     if events.len() != n {
-        return Err(format!("header says {n} lines, the record has {}", events.len()));
+        return Err(malformed(format!("header says {n} lines, the record has {}", events.len())));
     }
     Ok(Record { header, events })
 }
 
 /// Re-derive the typed stream from the stored text — the migration (and the parse path).
-pub fn reparse(r: &Record) -> Result<Record, String> {
+pub fn reparse(r: &Record) -> CoreResult<Record> {
     let texts: Vec<String> = r.events.iter().map(|e| e.line.render()).collect();
     let events = parse(&texts, r.header.viewer as usize)?;
     Ok(Record { header: Header { event_schema: EVENT_SCHEMA.into(), ..r.header.clone() }, events })
 }
 
 /// The golden gate: the stored text re-parses to the STORED typed stream, exactly.
-pub fn check_reparse(r: &Record) -> Result<(), String> {
+pub fn check_reparse(r: &Record) -> CoreResult<()> {
     let again = reparse(r)?;
     for (a, b) in r.events.iter().zip(&again.events) {
         if a != b {
-            return Err(format!("line {}: stored {:?} vs re-parsed {:?}", a.idx, a, b));
+            return Err(fault(format!("line {}: stored {:?} vs re-parsed {:?}", a.idx, a, b)));
         }
     }
     Ok(())
 }
 
-fn kind_of(name: &str) -> Result<EventKind, String> {
+fn kind_of(name: &str) -> CoreResult<EventKind> {
     use EventKind as K;
     const ALL: [EventKind; 36] = [
         K::Move, K::Switch, K::Drag, K::Faint, K::Damage, K::Heal, K::Boost, K::Unboost, K::Setboost,
@@ -211,28 +212,28 @@ fn kind_of(name: &str) -> Result<EventKind, String> {
         K::VolatileEnd, K::Activate, K::Prepare, K::Mustrecharge, K::Transform, K::Formechange, K::Swap,
         K::Sethp, K::ChoiceRejected, K::Unknown,
     ];
-    ALL.iter().copied().find(|k| k.name() == name).ok_or_else(|| format!("unknown event kind {name:?}"))
+    ALL.iter().copied().find(|k| k.name() == name).ok_or_else(|| malformed(format!("unknown event kind {name:?}")))
 }
 
-fn reading_of(v: &Val) -> Result<Reading, String> {
-    let kind = kind_of(v.str_at("kind").ok_or("reading: no kind")?)?;
-    let opt = |k: &str| -> Result<Option<String>, String> {
+fn reading_of(v: &Val) -> CoreResult<Reading> {
+    let kind = kind_of(v.str_at("kind").ok_or_else(|| malformed("reading: no kind"))?)?;
+    let opt = |k: &str| -> CoreResult<Option<String>> {
         match v.get(k) {
             Some(Val::Str(s)) => Ok(Some(s.clone())),
             Some(Val::Null) | None => Ok(None),
-            other => Err(format!("reading {k}: {other:?}")),
+            other => Err(malformed(format!("reading {k}: {other:?}"))),
         }
     };
     let side = match opt("side")?.as_deref() {
         Some("ours") => Some(Rel::Ours),
         Some("opp") => Some(Rel::Opp),
         None => None,
-        Some(o) => return Err(format!("reading side {o:?}")),
+        Some(o) => return Err(malformed(format!("reading side {o:?}"))),
     };
-    let int = |k: &str| -> Result<u32, String> {
+    let int = |k: &str| -> CoreResult<u32> {
         match v.get(k) {
             Some(Val::Int(n)) => Ok(*n as u32),
-            other => Err(format!("reading {k}: {other:?}")),
+            other => Err(malformed(format!("reading {k}: {other:?}"))),
         }
     };
     let mut value = Vec::new();
@@ -246,28 +247,28 @@ fn reading_of(v: &Val) -> Result<Reading, String> {
                     .chain(kind.optional_keys().iter())
                     .find(|d| **d == k.as_str())
                     .copied()
-                    .ok_or_else(|| format!("{} carries undeclared key {k:?}", kind.name()))?;
+                    .ok_or_else(|| malformed(format!("{} carries undeclared key {k:?}", kind.name())))?;
                 let val = match x {
                     Val::Null => Value::Null,
                     Val::Int(n) => Value::Int(*n),
                     Val::Float(f) => Value::Float(*f),
                     Val::Str(s) => Value::Str(s.clone()),
-                    other => return Err(format!("value {k}: {other:?}")),
+                    other => return Err(malformed(format!("value {k}: {other:?}"))),
                 };
                 value.push((key, val));
             }
         }
-        _ => return Err("reading: no value".into()),
+        _ => return Err(malformed("reading: no value")),
     }
     let raw = match v.get("raw") {
         Some(Val::Arr(a)) => a
             .iter()
             .map(|x| match x {
                 Val::Str(s) => Ok(s.clone()),
-                o => Err(format!("raw: {o:?}")),
+                o => Err(malformed(format!("raw: {o:?}"))),
             })
             .collect::<Result<Vec<_>, _>>()?,
-        _ => return Err("reading: no raw".into()),
+        _ => return Err(malformed("reading: no raw")),
     };
     Ok(Reading { seq: int("seq")?, turn: int("turn")?, kind, side, actor: opt("actor")?, target: opt("target")?, value, raw })
 }
@@ -318,7 +319,9 @@ mod tests {
     fn an_unknown_schema_is_refused_not_guessed() {
         let bytes = write(&sample()).replacen(EVENT_SCHEMA, "gen3_core_event_v0", 1);
         let err = read(&bytes).unwrap_err();
-        assert!(err.contains("REFUSED"), "{err}");
+        assert!(err.message().contains("REFUSED"), "{err}");
+        // An unknown schema is input this reader cannot carry — MALFORMED, not a core fault.
+        assert_eq!(err.kind(), "malformed");
     }
 
     #[test]

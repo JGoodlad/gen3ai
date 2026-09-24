@@ -7,6 +7,7 @@
 use super::tables::{
     EffectRow, MoveRow, SpeciesRow, EFFECTS, FIELD_NAMES, MOVES, SIDE_CONDITIONS, SPECIAL_MOVES, SPECIES, TYPE_NAMES,
 };
+use crate::core_error::{refuse, CoreResult, PyExc};
 
 /// `poke_env.data.normalize.to_id_str`: `"".join(c for c in s if c.isalnum()).lower()`.
 pub fn to_id(s: &str) -> String {
@@ -14,11 +15,11 @@ pub fn to_id(s: &str) -> String {
 }
 
 /// `GenData.pokedex[id]` (a `KeyError` when absent).
-pub fn species(id: &str) -> Result<&'static SpeciesRow, String> {
+pub fn species(id: &str) -> CoreResult<&'static SpeciesRow> {
     SPECIES
         .binary_search_by(|r| r.id.cmp(id))
         .map(|i| &SPECIES[i])
-        .map_err(|_| format!("pokedex[{id:?}]: KeyError (not in poke-env's gen-3 pokedex)"))
+        .map_err(|_| refuse(PyExc::KeyError, format!("pokedex[{id:?}]: KeyError (not in poke-env's gen-3 pokedex)")))
 }
 
 /// `GenData.moves.get(id)`.
@@ -105,17 +106,17 @@ pub fn field(message: &str) -> &'static str {
 
 /// `PokemonType.from_name`: `???` → `THREE_QUESTION_MARKS`, else `PokemonType[name.upper()]`
 /// (a `KeyError` for a name poke-env has no member for). Returns the member NAME.
-pub fn type_from_name(name: &str) -> Result<&'static str, String> {
+pub fn type_from_name(name: &str) -> CoreResult<&'static str> {
     let up = if name == "???" { "THREE_QUESTION_MARKS".to_string() } else { name.to_uppercase() };
     TYPE_NAMES
         .iter()
         .copied()
         .find(|t| *t == up)
-        .ok_or_else(|| format!("PokemonType[{up:?}]: KeyError"))
+        .ok_or_else(|| refuse(PyExc::KeyError, format!("PokemonType[{up:?}]: KeyError")))
 }
 
 /// `Status[tok.upper()]` — the member NAME, or a `KeyError`.
-pub fn status_from(tok: &str) -> Result<Status, String> {
+pub fn status_from(tok: &str) -> CoreResult<Status> {
     Ok(match tok.to_uppercase().as_str() {
         "BRN" => Status::Brn,
         "FNT" => Status::Fnt,
@@ -124,7 +125,7 @@ pub fn status_from(tok: &str) -> Result<Status, String> {
         "PSN" => Status::Psn,
         "SLP" => Status::Slp,
         "TOX" => Status::Tox,
-        other => return Err(format!("Status[{other:?}]: KeyError")),
+        other => return Err(refuse(PyExc::KeyError, format!("Status[{other:?}]: KeyError"))),
     })
 }
 

@@ -13,6 +13,7 @@ use super::line::{Field, Hp, Line};
 use super::reading::Reader;
 use super::schema::Kw;
 use super::{is_outcome, CoreEvent, SourceRec};
+use crate::core_error::{fault, CoreError, CoreResult};
 
 /// The percent a NON-owner sees (`bridge.rs::hp_percent`, `pokemon.js::getHealth`).
 pub fn hp_percent(hp: u32, maxhp: u32) -> u32 {
@@ -89,21 +90,21 @@ fn bridge_frame(line: &Line) -> bool {
 /// ONE shipped per-side line, typed on the STEP path: rebuilt from its source record through the
 /// privacy fold ([`side_view`]) and REFUSED unless it renders the exact bytes the bridge shipped;
 /// a side-only frame (no source) is parsed and must be one of the bridge's own frames.
-pub fn step_line(recs: &[SourceRec], text: &str, src: Option<u32>, viewer: u8, report_percent: bool) -> Result<Line, String> {
+pub fn step_line(recs: &[SourceRec], text: &str, src: Option<u32>, viewer: u8, report_percent: bool) -> CoreResult<Line> {
     match src {
         Some(s) => {
-            let rec = recs.get(s as usize).ok_or_else(|| format!("source record {s} out of range"))?;
+            let rec = recs.get(s as usize).ok_or_else(|| fault(format!("source record {s} out of range")))?;
             let line = side_view(&rec.line, viewer, report_percent);
             let rendered = line.render();
             if rendered != text {
-                return Err(format!("p{}: the typed source renders {rendered:?} but the bridge shipped {text:?}", viewer + 1));
+                return Err(fault(format!("p{}: the typed source renders {rendered:?} but the bridge shipped {text:?}", viewer + 1)));
             }
             Ok(line)
         }
         None => {
-            let line = Line::parse(text).map_err(|e| format!("p{}: {e}", viewer + 1))?;
+            let line = Line::parse(text).map_err(|e| CoreError::from(e).context(format!("p{}: ", viewer + 1)))?;
             if !bridge_frame(&line) {
-                return Err(format!("p{}: {text:?} has no source record and is not a side-only frame", viewer + 1));
+                return Err(fault(format!("p{}: {text:?} has no source record and is not a side-only frame", viewer + 1)));
             }
             Ok(line)
         }
@@ -117,7 +118,7 @@ pub fn step_events(
     shipped: &[(String, Option<u32>)],
     viewer: u8,
     report_percent: bool,
-) -> Result<Vec<CoreEvent>, String> {
+) -> CoreResult<Vec<CoreEvent>> {
     // Conservation per side: the sourced lines are exactly the records this side receives, once
     // each, in order. (The tier/rule framing records are exempt: a per-format reframe REPLACES
     // them with side-only frames in one format and ships them verbatim in another.)
@@ -130,12 +131,12 @@ pub fn step_events(
         .collect();
     if sourced != expected {
         let first = sourced.iter().zip(expected.iter()).position(|(a, b)| a != b).unwrap_or(sourced.len().min(expected.len()));
-        return Err(format!(
+        return Err(fault(format!(
             "CONSERVATION (p{}): the side received {} source records, the privacy split says {} — first difference at #{first}",
             viewer + 1,
             sourced.len(),
             expected.len()
-        ));
+        )));
     }
     let mut reader = Reader::new(viewer as usize);
     let mut out = Vec::with_capacity(shipped.len());
@@ -146,23 +147,23 @@ pub fn step_events(
                 let line = side_view(&rec.line, viewer, report_percent);
                 let rendered = line.render();
                 if &rendered != text {
-                    return Err(format!(
+                    return Err(fault(format!(
                         "p{} line {i}: the typed source renders {rendered:?} but the bridge shipped {text:?}",
                         viewer + 1
-                    ));
+                    )));
                 }
                 let owner = if is_outcome(line.kw) { rec.scope.move_side() } else { None };
                 (line, owner)
             }
             None => {
-                let line = Line::parse(text).map_err(|e| format!("p{} line {i}: {e}", viewer + 1))?;
+                let line = Line::parse(text).map_err(|e| CoreError::from(e).context(format!("p{} line {i}: ", viewer + 1)))?;
                 if !bridge_frame(&line) {
-                    return Err(format!("p{} line {i}: {text:?} has no source record and is not a side-only frame", viewer + 1));
+                    return Err(fault(format!("p{} line {i}: {text:?} has no source record and is not a side-only frame", viewer + 1)));
                 }
                 (line, None)
             }
         };
-        let readings = reader.feed(&line).map_err(|e| format!("p{} line {i} {text:?}: {e}", viewer + 1))?;
+        let readings = reader.feed(&line).map_err(|e| CoreError::from(e).context(format!("p{} line {i} {text:?}: ", viewer + 1)))?;
         out.push(CoreEvent { idx: i as u32, line, src: *src, owner, readings });
     }
     Ok(out)

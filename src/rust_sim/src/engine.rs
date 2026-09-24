@@ -30,6 +30,7 @@ use crate::bridge::{
     boundary_kinds, build_request_with_disabled_source, display_name, has_live_bench, move_disabled, pending_force,
     reject_move_name, resolve_choice, resolve_wire, Cmd, RequestState, SideRequest, WireChoice,
 };
+use crate::core_error::{fault, malformed, CoreError};
 use crate::dex::Dex;
 use crate::state::BattleState;
 use crate::turn::{Choice, FullBattleDriver, ScriptDecision};
@@ -343,7 +344,7 @@ pub struct Engine {
     /// A FATAL, non-recoverable condition the live bridge must report as `__ERR__` rather than
     /// silently spin on (`gen3_bridge_unresolvable_choice_failloud_v1`): a NAME-form wire choice
     /// that resolves against nothing, or a boundary that keeps rejecting.
-    fatal: Option<String>,
+    fatal: Option<CoreError>,
     /// Consecutive REJECTS at the CURRENT boundary (reset whenever a decision commits).
     reject_streak: u32,
 }
@@ -408,9 +409,15 @@ impl Engine {
         self.ended
     }
 
-    /// A FATAL condition the caller must surface (never spin on).
+    /// A FATAL condition the caller must surface (never spin on) — its message.
     pub fn fatal(&self) -> Option<&str> {
-        self.fatal.as_deref()
+        self.fatal.as_ref().map(CoreError::message)
+    }
+
+    /// The same, typed (`gen3_core_error_v1`): an unresolvable choice or a no-progress reject loop
+    /// is MALFORMED client input; an upstream desync is an engine FAULT.
+    pub fn fatal_error(&self) -> Option<&CoreError> {
+        self.fatal.as_ref()
     }
 
     /// The battle's CURRENT turn. 0 before the battle is built.
@@ -582,7 +589,7 @@ impl Engine {
                     // read `stopped`/the streams and ignore `fatal`, so their graceful-
                     // classification behaviour is unchanged.
                     let bp = self.boundary.as_ref().expect("boundary");
-                    self.fatal = Some(format!(
+                    self.fatal = Some(fault(format!(
                         "upstream desync: CHOOSE for p{} but this boundary does not request it \
                          (kinds p1={:?} p2={:?}, needs p1={} p2={}). The bridge would go silent \
                          forever, so this fails loud.",
@@ -591,7 +598,7 @@ impl Engine {
                         bp.kinds[1],
                         bp.need[0],
                         bp.need[1],
-                    ));
+                    )));
                     return;
                 }
                 // Resolve the wire token (numeric slot OR a NAME) against THIS boundary's state,
@@ -612,7 +619,7 @@ impl Engine {
                     let bs = self.battle.state().expect("state");
                     if resolve_choice(bs, s, &cmd.choice).is_none() {
                         let mon = &bs.sides[s].pokemon[bs.sides[s].active];
-                        self.fatal = Some(format!(
+                        self.fatal = Some(malformed(format!(
                             "unresolvable choice for p{}: {:?} — active {} has moves {:?}; bench {:?}. \
                              Re-requesting would loop forever, so this fails loud.",
                             s + 1,
@@ -626,7 +633,7 @@ impl Engine {
                                 .filter(|(i, m)| *i != bs.sides[s].active && !m.fainted)
                                 .map(|(_, m)| m.species_id.clone())
                                 .collect::<Vec<_>>(),
-                        ));
+                        )));
                         self.stopped = true;
                         return;
                     }
@@ -678,7 +685,7 @@ impl Engine {
                     // same refused choice must fail loud, not spin (see `REJECT_STREAK_CAP`).
                     self.reject_streak += 1;
                     if self.reject_streak > REJECT_STREAK_CAP {
-                        self.fatal = Some(format!(
+                        self.fatal = Some(malformed(format!(
                             "no-progress reject loop on p{}: {} consecutive rejects of {:?} at one \
                              boundary ({}). The client keeps re-sending a choice this boundary \
                              rejects, so nothing can advance — failing loud instead of spinning.",
@@ -686,7 +693,7 @@ impl Engine {
                             self.reject_streak,
                             cmd.choice,
                             rej.message(),
-                        ));
+                        )));
                         self.stopped = true;
                         return;
                     }
@@ -712,7 +719,7 @@ impl Engine {
                     if self.reject_streak > REJECT_STREAK_CAP {
                         let bs = self.battle.state().expect("state");
                         let mon = &bs.sides[s].pokemon[bs.sides[s].active];
-                        self.fatal = Some(format!(
+                        self.fatal = Some(malformed(format!(
                             "no-progress reject loop on p{}: {} consecutive rejects of {:?} at one \
                              boundary (active {}, trapped={}, firm={}, move_locked={}). The client \
                              keeps re-sending a choice this boundary rejects, so nothing can \
@@ -724,7 +731,7 @@ impl Engine {
                             bs.is_trapped(s, dex),
                             firm,
                             mon.move_locked(),
-                        ));
+                        )));
                         self.stopped = true;
                         return;
                     }

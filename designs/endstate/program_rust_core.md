@@ -210,7 +210,7 @@ history 3.9 % of it — [`research_state/measurements/rust_core_m3_2026-09-24/`]
 a TRANSPORT (chunks, the text reframe, request JSON strings, `cmd_buf`, `script` / `request_seeds`),
 which `sim_bridge` wraps around the engine. Today every fork clones `script` and `request_seeds`, and
 both grow with battle length (UNMEASURED); M5 needs the engine without the transport anyway.
-(2) Replace `Result<T, String>` with a `CoreError` enum that separates refusals mirroring a poke-env
+*(2) DONE 2026-09-24 (`gen3_core_error_v1`: `core_error::CoreError` — `Refusal{PyExc}` / `Malformed` / `Fault`, across `core_events`, `present`, `version` and the engine's fatal; the refusal class compared against poke-env by `rust_core_present_test.py`).* (2) Replace `Result<T, String>` with a `CoreError` enum that separates refusals mirroring a poke-env
 exception class (which the parity gate compares), malformed input, and engine faults. Today a
 refusal and a bug are indistinguishable strings.
 

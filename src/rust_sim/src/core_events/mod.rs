@@ -155,17 +155,17 @@ impl Reading {
     }
     /// The schema's two halves (`gen3_event_value_schema_v1`): every required key present, no key
     /// outside required ∪ optional. `Err` names the offending key.
-    pub fn check_schema(&self) -> Result<(), String> {
+    pub fn check_schema(&self) -> crate::core_error::CoreResult<()> {
         let req = self.kind.required_keys();
         let opt = self.kind.optional_keys();
         for k in req {
             if self.get(k).is_none() {
-                return Err(format!("{} lacks required key {k:?}", self.kind.name()));
+                return Err(crate::core_error::fault(format!("{} lacks required key {k:?}", self.kind.name())));
             }
         }
         for (k, _) in &self.value {
             if !req.contains(k) && !opt.contains(k) {
-                return Err(format!("{} carries undeclared key {k:?}", self.kind.name()));
+                return Err(crate::core_error::fault(format!("{} carries undeclared key {k:?}", self.kind.name())));
             }
         }
         Ok(())

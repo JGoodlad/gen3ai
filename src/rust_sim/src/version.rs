@@ -35,6 +35,7 @@
 //! corpus battle (`designs/rust_sim/present.md`).
 
 use std::sync::{Arc, OnceLock};
+use crate::core_error::{fault, malformed, CoreError, CoreResult};
 
 use crate::bridge::{BridgeSession, Cmd};
 use crate::engine::Engine;
@@ -45,7 +46,7 @@ use crate::core_events::{is_outcome, CoreEvent, Line, Scope};
 use crate::dex::Dex;
 use crate::present::{check_view, legal_actions, present, Audit, LegalActions, OneSidedView, BoardReading};
 
-type R<T> = Result<T, String>;
+type R<T> = CoreResult<T>;
 
 /// One side's stream state: its typed lines folded, in order, into the reading of the events
 /// (M1's [`Reader`] + the outcome-owner scan) and into the reading of the board ([`BoardReading`]).
@@ -91,7 +92,7 @@ impl SideStream {
 
     /// Fold ONE line of protocol TEXT (the parse path).
     pub fn fold_text(&mut self, text: &str) -> R<CoreEvent> {
-        let line = Line::parse(text).map_err(|e| format!("line {} {text:?}: {e}", self.lines))?;
+        let line = Line::parse(text).map_err(|e| CoreError::from(e).context(format!("line {} {text:?}: ", self.lines)))?;
         self.fold(line, None, None)
     }
 
@@ -153,7 +154,7 @@ impl BattleVersion {
         let mut events: [Vec<CoreEvent>; 2] = [Vec::new(), Vec::new()];
         for side in 0..2 {
             let Some(s) = streams[side].as_mut() else { continue };
-            for (line, src, scope) in sess.typed_side_lines(side, from[side])? {
+            for (line, src, scope) in sess.typed_side_lines(side, from[side]).map_err(fault)? {
                 events[side].push(s.fold(line, src, scope)?);
             }
         }
@@ -197,7 +198,7 @@ impl BattleVersion {
     /// fresh transport ([`BridgeSession::resume`]) — no chunk history, no script, no seed anchors;
     /// the outstanding requests' issued bytes are shared with the engine, not re-rendered.
     pub fn fork_session(&self) -> R<BridgeSession> {
-        let e = self.engine.as_ref().ok_or("only a step-built version has an engine to fork")?;
+        let e = self.engine.as_ref().ok_or_else(|| fault("only a step-built version has an engine to fork"))?;
         Ok(BridgeSession::resume(e.clone()))
     }
 
@@ -223,8 +224,8 @@ impl BattleVersion {
     /// end of the turn; each is a child). Folds EVERY line the transport shipped (it started empty
     /// at this version's boundary), TYPED, and keeps only the engine.
     pub fn child(self: &Arc<Self>, sess: BridgeSession) -> R<Arc<BattleVersion>> {
-        if let Some(f) = sess.fatal() {
-            return Err(format!("bridge fatal: {f}"));
+        if let Some(f) = sess.engine().fatal_error() {
+            return Err(f.clone().context("bridge fatal: "));
         }
         let mut streams = [self.streams[0].clone(), self.streams[1].clone()];
         let events = Self::fold_typed(&sess, &mut streams, [0, 0])?;
@@ -236,8 +237,8 @@ impl BattleVersion {
     /// search road runs it as `core_path=text`, and its INTEGRITY mode runs both and asserts the
     /// two children equal ([`streams_equal`]). Needs no source recording in the engine.
     pub fn child_text(self: &Arc<Self>, sess: BridgeSession) -> R<Arc<BattleVersion>> {
-        if let Some(f) = sess.fatal() {
-            return Err(format!("bridge fatal: {f}"));
+        if let Some(f) = sess.engine().fatal_error() {
+            return Err(f.clone().context("bridge fatal: "));
         }
         let mut streams = [self.streams[0].clone(), self.streams[1].clone()];
         let events = Self::fold_text(&sess, &mut streams, [0, 0])?;
@@ -267,7 +268,7 @@ impl BattleVersion {
     /// per decision but the fold.
     pub fn observe(mut self, sess: &BridgeSession) -> R<BattleVersion> {
         if self.origin != Origin::Observed {
-            return Err("observe is for a version built by observe_root".into());
+            return Err(fault("observe is for a version built by observe_root"));
         }
         let mut streams = [self.streams[0].take(), self.streams[1].take()];
         let events = Self::fold_typed(sess, &mut streams, self.cursor)?;
@@ -286,7 +287,7 @@ impl BattleVersion {
         match (self.origin, &self.streams[0], &self.streams[1]) {
             (Origin::Parse, Some(_), None) => Ok(0),
             (Origin::Parse, None, Some(_)) => Ok(1),
-            _ => Err("parse_step is for a parse-built (one-side, engine-less) version".into()),
+            _ => Err(fault("parse_step is for a parse-built (one-side, engine-less) version")),
         }
     }
 
@@ -343,7 +344,7 @@ impl BattleVersion {
     }
     /// `side`'s view (`present`), memoized.
     pub fn view(&self, side: usize) -> R<&OneSidedView> {
-        let s = self.streams[side].as_ref().ok_or_else(|| format!("no stream for p{}", side + 1))?;
+        let s = self.streams[side].as_ref().ok_or_else(|| fault(format!("no stream for p{}", side + 1)))?;
         self.views[side].get_or_init(|| s.view()).as_ref().map_err(|e| e.clone())
     }
     /// `side`'s legality at this boundary (`LegalActions.from_battle`).
@@ -352,14 +353,14 @@ impl BattleVersion {
     }
     /// The TRUTH AUDIT of `side`'s view against this version's own engine board.
     pub fn audit(&self, side: usize, dex: &Dex) -> R<Audit> {
-        let board = self.engine.as_ref().and_then(|e| e.battle_state()).ok_or("this version holds no board (audit_on)")?;
+        let board = self.engine.as_ref().and_then(|e| e.battle_state()).ok_or_else(|| fault("this version holds no board (audit_on)"))?;
         self.audit_on(side, board, dex)
     }
     /// The TRUTH AUDIT of `side`'s view against `board` — the observed session's, for an
     /// [`Origin::Observed`] version.
     pub fn audit_on(&self, side: usize, board: &BattleState, dex: &Dex) -> R<Audit> {
         if self.origin == Origin::Parse {
-            return Err("a parse-built version has no board".into());
+            return Err(fault("a parse-built version has no board"));
         }
         let view = self.view(side)?;
         // Whether the side's CURRENT request carries an `active` block — the one that re-syncs the
@@ -376,24 +377,24 @@ impl BattleVersion {
 /// board AND the transition's events, the source index aside) and its view — the search road's
 /// INTEGRITY check between the typed shortcut and the text path. `Err` names the first field.
 pub fn streams_equal(a: &BattleVersion, b: &BattleVersion, side: usize) -> R<()> {
-    let (x, y) = (a.stream(side).ok_or("no stream")?, b.stream(side).ok_or("no stream")?);
+    let (x, y) = (a.stream(side).ok_or_else(|| fault("no stream"))?, b.stream(side).ok_or_else(|| fault("no stream"))?);
     if x.board_reading != y.board_reading {
-        return Err(first_reading_difference(&x.board_reading, &y.board_reading));
+        return Err(fault(first_reading_difference(&x.board_reading, &y.board_reading)));
     }
     let (ea, eb) = (a.events(side), b.events(side));
     if ea.len() != eb.len() {
-        return Err(format!("events: {} vs {}", ea.len(), eb.len()));
+        return Err(fault(format!("events: {} vs {}", ea.len(), eb.len())));
     }
     for (p, q) in ea.iter().zip(eb) {
         if p.line != q.line || p.owner != q.owner || p.readings != q.readings {
-            return Err(format!("events: line {} {:?}", p.idx, p.line.render()));
+            return Err(fault(format!("events: line {} {:?}", p.idx, p.line.render())));
         }
     }
     let (va, vb) = (a.view(side)?.json(), b.view(side)?.json());
     if va != vb {
         let at = va.bytes().zip(vb.bytes()).position(|(p, q)| p != q).unwrap_or(va.len().min(vb.len()));
-        return Err(format!("view JSON differs at byte {at}: …{}… vs …{}…", &va[at.saturating_sub(40)..(at + 40).min(va.len())],
-                           &vb[at.saturating_sub(40)..(at + 40).min(vb.len())]));
+        return Err(malformed(format!("view JSON differs at byte {at}: …{}… vs …{}…", &va[at.saturating_sub(40)..(at + 40).min(va.len())],
+                           &vb[at.saturating_sub(40)..(at + 40).min(vb.len())])));
     }
     Ok(())
 }
@@ -423,23 +424,23 @@ fn first_reading_difference(a: &BoardReading, b: &BoardReading) -> String {
 /// the view. `Err` names the first difference.
 pub fn parse_matches_step(step: &BattleVersion, parsed: &BattleVersion, side: usize) -> R<()> {
     let (a, b) = (
-        step.stream(side).ok_or("step version lacks the side")?,
-        parsed.stream(side).ok_or("parsed version lacks the side")?,
+        step.stream(side).ok_or_else(|| fault("step version lacks the side"))?,
+        parsed.stream(side).ok_or_else(|| fault("parsed version lacks the side"))?,
     );
     if a.board_reading != b.board_reading {
-        return Err(format!("p{}: the parse-built reading board differs from the step-built one", side + 1));
+        return Err(fault(format!("p{}: the parse-built reading board differs from the step-built one", side + 1)));
     }
     let (ea, eb) = (step.events(side), parsed.events(side));
     if ea.len() != eb.len() {
-        return Err(format!("p{}: {} step events vs {} parsed", side + 1, ea.len(), eb.len()));
+        return Err(fault(format!("p{}: {} step events vs {} parsed", side + 1, ea.len(), eb.len())));
     }
     for (x, y) in ea.iter().zip(eb) {
         if x.line != y.line || x.owner != y.owner || x.readings != y.readings || x.idx != y.idx {
-            return Err(format!("p{} line {}: step {:?} vs parse {:?}", side + 1, x.idx, x.line.render(), y.line.render()));
+            return Err(fault(format!("p{} line {}: step {:?} vs parse {:?}", side + 1, x.idx, x.line.render(), y.line.render())));
         }
     }
     if step.view(side)? != parsed.view(side)? {
-        return Err(format!("p{}: the parse-built view differs from the step-built one", side + 1));
+        return Err(fault(format!("p{}: the parse-built view differs from the step-built one", side + 1)));
     }
     Ok(())
 }

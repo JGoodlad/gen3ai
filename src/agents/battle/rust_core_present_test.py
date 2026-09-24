@@ -275,3 +275,48 @@ def test_pe_r1b_the_toxic_counter_is_the_stage():
     assert reading(lines).live_view().opp.active.status_counter == 0, "upstream poke-env read 1"
     # A faint keeps the count it had (upstream froze its one-ahead count there).
     assert_same(lines + ["|faint|p2a: Zapdos"])
+
+
+# ---------------------------------------------------------------------------
+# REFUSALS — `gen3_core_error_v1`: where poke-env raises, the core refuses with the SAME class
+# ---------------------------------------------------------------------------
+
+def core_raw(lines: List[str]) -> dict:
+    from utils.bridge.sim_bridge_bin import resolve_core_events_bin
+
+    head = json.dumps({"viewer": 0, "username": "me", "team": TEAM})
+    p = subprocess.run([resolve_core_events_bin(), "--present-stream"], input="\n".join([head] + lines) + "\n",
+                       capture_output=True, text=True, check=True)
+    return json.loads(p.stdout)
+
+
+#: One line poke-env REFUSES, appended to a valid opening, and the class it raises.
+REFUSALS = {
+    "unknown_keyword": ("|-dynamaxplus|p2a: Zapdos", "UnknownMessageType"),
+    "non_gen3_keyword": ("|-mega|p2a: Zapdos|Zapdos|Zapdosite", "UnsupportedMessageType"),
+    "gen_mismatch": ("|gen|4", "RuntimeError"),
+    "turn_not_an_int": ("|turn|two", "ValueError"),
+}
+
+
+@pytest.mark.parametrize("case", sorted(REFUSALS))
+def test_refusals_raise_the_same_class(case):
+    """The core's REFUSAL class == the exception class poke-env raises on the same line — the
+    parity gate compares the CLASS (the message is each side's own). A refusal in the core that
+    poke-env accepts, or the reverse, fails here."""
+    line, want = REFUSALS[case]
+    lines = BASE + [line]
+    with pytest.raises(Exception) as ei:
+        reading(lines)
+    assert type(ei.value).__name__ == want, f"poke-env raised {type(ei.value).__name__}: {ei.value}"
+    out = core_raw(lines)
+    assert not out["ok"], "the core accepted a line poke-env refuses"
+    err = out["core_error"]
+    assert (err["kind"], err["class"]) == ("refusal", want), err
+
+
+def test_malformed_input_is_not_reported_as_a_refusal():
+    """An undecodable `|request|` is MALFORMED — the core never dresses it up as a poke-env class."""
+    out = core_raw(BASE + ['|request|{"side":'])
+    assert not out["ok"]
+    assert out["core_error"]["kind"] == "malformed" and out["core_error"]["class"] is None, out

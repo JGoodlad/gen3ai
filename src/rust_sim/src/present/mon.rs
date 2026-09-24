@@ -8,13 +8,14 @@
 
 use super::dex::{self, EffectId, Status};
 use super::tables::UNKNOWN_ITEM;
+use crate::core_error::{malformed, refuse, CoreResult, PyExc};
 
 /// `Pokemon._boosts`' key order.
 pub const BOOST_KEYS: [&str; 7] = ["accuracy", "atk", "def", "evasion", "spa", "spd", "spe"];
 /// `Pokemon._stats`' key order (and `baseStats`').
 pub const STAT_KEYS: [&str; 6] = ["hp", "atk", "def", "spa", "spd", "spe"];
 
-pub type R<T> = Result<T, String>;
+pub type R<T> = CoreResult<T>;
 
 /// poke-env's `Move` — the fields the reading reads.
 #[derive(Debug, Clone, PartialEq)]
@@ -69,7 +70,7 @@ impl PMove {
         if self.id == "recharge" || self.id == "fight" {
             return Ok(Entry { pp: 1, base_power: 0, typ: "NORMAL", protect_counter: false });
         }
-        Err(format!("Unknown move: {} (ValueError)", self.id))
+        Err(refuse(PyExc::ValueError, format!("Unknown move: {} (ValueError)", self.id)))
     }
 
     /// `Move.max_pp` (gen 3: `entry["pp"] * 8 // 5`, no Transform cap before gen 5).
@@ -208,7 +209,7 @@ impl TbMon {
             }
             let f: Vec<&str> = pm.split('|').collect();
             if f.len() != 12 {
-                return Err(format!("from_packed({pm:?}): expected 12 fields, got {} (ValueError)", f.len()));
+                return Err(refuse(PyExc::ValueError, format!("from_packed({pm:?}): expected 12 fields, got {} (ValueError)", f.len())));
             }
             let opt = |s: &str| if s.is_empty() { None } else { Some(s.to_string()) };
             let parse_list = |s: &str, dflt: i64| -> R<Option<Vec<i64>>> {
@@ -216,7 +217,7 @@ impl TbMon {
                     return Ok(None);
                 }
                 s.split(',')
-                    .map(|x| if x.is_empty() { Ok(dflt) } else { x.parse::<i64>().map_err(|_| format!("int({x:?})")) })
+                    .map(|x| if x.is_empty() { Ok(dflt) } else { x.parse::<i64>().map_err(|_| malformed(format!("int({x:?})"))) })
                     .collect::<R<Vec<i64>>>()
                     .map(Some)
             };
@@ -486,7 +487,7 @@ impl PMon {
     pub fn update_from_request(&mut self, req: &super::board_reading::ReqMon) -> R<()> {
         self.active = req.active;
         if self.ability().is_none() {
-            let base = req.base_ability.as_deref().ok_or("request mon without baseAbility (KeyError)")?;
+            let base = req.base_ability.as_deref().ok_or_else(|| refuse(PyExc::KeyError, "request mon without baseAbility (KeyError)"))?;
             self.set_ability(base);
         }
         if let Some(a) = &req.ability {
@@ -510,7 +511,7 @@ impl PMon {
                 if let Some(i) = STAT_KEYS.iter().position(|s| s == k) {
                     self.stats[i] = Some(*v);
                 } else {
-                    return Err(format!("request stat {k:?} is not a poke-env stat key"));
+                    return Err(malformed(format!("request stat {k:?} is not a poke-env stat key")));
                 }
             }
         }
@@ -559,7 +560,7 @@ impl PMon {
         let hp = if hp_status.contains(' ') {
             let parts: Vec<&str> = hp_status.split(' ').collect();
             if parts.len() != 2 {
-                return Err(format!("set_hp_status({hp_status:?}): too many values to unpack (ValueError)"));
+                return Err(refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): too many values to unpack (ValueError)")));
             }
             self.status = Some(dex::status_from(parts[1])?);
             if self.status == Some(Status::Slp) {
@@ -576,10 +577,10 @@ impl PMon {
         let digits: String = hp.chars().filter(|c| c.is_ascii_digit() || *c == '/').collect();
         let parts: Vec<&str> = digits.split('/').collect();
         if parts.len() != 2 {
-            return Err(format!("set_hp_status({hp_status:?}): expected cur/max (ValueError)"));
+            return Err(refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): expected cur/max (ValueError)")));
         }
-        let cur: u32 = parts[0].parse().map_err(|_| format!("set_hp_status({hp_status:?}): int() (ValueError)"))?;
-        let max: u32 = parts[1].parse().map_err(|_| format!("set_hp_status({hp_status:?}): int() (ValueError)"))?;
+        let cur: u32 = parts[0].parse().map_err(|_| refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): int() (ValueError)")))?;
+        let max: u32 = parts[1].parse().map_err(|_| refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): int() (ValueError)")))?;
         self.current_hp = Some(cur);
         self.max_hp = Some(max);
         if store {
@@ -667,7 +668,7 @@ impl PMon {
             }
             ("SKILL_SWAP", Some(StartDetails::Abilities(ab))) if !ab.is_empty() => {
                 if self.ability().is_none() {
-                    let a1 = ab.get(1).ok_or("skill swap details[1] (IndexError)")?.clone();
+                    let a1 = ab.get(1).ok_or_else(|| refuse(PyExc::IndexError, "skill swap details[1] (IndexError)"))?.clone();
                     self.set_ability(&a1);
                 }
                 self.set_temporary_ability(Some(&ab[0]));
@@ -726,7 +727,7 @@ impl PMon {
     // ---------------------------------------------------------------- boosts
 
     fn boost_idx(stat: &str) -> R<usize> {
-        BOOST_KEYS.iter().position(|k| *k == stat).ok_or_else(|| format!("boosts[{stat:?}]: KeyError"))
+        BOOST_KEYS.iter().position(|k| *k == stat).ok_or_else(|| refuse(PyExc::KeyError, format!("boosts[{stat:?}]: KeyError")))
     }
     /// `Pokemon.boost(stat, amount)`: add, clamped to ±6.
     pub fn boost(&mut self, stat: &str, amount: i32) -> R<()> {
@@ -737,7 +738,7 @@ impl PMon {
     /// `Pokemon.set_boost(stat, amount)` (asserts `|amount| <= 6`).
     pub fn set_boost(&mut self, stat: &str, amount: i32) -> R<()> {
         if amount.abs() > 6 {
-            return Err(format!("set_boost({stat}, {amount}): AssertionError"));
+            return Err(refuse(PyExc::AssertionError, format!("set_boost({stat}, {amount}): AssertionError")));
         }
         let i = Self::boost_idx(stat)?;
         self.boosts[i] = amount;

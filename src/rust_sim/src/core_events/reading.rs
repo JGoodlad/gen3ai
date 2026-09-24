@@ -32,9 +32,10 @@
 use super::line::Line;
 use super::schema::{EventKind, Kw};
 use super::{to_id, Intercept, Reading, Rel, Route, Value};
+use crate::core_error::{fault, malformed, refuse, CoreResult, PyExc};
 
 /// poke-env's `Status` member names.
-fn status_name(tok: &str) -> Result<&'static str, String> {
+fn status_name(tok: &str) -> CoreResult<&'static str> {
     Ok(match tok.to_ascii_lowercase().as_str() {
         "brn" => "BRN",
         "fnt" => "FNT",
@@ -43,7 +44,7 @@ fn status_name(tok: &str) -> Result<&'static str, String> {
         "psn" => "PSN",
         "slp" => "SLP",
         "tox" => "TOX",
-        other => return Err(format!("Status[{other:?}] is not a poke-env status (KeyError)")),
+        other => return Err(refuse(PyExc::KeyError, format!("Status[{other:?}] is not a poke-env status (KeyError)"))),
     })
 }
 
@@ -75,14 +76,14 @@ impl Mon {
         self.status = Some("FNT");
     }
     /// `Pokemon.set_hp_status`.
-    fn set_hp_status(&mut self, text: &str) -> Result<(), String> {
+    fn set_hp_status(&mut self, text: &str) -> CoreResult<()> {
         if text == "0 fnt" {
             self.faint();
             return Ok(());
         }
         let hp = if let Some((hp, st)) = text.split_once(' ') {
             if st.contains(' ') {
-                return Err(format!("set_hp_status({text:?}): too many values to unpack"));
+                return Err(refuse(PyExc::ValueError, format!("set_hp_status({text:?}): too many values to unpack")));
             }
             self.status = Some(status_name(st)?);
             hp
@@ -91,12 +92,12 @@ impl Mon {
             text
         };
         let digits: String = hp.chars().filter(|c| c.is_ascii_digit() || *c == '/').collect();
-        let (c, m) = digits.split_once('/').ok_or_else(|| format!("set_hp_status({text:?}): no '/'"))?;
+        let (c, m) = digits.split_once('/').ok_or_else(|| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): no '/' (ValueError)")))?;
         if m.contains('/') {
-            return Err(format!("set_hp_status({text:?}): too many values to unpack"));
+            return Err(refuse(PyExc::ValueError, format!("set_hp_status({text:?}): too many values to unpack")));
         }
-        self.cur = Some(c.parse().map_err(|_| format!("set_hp_status({text:?}): bad hp"))?);
-        self.max = Some(m.parse().map_err(|_| format!("set_hp_status({text:?}): bad max hp"))?);
+        self.cur = Some(c.parse().map_err(|_| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): bad hp (ValueError)")))?);
+        self.max = Some(m.parse().map_err(|_| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): bad max hp (ValueError)")))?);
         Ok(())
     }
     /// `Pokemon._update_from_details` — only the species matters here.
@@ -118,10 +119,10 @@ fn is_ident(tok: &str) -> bool {
 }
 
 /// `AbstractBattle.get_pokemon`'s key normalisation: `p1a: X` -> `p1: X`.
-fn norm_key(tok: &str) -> Result<String, String> {
+fn norm_key(tok: &str) -> CoreResult<String> {
     let b = tok.as_bytes();
     if b.len() < 4 {
-        return Err(format!("get_pokemon({tok:?}): identifier too short (IndexError)"));
+        return Err(refuse(PyExc::IndexError, format!("get_pokemon({tok:?}): identifier too short (IndexError)")));
     }
     if b[3] != b' ' {
         Ok(format!("{}{}", &tok[..2], &tok[3..]))
@@ -176,7 +177,7 @@ impl Reader {
     }
 
     /// `AbstractBattle.get_pokemon(identifier, details=…)`, creating the mon when unknown.
-    fn get(&mut self, tok: &str, details: Option<&str>, force_self: bool) -> Result<(usize, usize), String> {
+    fn get(&mut self, tok: &str, details: Option<&str>, force_self: bool) -> CoreResult<(usize, usize)> {
         let key = norm_key(tok)?;
         if let Some(at) = self.find(&key) {
             return Ok(at);
@@ -185,7 +186,7 @@ impl Reader {
         let t = if force_self { 0 } else { self.team_of(side) };
         if let Some(n) = self.team_size[side as usize] {
             if self.teams[t].len() >= n {
-                return Err(format!("get_pokemon({tok:?}): team already has {n} pokemons (ValueError)"));
+                return Err(refuse(PyExc::ValueError, format!("get_pokemon({tok:?}): team already has {n} pokemons (ValueError)")));
             }
         }
         // R10: with details the species comes from them; without, from the identifier's NAME.
@@ -197,7 +198,7 @@ impl Reader {
         Ok((t, self.teams[t].len() - 1))
     }
 
-    fn mon(&mut self, tok: &str) -> Result<&mut Mon, String> {
+    fn mon(&mut self, tok: &str) -> CoreResult<&mut Mon> {
         let (t, i) = self.get(tok, None, false)?;
         Ok(&mut self.teams[t][i].1)
     }
@@ -222,14 +223,14 @@ impl Reader {
     }
 
     /// `Gen3Battle._species_of` (creates, like `get_pokemon`).
-    fn species_of(&mut self, tok: &str) -> Result<Option<String>, String> {
+    fn species_of(&mut self, tok: &str) -> CoreResult<Option<String>> {
         if !is_ident(tok) {
             return Ok(None);
         }
         Ok(Some(self.mon(tok)?.species.clone()))
     }
 
-    fn hp_fraction(&mut self, tok: &str) -> Result<f64, String> {
+    fn hp_fraction(&mut self, tok: &str) -> CoreResult<f64> {
         Ok(self.mon(tok)?.hp_fraction())
     }
 
@@ -241,7 +242,7 @@ impl Reader {
     }
 
     fn from_ident(&mut self, kind: EventKind, sm: &[String], tok: Option<&str>,
-                  value: Vec<(&'static str, Value)>) -> Result<Reading, String> {
+                  value: Vec<(&'static str, Value)>) -> CoreResult<Reading> {
         let side = tok.and_then(|t| self.side_of(t));
         let actor = match tok {
             Some(t) => self.species_of(t)?,
@@ -251,11 +252,11 @@ impl Reader {
     }
 
     /// Feed ONE line of this side's stream; return the readings it produced, in order.
-    pub fn feed(&mut self, line: &Line) -> Result<Vec<Reading>, String> {
+    pub fn feed(&mut self, line: &Line) -> CoreResult<Vec<Reading>> {
         match line.kw.route() {
             Route::Plain => Ok(Vec::new()),
             Route::Intercept(i) => self.intercept(i, line),
-            Route::Unsupported => Err(format!("UnsupportedMessageType: {:?}", line.kw.as_str())),
+            Route::Unsupported => Err(refuse(PyExc::UnsupportedMessageType, format!("UnsupportedMessageType: {:?}", line.kw.as_str()))),
             Route::Control | Route::Cosmetic | Route::StateOnly => {
                 self.apply(line)?;
                 Ok(Vec::new())
@@ -264,11 +265,11 @@ impl Reader {
         }
     }
 
-    fn intercept(&mut self, i: Intercept, line: &Line) -> Result<Vec<Reading>, String> {
+    fn intercept(&mut self, i: Intercept, line: &Line) -> CoreResult<Vec<Reading>> {
         let sm = line.split_message();
         match i {
             Intercept::Ignored | Intercept::BigError | Intercept::Win | Intercept::Tie => Ok(Vec::new()),
-            Intercept::ShowTeam => Err("|showteam| is not a gen-3 line".into()),
+            Intercept::ShowTeam => Err(malformed("|showteam| is not a gen-3 line")),
             Intercept::Request => {
                 if sm.len() > 2 && !sm[2].is_empty() {
                     self.request(&sm[2..].join("|"))?;
@@ -293,14 +294,14 @@ impl Reader {
 
     /// `Battle.parse_request` -> `_update_team_from_request`: our side's roster, HP/status (the
     /// `condition`), the active flag and the details-species, for every mon in the request.
-    fn request(&mut self, json: &str) -> Result<(), String> {
+    fn request(&mut self, json: &str) -> CoreResult<()> {
         use super::jsonval::Val;
-        let v = Val::parse(json).map_err(|e| format!("request JSON: {e}"))?;
+        let v = Val::parse(json).map_err(|e| malformed(format!("request JSON: {e}")))?;
         let Some(Val::Arr(mons)) = v.get("side").and_then(|s| s.get("pokemon")) else {
-            return Err("request without side.pokemon".into());
+            return Err(refuse(PyExc::KeyError, "request without side.pokemon"));
         };
         for p in mons {
-            let ident = p.str_at("ident").ok_or("request mon without ident")?;
+            let ident = p.str_at("ident").ok_or_else(|| refuse(PyExc::KeyError, "request mon without ident"))?;
             let details = p.str_at("details").unwrap_or("");
             let condition = p.str_at("condition").unwrap_or("");
             let active = matches!(p.get("active"), Some(Val::Bool(true)));
@@ -319,13 +320,13 @@ impl Reader {
     }
 
     /// The state half of `AbstractBattle.parse_message` — only the five facts.
-    fn apply(&mut self, line: &Line) -> Result<(), String> {
+    fn apply(&mut self, line: &Line) -> CoreResult<()> {
         let sm = line.split_message();
         let f = |i: usize| -> &str { sm.get(i).map(String::as_str).unwrap_or("") };
         match line.kw {
             Kw::Turn => {
                 // `end_turn`: the new turn number, and R1's reset of the move owner.
-                self.turn = f(2).parse().map_err(|_| format!("|turn|{}: not an int", f(2)))?;
+                self.turn = f(2).parse().map_err(|_| refuse(PyExc::ValueError, format!("|turn|{}: int() (ValueError)", f(2))))?;
                 self.mover = None;
             }
             Kw::Teamsize => {
@@ -388,7 +389,7 @@ impl Reader {
                 self.mon(&tok)?;
             }
             Kw::Replace | Kw::Swap => {
-                return Err(format!("|{}| (Illusion / position swap) cannot occur in gen-3 singles", line.kw.as_str()));
+                return Err(malformed(format!("|{}| (Illusion / position swap) cannot occur in gen-3 singles", line.kw.as_str())));
             }
             // R11: `forme_change` keeps the species; nothing else here moves the five facts.
             _ => {}
@@ -396,7 +397,7 @@ impl Reader {
         Ok(())
     }
 
-    fn event(&mut self, kind: EventKind, line: &Line) -> Result<Vec<Reading>, String> {
+    fn event(&mut self, kind: EventKind, line: &Line) -> CoreResult<Vec<Reading>> {
         let sm = line.split_message();
         let get = |i: usize| -> Option<&str> { sm.get(i).map(String::as_str) };
         // ---- `_capture_pre`: the facts this line is about to overwrite ----
@@ -628,7 +629,7 @@ impl Reader {
                 out.push(self.from_ident(kind, &sm, get(2), vec![("op", Value::Str(op))])?);
             }
             EventKind::ChoiceRejected | EventKind::Unknown => {
-                return Err(format!("{:?} is never a parsed keyword's kind", kind));
+                return Err(fault(format!("{:?} is never a parsed keyword's kind", kind)));
             }
         }
         for r in &out {
@@ -688,7 +689,7 @@ fn delegated_from(sm: &[String], executed: &str) -> Option<String> {
 }
 
 /// Fold a whole side stream (typed lines, in order) into its readings.
-pub fn read_all(viewer: usize, lines: &[Line]) -> Result<Vec<Vec<Reading>>, String> {
+pub fn read_all(viewer: usize, lines: &[Line]) -> CoreResult<Vec<Vec<Reading>>> {
     let mut r = Reader::new(viewer);
     lines.iter().map(|l| r.feed(l)).collect()
 }

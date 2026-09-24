@@ -105,6 +105,9 @@ pub mod bridge;
 pub mod damage;
 pub mod dex;
 pub mod driver_timing;
+/// The core's error type (`gen3_core_error_v1`): a REFUSAL mirroring a poke-env exception class,
+/// MALFORMED input, or a core FAULT — never an undifferentiated `String`.
+pub mod core_error;
 /// The ENGINE half of a bridge session (`gen3_core_engine_split_v1`): the battle, the turn loop,
 /// the open boundary and the TYPED requests — what a `version::BattleVersion` owns.
 pub mod engine;

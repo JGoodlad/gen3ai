@@ -831,8 +831,8 @@ fn expand_arm_core(
 
     let fold = |engine: BridgeSession, p: CorePath| -> Result<Arc<BattleVersion>, String> {
         match p {
-            CorePath::Typed => parent.child(engine),
-            CorePath::Text => parent.child_text(engine),
+            CorePath::Typed => parent.child(engine).map_err(String::from),
+            CorePath::Text => parent.child_text(engine).map_err(String::from),
         }
     };
     let other = |p: CorePath| if p == CorePath::Typed { CorePath::Text } else { CorePath::Typed };

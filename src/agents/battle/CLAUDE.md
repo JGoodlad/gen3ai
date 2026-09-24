@@ -304,6 +304,9 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   search's `materializer=core` (`agents/training/core_successor.py`) and the pins in
   `rust_core_present_test.py` (`sim`), which feed each reading rule's scenario to BOTH poke-env
   (through `offline_feed`) and the core (`core_events --present-stream`) and compare field by field.
+  They also pin the core's REFUSALS (`gen3_core_error_v1`): a line poke-env raises on must fail in
+  the core with the SAME exception class (`core_error.class`), and malformed input must never be
+  reported as a poke-env class.
   🚨 **The poke-env data the core's reading consults is GENERATED from poke-env**:
   `python -m agents.battle.rust_core_present_tables --write` after any change to poke-env's pokedex,
   move table, `Effect` lifecycle sets or `SideCondition` (`rust_core_present_tables_test.py` fails

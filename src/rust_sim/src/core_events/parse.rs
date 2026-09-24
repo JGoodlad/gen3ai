@@ -11,6 +11,7 @@ use super::line::Line;
 use super::reading::Reader;
 use super::schema::Kw;
 use super::{is_outcome, CoreEvent};
+use crate::core_error::{fault, CoreError, CoreResult};
 
 /// The text rule for "whose MOVE owns this line" (Phase-0 parse-back, 12,850 / 12,850 on
 /// omniscient lines): `|move|X` opens X's move; any `|switch|` (a Baton Pass entry included),
@@ -35,15 +36,15 @@ impl OwnerScan {
 
 /// Parse one side's stream. `viewer` is the side (0 = p1). `Err` names the first line that cannot
 /// be read — an unknown keyword, a non-gen-3 line, or a line poke-env itself would raise on.
-pub fn parse<S: AsRef<str>>(lines: &[S], viewer: usize) -> Result<Vec<CoreEvent>, String> {
+pub fn parse<S: AsRef<str>>(lines: &[S], viewer: usize) -> CoreResult<Vec<CoreEvent>> {
     let mut reader = Reader::new(viewer);
     let mut owners = OwnerScan::default();
     let mut out = Vec::with_capacity(lines.len());
     for (i, text) in lines.iter().enumerate() {
         let text = text.as_ref();
-        let line = Line::parse(text).map_err(|e| format!("line {i} {text:?}: {e}"))?;
+        let line = Line::parse(text).map_err(|e| CoreError::from(e).context(format!("line {i} {text:?}: ")))?;
         let owner = owners.step(&line);
-        let readings = reader.feed(&line).map_err(|e| format!("line {i} {text:?}: {e}"))?;
+        let readings = reader.feed(&line).map_err(|e| CoreError::from(e).context(format!("line {i} {text:?}: ")))?;
         let owner = if is_outcome(line.kw) { owner } else { None };
         out.push(CoreEvent { idx: i as u32, line, src: None, owner, readings });
     }
@@ -52,25 +53,25 @@ pub fn parse<S: AsRef<str>>(lines: &[S], viewer: usize) -> Result<Vec<CoreEvent>
 
 /// The M1 gate: `parse(text)` reproduces the STEP path's events on every field but `src` (which
 /// only the step path knows). `Err` describes the first difference.
-pub fn parse_matches_step(step: &[CoreEvent], parsed: &[CoreEvent]) -> Result<(), String> {
+pub fn parse_matches_step(step: &[CoreEvent], parsed: &[CoreEvent]) -> CoreResult<()> {
     if step.len() != parsed.len() {
-        return Err(format!("line count: step {} vs parse {}", step.len(), parsed.len()));
+        return Err(fault(format!("line count: step {} vs parse {}", step.len(), parsed.len())));
     }
     for (a, b) in step.iter().zip(parsed) {
         if a.line != b.line {
-            return Err(format!("line {}: typed line differs: step {:?} parse {:?}", a.idx, a.line, b.line));
+            return Err(fault(format!("line {}: typed line differs: step {:?} parse {:?}", a.idx, a.line, b.line)));
         }
         if a.owner != b.owner {
-            return Err(format!(
+            return Err(fault(format!(
                 "line {} {:?}: outcome OWNER differs: engine scope says {:?}, line order says {:?}",
                 a.idx,
                 a.line.render(),
                 a.owner,
                 b.owner
-            ));
+            )));
         }
         if a.readings != b.readings {
-            return Err(format!("line {}: readings differ:\n  step  {:?}\n  parse {:?}", a.idx, a.readings, b.readings));
+            return Err(fault(format!("line {}: readings differ:\n  step  {:?}\n  parse {:?}", a.idx, a.readings, b.readings)));
         }
     }
     Ok(())

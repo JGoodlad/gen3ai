@@ -1686,7 +1686,7 @@ impl BridgeSession {
             .zip(core[side].iter())
             .skip(from)
             .map(|(t, s)| {
-                let line = crate::core_events::side::step_line(recs, t, *s, side as u8, report_percent)?;
+                let line = crate::core_events::side::step_line(recs, t, *s, side as u8, report_percent).map_err(String::from)?;
                 Ok((line, *s, s.map(|i| recs[i as usize].scope)))
             })
             .collect()
@@ -1702,7 +1702,7 @@ impl BridgeSession {
         if shipped.len() != core[side].len() {
             return Err(format!("p{}: {} shipped lines but {} tracked", side + 1, shipped.len(), core[side].len()));
         }
-        crate::core_events::side::step_events(recs, &shipped, side as u8, self.engine.report_percent())
+        crate::core_events::side::step_events(recs, &shipped, side as u8, self.engine.report_percent()).map_err(String::from)
     }
 
     /// The shared session body: build the engine over an already-constructed battle, reframe +

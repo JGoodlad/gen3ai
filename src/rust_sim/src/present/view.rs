@@ -10,6 +10,7 @@ use super::dex;
 use super::mon::{PMon, BOOST_KEYS, STAT_KEYS};
 use super::board_reading::BoardReading;
 use crate::core_events::json_out;
+use crate::core_error::{CoreResult};
 
 // 🚨 **`present()` is the TRUE reading** (owner directive, M2): where poke-env's reading is wrong
 // about a sim fact the stream can establish, the view carries the truth and the disagreement is a
@@ -94,7 +95,7 @@ pub struct OneSidedView {
     pub lost: Option<bool>,
 }
 
-type R<T> = Result<T, String>;
+type R<T> = CoreResult<T>;
 
 /// `present(reading)` — `LiveView.from_battle` over ONE side's stream, with the true reading where
 /// poke-env's is wrong (see above).

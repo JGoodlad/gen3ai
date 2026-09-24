@@ -13,6 +13,7 @@ use super::mon::{PMon, PMove, StartDetails, TbMon, R};
 use super::tables::BATTLE_IGNORED;
 use crate::core_events::jsonval::Val;
 use crate::core_events::{Intercept, Line, Route};
+use crate::core_error::{malformed, refuse, PyExc};
 
 /// One `side.pokemon[i]` record of a `|request|`, the fields `update_from_request` reads.
 #[derive(Debug, Clone, PartialEq)]
@@ -37,7 +38,7 @@ impl ReqMon {
                 kv.iter()
                     .map(|(k, x)| match x {
                         Val::Int(n) => Ok((k.clone(), *n)),
-                        other => Err(format!("request stat {k}: {other:?} is not an int")),
+                        other => Err(malformed(format!("request stat {k}: {other:?} is not an int"))),
                     })
                     .collect::<R<Vec<_>>>()?,
             ),
@@ -45,18 +46,18 @@ impl ReqMon {
         };
         let moves = match v.get("moves") {
             Some(Val::Arr(a)) => a.iter().filter_map(|m| if let Val::Str(s) = m { Some(s.clone()) } else { None }).collect(),
-            _ => return Err("request mon without moves (KeyError)".into()),
+            _ => return Err(refuse(PyExc::KeyError, "request mon without moves (KeyError)")),
         };
         Ok(ReqMon {
-            ident: s("ident").ok_or("request mon without ident (KeyError)")?,
-            details: s("details").ok_or("request mon without details (KeyError)")?,
-            condition: s("condition").ok_or("request mon without condition (KeyError)")?,
+            ident: s("ident").ok_or_else(|| refuse(PyExc::KeyError, "request mon without ident (KeyError)"))?,
+            details: s("details").ok_or_else(|| refuse(PyExc::KeyError, "request mon without details (KeyError)"))?,
+            condition: s("condition").ok_or_else(|| refuse(PyExc::KeyError, "request mon without condition (KeyError)"))?,
             active: truthy(v.get("active")),
             stats,
             moves,
             base_ability: s("baseAbility"),
             ability: s("ability"),
-            item: s("item").ok_or("request mon without item (KeyError)")?,
+            item: s("item").ok_or_else(|| refuse(PyExc::KeyError, "request mon without item (KeyError)"))?,
             reviving: v.get("reviving").map(|x| truthy(Some(x))),
         })
     }
@@ -172,7 +173,7 @@ impl BoardReading {
     pub fn feed(&mut self, line: &Line) -> R<()> {
         match line.kw.route() {
             Route::Plain => Ok(()),
-            Route::Unsupported => Err(format!("UnsupportedMessageType: {:?}", line.kw.as_str())),
+            Route::Unsupported => Err(refuse(PyExc::UnsupportedMessageType, format!("UnsupportedMessageType: {:?}", line.kw.as_str()))),
             Route::Intercept(i) => {
                 let sm = line.split_message();
                 match i {
@@ -191,7 +192,7 @@ impl BoardReading {
                         self.finished = true;
                         Ok(())
                     }
-                    Intercept::ShowTeam => Err("|showteam| is not a gen-3 line".into()),
+                    Intercept::ShowTeam => Err(malformed("|showteam| is not a gen-3 line")),
                     Intercept::Error | Intercept::BigError | Intercept::Ignored => Ok(()),
                 }
             }
@@ -248,7 +249,7 @@ impl BoardReading {
         -> R<(bool, usize)> {
         let b = identifier.as_bytes();
         if b.len() < 4 {
-            return Err(format!("get_pokemon({identifier:?}): IndexError"));
+            return Err(refuse(PyExc::IndexError, format!("get_pokemon({identifier:?}): IndexError")));
         }
         let key = if b[3] != b' ' { format!("{}{}", &identifier[..2], &identifier[3..]) } else { identifier.to_string() };
         if let Some(i) = self.team.iter().position(|(k, _)| *k == key) {
@@ -268,7 +269,7 @@ impl BoardReading {
             }
         }
         if matches.len() >= 2 {
-            return Err(format!("get_pokemon({identifier:?}): two team entries identify as {name_det:?} (AssertionError)"));
+            return Err(refuse(PyExc::AssertionError, format!("get_pokemon({identifier:?}): two team entries identify as {name_det:?} (AssertionError)")));
         }
         if let Some(&i) = matches.first() {
             let team = if own { &mut self.team } else { &mut self.opp };
@@ -276,14 +277,14 @@ impl BoardReading {
             team[i].1.name = Some(key.get(4..).unwrap_or("").to_string());
             return Ok((own, i));
         }
-        let role_side = side.ok_or_else(|| format!("get_pokemon({identifier:?}): no side"))? as usize;
+        let role_side = side.ok_or_else(|| malformed(format!("get_pokemon({identifier:?}): no side")))? as usize;
         let len = self.team_idx(own).len();
         if self.team_size.iter().any(|x| x.is_some()) {
             match self.team_size[role_side] {
                 Some(n) if len >= n => {
-                    return Err(format!("{}'s team already has {n} pokemons: cannot add {key} (ValueError)", &key[..2]));
+                    return Err(refuse(PyExc::ValueError, format!("{}'s team already has {n} pokemons: cannot add {key} (ValueError)", &key[..2])));
                 }
-                None => return Err(format!("_team_size[{:?}]: KeyError", &key[..2])),
+                None => return Err(refuse(PyExc::KeyError, format!("_team_size[{:?}]: KeyError", &key[..2]))),
                 _ => {}
             }
         }
@@ -308,12 +309,12 @@ impl BoardReading {
 
     /// `Battle.parse_request(request)` — with the fork's R3 fix (`_sync_active_pp`).
     pub fn parse_request(&mut self, json: &str) -> R<()> {
-        let v = Val::parse(json).map_err(|e| format!("request JSON: {e}"))?;
+        let v = Val::parse(json).map_err(|e| malformed(format!("request JSON: {e}")))?;
         self.wait = truthy(v.get("wait"));
-        let side = v.get("side").ok_or("request without side (KeyError)")?;
+        let side = v.get("side").ok_or_else(|| refuse(PyExc::KeyError, "request without side (KeyError)"))?;
         let mons: Vec<Val> = match side.get("pokemon") {
             Some(Val::Arr(a)) => a.clone(),
-            _ => return Err("request side without pokemon (KeyError)".into()),
+            _ => return Err(refuse(PyExc::KeyError, "request side without pokemon (KeyError)")),
         };
         let recs = mons.iter().map(ReqMon::from_val).collect::<R<Vec<_>>>()?;
         self.available_moves.clear();
@@ -324,19 +325,19 @@ impl BoardReading {
         self.force_switch = match v.get("forceSwitch") {
             Some(Val::Arr(a)) => truthy(a.first()),
             None => false,
-            Some(other) => return Err(format!("forceSwitch {other:?} is not a list")),
+            Some(other) => return Err(malformed(format!("forceSwitch {other:?} is not a list"))),
         };
         self.last_request_text = Some(json.to_string());
         if truthy(v.get("teamPreview")) {
-            return Err("teamPreview is not a gen-3 request".into());
+            return Err(malformed("teamPreview is not a gen-3 request"));
         }
         if let Some(first) = recs.first() {
-            self.role = ident_side(&first.ident).ok_or("request ident without side")?;
+            self.role = ident_side(&first.ident).ok_or_else(|| malformed("request ident without side"))?;
         }
         self.update_team_from_request(&recs)?;
         self.backfill_teambuilder_spread()?;
         if let Some(Val::Arr(active)) = v.get("active") {
-            let ar = active.first().ok_or("request active [] (IndexError)")?;
+            let ar = active.first().ok_or_else(|| refuse(PyExc::IndexError, "request active [] (IndexError)"))?;
             if truthy(ar.get("trapped")) {
                 self.trapped = true;
             }
@@ -349,7 +350,7 @@ impl BoardReading {
                 self.maybe_trapped = true;
             }
         } else if v.get("active").is_some() {
-            return Err("request active is not a list".into());
+            return Err(malformed("request active is not a list"));
         }
         if !self.trapped {
             for r in &recs {
@@ -357,7 +358,7 @@ impl BoardReading {
                     .team
                     .iter()
                     .position(|(k, _)| *k == r.ident)
-                    .ok_or_else(|| format!("team[{:?}]: KeyError", r.ident))?;
+                    .ok_or_else(|| refuse(PyExc::KeyError, format!("team[{:?}]: KeyError", r.ident)))?;
                 let m = &self.team[i].1;
                 if self.reviving {
                     if m.fainted() {
@@ -385,7 +386,7 @@ impl BoardReading {
                 .team
                 .iter()
                 .position(|(k, _)| *k == r.ident)
-                .ok_or_else(|| format!("team[{:?}]: KeyError", r.ident))?;
+                .ok_or_else(|| refuse(PyExc::KeyError, format!("team[{:?}]: KeyError", r.ident)))?;
             let m = &self.team[i].1;
             if r.active && !m.active {
                 truly.push(i);
@@ -436,7 +437,7 @@ impl BoardReading {
             let pp = match req.get("pp") {
                 Some(Val::Int(n)) => *n,
                 None | Some(Val::Null) => continue,
-                Some(other) => return Err(format!("request pp {other:?} is not an int")),
+                Some(other) => return Err(malformed(format!("request pp {other:?} is not an int"))),
             };
             let rid = match req.str_at("id") {
                 Some(r) if !r.is_empty() && r != "struggle" => r,
@@ -534,7 +535,7 @@ impl BoardReading {
         let before = conds.len();
         conds.retain(|(n, _)| *n != name);
         if conds.len() == before {
-            return Err(format!("side_conditions.pop({name}): KeyError"));
+            return Err(refuse(PyExc::KeyError, format!("side_conditions.pop({name}): KeyError")));
         }
         Ok(())
     }
@@ -559,7 +560,7 @@ impl BoardReading {
         let before = self.fields.len();
         self.fields.retain(|(n, _)| *n != f);
         if self.fields.len() == before && f != "NEUTRALIZING_GAS" {
-            return Err(format!("_fields.pop({f}): KeyError"));
+            return Err(refuse(PyExc::KeyError, format!("_fields.pop({f}): KeyError")));
         }
         Ok(())
     }
@@ -625,7 +626,7 @@ impl BoardReading {
             return Ok(());
         }
         let f = |i: usize| -> R<&str> {
-            sm.get(i).map(String::as_str).ok_or_else(|| format!("|{kw}|: field {i} missing (ValueError)"))
+            sm.get(i).map(String::as_str).ok_or_else(|| refuse(PyExc::ValueError, format!("|{kw}|: field {i} missing (ValueError)")))
         };
         match kw {
             "drag" | "switch" => {
@@ -650,7 +651,7 @@ impl BoardReading {
             }
             "-crit" | "-miss" | "-fail" | "-notarget" | "-nothing" => {}
             "turn" => {
-                let n: u32 = f(2)?.trim().parse().map_err(|_| format!("|turn|{}: int() (ValueError)", f(2).unwrap_or("")))?;
+                let n: u32 = f(2)?.trim().parse().map_err(|_| refuse(PyExc::ValueError, format!("|turn|{}: int() (ValueError)", f(2).unwrap_or(""))))?;
                 self.end_turn(n);
             }
             "-heal" => {
@@ -661,7 +662,7 @@ impl BoardReading {
             }
             "-boost" | "-unboost" => {
                 let (p, stat) = (f(2)?.to_string(), f(3)?.to_string());
-                let amt: i32 = f(4)?.trim().parse().map_err(|_| format!("|{kw}| amount: int() (ValueError)"))?;
+                let amt: i32 = f(4)?.trim().parse().map_err(|_| refuse(PyExc::ValueError, format!("|{kw}| amount: int() (ValueError)")))?;
                 self.mon(&p)?.boost(&stat, if kw == "-boost" { amt } else { -amt })?;
             }
             "-weather" => self.weather(&sm)?,
@@ -786,7 +787,7 @@ impl BoardReading {
             }
             "-setboost" => {
                 let (p, stat) = (f(2)?.to_string(), f(3)?.to_string());
-                let amt: i32 = f(4)?.trim().parse().map_err(|_| "|-setboost| amount: int() (ValueError)".to_string())?;
+                let amt: i32 = f(4)?.trim().parse().map_err(|_| refuse(PyExc::ValueError, "|-setboost| amount: int() (ValueError)"))?;
                 self.mon(&p)?.set_boost(&stat, amt)?;
             }
             "-sethp" => {
@@ -839,18 +840,18 @@ impl BoardReading {
             }
             "gen" => {
                 if f(2)?.trim() != "3" {
-                    return Err(format!("Battle Initiated with gen 3 but got: |gen|{}", f(2)?));
+                    return Err(refuse(PyExc::RuntimeError, format!("Battle Initiated with gen 3 but got: |gen|{}", f(2)?)));
                 }
             }
             "tier" | "inactive" | "poke" | "raw" | "start" | "title" | "message" | "-message" => {}
             "player" => self.player(&sm)?,
             "replace" | "swap" => {
-                return Err(format!("|{kw}| (Illusion / position swap) cannot occur in gen-3 singles"));
+                return Err(malformed(format!("|{kw}| (Illusion / position swap) cannot occur in gen-3 singles")));
             }
             "teamsize" => {
                 let (p, n) = (f(2)?.to_string(), f(3)?.to_string());
-                let side = ident_side(&p).ok_or_else(|| format!("|teamsize|{p}"))? as usize;
-                self.team_size[side] = Some(n.trim().parse().map_err(|_| format!("|teamsize| {n}: int() (ValueError)"))?);
+                let side = ident_side(&p).ok_or_else(|| malformed(format!("|teamsize|{p}")))? as usize;
+                self.team_size[side] = Some(n.trim().parse().map_err(|_| refuse(PyExc::ValueError, format!("|teamsize| {n}: int() (ValueError)")))?);
             }
             "-supereffective" | "-resisted" => {}
             "-immune" => {
@@ -861,7 +862,7 @@ impl BoardReading {
                 }
             }
             "-swapsideconditions" => self.side_conditions.swap(0, 1),
-            other => return Err(format!("NotImplementedError: |{other}|")),
+            other => return Err(refuse(PyExc::NotImplementedError, format!("NotImplementedError: |{other}|"))),
         }
         Ok(())
     }
@@ -899,13 +900,13 @@ impl BoardReading {
         match sm.len() {
             5 | 6 => {
                 let (player, username) = (&sm[2], &sm[3]);
-                let side = ident_side(player).ok_or_else(|| format!("|player|{player}"))?;
+                let side = ident_side(player).ok_or_else(|| malformed(format!("|player|{player}")))?;
                 self.role = if *username == self.username { side } else { 1 - side };
                 Ok(())
             }
             4 => {
                 if !sm[3].is_empty() {
-                    return Err(format!("Invalid player message: {sm:?}"));
+                    return Err(refuse(PyExc::RuntimeError, format!("Invalid player message: {sm:?}")));
                 }
                 Ok(())
             }
@@ -917,7 +918,7 @@ impl BoardReading {
     /// Minimize, Pressure (`_pressure_on`, rule V3), and `Pokemon.moved`.
     fn move_line(&mut self, sm0: &[String]) -> R<()> {
         let mut ev: Vec<String> = sm0.to_vec();
-        let who = ev.get(2).cloned().ok_or("|move|: no user")?;
+        let who = ev.get(2).cloned().ok_or_else(|| refuse(PyExc::IndexError, "|move|: no user"))?;
         self.mon(&who)?;
         let (mut use_, mut reveal, mut failed, mut spread) = (true, true, false, false);
         let mut overridden: Option<String> = None;
@@ -960,7 +961,7 @@ impl BoardReading {
                     overridden = Some(o);
                 }
                 "Grass Pledge" | "Water Pledge" | "Fire Pledge" => {}
-                _ => return Err(format!("Unhandled [from] move message - move {o:?} (ValueError)")),
+                _ => return Err(refuse(PyExc::ValueError, format!("Unhandled [from] move message - move {o:?} (ValueError)"))),
             }
         }
         if last(&ev) == "null" {
@@ -978,7 +979,7 @@ impl BoardReading {
                     reveal = false;
                 }
                 "Dancer" => return Ok(()),
-                _ => return Err(format!("Unhandled [from] ability message - ability {ab:?} (ValueError)")),
+                _ => return Err(refuse(PyExc::ValueError, format!("Unhandled [from] ability message - ability {ab:?} (ValueError)"))),
             }
         }
         if matches!(last(&ev).as_str(), "[from] Magic Coat" | "[from] Mirror Move" | "[from] Snatch" | "[from]Snatch") {
@@ -1008,19 +1009,19 @@ impl BoardReading {
                 let ok = t.is_empty()
                     || (t.len() > 4 && ["p1: ", "p2: ", "p1a:", "p1b:", "p2a:", "p2b:"].contains(&&t[..4]));
                 if !ok {
-                    return Err(format!("Unhandled move message format - {ev:?} (ValueError)"));
+                    return Err(refuse(PyExc::ValueError, format!("Unhandled move message format - {ev:?} (ValueError)")));
                 }
                 presumed = Some(t);
                 (ev[2].clone(), ev[3].clone())
             }
             n if n > 5 => {
                 if !ev[4].is_empty() {
-                    return Err(format!("Unhandled move message format - {ev:?} (ValueError)"));
+                    return Err(refuse(PyExc::ValueError, format!("Unhandled move message format - {ev:?} (ValueError)")));
                 }
                 presumed = Some(String::new());
                 (ev[2].clone(), ev[3].clone())
             }
-            _ => return Err(format!("|move| too short: {ev:?} (ValueError)")),
+            _ => return Err(refuse(PyExc::ValueError, format!("|move| too short: {ev:?} (ValueError)"))),
         };
         if mv.trim().to_uppercase() == "MINIMIZE" {
             self.mon(&pokemon)?.start_effect("MINIMIZE", None)?;
@@ -1033,7 +1034,7 @@ impl BoardReading {
         if let Some(o) = overridden {
             m.moved(&mv, failed, false, reveal, false)?;
             let key = dex::retrieve_id(&o);
-            let at = m.moves.lookup(&key).ok_or_else(|| format!("moves[{key:?}]: KeyError (overridden move)"))?;
+            let at = m.moves.lookup(&key).ok_or_else(|| refuse(PyExc::KeyError, format!("moves[{key:?}]: KeyError (overridden move)")))?;
             m.moves.get_mut(&at).expect("looked up").use_move(pressure, true);
         } else if !failed && matches!(mv.as_str(), "Sleep Talk" | "Copycat" | "Metronome" | "Nature Power") {
             m.moved(&mv, failed, use_, reveal, false)?;
@@ -1070,8 +1071,8 @@ impl BoardReading {
 
     /// The `-activate` branch.
     fn activate(&mut self, sm: &[String]) -> R<()> {
-        let target = sm.get(2).cloned().ok_or("|-activate|: field 2 (ValueError)")?;
-        let effect = sm.get(3).cloned().ok_or("|-activate|: field 3 (ValueError)")?;
+        let target = sm.get(2).cloned().ok_or_else(|| refuse(PyExc::ValueError, "|-activate|: field 2 (ValueError)"))?;
+        let effect = sm.get(3).cloned().ok_or_else(|| refuse(PyExc::ValueError, "|-activate|: field 3 (ValueError)"))?;
         let of_src = |sm: &[String], dflt: &str| -> String {
             sm.iter().skip(4).find_map(|t| t.strip_prefix("[of] ").map(str::to_string)).unwrap_or_else(|| dflt.to_string())
         };
@@ -1127,14 +1128,14 @@ impl BoardReading {
                 set_item(self.mon(&target)?, None);
             }
             "item: Leppa Berry" => {
-                let key = dex::to_id(sm.get(4).ok_or("Leppa: field 4 (IndexError)")?);
+                let key = dex::to_id(sm.get(4).ok_or_else(|| refuse(PyExc::IndexError, "Leppa: field 4 (IndexError)"))?);
                 let m = self.mon(&target)?;
-                let at = m.moves.lookup(&key).ok_or_else(|| format!("moves[{key:?}]: KeyError (Leppa Berry)"))?;
+                let at = m.moves.lookup(&key).ok_or_else(|| refuse(PyExc::KeyError, format!("moves[{key:?}]: KeyError (Leppa Berry)")))?;
                 let mv = m.moves.get_mut(&at).expect("looked up");
                 mv.current_pp = (mv.current_pp + 10).min(mv.max_pp()?);
             }
             "move: Mimic" => {
-                let mv = PMove::new(&dex::retrieve_id(sm.get(4).ok_or("Mimic: field 4 (IndexError)")?), None, false)?;
+                let mv = PMove::new(&dex::retrieve_id(sm.get(4).ok_or_else(|| refuse(PyExc::IndexError, "Mimic: field 4 (IndexError)"))?), None, false)?;
                 self.mon(&target)?.moves.set_mimic(Some(mv));
             }
             "move: Trick" => {
@@ -1197,12 +1198,12 @@ impl BoardReading {
                     set_item(self.mon(&who)?, Some(&dex::to_id(&item)));
                     set_item(self.mon(&victim)?, None);
                 }
-                _ => return Err(format!("Unhandled item message: {sm:?} (ValueError)")),
+                _ => return Err(refuse(PyExc::ValueError, format!("Unhandled item message: {sm:?} (ValueError)"))),
             }
             return Ok(());
         }
-        let p = sm.get(2).cloned().ok_or("|-item|: field 2 (ValueError)")?;
-        let item = sm.get(3).cloned().ok_or("|-item|: field 3 (ValueError)")?;
+        let p = sm.get(2).cloned().ok_or_else(|| refuse(PyExc::ValueError, "|-item|: field 2 (ValueError)"))?;
+        let item = sm.get(3).cloned().ok_or_else(|| refuse(PyExc::ValueError, "|-item|: field 3 (ValueError)"))?;
         if sm.len() > 4
             && matches!(sm[4].as_str(), "[from] ability: Magician" | "[from] move: Switcheroo" | "[from] move: Trick")
         {
@@ -1233,13 +1234,13 @@ fn available_moves_from_request(mon: &PMon, ar: &Val) -> R<Vec<String>> {
     if mon.has_effect(dex::effect_by_name("COMMANDER").expect("COMMANDER")) {
         return Ok(out);
     }
-    let Some(Val::Arr(reqs)) = ar.get("moves") else { return Err("active request without moves (KeyError)".into()) };
+    let Some(Val::Arr(reqs)) = ar.get("moves") else { return Err(refuse(PyExc::KeyError, "active request without moves (KeyError)")) };
     let keys: Vec<String> = mon.moves.moves().into_iter().map(|(k, _)| k).collect();
     for r in reqs {
         if truthy(r.get("disabled")) {
             continue;
         }
-        let id = r.str_at("id").ok_or("request move without id (KeyError)")?.to_string();
+        let id = r.str_at("id").ok_or_else(|| refuse(PyExc::KeyError, "request move without id (KeyError)"))?.to_string();
         if keys.contains(&id) || dex::is_special_move(&id) {
             out.push(id);
         } else if id == "hiddenpower" && keys.iter().filter(|k| k.starts_with("hiddenpower")).count() == 1 {
@@ -1247,7 +1248,7 @@ fn available_moves_from_request(mon: &PMon, ar: &Val) -> R<Vec<String>> {
         } else {
             let caller = ["copycat", "metronome", "mefirst", "mirrormove", "assist"].iter().any(|c| keys.iter().any(|k| k == c));
             if !(mon.ability() == Some("dancer") || caller) {
-                return Err(format!("Error with move {id}. Expected self.moves to contain copycat, metronome, mefirst, mirrormove, or assist, or to have the ability dancer (AssertionError)"));
+                return Err(refuse(PyExc::AssertionError, format!("Error with move {id}. Expected self.moves to contain copycat, metronome, mefirst, mirrormove, or assist, or to have the ability dancer (AssertionError)")));
             }
             out.push(id);
         }

@@ -45,6 +45,7 @@ use std::io::{self, BufRead, Write};
 
 use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::bridge::{parse_choice, BridgeSession, Cmd};
+use pokesim::core_error::{malformed, CoreError};
 use pokesim::core_events::json_out;
 use pokesim::core_events::parse::{parse, parse_matches_step};
 use pokesim::core_events::record::{self, Header, Path, Record};
@@ -393,7 +394,7 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
 /// `--present-stream`: ONE side's protocol TEXT on stdin → its `present()` view. The first line is
 /// a JSON header `{"viewer":0|1,"username":…,"team":<packed>|null}`; every later line
 /// is a protocol line of that side's stream (the parse path, exactly what a server sends). Prints
-/// ONE JSON object: `{"ok","error","view","legal","request"}`. The pin of every reading rule
+/// ONE JSON object: `{"ok","error","view","legal","request"}` (+ `core_error` on a failure). The pin of every reading rule
 /// against poke-env itself (`agents/battle/rust_core_present_test.py`) runs through it.
 fn present_stream() -> i32 {
     let stdin = io::stdin();
@@ -405,14 +406,14 @@ fn present_stream() -> i32 {
             return 2;
         }
     };
-    let res = (|| -> Result<String, String> {
-        let h = Json::parse(&head).map_err(|e| format!("header: {e}"))?;
-        let viewer = h.get("viewer").and_then(|v| v.as_f64()).ok_or("header viewer")? as usize;
-        let username = h.str_at("username").ok_or("header username")?.to_string();
+    let res = (|| -> Result<String, CoreError> {
+        let h = Json::parse(&head).map_err(|e| malformed(format!("header: {e}")))?;
+        let viewer = h.get("viewer").and_then(|v| v.as_f64()).ok_or_else(|| malformed("header viewer"))? as usize;
+        let username = h.str_at("username").ok_or_else(|| malformed("header username"))?.to_string();
         let team = h.str_at("team").map(str::to_string);
         let mut s = version::SideStream::new(viewer, &username, team.as_deref())?;
         for l in lines {
-            let l = l.map_err(|e| e.to_string())?;
+            let l = l.map_err(|e| malformed(e.to_string()))?;
             s.fold_text(&l)?;
         }
         let view = s.view()?.json();
@@ -424,9 +425,13 @@ fn present_stream() -> i32 {
     })();
     match res {
         Ok(o) => println!("{o}"),
+        // `error` is the MESSAGE (unchanged); `core_error` its kind and — for a refusal — the Python
+        // exception class poke-env raises on the same input (`gen3_core_error_v1`).
         Err(e) => {
             let mut o = String::from("{\"ok\":false,\"error\":");
-            json_out::str_into(&mut o, &e);
+            json_out::str_into(&mut o, e.message());
+            o.push_str(",\"core_error\":");
+            o.push_str(&e.json());
             o.push('}');
             println!("{o}");
         }
@@ -445,7 +450,7 @@ fn check_records(files: &[String]) -> i32 {
             if record::write(&r) != bytes {
                 return Err("write(read(bytes)) != bytes".into());
             }
-            record::check_reparse(&r)
+            record::check_reparse(&r).map_err(String::from)
         })();
         match res {
             Ok(()) => println!("ok {f}"),

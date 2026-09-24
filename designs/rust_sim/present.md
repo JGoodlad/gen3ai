@@ -67,6 +67,22 @@ passes the truth and catches a tampered view; a parse-built version refuses to s
 at every boundary the typed request renders the shipped bytes, and a resumed engine clone emits the
 same chunks and commits as the full session it was cloned from.
 
+**Errors are typed** (`gen3_core_error_v1`, `src/rust_sim/src/core_error.rs`). Every fallible core
+call returns `CoreResult<T>`; a `CoreError` is one of three things, never an undifferentiated string:
+
+| variant | means | example |
+|---|---|---|
+| `Refusal { exc: PyExc, msg }` | the input is one poke-env REFUSES, and the core refuses it with the SAME Python exception class (`KeyError`, `ValueError`, `IndexError`, `AssertionError`, `RuntimeError`, `NotImplementedError`, `UnknownMessageType`, `UnsupportedMessageType`) | `\|gen\|4` → `RuntimeError`; an unknown keyword → `UnknownMessageType`; `\|turn\|two` → `ValueError` |
+| `Malformed(msg)` | input no protocol can carry (an undecodable request, a record that does not parse, a choice naming nothing, a client re-sending a refused choice) | `\|request\|{"side":` |
+| `Fault(msg)` | the core contradicting itself (a gate disagreement, a conservation miss, a version asked for what its origin cannot do, an upstream engine desync) — a BUG | `parse_matches_step` failing |
+
+The message is the pre-`CoreError` string byte for byte (`From<CoreError> for String` at the
+transport boundary), so `sim_bridge`'s `__ERR__` frames are unchanged. The engine's fatal condition is
+typed too (`Engine::fatal_error`). **The parity gate compares the CLASS**:
+`rust_core_present_test.py::test_refusals_raise_the_same_class` feeds each refusing line to poke-env and
+to the core (`core_events --present-stream` reports `core_error {kind, class, message}`) and requires
+the same class; the Rust pins are `core_error::tests`.
+
 ## 3. `present()` — the TRUE reading; poke-env's mistakes are FINDINGS, never rules
 
 🚨 **Parity with poke-env is not the goal; truth is** (owner directive, 2026-09-23). `present()`
