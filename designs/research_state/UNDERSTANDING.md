@@ -235,12 +235,13 @@ continued training — +12.31 / +14.25 / +15.50 pp [+12.00, +18.88] on the untau
 depth, OUTSIDE the 3.69 floor by both clauses, at the same frozen dose 4.272e-9 (0.20× v8) the folds run at; +8.62…+11.81
 against W_b, so it is not the seed. Both per-slice cells clear too (Big-5 +0.11 vs a 0.0475 floor, DDTar +0.18 vs 0.085),
 and the continuation ends LEVEL with teacher t1 on t1's own pinned team having never seen it (−0.029, n.d.). It promoted
-five snapshots where the fold path promoted none. Front-loaded: +12.3 of the +15.5 is there by +3M. ONE control arm, so a
-CANDIDATE (rules 19/22) — its seed replicate is queued. **Consequence: on the win-prob side the frozen-parent baseline
+five snapshots where the fold path promoted none. Front-loaded: +12.3 of the +15.5 is there by +3M. **REPLICATED on a
+second seed (2026-09-23, `wcont_b_seed1002_read_2026-09-23/`): seed 1002 reads +13.25 / +12.56 / +12.94 pp [+10.25, +15.44],
+OUTSIDE ×3 depths, 8/8 teams, on the identical games (arm W reproduced exactly); seed spread at +12M −2.56 pp, under the floor.** **Consequence: on the win-prob side the frozen-parent baseline
 does NOT stand; every delta-against-a-frozen-parent on such an arm is inflated by something of order +15 pp on this meter
 over 12M steps, and the comparator for any fold is the CONTINUATION, not the parent.** Bots and G7 were BLIND across
 exactly this span (both paths "indistinguishable" at ~0.92 while the untaught meter separated them by 9–10 pp) — a
-saturated bot row is not a competence meter at this depth. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*]
+saturated bot row is not a competence meter at this depth. [ledger 2026-09-20 · *THE CONTINUATION CONTROL*; 2026-09-23 · *REPLICATES ON A SECOND SEED*]
 **Externally (`anchor_ab_continuation_2026-09-20/`, 8,400 greedy-vs-greedy games vs Metamon `SmallRL`, n = 1,200 per arm per
 team set): the continuation is +0.039 [−0.000, +0.079] over arm W on Metamon's teams and +0.020 [−0.019, +0.058] on ours —
 NOT DETECTED on both (a post-hoc three-cell pool reads +0.032 [+0.007, +0.058]) — while the SAME games put the era-1 fold
