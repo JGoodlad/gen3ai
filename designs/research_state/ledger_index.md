@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,312-line file. **The ledger itself is append-only and is never edited by this**;
+21,328-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**695 headings · 640 dated · 2026-08-01 → 2026-09-24 · ledger 21,312 lines.**
+**697 headings · 642 dated · 2026-08-01 → 2026-09-24 · ledger 21,328 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -715,3 +715,5 @@ rename.
   - `L21301` · `2026-09-24` · MEASUREMENT · **BELIEF-HEAD CALIBRATION OFF THE POOL: memorisation DETECTED and NET HARMFUL off-pool. On out-of-pool teams the learned heads are WORSE than the Smogon prior they fuse with: species −1.28 nats [−1.47, −1.10] on Metamon ladder teams, and the REINJECTED revealed-slot move posterior −7.8 pp hidden-move recall [−8.9, −6.6]. 15.8% of ladder hidden slots are >0.8-confident in a species the opponent does not have.**
   - `L21305` · `2026-09-24` · OPS (MAJOR) · **TRAINING-INPUT BOUNDARY `c97358e8` (`gen3_pe_reading_fixes_v1`): the Rust core M2's three poke-env reading findings FIXED in the vendored fork; slice V now runs with an EMPTY findings registry, 0 divergences at COMMIT (1,838) and MILESTONE (142,410 decisions).**
   - `L21309` · `2026-09-24` · OPS · **Heal Bell encode crash FIXED BY CLASS (`40330daa`, `gen3_effect_sources_v1`): the encoder's effect vocabulary is now SOURCE-DERIVED from Showdown's gen3 code, and `ladder_drift_scan` checks it against Showdown master. Heal Bell fires in 3.9% of 376,410 human gen3ou games, and every one would have crashed a ladder game.**
+  - `L21313` · `2026-09-24` · OPS (MAJOR) · **RUST CORE M3 CLOSED (`1592d84b`, `26bf2b62`, `28851dc6`..`cf48d41c`): the per-decision trackers, the α/β intent label and the win-indicator reward are folded on the version and shared by a fork; slice T (gating the CONSUMERS, per the owner, not TurnDelta fields) at 0 divergences. The loss catalogue found TRAINING-INPUT GIGO in the event window, the labels and the progress clock (fix dispatched the same day).**
+  - `L21321` · `2026-09-24` · OPS · **LADDER-USAGE CORPUS in every fuzz and parity gate, and the Metronome crash fixed by class: 11,431 / 11,431 public-ladder battles clean (`2bb5fd0d`..`692d3285`).**
