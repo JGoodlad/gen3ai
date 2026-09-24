@@ -237,6 +237,7 @@ impl crate::state::BattleState {
                 mon.fury_cutter = None; // gen3_bp_modifier_cluster_v1
                 mon.locked_move = None; // gen3_lockin_family_v1
                 mon.rollout = None;
+                mon.rollout_duration = 0;
                 mon.defense_curl = false;
                 mon.rage = false;
                 mon.minimize = false;
@@ -957,6 +958,7 @@ impl crate::state::BattleState {
             m.fury_cutter = None;
             m.locked_move = None; // gen3_lockin_family_v1 — silent on switch-out
             m.rollout = None;        // gen3_rollout_defensecurl_v1
+            m.rollout_duration = 0;  // gen3_rollout_lock_duration_v1
             m.defense_curl = false;  // gen3_rollout_defensecurl_v1
             m.rage = false;          // gen3_rage_secretpower_v1
             m.minimize = false;      // gen3_minimize_v1

@@ -622,3 +622,68 @@ fn charge_selfko_emits_no_charge_end_line() {
         raw.join("\n")
     );
 }
+
+/// LOCKED CONTINUATIONS (`gen3_lockedmove_announce_v1`) — every turn a lock makes the user repeat
+/// its move carries `|[from] lockedmove` on the announce: `runMove`'s `getLockedMove()` branch sets
+/// `sourceEffect = lockedmove` for OUTRAGE / THRASH / PETAL DANCE (the `lockedmove` volatile),
+/// UPROAR and ROLLOUT / ICE BALL alike (node-probed: `|move|p1a: Salamence|Outrage|p2a:
+/// Snorlax|[from] lockedmove` on every turn after the cast). WRONG (pre-fix): the port emitted
+/// the BARE line on every continuation — only Solar Beam's fire turn carried the attr — so
+/// poke-env read each continuation as a fresh use and charged a PP for it (the opponent's PP
+/// estimate; our own until the next full `|request|`). Found by the LADDER-USAGE corpus's first
+/// slice-V run. The CAST turn stays bare.
+#[test]
+fn lockin_continuations_announce_from_lockedmove() {
+    let foe = "Snorlax|snorlax||thickfat|splash|Serious||N||||";
+    for (packed, name) in [
+        ("Salamence|salamence||intimidate|outrage|Adamant|,252,,,,|M||||", "Outrage"),
+        ("Tauros|tauros||intimidate|thrash|Adamant|,252,,,,|M||||", "Thrash"),
+        ("Vileplume|vileplume||chlorophyll|petaldance|Modest|,,,252,,|M||||", "Petal Dance"),
+        ("Exploud|exploud||soundproof|uproar|Modest|,,,252,,|M||||", "Uproar"),
+    ] {
+        let script = [
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // the cast
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // the first continuation
+        ];
+        let raw = run_logged(packed, foe, SD, &script);
+        let user = &packed[..packed.find('|').unwrap()];
+        let bare = format!("|move|p1a: {user}|{name}|p2a: Snorlax");
+        let locked = format!("{bare}|[from] lockedmove");
+        let moves: Vec<&String> = raw.iter().filter(|l| l.starts_with(&format!("|move|p1a: {user}|"))).collect();
+        assert!(moves.len() >= 2, "{name}: fixture — the lock must reach a continuation; lines:\n{}", raw.join("\n"));
+        assert_eq!(moves[0], &bare, "{name}: the CAST turn is bare");
+        assert_eq!(moves[1], &locked, "{name}: the continuation carries `[from] lockedmove`; lines:\n{}", raw.join("\n"));
+    }
+}
+
+/// ROLLOUT's lock ENDS when a turn does not compute damage (`gen3_rollout_lock_duration_v1`):
+/// the sim's `rollout` volatile has `duration: 1`, refreshed to 2 only by the `basePowerCallback`
+/// (which runs only on a damaging hit), so a Protect-blocked (or missed) turn lets it expire at
+/// that residual and the NEXT use is a fresh one — a BARE announce, a PP paid, bp back to 30.
+/// Node-probed: `Rollout` / `Rollout|[from] lockedmove` (blocked) / `Rollout` (fresh). WRONG
+/// (pre-fix): the port kept the lock across the blocked turn — it announced the third use
+/// `[from] lockedmove` and charged no PP for it (31 left, not 30).
+#[test]
+fn rollout_lock_ends_on_a_turn_that_does_not_hit() {
+    let registeel = "Registeel|registeel||clearbody|rollout,thunderwave|Careful|252,,,,252,4|N||||";
+    let skarmory = "Skarmory|skarmory||keeneye|splash,protect|Careful|252,,,,252,4|M||||";
+    let script = [
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Rollout hits; Splash
+        ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // locked Rollout into Protect
+        ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // a FRESH Rollout; Splash
+    ];
+    let d = dex();
+    let mut battle = Battle::start_with_switchins(&opts_cg(registeel, skarmory, SD), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (_out, lines) = st.run_full_battle_logged(&script, &d);
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let uses: Vec<&String> = raw.iter().filter(|l| l.starts_with("|move|p1a: Registeel|Rollout")).collect();
+    let bare = "|move|p1a: Registeel|Rollout|p2a: Skarmory";
+    assert_eq!(uses.len(), 3, "fixture: three Rollout uses; lines:\n{}", raw.join("\n"));
+    assert_eq!(uses[0], bare);
+    assert_eq!(uses[1], &format!("{bare}|[from] lockedmove"), "the blocked turn is still the lock");
+    assert!(raw.iter().any(|l| l == "|-activate|p2a: Skarmory|Protect"), "fixture: Protect blocked it");
+    assert_eq!(uses[2], bare, "THE PIN — the lock expired at the blocked turn's residual");
+    let pp = st.sides[0].pokemon[0].move_pp[0];
+    assert_eq!(pp, 30, "two fresh uses pay two PP (32 -> 30, full PP Ups); the locked turn pays none");
+}

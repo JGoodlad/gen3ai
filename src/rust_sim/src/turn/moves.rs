@@ -599,6 +599,20 @@ impl crate::state::BattleState {
             //     Trick). ---
         }
 
+        // --- ROLLOUT / ICE BALL's volatile is ADDED here on the FIRST use
+        //     (`gen3_rollout_lock_duration_v1`): the move's `onModifyMove` (useMoveInner, after
+        //     BeforeMove and the PP deduction, before the announce and the accuracy roll) adds the
+        //     `rollout` volatile with `duration: 1` unless the user is asleep. It exists — and
+        //     carries a residual duration handler — even when this use then misses. ---
+        if !pursuit_strike
+            && matches!(move_id.as_str(), "rollout" | "iceball")
+            && self.sides[side].pokemon[slot].rollout.is_none()
+            && !matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_)))
+        {
+            self.sides[side].pokemon[slot].rollout = Some((0, move_index));
+            self.sides[side].pokemon[slot].rollout_duration = 1;
+        }
+
         // --- LAST-USED MOVE (`gen3_taunt_disable_v1`, `pokemon.moveUsed` at battle-actions.ts:260,
         //     right after PP is deducted / BeforeMove passed). Records the slot this mon just USED
         //     so a FOE's Disable can disable it. Set for a REAL move to `Some(move_index)`; a
@@ -682,7 +696,16 @@ impl crate::state::BattleState {
         //     the `[still]`+`-prepare`+`-anim` form); `announce_lockedmove` marks the fire
         //     (the downstream announce gains the lockedmove attr). ---
         let mut suppress_announce = false;
-        let mut announce_lockedmove = false;
+        // THE LOCK-IN CONTINUATIONS (`gen3_lockedmove_announce_v1`): a turn a lock makes the user
+        // repeat its move — Outrage / Petal Dance / Thrash (`lockedmove`), Uproar, Rollout / Ice
+        // Ball — runs `runMove`'s `getLockedMove()` branch, which sets `sourceEffect =
+        // lockedmove`, so the sim's announce is `|move|<user>|<Move>|<target>|[from] lockedmove`
+        // (then `|[miss]` on a miss), exactly as Solar Beam's fire turn. The port emitted the BARE
+        // line on every continuation from the day each family landed, and poke-env reads a bare
+        // line as a fresh use: it charged one PP per continuing turn (the opponent's PP estimate,
+        // and our own until the next full `|request|`). Found by the LADDER-USAGE corpus's first
+        // slice-V run (a Rollout Registeel); 0 pool teams carry any of these moves.
+        let mut announce_lockedmove = locked_uproar || locked_lockin || locked_rollout;
         if move_id == "solarbeam" {
             if locked_fire {
                 if let Some(t) = self.sides[side].pokemon[slot].two_turn.as_mut() {
@@ -1722,13 +1745,18 @@ impl crate::state::BattleState {
         //     announce — and unlike Uproar the lock ends in CONFUSION at the residual. ---
         // ROLLOUT / ICE BALL advance the execution counter on every LANDED hit; the lock ends
         // after the 5th (`gen3_rollout_defensecurl_v1`).
-        if matches!(move_id.as_str(), "rollout" | "iceball") {
+        // The count advances in the sim's `basePowerCallback`, i.e. only on a turn that computed
+        // damage; a non-final hit refreshes the volatile's duration to 2 so it survives the
+        // residual, and the 5th hit leaves it at 1 so that residual ends it
+        // (`gen3_rollout_lock_duration_v1`).
+        if matches!(move_id.as_str(), "rollout" | "iceball")
+            && !matches!(self.sides[side].pokemon[slot].status, Some(Status::Sleep(_)))
+        {
             let hits = self.sides[side].pokemon[slot].rollout.map(|(h, _)| h).unwrap_or(0) + 1;
-            self.sides[side].pokemon[slot].rollout = if hits >= 5 {
-                None
-            } else {
-                Some((hits, move_index))
-            };
+            self.sides[side].pokemon[slot].rollout = Some((hits.min(5), move_index));
+            if hits < 5 {
+                self.sides[side].pokemon[slot].rollout_duration = 2;
+            }
         }
 
         // RAGE (`gen3_rage_secretpower_v1`) arms its `singlemove` volatile on a landed hit.

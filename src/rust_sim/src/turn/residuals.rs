@@ -196,6 +196,21 @@ impl crate::state::BattleState {
                     handler: ResidualAction::FuryCutterDuration { side, slot: sl },
                 });
             }
+            // ROLLOUT / ICE BALL's `rollout` volatile (`gen3_rollout_lock_duration_v1`): a
+            // `duration` volatile with no onResidualOrder — the same NO_ORDER/subOrder-2 group as
+            // Fury Cutter and the lock-in family. Present on EVERY turn the volatile exists,
+            // including the first use and the turn it expires.
+            if self.sides[side].pokemon[self.sides[side].active].rollout.is_some() {
+                let sl = self.sides[side].active;
+                handlers.push(EventHandler {
+                    order: NO_ORDER,
+                    priority: 0,
+                    speed: self.sides[side].pokemon[sl].cached_speed as f64,
+                    sub_order: 2,
+                    effect_order: 0,
+                    handler: ResidualAction::RolloutDuration { side, slot: sl },
+                });
+            }
             if self.sides[side].pokemon[self.sides[side].active].uproar.is_some() {
                 let sl = self.sides[side].active;
                 handlers.push(EventHandler {
@@ -1051,6 +1066,22 @@ impl crate::state::BattleState {
                         continue;
                     }
                     self.sides[side].pokemon[slot].fury_cutter = Some((m, d - 1));
+                    continue;
+                }
+                // ROLLOUT's duration tick (`gen3_rollout_lock_duration_v1`): 2 -> 1 after a
+                // landed hit keeps the lock; 1 -> gone ends it (a miss, a Protect, a turn the
+                // user could not act, or the 5th hit). No emission.
+                ResidualAction::RolloutDuration { side, slot } => {
+                    if self.sides[side].pokemon[slot].rollout.is_none() {
+                        continue;
+                    }
+                    let d = self.sides[side].pokemon[slot].rollout_duration;
+                    if d <= 1 {
+                        self.sides[side].pokemon[slot].rollout = None;
+                        self.sides[side].pokemon[slot].rollout_duration = 0;
+                        continue;
+                    }
+                    self.sides[side].pokemon[slot].rollout_duration = d - 1;
                     continue;
                 }
                 // UPROAR's lock tick (`gen3_uproar_v1`). A LIVE tick emits the `[upkeep]`

@@ -13890,8 +13890,13 @@ fn rollout_doubles_per_execution_and_defense_curl_doubles_it_again() {
     let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
     let seed = "3,3,3,3";
 
-    // The execution counter advances 1,2,3,4 and the lock ENDS after the 5th.
-    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    // The execution counter advances 1,2,3,4 and the lock ENDS after the 5th. The lock's end
+    // is the `rollout` volatile EXPIRING at the 5th turn's residual (`gen3_rollout_lock_
+    // duration_v1`: the 5th hit does not refresh its duration), so the foe must SURVIVE the 5th
+    // hit for the residual to run — a Rock-resisting Steelix does; the Snorlax below is KO'd by
+    // it and the battle ends before any residual.
+    let lock_foe = "Steelix||none|RockHead|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, lock_foe, seed), &d).expect("start");
     let st = b.state_mut().expect("state");
     let pp0 = st.sides[0].pokemon[0].pp_of(0);
     let mut counter = Vec::new();

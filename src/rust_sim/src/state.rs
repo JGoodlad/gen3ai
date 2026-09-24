@@ -527,7 +527,19 @@ pub struct MonState {
     /// AGAIN while the user carries the Defense Curl volatile. Probe-measured as per-turn HP
     /// deltas rather than derived, because a MISS does not advance the counter and a CRIT
     /// mimics a rung.
+    ///
+    /// 🚨 **The lock is the sim's `rollout` VOLATILE, and it is DURATION-driven**
+    /// (`gen3_rollout_lock_duration_v1`): `onModifyMove` adds it on the FIRST use (hits 0,
+    /// `duration: 1`) before the accuracy roll; the `basePowerCallback` — which runs only when
+    /// the move computes damage — advances the count and refreshes `duration` to 2 while
+    /// `hitCount < 5`. So a MISS (or a Protect, or a turn the user cannot act) is NOT refreshed
+    /// and the lock EXPIRES at that turn's residual: the next use is a fresh one (PP paid, bp back
+    /// to 30, a bare announce). The port used to keep the lock across a miss.
     pub rollout: Option<(u8, usize)>,
+    /// The `rollout` volatile's `duration` (`gen3_rollout_lock_duration_v1`); meaningful only
+    /// while `rollout` is `Some`. Ticked by the residual `RolloutDuration` handler (a
+    /// NO_ORDER / subOrder-2 duration handler like Fury Cutter's, so it joins that tie group).
+    pub rollout_duration: u8,
     /// The DEFENSE CURL volatile (`gen3_rollout_defensecurl_v1`). Its own effect is the
     /// declarative +1 Def, but the volatile exists to double Rollout / Ice Ball — which is why
     /// the two had to be modeled in the same pass. Cleared on switch-out and faint.
@@ -1344,6 +1356,7 @@ impl MonState {
             fury_cutter: None,
             locked_move: None,
             rollout: None,
+            rollout_duration: 0,
             defense_curl: false,
             rage: false,
             minimize: false,

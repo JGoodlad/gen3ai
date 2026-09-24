@@ -661,6 +661,8 @@ enum ResidualAction {
     UproarDuration { side: usize, slot: usize },
     /// FURY CUTTER's `duration: 2` lapse (`gen3_bp_modifier_cluster_v1`), NO_ORDER/sub 2.
     FuryCutterDuration { side: usize, slot: usize },
+    /// The `rollout` volatile's duration tick (`gen3_rollout_lock_duration_v1`).
+    RolloutDuration { side: usize, slot: usize },
     /// The OUTRAGE / PETAL DANCE / THRASH lock tick (`gen3_lockin_family_v1`), NO_ORDER/sub 2.
     LockedMoveDuration { side: usize, slot: usize },
 }
