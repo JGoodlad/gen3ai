@@ -81,8 +81,13 @@ COMMIT_POLICY_KEYS = (20, 22)
 #: routine gate forever: key 177 passes Calm Mind stages (the entrant reads spa+2/spd+2 in the
 #: SIM), key 34 passes a Substitute (the §4b "missing `substitute`" finding's own board).
 COMMIT_BATON_PASS_KEYS = (34, 177)
-#: The MILESTONE tier's key ranges (the Phase-0 recipe) and policy keys, two seeds each.
-MILESTONE_RANDOM_KEYS = (range(0, 200), range(5000, 5200))
+#: The MILESTONE tier's key ranges and policy keys, two seeds each. The random seeds STRIDE the
+#: whole pool: teams are `key`, `key+1` (mod the pool), so the even keys pair (0,1), (2,3), … and
+#: the odd keys (1,2), (3,4), … — every one of the 719 teams plays twice per seed, against two
+#: different partners. (The Phase-0 ranges 0–199 and 5000–5199 wrapped onto overlapping teams and
+#: covered ~234 of 719 — which is how a Pressure-Aerodactyl team, 3 in the pool, never reached the
+#: truth audit.)
+MILESTONE_RANDOM_KEYS = (range(0, 720, 2), range(1, 720, 2))
 MILESTONE_POLICY_KEYS = (range(100, 150), range(6000, 6050))
 
 #: The compared fields of one event (``BattleEvent`` attribute, core JSON key).
@@ -642,7 +647,7 @@ def manifest_now() -> dict:
         "schema": "gen3_core_parity_manifest_v1",
         "pool_sha256": pool_hash(),
         "production_sha256": digest,
-        "random_keys": [[r.start, r.stop] for r in MILESTONE_RANDOM_KEYS],
+        "random_keys": [[r.start, r.stop, r.step] for r in MILESTONE_RANDOM_KEYS],
         "policy_keys": [[r.start, r.stop] for r in MILESTONE_POLICY_KEYS],
         "protocol_per_scenario": 2,
     }

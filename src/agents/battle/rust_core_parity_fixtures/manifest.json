@@ -15,11 +15,13 @@
  "random_keys": [
   [
    0,
-   200
+   720,
+   2
   ],
   [
-   5000,
-   5200
+   1,
+   720,
+   2
   ]
  ],
  "schema": "gen3_core_parity_manifest_v1"

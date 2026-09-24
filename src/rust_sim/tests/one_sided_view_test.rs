@@ -575,10 +575,10 @@ fn v4_a_fainted_own_mons_request_condition_clears_its_effects() {
 
 #[test]
 fn v5_the_status_counter_follows_poke_envs_own_status() {
-    // pokemon.py: `moved`/`cant_move` +1 while SLP; the `status` SETTER does NOT reset the
-    // counter (a Rest taken while badly poisoned carries the toxic count — a poke-env READING
-    // defect, reproduced here, not corrected: `one_sided_view.md` §4b); `-cureteam` →
-    // `cure_status()` clears the status and NOT the counter; `-curestatus X` resets both.
+    // pokemon.py: `moved`/`cant_move` +1 while SLP; the fork's `status` SETTER zeroes the
+    // counter on a CHANGE (R1: a Rest taken while badly poisoned starts its sleep at 0, not at the
+    // toxic count); `-cureteam` → `cure_status()` clears the status and NOT the counter;
+    // `-curestatus X` resets both.
     let obs = fold(&[
         "|switch|p2a: Suicune|Suicune|100/100",
         "|-status|p2a: Suicune|tox",
@@ -588,7 +588,8 @@ fn v5_the_status_counter_follows_poke_envs_own_status() {
         "|cant|p2a: Suicune|slp",
     ]);
     let m = obs.mon("Suicune", false).unwrap();
-    assert_eq!((m.pstatus.as_deref(), m.status_counter), (Some("slp"), 3));
+    assert_eq!((m.pstatus.as_deref(), m.status_counter), (Some("slp"), 1),
+        "the Rest resets the count; the one cant-turn since is the whole sleep");
     let obs = fold(&[
         "|switch|p1a: Swampert|Swampert, M|404/404",
         "|-status|p1a: Swampert|slp|[from] move: Rest",

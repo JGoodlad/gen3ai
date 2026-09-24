@@ -211,12 +211,12 @@ def _played(keys: Iterable[int], policy=None) -> Tuple[P.Census, V.ViewCensus]:
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("seed", [0, 1], ids=["keys_0_199", "keys_5000_5199"])
+@pytest.mark.parametrize("seed", [0, 1], ids=["even_keys_whole_pool", "odd_keys_whole_pool"])
 def test_milestone_seeded_random_battles(seed):
     P.check_manifest()
     census, views = _played(P.MILESTONE_RANDOM_KEYS[seed])
-    _assert_clean(census, min_events=100_000, min_kinds=24)
-    _assert_views_clean(views, min_decisions=30_000, min_truth=700_000)
+    _assert_clean(census, min_events=180_000, min_kinds=24)
+    _assert_views_clean(views, min_decisions=55_000, min_truth=1_200_000)
 
 
 @pytest.mark.slow

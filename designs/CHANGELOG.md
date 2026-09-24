@@ -9633,3 +9633,16 @@ reads **0.0** on the first rollout: an untrained policy's masked logits are near
 0.40 quantile lands at ~0 and the whole pool is admitted — honest (every decision really is
 contested there), but it means an early rollout's population is set by `--fork-max-per-battle` and
 the fraction rather than by contestedness.
+
+## 2026-09-23 — TRAINING-INPUT CHANGE: poke-env READING fixes R1–R3 from the truth audit (no version bump — dims and weight shapes unchanged)
+
+🚨 **Arms launched from this commit on read CORRECTED sleep/toxic counters (and the sleep-wake
+belief that reads them), the Psych Up boost direction, and our own move PP, and are NOT obs-identical
+to earlier arms.** Pinned runs execute their pin's vendored `poke_env` and are unaffected. The three
+fork fixes (`designs/rust_sim/one_sided_view.md` §4b), each established against the simulator:
+R1 — the `status` setter starts a NEW status at count 0 (upstream carried the old count: 11.09 per
+1,000 decisions on the pool); R2 — `|-copyboost|A|B` gives A B's stages, as the sim's Psych Up does
+(upstream read it backwards); R3 — our active mon's PP is synced from the `|request|` (upstream
+counted sightings, so an un-inferable foe Pressure left it high: 7.15 per 1,000 on the whole pool).
+The golden obs fixture was regenerated after a layout diff showed exactly 32 / 991 decisions move,
+in two columns only (the sleep counter and `p_wake` of one own slot).

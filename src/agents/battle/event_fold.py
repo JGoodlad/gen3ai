@@ -338,10 +338,12 @@ class ViewEventFolder(Gen3Battle):
             for m in self._mons.values():
                 m.boosts.clear()
         elif kw == "-copyboost":
-            # `|-copyboost|SOURCE|TARGET` — poke-env writes `target.copy_boosts(source)`, i.e.
-            # the TARGET ends up holding the SOURCE's stages (Psych Up's user is the target).
+            # `|-copyboost|RECEIVER|GIVER` — the FIRST ident takes the second's stages, as the
+            # sim's Psych Up does and as the fork's `-copyboost` handler now reads it (R2).
             if len(sm) >= 4:
-                self._boosts_of(sm[3]).update(dict(self._boosts_of(sm[2])))
+                b = self._boosts_of(sm[2])
+                b.clear()
+                b.update(dict(self._boosts_of(sm[3])))
         elif kw == "-invertboost":
             if len(sm) >= 3:
                 b = self._boosts_of(sm[2])

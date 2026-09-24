@@ -61,6 +61,17 @@ branch. Exactly 2 columns inserted, at HEAD indices **1518-1519** — inside the
 two columns from the HEAD capture reproduces the pre-clock baseline **bit-for-bit across all 991 x
 2667 cells**. So nothing beyond v65 had altered the obs, and this regen encodes only the intended
 insertion.
+
+**Regen 2026-09-23** (the TRUTH AUDIT's poke-env READING fixes R1–R3 — a new status starts its own
+counter; `-copyboost`'s first ident receives; our active PP is the request's; obs dim unchanged at
+2501). Proven confined before this regen, by capturing full vectors at the base commit (which
+reproduced the committed fixture 991/991) and with the fixes: decision count UNCHANGED at 991 (no
+branching), **32 / 991 decisions** differ, and every differing cell is one of TWO columns, both in
+our_team slot 3, both resolved from the layout — `POKEMON_COUNTER_OFFSET` (the SLEEP counter; the
+toxic one never moves) and `POKEMON_SLEEP_BELIEF_OFFSET + 1` (`p_wake`). The values are R1's: the
+first decision after a Rest read counter 1/4 (carried from the previous status) where the sim has
+slept 0 turns, and `p_wake` 1.0 where Rest's 2-turn schedule gives 0.0. R2 and R3 do not occur in
+this battle set. Regressions: `poke_env/battle/reading_fixes_test.py` (fails on upstream).
 """
 import json
 import os

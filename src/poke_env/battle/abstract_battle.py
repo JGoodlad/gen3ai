@@ -1164,8 +1164,14 @@ class AbstractBattle(ABC):
             pokemon = event[2]
             self.get_pokemon(pokemon).clear_positive_boosts()
         elif event[1] == "-copyboost":
-            source, target = event[2:4]
-            self.get_pokemon(target).copy_boosts(self.get_pokemon(source))
+            # gen3ai fork (R2, `designs/rust_sim/one_sided_view.md` §4b): the FIRST ident
+            # RECEIVES the second's stages. The sim's Psych Up is `source.boosts[i] =
+            # target.boosts[i]; this.add('-copyboost', source, target, …)` (data/mods/gen5
+            # moves.ts, inherited by gen 3); SIM-PROTOCOL.md's "copy from SOURCE to TARGET"
+            # wording says the reverse, and upstream followed the doc — so after a Psych Up the
+            # user kept its old stages and the TARGET's were overwritten with them.
+            receiver, giver = event[2:4]
+            self.get_pokemon(receiver).copy_boosts(self.get_pokemon(giver))
         elif event[1] == "-curestatus":
             pokemon, status = event[2:4]
             self.get_pokemon(pokemon).cure_status(status)

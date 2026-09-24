@@ -1382,7 +1382,17 @@ class Pokemon:
 
     @status.setter
     def status(self, status: Optional[Union[Status, str]]):
-        self._status = Status[status.upper()] if isinstance(status, str) else status
+        new = Status[status.upper()] if isinstance(status, str) else status
+        # gen3ai fork (R1, `designs/rust_sim/one_sided_view.md` §4b): a NEW status starts its OWN
+        # count. Upstream kept `_status_counter` across the change, so a Rest taken while badly
+        # poisoned began its sleep count at the toxic count, and a re-sleep after a cure the
+        # watcher saw only as a bare HP token resumed the old sleep's count — the obs's sleep
+        # counter and its sleep-wake belief (K = cant-turns) then read "wakes next turn" on a mon
+        # that had just fallen asleep. Measured against the sim: wrong on 886 of 12,201
+        # asleep-mon decisions as upstream, 0 with this reset.
+        if new != self._status:
+            self._status_counter = 0
+        self._status = new
 
     @property
     def status_counter(self) -> int:

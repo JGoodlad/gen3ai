@@ -257,11 +257,13 @@ impl MonObservation {
         self.pstatus.as_deref() == Some(s)
     }
 
-    /// The `Pokemon.status` SETTER (`-status`): writes `_status` and leaves `_status_counter`
-    /// alone — so a Rest taken while badly poisoned starts its sleep count at the toxic count
-    /// (a poke-env READING defect against the sim, recorded in `one_sided_view.md` §4b; this
-    /// fold reproduces the reading, it does not correct it).
+    /// The `Pokemon.status` SETTER (`-status`): writes `_status`, and — the fork's R1 fix
+    /// (`one_sided_view.md` §4b) — zeroes `_status_counter` when the status CHANGES, so a Rest
+    /// taken while badly poisoned starts its sleep count at 0, as the sim's does.
     fn set_pstatus(&mut self, status: &str) {
+        if !self.pstatus_is(status) {
+            self.status_counter = 0;
+        }
         self.pstatus = Some(status.to_string());
     }
 

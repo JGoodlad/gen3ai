@@ -120,6 +120,7 @@ class Battle(AbstractBattle):
             if self.active_pokemon is not None:
                 if strict_battle_tracking:
                     self.active_pokemon.check_move_consistency(active_request)
+                self._sync_active_pp(active_request)
                 self._available_moves.extend(
                     self.active_pokemon.available_moves_from_request(active_request)
                 )
@@ -142,6 +143,27 @@ class Battle(AbstractBattle):
                         self._available_switches.append(pokemon)
                 elif not pokemon.active and not pokemon.fainted:
                     self._available_switches.append(pokemon)
+
+    def _sync_active_pp(self, active_request: Dict[str, Any]) -> None:
+        """gen3ai fork (R3, `designs/rust_sim/one_sided_view.md` §4b): our active mon's move PP is
+        the REQUEST's, which is the sim's own word. Upstream counted it from `|move|` sightings and
+        never re-read it, so every PP the sim deducts without poke-env knowing — a foe's Pressure
+        it cannot infer (gen 3 announces Pressure only to its owner; an Aerodactyl has two
+        possible abilities) — left our own PP reading HIGH for the rest of the battle. A move the
+        request lists without a `pp` (a locked single entry, Struggle) is left alone."""
+        from poke_env.battle.move import Move
+
+        mon = self.active_pokemon
+        for req in active_request.get("moves", []):
+            pp = req.get("pp")
+            rid = req.get("id")
+            if pp is None or not rid or rid == "struggle":
+                continue
+            want = Move.retrieve_id(rid)
+            for mv in mon.moves.values():
+                if Move.retrieve_id(mv.id) == want:
+                    mv._current_pp = int(pp)
+                    break
 
     def switch(
         self,
