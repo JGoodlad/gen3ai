@@ -1,0 +1,16 @@
+5 units already written, 815 to run
+  1/815 random_10 368 decisions 2.13 s
+  21/815 random_50 158 decisions 0.81 s
+  41/815 random_90 62 decisions 0.38 s
+  61/815 random_130 161 decisions 0.77 s
+  81/815 random_170 122 decisions 0.44 s
+  101/815 random_210 91 decisions 0.57 s
+  121/815 random_250 134 decisions 0.78 s
+  141/815 random_290 84 decisions 0.42 s
+  161/815 random_330 123 decisions 0.35 s
+  181/815 random_370 157 decisions 0.58 s
+  201/815 random_410 120 decisions 0.38 s
+  221/815 random_450 121 decisions 0.43 s
+  241/815 random_490 184 decisions 1.11 s
+Terminated                 nice -n 10 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 $C/catalogue.py run --out $C/rows.jsonl
+EXIT 143

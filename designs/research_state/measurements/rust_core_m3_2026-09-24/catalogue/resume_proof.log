@@ -1,0 +1,9 @@
+v2 catalogue (frozen_d, 2026-09-24T14:01:47-07:00): a --limit 5 first leg wrote 5 durable rows; the detached run below resumed from them.
+5 units already written, 815 to run
+  1/815 random_10 368 decisions 2.13 s
+2026-09-24T14:05:07-07:00: KILLED the detached run (pid 1142415, SIGTERM) mid-flight after 257 durable rows (257 distinct units):
+Terminated                 nice -n 10 /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 $C/catalogue.py run --out $C/rows.jsonl
+EXIT 143
+restarted:
+257 units already written, 563 to run
+  1/563 random_514 63 decisions 0.62 s

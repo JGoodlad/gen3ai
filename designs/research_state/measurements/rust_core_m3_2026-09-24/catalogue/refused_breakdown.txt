@@ -1,0 +1,9 @@
+   908  DRAG + SWITCH label | the opponent's own action: a chosen/replacement switch | the label names the DRAGGED mon
+   109  MOVE label | cant Focus Punch | names the refused move
+    87  DRAG + SWITCH label | the opponent's own action: a refusal | the label names the DRAGGED mon
+    62  DRAG + SWITCH label | the opponent's own action: neither | the label names the DRAGGED mon
+    39  SWITCH label | cant slp | dragged after
+    36  SWITCH label | cant par | dragged after
+    10  SWITCH label | cant frz | dragged after
+     2  SWITCH label | cant ability: Truant | dragged after
+     1  MOVE label | cant nopp | names another move

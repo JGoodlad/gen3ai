@@ -1,0 +1,42 @@
+units 820/820 (missing 0); decisions 142410; slice-T divergences 0 (of which information-boundary violations 0)
+
+case | per 1,000 decisions | count
+multi_action_side         65.61     9344   a side has >= 2 actions in one decision window (an action then its replacement, a pass then its switch, a switch then a drag)
+multi_faint                9.39     1337   >= 2 faints in one window (a trade, Explosion, Destiny Bond, Perish Song, a residual KO after a KO)
+denied_fainted_first      24.91     3547   a turn actor fainted before its action (outsped and KOed, Explosion, a recoil trade)
+denied_turn_cut            4.54      646   a turn actor that did NOT faint lost its action because a faint earlier in the turn CUT it (gen-3: any faint cancels every remaining queued action; in singles that is a faster SELF-KO — Explosion / Self-Destruct, recoil, confusion, Rough Skin)
+refused                   99.14    14118   a chosen action refused (`cant`: par, slp, frz, flinch, recharge, Focus Punch, Taunt, Disable) and never taken
+baton_pass                 6.64      946   a Baton Pass entry (the receiver + the boosts / volatiles passed)
+called_move                0.80      114   a called move (Sleep Talk / Mirror Move) — caller then called
+pursuit_on_switch          3.01      428   Pursuit striking a switching target
+drag                      31.89     4542   a drag (Roar / Whirlwind): a switch that was not the player's choice
+replacement              102.28    14565   a replacement switch after a faint (the free switch)
+hazard_ko                  4.53      645   a faint to Spikes on entry
+residual_damage         1840.35   262084   damage / heal from a residual source (weather, poison, burn, Leech Seed, Leftovers, Wish …)
+item_transfer              0.90      128   an item moved or removed (Thief / Covet / Trick / Knock Off)
+substitute_hit             4.54      646   a Substitute took a hit
+protect_block             17.50     2492   a move LOST its target to Protect / Detect
+charge                     0.07       10   a charge turn (`-prepare`)
+recharge                   0.04        6   a recharge turn
+multi_hit                  2.81      400   a multi-hit move (>= 2 hits of one move)
+wish_heal                 13.05     1858   a Wish heal resolving (the wisher named)
+item_via_trick             0.00        0   an item line caused by Trick (both mons) — the event window's ITEM_TRANSITION reads REVEALED for each, never SWAPPED
+item_via_thief_covet       0.81      116   an item line caused by Thief / Covet (the victim's reads SWAPPED, the thief's REVEALED)
+hazard_cleared             8.67     1234   a side condition ENDED by Rapid Spin — the event window's HAZARD row is identical to a hazard SET
+faint_destinybond          0.00        0   a faint caused by Destiny Bond — the event window / TurnDelta faint-cause vocabulary has no such cause
+faint_perishsong           0.27       38   a faint caused by Perish Song — likewise
+unboost                   58.39     8316   a stat stage DROP (`|-unboost|`: Intimidate, Curse's Speed, Overheat, Screech …) — the event window's BOOST row reads it as a RISE (MAGNITUDE sign inverted)
+encore_same_turn           0.00        0   an Encore landing on the opponent BEFORE it moves that turn — its executed move is the encored one, whatever it chose (the label names the executed move)
+clock_false_progress      24.21     3448   the progress clock's clause (i) inputs hold — TurnDelta's `our_damaging_event` set and `opp_target_hp_delta` <= -0.03 — while OUR move dealt NO direct damage to the opponent in this window (a status / failed / self move credited with sand, poison, recoil or any other chip)
+clock_false_progress_reset     1.28      182   ... and that clause ALONE reset the clock (the counterfactual without `our_damaging_event` does not reset) — the GIGO that reaches the obs's progress-clock scalar
+turn-cut causes (the first faint's cause): {'recoil': 10, 'selfko': 220, 'spikes': 416}
+
+label outcomes (kind 0 MOVE / 1 SWITCH / 2 UNKNOWN=masked), per opponent case:
+  opp_encored_same_turn        {0: 0, 1: 0, 2: 0}  (MOVE labels naming the ENCORED move 0)
+  opp_denied_fainted_first     {0: 0, 1: 0, 2: 1769}
+  opp_denied_turn_cut          {0: 0, 1: 0, 2: 325}
+  opp_refused                  {0: 118, 1: 88, 2: 6853}
+  opp_baton_pass               {0: 169, 1: 0, 2: 473}
+  opp_called_move              {0: 46, 1: 0, 2: 11}  (MOVE labels naming the called move 46, the caller 0)
+  opp_dragged                  {0: 0, 1: 1063, 2: 1207}
+  opp_replacement_only         {0: 0, 1: 1194, 2: 4276}

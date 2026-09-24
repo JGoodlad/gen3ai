@@ -201,8 +201,17 @@ the slice level too) is gated by 24 constructed fixtures.
 **The tracker fork:** the Rust fold per successor is 0.089 ms, 1.8 % of a wide searched decision
 [0.7, 2.4] — 0.17× [0.07, 0.30] the pinned-pickle thaw ALONE (9.9 % [9.3, 10.3]); search still
 thaws until M4's encoder reads the version's trackers (`SearchConfig.core_trackers` stays OFF).
-**The loss catalogue** (what the frozen `TurnDelta`, the α/β label and the 22-column event window
-flatten, per 1,000 MILESTONE decisions) and the label / clock GIGO findings it surfaced: [`research_state/measurements/rust_core_m3_2026-09-24/`](../research_state/measurements/rust_core_m3_2026-09-24/README.md).
+**The loss catalogue** (§5 of [`research_state/measurements/rust_core_m3_2026-09-24/`](../research_state/measurements/rust_core_m3_2026-09-24/README.md);
+820 / 820 MILESTONE battles, 142,410 viewer decisions, slice T 0): per 1,000 decisions a turn actor
+is denied by fainting first 24.9, by the gen-3 TURN CUT 4.5, refused 99.1 — and every opponent
+denial's α/β label is MASKED. GIGO it surfaced (none fixed; training inputs): the 22-column event
+window records every stat DROP as a rise (58.4), a Protect block as a hit (17.5; it also kills the
+progress clock's exogenous-freeze branch), a Rapid Spin clear as a hazard set (8.7), Trick as two
+reveals, Perish Song / Destiny Bond faints as `attack`; the label names a DRAGGED mon as the
+opponent's switch (7.5), a replacement straddling a window as a chosen switch (8.4), the called
+move of a Sleep Talk (0.3); the clock's "our move dealt damage" clause credits any chip to a
+status / failed move (spurious 24.2, decisive 1.3). One poke-env finding: Assist and Nature Power
+crash the parse exactly as Metronome does.
 
 **Gate.** Slice T: the tracker state (every tracker above, every event-window row), the α/β
 opponent-intent LABEL per decision, and the REWARD (the win indicator) equal per decision, both

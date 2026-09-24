@@ -1,0 +1,195 @@
+
+===== label:opp_dragged:1: 1 example(s)
+{"battle": "random_1", "viewer": "p1", "after": 318, "label": {"kind": 1, "move_id": null, "switch_species": "zapdos", "switch_slot": 3, "attacker": null}}
+    |
+    |t:|<NORMALIZED>
+    |switch|p2a: Gengar|Gengar, F|14/100 par
+    |move|p1a: Tyranitar|Roar|p2a: Gengar
+    |drag|p2a: Zapdos|Zapdos|69/100 slp
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-damage|p2a: Zapdos|63/100 slp|[from] Sandstorm
+    |-heal|p2a: Zapdos|69/100 slp|[from] item: Leftovers
+    |-heal|p1a: Tyranitar|214/387 tox|[from] item: Leftovers
+    |-damage|p1a: Tyranitar|118/387 tox|[from] psn
+    |upkeep
+    |turn|73
+
+===== label:opp_replacement_only:1: 1 example(s)
+{"battle": "random_5", "viewer": "p1", "after": 130, "label": {"kind": 1, "move_id": null, "switch_species": "tyranitar", "switch_slot": 3, "attacker": null}}
+    |
+    |t:|<NORMALIZED>
+    |switch|p2a: Tyranitar|Tyranitar, M|40/100
+    |switch|p1a: Skarmory|Skarmory, M|287/334
+    |-damage|p2a: Tyranitar|28/100|[from] Spikes
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-heal|p1a: Skarmory|307/334|[from] item: Leftovers
+    |-heal|p2a: Tyranitar|34/100|[from] item: Leftovers
+    |upkeep
+    |turn|30
+
+===== label:opp_refused:0: 1 example(s)
+{"battle": "random_0", "viewer": "p2", "after": 157, "label": {"kind": 0, "move_id": "focuspunch", "switch_species": null, "switch_slot": null, "attacker": "tyranitar"}}
+    |
+    |t:|<NORMALIZED>
+    |-singleturn|p1a: Tyranitar|move: Focus Punch
+    |move|p2a: Swampert|Earthquake|p1a: Tyranitar
+    |-supereffective|p1a: Tyranitar
+    |-damage|p1a: Tyranitar|14/100
+    |move|p1a: Tyranitar|Focus Punch||[still]
+    |cant|p1a: Tyranitar|Focus Punch|Focus Punch
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-heal|p1a: Tyranitar|20/100|[from] item: Leftovers
+    |-heal|p2a: Swampert|403/403|[from] item: Leftovers
+    |upkeep
+    |turn|33
+
+===== label:opp_refused:1: 1 example(s)
+{"battle": "random_1", "viewer": "p1", "after": 322, "label": {"kind": 1, "move_id": null, "switch_species": "flygon", "switch_slot": 4, "attacker": null}}
+    |
+    |t:|<NORMALIZED>
+    |cant|p2a: Zapdos|slp
+    |move|p1a: Tyranitar|Roar|p2a: Zapdos
+    |drag|p2a: Flygon|Flygon, M|8/100 brn
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-heal|p2a: Flygon|14/100 brn|[from] item: Leftovers
+    |-damage|p2a: Flygon|2/100 brn|[from] brn
+    |-heal|p1a: Tyranitar|142/387 tox|[from] item: Leftovers
+    |-damage|p1a: Tyranitar|22/387 tox|[from] psn
+    |upkeep
+    |turn|74
+
+===== label:opp_baton_pass:0: 1 example(s)
+{"battle": "random_22", "viewer": "p2", "after": 139, "label": {"kind": 0, "move_id": "batonpass", "switch_species": null, "switch_slot": null, "attacker": "zapdos"}}
+    |
+    |t:|<NORMALIZED>
+    |move|p1a: Zapdos|Baton Pass||[still]
+    |-fail|p1a: Zapdos
+    |move|p2a: Jirachi|Substitute|p2a: Jirachi
+    |-fail|p2a: Jirachi|move: Substitute
+    |
+    |-heal|p1a: Zapdos|54/100|[from] item: Leftovers
+    |-heal|p2a: Jirachi|119/404 par|[from] item: Leftovers
+    |upkeep
+    |turn|26
+
+===== label:opp_baton_pass:2: 1 example(s)
+{"battle": "random_7", "viewer": "p1", "after": 50, "label": {"kind": 2, "move_id": null, "switch_species": null, "switch_slot": null, "attacker": null}}
+    |
+    |t:|<NORMALIZED>
+    |move|p2a: Jolteon|Baton Pass|p2a: Jolteon
+    |
+    |t:|<NORMALIZED>
+    |switch|p2a: Starmie|Starmie|100/100|[from] Baton Pass
+    |move|p1a: Skarmory|Roar|p2a: Starmie
+    |drag|p2a: Jolteon|Jolteon, F|100/100
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-damage|p2a: Jolteon|94/100|[from] Sandstorm
+    |-heal|p2a: Jolteon|100/100|[from] item: Leftovers
+    |-heal|p1a: Skarmory|241/333|[from] item: Leftovers
+    |upkeep
+    |turn|10
+
+===== label:opp_called_move:0: 1 example(s)
+{"battle": "random_10", "viewer": "p1", "after": 34, "label": {"kind": 0, "move_id": "rest", "switch_species": null, "switch_slot": null, "attacker": "suicune"}}
+    |
+    |t:|<NORMALIZED>
+    |switch|p1a: Starmie|Starmie|262/262
+    |cant|p2a: Suicune|slp
+    |move|p2a: Suicune|Sleep Talk|p2a: Suicune
+    |move|p2a: Suicune|Rest|p2a: Suicune|[from] Sleep Talk
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-damage|p1a: Starmie|246/262|[from] Sandstorm
+    |-damage|p2a: Suicune|94/100 slp|[from] Sandstorm
+    |-heal|p1a: Starmie|262/262|[from] item: Leftovers
+    |-heal|p2a: Suicune|100/100 slp|[from] item: Leftovers
+    |upkeep
+    |turn|7
+
+===== label:opp_denied_fainted_first:2: 1 example(s)
+{"battle": "random_0", "viewer": "p1", "after": 80, "label": {"kind": 2, "move_id": null, "switch_species": null, "switch_slot": null, "attacker": null}}
+    |
+    |t:|<NORMALIZED>
+    |move|p1a: Swampert|Hydro Pump|p2a: Forretress
+    |-damage|p2a: Forretress|0 fnt
+    |faint|p2a: Forretress
+    |
+    |t:|<NORMALIZED>
+    |switch|p2a: Gengar|Gengar, M|100/100
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-damage|p2a: Gengar|94/100|[from] Sandstorm
+    |-heal|p2a: Gengar|100/100|[from] item: Leftovers
+    |upkeep
+    |turn|16
+
+===== label:opp_denied_turn_cut:2: 1 example(s)
+{"battle": "random_0", "viewer": "p2", "after": 109, "label": {"kind": 2, "move_id": null, "switch_species": null, "switch_slot": null, "attacker": null}}
+    |
+    |t:|<NORMALIZED>
+    |move|p2a: Gengar|Explosion|p1a: Swampert
+    |-damage|p1a: Swampert|40/100
+    |faint|p2a: Gengar
+
+===== label:opp_encored_same_turn:0: 0 example(s)
+
+===== faint_destinybond: 0 example(s)
+
+===== faint_perishsong: 1 example(s)
+{"battle": "random_14", "viewer": "p1", "after": 266, "label": {"kind": 2, "move_id": null, "switch_species": null, "switch_slot": null, "attacker": null}}
+    |
+    |t:|<NORMALIZED>
+    |switch|p2a: Salamence|Salamence, F|70/100 tox
+    |-ability|p2a: Salamence|Intimidate|boost
+    |-unboost|p1a: Zapdos|atk|1
+    |-curestatus|p1a: Zapdos|frz|[msg]
+    |move|p1a: Zapdos|Roar|p2a: Salamence
+    |drag|p2a: Blissey|Blissey, F|100/100
+    |
+    |-heal|p1a: Zapdos|317/371|[from] item: Leftovers
+    |-start|p1a: Zapdos|perish0
+    |upkeep
+    |faint|p1a: Zapdos
+
+===== item_via_trick: 0 example(s)
+
+===== hazard_cleared: 1 example(s)
+{"battle": "random_1", "viewer": "p1", "after": 202, "label": {"kind": 0, "move_id": "crunch", "switch_species": null, "switch_slot": null, "attacker": "tyranitar"}}
+    |
+    |t:|<NORMALIZED>
+    |move|p2a: Tyranitar|Crunch|p1a: Forretress
+    |-resisted|p1a: Forretress
+    |-crit|p1a: Forretress
+    |-damage|p1a: Forretress|35/354
+    |-unboost|p1a: Forretress|spd|1
+    |move|p1a: Forretress|Rapid Spin|p2a: Tyranitar
+    |-resisted|p2a: Tyranitar
+    |-damage|p2a: Tyranitar|99/100
+    |-sideend|p1: Exa1|Spikes|[from] move: Rapid Spin|[of] p1a: Forretress
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-heal|p2a: Tyranitar|100/100|[from] item: Leftovers
+    |-heal|p1a: Forretress|57/354|[from] item: Leftovers
+    |upkeep
+    |turn|48
+
+===== clock_false_progress: 1 example(s)
+{"battle": "random_0", "viewer": "p1", "after": 180, "label": {"kind": 1, "move_id": null, "switch_species": "swampert", "switch_slot": 4, "attacker": null}}
+    |
+    |t:|<NORMALIZED>
+    |switch|p2a: Swampert|Swampert, M|100/100
+    |-damage|p2a: Swampert|88/100|[from] Spikes
+    |move|p1a: Blissey|Soft-Boiled||[still]
+    |-fail|p1a: Blissey|heal
+    |
+    |-weather|Sandstorm|[upkeep]
+    |-damage|p1a: Blissey|611/651|[from] Sandstorm
+    |-heal|p2a: Swampert|94/100|[from] item: Leftovers
+    |-heal|p1a: Blissey|651/651|[from] item: Leftovers
+    |upkeep
+    |turn|39
