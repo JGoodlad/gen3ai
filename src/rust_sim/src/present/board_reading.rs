@@ -122,6 +122,24 @@ pub struct BoardReading {
     /// `_available_switches`, as indices into `team`.
     pub available_switches: Vec<usize>,
     teambuilder: Option<Vec<TbMon>>,
+    /// poke-env's PENDING damaging move per mover (0 = ours, 1 = theirs): captured at the `|move|`
+    /// of a Physical/Special move (`_pending_{our,opp}_damaging_move`), as `(turn, event)`.
+    pub pending_damaging: [Option<(u32, DamagingMoveRead)>; 2],
+    /// …PROMOTED when an effectiveness emission for the defender lands in the same turn
+    /// (`_set_effectiveness` → `_{our,opp}_last_damaging_move`). Read through
+    /// [`BoardReading::last_damaging_move`] (turn-gated). The Hidden-Power belief's input.
+    pub last_damaging: [Option<(u32, DamagingMoveRead)>; 2],
+}
+
+/// poke-env's `DamagingMoveEvent`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DamagingMoveRead {
+    pub user_species: String,
+    pub target_species: String,
+    /// The target's status when the move fired.
+    pub target_status: Option<super::dex::Status>,
+    pub move_id: String,
+    pub effectiveness: f64,
 }
 
 fn ident_side(tok: &str) -> Option<u8> {
@@ -163,6 +181,8 @@ impl BoardReading {
                 Some(p) if !p.is_empty() => Some(TbMon::parse_team(p)?),
                 _ => None,
             },
+            pending_damaging: [None, None],
+            last_damaging: [None, None],
         })
     }
 
@@ -695,6 +715,9 @@ impl BoardReading {
             "-start" => {
                 let (p, effect) = (f(2)?.to_string(), f(3)?.to_string());
                 self.mon(&p)?;
+                if effect == "ability: Flash Fire" {
+                    self.set_effectiveness(&p, 0.0);
+                }
                 if effect == "typechange" {
                     let types = if sm.len() > 5 && sm[5].starts_with("[of] ") {
                         let other = sm[5][5..].to_string();
@@ -853,8 +876,17 @@ impl BoardReading {
                 let side = ident_side(&p).ok_or_else(|| malformed(format!("|teamsize|{p}")))? as usize;
                 self.team_size[side] = Some(n.trim().parse().map_err(|_| refuse(PyExc::ValueError, format!("|teamsize| {n}: int() (ValueError)")))?);
             }
-            "-supereffective" | "-resisted" => {}
+            "-supereffective" | "-resisted" => {
+                if sm.len() >= 3 {
+                    let d = sm[2].clone();
+                    self.set_effectiveness(&d, if sm[1] == "-supereffective" { 2.0 } else { 0.5 });
+                }
+            }
             "-immune" => {
+                if sm.len() >= 3 {
+                    let d = sm[2].clone();
+                    self.set_effectiveness(&d, 0.0);
+                }
                 if sm.len() == 4 && sm[3].starts_with("[from] ability:") {
                     let cause = sm[3].replace("[from] ability:", "");
                     let p = sm[2].clone();
@@ -1044,12 +1076,42 @@ impl BoardReading {
         // The pending damaging-move capture (after `moved`): `get_pokemon(presumed_target)` for a
         // Physical / Special move — a lookup that CREATES an unseen mon, so its order matters to
         // the reveal order (rule V2).
-        if let Some(t) = presumed.as_deref() {
-            if dex::move_row(&dex::to_id(&mv)).is_some_and(|r| r.damaging) {
-                self.mon(t)?;
-            }
+        if dex::move_row(&dex::to_id(&mv)).is_some_and(|r| r.damaging) {
+            let user_species = self.mon(&pokemon)?.species.clone();
+            let (target_species, target_status) = match presumed.as_deref() {
+                Some(t) => {
+                    let tm = self.mon(t)?;
+                    (tm.species.clone(), tm.status)
+                }
+                None => (user_species.clone(), None),
+            };
+            let mover = usize::from(ident_side(&pokemon) != Some(self.role));
+            self.pending_damaging[mover] = Some((
+                self.turn,
+                DamagingMoveRead { user_species, target_species, target_status, move_id: dex::to_id(&mv), effectiveness: 1.0 },
+            ));
         }
         Ok(())
+    }
+
+    /// `AbstractBattle._set_effectiveness(defender_side, mult)` — the promotion half.
+    fn set_effectiveness(&mut self, defender: &str, mult: f64) {
+        // the defender is OURS ⇒ the opponent's move resolved against us
+        let mover = usize::from(ident_side(defender) == Some(self.role));
+        if let Some((t, ev)) = &self.pending_damaging[mover] {
+            if *t == self.turn {
+                self.last_damaging[mover] = Some((self.turn, DamagingMoveRead { effectiveness: mult, ..ev.clone() }));
+            }
+        }
+    }
+
+    /// `battle.{our,opp}_last_damaging_move` (`mover` 0 = ours, 1 = theirs) — gated to the turn
+    /// that just resolved (`_last_turn_gated`).
+    pub fn last_damaging_move(&self, mover: usize) -> Option<&DamagingMoveRead> {
+        match &self.last_damaging[mover] {
+            Some((t, ev)) if *t + 1 == self.turn => Some(ev),
+            _ => None,
+        }
     }
 
     /// `AbstractBattle._pressure_on(pokemon, move, target_str)` with `Battle._get_target_mon`.

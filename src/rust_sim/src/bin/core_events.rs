@@ -37,6 +37,11 @@
 //! sides' `one_sided_view` and the engine truth (`"views":[{"after","new_request","p1","p2",
 //! "truth"},…]`) — slice V of the parity harness (`agents.battle.rust_core_parity_views`).
 //!
+//! `--trackers` also folds the per-decision TRACKERS on the version (`gen3_core_trackers_v1`) and
+//! reports, per viewer, per decision, `{"after", "reward", "trackers", "window"}` and a final
+//! `{"terminal": reward}` (`"trackers":[[…p1…],[…p2…]]`) — slice T of the parity harness
+//! (`agents.battle.rust_core_parity_trackers`).
+//!
 //! `--record-dir DIR [--commit SHA]` also writes each side's persisted record
 //! (`DIR/<label>.p1.jsonl`, `…p2.jsonl`, `core_events::record`), re-reading every file it wrote
 //! and refusing unless it round-trips byte-identically and re-parses from its text.
@@ -53,6 +58,7 @@ use pokesim::core_events::{CoreEvent, Line};
 use pokesim::dex::Dex;
 use pokesim::json::Json;
 use pokesim::prng::normalize_seed;
+use pokesim::trackers::clock::ClockConfig;
 use pokesim::version::{self, BattleVersion};
 use pokesim::{search, view};
 
@@ -65,11 +71,12 @@ struct Battle {
 }
 
 enum Script {
-    Choose(Cmd),
+    /// A choice and its raw wire token (a denied own action keeps the token — slice T).
+    Choose(Cmd, String),
     /// A capture golden's per-decision choice: fed only if the side's choice is still open
     /// (the golden repeats an ACCEPTED side's choice after the other side's was rejected; the
     /// sim's `side.choose` keeps the first accepted one).
-    ChooseIfOpen(Cmd),
+    ChooseIfOpen(Cmd, String),
     ForceLose(usize),
 }
 
@@ -205,7 +212,39 @@ fn capture(v: &BattleVersion, sess: &BridgeSession, dex: &Dex, seen: &mut usize,
     Ok(())
 }
 
-type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>);
+/// Per viewer, per DECISION (`--trackers`, slice T): the chunk index of the request it decided on,
+/// the whole tracker state, the native record of the window it closed, and the reward.
+struct TrackCap {
+    after: usize,
+    trackers: String,
+    window: String,
+    reward: f64,
+}
+
+type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>, [Vec<TrackCap>; 2]);
+
+/// Slice T at ONE transition: every side whose stream took a DECISION at this version's boundary.
+/// The decision's request must be the LAST line the side was shipped in the write (the live
+/// player decides after the request chunk, and slice V's alignment found none later).
+fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2]) -> Result<(), String> {
+    for side in 0..2 {
+        let Some(d) = v.decision(side) else { continue };
+        let lines = v.stream(side).map_or(0, |s| s.lines);
+        if d.line + 1 != lines {
+            return Err(format!("[ALIGN] p{} decided at stream line {} but the write shipped {} lines", side + 1, d.line, lines));
+        }
+        let after = sess.chunks().chunks.iter().rposition(|c| c.side == side).ok_or("a decision with no chunk")?;
+        let mut window = String::new();
+        d.window.json_into(&mut window);
+        caps[side].push(TrackCap {
+            after,
+            trackers: v.trackers(side).map_or("null".into(), |t| t.json()),
+            window,
+            reward: d.reward,
+        });
+    }
+    Ok(())
+}
 
 /// The M2 gate at ONE transition: each side's parse-built version, fed the same new TEXT the
 /// step-built one folded typed, must agree with it on the whole reading board, the transition's
@@ -222,7 +261,7 @@ fn parse_gate(v: &BattleVersion, sess: &BridgeSession, parsed: &mut [Option<Batt
     Ok(())
 }
 
-fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool) -> Result<Run, String> {
+fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool, trackers: bool) -> Result<Run, String> {
     let mut sess = if b.init_seed {
         BridgeSession::new_core(&b.opts, b.quick_claw, dex)?
     } else {
@@ -239,7 +278,13 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
     // is fed the same text and must agree at every step.
     let names = [b.opts.p1.name.as_str(), b.opts.p2.name.as_str()];
     let teams = [Some(b.opts.p1.team.0.as_str()), Some(b.opts.p2.team.0.as_str())];
-    let mut v = BattleVersion::observe_root(&sess, names, teams, [true, true]).map_err(|e| format!("version root: {e}"))?;
+    let cfg = trackers.then(ClockConfig::default);
+    let mut v = BattleVersion::observe_root_with(&sess, names, teams, [true, true], cfg)
+        .map_err(|e| format!("version root: {e}"))?;
+    let mut tcaps: [Vec<TrackCap>; 2] = [Vec::new(), Vec::new()];
+    if trackers {
+        track(&v, &sess, &mut tcaps)?;
+    }
     let mut parsed = [
         Some(BattleVersion::parse_root(0, names[0], teams[0])?),
         Some(BattleVersion::parse_root(1, names[1], teams[1])?),
@@ -254,21 +299,27 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         if sess.is_ended() {
             break;
         }
-        let skip = matches!(c, Script::ChooseIfOpen(cmd) if sess.is_choice_done(cmd.side));
+        let skip = matches!(c, Script::ChooseIfOpen(cmd, _) if sess.is_choice_done(cmd.side));
         if skip {
             continue;
         }
         match c {
-            Script::Choose(cmd) | Script::ChooseIfOpen(cmd) => sess.feed_cmd(cmd.clone(), dex),
+            Script::Choose(cmd, tok) | Script::ChooseIfOpen(cmd, tok) => {
+                v.note_choice(cmd.side, tok);
+                sess.feed_cmd(cmd.clone(), dex)
+            }
             Script::ForceLose(s) => sess.forfeit(*s),
         }
         v = v.observe(&sess).map_err(|e| format!("version step: {e}"))?;
+        if trackers {
+            track(&v, &sess, &mut tcaps)?;
+        }
         if let Some(f) = sess.fatal() {
             // A capture golden's blind per-decision script can re-send a rejected choice until
             // the bridge's no-progress cap fails loud (the capture ran into a stall loop): the
             // battle is TRUNCATED there, and everything emitted so far is still checked. A LIVE
             // recording (`CHOOSE`) never does this, so there it is a refusal.
-            if matches!(c, Script::ChooseIfOpen(_)) {
+            if matches!(c, Script::ChooseIfOpen(..)) {
                 break;
             }
             return Err(format!("bridge fatal: {f}"));
@@ -318,7 +369,15 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         }
         out[side] = step;
     }
-    Ok((sess, out, caps))
+    if trackers && sess.is_ended() {
+        // the TERMINAL reward, per viewer: the win indicator on the final board
+        for side in 0..2 {
+            let won = v.view(side).map(|w| w.won == Some(true)).unwrap_or(false);
+            tcaps[side].push(TrackCap { after: usize::MAX, trackers: String::new(), window: String::new(),
+                                        reward: if won { 1.0 } else { 0.0 } });
+        }
+    }
+    Ok((sess, out, caps, tcaps))
 }
 
 fn render(b: &Battle, res: Result<Run, String>) -> String {
@@ -330,7 +389,7 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
             json_out::str_into(&mut o, &e);
             o.push('}');
         }
-        Ok((sess, viewers, caps)) => {
+        Ok((sess, viewers, caps, tcaps)) => {
             o.push_str(",\"ok\":true,\"error\":null,\"ended\":");
             o.push_str(if sess.is_ended() { "true" } else { "false" });
             o.push_str(",\"truncated\":");
@@ -370,6 +429,28 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                 o.push(']');
             }
             o.push(']');
+            if tcaps.iter().any(|c| !c.is_empty()) {
+                o.push_str(",\"trackers\":[");
+                for (s, cs) in tcaps.iter().enumerate() {
+                    if s > 0 {
+                        o.push(',');
+                    }
+                    o.push('[');
+                    for (i, c) in cs.iter().enumerate() {
+                        if i > 0 {
+                            o.push(',');
+                        }
+                        if c.after == usize::MAX {
+                            o.push_str(&format!("{{\"terminal\":{:?}}}", c.reward));
+                        } else {
+                            o.push_str(&format!("{{\"after\":{},\"reward\":{:?},\"trackers\":{},\"window\":{}}}",
+                                                c.after, c.reward, c.trackers, c.window));
+                        }
+                    }
+                    o.push(']');
+                }
+                o.push(']');
+            }
             if !caps.is_empty() {
                 o.push_str(",\"views\":[");
                 for (i, c) in caps.iter().enumerate() {
@@ -474,7 +555,7 @@ fn bench_parse(rounds: usize, battles: &[Battle], dex: &Dex) -> String {
     use std::time::Instant;
     let mut streams: Vec<(usize, Vec<Vec<String>>)> = Vec::new();
     for b in battles {
-        let (sess, _, _) = match run(b, dex, None, "bench", false) {
+        let (sess, _, _, _) = match run(b, dex, None, "bench", false, false) {
             Ok(x) => x,
             Err(e) => return format!("{{\"error\":{:?}}}", e),
         };
@@ -557,6 +638,7 @@ fn main() {
     let mut bench_battles: Vec<Battle> = Vec::new();
     let mut record_dir: Option<String> = None;
     let mut views = false;
+    let mut trackers = false;
     let mut commit = "unknown".to_string();
     let mut i = if bench_rounds.is_some() { args.len() } else { 1 };
     while i < args.len() {
@@ -566,6 +648,7 @@ fn main() {
                 i += 1;
             }
             "--views" => views = true,
+            "--trackers" => trackers = true,
             "--commit" => {
                 commit = args.get(i + 1).cloned().unwrap_or_default();
                 i += 1;
@@ -618,7 +701,8 @@ fn main() {
                     let (side, choice) = rest.split_once(' ').unwrap_or((rest, ""));
                     let choice = parse_choice(choice).ok_or_else(|| format!("bad choice {choice:?}"))?;
                     let c = Cmd { side: side_of(side)?, choice };
-                    b.cmds.push(if cmd == "CHOOSE" { Script::Choose(c) } else { Script::ChooseIfOpen(c) });
+                    let tok = rest.split_once(' ').map_or("", |(_, t)| t).to_string();
+                    b.cmds.push(if cmd == "CHOOSE" { Script::Choose(c, tok) } else { Script::ChooseIfOpen(c, tok) });
                 }
                 "FORCELOSE" => {
                     let b = cur.as_mut().ok_or("FORCELOSE before START")?;
@@ -630,7 +714,7 @@ fn main() {
                         bench_battles.push(b);
                         return Ok(());
                     }
-                    let res = run(&b, &dex, record_dir.as_deref(), &commit, views);
+                    let res = run(&b, &dex, record_dir.as_deref(), &commit, views, trackers);
                     let _ = writeln!(out, "{}", render(&b, res));
                     let _ = out.flush();
                     n += 1;

@@ -304,6 +304,9 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   search's `materializer=core` (`agents/training/core_successor.py`) and the pins in
   `rust_core_present_test.py` (`sim`), which feed each reading rule's scenario to BOTH poke-env
   (through `offline_feed`) and the core (`core_events --present-stream`) and compare field by field.
+  Slice T (`rust_core_parity_trackers.py`, `gen3_core_parity_trackers_v1`) holds the core's
+  per-decision TRACKERS, α/β label and reward equal to the `EpisodeTracker` training drives over this
+  package's `Gen3Battle` (`designs/rust_sim/trackers.md`).
   They also pin the core's REFUSALS (`gen3_core_error_v1`): a line poke-env raises on must fail in
   the core with the SAME exception class (`core_error.class`), and malformed input must never be
   reported as a poke-env class.

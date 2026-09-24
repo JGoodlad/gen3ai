@@ -8,8 +8,15 @@ snapshots (HP-after, boosts, slot maps, phase, prev-active). The numeric per-tur
 come from the event log; the snapshot supplies only current-board values that are LiveView
 projections (never a diff-detective reconstruction).
 
-The field layout is FROZEN — it is consumed by ``turn_delta_encoder.py`` (the obs block) and
-the reward manager. Changing a field is retrain-class.
+The field layout is FROZEN. Its obs frames were DELETED (``gen3_frame_deletion_v1``: "what happened
+last turn" reaches the model through the H-B EVENT WINDOW, ``EpisodeTracker.EventWindowTracker``),
+so ``TurnDelta`` has no obs encoding. Its live consumers are the α/β opponent-intent LABELS
+(``opp_intent_labels.build_opp_intent_label``), the progress clock (``turns_since_progress``, an obs
+scalar), the reward manager (whose shaped terms are INERT under the win-prob era's terminal
+indicator) and the prober's decoder. Changing a field those read is retrain-class. The Rust core does
+not port the layout — it ports those consumers (``designs/rust_sim/trackers.md``), and this class is
+the ORACLE for the label until the cutover, then joins the deletion manifest
+(``designs/endstate/program_rust_core.md`` §4).
 """
 from __future__ import annotations
 from dataclasses import dataclass, field

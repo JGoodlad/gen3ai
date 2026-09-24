@@ -186,10 +186,25 @@ third road, identical decisions and obs bytes.
 `TurnDelta.build_from_events`; fields on the version, folded at construction, shared by a fork (the
 pinned-pickle tracker thaw — 16.9% of the searched decision today — becomes a pointer copy).
 
-**Gate.** Slice T: tracker state, `TurnDelta` fields AND the reward manager's per-decision reward
-(Python reward code fed the core's `TurnDelta`) equal per decision; the existing
-`turn_delta_fold_equivalence_fuzz_test` shape re-pointed at the core. **Size: 4–5 agent-days**
-(2,985 LOC of trackers).
+**Status (2026-09-24): the trackers CROSSED** (`gen3_core_trackers_v1`, contract
+[`designs/rust_sim/trackers.md`](../rust_sim/trackers.md)): slots, the Hidden-Power belief, the
+progress clock's obs half, recency, pair history, the 32-row event window, the wish and sleep folds,
+the α/β label and the win-indicator reward, folded on the version from one side's stream and shared
+by a fork (`Arc`, copied on the fork's own decision). Slice T green at COMMIT (0 divergences, 1,838
+decisions) — MILESTONE, the native record's fixtures, the fold-equivalence re-point and the fork-cost
+measurement are recorded in [`research_state/measurements/rust_core_m3_2026-09-24/`](../research_state/measurements/rust_core_m3_2026-09-24/README.md)
+as they land.
+
+**Gate.** Slice T: the tracker state (every tracker above, every event-window row), the α/β
+opponent-intent LABEL per decision, and the REWARD (the win indicator) equal per decision, both
+viewers. **`TurnDelta` is NOT gated field by field and is NOT ported as a structure** (owner direction,
+2026-09-24: drop the turn summary where an entity-aligned substitute exists — the event window is
+that substitute and is in production): its obs frames were deleted (`gen3_frame_deletion_v1`), so
+slice T gates its CONSUMERS — the label, the progress clock — through a projection of the fields they
+read. The core's native record of a window is an ORDERED per-action / per-effect list with full
+attribution (`record::Window`), of which the frozen `TurnDelta` and the 22-column event window are
+lossy projections. The existing `turn_delta_fold_equivalence_fuzz_test` shape re-pointed at the
+core. **Size: 4–5 agent-days** (2,985 LOC of trackers).
 
 **The REWARD in slice T is the WIN INDICATOR alone (decided 2026-09-23, orchestrator; owner consulted).**
 Every win-prob-era run trains on `1 TERMINAL + 0 PBRS + 0 BIAS` (`terminal_indicator`, `victory_value`
@@ -374,6 +389,7 @@ Each row names the milestone whose slice made it deletable. LOC from Phase 0 (d)
 | M4 (owner, 2026-09-24: HELD until M4) | the TYPED SHORTCUT: `CorePath::Typed`, `BridgeSession::typed_side_lines`, `session_from_record_core` in search, `SearchConfig.core_path`, and with them the INTEGRITY mode (its only job is typed == text) | ~250 | measured to save nothing (§6); `core_path=text` is §6c's one observation path |
 | DONE `c97358e8` | the matching `agents/battle/poke_env_findings.py` entry (PE-V10 / PE-R1b / PE-V16), all deleted, registry empty | 1 entry each | a TRAINING-INPUT change, the owner's call; deleting the entry TIGHTENS slice V |
 | M3 | `agents/training/clone_pins.py`; `ViewSuccessorFactory._clone_tracker`; `training/turn_delta_legacy.py` (test-only today) | 149 + 327 | the tracker fork becomes a pointer copy |
+| M3 (owner, 2026-09-24) | `agents/training/turn_delta.py` (`TurnDelta` + `build_from_events`), `battle/turn_view.py`'s `TurnDelta`-only reads, `episode_tracker.build_delta*`, and the Python trackers of `episode_tracker.py` (`RecencyTracker`, `PairHistoryTracker`, `EventWindowTracker`, `EpisodeTracker.record_context` / `advance_window`), `progress_clock.py`'s obs half, `hidden_power_tracker.py`, `wish_belief.build_wish_pending`, `sleep_belief.build_sleep_sources`, `opp_intent_labels.build_opp_intent_label`; the unported `choice_band_tracker.py` (no production reader) | 603 + ~1,900 + 240 | slice T (the core's trackers, label, reward); `TurnDelta` survives until then only as the label's ORACLE. Joins the pass WITH the shaped reward path (its other reader) |
 | M3 (decided 2026-09-23) | the SHAPED reward path: `reward_potentials.py`, `reward_bias_terms.py`, the shaped branches of `reward_manager.py` / `reward_composition.py`, and the inert shaped flags (into `designs/deleted_flags.md`), with their tests | ~1,100 + tests | the Rust reward is the win indicator (§2 M3). Until this pass, arm S stays re-runnable as a comparator |
 | after M7 | RESHAPE `BoardReading`: its fields mirror poke-env's `Battle` (`_player_username` …) because slice V compares field by field; design the reading for the view once poke-env has no production user | — | a reshape, not a deletion |
 | M4 | the Python pipeline's PERF layers — `observation/assembler.py` (incremental cache), the `live_view()` memo (`_state_epoch`, the request-change door), the `live_view_build_micros` memos | ~600 (assembler 498) | the Python encoder SURVIVES as the oracle; its perf scaffolding does not (a simpler oracle is a better oracle) |

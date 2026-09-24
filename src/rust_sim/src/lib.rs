@@ -135,3 +135,6 @@ pub mod version;
 pub mod stats;
 pub mod team;
 pub mod turn;
+/// The per-decision TRACKERS as state on the version, the native per-action window record, and the
+/// α/β label + win-indicator reward (`gen3_core_trackers_v1`, Rust Core Program M3).
+pub mod trackers;

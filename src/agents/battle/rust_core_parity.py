@@ -160,7 +160,7 @@ def selfcheck_counts(stderr: str) -> Optional[Dict[str, int]]:
 
 def run_core(battles: Sequence[RecordedBattle], record_dir: Optional[str] = None,
              commit: str = "unknown", views: bool = False,
-             selfcheck: Optional[collections.Counter] = None) -> List[dict]:
+             selfcheck: Optional[collections.Counter] = None, trackers: bool = False) -> List[dict]:
     """Replay ``battles`` through the core in ONE process; one result dict per battle.
     ``views`` also captures slice V's decision boards (``core_events --views``). ``selfcheck``
     accumulates the EMISSION SELF-CHECK's counts (``selfcheck["runs_without"]`` counts a process
@@ -170,6 +170,8 @@ def run_core(battles: Sequence[RecordedBattle], record_dir: Optional[str] = None
     argv = [resolve_core_events_bin()]
     if views:
         argv.append("--views")
+    if trackers:
+        argv.append("--trackers")
     if record_dir:
         argv += ["--record-dir", record_dir, "--commit", commit]
     stdin = "\n".join(line for b in battles for line in b.script()) + "\n"
@@ -288,19 +290,23 @@ VIEW_BATCH = 16
 
 def check_battles(battles: Sequence[RecordedBattle], census: Census,
                   record_dir: Optional[str] = None, commit: str = "unknown",
-                  views: "Optional[Any]" = None) -> Census:
+                  views: "Optional[Any]" = None, trackers: "Optional[Any]" = None) -> Census:
     """Run the core on ``battles``, check each against its recorded bytes and its references.
 
     ``views`` (a :class:`agents.battle.rust_core_parity_views.ViewCensus`) also runs slice V —
-    the TRUTH AUDIT of every decision's ``LiveView`` — on the SAME core replay."""
+    the TRUTH AUDIT of every decision's ``LiveView`` — on the SAME core replay. ``trackers`` (a
+    :class:`agents.battle.rust_core_parity_trackers.TrackerCensus`) also runs slice T — the
+    per-decision tracker state, the α/β label and the reward — on it too."""
     if views is not None:
         from agents.battle.rust_core_parity_views import check_views
+    if trackers is not None:
+        from agents.battle.rust_core_parity_trackers import check_trackers
 
-    step = VIEW_BATCH if views is not None else max(len(battles), 1)
+    step = VIEW_BATCH if (views is not None or trackers is not None) else max(len(battles), 1)
     for lo in range(0, len(battles), step):
         batch = battles[lo:lo + step]
         results = run_core(batch, record_dir=record_dir, commit=commit, views=views is not None,
-                           selfcheck=census.selfcheck)
+                           selfcheck=census.selfcheck, trackers=trackers is not None)
         for b, res in zip(batch, results):
             census.battles += 1
             if not res["ok"]:
@@ -317,6 +323,9 @@ def check_battles(battles: Sequence[RecordedBattle], census: Census,
                 check_views(b.label, chunks, res.get("views") or [], views,
                             teams={"p1": b.p1["team"], "p2": b.p2["team"]},
                             format_id=b.format_id)
+            if trackers is not None:
+                check_trackers(b.label, chunks, res.get("trackers") or [[], []], trackers,
+                               teams={"p1": b.p1["team"], "p2": b.p2["team"]}, format_id=b.format_id)
     return census
 
 

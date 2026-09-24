@@ -1,5 +1,7 @@
-"""The Rust Core parity gate — slice E (events, ``gen3_core_parity_events_v1``) and slice V (views
-+ legality, the TRUTH AUDIT, ``gen3_core_parity_views_v1`` — :mod:`rust_core_parity_views`).
+"""The Rust Core parity gate — slice E (events, ``gen3_core_parity_events_v1``), slice V (views
++ legality, the TRUTH AUDIT, ``gen3_core_parity_views_v1`` — :mod:`rust_core_parity_views`) and slice
+T (the trackers, the α/β label and the reward, ``gen3_core_parity_trackers_v1`` —
+:mod:`rust_core_parity_trackers`).
 
 Slice V's tests below: the COMMIT-tier gate, its TEETH (a re-introduced Baton Pass drop and a
 misread Spikes layer each FAIL; a dropped capture FAILS as ``[ALIGN]``), and the classification
@@ -31,6 +33,7 @@ from typing import Iterable, Tuple
 import pytest
 
 from agents.battle import rust_core_parity as P
+from agents.battle import rust_core_parity_trackers as T
 from agents.battle import rust_core_parity_views as V
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
@@ -209,26 +212,92 @@ def test_every_read_model_field_is_classified():
 
 
 # ---------------------------------------------------------------------------
+# slice T — the TRACKERS, the α/β label and the reward, every decision, both viewers (M3)
+# ---------------------------------------------------------------------------
+
+def _assert_trackers_clean(t: T.TrackerCensus, min_decisions: int, min_rows: int) -> None:
+    print("\n" + t.render())
+    assert not t.refused, t.render()
+    assert not t.divergences, t.render()
+    assert t.decisions >= min_decisions, f"only {t.decisions} decisions — vacuous"
+    assert t.window_rows >= min_rows, f"only {t.window_rows} event-window rows compared"
+    assert all(t.labels[k] > 0 for k in (0, 1, 2)), f"a label kind never fired: {dict(t.labels)}"
+    assert t.terminal_rewards > 0, "no terminal reward compared"
+
+
+def test_commit_tier_trackers_equal_episode_tracker():
+    """Slice T at the COMMIT tier: the core's trackers (folded on the version from the viewer's
+    stream) == the EpisodeTracker training drives, at every decision, both viewers, field by field
+    — plus the α/β label and the win-indicator reward."""
+    t = T.TrackerCensus()
+    P.check_battles(P.commit_corpus(), P.Census(), trackers=t)
+    _assert_trackers_clean(t, min_decisions=1_700, min_rows=40_000)
+
+
+def _commit_trackers_with(monkeypatch, target, name, fn) -> T.TrackerCensus:
+    monkeypatch.setattr(target, name, fn)
+    t = T.TrackerCensus()
+    P.check_battles(P.load_commit_fixture()[:4], P.Census(), trackers=t)
+    return t
+
+
+def test_the_tracker_slice_catches_a_misattributed_residual(monkeypatch):
+    """TEETH, the v81 class: fold residual damage into the attacking move's `hp_delta` again (the
+    event window's `[from]` guard dropped) — the gate must FAIL on the window rows."""
+    from agents.battle.battle_event import BattleEvent
+
+    t = _commit_trackers_with(monkeypatch, BattleEvent, "from_clause", property(lambda self: None))
+    assert any(k.startswith("[TRACKER] window") for k in t.divergences), t.render()
+
+
+def test_the_tracker_slice_catches_a_clock_that_never_resets(monkeypatch):
+    """TEETH: a progress clock whose PROGRESS clause never fires — the gate must FAIL on `clock`."""
+    from agents.training.progress_clock import ProgressClock
+
+    t = _commit_trackers_with(monkeypatch, ProgressClock, "_is_progress", staticmethod(lambda *a, **k: False))
+    assert any(k.startswith("[TRACKER] clock") for k in t.divergences), t.render()
+
+
+def test_the_tracker_slice_catches_a_phaze_labelled_as_a_choice(monkeypatch):
+    """TEETH, the label: an intent labeller that forgets the PHAZE mask (a switch that co-occurs with
+    a resolved move is OUR Roar, not their choice) — the gate must FAIL on `label`."""
+    import agents.training.opp_intent_labels as L
+
+    real = L.build_opp_intent_label
+
+    def no_phaze_mask(delta, move_num_of, opp_slot_of_species, species_num_of=None):
+        if delta is not None and delta.opp_switch_to and not delta.opp_fainted \
+                and not delta.phase_is_forced_switch:
+            return (L.KIND_SWITCH, 0, L.SWITCH_SLOT_NONE,
+                    0 if species_num_of is None else (species_num_of(delta.opp_switch_to) or 0))
+        return real(delta, move_num_of, opp_slot_of_species, species_num_of)
+
+    t = _commit_trackers_with(monkeypatch, L, "build_opp_intent_label", no_phaze_mask)
+    assert any(k.startswith("[TRACKER] label") for k in t.divergences), t.render()
+
+
+# ---------------------------------------------------------------------------
 # MILESTONE tier (slices E + V on the same played battles)
 # ---------------------------------------------------------------------------
 
-def _played(keys: Iterable[int], policy=None) -> Tuple[P.Census, V.ViewCensus]:
+def _played(keys: Iterable[int], policy=None) -> Tuple[P.Census, V.ViewCensus, T.TrackerCensus]:
     logging.getLogger("poke-env").setLevel(logging.ERROR)
-    census, views = P.Census(), V.ViewCensus()
+    census, views, trackers = P.Census(), V.ViewCensus(), T.TrackerCensus()
     lives = [P.play(k, policy=policy) for k in keys]
     for lv in lives:
         P.compare_live(lv, census)
-    P.check_battles([lv.recorded for lv in lives], census, views=views)
-    return census, views
+    P.check_battles([lv.recorded for lv in lives], census, views=views, trackers=trackers)
+    return census, views, trackers
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("seed", [0, 1], ids=["even_keys_whole_pool", "odd_keys_whole_pool"])
 def test_milestone_seeded_random_battles(seed):
     P.check_manifest()
-    census, views = _played(P.MILESTONE_RANDOM_KEYS[seed])
+    census, views, trackers = _played(P.MILESTONE_RANDOM_KEYS[seed])
     _assert_clean(census, min_events=180_000, min_kinds=24)
     _assert_views_clean(views, min_decisions=55_000, min_truth=1_200_000)
+    _assert_trackers_clean(trackers, min_decisions=55_000, min_rows=1_500_000)
 
 
 @pytest.mark.slow
@@ -236,9 +305,10 @@ def test_milestone_seeded_random_battles(seed):
 def test_milestone_production_policy_battles(seed):
     P.check_manifest()
     model = P.load_production_policy()
-    census, views = _played(P.MILESTONE_POLICY_KEYS[seed], policy=model)
+    census, views, trackers = _played(P.MILESTONE_POLICY_KEYS[seed], policy=model)
     _assert_clean(census, min_events=5_000, min_kinds=15)
     _assert_views_clean(views, min_decisions=3_000, min_truth=50_000)
+    _assert_trackers_clean(trackers, min_decisions=3_000, min_rows=80_000)
 
 
 @pytest.mark.slow

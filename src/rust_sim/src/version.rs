@@ -42,7 +42,9 @@ use crate::engine::Engine;
 use crate::state::BattleState;
 use crate::core_events::parse::OwnerScan;
 use crate::core_events::reading::Reader;
-use crate::core_events::{is_outcome, CoreEvent, Line, Scope};
+use crate::core_events::{is_outcome, CoreEvent, Field, Kw, Line, Scope};
+use crate::trackers::clock::ClockConfig;
+use crate::trackers::{Decision, TrackerState};
 use crate::dex::Dex;
 use crate::present::{check_view, legal_actions, present, Audit, LegalActions, OneSidedView, BoardReading};
 
@@ -57,6 +59,10 @@ pub struct SideStream {
     owners: OwnerScan,
     /// Lines of this side folded so far, whole battle.
     pub lines: usize,
+    /// The per-decision TRACKERS and the native record (`gen3_core_trackers_v1`, opt-in:
+    /// [`SideStream::with_trackers`]). A fork clones the handle; the state is shared until the
+    /// fork's own transition opens a decision.
+    pub trk: Option<TrackerState>,
 }
 
 impl SideStream {
@@ -68,7 +74,15 @@ impl SideStream {
             reader: Reader::new(viewer),
             owners: OwnerScan::default(),
             lines: 0,
+            trk: None,
         })
+    }
+
+    /// Turn the trackers ON for this stream (before its first line).
+    pub fn with_trackers(mut self, cfg: ClockConfig) -> SideStream {
+        let viewer = self.board_reading.viewer as usize;
+        self.trk = Some(TrackerState::new(viewer, cfg));
+        self
     }
 
     /// Fold ONE typed line. `scope` is the engine's action scope (the step path's owner truth);
@@ -76,7 +90,6 @@ impl SideStream {
     pub fn fold(&mut self, line: Line, src: Option<u32>, scope: Option<Scope>) -> R<CoreEvent> {
         let by_order = self.owners.step(&line);
         let readings = self.reader.feed(&line)?;
-        self.board_reading.feed(&line)?;
         let owner = if is_outcome(line.kw) {
             match scope {
                 Some(s) => s.move_side(),
@@ -85,7 +98,18 @@ impl SideStream {
         } else {
             None
         };
+        let request = line.kw == Kw::Request;
+        let request_nonempty = request && matches!(line.field(0), Some(Field::Text(t)) if !t.is_empty());
         let ev = CoreEvent { idx: self.lines as u32, line, src, owner, readings };
+        if let Some(t) = self.trk.as_mut() {
+            t.observe(&ev, &self.board_reading, scope);
+        }
+        self.board_reading.feed(&ev.line)?;
+        if request {
+            if let Some(t) = self.trk.as_mut() {
+                t.maybe_decide(&self.board_reading, request_nonempty, self.lines)?;
+            }
+        }
         self.lines += 1;
         Ok(ev)
     }
@@ -138,11 +162,16 @@ impl BattleVersion {
         BattleVersion { parent, origin, engine, streams, events, views: [OnceLock::new(), OnceLock::new()], cursor }
     }
 
-    fn fresh_streams(names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2]) -> R<[Option<SideStream>; 2]> {
+    fn fresh_streams(names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2], trk: Option<ClockConfig>)
+        -> R<[Option<SideStream>; 2]> {
         let mut out = [None, None];
         for side in 0..2 {
             if want[side] {
-                out[side] = Some(SideStream::new(side, names[side], teams[side])?);
+                let s = SideStream::new(side, names[side], teams[side])?;
+                out[side] = Some(match trk {
+                    Some(cfg) => s.with_trackers(cfg),
+                    None => s,
+                });
             }
         }
         Ok(out)
@@ -181,7 +210,14 @@ impl BattleVersion {
     /// only. `want` names the sides that carry a stream (a search reads one side, and every
     /// version of its tree then folds that side alone).
     pub fn root(sess: BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2]) -> R<BattleVersion> {
-        let mut streams = Self::fresh_streams(names, teams, want)?;
+        Self::root_with(sess, names, teams, want, None)
+    }
+
+    /// [`Self::root`] with the per-decision TRACKERS on (`gen3_core_trackers_v1`); every fork of
+    /// the tree inherits them.
+    pub fn root_with(sess: BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2],
+                     trackers: Option<ClockConfig>) -> R<BattleVersion> {
+        let mut streams = Self::fresh_streams(names, teams, want, trackers)?;
         let events = Self::fold_typed(&sess, &mut streams, [0, 0])?;
         Ok(Self::new(None, Origin::Step, Some(sess.into_engine()), streams, events, [0, 0]))
     }
@@ -189,7 +225,7 @@ impl BattleVersion {
     /// [`Self::root`] folded from each side's TEXT (the parse path) — the root of a
     /// `core_path=text` search tree, whose engine needs no source recording.
     pub fn root_text(sess: BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2]) -> R<BattleVersion> {
-        let mut streams = Self::fresh_streams(names, teams, want)?;
+        let mut streams = Self::fresh_streams(names, teams, want, None)?;
         let events = Self::fold_text(&sess, &mut streams, [0, 0])?;
         Ok(Self::new(None, Origin::Step, Some(sess.into_engine()), streams, events, [0, 0]))
     }
@@ -256,7 +292,13 @@ impl BattleVersion {
     /// its full transport history is the caller's). Every line shipped so far is folded TYPED.
     pub fn observe_root(sess: &BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2])
         -> R<BattleVersion> {
-        let mut streams = Self::fresh_streams(names, teams, want)?;
+        Self::observe_root_with(sess, names, teams, want, None)
+    }
+
+    /// [`Self::observe_root`] with the per-decision TRACKERS on (`gen3_core_trackers_v1`).
+    pub fn observe_root_with(sess: &BridgeSession, names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2],
+                             trackers: Option<ClockConfig>) -> R<BattleVersion> {
+        let mut streams = Self::fresh_streams(names, teams, want, trackers)?;
         let events = Self::fold_typed(sess, &mut streams, [0, 0])?;
         let cursor = [sess.side_line_count(0), sess.side_line_count(1)];
         Ok(Self::new(None, Origin::Observed, None, streams, events, cursor))
@@ -278,8 +320,18 @@ impl BattleVersion {
 
     /// The ROOT of a parse-built chain: ONE side's stream and nothing else.
     pub fn parse_root(viewer: usize, username: &str, packed_team: Option<&str>) -> R<BattleVersion> {
+        Self::parse_root_with(viewer, username, packed_team, None)
+    }
+
+    /// [`Self::parse_root`] with the per-decision TRACKERS on.
+    pub fn parse_root_with(viewer: usize, username: &str, packed_team: Option<&str>, trackers: Option<ClockConfig>)
+        -> R<BattleVersion> {
         let mut streams = [None, None];
-        streams[viewer] = Some(SideStream::new(viewer, username, packed_team)?);
+        let s = SideStream::new(viewer, username, packed_team)?;
+        streams[viewer] = Some(match trackers {
+            Some(cfg) => s.with_trackers(cfg),
+            None => s,
+        });
         Ok(Self::new(None, Origin::Parse, None, streams, [Vec::new(), Vec::new()], [0, 0]))
     }
 
@@ -315,7 +367,29 @@ impl BattleVersion {
         Ok(Self::new(None, Origin::Parse, None, streams, ev, [0, 0]))
     }
 
+    /// Tell `side`'s stream the choice it sent for the coming action (a denied own action keeps
+    /// it — [`crate::trackers::record::Choice`]). A no-op without trackers.
+    pub fn note_choice(&mut self, side: usize, token: &str) {
+        if let Some(t) = self.streams[side].as_mut().and_then(|s| s.trk.as_mut()) {
+            t.choose(token);
+        }
+    }
+
     // ---------------------------------------------------------------- reads
+
+    /// The DECISION `side` took at this version's boundary — `Some` iff the transition INTO this
+    /// version ended at one of the side's decision requests (its trackers folded there).
+    pub fn decision(&self, side: usize) -> Option<&Decision> {
+        let s = self.streams[side].as_ref()?;
+        let d = s.trk.as_ref()?.last.as_ref()?;
+        let first = s.lines - self.events[side].len();
+        (d.line >= first).then_some(d)
+    }
+
+    /// `side`'s tracker state at its latest decision.
+    pub fn trackers(&self, side: usize) -> Option<&crate::trackers::SideTrackers> {
+        Some(&self.streams[side].as_ref()?.trk.as_ref()?.trackers)
+    }
 
     pub fn parent(&self) -> Option<&Arc<BattleVersion>> {
         self.parent.as_ref()
