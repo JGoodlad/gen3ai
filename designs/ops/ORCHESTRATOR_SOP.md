@@ -56,6 +56,21 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
 
 ## 2. Dispatching agents
 
+- **LONG MEASUREMENTS ARE INCREMENTAL. Never a one-shot, many-hour driver (owner, 2026-09-24).**
+  Any job longer than about an hour (a battle battery, a smoke, a corpus scan, a meter over many
+  checkpoints) is built as UNITS that are each minutes long: a battle-index range, a checkpoint, a
+  log shard. Every dispatch prompt for such a job requires all of:
+  (1) each finished unit's rows are written DURABLY as it finishes, append-only, to a directory that
+  survives a reboot (never `/tmp`, never session scratch);
+  (2) the driver is RESUMABLE: on restart it skips the units already on disk, and that is TESTED by
+  killing and resuming it once on a small slice;
+  (3) the driver runs DETACHED from the agent's shell (it survives a session restart), and progress
+  is readable from the rows at any time;
+  (4) interim reads are for PROGRESS and health only. The verdict is read at the REGISTERED n, since
+  stopping early on a good-looking interim number is optional stopping.
+  **Why:** the 2026-09-24 belief win-rate A/B was a single 18,000-battle driver launched from its
+  agent's shell. A session restart killed the agent mid-run, and only luck (the workers happened to
+  keep running and write per-battle rows) meant the hours were not lost.
 - **Opus subagents DRIVE the work — "period" (owner, 2026-09-07).** The default for doing a thing
   — an analysis, a verification, a probe, a build — is to brief an Opus agent for it; the
   orchestrator dispatches, rules, banks, lands and relays. Do it inline only when it is a
