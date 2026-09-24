@@ -10,7 +10,7 @@ of the same per-side text, per viewer, per event, ``seq · turn · kind · side 
 value · raw`` — type-strict, NO allowlist. The corpus, the replay and the comparison live in
 ``agents.battle.rust_core_parity``; this file is the two tiers of ``program_rust_core.md`` §3:
 
-* **COMMIT** (routine gate, seconds): the 8 recorded battles of
+* **COMMIT** (routine gate, seconds): the 10 recorded battles of
   ``rust_core_parity_fixtures/commit_tier.json.gz`` + the six byte-fuzz fixtures carrying the four
   ambiguity-prone shapes + the first battle of each of the 22 protocol capture scenarios.
 * **MILESTONE** (``slow``; its verdicts land in ``designs/ops/slow_tier_status.json``): 2 × 200

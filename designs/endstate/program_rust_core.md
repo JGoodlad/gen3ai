@@ -125,7 +125,9 @@ presentation rule (V1–V13, `designs/rust_sim/one_sided_view.md` §2b), no allo
 MILESTONE on the same played battles as slice E. **The three open read-model findings are CLOSED**
 (root causes in `one_sided_view.md` §4b), with deferral D6 and eleven more projection classes;
 MILESTONE 83,896 decisions / 23.9M field comparisons / 1.94M truth checks, 0 divergences. M2's
-`present()` replaces the producer under this slice; the comparison does not change. **It also
+`present()` replaces the producer under this slice; the comparison does not change — and under
+§6c's decision (the training view is parsed from the per-side TEXT) its ENGINE-truth checks are
+what stop a text-derived view from inheriting a reading error the way every poke-env reader did. **It also
 found poke-env READING defects about sim facts (R1–R4 in `one_sided_view.md` §4b) whose fork fixes
 change what training reads and wait on the orchestrator**, and a MILESTONE coverage hole: keys
 5000–5199 wrap onto pool teams 686–718 and 0–166, so the two random seeds cover ~234 of the 719

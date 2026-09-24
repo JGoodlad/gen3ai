@@ -289,7 +289,7 @@ orchestrator (measured per 1,000 decisions, both viewers):
 | **R1** — the `status` setter never resets `_status_counter`, so a NEW status inherits the previous one's count (Rest while badly poisoned; a re-sleep after a cure the watcher saw only as a bare HP token). The obs's sleep counter AND the 3-dim sleep-wake belief (`K` = cant-turns) read it, so a fresh Rest can read "slept 3 turns, wakes next" with the reliability bit SET | for sleep, the `\|cant\|…\|slp` turns since the sleep began: as-is wrong on **886 of 12,201** asleep-mon decisions (Sleep Talk episodes excluded — the obs already flags those), a reset-on-change setter wrong on **0**. For toxic, the engine's `Toxic(stage)` | **11.09 · 7.48 · 9.22** decisions where an asleep / badly-poisoned mon's counter differs |
 | **R1b** — the toxic counter ticks at every `\|turn\|` a badly-poisoned mon is active, so one that entered AFTER the residual (a post-faint replacement) reads one ahead of the sim's stage | the engine's `Toxic(stage)`: 104 of 6,158 badly-poisoned-mon decisions with R1 fixed | ~1.2 (pool) |
 | **R2** — `-copyboost` is read BACKWARDS: poke-env copies the FIRST ident's stages onto the second, the sim does the reverse (`data/mods/gen5/moves.ts` psychup, which gen 3 inherits: `source.boosts[i] = target.boosts[i]; this.add('-copyboost', source, target)`; `SIM-PROTOCOL.md`'s wording says the opposite and poke-env followed the doc). After a Psych Up BOTH mons' stages read wrong | the engine + the pinned Showdown source | 0 · 0 · **0.27** (1 of the 719 pool teams carries Psych Up) |
-| **R3** — our OWN move PP is a sighting counter never synced to the `\|request\|`'s `pp`, so a PP the sim deducts without poke-env knowing (a foe's Pressure it cannot infer — gen 3 announces Pressure to its owner only, e.g. an Aerodactyl) drifts it HIGH; the old deferral D7, now a measured defect | the `\|request\|` (the sim's word) and the engine | 0 · 0 · **6.19** — and seen on the POOL by the search-road sweep (2 of 24 battles): 3 pool teams carry an un-inferable Pressure Aerodactyl, none of them inside the MILESTONE key range (below) |
+| **R3** — our OWN move PP is a sighting counter never synced to the `\|request\|`'s `pp`, so a PP the sim deducts without poke-env knowing (a foe's Pressure it cannot infer — gen 3 announces Pressure to its owner only, e.g. an Aerodactyl) drifts it HIGH; the old deferral D7, now a measured defect | the `\|request\|` (the sim's word) and the engine | 0 · 0 · **6.19** — and **7.15 on the WHOLE training pool** (465 of 64,991 decisions, 360 battles striding all 719 teams): the MILESTONE key range (below) never reaches the pool teams that trigger it |
 | **R4** — a TRANSFORMED mon's ability / stats / watched moves are poke-env approximations the projection does not yet present (own ability reads the base one — a gen-3 request never states the copied ability) | the engine | 0 · 0 · 0.06 (no pool team carries Transform) |
 
 **Also found by the procedural sweep, and it was the PORT's**: every move lock other than the
@@ -302,6 +302,14 @@ plays over). Established against the pinned Showdown's own requests for all six;
 **MILESTONE coverage hole**: keys 5000–5199 wrap (mod 719) onto pool teams 686–718 and 0–166,
 overlapping keys 0–199 — the two random seeds cover ~234 of the 719 pool teams. Widening the recipe
 makes R3 fire in the pool tier, so it lands with R3's fix, not before.
+
+**The fixes for R1–R3 exist and are NOT landed**: branch `truth-audit-pokeenv-reading-fixes` —
+the three fork changes, the projection's V5 following R1, a pin per fix that fails on upstream
+(`src/poke_env/battle/reading_fixes_test.py`), and the whole-pool MILESTONE recipe (even keys
+0–718 + odd keys 1–719); its slice V MILESTONE tier is green. Still open after it: R1b, R4, and the
+part of R3 no client can see — a mon that leaves the field between its move and the next request
+(Self-Destruct, a phaze) is never re-synced, so our BENCH PP is poke-env's count, a presentation
+rule (V15) the projection does not yet reproduce; procedural teams only so far.
 
 ### Standing rule
 
