@@ -121,6 +121,25 @@ So E10 (and any joint set belief) is a LEARNED MIXTURE, not a hand-supplied set 
 3. **Two meters, always reported separately:** ROSTER (species NLL for unrevealed slots, by number of
    teammates revealed) and SET (full-set NLL for a known species, by its own reveals). A gain on one
    must not hide a loss on the other.
+   **WHEN a roster prediction is read matters (owner, 2026-09-24).** The pooled number weights every
+   hidden slot at every decision, so long mid-game stages dominate. The ROSTER meter's HEADLINE is
+   therefore PER REVEAL COUNT k, with **k = 3 (half the team seen) and k = 5 (the last mon) as the named
+   endpoints**. Each stage is scored once per battle (at the first decision after the k-th reveal),
+   with the decision-weighted pool as a secondary. Why it matters, from the 2026-09-24 read's own strata
+   (species head minus Smogon prior, in nats; positive = the head is better):
+
+   | k revealed | 1 | 2 | 3 | 4 | 5 |
+   |---|---|---|---|---|---|
+   | pool | +1.01 | +0.68 | +0.20 | +0.04 | −0.17 |
+   | ladder | −0.85 | −0.84 | −1.34 | −1.67 | −1.70 |
+
+   The head is WORST exactly where the prediction matters most (the last mon, off-pool), and even on
+   the pool its edge fades as teammates are revealed. The Smogon teammate prior uses roster evidence
+   better than the learned head does, so the learned edge looks like the pool's species BASE RATES
+   rather than roster reasoning. (That is the orchestrator's reading of the strata, UNVERIFIED as a
+   mechanism.) The POLICY reads the parameter-free Smogon species prior for species (the learned
+   species head is a training-only readout), so this weakness reaches decisions only through the
+   reinjected move posterior.
 4. **The same synergies on OUR side are PLANNING, not inference** (we know our sets). Whether the
    policy and value price roles is probed by the tactics probe's ROLE family (§ measurements
    `tactics_probe_2026-09-24`).
