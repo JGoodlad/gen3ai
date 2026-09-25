@@ -466,7 +466,9 @@ game-end**, asserting per-decision state + status + boosts + confusion + running
   divergence cause, and it is **MOVE-LEVEL-BLIND** (it only ever picks damaging-or-switch choices).
   It does NOT gate `cargo test`: it is the measured remaining-work map, nothing more.
 - **Run it:** `node src/rust_sim/harness/gen_e2e_fuzz.js` (env knobs `E2E_FILTERED_TARGET` [default
-  **220**, the committed golden's size, so a plain regen reproduces it byte-for-byte],
+  **220**, the committed golden's size — 🚨 but a plain regen does NOT reproduce it today: the
+  golden predates the pool's growth (722 → 762 teams), so its team draw no longer matches; a regen
+  is a NEW golden to be reviewed, not a check (found 2026-09-25)],
   `E2E_UNFILTERED`, `E2E_MAX_TRIES`, `E2E_MASTER_SEED`) regenerates both vectors; then `cargo test`
   re-pins the Rust against them. The ignored helpers `e2e_diag` (categorize divergences
   SEED/STATE/FIRSTMOVER) + `e2e_trace_one` (per-decision HP/seed trace, `E2E_TRACE`/`E2E_LO`/
