@@ -176,3 +176,28 @@ Other: one procedural stress battle hit a 180-s LIVELOCK (`procedural_random.000
 360 identical `request` frames) — the shape of the existing backlog P1 "possible IMPRISON LIVELOCK on
 the agent side" (a seeded-random player re-picking a sealed move the request shows enabled);
 UNVERIFIED which move, not a core-vs-Python difference. Cost to training at cap 2: 0.93×.
+
+## 9. Readiness refresh (2026-09-25 11:30 PT) — NOT READY (counts short; 2 new fuzz repros under triage)
+
+**Training-input boundary: `bafaef89`** (landed; folds into `0896b7d9` — nothing trained between):
+adds `f74c2a12` (an all-imprisoned mon's pick is Struggle-substituted — the turn now proceeds where
+the port re-opened it) and `bafaef89` (successive refusals in one decision accumulate on one request;
+a move sent at a forced switch is refused) — both owner-directed, both Rust-bridge-only, both rare
+(≤ 13 per 20,000 random-picker battles; ~0 from poke-env and every fuzz picker by construction).
+Routine gate at the combined tree: 11,623 passed. MILESTONE (`b71494e2` = `bafaef89`'s code): slice
+N 4 / 4, parity 10 / 10. The stress runs from pin `bafaef89` since 11:12. The battles already run
+keep counting: neither fix can move a core-vs-Python comparison (both paths read the same port
+bytes), and the fuzz pickers never reach either state.
+
+| # | target | done / registered | open | state |
+|---|---|---|---|---|
+| 1 | ladder full tier | 7,160 + 7,160 / 11,407 + 11,407 | 0 CUTOVER-class | running |
+| 2 | pool | 5,440 / 8,628 | 0 | running |
+| 3 | `production` policy | 1,820 / 2,876 · 520 / 800 · 320 / 500 | 0 | running |
+| 4 | procedural | 2,519 / 4,000 | 0 (1 livelock, the 0896b7d9 class, now completes) | running |
+| 5 | corpora | 1 / 1 | 0 | MET |
+| 6 | slice N | 1,900 · 640 · 625 · 325 episodes | 0 since the F1 fix | running |
+| 7 | A/B fuzzers | state 6,300 / 10,000 · 1,900 / 3,000 · 700 / 1,000; bytes 6,300 · 1,900 · 700; bridge 3,200 / 5,000 · 1,300 / 2,000 · 700 / 1,000; sim-bridge 1,250 / 2,000 · 650 / 1,000 | **2 new repros still diverging on `bafaef89`** (`rmuh3kkcx_ab_2_24` seed @ d4; `rmuh7wyw3_ab_3_2` species @ d68) — under triage | open |
+| 8 | soak | 4 / 6 + 3 / 4 children × 10,000 | 0 errors, 0 replacements | running |
+| 9 | launch smoke | 2 | — | MET |
+| 10 | throughput | 8 pairs | −5.5% [−8.3, −2.1] | MET |
