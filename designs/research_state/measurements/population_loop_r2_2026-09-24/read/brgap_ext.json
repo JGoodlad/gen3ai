@@ -1,0 +1,252 @@
+{
+ "stat": "pooled",
+ "null_rate": 0.5,
+ "rate_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+ "rounds": [
+  {
+   "round": 2,
+   "target_run": "ai_v13_23_popr1_ctrl",
+   "target_file": "/home/goodlad/dev/gen3ai/models/ai_v13_23_popr1_ctrl/final_model.zip",
+   "target_step": 103219200,
+   "budget": 4030464,
+   "dose_rate": 3.814697265625e-08,
+   "rows": [
+    {
+     "run": "ai_v13_32_popr1_read_ctrl_ext",
+     "archetype": "offense",
+     "membership": "5/5",
+     "wins": 127,
+     "games": 200,
+     "rate": 0.635,
+     "endpoint_rate": 0.68,
+     "endpoint_step": 114000000,
+     "pooled_rate": 0.635,
+     "pooled_games": 200,
+     "gap": 0.135,
+     "gap_lo": 0.06631574058970169,
+     "gap_hi": 0.1985958378123518,
+     "n_cycles": 2
+    }
+   ],
+   "unassigned": [],
+   "pooled": []
+  },
+  {
+   "round": 3,
+   "target_run": "ai_v13_22_popr1_loop",
+   "target_file": "/home/goodlad/dev/gen3ai/models/ai_v13_22_popr1_loop/final_model.zip",
+   "target_step": 103219200,
+   "budget": 4030464,
+   "dose_rate": 3.814697265625e-08,
+   "rows": [
+    {
+     "run": "ai_v13_31_popr1_read_loop_ext",
+     "archetype": "offense",
+     "membership": "5/5",
+     "wins": 120,
+     "games": 200,
+     "rate": 0.6,
+     "endpoint_rate": 0.58,
+     "endpoint_step": 114000000,
+     "pooled_rate": 0.6,
+     "pooled_games": 200,
+     "gap": 0.09999999999999998,
+     "gap_lo": 0.030835438500125267,
+     "gap_hi": 0.1653953603162106,
+     "n_cycles": 2
+    }
+   ],
+   "unassigned": [],
+   "pooled": []
+  }
+ ],
+ "deltas": [
+  {
+   "earlier_round": 2,
+   "later_round": 3,
+   "per_archetype": [
+    {
+     "archetype": "offense",
+     "gap_earlier": 0.135,
+     "gap_later": 0.09999999999999998,
+     "delta": -0.03500000000000003,
+     "lo": -0.12895832669074578,
+     "hi": 0.05983712691571884,
+     "runs_earlier": [
+      "ai_v13_32_popr1_read_ctrl_ext"
+     ],
+     "runs_later": [
+      "ai_v13_31_popr1_read_loop_ext"
+     ],
+     "per_replicate": []
+    }
+   ],
+   "unpaired": [],
+   "mean_delta": null,
+   "lo": null,
+   "hi": null,
+   "n_pairs": 1,
+   "verdict": "UNREADABLE \u2014 fewer than two archetypes are present in both rounds"
+  }
+ ],
+ "caveats": [],
+ "mismatches": [],
+ "unmatched": false,
+ "runs": [
+  {
+   "run": "ai_v13_32_popr1_read_ctrl_ext",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_32_popr1_read_ctrl_ext",
+   "round": 2,
+   "archetype": "offense",
+   "membership": "5/5",
+   "target": {
+    "run": "ai_v13_23_popr1_ctrl",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_23_popr1_ctrl/final_model.zip",
+    "resolved_num_timesteps": 103219200,
+    "pins_own_teams": false
+   },
+   "fork_step": 111280128,
+   "num_timesteps": 115310592,
+   "budget": 4030464,
+   "dose_rate": 3.814697265625e-08,
+   "lr_median": 0.00025,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/9eb3abdc52876a63.txt",
+    "data/teams/sample/ac17a9dde5.txt",
+    "data/teams/sample/a185b2d193.txt",
+    "data/teams/sample/9ba039ba8a.txt",
+    "data/teams/sample/b904dbe059.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 112000032,
+     "wins": 59,
+     "games": 100,
+     "win_rate": 0.59,
+     "post_fork": true
+    },
+    {
+     "step": 114000000,
+     "wins": 68,
+     "games": 100,
+     "win_rate": 0.68,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 114000000,
+    "wins": 68,
+    "games": 100,
+    "win_rate": 0.68,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 127,
+    "games": 200,
+    "win_rate": 0.635,
+    "ci": [
+     0.5663157405897017,
+     0.6985958378123518
+    ]
+   }
+  },
+  {
+   "run": "ai_v13_31_popr1_read_loop_ext",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_31_popr1_read_loop_ext",
+   "round": 3,
+   "archetype": "offense",
+   "membership": "5/5",
+   "target": {
+    "run": "ai_v13_22_popr1_loop",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_22_popr1_loop/final_model.zip",
+    "resolved_num_timesteps": 103219200,
+    "pins_own_teams": false
+   },
+   "fork_step": 111280128,
+   "num_timesteps": 115310592,
+   "budget": 4030464,
+   "dose_rate": 3.814697265625e-08,
+   "lr_median": 0.00025,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/9eb3abdc52876a63.txt",
+    "data/teams/sample/ac17a9dde5.txt",
+    "data/teams/sample/a185b2d193.txt",
+    "data/teams/sample/9ba039ba8a.txt",
+    "data/teams/sample/b904dbe059.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 112000032,
+     "wins": 62,
+     "games": 100,
+     "win_rate": 0.62,
+     "post_fork": true
+    },
+    {
+     "step": 114000000,
+     "wins": 58,
+     "games": 100,
+     "win_rate": 0.58,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 114000000,
+    "wins": 58,
+    "games": 100,
+    "win_rate": 0.58,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 120,
+    "games": 200,
+    "win_rate": 0.6,
+    "ci": [
+     0.5308354385001253,
+     0.6653953603162106
+    ]
+   }
+  }
+ ],
+ "played": null,
+ "_meta": {
+  "tool": "main.best_response_gap",
+  "argv": [
+   "ai_v13_32_popr1_read_ctrl_ext",
+   "ai_v13_31_popr1_read_loop_ext",
+   "--rounds",
+   "ai_v13_32_popr1_read_ctrl_ext=2",
+   "ai_v13_31_popr1_read_loop_ext=3",
+   "--json",
+   "/home/goodlad/dev/gen3ai-wt/popr2-side/designs/research_state/measurements/population_loop_r2_2026-09-24/read/scripts/../brgap_ext.json",
+   "--md",
+   "/home/goodlad/dev/gen3ai-wt/popr2-side/designs/research_state/measurements/population_loop_r2_2026-09-24/read/scripts/../brgap_ext.md"
+  ],
+  "generated_at": "2026-09-25T14:47:33",
+  "cwd": "/home/goodlad/dev/gen3ai-wt/popr2-side",
+  "teamsets": "/home/goodlad/dev/gen3ai-wt/popr2-side/designs/research_state/exploiter_teamsets_2026-09-22.json",
+  "play": null
+ }
+}

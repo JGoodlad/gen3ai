@@ -29,7 +29,7 @@ B / C. `ai_v13_13` = `ai_v13_13_exploit5_offense`, the second (0.39×) offense e
 | §4.2.3 round-over-round (descriptor) | loop chain r3 − r2 **−4.50 [−11.33, +2.39]**; control chain r3 − r2 **−6.25 [−12.83, +0.41]** → the registered "loop falls and the control does not" pattern is **NOT met** (the control fell too) |
 | §4.3 G-U (untaught 8) | **does NOT fire** — B2 − C2 = −1.31 pp [−4.19, +1.19] vs the 3.69 floor; 4,800 battles, 0 timeouts (§4) |
 | §4.3 G-A (SmallRL anchors, greedy vs greedy) | **does NOT fire** — B2 − C2 = +1.75 pp [−2.13, +5.62] vs the 11.0 floor; 24 units / 2,400 games, all OK, regime verified (§5) |
-| §4.4 convergence side-check | **PENDING** — RB+ finished its training ≈ 12:35 PT, RC+ runs to ≈ 14:30. One-liner: `scripts/side_check.sh` (refuses until both have finished). It changes no branch and no count |
+| §4.4 convergence side-check (descriptor) | **DONE — row S, the Δ SURVIVES**: Δ_late = −5.75 pp [−12.40, +0.97] (≤ −5.0) and RB+ 0.600 is within 5 pp of RB's cycles 3–4 (0.585, rise +1.5). Changes no branch and no count (§6a) |
 | §5 branch | **N+ — FINAL.** Δ2 NOT DETECTED, ABSORBED, guards clean, not VOID. Counts **2 of 3** toward the stopping rule. **Power decision RESOLVED by the owner (2026-09-25): NO round 3 on this lineage** — the loop carries into the NEW lineage with both power levers registered up front (§6) |
 
 ## Deviations from the registration
@@ -202,7 +202,30 @@ multi-round read registered in advance. The stopping count on this lineage there
 un-exhausted; it neither turned (no T) nor was stopped (no third non-detection). The §4.4 side-check is still
 read as a descriptor when RC+ finishes; it changes no branch.
 
-## 7. Findings from this read
+## 6a. §4.4 convergence side-check — **row S, the Δ SURVIVES** (a DESCRIPTOR; not a re-verdict of round 1)
+
+Run 09-25 after RC+ finished (14:47 PT) by `scripts/side_check.sh`, verbatim, from a fresh worktree at nice 19. RB+ =
+`ai_v13_31_popr1_read_loop_ext` (round 1's reader of the loop, RB, forked +50 %), RC+ =
+`ai_v13_32_popr1_read_ctrl_ext` (round 1's reader of the control, RC, forked +50 %).
+`--check`: **0 mismatches**, budget 4,030,464 and dose 3.815e-08 on both (`brgap_ext_check.txt`; F2 again:
+the unassisted listing put RB+ in round 1 — the registered read passes `--rounds`).
+
+| reader | curve (parent's 4 + extension's 2, wins/100) | extension pooled | gap pp |
+|---|---|---:|---:|
+| RB → RB+ | 52 / 59 / 57 / 60 → **62 / 58** | 120/200 = 0.600 | +10.00 [+3.08, +16.54] |
+| RC → RC+ | 67 / 68 / 64 / 69 → **59 / 68** | 127/200 = 0.635 | +13.50 [+6.63, +19.86] |
+
+- **Δ+ = gap(RB+) − gap(RC+) = −3.50 pp [−12.90, +5.98]** (n 200 / 200; `brgap_ext.{txt,json,md}`).
+- **Δ_late** (cycles 3–6, 400 games each) **= −5.75 pp [−12.40, +0.97]**.
+- Rise over each parent's cycles 3–4: RB+ **+1.5** [−8.1, +11.0]; RC+ **−3.0** [−12.2, +6.3].
+- **Row, read in the registered order S, B, C, I** (`scripts/convergence_rule.py` → `convergence_rule.{txt,json}`):
+  S's two conditions hold on POINT estimates (Δ_late ≤ −5.0; RB+ within 5 pp of 0.585) → **S — the Δ SURVIVES**.
+  Round 1's Δ was not mostly reader speed, so round 2's primary reads as registered with no reader-budget qualifier.
+- 🚨 **Honest limit (registered):** this is a point-estimate descriptor at n = 200. Δ_late's CI crosses 0, and Δ+
+  alone (−3.50) sits above −5.0. It shows that RB did not keep climbing; it cannot certify either reader
+  converged. It changes no branch and no count (round 1 stays N+, round 2 stays N+ FINAL).
+
+
 
 - **F2 reproduced again, LIVE.** The unassisted `--check` listing put RB2 in round 2 and RC2 in round 3, the
   reverse of §4.2's mapping (`brgap_check.txt`). The registered `--rounds` fixed it.
@@ -240,4 +263,5 @@ read as a descriptor when RC+ finishes; it changes no branch.
 | `gu_rows/` · `scripts/gu_driver.py` · `scripts/gu_env.sh` | G-U: 4,800 per-battle rows (the `plateau_b1` rows are the reproduction), the resumable driver, its environment |
 | `untaught_popr2.{json,md}` · `gu_guard.json` · `gu_aggregate.txt` | G-U aggregate (the tool's own) + the guard rule + the reproduction check |
 | `ga_rows/` · `scripts/ga_driver.sh` · `scripts/ga_aggregate.py` · `ga_guard.json` · `ga_aggregate.txt` | G-A: 24 units (`summary.json`, `games.jsonl.gz`, both peer reports; the full trees with server / peer logs are in `~/gen3ai_archive/popr2_read_2026-09-25/ga_rows_full/`), driver, aggregate + guard rule |
-| `scripts/side_check.sh` | §4.4, the pending one-liner (run from a worktree root; refuses until RB+ and RC+ have finished; writes `brgap_ext_check.txt`, `brgap_ext.{txt,json,md}`, `convergence_rule.{txt,json}` here) |
+| `brgap_ext_check.txt` · `brgap_ext.{txt,json,md}` · `convergence_rule.{txt,json}` | §4.4 side-check outputs (row S) |
+| `scripts/side_check.sh` | §4.4, the one-liner that produced them (run from a worktree root; refuses until RB+ and RC+ have finished; writes `brgap_ext_check.txt`, `brgap_ext.{txt,json,md}`, `convergence_rule.{txt,json}` here) |

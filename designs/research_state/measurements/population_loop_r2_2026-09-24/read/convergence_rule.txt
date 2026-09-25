@@ -1,0 +1,13 @@
+$ python scripts/convergence_rule.py --json convergence_rule.json
+CONVERGENCE SIDE-CHECK (round-2 registration §4.4) — DESCRIPTOR, NOT a re-verdict of round 1
+  RB   ai_v13_24_popr1_read_loop          52/100 / 59/100 / 57/100 / 60/100
+  RC   ai_v13_25_popr1_read_ctrl          67/100 / 68/100 / 64/100 / 69/100
+  RB+  ai_v13_31_popr1_read_loop_ext      62/100 / 58/100
+  RC+  ai_v13_32_popr1_read_ctrl_ext      59/100 / 68/100
+  Δ+     = RB+ − RC+                    -3.50 pp [-12.90, +5.98]   (n 200 / 200)
+  Δ_late = (RB c3-4 + RB+) − (RC c3-4 + RC+) -5.75 pp [-12.40, +0.97]   (n 400 / 400)
+  rise RB+ over RB cycles 3-4            +1.50 pp [-8.06, +11.03]
+  rise RC+ over RC cycles 3-4            -3.00 pp [-12.24, +6.31]
+  OUTCOME: S — the Δ SURVIVES
+  wrote /home/goodlad/dev/gen3ai-wt/popr2-side/designs/research_state/measurements/population_loop_r2_2026-09-24/read/scripts/../convergence_rule.json
+rc=0
