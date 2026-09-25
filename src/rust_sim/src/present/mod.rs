@@ -53,9 +53,11 @@ pub mod legal;
 pub mod mon;
 pub mod tables;
 pub mod board_reading;
+pub mod tokens;
 pub mod view;
 
 pub use legal::{legal_actions, mask, LegalActions};
+pub use tokens::{choice_tokens, tokens_json};
 pub use board_reading::BoardReading;
 pub use audit::{check_view, Audit};
 pub use view::{present, OneSidedView};

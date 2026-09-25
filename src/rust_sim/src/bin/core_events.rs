@@ -43,8 +43,8 @@
 //! (`agents.battle.rust_core_parity_trackers`).
 //!
 //! `--obs` (implies `--trackers`) also ENCODES each decision's observation row on the version
-//! (`gen3_core_encoder_v1`) and adds `"obs"` (the wire frame, `encoder::wire`) and `"mask"` to
-//! every decision record — slice O of the parity harness (`agents.battle.rust_core_parity_obs`).
+//! (`gen3_core_encoder_v1`) and adds `"obs"` (the wire frame, `encoder::wire`), `"mask"` and
+//! `"tokens"` (the choice string per legal action, `present::choice_tokens`) to every decision record — slice O of the parity harness (`agents.battle.rust_core_parity_obs`).
 //!
 //! `--obs-bench SIDE K REPS` (with `--obs`) also TIMES the encoder at viewer SIDE's K-th decision
 //! (0-based): REPS encodes of the version (its view memoized — the production shape) and REPS of
@@ -228,8 +228,8 @@ struct TrackCap {
     trackers: String,
     window: String,
     reward: f64,
-    /// `--obs`: the encoded row's wire frame and the 11-dim mask.
-    obs: Option<(String, [u8; 11])>,
+    /// `--obs`: the encoded row's wire frame, the 11-dim mask and the choice tokens (JSON).
+    obs: Option<(String, [u8; 11], String)>,
 }
 
 /// `--obs-bench`: (side, decision index, reps).
@@ -304,7 +304,9 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
             let mut row = [0.0f32; pokesim::encoder::OBS_DIM];
             v.encode(side, &mut row).map_err(|e| format!("encode p{}: {}", side + 1, e.message()))?;
             let legal = v.legal(side).ok_or("a decision with no legality")?;
-            Some((pokesim::encoder::wire::frame(&row), pokesim::present::mask(&legal)))
+            let reading = &v.stream(side).ok_or("no stream")?.board_reading;
+            let tokens = pokesim::present::choice_tokens(reading, &legal).map_err(|e| e.message().to_string())?;
+            Some((pokesim::encoder::wire::frame(&row), pokesim::present::mask(&legal), pokesim::present::tokens_json(&tokens)))
         } else {
             None
         };
@@ -518,8 +520,8 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                         } else {
                             o.push_str(&format!("{{\"after\":{},\"reward\":{:?},\"trackers\":{},\"window\":{}",
                                                 c.after, c.reward, c.trackers, c.window));
-                            if let Some((frame, mask)) = &c.obs {
-                                o.push_str(&format!(",\"obs\":{frame},\"mask\":{mask:?}"));
+                            if let Some((frame, mask, tokens)) = &c.obs {
+                                o.push_str(&format!(",\"obs\":{frame},\"mask\":{mask:?},\"tokens\":{tokens}"));
                             }
                             o.push('}');
                         }

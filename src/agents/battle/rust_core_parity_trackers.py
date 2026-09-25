@@ -347,9 +347,10 @@ def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: 
             tr.record(b, mask, legal=legal)
             delta = tr.update_progress_clock(b, legal)
             if obs is not None:
-                from agents.battle.rust_core_parity_obs import compare_row, python_row
+                from agents.battle.rust_core_parity_obs import compare_row, python_row, python_tokens
 
-                compare_row(where, cap, python_row(b, tr, legal), mask, obs)
+                compare_row(where, cap, python_row(b, tr, legal), mask, obs,
+                            py_tokens=python_tokens(b, legal, mask))
             lab = intent_label(delta, frame)
             census.labels[lab["kind"]] += 1
             from agents.observation.base import ObservationEncoder

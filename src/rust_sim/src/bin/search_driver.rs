@@ -626,6 +626,10 @@ fn expand_many(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String
         return Err("expand_many: integrity is DELETED (its only job was typed == text; the typed \
                     shortcut is gone, program §4 M4)".into());
     }
+    // `rows` (core nodes, `gen3_core_encoder_v1`): each wanted side's leaf comes back as its ENCODED
+    // observation row + mask + choice tokens instead of the view / legality / events JSON — what
+    // search scores (the tree must fold the trackers: `open_root`'s `trackers`).
+    let rows = req.get("rows").and_then(Json::as_bool).unwrap_or(false);
     let mut out = Vec::with_capacity(arms.len());
     // `gen3_expand_many_timing_v1` — zero-cost and ZERO-BYTE unless `POKESIM_SEARCH_TIMING=1`.
     let mut timings = ArmTimings::default();
@@ -634,7 +638,7 @@ fn expand_many(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String
         let node_id = arm.str_at("node_id").ok_or("arm: missing node_id")?;
         let is_core = matches!(srv.nodes.get(node_id).map(|n| &n.state), Some(NodeState::Core(..)));
         if is_core {
-            out.push(expand_arm_core(srv, arm, dex, want, &mut timings)?);
+            out.push(expand_arm_core(srv, arm, dex, want, rows, &mut timings)?);
         } else {
             out.push(expand_arm(srv, arm, dex, want, &mut timings)?);
         }
@@ -777,6 +781,7 @@ fn expand_arm_core(
     arm: &Json,
     dex: &Dex,
     want: SideWant,
+    rows: bool,
     timings: &mut ArmTimings,
 ) -> Result<String, String> {
     let node_id = arm.str_at("node_id").ok_or("arm: missing node_id")?.to_string();
@@ -833,7 +838,7 @@ fn expand_arm_core(
     let mut core_fields = String::new();
     for s in 0..2 {
         let Some((leaf, mid)) = &leaves[s] else { continue };
-        core_fields.push_str(&core_payload(leaf, s, *mid)?);
+        core_fields.push_str(&if rows { core_row_payload(leaf, s, *mid)? } else { core_payload(leaf, s, *mid)? });
     }
     clk_render.stop(&mut timings.core_render_us);
 
@@ -873,6 +878,32 @@ fn expand_arm_core(
         opt_field("p1_chunks", p1_chunks.as_deref()),
         opt_field("p2_chunks", p2_chunks.as_deref()),
         core_fields,
+    ))
+}
+
+/// `,"core_pN":{"mid":…,"row":<frame>|null,"mask":[…],"tokens":{…}}` for one leaf (`rows`,
+/// `gen3_core_encoder_v1`): the side's observation row ENCODED on the version (the wire frame,
+/// `encoder::wire`), the 11-dim mask and the choice string per legal action
+/// (`present::choice_tokens`) — or `"row":null` when the leaf is not a decision of the side (its
+/// last request is `wait` / empty, the battle is over, or no action is legal), which the live player
+/// defers and search does not score.
+fn core_row_payload(leaf: &BattleVersion, s: usize, mid: bool) -> Result<String, String> {
+    let lines = leaf.stream(s).map_or(0, |x| x.lines);
+    let decided = leaf.decision(s).is_some_and(|d| d.line + 1 == lines);
+    if !decided {
+        return Ok(format!(",\"core_p{}\":{{\"mid\":{mid},\"row\":null}}", s + 1));
+    }
+    let mut row = [0.0f32; pokesim::encoder::OBS_DIM];
+    leaf.encode(s, &mut row)?;
+    let legal = leaf.legal(s).ok_or("a decision with no legality")?;
+    let reading = &leaf.stream(s).ok_or("no stream")?.board_reading;
+    let tokens = pokesim::present::choice_tokens(reading, &legal)?;
+    Ok(format!(
+        ",\"core_p{}\":{{\"mid\":{mid},\"row\":{},\"mask\":{:?},\"tokens\":{}}}",
+        s + 1,
+        pokesim::encoder::wire::frame(&row),
+        pokesim::present::mask(&legal),
+        pokesim::present::tokens_json(&tokens)
     ))
 }
 

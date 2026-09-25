@@ -85,7 +85,8 @@ A fork CLONES the `TrackerState`: the tracker state is an `Arc` and is COPIED on
 own transition opens a decision (`Arc::make_mut`); the record builder and the pending readings are
 small and the fork's own. `BattleVersion::decision(side)` is `Some` iff the transition INTO the
 version ended at one of the side's decisions. The trackers are opt-in (`root_with` /
-`observe_root_with` / `parse_root_with`); search does not turn them on until M4's encoder reads them.
+`observe_root_with` / `parse_root_with`); the M4 ENCODER reads them (`BattleVersion::encode`,
+`designs/rust_sim/encoder.md`), and search's core tree turns them on (`open_root`'s `trackers`).
 
 ## 3. The native record — what happened, in order, with attribution
 

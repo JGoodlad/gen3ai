@@ -302,11 +302,11 @@ class _Session:
         self.root = root
         self.opened = 0
 
-    def open_root(self, turn, record=None, core=None, side=None):
+    def open_root(self, turn, record=None, core=None, side=None, trackers=False):
         self.opened += 1
         return self.root
 
-    def expand_many(self, arms, *, side=None):
+    def expand_many(self, arms, *, side=None, rows=False):
         # `side` accepted and ignored — there is no payload to elide here. The KEYWORD must be
         # accepted because the production caller always sends it
         # (`gen3_expand_many_side_elision_v1`), and a double whose signature lags the real one
@@ -450,7 +450,7 @@ def test_a_dead_driver_on_the_racing_path_is_counted_not_crashed():
     eng = _engine("racing")
 
     class _Dead(_Session):
-        def open_root(self, turn, record=None, core=None, side=None):
+        def open_root(self, turn, record=None, core=None, side=None, trackers=False):
             raise RuntimeError("driver died")
 
     eng._session = _Dead(None)

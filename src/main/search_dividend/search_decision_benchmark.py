@@ -231,18 +231,16 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
 # ---------------------------------------------------------------------------
 
 
-#: road name -> materializer. ``core`` folds every successor from the side's protocol text (the
-#: one path — the typed shortcut is deleted, program §4 M4). ``core-trk`` is ``core`` with the
-#: Rust core's per-decision TRACKERS folded on every version (``SearchConfig.core_trackers``,
-#: ``gen3_core_trackers_v1``) — the M3 fork-cost A/B.
-ROADS = {"protocol": "protocol", "view": "view", "core": "core", "core-trk": "core"}
+#: road name -> materializer. ``core`` takes every successor as the Rust core's ENCODED row (its
+#: lines folded from text, its trackers and encoder on the version — ``gen3_core_encoder_v1``).
+ROADS = {"protocol": "protocol", "view": "view", "core": "core"}
 
 
 def _cfg(materializer: str, *, m_opp: int, k_worlds: int, arm: str, impl: str) -> SearchConfig:
     mat = ROADS[materializer]
     return SearchConfig(
         arm=arm, budget_s=1e9, seed=7, max_depth=1, search_impl=impl,
-        materializer=mat, core_trackers=(materializer == "core-trk"),
+        materializer=mat,
         caps=WidthCaps(m_opp=m_opp, k_worlds=k_worlds, r_dice=1))
 
 

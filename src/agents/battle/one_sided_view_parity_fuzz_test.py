@@ -532,6 +532,34 @@ def check_core(factory, encoder, road, row_road, core: dict, action: int, dec_i:
     return ok
 
 
+def check_core_row(ccore: dict, row_road, dec_i: int, where: str, cen: Census) -> bool:
+    """The CORE ROW road (`gen3_core_encoder_v1`) at ONE branch point — what SEARCH scores: the
+    driver's ENCODED row + mask (``expand_many(rows=True)``, the Rust encoder on the leaf version)
+    against ``materialize_branches``' own row, BYTE for byte. No Python tracker, view or encoder
+    stands between the two."""
+    from agents.battle.core_obs import wrap_row
+
+    mats = row_road.player._materialized
+    if len(mats) <= dec_i:
+        cen.defer("[core-row] the protocol successor produced no decision row")
+        return False
+    d = mats[dec_i]
+    if ccore.get("row") is None:
+        cen.note("core_row.presence", "a decision", "row null", where)
+        return False
+    got = wrap_row(ccore["row"])
+    ok = True
+    if list(np.asarray(d.mask)) != list(ccore.get("mask") or []):
+        cen.note("core_row.mask", list(np.asarray(d.mask)), ccore.get("mask"), where)
+        ok = False
+    if d.obs is None or np.asarray(d.obs, dtype=np.float32).tobytes() != got.tobytes():
+        bad = [] if d.obs is None else [int(i) for i in np.flatnonzero(
+            np.asarray(d.obs, dtype=np.float32).view(np.uint32) != got.view(np.uint32))]
+        cen.note("core_row.obs", "protocol row", f"{len(bad)} cells differ (first {bad[:6]})", where)
+        ok = False
+    return ok
+
+
 def _block_of(encoder, idx: int) -> str:
     """Name the block (and, inside a per-mon slot, the FIELD) an index falls in, resolved from the
     DECLARED layout — never a literal.
@@ -578,6 +606,8 @@ def _field_of(slot_layout: Any, col: int) -> str:
 #: The CORE road's compared branch points (and how many were D10 leaves) in the last :func:`run`.
 CORE_POINTS = 0
 CORE_D10 = 0
+#: successors compared on the CORE ROW road (the encoded row search scores)
+CORE_ROWS = 0
 
 def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS,
         impl: str = "rust", fixed_key: Optional[int] = None,
@@ -587,8 +617,8 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
     branch_points = 0
     full_obs_points = 0
     d10_points = 0
-    global CORE_POINTS, CORE_D10
-    CORE_POINTS, CORE_D10 = 0, 0
+    global CORE_POINTS, CORE_D10, CORE_ROWS
+    CORE_POINTS, CORE_D10, CORE_ROWS = 0, 0, 0
     for b in range(n_battles):
         with tempfile.TemporaryDirectory() as td:
             record, summary, npz = _record_one_battle(
@@ -602,7 +632,8 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
         if not cand:
             continue
         picks = [cand[int(len(cand) * f)] for f in (0.25, 0.5, 0.75)][:turns]
-        with SearchSession(record, impl=impl) as ss, SearchSession(record, impl=impl) as cs:
+        with SearchSession(record, impl=impl) as ss, SearchSession(record, impl=impl) as cs, \
+                SearchSession(record, impl=impl) as rs:
             for anchor in picks:
                 turn = int(invs[anchor]["turn"])
                 try:
@@ -649,6 +680,11 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                 croot = cs.open_root(turn, core="text")
                 cexp = [dict(a, node_id=croot.node_id) for a in expand]
                 core_of = {int(n.label): n for n in cs.expand_many(cexp, side=side)}
+                # THE CORE ROW ROAD — what search scores: the same arms, each leaf ENCODED by the
+                # Rust core on its version (a tree folding the trackers).
+                rroot = rs.open_root(turn, core="text", side=side, trackers=True)
+                rexp = [dict(a, node_id=rroot.node_id) for a in expand]
+                rows_of = {int(n.label): n for n in rs.expand_many(rexp, side=side, rows=True)}
                 from agents.training.core_successor import CoreSuccessorFactory
 
                 cfactory = (CoreSuccessorFactory.at_fork(
@@ -664,6 +700,8 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                                  f"{record.battle_tag}@t{turn}/arm{node.label}")
                         continue
                     ccore = cnode.core_p1 if side == "p1" else cnode.core_p2
+                    rnode = rows_of.get(int(node.label))
+                    rcore = None if rnode is None else (rnode.core_p1 if side == "p1" else rnode.core_p2)
                     payload = node.view_p1 if side == "p1" else node.view_p2
                     suffix = node.p1_chunks if side == "p1" else node.p2_chunks
                     # PAD the action list. `_feed` stops the moment the player is done, and a
@@ -721,6 +759,9 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                                             int(node.label), anchor + 1, where + "/core-D10", cen):
                                 CORE_POINTS += 1
                                 CORE_D10 += 1
+                        if rcore is not None and check_core_row(rcore, mid_road, anchor + 1,
+                                                                where + "/core-row-D10", cen):
+                            CORE_ROWS += 1
                         if clean_mid and factory is not None and check_successor(
                                 factory, encoder, mid_road, at[0], head, int(node.label),
                                 anchor + 1, where + "/D10", cen):
@@ -737,6 +778,9 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                             elif check_core(cfactory, encoder, arm_road, arm_road, ccore,
                                             int(node.label), anchor + 1, where + "/core", cen):
                                 CORE_POINTS += 1
+                        if rcore is not None and check_core_row(rcore, arm_road, anchor + 1,
+                                                                where + "/core-row", cen):
+                            CORE_ROWS += 1
     return cen, branch_points, full_obs_points, d10_points
 
 
@@ -768,6 +812,7 @@ def test_the_one_sided_view_reproduces_the_read_models_and_the_obs():
         f"this gate is what licenses `--materializer view`, and a run that never reaches it is "
         f"vacuous about every tracker block (branch points: {branch_points})")
     assert CORE_POINTS >= 8, f"only {CORE_POINTS} CORE-road successors compared — vacuous"
+    assert CORE_ROWS >= 8, f"only {CORE_ROWS} CORE-ROW successors (what search scores) compared — vacuous"
     assert not cen.rows, "\n" + cen.render()
 
 
@@ -820,5 +865,6 @@ if __name__ == "__main__":
     print(census.render())
     print(f"branch points compared: {bp}   (FULL tracker-fed obs at {fop} of them; "
           f"{d10} of those were D10 INTERMEDIATE arms served from view_pN_at[0]); "
-          f"CORE road: {CORE_POINTS} successors ({CORE_D10} D10)")
+          f"CORE road: {CORE_POINTS} successors ({CORE_D10} D10); CORE ROW road (search's): "
+          f"{CORE_ROWS} successors byte-equal")
     sys.exit(1 if census.rows else 0)

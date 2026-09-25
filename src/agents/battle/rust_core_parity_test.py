@@ -405,6 +405,16 @@ def test_the_obs_slice_catches_an_unwritten_cell_and_a_signed_zero():
     o = O.ObsCensus()
     O.compare_row("signed", with_row(signed), row, mask, o)
     assert o.byte_only_cells == 1 and o.divergences, o.render()
+    # the CHOICE TOKENS (what search branches on): a different token FAILS
+    tokens = dict(cap["tokens"])
+    assert tokens, "fixture: a decision with legal actions"
+    o = O.ObsCensus()
+    O.compare_row("tokens", cap, row, mask, o, py_tokens=tokens)
+    assert not o.divergences and o.tokens == len(tokens)
+    k = next(iter(tokens))
+    o = O.ObsCensus()
+    O.compare_row("tokens", cap, row, mask, o, py_tokens=dict(tokens, **{k: tokens[k] + "x"}))
+    assert "[TOKENS] the choice string per legal action" in o.divergences, o.render()
 
 
 # ---------------------------------------------------------------------------

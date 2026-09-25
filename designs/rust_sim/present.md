@@ -173,9 +173,14 @@ fails the day it is stale).
 `search_driver`'s `open_root` takes `core: "text"` (the one path; `"typed"` is REFUSED — the typed
 shortcut is deleted, program §4 M4) and `side` (the one stream a tree folds); a core root is a
 `BattleVersion`, and every `expand_many` arm's successor IS a version (`NodeState::Core`). Per arm
-and wanted side it returns `core_pN = {view, legal, request, events (the readings), mid}`, and
-Python's `CoreSuccessorFactory` (a `ViewSuccessorFactory` with `view_adapter`'s rules and
-`ViewEventFolder`'s re-parse deleted) encodes it with the unchanged tracker cadence and encoder.
+and wanted side it returns, with `rows` (what SEARCH sends, `gen3_core_encoder_v1`),
+`core_pN = {mid, row, mask, tokens}` — the leaf's observation ENCODED on its version (the tree folds
+the trackers: `open_root`'s `trackers`), its mask and its choice tokens (`present::choice_tokens`),
+`row: null` where the side does not decide — and search wraps the row with `np.frombuffer`
+(`designs/rust_sim/encoder.md` §5); no Python tracker, view or encoder touches the successor.
+Without `rows` it returns the M2 payload `core_pN = {view, legal, request, events (the readings),
+mid}`, which Python's `CoreSuccessorFactory` encodes (kept, unused by search, until the deletion
+pass).
 
 * **D10 — a leaf AT the intermediate decision.** An arm whose ply opens a second decision (a KO's
   replacement, a refused trapped switch) returns the version AT that decision (`mid`), built from
@@ -199,8 +204,8 @@ Python's `CoreSuccessorFactory` (a `ViewSuccessorFactory` with `view_adapter`'s 
 |---|---|
 | slice V — COMMIT / MILESTONE (`rust_core_parity_views.py`, via `core_events --views`) | at every decision, both viewers: `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, type-strict, no allowlist but the registered poke-env FINDINGS (§3, value-aware, counted per decision — none registered today); the board audit; parse == step at every version |
 | `materializer_parity_integration_test.py` | `protocol`, `view` and `core` give identical decisions, values and obs bytes |
-| `fork_sharing_parity_integration_test.py` (parametrized `view` / `core`) | one root fork per DECISION, shared across the K worlds, gives the same successor obs bytes as one fork per world — a reused factory leaks nothing between arms |
-| `one_sided_view_parity_fuzz_test.py` (`sim`) | on real bridge battles, the core's root and arm views == the protocol road's `LiveView` |
+| `fork_sharing_parity_integration_test.py` | the VIEW road: one root fork per DECISION, shared across the K worlds, gives the same successor obs bytes as one fork per world; the CORE road builds NO Python fork (`test_the_core_road_builds_no_python_fork`) |
+| `one_sided_view_parity_fuzz_test.py` (`sim`) | on real bridge battles, the core's root and arm views == the protocol road's `LiveView`, and the CORE ROW road's encoded rows == the protocol road's successor rows, byte for byte |
 | `core_successor_test.py` | the event transport; the driver REFUSES the deleted typed path and integrity mode |
 
 ## 6. Measurements and findings

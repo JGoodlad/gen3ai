@@ -106,7 +106,23 @@ vectors byte for byte.
 normaliser) fails on `our_team moves+` / `opp_team moves+`; a NaN cell and a `-0.0` in the core row
 each fail.
 
-## 7. The benchmark's core row
+## 7. Search takes rows
+
+On `materializer=core` (the default) search opens its tree with the TRACKERS on and expands with
+`rows` (`search_driver`'s `expand_many`): each wanted side's leaf version is ENCODED in the driver and
+comes back as `core_pN = {mid, row, mask, tokens}` — the `<f4` frame, the 11-dim mask and the choice
+string per legal action (`present::choice_tokens`, the real mapper's `action_to_order` mirrored: a
+switch is `switch <Pokemon.name>`, a move the first available `Move.id` matching the request slot —
+Hidden Power by prefix, `recharge` as `move 1` — the round trip back to the index enforced). `row:
+null` where the side does not decide (a `wait` request, the battle over, no legal action). Python
+(`SearchEngine._materialize_core`) wraps the row with `np.frombuffer` and scores it: no view JSON, no
+event fold, no Python tracker, no Python encoder and no Python prefix fork run on a core successor.
+Slice O compares the tokens against the real mapper at every decision (12,677 at COMMIT);
+`one_sided_view_parity_fuzz_test`'s CORE ROW road compares each arm's row to the protocol road's,
+byte for byte; `fork_sharing_parity_integration_test::test_the_core_road_builds_no_python_fork` pins
+that no Python fork is built.
+
+## 8. The benchmark's core row
 
 `src/agents/training/obs_build_benchmark.py` prints a CORE row: the profiled battle's recorded input
 log is replayed through `core_events --obs --obs-bench SIDE K REPS` (the release build unless
@@ -114,6 +130,6 @@ log is replayed through `core_events --obs --obs-bench SIDE K REPS` (the release
 encode with its view memoized (the production shape) and `present()` + encode (cold) — and its row is
 asserted byte-equal to the Python row before the time is printed (`--no-core` skips it).
 
-## 8. Measurements
+## 9. Measurements
 
 Recorded in [`../research_state/measurements/rust_core_m4_2026-09-24/`](../research_state/measurements/rust_core_m4_2026-09-24/README.md).

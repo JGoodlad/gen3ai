@@ -45,13 +45,13 @@ class _FakeSession:
         self.raise_on_open = raise_on_open
         self.opened = []
 
-    def open_root(self, turn, record=None, core=None, side=None):
+    def open_root(self, turn, record=None, core=None, side=None, trackers=False):
         self.opened.append((turn, record))
         if self.raise_on_open:
             raise self.raise_on_open
         return self.root
 
-    def expand_many(self, arms, *, side=None):
+    def expand_many(self, arms, *, side=None, rows=False):
         # `side` is accepted and ignored: this double returns nothing, so there is no payload to
         # elide. The KEYWORD has to be here — the production caller always passes it
         # (`gen3_expand_many_side_elision_v1`), and a double whose signature lags the real one
@@ -434,7 +434,7 @@ class _PlySession:
         self.per_ply = list(per_ply)
         self.calls = 0
 
-    def expand_many(self, arms, *, side=None):
+    def expand_many(self, arms, *, side=None, rows=False):
         # `side` accepted and IGNORED on purpose: this double answers both sides, which is the
         # `impl="node"` shape, and the elision is a rust-driver behaviour with its own gates
         # (`tests/search_side_elision_test.rs`, `side_elision_parity_integration_test.py`).
@@ -577,4 +577,4 @@ def test_the_core_roads_session_kwargs_travel_only_on_the_core_road():
 
     assert _engine("honest").open_root(_Historical(), 5, "rec", "p1") == ("root", 5, "rec")
     assert _engine("honest", materializer="core").open_root(_Core(), 5, "rec", "p2") == "core-root"
-    assert _Core.kw == {"core": "text", "side": "p2"}
+    assert _Core.kw == {"core": "text", "side": "p2", "trackers": True}

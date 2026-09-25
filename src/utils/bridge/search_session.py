@@ -137,7 +137,9 @@ class ExpandedNode:
     view_p1_at: List[dict] = field(default_factory=list)
     view_p2_at: List[dict] = field(default_factory=list)
     # `materializer=core` (`gen3_core_search_v1`, rust only): the arm's LEAF as a Rust-core
-    # version — `{view, legal, request, events, mid}` per asked-for side, the view being
+    # version — with `rows`, `{mid, row, mask, tokens}` per asked-for side (the leaf's ENCODED
+    # observation, `gen3_core_encoder_v1`; `row` null when the side does not decide there); without,
+    # `{view, legal, request, events, mid}`, the view being
     # the core's `present()` of the side's own stream (every poke-env reading rule applied in
     # Rust; `agents.battle.core_view` builds the read-models from it with no rule), `events` the
     # ply's readings (the tracker input) and `mid` whether the leaf is an intermediate (D10)
@@ -339,7 +341,7 @@ class SearchSession:
             view_p1=out.get("view_p1") or {}, view_p2=out.get("view_p2") or {})
 
     def expand_many(self, arms: Sequence[dict], *,
-                    side: Optional[str] = None) -> List[ExpandedNode]:
+                    side: Optional[str] = None, rows: bool = False) -> List[ExpandedNode]:
         """Expand N arms from their parent nodes in one round-trip. Each ``arm`` is a dict
         ``{node_id, p1_action, p2_action, seed, label, recorded_exact?, followup?}`` with the
         per-side action semantics of :func:`reconstruction.reroll_turn` (``"recorded"`` only
@@ -370,6 +372,12 @@ class SearchSession:
         sides — the sentinel keys on the field being ABSENT, never on the request, so nothing is
         elided under ``impl="node"``."""
         req: dict = {"cmd": "expand_many", "arms": [dict(a) for a in arms]}
+        # ROWS (core nodes, `gen3_core_encoder_v1`): each wanted side's `core_pN` is the leaf's
+        # ENCODED observation row (a `<f4` wire frame, `agents.battle.core_obs.wrap_row`) + mask +
+        # choice tokens, instead of the view / legality / events JSON. The tree must fold the
+        # trackers (`open_root(..., trackers=True)`).
+        if rows:
+            req["rows"] = True
         if side is not None:
             if side not in ("p1", "p2"):
                 raise SearchError(f"expand_many: side must be 'p1' or 'p2', got {side!r}")

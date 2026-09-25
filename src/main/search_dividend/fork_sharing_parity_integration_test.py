@@ -99,11 +99,10 @@ def _run(pool, record, side, turn, our_history, tokens, observed, *, share: bool
     return dict(res.scores or {}), int(res.action), res.widths, seen
 
 
-@pytest.mark.parametrize("materializer", ["view", "core"])
+@pytest.mark.parametrize("materializer", ["view"])
 def test_one_shared_fork_scores_every_world_exactly_as_a_per_world_fork_did(materializer):
-    """The VIEW road's fork and the CORE road's (`gen3_core_search_v1` — the same tracker fork,
-    no event folder: the ply's events are the version's readings), each shared across worlds
-    against a per-world control. The core road runs with its INTEGRITY check on every arm."""
+    """The VIEW road's fork, shared across worlds against a per-world control. (The CORE road has
+    no Python fork to share since it takes ROWS — `test_the_core_road_builds_no_python_fork`.)"""
     import agents.battle.one_sided_view_parity_fuzz_test as G
     from main.search_dividend import determinize as dz
     from main.search_dividend.__main__ import _pool
@@ -174,6 +173,37 @@ def test_one_shared_fork_scores_every_world_exactly_as_a_per_world_fork_did(mate
 
     assert compared >= 1, (
         "no decision produced two gated worlds with a view arm — the gate is vacuous")
+
+
+def test_the_core_road_builds_no_python_fork():
+    """The CORE road takes every successor as the Rust core's ENCODED ROW (`gen3_core_encoder_v1`):
+    a K-world decision on it replays NO shared prefix in Python and calls no Python successor
+    factory — the fork IS the driver's version tree — while every arm is still answered."""
+    import agents.battle.one_sided_view_parity_fuzz_test as G
+    from main.search_dividend import determinize as dz
+    from main.search_dividend.__main__ import _pool
+    from utils.bridge.search_session import SearchSession
+
+    with tempfile.TemporaryDirectory() as td:
+        record, summary, npz = G._record_one_battle(td, "rust", _KEY)
+    actions = np.asarray(npz["actions"], dtype=int)
+    invs = summary["invocations"]
+    cand = [i for i, iv in enumerate(invs)
+            if iv.get("phase") == "move_selection" and int(iv["turn"]) > 1]
+    side = record.side_of(record.trainee_username)
+    anchor = cand[0]
+    turn = int(invs[anchor]["turn"])
+    our_history = [int(x) for x in actions[:anchor]]
+    with SearchSession(record, impl="rust") as ss:
+        pfx = getattr(ss.open_root(turn), f"prefix_{side}_chunks")
+    tokens = G._choice_map(record, side, our_history, pfx, anchor)
+    assert tokens, "fixture: a legal root"
+    _scores, _act, w, seen = _run(_pool(0), record, side, turn, our_history, tokens,
+                                  dz.chunks_to_lines(pfx), share=True, materializer="core")
+    assert int(w.worlds_gated_ok) >= 2, "fixture: a multi-world decision"
+    assert w.core_arms > 0 and w.arms_scored > 0, (w.core_arms, w.arms_scored)
+    assert w.fork_cache_hit == 0 and w.fork_cache_miss == 0, "the core road built a Python fork"
+    assert seen == [], "a Python successor factory ran on the core road"
 
 
 def test_one_shared_prefix_replay_serves_every_world_on_the_protocol_road():

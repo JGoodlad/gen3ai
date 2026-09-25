@@ -128,10 +128,6 @@ class SearchConfig:
     #: ``fork_sharing_parity_integration_test``, ``one_sided_view_parity_fuzz_test``). ``view`` and
     #: ``protocol`` are on the Rust Core Program's deletion manifest (one pass, after the cutover).
     materializer: str = "core"
-    #: ``materializer="core"`` only: fold the per-decision TRACKERS on every
-    #: version of the tree (``gen3_core_trackers_v1``, ``designs/rust_sim/trackers.md``). OFF: nothing
-    #: reads them before M4's encoder; ON only to measure the fork's tracker cost.
-    core_trackers: bool = False
     honest_swap_moves: bool = False     # axis M — see determinize.swap_unused_moves
     seed: int = 0
     # The iterative-deepening CAP, not a target: the wall-clock budget governs the realized depth,
@@ -346,6 +342,11 @@ class _PlyContext:
         ``len(our_history)`` and each ply adds one. The whole depth generalization is this line:
         depth 1 encodes at ``+1``, depth 2 at ``+2``, and everything else is unchanged."""
         return len(self.our_history) + int(ply)
+
+
+#: A core-road leaf's ``fork``: its continuation is the DRIVER's node (the leaf version), not a
+#: Python object — the marker only tells a deeper ply that the parent is a core leaf.
+_CORE_LEAF = "core-leaf"
 
 
 @dataclass(frozen=True)
@@ -1055,7 +1056,11 @@ class SearchEngine:
         # The requested side's payload is byte-identical either way; the other side's slot comes
         # back as a refusing sentinel rather than an empty dict.
         core = self.cfg.materializer == "core"
-        expanded = self.session().expand_many(payload, side=ctx.side)
+        # The core road takes each successor as its ENCODED ROW (`gen3_core_encoder_v1`): the
+        # driver encodes the leaf version itself and ships the row + mask + choice tokens, so no
+        # view JSON, no event re-fold, no Python tracker and no Python encoder touch a core arm.
+        expanded = (self.session().expand_many(payload, side=ctx.side, rows=True) if core
+                    else self.session().expand_many(payload, side=ctx.side))
         widths.arms_expanded += len(expanded)
         if deep:
             widths.deep_arms_expanded += len(expanded)
@@ -1306,36 +1311,38 @@ class SearchEngine:
 
     def _materialize_core(self, ctx: "_PlyContext", branch_of, parents, acts, arm_core,
                           ply: int, widths: RealizedWidths) -> "Dict[int, _Leaf]":
-        """``{label: leaf}`` on the CORE road (`gen3_core_search_v1`): each arm's successor is the
-        driver's Rust-core VERSION — its view, legality and ply events — with only the trackers and
-        the encoder run here (:class:`~agents.training.core_successor.CoreSuccessorFactory`).
+        """``{label: leaf}`` on the CORE road (`gen3_core_search_v1` + `gen3_core_encoder_v1`): each
+        arm's successor is the driver's Rust-core VERSION, and the driver hands back its ENCODED
+        observation row (a ``<f4`` wire frame, wrapped with ``np.frombuffer`` — a wrong dtype, shape
+        or length is REFUSED), its mask and its choice tokens. Nothing is re-derived here: no view
+        JSON, no event fold, no Python tracker, no Python encoder, and no shared-prefix replay
+        (the core road opens no Python fork at all).
 
         🚨 **No fallback, by design.** The protocol and view roads each hand arms they cannot answer
         to another road; this one answers every arm or RAISES — a D10 leaf is the version AT its
-        intermediate decision (so it carries a fork like any other leaf), and a deeper ply always
-        forks from its parent's leaf. That is what makes the other roads deletable."""
+        intermediate decision, and a deeper ply always branches from its parent's driver node. A
+        leaf the side does not decide at (a ``wait`` request, the battle over, no legal action)
+        comes back ``row: null`` and is not scored — the live player defers there too."""
+        from agents.battle.core_obs import wrap_row
+
         out: "Dict[int, _Leaf]" = {}
-        root_fork = None
         for li in branch_of:
             parent = parents[li]
-            if ply == 1:
-                if root_fork is None:
-                    root_fork = self._root_fork(ctx, widths)
-                fork = root_fork
-            else:
-                if parent.fork is None:
-                    raise RuntimeError(f"materializer='core': ply {ply} arm {li}'s parent has no fork")
-                fork = parent.fork.child(self._encoder())
+            if ply > 1 and parent.fork is None:
+                raise RuntimeError(f"materializer='core': ply {ply} arm {li}'s parent is not a core leaf")
             payload = arm_core[li]
-            where = (f"decision #{len(ctx.our_history)} ({ctx.side}), depth {ply}, arm {li} "
-                     f"[our {parents[li].path + (acts[li],)}]")
-            got = fork.successor(payload, acts[li], where=where)
+            if "row" not in payload:
+                raise RuntimeError(f"materializer='core': arm {li} carries no encoded row — is the "
+                                   f"search driver the rust one, built from this tree?")
             widths.core_arms += 1
             if payload.get("mid"):
                 widths.core_arms_intermediate += 1
-            if got is None:
+            if payload["row"] is None:
                 continue                     # no decision here — every road agrees
-            out[li] = _Leaf(obs=got.obs, mask=got.mask, action_choices=got.action_choices, fork=got)
+            tokens = {int(k): str(v) for k, v in (payload.get("tokens") or {}).items()}
+            out[li] = _Leaf(obs=wrap_row(payload["row"]),
+                            mask=np.asarray(payload["mask"], dtype=np.int8),
+                            action_choices=tokens, fork=_CORE_LEAF)
         return out
 
     def _branch_fork(self, ctx: "_PlyContext", dec_i: int, widths: RealizedWidths):
@@ -1385,10 +1392,8 @@ class SearchEngine:
         core = self._core_open()
         if core is None:
             return ss.open_root(turn, record=record)
-        if self.cfg.core_trackers:
-            # sent ONLY when on, so the default core request stays the historical one
-            return ss.open_root(turn, record=record, core=core, side=side, trackers=True)
-        return ss.open_root(turn, record=record, core=core, side=side)
+        # the core tree folds the per-decision TRACKERS: the driver's encoder reads them
+        return ss.open_root(turn, record=record, core=core, side=side, trackers=True)
 
     def _encoder(self):
         """The observation encoder the VIEW road encodes a successor with — the same

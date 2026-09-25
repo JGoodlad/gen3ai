@@ -94,6 +94,8 @@ class ObsCensus:
     refused: List[str] = field(default_factory=list)
     #: per obs block, how many decisions had a nonzero cell there (the gate's non-vacuity)
     nonzero_blocks: collections.Counter = field(default_factory=collections.Counter)
+    #: choice tokens compared (one per legal action per decision)
+    tokens: int = 0
 
     def diverge(self, key: str, example: Any) -> None:
         self.divergences[key] += 1
@@ -101,7 +103,7 @@ class ObsCensus:
 
     def render(self) -> str:
         head = (f"{self.battles} battles, {self.viewers} viewers, {self.decisions} decisions, "
-                f"{self.rows_equal} rows byte-equal")
+                f"{self.rows_equal} rows byte-equal, {self.tokens} choice tokens")
         if not self.divergences and not self.refused:
             return f"✅ slice O: 0 divergences — {head}"
         out = [f"❌ slice O: {sum(self.divergences.values())} divergences in {len(self.divergences)} classes, "
@@ -132,9 +134,25 @@ def _block_spans():
     return _BLOCKS
 
 
+def python_tokens(battle, legal, mask) -> Dict[str, str]:
+    """``view_successor._choice_map`` over the reference battle: the REAL mapper's choice string
+    per legal action index (an index the mapper refuses is absent) — what a search branches on."""
+    from agents.action.mapper import Gen3ActionMapper
+
+    out: Dict[str, str] = {}
+    for idx in np.flatnonzero(np.asarray(mask)):
+        try:
+            out[str(int(idx))] = Gen3ActionMapper.action_to_order(
+                int(idx), battle, legal=legal).message[len("/choose "):]
+        except Exception:                                    # noqa: BLE001 — _choice_map's rule
+            continue
+    return out
+
+
 def compare_row(where: str, cap: Mapping[str, Any], py_row: np.ndarray, py_mask: np.ndarray,
-                census: ObsCensus) -> None:
-    """One decision: the core's wire frame + mask against the Python row + mask."""
+                census: ObsCensus, py_tokens: Optional[Mapping[str, str]] = None) -> None:
+    """One decision: the core's wire frame + mask (+ choice tokens) against the Python row + mask
+    (+ the mapper's tokens)."""
     from agents.battle.core_obs import RowRefused, check_row, wrap_row
 
     census.decisions += 1
@@ -154,6 +172,11 @@ def compare_row(where: str, cap: Mapping[str, Any], py_row: np.ndarray, py_mask:
     if list(cap.get("mask", [])) != [int(x) for x in py_mask]:
         census.diverge("[MASK] the 11-dim action mask", (where, "core", cap.get("mask"), "python",
                                                          [int(x) for x in py_mask]))
+    if py_tokens is not None:
+        census.tokens += len(py_tokens)
+        if dict(cap.get("tokens") or {}) != dict(py_tokens):
+            census.diverge("[TOKENS] the choice string per legal action",
+                           (where, "core", cap.get("tokens"), "python", dict(py_tokens)))
     if core.tobytes() == py.tobytes():
         census.rows_equal += 1
         return
