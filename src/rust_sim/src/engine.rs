@@ -230,7 +230,10 @@ fn classify_reject(
             // reference (and node) never send: caught by
             // `bridge_test::bridge_incremental_matches_genesis_replay` on the `taunt_struggle`
             // scenario, which exists precisely because that wedge shipped once before.
-            if mon.must_struggle(dex) {
+            // `forced_struggle` (not `must_struggle`): an ALL-IMPRISONED mon is OFFERED its full
+            // move list (the hidden disable renders `disabled:false`), and any in-range pick is
+            // SUBSTITUTED too (`gen3_imprison_all_struggle_v1`, `harness/probe_rereq_accumulate.js` F1).
+            if state.forced_struggle(side, dex) {
                 return None;
             }
             // LOCK-IN is the same shape of substitution, and omitting it cost two production
@@ -792,7 +795,7 @@ impl Engine {
                 for s in 0..2 {
                     if matches!(bp.got[s], Some(Choice::Move(_))) {
                         let mon = &bs.sides[s].pokemon[bs.sides[s].active];
-                        if !mon.move_locked() && mon.must_struggle(dex) {
+                        if !mon.move_locked() && bs.forced_struggle(s, dex) {
                             let name = display_name(mon, dex);
                             sink.struggle(s, format!("|-activate|p{}a: {}|move: Struggle", s + 1, name));
                         }

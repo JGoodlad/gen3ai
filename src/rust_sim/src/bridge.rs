@@ -1462,7 +1462,9 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
                 // A MOVE-LOCKED mon's single-entry request never Struggle-substitutes
                 // (`gen3_move_coverage_batch4c_v1` — the locked move/recharge is offered
                 // regardless of PP).
-                if !mon.move_locked() && mon.must_struggle(dex) {
+                // `forced_struggle` counts the foe's hidden Imprison disables
+                // (`gen3_imprison_all_struggle_v1`).
+                if !mon.move_locked() && state.forced_struggle(s, dex) {
                     let name = display_name(mon, dex);
                     chunks.push_chunk(
                         s,

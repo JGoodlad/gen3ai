@@ -42,6 +42,30 @@ impl crate::state::BattleState {
             .any(|m| crate::dex::to_id(&m.id) == move_id)
     }
 
+    /// Is `side`'s active FORCED to Struggle at CHOICE time (`gen3_imprison_all_struggle_v1`)?
+    /// `Side.chooseMove` reads `pokemon.getMoves()` UNRESTRICTED — a foe's Imprison is a HIDDEN
+    /// disable (`disableMove(id, true)`), so it counts there — and substitutes
+    /// `moveid:'struggle'` (+ the owner-only `|-activate|…|move: Struggle`) when that list is
+    /// empty (`sim/side.ts:682-691`). [`crate::state::MonState::must_struggle`] cannot see the
+    /// foe, so it answers only the VISIBLE half; this adds the imprisoned slots. ⚠️ The
+    /// REQUEST's shape must NOT use this: `getMoveRequestData` calls `getMoves(_, isLastActive)`,
+    /// which renders a hidden disable `disabled:false`, so an all-imprisoned mon is still
+    /// OFFERED its full move list (with `maybeDisabled`/`maybeLocked`) — only a mon whose
+    /// VISIBLE usable set is empty gets the Struggle-only request. Draw-free.
+    pub(crate) fn forced_struggle(&self, side: usize, dex: &Dex) -> bool {
+        let slot = self.sides[side].active;
+        let mon = &self.sides[side].pokemon[slot];
+        if mon.must_struggle(dex) {
+            return true;
+        }
+        (0..mon.move_pp.len()).all(|k| {
+            !mon.move_usable(k, dex)
+                || self
+                    .move_at(side, slot, k, dex)
+                    .is_some_and(|m| self.imprisoned_for(side, &to_id(&m.id), dex))
+        })
+    }
+
     /// Does `side`'s active KNOW at least one move the FOE also knows? Imprison's cast gate.
     pub(crate) fn shares_a_move_with_foe(&self, side: usize, dex: &Dex) -> bool {
         let slot = self.sides[side].active;

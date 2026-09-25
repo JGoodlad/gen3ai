@@ -141,12 +141,14 @@ impl crate::state::BattleState {
                     // which `move_usable` (a &MonState method) cannot see.
                     if let Some(m) = self.move_at(side, self.sides[side].active, mi, dex) {
                         if self.imprisoned_for(side, &crate::dex::to_id(&m.id), dex)
-                            && !mon.must_struggle(dex)
+                            && !self.forced_struggle(side, dex)
                         {
                             return false;
                         }
                     }
-                    if !mon.move_usable(mi, dex) && !mon.must_struggle(dex) {
+                    // `forced_struggle`, not `must_struggle`: an ALL-IMPRISONED mon's pick is
+                    // Struggle-SUBSTITUTED, not refused (`gen3_imprison_all_struggle_v1`).
+                    if !mon.move_usable(mi, dex) && !self.forced_struggle(side, dex) {
                         return false;
                     }
                 }
@@ -861,8 +863,9 @@ impl FullBattleDriver {
                         .unwrap_or(mi);
                     // A mon with NO usable move (all slots at 0 PP) has `moveid:'struggle'`
                     // substituted by `side.choose` — regardless of the scripted slot `mi`.
-                    let struggle =
-                        !locked && bs.sides[side].pokemon[active].must_struggle(dex);
+                    // `forced_struggle` counts the foe's hidden IMPRISON disables too
+                    // (`gen3_imprison_all_struggle_v1`).
+                    let struggle = !locked && bs.forced_struggle(side, dex);
                     // `beforeTurnMove` unshift (Focus Punch / Pursuit): a `move` whose move
                     // carries a `beforeTurnCallback` ALSO enqueues an order-5 `beforeTurnMove`.
                     if !struggle && !locked {

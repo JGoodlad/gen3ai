@@ -505,7 +505,7 @@ node src/rust_sim/harness/probe_residual_order_rng.js
 node src/rust_sim/harness/probe_phaze_regression_rng.js
 ```
 
-The full bug -> pin map (75 rows), each family's ground-truth probe, and the FEATURE pins for
+The full bug -> pin map (76 rows), each family's ground-truth probe, and the FEATURE pins for
 newly-modelled mechanics:
 [`designs/rust_sim/regression_pins.md`](../../designs/rust_sim/regression_pins.md).
 
@@ -661,8 +661,13 @@ real Node `getPlayerStreams`. It is the validation harness for `bridge.rs`. Its 
   imprisoned move (`gen3_imprison_maybe_flags_v1`, `gen3_imprison_choice_reject_v1`). poke-env reads
   `maybeTrapped` into the observation. Oracle `harness/probe_maybe_flags.js`; pins
   `tests/bridge_maybe_flags_test.rs` + bridge fixture 25. 🚨 **The fuzzers' pickers mirror the hidden
-  disable, so NO fuzzer submits an imprisoned pick** — that path is covered by the pins only, and
-  the all-imprisoned Struggle substitution is still OPEN
+  disable, so NO fuzzer submits an imprisoned pick** — that path is covered by the pins only. An
+  ALL-imprisoned mon is still OFFERED its full list and its pick is Struggle-SUBSTITUTED
+  (`BattleState::forced_struggle`, `gen3_imprison_all_struggle_v1` — the request shape keeps reading
+  `MonState::must_struggle`, the choice-time sites read `forced_struggle`; oracle
+  `harness/probe_rereq_accumulate.js` F rows, pins `tests/bridge_imprison_struggle_test.rs`). OPEN:
+  successive refusals in ONE decision must ACCUMULATE on the one outstanding request (the sim's
+  `activeRequest`); the port re-renders from the latest refusal only
   ([`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md) § The
   M6 CUTOVER stress).
 
