@@ -201,3 +201,31 @@ bytes), and the fuzz pickers never reach either state.
 | 8 | soak | 4 / 6 + 3 / 4 children × 10,000 | 0 errors, 0 replacements | running |
 | 9 | launch smoke | 2 | — | MET |
 | 10 | throughput | 8 pairs | −5.5% [−8.3, −2.1] | MET |
+
+## 10. Readiness refresh (2026-09-25 13:30 PT) — every open class closed; the counts are the remaining gate
+
+**Training-input boundary: `ba839869`** (landed; folds into `bafaef89` — nothing trained between):
+the engine's Beat Up reads the SET species under Transform, and a Pursuit faint that ends the battle
+cancels the queued switch (Rust-bridge play; 0 pool Transform sets; the Pursuit + Destiny Bond end
+state well under 1.6% of ladder pairings). Routine gate 11,623 passed; MILESTONE slice N 4 / 4, parity
+10 / 10 (`2d2380d1`). The stress runs from pin `2d2380d1` since 13:21.
+
+**No CUTOVER-class divergence** in any stress row at any pin after `318bdcb8`; the three ever recorded
+(`pool_110_5`, `ladder*_3459`) are fixed (`6b91d710`, `0981a25e`). Every A/B-fuzzer repro is fixed (13
+repros across 10 port classes), a proven recorder artifact (6), or covered by the proven switch-in
+block-swap allowlist entry (3).
+
+**The 146 unclassified parity records, triaged** (by class key and team content, against the
+READING triage of §7): READING — `[SIM-FACT] ours.moves` 69 (68 with an opposing Aerodactyl / Absol:
+the R3 residue, the unrevealed-Pressure PP class; 1 with Sleep Talk: the Sleep Talk into Pressure
+class), Transform `ours.stats` 12 + 12, Skill Swap `ours.ability` 8 + 3, the Mimic'd Hidden Power
+`legal.own_hp_typed_id` 6, the port's Conversion-2 `ours.types` 3, the V15 own-PP lag 1, the Yawn
+volatile 4 (one battle, both views); VIEW-ROAD (the legacy projection, deleted at the pass) — V4
+volatiles 48 + 48, V3 opp PP 27, V8 ability slots 17, V7 item disclosure 12 × 3. No new class; none is
+a core-vs-Python difference.
+
+Counts at 13:30 (registered): ladder full tier 7,960 + 7,920 / 11,407 + 11,407 · pool 6,000 / 8,628 ·
+policy 2,000 / 2,876, 560 / 800, 360 / 500 · procedural 2,799 / 4,000 · slice N 2,100 / 3,000, 700 /
+1,000, 700 / 1,000, 350 / 500 · fuzzers 70% of each · soak 5 / 6 + 3 / 4 children (0 errors). Targets
+5, 9, 10 MET. At cap 2 the parity streams need roughly another day; RCX is the last queued arm, so after
+it ends (~14:45) the box is free and the cap can go up (the governor never raises it on its own).
