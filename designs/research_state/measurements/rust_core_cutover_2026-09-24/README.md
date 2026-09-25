@@ -109,3 +109,42 @@ the bar). Mechanism: under `core` the Python side still runs the tracker fold, `
 labels and the reward (they are not the obs), so the core's parse + tracker fold in the child is
 ADDED work while only the encode (~0.1 ms) is removed — the tracker fold is paid twice. Training is
 CPU-bound at `--n-envs 48` on 16 cores, so the cycle total is the quantity that predicts fps.
+
+## 7. Readiness against the pre-registered targets (2026-09-25 04:30 PT) — NOT READY
+
+**New training-input boundary: `c080f5f0`** (folds into `b9d74f65`, no run having trained between —
+round 2 is pinned to `6eb9c776`): `52887823` (five engine classes: `[fatigue]`, Safeguard self-
+confusion, Imprison re-cast, Defense Curl / Rage stat index, Mimic self-overwrite readers — change
+Rust-bridge play; 0 of 813 pool files affected), `7f781602` (F1: a decision is recorded only when the
+env asks the trainee to move), `c080f5f0` (a move's target is its dex target class, in the reading and
+the event window — 20.2% of window MOVE rows change target). The stress runs from pin `c080f5f0`
+since 04:19; its earlier rows ran at `0478c14c` / `318bdcb8` / `e26dd14c` (per-row stamp).
+
+| # | target | done / registered | CUTOVER-class | state |
+|---|---|---|---|---|
+| 1 | ladder full tier, both slot orders | 3,840 + 3,840 / 11,407 + 11,407 battles (7,680 of 22,813 teams per pass) | **2 open**: `ladderA_3459` / `ladderB_3459` refused — the core's Hidden-Power belief eliminates every Lunatone candidate where Python's does not (under triage) | open |
+| 2 | pool × 12 partners | 2,920 / 8,628 | 1, FIXED (`pool_110_5`, a Snatch-stolen move's owner, `6b91d710`) | running |
+| 3 | `production` policy: pool / ladder / procedural | 980 / 2,876 · 280 / 800 · 180 / 500 | 0 | running |
+| 4 | procedural | 1,360 / 4,000 | 0 | running |
+| 5 | protocol + byte-fuzz corpora | 1 / 1 | 0 | MET |
+| 6 | slice N | pool 1,000 / 3,000 · policy 340 / 1,000 · ladder 350 / 1,000 · procedural 175 / 500 episodes | every difference is F1 at `318bdcb8` (FIXED `7f781602`); since the fix: **0** (70 stress episodes, 130 checked by hand, MILESTONE 4 / 4) | running |
+| 7 | the four A/B fuzzers | state 3,400 / 10,000 ladder · 1,100 / 3,000 ourandom · 400 / 1,000 pool; bytes 3,400 · 1,100 · 400; bridge 1,700 / 5,000 · 700 / 2,000 pool · 400 / 1,000 trapping; sim-bridge 700 / 2,000 · 350 / 1,000 | 14 hard: 2 fixed classes (`[fatigue]`, Mimic), 2 recorder artifacts (recorder fixed), 3 speed-tie block swaps (now a PROVEN allowlist entry), **7 untriaged** (5 `seed`, 1 `request`, 1 bridge `seed`, all at `318bdcb8`); plus a Rollout-turn Perish faint the allowlist proof's run found | open |
+| 8 | soak | 2 / 6 transport + 2 / 4 core-obs children × 10,000 episodes | 0 errors, 0 replacements; child RSS flat (9.6–13.6 MiB); env RSS +2.0–2.3% (bar 10%) | running |
+| 9 | the first two minutes of a real launch, `--obs-source core` | 2 launches (CPU, 8 envs, throwaway dirs deleted) | `e26dd14c`: preload compiled, 10 PPO iterations / 40,960 steps, no core-obs error; `c080f5f0`: 2 iterations, killed by PID | **MET** |
+| 10 | throughput ≤ +3% (CI upper) | 8 pairs | median +7.5%, CI [+3.0, +38.2]% | **NOT MET** — the Rust frame cost is being profiled |
+
+The stress's cost to training, cap 2: 0.93× (`ai_v13_28`, 87 iterations) and 0.93× (`ai_v13_29`, 5).
+
+**poke-env reading findings** (READING class, both paths agree, none a cutover blocker; M6
+triage): the R3 residue (an opposing Aerodactyl's unrevealed Pressure; 0.91 per 1,000 decisions,
+1.31 on ladder, 0 on pool; reaches the obs as own PP); Sleep Talk into Pressure (mechanism confirmed;
+0 in this stress); a Mimic'd Hidden Power keeps the bare id; a pending Yawn dropped on another sleep;
+Transform `stats` (not in the obs; feeds Φ_belief); Skill Swap's ability; and one misfiled class —
+`ours.types` after a Conversion-2 faint is a PORT gap (`types_override` not reset at a faint), poke-env
+is right. Backlog rows in `designs/ops/TECH_DEBT_BACKLOG.md` §2 (a) / (c).
+
+Other findings: `--eval-battles 0` makes the final eval divide by zero (`final_eval.py:115`) and the
+launcher's crash restart then refuses `--arch production` on the resume (a pre-existing pair, found
+by the smoke); `slice_n_test`'s COMMIT tier failed ONCE order-dependently in a worker's combined run
+(`opp_team moves+5/+16/+27`, suspected the `_category_val` cache in `observation/moves.py`) while
+passing in three routine gates here — UNVERIFIED.
