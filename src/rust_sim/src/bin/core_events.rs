@@ -45,6 +45,12 @@
 //! `--obs` (implies `--trackers`) also ENCODES each decision's observation row on the version
 //! (`gen3_core_encoder_v1`) and adds `"obs"` (the wire frame, `encoder::wire`), `"mask"` and
 //! `"tokens"` (the choice string per legal action, `present::choice_tokens`) to every decision record — slice O of the parity harness (`agents.battle.rust_core_parity_obs`).
+//! With `--trackers` / `--obs` each side's PARSE chain (one side's text, `parse_root_with`) folds the
+//! trackers too and takes the same `note_choice` tokens, and the battle is REFUSED unless it decides
+//! at exactly the step chain's decisions (one per side per write) and — with `--obs` — encodes a
+//! BYTE-identical row with an equal mask and equal tokens (`version::parse_encode_matches_step`,
+//! `gen3_core_parse_obs_gate_v1`): the parse chain is the encode path `sim_bridge`'s core
+//! observation mode ships to training, so every slice-O run gates it too.
 //!
 //! `--obs-bench SIDE K REPS` (with `--obs`) also TIMES the encoder at viewer SIDE's K-th decision
 //! (0-based): REPS encodes of the version (its view memoized — the production shape) and REPS of
@@ -284,12 +290,46 @@ type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>, [Vec<TrackCap>; 2]
 /// Slice T at ONE transition: every side whose stream took a DECISION at this version's boundary.
 /// The decision's request must be the LAST line the side was shipped in the write (the live
 /// player decides after the request chunk, and slice V's alignment found none later).
-fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2], obs: bool) -> Result<(), String> {
+///
+/// The PARSE chain (`parsed`, trackers on — the chain `sim_bridge`'s core observation mode encodes
+/// on, program §6c) must decide at exactly the same boundaries, on the same request line; a write
+/// may open at most one decision per side on either chain; and with `obs` its row must be
+/// BYTE-identical to the step chain's, its mask and choice tokens equal
+/// (`version::parse_encode_matches_step`, `gen3_core_parse_obs_gate_v1`). Any difference REFUSES the
+/// battle, naming the side, the decision index and the first differing cell.
+fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2], obs: bool,
+         parsed: &[Option<BattleVersion>; 2]) -> Result<(), String> {
     for side in 0..2 {
-        let Some(d) = v.decision(side) else { continue };
+        let tag = side + 1;
+        let k = caps[side].len();
+        let p = parsed[side].as_ref().ok_or("parse chain lost")?;
+        let d = match (v.decision(side), p.decision(side)) {
+            (None, None) => continue,
+            (Some(d), Some(pd)) if d.line == pd.line => d,
+            (s, q) => {
+                return Err(format!(
+                    "[PARSE-OBS] p{tag} decision {k}: the step chain decided at {:?}, the parse chain at {:?}",
+                    s.map(|d| d.line),
+                    q.map(|d| d.line)
+                ))
+            }
+        };
         let lines = v.stream(side).map_or(0, |s| s.lines);
         if d.line + 1 != lines {
             return Err(format!("[ALIGN] p{} decided at stream line {} but the write shipped {} lines", side + 1, d.line, lines));
+        }
+        // One decision per side per write (a second one in the same write would have no record
+        // and no row — the bridge's core observation mode refuses the same way).
+        let (sn, pn) = (v.trackers(side).map_or(0, |t| t.decisions), p.trackers(side).map_or(0, |t| t.decisions));
+        if sn as usize != k + 1 || pn != sn {
+            return Err(format!(
+                "[PARSE-OBS] p{tag} decision {k}: the step chain has taken {sn} decisions and the parse chain {pn}, \
+                 but this is only the {}-th recorded one (a write opened more than one)",
+                k + 1
+            ));
+        }
+        if obs {
+            version::parse_encode_matches_step(v, p, side).map_err(|e| format!("[PARSE-OBS] p{tag} decision {k}: {e}"))?;
         }
         let after = sess.chunks().chunks.iter().rposition(|c| c.side == side).ok_or("a decision with no chunk")?;
         let mut window = String::new();
@@ -321,19 +361,40 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
     Ok(())
 }
 
-/// The M2 gate at ONE transition: each side's parse-built version, fed the same new TEXT the
-/// step-built one folded typed, must agree with it on the whole reading board, the transition's
-/// events and the view (`version::parse_matches_step`).
-fn parse_gate(v: &BattleVersion, sess: &BridgeSession, parsed: &mut [Option<BattleVersion>; 2]) -> Result<(), String> {
+/// Advance each side's parse-built version over the TEXT its side was newly shipped (the chain
+/// reads from its own cursor: the whole stream is never re-parsed).
+fn advance_parsed(sess: &BridgeSession, parsed: &mut [Option<BattleVersion>; 2]) -> Result<(), String> {
     for side in 0..2 {
         let p = parsed[side].take().ok_or("parse chain lost")?;
         let from = p.stream(side).map_or(0, |s| s.lines);
         let text = sess.side_lines(side);
         let next = p.parse_advance(&text[from..]).map_err(|e| format!("parse p{}: {e}", side + 1))?;
-        version::parse_matches_step(v, &next, side).map_err(|e| format!("version parse != step: {e}"))?;
         parsed[side] = Some(next);
     }
     Ok(())
+}
+
+/// The M2 gate at ONE transition: each side's parse-built version, fed the same new TEXT the
+/// step-built one folded, must agree with it on the whole reading board, the transition's events
+/// and the view (`version::parse_matches_step`).
+fn parse_gate(v: &BattleVersion, parsed: &[Option<BattleVersion>; 2]) -> Result<(), String> {
+    for side in 0..2 {
+        let p = parsed[side].as_ref().ok_or("parse chain lost")?;
+        version::parse_matches_step(v, p, side).map_err(|e| format!("version parse != step: {e}"))?;
+    }
+    Ok(())
+}
+
+/// The parse chain's `ClockConfig`: the step chain's — except under the TEETH hook of a test /
+/// self-check build (`POKESIM_CORE_EVENTS_TEETH=parse_clock`), which flips `decision_tense` on the
+/// parse chain alone so a test can see the parse-encode gate refuse (`tests/core_obs_gate_test.rs`).
+/// Compiled out of `--release`.
+fn parse_cfg(cfg: Option<ClockConfig>) -> Option<ClockConfig> {
+    #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+    if std::env::var("POKESIM_CORE_EVENTS_TEETH").as_deref() == Ok("parse_clock") {
+        return cfg.map(|c| ClockConfig { decision_tense: !c.decision_tense, ..c });
+    }
+    cfg
 }
 
 fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool, trackers: bool, obs: bool) -> Result<Run, String> {
@@ -357,14 +418,19 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
     let mut v = BattleVersion::observe_root_with(&sess, names, teams, [true, true], cfg)
         .map_err(|e| format!("version root: {e}"))?;
     let mut tcaps: [Vec<TrackCap>; 2] = [Vec::new(), Vec::new()];
-    if trackers {
-        track(&v, &sess, &mut tcaps, obs)?;
-    }
+    // The parse chains fold the trackers too when the step chain does: they are the chains the
+    // training env's core observation encodes on (`sim_bridge` core_obs, program §6c), so every
+    // decision the step chain records is also gated there (`track`).
+    let pcfg = parse_cfg(cfg);
     let mut parsed = [
-        Some(BattleVersion::parse_root(0, names[0], teams[0])?),
-        Some(BattleVersion::parse_root(1, names[1], teams[1])?),
+        Some(BattleVersion::parse_root_with(0, names[0], teams[0], pcfg)?),
+        Some(BattleVersion::parse_root_with(1, names[1], teams[1], pcfg)?),
     ];
-    parse_gate(&v, &sess, &mut parsed)?;
+    advance_parsed(&sess, &mut parsed)?;
+    if trackers {
+        track(&v, &sess, &mut tcaps, obs, &parsed)?;
+    }
+    parse_gate(&v, &parsed)?;
     let mut caps: Vec<ViewCap> = Vec::new();
     let mut seen = 0usize;
     if views {
@@ -380,14 +446,20 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         }
         match c {
             Script::Choose(cmd, tok) | Script::ChooseIfOpen(cmd, tok) => {
+                // Both chains take the raw token BEFORE the command is fed (a denied own action
+                // keeps it) — the order `sim_bridge`'s core observation mode uses.
                 v.note_choice(cmd.side, tok);
+                if let Some(p) = parsed[cmd.side].as_mut() {
+                    p.note_choice(cmd.side, tok);
+                }
                 sess.feed_cmd(cmd.clone(), dex)
             }
             Script::ForceLose(s) => sess.forfeit(*s),
         }
         v = v.observe(&sess).map_err(|e| format!("version step: {e}"))?;
+        advance_parsed(&sess, &mut parsed)?;
         if trackers {
-            track(&v, &sess, &mut tcaps, obs)?;
+            track(&v, &sess, &mut tcaps, obs, &parsed)?;
         }
         if let Some(f) = sess.fatal() {
             // A capture golden's blind per-decision script can re-send a rejected choice until
@@ -399,7 +471,7 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
             }
             return Err(format!("bridge fatal: {f}"));
         }
-        parse_gate(&v, &sess, &mut parsed)?;
+        parse_gate(&v, &parsed)?;
         if views {
             capture(&v, &sess, dex, &mut seen, &mut caps)?;
         }

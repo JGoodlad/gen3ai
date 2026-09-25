@@ -5,15 +5,18 @@ narrate a change. The code is `src/rust_sim/src/encoder/`; the program is
 `designs/endstate/program_rust_core.md` §2 M4. -->
 
 The Rust Core Program's M4 (`gen3_core_encoder_v1`, `gen3_core_obs_layout_v1`,
-`gen3_core_obs_wire_v1`, `gen3_core_parity_obs_v1`). Built alongside the Python path: **training
-reads none of it** (the cutover is M6).
+`gen3_core_obs_wire_v1`, `gen3_core_parity_obs_v1`) and the M6 cutover's Rust half
+(`gen3_bridge_core_obs_v1`, `gen3_core_parse_obs_gate_v1`). Built alongside the Python path: **training
+reads it only through `sim_bridge`'s OPT-IN core observation mode (§5a), which the Python env turns on
+under its own flag, default OFF** — with the flag off, no training byte changes.
 
 | | |
 |---|---|
 | **Encoder** | `src/rust_sim/src/encoder/mod.rs` (`encode`, `encode_slice`, `prefill`, the active context, global env, board, pair history and event-window writers), `slot.rs` (the 122-dim per-mon slot), `data.rs` (the dex / prior tables, read from `data/pokemon/`), `layout.rs` (GENERATED), `wire.rs` (the row on the wire) |
 | **Version** | `BattleVersion::encode(side, &mut [f32; OBS_DIM])` — the side's reading, its view, its legality, its TRACKERS (required) |
 | **Python** | `agents/observation/rust_core_obs_layout.py` (the generator), `agents/battle/core_obs.py` (`wrap_row` / `check_row`), `agents/battle/rust_core_parity_obs.py` (slice O) |
-| **Gates** | slice O (COMMIT + MILESTONE, `rust_core_parity_test.py`), the obs golden (`test_the_obs_golden_is_reproduced_by_the_core`), `rust_core_obs_layout_test.py`, `core_obs_test.py`, `cargo test` (`encoder::tests`, `tests/encoder_test.rs`) |
+| **Bridge** | `src/rust_sim/src/bin/sim_bridge.rs` — the `core_obs` START key and the `__OBS__` frame (§5a) |
+| **Gates** | slice O (COMMIT + MILESTONE, `rust_core_parity_test.py`; through `core_events --obs` it also gates the PARSE chain's row, §6), the obs golden (`test_the_obs_golden_is_reproduced_by_the_core`), `rust_core_obs_layout_test.py`, `core_obs_test.py`, `cargo test` (`encoder::tests`, `tests/encoder_test.rs`, `tests/sim_bridge_core_obs_test.rs`) |
 
 ---
 
@@ -83,12 +86,79 @@ read-only view, no copy) and REFUSES — never converts — a wrong dtype, shape
 `encode` takes `&mut [f32; OBS_DIM]` (the shape is the type) and `encode_slice` refuses a slice of any
 other length before touching it. Pins: `core_obs_test.py`, `tests/encoder_test.rs`.
 
+## 5a. The row on the TRAINING wire — `sim_bridge`'s core observation mode
+
+The training env already talks to one `sim_bridge` child per env over its stdin/stdout pipe
+(`src/utils/bridge/bridge_session.py`). The mode is OPT-IN per battle: START's `core_obs` key
+
+```text
+"core_obs": {"sides": ["p1"] | ["p2"] | ["p1","p2"], "decision_tense": <bool>, "switch_freeze": <bool>}
+```
+
+(all three keys REQUIRED when the key is present — the two booleans are the progress clock's
+`ClockConfig`, training's `--progress-decision-tense` / `--progress-switch-freeze`, read and never
+defaulted; an unknown key, an empty / repeated / unknown side, a non-boolean flag is a loud
+`__ERR__`). **Absent or `null`, the child's stdout is BYTE-identical to the pre-mode binary.**
+
+**The observation comes through the parser** (program §6c). Per requested side the child keeps a
+PARSE-built version chain with trackers (`BattleVersion::parse_root_with(side, name, packed team,
+cfg)`), advanced by `parse_advance` over exactly the lines that side was newly shipped in the write
+(incremental — never the whole stream again). Every `CHOOSE` of a requested side is noted on its
+chain (`note_choice`, the raw token) BEFORE the command is fed, the order `core_events` uses. For
+each write (START's first emission, every `CHOOSE` / `FORCELOSE`), each requested side whose chain
+took a DECISION at the write's boundary gets ONE frame, written **BEFORE that write's chunk frames**
+(p1's first): the parent fires each chunk as an un-awaited task, so the row must already be stashed
+when the request chunk is dispatched.
+
+```text
+__OBS__ p1 {"frame":{"dtype":"<f4","shape":[2501],"b64":…},"mask":[11 ints],
+            "tokens":{"<idx>":"<choice>",…},"turn":<int>,"line":<int>,"rqid":<int>|null,"n":<int>}
+```
+
+| field | is |
+|---|---|
+| `frame` | `wire::frame` of `BattleVersion::encode` (§5; NaN-prefilled in test / self-check builds, zero-filled in release) |
+| `mask` | `present::mask` — the 11-dim action mask |
+| `tokens` | `present::choice_tokens` — the real mapper's choice string per legal action (§7) |
+| `turn` | the reading's turn at the decision |
+| `line` | the side's stream index of the `\|request\|` it decided on |
+| `rqid` | the request JSON's `rqid` when it carries one — the engine never writes one, so `null` on the bridge |
+| `n` | the frame's 0-based index among THIS side's frames in the current battle (0 at every START) — the alignment key a consumer counts its own decisions against |
+
+A decision's request must be the LAST line the side was shipped in the write, and a write opens at
+most one decision per side — either violation, and every parse / fold / encode failure, is a FATAL
+`__ERR__` written IN PLACE of the write's chunks, and the mode stays failed for the rest of the
+battle (never a skipped frame, never a fall-back). A battle that ends ships no frame for its terminal
+board (no decision). The chains are dropped at every battle reset, and each START builds its own. The
+mode builds the core's reading on its own parse chain: the transport's reveal fold and the core source
+recording stay OFF (`tests/view_fold_opt_in_test.rs`).
+
+**Pins** (`tests/sim_bridge_core_obs_test.rs`, real binaries, the bridge corpus's real teams under a
+seeded random policy that also sends rejected choices and forfeits): every `__OBS__` row equals
+`core_events --obs`'s row for the same battle BYTE for byte, mask and tokens equal, one per decision,
+NaN-free, before its request chunk; a recycled persistent child equals a fresh one, and a one-side
+request ships that side only; OFF (absent / `null`) is byte-identical and ON adds only the `__OBS__`
+lines; the two clock booleans reach the rows; a malformed key is refused.
+
+**Cost** (2026-09-24, release, `bench_core_obs_cost` in that file: 34 battles, 6,085 commands, median
+of 9 interleaved runs; the box carried a production run, load ≈ 27 on 16 cores, and the bench ran at
+`nice 19`, so the absolute figures are inflated): OFF 23.2 µs per command; ON adds **+138.5 µs per
+frame** for `["p1"]` (2,755 frames) and +134.1 µs for both sides (5,482). An in-process breakdown of
+the same path (13,775 frames, same box) puts **≈ 137 µs in the parse + tracker fold**, ≈ 30 µs in the
+encode (§8's figure), ≈ 19 µs in the frame JSON and ≈ 2 µs in legality, tokens and mask: the TRACKER
+FOLD dominates, not the encoder. **UNVERIFIED:** the figure on an idle box.
+
 ## 6. Slice O — the gate
 
 `agents/battle/rust_core_parity_obs.py`, inside slice T's decision loop (the tracker fold runs once
 for both): at every decision of both viewers, the row `Gen3Env.embed_battle` encodes (the real
 `EpisodeTracker`, the legality snapshot, the incremental assembler) against the core's, BYTE-equal,
-plus the 11-dim mask. **No allowlist.** A divergence is classed by FIELD, slot-independent
+plus the 11-dim mask. **No allowlist.** `core_events --obs` also folds each side's PARSE chain (one
+side's text, trackers on, the same `note_choice` tokens — the chain §5a ships to training) and REFUSES
+a battle unless it decides at exactly the step chain's decisions and encodes a BYTE-identical row
+with an equal mask and equal tokens (`version::parse_encode_matches_step`,
+`gen3_core_parse_obs_gate_v1`; the first differing cell named by `encoder::cell_name`) — so every
+slice-O run also gates the encode path the bridge ships. A divergence is classed by FIELD, slot-independent
 (`our_team moves+7`, `event_window MAGNITUDE`); the census also counts value-differing, byte-only and
 NaN cells, and which blocks were ever nonzero (a tier that never saw a block nonzero fails).
 

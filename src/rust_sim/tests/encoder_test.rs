@@ -121,3 +121,54 @@ fn a_stream_without_trackers_refuses_and_a_wrong_length_row_is_refused() {
     let mut exact = vec![0.0f32; OBS_DIM];
     encoder::encode_slice(&inp, &mut exact).unwrap();
 }
+
+/// `version::parse_encode_matches_step` (`gen3_core_parse_obs_gate_v1`, `core_events --obs`'s
+/// per-decision gate): a parse chain folded like the step chain passes at every decision; one folded
+/// with ANOTHER clock config — invisible to `parse_matches_step`, which compares the reading, the
+/// events and the view, not the trackers — is REFUSED, naming the first differing cell.
+#[test]
+fn the_parse_encode_gate_refuses_a_parse_chain_whose_trackers_fold_differently() {
+    use pokesim::version::{parse_encode_matches_step, parse_matches_step};
+    let dex = Dex::for_gen(3);
+    let opts = bridge_opts("gen3ou", "7,11,13,17".to_string(), P1, P2);
+    let run = |pcfg: ClockConfig| -> (usize, Vec<String>) {
+        let mut sess = BridgeSession::new_construct_turn0_core(&opts, &dex).expect("session");
+        let cfg = Some(ClockConfig::default());
+        let mut v = BattleVersion::observe_root_with(&sess, ["P1", "P2"], [Some(P1), Some(P2)], [true, true], cfg).unwrap();
+        let mut parsed = [
+            Some(BattleVersion::parse_root_with(0, "P1", Some(P1), Some(pcfg)).unwrap()),
+            Some(BattleVersion::parse_root_with(1, "P2", Some(P2), Some(pcfg)).unwrap()),
+        ];
+        let (mut decisions, mut refusals) = (0, Vec::new());
+        for (i, cmds) in std::iter::once(Vec::new()).chain(script()).enumerate() {
+            if i > 0 {
+                if sess.is_ended() {
+                    break;
+                }
+                sess.feed_cmds(&cmds, &dex);
+                v = v.observe(&sess).unwrap();
+            }
+            for side in 0..2 {
+                let p = parsed[side].take().unwrap();
+                let from = p.stream(side).unwrap().lines;
+                let next = p.parse_advance(&sess.side_lines(side)[from..]).unwrap();
+                parse_matches_step(&v, &next, side).expect("the reading, events and view agree either way");
+                if v.decision(side).is_some() {
+                    decisions += 1;
+                    if let Err(e) = parse_encode_matches_step(&v, &next, side) {
+                        refusals.push(e.message().to_string());
+                    }
+                }
+                parsed[side] = Some(next);
+            }
+        }
+        (decisions, refusals)
+    };
+    let (n, ok) = run(ClockConfig::default());
+    assert!(n >= 10, "only {n} decisions");
+    assert!(ok.is_empty(), "the unperturbed parse chain was refused: {ok:?}");
+    let (_, bad) = run(ClockConfig { decision_tense: true, switch_freeze: true });
+    assert!(!bad.is_empty(), "a parse chain folded with another clock config was never refused");
+    assert!(bad.iter().all(|e| e.contains("the parse-built row differs") && e.contains("first cell")), "{bad:?}");
+    assert!(bad[0].contains("reactive+") || bad[0].contains("global+"), "the clock lives in the reactive/global blocks: {}", bad[0]);
+}

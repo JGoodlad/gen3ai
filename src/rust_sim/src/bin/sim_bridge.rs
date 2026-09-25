@@ -6,17 +6,59 @@
 //! # Protocol (mirrors `local_sim_bridge.js` byte-for-byte)
 //!
 //! stdin (newline-delimited commands):
-//! - `START <json>`  `{formatid, seed?, persistent?, resumeReseed?, p1:{name,team}, p2:{name,team}}`
+//! - `START <json>`  `{formatid, seed?, persistent?, resumeReseed?, core_obs?, p1:{name,team}, p2:{name,team}}`
 //! - `CHOOSE <side> <choice>`  e.g. `CHOOSE p1 move 1` / `CHOOSE p2 switch 3`
 //! - `FORCELOSE <side>`  e.g. `FORCELOSE p1`  (poke-env `/forfeit` path)
 //! - `END`  tear down and exit
 //!
 //! stdout (newline-delimited frames):
 //! - `p1 <base64(chunk)>` / `p2 <base64(chunk)>`  one protocol chunk that side saw
+//! - `__OBS__ <p1|p2> <json>`  the side's observation row built by the CORE — ONLY when the
+//!   battle's START carried `core_obs` (see "Core observation mode" below)
 //! - `__END__`  battle over, both side streams closed (persistent → reset for the next START)
 //! - `__ERR__ <base64(msg)>`  fatal error
 //! - `__RECON__ <base64(json)>`  the reconstruction record, once per battle, just before
 //!   `__END__` (see [`emit_recon`] for the honest scope of its `input_log`)
+//!
+//! # Core observation mode (`gen3_bridge_core_obs_v1`) — OPT-IN, default OFF
+//!
+//! `START`'s optional `core_obs` key,
+//! `{"sides": ["p1"] | ["p2"] | ["p1","p2"], "decision_tense": bool, "switch_freeze": bool}`
+//! (all three REQUIRED when the key is present; an unknown key, an empty / repeated / unknown
+//! side or a non-boolean flag is a LOUD `__ERR__`), turns on the Rust core's observation for the
+//! named sides. The two booleans are the progress clock's `ClockConfig` (training's
+//! `--progress-decision-tense` / `--progress-switch-freeze`). ABSENT (or `null`) ⇒ this binary's
+//! stdout is BYTE-IDENTICAL to the mode's absence (pinned by `tests/sim_bridge_core_obs_test.rs`).
+//!
+//! Per requested side the child keeps a PARSE-built version chain with trackers
+//! (`BattleVersion::parse_root_with`) — the observation comes THROUGH THE PARSER, the program's
+//! §6c one observation path — advanced by exactly the lines that side was newly shipped in each
+//! write (incremental; the whole stream is never re-parsed). Every `CHOOSE` of a requested side
+//! is noted on its chain (`note_choice`, the raw choice token) BEFORE it is fed, as
+//! `core_events` does. For each write (START's first emission, every CHOOSE / FORCELOSE) each
+//! requested side whose chain took a DECISION at the write's boundary gets ONE frame, written
+//! BEFORE that write's chunk frames (p1's before p2's) — the parent fires each chunk as an
+//! un-awaited task, so the row must be stashed before the request chunk is dispatched:
+//!
+//! ```text
+//! __OBS__ p1 {"frame":{"dtype":"<f4","shape":[2501],"b64":…},"mask":[11 × 0|1],
+//!             "tokens":{"<idx>":"<choice>",…},"turn":<int>,"line":<int>,"rqid":<int>|null,"n":<int>}
+//! ```
+//!
+//! `frame` is `encoder::wire::frame` of `BattleVersion::encode` (NaN-prefilled in test /
+//! self-check builds, zero-filled in release); `mask` is `present::mask`; `tokens` is
+//! `present::choice_tokens` (the real mapper's choice string per legal action); `turn` is the
+//! reading's turn; `line` is the side's stream index of the `|request|` it decided on; `rqid` is
+//! the request JSON's `rqid` when it carries one (the engine never writes one: `null` today); `n`
+//! is the frame's 0-based index among THIS side's frames in the current battle (0 at every START)
+//! — the alignment key a consumer counts its own decisions against, since `rqid` cannot be.
+//! A decision's request must be the LAST line the side was shipped in the write (the `core_events`
+//! alignment), and a write opens at most one decision per side. A battle that ends emits no
+//! frame for its terminal board (no decision). Any parse / fold / encode / alignment failure is a
+//! FATAL `__ERR__`, written IN PLACE of that write's chunk frames — never a skipped frame, never a
+//! fall-back — and the mode stays failed for the rest of the battle. The chains are dropped at every battle reset (persistent recycling keeps
+//! nothing). This builds the core's own reading on the parse chain: the transport's reveal fold
+//! and core source recording stay OFF (`tests/view_fold_opt_in_test.rs`).
 //!
 //! # Seeds (`gen3_bridge_seed_forms_v1` / `gen3_bridge_seedless_fixed_seed_v1`)
 //!
@@ -70,9 +112,14 @@ use std::io::{self, BufRead, Write};
 
 use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::bridge::{parse_choice, BridgeSession, Cmd};
+use pokesim::core_events::jsonval::Val;
 use pokesim::dex::Dex;
+use pokesim::encoder::{self, OBS_DIM};
 use pokesim::json::Json;
+use pokesim::present;
 use pokesim::prng::{normalize_seed, Prng};
+use pokesim::trackers::clock::ClockConfig;
+use pokesim::version::BattleVersion;
 
 fn main() {
     let dex = Dex::for_gen(3);
@@ -140,6 +187,200 @@ struct Session {
     /// The reconstruction record's inputs (`gen3_bridge_recon_record_v1`), captured at
     /// START and as CHOOSE lines arrive. Cleared per battle by `reset`.
     recon: Recon,
+    /// The OPT-IN core observation (`gen3_bridge_core_obs_v1`): `None` unless this battle's
+    /// START carried `core_obs`. Dropped by `reset` (a new battle rebuilds it from its START).
+    core_obs: Option<CoreObs>,
+}
+
+/// A parsed `core_obs` START key.
+struct CoreObsSpec {
+    sides: [bool; 2],
+    cfg: ClockConfig,
+}
+
+/// Parse START's `core_obs` key. Absent or `null` → `None` (the mode is OFF and nothing about
+/// this child's output changes). Present → every field is REQUIRED and checked: a mode flag is
+/// read, never assumed, so a typo or a missing clock boolean is a loud error rather than a
+/// silently-default observation.
+fn parse_core_obs(v: &Json) -> Result<Option<CoreObsSpec>, String> {
+    let Some(c) = v.get("core_obs").filter(|c| !c.is_null()) else {
+        return Ok(None);
+    };
+    let obj = c.as_object().ok_or("START: `core_obs` must be an object")?;
+    for k in obj.keys() {
+        if !matches!(k.as_str(), "sides" | "decision_tense" | "switch_freeze") {
+            return Err(format!("START: `core_obs` has an unknown key {k:?}"));
+        }
+    }
+    let arr = c
+        .get("sides")
+        .and_then(Json::as_array)
+        .ok_or("START: `core_obs.sides` must be an array of \"p1\" / \"p2\"")?;
+    if arr.is_empty() {
+        return Err("START: `core_obs.sides` is empty".to_string());
+    }
+    let mut sides = [false; 2];
+    for s in arr {
+        let i = match s.as_str() {
+            Some("p1") => 0,
+            Some("p2") => 1,
+            _ => return Err(format!("START: `core_obs.sides` holds {s:?}, not \"p1\" / \"p2\"")),
+        };
+        if sides[i] {
+            return Err(format!("START: `core_obs.sides` names p{} twice", i + 1));
+        }
+        sides[i] = true;
+    }
+    let flag = |k: &str| -> Result<bool, String> {
+        c.get(k)
+            .and_then(Json::as_bool)
+            .ok_or_else(|| format!("START: `core_obs.{k}` must be present and a boolean"))
+    };
+    let cfg = ClockConfig { decision_tense: flag("decision_tense")?, switch_freeze: flag("switch_freeze")? };
+    Ok(Some(CoreObsSpec { sides, cfg }))
+}
+
+/// The core observation state of ONE battle: per requested side, the PARSE-built version chain
+/// (trackers on) and how far it has read.
+struct CoreObs {
+    /// The side's parse chain; `None` for a side that was not requested.
+    chains: [Option<BattleVersion>; 2],
+    /// Lines of the side's stream each chain has folded (the incremental cursor).
+    folded: [usize; 2],
+    /// Decisions each chain has taken (one `__OBS__` frame each).
+    decided: [u32; 2],
+    /// Set while a step is in flight and kept on failure: once a step failed (or panicked, which
+    /// leaves the chain taken), every later write of this battle is refused too — the chain no
+    /// longer holds the stream, and a skipped frame must never pass for a quiet one.
+    failed: Option<String>,
+}
+
+impl CoreObs {
+    fn new(spec: &CoreObsSpec, players: [&PlayerOptions; 2]) -> Result<CoreObs, String> {
+        let mut chains = [None, None];
+        for side in 0..2 {
+            if spec.sides[side] {
+                let p = players[side];
+                chains[side] = Some(
+                    BattleVersion::parse_root_with(side, &p.name, Some(&p.team.0), Some(spec.cfg))
+                        .map_err(|e| format!("core_obs: p{} root: {}", side + 1, e.message()))?,
+                );
+            }
+        }
+        Ok(CoreObs { chains, folded: [0, 0], decided: [0, 0], failed: None })
+    }
+
+    /// Note a requested side's choice token on its chain, BEFORE the command is fed (a denied
+    /// own action keeps it — `core_events` feeds its step chain the same way).
+    fn note_choice(&mut self, side: usize, token: &str) {
+        if let Some(c) = self.chains[side].as_mut() {
+            c.note_choice(side, token);
+        }
+    }
+
+    /// Advance every chain over the lines its side was shipped in `chunks[from..]` (this write)
+    /// and emit one `__OBS__` frame per decision taken at the write's boundary.
+    fn step(&mut self, bridge: &BridgeSession, from: usize, out: &mut impl Write) -> Result<(), String> {
+        if let Some(m) = &self.failed {
+            return Err(format!("core_obs: refused after an earlier failure in this battle: {m}"));
+        }
+        self.failed = Some("a core_obs step did not complete (panic)".to_string());
+        match self.step_inner(bridge, from, out) {
+            Ok(()) => {
+                self.failed = None;
+                Ok(())
+            }
+            Err(e) => {
+                self.failed = Some(e.clone());
+                Err(e)
+            }
+        }
+    }
+
+    fn step_inner(&mut self, bridge: &BridgeSession, from: usize, out: &mut impl Write) -> Result<(), String> {
+        let chunks = &bridge.chunks().chunks[from..];
+        for side in 0..2 {
+            let Some(chain) = self.chains[side].take() else { continue };
+            let tag = side + 1;
+            let new: Vec<&str> = chunks
+                .iter()
+                .filter(|c| c.side == side)
+                .flat_map(|c| c.lines.iter().map(String::as_str))
+                .collect();
+            let next = chain
+                .parse_advance(&new)
+                .map_err(|e| format!("core_obs: parse p{tag}: {}", e.message()))?;
+            self.folded[side] += new.len();
+            let s = next.stream(side).ok_or_else(|| format!("core_obs: p{tag}: the chain lost its stream"))?;
+            if s.lines != self.folded[side] {
+                return Err(format!("core_obs: p{tag}: the chain folded {} lines, the cursor says {}", s.lines, self.folded[side]));
+            }
+            // The incremental cursor == the whole shipped stream (O(chunks); test / self-check
+            // builds only — the cursor is the same one that emits the chunks).
+            #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+            if self.folded[side] != bridge.side_line_count(side) {
+                return Err(format!(
+                    "core_obs: p{tag}: folded {} lines but the side was shipped {}",
+                    self.folded[side],
+                    bridge.side_line_count(side)
+                ));
+            }
+            let decisions = next.trackers(side).map_or(0, |t| t.decisions);
+            let opened = decisions.checked_sub(self.decided[side]).ok_or_else(|| format!("core_obs: p{tag}: the decision count went backwards"))?;
+            match (next.decision(side), opened) {
+                (None, 0) => {}
+                (Some(d), 1) => {
+                    // The core_events alignment: the decision's request is the LAST line the side
+                    // was shipped in this write (the live player decides after the request chunk).
+                    if d.line + 1 != s.lines {
+                        return Err(format!(
+                            "core_obs: [ALIGN] p{tag} decided at stream line {} but the write shipped {} lines",
+                            d.line, s.lines
+                        ));
+                    }
+                    // `n` = this frame's index among this side's frames in this battle (the chain
+                    // is rebuilt at every START, so it restarts at 0).
+                    let json = obs_json(&next, side, d.line, self.decided[side])?;
+                    writeln!(out, "__OBS__ p{tag} {json}").ok();
+                    out.flush().ok();
+                }
+                (d, n) => {
+                    return Err(format!(
+                        "core_obs: p{tag}: one write opened {n} decisions (a decision at the boundary: {}) — \
+                         exactly one frame per decision cannot be kept",
+                        d.is_some()
+                    ));
+                }
+            }
+            self.decided[side] = decisions;
+            self.chains[side] = Some(next);
+        }
+        Ok(())
+    }
+}
+
+/// The `__OBS__` JSON of `side`'s decision on `v` (the request at stream line `line`), the side's
+/// `n`-th frame (0-based) of the battle.
+fn obs_json(v: &BattleVersion, side: usize, line: usize, n: u32) -> Result<String, String> {
+    let tag = side + 1;
+    let mut row = [0.0f32; OBS_DIM];
+    v.encode(side, &mut row).map_err(|e| format!("core_obs: encode p{tag}: {}", e.message()))?;
+    let legal = v.legal(side).ok_or_else(|| format!("core_obs: p{tag}: a decision with no legality"))?;
+    let reading = &v.stream(side).ok_or_else(|| format!("core_obs: p{tag}: no stream"))?.board_reading;
+    let tokens = present::choice_tokens(reading, &legal).map_err(|e| format!("core_obs: tokens p{tag}: {}", e.message()))?;
+    let mask = present::mask(&legal);
+    let rqid = match reading.last_request.as_ref().and_then(|r| r.get("rqid")) {
+        None | Some(Val::Null) => "null".to_string(),
+        Some(Val::Int(i)) => i.to_string(),
+        Some(other) => return Err(format!("core_obs: p{tag}: the request's rqid is not an integer: {other:?}")),
+    };
+    let mask_json = mask.iter().map(|m| m.to_string()).collect::<Vec<_>>().join(",");
+    Ok(format!(
+        "{{\"frame\":{},\"mask\":[{mask_json}],\"tokens\":{},\"turn\":{},\"line\":{line},\"rqid\":{rqid},\"n\":{n}}}",
+        encoder::wire::frame(&row),
+        present::tokens_json(&tokens),
+        reading.turn
+    ))
 }
 
 /// The `__RECON__` record's raw materials. See `emit_recon`.
@@ -171,6 +412,7 @@ impl Session {
             bridge: None,
             emitted: 0,
             ended: false,
+            core_obs: None,
         }
     }
 
@@ -182,6 +424,8 @@ impl Session {
         self.ended = false;
         // A persistent child must NOT leak one battle's record into the next.
         self.recon = Recon::default();
+        // …nor its core observation chains (dropped here; the next START builds its own).
+        self.core_obs = None;
     }
 }
 
@@ -290,10 +534,17 @@ fn handle_start(sess: &mut Session, json: &str, dex: &Dex) -> Result<(), String>
     let seed = Some(seed);
     let p1 = parse_player(&v, "p1")?;
     let p2 = parse_player(&v, "p2")?;
+    // The OPT-IN core observation (`gen3_bridge_core_obs_v1`): parsed and its chains built
+    // BEFORE anything is reset, so a malformed key refuses the START without touching state.
+    let core_obs = match parse_core_obs(&v)? {
+        Some(spec) => Some(CoreObs::new(&spec, [&p1, &p2])?),
+        None => None,
+    };
 
     // A new battle: reset the per-battle state (persistent keeps `persistent`), then build
     // the live incremental engine (advances to + emits the first request boundary).
     sess.reset();
+    sess.core_obs = core_obs;
     // Capture the record's materials (`gen3_bridge_recon_record_v1`). The `>player` payloads
     // are re-serialized from the parsed values rather than sliced out of the raw START JSON,
     // so the record is well-formed regardless of the caller's spacing/key order.
@@ -398,6 +649,12 @@ fn handle_choose(sess: &mut Session, rest: &str, dex: &Dex) -> Result<(), String
     sess.recon
         .cmds
         .push((side_tok.to_string(), choice_tok.to_string()));
+    // The core observation's chain takes the RAW choice token BEFORE the command is fed —
+    // including a choice the engine will refuse (a denied own action keeps it), exactly the
+    // order `core_events` uses (`note_choice`, then `feed_cmd`).
+    if let Some(o) = sess.core_obs.as_mut() {
+        o.note_choice(side, choice_tok);
+    }
     // --- resumeReseed (`gen3_bridge_resume_reseed_v1`) — mirrors the node bridge exactly:
     //     swap the PRNG at the START of the divergence turn (the battle's `turn` has already
     //     advanced to it once the prior turn resolved), BEFORE this turn's choices commit, and
@@ -465,10 +722,20 @@ fn handle_forcelose(sess: &mut Session, side: &str, out: &mut impl Write) -> Res
 }
 
 /// Write the NEW per-side chunk suffix the live session produced (past the emit cursor)
-/// as `pN <base64>` lines. Emits `__END__` when the battle ends.
+/// as `pN <base64>` lines — preceded, in core observation mode, by each requested side's
+/// `__OBS__` frame for a decision at this boundary. Emits `__END__` when the battle ends.
 fn flush_new_chunks(sess: &mut Session, out: &mut impl Write) -> Result<(), String> {
     if sess.ended {
         return Ok(());
+    }
+    let from = sess.emitted;
+    // The core observation frames go FIRST, BEFORE this write's chunk frames: the parent's reader
+    // fires each chunk as an un-awaited task, and the trainee's embed can run on the request chunk
+    // before the reader has read any later line — so the row must already be stashed when the
+    // request chunk is dispatched. A failure here is an `__ERR__` in place of the write's chunks
+    // (the battle is dead; nothing of this write is shipped).
+    if let (Some(obs), Some(bridge)) = (sess.core_obs.as_mut(), sess.bridge.as_ref()) {
+        obs.step(bridge, from, out)?;
     }
     let (len, is_ended) = {
         let bridge = sess
@@ -477,7 +744,7 @@ fn flush_new_chunks(sess: &mut Session, out: &mut impl Write) -> Result<(), Stri
             .ok_or("no battle in progress (missing START)")?;
         let all = &bridge.chunks().chunks;
         // Emit every chunk past the cursor, in flush order (both sides interleaved).
-        for c in all.iter().skip(sess.emitted) {
+        for c in all.iter().skip(from) {
             emit_chunk(out, c.side, &c.lines);
         }
         (all.len(), bridge.is_ended())

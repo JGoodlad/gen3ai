@@ -452,6 +452,45 @@ impl BattleVersion {
     }
 }
 
+/// The ENCODE half of the parse-reproduces-step gate at ONE decision (`gen3_core_parse_obs_gate_v1`):
+/// `step` and `parsed` (the same side's parse-built chain, trackers on) must encode BYTE-identical
+/// rows, equal masks and equal choice tokens for `side`. It catches what [`parse_matches_step`]
+/// cannot: the TRACKERS (the clock, recency, pair history, the event window, the belief) are not
+/// part of the reading board, so a tracker that folds differently on the parse path — or a chain
+/// built with another `ClockConfig` — reaches only the row. `Err` names the first differing cell
+/// ([`crate::encoder::cell_name`]).
+pub fn parse_encode_matches_step(step: &BattleVersion, parsed: &BattleVersion, side: usize) -> R<()> {
+    use crate::encoder::{cell_name, OBS_DIM};
+    let tag = side + 1;
+    let mut a = [0.0f32; OBS_DIM];
+    let mut b = [0.0f32; OBS_DIM];
+    step.encode(side, &mut a).map_err(|e| e.context(format!("p{tag} step encode: ")))?;
+    parsed.encode(side, &mut b).map_err(|e| e.context(format!("p{tag} parse encode: ")))?;
+    if let Some(i) = (0..OBS_DIM).find(|&i| a[i].to_bits() != b[i].to_bits()) {
+        let n = (0..OBS_DIM).filter(|&i| a[i].to_bits() != b[i].to_bits()).count();
+        return Err(fault(format!(
+            "p{tag}: the parse-built row differs from the step-built row in {n} cell(s); first cell {i} ({}): step {:?} vs parse {:?}",
+            cell_name(i), a[i], b[i]
+        )));
+    }
+    let (la, lb) = (step.legal(side), parsed.legal(side));
+    let (ma, mb) = (la.as_ref().map(crate::present::mask), lb.as_ref().map(crate::present::mask));
+    if ma != mb {
+        return Err(fault(format!("p{tag}: the parse-built mask {mb:?} differs from the step-built mask {ma:?}")));
+    }
+    if let (Some(la), Some(lb)) = (la, lb) {
+        fn reading(v: &BattleVersion, side: usize) -> R<&BoardReading> {
+            v.stream(side).map(|s| &s.board_reading).ok_or_else(|| fault("no stream"))
+        }
+        let ta = crate::present::choice_tokens(reading(step, side)?, &la)?;
+        let tb = crate::present::choice_tokens(reading(parsed, side)?, &lb)?;
+        if ta != tb {
+            return Err(fault(format!("p{tag}: the parse-built choice tokens {tb:?} differ from the step-built {ta:?}")));
+        }
+    }
+    Ok(())
+}
+
 /// The parse-reproduces-step gate for ONE boundary: `step` (a step-built version) and `parsed`
 /// (the same side's parse-built version fed the same text) must agree on the whole reading board,
 /// the transition's events (typed line, outcome owner, every reading — the source index aside) and

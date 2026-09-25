@@ -55,6 +55,25 @@ pub fn prefill(out: &mut [f32; OBS_DIM]) {
     out.fill(0.0);
 }
 
+/// The BLOCK a row cell belongs to and its offset inside it (`our_team[slot]+k`, `context+k`, …) —
+/// how a byte gate names the first differing cell.
+pub fn cell_name(i: usize) -> String {
+    let team = |base: usize, name: &str| {
+        let k = i - base;
+        format!("{name}[slot {}]+{}", k / POKEMON_FULL_DIM, k % POKEMON_FULL_DIM)
+    };
+    match i {
+        _ if i >= OBS_DIM => format!("cell {i} (past the row)"),
+        _ if i >= OFFSET_EVENT_WINDOW => format!("event_window+{}", i - OFFSET_EVENT_WINDOW),
+        _ if i >= OFFSET_PAIR_HISTORY => format!("pair_history+{}", i - OFFSET_PAIR_HISTORY),
+        _ if i >= OFFSET_REACTIVE => format!("reactive+{}", i - OFFSET_REACTIVE),
+        _ if i >= OFFSET_GLOBAL => format!("global+{}", i - OFFSET_GLOBAL),
+        _ if i >= OFFSET_CONTEXT => format!("context+{}", i - OFFSET_CONTEXT),
+        _ if i >= OFFSET_OPP_TEAM => team(OFFSET_OPP_TEAM, "opp_team"),
+        _ => team(OFFSET_OUR_TEAM, "our_team"),
+    }
+}
+
 /// Is this build's prefill the NaN poison? (Reported by the binaries so a gate can check which
 /// build it ran.)
 pub const NAN_POISON: bool = cfg!(any(debug_assertions, feature = "emission-selfcheck"));
