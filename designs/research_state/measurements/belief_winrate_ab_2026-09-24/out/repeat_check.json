@@ -1,0 +1,20 @@
+{
+ "compared": 360,
+ "fields": [
+  "status",
+  "winner",
+  "turns",
+  "n_dec",
+  "side"
+ ],
+ "mismatches": 0,
+ "examples": [],
+ "proof_in_b": {
+  "n": 5992,
+  "off_eq_ref": 5992,
+  "on_all_eq_prior": 5992,
+  "on_move_eq_prior": 5992,
+  "on_all_logits_differ": 5992,
+  "n_fail_msgs": 0
+ }
+}

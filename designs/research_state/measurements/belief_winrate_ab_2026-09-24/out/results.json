@@ -1,0 +1,489 @@
+{
+ "n_indices_seen": 3000,
+ "attempted": {
+  "pool:learned": 3000,
+  "pool:prior": 3000,
+  "ladder:learned": 3000,
+  "ladder:prior": 3000,
+  "pool:move": 3000,
+  "ladder:move": 3000
+ },
+ "failed": {
+  "pool:learned": 0,
+  "pool:prior": 0,
+  "ladder:learned": 1,
+  "ladder:prior": 3,
+  "pool:move": 0,
+  "ladder:move": 1
+ },
+ "fail_share": {
+  "pool:learned": 0.0,
+  "pool:prior": 0.0,
+  "ladder:learned": 0.0003333333333333333,
+  "ladder:prior": 0.001,
+  "pool:move": 0.0,
+  "ladder:move": 0.0003333333333333333
+ },
+ "primary_indices_complete": 3000,
+ "primary_indices_ok": 2996,
+ "primary_dropped": 4,
+ "secondary_indices_complete": 3000,
+ "secondary_indices_ok": 2996,
+ "INCONCLUSIVE_cells": [],
+ "errors": {
+  "ladder:prior": [
+   [
+    1492,
+    "timeout",
+    "wall>1800.0s"
+   ],
+   [
+    2542,
+    "error",
+    "UnknownVolatileError: volatile 'typechange' has no gen3 encoding slot \u2014 classify it in gen3_effects.py (binary / trap / counter) before training. Known: ['attract', 'bide', 'bind', 'charge', 'clamp', 'confusion', 'curse', 'defensecurl', 'destinybond', 'disable', 'doomdesire', 'encore', 'endure', 'firespin', 'flashfire', 'flinch', 'focusenergy', 'focuspunch', 'followme', 'foresight', 'futuresight',"
+   ],
+   [
+    2345,
+    "timeout",
+    "wall>1800.0s"
+   ]
+  ],
+  "ladder:move": [
+   [
+    2542,
+    "error",
+    "UnknownVolatileError: volatile 'typechange' has no gen3 encoding slot \u2014 classify it in gen3_effects.py (binary / trap / counter) before training. Known: ['attract', 'bide', 'bind', 'charge', 'clamp', 'confusion', 'curse', 'defensecurl', 'destinybond', 'disable', 'doomdesire', 'encore', 'endure', 'firespin', 'flashfire', 'flinch', 'focusenergy', 'focuspunch', 'followme', 'foresight', 'futuresight',"
+   ]
+  ],
+  "ladder:learned": [
+   [
+    1541,
+    "error",
+    "AssertionError: Error with move solarbeam. Expected self.moves to contain copycat, metronome, mefirst, mirrormove, or assist, or to have the ability dancer. Got {'counter': counter (Move object), 'seismictoss': seismictoss (Move object), 'explosion': explosion (Move object), 'rollout': rollout (Move object)}, ability: clearbody"
+   ]
+  ]
+ },
+ "primary": {
+  "n": 2996,
+  "wr": {
+   "pool:learned": {
+    "point": 0.48381174899866486,
+    "ci": [
+     0.46578771695594123,
+     0.5016688918558078
+    ]
+   },
+   "pool:prior": {
+    "point": 0.43207610146862485,
+    "ci": [
+     0.414218958611482,
+     0.44959946595460615
+    ]
+   },
+   "ladder:learned": {
+    "point": 0.664886515353805,
+    "ci": [
+     0.6478638184245661,
+     0.681909212283044
+    ]
+   },
+   "ladder:prior": {
+    "point": 0.6613818424566088,
+    "ci": [
+     0.644192256341789,
+     0.6785714285714286
+    ]
+   }
+  },
+  "contrasts": {
+   "E_pool = WR_prior - WR_learned (POOL)": {
+    "point": -0.05173564753004001,
+    "ci": [
+     -0.07359813084112149,
+     -0.030202770360480677
+    ],
+    "read": "NEGATIVE"
+   },
+   "E_ladder = WR_prior - WR_learned (LADDER)": {
+    "point": -0.003504672897196248,
+    "ci": [
+     -0.02469959946595468,
+     0.0171895861148198
+    ],
+    "read": "NOT DETECTED"
+   },
+   "DiD = E_ladder - E_pool": {
+    "point": 0.04823097463284376,
+    "ci": [
+     0.01852469959946601,
+     0.07827102803738323
+    ],
+    "read": "POSITIVE"
+   },
+   "WR_learned ladder - pool": {
+    "point": 0.1810747663551402,
+    "ci": [
+     0.15604138851802402,
+     0.20544058744993327
+    ],
+    "read": "POSITIVE"
+   }
+  },
+  "discordant_share": {
+   "pool:prior": 0.373497997329773,
+   "ladder:prior": 0.3417890520694259
+  }
+ },
+ "secondary": {
+  "n": 2996,
+  "wr": {
+   "pool:learned": {
+    "point": 0.48381174899866486,
+    "ci": [
+     0.46562082777036046,
+     0.5015020026702269
+    ]
+   },
+   "pool:prior": {
+    "point": 0.43207610146862485,
+    "ci": [
+     0.4145527369826435,
+     0.4499332443257677
+    ]
+   },
+   "ladder:learned": {
+    "point": 0.664886515353805,
+    "ci": [
+     0.6481975967957276,
+     0.6817423230974633
+    ]
+   },
+   "ladder:prior": {
+    "point": 0.6613818424566088,
+    "ci": [
+     0.6443591455273698,
+     0.6780707610146862
+    ]
+   },
+   "pool:move": {
+    "point": 0.42823765020026705,
+    "ci": [
+     0.410877002670227,
+     0.4460947930574099
+    ]
+   },
+   "ladder:move": {
+    "point": 0.6532042723631508,
+    "ci": [
+     0.6361815754339119,
+     0.6700600801068091
+    ]
+   }
+  },
+  "contrasts": {
+   "E^move_pool = WR_move - WR_learned (POOL)": {
+    "point": -0.05557409879839781,
+    "ci": [
+     -0.07743658210947929,
+     -0.03321094793057405
+    ],
+    "read": "NEGATIVE"
+   },
+   "E^move_ladder = WR_move - WR_learned (LADDER)": {
+    "point": -0.011682242990654235,
+    "ci": [
+     -0.03204272363150862,
+     0.008845126835780981
+    ],
+    "read": "NOT DETECTED"
+   },
+   "DiD^move": {
+    "point": 0.043891855807743574,
+    "ci": [
+     0.013351134846461941,
+     0.07443674899866488
+    ],
+    "read": "POSITIVE"
+   }
+  },
+  "discordant_share": {
+   "pool:prior": 0.373497997329773,
+   "pool:move": 0.3861815754339119,
+   "ladder:prior": 0.3417890520694259,
+   "ladder:move": 0.338785046728972
+  }
+ },
+ "side_read": {
+  "pool:all": {
+   "1": {
+    "n_decisions": 7966,
+    "rate": 0.1885513432086367,
+    "ci": [
+     0.1788245083278887,
+     0.19867560178136193
+    ]
+   },
+   "2": {
+    "n_decisions": 14052,
+    "rate": 0.18751779106177058,
+    "ci": [
+     0.17760384711055363,
+     0.1986643960339031
+    ]
+   },
+   "3": {
+    "n_decisions": 18844,
+    "rate": 0.18695606028444067,
+    "ci": [
+     0.1796877774012374,
+     0.19440013660355115
+    ]
+   },
+   "4": {
+    "n_decisions": 25658,
+    "rate": 0.1747213344765765,
+    "ci": [
+     0.1679663194255012,
+     0.18172472382322982
+    ]
+   },
+   "5": {
+    "n_decisions": 34418,
+    "rate": 0.16540763553954327,
+    "ci": [
+     0.15971814829232261,
+     0.17124943278856564
+    ]
+   },
+   "6": {
+    "n_decisions": 44456,
+    "rate": 0.14508727730789994,
+    "ci": [
+     0.1392935732505324,
+     0.15133593018474606
+    ]
+   },
+   "all": {
+    "n_decisions": 145394,
+    "rate": 0.1670357786428601,
+    "ci": [
+     0.16396119253300906,
+     0.17016506641317622
+    ]
+   }
+  },
+  "pool:move": {
+   "1": {
+    "n_decisions": 7966,
+    "rate": 0.16432337434094904,
+    "ci": [
+     0.15496241945276848,
+     0.17414540959486613
+    ]
+   },
+   "2": {
+    "n_decisions": 14052,
+    "rate": 0.17314261315115287,
+    "ci": [
+     0.16366287523152612,
+     0.18359860036721903
+    ]
+   },
+   "3": {
+    "n_decisions": 18844,
+    "rate": 0.16774570154956484,
+    "ci": [
+     0.16106917470139004,
+     0.1746320489316201
+    ]
+   },
+   "4": {
+    "n_decisions": 25658,
+    "rate": 0.15815729986748772,
+    "ci": [
+     0.1517991717947351,
+     0.16480847586512162
+    ]
+   },
+   "5": {
+    "n_decisions": 34418,
+    "rate": 0.1436748213144285,
+    "ci": [
+     0.13839974522182408,
+     0.14921356045405199
+    ]
+   },
+   "6": {
+    "n_decisions": 44456,
+    "rate": 0.119196508907684,
+    "ci": [
+     0.11373029605361425,
+     0.12525106442508432
+    ]
+   },
+   "all": {
+    "n_decisions": 145394,
+    "rate": 0.14584508301580532,
+    "ci": [
+     0.14289455867682738,
+     0.14894446243309536
+    ]
+   }
+  },
+  "ladder:all": {
+   "1": {
+    "n_decisions": 8282,
+    "rate": 0.1852209611205023,
+    "ci": [
+     0.1759035351649508,
+     0.19490244973590462
+    ]
+   },
+   "2": {
+    "n_decisions": 14964,
+    "rate": 0.17702485966319165,
+    "ci": [
+     0.16870966947516997,
+     0.1850628480696949
+    ]
+   },
+   "3": {
+    "n_decisions": 20314,
+    "rate": 0.1780053165304716,
+    "ci": [
+     0.17060002995001436,
+     0.1857049759718222
+    ]
+   },
+   "4": {
+    "n_decisions": 26795,
+    "rate": 0.17074080985258444,
+    "ci": [
+     0.16409026094187357,
+     0.17772002044060867
+    ]
+   },
+   "5": {
+    "n_decisions": 35096,
+    "rate": 0.15719740141326646,
+    "ci": [
+     0.15135316074809402,
+     0.16325405688690123
+    ]
+   },
+   "6": {
+    "n_decisions": 45622,
+    "rate": 0.1428915873920477,
+    "ci": [
+     0.13736824867154537,
+     0.14854075521336085
+    ]
+   },
+   "all": {
+    "n_decisions": 151073,
+    "rate": 0.16157751550574886,
+    "ci": [
+     0.158667421973605,
+     0.1645309095132957
+    ]
+   }
+  },
+  "ladder:move": {
+   "1": {
+    "n_decisions": 8282,
+    "rate": 0.1750784834581019,
+    "ci": [
+     0.16599515032253268,
+     0.1846756847248132
+    ]
+   },
+   "2": {
+    "n_decisions": 14964,
+    "rate": 0.16439454691259023,
+    "ci": [
+     0.15627595735662525,
+     0.17241162246943212
+    ]
+   },
+   "3": {
+    "n_decisions": 20314,
+    "rate": 0.16412326474352662,
+    "ci": [
+     0.15705102256479517,
+     0.1715395011170461
+    ]
+   },
+   "4": {
+    "n_decisions": 26795,
+    "rate": 0.15738010822914722,
+    "ci": [
+     0.1502865396557326,
+     0.1648459576416064
+    ]
+   },
+   "5": {
+    "n_decisions": 35096,
+    "rate": 0.144232961021199,
+    "ci": [
+     0.13873840210792285,
+     0.14999445921721158
+    ]
+   },
+   "6": {
+    "n_decisions": 45622,
+    "rate": 0.12566305729691815,
+    "ci": [
+     0.1205755339668378,
+     0.1310831070812128
+    ]
+   },
+   "all": {
+    "n_decisions": 151073,
+    "rate": 0.14731950778762584,
+    "ci": [
+     0.14449611267313459,
+     0.1501943741765997
+    ]
+   }
+  }
+ },
+ "side_read_sanity_off_mismatches": 0,
+ "descriptive": {
+  "pool:learned": {
+   "mean_turns": 44.290053404539385,
+   "max_turns": 250,
+   "mean_decisions": 48.52937249666222,
+   "draws": 5
+  },
+  "pool:prior": {
+   "mean_turns": 41.61782376502003,
+   "max_turns": 250,
+   "mean_decisions": 45.961949265687586,
+   "draws": 9
+  },
+  "ladder:learned": {
+   "mean_turns": 46.67156208277704,
+   "max_turns": 250,
+   "mean_decisions": 50.42489986648865,
+   "draws": 8
+  },
+  "ladder:prior": {
+   "mean_turns": 46.453271028037385,
+   "max_turns": 250,
+   "mean_decisions": 50.177570093457945,
+   "draws": 7
+  },
+  "pool:move": {
+   "mean_turns": 42.49699599465955,
+   "max_turns": 250,
+   "mean_decisions": 46.88117489986649,
+   "draws": 6
+  },
+  "ladder:move": {
+   "mean_turns": 46.36849132176235,
+   "max_turns": 250,
+   "mean_decisions": 50.076101468624834,
+   "draws": 10
+  }
+ }
+}
