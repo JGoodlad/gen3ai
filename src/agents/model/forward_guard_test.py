@@ -73,8 +73,10 @@ def test_an_UNGUARDED_extractor_is_corrupted_by_a_second_thread():
     if not errs:
         pytest.skip("the race did not schedule on this box in 800 forwards — see the guarded "
                     "test below, which is the one that carries the contract")
+    # "incoming_rows": an eighth class, a stash cleared under a reader (seen 2026-09-25 in the
+    # routine gate at d5c465fd).
     assert any("ValueThreatInject" in e or "out of bounds" in e or "reduced rows" in e
-               or "Sizes of tensors" in e for e in errs), errs[:5]
+               or "Sizes of tensors" in e or "incoming_rows" in e for e in errs), errs[:5]
 
 
 def test_a_GUARDED_extractor_is_byte_identical_to_the_SINGLE_THREADED_control():
