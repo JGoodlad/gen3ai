@@ -5,8 +5,12 @@ but collects nothing — same convention as ``*_fuzz_test.py``). It plays a real
 battle **in-process via the local BattleStream bridge** (no server) until a representative
 late-game decision is reached, then measures the cost of building one observation:
 
-  * ``state_encoder.encode``             — the full 3299-dim obs vector
+  * ``state_encoder.encode``             — the full 2501-dim obs vector
   * ``battle.live_view()``               — the current-board read-model
+  * the **CORE row** (``gen3_core_encoder_v1``, Rust Core Program M4) — the Rust encoder on the
+    SAME decision (``core_events --obs --obs-bench``, the release build unless
+    ``POKESIM_EMISSION_SELFCHECK=1``), replayed from the battle's recorded input log; its row is
+    asserted BYTE-equal to the Python row before its time is printed (``--no-core`` skips it)
 
 It prints a component wall-clock breakdown plus a ``cProfile`` ``tottime`` ranking so you can
 see which functions dominate. Use it to catch obs-pipeline perf regressions and to confirm an
@@ -232,6 +236,9 @@ class _BenchmarkPlayer(Player):
         self._reps = reps
         self._top = top
         self.result: Optional[dict] = None
+        #: the profiled decision: (battle tag, its index among this player's decisions, the row)
+        self.profiled: Optional[tuple] = None
+        self._n_decisions: dict = {}
 
     def choose_move(self, battle):
         mask = Gen3ActionMasker.get_mask(battle)
@@ -243,12 +250,19 @@ class _BenchmarkPlayer(Player):
         # call was missing and the benchmark silently timed those writes as skipped.
         tr.update_progress_clock(battle, None)
 
+        k = self._n_decisions.get(battle.battle_tag, 0)
+        if mask.sum() > 0:
+            self._n_decisions[battle.battle_tag] = k + 1
         if (self.result is None
                 and battle.turn >= self._profile_at_turn
                 and len(tr._history) > 1
                 and battle.opponent_active_pokemon is not None):
             self.result = profile_obs_build(
                 battle, tr, self.obs_enc, reps=self._reps, top=self._top)
+            row = self.obs_enc.encode(battle, hp_tracker=tr.hidden_power_tracker,
+                                      progress_clock=tr.progress_clock, recency=tr.recency,
+                                      pair_history=tr.pair_history, event_window=tr.event_window)
+            self.profiled = (battle.battle_tag, k, row)
 
         valid = [i for i, v in enumerate(mask) if v]
         # `self._choice_rng` (not the `random` module) so this player's action picks depend only
@@ -261,7 +275,53 @@ class _BenchmarkPlayer(Player):
             return self.choose_random_move(battle)
 
 
-async def main(battles: int, profile_at_turn: int, reps: int, top: int, seed: int) -> int:
+def core_row(bench: "_BenchmarkPlayer", reps: int) -> Optional[dict]:
+    """The CORE row: replay the profiled battle's recorded input log through ``core_events`` and
+    time the Rust encoder at the SAME decision (``--obs-bench``). Its row must equal the Python
+    row byte for byte, or the timing is refused."""
+    import json
+    import subprocess
+
+    from agents.battle.core_obs import wrap_row
+    from agents.battle.rust_core_parity import RecordedBattle
+    from utils.bridge import reconstruction
+    from utils.bridge.sim_bridge_bin import resolve_core_events_bin
+
+    tag, k, py_row = bench.profiled
+    rec = reconstruction.pop_record(tag)
+    if rec is None:
+        print("  CORE row: no __RECON__ record for the profiled battle — skipped", file=sys.stderr)
+        return None
+    players = rec.players()
+    side = 0 if players["p1"]["name"] == bench.username else 1
+    b = RecordedBattle(label="obs_bench", format_id=rec.format_id, seed=rec.prng_seed,
+                       p1=players["p1"], p2=players["p2"], commands=[list(c) for c in rec.commands])
+    exe = resolve_core_events_bin()
+    p = subprocess.run([exe, "--obs", "--obs-bench", str(side), str(k), str(reps)],
+                       input="\n".join(b.script()) + "\n", capture_output=True, text=True, check=False)
+    if p.returncode != 0:
+        raise RuntimeError(f"core_events failed: {p.stderr[-2000:]}")
+    res = json.loads(p.stdout.splitlines()[0])
+    if not res.get("ok") or "obs_bench" not in res:
+        raise RuntimeError(f"core_events did not time decision {k}: {res.get('error')}")
+    ob = res["obs_bench"]
+    core = wrap_row(ob["obs"])
+    if core.tobytes() != np.asarray(py_row, dtype=np.float32).tobytes():
+        bad = np.flatnonzero(core.view(np.uint32) != np.asarray(py_row, dtype=np.float32).view(np.uint32))
+        raise AssertionError(f"CORE row != Python row at {bad.size} cells (first {bad[:8].tolist()}) — "
+                             "the core timing below would be of a different vector")
+    build = "self-check (NaN prefill)" if ob["nan_poison"] else "release (zero prefill)"
+    print(f"  CORE row (Rust encoder, {build}, turn {ob['turn']}, byte-equal to the Python row):")
+    print(f"    encode (view memoized)      : {ob['encode_us_mean'] / 1e3:7.4f} ms mean, "
+          f"{ob['encode_us_median'] / 1e3:7.4f} ms median")
+    print(f"    present() + encode (COLD)   : {ob['present_encode_us_mean'] / 1e3:7.4f} ms mean, "
+          f"{ob['present_encode_us_median'] / 1e3:7.4f} ms median")
+    print(f"    binary: {exe}")
+    return ob
+
+
+async def main(battles: int, profile_at_turn: int, reps: int, top: int, seed: int,
+               core: bool = True) -> int:
     # `random.seed(seed)` alone was NOT enough: four drawers shared the global stream (two
     # teambuilders, this player's action pick, and `RandomPlayer`'s entire policy) and the bridge
     # interleaves the two players' `choose_move` calls, so the draw ORDER — and therefore the
@@ -303,6 +363,12 @@ async def main(battles: int, profile_at_turn: int, reps: int, top: int, seed: in
         print(f"never reached a turn>={profile_at_turn} decision in {battles} battles "
               f"— raise --battles or lower --turn", file=sys.stderr)
         return 1
+    if core:
+        # let the profiled battle finish so its input log is complete
+        while bench.profiled is not None and bench.profiled[0] in bench.battles \
+                and not bench.battles[bench.profiled[0]].finished:
+            await asyncio.sleep(0.05)
+        core_row(bench, reps)
     return 0
 
 
@@ -318,6 +384,8 @@ def _parse_args(argv):
                    help="number of cProfile functions to show (default 22)")
     p.add_argument("--seed", type=int, default=0,
                    help="seed for action selection — partial reproducibility (default 0)")
+    p.add_argument("--no-core", action="store_true",
+                   help="skip the CORE row (the Rust encoder on the same decision)")
     return p.parse_args(argv)
 
 
@@ -327,4 +395,4 @@ if __name__ == "__main__":
     warn_if_contended("obs-build benchmark")
     a = _parse_args(sys.argv[1:])
     sys.exit(asyncio.run(
-        main(a.battles, a.profile_at_turn, a.reps, a.top, a.seed)))
+        main(a.battles, a.profile_at_turn, a.reps, a.top, a.seed, core=not a.no_core)))

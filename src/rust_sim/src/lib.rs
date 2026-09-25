@@ -105,6 +105,10 @@ pub mod bridge;
 pub mod damage;
 pub mod dex;
 pub mod driver_timing;
+/// THE ENCODER (`gen3_core_encoder_v1`, Rust Core Program M4): the 2501-dim observation row of
+/// one side, built from that side's reading, view, legality and trackers; layout GENERATED from
+/// `agents/observation/constants.py`.
+pub mod encoder;
 /// The core's error type (`gen3_core_error_v1`): a REFUSAL mirroring a poke-env exception class,
 /// MALFORMED input, or a core FAULT — never an undifferentiated `String`.
 pub mod core_error;

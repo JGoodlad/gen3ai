@@ -55,7 +55,7 @@ pub fn to_id(s: &str) -> String {
 }
 
 /// Default data dir: `<repo>/data/pokemon`, relative to this crate.
-fn default_data_dir() -> PathBuf {
+pub(crate) fn default_data_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/pokemon")
 }
 

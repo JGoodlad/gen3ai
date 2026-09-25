@@ -1,7 +1,8 @@
 """The Rust Core parity gate — slice E (events, ``gen3_core_parity_events_v1``), slice V (views
 + legality, the TRUTH AUDIT, ``gen3_core_parity_views_v1`` — :mod:`rust_core_parity_views`) and slice
 T (the trackers, the α/β label and the reward, ``gen3_core_parity_trackers_v1`` —
-:mod:`rust_core_parity_trackers`).
+:mod:`rust_core_parity_trackers`) and slice O (the 2501-dim observation row, BYTE-equal,
+``gen3_core_parity_obs_v1`` — :mod:`rust_core_parity_obs`).
 
 Slice V's tests below: the COMMIT-tier gate, its TEETH (a re-introduced Baton Pass drop and a
 misread Spikes layer each FAIL; a dropped capture FAILS as ``[ALIGN]``), and the classification
@@ -34,6 +35,7 @@ from typing import Iterable, Tuple
 import pytest
 
 from agents.battle import rust_core_parity as P
+from agents.battle import rust_core_parity_obs as O
 from agents.battle import rust_core_parity_trackers as T
 from agents.battle import rust_core_parity_views as V
 
@@ -309,28 +311,126 @@ def test_the_information_boundary_holds_on_the_core_record_and_the_check_has_tee
 
 
 # ---------------------------------------------------------------------------
+# slice O — the OBSERVATION ROW, every decision, both viewers, byte-equal (M4)
+# ---------------------------------------------------------------------------
+
+#: The obs blocks every tier must see NONZERO somewhere (the gate cannot be green on zeros).
+_OBS_BLOCKS = ("our_team", "opp_team", "context", "global", "board", "pair_history", "event_window")
+
+
+def _assert_obs_clean(o: O.ObsCensus, min_decisions: int) -> None:
+    print("\n" + o.render())
+    assert not o.refused, o.render()
+    assert not o.divergences, o.render()
+    assert o.decisions >= min_decisions, f"only {o.decisions} decisions — vacuous"
+    assert o.rows_equal == o.decisions, o.render()
+    missing = [b for b in _OBS_BLOCKS if o.nonzero_blocks[b] == 0]
+    assert not missing, f"obs blocks never nonzero: {missing} ({dict(o.nonzero_blocks)})"
+
+
+def test_commit_tier_obs_rows_equal_the_python_encoder():
+    """Slice O at the COMMIT tier: the Rust encoder's row (``core_events --obs``, the self-check
+    build's NaN-poisoned prefill — an unwritten cell reads NaN and fails) == the row
+    ``Gen3Env.embed_battle`` encodes, BYTE for byte, plus the 11-dim mask, at every decision of
+    every in-scope battle, both viewers."""
+    o, t = O.ObsCensus(), T.TrackerCensus()
+    P.check_battles(P.commit_corpus(), P.Census(), trackers=t, obs=o)
+    _assert_obs_clean(o, min_decisions=1_700)
+    _assert_trackers_clean(t, min_decisions=1_700, min_rows=40_000)
+
+
+def test_the_obs_golden_is_reproduced_by_the_core():
+    """Every obs GOLDEN (``training/golden_obs_fixture.json`` — the per-decision sha256 of the
+    trainee's row over the fixed deterministic battle set): the core, replaying the same battles'
+    input logs, writes rows with EXACTLY the committed hashes, in order — and equal, byte for byte,
+    to the vectors the Python capture recorded in the same run."""
+    import json
+
+    from agents.training.golden_obs_capture import vector_hashes
+    from utils.paths import repo_path
+
+    golden = json.loads(repo_path("src", "agents", "training", "golden_obs_fixture.json").read_text())
+    py_vectors, battles = O.golden_battles()
+    rows = O.core_rows(battles)
+    assert len(py_vectors) == golden["n_decisions"], "the golden battles no longer replay (determinism)"
+    assert len(rows) == len(py_vectors), (len(rows), len(py_vectors))
+    first = next((i for i, (a, b) in enumerate(zip(rows, py_vectors)) if a.tobytes() != b.tobytes()), None)
+    assert first is None, f"core row != the capture's Python row at decision {first}"
+    got = vector_hashes(rows)
+    first = next((i for i, (a, b) in enumerate(zip(got, golden["hashes"])) if a != b), None)
+    assert first is None, f"core row != the committed golden at decision {first} of {len(got)}"
+
+
+def test_the_obs_slice_catches_a_changed_python_encoder(monkeypatch):
+    """TEETH, the day-it-lands property: a Python encoder change the core does not mirror (the
+    move slot's PP normaliser) FAILS slice O on exactly that field."""
+    import agents.observation.moves as M
+
+    monkeypatch.setattr(M, "MAX_PP", 32)
+    o = O.ObsCensus()
+    P.check_battles(P.load_commit_fixture()[:2], P.Census(), obs=o)
+    keys = set(o.divergences)
+    assert any(k.startswith("[OBS] our_team moves+") for k in keys), o.render()
+    assert any(k.startswith("[OBS] opp_team moves+") for k in keys), o.render()
+
+
+def test_the_obs_slice_catches_an_unwritten_cell_and_a_signed_zero():
+    """TEETH, the NaN poison: a core row with ONE NaN cell (a cell the encoder never wrote, as the
+    test build's prefill leaves it) FAILS, as does a ``-0.0`` where Python wrote ``0.0`` — the gate
+    compares BYTES, not ``==``."""
+    import base64
+
+    import numpy as np
+
+    b = P.load_commit_fixture()[0]
+    res = P.run_core([b], trackers=True, obs=True)[0]
+    cap = next(c for c in res["trackers"][0] if "obs" in c)
+    row = np.frombuffer(base64.b64decode(cap["obs"]["b64"]), dtype="<f4").copy()
+    mask = np.array(cap["mask"])
+
+    def with_row(r):
+        return dict(cap, obs=dict(cap["obs"], b64=base64.b64encode(r.astype("<f4").tobytes()).decode()))
+
+    clean = O.ObsCensus()
+    O.compare_row("clean", cap, row, mask, clean)
+    assert clean.rows_equal == 1 and not clean.divergences
+    zero_at = int(np.flatnonzero(row == 0)[0])
+    poisoned = row.copy()
+    poisoned[zero_at] = np.nan
+    o = O.ObsCensus()
+    O.compare_row("nan", with_row(poisoned), row, mask, o)
+    assert o.nan_cells == 1 and o.divergences, o.render()
+    signed = row.copy()
+    signed[zero_at] = -0.0
+    o = O.ObsCensus()
+    O.compare_row("signed", with_row(signed), row, mask, o)
+    assert o.byte_only_cells == 1 and o.divergences, o.render()
+
+
+# ---------------------------------------------------------------------------
 # MILESTONE tier (slices E + V on the same played battles)
 # ---------------------------------------------------------------------------
 
 def _played(keys: Iterable[int], policy=None,
-            source=None) -> Tuple[P.Census, V.ViewCensus, T.TrackerCensus]:
+            source=None) -> Tuple[P.Census, V.ViewCensus, T.TrackerCensus, O.ObsCensus]:
     logging.getLogger("poke-env").setLevel(logging.ERROR)
-    census, views, trackers = P.Census(), V.ViewCensus(), T.TrackerCensus()
+    census, views, trackers, obs = P.Census(), V.ViewCensus(), T.TrackerCensus(), O.ObsCensus()
     lives = [P.play(k, policy=policy, source=source) for k in keys]
     for lv in lives:
         P.compare_live(lv, census)
-    P.check_battles([lv.recorded for lv in lives], census, views=views, trackers=trackers)
-    return census, views, trackers
+    P.check_battles([lv.recorded for lv in lives], census, views=views, trackers=trackers, obs=obs)
+    return census, views, trackers, obs
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("seed", [0, 1], ids=["even_keys_whole_pool", "odd_keys_whole_pool"])
 def test_milestone_seeded_random_battles(seed):
     P.check_manifest()
-    census, views, trackers = _played(P.MILESTONE_RANDOM_KEYS[seed])
+    census, views, trackers, obs = _played(P.MILESTONE_RANDOM_KEYS[seed])
     _assert_clean(census, min_events=180_000, min_kinds=24)
     _assert_views_clean(views, min_decisions=55_000, min_truth=1_200_000)
     _assert_trackers_clean(trackers, min_decisions=55_000, min_rows=1_500_000)
+    _assert_obs_clean(obs, min_decisions=55_000)
 
 
 @pytest.mark.slow
@@ -338,10 +438,11 @@ def test_milestone_seeded_random_battles(seed):
 def test_milestone_production_policy_battles(seed):
     P.check_manifest()
     model = P.load_production_policy()
-    census, views, trackers = _played(P.MILESTONE_POLICY_KEYS[seed], policy=model)
+    census, views, trackers, obs = _played(P.MILESTONE_POLICY_KEYS[seed], policy=model)
     _assert_clean(census, min_events=5_000, min_kinds=15)
     _assert_views_clean(views, min_decisions=3_000, min_truth=50_000)
     _assert_trackers_clean(trackers, min_decisions=3_000, min_rows=80_000)
+    _assert_obs_clean(obs, min_decisions=3_000)
 
 
 @pytest.mark.slow
@@ -360,10 +461,11 @@ def test_milestone_ladder_battles(seed):
     The NAMED known divergences (``P.LADDER_KNOWN_DIVERGENCES``) run in their own test."""
     P.check_manifest()
     keys = [k for k in P.MILESTONE_LADDER_KEYS[seed] if k not in P.LADDER_KNOWN_DIVERGENCES]
-    census, views, trackers = _played(keys, source="ladder")
+    census, views, trackers, obs = _played(keys, source="ladder")
     _assert_clean(census, min_events=120_000, min_kinds=24)
     _assert_views_clean(views, min_decisions=20_000, min_truth=500_000)
     _assert_trackers_clean(trackers, min_decisions=20_000, min_rows=500_000)
+    _assert_obs_clean(obs, min_decisions=20_000)
 
 
 @pytest.mark.slow
@@ -374,9 +476,10 @@ def test_milestone_ladder_known_divergences_still_fire(key):
     its fix misleads every reader after it). Slice E stays fully clean on these battles."""
     P.check_manifest()
     name, want, _where = P.LADDER_KNOWN_DIVERGENCES[key]
-    census, views, trackers = _played([key], source="ladder")
-    print("\n" + census.render() + "\n" + views.render() + "\n" + trackers.render())
+    census, views, trackers, obs = _played([key], source="ladder")
+    print("\n" + census.render() + "\n" + views.render() + "\n" + trackers.render() + "\n" + obs.render())
     assert not census.divergences and not census.refused, census.render()
     assert not trackers.divergences and not trackers.refused, trackers.render()
+    assert not obs.divergences and not obs.refused, obs.render()
     assert not views.refused, views.render()
     assert set(views.divergences) == set(want), (name, dict(views.divergences))

@@ -34,6 +34,8 @@ pub struct Entry {
     pub base_power: u32,
     pub typ: &'static str,
     pub protect_counter: bool,
+    /// `category in ("Physical", "Special")` — with `typ`, `Move.category`'s gen-3 input.
+    pub damaging: bool,
 }
 
 impl PMove {
@@ -65,10 +67,10 @@ impl PMove {
             self.id.strip_prefix('z').and_then(dex::move_row)
         });
         if let Some(r) = row {
-            return Ok(Entry { pp: r.pp as u32, base_power: r.base_power as u32, typ: r.typ, protect_counter: r.protect_counter });
+            return Ok(Entry { pp: r.pp as u32, base_power: r.base_power as u32, typ: r.typ, protect_counter: r.protect_counter, damaging: r.damaging });
         }
         if self.id == "recharge" || self.id == "fight" {
-            return Ok(Entry { pp: 1, base_power: 0, typ: "NORMAL", protect_counter: false });
+            return Ok(Entry { pp: 1, base_power: 0, typ: "NORMAL", protect_counter: false, damaging: true });
         }
         Err(refuse(PyExc::ValueError, format!("Unknown move: {} (ValueError)", self.id)))
     }

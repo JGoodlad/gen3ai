@@ -302,6 +302,29 @@ rebuild the view at all. Detail + the gate tests: `src/agents/battle/CLAUDE.md`.
 - **Wrapping live mons in proxy objects** with `__getattr__` (the deleted
   `_AbilityOverrideMon`): `__getattr__` is slow and gets hit once per attribute per cell.
 
+## 🦀 The encoder has a RUST TWIN — a change here must be mirrored or it fails slice O the same day
+
+The Rust Core Program's M4 (`gen3_core_encoder_v1`, `designs/rust_sim/encoder.md`) reproduces this
+directory's `encode` byte for byte in `src/rust_sim/src/encoder/`, and **slice O** of the parity
+harness (`agents/battle/rust_core_parity_obs.py`, in the ROUTINE gate via
+`rust_core_parity_test.py`) compares the two rows as BYTES at every decision of the COMMIT corpus,
+both viewers, plus every obs golden. So a value change here — a new field, a changed normaliser, a
+new vocabulary entry — fails the routine gate until the Rust side mirrors it (or the change lands
+behind a flag OFF in `production_config.json`, program §3).
+
+- **The Rust LAYOUT is generated from THIS directory's constants**: after any change to
+  `constants.py`, `gen3_effects.py` (the volatile / cant vocabularies), the sub-encoders' index maps
+  or `assembler.SAT_LUT`, run `python -m agents.observation.rust_core_obs_layout --write` and rebuild
+  (`rust_core_obs_layout_test.py` fails the day `layout.rs` is stale).
+- **Floats are compared by bytes**: the Rust side evaluates each Python expression in f64 in the same
+  order and rounds once at the write. Reordering an expression here (`a / b * c` → `a * c / b`) can
+  move a last bit and FAIL slice O even though it is "value-neutral" to a human.
+- **The benchmark prints a CORE row** — the Rust encoder timed on the SAME decision, byte-asserted
+  equal (`obs_build_benchmark.py`; `--no-core` skips it). Measured 2026-09-24, load 17–24,
+  `--turn 25 --reps 400`: core encode **0.026 ms** (view memoized) / **0.037 ms** (`present()` +
+  encode, cold) against this directory's 0.157 ms production shape / 0.606 ms cold on the same
+  decision (`research_state/measurements/rust_core_m4_2026-09-24/`).
+
 ## ⚠️ A fuzz ORACLE binds to the layout too — by NAME, never by literal
 
 The positional-binding sweep (2026-08-18) found two live misbinds on this directory's *readers*,

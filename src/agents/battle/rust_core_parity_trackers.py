@@ -294,10 +294,13 @@ def boundary_violations(window: Sequence[Mapping]) -> List[Tuple[int, Any]]:
 
 def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: Sequence[Sequence[Mapping]],
                    census: TrackerCensus, teams: Optional[Mapping[str, str]] = None,
-                   format_id: str = "gen3ou", ended: Optional[Mapping[str, Any]] = None) -> None:
+                   format_id: str = "gen3ou", ended: Optional[Mapping[str, Any]] = None,
+                   obs: Optional[Any] = None) -> None:
     """Every decision of both viewers of one battle: the Python tracker state vs the core's.
     ``core_viewers[i]`` is ``core_events --trackers``' list of per-decision records for viewer i
-    (``{"after", "trackers", "reward"}``) plus a final ``{"terminal": …}`` entry."""
+    (``{"after", "trackers", "reward"}``) plus a final ``{"terminal": …}`` entry. ``obs`` (a
+    :class:`agents.battle.rust_core_parity_obs.ObsCensus`) also runs slice O at every decision:
+    the row ``Gen3Env.embed_battle`` encodes after this fold against the core's (``--obs``)."""
     from agents.action.mask_generator import Gen3ActionMasker
     from agents.training.episode_tracker import EpisodeTracker
     from agents.training.reward_config import RewardConfig
@@ -307,10 +310,14 @@ def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: 
         census.out_of_scope[format_id] += 1
         return
     census.battles += 1
+    if obs is not None:
+        obs.battles += 1
     lines_all = [ln for _, c in chunks for ln in c.split("\n")]
     names = player_names(lines_all)
     for vi, viewer in enumerate(("p1", "p2")):
         census.viewers += 1
+        if obs is not None:
+            obs.viewers += 1
         caps = [c for c in core_viewers[vi] if "trackers" in c]
         terminal = next((c for c in core_viewers[vi] if "terminal" in c), None)
         battle = new_battle(viewer, names, packed_team=(teams or {}).get(viewer))
@@ -339,6 +346,10 @@ def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: 
             tr.advance(0)
             tr.record(b, mask, legal=legal)
             delta = tr.update_progress_clock(b, legal)
+            if obs is not None:
+                from agents.battle.rust_core_parity_obs import compare_row, python_row
+
+                compare_row(where, cap, python_row(b, tr, legal), mask, obs)
             lab = intent_label(delta, frame)
             census.labels[lab["kind"]] += 1
             from agents.observation.base import ObservationEncoder

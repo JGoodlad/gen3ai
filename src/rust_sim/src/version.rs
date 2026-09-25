@@ -438,6 +438,21 @@ impl BattleVersion {
     pub fn legal(&self, side: usize) -> Option<LegalActions> {
         legal_actions(&self.streams[side].as_ref()?.board_reading)
     }
+    /// ENCODE `side`'s observation row into `out` (`gen3_core_encoder_v1`): the side's reading,
+    /// its view, its legality and its TRACKERS — the trackers are REQUIRED (a stream built without
+    /// them refuses rather than write a structurally-zero tracker block).
+    pub fn encode(&self, side: usize, out: &mut [f32; crate::encoder::OBS_DIM]) -> R<()> {
+        let s = self.streams[side].as_ref().ok_or_else(|| fault(format!("no stream for p{}", side + 1)))?;
+        let trackers = s.trk.as_ref().ok_or_else(|| fault("encode: this stream folds no trackers (with_trackers)"))?;
+        let legal = legal_actions(&s.board_reading);
+        let inputs = crate::encoder::Inputs {
+            reading: &s.board_reading,
+            view: self.view(side)?,
+            legal: legal.as_ref(),
+            trackers: &trackers.trackers,
+        };
+        crate::encoder::encode(&inputs, out)
+    }
     /// The TRUTH AUDIT of `side`'s view against this version's own engine board.
     pub fn audit(&self, side: usize, dex: &Dex) -> R<Audit> {
         let board = self.engine.as_ref().and_then(|e| e.battle_state()).ok_or_else(|| fault("this version holds no board (audit_on)"))?;

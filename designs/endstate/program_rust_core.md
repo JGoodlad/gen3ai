@@ -250,6 +250,17 @@ refusal and a bug are indistinguishable strings.
 
 ### M4 — The encoder (Tier 1c) — last, by design
 
+**Status (2026-09-24): the ENCODER BUILT, not used by training** (`gen3_core_encoder_v1`, contract
+[`designs/rust_sim/encoder.md`](../rust_sim/encoder.md)): `BattleVersion::encode(side, &mut [f32;
+2501])` over the side's reading, view, legality and M3 trackers; the layout GENERATED from
+`agents/observation/constants.py` (`gen3_core_obs_layout_v1`, pinned by `rust_core_obs_layout_test.py`);
+the dex / prior tables read from `data/`; NaN-prefilled in test / fuzz builds, zero-filled in release;
+the row on the wire as a `<f4` frame wrapped with `np.frombuffer`, a wrong dtype / shape / length /
+contiguity REFUSED (`gen3_core_obs_wire_v1`). **Slice O green at COMMIT**: 2,081 decisions, both
+viewers, every row BYTE-equal, and the obs golden reproduced hash for hash. `obs_build_benchmark.py`
+has its core row. Measurements:
+[`research_state/measurements/rust_core_m4_2026-09-24/`](../research_state/measurements/rust_core_m4_2026-09-24/README.md).
+
 **What crosses.** `encode(side, &mut [f32; 2501])` with the layout GENERATED from
 `agents/observation/constants.py` into a checked-in Rust table pinned by an `arch_tables`-style test
 (the design's §9 Q4 — the checked-in table is simpler and matches `arch_tables`). The dex/belief

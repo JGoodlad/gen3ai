@@ -42,6 +42,15 @@
 //! `{"terminal": reward}` (`"trackers":[[…p1…],[…p2…]]`) — slice T of the parity harness
 //! (`agents.battle.rust_core_parity_trackers`).
 //!
+//! `--obs` (implies `--trackers`) also ENCODES each decision's observation row on the version
+//! (`gen3_core_encoder_v1`) and adds `"obs"` (the wire frame, `encoder::wire`) and `"mask"` to
+//! every decision record — slice O of the parity harness (`agents.battle.rust_core_parity_obs`).
+//!
+//! `--obs-bench SIDE K REPS` (with `--obs`) also TIMES the encoder at viewer SIDE's K-th decision
+//! (0-based): REPS encodes of the version (its view memoized — the production shape) and REPS of
+//! `present()` + encode (the COLD shape), reported as `"obs_bench"` with the row it timed — the core
+//! row of `agents/training/obs_build_benchmark.py`.
+//!
 //! `--record-dir DIR [--commit SHA]` also writes each side's persisted record
 //! (`DIR/<label>.p1.jsonl`, `…p2.jsonl`, `core_events::record`), re-reading every file it wrote
 //! and refusing unless it round-trips byte-identically and re-parses from its text.
@@ -219,6 +228,55 @@ struct TrackCap {
     trackers: String,
     window: String,
     reward: f64,
+    /// `--obs`: the encoded row's wire frame and the 11-dim mask.
+    obs: Option<(String, [u8; 11])>,
+}
+
+/// `--obs-bench`: (side, decision index, reps).
+static OBS_BENCH: std::sync::OnceLock<(usize, usize, usize)> = std::sync::OnceLock::new();
+
+/// The encoder's timing at one decision (`--obs-bench`).
+fn obs_bench(v: &BattleVersion, side: usize, reps: usize) -> Result<String, String> {
+    use pokesim::encoder::{self, Inputs, OBS_DIM};
+    use std::time::Instant;
+    let mut row = [0.0f32; OBS_DIM];
+    let stats = |mut xs: Vec<f64>| -> (f64, f64) {
+        xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        (xs.iter().sum::<f64>() / xs.len() as f64, xs[xs.len() / 2])
+    };
+    let mut warm = Vec::with_capacity(reps);
+    for _ in 0..reps {
+        let t = Instant::now();
+        v.encode(side, &mut row).map_err(|e| e.message().to_string())?;
+        warm.push(t.elapsed().as_secs_f64() * 1e6);
+    }
+    let s = v.stream(side).ok_or("no stream")?;
+    let trk = s.trk.as_ref().ok_or("no trackers")?;
+    let mut cold = Vec::with_capacity(reps);
+    let mut cold_row = [0.0f32; OBS_DIM];
+    for _ in 0..reps {
+        let t = Instant::now();
+        let view = pokesim::present::present(&s.board_reading).map_err(|e| e.message().to_string())?;
+        let legal = pokesim::present::legal_actions(&s.board_reading);
+        let inp = Inputs { reading: &s.board_reading, view: &view, legal: legal.as_ref(), trackers: &trk.trackers };
+        encoder::encode(&inp, &mut cold_row).map_err(|e| e.message().to_string())?;
+        cold.push(t.elapsed().as_secs_f64() * 1e6);
+    }
+    if encoder::wire::row_bytes(&row) != encoder::wire::row_bytes(&cold_row) {
+        return Err("obs-bench: the warm and cold encodes differ".into());
+    }
+    let (wm, wmed) = stats(warm);
+    let (cm, cmed) = stats(cold);
+    Ok(format!(
+        "{{\"side\":{side},\"turn\":{},\"reps\":{reps},\"encode_us_mean\":{wm},\"encode_us_median\":{wmed},\"present_encode_us_mean\":{cm},\"present_encode_us_median\":{cmed},\"nan_poison\":{},\"obs\":{}}}",
+        s.board_reading.turn,
+        encoder::NAN_POISON,
+        encoder::wire::frame(&row)
+    ))
+}
+
+thread_local! {
+    static BENCH_OUT: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
 }
 
 type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>, [Vec<TrackCap>; 2]);
@@ -226,7 +284,7 @@ type Run = (BridgeSession, [Vec<CoreEvent>; 2], Vec<ViewCap>, [Vec<TrackCap>; 2]
 /// Slice T at ONE transition: every side whose stream took a DECISION at this version's boundary.
 /// The decision's request must be the LAST line the side was shipped in the write (the live
 /// player decides after the request chunk, and slice V's alignment found none later).
-fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2]) -> Result<(), String> {
+fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2], obs: bool) -> Result<(), String> {
     for side in 0..2 {
         let Some(d) = v.decision(side) else { continue };
         let lines = v.stream(side).map_or(0, |s| s.lines);
@@ -236,11 +294,26 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2])
         let after = sess.chunks().chunks.iter().rposition(|c| c.side == side).ok_or("a decision with no chunk")?;
         let mut window = String::new();
         d.window.json_into(&mut window);
+        if let Some(&(bs, bk, reps)) = OBS_BENCH.get() {
+            if obs && bs == side && bk == caps[side].len() {
+                let b = obs_bench(v, side, reps)?;
+                BENCH_OUT.with(|o| *o.borrow_mut() = Some(b));
+            }
+        }
+        let obs = if obs {
+            let mut row = [0.0f32; pokesim::encoder::OBS_DIM];
+            v.encode(side, &mut row).map_err(|e| format!("encode p{}: {}", side + 1, e.message()))?;
+            let legal = v.legal(side).ok_or("a decision with no legality")?;
+            Some((pokesim::encoder::wire::frame(&row), pokesim::present::mask(&legal)))
+        } else {
+            None
+        };
         caps[side].push(TrackCap {
             after,
             trackers: v.trackers(side).map_or("null".into(), |t| t.json()),
             window,
             reward: d.reward,
+            obs,
         });
     }
     Ok(())
@@ -261,7 +334,7 @@ fn parse_gate(v: &BattleVersion, sess: &BridgeSession, parsed: &mut [Option<Batt
     Ok(())
 }
 
-fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool, trackers: bool) -> Result<Run, String> {
+fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: bool, trackers: bool, obs: bool) -> Result<Run, String> {
     let mut sess = if b.init_seed {
         BridgeSession::new_core(&b.opts, b.quick_claw, dex)?
     } else {
@@ -283,7 +356,7 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         .map_err(|e| format!("version root: {e}"))?;
     let mut tcaps: [Vec<TrackCap>; 2] = [Vec::new(), Vec::new()];
     if trackers {
-        track(&v, &sess, &mut tcaps)?;
+        track(&v, &sess, &mut tcaps, obs)?;
     }
     let mut parsed = [
         Some(BattleVersion::parse_root(0, names[0], teams[0])?),
@@ -312,7 +385,7 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         }
         v = v.observe(&sess).map_err(|e| format!("version step: {e}"))?;
         if trackers {
-            track(&v, &sess, &mut tcaps)?;
+            track(&v, &sess, &mut tcaps, obs)?;
         }
         if let Some(f) = sess.fatal() {
             // A capture golden's blind per-decision script can re-send a rejected choice until
@@ -374,7 +447,7 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         for side in 0..2 {
             let won = v.view(side).map(|w| w.won == Some(true)).unwrap_or(false);
             tcaps[side].push(TrackCap { after: usize::MAX, trackers: String::new(), window: String::new(),
-                                        reward: if won { 1.0 } else { 0.0 } });
+                                        reward: if won { 1.0 } else { 0.0 }, obs: None });
         }
     }
     Ok((sess, out, caps, tcaps))
@@ -443,13 +516,21 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                         if c.after == usize::MAX {
                             o.push_str(&format!("{{\"terminal\":{:?}}}", c.reward));
                         } else {
-                            o.push_str(&format!("{{\"after\":{},\"reward\":{:?},\"trackers\":{},\"window\":{}}}",
+                            o.push_str(&format!("{{\"after\":{},\"reward\":{:?},\"trackers\":{},\"window\":{}",
                                                 c.after, c.reward, c.trackers, c.window));
+                            if let Some((frame, mask)) = &c.obs {
+                                o.push_str(&format!(",\"obs\":{frame},\"mask\":{mask:?}"));
+                            }
+                            o.push('}');
                         }
                     }
                     o.push(']');
                 }
                 o.push(']');
+            }
+            if let Some(b) = BENCH_OUT.with(|o| o.borrow_mut().take()) {
+                o.push_str(",\"obs_bench\":");
+                o.push_str(&b);
             }
             if !caps.is_empty() {
                 o.push_str(",\"views\":[");
@@ -555,7 +636,7 @@ fn bench_parse(rounds: usize, battles: &[Battle], dex: &Dex) -> String {
     use std::time::Instant;
     let mut streams: Vec<(usize, Vec<Vec<String>>)> = Vec::new();
     for b in battles {
-        let (sess, _, _, _) = match run(b, dex, None, "bench", false, false) {
+        let (sess, _, _, _) = match run(b, dex, None, "bench", false, false, false) {
             Ok(x) => x,
             Err(e) => return format!("{{\"error\":{:?}}}", e),
         };
@@ -639,6 +720,7 @@ fn main() {
     let mut record_dir: Option<String> = None;
     let mut views = false;
     let mut trackers = false;
+    let mut obs = false;
     let mut commit = "unknown".to_string();
     let mut i = if bench_rounds.is_some() { args.len() } else { 1 };
     while i < args.len() {
@@ -649,6 +731,15 @@ fn main() {
             }
             "--views" => views = true,
             "--trackers" => trackers = true,
+            "--obs" => {
+                obs = true;
+                trackers = true;
+            }
+            "--obs-bench" => {
+                let num = |k: usize| -> usize { args.get(i + k).and_then(|x| x.parse().ok()).expect("--obs-bench SIDE K REPS") };
+                let _ = OBS_BENCH.set((num(1), num(2), num(3)));
+                i += 3;
+            }
             "--commit" => {
                 commit = args.get(i + 1).cloned().unwrap_or_default();
                 i += 1;
@@ -714,7 +805,7 @@ fn main() {
                         bench_battles.push(b);
                         return Ok(());
                     }
-                    let res = run(&b, &dex, record_dir.as_deref(), &commit, views, trackers);
+                    let res = run(&b, &dex, record_dir.as_deref(), &commit, views, trackers, obs);
                     let _ = writeln!(out, "{}", render(&b, res));
                     let _ = out.flush();
                     n += 1;

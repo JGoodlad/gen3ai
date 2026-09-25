@@ -115,6 +115,7 @@ read the row you are about to edit.**
 | `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `BoardReading` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` GENERATED from poke-env. Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `version.rs` | M2 BUILT | `BattleVersion` (`gen3_core_version_v1`): the persistent battle state — `Arc` parent, per-side stream (`BoardReading` + event `Reader`), per-transition events, memoized views, the `Engine` as REFEREE (step-built only); built by step (a fork: an engine clone in a fresh transport, typed at the source), by observing a caller's session (linear), or by parse (one side's text), gated `parse == step` version by version. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `trackers/` | M3 BUILT; nothing reads it but slice T | The per-decision TRACKERS on the version (`gen3_core_trackers_v1`): slots, the Hidden-Power belief, the progress clock (obs half), recency, pair history, the 32-row event window, the wish / sleep folds, the α/β label, the win-indicator reward — folded from one side's stream at each of its decisions, shared by a fork (`Arc`); and the NATIVE window record (`record.rs`: ordered actions + attributed effects, denials incl. the gen-3 turn cut, the information boundary as a type and a slice-T check). Opt-in (`SideStream::with_trackers`). Detail: [`designs/rust_sim/trackers.md`](../../designs/rust_sim/trackers.md). |
+| `encoder/` | M4 BUILT; slice O reads it, training does not | THE ENCODER (`gen3_core_encoder_v1`): `BattleVersion::encode(side, &mut [f32; 2501])` — the 2501-dim row of one side from its reading, view, legality and TRACKERS, byte-equal to `Gen3ObservationEncoder` (slice O); `layout.rs` GENERATED from `agents/observation/constants.py`; the dex / prior tables read from `data/`; NaN-prefilled in test / fuzz builds; the row on the wire as a `<f4` frame (`wire.rs`). Detail: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md). |
 | `core_error.rs` | BUILT | `CoreError` (`gen3_core_error_v1`): the core's error — a `Refusal` carrying the Python exception class poke-env raises on the same input (the parity gate compares it), `Malformed` input, or a core `Fault`. Never a bare `String` inside the core; the message converts unchanged at the transport boundary. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
 | `engine.rs` | BUILT | The ENGINE half of a bridge session (`gen3_core_engine_split_v1`): the battle, the turn loop, the open boundary and the TYPED requests, advancing over a caller-owned command queue into an `EngineSink`. `bridge::BridgeSession` is the TRANSPORT around it (what `sim_bridge` writes, byte-identical); a version owns the engine alone. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md) §2. |
 
@@ -166,6 +167,26 @@ after a poke-env data change (`rust_core_present_tables_test.py` fails the day i
 🚨 **A TRAINING SESSION BUILDS NO VIEW.** Neither the one-sided view's reveal fold nor any core
 recording runs in `sim_bridge`; a reader opts in (`enable_view_fold`, `new_core`). Pinned by
 `tests/view_fold_opt_in_test.rs` (the constructors + a source scan of `sim_bridge.rs`).
+
+## The ENCODER — the observation row on the version — M4 (`gen3_core_encoder_v1`)
+
+`BattleVersion::encode(side, out)` writes the 2501-dim row `Gen3ObservationEncoder.encode` builds for
+the trainee (`Gen3Env.embed_battle`'s call), from that side's stream alone: the view for the
+current-board facts, the raw `PMon` for the item / type / ability / move sub-encoders (Python reads
+the raw `Pokemon` there too), the legality, and the M3 trackers (REQUIRED — a stream without them
+refuses). 🚨 **The encoder reproduces, it never fixes**: a wrong tracker value is fixed in the tracker,
+in both languages. 🚨 **The gate is BYTES** — f64 in Python's order, one round to f32 at the write;
+slice O compares `tobytes()`, so a `-0.0` fails. 🚨 **Test / fuzz builds NaN-prefill the row** (release
+zero-fills), so an unwritten slot or block reads NaN. 🚨 **The layout is GENERATED**:
+`python -m agents.observation.rust_core_obs_layout --write` after any `constants.py` / `gen3_effects`
+change (`rust_core_obs_layout_test.py` fails the day it is stale). Contract, the wire frame, the
+gates: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md).
+
+| gate | proves |
+|---|---|
+| `core_events --obs` → `rust_core_parity_obs.py` (slice O, COMMIT + MILESTONE) | the core's row == the Python row BYTE for byte + the mask, every decision, both viewers, no allowlist |
+| `rust_core_parity_test.py::test_the_obs_golden_is_reproduced_by_the_core` | the core's rows hash to `training/golden_obs_fixture.json` exactly |
+| `tests/encoder_test.rs` (`cargo test`) | no NaN left at any decision; step-built == parse-built bytes; the trackerless and wrong-length refusals |
 
 ## The EMISSION SELF-CHECK — every line checked as it is emitted (`gen3_core_emission_selfcheck_v1`)
 

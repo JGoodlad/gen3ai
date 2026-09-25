@@ -32,6 +32,11 @@ pub enum PyExc {
     UnknownMessageType,
     /// `agents.battle.battle_event.UnsupportedMessageType` — a non-gen-3 keyword.
     UnsupportedMessageType,
+    /// `agents.observation.gen3_effects.UnknownVolatileError` — the encoder's crash-don't-drop
+    /// on a volatile with no slot.
+    UnknownVolatileError,
+    /// `agents.observation.gen3_effects.UnknownCantReasonError`.
+    UnknownCantReasonError,
 }
 
 impl PyExc {
@@ -46,6 +51,8 @@ impl PyExc {
             PyExc::RuntimeError => "RuntimeError",
             PyExc::UnknownMessageType => "UnknownMessageType",
             PyExc::UnsupportedMessageType => "UnsupportedMessageType",
+            PyExc::UnknownVolatileError => "UnknownVolatileError",
+            PyExc::UnknownCantReasonError => "UnknownCantReasonError",
         }
     }
 }
