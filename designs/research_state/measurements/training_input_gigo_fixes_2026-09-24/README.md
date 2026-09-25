@@ -102,8 +102,22 @@ battles did not branch).
 * COMMIT (`rust_core_parity_test.py`, unmarked): 14 / 14 pass, 0 divergences.
 * MILESTONE (`-m slow`): **10 / 10 pass** before commit (`milestone_pre_commit.txt`, 12 min 23 s):
   seeded-random even / odd, `production` policy ×2, protocol + byte-fuzz, ladder keys 0–149 and
-  150–299, and the three named ladder known-divergences still fire exactly as named. Re-run at the
-  landed commit so `slow_tier_status.json`'s rows name the commit they measured.
+  150–299, and the three named ladder known-divergences still fire exactly as named. **Re-run at
+  the fix commit `c1567260`** (rebased on `22aba308`, which carries M4's encoder, so the tier now
+  includes slice O): **10 / 10 pass** in 13 min 06 s (`milestone_at_fix_commit.txt`). Main then
+  moved under it (`34da7225`, M4's search-takes-rows, which changed the parity harness itself), so
+  the tier ran AGAIN on the landed tree (fix `197736cd` + record `7f4936dd`): **10 / 10 pass** in
+  15 min 21 s (`milestone_at_landed_tree.txt`). The routine gate on that tree: 11,554 passed, 0
+  failed; `cargo test` 910 / 0. Both hashes are PRE-REBASE: main moved once more (`09cf40d5`, M4's
+  status and docs only) and the fix landed as `b9d74f65`; the MILESTONE rows for the landed commit
+  are recorded in `designs/ops/slow_tier_status.json` by the follow-up status commit, never by
+  back-dating these.
+* FRESH battles (`rust_core_trackers_fuzz_test.py --minutes 6`, seed 1447793121,
+  `tracker_fuzz_fresh.txt`): **slice T 0 divergences** over 312 battles, 62,025 decisions, 1,839,201
+  event-window rows (coverage incl. 2,330 drags, 1,404 denials, 918 Baton Pass entries, 20 Perish
+  Song and 2 Destiny Bond faints, 10 called moves); slice E 0. Slice V flagged ONE Skill Swap
+  (§7) — not a field this change touches.
+* `cargo test` (selfcheck profile): 910 passed, 0 failed, all 88 integration files.
 * The routine gate: the only failures before the golden regeneration were the two obs-golden tests
   and the strict xfail this change fixes. `reward_golden_test` did NOT move (its six compositions
   over its 30 battles never hit a T1 or T2 window whose charge the reward reads — **UNVERIFIED**
@@ -126,6 +140,17 @@ battles did not branch).
   moves again). Unmeasured in the corpus.
 * **A Ghost's Curse self-KO still reads `attack`** — its HP cost is a bare `-damage` on its own user
   while it moves, and the faint-cause classifier has no current-mover rule. Rare; not fixed.
+* **Slice V, Skill Swap (pre-existing, NOT this change):** fresh-fuzz seed 1447793121,
+  `procedural_51321` turn 3 — after Jirachi's Skill Swap, our own Jirachi's ability reads
+  `serenegrace` in poke-env and `keeneye` in the sim (`[SIM-FACT] ours.ability`, plus the
+  opponent-side PRESENTATION / V4-volatile rows), 2 decisions in 62,025. The SAME seed on the BASE
+  tree `2eb5850a` reproduces it at the same battle, turn and values
+  (`tracker_fuzz_same_seed_on_base.txt`). Not attributed further (gen 3 hides the swapped abilities
+  on the wire).
+* **Slice V on the BASE run only: `[SIM-FACT] ours.moves`, 125 decisions** — `random_21456` p2
+  t48, our Claydol's Explosion PP read 7 by poke-env and 6 by the sim. That battle lies beyond the
+  312 battles the fix-tree run reached in its budget (the base run played 344), so it says nothing
+  about this change; it is **UNVERIFIED** whether main still carries it.
 * The label now masks a switch that its CHOOSER's own drag followed (L1: they chose Blissey, our Roar
   dragged Starmie). Their real choice (SWITCH Blissey) is visible in the window; masking forgoes it
   rather than risk the wrong mon. A later label change could recover it.
@@ -134,4 +159,5 @@ battles did not branch).
 
 `census.py` + `run_census.sh` (§3–4) · `golden_census.txt` · `corpus_census.txt` ·
 `e12_fixtures_after.txt` · `gigo_repros_after.txt` · `event_window_fuzz.txt` · `milestone_pre_commit.txt` ·
+`milestone_at_fix_commit.txt` · `tracker_fuzz_fresh.txt` · `tracker_fuzz_same_seed_on_base.txt` ·
 `rust_revert_pins.py` + `rust_revert_pins.txt` (paths are the fix worktree's) · `obs_build_benchmark/`.

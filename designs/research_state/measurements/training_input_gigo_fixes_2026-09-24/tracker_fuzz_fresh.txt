@@ -1,0 +1,54 @@
+Tracker-equivalence fuzz (core vs EpisodeTracker) — seed 1447793121 — budget 6.0 min
+  battles=8 decisions=1260 rows=36812 divergences=0 refused=0 | denied=38 refused-actions=152 bp=6 drag=30 called=0 multi-faint=16
+  battles=16 decisions=2741 rows=80433 divergences=0 refused=0 | denied=72 refused-actions=220 bp=8 drag=116 called=0 multi-faint=32
+  battles=24 decisions=3772 rows=109549 divergences=0 refused=0 | denied=112 refused-actions=294 bp=8 drag=156 called=0 multi-faint=49
+  battles=32 decisions=4755 rows=137134 divergences=0 refused=0 | denied=144 refused-actions=332 bp=14 drag=180 called=0 multi-faint=67
+  battles=40 decisions=6302 rows=182580 divergences=0 refused=0 | denied=168 refused-actions=390 bp=34 drag=226 called=0 multi-faint=79
+  battles=48 decisions=8488 rows=249070 divergences=0 refused=0 | denied=203 refused-actions=620 bp=34 drag=350 called=0 multi-faint=94
+  battles=56 decisions=10259 rows=301907 divergences=0 refused=0 | denied=235 refused-actions=908 bp=36 drag=422 called=0 multi-faint=102
+  battles=64 decisions=11665 rows=343216 divergences=0 refused=0 | denied=267 refused-actions=1006 bp=36 drag=456 called=0 multi-faint=119
+  battles=72 decisions=14701 rows=436493 divergences=0 refused=0 | denied=297 refused-actions=1332 bp=346 drag=534 called=0 multi-faint=132
+  battles=80 decisions=18051 rows=539900 divergences=0 refused=0 | denied=331 refused-actions=1832 bp=360 drag=648 called=0 multi-faint=147
+  battles=88 decisions=19718 rows=589590 divergences=0 refused=0 | denied=372 refused-actions=2002 bp=366 drag=706 called=0 multi-faint=149
+  battles=96 decisions=21032 rows=627942 divergences=0 refused=0 | denied=412 refused-actions=2110 bp=374 drag=754 called=0 multi-faint=173
+  battles=104 decisions=22174 rows=660563 divergences=0 refused=0 | denied=443 refused-actions=2214 bp=376 drag=800 called=4 multi-faint=185
+  battles=112 decisions=23323 rows=693577 divergences=0 refused=0 | denied=491 refused-actions=2280 bp=406 drag=838 called=4 multi-faint=197
+  battles=120 decisions=25306 rows=753258 divergences=0 refused=0 | denied=527 refused-actions=2386 bp=408 drag=920 called=4 multi-faint=209
+  battles=128 decisions=26777 rows=796516 divergences=0 refused=0 | denied=573 refused-actions=2530 bp=410 drag=956 called=4 multi-faint=221
+  battles=136 decisions=28300 rows=841342 divergences=0 refused=0 | denied=617 refused-actions=2634 bp=418 drag=1086 called=4 multi-faint=231
+  battles=144 decisions=29619 rows=879708 divergences=0 refused=0 | denied=651 refused-actions=2696 bp=418 drag=1114 called=8 multi-faint=241
+  battles=152 decisions=30929 rows=917899 divergences=0 refused=0 | denied=675 refused-actions=2814 bp=434 drag=1132 called=8 multi-faint=248
+  battles=160 decisions=32310 rows=958299 divergences=0 refused=0 | denied=727 refused-actions=2894 bp=446 drag=1170 called=8 multi-faint=255
+  battles=168 decisions=34180 rows=1014473 divergences=0 refused=0 | denied=769 refused-actions=3126 bp=462 drag=1224 called=8 multi-faint=264
+  battles=176 decisions=35358 rows=1048558 divergences=0 refused=0 | denied=809 refused-actions=3182 bp=496 drag=1258 called=8 multi-faint=269
+  battles=184 decisions=36250 rows=1073267 divergences=0 refused=0 | denied=840 refused-actions=3210 bp=498 drag=1276 called=8 multi-faint=276
+  battles=192 decisions=38416 rows=1138835 divergences=0 refused=0 | denied=876 refused-actions=3392 bp=520 drag=1430 called=8 multi-faint=285
+  battles=200 decisions=40311 rows=1195749 divergences=0 refused=0 | denied=918 refused-actions=3628 bp=528 drag=1558 called=8 multi-faint=298
+  battles=208 decisions=41758 rows=1238414 divergences=0 refused=0 | denied=949 refused-actions=3818 bp=540 drag=1582 called=8 multi-faint=309
+  battles=216 decisions=43064 rows=1276503 divergences=0 refused=0 | denied=987 refused-actions=3930 bp=552 drag=1660 called=8 multi-faint=328
+  battles=224 decisions=44024 rows=1303404 divergences=5 refused=0 | denied=1019 refused-actions=3986 bp=570 drag=1672 called=8 multi-faint=340
+  battles=232 decisions=45673 rows=1352661 divergences=5 refused=0 | denied=1051 refused-actions=4132 bp=588 drag=1746 called=10 multi-faint=346
+  battles=240 decisions=46844 rows=1386454 divergences=5 refused=0 | denied=1089 refused-actions=4234 bp=588 drag=1780 called=10 multi-faint=358
+  battles=248 decisions=48405 rows=1432744 divergences=5 refused=0 | denied=1115 refused-actions=4376 bp=590 drag=1838 called=10 multi-faint=374
+  battles=256 decisions=51536 rows=1529056 divergences=5 refused=0 | denied=1153 refused-actions=4598 bp=862 drag=1886 called=10 multi-faint=393
+  battles=264 decisions=52480 rows=1555510 divergences=5 refused=0 | denied=1179 refused-actions=4658 bp=868 drag=1920 called=10 multi-faint=405
+  battles=272 decisions=53893 rows=1597268 divergences=5 refused=0 | denied=1219 refused-actions=4756 bp=870 drag=1984 called=10 multi-faint=418
+  battles=280 decisions=55407 rows=1642292 divergences=5 refused=0 | denied=1261 refused-actions=4862 bp=888 drag=2058 called=10 multi-faint=427
+  battles=288 decisions=56755 rows=1681713 divergences=5 refused=0 | denied=1296 refused-actions=4986 bp=896 drag=2118 called=10 multi-faint=441
+  battles=296 decisions=58569 rows=1735863 divergences=5 refused=0 | denied=1330 refused-actions=5222 bp=912 drag=2206 called=10 multi-faint=451
+  battles=304 decisions=59930 rows=1775985 divergences=5 refused=0 | denied=1374 refused-actions=5348 bp=914 drag=2262 called=10 multi-faint=460
+  battles=312 decisions=62025 rows=1839201 divergences=5 refused=0 | denied=1404 refused-actions=5526 bp=918 drag=2330 called=10 multi-faint=469
+✅ 0 divergences — 312 battles, 624 viewers, 783529 per-side lines, 400472 events compared, emission self-check omniscient=358296 per_viewer=718438 split=0 frame=68435
+❌ slice V: 5 divergences in 5 classes at 2 decisions (0.03 per 1,000), 0 refused — 312 battles, 624 viewers, 62025 decisions, 35931583 field comparisons, truth checks {'opp.ability': 240146, 'opp.types': 197464, 'ours.volatiles': 59239, 'opp.volatiles': 61605, 'opp.move-in-moveset': 766539, 'opp.item': 253011, 'opp.consumed-item-not-held': 4624}, core board checks {'BOARD': 11568744}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+         1  [PRESENTATION/V8-ability-slots] opp.ability
+            e.g. ('procedural_51321/p1@t3#c16', 'jirachi', 'reading', 'keeneye', 'projection', 'serenegrace')
+         1  [PRESENTATION/V4-volatiles] opp.volatiles
+            e.g. ('procedural_51321/p1@t3#c16', 'jirachi', 'reading', {}, 'projection', {'skillswap': 0})
+         1  [SIM-FACT] ours.ability
+            e.g. ('procedural_51321/p2@t3#c17', 'jirachi', 'reading', 'serenegrace', 'projection', 'keeneye')
+         1  [PRESENTATION/V4-volatiles] ours.volatiles
+            e.g. ('procedural_51321/p2@t3#c17', 'jirachi', 'reading', {}, 'projection', {'skillswap': 0})
+         1  [BOARD] ours.ability
+            e.g. ('procedural_51321/p2@t3#c17', 'jirachi: view Some("serenegrace") engine "keeneye"')
+✅ slice T: 0 divergences — 312 battles, 624 viewers, 62025 decisions, 1839201 event-window rows, labels {2: 13671, 0: 29494, 1: 18860}, 62025 rewards (624 terminal)
+coverage: {"action:cant": 5536, "action:denied": 1404, "action:drag": 2330, "action:framing": 4687, "action:move": 67275, "action:refused": 293, "action:residual": 53353, "action:switch": 49330, "called_move": 10, "denied": 1404, "entry:batonpass": 918, "entry:replacement": 5564, "faint_cause:destinybond": 2, "faint_cause:direct": 3707, "faint_cause:leechseed": 12, "faint_cause:perishsong": 20, "faint_cause:recoil": 16, "faint_cause:selfko": 842, "faint_cause:spikes": 347, "faint_cause:status": 287, "faint_cause:weather": 350, "multi_faint_window": 469, "pursuit_on_switch": 154, "refused": 5526}

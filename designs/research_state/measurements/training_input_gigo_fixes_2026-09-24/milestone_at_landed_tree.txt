@@ -1,0 +1,12 @@
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_100_149]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_6000_6049]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_protocol_and_byte_fuzz_corpora
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[even_keys_whole_pool]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_0_149]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_150_299]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[237]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[260]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[odd_keys_whole_pool]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[173]
+10 passed in 921.06s (0:15:21)
+EXIT 0
