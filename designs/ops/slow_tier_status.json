@@ -3,82 +3,82 @@
  "tests": {
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_0_149]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 153.07,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 134.48,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_150_299]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 157.29,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 131.87,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[173]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 0.44,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 0.57,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[237]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 0.55,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 0.98,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[260]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 0.48,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 0.62,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_100_149]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 220.53,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 182.61,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_6000_6049]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 134.46,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 117.52,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_protocol_and_byte_fuzz_corpora": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 8.44,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 4.82,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[even_keys_whole_pool]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 433.77,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 351.43,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[odd_keys_whole_pool]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 441.44,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 394.02,
+   "contention": 1.29,
    "detail": ""
   },
   "src/agents/model/build_arch_viewer_render_integration_test.py::test_dark_is_the_default_with_no_hash": {
@@ -547,34 +547,34 @@
   },
   "src/main/rust_core_cutover/slice_n_test.py::test_milestone_env_slice[ladder_full]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 17.17,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 9.17,
+   "contention": 1.29,
    "detail": ""
   },
   "src/main/rust_core_cutover/slice_n_test.py::test_milestone_env_slice[pool_policy]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 14.12,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 11.14,
+   "contention": 1.29,
    "detail": ""
   },
   "src/main/rust_core_cutover/slice_n_test.py::test_milestone_env_slice[pool_random]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 34.1,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 17.3,
+   "contention": 1.29,
    "detail": ""
   },
   "src/main/rust_core_cutover/slice_n_test.py::test_milestone_env_slice[procedural]": {
    "status": "pass",
-   "commit": "bafaef89fee4f9dc18c4d8653641ea858b61f5b0",
-   "at": "2026-09-25T18:27:05Z",
-   "duration_s": 12.72,
-   "contention": 1.46,
+   "commit": "72ce84254a2e71e776b459f95823fd44132e459a",
+   "at": "2026-09-25T20:20:28Z",
+   "duration_s": 5.88,
+   "contention": 1.29,
    "detail": ""
   },
   "src/main/train/search_teacher_composition_test.py::test_search_teacher_runs_multiple_cycles_end_to_end_on_rust": {
@@ -770,5 +770,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-25T18:27:05Z"
+ "last_written": "2026-09-25T20:20:28Z"
 }
