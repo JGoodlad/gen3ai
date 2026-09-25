@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,328-line file. **The ledger itself is append-only and is never edited by this**;
+21,345-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**697 headings · 642 dated · 2026-08-01 → 2026-09-24 · ledger 21,328 lines.**
+**698 headings · 643 dated · 2026-08-01 → 2026-09-24 · ledger 21,345 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -717,3 +717,4 @@ rename.
   - `L21309` · `2026-09-24` · OPS · **Heal Bell encode crash FIXED BY CLASS (`40330daa`, `gen3_effect_sources_v1`): the encoder's effect vocabulary is now SOURCE-DERIVED from Showdown's gen3 code, and `ladder_drift_scan` checks it against Showdown master. Heal Bell fires in 3.9% of 376,410 human gen3ou games, and every one would have crashed a ladder game.**
   - `L21313` · `2026-09-24` · OPS (MAJOR) · **RUST CORE M3 CLOSED (`1592d84b`, `26bf2b62`, `28851dc6`..`cf48d41c`): the per-decision trackers, the α/β intent label and the win-indicator reward are folded on the version and shared by a fork; slice T (gating the CONSUMERS, per the owner, not TurnDelta fields) at 0 divergences. The loss catalogue found TRAINING-INPUT GIGO in the event window, the labels and the progress clock (fix dispatched the same day).**
   - `L21321` · `2026-09-24` · OPS · **LADDER-USAGE CORPUS in every fuzz and parity gate, and the Metronome crash fixed by class: 11,431 / 11,431 public-ladder battles clean (`2bb5fd0d`..`692d3285`).**
+  - `L21329` · `2026-09-24` · MEASURED · **POPULATION LOOP ROUND 1: NOT DETECTED → BRANCH N+. The loop ENGAGED (B absorbed the specialists it saw, M = +8.50 pp [+1.76, +15.13]), both KILL guards are QUIET, and a fresh offense best responder found a gap 10 pp SMALLER on the loop than on the control (Δ = gap(RB) − gap(RC) = −10.00 pp [−16.60, −3.27]), but the CI does not clear the registered 5.0 pp bar. Round 1 counts 1 of 3 toward the stopping rule; round 2 = the loop one round deeper.**

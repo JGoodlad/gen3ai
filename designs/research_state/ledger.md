@@ -21325,3 +21325,20 @@ The gates now play a third team source: the Metamon `hl_05_26` gen3ou teams filt
 The called-move class (Metronome / Assist / Nature Power; 31 shapes enumerated by playing the real sim) is fixed in the fork and the core, with the sim's reading: not revealed, no PP, no Pressure. That includes a `[still]` call silently added to the actor's moveset, which reached the obs. On first contact the corpus found two engine bugs no pool team reaches, both fixed and pinned: lock-in continuations lacked `[from] lockedmove`, and Rollout kept its lock across a miss.
 
 MILESTONE on the ladder tier: 297 battles, 0 divergences in E, V and T. The fuzzers are clean but for already-documented allowlist rows and one unattributed `ab_fuzz` seed divergence at a sim-rejected Imprison choice (P2). The full smoke ran incrementally and resumed after a real SIGKILL: 11,431 / 11,431 ok, 2.03 M decisions. Pool battles are byte-identical (400 battles, 66,992 decisions), so there is no training-input change on the pool. The corpus is standing for M4's final gate, as the owner asked. Record: `measurements/ladder_usage_smoke_2026-09-24/`.
+
+### 2026-09-24 · MEASURED · **POPULATION LOOP ROUND 1: NOT DETECTED → BRANCH N+. The loop ENGAGED (B absorbed the specialists it saw, M = +8.50 pp [+1.76, +15.13]), both KILL guards are QUIET, and a fresh offense best responder found a gap 10 pp SMALLER on the loop than on the control (Δ = gap(RB) − gap(RC) = −10.00 pp [−16.60, −3.27]), but the CI does not clear the registered 5.0 pp bar. Round 1 counts 1 of 3 toward the stopping rule; round 2 = the loop one round deeper.**
+
+B (`ai_v13_22_popr1_loop`, the plateau parent G0 `ai_v13_12_plateau` +8M against its two offense exploiters at share 0.40, no distillation) moved its greedy win rate against them from G0's 0.36/0.34 to 0.425 over its last two cycles. C (`ai_v13_23_popr1_ctrl`, the no-exploiter control, share 0.0) stayed at 0.340.
+
+Readers at arm A's exact 1.78× recipe (`--check` 0 mismatches; `--rounds RC=2 RB=3` was needed exactly as F2 predicted):
+- RB (reader of B, `ai_v13_24_popr1_read_loop`): **+7.00 [+2.10, +11.76]**;
+- RC (reader of C, `ai_v13_25_popr1_read_ctrl`): **+17.00 [+12.25, +21.43]**;
+- A (G0's round-0 exploiter): +14.00.
+
+The floor: A2 (`ai_v13_26_popr0_exploit5_offense_s1002`, A's seed-1002 replicate), read alone per F3, reads **+12.00 [+7.15, +16.62]**, so **F = 2.00 pp** and **bar = 5.0**. |Δ| clears the bar, but the CI's upper end (−3.27) does not, so **NOT DETECTED**. That is a POWER miss (the test was powered for ≈ −11.7 pp at n = 400), not instrument noise. 🚨 RB's vs-target curve was still RISING (0.52 → 0.60) while RC, A and A2 were flat, so reader convergence is not established for RB. Part of Δ may be RB learning slower; round 2 carries a convergence side-check.
+
+Guards, B − C:
+- untaught 8: **−2.44 pp [−6.31, +0.88]** vs 3.69 on pin `6eb9c776`, with `plateau_b1` reproducing **963/1600 = 60.19 EXACTLY** (4,800 battles, 0 timeouts; C − G0 +1.06, WITHIN as predicted);
+- SmallRL greedy-vs-greedy: **−1.75 pp [−5.62, +2.13]** vs 0.110 on `7c511161`, the last commit before the c97358e8 training-input boundary (6eb9c776's `main.anchors` predates the regime-verified fixes; Training Run caught it), 3,600 games, 36/36 units regime-verified.
+
+Both cells were built incrementally (the owner's new rule), with deviations D1–D5 declared. Finding: Metamon's post-game RecursionError also fires in its ACCEPTOR half (4 of 6), which contradicts SOP H17. Round 2 per §5 N+: B continues with RB added to its stable set {A, `ai_v13_13`, RB} at 0.40 against C continued at share 0.0 with the same set, both +8M, read by fresh readers at A's recipe. Record `measurements/population_loop_r1_2026-09-23/read/`. Tag: **MEASURED · POP LOOP r1 · ABSORBED · guards clean · Δ −10.00 [−16.60, −3.27] · F 2.00 · bar 5.0 · NOT DETECTED · branch N+ (1 of 3) · `a6637f29`**.
