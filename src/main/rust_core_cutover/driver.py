@@ -8,7 +8,8 @@ Durable layout under ``--out`` (never /tmp):
 * ``divergences/`` — every divergent battle's input log (re-runnable alone), ``fuzz/`` — each fuzz
   unit's run dir (repros included), ``logs/`` — each unit process's stdout/stderr.
 * ``control.json`` — the operator's knobs, re-read every loop: ``cap`` (max concurrent units),
-  ``pause`` (start nothing), ``streams`` (an optional allow-list), ``stop`` (drain and exit).
+  ``pause`` (start nothing), ``streams`` (an optional allow-list), ``stop`` (drain and exit),
+  ``govern`` (default true; false = the governor measures but never cuts the cap).
 * ``timeline.jsonl`` — ``(t, running, cap, why)`` at every change (the governor's classifier input).
 * ``governor.json`` — the training-fps rows and every throttle event.
 * ``pin.json`` — the commit the pin was exported from (every row is stamped with it).
@@ -179,6 +180,16 @@ def next_unit(streams: List[PL.Stream], done: set, running: set, allowed: Option
     return best
 
 
+def throttled_cap(governor, cap: int, ctl: dict, now: float) -> int:
+    """The cap after the governor's throttle — unless ``control.json`` says ``"govern": false``
+    (default true). With it off the governor still POLLS (its fps rows and OFF windows keep
+    measuring the stress's cost to training) but NEVER cuts the cap: the owner's deliberate
+    high-contention burn-in (2026-09-25), where contention exposing a regression is the point."""
+    if not ctl.get("govern", True):
+        return cap
+    return governor.decide(cap, now)
+
+
 def _unit_env() -> dict:
     env = dict(os.environ)
     env.update(OMP_NUM_THREADS="1", MKL_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
@@ -334,7 +345,7 @@ class Driver:
                 last_gov = now
                 self.governor.poll(self.timeline)
                 if not self.in_off(now):
-                    newcap = self.governor.decide(cap, now)
+                    newcap = throttled_cap(self.governor, cap, ctl, now)
                     if newcap != cap:
                         self.log(f"THROTTLE cap {cap} -> {newcap} ({self.governor.events[-1]})")
                         ctl["cap"] = cap = newcap

@@ -73,3 +73,18 @@ def test_the_registration_on_disk_names_every_target(tmp_path):
     assert {"ladder_full_a", "ladder_full_b", "pool_random", "soak_transport", "envn_pool_random",
             "fz_proto_ladder", "fz_sbdiff_ladder"} <= names
     assert all(s["target"] for s in reg["streams"])
+
+
+def test_govern_false_measures_but_never_cuts_the_cap():
+    class G:
+        calls = 0
+
+        def decide(self, cap, now):
+            G.calls += 1
+            return max(2, cap - 2)
+
+    g = G()
+    assert D.throttled_cap(g, 8, {}, 0.0) == 6                    # default: the throttle applies
+    assert D.throttled_cap(g, 8, {"govern": True}, 0.0) == 6
+    assert D.throttled_cap(g, 8, {"govern": False}, 0.0) == 8     # measured, never cut
+    assert G.calls == 2
