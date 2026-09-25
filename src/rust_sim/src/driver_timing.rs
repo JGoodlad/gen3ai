@@ -51,12 +51,10 @@ pub struct ArmTimings {
     /// The whole handler, arms included — the denominator the three rows partition.
     pub total_us: u64,
     /// `materializer=core` (`gen3_core_search_v1`): folding the arm's lines into its versions (the
-    /// end-of-turn child and, on a D10 arm, the leaf) — the typed shortcut or the text path.
+    /// end-of-turn child and, on a D10 arm, the leaf), from their text.
     pub core_us: u64,
-    /// `materializer=core`: rendering the leaf's view / legality / events JSON.
+    /// `materializer=core`: rendering the leaf's payload.
     pub core_render_us: u64,
-    /// `materializer=core`: the INTEGRITY check's second fold + comparison (0 when it is off).
-    pub integrity_us: u64,
 }
 
 impl ArmTimings {
@@ -70,9 +68,9 @@ impl ArmTimings {
         }
         format!(
             ",\"timing_us\":{{\"sim\":{},\"view\":{},\"chunks\":{},\"render\":{},\"total\":{},\
-             \"core\":{},\"core_render\":{},\"integrity\":{}}}",
+             \"core\":{},\"core_render\":{}}}",
             self.sim_us, self.view_us, self.chunks_us, self.render_us, self.total_us, self.core_us,
-            self.core_render_us, self.integrity_us
+            self.core_render_us
         )
     }
 }
@@ -125,17 +123,16 @@ mod tests {
     #[test]
     fn the_rendered_field_is_the_documented_shape() {
         let t = ArmTimings { sim_us: 1, view_us: 2, chunks_us: 3, render_us: 4, total_us: 10, core_us: 5,
-                             core_render_us: 6, integrity_us: 7 };
+                             core_render_us: 6 };
         let rendered = format!(
             ",\"timing_us\":{{\"sim\":{},\"view\":{},\"chunks\":{},\"render\":{},\"total\":{},\
-             \"core\":{},\"core_render\":{},\"integrity\":{}}}",
-            t.sim_us, t.view_us, t.chunks_us, t.render_us, t.total_us, t.core_us, t.core_render_us,
-            t.integrity_us
+             \"core\":{},\"core_render\":{}}}",
+            t.sim_us, t.view_us, t.chunks_us, t.render_us, t.total_us, t.core_us, t.core_render_us
         );
         assert_eq!(
             rendered,
             ",\"timing_us\":{\"sim\":1,\"view\":2,\"chunks\":3,\"render\":4,\"total\":10,\"core\":5,\
-             \"core_render\":6,\"integrity\":7}"
+             \"core_render\":6}"
         );
     }
 }

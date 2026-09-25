@@ -387,13 +387,6 @@ pub fn session_from_record(rec: &Record, dex: &Dex) -> Result<BridgeSession, Str
     BridgeSession::new_construct_turn0(&rec.battle_options(), dex)
 }
 
-/// [`session_from_record`] with the core's SOURCE RECORDING on (`gen3_core_events_v1`) — the
-/// session a `materializer=core` search root is built from, so each successor's lines are typed
-/// at the source. Byte-identical emission (`core_events_test::recording_changes_no_byte_…`).
-pub fn session_from_record_core(rec: &Record, dex: &Dex) -> Result<BridgeSession, String> {
-    BridgeSession::new_construct_turn0_core(&rec.battle_options(), dex)
-}
-
 /// Feed ONE recorded command — Node's `writeCmd`. A `forcelose` entry runs the real
 /// forfeit (the `|win|` pair), everything else is a per-side choice.
 pub fn write_cmd(sess: &mut BridgeSession, cmd: &(String, String), dex: &Dex) -> Result<(), String> {

@@ -15,10 +15,8 @@ fork (the pinned-pickle thaw), the same ``record_context`` / ``advance_window`` 
 ``view_context`` and the same encoder, so an obs byte that differs from the other roads is a
 difference in the VERSION, which is what the three parity gates measure.
 
-**INTEGRITY** (``SearchConfig.integrity``): an arm the driver folded both ways (typed at the source
-AND from the side's text — the driver has already asserted the two VERSIONS equal) carries the
-text path's view as ``text_view``; here the two are ENCODED and the observation bytes and masks
-asserted equal, failing with the decision, the depth and the first differing obs block.
+The driver folds every successor from the side's TEXT (``parse(render)``, the one observation path;
+the typed shortcut and its integrity mode are deleted, program §4 M4).
 """
 
 from __future__ import annotations
@@ -32,10 +30,6 @@ from agents.battle.battle_event import BattleEvent, EventKind
 from agents.battle.core_view import legal_actions_from_core, live_view_from_core
 from agents.battle.view_adapter import ViewBattle
 from agents.training.view_successor import LazyTokens, ViewSuccessorFactory, _choice_map, view_context
-
-
-class CoreIntegrityError(RuntimeError):
-    """The typed shortcut and the text path built DIFFERENT observations for one successor."""
 
 
 def events_from_readings(readings: Sequence[Mapping[str, Any]]) -> List[BattleEvent]:
@@ -106,10 +100,6 @@ class CoreSuccessorFactory(ViewSuccessorFactory):
         advance the tracker with the action that was pressed, then record → advance → encode."""
         events = events_from_readings(core.get("events") or ())
         got = self._encode(core, core["view"], action, events)
-        text = core.get("text_view")
-        if text is not None:
-            twin = self._encode(core, text, action, events)
-            _assert_same(got, twin, where)
         if got is None:
             return None
         obs, mask, tr, vbattle, legal = got
@@ -117,36 +107,3 @@ class CoreSuccessorFactory(ViewSuccessorFactory):
             obs=obs, mask=mask,
             action_choices=LazyTokens(lambda: _choice_map(vbattle, mask, legal)),
             _fork=(tr, self._prior_events + events, self._battle_tag))
-
-
-def _assert_same(a, b, where: str) -> None:
-    """INTEGRITY: the two paths' encodings are byte-identical, or a loud, located failure."""
-    if (a is None) != (b is None):
-        raise CoreIntegrityError(f"INTEGRITY {where}: one path opened a decision and the other did not")
-    if a is None:
-        return
-    (oa, ma, *_), (ob, mb, *_) = a, b
-    if ma.tobytes() != mb.tobytes():
-        raise CoreIntegrityError(f"INTEGRITY {where}: action masks differ: typed {ma.tolist()} text {mb.tolist()}")
-    if oa.tobytes() != ob.tobytes():
-        idx = int(np.flatnonzero(oa != ob)[0])
-        raise CoreIntegrityError(
-            f"INTEGRITY {where}: observations differ first at index {idx} ({_block_of(idx)}): "
-            f"typed {oa[idx]!r} text {ob[idx]!r}")
-
-
-def _block_of(idx: int) -> str:
-    """The obs block an index belongs to, from the live layout (never a literal offset)."""
-    from agents.observation.state_encoder import get_observation_encoder, load_mappings
-
-    try:
-        layout = get_observation_encoder(load_mappings()).get_layout()
-    except Exception:                                          # noqa: BLE001 - diagnostics only
-        return "?"
-    best = "?"
-    for name, spec in layout.items():
-        off = spec.get("offset") if isinstance(spec, Mapping) else None
-        size = spec.get("size", spec.get("dim")) if isinstance(spec, Mapping) else None
-        if isinstance(off, int) and isinstance(size, int) and off <= idx < off + size:
-            best = name
-    return best

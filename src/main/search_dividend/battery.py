@@ -283,7 +283,7 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
     truncated = 0
     gate_failed = 0
     open_failed = 0
-    core = {"core_arms": 0, "core_arms_intermediate": 0, "integrity_checked": 0}
+    core = {"core_arms": 0, "core_arms_intermediate": 0}
     for d in decisions:
         # THE WIDTH COUNTERS RUN OVER EVERY DECISION. A decision that fell back still OPENED
         # worlds and still burned clock, and the two counters that say so are precisely the ones
@@ -329,9 +329,8 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         # the 2026-09-22 reading could not tell a dead DRIVER from a bad WORLD off the row —
         # `search.py` has kept the two apart since the beginning and the fold threw one away.
         "worlds_open_failed": open_failed,
-        # The CORE road (`gen3_core_search_v1`): successors answered from a Rust-core version, how
-        # many were D10 leaves, and how many the INTEGRITY sampler built both ways — a mismatch
-        # raises, so a row's integrity claim is "`integrity_checked` of `core_arms`, 0 mismatches".
+        # The CORE road (`gen3_core_search_v1`): successors answered from a Rust-core version, and
+        # how many were D10 leaves.
         **core,
         "realized_mean": {k: (round(sum(v) / len(v), 3) if v else 0.0)
                           for k, v in realized.items()},
@@ -556,10 +555,10 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
                 "score_mode": cfg.effective_score(), "search_impl": cfg.search_impl,
                 # WHICH ROAD built every successor (`gen3_core_search_v1`: every search number
                 # after the M2 adoption is stamped `materializer=core`), and — on the core road —
-                # the fold path and the integrity sampling rate (0 = off) the number carries.
+                # the fold path: always "text" since the typed shortcut's deletion (program §4 M4),
+                # stamped so a row stays comparable to the rows written before it.
                 "materializer": cfg.materializer,
-                "core_path": cfg.core_path if cfg.materializer == "core" else None,
-                "integrity": int(cfg.integrity) if cfg.materializer == "core" else None,
+                "core_path": "text" if cfg.materializer == "core" else None,
                 "root_strategy": cfg.root_strategy,
                 "max_depth": int(getattr(cfg, "max_depth", 1)),
                 "playoff_rollouts": (int(playoff_cfg.rollouts) if playoff_cfg

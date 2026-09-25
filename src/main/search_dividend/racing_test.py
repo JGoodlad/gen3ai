@@ -306,7 +306,7 @@ class _Session:
         self.opened += 1
         return self.root
 
-    def expand_many(self, arms, *, side=None, integrity=0):
+    def expand_many(self, arms, *, side=None):
         # `side` accepted and ignored — there is no payload to elide here. The KEYWORD must be
         # accepted because the production caller always sends it
         # (`gen3_expand_many_side_elision_v1`), and a double whose signature lags the real one

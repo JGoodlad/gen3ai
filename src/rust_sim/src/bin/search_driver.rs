@@ -93,11 +93,11 @@ use pokesim::json::Json;
 use pokesim::search::{
     aux_rng_from_seed, build_to_turn, json_quote, log_len, outcome_of, pre_state, recorded_queues,
     recorded_turn_choices, resolve_turn_capturing, resolve_turn_exact, resolve_turn_sourced_with,
-    session_from_record, session_from_record_core, side_chunk_strings, turn_log, write_cmd, ActionSpec,
+    session_from_record, side_chunk_strings, turn_log, write_cmd, ActionSpec,
     Capture, Record, Resolved, TurnSource, RECORDED_QUEUE_CAP,
 };
 use pokesim::trackers::clock::ClockConfig;
-use pokesim::version::{self, BattleVersion};
+use pokesim::version::BattleVersion;
 use pokesim::view::one_sided_view;
 
 /// One explored node: a paused session, plus (root only) the record + the index of the
@@ -112,20 +112,11 @@ struct Node {
 
 /// A node's paused battle: a bare engine (the `protocol` / `view` roads), or a
 /// [`BattleVersion`] (`materializer=core`, `gen3_core_search_v1`) — the engine plus each side's
-/// folded stream, so a successor's view is the version's, not a projection beside it.
+/// stream folded from its TEXT (`parse(render)`, the one observation path, program §6c), so a
+/// successor's view is the version's, not a projection beside it.
 enum NodeState {
     Plain(BridgeSession),
-    Core(Arc<BattleVersion>, CorePath),
-}
-
-/// How a core node's successors fold their lines: TYPED at the source (the shortcut the Rust
-/// Core Program's §6c licenses by `parse(emit(step)) == step`) or from the side's TEXT (the
-/// stream-only path every other observation takes). Chosen at `open_root`; the whole tree runs on
-/// one path so a search number is attributable to one.
-#[derive(Clone, Copy, PartialEq)]
-enum CorePath {
-    Typed,
-    Text,
+    Core(Arc<BattleVersion>),
 }
 
 impl Node {
@@ -142,13 +133,11 @@ impl Node {
 struct Server {
     nodes: HashMap<String, Node>,
     counter: u64,
-    /// Core arms seen by the INTEGRITY sampler (1-in-N is `count % N == 0`), process lifetime.
-    integrity_seen: u64,
 }
 
 impl Server {
     fn new() -> Server {
-        Server { nodes: HashMap::new(), counter: 0, integrity_seen: 0 }
+        Server { nodes: HashMap::new(), counter: 0 }
     }
 
     /// `n0`, `n1`, … — MONOTONIC for the process lifetime. A fresh `open_root` drops the
@@ -488,13 +477,17 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
     };
     let rec = Record::parse(req.get("record").ok_or("open_root: missing record")?)?;
     // `core` (`gen3_core_search_v1`): build the tree of BattleVersions instead of bare sessions,
-    // folding each successor's lines TYPED at the source ("typed") or from the side's TEXT
-    // ("text"). Absent = the historical body, byte for byte.
+    // every successor folded from the side's TEXT. `"text"` is the only path: the typed-at-source
+    // shortcut is DELETED (program §4 M4 row; it measured to save nothing, §6 B1). Absent = the
+    // historical body, byte for byte.
     let core = match req.str_at("core") {
-        None => None,
-        Some("typed") => Some(CorePath::Typed),
-        Some("text") => Some(CorePath::Text),
-        Some(other) => return Err(format!("open_root: core must be \"typed\" or \"text\", got \"{other}\"")),
+        None => false,
+        Some("text") => true,
+        Some("typed") => {
+            return Err("open_root: core \"typed\" is DELETED (the typed shortcut, program §4 M4) — \
+                        send core \"text\"".into())
+        }
+        Some(other) => return Err(format!("open_root: core must be \"text\", got \"{other}\"")),
     };
     // `side` (core only): the one side whose stream the tree folds — a search reads one side, so
     // the other's fold would be pure cost at every version. Absent = both.
@@ -504,28 +497,22 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
         Some("p2") => [false, true],
         Some(other) => return Err(format!("open_root: side must be \"p1\" or \"p2\", got \"{other}\"")),
     };
-    // `trackers` (core, typed only — `gen3_core_trackers_v1`): every version of the tree folds the
+    // `trackers` (core only — `gen3_core_trackers_v1`): every version of the tree folds the
     // per-decision TRACKERS of its wanted sides (a fork shares its parent's, copied only at its
-    // own decision). Read by nothing yet but the cost measurement; M4's encoder will read them.
+    // own decision) — what the ENCODER reads (`gen3_core_encoder_v1`).
     let trackers = req.get("trackers").and_then(Json::as_bool).unwrap_or(false);
-    if trackers && core != Some(CorePath::Typed) {
-        return Err("open_root: trackers are served on the typed core road only".into());
+    if trackers && !core {
+        return Err("open_root: trackers are served on the core road only".into());
     }
     // A fresh root starts a fresh tree; drop the previous search's nodes. ids stay
     // monotonic (see `Server::fresh_id`).
     srv.nodes.clear();
-    let mut sess = if core == Some(CorePath::Typed) {
-        session_from_record_core(&rec, dex)?
-    } else {
-        // The view / protocol roads read `one_sided_view` at every node, so their tree folds
-        // reveals (`gen3_view_fold_opt_in_v1`); a core tree's view is the version's own (the
-        // text path's root lands here too and folds nothing it does not read).
-        let mut s = session_from_record(&rec, dex)?;
-        if core.is_none() {
-            s.enable_view_fold()?;
-        }
-        s
-    };
+    // The view / protocol roads read `one_sided_view` at every node, so their tree folds
+    // reveals (`gen3_view_fold_opt_in_v1`); a core tree's view is the version's own.
+    let mut sess = session_from_record(&rec, dex)?;
+    if !core {
+        sess.enable_view_fold()?;
+    }
     let rest_idx = build_to_turn(&mut sess, &rec, turn, dex)?;
 
     let requests = requests_json(&sess);
@@ -537,7 +524,7 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
     let node_id = srv.fresh_id();
     // The core road has no use for the port's projection (its view is the version's own), so a
     // core root renders none.
-    let views = if core.is_some() {
+    let views = if core {
         String::new()
     } else {
         format!(",\"view_p1\":{},\"view_p2\":{}", one_sided_view(&sess, 0, dex)?, one_sided_view(&sess, 1, dex)?)
@@ -553,19 +540,14 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
         p2,
         views
     );
-    let state = match core {
-        None => NodeState::Plain(sess),
-        Some(path) => {
-            let names = [rec.p1.name.clone(), rec.p2.name.clone()];
-            let teams = [rec.p1.team.0.clone(), rec.p2.team.0.clone()];
-            let n = [names[0].as_str(), names[1].as_str()];
-            let t = [Some(teams[0].as_str()), Some(teams[1].as_str())];
-            let v = match path {
-                CorePath::Typed => BattleVersion::root_with(sess, n, t, want, trackers.then(ClockConfig::default))?,
-                CorePath::Text => BattleVersion::root_text(sess, n, t, want)?,
-            };
-            NodeState::Core(Arc::new(v), path)
-        }
+    let state = if core {
+        let names = [rec.p1.name.clone(), rec.p2.name.clone()];
+        let teams = [rec.p1.team.0.clone(), rec.p2.team.0.clone()];
+        let n = [names[0].as_str(), names[1].as_str()];
+        let t = [Some(teams[0].as_str()), Some(teams[1].as_str())];
+        NodeState::Core(Arc::new(BattleVersion::root_with(sess, n, t, want, trackers.then(ClockConfig::default))?))
+    } else {
+        NodeState::Plain(sess)
     };
     srv.nodes.insert(node_id, Node { state, record: Some(rec), rest_idx });
     Ok(body)
@@ -638,13 +620,12 @@ fn expand_many(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String
     let empty: Vec<Json> = Vec::new();
     let arms = req.get("arms").and_then(Json::as_array).unwrap_or(&empty).to_vec();
     let want = SideWant::parse(req)?;
-    // `integrity` (`gen3_core_search_v1`, core nodes only): every Nth core arm is folded BOTH ways
-    // — typed at the source and from the side's text — and the two versions must agree on the
-    // whole stream state and the view, or the request FAILS naming the arm and the field. 0 = off.
-    let integrity = match req.get("integrity") {
-        None | Some(Json::Null) => 0u64,
-        Some(v) => v.as_f64().filter(|n| *n >= 0.0 && n.fract() == 0.0).ok_or("expand_many: integrity must be a non-negative integer")? as u64,
-    };
+    // The INTEGRITY mode (typed == text) is DELETED with the typed shortcut (program §4 M4): a
+    // request that still asks for it is refused rather than silently served un-checked.
+    if req.get("integrity").is_some_and(|v| !v.is_null()) {
+        return Err("expand_many: integrity is DELETED (its only job was typed == text; the typed \
+                    shortcut is gone, program §4 M4)".into());
+    }
     let mut out = Vec::with_capacity(arms.len());
     // `gen3_expand_many_timing_v1` — zero-cost and ZERO-BYTE unless `POKESIM_SEARCH_TIMING=1`.
     let mut timings = ArmTimings::default();
@@ -653,9 +634,7 @@ fn expand_many(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String
         let node_id = arm.str_at("node_id").ok_or("arm: missing node_id")?;
         let is_core = matches!(srv.nodes.get(node_id).map(|n| &n.state), Some(NodeState::Core(..)));
         if is_core {
-            let check = integrity > 0 && srv.integrity_seen % integrity == 0;
-            srv.integrity_seen += 1;
-            out.push(expand_arm_core(srv, arm, dex, want, check, &mut timings)?);
+            out.push(expand_arm_core(srv, arm, dex, want, &mut timings)?);
         } else {
             out.push(expand_arm(srv, arm, dex, want, &mut timings)?);
         }
@@ -778,7 +757,7 @@ fn expand_arm(
 }
 
 /// ONE arm on the CORE road (`gen3_core_search_v1`): the parent node is a [`BattleVersion`], and
-/// the successor is a version too.
+/// the successor is a version too, its lines folded from their TEXT.
 ///
 /// The arm resolves exactly as on the other roads (same clone, same reseed, same follow-up
 /// policy, same draws). What differs is what comes back per wanted side, as `core_pN`:
@@ -787,9 +766,7 @@ fn expand_arm(
 ///   request: the version at the first decision this ply opened for the side (a D10 arm: the
 ///   replacement round inside the turn) or at the end of the turn;
 /// * `events` — the readings of the leaf's transition (the ply's `BattleEvent`s, the tracker
-///   input), and `mid` — whether the leaf is an intermediate decision;
-/// * with the INTEGRITY check sampled for this arm, `text_view` — the same leaf folded the OTHER
-///   way (text if the tree is typed, typed if it is text), after the two were asserted equal.
+///   input), and `mid` — whether the leaf is an intermediate decision.
 ///
 /// The child NODE is the leaf version of the side the request asked for (`side`), so a deeper ply
 /// branches from the board its leaf describes — including a D10 leaf, which on the other roads
@@ -800,7 +777,6 @@ fn expand_arm_core(
     arm: &Json,
     dex: &Dex,
     want: SideWant,
-    check: bool,
     timings: &mut ArmTimings,
 ) -> Result<String, String> {
     let node_id = arm.str_at("node_id").ok_or("arm: missing node_id")?.to_string();
@@ -815,8 +791,8 @@ fn expand_arm_core(
     let label = render_id(arm.get("label"));
 
     let clk_sim = ArmClock::start();
-    let (parent, path) = match srv.nodes.get(&node_id).map(|n| &n.state) {
-        Some(NodeState::Core(v, p)) => (Arc::clone(v), *p),
+    let parent = match srv.nodes.get(&node_id).map(|n| &n.state) {
+        Some(NodeState::Core(v)) => Arc::clone(v),
         _ => return Err(format!("unknown core node {node_id}")),
     };
     let mut sess = parent.fork_session()?;
@@ -837,19 +813,9 @@ fn expand_arm_core(
     let p2_chunks = want.wants(1).then(|| chunk_array(&sess, 1));
     clk_chunks.stop(&mut timings.chunks_us);
 
-    let fold = |engine: BridgeSession, p: CorePath| -> Result<Arc<BattleVersion>, String> {
-        match p {
-            CorePath::Typed => parent.child(engine).map_err(String::from),
-            CorePath::Text => parent.child_text(engine).map_err(String::from),
-        }
-    };
-    let other = |p: CorePath| if p == CorePath::Typed { CorePath::Text } else { CorePath::Typed };
     let clk_core = ArmClock::start();
-    let end_engine = if check { Some(sess.snapshot()) } else { None };
-    let end = fold(sess, path)?;
+    let end = parent.child(sess)?;
     let mut leaves: [Option<(Arc<BattleVersion>, bool)>; 2] = [None, None];
-    // The engine each INTERMEDIATE leaf was folded from, kept only for the integrity check's twin.
-    let mut mid_engines: [Option<BridgeSession>; 2] = [None, None];
     for s in 0..2 {
         if !want.wants(s) {
             continue;
@@ -858,60 +824,16 @@ fn expand_arm_core(
             (Arc::clone(&end), false)
         } else {
             let e = at[s].remove(0);
-            if check {
-                mid_engines[s] = Some(e.snapshot());
-            }
-            (fold(e, path)?, true)
+            (parent.child(e)?, true)
         });
     }
     clk_core.stop(&mut timings.core_us);
-
-    // INTEGRITY: the same leaf folded the other way must be the same version, field for field.
-    let clk_check = ArmClock::start();
-    let mut text_views: [Option<String>; 2] = [None, None];
-    if check {
-        for s in 0..2 {
-            let Some((leaf, mid)) = &leaves[s] else { continue };
-            let engine = if *mid {
-                mid_engines[s].take().expect("kept when checking")
-            } else {
-                end_engine.as_ref().expect("taken when checking").snapshot()
-            };
-            let twin = fold(engine, other(path))?;
-            version::streams_equal(leaf, &twin, s).map_err(|e| {
-                format!("INTEGRITY: arm {label} (node {node_id}, p{}, {} leaf): the typed and the text path disagree — {e}",
-                        s + 1, if *mid { "intermediate" } else { "end-of-turn" })
-            })?;
-            text_views[s] = Some(twin.view(s)?.json());
-        }
-    }
-    clk_check.stop(&mut timings.integrity_us);
 
     let clk_render = ArmClock::start();
     let mut core_fields = String::new();
     for s in 0..2 {
         let Some((leaf, mid)) = &leaves[s] else { continue };
-        let legal = leaf.legal(s).map_or("null".to_string(), |l| l.json());
-        let mut events = String::from("[");
-        let mut first = true;
-        for ev in leaf.events(s) {
-            for r in &ev.readings {
-                if !first {
-                    events.push(',');
-                }
-                first = false;
-                r.json_into(&mut events);
-            }
-        }
-        events.push(']');
-        let mut o = format!(",\"core_p{}\":{{\"view\":{},\"legal\":{},\"request\":", s + 1, leaf.view(s)?.json(), legal);
-        pokesim::core_events::json_out::opt_str_into(&mut o, leaf.request(s));
-        o.push_str(&format!(",\"events\":{events},\"mid\":{mid}"));
-        if let Some(t) = &text_views[s] {
-            o.push_str(&format!(",\"text_view\":{t}"));
-        }
-        o.push('}');
-        core_fields.push_str(&o);
+        core_fields.push_str(&core_payload(leaf, s, *mid)?);
     }
     clk_render.stop(&mut timings.core_render_us);
 
@@ -935,7 +857,7 @@ fn expand_arm_core(
         None
     } else {
         let id = srv.fresh_id();
-        srv.nodes.insert(id.clone(), Node { state: NodeState::Core(node, path), record: None, rest_idx: 0 });
+        srv.nodes.insert(id.clone(), Node { state: NodeState::Core(node), record: None, rest_idx: 0 });
         Some(id)
     };
     Ok(format!(
@@ -952,6 +874,28 @@ fn expand_arm_core(
         opt_field("p2_chunks", p2_chunks.as_deref()),
         core_fields,
     ))
+}
+
+/// `,"core_pN":{…}` for one leaf: its view, legality, raw request, the transition's readings and
+/// whether it is an intermediate (D10) decision.
+fn core_payload(leaf: &BattleVersion, s: usize, mid: bool) -> Result<String, String> {
+    let legal = leaf.legal(s).map_or("null".to_string(), |l| l.json());
+    let mut events = String::from("[");
+    let mut first = true;
+    for ev in leaf.events(s) {
+        for r in &ev.readings {
+            if !first {
+                events.push(',');
+            }
+            first = false;
+            r.json_into(&mut events);
+        }
+    }
+    events.push(']');
+    let mut o = format!(",\"core_p{}\":{{\"view\":{},\"legal\":{},\"request\":", s + 1, leaf.view(s)?.json(), legal);
+    pokesim::core_events::json_out::opt_str_into(&mut o, leaf.request(s));
+    o.push_str(&format!(",\"events\":{events},\"mid\":{mid}}}"));
+    Ok(o)
 }
 
 // ===========================================================================

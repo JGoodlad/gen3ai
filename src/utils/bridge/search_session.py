@@ -137,12 +137,11 @@ class ExpandedNode:
     view_p1_at: List[dict] = field(default_factory=list)
     view_p2_at: List[dict] = field(default_factory=list)
     # `materializer=core` (`gen3_core_search_v1`, rust only): the arm's LEAF as a Rust-core
-    # version — `{view, legal, request, events, mid, text_view?}` per asked-for side, the view being
+    # version — `{view, legal, request, events, mid}` per asked-for side, the view being
     # the core's `present()` of the side's own stream (every poke-env reading rule applied in
     # Rust; `agents.battle.core_view` builds the read-models from it with no rule), `events` the
-    # ply's readings (the tracker input), `mid` whether the leaf is an intermediate (D10)
-    # decision, and `text_view` the same leaf folded the OTHER way when the arm was integrity-
-    # checked. `None` on a non-core node.
+    # ply's readings (the tracker input) and `mid` whether the leaf is an intermediate (D10)
+    # decision. `None` on a non-core node.
     core_p1: Optional[dict] = None
     core_p2: Optional[dict] = None
 
@@ -311,19 +310,20 @@ class SearchSession:
         targets a SPECIFIC battle on a reused session (else the one passed to ``__init__``); it also
         clears the driver's node cache, so a warm process serves many battles' searches in turn.
 
-        ``core`` (``"typed"`` / ``"text"``, rust only — ``gen3_core_search_v1``) builds the tree of
-        Rust-core BattleVersions instead of bare sessions, each successor folded TYPED at the
-        source or from the side's TEXT; every arm expanded from it then carries ``core_pN``.
-        ``side`` (core only) folds that side's stream alone, at every version of the tree.
-        ``trackers`` (typed core only, ``gen3_core_trackers_v1``) folds the per-decision TRACKERS on
-        every version too — read by nothing yet but the fork-cost measurement."""
+        ``core="text"`` (rust only — ``gen3_core_search_v1``) builds the tree of Rust-core
+        BattleVersions instead of bare sessions, each successor folded from the side's TEXT (the
+        one path — the typed shortcut is deleted, program §4 M4); every arm expanded from it then
+        carries ``core_pN``. ``side`` (core only) folds that side's stream alone, at every version
+        of the tree. ``trackers`` (core only, ``gen3_core_trackers_v1``) folds the per-decision
+        TRACKERS on every version too."""
         rec = record if record is not None else self._record
         if rec is None:
             raise SearchError("open_root needs a record (pass record= or construct with one)")
         req: dict = {"cmd": "open_root", "record": rec.to_dict(), "turn": int(turn)}
         if core is not None:
-            if core not in ("typed", "text"):
-                raise SearchError(f"open_root: core must be 'typed' or 'text', got {core!r}")
+            if core != "text":
+                raise SearchError(f"open_root: core must be 'text' (the typed shortcut is deleted), "
+                                  f"got {core!r}")
             req["core"] = core
             if side is not None:
                 if side not in ("p1", "p2"):
@@ -339,7 +339,7 @@ class SearchSession:
             view_p1=out.get("view_p1") or {}, view_p2=out.get("view_p2") or {})
 
     def expand_many(self, arms: Sequence[dict], *,
-                    side: Optional[str] = None, integrity: int = 0) -> List[ExpandedNode]:
+                    side: Optional[str] = None) -> List[ExpandedNode]:
         """Expand N arms from their parent nodes in one round-trip. Each ``arm`` is a dict
         ``{node_id, p1_action, p2_action, seed, label, recorded_exact?, followup?}`` with the
         per-side action semantics of :func:`reconstruction.reroll_turn` (``"recorded"`` only
@@ -374,10 +374,6 @@ class SearchSession:
             if side not in ("p1", "p2"):
                 raise SearchError(f"expand_many: side must be 'p1' or 'p2', got {side!r}")
             req["side"] = side
-        # INTEGRITY (core nodes, `gen3_core_search_v1`): every Nth core arm is folded both ways
-        # (typed + text) and the driver FAILS the call on any disagreement; 0 = off.
-        if integrity:
-            req["integrity"] = int(integrity)
         out = self._call(req)
         return [
             ExpandedNode(

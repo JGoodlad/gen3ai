@@ -1668,28 +1668,21 @@ impl BridgeSession {
         self.chunks.side_chunks(side).map(|c| c.lines.len()).sum()
     }
 
-    /// `side`'s shipped lines from index `from` on, TYPED on the step path (a core session only):
-    /// each rebuilt from its source record through the privacy fold and refused unless it renders
-    /// the shipped bytes (`core_events::side::step_line`). The typed-at-source shortcut the Rust
-    /// Core Program's §6c licenses by `parse(emit(step)) == step`.
-    pub fn typed_side_lines(&self, side: usize, from: usize)
-        -> Result<Vec<(crate::core_events::Line, Option<u32>, Option<crate::core_events::Scope>)>, String> {
+    /// The ENGINE-TRUTH annotation of `side`'s shipped lines from index `from` on (a core session
+    /// only): per line, the omniscient source record it was folded from and that record's action
+    /// SCOPE — the step path's owner truth the native window record keeps as its grouping gate. The
+    /// lines themselves are always folded from their TEXT (`Line::parse`); this carries no line
+    /// (the typed-at-source shortcut is DELETED, program §4 M4 row — `parse(render)` is the one
+    /// observation path, §6c).
+    pub fn side_scopes(&self, side: usize, from: usize)
+        -> Result<Vec<(Option<u32>, Option<crate::core_events::Scope>)>, String> {
         let core = self.chunks.core.as_ref().ok_or("not a core session (use new_core / new_construct_turn0_core)")?;
         let recs = self.source_recs().ok_or("no source records")?;
-        let texts: Vec<&String> = self.chunks.side_chunks(side).flat_map(|c| c.lines.iter()).collect();
-        if texts.len() != core[side].len() {
-            return Err(format!("p{}: {} shipped lines but {} tracked", side + 1, texts.len(), core[side].len()));
+        let n = self.side_line_count(side);
+        if n != core[side].len() {
+            return Err(format!("p{}: {} shipped lines but {} tracked", side + 1, n, core[side].len()));
         }
-        let report_percent = self.engine.report_percent();
-        texts
-            .iter()
-            .zip(core[side].iter())
-            .skip(from)
-            .map(|(t, s)| {
-                let line = crate::core_events::side::step_line(recs, t, *s, side as u8, report_percent).map_err(String::from)?;
-                Ok((line, *s, s.map(|i| recs[i as usize].scope)))
-            })
-            .collect()
+        Ok(core[side].iter().skip(from).map(|s| (*s, s.map(|i| recs[i as usize].scope))).collect())
     }
 
     /// The STEP path's per-side [`crate::core_events::CoreEvent`]s for `side` (a core session

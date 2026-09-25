@@ -231,19 +231,18 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
 # ---------------------------------------------------------------------------
 
 
-#: road name -> (materializer, core_path). ``core`` is the typed shortcut, ``core-text`` the
-#: side's protocol text through ``parse`` — the pair the Rust Core Program's §6 decision reads.
-#: ``core-trk`` is ``core`` with the Rust core's per-decision TRACKERS folded on every version
-#: (``SearchConfig.core_trackers``, ``gen3_core_trackers_v1``) — the M3 fork-cost A/B.
-ROADS = {"protocol": ("protocol", "typed"), "view": ("view", "typed"),
-         "core": ("core", "typed"), "core-text": ("core", "text"), "core-trk": ("core", "typed")}
+#: road name -> materializer. ``core`` folds every successor from the side's protocol text (the
+#: one path — the typed shortcut is deleted, program §4 M4). ``core-trk`` is ``core`` with the
+#: Rust core's per-decision TRACKERS folded on every version (``SearchConfig.core_trackers``,
+#: ``gen3_core_trackers_v1``) — the M3 fork-cost A/B.
+ROADS = {"protocol": "protocol", "view": "view", "core": "core", "core-trk": "core"}
 
 
 def _cfg(materializer: str, *, m_opp: int, k_worlds: int, arm: str, impl: str) -> SearchConfig:
-    mat, path = ROADS[materializer]
+    mat = ROADS[materializer]
     return SearchConfig(
         arm=arm, budget_s=1e9, seed=7, max_depth=1, search_impl=impl,
-        materializer=mat, core_path=path, integrity=0, core_trackers=(materializer == "core-trk"),
+        materializer=mat, core_trackers=(materializer == "core-trk"),
         caps=WidthCaps(m_opp=m_opp, k_worlds=k_worlds, r_dice=1))
 
 
@@ -470,8 +469,8 @@ def main() -> int:
     ap.add_argument("--roads", nargs="+", default=["protocol", "view"],
                     choices=tuple(ROADS),
                     help="ONE road per process for an A/B claim (the two roads in one interpreter "
-                         "are not independent — expand_many_2026-09-22/README.md); `core` is the "
-                         "typed shortcut, `core-text` the text path")
+                         "are not independent — expand_many_2026-09-22/README.md); `core` folds "
+                         "every successor from its text (the typed shortcut is deleted)")
     ap.add_argument("--rust-timing", action="store_true",
                     help="set POKESIM_SEARCH_TIMING=1 for the driver child and sum its per-phase "
                          "`timing_us` (sim / chunks / core fold / core render / …) per road")

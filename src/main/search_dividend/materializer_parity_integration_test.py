@@ -57,10 +57,9 @@ def _cfg(materializer: str) -> SearchConfig:
     # PINNED widths. A cell's realized width is a function of the wall clock, so an un-pinned
     # comparison would be measuring which road was faster — which is a different (and here,
     # meaningless) question. `--max-*` at 1 also makes the arm set small enough to be a test.
-    # The CORE road runs with its INTEGRITY check on every arm (typed + text, view + obs bytes).
     return SearchConfig(
         arm="oracle", budget_s=60.0, seed=7, max_depth=1, search_impl="rust",
-        materializer=materializer, integrity=1 if materializer == "core" else 0,
+        materializer=materializer,
         caps=WidthCaps(m_opp=2, k_worlds=1, r_dice=1))
 
 
@@ -119,13 +118,12 @@ def test_the_two_materializers_decide_identically_on_a_seeded_decision():
             print(f"  turn {turn} [{road}]: fallback={why_b!r} arms_scored={w_b.arms_scored} "
                   f"view_arms={w_b.view_arms} fb_no_payload={w_b.view_fallback_no_payload} "
                   f"fb_mid={w_b.view_fallback_intermediate} core_arms={w_b.core_arms} "
-                  f"core_mid={w_b.core_arms_intermediate} integrity={w_b.integrity_checked} "
+                  f"core_mid={w_b.core_arms_intermediate} "
                   f"worlds_open_failed={w_b.worlds_open_failed} gate_failed={w_b.worlds_gate_failed}")
             if road == "view":
                 view_arms += int(w_b.view_arms)
             else:
                 core_arms += int(w_b.core_arms)
-                assert w_b.integrity_checked == w_b.core_arms, "the core road ran un-checked arms"
         compared += 1
 
     assert compared >= 2, f"only {compared} decisions compared — the gate is vacuous"

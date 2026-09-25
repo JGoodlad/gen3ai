@@ -20,16 +20,18 @@ M6); SEARCH adopts it (`materializer=core`, §4 below).
 ## 1. The interface rule — the view is built from ONE SIDE'S STREAM, the board is a REFEREE
 
 `present(reading: &BoardReading) -> OneSidedView` has **no board parameter**. A
-`BoardReading` is built only from one side's typed lines (its protocol + its own `|request|`s), so a
-board-derived fact cannot reach the view by construction — a training-only leak does not compile.
-The omniscient board is used in exactly two places, both outside the view:
+`BoardReading` is built only from one side's lines (its protocol + its own `|request|`s, each
+`Line::parse` of the shipped text), so a board-derived fact cannot reach the view by construction —
+a training-only leak does not compile. The omniscient board is used in exactly two places, both
+outside the view:
 
 * **the audit** — `check_view(view, board, side, dex, pp_synced) -> Audit` asserts every SIM-FACT
   field of a view against the engine (`BattleVersion::audit`); slice V runs it at every decision;
-* **search's typed shortcut** — the step path folds each shipped line from its TYPED source record
-  (`BridgeSession::typed_side_lines`) instead of re-parsing the text. The typed `Line` is the same
-  value `Line::parse` of its rendering gives (M1's canonical-form gate), and §4's integrity mode
-  checks the two roads' VERSIONS equal on search's own arms.
+* **the step path's owner truth** — on a CORE session (source recording on: the parity replay) each
+  shipped line carries its source record's action SCOPE (`BridgeSession::side_scopes`), which the
+  native window record keeps and the parse-reproduces-step gate holds the line-order owner to. It
+  carries no LINE: every version folds `parse(render)`, the one observation path (program §6c) —
+  the typed-at-source shortcut and its integrity mode are DELETED (program §4 M4 row).
 
 ## 2. `BattleVersion`
 
@@ -50,9 +52,8 @@ requests' issued bytes SHARED with the engine, which rendered each once at issue
 
 | constructor | origin | what |
 |---|---|---|
-| `root(sess, names, teams, want)` | `Step` | a fork tree's root: every line `sess` shipped is folded TYPED, then the transport is dropped; `want` names the sides that carry a stream (a search reads one) |
-| `fork_session()` / `step(cmds, dex)` / `step_with(f)` / `child(sess)` | `Step` | a FORK: an engine clone in a fresh transport, driven, its lines folded TYPED; the child keeps the engine |
-| `root_text` / `child_text` | `Step` | the same, folding the TEXT (render → `Line::parse`) — the integrity twin |
+| `root(sess, names, teams, want)` / `root_with(…, trackers)` | `Step` | a fork tree's root: every line `sess` shipped is folded from its TEXT, then the transport is dropped; `want` names the sides that carry a stream (a search reads one) |
+| `fork_session()` / `step(cmds, dex)` / `step_with(f)` / `child(sess)` | `Step` | a FORK: an engine clone in a fresh transport, driven, its lines folded from their TEXT; the child keeps the engine |
 | `observe_root(&sess, …)` / `observe(&sess)` | `Observed` | a LINEAR replay OBSERVING a session the caller drives (the parity harness): no engine, no copy; the caller's session is the referee (`audit_on(side, board, dex)`) |
 | `parse_root` / `parse_step` / `parse_advance` | `Parse` | ONE side's text, no engine — what a real server sends |
 
@@ -61,7 +62,8 @@ requests' issued bytes SHARED with the engine, which rendered each once at issue
 every step of every corpus battle (both sides), and `tests/version_test.rs` pins the properties one
 battle can show: the chain equals its parse twin; a fork leaves its parent untouched; a fork chain
 equals the observed linear replay; a fork's transport carries the engine and NO wire history, its
-requests rendered to the parent wire's bytes; typed == text (`streams_equal`, with teeth); the audit
+requests rendered to the parent wire's bytes; a NON-recording fork (a search tree's: no scopes, owners
+by line order) folds the same stream as a recording one (with teeth); the audit
 passes the truth and catches a tampered view; a parse-built version refuses to step or audit.
 `tests/engine_split_test.rs` pins the split itself on the trapping golden and a disabled-move reject:
 at every boundary the typed request renders the shipped bytes, and a resumed engine clone emits the
@@ -168,12 +170,12 @@ fails the day it is stale).
 
 ## 4. Search on the core — `materializer=core`
 
-`search_driver`'s `open_root` takes `core: "typed" | "text"` (and `side`: the one stream a tree
-folds); a core root is a `BattleVersion`, and every `expand_many` arm's successor IS a version
-(`NodeState::Core`). Per arm and wanted side it returns `core_pN = {view, legal, request, events
-(the readings), mid, text_view?}`, and Python's `CoreSuccessorFactory` (a `ViewSuccessorFactory`
-with `view_adapter`'s rules and `ViewEventFolder`'s re-parse deleted) encodes it with the unchanged
-tracker cadence and encoder.
+`search_driver`'s `open_root` takes `core: "text"` (the one path; `"typed"` is REFUSED — the typed
+shortcut is deleted, program §4 M4) and `side` (the one stream a tree folds); a core root is a
+`BattleVersion`, and every `expand_many` arm's successor IS a version (`NodeState::Core`). Per arm
+and wanted side it returns `core_pN = {view, legal, request, events (the readings), mid}`, and
+Python's `CoreSuccessorFactory` (a `ViewSuccessorFactory` with `view_adapter`'s rules and
+`ViewEventFolder`'s re-parse deleted) encodes it with the unchanged tracker cadence and encoder.
 
 * **D10 — a leaf AT the intermediate decision.** An arm whose ply opens a second decision (a KO's
   replacement, a refused trapped switch) returns the version AT that decision (`mid`), built from
@@ -183,26 +185,23 @@ tracker cadence and encoder.
   depth ≥ 2, recorded as a finding (§6).
 * **`recorded_exact` is REFUSED on core** (`resolve_turn_exact` has no production consumer on this
   path and no capture rule).
-* **INTEGRITY** (`SearchConfig.integrity = N`, `--search-integrity N`, `expand_many`'s
-  `integrity`): every Nth core arm is folded BOTH ways — typed and from the text — the driver
-  asserts the two VERSIONS equal (`streams_equal`: board reading, events, view), and Python encodes both
-  views and asserts the obs bytes and mask equal (`CoreIntegrityError`, naming the decision, the
-  depth and the first differing obs block). **ON (N = 1) in every search test, fuzzer and parity
-  gate; OFF (0) by default in production**; a sampled N stamps a number "integrity-sampled at 1/N".
-  Every battery row is stamped `materializer` / `core_path` / `integrity`.
-* **Defaults**: `SearchConfig.materializer = "core"`, `core_path = "typed"`, `integrity = 0`;
-  `--materializer {core,protocol,view}` (default `core`). The protocol and view roads are NOT
-  deleted — the cutover's deletion manifest names them (program §4).
+* **The INTEGRITY mode is DELETED** with the typed shortcut (its only job was typed == text):
+  `expand_many` REFUSES an `integrity` key, and `--search-integrity` / `--core-path` are gone
+  (`designs/deleted_flags.md`). Every battery row is stamped `materializer`, and `core_path: "text"`
+  on the core road (so a row stays comparable to the rows written before the deletion).
+* **Defaults**: `SearchConfig.materializer = "core"`; `--materializer {core,protocol,view}`
+  (default `core`). The protocol and view roads are NOT deleted — the cutover's deletion manifest
+  names them (program §4).
 
 ## 5. The gates, and what each proves
 
 | gate | proves |
 |---|---|
 | slice V — COMMIT / MILESTONE (`rust_core_parity_views.py`, via `core_events --views`) | at every decision, both viewers: `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, type-strict, no allowlist but the registered poke-env FINDINGS (§3, value-aware, counted per decision — none registered today); the board audit; parse == step at every version |
-| `materializer_parity_integration_test.py` | `protocol`, `view` and `core` give identical decisions, values and obs bytes, integrity on |
+| `materializer_parity_integration_test.py` | `protocol`, `view` and `core` give identical decisions, values and obs bytes |
 | `fork_sharing_parity_integration_test.py` (parametrized `view` / `core`) | one root fork per DECISION, shared across the K worlds, gives the same successor obs bytes as one fork per world — a reused factory leaks nothing between arms |
 | `one_sided_view_parity_fuzz_test.py` (`sim`) | on real bridge battles, the core's root and arm views == the protocol road's `LiveView` |
-| `core_successor_test.py` | the transport and the integrity check's teeth (a tampered `text_view` raises) |
+| `core_successor_test.py` | the event transport; the driver REFUSES the deleted typed path and integrity mode |
 
 ## 6. Measurements and findings
 

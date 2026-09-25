@@ -53,7 +53,7 @@ class _NeverHits(dict):
 def _engine(pool, *, share: bool, materializer: str = "view") -> SearchEngine:
     cfg = SearchConfig(
         arm="honest", budget_s=1e9, seed=7, max_depth=1, search_impl="rust",
-        materializer=materializer, integrity=1 if materializer == "core" else 0,
+        materializer=materializer,
         caps=WidthCaps(m_opp=2, k_worlds=3, r_dice=1))
     eng = SearchEngine(model=None, mappings=None, cfg=cfg, pool_packed=list(pool))
     eng._score_batch = lambda obs, masks: (                      # type: ignore[assignment]
@@ -167,11 +167,10 @@ def test_one_shared_fork_scores_every_world_exactly_as_a_per_world_fork_did(mate
         assert exp_w.view_arms == ctl_w.view_arms
         assert exp_w.core_arms == ctl_w.core_arms
         if materializer == "core":
-            assert exp_w.core_arms > 0 and exp_w.integrity_checked == exp_w.core_arms
+            assert exp_w.core_arms > 0
         print(f"  turn {turn}: worlds={exp_w.worlds_gated_ok} successors={len(exp_obs)} "
               f"fork_hit={exp_w.fork_cache_hit} fork_miss={exp_w.fork_cache_miss} "
-              f"view_arms={exp_w.view_arms} core_arms={exp_w.core_arms} "
-              f"integrity={exp_w.integrity_checked}")
+              f"view_arms={exp_w.view_arms} core_arms={exp_w.core_arms}")
 
     assert compared >= 1, (
         "no decision produced two gated worlds with a view arm — the gate is vacuous")

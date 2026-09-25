@@ -645,10 +645,10 @@ def run(n_battles: int = 2, arms: int = DEFAULT_ARMS, turns: int = DEFAULT_TURNS
                            f"{other}_action": opp_rec,
                            "seed": f"{turn},{k + 1},{anchor + 7},{k * 13 + 11}", "label": a}
                           for k, a in enumerate(picks)]
-                # THE CORE ROAD — the same arms, from a Rust-core VERSION root, integrity-checked.
-                croot = cs.open_root(turn, core="typed")
+                # THE CORE ROAD — the same arms, from a Rust-core VERSION root (the text path).
+                croot = cs.open_root(turn, core="text")
                 cexp = [dict(a, node_id=croot.node_id) for a in expand]
-                core_of = {int(n.label): n for n in cs.expand_many(cexp, side=side, integrity=1)}
+                core_of = {int(n.label): n for n in cs.expand_many(cexp, side=side)}
                 from agents.training.core_successor import CoreSuccessorFactory
 
                 cfactory = (CoreSuccessorFactory.at_fork(
@@ -820,5 +820,5 @@ if __name__ == "__main__":
     print(census.render())
     print(f"branch points compared: {bp}   (FULL tracker-fed obs at {fop} of them; "
           f"{d10} of those were D10 INTERMEDIATE arms served from view_pN_at[0]); "
-          f"CORE road: {CORE_POINTS} successors ({CORE_D10} D10), integrity-checked")
+          f"CORE road: {CORE_POINTS} successors ({CORE_D10} D10)")
     sys.exit(1 if census.rows else 0)

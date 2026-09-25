@@ -28,6 +28,8 @@ reactions from a reader.
 
 | flag | citation | note |
 |---|---|---|
+| `--core-path` | `gen3_core_encoder_v1` (Rust Core M4, 2026-09-24; program §4 M4 row) | `python -m main.search_dividend`'s core-road fold path (`typed` / `text`); the typed shortcut is deleted and `text` is the one path, so the flag has nothing to choose |
+| `--search-integrity` | `gen3_core_encoder_v1` (Rust Core M4, 2026-09-24; program §4 M4 row) | the core road's INTEGRITY mode (every Nth arm folded typed AND text, asserted equal); its only job was typed == text, deleted with the shortcut |
 | `--use-showdown-bridge` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L2905) | the deprecated `--use-bridge=node` alias; deleted when `rust` became the default, precisely so the legacy spelling could not silently select the slower impl |
 | `--pubval-mode` | v88 `gen3_dead_flag_purge_v1` (CHANGELOG L4078) | the whole public-info value subsystem went with it — `agents.training.pubval`, `PubValHead`, `_pubval_loss`, `data/gen3_pubval.json`. Measured NULL, never ON in production |
 | `--pubval-coef` | v88 `gen3_dead_flag_purge_v1` (CHANGELOG L4078) | as above |

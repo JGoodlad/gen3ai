@@ -12,7 +12,7 @@ use std::sync::Arc;
 use pokesim::bridge::{bridge_opts, parse_choice, BridgeSession, Cmd};
 use pokesim::dex::Dex;
 use pokesim::present::check_view;
-use pokesim::version::{parse_matches_step, streams_equal, BattleVersion};
+use pokesim::version::{parse_matches_step, BattleVersion};
 
 const P1: &str = "Metagross|||clearbody|meteormash,earthquake,explosion,agility|Adamant|252,252,,,4,|||||]\
 Suicune|||pressure|calmmind,surf,rest,icebeam|Bold|252,,252,,4,|||||";
@@ -145,26 +145,36 @@ fn a_fork_session_carries_the_engine_and_no_wire_history() {
     }
 }
 
+/// The ONE observation path (`parse(render)`, program §6c; the typed shortcut is deleted): a
+/// search tree's versions are forked from a session that records NO source (its lines carry no
+/// engine scope, so every outcome's owner comes from line order), and must fold the SAME stream —
+/// reading board, events with their owners, view — as a recording session's, whose lines carry
+/// the engine's scope. TEETH: a different successor does not compare equal.
 #[test]
-fn the_typed_shortcut_and_the_text_path_fold_the_same_version() {
+fn a_non_recording_fork_folds_the_same_stream_as_a_recording_one() {
     let dex = Dex::for_gen(3);
-    let r = Arc::new(root(&dex));
+    let opts = bridge_opts("gen3ou", "7,11,13,17".to_string(), P1, P2);
+    let plain = BridgeSession::new_construct_turn0(&opts, &dex).expect("session");
+    assert!(!plain.is_core());
+    let rp = Arc::new(BattleVersion::root(plain, ["P1", "P2"], [Some(P1), Some(P2)], [true, true]).unwrap());
+    let rc = Arc::new(root(&dex));
+    let (mut vp, mut vc) = (Arc::clone(&rp), Arc::clone(&rc));
     let mut n = 0;
-    for cmds in script().into_iter().take(3) {
-        let mut e = r.fork_session().unwrap();
-        e.feed_cmds(&cmds, &dex);
-        let typed = r.child(e.snapshot()).unwrap();
-        let text = r.child_text(e).unwrap();
+    for cmds in script() {
+        if vc.engine().map_or(true, |e| e.is_ended()) {
+            break;
+        }
+        vp = vp.step(&cmds, &dex).unwrap();
+        vc = vc.step(&cmds, &dex).unwrap();
         for side in 0..2 {
-            streams_equal(&typed, &text, side).unwrap();
+            parse_matches_step(&vc, &vp, side).unwrap_or_else(|e| panic!("p{}: {e:?}", side + 1));
             n += 1;
         }
     }
-    assert!(n >= 6);
-    // TEETH: two different successors must NOT compare equal (the integrity check can fail).
-    let a = r.step(&[cmd(0, "move 1"), cmd(1, "move 1")], &dex).unwrap();
-    let b = r.step(&[cmd(0, "move 2"), cmd(1, "move 1")], &dex).unwrap();
-    assert!(streams_equal(&a, &b, 0).is_err(), "streams_equal must see a different successor");
+    assert!(n >= 8, "only {n} boundaries compared");
+    let a = rc.step(&[cmd(0, "move 1"), cmd(1, "move 1")], &dex).unwrap();
+    let b = rp.step(&[cmd(0, "move 2"), cmd(1, "move 1")], &dex).unwrap();
+    assert!(parse_matches_step(&a, &b, 0).is_err(), "a different successor must not compare equal");
 }
 
 #[test]

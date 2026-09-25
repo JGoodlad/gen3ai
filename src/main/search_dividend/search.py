@@ -128,18 +128,7 @@ class SearchConfig:
     #: ``fork_sharing_parity_integration_test``, ``one_sided_view_parity_fuzz_test``). ``view`` and
     #: ``protocol`` are on the Rust Core Program's deletion manifest (one pass, after the cutover).
     materializer: str = "core"
-    #: ``materializer="core"`` only: how a successor's lines are folded — ``"typed"`` at the source
-    #: (the shortcut §6c licenses by ``parse(emit(step)) == step``) or ``"text"`` (the side's
-    #: protocol text through ``parse`` — the one path every other observation takes). A DECISION
-    #: INPUT, measured in ``program_rust_core.md`` §6.
-    core_path: str = "typed"
-    #: ``materializer="core"`` only: the INTEGRITY check — every Nth arm's successor is built BOTH
-    #: ways (typed + text) and asserted byte-equal, view AND encoded obs, failing loudly with the
-    #: decision, depth and field. 0 = off (production), 1 = every arm (every search test, fuzzer
-    #: and parity gate), N = sampled — cheap enough to leave on in a battery, so a number can carry
-    #: "integrity-sampled at 1/N, 0 mismatches" (``RealizedWidths.integrity_checked``).
-    integrity: int = 0
-    #: ``materializer="core"``, ``core_path="typed"`` only: fold the per-decision TRACKERS on every
+    #: ``materializer="core"`` only: fold the per-decision TRACKERS on every
     #: version of the tree (``gen3_core_trackers_v1``, ``designs/rust_sim/trackers.md``). OFF: nothing
     #: reads them before M4's encoder; ON only to measure the fork's tracker cost.
     core_trackers: bool = False
@@ -167,10 +156,6 @@ class SearchConfig:
             raise ValueError("materializer='core' is RUST-only (its successors are Rust-core "
                              "versions): pass search_impl='rust', or materializer='protocol' for the "
                              "node driver")
-        if self.core_path not in ("typed", "text"):
-            raise ValueError(f"unknown core_path {self.core_path!r} (expected 'typed' or 'text')")
-        if int(self.integrity) < 0:
-            raise ValueError(f"integrity must be >= 0 (0 = off, N = check 1 arm in N), got {self.integrity}")
         if self.root_strategy not in ROOT_STRATEGIES:
             raise ValueError(f"unknown root_strategy {self.root_strategy!r} "
                              f"(want one of {ROOT_STRATEGIES})")
@@ -1069,11 +1054,8 @@ class SearchEngine:
         # is told not to render, quote or ship the other copy. It was 43.0% of the reply bytes.
         # The requested side's payload is byte-identical either way; the other side's slot comes
         # back as a refusing sentinel rather than an empty dict.
-        # The core road's INTEGRITY count travels only on the core road, so a view / protocol
-        # caller sends exactly the historical request.
         core = self.cfg.materializer == "core"
-        core_kw = {"integrity": int(self.cfg.integrity)} if core else {}
-        expanded = self.session().expand_many(payload, side=ctx.side, **core_kw)
+        expanded = self.session().expand_many(payload, side=ctx.side)
         widths.arms_expanded += len(expanded)
         if deep:
             widths.deep_arms_expanded += len(expanded)
@@ -1331,11 +1313,7 @@ class SearchEngine:
         🚨 **No fallback, by design.** The protocol and view roads each hand arms they cannot answer
         to another road; this one answers every arm or RAISES — a D10 leaf is the version AT its
         intermediate decision (so it carries a fork like any other leaf), and a deeper ply always
-        forks from its parent's leaf. That is what makes the other roads deletable.
-
-        With ``integrity`` on, an arm the driver checked carries the text path's view beside the
-        typed one; :meth:`CoreSuccessorFactory.successor` encodes both and raises on any byte
-        difference, naming the decision (world turn + our history), the depth and the obs block."""
+        forks from its parent's leaf. That is what makes the other roads deletable."""
         out: "Dict[int, _Leaf]" = {}
         root_fork = None
         for li in branch_of:
@@ -1355,8 +1333,6 @@ class SearchEngine:
             widths.core_arms += 1
             if payload.get("mid"):
                 widths.core_arms_intermediate += 1
-            if payload.get("text_view") is not None:
-                widths.integrity_checked += 1
             if got is None:
                 continue                     # no decision here — every road agrees
             out[li] = _Leaf(obs=got.obs, mask=got.mask, action_choices=got.action_choices, fork=got)
@@ -1396,8 +1372,9 @@ class SearchEngine:
         return got
 
     def _core_open(self) -> Optional[str]:
-        """The ``core`` argument of ``open_root``: the fold path on the core road, else ``None``."""
-        return self.cfg.core_path if self.cfg.materializer == "core" else None
+        """The ``core`` argument of ``open_root``: ``"text"`` on the core road (the one fold path —
+        the typed shortcut is deleted, program §4 M4), else ``None``."""
+        return "text" if self.cfg.materializer == "core" else None
 
     def open_root(self, ss, turn: int, record, side: str):
         """Open a search root for ``side`` on this engine's road. The core road's ``core`` /

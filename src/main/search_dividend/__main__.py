@@ -105,15 +105,6 @@ def build_parser() -> argparse.ArgumentParser:
                         "`protocol` per arm; `protocol` replays the ply through poke-env. All three "
                         "decide identically at depth 1 (the parity gates); every result row is "
                         "stamped with the road.")
-    p.add_argument("--core-path", default="typed", choices=["typed", "text"],
-                   help="--materializer core only: fold each successor TYPED at the source (the "
-                        "shortcut) or from the side's protocol TEXT (the one path every other "
-                        "observation takes). Stamped on every row.")
-    p.add_argument("--search-integrity", type=int, default=0, metavar="N",
-                   help="--materializer core only: build every Nth successor BOTH ways (typed + "
-                        "text) and assert the view and the encoded obs byte-equal, failing loudly "
-                        "with the decision, depth and field. 0 = off (default), 1 = every arm, "
-                        "N = sampled; the row carries integrity_checked of core_arms.")
     p.add_argument("--leaf-head", default=None, metavar="PATH",
                    help="replace the WIN-PROB head's weights with a state_dict from PATH after "
                         "loading the checkpoint. The win head is a leak-safe SIDE readout (never "
@@ -473,8 +464,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         for budget in ([0.0] if arm == "base" else budgets):
             cfg = SearchConfig(arm=arm, budget_s=budget, caps=caps, score=args.score,
                                search_impl=args.search_impl,
-                               materializer=args.materializer, core_path=args.core_path,
-                               integrity=args.search_integrity,
+                               materializer=args.materializer,
                                honest_swap_moves=args.honest_swap_moves, seed=args.seed,
                                max_depth=args.max_depth,
                                root_strategy=args.root_strategy,
