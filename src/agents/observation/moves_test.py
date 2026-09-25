@@ -5,6 +5,21 @@ from agents.observation.types import TypeEncoder
 from poke_env.battle.move_category import MoveCategory
 
 
+@pytest.fixture(autouse=True)
+def _isolate_the_category_cache():
+    """`moves._CATEGORY_VAL_CACHE` memoizes a move's category BY ID for the whole process. The
+    fakes below give real move ids made-up categories (FakeMove's default is SPECIAL), so without
+    this a later test in the same worker encodes a real Earthquake as special — found as an
+    order-dependent slice N failure (`opp_team moves+5/+16/+27`, 2026-09-25)."""
+    from agents.observation import moves as _moves
+
+    saved = dict(_moves._CATEGORY_VAL_CACHE)
+    _moves._CATEGORY_VAL_CACHE.clear()
+    yield
+    _moves._CATEGORY_VAL_CACHE.clear()
+    _moves._CATEGORY_VAL_CACHE.update(saved)
+
+
 # ---------------------------------------------------------------------------
 # Fakes
 # ---------------------------------------------------------------------------
