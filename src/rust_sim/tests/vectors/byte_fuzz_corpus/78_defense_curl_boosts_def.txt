@@ -1,0 +1,753 @@
+# FIXTURE 78 — DEFENSE CURL raises DEF: `|-boost|<u>|def|1` (gen3_boost_index_fixes_v1; the port raised SpA, and the Brick Break into the curled Blissey dealt 1.5x).
+# Source: the M6 fuzz-fix bounded run (ab_fuzz --mode ourandom --protocol --format gen3ou --master-seed 620000), repro rmugkbp69_ab_6_11.
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=ourandom master_seed=620000 run_id=rmugkbp69 chunk=6
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_6_11
+TEAM	ab_6_11	p1	Swampert||leftovers|torrent|icebeam,earthquake,curse,substitute|Timid|,,4,252,,252|M||||]Aerodactyl||choiceband|rockhead|rockslide,earthquake,substitute,hiddenpowerbug|Jolly|4,252,,,,252|M|,30,,,30,30|||]Gengar||leftovers|levitate|explosion,willowisp,firepunch,icepunch|Timid|248,,44,8,112,96|M||||]Salamence||leftovers|intimidate|dragonclaw,earthquake,hiddenpowerflying,brickbreak|Adamant|,252,,,4,252|M|,30,,30,30,30|||]Umbreon||leftovers|synchronize|pursuit,toxic,charm,wish|Sassy|252,,120,,136,|M||||]Tyranitar||leftovers|sandstream|brickbreak,doubleedge,icebeam,crunch|Adamant|4,252,,,,252|M||||
+TEAM	ab_6_11	p2	Salamence||leftovers|intimidate|dragonclaw,wish,rockslide,hiddenpowerflying|Naive|,4,,252,,252|M|,30,,30,30,30|||]Tyranitar||leftovers|sandstream|taunt,rockslide,pursuit,focuspunch|Adamant|,252,,,4,252|M||||]Blissey||leftovers|naturalcure|defensecurl,softboiled,seismictoss,flamethrower|Modest|,,252,252,,4|F||||]Heracross||choiceband|swarm|rockslide,brickbreak,megahorn,substitute|Adamant|,252,4,,,252|M||||]Jirachi||leftovers|serenegrace|calmmind,psychic,protect,bodyslam|Timid|,,4,252,,252|N||||]Snorlax||leftovers|immunity|earthquake,curse,selfdestruct,focuspunch|Careful|144,96,132,,136,|M||||
+FMT	ab_6_11	gen3ou
+INIT	ab_6_11	13944,53868,3264,39854	1058978553	0
+DEC	ab_6_11	0	move	0	0	m3	s3	54001,22539,50486,10345	Swampert	277	341	0	-	-1	0	0	0	0	0	6	Heracross	301	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_6_11	1	move	0	0	m1	m0	48075,8988,13604,43569	Swampert	298	341	0	-	-1	0	0	0	0	0	6	Heracross	251	301	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_6_11	2	move	0	0	m0	s2	43767,43574,22782,52511	Swampert	319	341	0	-	-1	0	0	0	0	0	6	Blissey	619	651	0	frz	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_6_11	3	move	0	0	m3	m2	30748,10383,49628,23289	Swampert	340	341	0	-	-1	0	0	0	0	0	6	Blissey	651	651	0	frz	0	0	0	0	0	0	6	p1	0	0	1	0	0
+DEC	ab_6_11	4	move	0	0	m2	s5	59315,22955,18619,62147	Swampert	341	341	0	-	0	1	0	0	-1	0	6	Snorlax	497	497	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_6_11	5	move	0	0	m0	m1	4583,22785,6290,23233	Swampert	341	341	0	-	0	1	0	0	-1	0	6	Snorlax	464	497	0	-	1	1	0	0	-1	0	6	p1	0	0	0	0	0
+DEC	ab_6_11	6	move	0	0	m0	m0	61045,34981,27511,51593	Swampert	341	341	0	-	0	1	0	0	-1	0	6	Snorlax	428	497	0	-	1	1	0	0	-1	0	6	p1	0	0	0	0	0
+DEC	ab_6_11	7	move	0	0	m1	m3	40290,54379,49520,3213	Swampert	341	341	0	-	0	1	0	0	-1	0	6	Snorlax	374	497	0	-	1	1	0	0	-1	0	6	p1	0	0	0	0	0
+DEC	ab_6_11	8	move	0	0	m0	m2	16075,27498,39037,31402	Swampert	0	341	1	fnt	0	0	0	0	0	0	5	Snorlax	0	497	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_6_11	9	switch	1	1	s5	s5	49800,15081,25330,64981	Tyranitar	342	342	0	-	0	0	0	0	0	0	5	Blissey	651	651	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_6_11	10	move	0	0	m2	m0	8878,3222,7433,52640	Tyranitar	342	342	0	-	0	0	0	0	0	0	5	Blissey	548	651	0	-	0	1	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_6_11	11	move	0	0	m2	m1	22354,22785,42099,61409	Tyranitar	342	342	0	-	0	0	0	0	0	0	5	Blissey	502	651	0	frz	0	1	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_6_11	12	move	0	0	m0	m1	58347,3565,22850,58524	Tyranitar	342	342	0	-	0	0	0	0	0	0	5	Blissey	214	651	0	frz	0	1	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_6_11	13	move	0	0	m1	m1	18565,14709,45095,54384	Tyranitar	298	342	0	-	0	0	0	0	0	0	5	Blissey	0	651	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_6_11	14	switch	0	1	-	s1	35005,24660,28616,52141	Tyranitar	298	342	0	-	0	0	0	0	0	0	5	Tyranitar	341	341	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_6_11	15	move	0	0	m2	m0	24394,53398,38889,33266	Tyranitar	319	342	0	-	0	0	0	0	0	0	5	Tyranitar	302	341	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_6_11	16	move	0	0	m2	m1	46135,58973,42918,49527	Tyranitar	202	342	0	-	0	0	0	0	0	0	5	Tyranitar	260	341	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_6_11	17	move	0	0	m2	m0	6476,55684,24833,46215	Tyranitar	223	342	0	-	0	0	0	0	0	0	5	Tyranitar	215	341	0	frz	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_6_11	18	move	0	0	m3	m1	45162,37137,8163,44612	Tyranitar	244	342	0	-	0	0	0	0	0	0	5	Tyranitar	196	341	0	frz	0	0	0	-1	0	0	4	p1	0	0	0	0	0
+DEC	ab_6_11	19	move	0	0	m2	m3	12089,56906,56842,41853	Tyranitar	265	342	0	-	0	0	0	0	0	0	5	Tyranitar	128	341	0	frz	0	0	0	-1	0	0	4	p1	0	0	0	0	0
+DEC	ab_6_11	20	move	0	0	m3	m2	52416,50940,59742,43277	Tyranitar	286	342	0	-	0	0	0	0	0	0	5	Tyranitar	88	341	0	frz	0	0	0	-2	0	0	4	p1	0	0	0	0	0
+DEC	ab_6_11	21	move	0	0	m2	m3	51325,31372,65316,35413	Tyranitar	286	342	0	-	0	0	0	0	0	0	5	Tyranitar	0	341	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	22	switch	0	1	-	s4	1107,60687,56299,44876	Tyranitar	307	342	0	-	0	0	0	0	0	0	5	Jirachi	341	341	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_6_11	23	move	0	0	m0	m3	20331,65127,48897,29620	Tyranitar	300	342	0	-	0	0	0	0	0	0	5	Jirachi	262	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	24	move	0	0	m2	m1	3818,24490,59158,48506	Tyranitar	321	342	0	-	0	0	0	0	0	0	5	Jirachi	252	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	25	move	0	0	m3	m1	17095,50252,23136,15088	Tyranitar	342	342	0	-	0	0	0	0	0	0	5	Jirachi	198	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	26	move	0	0	m3	s3	63298,10054,12066,6103	Tyranitar	342	342	0	-	-1	0	0	0	0	0	5	Salamence	219	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	27	move	0	0	m1	s3	38121,29045,16526,49659	Tyranitar	342	342	0	-	-1	0	0	0	0	0	5	Jirachi	168	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	28	move	0	0	m0	m0	41366,63713,15209,45535	Tyranitar	342	342	0	-	-1	0	0	0	0	0	5	Jirachi	125	341	0	-	0	0	1	1	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	29	move	0	0	m0	m3	27678,29405,3067,59777	Tyranitar	336	342	0	par	-1	0	0	0	0	0	5	Jirachi	78	341	0	-	0	0	1	1	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	30	move	0	0	m1	s3	27662,53022,52850,32444	Tyranitar	326	342	0	par	-2	0	0	0	0	0	5	Salamence	125	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	31	move	0	0	m1	m3	63147,39955,31562,34084	Tyranitar	266	342	0	par	-2	0	0	0	0	0	5	Salamence	27	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	32	move	0	0	m3	m2	50307,31422,40050,12827	Tyranitar	213	342	0	par	-2	0	0	0	0	0	5	Salamence	27	331	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	33	move	0	0	s1	m1	27728,20694,39105,54890	Aerodactyl	302	302	0	-	0	0	0	0	0	0	5	Salamence	27	331	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	34	move	0	0	m2	m1	12183,54781,38212,61589	Aerodactyl	227	302	0	-	0	0	0	0	0	0	5	Salamence	192	331	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	35	move	0	0	m2	m0	1490,17282,13655,47833	Aerodactyl	227	302	0	-	0	0	0	0	0	0	5	Salamence	192	331	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	36	move	0	0	m2	m3	6743,58269,40564,2269	Aerodactyl	152	302	0	-	0	0	0	0	0	0	5	Salamence	192	331	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	37	move	0	0	m2	m1	65331,60950,5815,25332	Aerodactyl	77	302	0	-	0	0	0	0	0	0	5	Salamence	192	331	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	38	move	0	0	m2	m2	61637,34355,47753,29739	Aerodactyl	77	302	0	-	0	0	0	0	0	0	5	Salamence	331	331	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	39	move	0	0	m2	m0	17706,57978,12169,8463	Aerodactyl	2	302	0	-	0	0	0	0	0	0	5	Salamence	331	331	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	40	move	0	0	m2	m3	45462,52612,54260,36400	Aerodactyl	0	302	1	fnt	0	0	0	0	0	0	4	Salamence	331	331	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	41	switch	1	0	s3	-	9656,19313,41738,26547	Salamence	331	331	0	-	0	0	0	0	0	0	4	Salamence	331	331	0	-	-1	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_6_11	42	move	0	0	s2	m3	25938,35765,1085,11287	Gengar	231	323	0	-	0	0	0	0	0	0	4	Salamence	331	331	0	-	-1	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	43	move	0	0	s1	s3	48140,52232,20866,21206	Tyranitar	234	342	0	par	0	0	0	0	0	0	4	Jirachi	99	341	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	44	move	0	0	s1	m1	23395,28039,55123,25354	Gengar	0	323	1	fnt	0	0	0	0	0	0	3	Jirachi	99	341	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_6_11	45	switch	1	0	s2	-	31106,31445,33107,2997	Salamence	331	331	0	-	0	0	0	0	0	0	3	Jirachi	120	341	0	-	-1	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_6_11	46	move	0	0	m3	m3	5982,59670,43550,14119	Salamence	285	331	0	par	0	0	0	0	0	0	3	Jirachi	34	341	0	-	-1	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_6_11	47	move	0	0	m0	m3	62478,60349,37563,30511	Salamence	236	331	0	par	0	0	0	0	0	0	3	Jirachi	0	341	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_6_11	48	switch	0	1	-	s3	27382,6468,19757,52046	Salamence	236	331	0	par	-1	0	0	0	0	0	3	Salamence	331	331	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_6_11	49	move	0	0	m2	m2	26926,44412,21617,33892	Salamence	236	331	0	par	-1	0	0	0	0	0	3	Salamence	218	331	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_6_11	50	move	0	0	m2	m1	24537,25189,63729,25179	Salamence	236	331	0	par	-1	0	0	0	0	0	3	Salamence	104	331	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_6_11	51	move	0	0	m2	m2	50663,64223,46966,32739	Salamence	42	331	0	par	-1	0	0	0	0	0	3	Salamence	0	331	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_6_11	52	switch	0	1	-	s2	40324,27442,3980,36434	Salamence	42	331	0	par	-1	0	0	0	0	0	3	Heracross	283	301	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_6_11	53	move	0	0	m1	m1	33650,56293,37107,41287	Salamence	0	331	1	fnt	0	0	0	0	0	0	2	Heracross	283	301	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_6_11	54	switch	1	0	s4	-	58500,35034,61061,16070	Umbreon	394	394	0	-	0	0	0	0	0	0	2	Heracross	265	301	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_6_11	55	move	0	0	m2	m1	30122,31281,50048,61434	Umbreon	0	394	1	fnt	0	0	0	0	0	0	1	Heracross	247	301	0	-	-2	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_6_11	56	switch	1	0	s1	-	29081,168,10824,5733	Tyranitar	234	342	0	par	0	0	0	0	0	0	1	Heracross	247	301	0	-	-2	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_6_11	57	move	0	0	m0	m1	41857,44870,53439,5614	Tyranitar	0	342	1	par	0	0	0	0	0	0	0	Heracross	247	301	0	-	-2	0	0	0	0	0	1	p2	0	0	0	0	0
+END	ab_6_11	1	p2
+L	ab_6_11	0	|t:|<NORMALIZED>
+L	ab_6_11	1	|gametype|singles
+L	ab_6_11	2	|player|p1|P1||
+L	ab_6_11	3	|player|p2|P2||
+L	ab_6_11	4	|gen|3
+L	ab_6_11	5	|tier|[Gen 3] OU
+L	ab_6_11	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_6_11	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_6_11	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_6_11	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_6_11	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_6_11	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_6_11	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_6_11	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_6_11	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_6_11	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_6_11	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_6_11	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_6_11	18	|
+L	ab_6_11	19	|t:|<NORMALIZED>
+L	ab_6_11	20	|teamsize|p1|6
+L	ab_6_11	21	|teamsize|p2|6
+L	ab_6_11	22	|start
+L	ab_6_11	23	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_6_11	24	|switch|p2a: Salamence|Salamence, M|331/331
+L	ab_6_11	25	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_6_11	26	|-unboost|p1a: Swampert|atk|1
+L	ab_6_11	27	|turn|1
+L	ab_6_11	28	|
+L	ab_6_11	29	|t:|<NORMALIZED>
+L	ab_6_11	30	|switch|p2a: Heracross|Heracross, M|301/301
+L	ab_6_11	31	|move|p1a: Swampert|Substitute|p1a: Swampert
+L	ab_6_11	32	|-start|p1a: Swampert|Substitute
+L	ab_6_11	33	|-damage|p1a: Swampert|256/341
+L	ab_6_11	34	|
+L	ab_6_11	35	|-heal|p1a: Swampert|277/341|[from] item: Leftovers
+L	ab_6_11	36	|upkeep
+L	ab_6_11	37	|turn|2
+L	ab_6_11	38	|
+L	ab_6_11	39	|t:|<NORMALIZED>
+L	ab_6_11	40	|move|p2a: Heracross|Rock Slide|p1a: Swampert
+L	ab_6_11	41	|-resisted|p1a: Swampert
+L	ab_6_11	42	|-activate|p1a: Swampert|Substitute|[damage]
+L	ab_6_11	43	|move|p1a: Swampert|Earthquake|p2a: Heracross
+L	ab_6_11	44	|-resisted|p2a: Heracross
+L	ab_6_11	45	|-damage|p2a: Heracross|251/301
+L	ab_6_11	46	|
+L	ab_6_11	47	|-heal|p1a: Swampert|298/341|[from] item: Leftovers
+L	ab_6_11	48	|upkeep
+L	ab_6_11	49	|turn|3
+L	ab_6_11	50	|
+L	ab_6_11	51	|t:|<NORMALIZED>
+L	ab_6_11	52	|switch|p2a: Blissey|Blissey, F|651/651
+L	ab_6_11	53	|move|p1a: Swampert|Ice Beam|p2a: Blissey
+L	ab_6_11	54	|-damage|p2a: Blissey|579/651
+L	ab_6_11	55	|-status|p2a: Blissey|frz
+L	ab_6_11	56	|
+L	ab_6_11	57	|-heal|p1a: Swampert|319/341|[from] item: Leftovers
+L	ab_6_11	58	|-heal|p2a: Blissey|619/651 frz|[from] item: Leftovers
+L	ab_6_11	59	|upkeep
+L	ab_6_11	60	|turn|4
+L	ab_6_11	61	|
+L	ab_6_11	62	|t:|<NORMALIZED>
+L	ab_6_11	63	|move|p1a: Swampert|Substitute|p1a: Swampert
+L	ab_6_11	64	|-fail|p1a: Swampert|move: Substitute
+L	ab_6_11	65	|cant|p2a: Blissey|frz
+L	ab_6_11	66	|
+L	ab_6_11	67	|-heal|p1a: Swampert|340/341|[from] item: Leftovers
+L	ab_6_11	68	|-heal|p2a: Blissey|651/651 frz|[from] item: Leftovers
+L	ab_6_11	69	|upkeep
+L	ab_6_11	70	|turn|5
+L	ab_6_11	71	|
+L	ab_6_11	72	|t:|<NORMALIZED>
+L	ab_6_11	73	|-curestatus|p2a: Blissey|frz|[from] ability: Natural Cure|[silent]
+L	ab_6_11	74	|switch|p2a: Snorlax|Snorlax, M|497/497
+L	ab_6_11	75	|move|p1a: Swampert|Curse|p1a: Swampert
+L	ab_6_11	76	|-unboost|p1a: Swampert|spe|1
+L	ab_6_11	77	|-boost|p1a: Swampert|atk|1
+L	ab_6_11	78	|-boost|p1a: Swampert|def|1
+L	ab_6_11	79	|
+L	ab_6_11	80	|-heal|p1a: Swampert|341/341|[from] item: Leftovers
+L	ab_6_11	81	|upkeep
+L	ab_6_11	82	|turn|6
+L	ab_6_11	83	|
+L	ab_6_11	84	|t:|<NORMALIZED>
+L	ab_6_11	85	|move|p1a: Swampert|Ice Beam|p2a: Snorlax
+L	ab_6_11	86	|-damage|p2a: Snorlax|433/497
+L	ab_6_11	87	|move|p2a: Snorlax|Curse|p2a: Snorlax
+L	ab_6_11	88	|-unboost|p2a: Snorlax|spe|1
+L	ab_6_11	89	|-boost|p2a: Snorlax|atk|1
+L	ab_6_11	90	|-boost|p2a: Snorlax|def|1
+L	ab_6_11	91	|
+L	ab_6_11	92	|-heal|p2a: Snorlax|464/497|[from] item: Leftovers
+L	ab_6_11	93	|upkeep
+L	ab_6_11	94	|turn|7
+L	ab_6_11	95	|
+L	ab_6_11	96	|t:|<NORMALIZED>
+L	ab_6_11	97	|move|p1a: Swampert|Ice Beam|p2a: Snorlax
+L	ab_6_11	98	|-damage|p2a: Snorlax|397/497
+L	ab_6_11	99	|move|p2a: Snorlax|Earthquake|p1a: Swampert
+L	ab_6_11	100	|-end|p1a: Swampert|Substitute
+L	ab_6_11	101	|
+L	ab_6_11	102	|-heal|p2a: Snorlax|428/497|[from] item: Leftovers
+L	ab_6_11	103	|upkeep
+L	ab_6_11	104	|turn|8
+L	ab_6_11	105	|
+L	ab_6_11	106	|t:|<NORMALIZED>
+L	ab_6_11	107	|-singleturn|p2a: Snorlax|move: Focus Punch
+L	ab_6_11	108	|move|p1a: Swampert|Earthquake|p2a: Snorlax
+L	ab_6_11	109	|-damage|p2a: Snorlax|343/497
+L	ab_6_11	110	|move|p2a: Snorlax|Focus Punch||[still]
+L	ab_6_11	111	|cant|p2a: Snorlax|Focus Punch|Focus Punch
+L	ab_6_11	112	|
+L	ab_6_11	113	|-heal|p2a: Snorlax|374/497|[from] item: Leftovers
+L	ab_6_11	114	|upkeep
+L	ab_6_11	115	|turn|9
+L	ab_6_11	116	|
+L	ab_6_11	117	|t:|<NORMALIZED>
+L	ab_6_11	118	|move|p1a: Swampert|Ice Beam|p2a: Snorlax
+L	ab_6_11	119	|-damage|p2a: Snorlax|310/497
+L	ab_6_11	120	|move|p2a: Snorlax|Self-Destruct|p1a: Swampert
+L	ab_6_11	121	|-damage|p1a: Swampert|0 fnt
+L	ab_6_11	122	|faint|p2a: Snorlax
+L	ab_6_11	123	|faint|p1a: Swampert
+L	ab_6_11	124	|
+L	ab_6_11	125	|t:|<NORMALIZED>
+L	ab_6_11	126	|switch|p1a: Tyranitar|Tyranitar, M|342/342
+L	ab_6_11	127	|switch|p2a: Blissey|Blissey, F|651/651
+L	ab_6_11	128	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_6_11	129	|
+L	ab_6_11	130	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	131	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_6_11	132	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_6_11	133	|upkeep
+L	ab_6_11	134	|turn|10
+L	ab_6_11	135	|
+L	ab_6_11	136	|t:|<NORMALIZED>
+L	ab_6_11	137	|move|p1a: Tyranitar|Ice Beam|p2a: Blissey
+L	ab_6_11	138	|-crit|p2a: Blissey
+L	ab_6_11	139	|-damage|p2a: Blissey|548/651
+L	ab_6_11	140	|move|p2a: Blissey|Defense Curl|p2a: Blissey
+L	ab_6_11	141	|-boost|p2a: Blissey|def|1
+L	ab_6_11	142	|
+L	ab_6_11	143	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	144	|-damage|p2a: Blissey|508/651|[from] Sandstorm
+L	ab_6_11	145	|-heal|p2a: Blissey|548/651|[from] item: Leftovers
+L	ab_6_11	146	|upkeep
+L	ab_6_11	147	|turn|11
+L	ab_6_11	148	|
+L	ab_6_11	149	|t:|<NORMALIZED>
+L	ab_6_11	150	|move|p1a: Tyranitar|Ice Beam|p2a: Blissey
+L	ab_6_11	151	|-damage|p2a: Blissey|502/651
+L	ab_6_11	152	|-status|p2a: Blissey|frz
+L	ab_6_11	153	|cant|p2a: Blissey|frz
+L	ab_6_11	154	|
+L	ab_6_11	155	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	156	|-damage|p2a: Blissey|462/651 frz|[from] Sandstorm
+L	ab_6_11	157	|-heal|p2a: Blissey|502/651 frz|[from] item: Leftovers
+L	ab_6_11	158	|upkeep
+L	ab_6_11	159	|turn|12
+L	ab_6_11	160	|
+L	ab_6_11	161	|t:|<NORMALIZED>
+L	ab_6_11	162	|move|p1a: Tyranitar|Brick Break|p2a: Blissey
+L	ab_6_11	163	|-supereffective|p2a: Blissey
+L	ab_6_11	164	|-damage|p2a: Blissey|214/651 frz
+L	ab_6_11	165	|cant|p2a: Blissey|frz
+L	ab_6_11	166	|
+L	ab_6_11	167	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	168	|-damage|p2a: Blissey|174/651 frz|[from] Sandstorm
+L	ab_6_11	169	|-heal|p2a: Blissey|214/651 frz|[from] item: Leftovers
+L	ab_6_11	170	|upkeep
+L	ab_6_11	171	|turn|13
+L	ab_6_11	172	|
+L	ab_6_11	173	|t:|<NORMALIZED>
+L	ab_6_11	174	|move|p1a: Tyranitar|Double-Edge|p2a: Blissey
+L	ab_6_11	175	|-damage|p2a: Blissey|17/651 frz
+L	ab_6_11	176	|-damage|p1a: Tyranitar|277/342|[from] Recoil|[of] p2a: Blissey
+L	ab_6_11	177	|cant|p2a: Blissey|frz
+L	ab_6_11	178	|
+L	ab_6_11	179	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	180	|-damage|p2a: Blissey|0 fnt|[from] Sandstorm
+L	ab_6_11	181	|faint|p2a: Blissey
+L	ab_6_11	182	|-heal|p1a: Tyranitar|298/342|[from] item: Leftovers
+L	ab_6_11	183	|upkeep
+L	ab_6_11	184	|
+L	ab_6_11	185	|t:|<NORMALIZED>
+L	ab_6_11	186	|switch|p2a: Tyranitar|Tyranitar, M|341/341
+L	ab_6_11	187	|turn|14
+L	ab_6_11	188	|
+L	ab_6_11	189	|t:|<NORMALIZED>
+L	ab_6_11	190	|move|p2a: Tyranitar|Taunt|p1a: Tyranitar
+L	ab_6_11	191	|-start|p1a: Tyranitar|move: Taunt
+L	ab_6_11	192	|move|p1a: Tyranitar|Ice Beam|p2a: Tyranitar
+L	ab_6_11	193	|-damage|p2a: Tyranitar|281/341
+L	ab_6_11	194	|
+L	ab_6_11	195	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	196	|-heal|p2a: Tyranitar|302/341|[from] item: Leftovers
+L	ab_6_11	197	|-heal|p1a: Tyranitar|319/342|[from] item: Leftovers
+L	ab_6_11	198	|upkeep
+L	ab_6_11	199	|turn|15
+L	ab_6_11	200	|
+L	ab_6_11	201	|t:|<NORMALIZED>
+L	ab_6_11	202	|move|p1a: Tyranitar|Ice Beam|p2a: Tyranitar
+L	ab_6_11	203	|-damage|p2a: Tyranitar|239/341
+L	ab_6_11	204	|move|p2a: Tyranitar|Rock Slide|p1a: Tyranitar
+L	ab_6_11	205	|-damage|p1a: Tyranitar|181/342
+L	ab_6_11	206	|
+L	ab_6_11	207	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	208	|-heal|p2a: Tyranitar|260/341|[from] item: Leftovers
+L	ab_6_11	209	|-heal|p1a: Tyranitar|202/342|[from] item: Leftovers
+L	ab_6_11	210	|-end|p1a: Tyranitar|move: Taunt|[silent]
+L	ab_6_11	211	|upkeep
+L	ab_6_11	212	|turn|16
+L	ab_6_11	213	|
+L	ab_6_11	214	|t:|<NORMALIZED>
+L	ab_6_11	215	|move|p1a: Tyranitar|Ice Beam|p2a: Tyranitar
+L	ab_6_11	216	|-damage|p2a: Tyranitar|194/341
+L	ab_6_11	217	|-status|p2a: Tyranitar|frz
+L	ab_6_11	218	|cant|p2a: Tyranitar|frz
+L	ab_6_11	219	|
+L	ab_6_11	220	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	221	|-heal|p2a: Tyranitar|215/341 frz|[from] item: Leftovers
+L	ab_6_11	222	|-heal|p1a: Tyranitar|223/342|[from] item: Leftovers
+L	ab_6_11	223	|upkeep
+L	ab_6_11	224	|turn|17
+L	ab_6_11	225	|
+L	ab_6_11	226	|t:|<NORMALIZED>
+L	ab_6_11	227	|move|p1a: Tyranitar|Crunch|p2a: Tyranitar
+L	ab_6_11	228	|-resisted|p2a: Tyranitar
+L	ab_6_11	229	|-damage|p2a: Tyranitar|175/341 frz
+L	ab_6_11	230	|-unboost|p2a: Tyranitar|spd|1
+L	ab_6_11	231	|cant|p2a: Tyranitar|frz
+L	ab_6_11	232	|
+L	ab_6_11	233	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	234	|-heal|p1a: Tyranitar|244/342|[from] item: Leftovers
+L	ab_6_11	235	|-heal|p2a: Tyranitar|196/341 frz|[from] item: Leftovers
+L	ab_6_11	236	|upkeep
+L	ab_6_11	237	|turn|18
+L	ab_6_11	238	|
+L	ab_6_11	239	|t:|<NORMALIZED>
+L	ab_6_11	240	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_6_11	241	|move|p1a: Tyranitar|Ice Beam|p2a: Tyranitar
+L	ab_6_11	242	|-damage|p2a: Tyranitar|107/341 frz
+L	ab_6_11	243	|cant|p2a: Tyranitar|frz
+L	ab_6_11	244	|
+L	ab_6_11	245	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	246	|-heal|p2a: Tyranitar|128/341 frz|[from] item: Leftovers
+L	ab_6_11	247	|-heal|p1a: Tyranitar|265/342|[from] item: Leftovers
+L	ab_6_11	248	|upkeep
+L	ab_6_11	249	|turn|19
+L	ab_6_11	250	|
+L	ab_6_11	251	|t:|<NORMALIZED>
+L	ab_6_11	252	|move|p1a: Tyranitar|Crunch|p2a: Tyranitar
+L	ab_6_11	253	|-resisted|p2a: Tyranitar
+L	ab_6_11	254	|-damage|p2a: Tyranitar|67/341 frz
+L	ab_6_11	255	|-unboost|p2a: Tyranitar|spd|1
+L	ab_6_11	256	|cant|p2a: Tyranitar|frz
+L	ab_6_11	257	|
+L	ab_6_11	258	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	259	|-heal|p2a: Tyranitar|88/341 frz|[from] item: Leftovers
+L	ab_6_11	260	|-heal|p1a: Tyranitar|286/342|[from] item: Leftovers
+L	ab_6_11	261	|upkeep
+L	ab_6_11	262	|turn|20
+L	ab_6_11	263	|
+L	ab_6_11	264	|t:|<NORMALIZED>
+L	ab_6_11	265	|-singleturn|p2a: Tyranitar|move: Focus Punch
+L	ab_6_11	266	|move|p1a: Tyranitar|Ice Beam|p2a: Tyranitar
+L	ab_6_11	267	|-damage|p2a: Tyranitar|0 fnt
+L	ab_6_11	268	|faint|p2a: Tyranitar
+L	ab_6_11	269	|
+L	ab_6_11	270	|t:|<NORMALIZED>
+L	ab_6_11	271	|switch|p2a: Jirachi|Jirachi|341/341
+L	ab_6_11	272	|
+L	ab_6_11	273	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	274	|-heal|p1a: Tyranitar|307/342|[from] item: Leftovers
+L	ab_6_11	275	|upkeep
+L	ab_6_11	276	|turn|21
+L	ab_6_11	277	|
+L	ab_6_11	278	|t:|<NORMALIZED>
+L	ab_6_11	279	|move|p2a: Jirachi|Body Slam|p1a: Tyranitar
+L	ab_6_11	280	|-resisted|p1a: Tyranitar
+L	ab_6_11	281	|-damage|p1a: Tyranitar|279/342
+L	ab_6_11	282	|move|p1a: Tyranitar|Brick Break|p2a: Jirachi
+L	ab_6_11	283	|-damage|p2a: Jirachi|241/341
+L	ab_6_11	284	|
+L	ab_6_11	285	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	286	|-heal|p2a: Jirachi|262/341|[from] item: Leftovers
+L	ab_6_11	287	|-heal|p1a: Tyranitar|300/342|[from] item: Leftovers
+L	ab_6_11	288	|upkeep
+L	ab_6_11	289	|turn|22
+L	ab_6_11	290	|
+L	ab_6_11	291	|t:|<NORMALIZED>
+L	ab_6_11	292	|move|p2a: Jirachi|Psychic|p1a: Tyranitar
+L	ab_6_11	293	|-immune|p1a: Tyranitar
+L	ab_6_11	294	|move|p1a: Tyranitar|Ice Beam|p2a: Jirachi
+L	ab_6_11	295	|-resisted|p2a: Jirachi
+L	ab_6_11	296	|-damage|p2a: Jirachi|231/341
+L	ab_6_11	297	|
+L	ab_6_11	298	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	299	|-heal|p2a: Jirachi|252/341|[from] item: Leftovers
+L	ab_6_11	300	|-heal|p1a: Tyranitar|321/342|[from] item: Leftovers
+L	ab_6_11	301	|upkeep
+L	ab_6_11	302	|turn|23
+L	ab_6_11	303	|
+L	ab_6_11	304	|t:|<NORMALIZED>
+L	ab_6_11	305	|move|p2a: Jirachi|Psychic|p1a: Tyranitar
+L	ab_6_11	306	|-immune|p1a: Tyranitar
+L	ab_6_11	307	|move|p1a: Tyranitar|Crunch|p2a: Jirachi
+L	ab_6_11	308	|-damage|p2a: Jirachi|177/341
+L	ab_6_11	309	|
+L	ab_6_11	310	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	311	|-heal|p2a: Jirachi|198/341|[from] item: Leftovers
+L	ab_6_11	312	|-heal|p1a: Tyranitar|342/342|[from] item: Leftovers
+L	ab_6_11	313	|upkeep
+L	ab_6_11	314	|turn|24
+L	ab_6_11	315	|
+L	ab_6_11	316	|t:|<NORMALIZED>
+L	ab_6_11	317	|switch|p2a: Salamence|Salamence, M|331/331
+L	ab_6_11	318	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_6_11	319	|-unboost|p1a: Tyranitar|atk|1
+L	ab_6_11	320	|move|p1a: Tyranitar|Crunch|p2a: Salamence
+L	ab_6_11	321	|-damage|p2a: Salamence|219/331
+L	ab_6_11	322	|
+L	ab_6_11	323	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	324	|-damage|p2a: Salamence|199/331|[from] Sandstorm
+L	ab_6_11	325	|-heal|p2a: Salamence|219/331|[from] item: Leftovers
+L	ab_6_11	326	|upkeep
+L	ab_6_11	327	|turn|25
+L	ab_6_11	328	|
+L	ab_6_11	329	|t:|<NORMALIZED>
+L	ab_6_11	330	|switch|p2a: Jirachi|Jirachi|198/341
+L	ab_6_11	331	|move|p1a: Tyranitar|Double-Edge|p2a: Jirachi
+L	ab_6_11	332	|-resisted|p2a: Jirachi
+L	ab_6_11	333	|-damage|p2a: Jirachi|147/341
+L	ab_6_11	334	|-damage|p1a: Tyranitar|325/342|[from] Recoil|[of] p2a: Jirachi
+L	ab_6_11	335	|
+L	ab_6_11	336	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	337	|-heal|p2a: Jirachi|168/341|[from] item: Leftovers
+L	ab_6_11	338	|-heal|p1a: Tyranitar|342/342|[from] item: Leftovers
+L	ab_6_11	339	|upkeep
+L	ab_6_11	340	|turn|26
+L	ab_6_11	341	|
+L	ab_6_11	342	|t:|<NORMALIZED>
+L	ab_6_11	343	|move|p2a: Jirachi|Calm Mind|p2a: Jirachi
+L	ab_6_11	344	|-boost|p2a: Jirachi|spa|1
+L	ab_6_11	345	|-boost|p2a: Jirachi|spd|1
+L	ab_6_11	346	|move|p1a: Tyranitar|Brick Break|p2a: Jirachi
+L	ab_6_11	347	|-damage|p2a: Jirachi|104/341
+L	ab_6_11	348	|
+L	ab_6_11	349	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	350	|-heal|p2a: Jirachi|125/341|[from] item: Leftovers
+L	ab_6_11	351	|upkeep
+L	ab_6_11	352	|turn|27
+L	ab_6_11	353	|
+L	ab_6_11	354	|t:|<NORMALIZED>
+L	ab_6_11	355	|move|p2a: Jirachi|Body Slam|p1a: Tyranitar
+L	ab_6_11	356	|-resisted|p1a: Tyranitar
+L	ab_6_11	357	|-damage|p1a: Tyranitar|315/342
+L	ab_6_11	358	|-status|p1a: Tyranitar|par
+L	ab_6_11	359	|move|p1a: Tyranitar|Brick Break|p2a: Jirachi
+L	ab_6_11	360	|-damage|p2a: Jirachi|57/341
+L	ab_6_11	361	|
+L	ab_6_11	362	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	363	|-heal|p2a: Jirachi|78/341|[from] item: Leftovers
+L	ab_6_11	364	|-heal|p1a: Tyranitar|336/342 par|[from] item: Leftovers
+L	ab_6_11	365	|upkeep
+L	ab_6_11	366	|turn|28
+L	ab_6_11	367	|
+L	ab_6_11	368	|t:|<NORMALIZED>
+L	ab_6_11	369	|switch|p2a: Salamence|Salamence, M|219/331
+L	ab_6_11	370	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_6_11	371	|-unboost|p1a: Tyranitar|atk|1
+L	ab_6_11	372	|move|p1a: Tyranitar|Double-Edge|p2a: Salamence
+L	ab_6_11	373	|-damage|p2a: Salamence|125/331
+L	ab_6_11	374	|-damage|p1a: Tyranitar|305/342 par|[from] Recoil|[of] p2a: Salamence
+L	ab_6_11	375	|
+L	ab_6_11	376	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	377	|-damage|p2a: Salamence|105/331|[from] Sandstorm
+L	ab_6_11	378	|-heal|p2a: Salamence|125/331|[from] item: Leftovers
+L	ab_6_11	379	|-heal|p1a: Tyranitar|326/342 par|[from] item: Leftovers
+L	ab_6_11	380	|upkeep
+L	ab_6_11	381	|turn|29
+L	ab_6_11	382	|
+L	ab_6_11	383	|t:|<NORMALIZED>
+L	ab_6_11	384	|move|p2a: Salamence|Hidden Power|p1a: Tyranitar
+L	ab_6_11	385	|-resisted|p1a: Tyranitar
+L	ab_6_11	386	|-damage|p1a: Tyranitar|277/342 par
+L	ab_6_11	387	|move|p1a: Tyranitar|Double-Edge|p2a: Salamence
+L	ab_6_11	388	|-damage|p2a: Salamence|27/331
+L	ab_6_11	389	|-damage|p1a: Tyranitar|245/342 par|[from] Recoil|[of] p2a: Salamence
+L	ab_6_11	390	|
+L	ab_6_11	391	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	392	|-damage|p2a: Salamence|7/331|[from] Sandstorm
+L	ab_6_11	393	|-heal|p2a: Salamence|27/331|[from] item: Leftovers
+L	ab_6_11	394	|-heal|p1a: Tyranitar|266/342 par|[from] item: Leftovers
+L	ab_6_11	395	|upkeep
+L	ab_6_11	396	|turn|30
+L	ab_6_11	397	|
+L	ab_6_11	398	|t:|<NORMALIZED>
+L	ab_6_11	399	|move|p2a: Salamence|Rock Slide|p1a: Tyranitar
+L	ab_6_11	400	|-damage|p1a: Tyranitar|192/342 par
+L	ab_6_11	401	|cant|p1a: Tyranitar|flinch
+L	ab_6_11	402	|
+L	ab_6_11	403	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	404	|-damage|p2a: Salamence|7/331|[from] Sandstorm
+L	ab_6_11	405	|-heal|p2a: Salamence|27/331|[from] item: Leftovers
+L	ab_6_11	406	|-heal|p1a: Tyranitar|213/342 par|[from] item: Leftovers
+L	ab_6_11	407	|upkeep
+L	ab_6_11	408	|turn|31
+L	ab_6_11	409	|
+L	ab_6_11	410	|t:|<NORMALIZED>
+L	ab_6_11	411	|switch|p1a: Aerodactyl|Aerodactyl, M|302/302
+L	ab_6_11	412	|move|p2a: Salamence|Wish|p2a: Salamence
+L	ab_6_11	413	|
+L	ab_6_11	414	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	415	|-damage|p2a: Salamence|7/331|[from] Sandstorm
+L	ab_6_11	416	|-heal|p2a: Salamence|27/331|[from] item: Leftovers
+L	ab_6_11	417	|upkeep
+L	ab_6_11	418	|turn|32
+L	ab_6_11	419	|
+L	ab_6_11	420	|t:|<NORMALIZED>
+L	ab_6_11	421	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_6_11	422	|-start|p1a: Aerodactyl|Substitute
+L	ab_6_11	423	|-damage|p1a: Aerodactyl|227/302
+L	ab_6_11	424	|move|p2a: Salamence|Wish||[still]
+L	ab_6_11	425	|-fail|p2a: Salamence
+L	ab_6_11	426	|
+L	ab_6_11	427	|-heal|p2a: Salamence|192/331|[from] move: Wish|[wisher] Salamence
+L	ab_6_11	428	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	429	|-damage|p2a: Salamence|172/331|[from] Sandstorm
+L	ab_6_11	430	|-heal|p2a: Salamence|192/331|[from] item: Leftovers
+L	ab_6_11	431	|upkeep
+L	ab_6_11	432	|turn|33
+L	ab_6_11	433	|
+L	ab_6_11	434	|t:|<NORMALIZED>
+L	ab_6_11	435	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_6_11	436	|-fail|p1a: Aerodactyl|move: Substitute
+L	ab_6_11	437	|move|p2a: Salamence|Dragon Claw|p1a: Aerodactyl
+L	ab_6_11	438	|-end|p1a: Aerodactyl|Substitute
+L	ab_6_11	439	|
+L	ab_6_11	440	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	441	|-damage|p2a: Salamence|172/331|[from] Sandstorm
+L	ab_6_11	442	|-heal|p2a: Salamence|192/331|[from] item: Leftovers
+L	ab_6_11	443	|upkeep
+L	ab_6_11	444	|turn|34
+L	ab_6_11	445	|
+L	ab_6_11	446	|t:|<NORMALIZED>
+L	ab_6_11	447	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_6_11	448	|-start|p1a: Aerodactyl|Substitute
+L	ab_6_11	449	|-damage|p1a: Aerodactyl|152/302
+L	ab_6_11	450	|move|p2a: Salamence|Hidden Power|p1a: Aerodactyl
+L	ab_6_11	451	|-resisted|p1a: Aerodactyl
+L	ab_6_11	452	|-end|p1a: Aerodactyl|Substitute
+L	ab_6_11	453	|
+L	ab_6_11	454	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	455	|-damage|p2a: Salamence|172/331|[from] Sandstorm
+L	ab_6_11	456	|-heal|p2a: Salamence|192/331|[from] item: Leftovers
+L	ab_6_11	457	|upkeep
+L	ab_6_11	458	|turn|35
+L	ab_6_11	459	|
+L	ab_6_11	460	|t:|<NORMALIZED>
+L	ab_6_11	461	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_6_11	462	|-start|p1a: Aerodactyl|Substitute
+L	ab_6_11	463	|-damage|p1a: Aerodactyl|77/302
+L	ab_6_11	464	|move|p2a: Salamence|Wish|p2a: Salamence
+L	ab_6_11	465	|
+L	ab_6_11	466	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	467	|-damage|p2a: Salamence|172/331|[from] Sandstorm
+L	ab_6_11	468	|-heal|p2a: Salamence|192/331|[from] item: Leftovers
+L	ab_6_11	469	|upkeep
+L	ab_6_11	470	|turn|36
+L	ab_6_11	471	|
+L	ab_6_11	472	|t:|<NORMALIZED>
+L	ab_6_11	473	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_6_11	474	|-fail|p1a: Aerodactyl|move: Substitute
+L	ab_6_11	475	|move|p2a: Salamence|Rock Slide|p1a: Aerodactyl
+L	ab_6_11	476	|-supereffective|p1a: Aerodactyl
+L	ab_6_11	477	|-end|p1a: Aerodactyl|Substitute
+L	ab_6_11	478	|
+L	ab_6_11	479	|-heal|p2a: Salamence|331/331|[from] move: Wish|[wisher] Salamence
+L	ab_6_11	480	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	481	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+L	ab_6_11	482	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+L	ab_6_11	483	|upkeep
+L	ab_6_11	484	|turn|37
+L	ab_6_11	485	|
+L	ab_6_11	486	|t:|<NORMALIZED>
+L	ab_6_11	487	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_6_11	488	|-start|p1a: Aerodactyl|Substitute
+L	ab_6_11	489	|-damage|p1a: Aerodactyl|2/302
+L	ab_6_11	490	|move|p2a: Salamence|Dragon Claw|p1a: Aerodactyl
+L	ab_6_11	491	|-end|p1a: Aerodactyl|Substitute
+L	ab_6_11	492	|
+L	ab_6_11	493	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	494	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+L	ab_6_11	495	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+L	ab_6_11	496	|upkeep
+L	ab_6_11	497	|turn|38
+L	ab_6_11	498	|
+L	ab_6_11	499	|t:|<NORMALIZED>
+L	ab_6_11	500	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_6_11	501	|-fail|p1a: Aerodactyl|move: Substitute|[weak]
+L	ab_6_11	502	|move|p2a: Salamence|Hidden Power|p1a: Aerodactyl
+L	ab_6_11	503	|-resisted|p1a: Aerodactyl
+L	ab_6_11	504	|-damage|p1a: Aerodactyl|0 fnt
+L	ab_6_11	505	|faint|p1a: Aerodactyl
+L	ab_6_11	506	|
+L	ab_6_11	507	|t:|<NORMALIZED>
+L	ab_6_11	508	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_6_11	509	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_6_11	510	|-unboost|p2a: Salamence|atk|1
+L	ab_6_11	511	|
+L	ab_6_11	512	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	513	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+L	ab_6_11	514	|-damage|p1a: Salamence|311/331|[from] Sandstorm
+L	ab_6_11	515	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+L	ab_6_11	516	|-heal|p1a: Salamence|331/331|[from] item: Leftovers
+L	ab_6_11	517	|upkeep
+L	ab_6_11	518	|turn|39
+L	ab_6_11	519	|
+L	ab_6_11	520	|t:|<NORMALIZED>
+L	ab_6_11	521	|switch|p1a: Gengar|Gengar, M|323/323
+L	ab_6_11	522	|move|p2a: Salamence|Hidden Power|p1a: Gengar
+L	ab_6_11	523	|-damage|p1a: Gengar|231/323
+L	ab_6_11	524	|
+L	ab_6_11	525	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	526	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+L	ab_6_11	527	|-damage|p1a: Gengar|211/323|[from] Sandstorm
+L	ab_6_11	528	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+L	ab_6_11	529	|-heal|p1a: Gengar|231/323|[from] item: Leftovers
+L	ab_6_11	530	|upkeep
+L	ab_6_11	531	|turn|40
+L	ab_6_11	532	|
+L	ab_6_11	533	|t:|<NORMALIZED>
+L	ab_6_11	534	|switch|p2a: Jirachi|Jirachi|78/341
+L	ab_6_11	535	|switch|p1a: Tyranitar|Tyranitar, M|213/342 par
+L	ab_6_11	536	|
+L	ab_6_11	537	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	538	|-heal|p2a: Jirachi|99/341|[from] item: Leftovers
+L	ab_6_11	539	|-heal|p1a: Tyranitar|234/342 par|[from] item: Leftovers
+L	ab_6_11	540	|upkeep
+L	ab_6_11	541	|turn|41
+L	ab_6_11	542	|
+L	ab_6_11	543	|t:|<NORMALIZED>
+L	ab_6_11	544	|switch|p1a: Gengar|Gengar, M|231/323
+L	ab_6_11	545	|move|p2a: Jirachi|Psychic|p1a: Gengar
+L	ab_6_11	546	|-supereffective|p1a: Gengar
+L	ab_6_11	547	|-damage|p1a: Gengar|0 fnt
+L	ab_6_11	548	|faint|p1a: Gengar
+L	ab_6_11	549	|
+L	ab_6_11	550	|t:|<NORMALIZED>
+L	ab_6_11	551	|switch|p1a: Salamence|Salamence, M|331/331
+L	ab_6_11	552	|-ability|p1a: Salamence|Intimidate|boost
+L	ab_6_11	553	|-unboost|p2a: Jirachi|atk|1
+L	ab_6_11	554	|
+L	ab_6_11	555	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	556	|-damage|p1a: Salamence|311/331|[from] Sandstorm
+L	ab_6_11	557	|-heal|p2a: Jirachi|120/341|[from] item: Leftovers
+L	ab_6_11	558	|-heal|p1a: Salamence|331/331|[from] item: Leftovers
+L	ab_6_11	559	|upkeep
+L	ab_6_11	560	|turn|42
+L	ab_6_11	561	|
+L	ab_6_11	562	|t:|<NORMALIZED>
+L	ab_6_11	563	|move|p2a: Jirachi|Body Slam|p1a: Salamence
+L	ab_6_11	564	|-damage|p1a: Salamence|285/331
+L	ab_6_11	565	|-status|p1a: Salamence|par
+L	ab_6_11	566	|move|p1a: Salamence|Brick Break|p2a: Jirachi
+L	ab_6_11	567	|-damage|p2a: Jirachi|13/341
+L	ab_6_11	568	|
+L	ab_6_11	569	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	570	|-damage|p1a: Salamence|265/331 par|[from] Sandstorm
+L	ab_6_11	571	|-heal|p2a: Jirachi|34/341|[from] item: Leftovers
+L	ab_6_11	572	|-heal|p1a: Salamence|285/331 par|[from] item: Leftovers
+L	ab_6_11	573	|upkeep
+L	ab_6_11	574	|turn|43
+L	ab_6_11	575	|
+L	ab_6_11	576	|t:|<NORMALIZED>
+L	ab_6_11	577	|move|p2a: Jirachi|Body Slam|p1a: Salamence
+L	ab_6_11	578	|-damage|p1a: Salamence|236/331 par
+L	ab_6_11	579	|move|p1a: Salamence|Dragon Claw|p2a: Jirachi
+L	ab_6_11	580	|-resisted|p2a: Jirachi
+L	ab_6_11	581	|-damage|p2a: Jirachi|0 fnt
+L	ab_6_11	582	|faint|p2a: Jirachi
+L	ab_6_11	583	|
+L	ab_6_11	584	|t:|<NORMALIZED>
+L	ab_6_11	585	|switch|p2a: Salamence|Salamence, M|331/331
+L	ab_6_11	586	|-ability|p2a: Salamence|Intimidate|boost
+L	ab_6_11	587	|-unboost|p1a: Salamence|atk|1
+L	ab_6_11	588	|
+L	ab_6_11	589	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	590	|-damage|p2a: Salamence|311/331|[from] Sandstorm
+L	ab_6_11	591	|-damage|p1a: Salamence|216/331 par|[from] Sandstorm
+L	ab_6_11	592	|-heal|p2a: Salamence|331/331|[from] item: Leftovers
+L	ab_6_11	593	|-heal|p1a: Salamence|236/331 par|[from] item: Leftovers
+L	ab_6_11	594	|upkeep
+L	ab_6_11	595	|turn|44
+L	ab_6_11	596	|
+L	ab_6_11	597	|t:|<NORMALIZED>
+L	ab_6_11	598	|move|p2a: Salamence|Rock Slide|p1a: Salamence|[miss]
+L	ab_6_11	599	|-miss|p2a: Salamence|p1a: Salamence
+L	ab_6_11	600	|move|p1a: Salamence|Hidden Power|p2a: Salamence
+L	ab_6_11	601	|-damage|p2a: Salamence|218/331
+L	ab_6_11	602	|
+L	ab_6_11	603	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	604	|-damage|p2a: Salamence|198/331|[from] Sandstorm
+L	ab_6_11	605	|-damage|p1a: Salamence|216/331 par|[from] Sandstorm
+L	ab_6_11	606	|-heal|p2a: Salamence|218/331|[from] item: Leftovers
+L	ab_6_11	607	|-heal|p1a: Salamence|236/331 par|[from] item: Leftovers
+L	ab_6_11	608	|upkeep
+L	ab_6_11	609	|turn|45
+L	ab_6_11	610	|
+L	ab_6_11	611	|t:|<NORMALIZED>
+L	ab_6_11	612	|move|p2a: Salamence|Wish|p2a: Salamence
+L	ab_6_11	613	|move|p1a: Salamence|Hidden Power|p2a: Salamence
+L	ab_6_11	614	|-damage|p2a: Salamence|104/331
+L	ab_6_11	615	|
+L	ab_6_11	616	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	617	|-damage|p2a: Salamence|84/331|[from] Sandstorm
+L	ab_6_11	618	|-damage|p1a: Salamence|216/331 par|[from] Sandstorm
+L	ab_6_11	619	|-heal|p2a: Salamence|104/331|[from] item: Leftovers
+L	ab_6_11	620	|-heal|p1a: Salamence|236/331 par|[from] item: Leftovers
+L	ab_6_11	621	|upkeep
+L	ab_6_11	622	|turn|46
+L	ab_6_11	623	|
+L	ab_6_11	624	|t:|<NORMALIZED>
+L	ab_6_11	625	|move|p2a: Salamence|Rock Slide|p1a: Salamence
+L	ab_6_11	626	|-supereffective|p1a: Salamence
+L	ab_6_11	627	|-damage|p1a: Salamence|42/331 par
+L	ab_6_11	628	|move|p1a: Salamence|Hidden Power|p2a: Salamence
+L	ab_6_11	629	|-damage|p2a: Salamence|0 fnt
+L	ab_6_11	630	|faint|p2a: Salamence
+L	ab_6_11	631	|
+L	ab_6_11	632	|t:|<NORMALIZED>
+L	ab_6_11	633	|switch|p2a: Heracross|Heracross, M|251/301
+L	ab_6_11	634	|
+L	ab_6_11	635	|-heal|p2a: Heracross|301/301|[from] move: Wish|[wisher] Salamence
+L	ab_6_11	636	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	637	|-damage|p2a: Heracross|283/301|[from] Sandstorm
+L	ab_6_11	638	|-damage|p1a: Salamence|22/331 par|[from] Sandstorm
+L	ab_6_11	639	|-heal|p1a: Salamence|42/331 par|[from] item: Leftovers
+L	ab_6_11	640	|upkeep
+L	ab_6_11	641	|turn|47
+L	ab_6_11	642	|
+L	ab_6_11	643	|t:|<NORMALIZED>
+L	ab_6_11	644	|move|p2a: Heracross|Brick Break|p1a: Salamence
+L	ab_6_11	645	|-resisted|p1a: Salamence
+L	ab_6_11	646	|-damage|p1a: Salamence|0 fnt
+L	ab_6_11	647	|faint|p1a: Salamence
+L	ab_6_11	648	|
+L	ab_6_11	649	|t:|<NORMALIZED>
+L	ab_6_11	650	|switch|p1a: Umbreon|Umbreon, M|394/394
+L	ab_6_11	651	|
+L	ab_6_11	652	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	653	|-damage|p2a: Heracross|265/301|[from] Sandstorm
+L	ab_6_11	654	|-damage|p1a: Umbreon|370/394|[from] Sandstorm
+L	ab_6_11	655	|-heal|p1a: Umbreon|394/394|[from] item: Leftovers
+L	ab_6_11	656	|upkeep
+L	ab_6_11	657	|turn|48
+L	ab_6_11	658	|
+L	ab_6_11	659	|t:|<NORMALIZED>
+L	ab_6_11	660	|move|p2a: Heracross|Brick Break|p1a: Umbreon
+L	ab_6_11	661	|-supereffective|p1a: Umbreon
+L	ab_6_11	662	|-damage|p1a: Umbreon|14/394
+L	ab_6_11	663	|move|p1a: Umbreon|Charm|p2a: Heracross
+L	ab_6_11	664	|-unboost|p2a: Heracross|atk|2
+L	ab_6_11	665	|
+L	ab_6_11	666	|-weather|Sandstorm|[upkeep]
+L	ab_6_11	667	|-damage|p2a: Heracross|247/301|[from] Sandstorm
+L	ab_6_11	668	|-damage|p1a: Umbreon|0 fnt|[from] Sandstorm
+L	ab_6_11	669	|faint|p1a: Umbreon
+L	ab_6_11	670	|upkeep
+L	ab_6_11	671	|
+L	ab_6_11	672	|t:|<NORMALIZED>
+L	ab_6_11	673	|switch|p1a: Tyranitar|Tyranitar, M|234/342 par
+L	ab_6_11	674	|turn|49
+L	ab_6_11	675	|
+L	ab_6_11	676	|t:|<NORMALIZED>
+L	ab_6_11	677	|move|p2a: Heracross|Brick Break|p1a: Tyranitar
+L	ab_6_11	678	|-supereffective|p1a: Tyranitar
+L	ab_6_11	679	|-damage|p1a: Tyranitar|0 fnt
+L	ab_6_11	680	|faint|p1a: Tyranitar
+L	ab_6_11	681	|
+L	ab_6_11	682	|win|P2

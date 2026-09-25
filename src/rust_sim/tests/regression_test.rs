@@ -13730,6 +13730,47 @@ fn imprison_fails_when_no_move_is_shared() {
     );
 }
 
+/// IM3 — a RE-CAST while the caster already imprisons FAILS (`gen3_imprison_recast_fails_v1`):
+/// the `imprison` condition has no `onRestart`, so `addVolatile` returns false after `onTryHit`
+/// passes, and the move takes the same draw-free `[still]` + `-fail` form as IM2. Ground truth
+/// `harness/probe_imprison.js` Q3 (whose script, until this fix, never actually re-cast). WRONG
+/// (pre-fix): the port re-started it — a second `|-start|<u>|move: Imprison`. Found by the M6
+/// cutover stress's ladder corpus (a Dusclops re-casting Imprison into a Suicune).
+#[test]
+fn imprison_recast_while_imprisoning_fails() {
+    let d = dex();
+    // Both know Ice Beam + Splash; the foe's Body Slam is unshared, so its pick is never sealed.
+    let user = "Gengar||none|Levitate|imprison,icebeam,splash|Hardy|85,85,85,85,85,85|M||||";
+    let foe = "Snorlax||none|Immunity|icebeam,bodyslam,splash,rest|Hardy|85,85,85,85,85,85|M||||";
+    let seed = "3,3,3,3";
+    let mut b = Battle::start_with_switchins(&opts_cg(user, foe, seed), &d).expect("start");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // cast; Body Slam
+            ScriptDecision::both(Choice::Move(0), Choice::Move(1)), // RE-cast; Body Slam
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+    let casts: Vec<&String> = raw.iter().filter(|l| l.starts_with("|move|p1a: Gengar|Imprison")).collect();
+    assert_eq!(casts.len(), 2, "IM3 fixture: two Imprison uses. got:\n{joined}");
+    assert_eq!(casts[0], "|move|p1a: Gengar|Imprison|p1a: Gengar", "IM3: the first cast lands");
+    assert_eq!(casts[1], "|move|p1a: Gengar|Imprison||[still]", "IM3: the RE-cast takes the [still] form. got:\n{joined}");
+    assert_eq!(
+        raw.iter().filter(|l| l.as_str() == "|-start|p1a: Gengar|move: Imprison").count(),
+        1,
+        "IM3: exactly ONE -start — the re-cast must not restart it. got:\n{joined}"
+    );
+    assert_eq!(
+        raw.iter().filter(|l| l.as_str() == "|-fail|p1a: Gengar").count(),
+        1,
+        "IM3: the re-cast's bare -fail on the USER. got:\n{joined}"
+    );
+    assert!(st.sides[0].pokemon[0].imprison, "IM3: the original Imprison still stands");
+}
+
 /// MZ1 — MINIMIZE is NOT a pure self-boost: its volatile is LIVE in gen 3, doubling the
 /// damage of any move carrying `flags.minimize`. Ground truth
 /// `harness/probe_doubleteam_minimize.js`.
@@ -13833,11 +13874,19 @@ fn rage_boosts_attack_when_the_foe_hits_inside_the_window() {
         raw.iter().any(|l| l.starts_with("|-damage|p1a: Nidoking|")),
         "RG1: the foe must land a damaging move for the boost to be testable. got:\n{joined}"
     );
+    // `boosts` is in `STAT_TOKENS` order (atk 0, def 1): this pin once read `boosts[1]` as Atk
+    // and so certified the bug — Rage raised Def and announced `def|1`
+    // (`gen3_boost_index_fixes_v1`). The sim, probed: `|-boost|p1a: Tauros|atk|1`, boosts `{atk: 1}`.
     assert!(
-        st.sides[0].pokemon[0].boosts[1] >= 1,
-        "RG1: a foe hit inside the window raises the rager's Atk (got {})",
-        st.sides[0].pokemon[0].boosts[1]
+        raw.iter().any(|l| l.as_str() == "|-boost|p1a: Nidoking|atk|1"),
+        "RG1: the rage boost announces ATK. got:\n{joined}"
     );
+    assert!(
+        st.sides[0].pokemon[0].boosts[0] >= 1,
+        "RG1: a foe hit inside the window raises the rager's Atk (index 0) (got {})",
+        st.sides[0].pokemon[0].boosts[0]
+    );
+    assert_eq!(st.sides[0].pokemon[0].boosts[1], 0, "RG1: and leaves Def (index 1) alone");
 }
 
 /// RG2 — SECRET POWER is an ORDINARY 70-BP Normal move in gen 3.
@@ -13960,7 +14009,11 @@ fn rollout_doubles_per_execution_and_defense_curl_doubles_it_again() {
 
 /// RO2 — DEFENSE CURL's own effect: a never-miss, draw-free +1 Def, plus the volatile that
 /// Rollout reads. Both halves matter — the boost is what the move does, the volatile is why it
-/// had to be modeled alongside Rollout.
+/// had to be modeled alongside Rollout. `boosts` is in `STAT_TOKENS` order (atk 0, def 1, spa 2):
+/// this pin once asserted `boosts[2]` and so certified the bug it should have caught — the curl
+/// raised SpA and announced `|-boost|<u>|spa|1` (`gen3_boost_index_fixes_v1`, found by the M6
+/// cutover stress: a Blissey's Brick Break damage ran 1.5x the sim's). The sim, probed:
+/// `|-boost|p1a: Marowak|def|1`, boosts `{def: 1}`.
 #[test]
 fn defense_curl_raises_defense_and_sets_the_volatile() {
     let d = dex();
@@ -13968,11 +14021,19 @@ fn defense_curl_raises_defense_and_sets_the_volatile() {
     let foe = "Snorlax||none|Sturdy|splash|Hardy|85,85,85,85,85,85|M||||";
     let mut b = Battle::start_with_switchins(&opts_cg(user, foe, "3,3,3,3"), &d).expect("start");
     let st = b.state_mut().expect("state");
-    st.run_full_battle(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
-    assert_eq!(
-        st.sides[0].pokemon[0].boosts[2], 1,
-        "RO2: Defense Curl raises Def by one stage"
+    let (_o, lines) =
+        st.run_full_battle_logged(&[ScriptDecision::both(Choice::Move(0), Choice::Move(0))], &d);
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(
+        raw.iter().any(|l| l.as_str() == "|-boost|p1a: Marowak|def|1"),
+        "RO2: the curl announces a DEF boost. got:\n{}",
+        raw.join("\n")
     );
+    assert_eq!(
+        st.sides[0].pokemon[0].boosts[1], 1,
+        "RO2: Defense Curl raises Def (index 1) by one stage"
+    );
+    assert_eq!(st.sides[0].pokemon[0].boosts[2], 0, "RO2: and leaves SpA (index 2) alone");
     assert!(
         st.sides[0].pokemon[0].defense_curl,
         "RO2: and sets the volatile Rollout reads"
@@ -16657,4 +16718,148 @@ fn perish_gathered_before_a_later_protect_matches_the_sim_tick_order() {
          flips the perish0 pair (and the faints) to p1-first. got:\n{}",
         marks.join("\n")
     );
+}
+
+/// SG3 — Safeguard does NOT block a SELF-SOURCED confusion (`gen3_lockin_fatigue_v1`). Ground
+/// truth `harness/probe_lockin_fatigue.js` (raw `>start` seed, `seedAfter` per decision).
+///
+/// `safeguard.onTryAddVolatile` blocks confusion only when `target !== source`, and
+/// `addVolatile` defaults `source` to the ambient event's source, else to the holder itself. The
+/// END of the holder's own lock (`lockedmove.onEnd`, inside `removeVolatile`'s sourceless `End`
+/// event) and its own Figy-family berry (`eatItem` sets source = the holder) are therefore
+/// self-sourced: the holder IS confused and the `random(2,6)` DRAWS, under its own Safeguard.
+/// WRONG (pre-fix): `add_confusion` returned at ANY live Safeguard — no confusion, one
+/// `random(2,6)` fewer than the sim (a `kind=seed` divergence). The lock end also announces
+/// `[fatigue]`; the berry's add stays bare.
+#[test]
+fn safeguard_does_not_block_a_self_sourced_confusion() {
+    let d = dex();
+    let construct = |p1: &str, p2: &str, seed: &str| {
+        let opts = BattleOptions {
+            format_id: "gen3customgame".to_string(),
+            seed: Some(seed.to_string()),
+            p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(p1.to_string()) },
+            p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(p2.to_string()) },
+        };
+        Battle::start_with_turn0_construction(&opts, &d).expect("turn-0 construction")
+    };
+
+    // (a) the LOCK END under the user's own Safeguard: t1 Safeguard, t2 Outrage, t3 the
+    // continuation whose residual ends the lock.
+    let dnite = "Dragonite||none|innerfocus|outrage,safeguard|Hardy|85,85,85,85,85,85|M||||";
+    let snorlax = "Snorlax||none|thickfat|splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = construct(dnite, snorlax, "[3,3,3,3]");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(st.sides[0].safeguard > 0, "fixture: Safeguard is still up at the lock end");
+    assert!(st.sides[0].pokemon[0].locked_move.is_none(), "fixture: the lock has ended");
+    assert!(
+        st.sides[0].pokemon[0].confusion.is_some(),
+        "SG3(a): the lock-end confusion lands under the user's own Safeguard; lines:\n{}",
+        raw.join("\n")
+    );
+    assert!(raw.iter().any(|l| l == "|-start|p1a: Dragonite|confusion|[fatigue]"), "SG3(a): the `[fatigue]` form");
+    assert_eq!(seed_str(&st.prng_seed()), "58907,31542,794,55151", "SG3(a): seed after the lock end == the sim's");
+
+    // (b) a FIGY BERRY (-Atk nature) eaten under the holder's own Safeguard: t1 Safeguard, then
+    // two idle turns under Seismic Toss; the t3 residual eats it.
+    let figy = "Snorlax||figyberry|thickfat|safeguard,splash|Modest|85,85,85,85,85,85|M||||";
+    let tosser = "Blissey||none|naturalcure|seismictoss|Hardy|85,85,85,85,85,85|F||||";
+    let mut b = construct(figy, tosser, "[5,5,5,5]");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    assert!(st.sides[0].safeguard > 0, "fixture: Safeguard is still up when the berry is eaten");
+    assert!(raw.iter().any(|l| l == "|-enditem|p1a: Snorlax|Figy Berry|[eat]"), "fixture: the berry was eaten");
+    assert!(
+        st.sides[0].pokemon[0].confusion.is_some(),
+        "SG3(b): the berry confusion lands under the holder's own Safeguard; lines:\n{}",
+        raw.join("\n")
+    );
+    assert!(raw.iter().any(|l| l == "|-start|p1a: Snorlax|confusion"), "SG3(b): the berry's add is BARE");
+    assert_eq!(seed_str(&st.prng_seed()), "38822,52442,40462,23117", "SG3(b): seed after the berry == the sim's");
+}
+
+/// MX1 — the readers of a SELF-OVERWRITING Mimic's `lastMove` (`gen3_mimic_self_overwrite_readers_v1`,
+/// found by the M6 cutover stress, `rmugk8bpp_ab_0_5`: an Alakazam encored a Meganium into the
+/// Trick its Mimic had just copied). Ground truth `harness/probe_mimic_self_overwrite_readers.js`
+/// (raw `>start` seeds, `seedAfter`).
+///
+/// A successful Mimic replaces its OWN slot, but the move the mon USED is still `mimic` — in no
+/// slot. The sim resolves `lastMove` by ID, so (E1) an ENCORE into it FAILS after drawing its
+/// accuracy roll and `random(3,7)`, and (M1) a new foe's MIMIC of it FAILS (`failmimic`). The port
+/// stores `lastMove` as a SLOT; WRONG (pre-fix): Encore locked the copied move in, and Mimic copied
+/// it. (Disable is MD1; Torment and the Choice lock already honour the same flag.)
+#[test]
+fn a_self_overwriting_mimic_is_what_encore_and_mimic_read() {
+    let d = dex();
+    let construct = |p1: &str, p2: &str, seed: &str| {
+        let opts = BattleOptions {
+            format_id: "gen3customgame".to_string(),
+            seed: Some(seed.to_string()),
+            p1: PlayerOptions { name: "P1".to_string(), team: PackedTeam(p1.to_string()) },
+            p2: PlayerOptions { name: "P2".to_string(), team: PackedTeam(p2.to_string()) },
+        };
+        Battle::start_with_turn0_construction(&opts, &d).expect("turn-0 construction")
+    };
+    let snorlax = "Snorlax||none|thickfat|mimic,bodyslam|Hardy|85,85,85,85,85,85|M||||";
+
+    // E1: Alakazam (faster) Psychics, Snorlax Mimics it; then Alakazam's Encore.
+    let kazam = "Alakazam||none|synchronize|psychic,encore|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = construct(snorlax, kazam, "[3,3,3,3]");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+    assert!(raw.iter().any(|l| l == "|-activate|p1a: Snorlax|move: Mimic|Psychic"), "E1 fixture: the Mimic overwrote its slot. got:\n{joined}");
+    assert!(raw.iter().any(|l| l == "|move|p2a: Alakazam|Encore||[still]"), "E1: the Encore fails. got:\n{joined}");
+    assert!(raw.iter().any(|l| l == "|-fail|p2a: Alakazam"), "E1: with a bare -fail on the user. got:\n{joined}");
+    assert!(st.sides[0].pokemon[0].encore.is_none(), "E1: no Encore volatile");
+    assert_eq!(seed_str(&st.prng_seed()), "54089,12386,20241,1166", "E1: seed == the sim's (acc + random(3,7) drawn)");
+
+    // M1: Breloom Mach Punches, Snorlax Mimics it, Spore puts it to sleep through the switch, and
+    // the incoming Mr. Mime Mimics the sleeper whose lastMove is still the Mimic.
+    let breloom = "Breloom||none|effectspore|machpunch,spore|Hardy|85,85,85,85,85,85|M||||]Mr. Mime||none|soundproof|mimic,splash|Hardy|85,85,85,85,85,85|M||||";
+    let mut b = construct(snorlax, breloom, "[1,1,1,1]");
+    let st = b.state_mut().expect("state");
+    let (_o, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)),
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)),
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)),
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let joined = raw.join("\n");
+    assert_eq!(
+        raw.iter().filter(|l| l.as_str() == "|cant|p1a: Snorlax|slp").count(),
+        3,
+        "M1 fixture: Snorlax sleeps through turns 2-4, so its lastMove stays the Mimic. got:\n{joined}"
+    );
+    assert!(raw.iter().any(|l| l == "|move|p2a: Mr. Mime|Mimic||[still]"), "M1: the Mimic fails. got:\n{joined}");
+    assert!(raw.iter().any(|l| l == "|-fail|p2a: Mr. Mime"), "M1: with a bare -fail on the user. got:\n{joined}");
+    assert_eq!(seed_str(&st.prng_seed()), "45365,35686,22216,26131", "M1: seed == the sim's");
 }

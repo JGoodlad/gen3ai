@@ -1,0 +1,1237 @@
+# FIXTURE 77 — an Imprison RE-CAST while imprisoning fails: `|move|<u>|Imprison||[still]` + `|-fail|<u>` (gen3_imprison_recast_fails_v1).
+# Source: the M6 cutover stress repro fz_proto_ladder.00000/divergences/rmuggvoke_ab_3_15 (ladder, gen3ou), RE-RECORDED through the
+# real sim from the choices the sim APPLIED at each commit (the original recording re-wrote a HELD side after an
+# Imprison reject — gen3_recorder_held_choice_v1); the omniscient log is byte-identical to the original's.
+SCEN	ab_3_15
+TEAM	ab_3_15	p1	Metagross||ChoiceBand|ClearBody|RockSlide,Explosion,Earthquake,Agility|Adamant|168,252,,,,88|N||||]Celebi||Leftovers|NaturalCure|LeechSeed,HiddenPower,GigaDrain,Recover|Modest|,,,252,76,180|N||||,Dark,,,,]Snorlax||Leftovers|Immunity|BodySlam,Earthquake,Curse,SelfDestruct|Careful|144,96,132,,136,|M||||]Zapdos||Leftovers|Pressure|HiddenPower,Roar,Thunderbolt,Toxic|Timid|4,,,252,,252|N||||,Dark,,,,]Swampert||Leftovers|Torrent|Earthquake,Protect,Endeavor,Surf|Relaxed|248,,216,,44,|M||||]Suicune||Leftovers|Pressure|Substitute,Surf,Rest,CalmMind|Modest|28,,,252,,228|N||||
+TEAM	ab_3_15	p2	Dugtrio||ChoiceBand|ArenaTrap|RockSlide,BeatUp,HiddenPower,AerialAce|Jolly|,252,,,4,252|M||||,Dark,,,,]Skarmory||Leftovers|KeenEye|Spikes,Roar,Toxic,DrillPeck|Careful|252,,,,252,4|M||||]Vaporeon||Leftovers|WaterAbsorb|Wish,Protect,Roar,Surf|Modest|12,,20,252,,224|M||||]Claydol||Leftovers|Levitate|RapidSpin,Rest,Psychic,Earthquake|Careful|252,96,112,32,16,|N||||]Dusclops||Leftovers|Pressure|WillOWisp,Rest,SeismicToss,Imprison|Careful|252,,4,,252,|M||||]Blissey||Leftovers|NaturalCure|Thunderbolt,HealBell,SoftBoiled,IceBeam|Modest|,,252,232,,24|F||||
+FMT	ab_3_15	gen3ou
+INIT	ab_3_15	53000,43672,60976,37028	3187691039	0
+DEC	ab_3_15	0	move	0	0	m0	s1	51353,55807,9066,41883	Metagross	343	343	0	-	0	0	0	0	0	0	6	Skarmory	241	334	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_3_15	1	move	0	0	m0	s2	52483,937,21180,50398	Metagross	343	343	0	-	0	0	0	0	0	0	6	Vaporeon	200	404	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_3_15	2	move	0	0	m0	m0	32926,40425,32586,1170	Metagross	343	343	0	-	0	0	0	0	0	0	6	Vaporeon	0	404	1	fnt	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_15	3	switch	0	1	-	s5	30987,2763,36042,36445	Metagross	343	343	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_3_15	4	move	0	0	s5	m1	5447,10225,4811,36468	Suicune	348	348	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_3_15	5	move	0	0	s3	m1	20864,22681,11997,59015	Zapdos	322	322	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_3_15	6	move	0	0	m0	m0	21951,38614,37208,6799	Zapdos	253	322	0	-	0	0	0	0	0	0	6	Blissey	629	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_3_15	7	move	0	0	m1	m3	883,34602,16926,30788	Zapdos	94	322	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_15	8	move	0	0	s1	s1	25256,63860,24164,30103	Celebi	341	341	0	-	0	0	0	0	0	0	6	Dugtrio	211	211	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_3_15	9	move	0	0	m0	s3	49905,34470,37942,41137	Celebi	341	341	0	-	0	0	0	0	0	0	6	Blissey	570	651	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_15	10	move	0	0	s5	m0	13165,54964,48707,30124	Metagross	329	343	0	-	0	0	0	0	0	0	6	Blissey	529	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_3_15	11	move	0	0	s4	m1	53779,59769,62065,6047	Swampert	403	403	0	-	0	0	0	0	0	0	6	Blissey	488	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_3_15	12	move	0	0	m3	m2	9324,3821,30626,38211	Swampert	403	403	0	-	0	0	0	0	0	0	6	Blissey	538	651	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_15	13	move	0	0	m0	m1	24392,57105,29896,8359	Swampert	403	403	0	-	0	0	0	0	0	0	6	Blissey	230	651	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_15	14	move	0	0	m1	m2	55813,24426,62033,45377	Swampert	403	403	0	-	0	0	0	0	0	0	6	Blissey	514	651	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_3_15	15	move	0	0	m0	m0	21198,26090,39634,41340	Swampert	403	403	0	-	0	0	0	0	0	0	6	Blissey	214	651	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_3_15	16	move	0	0	m0	m1	56643,14778,20388,53257	Swampert	403	403	0	-	0	0	0	0	0	0	6	Blissey	0	651	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	17	switch	0	1	-	s1	9263,9971,7104,33616	Swampert	403	403	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_3_15	18	move	0	0	m2	m0	14239,30142,63840,4068	Swampert	403	403	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	19	move	0	0	m1	m1	29652,5394,47312,63734	Swampert	403	403	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	20	move	0	0	m2	m3	40577,21445,62797,19541	Swampert	345	403	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	21	move	0	0	m2	m2	16295,9536,18386,49507	Swampert	293	403	0	-	0	0	0	0	0	0	6	Claydol	288	324	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	22	move	0	0	m3	m3	8016,45411,5848,3080	Swampert	237	403	0	-	0	0	0	0	0	0	6	Claydol	28	324	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	23	move	0	0	m0	m1	48793,26126,15759,15644	Swampert	262	403	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	24	move	0	0	m0	m1	13190,64526,27889,34158	Swampert	287	403	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	25	move	0	0	m3	m3	18804,40634,22790,23586	Swampert	312	403	0	-	0	0	0	0	0	0	6	Claydol	184	324	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	26	move	0	0	s1	m1	27864,20337,7531,51671	Zapdos	114	322	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	slp	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	27	move	0	0	m1	m0	15990,42463,50475,10456	Zapdos	134	322	0	-	0	0	0	0	0	0	6	Skarmory	261	334	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	28	move	0	0	m1	s4	3838,50776,27202,34677	Zapdos	154	322	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	29	move	0	0	m3	m0	26666,22976,2327,9183	Zapdos	174	322	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	slp	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	30	move	0	0	m1	s4	19208,33983,22376,14272	Zapdos	194	322	0	-	0	0	0	0	0	0	6	Dusclops	284	284	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	31	move	0	0	s4	m3	32741,24418,51290,23939	Metagross	329	343	0	-	0	0	0	0	0	0	6	Dusclops	284	284	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	32	move	0	0	m1	m3	22073,7884,14957,40562	Metagross	0	343	1	fnt	0	0	0	0	0	0	5	Dusclops	284	284	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	33	switch	1	0	s4	-	2487,45737,9295,9149	Zapdos	214	322	0	-	0	0	0	0	0	0	5	Dusclops	284	284	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_3_15	34	move	0	0	m2	m2	18477,35504,61886,24075	Zapdos	134	322	0	-	0	0	0	0	0	0	5	Dusclops	203	284	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	35	move	0	0	s1	m0	6872,16738,565,35004	Swampert	287	403	0	brn	0	0	0	0	0	0	5	Dusclops	220	284	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	36	move	0	0	m0	m3	49448,51493,6293,30352	Swampert	262	403	0	brn	0	0	0	0	0	0	5	Dusclops	188	284	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	37	move	0	0	s3	s4	6902,59061,44417,30099	Suicune	348	348	0	-	0	0	0	0	0	0	5	Claydol	324	324	0	slp	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	38	move	0	0	s3	m0	21893,14463,12114,7159	Swampert	226	403	0	brn	0	0	0	0	0	0	5	Claydol	324	324	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	39	move	0	0	m0	m0	20642,57070,53490,28778	Swampert	188	403	0	brn	0	0	0	0	0	0	5	Claydol	324	324	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	40	move	0	0	s5	m0	4935,17813,24750,61278	Celebi	341	341	0	-	0	0	0	0	0	0	5	Claydol	324	324	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	41	move	0	0	s1	m0	50444,60409,7538,34578	Zapdos	137	322	0	-	0	0	0	0	0	0	5	Claydol	324	324	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_3_15	42	move	0	0	m0	s2	53814,22225,3883,11142	Zapdos	157	322	0	-	0	0	0	0	0	0	5	Skarmory	245	334	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_3_15	43	move	0	0	m2	m0	16458,57131,1007,37050	Zapdos	157	322	0	-	0	0	0	0	0	0	5	Skarmory	0	334	1	fnt	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_15	44	switch	0	1	-	s4	41431,21777,12084,16933	Zapdos	177	322	0	-	0	0	0	0	0	0	5	Dusclops	205	284	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_3_15	45	move	0	0	m3	m1	50850,14033,48941,63536	Zapdos	197	322	0	-	0	0	0	0	0	0	5	Dusclops	284	284	0	slp	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_15	46	move	0	0	m3	m3	28700,28866,62522,11618	Zapdos	217	322	0	-	0	0	0	0	0	0	5	Dusclops	284	284	0	slp	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_15	47	move	0	0	m1	m1	14472,44766,13700,56855	Zapdos	237	322	0	-	0	0	0	0	0	0	5	Dugtrio	211	211	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_3_15	48	move	0	0	m0	m3	14349,59629,4192,52661	Zapdos	212	322	0	-	0	0	0	0	0	0	5	Dugtrio	109	211	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_3_15	49	move	0	0	m2	m3	55030,65269,39029,1529	Zapdos	187	322	0	-	0	0	0	0	0	0	5	Dugtrio	109	211	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_3_15	50	move	0	0	s5	m3	1299,59090,52022,40882	Swampert	96	403	0	brn	0	0	0	0	0	0	5	Dugtrio	109	211	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_3_15	51	move	0	0	m2	m3	44985,49335,10831,64038	Swampert	4	403	0	brn	0	0	0	0	0	0	5	Dugtrio	29	211	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_3_15	52	move	0	0	m2	m3	7953,29166,47087,19688	Swampert	0	403	1	fnt	0	0	0	0	0	0	4	Dugtrio	29	211	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_3_15	53	switch	1	0	s2	-	41701,65314,39952,7755	Snorlax	497	497	0	-	0	0	0	0	0	0	4	Dugtrio	29	211	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_3_15	54	move	0	0	m1	m3	58050,20828,27393,17742	Snorlax	411	497	0	-	0	0	0	0	0	0	4	Dugtrio	0	211	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	55	switch	0	1	-	s3	48081,46789,45791,46217	Snorlax	442	497	0	-	0	0	0	0	0	0	4	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_3_15	56	move	0	0	m1	m2	22686,43467,971,20068	Snorlax	373	497	0	-	0	0	0	0	0	0	4	Dusclops	141	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	57	move	0	0	m2	m1	7804,33531,59330,29112	Snorlax	404	497	0	-	1	1	0	0	-1	0	4	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	58	move	0	0	m2	m2	31375,56520,33672,47530	Snorlax	435	497	0	-	2	2	0	0	-2	0	4	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	59	move	0	0	m2	m0	37777,64834,30006,10188	Snorlax	466	497	0	-	3	3	0	0	-3	0	4	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	60	move	0	0	m0	m2	60806,63102,54376,40729	Snorlax	397	497	0	-	3	3	0	0	-3	0	4	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	61	move	0	0	m0	m3	48360,4114,4941,53731	Snorlax	428	497	0	-	3	3	0	0	-3	0	4	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	62	move	0	0	m1	m0	40239,24204,35708,47841	Snorlax	397	497	0	brn	3	3	0	0	-3	0	4	Dusclops	204	284	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	63	move	0	0	m0	m2	49159,54994,40717,2554	Snorlax	266	497	0	brn	3	3	0	0	-3	0	4	Dusclops	221	284	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	64	move	0	0	m3	m3	50281,65385,30840,22629	Snorlax	0	497	1	fnt	0	0	0	0	0	0	3	Dusclops	221	284	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	65	switch	1	0	s1	-	42343,64898,62898,35740	Celebi	341	341	0	-	0	0	0	0	0	0	3	Dusclops	238	284	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_3_15	66	move	0	0	m2	m3	47432,55295,22339,2928	Celebi	341	341	0	-	0	0	0	0	0	0	3	Dusclops	192	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	67	move	0	0	s5	m1	56826,37987,44358,34477	Zapdos	207	322	0	-	0	0	0	0	0	0	3	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	68	move	0	0	m0	m2	42137,63431,27369,57201	Zapdos	227	322	0	-	0	0	0	0	0	0	3	Dusclops	209	284	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	69	move	0	0	s3	m3	17494,37666,7958,16216	Suicune	348	348	0	-	0	0	0	0	0	0	3	Dusclops	226	284	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	70	move	0	0	m0	m2	54058,48684,41383,42570	Suicune	282	348	0	-	0	0	0	0	0	0	3	Dusclops	243	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	71	move	0	0	s5	m2	11715,31356,58721,23404	Celebi	262	341	0	-	0	0	0	0	0	0	3	Dusclops	260	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	72	move	0	0	m2	m1	52579,4601,5532,24818	Celebi	313	341	0	-	0	0	0	0	0	0	3	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	73	move	0	0	s5	m1	19495,39292,62808,24637	Suicune	303	348	0	-	0	0	0	0	0	0	3	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	74	move	0	0	m0	m0	11462,33454,30000,15316	Suicune	237	348	0	-	0	0	0	0	0	0	3	Dusclops	284	284	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	75	move	0	0	m0	m3	5082,12222,7934,44391	Suicune	258	348	0	-	0	0	0	0	0	0	3	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	76	move	0	0	m3	m0	7027,14341,43659,49153	Suicune	279	348	0	-	0	0	1	1	0	0	3	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	77	move	0	0	m3	m3	61766,3256,48912,59432	Suicune	300	348	0	-	0	0	2	2	0	0	3	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	78	move	0	0	m0	m1	56467,36434,42791,40587	Suicune	321	348	0	-	0	0	2	2	0	0	3	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	79	move	0	0	m0	s2	13479,45279,8301,36506	Suicune	342	348	0	-	0	0	2	2	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	80	move	0	0	m3	s2	47663,11340,19174,19333	Suicune	348	348	0	-	0	0	3	3	0	0	3	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	81	move	0	0	s5	m2	11851,19635,43232,25967	Celebi	234	341	0	-	0	0	0	0	0	0	3	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	82	move	0	0	s3	m0	43050,467,35471,40208	Zapdos	207	322	0	brn	0	0	0	0	0	0	3	Dusclops	284	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	83	move	0	0	m2	s2	53031,55730,43899,53058	Zapdos	187	322	0	brn	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	84	move	0	0	m2	m3	36727,13283,47159,50295	Zapdos	167	322	0	brn	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	85	move	0	0	m2	m3	11205,58938,43730,48376	Zapdos	147	322	0	brn	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	86	move	0	0	m2	m0	12640,26151,46722,60031	Zapdos	110	322	0	brn	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	87	move	0	0	s5	m2	46046,43488,22414,2450	Suicune	304	348	0	-	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	88	move	0	0	m3	m2	24039,59502,34961,46369	Suicune	282	348	0	-	0	0	1	1	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	89	move	0	0	s3	m1	25522,28700,47992,48584	Celebi	255	341	0	-	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	90	move	0	0	m0	m1	17136,35087,31375,17210	Celebi	316	341	0	-	0	0	0	0	0	0	3	Claydol	284	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	91	move	0	0	m0	m0	50163,14817,25061,47081	Celebi	323	341	0	-	0	0	0	0	0	0	3	Claydol	304	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	92	move	0	0	m2	s2	4308,53602,25794,54509	Celebi	341	341	0	-	0	0	0	0	0	0	3	Dusclops	172	284	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_3_15	93	move	0	0	m3	m0	48842,8836,42566,18262	Celebi	299	341	0	brn	0	0	0	0	0	0	3	Dusclops	189	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	94	move	0	0	m2	m3	36712,41585,981,3978	Celebi	299	341	0	brn	0	0	0	0	0	0	3	Dusclops	148	284	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	95	move	0	0	s5	s2	24026,40567,11596,39477	Zapdos	90	322	0	brn	0	0	0	0	0	0	3	Claydol	324	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	96	move	0	0	m0	m2	52380,51517,44766,57906	Zapdos	0	322	1	fnt	0	0	0	0	0	0	2	Claydol	55	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	97	switch	1	0	s5	-	5619,39722,35968,40573	Celebi	320	341	0	-	0	0	0	0	0	0	2	Claydol	75	324	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_3_15	98	move	0	0	m0	m1	28821,58089,28502,39489	Celebi	341	341	0	-	0	0	0	0	0	0	2	Claydol	284	324	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	99	move	0	0	m1	m2	17905,30061,4546,453	Celebi	341	341	0	-	0	0	0	0	0	0	2	Claydol	151	324	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	100	move	0	0	m3	m3	36556,45390,64774,48764	Celebi	341	341	0	-	0	0	0	0	0	0	2	Claydol	131	324	0	slp	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	101	move	0	0	m3	m2	41007,55021,20647,40531	Celebi	341	341	0	-	0	0	0	0	0	0	2	Claydol	111	324	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_3_15	102	move	0	0	m1	m2	37963,60323,5105,36068	Celebi	341	341	0	-	0	0	0	0	0	0	2	Claydol	0	324	1	fnt	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_3_15	103	switch	0	1	-	s2	43290,4610,11541,14519	Celebi	341	341	0	-	0	0	0	0	0	0	2	Dusclops	165	284	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_3_15	104	move	0	0	m3	m0	7979,45425,25381,51256	Celebi	299	341	0	brn	0	0	0	0	0	0	2	Dusclops	182	284	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_3_15	105	move	0	0	m1	m3	53467,45937,63477,5708	Celebi	278	341	0	brn	0	0	0	0	0	0	2	Dusclops	113	284	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_3_15	106	move	0	0	m0	m3	29150,32337,4347,53022	Celebi	292	341	0	brn	0	0	0	0	0	0	2	Dusclops	95	284	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_3_15	107	move	0	0	m1	m0	58437,65103,52278,60114	Celebi	294	341	0	brn	0	0	0	0	0	0	2	Dusclops	0	284	1	-	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_3_15	1	p1
+L	ab_3_15	0	|t:|<NORMALIZED>
+L	ab_3_15	1	|gametype|singles
+L	ab_3_15	2	|player|p1|P1||
+L	ab_3_15	3	|player|p2|P2||
+L	ab_3_15	4	|gen|3
+L	ab_3_15	5	|tier|[Gen 3] OU
+L	ab_3_15	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_3_15	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_3_15	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_3_15	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_3_15	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_3_15	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_3_15	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_3_15	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_3_15	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_3_15	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_3_15	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_3_15	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_3_15	18	|
+L	ab_3_15	19	|t:|<NORMALIZED>
+L	ab_3_15	20	|teamsize|p1|6
+L	ab_3_15	21	|teamsize|p2|6
+L	ab_3_15	22	|start
+L	ab_3_15	23	|switch|p1a: Metagross|Metagross|343/343
+L	ab_3_15	24	|switch|p2a: Dugtrio|Dugtrio, M|211/211
+L	ab_3_15	25	|turn|1
+L	ab_3_15	26	|
+L	ab_3_15	27	|t:|<NORMALIZED>
+L	ab_3_15	28	|switch|p2a: Skarmory|Skarmory, M|334/334
+L	ab_3_15	29	|move|p1a: Metagross|Rock Slide|p2a: Skarmory
+L	ab_3_15	30	|-damage|p2a: Skarmory|221/334
+L	ab_3_15	31	|
+L	ab_3_15	32	|-heal|p2a: Skarmory|241/334|[from] item: Leftovers
+L	ab_3_15	33	|upkeep
+L	ab_3_15	34	|turn|2
+L	ab_3_15	35	|
+L	ab_3_15	36	|t:|<NORMALIZED>
+L	ab_3_15	37	|switch|p2a: Vaporeon|Vaporeon, M|404/404
+L	ab_3_15	38	|move|p1a: Metagross|Rock Slide|p2a: Vaporeon
+L	ab_3_15	39	|-damage|p2a: Vaporeon|175/404
+L	ab_3_15	40	|
+L	ab_3_15	41	|-heal|p2a: Vaporeon|200/404|[from] item: Leftovers
+L	ab_3_15	42	|upkeep
+L	ab_3_15	43	|turn|3
+L	ab_3_15	44	|
+L	ab_3_15	45	|t:|<NORMALIZED>
+L	ab_3_15	46	|move|p2a: Vaporeon|Wish|p2a: Vaporeon
+L	ab_3_15	47	|move|p1a: Metagross|Rock Slide|p2a: Vaporeon
+L	ab_3_15	48	|-damage|p2a: Vaporeon|0 fnt
+L	ab_3_15	49	|faint|p2a: Vaporeon
+L	ab_3_15	50	|
+L	ab_3_15	51	|t:|<NORMALIZED>
+L	ab_3_15	52	|switch|p2a: Blissey|Blissey, F|651/651
+L	ab_3_15	53	|
+L	ab_3_15	54	|upkeep
+L	ab_3_15	55	|turn|4
+L	ab_3_15	56	|
+L	ab_3_15	57	|t:|<NORMALIZED>
+L	ab_3_15	58	|switch|p1a: Suicune|Suicune|348/348
+L	ab_3_15	59	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_3_15	60	|move|p2a: Blissey|Heal Bell|p2a: Blissey
+L	ab_3_15	61	|-activate|p2a: Blissey|move: Heal Bell
+L	ab_3_15	62	|
+L	ab_3_15	63	|upkeep
+L	ab_3_15	64	|turn|5
+L	ab_3_15	65	|
+L	ab_3_15	66	|t:|<NORMALIZED>
+L	ab_3_15	67	|switch|p1a: Zapdos|Zapdos|322/322
+L	ab_3_15	68	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_3_15	69	|move|p2a: Blissey|Heal Bell|p2a: Blissey
+L	ab_3_15	70	|-activate|p2a: Blissey|move: Heal Bell
+L	ab_3_15	71	|
+L	ab_3_15	72	|upkeep
+L	ab_3_15	73	|turn|6
+L	ab_3_15	74	|
+L	ab_3_15	75	|t:|<NORMALIZED>
+L	ab_3_15	76	|move|p1a: Zapdos|Hidden Power|p2a: Blissey
+L	ab_3_15	77	|-damage|p2a: Blissey|589/651
+L	ab_3_15	78	|move|p2a: Blissey|Thunderbolt|p1a: Zapdos
+L	ab_3_15	79	|-damage|p1a: Zapdos|233/322
+L	ab_3_15	80	|
+L	ab_3_15	81	|-heal|p1a: Zapdos|253/322|[from] item: Leftovers
+L	ab_3_15	82	|-heal|p2a: Blissey|629/651|[from] item: Leftovers
+L	ab_3_15	83	|upkeep
+L	ab_3_15	84	|turn|7
+L	ab_3_15	85	|
+L	ab_3_15	86	|t:|<NORMALIZED>
+L	ab_3_15	87	|move|p2a: Blissey|Ice Beam|p1a: Zapdos
+L	ab_3_15	88	|-supereffective|p1a: Zapdos
+L	ab_3_15	89	|-damage|p1a: Zapdos|74/322
+L	ab_3_15	90	|move|p1a: Zapdos|Roar|p2a: Blissey
+L	ab_3_15	91	|drag|p2a: Claydol|Claydol|324/324
+L	ab_3_15	92	|
+L	ab_3_15	93	|-heal|p1a: Zapdos|94/322|[from] item: Leftovers
+L	ab_3_15	94	|upkeep
+L	ab_3_15	95	|turn|8
+L	ab_3_15	96	|
+L	ab_3_15	97	|t:|<NORMALIZED>
+L	ab_3_15	98	|switch|p1a: Celebi|Celebi|341/341
+L	ab_3_15	99	|switch|p2a: Dugtrio|Dugtrio, M|211/211
+L	ab_3_15	100	|
+L	ab_3_15	101	|upkeep
+L	ab_3_15	102	|turn|9
+L	ab_3_15	103	|
+L	ab_3_15	104	|t:|<NORMALIZED>
+L	ab_3_15	105	|switch|p2a: Blissey|Blissey, F|629/651
+L	ab_3_15	106	|move|p1a: Celebi|Leech Seed|p2a: Blissey
+L	ab_3_15	107	|-start|p2a: Blissey|move: Leech Seed
+L	ab_3_15	108	|
+L	ab_3_15	109	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_3_15	110	|-damage|p2a: Blissey|570/651|[from] Leech Seed|[of] p1a: Celebi
+L	ab_3_15	111	|upkeep
+L	ab_3_15	112	|turn|10
+L	ab_3_15	113	|
+L	ab_3_15	114	|t:|<NORMALIZED>
+L	ab_3_15	115	|switch|p1a: Metagross|Metagross|343/343
+L	ab_3_15	116	|move|p2a: Blissey|Thunderbolt|p1a: Metagross
+L	ab_3_15	117	|-damage|p1a: Metagross|248/343
+L	ab_3_15	118	|
+L	ab_3_15	119	|-heal|p2a: Blissey|610/651|[from] item: Leftovers
+L	ab_3_15	120	|-damage|p2a: Blissey|529/651|[from] Leech Seed|[of] p1a: Metagross
+L	ab_3_15	121	|-heal|p1a: Metagross|329/343|[silent]
+L	ab_3_15	122	|upkeep
+L	ab_3_15	123	|turn|11
+L	ab_3_15	124	|
+L	ab_3_15	125	|t:|<NORMALIZED>
+L	ab_3_15	126	|switch|p1a: Swampert|Swampert, M|403/403
+L	ab_3_15	127	|move|p2a: Blissey|Heal Bell|p2a: Blissey
+L	ab_3_15	128	|-activate|p2a: Blissey|move: Heal Bell
+L	ab_3_15	129	|
+L	ab_3_15	130	|-heal|p2a: Blissey|569/651|[from] item: Leftovers
+L	ab_3_15	131	|-damage|p2a: Blissey|488/651|[from] Leech Seed|[of] p1a: Swampert
+L	ab_3_15	132	|upkeep
+L	ab_3_15	133	|turn|12
+L	ab_3_15	134	|
+L	ab_3_15	135	|t:|<NORMALIZED>
+L	ab_3_15	136	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_3_15	137	|-heal|p2a: Blissey|651/651
+L	ab_3_15	138	|move|p1a: Swampert|Surf|p2a: Blissey
+L	ab_3_15	139	|-damage|p2a: Blissey|579/651
+L	ab_3_15	140	|
+L	ab_3_15	141	|-heal|p2a: Blissey|619/651|[from] item: Leftovers
+L	ab_3_15	142	|-damage|p2a: Blissey|538/651|[from] Leech Seed|[of] p1a: Swampert
+L	ab_3_15	143	|upkeep
+L	ab_3_15	144	|turn|13
+L	ab_3_15	145	|
+L	ab_3_15	146	|t:|<NORMALIZED>
+L	ab_3_15	147	|move|p2a: Blissey|Heal Bell|p2a: Blissey
+L	ab_3_15	148	|-activate|p2a: Blissey|move: Heal Bell
+L	ab_3_15	149	|move|p1a: Swampert|Earthquake|p2a: Blissey
+L	ab_3_15	150	|-damage|p2a: Blissey|271/651
+L	ab_3_15	151	|
+L	ab_3_15	152	|-heal|p2a: Blissey|311/651|[from] item: Leftovers
+L	ab_3_15	153	|-damage|p2a: Blissey|230/651|[from] Leech Seed|[of] p1a: Swampert
+L	ab_3_15	154	|upkeep
+L	ab_3_15	155	|turn|14
+L	ab_3_15	156	|
+L	ab_3_15	157	|t:|<NORMALIZED>
+L	ab_3_15	158	|move|p1a: Swampert|Protect|p1a: Swampert
+L	ab_3_15	159	|-singleturn|p1a: Swampert|Protect
+L	ab_3_15	160	|move|p2a: Blissey|Soft-Boiled|p2a: Blissey
+L	ab_3_15	161	|-heal|p2a: Blissey|555/651
+L	ab_3_15	162	|
+L	ab_3_15	163	|-heal|p2a: Blissey|595/651|[from] item: Leftovers
+L	ab_3_15	164	|-damage|p2a: Blissey|514/651|[from] Leech Seed|[of] p1a: Swampert
+L	ab_3_15	165	|upkeep
+L	ab_3_15	166	|turn|15
+L	ab_3_15	167	|
+L	ab_3_15	168	|t:|<NORMALIZED>
+L	ab_3_15	169	|move|p2a: Blissey|Thunderbolt|p1a: Swampert
+L	ab_3_15	170	|-immune|p1a: Swampert
+L	ab_3_15	171	|move|p1a: Swampert|Earthquake|p2a: Blissey
+L	ab_3_15	172	|-damage|p2a: Blissey|255/651
+L	ab_3_15	173	|
+L	ab_3_15	174	|-heal|p2a: Blissey|295/651|[from] item: Leftovers
+L	ab_3_15	175	|-damage|p2a: Blissey|214/651|[from] Leech Seed|[of] p1a: Swampert
+L	ab_3_15	176	|upkeep
+L	ab_3_15	177	|turn|16
+L	ab_3_15	178	|
+L	ab_3_15	179	|t:|<NORMALIZED>
+L	ab_3_15	180	|move|p2a: Blissey|Heal Bell|p2a: Blissey
+L	ab_3_15	181	|-activate|p2a: Blissey|move: Heal Bell
+L	ab_3_15	182	|move|p1a: Swampert|Earthquake|p2a: Blissey
+L	ab_3_15	183	|-damage|p2a: Blissey|0 fnt
+L	ab_3_15	184	|faint|p2a: Blissey
+L	ab_3_15	185	|
+L	ab_3_15	186	|t:|<NORMALIZED>
+L	ab_3_15	187	|switch|p2a: Claydol|Claydol|324/324
+L	ab_3_15	188	|
+L	ab_3_15	189	|upkeep
+L	ab_3_15	190	|turn|17
+L	ab_3_15	191	|
+L	ab_3_15	192	|t:|<NORMALIZED>
+L	ab_3_15	193	|move|p2a: Claydol|Rapid Spin|p1a: Swampert
+L	ab_3_15	194	|-damage|p1a: Swampert|391/403
+L	ab_3_15	195	|move|p1a: Swampert|Endeavor|p2a: Claydol
+L	ab_3_15	196	|-fail|p1a: Swampert
+L	ab_3_15	197	|
+L	ab_3_15	198	|-heal|p1a: Swampert|403/403|[from] item: Leftovers
+L	ab_3_15	199	|upkeep
+L	ab_3_15	200	|turn|18
+L	ab_3_15	201	|
+L	ab_3_15	202	|t:|<NORMALIZED>
+L	ab_3_15	203	|move|p1a: Swampert|Protect|p1a: Swampert
+L	ab_3_15	204	|-singleturn|p1a: Swampert|Protect
+L	ab_3_15	205	|move|p2a: Claydol|Rest|p2a: Claydol
+L	ab_3_15	206	|-fail|p2a: Claydol|heal
+L	ab_3_15	207	|
+L	ab_3_15	208	|upkeep
+L	ab_3_15	209	|turn|19
+L	ab_3_15	210	|
+L	ab_3_15	211	|t:|<NORMALIZED>
+L	ab_3_15	212	|move|p2a: Claydol|Earthquake|p1a: Swampert
+L	ab_3_15	213	|-damage|p1a: Swampert|320/403
+L	ab_3_15	214	|move|p1a: Swampert|Endeavor|p2a: Claydol
+L	ab_3_15	215	|-damage|p2a: Claydol|320/324
+L	ab_3_15	216	|
+L	ab_3_15	217	|-heal|p2a: Claydol|324/324|[from] item: Leftovers
+L	ab_3_15	218	|-heal|p1a: Swampert|345/403|[from] item: Leftovers
+L	ab_3_15	219	|upkeep
+L	ab_3_15	220	|turn|20
+L	ab_3_15	221	|
+L	ab_3_15	222	|t:|<NORMALIZED>
+L	ab_3_15	223	|move|p2a: Claydol|Psychic|p1a: Swampert
+L	ab_3_15	224	|-damage|p1a: Swampert|268/403
+L	ab_3_15	225	|move|p1a: Swampert|Endeavor|p2a: Claydol
+L	ab_3_15	226	|-damage|p2a: Claydol|268/324
+L	ab_3_15	227	|
+L	ab_3_15	228	|-heal|p2a: Claydol|288/324|[from] item: Leftovers
+L	ab_3_15	229	|-heal|p1a: Swampert|293/403|[from] item: Leftovers
+L	ab_3_15	230	|upkeep
+L	ab_3_15	231	|turn|21
+L	ab_3_15	232	|
+L	ab_3_15	233	|t:|<NORMALIZED>
+L	ab_3_15	234	|move|p2a: Claydol|Earthquake|p1a: Swampert
+L	ab_3_15	235	|-damage|p1a: Swampert|212/403
+L	ab_3_15	236	|move|p1a: Swampert|Surf|p2a: Claydol
+L	ab_3_15	237	|-supereffective|p2a: Claydol
+L	ab_3_15	238	|-crit|p2a: Claydol
+L	ab_3_15	239	|-damage|p2a: Claydol|8/324
+L	ab_3_15	240	|
+L	ab_3_15	241	|-heal|p2a: Claydol|28/324|[from] item: Leftovers
+L	ab_3_15	242	|-heal|p1a: Swampert|237/403|[from] item: Leftovers
+L	ab_3_15	243	|upkeep
+L	ab_3_15	244	|turn|22
+L	ab_3_15	245	|
+L	ab_3_15	246	|t:|<NORMALIZED>
+L	ab_3_15	247	|move|p2a: Claydol|Rest|p2a: Claydol
+L	ab_3_15	248	|-status|p2a: Claydol|slp|[from] move: Rest
+L	ab_3_15	249	|-heal|p2a: Claydol|324/324 slp|[silent]
+L	ab_3_15	250	|move|p1a: Swampert|Earthquake|p2a: Claydol
+L	ab_3_15	251	|-immune|p2a: Claydol
+L	ab_3_15	252	|
+L	ab_3_15	253	|-heal|p1a: Swampert|262/403|[from] item: Leftovers
+L	ab_3_15	254	|upkeep
+L	ab_3_15	255	|turn|23
+L	ab_3_15	256	|
+L	ab_3_15	257	|t:|<NORMALIZED>
+L	ab_3_15	258	|cant|p2a: Claydol|slp
+L	ab_3_15	259	|move|p1a: Swampert|Earthquake|p2a: Claydol
+L	ab_3_15	260	|-immune|p2a: Claydol
+L	ab_3_15	261	|
+L	ab_3_15	262	|-heal|p1a: Swampert|287/403|[from] item: Leftovers
+L	ab_3_15	263	|upkeep
+L	ab_3_15	264	|turn|24
+L	ab_3_15	265	|
+L	ab_3_15	266	|t:|<NORMALIZED>
+L	ab_3_15	267	|cant|p2a: Claydol|slp
+L	ab_3_15	268	|move|p1a: Swampert|Surf|p2a: Claydol
+L	ab_3_15	269	|-supereffective|p2a: Claydol
+L	ab_3_15	270	|-damage|p2a: Claydol|164/324 slp
+L	ab_3_15	271	|
+L	ab_3_15	272	|-heal|p2a: Claydol|184/324 slp|[from] item: Leftovers
+L	ab_3_15	273	|-heal|p1a: Swampert|312/403|[from] item: Leftovers
+L	ab_3_15	274	|upkeep
+L	ab_3_15	275	|turn|25
+L	ab_3_15	276	|
+L	ab_3_15	277	|t:|<NORMALIZED>
+L	ab_3_15	278	|switch|p1a: Zapdos|Zapdos|94/322
+L	ab_3_15	279	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_3_15	280	|-curestatus|p2a: Claydol|slp|[msg]
+L	ab_3_15	281	|move|p2a: Claydol|Rest|p2a: Claydol
+L	ab_3_15	282	|-status|p2a: Claydol|slp|[from] move: Rest
+L	ab_3_15	283	|-heal|p2a: Claydol|324/324 slp|[silent]
+L	ab_3_15	284	|
+L	ab_3_15	285	|-heal|p1a: Zapdos|114/322|[from] item: Leftovers
+L	ab_3_15	286	|upkeep
+L	ab_3_15	287	|turn|26
+L	ab_3_15	288	|
+L	ab_3_15	289	|t:|<NORMALIZED>
+L	ab_3_15	290	|cant|p2a: Claydol|slp
+L	ab_3_15	291	|move|p1a: Zapdos|Roar|p2a: Claydol
+L	ab_3_15	292	|drag|p2a: Skarmory|Skarmory, M|241/334
+L	ab_3_15	293	|
+L	ab_3_15	294	|-heal|p1a: Zapdos|134/322|[from] item: Leftovers
+L	ab_3_15	295	|-heal|p2a: Skarmory|261/334|[from] item: Leftovers
+L	ab_3_15	296	|upkeep
+L	ab_3_15	297	|turn|27
+L	ab_3_15	298	|
+L	ab_3_15	299	|t:|<NORMALIZED>
+L	ab_3_15	300	|switch|p2a: Dusclops|Dusclops, M|284/284
+L	ab_3_15	301	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_3_15	302	|move|p1a: Zapdos|Roar|p2a: Dusclops
+L	ab_3_15	303	|drag|p2a: Claydol|Claydol|324/324 slp
+L	ab_3_15	304	|
+L	ab_3_15	305	|-heal|p1a: Zapdos|154/322|[from] item: Leftovers
+L	ab_3_15	306	|upkeep
+L	ab_3_15	307	|turn|28
+L	ab_3_15	308	|
+L	ab_3_15	309	|t:|<NORMALIZED>
+L	ab_3_15	310	|move|p1a: Zapdos|Toxic||[still]
+L	ab_3_15	311	|-fail|p1a: Zapdos
+L	ab_3_15	312	|cant|p2a: Claydol|slp
+L	ab_3_15	313	|
+L	ab_3_15	314	|-heal|p1a: Zapdos|174/322|[from] item: Leftovers
+L	ab_3_15	315	|upkeep
+L	ab_3_15	316	|turn|29
+L	ab_3_15	317	|
+L	ab_3_15	318	|t:|<NORMALIZED>
+L	ab_3_15	319	|switch|p2a: Skarmory|Skarmory, M|261/334
+L	ab_3_15	320	|move|p1a: Zapdos|Roar|p2a: Skarmory
+L	ab_3_15	321	|drag|p2a: Dusclops|Dusclops, M|284/284
+L	ab_3_15	322	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_3_15	323	|
+L	ab_3_15	324	|-heal|p1a: Zapdos|194/322|[from] item: Leftovers
+L	ab_3_15	325	|upkeep
+L	ab_3_15	326	|turn|30
+L	ab_3_15	327	|
+L	ab_3_15	328	|t:|<NORMALIZED>
+L	ab_3_15	329	|switch|p1a: Metagross|Metagross|329/343
+L	ab_3_15	330	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	331	|-fail|p2a: Dusclops
+L	ab_3_15	332	|
+L	ab_3_15	333	|upkeep
+L	ab_3_15	334	|turn|31
+L	ab_3_15	335	|
+L	ab_3_15	336	|t:|<NORMALIZED>
+L	ab_3_15	337	|move|p1a: Metagross|Explosion|p2a: Dusclops
+L	ab_3_15	338	|-immune|p2a: Dusclops
+L	ab_3_15	339	|faint|p1a: Metagross
+L	ab_3_15	340	|
+L	ab_3_15	341	|t:|<NORMALIZED>
+L	ab_3_15	342	|switch|p1a: Zapdos|Zapdos|194/322
+L	ab_3_15	343	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_3_15	344	|
+L	ab_3_15	345	|-heal|p1a: Zapdos|214/322|[from] item: Leftovers
+L	ab_3_15	346	|upkeep
+L	ab_3_15	347	|turn|32
+L	ab_3_15	348	|
+L	ab_3_15	349	|t:|<NORMALIZED>
+L	ab_3_15	350	|move|p1a: Zapdos|Thunderbolt|p2a: Dusclops
+L	ab_3_15	351	|-damage|p2a: Dusclops|186/284
+L	ab_3_15	352	|move|p2a: Dusclops|Seismic Toss|p1a: Zapdos
+L	ab_3_15	353	|-damage|p1a: Zapdos|114/322
+L	ab_3_15	354	|
+L	ab_3_15	355	|-heal|p1a: Zapdos|134/322|[from] item: Leftovers
+L	ab_3_15	356	|-heal|p2a: Dusclops|203/284|[from] item: Leftovers
+L	ab_3_15	357	|upkeep
+L	ab_3_15	358	|turn|33
+L	ab_3_15	359	|
+L	ab_3_15	360	|t:|<NORMALIZED>
+L	ab_3_15	361	|switch|p1a: Swampert|Swampert, M|312/403
+L	ab_3_15	362	|move|p2a: Dusclops|Will-O-Wisp|p1a: Swampert
+L	ab_3_15	363	|-status|p1a: Swampert|brn
+L	ab_3_15	364	|
+L	ab_3_15	365	|-heal|p1a: Swampert|337/403 brn|[from] item: Leftovers
+L	ab_3_15	366	|-damage|p1a: Swampert|287/403 brn|[from] brn
+L	ab_3_15	367	|-heal|p2a: Dusclops|220/284|[from] item: Leftovers
+L	ab_3_15	368	|upkeep
+L	ab_3_15	369	|turn|34
+L	ab_3_15	370	|
+L	ab_3_15	371	|t:|<NORMALIZED>
+L	ab_3_15	372	|move|p1a: Swampert|Earthquake|p2a: Dusclops
+L	ab_3_15	373	|-damage|p2a: Dusclops|171/284
+L	ab_3_15	374	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	375	|-fail|p2a: Dusclops
+L	ab_3_15	376	|
+L	ab_3_15	377	|-heal|p1a: Swampert|312/403 brn|[from] item: Leftovers
+L	ab_3_15	378	|-damage|p1a: Swampert|262/403 brn|[from] brn
+L	ab_3_15	379	|-heal|p2a: Dusclops|188/284|[from] item: Leftovers
+L	ab_3_15	380	|upkeep
+L	ab_3_15	381	|turn|35
+L	ab_3_15	382	|
+L	ab_3_15	383	|t:|<NORMALIZED>
+L	ab_3_15	384	|switch|p1a: Suicune|Suicune|348/348
+L	ab_3_15	385	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_3_15	386	|switch|p2a: Claydol|Claydol|324/324 slp
+L	ab_3_15	387	|
+L	ab_3_15	388	|upkeep
+L	ab_3_15	389	|turn|36
+L	ab_3_15	390	|
+L	ab_3_15	391	|t:|<NORMALIZED>
+L	ab_3_15	392	|switch|p1a: Swampert|Swampert, M|262/403 brn
+L	ab_3_15	393	|-curestatus|p2a: Claydol|slp|[msg]
+L	ab_3_15	394	|move|p2a: Claydol|Rapid Spin|p1a: Swampert
+L	ab_3_15	395	|-damage|p1a: Swampert|251/403 brn
+L	ab_3_15	396	|
+L	ab_3_15	397	|-heal|p1a: Swampert|276/403 brn|[from] item: Leftovers
+L	ab_3_15	398	|-damage|p1a: Swampert|226/403 brn|[from] brn
+L	ab_3_15	399	|upkeep
+L	ab_3_15	400	|turn|37
+L	ab_3_15	401	|
+L	ab_3_15	402	|t:|<NORMALIZED>
+L	ab_3_15	403	|move|p2a: Claydol|Rapid Spin|p1a: Swampert
+L	ab_3_15	404	|-damage|p1a: Swampert|213/403 brn
+L	ab_3_15	405	|move|p1a: Swampert|Earthquake|p2a: Claydol
+L	ab_3_15	406	|-immune|p2a: Claydol
+L	ab_3_15	407	|
+L	ab_3_15	408	|-heal|p1a: Swampert|238/403 brn|[from] item: Leftovers
+L	ab_3_15	409	|-damage|p1a: Swampert|188/403 brn|[from] brn
+L	ab_3_15	410	|upkeep
+L	ab_3_15	411	|turn|38
+L	ab_3_15	412	|
+L	ab_3_15	413	|t:|<NORMALIZED>
+L	ab_3_15	414	|switch|p1a: Celebi|Celebi|341/341
+L	ab_3_15	415	|move|p2a: Claydol|Rapid Spin|p1a: Celebi
+L	ab_3_15	416	|-damage|p1a: Celebi|326/341
+L	ab_3_15	417	|
+L	ab_3_15	418	|-heal|p1a: Celebi|341/341|[from] item: Leftovers
+L	ab_3_15	419	|upkeep
+L	ab_3_15	420	|turn|39
+L	ab_3_15	421	|
+L	ab_3_15	422	|t:|<NORMALIZED>
+L	ab_3_15	423	|switch|p1a: Zapdos|Zapdos|134/322
+L	ab_3_15	424	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_3_15	425	|move|p2a: Claydol|Rapid Spin|p1a: Zapdos
+L	ab_3_15	426	|-damage|p1a: Zapdos|117/322
+L	ab_3_15	427	|
+L	ab_3_15	428	|-heal|p1a: Zapdos|137/322|[from] item: Leftovers
+L	ab_3_15	429	|upkeep
+L	ab_3_15	430	|turn|40
+L	ab_3_15	431	|
+L	ab_3_15	432	|t:|<NORMALIZED>
+L	ab_3_15	433	|switch|p2a: Skarmory|Skarmory, M|261/334
+L	ab_3_15	434	|move|p1a: Zapdos|Hidden Power|p2a: Skarmory
+L	ab_3_15	435	|-resisted|p2a: Skarmory
+L	ab_3_15	436	|-damage|p2a: Skarmory|225/334
+L	ab_3_15	437	|
+L	ab_3_15	438	|-heal|p1a: Zapdos|157/322|[from] item: Leftovers
+L	ab_3_15	439	|-heal|p2a: Skarmory|245/334|[from] item: Leftovers
+L	ab_3_15	440	|upkeep
+L	ab_3_15	441	|turn|41
+L	ab_3_15	442	|
+L	ab_3_15	443	|t:|<NORMALIZED>
+L	ab_3_15	444	|move|p1a: Zapdos|Thunderbolt|p2a: Skarmory
+L	ab_3_15	445	|-supereffective|p2a: Skarmory
+L	ab_3_15	446	|-damage|p2a: Skarmory|0 fnt
+L	ab_3_15	447	|faint|p2a: Skarmory
+L	ab_3_15	448	|
+L	ab_3_15	449	|t:|<NORMALIZED>
+L	ab_3_15	450	|switch|p2a: Dusclops|Dusclops, M|188/284
+L	ab_3_15	451	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_3_15	452	|
+L	ab_3_15	453	|-heal|p1a: Zapdos|177/322|[from] item: Leftovers
+L	ab_3_15	454	|-heal|p2a: Dusclops|205/284|[from] item: Leftovers
+L	ab_3_15	455	|upkeep
+L	ab_3_15	456	|turn|42
+L	ab_3_15	457	|
+L	ab_3_15	458	|t:|<NORMALIZED>
+L	ab_3_15	459	|move|p1a: Zapdos|Toxic|p2a: Dusclops
+L	ab_3_15	460	|-status|p2a: Dusclops|tox
+L	ab_3_15	461	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_3_15	462	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_3_15	463	|-heal|p2a: Dusclops|284/284 slp|[silent]
+L	ab_3_15	464	|
+L	ab_3_15	465	|-heal|p1a: Zapdos|197/322|[from] item: Leftovers
+L	ab_3_15	466	|upkeep
+L	ab_3_15	467	|turn|43
+L	ab_3_15	468	|
+L	ab_3_15	469	|t:|<NORMALIZED>
+L	ab_3_15	470	|move|p1a: Zapdos|Toxic||[still]
+L	ab_3_15	471	|-fail|p1a: Zapdos
+L	ab_3_15	472	|cant|p2a: Dusclops|slp
+L	ab_3_15	473	|
+L	ab_3_15	474	|-heal|p1a: Zapdos|217/322|[from] item: Leftovers
+L	ab_3_15	475	|upkeep
+L	ab_3_15	476	|turn|44
+L	ab_3_15	477	|
+L	ab_3_15	478	|t:|<NORMALIZED>
+L	ab_3_15	479	|cant|p2a: Dusclops|slp
+L	ab_3_15	480	|move|p1a: Zapdos|Roar|p2a: Dusclops
+L	ab_3_15	481	|drag|p2a: Dugtrio|Dugtrio, M|211/211
+L	ab_3_15	482	|
+L	ab_3_15	483	|-heal|p1a: Zapdos|237/322|[from] item: Leftovers
+L	ab_3_15	484	|upkeep
+L	ab_3_15	485	|turn|45
+L	ab_3_15	486	|
+L	ab_3_15	487	|t:|<NORMALIZED>
+L	ab_3_15	488	|move|p2a: Dugtrio|Aerial Ace|p1a: Zapdos
+L	ab_3_15	489	|-resisted|p1a: Zapdos
+L	ab_3_15	490	|-damage|p1a: Zapdos|192/322
+L	ab_3_15	491	|move|p1a: Zapdos|Hidden Power|p2a: Dugtrio
+L	ab_3_15	492	|-damage|p2a: Dugtrio|109/211
+L	ab_3_15	493	|
+L	ab_3_15	494	|-heal|p1a: Zapdos|212/322|[from] item: Leftovers
+L	ab_3_15	495	|upkeep
+L	ab_3_15	496	|turn|46
+L	ab_3_15	497	|
+L	ab_3_15	498	|t:|<NORMALIZED>
+L	ab_3_15	499	|move|p2a: Dugtrio|Aerial Ace|p1a: Zapdos
+L	ab_3_15	500	|-resisted|p1a: Zapdos
+L	ab_3_15	501	|-damage|p1a: Zapdos|167/322
+L	ab_3_15	502	|move|p1a: Zapdos|Thunderbolt|p2a: Dugtrio
+L	ab_3_15	503	|-immune|p2a: Dugtrio
+L	ab_3_15	504	|
+L	ab_3_15	505	|-heal|p1a: Zapdos|187/322|[from] item: Leftovers
+L	ab_3_15	506	|upkeep
+L	ab_3_15	507	|turn|47
+L	ab_3_15	508	|
+L	ab_3_15	509	|t:|<NORMALIZED>
+L	ab_3_15	510	|switch|p1a: Swampert|Swampert, M|188/403 brn
+L	ab_3_15	511	|move|p2a: Dugtrio|Aerial Ace|p1a: Swampert
+L	ab_3_15	512	|-damage|p1a: Swampert|121/403 brn
+L	ab_3_15	513	|
+L	ab_3_15	514	|-heal|p1a: Swampert|146/403 brn|[from] item: Leftovers
+L	ab_3_15	515	|-damage|p1a: Swampert|96/403 brn|[from] brn
+L	ab_3_15	516	|upkeep
+L	ab_3_15	517	|turn|48
+L	ab_3_15	518	|
+L	ab_3_15	519	|t:|<NORMALIZED>
+L	ab_3_15	520	|move|p2a: Dugtrio|Aerial Ace|p1a: Swampert
+L	ab_3_15	521	|-damage|p1a: Swampert|29/403 brn
+L	ab_3_15	522	|move|p1a: Swampert|Endeavor|p2a: Dugtrio
+L	ab_3_15	523	|-damage|p2a: Dugtrio|29/211
+L	ab_3_15	524	|
+L	ab_3_15	525	|-heal|p1a: Swampert|54/403 brn|[from] item: Leftovers
+L	ab_3_15	526	|-damage|p1a: Swampert|4/403 brn|[from] brn
+L	ab_3_15	527	|upkeep
+L	ab_3_15	528	|turn|49
+L	ab_3_15	529	|
+L	ab_3_15	530	|t:|<NORMALIZED>
+L	ab_3_15	531	|move|p2a: Dugtrio|Aerial Ace|p1a: Swampert
+L	ab_3_15	532	|-damage|p1a: Swampert|0 fnt
+L	ab_3_15	533	|faint|p1a: Swampert
+L	ab_3_15	534	|
+L	ab_3_15	535	|t:|<NORMALIZED>
+L	ab_3_15	536	|switch|p1a: Snorlax|Snorlax, M|497/497
+L	ab_3_15	537	|
+L	ab_3_15	538	|upkeep
+L	ab_3_15	539	|turn|50
+L	ab_3_15	540	|
+L	ab_3_15	541	|t:|<NORMALIZED>
+L	ab_3_15	542	|move|p2a: Dugtrio|Aerial Ace|p1a: Snorlax
+L	ab_3_15	543	|-damage|p1a: Snorlax|411/497
+L	ab_3_15	544	|move|p1a: Snorlax|Earthquake|p2a: Dugtrio
+L	ab_3_15	545	|-damage|p2a: Dugtrio|0 fnt
+L	ab_3_15	546	|faint|p2a: Dugtrio
+L	ab_3_15	547	|
+L	ab_3_15	548	|t:|<NORMALIZED>
+L	ab_3_15	549	|switch|p2a: Dusclops|Dusclops, M|284/284 slp
+L	ab_3_15	550	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_3_15	551	|
+L	ab_3_15	552	|-heal|p1a: Snorlax|442/497|[from] item: Leftovers
+L	ab_3_15	553	|upkeep
+L	ab_3_15	554	|turn|51
+L	ab_3_15	555	|
+L	ab_3_15	556	|t:|<NORMALIZED>
+L	ab_3_15	557	|move|p1a: Snorlax|Earthquake|p2a: Dusclops
+L	ab_3_15	558	|-crit|p2a: Dusclops
+L	ab_3_15	559	|-damage|p2a: Dusclops|124/284 slp
+L	ab_3_15	560	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_3_15	561	|move|p2a: Dusclops|Seismic Toss|p1a: Snorlax
+L	ab_3_15	562	|-damage|p1a: Snorlax|342/497
+L	ab_3_15	563	|
+L	ab_3_15	564	|-heal|p1a: Snorlax|373/497|[from] item: Leftovers
+L	ab_3_15	565	|-heal|p2a: Dusclops|141/284|[from] item: Leftovers
+L	ab_3_15	566	|upkeep
+L	ab_3_15	567	|turn|52
+L	ab_3_15	568	|
+L	ab_3_15	569	|t:|<NORMALIZED>
+L	ab_3_15	570	|move|p1a: Snorlax|Curse|p1a: Snorlax
+L	ab_3_15	571	|-unboost|p1a: Snorlax|spe|1
+L	ab_3_15	572	|-boost|p1a: Snorlax|atk|1
+L	ab_3_15	573	|-boost|p1a: Snorlax|def|1
+L	ab_3_15	574	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_3_15	575	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_3_15	576	|-heal|p2a: Dusclops|284/284 slp|[silent]
+L	ab_3_15	577	|
+L	ab_3_15	578	|-heal|p1a: Snorlax|404/497|[from] item: Leftovers
+L	ab_3_15	579	|upkeep
+L	ab_3_15	580	|turn|53
+L	ab_3_15	581	|
+L	ab_3_15	582	|t:|<NORMALIZED>
+L	ab_3_15	583	|cant|p2a: Dusclops|slp
+L	ab_3_15	584	|move|p1a: Snorlax|Curse|p1a: Snorlax
+L	ab_3_15	585	|-unboost|p1a: Snorlax|spe|1
+L	ab_3_15	586	|-boost|p1a: Snorlax|atk|1
+L	ab_3_15	587	|-boost|p1a: Snorlax|def|1
+L	ab_3_15	588	|
+L	ab_3_15	589	|-heal|p1a: Snorlax|435/497|[from] item: Leftovers
+L	ab_3_15	590	|upkeep
+L	ab_3_15	591	|turn|54
+L	ab_3_15	592	|
+L	ab_3_15	593	|t:|<NORMALIZED>
+L	ab_3_15	594	|cant|p2a: Dusclops|slp
+L	ab_3_15	595	|move|p1a: Snorlax|Curse|p1a: Snorlax
+L	ab_3_15	596	|-unboost|p1a: Snorlax|spe|1
+L	ab_3_15	597	|-boost|p1a: Snorlax|atk|1
+L	ab_3_15	598	|-boost|p1a: Snorlax|def|1
+L	ab_3_15	599	|
+L	ab_3_15	600	|-heal|p1a: Snorlax|466/497|[from] item: Leftovers
+L	ab_3_15	601	|upkeep
+L	ab_3_15	602	|turn|55
+L	ab_3_15	603	|
+L	ab_3_15	604	|t:|<NORMALIZED>
+L	ab_3_15	605	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_3_15	606	|move|p2a: Dusclops|Seismic Toss|p1a: Snorlax
+L	ab_3_15	607	|-damage|p1a: Snorlax|366/497
+L	ab_3_15	608	|move|p1a: Snorlax|Body Slam|p2a: Dusclops
+L	ab_3_15	609	|-immune|p2a: Dusclops
+L	ab_3_15	610	|
+L	ab_3_15	611	|-heal|p1a: Snorlax|397/497|[from] item: Leftovers
+L	ab_3_15	612	|upkeep
+L	ab_3_15	613	|turn|56
+L	ab_3_15	614	|
+L	ab_3_15	615	|t:|<NORMALIZED>
+L	ab_3_15	616	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	617	|-fail|p2a: Dusclops
+L	ab_3_15	618	|move|p1a: Snorlax|Body Slam|p2a: Dusclops
+L	ab_3_15	619	|-immune|p2a: Dusclops
+L	ab_3_15	620	|
+L	ab_3_15	621	|-heal|p1a: Snorlax|428/497|[from] item: Leftovers
+L	ab_3_15	622	|upkeep
+L	ab_3_15	623	|turn|57
+L	ab_3_15	624	|
+L	ab_3_15	625	|t:|<NORMALIZED>
+L	ab_3_15	626	|move|p2a: Dusclops|Will-O-Wisp|p1a: Snorlax
+L	ab_3_15	627	|-status|p1a: Snorlax|brn
+L	ab_3_15	628	|move|p1a: Snorlax|Earthquake|p2a: Dusclops
+L	ab_3_15	629	|-damage|p2a: Dusclops|187/284
+L	ab_3_15	630	|
+L	ab_3_15	631	|-heal|p2a: Dusclops|204/284|[from] item: Leftovers
+L	ab_3_15	632	|-heal|p1a: Snorlax|459/497 brn|[from] item: Leftovers
+L	ab_3_15	633	|-damage|p1a: Snorlax|397/497 brn|[from] brn
+L	ab_3_15	634	|upkeep
+L	ab_3_15	635	|turn|58
+L	ab_3_15	636	|
+L	ab_3_15	637	|t:|<NORMALIZED>
+L	ab_3_15	638	|move|p2a: Dusclops|Seismic Toss|p1a: Snorlax
+L	ab_3_15	639	|-damage|p1a: Snorlax|297/497 brn
+L	ab_3_15	640	|move|p1a: Snorlax|Body Slam|p2a: Dusclops
+L	ab_3_15	641	|-immune|p2a: Dusclops
+L	ab_3_15	642	|
+L	ab_3_15	643	|-heal|p2a: Dusclops|221/284|[from] item: Leftovers
+L	ab_3_15	644	|-heal|p1a: Snorlax|328/497 brn|[from] item: Leftovers
+L	ab_3_15	645	|-damage|p1a: Snorlax|266/497 brn|[from] brn
+L	ab_3_15	646	|upkeep
+L	ab_3_15	647	|turn|59
+L	ab_3_15	648	|
+L	ab_3_15	649	|t:|<NORMALIZED>
+L	ab_3_15	650	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	651	|-fail|p2a: Dusclops
+L	ab_3_15	652	|move|p1a: Snorlax|Self-Destruct|p2a: Dusclops
+L	ab_3_15	653	|-immune|p2a: Dusclops
+L	ab_3_15	654	|faint|p1a: Snorlax
+L	ab_3_15	655	|
+L	ab_3_15	656	|t:|<NORMALIZED>
+L	ab_3_15	657	|switch|p1a: Celebi|Celebi|341/341
+L	ab_3_15	658	|
+L	ab_3_15	659	|-heal|p2a: Dusclops|238/284|[from] item: Leftovers
+L	ab_3_15	660	|upkeep
+L	ab_3_15	661	|turn|60
+L	ab_3_15	662	|
+L	ab_3_15	663	|t:|<NORMALIZED>
+L	ab_3_15	664	|move|p1a: Celebi|Giga Drain|p2a: Dusclops
+L	ab_3_15	665	|-damage|p2a: Dusclops|175/284
+L	ab_3_15	666	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	667	|-fail|p2a: Dusclops
+L	ab_3_15	668	|
+L	ab_3_15	669	|-heal|p2a: Dusclops|192/284|[from] item: Leftovers
+L	ab_3_15	670	|upkeep
+L	ab_3_15	671	|turn|61
+L	ab_3_15	672	|
+L	ab_3_15	673	|t:|<NORMALIZED>
+L	ab_3_15	674	|switch|p1a: Zapdos|Zapdos|187/322
+L	ab_3_15	675	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_3_15	676	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_3_15	677	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_3_15	678	|-heal|p2a: Dusclops|284/284 slp|[silent]
+L	ab_3_15	679	|
+L	ab_3_15	680	|-heal|p1a: Zapdos|207/322|[from] item: Leftovers
+L	ab_3_15	681	|upkeep
+L	ab_3_15	682	|turn|62
+L	ab_3_15	683	|
+L	ab_3_15	684	|t:|<NORMALIZED>
+L	ab_3_15	685	|move|p1a: Zapdos|Hidden Power|p2a: Dusclops
+L	ab_3_15	686	|-supereffective|p2a: Dusclops
+L	ab_3_15	687	|-damage|p2a: Dusclops|192/284 slp
+L	ab_3_15	688	|cant|p2a: Dusclops|slp
+L	ab_3_15	689	|
+L	ab_3_15	690	|-heal|p1a: Zapdos|227/322|[from] item: Leftovers
+L	ab_3_15	691	|-heal|p2a: Dusclops|209/284 slp|[from] item: Leftovers
+L	ab_3_15	692	|upkeep
+L	ab_3_15	693	|turn|63
+L	ab_3_15	694	|
+L	ab_3_15	695	|t:|<NORMALIZED>
+L	ab_3_15	696	|switch|p1a: Suicune|Suicune|348/348
+L	ab_3_15	697	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_3_15	698	|cant|p2a: Dusclops|slp
+L	ab_3_15	699	|
+L	ab_3_15	700	|-heal|p2a: Dusclops|226/284 slp|[from] item: Leftovers
+L	ab_3_15	701	|upkeep
+L	ab_3_15	702	|turn|64
+L	ab_3_15	703	|
+L	ab_3_15	704	|t:|<NORMALIZED>
+L	ab_3_15	705	|move|p1a: Suicune|Substitute|p1a: Suicune
+L	ab_3_15	706	|-start|p1a: Suicune|Substitute
+L	ab_3_15	707	|-damage|p1a: Suicune|261/348
+L	ab_3_15	708	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_3_15	709	|move|p2a: Dusclops|Seismic Toss|p1a: Suicune
+L	ab_3_15	710	|-end|p1a: Suicune|Substitute
+L	ab_3_15	711	|
+L	ab_3_15	712	|-heal|p1a: Suicune|282/348|[from] item: Leftovers
+L	ab_3_15	713	|-heal|p2a: Dusclops|243/284|[from] item: Leftovers
+L	ab_3_15	714	|upkeep
+L	ab_3_15	715	|turn|65
+L	ab_3_15	716	|
+L	ab_3_15	717	|t:|<NORMALIZED>
+L	ab_3_15	718	|switch|p1a: Celebi|Celebi|341/341
+L	ab_3_15	719	|move|p2a: Dusclops|Seismic Toss|p1a: Celebi
+L	ab_3_15	720	|-damage|p1a: Celebi|241/341
+L	ab_3_15	721	|
+L	ab_3_15	722	|-heal|p1a: Celebi|262/341|[from] item: Leftovers
+L	ab_3_15	723	|-heal|p2a: Dusclops|260/284|[from] item: Leftovers
+L	ab_3_15	724	|upkeep
+L	ab_3_15	725	|turn|66
+L	ab_3_15	726	|
+L	ab_3_15	727	|t:|<NORMALIZED>
+L	ab_3_15	728	|move|p1a: Celebi|Giga Drain|p2a: Dusclops
+L	ab_3_15	729	|-damage|p2a: Dusclops|200/284
+L	ab_3_15	730	|-heal|p1a: Celebi|292/341|[from] drain|[of] p2a: Dusclops
+L	ab_3_15	731	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_3_15	732	|-status|p2a: Dusclops|slp|[from] move: Rest
+L	ab_3_15	733	|-heal|p2a: Dusclops|284/284 slp|[silent]
+L	ab_3_15	734	|
+L	ab_3_15	735	|-heal|p1a: Celebi|313/341|[from] item: Leftovers
+L	ab_3_15	736	|upkeep
+L	ab_3_15	737	|turn|67
+L	ab_3_15	738	|
+L	ab_3_15	739	|t:|<NORMALIZED>
+L	ab_3_15	740	|switch|p1a: Suicune|Suicune|282/348
+L	ab_3_15	741	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_3_15	742	|cant|p2a: Dusclops|slp
+L	ab_3_15	743	|
+L	ab_3_15	744	|-heal|p1a: Suicune|303/348|[from] item: Leftovers
+L	ab_3_15	745	|upkeep
+L	ab_3_15	746	|turn|68
+L	ab_3_15	747	|
+L	ab_3_15	748	|t:|<NORMALIZED>
+L	ab_3_15	749	|move|p1a: Suicune|Substitute|p1a: Suicune
+L	ab_3_15	750	|-start|p1a: Suicune|Substitute
+L	ab_3_15	751	|-damage|p1a: Suicune|216/348
+L	ab_3_15	752	|cant|p2a: Dusclops|slp
+L	ab_3_15	753	|
+L	ab_3_15	754	|-heal|p1a: Suicune|237/348|[from] item: Leftovers
+L	ab_3_15	755	|upkeep
+L	ab_3_15	756	|turn|69
+L	ab_3_15	757	|
+L	ab_3_15	758	|t:|<NORMALIZED>
+L	ab_3_15	759	|move|p1a: Suicune|Substitute|p1a: Suicune
+L	ab_3_15	760	|-fail|p1a: Suicune|move: Substitute
+L	ab_3_15	761	|-curestatus|p2a: Dusclops|slp|[msg]
+L	ab_3_15	762	|move|p2a: Dusclops|Imprison|p2a: Dusclops
+L	ab_3_15	763	|-start|p2a: Dusclops|move: Imprison
+L	ab_3_15	764	|
+L	ab_3_15	765	|-heal|p1a: Suicune|258/348|[from] item: Leftovers
+L	ab_3_15	766	|upkeep
+L	ab_3_15	767	|turn|70
+L	ab_3_15	768	|
+L	ab_3_15	769	|t:|<NORMALIZED>
+L	ab_3_15	770	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_3_15	771	|-boost|p1a: Suicune|spa|1
+L	ab_3_15	772	|-boost|p1a: Suicune|spd|1
+L	ab_3_15	773	|move|p2a: Dusclops|Will-O-Wisp||[still]
+L	ab_3_15	774	|-fail|p2a: Dusclops
+L	ab_3_15	775	|
+L	ab_3_15	776	|-heal|p1a: Suicune|279/348|[from] item: Leftovers
+L	ab_3_15	777	|upkeep
+L	ab_3_15	778	|turn|71
+L	ab_3_15	779	|
+L	ab_3_15	780	|t:|<NORMALIZED>
+L	ab_3_15	781	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_3_15	782	|-boost|p1a: Suicune|spa|1
+L	ab_3_15	783	|-boost|p1a: Suicune|spd|1
+L	ab_3_15	784	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	785	|-fail|p2a: Dusclops
+L	ab_3_15	786	|
+L	ab_3_15	787	|-heal|p1a: Suicune|300/348|[from] item: Leftovers
+L	ab_3_15	788	|upkeep
+L	ab_3_15	789	|turn|72
+L	ab_3_15	790	|
+L	ab_3_15	791	|t:|<NORMALIZED>
+L	ab_3_15	792	|move|p1a: Suicune|Substitute|p1a: Suicune
+L	ab_3_15	793	|-fail|p1a: Suicune|move: Substitute
+L	ab_3_15	794	|move|p2a: Dusclops|Rest|p2a: Dusclops
+L	ab_3_15	795	|-fail|p2a: Dusclops|heal
+L	ab_3_15	796	|
+L	ab_3_15	797	|-heal|p1a: Suicune|321/348|[from] item: Leftovers
+L	ab_3_15	798	|upkeep
+L	ab_3_15	799	|turn|73
+L	ab_3_15	800	|
+L	ab_3_15	801	|t:|<NORMALIZED>
+L	ab_3_15	802	|switch|p2a: Claydol|Claydol|324/324
+L	ab_3_15	803	|move|p1a: Suicune|Substitute|p1a: Suicune
+L	ab_3_15	804	|-fail|p1a: Suicune|move: Substitute
+L	ab_3_15	805	|
+L	ab_3_15	806	|-heal|p1a: Suicune|342/348|[from] item: Leftovers
+L	ab_3_15	807	|upkeep
+L	ab_3_15	808	|turn|74
+L	ab_3_15	809	|
+L	ab_3_15	810	|t:|<NORMALIZED>
+L	ab_3_15	811	|switch|p2a: Dusclops|Dusclops, M|284/284
+L	ab_3_15	812	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_3_15	813	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_3_15	814	|-boost|p1a: Suicune|spa|1
+L	ab_3_15	815	|-boost|p1a: Suicune|spd|1
+L	ab_3_15	816	|
+L	ab_3_15	817	|-heal|p1a: Suicune|348/348|[from] item: Leftovers
+L	ab_3_15	818	|upkeep
+L	ab_3_15	819	|turn|75
+L	ab_3_15	820	|
+L	ab_3_15	821	|t:|<NORMALIZED>
+L	ab_3_15	822	|switch|p1a: Celebi|Celebi|313/341
+L	ab_3_15	823	|move|p2a: Dusclops|Seismic Toss|p1a: Celebi
+L	ab_3_15	824	|-damage|p1a: Celebi|213/341
+L	ab_3_15	825	|
+L	ab_3_15	826	|-heal|p1a: Celebi|234/341|[from] item: Leftovers
+L	ab_3_15	827	|upkeep
+L	ab_3_15	828	|turn|76
+L	ab_3_15	829	|
+L	ab_3_15	830	|t:|<NORMALIZED>
+L	ab_3_15	831	|switch|p1a: Zapdos|Zapdos|227/322
+L	ab_3_15	832	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_3_15	833	|move|p2a: Dusclops|Will-O-Wisp|p1a: Zapdos
+L	ab_3_15	834	|-status|p1a: Zapdos|brn
+L	ab_3_15	835	|
+L	ab_3_15	836	|-heal|p1a: Zapdos|247/322 brn|[from] item: Leftovers
+L	ab_3_15	837	|-damage|p1a: Zapdos|207/322 brn|[from] brn
+L	ab_3_15	838	|upkeep
+L	ab_3_15	839	|turn|77
+L	ab_3_15	840	|
+L	ab_3_15	841	|t:|<NORMALIZED>
+L	ab_3_15	842	|switch|p2a: Claydol|Claydol|324/324
+L	ab_3_15	843	|move|p1a: Zapdos|Thunderbolt|p2a: Claydol
+L	ab_3_15	844	|-immune|p2a: Claydol
+L	ab_3_15	845	|
+L	ab_3_15	846	|-heal|p1a: Zapdos|227/322 brn|[from] item: Leftovers
+L	ab_3_15	847	|-damage|p1a: Zapdos|187/322 brn|[from] brn
+L	ab_3_15	848	|upkeep
+L	ab_3_15	849	|turn|78
+L	ab_3_15	850	|
+L	ab_3_15	851	|t:|<NORMALIZED>
+L	ab_3_15	852	|move|p1a: Zapdos|Thunderbolt|p2a: Claydol
+L	ab_3_15	853	|-immune|p2a: Claydol
+L	ab_3_15	854	|move|p2a: Claydol|Earthquake|p1a: Zapdos
+L	ab_3_15	855	|-immune|p1a: Zapdos
+L	ab_3_15	856	|
+L	ab_3_15	857	|-heal|p1a: Zapdos|207/322 brn|[from] item: Leftovers
+L	ab_3_15	858	|-damage|p1a: Zapdos|167/322 brn|[from] brn
+L	ab_3_15	859	|upkeep
+L	ab_3_15	860	|turn|79
+L	ab_3_15	861	|
+L	ab_3_15	862	|t:|<NORMALIZED>
+L	ab_3_15	863	|move|p1a: Zapdos|Thunderbolt|p2a: Claydol
+L	ab_3_15	864	|-immune|p2a: Claydol
+L	ab_3_15	865	|move|p2a: Claydol|Earthquake|p1a: Zapdos
+L	ab_3_15	866	|-immune|p1a: Zapdos
+L	ab_3_15	867	|
+L	ab_3_15	868	|-heal|p1a: Zapdos|187/322 brn|[from] item: Leftovers
+L	ab_3_15	869	|-damage|p1a: Zapdos|147/322 brn|[from] brn
+L	ab_3_15	870	|upkeep
+L	ab_3_15	871	|turn|80
+L	ab_3_15	872	|
+L	ab_3_15	873	|t:|<NORMALIZED>
+L	ab_3_15	874	|move|p1a: Zapdos|Thunderbolt|p2a: Claydol
+L	ab_3_15	875	|-immune|p2a: Claydol
+L	ab_3_15	876	|move|p2a: Claydol|Rapid Spin|p1a: Zapdos
+L	ab_3_15	877	|-damage|p1a: Zapdos|130/322 brn
+L	ab_3_15	878	|
+L	ab_3_15	879	|-heal|p1a: Zapdos|150/322 brn|[from] item: Leftovers
+L	ab_3_15	880	|-damage|p1a: Zapdos|110/322 brn|[from] brn
+L	ab_3_15	881	|upkeep
+L	ab_3_15	882	|turn|81
+L	ab_3_15	883	|
+L	ab_3_15	884	|t:|<NORMALIZED>
+L	ab_3_15	885	|switch|p1a: Suicune|Suicune|348/348
+L	ab_3_15	886	|-ability|p1a: Suicune|Pressure|[silent]
+L	ab_3_15	887	|move|p2a: Claydol|Psychic|p1a: Suicune
+L	ab_3_15	888	|-damage|p1a: Suicune|283/348
+L	ab_3_15	889	|
+L	ab_3_15	890	|-heal|p1a: Suicune|304/348|[from] item: Leftovers
+L	ab_3_15	891	|upkeep
+L	ab_3_15	892	|turn|82
+L	ab_3_15	893	|
+L	ab_3_15	894	|t:|<NORMALIZED>
+L	ab_3_15	895	|move|p1a: Suicune|Calm Mind|p1a: Suicune
+L	ab_3_15	896	|-boost|p1a: Suicune|spa|1
+L	ab_3_15	897	|-boost|p1a: Suicune|spd|1
+L	ab_3_15	898	|move|p2a: Claydol|Psychic|p1a: Suicune
+L	ab_3_15	899	|-damage|p1a: Suicune|261/348
+L	ab_3_15	900	|
+L	ab_3_15	901	|-heal|p1a: Suicune|282/348|[from] item: Leftovers
+L	ab_3_15	902	|upkeep
+L	ab_3_15	903	|turn|83
+L	ab_3_15	904	|
+L	ab_3_15	905	|t:|<NORMALIZED>
+L	ab_3_15	906	|switch|p1a: Celebi|Celebi|234/341
+L	ab_3_15	907	|move|p2a: Claydol|Rest|p2a: Claydol
+L	ab_3_15	908	|-fail|p2a: Claydol|heal
+L	ab_3_15	909	|
+L	ab_3_15	910	|-heal|p1a: Celebi|255/341|[from] item: Leftovers
+L	ab_3_15	911	|upkeep
+L	ab_3_15	912	|turn|84
+L	ab_3_15	913	|
+L	ab_3_15	914	|t:|<NORMALIZED>
+L	ab_3_15	915	|move|p1a: Celebi|Leech Seed|p2a: Claydol
+L	ab_3_15	916	|-start|p2a: Claydol|move: Leech Seed
+L	ab_3_15	917	|move|p2a: Claydol|Rest|p2a: Claydol
+L	ab_3_15	918	|-fail|p2a: Claydol|heal
+L	ab_3_15	919	|
+L	ab_3_15	920	|-heal|p1a: Celebi|276/341|[from] item: Leftovers
+L	ab_3_15	921	|-damage|p2a: Claydol|284/324|[from] Leech Seed|[of] p1a: Celebi
+L	ab_3_15	922	|-heal|p1a: Celebi|316/341|[silent]
+L	ab_3_15	923	|upkeep
+L	ab_3_15	924	|turn|85
+L	ab_3_15	925	|
+L	ab_3_15	926	|t:|<NORMALIZED>
+L	ab_3_15	927	|move|p1a: Celebi|Leech Seed||[still]
+L	ab_3_15	928	|-fail|p1a: Celebi
+L	ab_3_15	929	|move|p2a: Claydol|Rapid Spin|p1a: Celebi
+L	ab_3_15	930	|-damage|p1a: Celebi|302/341
+L	ab_3_15	931	|-end|p2a: Claydol|Leech Seed|[from] move: Rapid Spin|[of] p2a: Claydol
+L	ab_3_15	932	|
+L	ab_3_15	933	|-heal|p1a: Celebi|323/341|[from] item: Leftovers
+L	ab_3_15	934	|-heal|p2a: Claydol|304/324|[from] item: Leftovers
+L	ab_3_15	935	|upkeep
+L	ab_3_15	936	|turn|86
+L	ab_3_15	937	|
+L	ab_3_15	938	|t:|<NORMALIZED>
+L	ab_3_15	939	|switch|p2a: Dusclops|Dusclops, M|284/284
+L	ab_3_15	940	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_3_15	941	|move|p1a: Celebi|Giga Drain|p2a: Dusclops
+L	ab_3_15	942	|-crit|p2a: Dusclops
+L	ab_3_15	943	|-damage|p2a: Dusclops|155/284
+L	ab_3_15	944	|-heal|p1a: Celebi|341/341|[from] drain|[of] p2a: Dusclops
+L	ab_3_15	945	|
+L	ab_3_15	946	|-heal|p2a: Dusclops|172/284|[from] item: Leftovers
+L	ab_3_15	947	|upkeep
+L	ab_3_15	948	|turn|87
+L	ab_3_15	949	|
+L	ab_3_15	950	|t:|<NORMALIZED>
+L	ab_3_15	951	|move|p1a: Celebi|Recover||[still]
+L	ab_3_15	952	|-fail|p1a: Celebi|heal
+L	ab_3_15	953	|move|p2a: Dusclops|Will-O-Wisp|p1a: Celebi
+L	ab_3_15	954	|-status|p1a: Celebi|brn
+L	ab_3_15	955	|
+L	ab_3_15	956	|-damage|p1a: Celebi|299/341 brn|[from] brn
+L	ab_3_15	957	|-heal|p2a: Dusclops|189/284|[from] item: Leftovers
+L	ab_3_15	958	|upkeep
+L	ab_3_15	959	|turn|88
+L	ab_3_15	960	|
+L	ab_3_15	961	|t:|<NORMALIZED>
+L	ab_3_15	962	|move|p1a: Celebi|Giga Drain|p2a: Dusclops
+L	ab_3_15	963	|-damage|p2a: Dusclops|131/284
+L	ab_3_15	964	|-heal|p1a: Celebi|328/341 brn|[from] drain|[of] p2a: Dusclops
+L	ab_3_15	965	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	966	|-fail|p2a: Dusclops
+L	ab_3_15	967	|
+L	ab_3_15	968	|-heal|p1a: Celebi|341/341 brn|[from] item: Leftovers
+L	ab_3_15	969	|-damage|p1a: Celebi|299/341 brn|[from] brn
+L	ab_3_15	970	|-heal|p2a: Dusclops|148/284|[from] item: Leftovers
+L	ab_3_15	971	|upkeep
+L	ab_3_15	972	|turn|89
+L	ab_3_15	973	|
+L	ab_3_15	974	|t:|<NORMALIZED>
+L	ab_3_15	975	|-curestatus|p1a: Celebi|brn|[from] ability: Natural Cure|[silent]
+L	ab_3_15	976	|switch|p1a: Zapdos|Zapdos|110/322 brn
+L	ab_3_15	977	|-ability|p1a: Zapdos|Pressure|[silent]
+L	ab_3_15	978	|switch|p2a: Claydol|Claydol|304/324
+L	ab_3_15	979	|
+L	ab_3_15	980	|-heal|p1a: Zapdos|130/322 brn|[from] item: Leftovers
+L	ab_3_15	981	|-damage|p1a: Zapdos|90/322 brn|[from] brn
+L	ab_3_15	982	|-heal|p2a: Claydol|324/324|[from] item: Leftovers
+L	ab_3_15	983	|upkeep
+L	ab_3_15	984	|turn|90
+L	ab_3_15	985	|
+L	ab_3_15	986	|t:|<NORMALIZED>
+L	ab_3_15	987	|move|p1a: Zapdos|Hidden Power|p2a: Claydol
+L	ab_3_15	988	|-supereffective|p2a: Claydol
+L	ab_3_15	989	|-crit|p2a: Claydol
+L	ab_3_15	990	|-damage|p2a: Claydol|55/324
+L	ab_3_15	991	|move|p2a: Claydol|Psychic|p1a: Zapdos
+L	ab_3_15	992	|-crit|p1a: Zapdos
+L	ab_3_15	993	|-damage|p1a: Zapdos|0 fnt
+L	ab_3_15	994	|faint|p1a: Zapdos
+L	ab_3_15	995	|
+L	ab_3_15	996	|t:|<NORMALIZED>
+L	ab_3_15	997	|switch|p1a: Celebi|Celebi|299/341
+L	ab_3_15	998	|
+L	ab_3_15	999	|-heal|p1a: Celebi|320/341|[from] item: Leftovers
+L	ab_3_15	1000	|-heal|p2a: Claydol|75/324|[from] item: Leftovers
+L	ab_3_15	1001	|upkeep
+L	ab_3_15	1002	|turn|91
+L	ab_3_15	1003	|
+L	ab_3_15	1004	|t:|<NORMALIZED>
+L	ab_3_15	1005	|move|p1a: Celebi|Leech Seed|p2a: Claydol
+L	ab_3_15	1006	|-start|p2a: Claydol|move: Leech Seed
+L	ab_3_15	1007	|move|p2a: Claydol|Rest|p2a: Claydol
+L	ab_3_15	1008	|-status|p2a: Claydol|slp|[from] move: Rest
+L	ab_3_15	1009	|-heal|p2a: Claydol|324/324 slp|[silent]
+L	ab_3_15	1010	|
+L	ab_3_15	1011	|-heal|p1a: Celebi|341/341|[from] item: Leftovers
+L	ab_3_15	1012	|-damage|p2a: Claydol|284/324 slp|[from] Leech Seed|[of] p1a: Celebi
+L	ab_3_15	1013	|upkeep
+L	ab_3_15	1014	|turn|92
+L	ab_3_15	1015	|
+L	ab_3_15	1016	|t:|<NORMALIZED>
+L	ab_3_15	1017	|move|p1a: Celebi|Hidden Power|p2a: Claydol
+L	ab_3_15	1018	|-supereffective|p2a: Claydol
+L	ab_3_15	1019	|-damage|p2a: Claydol|171/324 slp
+L	ab_3_15	1020	|cant|p2a: Claydol|slp
+L	ab_3_15	1021	|
+L	ab_3_15	1022	|-heal|p2a: Claydol|191/324 slp|[from] item: Leftovers
+L	ab_3_15	1023	|-damage|p2a: Claydol|151/324 slp|[from] Leech Seed|[of] p1a: Celebi
+L	ab_3_15	1024	|upkeep
+L	ab_3_15	1025	|turn|93
+L	ab_3_15	1026	|
+L	ab_3_15	1027	|t:|<NORMALIZED>
+L	ab_3_15	1028	|move|p1a: Celebi|Recover||[still]
+L	ab_3_15	1029	|-fail|p1a: Celebi|heal
+L	ab_3_15	1030	|cant|p2a: Claydol|slp
+L	ab_3_15	1031	|
+L	ab_3_15	1032	|-heal|p2a: Claydol|171/324 slp|[from] item: Leftovers
+L	ab_3_15	1033	|-damage|p2a: Claydol|131/324 slp|[from] Leech Seed|[of] p1a: Celebi
+L	ab_3_15	1034	|upkeep
+L	ab_3_15	1035	|turn|94
+L	ab_3_15	1036	|
+L	ab_3_15	1037	|t:|<NORMALIZED>
+L	ab_3_15	1038	|move|p1a: Celebi|Recover||[still]
+L	ab_3_15	1039	|-fail|p1a: Celebi|heal
+L	ab_3_15	1040	|-curestatus|p2a: Claydol|slp|[msg]
+L	ab_3_15	1041	|move|p2a: Claydol|Psychic|p1a: Celebi
+L	ab_3_15	1042	|-resisted|p1a: Celebi
+L	ab_3_15	1043	|-damage|p1a: Celebi|308/341
+L	ab_3_15	1044	|
+L	ab_3_15	1045	|-heal|p1a: Celebi|329/341|[from] item: Leftovers
+L	ab_3_15	1046	|-heal|p2a: Claydol|151/324|[from] item: Leftovers
+L	ab_3_15	1047	|-damage|p2a: Claydol|111/324|[from] Leech Seed|[of] p1a: Celebi
+L	ab_3_15	1048	|-heal|p1a: Celebi|341/341|[silent]
+L	ab_3_15	1049	|upkeep
+L	ab_3_15	1050	|turn|95
+L	ab_3_15	1051	|
+L	ab_3_15	1052	|t:|<NORMALIZED>
+L	ab_3_15	1053	|move|p1a: Celebi|Hidden Power|p2a: Claydol
+L	ab_3_15	1054	|-supereffective|p2a: Claydol
+L	ab_3_15	1055	|-damage|p2a: Claydol|0 fnt
+L	ab_3_15	1056	|faint|p2a: Claydol
+L	ab_3_15	1057	|
+L	ab_3_15	1058	|t:|<NORMALIZED>
+L	ab_3_15	1059	|switch|p2a: Dusclops|Dusclops, M|148/284
+L	ab_3_15	1060	|-ability|p2a: Dusclops|Pressure|[silent]
+L	ab_3_15	1061	|
+L	ab_3_15	1062	|-heal|p2a: Dusclops|165/284|[from] item: Leftovers
+L	ab_3_15	1063	|upkeep
+L	ab_3_15	1064	|turn|96
+L	ab_3_15	1065	|
+L	ab_3_15	1066	|t:|<NORMALIZED>
+L	ab_3_15	1067	|move|p1a: Celebi|Recover||[still]
+L	ab_3_15	1068	|-fail|p1a: Celebi|heal
+L	ab_3_15	1069	|move|p2a: Dusclops|Will-O-Wisp|p1a: Celebi
+L	ab_3_15	1070	|-status|p1a: Celebi|brn
+L	ab_3_15	1071	|
+L	ab_3_15	1072	|-damage|p1a: Celebi|299/341 brn|[from] brn
+L	ab_3_15	1073	|-heal|p2a: Dusclops|182/284|[from] item: Leftovers
+L	ab_3_15	1074	|upkeep
+L	ab_3_15	1075	|turn|97
+L	ab_3_15	1076	|
+L	ab_3_15	1077	|t:|<NORMALIZED>
+L	ab_3_15	1078	|move|p1a: Celebi|Hidden Power|p2a: Dusclops
+L	ab_3_15	1079	|-supereffective|p2a: Dusclops
+L	ab_3_15	1080	|-damage|p2a: Dusclops|96/284
+L	ab_3_15	1081	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	1082	|-fail|p2a: Dusclops
+L	ab_3_15	1083	|
+L	ab_3_15	1084	|-heal|p1a: Celebi|320/341 brn|[from] item: Leftovers
+L	ab_3_15	1085	|-damage|p1a: Celebi|278/341 brn|[from] brn
+L	ab_3_15	1086	|-heal|p2a: Dusclops|113/284|[from] item: Leftovers
+L	ab_3_15	1087	|upkeep
+L	ab_3_15	1088	|turn|98
+L	ab_3_15	1089	|
+L	ab_3_15	1090	|t:|<NORMALIZED>
+L	ab_3_15	1091	|move|p1a: Celebi|Leech Seed|p2a: Dusclops
+L	ab_3_15	1092	|-start|p2a: Dusclops|move: Leech Seed
+L	ab_3_15	1093	|move|p2a: Dusclops|Imprison||[still]
+L	ab_3_15	1094	|-fail|p2a: Dusclops
+L	ab_3_15	1095	|
+L	ab_3_15	1096	|-heal|p1a: Celebi|299/341 brn|[from] item: Leftovers
+L	ab_3_15	1097	|-damage|p1a: Celebi|257/341 brn|[from] brn
+L	ab_3_15	1098	|-heal|p2a: Dusclops|130/284|[from] item: Leftovers
+L	ab_3_15	1099	|-damage|p2a: Dusclops|95/284|[from] Leech Seed|[of] p1a: Celebi
+L	ab_3_15	1100	|-heal|p1a: Celebi|292/341 brn|[silent]
+L	ab_3_15	1101	|upkeep
+L	ab_3_15	1102	|turn|99
+L	ab_3_15	1103	|
+L	ab_3_15	1104	|t:|<NORMALIZED>
+L	ab_3_15	1105	|move|p1a: Celebi|Hidden Power|p2a: Dusclops
+L	ab_3_15	1106	|-supereffective|p2a: Dusclops
+L	ab_3_15	1107	|-damage|p2a: Dusclops|6/284
+L	ab_3_15	1108	|move|p2a: Dusclops|Will-O-Wisp|p1a: Celebi|[miss]
+L	ab_3_15	1109	|-miss|p2a: Dusclops|p1a: Celebi
+L	ab_3_15	1110	|
+L	ab_3_15	1111	|-heal|p1a: Celebi|313/341 brn|[from] item: Leftovers
+L	ab_3_15	1112	|-damage|p1a: Celebi|271/341 brn|[from] brn
+L	ab_3_15	1113	|-heal|p2a: Dusclops|23/284|[from] item: Leftovers
+L	ab_3_15	1114	|-damage|p2a: Dusclops|0 fnt|[from] Leech Seed|[of] p1a: Celebi
+L	ab_3_15	1115	|-heal|p1a: Celebi|294/341 brn|[silent]
+L	ab_3_15	1116	|faint|p2a: Dusclops
+L	ab_3_15	1117	|
+L	ab_3_15	1118	|win|P1

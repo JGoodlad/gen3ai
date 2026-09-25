@@ -1548,12 +1548,14 @@ impl crate::state::BattleState {
                 && self.sides[foe].pokemon[foe_slot].rage
                 && !self.sides[foe].pokemon[foe_slot].fainted
             {
-                let cur = self.sides[foe].pokemon[foe_slot].boosts[1] as i32;
+                // `boosts` is in `STAT_TOKENS` order — Atk is index 0 (`gen3_boost_index_fixes_v1`:
+                // this read 1 = Def, so Rage raised Def and announced `|-boost|<u>|def|1`).
+                let cur = self.sides[foe].pokemon[foe_slot].boosts[0] as i32;
                 let next = (cur + 1).clamp(-6, 6);
-                self.sides[foe].pokemon[foe_slot].boosts[1] = next as i8;
+                self.sides[foe].pokemon[foe_slot].boosts[0] = next as i8;
                 if self.logging() && next != cur {
                     let m = self.mon_ref(foe, foe_slot, dex);
-                    self.log.boost_applied(&m, 1, 1, (next - cur) as i8, next as i8);
+                    self.log.boost_applied(&m, 0, 1, (next - cur) as i8, next as i8);
                 }
             }
             // [EMIT] `|-damage|<foe>|<HP>` with the POST-damage HP (`x/y`, `x/y

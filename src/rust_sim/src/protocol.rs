@@ -1092,6 +1092,12 @@ impl ProtocolBuilder {
     pub fn volatile_start_upkeep(&mut self, mon: &MonRef, effect: &str) {
         self.emit(|| Line::new(Kw::Start, vec![Field::mon(mon), text_or_empty(effect), Field::tag("[upkeep]")]));
     }
+    /// `|-start|<mon>|<effect>|[fatigue]` — the END-OF-LOCK confusion (`gen3_lockin_fatigue_v1`):
+    /// `confusion.onStart` tags `[fatigue]` when its `sourceEffect` is `lockedmove` (Outrage /
+    /// Thrash / Petal Dance), which it always is inside `lockedmove.onEnd`.
+    pub fn volatile_start_fatigue(&mut self, mon: &MonRef, effect: &str) {
+        self.emit(|| Line::new(Kw::Start, vec![Field::mon(mon), text_or_empty(effect), Field::tag("[fatigue]")]));
+    }
     /// `|-end|<mon>|<Effect>` — a volatile ends (Substitute breaks).
     pub fn volatile_end(&mut self, mon: &MonRef, effect: &str) {
         self.emit(|| Line::new(Kw::End, vec![Field::mon(mon), text_or_empty(effect)]));

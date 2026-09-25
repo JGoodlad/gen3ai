@@ -113,14 +113,16 @@ impl crate::state::BattleState {
                     // `if (pokemon.getNature().minus === "<stat>") addVolatile('confusion')`
                     // — the nature that LOWERS the berry's flavor stat confuses. An EMPTY /
                     // neutral nature has no minus. The addVolatile draws random(2,6) via the
-                    // shared confusion-add gates (already-confused / Own Tempo → no draw).
+                    // shared confusion-add gates (already-confused / Own Tempo → no draw); the
+                    // holder's OWN Safeguard does not block it (a self-sourced add, source = the
+                    // holder — `gen3_lockin_fatigue_v1`).
                     let minus = nature_minus_stat(&self.sides[side].pokemon[slot].set.nature, dex);
                     if minus.as_deref() == Some(confuse_if_minus.as_str()) {
                         // `add_confusion` ALREADY emits the `|-start|<mon>|confusion` reveal on a
                         // successful add — do NOT emit it a second time here (the prior port
                         // double-emitted the Figy/Mago/Iapapa/Aguav/Wiki `-start confusion`,
                         // `gen3_omniscient_byte_fuzz_v1`).
-                        self.add_confusion(side, slot, false, dex);
+                        self.add_confusion(side, slot, super::secondaries::ConfusionSource::OwnBerry, dex);
                     }
                 }
             }

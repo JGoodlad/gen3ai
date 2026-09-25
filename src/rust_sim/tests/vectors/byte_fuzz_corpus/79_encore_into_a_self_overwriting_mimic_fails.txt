@@ -1,0 +1,708 @@
+# FIXTURE 79 — ENCORE into a mon whose lastMove is a Mimic that overwrote its own slot FAILS: `|move|<u>|Encore||[still]` + `|-fail|<u>` (gen3_mimic_self_overwrite_readers_v1).
+# Source: the M6 cutover stress repro fz_proto_ourandom.00004/divergences/rmugk8bpp_ab_0_5 (an Alakazam Encore into a Meganium's Mimic-copied Trick, gen3ou).
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=ourandom master_seed=620004 run_id=rmugk8bpp chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_5
+TEAM	ab_0_5	p1	Skarmory||leftovers|keeneye|protect,spikes,drillpeck,roar|Calm|252,,,,212,44|M||||]Claydol||leftovers|levitate|earthquake,psychic,icebeam,rapidspin|Adamant|252,216,,32,,8|N||||]Aerodactyl||liechiberry|rockhead|substitute,rockslide,earthquake,doubleedge|Jolly|4,252,,,,252|M||||]Gengar||leftovers|levitate|explosion,thunderbolt,icepunch,willowisp|Timid|68,,,252,,188|M||||]Meganium||leftovers|overgrow|synthesis,leechseed,gigadrain,mimic|Impish|252,,126,,126,4|M||||]Metagross||choiceband|clearbody|earthquake,explosion,meteormash,pursuit|Adamant|168,252,,,,88|N||||
+TEAM	ab_0_5	p2	Smeargle||leftovers|owntempo|taunt,spikes,batonpass,spore|Timid|72,,,,184,252|M||||]Alakazam||leftovers|synchronize|encore,trick,hiddenpowergrass,firepunch|Timid|,,,252,4,252|M|30,,30,30,,|||]Vaporeon||leftovers|waterabsorb|icebeam,hydropump,haze,substitute|Bold|248,,252,,,8|M||||]Jirachi||leftovers|serenegrace|thunderbolt,protect,firepunch,psychic|Sassy|252,,76,,180,|N||||]Metagross||leftovers|clearbody|earthquake,hiddenpowerrock,meteormash,explosion|Adamant|168,236,16,,,88|N|,30,30,,30,30|||]Gengar||leftovers|levitate|explosion,taunt,thunderbolt,firepunch|Timid|248,,44,8,112,96|M||||
+FMT	ab_0_5	gen3ou
+INIT	ab_0_5	15707,40402,6445,48459	2752445956	0
+DEC	ab_0_5	0	move	0	0	m1	m2	15707,40402,6445,48459	Skarmory	334	334	0	-	0	0	0	0	0	0	6	Smeargle	269	269	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_5	1	switch	0	1	-	s1	17812,5904,14988,28762	Skarmory	334	334	0	-	0	0	0	0	0	0	6	Alakazam	250	250	0	-	0	0	0	0	0	0	6	none	0	1	0	0	0
+DEC	ab_0_5	2	move	0	0	m3	m2	55663,61556,59770,31952	Skarmory	334	334	0	-	0	0	0	0	0	0	6	Gengar	323	323	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	3	move	0	0	m3	m1	32204,37229,4771,14594	Skarmory	334	334	0	-	0	0	0	0	0	0	6	Gengar	323	323	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	4	move	0	0	m2	m2	59460,41801,35706,46250	Skarmory	180	334	0	-	0	0	0	0	0	0	6	Gengar	247	323	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	5	move	0	0	m2	m2	44372,29838,43819,33618	Skarmory	24	334	0	-	0	0	0	0	0	0	6	Gengar	165	323	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	6	move	0	0	m2	m1	65497,24299,31437,29153	Skarmory	44	334	0	-	0	0	0	0	0	0	6	Gengar	87	323	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	7	move	0	0	m2	m2	40756,22774,19715,40805	Skarmory	0	334	1	fnt	0	0	0	0	0	0	5	Gengar	87	323	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	8	switch	1	0	s4	-	46,17556,19108,36508	Meganium	364	364	0	-	0	0	0	0	0	0	5	Gengar	107	323	0	-	0	0	0	0	0	0	6	none	0	1	0	0	0
+DEC	ab_0_5	9	move	0	0	m1	s5	4647,49197,49717,6894	Meganium	364	364	0	-	0	0	0	0	0	0	5	Alakazam	203	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	10	move	0	0	m3	m1	29338,54626,8914,56944	Meganium	364	364	0	-	0	0	0	0	0	0	5	Alakazam	187	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	1
+DEC	ab_0_5	11	move	0	0	m2	m0	21099,4592,47462,46358	Meganium	364	364	0	-	0	0	0	0	0	0	5	Alakazam	102	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	1
+DEC	ab_0_5	12	move	0	0	m1	m2	19084,21821,47370,23285	Meganium	364	364	0	-	0	0	0	0	0	0	5	Alakazam	86	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	13	move	0	0	m0	m0	18851,34071,37858,16185	Meganium	364	364	0	-	0	0	0	0	0	0	5	Alakazam	70	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	1
+DEC	ab_0_5	14	move	0	0	m1	m3	40639,17262,61512,15463	Meganium	249	364	0	-	0	0	0	0	0	0	5	Alakazam	54	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	15	move	0	0	m1	m2	38620,25621,24833,18842	Meganium	268	364	0	-	0	0	0	0	0	0	5	Alakazam	38	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	16	move	0	0	m1	m2	40061,3451,46136,7625	Meganium	284	364	0	-	0	0	0	0	0	0	5	Alakazam	22	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	17	move	0	0	m1	m3	51417,46259,41487,37751	Meganium	184	364	0	-	0	0	0	0	0	0	5	Alakazam	6	250	0	-	0	0	0	0	0	0	6	p2	0	1	0	0	0
+DEC	ab_0_5	18	move	0	0	m1	m2	19097,41521,4548,50075	Meganium	187	364	0	-	0	0	0	0	0	0	5	Alakazam	0	250	1	fnt	0	0	0	0	0	0	5	p2	0	1	0	0	0
+DEC	ab_0_5	19	switch	0	1	-	s5	11870,5100,3250,48618	Meganium	187	364	0	-	0	0	0	0	0	0	5	Gengar	107	323	0	-	0	0	0	0	0	0	5	none	0	1	0	0	0
+DEC	ab_0_5	20	move	0	0	m1	m0	12380,23277,28379,55679	Meganium	0	364	1	fnt	0	0	0	0	0	0	4	Gengar	0	323	1	fnt	0	0	0	0	0	0	4	p2	0	1	0	0	0
+DEC	ab_0_5	21	switch	1	1	s5	s4	10968,31711,60097,25822	Metagross	343	343	0	-	0	0	0	0	0	0	4	Metagross	322	343	0	-	0	0	0	0	0	0	4	none	0	1	0	0	0
+DEC	ab_0_5	22	move	0	0	m0	m2	76,29,15351,63779	Metagross	343	343	0	-	0	0	0	0	0	0	4	Metagross	0	343	1	fnt	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_5	23	switch	0	1	-	s2	51272,15697,61764,42130	Metagross	343	343	0	-	0	0	0	0	0	0	4	Vaporeon	434	463	0	-	0	0	0	0	0	0	3	none	0	1	0	0	0
+DEC	ab_0_5	24	move	0	0	s2	m1	59759,34338,13021,11892	Aerodactyl	302	302	0	-	0	0	0	0	0	0	4	Vaporeon	462	463	0	-	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_5	25	move	0	0	m0	m1	46587,35280,1236,61640	Aerodactyl	227	302	0	-	0	0	0	0	0	0	4	Vaporeon	463	463	0	-	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_5	26	move	0	0	m2	m2	19124,45537,52373,21980	Aerodactyl	227	302	0	-	0	0	0	0	0	0	4	Vaporeon	396	463	0	-	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_5	27	move	0	0	m0	m2	34848,61611,51976,14991	Aerodactyl	152	302	0	-	0	0	0	0	0	0	4	Vaporeon	424	463	0	-	0	0	0	0	0	0	3	p1	0	1	0	0	0
+DEC	ab_0_5	28	move	0	0	m2	s1	37913,35558,62310,59699	Aerodactyl	152	302	0	-	0	0	0	0	0	0	4	Smeargle	24	269	0	-	0	0	0	0	0	0	3	p2	0	1	0	0	0
+DEC	ab_0_5	29	move	0	0	s2	m1	60714,10672,65265,60130	Metagross	343	343	0	-	0	0	0	0	0	0	4	Smeargle	40	269	0	-	0	0	0	0	0	0	3	p1	1	1	0	0	0
+DEC	ab_0_5	30	move	0	0	m3	m2	60714,10672,65265,60130	Metagross	343	343	0	-	0	0	0	0	0	0	4	Smeargle	40	269	0	-	0	0	0	0	0	0	3	p2	1	1	0	0	0
+DEC	ab_0_5	31	switch	0	1	-	s1	43540,46719,50432,29270	Metagross	343	343	0	-	0	0	0	0	0	0	4	Vaporeon	365	463	0	-	0	0	0	0	0	0	3	none	1	1	0	0	0
+DEC	ab_0_5	32	move	0	0	m3	m1	42013,65393,32217,14239	Metagross	166	343	0	-	0	0	0	0	0	0	4	Vaporeon	361	463	0	-	0	0	0	0	0	0	3	p1	1	1	0	0	0
+DEC	ab_0_5	33	move	0	0	m3	s1	33723,59849,57667,38016	Metagross	166	343	0	-	0	0	0	0	0	0	4	Smeargle	23	269	0	-	0	0	0	0	0	0	3	p1	1	1	0	0	0
+DEC	ab_0_5	34	move	0	0	m3	s1	44989,12201,58975,17789	Metagross	166	343	0	-	0	0	0	0	0	0	4	Vaporeon	274	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	35	move	0	0	m3	m3	1077,51091,29424,53569	Metagross	166	343	0	-	0	0	0	0	0	0	4	Vaporeon	129	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	36	move	0	0	m3	m3	18111,11342,25854,51397	Metagross	166	343	0	-	0	0	0	0	0	0	4	Vaporeon	157	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	37	move	0	0	m3	m1	9259,62758,5588,9040	Metagross	166	343	0	-	0	0	0	0	0	0	4	Vaporeon	185	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	38	move	0	0	m3	m3	21736,52426,25209,45028	Metagross	166	343	0	-	0	0	0	0	0	0	4	Vaporeon	213	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	39	move	0	0	m3	s3	4350,39050,40741,40401	Metagross	166	343	0	-	0	0	0	0	0	0	4	Jirachi	379	404	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	40	move	0	0	m3	m3	61785,65449,52938,64153	Metagross	139	343	0	-	0	0	0	0	0	0	4	Jirachi	381	404	0	-	0	0	0	0	0	0	2	p2	1	1	0	0	0
+DEC	ab_0_5	41	move	0	0	m3	m2	46347,24442,22485,9825	Metagross	16	343	0	-	0	0	0	0	0	0	4	Jirachi	383	404	0	-	0	0	0	0	0	0	2	p2	1	1	0	0	0
+DEC	ab_0_5	42	move	0	0	m3	m3	46630,23050,11021,3045	Metagross	0	343	1	fnt	0	0	0	0	0	0	3	Jirachi	383	404	0	-	0	0	0	0	0	0	2	p2	1	1	0	0	0
+DEC	ab_0_5	43	switch	1	0	s1	-	32020,44485,59116,56604	Claydol	324	324	0	-	0	0	0	0	0	0	3	Jirachi	404	404	0	-	0	0	0	0	0	0	2	none	1	1	0	0	0
+DEC	ab_0_5	44	move	0	0	m0	m3	55851,2338,27686,63364	Claydol	299	324	0	-	0	0	0	0	0	0	3	Jirachi	214	404	0	-	0	0	0	0	0	0	2	p2	1	1	0	0	0
+DEC	ab_0_5	45	move	0	0	s3	m2	5150,47372,8347,29691	Gengar	219	278	0	-	0	0	0	0	0	0	3	Jirachi	239	404	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	46	move	0	0	m3	m0	20342,34471,52231,50105	Gengar	143	278	0	-	0	0	0	0	0	0	3	Jirachi	264	404	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	47	move	0	0	m3	m3	1099,28272,55346,1255	Gengar	0	278	1	fnt	0	0	0	0	0	0	2	Jirachi	264	404	0	brn	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	48	switch	1	0	s2	-	48885,21962,42707,11494	Aerodactyl	152	302	0	-	0	0	0	0	0	0	2	Jirachi	239	404	0	brn	0	0	0	0	0	0	2	none	1	1	0	0	0
+DEC	ab_0_5	49	move	0	0	m3	m2	10023,21911,7463,57358	Aerodactyl	118	302	0	-	0	0	0	0	0	0	2	Jirachi	154	404	0	brn	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	50	move	0	0	s3	m1	55540,16731,57387,33353	Claydol	319	324	0	-	0	0	0	0	0	0	2	Jirachi	129	404	0	brn	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	51	move	0	0	m2	m2	42731,52765,13780,34424	Claydol	287	324	0	-	0	0	0	0	0	0	2	Jirachi	83	404	0	brn	0	0	0	0	0	0	2	p2	1	1	0	0	0
+DEC	ab_0_5	52	move	0	0	s3	s3	29940,18999,17981,58395	Aerodactyl	118	302	0	-	0	0	0	0	0	0	2	Vaporeon	184	463	0	-	0	0	0	0	0	0	2	p2	1	1	0	0	0
+DEC	ab_0_5	53	move	0	0	s3	m3	49867,35833,30305,4202	Claydol	307	324	0	-	0	0	0	0	0	0	2	Vaporeon	97	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	54	move	0	0	m0	m2	4652,27877,60787,36702	Claydol	324	324	0	-	0	0	0	0	0	0	2	Vaporeon	125	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	55	move	0	0	s3	m3	51203,56196,6665,31961	Aerodactyl	118	302	0	-	0	0	0	0	0	0	2	Vaporeon	38	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	56	move	0	0	m1	m2	32166,38283,32406,19700	Aerodactyl	118	302	0	-	0	0	0	0	0	0	2	Vaporeon	66	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	57	move	0	0	m3	m3	15813,50757,41821,10056	Aerodactyl	118	302	0	-	0	0	0	0	0	0	2	Vaporeon	94	463	0	-	0	0	0	0	0	0	2	p1	1	1	0	0	0
+DEC	ab_0_5	58	move	0	0	m1	m1	56741,33303,21739,9308	Aerodactyl	118	302	0	-	0	0	0	0	0	0	2	Vaporeon	0	463	1	fnt	0	0	0	0	0	0	1	p1	1	1	0	0	0
+DEC	ab_0_5	59	switch	0	1	-	s3	33924,41399,9701,13071	Aerodactyl	118	302	0	-	0	0	0	0	0	0	2	Jirachi	8	404	0	brn	0	0	0	0	0	0	1	none	1	1	0	0	0
+DEC	ab_0_5	60	move	0	0	m3	m3	28519,48752,23121,38960	Aerodactyl	118	302	0	-	0	0	0	0	0	0	2	Jirachi	0	404	1	brn	0	0	0	0	0	0	0	p1	1	1	0	0	0
+END	ab_0_5	1	p1
+L	ab_0_5	0	|t:|<NORMALIZED>
+L	ab_0_5	1	|gametype|singles
+L	ab_0_5	2	|player|p1|P1||
+L	ab_0_5	3	|player|p2|P2||
+L	ab_0_5	4	|gen|3
+L	ab_0_5	5	|tier|[Gen 3] OU
+L	ab_0_5	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_5	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_0_5	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_0_5	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_0_5	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_0_5	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_0_5	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_0_5	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_0_5	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_0_5	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_0_5	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_0_5	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_0_5	18	|
+L	ab_0_5	19	|t:|<NORMALIZED>
+L	ab_0_5	20	|teamsize|p1|6
+L	ab_0_5	21	|teamsize|p2|6
+L	ab_0_5	22	|start
+L	ab_0_5	23	|switch|p1a: Skarmory|Skarmory, M|334/334
+L	ab_0_5	24	|switch|p2a: Smeargle|Smeargle, M|269/269
+L	ab_0_5	25	|turn|1
+L	ab_0_5	26	|
+L	ab_0_5	27	|t:|<NORMALIZED>
+L	ab_0_5	28	|move|p2a: Smeargle|Baton Pass|p2a: Smeargle
+L	ab_0_5	29	|
+L	ab_0_5	30	|t:|<NORMALIZED>
+L	ab_0_5	31	|switch|p2a: Alakazam|Alakazam, M|250/250|[from] Baton Pass
+L	ab_0_5	32	|move|p1a: Skarmory|Spikes|p2a: Alakazam
+L	ab_0_5	33	|-sidestart|p2: P2|Spikes
+L	ab_0_5	34	|
+L	ab_0_5	35	|upkeep
+L	ab_0_5	36	|turn|2
+L	ab_0_5	37	|
+L	ab_0_5	38	|t:|<NORMALIZED>
+L	ab_0_5	39	|move|p2a: Alakazam|Hidden Power|p1a: Skarmory
+L	ab_0_5	40	|-resisted|p1a: Skarmory
+L	ab_0_5	41	|-damage|p1a: Skarmory|315/334
+L	ab_0_5	42	|move|p1a: Skarmory|Roar|p2a: Alakazam
+L	ab_0_5	43	|drag|p2a: Gengar|Gengar, M|323/323
+L	ab_0_5	44	|
+L	ab_0_5	45	|-heal|p1a: Skarmory|334/334|[from] item: Leftovers
+L	ab_0_5	46	|upkeep
+L	ab_0_5	47	|turn|3
+L	ab_0_5	48	|
+L	ab_0_5	49	|t:|<NORMALIZED>
+L	ab_0_5	50	|move|p2a: Gengar|Taunt|p1a: Skarmory
+L	ab_0_5	51	|-start|p1a: Skarmory|move: Taunt
+L	ab_0_5	52	|cant|p1a: Skarmory|move: Taunt|Roar
+L	ab_0_5	53	|
+L	ab_0_5	54	|upkeep
+L	ab_0_5	55	|turn|4
+L	ab_0_5	56	|
+L	ab_0_5	57	|t:|<NORMALIZED>
+L	ab_0_5	58	|move|p2a: Gengar|Thunderbolt|p1a: Skarmory
+L	ab_0_5	59	|-supereffective|p1a: Skarmory
+L	ab_0_5	60	|-damage|p1a: Skarmory|160/334
+L	ab_0_5	61	|move|p1a: Skarmory|Drill Peck|p2a: Gengar
+L	ab_0_5	62	|-damage|p2a: Gengar|227/323
+L	ab_0_5	63	|
+L	ab_0_5	64	|-heal|p2a: Gengar|247/323|[from] item: Leftovers
+L	ab_0_5	65	|-heal|p1a: Skarmory|180/334|[from] item: Leftovers
+L	ab_0_5	66	|-end|p1a: Skarmory|move: Taunt|[silent]
+L	ab_0_5	67	|upkeep
+L	ab_0_5	68	|turn|5
+L	ab_0_5	69	|
+L	ab_0_5	70	|t:|<NORMALIZED>
+L	ab_0_5	71	|move|p2a: Gengar|Thunderbolt|p1a: Skarmory
+L	ab_0_5	72	|-supereffective|p1a: Skarmory
+L	ab_0_5	73	|-damage|p1a: Skarmory|4/334
+L	ab_0_5	74	|move|p1a: Skarmory|Drill Peck|p2a: Gengar
+L	ab_0_5	75	|-damage|p2a: Gengar|145/323
+L	ab_0_5	76	|
+L	ab_0_5	77	|-heal|p2a: Gengar|165/323|[from] item: Leftovers
+L	ab_0_5	78	|-heal|p1a: Skarmory|24/334|[from] item: Leftovers
+L	ab_0_5	79	|upkeep
+L	ab_0_5	80	|turn|6
+L	ab_0_5	81	|
+L	ab_0_5	82	|t:|<NORMALIZED>
+L	ab_0_5	83	|move|p2a: Gengar|Taunt|p1a: Skarmory
+L	ab_0_5	84	|-start|p1a: Skarmory|move: Taunt
+L	ab_0_5	85	|move|p1a: Skarmory|Drill Peck|p2a: Gengar
+L	ab_0_5	86	|-damage|p2a: Gengar|67/323
+L	ab_0_5	87	|
+L	ab_0_5	88	|-heal|p2a: Gengar|87/323|[from] item: Leftovers
+L	ab_0_5	89	|-heal|p1a: Skarmory|44/334|[from] item: Leftovers
+L	ab_0_5	90	|upkeep
+L	ab_0_5	91	|turn|7
+L	ab_0_5	92	|
+L	ab_0_5	93	|t:|<NORMALIZED>
+L	ab_0_5	94	|move|p2a: Gengar|Thunderbolt|p1a: Skarmory
+L	ab_0_5	95	|-supereffective|p1a: Skarmory
+L	ab_0_5	96	|-damage|p1a: Skarmory|0 fnt
+L	ab_0_5	97	|faint|p1a: Skarmory
+L	ab_0_5	98	|
+L	ab_0_5	99	|t:|<NORMALIZED>
+L	ab_0_5	100	|switch|p1a: Meganium|Meganium, M|364/364
+L	ab_0_5	101	|
+L	ab_0_5	102	|-heal|p2a: Gengar|107/323|[from] item: Leftovers
+L	ab_0_5	103	|upkeep
+L	ab_0_5	104	|turn|8
+L	ab_0_5	105	|
+L	ab_0_5	106	|t:|<NORMALIZED>
+L	ab_0_5	107	|switch|p2a: Alakazam|Alakazam, M|250/250
+L	ab_0_5	108	|-damage|p2a: Alakazam|219/250|[from] Spikes
+L	ab_0_5	109	|move|p1a: Meganium|Leech Seed|p2a: Alakazam
+L	ab_0_5	110	|-start|p2a: Alakazam|move: Leech Seed
+L	ab_0_5	111	|
+L	ab_0_5	112	|-heal|p2a: Alakazam|234/250|[from] item: Leftovers
+L	ab_0_5	113	|-damage|p2a: Alakazam|203/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	114	|upkeep
+L	ab_0_5	115	|turn|9
+L	ab_0_5	116	|
+L	ab_0_5	117	|t:|<NORMALIZED>
+L	ab_0_5	118	|move|p2a: Alakazam|Trick|p1a: Meganium
+L	ab_0_5	119	|-activate|p2a: Alakazam|move: Trick|[of] p1a: Meganium
+L	ab_0_5	120	|-item|p1a: Meganium|Leftovers|[from] move: Trick
+L	ab_0_5	121	|-item|p2a: Alakazam|Leftovers|[from] move: Trick
+L	ab_0_5	122	|move|p1a: Meganium|Mimic|p2a: Alakazam
+L	ab_0_5	123	|-activate|p1a: Meganium|move: Mimic|Trick
+L	ab_0_5	124	|
+L	ab_0_5	125	|-heal|p2a: Alakazam|218/250|[from] item: Leftovers
+L	ab_0_5	126	|-damage|p2a: Alakazam|187/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	127	|upkeep
+L	ab_0_5	128	|turn|10
+L	ab_0_5	129	|
+L	ab_0_5	130	|t:|<NORMALIZED>
+L	ab_0_5	131	|move|p2a: Alakazam|Encore||[still]
+L	ab_0_5	132	|-fail|p2a: Alakazam
+L	ab_0_5	133	|move|p1a: Meganium|Giga Drain|p2a: Alakazam
+L	ab_0_5	134	|-damage|p2a: Alakazam|118/250
+L	ab_0_5	135	|
+L	ab_0_5	136	|-heal|p2a: Alakazam|133/250|[from] item: Leftovers
+L	ab_0_5	137	|-damage|p2a: Alakazam|102/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	138	|upkeep
+L	ab_0_5	139	|turn|11
+L	ab_0_5	140	|
+L	ab_0_5	141	|t:|<NORMALIZED>
+L	ab_0_5	142	|move|p2a: Alakazam|Hidden Power|p1a: Meganium
+L	ab_0_5	143	|-resisted|p1a: Meganium
+L	ab_0_5	144	|-damage|p1a: Meganium|326/364
+L	ab_0_5	145	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_0_5	146	|-fail|p1a: Meganium
+L	ab_0_5	147	|
+L	ab_0_5	148	|-heal|p2a: Alakazam|117/250|[from] item: Leftovers
+L	ab_0_5	149	|-damage|p2a: Alakazam|86/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	150	|-heal|p1a: Meganium|357/364|[silent]
+L	ab_0_5	151	|-heal|p1a: Meganium|364/364|[from] item: Leftovers
+L	ab_0_5	152	|upkeep
+L	ab_0_5	153	|turn|12
+L	ab_0_5	154	|
+L	ab_0_5	155	|t:|<NORMALIZED>
+L	ab_0_5	156	|move|p2a: Alakazam|Encore|p1a: Meganium
+L	ab_0_5	157	|-start|p1a: Meganium|Encore
+L	ab_0_5	158	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_0_5	159	|-fail|p1a: Meganium
+L	ab_0_5	160	|
+L	ab_0_5	161	|-heal|p2a: Alakazam|101/250|[from] item: Leftovers
+L	ab_0_5	162	|-damage|p2a: Alakazam|70/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	163	|upkeep
+L	ab_0_5	164	|turn|13
+L	ab_0_5	165	|
+L	ab_0_5	166	|t:|<NORMALIZED>
+L	ab_0_5	167	|move|p2a: Alakazam|Fire Punch|p1a: Meganium
+L	ab_0_5	168	|-supereffective|p1a: Meganium
+L	ab_0_5	169	|-damage|p1a: Meganium|196/364
+L	ab_0_5	170	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_0_5	171	|-fail|p1a: Meganium
+L	ab_0_5	172	|
+L	ab_0_5	173	|-heal|p2a: Alakazam|85/250|[from] item: Leftovers
+L	ab_0_5	174	|-damage|p2a: Alakazam|54/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	175	|-heal|p1a: Meganium|227/364|[silent]
+L	ab_0_5	176	|-heal|p1a: Meganium|249/364|[from] item: Leftovers
+L	ab_0_5	177	|upkeep
+L	ab_0_5	178	|turn|14
+L	ab_0_5	179	|
+L	ab_0_5	180	|t:|<NORMALIZED>
+L	ab_0_5	181	|move|p2a: Alakazam|Hidden Power|p1a: Meganium
+L	ab_0_5	182	|-resisted|p1a: Meganium
+L	ab_0_5	183	|-damage|p1a: Meganium|215/364
+L	ab_0_5	184	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_0_5	185	|-fail|p1a: Meganium
+L	ab_0_5	186	|
+L	ab_0_5	187	|-heal|p2a: Alakazam|69/250|[from] item: Leftovers
+L	ab_0_5	188	|-damage|p2a: Alakazam|38/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	189	|-heal|p1a: Meganium|246/364|[silent]
+L	ab_0_5	190	|-heal|p1a: Meganium|268/364|[from] item: Leftovers
+L	ab_0_5	191	|upkeep
+L	ab_0_5	192	|turn|15
+L	ab_0_5	193	|
+L	ab_0_5	194	|t:|<NORMALIZED>
+L	ab_0_5	195	|move|p2a: Alakazam|Hidden Power|p1a: Meganium
+L	ab_0_5	196	|-resisted|p1a: Meganium
+L	ab_0_5	197	|-damage|p1a: Meganium|231/364
+L	ab_0_5	198	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_0_5	199	|-fail|p1a: Meganium
+L	ab_0_5	200	|
+L	ab_0_5	201	|-heal|p2a: Alakazam|53/250|[from] item: Leftovers
+L	ab_0_5	202	|-damage|p2a: Alakazam|22/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	203	|-heal|p1a: Meganium|262/364|[silent]
+L	ab_0_5	204	|-heal|p1a: Meganium|284/364|[from] item: Leftovers
+L	ab_0_5	205	|-end|p1a: Meganium|Encore
+L	ab_0_5	206	|upkeep
+L	ab_0_5	207	|turn|16
+L	ab_0_5	208	|
+L	ab_0_5	209	|t:|<NORMALIZED>
+L	ab_0_5	210	|move|p2a: Alakazam|Fire Punch|p1a: Meganium
+L	ab_0_5	211	|-supereffective|p1a: Meganium
+L	ab_0_5	212	|-damage|p1a: Meganium|131/364
+L	ab_0_5	213	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_0_5	214	|-fail|p1a: Meganium
+L	ab_0_5	215	|
+L	ab_0_5	216	|-heal|p2a: Alakazam|37/250|[from] item: Leftovers
+L	ab_0_5	217	|-damage|p2a: Alakazam|6/250|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	218	|-heal|p1a: Meganium|162/364|[silent]
+L	ab_0_5	219	|-heal|p1a: Meganium|184/364|[from] item: Leftovers
+L	ab_0_5	220	|upkeep
+L	ab_0_5	221	|turn|17
+L	ab_0_5	222	|
+L	ab_0_5	223	|t:|<NORMALIZED>
+L	ab_0_5	224	|move|p2a: Alakazam|Hidden Power|p1a: Meganium
+L	ab_0_5	225	|-resisted|p1a: Meganium
+L	ab_0_5	226	|-damage|p1a: Meganium|144/364
+L	ab_0_5	227	|move|p1a: Meganium|Leech Seed||[still]
+L	ab_0_5	228	|-fail|p1a: Meganium
+L	ab_0_5	229	|
+L	ab_0_5	230	|-heal|p2a: Alakazam|21/250|[from] item: Leftovers
+L	ab_0_5	231	|-damage|p2a: Alakazam|0 fnt|[from] Leech Seed|[of] p1a: Meganium
+L	ab_0_5	232	|-heal|p1a: Meganium|165/364|[silent]
+L	ab_0_5	233	|faint|p2a: Alakazam
+L	ab_0_5	234	|-heal|p1a: Meganium|187/364|[from] item: Leftovers
+L	ab_0_5	235	|upkeep
+L	ab_0_5	236	|
+L	ab_0_5	237	|t:|<NORMALIZED>
+L	ab_0_5	238	|switch|p2a: Gengar|Gengar, M|107/323
+L	ab_0_5	239	|turn|18
+L	ab_0_5	240	|
+L	ab_0_5	241	|t:|<NORMALIZED>
+L	ab_0_5	242	|move|p2a: Gengar|Explosion|p1a: Meganium
+L	ab_0_5	243	|-damage|p1a: Meganium|0 fnt
+L	ab_0_5	244	|faint|p2a: Gengar
+L	ab_0_5	245	|faint|p1a: Meganium
+L	ab_0_5	246	|
+L	ab_0_5	247	|t:|<NORMALIZED>
+L	ab_0_5	248	|switch|p2a: Metagross|Metagross|343/343
+L	ab_0_5	249	|switch|p1a: Metagross|Metagross|343/343
+L	ab_0_5	250	|-damage|p2a: Metagross|301/343|[from] Spikes
+L	ab_0_5	251	|
+L	ab_0_5	252	|-heal|p2a: Metagross|322/343|[from] item: Leftovers
+L	ab_0_5	253	|upkeep
+L	ab_0_5	254	|turn|19
+L	ab_0_5	255	|
+L	ab_0_5	256	|t:|<NORMALIZED>
+L	ab_0_5	257	|move|p1a: Metagross|Earthquake|p2a: Metagross
+L	ab_0_5	258	|-supereffective|p2a: Metagross
+L	ab_0_5	259	|-damage|p2a: Metagross|0 fnt
+L	ab_0_5	260	|faint|p2a: Metagross
+L	ab_0_5	261	|
+L	ab_0_5	262	|t:|<NORMALIZED>
+L	ab_0_5	263	|switch|p2a: Vaporeon|Vaporeon, M|463/463
+L	ab_0_5	264	|-damage|p2a: Vaporeon|406/463|[from] Spikes
+L	ab_0_5	265	|
+L	ab_0_5	266	|-heal|p2a: Vaporeon|434/463|[from] item: Leftovers
+L	ab_0_5	267	|upkeep
+L	ab_0_5	268	|turn|20
+L	ab_0_5	269	|
+L	ab_0_5	270	|t:|<NORMALIZED>
+L	ab_0_5	271	|switch|p1a: Aerodactyl|Aerodactyl, M|302/302
+L	ab_0_5	272	|move|p2a: Vaporeon|Hydro Pump|p1a: Aerodactyl|[miss]
+L	ab_0_5	273	|-miss|p2a: Vaporeon|p1a: Aerodactyl
+L	ab_0_5	274	|
+L	ab_0_5	275	|-heal|p2a: Vaporeon|462/463|[from] item: Leftovers
+L	ab_0_5	276	|upkeep
+L	ab_0_5	277	|turn|21
+L	ab_0_5	278	|
+L	ab_0_5	279	|t:|<NORMALIZED>
+L	ab_0_5	280	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_0_5	281	|-start|p1a: Aerodactyl|Substitute
+L	ab_0_5	282	|-damage|p1a: Aerodactyl|227/302
+L	ab_0_5	283	|move|p2a: Vaporeon|Hydro Pump|p1a: Aerodactyl
+L	ab_0_5	284	|-supereffective|p1a: Aerodactyl
+L	ab_0_5	285	|-end|p1a: Aerodactyl|Substitute
+L	ab_0_5	286	|
+L	ab_0_5	287	|-heal|p2a: Vaporeon|463/463|[from] item: Leftovers
+L	ab_0_5	288	|upkeep
+L	ab_0_5	289	|turn|22
+L	ab_0_5	290	|
+L	ab_0_5	291	|t:|<NORMALIZED>
+L	ab_0_5	292	|move|p1a: Aerodactyl|Earthquake|p2a: Vaporeon
+L	ab_0_5	293	|-damage|p2a: Vaporeon|368/463
+L	ab_0_5	294	|move|p2a: Vaporeon|Haze|p2a: Vaporeon
+L	ab_0_5	295	|-clearallboost
+L	ab_0_5	296	|
+L	ab_0_5	297	|-heal|p2a: Vaporeon|396/463|[from] item: Leftovers
+L	ab_0_5	298	|upkeep
+L	ab_0_5	299	|turn|23
+L	ab_0_5	300	|
+L	ab_0_5	301	|t:|<NORMALIZED>
+L	ab_0_5	302	|move|p1a: Aerodactyl|Substitute|p1a: Aerodactyl
+L	ab_0_5	303	|-start|p1a: Aerodactyl|Substitute
+L	ab_0_5	304	|-damage|p1a: Aerodactyl|152/302
+L	ab_0_5	305	|move|p2a: Vaporeon|Haze|p2a: Vaporeon
+L	ab_0_5	306	|-clearallboost
+L	ab_0_5	307	|
+L	ab_0_5	308	|-heal|p2a: Vaporeon|424/463|[from] item: Leftovers
+L	ab_0_5	309	|upkeep
+L	ab_0_5	310	|turn|24
+L	ab_0_5	311	|
+L	ab_0_5	312	|t:|<NORMALIZED>
+L	ab_0_5	313	|switch|p2a: Smeargle|Smeargle, M|269/269
+L	ab_0_5	314	|-damage|p2a: Smeargle|236/269|[from] Spikes
+L	ab_0_5	315	|move|p1a: Aerodactyl|Earthquake|p2a: Smeargle
+L	ab_0_5	316	|-damage|p2a: Smeargle|8/269
+L	ab_0_5	317	|
+L	ab_0_5	318	|-heal|p2a: Smeargle|24/269|[from] item: Leftovers
+L	ab_0_5	319	|upkeep
+L	ab_0_5	320	|turn|25
+L	ab_0_5	321	|
+L	ab_0_5	322	|t:|<NORMALIZED>
+L	ab_0_5	323	|switch|p1a: Metagross|Metagross|343/343
+L	ab_0_5	324	|move|p2a: Smeargle|Spikes|p1a: Metagross
+L	ab_0_5	325	|-sidestart|p1: P1|Spikes
+L	ab_0_5	326	|
+L	ab_0_5	327	|-heal|p2a: Smeargle|40/269|[from] item: Leftovers
+L	ab_0_5	328	|upkeep
+L	ab_0_5	329	|turn|26
+L	ab_0_5	330	|
+L	ab_0_5	331	|t:|<NORMALIZED>
+L	ab_0_5	332	|move|p2a: Smeargle|Baton Pass|p2a: Smeargle
+L	ab_0_5	333	|
+L	ab_0_5	334	|t:|<NORMALIZED>
+L	ab_0_5	335	|switch|p2a: Vaporeon|Vaporeon, M|424/463|[from] Baton Pass
+L	ab_0_5	336	|-damage|p2a: Vaporeon|367/463|[from] Spikes
+L	ab_0_5	337	|move|p1a: Metagross|Pursuit|p2a: Vaporeon
+L	ab_0_5	338	|-damage|p2a: Vaporeon|337/463
+L	ab_0_5	339	|
+L	ab_0_5	340	|-heal|p2a: Vaporeon|365/463|[from] item: Leftovers
+L	ab_0_5	341	|upkeep
+L	ab_0_5	342	|turn|27
+L	ab_0_5	343	|
+L	ab_0_5	344	|t:|<NORMALIZED>
+L	ab_0_5	345	|move|p1a: Metagross|Pursuit|p2a: Vaporeon
+L	ab_0_5	346	|-damage|p2a: Vaporeon|333/463
+L	ab_0_5	347	|move|p2a: Vaporeon|Hydro Pump|p1a: Metagross
+L	ab_0_5	348	|-damage|p1a: Metagross|166/343
+L	ab_0_5	349	|
+L	ab_0_5	350	|-heal|p2a: Vaporeon|361/463|[from] item: Leftovers
+L	ab_0_5	351	|upkeep
+L	ab_0_5	352	|turn|28
+L	ab_0_5	353	|
+L	ab_0_5	354	|t:|<NORMALIZED>
+L	ab_0_5	355	|-activate|p2a: Vaporeon|move: Pursuit
+L	ab_0_5	356	|move|p1a: Metagross|Pursuit|p2a: Vaporeon|[from] Pursuit
+L	ab_0_5	357	|-damage|p2a: Vaporeon|303/463
+L	ab_0_5	358	|switch|p2a: Smeargle|Smeargle, M|40/269
+L	ab_0_5	359	|-damage|p2a: Smeargle|7/269|[from] Spikes
+L	ab_0_5	360	|
+L	ab_0_5	361	|-heal|p2a: Smeargle|23/269|[from] item: Leftovers
+L	ab_0_5	362	|upkeep
+L	ab_0_5	363	|turn|29
+L	ab_0_5	364	|
+L	ab_0_5	365	|t:|<NORMALIZED>
+L	ab_0_5	366	|-activate|p2a: Smeargle|move: Pursuit
+L	ab_0_5	367	|move|p1a: Metagross|Pursuit|p2a: Smeargle|[from] Pursuit
+L	ab_0_5	368	|-damage|p2a: Smeargle|0 fnt
+L	ab_0_5	369	|-hint|Previously chosen switches continue in Gen 2-4 after a Pursuit target faints.
+L	ab_0_5	370	|faint|p2a: Smeargle
+L	ab_0_5	371	|switch|p2a: Vaporeon|Vaporeon, M|303/463
+L	ab_0_5	372	|-damage|p2a: Vaporeon|246/463|[from] Spikes
+L	ab_0_5	373	|
+L	ab_0_5	374	|-heal|p2a: Vaporeon|274/463|[from] item: Leftovers
+L	ab_0_5	375	|upkeep
+L	ab_0_5	376	|turn|30
+L	ab_0_5	377	|
+L	ab_0_5	378	|t:|<NORMALIZED>
+L	ab_0_5	379	|move|p1a: Metagross|Pursuit|p2a: Vaporeon
+L	ab_0_5	380	|-crit|p2a: Vaporeon
+L	ab_0_5	381	|-damage|p2a: Vaporeon|216/463
+L	ab_0_5	382	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_5	383	|-start|p2a: Vaporeon|Substitute
+L	ab_0_5	384	|-damage|p2a: Vaporeon|101/463
+L	ab_0_5	385	|
+L	ab_0_5	386	|-heal|p2a: Vaporeon|129/463|[from] item: Leftovers
+L	ab_0_5	387	|upkeep
+L	ab_0_5	388	|turn|31
+L	ab_0_5	389	|
+L	ab_0_5	390	|t:|<NORMALIZED>
+L	ab_0_5	391	|move|p1a: Metagross|Pursuit|p2a: Vaporeon
+L	ab_0_5	392	|-activate|p2a: Vaporeon|Substitute|[damage]
+L	ab_0_5	393	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_5	394	|-fail|p2a: Vaporeon|move: Substitute
+L	ab_0_5	395	|
+L	ab_0_5	396	|-heal|p2a: Vaporeon|157/463|[from] item: Leftovers
+L	ab_0_5	397	|upkeep
+L	ab_0_5	398	|turn|32
+L	ab_0_5	399	|
+L	ab_0_5	400	|t:|<NORMALIZED>
+L	ab_0_5	401	|move|p1a: Metagross|Pursuit|p2a: Vaporeon
+L	ab_0_5	402	|-activate|p2a: Vaporeon|Substitute|[damage]
+L	ab_0_5	403	|move|p2a: Vaporeon|Hydro Pump|p1a: Metagross|[miss]
+L	ab_0_5	404	|-miss|p2a: Vaporeon|p1a: Metagross
+L	ab_0_5	405	|
+L	ab_0_5	406	|-heal|p2a: Vaporeon|185/463|[from] item: Leftovers
+L	ab_0_5	407	|upkeep
+L	ab_0_5	408	|turn|33
+L	ab_0_5	409	|
+L	ab_0_5	410	|t:|<NORMALIZED>
+L	ab_0_5	411	|move|p1a: Metagross|Pursuit|p2a: Vaporeon
+L	ab_0_5	412	|-activate|p2a: Vaporeon|Substitute|[damage]
+L	ab_0_5	413	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_5	414	|-fail|p2a: Vaporeon|move: Substitute
+L	ab_0_5	415	|
+L	ab_0_5	416	|-heal|p2a: Vaporeon|213/463|[from] item: Leftovers
+L	ab_0_5	417	|upkeep
+L	ab_0_5	418	|turn|34
+L	ab_0_5	419	|
+L	ab_0_5	420	|t:|<NORMALIZED>
+L	ab_0_5	421	|-activate|p2a: Vaporeon|move: Pursuit
+L	ab_0_5	422	|move|p1a: Metagross|Pursuit|p2a: Vaporeon|[from] Pursuit
+L	ab_0_5	423	|-end|p2a: Vaporeon|Substitute
+L	ab_0_5	424	|switch|p2a: Jirachi|Jirachi|404/404
+L	ab_0_5	425	|-damage|p2a: Jirachi|354/404|[from] Spikes
+L	ab_0_5	426	|
+L	ab_0_5	427	|-heal|p2a: Jirachi|379/404|[from] item: Leftovers
+L	ab_0_5	428	|upkeep
+L	ab_0_5	429	|turn|35
+L	ab_0_5	430	|
+L	ab_0_5	431	|t:|<NORMALIZED>
+L	ab_0_5	432	|move|p2a: Jirachi|Psychic|p1a: Metagross
+L	ab_0_5	433	|-resisted|p1a: Metagross
+L	ab_0_5	434	|-damage|p1a: Metagross|139/343
+L	ab_0_5	435	|move|p1a: Metagross|Pursuit|p2a: Jirachi
+L	ab_0_5	436	|-damage|p2a: Jirachi|356/404
+L	ab_0_5	437	|
+L	ab_0_5	438	|-heal|p2a: Jirachi|381/404|[from] item: Leftovers
+L	ab_0_5	439	|upkeep
+L	ab_0_5	440	|turn|36
+L	ab_0_5	441	|
+L	ab_0_5	442	|t:|<NORMALIZED>
+L	ab_0_5	443	|move|p2a: Jirachi|Fire Punch|p1a: Metagross
+L	ab_0_5	444	|-supereffective|p1a: Metagross
+L	ab_0_5	445	|-damage|p1a: Metagross|16/343
+L	ab_0_5	446	|move|p1a: Metagross|Pursuit|p2a: Jirachi
+L	ab_0_5	447	|-damage|p2a: Jirachi|358/404
+L	ab_0_5	448	|
+L	ab_0_5	449	|-heal|p2a: Jirachi|383/404|[from] item: Leftovers
+L	ab_0_5	450	|upkeep
+L	ab_0_5	451	|turn|37
+L	ab_0_5	452	|
+L	ab_0_5	453	|t:|<NORMALIZED>
+L	ab_0_5	454	|move|p2a: Jirachi|Psychic|p1a: Metagross
+L	ab_0_5	455	|-resisted|p1a: Metagross
+L	ab_0_5	456	|-damage|p1a: Metagross|0 fnt
+L	ab_0_5	457	|faint|p1a: Metagross
+L	ab_0_5	458	|
+L	ab_0_5	459	|t:|<NORMALIZED>
+L	ab_0_5	460	|switch|p1a: Claydol|Claydol|324/324
+L	ab_0_5	461	|
+L	ab_0_5	462	|-heal|p2a: Jirachi|404/404|[from] item: Leftovers
+L	ab_0_5	463	|upkeep
+L	ab_0_5	464	|turn|38
+L	ab_0_5	465	|
+L	ab_0_5	466	|t:|<NORMALIZED>
+L	ab_0_5	467	|move|p2a: Jirachi|Psychic|p1a: Claydol
+L	ab_0_5	468	|-resisted|p1a: Claydol
+L	ab_0_5	469	|-damage|p1a: Claydol|279/324
+L	ab_0_5	470	|move|p1a: Claydol|Earthquake|p2a: Jirachi
+L	ab_0_5	471	|-supereffective|p2a: Jirachi
+L	ab_0_5	472	|-damage|p2a: Jirachi|189/404
+L	ab_0_5	473	|
+L	ab_0_5	474	|-heal|p2a: Jirachi|214/404|[from] item: Leftovers
+L	ab_0_5	475	|-heal|p1a: Claydol|299/324|[from] item: Leftovers
+L	ab_0_5	476	|upkeep
+L	ab_0_5	477	|turn|39
+L	ab_0_5	478	|
+L	ab_0_5	479	|t:|<NORMALIZED>
+L	ab_0_5	480	|switch|p1a: Gengar|Gengar, M|278/278
+L	ab_0_5	481	|move|p2a: Jirachi|Fire Punch|p1a: Gengar
+L	ab_0_5	482	|-damage|p1a: Gengar|202/278
+L	ab_0_5	483	|
+L	ab_0_5	484	|-heal|p1a: Gengar|219/278|[from] item: Leftovers
+L	ab_0_5	485	|-heal|p2a: Jirachi|239/404|[from] item: Leftovers
+L	ab_0_5	486	|upkeep
+L	ab_0_5	487	|turn|40
+L	ab_0_5	488	|
+L	ab_0_5	489	|t:|<NORMALIZED>
+L	ab_0_5	490	|move|p1a: Gengar|Will-O-Wisp|p2a: Jirachi|[miss]
+L	ab_0_5	491	|-miss|p1a: Gengar|p2a: Jirachi
+L	ab_0_5	492	|move|p2a: Jirachi|Thunderbolt|p1a: Gengar
+L	ab_0_5	493	|-damage|p1a: Gengar|126/278
+L	ab_0_5	494	|
+L	ab_0_5	495	|-heal|p1a: Gengar|143/278|[from] item: Leftovers
+L	ab_0_5	496	|-heal|p2a: Jirachi|264/404|[from] item: Leftovers
+L	ab_0_5	497	|upkeep
+L	ab_0_5	498	|turn|41
+L	ab_0_5	499	|
+L	ab_0_5	500	|t:|<NORMALIZED>
+L	ab_0_5	501	|move|p1a: Gengar|Will-O-Wisp|p2a: Jirachi
+L	ab_0_5	502	|-status|p2a: Jirachi|brn
+L	ab_0_5	503	|move|p2a: Jirachi|Psychic|p1a: Gengar
+L	ab_0_5	504	|-supereffective|p1a: Gengar
+L	ab_0_5	505	|-damage|p1a: Gengar|0 fnt
+L	ab_0_5	506	|faint|p1a: Gengar
+L	ab_0_5	507	|
+L	ab_0_5	508	|t:|<NORMALIZED>
+L	ab_0_5	509	|switch|p1a: Aerodactyl|Aerodactyl, M|152/302
+L	ab_0_5	510	|
+L	ab_0_5	511	|-heal|p2a: Jirachi|289/404 brn|[from] item: Leftovers
+L	ab_0_5	512	|-damage|p2a: Jirachi|239/404 brn|[from] brn
+L	ab_0_5	513	|upkeep
+L	ab_0_5	514	|turn|42
+L	ab_0_5	515	|
+L	ab_0_5	516	|t:|<NORMALIZED>
+L	ab_0_5	517	|move|p1a: Aerodactyl|Double-Edge|p2a: Jirachi
+L	ab_0_5	518	|-resisted|p2a: Jirachi
+L	ab_0_5	519	|-damage|p2a: Jirachi|179/404 brn
+L	ab_0_5	520	|move|p2a: Jirachi|Fire Punch|p1a: Aerodactyl
+L	ab_0_5	521	|-resisted|p1a: Aerodactyl
+L	ab_0_5	522	|-damage|p1a: Aerodactyl|118/302
+L	ab_0_5	523	|
+L	ab_0_5	524	|-heal|p2a: Jirachi|204/404 brn|[from] item: Leftovers
+L	ab_0_5	525	|-damage|p2a: Jirachi|154/404 brn|[from] brn
+L	ab_0_5	526	|upkeep
+L	ab_0_5	527	|turn|43
+L	ab_0_5	528	|
+L	ab_0_5	529	|t:|<NORMALIZED>
+L	ab_0_5	530	|switch|p1a: Claydol|Claydol|299/324
+L	ab_0_5	531	|move|p2a: Jirachi|Protect||[still]
+L	ab_0_5	532	|-fail|p2a: Jirachi
+L	ab_0_5	533	|
+L	ab_0_5	534	|-heal|p2a: Jirachi|179/404 brn|[from] item: Leftovers
+L	ab_0_5	535	|-damage|p2a: Jirachi|129/404 brn|[from] brn
+L	ab_0_5	536	|-heal|p1a: Claydol|319/324|[from] item: Leftovers
+L	ab_0_5	537	|upkeep
+L	ab_0_5	538	|turn|44
+L	ab_0_5	539	|
+L	ab_0_5	540	|t:|<NORMALIZED>
+L	ab_0_5	541	|move|p2a: Jirachi|Fire Punch|p1a: Claydol
+L	ab_0_5	542	|-damage|p1a: Claydol|267/324
+L	ab_0_5	543	|move|p1a: Claydol|Ice Beam|p2a: Jirachi
+L	ab_0_5	544	|-resisted|p2a: Jirachi
+L	ab_0_5	545	|-damage|p2a: Jirachi|108/404 brn
+L	ab_0_5	546	|
+L	ab_0_5	547	|-heal|p2a: Jirachi|133/404 brn|[from] item: Leftovers
+L	ab_0_5	548	|-damage|p2a: Jirachi|83/404 brn|[from] brn
+L	ab_0_5	549	|-heal|p1a: Claydol|287/324|[from] item: Leftovers
+L	ab_0_5	550	|upkeep
+L	ab_0_5	551	|turn|45
+L	ab_0_5	552	|
+L	ab_0_5	553	|t:|<NORMALIZED>
+L	ab_0_5	554	|switch|p2a: Vaporeon|Vaporeon, M|213/463
+L	ab_0_5	555	|-damage|p2a: Vaporeon|156/463|[from] Spikes
+L	ab_0_5	556	|switch|p1a: Aerodactyl|Aerodactyl, M|118/302
+L	ab_0_5	557	|
+L	ab_0_5	558	|-heal|p2a: Vaporeon|184/463|[from] item: Leftovers
+L	ab_0_5	559	|upkeep
+L	ab_0_5	560	|turn|46
+L	ab_0_5	561	|
+L	ab_0_5	562	|t:|<NORMALIZED>
+L	ab_0_5	563	|switch|p1a: Claydol|Claydol|287/324
+L	ab_0_5	564	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_5	565	|-start|p2a: Vaporeon|Substitute
+L	ab_0_5	566	|-damage|p2a: Vaporeon|69/463
+L	ab_0_5	567	|
+L	ab_0_5	568	|-heal|p1a: Claydol|307/324|[from] item: Leftovers
+L	ab_0_5	569	|-heal|p2a: Vaporeon|97/463|[from] item: Leftovers
+L	ab_0_5	570	|upkeep
+L	ab_0_5	571	|turn|47
+L	ab_0_5	572	|
+L	ab_0_5	573	|t:|<NORMALIZED>
+L	ab_0_5	574	|move|p1a: Claydol|Earthquake|p2a: Vaporeon
+L	ab_0_5	575	|-end|p2a: Vaporeon|Substitute
+L	ab_0_5	576	|move|p2a: Vaporeon|Haze|p2a: Vaporeon
+L	ab_0_5	577	|-clearallboost
+L	ab_0_5	578	|
+L	ab_0_5	579	|-heal|p1a: Claydol|324/324|[from] item: Leftovers
+L	ab_0_5	580	|-heal|p2a: Vaporeon|125/463|[from] item: Leftovers
+L	ab_0_5	581	|upkeep
+L	ab_0_5	582	|turn|48
+L	ab_0_5	583	|
+L	ab_0_5	584	|t:|<NORMALIZED>
+L	ab_0_5	585	|switch|p1a: Aerodactyl|Aerodactyl, M|118/302
+L	ab_0_5	586	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_5	587	|-start|p2a: Vaporeon|Substitute
+L	ab_0_5	588	|-damage|p2a: Vaporeon|10/463
+L	ab_0_5	589	|
+L	ab_0_5	590	|-heal|p2a: Vaporeon|38/463|[from] item: Leftovers
+L	ab_0_5	591	|upkeep
+L	ab_0_5	592	|turn|49
+L	ab_0_5	593	|
+L	ab_0_5	594	|t:|<NORMALIZED>
+L	ab_0_5	595	|move|p1a: Aerodactyl|Rock Slide|p2a: Vaporeon
+L	ab_0_5	596	|-activate|p2a: Vaporeon|Substitute|[damage]
+L	ab_0_5	597	|move|p2a: Vaporeon|Haze|p2a: Vaporeon
+L	ab_0_5	598	|-clearallboost
+L	ab_0_5	599	|
+L	ab_0_5	600	|-heal|p2a: Vaporeon|66/463|[from] item: Leftovers
+L	ab_0_5	601	|upkeep
+L	ab_0_5	602	|turn|50
+L	ab_0_5	603	|
+L	ab_0_5	604	|t:|<NORMALIZED>
+L	ab_0_5	605	|move|p1a: Aerodactyl|Double-Edge|p2a: Vaporeon
+L	ab_0_5	606	|-end|p2a: Vaporeon|Substitute
+L	ab_0_5	607	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_5	608	|-fail|p2a: Vaporeon|move: Substitute|[weak]
+L	ab_0_5	609	|
+L	ab_0_5	610	|-heal|p2a: Vaporeon|94/463|[from] item: Leftovers
+L	ab_0_5	611	|upkeep
+L	ab_0_5	612	|turn|51
+L	ab_0_5	613	|
+L	ab_0_5	614	|t:|<NORMALIZED>
+L	ab_0_5	615	|move|p1a: Aerodactyl|Rock Slide|p2a: Vaporeon
+L	ab_0_5	616	|-damage|p2a: Vaporeon|0 fnt
+L	ab_0_5	617	|faint|p2a: Vaporeon
+L	ab_0_5	618	|
+L	ab_0_5	619	|t:|<NORMALIZED>
+L	ab_0_5	620	|switch|p2a: Jirachi|Jirachi|83/404 brn
+L	ab_0_5	621	|-damage|p2a: Jirachi|33/404 brn|[from] Spikes
+L	ab_0_5	622	|
+L	ab_0_5	623	|-heal|p2a: Jirachi|58/404 brn|[from] item: Leftovers
+L	ab_0_5	624	|-damage|p2a: Jirachi|8/404 brn|[from] brn
+L	ab_0_5	625	|upkeep
+L	ab_0_5	626	|turn|52
+L	ab_0_5	627	|
+L	ab_0_5	628	|t:|<NORMALIZED>
+L	ab_0_5	629	|move|p1a: Aerodactyl|Double-Edge|p2a: Jirachi
+L	ab_0_5	630	|-resisted|p2a: Jirachi
+L	ab_0_5	631	|-damage|p2a: Jirachi|0 fnt
+L	ab_0_5	632	|faint|p2a: Jirachi
+L	ab_0_5	633	|
+L	ab_0_5	634	|win|P1

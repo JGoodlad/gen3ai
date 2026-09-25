@@ -24,6 +24,15 @@ const decFrom = process.argv[3] !== undefined ? Number(process.argv[3]) : 0;
 const decTo = process.argv[4] !== undefined ? Number(process.argv[4]) : Infinity;
 
 const summary = JSON.parse(fs.readFileSync(path.join(reproDir, 'summary.json'), 'utf8'));
+// The RUN FORMAT lives in battle.txt's `FMT` row (summary.json does not carry it). A gen3ou repro
+// replayed under the gen3customgame default reproduces a DIFFERENT battle (no clause shuffles, no
+// OU framing) and the trace is then of nothing. Typed Hidden Power is admitted exactly as
+// `ab_fuzz.js` admits it (pool / ourandom / ladder), or a recorded HP choice cannot replay.
+const fmtRow = fs.readFileSync(path.join(reproDir, 'battle.txt'), 'utf8')
+  .split('\n').find(l => l.startsWith('FMT\t'));
+const runFormat = fmtRow ? fmtRow.split('\t')[2].trim() : undefined;
+const allowHiddenPower = ['pool', 'ourandom', 'ladder'].includes(summary.mode);
+console.log(`=== format=${runFormat || '(default gen3customgame)'} mode=${summary.mode} allowHiddenPower=${allowHiddenPower}`);
 
 // ---- PRNG instrumentation (global, prototype-level) ----
 let decisionNo = -1; // bumped externally via seed-boundary sniffing below
@@ -105,7 +114,7 @@ PRNG.prototype.getSeed = function () {
   const rec = await e2e.runBattle(
     summary.packed_teams.p1, summary.packed_teams.p2,
     summary.battle_seed, summary.choose_seed, 'modeled',
-    { replayChoices: summary.choices || null });
+    { replayChoices: summary.choices || null, format: runFormat, allowHiddenPower });
   traceOn = false;
   console.log('=== replay done. decisions=', rec.decisions.length, 'ended=', rec.ended, 'winner=', rec.winner, 'dropped=', rec.dropped);
   for (let i = Math.max(0, decFrom - 1); i <= Math.min(rec.decisions.length - 1, decTo === Infinity ? rec.decisions.length - 1 : decTo); i++) {

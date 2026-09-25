@@ -620,8 +620,14 @@ impl crate::state::BattleState {
             //     `MoveData::fail_encore` — Struggle stores `last_move = None` so it falls
             //     under no-lastMove here, matching the sim's failencore-flagged Struggle) /
             //     the lastMove slot at 0 PP. All → `[still]` + `-fail|<user>`, draws consumed.
+            //     A self-overwritten lastMove (a Mimic that replaced its own slot, or a
+            //     Transform whose copy dropped it — `last_move_was_self_overwrite`) is in NO
+            //     slot: `getMoveData(lastMove.id)` is undefined, so it rejects too (and both
+            //     moves carry `failencore`); reading the SLOT would encore the copied move
+            //     (`gen3_mimic_self_overwrite_readers_v1`, `harness/probe_mimic_self_overwrite_readers.js` E1).
             let reject = match self.sides[foe].pokemon[foe_slot].last_move {
                 None => true,
+                Some(_) if self.sides[foe].pokemon[foe_slot].last_move_was_self_overwrite => true,
                 Some(lslot) => {
                     let fail_flag = self
                         .move_at(foe, foe_slot, lslot, dex)
@@ -929,6 +935,14 @@ impl crate::state::BattleState {
                 if self.sides[_side].pokemon[_slot].transformed() {
                     true
                 } else if self.sides[foe].pokemon[foe_slot].substitute.is_some() {
+                    true
+                } else if self.sides[foe].pokemon[foe_slot].last_move_was_self_overwrite
+                    && self.sides[foe].pokemon[foe_slot].last_move_used.as_deref() == Some("mimic")
+                {
+                    // The foe's lastMove is a Mimic that overwrote its OWN slot: the used move is
+                    // `mimic` (`failmimic`), not the copy now in that slot — FAIL
+                    // (`gen3_mimic_self_overwrite_readers_v1`, probe M1). A TRANSFORM self-overwrite
+                    // is NOT this case: `transform` lacks `failmimic` and the sim copies it.
                     true
                 } else {
                     match self.sides[foe].pokemon[foe_slot].last_move {
@@ -1842,10 +1856,13 @@ impl crate::state::BattleState {
         // line — it simply lasts while the caster is out. It succeeds iff the caster shares at
         // least one move with the CURRENT foe; the restriction itself is re-derived as a
         // movepool intersection each time it is consulted, so a Mimic that rewrites a slot
-        // changes what is imprisoned for free.
+        // changes what is imprisoned for free. A RE-CAST while the caster already imprisons
+        // fails too (`gen3_imprison_recast_fails_v1`): the condition has no `onRestart`, so
+        // `addVolatile` returns false after `onTryHit` passes — the same draw-free `[still]` +
+        // `-fail` as the no-shared-move case (`harness/probe_imprison.js` Q3).
         if move_id == "imprison" {
             debug_assert!(never_miss, "imprison: expected the never-miss dex row");
-            if self.shares_a_move_with_foe(_side, dex) {
+            if self.shares_a_move_with_foe(_side, dex) && !self.sides[_side].pokemon[_slot].imprison {
                 self.sides[_side].pokemon[_slot].imprison = true;
                 // [EMIT] `|-start|<u>|move: Imprison` (the `move: `-prefixed form).
                 if self.logging() {
@@ -1853,7 +1870,8 @@ impl crate::state::BattleState {
                     self.log.volatile_start(&u, "move: Imprison");
                 }
             } else if self.logging() {
-                // No shared move → the did-nothing `[still]` form + a bare -fail on the USER.
+                // No shared move, or a RE-CAST → the did-nothing `[still]` form + a bare -fail
+                // on the USER.
                 let u = self.mon_ref(_side, _slot, dex);
                 self.log.attr_last_move_still();
                 self.log.fail(&u, None, false);
@@ -1887,7 +1905,10 @@ impl crate::state::BattleState {
             // that also carries a `volatileStatus`, and widening that rule would be a data
             // change (extractor-parity + obs-golden) for one stat on one move.
             {
-                let idx = 2usize; // Def
+                // `boosts` is in `STAT_TOKENS` order — atk 0, def 1, spa 2, spd 3, spe 4, accuracy
+                // 5, evasion 6. Def is index 1 (`gen3_boost_index_fixes_v1`: this read 2 = SpA, so
+                // the curl raised SpA and announced `|-boost|<u>|spa|1`).
+                let idx = 1usize; // Def
                 let cur = self.sides[_side].pokemon[_slot].boosts[idx] as i32;
                 let next = (cur + 1).clamp(-6, 6);
                 self.sides[_side].pokemon[_slot].boosts[idx] = next as i8;
@@ -3309,7 +3330,7 @@ impl crate::state::BattleState {
             }
             // SUCCESS → the shared path handles SAFEGUARD, else draws random(2,6) and emits
             // `-start|confusion`.
-            self.add_confusion(foe, foe_slot, true, dex);
+            self.add_confusion(foe, foe_slot, super::secondaries::ConfusionSource::Foe { announce: true }, dex);
             return MoveResolution::done(false, false, false);
         }
 

@@ -6,7 +6,7 @@
 //   RE-CAST (already imprisoned) : DRAW-FREE -> the same [still]+-fail  + |debug|move failed because it did nothing
 //   BLOCKED foe move (queued)    : DRAW-FREE -> |cant|<foe>|move: Imprison|<Move>, NO PP spent
 //   there is NO -end line, NO duration, NO accuracy roll and NO residual tick.
-const path=require('path'); const PS='/home/goodlad/dev/gen3ai/deps/pokemon-showdown';
+const path=require('path'); const PS=path.resolve(__dirname,'../../../deps/pokemon-showdown');
 const {BattleStream}=require(path.join(PS,'dist/sim/battle-stream.js'));
 const {PRNG}=require(path.join(PS,'dist/sim/prng'));
 let draws=[];
@@ -48,7 +48,10 @@ async function run(label,p1,p2,script,seed='[9,9,9,9]'){
   await run('Q1a CAST, shared move exists',            user, share,   ['>p1 move 1\n>p2 move 2']);
   await run('Q1a CONTROL (Splash, identical board)',   user, share,   ['>p1 move 3\n>p2 move 2']);
   await run('Q1b CAST, NO shared move -> fail',        user, noShare, ['>p1 move 1\n>p2 move 1']);
-  await run('Q3  RE-CAST while already imprisoned',    user, share,   ['>p1 move 1\n>p2 move 2','>p1 move 3\n>p2 move 3']);
+  // The RE-CAST really re-casts (`move 1`) — an earlier draft sent `move 3` (Splash) here, so the
+  // settled re-cast row above was never exercised and the port shipped without the gate
+  // (`gen3_imprison_recast_fails_v1`).
+  await run('Q3  RE-CAST while already imprisoned',    user, share,   ['>p1 move 1\n>p2 move 2','>p1 move 1\n>p2 move 2']);
   await run('Q3  BLOCKED queued move -> |cant| (PP unspent)', user, share, ['>p1 move 1\n>p2 move 1']);
   await run('Q5  REJECT + re-request for a NEXT-turn imprisoned pick', user, share,
     ['>p1 move 1\n>p2 move 2','>p1 move 3\n>p2 move 1']);

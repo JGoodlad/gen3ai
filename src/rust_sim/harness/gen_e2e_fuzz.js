@@ -1423,9 +1423,19 @@ function pickMove(battle, side, rng, mode, allowHiddenPower = false) {
   if (!req || !req.active || !req.active[0]) return { choice: null, reason: 'no-active-request' };
   const moves = req.active[0].moves || [];
   const legalMoveSlots = [];
+  // HIDDEN DISABLE (`gen3_picker_hidden_disable_v1`): Imprison seals the foe's shared moves with
+  // `disableMove(id, true)` — a `'hidden'` disable the OWNER'S REQUEST masks as `disabled:false`
+  // (`getMoveRequestData` builds it with `restrictData`), flagging the mon `maybeDisabled`
+  // instead; `side.chooseMove` then REJECTS the pick (`[Unavailable choice] Can't move: X's Y is
+  // disabled`). Mirror the sim's own truth (`moveSlot.disabled`), exactly as the trapping gate
+  // below mirrors `pokemon.trapped`. `maybeDisabled` is set only for an UNLOCKED request, so the
+  // request's moves are the mon's `moveSlots` one-for-one there.
+  const activeMon = battle.sides[side].active[0];
+  const hiddenDisabled = (k) => !!(req.active[0].maybeDisabled && activeMon
+    && activeMon.moveSlots.length === moves.length && activeMon.moveSlots[k].disabled);
   for (let k = 0; k < moves.length; k++) {
     const mv = moves[k];
-    if (mv.disabled) continue;
+    if (mv.disabled || hiddenDisabled(k)) continue;
     const id = toId(mv.id || mv.move);
     if (mode === 'modeled') {
       // SLEEP TALK (`gen3_move_coverage_batch5_v1`): pickable ONLY when the carrier's
@@ -1669,6 +1679,18 @@ async function runBattle(p1Packed, p2Packed, seed, chooseSeed, mode, opts = {}) 
       batch6MoveThisDec = !!(r1.batch6Move || r2.batch6Move);
     }
 
+    // A REQUEST-DRIVEN CLIENT answers only an OPEN request (`gen3_recorder_held_choice_v1`). After
+    // one side's choice is REJECTED the boundary stays open with the OTHER side's choice HELD, and
+    // re-writing the held side is not a no-op in the sim: the writes apply IN ORDER, so a held
+    // p2's re-write lands on the NEXT turn's request once `>p1` commits this one (and a held
+    // p1's re-write REPLACES it). The port's scripted driver keeps the held choice, so every later
+    // choice of that side replayed one turn off — the M6 stress's `rmuggvoke_ab_3_15`. Record
+    // `-` for a held side instead. (Picking path only: a `replayChoices` replay writes exactly
+    // what was recorded, so an old repro still reproduces bit-for-bit.)
+    if (!replayChoices) {
+      if (cp1 && battle.sides[0].isChoiceDone()) cp1 = null;
+      if (cp2 && battle.sides[1].isChoiceDone()) cp2 = null;
+    }
     const logLenBefore = log.length;
     try { if (cp1) streams.omniscient.write(`>p1 ${cp1}`); } catch (e) {}
     try { if (cp2) streams.omniscient.write(`>p2 ${cp2}`); } catch (e) {}

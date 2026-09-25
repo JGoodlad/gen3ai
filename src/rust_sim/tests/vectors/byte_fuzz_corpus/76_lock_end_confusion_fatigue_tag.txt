@@ -1,0 +1,1247 @@
+# FIXTURE 76 — the END-OF-LOCK confusion announces `|-start|<user>|confusion|[fatigue]` (gen3_lockin_fatigue_v1).
+# Source: the M6 cutover stress repro fz_proto_ourandom.00000/divergences/rmuggw4az_ab_0_14 (a Dragonite Outrage, gen3ou).
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=ourandom master_seed=620000 run_id=rmuggw4az chunk=0
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_0_14
+TEAM	ab_0_14	p1	Swampert||leftovers|torrent|earthquake,icebeam,hydropump,substitute|Timid|,,4,252,,252|M||||]Gengar||leftovers|levitate|thunderbolt,taunt,explosion,willowisp|Timid|,,,252,4,252|M||||]Tyranitar||lumberry|sandstream|hiddenpowerbug,focuspunch,earthquake,surf|Modest|252,,,252,,4|M|,30,,,30,30|||]Starmie||leftovers|naturalcure|hydropump,icebeam,rapidspin,surf|Timid|4,,,252,,252|N||||]Skarmory||leftovers|keeneye|drillpeck,toxic,protect,roar|Careful|248,,,,244,16|M||||]Dugtrio||choiceband|arenatrap|hiddenpowerbug,aerialace,earthquake,beatup|Jolly|,252,,,4,252|M|,30,,,30,30|||
+TEAM	ab_0_14	p2	Metagross||salacberry|clearbody|meteormash,rockslide,explosion,earthquake|Adamant|168,252,,,,88|N||||]Zapdos||leftovers|pressure|hiddenpowergrass,thunderbolt,rest,roar|Calm|252,,,,224,32|N|30,,30,30,,|||]Vaporeon||leftovers|waterabsorb|icebeam,substitute,hydropump,toxic|Bold|248,,228,,32,|M||||]Claydol||leftovers|levitate|earthquake,explosion,rest,rapidspin|Adamant|252,216,,32,,8|N||||]Magneton||magnet|magnetpull|hiddenpowerfire,thunderbolt,sunnyday,toxic|Modest|4,,,252,,252|N|30,,30,30,,30|||]Dragonite||leftovers|innerfocus|earthquake,thunderbolt,dragondance,outrage|Lonely|52,204,,68,,184|M||||
+FMT	ab_0_14	gen3ou
+INIT	ab_0_14	43154,16002,58828,27981	3623347663	0
+DEC	ab_0_14	0	move	0	0	m2	m3	4543,23586,28667,19064	Swampert	228	341	0	-	0	0	0	0	0	0	6	Metagross	343	343	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	1	move	0	0	m3	m3	55179,22078,35776,62604	Swampert	164	341	0	-	0	0	0	0	0	0	6	Metagross	343	343	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	2	move	0	0	s4	m3	19293,24307,34553,29534	Skarmory	333	333	0	-	0	0	0	0	0	0	6	Metagross	343	343	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	3	move	0	0	m0	m1	24082,28921,37625,12166	Skarmory	276	333	0	-	0	0	0	0	0	0	6	Metagross	312	343	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	4	move	0	0	m3	m3	35840,11605,44677,21690	Skarmory	296	333	0	-	0	0	0	0	0	0	6	Claydol	324	324	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	5	move	0	0	m0	s1	62921,61839,59220,44718	Skarmory	316	333	0	-	0	0	0	0	0	0	6	Zapdos	357	383	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	6	move	0	0	s2	m3	7583,19521,64293,11699	Dugtrio	211	211	0	-	0	0	0	0	0	0	6	Zapdos	357	383	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	7	move	0	0	m0	m2	30206,2020,42966,18737	Dugtrio	211	211	0	-	0	0	0	0	0	0	6	Zapdos	383	383	0	slp	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	8	move	0	0	m0	m2	15125,4397,15070,8629	Dugtrio	211	211	0	-	0	0	0	0	0	0	6	Zapdos	329	383	0	slp	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	9	move	0	0	m0	m2	43731,28622,19941,6649	Dugtrio	211	211	0	-	0	0	0	0	0	0	6	Zapdos	280	383	0	slp	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	10	move	0	0	m0	m3	50183,14024,14275,7463	Skarmory	333	333	0	-	0	0	0	0	0	0	6	Zapdos	230	383	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	11	move	0	0	m1	m3	34133,62414,37673,31066	Starmie	262	262	0	-	0	0	0	0	0	0	6	Zapdos	207	383	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	12	move	0	0	m2	m3	55599,33168,21680,3536	Skarmory	333	333	0	-	0	0	0	0	0	0	6	Zapdos	147	383	0	tox	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	13	move	0	0	m3	m3	37074,13400,1601,7053	Tyranitar	404	404	0	-	0	0	0	0	0	0	6	Zapdos	78	383	0	tox	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	14	move	0	0	m0	m2	49476,28033,2166,26715	Tyranitar	404	404	0	-	0	0	0	0	0	0	6	Zapdos	347	383	0	slp	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	15	move	0	0	m0	m1	20651,24784,29386,45631	Tyranitar	404	404	0	-	0	0	0	0	0	0	6	Zapdos	310	383	0	slp	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	16	move	0	0	m0	m1	25738,46256,28376,50659	Tyranitar	404	404	0	-	0	0	0	0	0	0	6	Zapdos	274	383	0	slp	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_0_14	17	move	0	0	m0	m3	63379,60083,14900,20193	Dugtrio	211	211	0	-	0	0	0	0	0	0	6	Zapdos	239	383	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	18	move	0	0	m3	m1	5934,33024,8938,36374	Dugtrio	211	211	0	-	0	0	0	0	0	0	6	Zapdos	176	383	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	19	move	0	0	m3	m0	3949,18634,4585,21505	Dugtrio	29	211	0	-	0	0	0	0	0	0	6	Zapdos	104	383	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	20	move	0	0	m3	m1	27035,31191,50202,54454	Dugtrio	29	211	0	-	0	0	0	0	0	0	6	Zapdos	51	383	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	21	move	0	0	s2	m0	17197,42398,49274,34538	Tyranitar	267	404	0	-	0	0	0	0	0	0	6	Zapdos	51	383	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	22	move	0	0	s2	m1	17099,15008,31498,25356	Dugtrio	29	211	0	-	0	0	0	0	0	0	6	Zapdos	51	383	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_0_14	23	move	0	0	m1	m1	64873,40729,27846,40414	Dugtrio	29	211	0	-	0	0	0	0	0	0	6	Zapdos	0	383	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_14	24	switch	0	1	-	s2	16585,63196,11792,46425	Dugtrio	29	211	0	-	0	0	0	0	0	0	6	Vaporeon	463	463	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_14	25	move	0	0	m1	m1	1842,54004,46608,19858	Dugtrio	29	211	0	-	0	0	0	0	0	0	6	Vaporeon	273	463	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_14	26	move	0	0	m1	m3	10763,32353,23957,18721	Dugtrio	16	211	0	tox	0	0	0	0	0	0	6	Vaporeon	273	463	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_14	27	move	0	0	m1	m3	3462,43587,8797,1850	Dugtrio	0	211	1	fnt	0	0	0	0	0	0	5	Vaporeon	273	463	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_14	28	switch	1	0	s3	-	292,41306,590,33445	Starmie	262	262	0	-	0	0	0	0	0	0	5	Vaporeon	273	463	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_14	29	move	0	0	m1	m3	23674,33401,8177,21474	Starmie	246	262	0	tox	0	0	0	0	0	0	5	Vaporeon	227	463	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_14	30	move	0	0	m2	s3	20918,45682,55555,19286	Starmie	214	262	0	tox	0	0	0	0	0	0	5	Metagross	308	343	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_14	31	move	0	0	m2	m1	58568,65413,7403,24702	Starmie	55	262	0	tox	0	0	0	0	0	0	5	Metagross	304	343	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_14	32	move	0	0	m2	m1	17702,13894,21455,26023	Starmie	0	262	1	fnt	0	0	0	0	0	0	4	Metagross	300	343	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_14	33	switch	1	0	s5	-	11219,40458,18929,6310	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Metagross	300	343	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_0_14	34	move	0	0	m1	m1	41376,13561,56019,57980	Skarmory	281	333	0	-	0	0	0	0	0	0	4	Metagross	300	343	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_14	35	move	0	0	m3	m0	62919,21638,47585,47117	Skarmory	225	333	0	-	0	0	0	0	0	0	4	Claydol	324	324	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_14	36	move	0	0	m0	m2	24456,63874,61395,47825	Skarmory	245	333	0	-	0	0	0	0	0	0	4	Claydol	274	324	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_14	37	move	0	0	m2	m2	51519,35587,62720,47445	Skarmory	265	333	0	-	0	0	0	0	0	0	4	Claydol	324	324	0	slp	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_0_14	38	move	0	0	m3	m3	3176,32150,12506,21278	Skarmory	285	333	0	-	0	0	0	0	0	0	4	Vaporeon	227	463	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_14	39	move	0	0	m1	s1	15350,3798,33971,44832	Skarmory	305	333	0	-	0	0	0	0	0	0	4	Metagross	300	343	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_0_14	40	move	0	0	m2	m2	64472,36369,52642,54883	Skarmory	305	333	0	-	0	0	0	0	0	0	4	Metagross	0	343	1	fnt	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_14	41	switch	0	1	-	s5	1680,7856,2062,31133	Skarmory	325	333	0	-	0	0	0	0	0	0	4	Dragonite	336	336	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_0_14	42	move	0	0	m3	m2	24947,14887,5752,55110	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Vaporeon	227	463	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	43	move	0	0	m0	s4	20156,58111,20512,122	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Magneton	220	241	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	44	move	0	0	m2	m1	38207,3849,65202,56271	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Magneton	220	241	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_14	45	move	0	0	m1	m2	19872,46067,14151,32297	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Magneton	220	241	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	46	move	0	0	m1	m2	38968,54532,10763,63091	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Magneton	220	241	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	47	move	0	0	m2	m1	3811,41411,35430,63620	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Magneton	220	241	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_14	48	move	0	0	m2	m3	57033,29476,47988,2033	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Magneton	220	241	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_14	49	move	0	0	m2	m1	7902,63321,15143,64714	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Magneton	220	241	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_14	50	move	0	0	m3	m2	24108,52983,32453,2271	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Vaporeon	255	463	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	51	move	0	0	m2	m3	16489,5104,49972,43200	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Vaporeon	283	463	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_0_14	52	move	0	0	m3	m3	58782,2996,42746,15956	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Claydol	324	324	0	slp	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	53	move	0	0	m0	s1	25276,13270,50947,49832	Skarmory	333	333	0	-	0	0	0	0	0	0	4	Dragonite	268	336	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	54	move	0	0	m0	m3	33687,58818,39507,42896	Skarmory	302	333	0	-	0	0	0	0	0	0	4	Dragonite	191	336	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_0_14	55	move	0	0	m0	m0	36596,19425,59697,63352	Skarmory	266	333	0	-	0	0	0	0	0	0	4	Dragonite	121	336	0	-	0	0	0	0	0	2	4	p2	0	0	0	0	0
+DEC	ab_0_14	56	move	0	0	m0	m2	28329,30710,39447,14079	Skarmory	286	333	0	-	0	0	0	0	0	0	4	Dragonite	56	336	0	-	1	0	0	0	1	1	4	p2	0	0	0	0	0
+DEC	ab_0_14	57	move	0	0	m0	m1	63817,56675,56015,36340	Skarmory	151	333	0	-	0	0	0	0	0	0	4	Dragonite	0	336	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_14	58	switch	0	1	-	s3	34175,53586,14509,13319	Skarmory	171	333	0	-	0	0	0	0	0	0	4	Vaporeon	311	463	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_0_14	59	move	0	0	m0	m0	64271,29774,11353,14351	Skarmory	119	333	0	-	0	0	0	0	0	0	4	Vaporeon	256	463	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_14	60	move	0	0	s2	m1	9210,54677,6850,50094	Tyranitar	267	404	0	-	0	0	0	0	0	0	4	Vaporeon	141	463	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_0_14	61	move	0	0	m3	s1	3746,10857,17386,13922	Tyranitar	267	404	0	-	0	0	0	0	0	0	4	Claydol	175	324	0	slp	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_0_14	62	move	0	0	m3	m3	1152,50549,621,25367	Tyranitar	267	404	0	-	0	0	0	0	0	0	4	Claydol	0	324	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	63	switch	0	1	-	s1	14480,20820,59639,1494	Tyranitar	267	404	0	-	0	0	0	0	0	0	4	Vaporeon	141	463	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_14	64	move	0	0	m3	m1	53022,10880,15503,58648	Tyranitar	267	404	0	-	0	0	0	0	0	0	4	Vaporeon	141	463	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	65	move	0	0	s1	m0	17611,43018,43671,54559	Gengar	162	261	0	-	0	0	0	0	0	0	4	Vaporeon	141	463	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	66	move	0	0	m1	m2	30254,37729,35348,31427	Gengar	0	261	1	fnt	0	0	0	0	0	0	3	Vaporeon	141	463	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	67	switch	1	0	s4	-	24047,4777,3906,26802	Swampert	185	341	0	-	0	0	0	0	0	0	3	Vaporeon	141	463	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_0_14	68	move	0	0	m2	m0	37087,24897,51257,40424	Swampert	111	341	0	-	0	0	0	0	0	0	3	Vaporeon	256	463	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	69	move	0	0	s2	m1	62378,40916,1467,4939	Skarmory	139	333	0	-	0	0	0	0	0	0	3	Vaporeon	256	463	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	70	move	0	0	m3	m2	62669,31383,3764,3631	Skarmory	159	333	0	-	0	0	0	0	0	0	3	Magneton	220	241	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	71	move	0	0	m3	s4	10056,43276,8170,23248	Skarmory	179	333	0	-	0	0	0	0	0	0	3	Magneton	220	241	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	72	move	0	0	m2	m3	2164,23501,16417,21645	Skarmory	199	333	0	-	0	0	0	0	0	0	3	Magneton	220	241	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	73	move	0	0	m1	m2	38856,56232,2638,5431	Skarmory	219	333	0	-	0	0	0	0	0	0	3	Magneton	220	241	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	74	move	0	0	m2	m1	19641,39423,62662,33464	Skarmory	239	333	0	-	0	0	0	0	0	0	3	Magneton	220	241	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	75	move	0	0	m3	s4	46854,21096,19043,17877	Skarmory	259	333	0	-	0	0	0	0	0	0	3	Magneton	220	241	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	76	move	0	0	m2	m2	590,10343,2126,58175	Skarmory	279	333	0	-	0	0	0	0	0	0	3	Magneton	220	241	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	77	move	0	0	m2	m0	35978,27543,62947,59107	Skarmory	299	333	0	-	0	0	0	0	0	0	3	Magneton	220	241	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	78	move	0	0	m3	m3	26840,13774,27568,38983	Skarmory	319	333	0	-	0	0	0	0	0	0	3	Vaporeon	284	463	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	79	move	0	0	m0	m0	12388,19394,3273,21583	Skarmory	266	333	0	-	0	0	0	0	0	0	3	Vaporeon	226	463	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	80	move	0	0	m0	s4	19104,51385,31583,59123	Skarmory	286	333	0	-	0	0	0	0	0	0	3	Magneton	199	241	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	81	move	0	0	m1	m0	61832,61301,9554,790	Skarmory	148	333	0	-	0	0	0	0	0	0	3	Magneton	199	241	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	82	move	0	0	m3	m2	10930,25826,29936,59771	Skarmory	168	333	0	-	0	0	0	0	0	0	3	Vaporeon	254	463	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	83	move	0	0	s1	m1	32511,47498,22146,36682	Tyranitar	267	404	0	-	0	0	0	0	0	0	3	Vaporeon	139	463	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	ab_0_14	84	move	0	0	m3	m0	16699,43997,23075,28480	Tyranitar	191	404	0	-	0	0	0	0	0	0	3	Vaporeon	254	463	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_0_14	85	move	0	0	m1	s4	59816,64179,52602,44349	Tyranitar	191	404	0	-	0	0	0	0	0	0	3	Magneton	0	241	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_14	86	switch	0	1	-	s4	46813,63848,12525,40148	Tyranitar	191	404	0	-	0	0	0	0	0	0	3	Vaporeon	254	463	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_14	87	move	0	0	m0	m2	61420,644,63189,37771	Tyranitar	191	404	0	-	0	0	0	0	0	0	3	Vaporeon	184	463	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_14	88	move	0	0	m0	m2	26700,29058,26517,55356	Tyranitar	0	404	1	fnt	0	0	0	0	0	0	2	Vaporeon	184	463	0	-	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	ab_0_14	89	switch	1	0	s1	-	34898,33248,18593,2671	Skarmory	188	333	0	-	0	0	0	0	0	0	2	Vaporeon	184	463	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_14	90	move	0	0	s2	m2	31830,10385,32283,52752	Swampert	0	341	1	fnt	0	0	0	0	0	0	1	Vaporeon	184	463	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_14	91	switch	1	0	s2	-	9789,2021,1237,31507	Skarmory	208	333	0	-	0	0	0	0	0	0	1	Vaporeon	184	463	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	ab_0_14	92	move	0	0	m0	m1	23008,61501,47596,51575	Skarmory	228	333	0	-	0	0	0	0	0	0	1	Vaporeon	111	463	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_14	93	move	0	0	m1	m3	59256,28330,22365,52728	Skarmory	248	333	0	-	0	0	0	0	0	0	1	Vaporeon	111	463	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_14	94	move	0	0	m1	m1	13901,49777,62822,11242	Skarmory	268	333	0	-	0	0	0	0	0	0	1	Vaporeon	111	463	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_14	95	move	0	0	m1	m0	32490,17661,48177,3875	Skarmory	220	333	0	-	0	0	0	0	0	0	1	Vaporeon	83	463	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_14	96	move	0	0	m1	m3	48135,49359,26929,44148	Skarmory	240	333	0	-	0	0	0	0	0	0	1	Vaporeon	27	463	0	tox	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	ab_0_14	97	move	0	0	m2	m1	102,60416,48437,48263	Skarmory	240	333	0	-	0	0	0	0	0	0	1	Vaporeon	0	463	1	tox	0	0	0	0	0	0	0	p1	0	0	0	0	0
+END	ab_0_14	1	p1
+L	ab_0_14	0	|t:|<NORMALIZED>
+L	ab_0_14	1	|gametype|singles
+L	ab_0_14	2	|player|p1|P1||
+L	ab_0_14	3	|player|p2|P2||
+L	ab_0_14	4	|gen|3
+L	ab_0_14	5	|tier|[Gen 3] OU
+L	ab_0_14	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_0_14	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_0_14	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_0_14	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_0_14	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_0_14	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_0_14	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_0_14	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_0_14	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_0_14	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_0_14	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_0_14	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_0_14	18	|
+L	ab_0_14	19	|t:|<NORMALIZED>
+L	ab_0_14	20	|teamsize|p1|6
+L	ab_0_14	21	|teamsize|p2|6
+L	ab_0_14	22	|start
+L	ab_0_14	23	|switch|p1a: Swampert|Swampert, M|341/341
+L	ab_0_14	24	|switch|p2a: Metagross|Metagross|343/343
+L	ab_0_14	25	|turn|1
+L	ab_0_14	26	|
+L	ab_0_14	27	|t:|<NORMALIZED>
+L	ab_0_14	28	|move|p1a: Swampert|Hydro Pump|p2a: Metagross|[miss]
+L	ab_0_14	29	|-miss|p1a: Swampert|p2a: Metagross
+L	ab_0_14	30	|move|p2a: Metagross|Earthquake|p1a: Swampert
+L	ab_0_14	31	|-damage|p1a: Swampert|207/341
+L	ab_0_14	32	|
+L	ab_0_14	33	|-heal|p1a: Swampert|228/341|[from] item: Leftovers
+L	ab_0_14	34	|upkeep
+L	ab_0_14	35	|turn|2
+L	ab_0_14	36	|
+L	ab_0_14	37	|t:|<NORMALIZED>
+L	ab_0_14	38	|move|p1a: Swampert|Substitute|p1a: Swampert
+L	ab_0_14	39	|-start|p1a: Swampert|Substitute
+L	ab_0_14	40	|-damage|p1a: Swampert|143/341
+L	ab_0_14	41	|move|p2a: Metagross|Earthquake|p1a: Swampert
+L	ab_0_14	42	|-end|p1a: Swampert|Substitute
+L	ab_0_14	43	|
+L	ab_0_14	44	|-heal|p1a: Swampert|164/341|[from] item: Leftovers
+L	ab_0_14	45	|upkeep
+L	ab_0_14	46	|turn|3
+L	ab_0_14	47	|
+L	ab_0_14	48	|t:|<NORMALIZED>
+L	ab_0_14	49	|switch|p1a: Skarmory|Skarmory, M|333/333
+L	ab_0_14	50	|move|p2a: Metagross|Earthquake|p1a: Skarmory
+L	ab_0_14	51	|-immune|p1a: Skarmory
+L	ab_0_14	52	|
+L	ab_0_14	53	|upkeep
+L	ab_0_14	54	|turn|4
+L	ab_0_14	55	|
+L	ab_0_14	56	|t:|<NORMALIZED>
+L	ab_0_14	57	|move|p2a: Metagross|Rock Slide|p1a: Skarmory
+L	ab_0_14	58	|-damage|p1a: Skarmory|256/333
+L	ab_0_14	59	|move|p1a: Skarmory|Drill Peck|p2a: Metagross
+L	ab_0_14	60	|-resisted|p2a: Metagross
+L	ab_0_14	61	|-damage|p2a: Metagross|312/343
+L	ab_0_14	62	|
+L	ab_0_14	63	|-heal|p1a: Skarmory|276/333|[from] item: Leftovers
+L	ab_0_14	64	|upkeep
+L	ab_0_14	65	|turn|5
+L	ab_0_14	66	|
+L	ab_0_14	67	|t:|<NORMALIZED>
+L	ab_0_14	68	|move|p2a: Metagross|Earthquake|p1a: Skarmory
+L	ab_0_14	69	|-immune|p1a: Skarmory
+L	ab_0_14	70	|move|p1a: Skarmory|Roar|p2a: Metagross
+L	ab_0_14	71	|drag|p2a: Claydol|Claydol|324/324
+L	ab_0_14	72	|
+L	ab_0_14	73	|-heal|p1a: Skarmory|296/333|[from] item: Leftovers
+L	ab_0_14	74	|upkeep
+L	ab_0_14	75	|turn|6
+L	ab_0_14	76	|
+L	ab_0_14	77	|t:|<NORMALIZED>
+L	ab_0_14	78	|switch|p2a: Zapdos|Zapdos|383/383
+L	ab_0_14	79	|-ability|p2a: Zapdos|Pressure|[silent]
+L	ab_0_14	80	|move|p1a: Skarmory|Drill Peck|p2a: Zapdos
+L	ab_0_14	81	|-resisted|p2a: Zapdos
+L	ab_0_14	82	|-damage|p2a: Zapdos|334/383
+L	ab_0_14	83	|
+L	ab_0_14	84	|-heal|p2a: Zapdos|357/383|[from] item: Leftovers
+L	ab_0_14	85	|-heal|p1a: Skarmory|316/333|[from] item: Leftovers
+L	ab_0_14	86	|upkeep
+L	ab_0_14	87	|turn|7
+L	ab_0_14	88	|
+L	ab_0_14	89	|t:|<NORMALIZED>
+L	ab_0_14	90	|switch|p1a: Tyranitar|Tyranitar, M|404/404
+L	ab_0_14	91	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_0_14	92	|move|p2a: Zapdos|Roar|p1a: Tyranitar
+L	ab_0_14	93	|drag|p1a: Dugtrio|Dugtrio, M|211/211
+L	ab_0_14	94	|
+L	ab_0_14	95	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	96	|-damage|p2a: Zapdos|334/383|[from] Sandstorm
+L	ab_0_14	97	|-heal|p2a: Zapdos|357/383|[from] item: Leftovers
+L	ab_0_14	98	|upkeep
+L	ab_0_14	99	|turn|8
+L	ab_0_14	100	|
+L	ab_0_14	101	|t:|<NORMALIZED>
+L	ab_0_14	102	|move|p1a: Dugtrio|Hidden Power|p2a: Zapdos
+L	ab_0_14	103	|-resisted|p2a: Zapdos
+L	ab_0_14	104	|-damage|p2a: Zapdos|309/383
+L	ab_0_14	105	|move|p2a: Zapdos|Rest|p2a: Zapdos
+L	ab_0_14	106	|-status|p2a: Zapdos|slp|[from] move: Rest
+L	ab_0_14	107	|-heal|p2a: Zapdos|383/383 slp|[silent]
+L	ab_0_14	108	|
+L	ab_0_14	109	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	110	|-damage|p2a: Zapdos|360/383 slp|[from] Sandstorm
+L	ab_0_14	111	|-heal|p2a: Zapdos|383/383 slp|[from] item: Leftovers
+L	ab_0_14	112	|upkeep
+L	ab_0_14	113	|turn|9
+L	ab_0_14	114	|
+L	ab_0_14	115	|t:|<NORMALIZED>
+L	ab_0_14	116	|move|p1a: Dugtrio|Hidden Power|p2a: Zapdos
+L	ab_0_14	117	|-resisted|p2a: Zapdos
+L	ab_0_14	118	|-damage|p2a: Zapdos|329/383 slp
+L	ab_0_14	119	|cant|p2a: Zapdos|slp
+L	ab_0_14	120	|
+L	ab_0_14	121	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	122	|-damage|p2a: Zapdos|306/383 slp|[from] Sandstorm
+L	ab_0_14	123	|-heal|p2a: Zapdos|329/383 slp|[from] item: Leftovers
+L	ab_0_14	124	|upkeep
+L	ab_0_14	125	|turn|10
+L	ab_0_14	126	|
+L	ab_0_14	127	|t:|<NORMALIZED>
+L	ab_0_14	128	|move|p1a: Dugtrio|Hidden Power|p2a: Zapdos
+L	ab_0_14	129	|-resisted|p2a: Zapdos
+L	ab_0_14	130	|-damage|p2a: Zapdos|280/383 slp
+L	ab_0_14	131	|cant|p2a: Zapdos|slp
+L	ab_0_14	132	|
+L	ab_0_14	133	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	134	|-damage|p2a: Zapdos|257/383 slp|[from] Sandstorm
+L	ab_0_14	135	|-heal|p2a: Zapdos|280/383 slp|[from] item: Leftovers
+L	ab_0_14	136	|upkeep
+L	ab_0_14	137	|turn|11
+L	ab_0_14	138	|
+L	ab_0_14	139	|t:|<NORMALIZED>
+L	ab_0_14	140	|move|p1a: Dugtrio|Hidden Power|p2a: Zapdos
+L	ab_0_14	141	|-resisted|p2a: Zapdos
+L	ab_0_14	142	|-damage|p2a: Zapdos|230/383 slp
+L	ab_0_14	143	|-curestatus|p2a: Zapdos|slp|[msg]
+L	ab_0_14	144	|move|p2a: Zapdos|Roar|p1a: Dugtrio
+L	ab_0_14	145	|drag|p1a: Skarmory|Skarmory, M|316/333
+L	ab_0_14	146	|
+L	ab_0_14	147	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	148	|-damage|p2a: Zapdos|207/383|[from] Sandstorm
+L	ab_0_14	149	|-heal|p2a: Zapdos|230/383|[from] item: Leftovers
+L	ab_0_14	150	|-heal|p1a: Skarmory|333/333|[from] item: Leftovers
+L	ab_0_14	151	|upkeep
+L	ab_0_14	152	|turn|12
+L	ab_0_14	153	|
+L	ab_0_14	154	|t:|<NORMALIZED>
+L	ab_0_14	155	|move|p1a: Skarmory|Toxic|p2a: Zapdos
+L	ab_0_14	156	|-status|p2a: Zapdos|tox
+L	ab_0_14	157	|move|p2a: Zapdos|Roar|p1a: Skarmory
+L	ab_0_14	158	|drag|p1a: Starmie|Starmie|262/262
+L	ab_0_14	159	|
+L	ab_0_14	160	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	161	|-damage|p1a: Starmie|246/262|[from] Sandstorm
+L	ab_0_14	162	|-damage|p2a: Zapdos|207/383 tox|[from] Sandstorm
+L	ab_0_14	163	|-heal|p1a: Starmie|262/262|[from] item: Leftovers
+L	ab_0_14	164	|-heal|p2a: Zapdos|230/383 tox|[from] item: Leftovers
+L	ab_0_14	165	|-damage|p2a: Zapdos|207/383 tox|[from] psn
+L	ab_0_14	166	|upkeep
+L	ab_0_14	167	|turn|13
+L	ab_0_14	168	|
+L	ab_0_14	169	|t:|<NORMALIZED>
+L	ab_0_14	170	|move|p1a: Starmie|Rapid Spin|p2a: Zapdos
+L	ab_0_14	171	|-damage|p2a: Zapdos|193/383 tox
+L	ab_0_14	172	|move|p2a: Zapdos|Roar|p1a: Starmie
+L	ab_0_14	173	|drag|p1a: Skarmory|Skarmory, M|333/333
+L	ab_0_14	174	|
+L	ab_0_14	175	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	176	|-damage|p2a: Zapdos|170/383 tox|[from] Sandstorm
+L	ab_0_14	177	|-heal|p2a: Zapdos|193/383 tox|[from] item: Leftovers
+L	ab_0_14	178	|-damage|p2a: Zapdos|147/383 tox|[from] psn
+L	ab_0_14	179	|upkeep
+L	ab_0_14	180	|turn|14
+L	ab_0_14	181	|
+L	ab_0_14	182	|t:|<NORMALIZED>
+L	ab_0_14	183	|move|p2a: Zapdos|Roar|p1a: Skarmory
+L	ab_0_14	184	|drag|p1a: Tyranitar|Tyranitar, M|404/404
+L	ab_0_14	185	|
+L	ab_0_14	186	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	187	|-damage|p2a: Zapdos|124/383 tox|[from] Sandstorm
+L	ab_0_14	188	|-heal|p2a: Zapdos|147/383 tox|[from] item: Leftovers
+L	ab_0_14	189	|-damage|p2a: Zapdos|78/383 tox|[from] psn
+L	ab_0_14	190	|upkeep
+L	ab_0_14	191	|turn|15
+L	ab_0_14	192	|
+L	ab_0_14	193	|t:|<NORMALIZED>
+L	ab_0_14	194	|move|p2a: Zapdos|Rest|p2a: Zapdos
+L	ab_0_14	195	|-status|p2a: Zapdos|slp|[from] move: Rest
+L	ab_0_14	196	|-heal|p2a: Zapdos|383/383 slp|[silent]
+L	ab_0_14	197	|move|p1a: Tyranitar|Hidden Power|p2a: Zapdos
+L	ab_0_14	198	|-resisted|p2a: Zapdos
+L	ab_0_14	199	|-damage|p2a: Zapdos|347/383 slp
+L	ab_0_14	200	|
+L	ab_0_14	201	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	202	|-damage|p2a: Zapdos|324/383 slp|[from] Sandstorm
+L	ab_0_14	203	|-heal|p2a: Zapdos|347/383 slp|[from] item: Leftovers
+L	ab_0_14	204	|upkeep
+L	ab_0_14	205	|turn|16
+L	ab_0_14	206	|
+L	ab_0_14	207	|t:|<NORMALIZED>
+L	ab_0_14	208	|cant|p2a: Zapdos|slp
+L	ab_0_14	209	|move|p1a: Tyranitar|Hidden Power|p2a: Zapdos
+L	ab_0_14	210	|-resisted|p2a: Zapdos
+L	ab_0_14	211	|-damage|p2a: Zapdos|310/383 slp
+L	ab_0_14	212	|
+L	ab_0_14	213	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	214	|-damage|p2a: Zapdos|287/383 slp|[from] Sandstorm
+L	ab_0_14	215	|-heal|p2a: Zapdos|310/383 slp|[from] item: Leftovers
+L	ab_0_14	216	|upkeep
+L	ab_0_14	217	|turn|17
+L	ab_0_14	218	|
+L	ab_0_14	219	|t:|<NORMALIZED>
+L	ab_0_14	220	|cant|p2a: Zapdos|slp
+L	ab_0_14	221	|move|p1a: Tyranitar|Hidden Power|p2a: Zapdos
+L	ab_0_14	222	|-resisted|p2a: Zapdos
+L	ab_0_14	223	|-damage|p2a: Zapdos|274/383 slp
+L	ab_0_14	224	|
+L	ab_0_14	225	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	226	|-damage|p2a: Zapdos|251/383 slp|[from] Sandstorm
+L	ab_0_14	227	|-heal|p2a: Zapdos|274/383 slp|[from] item: Leftovers
+L	ab_0_14	228	|upkeep
+L	ab_0_14	229	|turn|18
+L	ab_0_14	230	|
+L	ab_0_14	231	|t:|<NORMALIZED>
+L	ab_0_14	232	|move|p1a: Tyranitar|Hidden Power|p2a: Zapdos
+L	ab_0_14	233	|-resisted|p2a: Zapdos
+L	ab_0_14	234	|-damage|p2a: Zapdos|239/383 slp
+L	ab_0_14	235	|-curestatus|p2a: Zapdos|slp|[msg]
+L	ab_0_14	236	|move|p2a: Zapdos|Roar|p1a: Tyranitar
+L	ab_0_14	237	|drag|p1a: Dugtrio|Dugtrio, M|211/211
+L	ab_0_14	238	|
+L	ab_0_14	239	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	240	|-damage|p2a: Zapdos|216/383|[from] Sandstorm
+L	ab_0_14	241	|-heal|p2a: Zapdos|239/383|[from] item: Leftovers
+L	ab_0_14	242	|upkeep
+L	ab_0_14	243	|turn|19
+L	ab_0_14	244	|
+L	ab_0_14	245	|t:|<NORMALIZED>
+L	ab_0_14	246	|move|p1a: Dugtrio|Beat Up|p2a: Zapdos
+L	ab_0_14	247	|-damage|p2a: Zapdos|232/383
+L	ab_0_14	248	|-damage|p2a: Zapdos|224/383
+L	ab_0_14	249	|-damage|p2a: Zapdos|211/383
+L	ab_0_14	250	|-crit|p2a: Zapdos
+L	ab_0_14	251	|-damage|p2a: Zapdos|195/383
+L	ab_0_14	252	|-damage|p2a: Zapdos|184/383
+L	ab_0_14	253	|-damage|p2a: Zapdos|176/383
+L	ab_0_14	254	|-hitcount|p2a: Zapdos|6
+L	ab_0_14	255	|move|p2a: Zapdos|Thunderbolt|p1a: Dugtrio
+L	ab_0_14	256	|-immune|p1a: Dugtrio
+L	ab_0_14	257	|
+L	ab_0_14	258	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	259	|-damage|p2a: Zapdos|153/383|[from] Sandstorm
+L	ab_0_14	260	|-heal|p2a: Zapdos|176/383|[from] item: Leftovers
+L	ab_0_14	261	|upkeep
+L	ab_0_14	262	|turn|20
+L	ab_0_14	263	|
+L	ab_0_14	264	|t:|<NORMALIZED>
+L	ab_0_14	265	|move|p1a: Dugtrio|Beat Up|p2a: Zapdos
+L	ab_0_14	266	|-damage|p2a: Zapdos|168/383
+L	ab_0_14	267	|-damage|p2a: Zapdos|161/383
+L	ab_0_14	268	|-damage|p2a: Zapdos|147/383
+L	ab_0_14	269	|-damage|p2a: Zapdos|139/383
+L	ab_0_14	270	|-crit|p2a: Zapdos
+L	ab_0_14	271	|-damage|p2a: Zapdos|119/383
+L	ab_0_14	272	|-crit|p2a: Zapdos
+L	ab_0_14	273	|-damage|p2a: Zapdos|104/383
+L	ab_0_14	274	|-hitcount|p2a: Zapdos|6
+L	ab_0_14	275	|move|p2a: Zapdos|Hidden Power|p1a: Dugtrio
+L	ab_0_14	276	|-supereffective|p1a: Dugtrio
+L	ab_0_14	277	|-damage|p1a: Dugtrio|29/211
+L	ab_0_14	278	|
+L	ab_0_14	279	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	280	|-damage|p2a: Zapdos|81/383|[from] Sandstorm
+L	ab_0_14	281	|-heal|p2a: Zapdos|104/383|[from] item: Leftovers
+L	ab_0_14	282	|upkeep
+L	ab_0_14	283	|turn|21
+L	ab_0_14	284	|
+L	ab_0_14	285	|t:|<NORMALIZED>
+L	ab_0_14	286	|move|p1a: Dugtrio|Beat Up|p2a: Zapdos
+L	ab_0_14	287	|-damage|p2a: Zapdos|96/383
+L	ab_0_14	288	|-damage|p2a: Zapdos|89/383
+L	ab_0_14	289	|-damage|p2a: Zapdos|77/383
+L	ab_0_14	290	|-damage|p2a: Zapdos|69/383
+L	ab_0_14	291	|-damage|p2a: Zapdos|58/383
+L	ab_0_14	292	|-damage|p2a: Zapdos|51/383
+L	ab_0_14	293	|-hitcount|p2a: Zapdos|6
+L	ab_0_14	294	|move|p2a: Zapdos|Thunderbolt|p1a: Dugtrio
+L	ab_0_14	295	|-immune|p1a: Dugtrio
+L	ab_0_14	296	|
+L	ab_0_14	297	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	298	|-damage|p2a: Zapdos|28/383|[from] Sandstorm
+L	ab_0_14	299	|-heal|p2a: Zapdos|51/383|[from] item: Leftovers
+L	ab_0_14	300	|upkeep
+L	ab_0_14	301	|turn|22
+L	ab_0_14	302	|
+L	ab_0_14	303	|t:|<NORMALIZED>
+L	ab_0_14	304	|switch|p1a: Tyranitar|Tyranitar, M|404/404
+L	ab_0_14	305	|move|p2a: Zapdos|Hidden Power|p1a: Tyranitar
+L	ab_0_14	306	|-supereffective|p1a: Tyranitar
+L	ab_0_14	307	|-damage|p1a: Tyranitar|267/404
+L	ab_0_14	308	|
+L	ab_0_14	309	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	310	|-damage|p2a: Zapdos|28/383|[from] Sandstorm
+L	ab_0_14	311	|-heal|p2a: Zapdos|51/383|[from] item: Leftovers
+L	ab_0_14	312	|upkeep
+L	ab_0_14	313	|turn|23
+L	ab_0_14	314	|
+L	ab_0_14	315	|t:|<NORMALIZED>
+L	ab_0_14	316	|switch|p1a: Dugtrio|Dugtrio, M|29/211
+L	ab_0_14	317	|move|p2a: Zapdos|Thunderbolt|p1a: Dugtrio
+L	ab_0_14	318	|-immune|p1a: Dugtrio
+L	ab_0_14	319	|
+L	ab_0_14	320	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	321	|-damage|p2a: Zapdos|28/383|[from] Sandstorm
+L	ab_0_14	322	|-heal|p2a: Zapdos|51/383|[from] item: Leftovers
+L	ab_0_14	323	|upkeep
+L	ab_0_14	324	|turn|24
+L	ab_0_14	325	|
+L	ab_0_14	326	|t:|<NORMALIZED>
+L	ab_0_14	327	|move|p1a: Dugtrio|Aerial Ace|p2a: Zapdos
+L	ab_0_14	328	|-resisted|p2a: Zapdos
+L	ab_0_14	329	|-crit|p2a: Zapdos
+L	ab_0_14	330	|-damage|p2a: Zapdos|0 fnt
+L	ab_0_14	331	|faint|p2a: Zapdos
+L	ab_0_14	332	|
+L	ab_0_14	333	|t:|<NORMALIZED>
+L	ab_0_14	334	|switch|p2a: Vaporeon|Vaporeon, M|463/463
+L	ab_0_14	335	|
+L	ab_0_14	336	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	337	|-damage|p2a: Vaporeon|435/463|[from] Sandstorm
+L	ab_0_14	338	|-heal|p2a: Vaporeon|463/463|[from] item: Leftovers
+L	ab_0_14	339	|upkeep
+L	ab_0_14	340	|turn|25
+L	ab_0_14	341	|
+L	ab_0_14	342	|t:|<NORMALIZED>
+L	ab_0_14	343	|move|p1a: Dugtrio|Aerial Ace|p2a: Vaporeon
+L	ab_0_14	344	|-damage|p2a: Vaporeon|388/463
+L	ab_0_14	345	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_14	346	|-start|p2a: Vaporeon|Substitute
+L	ab_0_14	347	|-damage|p2a: Vaporeon|273/463
+L	ab_0_14	348	|
+L	ab_0_14	349	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	350	|-damage|p2a: Vaporeon|245/463|[from] Sandstorm
+L	ab_0_14	351	|-heal|p2a: Vaporeon|273/463|[from] item: Leftovers
+L	ab_0_14	352	|upkeep
+L	ab_0_14	353	|turn|26
+L	ab_0_14	354	|
+L	ab_0_14	355	|t:|<NORMALIZED>
+L	ab_0_14	356	|move|p1a: Dugtrio|Aerial Ace|p2a: Vaporeon
+L	ab_0_14	357	|-activate|p2a: Vaporeon|Substitute|[damage]
+L	ab_0_14	358	|move|p2a: Vaporeon|Toxic|p1a: Dugtrio
+L	ab_0_14	359	|-status|p1a: Dugtrio|tox
+L	ab_0_14	360	|
+L	ab_0_14	361	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	362	|-damage|p2a: Vaporeon|245/463|[from] Sandstorm
+L	ab_0_14	363	|-damage|p1a: Dugtrio|16/211 tox|[from] psn
+L	ab_0_14	364	|-heal|p2a: Vaporeon|273/463|[from] item: Leftovers
+L	ab_0_14	365	|upkeep
+L	ab_0_14	366	|turn|27
+L	ab_0_14	367	|
+L	ab_0_14	368	|t:|<NORMALIZED>
+L	ab_0_14	369	|move|p1a: Dugtrio|Aerial Ace|p2a: Vaporeon
+L	ab_0_14	370	|-end|p2a: Vaporeon|Substitute
+L	ab_0_14	371	|move|p2a: Vaporeon|Toxic|p1a: Dugtrio
+L	ab_0_14	372	|-fail|p1a: Dugtrio|tox
+L	ab_0_14	373	|
+L	ab_0_14	374	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	375	|-damage|p2a: Vaporeon|245/463|[from] Sandstorm
+L	ab_0_14	376	|-damage|p1a: Dugtrio|0 fnt|[from] psn
+L	ab_0_14	377	|faint|p1a: Dugtrio
+L	ab_0_14	378	|-heal|p2a: Vaporeon|273/463|[from] item: Leftovers
+L	ab_0_14	379	|upkeep
+L	ab_0_14	380	|
+L	ab_0_14	381	|t:|<NORMALIZED>
+L	ab_0_14	382	|switch|p1a: Starmie|Starmie|262/262
+L	ab_0_14	383	|turn|28
+L	ab_0_14	384	|
+L	ab_0_14	385	|t:|<NORMALIZED>
+L	ab_0_14	386	|move|p1a: Starmie|Ice Beam|p2a: Vaporeon
+L	ab_0_14	387	|-resisted|p2a: Vaporeon
+L	ab_0_14	388	|-damage|p2a: Vaporeon|227/463
+L	ab_0_14	389	|move|p2a: Vaporeon|Toxic|p1a: Starmie
+L	ab_0_14	390	|-status|p1a: Starmie|tox
+L	ab_0_14	391	|
+L	ab_0_14	392	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	393	|-damage|p1a: Starmie|246/262 tox|[from] Sandstorm
+L	ab_0_14	394	|-damage|p2a: Vaporeon|199/463|[from] Sandstorm
+L	ab_0_14	395	|-heal|p1a: Starmie|262/262 tox|[from] item: Leftovers
+L	ab_0_14	396	|-damage|p1a: Starmie|246/262 tox|[from] psn
+L	ab_0_14	397	|-heal|p2a: Vaporeon|227/463|[from] item: Leftovers
+L	ab_0_14	398	|upkeep
+L	ab_0_14	399	|turn|29
+L	ab_0_14	400	|
+L	ab_0_14	401	|t:|<NORMALIZED>
+L	ab_0_14	402	|switch|p2a: Metagross|Metagross|312/343
+L	ab_0_14	403	|move|p1a: Starmie|Rapid Spin|p2a: Metagross
+L	ab_0_14	404	|-resisted|p2a: Metagross
+L	ab_0_14	405	|-damage|p2a: Metagross|308/343
+L	ab_0_14	406	|
+L	ab_0_14	407	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	408	|-damage|p1a: Starmie|230/262 tox|[from] Sandstorm
+L	ab_0_14	409	|-heal|p1a: Starmie|246/262 tox|[from] item: Leftovers
+L	ab_0_14	410	|-damage|p1a: Starmie|214/262 tox|[from] psn
+L	ab_0_14	411	|upkeep
+L	ab_0_14	412	|turn|30
+L	ab_0_14	413	|
+L	ab_0_14	414	|t:|<NORMALIZED>
+L	ab_0_14	415	|move|p1a: Starmie|Rapid Spin|p2a: Metagross
+L	ab_0_14	416	|-resisted|p2a: Metagross
+L	ab_0_14	417	|-damage|p2a: Metagross|304/343
+L	ab_0_14	418	|move|p2a: Metagross|Rock Slide|p1a: Starmie
+L	ab_0_14	419	|-damage|p1a: Starmie|103/262 tox
+L	ab_0_14	420	|
+L	ab_0_14	421	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	422	|-damage|p1a: Starmie|87/262 tox|[from] Sandstorm
+L	ab_0_14	423	|-heal|p1a: Starmie|103/262 tox|[from] item: Leftovers
+L	ab_0_14	424	|-damage|p1a: Starmie|55/262 tox|[from] psn
+L	ab_0_14	425	|upkeep
+L	ab_0_14	426	|turn|31
+L	ab_0_14	427	|
+L	ab_0_14	428	|t:|<NORMALIZED>
+L	ab_0_14	429	|move|p1a: Starmie|Rapid Spin|p2a: Metagross
+L	ab_0_14	430	|-resisted|p2a: Metagross
+L	ab_0_14	431	|-damage|p2a: Metagross|300/343
+L	ab_0_14	432	|move|p2a: Metagross|Rock Slide|p1a: Starmie
+L	ab_0_14	433	|-damage|p1a: Starmie|0 fnt
+L	ab_0_14	434	|faint|p1a: Starmie
+L	ab_0_14	435	|
+L	ab_0_14	436	|t:|<NORMALIZED>
+L	ab_0_14	437	|switch|p1a: Skarmory|Skarmory, M|333/333
+L	ab_0_14	438	|
+L	ab_0_14	439	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	440	|upkeep
+L	ab_0_14	441	|turn|32
+L	ab_0_14	442	|
+L	ab_0_14	443	|t:|<NORMALIZED>
+L	ab_0_14	444	|move|p2a: Metagross|Rock Slide|p1a: Skarmory
+L	ab_0_14	445	|-damage|p1a: Skarmory|261/333
+L	ab_0_14	446	|move|p1a: Skarmory|Toxic|p2a: Metagross
+L	ab_0_14	447	|-immune|p2a: Metagross
+L	ab_0_14	448	|
+L	ab_0_14	449	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	450	|-heal|p1a: Skarmory|281/333|[from] item: Leftovers
+L	ab_0_14	451	|upkeep
+L	ab_0_14	452	|turn|33
+L	ab_0_14	453	|
+L	ab_0_14	454	|t:|<NORMALIZED>
+L	ab_0_14	455	|move|p2a: Metagross|Meteor Mash|p1a: Skarmory
+L	ab_0_14	456	|-resisted|p1a: Skarmory
+L	ab_0_14	457	|-damage|p1a: Skarmory|205/333
+L	ab_0_14	458	|move|p1a: Skarmory|Roar|p2a: Metagross
+L	ab_0_14	459	|drag|p2a: Claydol|Claydol|324/324
+L	ab_0_14	460	|
+L	ab_0_14	461	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	462	|-heal|p1a: Skarmory|225/333|[from] item: Leftovers
+L	ab_0_14	463	|upkeep
+L	ab_0_14	464	|turn|34
+L	ab_0_14	465	|
+L	ab_0_14	466	|t:|<NORMALIZED>
+L	ab_0_14	467	|move|p2a: Claydol|Rest|p2a: Claydol
+L	ab_0_14	468	|-fail|p2a: Claydol|heal
+L	ab_0_14	469	|move|p1a: Skarmory|Drill Peck|p2a: Claydol
+L	ab_0_14	470	|-damage|p2a: Claydol|254/324
+L	ab_0_14	471	|
+L	ab_0_14	472	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	473	|-heal|p2a: Claydol|274/324|[from] item: Leftovers
+L	ab_0_14	474	|-heal|p1a: Skarmory|245/333|[from] item: Leftovers
+L	ab_0_14	475	|upkeep
+L	ab_0_14	476	|turn|35
+L	ab_0_14	477	|
+L	ab_0_14	478	|t:|<NORMALIZED>
+L	ab_0_14	479	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	480	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	481	|move|p2a: Claydol|Rest|p2a: Claydol
+L	ab_0_14	482	|-status|p2a: Claydol|slp|[from] move: Rest
+L	ab_0_14	483	|-heal|p2a: Claydol|324/324 slp|[silent]
+L	ab_0_14	484	|
+L	ab_0_14	485	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	486	|-heal|p1a: Skarmory|265/333|[from] item: Leftovers
+L	ab_0_14	487	|upkeep
+L	ab_0_14	488	|turn|36
+L	ab_0_14	489	|
+L	ab_0_14	490	|t:|<NORMALIZED>
+L	ab_0_14	491	|cant|p2a: Claydol|slp
+L	ab_0_14	492	|move|p1a: Skarmory|Roar|p2a: Claydol
+L	ab_0_14	493	|drag|p2a: Vaporeon|Vaporeon, M|227/463
+L	ab_0_14	494	|
+L	ab_0_14	495	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	496	|-damage|p2a: Vaporeon|199/463|[from] Sandstorm
+L	ab_0_14	497	|-heal|p1a: Skarmory|285/333|[from] item: Leftovers
+L	ab_0_14	498	|-heal|p2a: Vaporeon|227/463|[from] item: Leftovers
+L	ab_0_14	499	|upkeep
+L	ab_0_14	500	|turn|37
+L	ab_0_14	501	|
+L	ab_0_14	502	|t:|<NORMALIZED>
+L	ab_0_14	503	|switch|p2a: Metagross|Metagross|300/343
+L	ab_0_14	504	|move|p1a: Skarmory|Toxic|p2a: Metagross|[miss]
+L	ab_0_14	505	|-miss|p1a: Skarmory|p2a: Metagross
+L	ab_0_14	506	|
+L	ab_0_14	507	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	508	|-heal|p1a: Skarmory|305/333|[from] item: Leftovers
+L	ab_0_14	509	|upkeep
+L	ab_0_14	510	|turn|38
+L	ab_0_14	511	|
+L	ab_0_14	512	|t:|<NORMALIZED>
+L	ab_0_14	513	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	514	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	515	|move|p2a: Metagross|Explosion|p1a: Skarmory
+L	ab_0_14	516	|-activate|p1a: Skarmory|Protect
+L	ab_0_14	517	|faint|p2a: Metagross
+L	ab_0_14	518	|
+L	ab_0_14	519	|t:|<NORMALIZED>
+L	ab_0_14	520	|switch|p2a: Dragonite|Dragonite, M|336/336
+L	ab_0_14	521	|
+L	ab_0_14	522	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	523	|-damage|p2a: Dragonite|315/336|[from] Sandstorm
+L	ab_0_14	524	|-heal|p2a: Dragonite|336/336|[from] item: Leftovers
+L	ab_0_14	525	|-heal|p1a: Skarmory|325/333|[from] item: Leftovers
+L	ab_0_14	526	|upkeep
+L	ab_0_14	527	|turn|39
+L	ab_0_14	528	|
+L	ab_0_14	529	|t:|<NORMALIZED>
+L	ab_0_14	530	|move|p2a: Dragonite|Dragon Dance|p2a: Dragonite
+L	ab_0_14	531	|-boost|p2a: Dragonite|atk|1
+L	ab_0_14	532	|-boost|p2a: Dragonite|spe|1
+L	ab_0_14	533	|move|p1a: Skarmory|Roar|p2a: Dragonite
+L	ab_0_14	534	|drag|p2a: Vaporeon|Vaporeon, M|227/463
+L	ab_0_14	535	|
+L	ab_0_14	536	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	537	|-damage|p2a: Vaporeon|199/463|[from] Sandstorm
+L	ab_0_14	538	|-heal|p1a: Skarmory|333/333|[from] item: Leftovers
+L	ab_0_14	539	|-heal|p2a: Vaporeon|227/463|[from] item: Leftovers
+L	ab_0_14	540	|upkeep
+L	ab_0_14	541	|turn|40
+L	ab_0_14	542	|
+L	ab_0_14	543	|t:|<NORMALIZED>
+L	ab_0_14	544	|switch|p2a: Magneton|Magneton|241/241
+L	ab_0_14	545	|move|p1a: Skarmory|Drill Peck|p2a: Magneton
+L	ab_0_14	546	|-resisted|p2a: Magneton
+L	ab_0_14	547	|-damage|p2a: Magneton|220/241
+L	ab_0_14	548	|
+L	ab_0_14	549	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	550	|upkeep
+L	ab_0_14	551	|turn|41
+L	ab_0_14	552	|
+L	ab_0_14	553	|t:|<NORMALIZED>
+L	ab_0_14	554	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	555	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	556	|move|p2a: Magneton|Thunderbolt|p1a: Skarmory
+L	ab_0_14	557	|-activate|p1a: Skarmory|Protect
+L	ab_0_14	558	|
+L	ab_0_14	559	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	560	|upkeep
+L	ab_0_14	561	|turn|42
+L	ab_0_14	562	|
+L	ab_0_14	563	|t:|<NORMALIZED>
+L	ab_0_14	564	|move|p2a: Magneton|Sunny Day|p2a: Magneton
+L	ab_0_14	565	|-weather|SunnyDay
+L	ab_0_14	566	|move|p1a: Skarmory|Toxic|p2a: Magneton
+L	ab_0_14	567	|-immune|p2a: Magneton
+L	ab_0_14	568	|
+L	ab_0_14	569	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	570	|upkeep
+L	ab_0_14	571	|turn|43
+L	ab_0_14	572	|
+L	ab_0_14	573	|t:|<NORMALIZED>
+L	ab_0_14	574	|move|p2a: Magneton|Sunny Day||[still]
+L	ab_0_14	575	|-fail|p2a: Magneton
+L	ab_0_14	576	|move|p1a: Skarmory|Toxic|p2a: Magneton
+L	ab_0_14	577	|-immune|p2a: Magneton
+L	ab_0_14	578	|
+L	ab_0_14	579	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	580	|upkeep
+L	ab_0_14	581	|turn|44
+L	ab_0_14	582	|
+L	ab_0_14	583	|t:|<NORMALIZED>
+L	ab_0_14	584	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	585	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	586	|move|p2a: Magneton|Thunderbolt|p1a: Skarmory
+L	ab_0_14	587	|-activate|p1a: Skarmory|Protect
+L	ab_0_14	588	|
+L	ab_0_14	589	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	590	|upkeep
+L	ab_0_14	591	|turn|45
+L	ab_0_14	592	|
+L	ab_0_14	593	|t:|<NORMALIZED>
+L	ab_0_14	594	|move|p1a: Skarmory|Protect||[still]
+L	ab_0_14	595	|-fail|p1a: Skarmory
+L	ab_0_14	596	|move|p2a: Magneton|Toxic|p1a: Skarmory
+L	ab_0_14	597	|-immune|p1a: Skarmory
+L	ab_0_14	598	|
+L	ab_0_14	599	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	600	|upkeep
+L	ab_0_14	601	|turn|46
+L	ab_0_14	602	|
+L	ab_0_14	603	|t:|<NORMALIZED>
+L	ab_0_14	604	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	605	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	606	|move|p2a: Magneton|Thunderbolt|p1a: Skarmory
+L	ab_0_14	607	|-activate|p1a: Skarmory|Protect
+L	ab_0_14	608	|
+L	ab_0_14	609	|-weather|none
+L	ab_0_14	610	|upkeep
+L	ab_0_14	611	|turn|47
+L	ab_0_14	612	|
+L	ab_0_14	613	|t:|<NORMALIZED>
+L	ab_0_14	614	|move|p2a: Magneton|Sunny Day|p2a: Magneton
+L	ab_0_14	615	|-weather|SunnyDay
+L	ab_0_14	616	|move|p1a: Skarmory|Roar|p2a: Magneton
+L	ab_0_14	617	|drag|p2a: Vaporeon|Vaporeon, M|227/463
+L	ab_0_14	618	|
+L	ab_0_14	619	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	620	|-heal|p2a: Vaporeon|255/463|[from] item: Leftovers
+L	ab_0_14	621	|upkeep
+L	ab_0_14	622	|turn|48
+L	ab_0_14	623	|
+L	ab_0_14	624	|t:|<NORMALIZED>
+L	ab_0_14	625	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	626	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	627	|move|p2a: Vaporeon|Toxic|p1a: Skarmory
+L	ab_0_14	628	|-activate|p1a: Skarmory|Protect
+L	ab_0_14	629	|
+L	ab_0_14	630	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	631	|-heal|p2a: Vaporeon|283/463|[from] item: Leftovers
+L	ab_0_14	632	|upkeep
+L	ab_0_14	633	|turn|49
+L	ab_0_14	634	|
+L	ab_0_14	635	|t:|<NORMALIZED>
+L	ab_0_14	636	|move|p2a: Vaporeon|Toxic|p1a: Skarmory
+L	ab_0_14	637	|-immune|p1a: Skarmory
+L	ab_0_14	638	|move|p1a: Skarmory|Roar|p2a: Vaporeon
+L	ab_0_14	639	|drag|p2a: Claydol|Claydol|324/324 slp
+L	ab_0_14	640	|
+L	ab_0_14	641	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	642	|upkeep
+L	ab_0_14	643	|turn|50
+L	ab_0_14	644	|
+L	ab_0_14	645	|t:|<NORMALIZED>
+L	ab_0_14	646	|switch|p2a: Dragonite|Dragonite, M|336/336
+L	ab_0_14	647	|move|p1a: Skarmory|Drill Peck|p2a: Dragonite
+L	ab_0_14	648	|-damage|p2a: Dragonite|247/336
+L	ab_0_14	649	|
+L	ab_0_14	650	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	651	|-heal|p2a: Dragonite|268/336|[from] item: Leftovers
+L	ab_0_14	652	|upkeep
+L	ab_0_14	653	|turn|51
+L	ab_0_14	654	|
+L	ab_0_14	655	|t:|<NORMALIZED>
+L	ab_0_14	656	|move|p2a: Dragonite|Outrage|p1a: Skarmory
+L	ab_0_14	657	|-resisted|p1a: Skarmory
+L	ab_0_14	658	|-damage|p1a: Skarmory|282/333
+L	ab_0_14	659	|move|p1a: Skarmory|Drill Peck|p2a: Dragonite
+L	ab_0_14	660	|-damage|p2a: Dragonite|170/336
+L	ab_0_14	661	|
+L	ab_0_14	662	|-weather|none
+L	ab_0_14	663	|-heal|p2a: Dragonite|191/336|[from] item: Leftovers
+L	ab_0_14	664	|-heal|p1a: Skarmory|302/333|[from] item: Leftovers
+L	ab_0_14	665	|upkeep
+L	ab_0_14	666	|turn|52
+L	ab_0_14	667	|
+L	ab_0_14	668	|t:|<NORMALIZED>
+L	ab_0_14	669	|move|p2a: Dragonite|Outrage|p1a: Skarmory|[from] lockedmove
+L	ab_0_14	670	|-resisted|p1a: Skarmory
+L	ab_0_14	671	|-damage|p1a: Skarmory|246/333
+L	ab_0_14	672	|move|p1a: Skarmory|Drill Peck|p2a: Dragonite
+L	ab_0_14	673	|-damage|p2a: Dragonite|100/336
+L	ab_0_14	674	|
+L	ab_0_14	675	|-heal|p2a: Dragonite|121/336|[from] item: Leftovers
+L	ab_0_14	676	|-heal|p1a: Skarmory|266/333|[from] item: Leftovers
+L	ab_0_14	677	|-start|p2a: Dragonite|confusion|[fatigue]
+L	ab_0_14	678	|upkeep
+L	ab_0_14	679	|turn|53
+L	ab_0_14	680	|
+L	ab_0_14	681	|t:|<NORMALIZED>
+L	ab_0_14	682	|-activate|p2a: Dragonite|confusion
+L	ab_0_14	683	|move|p2a: Dragonite|Dragon Dance|p2a: Dragonite
+L	ab_0_14	684	|-boost|p2a: Dragonite|atk|1
+L	ab_0_14	685	|-boost|p2a: Dragonite|spe|1
+L	ab_0_14	686	|move|p1a: Skarmory|Drill Peck|p2a: Dragonite
+L	ab_0_14	687	|-damage|p2a: Dragonite|35/336
+L	ab_0_14	688	|
+L	ab_0_14	689	|-heal|p2a: Dragonite|56/336|[from] item: Leftovers
+L	ab_0_14	690	|-heal|p1a: Skarmory|286/333|[from] item: Leftovers
+L	ab_0_14	691	|upkeep
+L	ab_0_14	692	|turn|54
+L	ab_0_14	693	|
+L	ab_0_14	694	|t:|<NORMALIZED>
+L	ab_0_14	695	|-end|p2a: Dragonite|confusion
+L	ab_0_14	696	|move|p2a: Dragonite|Thunderbolt|p1a: Skarmory
+L	ab_0_14	697	|-supereffective|p1a: Skarmory
+L	ab_0_14	698	|-damage|p1a: Skarmory|151/333
+L	ab_0_14	699	|move|p1a: Skarmory|Drill Peck|p2a: Dragonite
+L	ab_0_14	700	|-damage|p2a: Dragonite|0 fnt
+L	ab_0_14	701	|faint|p2a: Dragonite
+L	ab_0_14	702	|
+L	ab_0_14	703	|t:|<NORMALIZED>
+L	ab_0_14	704	|switch|p2a: Vaporeon|Vaporeon, M|283/463
+L	ab_0_14	705	|
+L	ab_0_14	706	|-heal|p1a: Skarmory|171/333|[from] item: Leftovers
+L	ab_0_14	707	|-heal|p2a: Vaporeon|311/463|[from] item: Leftovers
+L	ab_0_14	708	|upkeep
+L	ab_0_14	709	|turn|55
+L	ab_0_14	710	|
+L	ab_0_14	711	|t:|<NORMALIZED>
+L	ab_0_14	712	|move|p1a: Skarmory|Drill Peck|p2a: Vaporeon
+L	ab_0_14	713	|-damage|p2a: Vaporeon|228/463
+L	ab_0_14	714	|move|p2a: Vaporeon|Ice Beam|p1a: Skarmory
+L	ab_0_14	715	|-damage|p1a: Skarmory|99/333
+L	ab_0_14	716	|
+L	ab_0_14	717	|-heal|p1a: Skarmory|119/333|[from] item: Leftovers
+L	ab_0_14	718	|-heal|p2a: Vaporeon|256/463|[from] item: Leftovers
+L	ab_0_14	719	|upkeep
+L	ab_0_14	720	|turn|56
+L	ab_0_14	721	|
+L	ab_0_14	722	|t:|<NORMALIZED>
+L	ab_0_14	723	|switch|p1a: Tyranitar|Tyranitar, M|267/404
+L	ab_0_14	724	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_0_14	725	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_14	726	|-start|p2a: Vaporeon|Substitute
+L	ab_0_14	727	|-damage|p2a: Vaporeon|141/463
+L	ab_0_14	728	|
+L	ab_0_14	729	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	730	|-damage|p2a: Vaporeon|113/463|[from] Sandstorm
+L	ab_0_14	731	|-heal|p2a: Vaporeon|141/463|[from] item: Leftovers
+L	ab_0_14	732	|upkeep
+L	ab_0_14	733	|turn|57
+L	ab_0_14	734	|
+L	ab_0_14	735	|t:|<NORMALIZED>
+L	ab_0_14	736	|switch|p2a: Claydol|Claydol|324/324 slp
+L	ab_0_14	737	|move|p1a: Tyranitar|Surf|p2a: Claydol
+L	ab_0_14	738	|-supereffective|p2a: Claydol
+L	ab_0_14	739	|-damage|p2a: Claydol|155/324 slp
+L	ab_0_14	740	|
+L	ab_0_14	741	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	742	|-heal|p2a: Claydol|175/324 slp|[from] item: Leftovers
+L	ab_0_14	743	|upkeep
+L	ab_0_14	744	|turn|58
+L	ab_0_14	745	|
+L	ab_0_14	746	|t:|<NORMALIZED>
+L	ab_0_14	747	|cant|p2a: Claydol|slp
+L	ab_0_14	748	|move|p1a: Tyranitar|Surf|p2a: Claydol
+L	ab_0_14	749	|-supereffective|p2a: Claydol
+L	ab_0_14	750	|-damage|p2a: Claydol|0 fnt
+L	ab_0_14	751	|faint|p2a: Claydol
+L	ab_0_14	752	|
+L	ab_0_14	753	|t:|<NORMALIZED>
+L	ab_0_14	754	|switch|p2a: Vaporeon|Vaporeon, M|141/463
+L	ab_0_14	755	|
+L	ab_0_14	756	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	757	|-damage|p2a: Vaporeon|113/463|[from] Sandstorm
+L	ab_0_14	758	|-heal|p2a: Vaporeon|141/463|[from] item: Leftovers
+L	ab_0_14	759	|upkeep
+L	ab_0_14	760	|turn|59
+L	ab_0_14	761	|
+L	ab_0_14	762	|t:|<NORMALIZED>
+L	ab_0_14	763	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_14	764	|-start|p2a: Vaporeon|Substitute
+L	ab_0_14	765	|-damage|p2a: Vaporeon|26/463
+L	ab_0_14	766	|move|p1a: Tyranitar|Surf|p2a: Vaporeon
+L	ab_0_14	767	|-heal|p2a: Vaporeon|141/463|[from] ability: Water Absorb|[of] p1a: Tyranitar
+L	ab_0_14	768	|
+L	ab_0_14	769	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	770	|-damage|p2a: Vaporeon|113/463|[from] Sandstorm
+L	ab_0_14	771	|-heal|p2a: Vaporeon|141/463|[from] item: Leftovers
+L	ab_0_14	772	|upkeep
+L	ab_0_14	773	|turn|60
+L	ab_0_14	774	|
+L	ab_0_14	775	|t:|<NORMALIZED>
+L	ab_0_14	776	|switch|p1a: Gengar|Gengar, M|261/261
+L	ab_0_14	777	|move|p2a: Vaporeon|Ice Beam|p1a: Gengar
+L	ab_0_14	778	|-damage|p1a: Gengar|162/261
+L	ab_0_14	779	|
+L	ab_0_14	780	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	781	|-damage|p1a: Gengar|146/261|[from] Sandstorm
+L	ab_0_14	782	|-damage|p2a: Vaporeon|113/463|[from] Sandstorm
+L	ab_0_14	783	|-heal|p1a: Gengar|162/261|[from] item: Leftovers
+L	ab_0_14	784	|-heal|p2a: Vaporeon|141/463|[from] item: Leftovers
+L	ab_0_14	785	|upkeep
+L	ab_0_14	786	|turn|61
+L	ab_0_14	787	|
+L	ab_0_14	788	|t:|<NORMALIZED>
+L	ab_0_14	789	|move|p1a: Gengar|Taunt|p2a: Vaporeon
+L	ab_0_14	790	|-start|p2a: Vaporeon|move: Taunt
+L	ab_0_14	791	|move|p2a: Vaporeon|Hydro Pump|p1a: Gengar
+L	ab_0_14	792	|-crit|p1a: Gengar
+L	ab_0_14	793	|-damage|p1a: Gengar|0 fnt
+L	ab_0_14	794	|faint|p1a: Gengar
+L	ab_0_14	795	|
+L	ab_0_14	796	|t:|<NORMALIZED>
+L	ab_0_14	797	|switch|p1a: Swampert|Swampert, M|164/341
+L	ab_0_14	798	|
+L	ab_0_14	799	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	800	|-damage|p2a: Vaporeon|113/463|[from] Sandstorm
+L	ab_0_14	801	|-heal|p1a: Swampert|185/341|[from] item: Leftovers
+L	ab_0_14	802	|-heal|p2a: Vaporeon|141/463|[from] item: Leftovers
+L	ab_0_14	803	|upkeep
+L	ab_0_14	804	|turn|62
+L	ab_0_14	805	|
+L	ab_0_14	806	|t:|<NORMALIZED>
+L	ab_0_14	807	|move|p1a: Swampert|Hydro Pump|p2a: Vaporeon
+L	ab_0_14	808	|-heal|p2a: Vaporeon|256/463|[from] ability: Water Absorb|[of] p1a: Swampert
+L	ab_0_14	809	|move|p2a: Vaporeon|Ice Beam|p1a: Swampert
+L	ab_0_14	810	|-damage|p1a: Swampert|90/341
+L	ab_0_14	811	|
+L	ab_0_14	812	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	813	|-damage|p2a: Vaporeon|228/463|[from] Sandstorm
+L	ab_0_14	814	|-heal|p1a: Swampert|111/341|[from] item: Leftovers
+L	ab_0_14	815	|-heal|p2a: Vaporeon|256/463|[from] item: Leftovers
+L	ab_0_14	816	|-end|p2a: Vaporeon|move: Taunt|[silent]
+L	ab_0_14	817	|upkeep
+L	ab_0_14	818	|turn|63
+L	ab_0_14	819	|
+L	ab_0_14	820	|t:|<NORMALIZED>
+L	ab_0_14	821	|switch|p1a: Skarmory|Skarmory, M|119/333
+L	ab_0_14	822	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_14	823	|-fail|p2a: Vaporeon|move: Substitute
+L	ab_0_14	824	|
+L	ab_0_14	825	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	826	|-damage|p2a: Vaporeon|228/463|[from] Sandstorm
+L	ab_0_14	827	|-heal|p1a: Skarmory|139/333|[from] item: Leftovers
+L	ab_0_14	828	|-heal|p2a: Vaporeon|256/463|[from] item: Leftovers
+L	ab_0_14	829	|upkeep
+L	ab_0_14	830	|turn|64
+L	ab_0_14	831	|
+L	ab_0_14	832	|t:|<NORMALIZED>
+L	ab_0_14	833	|move|p2a: Vaporeon|Hydro Pump|p1a: Skarmory|[miss]
+L	ab_0_14	834	|-miss|p2a: Vaporeon|p1a: Skarmory
+L	ab_0_14	835	|move|p1a: Skarmory|Roar|p2a: Vaporeon
+L	ab_0_14	836	|drag|p2a: Magneton|Magneton|220/241
+L	ab_0_14	837	|
+L	ab_0_14	838	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	839	|-heal|p1a: Skarmory|159/333|[from] item: Leftovers
+L	ab_0_14	840	|upkeep
+L	ab_0_14	841	|turn|65
+L	ab_0_14	842	|
+L	ab_0_14	843	|t:|<NORMALIZED>
+L	ab_0_14	844	|switch|p2a: Vaporeon|Vaporeon, M|256/463
+L	ab_0_14	845	|move|p1a: Skarmory|Roar|p2a: Vaporeon
+L	ab_0_14	846	|drag|p2a: Magneton|Magneton|220/241
+L	ab_0_14	847	|
+L	ab_0_14	848	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	849	|-heal|p1a: Skarmory|179/333|[from] item: Leftovers
+L	ab_0_14	850	|upkeep
+L	ab_0_14	851	|turn|66
+L	ab_0_14	852	|
+L	ab_0_14	853	|t:|<NORMALIZED>
+L	ab_0_14	854	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	855	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	856	|move|p2a: Magneton|Toxic|p1a: Skarmory
+L	ab_0_14	857	|-activate|p1a: Skarmory|Protect
+L	ab_0_14	858	|
+L	ab_0_14	859	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	860	|-heal|p1a: Skarmory|199/333|[from] item: Leftovers
+L	ab_0_14	861	|upkeep
+L	ab_0_14	862	|turn|67
+L	ab_0_14	863	|
+L	ab_0_14	864	|t:|<NORMALIZED>
+L	ab_0_14	865	|move|p2a: Magneton|Sunny Day|p2a: Magneton
+L	ab_0_14	866	|-weather|SunnyDay
+L	ab_0_14	867	|move|p1a: Skarmory|Toxic|p2a: Magneton
+L	ab_0_14	868	|-immune|p2a: Magneton
+L	ab_0_14	869	|
+L	ab_0_14	870	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	871	|-heal|p1a: Skarmory|219/333|[from] item: Leftovers
+L	ab_0_14	872	|upkeep
+L	ab_0_14	873	|turn|68
+L	ab_0_14	874	|
+L	ab_0_14	875	|t:|<NORMALIZED>
+L	ab_0_14	876	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	877	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	878	|move|p2a: Magneton|Thunderbolt|p1a: Skarmory
+L	ab_0_14	879	|-activate|p1a: Skarmory|Protect
+L	ab_0_14	880	|
+L	ab_0_14	881	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	882	|-heal|p1a: Skarmory|239/333|[from] item: Leftovers
+L	ab_0_14	883	|upkeep
+L	ab_0_14	884	|turn|69
+L	ab_0_14	885	|
+L	ab_0_14	886	|t:|<NORMALIZED>
+L	ab_0_14	887	|switch|p2a: Vaporeon|Vaporeon, M|256/463
+L	ab_0_14	888	|move|p1a: Skarmory|Roar|p2a: Vaporeon
+L	ab_0_14	889	|drag|p2a: Magneton|Magneton|220/241
+L	ab_0_14	890	|
+L	ab_0_14	891	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	892	|-heal|p1a: Skarmory|259/333|[from] item: Leftovers
+L	ab_0_14	893	|upkeep
+L	ab_0_14	894	|turn|70
+L	ab_0_14	895	|
+L	ab_0_14	896	|t:|<NORMALIZED>
+L	ab_0_14	897	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	898	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	899	|move|p2a: Magneton|Sunny Day||[still]
+L	ab_0_14	900	|-fail|p2a: Magneton
+L	ab_0_14	901	|
+L	ab_0_14	902	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	903	|-heal|p1a: Skarmory|279/333|[from] item: Leftovers
+L	ab_0_14	904	|upkeep
+L	ab_0_14	905	|turn|71
+L	ab_0_14	906	|
+L	ab_0_14	907	|t:|<NORMALIZED>
+L	ab_0_14	908	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	909	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	910	|move|p2a: Magneton|Hidden Power|p1a: Skarmory
+L	ab_0_14	911	|-activate|p1a: Skarmory|Protect
+L	ab_0_14	912	|
+L	ab_0_14	913	|-weather|none
+L	ab_0_14	914	|-heal|p1a: Skarmory|299/333|[from] item: Leftovers
+L	ab_0_14	915	|upkeep
+L	ab_0_14	916	|turn|72
+L	ab_0_14	917	|
+L	ab_0_14	918	|t:|<NORMALIZED>
+L	ab_0_14	919	|move|p2a: Magneton|Toxic|p1a: Skarmory
+L	ab_0_14	920	|-immune|p1a: Skarmory
+L	ab_0_14	921	|move|p1a: Skarmory|Roar|p2a: Magneton
+L	ab_0_14	922	|drag|p2a: Vaporeon|Vaporeon, M|256/463
+L	ab_0_14	923	|
+L	ab_0_14	924	|-heal|p1a: Skarmory|319/333|[from] item: Leftovers
+L	ab_0_14	925	|-heal|p2a: Vaporeon|284/463|[from] item: Leftovers
+L	ab_0_14	926	|upkeep
+L	ab_0_14	927	|turn|73
+L	ab_0_14	928	|
+L	ab_0_14	929	|t:|<NORMALIZED>
+L	ab_0_14	930	|move|p1a: Skarmory|Drill Peck|p2a: Vaporeon
+L	ab_0_14	931	|-damage|p2a: Vaporeon|198/463
+L	ab_0_14	932	|move|p2a: Vaporeon|Ice Beam|p1a: Skarmory
+L	ab_0_14	933	|-damage|p1a: Skarmory|246/333
+L	ab_0_14	934	|
+L	ab_0_14	935	|-heal|p1a: Skarmory|266/333|[from] item: Leftovers
+L	ab_0_14	936	|-heal|p2a: Vaporeon|226/463|[from] item: Leftovers
+L	ab_0_14	937	|upkeep
+L	ab_0_14	938	|turn|74
+L	ab_0_14	939	|
+L	ab_0_14	940	|t:|<NORMALIZED>
+L	ab_0_14	941	|switch|p2a: Magneton|Magneton|220/241
+L	ab_0_14	942	|move|p1a: Skarmory|Drill Peck|p2a: Magneton
+L	ab_0_14	943	|-resisted|p2a: Magneton
+L	ab_0_14	944	|-damage|p2a: Magneton|199/241
+L	ab_0_14	945	|
+L	ab_0_14	946	|-heal|p1a: Skarmory|286/333|[from] item: Leftovers
+L	ab_0_14	947	|upkeep
+L	ab_0_14	948	|turn|75
+L	ab_0_14	949	|
+L	ab_0_14	950	|t:|<NORMALIZED>
+L	ab_0_14	951	|move|p2a: Magneton|Hidden Power|p1a: Skarmory
+L	ab_0_14	952	|-supereffective|p1a: Skarmory
+L	ab_0_14	953	|-damage|p1a: Skarmory|128/333
+L	ab_0_14	954	|move|p1a: Skarmory|Toxic|p2a: Magneton|[miss]
+L	ab_0_14	955	|-miss|p1a: Skarmory|p2a: Magneton
+L	ab_0_14	956	|
+L	ab_0_14	957	|-heal|p1a: Skarmory|148/333|[from] item: Leftovers
+L	ab_0_14	958	|upkeep
+L	ab_0_14	959	|turn|76
+L	ab_0_14	960	|
+L	ab_0_14	961	|t:|<NORMALIZED>
+L	ab_0_14	962	|move|p2a: Magneton|Sunny Day|p2a: Magneton
+L	ab_0_14	963	|-weather|SunnyDay
+L	ab_0_14	964	|move|p1a: Skarmory|Roar|p2a: Magneton
+L	ab_0_14	965	|drag|p2a: Vaporeon|Vaporeon, M|226/463
+L	ab_0_14	966	|
+L	ab_0_14	967	|-weather|SunnyDay|[upkeep]
+L	ab_0_14	968	|-heal|p1a: Skarmory|168/333|[from] item: Leftovers
+L	ab_0_14	969	|-heal|p2a: Vaporeon|254/463|[from] item: Leftovers
+L	ab_0_14	970	|upkeep
+L	ab_0_14	971	|turn|77
+L	ab_0_14	972	|
+L	ab_0_14	973	|t:|<NORMALIZED>
+L	ab_0_14	974	|switch|p1a: Tyranitar|Tyranitar, M|267/404
+L	ab_0_14	975	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_0_14	976	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_14	977	|-start|p2a: Vaporeon|Substitute
+L	ab_0_14	978	|-damage|p2a: Vaporeon|139/463
+L	ab_0_14	979	|
+L	ab_0_14	980	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	981	|-damage|p2a: Vaporeon|111/463|[from] Sandstorm
+L	ab_0_14	982	|-heal|p2a: Vaporeon|139/463|[from] item: Leftovers
+L	ab_0_14	983	|upkeep
+L	ab_0_14	984	|turn|78
+L	ab_0_14	985	|
+L	ab_0_14	986	|t:|<NORMALIZED>
+L	ab_0_14	987	|move|p2a: Vaporeon|Ice Beam|p1a: Tyranitar
+L	ab_0_14	988	|-damage|p1a: Tyranitar|191/404
+L	ab_0_14	989	|move|p1a: Tyranitar|Surf|p2a: Vaporeon
+L	ab_0_14	990	|-heal|p2a: Vaporeon|254/463|[from] ability: Water Absorb|[of] p1a: Tyranitar
+L	ab_0_14	991	|
+L	ab_0_14	992	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	993	|-damage|p2a: Vaporeon|226/463|[from] Sandstorm
+L	ab_0_14	994	|-heal|p2a: Vaporeon|254/463|[from] item: Leftovers
+L	ab_0_14	995	|upkeep
+L	ab_0_14	996	|turn|79
+L	ab_0_14	997	|
+L	ab_0_14	998	|t:|<NORMALIZED>
+L	ab_0_14	999	|-singleturn|p1a: Tyranitar|move: Focus Punch
+L	ab_0_14	1000	|switch|p2a: Magneton|Magneton|199/241
+L	ab_0_14	1001	|move|p1a: Tyranitar|Focus Punch|p2a: Magneton
+L	ab_0_14	1002	|-supereffective|p2a: Magneton
+L	ab_0_14	1003	|-damage|p2a: Magneton|0 fnt
+L	ab_0_14	1004	|faint|p2a: Magneton
+L	ab_0_14	1005	|
+L	ab_0_14	1006	|t:|<NORMALIZED>
+L	ab_0_14	1007	|switch|p2a: Vaporeon|Vaporeon, M|254/463
+L	ab_0_14	1008	|
+L	ab_0_14	1009	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1010	|-damage|p2a: Vaporeon|226/463|[from] Sandstorm
+L	ab_0_14	1011	|-heal|p2a: Vaporeon|254/463|[from] item: Leftovers
+L	ab_0_14	1012	|upkeep
+L	ab_0_14	1013	|turn|80
+L	ab_0_14	1014	|
+L	ab_0_14	1015	|t:|<NORMALIZED>
+L	ab_0_14	1016	|move|p2a: Vaporeon|Hydro Pump|p1a: Tyranitar|[miss]
+L	ab_0_14	1017	|-miss|p2a: Vaporeon|p1a: Tyranitar
+L	ab_0_14	1018	|move|p1a: Tyranitar|Hidden Power|p2a: Vaporeon
+L	ab_0_14	1019	|-damage|p2a: Vaporeon|184/463
+L	ab_0_14	1020	|
+L	ab_0_14	1021	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1022	|-damage|p2a: Vaporeon|156/463|[from] Sandstorm
+L	ab_0_14	1023	|-heal|p2a: Vaporeon|184/463|[from] item: Leftovers
+L	ab_0_14	1024	|upkeep
+L	ab_0_14	1025	|turn|81
+L	ab_0_14	1026	|
+L	ab_0_14	1027	|t:|<NORMALIZED>
+L	ab_0_14	1028	|move|p2a: Vaporeon|Hydro Pump|p1a: Tyranitar
+L	ab_0_14	1029	|-supereffective|p1a: Tyranitar
+L	ab_0_14	1030	|-damage|p1a: Tyranitar|0 fnt
+L	ab_0_14	1031	|faint|p1a: Tyranitar
+L	ab_0_14	1032	|
+L	ab_0_14	1033	|t:|<NORMALIZED>
+L	ab_0_14	1034	|switch|p1a: Skarmory|Skarmory, M|168/333
+L	ab_0_14	1035	|
+L	ab_0_14	1036	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1037	|-damage|p2a: Vaporeon|156/463|[from] Sandstorm
+L	ab_0_14	1038	|-heal|p1a: Skarmory|188/333|[from] item: Leftovers
+L	ab_0_14	1039	|-heal|p2a: Vaporeon|184/463|[from] item: Leftovers
+L	ab_0_14	1040	|upkeep
+L	ab_0_14	1041	|turn|82
+L	ab_0_14	1042	|
+L	ab_0_14	1043	|t:|<NORMALIZED>
+L	ab_0_14	1044	|switch|p1a: Swampert|Swampert, M|111/341
+L	ab_0_14	1045	|move|p2a: Vaporeon|Hydro Pump|p1a: Swampert
+L	ab_0_14	1046	|-damage|p1a: Swampert|0 fnt
+L	ab_0_14	1047	|faint|p1a: Swampert
+L	ab_0_14	1048	|
+L	ab_0_14	1049	|t:|<NORMALIZED>
+L	ab_0_14	1050	|switch|p1a: Skarmory|Skarmory, M|188/333
+L	ab_0_14	1051	|
+L	ab_0_14	1052	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1053	|-damage|p2a: Vaporeon|156/463|[from] Sandstorm
+L	ab_0_14	1054	|-heal|p1a: Skarmory|208/333|[from] item: Leftovers
+L	ab_0_14	1055	|-heal|p2a: Vaporeon|184/463|[from] item: Leftovers
+L	ab_0_14	1056	|upkeep
+L	ab_0_14	1057	|turn|83
+L	ab_0_14	1058	|
+L	ab_0_14	1059	|t:|<NORMALIZED>
+L	ab_0_14	1060	|move|p1a: Skarmory|Drill Peck|p2a: Vaporeon
+L	ab_0_14	1061	|-damage|p2a: Vaporeon|111/463
+L	ab_0_14	1062	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_14	1063	|-fail|p2a: Vaporeon|move: Substitute|[weak]
+L	ab_0_14	1064	|
+L	ab_0_14	1065	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1066	|-damage|p2a: Vaporeon|83/463|[from] Sandstorm
+L	ab_0_14	1067	|-heal|p1a: Skarmory|228/333|[from] item: Leftovers
+L	ab_0_14	1068	|-heal|p2a: Vaporeon|111/463|[from] item: Leftovers
+L	ab_0_14	1069	|upkeep
+L	ab_0_14	1070	|turn|84
+L	ab_0_14	1071	|
+L	ab_0_14	1072	|t:|<NORMALIZED>
+L	ab_0_14	1073	|move|p1a: Skarmory|Toxic|p2a: Vaporeon|[miss]
+L	ab_0_14	1074	|-miss|p1a: Skarmory|p2a: Vaporeon
+L	ab_0_14	1075	|move|p2a: Vaporeon|Toxic|p1a: Skarmory
+L	ab_0_14	1076	|-immune|p1a: Skarmory
+L	ab_0_14	1077	|
+L	ab_0_14	1078	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1079	|-damage|p2a: Vaporeon|83/463|[from] Sandstorm
+L	ab_0_14	1080	|-heal|p1a: Skarmory|248/333|[from] item: Leftovers
+L	ab_0_14	1081	|-heal|p2a: Vaporeon|111/463|[from] item: Leftovers
+L	ab_0_14	1082	|upkeep
+L	ab_0_14	1083	|turn|85
+L	ab_0_14	1084	|
+L	ab_0_14	1085	|t:|<NORMALIZED>
+L	ab_0_14	1086	|move|p1a: Skarmory|Toxic|p2a: Vaporeon|[miss]
+L	ab_0_14	1087	|-miss|p1a: Skarmory|p2a: Vaporeon
+L	ab_0_14	1088	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_14	1089	|-fail|p2a: Vaporeon|move: Substitute|[weak]
+L	ab_0_14	1090	|
+L	ab_0_14	1091	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1092	|-damage|p2a: Vaporeon|83/463|[from] Sandstorm
+L	ab_0_14	1093	|-heal|p1a: Skarmory|268/333|[from] item: Leftovers
+L	ab_0_14	1094	|-heal|p2a: Vaporeon|111/463|[from] item: Leftovers
+L	ab_0_14	1095	|upkeep
+L	ab_0_14	1096	|turn|86
+L	ab_0_14	1097	|
+L	ab_0_14	1098	|t:|<NORMALIZED>
+L	ab_0_14	1099	|move|p1a: Skarmory|Toxic|p2a: Vaporeon
+L	ab_0_14	1100	|-status|p2a: Vaporeon|tox
+L	ab_0_14	1101	|move|p2a: Vaporeon|Ice Beam|p1a: Skarmory
+L	ab_0_14	1102	|-damage|p1a: Skarmory|200/333
+L	ab_0_14	1103	|
+L	ab_0_14	1104	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1105	|-damage|p2a: Vaporeon|83/463 tox|[from] Sandstorm
+L	ab_0_14	1106	|-heal|p1a: Skarmory|220/333|[from] item: Leftovers
+L	ab_0_14	1107	|-heal|p2a: Vaporeon|111/463 tox|[from] item: Leftovers
+L	ab_0_14	1108	|-damage|p2a: Vaporeon|83/463 tox|[from] psn
+L	ab_0_14	1109	|upkeep
+L	ab_0_14	1110	|turn|87
+L	ab_0_14	1111	|
+L	ab_0_14	1112	|t:|<NORMALIZED>
+L	ab_0_14	1113	|move|p1a: Skarmory|Toxic|p2a: Vaporeon
+L	ab_0_14	1114	|-fail|p2a: Vaporeon|tox
+L	ab_0_14	1115	|move|p2a: Vaporeon|Toxic|p1a: Skarmory
+L	ab_0_14	1116	|-immune|p1a: Skarmory
+L	ab_0_14	1117	|
+L	ab_0_14	1118	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1119	|-damage|p2a: Vaporeon|55/463 tox|[from] Sandstorm
+L	ab_0_14	1120	|-heal|p1a: Skarmory|240/333|[from] item: Leftovers
+L	ab_0_14	1121	|-heal|p2a: Vaporeon|83/463 tox|[from] item: Leftovers
+L	ab_0_14	1122	|-damage|p2a: Vaporeon|27/463 tox|[from] psn
+L	ab_0_14	1123	|upkeep
+L	ab_0_14	1124	|turn|88
+L	ab_0_14	1125	|
+L	ab_0_14	1126	|t:|<NORMALIZED>
+L	ab_0_14	1127	|move|p1a: Skarmory|Protect|p1a: Skarmory
+L	ab_0_14	1128	|-singleturn|p1a: Skarmory|Protect
+L	ab_0_14	1129	|move|p2a: Vaporeon|Substitute|p2a: Vaporeon
+L	ab_0_14	1130	|-fail|p2a: Vaporeon|move: Substitute|[weak]
+L	ab_0_14	1131	|
+L	ab_0_14	1132	|-weather|Sandstorm|[upkeep]
+L	ab_0_14	1133	|-damage|p2a: Vaporeon|0 fnt|[from] Sandstorm
+L	ab_0_14	1134	|faint|p2a: Vaporeon
+L	ab_0_14	1135	|
+L	ab_0_14	1136	|win|P1

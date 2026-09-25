@@ -51,7 +51,10 @@
 //   EDGES:
 //     SELF-inflicted (REST) PASSES — `onSetStatus` returns early when target === source.
 //       Rest under your own Safeguard sleeps + heals and draws its `random(2,6)` normally.
-//     CONFUSION is blocked (`onTryAddVolatile`), including Confuse Ray and Swagger.
+//     CONFUSION is blocked (`onTryAddVolatile`), including Confuse Ray and Swagger — but only a
+//       FOE-sourced one (`target !== source`): the holder's own LOCK END and its own Figy-family
+//       BERRY are self-sourced and are NOT blocked (they draw their `random(2,6)`; settled by
+//       `probe_lockin_fatigue.js`, `gen3_lockin_fatigue_v1`).
 //       SWAGGER IS PARTIAL: its `-boost|<t>|atk|2` STILL APPLIES and only the confusion is
 //       blocked -> `|-boost|<t>|atk|2` THEN `|-activate|<t>|move: Safeguard`. (An earlier
 //       draft of this probe claimed the whole move failed — its line filter simply omitted

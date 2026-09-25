@@ -1029,8 +1029,8 @@ impl crate::state::BattleState {
                 }
                 // The LOCK-IN tick (`gen3_lockin_family_v1`). On the tick that runs the
                 // counter out the user is CONFUSED — its own `random(2,6)`, routed through
-                // `add_confusion` so Own Tempo / already-confused / Safeguard all gate it
-                // exactly as they do for any other confusion source. SLEEP breaks the lock
+                // `add_confusion` so Own Tempo / already-confused gate it as they do any other
+                // confusion source; Safeguard does NOT (a self-sourced add). SLEEP breaks the lock
                 // FIRST and cleanly: the sim's `onResidual` deletes the volatile before the
                 // duration is consulted, so an asleep user is never confused by it.
                 ResidualAction::LockedMoveDuration { side, slot } => {
@@ -1046,9 +1046,10 @@ impl crate::state::BattleState {
                     }
                     if turns <= 1 {
                         self.sides[side].pokemon[slot].locked_move = None;
-                        // The end-of-lock confusion (announce = false: this is not a status
-                        // MOVE's primary effect, so a Safeguard block here is silent).
-                        self.add_confusion(side, slot, false, dex);
+                        // The end-of-lock confusion: SELF-sourced, so the user's own Safeguard
+                        // does NOT block it, and it announces `|-start|…|confusion|[fatigue]`
+                        // (`gen3_lockin_fatigue_v1`).
+                        self.add_confusion(side, slot, super::secondaries::ConfusionSource::LockEnd, dex);
                         continue; // duration-END → skip faintMessages
                     }
                     self.sides[side].pokemon[slot].locked_move = Some((turns - 1, k));

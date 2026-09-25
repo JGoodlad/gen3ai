@@ -1,6 +1,25 @@
 use crate::dex::{to_id, Dex};
 use super::helpers::*;
 
+/// WHO confuses the holder — what `add_confusion` reads off the add (`gen3_lockin_fatigue_v1`).
+/// Showdown's `addVolatile` takes `source` from the ambient event, else the holder itself, and
+/// `sourceEffect` from the ambient effect; Safeguard and `confusion.onStart` read those two.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ConfusionSource {
+    /// A FOE's move (`target !== source` → Safeguard BLOCKS). `announce` is the block's
+    /// `-activate` gate — TRUE for a status MOVE's PRIMARY effect (Confuse Ray), FALSE for a
+    /// damaging move's SECONDARY (Water Pulse), mirroring `try_set_status_impl`'s
+    /// `announce_immune_block`: a blocked SECONDARY is SILENT, its `random(100)` already drawn.
+    Foe { announce: bool },
+    /// The holder's own LOCK ending (`lockedmove.onEnd`, Outrage / Thrash / Petal Dance):
+    /// source = the holder → NOT Safeguard-blocked; `sourceEffect` = `lockedmove` → the
+    /// `|-start|<mon>|confusion|[fatigue]` form.
+    LockEnd,
+    /// The holder's own Figy-family BERRY (`onEat`, source = the holder) → NOT Safeguard-blocked;
+    /// the bare form.
+    OwnBerry,
+}
+
 impl crate::state::BattleState {
 
     /// Apply a damaging move's SECONDARY effects (battle-actions.ts secondaries(),
@@ -205,7 +224,7 @@ impl crate::state::BattleState {
             // random(100) itself was already drawn by the caller (a landed-but-gated
             // confusion STILL drew the random(100) but draws NO random(2,6)).
             "confusion" => {
-                self.add_confusion(foe, foe_slot, false, dex);
+                self.add_confusion(foe, foe_slot, ConfusionSource::Foe { announce: false }, dex);
             }
             // The STRUCTURED stat-boost secondaries (foe stat-drop / self stat-raise) —
             // DRAW-FREE; apply the (stat, stages) from the move's secondary_boosts spec
@@ -237,15 +256,17 @@ impl crate::state::BattleState {
     /// On a SUCCESSFUL add it draws ONE `random(2,6)` (the onStart duration, min=2 for
     /// a move source → 2..5 turns) into the `confusion: Option<u8>` counter.
     ///
-    /// `announce` is the safeguard/`-activate` gate — TRUE when the confusion is a status
-    /// MOVE's PRIMARY effect (Confuse Ray), FALSE for a damaging move's SECONDARY (Water
-    /// Pulse) or a berry. It mirrors `try_set_status_impl`'s `announce_immune_block`: a
-    /// safeguard-blocked SECONDARY is SILENT, and its `random(100)` already drew either way.
+    /// `src` is WHO confuses the holder (`gen3_lockin_fatigue_v1`) — the two facts the add
+    /// reads off it, both probe-settled by `harness/probe_lockin_fatigue.js`:
+    ///   - SAFEGUARD blocks only a FOE-sourced add (`onTryAddVolatile`'s `target !== source`).
+    ///     A self-sourced add — the holder's own lock ending, its own berry — takes `source`
+    ///     = the holder (`addVolatile`'s default), so it is NOT blocked and DRAWS.
+    ///   - the `-start` form: a lock end (`sourceEffect` = `lockedmove`) carries `[fatigue]`.
     pub(crate) fn add_confusion(
         &mut self,
         foe: usize,
         foe_slot: usize,
-        announce: bool,
+        src: ConfusionSource,
         _dex: &Dex,
     ) {
         let mon = &self.sides[foe].pokemon[foe_slot];
@@ -261,27 +282,36 @@ impl crate::state::BattleState {
         if to_id(&mon.ability) == "owntempo" {
             return;
         }
-        // SAFEGUARD (`gen3_safeguard_v1`): the side condition's `onTryAddVolatile` blocks
-        // confusion too, BEFORE the onStart → the `random(2,6)` is NOT drawn (the same
+        // SAFEGUARD (`gen3_safeguard_v1`): the side condition's `onTryAddVolatile` blocks a
+        // FOE-sourced confusion, BEFORE the onStart → the `random(2,6)` is NOT drawn (the same
         // draw-suppressing shape as Own Tempo). A confusion SECONDARY's own `random(100)`
         // already drew in the caller. Probe-settled; note Swagger is PARTIAL — its +2 Atk
         // still applies and only the confusion is blocked (Swagger is not modeled yet).
+        // A SELF-sourced add (a lock end, the holder's berry) passes the `target !== source`
+        // test and is NOT blocked (`gen3_lockin_fatigue_v1`).
         if self.sides[foe].safeguard > 0 {
-            if announce && self.logging() {
-                let m = self.mon_ref(foe, foe_slot, _dex);
-                self.log.activate(&m, "move: Safeguard", None);
+            if let ConfusionSource::Foe { announce } = src {
+                if announce && self.logging() {
+                    let m = self.mon_ref(foe, foe_slot, _dex);
+                    self.log.activate(&m, "move: Safeguard", None);
+                }
+                return;
             }
-            return;
         }
         // SUCCESSFUL add → the onStart duration draw random(2,6) (2..5 turns).
         let dur = self.prng.random_range(2, 6) as u8;
         self.sides[foe].pokemon[foe_slot].confusion = Some(dur);
         // [EMIT] `|-start|<mon>|confusion` (`gen3_omniscient_byte_fuzz_v1` FORM 6a) — the
         // sim's `confusion.onStart` reveal on a successful add (Water Pulse / Confuse Ray /
-        // Dynamic Punch / …). Draw-free / observation-only.
+        // Dynamic Punch / a berry / …); a LOCK END appends `[fatigue]`. Draw-free /
+        // observation-only.
         if self.logging() {
             let m = self.mon_ref(foe, foe_slot, _dex);
-            self.log.volatile_start(&m, "confusion");
+            if src == ConfusionSource::LockEnd {
+                self.log.volatile_start_fatigue(&m, "confusion");
+            } else {
+                self.log.volatile_start(&m, "confusion");
+            }
         }
     }
 

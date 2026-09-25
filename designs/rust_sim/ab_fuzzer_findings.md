@@ -563,6 +563,80 @@ continuations lacked `[from] lockedmove` (`gen3_lockedmove_announce_v1`), and Ro
 kept their lock across a turn that computed no damage (`gen3_rollout_lock_duration_v1`). MILESTONE
 counts per fuzzer are in `designs/research_state/measurements/ladder_usage_smoke_2026-09-24/`.
 
+## The M6 CUTOVER stress (2026-09-24) — its repros, six port bugs and one recorder artifact
+
+The Rust core program's cutover stress (`/home/goodlad/gen3ai_archive/cutover_stress_2026-09-24/`)
+saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass). Each class, as settled against the real sim:
+
+- **`rmuggw4az_ab_0_14`** (ourandom, `kind=protocol`) — **the END-OF-LOCK confusion's `[fatigue]`
+  tag** (`gen3_lockin_fatigue_v1`). `confusion.onStart` renders
+  `|-start|<user>|confusion|[fatigue]` when its `sourceEffect` is `lockedmove`, which it always is
+  inside `lockedmove.onEnd`; the port emitted the bare form. `add_confusion` now takes a typed
+  `ConfusionSource` (`Foe { announce }` / `LockEnd` / `OwnBerry`). Settling it found a MECHANICS bug
+  on the same path: **Safeguard does not block a SELF-SOURCED confusion** — its `onTryAddVolatile`
+  blocks only `target !== source`, and `addVolatile` defaults `source` to the holder, so the holder's
+  own lock end and its own Figy-family berry confuse it (and draw the `random(2,6)`) under its own
+  Safeguard; the port blocked both, one draw short. Neither changes poke-env's reading of the line
+  (`-start` reads `event[2:4]`; the event value is `{effect, op, from, of}`), so the tag reaches only
+  `raw`. Ground truth `harness/probe_lockin_fatigue.js`; pins LF1 / SG3 + fixture 76.
+- **`rmuggvoke_ab_3_15`** (ladder, `kind=seed` @ decision 79) — **a RECORDER artifact, not a port
+  draw bug** (`gen3_recorder_held_choice_v1`). Dusclops's Imprison seals Suicune's Rest with a
+  `'hidden'` disable, which the OWNER'S request masks as `disabled:false` (`getMoveRequestData` builds
+  it with `restrictData`); the picker read only the request, picked Rest, and the sim rejected it
+  (`[Unavailable choice] Can't move: Suicune's Rest is disabled`) with p2's switch HELD. The recorder
+  then re-wrote BOTH sides at the next decision, and the sim applies writes in order: `>p1 move 1`
+  committed turn 73 with the held switch, and the re-written `>p2 switch 3` became p2's choice for
+  turn 74 — every later p2 choice ran one turn off the recorded row until a `>p2` write hit a
+  waiting side (`Can't do anything: It's not your turn`, boundary 97). The port's scripted driver
+  keeps the held choice and drops the re-write (FIRST-accepted-wins), so `ab_replay` desynced at
+  decision 81 while its RNG consumption was right — the port has no checkpoint for the zero-draw
+  rejected round, so the SUBSEQUENCE anchor names decision 79. Settled by position: collapsing that
+  one zero-draw round, the port's checkpoints equal the sim's through decision 80 and first differ
+  at 81; and RE-RECORDING the battle from the choices the sim APPLIED at each `commitChoices`
+  (one accepted choice per side per boundary) reproduces the original omniscient log byte for byte.
+  The port then replays that re-record STATE + SEED + WINNER clean. **Neither live surface can
+  produce this write:** poke-env answers only an open request, and after `[Unavailable choice]`
+  only the rejected side is re-asked (`Engine::advance` treats a choice for a side it is not asking
+  as an upstream desync and fails loud). Fixed in the recorder (`gen_e2e_fuzz.js`): the picker
+  mirrors the sim's own `moveSlot.disabled` when the request says `maybeDisabled`
+  (`gen3_picker_hidden_disable_v1`, the `pokemon.trapped` precedent), and the picking path never
+  re-writes a side whose choice is already held (records `-`). A `replayChoices` replay still writes
+  exactly what was recorded, so the original repro still reproduces — and so it cannot flip to `ok`
+  under `ab_replay`: it records a write sequence the port's script contract (one decision per
+  request boundary) does not describe.
+- **The re-record's first byte divergence** — **an IMPRISON RE-CAST while imprisoning**
+  (`gen3_imprison_recast_fails_v1`). The condition has no `onRestart`, so `addVolatile` fails after
+  `onTryHit` passes and the move takes the draw-free `[still]` + `-fail` form; the port re-started
+  it (a second `-start`). `harness/probe_imprison.js` listed this row SETTLED, but its Q3 script
+  re-sent Splash, not Imprison, so it had never run. It is fixed now and pinned (IM3 + fixture 77, the re-record).
+
+- **The bounded re-run's one new port class** — **two hard-coded stat indices off by one**
+  (`gen3_boost_index_fixes_v1`, `--mode ourandom` seed 620000, repro `rmugkbp69_ab_6_11`).
+  DEFENSE CURL raised `boosts[2]` (SpA) and RAGE `boosts[1]` (Def); `boosts` is in `STAT_TOKENS`
+  order, and the sim raises Def and Atk. The first observable was Brick Break into the curled
+  Blissey at 1.5x the sim's damage, and the seed anchor fired three decisions later (the whole-battle
+  seed alignment reports before any per-decision boost check). Both moves' pins had asserted the
+  same wrong index. Every other literal boost index in the engine was swept (Curse's `(4, 0, 1)`,
+  Minimize's 6, Speed Boost's 4 — all correct); the rest are data-derived. Pins RO2 / RG1 + fixture 78.
+
+- **`rmugk8bpp_ab_0_5`** (ourandom, `kind=seed` @ 11, a later stress unit) — **Encore read a
+  SELF-OVERWRITING Mimic's slot** (`gen3_mimic_self_overwrite_readers_v1`). A Mimic that replaced
+  its own slot leaves `lastMove` = `mimic` in no slot; the sim's Encore (`getMoveData(lastMove.id)`)
+  and a new foe's Mimic (`failmimic`) both FAIL, and the port encored / mimicked the copied move
+  at that slot. Both readers now honour `last_move_was_self_overwrite` (Disable, Torment and the
+  Choice lock already did). The Mimic reader applies it only after a Mimic: a TRANSFORM
+  self-overwrite leaves `transform`, which lacks `failmimic`, and the sim copies it. That edge is
+  not modeled either way. Pins MX1 + fixture 79.
+- **`rmugih8vj_ab_1_18`** (ladder, `kind=seed` @ 52, a later stress unit) — the SAME recorder
+  artifact as `rmuggvoke_ab_3_15` (Imprison seals Zapdos's Rest; `Can't move: Zapdos's Rest is
+  disabled`). Collapsing its one zero-draw round, the port's checkpoints equal the sim's across all
+  62; the re-record from the sim-applied choices reproduces the original log byte for byte and
+  replays `ok`.
+
+`harness/probe_repro_simtrace.js` now replays a repro under its `FMT` row's format, admitting typed
+Hidden Power the way `ab_fuzz.js` does (pool / ourandom / ladder); before this, it replayed every
+repro as `gen3customgame` and reproduced a different battle for any gen3ou repro.
+
 ## `ab_fuzz.js` — the driver, the three team modes, the replayer and the repro format
 
 - **The driver** `harness/ab_fuzz.js` — per chunk (default 25 battles): generate/pick team

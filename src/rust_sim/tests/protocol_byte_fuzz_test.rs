@@ -656,6 +656,30 @@ fn lockin_continuations_announce_from_lockedmove() {
     }
 }
 
+/// The END-OF-LOCK confusion announces `|-start|<user>|confusion|[fatigue]`
+/// (`gen3_lockin_fatigue_v1`): `confusion.onStart` tags `[fatigue]` when its `sourceEffect` is
+/// `lockedmove`, which it always is inside `lockedmove.onEnd`. Node-probed
+/// (`harness/probe_lockin_fatigue.js`) for Outrage, Thrash and Petal Dance. WRONG (pre-fix): the
+/// port emitted the BARE `|-start|<user>|confusion` — found by the M6 cutover stress
+/// (`--mode ourandom --protocol`, a Dragonite Outrage).
+#[test]
+fn lock_end_confusion_announces_fatigue() {
+    // Steel/Flying resists Normal, Dragon AND Grass, so the foe survives the whole lock.
+    let foe = "Skarmory||none|keeneye|splash|Careful|252,,,,252,4|M||||";
+    for (packed, user) in [
+        ("Dragonite||none|innerfocus|outrage,splash|Hardy|85,85,85,85,85,85|M||||", "Dragonite"),
+        ("Tauros||none|innerfocus|thrash,splash|Hardy|85,85,85,85,85,85|M||||", "Tauros"),
+        ("Vileplume||none|innerfocus|petaldance,splash|Hardy|85,85,85,85,85,85|M||||", "Vileplume"),
+    ] {
+        let script = [ScriptDecision::both(Choice::Move(0), Choice::Move(0)); 4];
+        let raw = run_logged(packed, foe, SD, &script);
+        let fatigue = format!("|-start|p1a: {user}|confusion|[fatigue]");
+        let bare = format!("|-start|p1a: {user}|confusion");
+        assert!(raw.iter().any(|l| *l == fatigue), "{user}: the lock end announces `[fatigue]`; lines:\n{}", raw.join("\n"));
+        assert!(!raw.iter().any(|l| *l == bare), "{user}: no BARE lock-end confusion line; lines:\n{}", raw.join("\n"));
+    }
+}
+
 /// ROLLOUT's lock ENDS when a turn does not compute damage (`gen3_rollout_lock_duration_v1`):
 /// the sim's `rollout` volatile has `duration: 1`, refreshed to 2 only by the `basePowerCallback`
 /// (which runs only on a damaging hit), so a Protect-blocked (or missed) turn lets it expire at

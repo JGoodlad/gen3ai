@@ -3,7 +3,7 @@
 Each `*.txt` here is a **frozen A/B `--protocol` byte-fuzzer repro** — a single,
 self-contained real gen3ou/gen3customgame battle in the fuzzer's chunk golden format
 (`SCEN` / `TEAM` / `FMT` / `INIT` / `DEC` / `END` / `L` rows — exactly a repro dir's
-`battle.txt`). **76 fixtures**, each replayed through the emitting engine
+`battle.txt`). **80 fixtures**, each replayed through the emitting engine
 (`run_full_battle_logged`): all but the two tagged allowlist fixtures (`21_*`, `27_*`)
 **replay byte-clean today**, and each **guards a specific `|...|` emission form** that the
 omniscient-byte fuzzer once surfaced as a divergence and the engine now emits
@@ -50,6 +50,10 @@ The fixtures are named by the form they guard, e.g.:
 | `62_traced_flash_fire_absorbs_will_o_wisp.txt` | **RANDBATS tail** — a Will-O-Wisp absorbed by a (TRACED) Flash Fire emits `\|-start\|<t>\|ability: Flash Fire` on the first absorb / `\|-immune\|…\|[from] ability: Flash Fire` once armed (was a SILENT arm) |
 | `63_liquid_ooze_leech_double_faint_order.txt` | **RANDBATS tail** — the Liquid-Ooze leech reversal is an INSTAFAINT (`faintMessages(lastFirst=true)`): the reversal-KO'd SEEDER's `\|faint\|` precedes the leech-KO'd seeded mon's |
 | `64_choicelock_lazy_release_after_knock_off.txt` | **RANDBATS tail** (a `kind=seed` guard) — the `choicelock` volatile survives a Knock Off / Trick of the Choice item until the NEXT endTurn `DisableMove` event, so that event STILL counts it in the handler-sort tie-shuffle |
+| `76_lock_end_confusion_fatigue_tag.txt` | **M6 cutover stress** — the END-OF-LOCK confusion (Outrage / Thrash / Petal Dance) announces `\|-start\|<user>\|confusion\|[fatigue]` (`gen3_lockin_fatigue_v1`) |
+| `77_imprison_recast_still_fail.txt` | **M6 cutover stress** — an Imprison RE-CAST while imprisoning fails: `\|move\|<u>\|Imprison\|\|[still]` + `\|-fail\|<u>`, one `-start` only (`gen3_imprison_recast_fails_v1`); RE-RECORDED from the sim-applied choices (its header says why) |
+| `78_defense_curl_boosts_def.txt` | **M6 fuzz-fix run** — DEFENSE CURL raises DEF: `\|-boost\|<u>\|def\|1` (`gen3_boost_index_fixes_v1`; the port raised SpA, so a later Brick Break into the curled Blissey dealt 1.5x and the seed anchor fired 3 decisions later) |
+| `79_encore_into_a_self_overwriting_mimic_fails.txt` | **M6 cutover stress** — ENCORE into a mon whose `lastMove` is a Mimic that overwrote its OWN slot FAILS (`\|move\|<u>\|Encore\|\|[still]` + `\|-fail\|<u>`); the port read the SLOT and encored the copied Trick (`gen3_mimic_self_overwrite_readers_v1`) |
 
 ## Two fixture classes (the KNOWN-RESIDUAL allowlist gate)
 

@@ -496,7 +496,7 @@ node src/rust_sim/harness/probe_residual_order_rng.js
 node src/rust_sim/harness/probe_phaze_regression_rng.js
 ```
 
-The full bug -> pin map (65 rows), each family's ground-truth probe, and the FEATURE pins for
+The full bug -> pin map (72 rows), each family's ground-truth probe, and the FEATURE pins for
 newly-modelled mechanics:
 [`designs/rust_sim/regression_pins.md`](../../designs/rust_sim/regression_pins.md).
 
@@ -532,7 +532,8 @@ running; every future mechanic layer becomes automatically stress-tested.
   `--mode random --battles 200 --master-seed S` (reproducible bounded hunt);
   replay any repro with `target/selfcheck/ab_replay <repro-dir>` (the self-check build `ab_fuzz.js` builds).
 - **The root-causing workhorse** is `harness/probe_repro_simtrace.js` — replay ANY saved repro dir
-  through the REAL sim with per-draw PRNG call-site instrumentation.
+  through the REAL sim with per-draw PRNG call-site instrumentation, under the repro's own `FMT`
+  format (a gen3ou repro replayed as `gen3customgame` is a different battle).
 
 The driver/replayer internals and every closed finding record (the first bounded smoke's fix queue,
 the residual tail's 7 engine bugs, fix-queue #4's 3 more):
@@ -765,6 +766,19 @@ real data shapes caught, and the first results:
   so the label sent a reader hunting a bug that does not exist (it did, on 2026-08-17). It now names
   the moves that actually blocked, with a distinct `all-disabled(...)` reason. **A diagnostic that
   names an innocent bystander is worse than one that names nothing.**
+- **A HIDDEN disable reads `disabled:false` in the request** (`gen3_picker_hidden_disable_v1`).
+  Imprison seals the foe's shared moves with a `'hidden'` disable that the owner's request masks,
+  so a request-reading picker submits a doomed move; the picker now mirrors the sim's own
+  `moveSlot.disabled` under `maybeDisabled`, as it mirrors `pokemon.trapped` for switches.
+- 🚨 **The recorder never re-writes a HELD side** (`gen3_recorder_held_choice_v1`). After one side's
+  reject the other side's choice is held, and a re-write is NOT a no-op in the sim — writes apply in
+  order, so a held p2's re-write lands on the NEXT turn's request once `>p1` commits (a held p1's
+  REPLACES it). The port's script keeps the held choice, so the repro replays one turn off with
+  correct draws and reads `kind=seed` (the M6 stress's `rmuggvoke_ab_3_15`). A live client never
+  sends that write (only the rejected side is re-asked). A repro recorded before this fix cannot
+  flip to `ok`. Re-record it from the sim-APPLIED choices to test the port on it —
+  [`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md) § The M6
+  CUTOVER stress.
 
 ### THE EXTERNAL-CONSISTENCY GATE (`gen_sim_bridge_diff.js`) — promoted to a green-gated fuzzer
 
@@ -980,6 +994,12 @@ lessons that outlive them — each cost a round to learn, and each binds the NEX
   "STILL NEEDED" note. Verify against the harness and the code, never against prose.
 - 🚨 **A COUNT COMPARISON WHOSE TWO SIDES COVER DIFFERENT WINDOWS IS NOT EVIDENCE, and it reads
   exactly like evidence.** Compare draw POSITIONS within a single decision.
+- 🚨 **A PIN THAT READS THE PORT'S OWN REPRESENTATION CERTIFIES ITS BUGS.** Defense Curl's and
+  Rage's pins asserted `boosts[2]` / `boosts[1]`, the same wrong indices the engine wrote, so both
+  passed for months while the moves raised SpA and Def (`gen3_boost_index_fixes_v1`). Assert the
+  sim's OBSERVABLE (the emitted `|-boost|<u>|def|1`) too. Likewise a probe's SETTLED header can name
+  a row its script never ran (`probe_imprison.js` Q3 re-sent Splash, not Imprison). Check that
+  the script actually runs the row.
 - 🚨 **FIX BUGS FOUND ON THE SURFACE YOU CARE ABOUT.** Two bugs found on 2026-08-17 have ZERO
   gen3ou-pool exposure — 0 of 773 pool files carry either mechanic — so neither could ever have fired
   in training. That is what `--mode ourandom` exists for.
