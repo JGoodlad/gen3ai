@@ -1,4 +1,4 @@
-# Population loop round 1 — THE REGISTERED READ (2026-09-24)
+# Population loop round 1 — THE REGISTERED READ (2026-09-24) · VERDICT: NOT DETECTED → branch N+
 
 The registration is [`../../../population_loop_round1_2026-09-23.md`](../../../population_loop_round1_2026-09-23.md)
 (§4 the read, §5 the branches, §6 the findings). This directory is the read, carried out as
@@ -19,10 +19,10 @@ second (0.39×) offense exploiter of G0.
 |---|---|
 | §4.1 manipulation check | **DONE — ABSORBED**, M = +8.50 pp [+1.76, +15.13] |
 | §4.2 `--check` gate | **DONE — 0 mismatches**, 3 runs read (not VOID) |
-| §4.2 primary Δ = gap(RB) − gap(RC) | **point estimate DONE: −10.00 pp [−16.60, −3.27]**; the VERDICT is **PENDING A2** (bar = max(F, 5.0) needs A2's floor) |
+| §4.2 primary Δ = gap(RB) − gap(RC) | **−10.00 pp [−16.60, −3.27]; F = 2.00 pp (A2 +12.00 vs A +14.00), bar = 5.0 → NOT DETECTED** |
 | §4.3 G-U (untaught 8) | **DONE — does NOT fire**; reproduction check PASSED EXACTLY (`plateau_b1` 963/1600 = 60.19 pp) |
 | §4.3 G-A (SmallRL anchors) | **DONE — does NOT fire**, B − C = −1.75 pp [−5.62, +2.13] at n = 1,200 each, all 36 units `regime_verified_decisions` true |
-| §5 branch | **PENDING the primary verdict**; V and K are ruled out, R and T are arithmetically impossible — the branch is **N+** unless F ≥ 16.60 pp (§5) |
+| §5 branch | **N+** — Δ NOT DETECTED, manipulation ABSORBED, guards clean. Counts 1 of 3 toward the stopping rule; round 2 = the loop one round deeper |
 
 ---
 
@@ -108,19 +108,15 @@ the tool's own VERDICT line reads "UNREADABLE — fewer than two archetypes", fi
 verdict). Descriptors (never folded): gap(RC) − gap(A) = +3.00 [−3.58, +9.54] (plain continuation did
 not move the gap — inside the bar, as predicted); gap(RB) − gap(A) = −7.00 [−13.68, −0.23].
 
-**THE VERDICT IS PENDING A2** (`primary_verdict.json` says so; `scripts/primary_rule.py` applies the
-rule the moment `brgap_A2.json` exists). What the arithmetic already fixes, stated so nobody reads
-it as an interim verdict: **bar ≥ 5.0 pp, and OUTSIDE-below needs the CI's upper end below −bar ≤
-−5.0; it is −3.27, so OUTSIDE cannot fire for ANY floor F.** EQUIVALENT would need bar ≥ 16.60 pp,
-i.e. |gap(A) − gap(A2)| ≥ 16.60 (gap(A2) ≤ −2.6 or ≥ +30.6 pp). Every other F gives NOT DETECTED.
+**A2's floor** (`ai_v13_26_popr0_exploit5_offense_s1002`, A's seed-1002 replicate; pin `6eb9c776`,
+budget 8,060,928, dose 3.815e-08 = A's), read ALONE (finding F3, `brgap_A2.{json,md,txt}`):
+**pooled 248/400 = 0.620, gap +12.00 pp [+7.15, +16.62]**, per cycle 0.60 / 0.67 / 0.61 / 0.60.
 
-**A2's floor — PENDING.** At this record's writing (16:05 PT) A2 was training (last eval
-100,000,032; ETA ≈ 17:20 PT at 378 fps under box contention). When it finishes at 103,219,200:
+**F = |gap(A) − gap(A2)| = |14.00 − 12.00| = 2.00 pp → bar = max(2.00, 5.0) = 5.0 pp.**
 
-```
-python -m main.best_response_gap ai_v13_26_popr0_exploit5_offense_s1002 --json brgap_A2.json --md brgap_A2.md   # ALONE (F3)
-python3 scripts/primary_rule.py .      # F = |gap(A) − gap(A2)|, bar = max(F, 5.0), the rule verbatim
-```
+**THE RULE (`primary_rule.py` → `primary_verdict.json`):** |Δ| = 10.00 > 5.0 (clause 1 holds), but the
+CI's upper end −3.27 does NOT exclude −5.0 (clause 2 fails) → not OUTSIDE; the CI is not inside
+[−5.0, +5.0] → not EQUIVALENT. **VERDICT: NOT DETECTED.**
 
 ## 3. §4.3 G-U — the untaught 8. **Does NOT fire. Reproduction check PASSED EXACTLY.**
 
@@ -193,7 +189,7 @@ Read in the registered order (the first that applies governs):
 | **K** (kill) | G-U or G-A: B − C OUTSIDE BELOW | **ruled out** — G-U −2.44 [−6.31, +0.88] pp vs 3.69; G-A −1.75 [−5.62, +2.13] pp vs 11.0 |
 | **R** (rose) | Δ OUTSIDE, ABOVE | **impossible** — Δ = −10.00 < 0 |
 | **T** (turns) | Δ OUTSIDE, BELOW (+ secondary, guards) | **impossible for every F** — the CI's upper end −3.27 never clears −bar ≤ −5.0 |
-| **N+** | Δ NOT DETECTED, ABSORBED | **the branch unless F ≥ 16.60 pp** — ABSORBED is established (M lower bound +1.76) |
+| **N+** | Δ NOT DETECTED, ABSORBED | **✅ GOVERNS** — NOT DETECTED at bar 5.0 (F = 2.00); ABSORBED (M lower bound +1.76) |
 | M | Δ NOT DETECTED, NOT ABSORBED | ruled out (ABSORBED) |
 
 **The registered consequence of N+ (§5, verbatim in substance):** *"B beat the specialists it saw, and a
@@ -202,17 +198,16 @@ fresh best responder is not measurably weaker: absorption did not generalize at 
 with **RB added to its stable set {A, `ai_v13_13`, RB} at share 0.40**, against C continued at share
 0.0 with the same set loaded, both +8M, each read by a fresh offense reader at A's exact recipe.
 
-🚨 **A registration gap, stated before the floor lands:** if F ≥ 16.60 pp the rule returns
-**EQUIVALENT**, and §5 has no row for EQUIVALENT. (It would need |gap(A) − gap(A2)| ≥ 16.6, a
-replicate spread larger than A's whole gap; implausible but not excluded.) That case goes back to the
-orchestrator for a ruling — this read will not improvise a branch.
+(The EQUIVALENT case, which §5 has no row for, needed F ≥ 16.60; F = 2.00, so it did not arise.)
 
 **What the number says, beside the rule (a descriptor, not a verdict).** The point estimate is in the
 registered direction and large (−10.0 pp; gap(RB) +7.0 vs gap(RC) +17.0 and gap(A) +14.0), and its
 CI excludes zero — but the registered bar is 5.0 and the test was
 powered for ≈ −11.7 pp. Rule 22 and the bar exist because the per-reader Newcombe interval holds draw
 noise only (F4): one B/C pair at one seed. The reader curves add a caveat (H-1 below). The honest
-reading is a CANDIDATE-SIZED point estimate the registered test does not detect.
+reading is a CANDIDATE-SIZED point estimate the registered test does not detect. The reader floor
+itself is small (F = 2.00 pp between two seeds on one target), so the bar was set by the registered
+5.0 minimum, not by instrument noise — what failed was the CI's reach (−3.27), i.e. POWER at n = 400.
 
 ## 6. Hazards and findings from this read
 
@@ -260,7 +255,7 @@ reading is a CANDIDATE-SIZED point estimate the registered test does not detect.
 |---|---|
 | `manipulation_check.json` · `scripts/manipulation_check.py` | §4.1 |
 | `brgap_check.txt` · `brgap_r1.{json,md,txt}` | §4.2 gate + the registered read |
-| `brgap_A2.{json,md,txt}` | A2's own invocation (finding F3) — written when A2 finishes |
+| `brgap_A2.{json,md,txt}` | A2's own invocation (finding F3) |
 | `primary_verdict.json` · `scripts/primary_rule.py` | the §4.2 rule applied |
 | `gu_rows/` · `scripts/gu_driver.py` · `scripts/gu_env.sh` | G-U: 4,800 per-battle rows, the resumable driver, its environment |
 | `untaught_popr1.{json,md}` · `gu_guard.json` · `gu_aggregate.txt` | G-U aggregate + guard rule + reproduction check |

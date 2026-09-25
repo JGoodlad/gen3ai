@@ -7,5 +7,13 @@
  ],
  "gap_A_pp": 14.0,
  "arithmetic_note": "bar >= 5.0 always; OUTSIDE-below needs hi < -bar <= -5.0, and hi = -3.27, so OUTSIDE is impossible for ANY F; EQUIVALENT would need bar >= 16.60",
- "verdict": "PENDING \u2014 A2 has not finished; no verdict from an interim read"
+ "gap_A2_pp": 12.0,
+ "A2_pooled": [
+  248,
+  400
+ ],
+ "A2_n_cycles": 4,
+ "F_pp": 2.0,
+ "bar_pp": 5.0,
+ "verdict": "NOT DETECTED"
 }
