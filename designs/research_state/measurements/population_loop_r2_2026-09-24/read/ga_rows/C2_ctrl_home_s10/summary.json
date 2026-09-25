@@ -1,0 +1,110 @@
+{
+ "by_half": {
+  "ours_challenge": {
+   "n": 50,
+   "wilson_hi": 0.7413721069227714,
+   "wilson_lo": 0.48150446927775903,
+   "win_rate": 0.62,
+   "wins": 31
+  },
+  "peer_challenge": {
+   "n": 50,
+   "wilson_hi": 0.7413721069227714,
+   "wilson_lo": 0.48150446927775903,
+   "win_rate": 0.62,
+   "wins": 31
+  }
+ },
+ "cell": {
+  "battle_format": "gen3ou",
+  "forfeit_turn_limit": 250,
+  "model_loader": "bare",
+  "model_rung": "explicit_zip",
+  "model_spec": "/home/goodlad/dev/gen3ai/models/ai_v13_28_popr2_ctrl/final_model.zip",
+  "model_step": 111280128,
+  "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v13_28_popr2_ctrl/final_model.zip",
+  "opponent": "metamon:SmallRL",
+  "opponent_agent": "SmallRL",
+  "opponent_commit": "0a00a759",
+  "opponent_kind": "metamon",
+  "opponent_version": "SmallRL@ckpt40",
+  "our_regime": "greedy",
+  "our_side": "model",
+  "our_team_count": 719,
+  "our_team_source": "pool",
+  "regime_matched": true,
+  "search_parallelism": null,
+  "search_time_ms": null,
+  "server_impl": "rust",
+  "server_uri": "ws://localhost:9500/showdown/websocket",
+  "server_version": "ws_frontend@7c511161+rust:/home/goodlad/dev/gen3ai-wt/pin-7c511161-popr2/src/rust_sim/target/release/sim_bridge",
+  "showdown_pin": "e0551883f",
+  "teamset": "home",
+  "their_regime": "greedy",
+  "their_team_count": 719,
+  "their_team_source": ""
+ },
+ "distinct_our_teams": 47,
+ "hit_forfeit_limit": 1,
+ "losses": 37,
+ "max_turns": 250,
+ "mean_turns": 60.03,
+ "median_turns": 47,
+ "n": 100,
+ "n_defaults": 0,
+ "n_redecides": 0,
+ "peer_clean": true,
+ "peer_exit_notes": [],
+ "provenance": {
+  "anchors_config": "/home/goodlad/dev/gen3ai-wt/pin-7c511161-popr2/designs/ops/anchors.json",
+  "games_path": "/home/goodlad/dev/gen3ai-wt/popr2-guards/designs/research_state/measurements/population_loop_r2_2026-09-24/read/scripts/../ga_rows/C2_ctrl_home_s10/games.jsonl",
+  "peer_report": {
+   "argmax_match_rate": 1.0,
+   "commit": "0a00a759",
+   "median_decision_s": 0.008735626004636288,
+   "model_loader": "bare",
+   "n_decisions": 2827,
+   "our_stochastic_kwargs": [
+    false
+   ],
+   "peer_clean": true,
+   "peer_error_free": true,
+   "peer_exit_notes": [],
+   "peer_games": null,
+   "peer_rc": 0,
+   "peer_rcs": [
+    0
+   ],
+   "peer_wins": null,
+   "regime_verified": true,
+   "regime_verified_decisions": true,
+   "sample_kwargs": [
+    false
+   ],
+   "series_peer_clean": true,
+   "series_regime_verified_decisions": true,
+   "team_count": 719,
+   "their_regime": "greedy",
+   "version": "SmallRL@ckpt40",
+   "visits_mean": null,
+   "visits_n": 0,
+   "wall_s": 264.31065678596497
+  }
+ },
+ "realized_visits_per_decision_mean": null,
+ "realized_visits_samples": 0,
+ "regime_verified": true,
+ "regime_verified_decisions": true,
+ "status": "OK",
+ "team_source_asymmetry": false,
+ "their_argmax_match_rates": [
+  1.0
+ ],
+ "ties": 1,
+ "wilson95": [
+  0.522097552931935,
+  0.7090240074943756
+ ],
+ "win_rate": 0.62,
+ "wins": 62
+}

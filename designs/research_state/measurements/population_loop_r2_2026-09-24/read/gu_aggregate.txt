@@ -1,0 +1,142 @@
+{
+ "what": "G-U, the untaught-8 KILL guard (round-2 registration \u00a74.3)",
+ "tree": "6eb9c776940ed6040ddb90acfbc28b038457fc42",
+ "reproduction_check": {
+  "label": "plateau_b1",
+  "wins": 963,
+  "finished": 1600,
+  "level_pp": 60.19,
+  "registered_pp": 60.19,
+  "registered_wins": 963,
+  "PASS": true,
+  "per_team_identical_to_round1_rows": true
+ },
+ "levels_pp": {
+  "popr2_loop": 60.75,
+  "popr2_ctrl": 62.06,
+  "plateau_b1": 60.19,
+  "r1_popr1_loop": 58.81,
+  "r1_popr1_ctrl": 61.25,
+  "r1_plateau_b1": 60.19
+ },
+ "timeouts": {
+  "attempted": 4800,
+  "timeouts": 0,
+  "fraction": 0.0,
+  "inconclusive_above": 0.25,
+  "inconclusive": false
+ },
+ "B2_minus_C2 (popr2_loop - popr2_ctrl)": {
+  "delta_pp": -1.31,
+  "ci95_pp": [
+   -4.19,
+   1.19
+  ],
+  "floor_pp": 3.69,
+  "clause_a": false,
+  "clause_b_ci_excludes_floor_point": false,
+  "OUTSIDE": false,
+  "OUTSIDE_BELOW": false,
+  "per_team_delta": {
+   "U_61590463": 0.005,
+   "U_92832108": 0.035,
+   "U_ce35b736": -0.05,
+   "U_9909f2e9": -0.02,
+   "U_9d5f8458": -0.02,
+   "U_f7ba5702": -0.09,
+   "U_90b94599": 0.01,
+   "U_dbf81d8e": 0.025
+  }
+ },
+ "B2_minus_B (popr2_loop - r1 popr1_loop), descriptor": {
+  "delta_pp": 1.94,
+  "ci95_pp": [
+   -1.75,
+   4.69
+  ],
+  "floor_pp": 3.69,
+  "clause_a": false,
+  "clause_b_ci_excludes_floor_point": false,
+  "OUTSIDE": false,
+  "OUTSIDE_BELOW": false,
+  "per_team_delta": {
+   "U_61590463": 0.0,
+   "U_92832108": 0.04,
+   "U_ce35b736": 0.065,
+   "U_9909f2e9": 0.04,
+   "U_9d5f8458": 0.0,
+   "U_f7ba5702": -0.09,
+   "U_90b94599": 0.05,
+   "U_dbf81d8e": 0.05
+  }
+ },
+ "C2_minus_C (popr2_ctrl - r1 popr1_ctrl), descriptor": {
+  "delta_pp": 0.81,
+  "ci95_pp": [
+   -1.38,
+   3.12
+  ],
+  "floor_pp": 3.69,
+  "clause_a": false,
+  "clause_b_ci_excludes_floor_point": true,
+  "OUTSIDE": false,
+  "OUTSIDE_BELOW": false,
+  "per_team_delta": {
+   "U_61590463": 0.01,
+   "U_92832108": 0.005,
+   "U_ce35b736": 0.005,
+   "U_9909f2e9": -0.05,
+   "U_9d5f8458": 0.035,
+   "U_f7ba5702": 0.0,
+   "U_90b94599": 0.07,
+   "U_dbf81d8e": -0.01
+  }
+ },
+ "B2_minus_G0 (popr2_loop - plateau_b1), descriptor": {
+  "delta_pp": 0.56,
+  "ci95_pp": [
+   -1.44,
+   2.25
+  ],
+  "floor_pp": 3.69,
+  "clause_a": false,
+  "clause_b_ci_excludes_floor_point": true,
+  "OUTSIDE": false,
+  "OUTSIDE_BELOW": false,
+  "per_team_delta": {
+   "U_61590463": 0.01,
+   "U_92832108": 0.02,
+   "U_ce35b736": 0.03,
+   "U_9909f2e9": -0.025,
+   "U_9d5f8458": 0.035,
+   "U_f7ba5702": -0.05,
+   "U_90b94599": 0.005,
+   "U_dbf81d8e": 0.02
+  }
+ },
+ "C2_minus_G0 (popr2_ctrl - plateau_b1), descriptor": {
+  "delta_pp": 1.88,
+  "ci95_pp": [
+   -0.19,
+   4.25
+  ],
+  "floor_pp": 3.69,
+  "clause_a": false,
+  "clause_b_ci_excludes_floor_point": false,
+  "OUTSIDE": false,
+  "OUTSIDE_BELOW": false,
+  "per_team_delta": {
+   "U_61590463": 0.005,
+   "U_92832108": -0.015,
+   "U_ce35b736": 0.08,
+   "U_9909f2e9": -0.005,
+   "U_9d5f8458": 0.055,
+   "U_f7ba5702": 0.04,
+   "U_90b94599": -0.005,
+   "U_dbf81d8e": -0.005
+  }
+ },
+ "bootstrap": "20,000 draws, ONE shared team index set, seed 20260915; the TEAM is the unit",
+ "KILL": false,
+ "VOID": false
+}

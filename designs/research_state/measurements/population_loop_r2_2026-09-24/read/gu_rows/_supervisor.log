@@ -1,0 +1,1 @@
+supervisor: worker rcs [0, 0, 0]

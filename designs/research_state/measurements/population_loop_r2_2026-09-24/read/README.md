@@ -1,9 +1,10 @@
-# Population loop round 2 — THE REGISTERED PRIMARY READ (2026-09-25) · VERDICT: NOT DETECTED → branch N+ (PROVISIONAL: the §4.3 KILL guards are not yet read)
+# Population loop round 2 — THE REGISTERED READ (2026-09-25) · VERDICT: NOT DETECTED → branch N+ (FINAL: both KILL guards read clean; reproduction check EXACT)
 
 The registration is [`../../../population_loop_round2_2026-09-24.md`](../../../population_loop_round2_2026-09-24.md)
 (committed `3265ec83` before any B2 eval; §4 the read, §5 the branches, §6 the hazards). The launch kit is
 [`../README.md`](../README.md). Method precedent: [round 1's read](../../population_loop_r1_2026-09-23/read/README.md).
-Read at `origin/main` `0896b7d9` (the meter only reads run files), from a worktree (finding K-1), 10:52 PT 09-25.
+Primary read at `origin/main` `0896b7d9` (the meter only reads run files), from a worktree (finding K-1), 10:52 PT
+09-25. KILL guards played 11:13–12:47 PT 09-25: G-U on the arms' pin `6eb9c776`, G-A on `7c511161` (§§4–5).
 
 **The codes, each time:** **B2** = `ai_v13_27_popr2_loop`, the round-2 LOOP generalist (B, the round-1
 loop generalist, continued +8M against the stable set {A, `ai_v13_13`, RB} at share 0.40). **C2** =
@@ -22,19 +23,22 @@ B / C. `ai_v13_13` = `ai_v13_13_exploit5_offense`, the second (0.39×) offense e
 |---|---|
 | §5 V: `--check` gate (§4.2.1) | **0 mismatches**, 3 runs, budget 8,060,928 · dose 3.815e-08 · offense on all three (`brgap_check.txt`) |
 | §5 V: STOP-list from files | **clean** — B2 TB `train/stable_fraction` 0.36 on all 4 post-fork points, C2 0.00; every B2 / C2 eval row `matchup_hash` `ef5242cffd`; RB2 and RC2 at 119,341,056 (`stoplist.json`, `stoplist_tb.txt`) |
-| §5 V: `plateau_b1` reproduction (963/1600) | **NOT RUN** — it belongs to G-U |
+| §5 V: `plateau_b1` reproduction (963/1600) | **PASSED EXACTLY** — 963/1600 = 60.19 pp, and every per-team rate identical to round 1's rows (`gu_guard.json`) |
 | §4.1 manipulation check M2 | **ABSORBED**, M2 = +8.67 pp [+3.06, +14.19] (`manipulation_check.json`) |
 | §4.2 PRIMARY Δ2 = gap(RB2) − gap(RC2) | **−8.25 pp [−15.01, −1.38]**, bar 5.0 → **NOT DETECTED** (`primary_verdict.json`) |
 | §4.2.3 round-over-round (descriptor) | loop chain r3 − r2 **−4.50 [−11.33, +2.39]**; control chain r3 − r2 **−6.25 [−12.83, +0.41]** → the registered "loop falls and the control does not" pattern is **NOT met** (the control fell too) |
-| §4.3 G-U (untaught 8) and G-A (SmallRL anchors) | **NOT READ** — no driver is running and none was asked of this read. Branch K comes BEFORE N+ in §5's order, so the branch below is PROVISIONAL until both are read |
-| §4.4 convergence side-check | **PENDING** — RB+ is training (ends ≈ 12:35 PT), then RC+ (≈ 14:30). One-liner: `scripts/side_check.sh` (refuses until both have finished) |
-| §5 branch | **N+ (provisional)** — Δ2 NOT DETECTED, ABSORBED. If G-U and G-A come back clean: counts **2 of 3** toward the stopping rule, and round 3 is the LAST round at this configuration |
+| §4.3 G-U (untaught 8) | **does NOT fire** — B2 − C2 = −1.31 pp [−4.19, +1.19] vs the 3.69 floor; 4,800 battles, 0 timeouts (§4) |
+| §4.3 G-A (SmallRL anchors, greedy vs greedy) | **does NOT fire** — B2 − C2 = +1.75 pp [−2.13, +5.62] vs the 11.0 floor; 24 units / 2,400 games, all OK, regime verified (§5) |
+| §4.4 convergence side-check | **PENDING** — RB+ finished its training ≈ 12:35 PT, RC+ runs to ≈ 14:30. One-liner: `scripts/side_check.sh` (refuses until both have finished). It changes no branch and no count |
+| §5 branch | **N+ — FINAL.** Δ2 NOT DETECTED, ABSORBED, guards clean, not VOID. Counts **2 of 3** toward the stopping rule. **Power decision RESOLVED by the owner (2026-09-25): NO round 3 on this lineage** — the loop carries into the NEW lineage with both power levers registered up front (§6) |
 
 ## Deviations from the registration
 
 | # | deviation | reason |
 |---|---|---|
-| D1 | §4.3 guards (G-U, G-A) not run, so branch K and V's reproduction clause are OPEN | out of this read's scope (primary only); CPU-hours of work on a box with a live training arm. The branch is labelled PROVISIONAL, not issued |
+| D1 | §4.3 guards run AFTER the primary was banked (ledger `aa8d56ea` carried the branch as PROVISIONAL) | the primary read was scoped first; the guards were then dispatched and ran as registered. The guard rule and floors were fixed before either was played |
+| D4 | G-U at **3** workers (registration: 4) and **nice 19** (round 1: 15); G-A at `--nice 19` + outer `nice -n 19` (registration: `--nice 15`) | coordinator's load constraint (a live arm, the M6 stress and a gate on the box). Workers split units and niceness schedules CPU; neither changes a number at concurrency 1, and the reproduction check came back EXACT |
+| D5 | G-A units at `--team-seed` = `--seed-base` ∈ {0,…,50} (100-game units) with `--server rust` named explicitly | round 1's D3, carried as the registration directs (§4.3: "the same S for B2 and C2 (round 1's D3)"); `--server rust` is the tree's default, named so the argv says it |
 | D2 | §4.2 secondary (`--play 400 --greedy` on RB2 / RC2) not run | its registered use is only "run only if the primary is OUTSIDE" (§4.2) |
 | D3 | read at `origin/main` `0896b7d9`, not the arms' pin | the registration's commands are main's meter (as round 1's read); it reads run files only and reproduced round 1's primary exactly at registration time |
 
@@ -106,26 +110,99 @@ The registered pattern ("the loop chain's r3 − r2 below zero AND the control c
 both chains fell in round 2, the control by more (point). The loop's gap has fallen monotonically,
 +14.0 → +7.0 → +2.5; the control's went +14.0 → +17.0 → +10.75. The contrast that governs is §2's Δ2.
 
-## 4. The §5 branch (read in order; the first that applies governs)
+## 4. §4.3 G-U — the untaught 8. **Does NOT fire. Reproduction check PASSED EXACTLY.**
+
+Tree `6eb9c776` (the arms' pin), its own worktree (`gen3ai-wt/pin-6eb9c776-popr2`, submodule `e0551883`,
+`dist` / `node_modules` linked — H-9 did not bite), its own release `sim_bridge` (`strings` shows only that
+worktree's dex path), cwd = that tree, CPU only, one thread, nice 19. Round 1's driver with the refs changed
+(`scripts/gu_driver.py`, `scripts/gu_env.sh`): `untaught_meter_opponent`, `--seed 0`, concurrency 1, 200 games
+per team, units of (ref × team × 25 battles), **4,800 battles, 0 timeouts**. The paired team bootstrap is
+round 1's, verbatim (20,000 draws, seed 20260915). `data/` is byte-identical between `6eb9c776`, `7c511161`
+and main. The aggregate was exercised first on round 1's banked rows relabelled (it reprints round 1's B − C
+−2.44 [−6.31, +0.88] exactly), and the first `plateau_b1` unit matched round 1's rows battle for battle.
+
+| ref | untaught-8 | wins/finished |
+|---|---:|---:|
+| `popr2_loop` (B2) | **60.75 pp** | 972/1600 |
+| `popr2_ctrl` (C2) | **62.06 pp** | 993/1600 |
+| `plateau_b1` (G0) | **60.19 pp** ✅ | **963/1600, EXACT**; all 8 per-team rates identical to round 1's |
+
+| contrast | Δ pp | 95 % CI | reading |
+|---|---:|---|---|
+| **B2 − C2 (the guard)** | **−1.31** | **[−4.19, +1.19]** | \|Δ\| < 3.69 and the CI contains −3.69 → **WITHIN; KILL does NOT fire** |
+| B2 − B (banked B, descriptor) | +1.94 | [−1.75, +4.69] | within |
+| C2 − C (banked C, descriptor) | +0.81 | [−1.38, +3.12] | within |
+| B2 − G0 (descriptor) | +0.56 | [−1.44, +2.25] | within |
+| C2 − G0 (descriptor) | +1.88 | [−0.19, +4.25] | within |
+
+Per team, B2 − C2: +0.005 / +0.035 / −0.050 / −0.020 / −0.020 / **−0.090** / +0.010 / +0.025 (team order
+of the manifest). The registration's stated worry ("a second −2.4 on top would put B2 − C2 near −4.9") did
+NOT happen: the cumulative two-round contrast is −1.31, SMALLER than round 1's −2.44. B2 recovered
+(+1.94 over B) more than C2 moved (+0.81 over C). Within the floor is not "no cost".
+
+## 5. §4.3 G-A — SmallRL anchors (greedy vs greedy). **Does NOT fire.**
+
+Tree `7c511161` (not the pin; §4.3), its own worktree (`gen3ai-wt/pin-7c511161-popr2`) and release
+`sim_bridge`. Round 1's driver with the models changed (`scripts/ga_driver.sh`): `python -m main.anchors
+--model <final_model.zip> --opponent metamon:SmallRL --server rust --regime greedy --teamset {away,home}
+--games 100 --team-seed S --seed-base S --device cpu --nice 19`, `OMP_NUM_THREADS=1`, one unit at a time,
+S ∈ {0,10,20,30,40,50}, the same S for B2 and C2. Each unit started its own in-repo websocket front end on
+a free 9500–9599 port and stopped it itself (no Node server; nothing left listening afterwards). **2,400 games;
+all 24 units status OK, n = 100, `regime_verified_decisions` true, `argmax_match_rate` 1.0, every model
+loaded `bare`, no `team_source_asymmetry`.** 14 games hit the 250-turn forfeit, 3 ties. The aggregate
+(`scripts/ga_aggregate.py`) was exercised first on round 1's units relabelled: it reprints round 1's B − C
+−0.0175 [−0.0562, +0.0213] exactly.
+
+| model | pooled 1,200 | rate | Wilson 95 % | away 600 | home 600 |
+|---|---:|---:|---|---:|---:|
+| B2 (the loop) | 754 | **0.628** | [0.601, 0.655] | 367 | 387 |
+| C2 (the control) | 733 | **0.611** | [0.583, 0.638] | 357 | 376 |
+| B (banked, round 1) | 733 | 0.611 | [0.583, 0.638] | 348 | 385 |
+| C (banked, round 1) | 754 | 0.628 | [0.601, 0.655] | 352 | 402 |
+| G0 (banked) | 744 | 0.620 | [0.592, 0.647] | 341 | 403 |
+
+| contrast | Δ | Newcombe 95 % | reading |
+|---|---:|---|---|
+| **B2 − C2 (the guard)** | **+0.0175** | **[−0.0213, +0.0562]** | Δ > 0; not OUTSIDE BELOW the 0.110 floor → **KILL does NOT fire** |
+| B2 − C2, away / home (descriptor) | +0.0167 / +0.0183 | [−0.039, +0.072] / [−0.036, +0.073] | — |
+| B2 − B (descriptor) | +0.0175 | [−0.0213, +0.0562] | — |
+| C2 − C (descriptor) | −0.0175 | [−0.0562, +0.0213] | — |
+| B2 − G0 / C2 − G0 (descriptor) | +0.0083 / −0.0092 | [−0.030, +0.047] / [−0.048, +0.030] | — |
+
+⚠️ **A COINCIDENCE, CHECKED:** B2's total (754) equals round 1's C, and C2's (733) equals round 1's B. It is
+NOT a label swap: every new unit's `summary.json` names its own checkpoint (`ai_v13_27_…` / `ai_v13_28_…`),
+the away/home splits differ (367/387 vs 352/402; 357/376 vs 348/385), and the per-unit counts differ
+(e.g. `away_s0`: B2 67, C2 64, B 58, C 48).
+
+**`peer_clean` false on 2 of 24 units, both COMPLETE halves, COUNTED as registered (H-3):**
+`B2_loop_home_s50` (Metamon's post-game `RecursionError` in the `ours_challenge` half, where Metamon is the
+ACCEPTOR — H-3 again) and `C2_ctrl_home_s30` (in the `peer_challenge` half, the SOP's H17 case).
+
+## 6. The §5 branch — **N+, FINAL**
+
+Read in the registered order (the first that applies governs):
 
 | branch | status |
 |---|---|
-| **V** | `--check` 0 mismatches; STOP-list clean. **The `plateau_b1` reproduction clause is OPEN** (G-U not run) |
-| **K** | **OPEN** — G-U and G-A not read |
+| **V** | **ruled out** — `--check` 0 mismatches; STOP-list clean; `plateau_b1` 963/1600 EXACT |
+| **K** | **ruled out** — G-U B2 − C2 −1.31 [−4.19, +1.19] vs 3.69; G-A +1.75 [−2.13, +5.62] pp vs 11.0 |
 | **R** | impossible — Δ2 < 0 |
 | **T** | impossible — the CI's upper end −1.38 does not clear −5.0 |
-| **N+** | **FIRES, PROVISIONALLY** — NOT DETECTED at bar 5.0; ABSORBED (M2 lower bound +3.06) |
+| **N+** | **✅ GOVERNS** — NOT DETECTED at bar 5.0; ABSORBED (M2 lower bound +3.06) |
 | M, E | ruled out (ABSORBED; the CI is not inside ±5.0) |
 
-**If the guards come back clean**, the registered consequence of N+ applies: *B2 beat what it saw, and a
-fresh best responder is not measurably weaker at this power, for the second round running.* It counts
-**2 of 3** toward the stopping rule. Round 3 is one round deeper (RB2 joins B2's set, share 0.40, the same
-dose) and is the LAST round at this configuration. **Before round 3 is registered, the orchestrator
-decides whether to buy the power the question needs** (`--eval-battles 200`, or a pooled 3-round read
-registered BEFORE round 3's numbers exist), because a third NOT DETECTED at n = 400 ends the loop on power
-alone. **If G-U or G-A fires, the branch is K** and B2 is not a round-3 parent.
+**The registered consequence:** *B2 beat what it saw — including the new specialist RB — and a fresh best
+responder is not measurably weaker at this power, for the second round running.* It counts **2 of 3**
+toward the stopping rule.
 
-## 5. Findings from this read
+**The power decision (§5 N+'s pre-condition) — RESOLVED by the owner, 2026-09-25:** there is **NO round 3
+on this lineage at this configuration.** The population loop carries into the NEW lineage with BOTH power
+levers registered up front, before that lineage's round 1: readers at `--eval-battles 200`, and a pooled
+multi-round read registered in advance. The stopping count on this lineage therefore ends at 2 of 3,
+un-exhausted; it neither turned (no T) nor was stopped (no third non-detection). The §4.4 side-check is still
+read as a descriptor when RC+ finishes; it changes no branch.
+
+## 7. Findings from this read
 
 - **F2 reproduced again, LIVE.** The unassisted `--check` listing put RB2 in round 2 and RC2 in round 3, the
   reverse of §4.2's mapping (`brgap_check.txt`). The registered `--rounds` fixed it.
@@ -143,6 +220,11 @@ alone. **If G-U or G-A fires, the branch is K** and B2 is not a round-3 parent.
 - **RC2's gap fell 6.25 pp below RC's** on a plain continuation block (the prior was "inside the bar"). A
   second 8M block at share 0.0 may itself lower exploitability, or this is reader noise (F = 2.00 is one
   pair at one target). This is why the within-round contrast, not the round-over-round chain, governs.
+- **G-A's totals coincide across rounds** (B2 = C's 754, C2 = B's 733) — checked, not a label swap (§5).
+- **H-3 fired again**: one of the two Metamon `RecursionError`s was in the ACCEPTOR half (§5). The SOP's H17
+  wording and `main.anchors`' `peer_recursion_upstream` stamp remain unfixed (anchors owner).
+- **The guards ran on a loaded box** (load 21–31 on 16 cores: RB+ training, the M6 stress, an M6 gate) at nice
+  19 with no measurable cost: G-U 1 h 23 m (3 workers), G-A 5–6 min per 100-game unit.
 - **The JSON `_meta.cwd` / `teamsets` fields name this read's worktree path**, which is removed after the
   commit; the teamsets file is the committed `designs/research_state/exploiter_teamsets_2026-09-22.json`.
 
@@ -155,4 +237,7 @@ alone. **If G-U or G-A fires, the branch is K** and B2 is not a round-3 parent.
 | `brgap_loop_chain.*` · `brgap_ctrl_chain.*` | §4.2.3 both chains |
 | `manipulation_check.json` · `scripts/manipulation_check.py` | §4.1 |
 | `stoplist.json` · `stoplist_tb.txt` · `scripts/stoplist_check.py` | §5 V STOP-list facts from files |
+| `gu_rows/` · `scripts/gu_driver.py` · `scripts/gu_env.sh` | G-U: 4,800 per-battle rows (the `plateau_b1` rows are the reproduction), the resumable driver, its environment |
+| `untaught_popr2.{json,md}` · `gu_guard.json` · `gu_aggregate.txt` | G-U aggregate (the tool's own) + the guard rule + the reproduction check |
+| `ga_rows/` · `scripts/ga_driver.sh` · `scripts/ga_aggregate.py` · `ga_guard.json` · `ga_aggregate.txt` | G-A: 24 units (`summary.json`, `games.jsonl.gz`, both peer reports; the full trees with server / peer logs are in `~/gen3ai_archive/popr2_read_2026-09-25/ga_rows_full/`), driver, aggregate + guard rule |
 | `scripts/side_check.sh` | §4.4, the pending one-liner (run from a worktree root; refuses until RB+ and RC+ have finished; writes `brgap_ext_check.txt`, `brgap_ext.{txt,json,md}`, `convergence_rule.{txt,json}` here) |
