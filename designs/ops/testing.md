@@ -480,6 +480,18 @@ written atomically to a durable directory, resumable (a restarted driver skips t
 pinned by `main/ladder_usage_smoke_test.py` and proven by a real kill + resume), detached
 (`run --detach`), `status` for progress, `report` refuses before the registered n.
 
+**The Rust core CUTOVER stress** (`python -m main.rust_core_cutover`, `gen3_core_cutover_stress_v1`;
+the pre-registered targets are `designs/endstate/program_rust_core.md` §3's CUTOVER subsection) is
+the same pattern at the cutover's scale: slices E / V / T / O (and N once `--obs-source core`
+exists) over the ladder FULL tier from both slots, the pool, procedural teams and the `production`
+policy; the four A/B fuzzers; a soak — minutes-long units, one atomic row each, resumable,
+`nice 19`, a worker cap in `control.json`, and a GOVERNOR that reads the live training arm's
+marginal fps (read-only) and throttles on a >15% drop. 🚨 **Run it from a PIN**
+(`python -m main.rust_core_cutover pin --root <dir>`: a `git archive` export with its own
+self-check binaries), never from a worktree — a binary compiled in a worktree panics once the
+worktree is removed. `status --out <dir>` reports progress by stream and every divergence by
+CUTOVER / READING / VIEW-ROAD class (`main/rust_core_cutover/verdict.py`).
+
 ### E2E tests (`*_e2e_test.py` / `*_fuzz_e2e_test.py`, require a live server)
 ```bash
 # Start server first: npm run showdown

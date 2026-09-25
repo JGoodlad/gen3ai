@@ -373,7 +373,49 @@ sharing the box (load 20–35 on 16 cpus).
 |---|---|---|---|---|---|
 | **COMMIT** | inside the ROUTINE gate, every change | **8 battles**: 6 seeded-random pairings over 6 distinct pool teams + 2 production-policy battles; RECORDED (the `__RECON__` input log: seed, packed teams, command list), committed as a gzip fixture (~50 KB) | nothing is re-played by players: both paths re-derive from the recorded input log, so no player RNG is involved; the fixture carries the pool-team hashes and the gate REFUSES if the core or the pool no longer reproduces the recorded chunks (the spike's byte check) | **~5–8 s / ~10–15 s** (all slices; E alone ≈ 2 s) | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` (unmarked) |
 | **MILESTONE** | marked `slow`; verdict merged into `designs/ops/slow_tier_status.json` so a recorded FAIL turns the routine gate red. Run when a Rust milestone lands AND when a Python change touches a covered area (`agents/battle`, `agents/observation`, the tracker files, `agents/action`) | **2 seeds × 200 seeded-random battles** (key ranges 0–199 and 5000–5199, the Phase-0 recipe) **+ 2 × 50 production-policy battles** (the `production` baseline checkpoint, `gen3_policy_sample_rng_v1`-seeded sampling) **+ the 22-scenario protocol corpus × 2 seeds** | the key recipe: teams by pool index `key`, `key+1`; player RNG 1000+key / 2000+key; sim seed `[11+key, 22+key, 33+key, 44+key]`; concurrency 1; the forfeit at `StallConfig().threshold` so no battle reaches the 1,000-turn limit. A manifest (pool content hash, checkpoint sha256, key ranges) is committed; the gate REFUSES on a manifest mismatch — a pool change regenerates the manifest in the same commit | **~3–5 min / ~8–12 min** at `-n 2` (E+V+T+O); ≤ 30 min once slice N adds depth-3 successors | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -m slow -q -n 2` |
-| **CUTOVER** | ONCE, before training switches, box otherwise idle, all cores | **the full team pool**: every one of the 719 teams × 25 seeded opponents × **both seeds** × two policy families (seeded-random; the production checkpoint at T = 1) = **71,900 battles**, whole-battle byte identity of events, views, legality, trackers, `TurnDelta`/reward and the 2501-dim obs at every decision, both viewers; depth-3 successors on 2% of decisions; then the `--debug` smoke and the **first two minutes of a real launch** | the same key recipe over the full pool; the manifest + every `__RECON__` record banked in the cutover record dir, so any failing battle is re-runnable alone | ≈ 25 core-h → **~2 h on 14 idle cores**; 24 h budgeted so the first failure can be fixed and the WHOLE campaign re-run, not the failing slice | `python3 -m main.rust_core_cutover --manifest <dir>/manifest.json --jobs 14 --out <dir>` |
+| **CUTOVER** | ONCE, before training switches — **reformulated 2026-09-24 (owner option 2): run CONCURRENTLY with the training queue at `nice 19`, gated on COVERAGE and COUNT, not hours**; the pre-registered targets are the subsection below | every full-tier LADDER team from both slots, the whole pool × 12 partners per slot, procedural teams, the `production` policy on pool / ladder / procedural, slice N env-level episodes, the four A/B fuzzers, a soak | every battle re-runnable alone from its row (key, team indices, source) and every divergent battle's input log banked | wall time set by the shared box (units are minutes long, resumable) | `python -m main.rust_core_cutover run --out ~/gen3ai_archive/cutover_stress_2026-09-24 --detach` |
+
+### The CUTOVER tier — PRE-REGISTERED targets (2026-09-24, written before any stress result was read)
+
+The owner chose option 2: the cutover stress runs CONCURRENTLY with the live training queue, at low
+priority, "and make it so we feel very good about it". Because the cores are shared, the gate is
+COVERAGE and COUNT — every target below met with **zero unexplained divergences** — never a number
+of hours. The driver is `src/main/rust_core_cutover/` (`gen3_core_cutover_stress_v1`); its
+`plan.py` IS this table (the registration on disk refuses an edit), and it runs from a `git
+archive` PIN with its own self-check binaries (never a worktree). Progress:
+`python -m main.rust_core_cutover status --out ~/gen3ai_archive/cutover_stress_2026-09-24`.
+
+**What a divergence means** (`main/rust_core_cutover/verdict.py`): **CUTOVER** — the core against
+the Python path training reads (every slice E / T / O / N field, slice V's `[core]` column and
+mask, every `[ALIGN]`, every refusal); **READING** — the reading (poke-env's, which the core mirrors,
+so both paths hold it) against the SIMULATOR (`[BOARD]`, `[TRUTH]`, a bare `[SIM-FACT]`);
+**VIEW-ROAD** — the legacy view road's projection (a bare `[PRESENTATION/…]`; §4 deletes it). The
+gate is **CUTOVER = 0**; every READING and VIEW-ROAD class is NAMED with its rate in the readiness
+report (READING classes are its "poke-env reading findings"), and an unrecognised key counts as
+CUTOVER. (The taxonomy was written after a 40-battle procedural smoke showed three V divergences
+of the view-road and R3-residue classes already on record in M2 / M3; no target was set after it.)
+
+| # | target | count (registered) | gate |
+|---|---|---|---|
+| 1 | slices **E / V / T / O**, both viewers, every decision, live == offline, the self-check build: **the LADDER full tier from both slots** (pass A: key `k` plays teams `2k` / `2k+1` — the MILESTONE recipe, so its three NAMED known divergences replay byte for byte; pass B: the same pairs SWAPPED) | 11,407 + 11,407 battles; **all 22,813 teams in each pass** | CUTOVER 0; refused 0; errored 0; A's three named keys fire in exactly their named keys |
+| 2 | the same slices on the **pool**: every team × 12 partners (offsets 1 … 233) from EACH slot, seeded-random | 8,628 battles | as 1 |
+| 3 | the same slices, **the `production` policy** at T = 1: pool (every team × 4 partners), the ladder MILESTONE tier from both slots, procedural | 2,876 + 800 + 500 battles | as 1 |
+| 4 | the same slices on **fresh PROCEDURAL** teams, seeded-random | 4,000 battles (8,000 teams) | as 1 |
+| 5 | slice E on the 22-scenario protocol corpus × 2 + every byte-fuzz fixture | 1 unit | as 1 |
+| 6 | **slice N** (env level, M6's slice): two `Gen3Env`s in LOCKSTEP on the same seed, teams and actions, one `--obs-source python`, one `--obs-source core`; per decision the obs row (bytes), the mask, the reward, `terminated` / `truncated` and EVERY training-only label key the production config emits (ARCHITECTURE.md §7) equal | 3,000 pool seeded-random + 1,000 pool `production` policy + 1,000 ladder + 500 procedural episodes | any difference = CUTOVER; errored 0 |
+| 7 | the four Rust-vs-Node **A/B fuzzers**, the self-check build, each by its own green-gate definition: `ab_fuzz.js` (omniscient STATE), `ab_fuzz.js --protocol --format gen3ou` (bytes), `bridge_ab_fuzz.js --format gen3ou` (per-side + request), `gen_sim_bridge_diff.js --format gen3ou --persistent` (external consistency) | STATE and BYTES: 10,000 ladder-full + 3,000 `ourandom` + 1,000 pool each; BRIDGE: 5,000 ladder + 2,000 `ourandom` + 1,000 trapping; SIM-BRIDGE: 2,000 ladder + 1,000 `ourandom` | 0 non-allowlisted diverged / panic / parse_error (and 0 `errored`, 0 `drain_timeouts`) |
+| 8 | **SOAK**: one persistent Rust bridge child per unit behind a real `Gen3Env` (the training transport), RSS of the child and of the env process sampled every 250 episodes | 6 children × 10,000 episodes (python obs) + 4 × 10,000 (`--obs-source core`) — each ≈ 4.6× a production child's 3-h life | 0 errors, 0 child replacements (a crash), and no unit's child or env RSS above 1.10 × its episode-250 sample at its last sample |
+| 9 | the `--debug` smoke and **the first two minutes of a real launch** under `--obs-source core` on a throwaway run dir (the forkserver preload, the compile and warm-start layers) | 1 launch | reaches its first PPO iteration; no `FATAL` / `Traceback` / `[ModelVersion] FATAL`; the launch line stamps the obs source |
+| 10 | **throughput non-regression**, `trainer_turn_benchmark.py --pin-battles` over the RUST bridge, core vs python obs source, interleaved | ≥ 6 interleaved pairs | the upper end of the 95% CI of (core − python) / python per-turn time ≤ +3% (the equivalence rule: the delta's own CI inside the bar) |
+
+Not in the tier: depth-3 successors (the original row's) — successors are search's, gated by M2's
+three search gates and M4's row road, and become a training concern only at M5.
+
+**The stress's cost to training** is itself pre-registered (`main/rust_core_cutover/governor.py`):
+the live arm's MARGINAL fps per PPO iteration, read-only from its `launcher_child.log`; a 15-min
+OFF window before the stress's first unit, a 20-min OFF window every 4 h and whenever a new run
+appears (an arm switch); if the median of 5 ON iterations falls below 0.85 × the OFF baseline, the
+worker cap drops by 2 (floor 2; start 6 of 16 cores), and the governor never raises it.
 
 **The per-emission complement — the EMISSION SELF-CHECK** (`gen3_core_emission_selfcheck_v1`,
 BUILT 2026-09-23; [`designs/rust_sim/emission_selfcheck.md`](../rust_sim/emission_selfcheck.md)).
