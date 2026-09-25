@@ -464,7 +464,19 @@ class Gen3Env(SinglesEnv):
             # action against the exact same immutable surface and the encoder doesn't rebuild it.
             legal = LegalActions.from_battle(battle)
             mask = Gen3ActionMasker.get_mask(battle, legal=legal).astype(np.int8)
-            if mask.sum() > 0:
+            # gen3_no_phantom_decision_v1 (Rust core M6 finding F1): a DECISION is recorded only
+            # when the env is actually asking the trainee to move. poke-env's `step()` embeds
+            # `battle1` on EVERY return — including a step on which the trainee was not to move
+            # (a `wait` request while the opponent force-switches, or its `battle1` fallback that
+            # re-embeds an already-answered request); recording there advanced the progress clock
+            # and recency on a decision the sim never asked for (5.0% of steps, measured by slice
+            # N), which the offline replay oracle and the Rust core never do.
+            if mask.sum() > 0 and getattr(self, "agent1_to_move", True):
+                if legal.wait:
+                    raise RuntimeError(
+                        f"{battle.battle_tag} turn {battle.turn}: a `wait` request reached the "
+                        "trainee's decision record — the sim asks for no action here "
+                        "(gen3_no_phantom_decision_v1)")
                 self._tracker.record(battle, mask, legal=legal)
                 # Advance the shared ProgressClock for the JUST-COMPLETED window BEFORE encode reads
                 # it (design §5.1). Cache the returned delta so calc_reward reuses it (no double fold).
@@ -1060,7 +1072,11 @@ class Gen3Env(SinglesEnv):
         try:
             battle = getattr(self, "_battle", None) or self.battle1
             trainee_idx = action.get(self.agent1.username, -1) if isinstance(action, dict) else action
-            if battle is self.battle1 and self._tracker.last_ctx is not None:
+            # Only an action the sim will RECEIVE advances the trackers: on a step where the trainee
+            # is not to move (the wrapper drives it with action 0) poke-env sends nothing
+            # (gen3_no_phantom_decision_v1).
+            if (battle is self.battle1 and self._tracker.last_ctx is not None
+                    and getattr(self, "agent1_to_move", True)):
                 self._tracker.advance(trainee_idx)
                 self.reward_manager.record_action(self._tracker.last_ctx, trainee_idx)
             out = super().step(action)

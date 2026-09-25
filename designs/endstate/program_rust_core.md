@@ -341,10 +341,11 @@ an `__OBS__` frame built through the PARSER (§6c) and `Gen3Env` takes it, refus
 another battle / decision / turn, a NaN cell or a disagreeing mask; labels, reward, the tracker fold
 and the mapper stay Python. `core_events --obs` now also requires the parse-chain row to equal the
 step-chain row at every decision. Slice N (env level, two envs in lockstep) is pinned at COMMIT and
-MILESTONE (`main/rust_core_cutover/slice_n_test.py`); its one NAMED class is finding **F1**: the
-live env records a trainee decision on a PHANTOM step (the trainee not asked to move), which the core
-never does — 5.0% of steps, 41 of 4,273 later decisions differ in the progress clock / recency; a
-Python-side training-input bug, reported (TECH_DEBT_BACKLOG (a)), the orchestrator's call. The
+MILESTONE (`main/rust_core_cutover/slice_n_test.py`), zero differences, no allowlist. Its first
+find, **F1** — the live env recorded a trainee decision on a PHANTOM step (the trainee not asked to
+move: a `wait` request, or poke-env's re-embed of an answered request), 5.0% of steps — is FIXED on
+the Python side (`gen3_no_phantom_decision_v1`, a TRAINING-INPUT change folded into the boundary; a
+`wait` request reaching the record raises). The
 stress (`python -m main.rust_core_cutover`, the CUTOVER subsection of §3) runs concurrently with the
 training queue under its governor. Measurements:
 [`research_state/measurements/rust_core_cutover_2026-09-24/`](../research_state/measurements/rust_core_cutover_2026-09-24/README.md).

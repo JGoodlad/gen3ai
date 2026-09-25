@@ -439,9 +439,11 @@ the owner switches. `core` takes the trainee's 2501-dim row and 11-bit mask from
 another battle, decision (`n`) or turn, a NaN cell or a mask that disagrees with the reading. Labels,
 reward, the tracker fold and the action mapping stay Python; terminal and non-decision embeds are
 still encoded here and counted (`Gen3Env.core_obs_counts`). The env-level parity gate is slice N
-(`main/rust_core_cutover/slice_n_test.py`); its one NAMED class is finding F1 — the live env
-records a trainee decision on a PHANTOM step (the trainee not asked to move), which the core never
-does. Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
+(`main/rust_core_cutover/slice_n_test.py`), zero differences, no allowlist. 🚨 **A DECISION is recorded only when the env
+asks the trainee to move** (`gen3_no_phantom_decision_v1`, a TRAINING-INPUT change): poke-env embeds
+`battle1` on every step, including a `wait` request or its re-embed of an answered request, and the
+trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES.
+Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
 
 ## The two compile flags (`--compile-opponents` · `--compile-trainer`, both DEFAULT ON)
 

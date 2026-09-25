@@ -23,20 +23,14 @@ def _stream(name, battles, per_unit, **params):
 
 
 def _assert_clean(row, min_episodes, min_core):
-    """No UNEXPLAINED difference. The one NAMED class is finding F1 (`verdict.CUTOVER_F1`): the
-    live env records a trainee decision on a PHANTOM step (the trainee not asked to move — a
-    `wait` request, the wrapper's inner `step(0)`); the core never does, so the progress clock /
-    recency differ on later decisions of that episode. It is a Python-side TRAINING-INPUT bug,
-    reported, not fixed here (the orchestrator's call); the day it is fixed this class stops
-    firing and `test_the_named_phantom_class_still_fires` must go."""
-    from main.rust_core_cutover import verdict as VD
-
+    """No difference at all — no allowlist, no named class. (Finding F1, the live env's PHANTOM
+    decision on a step the trainee was not asked to move, was FIXED on the Python side:
+    gen3_no_phantom_decision_v1; its named class is retired.)"""
     print({k: row[k] for k in ("battles", "steps", "phantom_steps", "core_obs_counts", "label_keys")})
     assert not row["errors"], row["errors"]
     n = row["totals"]["N"]
-    print(n["divergences"])
-    unexplained = {k: v for k, v in n["divergences"].items() if VD.category("N", k) != VD.CUTOVER_F1}
-    assert not unexplained, (unexplained, n["examples"])
+    assert not n["divergences"], (n["divergences"], n["examples"])
+    assert row["phantom_steps"] > 0, "no phantom step exercised — the F1 regression would go unseen"
     assert row["battles"] >= min_episodes
     assert row["core_obs_counts"]["core"]["core"] >= min_core, row["core_obs_counts"]
     assert row["core_obs_counts"]["python"]["core"] == 0
@@ -48,18 +42,6 @@ def _assert_clean(row, min_episodes, min_core):
 def test_commit_tier_the_core_obs_env_equals_the_python_env(tmp_path):
     row = E.run_envn(_stream("envn_commit", 6, 6, source="pool", policy=False, key_base=48_000), 0, tmp_path)
     _assert_clean(row, min_episodes=6, min_core=150)
-
-
-def test_the_named_phantom_class_still_fires(tmp_path):
-    """F1 is NAMED, never a blanket tolerance: on these seeds it must still fire (so a fix makes
-    this fail and the name is retired with it). Measured 2026-09-24: 41 of 4,273 core decisions
-    over 60 pool episodes, 5.0% of steps phantom."""
-    from main.rust_core_cutover import verdict as VD
-
-    row = E.run_envn(_stream("envn_f1", 12, 12, source="pool", policy=False, key_base=50_000), 0, tmp_path)
-    assert row["phantom_steps"] > 0
-    assert any(VD.category("N", k) == VD.CUTOVER_F1 for k in row["totals"]["N"]["divergences"]), \
-        row["totals"]["N"]["divergences"]
 
 
 def test_the_env_slice_has_teeth(tmp_path, monkeypatch):

@@ -245,17 +245,15 @@ def run_envn(stream, i, out):
             label_keys = sorted(obs_p)
             compare_obs(obs_p, obs_c, census, examples, (*where, "reset"))
             actions = []
-            phantom_seen = False
             for step in range(2000):
                 mask = np.asarray(obs_p["action_mask"]).astype(bool)
                 legal = np.flatnonzero(mask)
                 if not envs["python"][0].env.agent1_to_move:
                     # the TRAINING wrapper's shape (MaskableAgentWrapper.step): a step on which the
                     # trainee is not asked to move is driven with action 0 inside the wrapper, never
-                    # sampled — the env's trackers still see it (the PHANTOM decision, finding F1)
+                    # sampled (and, since gen3_no_phantom_decision_v1, never recorded as a decision)
                     act = 0
                     counts["phantom_steps"] = counts.get("phantom_steps", 0) + 1
-                    phantom_seen = True
                 elif model is not None:
                     act = _policy_action(model, obs_p, mask, rng) if legal.size else 0
                 else:
@@ -264,11 +262,7 @@ def run_envn(stream, i, out):
                 rp = envs["python"][0].step(act)
                 rc = envs["core"][0].step(act)
                 counts["steps"] += 1
-                # A difference AFTER a phantom step of this episode is tagged: finding F1 (the live
-                # env's trackers take a decision the core never takes) explains it by construction;
-                # a difference with no phantom before it is unexplained.
-                compare_obs(rp[0], rc[0], census, examples, (*where, step),
-                            tag=" [after-phantom]" if phantom_seen else "")
+                compare_obs(rp[0], rc[0], census, examples, (*where, step))
                 for j, name in ((1, "reward"), (2, "terminated"), (3, "truncated")):
                     if type(rp[j]) is not type(rc[j]) or rp[j] != rc[j]:
                         census[name] = census.get(name, 0) + 1

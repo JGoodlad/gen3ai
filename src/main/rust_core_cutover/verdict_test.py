@@ -24,12 +24,3 @@ def test_census_counts_battles_and_fields_per_key():
     c = VD.census(recs)
     assert c[VD.READING]["V [SIM-FACT] ours.moves"] == {"battles": 2, "fields": 5, "example": "a"}
     assert c[VD.CUTOVER]["O x"]["battles"] == 1
-
-
-def test_a_slice_n_difference_after_a_phantom_step_is_named_not_merged():
-    assert VD.category("N", "observation board +2 [after-phantom]") == VD.CUTOVER_F1
-    assert VD.category("N", "observation board +2") == VD.CUTOVER
-    assert VD.category("N", "observation opp_team recency+0 [after-phantom]") == VD.CUTOVER_F1
-    # a field the phantom record cannot move is NOT explained by F1, phantom or not
-    assert VD.category("N", "observation our_team moves+4 [after-phantom]") == VD.CUTOVER
-    assert VD.category("N", "win_target [after-phantom]") == VD.CUTOVER
