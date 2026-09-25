@@ -96,6 +96,7 @@ NaN cells, and which blocks were ever nonzero (a tier that never saw a block non
 |---|---|
 | COMMIT | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` (unmarked: slice O on the recorded corpus, the obs GOLDEN reproduced by the core, the teeth) |
 | MILESTONE | `… -m slow -q -n 2` — slice O on every played battle (pool, policy, LADDER), the verdict in `designs/ops/slow_tier_status.json` |
+| FRESH | `python src/agents/battle/rust_core_trackers_fuzz_test.py [--minutes N] [--procedural P]` — slice O (with E / V / T) on new battles every run, pool + mechanic-dense + PROCEDURAL teams |
 
 **The obs golden.** `test_the_obs_golden_is_reproduced_by_the_core` plays `golden_obs_capture`'s
 fixed battle set, replays the recorded input logs through `core_events --obs`, and requires the

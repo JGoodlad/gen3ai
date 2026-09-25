@@ -256,9 +256,11 @@ refusal and a bug are indistinguishable strings.
 `agents/observation/constants.py` (`gen3_core_obs_layout_v1`, pinned by `rust_core_obs_layout_test.py`);
 the dex / prior tables read from `data/`; NaN-prefilled in test / fuzz builds, zero-filled in release;
 the row on the wire as a `<f4` frame wrapped with `np.frombuffer`, a wrong dtype / shape / length /
-contiguity REFUSED (`gen3_core_obs_wire_v1`). **Slice O green at COMMIT**: 2,081 decisions, both
-viewers, every row BYTE-equal, and the obs golden reproduced hash for hash. `obs_build_benchmark.py`
-has its core row. **Search takes rows** (`expand_many`'s `rows`: each core arm's leaf is encoded on
+contiguity REFUSED (`gen3_core_obs_wire_v1`). **Slice O green at COMMIT** (2,081 decisions, both
+viewers, every row BYTE-equal; the obs golden reproduced hash for hash) **and MILESTONE** (at
+`34da7225`: 194,304 decisions over pool random, `production` policy and the LADDER-USAGE corpus, every
+row byte-equal, 1.15 M choice tokens equal; fresh battles incl. PROCEDURAL teams: 77,475 decisions, 0).
+`obs_build_benchmark.py` has its core row (8–12× the Python production encode). **Search takes rows** (`expand_many`'s `rows`: each core arm's leaf is encoded on
 its version, shipped with its mask and its choice tokens — `present::choice_tokens`, compared against
 the real mapper by slice O — so no view JSON, Python tracker or Python encoder touches a search
 successor; the three search gates pass on it, `one_sided_view_parity_fuzz_test`'s new CORE ROW road

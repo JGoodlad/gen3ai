@@ -429,8 +429,9 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 #                                  utils/bridge/search_clone_parity_fuzz_test.py (serializeBattle clone == reroll_many, bit-for-bit obs + value_crn anchor + depth-2)
 #                                  and training/obs_roundtrip_fuzz_test.py (offline obs == live obs, bit-for-bit)
 #                                  battle/rust_core_trackers_fuzz_test.py [--minutes N] (slice T on FRESH battles: the Rust core's
-#                                      per-decision trackers / α-β label / reward == EpisodeTracker, + slices E and V, pool +
-#                                      mechanic-dense + procedural teams; the fold-equivalence fuzz's shape re-pointed at the core)
+#                                      per-decision trackers / α-β label / reward == EpisodeTracker, + slices E, V and O — the
+#                                      Rust ENCODER's 2501-dim row byte-equal to Gen3ObservationEncoder's — pool + mechanic-dense
+#                                      + procedural teams; the fold-equivalence fuzz's shape re-pointed at the core)
 ```
 
 ### THREE TEAM SOURCES — the pool, the procedural generator, and the LADDER-USAGE corpus

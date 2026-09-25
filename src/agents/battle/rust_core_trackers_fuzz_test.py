@@ -8,7 +8,8 @@ driven as ``Gen3Env.embed_battle`` drives it, the α/β label and the win-indica
 :mod:`agents.battle.rust_core_parity_trackers`), on NEW battles every run: seeded-random players over
 the rust bridge, teams from the pool, the fold fuzz's mechanic-dense ``MIXED_TEAM`` (Haze, Pain
 Split, Explosion, Spikes/Roar, boosts, status) and the PROCEDURAL generator (Smogon-derived teams
-outside the pool). Every battle also runs slices E and V on the same replay.
+outside the pool). Every battle also runs slices E, V and O (the 2501-dim row, byte-equal — the
+Rust ENCODER, ``gen3_core_encoder_v1``, plus the choice tokens) on the same replay.
 
 Coverage is read off the core's NATIVE record (``record::Window``): denials, Baton Pass entries,
 drags, called moves, multi-faint windows, hazard KOs — so a run that never reached a corner says so.
@@ -81,6 +82,7 @@ def _battles(rng: random.Random, n: int, procedural: float) -> Iterable[Tuple[in
 
 def main(argv: Optional[list] = None) -> int:
     from agents.battle import rust_core_parity as P
+    from agents.battle import rust_core_parity_obs as O
     from agents.battle import rust_core_parity_trackers as T
     from agents.battle import rust_core_parity_views as V
 
@@ -94,7 +96,7 @@ def main(argv: Optional[list] = None) -> int:
     seed = args.seed if args.seed is not None else int(time.time() * 1000) % (1 << 31)
     rng = random.Random(seed)
     print(f"Tracker-equivalence fuzz (core vs EpisodeTracker) — seed {seed} — budget {args.minutes:.1f} min", flush=True)
-    events, views, trackers = P.Census(), V.ViewCensus(), T.TrackerCensus()
+    events, views, trackers, obs = P.Census(), V.ViewCensus(), T.TrackerCensus(), O.ObsCensus()
     cov: Counter = collections.Counter()
     deadline = time.time() + args.minutes * 60
     played = skips = 0
@@ -111,9 +113,10 @@ def main(argv: Optional[list] = None) -> int:
             P.compare_live(lv, events)
             batch.append(lv.recorded)
         played += len(batch)
-        P.check_battles(batch, events, views=views, trackers=trackers,
+        P.check_battles(batch, events, views=views, trackers=trackers, obs=obs,
                         on_result=lambda _b, res: _coverage(res.get("trackers"), cov))
-        bad = sum(events.divergences.values()) + sum(views.divergences.values()) + sum(trackers.divergences.values())
+        bad = (sum(events.divergences.values()) + sum(views.divergences.values())
+               + sum(trackers.divergences.values()) + sum(obs.divergences.values()))
         print(f"  battles={played} decisions={trackers.decisions} rows={trackers.window_rows} "
               f"divergences={bad} refused={len(trackers.refused) + len(events.refused)} | "
               f"denied={cov['denied']} refused-actions={cov['refused']} bp={cov['entry:batonpass']} "
@@ -122,8 +125,10 @@ def main(argv: Optional[list] = None) -> int:
     print(events.render())
     print(views.render())
     print(trackers.render())
+    print(obs.render())
     print("coverage:", json.dumps(dict(sorted(cov.items()))))
-    clean = not (events.divergences or views.divergences or trackers.divergences or events.refused or trackers.refused)
+    clean = not (events.divergences or views.divergences or trackers.divergences or obs.divergences
+                 or events.refused or trackers.refused or obs.refused)
     if skips:
         print(f"infra skips: {skips}")
     return 0 if clean and trackers.decisions > 0 and skips <= max(1, played // 4) else 1
