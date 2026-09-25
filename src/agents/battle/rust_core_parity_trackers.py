@@ -84,6 +84,13 @@ def delta_projection(d) -> dict:
         "decision_was_forced_switch": bool(d.decision_was_forced_switch),
         "our_damaging": d.our_damaging_event is not None, "opp_damaging": d.opp_damaging_event is not None,
         "opp_target_hp_delta": None if d.opp_target_hp_delta is None else float(np.float32(d.opp_target_hp_delta)),
+        # the label's non-choice facts and clause (i)'s own-hit attribution
+        # (gen3_intent_label_semantics_fixes_v1 / gen3_progress_clock_attribution_fix_v1)
+        "opp_called_via": d.opp_called_via,
+        "opp_dragged": bool(d.opp_dragged),
+        "opp_switch_is_replacement": bool(d.opp_switch_is_replacement),
+        "opp_choice_overridden": bool(d.opp_choice_overridden),
+        "our_move_hit_delta": float(np.float32(d.our_move_hit_delta)),
         "our_hp_delta": [float(x) for x in np.asarray(d.our_hp_delta, dtype=np.float32)],
         "opp_hp_delta": [float(x) for x in np.asarray(d.opp_hp_delta, dtype=np.float32)],
     }

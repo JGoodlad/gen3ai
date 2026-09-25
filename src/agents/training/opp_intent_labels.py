@@ -14,10 +14,16 @@ not choices at all, and supervising on them would teach the heads to predict our
 | they clicked a move | `opp_resolved_move_id`, no switch | **MOVE** |
 | they voluntarily pivoted | `opp_switch_to`, no faint, no move | **SWITCH** — the only case `β` learns from |
 | we PHAZED them (Roar/Whirlwind) | `opp_switch_to` **and** a move resolved | **UNKNOWN** — our choice, not theirs |
+| we DRAGGED them after their own switch, or while they were asleep / paralysed / frozen / loafing | `opp_dragged` | **UNKNOWN** — the dragged mon is one they never chose |
 | their mon fainted and was replaced | `opp_switch_to` **and** `opp_fainted` | **UNKNOWN** — forced by the rules |
+| the replacement lands in the NEXT window (the faint lay in the previous one) | `opp_switch_is_replacement` | **UNKNOWN** — the same forced switch |
 | the window closes on a forced switch | `phase_is_forced_switch` | **UNKNOWN** — there was no choice to make |
+| they called a move (Sleep Talk → Rest, Mirror Move, Metronome, Assist, Nature Power, Magic Coat, Snatch) | `opp_called_via` | **MOVE the CALLER** — they clicked Sleep Talk, not Rest |
+| our Encore landed before they moved, so the encored move ran in place of their pick | `opp_choice_overridden` | **UNKNOWN** — the executed move is not their choice |
 
-Everything not a genuine choice is MASKED, never guessed. A mask costs supervision on that row; a
+Everything not a genuine choice is MASKED, never guessed (the drag, straddling-replacement, caller and
+Encore rows are `gen3_intent_label_semantics_fixes_v1`, found by the Rust core M3 loss catalogue:
+`designs/research_state/measurements/rust_core_m3_2026-09-24/` §5.3). A mask costs supervision on that row; a
 wrong label costs the head's meaning, and `α`'s accuracy stops being readable as "how well do we
 predict the opponent".
 
@@ -80,14 +86,22 @@ def build_opp_intent_label(
     # A forced-switch window contains no opponent decision at all.
     if getattr(delta, "phase_is_forced_switch", False):
         return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0
+    # Our Encore overrode the move they picked: what executed is not what they chose.
+    if getattr(delta, "opp_choice_overridden", False):
+        return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0
 
-    move_id = delta.opp_resolved_move_id
+    # A CALLED move (Sleep Talk → Rest) is the caller's doing: the choice was the CALLER.
+    move_id = getattr(delta, "opp_called_via", None) or delta.opp_resolved_move_id
     switch_to = delta.opp_switch_to
 
     if switch_to:
         # A switch that co-occurs with a resolved move is a PHAZE (our Roar/Whirlwind moved them),
-        # and one that co-occurs with a faint is a forced replacement. Neither is their choice.
-        if move_id or getattr(delta, "opp_fainted", False):
+        # one that co-occurs with a faint is a forced replacement, a DRAGGED entrant is one they
+        # never chose (even when they had switched first, or were asleep), and a replacement for a
+        # faint in the PREVIOUS window is the same forced switch. None of them is their choice.
+        if (move_id or getattr(delta, "opp_fainted", False)
+                or getattr(delta, "opp_dragged", False)
+                or getattr(delta, "opp_switch_is_replacement", False)):
             return KIND_UNKNOWN, 0, SWITCH_SLOT_NONE, 0
         slot = opp_slot_of_species(switch_to)
         sp = None if species_num_of is None else species_num_of(switch_to)

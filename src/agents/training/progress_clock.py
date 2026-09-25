@@ -404,9 +404,17 @@ class ProgressClock:
                      prev_our_has_sub: bool = False, our_has_sub_now: bool = False) -> bool:
         # (i) OUR move dealt net damage above the floor to a non-fainted opp (our-attributed — NOT
         #     net opp HP, which would let passive Sandstorm/Leech chip reset the clock for free).
+        #     gen3_progress_clock_attribution_fix_v1 (T1): the target's NET fall alone is not our
+        #     damage — `our_damaging_event` is ANY move of ours whose named target lost HP from ANY
+        #     source, so a Taunt / Toxic / failed Soft-Boiled / missed Hydro Pump read as progress
+        #     whenever sand, poison, Spikes on the entrant or the opponent's own recoil chipped
+        #     ≥ 3 %. Our move's OWN hits (`our_move_hit_delta`: bare `-damage` lines while we are
+        #     the current mover) must clear the floor too.
         ev = getattr(delta, "our_damaging_event", None)
         tgt = getattr(delta, "opp_target_hp_delta", None)
-        if ev is not None and tgt is not None and float(tgt) <= -PROGRESS_DMG_EPS:
+        hit = float(getattr(delta, "our_move_hit_delta", 0.0) or 0.0)
+        if (ev is not None and tgt is not None and float(tgt) <= -PROGRESS_DMG_EPS
+                and hit <= -PROGRESS_DMG_EPS):
             return True
         # (ii) a status LANDED on the opp this window (the transition event, not a re-tick).
         if getattr(delta, "opp_status_applied", None) is not None:

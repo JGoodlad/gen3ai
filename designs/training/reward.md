@@ -112,11 +112,13 @@ None, byte-identical default). It adds **no** resume-immutable field — it ride
 precedent = `HiddenPowerTracker`). It is updated at `record()`/`embed_battle` time (so the obs is fresh
 — poke-env runs `embed_battle` before `calc_reward`), and read by BOTH the obs encoder (`value()` →
 `reactive_layout["turns_since_progress"]`, absolute obs column **1602**) and the reward
-(`last_penalty` → `no_progress_tax`), so **obs and reward key on one value**. The ternary predicate per decision window: PROGRESS (our-attributed damage ≥3% / status
+(`last_penalty` → `no_progress_tax`), so **obs and reward key on one value**. The ternary predicate per decision window: PROGRESS (our-attributed damage ≥3% — the target's net fall AND our move's OWN hits, `TurnDelta.our_move_hit_delta`, each ≥3%, so sand / poison / recoil / Spikes chip beside a Taunt or a failed move is not ours, `gen3_progress_clock_attribution_fix_v1` / status
 landed / hazard layer / forced opp commit / **an our-owned residual — Toxic/poison/burn or Leech
 Seed/Curse/Nightmare — chipping the opp NET-down** → reset), DENIED (freeze), NO_OP (deliberate
 wheel-spin → increment + charge, gated off on forced-switch windows and when no switch is legal).
-DENIED splits two ways (`_denial_kind`): **exogenous** (miss / Protect-block / cant) is ALWAYS frozen;
+DENIED splits two ways (`_denial_kind`): **exogenous** (miss / Protect-block / cant) is ALWAYS frozen
+(a Protect-block reads outcome `"fail"` since `TurnView` folds the `-activate … Protect` — before
+that fix the block read `"hit"` and this branch could not fire);
 a **productive heal** is frozen only for `HEAL_FREEZE_GRACE`=2 consecutive windows — a SUSTAINED heal
 with no progress (the self-play mirror heal-war) then falls through to NO_OP and CHARGES, so the
 250-turn stall finally registers. **Rest-loop (`gen3_rest_loop_stall_v1`):** a REST that already happened

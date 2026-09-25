@@ -24,6 +24,15 @@ the env emits the opponent's move NUM and `match_seats_to_move_num` locates it a
 belief miss is MASKED and `opp_intent/alpha_mask_rate` is logged — that rate is the BELIEF's coverage
 failure, and folding it into "α was wrong" would hide which component to fix.
 
+**Only a CHOICE is a label** (`opp_intent_labels.build_opp_intent_label`). A switch-in the
+opponent did not choose is MASKED — our phaze, a DRAG by our Roar / Whirlwind (even after their own
+switch, or while they were asleep / paralysed), a replacement after a faint whether the faint
+shares the window or lay in the previous one — as is a move our Encore overrode before they acted.
+A CALLED move is labelled as its CALLER (Sleep Talk, not the Rest it called). The drag,
+straddling-replacement, caller and Encore rows are `gen3_intent_label_semantics_fixes_v1` (the Rust
+core M3 loss catalogue's L1–L5; before them ≈ 16 labels per 1,000 decisions named a mon the
+opponent never picked).
+
 **The label is for the PREVIOUS decision.** Their turn-t action is only observable while building the
 obs for t+1, so `instrumented_ppo` shifts the label block back one row **before `get()` shuffles**
 and drops any pair whose successor starts an episode (`align_labels_to_predictions`). Skipping that

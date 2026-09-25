@@ -148,14 +148,13 @@ class TestSubstituteAbsorption:
         assert any(r["t"] != EVENT_T_MOVE for r in rows), (
             f"no row records the sub absorbing a hit; window = {rows}")
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "2026-08-17 follow-up audit — a MISATTRIBUTION, not an absence (see §3.5). Substitute's "
-        "own 25% HP cost is a `|-damage|` with NO `[from]` clause on the mon that is also the "
-        "opponent's recorded move target, so the tracker's damage-attach rule credits it to the "
-        "OPPONENT'S move. Confirmed live: `machamp seismictoss hp_delta=-0.2493` on a turn its "
-        "Seismic Toss dealt ZERO (the sub ate it) — 0.2493 is exactly Blissey's 178/714 sub "
-        "cost. Strict xfail so a fix turns this RED."))
     def test_substitute_self_cost_is_not_credited_to_the_opponents_move(self):
+        """FIXED by `gen3_event_window_semantics_fixes_v1` (the current-mover rule): a bare
+        `-damage` attaches to an open move only while its user is the side MOVING. Found by the
+        2026-08-17 follow-up audit (§3.5) as a strict xfail — Substitute's own 25 % HP cost is a
+        `|-damage|` with NO `[from]` on the mon that is the opponent's recorded target, and it was
+        credited to the OPPONENT'S move (live: `machamp seismictoss hp_delta=-0.2493` on a turn
+        its Seismic Toss dealt ZERO — exactly Blissey's 178/714 sub cost). Now a plain pin."""
         rows = _move_rows(_fold([
             _ev(0, EventKind.MOVE, OPP, OPP_SP, move_id="seismictoss"),
             _ev(1, EventKind.VOLATILE_END, OURS, OUR_SP, effect="Substitute", op="end"),

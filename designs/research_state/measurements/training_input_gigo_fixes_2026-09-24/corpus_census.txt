@@ -1,0 +1,27 @@
+battles compared: 239  (only in one capture: [])
+EXCLUDED — a production-policy battle whose trajectory branched (the policy reads the changed obs): ['policy.106']
+event-window rows: 82327   viewer decisions: 33766   decisions with any change (a changed row in its window, its label, or its clock): 20282
+
+ROW changes:
+  W1 stat drop                                                     1837    54.40 /1,000
+  W4 Protect block                                                  822    24.34 /1,000
+  W5 side start                                                     806    23.87 /1,000
+  W5 side end                                                        88     2.61 /1,000
+  T1-row foreign bare damage                                         64     1.90 /1,000
+  W2 faint without a lethal line (was attack)                        10     0.30 /1,000
+  W2 faint without a lethal line (was weather)                        2     0.06 /1,000
+  W3 transfer |-item|                                                 2     0.06 /1,000
+
+LABEL changes:
+  L3 straddling replacement                                         336     9.95 /1,000
+  L1/L2 drag                                                        228     6.75 /1,000
+  L4 caller                                                          12     0.36 /1,000
+
+CLOCK transitions:
+  T2 blocked attack frozen                                          334     9.89 /1,000
+  cascade (n carries)                                                77     2.28 /1,000
+  T1 clause (i) without our own hit                                  63     1.87 /1,000
+
+OBS cells (golden):
+
+✅ every change is explained by the three fixes

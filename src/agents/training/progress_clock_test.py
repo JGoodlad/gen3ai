@@ -64,7 +64,7 @@ def delta(**kw):
     canonical charged NO_OP, so each test names only the one fact it is about."""
     base = dict(
         our_move_id="tackle", our_switch_to=None, our_prev_active="ourmon",
-        our_damaging_event=None, opp_target_hp_delta=None,
+        our_damaging_event=None, opp_target_hp_delta=None, our_move_hit_delta=0.0,
         opp_status_applied=None, opp_switch_to=None,
         our_failed_to_move=False, our_move_outcome="hit",
         our_status_applied=None, our_status_cured=None,
@@ -100,7 +100,8 @@ _HIT = SimpleNamespace(move_id="tackle", target_species="oppmon")
 
 SCENARIO = [
     ("plain no-op", dict(), {}, {}),
-    ("damaging move", dict(our_damaging_event=_HIT, opp_target_hp_delta=-0.3), {}, {}),
+    ("damaging move", dict(our_damaging_event=_HIT, opp_target_hp_delta=-0.3,
+                           our_move_hit_delta=-0.3), {}, {}),
     ("accuracy miss", dict(our_move_outcome="miss"), {}, {}),
     ("heal 1 (in grace)", dict(our_move_id="recover", our_hp_delta=_HEAL), {}, {}),
     ("heal 2 (in grace)", dict(our_move_id="recover", our_hp_delta=_HEAL), {}, {}),

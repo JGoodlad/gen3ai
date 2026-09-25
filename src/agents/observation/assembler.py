@@ -54,6 +54,7 @@ from agents.battle.battle_event import OPP, OURS, EventKind
 from agents.battle.turn_view import faint_cause_id
 from agents.observation.constants import (
     EVENT_COL,
+    EVENT_T_BOOST,
     EVENT_T_MOVE,
     EVENT_TOKEN_DIM,
     EVENT_WINDOW_N,
@@ -96,8 +97,11 @@ def write_event_row(vec: np.ndarray, o: int, rec: Dict[str, Any], cur_turn: int)
     vec[o + _c.TARGET_SPECIES] = float(_target.num) if _target is not None else 0.0
     vec[o + _c.MOVE] = float(_mv.num) if _mv is not None else 0.0
     _mag = rec["hp_delta"]
-    vec[o + _c.MAGNITUDE] = (max(-1.0, min(1.0, _mag)) if rec["t"] == EVENT_T_MOVE
-                             else max(-1.0, min(1.0, _mag / 6.0)))
+    # MOVE: the attributed hp fraction; BOOST: the SIGNED stage change / 6; HAZARD: +1 a side
+    # condition started, −1 one ended (gen3_event_window_semantics_fixes_v1). Every other row
+    # carries 0, so only BOOST is scaled.
+    vec[o + _c.MAGNITUDE] = (max(-1.0, min(1.0, _mag / 6.0)) if rec["t"] == EVENT_T_BOOST
+                             else max(-1.0, min(1.0, _mag)))
     if rec["t"] == EVENT_T_MOVE:
         vec[o + _c.OUT_HIT] = 0.0 if (rec["missed"] or rec["failed"]) else 1.0
         vec[o + _c.OUT_MISS] = 1.0 if rec["missed"] else 0.0

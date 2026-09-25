@@ -376,9 +376,12 @@ def _event_status_id(status: "str | None") -> int:
 # gen3_event_semantics_v1 — the two classifiers the H-B rows need.
 # `_classify_faint_cause` is IMPORTED from turn_view rather than reimplemented: the frames and
 # the event window must never disagree about what "weather" means, and one copy cannot drift.
-from agents.battle.turn_view import _classify_faint_cause
+from agents.battle.turn_view import _classify_faint_cause, damage_is_lethal, is_protect_block
 
 _SELF_KO_MOVE_IDS: frozenset = frozenset({"explosion", "selfdestruct"})
+# The moves whose item lines move an item from one mon to the other (W3 above).
+_ITEM_TRANSFER_WORDS: tuple = ("trick", "thief", "covet", "switcheroo")
+
 def _classify_item_transition(kind, from_clause: "Optional[str]") -> int:
     """|-item| / |-enditem| (+ its `[from]`) -> one of the ITEM_TR_* ids.
 
@@ -388,13 +391,17 @@ def _classify_item_transition(kind, from_clause: "Optional[str]") -> int:
     now holding it — which is information about their set, not just about ours. Collapsing them
     into one "item gone" bit is the conflation this column exists to end."""
     from agents.battle.battle_event import EventKind
+    fc = (from_clause or "").strip().lower()
+    # gen3_event_window_semantics_fixes_v1 (W3): a transfer move writes an item line on BOTH
+    # mons — Trick `|-item|` ×2, Thief / Covet `|-enditem|` on the victim + `|-item|` on the
+    # taker. Every one of them is the item CHANGING HANDS, so the `|-item|` side is SWAPPED too;
+    # reading it as REVEALED ("disclosed, still held") recorded a Trick as two plain reveals.
+    if any(w in fc for w in _ITEM_TRANSFER_WORDS):
+        return ITEM_TR_SWAPPED
     if kind is EventKind.ITEM:
         return ITEM_TR_REVEALED
-    fc = (from_clause or "").strip().lower()
     if "knock off" in fc or "knockoff" in fc:
         return ITEM_TR_REMOVED
-    if any(w in fc for w in ("trick", "thief", "covet", "switcheroo")):
-        return ITEM_TR_SWAPPED
     return ITEM_TR_CONSUMED
 
 
@@ -435,7 +442,14 @@ class EventWindowTracker:
         # Per SIDE, reset when that side's mon leaves the field (a fresh mon's death has
         # nothing to do with the previous occupant's last chip).
         self._last_dmg_cause: dict = {}
+        # gen3_event_window_semantics_fixes_v1 (W2): did that last damage take the mon to 0 HP? A
+        # faint no damage line caused (Destiny Bond, Perish Song, Memento) is not an `attack`.
+        self._last_dmg_lethal: dict = {}
         self._used_selfko: dict = {}   # side -> did its last move self-KO
+        # The CURRENT MOVER — the side of the latest `|move|`. A bare `-damage` is the open move's
+        # own hit only while its user is the one moving: the other side's Substitute / Belly Drum /
+        # Ghost-Curse HP cost also prints a `-damage` with no `[from]` (T1's class, on the row).
+        self._last_mover: Optional[str] = None
         self._first_mover_turn: int = -1    # the turn whose first mover is recorded
         self._first_mover_side: Optional[str] = None
         self._forced: dict = {}             # side -> active slot empty (post-faint window)
@@ -472,6 +486,7 @@ class EventWindowTracker:
                     "status": 0, "turn": et,
                 })
                 self._open_move[side] = rec
+                self._last_mover = side
                 # Explosion / Self-Destruct kill their OWN user; the lethal damage carries no
                 # `[from]`, so without this the faint would classify as a plain `attack`.
                 self._used_selfko[side] = (e.move_id in _SELF_KO_MOVE_IDS)
@@ -481,6 +496,7 @@ class EventWindowTracker:
                 # status / item residuals all carry one) AND the damaged mon IS the move's
                 # recorded target (a switched-in replacement taking hazard chip is not the hit).
                 self._last_dmg_cause[side] = e.from_clause   # None ⇒ a direct hit
+                self._last_dmg_lethal[side] = damage_is_lethal(e)
                 mover = OPP if side == OURS else OURS
                 om = self._open_move.get(mover)
                 # `from_clause`, NOT `value.get("from")`. On a DAMAGE event the parser stores
@@ -490,6 +506,7 @@ class EventWindowTracker:
                 # magnitude. Shipped v81, trained on for two generations.
                 if (om is not None and om["turn"] == et
                         and not e.from_clause
+                        and self._last_mover == mover
                         and sp and om["target"] == sp):
                     amt = e.amount
                     if amt is not None:
@@ -511,6 +528,14 @@ class EventWindowTracker:
                         om["failed"] = True
                     else:
                         om["crit"] = True
+            elif k is EventKind.ACTIVATE and side is not None and is_protect_block(e.effect):
+                # gen3_event_window_semantics_fixes_v1 (W4): `|-activate|<target>|move: Protect` —
+                # the PROTECTOR is named, and the open move of the side that is MOVING was stopped.
+                # It read OUT_HIT (magnitude 0) until this, i.e. a blocked attack looked landed.
+                mover = OPP if side == OURS else OURS
+                om = self._open_move.get(mover)
+                if om is not None and om["turn"] == et and self._last_mover == mover:
+                    om["failed"] = True
             elif k in (EventKind.IMMUNE, EventKind.RESISTED, EventKind.SUPEREFFECTIVE) \
                     and side is not None:
                 # The producer tags these on the MOVER ("attach to the resolving mover",
@@ -542,6 +567,7 @@ class EventWindowTracker:
                 # A fresh mon inherits no chip history from the one it replaced — without this
                 # the incoming mon's first faint would read the PREVIOUS occupant's last cause.
                 self._last_dmg_cause.pop(side, None)
+                self._last_dmg_lethal.pop(side, None)
                 self._used_selfko.pop(side, None)
             elif k is EventKind.FAINT and side is not None and sp:
                 self._append({
@@ -551,9 +577,11 @@ class EventWindowTracker:
                     # gen3_event_semantics_v1: WHY it fainted. Reuses `turn_view`'s classifier
                     # so the event window and the TurnDelta fold cannot drift on the vocabulary.
                     "faint_cause": _classify_faint_cause(
-                        self._last_dmg_cause.get(side), bool(self._used_selfko.get(side))),
+                        self._last_dmg_cause.get(side), bool(self._used_selfko.get(side)),
+                        bool(self._last_dmg_lethal.get(side))),
                 })
                 self._last_dmg_cause.pop(side, None)
+                self._last_dmg_lethal.pop(side, None)
                 self._used_selfko.pop(side, None)
                 if side == OURS and self._our_active == sp:
                     self._our_active = None
@@ -571,11 +599,15 @@ class EventWindowTracker:
                     "status": _event_status_id(e.status), "turn": et,
                 })
             elif k in (EventKind.BOOST, EventKind.UNBOOST) and sp:
+                # gen3_event_window_semantics_fixes_v1 (W1): `amount` is ALREADY SIGNED — the
+                # event builder negates an `|-unboost|` (`gen3_battle._build_event`). Negating it
+                # again here stored every stat DROP (Intimidate, Curse's Speed, Overheat, Screech)
+                # as a RISE, 58 per 1,000 decisions.
                 amt = float(e.amount or 0.0)
                 self._append({
                     "t": EVENT_T_BOOST, "actor": sp, "side": side, "target": None,
                     "move_id": None,
-                    "hp_delta": (amt if k is EventKind.BOOST else -amt),   # the magnitude col
+                    "hp_delta": amt,   # the magnitude col: the signed stage change
                     "missed": False, "failed": False, "crit": False, "eff": 0,
                     "we_first": False, "status": 0, "turn": et,
                 })
@@ -587,9 +619,14 @@ class EventWindowTracker:
                     "item_tr": _classify_item_transition(k, e.from_clause),
                 })
             elif k is EventKind.SIDE and side is not None:
+                # gen3_event_window_semantics_fixes_v1 (W5): the magnitude column carries the
+                # direction, +1 a condition STARTED (a Spikes layer laid, Reflect up) and −1 one
+                # ENDED (Rapid Spin's clear, a screen expiring). A clear read exactly like a set.
                 self._append({
                     "t": EVENT_T_HAZARD, "actor": None, "side": side, "target": None,
-                    "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
+                    "move_id": None,
+                    "hp_delta": (-1.0 if e.value.get("op") == "sideend" else 1.0),
+                    "missed": False, "failed": False,
                     "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
                 })
             elif k is EventKind.CANT and sp:

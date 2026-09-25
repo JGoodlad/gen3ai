@@ -9671,3 +9671,29 @@ field-level census showed exactly 4 / 991 decisions move, all in the TOXIC half 
 mon's `status_counters` (0 → 1/8, the one-behind shape); over a wider 80-battle deterministic set,
 65 / 9,987 decisions move — `context[*].boosts` of a FAINTED active (55) and the toxic slot (10) —
 and nothing else (`designs/research_state/measurements/pe_reading_fixes_2026-09-24/`).
+
+## 2026-09-24 — TRAINING-INPUT CHANGE: the Rust core M3 loss catalogue's GIGO fixed on both paths — the event window, the α/β label, the progress clock (`gen3_event_window_semantics_fixes_v1`, `gen3_intent_label_semantics_fixes_v1`, `gen3_progress_clock_attribution_fix_v1`; no version bump — dims and weight shapes unchanged)
+
+🚨 **Arms launched from this commit on read a different event window, a different
+`turns_since_progress`, and (with the intent loss on) different α/β targets, and are NOT
+obs-identical to earlier arms.** Pinned runs execute their pin's code and are unaffected. It folds
+into the `c97358e8` training-input boundary: no run has trained from main since (round 1 is pinned
+to `6eb9c776`). The EVENT WINDOW (the obs's only history route): a stat DROP was stored as a RISE
+(W1, 58 / 1,000 decisions — `update` negated an already-signed amount); a Protect / Detect block
+read OUT_HIT (W4); a Rapid Spin clear was a HAZARD row identical to a set (W5 — the magnitude
+column now carries +1 start / −1 end, unscaled); Trick's `|-item|` lines read REVEALED (W3 —
+SWAPPED on both mons, the Thief taker's line too); a Destiny Bond / Perish Song faint read `attack`
+(W2 — a faint no damage line took to 0 HP is `other`); and the OTHER side's own bare `-damage`
+(Substitute / Belly Drum cost) was attached to our move's hit (the feature-coverage audit's strict
+xfail §3.5 — a bare `-damage` now attaches only while the open move's user is moving). The α/β
+LABEL masks a DRAGGED entrant (L1 / L2), the replacement for a faint in the previous window (L3)
+and an Encore override (L5), and labels a CALLED move as its CALLER (L4). The CLOCK's clause (i)
+requires our move's OWN hit (T1 — sand / poison / recoil / Spikes chip beside a Taunt or a failed
+move reset it), and a blocked attack reads outcome `fail`, so the exogenous freeze fires (T2).
+`TurnDelta` gains `opp_dragged` / `opp_switch_is_replacement` / `opp_called_via` /
+`opp_choice_overridden` / `our_move_hit_delta` (none encoded). The Rust core's trackers take the
+same rules; slice T is 0 at COMMIT and MILESTONE (incl. the ladder tiers). The golden obs fixture
+was regenerated after a value-aware census: 698 / 991 decisions move, ONLY the five event-window
+fields and the clock scalar, every cell resolved to its row and event; over 239 corpus battles
+every label / row / clock change is explained, at rates agreeing with M3's catalogue
+(`designs/research_state/measurements/training_input_gigo_fixes_2026-09-24/`).

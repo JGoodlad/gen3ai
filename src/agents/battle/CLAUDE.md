@@ -53,7 +53,15 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   `cant_reason`/`cant_move`, `crit`/`missed`/`failed`, `effectiveness`, `damaging_move`,
   `status_applied`/`status_cured`, `item_lost`/`item_gained`) + turn-level facts
   (`move_order`, `we_moved_first`, `both_attacked`, `someone_fainted`,
-  `damage_on(species, side=…)`). `TurnDelta.build_from_events` (`training/turn_delta.py`)
+  `damage_on(species, side=…)`). Three facts need the CROSS-side event order and are folded in
+  `_fold_attribution` (`gen3_event_window_semantics_fixes_v1` / `gen3_progress_clock_attribution_fix_v1`):
+  `blocked` (the move was stopped by the target's Protect / Detect — `outcome` is then `"fail"`),
+  `hit_dealt` (a bare `-damage` on the other side while THIS side is the current mover — the
+  move's own hits, never sand / poison / recoil / Spikes / the other side's Substitute cost) and
+  `choice_overridden` (an Encore landed before this side moved). `faint_details` calls a faint
+  that no damage line took to 0 HP `other`, never `attack` (Destiny Bond / Perish Song; an absent
+  `hp_after` keeps the classic reading); `is_protect_block` / `damage_is_lethal` are the shared
+  predicates the event window uses too. `TurnDelta.build_from_events` (`training/turn_delta.py`)
   folds this on every production path — the diff-based detective is retired (see below).
 - **`LiveView` / `LiveSide` / `LivePokemon` / `LiveMove`** (`live_view.py`) — the
   **current-board** read surface ("what is true now"), built via `battle.live_view()`. An

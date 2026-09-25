@@ -313,6 +313,27 @@ class TurnDelta:
     attempted_switch_rejected: bool = False
     attempted_switch_to: Optional[str] = None
 
+    # --- What the α/β label and the progress clock need beyond the frozen layout ---------------
+    # gen3_intent_label_semantics_fixes_v1 / gen3_progress_clock_attribution_fix_v1. NONE of these
+    # is encoded into the observation; each is folded from the event log by `TurnView`.
+    #
+    # ``opp_dragged`` — the opponent's active was DRAGGED in this window (our Roar / Whirlwind), so
+    # its ``opp_switch_to`` is a mon it never chose (L1, and L2: refused, then dragged).
+    # ``opp_switch_is_replacement`` — the opponent's switch-in filled a slot EMPTIED BY A FAINT
+    # that lay in the PREVIOUS window (the decision that opened this one saw its active fainted):
+    # the free replacement, not a chosen switch (L3). The same-window case is ``opp_fainted``.
+    # ``opp_called_via`` — the move that CALLED the opponent's executed move (Sleep Talk → Rest,
+    # Mirror Move, Metronome, Assist, Nature Power, Magic Coat, Snatch): the CALLER is the choice (L4).
+    # ``opp_choice_overridden`` — an Encore landed on the opponent's mon before it moved this turn,
+    # so the move it executed is the encored one, not the one it chose (L5).
+    # ``our_move_hit_delta`` — HP fraction our moves' OWN hits took off the opponent (≤ 0); the
+    # progress clock's clause (i) requires it (T1).
+    opp_dragged: bool = False
+    opp_switch_is_replacement: bool = False
+    opp_called_via: Optional[str] = None
+    opp_choice_overridden: bool = False
+    our_move_hit_delta: float = 0.0
+
     @property
     def opp_resolved_move_id(self) -> Optional[str]:
         """Opp's move id with protocol-truth preference.
@@ -577,6 +598,12 @@ class TurnDelta:
             opp_item_lost=opp_item_lost,
             attempted_switch_rejected=view.ours.attempted_rejected,
             attempted_switch_to=our_attempted_switch_to,
+            opp_dragged=opp.drag,
+            opp_switch_is_replacement=(opp_switch_to is not None
+                                       and prev_ctx.opp_active in prev_ctx.opp_fainted_species),
+            opp_called_via=opp.called_via,
+            opp_choice_overridden=opp.choice_overridden,
+            our_move_hit_delta=float(our.hit_dealt),
         )
 
     @classmethod

@@ -272,7 +272,8 @@ class EventCol(IntEnum):
       ACTOR_SIDE      2  +1 ours / −1 opp / 0 neither
       TARGET_SPECIES  3  target species dex num (embedding-routed; 0 none)
       MOVE            4  move dex num (embedding-routed; 0 none)
-      MAGNITUDE       5  MOVE: attributed hp_delta; BOOST: signed stage delta / 6
+      MAGNITUDE       5  MOVE: attributed hp_delta; BOOST: signed stage delta / 6 (a drop is
+                         NEGATIVE); HAZARD: +1 a side condition started, −1 one ended
       OUT_HIT..FAIL   6-8   outcome one-hot (moves only) — CONTIGUOUS
       CRIT            9  critical hit
       EFF_NEUTRAL..IMMUNE 10-13  effectiveness one-hot (moves only) — CONTIGUOUS, and indexed
@@ -362,7 +363,8 @@ ITEM_TR_NONE = 0
 ITEM_TR_REVEALED = 1   # |-item| — the item was merely disclosed, still held
 ITEM_TR_CONSUMED = 2   # |-enditem| with no [from] — berry/herb used up by its own trigger
 ITEM_TR_REMOVED = 3    # |-enditem| [from] Knock Off — gone for the rest of the battle (ADV)
-ITEM_TR_SWAPPED = 4    # |-enditem| [from] Trick / Thief / Covet — the OPPONENT now holds it
+ITEM_TR_SWAPPED = 4    # an item line [from] Trick / Thief / Covet — the item CHANGED HANDS (on the
+                       # victim's |-enditem| the opponent now holds it; on an |-item| this mon just got it)
 N_ITEM_TRANSITIONS = 5
 
 # The STATUS vocabulary of column 15, here for the same reason `EVENT_T_*` is: it is the obs

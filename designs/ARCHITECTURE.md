@@ -79,6 +79,18 @@ embedding ids; **no Linear reads the block raw** — its only consumer is the op
 `history_events` event-seat encoder (§ flag table). The columns are documented at
 `agents/observation/constants.py` (`EVENT_TOKEN_DIM`).
 
+**What the columns say** (`gen3_event_window_semantics_fixes_v1`, the Rust core M3 loss
+catalogue's findings W1–W5): a BOOST row's MAGNITUDE is the SIGNED stage change / 6 (a drop is
+negative); a HAZARD row's MAGNITUDE is +1 when a side condition STARTS (a Spikes layer, a screen)
+and −1 when one ENDS (Rapid Spin's clear, a screen expiring); a MOVE row stopped by the target's
+Protect / Detect reads OUT_FAIL; a MOVE row's attributed `hp_delta` counts a bare `-damage` only
+while that move's user is the side MOVING (the other side's own Substitute / Belly Drum cost is not
+the hit); a FAINT that no damage line caused (Destiny Bond, Perish Song, Memento) reads `other`,
+never `attack`; an item line `[from]` Trick / Thief / Covet reads SWAPPED on both mons. The same
+rules hold in the Rust core's trackers (slice T, 0 divergences). Measured on the golden battle
+set: 698 / 991 decisions' obs change, in those five fields and the clock scalar only
+(`designs/research_state/measurements/training_input_gigo_fixes_2026-09-24/`).
+
 `gen3_entity_rehome_v1` (Stage 3): the two 144-dim matchup matrices and 6 of the 11 reactive
 scalars are **deleted** — the D/V edge families compute a strict superset of the matchup signal
 GPU-side, `active_status` was byte-redundant with the per-mon condition one-hot, and
@@ -209,6 +221,16 @@ with one addition and one accepted loss:
   attempted target "is not on the wire and is recovered at fold time from the action index", and
   this window folds from events alone. Trappedness itself still reaches the model through the
   per-mon slots (`gen3_entity_rehome_v1`).
+
+**The α/β intent label and the progress clock read `TurnDelta`, and both mask or discount what
+was not a choice or not our doing** (`gen3_intent_label_semantics_fixes_v1`,
+`gen3_progress_clock_attribution_fix_v1`): the label is MASKED when the opponent's switch-in was
+DRAGGED by our Roar / Whirlwind, was the free replacement for a faint in the previous window, or
+when our Encore overrode its move before it acted, and a CALLED move (Sleep Talk → Rest, Mirror
+Move, Magic Coat, …) is labelled as its CALLER. The clock's clause (i) ("our move dealt damage")
+requires our move's OWN hit to clear the 3 % floor as well as the target's net fall, and a
+blocked attack (outcome `fail` against Protect / Detect) is the exogenous FREEZE, not a charged
+no-op.
 
 Per-slot layout of the event record, and the embedded-ID manifest that routes raw ids to
 embedding tables, live in `src/agents/observation/CLAUDE.md`.

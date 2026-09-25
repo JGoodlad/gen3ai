@@ -49,6 +49,28 @@ FAINT_CAUSE_VOCAB: tuple = (
 FAINT_CAUSE_DIM: int = len(FAINT_CAUSE_VOCAB)  # 8
 _FAINT_CAUSE_TO_IDX: Dict[str, int] = {c: i for i, c in enumerate(FAINT_CAUSE_VOCAB)}
 
+def damage_is_lethal(e: BattleEvent) -> bool:
+    """False iff a DAMAGE event is KNOWN to have left its mon above 0 HP. ``hp_after`` is an
+    OPTIONAL key (``EVENT_OPTIONAL_KEYS``; the live builder always writes it), so an event without
+    one is unknown and keeps the classic reading — only a faint whose last damage demonstrably did
+    not KO (or that had no damage line at all) is re-read as "not an attack"."""
+    hp_after = e.value.get("hp_after")
+    return hp_after is None or float(hp_after) <= 0.0
+
+
+# `|-activate|<target>|move: Protect` — the target's Protect / Detect STOPPED the move being used
+# (gen3_event_window_semantics_fixes_v1, W4). Endure's `-activate` is NOT a block: the move still
+# hits, to 1 HP. Bare and `move:`-prefixed forms both occur in the gen-3 sim.
+_PROTECT_BLOCK_EFFECTS: frozenset = frozenset({"protect", "detect", "move: protect", "move: detect"})
+
+
+def is_protect_block(effect: Optional[str]) -> bool:
+    """True iff an ``|-activate|`` effect is a Protect / Detect BLOCK of the move being used.
+    ONE predicate for the H-B event window and :class:`TurnView`, so the two cannot disagree on
+    what a block is (the Rust core's `record.rs` / `history.rs` / `turnview.rs` match the same set)."""
+    return (effect or "").strip().lower() in _PROTECT_BLOCK_EFFECTS
+
+
 # Self-KO moves: the user always faints (even on a miss/immune target in Gen 3
 # they still die), so a faint on the user's own side this turn is classified selfko.
 _SELF_KO_MOVES: frozenset = frozenset({"explosion", "selfdestruct"})
@@ -78,10 +100,21 @@ def faint_cause_id(cause: Optional[str]) -> int:
     return _FAINT_CAUSE_TO_IDX[cause] + 1
 
 
-def _classify_faint_cause(from_clause: Optional[str], used_selfko: bool) -> str:
-    """Map a DAMAGE event's ``[from]`` clause + self-KO flag → faint cause label."""
+def _classify_faint_cause(from_clause: Optional[str], used_selfko: bool,
+                          lethal: bool = True) -> str:
+    """Map a DAMAGE event's ``[from]`` clause + self-KO flag → faint cause label.
+
+    ``lethal`` is whether the fainting mon's LAST damage line took it to 0 HP. A faint that no
+    damage line caused — Destiny Bond (``|-activate|<user>|move: Destiny Bond`` then the attacker's
+    ``|faint|``), Perish Song (``|-start|<mon>|perish0`` then ``|faint|``), Memento — has no ``[from]``
+    to read, and the old "no ``[from]`` ⇒ attack" fall-through called it a KO by a direct move
+    (gen3_event_window_semantics_fixes_v1, W2). The vocabulary has no ``perishsong`` /
+    ``destinybond`` entry (that is the next layout change), so it is ``"other"`` — the honest
+    catch-all — never ``"attack"``."""
     if used_selfko:
         return "selfko"
+    if not lethal:
+        return "other"
     if from_clause is None:
         return "attack"
     fc = from_clause.strip().lower()
@@ -135,6 +168,14 @@ class SideTurn:
     status_cured: Optional[str] = None  # status this side's active LOST this turn
     item_lost: Optional[str] = None  # item consumed/knocked off this turn (|-enditem|)
     item_gained: Optional[str] = None  # item revealed/gained this turn (|-item|)
+    blocked: bool = False  # this side's move was STOPPED by the target's Protect / Detect
+    #   (`|-activate|<target>|move: Protect`) — outcome "fail" (gen3_event_window_semantics_fixes_v1)
+    hit_dealt: float = 0.0  # HP fraction THIS side's moves' own hits took off the other side
+    #   (≤ 0): a `-damage` with no `[from]` on the other side while THIS side is the current mover
+    #   (the latest `|move|`). Sand / poison / recoil / Spikes on the entrant / the opponent's own
+    #   Substitute or Belly Drum cost are not our hit (T1).
+    choice_overridden: bool = False  # an Encore landed on this side's mon BEFORE it moved this
+    #   turn, so the move it executed is the encored one, not the one it chose (L5)
     attempted_rejected: bool = False  # an action this side chose was REFUSED by the server
     #   this window (|error|[Unavailable choice] — a switch tried while trapped). Folded from
     #   the out-of-band CHOICE_REJECTED event; only ever set on OUR side (the opponent's
@@ -153,7 +194,7 @@ class SideTurn:
             return None
         if self.missed:
             return "miss"
-        if self.failed:
+        if self.failed or self.blocked:
             return "fail"
         return "hit"
 
@@ -167,6 +208,7 @@ class TurnView:
         self.our_side = our_side
         self.ours = self._fold_side(OURS)
         self.opp = self._fold_side(OPP)
+        self._fold_attribution()
         self._move_order: List[str] = self._compute_move_order()
 
     # ---- constructors ----
@@ -261,6 +303,41 @@ class TurnView:
                     else (1.0 if dealt < 0.0 else None),
                 )
         return st
+
+    def _fold_attribution(self) -> None:
+        """The facts that need the CROSS-SIDE event order (gen3_event_window_semantics_fixes_v1):
+
+        * **the current mover's own hits** (``hit_dealt``) — a ``-damage`` with no ``[from]`` on the
+          side opposite the latest ``|move|``'s user. A ``[from]`` marks every residual, recoil,
+          hazard, weather and item chip; the current-mover rule excludes the other side's own
+          no-``[from]`` HP costs (Substitute, Belly Drum, a Ghost's Curse, which print a bare
+          ``-damage`` on their user while THEY are moving).
+        * **a Protect / Detect block** (``blocked``) — ``|-activate|<target>|move: Protect`` stops
+          the current mover's move; the activate line names the PROTECTOR, so it is the other
+          side's move that is blocked.
+        * **an Encore override** (``choice_overridden``) — an Encore ``-start`` on a side's mon
+          BEFORE that side's move in the same turn: the move it executes is the encored one.
+        """
+        mover: Optional[str] = None
+        encored_turn: Dict[str, int] = {}
+        for e in self.events:
+            k = e.kind
+            if k is EventKind.MOVE and e.side in (OURS, OPP):
+                mover = e.side
+                if encored_turn.get(e.side) == e.turn:
+                    self._side(e.side).choice_overridden = True
+            elif k is EventKind.DAMAGE and mover is not None and e.side in (OURS, OPP) \
+                    and e.side != mover and not e.from_clause:
+                self._side(mover).hit_dealt += float(e.value.get("amount", 0.0))
+            elif k is EventKind.ACTIVATE and e.side in (OURS, OPP) and mover is not None \
+                    and e.side != mover and is_protect_block(e.effect):
+                self._side(mover).blocked = True
+            elif k is EventKind.VOLATILE_START and e.side in (OURS, OPP) \
+                    and (e.effect or "").strip().lower() in ("encore", "move: encore"):
+                encored_turn[e.side] = e.turn
+
+    def _side(self, side: str) -> "SideTurn":
+        return self.ours if side == OURS else self.opp
 
     def _compute_move_order(self) -> List[str]:
         """Sides in the order they first acted this turn (first element moved first)."""
@@ -370,11 +447,14 @@ class TurnView:
         move this turn, that side's faint is classified ``"selfko"`` regardless
         of the last damage reason.
         """
-        # Build (species, side) → last DAMAGE [from] clause, in event order.
+        # Build (species, side) → last DAMAGE [from] clause, in event order, and whether that
+        # damage took the mon to 0 HP (a faint no damage line caused is not an `attack`, W2).
         last_damage_reason: Dict[tuple, Optional[str]] = {}
+        last_damage_lethal: Dict[tuple, bool] = {}
         for e in self.events:
             if e.kind is EventKind.DAMAGE and e.actor_species and e.side:
                 last_damage_reason[(e.actor_species, e.side)] = e.reason
+                last_damage_lethal[(e.actor_species, e.side)] = damage_is_lethal(e)
 
         details: List[FaintDetail] = []
         for e in self.events:
@@ -387,7 +467,8 @@ class TurnView:
                 and side_turn.move_id in _SELF_KO_MOVES
             )
             from_clause = last_damage_reason.get((e.actor_species, e.side))
-            cause = _classify_faint_cause(from_clause, used_selfko)
+            lethal = last_damage_lethal.get((e.actor_species, e.side), False)
+            cause = _classify_faint_cause(from_clause, used_selfko, lethal)
             details.append(FaintDetail(species=e.actor_species, side=e.side, cause=cause))
         return details
 

@@ -112,7 +112,7 @@ def attributable_damage(e) -> bool:
 _ORACLE_SELF_KO_MOVES = frozenset({"explosion", "selfdestruct"})
 
 
-def oracle_faint_cause_id(from_clause, used_selfko: bool) -> int:
+def oracle_faint_cause_id(from_clause, used_selfko: bool, lethal: bool = True) -> int:
     """WHY a mon fainted → its 1-based `FAINT_CAUSE_VOCAB` id, classified from the `[from]`
     clause of the last damage it took. Written out here rather than calling the battle layer's
     classifier: a residual death (weather / status / hazard / Leech Seed) emits no preceding
@@ -120,6 +120,10 @@ def oracle_faint_cause_id(from_clause, used_selfko: bool) -> int:
     silently-agreeing copy of the producer's branch would test nothing."""
     if used_selfko:
         label = "selfko"
+    elif not lethal:
+        # no damage line took it to 0 HP (Destiny Bond, Perish Song, Memento) — not an attack
+        # (gen3_event_window_semantics_fixes_v1, W2)
+        label = "other"
     elif from_clause is None:
         label = "attack"
     else:
@@ -144,13 +148,13 @@ def oracle_item_transition(kind, from_clause) -> int:
     item stops being held and they mean different things: a CONSUMED berry was spent, a Knock
     Off REMOVAL is permanent in ADV, and a Trick/Thief/Covet SWAP tells you the opponent now
     holds it. Derived here from the event kind + clause alone."""
+    fc = (from_clause or "").strip().lower()
+    if any(w in fc for w in ("trick", "thief", "covet", "switcheroo")):
+        return ITEM_TR_SWAPPED            # BOTH item lines of a transfer (W3), incl. an `|-item|`
     if kind is EventKind.ITEM:
         return ITEM_TR_REVEALED
-    fc = (from_clause or "").strip().lower()
     if "knock off" in fc or "knockoff" in fc:
         return ITEM_TR_REMOVED
-    if any(w in fc for w in ("trick", "thief", "covet", "switcheroo")):
-        return ITEM_TR_SWAPPED
     return ITEM_TR_CONSUMED
 
 
@@ -169,7 +173,9 @@ def _oracle_rows(battle, resync_log):
     # CLEARED when that side's mon leaves the field — a fresh mon inherits no chip history, and
     # getting that wrong makes an incoming mon's first faint read the previous occupant's cause.
     last_dmg_cause = {}
+    last_dmg_lethal = {}
     used_selfko = {}
+    mover_now = None       # the side of the latest |move| — whose bare -damage is a hit
     resync = sorted(resync_log, key=lambda r: r[0])     # by seq watermark
 
     def flags():
@@ -208,11 +214,16 @@ def _oracle_rows(battle, resync_log):
             rows.append(r)
             open_move[side] = r
             used_selfko[side] = e.move_id in _ORACLE_SELF_KO_MOVES
+        if k is EventKind.MOVE and side:
+            mover_now = side
         elif k is EventKind.DAMAGE and side:
             last_dmg_cause[side] = e.from_clause        # None ⇒ a direct hit
+            _ha = e.value.get("hp_after")
+            last_dmg_lethal[side] = _ha is None or float(_ha) <= 0.0
             mover = OPP if side == OURS else OURS
             om = open_move.get(mover)
             if (om is not None and om["turn"] == et and attributable_damage(e)
+                    and mover_now == mover
                     and sp and om["target"] == sp and e.amount is not None):
                 om["mag"] += float(e.amount)
         elif k in (EventKind.MISS, EventKind.FAIL, EventKind.CRIT) and side:
@@ -226,6 +237,13 @@ def _oracle_rows(battle, resync_log):
                     om["fail"], om["hit"] = 1.0, 0.0
                 else:
                     om["crit"] = 1.0
+        elif k is EventKind.ACTIVATE and side and str(e.effect or "").strip().lower() in (
+                "protect", "detect", "move: protect", "move: detect"):
+            # a Protect / Detect BLOCK names the protector; the moving side's move failed (W4)
+            mover = OPP if side == OURS else OURS
+            om = open_move.get(mover)
+            if om is not None and om["turn"] == et and mover_now == mover:
+                om["fail"], om["hit"] = 1.0, 0.0
         elif k in (EventKind.IMMUNE, EventKind.RESISTED, EventKind.SUPEREFFECTIVE) and side:
             om = open_move.get(side)                      # producer tags the MOVER, like crit/miss/fail
             if om is not None and om["turn"] == et:
@@ -243,6 +261,7 @@ def _oracle_rows(battle, resync_log):
             else:
                 opp_active = sp
             last_dmg_cause.pop(side, None)
+            last_dmg_lethal.pop(side, None)
             used_selfko.pop(side, None)
         elif k is EventKind.FAINT and side and sp:
             if emit(seq):
@@ -250,8 +269,10 @@ def _oracle_rows(battle, resync_log):
                                  mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0,
                                  wf=False, status=0, turn=et, fw=flags(),
                                  faint=oracle_faint_cause_id(last_dmg_cause.get(side),
-                                                             bool(used_selfko.get(side)))))
+                                                             bool(used_selfko.get(side)),
+                                                             bool(last_dmg_lethal.get(side)))))
             last_dmg_cause.pop(side, None)
+            last_dmg_lethal.pop(side, None)
             used_selfko.pop(side, None)
             if side == OURS and our_active == sp:
                 our_active, forced["ours"] = None, True
@@ -267,7 +288,7 @@ def _oracle_rows(battle, resync_log):
         elif k in (EventKind.BOOST, EventKind.UNBOOST) and sp and emit(seq):
             amt = float(e.amount or 0.0)
             rows.append(dict(t=EVENT_T_BOOST, actor=sp, side=side, target=None, move=None,
-                             mag=(amt if k is EventKind.BOOST else -amt), hit=0.0, miss=0.0,
+                             mag=amt, hit=0.0, miss=0.0,        # amount is already SIGNED (W1)
                              fail=0.0, crit=0.0, eff=0, wf=False, status=0, turn=et,
                              fw=flags()))
         elif k in (EventKind.ITEM, EventKind.ENDITEM) and sp and emit(seq):
@@ -277,7 +298,7 @@ def _oracle_rows(battle, resync_log):
                              item_tr=oracle_item_transition(k, e.from_clause)))
         elif k is EventKind.SIDE and side and emit(seq):
             rows.append(dict(t=EVENT_T_HAZARD, actor=None, side=side, target=None, move=None,
-                             mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0,
+                             mag=(-1.0 if e.value.get("op") == "sideend" else 1.0), hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0,
                              wf=False, status=0, turn=et, fw=flags()))
         elif k is EventKind.CANT and sp and emit(seq):
             # "this mon could not move, and why". ATTRIBUTED TO THE MON THAT LOST ITS TURN, not
@@ -313,7 +334,8 @@ def _want_vec(r, cur_turn):
     """The oracle's expected row, keyed by NAMED column — never a positional tuple."""
     side = 1.0 if r["side"] == OURS else (-1.0 if r["side"] == OPP else 0.0)
     is_move = r["t"] == EVENT_T_MOVE
-    mag = max(-1.0, min(1.0, r["mag"])) if is_move else max(-1.0, min(1.0, r["mag"] / 6.0))
+    # only a BOOST row carries stage units; a HAZARD row's ±1 is written as is
+    mag = max(-1.0, min(1.0, r["mag"] / 6.0)) if r["t"] == EVENT_T_BOOST else max(-1.0, min(1.0, r["mag"]))
     want = {
         C.TYPE: float(r["t"]),
         C.ACTOR_SPECIES: _sp_num(r["actor"]),

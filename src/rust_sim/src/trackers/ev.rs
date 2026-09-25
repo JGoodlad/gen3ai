@@ -81,3 +81,26 @@ pub fn other(r: Rel) -> Rel {
         Rel::Opp => Rel::Ours,
     }
 }
+
+/// `BattleEvent.effect`: `value.get("effect") or value.get("condition")`.
+pub fn effect(r: &Reading) -> Option<&str> {
+    match nz(s(r, "effect")) {
+        Some(x) => Some(x),
+        None => s(r, "condition"),
+    }
+}
+
+/// `turn_view.is_protect_block` — an `|-activate|` effect that is a Protect / Detect BLOCK of the move
+/// being used (`gen3_event_window_semantics_fixes_v1`, W4). Endure's `-activate` is not a block.
+pub fn is_protect_block(effect: Option<&str>) -> bool {
+    matches!(
+        effect.unwrap_or("").trim().to_lowercase().as_str(),
+        "protect" | "detect" | "move: protect" | "move: detect"
+    )
+}
+
+/// `turn_view.damage_is_lethal` — FALSE iff the damage is KNOWN to have left its mon above 0 HP
+/// (`hp_after` is an optional key: an absent one keeps the classic reading).
+pub fn damage_is_lethal(r: &Reading) -> bool {
+    num(r, "hp_after").is_none_or(|h| h <= 0.0)
+}

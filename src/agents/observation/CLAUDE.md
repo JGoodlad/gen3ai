@@ -611,6 +611,10 @@ deletion cost, and the three facts that ship WITHOUT a substitute, is
 `EventWindowTracker` (same window, same alive-filtered resync), threaded via
 `encode(event_window=…)`; rows most-recent-LAST, front zero-padding; ids are embedding ids and
 NO Linear reads the block raw (its only consumer is the opt-in `--history-events` event seats).
+MAGNITUDE is stage-scaled (`/ 6`) on a BOOST row ONLY — signed, a drop negative — and a HAZARD row
+writes its ±1 (condition started / ended) as is (`gen3_event_window_semantics_fixes_v1`; the rest of
+that fix — the Protect OUT_FAIL, the current-mover damage rule, the no-lethal-line faint, Trick
+SWAPPED — lives in the fold, `designs/ARCHITECTURE.md` §1.1).
 
 > ⚠️ **Feeding it takes the FULL three-step decision protocol** — `record` →
 > `update_progress_clock` → `encode(event_window=…)`, in that order. `update_progress_clock` is

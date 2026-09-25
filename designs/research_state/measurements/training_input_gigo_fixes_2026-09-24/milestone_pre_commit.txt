@@ -1,0 +1,30 @@
+✅ slice V: 0 divergences — 50 battles, 100 viewers, 6748 decisions, 3656296 field comparisons, truth checks {'opp.types': 18569, 'ours.volatiles': 6333, 'opp.volatiles': 6712, 'opp.move-in-moveset': 63395, 'opp.item': 21490, 'opp.ability': 17943, 'opp.consumed-item-not-held': 189}, core board checks {'BOARD': 1195871}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 50 battles, 100 viewers, 6748 decisions, 194677 event-window rows, labels {2: 1850, 0: 3934, 1: 964}, 6748 rewards (100 terminal)
+✅ slice V: 0 divergences — 50 battles, 100 viewers, 3951 decisions, 1931305 field comparisons, truth checks {'opp.ability': 10184, 'opp.types': 8661, 'ours.volatiles': 3523, 'opp.volatiles': 3933, 'opp.item': 9685, 'opp.move-in-moveset': 21523}, core board checks {'BOARD': 650564}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 50 battles, 100 viewers, 3951 decisions, 106140 event-window rows, labels {2: 1413, 1: 388, 0: 2150}, 3951 rewards (100 terminal)
+✅ slice V: 0 divergences — 360 battles, 720 viewers, 64991 decisions, 37551725 field comparisons, truth checks {'opp.ability': 248588, 'opp.types': 197223, 'ours.volatiles': 61786, 'opp.volatiles': 64389, 'opp.move-in-moveset': 762849, 'opp.item': 257227, 'opp.consumed-item-not-held': 4632}, core board checks {'BOARD': 12049356}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 360 battles, 720 viewers, 64991 decisions, 1913361 event-window rows, labels {2: 14473, 0: 31561, 1: 18957}, 64991 rewards (720 terminal)
+✅ slice V: 0 divergences — 150 battles, 300 viewers, 25975 decisions, 14966177 field comparisons, truth checks {'opp.ability': 91994, 'opp.types': 81761, 'ours.volatiles': 24644, 'opp.volatiles': 25765, 'opp.move-in-moveset': 288107, 'opp.item': 102447, 'opp.consumed-item-not-held': 2052}, core board checks {'BOARD': 4797319}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 150 battles, 300 viewers, 25975 decisions, 761327 event-window rows, labels {2: 5808, 0: 12858, 1: 7309}, 25975 rewards (300 terminal)
+✅ slice V: 0 divergences — 147 battles, 294 viewers, 25620 decisions, 14774002 field comparisons, truth checks {'opp.ability': 93031, 'opp.types': 79626, 'ours.volatiles': 24310, 'opp.volatiles': 25410, 'opp.move-in-moveset': 290234, 'opp.item': 99630, 'opp.consumed-item-not-held': 3064}, core board checks {'BOARD': 4741645}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 147 battles, 294 viewers, 25620 decisions, 751099 event-window rows, labels {2: 5723, 0: 12882, 1: 7015}, 25620 rewards (294 terminal)
+❌ slice V: 47 divergences in 1 classes at 47 decisions (431.19 per 1,000), 0 refused — 1 battles, 2 viewers, 109 decisions, 61427 field comparisons, truth checks {'opp.ability': 441, 'opp.types': 305, 'ours.volatiles': 100, 'opp.volatiles': 105, 'opp.move-in-moveset': 875, 'opp.item': 304}, core board checks {'BOARD': 19524}, named rules {'V15': 47}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 1 battles, 2 viewers, 109 decisions, 3010 event-window rows, labels {2: 26, 1: 33, 0: 50}, 109 rewards (2 terminal)
+❌ slice V: 17 divergences in 1 classes at 17 decisions (178.95 per 1,000), 0 refused — 1 battles, 2 viewers, 95 decisions, 52995 field comparisons, truth checks {'opp.ability': 373, 'opp.types': 318, 'ours.volatiles': 86, 'opp.volatiles': 93, 'opp.item': 323, 'opp.move-in-moveset': 671}, core board checks {'BOARD': 16953}, named rules {'V15': 17}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 1 battles, 2 viewers, 95 decisions, 2544 event-window rows, labels {2: 28, 1: 30, 0: 37}, 95 rewards (2 terminal)
+✅ slice V: 0 divergences — 360 battles, 720 viewers, 67022 decisions, 38763924 field comparisons, truth checks {'opp.ability': 261197, 'opp.types': 199057, 'ours.volatiles': 63777, 'opp.volatiles': 66468, 'opp.move-in-moveset': 796733, 'opp.item': 261703, 'opp.consumed-item-not-held': 5343}, core board checks {'BOARD': 12428930}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 360 battles, 720 viewers, 67022 decisions, 1977039 event-window rows, labels {2: 15119, 1: 18230, 0: 33673}, 67022 rewards (720 terminal)
+❌ slice V: 3 divergences in 3 classes at 2 decisions (21.05 per 1,000), 0 refused — 1 battles, 2 viewers, 95 decisions, 53133 field comparisons, truth checks {'opp.ability': 345, 'opp.types': 376, 'ours.volatiles': 85, 'opp.volatiles': 93, 'opp.item': 351, 'opp.move-in-moveset': 563}, core board checks {'BOARD': 16974}, named rules {}, KNOWN poke-env findings (facts) {} (decisions) {}
+✅ slice T: 0 divergences — 1 battles, 2 viewers, 95 decisions, 2516 event-window rows, labels {2: 31, 1: 39, 0: 25}, 95 rewards (2 terminal)
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_100_149]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_production_policy_battles[policy_keys_6000_6049]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_protocol_and_byte_fuzz_corpora
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[even_keys_whole_pool]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_0_149]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_battles[ladder_keys_150_299]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[237]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[260]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_seeded_random_battles[odd_keys_whole_pool]
+PASSED src/agents/battle/rust_core_parity_test.py::test_milestone_ladder_known_divergences_still_fire[173]
+10 passed in 743.22s (0:12:23)
+EXIT 0

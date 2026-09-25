@@ -115,7 +115,9 @@ impl ProgressClock {
     #[allow(clippy::too_many_arguments)]
     fn is_progress(d: &DeltaProjection, live: &OneSidedView, prev_spikes: i64, opp_spikes_now: i64,
                    prev_boost: i64, boost_now: i64, prev_sub: bool, sub_now: bool) -> bool {
-        if d.our_damaging_event.is_some() {
+        // (i) needs our move's OWN hits to clear the floor, not only the target's net fall (T1,
+        // `gen3_progress_clock_attribution_fix_v1`)
+        if d.our_damaging_event.is_some() && d.our_move_hit_delta <= -PROGRESS_DMG_EPS {
             if let Some(t) = d.opp_target_hp_delta {
                 if (t as f64) <= -PROGRESS_DMG_EPS {
                     return true;

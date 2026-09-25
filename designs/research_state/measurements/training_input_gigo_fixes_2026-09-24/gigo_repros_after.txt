@@ -1,0 +1,292 @@
+
+######## e12.taunt_in_sand_reads_as_progress — slice T: 0 divergences over 8 decisions
+--- p1 decision after chunk 6
+    RECORD  switch {"to":["ours","tyranitar"],"entry":"lead"}
+    RECORD  switch {"to":["opp","snorlax"],"entry":"lead"}  effects: ['weather/ability/Sand Stream']
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p1 decision after chunk 10
+    RECORD  move {"user":["ours","tyranitar"],"id":"taunt","target":["opp","snorlax"]}  effects: ['volatile_start/snorlax/direct']
+    RECORD  move {"user":["opp","snorlax"],"id":"bodyslam","target":["ours","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"taunt","our_prev_active":"tyranitar","opp_move_id":"bodyslam","opp_prev_active":"snorlax","opp_move_known":true,"our_hp_delta":[-0.085,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_effectiveness":0.5,"we_moved_first":true,"our_damaging_event":["tyranitar","snorlax",null,"taunt",1.0],"opp_damaging_event":["snorlax","tyranitar",null,"bodyslam",0.5],"our_hp_after":[0.915,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.939,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.085,"opp_target_hp_delta":-0.061,"our_move_outcome":"hit","opp_move_outcome":"hit","attempted_switch_to":"tyranitar","opp_resolved_move_id (property)":"bodyslam"}
+    LABEL   {"kind":0,"move_id":"bodyslam","switch_species":null,"switch_slot":null,"attacker":"snorlax"}
+    CLOCK   {"n": 2, "value": 0.45815690999132624}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"ours","target":"snorlax","move_id":"taunt","we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"opp","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.14662756598240467,"eff":2}
+--- p1 decision after chunk 14
+    RECORD  move {"user":["ours","tyranitar"],"id":"taunt","still":true}  effects: ['fail/tyranitar/direct']
+    RECORD  move {"user":["opp","snorlax"],"id":"bodyslam","target":["ours","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers', 'volatile_end/snorlax/direct']
+    DELTA   {"our_move_id":"taunt","our_prev_active":"tyranitar","opp_move_id":"bodyslam","opp_prev_active":"snorlax","opp_move_known":true,"our_hp_delta":[-0.073,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_effectiveness":0.5,"we_moved_first":true,"our_damaging_event":["tyranitar","snorlax",null,"taunt",1.0],"opp_damaging_event":["snorlax","tyranitar",null,"bodyslam",0.5],"our_hp_after":[0.842,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.879,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.073,"opp_target_hp_delta":-0.061,"our_move_outcome":"fail","opp_move_outcome":"hit","attempted_switch_to":"tyranitar","opp_resolved_move_id (property)":"bodyslam"}
+    LABEL   {"kind":0,"move_id":"bodyslam","switch_species":null,"switch_slot":null,"attacker":"snorlax"}
+    CLOCK   {"n": 3, "value": 0.5781296526357756}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"ours","target":"snorlax","move_id":"taunt","failed":true,"we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"opp","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.1348973607038123,"eff":2}
+--- p1 decision after chunk 18
+    RECORD  move {"user":["ours","tyranitar"],"id":"taunt","target":["opp","snorlax"]}  effects: ['volatile_start/snorlax/direct']
+    RECORD  move {"user":["opp","snorlax"],"id":"bodyslam","target":["ours","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"taunt","our_prev_active":"tyranitar","opp_move_id":"bodyslam","opp_prev_active":"snorlax","opp_move_known":true,"our_hp_delta":[-0.097,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_effectiveness":0.5,"we_moved_first":true,"our_damaging_event":["tyranitar","snorlax",null,"taunt",1.0],"opp_damaging_event":["snorlax","tyranitar",null,"bodyslam",0.5],"our_hp_after":[0.745,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.818,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.097,"opp_target_hp_delta":-0.061,"our_move_outcome":"hit","opp_move_outcome":"hit","attempted_switch_to":"tyranitar","opp_resolved_move_id (property)":"bodyslam"}
+    LABEL   {"kind":0,"move_id":"bodyslam","switch_species":null,"switch_slot":null,"attacker":"snorlax"}
+    CLOCK   {"n": 4, "value": 0.6711877414712396}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"ours","target":"snorlax","move_id":"taunt","we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"opp","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.15835777126099715,"eff":2}
+--- p2 decision after chunk 7
+    RECORD  switch {"to":["opp","tyranitar"],"entry":"lead"}
+    RECORD  switch {"to":["ours","snorlax"],"entry":"lead"}  effects: ['weather/ability/Sand Stream']
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p2 decision after chunk 11
+    RECORD  move {"user":["opp","tyranitar"],"id":"taunt","target":["ours","snorlax"]}  effects: ['volatile_start/snorlax/direct']
+    RECORD  move {"user":["ours","snorlax"],"id":"bodyslam","target":["opp","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"bodyslam","our_prev_active":"snorlax","opp_move_id":"taunt","opp_prev_active":"tyranitar","opp_move_known":true,"our_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.085,0.0,0.0,0.0,0.0,0.0],"our_effectiveness":0.5,"our_damaging_event":["snorlax","tyranitar",null,"bodyslam",0.5],"opp_damaging_event":["tyranitar","snorlax",null,"taunt",1.0],"our_hp_after":[0.939,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.915,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.061,"opp_target_hp_delta":-0.085,"our_move_outcome":"hit","opp_move_outcome":"hit","attempted_switch_to":"snorlax","our_move_hit_delta":-0.147,"opp_resolved_move_id (property)":"taunt"}
+    LABEL   {"kind":0,"move_id":"taunt","switch_species":null,"switch_slot":null,"attacker":"tyranitar"}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"opp","target":"snorlax","move_id":"taunt","we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"ours","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.14662756598240467,"eff":2}
+--- p2 decision after chunk 15
+    RECORD  move {"user":["opp","tyranitar"],"id":"taunt","still":true}  effects: ['fail/tyranitar/direct']
+    RECORD  move {"user":["ours","snorlax"],"id":"bodyslam","target":["opp","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers', 'volatile_end/snorlax/direct']
+    DELTA   {"our_move_id":"bodyslam","our_prev_active":"snorlax","opp_move_id":"taunt","opp_prev_active":"tyranitar","opp_move_known":true,"our_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.073,0.0,0.0,0.0,0.0,0.0],"our_effectiveness":0.5,"our_damaging_event":["snorlax","tyranitar",null,"bodyslam",0.5],"opp_damaging_event":["tyranitar","snorlax",null,"taunt",1.0],"our_hp_after":[0.879,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.842,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.061,"opp_target_hp_delta":-0.073,"our_move_outcome":"hit","opp_move_outcome":"fail","attempted_switch_to":"snorlax","our_move_hit_delta":-0.135,"opp_resolved_move_id (property)":"taunt"}
+    LABEL   {"kind":0,"move_id":"taunt","switch_species":null,"switch_slot":null,"attacker":"tyranitar"}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"opp","target":"snorlax","move_id":"taunt","failed":true,"we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"ours","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.1348973607038123,"eff":2}
+--- p2 decision after chunk 19
+    RECORD  move {"user":["opp","tyranitar"],"id":"taunt","target":["ours","snorlax"]}  effects: ['volatile_start/snorlax/direct']
+    RECORD  move {"user":["ours","snorlax"],"id":"bodyslam","target":["opp","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"bodyslam","our_prev_active":"snorlax","opp_move_id":"taunt","opp_prev_active":"tyranitar","opp_move_known":true,"our_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.097,0.0,0.0,0.0,0.0,0.0],"our_effectiveness":0.5,"our_damaging_event":["snorlax","tyranitar",null,"bodyslam",0.5],"opp_damaging_event":["tyranitar","snorlax",null,"taunt",1.0],"our_hp_after":[0.818,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.745,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.061,"opp_target_hp_delta":-0.097,"our_move_outcome":"hit","opp_move_outcome":"hit","attempted_switch_to":"snorlax","our_move_hit_delta":-0.158,"opp_resolved_move_id (property)":"taunt"}
+    LABEL   {"kind":0,"move_id":"taunt","switch_species":null,"switch_slot":null,"attacker":"tyranitar"}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"opp","target":"snorlax","move_id":"taunt","we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"ours","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.15835777126099715,"eff":2}
+
+######## e12.control_self_move_in_sand — slice T: 0 divergences over 8 decisions
+--- p1 decision after chunk 6
+    RECORD  switch {"to":["ours","tyranitar"],"entry":"lead"}
+    RECORD  switch {"to":["opp","snorlax"],"entry":"lead"}  effects: ['weather/ability/Sand Stream']
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p1 decision after chunk 10
+    RECORD  move {"user":["ours","tyranitar"],"id":"rest","target":["ours","tyranitar"]}  effects: ['fail/tyranitar/direct']
+    RECORD  move {"user":["opp","snorlax"],"id":"bodyslam","target":["ours","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"rest","our_prev_active":"tyranitar","opp_move_id":"bodyslam","opp_prev_active":"snorlax","opp_move_known":true,"our_hp_delta":[-0.07,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_effectiveness":0.5,"we_moved_first":true,"opp_damaging_event":["snorlax","tyranitar",null,"bodyslam",0.5],"our_hp_after":[0.93,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.939,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.07,"our_move_outcome":"fail","opp_move_outcome":"hit","attempted_switch_to":"tyranitar","opp_resolved_move_id (property)":"bodyslam"}
+    LABEL   {"kind":0,"move_id":"bodyslam","switch_species":null,"switch_slot":null,"attacker":"snorlax"}
+    CLOCK   {"n": 2, "value": 0.45815690999132624}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"ours","target":"snorlax","move_id":"rest","failed":true,"we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"opp","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.13196480938416422,"eff":2}
+--- p1 decision after chunk 14
+    RECORD  move {"user":["ours","tyranitar"],"id":"rest","target":["ours","tyranitar"]}  effects: ['status/tyranitar/move/Rest', 'heal/tyranitar/direct']
+    RECORD  move {"user":["opp","snorlax"],"id":"bodyslam","target":["ours","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"rest","our_prev_active":"tyranitar","opp_move_id":"bodyslam","opp_prev_active":"snorlax","opp_move_known":true,"our_hp_delta":[-0.023,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_effectiveness":0.5,"we_moved_first":true,"opp_damaging_event":["snorlax","tyranitar","SLP","bodyslam",0.5],"our_hp_after":[0.906,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.879,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.023,"our_move_outcome":"hit","opp_move_outcome":"hit","our_status_applied":"SLP","attempted_switch_to":"tyranitar","opp_resolved_move_id (property)":"bodyslam"}
+    LABEL   {"kind":0,"move_id":"bodyslam","switch_species":null,"switch_slot":null,"attacker":"snorlax"}
+    CLOCK   {"n": 3, "value": 0.5781296526357756}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"ours","target":"snorlax","move_id":"rest","we_first":true}
+    EW-ROW  {"t":4,"actor":"tyranitar","side":"ours","status":3}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"opp","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.15542521994134895,"eff":2}
+--- p1 decision after chunk 18
+    RECORD  cant {"mon":["ours","tyranitar"],"reason":"slp","choice":{"own":"move 1"}}
+    RECORD  move {"user":["opp","snorlax"],"id":"bodyslam","target":["ours","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_prev_active":"tyranitar","opp_move_id":"bodyslam","opp_prev_active":"snorlax","opp_move_known":true,"our_hp_delta":[-0.073,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"our_failed_to_move":true,"our_cant_reason":"slp","opp_effectiveness":0.5,"opp_damaging_event":["snorlax","tyranitar","SLP","bodyslam",0.5],"our_hp_after":[0.833,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.818,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.073,"opp_move_outcome":"hit","attempted_switch_to":"tyranitar","opp_resolved_move_id (property)":"bodyslam"}
+    LABEL   {"kind":0,"move_id":"bodyslam","switch_species":null,"switch_slot":null,"attacker":"snorlax"}
+    CLOCK   {"n": 3, "value": 0.5781296526357756}
+    EW-ROW  {"t":10,"actor":"tyranitar","side":"ours","failed":true,"cant":"slp"}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"opp","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.1348973607038123,"eff":2,"we_first":true}
+--- p2 decision after chunk 7
+    RECORD  switch {"to":["opp","tyranitar"],"entry":"lead"}
+    RECORD  switch {"to":["ours","snorlax"],"entry":"lead"}  effects: ['weather/ability/Sand Stream']
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p2 decision after chunk 11
+    RECORD  move {"user":["opp","tyranitar"],"id":"rest","target":["opp","tyranitar"]}  effects: ['fail/tyranitar/direct']
+    RECORD  move {"user":["ours","snorlax"],"id":"bodyslam","target":["opp","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"bodyslam","our_prev_active":"snorlax","opp_move_id":"rest","opp_prev_active":"tyranitar","opp_move_known":true,"our_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.07,0.0,0.0,0.0,0.0,0.0],"our_effectiveness":0.5,"our_damaging_event":["snorlax","tyranitar",null,"bodyslam",0.5],"our_hp_after":[0.939,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.93,0.0,0.0,0.0,0.0,0.0],"opp_target_hp_delta":-0.07,"our_move_outcome":"hit","opp_move_outcome":"fail","attempted_switch_to":"snorlax","our_move_hit_delta":-0.132,"opp_resolved_move_id (property)":"rest"}
+    LABEL   {"kind":0,"move_id":"rest","switch_species":null,"switch_slot":null,"attacker":"tyranitar"}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"opp","target":"snorlax","move_id":"rest","failed":true,"we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"ours","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.13196480938416422,"eff":2}
+--- p2 decision after chunk 15
+    RECORD  move {"user":["opp","tyranitar"],"id":"rest","target":["opp","tyranitar"]}  effects: ['status/tyranitar/move/Rest', 'heal/tyranitar/direct']
+    RECORD  move {"user":["ours","snorlax"],"id":"bodyslam","target":["opp","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"bodyslam","our_prev_active":"snorlax","opp_move_id":"rest","opp_prev_active":"tyranitar","opp_move_known":true,"our_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.023,0.0,0.0,0.0,0.0,0.0],"our_effectiveness":0.5,"our_damaging_event":["snorlax","tyranitar","SLP","bodyslam",0.5],"our_hp_after":[0.879,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.906,0.0,0.0,0.0,0.0,0.0],"opp_target_hp_delta":-0.023,"our_move_outcome":"hit","opp_move_outcome":"hit","opp_status_applied":"SLP","attempted_switch_to":"snorlax","our_move_hit_delta":-0.155,"opp_resolved_move_id (property)":"rest"}
+    LABEL   {"kind":0,"move_id":"rest","switch_species":null,"switch_slot":null,"attacker":"tyranitar"}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":1,"actor":"tyranitar","side":"opp","target":"snorlax","move_id":"rest","we_first":true}
+    EW-ROW  {"t":4,"actor":"tyranitar","side":"opp","status":3}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"ours","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.15542521994134895,"eff":2}
+--- p2 decision after chunk 19
+    RECORD  cant {"mon":["opp","tyranitar"],"reason":"slp","choice":"opp"}
+    RECORD  move {"user":["ours","snorlax"],"id":"bodyslam","target":["opp","tyranitar"]}  effects: ['effectiveness/tyranitar/direct', 'damage/tyranitar/direct']
+    RECORD  residual {}  effects: ['weather/direct', 'damage/snorlax/weather/Sandstorm', 'heal/tyranitar/item/Leftovers']
+    DELTA   {"our_move_id":"bodyslam","our_prev_active":"snorlax","opp_prev_active":"tyranitar","our_hp_delta":[-0.061,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.073,0.0,0.0,0.0,0.0,0.0],"opp_failed_to_move":true,"opp_cant_reason":"slp","our_effectiveness":0.5,"our_damaging_event":["snorlax","tyranitar","SLP","bodyslam",0.5],"our_hp_after":[0.818,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.833,0.0,0.0,0.0,0.0,0.0],"opp_target_hp_delta":-0.073,"our_move_outcome":"hit","attempted_switch_to":"snorlax","our_move_hit_delta":-0.135}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":10,"actor":"tyranitar","side":"opp","failed":true,"cant":"slp"}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"ours","target":"tyranitar","move_id":"bodyslam","hp_delta":-0.1348973607038123,"eff":2,"we_first":true}
+
+######## e12.opp_double_edge_recoil_credits_our_status_move — slice T: 0 divergences over 5 decisions
+--- p1 decision after chunk 6
+    RECORD  switch {"to":["ours","blissey"],"entry":"lead"}
+    RECORD  switch {"to":["opp","snorlax"],"entry":"lead"}
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p1 decision after chunk 10
+    RECORD  move {"user":["ours","blissey"],"id":"thunderwave","target":["opp","snorlax"]}  effects: ['status/snorlax/direct']
+    RECORD  move {"user":["opp","snorlax"],"id":"doubleedge","target":["ours","blissey"]}  effects: ['damage/blissey/direct', 'damage/snorlax/recoil', 'faint/blissey/direct']
+    DELTA   {"our_move_id":"thunderwave","our_prev_active":"blissey","opp_move_id":"doubleedge","opp_prev_active":"snorlax","opp_move_known":true,"our_hp_delta":[-1.0,0.0,0.0,0.0,0.0,0.0],"opp_hp_delta":[-0.471,0.0,0.0,0.0,0.0,0.0],"we_fainted":true,"we_moved_first":true,"our_damaging_event":["blissey","snorlax",null,"thunderwave",1.0],"opp_damaging_event":["snorlax","blissey",null,"doubleedge",1.0],"phase_is_forced_switch":true,"our_hp_after":[0.0,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.529,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-1.0,"opp_target_hp_delta":-0.471,"our_move_outcome":"hit","opp_move_outcome":"hit","our_faint_count":1,"our_faint_causes":[1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"opp_status_applied":"PAR","attempted_switch_to":"blissey","opp_resolved_move_id (property)":"doubleedge"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+    EW-ROW  {"t":1,"actor":"blissey","side":"ours","target":"snorlax","move_id":"thunderwave","we_first":true}
+    EW-ROW  {"t":4,"actor":"snorlax","side":"opp","status":2}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"opp","target":"blissey","move_id":"doubleedge","hp_delta":-1.0}
+    EW-ROW  {"t":3,"actor":"blissey","side":"ours","faint_cause":"attack"}
+--- p1 decision after chunk 12
+    DELTA   {"our_prev_active":"NONE","opp_prev_active":"snorlax","phase_is_forced_switch":true,"decision_was_forced_switch":true,"our_hp_after":[0.0,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.529,0.0,0.0,0.0,0.0,0.0],"attempted_switch_to":"blissey"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p1 decision after chunk 14
+    DELTA   {"our_prev_active":"NONE","opp_prev_active":"snorlax","phase_is_forced_switch":true,"decision_was_forced_switch":true,"our_hp_after":[0.0,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[0.529,0.0,0.0,0.0,0.0,0.0],"attempted_switch_to":"blissey"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p2 decision after chunk 7
+    RECORD  switch {"to":["opp","blissey"],"entry":"lead"}
+    RECORD  switch {"to":["ours","snorlax"],"entry":"lead"}
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+
+######## e12.label_roar_overrides_their_chosen_switch — slice T: 0 divergences over 6 decisions
+--- p1 decision after chunk 6
+    RECORD  switch {"to":["ours","skarmory"],"entry":"lead"}
+    RECORD  switch {"to":["opp","snorlax"],"entry":"lead"}
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p1 decision after chunk 10
+    RECORD  switch {"to":["opp","blissey"],"out":"snorlax","entry":"chosen"}
+    RECORD  move {"user":["ours","skarmory"],"id":"roar","target":["opp","blissey"]}
+    RECORD  drag {"to":["opp","starmie"],"out":"blissey","by":["ours","skarmory"],"by_move":"roar"}
+    DELTA   {"our_move_id":"roar","our_prev_active":"skarmory","opp_switch_to":"starmie","opp_prev_active":"snorlax","opp_move_known":true,"our_hp_after":[1.0,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[1.0,1.0,1.0,0.0,0.0,0.0],"our_move_outcome":"hit","attempted_switch_to":"skarmory","opp_dragged":true}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":2,"actor":"blissey","side":"opp","target":"skarmory"}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"ours","target":"blissey","move_id":"roar","we_first":true}
+    EW-ROW  {"t":2,"actor":"starmie","side":"opp","target":"skarmory"}
+--- p1 decision after chunk 14
+    RECORD  move {"user":["opp","starmie"],"id":"recover","still":true}  effects: ['fail/starmie/direct']
+    RECORD  move {"user":["ours","skarmory"],"id":"roar","target":["opp","starmie"]}
+    RECORD  drag {"to":["opp","blissey"],"out":"starmie","by":["ours","skarmory"],"by_move":"roar"}
+    DELTA   {"our_move_id":"roar","our_prev_active":"skarmory","opp_move_id":"recover","opp_switch_to":"blissey","opp_prev_active":"starmie","opp_move_known":true,"our_hp_after":[1.0,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[1.0,1.0,1.0,0.0,0.0,0.0],"our_move_outcome":"hit","opp_move_outcome":"fail","attempted_switch_to":"skarmory","opp_dragged":true,"opp_resolved_move_id (property)":"recover"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":1,"actor":"starmie","side":"opp","target":"skarmory","move_id":"recover","failed":true,"we_first":true}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"ours","target":"starmie","move_id":"roar"}
+    EW-ROW  {"t":2,"actor":"blissey","side":"opp","target":"skarmory"}
+--- p2 decision after chunk 7
+    RECORD  switch {"to":["opp","skarmory"],"entry":"lead"}
+    RECORD  switch {"to":["ours","snorlax"],"entry":"lead"}
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p2 decision after chunk 11
+    RECORD  switch {"to":["ours","blissey"],"out":"snorlax","entry":"chosen"}
+    RECORD  move {"user":["opp","skarmory"],"id":"roar","target":["ours","blissey"]}
+    RECORD  drag {"to":["ours","starmie"],"out":"blissey","by":["opp","skarmory"],"by_move":"roar"}
+    DELTA   {"our_switch_to":"starmie","our_prev_active":"snorlax","opp_move_id":"roar","opp_prev_active":"skarmory","opp_move_known":true,"our_hp_after":[1.0,1.0,1.0,0.0,0.0,0.0],"opp_hp_after":[1.0,0.0,0.0,0.0,0.0,0.0],"opp_move_outcome":"hit","attempted_switch_to":"snorlax","opp_resolved_move_id (property)":"roar"}
+    LABEL   {"kind":0,"move_id":"roar","switch_species":null,"switch_slot":null,"attacker":"skarmory"}
+    CLOCK   {"n": 2, "value": 0.45815690999132624}
+    EW-ROW  {"t":2,"actor":"blissey","side":"ours","target":"skarmory"}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"opp","target":"blissey","move_id":"roar","we_first":true}
+    EW-ROW  {"t":2,"actor":"starmie","side":"ours","target":"skarmory"}
+--- p2 decision after chunk 15
+    RECORD  move {"user":["ours","starmie"],"id":"recover","still":true}  effects: ['fail/starmie/direct']
+    RECORD  move {"user":["opp","skarmory"],"id":"roar","target":["ours","starmie"]}
+    RECORD  drag {"to":["ours","blissey"],"out":"starmie","by":["opp","skarmory"],"by_move":"roar"}
+    DELTA   {"our_move_id":"recover","our_switch_to":"blissey","our_prev_active":"starmie","opp_move_id":"roar","opp_prev_active":"skarmory","opp_move_known":true,"we_moved_first":true,"our_hp_after":[1.0,1.0,1.0,0.0,0.0,0.0],"opp_hp_after":[1.0,0.0,0.0,0.0,0.0,0.0],"our_move_outcome":"fail","opp_move_outcome":"hit","attempted_switch_to":"snorlax","opp_resolved_move_id (property)":"roar"}
+    LABEL   {"kind":0,"move_id":"roar","switch_species":null,"switch_slot":null,"attacker":"skarmory"}
+    CLOCK   {"n": 3, "value": 0.5781296526357756}
+    EW-ROW  {"t":1,"actor":"starmie","side":"ours","target":"skarmory","move_id":"recover","failed":true,"we_first":true}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"opp","target":"starmie","move_id":"roar"}
+    EW-ROW  {"t":2,"actor":"blissey","side":"ours","target":"skarmory"}
+
+######## e12.label_asleep_then_dragged_reads_as_switch — slice T: 0 divergences over 8 decisions
+--- p1 decision after chunk 6
+    RECORD  switch {"to":["ours","skarmory"],"entry":"lead"}
+    RECORD  switch {"to":["opp","snorlax"],"entry":"lead"}
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p1 decision after chunk 10
+    RECORD  move {"user":["ours","skarmory"],"id":"drillpeck","target":["opp","snorlax"]}  effects: ['damage/snorlax/direct']
+    RECORD  move {"user":["opp","snorlax"],"id":"rest","target":["opp","snorlax"]}  effects: ['status/snorlax/move/Rest', 'heal/snorlax/direct']
+    DELTA   {"our_move_id":"drillpeck","our_prev_active":"skarmory","opp_move_id":"rest","opp_prev_active":"snorlax","opp_move_known":true,"we_moved_first":true,"our_hp_after":[1.0,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[1.0,0.0,0.0,0.0,0.0,0.0],"our_move_outcome":"hit","opp_move_outcome":"hit","opp_status_applied":"SLP","attempted_switch_to":"skarmory","our_move_hit_delta":-0.221,"opp_resolved_move_id (property)":"rest"}
+    LABEL   {"kind":0,"move_id":"rest","switch_species":null,"switch_slot":null,"attacker":"snorlax"}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"ours","target":"snorlax","move_id":"drillpeck","hp_delta":-0.22125813449023857,"we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"opp","target":"skarmory","move_id":"rest"}
+    EW-ROW  {"t":4,"actor":"snorlax","side":"opp","status":3}
+--- p1 decision after chunk 14
+    RECORD  cant {"mon":["opp","snorlax"],"reason":"slp","choice":"opp"}
+    RECORD  move {"user":["ours","skarmory"],"id":"roar","target":["opp","snorlax"]}
+    RECORD  drag {"to":["opp","blissey"],"out":"snorlax","by":["ours","skarmory"],"by_move":"roar"}
+    DELTA   {"our_move_id":"roar","our_prev_active":"skarmory","opp_switch_to":"blissey","opp_prev_active":"snorlax","opp_move_known":true,"opp_failed_to_move":true,"opp_cant_reason":"slp","our_hp_after":[1.0,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[1.0,1.0,0.0,0.0,0.0,0.0],"our_move_outcome":"hit","attempted_switch_to":"skarmory","opp_dragged":true}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 0, "value": 0.0}
+    EW-ROW  {"t":10,"actor":"snorlax","side":"opp","failed":true,"cant":"slp"}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"ours","target":"snorlax","move_id":"roar","we_first":true}
+    EW-ROW  {"t":2,"actor":"blissey","side":"opp","target":"skarmory"}
+--- p1 decision after chunk 18
+    RECORD  move {"user":["ours","skarmory"],"id":"drillpeck","target":["opp","blissey"]}  effects: ['damage/blissey/direct']
+    RECORD  move {"user":["opp","blissey"],"id":"softboiled","target":["opp","blissey"]}  effects: ['heal/blissey/direct']
+    DELTA   {"our_move_id":"drillpeck","our_prev_active":"skarmory","opp_move_id":"softboiled","opp_prev_active":"blissey","opp_move_known":true,"opp_hp_delta":[0.0,-0.018,0.0,0.0,0.0,0.0],"we_moved_first":true,"our_damaging_event":["skarmory","blissey",null,"drillpeck",1.0],"our_hp_after":[1.0,1.0,0.0,0.0,0.0,0.0],"opp_hp_after":[1.0,0.982,0.0,0.0,0.0,0.0],"opp_target_hp_delta":-0.018,"our_move_outcome":"hit","opp_move_outcome":"hit","attempted_switch_to":"skarmory","our_move_hit_delta":-0.518,"opp_resolved_move_id (property)":"softboiled"}
+    LABEL   {"kind":0,"move_id":"softboiled","switch_species":null,"switch_slot":null,"attacker":"blissey"}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"ours","target":"blissey","move_id":"drillpeck","hp_delta":-0.5176651305683564,"we_first":true}
+    EW-ROW  {"t":1,"actor":"blissey","side":"opp","target":"skarmory","move_id":"softboiled"}
+--- p2 decision after chunk 7
+    RECORD  switch {"to":["opp","skarmory"],"entry":"lead"}
+    RECORD  switch {"to":["ours","snorlax"],"entry":"lead"}
+    DELTA   {"our_prev_active":"NULL","opp_prev_active":"NULL"}
+    LABEL   {"kind":2,"move_id":null,"switch_species":null,"switch_slot":null,"attacker":null}
+    CLOCK   {"n": 1, "value": 0.2890648263178878}
+--- p2 decision after chunk 11
+    RECORD  move {"user":["opp","skarmory"],"id":"drillpeck","target":["ours","snorlax"]}  effects: ['damage/snorlax/direct']
+    RECORD  move {"user":["ours","snorlax"],"id":"rest","target":["ours","snorlax"]}  effects: ['status/snorlax/move/Rest', 'heal/snorlax/direct']
+    DELTA   {"our_move_id":"rest","our_prev_active":"snorlax","opp_move_id":"drillpeck","opp_prev_active":"skarmory","opp_move_known":true,"our_hp_after":[1.0,1.0,1.0,0.0,0.0,0.0],"opp_hp_after":[1.0,0.0,0.0,0.0,0.0,0.0],"our_move_outcome":"hit","opp_move_outcome":"hit","our_status_applied":"SLP","attempted_switch_to":"snorlax","opp_resolved_move_id (property)":"drillpeck"}
+    LABEL   {"kind":0,"move_id":"drillpeck","switch_species":null,"switch_slot":null,"attacker":"skarmory"}
+    CLOCK   {"n": 2, "value": 0.45815690999132624}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"opp","target":"snorlax","move_id":"drillpeck","hp_delta":-0.22125813449023857,"we_first":true}
+    EW-ROW  {"t":1,"actor":"snorlax","side":"ours","target":"skarmory","move_id":"rest"}
+    EW-ROW  {"t":4,"actor":"snorlax","side":"ours","status":3}
+--- p2 decision after chunk 15
+    RECORD  cant {"mon":["ours","snorlax"],"reason":"slp","choice":{"own":"move 1"}}
+    RECORD  move {"user":["opp","skarmory"],"id":"roar","target":["ours","snorlax"]}
+    RECORD  drag {"to":["ours","blissey"],"out":"snorlax","by":["opp","skarmory"],"by_move":"roar"}
+    DELTA   {"our_switch_to":"blissey","our_prev_active":"snorlax","opp_move_id":"roar","opp_prev_active":"skarmory","opp_move_known":true,"our_failed_to_move":true,"our_cant_reason":"slp","our_hp_after":[1.0,1.0,1.0,0.0,0.0,0.0],"opp_hp_after":[1.0,0.0,0.0,0.0,0.0,0.0],"opp_move_outcome":"hit","attempted_switch_to":"snorlax","opp_resolved_move_id (property)":"roar"}
+    LABEL   {"kind":0,"move_id":"roar","switch_species":null,"switch_slot":null,"attacker":"skarmory"}
+    CLOCK   {"n": 2, "value": 0.45815690999132624}
+    EW-ROW  {"t":10,"actor":"snorlax","side":"ours","failed":true,"cant":"slp"}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"opp","target":"snorlax","move_id":"roar","we_first":true}
+    EW-ROW  {"t":2,"actor":"blissey","side":"ours","target":"skarmory"}
+--- p2 decision after chunk 19
+    RECORD  move {"user":["opp","skarmory"],"id":"drillpeck","target":["ours","blissey"]}  effects: ['damage/blissey/direct']
+    RECORD  move {"user":["ours","blissey"],"id":"softboiled","target":["ours","blissey"]}  effects: ['heal/blissey/direct']
+    DELTA   {"our_move_id":"softboiled","our_prev_active":"blissey","opp_move_id":"drillpeck","opp_prev_active":"skarmory","opp_move_known":true,"our_hp_delta":[0.0,-0.018,0.0,0.0,0.0,0.0],"opp_damaging_event":["skarmory","blissey",null,"drillpeck",1.0],"our_hp_after":[1.0,0.982,1.0,0.0,0.0,0.0],"opp_hp_after":[1.0,0.0,0.0,0.0,0.0,0.0],"our_target_hp_delta":-0.018,"our_move_outcome":"hit","opp_move_outcome":"hit","attempted_switch_to":"snorlax","opp_resolved_move_id (property)":"drillpeck"}
+    LABEL   {"kind":0,"move_id":"drillpeck","switch_species":null,"switch_slot":null,"attacker":"skarmory"}
+    CLOCK   {"n": 3, "value": 0.5781296526357756}
+    EW-ROW  {"t":1,"actor":"skarmory","side":"opp","target":"blissey","move_id":"drillpeck","hp_delta":-0.5176651305683564,"we_first":true}
+    EW-ROW  {"t":1,"actor":"blissey","side":"ours","target":"skarmory","move_id":"softboiled"}

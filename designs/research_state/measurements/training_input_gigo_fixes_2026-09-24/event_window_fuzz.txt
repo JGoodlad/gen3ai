@@ -1,0 +1,3 @@
+[event-window fuzz] 20 battles, 1252 decisions, 36534 checks, 0 failures
+  derived-column rows exercised: {'cant': 956, 'faint_cause': 1985, 'item_tr': 80}
+PASS

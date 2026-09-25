@@ -29,7 +29,7 @@ class TestProgressClock(unittest.TestCase):
         c = self._clock()
         c.n = 5
         ev = object()   # our_damaging_event present
-        c.update(_delta(our_damaging_event=ev, opp_target_hp_delta=-0.25),
+        c.update(_delta(our_damaging_event=ev, opp_target_hp_delta=-0.25, our_move_hit_delta=-0.25),
                  _full_team_live(), _Legal(switches=[1]))
         self.assertEqual(c.n, 0)
         self.assertEqual(c.last_penalty, 0.0)
@@ -277,7 +277,7 @@ class TestProgressClock(unittest.TestCase):
         progress (clause (i)) — it falls through to a charged NO_OP."""
         c = self._clock(); c.n = 2; c._prev_our_spikes = 0
         c.update(_delta(our_move_id="rapidspin", our_damaging_event=object(),
-                        opp_target_hp_delta=-0.05, our_move_outcome="hit"),
+                        opp_target_hp_delta=-0.05, our_move_hit_delta=-0.05, our_move_outcome="hit"),
                  _full_team_live(), _Legal(switches=[1]))
         self.assertEqual(c.n, 3)
         self.assertAlmostEqual(c.last_penalty, -0.15, places=6)
@@ -296,7 +296,7 @@ class TestProgressClock(unittest.TestCase):
         c = self._clock(); c.n = 4; c._prev_our_spikes = 2
         live = _Live([1.0] * 6, [1.0] * 6)            # our spikes cleared this window → now 0
         c.update(_delta(our_move_id="rapidspin", our_damaging_event=object(),
-                        opp_target_hp_delta=-0.05, our_move_outcome="hit"),
+                        opp_target_hp_delta=-0.05, our_move_hit_delta=-0.05, our_move_outcome="hit"),
                  live, _Legal(switches=[1]))
         self.assertEqual(c.n, 0)
 
@@ -304,7 +304,7 @@ class TestProgressClock(unittest.TestCase):
         """A RapidSpin that lands a KO is real progress even with no hazards to clear — not penalised."""
         c = self._clock(); c.n = 3; c._prev_our_spikes = 0
         c.update(_delta(our_move_id="rapidspin", opp_fainted=True, our_damaging_event=object(),
-                        opp_target_hp_delta=-0.30, our_move_outcome="hit"),
+                        opp_target_hp_delta=-0.30, our_move_hit_delta=-0.30, our_move_outcome="hit"),
                  _full_team_live(opp_alive=5), _Legal(switches=[1]))
         self.assertEqual(c.n, 0)
 
@@ -426,7 +426,7 @@ class TestProgressClock(unittest.TestCase):
         for _ in range(HEAL_FREEZE_GRACE + 1):                    # push past grace → charging
             c.update(_delta(our_move_id="recover", our_hp_delta=our_hp), live, _Legal(switches=[1]))
         self.assertLess(c.last_penalty, 0.0)
-        c.update(_delta(our_damaging_event=object(), opp_target_hp_delta=-0.3),
+        c.update(_delta(our_damaging_event=object(), opp_target_hp_delta=-0.3, our_move_hit_delta=-0.3),
                  live, _Legal(switches=[1]))                      # progress → resets streak
         self.assertEqual(c.n, 0)
         c.update(_delta(our_move_id="recover", our_hp_delta=our_hp), live, _Legal(switches=[1]))

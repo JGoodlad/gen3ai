@@ -501,7 +501,7 @@ def test_the_fuzz_ORACLE_derives_the_three_id_columns_it_used_to_declare_unmodel
         oracle_faint_cause_id, oracle_item_transition,
     )
     from agents.battle.battle_event import EventKind as K
-    from agents.observation.constants import ITEM_TR_REVEALED
+    from agents.observation.constants import ITEM_TR_REVEALED, ITEM_TR_SWAPPED
 
     causes = {c: oracle_faint_cause_id(fc, False) for c, fc in (
         ("attack", None), ("hazard", "Spikes"), ("weather", "Sandstorm"),
@@ -519,8 +519,15 @@ def test_the_fuzz_ORACLE_derives_the_three_id_columns_it_used_to_declare_unmodel
            oracle_item_transition(K.ENDITEM, "move: Knock Off"),       # permanent in ADV
            oracle_item_transition(K.ENDITEM, "move: Trick")}           # the opp holds it now
     assert len(trs) == 4, f"the item transitions collapsed onto each other: {trs}"
-    assert oracle_item_transition(K.ITEM, "move: Trick") == ITEM_TR_REVEALED, \
-        "an |-item| line is a DISCLOSURE — it must not read as a transfer whatever it cites"
+    # gen3_event_window_semantics_fixes_v1 (W3): an |-item| line [from] a TRANSFER move is the
+    # item changing hands (Trick writes |-item| on BOTH mons, Thief/Covet on the taker) — reading
+    # it as a disclosure recorded a Trick as two plain reveals. Without a transfer cause it IS a
+    # disclosure.
+    assert oracle_item_transition(K.ITEM, "move: Trick") == ITEM_TR_SWAPPED
+    assert oracle_item_transition(K.ITEM, "move: Thief") == ITEM_TR_SWAPPED
+    assert oracle_item_transition(K.ITEM, None) == ITEM_TR_REVEALED
+    # W2: a faint no damage line KO'd (Destiny Bond / Perish Song) is not an attack
+    assert oracle_faint_cause_id(None, False, False) == causes["other"]
 
 
 def test_an_unknown_status_name_CRASHES_rather_than_reading_as_none():

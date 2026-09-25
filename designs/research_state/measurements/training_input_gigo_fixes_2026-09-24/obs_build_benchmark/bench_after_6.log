@@ -1,0 +1,89 @@
+load1_start 5.33 tree /home/goodlad/dev/gen3ai-wt/gigo-inputs 2eb5850a 25dirty
+Obs-build benchmark — gen3ou — searching for a turn>=25 decision (≤200 battles, reps=400, top=22, seed=0)
+
+==============================================================================
+PER-DECISION OBS BUILD BENCHMARK  (obs dim 2501, turn 25, opp mons w/ revealed moves 5/6)
+==============================================================================
+  full per-decision obs build  :   0.361 ms   [COLD: view memo dropped each rep — the production mix, and the comparable series]
+    state_encoder.encode       :   0.358 ms  (  99%)
+    [live_view() alone         :   0.071 ms  (  20%)]
+  encode with the view memo WARM:   0.265 ms  (  73%)  [what encode costs when record/mask already built the view]
+  INCREMENTAL encode (assembler), view memo COLD:
+    cache invalidated each rep :   0.344 ms  (  95%)  [a full rebuild THROUGH the assembler — the episode's first decision]
+    cache WARM                 :   0.184 ms  (  51%)  [speedup vs COLD full: 1.96x]
+    cache WARM + view memo WARM:   0.104 ms  (  29%)  [THE PRODUCTION SHAPE — record() already built the view; vs 0.265 ms before: 2.55x]
+    ⚠️ the warm series re-encodes ONE decision, so its dirty set is the same every
+       rep — an OPTIMISTIC bound. trainer_turn_benchmark walks real consecutive
+       decisions and is the honest end-to-end number.
+
+  NOTE: absolute ms scale with machine load; the component ratios and the
+        cProfile ranking below are the load-stable signal.
+  NOTE: the reps loop re-encodes ONE decision, so a memo would be 100% warm from
+        rep 2 — every series above except the last drops it first. Judge
+        calls/encode from the COLD cProfile block below.
+
+  [COLD full rebuild] Top 22 by tottime — the series comparable to history:
+         1591601 function calls in 0.479 seconds
+
+   Ordered by: internal time
+   List reduced from 157 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    12800    0.041    0.000    0.061    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/assembler.py:80(write_event_row)
+     4800    0.040    0.000    0.090    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/moves.py:72(encode)
+     4800    0.039    0.000    0.107    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/battle/live_view.py:174(from_pokemon)
+     4800    0.031    0.000    0.192    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/pokemon.py:87(encode)
+      400    0.026    0.000    0.489    0.001 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/state_encoder.py:157(encode)
+   314000    0.021    0.000    0.024    0.000 {method 'get' of 'dict' objects}
+    14400    0.018    0.000    0.026    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/training/episode_tracker.py:310(pair_values)
+     4800    0.013    0.000    0.024    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/types.py:27(encode)
+     4800    0.010    0.000    0.016    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/battle/live_view.py:196(<listcomp>)
+     4800    0.009    0.000    0.013    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/species.py:25(encode)
+     4800    0.009    0.000    0.012    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/training/episode_tracker.py:122(values)
+     4800    0.008    0.000    0.013    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/items.py:25(encode)
+    40000    0.007    0.000    0.010    0.000 /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/enum.py:193(__get__)
+    21600    0.007    0.000    0.011    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/gen3_data/moves.py:161(get)
+     4800    0.007    0.000    0.015    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/abilities.py:67(encode)
+      400    0.007    0.000    0.009    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/wish_belief.py:42(build_wish_pending)
+    34800    0.006    0.000    0.006    0.000 {built-in method numpy.zeros}
+    22000    0.006    0.000    0.009    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/gen3_data/species.py:61(get)
+   110400    0.006    0.000    0.006    0.000 {built-in method builtins.len}
+   100800    0.005    0.000    0.005    0.000 {method 'append' of 'list' objects}
+    17600    0.005    0.000    0.007    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/poke_env/battle/pokemon.py:1492(type_2)
+    15200    0.005    0.000    0.015    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/poke_env/battle/move.py:1035(moves)
+
+
+
+  [WARM incremental] Top 22 by tottime — WHAT PRODUCTION RUNS:
+         514001 function calls in 0.139 seconds
+
+   Ordered by: internal time
+   List reduced from 136 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      400    0.019    0.000    0.139    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/state_encoder.py:157(encode)
+    14400    0.017    0.000    0.025    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/training/episode_tracker.py:310(pair_values)
+   139200    0.008    0.000    0.008    0.000 {method 'get' of 'dict' objects}
+      800    0.007    0.000    0.016    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/moves.py:72(encode)
+     4800    0.007    0.000    0.010    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/training/episode_tracker.py:122(values)
+      800    0.006    0.000    0.035    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/pokemon.py:87(encode)
+      400    0.004    0.000    0.010    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/reactive.py:99(encode)
+    89600    0.004    0.000    0.004    0.000 {method 'append' of 'list' objects}
+      800    0.004    0.000    0.006    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/assembler.py:80(write_event_row)
+      800    0.003    0.000    0.005    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/active_context.py:36(encode)
+      800    0.002    0.000    0.005    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/types.py:27(encode)
+      400    0.002    0.000    0.010    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/battle/live_view.py:512(from_battle)
+      400    0.002    0.000    0.003    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/global_env.py:47(encode)
+    11200    0.002    0.000    0.003    0.000 /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/enum.py:193(__get__)
+    24800    0.002    0.000    0.002    0.000 {built-in method builtins.max}
+      400    0.002    0.000    0.004    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/assembler.py:219(prepare)
+     2000    0.002    0.000    0.003    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/battle/live_view.py:523(<genexpr>)
+     5200    0.002    0.000    0.003    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/gen3_data/moves.py:161(get)
+      800    0.002    0.000    0.002    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/species.py:25(encode)
+     8800    0.001    0.000    0.001    0.000 {built-in method numpy.zeros}
+      400    0.001    0.000    0.007    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/assembler.py:426(update_window)
+      800    0.001    0.000    0.002    0.000 /home/goodlad/dev/gen3ai-wt/gigo-inputs/src/agents/observation/items.py:25(encode)
+
+
+
+load1_end 5.30

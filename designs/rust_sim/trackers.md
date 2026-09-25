@@ -14,7 +14,7 @@ fork shares its parent's and pays only for its own decision.
 | **Trackers** | `src/rust_sim/src/trackers/mod.rs` (`SideTrackers`, `TrackerState`, `IntentLabel`, `reward`), `history.rs` (recency, pair history, the event window, the wish and sleep folds), `clock.rs` (the progress clock), `hp_belief.rs` (the Hidden-Power belief), `delta.rs` (the context + the `TurnDelta` PROJECTION), `turnview.rs` (the frozen per-side turn fold), `ev.rs` (typed accessors over a reading) |
 | **Native record** | `src/rust_sim/src/trackers/record.rs` (`Window` = ordered `Action`s, each with ordered `Effect`s; `Choice`, `DenialWhy`) |
 | **Version** | `SideStream::with_trackers` / `BattleVersion::{root_with, observe_root_with, parse_root_with}`; `BattleVersion::{decision, trackers, note_choice}` |
-| **Gates** | slice T (`agents/battle/rust_core_parity_trackers.py`, COMMIT + MILESTONE in `rust_core_parity_test.py`; FRESH battles: `rust_core_trackers_fuzz_test.py`); the native record's fixtures `tests/window_record_test.rs` |
+| **Gates** | slice T (`agents/battle/rust_core_parity_trackers.py`, COMMIT + MILESTONE in `rust_core_parity_test.py`; FRESH battles: `rust_core_trackers_fuzz_test.py`); the native record's fixtures `tests/window_record_test.rs`; the training-input SEMANTICS pins `tests/tracker_semantics_test.rs` (Rust) and `agents/battle/tracker_semantics_fixtures_test.py` (both sides through slice T) |
 
 ---
 
@@ -70,7 +70,7 @@ that just resolved. That spans the whole turn, so a window that opened at a mid-
 does not contain it. The core keeps the same two slots on `BoardReading`
 (`pending_damaging` / `last_damaging` / `last_damaging_move`). A window-scoped reading (the rule
 `view_successor.view_context._to_dme` uses) diverged from training on the HP belief at 57 of 1,838
-COMMIT decisions before this port — see §5.
+COMMIT decisions before this port — see §6.
 
 ## 2. On the version — shared by a fork
 
@@ -124,9 +124,8 @@ Detect — its target lost), faints with their cause (self-KO, Destiny Bond, Per
 damage), status and cures, boosts, item transitions with direction (`to` on Trick / Thief / Covet),
 side conditions with their layer count, crits, misses, fails, effectiveness PER HIT (a multi-hit
 move's hits are separate effects), charge (`Prepare`) and recharge. A stage change is SIGNED (`Boost
-{ stat, n }`, a drop negative) — the typed event's `amount` already carries the sign, so the record
-must not negate an `|-unboost|` again (the Python event window does exactly that; see the M3 loss
-catalogue).
+{ stat, n }`, a drop negative) — the typed event's `amount` already carries the sign, so neither the
+record nor the event window negates an `|-unboost|` again.
 
 🚨 **The information boundary is a TYPE.** A viewer knows its OWN denied choice (it sent it —
 `BattleVersion::note_choice`) and only THAT the opponent was denied. `record::Choice` is
@@ -156,7 +155,21 @@ choice — each FAILS.
 | COMMIT | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` (unmarked) |
 | MILESTONE | `… -m slow -q -n 2` (the verdict lands in `designs/ops/slow_tier_status.json`) |
 
-## 5. Findings
+## 5. The training-input semantics the trackers fold (both paths, held equal by slice T)
+
+The M3 loss catalogue (§ below) found GIGO in three of training's own layers; they are FIXED on the
+Python path and in these trackers together, and slice T is 0 at COMMIT and MILESTONE after it:
+
+| rule | what the tracker folds | Python / Rust |
+|---|---|---|
+| `gen3_event_window_semantics_fixes_v1` | the 22-column event window: a BOOST row's magnitude is the SIGNED stage change (W1); a FAINT no damage line took to 0 HP is `other` (W2 — Destiny Bond, Perish Song); an item line `[from]` Trick / Thief / Covet is SWAPPED on both mons (W3); a MOVE row stopped by Protect / Detect is `failed` (W4); a HAZARD row's magnitude is +1 on `sidestart`, −1 on `sideend` (W5); a bare `-damage` attaches to the open move only while its user is the CURRENT MOVER (the other side's Substitute / Belly Drum cost) | `EventWindowTracker.update` / `history::EventWindow::update`; the predicates `turn_view.is_protect_block` / `damage_is_lethal` ≡ `ev::is_protect_block` / `ev::damage_is_lethal` |
+| `gen3_intent_label_semantics_fixes_v1` | the α/β label: MASKED on a DRAG (L1 / L2), on the replacement for a faint in the PREVIOUS window (L3; `Ctx::opp_active_fainted`), on an Encore override (L5); a CALLED move is labelled as its CALLER (L4) | `build_opp_intent_label` / `IntentLabel::build`, from `TurnDelta.opp_dragged` / `opp_switch_is_replacement` / `opp_called_via` / `opp_choice_overridden` ≡ `DeltaProjection` |
+| `gen3_progress_clock_attribution_fix_v1` | clause (i) needs our move's OWN hits (`our_move_hit_delta`, the current mover's bare `-damage`) ≥ 3 % as well as the target's net fall (T1); a Protect block reads outcome `"fail"`, so the "our attack blocked" freeze fires (T2) | `ProgressClock._is_progress` / `clock::is_progress`; `TurnView._fold_attribution` / `turnview::fold_attribution` |
+
+The census that proved the obs and label change touched only these fields, and the rates, is
+[`../research_state/measurements/training_input_gigo_fixes_2026-09-24/`](../research_state/measurements/training_input_gigo_fixes_2026-09-24/README.md).
+
+## 6. Findings
 
 - **The search roads' Hidden-Power input is window-scoped** (`view_successor.view_context._to_dme`,
   used by the view and core roads' Python successors): a decision whose window opened at a mid-turn

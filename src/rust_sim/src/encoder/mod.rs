@@ -357,7 +357,10 @@ fn event_row(t: &data::Tables, r: &EventRecord, cur_turn: i64, out: &mut [f32]) 
             -1.0
         }
     };
-    put(out, EV_MAGNITUDE, if is_move { clip(r.hp_delta) } else { clip(r.hp_delta / 6.0) });
+    // MOVE: the attributed hp fraction; BOOST: the SIGNED stage change / 6; HAZARD: +1 a side
+    // condition started, −1 one ended (`gen3_event_window_semantics_fixes_v1`) — only BOOST is scaled.
+    let is_boost = r.t as usize == EVENT_T_BOOST;
+    put(out, EV_MAGNITUDE, if is_boost { clip(r.hp_delta / 6.0) } else { clip(r.hp_delta) });
     if is_move {
         put(out, EV_OUT_HIT, if r.missed || r.failed { 0.0 } else { 1.0 });
         put(out, EV_OUT_MISS, if r.missed { 1.0 } else { 0.0 });

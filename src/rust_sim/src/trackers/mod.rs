@@ -62,12 +62,18 @@ impl IntentLabel {
 
     /// `build_opp_intent_label(delta, move_num_of, opp_slot_of_species)`, ids only.
     pub fn build(d: &DeltaProjection, prev_frame: &[String]) -> IntentLabel {
-        if d.phase_is_forced_switch {
+        if d.phase_is_forced_switch || d.opp_choice_overridden {
             return Self::unknown();
         }
-        let move_id = d.opp_resolved_move_id().filter(|m| !m.is_empty());
+        // a CALLED move's choice is its CALLER (L4)
+        let move_id = d
+            .opp_called_via
+            .as_deref()
+            .filter(|m| !m.is_empty())
+            .or_else(|| d.opp_resolved_move_id().filter(|m| !m.is_empty()));
         if let Some(sw) = d.opp_switch_to.as_deref().filter(|s| !s.is_empty()) {
-            if move_id.is_some() || d.opp_fainted {
+            // a phaze, a same-window replacement, a DRAG (L1 / L2) or a straddling replacement (L3)
+            if move_id.is_some() || d.opp_fainted || d.opp_dragged || d.opp_switch_is_replacement {
                 return Self::unknown();
             }
             let key = to_id(sw);

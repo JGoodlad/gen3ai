@@ -1,0 +1,28 @@
+battles compared: 6  (only in one capture: [])
+event-window rows: 2183   viewer decisions: 991   decisions with any change (a changed row in its window, its label, or its clock): 698
+
+ROW changes:
+  W4 Protect block                                                   68    68.62 /1,000
+  W5 side start                                                      22    22.20 /1,000
+  W1 stat drop                                                        5     5.05 /1,000
+  W2 faint without a lethal line (was attack)                         3     3.03 /1,000
+  W2 faint without a lethal line (was weather)                        1     1.01 /1,000
+
+LABEL changes:
+
+CLOCK transitions:
+  T2 blocked attack frozen                                           32    32.29 /1,000
+  cascade (n carries)                                                 1     1.01 /1,000
+
+OBS cells (golden):
+  OUT_HIT ← W4 Protect block                                        981   989.91 /1,000
+  OUT_FAIL ← W4 Protect block                                       981   989.91 /1,000
+  MAGNITUDE ← W5 side start                                         279   281.53 /1,000
+  MAGNITUDE ← W1 stat drop                                           70    70.64 /1,000
+  reactive[2] turns_since_progress                                   48    48.44 /1,000
+  FAINT_CAUSE ← W2 faint without a lethal line (was attack)          38    38.35 /1,000
+  FAINT_CAUSE ← W2 faint without a lethal line (was weather)          7     7.06 /1,000
+
+obs vectors: 991 decisions, 698 changed
+
+✅ every change is explained by the three fixes

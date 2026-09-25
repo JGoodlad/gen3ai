@@ -57,6 +57,9 @@ pub struct Ctx {
     /// `"NONE"` when no (living) active.
     pub our_active: String,
     pub opp_active: String,
+    /// `ctx.opp_active in ctx.opp_fainted_species` — the opponent's active had fainted and was not
+    /// yet replaced at this decision (the next window's switch-in is the free replacement, L3).
+    pub opp_active_fainted: bool,
     pub our_fainted: usize,
     pub opp_fainted: usize,
     pub active_move_ids: [Option<String>; 4],
@@ -122,6 +125,7 @@ impl Ctx {
             opp_slots: opp_slots.clone(),
             our_active: our_a.filter(|m| !m.fainted).map_or("NONE".into(), |m| m.species.clone()),
             opp_active: opp_a.map_or("NONE".into(), |m| m.species.clone()),
+            opp_active_fainted: opp_a.is_some_and(|m| m.fainted),
             our_fainted: live.ours.mons.iter().filter(|m| m.fainted).count(),
             opp_fainted: live.opp.mons.iter().filter(|m| m.fainted).count(),
             active_move_ids,
@@ -157,6 +161,14 @@ pub struct DeltaProjection {
     pub opp_target_hp_delta: Option<f32>,
     pub phase_is_forced_switch: bool,
     pub decision_was_forced_switch: bool,
+    /// `opp_dragged` / `opp_switch_is_replacement` / `opp_called_via` / `opp_choice_overridden` — the
+    /// label's non-choice facts (`gen3_intent_label_semantics_fixes_v1`); `our_move_hit_delta` — our
+    /// moves' OWN hits, clause (i)'s attribution (`gen3_progress_clock_attribution_fix_v1`).
+    pub opp_dragged: bool,
+    pub opp_switch_is_replacement: bool,
+    pub opp_called_via: Option<String>,
+    pub opp_choice_overridden: bool,
+    pub our_move_hit_delta: f64,
 }
 
 /// A float32 sum in index order — `np.float32 array .sum()` for a 6-vector.
@@ -247,6 +259,11 @@ impl DeltaProjection {
             opp_damaging_event,
             phase_is_forced_switch: forced,
             decision_was_forced_switch: decided_forced,
+            opp_dragged: opp.drag,
+            opp_switch_is_replacement: opp.switched && opp.switched_to.is_some() && prev.opp_active_fainted,
+            opp_called_via: opp.called_via.clone(),
+            opp_choice_overridden: opp.choice_overridden,
+            our_move_hit_delta: our.hit_dealt,
         }
     }
 
@@ -282,6 +299,12 @@ impl DeltaProjection {
             Some(x) => json_out::f64_into(out, x as f64),
             None => out.push_str("null"),
         }
+        o(out, "opp_called_via", self.opp_called_via.as_deref());
+        out.push_str(&format!(
+            ",\"opp_dragged\":{},\"opp_switch_is_replacement\":{},\"opp_choice_overridden\":{},\"our_move_hit_delta\":",
+            self.opp_dragged, self.opp_switch_is_replacement, self.opp_choice_overridden
+        ));
+        json_out::f64_into(out, self.our_move_hit_delta as f32 as f64);
         for (k, a) in [("our_hp_delta", &self.our_hp_delta), ("opp_hp_delta", &self.opp_hp_delta)] {
             out.push_str(&format!(",\"{k}\":["));
             for (i, x) in a.iter().enumerate() {

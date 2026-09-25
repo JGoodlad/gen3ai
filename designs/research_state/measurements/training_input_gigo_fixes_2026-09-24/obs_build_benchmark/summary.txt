@@ -1,0 +1,10 @@
+obs_build_benchmark.py — 8 interleaved pairs (order alternating), BASE = 2eb5850a, AFTER = the fix tree;
+load1 5.0-5.3 throughout; nice -n 10; ratio = after / before per pair, median with a paired bootstrap 95% CI
+(20,000 resamples, seed 0).
+
+full (cold)                    after/before median 0.999 [95% CI 0.989, 1.015]  per pair [1.01, 1.01, 0.98, 1.0, 0.99, 1.09, 1.0, 1.0]
+live_view                      after/before median 0.993 [95% CI 0.973, 1.014]  per pair [0.97, 0.99, 1.01, 1.0, 0.99, 1.08, 1.0, 0.88]
+production shape (warm+memo)   after/before median 0.986 [95% CI 0.961, 1.030]  per pair [0.96, 1.01, 1.02, 0.96, 0.96, 1.04, 1.03, 0.93]
+
+Every CI straddles 1.00: no measurable change. (The fixes add one comparison per event to the H-B fold and
+one per BOOST row to the magnitude write; the encoder's structure is unchanged.)

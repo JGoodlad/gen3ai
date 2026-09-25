@@ -353,16 +353,16 @@ fn event_status_id(status: Option<&str>) -> CoreResult<u8> {
     })
 }
 
-/// `_classify_item_transition`.
+/// `_classify_item_transition`. A transfer move's item line is SWAPPED on BOTH mons — Trick's two
+/// `|-item|`s, Thief / Covet's taker `|-item|` (`gen3_event_window_semantics_fixes_v1`, W3).
 fn classify_item_transition(kind: K, from_clause: Option<&str>) -> u8 {
-    if kind == K::Item {
-        return item_tr::REVEALED;
-    }
     let fc = from_clause.unwrap_or("").trim().to_lowercase();
-    if fc.contains("knock off") || fc.contains("knockoff") {
-        item_tr::REMOVED
-    } else if ["trick", "thief", "covet", "switcheroo"].iter().any(|w| fc.contains(w)) {
+    if ["trick", "thief", "covet", "switcheroo"].iter().any(|w| fc.contains(w)) {
         item_tr::SWAPPED
+    } else if kind == K::Item {
+        item_tr::REVEALED
+    } else if fc.contains("knock off") || fc.contains("knockoff") {
+        item_tr::REMOVED
     } else {
         item_tr::CONSUMED
     }
@@ -459,7 +459,12 @@ pub struct EventWindow {
     /// `_open_move`: side → the open MOVE record's id.
     open_move: [Option<u64>; 2],
     last_dmg_cause: [Option<Option<String>>; 2],
+    /// `_last_dmg_lethal`: did that last damage take the mon to 0 HP (W2).
+    last_dmg_lethal: [Option<bool>; 2],
     used_selfko: [Option<bool>; 2],
+    /// `_last_mover`: the side of the latest `|move|` — a bare `-damage` is the open move's own hit
+    /// only while its user is the one moving.
+    last_mover: Option<Rel>,
     first_mover_turn: i64,
     first_mover_side: Option<Rel>,
     forced: [bool; 2],
@@ -476,7 +481,9 @@ impl Default for EventWindow {
             opp_active: None,
             open_move: [None, None],
             last_dmg_cause: [None, None],
+            last_dmg_lethal: [None, None],
             used_selfko: [None, None],
+            last_mover: None,
             first_mover_turn: -1,
             first_mover_side: None,
             forced: [false, false],
@@ -545,17 +552,21 @@ impl EventWindow {
                     r.we_first = Some(side) == self.first_mover_side;
                     let id = self.append(r);
                     self.open_move[ri(side)] = Some(id);
+                    self.last_mover = Some(side);
                     self.used_selfko[ri(side)] = Some(ev::move_id(e).is_some_and(|m| SELF_KO.contains(&m)));
                 }
                 K::Damage if side.is_some() => {
                     let side = side.unwrap();
                     let fc = ev::from_clause(e);
                     self.last_dmg_cause[ri(side)] = Some(fc.map(str::to_string));
+                    self.last_dmg_lethal[ri(side)] = Some(ev::damage_is_lethal(e));
                     let mover = ev::other(side);
                     let amt = ev::amount(e);
+                    let moving = self.last_mover == Some(mover);
                     if let Some(om) = self.open(mover) {
                         if om.turn == et
                             && ev::nz(fc).is_none()
+                            && moving
                             && sp.is_some()
                             && om.target.as_deref() == sp
                         {
@@ -574,6 +585,16 @@ impl EventWindow {
                                 K::Fail => om.failed = true,
                                 _ => om.crit = true,
                             }
+                        }
+                    }
+                }
+                K::Activate if side.is_some() && ev::is_protect_block(ev::effect(e)) => {
+                    // W4: the PROTECTOR is named; the moving side's open move was stopped.
+                    let mover = ev::other(side.unwrap());
+                    let moving = self.last_mover == Some(mover);
+                    if let Some(om) = self.open(mover) {
+                        if om.turn == et && moving {
+                            om.failed = true;
                         }
                     }
                 }
@@ -599,15 +620,21 @@ impl EventWindow {
                         Rel::Opp => self.opp_active = sp.map(str::to_string),
                     }
                     self.last_dmg_cause[ri(side)] = None;
+                    self.last_dmg_lethal[ri(side)] = None;
                     self.used_selfko[ri(side)] = None;
                 }
                 K::Faint if side.is_some() && sp.is_some() => {
                     let side = side.unwrap();
                     let mut r = EventRecord::new(t::FAINT, sp, Some(side), et);
                     let fc = self.last_dmg_cause[ri(side)].clone().flatten();
-                    r.faint_cause = Some(classify_faint_cause(fc.as_deref(), self.used_selfko[ri(side)].unwrap_or(false)));
+                    r.faint_cause = Some(classify_faint_cause(
+                        fc.as_deref(),
+                        self.used_selfko[ri(side)].unwrap_or(false),
+                        self.last_dmg_lethal[ri(side)].unwrap_or(false),
+                    ));
                     self.append(r);
                     self.last_dmg_cause[ri(side)] = None;
+                    self.last_dmg_lethal[ri(side)] = None;
                     self.used_selfko[ri(side)] = None;
                     if side == Rel::Ours && self.our_active.as_deref() == sp {
                         self.our_active = None;
@@ -629,7 +656,8 @@ impl EventWindow {
                         _ => 0.0,
                     };
                     let mut r = EventRecord::new(t::BOOST, sp, side, et);
-                    r.hp_delta = if e.kind == K::Boost { amt } else { -amt };
+                    // W1: the reading's `amount` is ALREADY SIGNED (an `|-unboost|` reads negative)
+                    r.hp_delta = amt;
                     self.append(r);
                 }
                 K::Item | K::Enditem if sp.is_some() => {
@@ -638,7 +666,10 @@ impl EventWindow {
                     self.append(r);
                 }
                 K::Side if side.is_some() => {
-                    self.append(EventRecord::new(t::HAZARD, None, side, et));
+                    // W5: +1 a side condition started, −1 one ended (Rapid Spin's clear, a screen's end)
+                    let mut r = EventRecord::new(t::HAZARD, None, side, et);
+                    r.hp_delta = if ev::s(e, "op") == Some("sideend") { -1.0 } else { 1.0 };
+                    self.append(r);
                 }
                 K::Cant if sp.is_some() => {
                     let cs = ev::blocked_side(e).or(side);

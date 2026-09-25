@@ -98,12 +98,12 @@ a dead obs dim is the most valuable thing this suite can find.
   `BattleEvent.from_clause`, which resolves `value["reason"]` on
   DAMAGE/HEAL/SETHP/STATUS and `value["from"]` on the ITEM/ENDITEM/WEATHER/effect
   kinds — neither raw accessor alone covers both.
-- **Substitute's own 25% HP cost is still credited to the OPPONENT'S move.** It
-  is a `|-damage|` with NO `[from]` clause, on the mon that is also the recorded
-  move target, so no clause-based guard can see it and the damage-attach rule
-  fires. Confirmed live: `machamp seismictoss hp_delta=-0.2493` on a turn its
-  Seismic Toss dealt ZERO (the sub ate it) — 0.2493 is exactly Blissey's 178/714
-  sub cost. Live defect, see gaps §3.5.
+- **FIXED — a Substitute's own 25% HP cost is no longer credited to the OPPONENT'S
+  move.** It is a `|-damage|` with NO `[from]` clause on the recorded move target
+  (live: `machamp seismictoss hp_delta=-0.2493` on a turn its Seismic Toss dealt
+  ZERO), so no clause guard could see it; `gen3_event_window_semantics_fixes_v1`
+  attaches a bare `-damage` only while the open move's user is the side MOVING
+  (gaps §3.5; `substitute_confusion_feature_test` is now a plain pin).
 - **A Substitute BREAKING or ABSORBING emits no event row at all.**
   `|-end|…|Substitute` folds to a volatile-end and `|-activate|…|Substitute|[damage]`
   to `EventKind.ACTIVATE`; `EventWindowTracker.update` has a branch for neither,
