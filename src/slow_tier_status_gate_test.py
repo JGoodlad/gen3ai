@@ -13,8 +13,8 @@ is reported and never fatal, why the artifact is committed rather than gitignore
 file fails, and the honest limitation that a test which broke *since* the last recorded run still
 reads green — is in `src/utils/slow_tier_status.py`'s module docstring.
 
-**One thing is fatal here and only one: a RECORDED RED.** Inconclusive (a timeout signature —
-*a timeout is never a semantic outcome*), unrecorded (a slow test nobody has run yet) and stale (the
+**One thing is fatal here and only one: a RECORDED RED.** Inconclusive (a timeout signature, or
+a test interrupted before its CALL phase finished — *a timeout is never a semantic outcome*), unrecorded (a slow test nobody has run yet) and stale (the
 tier has not been run lately) are REPORTED, as warnings that survive `-q`, and pass.
 
 Refresh the artifact:
@@ -43,6 +43,7 @@ from utils.slow_tier_status import (
     make_row,
     merge_outcome,
     record_results,
+    settle,
     status_path,
 )
 
@@ -131,7 +132,7 @@ def _report(v: Verdict, path) -> None:
           f"{len(v.unrecorded)} unrecorded, {len(v.stale)} stale")
     if v.inconclusive:
         warnings.warn(
-            "slow-tier INCONCLUSIVE (a timeout signature — never a verdict): "
+            "slow-tier INCONCLUSIVE (a timeout signature or an interrupted run — never a verdict): "
             + ", ".join(n for n, _ in v.inconclusive), stacklevel=2)
     if v.unrecorded:
         warnings.warn(
@@ -227,6 +228,17 @@ def test_a_SKIPPED_test_never_banks_as_a_PASS():
     assert merge_outcome("skip", "fail") == "fail"
     v = evaluate({"tests": {"a::t": _row("skip"), "b::t": _row("pass")}})
     assert v.ok and v.n_pass == 1 and v.n_skip == 1
+
+
+def test_a_PASS_with_no_CALL_phase_settles_INCONCLUSIVE():
+    """A SETUP that succeeds classifies `pass`; a test interrupted mid-call has nothing else, and
+    banked 0.0 s PASS rows for two in-flight tests (2026-09-24). Only the unearned pass is demoted —
+    a setup skip or error has no call either and keeps its own class. The real-session proof is
+    `slow_tier_status_interrupt_test.py`."""
+    assert settle("pass", call_reported=False) == "inconclusive"
+    assert settle("pass", call_reported=True) == "pass"
+    assert settle("skip", call_reported=False) == "skip"
+    assert settle("fail", call_reported=False) == "fail"
 
 
 def test_recording_MERGES_and_never_truncates_the_other_rows(tmp_path):

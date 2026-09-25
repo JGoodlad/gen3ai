@@ -174,6 +174,8 @@ def _record_slow_result(report):
             "status": merged,
             "duration_s": (prev or {}).get("duration_s", 0.0) + float(report.duration),
             "detail": detail,
+            # A PASS is only earned by a CALL phase — see `slow_tier_status.settle`.
+            "call": bool((prev or {}).get("call")) or report.when == "call",
         }
     except Exception as exc:            # never let the recorder break a test run
         _slow_write_note.append(f"slow-tier status NOT recorded for {report.nodeid}: {exc!r}")
@@ -192,14 +194,19 @@ def _write_slow_results(nodeids=None):
         return
     try:
         from utils.git import get_git_hash
-        from utils.slow_tier_status import make_row, record_results
+        from utils.slow_tier_status import INTERRUPTED_DETAIL, make_row, record_results, settle
         commit = get_git_hash()
         factor = _contention_factor()
         wanted = _slow_results if nodeids is None else {
             n: _slow_results[n] for n in nodeids if n in _slow_results}
-        rows = {nodeid: make_row(r["status"], commit=commit, duration_s=r["duration_s"],
-                                 contention=factor, detail=r.get("detail", ""))
-                for nodeid, r in wanted.items()}
+        rows = {}
+        for nodeid, r in wanted.items():
+            # A test interrupted in flight has only its SETUP row here, which reads `pass`; the
+            # session-finish sweep below would bank it GREEN. `settle` demotes it to inconclusive.
+            status = settle(r["status"], r.get("call", False))
+            detail = INTERRUPTED_DETAIL if status != r["status"] else r.get("detail", "")
+            rows[nodeid] = make_row(status, commit=commit, duration_s=r["duration_s"],
+                                    contention=factor, detail=detail)
         if not rows:
             return
         path = record_results(rows)

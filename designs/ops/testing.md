@@ -273,6 +273,10 @@ reads it:
   Each verdict is **banked at that test's teardown**, not only at session finish: the slow tier is
   ~2 hours beside a live run, and a session interrupted at test 79 of 80 must not throw away 79
   verdicts. An artifact you only get by not pressing Ctrl-C is an artifact nobody will have.
+  🚨 **A PASS needs a CALL phase** (`slow_tier_status.settle`): a setup that succeeds classifies
+  `pass`, so a test interrupted mid-call once banked as PASS at 0.0 s through the session-finish
+  sweep (2026-09-24, a MILESTONE run stopped with SIGTERM). A test with no call report now banks
+  `inconclusive`; `src/slow_tier_status_interrupt_test.py` interrupts a real session to pin it.
 * **Artifact** — `designs/ops/slow_tier_status.json`, **committed**.
 * **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, in every tier, ~0.03 s plus one
   `git rev-list` per distinct recorded commit.
@@ -280,7 +284,7 @@ reads it:
 | class | meaning | gate |
 |---|---|---|
 | `fail` | the tier ran it and it failed | **FAILS the routine gate**, naming the test id and the commit it failed at |
-| `inconclusive` | it failed with a TIMEOUT signature | reported — *a timeout is never a semantic outcome* |
+| `inconclusive` | it failed with a TIMEOUT signature, **or it never finished a CALL phase** (Ctrl-C, a SIGTERM'd xdist worker — killed in flight) | reported — *a timeout is never a semantic outcome* |
 | unrecorded | collected as `slow` this session, no row | reported — a new slow test is not a regression |
 | stale | the row is >25 commits behind HEAD, or its commit is unknown | reported |
 
@@ -319,10 +323,10 @@ restore command and `GEN3AI_SKIP_SLOW_STATUS_GATE=1`, so it can never strand any
 rows is reading nothing at all.
 
 The recording side can be turned off on its own with `GEN3AI_SKIP_SLOW_STATUS_RECORD=1` (a run whose
-verdict should not be banked — a deliberate experiment, a starved box). Ten meta-tests in the gate
+verdict should not be banked — a deliberate experiment, a starved box). Twelve meta-tests in the gate
 file plant each condition — a red, an inconclusive, an unrecorded, a stale row, an unknown commit,
-a merge that must not truncate — so the gate's behaviour is pinned rather than described. Contract:
-`src/utils/slow_tier_status.py`.
+a merge that must not truncate, a setup-only pass that must not bank green — so the gate's
+behaviour is pinned rather than described. Contract: `src/utils/slow_tier_status.py`.
 
 ### The REWARD GOLDEN (`src/agents/training/reward_golden_test.py`) — `sim`, ~20 s
 

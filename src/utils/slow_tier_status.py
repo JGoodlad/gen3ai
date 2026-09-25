@@ -25,7 +25,7 @@ in the routine suite READS it — so a red `slow` test costs one JSON read to su
 | class | meaning | gate |
 |---|---|---|
 | `fail` | the slow tier RAN this test and it failed | **FAILS the routine gate**, naming the test and the commit it failed at |
-| `inconclusive` | it failed with a TIMEOUT signature | reported, never fatal — *a timeout is never a semantic outcome* |
+| `inconclusive` | it failed with a TIMEOUT signature, **or it never finished a CALL phase** (killed or interrupted in flight) | reported, never fatal — *a timeout is never a semantic outcome* |
 | unrecorded | collected as `slow` this session, no row here | reported — a new slow test is not a regression |
 | stale | the row's commit is far behind HEAD, or not an ancestor of it | reported |
 
@@ -120,6 +120,34 @@ def status_path() -> Path:
 
 
 # ───────────────────────────────────────────────────────────────────── recording ──
+
+
+#: The detail an `inconclusive` row carries when `settle` demoted it: the test never reported a
+#: CALL phase, so nothing it asserts was measured.
+INTERRUPTED_DETAIL = ("INTERRUPTED in flight: no call-phase report (Ctrl-C / KeyboardInterrupt, a "
+                      "SIGTERM'd xdist worker, a killed session) — nothing it asserts was measured")
+
+
+def settle(status: str, call_reported: bool) -> str:
+    """The verdict a test may BANK, given every phase it reported. **`pass` needs a CALL phase.**
+
+    🚨 A test's first report is its SETUP, and a setup that succeeds classifies `pass` — so a test
+    that is interrupted mid-CALL is, to the fold above, indistinguishable from one that passed.
+    Measured 2026-09-24: a MILESTONE run stopped with SIGTERM banked two in-flight tests as PASS
+    with 0.0 s durations (their setup time). Two routes reach the bank with only that setup row: a
+    KeyboardInterrupt, which pytest re-raises out of the call WITHOUT making a call report and
+    then runs `pytest_sessionfinish`; and a SIGTERM'd xdist worker, whose crash report carries NO
+    keywords (so it is not seen as `slow`) while the controller survives to session finish.
+
+    **By class, not by signal:** whatever stopped it, a test with no CALL report did not run to
+    completion, so it cannot be green. It is `inconclusive` — reported on every routine run, never
+    fatal — rather than dropped, for the same reason a timeout is: the attempt happened and did not
+    finish, and silently keeping an older green would hide that. A setup SKIP or setup ERROR has no
+    call either and keeps its own class; only the unearned `pass` is demoted.
+    """
+    if status == "pass" and not call_reported:
+        return "inconclusive"
+    return status
 
 
 def classify(failed: bool, skipped: bool, text: str) -> str:
