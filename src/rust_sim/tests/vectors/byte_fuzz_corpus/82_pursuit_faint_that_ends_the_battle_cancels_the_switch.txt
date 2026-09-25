@@ -1,0 +1,79 @@
+# FIXTURE 82 — a Pursuit KO whose Destiny Bond takes the foe's LAST mon ends the battle: no |switch| before |win| (gen3_pursuitfaint_win_stops_switch_v1).
+# Source: harness/probe_beatup_set_species_pursuit_win.js scenario `pw_pursuit_destiny_bond_win` (a CONSTRUCTED battle recorded through the real sim).
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	pw_pursuit_destiny_bond_win
+TEAM	pw_pursuit_destiny_bond_win	p1	Gengar||Leftovers|Levitate|DestinyBond,Thunderbolt,IcePunch,GigaDrain|Timid|252,,,4,,252|M||||]Skarmory||Leftovers|KeenEye|DrillPeck,Spikes,Roar,Protect|Impish|252,,252,,4,|M||||
+TEAM	pw_pursuit_destiny_bond_win	p2	Tyranitar||Leftovers|SandStream|Pursuit,Crunch,RockSlide,Earthquake|Adamant|4,252,,,,252|M||||
+FMT	pw_pursuit_destiny_bond_win	gen3ou
+INIT	pw_pursuit_destiny_bond_win	30982,33910,19571,50263	1	0
+DEC	pw_pursuit_destiny_bond_win	0	move	0	0	m1	m1	54274,43667,37867,24894	Gengar	114	324	0	-	0	0	0	0	0	0	2	Tyranitar	264	342	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	pw_pursuit_destiny_bond_win	1	move	0	0	m0	m3	14735,5508,9502,51264	Gengar	114	324	0	-	0	0	0	0	0	0	2	Tyranitar	285	342	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+DEC	pw_pursuit_destiny_bond_win	2	move	0	0	s1	m0	55173,41332,18014,39666	Gengar	0	324	1	-	0	0	0	0	0	0	1	Tyranitar	0	342	1	-	0	0	0	0	0	0	0	p2	0	0	0	0	0
+END	pw_pursuit_destiny_bond_win	1	p1
+L	pw_pursuit_destiny_bond_win	0	|t:|<NORMALIZED>
+L	pw_pursuit_destiny_bond_win	1	|gametype|singles
+L	pw_pursuit_destiny_bond_win	2	|player|p1|P1||
+L	pw_pursuit_destiny_bond_win	3	|player|p2|P2||
+L	pw_pursuit_destiny_bond_win	4	|gen|3
+L	pw_pursuit_destiny_bond_win	5	|tier|[Gen 3] OU
+L	pw_pursuit_destiny_bond_win	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	pw_pursuit_destiny_bond_win	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	pw_pursuit_destiny_bond_win	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	pw_pursuit_destiny_bond_win	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	pw_pursuit_destiny_bond_win	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	pw_pursuit_destiny_bond_win	11	|rule|Species Clause: Limit one of each Pokémon
+L	pw_pursuit_destiny_bond_win	12	|rule|OHKO Clause: OHKO moves are banned
+L	pw_pursuit_destiny_bond_win	13	|rule|Evasion Items Clause: Evasion items are banned
+L	pw_pursuit_destiny_bond_win	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	pw_pursuit_destiny_bond_win	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	pw_pursuit_destiny_bond_win	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	pw_pursuit_destiny_bond_win	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	pw_pursuit_destiny_bond_win	18	|
+L	pw_pursuit_destiny_bond_win	19	|t:|<NORMALIZED>
+L	pw_pursuit_destiny_bond_win	20	|teamsize|p1|2
+L	pw_pursuit_destiny_bond_win	21	|teamsize|p2|1
+L	pw_pursuit_destiny_bond_win	22	|start
+L	pw_pursuit_destiny_bond_win	23	|switch|p1a: Gengar|Gengar, M|324/324
+L	pw_pursuit_destiny_bond_win	24	|switch|p2a: Tyranitar|Tyranitar, M|342/342
+L	pw_pursuit_destiny_bond_win	25	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	pw_pursuit_destiny_bond_win	26	|turn|1
+L	pw_pursuit_destiny_bond_win	27	|
+L	pw_pursuit_destiny_bond_win	28	|t:|<NORMALIZED>
+L	pw_pursuit_destiny_bond_win	29	|move|p1a: Gengar|Thunderbolt|p2a: Tyranitar
+L	pw_pursuit_destiny_bond_win	30	|-damage|p2a: Tyranitar|243/342
+L	pw_pursuit_destiny_bond_win	31	|move|p2a: Tyranitar|Crunch|p1a: Gengar
+L	pw_pursuit_destiny_bond_win	32	|-supereffective|p1a: Gengar
+L	pw_pursuit_destiny_bond_win	33	|-damage|p1a: Gengar|114/324
+L	pw_pursuit_destiny_bond_win	34	|
+L	pw_pursuit_destiny_bond_win	35	|-weather|Sandstorm|[upkeep]
+L	pw_pursuit_destiny_bond_win	36	|-damage|p1a: Gengar|94/324|[from] Sandstorm
+L	pw_pursuit_destiny_bond_win	37	|-heal|p1a: Gengar|114/324|[from] item: Leftovers
+L	pw_pursuit_destiny_bond_win	38	|-heal|p2a: Tyranitar|264/342|[from] item: Leftovers
+L	pw_pursuit_destiny_bond_win	39	|upkeep
+L	pw_pursuit_destiny_bond_win	40	|turn|2
+L	pw_pursuit_destiny_bond_win	41	|
+L	pw_pursuit_destiny_bond_win	42	|t:|<NORMALIZED>
+L	pw_pursuit_destiny_bond_win	43	|move|p1a: Gengar|Destiny Bond|p1a: Gengar
+L	pw_pursuit_destiny_bond_win	44	|-singlemove|p1a: Gengar|Destiny Bond
+L	pw_pursuit_destiny_bond_win	45	|move|p2a: Tyranitar|Earthquake|p1a: Gengar
+L	pw_pursuit_destiny_bond_win	46	|-immune|p1a: Gengar
+L	pw_pursuit_destiny_bond_win	47	|
+L	pw_pursuit_destiny_bond_win	48	|-weather|Sandstorm|[upkeep]
+L	pw_pursuit_destiny_bond_win	49	|-damage|p1a: Gengar|94/324|[from] Sandstorm
+L	pw_pursuit_destiny_bond_win	50	|-heal|p1a: Gengar|114/324|[from] item: Leftovers
+L	pw_pursuit_destiny_bond_win	51	|-heal|p2a: Tyranitar|285/342|[from] item: Leftovers
+L	pw_pursuit_destiny_bond_win	52	|upkeep
+L	pw_pursuit_destiny_bond_win	53	|turn|3
+L	pw_pursuit_destiny_bond_win	54	|
+L	pw_pursuit_destiny_bond_win	55	|t:|<NORMALIZED>
+L	pw_pursuit_destiny_bond_win	56	|-activate|p1a: Gengar|move: Pursuit
+L	pw_pursuit_destiny_bond_win	57	|move|p2a: Tyranitar|Pursuit|p1a: Gengar|[from] Pursuit
+L	pw_pursuit_destiny_bond_win	58	|-supereffective|p1a: Gengar
+L	pw_pursuit_destiny_bond_win	59	|-damage|p1a: Gengar|0 fnt
+L	pw_pursuit_destiny_bond_win	60	|-hint|Previously chosen switches continue in Gen 2-4 after a Pursuit target faints.
+L	pw_pursuit_destiny_bond_win	61	|faint|p1a: Gengar
+L	pw_pursuit_destiny_bond_win	62	|-activate|p1a: Gengar|move: Destiny Bond
+L	pw_pursuit_destiny_bond_win	63	|faint|p2a: Tyranitar
+L	pw_pursuit_destiny_bond_win	64	|
+L	pw_pursuit_destiny_bond_win	65	|win|P1

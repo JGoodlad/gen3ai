@@ -563,7 +563,7 @@ continuations lacked `[from] lockedmove` (`gen3_lockedmove_announce_v1`), and Ro
 kept their lock across a turn that computed no damage (`gen3_rollout_lock_duration_v1`). MILESTONE
 counts per fuzzer are in `designs/research_state/measurements/ladder_usage_smoke_2026-09-24/`.
 
-## The M6 CUTOVER stress (2026-09-24) — its repros, six port bugs and one recorder artifact
+## The M6 CUTOVER stress (2026-09-24) — its repros, the port bugs they found, and one recorder artifact
 
 The Rust core program's cutover stress (`/home/goodlad/gen3ai_archive/cutover_stress_2026-09-24/`)
 saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass). Each class, as settled against the real sim:
@@ -778,6 +778,60 @@ saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass)
     tier): 18 passed. The fuzzers cannot reach either class (their pickers mirror the hidden disable,
     never re-submit a refused pick and answer a forceSwitch with a switch), so these runs are
     no-regression evidence, not coverage — the coverage is the pins and the four repros.
+
+- **The third M6 triage pass (2026-09-25, branch `m6-fuzz3` on `bafaef89`) — two NEW repros, both
+  real PORT bugs (neither is the recorder artifact).** Ground truth for both:
+  `harness/probe_beatup_set_species_pursuit_win.js` (fail-loud; it also writes fixtures 81-83).
+  - **`rmuh3kkcx_ab_2_24`** (ladder state run, `kind=seed` @ 4, recorded at pin `8bc01de8`) —
+    **Beat Up reads the SET species' base stats** (`gen3_beatup_set_species_v1`). Not the recorder
+    artifact: the sim's replay of the recorded choices has no reject, and the port now replays all
+    44 decisions `ok` from the ORIGINAL recording. Localized by draw POSITION inside decision 4:
+    the port's first 20 draws equal the sim's 20 exactly (both land on the sim's `seedAfter`), and
+    the port then drew one more Beat Up strike (crit + roll) before its checkpoint, because the
+    Smeargle that had Transformed into Dugtrio was still standing. The byte diff showed why: every
+    strike did less damage from turn 2 on (the first strike 20 in the sim, 14 in the port). The
+    gen-3 mod returns `dex.species.get(pokemon.set.species).baseStats.def` for the defender and
+    `…get(ally.set.species).baseStats.atk` per strike (`data/mods/gen3/moves.ts:48,53`); the port's
+    `run_beat_up` read the live `species_id`, which a Transform moves (Dugtrio Def 50 vs Smeargle
+    35). Both sides now read `base_species_id`, and the constructed fixture 81 pins each side on
+    its own (a Houndoom Beat Up into a Smeargle Transformed into it, while the Smeargle Beat Ups
+    back at its own Atk 20). No other `set.species` reader exists in the gen-3 sim path (grep of
+    `data/mods/gen3`, `data/moves.ts`, `sim/battle-actions.ts`).
+  - **`rmuh7wyw3_ab_3_2`** (ladder `--protocol`, `kind=species` @ 68, recorded at pin `0896b7d9`;
+    seeds equal through all 69 decisions) — **a Pursuit KO that ENDS the battle cancels the
+    continuing switch** (`gen3_pursuitfaint_win_stops_switch_v1`). A pursued Gengar under its own
+    Destiny Bond switched out; Tyranitar's Pursuit KO'd it and Destiny Bond took Tyranitar, p2's
+    last mon. The sim re-queues the gen 2-4 switch (`sim/battle.ts:2787-2794`), then the runAction
+    tail's `faintMessages()` → `checkWin` ends the battle and `if (this.ended) return true`
+    (`sim/battle.ts:2856-2857`), so the switch never runs. `execute_switch` ran `process_faints`
+    and then swapped Skarmory in, emitting `|switch|p1a: Skarmory…` between the last `|faint|` and
+    `|win|`. It now returns when `check_win` fires there. Fixture 83 is the CONTROL: with a bench
+    behind the pursuer, the switch still happens.
+  - **Pins, each checked to FAIL on a revert:** byte-fuzz fixtures 81 (`kind=state` with EITHER
+    Beat Up side reverted alone), 82 and 84 (`kind=species` with the `check_win` return removed),
+    85 (the state-only ladder repro, `kind=seed` @ 4 with the target side reverted). 83 stays `ok`
+    under every revert. Rows BU2 / PW1 in
+    [`regression_pins.md`](regression_pins.md).
+  - **poke-env impact — both change bytes the bridge sends.** Replayed through BOTH real bridges
+    (`gen_sim_bridge_diff.js --repro`, the probe's three scenarios as `start_json` + `cmds`): byte-clean
+    on this branch; with the fixes reverted, Beat Up diverges at p1 chunk 6
+    (`|-damage|p2a: Houndoom|99/100` in node, `96/100` in the port — HP, which poke-env reads), and
+    the Pursuit win at p1 chunk 8 (an extra `|switch|p1a: Skarmory…` before `|win|`, which moves
+    the terminal board's active mon). **Rate (not measured on a sim run; co-occurrence upper
+    bounds):** Beat Up needs a Transform user in the battle — 20 of 22,813 ladder-corpus teams
+    carry Transform and 2,594 carry Beat Up, so ≤ 0.04% of ladder pairings can reach it; the
+    training POOL (`data/teams/`) has 0 Transform sets, so pool-vs-pool training never reaches it.
+    The Pursuit win needs a pursued, Destiny-Bonded switcher whose KO takes the foe's last mon:
+    2,396 ladder teams carry Pursuit and 844 Destiny Bond (~1.6% of pairings carry both, the end
+    state far rarer); the pool has 172 Pursuit and 6 Destiny Bond files. The cutover stress met
+    each class once, in 6,600 ladder battles per fuzzer family.
+  - **Evidence.** `cargo test`: 988 passed, 0 failed, 8 ignored (fixtures 81-85 run inside
+    `byte_fuzz_corpus_replays_clean`). FRESH bounded runs, all green: `ab_fuzz.js --mode ladder
+    --ladder-tier full` 220 battles at `--master-seed 925501` (220 ok, 14,241 decisions); `--protocol
+    --format gen3ou` 220 at `--master-seed 925502` (214 ok + 6 allowlisted turn-0 construction keys,
+    0 diverged, 1 prefix battle dropped by the picker as `forced-unmodeled-move`);
+    `bridge_ab_fuzz.js --mode ladder --ladder-tier full --format gen3ou` 200 at `--master-seed
+    925503` (198 ok + 2 allowlisted, 0 diverged). `rust_core_parity_test.py -m "not slow"`: 18 passed.
 
 `harness/probe_repro_simtrace.js` now replays a repro under its `FMT` row's format, admitting typed
 Hidden Power the way `ab_fuzz.js` does (pool / ourandom / ladder); before this, it replayed every

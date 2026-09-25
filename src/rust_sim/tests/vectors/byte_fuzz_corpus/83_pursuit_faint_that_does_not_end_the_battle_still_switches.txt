@@ -1,0 +1,102 @@
+# FIXTURE 83 — CONTROL for 82 — the same Pursuit + Destiny Bond with a bench behind the pursuer: the chosen switch still brings Skarmory in.
+# Source: harness/probe_beatup_set_species_pursuit_win.js scenario `pc_pursuit_destiny_bond_continues` (a CONSTRUCTED battle recorded through the real sim).
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	pc_pursuit_destiny_bond_continues
+TEAM	pc_pursuit_destiny_bond_continues	p1	Gengar||Leftovers|Levitate|DestinyBond,Thunderbolt,IcePunch,GigaDrain|Timid|252,,,4,,252|M||||]Skarmory||Leftovers|KeenEye|DrillPeck,Spikes,Roar,Protect|Impish|252,,252,,4,|M||||
+TEAM	pc_pursuit_destiny_bond_continues	p2	Tyranitar||Leftovers|SandStream|Pursuit,Crunch,RockSlide,Earthquake|Adamant|4,252,,,,252|M||||]Blissey||Leftovers|NaturalCure|SeismicToss,SoftBoiled,ThunderWave,IceBeam|Bold|252,,252,,4,|F||||
+FMT	pc_pursuit_destiny_bond_continues	gen3ou
+INIT	pc_pursuit_destiny_bond_continues	30982,33910,19571,50263	1	0
+DEC	pc_pursuit_destiny_bond_continues	0	move	0	0	m1	m1	54274,43667,37867,24894	Gengar	114	324	0	-	0	0	0	0	0	0	2	Tyranitar	264	342	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	pc_pursuit_destiny_bond_continues	1	move	0	0	m0	m3	14735,5508,9502,51264	Gengar	114	324	0	-	0	0	0	0	0	0	2	Tyranitar	285	342	0	-	0	0	0	0	0	0	2	p1	0	0	0	0	0
+DEC	pc_pursuit_destiny_bond_continues	2	move	0	0	s1	m0	55173,41332,18014,39666	Skarmory	334	334	0	-	0	0	0	0	0	0	1	Tyranitar	0	342	1	fnt	0	0	0	0	0	0	1	p2	0	0	0	0	0
+DEC	pc_pursuit_destiny_bond_continues	3	switch	0	1	-	s1	20898,18934,47363,16957	Skarmory	334	334	0	-	0	0	0	0	0	0	1	Blissey	714	714	0	-	0	0	0	0	0	0	1	none	0	0	0	0	0
+DEC	pc_pursuit_destiny_bond_continues	4	move	0	0	m0	m0	1282,42014,22271,29224	Skarmory	254	334	0	-	0	0	0	0	0	0	1	Blissey	582	714	0	-	0	0	0	0	0	0	1	p1	0	0	0	0	0
+END	pc_pursuit_destiny_bond_continues	0	none
+L	pc_pursuit_destiny_bond_continues	0	|t:|<NORMALIZED>
+L	pc_pursuit_destiny_bond_continues	1	|gametype|singles
+L	pc_pursuit_destiny_bond_continues	2	|player|p1|P1||
+L	pc_pursuit_destiny_bond_continues	3	|player|p2|P2||
+L	pc_pursuit_destiny_bond_continues	4	|gen|3
+L	pc_pursuit_destiny_bond_continues	5	|tier|[Gen 3] OU
+L	pc_pursuit_destiny_bond_continues	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	pc_pursuit_destiny_bond_continues	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	pc_pursuit_destiny_bond_continues	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	pc_pursuit_destiny_bond_continues	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	pc_pursuit_destiny_bond_continues	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	pc_pursuit_destiny_bond_continues	11	|rule|Species Clause: Limit one of each Pokémon
+L	pc_pursuit_destiny_bond_continues	12	|rule|OHKO Clause: OHKO moves are banned
+L	pc_pursuit_destiny_bond_continues	13	|rule|Evasion Items Clause: Evasion items are banned
+L	pc_pursuit_destiny_bond_continues	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	pc_pursuit_destiny_bond_continues	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	pc_pursuit_destiny_bond_continues	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	pc_pursuit_destiny_bond_continues	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	pc_pursuit_destiny_bond_continues	18	|
+L	pc_pursuit_destiny_bond_continues	19	|t:|<NORMALIZED>
+L	pc_pursuit_destiny_bond_continues	20	|teamsize|p1|2
+L	pc_pursuit_destiny_bond_continues	21	|teamsize|p2|2
+L	pc_pursuit_destiny_bond_continues	22	|start
+L	pc_pursuit_destiny_bond_continues	23	|switch|p1a: Gengar|Gengar, M|324/324
+L	pc_pursuit_destiny_bond_continues	24	|switch|p2a: Tyranitar|Tyranitar, M|342/342
+L	pc_pursuit_destiny_bond_continues	25	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Tyranitar
+L	pc_pursuit_destiny_bond_continues	26	|turn|1
+L	pc_pursuit_destiny_bond_continues	27	|
+L	pc_pursuit_destiny_bond_continues	28	|t:|<NORMALIZED>
+L	pc_pursuit_destiny_bond_continues	29	|move|p1a: Gengar|Thunderbolt|p2a: Tyranitar
+L	pc_pursuit_destiny_bond_continues	30	|-damage|p2a: Tyranitar|243/342
+L	pc_pursuit_destiny_bond_continues	31	|move|p2a: Tyranitar|Crunch|p1a: Gengar
+L	pc_pursuit_destiny_bond_continues	32	|-supereffective|p1a: Gengar
+L	pc_pursuit_destiny_bond_continues	33	|-damage|p1a: Gengar|114/324
+L	pc_pursuit_destiny_bond_continues	34	|
+L	pc_pursuit_destiny_bond_continues	35	|-weather|Sandstorm|[upkeep]
+L	pc_pursuit_destiny_bond_continues	36	|-damage|p1a: Gengar|94/324|[from] Sandstorm
+L	pc_pursuit_destiny_bond_continues	37	|-heal|p1a: Gengar|114/324|[from] item: Leftovers
+L	pc_pursuit_destiny_bond_continues	38	|-heal|p2a: Tyranitar|264/342|[from] item: Leftovers
+L	pc_pursuit_destiny_bond_continues	39	|upkeep
+L	pc_pursuit_destiny_bond_continues	40	|turn|2
+L	pc_pursuit_destiny_bond_continues	41	|
+L	pc_pursuit_destiny_bond_continues	42	|t:|<NORMALIZED>
+L	pc_pursuit_destiny_bond_continues	43	|move|p1a: Gengar|Destiny Bond|p1a: Gengar
+L	pc_pursuit_destiny_bond_continues	44	|-singlemove|p1a: Gengar|Destiny Bond
+L	pc_pursuit_destiny_bond_continues	45	|move|p2a: Tyranitar|Earthquake|p1a: Gengar
+L	pc_pursuit_destiny_bond_continues	46	|-immune|p1a: Gengar
+L	pc_pursuit_destiny_bond_continues	47	|
+L	pc_pursuit_destiny_bond_continues	48	|-weather|Sandstorm|[upkeep]
+L	pc_pursuit_destiny_bond_continues	49	|-damage|p1a: Gengar|94/324|[from] Sandstorm
+L	pc_pursuit_destiny_bond_continues	50	|-heal|p1a: Gengar|114/324|[from] item: Leftovers
+L	pc_pursuit_destiny_bond_continues	51	|-heal|p2a: Tyranitar|285/342|[from] item: Leftovers
+L	pc_pursuit_destiny_bond_continues	52	|upkeep
+L	pc_pursuit_destiny_bond_continues	53	|turn|3
+L	pc_pursuit_destiny_bond_continues	54	|
+L	pc_pursuit_destiny_bond_continues	55	|t:|<NORMALIZED>
+L	pc_pursuit_destiny_bond_continues	56	|-activate|p1a: Gengar|move: Pursuit
+L	pc_pursuit_destiny_bond_continues	57	|move|p2a: Tyranitar|Pursuit|p1a: Gengar|[from] Pursuit
+L	pc_pursuit_destiny_bond_continues	58	|-supereffective|p1a: Gengar
+L	pc_pursuit_destiny_bond_continues	59	|-damage|p1a: Gengar|0 fnt
+L	pc_pursuit_destiny_bond_continues	60	|-hint|Previously chosen switches continue in Gen 2-4 after a Pursuit target faints.
+L	pc_pursuit_destiny_bond_continues	61	|faint|p1a: Gengar
+L	pc_pursuit_destiny_bond_continues	62	|-activate|p1a: Gengar|move: Destiny Bond
+L	pc_pursuit_destiny_bond_continues	63	|faint|p2a: Tyranitar
+L	pc_pursuit_destiny_bond_continues	64	|switch|p1a: Skarmory|Skarmory, M|334/334
+L	pc_pursuit_destiny_bond_continues	65	|
+L	pc_pursuit_destiny_bond_continues	66	|t:|<NORMALIZED>
+L	pc_pursuit_destiny_bond_continues	67	|switch|p2a: Blissey|Blissey, F|714/714
+L	pc_pursuit_destiny_bond_continues	68	|
+L	pc_pursuit_destiny_bond_continues	69	|-weather|Sandstorm|[upkeep]
+L	pc_pursuit_destiny_bond_continues	70	|-damage|p2a: Blissey|670/714|[from] Sandstorm
+L	pc_pursuit_destiny_bond_continues	71	|-heal|p2a: Blissey|714/714|[from] item: Leftovers
+L	pc_pursuit_destiny_bond_continues	72	|upkeep
+L	pc_pursuit_destiny_bond_continues	73	|turn|4
+L	pc_pursuit_destiny_bond_continues	74	|
+L	pc_pursuit_destiny_bond_continues	75	|t:|<NORMALIZED>
+L	pc_pursuit_destiny_bond_continues	76	|move|p1a: Skarmory|Drill Peck|p2a: Blissey
+L	pc_pursuit_destiny_bond_continues	77	|-damage|p2a: Blissey|582/714
+L	pc_pursuit_destiny_bond_continues	78	|move|p2a: Blissey|Seismic Toss|p1a: Skarmory
+L	pc_pursuit_destiny_bond_continues	79	|-damage|p1a: Skarmory|234/334
+L	pc_pursuit_destiny_bond_continues	80	|
+L	pc_pursuit_destiny_bond_continues	81	|-weather|Sandstorm|[upkeep]
+L	pc_pursuit_destiny_bond_continues	82	|-damage|p2a: Blissey|538/714|[from] Sandstorm
+L	pc_pursuit_destiny_bond_continues	83	|-heal|p1a: Skarmory|254/334|[from] item: Leftovers
+L	pc_pursuit_destiny_bond_continues	84	|-heal|p2a: Blissey|582/714|[from] item: Leftovers
+L	pc_pursuit_destiny_bond_continues	85	|upkeep
+L	pc_pursuit_destiny_bond_continues	86	|turn|5

@@ -505,7 +505,7 @@ node src/rust_sim/harness/probe_residual_order_rng.js
 node src/rust_sim/harness/probe_phaze_regression_rng.js
 ```
 
-The full bug -> pin map (76 rows), each family's ground-truth probe, and the FEATURE pins for
+The full bug -> pin map (82 rows), each family's ground-truth probe, and the FEATURE pins for
 newly-modelled mechanics:
 [`designs/rust_sim/regression_pins.md`](../../designs/rust_sim/regression_pins.md).
 

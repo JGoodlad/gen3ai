@@ -1,0 +1,55 @@
+# FIXTURE 85 (STATE-only chunk: no L rows, genders drawn) — Beat Up into a TRANSFORMED target reads the target's SET species base Def (gen3_beatup_set_species_v1).
+# Source: the M6 cutover stress repro fz_state_ladder.00050/divergences/rmuh3kkcx_ab_2_24 (ladder, gen3customgame; kind=seed @ 4 pre-fix — a Smeargle transformed into Dugtrio took Beat Up at Dugtrio's Def 50).
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=ladder master_seed=610050 run_id=rmuh3kkcx chunk=2
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_2_24
+TEAM	ab_2_24	p1	Zapdos||Leftovers|Pressure|Thunderbolt,ThunderWave,BatonPass,HiddenPower|Timid|4,,,252,,252|N||||,Dark,,,,]Celebi||Leftovers|NaturalCure|CalmMind,HiddenPower,Psychic,BatonPass|Bold|248,,124,40,60,36|N||||,Dark,,,,]Dugtrio||ChoiceBand|ArenaTrap|BeatUp,Earthquake,HiddenPower,Screech|Adamant|12,252,,,,212|||||,Dark,,,,]Claydol||Leftovers|Levitate|RapidSpin,Psychic,Explosion,HiddenPower|Adamant|252,216,,32,,8|N||||,Dark,,,,]Metagross||Leftovers|ClearBody|Psychic,MeteorMash,Earthquake,Explosion|Adamant|200,216,,,,92|N||||]Suicune||Leftovers|Pressure|CalmMind,IceBeam,HiddenPower,Substitute|Bold|240,,252,,,16|N||||,Dark,,,,
+TEAM	ab_2_24	p2	Smeargle||Leftovers|OwnTempo|Spore,Transform,Spikes,DestinyBond|Timid|252,,,,4,252|||||]Gengar||Leftovers|Levitate|HiddenPower,Thunderbolt,IcePunch,GigaDrain|Timid|248,,44,8,112,96|||||,Dark,,,,]Aerodactyl||ChoiceBand|RockHead|HiddenPower,RockSlide,Substitute,DoubleEdge|Jolly|4,252,,,72,180|||||,Dark,,,,]Swampert||SalacBerry|Torrent|Substitute,Endeavor,Earthquake,HydroPump|Quiet|248,,,216,,44|||||]Metagross||Leftovers|ClearBody|MeteorMash,Explosion,Protect,Agility|Quiet|252,,,252,,4|N||||]Tyranitar||Leftovers|SandStream|Crunch,Earthquake,HiddenPower,RockSlide|Jolly|4,252,,,,252|||||,Dark,,,,
+INIT	ab_2_24	18812,7287,61366,56474	2484249649	0
+DEC	ab_2_24	0	move	0	0	m2	m1	18812,7287,61366,56474	Zapdos	322	322	0	-	0	0	0	0	0	0	6	Smeargle	314	314	0	-	0	0	0	0	0	0	6	p1	0	0	0	0	0
+DEC	ab_2_24	1	switch	1	0	s2	-	61413,1198,46080,46396	Dugtrio	214	214	0	-	0	0	0	0	0	0	6	Dugtrio	314	314	0	-	0	0	0	0	0	0	6	none	0	0	0	0	0
+DEC	ab_2_24	2	move	0	0	m0	m2	61506,3765,39562,62629	Dugtrio	173	214	0	-	0	0	0	0	0	0	6	Dugtrio	202	314	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_2_24	3	move	0	0	m0	m3	65370,65337,8624,49217	Dugtrio	173	214	0	-	0	-2	0	0	0	0	6	Dugtrio	90	314	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_2_24	4	move	0	0	m0	m1	29164,63466,61755,43861	Dugtrio	173	214	0	-	0	-2	0	0	0	0	6	Smeargle	0	314	1	fnt	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	5	switch	0	1	-	s1	294,3900,42676,46156	Dugtrio	173	214	0	-	0	-2	0	0	0	0	6	Gengar	323	323	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_2_24	6	move	0	0	m0	s5	60984,37647,36674,35450	Dugtrio	173	214	0	-	0	-2	0	0	0	0	6	Tyranitar	319	342	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_2_24	7	move	0	0	m0	m0	7349,61601,51231,42988	Dugtrio	59	214	0	-	0	-2	0	0	0	0	6	Tyranitar	296	342	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	8	move	0	0	s1	m3	9674,37233,9149,62595	Celebi	287	403	0	-	0	0	0	0	0	0	6	Tyranitar	317	342	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	9	move	0	0	m2	m0	18609,22992,49665,23169	Celebi	138	403	0	-	0	0	0	0	0	0	6	Tyranitar	338	342	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	10	move	0	0	m0	m1	30888,21285,44731,15877	Celebi	87	403	0	-	0	0	1	1	0	0	6	Tyranitar	342	342	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	11	move	0	0	m3	s3	30888,21285,44731,15877	Celebi	87	403	0	-	0	0	1	1	0	0	6	Swampert	403	403	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_2_24	12	switch	1	0	s1	-	38890,60577,62041,50108	Dugtrio	59	214	0	-	0	0	1	1	0	0	6	Swampert	403	403	0	-	0	0	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_2_24	13	move	0	0	m3	m3	9188,38703,52068,400	Dugtrio	0	214	1	fnt	0	0	0	0	0	0	5	Swampert	403	403	0	-	0	-2	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	14	switch	1	0	s5	-	12034,51176,36449,19603	Suicune	401	401	0	-	0	0	0	0	0	0	5	Swampert	403	403	0	-	0	-2	0	0	0	0	5	none	0	0	0	0	0
+DEC	ab_2_24	15	move	0	0	m0	s5	22272,19176,23177,32706	Suicune	401	401	0	-	0	0	1	1	0	0	5	Gengar	323	323	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_2_24	16	move	0	0	m1	m0	38368,63813,12101,58218	Suicune	361	401	0	-	0	0	1	1	0	0	5	Gengar	214	323	0	-	0	0	0	0	0	0	5	p2	0	0	0	0	0
+DEC	ab_2_24	17	move	0	0	s4	m0	6175,48894,57321,12894	Metagross	299	351	0	-	0	0	0	0	0	0	5	Gengar	214	323	0	-	0	0	0	0	0	0	5	p1	0	0	0	0	0
+DEC	ab_2_24	18	move	0	0	m1	m2	20656,60674,42524,3718	Metagross	256	351	0	-	0	0	0	0	0	0	5	Gengar	0	323	1	fnt	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	19	switch	0	1	-	s2	36558,51891,31400,4001	Metagross	277	351	0	-	0	0	0	0	0	0	5	Aerodactyl	302	302	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_2_24	20	move	0	0	s1	m0	11114,15655,19024,17338	Celebi	0	403	1	fnt	0	0	0	0	0	0	4	Aerodactyl	302	302	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_2_24	21	switch	1	0	s3	-	64369,49771,38949,57637	Claydol	324	324	0	-	0	0	0	0	0	0	4	Aerodactyl	302	302	0	-	0	0	0	0	0	0	4	none	0	0	0	0	0
+DEC	ab_2_24	22	move	0	0	m1	m0	2754,29289,3418,46957	Claydol	225	324	0	-	0	0	0	0	0	0	4	Aerodactyl	208	302	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	23	move	0	0	m3	m0	38951,45151,36300,61450	Claydol	129	324	0	-	0	0	0	0	0	0	4	Aerodactyl	166	302	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	24	move	0	0	m3	m0	5124,55039,4228,31939	Claydol	96	324	0	-	0	0	0	0	0	0	4	Aerodactyl	119	302	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	25	move	0	0	s4	m0	17705,58868,17062,36903	Suicune	333	401	0	-	0	0	0	0	0	0	4	Aerodactyl	119	302	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_2_24	26	move	0	0	m3	m0	29089,8764,21332,54603	Suicune	206	401	0	-	0	0	0	0	0	0	4	Aerodactyl	119	302	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	27	move	0	0	m2	s5	45432,3534,55301,45103	Suicune	206	401	0	-	0	0	0	0	0	0	4	Swampert	349	403	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	28	move	0	0	m1	m1	22414,14838,14640,45314	Suicune	206	401	0	-	0	0	0	0	0	0	4	Swampert	207	403	0	-	0	0	0	0	0	0	4	p1	0	0	0	1	0
+DEC	ab_2_24	29	move	0	0	m0	m3	34072,43927,60172,5750	Suicune	206	401	0	-	0	0	1	1	0	0	4	Swampert	207	403	0	-	0	0	0	0	0	0	4	p1	0	0	0	0	0
+DEC	ab_2_24	30	move	0	0	m1	m0	52173,3880,14362,14293	Suicune	206	401	0	-	0	0	1	1	0	0	4	Swampert	96	403	0	-	0	0	0	0	1	0	4	p1	0	0	0	0	0
+DEC	ab_2_24	31	move	0	0	m2	m1	8265,21386,63459,36768	Suicune	206	401	0	-	0	0	1	1	0	0	4	Swampert	6	403	0	-	0	0	0	0	1	0	4	p2	0	0	0	1	0
+DEC	ab_2_24	32	move	0	0	m0	s4	48839,42605,554,59619	Suicune	206	401	0	-	0	0	2	2	0	0	4	Metagross	364	364	0	-	0	0	0	0	0	0	4	p2	0	0	0	0	0
+DEC	ab_2_24	33	move	0	0	m0	m3	21283,19237,62442,64338	Suicune	206	401	0	-	0	0	3	3	0	0	4	Metagross	364	364	0	-	0	0	0	0	2	0	4	p1	0	0	0	0	0
+DEC	ab_2_24	34	move	0	0	m3	m1	37343,19315,42331,31303	Suicune	0	401	1	fnt	0	0	0	0	0	0	3	Metagross	0	364	1	fnt	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	ab_2_24	35	switch	1	1	s2	s3	41545,36919,32158,56262	Zapdos	322	322	0	-	0	0	0	0	0	0	3	Tyranitar	342	342	0	-	0	0	0	0	0	0	3	none	0	0	0	0	0
+DEC	ab_2_24	36	move	0	0	s1	m1	6013,43035,23426,48378	Metagross	108	351	0	-	0	0	0	0	0	0	3	Tyranitar	342	342	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	ab_2_24	37	move	0	0	m3	s4	54360,57420,43681,63055	Metagross	0	351	1	fnt	0	0	0	0	0	0	2	Swampert	0	403	1	fnt	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_2_24	38	switch	1	1	s1	s5	29177,38418,3846,4846	Zapdos	322	322	0	-	0	0	0	0	0	0	2	Aerodactyl	119	302	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_2_24	39	move	0	0	m2	m3	30388,6066,27074,26867	Zapdos	110	322	0	-	0	0	0	0	0	0	2	Aerodactyl	119	302	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_2_24	40	switch	1	0	s4	-	50034,5491,9897,4514	Claydol	116	324	0	-	0	0	0	0	0	0	2	Aerodactyl	119	302	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_2_24	41	move	0	0	m3	m3	54337,32936,46809,39255	Claydol	0	324	1	fnt	0	0	0	0	0	0	1	Aerodactyl	119	302	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+DEC	ab_2_24	42	switch	1	0	s4	-	6262,38241,31856,44310	Zapdos	110	322	0	-	0	0	0	0	0	0	1	Aerodactyl	119	302	0	-	0	0	0	0	0	0	2	none	0	0	0	0	0
+DEC	ab_2_24	43	move	0	0	m3	m3	1641,56086,20653,11131	Zapdos	0	322	1	-	0	0	0	0	0	0	0	Aerodactyl	119	302	0	-	0	0	0	0	0	0	2	p2	0	0	0	0	0
+END	ab_2_24	1	p2

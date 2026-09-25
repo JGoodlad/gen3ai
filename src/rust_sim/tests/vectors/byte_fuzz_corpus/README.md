@@ -55,6 +55,11 @@ The fixtures are named by the form they guard, e.g.:
 | `78_defense_curl_boosts_def.txt` | **M6 fuzz-fix run** — DEFENSE CURL raises DEF: `\|-boost\|<u>\|def\|1` (`gen3_boost_index_fixes_v1`; the port raised SpA, so a later Brick Break into the curled Blissey dealt 1.5x and the seed anchor fired 3 decisions later) |
 | `79_encore_into_a_self_overwriting_mimic_fails.txt` | **M6 cutover stress** — ENCORE into a mon whose `lastMove` is a Mimic that overwrote its OWN slot FAILS (`\|move\|<u>\|Encore\|\|[still]` + `\|-fail\|<u>`); the port read the SLOT and encored the copied Trick (`gen3_mimic_self_overwrite_readers_v1`) |
 | `80_beatup_blocked_by_protect_keeps_its_residual_handler.txt` | **M6 cutover stress** — a Beat Up BLOCKED by Protect still carries the `beatup` volatile (added by `onModifyMove` before the Protect `TryHit`), whose residual handler ties an equal-Speed foe's `stall` handler for one tie-shuffle draw; the port set it only on a hit (`gen3_beatup_volatile_on_block_v1`) |
+| `81_beatup_reads_the_set_species_under_transform.txt` | **M6 cutover stress (constructed)** — BEAT UP reads BOTH base stats from the SET species: a Houndoom Beat Up into a Smeargle Transformed into it strikes at Smeargle's Def, and the transformed Smeargle's own strike is at Smeargle's Atk (`gen3_beatup_set_species_v1`; `harness/probe_beatup_set_species_pursuit_win.js` BU) |
+| `82_pursuit_faint_that_ends_the_battle_cancels_the_switch.txt` | **M6 cutover stress (constructed)** — a Pursuit KO whose Destiny Bond takes the foe's LAST mon ends the battle: no `\|switch\|` before `\|win\|` (`gen3_pursuitfaint_win_stops_switch_v1`; the probe's PW) |
+| `83_pursuit_faint_that_does_not_end_the_battle_still_switches.txt` | the CONTROL for 82 — a bench behind the pursuer: the gen 2-4 switch still brings Skarmory in, then p2 replaces (the probe's PC) |
+| `84_pursuit_destiny_bond_last_mon_ladder_battle.txt` | **M6 cutover stress** — the ladder battle behind 82 (`rmuh7wyw3_ab_3_2`) |
+| `85_beatup_into_a_transformed_target_ladder_battle.txt` | **M6 cutover stress** — the ladder battle behind 81 (`rmuh3kkcx_ab_2_24`); a STATE-only chunk (no `L` rows, genders drawn), like `28_*` |
 
 ## Two fixture classes (the KNOWN-RESIDUAL allowlist gate)
 

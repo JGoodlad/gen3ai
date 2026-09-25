@@ -820,6 +820,20 @@ impl crate::state::BattleState {
                             );
                         }
                         self.process_faints(dex);
+                        // A faint that ENDS the battle cancels the continuing switch
+                        // (`gen3_pursuitfaint_win_stops_switch_v1`, the M6 cutover stress's
+                        // `rmuh7wyw3_ab_3_2`): the sim re-queues the switch
+                        // (`sim/battle.ts:2787-2794`) and then runs the runAction tail's
+                        // `faintMessages()` → `checkWin` → `if (this.ended) return true`
+                        // (`sim/battle.ts:2856-2857`), so the re-queued switch never runs. The
+                        // repro: a pursued Gengar under its own Destiny Bond takes the
+                        // pursuer — the foe's LAST mon — down with it; the sim emits no
+                        // `|switch|` before `|win|`. The caller's tail sees the same
+                        // `check_win` and ends the turn.
+                        if self.check_win().is_some() {
+                            self.sides[side].pokemon[active].pursuit = None;
+                            return;
+                        }
                     }
                 }
                 // (g) The `pursuit` volatile is CONSUMED by the interrupt (whether or not a strike

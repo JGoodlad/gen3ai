@@ -1,0 +1,88 @@
+# FIXTURE 81 — BEAT UP reads BOTH base stats from the SET species under Transform (gen3_beatup_set_species_v1).
+# Source: harness/probe_beatup_set_species_pursuit_win.js scenario `bu_transformed_beatup` (a CONSTRUCTED battle recorded through the real sim).
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	bu_transformed_beatup
+TEAM	bu_transformed_beatup	p1	Smeargle||Leftovers|OwnTempo|Transform,Splash,Spikes,Protect|Jolly|,,,,,252|M||||]Snorlax||Leftovers|ThickFat|BodySlam,Curse,Rest,SleepTalk|Adamant|252,252,,,4,|M||||]Skarmory||Leftovers|KeenEye|DrillPeck,Spikes,Roar,Protect|Impish|252,,252,,4,|M||||
+TEAM	bu_transformed_beatup	p2	Houndoom||Leftovers|EarlyBird|BeatUp,Crunch,FireBlast,Protect|Timid|,,,252,4,252|M||||]Celebi||Leftovers|NaturalCure|Psychic,Recover,CalmMind,GigaDrain|Bold|252,,252,,4,|N||||]Metagross||Leftovers|ClearBody|MeteorMash,Earthquake,Explosion,Agility|Adamant|252,252,,,4,|N||||
+FMT	bu_transformed_beatup	gen3ou
+INIT	bu_transformed_beatup	30982,33910,19571,50263	1	0
+DEC	bu_transformed_beatup	0	move	0	0	m0	m0	14735,5508,9502,51264	Houndoom	190	251	0	-	0	0	0	0	0	0	3	Houndoom	291	291	0	-	0	0	0	0	0	0	3	p2	0	0	0	0	0
+DEC	bu_transformed_beatup	1	move	0	0	m0	m0	61911,59921,9996,41817	Houndoom	130	251	0	-	0	0	0	0	0	0	3	Houndoom	255	291	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+DEC	bu_transformed_beatup	2	move	0	0	m0	m0	16820,31128,55372,46718	Houndoom	69	251	0	-	0	0	0	0	0	0	3	Houndoom	216	291	0	-	0	0	0	0	0	0	3	p1	0	0	0	0	0
+END	bu_transformed_beatup	0	none
+L	bu_transformed_beatup	0	|t:|<NORMALIZED>
+L	bu_transformed_beatup	1	|gametype|singles
+L	bu_transformed_beatup	2	|player|p1|P1||
+L	bu_transformed_beatup	3	|player|p2|P2||
+L	bu_transformed_beatup	4	|gen|3
+L	bu_transformed_beatup	5	|tier|[Gen 3] OU
+L	bu_transformed_beatup	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	bu_transformed_beatup	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	bu_transformed_beatup	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	bu_transformed_beatup	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	bu_transformed_beatup	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	bu_transformed_beatup	11	|rule|Species Clause: Limit one of each Pokémon
+L	bu_transformed_beatup	12	|rule|OHKO Clause: OHKO moves are banned
+L	bu_transformed_beatup	13	|rule|Evasion Items Clause: Evasion items are banned
+L	bu_transformed_beatup	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	bu_transformed_beatup	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	bu_transformed_beatup	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	bu_transformed_beatup	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	bu_transformed_beatup	18	|
+L	bu_transformed_beatup	19	|t:|<NORMALIZED>
+L	bu_transformed_beatup	20	|teamsize|p1|3
+L	bu_transformed_beatup	21	|teamsize|p2|3
+L	bu_transformed_beatup	22	|start
+L	bu_transformed_beatup	23	|switch|p1a: Smeargle|Smeargle, M|251/251
+L	bu_transformed_beatup	24	|switch|p2a: Houndoom|Houndoom, M|291/291
+L	bu_transformed_beatup	25	|turn|1
+L	bu_transformed_beatup	26	|
+L	bu_transformed_beatup	27	|t:|<NORMALIZED>
+L	bu_transformed_beatup	28	|move|p2a: Houndoom|Beat Up|p1a: Smeargle
+L	bu_transformed_beatup	29	|-damage|p1a: Smeargle|229/251
+L	bu_transformed_beatup	30	|-damage|p1a: Smeargle|206/251
+L	bu_transformed_beatup	31	|-damage|p1a: Smeargle|175/251
+L	bu_transformed_beatup	32	|-hitcount|p1a: Smeargle|3
+L	bu_transformed_beatup	33	|move|p1a: Smeargle|Transform|p2a: Houndoom
+L	bu_transformed_beatup	34	|-transform|p1a: Smeargle|p2a: Houndoom
+L	bu_transformed_beatup	35	|
+L	bu_transformed_beatup	36	|-heal|p1a: Smeargle|190/251|[from] item: Leftovers
+L	bu_transformed_beatup	37	|upkeep
+L	bu_transformed_beatup	38	|turn|2
+L	bu_transformed_beatup	39	|
+L	bu_transformed_beatup	40	|t:|<NORMALIZED>
+L	bu_transformed_beatup	41	|move|p1a: Smeargle|Beat Up|p2a: Houndoom
+L	bu_transformed_beatup	42	|-damage|p2a: Houndoom|287/291
+L	bu_transformed_beatup	43	|-crit|p2a: Houndoom
+L	bu_transformed_beatup	44	|-damage|p2a: Houndoom|250/291
+L	bu_transformed_beatup	45	|-damage|p2a: Houndoom|237/291
+L	bu_transformed_beatup	46	|-hitcount|p2a: Houndoom|3
+L	bu_transformed_beatup	47	|move|p2a: Houndoom|Beat Up|p1a: Smeargle
+L	bu_transformed_beatup	48	|-damage|p1a: Smeargle|168/251
+L	bu_transformed_beatup	49	|-damage|p1a: Smeargle|146/251
+L	bu_transformed_beatup	50	|-damage|p1a: Smeargle|115/251
+L	bu_transformed_beatup	51	|-hitcount|p1a: Smeargle|3
+L	bu_transformed_beatup	52	|
+L	bu_transformed_beatup	53	|-heal|p1a: Smeargle|130/251|[from] item: Leftovers
+L	bu_transformed_beatup	54	|-heal|p2a: Houndoom|255/291|[from] item: Leftovers
+L	bu_transformed_beatup	55	|upkeep
+L	bu_transformed_beatup	56	|turn|3
+L	bu_transformed_beatup	57	|
+L	bu_transformed_beatup	58	|t:|<NORMALIZED>
+L	bu_transformed_beatup	59	|move|p1a: Smeargle|Beat Up|p2a: Houndoom
+L	bu_transformed_beatup	60	|-damage|p2a: Houndoom|251/291
+L	bu_transformed_beatup	61	|-crit|p2a: Houndoom
+L	bu_transformed_beatup	62	|-damage|p2a: Houndoom|211/291
+L	bu_transformed_beatup	63	|-damage|p2a: Houndoom|198/291
+L	bu_transformed_beatup	64	|-hitcount|p2a: Houndoom|3
+L	bu_transformed_beatup	65	|move|p2a: Houndoom|Beat Up|p1a: Smeargle
+L	bu_transformed_beatup	66	|-damage|p1a: Smeargle|110/251
+L	bu_transformed_beatup	67	|-damage|p1a: Smeargle|86/251
+L	bu_transformed_beatup	68	|-damage|p1a: Smeargle|54/251
+L	bu_transformed_beatup	69	|-hitcount|p1a: Smeargle|3
+L	bu_transformed_beatup	70	|
+L	bu_transformed_beatup	71	|-heal|p2a: Houndoom|216/291|[from] item: Leftovers
+L	bu_transformed_beatup	72	|-heal|p1a: Smeargle|69/251|[from] item: Leftovers
+L	bu_transformed_beatup	73	|upkeep
+L	bu_transformed_beatup	74	|turn|4

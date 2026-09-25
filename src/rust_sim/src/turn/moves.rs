@@ -2021,8 +2021,17 @@ impl crate::state::BattleState {
         // immutable dex borrow: party order, healthy = `!fainted && status == None`. Each
         // entry carries the ally's SLOT INDEX (for the `[of]` display name) + its dex base-atk.
         let user_level = self.sides[side].pokemon[slot].level;
+        // Both base stats are read from the SET species (`pokemon.set.species`, the mod's
+        // `this.dex.species.get(pokemon.set.species).baseStats.def` and
+        // `…get(move.allies!.shift()!.set.species).baseStats.atk`, gen3 moves.ts:48/53) —
+        // the CONSTRUCTION identity `base_species_id`, NOT the live `species_id`, which a
+        // TRANSFORM moves (`gen3_beatup_set_species_v1`, the M6 cutover stress's
+        // `rmuh3kkcx_ab_2_24`: a Smeargle transformed into Dugtrio took Beat Up at Dugtrio's
+        // base Def 50 in the port, Smeargle's 35 in the sim — less damage per strike, the
+        // KO landed one strike later, one extra strike's crit + roll draws). A transformed
+        // Beat Up USER strikes at its OWN set species' base Atk for the same reason.
         let target_base_def = dex
-            .species(&self.sides[foe].pokemon[foe_slot].species_id)
+            .species(&self.sides[foe].pokemon[foe_slot].base_species_id)
             .expect("beatup: target species must be in the dex")
             .base_stats
             .def;
@@ -2033,7 +2042,7 @@ impl crate::state::BattleState {
             })
             .map(|i| {
                 let base_atk = dex
-                    .species(&self.sides[side].pokemon[i].species_id)
+                    .species(&self.sides[side].pokemon[i].base_species_id)
                     .expect("beatup: ally species must be in the dex")
                     .base_stats
                     .atk;
