@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,380-line file. **The ledger itself is append-only and is never edited by this**;
+21,386-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**701 headings · 646 dated · 2026-08-01 → 2026-09-24 · ledger 21,380 lines.**
+**702 headings · 647 dated · 2026-08-01 → 2026-09-24 · ledger 21,386 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -721,3 +721,4 @@ rename.
   - `L21346` · `2026-09-24` · OPS · **POPULATION LOOP ROUND 2 IS REGISTERED (`3265ec83`, 17:54 PT, before B2's first eval). B2 (`ai_v13_27_popr2_loop`, the loop: B +8M with RB added to its stable set {A, `ai_v13_13`, RB} at share 0.40) against C2 (`ai_v13_28_popr2_ctrl`, the control: C +8M at share 0.0), each read by a FRESH offense reader at arm A's exact recipe (RB2 `ai_v13_29_popr2_read_loop`, RC2 `ai_v13_30_popr2_read_ctrl`). Primary Δ2 = gap(RB2) − gap(RC2), bar 5.0 (F = 2.00 reused), detection needs Δ2 ≲ −11.7 pp; round 1's own −10.00 would miss again. A convergence side-check (RB+ / RC+, round 1's readers forked +50 %) is a DESCRIPTOR, NOT a re-verdict of round 1.**
   - `L21350` · `2026-09-24` · FIX · **TRAINING-INPUT CHANGE: the Rust core M3 loss catalogue's GIGO is fixed on both paths (`b9d74f65`; `gen3_event_window_semantics_fixes_v1`, `gen3_intent_label_semantics_fixes_v1`, `gen3_progress_clock_attribution_fix_v1`). It FOLDS INTO the `c97358e8` boundary; THE TRAINING-INPUT BOUNDARY IS NOW `b9d74f65`.**
   - `L21365` · `2026-09-24` · OPS (MAJOR) · **RUST CORE M4 CLOSED (`9ae4acdd` `74df7250` `34da7225` `09cf40d5` `6b14fbf7`): the Rust core writes the WHOLE 2501-dim observation, byte-equal to the Python encoder on every decision checked (194,606 at MILESTONE on the new training-input boundary, pool + policy + ladder, no allowlist), 8–12× faster. Search takes rows; the typed shortcut is deleted. Built alongside: training reads none of it yet.**
+  - `L21381` · `2026-09-24` · MEASUREMENT · **BELIEF WIN-RATE A/B READ (`10212cff`; registered `1a971e88`): DECISION-RULE BRANCH 1. The learned belief heads earn ~5 pp against the POOL they memorised and NOTHING DETECTABLE against Metamon LADDER teams — they stop helping there, they do not hurt. DiD +4.8 pp [+1.9, +7.8].**
