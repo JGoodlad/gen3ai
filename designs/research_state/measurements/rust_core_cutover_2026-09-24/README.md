@@ -54,6 +54,8 @@ OFF windows (every 4 h) and an arm switch re-baseline it.
 
 ## 4. Progress at the interim report
 
+**MILESTONE tiers at `318bdcb8`** (recorded in `designs/ops/slow_tier_status.json`): slice N 4 / 4 (pool 60, `production` policy 15, ladder 30, procedural 20 episodes — no unexplained difference; F1 only), the parity MILESTONE 10 / 10 with the new parse-path encode gate in `core_events`.
+
 See `status`. At 22:15: ladder full tier 2,160 (A) / 2,080 (B) of 22,813 teams covered; ~630 k
 slice-O decisions byte-equal across all parity streams; **0 CUTOVER-class divergences** in
 slices E / V / T / O; the READING and VIEW-ROAD classes seen so far are the ones M2–M4 recorded
@@ -87,9 +89,23 @@ force-switches; poke-env's `battle1` re-embed), the live env still records a tra
 the core and the replay oracle do not. A Python-side TRAINING-INPUT bug, reported with its rate, not
 fixed (backlog (a), P0, the orchestrator's call). The cutover as built would change these inputs.
 
-## 6. The `__OBS__` cost
+## 6. The `__OBS__` cost and the throughput A/B (§3 target 10) — NOT MET
 
 Release `sim_bridge`, load ~27, `nice 19` (UNVERIFIED on an idle box): +~135 µs per frame (the
 parse + tracker fold ~137 µs, encode ~30 µs, frame JSON ~19 µs) against a Python production-shape
-encode of 0.12–0.16 ms (M4). The throughput A/B (§3 target 10,
-`python -m main.rust_core_cutover.throughput_ab`) is the verdict.
+encode of 0.12–0.16 ms (M4).
+
+`python -m main.rust_core_cutover.throughput_ab --pairs 8 --decisions 400` from pin `318bdcb8`
+(interleaved A B / B A, `--pin-battles --seed 0`, the rust release bridge, concurrently with the
+stress at cap 4; rows `~/gen3ai_archive/cutover_stress_2026-09-24/throughput_ab/`):
+
+| per decision | python obs (median of 8) | core obs | core − python, per pair |
+|---|---|---|---|
+| full cycle (our CPU + the child, serialized) | 1.07 ms | 1.19 ms | **median +7.5%**, mean +16.2%, 95% CI [+3.0%, +38.2%] (one +90% pair) |
+| our controllable (Python) CPU | 0.69 ms | 0.58 ms | mean −12.2%, CI [−21.1%, +2.4%] |
+
+**Verdict: NON-REGRESSION NOT MET** (the CI's upper end +38% > +3%; even the lower end is above
+the bar). Mechanism: under `core` the Python side still runs the tracker fold, `live_view()`, the
+labels and the reward (they are not the obs), so the core's parse + tracker fold in the child is
+ADDED work while only the encode (~0.1 ms) is removed — the tracker fold is paid twice. Training is
+CPU-bound at `--n-envs 48` on 16 cores, so the cycle total is the quantity that predicts fps.
