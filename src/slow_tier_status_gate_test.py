@@ -254,6 +254,33 @@ def test_recording_MERGES_and_never_truncates_the_other_rows(tmp_path):
     assert not v.ok and [n for n, _ in v.reds] == ["b::t2"]
 
 
+def test_a_recorded_FAIL_is_STICKY_until_a_real_verdict_replaces_it(tmp_path):
+    """An inconclusive (a timeout, or a test killed in flight) or a skip did not measure the test,
+    so it must not clear a red. Before `merge_row`, `tests.update` let either one replace a `fail`
+    and the red dropped out of the fatal set unseen. Only a PASS or a newer FAIL replaces it."""
+    path = tmp_path / "status.json"
+
+    def bank(status, commit, detail=""):
+        record_results({"a::t": make_row(status, commit=commit, duration_s=1, contention=1,
+                                         detail=detail)}, path)
+        return json.loads(path.read_text())["tests"]["a::t"]
+
+    bank("fail", "c1", "E   AssertionError: 2 != 3")
+    for unverdicted in ("inconclusive", "skip"):
+        row = bank(unverdicted, "c2", "E   TimeoutError")
+        assert row["status"] == "fail" and row["commit"] == "c1", row
+        assert row["held_over"]["status"] == unverdicted and row["held_over"]["commit"] == "c2"
+        v = evaluate(json.loads(path.read_text()))
+        assert not v.ok and "re-run since, NOT a verdict" in v.red_message()
+    row = bank("fail", "c3", "E   AssertionError: 4 != 5")     # a NEWER red replaces the old one
+    assert row["commit"] == "c3" and "held_over" not in row
+    row = bank("pass", "c4")                                      # ...and only a real pass clears it
+    assert row["status"] == "pass" and "held_over" not in row
+    assert evaluate(json.loads(path.read_text())).ok
+    # Every other pairing is unchanged: newest wins, so an inconclusive still demotes a green.
+    assert bank("inconclusive", "c5")["status"] == "inconclusive"
+
+
 def test_the_env_override_points_the_reader_at_a_scratch_file(tmp_path, monkeypatch):
     """`$GEN3AI_SLOW_STATUS_FILE` is what lets a plant be proven without touching the real file."""
     scratch = tmp_path / "elsewhere.json"

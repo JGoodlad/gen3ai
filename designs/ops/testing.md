@@ -283,7 +283,7 @@ reads it:
 
 | class | meaning | gate |
 |---|---|---|
-| `fail` | the tier ran it and it failed | **FAILS the routine gate**, naming the test id and the commit it failed at |
+| `fail` | the tier ran it and it failed | **FAILS the routine gate**, naming the test id and the commit it failed at. **STICKY**: only a later PASS or FAIL replaces it; an inconclusive or skipped re-run is kept beside it as `held_over` (`slow_tier_status.merge_row`) |
 | `inconclusive` | it failed with a TIMEOUT signature, **or it never finished a CALL phase** (Ctrl-C, a SIGTERM'd xdist worker — killed in flight) | reported — *a timeout is never a semantic outcome* |
 | unrecorded | collected as `slow` this session, no row | reported — a new slow test is not a regression |
 | stale | the row is >25 commits behind HEAD, or its commit is unknown | reported |
@@ -323,10 +323,11 @@ restore command and `GEN3AI_SKIP_SLOW_STATUS_GATE=1`, so it can never strand any
 rows is reading nothing at all.
 
 The recording side can be turned off on its own with `GEN3AI_SKIP_SLOW_STATUS_RECORD=1` (a run whose
-verdict should not be banked — a deliberate experiment, a starved box). Twelve meta-tests in the gate
+verdict should not be banked — a deliberate experiment, a starved box). Thirteen meta-tests in the gate
 file plant each condition — a red, an inconclusive, an unrecorded, a stale row, an unknown commit,
-a merge that must not truncate, a setup-only pass that must not bank green — so the gate's
-behaviour is pinned rather than described. Contract: `src/utils/slow_tier_status.py`.
+a merge that must not truncate, a setup-only pass that must not bank green, a red that an
+unverdicted re-run must not clear — so the gate's behaviour is pinned rather than described.
+Contract: `src/utils/slow_tier_status.py`.
 
 ### The REWARD GOLDEN (`src/agents/training/reward_golden_test.py`) — `sim`, ~20 s
 

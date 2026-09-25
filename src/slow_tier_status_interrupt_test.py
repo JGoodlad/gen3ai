@@ -38,7 +38,7 @@ import pytest
 
 from utils.contention import scale_timeout
 from utils.paths import repo_root, src_root
-from utils.slow_tier_status import INTERRUPTED_DETAIL
+from utils.slow_tier_status import INTERRUPTED_DETAIL, SCHEMA, make_row
 
 pytestmark = pytest.mark.integration
 
@@ -62,12 +62,16 @@ def test_an_in_flight_slow_test():
 '''
 
 
-def _interrupt_a_session(tmp_path: Path, *, xdist: bool) -> dict:
-    """Run the real conftest over the sleeper, interrupt it in flight, return the rows written."""
+def _interrupt_a_session(tmp_path: Path, *, xdist: bool, seed: "dict | None" = None) -> dict:
+    """Run the real conftest over the sleeper, interrupt it in flight, return the rows written.
+
+    ``seed`` pre-plants ``{nodeid: row}`` in the temp status file, as a previous run would have."""
     shutil.copy(_CONFTEST, tmp_path / "conftest.py")
     (tmp_path / "pytest.ini").write_text("[pytest]\nmarkers =\n    slow: slow\n")
     (tmp_path / "sleeper_test.py").write_text(_SLEEPER)
     status, started = tmp_path / "status.json", tmp_path / "started.pid"
+    if seed:
+        status.write_text(json.dumps({"schema": SCHEMA, "tests": seed}))
     env = {k: v for k, v in os.environ.items()
            if not k.startswith("PYTEST_") and k != "GEN3AI_SKIP_SLOW_STATUS_RECORD"}
     env.update(GEN3AI_SLOW_STATUS_FILE=str(status), SLEEPER_STARTED=str(started),
@@ -111,4 +115,18 @@ def test_an_interrupted_slow_test_banks_INCONCLUSIVE_never_PASS(tmp_path, xdist)
         f"interrupted test as green is lying: {rows[_IN_FLIGHT]}")
     assert rows[_IN_FLIGHT]["detail"] == INTERRUPTED_DETAIL
     # ...and the demotion is by class, not a blanket one: a test that finished its CALL keeps PASS.
+    assert rows[_DONE]["status"] == "pass", rows[_DONE]
+
+
+def test_an_interrupted_RERUN_of_a_RED_test_leaves_it_RED(tmp_path):
+    """The sticky-red rule through the REAL recorder: a test recorded `fail`, then re-run and
+    killed in flight, must still read `fail` — the interrupted attempt is kept as `held_over`, and
+    the gate stays red. Before `merge_row` the re-run banked `inconclusive` over the red."""
+    red = make_row("fail", commit="c0ffee", duration_s=3.0, contention=1.0,
+                   detail="AssertionError: 2 != 3")
+    rows = _interrupt_a_session(tmp_path, xdist=False, seed={_IN_FLIGHT: red})
+    assert rows[_IN_FLIGHT]["status"] == "fail" and rows[_IN_FLIGHT]["commit"] == "c0ffee", (
+        f"an interrupted re-run cleared a recorded red: {rows[_IN_FLIGHT]}")
+    assert rows[_IN_FLIGHT]["held_over"]["status"] == "inconclusive"
+    assert rows[_IN_FLIGHT]["held_over"]["detail"] == INTERRUPTED_DETAIL
     assert rows[_DONE]["status"] == "pass", rows[_DONE]

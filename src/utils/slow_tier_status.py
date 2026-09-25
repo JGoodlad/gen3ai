@@ -24,7 +24,7 @@ in the routine suite READS it — so a red `slow` test costs one JSON read to su
 
 | class | meaning | gate |
 |---|---|---|
-| `fail` | the slow tier RAN this test and it failed | **FAILS the routine gate**, naming the test and the commit it failed at |
+| `fail` | the slow tier RAN this test and it failed | **FAILS the routine gate**, naming the test and the commit it failed at. **STICKY:** only a later PASS or FAIL replaces it — an inconclusive or skipped re-run is kept beside it as `held_over` (`merge_row`) |
 | `inconclusive` | it failed with a TIMEOUT signature, **or it never finished a CALL phase** (killed or interrupted in flight) | reported, never fatal — *a timeout is never a semantic outcome* |
 | unrecorded | collected as `slow` this session, no row here | reported — a new slow test is not a regression |
 | stale | the row's commit is far behind HEAD, or not an ancestor of it | reported |
@@ -171,7 +171,8 @@ def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = No
     workers finishing at the same moment must not lose each other's results. The read-modify-write
     is done under an exclusive `flock` (in the temp dir, never beside the artifact) and committed
     with an atomic rename,
-    so a crashed writer can never leave a half-written artifact behind.
+    so a crashed writer can never leave a half-written artifact behind. Each row goes through
+    `merge_row`, so a recorded `fail` survives an unverdicted re-run.
     """
     import fcntl
 
@@ -190,7 +191,8 @@ def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = No
             doc = _read(target) if target.exists() else {"schema": SCHEMA, "tests": {}}
             doc.setdefault("schema", SCHEMA)
             tests = doc.setdefault("tests", {})
-            tests.update(results)
+            for nodeid, row in results.items():
+                tests[nodeid] = merge_row(tests.get(nodeid), row)
             doc["tests"] = dict(sorted(tests.items()))
             doc["last_written"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix=".slow_status.")
@@ -201,6 +203,34 @@ def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = No
         finally:
             fcntl.flock(lf, fcntl.LOCK_UN)
     return target
+
+
+#: The only verdicts that may REPLACE a recorded `fail`: a run that actually measured the test.
+_VERDICTS = ("pass", "fail")
+
+
+def merge_row(recorded: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, Any]:
+    """The row to BANK when ``new`` meets the row already in the file. **A red is STICKY.**
+
+    Across runs the newer row normally wins: a PASS after a FAIL is the fix landing, and that is
+    how a red gets cleared. But an `inconclusive` row (a timeout, or a test killed before its CALL
+    finished) and a `skip` both say *this run did not measure the test*, and letting either replace
+    a recorded `fail` turns a red into a non-fatal report without anyone having seen it pass.
+    Found 2026-09-24 (`designs/ops/cloud_reports/2026-09-24_slow_tier_recorder.md` §2): an
+    interrupted re-run of a red test, or a timeout after a fail, quietly dropped it out of the
+    fatal set. **By class:** a `fail` is replaced only by a VERDICT (`pass`, or a newer `fail`).
+
+    The kept red carries the unverdicted attempt as ``held_over`` (its status, commit, time and
+    detail), so the file still says the test was re-run and what happened; a later verdict
+    replaces the whole row and the note goes with it. Every other pairing is unchanged — newest
+    wins — so an inconclusive after a PASS still demotes the green, as it should.
+    """
+    if (recorded is not None and recorded.get("status") == "fail"
+            and new.get("status") not in _VERDICTS):
+        kept = dict(recorded)
+        kept["held_over"] = {k: new.get(k) for k in ("status", "commit", "at", "detail")}
+        return kept
+    return new
 
 
 def make_row(status: str, *, commit: str, duration_s: float,
@@ -252,6 +282,10 @@ class Verdict:
             lines.append(f"  {nodeid}")
             lines.append(f"      failed at commit {row.get('commit', '?')[:12]} "
                          f"on {row.get('at', '?')}  ({row.get('detail', '') or 'no detail'})")
+            held = row.get("held_over")
+            if isinstance(held, dict):
+                lines.append(f"      re-run since, NOT a verdict: {held.get('status')} at commit "
+                             f"{str(held.get('commit') or '?')[:12]} on {held.get('at', '?')}")
         lines += [
             "",
             "Fix the test, then re-record it:",
