@@ -334,6 +334,21 @@ source hash, and Python REFUSES a mismatch at import. Python imports whichever `
 
 ### M6 — THE CUTOVER, then the DELETION PASS
 
+**Status (2026-09-24): PREPARING — the stress is RUNNING, the switch is NOT made** (training
+switches only on the owner's word after the readiness report). Built alongside, default OFF:
+`--obs-source core` (`gen3_core_obs_source_v1`) — the rust `sim_bridge` ships the trainee's row as
+an `__OBS__` frame built through the PARSER (§6c) and `Gen3Env` takes it, refusing a frame of
+another battle / decision / turn, a NaN cell or a disagreeing mask; labels, reward, the tracker fold
+and the mapper stay Python. `core_events --obs` now also requires the parse-chain row to equal the
+step-chain row at every decision. Slice N (env level, two envs in lockstep) is pinned at COMMIT and
+MILESTONE (`main/rust_core_cutover/slice_n_test.py`); its one NAMED class is finding **F1**: the
+live env records a trainee decision on a PHANTOM step (the trainee not asked to move), which the core
+never does — 5.0% of steps, 41 of 4,273 later decisions differ in the progress clock / recency; a
+Python-side training-input bug, reported (TECH_DEBT_BACKLOG (a)), the orchestrator's call. The
+stress (`python -m main.rust_core_cutover`, the CUTOVER subsection of §3) runs concurrently with the
+training queue under its governor. Measurements:
+[`research_state/measurements/rust_core_cutover_2026-09-24/`](../research_state/measurements/rust_core_cutover_2026-09-24/README.md).
+
 The CUTOVER tier (§3) green; the `--debug` smoke; **the first two minutes of a real launch** on a
 throwaway run dir (the only test of the preload layer, and after M5 of the Rust env's startup);
 training throughput non-regression. Then training switches once, between research reads, with a
@@ -403,7 +418,7 @@ of the view-road and R3-residue classes already on record in M2 / M3; no target 
 | 4 | the same slices on **fresh PROCEDURAL** teams, seeded-random | 4,000 battles (8,000 teams) | as 1 |
 | 5 | slice E on the 22-scenario protocol corpus × 2 + every byte-fuzz fixture | 1 unit | as 1 |
 | 6 | **slice N** (env level, M6's slice): two `Gen3Env`s in LOCKSTEP on the same seed, teams and actions, one `--obs-source python`, one `--obs-source core`; per decision the obs row (bytes), the mask, the reward, `terminated` / `truncated` and EVERY training-only label key the production config emits (ARCHITECTURE.md §7) equal | 3,000 pool seeded-random + 1,000 pool `production` policy + 1,000 ladder + 500 procedural episodes | any difference = CUTOVER; errored 0 |
-| 7 | the four Rust-vs-Node **A/B fuzzers**, the self-check build, each by its own green-gate definition: `ab_fuzz.js` (omniscient STATE), `ab_fuzz.js --protocol --format gen3ou` (bytes), `bridge_ab_fuzz.js --format gen3ou` (per-side + request), `gen_sim_bridge_diff.js --format gen3ou --persistent` (external consistency) | STATE and BYTES: 10,000 ladder-full + 3,000 `ourandom` + 1,000 pool each; BRIDGE: 5,000 ladder + 2,000 `ourandom` + 1,000 trapping; SIM-BRIDGE: 2,000 ladder + 1,000 `ourandom` | 0 non-allowlisted diverged / panic / parse_error (and 0 `errored`, 0 `drain_timeouts`) |
+| 7 | the four Rust-vs-Node **A/B fuzzers**, the self-check build, each by its own green-gate definition: `ab_fuzz.js` (omniscient STATE), `ab_fuzz.js --protocol --format gen3ou` (bytes), `bridge_ab_fuzz.js --format gen3ou` (per-side + request), `gen_sim_bridge_diff.js --format gen3ou --persistent` (external consistency) | STATE and BYTES: 10,000 ladder-full + 3,000 `ourandom` + 1,000 pool each; BRIDGE: 5,000 ladder + 2,000 pool + 1,000 trapping; SIM-BRIDGE: 2,000 ladder + 1,000 pool (**amendment 1**, 2026-09-24: these two fuzzers have no `ourandom` mode — the first registration named it, its two units errored on the flag, and `pool` replaced it at the same counts; recorded in the registration's `amendments`) | 0 non-allowlisted diverged / panic / parse_error (and 0 `errored`, 0 `drain_timeouts`) |
 | 8 | **SOAK**: one persistent Rust bridge child per unit behind a real `Gen3Env` (the training transport), RSS of the child and of the env process sampled every 250 episodes | 6 children × 10,000 episodes (python obs) + 4 × 10,000 (`--obs-source core`) — each ≈ 4.6× a production child's 3-h life | 0 errors, 0 child replacements (a crash), and no unit's child or env RSS above 1.10 × its episode-250 sample at its last sample |
 | 9 | the `--debug` smoke and **the first two minutes of a real launch** under `--obs-source core` on a throwaway run dir (the forkserver preload, the compile and warm-start layers) | 1 launch | reaches its first PPO iteration; no `FATAL` / `Traceback` / `[ModelVersion] FATAL`; the launch line stamps the obs source |
 | 10 | **throughput non-regression**, `trainer_turn_benchmark.py --pin-battles` over the RUST bridge, core vs python obs source, interleaved | ≥ 6 interleaved pairs | the upper end of the 95% CI of (core − python) / python per-turn time ≤ +3% (the equivalence rule: the delta's own CI inside the bar) |

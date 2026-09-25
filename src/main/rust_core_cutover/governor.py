@@ -167,6 +167,11 @@ class Governor:
             except OSError:
                 continue
             st = self.state.setdefault(run, RunState())
+            # Only the LIVE child (the last one the log names) can be placed on the wall clock:
+            # rows of an earlier child were written before this poll could see them, so
+            # `now - elapsed` says nothing about when (the ring log also trims attach lines).
+            live = its[-1].child if its else None
+            its = [it for it in its if it.child == live]
             for it in its:
                 o = now - it.elapsed
                 if it.child not in st.origin or o < st.origin[it.child]:
@@ -175,8 +180,17 @@ class Governor:
             for child, e0, e1, fps in marginals(its):
                 if (child, e1) in have or child not in st.origin:
                     continue
-                w0, w1 = st.origin[child] + e0, st.origin[child] + e1
-                st.rows.append([child, e1, round(w1, 1), round(fps, 2), classify(w0, w1, timeline)])
+                st.rows.append([child, e1, 0.0, round(fps, 2), "", e0])
+            # (Re)place every recent row with its child's CURRENT origin estimate: the estimate only
+            # moves earlier as rows are seen closer to their writing, so a row first placed from a
+            # late sighting is corrected on the next poll (bounded to the last 2 h of rows).
+            for r in st.rows:
+                if len(r) < 6 or r[0] not in st.origin:
+                    continue
+                w0, w1 = st.origin[r[0]] + r[5], st.origin[r[0]] + r[1]
+                if r[4] and now - w1 > 7200:
+                    continue
+                r[2], r[4] = round(w1, 1), classify(w0, w1, timeline)
             st.rows = st.rows[-2000:]
 
     def baseline(self, run: str) -> Optional[float]:

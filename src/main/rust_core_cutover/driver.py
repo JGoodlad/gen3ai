@@ -55,14 +55,32 @@ def registration(sz: Dict[str, int]) -> dict:
                          "requires": s.requires} for s in PL.streams(**sz)]}
 
 
-def write_registration(out: Path, sz: Dict[str, int]) -> dict:
+def write_registration(out: Path, sz: Dict[str, int], amend: Optional[str] = None) -> dict:
+    """The plan on disk, written once. A plan that differs is REFUSED — unless ``amend`` names the
+    reason, in which case the old registration is kept beside it (``registration.<k>.json``) and
+    the new one carries every amendment (reason, time, the streams removed and added): a changed
+    target is a visible, dated amendment, never a silent edit. Rows of a removed stream stay on
+    disk and are simply no longer read."""
     reg = json.loads(json.dumps(registration(sz)))
     path = out / "registration.json"
     if path.exists():
         have = json.loads(path.read_text())
-        if have != reg:
-            raise SystemExit(f"{path} records a different plan — refusing to mix registrations")
-        return have
+        amendments = have.get("amendments", [])
+        if {k: v for k, v in have.items() if k != "amendments"} == reg:
+            return have
+        if not amend:
+            raise SystemExit(f"{path} records a different plan — refusing to mix registrations "
+                             "(pass --amend REASON to amend it visibly)")
+        k = len(amendments) + 1
+        path.rename(out / f"registration.{k - 1}.json")
+        old = {s["name"]: s for s in have["streams"]}
+        new = {s["name"]: s for s in reg["streams"]}
+        reg["amendments"] = amendments + [{
+            "n": k, "t": time.time(), "reason": amend,
+            "removed": sorted(set(old) - set(new)), "added": sorted(set(new) - set(old)),
+            "changed": sorted(n for n in set(old) & set(new) if old[n] != new[n])}]
+        path.write_text(json.dumps(reg, indent=1, sort_keys=True) + "\n")
+        return reg
     out.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(reg, indent=1, sort_keys=True) + "\n")
     return reg
@@ -193,12 +211,12 @@ def _alive_unit(pid: int, uid: str) -> bool:
 
 
 class Driver:
-    def __init__(self, out: Path, cap: int):
+    def __init__(self, out: Path, cap: int, amend: Optional[str] = None):
         from main.rust_core_cutover.governor import Governor
 
         self.out = out
         sz = sizes()
-        self.reg = write_registration(out, sz)
+        self.reg = write_registration(out, sz, amend)
         self.streams = PL.streams(**sz)
         self.caps = capabilities()
         self.governor = Governor(out)
@@ -305,7 +323,7 @@ class Driver:
         from main.rust_core_cutover import governor as G
 
         self.log(f"driver pid={os.getpid()} pin={pin_info()['commit']} caps={self.caps} "
-                 f"done={len(done_units(self.out))}")
+                 f"done={len(done_units(self.out))} adopted={sorted(self.running)}")
         last_gov = 0.0
         while True:
             self._reap()
@@ -481,6 +499,9 @@ def main(argv=None) -> int:
     for name in ("run", "unit", "status", "register"):
         p = sub.add_parser(name)
         p.add_argument("--out", type=Path, required=True)
+        if name in ("run", "register"):
+            p.add_argument("--amend", default=None, metavar="REASON",
+                           help="amend a registration whose plan changed, recording REASON")
         if name == "run":
             p.add_argument("--cap", type=int, default=DEFAULT_CAP)
             p.add_argument("--detach", action="store_true")
@@ -496,7 +517,7 @@ def main(argv=None) -> int:
     if a.cmd == "unit":
         return run_one(out, a.unit)
     if a.cmd == "register":
-        print(json.dumps(write_registration(out, sizes()), indent=1))
+        print(json.dumps(write_registration(out, sizes(), a.amend), indent=1))
         return 0
     if a.cmd == "status":
         s = status(out)
@@ -512,6 +533,8 @@ def main(argv=None) -> int:
                 return 2
         argv2 = ["nice", "-n", "19", sys.executable, "-m", "main.rust_core_cutover", "run",
                  "--out", str(out), "--cap", str(a.cap)]
+        if a.amend:
+            argv2 += ["--amend", a.amend]
         with open(out / "driver.stdout", "a") as fh:
             p = subprocess.Popen(argv2, stdin=subprocess.DEVNULL, stdout=fh, stderr=subprocess.STDOUT,
                                  start_new_session=True, env={**os.environ, "PYTHONUNBUFFERED": "1"})
@@ -519,5 +542,5 @@ def main(argv=None) -> int:
         pid_file.write_text(f"{p.pid}\n")
         print(f"detached driver pid {p.pid}; progress: python -m main.rust_core_cutover status --out {out}")
         return 0
-    Driver(out, a.cap).loop()
+    Driver(out, a.cap, a.amend).loop()
     return 0

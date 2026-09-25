@@ -39,11 +39,16 @@ def test_rows_are_atomic_and_define_done(tmp_path):
     assert D.done_units(tmp_path) == {"corpora.00000"}
 
 
-def test_a_changed_registration_is_refused(tmp_path):
+def test_a_changed_registration_is_refused_unless_amended_visibly(tmp_path):
     D.write_registration(tmp_path, SIZES)
     D.write_registration(tmp_path, SIZES)                 # the same plan resumes
     with pytest.raises(SystemExit):
         D.write_registration(tmp_path, {**SIZES, "pool_n": 720})
+    reg = D.write_registration(tmp_path, {**SIZES, "pool_n": 720}, amend="pool grew")
+    assert reg["amendments"][0]["reason"] == "pool grew"
+    assert "pool_random" in reg["amendments"][0]["changed"]
+    assert (tmp_path / "registration.0.json").exists()
+    assert D.write_registration(tmp_path, {**SIZES, "pool_n": 720}) == reg   # resumes amended
 
 
 def test_an_orphaned_unit_process_is_recognised_by_its_argv():

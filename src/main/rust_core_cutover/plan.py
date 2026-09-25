@@ -98,10 +98,12 @@ def streams(pool_n: int, ladder_full_n: int, ladder_policy_n: int) -> List[Strea
         *_fuzz("state", "ab_fuzz.js", [], (("ladder", 10_000), ("ourandom", 3_000), ("pool", 1_000))),
         *_fuzz("proto", "ab_fuzz.js", ["--protocol", "--format", "gen3ou"],
                (("ladder", 10_000), ("ourandom", 3_000), ("pool", 1_000))),
+        # (`bridge_ab_fuzz.js` and `gen_sim_bridge_diff.js` have no `ourandom` mode — their second
+        # surface is the pool; amendment 1 of the registration, 2026-09-24.)
         *_fuzz("bridge", "bridge_ab_fuzz.js", ["--format", "gen3ou"],
-               (("ladder", 5_000), ("ourandom", 2_000), ("trapping", 1_000))),
+               (("ladder", 5_000), ("pool", 2_000), ("trapping", 1_000))),
         *_fuzz("sbdiff", "gen_sim_bridge_diff.js", ["--format", "gen3ou", "--persistent"],
-               (("ladder", 2_000), ("ourandom", 1_000)), per_unit=50),
+               (("ladder", 2_000), ("pool", 1_000)), per_unit=50),
         # ---- the SOAK: long-lived training-transport bridge children --------------------------
         Stream("soak_transport", "soak", 6 * 10_000, 10_000,
                "6 bridge children x 10,000 episodes each (~4.6x a production child's 3-h life of "

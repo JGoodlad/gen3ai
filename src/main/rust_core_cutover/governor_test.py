@@ -78,6 +78,12 @@ def test_poll_places_iterations_on_the_wall_clock_from_the_rows_it_saw(tmp_path,
     st = g.state[str(run)]
     assert st.origin[7] == 9100.0
     assert [(r[1], r[2], r[4]) for r in st.rows] == [(700, 9800.0, "off"), (900, 10000.0, "off")]
+    # a row first seen LATE is re-placed once the origin estimate improves
+    (run / "launcher_child.log").write_text(_log(7, rows + [(6, 1100, 589824)]))
+    g.poll(timeline=[(0.0, 0), (10_000.5, 2)], now=10_150.0)   # row 1100 seen 50 s after 10_100
+    assert st.origin[7] == 9050.0
+    assert [(r[1], r[2]) for r in st.rows] == [(700, 9750.0), (900, 9950.0), (1100, 10150.0)]
+    assert st.rows[-1][4] == "mixed"          # the stress started inside [9950, 10150]
     g.save()
     assert G.Governor(tmp_path).state[str(run)].rows == st.rows
 
@@ -85,3 +91,16 @@ def test_poll_places_iterations_on_the_wall_clock_from_the_rows_it_saw(tmp_path,
 def test_live_runs_reads_only_train_rl_agent_processes_with_a_run_dir():
     for rd, pid in G.live_runs().items():
         assert Path(rd).is_absolute() and pid > 0
+
+
+def test_rows_of_a_finished_child_are_never_placed(tmp_path, monkeypatch):
+    run = tmp_path / "run"
+    run.mkdir()
+    old = [(1, 100, 98304), (2, 300, 196608), (3, 500, 294912), (4, 700, 393216)]
+    new = [(1, 50, 98304), (2, 250, 196608), (3, 450, 294912), (4, 650, 393216)]
+    (run / "launcher_child.log").write_text(_log(7, old) + _log(8, new))
+    monkeypatch.setattr(G, "live_runs", lambda: {str(run): 1})
+    g = G.Governor(tmp_path)
+    g.poll(timeline=[], now=5_000.0)
+    assert {r[0] for r in g.state[str(run)].rows} == {8}
+    assert set(g.state[str(run)].origin) == {8}
