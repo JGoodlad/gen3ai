@@ -1,0 +1,278 @@
+{
+ "stat": "pooled",
+ "null_rate": 0.5,
+ "rate_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+ "rounds": [
+  {
+   "round": 1,
+   "target_run": "ai_v13_12_plateau",
+   "target_file": "/home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip",
+   "target_step": 95158272,
+   "budget": 8060928,
+   "dose_rate": 3.814697265625e-08,
+   "rows": [
+    {
+     "run": "ai_v13_18_teach5_offense_hidose",
+     "archetype": "offense",
+     "membership": "5/5",
+     "wins": 256,
+     "games": 400,
+     "rate": 0.64,
+     "endpoint_rate": 0.66,
+     "endpoint_step": 102000000,
+     "pooled_rate": 0.64,
+     "pooled_games": 400,
+     "gap": 0.14,
+     "gap_lo": 0.09183356361863426,
+     "gap_hi": 0.18550289701345513,
+     "n_cycles": 4
+    }
+   ],
+   "unassigned": [],
+   "pooled": []
+  },
+  {
+   "round": 2,
+   "target_run": "ai_v13_22_popr1_loop",
+   "target_file": "/home/goodlad/dev/gen3ai/models/ai_v13_22_popr1_loop/final_model.zip",
+   "target_step": 103219200,
+   "budget": 8060928,
+   "dose_rate": 3.814697265625e-08,
+   "rows": [
+    {
+     "run": "ai_v13_24_popr1_read_loop",
+     "archetype": "offense",
+     "membership": "5/5",
+     "wins": 228,
+     "games": 400,
+     "rate": 0.57,
+     "endpoint_rate": 0.6,
+     "endpoint_step": 110000016,
+     "pooled_rate": 0.57,
+     "pooled_games": 400,
+     "gap": 0.06999999999999995,
+     "gap_lo": 0.02104341611975513,
+     "gap_hi": 0.11762481419628956,
+     "n_cycles": 4
+    }
+   ],
+   "unassigned": [],
+   "pooled": []
+  }
+ ],
+ "deltas": [
+  {
+   "earlier_round": 1,
+   "later_round": 2,
+   "per_archetype": [
+    {
+     "archetype": "offense",
+     "gap_earlier": 0.14,
+     "gap_later": 0.06999999999999995,
+     "delta": -0.07000000000000006,
+     "lo": -0.13683756983793288,
+     "hi": -0.002264274412159331,
+     "runs_earlier": [
+      "ai_v13_18_teach5_offense_hidose"
+     ],
+     "runs_later": [
+      "ai_v13_24_popr1_read_loop"
+     ],
+     "per_replicate": []
+    }
+   ],
+   "unpaired": [],
+   "mean_delta": null,
+   "lo": null,
+   "hi": null,
+   "n_pairs": 1,
+   "verdict": "UNREADABLE \u2014 fewer than two archetypes are present in both rounds"
+  }
+ ],
+ "caveats": [],
+ "mismatches": [],
+ "unmatched": false,
+ "runs": [
+  {
+   "run": "ai_v13_18_teach5_offense_hidose",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_18_teach5_offense_hidose",
+   "round": 1,
+   "archetype": "offense",
+   "membership": "5/5",
+   "target": {
+    "run": "ai_v13_12_plateau",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip",
+    "resolved_num_timesteps": 95158272,
+    "pins_own_teams": false
+   },
+   "fork_step": 95158272,
+   "num_timesteps": 103219200,
+   "budget": 8060928,
+   "dose_rate": 3.814697265625e-08,
+   "lr_median": 0.00025,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/9eb3abdc52876a63.txt",
+    "data/teams/sample/ac17a9dde5.txt",
+    "data/teams/sample/a185b2d193.txt",
+    "data/teams/sample/9ba039ba8a.txt",
+    "data/teams/sample/b904dbe059.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 96000000,
+     "wins": 65,
+     "games": 100,
+     "win_rate": 0.65,
+     "post_fork": true
+    },
+    {
+     "step": 98000016,
+     "wins": 58,
+     "games": 100,
+     "win_rate": 0.58,
+     "post_fork": true
+    },
+    {
+     "step": 100000032,
+     "wins": 67,
+     "games": 100,
+     "win_rate": 0.67,
+     "post_fork": true
+    },
+    {
+     "step": 102000000,
+     "wins": 66,
+     "games": 100,
+     "win_rate": 0.66,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 102000000,
+    "wins": 66,
+    "games": 100,
+    "win_rate": 0.66,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 256,
+    "games": 400,
+    "win_rate": 0.64,
+    "ci": [
+     0.5918335636186343,
+     0.6855028970134551
+    ]
+   }
+  },
+  {
+   "run": "ai_v13_24_popr1_read_loop",
+   "dir": "/home/goodlad/dev/gen3ai/models/ai_v13_24_popr1_read_loop",
+   "round": 2,
+   "archetype": "offense",
+   "membership": "5/5",
+   "target": {
+    "run": "ai_v13_22_popr1_loop",
+    "resolved_file": "/home/goodlad/dev/gen3ai/models/ai_v13_22_popr1_loop/final_model.zip",
+    "resolved_num_timesteps": 103219200,
+    "pins_own_teams": false
+   },
+   "fork_step": 103219200,
+   "num_timesteps": 111280128,
+   "budget": 8060928,
+   "dose_rate": 3.814697265625e-08,
+   "lr_median": 0.00025,
+   "lineage_derived": false,
+   "teams": [
+    "data/teams/sample/9eb3abdc52876a63.txt",
+    "data/teams/sample/ac17a9dde5.txt",
+    "data/teams/sample/a185b2d193.txt",
+    "data/teams/sample/9ba039ba8a.txt",
+    "data/teams/sample/b904dbe059.txt"
+   ],
+   "regime": {
+    "eval_sentinel_greedy": true,
+    "exploiter_keep_bots": true,
+    "exploiter_bot_fraction": 0.5,
+    "exploiter_temp_mode": "fixed",
+    "exploiter_temp_end": 1.0,
+    "cycle_games": 100,
+    "target_pins_own_teams": false
+   },
+   "series_regime": "greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)",
+   "series": [
+    {
+     "step": 104000016,
+     "wins": 52,
+     "games": 100,
+     "win_rate": 0.52,
+     "post_fork": true
+    },
+    {
+     "step": 106000032,
+     "wins": 59,
+     "games": 100,
+     "win_rate": 0.59,
+     "post_fork": true
+    },
+    {
+     "step": 108000000,
+     "wins": 57,
+     "games": 100,
+     "win_rate": 0.57,
+     "post_fork": true
+    },
+    {
+     "step": 110000016,
+     "wins": 60,
+     "games": 100,
+     "win_rate": 0.6,
+     "post_fork": true
+    }
+   ],
+   "endpoint": {
+    "step": 110000016,
+    "wins": 60,
+    "games": 100,
+    "win_rate": 0.6,
+    "post_fork": true
+   },
+   "pooled": {
+    "wins": 228,
+    "games": 400,
+    "win_rate": 0.57,
+    "ci": [
+     0.5210434161197551,
+     0.6176248141962896
+    ]
+   }
+  }
+ ],
+ "played": null,
+ "_meta": {
+  "tool": "main.best_response_gap",
+  "argv": [
+   "ai_v13_18_teach5_offense_hidose",
+   "ai_v13_24_popr1_read_loop",
+   "--rounds",
+   "ai_v13_18_teach5_offense_hidose=1",
+   "ai_v13_24_popr1_read_loop=2",
+   "--json",
+   "/home/goodlad/dev/gen3ai-wt/popr2-registration/designs/research_state/measurements/population_loop_r2_2026-09-24/validation/brgap_loop_chain_r1half.json"
+  ],
+  "generated_at": "2026-09-24T18:02:55",
+  "cwd": "/home/goodlad/dev/gen3ai",
+  "teamsets": "/home/goodlad/dev/gen3ai-wt/popr2-registration/designs/research_state/exploiter_teamsets_2026-09-22.json",
+  "play": null
+ }
+}

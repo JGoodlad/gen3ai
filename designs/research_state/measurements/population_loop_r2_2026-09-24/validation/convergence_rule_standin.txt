@@ -1,0 +1,10 @@
+CONVERGENCE SIDE-CHECK (round-2 registration §4.4) — DESCRIPTOR, NOT a re-verdict of round 1
+  RB   ai_v13_24_popr1_read_loop          52/100 / 59/100 / 57/100 / 60/100
+  RC   ai_v13_25_popr1_read_ctrl          67/100 / 68/100 / 64/100 / 69/100
+  RB+  sim_ext_RBX                        62/100 / 63/100
+  RC+  sim_ext_RCX                        68/100 / 67/100
+  Δ+     = RB+ − RC+                    -5.00 pp [-14.20, +4.33]   (n 200 / 200)
+  Δ_late = (RB c3-4 + RB+) − (RC c3-4 + RC+) -6.50 pp [-13.08, +0.16]   (n 400 / 400)
+  rise RB+ over RB cycles 3-4            +4.00 pp [-5.54, +13.44]
+  rise RC+ over RC cycles 3-4            +1.00 pp [-8.16, +10.14]
+  OUTCOME: S — the Δ SURVIVES

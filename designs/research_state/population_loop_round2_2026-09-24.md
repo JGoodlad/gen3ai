@@ -1,7 +1,12 @@
 # Population loop, round 2 — PRE-REGISTRATION (2026-09-24)
 
-**Status: REGISTERED before any round-2 number exists.** B2 launched at 17:43 PT 09-24; this file was
-committed before its first eval cycle was read. The round-2 generalists (B2, C2) were specified by round 1's
+**Status: REGISTERED before any round-2 number exists.** B2 launched at 17:43 PT 09-24. §§1–6 were
+committed as `3265ec83` at 17:54 PT, when `models/ai_v13_27_popr2_loop/eval_results.jsonl` did not
+yet exist (checked at 17:54:39). The follow-up commit adds the reader and side-check kit, the §4.4
+rule script, and the findings from validating them. It changes no primary, bar, rule or branch.
+**One declared amendment, made before any extension exists:** §4.4's row order S, C, B, I → **S, B,
+C, I**, so that a rise in both readers is never read as RB alone closing (found while mechanising the
+table). At 18:12 B2 still had no eval row. The round-2 generalists (B2, C2) were specified by round 1's
 §5 branch N+ and are the Training Run session's launches. This session trained nothing, touched no
 GPU, and wrote nothing under `models/`. The reader launch kit and the convergence side-check kit are in
 [`measurements/population_loop_r2_2026-09-24/`](measurements/population_loop_r2_2026-09-24/README.md)
@@ -184,8 +189,10 @@ python -m main.best_response_gap ai_v13_18_teach5_offense_hidose \
 #### 4.2.3 The round-over-round question — does the loop's gap FALL across rounds?
 
 This is the question `main.best_response_gap` exists for ("the loop is working iff the gap FALLS round
-over round"). It is asked on the two CHAINS, each in its own invocation, because two readers of one
-archetype in one round collapse (F3), and a chain must hold one reader per round:
+over round"). It is asked on the two CHAINS, each in its own invocation, with one reader per round. (F3's silent
+collapse is FIXED at main, `26015897`. Two readers of one target now POOL as replicates, and two
+readers of DIFFERENT targets in one round are a typed refusal. So mixing the chains in one
+invocation fails loudly, but it still does not answer the question.)
 
 ```bash
 # the LOOP chain: G0 → B → B2, read by A → RB → RB2
@@ -199,7 +206,9 @@ python -m main.best_response_gap ai_v13_18_teach5_offense_hidose ai_v13_25_popr1
 ```
 
 (The targets' steps already order the chains, 95.2M → 103.2M → 111.3M. `--rounds` is passed anyway,
-so a tie-break can never reorder them.) Each chain prints two per-round Newcombe deltas. The loop chain's
+so a tie-break can never reorder them. Both chains' round-1 halves were run at main this session:
+`measurements/population_loop_r2_2026-09-24/validation/brgap_{loop,ctrl}_chain_r1half.txt`, −7.00
+[−13.68, −0.23] and +3.00 [−3.58, +9.54], as round 1's read printed.) Each chain prints two per-round Newcombe deltas. The loop chain's
 round-1 delta is already known: gap(RB) − gap(A) = **−7.00 [−13.68, −0.23]**. **Registered reading:
 DESCRIPTOR, never the verdict.** The loop "falls round over round" iff the loop chain's `round 3 −
 round 2` row is below zero, AND the control chain's same row is not. This is read as a pattern, not
@@ -275,6 +284,9 @@ learning SPEED on a harder target (H-1: RB 0.52 / 0.59 / 0.57 / 0.60, still risi
   python -m main.best_response_gap ai_v13_32_popr1_read_ctrl_ext ai_v13_31_popr1_read_loop_ext \
       --rounds ai_v13_32_popr1_read_ctrl_ext=2 ai_v13_31_popr1_read_loop_ext=3 \
       --json <out>/brgap_ext.json --md <out>/brgap_ext.md
+  # the table below, mechanised (reads RB, RC, RB+, RC+ through the meter's own reader)
+  python designs/research_state/measurements/population_loop_r2_2026-09-24/scripts/convergence_rule.py \
+      --json <out>/convergence_rule.json
   ```
   **Δ+ = gap(RB+) − gap(RC+)**, stat `pooled` over the extension's eval cycles. At an eval every 2M on
   absolute steps, that is the cycles at 112M and 114M: **2 × 100 = 200 games per reader, half-width
@@ -288,12 +300,21 @@ learning SPEED on a harder target (H-1: RB 0.52 / 0.59 / 0.57 / 0.60, still risi
 | outcome (registered before any number) | condition | what it means for round 2's reading |
 |---|---|---|
 | **S — the Δ SURVIVES** | Δ_late ≤ −5.0 AND RB+'s pooled rate is within 5 pp of RB's own cycles 3–4 (0.585) | Round 1's Δ was not mostly reader speed. Round 2's primary reads as registered, and a T in round 2 needs no extra qualifier |
-| **C — the Δ CLOSES** | RB+'s pooled rate ≥ RB's cycles 3–4 + 5 pp, AND Δ+ > −5.0 | Part of Δ1 was RB still learning. **Round 2's primary still governs by its rule**, but every reading of it carries "at an 8M reader budget": a smaller gap on B2 may mean *slower to exploit*, not *less exploitable*. **A T in round 2 is then a CANDIDATE that needs RB2+ / RC2+ (the same +50 % extension of RB2 and RC2, ≈ 4 GPU-h) BEFORE rule 22's replicate pair is spent.** And the orchestrator is asked whether round 3 (if any) should re-register a longer reader budget for ALL readers, A's included (a new round-0 A′ at 12M), since the chain cannot be matched otherwise |
 | **B — BOTH still climbing** | RB+ AND RC+ each ≥ their own cycles 3–4 + 5 pp | Neither reader converged at 8M. Δ compares matched budgets but not converged best responses, for either arm. Read round 2 as in C. Additionally the whole reader instrument's 8M budget is in question (A was flat, so this would be new) |
+| **C — the Δ CLOSES** | RB+'s pooled rate ≥ RB's cycles 3–4 + 5 pp, AND Δ+ > −5.0 | Part of Δ1 was RB still learning. **Round 2's primary still governs by its rule**, but every reading of it carries "at an 8M reader budget": a smaller gap on B2 may mean *slower to exploit*, not *less exploitable*. **A T in round 2 is then a CANDIDATE that needs RB2+ / RC2+ (the same +50 % extension of RB2 and RC2, ≈ 4 GPU-h) BEFORE rule 22's replicate pair is spent.** And the orchestrator is asked whether round 3 (if any) should re-register a longer reader budget for ALL readers, A's included (a new round-0 A′ at 12M), since the chain cannot be matched otherwise |
 | **I — INCONCLUSIVE** | none of the above (the expected case at n = 200) | nothing changes; the H-1 caveat stays attached to Δ1 as worded in round 1's read, and round 2's own reader curves (§4.2 descriptor) are the next evidence |
 
-The rows are read in the order S, C, B, I; the first that applies governs. RB's cycles 3–4 pooled =
-(57 + 60) / 200 = 0.585, and RC's = (64 + 69) / 200 = 0.665, from round 1's read.
+The rows are read in the order **S, B, C, I**; the first that applies governs. B comes before C so
+that a rise in BOTH readers is never read as RB alone closing. RB's cycles 3–4 pooled = (57 + 60) /
+200 = 0.585, and RC's = (64 + 69) / 200 = 0.665, from round 1's read. **The conditions are on POINT
+estimates** (it is a descriptor), and every interval is printed beside them. At n = 200 against 200
+a "rise ≥ 5 pp" is well inside noise (half-width ≈ 9.5), which is why no row moves a verdict.
+**Mechanised:** `measurements/population_loop_r2_2026-09-24/scripts/convergence_rule.py` reads the
+four runs through the meter's own `read_exploiter` and prints Δ+, Δ_late, both rises and the row.
+It was exercised on weight-free stand-ins (`scripts/brgap_ext_standin_sim.py`, scenario counts, not a
+prediction; `validation/convergence_rule_standin.txt`). There, `best_response_gap --check` on the
+stand-in pair read **0 mismatches at budget 4,030,464**, the pair read gave half-width ≈ 9.3 pp, and
+**RB together with an extension was REFUSED on budget** (8,060,928 vs 4,030,464), as registered.
 
 ---
 
@@ -330,9 +351,13 @@ pre-condition on T's replicate spend.
 - **F2 — siblings need `--rounds`.** B2 and C2 both land on 111,280,128; RB2 and RC2 on 119,341,056.
   Round 1 reproduced it LIVE (H-2: the unassisted listing REVERSED the mapping). Every invocation in
   this file passes `--rounds`.
-- **F3 — SILENT COLLAPSE of two same-archetype readers in one round.** It still holds: the two chains
-  (§4.2.3) and the extension pair (§4.4) are each separate invocations with one reader per round. **Never
-  put RB and RB2, or RB and RB+, in one round.**
+- **F3 — FIXED at main (`26015897`), still honoured.** Same-target, same-archetype readers now pool
+  as replicates, with the between-replicate spread printed; a different target in the same round is a
+  typed refusal. Checked this session: A + A2 in round 1 pool to **+13.00 [+9.60, +16.28]**, spread
+  −2.00 [−8.65, +4.68], and the round-1 primary reproduces EXACTLY at main, **−10.00 [−16.60, −3.27]**
+  (`validation/brgap_r1_with_A2_pooled.txt`). The registered invocations still hold one reader per round.
+  🚨 **RB and RB+ share a TARGET KEY (B's final @103,219,200)**, so in one invocation the tool would
+  treat them as replicates if the budget check did not refuse first. They are never co-invoked.
 - **H-1 — RB's curve was still rising.** Addressed by §4.4 (descriptor) and by the registered
   convergence descriptor on RB2/RC2 (§4.2). It never moves a verdict by itself.
 - **H-3 — Metamon's post-game `RecursionError` fires in the ACCEPTOR half too** (4 of 6 in round 1).
@@ -360,10 +385,33 @@ pre-condition on T's replicate spend.
 - **P-5 — B2 and C2's argvs live in the Training Run session's job directory**
   (`/home/goodlad/.claude/jobs/popr2_2026-09-24/`), not in the repo. The measurement directory commits
   verbatim copies, so the registration does not depend on a scratch path.
-- **P-6 — a reader extension is a FORK, so the ForkLR guard re-pins the rate.** RB's and RC's
-  checkpoints already hold the frozen 2.5e-4. The extension names the same value, so the fork is
-  dose-neutral by construction. What a fork does NOT carry is the reader's own self-play pool and eval
-  history, and in exploiter mode neither is read by the reader's training. Verified or refuted in the
-  kit's dry-run: see the measurement directory's README.
+- **P-6 — a reader extension is a FORK, so the ForkLR guard re-pins the rate. VERIFIED by executing.**
+  RB's and RC's checkpoints already hold the frozen 2.5e-4, and the extension names the same value,
+  so the fork is dose-neutral by construction. checkargs on the REAL extension argvs (parents and
+  targets exist) gives the pinned parser at 129 / 2 / 0, `[ForkLR] ✓ … (--fork-lr 0.00025
+  --fork-lr-freeze)`, and the ARCH surface clean. The dry-run reads `--steps 115,280,128 vs checkpoint
+  at 111,280,128 (sidecar) → +4,000,000`, role `FORK of …/ai_v13_24_popr1_read_loop` (and of `…_25_…`
+  for RC+). A fork does NOT carry the reader's eval history: `read_series` marks any row at or below
+  `fork_step` as the parent's, so an inherited file could not be credited to RB+ anyway. No warm-start
+  runs (`model_build.py` builds one only under `--warmstart-consensus`, absent from every reader argv).
+  No self-play pool is involved (RB has no `snapshots/`: exploiter mode). ⚠️ RB and RC each also hold a
+  `final_model_interrupted.zip` (07:10 and 10:41 PT 09-24, periodic-restart saves, OLDER than
+  `final_model.zip`). The argvs name `final_model.zip` explicitly, and the launch script checks that
+  the parent run is finished at 111,280,128.
+- **K-1 — `main.best_response_gap` WRITES `best_response_gap.json` INTO CWD BY DEFAULT**
+  (`DEFAULT_JSON`, `src/main/best_response_gap.py`). Run from the main checkout (it must run from a repo
+  root, since recorded team paths are repo-relative), it dirties MAIN. **This session did exactly that
+  once** (18:02 PT, three invocations overwriting one file). The file was moved out
+  (`/tmp/popr2_stray_best_response_gap.json`) within a minute, and main is clean. **Every registered
+  invocation that reads passes `--json <out>`.** `--check` writes nothing. A tool finding for the meter
+  owner: default to no file, or refuse a cwd inside a git checkout's tracked tree.
+- **K-2 — the RB2 / RC2 stand-in target is an EXPLOITER, not a generalist.** Their argvs were validated
+  against `ai_v13_24_popr1_read_loop` @111,280,128 (the step B2 and C2 land on), because B2's and C2's
+  finals do not exist. What the stand-in cannot validate: that B2's / C2's `model_config.json` inherits
+  nothing a reader would trip on (round 1's F6, which came back clean for B and C). The real launch
+  scripts re-run checkargs + `--dry-run` against the real target before launching.
+- **K-3 — round 1's STOP-lists could not be re-verified from banners** (round 1 H-4: the banners are
+  not in the child logs). The round-2 STOP-lists therefore add a post-first-eval item each (the
+  `externals.ext_<target>` cell with counts [w, 100]) that CAN be checked from files.
 </content>
 </invoke>

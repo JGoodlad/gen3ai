@@ -1,0 +1,1 @@
+FATAL: prerequisite models/ai_v13_28_popr2_ctrl/final_model.zip does not exist — this arm cannot launch yet.

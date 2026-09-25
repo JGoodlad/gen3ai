@@ -1,0 +1,33 @@
+  wrote /tmp/popr2_ext_standin/out.json
+
+BEST-RESPONSE GAP — how much a fresh exploiter beats the generalist it trained on
+  gap = win rate − 0.5; the population loop is working iff the gap FALLS round over round
+  stat: pooled   regime: greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)
+
+ROUND 2 · target ai_v13_23_popr1_ctrl @103,219,200 · exploiter budget 4,030,464 steps · dose 3.815e-08
+  archetype  teams  run          endpoint  pooled  n    gap pp   95% CI pp         
+  ---------  -----  -----------  --------  ------  ---  -------  ------------------
+  offense    5/5    sim_ext_RCX  0.6700    0.6750  200   +17.50  [ +10.73,  +23.61]
+
+ROUND 3 · target ai_v13_22_popr1_loop @103,219,200 · exploiter budget 4,030,464 steps · dose 3.815e-08
+  archetype  teams  run          endpoint  pooled  n    gap pp   95% CI pp         
+  ---------  -----  -----------  --------  ------  ---  -------  ------------------
+  offense    5/5    sim_ext_RBX  0.6300    0.6250  200   +12.50  [  +5.61,  +18.91]
+
+ROUND-OVER-ROUND Δ (round 3 − round 2), paired on ARCHETYPE
+  archetype  gap r2   gap r3   Δ pp     95% CI pp (Newcombe)
+  ---------  -------  -------  -------  --------------------
+  offense     +17.50   +12.50    -5.00  [ -14.20,   +4.33]  
+    MEAN Δ: — (UNREADABLE — fewer than two archetypes are present in both rounds)
+    VERDICT: UNREADABLE — fewer than two archetypes are present in both rounds
+
+PROVENANCE — every fact below is READ from what the run wrote down
+  sim_ext_RCX  round 2  archetype offense (5/5)
+      target ai_v13_23_popr1_ctrl @103,219,200 -> /home/goodlad/dev/gen3ai/models/ai_v13_23_popr1_ctrl/final_model.zip
+      budget 4,030,464 steps · dose 3.815e-08 · 2/2 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
+  sim_ext_RBX  round 3  archetype offense (5/5)
+      target ai_v13_22_popr1_loop @103,219,200 -> /home/goodlad/dev/gen3ai/models/ai_v13_22_popr1_loop/final_model.zip
+      budget 4,030,464 steps · dose 3.815e-08 · 2/2 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
+rc=0

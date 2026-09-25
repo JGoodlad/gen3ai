@@ -1,0 +1,8 @@
+
+[best_response_gap] REFUSAL (unmatched_budget) — REFUSING the comparison — the exploiters are not matched:
+  BUDGET MISMATCH — ai_v13_24_popr1_read_loop vs sim_ext_RBX: 8,060,928 vs 4,030,464 post-fork steps (100.0% apart, tolerance 2%)
+
+  A best-response gap is a property of (the generalist, the exploiter's budget, its dose, its regime). Comparing two rounds that differ on any of those attributes to the GENERALIST what belongs to the exploiter — which is exactly how the 2026-09-21 era-2/era-1 read was confounded, by a 4.5x dose gap nobody registered (--fork-lr unset, the new parent's annealed rate inherited).
+  Pass --allow-unmatched to print it anyway; the mismatch is then carried in the header and in the JSON, and belongs in every quote of the number.
+
+rc=2

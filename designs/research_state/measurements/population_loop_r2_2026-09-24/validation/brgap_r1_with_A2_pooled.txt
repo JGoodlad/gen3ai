@@ -1,0 +1,57 @@
+  wrote /home/goodlad/dev/gen3ai-wt/popr2-registration/designs/research_state/measurements/population_loop_r2_2026-09-24/validation/brgap_r1_with_A2_pooled.json
+
+BEST-RESPONSE GAP — how much a fresh exploiter beats the generalist it trained on
+  gap = win rate − 0.5; the population loop is working iff the gap FALLS round over round
+  stat: pooled   regime: greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)
+  ⚠ CAVEAT: round 1, archetype offense: 2 REPLICATES pooled (ai_v13_18_teach5_offense_hidose, ai_v13_26_popr0_exploit5_offense_s1002) — the round-over-round cell is their summed wins/games, which counts the between-seed spread as binomial noise. Largest between-replicate difference ai_v13_26_popr0_exploit5_offense_s1002 − ai_v13_18_teach5_offense_hidose = -2.00 pp [-8.65, +4.68].
+
+ROUND 1 · target ai_v13_12_plateau @95,158,272 · exploiter budget 8,060,928 steps · dose 3.815e-08
+  archetype          teams  run                                     endpoint  pooled  n    gap pp   95% CI pp         
+  -----------------  -----  --------------------------------------  --------  ------  ---  -------  ------------------
+  offense [rep 1/2]  5/5    ai_v13_18_teach5_offense_hidose         0.6600    0.6400  400   +14.00  [  +9.18,  +18.55]
+  offense [rep 2/2]  5/5    ai_v13_26_popr0_exploit5_offense_s1002  0.6000    0.6200  400   +12.00  [  +7.15,  +16.62]
+  offense POOLED     5/5    POOLED (2 replicates)                   —         0.6300  800   +13.00  [  +9.60,  +16.28]
+
+ROUND 2 · target ai_v13_23_popr1_ctrl @103,219,200 · exploiter budget 8,060,928 steps · dose 3.815e-08
+  archetype  teams  run                        endpoint  pooled  n    gap pp   95% CI pp         
+  ---------  -----  -------------------------  --------  ------  ---  -------  ------------------
+  offense    5/5    ai_v13_25_popr1_read_ctrl  0.6900    0.6700  400   +17.00  [ +12.25,  +21.43]
+
+ROUND 3 · target ai_v13_22_popr1_loop @103,219,200 · exploiter budget 8,060,928 steps · dose 3.815e-08
+  archetype  teams  run                        endpoint  pooled  n    gap pp   95% CI pp         
+  ---------  -----  -------------------------  --------  ------  ---  -------  ------------------
+  offense    5/5    ai_v13_24_popr1_read_loop  0.6000    0.5700  400    +7.00  [  +2.10,  +11.76]
+
+ROUND-OVER-ROUND Δ (round 2 − round 1), paired on ARCHETYPE
+  archetype                                                               gap r1   gap r2   Δ pp     95% CI pp (Newcombe)
+  ----------------------------------------------------------------------  -------  -------  -------  --------------------
+  offense POOLED                                                           +13.00   +17.00    +4.00  [  -1.77,   +9.58]  
+    └ ai_v13_25_popr1_read_ctrl − ai_v13_18_teach5_offense_hidose          +14.00   +17.00    +3.00  [  -3.58,   +9.54]  
+    └ ai_v13_25_popr1_read_ctrl − ai_v13_26_popr0_exploit5_offense_s1002   +12.00   +17.00    +5.00  [  -1.63,  +11.57]  
+    MEAN Δ: — (UNREADABLE — fewer than two archetypes are present in both rounds)
+    VERDICT: UNREADABLE — fewer than two archetypes are present in both rounds
+
+ROUND-OVER-ROUND Δ (round 3 − round 2), paired on ARCHETYPE
+  archetype  gap r2   gap r3   Δ pp     95% CI pp (Newcombe)
+  ---------  -------  -------  -------  --------------------
+  offense     +17.00    +7.00   -10.00  [ -16.60,   -3.27]  
+    MEAN Δ: — (UNREADABLE — fewer than two archetypes are present in both rounds)
+    VERDICT: UNREADABLE — fewer than two archetypes are present in both rounds
+
+PROVENANCE — every fact below is READ from what the run wrote down
+  ai_v13_24_popr1_read_loop  round 3  archetype offense (5/5)
+      target ai_v13_22_popr1_loop @103,219,200 -> /home/goodlad/dev/gen3ai/models/ai_v13_22_popr1_loop/final_model.zip
+      budget 8,060,928 steps · dose 3.815e-08 · 4/4 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
+  ai_v13_25_popr1_read_ctrl  round 2  archetype offense (5/5)
+      target ai_v13_23_popr1_ctrl @103,219,200 -> /home/goodlad/dev/gen3ai/models/ai_v13_23_popr1_ctrl/final_model.zip
+      budget 8,060,928 steps · dose 3.815e-08 · 4/4 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
+  ai_v13_18_teach5_offense_hidose  round 1  archetype offense (5/5)
+      target ai_v13_12_plateau @95,158,272 -> /home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip
+      budget 8,060,928 steps · dose 3.815e-08 · 4/4 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
+  ai_v13_26_popr0_exploit5_offense_s1002  round 1  archetype offense (5/5)
+      target ai_v13_12_plateau @95,158,272 -> /home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip
+      budget 8,060,928 steps · dose 3.815e-08 · 4/4 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
