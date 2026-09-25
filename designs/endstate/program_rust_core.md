@@ -334,8 +334,15 @@ source hash, and Python REFUSES a mismatch at import. Python imports whichever `
 
 ### M6 — THE CUTOVER, then the DELETION PASS
 
-**Status (2026-09-24): PREPARING — the stress is RUNNING, the switch is NOT made** (training
-switches only on the owner's word after the readiness report). Built alongside, default OFF:
+**Status (2026-09-25): the SWITCH IS MADE — `--obs-source core` is the production default on the
+rust bridge (owner decision, 2026-09-25); the DELETION PASS is next.** 🚨 **A registered DEVIATION:**
+training switched BEFORE the CUTOVER tier's registered counts were met — at the switch the stress
+stood at ~60–70% of every count (the ladder full tier 7,960 + 7,920 of 11,407 + 11,407, the pool 6,000
+of 8,628, slice N 2,100 / 700 / 700 / 350 of 3,000 / 1,000 / 1,000 / 500, the fuzzers ~70%), with ZERO
+open CUTOVER-class divergences, targets 5, 9 and 10 met, and every other target clean so far. The
+stress KEEPS RUNNING to its registered counts as POST-SWITCH confirmation; **any CUTOVER-class
+divergence it finds REVERTS the default to `python`** (a one-line change) until it is fixed. Before
+the switch (the prep record, kept):
 `--obs-source core` (`gen3_core_obs_source_v1`) — the rust `sim_bridge` ships the trainee's row as
 an `__OBS__` frame built through the PARSER (§6c) and `Gen3Env` takes it, refusing a frame of
 another battle / decision / turn, a NaN cell or a disagreeing mask; labels, reward, the tracker fold
@@ -669,5 +676,5 @@ the training observation by parsing its own per-side stream.
 | M1, M3, M4 (built alongside) | unchanged — Python path | unchanged | unchanged |
 | M2 search adoption (ledger entry) | unchanged | `materializer=core` from that entry | unchanged |
 | T2 non-training adoptions (one entry each) | unchanged | the leaf on T2 | each meter stamps `inference: service`; greedy actions proven byte-identical, so the numbers are value-neutral |
-| **M6 CUTOVER** (ledger entry, between reads) | **every number after it runs on the core**; `metadata.json` records the env core + commit; a resume pinned to a pre-cutover commit stays on Python (the launcher's pin), so no run spans the cutover without a re-pin | core | core for training-side evals |
+| **M6 CUTOVER — DONE 2026-09-25** (ledger entry, between reads; the stress continues as post-switch confirmation, §2 M6) | **every number after it runs on the core**; `metadata.json` records the env core + commit; a resume pinned to a pre-cutover commit stays on Python (the launcher's pin), so no run spans the cutover without a re-pin | core | core for training-side evals |
 | M7 | — | — | anchors / ladder stamp `client: core` |

@@ -806,7 +806,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "structural (version-gated) toggle that cannot be turned on mid-run."),
     CombinationCheck(
         "obs_source_core_needs_rust_bridge", ("obs_source", "use_bridge"),
-        lambda a: _val(a, "obs_source", "python") == "core" and _val(a, "use_bridge", "rust") != "rust",
+        lambda a: _val(a, "obs_source", None) == "core" and _val(a, "use_bridge", "rust") != "rust",
         "--obs-source core requires --use-bridge rust — the core that builds the row lives in "
         "the rust sim_bridge child (gen3_core_obs_source_v1)"),
     CombinationCheck(

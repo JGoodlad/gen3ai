@@ -1438,9 +1438,10 @@ Only the **trainee** `Gen3Env` emits any of these. Eval and self-play opponents 
 `RLPlayer`, which never constructs them.
 
 **Where the trainee's `observation` row comes from** is a transport choice, not an architecture
-one: `--obs-source python` (the default, production) encodes it in the env worker; `--obs-source
-core` (`gen3_core_obs_source_v1`, the Rust core program's M6, built alongside and OFF) takes the
-Rust core's byte-identical row from the rust `sim_bridge` child. Either way every key in the table
+one: `--obs-source core` (`gen3_core_obs_source_v1`, **the production default on the rust bridge
+since the Rust core program's M6 cutover, 2026-09-25**) takes the Rust core's row from the rust
+`sim_bridge` child; `--obs-source python` (the explicit opt-out, and the default off the rust
+bridge) encodes the byte-identical row in the env worker. Either way every key in the table
 above is computed by the Python env from both battles and the engine side it holds, and the
 leak-safety property is unchanged — the forward reads `obs["observation"]` alone. The env-level
 parity gate (slice N, `main/rust_core_cutover/slice_n_test.py`) requires every key, the row, the

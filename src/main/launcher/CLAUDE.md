@@ -336,7 +336,7 @@ block, and exits.
 
 **What it prints**, in order: role · run dir (flagged `EXISTS — a real launch WRITES INTO IT` when
 it does) · `--model` · pin sha + subject + source · `--steps` beside the checkpoint's recorded
-`num_timesteps` and the `+X steps` delta · interpreter · transport · restart/grace/nice · the
+`num_timesteps` and the `+X steps` delta · interpreter · transport · the trainee's obs source (`--obs-source`, `core` by default on the rust bridge) · restart/grace/nice · the
 effective config with each reported flag marked `INHERITED` or `from the argv` (`distill_teacher`,
 `distill_target`, `distill_coef`, `distill_topk`, `grad_accum_steps`, `fork_lr`, `fork_lr_freeze` —
 `dry_run.REPORTED_DESTS`) · the pool as recorded (`N snapshot(s)` + `win_rate_vs_bots`, so pool

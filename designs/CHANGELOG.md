@@ -9737,3 +9737,17 @@ training pool's 1,912 HP users carry a zero-prior type, 289 of the ladder corpus
 Dark, the Metamon default-IV artifact). Two unit pins that asserted the raise on a refuted prior
 (`hidden_power_tracker_test.py`) were rewritten to the new rule; the loud half is pinned on a log no
 type explains.
+
+## 2026-09-25 — THE RUST CORE CUTOVER: `--obs-source core` is the production default on the rust bridge (`gen3_core_obs_source_v1`; no version bump — dims, weight shapes and the observation bytes are unchanged)
+
+The trainee's 2501-dim observation row now comes from the Rust core (the rust `sim_bridge` child
+parses the trainee's own per-side stream, folds the trackers and encodes, and ships the row before
+the request it answers) instead of `Gen3ObservationEncoder` in the env worker. **Byte-identical by
+construction**: the slice N gate (two envs in lockstep, every obs key, the mask, the reward and the
+episode end equal per decision) and slices E / V / T / O held with zero core-vs-Python differences
+on every stress row after `318bdcb8`, so the training-input boundary does NOT move. `--obs-source
+python` stays as the explicit opt-out (the deletion pass removes it) and is the default off the rust
+bridge. Owner decision; switched before the CUTOVER tier's registered counts were met (a recorded
+deviation — `designs/endstate/program_rust_core.md` §2 M6): the stress continues to its counts, and a
+CUTOVER-class divergence reverts the default.
+

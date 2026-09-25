@@ -22,6 +22,16 @@ from utils.bridge.bridge_session import attach_bridge_transport
 from utils.logging.levels import LogLevel
 
 
+def resolved_obs_source(args) -> str:
+    """The trainee's obs source for ``args`` (gen3_core_obs_source_v1): the typed value, else
+    ``core`` on the rust bridge (the production default since the M6 cutover) and ``python`` on
+    any other transport (the core lives in the rust ``sim_bridge`` child)."""
+    typed = getattr(args, "obs_source", None)
+    if typed is not None:
+        return typed
+    return "core" if getattr(args, "use_bridge", "rust") == "rust" else "python"
+
+
 def trainee_env_kwargs(args) -> dict:
     """The TRAINEE ``Gen3Env``'s per-run keyword arguments — which training-only label keys it
     emits (ARCHITECTURE.md §7) and where its observation row comes from — as a pure function of
@@ -83,7 +93,7 @@ def trainee_env_kwargs(args) -> dict:
         distill_team_species=getattr(args, "_distill_species", None),
         # gen3_core_obs_source_v1: the trainee's row from the Rust core (`--obs-source core`)
         # or from the Python encoder (the default). Only the trainee env; opponents unchanged.
-        obs_source=getattr(args, "obs_source", "python"),
+        obs_source=resolved_obs_source(args),
     )
 
 
@@ -142,7 +152,7 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 # mask, wrappers) is unchanged — see utils/bridge/bridge_session.py.
                 attach_bridge_transport(env, battle_format=BATTLE_FORMAT,
                                         impl=args.bridge_impl, recon_sink=_recon_sink,
-                                        core_obs=(getattr(args, "obs_source", "python") == "core"))
+                                        core_obs=(resolved_obs_source(args) == "core"))
 
             # Opponents are pure DECISION FUNCTIONS over env.battle2 (env.agent1/agent2 do
             # the networking), so build them start_listening=False — no idle connections,

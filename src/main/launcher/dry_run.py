@@ -283,6 +283,10 @@ def dry_run(
     if child_uses_bridge(child_args):
         impl = _peek_arg(child_args, "--use-bridge") or "rust"
         out(f"  transport   : in-process bridge [{impl}] (no Showdown server)")
+        # gen3_core_obs_source_v1: the trainee row's source, resolved as the child resolves it
+        # (typed, else `core` on the rust bridge — the production default since the M6 cutover).
+        obs = _peek_arg(child_args, "--obs-source") or ("core" if impl == "rust" else "python")
+        out(f"  obs source  : {obs} ({'the Rust core row' if obs == 'core' else 'the Python encoder'})")
     else:
         out(f"  transport   : websocket → Showdown :{_peek_arg(child_args, '--showdown-port', int)}")
     sched = (f"every {interval_hours:.1f}h" if interval_hours > 0 else "single run (no restart)")

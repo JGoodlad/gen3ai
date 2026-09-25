@@ -418,6 +418,11 @@ though every `impl=` default is still `"node"`.
   raising it is asyncio latency-hiding, not multi-core, and nets negative under training contention.
 - The launcher treats an ABSENT `--use-bridge` as a bridge run, so it injects no phantom
   `--showdown-port` (pinned by `default_port_test.py`).
+- **The trainee's observation comes from the Rust core** on this transport (`--obs-source core`,
+  the default since the M6 cutover, 2026-09-25: the rust child ships each decision's row as an
+  `__OBS__` frame; every launch stamps `🔭 [OBS SOURCE]`). `--obs-source python` is the explicit
+  opt-out (byte-identical by construction) and the default on `--use-bridge node|off`; typing `core`
+  there is refused. Detail: `src/agents/training/CLAUDE.md`.
 
 🚨 **THE DURABLE LESSON — a "default" branch that nothing tests is untested however green the suite
 is.** Three seed defects shipped on this path because every gate was inherently SEEDED or compared

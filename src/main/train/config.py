@@ -1222,11 +1222,14 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                      "either way — see teacher/step_block_ms.")
     else:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
-    # gen3_core_obs_source_v1: stamp WHICH path built the trainee's observation on every launch.
-    emit(f"🔭 [OBS SOURCE] {getattr(args, 'obs_source', 'python')} — "
+    # gen3_core_obs_source_v1: resolve the default (core on the rust bridge since the M6 cutover)
+    # into the namespace, so every reader and the run's recorded argv see ONE value, and stamp it.
+    from main.train.env_factory import resolved_obs_source
+    args.obs_source = resolved_obs_source(args)
+    emit(f"🔭 [OBS SOURCE] {args.obs_source} — "
          + ("the Rust core's row (sim_bridge __OBS__ frames; Python encodes only terminal / "
-            "non-decision embeds)" if getattr(args, "obs_source", "python") == "core"
-            else "the Python encoder (production)"))
+            "non-decision embeds) — the production default" if args.obs_source == "core"
+            else "the Python encoder (the opt-out; the default off the rust bridge)"))
 
     annealing_mode = args.anneal_lr_start_steps is not None
 
