@@ -129,6 +129,13 @@ in a session built by `BridgeSession::new_core` / `new_construct_turn0_core`; `s
 does, so training ships the same bytes and uses none of it. Full contract, the 11 named reading
 rules and the record format: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md).
 
+🚨 **A move of the OTHER side's mon run INSIDE another action goes through
+`BattleState::in_nested_move_scope`** (`gen3_core_nested_move_scope_v1`: Pursuit's strike, a
+Snatch-stolen move; Magic Coat's bounce when it is modelled). The step path's outcome OWNER is the
+source scope and `parse` reads it from line order, so a nest left in the enclosing scope is a
+`parse != step` refusal — the cutover stress's one slice-E refusal (`pool_110_5`, 2026-09-25) was
+exactly that ([`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md) §3, §5).
+
 🚨 **A new emit form is a typed method, and it must be CANONICAL**: `Line::parse(render(l)) == l`
 (a `|` inside one field is two fields — `volatile_start_detail`, not a pipe-joined string). Every
 corpus battle checks it (`tests/core_events_test.rs`, and `core_events` refuses otherwise).
@@ -496,7 +503,7 @@ node src/rust_sim/harness/probe_residual_order_rng.js
 node src/rust_sim/harness/probe_phaze_regression_rng.js
 ```
 
-The full bug -> pin map (72 rows), each family's ground-truth probe, and the FEATURE pins for
+The full bug -> pin map (73 rows), each family's ground-truth probe, and the FEATURE pins for
 newly-modelled mechanics:
 [`designs/rust_sim/regression_pins.md`](../../designs/rust_sim/regression_pins.md).
 

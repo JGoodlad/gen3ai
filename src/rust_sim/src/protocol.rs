@@ -253,9 +253,11 @@ pub struct ProtocolBuilder {
     drained: usize,
     /// The last `|turn|N` marker's N (0 before the first) — a record's `turn`.
     cur_turn: u32,
-    /// Which engine action is running — set by the turn loop (`turn/driver.rs`) and around
-    /// Pursuit's in-switch strike (`turn/switch.rs`). A record's `scope`: the sim's own answer to
-    /// "whose move owns this line", which the protocol never prints. Plain field writes, no draw.
+    /// Which engine action is running — set by the turn loop (`turn/driver.rs`) and, for a NESTED
+    /// move of the OTHER side's mon (Pursuit's in-switch strike, a Snatch-stolen move), by
+    /// `BattleState::in_nested_move_scope` (`gen3_core_nested_move_scope_v1`). A record's `scope`:
+    /// the sim's own answer to "whose move owns this line", which the protocol never prints. Plain
+    /// field writes, no draw.
     pub scope: Scope,
 }
 

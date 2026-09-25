@@ -262,3 +262,103 @@ fn recording_changes_no_byte_of_the_production_stream() {
         assert_eq!(plain.battle_state().unwrap().prng_seed(), core.battle_state().unwrap().prng_seed(), "[{label}]");
     }
 }
+
+// ── A NESTED cross-side move carries its USER's scope (`gen3_core_nested_move_scope_v1`) ─────────
+
+/// Play `turns` on a core session and hold it to BOTH parse gates: the whole-battle
+/// `parse(side text) == step` and the version-by-version `version::parse_matches_step` (the one
+/// the cutover stress refused on). Returns the session.
+fn nested_scope_battle(p1: &str, p2: &str, turns: &[[&str; 2]], dex: &Dex) -> BridgeSession {
+    use pokesim::version::{parse_matches_step as version_gate, BattleVersion};
+    let cmd = |side: usize, tok: &str| Cmd { side, choice: pokesim::bridge::parse_choice(tok).expect("choice") };
+    let opts = bridge_opts("gen3ou", "7,11,13,17".to_string(), p1, p2);
+    let mut sess = BridgeSession::new_construct_turn0_core(&opts, dex).expect("session");
+    let mut v = BattleVersion::observe_root(&sess, ["P1", "P2"], [Some(p1), Some(p2)], [true, true]).expect("root");
+    let mut parsed = [
+        Some(BattleVersion::parse_root(0, "P1", Some(p1)).unwrap()),
+        Some(BattleVersion::parse_root(1, "P2", Some(p2)).unwrap()),
+    ];
+    for (i, t) in std::iter::once(None).chain(turns.iter().map(Some)).enumerate() {
+        if let Some(t) = t {
+            assert!(!sess.is_ended(), "turn {i}: the battle ended early");
+            sess.feed_cmds(&[cmd(0, t[0]), cmd(1, t[1])], dex);
+            assert!(sess.fatal().is_none(), "turn {i}: bridge fatal {:?}", sess.fatal());
+            v = v.observe(&sess).unwrap();
+        }
+        for side in 0..2 {
+            let p = parsed[side].take().unwrap();
+            let from = p.stream(side).unwrap().lines;
+            let next = p.parse_advance(&sess.side_lines(side)[from..]).unwrap();
+            version_gate(&v, &next, side).unwrap_or_else(|e| panic!("version gate, write {i}: {e}"));
+            parsed[side] = Some(next);
+        }
+    }
+    let mut t = Tally { battles: 0, lines: 0, readings: 0, kinds: BTreeMap::new(), owners: 0, truncated: 0 };
+    check_session("nested scope", &sess, &mut t);
+    sess
+}
+
+/// The source record rendering `text` (exactly one).
+fn rec_of<'a>(sess: &'a BridgeSession, text: &str) -> &'a pokesim::core_events::SourceRec {
+    let recs: Vec<_> = sess.source_recs().unwrap().iter().filter(|r| r.line.render() == text).collect();
+    assert_eq!(recs.len(), 1, "exactly one {text:?} in the omniscient log: {:?}",
+               sess.source_recs().unwrap().iter().map(|r| r.line.render()).collect::<Vec<_>>());
+    recs[0]
+}
+
+/// The outcome owner the STEP path gives `text` on each viewer's stream.
+fn step_owner(sess: &BridgeSession, text: &str) -> [Option<u8>; 2] {
+    [0, 1].map(|side| {
+        let evs = sess.core_events(side).unwrap();
+        let hits: Vec<_> = evs.iter().filter(|e| e.line.render() == text).collect();
+        assert_eq!(hits.len(), 1, "p{}: exactly one {text:?}", side + 1);
+        hits[0].owner
+    })
+}
+
+/// SNATCH (the cutover-stress refusal `pool_110_5`, 2026-09-25): a Snatch-stolen move is the
+/// SNATCHER's, nested inside the victim's move — the sim's `useMove(move.id, snatchUser)`
+/// (`data/mods/gen4/moves.ts` `snatch`, inherited by gen 3) sets the ACTIVE mon to the snatcher
+/// (`sim/battle-actions.ts` `useMoveInner` → `setActiveMove(move, pokemon, …)`). Here Blissey
+/// steals Swampert's Refresh with no status to cure, so the stolen Refresh FAILS on Blissey:
+/// `|-fail|p1a: Blissey` is Blissey's move's outcome, which line order reads (the nested
+/// `|move|p1a: Blissey|Refresh||[from] Snatch|[still]` opens p1's move). The pre-fix engine left
+/// the stolen move in the VICTIM's scope, so the step owner was p2 and both parse gates refused
+/// (`outcome OWNER: engine scope says Some(1), line order says Some(0)`).
+#[test]
+fn a_snatch_stolen_moves_outcome_is_owned_by_the_snatcher() {
+    let dex = Dex::for_gen(3);
+    let p1 = "Blissey||leftovers|naturalcure|snatch,softboiled,seismictoss,toxic|Bold|252,,252,,4,|||||";
+    let p2 = "Swampert||leftovers|torrent|refresh,earthquake,icebeam,protect|Relaxed|252,,252,,4,|||||";
+    let sess = nested_scope_battle(p1, p2, &[["move 1", "move 1"]], &dex);
+    use pokesim::core_events::Scope;
+    // the victim's announce and the snatcher's `-activate` (printed from the victim's PrepareHit,
+    // before the nested useMove) stay in the VICTIM's action
+    assert_eq!(rec_of(&sess, "|move|p2a: Swampert|Refresh|p2a: Swampert").scope, Scope::Move(1));
+    assert_eq!(rec_of(&sess, "|-activate|p1a: Blissey|move: Snatch|[of] p2a: Swampert").scope, Scope::Move(1));
+    // the stolen move — its announce and its failure — is the SNATCHER's
+    assert_eq!(rec_of(&sess, "|move|p1a: Blissey|Refresh||[from] Snatch|[still]").scope, Scope::Move(0));
+    assert_eq!(rec_of(&sess, "|-fail|p1a: Blissey").scope, Scope::Move(0));
+    assert_eq!(step_owner(&sess, "|-fail|p1a: Blissey"), [Some(0), Some(0)]);
+}
+
+/// PURSUIT: the strike is the PURSUER's move, nested inside the switcher's switch — the same
+/// class, re-scoped through the same helper. Tyranitar's Pursuit hits a switching Alakazam
+/// super-effectively: `|-supereffective|p2a: Alakazam` is p1's outcome on both paths (the
+/// enclosing scope, `Switch(p2)`, has no move side, so a strike left in it would read `None`
+/// on the step path against line order's p1).
+#[test]
+fn a_pursuit_strikes_outcome_is_owned_by_the_pursuer() {
+    let dex = Dex::for_gen(3);
+    let p1 = "Tyranitar||leftovers|sandstream|pursuit,crunch,earthquake,rockslide|Adamant|252,252,,,4,|||||";
+    let p2 = "Alakazam||leftovers|synchronize|psychic,calmmind,recover,firepunch|Timid|4,,,252,,252|||||]\
+Snorlax||leftovers|immunity|bodyslam,earthquake,rest,curse|Careful|252,,4,,252,|||||";
+    let sess = nested_scope_battle(p1, p2, &[["move 1", "switch 2"]], &dex);
+    use pokesim::core_events::Scope;
+    let strike = sess.source_recs().unwrap().iter()
+        .find(|r| r.line.render().starts_with("|move|p1a: Tyranitar|Pursuit|p2a: Alakazam"))
+        .expect("the Pursuit strike on the switcher");
+    assert_eq!(strike.scope, Scope::Move(0), "the strike's announce");
+    assert_eq!(rec_of(&sess, "|-supereffective|p2a: Alakazam").scope, Scope::Move(0));
+    assert_eq!(step_owner(&sess, "|-supereffective|p2a: Alakazam"), [Some(0), Some(0)]);
+}

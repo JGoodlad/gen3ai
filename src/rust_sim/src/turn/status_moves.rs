@@ -267,12 +267,19 @@ impl crate::state::BattleState {
             //     never re-fires. Its resolution is DISCARDED — the nested useMove is not the
             //     snatcher's own queued action, so it fires no trailing Update (probe: SN2
             //     SwordsDance draws only endTurn; SN5 Rest draws its sleep roll + endTurn).
+            //     The stolen move is the SNATCHER's, nested inside the victim's action: its
+            //     lines (the `[from] Snatch` announce, a `-fail` when the stolen effect fails)
+            //     carry the snatcher's source scope (`gen3_core_nested_move_scope_v1`); the
+            //     `-activate` above stays in the victim's (the sim prints it from the victim's
+            //     `PrepareHit`, before the nested `useMove`).
             self.log.set_next_move_from("Snatch");
-            self.run_status_move(
-                foe, foe_slot, _side, _slot, accuracy, never_miss, move_type, move_id,
-                move_name, targets_self, status_inflicted, /*foe_will_move*/ false,
-                /*will_act*/ will_act, /*was_choice_locked*/ false, dex,
-            );
+            self.in_nested_move_scope(foe, |s| {
+                s.run_status_move(
+                    foe, foe_slot, _side, _slot, accuracy, never_miss, move_type, move_id,
+                    move_name, targets_self, status_inflicted, /*foe_will_move*/ false,
+                    /*will_act*/ will_act, /*was_choice_locked*/ false, dex,
+                )
+            });
             // (5) return null — the FOE's move does nothing (not landed, not missed).
             return MoveResolution::done(false, false, false);
         }

@@ -71,7 +71,10 @@ pub enum Scope {
     /// Battle construction / the leads' switch-in (before any queued action).
     #[default]
     Start,
-    /// A `move` (or `beforeTurnMove`) action of this side, including a Pursuit strike.
+    /// A `move` (or `beforeTurnMove`) action of this side, AND a move this side's mon executes
+    /// NESTED inside another action — Pursuit's strike inside the switcher's switch, a
+    /// Snatch-stolen move inside the victim's move (`gen3_core_nested_move_scope_v1`: the sim's
+    /// `useMoveInner` makes the nested user the active mon).
     Move(u8),
     /// A `switch` / `instaswitch` / `runSwitch` action of this side.
     Switch(u8),

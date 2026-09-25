@@ -73,8 +73,27 @@ viewer's render ([`emission_selfcheck.md`](emission_selfcheck.md)).
 
 With recording on, `ProtocolBuilder` keeps one `SourceRec { line, turn, scope }` per committed
 line (conservation by construction). `scope` is the ENGINE's action — `Move(side)` / `Switch(side)`
-/ `Residual` / `Other` / `Start` — set by the turn loop (`turn/driver.rs`) and around Pursuit's
-nested strike (`turn/switch.rs`): the sim's own answer to "whose move owns this line".
+/ `Residual` / `Other` / `Start` — set by the turn loop (`turn/driver.rs`): the sim's own answer to
+"whose move owns this line".
+
+🚨 **A NESTED move of the OTHER side's mon carries ITS USER's scope** (`gen3_core_nested_move_scope_v1`).
+Two actions the port models run a move of the other side inside them: Pursuit's strike inside the
+switcher's switch (`turn/switch.rs`) and a Snatch-stolen move inside the victim's move
+(`turn/status_moves.rs`). The sim's `useMoveInner` makes the nested user the ACTIVE mon
+(`battle.setActiveMove(move, pokemon, …)`, `sim/battle-actions.ts`), so every line that move emits —
+its `|move|` announce and its outcome lines — is that mon's move. Both sites go through ONE helper,
+`BattleState::in_nested_move_scope(side, …)` (`turn/helpers.rs`), which sets `Move(side)` and
+restores the enclosing scope. What stays OUTSIDE it is what the sim prints from the enclosing action
+before the nested `useMove` — Snatch's `|-activate|<snatcher>|move: Snatch|[of] <victim>` comes from
+the victim's `PrepareHit` and keeps the victim's scope. **Every future cross-side `useMove` must go
+through the helper** — Magic Coat's bounce (`useMove(newMove, target, {target: source})`,
+`data/mods/gen4/moves.ts`) is the one gen-3 move of the class the port does not model yet (it fails
+loud today). A nest left in the enclosing scope is a `parse != step` refusal: the cutover stress's
+`pool_110_5` (2026-09-25) — Blissey snatching Swampert's Refresh with no status to cure — refused
+on `|-fail|p1a: Blissey`, `engine scope says Some(1), line order says Some(0)`, until the Snatch
+site used the helper. Pins: `core_events_test::a_snatch_stolen_moves_outcome_is_owned_by_the_snatcher`
+and `…::a_pursuit_strikes_outcome_is_owned_by_the_pursuer` (each FAILS with the site's helper call
+reverted).
 
 Each side's shipped lines carry the index of the source record they derive from
 (`BridgeChunks::core`). `side::step_events` rebuilds each line from its TYPED record (the typed
@@ -123,7 +142,23 @@ line typed, the same `Reader`, and the one attribution the protocol never prints
 line's OWNER — recovered from line order (`OwnerScan`: `|move|X` opens X's move; `|switch|`,
 `|turn|`, `|upkeep` and the bare `|` close it; `|drag|` does not). `CoreEvent.owner` is defined on
 outcome lines only; the step path takes it from the engine scope. `parse_matches_step` (typed line,
-owner, every reading) is `parse(emit(step)) == step`.
+owner, every reading) is `parse(emit(step)) == step` — both the whole-battle form
+(`core_events::parse::parse_matches_step`) and the per-transition one on the version chain
+(`version::parse_matches_step`); either names the differing FIELD (typed line / outcome OWNER /
+readings / index), because two events that render the same text differ only there.
+
+**Where the two can disagree, by construction** — an outcome line whose engine scope side is not
+the side of the last unclosed `|move|` line. Every outcome emission site in the port was audited
+(2026-09-25) against the four contexts: inside a move, each follows its own action's `|move|`
+announce with no closer between (`turn/moves.rs`, `turn/status_moves.rs`, a stat-drop block in
+`turn/secondaries.rs`); a switch-in's (Intimidate vs Clear Body, `turn/helpers.rs`) follows a
+`|switch|` (no owner either way) or a `|drag|` (the phazer's, either way); the residual's (the
+future-move `-miss`) follows the bare `|`; a NESTED cross-side move is re-scoped (§3). **Two latent
+instances wait on unmodeled moves** (both fail loud today): Magic Coat's bounce (a §3 nest) and gen-3
+Bide's unleash, whose `-end|…|move: Bide` / `-fail` / `-miss` and damage are printed from the Bide
+user's `onBeforeMove` with NO `|move|` line of its own (`data/mods/gen3/moves.ts` `bide`) — line
+order would name the previous mover, so modelling Bide needs a line-order rule (e.g. that `-end`
+opening its user's move) as well as the engine code.
 
 ## 6. The persisted record (`record.rs`, `event_schema` = `gen3_core_event_v1`)
 

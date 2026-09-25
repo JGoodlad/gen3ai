@@ -509,7 +509,24 @@ pub fn parse_matches_step(step: &BattleVersion, parsed: &BattleVersion, side: us
     }
     for (x, y) in ea.iter().zip(eb) {
         if x.line != y.line || x.owner != y.owner || x.readings != y.readings || x.idx != y.idx {
-            return Err(fault(format!("p{} line {}: step {:?} vs parse {:?}", side + 1, x.idx, x.line.render(), y.line.render())));
+            // Name the differing FIELD: two lines that render identically differ in the owner,
+            // the readings or the index, and a message that prints only the text hides which.
+            let what = if x.line != y.line {
+                format!("typed line: step {:?} vs parse {:?}", x.line, y.line)
+            } else if x.owner != y.owner {
+                format!("outcome OWNER: engine scope says {:?}, line order says {:?}", x.owner, y.owner)
+            } else if x.readings != y.readings {
+                format!("readings:\n  step  {:?}\n  parse {:?}", x.readings, y.readings)
+            } else {
+                format!("index: step {} vs parse {}", x.idx, y.idx)
+            };
+            return Err(fault(format!(
+                "p{} line {}: step {:?} vs parse {:?} — {what}",
+                side + 1,
+                x.idx,
+                x.line.render(),
+                y.line.render()
+            )));
         }
     }
     if step.view(side)? != parsed.view(side)? {

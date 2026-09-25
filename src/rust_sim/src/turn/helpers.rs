@@ -7,6 +7,25 @@ use crate::state::{Status, Weather};
 use super::*;
 
 impl crate::state::BattleState {
+    /// Run `f` — a NESTED move executed by `side`'s mon INSIDE another action — with the
+    /// builder's source scope set to `Move(side)`, then restore the enclosing scope
+    /// (`gen3_core_nested_move_scope_v1`). The sim's own answer: `useMoveInner` calls
+    /// `battle.setActiveMove(move, pokemon, target)` with the NESTED user (`sim/battle-actions.ts`),
+    /// so every line that move emits — its `|move|` announce and its outcome lines — belongs to
+    /// that mon's move, not to the action it interrupted. The two cross-side nests the port
+    /// models: Pursuit's strike inside the switcher's switch (`turn/switch.rs`) and a
+    /// Snatch-stolen move inside the victim's move (`turn/status_moves.rs`). A same-side call
+    /// (Sleep Talk) needs no re-scope. Every cross-side `useMove` MUST go through here: the step
+    /// path's outcome OWNER is this scope, and `parse` recovers it from line order (the nested
+    /// `|move|` opens the nested user's move), so a nest left in the enclosing scope is a
+    /// `parse != step` refusal (`version::parse_matches_step`). A plain field write, no draw.
+    pub(crate) fn in_nested_move_scope<T>(&mut self, side: usize, f: impl FnOnce(&mut Self) -> T) -> T {
+        let prev = std::mem::replace(&mut self.log.scope, crate::core_events::Scope::Move(side as u8));
+        let out = f(self);
+        self.log.scope = prev;
+        out
+    }
+
     /// Is `move_id` blocked for `side`'s active by the FOE's live IMPRISON
     /// (`gen3_imprison_v1`)? The rule is "the imprisoner KNOWS this move", so it is a
     /// movepool intersection, not a stored list — which also means a Mimic that overwrote a
