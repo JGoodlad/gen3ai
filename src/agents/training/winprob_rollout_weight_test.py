@@ -301,7 +301,10 @@ def test_the_env_declares_the_key_under_EXACTLY_the_predicate_the_loss_reads_it_
     KeyError mid-run or a silently unweighted arm."""
     import main.train.env_factory as ef
     import agents.training.instrumented_ppo.ppo as ppo_mod
-    fac = inspect.getsource(ef.create_training_env_random)
+    # the predicate lives in `trainee_env_kwargs` (one source for the factory and the cutover's
+    # slice N), and the factory must still build the trainee env through it
+    assert "**trainee_env_kwargs(args)" in inspect.getsource(ef.create_training_env_random)
+    fac = inspect.getsource(ef.trainee_env_kwargs)
     assert "emit_win_row_weight=(" in fac
     assert 'win_prob_rollout_weight", 1.0) or 1.0) > 1.0' in fac
     assert 'win_prob_rollout_target", 0.0) or 0.0) > 0.0' in fac

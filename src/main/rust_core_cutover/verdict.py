@@ -19,11 +19,25 @@ from __future__ import annotations
 from typing import Dict, Iterable
 
 CUTOVER, READING, VIEW_ROAD = "CUTOVER", "READING", "VIEW-ROAD"
+#: Slice N differences that follow a PHANTOM step of the same episode (finding F1, 2026-09-24: the
+#: live env records a trainee decision on a step the trainee is not asked to move; the core never
+#: does). Still a CUTOVER difference — training inputs change at the switch — but NAMED, so an
+#: unexplained class can never hide behind it.
+CUTOVER_F1 = "CUTOVER-F1 (named: phantom decision)"
+
+
+def is_f1_field(key: str) -> bool:
+    """The obs fields a phantom ``EpisodeTracker.record`` + ``update_progress_clock`` can move: the
+    progress clock (``board +2``, turns since progress) and recency. Any OTHER field that differs
+    after a phantom is NOT explained by F1."""
+    return key == "observation board +2" or (key.startswith("observation ") and " recency+" in key)
 
 
 def category(slice_: str, key: str) -> str:
     if key.startswith("REFUSED"):
         return CUTOVER
+    if slice_ == "N" and key.endswith("[after-phantom]") and is_f1_field(key[: -len(" [after-phantom]")]):
+        return CUTOVER_F1
     if slice_ != "V":
         return CUTOVER
     if key.startswith("[core]") or key.startswith("[ALIGN]"):

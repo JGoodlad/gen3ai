@@ -64,6 +64,17 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "verb families), so --search-teacher no longer requires 'node'; the "
                              "run's impl is threaded into the teacher workers. 'rust' also "
                              "fail-louds on an unmodeled move.")
+    parser.add_argument("--obs-source", type=str, default="python", choices=["python", "core"],
+                        help="Where the TRAINEE's observation row comes from "
+                             "(gen3_core_obs_source_v1, the Rust core program's M6). 'python' "
+                             "(DEFAULT, production) = Gen3ObservationEncoder in the env worker. "
+                             "'core' = the Rust core's row, built in the rust sim_bridge child from "
+                             "the trainee's own per-side stream (parse -> reading -> view -> trackers "
+                             "-> encode) and shipped before the request it answers; the env refuses "
+                             "a frame of another battle / decision, a NaN cell or a mask that "
+                             "disagrees with the reading. Needs --use-bridge rust. Labels, reward "
+                             "and action mapping are unchanged (Python); terminal and non-decision "
+                             "embeds stay Python and are counted. Opponents are unaffected.")
     parser.add_argument(
         "--self-play-use-cpu",
         action=BoolFlag,

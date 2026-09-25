@@ -22,6 +22,71 @@ from utils.bridge.bridge_session import attach_bridge_transport
 from utils.logging.levels import LogLevel
 
 
+def trainee_env_kwargs(args) -> dict:
+    """The TRAINEE ``Gen3Env``'s per-run keyword arguments — which training-only label keys it
+    emits (ARCHITECTURE.md §7) and where its observation row comes from — as a pure function of
+    the resolved ``args``, so every builder of a training-shaped env (this factory, the cutover
+    stress's slice N) derives the SAME surface from one place."""
+    return dict(
+        # TRAINING-only privileged belief labels (only the trainee env; the model side
+        # gates the BeliefHead on the same coef>0 signal). Eval/self-play opponents play
+        # via RLPlayer, not Gen3Env, so they never emit them.
+        emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
+        move_belief_mode=args.move_belief_mode,
+        emit_win_target=(args.win_prob_mode != "none"),
+        # gen3_winprob_rollout_weight_v1: the per-row BCE WEIGHT key, declared only when
+        # there is something to weigh — the weight above 1.0 AND a rollout fraction above
+        # 0.0 (the two are already bound to each other by `combination_checks`, and this
+        # is the same predicate spelled where the obs space is decided rather than
+        # inferred from one half of it).
+        emit_win_row_weight=(
+            float(getattr(args, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
+            and float(getattr(args, "win_prob_rollout_target", 0.0) or 0.0) > 0.0),
+        # gen3_fork_v1: the per-row POLICY-TERM mask key (`fork_pg_m`), declared only when
+        # the arm is on. It is the carrier for THE MASK RULE — the fork step is out of the
+        # policy term for every branch — and an injected row is the only row that ever
+        # holds anything but the 1.0 placeholder, so an unflagged run's observation space,
+        # its rollout buffer and its policy loss are all untouched.
+        emit_fork_pg_mask=(float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0),
+        # PRIVILEGED TRUE-TEAM channel (gen3_value_true_team_v1): emit the opponent's
+        # actual party only when the value route that reads it was built. Emitting it
+        # unconditionally would put a key in the observation_space that no consumer reads
+        # and that every non-local path would then have to fabricate.
+        emit_opp_true_team=bool(getattr(args, "value_true_team", False)),
+        # DENSE AUXILIARY labels (gen3_dense_aux_v1): emit the 25 end-of-battle targets
+        # and their two-part mask only when the head that consumes them was built — the
+        # same coef>0 signal `extractor_arch._DERIVED` turns into the `dense_aux` toggle,
+        # so the key set and the module cannot disagree.
+        emit_dense_aux=(float(getattr(args, "win_prob_dense_aux", 0.0) or 0.0) > 0.0),
+        # SPREAD-belief supervision (gen3_unified_spread_belief_v1): emit the privileged
+        # true-spread label only when the loss will consume it (coef>0; the CLI guards that
+        # --spread-belief-coef requires --spread-belief, so the head is present to supervise).
+        emit_spread_labels=(args.spread_belief and args.spread_belief_coef > 0.0),
+        emit_opp_intent_labels=(getattr(args, 'opp_intent_coef', 0.0) > 0.0),
+        # HP-TYPE-belief supervision (gen3_typed_hp_belief_v1): emit the privileged true-HP-type
+        # label only when the CE will consume it (the head itself is unconditional under a move
+        # belief; the CLI guards that the coef implies one).
+        emit_hp_type_labels=(args.move_belief_mode != "off" and args.hp_belief_mode == "composed"
+                             and args.hp_type_belief_coef > 0.0),
+        # ITEM-belief supervision (gen3_item_belief_v1): emit the privileged true-item
+        # label only when the head exists AND the CE will consume it.
+        emit_item_labels=(args.item_belief and args.item_belief_coef > 0.0),
+        # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
+        # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
+        emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
+        # BAIT-exploration flag (gen3_bait_entropy_v1): same gate, same reason — emit only when the
+        # boost is on, so the flag costs nothing on every run that is not taking the probe.
+        emit_bait_opportunity=(args.bait_entropy_boost > 1.0),
+        # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1): the teacher team's species id-set
+        # (None unless --distill-coef>0). The env emits `distill_mask`=1 on states where the
+        # trainee pilots this team — the only states the distillation KL folds. None → no key.
+        distill_team_species=getattr(args, "_distill_species", None),
+        # gen3_core_obs_source_v1: the trainee's row from the Rust core (`--obs-source core`)
+        # or from the Python encoder (the default). Only the trainee env; opponents unchanged.
+        obs_source=getattr(args, "obs_source", "python"),
+    )
+
+
 def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                                opponent_version=None, snapshot_dir=None,
                                self_play_fraction=0.0, self_play=False,
@@ -55,59 +120,7 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 account_configuration1=AccountConfiguration(env_username, "password"),
                 # Bridge mode: don't open websockets — the in-process sim is the transport.
                 start_listening=not args.use_showdown_bridge,
-                # TRAINING-only privileged belief labels (only the trainee env; the model side
-                # gates the BeliefHead on the same coef>0 signal). Eval/self-play opponents play
-                # via RLPlayer, not Gen3Env, so they never emit them.
-                emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
-                move_belief_mode=args.move_belief_mode,
-                emit_win_target=(args.win_prob_mode != "none"),
-                # gen3_winprob_rollout_weight_v1: the per-row BCE WEIGHT key, declared only when
-                # there is something to weigh — the weight above 1.0 AND a rollout fraction above
-                # 0.0 (the two are already bound to each other by `combination_checks`, and this
-                # is the same predicate spelled where the obs space is decided rather than
-                # inferred from one half of it).
-                emit_win_row_weight=(
-                    float(getattr(args, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
-                    and float(getattr(args, "win_prob_rollout_target", 0.0) or 0.0) > 0.0),
-                # gen3_fork_v1: the per-row POLICY-TERM mask key (`fork_pg_m`), declared only when
-                # the arm is on. It is the carrier for THE MASK RULE — the fork step is out of the
-                # policy term for every branch — and an injected row is the only row that ever
-                # holds anything but the 1.0 placeholder, so an unflagged run's observation space,
-                # its rollout buffer and its policy loss are all untouched.
-                emit_fork_pg_mask=(float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0),
-                # PRIVILEGED TRUE-TEAM channel (gen3_value_true_team_v1): emit the opponent's
-                # actual party only when the value route that reads it was built. Emitting it
-                # unconditionally would put a key in the observation_space that no consumer reads
-                # and that every non-local path would then have to fabricate.
-                emit_opp_true_team=bool(getattr(args, "value_true_team", False)),
-                # DENSE AUXILIARY labels (gen3_dense_aux_v1): emit the 25 end-of-battle targets
-                # and their two-part mask only when the head that consumes them was built — the
-                # same coef>0 signal `extractor_arch._DERIVED` turns into the `dense_aux` toggle,
-                # so the key set and the module cannot disagree.
-                emit_dense_aux=(float(getattr(args, "win_prob_dense_aux", 0.0) or 0.0) > 0.0),
-                # SPREAD-belief supervision (gen3_unified_spread_belief_v1): emit the privileged
-                # true-spread label only when the loss will consume it (coef>0; the CLI guards that
-                # --spread-belief-coef requires --spread-belief, so the head is present to supervise).
-                emit_spread_labels=(args.spread_belief and args.spread_belief_coef > 0.0),
-                emit_opp_intent_labels=(getattr(args, 'opp_intent_coef', 0.0) > 0.0),
-                # HP-TYPE-belief supervision (gen3_typed_hp_belief_v1): emit the privileged true-HP-type
-                # label only when the CE will consume it (the head itself is unconditional under a move
-                # belief; the CLI guards that the coef implies one).
-                emit_hp_type_labels=(args.move_belief_mode != "off" and args.hp_belief_mode == "composed"
-                                     and args.hp_type_belief_coef > 0.0),
-                # ITEM-belief supervision (gen3_item_belief_v1): emit the privileged true-item
-                # label only when the head exists AND the CE will consume it.
-                emit_item_labels=(args.item_belief and args.item_belief_coef > 0.0),
-                # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
-                # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
-                emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
-                # BAIT-exploration flag (gen3_bait_entropy_v1): same gate, same reason — emit only when the
-                # boost is on, so the flag costs nothing on every run that is not taking the probe.
-                emit_bait_opportunity=(args.bait_entropy_boost > 1.0),
-                # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1): the teacher team's species id-set
-                # (None unless --distill-coef>0). The env emits `distill_mask`=1 on states where the
-                # trainee pilots this team — the only states the distillation KL folds. None → no key.
-                distill_team_species=getattr(args, "_distill_species", None),
+                **trainee_env_kwargs(args),
                 # The OPPONENT side's real team source (agent2 does the networking for every
                 # per-episode opponent; the rotated Players are decision-functions whose own
                 # builders are inert). Without this, PokeEnv fed `team=` (the TRAINEE builder)
@@ -128,7 +141,8 @@ def create_training_env_random(idx, stall_config=None, opponent_device="auto",
                 # BattleStream subprocess. Everything above the transport (obs, reward,
                 # mask, wrappers) is unchanged — see utils/bridge/bridge_session.py.
                 attach_bridge_transport(env, battle_format=BATTLE_FORMAT,
-                                        impl=args.bridge_impl, recon_sink=_recon_sink)
+                                        impl=args.bridge_impl, recon_sink=_recon_sink,
+                                        core_obs=(getattr(args, "obs_source", "python") == "core"))
 
             # Opponents are pure DECISION FUNCTIONS over env.battle2 (env.agent1/agent2 do
             # the networking), so build them start_listening=False — no idle connections,

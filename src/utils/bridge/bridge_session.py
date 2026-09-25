@@ -94,6 +94,7 @@ def attach_bridge_transport(
     env, *, battle_format: str, seed: Optional[List[int]] = None, persistent: bool = True,
     recycle_every: int = 5000, impl: str = "node",
     recon_sink: Optional[Callable[[Optional[str], str], None]] = None,
+    core_obs: bool = False,
 ) -> "BridgeSession":
     """Swap a freshly-built ``PokeEnv``'s websocket transport for the local bridge.
 
@@ -116,15 +117,25 @@ def attach_bridge_transport(
     direct runs. ``0`` disables it. Returns the live ``BridgeSession`` (also stashed on
     ``env._bridge_session`` so it isn't GC'd and ``close()`` can reach it).
 
+    ``core_obs`` (default False — the bytes on the wire are then unchanged) asks the RUST child to
+    ship the TRAINEE's observation row built by the core (``gen3_core_obs_source_v1``): START gains
+    ``core_obs`` = ``env.core_obs_spec()`` and every trainee decision is preceded by an ``__OBS__``
+    frame, stashed in ``session.core_obs[side]`` for ``Gen3Env(obs_source="core")``. Rust only.
+
     ``recon_sink`` (default None = the historical behaviour, nothing written) is called with
     ``(battle_tag, base64_payload)`` for every episode's ``__RECON__`` frame, IN ADDITION to the
     single-slot ``last_recon`` stash. It exists for the counterfactual label factory's record tap
     (``agents.training.cf_records``); a CALLABLE rather than a directory keeps this transport
     module free of any dependency on the training package.
     """
+    spec = None
+    if core_obs:
+        if impl != "rust":
+            raise ValueError(f"core_obs needs the rust bridge (the core lives in sim_bridge), not {impl!r}")
+        spec = env.core_obs_spec()
     session = BridgeSession(
         env.agent1, env.agent2, battle_format, seed=seed, persistent=persistent,
-        recycle_every=recycle_every, impl=impl, recon_sink=recon_sink,
+        recycle_every=recycle_every, impl=impl, recon_sink=recon_sink, core_obs=spec,
     ).attach()
     # Keep a reference for the env's lifetime + tear the child down on env.close().
     env._bridge_session = session
@@ -162,6 +173,7 @@ class BridgeSession:
         recycle_every: int = 5000,
         impl: str = "node",
         recon_sink: Optional[Callable[[Optional[str], str], None]] = None,
+        core_obs: Optional[dict] = None,
     ):
         self.a1 = agent1
         self.a2 = agent2
@@ -249,6 +261,11 @@ class BridgeSession:
         # OPT-IN extra consumer of the same frame (None = off, the default: nothing is written and
         # the dispatch path is unchanged). Owned by the caller — see `attach_bridge_transport`.
         self._recon_sink = recon_sink
+        # gen3_core_obs_source_v1: the START `core_obs` spec (None = off, the wire unchanged) and,
+        # per side, the LATEST `__OBS__` frame the child shipped (it precedes the request chunk it
+        # belongs to; `core_obs.frame_for_decision` refuses a frame of another battle / request).
+        self._core_obs_spec = core_obs
+        self.core_obs: Dict[str, tuple] = {}
 
     def attach(self) -> "BridgeSession":
         self.c1 = self._make_client(self.a1, "p1")
@@ -320,6 +337,9 @@ class BridgeSession:
         }
         if persistent:
             start["persistent"] = True
+        if self._core_obs_spec is not None:
+            start["core_obs"] = self._core_obs_spec
+            self.core_obs = {}
         if self.seed:
             start["seed"] = self.seed
         proc.stdin.write((f"START {json.dumps(start)}\n").encode())
@@ -554,6 +574,17 @@ class BridgeSession:
                     self._recon_sink(self._tag, payload)
                 except Exception as exc:                    # pragma: no cover - defensive
                     print(f"⚠️  [bridge] recon_sink failed: {exc}", flush=True)
+            return
+        if text.startswith("__OBS__"):
+            # gen3_core_obs_source_v1: the core's row for the side's NEXT decision. Stashed
+            # SYNCHRONOUSLY (no await between here and the request chunk's dispatch below it on the
+            # wire), so it is in place before poke-env can hand that decision to the env.
+            # Kept RAW (the tag it arrived under + the JSON): the transport never decodes an
+            # observation — `agents.battle.core_obs.frame_for_decision` does, at the decision.
+            if self._core_obs_spec is None:
+                raise RuntimeError("bridge child shipped an __OBS__ frame nobody asked for")
+            _, obs_side, payload = text.split(" ", 2)
+            self.core_obs[obs_side] = (self._tag, payload)
             return
         side, b64 = text.split(" ", 1)
         chunk = base64.b64decode(b64).decode("utf-8")

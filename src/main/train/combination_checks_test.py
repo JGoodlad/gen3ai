@@ -267,6 +267,7 @@ ARGVS: dict[str, list[str]] = {
     "win_prob_pbrs_frozen_needs_a_head": ["--win-prob-pbrs-frozen", "models/p.zip",
                                           "--win-prob-mode", "none"],
     "cf_records_needs_bridge": ["--cf-records", "--use-bridge", "off"],
+    "obs_source_core_needs_rust_bridge": ["--obs-source", "core", "--use-bridge", "node"],
     "cf_label_duty_cycle_floor": ["--cf-records", "--cf-winprob-coef", "0.1",
                                   "--win-prob-mode", "read_only", "--cf-label-lag-steps", "10",
                                   "--n-envs", "48"],

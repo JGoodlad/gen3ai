@@ -448,6 +448,14 @@ class _LocalBattleRunner:
                 # the forensic trace writer can join it (see reconstruction.py).
                 self._offer_recon(tag, text)
                 continue
+            if text.startswith("__OBS__"):
+                # gen3_core_obs_source_v1: the core's row for the side's NEXT decision (a START
+                # that carried `core_obs` via `start_extra`). Stashed RAW on that side's client,
+                # before the request chunk below it is fed, exactly as `BridgeSession` does; a
+                # consumer decodes it with `agents.battle.core_obs.frame_for_decision`.
+                _, obs_side, payload = text.split(" ", 2)
+                (self.c1 if obs_side == "p1" else self.c2).core_obs = (tag, payload)
+                continue
             side, b64 = text.split(" ", 1)
             chunk = base64.b64decode(b64).decode("utf-8")
             if self.chunk_sink is not None:

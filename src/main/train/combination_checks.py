@@ -805,6 +805,11 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "read_only — the term supervises a head that flag BUILDS, and it is a "
         "structural (version-gated) toggle that cannot be turned on mid-run."),
     CombinationCheck(
+        "obs_source_core_needs_rust_bridge", ("obs_source", "use_bridge"),
+        lambda a: _val(a, "obs_source", "python") == "core" and _val(a, "use_bridge", "rust") != "rust",
+        "--obs-source core requires --use-bridge rust — the core that builds the row lives in "
+        "the rust sim_bridge child (gen3_core_obs_source_v1)"),
+    CombinationCheck(
         "cf_records_needs_bridge", ("cf_records", "use_bridge"),
         lambda a: bool(a.cf_records) and _val(a, "use_bridge", "rust") == "off",
         "--cf-records requires the in-process bridge (--use-bridge node|rust) — the "

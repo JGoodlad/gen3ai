@@ -1421,6 +1421,15 @@ is a DIAGNOSTIC rather than a loss.
 Only the **trainee** `Gen3Env` emits any of these. Eval and self-play opponents play through
 `RLPlayer`, which never constructs them.
 
+**Where the trainee's `observation` row comes from** is a transport choice, not an architecture
+one: `--obs-source python` (the default, production) encodes it in the env worker; `--obs-source
+core` (`gen3_core_obs_source_v1`, the Rust core program's M6, built alongside and OFF) takes the
+Rust core's byte-identical row from the rust `sim_bridge` child. Either way every key in the table
+above is computed by the Python env from both battles and the engine side it holds, and the
+leak-safety property is unchanged — the forward reads `obs["observation"]` alone. The env-level
+parity gate (slice N, `main/rust_core_cutover/slice_n_test.py`) requires every key, the row, the
+mask, the reward and the episode end EQUAL between the two sources, per decision.
+
 Two side-channel stashes are also never fed forward: `last_belief_target_latent` (computed only
 under `torch.is_grad_enabled()`) and `last_move_latent_table`. The pinned no-leak tests are
 `belief_slots_test.test_latent_target_is_no_leak`,

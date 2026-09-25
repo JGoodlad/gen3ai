@@ -1222,6 +1222,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                      "either way — see teacher/step_block_ms.")
     else:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
+    # gen3_core_obs_source_v1: stamp WHICH path built the trainee's observation on every launch.
+    emit(f"🔭 [OBS SOURCE] {getattr(args, 'obs_source', 'python')} — "
+         + ("the Rust core's row (sim_bridge __OBS__ frames; Python encodes only terminal / "
+            "non-decision embeds)" if getattr(args, "obs_source", "python") == "core"
+            else "the Python encoder (production)"))
 
     annealing_mode = args.anneal_lr_start_steps is not None
 

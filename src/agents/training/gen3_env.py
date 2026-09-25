@@ -38,6 +38,11 @@ from agents.training.reward_function import RewardFunction
 from agents.training.episode_tracker import EpisodeTracker
 from agents.training.stall import StallConfig, StallLogger
 from agents.battle.gen3_battle import Gen3Battle
+# gen3_core_obs_source_v1 (program M6): where the TRAINEE's observation row comes from. `python`
+# (the default, production today) — `Gen3ObservationEncoder` here; `core` — the Rust core's row,
+# built in the rust `sim_bridge` child from the trainee's own per-side stream (parse → reading →
+# view → trackers → encode) and shipped as an `__OBS__` frame before the request it answers.
+from agents.battle.core_obs import OBS_SOURCES  # re-exported: the flag's choices
 # gen3_bait_entropy_v1: ONE zero-damage predicate, shared with the scripted BaitBot opponent, so the
 # training flag fires on exactly the boards BaitBot exploits (and both resolve the type chart + the
 # gen-3 ability immunities from `data/` via `effective_multiplier` — never a hand-copied table).
@@ -91,7 +96,16 @@ class Gen3Env(SinglesEnv):
                  emit_defensive_opportunity: bool = False,
                  emit_bait_opportunity: bool = False,
                  distill_team_species=None,
-                 opponent_team=None, **kwargs):
+                 opponent_team=None, obs_source: str = "python", **kwargs):
+        if obs_source not in OBS_SOURCES:
+            raise ValueError(f"obs_source must be one of {OBS_SOURCES}, got {obs_source!r}")
+        self.obs_source = obs_source
+        # gen3_core_obs_source_v1: per episode, how many trainee decisions took the core's row, and
+        # how many embeds had no core row to take (the terminal, a `wait`, a re-embed of an
+        # already-answered request) and were encoded here instead — the Python encoder's residual
+        # role under `core`, counted so it is never silent.
+        self._core_n = 0
+        self.core_obs_counts = {"core": 0, "python_nondecision": 0, "python_redecision": 0}
         self.log_level = log_level
         self._stall_logger = StallLogger(stall_config)
         super().__init__(*args, **kwargs)
@@ -457,7 +471,14 @@ class Gen3Env(SinglesEnv):
                 self._pending_delta = self._tracker.update_progress_clock(battle, legal)
                 self._intent_delta = self._pending_delta
 
-        if battle is self.battle1:
+        core_row = None
+        if battle is self.battle1 and self.obs_source == "core":
+            core_row = self._core_row(battle, legal)
+        if core_row is not None:
+            obs = core_row
+            if self._emit_opp_intent_labels:
+                self._snapshot_opp_slot_map(obs)
+        elif battle is self.battle1:
             obs = self.observation_encoder.encode(
                 battle, hp_tracker=self._tracker.hidden_power_tracker, legal=legal,
                 progress_clock=self._tracker.progress_clock,
@@ -481,6 +502,44 @@ class Gen3Env(SinglesEnv):
         # the N-turn TurnDelta lag frames used to be concatenated here; both are deleted, and the
         # H-B event window (built inside `encode`) is what carries "what happened" now.
         return obs
+
+    def core_obs_spec(self) -> dict:
+        """The START ``core_obs`` spec for the rust bridge (``attach_bridge_transport(core_obs=
+        True)``): the trainee's side, and the progress clock's two behaviour switches exactly as
+        THIS env's clock was configured (``ProgressClock.apply_reward_config``), so the core's clock
+        folds the same rule the Python one would."""
+        clock = self._tracker.progress_clock
+        return {"sides": ["p1"], "decision_tense": bool(clock.decision_tense),
+                "switch_freeze": bool(clock.switch_freeze)}
+
+    def _core_row(self, battle, legal):
+        """The core's row for this embed, or ``None`` when the embed is not a core decision (the
+        caller then encodes it here, and the embed is counted). A decision the core should have
+        answered and did not — a frame of another battle, a skipped or repeated decision index, a
+        turn, NaN cell or mask disagreement — RAISES (`CoreObsMismatch`): crash over corruption."""
+        from agents.battle.core_obs import fresh_frame_index, frame_for_decision
+
+        ctx = self._tracker.last_ctx
+        decided = (legal is not None and ctx is not None and ctx.legal is legal
+                   and int(np.asarray(ctx.mask).sum()) > 0)
+        if not decided:
+            self.core_obs_counts["python_nondecision"] += 1
+            return None
+        session = getattr(self, "_bridge_session", None)
+        if session is None:
+            raise RuntimeError("obs_source='core' needs the rust bridge transport "
+                               "(attach_bridge_transport(..., impl='rust', core_obs=True))")
+        raw = session.core_obs.get(battle.player_role)
+        if fresh_frame_index(raw, battle.battle_tag) != self._core_n:
+            if fresh_frame_index(raw, battle.battle_tag) == self._core_n - 1:
+                # the same request embedded again (poke-env's `battle1` fallback on a step where the
+                # trainee was not asked to move): the core took no new decision.
+                self.core_obs_counts["python_redecision"] += 1
+                return None
+        frame = frame_for_decision(battle, raw, self._core_n, ctx.mask)
+        self._core_n += 1
+        self.core_obs_counts["core"] += 1
+        return np.array(frame.row, dtype=np.float32)   # writable, owned (the wire view is read-only)
 
     def action_masks(self) -> np.ndarray:
         ctx = self._tracker.last_ctx
@@ -1026,6 +1085,7 @@ class Gen3Env(SinglesEnv):
     def reset(self, *args, **kwargs):
         self.reward_manager.report_episode(getattr(self, "battle1", None))
         self._tracker.reset()
+        self._core_n = 0
         self._distill_team_id = None     # new battle → recompute which teacher's team (if any) the trainee is on
         try:
             if hasattr(self, "agent1"):

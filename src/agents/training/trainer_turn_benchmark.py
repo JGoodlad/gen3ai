@@ -113,9 +113,13 @@ class _TrainerTurnPlayer(Player):
     policy, so no model is loaded."""
 
     def __init__(self, *args, warmup: int, use_assembler: bool = True,
-                 reward_config: "RewardConfig | None" = None, **kwargs):
+                 reward_config: "RewardConfig | None" = None, obs_source: str = "python", **kwargs):
         super().__init__(*args, **kwargs)
         self._use_assembler = use_assembler
+        # gen3_core_obs_source_v1: `core` takes the row from the rust child's `__OBS__` frame
+        # (what `Gen3Env(obs_source="core")` does) instead of running the Python encoder.
+        self._obs_source = obs_source
+        self._core_n: Dict[str, int] = {}
         # The reward COMPOSITION under test. `None` = the dataclass default (the shaped
         # production reward). `--reward-argv` builds it through the REAL launch path
         # (`build_parser` → `RewardConfig.from_args`), so a composition measured here is a
@@ -196,12 +200,20 @@ class _TrainerTurnPlayer(Player):
         # figure from this script is comparable to one printed after this date.
         timed("obs: update_progress_clock",
               lambda: tr.update_progress_clock(battle, legal))
-        _kw = dict(hp_tracker=tr.hidden_power_tracker, legal=legal,
-                   progress_clock=tr.progress_clock, recency=tr.recency,
-                   pair_history=tr.pair_history, event_window=tr.event_window)
-        if self._use_assembler:
-            _kw["assembler"] = tr.obs_assembler(self.obs_enc.dimension)
-        timed("obs: state_encoder.encode", lambda: self.obs_enc.encode(battle, **_kw))
+        if self._obs_source == "core":
+            from agents.battle.core_obs import frame_for_decision
+
+            n = self._core_n.get(tag, 0)
+            timed("obs: core frame (decode + checks)",
+                  lambda: frame_for_decision(battle, self.ps_client.core_obs, n, mask))
+            self._core_n[tag] = n + 1
+        else:
+            _kw = dict(hp_tracker=tr.hidden_power_tracker, legal=legal,
+                       progress_clock=tr.progress_clock, recency=tr.recency,
+                       pair_history=tr.pair_history, event_window=tr.event_window)
+            if self._use_assembler:
+                _kw["assembler"] = tr.obs_assembler(self.obs_enc.dimension)
+            timed("obs: state_encoder.encode", lambda: self.obs_enc.encode(battle, **_kw))
 
         # --- reward (Gen3Env.calc_reward) ---
         delta = timed("reward: build_delta", lambda: tr.build_delta(battle=battle))  # noqa: E501
@@ -247,7 +259,8 @@ _GROUPS = [
     # was added with gen3_obs_assembler_v1 and must be listed, or the obs share understates by
     # the whole tracker fold (progress clock + recency + H-A pair + H-B window).
     ("obs build", ["obs: live_view (shared build)", "obs: legal + mask", "obs: tracker.record",
-                   "obs: update_progress_clock", "obs: state_encoder.encode"]),
+                   "obs: update_progress_clock", "obs: state_encoder.encode",
+                   "obs: core frame (decode + checks)"]),
     ("reward (TurnDelta fold)", ["reward: build_delta", "reward: process_turn_reward"]),
     ("action map", ["action map"]),
     ("tracker advance/record", ["tracker advance/record"]),
@@ -361,7 +374,9 @@ def _reward_config_from_argv(reward_argv: "str | None") -> "RewardConfig | None"
 
 async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
                use_assembler: bool = True, reward_argv: "str | None" = None,
-               pin: bool = False, bridge: str = "rust") -> int:
+               pin: bool = False, bridge: str = "rust", obs_source: str = "python") -> int:
+    if obs_source == "core" and bridge != "rust":
+        raise SystemExit("--obs-source core needs --bridge rust (the core lives in sim_bridge)")
     # `random.seed(seed)` alone was NOT enough: four drawers shared the global stream (two
     # teambuilders, this player's action pick, and `RandomPlayer`'s entire policy) and the bridge
     # interleaves the two players' `choose_move` calls, so the draw ORDER — and therefore the
@@ -374,6 +389,7 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
     pool = _team_pool()
     player = _TrainerTurnPlayer(
         warmup=warmup, use_assembler=use_assembler, reward_config=reward_config,
+        obs_source=obs_source,
         battle_format=BATTLE_FORMAT, team=Gen3Teambuilder(pool, rng_seed=seed * 4 + 0),
         rng_seed=seed * 4 + 1,
         account_configuration=AccountConfiguration(f"TTz{ts}", "pw"),
@@ -388,7 +404,10 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
     print(f"Trainer-turn CPU profiler — {BATTLE_FORMAT} — target {target_decisions} measured "
           f"decisions (warmup {warmup}, seed {seed}, no GPU/server, "
           f"obs-assembler {'ON' if use_assembler else 'OFF'}, "
-          f"battles {'PINNED' if pin else 'random'}, bridge {bridge})", flush=True)
+          f"battles {'PINNED' if pin else 'random'}, bridge {bridge}, obs source {obs_source})",
+          flush=True)
+    start_extra = ({"core_obs": {"sides": ["p1"], "decision_tense": False, "switch_freeze": False}}
+                   if obs_source == "core" else None)
     # The reward arm is part of the measurement, so it is printed with the run header rather
     # than left implicit — `format_reward_composition` is the SAME announcer a launch prints.
     print(format_reward_composition(reward_config or RewardConfig())
@@ -400,7 +419,7 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
         # so repeated single-battle calls never collide on a reused tag — no per-call cleanup
         # needed; _battle_finished_callback drops each battle's tracker/reward as it ends.
         await run_local_battles(player, opp, 1, seed=_battle_seed(seed, battles) if pin else None,
-                                impl=bridge)
+                                impl=bridge, start_extra=start_extra)
         battles += 1
 
     if player.measured == 0:
@@ -435,6 +454,12 @@ def _parse_args(argv):
                         "production release `sim_bridge`) or 'node' (local_sim_bridge.js, the old "
                         "default, kept as the explicit A/B arm). The per-decision WALL cycle "
                         "includes the child's sim advance, so the two are different measurements.")
+    p.add_argument("--obs-source", choices=("python", "core"), default="python",
+                   help="the trainee row's source, as `train_rl_agent --obs-source`: 'python' (the "
+                        "encoder, timed as `state_encoder.encode`) or 'core' (the rust child's "
+                        "`__OBS__` frame, timed as its decode + checks; the child's encode lands in "
+                        "the cycle's must-pay wall). Needs --bridge rust. Interleave the two arms "
+                        "under --pin-battles for an A/B.")
     p.add_argument("--no-assembler", dest="use_assembler", action="store_false",
                    help="encode WITHOUT the incremental obs cache (gen3_obs_assembler_v1) — the "
                         "A/B arm. Run both back to back in one session: absolute ms on this box "
@@ -449,4 +474,4 @@ if __name__ == "__main__":
     args = _parse_args(sys.argv[1:])
     sys.exit(asyncio.run(
         main(args.target_decisions, args.battle_cap, args.warmup, args.seed,
-             args.use_assembler, args.reward_argv, args.pin, args.bridge)))
+             args.use_assembler, args.reward_argv, args.pin, args.bridge, args.obs_source)))

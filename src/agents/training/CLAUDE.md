@@ -431,6 +431,18 @@ terms, team PFSP, per-team win rates): the async collector wave-batches, so call
 recover which buffer ROW a step landed on. A capture that needs the row is INLINED into
 `collect_rollouts_async` instead (`WinProbLabelCallback`'s terminal capture).
 
+## Where the trainee's observation comes from (`--obs-source {python,core}`, DEFAULT `python`)
+
+`gen3_core_obs_source_v1` — the Rust core program's M6, **built alongside, OFF in production** until
+the owner switches. `core` takes the trainee's 2501-dim row and 11-bit mask from the rust
+`sim_bridge` child (`__OBS__` frames; needs `--use-bridge rust`); `Gen3Env` REFUSES a frame of
+another battle, decision (`n`) or turn, a NaN cell or a mask that disagrees with the reading. Labels,
+reward, the tracker fold and the action mapping stay Python; terminal and non-decision embeds are
+still encoded here and counted (`Gen3Env.core_obs_counts`). The env-level parity gate is slice N
+(`main/rust_core_cutover/slice_n_test.py`); its one NAMED class is finding F1 — the live env
+records a trainee decision on a PHANTOM step (the trainee not asked to move), which the core never
+does. Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
+
 ## The two compile flags (`--compile-opponents` · `--compile-trainer`, both DEFAULT ON)
 
 **Split by WHO and WHERE** (renamed 2026-08-14 from the single `--compile-extractor`, which said

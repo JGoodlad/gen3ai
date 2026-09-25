@@ -106,6 +106,10 @@ class BattleStreamClient(PSClient):
         # (a livelock) or ADVANCING (a budget too small for the workload). Those are opposite
         # findings and the message used to assert the first with no evidence for it.
         self.last_frame = ""
+        # gen3_core_obs_source_v1: the latest `__OBS__` frame for this side, raw — `(battle tag,
+        # JSON)` — when the START asked the rust child for core rows (`local_battle_runner`
+        # stashes it before feeding the request chunk it precedes). None otherwise.
+        self.core_obs = None
         # No auth handshake against a local sim.
         self._logged_in.set()
 
