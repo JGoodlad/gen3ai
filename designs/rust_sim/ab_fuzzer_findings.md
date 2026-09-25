@@ -657,10 +657,89 @@ saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass)
   the sim's seed before the end-of-turn Quick Claw roll (exactly one draw missing), and the next
   turn's damage roll / speed tie read the shifted stream. `run_move` now sets the flag for Beat Up
   before the Protect block. Pins: byte fixture 80 + bridge fixture 24 (each FAILS on revert).
-  Still OPEN at the end of the pass: and two `|request|`
+  Still OPEN at the end of the pass: two `|request|`
   flag classes (`sbd_mugr6edd_b24`: the sim sets `maybeDisabled` for ANY foe of an active imprisoner,
   `data/moves.ts:9507`, while `bridge.rs` requires a shared move; `rmugytne6_bab_2_10`: a missing
-  `maybeTrapped`, not root-caused). Both request classes change bytes poke-env receives.
+  `maybeTrapped`, not root-caused). Both request classes change bytes poke-env receives. **Both are
+  CLOSED by the request-flag pass below.**
+
+- **The request-flag pass (2026-09-25, branch `m6-trap`) — both `|request|` classes root-caused and
+  fixed, plus two more found while pinning them.** Ground truth for every row:
+  `harness/probe_maybe_flags.js` (fail-loud, 13 rows vs the real sim). Pins:
+  `tests/bridge_maybe_flags_test.rs` (12: K1 / K2 / S1 / S2 / I1 / O1 / R1 / R2 each checked to FAIL
+  on a revert of its fix; K3 / K4 / S3 / S4 are CONTROLS against an over-wide fix) + bridge fixture
+  25 (the `rmugytne6_bab_2_10` battle, which FAILS with either `maybeTrapped` revert).
+  - **`rmugytne6_bab_2_10` — `maybeTrapped` is WIDER than the real trap**
+    (`gen3_known_type_maybe_trap_v1`). The sim reads `pokemon.maybeTrapped`, which endTurn sets
+    through `runEvent('MaybeTrapPokemon')` (`sim/battle.ts:1723-1757`), and that event's handlers
+    read `pokemon.knownType`: gen-3 Magnet Pull's `onAnyMaybeTrapPokemon` is
+    `!knownType || hasType('Steel')` (`data/mods/gen3/abilities.ts:107-113`), Arena Trap's is
+    `isGrounded(!knownType)` (`data/abilities.ts:203-209`). `transformInto` sets
+    `knownType = isAlly(target) && target.knownType` (`sim/pokemon.ts:1298`) — FALSE for a copy of
+    a foe, until switch-out or a `setType`. The repro: p2's Smeargle Transformed into p1's Gyarados
+    (Water/Flying), then p1 brought in Magneton; the Smeargle is NOT trapped (its switch is
+    accepted) but its request says `maybeTrapped:true`. The port tied `maybeTrapped` to the real
+    trap (`bridge.rs` `is_trapped && has_bench && !firm`), so it emitted nothing. A SECOND arm of
+    the same flag (already PROBE-SETTLED for the harness in `port_build_log.md`'s
+    `gen3_simbridge_probe_accepted_v1` round, `probe_maybetrapped_probe_accepted.js`, but never
+    implemented in the port): the "canceling switches would leak information" loop
+    runs `FoeMaybeTrapPokemon` for EVERY ability of the foe's SPECIES in an `obtainableabilities`
+    format (gen3ou, not gen3customgame), so a Sand Veil Dugtrio flags every grounded foe. Fix:
+    `TransformOverlay::type_known` (false on every copy, true on Conversion / Conversion 2 / Color
+    Change), `BattleState::is_maybe_trapped` (held ability + the leak table
+    `LEAK_SPECIES_TRAP_ABILITIES`, enumerated from `Dex.forGen(3)`: Dugtrio / Diglett / Trapinch →
+    Arena Trap, Wobbuffet / Wynaut → Shadow Tag; gen-3 Magnet Pull has no `onFoeMaybeTrapPokemon`),
+    and the request flag reads it. Display-only and draw-free: the trap itself, and so switch
+    legality, is unchanged. **poke-env READS this key** (`LegalActions.maybe_trapped` → the
+    observation's maybe-trapped bit, `POKEMON_MAYBE_TRAPPED_OFFSET`).
+  - **`sbd_mugr6edd_b24` — Imprison flags EVERY live foe** (`gen3_imprison_maybe_flags_v1`).
+    `onFoeDisableMove` ends with `pokemon.maybeDisabled = true` unconditionally
+    (`data/moves.ts:9502-9508`); the port required a shared move. The repro: Dusclops imprisoned a
+    Suicune (shared Rest), then a Celebi that shares nothing came in. Nothing under `src/poke_env`
+    or `src/agents` reads `maybeDisabled` / `maybeLocked` (grep, 2026-09-25), so the fix changes
+    raw request bytes only.
+  - **Found while pinning — the Imprison `maybeLocked` drop was keyed on the wrong re-request.** The
+    re-request is the sim's SAME `activeRequest`, mutated by the refused choice's update closure: a
+    refused imprisoned MOVE runs `updateDisabledRequest` (`sim/side.ts:834-839`), which deletes
+    `maybeLocked`; a refused trapped SWITCH (`side.ts:967-979`) touches only
+    `maybeTrapped`/`trapped`. The port dropped it on `trapped_firm` — exactly backwards. It also
+    wrote the trap flag BEFORE `maybeDisabled`/`maybeLocked`; `getMoveRequestData`
+    (`sim/pokemon.ts:1121-1134`) writes it LAST (a Mean Look + Imprison Dusclops shows both).
+  - **Found while pinning — the ENGINE accepted a pick of an imprisoned move**
+    (`gen3_imprison_choice_reject_v1`). The request masks the hidden disable (`disabled:false`), but
+    `Side.chooseMove` reads `getMoves()` unrestricted and refuses it (`[Unavailable choice] Can't
+    move: X's Y is disabled` + a re-request with that slot `disabled:true,"disabledSource":""`).
+    `engine.rs::classify_reject` did not see the FOE-held restriction, so the engine accepted the
+    pick; the flat driver's `choice_is_legal` then dropped the decision and the boundary re-opened
+    with a silent, un-`update`d copy of the same request. **This is the path a live poke-env client
+    takes** — the fuzzers' pickers mirror the hidden disable (`gen3_picker_hidden_disable_v1`), so no
+    fuzzer ever submitted such a pick. Fixed in `classify_reject`; the re-request bytes (the `|error|`,
+    `disabled:true` on the slot, `"update":true`) are ones poke-env READS.
+  - **OPEN (FINDING, not fixed): every move imprisoned.** The sim SUBSTITUTES Struggle when no slot
+    is usable once the hidden disables count (`getMoves()` returns `[]`, `side.ts:682-691`); the
+    port's `must_struggle` is a `MonState` method that cannot see the foe's Imprison, so the flat
+    driver's `choice_is_legal` rejects the pick instead. `classify_reject` deliberately leaves that
+    case to the existing path. Unmeasured in a fuzzer (the pickers never reach it).
+  - **Evidence (2026-09-25, all green).** Both repros replay `ok` (`bridge_replay --ab`;
+    `gen_sim_bridge_diff.js --repro`). `bridge_ab_fuzz.js --mode ladder --ladder-tier full --format
+    gen3ou` 300 battles at `--master-seed 925001` (the seed fixture 23 came from, so a regression
+    re-run, not fresh battles): 295 ok + 5 allowlisted (turn-0 construction keys), 0 diverged; and
+    300 FRESH battles at `--master-seed 925137`: 296 ok + 4 allowlisted, 0 diverged.
+    `--mode trapping`: 300 / 300 ok in gen3ou (seed 925002) and 300 / 300 in gen3customgame (seed
+    925005). `gen_sim_bridge_diff.js --mode ladder --ladder-tier full --persistent` 200 battles (seed
+    925004): 198 ok, 0 diverged, `drain_timeouts` 0, 2 `errored` — both a > 600-decision Struggle
+    stalemate (the harness `SAFETY` cap) that `--repro` replays byte-clean through all 1,187 / 1,190
+    commands, and whose choices are read from the NODE child alone, so they cannot depend on the port.
+  - **Rate (the real sim, a uniform-random legal picker, 20,000 fresh ladder-corpus battles,
+    3,366,352 move requests).** `maybeTrapped` without a real trap: **0** (the corpus has 20 Transform
+    sets and 0 Sand Veil / Hyper Cutter trap species in 22,813 teams; the cutover stress met it
+    once in 2,400 bridge battles / 292,867 requests). Imprison `maybeDisabled` on a no-shared-move
+    foe: **55** requests (21 battles carried the flags at all). A pick of an imprisoned move (the
+    engine reject): **13** picks. The trap-flag key order (Imprison + a trap flag together): **0**.
+  - **OPEN (FINDING): re-request deltas do not accumulate.** The sim mutates ONE `activeRequest` across
+    successive refusals in a decision; the port re-renders each re-request from the latest refusal
+    only (`Request { trapped, disabled_source }`), so a second refusal in the same decision loses the
+    first's delta (e.g. a `disabled:true` slot, or the dropped `maybeLocked`). Pre-existing.
 
 `harness/probe_repro_simtrace.js` now replays a repro under its `FMT` row's format, admitting typed
 Hidden Power the way `ab_fuzz.js` does (pool / ourandom / ladder); before this, it replayed every

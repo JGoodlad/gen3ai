@@ -103,6 +103,35 @@ recomputed on every `move` request):
    `is_trapped == false` → **neither** flag (per-request recompute, not a sticky
    `trapped:true` that persists).
 
+### `maybeTrapped` is WIDER than the trap (`gen3_known_type_maybe_trap_v1`)
+
+Step 1 above is the COMMON case, not the rule. The sim emits `maybeTrapped` from
+`pokemon.maybeTrapped`, which endTurn sets through `runEvent('MaybeTrapPokemon')`
+(`sim/battle.ts:1723-1757`), and that is a different predicate from the trap
+(`runEvent('TrapPokemon')`). A mon can be maybe-trapped and NOT trapped — its switch is then
+ACCEPTED (`side.ts`: `else if (pokemon.maybeTrapped) this.choice.cantUndo = true`) but the
+request still shows `maybeTrapped:true`. Two arms (probe `probe_maybe_flags.js`, K/S rows):
+
+- **An unknown type.** `transformInto` sets `knownType = isAlly(target) && target.knownType`
+  (`sim/pokemon.ts:1298`) — FALSE for a mon Transformed into its foe, until it switches out or a
+  `setType` lands (Conversion / Conversion 2 / Color Change). gen-3 Magnet Pull's maybe handler is
+  `!knownType || hasType('Steel')`; Arena Trap's is `isGrounded(!knownType)`, which ignores Flying
+  (Levitate still escapes). So a Smeargle Transformed into a Gyarados, facing a Magneton, is
+  `maybeTrapped` (the M6 cutover-stress repro `rmugytne6_bab_2_10`).
+- **The leak loop** ("canceling switches would leak information"). In an `obtainableabilities`
+  format (gen3ou; NOT gen3customgame) endTurn runs `FoeMaybeTrapPokemon` for EVERY ability of the
+  foe's current species. gen-3 species that matters for: Dugtrio / Diglett / Trapinch (Arena Trap)
+  and Wobbuffet / Wynaut (Shadow Tag); gen-3 Magnet Pull has no `onFoeMaybeTrapPokemon`, so a Sturdy
+  Magneton adds nothing. So a SAND VEIL Dugtrio flags every grounded foe.
+
+The port: `BattleState::is_maybe_trapped` (`src/turn/switch.rs`) + `TransformOverlay::type_known`
+(`src/state.rs`), and `bridge.rs` emits `maybeTrapped` for a live-bench mon that is hidden-trapped
+OR maybe-trapped. Every hidden trap is also maybe (each handler's maybe gate contains its trap gate).
+
+**KEY ORDER.** `getMoveRequestData` writes `maybeDisabled`, `maybeLocked` (Imprison), THEN the trap
+flag; a refused switch's update closure deletes `maybeTrapped` and APPENDS `trapped`. So the trap
+flag is always LAST (`probe_maybe_flags.js` O1 / R2).
+
 ### The legal-action rule (how poke-env consumes it — the WHY)
 
 `src/poke_env/battle/battle.py::parse_request` derives switch-legality from the flag:
@@ -116,6 +145,10 @@ recomputed on every `move` request):
   the RL runtime's legal-action mask must treat `maybeTrapped` as "switch still
   offered" — the rejection round is what removes it.
 - neither flag → not trapped → `available_switches` = all live non-active bench mons.
+
+⚠️ `maybe_trapped` is ALSO an observation input: `LegalActions.maybe_trapped` feeds the reactive
+maybe-trapped bit (`POKEMON_MAYBE_TRAPPED_OFFSET`), so a wrong `maybeTrapped` is a wrong byte the
+policy reads, even where it changes no legal action.
 
 So the Rust emitter getting `maybeTrapped` vs `trapped` vs neither RIGHT is exactly
 what makes poke-env compute the identical legal switch set.

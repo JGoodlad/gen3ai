@@ -6,9 +6,9 @@ Each `*.txt` is a self-contained single-battle bridge-fuzzer repro (a repro dir'
 byte differential vs the recorded real `getPlayerStreams`, plus the SEED ANCHOR — each
 decision's post-decision engine seed == the recorded omniscient `seedAfter`).
 
-Two fixture classes — **14 clean + 5 allowlisted** today:
+Two fixture classes — **17 clean + 5 allowlisted** today:
 
-- **Untagged** (`01_*`..`06_*`, `10_*`..`15_*`, `19_*`, `20_*`, both formats) — a CLEAN
+- **Untagged** (`01_*`..`06_*`, `10_*`..`15_*`, `19_*`, `20_*`, `23_*`..`25_*`, both formats) — a CLEAN
   per-side/request battle that MUST replay `ok` (every per-side chunk + `|request|` frame
   byte-identical, seed anchor holds). The round-6 CONTENT-bug guards:
   - `12_morning_sun_success_cg.txt` (bab_7_1) → the B2 fix: a SUCCESSFUL Morning Sun
@@ -84,6 +84,13 @@ UNTAGGED regression fixture from the M6 cutover triage: `23_rollout_nonend_tick_
 a Charizard Beat Up into a 328-Speed Flygon's Protect keeps the `beatup` residual handler, one
 residual tie-shuffle draw (`gen3_beatup_volatile_on_block_v1`); it diverged `kind=perside` (the next
 turn's speed-tie order) before the fix and reads `kind=seed` with the fix reverted.
+
+`25_transform_foe_knowntype_maybetrapped_ou.txt` (bab_2_10, cutover stress `fz_bridge_ladder.00019`) —
+a Smeargle Transformed into a Gyarados (Water/Flying), then facing a Magnet Pull Magneton, is NOT
+trapped but its `|request|` carries `maybeTrapped:true`: a Transform copy has `knownType` false, and
+gen-3 Magnet Pull's maybe handler is `!knownType || hasType('Steel')`
+(`gen3_known_type_maybe_trap_v1`). It diverged `kind=request` (p2 line 66) before the fix, and does
+again with either the Transform's `type_known` or the request's `is_maybe_trapped` read reverted.
 
 To ADD a fixture: run `node harness/bridge_ab_fuzz.js --mode pool --format {gen3customgame|gen3ou}`,
 take a repro's `battle.txt` (or extract a clean battle from `chunks/`), and drop it here. A clean

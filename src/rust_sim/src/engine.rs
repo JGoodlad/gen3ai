@@ -266,7 +266,27 @@ fn classify_reject(
                     message: format!("Can't move: Your {} doesn't have a move {}", display_name(mon, dex), shown),
                 });
             }
-            if move_disabled(mon, *k, dex) {
+            // IMPRISON (`gen3_imprison_choice_reject_v1`): an imprisoned slot is a HIDDEN disable
+            // (`disableMove(id, true)` → `'hidden'`). The REQUEST masks it (`getMoves(_, true)`
+            // renders `disabled:false`), but `Side.chooseMove` reads `getMoves()` UNRESTRICTED, so
+            // the pick is REFUSED exactly like a visible disable: `[Unavailable choice] Can't move:
+            // X's Y is disabled` + a re-request with that slot `disabled:true,"disabledSource":""`
+            // (and, via `updateDisabledRequest`, no `maybeLocked`) — `harness/probe_imprison.js`
+            // Q5, `harness/probe_maybe_flags.js` R1. WRONG (pre-fix): this classifier did not see
+            // the FOE-held restriction, so the engine ACCEPTED the pick and the flat driver then
+            // dropped the decision (`choice_is_legal` already refuses it), re-opening the
+            // boundary with a silent, un-`update`d copy of the same request — no `|error|` at all.
+            // When NO slot is usable once the imprisoned ones are counted, the sim instead
+            // SUBSTITUTES Struggle (`getMoves()` returns `[]`); that case is left to the existing
+            // path (see the FINDING in `designs/rust_sim/ab_fuzzer_findings.md`).
+            let imprisoned = |j: usize| {
+                state
+                    .move_at(side, s.active, j, dex)
+                    .is_some_and(|m| state.imprisoned_for(side, &crate::dex::to_id(&m.id), dex))
+            };
+            let imprisoned_pick = imprisoned(*k)
+                && (0..mon.set.moves.len()).any(|j| !move_disabled(mon, j, dex) && !imprisoned(j));
+            if move_disabled(mon, *k, dex) || imprisoned_pick {
                 let name = reject_move_name(mon, *k, dex);
                 return Some(RejectClass::Unavailable {
                     message: format!("Can't move: {}'s {} is disabled", display_name(mon, dex), name),

@@ -1204,7 +1204,15 @@ impl crate::state::BattleState {
                         base_move_pp: u.move_pp.clone(),
                         base_move_maxpp: u.move_maxpp.clone(),
                         base_hidden_power_bp: u.hidden_power_bp,
+                        type_known: false,
                     });
+                }
+                // `transformInto`: `this.knownType = this.isAlly(pokemon) && pokemon.knownType`
+                // — the target is always a FOE in singles, so EVERY successful copy (a re-copy
+                // included: gen 3 lets a transformed mon Transform again) leaves it `false`
+                // (`gen3_known_type_maybe_trap_v1`).
+                if let Some(ov) = u.transform.as_mut() {
+                    ov.type_known = false;
                 }
                 u.species_id = t_species;
                 u.stats[1] = t_stats[1];
@@ -1838,6 +1846,8 @@ impl crate::state::BattleState {
             // THE ONE DRAW. `random(n)` fires even when n == 1 (probe C2).
             let pick = list[self.prng.random_below(list.len() as u32) as usize];
             self.sides[_side].pokemon[_slot].types_override = Some(vec![pick]);
+            // `setType` ends with `this.knownType = true` (`gen3_known_type_maybe_trap_v1`).
+            self.sides[_side].pokemon[_slot].mark_type_known();
             // [EMIT] `|-start|<u>|typechange|<Type>` — the DISPLAY-cased type name (the
             // Color Change precedent; the internal key is UPPERCASE).
             if self.logging() {

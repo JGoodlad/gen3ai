@@ -1045,15 +1045,24 @@ fn serialize_active_with_disabled_source(
     // them (`trapped_firm`). So a FIRM trap emits `trapped:true` unconditionally;
     // otherwise the `maybeTrapped`→`trapped` (on reject) machine applies.
     // (`state::trap_is_firm`; probe-settled vs the sim, `gen3_shadowtag_firm_trap_v1`.)
+    //
+    // `maybeTrapped` is WIDER than the real trap (`gen3_known_type_maybe_trap_v1`): the sim reads
+    // `pokemon.maybeTrapped`, which endTurn's `MaybeTrapPokemon` fold sets for a mon TRANSFORMED
+    // into its foe (`knownType` false: Magnet Pull ignores the Steel gate, Arena Trap ignores
+    // Flying) and — in an `obtainableabilities` format — for any foe whose SPECIES could hold a
+    // trapping ability (a Sand Veil Dugtrio). Such a mon is NOT trapped (its switch is accepted),
+    // but the flag is shown. A real 'hidden' trap is always also maybe (both handlers' maybe
+    // gate contains their trap gate), so the `is_trapped` term only restates that.
+    // (`BattleState::is_maybe_trapped`; the cutover-stress repro `rmugytne6_bab_2_10`.)
     let is_trapped = state.is_trapped(side, dex);
     let has_bench = has_live_bench(state, side);
-    let firm = trapped_firm || state.trap_is_firm(side, dex);
-    let flag = if is_trapped && has_bench {
-        if firm {
-            ",\"trapped\":true"
-        } else {
-            ",\"maybeTrapped\":true"
-        }
+    let firm = is_trapped && (trapped_firm || state.trap_is_firm(side, dex));
+    let flag = if !has_bench {
+        ""
+    } else if firm {
+        ",\"trapped\":true"
+    } else if is_trapped || state.is_maybe_trapped(side, dex) {
+        ",\"maybeTrapped\":true"
     } else {
         ""
     };
@@ -1061,12 +1070,27 @@ fn serialize_active_with_disabled_source(
     // `disabled:false` and the request instead gains TOP-LEVEL `maybeDisabled` / `maybeLocked`
     // flags — probe-captured. (A rejected pick then re-requests with that one slot flipped to
     // `disabled:true,"disabledSource":""`, which the existing reject path already produces.)
-    // `maybeLocked` drops away on the re-request, so it is emitted only on a FRESH request.
-    let imprisoned_any = (0..state.sides[side].pokemon[state.sides[side].active].set.moves.len())
-        .filter_map(|k| state.move_at(side, state.sides[side].active, k, dex))
-        .any(|m| state.imprisoned_for(side, &crate::dex::to_id(&m.id), dex));
-    let imp = if imprisoned_any {
-        if trapped_firm {
+    //
+    // WHO gets them (`gen3_imprison_maybe_flags_v1`, cutover-stress repro `sbd_mugr6edd_b24`):
+    // EVERY live foe of an active Imprison holder, shared move or not — `onFoeDisableMove`
+    // disables the holder's moves on the foe and then sets `pokemon.maybeDisabled = true`
+    // UNCONDITIONALLY (`data/moves.ts` ~9502-9508). It used to require a shared move, so a
+    // no-shared-move ENTRANT (the holder imprisoned an earlier foe) lost both keys. The holder
+    // is `pokemon.foes()` — hp > 0 (a volatile does not outlive its holder's faint anyway).
+    //
+    // WHEN `maybeLocked` drops (`gen3_imprison_maybe_flags_v1`, probe
+    // `harness/probe_maybe_flags.js` R1/R2): the re-request is the SAME `activeRequest`, mutated
+    // by the refused choice's update closure. A refused IMPRISONED MOVE runs
+    // `updateDisabledRequest`, which deletes `maybeLocked` (`maybeDisabled` stays in singles) —
+    // that is the `ds_slot` re-request. A refused TRAPPED SWITCH touches only
+    // `maybeTrapped`/`trapped`, so `maybeLocked` STAYS. (This used to key on `trapped_firm`,
+    // which had the two re-requests exactly backwards.)
+    let foe_imprisons = {
+        let foe = &state.sides[1 - side].pokemon[state.sides[1 - side].active];
+        foe.imprison && !foe.fainted && foe.hp > 0
+    };
+    let imp = if foe_imprisons {
+        if ds_slot.is_some() {
             ",\"maybeDisabled\":true"
         } else {
             ",\"maybeDisabled\":true,\"maybeLocked\":true"
@@ -1074,7 +1098,11 @@ fn serialize_active_with_disabled_source(
     } else {
         ""
     };
-    format!("{{\"moves\":{moves_json}{flag}{imp}}}")
+    // KEY ORDER (`gen3_imprison_maybe_flags_v1`, probe `harness/probe_maybe_flags.js` O1/R2):
+    // `getMoveRequestData` writes `maybeDisabled`, `maybeLocked`, THEN the trap flag, and a
+    // trapped-switch reject's update closure deletes `maybeTrapped` and APPENDS `trapped` — so
+    // the trap flag is LAST in every form. (A Mean Look + Imprison Dusclops shows both.)
+    format!("{{\"moves\":{moves_json}{imp}{flag}}}")
 }
 
 /// Whether `side` has ≥1 live, non-active bench mon (mirrors `battle.canSwitch`).

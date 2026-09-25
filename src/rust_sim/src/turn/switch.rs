@@ -87,6 +87,68 @@ impl crate::state::BattleState {
         }
     }
 
+    /// The sim's `pokemon.maybeTrapped` as endTurn leaves it (`gen3_known_type_maybe_trap_v1`) —
+    /// the request's `maybeTrapped` display flag, which is WIDER than the real trap
+    /// ([`Self::is_trapped`]). DISPLAY-ONLY and DRAW-FREE: `MaybeTrapPokemon` runs every endTurn
+    /// in gen 3 whatever this returns (its handler sort is already modelled in
+    /// `trap_event_shuffles`), and the leak loop is `singleEvent`s (no sort, no draw). The real
+    /// trap — and so switch legality — is untouched: a mon that is maybe-but-not-trapped still
+    /// switches (`side.ts`: `else if (pokemon.maybeTrapped) this.choice.cantUndo = true`).
+    ///
+    /// `sim/battle.ts` ~1723-1757, gen 3 singles (probe `harness/probe_maybe_flags.js`):
+    /// 1. `runEvent('MaybeTrapPokemon', me)` — gated on `!knownType || getImmunity('trapped')`,
+    ///    which gen 3 always passes (no `trapped` type immunity). The FOE's HELD ability:
+    ///    - Arena Trap (`onFoeMaybeTrapPokemon`): `me.isGrounded(!me.knownType)` — an UNKNOWN
+    ///      type ignores Flying (Levitate still escapes);
+    ///    - Magnet Pull (gen3 mod `onAnyMaybeTrapPokemon`): `!me.knownType || me Steel`;
+    ///    - Shadow Tag (base `onFoeMaybeTrapPokemon`, inherited): `!me.hasAbility('shadowtag')`.
+    /// 2. The leak loop, ONLY where the format has `obtainableabilities`: EVERY ability of the
+    ///    foe's CURRENT species (a transformed foe's copied species) gets a `FoeMaybeTrapPokemon`
+    ///    singleEvent. (The loop's "already ran" skip compares a display NAME to an ID, so it
+    ///    never skips — harmless, the flag is idempotent.) gen-3 Magnet Pull has NO
+    ///    `onFoeMaybeTrapPokemon` (the mod sets it `undefined`), so only Arena Trap and Shadow
+    ///    Tag species matter — [`LEAK_SPECIES_TRAP_ABILITIES`].
+    /// `knownType` is `false` only for a mon TRANSFORMED into its foe ([`crate::state::MonState::known_type`]).
+    /// The cutover-stress repro `rmugytne6_bab_2_10`: a Smeargle transformed into a Gyarados
+    /// (Water/Flying) faces a Magnet Pull Magneton — NOT trapped, but `maybeTrapped:true`.
+    pub fn is_maybe_trapped(&self, side: usize, dex: &Dex) -> bool {
+        let me = &self.sides[side].pokemon[self.sides[side].active];
+        let foe = &self.sides[1 - side].pokemon[self.sides[1 - side].active];
+        // `pokemon.foes()` keeps only hp > 0, and every handler gates on `isAdjacent`, which is
+        // false for a fainted mon on either end.
+        if me.fainted || me.hp == 0 || foe.fainted || foe.hp == 0 {
+            return false;
+        }
+        let known = me.known_type();
+        let my_ability = to_id(&me.ability);
+        // `isGrounded(negateImmunity)`, gen 3: no Gravity / Ingrain(gen>=4) / Iron Ball / Magnet
+        // Rise / Air Balloon, so it is "not Flying (unless negated) and not Levitate".
+        let grounded = |negate: bool| {
+            (negate || !mon_types(me, dex).contains(&Type::Flying)) && my_ability != "levitate"
+        };
+        let fires = |ability: &str| match ability {
+            "arenatrap" => grounded(!known),
+            "shadowtag" => my_ability != "shadowtag",
+            _ => false,
+        };
+        let held = to_id(&foe.ability);
+        if fires(&held) {
+            return true;
+        }
+        if held == "magnetpull" && (!known || mon_types(me, dex).contains(&Type::Steel)) {
+            return true;
+        }
+        if crate::state::format_has_obtainable_abilities(&self.format_id) {
+            let species = to_id(&foe.species_id);
+            if let Some((_, abilities)) = LEAK_SPECIES_TRAP_ABILITIES.iter().find(|(s, _)| *s == species) {
+                if abilities.iter().any(|a| fires(a)) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     /// Whether this side's active is trapped by a **FIRM** (`trapped === true`) trap
     /// — as opposed to the `'hidden'` (`maybeTrapped`) traps. This drives the bridge
     /// `|request|` flag: the sim's gen3 **Shadow Tag** override sets `pokemon.trapped =
@@ -1529,3 +1591,21 @@ impl crate::state::BattleState {
         }
     }
 }
+
+/// Every gen-3 species whose (gen-3-pruned: no `H`, no gen-4 slot `1`) ability list carries a
+/// trapping ability with a gen-3 `onFoeMaybeTrapPokemon` handler — the species endTurn's leak loop
+/// can raise `maybeTrapped` for even when the mon does not HOLD that ability
+/// (`gen3_known_type_maybe_trap_v1`, [`BattleState::is_maybe_trapped`]). ENUMERATED from the sim,
+/// not hand-picked: `Dex.forGen(3).species.all()` filtered to `gen <= 3`, non-nonstandard, any
+/// ability in {Arena Trap, Shadow Tag, Magnet Pull} → Dugtrio / Diglett / Trapinch (Arena Trap),
+/// Wobbuffet / Wynaut (Shadow Tag), Magnemite / Magneton / Nosepass (Magnet Pull — DROPPED here:
+/// the gen-3 mod sets Magnet Pull's `onFoeMaybeTrapPokemon: undefined`, probe S4). A mon that
+/// cannot hold its species' other ability (Wobbuffet) still needs its row: a Skill-Swapped or
+/// Traced-over Wobbuffet keeps the species.
+pub const LEAK_SPECIES_TRAP_ABILITIES: &[(&str, &[&str])] = &[
+    ("diglett", &["arenatrap"]),
+    ("dugtrio", &["arenatrap"]),
+    ("trapinch", &["arenatrap"]),
+    ("wobbuffet", &["shadowtag"]),
+    ("wynaut", &["shadowtag"]),
+];

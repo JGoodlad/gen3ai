@@ -339,6 +339,8 @@ impl crate::state::BattleState {
         }
         let t = move_type.expect("checked above");
         self.sides[side].pokemon[slot].types_override = Some(vec![t]);
+        // `setType` ends with `this.knownType = true` (`gen3_known_type_maybe_trap_v1`).
+        self.sides[side].pokemon[slot].mark_type_known();
         // [EMIT] `|-start|<mon>|typechange|<Type>|[from] ability: Color Change`.
         if self.logging() {
             let mon_ref = self.mon_ref(side, slot, dex);

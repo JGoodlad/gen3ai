@@ -229,8 +229,10 @@ impl crate::state::BattleState {
     /// Both events carry the IDENTICAL matrix (each ability registers both its Trap and
     /// its MaybeTrap callback), and gen-3 has NO `trapped` type-immunity (the gen3 dex
     /// resolves Ghost `damageTaken.trapped` = undefined — a grounded Ghost IS trapped,
-    /// probe-verified) and no Illusion (`knownType` always true), so `MaybeTrapPokemon`
-    /// ALWAYS runs after `TrapPokemon` (battle.ts:1725 gate passes).
+    /// probe-verified), so `getImmunity('trapped')` is always true and `MaybeTrapPokemon`
+    /// ALWAYS runs after `TrapPokemon` (the battle.ts:1725 `!knownType || getImmunity` gate
+    /// passes whatever `knownType` is — it is FALSE for a mon Transformed into its foe, which
+    /// changes only what the handlers DISPLAY, `BattleState::is_maybe_trapped`).
     ///
     /// With >= 2 handlers the sort ties iff the holders' cached `pokemon.speed` AND their
     /// `subOrder` are equal (`effectOrder` is only resolved for SwitchIn/RedirectTarget

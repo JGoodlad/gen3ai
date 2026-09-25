@@ -651,6 +651,21 @@ real Node `getPlayerStreams`. It is the validation harness for `bridge.rs`. Its 
   distinguishes them), the forced-Struggle `|-activate|<mon>|move: Struggle` OWNER-ONLY `sideupdate`
   line, and the per-side request residual.
 
+- 🚨 **`maybeTrapped` is NOT "trapped but unconfirmed", and `maybeDisabled` is NOT "shares a move".**
+  Both are endTurn DISPLAY predicates wider than the restriction they hint at. `maybeTrapped` also
+  fires for a mon Transformed into its foe (`knownType` false: Magnet Pull drops its Steel gate,
+  Arena Trap its Flying gate) and, in gen3ou only, for a foe whose SPECIES could hold Arena Trap /
+  Shadow Tag (a Sand Veil Dugtrio) — `BattleState::is_maybe_trapped`, `gen3_known_type_maybe_trap_v1`.
+  Imprison sets `maybeDisabled` + `maybeLocked` on EVERY live foe; `maybeLocked` drops only on a
+  refused-MOVE re-request; the trap flag is written LAST; and the engine REFUSES a pick of an
+  imprisoned move (`gen3_imprison_maybe_flags_v1`, `gen3_imprison_choice_reject_v1`). poke-env reads
+  `maybeTrapped` into the observation. Oracle `harness/probe_maybe_flags.js`; pins
+  `tests/bridge_maybe_flags_test.rs` + bridge fixture 25. 🚨 **The fuzzers' pickers mirror the hidden
+  disable, so NO fuzzer submits an imprisoned pick** — that path is covered by the pins only, and
+  the all-imprisoned Struggle substitution is still OPEN
+  ([`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md) § The
+  M6 CUTOVER stress).
+
 - **Honest scope (next phase):** `randbats`/`random` modes surface PRE-EXISTING **omniscient-stream**
   gaps orthogonal to the request/per-side layer — the non-L100 `details` LEVEL display
   (`switch_details`/request `details` omit `, L84`; the port targets L100 gen3ou), a **mid-battle

@@ -953,6 +953,15 @@ pub struct TransformOverlay {
     pub base_move_maxpp: Vec<u16>,
     /// The mon's OWN IV-derived Hidden Power BP (`baseHpPower`).
     pub base_hidden_power_bp: u8,
+    /// The sim's `pokemon.knownType` WHILE transformed (`gen3_known_type_maybe_trap_v1`).
+    /// `transformInto` sets `this.knownType = this.isAlly(pokemon) && pokemon.knownType`, so a
+    /// copy of a FOE (the only Transform gen-3 singles has) starts `false`; a later `setType`
+    /// (Conversion / Conversion 2 / Color Change — `sim/pokemon.ts` `setType` ends with
+    /// `this.knownType = true`) flips it back, and switch-out drops the overlay (`clearVolatile`
+    /// → `setSpecies(baseSpecies)` → `true`). DISPLAY-ONLY in gen 3: its one reader is the
+    /// endTurn `MaybeTrapPokemon` fold behind the request's `maybeTrapped`
+    /// ([`crate::state::BattleState::is_maybe_trapped`]). No draw, no damage, no legality.
+    pub type_known: bool,
 }
 
 /// The MIMIC moveslot-overlay restore record (`gen3_move_coverage_batch6_v1`).
@@ -1419,6 +1428,21 @@ impl MonState {
     /// AT TRANSFORM TIME (which still carries any Mimic copy), and the Mimic record then
     /// puts Mimic back — together reproducing the sim's `baseMoveSlots`. A no-op when no
     /// overlay is up. DRAW-FREE (pure state).
+    /// The sim's `pokemon.knownType` (`gen3_known_type_maybe_trap_v1`): `true` unless this mon is
+    /// TRANSFORMED into a foe and no `setType` has landed since. See
+    /// [`TransformOverlay::type_known`].
+    pub fn known_type(&self) -> bool {
+        self.transform.as_ref().is_none_or(|ov| ov.type_known)
+    }
+
+    /// A `setType` landed (Conversion / Conversion 2 / Color Change): the sim's `setType` ends
+    /// with `this.knownType = true`. A no-op on an untransformed mon (already known).
+    pub fn mark_type_known(&mut self) {
+        if let Some(ov) = self.transform.as_mut() {
+            ov.type_known = true;
+        }
+    }
+
     pub fn restore_transform_overlay(&mut self) {
         if let Some(ov) = self.transform.take() {
             self.species_id = ov.base_species_id;
@@ -2057,6 +2081,16 @@ const DEFAULT_CONSTRUCT_SEED: &str = "0,0,0,0";
 /// clauses. We match on the format SHAPE: anything `gen3customgame` (or any
 /// `*customgame`) → no clause; everything else gen-3 (gen3ou/uu/ubers/…) → clause.
 /// Gen-generic: only `*customgame` is the clause-free family.
+/// Whether the format's rule table carries `obtainableabilities` (`gen3ou`'s `Standard` →
+/// `Obtainable`; NOT `gen3customgame`). It gates endTurn's "canceling switches would leak
+/// information" loop (`sim/battle.ts` ~1729-1754: `(+hackmons || !obtainableabilities) &&
+/// !format.team` → skip), i.e. whether a foe's UNHELD species abilities can raise the request's
+/// `maybeTrapped` (`gen3_known_type_maybe_trap_v1`; probe `harness/probe_maybe_flags.js` S1/S2).
+/// The same customgame-vs-ladder split as [`format_has_sleep_clause`].
+pub fn format_has_obtainable_abilities(format_id: &str) -> bool {
+    format_has_sleep_clause(format_id)
+}
+
 pub fn format_has_sleep_clause(format_id: &str) -> bool {
     let id: String = format_id.chars().filter(|c| c.is_ascii_alphanumeric()).map(|c| c.to_ascii_lowercase()).collect();
     !id.ends_with("customgame")
