@@ -132,6 +132,26 @@ OR maybe-trapped. Every hidden trap is also maybe (each handler's maybe gate con
 flag; a refused switch's update closure deletes `maybeTrapped` and APPENDS `trapped`. So the trap
 flag is always LAST (`probe_maybe_flags.js` O1 / R2).
 
+**RE-REQUESTS ACCUMULATE (`gen3_rereq_accumulate_v1`, probe `probe_rereq_accumulate.js` A1-A6).**
+The sim keeps ONE `side.activeRequest` per decision and every refusal's update closure MUTATES it
+(`emitChoiceError` → `updateRequestForPokemon`, `sim/side.ts:511-517`), then `emitRequest(_, true)`
+re-sends the whole object. So a refused move then a refused hidden-trap switch (either order)
+re-requests with the slot still `disabled:true,"disabledSource":""`, `maybeLocked` still gone AND
+`trapped:true` (A1/A2); two refused moves flip both slots (A3). A refusal that changes NOTHING is
+`[Invalid choice]` with no re-request: a hidden-trap switch refused twice (A5 — `trapped` is already
+set), a Choice-locked slot refused twice (A6). EXCEPT under Imprison: `chooseMove` calls
+`getMoveRequestData()` first (`side.ts:553`), which re-derives `maybeLocked` from the
+never-cleared-in-singles `maybeDisabled`, so `updateDisabledRequest` reports a change every time and
+a repeated imprisoned pick is `[Unavailable choice]` + a re-request again (A4). The engine starts each
+re-request from the OUTSTANDING `Request` (`disabled_mask`, `trapped`); the genesis path
+(`run_full_battle_bridge`) keeps a per-decision `firmed` for the trap half.
+
+**A MOVE AT A FORCED SWITCH (`gen3_choice_kind_mismatch_v1`, probe K1).** `Side.chooseMove`'s first
+gate is `requestState !== 'move'` (`side.ts:540-542`): `[Invalid choice] Can't move: You need a
+switch response` to that side alone, nothing follows, and the switch it asked for is accepted after.
+The port used to accept the move against the fainted active's moveset, drop it in the driver and
+re-open the boundary (re-issuing the forceSwitch AND the other side's `wait`).
+
 ### The legal-action rule (how poke-env consumes it — the WHY)
 
 `src/poke_env/battle/battle.py::parse_request` derives switch-legality from the flag:

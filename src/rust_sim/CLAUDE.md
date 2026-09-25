@@ -665,9 +665,15 @@ real Node `getPlayerStreams`. It is the validation harness for `bridge.rs`. Its 
   ALL-imprisoned mon is still OFFERED its full list and its pick is Struggle-SUBSTITUTED
   (`BattleState::forced_struggle`, `gen3_imprison_all_struggle_v1` — the request shape keeps reading
   `MonState::must_struggle`, the choice-time sites read `forced_struggle`; oracle
-  `harness/probe_rereq_accumulate.js` F rows, pins `tests/bridge_imprison_struggle_test.rs`). OPEN:
-  successive refusals in ONE decision must ACCUMULATE on the one outstanding request (the sim's
-  `activeRequest`); the port re-renders from the latest refusal only
+  `harness/probe_rereq_accumulate.js` F rows, pins `tests/bridge_imprison_struggle_test.rs`).
+  Successive refusals in ONE decision ACCUMULATE on the outstanding `Request` (the sim's one
+  `activeRequest`): `disabled_mask` keeps every slot a refused move flipped, `trapped` stays once a
+  refused switch set it, and a refusal that changes nothing is `[Invalid choice]` with NO
+  re-request — except a repeated IMPRISONED pick, which re-derives `maybeLocked` and so re-requests
+  again (`gen3_rereq_accumulate_v1`). A `move` sent to a FORCED-SWITCH request is refused FIRST
+  (`[Invalid choice] Can't move: You need a switch response`, nothing follows —
+  `gen3_choice_kind_mismatch_v1`). Oracle `harness/probe_rereq_accumulate.js` A / K rows; pins
+  `tests/bridge_rereq_accumulate_test.rs`
   ([`designs/rust_sim/ab_fuzzer_findings.md`](../../designs/rust_sim/ab_fuzzer_findings.md) § The
   M6 CUTOVER stress).
 

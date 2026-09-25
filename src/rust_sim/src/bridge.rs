@@ -878,14 +878,17 @@ fn serialize_side(state: &BattleState, side: usize, dex: &Dex) -> String {
 /// Serialize `active[0]`, optionally with the post-reject `disabledSource` mutation
 /// (`gen3_choice_reject_framing_v1`).
 ///
-/// When `ds_slot` is `Some(k)`, slot `k` is rendered `"disabled":true` with a trailing
+/// Every slot `k` whose bit is set in `ds_mask` is rendered `"disabled":true` with a trailing
 /// `,"disabledSource":""` — the exact delta `Side.chooseMove`'s `updateRequestForPokemon`
 /// applies to the request it re-issues after refusing a DISABLED move. PROBE-MEASURED
 /// (`harness/probe_choice_reject_framing.js`): the re-issued request differs from the one it
 /// answered in EXACTLY two places — this key, and the top-level `"update":true` that
 /// [`build_request_with_disabled_source`]'s `update` flag already appends.
 ///
-/// `ds_slot: None` is the ordinary request (every non-reject caller).
+/// `ds_mask: 0` is the ordinary request (every non-reject caller). It is a MASK, not one slot,
+/// because the sim mutates ONE `activeRequest` across successive refusals in a decision
+/// (`gen3_rereq_accumulate_v1`, `harness/probe_rereq_accumulate.js` A3): a second refused move
+/// re-issues the request with BOTH slots flipped.
 ///
 /// The empty-string source is not a placeholder: gen-3's Choice lock (`choicelock`) carries no
 /// `disabledSource`, so the sim copies `''` verbatim. A future disabler that DOES set one
@@ -894,7 +897,7 @@ fn serialize_active_with_disabled_source(
     state: &BattleState,
     side: usize,
     trapped_firm: bool,
-    ds_slot: Option<usize>,
+    ds_mask: u8,
     dex: &Dex,
 ) -> String {
     let s = &state.sides[side];
@@ -1003,7 +1006,7 @@ fn serialize_active_with_disabled_source(
                     && mon.mimic_overlay.as_ref().is_some_and(|ov| ov.slot == k);
                 // The post-reject mutation: this slot is the one the client was refused, so
                 // it renders `disabled:true` + the trailing `disabledSource` key.
-                let ds = ds_slot == Some(k);
+                let ds = k < 8 && ds_mask & (1u8 << k) != 0;
                 let disabled = disabled || ds;
                 let ds_tail = if ds { ",\"disabledSource\":\"\"" } else { "" };
                 if mimicked {
@@ -1082,7 +1085,8 @@ fn serialize_active_with_disabled_source(
     // `harness/probe_maybe_flags.js` R1/R2): the re-request is the SAME `activeRequest`, mutated
     // by the refused choice's update closure. A refused IMPRISONED MOVE runs
     // `updateDisabledRequest`, which deletes `maybeLocked` (`maybeDisabled` stays in singles) —
-    // that is the `ds_slot` re-request. A refused TRAPPED SWITCH touches only
+    // that is any re-request with `ds_mask != 0` — and it STAYS dropped on a later trapped-switch
+    // re-request in the same decision (`gen3_rereq_accumulate_v1`). A refused TRAPPED SWITCH touches only
     // `maybeTrapped`/`trapped`, so `maybeLocked` STAYS. (This used to key on `trapped_firm`,
     // which had the two re-requests exactly backwards.)
     let foe_imprisons = {
@@ -1090,7 +1094,7 @@ fn serialize_active_with_disabled_source(
         foe.imprison && !foe.fainted && foe.hp > 0
     };
     let imp = if foe_imprisons {
-        if ds_slot.is_some() {
+        if ds_mask != 0 {
             ",\"maybeDisabled\":true"
         } else {
             ",\"maybeDisabled\":true,\"maybeLocked\":true"
@@ -1135,7 +1139,7 @@ fn build_request(
     no_cancel: bool,
     dex: &Dex,
 ) -> String {
-    build_request_with_disabled_source(state, side, kind, trapped_firm, update, no_cancel, None, dex)
+    build_request_with_disabled_source(state, side, kind, trapped_firm, update, no_cancel, 0, dex)
 }
 
 /// [`build_request`] plus the post-reject `disabledSource` slot
@@ -1148,13 +1152,13 @@ pub(crate) fn build_request_with_disabled_source(
     trapped_firm: bool,
     update: bool,
     no_cancel: bool,
-    ds_slot: Option<usize>,
+    ds_mask: u8,
     dex: &Dex,
 ) -> String {
     let side_json = serialize_side(state, side, dex);
     let mut body = match kind {
         SideRequest::Move => {
-            let active = serialize_active_with_disabled_source(state, side, trapped_firm, ds_slot, dex);
+            let active = serialize_active_with_disabled_source(state, side, trapped_firm, ds_mask, dex);
             format!("{{\"active\":[{active}],\"side\":{side_json}}}")
         }
         SideRequest::ForceSwitch => {
@@ -1372,6 +1376,10 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
         }
         let mut got: [Option<Choice>; 2] = [None, None];
         let mut plan_ended = false;
+        // A hidden trap an earlier refused switch of THIS decision already firmed: a second
+        // refused switch changes nothing → `[Invalid choice]`, no re-request
+        // (`gen3_rereq_accumulate_v1` A5; the engine's twin reads its outstanding request).
+        let mut firmed: [bool; 2] = [false, false];
         while need[0] || need[1] {
             let cmd = match cmd_iter.peek() {
                 Some(c) => *c,
@@ -1429,7 +1437,7 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
                 && matches!(resolved, Choice::Switch(_))
                 && ((state.is_trapped(s, dex) && has_live_bench(state, s)) || locked)
             {
-                if locked || state.trap_is_firm(s, dex) {
+                if locked || state.trap_is_firm(s, dex) || firmed[s] {
                     chunks.push_chunk(
                         s,
                         vec!["|error|[Invalid choice] Can't switch: The active Pokémon is trapped"
@@ -1443,6 +1451,7 @@ pub fn run_full_battle_bridge_core_with_quick_claw(
                     );
                     let rereq = build_request(state, s, SideRequest::Move, true, true, false, dex);
                     chunks.push_chunk(s, vec![rereq]);
+                    firmed[s] = true;
                 }
                 continue; // side s still needs a choice
             }

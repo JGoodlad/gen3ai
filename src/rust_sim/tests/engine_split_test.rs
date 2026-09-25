@@ -119,6 +119,6 @@ fn a_disabled_source_re_request_is_a_typed_value_too() {
     }
     let req = s.active_request_json(0).expect("the re-request");
     assert!(req.contains("\"disabledSource\":\"\"") && req.contains("\"update\":true"), "non-vacuity: {req}");
-    assert_eq!(s.engine().request(0).and_then(|r| r.disabled_source), Some(1));
+    assert_eq!(s.engine().request(0).map(|r| r.disabled_mask), Some(1 << 1));
     assert!(checked >= 6 && forks >= 4, "{checked} / {forks}");
 }

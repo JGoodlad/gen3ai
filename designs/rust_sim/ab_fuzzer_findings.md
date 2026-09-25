@@ -715,11 +715,11 @@ saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass)
     takes** — the fuzzers' pickers mirror the hidden disable (`gen3_picker_hidden_disable_v1`), so no
     fuzzer ever submitted such a pick. Fixed in `classify_reject`; the re-request bytes (the `|error|`,
     `disabled:true` on the slot, `"update":true`) are ones poke-env READS.
-  - **OPEN (FINDING, not fixed): every move imprisoned.** The sim SUBSTITUTES Struggle when no slot
-    is usable once the hidden disables count (`getMoves()` returns `[]`, `side.ts:682-691`); the
-    port's `must_struggle` is a `MonState` method that cannot see the foe's Imprison, so the flat
-    driver's `choice_is_legal` rejects the pick instead. `classify_reject` deliberately leaves that
-    case to the existing path. Unmeasured in a fuzzer (the pickers never reach it).
+  - **Every move imprisoned — FIXED (`gen3_imprison_all_struggle_v1`).** The sim SUBSTITUTES
+    Struggle when no slot is usable once the hidden disables count (`getMoves()` returns `[]`,
+    `side.ts:682-691`); the port now reads `BattleState::forced_struggle` at the choice-time sites
+    (pin `tests/bridge_imprison_struggle_test.rs` f1, the F rows of `harness/probe_rereq_accumulate.js`).
+    Unmeasured in a fuzzer (the pickers never reach it).
   - **Evidence (2026-09-25, all green).** Both repros replay `ok` (`bridge_replay --ab`;
     `gen_sim_bridge_diff.js --repro`). `bridge_ab_fuzz.js --mode ladder --ladder-tier full --format
     gen3ou` 300 battles at `--master-seed 925001` (the seed fixture 23 came from, so a regression
@@ -736,10 +736,48 @@ saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass)
     once in 2,400 bridge battles / 292,867 requests). Imprison `maybeDisabled` on a no-shared-move
     foe: **55** requests (21 battles carried the flags at all). A pick of an imprisoned move (the
     engine reject): **13** picks. The trap-flag key order (Imprison + a trap flag together): **0**.
-  - **OPEN (FINDING): re-request deltas do not accumulate.** The sim mutates ONE `activeRequest` across
+  - ~~OPEN~~ **CLOSED by the accumulation pass below: re-request deltas do not accumulate.** The sim mutates ONE `activeRequest` across
     successive refusals in a decision; the port re-renders each re-request from the latest refusal
     only (`Request { trapped, disabled_source }`), so a second refusal in the same decision loses the
     first's delta (e.g. a `disabled:true` slot, or the dropped `maybeLocked`). Pre-existing.
+
+- **The re-request accumulation pass (2026-09-25, branch `m6-struggle` on `m6-cutover`) — the OPEN
+  row above closed, plus one class found while replaying its repro.** Ground truth:
+  `harness/probe_rereq_accumulate.js` A1-A6 + K1 (fail-loud vs the real sim). Pins:
+  `tests/bridge_rereq_accumulate_test.rs` (7: A1 / A2 / A3 / A5 / A6 / K1 each checked to FAIL on a
+  revert of its fix; A4 is a CONTROL).
+  - **Re-requests accumulate** (`gen3_rereq_accumulate_v1`). `Request.disabled_source: Option<u8>` →
+    `disabled_mask: u8`; each re-request starts from the OUTSTANDING request (its mask, its
+    `trapped`), and a refusal that changes nothing is downgraded to `[Invalid choice]` with no
+    re-request (a hidden trap already firmed; a slot already flipped with no Imprison foe — A4 is the
+    Imprison exception, `maybeLocked` re-derived from `maybeDisabled`, `sim/side.ts:553`). The
+    genesis path (`run_full_battle_bridge`) keeps a per-decision `firmed[s]` for the trap half.
+    Changes `|request|` bytes and `|error|` framing poke-env READS (the slot `disabled` flags feed
+    `available_moves` / `LegalActions`; `trapped` feeds `LegalActions.trapped`) — but only after a
+    REFUSED choice, which neither the fuzz pickers nor poke-env's own valid-order pickers produce.
+  - **Found while replaying the repro — a `move` at a FORCED-SWITCH request**
+    (`gen3_choice_kind_mismatch_v1`). The first scripted repro sent `move 3` to p1's forceSwitch
+    (Dugtrio had just fainted): Node answers `|error|[Invalid choice] Can't move: You need a switch
+    response` (`Side.chooseMove`'s `requestState !== 'move'` gate, `sim/side.ts:540-542`) and
+    nothing else; the port accepted the pick (`classify_reject` never read the request KIND), the
+    flat driver dropped it and the boundary RE-OPENED, re-issuing the forceSwitch and p2's `wait`.
+    A PORT bug, not a harness artifact: the per-side streams differ for the same input. Fixed by a
+    kind gate at the top of `classify_reject`. Not reachable from poke-env (it answers a
+    forceSwitch with a switch order).
+  - **Repros (scripted; the fuzz pickers never refuse twice), all through `gen_sim_bridge_diff.js
+    --repro`, both bridges to `|win|`, byte-clean on this branch and DIVERGED on the pre-fix
+    engine:** move-then-switch + a repeated imprisoned pick + two refused moves (25 cmds; pre-fix
+    p2 chunk 9, the slot's lost `disabled:true`); the same + the K1 move at the forced switch (26
+    cmds; pre-fix p1 chunk 10, the missing `|error|`); switch-then-move + a repeated refused switch
+    (25 cmds; pre-fix p2 chunk 9, `maybeTrapped` for `trapped`); a Choice Band slot refused twice
+    (12 cmds; pre-fix p1 chunk 8, `[Unavailable choice]` for `[Invalid choice]`).
+  - **Evidence.** `cargo test`: 988 passed, 0 failed, 8 ignored. `bridge_ab_fuzz.js --selftest`: 25/25.
+    `--mode ladder --ladder-tier full --format gen3ou` 220 FRESH battles (`--master-seed 925401`):
+    216 ok + 4 allowlisted, 0 diverged. `--mode trapping --format gen3ou` 220 fresh
+    (`--master-seed 925402`): 220 / 220 ok. `rust_core_parity_test.py -m "not slow"` (the COMMIT
+    tier): 18 passed. The fuzzers cannot reach either class (their pickers mirror the hidden disable,
+    never re-submit a refused pick and answer a forceSwitch with a switch), so these runs are
+    no-regression evidence, not coverage — the coverage is the pins and the four repros.
 
 `harness/probe_repro_simtrace.js` now replays a repro under its `FMT` row's format, admitting typed
 Hidden Power the way `ab_fuzz.js` does (pool / ourandom / ladder); before this, it replayed every

@@ -21,6 +21,9 @@
 //      re-sends the WHOLE mutated object. So a second refusal's re-request carries the first's
 //      delta too, and a refusal that changes NOTHING (the same refused pick again) is
 //      `[Invalid choice]` with NO re-request.
+//  (K) A `move` sent to a FORCED-SWITCH request is refused by `Side.chooseMove`'s FIRST gate
+//      (`requestState !== 'move'`, sim/side.ts:540-542): `[Invalid choice] Can't move: You need a
+//      switch response`, to that side alone, nothing follows (`gen3_choice_kind_mismatch_v1`).
 'use strict';
 const path = require('path');
 const PS = path.resolve(__dirname, '../../../deps/pokemon-showdown');
@@ -139,5 +142,22 @@ acc('A5 the SAME refused hidden-trap switch twice: the 2nd -> [Invalid choice], 
   check('A6 the SAME refused visible-disable twice (no Imprison): 2nd -> [Invalid choice], NO re-request',
     `${rows.join(' ')} || ${reqSummary(b, 0)}`,
     'move 2:refused["|error|[Unavailable choice] Can\'t move…","|request|…"] move 2:refused["|error|[Invalid choice] Can\'t move…"] || moves=splash/rest[-Ds] flags=- update=true');
+}
+// ── (K) KIND MISMATCH (`gen3_choice_kind_mismatch_v1`): a `move` sent to a FORCED-SWITCH request.
+// `Side.chooseMove`'s first gate is `requestState !== 'move'` (sim/side.ts:540-542): `[Invalid
+// choice] Can't move: You need a switch response` to that side alone, no re-request, and the
+// switch it asked for is still accepted afterwards.
+{
+  const { b, out } = mk('gen3customgame', T1, T2);
+  b.choose('p1', 'move 1'); b.choose('p2', 'move 3');
+  for (let i = 0; i < 5 && b.sides[0].requestState !== 'switch'; i++) { b.choose('p1', 'move 3'); b.choose('p2', 'move 2'); }
+  const from = out.length;
+  const st = b.sides[0].requestState;
+  const ok = b.choose('p1', 'move 3');
+  const p1 = sideLines(out, from, 0), p2 = sideLines(out, from, 1);
+  const ok2 = b.choose('p1', 'switch 2');
+  check('K1 a move at a forced switch: [Invalid choice], nothing follows, the switch is then accepted',
+    `${st} ${!!ok} ${JSON.stringify(p1)} p2=${JSON.stringify(p2)} switch=${!!ok2}`,
+    'switch false ["|error|[Invalid choice] Can\'t move: You need a switch response"] p2=[] switch=true');
 }
 process.exit(bad ? 1 : 0);

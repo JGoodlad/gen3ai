@@ -47,13 +47,16 @@ pub struct Request {
     pub update: bool,
     /// `,"noCancel":true` — a forced replacement only one side is asked for.
     pub no_cancel: bool,
-    /// The slot a disabled-move reject marked with `"disabledSource":""`.
-    pub disabled_source: Option<u8>,
+    /// The slots (bit k = slot k) the disabled-move rejects of THIS decision marked
+    /// `"disabled":true,"disabledSource":""`. A MASK because the sim mutates ONE `activeRequest`
+    /// across successive refusals (`gen3_rereq_accumulate_v1`): each re-request carries every
+    /// earlier refusal's delta, not just the latest one's.
+    pub disabled_mask: u8,
 }
 
 impl Request {
     fn plain(kind: SideRequest, no_cancel: bool) -> Request {
-        Request { kind: kind.into(), trapped: false, update: false, no_cancel, disabled_source: None }
+        Request { kind: kind.into(), trapped: false, update: false, no_cancel, disabled_mask: 0 }
     }
 
     fn side_kind(&self) -> SideRequest {
@@ -74,7 +77,7 @@ impl Request {
             self.trapped,
             self.update,
             self.no_cancel,
-            self.disabled_source.map(usize::from),
+            self.disabled_mask,
             dex,
         )
     }
@@ -191,6 +194,17 @@ fn classify_reject(
                 _ => format!("Can't pass: Your {} must make a move (or switch)", display_name(mon, dex)),
             },
         });
+    }
+    // A MOVE sent to a FORCED-SWITCH request (`gen3_choice_kind_mismatch_v1`). `Side.chooseMove`'s
+    // FIRST gate is `requestState !== 'move'` → `Can't move: You need a switch response`
+    // (`sim/side.ts:540-542`) — before any slot, PP or disable check, and with no update callback,
+    // so `[Invalid choice]` and NOTHING follows (the other side receives nothing either). WRONG
+    // (pre-fix): nothing here looked at `kind`, so the pick was ACCEPTED against the fainted
+    // active's moveset, the flat driver's forced-switch intake then dropped it and the boundary
+    // RE-OPENED — re-issuing the forceSwitch request AND the other side's `wait` with no `|error|`
+    // (found replaying the accumulation repro, `harness/probe_rereq_accumulate.js` K1).
+    if kind == SideRequest::ForceSwitch && matches!(wire, WireChoice::Move(_) | WireChoice::MoveName(_)) {
+        return Some(RejectClass::Invalid { message: "Can't move: You need a switch response".to_string() });
     }
     match resolved {
         Choice::Move(k) => {
@@ -682,7 +696,12 @@ impl Engine {
                     let reject = kind_s == SideRequest::Move
                         && matches!(resolved, Choice::Switch(_))
                         && ((bs.is_trapped(s, dex) && has_live_bench(bs, s)) || locked);
-                    let firm = locked || bs.trap_is_firm(s, dex);
+                    // A hidden trap this decision ALREADY firmed (an earlier refused switch set
+                    // the outstanding request's `trapped`) is firm now too: the closure finds
+                    // `trapped` set and no `maybeTrapped`, changes nothing, so the sim answers
+                    // `[Invalid choice]` with NO re-request (`gen3_rereq_accumulate_v1` A5).
+                    let already = self.requests[s].is_some_and(|r| r.trapped);
+                    let firm = locked || bs.trap_is_firm(s, dex) || already;
                     (reject, firm)
                 };
                 // Every OTHER reject class (`gen3_choice_reject_framing_v1`). PROBE-MEASURED
@@ -720,17 +739,44 @@ impl Engine {
                         self.stopped = true;
                         return;
                     }
+                    // ACCUMULATE (`gen3_rereq_accumulate_v1`, `harness/probe_rereq_accumulate.js`
+                    // A1-A6): the sim's update closure MUTATES the request this side already
+                    // holds, so start from the one outstanding — its trap flag and every slot an
+                    // earlier refusal of this decision flipped. The refusal is `[Unavailable
+                    // choice]` + a re-issue only if it CHANGES that request: the slot is not yet
+                    // flipped, or `updateDisabledRequest` drops a `maybeLocked` — which, since
+                    // `chooseMove` re-derives `pokemon.maybeLocked` from Imprison's
+                    // never-cleared-in-singles `maybeDisabled` (`sim/side.ts:553`), is EVERY
+                    // refusal while a foe imprisons (A4). Otherwise `[Invalid choice]` and
+                    // nothing follows (A6: the Choice-locked slot refused twice).
+                    let (cur_trapped, cur_mask) =
+                        self.requests[s].map(|r| (r.trapped, r.disabled_mask)).unwrap_or((false, 0));
+                    let rej = match rej {
+                        RejectClass::Unavailable { message, ds_slot } => {
+                            let bit = if ds_slot < 8 { 1u8 << ds_slot } else { 0 };
+                            let bs = self.battle.state().expect("state");
+                            let foe = &bs.sides[1 - s].pokemon[bs.sides[1 - s].active];
+                            let maybe_disabled = foe.imprison && !foe.fainted && foe.hp > 0;
+                            if cur_mask & bit == 0 || maybe_disabled {
+                                RejectClass::Unavailable { message, ds_slot }
+                            } else {
+                                RejectClass::Invalid { message }
+                            }
+                        }
+                        other => other,
+                    };
                     sink.error(s, rej.error_line());
                     if let RejectClass::Unavailable { ds_slot, .. } = rej {
                         // The ONLY class that re-issues. Emitted to `s` ALONE: the other side's
                         // already-accepted choice stands, so re-asking it would both duplicate a
                         // request the sim never sends and record a phantom extra pick.
+                        let bit = if ds_slot < 8 { 1u8 << ds_slot } else { 0 };
                         let req = Request {
                             kind: kind_s.into(),
-                            trapped: false,
+                            trapped: cur_trapped,
                             update: true,
                             no_cancel: false,
-                            disabled_source: Some(ds_slot as u8),
+                            disabled_mask: cur_mask | bit,
                         };
                         self.issue(s, req, sink, dex);
                     }
@@ -768,12 +814,15 @@ impl Engine {
                         // The RE-ISSUED frame supersedes the one this reject answered: the
                         // boundary is still open and the side must pick again FROM THIS request
                         // (it now carries `trapped:true` + `"update":true`).
+                        // …keeping every slot an earlier refused move of this decision flipped
+                        // (`gen3_rereq_accumulate_v1` A2).
+                        let cur_mask = self.requests[s].map(|r| r.disabled_mask).unwrap_or(0);
                         let req = Request {
                             kind: RequestState::Move,
                             trapped: true,
                             update: true,
                             no_cancel: false,
-                            disabled_source: None,
+                            disabled_mask: cur_mask,
                         };
                         self.issue(s, req, sink, dex);
                     }
