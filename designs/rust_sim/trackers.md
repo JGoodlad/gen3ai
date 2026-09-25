@@ -161,19 +161,27 @@ choice — each FAILS.
 
 ## 5. The training-input semantics the trackers fold (both paths, held equal by slice T)
 
-The M3 loss catalogue (§ below) found GIGO in three of training's own layers; they are FIXED on the
-Python path and in these trackers together, and slice T is 0 at COMMIT and MILESTONE after it:
+The M3 loss catalogue (§ below) found GIGO in three of training's own layers, and the M6 cutover
+stress a fourth (the Hidden-Power belief's prior support); they are FIXED on the Python path and in
+these trackers together, and slice T is 0 at COMMIT and MILESTONE after it:
 
 | rule | what the tracker folds | Python / Rust |
 |---|---|---|
 | `gen3_event_window_semantics_fixes_v1` | the 22-column event window: a BOOST row's magnitude is the SIGNED stage change (W1); a FAINT no damage line took to 0 HP is `other` (W2 — Destiny Bond, Perish Song); an item line `[from]` Trick / Thief / Covet is SWAPPED on both mons (W3); a MOVE row stopped by Protect / Detect is `failed` (W4); a HAZARD row's magnitude is +1 on `sidestart`, −1 on `sideend` (W5); a bare `-damage` attaches to the open move only while its user is the CURRENT MOVER (the other side's Substitute / Belly Drum cost) | `EventWindowTracker.update` / `history::EventWindow::update`; the predicates `turn_view.is_protect_block` / `damage_is_lethal` ≡ `ev::is_protect_block` / `ev::damage_is_lethal` |
 | `gen3_intent_label_semantics_fixes_v1` | the α/β label: MASKED on a DRAG (L1 / L2), on the replacement for a faint in the PREVIOUS window (L3; `Ctx::opp_active_fainted`), on an Encore override (L5); a CALLED move is labelled as its CALLER (L4) | `build_opp_intent_label` / `IntentLabel::build`, from `TurnDelta.opp_dragged` / `opp_switch_is_replacement` / `opp_called_via` / `opp_choice_overridden` ≡ `DeltaProjection` |
+| `gen3_hp_prior_support_v1` | the Hidden-Power belief: a species' Smogon USAGE row is its prior, but a usage zero is not an impossibility — every one of the 16 types is a legal Hidden Power (the IVs', `sim/dex.ts` `getHiddenPower`; an unset IV is 31, `sim/pokemon.ts:387-394`, so an IV-less set is HP DARK). When a species' observations eliminate every type its row gives mass while some type explains them all, it restarts from the flat 1/16 prior and its WHOLE observation log is replayed (`prior_discarded`, in slice T's `hp`); only a log NO type explains still refuses (`all candidates eliminated`). Before: both paths refused — the cutover stress's `ladderA_3459` / `ladderB_3459` (an IV-less Lunatone's HP Dark, 2x on Gengar; Lunatone's row has no Dark). Exposure: 0 of the training pool's 1,912 HP users carry a zero-prior type, 289 of the ladder corpus's 52,007 (all HP Dark) | `HiddenPowerTracker.observe` / `HpBelief::observe` |
 | `gen3_progress_clock_attribution_fix_v1` | clause (i) needs our move's OWN hits (`our_move_hit_delta`, the current mover's bare `-damage`) ≥ 3 % as well as the target's net fall (T1); a Protect block reads outcome `"fail"`, so the "our attack blocked" freeze fires (T2) | `ProgressClock._is_progress` / `clock::is_progress`; `TurnView._fold_attribution` / `turnview::fold_attribution` |
 
 The census that proved the obs and label change touched only these fields, and the rates, is
 [`../research_state/measurements/training_input_gigo_fixes_2026-09-24/`](../research_state/measurements/training_input_gigo_fixes_2026-09-24/README.md).
 
 ## 6. Findings
+
+- **A NEUTRAL Hidden Power hit never narrows the belief** (both paths, by poke-env's rule above):
+  the pending damaging move is promoted only by an effectiveness emission (`|-supereffective|` /
+  `|-resisted|` / `|-immune|`, Flash Fire's `|-start|`), and a neutral hit prints none — so the
+  belief sees 0.0 / 0.5 / 2.0 and never 1.0 (in `ladderA_3459`, Lunatone's three neutral hits
+  before the 2x reached neither tracker). An information loss, not a divergence; not changed.
 
 - **The search roads' Hidden-Power input is window-scoped** (`view_successor.view_context._to_dme`,
   used by the view and core roads' Python successors): a decision whose window opened at a mid-turn

@@ -71,6 +71,7 @@ fn bucket(m: f64) -> f64 {
 }
 
 /// The target of an opponent's Hidden Power, as `_wrap_hp_target` builds it.
+#[derive(Debug, Clone, PartialEq)]
 struct Target {
     t1: Option<Type>,
     t2: Option<Type>,
@@ -85,6 +86,11 @@ pub struct HpBelief {
     pub ruled_out: BTreeSet<String>,
     pub infeasible: u32,
     pub revision: u32,
+    /// `_prior_discarded` (`gen3_hp_prior_support_v1`): species whose usage-prior row their own
+    /// observations refuted, restarted from the flat prior.
+    pub prior_discarded: BTreeSet<String>,
+    /// `_obs_targets`: every observation of a species, replayable against the flat prior.
+    log: BTreeMap<String, Vec<(f64, Target)>>,
 }
 
 impl HpBelief {
@@ -95,16 +101,8 @@ impl HpBelief {
         })
     }
 
-    fn observe(&mut self, dex: &Dex, species: &str, eff: f64, t: &Target) -> CoreResult<()> {
-        let v = self.state.entry(species.to_string()).or_insert_with(|| {
-            let mut v = [1.0f32 / 16.0; 16];
-            if let Some(row) = priors().get(species).filter(|r| !r.is_empty()) {
-                for (i, n) in HP_TYPES.iter().enumerate() {
-                    v[i] = row.iter().find(|(k, _)| k == n).map_or(0.0, |(_, p)| *p) as f32;
-                }
-            }
-            v
-        });
+    /// `HiddenPowerTracker._narrow`: zero every candidate that could not produce `eff` on `t`.
+    fn narrow(dex: &Dex, v: &mut [f32; 16], eff: f64, t: &Target) {
         for (i, n) in HP_TYPES.iter().enumerate() {
             if v[i] != 0.0 {
                 let ty = Type::from_name(n).expect("HP type");
@@ -113,13 +111,47 @@ impl HpBelief {
                 }
             }
         }
+    }
+
+    /// `HiddenPowerTracker.observe`. A usage prior's zero is not an impossibility
+    /// (`gen3_hp_prior_support_v1`): every one of the 16 types is a legal Hidden Power (the IVs',
+    /// `sim/dex.ts` `getHiddenPower`; an unset IV is 31, `sim/pokemon.ts:387-394`, so an IV-less set
+    /// is HP Dark). When the observations eliminate every type the species' prior row gives mass but
+    /// some type explains them all, the species restarts from the flat prior and its log is
+    /// replayed; only a log NO type explains is refused.
+    fn observe(&mut self, dex: &Dex, species: &str, eff: f64, t: &Target) -> CoreResult<()> {
+        let prior = priors().get(species).filter(|r| !r.is_empty());
+        let v = self.state.entry(species.to_string()).or_insert_with(|| {
+            let mut v = [1.0f32 / 16.0; 16];
+            if let Some(row) = prior {
+                for (i, n) in HP_TYPES.iter().enumerate() {
+                    v[i] = row.iter().find(|(k, _)| k == n).map_or(0.0, |(_, p)| *p) as f32;
+                }
+            }
+            v
+        });
+        Self::narrow(dex, v, eff, t);
         self.revision += 1;
-        if v.iter().all(|x| *x == 0.0) {
-            return Err(fault(format!(
-                "HiddenPowerTracker: all candidates eliminated for {species:?} after observing {eff}x"
-            )));
+        let log = self.log.entry(species.to_string()).or_default();
+        log.push((eff, t.clone()));
+        if v.iter().any(|x| *x != 0.0) {
+            return Ok(());
         }
-        Ok(())
+        if prior.is_some() && !self.prior_discarded.contains(species) {
+            let mut flat = [1.0f32 / 16.0; 16];
+            for (e, tg) in log.iter() {
+                Self::narrow(dex, &mut flat, *e, tg);
+            }
+            if flat.iter().any(|x| *x != 0.0) {
+                *v = flat;
+                self.prior_discarded.insert(species.to_string());
+                return Ok(());
+            }
+        }
+        Err(fault(format!(
+            "HiddenPowerTracker: all candidates eliminated for {species:?} after observing {eff}x \
+             (no Hidden Power type explains the observations, even under the flat prior)"
+        )))
     }
 
     /// `_maybe_observe_hidden_power(live, ctx)`.
@@ -188,6 +220,58 @@ impl HpBelief {
             }
             json_out::str_into(out, sp);
         }
-        out.push_str(&format!("],\"infeasible\":{},\"revision\":{}}}", self.infeasible, self.revision));
+        out.push_str(&format!("],\"infeasible\":{},\"prior_discarded\":[", self.infeasible));
+        for (i, sp) in self.prior_discarded.iter().enumerate() {
+            if i > 0 {
+                out.push(',');
+            }
+            json_out::str_into(out, sp);
+        }
+        out.push_str(&format!("],\"revision\":{}}}", self.revision));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tgt(t1: &str, t2: Option<&str>, ability: &str) -> Target {
+        Target { t1: Type::from_name(t1), t2: t2.and_then(Type::from_name), ability: ability.into(), frozen: false }
+    }
+
+    fn survivors(b: &HpBelief, sp: &str) -> Vec<&'static str> {
+        let v = b.state.get(sp).expect("observed");
+        HP_TYPES.iter().zip(v).filter(|(_, p)| **p != 0.0).map(|(n, _)| *n).collect()
+    }
+
+    /// `gen3_hp_prior_support_v1`: a prior row the evidence refutes is replaced by the flat prior and
+    /// the WHOLE log replayed — the first observation (which the row survived) bites in the replay.
+    #[test]
+    fn a_refuted_usage_prior_restarts_from_flat_and_replays_the_log() {
+        let dex = Dex::for_gen(3);
+        let mut b = HpBelief::default();
+        // Lunatone's real row: electric / fighting / fire / grass / ice / rock / water — no dark.
+        // 0.5x on Tyranitar (Rock / Dark): only Fire of the row.
+        b.observe(&dex, "lunatone", 0.5, &tgt("rock", Some("dark"), "sandstream")).expect("resisted by Tyranitar");
+        assert_eq!(survivors(&b, "lunatone"), vec!["fire"]);
+        assert!(b.prior_discarded.is_empty());
+        // 2x on Gengar (Ghost / Poison): Fire is 1x — the row is refuted. Replayed from flat, both
+        // observations: Dark / Ghost (Psychic is 2x on Gengar but 0x on Dark).
+        b.observe(&dex, "lunatone", 2.0, &tgt("ghost", Some("poison"), "levitate")).expect("2x on Gengar");
+        assert_eq!(survivors(&b, "lunatone"), vec!["dark", "ghost"]);
+        assert!(b.state["lunatone"].iter().all(|p| *p == 0.0 || *p == 1.0 / 16.0), "flat mass");
+        assert_eq!(b.prior_discarded.iter().collect::<Vec<_>>(), vec!["lunatone"]);
+        assert_eq!(b.revision, 2);
+    }
+
+    /// The loud half stays: a log NO Hidden Power type explains is refused, even under the flat prior.
+    #[test]
+    fn a_log_no_hidden_power_type_explains_is_still_refused() {
+        let dex = Dex::for_gen(3);
+        let mut b = HpBelief::default();
+        // 2x on Normal: Fighting only; 2x on Ghost / Poison: Dark / Ghost / Psychic — disjoint.
+        b.observe(&dex, "lunatone", 2.0, &tgt("normal", None, "naturalcure")).expect("fighting survives");
+        let e = b.observe(&dex, "lunatone", 2.0, &tgt("ghost", Some("poison"), "levitate")).expect_err("no type explains both");
+        assert!(e.message().contains("all candidates eliminated"), "{e}");
     }
 }

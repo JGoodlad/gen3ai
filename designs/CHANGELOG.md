@@ -9718,3 +9718,22 @@ golden obs fixture was regenerated: 914 / 991 decisions move, ONLY the event win
 `TARGET_SPECIES` column (4,400 cells, 0 elsewhere; the rule reverted reproduces the old golden
 byte-exactly); the golden record corpus was regenerated (66 records' readings — 134 readings: target,
 and `target_status` with it).
+
+## 2026-09-25 — TRAINING-INPUT CHANGE (the crash class only): the Hidden-Power belief's prior SUPPORT, on both paths (`gen3_hp_prior_support_v1`; no version bump — dims and weight shapes unchanged)
+
+The Rust core M6 cutover stress refused `ladderA_3459` / `ladderB_3459` with `HiddenPowerTracker: all
+candidates eliminated for "lunatone" after observing 2x` — and the Python `EpisodeTracker` raises the
+SAME `ValueError` at the SAME decision on the same text (p1 turn 104 / p2 turn 10): a shared crash,
+not a divergence. The observation was TRUE: an IV-less Lunatone is HP DARK (every unset IV is 31,
+`sim/pokemon.ts:387-394`; `sim/dex.ts` `getHiddenPower` → `hpTypes[15]`; the server's request says
+"Hidden Power Dark 70"), Dark is 2x on Gengar, and Lunatone's Smogon usage row gives Dark 0.0 — so the
+tracker treated "nobody on Smogon used it" as "impossible" and crashed on a legal battle (a crash in
+training's env, in `play.py`'s live games, and an `__ERR__` from the core bridge). Now a species whose
+own observations eliminate every type its row gives mass, while some type explains them all, restarts
+from the flat 1/16 prior and replays its whole observation log (`prior_discarded`, counted, in slice
+T's `hp`); only a log NO Hidden Power type explains still raises. Every battle that did not crash
+before is byte-identical (the new branch runs only where the old code raised); exposure — 0 of the
+training pool's 1,912 HP users carry a zero-prior type, 289 of the ladder corpus's 52,007 (all HP
+Dark, the Metamon default-IV artifact). Two unit pins that asserted the raise on a refuted prior
+(`hidden_power_tracker_test.py`) were rewritten to the new rule; the loud half is pinned on a log no
+type explains.

@@ -142,6 +142,18 @@ The two counters are read off the vendored poke-env's `status_counter`: sleep `m
 (`gen3_pe_reading_fixes_v1`). A FAINTED active's `active_context` boosts are zero (the sim's faint
 clears them), and the `flashfire` volatile slot stays set until its holder leaves the field.
 
+An OPPONENT's Hidden-Power block is `HiddenPowerTracker`'s per-species vector (our own mons read
+`hp_revealed` 1, probs all zero): all-zero until an HP hit with
+an effectiveness EMISSION is observed (a neutral hit prints none and is never observed); then the
+species' Smogon usage row (flat 1/16 without one), each type zeroed that could not produce an
+observed bucket against the resolved target. A usage zero is not an impossibility
+(`gen3_hp_prior_support_v1`): a species whose own observations refute its row — every type the row
+gives mass eliminated while some type explains them all, e.g. an IV-less set's HP Dark — restarts
+from the flat prior and replays its log; only a log NO type explains raises. `hp_revealed` is 1
+once the species is narrowed or its four revealed moves hold no Hidden Power (probs then all zero).
+Exposure (2026-09-25, `hp_belief` fix): 0 of the training pool's 1,912 HP users carry a type their
+row gives 0, 289 of the ladder corpus's 52,007 (all HP Dark).
+
 ### 1.3 Board (reactive) block — 17 dims
 
 **5 raw board scalars, then the request-ordered active moves.** Everything derived is gone

@@ -14,6 +14,9 @@
 //!   CALLER (L4), an Encore override is masked (L5).
 //! * `gen3_progress_clock_attribution_fix_v1` — clause (i) needs our move's OWN hit (T1), and a
 //!   blocked attack is an exogenous freeze, not a charged no-op (T2).
+//! * `gen3_hp_prior_support_v1` — the Hidden-Power belief: a usage prior's zero is not an
+//!   impossibility; a species whose own observations refute its prior row restarts from the flat
+//!   prior and replays them (the 2026-09-25 cutover-stress refusal `ladderA_3459`).
 
 use std::sync::Arc;
 
@@ -284,4 +287,30 @@ fn a_status_move_in_sand_is_not_progress() {
         assert!(x.opp_target_hp_delta.is_some_and(|t| t < 0.0) || x.our_damaging_event.is_none(), "{x:?}");
         assert_eq!(x.our_move_hit_delta, 0.0);
     }
+}
+
+// ------------------------------------------------------------------ the Hidden-Power belief
+
+/// `gen3_hp_prior_support_v1` — the cutover stress's `ladderA_3459` / `ladderB_3459` refusal,
+/// constructed. A set with NO IVs has every IV 31 (`sim/pokemon.ts:387-394`), so its Hidden Power is
+/// DARK (`sim/dex.ts` `getHiddenPower`: 63·15/63 → `hpTypes[15]`). Lunatone's Smogon usage row gives
+/// Dark (and Ghost, Psychic) mass 0.0, and Dark is 2x on Gengar (Ghost / Poison), so the belief
+/// eliminated every prior-supported type and the fold REFUSED ("all candidates eliminated"). Now the
+/// refuted row is replaced by the flat prior: the three types a 2x on Ghost / Poison allows survive
+/// at 1/16 — the true type among them — and the species is recorded as `prior_discarded`.
+#[test]
+fn a_hidden_power_type_its_usage_prior_excludes_falls_back_to_the_flat_prior() {
+    let p1 = team(&[set("gengar", "", "levitate", "splash", 100), set("snorlax", "", "immunity", "rest", 100)]);
+    let p2 = team(&[set("lunatone", "", "levitate", "hiddenpower", 50), set("snorlax", "", "immunity", "rest", 100)]);
+    let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "move 1"), (1, "move 1")]);
+    let hp = &d[0].last().expect("a p1 decision after the hit").hp;
+    let flat = 1.0f32 / 16.0;
+    let mut want = [0.0f32; 16];
+    for n in ["dark", "ghost", "psychic"] {
+        want[pokesim::trackers::hp_belief::HP_TYPES.iter().position(|x| *x == n).unwrap()] = flat;
+    }
+    assert_eq!(hp.state.get("lunatone"), Some(&want), "the flat-prior posterior of a 2x on Gengar");
+    assert!(hp.prior_discarded.contains("lunatone"), "the refuted prior row is counted: {hp:?}");
+    // p2 (the Hidden Power user's side) observes nothing: p1 carries no Hidden Power.
+    assert!(d[1].last().unwrap().hp.state.is_empty());
 }

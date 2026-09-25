@@ -14,7 +14,8 @@ The cases: `gen3_event_window_semantics_fixes_v1` (W1 stat drop, W2 Destiny Bond
 faint, W3 Trick / Thief, W4 Protect, W5 Rapid Spin), `gen3_intent_label_semantics_fixes_v1` (L1 / L2
 drag, L3 straddling replacement, L4 caller, L5 Encore) and `gen3_progress_clock_attribution_fix_v1`
 (T1 status moves in sand / beside the opponent's recoil, T2 a blocked attack freezes the clock). The
-record: `designs/research_state/measurements/training_input_gigo_fixes_2026-09-24/`.
+record: `designs/research_state/measurements/training_input_gigo_fixes_2026-09-24/`. Also
+`gen3_hp_prior_support_v1` (an off-prior Hidden Power type falls back to the flat prior).
 
 Tier: unmarked, like slice T's COMMIT tier — 14 short battles through the in-process core, ~seconds.
 """
@@ -49,6 +50,9 @@ FIXTURES: Dict[str, Tuple[str, str, str, List[Tuple[int, str]]]] = {
     # (A Snatch-stolen use is pinned on hand-built lines only: a constructed Snatch battle is REFUSED
     # by the core's own parse-vs-step check today — a pre-existing `-fail` OWNER disagreement.)
     'failed_refresh': ('umbreon|||synchronize|splash,toxic|Hardy|||||100|]snorlax|||immunity|rest|Hardy|||||100|', 'swampert|||torrent|refresh|Hardy|||||100|]blissey|||naturalcure|softboiled|Hardy|||||100|', '1,2,3,4', [(0, 'move 1'), (1, 'move 1'), (0, 'move 2'), (1, 'move 1')]),
+    # gen3_hp_prior_support_v1: an IV-less Lunatone's Hidden Power is DARK (every IV 31), a type its
+    # Smogon usage row gives 0.0; Dark is 2x on Gengar (the cutover stress's `ladderA_3459` refusal).
+    'hp_dark_off_prior': ('gengar|||levitate|splash|Hardy|||||100|]snorlax|||immunity|rest|Hardy|||||100|', 'lunatone|||levitate|hiddenpower|Hardy|||||50|]snorlax|||immunity|rest|Hardy|||||100|', '1,2,3,4', [(0, 'move 1'), (1, 'move 1'), (0, 'move 1'), (1, 'move 1')]),
     'asleep_then_dragged': ('skarmory|||keeneye|drillpeck,roar|Hardy|||||100|]snorlax|||immunity|rest|Hardy|||||100|', 'snorlax|||immunity|rest|Hardy|||||100|]blissey|||naturalcure|softboiled|Hardy|||||100|]starmie|||naturalcure|recover|Hardy|||||100|', '1,2,3,4', [(0, 'move 1'), (1, 'move 1'), (0, 'move 2'), (1, 'move 1'), (0, 'move 1'), (1, 'move 1')]),
 }
 
@@ -161,3 +165,20 @@ def test_r4_a_self_move_row_targets_its_user_on_both_paths(replays):
         got = [(x["actor"], x["move_id"], x["target"]) for x in rows]
         assert got == [("umbreon", "splash", "umbreon"), ("swampert", "refresh", "swampert"),
                        ("umbreon", "toxic", "swampert"), ("swampert", "refresh", "swampert")], f"viewer {v}: {got}"
+
+
+def test_hp_an_off_prior_hidden_power_type_falls_back_to_the_flat_prior_on_both_paths(replays):
+    """gen3_hp_prior_support_v1: Lunatone's usage prior gives HP Dark 0.0, but an IV-less set IS HP
+    Dark (`sim/pokemon.ts:387-394` + `sim/dex.ts` `getHiddenPower`), and its 2x on Gengar eliminated
+    every prior-supported type — both paths REFUSED ("all candidates eliminated"). Now the refuted row
+    is replaced by the flat prior: Dark / Ghost / Psychic (every type 2x on Ghost / Poison) survive at
+    1/16 on the core AND the Python path (slice T clean, asserted in the fixture). Reverting either
+    side refuses the battle; reverting both refuses it on both."""
+    flat = 1.0 / 16.0
+    names = ["bug", "dark", "dragon", "electric", "fighting", "fire", "flying", "ghost", "grass", "ground",
+             "ice", "poison", "psychic", "rock", "steel", "water"]
+    want = [flat if n in ("dark", "ghost", "psychic") else 0.0 for n in names]
+    hp = replays["hp_dark_off_prior"][0][-1]["hp"]           # p1 = Gengar's side, after the hit
+    assert hp["state"] == [["lunatone", want]], hp
+    assert hp["prior_discarded"] == ["lunatone"], hp
+    assert replays["hp_dark_off_prior"][1][-1]["hp"]["state"] == []   # p1 carries no Hidden Power

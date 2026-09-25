@@ -219,20 +219,56 @@ def test_species_not_in_priors_uses_flat_prior():
 # Error cases
 # ---------------------------------------------------------------------------
 
-def test_all_zero_with_prior_entry_raises():
-    """Filtering out all prior-listed types raises ValueError (tracker bug)."""
-    # Jolteon prior only has ice/grass, but we observe 0× on Electric/Volt Absorb
-    # 0× requires Electric type → but ice and grass are 1× vs Electric, not 0×
-    # So all prior entries get eliminated → ValueError
+def test_a_prior_row_the_evidence_refutes_falls_back_to_the_flat_prior():
+    """gen3_hp_prior_support_v1: a usage prior's zero is not an impossibility. Jolteon's (made-up)
+    row has only Ice / Grass, but a 0x on Electric / Volt Absorb means HP Electric — a legal type
+    (every one of the 16 is; the IVs decide, `sim/dex.ts` `getHiddenPower`). The row is refuted, so
+    the species restarts from the flat prior and its log is replayed: Electric survives at 1/16.
+    (Before: `ValueError` "tracker bug" — a crash on a legal battle.)"""
     priors = {"jolteon": {"ice": 0.70, "grass": 0.30}}
     tracker = HiddenPowerTracker(_priors=priors)
     jolteon = MockMon("jolteon", PokemonType.ELECTRIC, None, "voltabsorb")
-    with pytest.raises(ValueError, match="tracker bug"):
-        tracker.observe("jolteon", 0.0, jolteon)
+    tracker.observe("jolteon", 0.0, jolteon)
+    probs = tracker.get_probs("jolteon")
+    assert [i for i, p in enumerate(probs) if p > 0] == [HP_IDX["electric"]]
+    assert probs[HP_IDX["electric"]] == np.float32(1.0 / 16)
+    assert tracker.prior_discarded == frozenset({"jolteon"})
+    assert tracker.revision == 1
 
 
-def test_all_zero_without_prior_entry_raises_data_gap():
-    """Filtering flat 1/16 to all zeros raises ValueError (data gap message)."""
+def test_the_real_lunatone_prior_and_hp_dark_on_gengar():
+    """The cutover stress's `ladderA_3459` on the REAL priors: an IV-less Lunatone is HP Dark
+    (`sim/pokemon.ts:387-394`: an unset IV is 31), its Smogon row gives Dark 0.0, and Dark is 2x on
+    Gengar. Both trackers refused; now the flat-prior posterior keeps Dark / Ghost / Psychic."""
+    tracker = HiddenPowerTracker()
+    assert tracker._priors["lunatone"].get("dark", 0.0) == 0.0, "the prior this pin is about"
+    gengar = MockMon("gengar", PokemonType.GHOST, PokemonType.POISON, "levitate")
+    tracker.observe("lunatone", 2.0, gengar)
+    probs = tracker.get_probs("lunatone")
+    assert {HIDDEN_POWER_TYPE_ORDER[i].name.lower() for i, p in enumerate(probs) if p > 0} == \
+        {"dark", "ghost", "psychic"}
+    assert tracker.prior_discarded == frozenset({"lunatone"})
+    tracker.reset()
+    assert tracker.prior_discarded == frozenset()
+
+
+def test_the_replay_covers_the_whole_log_not_just_the_last_observation():
+    """The fallback re-applies EVERY logged observation to the flat prior, not only the one that
+    refuted the row. Prior: Fire only. 0.5x on Tyranitar (Rock / Dark) — Fire survives it. Then 2x
+    on Gengar (Ghost / Poison) — Fire is 1x, the row is refuted. Flat ∩ both = Dark / Ghost (Psychic
+    is 2x on Gengar but 0x on Dark); replaying the last observation alone would keep Psychic."""
+    tracker = HiddenPowerTracker(_priors={"lunatone": {"fire": 1.0}})
+    tracker.observe("lunatone", 0.5, MockMon("tyranitar", PokemonType.ROCK, PokemonType.DARK, "sandstream"))
+    assert [i for i, p in enumerate(tracker.get_probs("lunatone")) if p > 0] == [HP_IDX["fire"]]
+    assert tracker.prior_discarded == frozenset()
+    tracker.observe("lunatone", 2.0, MockMon("gengar", PokemonType.GHOST, PokemonType.POISON, "levitate"))
+    probs = tracker.get_probs("lunatone")
+    assert {HIDDEN_POWER_TYPE_ORDER[i].name.lower() for i, p in enumerate(probs) if p > 0} == {"dark", "ghost"}
+    assert tracker.prior_discarded == frozenset({"lunatone"})
+
+
+def test_all_zero_without_prior_entry_raises():
+    """Filtering flat 1/16 to all zeros raises ValueError: no HP type explains it (a tracker bug)."""
     # A move impossible against this specific type combo would do it.
     # Use a double-immune case: Ghost/Normal doesn't exist, but we can construct
     # a mon that's immune to all 16 HP types via its type chart.
@@ -245,8 +281,8 @@ def test_all_zero_without_prior_entry_raises_data_gap():
     tracker = make_tracker()
     blissey = MockMon("blissey", PokemonType.NORMAL, None, "naturalcure")
     # 4.0× is not achievable by any HP type against any single-type Normal mon
-    # (max is 2× from Fighting) → all candidates eliminated → ValueError (data gap)
-    with pytest.raises(ValueError, match="data gap"):
+    # (max is 2× from Fighting) → all candidates eliminated even under the flat prior → ValueError
+    with pytest.raises(ValueError, match="even under the flat prior"):
         tracker.observe("blissey", 4.0, blissey)
 
 
@@ -394,17 +430,23 @@ def test_infeasible_observation_is_discarded_not_narrowed():
     assert not tracker.is_known("gengar")
 
 
-def test_feasible_but_contradictory_observation_still_raises():
-    """The deliberate ASYMMETRY: when the effectiveness IS achievable by some HP type but not by any
-    of THIS species' surviving candidates, that is a genuine contradiction — a tracker bug or a gap
-    in the HP-type priors — and it must stay LOUD rather than being swallowed by the guard."""
+def test_feasible_but_contradictory_observations_still_raise():
+    """The deliberate ASYMMETRY: each effectiveness IS achievable by some HP type (so the guard does
+    not discard either), but NO single type explains both — a genuine contradiction (a tracker bug:
+    a misattributed target), and it must stay LOUD rather than being swallowed by the guard or by the
+    flat-prior fallback (gen3_hp_prior_support_v1)."""
     tracker = make_tracker({"gengar": {"ice": 1.0}})          # gengar's prior: ICE only
     blissey = MockMon("blissey", PokemonType.NORMAL, None, "naturalcure")
+    suicune = MockMon("suicune", PokemonType.WATER, None, "pressure")
     # 2x vs Normal is feasible in general (Fighting does it), so the guard would NOT discard…
     assert tracker.is_feasible(2.0, blissey)
-    # …but gengar's only candidate is Ice, which is 1x vs Normal → a real contradiction → raise.
+    # …and the prior (Ice, 1x on Normal) is refuted → flat fallback → Fighting only.
+    tracker.observe("gengar", 2.0, blissey)
+    assert tracker.prior_discarded == frozenset({"gengar"})
+    # 2x on pure Water is feasible (Electric / Grass), but Fighting is 1x there: no type explains both.
+    assert tracker.is_feasible(2.0, suicune)
     with pytest.raises(ValueError, match="all candidates eliminated"):
-        tracker.observe("gengar", 2.0, blissey)
+        tracker.observe("gengar", 2.0, suicune)
 
 
 def test_episode_tracker_guards_observe_by_default():

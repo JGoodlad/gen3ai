@@ -82,6 +82,14 @@ class HiddenPowerTracker:
         # Per-species observation log — kept so a ValueError dump can show
         # exactly which earlier observations narrowed the candidate set to nothing.
         self._obs_log: dict[str, list] = {}
+        # gen3_hp_prior_support_v1: the same observations as REPLAYABLE (effectiveness, target)
+        # pairs, so a usage prior the evidence contradicts can be replaced by the flat prior and the
+        # whole log re-applied (see `observe`).
+        self._obs_targets: dict[str, list] = {}
+        # Species whose usage-prior row was CONTRADICTED by their own observations (every type the
+        # row gives mass was eliminated while some Hidden Power type still explains them all) and so
+        # was replaced by the flat prior. Counted, never silent: on the training pool this sits at 0.
+        self._prior_discarded: set[str] = set()
         # gen3_obs_assembler_v1: a monotone counter bumped by EVERY writer of the state
         # `get_probs` / `is_known` read. The obs assembler caches an opponent's 122-dim slot
         # (17 of which are this tracker's HP-candidate block) and needs to know when the block
@@ -95,13 +103,20 @@ class HiddenPowerTracker:
 
         effectiveness must be 0.0, 0.5, 1.0, or 2.0 — the observed damage multiplier.
 
-        Raises ValueError if the observation eliminates all candidates. This should
-        never happen in correct operation; it indicates either a tracker bug (when the
-        species has a prior entry) or a missing entry in gen3_hidden_power_priors.json
-        (data gap).
-        """
-        had_prior_entry = species in self._priors
+        **A usage prior's zero is not an impossibility** (`gen3_hp_prior_support_v1`). A species'
+        row in gen3_hidden_power_priors.json is Smogon USAGE: a type nobody used there has mass 0.0,
+        but every one of the 16 types is a legal Hidden Power for every user — the type is the IVs'
+        (`sim/dex.ts` `getHiddenPower`), and an unset IV is 31 (`sim/pokemon.ts:387-394`), so a set
+        that states no IVs is HP DARK. When this species' observations eliminate every type its row
+        gives mass while SOME type still explains them all, the row is what the evidence refuted:
+        the species restarts from the flat 1/16 prior and its whole observation log is re-applied
+        (counted in :attr:`prior_discarded`). Measured: 0 of the training pool's 1,912 HP users carry
+        a zero-prior type; 289 of the ladder corpus's 52,007 do (all HP Dark).
 
+        Raises ValueError if the observations eliminate every candidate even under the flat prior —
+        no Hidden Power type explains them, so a target or an effectiveness was misattributed: a
+        tracker bug, and it stays loud.
+        """
         if species not in self._state:
             prior_dict = self._priors.get(species, {})
             if prior_dict:
@@ -113,16 +128,7 @@ class HiddenPowerTracker:
                 vec = np.full(16, _FLAT_PRIOR, dtype=np.float32)
             self._state[species] = vec
 
-        # poke-env reports effectiveness in the {0, 0.5, 1, 2} buckets — a 4× SE
-        # hit on a quad-weak target reads as 2.0, not 4.0. Bucket our computed
-        # multipliers the same way before comparing.
-        for i, hidden_power_type in enumerate(HIDDEN_POWER_TYPE_ORDER):
-            if self._state[species][i] != 0.0:
-                calc = bucket_effectiveness(
-                    effective_multiplier(hidden_power_type, target_mon)
-                )
-                if calc != effectiveness:
-                    self._state[species][i] = 0.0
+        self._narrow(self._state[species], effectiveness, target_mon)
 
         self._revision += 1
 
@@ -136,30 +142,52 @@ class HiddenPowerTracker:
             getattr(target_mon, "ability", None),
             str(getattr(target_mon, "status", None)),
         ))
+        self._obs_targets.setdefault(species, []).append((effectiveness, target_mon))
 
-        if not np.any(self._state[species]):
-            mon_desc = (
-                f"{getattr(target_mon, 'species', '?')} "
-                f"(type1={getattr(target_mon, 'type_1', '?')}, "
-                f"type2={getattr(target_mon, 'type_2', '?')}, "
-                f"ability={getattr(target_mon, 'ability', '?')}, "
-                f"status={getattr(target_mon, 'status', None)})"
-            )
-            history = "\n  ".join(
-                f"eff={e}× target={s} types=({t1}/{t2}) ability={a} status={st}"
-                for (e, s, t1, t2, a, st) in self._obs_log[species]
-            )
-            why = (
-                "Species has a prior entry — this is likely a tracker bug."
-                if had_prior_entry
-                else "Species has no prior entry (flat 1/16 used) — data gap: "
-                     f"add '{species}' to gen3_hidden_power_priors.json."
-            )
-            raise ValueError(
-                f"HiddenPowerTracker: all candidates eliminated for '{species}' "
-                f"after observing {effectiveness}× on {mon_desc}. {why}\n"
-                f"Observation log for '{species}':\n  {history}"
-            )
+        if np.any(self._state[species]):
+            return
+        if self._priors.get(species) and species not in self._prior_discarded:
+            # gen3_hp_prior_support_v1: the usage row excluded the true type — re-run the whole
+            # log from the flat prior (every legal type).
+            flat = np.full(16, _FLAT_PRIOR, dtype=np.float32)
+            for eff, tgt in self._obs_targets[species]:
+                self._narrow(flat, eff, tgt)
+            if np.any(flat):
+                self._state[species] = flat
+                self._prior_discarded.add(species)
+                return
+        mon_desc = (
+            f"{getattr(target_mon, 'species', '?')} "
+            f"(type1={getattr(target_mon, 'type_1', '?')}, "
+            f"type2={getattr(target_mon, 'type_2', '?')}, "
+            f"ability={getattr(target_mon, 'ability', '?')}, "
+            f"status={getattr(target_mon, 'status', None)})"
+        )
+        history = "\n  ".join(
+            f"eff={e}× target={s} types=({t1}/{t2}) ability={a} status={st}"
+            for (e, s, t1, t2, a, st) in self._obs_log[species]
+        )
+        raise ValueError(
+            f"HiddenPowerTracker: all candidates eliminated for '{species}' "
+            f"after observing {effectiveness}× on {mon_desc}. No Hidden Power type explains "
+            f"this species' observations even under the flat prior — a tracker bug "
+            f"(a misattributed target or effectiveness).\n"
+            f"Observation log for '{species}':\n  {history}"
+        )
+
+    @staticmethod
+    def _narrow(vec: np.ndarray, effectiveness: float, target_mon) -> None:
+        """Zero every candidate of ``vec`` that could not produce ``effectiveness`` on ``target_mon``.
+
+        poke-env reports effectiveness in the {0, 0.5, 1, 2} buckets — a 4× SE hit on a quad-weak
+        target reads as 2.0, not 4.0 — so the computed multipliers are bucketed the same way."""
+        for i, hidden_power_type in enumerate(HIDDEN_POWER_TYPE_ORDER):
+            if vec[i] != 0.0:
+                calc = bucket_effectiveness(
+                    effective_multiplier(hidden_power_type, target_mon)
+                )
+                if calc != effectiveness:
+                    vec[i] = 0.0
 
     def is_feasible(self, effectiveness: float, target_mon) -> bool:
         """Return True if at least one HP type produces this effectiveness against target_mon.
@@ -171,9 +199,12 @@ class HiddenPowerTracker:
         never hit, so it is discarded (and counted, see :attr:`infeasible_observations`) rather
         than narrowing on it or raising.
 
-        Note the deliberate asymmetry with :meth:`observe`, which still RAISES when the observation
-        is feasible in general but eliminates every candidate for THIS species: that is a genuine
-        contradiction (tracker bug or a prior-data gap), not a misattribution, and it must stay loud.
+        Note the deliberate asymmetry with :meth:`observe`. An observation that is feasible in
+        general but eliminates every candidate THIS species' usage prior supports refutes the PRIOR
+        (a type nobody used on Smogon is still legal): the species falls back to the flat prior and
+        its log is replayed (`gen3_hp_prior_support_v1`). Only a log that NO Hidden Power type
+        explains — each observation feasible alone, their conjunction not — still RAISES: that is a
+        genuine contradiction (a tracker bug), and it must stay loud.
         """
         return any(
             bucket_effectiveness(effective_multiplier(hp_type, target_mon)) == effectiveness
@@ -194,6 +225,12 @@ class HiddenPowerTracker:
         inferring "the HP block cannot have moved" from the event stream.
         """
         return self._revision
+
+    @property
+    def prior_discarded(self) -> frozenset:
+        """Species whose usage-prior row their own observations refuted, now on the flat prior
+        (`gen3_hp_prior_support_v1`; expected empty on the training pool)."""
+        return frozenset(self._prior_discarded)
 
     @property
     def infeasible_observations(self) -> int:
@@ -237,5 +274,7 @@ class HiddenPowerTracker:
         self._state.clear()
         self._ruled_out.clear()
         self._obs_log.clear()
+        self._obs_targets.clear()
+        self._prior_discarded.clear()
         self._infeasible_observations = 0
         self._revision = 0

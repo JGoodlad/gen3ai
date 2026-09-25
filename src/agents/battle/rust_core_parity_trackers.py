@@ -155,7 +155,7 @@ def tracker_state(tr, delta, label: dict, battle) -> dict:
         "opp_slots": [s for s, _ in sorted(tr._opp_slots._slots.items(), key=lambda kv: kv[1])],
         "hp": {"state": [[sp, [float(x) for x in v]] for sp, v in sorted(hp._state.items())],
                "ruled_out": sorted(hp._ruled_out), "infeasible": int(hp._infeasible_observations),
-               "revision": int(hp._revision)},
+               "prior_discarded": sorted(hp._prior_discarded), "revision": int(hp._revision)},
         "clock": {"n": int(clk.n), "prev_spikes": int(clk._prev_spikes), "prev_our_spikes": int(clk._prev_our_spikes),
                   "prev_our_boost_sum": int(clk._prev_our_boost_sum), "prev_our_has_sub": bool(clk._prev_our_has_sub),
                   "heal_streak": int(clk._heal_streak), "is_rest_loop": bool(clk._is_rest_loop),

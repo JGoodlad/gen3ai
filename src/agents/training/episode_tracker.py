@@ -921,8 +921,11 @@ class EpisodeTracker:
         #     junk about a mon that was never involved. DISCARD it: narrowing on it would zero
         #     perfectly possible types, and raising would crash a run over a misattribution.
         #   * Some type could have produced it, but none of THIS SPECIES' surviving candidates can.
-        #     That is a real contradiction — a tracker bug or a gap in the HP-type priors — and
-        #     `observe` still RAISES on it, with its full per-species observation-log dump.
+        #     If the species' USAGE prior is what excluded the truth (a type nobody used on Smogon is
+        #     still legal — an IV-less set is HP Dark), `observe` restarts it from the flat prior and
+        #     replays its log (gen3_hp_prior_support_v1, counted in `prior_discarded`). Only a log NO
+        #     Hidden Power type explains is a real contradiction — a tracker bug — and `observe`
+        #     still RAISES on it, with its full per-species observation-log dump.
         #
         # So the guard removes the crash for the misattribution class WITHOUT weakening the GIGO
         # detector for the genuine one. Discards are counted rather than silent (see the tracker's
