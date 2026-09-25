@@ -36,6 +36,8 @@
 //        [--out DIR]                              (default harness/bridge_ab_fuzz_out/)
 //        [--keep-chunks]
 //        [--trap-prob P]                          (P(issue a rejected switch when trapped), default 0.5)
+//        [--selftest]                             (allowlist GATE-INTEGRITY injections through the
+//                                                  real replayer, then exit — see selftest() below)
 //
 // SIGINT (ctrl-c): finishes the current chunk, prints the cumulative summary. A
 // second SIGINT aborts immediately.
@@ -44,6 +46,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { spawnSync } = require('child_process');
 
 const e2e = require('./gen_e2e_fuzz.js');
@@ -90,6 +93,7 @@ function parseFlags(argv) {
     keepChunks: false,
     trapProb: 0.5,
     ladderTier: 'milestone',
+    selftest: false,
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -104,6 +108,7 @@ function parseFlags(argv) {
     else if (a === '--keep-chunks') f.keepChunks = true;
     else if (a === '--trap-prob') f.trapProb = Number(next());
     else if (a === '--ladder-tier') f.ladderTier = next();
+    else if (a === '--selftest') f.selftest = true;
     else { console.error(`unknown flag ${a}`); process.exit(2); }
   }
   if (!['trapping', 'randbats', 'random', 'pool', 'ladder'].includes(f.mode)) {
@@ -417,9 +422,28 @@ function saveRepro(outDir, runId, flags, meta, verdict, chunkIdx, subdir) {
   return dir;
 }
 
+// Build the Rust replayer ONCE into the ISOLATED target dir (never the shared target/).
+function buildReplayer() {
+  const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}`, CARGO_TARGET_DIR: BRIDGE_TARGET };
+  const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'bridge_replay'], { cwd: CRATE, env, stdio: 'inherit' });
+  if (r.status !== 0) { console.error('[bridge_ab_fuzz] cargo build failed'); process.exit(1); }
+  if (!fs.existsSync(REPLAYER)) { console.error(`[bridge_ab_fuzz] replayer missing: ${REPLAYER}`); process.exit(1); }
+}
+
+// The GREEN-GATE accounting of ONE replayer verdict: `ok`, `allowlisted` (a documented residual
+// the Rust replayer NARROWLY classified — counted separately, never a failure), or `hard` (every
+// other outcome, which fails the run). Only a `diverge` verdict can be allowlisted: an
+// `allowlisted` field on a panic / error / parse_error is NOT honoured.
+function verdictClass(v) {
+  if (v.verdict === 'ok') return 'ok';
+  if (v.verdict === 'diverge' && typeof v.allowlisted === 'string' && v.allowlisted.length > 0) return 'allowlisted';
+  return 'hard';
+}
+
 // ── Main loop ─────────────────────────────────────────────────────────────────
 async function main() {
   const flags = parseFlags(process.argv);
+  if (flags.selftest) return selftest();
   const runId = `r${Date.now().toString(36)}`;
   const t0 = Date.now();
 
@@ -436,13 +460,7 @@ async function main() {
     `--master-seed ${flags.masterSeed}` + (flags.mode === 'ladder' ? ` --ladder-tier ${flags.ladderTier}` : '') +
     (flags.battles ? ` --battles ${flags.battles}` : ''));
 
-  // Build the Rust replayer ONCE into the ISOLATED target dir (never the shared target/).
-  {
-    const env = { ...process.env, PATH: `${process.env.HOME}/.cargo/bin:${process.env.PATH}`, CARGO_TARGET_DIR: BRIDGE_TARGET };
-    const r = spawnSync('cargo', ['build', '--profile', 'selfcheck', '--features', 'emission-selfcheck', '--bin', 'bridge_replay'], { cwd: CRATE, env, stdio: 'inherit' });
-    if (r.status !== 0) { console.error('[bridge_ab_fuzz] cargo build failed'); process.exit(1); }
-  }
-  if (!fs.existsSync(REPLAYER)) { console.error(`[bridge_ab_fuzz] replayer missing: ${REPLAYER}`); process.exit(1); }
+  buildReplayer();
 
   // Deterministic streams from the master seed.
   const teamRng = mulberry32(flags.masterSeed);
@@ -583,11 +601,12 @@ async function main() {
 
       let chunkOk = 0; let chunkDiv = 0; let chunkAllow = 0;
       for (const v of verdicts) {
-        if (v.verdict === 'ok') { cum.ok++; chunkOk++; continue; }
-        // A documented request-DISPLAY deferral (Curse target / return102 / gender-level
-        // details) is `allowlisted` NARROWLY by the Rust replayer — counted SEPARATELY, saved
-        // under allowlisted/, and NOT a gate failure (mirrors ab_fuzz.js --protocol).
-        if (v.allowlisted) {
+        const cls = verdictClass(v);
+        if (cls === 'ok') { cum.ok++; chunkOk++; continue; }
+        // A documented residual (a request-DISPLAY deferral, or one of the turn-0 construction
+        // speed-tie per-side keys) is `allowlisted` NARROWLY by the Rust replayer — counted
+        // SEPARATELY, saved under allowlisted/, and NOT a gate failure (mirrors ab_fuzz.js --protocol).
+        if (cls === 'allowlisted') {
           cum.allowlisted++; chunkAllow++;
           cum.allowKinds.set(v.allowlisted, (cum.allowKinds.get(v.allowlisted) || 0) + 1);
           const meta = metas.get(v.battle);
@@ -657,6 +676,176 @@ async function main() {
   // (mirrors ab_fuzz.js --protocol). Allowlisted request-DISPLAY deferrals do NOT fail.
   const hardFail = cum.diverged + cum.panic + cum.parseError;
   process.exit(hardFail > 0 ? 1 : 0);
+}
+
+// ── ALLOWLIST GATE-INTEGRITY SELF-TEST (`node bridge_ab_fuzz.js --selftest`) ─────────────────
+// The per-side allowlist lives in the Rust replayer (`bridge_replay.rs` + its
+// `bridge_replay/switchin_block_swap.rs`), and its `#[cfg(test)]` modules pin each clause in
+// isolation. This is the END-TO-END half: FAULT INJECTIONS into real, committed repro fixtures,
+// replayed through the SAME `bridge_replay --ab` binary and the SAME `verdictClass` accounting the
+// fuzzer uses. The POSITIVES show every tagged construction-window fixture still resolves to its
+// reason; the NEGATIVES — the load-bearing half — show that a CONTENT change inside the reordered
+// window, a dropped / extra / internally-reordered line, a non-tie lead, and a divergence LATER in
+// an otherwise-allowlisted battle each still FAIL the gate. Run it after ANY change to a per-side
+// allowlist clause. Every mangled golden is written to a temp dir, never into the corpus.
+function selftest() {
+  buildReplayer();
+  const corpus = path.join(CRATE, 'tests/vectors/bridge_corpus');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bridge_ab_selftest_'));
+  const BLOCK_SWAP = 'turn0-construction-speed-tie-switchin-block-swap';
+  let fail = 0; let n = 0;
+  const check = (label, got, want) => {
+    n++;
+    const ok = JSON.stringify(got) === JSON.stringify(want);
+    if (!ok) { fail++; console.error(`  FAIL ${label}: got ${JSON.stringify(got)} want ${JSON.stringify(want)}`); }
+    else console.error(`  ok   ${label}`);
+  };
+  // Replay ONE single-battle golden text and reduce its verdict to what the gate sees.
+  let k = 0;
+  const replay = (text) => {
+    const file = path.join(tmp, `case${k++}.txt`);
+    fs.writeFileSync(file, text);
+    const proc = spawnSync(REPLAYER, [file, '--ab'], { maxBuffer: 256 * 1024 * 1024 });
+    const lines = (proc.stdout || Buffer.from('')).toString().split('\n').filter((l) => l.startsWith('{') && !l.includes('"chunk_summary"'));
+    if (lines.length !== 1) return { cls: 'no-verdict', n: lines.length };
+    const v = JSON.parse(lines[0]);
+    return { cls: verdictClass(v), kind: v.kind || v.verdict, allowlisted: v.allowlisted ?? null, side: v.side ?? null, line: v.line ?? null };
+  };
+  const read = (name) => fs.readFileSync(path.join(corpus, name), 'utf8');
+
+  // ── Row helpers over the SCEN/TEAM/INIT/CMD/SEED/CHUNK/END grammar ──
+  const rawOf = (row) => row.split('\t').slice(6).join('\t');
+  const withRaw = (row, raw) => [...row.split('\t').slice(0, 6), raw].join('\t');
+  const isChunk = (row, side) => row.startsWith('CHUNK\t') && row.split('\t')[3] === side;
+  // Indices (into `rows`) of one side's CHUNK rows, split at that side's first `|turn|` row.
+  const sideRows = (rows, side) => {
+    const idx = rows.map((r, i) => (isChunk(r, side) ? i : -1)).filter((i) => i >= 0);
+    const t = idx.findIndex((i) => rawOf(rows[i]).startsWith('|turn|'));
+    if (t < 0) throw new Error(`selftest: no |turn| row on ${side}`);
+    return { window: idx.slice(0, t), rest: idx.slice(t) };
+  };
+  // Apply `edit(rows)` to a fixture's rows; `edit` mutates in place.
+  const mangle = (text, edit) => { const rows = text.split('\n'); edit(rows); return rows.join('\n'); };
+  const findRow = (rows, idxs, pred, what) => {
+    const i = idxs.find((j) => pred(rawOf(rows[j])));
+    if (i === undefined) throw new Error(`selftest: precondition — no row matching ${what}`);
+    return i;
+  };
+
+  const f21 = read('21_construction_switchin_block_swap_p1_ou.txt');
+  const f22 = read('22_construction_switchin_block_swap_p2_ou.txt');
+  const INTIM = '|-ability|p2a: Salamence|Intimidate|boost';
+  const UNBOOST = '|-unboost|p1a: Zapdos|atk|1';
+  const PRESSURE = '|-ability|p1a: Zapdos|Pressure|[silent]';
+
+  // ── The accounting itself ──
+  check('verdictClass: ok', verdictClass({ verdict: 'ok' }), 'ok');
+  check('verdictClass: a diverge carrying a reason is allowlisted', verdictClass({ verdict: 'diverge', allowlisted: BLOCK_SWAP }), 'allowlisted');
+  check('verdictClass: a diverge with NO reason is a hard failure', verdictClass({ verdict: 'diverge', kind: 'perside' }), 'hard');
+  check('verdictClass: an EMPTY reason is a hard failure', verdictClass({ verdict: 'diverge', allowlisted: '' }), 'hard');
+  check('verdictClass: a panic is never allowlisted', verdictClass({ verdict: 'panic', allowlisted: BLOCK_SWAP }), 'hard');
+
+  // ── POSITIVES: every tagged construction-window fixture still resolves to its reason ──
+  for (const name of fs.readdirSync(corpus).filter((f) => f.endsWith('.txt')).sort()) {
+    const text = read(name);
+    const tag = (text.split('\n').find((l) => l.trim().startsWith('# ALLOWLIST ')) || '').trim().slice('# ALLOWLIST '.length).trim();
+    if (!tag) continue;
+    const r = replay(text);
+    check(`POSITIVE ${name} -> ${tag}`, [r.cls, r.allowlisted], ['allowlisted', tag]);
+  }
+  // The precondition every negative below leans on: fixture 21's p1 window really is the
+  // [Intimidate, unboost, Pressure] block order the sim wrote.
+  {
+    const rows = f21.split('\n');
+    const w = sideRows(rows, 'p1').window.map((i) => rawOf(rows[i]));
+    check('precondition: fixture 21 p1 window ends [INTIM, UNBOOST, PRESSURE]', w.slice(-3), [INTIM, UNBOOST, PRESSURE]);
+  }
+
+  // ── NEGATIVES: each must FAIL the gate (a `diverge` with NO allowlisted reason) ──
+  const HARD = (r) => [r.cls, r.allowlisted];
+  const WANT = ['hard', null];
+  const neg = (label, text) => {
+    const r = replay(text);
+    check(`NEGATIVE ${label}  [kind=${r.kind} side=${r.side} line=${r.line}]`, HARD(r), WANT);
+  };
+
+  neg('content change inside the reordered window (-unboost atk|1 -> atk|2)', mangle(f21, (rows) => {
+    const { window } = sideRows(rows, 'p1');
+    const i = findRow(rows, window, (r) => r === UNBOOST, 'the p1 -unboost');
+    rows[i] = withRaw(rows[i], '|-unboost|p1a: Zapdos|atk|2');
+  }));
+  neg('content change inside the reordered window (Pressure -> Insomnia)', mangle(f21, (rows) => {
+    const { window } = sideRows(rows, 'p1');
+    const i = findRow(rows, window, (r) => r === PRESSURE, 'the p1 Pressure line');
+    rows[i] = withRaw(rows[i], '|-ability|p1a: Zapdos|Insomnia|[silent]');
+  }));
+  neg('mis-targeted -unboost (the Intimidator\'s own slot)', mangle(f21, (rows) => {
+    const { window } = sideRows(rows, 'p1');
+    const i = findRow(rows, window, (r) => r === UNBOOST, 'the p1 -unboost');
+    rows[i] = withRaw(rows[i], '|-unboost|p2a: Salamence|atk|1');
+  }));
+  neg('a DROPPED window line (the golden loses Pressure)', mangle(f21, (rows) => {
+    const { window } = sideRows(rows, 'p1');
+    rows.splice(findRow(rows, window, (r) => r === PRESSURE, 'the p1 Pressure line'), 1);
+  }));
+  neg('an EXTRA window line (a duplicated -unboost)', mangle(f21, (rows) => {
+    const { window } = sideRows(rows, 'p1');
+    const i = findRow(rows, window, (r) => r === UNBOOST, 'the p1 -unboost');
+    rows.splice(i + 1, 0, rows[i]);
+  }));
+  neg('the Intimidate pair internally REORDERED (multiset preserved: -unboost before its announce)', mangle(f21, (rows) => {
+    const { window } = sideRows(rows, 'p1');
+    const a = findRow(rows, window, (r) => r === INTIM, 'the p1 Intimidate line');
+    const b = findRow(rows, window, (r) => r === UNBOOST, 'the p1 -unboost');
+    const ra = rawOf(rows[a]); rows[a] = withRaw(rows[a], rawOf(rows[b])); rows[b] = withRaw(rows[b], ra);
+  }));
+  neg('the two lead |switch| lines swapped (a non-framing reorder)', mangle(f21, (rows) => {
+    const { window } = sideRows(rows, 'p1');
+    const a = findRow(rows, window, (r) => r.startsWith('|switch|p1a: '), 'the p1a switch');
+    const b = findRow(rows, window, (r) => r.startsWith('|switch|p2a: '), 'the p2a switch');
+    const ra = rawOf(rows[a]); rows[a] = withRaw(rows[a], rawOf(rows[b])); rows[b] = withRaw(rows[b], ra);
+  }));
+  neg('a content change in the OTHER side\'s window (p2 -unboost atk|1 -> atk|2)', mangle(f21, (rows) => {
+    const { window } = sideRows(rows, 'p2');
+    const i = findRow(rows, window, (r) => r === UNBOOST, 'the p2 -unboost');
+    rows[i] = withRaw(rows[i], '|-unboost|p1a: Zapdos|atk|2');
+  }));
+  neg('a NON-TIE lead (Salamence Spe EV 252 -> 248: 327 vs Zapdos 328)', mangle(f21, (rows) => {
+    const i = rows.findIndex((r) => r.startsWith('TEAM\t') && r.split('\t')[2] === 'p2');
+    const before = rows[i];
+    rows[i] = before.replace('Naive|,4,,252,,252|', 'Naive|,4,,252,,248|');
+    if (rows[i] === before) throw new Error('selftest: precondition — Salamence EV spread not found');
+  }));
+  // The MASKING guard — the construction reorder must not hide a real bug later in the battle.
+  neg('a LATER divergence on the SAME side (a p1 -damage HP after |turn|1)', mangle(f21, (rows) => {
+    const { rest } = sideRows(rows, 'p1');
+    const i = findRow(rows, rest, (r) => r.startsWith('|-damage|'), 'a p1 -damage after turn 1');
+    rows[i] = withRaw(rows[i], rawOf(rows[i]).replace(/\|(\d+)\//, (m, hp) => `|${Number(hp) === 0 ? 1 : Number(hp) - 1}/`));
+  }));
+  neg('a LATER divergence on the OTHER side (a p2 -damage HP after |turn|1)', mangle(f21, (rows) => {
+    const { rest } = sideRows(rows, 'p2');
+    const i = findRow(rows, rest, (r) => r.startsWith('|-damage|'), 'a p2 -damage after turn 1');
+    rows[i] = withRaw(rows[i], rawOf(rows[i]).replace(/\|(\d+)\//, (m, hp) => `|${Number(hp) === 0 ? 1 : Number(hp) - 1}/`));
+  }));
+  neg('a LATER |request| divergence on the SAME side (a pp value)', mangle(f21, (rows) => {
+    const { rest } = sideRows(rows, 'p1');
+    const i = findRow(rows, rest, (r) => r.startsWith('|request|') && /"pp":\d+/.test(r), 'a p1 request with a pp');
+    rows[i] = withRaw(rows[i], rawOf(rows[i]).replace(/"pp":(\d+)/, (m, pp) => `"pp":${Number(pp) + 1}`));
+  }));
+  neg('the LAST p1 line dropped (a truncated golden)', mangle(f21, (rows) => {
+    const { rest } = sideRows(rows, 'p1');
+    rows.splice(rest[rest.length - 1], 1);
+  }));
+  // Fixture 22 (the p2-side orientation): its own content-change negative.
+  neg('fixture 22: content change inside the reordered p2 window (atk|1 -> atk|2)', mangle(f22, (rows) => {
+    const { window } = sideRows(rows, 'p2');
+    const i = findRow(rows, window, (r) => r === '|-unboost|p2a: Zapdos|atk|1', 'the p2 -unboost');
+    rows[i] = withRaw(rows[i], '|-unboost|p2a: Zapdos|atk|2');
+  }));
+
+  try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) {}
+  console.error(fail ? `\n[selftest] ${fail} of ${n} FAILURE(S)` : `\n[selftest] all ${n} allowlist gate-integrity cases pass`);
+  process.exit(fail ? 1 : 0);
 }
 
 function appendLog(logPath, line) {

@@ -26,6 +26,12 @@ use pokesim::bridge::{
 };
 use pokesim::dex::Dex;
 
+// The per-side SWITCH-IN BLOCK SWAP allowlist key. `#[path]` because a binary's root file is a
+// crate root, so a bare `mod` would resolve to `src/bin/switchin_block_swap.rs` — which Cargo
+// would ALSO auto-discover as a separate binary.
+#[path = "bridge_replay/switchin_block_swap.rs"]
+mod switchin_block_swap;
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
@@ -226,7 +232,8 @@ fn truncate(s: &str) -> String {
 /// UPSTREAM draw desync) is reported as `kind:"seed"` BEFORE the per-side byte diff,
 /// so a per-side/request divergence is partitioned into an upstream engine bug vs a
 /// genuine per-side/request-serializer bug. A documented request-DISPLAY deferral
-/// (Curse target / return102 / gender-level details) is `allowlisted` NARROWLY.
+/// (Curse target / return102 / gender-level details), or one of the three turn-0 construction
+/// speed-tie per-side keys (B1, the mirror flip, the switch-in block swap), is `allowlisted` NARROWLY.
 /// The A2 SEED-ANCHOR alignment (`gen3_perside_seed_anchor_makerequest_align_v1`).
 ///
 /// The port's per-`|request|`-boundary seed list (`got`) is a SUPERSET of the omniscient
@@ -372,9 +379,19 @@ fn ab_verdict(b: &GoldenBattle, dex: &Dex) -> String {
         };
         // B1 (pure framing PERMUTATION) first, then the A1-analog MIRROR IDENT FLIP (the
         // single-line `[of]` content flip AND the Intimidate `-ability`+`-unboost` permutation —
-        // both the same harmless turn-0 construction speed-tie same-species mirror reorder).
+        // both the same harmless turn-0 construction speed-tie same-species mirror reorder),
+        // then the SWITCH-IN BLOCK SWAP (a NON-mirror tie whose moved lines include Intimidate's
+        // `-unboost`, which B1's clause 3 rejects; it also requires the REST of BOTH per-side
+        // streams to be byte-identical — see `switchin_block_swap.rs`).
         classify_perside_construction_order_flip(&gw, &ew, leads_speed_tie)
             .or_else(|| classify_perside_construction_mirror_flip(&gw, &ew, leads_speed_tie))
+            .or_else(|| {
+                switchin_block_swap::classify_perside_construction_block_swap(
+                    [&b.p1_expected, &b.p2_expected],
+                    [&streams.p1, &streams.p2],
+                    leads_speed_tie,
+                )
+            })
     } else {
         None
     };

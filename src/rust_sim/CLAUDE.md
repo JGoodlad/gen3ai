@@ -661,6 +661,47 @@ real Node `getPlayerStreams`. It is the validation harness for `bridge.rs`. Its 
   raw stream too), not the bridge layer. `trapped:true` coverage is dense; a `gen3ou`-format trapping
   run additionally exercises the OU reframe + HP-privacy fold.
 
+### The PER-SIDE KNOWN-RESIDUAL ALLOWLIST (`bridge_replay --ab`) — the bridge fuzzer's green gate
+
+`bridge_ab_fuzz.js` exits non-zero on any `diverge`/`panic`/`parse_error` verdict that carries no
+`allowlisted` reason (`verdictClass`: only a `diverge` can be allowlisted). **These clauses are the
+live definition of when the per-side gate may pass; edit them only with an injection proof.** The
+`|request|` keys (`classify_known_perside_residual`: Curse target and `return102`, both DORMANT, plus
+the gender/level `details` suffix) are one family. The other three keys are a `kind=perside` first
+divergence tried IN ORDER, and all three have the SAME root as the omniscient E1/A1: the unmodelled
+turn-0 construction speed-tie order (the sim's tied `runSwitch` insert draws `battle.random`; the
+port's `event::run_start_switchins` is deterministic at a tie). All three are seed=None-invisible:
+- **B1 `turn0-construction-speed-tie-order-flip`**: a pure permutation of the framing window
+  where every moved line is `-ability`/`-weather`.
+- **`perside-construction-speed-tie-mirror-of-flip`**: a same-species MIRROR lead's ident flip
+  (the single-line `[of]` form, or the Intimidate block permutation).
+- **`turn0-construction-speed-tie-switchin-block-swap`** (`src/bin/bridge_replay/switchin_block_swap.rs`):
+  a NON-mirror tie whose moved lines include Intimidate's `-unboost` (B1's clause 3 rejects that line;
+  the mirror key needs same-species leads). The Zapdos-vs-Salamence cutover-stress repros are the
+  example. Allowlisted ONLY IF ALL of these hold: (1) the leads' Speeds tie; (2) on BOTH sides the first
+  `|turn|` line is exactly `|turn|1`, at the same index in golden and engine; (3) on BOTH sides everything
+  from `|turn|1` to the end is BYTE-IDENTICAL; (4) each side's windows are an identical MULTISET; (5) a
+  differing window is exactly ONE swap of two adjacent runs (golden `A++B`, engine `B++A`); (6) `A` and
+  `B` are each a well-formed switch-in block of the two DIFFERENT leads. A block is a lone
+  `-weather|…|[from] ability: …|[of] pNa`, a lone non-Intimidate `-ability`, or the pair
+  `-ability|…|Intimidate|boost` then `-unboost|<foe>|atk|<n>`. A blocked Intimidate (`-fail`/`-immune`
+  tail), Forecast, a three-block rotation, or a co-occurring request residual is NOT admitted.
+- 🚨 **B1 and the mirror key do NOT check the rest of the battle.** The verdict is first-divergence,
+  so an allowlisted B1/mirror battle cannot report a LATER real divergence. The block-swap key's
+  clause (3) closes that for itself only. On 2026-09-25 all 10 B1/mirror-allowlisted cutover-stress
+  repros were byte-identical after the window, so nothing was hidden in that run. Retrofitting (3)
+  onto B1 and the mirror key is still OPEN.
+- **Gate integrity:** `node harness/bridge_ab_fuzz.js --selftest` runs 25 cases through the real
+  replayer. It replays every tagged fixture to its reason, then applies 14 mangled-golden injections
+  that must each still FAIL (the NEGATIVES are the load-bearing half): `atk|1`→`atk|2`, a changed
+  ability, a mis-targeted `-unboost`, a dropped line, an extra line, the Intimidate pair internally
+  reordered (the multiset is preserved), the lead `|switch|` lines swapped, the other side's window,
+  a non-tie lead, a later `-damage` or `|request|` on either side, a truncated golden, and the
+  fixture-22 orientation. The classifier's own 26 `#[cfg(test)]` cases are also mutation-checked:
+  every clause's revert fails a test, except (4) and the equal-length check, which (5) implies. Tagged
+  corpus fixtures: `tests/vectors/bridge_corpus/21_*` and `22_*`. **Run `--selftest` after ANY change
+  to a per-side allowlist clause.**
+
 ### The BANKED SPEC QUEUE — probe-settled specs
 
 Each mechanic that reached the engine through a probe left a re-runnable oracle in `harness/` whose

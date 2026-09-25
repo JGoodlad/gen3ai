@@ -6,7 +6,7 @@ Each `*.txt` is a self-contained single-battle bridge-fuzzer repro (a repro dir'
 byte differential vs the recorded real `getPlayerStreams`, plus the SEED ANCHOR — each
 decision's post-decision engine seed == the recorded omniscient `seedAfter`).
 
-Two fixture classes — **14 clean + 3 allowlisted** today:
+Two fixture classes — **14 clean + 5 allowlisted** today:
 
 - **Untagged** (`01_*`..`06_*`, `10_*`..`15_*`, `19_*`, `20_*`, both formats) — a CLEAN
   per-side/request battle that MUST replay `ok` (every per-side chunk + `|request|` frame
@@ -48,7 +48,7 @@ Two fixture classes — **14 clean + 3 allowlisted** today:
     makeRequest checkpoint the omniscient per-decision capture collapses. Both boards are
     byte-CLEAN, so the anchor must absorb the extra boundary → `ok`; reverting either anchor
     fix re-reports `kind=seed`.
-- **`# ALLOWLIST <reason>` tagged** (`16_*`..`18_*`) — a battle that MUST
+- **`# ALLOWLIST <reason>` tagged** (`16_*`..`18_*`, `21_*`, `22_*`) — a battle that MUST
   diverge with EXACTLY the tagged `allowlisted` reason:
   - `16_construction_order_flip_cg.txt` (bab_3_15) → `turn0-construction-speed-tie-order-flip`
     — the B1 NON-mirror construction speed-tie per-side framing ORDER flip (a `-ability`/
@@ -62,6 +62,15 @@ Two fixture classes — **14 clean + 3 allowlisted** today:
     Intimidate BLOCK PERMUTATION, where both `-ability|…|Intimidate|boost` lines reorder
     TOGETHER with their paired `-unboost|…|atk|1` — an IDENTICAL multiset that B1's clause-3
     (`-unboost` rejected) cannot catch.
+  - `21_construction_switchin_block_swap_p1_ou.txt` (bab_2_16, gen3ou, `--mode ladder`) and
+    `22_construction_switchin_block_swap_p2_ou.txt` (bab_3_4, the opposite orientation) →
+    `turn0-construction-speed-tie-switchin-block-swap` — a NON-mirror Zapdos-vs-Salamence lead tie at
+    328 Speed, from the Rust core cutover stress. The Intimidate pair (`-ability|…|Intimidate|boost` +
+    `-unboost|<foe>|atk|1`) and the foe's `-ability|…|Pressure|[silent]` swap as whole blocks, and every
+    other per-side line is byte-identical. B1 rejects the moved `-unboost`, and the mirror key needs
+    same-species leads. `node harness/bridge_ab_fuzz.js --selftest` mangles these two fixtures to prove
+    a content change, a dropped or extra line, an internal reorder, a non-tie lead, or a LATER divergence
+    still fails the gate.
 
   (The `gender-level-details-construction-draw` deferral is inactive on the pinned-gender
   L100 pool, so it has no fixture yet; the classifier still carries it for randbats/random.)

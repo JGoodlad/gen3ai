@@ -722,6 +722,110 @@ repro as `gen3customgame` and reproduced a different battle for any gen3ou repro
   (`bridge_replay <dir>` reads `<dir>/battle.txt`). Isolated build:
   `CARGO_TARGET_DIR=/tmp/pokesim_target_bridge` (NEVER the shared `target/` — the live `ab_replay`).
 
+## `bridge_ab_fuzz.js` — the SWITCH-IN BLOCK SWAP key (`turn0-construction-speed-tie-switchin-block-swap`)
+
+**The residual.** The Rust core CUTOVER stress (2026-09-24, `--mode ladder --ladder-tier full`,
+gen3ou) produced three non-allowlisted `kind=perside` repros: `fz_bridge_ladder.00005` `bab_2_16`,
+`fz_bridge_ladder.00007` `bab_2_18` and `fz_bridge_ladder.00008` `bab_3_4`, under
+`~/gen3ai_archive/cutover_stress_2026-09-24/run/fuzz/`. They are three DISTINCT team pairs. Each is
+a Zapdos (Pressure) vs Salamence (Intimidate) lead at 328 Speed. Showdown computed both Speeds
+independently, so the tie is confirmed by the sim and not only by the port's `lead_speed`. On the
+Zapdos owner's per-side stream, the sim writes the Intimidate pair
+(`-ability|<Salamence>|Intimidate|boost`, `-unboost|<Zapdos>|atk|1`) and then
+`-ability|<Zapdos>|Pressure|[silent]`. The port writes the Pressure line first. The form check
+compared full `--print` streams: each window is an identical multiset, the two sides' streams are
+the same length, and every line from `|turn|1` to the end is byte-identical on BOTH sides. The other
+side's window is identical, because that side does not see the owner-only Pressure line. The two
+fresh runs below produced two more instances with the same form: `bab_0_21` (the same pair at 299
+Speed) and `bab_7_4`.
+
+**Root (verified at source).** The sim's `start` action calls `switchIn` for each lead, and each call
+queues a `runSwitch` through `BattleQueue.insertChoice`. At equal Speed that call draws
+`this.battle.random(firstIndex, lastIndex + 1)` to place the tied action. `runSwitch` then runs
+`fieldEvent('SwitchIn')`, which speed-sorts the handlers with a tie shuffle. So a PRNG draw decides
+which lead's switch-in handlers run first. The port's `event::run_start_switchins` uses a
+deterministic side order at a raw-Speed tie and draws nothing. The golden's `INIT` seed is the
+post-construction seed, so the draw COUNT is accounted for and the seed anchor passes; only the
+ORDER is unmodelled. This is the same root as the omniscient E1/A1 keys. It is seed=None-invisible,
+so it has zero production impact under `--use-bridge=rust`.
+
+**Why the existing keys missed it.** B1 (`classify_perside_construction_order_flip`) admits a moved
+line only if it is `-ability` or `-weather`, and here the `-unboost` moves. The mirror key needs
+same-species leads.
+
+**The predicate** (`src/rust_sim/src/bin/bridge_replay/switchin_block_swap.rs`). It is tried after B1
+and the mirror key, on a `kind=perside` first divergence. It sees BOTH sides' full golden and engine
+streams, and it allowlists only if all of the following hold:
+1. The leads' Speeds tie.
+2. On both sides, the first `|turn|` line is exactly `|turn|1`, at the same index in golden and engine.
+3. On both sides, everything from `|turn|1` to the end is byte-identical.
+4. Each side's windows are an identical multiset.
+5. A differing window is exactly one swap of two adjacent runs: golden `A++B`, engine `B++A`.
+6. `A` and `B` are each a well-formed switch-in block, and they belong to the two different leads. A
+   block is a lone `-weather|<W>|[from] ability: <A>|[of] pNa: <name>`, a lone `-ability` that is not
+   Intimidate, or the pair `-ability|pNa|Intimidate|boost` followed by `-unboost|<foe slot>|atk|<digits>`.
+7. At least one side's windows differ.
+
+Clause (3) is new to this key. The verdict is first-divergence, so without (3) the construction
+reorder would HIDE any later real divergence in the same battle. B1 and the mirror key have no such
+clause (see the OPEN item below).
+
+**Gate integrity.**
+- **The unit tests.** The module has 26 `#[cfg(test)]` cases: 3 positives, both orientations plus a
+  weather/Intimidate pair, and 23 negatives. A mutation run reverted each clause in turn. All 12
+  load-bearing mutants fail at least one test. Two mutants survive, and both are logically implied:
+  dropping (4) is covered by (5), since a swap preserves the multiset, and dropping (2)'s
+  equal-length check is covered by (4)'s length test. `is_switchin_block_swap` also guards its own
+  lengths, so it never indexes out of bounds.
+- **The end-to-end selftest.** `node harness/bridge_ab_fuzz.js --selftest` runs 25 cases through the
+  real replayer. There are 5 `verdictClass` accounting cases, all 5 tagged fixtures (16/17/18/21/22)
+  resolve to their reasons, 1 precondition check, and 14 mangled-golden NEGATIVES that each FAIL.
+  - Inside the window: `-unboost …|atk|1`→`atk|2`, Pressure→Insomnia, a self-targeted `-unboost`, a
+    dropped line, an extra line, and the Intimidate pair internally reordered (the multiset is
+    preserved, so plain E1 would swallow it). Each first-diverges at p1 line 25 and is refused.
+  - The lead `|switch|` lines swapped: first-diverges as `kind=privacy`.
+  - The other side's window changed.
+  - A non-tie lead (Salamence Spe EV 252→248): it fails through the SEED ANCHOR first. Clause (1)
+    therefore has no isolated end-to-end proof, and its proof is the unit test. The request JSON also
+    exposes the changed stat, so an end-to-end non-tie case would trip clause (3) as well.
+  - A later `-damage` on either side, a later `|request|` `pp`, and a truncated golden: each still
+    first-diverges at line 25 and is refused by clause (3).
+- **The same selftest against mutant replayers.** Removing clause (3) flips exactly the 4
+  later-divergence negatives to allowlisted. Removing (5)/(6), which leaves plain multiset E1, flips
+  the internal-reorder negative. Unwiring the key flips the fixture 21/22 positives. Removing (1)
+  flips nothing end-to-end, because the seed anchor catches the non-tie first.
+- **The corpus tag.** Stripping fixture 21's `# ALLOWLIST` tag makes `tests/bridge_corpus_test.rs`
+  FAIL (`REGRESSION … kind=perside`).
+
+**Does NOT admit** (each would surface as a new divergence for review): an Intimidate blocked by
+Clear Body / Hyper Cutter / White Smoke or a Substitute (a `-fail`/`-immune` tail), Forecast's
+`-formechange`, a three-block rotation, and a battle that also carries any other per-side or
+`|request|` residual.
+
+**The fresh runs.** Both used `--mode ladder --ladder-tier full --format gen3ou --battles 300`.
+- **Seed 925002:** 295 ok + 5 allowlisted, 0 diverged, exit 0. The allowlisted were 1 block swap
+  (`bab_7_4`, Salamence/Zapdos at 328, the p2 orientation, same form) and 4 mirror flips.
+- **Seed 925001:** 294 ok + 5 allowlisted (1 block swap, `bab_0_21`; 4 mirror flips) + **1 REAL
+  divergence**, exit 1. That divergence is `bab_0_8`, on p2 at line 417: the sim writes
+  `|faint|p1a: Skarmory` and the port writes `|upkeep`. It is a Perish Song faint on a turn where the
+  foe Registeel's Rollout lock ticks 2 → 1. The leads do not tie and both windows are identical, so no
+  construction key applies. The pre-change replayer at `318bdcb8` returns the same verdict; the
+  divergence was not caused by this change, and the change correctly refuses to swallow it.
+
+**OPEN — the Rollout perish faint order (`bab_0_8`).** Reproduce it with the seed-925001 run above.
+The likely root was read from the source but NOT probe-verified and NOT fixed. The sim's
+`fieldEvent('Residual')` skips `faintMessages()` only for a duration handler that ENDS this turn. A
+tick that does not end, such as Rollout's 2 → 1 after a hit, falls through and drains the enqueued
+Perish faint BEFORE `|upkeep`. The port's `turn/residuals.rs` `RolloutDuration` arm `continue`s on its
+non-ending branch too, which is the `MustRechargeDuration` shape of the round-5 D4b fix.
+`FuryCutterDuration`'s `d - 1` branch has the same shape and is UNVERIFIED.
+
+**OPEN — B1 and the mirror key mask later divergences.** Both return on the first divergence without
+checking the rest of the battle. As a data point, all 10 B1/mirror-allowlisted repros in the cutover
+stress were re-read with a full-stream check, and every one is byte-identical after the window on
+both sides. Nothing was hidden in that run. Retrofitting clause (3) onto both keys needs its own
+injection proof.
+
 
 ---
 
