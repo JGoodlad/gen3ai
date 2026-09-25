@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,394-line file. **The ledger itself is append-only and is never edited by this**;
+21,398-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**704 headings · 649 dated · 2026-08-01 → 2026-09-25 · ledger 21,394 lines.**
+**705 headings · 650 dated · 2026-08-01 → 2026-09-25 · ledger 21,398 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -724,3 +724,4 @@ rename.
   - `L21381` · `2026-09-24` · MEASUREMENT · **BELIEF WIN-RATE A/B READ (`10212cff`; registered `1a971e88`): DECISION-RULE BRANCH 1. The learned belief heads earn ~5 pp against the POOL they memorised and NOTHING DETECTABLE against Metamon LADDER teams — they stop helping there, they do not hurt. DiD +4.8 pp [+1.9, +7.8].**
   - `L21387` · `2026-09-25` · RESULT · **POPULATION LOOP ROUND 2 PRIMARY: Δ2 = gap(RB2) − gap(RC2) = −8.25 pp [−15.01, −1.38], bar 5.0 (F = 2.00 reused) → NOT DETECTED; manipulation ABSORBED, M2 = +8.67 [+3.06, +14.19] (vs RB, the new specialist, +17.0 [+7.3, +26.3]) → branch N+, PROVISIONAL until the §4.3 KILL guards (G-U untaught 8 incl. the 963/1600 reproduction, G-A SmallRL) are read.**
   - `L21391` · `2026-09-25` · RESULT · **POPULATION LOOP ROUND 2: BRANCH N+ IS FINAL — both §4.3 KILL guards read clean and the reproduction check was exact (updates `aa8d56ea`'s PROVISIONAL N+). G-U, the untaught 8 (pin `6eb9c776`): B2 − C2 = −1.31 pp [−4.19, +1.19] against the 3.69 floor; `plateau_b1` 963/1600 = 60.19 EXACT. G-A, SmallRL greedy vs greedy (`7c511161`, `--server rust`): B2 − C2 = +1.75 pp [−2.13, +5.62] against the 11.0 floor. N+ counts 2 of 3. Power decision RESOLVED (owner, 09-25): NO round 3 on this lineage; the loop carries into the NEW lineage with both power levers registered up front (`--eval-battles 200` readers + a pooled multi-round read registered before its round 1).**
+  - `L21395` · `2026-09-25` · OPS (MAJOR) · **THE RUST CORE CUTOVER: `--obs-source core` is the production default on the rust bridge (`ac0b6469`; owner decision).**
