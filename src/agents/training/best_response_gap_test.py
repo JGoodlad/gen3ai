@@ -399,6 +399,26 @@ def test_cli_exits_2_on_a_refusal(tmp_path, capsys):
     assert "unmatched_dose" in capsys.readouterr().err
 
 
+def test_cli_writes_NOTHING_into_cwd_without_an_explicit_path(tmp_path, monkeypatch, capsys):
+    """K-1 (round-2 registration, 2026-09-24): the default `--json` was `./best_response_gap.json`,
+    so a read run from the main checkout DIRTIED MAIN. With no `--json` / `--md` the report goes to
+    stdout and not one file appears in cwd; an explicit path still writes exactly there."""
+    from main import best_response_gap as cli
+    d = make_run(tmp_path, "a", target_run="g1", target_step=10, fork_step=10, num_timesteps=20,
+                 cycles=[(15, 74, 100)], team_stems=["aaaa1111"])
+    ts = _teamsets_file(tmp_path)
+    cwd = tmp_path / "checkout"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    assert cli.main([d, "--teamsets", ts, "--draws", "200"]) == 0
+    assert os.listdir(cwd) == [], f"the CLI wrote into cwd: {os.listdir(cwd)}"
+    assert "greedy-vs-greedy" in capsys.readouterr().out       # the report went to stdout
+    out = tmp_path / "explicit.json"
+    assert cli.main([d, "--teamsets", ts, "--draws", "200", "--json", str(out), "--quiet"]) == 0
+    assert json.loads(out.read_text())["_meta"]["tool"] == "main.best_response_gap"
+    assert os.listdir(cwd) == []
+
+
 def test_cli_check_mode_plays_and_writes_nothing(tmp_path):
     from main import best_response_gap as cli
     d = make_run(tmp_path, "a", target_run="g1", target_step=10, fork_step=10, num_timesteps=20,

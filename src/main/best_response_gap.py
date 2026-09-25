@@ -43,7 +43,11 @@ from typing import Any, Dict, List, Optional, Sequence
 from agents.training import best_response_gap as engine
 from agents.training.best_response_gap import BestResponseGapError
 
-DEFAULT_JSON = "best_response_gap.json"
+# 🚨 NO DEFAULT OUTPUT FILE. The default used to be `./best_response_gap.json`, i.e. wherever the
+# caller stood — and run from the main checkout it DIRTIED MAIN (round-2 registration K-1,
+# 2026-09-24). A file is written only where `--json` / `--md` name one; the report itself always
+# goes to stdout. Not a temp path (an unrequested file nobody knows to look for) and not a refusal
+# inside a git tree (cwd-dependent, and a plain "show me the gap" read would then exit non-zero).
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -84,9 +88,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="battles in flight. Above 1 is REFUSED (unreproducible).")
     p.add_argument("--draws", type=int, default=engine.DEFAULT_DRAWS)
     p.add_argument("--bootstrap-seed", type=int, default=engine.DEFAULT_BOOTSTRAP_SEED)
-    p.add_argument("--json", dest="json_out", default=DEFAULT_JSON, metavar="PATH",
-                   help=f"write the report JSON here (default: ./{DEFAULT_JSON}).")
-    p.add_argument("--no-json", action="store_true", help="do not write the JSON.")
+    p.add_argument("--json", dest="json_out", default=None, metavar="PATH",
+                   help="write the report JSON here. Default: no file — the report is printed "
+                        "to stdout, so running from a checkout never dirties it.")
+    p.add_argument("--no-json", action="store_true",
+                   help="do not write the JSON, even with --json (kept for existing callers).")
     p.add_argument("--md", dest="md_out", default=None, metavar="PATH")
     p.add_argument("--check", action="store_true",
                    help="read every run and run the matched gate; print nothing else, play "
@@ -363,6 +369,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         with open(args.json_out, "w") as fh:
             json.dump(doc, fh, indent=1)
         log(f"  wrote {args.json_out}")
+    elif not args.no_json:
+        log("  no --json PATH given: the JSON report was not written (nothing lands in cwd)")
     if args.md_out:
         with open(args.md_out, "w") as fh:
             fh.write(render_markdown(doc))
