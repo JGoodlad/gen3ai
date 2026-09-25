@@ -633,6 +633,35 @@ saved non-allowlisted `ab_fuzz --protocol` repros (four by the end of this pass)
   62; the re-record from the sim-applied choices reproduces the original log byte for byte and
   replays `ok`.
 
+- **The second M6 triage pass (2026-09-25, branch `m6-fuzz2`).** Four of the five `seed` repros
+  (`rmugn9u2y_ab_2_4`, `rmugrwx3p_ab_2_19`, `rmugn66nq_ab_1_22`, `rmugre8ch_ab_1_17`) are the SAME
+  recorder artifact as `rmuggvoke_ab_3_15`: each replay through the real sim logs an Imprison
+  `[Unavailable choice] Can't move: <mon>'s <move> is disabled` reject, the re-record from the
+  sim-APPLIED choices reproduces the original omniscient log byte for byte, and the port replays
+  each re-record `ok` (the two state-mode ones re-recorded WITHOUT protocol lines — their genders
+  are drawn, not pinned). **A NON-ENDING duration tick drains a deferred faint**
+  (`gen3_duration_nonend_faint_drain_v1`, bridge `--master-seed 925001` `bab_0_8`): the
+  `RolloutDuration`, `FuryCutterDuration` and `LockedMoveDuration` residual arms `continue`d on
+  their 2 -> 1 decrement, but `fieldEvent` (`sim/battle.ts:515-521`) takes the skip-`faintMessages`
+  branch only when the duration reaches 0, so a Perish faint the order-12 END `continue` deferred
+  is emitted at the next such handler, BEFORE `|upkeep|` (the D4b `mustrecharge` class). Verified
+  in the real sim for all three moves (Celebi perish0 on the turn Chansey lands Rollout / Fury
+  Cutter / Outrage: `|faint|` precedes `|upkeep|`). Pins `regression_test::*_nonend_tick_drains_*`
+  (3) + bridge fixture 23, all four FAIL on revert. **A Beat Up blocked by Protect keeps its residual handler** (`gen3_beatup_volatile_on_block_v1`,
+  `rmugoebrf_ab_1_0` + `rmugrh4uy_bab_0_18`, both a Charizard Beat Up into a 328-Speed Flygon's
+  Protect): gen-3 `useMoveInner` runs `onModifyMove` — which adds the `beatup` volatile — BEFORE
+  the accuracy roll and the Protect `TryHit` (`data/mods/gen3/scripts.ts`), so the blocked Beat Up
+  still carries the `duration: 1` NO_ORDER residual handler, and at equal Speed it ties Flygon's
+  `stall` handler: ONE residual tie-shuffle draw. The port set `beat_up` only in `run_beat_up`
+  (reached on a hit), so it was one draw short; `simtrace` showed the port's post-turn seed equal to
+  the sim's seed before the end-of-turn Quick Claw roll (exactly one draw missing), and the next
+  turn's damage roll / speed tie read the shifted stream. `run_move` now sets the flag for Beat Up
+  before the Protect block. Pins: byte fixture 80 + bridge fixture 24 (each FAILS on revert).
+  Still OPEN at the end of the pass: and two `|request|`
+  flag classes (`sbd_mugr6edd_b24`: the sim sets `maybeDisabled` for ANY foe of an active imprisoner,
+  `data/moves.ts:9507`, while `bridge.rs` requires a shared move; `rmugytne6_bab_2_10`: a missing
+  `maybeTrapped`, not root-caused). Both request classes change bytes poke-env receives.
+
 `harness/probe_repro_simtrace.js` now replays a repro under its `FMT` row's format, admitting typed
 Hidden Power the way `ab_fuzz.js` does (pool / ourandom / ladder); before this, it replayed every
 repro as `gen3customgame` and reproduced a different battle for any gen3ou repro.

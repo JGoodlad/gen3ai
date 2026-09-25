@@ -1,0 +1,620 @@
+# FIXTURE 80 — a BEAT UP blocked by PROTECT still leaves the `beatup` volatile (added by onModifyMove before TryHit), so its NO_ORDER residual duration handler ties the 328-Speed Flygon's stall handler: one residual tie-shuffle draw (gen3_beatup_volatile_on_block_v1).
+# Source: the M6 cutover stress repro fz_proto_ladder.00023/divergences/rmugoebrf_ab_1_0 (kind=seed @ 39 pre-fix; the Fire Blast of the next turn was the first byte diff).
+# ab_fuzz chunk — A/B differential fuzzer (real Showdown sim vs the Rust port).
+# mode=ladder master_seed=620023 run_id=rmugoebrf chunk=1
+# Format identical to tests/vectors/e2e_fuzz_golden.txt (SCEN/TEAM/INIT/DEC/END).
+# Replay: target/selfcheck/ab_replay <this-file>   (one JSON verdict per battle)
+SCEN	ab_1_0
+TEAM	ab_1_0	p1	Tyranitar||ChoiceBand|SandStream|FocusPunch,Earthquake,HiddenPower,DragonDance|Adamant|4,252,,,,252|M||||,Dark,,,,]Skarmory||Leftovers|KeenEye|Spikes,Roar,Protect,DrillPeck|Careful|252,,4,,252,|M||||]Blissey||Leftovers|NaturalCure|SoftBoiled,CalmMind,Thunderbolt,ThunderWave|Modest|,,252,252,,4|F||||]Gengar||Leftovers|Levitate|GigaDrain,Explosion,WillOWisp,Thunderbolt|Hasty|,4,,252,,252|M||||]Flygon||Leftovers|Levitate|Earthquake,RockSlide,Protect,Toxic|Jolly|4,252,,,,252|M||||]Jirachi||Leftovers|SereneGrace|Toxic,FirePunch,HiddenPower,Thunder|Timid|4,,,252,,252|N||||,Dark,,,,
+TEAM	ab_1_0	p2	Tyranitar||LumBerry|SandStream|IceBeam,BrickBreak,RockSlide,HiddenPower|Modest|252,,16,220,,20|M||||,Dark,,,,]Cloyster||Leftovers|ShellArmor|Spikes,Surf,Explosion,RapidSpin|Modest|16,,,56,252,184|M||||]Blissey||Leftovers|NaturalCure|SeismicToss,ThunderWave,CalmMind,Wish|Modest|,,252,232,,24|F||||]Metagross||Leftovers|ClearBody|Earthquake,MeteorMash,Agility,Explosion|Adamant|200,216,,,,92|N||||]Charizard||Leftovers|Blaze|FireBlast,BeatUp,Substitute,Flamethrower|Timid|,,,252,4,252|M||||]Gengar||Leftovers|Levitate|Taunt,Explosion,HiddenPower,IcePunch|Timid|248,,44,8,112,96|M|,0,,30,,|||,Grass,,,,
+FMT	ab_1_0	gen3ou
+INIT	ab_1_0	46327,335,2649,34549	3332509757	0
+DEC	ab_1_0	0	move	0	0	m3	s1	3455,9156,2916,64108	Tyranitar	342	342	0	-	1	0	0	0	1	0	6	Cloyster	245	245	0	-	0	0	0	0	0	0	6	p2	0	0	0	0	0
+DEC	ab_1_0	1	move	0	0	m3	m0	45159,24693,61941,14175	Tyranitar	342	342	0	-	2	0	0	0	2	0	6	Cloyster	245	245	0	-	0	0	0	0	0	0	6	p1	1	0	0	0	0
+DEC	ab_1_0	2	move	0	0	m3	m3	13769,23068,17066,14595	Tyranitar	337	342	0	-	3	0	0	0	3	0	6	Cloyster	245	245	0	-	0	0	0	0	0	0	6	p1	1	0	0	0	0
+DEC	ab_1_0	3	move	0	0	m3	m3	10654,41896,7619,2151	Tyranitar	331	342	0	-	4	0	0	0	4	0	6	Cloyster	245	245	0	-	0	0	0	0	0	0	6	p1	1	0	0	0	0
+DEC	ab_1_0	4	move	0	0	m3	m2	4053,8603,2581,46888	Tyranitar	164	342	0	-	5	0	0	0	5	0	6	Cloyster	0	245	1	fnt	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_1_0	5	switch	0	1	-	s2	58452,42293,31700,18827	Tyranitar	164	342	0	-	5	0	0	0	5	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	none	1	0	0	0	0
+DEC	ab_1_0	6	move	0	0	s2	m0	9649,31514,10670,16005	Blissey	470	651	0	-	0	0	0	0	0	0	6	Blissey	651	651	0	-	0	0	0	0	0	0	5	p1	1	0	1	0	0
+DEC	ab_1_0	7	move	0	0	m1	m2	7580,6461,33533,30268	Blissey	470	651	0	-	0	0	1	1	0	0	6	Blissey	651	651	0	-	0	0	1	1	0	0	5	p2	1	0	0	0	0
+DEC	ab_1_0	8	move	0	0	m1	m1	23330,19384,44917,35856	Blissey	470	651	0	par	0	0	2	2	0	0	6	Blissey	651	651	0	-	0	0	1	1	0	0	5	p2	1	0	0	0	0
+DEC	ab_1_0	9	move	0	0	m0	m3	57201,31013,57618,26178	Blissey	651	651	0	par	0	0	2	2	0	0	6	Blissey	651	651	0	-	0	0	1	1	0	0	5	p2	1	0	0	0	0
+DEC	ab_1_0	10	move	0	0	m3	s1	15768,20685,55172,3236	Blissey	651	651	0	par	0	0	2	2	0	0	6	Tyranitar	404	404	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_1_0	11	move	0	0	m2	m1	33105,65262,58126,9599	Blissey	362	651	0	par	0	0	2	2	0	0	6	Tyranitar	228	404	0	-	0	0	0	0	0	0	5	p2	1	0	0	0	0
+DEC	ab_1_0	12	move	0	0	s1	m3	55775,8950,57981,34083	Skarmory	303	334	0	-	0	0	0	0	0	0	6	Tyranitar	228	404	0	-	0	0	0	0	0	0	5	p1	1	0	0	0	0
+DEC	ab_1_0	13	move	0	0	m0	m2	4305,46464,6146,60678	Skarmory	247	334	0	-	0	0	0	0	0	0	6	Tyranitar	228	404	0	-	0	0	0	0	0	0	5	p1	1	1	0	0	0
+DEC	ab_1_0	14	move	0	0	m1	s1	12369,49348,47820,45483	Skarmory	267	334	0	-	0	0	0	0	0	0	6	Gengar	323	323	0	-	0	0	0	0	0	0	5	p2	1	1	0	0	0
+DEC	ab_1_0	15	move	0	0	m3	m1	2241,5434,13040,45532	Skarmory	186	334	0	-	0	0	0	0	0	0	6	Gengar	0	323	1	fnt	0	0	0	0	0	0	4	p2	1	1	0	0	0
+DEC	ab_1_0	16	switch	0	1	-	s1	50119,5282,38223,34447	Skarmory	206	334	0	-	0	0	0	0	0	0	6	Tyranitar	178	404	0	-	0	0	0	0	0	0	4	none	1	1	0	0	0
+DEC	ab_1_0	17	move	0	0	m3	m2	47995,11721,64842,24983	Skarmory	154	334	0	-	0	0	0	0	0	0	6	Tyranitar	104	404	0	-	0	0	0	0	0	0	4	p1	1	1	0	0	0
+DEC	ab_1_0	18	move	0	0	m0	m3	21815,9774,53339,61371	Skarmory	123	334	0	-	0	0	0	0	0	0	6	Tyranitar	104	404	0	-	0	0	0	0	0	0	4	p1	1	2	0	0	0
+DEC	ab_1_0	19	move	0	0	m1	m0	35374,10291,59298,12416	Skarmory	47	334	0	-	0	0	0	0	0	0	6	Blissey	462	651	0	-	0	0	0	0	0	0	4	p2	1	2	0	0	0
+DEC	ab_1_0	20	move	0	0	m3	m1	13790,25,51880,64422	Skarmory	67	334	0	par	0	0	0	0	0	0	6	Blissey	294	651	0	-	0	0	0	0	0	0	4	p1	1	2	0	0	0
+DEC	ab_1_0	21	move	0	0	m1	s5	43229,262,26733,40666	Skarmory	87	334	0	par	0	0	0	0	0	0	6	Metagross	314	351	0	-	0	0	0	0	0	0	4	p2	1	2	0	0	0
+DEC	ab_1_0	22	move	0	0	m1	m2	54058,48569,34045,40316	Skarmory	107	334	0	par	0	0	0	0	0	0	6	Metagross	335	351	0	-	0	0	0	0	2	0	4	p2	1	2	0	0	0
+DEC	ab_1_0	23	move	0	0	m0	m1	64934,11022,41109,23561	Skarmory	127	334	0	par	0	0	0	0	0	0	6	Metagross	351	351	0	-	0	0	0	0	2	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	24	move	0	0	m3	m2	60219,62888,56023,35812	Skarmory	147	334	0	par	0	0	0	0	0	0	6	Metagross	342	351	0	-	0	0	0	0	4	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	25	move	0	0	m3	m2	46360,56387,41365,5366	Skarmory	167	334	0	par	0	0	0	0	0	0	6	Metagross	351	351	0	-	0	0	0	0	6	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	26	move	0	0	m3	s4	60777,16103,12527,38997	Skarmory	187	334	0	par	0	0	0	0	0	0	6	Charizard	196	297	0	-	0	0	0	0	0	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	27	move	0	0	m0	m0	47615,2429,52958,5662	Skarmory	207	334	0	par	0	0	0	0	0	0	6	Charizard	196	297	0	-	0	0	0	0	0	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	28	move	0	0	m0	m2	17810,27413,29542,64032	Skarmory	227	334	0	par	0	0	0	0	0	0	6	Charizard	122	297	0	-	0	0	0	0	0	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	29	move	0	0	m1	m3	24312,40867,22857,14772	Skarmory	0	334	1	fnt	0	0	0	0	0	0	5	Charizard	122	297	0	-	0	0	0	0	0	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	30	switch	1	0	s4	-	51415,13868,8450,13178	Flygon	302	302	0	-	0	0	0	0	0	0	5	Charizard	122	297	0	-	0	0	0	0	0	0	4	none	1	3	0	0	0
+DEC	ab_1_0	31	move	0	0	s1	m3	41960,25970,50535,52595	Blissey	174	651	0	-	0	0	0	0	0	0	5	Charizard	122	297	0	-	0	0	0	0	0	0	4	p1	1	3	0	0	0
+DEC	ab_1_0	32	move	0	0	m1	m1	19109,45805,61428,58584	Blissey	0	651	1	fnt	0	0	0	0	0	0	4	Charizard	122	297	0	-	0	0	0	0	0	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	33	switch	1	0	s5	-	22516,33862,38305,47294	Jirachi	321	342	0	-	0	0	0	0	0	0	4	Charizard	122	297	0	-	0	0	0	0	0	0	4	none	1	3	0	0	0
+DEC	ab_1_0	34	move	0	0	m2	m0	43660,27850,50671,27397	Jirachi	0	342	1	fnt	0	0	0	0	0	0	3	Charizard	122	297	0	-	0	0	0	0	0	0	4	p1	1	3	0	0	0
+DEC	ab_1_0	35	switch	1	0	s2	-	42484,51864,16644,33980	Tyranitar	122	342	0	-	0	0	0	0	0	0	3	Charizard	122	297	0	-	0	0	0	0	0	0	4	none	1	3	0	0	0
+DEC	ab_1_0	36	move	0	0	m3	m1	34573,63116,54155,62006	Tyranitar	82	342	0	-	1	0	0	0	1	0	3	Charizard	122	297	0	-	0	0	0	0	0	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	37	move	0	0	m3	m0	32657,27679,37200,52330	Tyranitar	0	342	1	fnt	0	0	0	0	0	0	2	Charizard	122	297	0	-	0	0	0	0	0	0	4	p1	1	3	0	0	0
+DEC	ab_1_0	38	switch	1	0	s1	-	9805,15341,3208,40288	Flygon	302	302	0	-	0	0	0	0	0	0	2	Charizard	122	297	0	-	0	0	0	0	0	0	4	none	1	3	0	0	0
+DEC	ab_1_0	39	move	0	0	m2	m1	63116,31539,38079,36389	Flygon	302	302	0	-	0	0	0	0	0	0	2	Charizard	122	297	0	-	0	0	0	0	0	0	4	p1	1	3	0	0	0
+DEC	ab_1_0	40	move	0	0	m0	m0	44474,3072,59183,22794	Flygon	200	302	0	-	0	0	0	0	0	0	2	Charizard	122	297	0	-	0	0	0	0	0	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	41	move	0	0	s3	s5	55207,58895,56031,36350	Gengar	261	261	0	-	0	0	0	0	0	0	2	Blissey	132	651	0	-	0	0	0	0	0	0	4	p2	1	3	0	0	0
+DEC	ab_1_0	42	move	0	0	m3	s5	35101,15804,3767,31666	Gengar	261	261	0	-	0	0	0	0	0	0	2	Charizard	0	297	1	fnt	0	0	0	0	0	0	3	p2	1	3	0	0	0
+DEC	ab_1_0	43	switch	0	1	-	s5	35101,15804,3767,31666	Gengar	261	261	0	-	0	0	0	0	0	0	2	Blissey	0	651	1	fnt	0	0	0	0	0	0	2	none	1	3	0	0	0
+DEC	ab_1_0	44	switch	0	1	-	s3	35101,15804,3767,31666	Gengar	261	261	0	-	0	0	0	0	0	0	2	Tyranitar	0	404	1	fnt	0	0	0	0	0	0	1	none	1	3	0	0	0
+DEC	ab_1_0	45	switch	0	1	-	s4	25258,16767,31130,44541	Gengar	261	261	0	-	0	0	0	0	0	0	2	Metagross	285	351	0	-	0	0	0	0	0	0	1	none	1	3	0	0	0
+DEC	ab_1_0	46	move	0	0	m3	m3	24302,44729,30263,4442	Gengar	261	261	0	-	0	0	0	0	0	0	2	Metagross	0	351	1	par	0	0	0	0	0	0	0	p1	1	3	0	0	0
+END	ab_1_0	1	p1
+L	ab_1_0	0	|t:|<NORMALIZED>
+L	ab_1_0	1	|gametype|singles
+L	ab_1_0	2	|player|p1|P1||
+L	ab_1_0	3	|player|p2|P2||
+L	ab_1_0	4	|gen|3
+L	ab_1_0	5	|tier|[Gen 3] OU
+L	ab_1_0	6	|rule|HP Percentage Mod: HP is shown in percentages
+L	ab_1_0	7	|rule|Beat Up Nicknames Mod: Beat Up will not reveal any party members
+L	ab_1_0	8	|rule|Endless Battle Clause: Forcing endless battles is banned
+L	ab_1_0	9	|rule|Sleep Clause Mod: Limit one foe put to sleep
+L	ab_1_0	10	|rule|Switch Priority Clause Mod: Faster Pokémon switch first
+L	ab_1_0	11	|rule|Species Clause: Limit one of each Pokémon
+L	ab_1_0	12	|rule|OHKO Clause: OHKO moves are banned
+L	ab_1_0	13	|rule|Evasion Items Clause: Evasion items are banned
+L	ab_1_0	14	|rule|Evasion Moves Clause: Evasion moves are banned
+L	ab_1_0	15	|rule|One Boost Passer Clause: Limit one Baton Passer that has a way to boost its stats
+L	ab_1_0	16	|rule|Freeze Clause Mod: Limit one foe frozen
+L	ab_1_0	17	|rule|Baton Pass Stat Clause: No Baton Passer may have a way to boost its Speed
+L	ab_1_0	18	|
+L	ab_1_0	19	|t:|<NORMALIZED>
+L	ab_1_0	20	|teamsize|p1|6
+L	ab_1_0	21	|teamsize|p2|6
+L	ab_1_0	22	|start
+L	ab_1_0	23	|switch|p1a: Tyranitar|Tyranitar, M|342/342
+L	ab_1_0	24	|switch|p2a: Tyranitar|Tyranitar, M|404/404
+L	ab_1_0	25	|-weather|Sandstorm|[from] ability: Sand Stream|[of] p1a: Tyranitar
+L	ab_1_0	26	|turn|1
+L	ab_1_0	27	|
+L	ab_1_0	28	|t:|<NORMALIZED>
+L	ab_1_0	29	|switch|p2a: Cloyster|Cloyster, M|245/245
+L	ab_1_0	30	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_1_0	31	|-boost|p1a: Tyranitar|atk|1
+L	ab_1_0	32	|-boost|p1a: Tyranitar|spe|1
+L	ab_1_0	33	|
+L	ab_1_0	34	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	35	|-damage|p2a: Cloyster|230/245|[from] Sandstorm
+L	ab_1_0	36	|-heal|p2a: Cloyster|245/245|[from] item: Leftovers
+L	ab_1_0	37	|upkeep
+L	ab_1_0	38	|turn|2
+L	ab_1_0	39	|
+L	ab_1_0	40	|t:|<NORMALIZED>
+L	ab_1_0	41	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_1_0	42	|-boost|p1a: Tyranitar|atk|1
+L	ab_1_0	43	|-boost|p1a: Tyranitar|spe|1
+L	ab_1_0	44	|move|p2a: Cloyster|Spikes|p1a: Tyranitar
+L	ab_1_0	45	|-sidestart|p1: P1|Spikes
+L	ab_1_0	46	|
+L	ab_1_0	47	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	48	|-damage|p2a: Cloyster|230/245|[from] Sandstorm
+L	ab_1_0	49	|-heal|p2a: Cloyster|245/245|[from] item: Leftovers
+L	ab_1_0	50	|upkeep
+L	ab_1_0	51	|turn|3
+L	ab_1_0	52	|
+L	ab_1_0	53	|t:|<NORMALIZED>
+L	ab_1_0	54	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_1_0	55	|-boost|p1a: Tyranitar|atk|1
+L	ab_1_0	56	|-boost|p1a: Tyranitar|spe|1
+L	ab_1_0	57	|move|p2a: Cloyster|Rapid Spin|p1a: Tyranitar
+L	ab_1_0	58	|-resisted|p1a: Tyranitar
+L	ab_1_0	59	|-damage|p1a: Tyranitar|337/342
+L	ab_1_0	60	|
+L	ab_1_0	61	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	62	|-damage|p2a: Cloyster|230/245|[from] Sandstorm
+L	ab_1_0	63	|-heal|p2a: Cloyster|245/245|[from] item: Leftovers
+L	ab_1_0	64	|upkeep
+L	ab_1_0	65	|turn|4
+L	ab_1_0	66	|
+L	ab_1_0	67	|t:|<NORMALIZED>
+L	ab_1_0	68	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_1_0	69	|-boost|p1a: Tyranitar|atk|1
+L	ab_1_0	70	|-boost|p1a: Tyranitar|spe|1
+L	ab_1_0	71	|move|p2a: Cloyster|Rapid Spin|p1a: Tyranitar
+L	ab_1_0	72	|-resisted|p1a: Tyranitar
+L	ab_1_0	73	|-damage|p1a: Tyranitar|331/342
+L	ab_1_0	74	|
+L	ab_1_0	75	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	76	|-damage|p2a: Cloyster|230/245|[from] Sandstorm
+L	ab_1_0	77	|-heal|p2a: Cloyster|245/245|[from] item: Leftovers
+L	ab_1_0	78	|upkeep
+L	ab_1_0	79	|turn|5
+L	ab_1_0	80	|
+L	ab_1_0	81	|t:|<NORMALIZED>
+L	ab_1_0	82	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_1_0	83	|-boost|p1a: Tyranitar|atk|1
+L	ab_1_0	84	|-boost|p1a: Tyranitar|spe|1
+L	ab_1_0	85	|move|p2a: Cloyster|Explosion|p1a: Tyranitar
+L	ab_1_0	86	|-resisted|p1a: Tyranitar
+L	ab_1_0	87	|-damage|p1a: Tyranitar|164/342
+L	ab_1_0	88	|faint|p2a: Cloyster
+L	ab_1_0	89	|
+L	ab_1_0	90	|t:|<NORMALIZED>
+L	ab_1_0	91	|switch|p2a: Blissey|Blissey, F|651/651
+L	ab_1_0	92	|
+L	ab_1_0	93	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	94	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_1_0	95	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_1_0	96	|upkeep
+L	ab_1_0	97	|turn|6
+L	ab_1_0	98	|
+L	ab_1_0	99	|t:|<NORMALIZED>
+L	ab_1_0	100	|switch|p1a: Blissey|Blissey, F|651/651
+L	ab_1_0	101	|-damage|p1a: Blissey|570/651|[from] Spikes
+L	ab_1_0	102	|move|p2a: Blissey|Seismic Toss|p1a: Blissey
+L	ab_1_0	103	|-damage|p1a: Blissey|470/651
+L	ab_1_0	104	|
+L	ab_1_0	105	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	106	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_1_0	107	|-damage|p1a: Blissey|430/651|[from] Sandstorm
+L	ab_1_0	108	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_1_0	109	|-heal|p1a: Blissey|470/651|[from] item: Leftovers
+L	ab_1_0	110	|upkeep
+L	ab_1_0	111	|turn|7
+L	ab_1_0	112	|
+L	ab_1_0	113	|t:|<NORMALIZED>
+L	ab_1_0	114	|move|p2a: Blissey|Calm Mind|p2a: Blissey
+L	ab_1_0	115	|-boost|p2a: Blissey|spa|1
+L	ab_1_0	116	|-boost|p2a: Blissey|spd|1
+L	ab_1_0	117	|move|p1a: Blissey|Calm Mind|p1a: Blissey
+L	ab_1_0	118	|-boost|p1a: Blissey|spa|1
+L	ab_1_0	119	|-boost|p1a: Blissey|spd|1
+L	ab_1_0	120	|
+L	ab_1_0	121	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	122	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_1_0	123	|-damage|p1a: Blissey|430/651|[from] Sandstorm
+L	ab_1_0	124	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_1_0	125	|-heal|p1a: Blissey|470/651|[from] item: Leftovers
+L	ab_1_0	126	|upkeep
+L	ab_1_0	127	|turn|8
+L	ab_1_0	128	|
+L	ab_1_0	129	|t:|<NORMALIZED>
+L	ab_1_0	130	|move|p2a: Blissey|Thunder Wave|p1a: Blissey
+L	ab_1_0	131	|-status|p1a: Blissey|par
+L	ab_1_0	132	|move|p1a: Blissey|Calm Mind|p1a: Blissey
+L	ab_1_0	133	|-boost|p1a: Blissey|spa|1
+L	ab_1_0	134	|-boost|p1a: Blissey|spd|1
+L	ab_1_0	135	|
+L	ab_1_0	136	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	137	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_1_0	138	|-damage|p1a: Blissey|430/651 par|[from] Sandstorm
+L	ab_1_0	139	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_1_0	140	|-heal|p1a: Blissey|470/651 par|[from] item: Leftovers
+L	ab_1_0	141	|upkeep
+L	ab_1_0	142	|turn|9
+L	ab_1_0	143	|
+L	ab_1_0	144	|t:|<NORMALIZED>
+L	ab_1_0	145	|move|p2a: Blissey|Wish|p2a: Blissey
+L	ab_1_0	146	|move|p1a: Blissey|Soft-Boiled|p1a: Blissey
+L	ab_1_0	147	|-heal|p1a: Blissey|651/651 par
+L	ab_1_0	148	|
+L	ab_1_0	149	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	150	|-damage|p2a: Blissey|611/651|[from] Sandstorm
+L	ab_1_0	151	|-damage|p1a: Blissey|611/651 par|[from] Sandstorm
+L	ab_1_0	152	|-heal|p2a: Blissey|651/651|[from] item: Leftovers
+L	ab_1_0	153	|-heal|p1a: Blissey|651/651 par|[from] item: Leftovers
+L	ab_1_0	154	|upkeep
+L	ab_1_0	155	|turn|10
+L	ab_1_0	156	|
+L	ab_1_0	157	|t:|<NORMALIZED>
+L	ab_1_0	158	|switch|p2a: Tyranitar|Tyranitar, M|404/404
+L	ab_1_0	159	|cant|p1a: Blissey|par
+L	ab_1_0	160	|
+L	ab_1_0	161	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	162	|-damage|p1a: Blissey|611/651 par|[from] Sandstorm
+L	ab_1_0	163	|-heal|p1a: Blissey|651/651 par|[from] item: Leftovers
+L	ab_1_0	164	|upkeep
+L	ab_1_0	165	|turn|11
+L	ab_1_0	166	|
+L	ab_1_0	167	|t:|<NORMALIZED>
+L	ab_1_0	168	|move|p2a: Tyranitar|Brick Break|p1a: Blissey
+L	ab_1_0	169	|-supereffective|p1a: Blissey
+L	ab_1_0	170	|-damage|p1a: Blissey|362/651 par
+L	ab_1_0	171	|move|p1a: Blissey|Thunderbolt|p2a: Tyranitar
+L	ab_1_0	172	|-damage|p2a: Tyranitar|228/404
+L	ab_1_0	173	|
+L	ab_1_0	174	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	175	|-damage|p1a: Blissey|322/651 par|[from] Sandstorm
+L	ab_1_0	176	|-heal|p1a: Blissey|362/651 par|[from] item: Leftovers
+L	ab_1_0	177	|upkeep
+L	ab_1_0	178	|turn|12
+L	ab_1_0	179	|
+L	ab_1_0	180	|t:|<NORMALIZED>
+L	ab_1_0	181	|-curestatus|p1a: Blissey|par|[from] ability: Natural Cure|[silent]
+L	ab_1_0	182	|switch|p1a: Skarmory|Skarmory, M|334/334
+L	ab_1_0	183	|move|p2a: Tyranitar|Hidden Power|p1a: Skarmory
+L	ab_1_0	184	|-resisted|p1a: Skarmory
+L	ab_1_0	185	|-damage|p1a: Skarmory|283/334
+L	ab_1_0	186	|
+L	ab_1_0	187	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	188	|-heal|p1a: Skarmory|303/334|[from] item: Leftovers
+L	ab_1_0	189	|upkeep
+L	ab_1_0	190	|turn|13
+L	ab_1_0	191	|
+L	ab_1_0	192	|t:|<NORMALIZED>
+L	ab_1_0	193	|move|p1a: Skarmory|Spikes|p2a: Tyranitar
+L	ab_1_0	194	|-sidestart|p2: P2|Spikes
+L	ab_1_0	195	|move|p2a: Tyranitar|Rock Slide|p1a: Skarmory
+L	ab_1_0	196	|-damage|p1a: Skarmory|227/334
+L	ab_1_0	197	|
+L	ab_1_0	198	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	199	|-heal|p1a: Skarmory|247/334|[from] item: Leftovers
+L	ab_1_0	200	|upkeep
+L	ab_1_0	201	|turn|14
+L	ab_1_0	202	|
+L	ab_1_0	203	|t:|<NORMALIZED>
+L	ab_1_0	204	|switch|p2a: Blissey|Blissey, F|651/651
+L	ab_1_0	205	|-damage|p2a: Blissey|570/651|[from] Spikes
+L	ab_1_0	206	|move|p1a: Skarmory|Roar|p2a: Blissey
+L	ab_1_0	207	|drag|p2a: Gengar|Gengar, M|323/323
+L	ab_1_0	208	|
+L	ab_1_0	209	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	210	|-damage|p2a: Gengar|303/323|[from] Sandstorm
+L	ab_1_0	211	|-heal|p2a: Gengar|323/323|[from] item: Leftovers
+L	ab_1_0	212	|-heal|p1a: Skarmory|267/334|[from] item: Leftovers
+L	ab_1_0	213	|upkeep
+L	ab_1_0	214	|turn|15
+L	ab_1_0	215	|
+L	ab_1_0	216	|t:|<NORMALIZED>
+L	ab_1_0	217	|move|p2a: Gengar|Explosion|p1a: Skarmory
+L	ab_1_0	218	|-resisted|p1a: Skarmory
+L	ab_1_0	219	|-damage|p1a: Skarmory|186/334
+L	ab_1_0	220	|faint|p2a: Gengar
+L	ab_1_0	221	|
+L	ab_1_0	222	|t:|<NORMALIZED>
+L	ab_1_0	223	|switch|p2a: Tyranitar|Tyranitar, M|228/404
+L	ab_1_0	224	|-damage|p2a: Tyranitar|178/404|[from] Spikes
+L	ab_1_0	225	|
+L	ab_1_0	226	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	227	|-heal|p1a: Skarmory|206/334|[from] item: Leftovers
+L	ab_1_0	228	|upkeep
+L	ab_1_0	229	|turn|16
+L	ab_1_0	230	|
+L	ab_1_0	231	|t:|<NORMALIZED>
+L	ab_1_0	232	|move|p1a: Skarmory|Drill Peck|p2a: Tyranitar
+L	ab_1_0	233	|-resisted|p2a: Tyranitar
+L	ab_1_0	234	|-crit|p2a: Tyranitar
+L	ab_1_0	235	|-damage|p2a: Tyranitar|104/404
+L	ab_1_0	236	|move|p2a: Tyranitar|Rock Slide|p1a: Skarmory
+L	ab_1_0	237	|-damage|p1a: Skarmory|134/334
+L	ab_1_0	238	|
+L	ab_1_0	239	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	240	|-heal|p1a: Skarmory|154/334|[from] item: Leftovers
+L	ab_1_0	241	|upkeep
+L	ab_1_0	242	|turn|17
+L	ab_1_0	243	|
+L	ab_1_0	244	|t:|<NORMALIZED>
+L	ab_1_0	245	|move|p1a: Skarmory|Spikes|p2a: Tyranitar
+L	ab_1_0	246	|-sidestart|p2: P2|Spikes
+L	ab_1_0	247	|move|p2a: Tyranitar|Hidden Power|p1a: Skarmory
+L	ab_1_0	248	|-resisted|p1a: Skarmory
+L	ab_1_0	249	|-damage|p1a: Skarmory|103/334
+L	ab_1_0	250	|
+L	ab_1_0	251	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	252	|-heal|p1a: Skarmory|123/334|[from] item: Leftovers
+L	ab_1_0	253	|upkeep
+L	ab_1_0	254	|turn|18
+L	ab_1_0	255	|
+L	ab_1_0	256	|t:|<NORMALIZED>
+L	ab_1_0	257	|move|p2a: Tyranitar|Ice Beam|p1a: Skarmory
+L	ab_1_0	258	|-damage|p1a: Skarmory|27/334
+L	ab_1_0	259	|move|p1a: Skarmory|Roar|p2a: Tyranitar
+L	ab_1_0	260	|drag|p2a: Blissey|Blissey, F|570/651
+L	ab_1_0	261	|-damage|p2a: Blissey|462/651|[from] Spikes
+L	ab_1_0	262	|
+L	ab_1_0	263	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	264	|-damage|p2a: Blissey|422/651|[from] Sandstorm
+L	ab_1_0	265	|-heal|p1a: Skarmory|47/334|[from] item: Leftovers
+L	ab_1_0	266	|-heal|p2a: Blissey|462/651|[from] item: Leftovers
+L	ab_1_0	267	|upkeep
+L	ab_1_0	268	|turn|19
+L	ab_1_0	269	|
+L	ab_1_0	270	|t:|<NORMALIZED>
+L	ab_1_0	271	|move|p1a: Skarmory|Drill Peck|p2a: Blissey
+L	ab_1_0	272	|-damage|p2a: Blissey|294/651
+L	ab_1_0	273	|move|p2a: Blissey|Thunder Wave|p1a: Skarmory
+L	ab_1_0	274	|-status|p1a: Skarmory|par
+L	ab_1_0	275	|
+L	ab_1_0	276	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	277	|-damage|p2a: Blissey|254/651|[from] Sandstorm
+L	ab_1_0	278	|-heal|p2a: Blissey|294/651|[from] item: Leftovers
+L	ab_1_0	279	|-heal|p1a: Skarmory|67/334 par|[from] item: Leftovers
+L	ab_1_0	280	|upkeep
+L	ab_1_0	281	|turn|20
+L	ab_1_0	282	|
+L	ab_1_0	283	|t:|<NORMALIZED>
+L	ab_1_0	284	|switch|p2a: Tyranitar|Tyranitar, M|104/404
+L	ab_1_0	285	|-damage|p2a: Tyranitar|37/404|[from] Spikes
+L	ab_1_0	286	|move|p1a: Skarmory|Roar|p2a: Tyranitar
+L	ab_1_0	287	|drag|p2a: Metagross|Metagross|351/351
+L	ab_1_0	288	|-damage|p2a: Metagross|293/351|[from] Spikes
+L	ab_1_0	289	|
+L	ab_1_0	290	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	291	|-heal|p2a: Metagross|314/351|[from] item: Leftovers
+L	ab_1_0	292	|-heal|p1a: Skarmory|87/334 par|[from] item: Leftovers
+L	ab_1_0	293	|upkeep
+L	ab_1_0	294	|turn|21
+L	ab_1_0	295	|
+L	ab_1_0	296	|t:|<NORMALIZED>
+L	ab_1_0	297	|move|p2a: Metagross|Agility|p2a: Metagross
+L	ab_1_0	298	|-boost|p2a: Metagross|spe|2
+L	ab_1_0	299	|cant|p1a: Skarmory|par
+L	ab_1_0	300	|
+L	ab_1_0	301	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	302	|-heal|p2a: Metagross|335/351|[from] item: Leftovers
+L	ab_1_0	303	|-heal|p1a: Skarmory|107/334 par|[from] item: Leftovers
+L	ab_1_0	304	|upkeep
+L	ab_1_0	305	|turn|22
+L	ab_1_0	306	|
+L	ab_1_0	307	|t:|<NORMALIZED>
+L	ab_1_0	308	|move|p2a: Metagross|Meteor Mash|p1a: Skarmory|[miss]
+L	ab_1_0	309	|-miss|p2a: Metagross|p1a: Skarmory
+L	ab_1_0	310	|move|p1a: Skarmory|Spikes|p2a: Metagross
+L	ab_1_0	311	|-sidestart|p2: P2|Spikes
+L	ab_1_0	312	|
+L	ab_1_0	313	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	314	|-heal|p2a: Metagross|351/351|[from] item: Leftovers
+L	ab_1_0	315	|-heal|p1a: Skarmory|127/334 par|[from] item: Leftovers
+L	ab_1_0	316	|upkeep
+L	ab_1_0	317	|turn|23
+L	ab_1_0	318	|
+L	ab_1_0	319	|t:|<NORMALIZED>
+L	ab_1_0	320	|move|p2a: Metagross|Agility|p2a: Metagross
+L	ab_1_0	321	|-boost|p2a: Metagross|spe|2
+L	ab_1_0	322	|move|p1a: Skarmory|Drill Peck|p2a: Metagross
+L	ab_1_0	323	|-resisted|p2a: Metagross
+L	ab_1_0	324	|-damage|p2a: Metagross|321/351
+L	ab_1_0	325	|
+L	ab_1_0	326	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	327	|-heal|p2a: Metagross|342/351|[from] item: Leftovers
+L	ab_1_0	328	|-heal|p1a: Skarmory|147/334 par|[from] item: Leftovers
+L	ab_1_0	329	|upkeep
+L	ab_1_0	330	|turn|24
+L	ab_1_0	331	|
+L	ab_1_0	332	|t:|<NORMALIZED>
+L	ab_1_0	333	|move|p2a: Metagross|Agility|p2a: Metagross
+L	ab_1_0	334	|-boost|p2a: Metagross|spe|2
+L	ab_1_0	335	|cant|p1a: Skarmory|par
+L	ab_1_0	336	|
+L	ab_1_0	337	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	338	|-heal|p2a: Metagross|351/351|[from] item: Leftovers
+L	ab_1_0	339	|-heal|p1a: Skarmory|167/334 par|[from] item: Leftovers
+L	ab_1_0	340	|upkeep
+L	ab_1_0	341	|turn|25
+L	ab_1_0	342	|
+L	ab_1_0	343	|t:|<NORMALIZED>
+L	ab_1_0	344	|switch|p2a: Charizard|Charizard, M|297/297
+L	ab_1_0	345	|move|p1a: Skarmory|Drill Peck|p2a: Charizard
+L	ab_1_0	346	|-damage|p2a: Charizard|196/297
+L	ab_1_0	347	|
+L	ab_1_0	348	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	349	|-damage|p2a: Charizard|178/297|[from] Sandstorm
+L	ab_1_0	350	|-heal|p2a: Charizard|196/297|[from] item: Leftovers
+L	ab_1_0	351	|-heal|p1a: Skarmory|187/334 par|[from] item: Leftovers
+L	ab_1_0	352	|upkeep
+L	ab_1_0	353	|turn|26
+L	ab_1_0	354	|
+L	ab_1_0	355	|t:|<NORMALIZED>
+L	ab_1_0	356	|move|p2a: Charizard|Fire Blast|p1a: Skarmory|[miss]
+L	ab_1_0	357	|-miss|p2a: Charizard|p1a: Skarmory
+L	ab_1_0	358	|move|p1a: Skarmory|Spikes||[still]
+L	ab_1_0	359	|-fail|p1a: Skarmory
+L	ab_1_0	360	|
+L	ab_1_0	361	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	362	|-damage|p2a: Charizard|178/297|[from] Sandstorm
+L	ab_1_0	363	|-heal|p2a: Charizard|196/297|[from] item: Leftovers
+L	ab_1_0	364	|-heal|p1a: Skarmory|207/334 par|[from] item: Leftovers
+L	ab_1_0	365	|upkeep
+L	ab_1_0	366	|turn|27
+L	ab_1_0	367	|
+L	ab_1_0	368	|t:|<NORMALIZED>
+L	ab_1_0	369	|move|p2a: Charizard|Substitute|p2a: Charizard
+L	ab_1_0	370	|-start|p2a: Charizard|Substitute
+L	ab_1_0	371	|-damage|p2a: Charizard|122/297
+L	ab_1_0	372	|move|p1a: Skarmory|Spikes||[still]
+L	ab_1_0	373	|-fail|p1a: Skarmory
+L	ab_1_0	374	|
+L	ab_1_0	375	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	376	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	377	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	378	|-heal|p1a: Skarmory|227/334 par|[from] item: Leftovers
+L	ab_1_0	379	|upkeep
+L	ab_1_0	380	|turn|28
+L	ab_1_0	381	|
+L	ab_1_0	382	|t:|<NORMALIZED>
+L	ab_1_0	383	|move|p2a: Charizard|Flamethrower|p1a: Skarmory
+L	ab_1_0	384	|-supereffective|p1a: Skarmory
+L	ab_1_0	385	|-damage|p1a: Skarmory|0 fnt
+L	ab_1_0	386	|faint|p1a: Skarmory
+L	ab_1_0	387	|
+L	ab_1_0	388	|t:|<NORMALIZED>
+L	ab_1_0	389	|switch|p1a: Flygon|Flygon, M|302/302
+L	ab_1_0	390	|
+L	ab_1_0	391	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	392	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	393	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	394	|upkeep
+L	ab_1_0	395	|turn|29
+L	ab_1_0	396	|
+L	ab_1_0	397	|t:|<NORMALIZED>
+L	ab_1_0	398	|switch|p1a: Blissey|Blissey, F|362/651
+L	ab_1_0	399	|-damage|p1a: Blissey|281/651|[from] Spikes
+L	ab_1_0	400	|move|p2a: Charizard|Flamethrower|p1a: Blissey
+L	ab_1_0	401	|-damage|p1a: Blissey|174/651
+L	ab_1_0	402	|
+L	ab_1_0	403	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	404	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	405	|-damage|p1a: Blissey|134/651|[from] Sandstorm
+L	ab_1_0	406	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	407	|-heal|p1a: Blissey|174/651|[from] item: Leftovers
+L	ab_1_0	408	|upkeep
+L	ab_1_0	409	|turn|30
+L	ab_1_0	410	|
+L	ab_1_0	411	|t:|<NORMALIZED>
+L	ab_1_0	412	|move|p2a: Charizard|Beat Up|p1a: Blissey
+L	ab_1_0	413	|-damage|p1a: Blissey|111/651
+L	ab_1_0	414	|-damage|p1a: Blissey|13/651
+L	ab_1_0	415	|-damage|p1a: Blissey|0 fnt
+L	ab_1_0	416	|-hitcount|p1a: Blissey|3
+L	ab_1_0	417	|faint|p1a: Blissey
+L	ab_1_0	418	|
+L	ab_1_0	419	|t:|<NORMALIZED>
+L	ab_1_0	420	|switch|p1a: Jirachi|Jirachi|342/342
+L	ab_1_0	421	|-damage|p1a: Jirachi|300/342|[from] Spikes
+L	ab_1_0	422	|
+L	ab_1_0	423	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	424	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	425	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	426	|-heal|p1a: Jirachi|321/342|[from] item: Leftovers
+L	ab_1_0	427	|upkeep
+L	ab_1_0	428	|turn|31
+L	ab_1_0	429	|
+L	ab_1_0	430	|t:|<NORMALIZED>
+L	ab_1_0	431	|move|p1a: Jirachi|Hidden Power|p2a: Charizard
+L	ab_1_0	432	|-end|p2a: Charizard|Substitute
+L	ab_1_0	433	|move|p2a: Charizard|Fire Blast|p1a: Jirachi
+L	ab_1_0	434	|-supereffective|p1a: Jirachi
+L	ab_1_0	435	|-damage|p1a: Jirachi|0 fnt
+L	ab_1_0	436	|faint|p1a: Jirachi
+L	ab_1_0	437	|
+L	ab_1_0	438	|t:|<NORMALIZED>
+L	ab_1_0	439	|switch|p1a: Tyranitar|Tyranitar, M|164/342
+L	ab_1_0	440	|-damage|p1a: Tyranitar|122/342|[from] Spikes
+L	ab_1_0	441	|
+L	ab_1_0	442	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	443	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	444	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	445	|upkeep
+L	ab_1_0	446	|turn|32
+L	ab_1_0	447	|
+L	ab_1_0	448	|t:|<NORMALIZED>
+L	ab_1_0	449	|move|p2a: Charizard|Beat Up|p1a: Tyranitar
+L	ab_1_0	450	|-damage|p1a: Tyranitar|116/342
+L	ab_1_0	451	|-crit|p1a: Tyranitar
+L	ab_1_0	452	|-damage|p1a: Tyranitar|94/342
+L	ab_1_0	453	|-damage|p1a: Tyranitar|83/342
+L	ab_1_0	454	|-damage|p1a: Tyranitar|82/342
+L	ab_1_0	455	|-hitcount|p1a: Tyranitar|4
+L	ab_1_0	456	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_1_0	457	|-boost|p1a: Tyranitar|atk|1
+L	ab_1_0	458	|-boost|p1a: Tyranitar|spe|1
+L	ab_1_0	459	|
+L	ab_1_0	460	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	461	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	462	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	463	|upkeep
+L	ab_1_0	464	|turn|33
+L	ab_1_0	465	|
+L	ab_1_0	466	|t:|<NORMALIZED>
+L	ab_1_0	467	|move|p1a: Tyranitar|Dragon Dance|p1a: Tyranitar
+L	ab_1_0	468	|-boost|p1a: Tyranitar|atk|1
+L	ab_1_0	469	|-boost|p1a: Tyranitar|spe|1
+L	ab_1_0	470	|move|p2a: Charizard|Fire Blast|p1a: Tyranitar
+L	ab_1_0	471	|-resisted|p1a: Tyranitar
+L	ab_1_0	472	|-damage|p1a: Tyranitar|0 fnt
+L	ab_1_0	473	|faint|p1a: Tyranitar
+L	ab_1_0	474	|
+L	ab_1_0	475	|t:|<NORMALIZED>
+L	ab_1_0	476	|switch|p1a: Flygon|Flygon, M|302/302
+L	ab_1_0	477	|
+L	ab_1_0	478	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	479	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	480	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	481	|upkeep
+L	ab_1_0	482	|turn|34
+L	ab_1_0	483	|
+L	ab_1_0	484	|t:|<NORMALIZED>
+L	ab_1_0	485	|move|p1a: Flygon|Protect|p1a: Flygon
+L	ab_1_0	486	|-singleturn|p1a: Flygon|Protect
+L	ab_1_0	487	|move|p2a: Charizard|Beat Up|p1a: Flygon
+L	ab_1_0	488	|-activate|p1a: Flygon|Protect
+L	ab_1_0	489	|
+L	ab_1_0	490	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	491	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	492	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	493	|upkeep
+L	ab_1_0	494	|turn|35
+L	ab_1_0	495	|
+L	ab_1_0	496	|t:|<NORMALIZED>
+L	ab_1_0	497	|move|p2a: Charizard|Fire Blast|p1a: Flygon
+L	ab_1_0	498	|-resisted|p1a: Flygon
+L	ab_1_0	499	|-damage|p1a: Flygon|182/302
+L	ab_1_0	500	|move|p1a: Flygon|Earthquake|p2a: Charizard
+L	ab_1_0	501	|-immune|p2a: Charizard
+L	ab_1_0	502	|
+L	ab_1_0	503	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	504	|-damage|p2a: Charizard|104/297|[from] Sandstorm
+L	ab_1_0	505	|-heal|p2a: Charizard|122/297|[from] item: Leftovers
+L	ab_1_0	506	|-heal|p1a: Flygon|200/302|[from] item: Leftovers
+L	ab_1_0	507	|upkeep
+L	ab_1_0	508	|turn|36
+L	ab_1_0	509	|
+L	ab_1_0	510	|t:|<NORMALIZED>
+L	ab_1_0	511	|switch|p2a: Blissey|Blissey, F|294/651
+L	ab_1_0	512	|-damage|p2a: Blissey|132/651|[from] Spikes
+L	ab_1_0	513	|switch|p1a: Gengar|Gengar, M|261/261
+L	ab_1_0	514	|
+L	ab_1_0	515	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	516	|-damage|p1a: Gengar|245/261|[from] Sandstorm
+L	ab_1_0	517	|-damage|p2a: Blissey|92/651|[from] Sandstorm
+L	ab_1_0	518	|-heal|p1a: Gengar|261/261|[from] item: Leftovers
+L	ab_1_0	519	|-heal|p2a: Blissey|132/651|[from] item: Leftovers
+L	ab_1_0	520	|upkeep
+L	ab_1_0	521	|turn|37
+L	ab_1_0	522	|
+L	ab_1_0	523	|t:|<NORMALIZED>
+L	ab_1_0	524	|switch|p2a: Charizard|Charizard, M|122/297
+L	ab_1_0	525	|move|p1a: Gengar|Thunderbolt|p2a: Charizard
+L	ab_1_0	526	|-supereffective|p2a: Charizard
+L	ab_1_0	527	|-crit|p2a: Charizard
+L	ab_1_0	528	|-damage|p2a: Charizard|0 fnt
+L	ab_1_0	529	|faint|p2a: Charizard
+L	ab_1_0	530	|
+L	ab_1_0	531	|t:|<NORMALIZED>
+L	ab_1_0	532	|switch|p2a: Blissey|Blissey, F|132/651
+L	ab_1_0	533	|-damage|p2a: Blissey|0 fnt|[from] Spikes
+L	ab_1_0	534	|faint|p2a: Blissey
+L	ab_1_0	535	|
+L	ab_1_0	536	|t:|<NORMALIZED>
+L	ab_1_0	537	|switch|p2a: Tyranitar|Tyranitar, M|37/404
+L	ab_1_0	538	|-damage|p2a: Tyranitar|0 fnt|[from] Spikes
+L	ab_1_0	539	|faint|p2a: Tyranitar
+L	ab_1_0	540	|
+L	ab_1_0	541	|t:|<NORMALIZED>
+L	ab_1_0	542	|switch|p2a: Metagross|Metagross|351/351
+L	ab_1_0	543	|-damage|p2a: Metagross|264/351|[from] Spikes
+L	ab_1_0	544	|
+L	ab_1_0	545	|-weather|Sandstorm|[upkeep]
+L	ab_1_0	546	|-damage|p1a: Gengar|245/261|[from] Sandstorm
+L	ab_1_0	547	|-heal|p1a: Gengar|261/261|[from] item: Leftovers
+L	ab_1_0	548	|-heal|p2a: Metagross|285/351|[from] item: Leftovers
+L	ab_1_0	549	|upkeep
+L	ab_1_0	550	|turn|38
+L	ab_1_0	551	|
+L	ab_1_0	552	|t:|<NORMALIZED>
+L	ab_1_0	553	|move|p1a: Gengar|Thunderbolt|p2a: Metagross
+L	ab_1_0	554	|-damage|p2a: Metagross|158/351
+L	ab_1_0	555	|-status|p2a: Metagross|par
+L	ab_1_0	556	|move|p2a: Metagross|Explosion|p1a: Gengar
+L	ab_1_0	557	|-immune|p1a: Gengar
+L	ab_1_0	558	|faint|p2a: Metagross
+L	ab_1_0	559	|
+L	ab_1_0	560	|win|P1

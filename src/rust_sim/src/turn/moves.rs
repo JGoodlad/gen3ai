@@ -751,6 +751,19 @@ impl crate::state::BattleState {
             return self.run_protect(side, slot, &move_id, &move_name, will_act, dex);
         }
 
+        // --- BEAT UP's `beatup` volatile is added by the move's `onModifyMove`
+        //     (`data/mods/gen3/moves.ts`), which gen-3 `useMoveInner` runs BEFORE the accuracy
+        //     roll and the Protect `TryHit` (`data/mods/gen3/scripts.ts`). So a Beat Up that is
+        //     then PROTECT-BLOCKED or MISSES still leaves the volatile, and its NO_ORDER residual
+        //     duration handler still joins the residual tie-shuffle (a Beat Up into a Protect at
+        //     equal Speed is one extra draw). Setting it only in `run_beat_up` (reached on a hit)
+        //     dropped that draw (`gen3_beatup_volatile_on_block_v1`, the M6 cutover stress's
+        //     `rmugoebrf_ab_1_0` + `rmugrh4uy_bab_0_18`: Charizard Beat Up into a 328-Speed Flygon's
+        //     Protect). ---
+        if move_id == "beatup" {
+            self.sides[side].pokemon[slot].beat_up = true;
+        }
+
         // --- PROTECT BLOCK (the FOE side): a move TARGETING the protected mon is
         //     blocked. In gen-3 `tryMoveHit` the protect `onTryHit` fires at the `TryHit`
         //     event, which runs AFTER the accuracy roll (`scripts.ts` line 364 accuracy →

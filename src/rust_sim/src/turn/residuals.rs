@@ -1053,7 +1053,10 @@ impl crate::state::BattleState {
                         continue; // duration-END → skip faintMessages
                     }
                     self.sides[side].pokemon[slot].locked_move = Some((turns - 1, k));
-                    continue;
+                    // NON-ending: the sim's `lockedmove` is `duration: 2` refreshed by `onRestart`,
+                    // so a live lock's residual is the 2 → 1 decrement, NOT the `duration-- == 0`
+                    // branch — `fieldEvent` runs `onResidual` and then the per-handler
+                    // `faintMessages()` (`gen3_duration_nonend_faint_drain_v1`). Fall through.
                 }
                 // FURY CUTTER's duration tick (`gen3_bp_modifier_cluster_v1`): 2 -> 1 -> gone.
                 // No emission (the sim's condition has no onEnd); the duration-END `continue`
@@ -1064,10 +1067,13 @@ impl crate::state::BattleState {
                     };
                     if d <= 1 {
                         self.sides[side].pokemon[slot].fury_cutter = None;
-                        continue;
+                        continue; // duration-END → skip faintMessages
                     }
                     self.sides[side].pokemon[slot].fury_cutter = Some((m, d - 1));
-                    continue;
+                    // A NON-ending decrement (2 → 1) is not the sim's `duration-- == 0` branch,
+                    // so `fieldEvent` runs the per-handler `faintMessages()` — draining a faint
+                    // an earlier END handler deferred (the order-12 Perish `continue`) BEFORE
+                    // `|upkeep|` (`gen3_duration_nonend_faint_drain_v1`). Fall through.
                 }
                 // ROLLOUT's duration tick (`gen3_rollout_lock_duration_v1`): 2 -> 1 after a
                 // landed hit keeps the lock; 1 -> gone ends it (a miss, a Protect, a turn the
@@ -1080,10 +1086,13 @@ impl crate::state::BattleState {
                     if d <= 1 {
                         self.sides[side].pokemon[slot].rollout = None;
                         self.sides[side].pokemon[slot].rollout_duration = 0;
-                        continue;
+                        continue; // duration-END → skip faintMessages
                     }
                     self.sides[side].pokemon[slot].rollout_duration = d - 1;
-                    continue;
+                    // NON-ending (2 → 1): the sim runs `rollout.condition.onResidual` and then the
+                    // per-handler `faintMessages()`, so a Perish faint deferred by the order-12
+                    // END `continue` is emitted HERE, before `|upkeep|`
+                    // (`gen3_duration_nonend_faint_drain_v1`, bridge 925001 `bab_0_8`). Fall through.
                 }
                 // UPROAR's lock tick (`gen3_uproar_v1`). A LIVE tick emits the `[upkeep]`
                 // form; the tick that reaches 0 emits `-end` and takes the duration-END

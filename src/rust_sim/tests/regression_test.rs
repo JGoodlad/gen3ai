@@ -16863,3 +16863,79 @@ fn a_self_overwriting_mimic_is_what_encore_and_mimic_read() {
     assert!(raw.iter().any(|l| l == "|-fail|p2a: Mr. Mime"), "M1: with a bare -fail on the user. got:\n{joined}");
     assert_eq!(seed_str(&st.prng_seed()), "45365,35686,22216,26131", "M1: seed == the sim's");
 }
+
+// ─── gen3_duration_nonend_faint_drain_v1 ────────────────────────────────────────────────
+// The D4b class, three more arms. `fieldEvent('Residual')` takes the `duration-- == 0 →
+// end() → continue` branch ONLY on the tick that ends a duration volatile; a NON-ending
+// decrement runs the handler's callback and then the per-handler `faintMessages()`. So a
+// Perish faint that the order-12 END `continue` deferred is drained at the next such
+// handler, BEFORE `|upkeep|`. The `rollout` (duration 2 after a landed hit), `furycutter`
+// (duration 2, refreshed by `onRestart`) and `lockedmove` (duration 2, refreshed by
+// `onRestart`) arms all `continue`d on their NON-ending tick, so the port emitted the faint
+// AFTER `|upkeep|`. Found by `bridge_ab_fuzz.js --mode ladder --ladder-tier full --format
+// gen3ou --master-seed 925001` battle `bab_0_8` (a Perish Song faint on the turn a
+// Registeel's Rollout counts 2 → 1), frozen as `tests/vectors/bridge_corpus/23_*`.
+
+/// Celebi perishes out on the turn the un-perished foe first lands `lock_move`; the foe's
+/// NON-ending residual duration tick must drain Celebi's `|faint|` before `|upkeep|`.
+fn nonend_duration_tick_drains_perish_faint(lock_move: &str, seed: &str) {
+    let d = dex();
+    let p1 = "Celebi|||NoAbility|perishsong,splash|Serious|252,,,,,|N||||]Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||";
+    let p2 = format!(
+        "Snorlax|||NoAbility|splash|Serious|252,,,,,|N||||]Chansey|||NoAbility|{lock_move},splash|Serious|252,,,,,|N||||"
+    );
+    let mut battle = Battle::start_with_switchins(&opts_cg(p1, &p2, seed), &d).expect("start");
+    let st = battle.state_mut().expect("state");
+    let (out, lines) = st.run_full_battle_logged(
+        &[
+            ScriptDecision::both(Choice::Move(0), Choice::Move(0)), // Celebi Perish Song (both → perish3)
+            ScriptDecision::both(Choice::Move(1), Choice::Switch(1)), // p2 Snorlax → Chansey (clears p2 perish)
+            ScriptDecision::both(Choice::Move(1), Choice::Move(1)), // both Splash
+            ScriptDecision::both(Choice::Move(1), Choice::Move(0)), // Chansey's lock move lands; Celebi perish0
+            ScriptDecision::one(0, Choice::Switch(1)),              // Celebi's forced replacement
+        ],
+        &d,
+    );
+    let raw: Vec<String> = lines.into_iter().map(|l| l.0).collect();
+    let used = raw
+        .iter()
+        .rposition(|l| l.starts_with("|move|") && l.contains("Chansey") && !l.contains("Splash"))
+        .unwrap_or_else(|| panic!("Chansey must use {lock_move} (else the scenario is vacuous)"));
+    assert!(
+        raw[used + 1..].iter().take(3).any(|l| l.starts_with("|-damage|") && l.contains("Celebi")),
+        "{lock_move} must LAND on Celebi (a miss sets no duration volatile — vacuous). Tail:\n{}",
+        raw[used..].join("\n")
+    );
+    let faint = raw[used..]
+        .iter()
+        .position(|l| l.starts_with("|faint|") && l.contains("Celebi"))
+        .map(|i| i + used)
+        .expect("Celebi must faint from perish0 on the lock turn");
+    let upkeep = raw[used..]
+        .iter()
+        .position(|l| l == "|upkeep")
+        .map(|i| i + used)
+        .expect("the |upkeep| marker of the perish turn");
+    assert!(
+        faint < upkeep,
+        "{lock_move}'s NON-ending residual duration tick must run faintMessages so the deferred \
+         perish |faint| (idx {faint}) precedes |upkeep| (idx {upkeep}). Emitted tail:\n{}",
+        raw[used..=upkeep].join("\n")
+    );
+    assert!(out.decisions[3].active[0].fainted, "Celebi fainted at perish0 on the lock turn");
+}
+
+#[test]
+fn rollout_nonend_tick_drains_deferred_perish_faint_before_upkeep() {
+    nonend_duration_tick_drains_perish_faint("rollout", "44317,42357,9927,48760");
+}
+
+#[test]
+fn furycutter_nonend_tick_drains_deferred_perish_faint_before_upkeep() {
+    nonend_duration_tick_drains_perish_faint("furycutter", "44317,42357,9927,48760");
+}
+
+#[test]
+fn lockedmove_nonend_tick_drains_deferred_perish_faint_before_upkeep() {
+    nonend_duration_tick_drains_perish_faint("outrage", "44317,42357,9927,48760");
+}

@@ -54,6 +54,7 @@ The fixtures are named by the form they guard, e.g.:
 | `77_imprison_recast_still_fail.txt` | **M6 cutover stress** — an Imprison RE-CAST while imprisoning fails: `\|move\|<u>\|Imprison\|\|[still]` + `\|-fail\|<u>`, one `-start` only (`gen3_imprison_recast_fails_v1`); RE-RECORDED from the sim-applied choices (its header says why) |
 | `78_defense_curl_boosts_def.txt` | **M6 fuzz-fix run** — DEFENSE CURL raises DEF: `\|-boost\|<u>\|def\|1` (`gen3_boost_index_fixes_v1`; the port raised SpA, so a later Brick Break into the curled Blissey dealt 1.5x and the seed anchor fired 3 decisions later) |
 | `79_encore_into_a_self_overwriting_mimic_fails.txt` | **M6 cutover stress** — ENCORE into a mon whose `lastMove` is a Mimic that overwrote its OWN slot FAILS (`\|move\|<u>\|Encore\|\|[still]` + `\|-fail\|<u>`); the port read the SLOT and encored the copied Trick (`gen3_mimic_self_overwrite_readers_v1`) |
+| `80_beatup_blocked_by_protect_keeps_its_residual_handler.txt` | **M6 cutover stress** — a Beat Up BLOCKED by Protect still carries the `beatup` volatile (added by `onModifyMove` before the Protect `TryHit`), whose residual handler ties an equal-Speed foe's `stall` handler for one tie-shuffle draw; the port set it only on a hit (`gen3_beatup_volatile_on_block_v1`) |
 
 ## Two fixture classes (the KNOWN-RESIDUAL allowlist gate)
 

@@ -75,6 +75,16 @@ Two fixture classes — **14 clean + 5 allowlisted** today:
   (The `gender-level-details-construction-draw` deferral is inactive on the pinned-gender
   L100 pool, so it has no fixture yet; the classifier still carries it for randbats/random.)
 
+UNTAGGED regression fixture from the M6 cutover triage: `23_rollout_nonend_tick_drains_perish_faint_ou.txt`
+(bab_0_8, `--mode ladder --ladder-tier full --format gen3ou --master-seed 925001`) — a Perish Song
+`|faint|` on the turn a Registeel's Rollout counts 2 -> 1 must precede `|upkeep|`
+(`gen3_duration_nonend_faint_drain_v1`); it diverged `kind=perside` before the fix.
+
+`24_beatup_blocked_by_protect_residual_tie_draw_ou.txt` (bab_0_18, cutover stress `fz_bridge_ladder.00014`) —
+a Charizard Beat Up into a 328-Speed Flygon's Protect keeps the `beatup` residual handler, one
+residual tie-shuffle draw (`gen3_beatup_volatile_on_block_v1`); it diverged `kind=perside` (the next
+turn's speed-tie order) before the fix and reads `kind=seed` with the fix reverted.
+
 To ADD a fixture: run `node harness/bridge_ab_fuzz.js --mode pool --format {gen3customgame|gen3ou}`,
 take a repro's `battle.txt` (or extract a clean battle from `chunks/`), and drop it here. A clean
 battle stays untagged; a documented-deferral battle gets a `# ALLOWLIST <reason>` header line.
