@@ -21361,3 +21361,19 @@ No run has trained from main since `c97358e8`. Round 1 was pinned to `6eb9c776`,
 - **Clock:** clause (i) needs our own hit (T1), and a blocked attack freezes the clock (T2).
 
 No layout change. Slice T is 0 at COMMIT and MILESTONE (incl. the ladder tier and slice O, since M4's encoder had landed meanwhile and was mirrored); a fresh fuzz reads 0 over 312 battles / 62,025 decisions; M3's 30 fixtures all read 0. The golden was regenerated after a value-aware census: 698 of 991 decisions move, in the five window fields and the clock scalar only. The obs build is unchanged (0.986× [0.961, 1.030]). Two pre-existing slice-V reading classes are unattributed (backlog): our own ability after Skill Swap, and own Explosion PP. Record: `measurements/training_input_gigo_fixes_2026-09-24/`.
+
+### 2026-09-24 · OPS (MAJOR) · **RUST CORE M4 CLOSED (`9ae4acdd` `74df7250` `34da7225` `09cf40d5` `6b14fbf7`): the Rust core writes the WHOLE 2501-dim observation, byte-equal to the Python encoder on every decision checked (194,606 at MILESTONE on the new training-input boundary, pool + policy + ladder, no allowlist), 8–12× faster. Search takes rows; the typed shortcut is deleted. Built alongside: training reads none of it yet.**
+
+`BattleVersion::encode` writes the observation from one side's reading, view, legality and M3 trackers. The layout is generated from `constants.py`; the tables are read from `data/`.
+- **Transport:** the row travels in the existing pipe reply as a `<f4` frame, and Python wraps it with `np.frombuffer` (read-only, no copy). A wrong dtype, shape, length or contiguity is REFUSED. Test builds NaN-prefill the row, and a removed write is shown to fail.
+- **Slice O, byte-equal, no allowlist:**
+  - COMMIT: 2,081 decisions;
+  - MILESTONE at `b6dfd7e8`: 10/10, 194,606 decisions, 1.15 M choice tokens equal;
+  - fresh procedural-heavy fuzz: 144,293 decisions, 0;
+  - the regenerated obs golden (after the GIGO fix) reproduced exactly.
+- **Speed:** encode 0.014–0.026 ms against Python's production 0.116–0.159 ms on the same decisions (8–12×, loaded box); cold, 18–29×.
+- **Search:** it takes rows (`expand_many` `rows`), with no Python tracker, view, encoder or prefix replay on a core successor, and the fuzz gate compares its rows to the protocol road byte for byte.
+- **Typed shortcut:** DELETED together with its integrity mode (owner: held until M4), so `parse(render)` is the one observation path. The flags are recorded in `deleted_flags.md`.
+- **Not done:** the training-only label keys (belief labels, `win_target`, `opp_class`) need the opponent's true team or the env wrapper, so they belong to the M6 CUTOVER wiring. Search-decision wall time vs the Python successor is unmeasured (it needs banked traces under `models/`).
+
+New poke-env reading finding, unfixed (a training-input change): a Sleep Talk-called move into Pressure is charged 2 PP by the reading, 1 by the sim (`play(26085)`). Record `measurements/rust_core_m4_2026-09-24/`, doc `designs/rust_sim/encoder.md`.
