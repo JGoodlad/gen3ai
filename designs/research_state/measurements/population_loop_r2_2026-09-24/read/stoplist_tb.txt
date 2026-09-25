@@ -1,0 +1,26 @@
+$ python -m main.ops.tb_read ai_v13_27_popr2_loop --tag train/stable_fraction --tag train/selfplay_fraction
+
+train/stable_fraction
+  points 55   steps 2,000,016 .. 110,000,016   (last 20)
+  median +0.0000   min +0.0000   max +0.3600   last +0.3600
+
+train/selfplay_fraction   <- regime marker, read the CURRENT value
+  CURRENT 0.54 since step 96,000,000
+  changes: 0.00@2,000,016 -> 0.84@4,000,032 -> 0.90@6,000,000 -> 0.54@96,000,000
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0
+$ python -m main.ops.tb_read ai_v13_28_popr2_ctrl --tag train/stable_fraction --tag train/selfplay_fraction
+
+train/stable_fraction
+  points 55   steps 2,000,016 .. 110,000,016   (last 20)
+  median +0.0000   min +0.0000   max +0.0000   last +0.0000
+
+train/selfplay_fraction   <- regime marker, read the CURRENT value
+  CURRENT 0.90 since step 6,000,000
+  changes: 0.00@2,000,016 -> 0.84@4,000,032 -> 0.90@6,000,000
+
+=== CALIBRATION COST ===
+  NO SCALAR for reliability and/or resolution  <- absence is not a zero
+rc=0

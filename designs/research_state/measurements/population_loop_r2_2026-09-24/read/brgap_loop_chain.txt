@@ -1,0 +1,51 @@
+$ python -m main.best_response_gap ai_v13_18_teach5_offense_hidose ai_v13_24_popr1_read_loop ai_v13_29_popr2_read_loop --rounds ai_v13_18_teach5_offense_hidose=1 ai_v13_24_popr1_read_loop=2 ai_v13_29_popr2_read_loop=3 --json designs/research_state/measurements/population_loop_r2_2026-09-24/read/brgap_loop_chain.json --md designs/research_state/measurements/population_loop_r2_2026-09-24/read/brgap_loop_chain.md
+  wrote designs/research_state/measurements/population_loop_r2_2026-09-24/read/brgap_loop_chain.json
+  wrote designs/research_state/measurements/population_loop_r2_2026-09-24/read/brgap_loop_chain.md
+
+BEST-RESPONSE GAP — how much a fresh exploiter beats the generalist it trained on
+  gap = win rate − 0.5; the population loop is working iff the gap FALLS round over round
+  stat: pooled   regime: greedy-vs-greedy (EVAL regime, main.eval_worker FIXED branch)
+
+ROUND 1 · target ai_v13_12_plateau @95,158,272 · exploiter budget 8,060,928 steps · dose 3.815e-08
+  archetype  teams  run                              endpoint  pooled  n    gap pp   95% CI pp         
+  ---------  -----  -------------------------------  --------  ------  ---  -------  ------------------
+  offense    5/5    ai_v13_18_teach5_offense_hidose  0.6600    0.6400  400   +14.00  [  +9.18,  +18.55]
+
+ROUND 2 · target ai_v13_22_popr1_loop @103,219,200 · exploiter budget 8,060,928 steps · dose 3.815e-08
+  archetype  teams  run                        endpoint  pooled  n    gap pp   95% CI pp         
+  ---------  -----  -------------------------  --------  ------  ---  -------  ------------------
+  offense    5/5    ai_v13_24_popr1_read_loop  0.6000    0.5700  400    +7.00  [  +2.10,  +11.76]
+
+ROUND 3 · target ai_v13_27_popr2_loop @111,280,128 · exploiter budget 8,060,928 steps · dose 3.815e-08
+  archetype  teams  run                        endpoint  pooled  n    gap pp   95% CI pp         
+  ---------  -----  -------------------------  --------  ------  ---  -------  ------------------
+  offense    5/5    ai_v13_29_popr2_read_loop  0.5500    0.5250  400    +2.50  [  -2.39,   +7.35]
+
+ROUND-OVER-ROUND Δ (round 2 − round 1), paired on ARCHETYPE
+  archetype  gap r1   gap r2   Δ pp     95% CI pp (Newcombe)
+  ---------  -------  -------  -------  --------------------
+  offense     +14.00    +7.00    -7.00  [ -13.68,   -0.23]  
+    MEAN Δ: — (UNREADABLE — fewer than two archetypes are present in both rounds)
+    VERDICT: UNREADABLE — fewer than two archetypes are present in both rounds
+
+ROUND-OVER-ROUND Δ (round 3 − round 2), paired on ARCHETYPE
+  archetype  gap r2   gap r3   Δ pp     95% CI pp (Newcombe)
+  ---------  -------  -------  -------  --------------------
+  offense      +7.00    +2.50    -4.50  [ -11.33,   +2.39]  
+    MEAN Δ: — (UNREADABLE — fewer than two archetypes are present in both rounds)
+    VERDICT: UNREADABLE — fewer than two archetypes are present in both rounds
+
+PROVENANCE — every fact below is READ from what the run wrote down
+  ai_v13_18_teach5_offense_hidose  round 1  archetype offense (5/5)
+      target ai_v13_12_plateau @95,158,272 -> /home/goodlad/dev/gen3ai/models/ai_v13_12_plateau/final_model.zip
+      budget 8,060,928 steps · dose 3.815e-08 · 4/4 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
+  ai_v13_24_popr1_read_loop  round 2  archetype offense (5/5)
+      target ai_v13_22_popr1_loop @103,219,200 -> /home/goodlad/dev/gen3ai/models/ai_v13_22_popr1_loop/final_model.zip
+      budget 8,060,928 steps · dose 3.815e-08 · 4/4 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
+  ai_v13_29_popr2_read_loop  round 3  archetype offense (5/5)
+      target ai_v13_27_popr2_loop @111,280,128 -> /home/goodlad/dev/gen3ai/models/ai_v13_27_popr2_loop/final_model.zip
+      budget 8,060,928 steps · dose 3.815e-08 · 4/4 post-fork cycles · teams 9eb3abdc52876a63.txt, ac17a9dde5.txt, a185b2d193.txt, 9ba039ba8a.txt, b904dbe059.txt
+      target pilots the shared POOL
+rc=0

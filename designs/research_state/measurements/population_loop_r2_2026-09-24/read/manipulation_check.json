@@ -1,0 +1,234 @@
+{
+ "what": "\u00a74.1 manipulation check, population loop round 2",
+ "arms": {
+  "B2": {
+   "run": "ai_v13_27_popr2_loop",
+   "series": [
+    {
+     "step": 104000016,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      42,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      44,
+      100
+     ],
+     "ext_ai_v13_24_popr1_read_loop": [
+      52,
+      100
+     ]
+    },
+    {
+     "step": 106000032,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      41,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      38,
+      100
+     ],
+     "ext_ai_v13_24_popr1_read_loop": [
+      53,
+      100
+     ]
+    },
+    {
+     "step": 108000000,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      44,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      46,
+      100
+     ],
+     "ext_ai_v13_24_popr1_read_loop": [
+      48,
+      100
+     ]
+    },
+    {
+     "step": 110000016,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      42,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      45,
+      100
+     ],
+     "ext_ai_v13_24_popr1_read_loop": [
+      59,
+      100
+     ]
+    }
+   ],
+   "last_two_pooled": [
+    284,
+    600
+   ],
+   "rate": 0.47333333333333333,
+   "curve_all_three": [
+    0.46,
+    0.44,
+    0.46,
+    0.4866666666666667
+   ]
+  },
+  "C2": {
+   "run": "ai_v13_28_popr2_ctrl",
+   "series": [
+    {
+     "step": 104000016,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      35,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      34,
+      100
+     ],
+     "ext_ai_v13_24_popr1_read_loop": [
+      37,
+      100
+     ]
+    },
+    {
+     "step": 106000032,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      32,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      37,
+      100
+     ],
+     "ext_ai_v13_24_popr1_read_loop": [
+      34,
+      100
+     ]
+    },
+    {
+     "step": 108000000,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      42,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      42,
+      100
+     ],
+     "ext_ai_v13_24_popr1_read_loop": [
+      39,
+      100
+     ]
+    },
+    {
+     "step": 110000016,
+     "regime": {
+      "greedy": true,
+      "symmetric_teams": true
+     },
+     "matchup_hash": "ef5242cffd",
+     "ext_ai_v13_18_teach5_offense_hidose": [
+      37,
+      100
+     ],
+     "ext_ai_v13_13_exploit5_offense": [
+      38,
+      100
+     ],
+     "ext_ai_v13_24_popr1_read_loop": [
+      34,
+      100
+     ]
+    }
+   ],
+   "last_two_pooled": [
+    232,
+    600
+   ],
+   "rate": 0.38666666666666666,
+   "curve_all_three": [
+    0.35333333333333333,
+    0.3433333333333333,
+    0.41,
+    0.36333333333333334
+   ]
+  }
+ },
+ "M2": {
+  "point": 0.08666666666666667,
+  "ci95": [
+   0.030645827706600966,
+   0.14192347122420867
+  ],
+  "ABSORBED": true
+ },
+ "per_specialist_descriptor": {
+  "ext_ai_v13_18_teach5_offense_hidose": {
+   "B2": 0.43,
+   "C2": 0.395,
+   "B2_minus_C2": 0.034999999999999976,
+   "ci95": [
+    -0.06102370565764241,
+    0.13012009795051627
+   ]
+  },
+  "ext_ai_v13_13_exploit5_offense": {
+   "B2": 0.455,
+   "C2": 0.4,
+   "B2_minus_C2": 0.05499999999999999,
+   "ci95": [
+    -0.04165688365041892,
+    0.15022231928095475
+   ]
+  },
+  "ext_ai_v13_24_popr1_read_loop": {
+   "B2": 0.535,
+   "C2": 0.365,
+   "B2_minus_C2": 0.17000000000000004,
+   "ci95": [
+    0.07254669508429144,
+    0.2629697909321306
+   ]
+  }
+ }
+}

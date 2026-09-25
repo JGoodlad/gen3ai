@@ -1,0 +1,54 @@
+{
+ "statistic": "gap(RB2) - gap(RC2), offense, pooled 400 games per reader, Newcombe 95%",
+ "delta_pp": -8.25,
+ "ci95_pp": [
+  -15.01,
+  -1.38
+ ],
+ "F_pp_reused": 2.0,
+ "bar_pp": 5.0,
+ "verdict": "NOT DETECTED",
+ "clause1_abs_gt_bar": true,
+ "clause2_ci_excludes_bar_point": false,
+ "gaps_pp": {
+  "ai_v13_18_teach5_offense_hidose": 14.0,
+  "ai_v13_30_popr2_read_ctrl": 10.75,
+  "ai_v13_29_popr2_read_loop": 2.5
+ },
+ "convergence_descriptor": {
+  "ai_v13_18_teach5_offense_hidose": {
+   "curve": [
+    0.65,
+    0.58,
+    0.67,
+    0.66
+   ],
+   "cycles_1_2": 0.615,
+   "cycles_3_4": 0.665,
+   "rise_pp": 5.0
+  },
+  "ai_v13_30_popr2_read_ctrl": {
+   "curve": [
+    0.64,
+    0.6,
+    0.66,
+    0.53
+   ],
+   "cycles_1_2": 0.62,
+   "cycles_3_4": 0.595,
+   "rise_pp": -2.5
+  },
+  "ai_v13_29_popr2_read_loop": {
+   "curve": [
+    0.5,
+    0.53,
+    0.52,
+    0.55
+   ],
+   "cycles_1_2": 0.515,
+   "cycles_3_4": 0.535,
+   "rise_pp": 2.0
+  }
+ },
+ "convergence_caveat": false
+}
