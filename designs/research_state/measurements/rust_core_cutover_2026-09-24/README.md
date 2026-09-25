@@ -148,3 +148,31 @@ launcher's crash restart then refuses `--arch production` on the resume (a pre-e
 by the smoke); `slice_n_test`'s COMMIT tier failed ONCE order-dependently in a worker's combined run
 (`opp_team moves+5/+16/+27`, suspected the `_category_val` cache in `observation/moves.py`) while
 passing in three routine gates here — UNVERIFIED.
+
+## 8. Readiness refresh (2026-09-25 07:40 PT) — NOT READY (counts short; two request-flag classes open)
+
+**Training-input boundary: `8bc01de8`** (landed; folds into `c080f5f0` — nothing trained between):
+adds `0981a25e` (the Hidden-Power flat-prior fallback: a shared CRASH on 289 of 52,007 ladder HP
+users, 0 of the pool's 1,912 — orchestrator decision KEEP) and `8bc01de8` (engine: a non-ending
+duration tick drains a deferred faint; Beat Up blocked by Protect keeps its residual handler — Rust
+bridge play). `85ab9b1d` (the frame speed-up) and `64d68c08` (a test-isolation fix) change no input.
+Routine gate at `8bc01de8`: 11,623 passed. MILESTONE at `8bc01de8`: slice N 4 / 4, parity 10 / 10.
+The stress runs from pin `8bc01de8` since 07:19.
+
+| # | target | done / registered | open CUTOVER-class | state |
+|---|---|---|---|---|
+| 1 | ladder full tier, both orders | 5,240 + 5,240 / 11,407 + 11,407 (10,480 of 22,813 teams per pass) | 0 (the `ladder*_3459` HP refusal FIXED `0981a25e`) | running |
+| 2 | pool | 3,960 / 8,628 | 0 (`pool_110_5` FIXED `6b91d710`) | running |
+| 3 | `production` policy | 1,320 / 2,876 · 380 / 800 · 240 / 500 | 0 | running |
+| 4 | procedural | 1,839 / 4,000 | 0; ONE battle errored (below) | running |
+| 5 | corpora | 1 / 1 | 0 | MET |
+| 6 | slice N | 1,375 / 3,000 · 460 / 1,000 · 475 / 1,000 · 250 / 500 | 0 since the F1 fix (every recorded difference is F1 at `318bdcb8`) | running |
+| 7 | A/B fuzzers | state 4,600 / 10,000 · 1,400 / 3,000 · 500 / 1,000; bytes 4,600 · 1,400 · 500; bridge 2,300 / 5,000 · 1,000 / 2,000 · 500 / 1,000; sim-bridge 950 / 2,000 · 500 / 1,000 | 15 hard repros: 6 FIXED (4 classes), 6 recorder artifacts (proven by re-recording), 3 speed-tie block swaps (proven allowlist); **2 OPEN request-flag classes** (`maybeTrapped` missing for a Smeargle — poke-env reads it into `LegalActions.maybe_trapped`, an obs bit; `maybeDisabled` missing for a foe of an Imprison user sharing no move — no reader found) — under diagnosis | open |
+| 8 | soak | 3 / 6 + 2 / 4 children × 10,000 | 0 errors, 0 replacements, child RSS flat, env +2.0–2.3% | running |
+| 9 | first two minutes of a real launch | 2 launches | — | MET |
+| 10 | throughput ≤ +3% | 8 pairs at `85ab9b1d` | mean −5.5%, CI [−8.3, −2.1]% | MET |
+
+Other: one procedural stress battle hit a 180-s LIVELOCK (`procedural_random.00043`, pin `c080f5f0`:
+360 identical `request` frames) — the shape of the existing backlog P1 "possible IMPRISON LIVELOCK on
+the agent side" (a seeded-random player re-picking a sealed move the request shows enabled);
+UNVERIFIED which move, not a core-vs-Python difference. Cost to training at cap 2: 0.93×.
