@@ -561,10 +561,15 @@ def test_a_LEGACY_tree_is_labelled_SELECTION_UNKNOWN_and_its_NUMBERS_DO_NOT_MOVE
     # that is not a result. A timing field inside a byte-for-byte comparison of RESULTS is a
     # defect in the comparison, not a finding about the gauge; drop it the way `trace_selection`
     # is dropped, and keep every other key of `meta` pinned.
+    #
+    # `meta.generated_at` is the same class: a wall clock to the SECOND (`scaffolding_gauge.py:264`),
+    # so two runs that straddle a second boundary (`…:30` vs `…:31`) flaked this pin (2026-09-24).
+    _WALL_CLOCK = ("runtime_sec", "generated_at")
+
     def _stable(doc):
         out = dict(doc)
         if isinstance(out.get("meta"), dict):
-            out["meta"] = {k: v for k, v in out["meta"].items() if k != "runtime_sec"}
+            out["meta"] = {k: v for k, v in out["meta"].items() if k not in _WALL_CLOCK}
         return out
 
     legacy_cmp, recorded_cmp = _stable(legacy), _stable(recorded)
@@ -572,8 +577,9 @@ def test_a_LEGACY_tree_is_labelled_SELECTION_UNKNOWN_and_its_NUMBERS_DO_NOT_MOVE
         if key == "trace_selection":
             continue
         assert json.dumps(recorded_cmp.get(key)) == json.dumps(legacy_cmp.get(key)), key
-    assert "runtime_sec" in (legacy.get("meta") or {}), \
-        "the field is still published; only its comparison is dropped"
+    for k in _WALL_CLOCK:
+        assert k in (legacy.get("meta") or {}), \
+            f"{k} is still published; only its comparison is dropped"
     assert recorded["trace_selection"] != legacy["trace_selection"]
     assert "SELECTION RECORDED" in recorded_text and "SELECTION UNKNOWN" not in recorded_text
     assert recorded["trace_selection"]["steps"]["7000000"]["per_opponent"]["heuristic"][
