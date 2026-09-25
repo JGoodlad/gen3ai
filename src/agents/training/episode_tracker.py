@@ -461,7 +461,8 @@ class EventWindowTracker:
 
     def update(self, turn: int, events, our_active: Optional[str],
                opp_active: Optional[str]) -> None:
-        from agents.battle.battle_event import OURS, OPP, EventKind
+        from agents.battle.battle_event import (
+            IMPLIED_NONE, IMPLIED_USER, OURS, OPP, EventKind, implied_move_target)
         self._turn = max(self._turn, int(turn))
         for e in events or []:
             seq = getattr(e, "seq", None)
@@ -477,9 +478,15 @@ class EventWindowTracker:
                 if self._first_mover_turn != et:
                     self._first_mover_turn = et
                     self._first_mover_side = side
+                # gen3_move_target_class_v1: the move's dex target class (the reading's R4
+                # rule) — a self / side / field move (Refresh, Protect, Recover, Rain Dance) is
+                # the USER's row, not the foe's; `adjacentAlly` has none.
+                _implied = implied_move_target(e.move_id, sp)
                 rec = self._append({
                     "t": EVENT_T_MOVE, "actor": sp, "side": side,
-                    "target": (self._opp_active if side == OURS else self._our_active),
+                    "target": (sp if _implied == IMPLIED_USER
+                               else None if _implied == IMPLIED_NONE
+                               else (self._opp_active if side == OURS else self._our_active)),
                     "move_id": e.move_id, "hp_delta": 0.0,
                     "missed": False, "failed": False, "crit": False,
                     "eff": 0, "we_first": side == self._first_mover_side,

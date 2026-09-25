@@ -20,7 +20,7 @@
 //! | R1 | an outcome line's side is the last `\|move\|` line's, reset only at `\|turn\|` | `abstract_battle.py:711` (set), `:1634` (reset); `gen3_battle.py:716,733` |
 //! | R2 | an effectiveness line with no open move is owned by the side opposite the defender | `gen3_battle.py:735-738` |
 //! | R3 | a MISS/FAIL/CRIT's target is the mon NAMED at index 2 — for `-miss` that is the USER | `gen3_battle.py:717,727` |
-//! | R4 | a `[still]` / empty-target move targets the OTHER side's active | `gen3_battle.py:532-539` |
+//! | R4 | an empty-target (`[still]`) move targets what the sim blanked: the move's dex target class — the USER for `self` / side / field moves (+ a non-Ghost Curse), none for `adjacentAlly`, else the OTHER side's active (`implied_target`) | `gen3_battle.py::_capture_pre`; `battle_event.implied_move_target` |
 //! | R5 | `\|move\|…\|[miss]` / `[notarget]` adds a second, synthetic MISS / FAIL (`from="move-suffix"`) | `gen3_battle.py:272-274,488-502` |
 //! | R6 | HP is the viewer's rendering (own exact, foe `ceil%`) | `Pokemon.current_hp_fraction`; `bridge.rs::hp_percent` |
 //! | R7 | an effectiveness event carries only its multiplier (`[from] ability:` dropped) | `gen3_battle.py:744-749` |
@@ -109,6 +109,47 @@ impl Mon {
         let d = details.replace(", shiny", "");
         let head = d.split(", ").next().unwrap_or("");
         self.species = to_id(head);
+    }
+}
+
+/// Which mon a gen-3 SINGLES `|move|` line targets, by the move's dex target class
+/// (`gen3_move_target_class_v1`) — `battle_event.implied_move_target`, line for line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Implied {
+    /// The move's own user (`self` / `allies` / `all` / `allySide` / `allyTeam` /
+    /// `adjacentAllyOrSelf`, and a non-Ghost user's Curse).
+    User,
+    /// The other side's active (every other class; an unknown move).
+    Foe,
+    /// No target (`adjacentAlly` in singles — `getRandomTarget` returns `null`).
+    None,
+}
+
+/// `battle_event.MOVE_TARGETS_USER`.
+pub const MOVE_TARGETS_USER: [&str; 6] = ["self", "allies", "all", "allySide", "allyTeam", "adjacentAllyOrSelf"];
+
+/// R4 — the mon the sim writes into a `|move|` line's target field (`useMoveInner` →
+/// `addMove('move', pokemon, name, `${target}…`)`) BEFORE `Battle.attrLastMove('[still]')` blanks
+/// it: the USER for the classes `getRandomTarget` / `useMoveInner` resolve to it, nothing for
+/// `adjacentAlly`, else the foe's active. Curse is the one gen-3 move whose target `ModifyMove`
+/// changes (`data/mods/gen4/moves.ts`, inherited): a non-Ghost user's takes `nonGhostTarget` =
+/// `self`, read from the user's DEX types. `move` is the line's move field (a display name) or an
+/// id; an unknown move, and a Curse whose user's species the dex does not know, keep the foe.
+/// `battle_event.implied_move_target` is the Python half — the two must stay identical (slices
+/// E / T / O hold them byte-equal).
+pub fn implied_target(move_: Option<&str>, user_species: Option<&str>) -> Implied {
+    let dex = crate::trackers::dex();
+    let Some(md) = move_.filter(|m| !m.is_empty()).and_then(|m| dex.moves(&to_id(m))) else { return Implied::Foe };
+    if md.id == "curse" {
+        let ghost = user_species.filter(|s| !s.is_empty()).and_then(|s| dex.species(s)).map(|sd| sd.types.contains(&crate::dex::types::Type::Ghost));
+        return if ghost == Some(false) { Implied::User } else { Implied::Foe };
+    }
+    if MOVE_TARGETS_USER.contains(&md.target.as_str()) {
+        Implied::User
+    } else if md.target == "adjacentAlly" {
+        Implied::None
+    } else {
+        Implied::Foe
     }
 }
 
@@ -408,14 +449,26 @@ impl Reader {
             Kw::Move => {
                 let actor = get(2).unwrap_or("");
                 let side = self.side_of(actor);
-                // R4: an explicit identifier target, else the OTHER side's active.
+                // R4: an explicit identifier target, else the mon the sim WROTE there before
+                // `[still]` blanked it — the move's dex target class (`implied_target`).
                 let tmon: Option<&Mon> = match get(4) {
                     Some(t) if is_ident(t) => {
                         let t = t.to_string();
                         let m = self.mon(&t)?;
                         Some(&*m)
                     }
-                    _ => self.active(if side == Some(Rel::Ours) { Rel::Opp } else { Rel::Ours }),
+                    _ => {
+                        let actor = actor.to_string();
+                        let user_species = if is_ident(&actor) { Some(self.mon(&actor)?.species.clone()) } else { None };
+                        match implied_target(get(3), user_species.as_deref()) {
+                            Implied::User => {
+                                let m = self.mon(&actor)?;
+                                Some(&*m)
+                            }
+                            Implied::None => None,
+                            Implied::Foe => self.active(if side == Some(Rel::Ours) { Rel::Opp } else { Rel::Ours }),
+                        }
+                    }
                 };
                 pre_target = Some(tmon.map(|m| m.species.clone()));
                 pre_status = tmon.and_then(|m| m.status);
@@ -749,11 +802,49 @@ mod tests {
         assert_eq!(e.side, Some(Rel::Opp));
     }
 
-    /// R4 — `gen3_battle.py:532-539`.
+    /// R4 — `gen3_battle.py::_capture_pre` / `battle_event.implied_move_target`
+    /// (`gen3_move_target_class_v1`): an empty target field reads the mon the sim blanked.
     #[test]
-    fn r4_a_still_move_targets_the_foe_active() {
-        let e = last(&["|move|p1a: Metagross|Protect||[still]"], EventKind::Move);
+    fn r4_a_still_self_move_targets_its_user() {
+        // A failed Protect (`self`): the sim wrote `p1a: Metagross`, `[still]` erased it.
+        let e = last(&["|move|p1a: Metagross|Protect||[still]", "|-fail|p1a: Metagross"], EventKind::Move);
+        assert_eq!(e.target.as_deref(), Some("metagross"));
+        // The opponent's failed Refresh (the 2026-09-25 evidence shape) targets the OPPONENT's mon.
+        let e = last(&["|move|p2a: Gyarados|Refresh||[still]", "|-fail|p2a: Gyarados"], EventKind::Move);
+        assert_eq!((e.side, e.target.as_deref()), (Some(Rel::Opp), Some("gyarados")));
+        // A field move (`all`) and a side move (`allySide`) are the user's too.
+        let e = last(&["|move|p1a: Metagross|Rain Dance||[still]"], EventKind::Move);
+        assert_eq!(e.target.as_deref(), Some("metagross"));
+        let e = last(&["|move|p1a: Metagross|Reflect||[still]"], EventKind::Move);
+        assert_eq!(e.target.as_deref(), Some("metagross"));
+    }
+
+    /// R4 — a Snatch-stolen self move is used BY the snatcher, so it targets the snatcher.
+    #[test]
+    fn r4_a_snatched_self_move_targets_the_snatcher() {
+        let e = last(&["|move|p1a: Metagross|Refresh||[from] Snatch|[still]", "|-fail|p1a: Metagross"], EventKind::Move);
+        assert_eq!((e.side, e.target.as_deref(), e.get("from_move")),
+                   (Some(Rel::Ours), Some("metagross"), Some(&Value::Str("snatch".into()))));
+    }
+
+    /// R4 — a foe-targeting move (and a charge turn) with an empty field keeps the foe's active.
+    #[test]
+    fn r4_a_still_foe_move_targets_the_foe_active() {
+        let e = last(&["|move|p1a: Metagross|Thunder Wave||[still]", "|-fail|p2a: Gyarados"], EventKind::Move);
         assert_eq!(e.target.as_deref(), Some("gyarados"));
+        let e = last(&["|move|p1a: Metagross|Spikes||[still]"], EventKind::Move);
+        assert_eq!(e.target.as_deref(), Some("gyarados"), "foeSide is the foe's");
+    }
+
+    /// R4 — Curse by the user's dex types: non-Ghost → the user, Ghost → the foe.
+    #[test]
+    fn r4_curse_follows_the_users_ghost_type() {
+        assert_eq!(implied_target(Some("Curse"), Some("snorlax")), Implied::User);
+        assert_eq!(implied_target(Some("Curse"), Some("gengar")), Implied::Foe);
+        assert_eq!(implied_target(Some("Curse"), None), Implied::Foe);
+        assert_eq!(implied_target(Some("Helping Hand"), Some("snorlax")), Implied::None);
+        assert_eq!(implied_target(Some("Not A Move"), Some("snorlax")), Implied::Foe);
+        assert_eq!(implied_target(Some("Hidden Power"), Some("snorlax")), Implied::Foe);
     }
 
     /// R5 — `gen3_battle.py:488-502`.

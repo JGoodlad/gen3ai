@@ -86,7 +86,11 @@ and −1 when one ENDS (Rapid Spin's clear, a screen expiring); a MOVE row stopp
 Protect / Detect reads OUT_FAIL; a MOVE row's attributed `hp_delta` counts a bare `-damage` only
 while that move's user is the side MOVING (the other side's own Substitute / Belly Drum cost is not
 the hit); a FAINT that no damage line caused (Destiny Bond, Perish Song, Memento) reads `other`,
-never `attack`; an item line `[from]` Trick / Thief / Covet reads SWAPPED on both mons. The same
+never `attack`; an item line `[from]` Trick / Thief / Covet reads SWAPPED on both mons; a MOVE
+row's TARGET is the move's dex target class (`gen3_move_target_class_v1`) — the USER for a self /
+side / field move (Protect, Recover, Refresh, Calm Mind, Rain Dance, a non-Ghost Curse), none for
+`adjacentAlly`, else the other side's active — and the reading's event target follows the same class
+when the protocol blanked the field (`[still]`). The same
 rules hold in the Rust core's trackers (slice T, 0 divergences). Measured on the golden battle
 set: 698 / 991 decisions' obs change, in those five fields and the clock scalar only
 (`designs/research_state/measurements/training_input_gigo_fixes_2026-09-24/`).

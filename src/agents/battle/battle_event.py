@@ -37,6 +37,49 @@ OURS = "ours"
 OPP = "opp"
 
 
+# gen3_move_target_class_v1 — the dex target classes the sim resolves to the USER in singles:
+# `BattleActions.useMoveInner` (data/mods/gen3/scripts.ts) forces `self` / `allies` to the user, and
+# `Battle.getRandomTarget` (sim/battle.ts) returns the user for `self` / `all` / `allySide` /
+# `allyTeam` / `adjacentAllyOrSelf`, `null` for `adjacentAlly` in singles, and the foe's active for
+# every other class. Mirrored by `core_events::reading::implied_target` (Rust).
+MOVE_TARGETS_USER = frozenset({"self", "allies", "all", "allySide", "allyTeam", "adjacentAllyOrSelf"})
+IMPLIED_USER = "user"
+IMPLIED_FOE = "foe"
+IMPLIED_NONE = "none"
+
+
+def implied_move_target(move: Optional[str], user_species: Optional[str]) -> str:
+    """Which mon a gen-3 SINGLES ``|move|`` line targets, from the move's dex ``target`` class —
+    ``"user"``, ``"foe"`` (the other side's active) or ``"none"`` (no target: ``adjacentAlly``).
+
+    This is exactly the mon the sim writes into the line's target field (``useMoveInner`` →
+    ``addMove('move', pokemon, name, `${target}…`)``) BEFORE ``Battle.attrLastMove('[still]')``
+    blanks it ("if no animation plays, the target should never be known" — every ``-fail`` of a
+    move, a charge turn, …). So a ``[still]`` line reads the same target as the same move printed
+    whole: a failed Refresh / Protect / Recover targets its USER, not the foe. Measured against
+    every printed-target ``|move|`` line of the rust_sim test vectors (21,890 lines, 2026-09-25):
+    this class agrees on all but the non-Ghost Curse, which is the one gen-3 move whose target the
+    sim changes in ``ModifyMove`` (data/mods/gen4/moves.ts, inherited: a non-Ghost user's Curse
+    takes ``nonGhostTarget`` = ``self``) — resolved here from the USER's dex types.
+
+    ``move`` is a move id or display name; an unknown move, and a Curse whose user's species the
+    dex does not know, keep the foe (the pre-rule reading).
+    """
+    from agents import gen3_data  # lazy: the facade is poke-env-free, but keep import order flat
+
+    md = gen3_data.moves.get(to_id_str(move)) if move else None
+    if md is None:
+        return IMPLIED_FOE
+    if md.id == "curse":
+        sd = gen3_data.species.get(to_id_str(user_species)) if user_species else None
+        return IMPLIED_USER if (sd is not None and "GHOST" not in sd.types) else IMPLIED_FOE
+    if md.target in MOVE_TARGETS_USER:
+        return IMPLIED_USER
+    if md.target == "adjacentAlly":
+        return IMPLIED_NONE
+    return IMPLIED_FOE
+
+
 def from_clause_move_source(tokens: Sequence[str]) -> Optional[str]:
     """The id of the MOVE named by a ``|move|`` line's ``[from]`` clause — the move that *called* or
     *redirected* this one (Sleep Talk / Metronome / Mirror Move / Snatch / Magic Coat …) — or

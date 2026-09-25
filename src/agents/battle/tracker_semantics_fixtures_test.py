@@ -45,6 +45,10 @@ FIXTURES: Dict[str, Tuple[str, str, str, List[Tuple[int, str]]]] = {
     'taunt_in_sand': ('tyranitar||leftovers|sandstream|taunt|Hardy|||||100|]snorlax|||immunity|rest|Hardy|||||100|', 'snorlax|||immunity|bodyslam|Hardy|||||100|]blissey|||naturalcure|softboiled|Hardy|||||100|', '1,2,3,4', [(0, 'move 1'), (1, 'move 1'), (0, 'move 1'), (1, 'move 1'), (0, 'move 1'), (1, 'move 1')]),
     'opp_recoil_beside_our_status_move': ('blissey|||naturalcure|toxic,thunderwave|Hardy|||||100|]snorlax|||immunity|rest|Hardy|||||100|', 'snorlax|||immunity|doubleedge|Hardy|||||100|]blissey|||naturalcure|softboiled|Hardy|||||100|', '1,2,3,4', [(0, 'move 2'), (1, 'move 1'), (0, 'move 2'), (1, 'move 1'), (0, 'move 2'), (1, 'move 1')]),
     'roar_overrides_their_chosen_switch': ('skarmory|||keeneye|roar|Hardy|||||100|]snorlax|||immunity|rest|Hardy|||||100|', 'snorlax|||immunity|rest|Hardy|||||100|]blissey|||naturalcure|softboiled|Hardy|||||100|]starmie|||naturalcure|recover|Hardy|||||100|', '1,2,3,4', [(0, 'move 1'), (1, 'switch 2'), (0, 'move 1'), (1, 'move 1')]),
+    # gen3_move_target_class_v1 (R4): a Refresh with no status to cure fails (`|move|…|Refresh||[still]`).
+    # (A Snatch-stolen use is pinned on hand-built lines only: a constructed Snatch battle is REFUSED
+    # by the core's own parse-vs-step check today — a pre-existing `-fail` OWNER disagreement.)
+    'failed_refresh': ('umbreon|||synchronize|splash,toxic|Hardy|||||100|]snorlax|||immunity|rest|Hardy|||||100|', 'swampert|||torrent|refresh|Hardy|||||100|]blissey|||naturalcure|softboiled|Hardy|||||100|', '1,2,3,4', [(0, 'move 1'), (1, 'move 1'), (0, 'move 2'), (1, 'move 1')]),
     'asleep_then_dragged': ('skarmory|||keeneye|drillpeck,roar|Hardy|||||100|]snorlax|||immunity|rest|Hardy|||||100|', 'snorlax|||immunity|rest|Hardy|||||100|]blissey|||naturalcure|softboiled|Hardy|||||100|]starmie|||naturalcure|recover|Hardy|||||100|', '1,2,3,4', [(0, 'move 1'), (1, 'move 1'), (0, 'move 2'), (1, 'move 1'), (0, 'move 1'), (1, 'move 1')]),
 }
 
@@ -146,3 +150,14 @@ def test_t1_chip_our_move_did_not_deal_is_not_progress(replays):
     assert spurious, "the fixture holds the old clause's spurious inputs"
     n = [s["clock"]["n"] for s in ours]
     assert n[-1] >= 2 and all(b >= a for a, b in zip(n[1:], n[2:])), n
+
+
+def test_r4_a_self_move_row_targets_its_user_on_both_paths(replays):
+    """gen3_move_target_class_v1 (R4): `|move|p2a: Swampert|Refresh||[still]` (no status to cure) is
+    Swampert's row, and Splash (`self`) is Umbreon's — on the core AND (slice T clean, asserted in the
+    fixture) the Python path; Toxic keeps the foe. Reverting either side's rule fails here."""
+    for v in (0, 1):
+        rows = [x for x in _rows(replays, "failed_refresh", v) if x["t"] == _T_MOVE]
+        got = [(x["actor"], x["move_id"], x["target"]) for x in rows]
+        assert got == [("umbreon", "splash", "umbreon"), ("swampert", "refresh", "swampert"),
+                       ("umbreon", "toxic", "swampert"), ("swampert", "refresh", "swampert")], f"viewer {v}: {got}"

@@ -10,6 +10,7 @@ use super::ev;
 use super::turnview::classify_faint_cause;
 use crate::core_error::{refuse, CoreResult, PyExc};
 use crate::core_events::json_out;
+use crate::core_events::reading::{implied_target, Implied};
 use crate::core_events::{EventKind as K, Reading, Rel};
 use crate::dex::Dex;
 
@@ -547,7 +548,13 @@ impl EventWindow {
                         self.first_mover_side = Some(side);
                     }
                     let mut r = EventRecord::new(t::MOVE, sp, Some(side), et);
-                    r.target = self.active(ev::other(side)).map(str::to_string);
+                    // gen3_move_target_class_v1: the move's dex target class (the reading's R4) —
+                    // a self / side / field move is the USER's row; `adjacentAlly` has none.
+                    r.target = match implied_target(ev::move_id(e), sp) {
+                        Implied::User => sp.map(str::to_string),
+                        Implied::None => None,
+                        Implied::Foe => self.active(ev::other(side)).map(str::to_string),
+                    };
                     r.move_id = ev::move_id(e).map(str::to_string);
                     r.we_first = Some(side) == self.first_mover_side;
                     let id = self.append(r);

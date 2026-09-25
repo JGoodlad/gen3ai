@@ -470,3 +470,45 @@ def test_known_ability_not_clobbered_by_activation():
     g3.parse_message(["", "-activate", "p2a: Snorlax", "ability: Immunity"])
     assert opp.ability == "immunity"
     assert opp.temporary_ability is None
+
+
+# --------------------------------------------------------------------------- #
+# R4 (gen3_move_target_class_v1): an EMPTY target field reads what the sim      #
+# blanked. `Battle.attrLastMove('[still]')` (sim/battle.ts) erases field 4 of   #
+# the move line; the sim wrote the move's dex-target-class mon there first.     #
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("line,expected", [
+    # the 2026-09-25 cutover-stress evidence shape: the OPPONENT's failed Refresh (`self`)
+    (["", "move", "p2a: Tyra", "Refresh", "", "[still]"], ("opp", "tyranitar")),
+    # a Snatch-stolen self move is used BY the snatcher
+    (["", "move", "p1a: Zappy", "Refresh", "", "[from] Snatch", "[still]"], ("ours", "zapdos")),
+    (["", "move", "p1a: Zappy", "Protect", "", "[still]"], ("ours", "zapdos")),
+    (["", "move", "p1a: Zappy", "Rain Dance", "", "[still]"], ("ours", "zapdos")),     # `all`
+    (["", "move", "p2a: Tyra", "Reflect", "", "[still]"], ("opp", "tyranitar")),        # `allySide`
+    (["", "move", "p2a: Tyra", "Curse", "", "[still]"], ("opp", "tyranitar")),          # non-Ghost Curse
+    # foe-targeting classes keep the other side's active (a failed status move, a charge turn, Spikes)
+    (["", "move", "p1a: Zappy", "Thunder Wave", "", "[still]"], ("ours", "tyranitar")),
+    (["", "move", "p1a: Zappy", "Spikes", "", "[still]"], ("ours", "tyranitar")),       # `foeSide`
+    (["", "move", "p2a: Tyra", "Solar Beam", "", "[still]"], ("opp", "zapdos")),
+])
+def test_r4_an_empty_target_move_reads_the_mon_the_sim_blanked(line, expected):
+    b = make(Gen3Battle)
+    feed(b, CANONICAL[:11])          # Zappy (ours) vs Tyra (opp), turn 1
+    b.parse_message(line)
+    mv = [e for e in b.events if e.kind is EventKind.MOVE][-1]
+    assert (mv.side, mv.target_species) == expected, mv
+    if line[4:5] == [""] and "[from] Snatch" in line:
+        assert mv.value.get("from_move") == "snatch"
+
+
+def test_r4_the_implied_target_class_table():
+    from agents.battle.battle_event import implied_move_target
+    assert implied_move_target("Refresh", "swampert") == "user"
+    assert implied_move_target("refresh", "swampert") == "user"
+    assert implied_move_target("Curse", "snorlax") == "user"
+    assert implied_move_target("Curse", "gengar") == "foe"      # Ghost Curse targets the foe
+    assert implied_move_target("Curse", None) == "foe"
+    assert implied_move_target("Helping Hand", "snorlax") == "none"   # adjacentAlly in singles
+    assert implied_move_target("Toxic", "snorlax") == "foe"
+    assert implied_move_target("Not A Move", "snorlax") == "foe"
+    assert implied_move_target("", "snorlax") == "foe"

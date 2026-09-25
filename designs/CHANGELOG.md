@@ -9697,3 +9697,24 @@ was regenerated after a value-aware census: 698 / 991 decisions move, ONLY the f
 fields and the clock scalar, every cell resolved to its row and event; over 239 corpus battles
 every label / row / clock change is explained, at rates agreeing with M3's catalogue
 (`designs/research_state/measurements/training_input_gigo_fixes_2026-09-24/`).
+
+## 2026-09-25 — TRAINING-INPUT CHANGE: a move's TARGET by its dex target class, on both paths (`gen3_move_target_class_v1`; no version bump — dims and weight shapes unchanged)
+
+🚨 **Arms launched from this commit on read a different event window and are NOT obs-identical to
+earlier arms.** Pinned runs execute their pin's code and are unaffected; folded into the current
+training-input boundary (orchestrator, 2026-09-25). The EVENT WINDOW's MOVE row carried the OTHER
+side's active as its target for EVERY move — so a Protect / Recover / Calm Mind / Refresh row named
+the foe — and the READING (R4) gave a `[still]` move (the sim blanks field 4 on every `-fail`, e.g.
+`|move|p2a: Swampert|Refresh||[still]`, and on a Snatch-stolen use `|move|p1a: Blissey|Refresh||[from]
+Snatch|[still]`) the foe as its event target. Both now take the move's dex `target` class
+(`battle_event.implied_move_target` ↔ `core_events::reading::implied_target`): the USER for `self` /
+`allies` / `all` / `allySide` / `allyTeam` / `adjacentAllyOrSelf` and a non-Ghost user's Curse, none
+for `adjacentAlly`, else the other side's active — the mon `useMoveInner` / `getRandomTarget` write
+before `attrLastMove('[still]')` erases it; the class agrees with the printed target on 21,890
+printed-target lines of the rust_sim vectors. Measured over 200 random-policy seeded battles (40,716
+decisions): 9,480 MOVE rows change target (232.8 per 1,000 decisions, 20.2 % of MOVE rows; an upper
+bound — same-species mirrors not subtracted), 1,918 of them also in the reading (47.1 per 1,000). The
+golden obs fixture was regenerated: 914 / 991 decisions move, ONLY the event window's
+`TARGET_SPECIES` column (4,400 cells, 0 elsewhere; the rule reverted reproduces the old golden
+byte-exactly); the golden record corpus was regenerated (66 records' readings — 134 readings: target,
+and `target_status` with it).

@@ -115,6 +115,29 @@ fn a_protect_block_fails_the_blocked_move_and_freezes_the_clock() {
     assert_eq!(last.clock.n, before, "a blocked attack is an exogenous freeze");
 }
 
+/// `gen3_move_target_class_v1` (R4): a `[still]` line's target is what the sim blanked — a failed
+/// Refresh (the 2026-09-25 cutover-stress evidence shape: `|move|p2a: Swampert|Refresh||[still]`)
+/// is its USER's row, not the foe active's; Splash (`self`) is its user's; Toxic keeps the foe.
+/// (A Snatch-stolen use is pinned on hand-built lines in `core_events::reading`'s tests: a
+/// constructed Snatch battle is refused by the version's parse-vs-step check today.)
+#[test]
+fn a_self_move_row_targets_its_user_even_when_still() {
+    let p1 = team(&[set("umbreon", "", "synchronize", "splash,toxic", 100), set("snorlax", "", "immunity", "rest", 100)]);
+    let p2 = team(&[set("swampert", "", "torrent", "refresh", 100), set("blissey", "", "naturalcure", "softboiled", 100)]);
+    let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "move 2"), (1, "move 1")]);
+    for viewer in 0..2 {
+        let rs = rows(&d, viewer);
+        let got: Vec<(Option<&str>, Option<&str>, Option<&str>)> = rs.iter()
+            .filter(|r| r.t == t::MOVE)
+            .map(|r| (r.actor.as_deref(), r.move_id.as_deref(), r.target.as_deref())).collect();
+        assert_eq!(got, vec![(Some("umbreon"), Some("splash"), Some("umbreon")),
+                             (Some("swampert"), Some("refresh"), Some("swampert")),
+                             (Some("umbreon"), Some("toxic"), Some("swampert")),
+                             (Some("swampert"), Some("refresh"), Some("swampert"))],
+                   "viewer {viewer}: the MOVE rows' targets");
+    }
+}
+
 #[test]
 fn a_rapid_spin_clear_is_a_negative_hazard_row() {
     let p1 = team(&[set("starmie", "", "naturalcure", "rapidspin", 100), set("snorlax", "", "immunity", "rest", 100)]);

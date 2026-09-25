@@ -101,6 +101,10 @@ class MoveData:
     # Defense Curl's volatile, the evasion moves) — see tools/pokemon_data_extractor/sync.py::
     # _self_boosts. `is_boost` is the broader flag; this is the machine-usable stage map.
     self_boosts: Tuple[Tuple[str, int], ...] = ()
+    # The dex's TARGET class (`self` / `normal` / `allySide` / `foeSide` / `all` / …, verbatim from
+    # Showdown's movedex). The reading of a `|move|` line whose target field the protocol left
+    # EMPTY (`[still]`) is resolved from it — `agents.battle.battle_event.implied_move_target`.
+    target: str = "normal"
 
     def secondary_chance(self, col: str) -> float:
         """Trigger probability (0..1) of secondary effect `col` (e.g. ``"par"``, ``"flinch"``),
@@ -150,6 +154,7 @@ def _build(raw: Dict[str, dict]) -> Dict[str, MoveData]:
             self_boosts=tuple(
                 sorted((str(k), int(s)) for k, s in (v.get("selfBoosts") or {}).items())
             ),
+            target=str(v.get("target", "normal")),
         )
     return dex
 

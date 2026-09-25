@@ -120,7 +120,7 @@ poke-env line it mirrors:
 | R1 | an outcome line's side = the last `\|move\|` line's, reset only at `\|turn\|` | `abstract_battle.py:711`, `:1634`; `gen3_battle.py:716,733` |
 | R2 | an effectiveness line with no open move → the side opposite the defender | `gen3_battle.py:735-738` |
 | R3 | a MISS/FAIL/CRIT's target = the mon NAMED at index 2 (for `-miss`, the USER) | `gen3_battle.py:717,727` |
-| R4 | a `[still]` / empty-target move targets the OTHER side's active | `gen3_battle.py:532-539` |
+| R4 | an empty-target move (`[still]` — `Battle.attrLastMove` blanks field 4 on every `-fail`, charge turn, …) targets what the sim wrote there first: the move's dex `target` class — the USER for `self` / `allies` / `all` / `allySide` / `allyTeam` / `adjacentAllyOrSelf` and a non-Ghost user's Curse, NONE for `adjacentAlly`, else the OTHER side's active (`gen3_move_target_class_v1`; checked against 21,890 printed-target lines, 2026-09-25). The event window's MOVE row takes the same class | `gen3_battle.py::_capture_pre`; `battle_event.implied_move_target` ↔ `reading.rs::implied_target`; `EventWindowTracker` ↔ `history.rs` |
 | R5 | `\|move\|…\|[miss]` / `[notarget]` adds a synthetic MISS / FAIL (`from="move-suffix"`) | `gen3_battle.py:272-274,488-502` |
 | R6 | HP in the viewer's rendering (own exact, foe `ceil%`) | `Pokemon.current_hp_fraction`; `bridge.rs::hp_percent` |
 | R7 | an effectiveness event carries only its multiplier (`[from] ability:` dropped) | `gen3_battle.py:744-749` |
@@ -170,11 +170,11 @@ reader keeps int vs float and the exact value. `read` REFUSES an unknown record 
 `event_schema`, a bad line count, and a text that no longer parses; `write(read(bytes)) == bytes`;
 `reparse` (the migration) re-derives the stream from the text; `check_reparse` is the golden gate.
 
-**Golden corpus**: `src/agents/battle/rust_core_parity_fixtures/records/*.jsonl.gz` — the COMMIT
-tier's first 8 recorded battles + the first battle of each of the protocol capture scenarios, both
-viewers (62 records; gzip'd because the text carries every `|request|` frame, ~8 MB plain / 600 KB
-gzip'd). The two Baton Pass battles slice V added to the fixture are not in it: the record corpus
-gates the FORMAT, and a regeneration rewrites every record's `core_commit`.
+**Golden corpus**: `src/agents/battle/rust_core_parity_fixtures/records/*.jsonl.gz` — every battle
+of the COMMIT fixture + the first battle of each of the protocol capture scenarios, both viewers
+(70 records since the 2026-09-25 R4 regeneration, which also took in the fixture's two later
+battles `random_34` / `random_177`; gzip'd because the text carries every `|request|` frame). A
+regeneration rewrites every record's `core_commit`.
 Regenerate: `python -m agents.battle.rust_core_parity write-records`. Gate:
 `rust_core_parity_test.py::test_the_golden_records_round_trip_and_reparse` (`core_events
 --check-records`).

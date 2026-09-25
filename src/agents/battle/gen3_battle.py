@@ -33,6 +33,8 @@ from poke_env.data.normalize import to_id_str
 
 from agents.battle.battle_event import (
     EVENT_KIND,
+    IMPLIED_NONE,
+    IMPLIED_USER,
     OPP,
     OURS,
     BattleEvent,
@@ -40,6 +42,7 @@ from agents.battle.battle_event import (
     Policy,
     classify,
     from_clause_move_source,
+    implied_move_target,
 )
 
 if TYPE_CHECKING:
@@ -526,17 +529,30 @@ class Gen3Battle(Battle):
         if keyword == "move":
             actor = split_message[2]
             side = self._side_of(actor)
-            # Resolve the target: explicit identifier if present, else the other
-            # side's active (singles). Status is sampled NOW — a frozen Flash Fire
-            # holder thaws in the same hit, so post-resolution status would lie.
+            # Resolve the target: explicit identifier if present, else the mon the sim
+            # WROTE there before `[still]` blanked it (R4, gen3_move_target_class_v1): the
+            # move's dex target class — the USER for a self / side / field move (a failed
+            # Refresh, a Snatch-stolen Recover), nothing for `adjacentAlly`, else the other
+            # side's active. Status is sampled NOW — a frozen Flash Fire holder thaws in the
+            # same hit, so post-resolution status would lie.
             if len(split_message) > 4 and _is_ident(split_message[4]):
                 tmon = self.get_pokemon(split_message[4])
             else:
-                tmon = (
-                    self.opponent_active_pokemon
-                    if side == OURS
-                    else self.active_pokemon
+                user = self.get_pokemon(actor) if _is_ident(actor) else None
+                implied = implied_move_target(
+                    split_message[3] if len(split_message) > 3 else None,
+                    user.species if user else None,
                 )
+                if implied == IMPLIED_USER:
+                    tmon = user
+                elif implied == IMPLIED_NONE:
+                    tmon = None
+                else:
+                    tmon = (
+                        self.opponent_active_pokemon
+                        if side == OURS
+                        else self.active_pokemon
+                    )
             pre["target_species"] = tmon.species if tmon else None
             pre["target_status"] = tmon.status.name if tmon and tmon.status else None
         elif keyword in ("-damage", "-heal", "-sethp"):

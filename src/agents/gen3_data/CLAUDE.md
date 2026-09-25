@@ -23,7 +23,8 @@ gen3_data.moves.get(move_id)            # MoveData(num, base_power, type, catego
                                         #   secondary_effects + .secondary_chance(col),      # v24
                                         #   self_boosts — the pure-setup (stat, stages) map  # C1
                                         #   [gen3_setup_moves_v1; empty for Belly Drum/Curse/
-                                        #    Defense Curl by the pure-setup gates], …)
+                                        #    Defense Curl by the pure-setup gates],
+                                        #   target — the dex target class, verbatim (R4), …)
 gen3_data.species.get(species_id)       # SpeciesData(num, base_stats, types, base_species, battle_only)
 gen3_data.species.base_form_ids()       # BASE forms only — one id per national-dex num
 gen3_data.items.get(item_id)            # ItemData(num, name)

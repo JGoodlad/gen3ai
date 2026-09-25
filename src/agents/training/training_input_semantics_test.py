@@ -86,6 +86,27 @@ def test_w2_a_faint_no_damage_line_caused_is_other_not_attack():
     assert [r["faint_cause"] for r in rows if r["t"] == EVENT_T_FAINT] == ["other"]
 
 
+def test_r4_a_self_move_row_targets_its_user():
+    """gen3_move_target_class_v1: the window's MOVE row target is the move's dex target class — a
+    self / side / field move (a failed Refresh, a Snatch-stolen one, Recover, Rain Dance) is its
+    USER's row. The row used to carry the OTHER side's active for every move (the 2026-09-25
+    cutover-stress evidence: Swampert's failed Refresh rows read `blissey` / `forretress`)."""
+    rows = _window([ev(EventKind.MOVE, OPP, "skarmory", move_id="refresh"),
+                    ev(EventKind.MOVE, OURS, "snorlax", move_id="refresh", from_move="snatch"),
+                    ev(EventKind.MOVE, OURS, "snorlax", move_id="raindance", turn=2),
+                    ev(EventKind.MOVE, OPP, "skarmory", move_id="drillpeck", turn=2),
+                    ev(EventKind.MOVE, OURS, "snorlax", move_id="curse", turn=3),
+                    ev(EventKind.MOVE, OPP, "skarmory", move_id="spikes", turn=3)])
+    assert [(r["actor"], r["target"]) for r in rows] == [
+        ("skarmory", "skarmory"), ("snorlax", "snorlax"), ("snorlax", "snorlax"),
+        ("skarmory", "snorlax"), ("snorlax", "snorlax"), ("skarmory", "snorlax")]
+    # ... and the obs column carries the USER's dex num.
+    from agents import gen3_data
+    vec = np.zeros(EVENT_TOKEN_DIM, dtype=np.float32)
+    write_event_row(vec, 0, rows[0], 1)
+    assert vec[C.TARGET_SPECIES] == float(gen3_data.species.get("skarmory").num)
+
+
 def test_w3_a_trick_or_thief_item_line_is_swapped_on_both_mons():
     rows = _window([ev(EventKind.ITEM, OPP, "skarmory", item="choiceband", **{"from": "move: Trick"}),
                     ev(EventKind.ITEM, OURS, "snorlax", item="leftovers", **{"from": "move: Trick"}),
