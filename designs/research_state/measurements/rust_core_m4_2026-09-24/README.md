@@ -42,6 +42,19 @@ over 376 battles, 752 viewers, 77,475 decisions (449,894 choice tokens)** on poo
 PROCEDURAL teams; slice T 0. Slice V flagged 2 decisions of one pool battle — a pre-existing READING
 finding, not the encoder's (§3).
 
+**The FINAL tier, on the new training-input boundary** (`b6dfd7e8` — the M3 GIGO fix
+`b9d74f65` rebased on M4, its event-window change mirrored in the encoder, the obs golden
+regenerated): MILESTONE **10 / 10** (12 min 23 s; rows re-recorded in `slow_tier_status.json`), slice O
+0 divergences on **194,606 decisions** — pool random 64,991 + 67,022, policy 6,748 + 3,951 (the policy's
+own trajectories moved with its inputs), ladder 25,975 + 25,620, the 3 named ladder battles 299 — every
+row byte-equal, **1,154,149** choice tokens equal. COMMIT tier and the regenerated obs golden green in
+the routine gate. Fresh battles (`fuzz/tracker_obs_fuzz_b6dfd7e8.log`, seed 1451299227, 6 min, 50 %
+procedural): slice O **0 over 352 battles, 66,818 decisions** (402,703 tokens), slice T 0. Its slice V
+flagged one procedural battle with a TRANSFORMED own Smeargle (`procedural_50914`, turn 23): the view
+road's opp PP / ability presentation (V3 / V8, the view road only) and the reading's `stats` vs the
+engine's (`[BOARD] ours.stats`) — a pre-existing Transform (V14) class, `stats` not in the obs; which
+side is right about a transformed mon's request stats is UNVERIFIED.
+
 ## 2. The benchmark's core row
 
 `python src/agents/training/obs_build_benchmark.py --turn 25 --reps 400` (load1 17.4 at start; the

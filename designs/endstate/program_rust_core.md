@@ -259,7 +259,10 @@ the row on the wire as a `<f4` frame wrapped with `np.frombuffer`, a wrong dtype
 contiguity REFUSED (`gen3_core_obs_wire_v1`). **Slice O green at COMMIT** (2,081 decisions, both
 viewers, every row BYTE-equal; the obs golden reproduced hash for hash) **and MILESTONE** (at
 `34da7225`: 194,304 decisions over pool random, `production` policy and the LADDER-USAGE corpus, every
-row byte-equal, 1.15 M choice tokens equal; fresh battles incl. PROCEDURAL teams: 77,475 decisions, 0).
+row byte-equal, 1.15 M choice tokens equal; RE-RUN on the new training-input boundary `b6dfd7e8` (the
+M3 GIGO fix, its event-window change mirrored in the encoder): 10 / 10, 194,606 decisions byte-equal,
+the regenerated obs golden reproduced; fresh battles incl. PROCEDURAL teams: 77,475 + 66,818
+decisions, 0).
 `obs_build_benchmark.py` has its core row (8–12× the Python production encode). **Search takes rows** (`expand_many`'s `rows`: each core arm's leaf is encoded on
 its version, shipped with its mask and its choice tokens — `present::choice_tokens`, compared against
 the real mapper by slice O — so no view JSON, Python tracker or Python encoder touches a search
