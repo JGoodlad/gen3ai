@@ -510,7 +510,7 @@ export PYTHONPATH=$PYTHONPATH:src
 # WHERE the obs pipeline's time goes (component breakdown + cProfile ranking)
 python3 src/agents/training/obs_build_benchmark.py [--turn 25] [--reps 400] [--top 22] [--battles 200] [--seed 0]
 # WHERE a whole trainer turn's CPU goes (parse + obs + reward + mask + map + tracker), GPU-excluded
-python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--reward-argv '…']
+python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--reward-argv '…'] [--bridge rust|node]   # rust is the default (training's)
 # A/B one implementation of LiveView.from_battle against the previous one, on ONE frozen board
 python3 src/agents/training/live_view_build_benchmark.py [--reps 2500] [--rounds 6] [--turn 12] [--profile]
 # ms per SEARCH SUCCESSOR: the protocol road vs the one-sided VIEW road, on a hand-built arm set

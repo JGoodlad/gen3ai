@@ -21,7 +21,8 @@ embed_battle / calc_reward / action_to_order / step):
 Three-bucket philosophy (matches what you asked for):
   * **Our CPU** — everything above. This is the headline number and the only thing we can
     optimize. Reported as a stacked per-decision breakdown.
-  * **Must-pay overhead** — the Node sim advance + bridge IPC. It's an async subprocess wait,
+  * **Must-pay overhead** — the sim advance (the rust `sim_bridge` by default, `--bridge node`
+    for the Node one) + bridge IPC. It's an async subprocess wait,
     NOT our CPU, so it is deliberately NOT counted as a stage (you said you don't care about it).
   * **GPU / model forward** — EXCLUDED by design: a random legal action stands in for the
     policy, so no model is loaded and the GPU is never touched.
@@ -360,7 +361,7 @@ def _reward_config_from_argv(reward_argv: "str | None") -> "RewardConfig | None"
 
 async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
                use_assembler: bool = True, reward_argv: "str | None" = None,
-               pin: bool = False) -> int:
+               pin: bool = False, bridge: str = "rust") -> int:
     # `random.seed(seed)` alone was NOT enough: four drawers shared the global stream (two
     # teambuilders, this player's action pick, and `RandomPlayer`'s entire policy) and the bridge
     # interleaves the two players' `choose_move` calls, so the draw ORDER — and therefore the
@@ -387,7 +388,7 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
     print(f"Trainer-turn CPU profiler — {BATTLE_FORMAT} — target {target_decisions} measured "
           f"decisions (warmup {warmup}, seed {seed}, no GPU/server, "
           f"obs-assembler {'ON' if use_assembler else 'OFF'}, "
-          f"battles {'PINNED' if pin else 'random'})", flush=True)
+          f"battles {'PINNED' if pin else 'random'}, bridge {bridge})", flush=True)
     # The reward arm is part of the measurement, so it is printed with the run header rather
     # than left implicit — `format_reward_composition` is the SAME announcer a launch prints.
     print(format_reward_composition(reward_config or RewardConfig())
@@ -398,7 +399,8 @@ async def main(target_decisions: int, battle_cap: int, warmup: int, seed: int,
         # The bridge assigns each battle a process-unique tag (local_battle_runner._BATTLE_SEQ),
         # so repeated single-battle calls never collide on a reused tag — no per-call cleanup
         # needed; _battle_finished_callback drops each battle's tracker/reward as it ends.
-        await run_local_battles(player, opp, 1, seed=_battle_seed(seed, battles) if pin else None)
+        await run_local_battles(player, opp, 1, seed=_battle_seed(seed, battles) if pin else None,
+                                impl=bridge)
         battles += 1
 
     if player.measured == 0:
@@ -428,6 +430,11 @@ def _parse_args(argv):
                         "ONE quoted string (e.g. '--no-hand-shaping --terminal-indicator "
                         "--victory-value 1.0'). Parsed by the launcher's own build_parser + "
                         "RewardConfig.from_args. Unset = the shaped production default.")
+    p.add_argument("--bridge", choices=("rust", "node"), default="rust",
+                   help="the sim child: 'rust' (DEFAULT — training's `--use-bridge` default, the "
+                        "production release `sim_bridge`) or 'node' (local_sim_bridge.js, the old "
+                        "default, kept as the explicit A/B arm). The per-decision WALL cycle "
+                        "includes the child's sim advance, so the two are different measurements.")
     p.add_argument("--no-assembler", dest="use_assembler", action="store_false",
                    help="encode WITHOUT the incremental obs cache (gen3_obs_assembler_v1) — the "
                         "A/B arm. Run both back to back in one session: absolute ms on this box "
@@ -442,4 +449,4 @@ if __name__ == "__main__":
     args = _parse_args(sys.argv[1:])
     sys.exit(asyncio.run(
         main(args.target_decisions, args.battle_cap, args.warmup, args.seed,
-             args.use_assembler, args.reward_argv, args.pin)))
+             args.use_assembler, args.reward_argv, args.pin, args.bridge)))
