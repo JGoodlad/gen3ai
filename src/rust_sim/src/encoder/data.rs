@@ -6,8 +6,13 @@
 //! so a `tools/` regeneration reaches both encoders at once (program §3, "data changes propagate
 //! through `data/`"). Loaded once per process.
 
-use std::collections::HashMap;
+use std::collections::HashMap as StdMap;
 use std::sync::OnceLock;
+
+/// The tables' maps: keyed by an id, hashed with [`crate::present::dex::IdHasher`] (every encode
+/// looks up each mon's species, item, ability and moves; only `get` is ever called on them, so the
+/// hasher is not observable).
+pub type HashMap<K, V> = StdMap<K, V, std::hash::BuildHasherDefault<crate::present::dex::IdHasher>>;
 
 use super::layout::TYPE_TO_IDX;
 use crate::json::Json;
@@ -55,7 +60,7 @@ fn load(name: &str) -> Result<Json, String> {
     Json::parse(&text).map_err(|e| format!("parse {}: {e}", path.display()))
 }
 
-fn obj(j: &Json) -> Result<&HashMap<String, Json>, String> {
+fn obj(j: &Json) -> Result<&StdMap<String, Json>, String> {
     j.as_object().ok_or_else(|| "expected a JSON object".to_string())
 }
 
@@ -85,7 +90,7 @@ pub fn type_idx(name: &str) -> usize {
 
 fn build() -> Result<Tables, String> {
     const STATS: [&str; 6] = ["hp", "atk", "def", "spa", "spd", "spe"];
-    let mut species = HashMap::new();
+    let mut species = HashMap::default();
     for (id, v) in obj(&load("gen3_species.json")?)? {
         let base_stats = v.get("baseStats").map(|bs| {
             let mut s = [0.0; 6];
@@ -97,7 +102,7 @@ fn build() -> Result<Tables, String> {
         species.insert(id.clone(), SpeciesRec { num: int_of(v, "num", 0) as f64, base_stats });
     }
     let nums = |name: &str| -> Result<HashMap<String, f64>, String> {
-        let mut m = HashMap::new();
+        let mut m = HashMap::default();
         for (id, v) in obj(&load(name)?)? {
             if v.as_object().is_some() {
                 m.insert(id.clone(), int_of(v, "num", 0) as f64);
@@ -107,7 +112,7 @@ fn build() -> Result<Tables, String> {
     };
     let items = nums("gen3_items.json")?;
     let abilities = nums("gen3_abilities.json")?;
-    let mut moves = HashMap::new();
+    let mut moves = HashMap::default();
     for (id, v) in obj(&load("gen3_moves.json")?)? {
         // `_resolve_type`: "???" is THREE_QUESTION_MARKS, else the upper-cased name; the move
         // encoder then spells THREE_QUESTION_MARKS back as "???" for `TYPE_TO_IDX`.
@@ -126,10 +131,10 @@ fn build() -> Result<Tables, String> {
             },
         );
     }
-    let mut ability_priors: HashMap<String, HashMap<String, f64>> = HashMap::new();
-    let mut ability_rank = HashMap::new();
+    let mut ability_priors: HashMap<String, HashMap<String, f64>> = HashMap::default();
+    let mut ability_rank = HashMap::default();
     for (sp, probs) in obj(&load("gen3_ability_priors.json")?)? {
-        let mut m = HashMap::new();
+        let mut m = HashMap::default();
         for (ab, p) in obj(probs)? {
             m.insert(ab.clone(), p.as_f64().ok_or("ability prior: not a number")?);
         }
@@ -144,7 +149,7 @@ fn build() -> Result<Tables, String> {
         }
         ability_priors.insert(sp.clone(), m);
     }
-    let mut natures = HashMap::new();
+    let mut natures = HashMap::default();
     for (name, v) in obj(&load("gen3_natures.json")?)? {
         let mut mults = [None; 5];
         for (i, k) in super::layout::NATURE_STAT_ORDER.iter().enumerate() {

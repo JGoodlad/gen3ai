@@ -30,7 +30,11 @@ pub struct MonMap<V>(BTreeMap<(u8, String), V>);
 
 impl<V: Clone> MonMap<V> {
     pub fn get(&self, k: &(Rel, &str)) -> Option<&V> {
-        self.0.get(&(rel_rank(k.0), k.1.to_string()))
+        // A scan, not a keyed lookup: the map's key is owned, and a map holds one entry per mon the
+        // battle has shown (a dozen) — building an owned key per lookup cost more than comparing
+        // them. The keys are unique, so the scan finds what `BTreeMap::get` found.
+        let r = rel_rank(k.0);
+        self.0.iter().find(|((kr, ks), _)| *kr == r && ks == k.1).map(|(_, v)| v)
     }
     pub fn insert(&mut self, k: (Rel, &str), v: V) {
         self.0.insert((rel_rank(k.0), k.1.to_string()), v);

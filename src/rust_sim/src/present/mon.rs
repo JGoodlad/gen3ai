@@ -77,7 +77,11 @@ impl PMove {
 
     /// `Move.max_pp` (gen 3: `entry["pp"] * 8 // 5`, no Transform cap before gen 5).
     pub fn max_pp(&self) -> R<u32> {
-        Ok(self.entry()?.pp * 8 / 5)
+        Ok(self.max_pp_of(&self.entry()?))
+    }
+    /// [`Self::max_pp`] of this move's already-read [`Self::entry`].
+    pub fn max_pp_of(&self, e: &Entry) -> u32 {
+        e.pp * 8 / 5
     }
 
     /// `Move.use(pressure, overridden)`: `1 + pressure − overridden`, floored at 0.
@@ -143,6 +147,14 @@ impl MoveSet {
                 .iter()
                 .map(|(k, v)| if k == "mimic" { (mm.id.clone(), mm.clone()) } else { (k.clone(), v.clone()) })
                 .collect(),
+        }
+    }
+    /// [`Self::moves`] BORROWED: the same `(key, move)` pairs in the same order, no copies.
+    pub fn moves_ref(&self) -> Vec<(&str, &PMove)> {
+        let r = self.resolved();
+        match &r.mimic {
+            None => r.base.iter().map(|(k, v)| (k.as_str(), v)).collect(),
+            Some(mm) => r.base.iter().map(|(k, v)| if k == "mimic" { (mm.id.as_str(), mm) } else { (k.as_str(), v) }).collect(),
         }
     }
     /// `key in self.moves`.
@@ -487,6 +499,12 @@ impl PMon {
 
     /// `Pokemon.update_from_request(request_pokemon)`.
     pub fn update_from_request(&mut self, req: &super::board_reading::ReqMon) -> R<()> {
+        self.update_from_request_owned(req.clone())
+    }
+
+    /// [`Self::update_from_request`] of a record the caller hands over: it is MOVED into
+    /// `_last_request` rather than copied.
+    pub fn update_from_request_owned(&mut self, req: super::board_reading::ReqMon) -> R<()> {
         self.active = req.active;
         if self.ability().is_none() {
             let base = req.base_ability.as_deref().ok_or_else(|| refuse(PyExc::KeyError, "request mon without baseAbility (KeyError)"))?;
@@ -497,16 +515,30 @@ impl PMon {
                 self.set_temporary_ability(Some(a));
             }
         }
-        self.last_request = Some(req.clone());
+        // `self._last_request = request_pokemon` comes here, before the rest (an error below leaves
+        // it stored); the rest reads the record, never `_last_request`, so it is stored after.
+        let rest = self.apply_request_record(&req);
+        self.last_request = Some(req);
+        rest
+    }
+
+    /// The part of `update_from_request` after `_last_request` is stored.
+    fn apply_request_record(&mut self, req: &super::board_reading::ReqMon) -> R<()> {
         self.set_hp_status(&req.condition, true)?;
-        self.name = Some(req.ident.get(4..).unwrap_or("").to_string());
-        self.item = Some(req.item.clone());
+        // (each written only when it changes — the steady state of every request after the first)
+        let name = req.ident.get(4..).unwrap_or("");
+        if self.name.as_deref() != Some(name) {
+            self.name = Some(name.to_string());
+        }
+        if self.item.as_deref() != Some(req.item.as_str()) {
+            self.item = Some(req.item.clone());
+        }
         if !req.item.is_empty() {
             self.consumed_item = None;
         }
         self.update_from_details(&req.details)?;
         for m in &req.moves {
-            self.add_move(m)?;
+            self.learn_move(m)?;
         }
         if let Some(st) = &req.stats {
             for (k, v) in st {
@@ -538,6 +570,21 @@ impl PMon {
         if self.moves.contains(&id) {
             return Ok(self.moves.lookup(&id));
         }
+        self.store_new_move(id, move_id)
+    }
+
+    /// [`Self::add_move`] when the caller discards WHICH object it returns (a request's moveset):
+    /// the same store, without building the handle of a move already known.
+    pub fn learn_move(&mut self, move_id: &str) -> R<()> {
+        let id = dex::retrieve_id_of(move_id);
+        if self.moves.contains(&id) {
+            return Ok(());
+        }
+        self.store_new_move(id.into_owned(), move_id).map(|_| ())
+    }
+
+    /// `add_move` past its `if id in self.moves` return.
+    fn store_new_move(&mut self, id: String, move_id: &str) -> R<Option<MoveRef>> {
         if !dex::should_be_stored(&id) {
             return Ok(None);
         }
@@ -559,30 +606,36 @@ impl PMon {
             self.faint();
             return Ok(());
         }
-        let hp = if hp_status.contains(' ') {
-            let parts: Vec<&str> = hp_status.split(' ').collect();
-            if parts.len() != 2 {
+        let hp = if let Some((hp, status)) = hp_status.split_once(' ') {
+            // `hp, status = hp_status.split(" ")`: exactly one space
+            if status.contains(' ') {
                 return Err(refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): too many values to unpack (ValueError)")));
             }
-            self.status = Some(dex::status_from(parts[1])?);
+            self.status = Some(dex::status_from(status)?);
             if self.status == Some(Status::Slp) {
                 let yawn = dex::effect_from_message("yawn");
                 if self.has_effect(yawn) {
                     self.end_effect("yawn");
                 }
             }
-            parts[0]
+            hp
         } else {
             self.status = None;
             hp_status
         };
-        let digits: String = hp.chars().filter(|c| c.is_ascii_digit() || *c == '/').collect();
-        let parts: Vec<&str> = digits.split('/').collect();
-        if parts.len() != 2 {
+        // `"".join(c for c in hp if c in "0123456789/").split("/")` → exactly two parts, each
+        // `int()` — read in place: the filter keeps every '/', so the parts are the digits either
+        // side of `hp`'s one '/'; `int()` of a digit run is `u32::from_str` of it.
+        if hp.bytes().filter(|b| *b == b'/').count() != 1 {
             return Err(refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): expected cur/max (ValueError)")));
         }
-        let cur: u32 = parts[0].parse().map_err(|_| refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): int() (ValueError)")))?;
-        let max: u32 = parts[1].parse().map_err(|_| refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): int() (ValueError)")))?;
+        let (a, b) = hp.split_once('/').expect("one '/'");
+        let int = |part: &str| -> R<u32> {
+            crate::core_events::int_of_digits(part)
+                .ok_or_else(|| refuse(PyExc::ValueError, format!("set_hp_status({hp_status:?}): int() (ValueError)")))
+        };
+        let cur = int(a)?;
+        let max = int(b)?;
         self.current_hp = Some(cur);
         self.max_hp = Some(max);
         if store {
@@ -876,7 +929,7 @@ impl PMon {
         self.status = None;
         let last = self.last_request.take();
         if let Some(l) = last {
-            self.update_from_request(&l)?;
+            self.update_from_request_owned(l)?;
         }
         self.switch_out();
         Ok(())
@@ -926,4 +979,53 @@ impl PMon {
 pub enum StartDetails {
     Types(String),
     Abilities(Vec<String>),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The allocating `set_hp_status` parse the in-place one replaced (the reference): the
+    /// status token, then cur / max — or the refusal message.
+    fn reference(hp_status: &str) -> Result<(Option<String>, u32, u32), String> {
+        let hp = if hp_status.contains(' ') {
+            let parts: Vec<&str> = hp_status.split(' ').collect();
+            if parts.len() != 2 {
+                return Err(format!("set_hp_status({hp_status:?}): too many values to unpack (ValueError)"));
+            }
+            // `_status = Status[status.upper()]` comes before the HP parse
+            dex::status_from(parts[1]).map_err(|e| e.message().to_string())?;
+            (Some(parts[1].to_string()), parts[0])
+        } else {
+            (None, hp_status)
+        };
+        let digits: String = hp.1.chars().filter(|c| c.is_ascii_digit() || *c == '/').collect();
+        let parts: Vec<&str> = digits.split('/').collect();
+        if parts.len() != 2 {
+            return Err(format!("set_hp_status({hp_status:?}): expected cur/max (ValueError)"));
+        }
+        let cur: u32 = parts[0].parse().map_err(|_| format!("set_hp_status({hp_status:?}): int() (ValueError)"))?;
+        let max: u32 = parts[1].parse().map_err(|_| format!("set_hp_status({hp_status:?}): int() (ValueError)"))?;
+        Ok((hp.0, cur, max))
+    }
+
+    #[test]
+    fn set_hp_status_reads_exactly_as_the_allocating_parse() {
+        for s in [
+            "300/300", "0/300", "12/100", "364/401 par", "1/100 slp", "100/100 tox", "a1b/2c", "/", "12/", "/12",
+            "1/2/3", "12", "", "4294967295/4294967295", "4294967296/1", "1/99999999999", "007/010", "1 2 3",
+            "50/100 ", " 50/100", "50/100 xyz", "٣/٤", "5/10 brn", "10/10\tfrz", "1/1 PAR",
+        ] {
+            let mut m = PMon::blank();
+            let got = m.set_hp_status(s, true).map(|()| (m.status, m.current_hp.unwrap(), m.max_hp.unwrap()));
+            match (reference(s), got) {
+                (Ok((st, c, x)), Ok((gst, gc, gx))) => {
+                    assert_eq!((c, x), (gc, gx), "{s:?}");
+                    assert_eq!(st.map(|t| dex::status_from(&t).unwrap()), gst, "{s:?}");
+                }
+                (Err(want), Err(e)) => assert_eq!(e.message(), want, "{s:?}"),
+                (w, g) => panic!("{s:?}: reference {w:?} vs port {:?}", g.map_err(|e| e.message().to_string())),
+            }
+        }
+    }
 }

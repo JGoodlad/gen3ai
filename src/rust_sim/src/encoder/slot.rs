@@ -149,11 +149,28 @@ fn species(t: &Tables, live: &MonView, v: &mut [f32]) -> CoreResult<()> {
     Ok(())
 }
 
+/// `s.lower().replace(" ", "").replace("_", "")` — the item / ability encoders' key. One pass on
+/// ASCII (there the lower-case fold is per byte and neither makes nor unmakes a space or an
+/// underscore, so the order of the three steps does not matter); the three steps otherwise (the
+/// Unicode fold is context-sensitive, so the removals must follow it).
+pub(crate) fn squash_key(s: &str) -> String {
+    if s.is_ascii() {
+        let mut o = String::with_capacity(s.len());
+        for b in s.bytes() {
+            if b != b' ' && b != b'_' {
+                o.push(b.to_ascii_lowercase() as char);
+            }
+        }
+        return o;
+    }
+    s.to_lowercase().replace(' ', "").replace('_', "")
+}
+
 /// `ItemsEncoder.encode(mon)` — [num, known, consumed] off the RAW `mon.item` / `consumed_item`.
 fn item(t: &Tables, mon: &PMon, v: &mut [f32]) -> CoreResult<()> {
     match mon.item.as_deref().filter(|s| !s.is_empty()) {
         Some(it) => {
-            let key: String = it.to_lowercase().replace(' ', "").replace('_', "");
+            let key: String = squash_key(it);
             if key == "unknownitem" {
                 return Ok(());
             }
@@ -189,7 +206,7 @@ fn types(mon: &PMon, v: &mut [f32]) {
 /// `AbilitiesEncoder.encode(mon)` — revealed `[num, 0, 1, 1]`, else the Smogon top-2 prior.
 fn ability(t: &Tables, mon: &PMon, v: &mut [f32]) -> CoreResult<()> {
     if let Some(a) = mon.ability().filter(|s| !s.is_empty()) {
-        let key: String = a.to_lowercase().replace(' ', "").replace('_', "");
+        let key: String = squash_key(a);
         if key != UNKNOWN_ABILITY {
             let num = t.abilities.get(&key).ok_or_else(|| {
                 raise(PyExc::ValueError, format!("Unrecognized ability: {key}. Update data/pokemon/gen3_abilities.json"))
@@ -210,21 +227,21 @@ fn ability(t: &Tables, mon: &PMon, v: &mut [f32]) -> CoreResult<()> {
     Ok(())
 }
 
-/// `moves._category_val` — poke-env's gen-3 `Move.category` (0 status, 1 physical, 2 special).
-fn category(mv: &crate::present::mon::PMove) -> CoreResult<f64> {
-    let e = mv.entry()?;
-    Ok(if !e.damaging {
+/// `moves._category_val` — poke-env's gen-3 `Move.category` (0 status, 1 physical, 2 special), of
+/// the move's dex row (`Move.entry`).
+fn category(e: &crate::present::mon::Entry) -> f64 {
+    if !e.damaging {
         0.0
     } else if SPECIAL_TYPES_PRE_SPLIT.contains(&e.typ) {
         2.0
     } else {
         1.0
-    })
+    }
 }
 
 /// `MovesEncoder.encode(mon)` — the moveset sorted by `Move.id`, 4 × 11.
 fn moves(t: &Tables, mon: &PMon, v: &mut [f32]) -> CoreResult<()> {
-    let mut ms: Vec<crate::present::mon::PMove> = mon.moves.moves().into_iter().map(|(_, m)| m).collect();
+    let mut ms: Vec<&crate::present::mon::PMove> = mon.moves.moves_ref().into_iter().map(|(_, m)| m).collect();
     ms.sort_by(|a, b| a.id.cmp(&b.id));
     for (i, mv) in ms.iter().take(4).enumerate() {
         let md = t.moves.get(&mv.id).ok_or_else(|| {
@@ -237,10 +254,12 @@ fn moves(t: &Tables, mon: &PMon, v: &mut [f32]) -> CoreResult<()> {
         put(v, b + 2, if md.has_secondary { 1.0 } else { 0.0 });
         put(v, b + 3, if md.has_recoil { 1.0 } else { 0.0 });
         put(v, b + 4, type_id as f64);
-        put(v, b + 5, category(mv)?);
+        // ONE dex row per move for its category and its max PP (`Move.max_pp` is `entry.pp * 8 // 5`)
+        let e = mv.entry()?;
+        put(v, b + 5, category(&e));
         v[b + 6] = 1.0;
         put(v, b + 7, mv.current_pp as f64 / MAX_PP as f64);
-        put(v, b + 8, mv.max_pp()? as f64 / MAX_PP as f64);
+        put(v, b + 8, mv.max_pp_of(&e) as f64 / MAX_PP as f64);
         put(v, b + 9, md.accuracy as f64 / 100.0);
         put(v, b + 10, if md.never_miss { 1.0 } else { 0.0 });
     }

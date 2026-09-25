@@ -37,7 +37,7 @@ impl ReqMon {
             Some(Val::Obj(kv)) => Some(
                 kv.iter()
                     .map(|(k, x)| match x {
-                        Val::Int(n) => Ok((k.clone(), *n)),
+                        Val::Int(n) => Ok((k.to_string(), *n)),
                         other => Err(malformed(format!("request stat {k}: {other:?} is not an int"))),
                     })
                     .collect::<R<Vec<_>>>()?,
@@ -45,7 +45,7 @@ impl ReqMon {
             _ => None,
         };
         let moves = match v.get("moves") {
-            Some(Val::Arr(a)) => a.iter().filter_map(|m| if let Val::Str(s) = m { Some(s.clone()) } else { None }).collect(),
+            Some(Val::Arr(a)) => a.iter().filter_map(|m| if let Val::Str(s) = m { Some(s.to_string()) } else { None }).collect(),
             _ => return Err(refuse(PyExc::KeyError, "request mon without moves (KeyError)")),
         };
         Ok(ReqMon {
@@ -191,18 +191,30 @@ impl BoardReading {
     /// Feed ONE line of this side's stream, routed exactly as `Player._handle_battle_message`
     /// routes it (`offline_feed.feed_line`).
     pub fn feed(&mut self, line: &Line) -> R<()> {
+        use crate::core_events::reading::{request_payload, split_for_readings};
+        let req = if line.kw == crate::core_events::Kw::Request { request_payload(line)? } else { None };
+        self.feed_with(line, &split_for_readings(line), req)
+    }
+
+    /// [`Self::feed`] with the line's split ([`crate::core_events::reading::split_for_readings`])
+    /// and a `|request|` line's payload ([`crate::core_events::reading::request_payload`]; ignored
+    /// on every other line) ALREADY computed — the stream's two reading folds split the line and
+    /// parse the JSON once (`version::SideStream::fold`).
+    pub fn feed_with(&mut self, line: &Line, sm: &[String], req: Option<(String, Val)>) -> R<()> {
+        #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+        crate::core_events::reading::check_precomputed(line, sm, req.is_some())?;
         match line.kw.route() {
             Route::Plain => Ok(()),
             Route::Unsupported => Err(refuse(PyExc::UnsupportedMessageType, format!("UnsupportedMessageType: {:?}", line.kw.as_str()))),
+            Route::Intercept(Intercept::Request) => {
+                if let Some((text, v)) = req {
+                    self.parse_request_val(text, v)?;
+                }
+                Ok(())
+            }
             Route::Intercept(i) => {
-                let sm = line.split_message();
                 match i {
-                    Intercept::Request => {
-                        if sm.len() > 2 && !sm[2].is_empty() {
-                            self.parse_request(&sm[2..].join("|"))?;
-                        }
-                        Ok(())
-                    }
+                    Intercept::Request => unreachable!("routed above"),
                     Intercept::Win => {
                         let who = sm.get(2).cloned().unwrap_or_default();
                         self.won_by(&who);
@@ -216,7 +228,7 @@ impl BoardReading {
                     Intercept::Error | Intercept::BigError | Intercept::Ignored => Ok(()),
                 }
             }
-            Route::Event(_) | Route::Control | Route::Cosmetic | Route::StateOnly => self.parse_message(line),
+            Route::Event(_) | Route::Control | Route::Cosmetic | Route::StateOnly => self.parse_message_split(sm),
         }
     }
 
@@ -330,13 +342,18 @@ impl BoardReading {
     /// `Battle.parse_request(request)` — with the fork's R3 fix (`_sync_active_pp`).
     pub fn parse_request(&mut self, json: &str) -> R<()> {
         let v = Val::parse(json).map_err(|e| malformed(format!("request JSON: {e}")))?;
+        self.parse_request_val(json.to_string(), v)
+    }
+
+    /// [`Self::parse_request`] of an already-parsed payload: `json` is its text (kept as
+    /// `last_request_text`), `v` its value (kept as `last_request`).
+    pub fn parse_request_val(&mut self, json: String, v: Val) -> R<()> {
         self.wait = truthy(v.get("wait"));
         let side = v.get("side").ok_or_else(|| refuse(PyExc::KeyError, "request without side (KeyError)"))?;
-        let mons: Vec<Val> = match side.get("pokemon") {
-            Some(Val::Arr(a)) => a.clone(),
+        let recs = match side.get("pokemon") {
+            Some(Val::Arr(a)) => a.iter().map(ReqMon::from_val).collect::<R<Vec<_>>>()?,
             _ => return Err(refuse(PyExc::KeyError, "request side without pokemon (KeyError)")),
         };
-        let recs = mons.iter().map(ReqMon::from_val).collect::<R<Vec<_>>>()?;
         self.available_moves.clear();
         self.available_switches.clear();
         self.maybe_trapped = false;
@@ -347,14 +364,14 @@ impl BoardReading {
             None => false,
             Some(other) => return Err(malformed(format!("forceSwitch {other:?} is not a list"))),
         };
-        self.last_request_text = Some(json.to_string());
+        self.last_request_text = Some(json);
         if truthy(v.get("teamPreview")) {
             return Err(malformed("teamPreview is not a gen-3 request"));
         }
         if let Some(first) = recs.first() {
             self.role = ident_side(&first.ident).ok_or_else(|| malformed("request ident without side"))?;
         }
-        self.update_team_from_request(&recs)?;
+        let idents = self.update_team_from_request(recs)?;
         self.backfill_teambuilder_spread()?;
         if let Some(Val::Arr(active)) = v.get("active") {
             let ar = active.first().ok_or_else(|| refuse(PyExc::IndexError, "request active [] (IndexError)"))?;
@@ -373,12 +390,12 @@ impl BoardReading {
             return Err(malformed("request active is not a list"));
         }
         if !self.trapped {
-            for r in &recs {
+            for ident in &idents {
                 let i = self
                     .team
                     .iter()
-                    .position(|(k, _)| *k == r.ident)
-                    .ok_or_else(|| refuse(PyExc::KeyError, format!("team[{:?}]: KeyError", r.ident)))?;
+                    .position(|(k, _)| k == ident)
+                    .ok_or_else(|| refuse(PyExc::KeyError, format!("team[{ident:?}]: KeyError")))?;
                 let m = &self.team[i].1;
                 if self.reviving {
                     if m.fainted() {
@@ -394,11 +411,12 @@ impl BoardReading {
     }
 
     /// `AbstractBattle._update_team_from_request(side)`: create unknown mons from the record,
-    /// resync the active flags (`was_illusioned` / `switch_in`), then `update_from_request` each.
-    fn update_team_from_request(&mut self, recs: &[ReqMon]) -> R<()> {
+    /// resync the active flags (`was_illusioned` / `switch_in`), then `update_from_request` each —
+    /// each record MOVED into its mon (`_last_request`). Returns the records' idents, in order.
+    fn update_team_from_request(&mut self, recs: Vec<ReqMon>) -> R<Vec<String>> {
         let mut falsely = Vec::new();
         let mut truly = Vec::new();
-        for r in recs {
+        for r in &recs {
             if !self.team.iter().any(|(k, _)| *k == r.ident) {
                 self.get_pokemon(&r.ident, true, &r.details, Some(r))?;
             }
@@ -420,30 +438,39 @@ impl BoardReading {
         for i in truly {
             self.team[i].1.switch_in(None)?;
         }
+        let mut idents = Vec::with_capacity(recs.len());
         for r in recs {
+            idents.push(r.ident.clone());
             match self.team.iter().position(|(k, _)| *k == r.ident) {
-                Some(i) => self.team[i].1.update_from_request(r)?,
+                Some(i) => self.team[i].1.update_from_request_owned(r)?,
                 None => {
-                    self.get_pokemon(&r.ident, true, &r.details, Some(r))?;
+                    self.get_pokemon(&r.ident, true, &r.details, Some(&r))?;
                 }
             }
         }
-        Ok(())
+        Ok(idents)
     }
 
     /// `AbstractBattle.backfill_teambuilder_spread()`: each declared mon's IVs / EVs / nature onto
     /// the team member of the same species (`setdefault` — the first one).
     fn backfill_teambuilder_spread(&mut self) -> R<()> {
-        let Some(tb) = self.teambuilder.clone() else { return Ok(()) };
-        for t in &tb {
+        // `backfill_spread` writes a spread ONCE (a mon that carries IVs is left alone), so once every
+        // team member carries one the scan below changes nothing — the steady state of every request
+        // after the first.
+        if self.team.iter().all(|(_, m)| m.ivs.is_some()) {
+            return Ok(());
+        }
+        let Some(tb) = self.teambuilder.as_ref() else { return Ok(()) };
+        let team = &mut self.team;
+        for t in tb {
             let raw = match (&t.species, &t.nickname) {
-                (Some(s), _) => s.clone(),
-                (None, Some(n)) => n.clone(),
+                (Some(s), _) => s,
+                (None, Some(n)) => n,
                 (None, None) => continue,
             };
-            let want = dex::to_id(&raw);
-            if let Some(i) = self.team.iter().position(|(_, m)| dex::to_id(&m.species) == want) {
-                self.team[i].1.backfill_spread(t);
+            let want = dex::to_id(raw);
+            if let Some(i) = team.iter().position(|(_, m)| dex::to_id(&m.species) == want) {
+                team[i].1.backfill_spread(t);
             }
         }
         Ok(())
@@ -453,6 +480,9 @@ impl BoardReading {
     /// the request's (the sim's own word), matched by `Move.retrieve_id`.
     fn sync_active_pp(&mut self, ai: usize, ar: &Val) -> R<()> {
         let Some(Val::Arr(reqs)) = ar.get("moves") else { return Ok(()) };
+        // (dict key, `retrieve_id(Move.id)`) of the active mon's moves, in dict order — read ONCE:
+        // the loop writes PP, never the moveset.
+        let mut keys: Option<Vec<(String, String)>> = None;
         for req in reqs {
             let pp = match req.get("pp") {
                 Some(Val::Int(n)) => *n,
@@ -465,10 +495,11 @@ impl BoardReading {
             };
             let want = dex::retrieve_id(rid);
             let mon = &mut self.team[ai].1;
-            let keys: Vec<String> = mon.moves.moves().into_iter().map(|(k, m)| format!("{k}\u{0}{}", m.id)).collect();
-            for kk in keys {
-                let (k, id) = kk.split_once('\u{0}').expect("joined");
-                if dex::retrieve_id(id) == want {
+            let keys = keys.get_or_insert_with(|| {
+                mon.moves.moves_ref().into_iter().map(|(k, m)| (k.to_string(), dex::retrieve_id(&m.id))).collect()
+            });
+            for (k, id) in keys.iter() {
+                if *id == want {
                     if let Some(at) = mon.moves.lookup(k) {
                         if let Some(m) = mon.moves.get_mut(&at) {
                             m.current_pp = pp.max(0) as u32;
@@ -640,7 +671,11 @@ impl BoardReading {
 
     /// The state half of `AbstractBattle.parse_message` (+ `Gen3Battle`'s weather fold).
     pub fn parse_message(&mut self, line: &Line) -> R<()> {
-        let sm = line.split_message();
+        self.parse_message_split(&line.split_message())
+    }
+
+    /// [`Self::parse_message`] of the line's `split_message()`.
+    fn parse_message_split(&mut self, sm: &[String]) -> R<()> {
         let kw = sm.get(1).map(String::as_str).unwrap_or("");
         if BATTLE_IGNORED.contains(&kw) {
             return Ok(());
@@ -1306,13 +1341,13 @@ fn available_moves_from_request(mon: &PMon, ar: &Val) -> R<Vec<String>> {
         return Ok(out);
     }
     let Some(Val::Arr(reqs)) = ar.get("moves") else { return Err(refuse(PyExc::KeyError, "active request without moves (KeyError)")) };
-    let keys: Vec<String> = mon.moves.moves().into_iter().map(|(k, _)| k).collect();
+    let keys: Vec<&str> = mon.moves.moves_ref().into_iter().map(|(k, _)| k).collect();
     for r in reqs {
         if truthy(r.get("disabled")) {
             continue;
         }
         let id = r.str_at("id").ok_or_else(|| refuse(PyExc::KeyError, "request move without id (KeyError)"))?.to_string();
-        if keys.contains(&id) || dex::is_special_move(&id) {
+        if keys.contains(&id.as_str()) || dex::is_special_move(&id) {
             out.push(id);
         } else if id == "hiddenpower" && keys.iter().filter(|k| k.starts_with("hiddenpower")).count() == 1 {
             out.push(id);

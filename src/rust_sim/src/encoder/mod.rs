@@ -264,7 +264,7 @@ fn request_slot_moves(inp: &Inputs) -> CoreResult<Vec<Option<String>>> {
         }
         return Err(fault("encode: available moves with no active mon / no legality (unmirrored path)"));
     };
-    let moveset = active.moves.moves();
+    let moveset = active.moves.moves_ref();
     let mut out = Vec::new();
     for lm in legal.move_slots.iter().take(4) {
         let mut mv = moveset.iter().find(|(k, _)| *k == lm.id).map(|(_, m)| m.id.clone());
@@ -279,39 +279,66 @@ fn request_slot_moves(inp: &Inputs) -> CoreResult<Vec<Option<String>>> {
 
 // ---------------------------------------------------------------------------- pair history
 
-/// `PairHistoryTracker.pair_values(opp_species, our_species)` into 5 cells.
-fn pair_cell(p: &crate::trackers::history::PairHistory, opp: Option<&str>, ours: Option<&str>, out: &mut [f32]) {
-    let (Some(i), Some(j)) = (opp.filter(|s| !s.is_empty()), ours.filter(|s| !s.is_empty())) else {
+/// `PairHistoryTracker.pair_values(opp_species, our_species)` into 5 cells, given the two maps'
+/// values at the pair (`counts`: switch-ins, attacks, status clicks, shared count; `last`: the
+/// shared last turn), `None` where the pair has no species.
+fn pair_cell(p: &crate::trackers::history::PairHistory, pair: Option<([i64; 4], Option<i64>)>, out: &mut [f32]) {
+    let Some((counts, last)) = pair else {
         out[..4].fill(0.0);
         out[4] = 1.0;
         return;
     };
-    let key = (i.to_string(), j.to_string());
     let cap = PAIR_SAT as i64;
-    let rec = match p.shared_last_turn.get(&key) {
+    let rec = match last {
         None => 1.0,
         Some(last) => {
             let d = p.turn - last;
             SAT_LUT[if 0 < d && d < cap { d } else if d <= 0 { 0 } else { cap } as usize]
         }
     };
-    for (k, m) in [&p.switch_ins, &p.attacks, &p.status_clicks, &p.shared_count].into_iter().enumerate() {
-        let n = *m.get(&key).unwrap_or(&0);
+    for (k, n) in counts.into_iter().enumerate() {
         put(out, k, SAT_LUT[if n < cap { n.max(0) } else { cap } as usize]);
     }
     put(out, 4, rec);
 }
 
 /// The 6×6×5 block, (opp slot, our slot, cell) row-major, joined by the team-list order.
+///
+/// Each cell is the five maps' values at its (opp species, our species) key. They are read by ONE
+/// pass over each map, each entry landing on every cell whose two slots hold its two species —
+/// the keys are unique, so a cell receives exactly the value `get(&key)` returns (0 / `None` when
+/// the map holds no such key), without 36 × 5 owned-key lookups.
 fn pair_history(inp: &Inputs, out: &mut [f32]) {
     let ph = &inp.trackers.pair;
     fn sp(team: &[(String, crate::present::mon::PMon)], k: usize) -> Option<&str> {
-        team.get(k).map(|(_, m)| m.species.as_str())
+        team.get(k).map(|(_, m)| m.species.as_str()).filter(|s| !s.is_empty())
+    }
+    let opp: [Option<&str>; TEAM_SIZE] = std::array::from_fn(|i| sp(&inp.reading.opp, i));
+    let ours: [Option<&str>; TEAM_SIZE] = std::array::from_fn(|j| sp(&inp.reading.team, j));
+    let mut counts = [[[0i64; 4]; TEAM_SIZE]; TEAM_SIZE];
+    let mut last = [[None::<i64>; TEAM_SIZE]; TEAM_SIZE];
+    // each entry lands on the (opp slot, our slot) cells whose two species are its key (o, u)
+    for (k, m) in [&ph.switch_ins, &ph.attacks, &ph.status_clicks, &ph.shared_count].into_iter().enumerate() {
+        for ((o, u), n) in m {
+            for i in (0..TEAM_SIZE).filter(|&i| opp[i] == Some(o.as_str())) {
+                for j in (0..TEAM_SIZE).filter(|&j| ours[j] == Some(u.as_str())) {
+                    counts[i][j][k] = *n;
+                }
+            }
+        }
+    }
+    for ((o, u), t) in &ph.shared_last_turn {
+        for i in (0..TEAM_SIZE).filter(|&i| opp[i] == Some(o.as_str())) {
+            for j in (0..TEAM_SIZE).filter(|&j| ours[j] == Some(u.as_str())) {
+                last[i][j] = Some(*t);
+            }
+        }
     }
     for i in 0..TEAM_SIZE {
         for j in 0..TEAM_SIZE {
             let o = (i * TEAM_SIZE + j) * PAIR_HISTORY_CELL_DIM;
-            pair_cell(ph, sp(&inp.reading.opp, i), sp(&inp.reading.team, j), &mut out[o..o + PAIR_HISTORY_CELL_DIM]);
+            let pair = (opp[i].is_some() && ours[j].is_some()).then(|| (counts[i][j], last[i][j]));
+            pair_cell(ph, pair, &mut out[o..o + PAIR_HISTORY_CELL_DIM]);
         }
     }
 }

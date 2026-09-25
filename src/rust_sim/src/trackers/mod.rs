@@ -274,8 +274,9 @@ pub fn dex() -> &'static Dex {
 pub struct Decision {
     /// The side's stream line index of the `|request|` it decided on.
     pub line: usize,
-    /// The native record of the window this decision closed.
-    pub window: std::sync::Arc<record::Window>,
+    /// The native record of the window this decision closed — `None` on a stream built WITHOUT
+    /// the record ([`TrackerState::without_record`]: a reader of the row alone, `sim_bridge`).
+    pub window: Option<std::sync::Arc<record::Window>>,
     /// The reward of the transition into this decision (the win indicator).
     pub reward: f64,
     /// The side's view at the decision (`present()`), handed to the version's memo so it is
@@ -290,7 +291,9 @@ pub struct Decision {
 #[derive(Debug, Clone)]
 pub struct TrackerState {
     pub trackers: std::sync::Arc<SideTrackers>,
-    pub record: record::RecordBuilder,
+    /// The native record's builder; `None` when the stream builds no record
+    /// ([`Self::without_record`]) — the trackers, and so the row, never read it.
+    pub record: Option<record::RecordBuilder>,
     pending: Vec<Reading>,
     /// The latest decision this stream took.
     pub last: Option<Decision>,
@@ -300,24 +303,50 @@ impl TrackerState {
     pub fn new(viewer: usize, cfg: ClockConfig) -> TrackerState {
         TrackerState {
             trackers: std::sync::Arc::new(SideTrackers::new(cfg)),
-            record: record::RecordBuilder::new(viewer),
+            record: Some(record::RecordBuilder::new(viewer)),
             pending: Vec::new(),
             last: None,
         }
+    }
+
+    /// Build NO native record (before the first line): every decision's `window` is `None`. The
+    /// trackers, the label, the reward and the encoded row do not read the record, so they are
+    /// unchanged — the shape of a consumer that ships only the row (`sim_bridge`'s core
+    /// observation mode), which would otherwise build a record per line that nothing reads.
+    pub fn without_record(mut self) -> TrackerState {
+        self.record = None;
+        self
     }
 
     /// Fold one line's event (before the board reading takes the line — `before` is the board as it
     /// stood, which a Baton Pass reads its passer from).
     pub fn observe(&mut self, ev: &crate::core_events::CoreEvent, before: &crate::present::BoardReading,
                    scope: Option<crate::core_events::Scope>) {
-        self.record.push(ev, before, scope);
+        if let Some(r) = self.record.as_mut() {
+            r.push(ev, before, scope);
+        }
         self.pending.extend(ev.readings.iter().cloned());
+    }
+
+    /// [`Self::observe`]'s record half (the caller hands the readings over with [`Self::pend`]).
+    pub fn record_line(&mut self, ev: &crate::core_events::CoreEvent, before: &crate::present::BoardReading,
+                       scope: Option<crate::core_events::Scope>) {
+        if let Some(r) = self.record.as_mut() {
+            r.push(ev, before, scope);
+        }
+    }
+
+    /// [`Self::observe`]'s pending half, the readings MOVED in (a stream that keeps no event).
+    pub fn pend(&mut self, readings: Vec<crate::core_events::Reading>) {
+        self.pending.extend(readings);
     }
 
     /// Our own choice for the coming action — a DENIED own action keeps it (the opponent's never
     /// reaches this side, by type: `record::Denied`).
     pub fn choose(&mut self, token: &str) {
-        self.record.choose(token);
+        if let Some(r) = self.record.as_mut() {
+            r.choose(token);
+        }
     }
 
     /// After the board took a `|request|` line (stream index `line`): if it opens a DECISION of this
@@ -342,7 +371,7 @@ impl TrackerState {
             effectiveness: Some(d.effectiveness),
         });
         std::sync::Arc::make_mut(&mut self.trackers).decide(&view, Some(&legal), &pending, dm, dex())?;
-        let window = std::sync::Arc::new(self.record.take());
+        let window = self.record.as_mut().map(|r| std::sync::Arc::new(r.take()));
         let reward = reward(&view);
         self.last = Some(Decision { line, window, reward, view: Some(view) });
         Ok(())

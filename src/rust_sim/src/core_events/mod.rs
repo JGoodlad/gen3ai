@@ -205,7 +205,30 @@ pub fn is_outcome(kw: Kw) -> bool {
 
 /// `poke_env.data.normalize.to_id_str`: `"".join(c for c in s if c.isalnum()).lower()`.
 pub fn to_id(s: &str) -> String {
+    // ASCII (every protocol id, name and species this side of a nickname): the same filter and
+    // fold byte by byte — on ASCII, `char::is_alphanumeric` is `[0-9A-Za-z]` and `to_lowercase`
+    // is the ASCII fold.
+    if s.is_ascii() {
+        let mut o = String::with_capacity(s.len());
+        for b in s.bytes() {
+            if b.is_ascii_alphanumeric() {
+                o.push(b.to_ascii_lowercase() as char);
+            }
+        }
+        return o;
+    }
     s.chars().filter(|c| c.is_alphanumeric()).flat_map(|c| c.to_lowercase()).collect()
+}
+
+/// `int("".join(c for c in part if c.isdigit()))` for an ASCII-digit filter: the digits of `part`
+/// read as a `u32` (what `str::parse` of the filtered run returns), `None` when there are none or
+/// they overflow — read in place, no filtered copy.
+pub(crate) fn int_of_digits(part: &str) -> Option<u32> {
+    let mut v: Option<u32> = None;
+    for c in part.bytes().filter(u8::is_ascii_digit) {
+        v = Some(v.unwrap_or(0).checked_mul(10)?.checked_add((c - b'0') as u32)?);
+    }
+    v
 }
 
 /// Minimal JSON rendering for the core's records (std-only, like the rest of the crate).

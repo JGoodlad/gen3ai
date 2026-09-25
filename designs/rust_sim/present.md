@@ -55,7 +55,7 @@ requests' issued bytes SHARED with the engine, which rendered each once at issue
 | `root(sess, names, teams, want)` / `root_with(…, trackers)` | `Step` | a fork tree's root: every line `sess` shipped is folded from its TEXT, then the transport is dropped; `want` names the sides that carry a stream (a search reads one) |
 | `fork_session()` / `step(cmds, dex)` / `step_with(f)` / `child(sess)` | `Step` | a FORK: an engine clone in a fresh transport, driven, its lines folded from their TEXT; the child keeps the engine |
 | `observe_root(&sess, …)` / `observe(&sess)` | `Observed` | a LINEAR replay OBSERVING a session the caller drives (the parity harness): no engine, no copy; the caller's session is the referee (`audit_on(side, board, dex)`) |
-| `parse_root` / `parse_step` / `parse_advance` | `Parse` | ONE side's text, no engine — what a real server sends |
+| `parse_root` / `parse_step` / `parse_advance` / `parse_advance_lean` | `Parse` | ONE side's text, no engine — what a real server sends |
 
 **The gate** — `parse_matches_step(step_built, parse_built, side)`: the whole board reading (the
 `BoardReading`), the transition's events and the view equal, version by version. `core_events` runs it at

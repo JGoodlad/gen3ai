@@ -149,7 +149,7 @@ pub fn read(text: &str) -> CoreResult<Record> {
         viewer,
         format: h.str_at("format").ok_or_else(|| malformed("header: no format"))?.to_string(),
         showdown_version: match h.get("showdown_version") {
-            Some(Val::Str(s)) => Some(s.clone()),
+            Some(Val::Str(s)) => Some(s.to_string()),
             Some(Val::Null) | None => None,
             Some(v) => return Err(malformed(format!("header: bad showdown_version {v:?}"))),
         },
@@ -219,7 +219,7 @@ fn reading_of(v: &Val) -> CoreResult<Reading> {
     let kind = kind_of(v.str_at("kind").ok_or_else(|| malformed("reading: no kind"))?)?;
     let opt = |k: &str| -> CoreResult<Option<String>> {
         match v.get(k) {
-            Some(Val::Str(s)) => Ok(Some(s.clone())),
+            Some(Val::Str(s)) => Ok(Some(s.to_string())),
             Some(Val::Null) | None => Ok(None),
             other => Err(malformed(format!("reading {k}: {other:?}"))),
         }
@@ -245,14 +245,14 @@ fn reading_of(v: &Val) -> CoreResult<Reading> {
                     .required_keys()
                     .iter()
                     .chain(kind.optional_keys().iter())
-                    .find(|d| **d == k.as_str())
+                    .find(|d| **d == k.as_ref())
                     .copied()
                     .ok_or_else(|| malformed(format!("{} carries undeclared key {k:?}", kind.name())))?;
                 let val = match x {
                     Val::Null => Value::Null,
                     Val::Int(n) => Value::Int(*n),
                     Val::Float(f) => Value::Float(*f),
-                    Val::Str(s) => Value::Str(s.clone()),
+                    Val::Str(s) => Value::Str(s.to_string()),
                     other => return Err(malformed(format!("value {k}: {other:?}"))),
                 };
                 value.push((key, val));
@@ -264,7 +264,7 @@ fn reading_of(v: &Val) -> CoreResult<Reading> {
         Some(Val::Arr(a)) => a
             .iter()
             .map(|x| match x {
-                Val::Str(s) => Ok(s.clone()),
+                Val::Str(s) => Ok(s.to_string()),
                 o => Err(malformed(format!("raw: {o:?}"))),
             })
             .collect::<Result<Vec<_>, _>>()?,

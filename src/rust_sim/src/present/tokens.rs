@@ -30,8 +30,8 @@ fn available_move_ids(r: &BoardReading) -> Vec<String> {
         .iter()
         .map(|id| {
             let Some(mon) = active else { return id.clone() };
-            let moves = mon.moves.moves();
-            if let Some((_, m)) = moves.iter().find(|(k, _)| k == id) {
+            let moves = mon.moves.moves_ref();
+            if let Some((_, m)) = moves.iter().find(|(k, _)| *k == id) {
                 return m.id.clone();
             }
             if id == "hiddenpower" {

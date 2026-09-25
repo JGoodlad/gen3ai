@@ -63,3 +63,15 @@ fn an_unclassified_volatile_is_refused_and_a_not_a_volatile_encodes_nothing() {
     let i = VOLATILE_SLOTS.iter().position(|s| *s == "stockpile").unwrap();
     assert_eq!(out[i], (2.0f64 / 3.0) as f32);
 }
+
+#[test]
+fn the_item_and_ability_key_is_the_three_step_squash() {
+    let reference = |s: &str| s.to_lowercase().replace(' ', "").replace('_', "");
+    for s in ["", "Leftovers", "Choice Band", "choice_band", "Lum Berry", "UNKNOWN_ITEM", "  a _B_ c  ", "Shed Shell", "ΑΣ Β", "Poké Ball", "İ_x", "\tTab"] {
+        assert_eq!(slot::squash_key(s), reference(s), "{s:?}");
+    }
+    for b in 0u8..128 {
+        let s = format!("x{}Y", b as char);
+        assert_eq!(slot::squash_key(&s), reference(&s), "{b}");
+    }
+}

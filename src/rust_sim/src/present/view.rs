@@ -144,9 +144,9 @@ pub fn present(reading: &BoardReading) -> R<OneSidedView> {
 fn mon_view(m: &PMon, active: bool, own: bool) -> R<MonView> {
     let mut moves: Vec<MoveView> = m
         .moves
-        .moves()
+        .moves_ref()
         .into_iter()
-        .map(|(k, mv)| Ok(MoveView { id: k, move_id: mv.id.clone(), current_pp: mv.current_pp, max_pp: mv.max_pp()? }))
+        .map(|(k, mv)| Ok(MoveView { id: k.to_string(), move_id: mv.id.clone(), current_pp: mv.current_pp, max_pp: mv.max_pp()? }))
         .collect::<R<Vec<_>>>()?;
     moves.sort_by(|a, b| a.id.cmp(&b.id));
     let item = match m.item.as_deref() {

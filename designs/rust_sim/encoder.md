@@ -101,9 +101,12 @@ defaulted; an unknown key, an empty / repeated / unknown side, a non-boolean fla
 `__ERR__`). **Absent or `null`, the child's stdout is BYTE-identical to the pre-mode binary.**
 
 **The observation comes through the parser** (program §6c). Per requested side the child keeps a
-PARSE-built version chain with trackers (`BattleVersion::parse_root_with(side, name, packed team,
-cfg)`), advanced by `parse_advance` over exactly the lines that side was newly shipped in the write
-(incremental — never the whole stream again). Every `CHOOSE` of a requested side is noted on its
+PARSE-built version chain with trackers and NO native record (`BattleVersion::parse_root_unrecorded(side,
+name, packed team, cfg)` — the row never reads the record, trackers.md §2), advanced by
+`parse_advance_lean` over exactly the lines that side was newly shipped in the write (incremental —
+never the whole stream again; LEAN — the chain keeps no per-transition events and MOVES each line's
+readings to the trackers, every other read equal to `parse_advance`'s). The pins below hold this
+chain's rows to `core_events --obs`'s recording, event-keeping chains byte for byte. Every `CHOOSE` of a requested side is noted on its
 chain (`note_choice`, the raw token) BEFORE the command is fed, the order `core_events` uses. For
 each write (START's first emission, every `CHOOSE` / `FORCELOSE`), each requested side whose chain
 took a DECISION at the write's boundary gets ONE frame, written **BEFORE that write's chunk frames**
@@ -117,7 +120,7 @@ __OBS__ p1 {"frame":{"dtype":"<f4","shape":[2501],"b64":…},"mask":[11 ints],
 
 | field | is |
 |---|---|
-| `frame` | `wire::frame` of `BattleVersion::encode` (§5; NaN-prefilled in test / self-check builds, zero-filled in release) |
+| `frame` | `wire::frame` of `BattleVersion::encode` (§5; NaN-prefilled in test / self-check builds, zero-filled in release); the whole object is `wire::obs_json_into` |
 | `mask` | `present::mask` — the 11-dim action mask |
 | `tokens` | `present::choice_tokens` — the real mapper's choice string per legal action (§7) |
 | `turn` | the reading's turn at the decision |
@@ -140,13 +143,40 @@ NaN-free, before its request chunk; a recycled persistent child equals a fresh o
 request ships that side only; OFF (absent / `null`) is byte-identical and ON adds only the `__OBS__`
 lines; the two clock booleans reach the rows; a malformed key is refused.
 
-**Cost** (2026-09-24, release, `bench_core_obs_cost` in that file: 34 battles, 6,085 commands, median
-of 9 interleaved runs; the box carried a production run, load ≈ 27 on 16 cores, and the bench ran at
-`nice 19`, so the absolute figures are inflated): OFF 23.2 µs per command; ON adds **+138.5 µs per
-frame** for `["p1"]` (2,755 frames) and +134.1 µs for both sides (5,482). An in-process breakdown of
-the same path (13,775 frames, same box) puts **≈ 137 µs in the parse + tracker fold**, ≈ 30 µs in the
-encode (§8's figure), ≈ 19 µs in the frame JSON and ≈ 2 µs in legality, tokens and mask: the TRACKER
-FOLD dominates, not the encoder. **UNVERIFIED:** the figure on an idle box.
+**Cost** (2026-09-25, release, the box carrying a production run, everything at `nice 19`, so the
+absolute figures are load-inflated and move with the load; **UNVERIFIED:** the figures on an idle
+box). Process level, `bench_core_obs_cost`'s scripts (`CORE_OBS_BENCH_BATTLES=34`: 34 battles /
+6,085 commands) replayed through ONE persistent child, OFF vs ON, the pre-change and the current
+binary alternating one process per run, 10 rounds: ON adds **+55.0 µs per frame** for `["p1"]`
+(2,755 frames; per-round 54–56; load 18), against +125.0 for the pre-change binary in the same run
+(OFF ≈ 20.3 µs per command for both binaries); a load-26 repeat read +105.0 vs +209.7, both sides +75.7 vs
++176.5 per frame (5,482 frames, 8 rounds, load 31). A fresh child also pays a ONE-TIME **≈ 3.7 ms**
+at its first frame (the encoder tables and the HP priors — the trackers share the bridge's dex,
+`trackers::dex`; it was ≈ 8.9 ms), so ONE ~100-frame battle reads ≈ 90 µs per frame (219 before);
+a training child is recycled every 5,000 battles, so the steady state is the figure.
+
+In-process, per frame (`bench_core_obs_stages` in the same file: 17 battles, 1,396 frames, median
+of 8 interleaved rounds against the pre-change code, load 18–28; its attribution re-runs between
+the stages inflate the production stages against the process figure): **the fold 36.7 µs** (80.5
+before) and **the frame 12.7 µs** (33.9 before). Attribution, each piece re-run standalone on the
+same input: a TRACKERLESS parse chain 24.7 (the line parse 1.8; the request JSON, parsed once for
+both reading folds, 7.4; the M1 reading fold ≈ 4.2 beyond the JSON; the board reading ≈ 5.9 beyond
+the JSON on request lines and 5.0 on the others), then `present()` 6.3, the tracker decide 3.2,
+legality 0.5 and ≈ 2 of decision bookkeeping by difference; the frame = the encode (view memoized)
+6.0 + the base64 frame and tokens JSON 3.6 + legality and `choice_tokens` 0.9 + the rest of the JSON.
+
+What the mode no longer pays (each change byte-identical: `tests/sim_bridge_core_obs_test.rs`, slice
+O, the parse-path gate): the request JSON parsed twice and every line split two or three times (once
+per reading fold); a char-at-a-time JSON string reader allocating every key (the request vocabulary
+is interned, `jsonval::JStr`); the pokemon array, every request record and the teambuilder cloned
+per request, and the spent backfill scan; a moveset COPY at every move read; a binary search of the
+move table at every move row read (an id index now) and SipHash on the encoder's tables; allocating
+`to_id` / item-key folds on ASCII; 36 × 5 owned-key map lookups in the pair block (one pass per map
+now); the HP parse's filtered copies; a `Reading` clone per line into an event nobody reads
+(`parse_advance_lean`); the native window record, built per line and read by nothing on this
+path (`parse_root_unrecorded`); a char-at-a-time base64 of the 10 KB row and the frame JSON copied three
+times (the line is now built once as bytes and written with one `write_all`); and a SECOND gen-3
+dex load at the first decision.
 
 ## 6. Slice O — the gate
 

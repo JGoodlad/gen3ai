@@ -13,7 +13,7 @@ fork shares its parent's and pays only for its own decision.
 |---|---|
 | **Trackers** | `src/rust_sim/src/trackers/mod.rs` (`SideTrackers`, `TrackerState`, `IntentLabel`, `reward`), `history.rs` (recency, pair history, the event window, the wish and sleep folds), `clock.rs` (the progress clock), `hp_belief.rs` (the Hidden-Power belief), `delta.rs` (the context + the `TurnDelta` PROJECTION), `turnview.rs` (the frozen per-side turn fold), `ev.rs` (typed accessors over a reading) |
 | **Native record** | `src/rust_sim/src/trackers/record.rs` (`Window` = ordered `Action`s, each with ordered `Effect`s; `Choice`, `DenialWhy`) |
-| **Version** | `SideStream::with_trackers` / `BattleVersion::{root_with, observe_root_with, parse_root_with}`; `BattleVersion::{decision, trackers, note_choice}` |
+| **Version** | `SideStream::with_trackers` / `BattleVersion::{root_with, observe_root_with, parse_root_with, parse_root_unrecorded}`; `BattleVersion::{decision, trackers, note_choice}` |
 | **Gates** | slice T (`agents/battle/rust_core_parity_trackers.py`, COMMIT + MILESTONE in `rust_core_parity_test.py`; FRESH battles: `rust_core_trackers_fuzz_test.py`); the native record's fixtures `tests/window_record_test.rs`; the training-input SEMANTICS pins `tests/tracker_semantics_test.rs` (Rust) and `agents/battle/tracker_semantics_fixtures_test.py` (both sides through slice T) |
 
 ---
@@ -87,6 +87,10 @@ small and the fork's own. `BattleVersion::decision(side)` is `Some` iff the tran
 version ended at one of the side's decisions. The trackers are opt-in (`root_with` /
 `observe_root_with` / `parse_root_with`); the M4 ENCODER reads them (`BattleVersion::encode`,
 `designs/rust_sim/encoder.md`), and search's core tree turns them on (`open_root`'s `trackers`).
+The native record is opt-OUT: `TrackerState::without_record` / `BattleVersion::parse_root_unrecorded`
+build none (every `Decision.window` is `None`; the trackers, the label, the reward and the row are
+unchanged, since none reads it) — the chain `sim_bridge`'s core observation mode keeps, whose
+consumer ships only the row.
 
 ## 3. The native record — what happened, in order, with attribution
 

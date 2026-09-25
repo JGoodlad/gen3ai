@@ -74,16 +74,16 @@ pub fn legal_actions(t: &BoardReading) -> Option<LegalActions> {
     let switches = idx.iter().map(|&i| LegalSwitch { species: t.team[i].1.species.clone(), slot: i }).collect();
     // `_own_hp_typed_id`: the active mon's single `hiddenpower*` Move.id.
     let own_hp_typed_id = t.active_index(true).and_then(|i| {
-        let typed: Vec<String> = t.team[i]
+        let typed: Vec<&String> = t.team[i]
             .1
             .moves
-            .moves()
+            .moves_ref()
             .into_iter()
-            .map(|(_, m)| m.id)
+            .map(|(_, m)| &m.id)
             .filter(|id| id.starts_with("hiddenpower"))
             .collect();
         if typed.len() == 1 {
-            typed.into_iter().next()
+            Some(typed[0].clone())
         } else {
             None
         }

@@ -22,7 +22,8 @@
 //!   other `decision_tense`).
 //!
 //! `bench_core_obs_cost` (ignored) is the cost measurement: `cargo test --release --test
-//! sim_bridge_core_obs_test -- --ignored --nocapture bench_core_obs_cost`.
+//! sim_bridge_core_obs_test -- --ignored --nocapture bench_core_obs_cost`; `bench_core_obs_stages`
+//! (ignored) is its in-process per-stage breakdown (`designs/rust_sim/encoder.md` §5a).
 
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -439,7 +440,7 @@ fn core_obs_rows_equal_core_events_obs_byte_for_byte() {
         let Some(Val::Arr(cchunks)) = ce.get("chunks") else { panic!("chunks") };
         let cchunks: Vec<(usize, Vec<String>)> = cchunks.iter().map(|c| match c {
             Val::Arr(p) => (int(&p[0]) as usize, match &p[1] {
-                Val::Arr(ls) => ls.iter().map(|l| match l { Val::Str(s) => s.clone(), o => panic!("{o:?}") }).collect(),
+                Val::Arr(ls) => ls.iter().map(|l| match l { Val::Str(s) => s.to_string(), o => panic!("{o:?}") }).collect(),
                 o => panic!("{o:?}"),
             }),
             o => panic!("{o:?}"),
@@ -709,3 +710,250 @@ fn bench_core_obs_cost() {
     }
 }
 
+
+/// The battles both benches replay: `n` corpus team pairs under the seeded random policy, `gen3ou`,
+/// no forfeit.
+fn bench_battles(n: usize) -> Vec<Battle> {
+    let teams = corpus_teams();
+    let mut bs = Vec::new();
+    for rep in 0..(n.div_ceil(teams.len())) {
+        for (i, t) in teams.iter().enumerate() {
+            if bs.len() < n {
+                let seed = format!("{},{},{},{}", 11 + i, 5 * rep + 1, 29 + i, 31 + rep);
+                bs.push(generate(&format!("bench{rep}_{i}"), "gen3ou", &seed, t.clone(), (rep * 1000 + i) as u64, None));
+            }
+        }
+    }
+    bs
+}
+
+/// Named wall-clock accumulators, reported in insertion order.
+#[derive(Default)]
+struct Stages(Vec<(&'static str, bool, std::time::Duration)>);
+impl Stages {
+    /// `prod`: the stage is part of the shipped pipeline (summed into the total); otherwise it is an
+    /// ATTRIBUTION re-run of a piece of a production stage on the same input.
+    fn add(&mut self, name: &'static str, prod: bool, d: std::time::Duration) {
+        match self.0.iter_mut().find(|(n, _, _)| *n == name) {
+            Some(s) => s.2 += d,
+            None => self.0.push((name, prod, d)),
+        }
+    }
+}
+
+/// The PER-STAGE cost of the core observation mode, in-process (release): the bridge's
+/// `CoreObs::step` pipeline replayed over `bench_core_obs_cost`'s battles, each stage timed on its
+/// own. `cargo test --release --test sim_bridge_core_obs_test -- --ignored --nocapture
+/// bench_core_obs_stages` (`CORE_OBS_BENCH_BATTLES`, `CORE_OBS_BENCH_REPS`, `CORE_OBS_BENCH_SIDES`
+/// = `p1` | `both`).
+///
+/// PRODUCTION stages (`PROD`; their sum is the mode's in-process cost per frame): `collect` (the
+/// write's new lines), `fold` (`parse_advance_lean` of the bridge's chain — `parse_root_unrecorded`,
+/// the trackers on and no native record — the parse, the reading
+/// folds, the trackers and, at a decision, `present()` + legality + the tracker decide),
+/// `obs_json` (`wire::obs_json_into`, the bridge's own frame builder: the encode with the view
+/// memoized, legality, `choice_tokens`, the mask and the JSON), `write` (the line into a buffer).
+/// ATTRIBUTION stages (`attr`; pieces of a production stage re-run standalone on the same input,
+/// NOT summed): `parse` (`Line::parse`), `req_json` (one `Val::parse` of each request payload),
+/// `reader` (M1's reading fold), `board_req` / `board_other` (the board reading on request / other
+/// lines), `plain` (a TRACKERLESS parse chain: parse + both reading folds), `present`, `legal`,
+/// `decide` (the tracker decide replayed from the previous decision's state), `encode`, `tokens`
+/// (legality + tokens + mask), `frame_json` (the frame + the tokens JSON). Every replayed result is
+/// ASSERTED equal to the chain's (the standalone board, the view, the tracker state, the frame), so
+/// each number is about the code that ships.
+#[test]
+#[ignore]
+fn bench_core_obs_stages() {
+    use pokesim::core_events::reading::Reader;
+    use pokesim::core_events::{Kw, Line};
+    use pokesim::present::board_reading::BoardReading;
+    use pokesim::trackers::turnview::DamagingMove;
+    use std::hint::black_box;
+    use std::time::Instant;
+
+    let n: usize = std::env::var("CORE_OBS_BENCH_BATTLES").ok().and_then(|s| s.parse().ok()).unwrap_or(17);
+    let reps: usize = std::env::var("CORE_OBS_BENCH_REPS").ok().and_then(|s| s.parse().ok()).unwrap_or(5);
+    let both = std::env::var("CORE_OBS_BENCH_SIDES").is_ok_and(|s| s == "both");
+    let sides: Vec<usize> = if both { vec![0, 1] } else { vec![0] };
+    let bs = bench_battles(n);
+    let dex = Dex::for_gen(3);
+    let cfg = ClockConfig::default();
+
+    let mut per_rep: Vec<Stages> = Vec::new();
+    let (mut frames, mut writes, mut lines_n) = (0usize, 0usize, 0usize);
+    for _ in 0..reps {
+        let mut st = Stages::default();
+        (frames, writes, lines_n) = (0, 0, 0);
+        let mut sink: Vec<u8> = Vec::with_capacity(1 << 16);
+        for b in &bs {
+            let mut sess = BridgeSession::new_construct_turn0(&b.opts(), &dex).expect("session");
+            let mut trk: [Option<BattleVersion>; 2] = [0, 1].map(|s| {
+                sides.contains(&s).then(|| BattleVersion::parse_root_unrecorded(s, NAMES[s], Some(&b.teams[s]), cfg).expect("root"))
+            });
+            let mut plain: [Option<BattleVersion>; 2] = [0, 1].map(|s| {
+                sides.contains(&s).then(|| BattleVersion::parse_root(s, NAMES[s], Some(&b.teams[s])).expect("root"))
+            });
+            let mut readers = [Reader::new(0), Reader::new(1)];
+            let mut boards = [0, 1].map(|s| BoardReading::new(s, NAMES[s], Some(&b.teams[s])).expect("board"));
+            // the tracker state at each side's previous decision + the readings since (the decide replay)
+            let mut pre: [Option<pokesim::trackers::SideTrackers>; 2] = [0, 1].map(|s| trk[s].as_ref().and_then(|v| v.trackers(s).cloned()));
+            let mut pending: [Vec<pokesim::core_events::Reading>; 2] = [Vec::new(), Vec::new()];
+            let mut decided = [0u32; 2];
+            let mut emitted = 0usize;
+            let mut cmds = b.cmds.iter();
+            loop {
+                let from = emitted;
+                for &side in &sides {
+                    // ---- PROD: collect
+                    let t0 = Instant::now();
+                    let new: Vec<&str> = sess.chunks().chunks[from..]
+                        .iter()
+                        .filter(|c| c.side == side)
+                        .flat_map(|c| c.lines.iter().map(String::as_str))
+                        .collect();
+                    st.add("collect", true, t0.elapsed());
+                    lines_n += new.len();
+                    // ---- attr: parse / req_json / reader / board, standalone
+                    let mut parsed = Vec::with_capacity(new.len());
+                    let t0 = Instant::now();
+                    for l in &new {
+                        parsed.push(black_box(Line::parse(l).expect("parse")));
+                    }
+                    st.add("parse", false, t0.elapsed());
+                    for l in parsed.iter().filter(|l| l.kw == Kw::Request) {
+                        let sm = l.split_message();
+                        if sm.len() > 2 && !sm[2].is_empty() {
+                            let j = sm[2..].join("|");
+                            let t0 = Instant::now();
+                            black_box(Val::parse(&j).expect("request json"));
+                            st.add("req_json", false, t0.elapsed());
+                        }
+                    }
+                    let t0 = Instant::now();
+                    for l in &parsed {
+                        black_box(readers[side].feed(l).expect("reader"));
+                    }
+                    st.add("reader", false, t0.elapsed());
+                    for l in &parsed {
+                        let t0 = Instant::now();
+                        boards[side].feed(l).expect("board");
+                        st.add(if l.kw == Kw::Request { "board_req" } else { "board_other" }, false, t0.elapsed());
+                    }
+                    // ---- attr: the trackerless chain
+                    let p = plain[side].take().unwrap();
+                    let t0 = Instant::now();
+                    let p = p.parse_advance(&new).expect("plain parse");
+                    st.add("plain", false, t0.elapsed());
+                    plain[side] = Some(p);
+                    // ---- PROD: the tracker chain
+                    let c = trk[side].take().unwrap();
+                    let t0 = Instant::now();
+                    let next = c.parse_advance_lean(&new).expect("parse");
+                    st.add("fold", true, t0.elapsed());
+                    let s = next.stream(side).unwrap();
+                    assert!(s.board_reading == boards[side], "{}: the standalone board drifted from the chain's", b.label);
+                    // the lean chain keeps no events; the trackerless chain's readings are the same fold's
+                    pending[side].extend(plain[side].as_ref().unwrap().events(side).iter().flat_map(|e| e.readings.iter().cloned()));
+                    let decisions = next.trackers(side).map_or(0, |t| t.decisions);
+                    if let Some(d) = next.decision(side) {
+                        assert_eq!(decisions, decided[side] + 1);
+                        assert_eq!(d.line + 1, s.lines);
+                        let br = &s.board_reading;
+                        // ---- attr: present / legal / decide, replayed
+                        let t0 = Instant::now();
+                        let view = present::present(br).expect("present");
+                        st.add("present", false, t0.elapsed());
+                        assert!(&view == next.view(side).unwrap(), "present replay");
+                        let t0 = Instant::now();
+                        let legal = present::legal_actions(br).expect("legal");
+                        black_box(present::mask(&legal));
+                        st.add("legal", false, t0.elapsed());
+                        let dm = br.last_damaging_move(1).map(|d| DamagingMove {
+                            user_species: Some(d.user_species.clone()),
+                            target_species: Some(d.target_species.clone()),
+                            target_status: d.target_status.map(|s| s.live().to_uppercase()),
+                            move_id: Some(d.move_id.clone()),
+                            effectiveness: Some(d.effectiveness),
+                        });
+                        let mut tr = pre[side].take().unwrap();
+                        let pend = std::mem::take(&mut pending[side]);
+                        let t0 = Instant::now();
+                        tr.decide(&view, Some(&legal), &pend, dm, pokesim::trackers::dex()).expect("decide");
+                        st.add("decide", false, t0.elapsed());
+                        assert!(&tr == next.trackers(side).unwrap(), "{}: the decide replay differs from the chain's", b.label);
+                        pre[side] = Some(tr);
+                        // ---- PROD: the frame (`wire::obs_json_into`, what the bridge ships) + its write
+                        let t0 = Instant::now();
+                        let mut obs = Vec::with_capacity(wire::FRAME_LEN + 512);
+                        obs.extend_from_slice(if side == 0 { b"__OBS__ p1 " } else { b"__OBS__ p2 " });
+                        wire::obs_json_into(&next, side, d.line, decided[side], &mut obs).expect("obs json");
+                        obs.push(b'\n');
+                        st.add("obs_json", true, t0.elapsed());
+                        let t0 = Instant::now();
+                        sink.extend_from_slice(&obs);
+                        st.add("write", true, t0.elapsed());
+                        // ---- attr: the frame's pieces — the encode, legality + tokens + mask, the JSON
+                        let t0 = Instant::now();
+                        let mut row = [0.0f32; OBS_DIM];
+                        next.encode(side, &mut row).expect("encode");
+                        st.add("encode", false, t0.elapsed());
+                        let t0 = Instant::now();
+                        let legal = next.legal(side).expect("legal");
+                        let tokens = present::choice_tokens(br, &legal).expect("tokens");
+                        black_box(present::mask(&legal));
+                        st.add("tokens", false, t0.elapsed());
+                        let t0 = Instant::now();
+                        let mut f = String::with_capacity(wire::FRAME_LEN);
+                        wire::frame_into(&row, &mut f);
+                        black_box(present::tokens_json(&tokens));
+                        st.add("frame_json", false, t0.elapsed());
+                        let at = b"__OBS__ p1 {\"frame\":".len();
+                        assert!(&obs[at..at + f.len()] == f.as_bytes(), "the frame piece is not the shipped frame");
+                        sink.clear();
+                        frames += 1;
+                    } else {
+                        assert_eq!(decisions, decided[side]);
+                    }
+                    decided[side] = decisions;
+                    trk[side] = Some(next);
+                }
+                writes += 1;
+                emitted = sess.chunks().chunks.len();
+                if sess.is_ended() {
+                    break;
+                }
+                let Some(cmd) = cmds.next() else { break };
+                let (verb, rest) = cmd.split_once(' ').unwrap();
+                let (side_tok, tok) = rest.split_once(' ').unwrap_or((rest, ""));
+                let side = if side_tok == "p1" { 0 } else { 1 };
+                match verb {
+                    "CHOOSE" => {
+                        if let Some(c) = trk[side].as_mut() {
+                            c.note_choice(side, tok);
+                        }
+                        sess.feed_cmd(Cmd { side, choice: parse_choice(tok).expect("choice") }, &dex);
+                    }
+                    "FORCELOSE" => sess.forfeit(side),
+                    v => panic!("verb {v}"),
+                }
+            }
+        }
+        per_rep.push(st);
+    }
+    println!(
+        "stages: {} battles, sides {:?}, reps {reps}, {frames} frames, {writes} writes, {lines_n} lines ({:.1} per frame), debug_assertions {}",
+        bs.len(), sides, lines_n as f64 / frames as f64, cfg!(debug_assertions)
+    );
+    println!("  µs per FRAME, median of {reps} reps");
+    let mut total = 0.0;
+    for (k, (name, prod, _)) in per_rep[0].0.iter().enumerate() {
+        let mut v: Vec<f64> = per_rep.iter().map(|r| r.0[k].2.as_secs_f64() * 1e6 / frames as f64).collect();
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let m = v[v.len() / 2];
+        if *prod {
+            total += m;
+        }
+        println!("  {} {name:>11}: {m:8.2}", if *prod { "PROD" } else { "attr" });
+    }
+    println!("  PROD       total: {total:8.2}");
+}

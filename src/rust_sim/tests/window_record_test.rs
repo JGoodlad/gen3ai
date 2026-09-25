@@ -51,7 +51,7 @@ fn play(p1: &str, p2: &str, seed: &str, script: &[(usize, &str)]) -> Run {
     let mut collect = |v: &BattleVersion, w: &mut [Vec<Arc<Window>>; 2]| {
         for s in 0..2 {
             if let Some(d) = v.decision(s) {
-                w[s].push(Arc::clone(&d.window));
+                w[s].push(Arc::clone(d.window.as_ref().expect("a recording stream")));
             }
         }
     };
@@ -70,7 +70,7 @@ fn play(p1: &str, p2: &str, seed: &str, script: &[(usize, &str)]) -> Run {
     }
     assert!(sess.fatal().is_none(), "fixture faulted: {:?}", sess.fatal());
     for s in 0..2 {
-        let open = v.stream(s).and_then(|st| st.trk.as_ref()).map(|t| t.record.current().clone()).expect("trk");
+        let open = v.stream(s).and_then(|st| st.trk.as_ref()).map(|t| t.record.as_ref().expect("a recording stream").current().clone()).expect("trk");
         windows[s].push(Arc::new(open));
     }
     let input = (p1.to_string(), p2.to_string(), seed.to_string(),
@@ -682,7 +682,7 @@ fn parse_record(lines: &[&str]) -> Window {
     for l in lines {
         s.fold_text(l).unwrap_or_else(|e| panic!("{l}: {e}"));
     }
-    s.trk.expect("trk").record.current().clone()
+    s.trk.expect("trk").record.as_ref().expect("a recording stream").current().clone()
 }
 
 #[test]
@@ -712,7 +712,7 @@ fn every_gen3_caller_is_recorded_as_caller_then_called_or_refused_as_poke_env_re
         }
         if read {
             assert!(refused.is_none(), "{caller}: {refused:?}");
-            let w = s.trk.expect("trk").record.current().clone();
+            let w = s.trk.expect("trk").record.as_ref().expect("a recording stream").current().clone();
             let (want_called, want_caller) = (pokesim::core_events::to_id(called), pokesim::core_events::to_id(caller));
             assert!(w.actions.iter().any(|a| matches!(&a.kind,
                 ActionKind::Move { id, called_by: Some(c), .. } if *id == want_called && *c == want_caller)), "{caller}: {}", json(&w));

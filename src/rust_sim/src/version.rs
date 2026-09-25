@@ -90,8 +90,23 @@ impl SideStream {
     /// Fold ONE typed line. `scope` is the engine's action scope (the step path's owner truth);
     /// the parse path passes `None` and the owner comes from line order.
     pub fn fold(&mut self, line: Line, src: Option<u32>, scope: Option<Scope>) -> R<CoreEvent> {
+        self.fold_inner(line, src, scope, true).map(|ev| ev.expect("kept"))
+    }
+
+    /// [`Self::fold`], keeping NO event: the line's readings are MOVED to the trackers rather than
+    /// copied into an event nobody reads (`BattleVersion::parse_advance_lean`). Every state the
+    /// stream holds after the line is `fold`'s.
+    pub fn fold_lean(&mut self, line: Line) -> R<()> {
+        self.fold_inner(line, None, None, false).map(|_| ())
+    }
+
+    fn fold_inner(&mut self, line: Line, src: Option<u32>, scope: Option<Scope>, keep: bool) -> R<Option<CoreEvent>> {
         let by_order = self.owners.step(&line);
-        let readings = self.reader.feed(&line)?;
+        // The line is split, and a `|request|`'s JSON parsed, ONCE for both reading folds (the
+        // reader, then the board).
+        let req = if line.kw == Kw::Request { crate::core_events::reading::request_payload(&line)? } else { None };
+        let sm = crate::core_events::reading::split_for_readings(&line);
+        let readings = self.reader.feed_with(&line, &sm, req.as_ref().map(|(_, v)| v))?;
         let owner = if is_outcome(line.kw) {
             match scope {
                 Some(s) => s.move_side(),
@@ -102,18 +117,29 @@ impl SideStream {
         };
         let request = line.kw == Kw::Request;
         let request_nonempty = request && matches!(line.field(0), Some(Field::Text(t)) if !t.is_empty());
-        let ev = CoreEvent { idx: self.lines as u32, line, src, owner, readings };
+        let mut ev = CoreEvent { idx: self.lines as u32, line, src, owner, readings };
         if let Some(t) = self.trk.as_mut() {
-            t.observe(&ev, &self.board_reading, scope);
+            if keep {
+                t.observe(&ev, &self.board_reading, scope);
+            } else {
+                // the record reads the board BEFORE the line (`observe`'s order); the pending
+                // readings are read only at the next decision, so they are handed over after it
+                t.record_line(&ev, &self.board_reading, scope);
+            }
         }
-        self.board_reading.feed(&ev.line)?;
+        self.board_reading.feed_with(&ev.line, &sm, req)?;
+        if !keep {
+            if let Some(t) = self.trk.as_mut() {
+                t.pend(std::mem::take(&mut ev.readings));
+            }
+        }
         if request {
             if let Some(t) = self.trk.as_mut() {
                 t.maybe_decide(&self.board_reading, request_nonempty, self.lines)?;
             }
         }
         self.lines += 1;
-        Ok(ev)
+        Ok(keep.then_some(ev))
     }
 
     /// Fold ONE line of protocol TEXT (the parse path).
@@ -151,6 +177,9 @@ pub struct BattleVersion {
     engine: Option<Engine>,
     streams: [Option<SideStream>; 2],
     events: [Vec<CoreEvent>; 2],
+    /// Lines each side folded in the transition INTO this version (`events[side].len()`, or the
+    /// count alone for a version that keeps no events — [`BattleVersion::parse_advance_lean`]).
+    transition: [usize; 2],
     views: [OnceLock<R<OneSidedView>>; 2],
     /// Lines of the OBSERVED session's chunk list each side has folded ([`Origin::Observed`]
     /// only; 0 otherwise — a fork's transport starts empty, so it copies the board, never the
@@ -159,13 +188,19 @@ pub struct BattleVersion {
 }
 
 impl BattleVersion {
-    fn new(parent: Option<Arc<BattleVersion>>, origin: Origin, engine: Option<Engine>, mut streams: [Option<SideStream>; 2],
+    fn new(parent: Option<Arc<BattleVersion>>, origin: Origin, engine: Option<Engine>, streams: [Option<SideStream>; 2],
            events: [Vec<CoreEvent>; 2], cursor: [usize; 2]) -> BattleVersion {
+        let transition = [events[0].len(), events[1].len()];
+        Self::assemble(parent, origin, engine, streams, events, transition, cursor)
+    }
+
+    fn assemble(parent: Option<Arc<BattleVersion>>, origin: Origin, engine: Option<Engine>, mut streams: [Option<SideStream>; 2],
+                events: [Vec<CoreEvent>; 2], transition: [usize; 2], cursor: [usize; 2]) -> BattleVersion {
         let views = [OnceLock::new(), OnceLock::new()];
         // A decision taken at THIS boundary already computed the side's view — the memo adopts it.
         for side in 0..2 {
             let Some(s) = streams[side].as_mut() else { continue };
-            let first = s.lines - events[side].len();
+            let first = s.lines - transition[side];
             if let Some(d) = s.trk.as_mut().and_then(|t| t.last.as_mut()) {
                 if d.line >= first && d.line + 1 == s.lines {
                     if let Some(v) = d.view.take() {
@@ -174,7 +209,7 @@ impl BattleVersion {
                 }
             }
         }
-        BattleVersion { parent, origin, engine, streams, events, views, cursor }
+        BattleVersion { parent, origin, engine, streams, events, transition, views, cursor }
     }
 
     fn fresh_streams(names: [&str; 2], teams: [Option<&str>; 2], want: [bool; 2], trk: Option<ClockConfig>)
@@ -274,6 +309,7 @@ impl BattleVersion {
     pub fn only(mut self, side: usize) -> BattleVersion {
         self.streams[1 - side] = None;
         self.events[1 - side].clear();
+        self.transition[1 - side] = 0;
         self
     }
 
@@ -311,6 +347,19 @@ impl BattleVersion {
     /// The ROOT of a parse-built chain: ONE side's stream and nothing else.
     pub fn parse_root(viewer: usize, username: &str, packed_team: Option<&str>) -> R<BattleVersion> {
         Self::parse_root_with(viewer, username, packed_team, None)
+    }
+
+    /// [`Self::parse_root_with`] with the trackers on and NO native record
+    /// ([`TrackerState::without_record`]: every decision's `window` is `None`, every other read
+    /// unchanged) — the chain of a consumer that reads the row alone (`sim_bridge`'s core
+    /// observation mode).
+    pub fn parse_root_unrecorded(viewer: usize, username: &str, packed_team: Option<&str>, cfg: ClockConfig)
+        -> R<BattleVersion> {
+        let mut v = Self::parse_root_with(viewer, username, packed_team, Some(cfg))?;
+        if let Some(t) = v.streams[viewer].as_mut().and_then(|s| s.trk.take()) {
+            v.streams[viewer].as_mut().expect("the root's stream").trk = Some(t.without_record());
+        }
+        Ok(v)
     }
 
     /// [`Self::parse_root`] with the per-decision TRACKERS on.
@@ -357,6 +406,25 @@ impl BattleVersion {
         Ok(Self::new(None, Origin::Parse, None, streams, ev, [0, 0]))
     }
 
+    /// PARSE — linear and LEAN: [`Self::parse_advance`] keeping no events (`events(side)` is
+    /// empty on the result; every other read — the stream, [`Self::decision`], the view, the
+    /// legality, [`Self::encode`] — is `parse_advance`'s). The shape a consumer that reads only
+    /// the decision and its row takes (`sim_bridge`'s core observation mode).
+    pub fn parse_advance_lean<S: AsRef<str>>(mut self, lines: &[S]) -> R<BattleVersion> {
+        let side = self.only_side()?;
+        let mut s = self.streams[side].take().expect("only_side");
+        for l in lines {
+            let text = l.as_ref();
+            let line = Line::parse(text).map_err(|e| CoreError::from(e).context(format!("line {} {text:?}: ", s.lines)))?;
+            s.fold_lean(line)?;
+        }
+        let mut streams = [None, None];
+        streams[side] = Some(s);
+        let mut transition = [0, 0];
+        transition[side] = lines.len();
+        Ok(Self::assemble(None, Origin::Parse, None, streams, [Vec::new(), Vec::new()], transition, [0, 0]))
+    }
+
     /// Tell `side`'s stream the choice it sent for the coming action (a denied own action keeps
     /// it — [`crate::trackers::record::Choice`]). A no-op without trackers.
     pub fn note_choice(&mut self, side: usize, token: &str) {
@@ -372,7 +440,7 @@ impl BattleVersion {
     pub fn decision(&self, side: usize) -> Option<&Decision> {
         let s = self.streams[side].as_ref()?;
         let d = s.trk.as_ref()?.last.as_ref()?;
-        let first = s.lines - self.events[side].len();
+        let first = s.lines - self.transition[side];
         (d.line >= first).then_some(d)
     }
 

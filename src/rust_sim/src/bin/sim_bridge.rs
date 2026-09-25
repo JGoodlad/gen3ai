@@ -30,11 +30,12 @@
 //! `--progress-decision-tense` / `--progress-switch-freeze`). ABSENT (or `null`) ⇒ this binary's
 //! stdout is BYTE-IDENTICAL to the mode's absence (pinned by `tests/sim_bridge_core_obs_test.rs`).
 //!
-//! Per requested side the child keeps a PARSE-built version chain with trackers
-//! (`BattleVersion::parse_root_with`) — the observation comes THROUGH THE PARSER, the program's
-//! §6c one observation path — advanced by exactly the lines that side was newly shipped in each
-//! write (incremental; the whole stream is never re-parsed). Every `CHOOSE` of a requested side
-//! is noted on its chain (`note_choice`, the raw choice token) BEFORE it is fed, as
+//! Per requested side the child keeps a PARSE-built version chain with trackers and no native
+//! record (`BattleVersion::parse_root_unrecorded` — the row never reads the record): the
+//! observation comes THROUGH THE PARSER, the program's §6c one observation path, advanced by
+//! exactly the lines that side was newly shipped in each write (incremental,
+//! `BattleVersion::parse_advance_lean`; the whole stream is never re-parsed). Every `CHOOSE` of a
+//! requested side is noted on its chain (`note_choice`, the raw choice token) BEFORE it is fed, as
 //! `core_events` does. For each write (START's first emission, every CHOOSE / FORCELOSE) each
 //! requested side whose chain took a DECISION at the write's boundary gets ONE frame, written
 //! BEFORE that write's chunk frames (p1's before p2's) — the parent fires each chunk as an
@@ -45,9 +46,10 @@
 //!             "tokens":{"<idx>":"<choice>",…},"turn":<int>,"line":<int>,"rqid":<int>|null,"n":<int>}
 //! ```
 //!
-//! `frame` is `encoder::wire::frame` of `BattleVersion::encode` (NaN-prefilled in test /
-//! self-check builds, zero-filled in release); `mask` is `present::mask`; `tokens` is
-//! `present::choice_tokens` (the real mapper's choice string per legal action); `turn` is the
+//! The JSON is `encoder::wire::obs_json_into`. `frame` is `encoder::wire::frame` of
+//! `BattleVersion::encode` (NaN-prefilled in test / self-check builds, zero-filled in release);
+//! `mask` is `present::mask`; `tokens` is `present::choice_tokens` (the real mapper's choice string
+//! per legal action); `turn` is the
 //! reading's turn; `line` is the side's stream index of the `|request|` it decided on; `rqid` is
 //! the request JSON's `rqid` when it carries one (the engine never writes one: `null` today); `n`
 //! is the frame's 0-based index among THIS side's frames in the current battle (0 at every START)
@@ -112,17 +114,17 @@ use std::io::{self, BufRead, Write};
 
 use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::bridge::{parse_choice, BridgeSession, Cmd};
-use pokesim::core_events::jsonval::Val;
 use pokesim::dex::Dex;
-use pokesim::encoder::{self, OBS_DIM};
+use pokesim::encoder;
 use pokesim::json::Json;
-use pokesim::present;
 use pokesim::prng::{normalize_seed, Prng};
 use pokesim::trackers::clock::ClockConfig;
 use pokesim::version::BattleVersion;
 
 fn main() {
-    let dex = Dex::for_gen(3);
+    // The process-wide gen-3 dex the core's trackers consult too (`trackers::dex`): the core
+    // observation mode would otherwise load a SECOND copy at its first decision.
+    let dex: &Dex = pokesim::trackers::dex();
     let mut sess = Session::new();
 
     let stdin = io::stdin();
@@ -140,7 +142,7 @@ fn main() {
         // `uncaughtException` handler (which does NOT exit on a per-line failure unless
         // the panic is unrecoverable — here we report and keep the loop alive).
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            handle_line(&mut sess, line, &dex, &mut out)
+            handle_line(&mut sess, line, dex, &mut out)
         }));
         match res {
             Ok(Ok(LineResult::Continue)) => {}
@@ -262,7 +264,7 @@ impl CoreObs {
             if spec.sides[side] {
                 let p = players[side];
                 chains[side] = Some(
-                    BattleVersion::parse_root_with(side, &p.name, Some(&p.team.0), Some(spec.cfg))
+                    BattleVersion::parse_root_unrecorded(side, &p.name, Some(&p.team.0), spec.cfg)
                         .map_err(|e| format!("core_obs: p{} root: {}", side + 1, e.message()))?,
                 );
             }
@@ -308,7 +310,7 @@ impl CoreObs {
                 .flat_map(|c| c.lines.iter().map(String::as_str))
                 .collect();
             let next = chain
-                .parse_advance(&new)
+                .parse_advance_lean(&new)
                 .map_err(|e| format!("core_obs: parse p{tag}: {}", e.message()))?;
             self.folded[side] += new.len();
             let s = next.stream(side).ok_or_else(|| format!("core_obs: p{tag}: the chain lost its stream"))?;
@@ -340,8 +342,12 @@ impl CoreObs {
                     }
                     // `n` = this frame's index among this side's frames in this battle (the chain
                     // is rebuilt at every START, so it restarts at 0).
-                    let json = obs_json(&next, side, d.line, self.decided[side])?;
-                    writeln!(out, "__OBS__ p{tag} {json}").ok();
+                    let mut obs = Vec::with_capacity(encoder::wire::FRAME_LEN + 512);
+                    obs.extend_from_slice(if side == 0 { b"__OBS__ p1 " } else { b"__OBS__ p2 " });
+                    encoder::wire::obs_json_into(&next, side, d.line, self.decided[side], &mut obs)?;
+                    obs.push(b'\n');
+                    // ONE write of the whole line (the line writer passes it through in one piece).
+                    out.write_all(&obs).ok();
                     out.flush().ok();
                 }
                 (d, n) => {
@@ -357,30 +363,6 @@ impl CoreObs {
         }
         Ok(())
     }
-}
-
-/// The `__OBS__` JSON of `side`'s decision on `v` (the request at stream line `line`), the side's
-/// `n`-th frame (0-based) of the battle.
-fn obs_json(v: &BattleVersion, side: usize, line: usize, n: u32) -> Result<String, String> {
-    let tag = side + 1;
-    let mut row = [0.0f32; OBS_DIM];
-    v.encode(side, &mut row).map_err(|e| format!("core_obs: encode p{tag}: {}", e.message()))?;
-    let legal = v.legal(side).ok_or_else(|| format!("core_obs: p{tag}: a decision with no legality"))?;
-    let reading = &v.stream(side).ok_or_else(|| format!("core_obs: p{tag}: no stream"))?.board_reading;
-    let tokens = present::choice_tokens(reading, &legal).map_err(|e| format!("core_obs: tokens p{tag}: {}", e.message()))?;
-    let mask = present::mask(&legal);
-    let rqid = match reading.last_request.as_ref().and_then(|r| r.get("rqid")) {
-        None | Some(Val::Null) => "null".to_string(),
-        Some(Val::Int(i)) => i.to_string(),
-        Some(other) => return Err(format!("core_obs: p{tag}: the request's rqid is not an integer: {other:?}")),
-    };
-    let mask_json = mask.iter().map(|m| m.to_string()).collect::<Vec<_>>().join(",");
-    Ok(format!(
-        "{{\"frame\":{},\"mask\":[{mask_json}],\"tokens\":{},\"turn\":{},\"line\":{line},\"rqid\":{rqid},\"n\":{n}}}",
-        encoder::wire::frame(&row),
-        present::tokens_json(&tokens),
-        reading.turn
-    ))
 }
 
 /// The `__RECON__` record's raw materials. See `emit_recon`.

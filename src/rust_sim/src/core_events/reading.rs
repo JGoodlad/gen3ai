@@ -29,6 +29,7 @@
 //! | R10 | a mon named by a line but never introduced is created with `species = to_id(name)` (the NICKNAME) | `abstract_battle.py:421-424` |
 //! | R11 | a `-formechange` / `detailschange` never renames the species a later event names | `pokemon.py:469-471` (`store_species=False`) |
 
+use super::jsonval::Val;
 use super::line::Line;
 use super::schema::{EventKind, Kw};
 use super::{to_id, Intercept, Reading, Rel, Route, Value};
@@ -91,13 +92,13 @@ impl Mon {
             self.status = None;
             text
         };
-        let digits: String = hp.chars().filter(|c| c.is_ascii_digit() || *c == '/').collect();
-        let (c, m) = digits.split_once('/').ok_or_else(|| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): no '/' (ValueError)")))?;
+        // the digits and '/' of `hp`, split at the '/' — read in place (the filter keeps every '/')
+        let (c, m) = hp.split_once('/').ok_or_else(|| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): no '/' (ValueError)")))?;
         if m.contains('/') {
             return Err(refuse(PyExc::ValueError, format!("set_hp_status({text:?}): too many values to unpack")));
         }
-        self.cur = Some(c.parse().map_err(|_| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): bad hp (ValueError)")))?);
-        self.max = Some(m.parse().map_err(|_| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): bad max hp (ValueError)")))?);
+        self.cur = Some(super::int_of_digits(c).ok_or_else(|| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): bad hp (ValueError)")))?);
+        self.max = Some(super::int_of_digits(m).ok_or_else(|| refuse(PyExc::ValueError, format!("set_hp_status({text:?}): bad max hp (ValueError)")))?);
         Ok(())
     }
     /// `Pokemon._update_from_details` — only the species matters here.
@@ -159,17 +160,67 @@ fn is_ident(tok: &str) -> bool {
     b.len() >= 2 && b[0] == b'p' && (b[1] == b'1' || b[1] == b'2')
 }
 
-/// `AbstractBattle.get_pokemon`'s key normalisation: `p1a: X` -> `p1: X`.
-fn norm_key(tok: &str) -> CoreResult<String> {
+/// `AbstractBattle.get_pokemon`'s key normalisation: `p1a: X` -> `p1: X` (an already-normal key is
+/// borrowed, not copied).
+fn norm_key(tok: &str) -> CoreResult<std::borrow::Cow<'_, str>> {
     let b = tok.as_bytes();
     if b.len() < 4 {
         return Err(refuse(PyExc::IndexError, format!("get_pokemon({tok:?}): identifier too short (IndexError)")));
     }
     if b[3] != b' ' {
-        Ok(format!("{}{}", &tok[..2], &tok[3..]))
+        Ok(std::borrow::Cow::Owned(format!("{}{}", &tok[..2], &tok[3..])))
     } else {
-        Ok(tok.to_string())
+        Ok(std::borrow::Cow::Borrowed(tok))
     }
+}
+
+/// A `|request|` line's JSON payload — `(text, value)`, the text exactly `split_message()[2..]
+/// .join("|")` — or `None` when the line carries none (`|request|` / `|request|` + empty). The two
+/// reading folds of a stream (M1's [`Reader`] and the board reading) take it PARSED ONCE per line
+/// ([`Reader::feed_with`], `BoardReading::feed_with`); a malformed payload is the error both raised.
+pub fn request_payload(line: &Line) -> CoreResult<Option<(String, Val)>> {
+    let has = match line.fields.first() {
+        Some(f) => {
+            let mut t = String::new();
+            f.render_into(&mut t);
+            !t.is_empty()
+        }
+        None => false,
+    };
+    if !has {
+        return Ok(None);
+    }
+    let mut text = String::new();
+    for (k, f) in line.fields.iter().enumerate() {
+        if k > 0 {
+            text.push('|');
+        }
+        f.render_into(&mut text);
+    }
+    let v = Val::parse(&text).map_err(|e| malformed(format!("request JSON: {e}")))?;
+    Ok(Some((text, v)))
+}
+
+/// `line.split_message()` for the two reading folds — empty for the lines neither splits (a plain
+/// line, a `|request|`, whose payload is [`request_payload`], an unsupported keyword).
+pub fn split_for_readings(line: &Line) -> Vec<String> {
+    match line.kw.route() {
+        Route::Plain | Route::Unsupported | Route::Intercept(Intercept::Request) => Vec::new(),
+        _ => line.split_message(),
+    }
+}
+
+/// Test / self-check builds: a `feed_with` caller's precomputed split and payload are the line's
+/// own (a payload left out would skip the request's fold in silence).
+#[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+pub(crate) fn check_precomputed(line: &Line, sm: &[String], has_req: bool) -> CoreResult<()> {
+    if sm != split_for_readings(line).as_slice() {
+        return Err(fault(format!("feed_with: the split passed is not the line's ({:?})", line.render())));
+    }
+    if line.kw == Kw::Request && has_req != request_payload(line)?.is_some() {
+        return Err(fault(format!("feed_with: the request payload passed is not the line's ({:?})", line.render())));
+    }
+    Ok(())
 }
 
 /// The per-viewer reading fold.
@@ -235,7 +286,7 @@ impl Reader {
         if let Some(d) = details {
             mon.update_from_details(d);
         }
-        self.teams[t].push((key, mon));
+        self.teams[t].push((key.into_owned(), mon));
         Ok((t, self.teams[t].len() - 1))
     }
 
@@ -294,29 +345,40 @@ impl Reader {
 
     /// Feed ONE line of this side's stream; return the readings it produced, in order.
     pub fn feed(&mut self, line: &Line) -> CoreResult<Vec<Reading>> {
-        match line.kw.route() {
-            Route::Plain => Ok(Vec::new()),
-            Route::Intercept(i) => self.intercept(i, line),
-            Route::Unsupported => Err(refuse(PyExc::UnsupportedMessageType, format!("UnsupportedMessageType: {:?}", line.kw.as_str()))),
-            Route::Control | Route::Cosmetic | Route::StateOnly => {
-                self.apply(line)?;
-                Ok(Vec::new())
-            }
-            Route::Event(kind) => self.event(kind, line),
-        }
+        let req = if line.kw == Kw::Request { request_payload(line)? } else { None };
+        self.feed_with(line, &split_for_readings(line), req.as_ref().map(|(_, v)| v))
     }
 
-    fn intercept(&mut self, i: Intercept, line: &Line) -> CoreResult<Vec<Reading>> {
-        let sm = line.split_message();
-        match i {
-            Intercept::Ignored | Intercept::BigError | Intercept::Win | Intercept::Tie => Ok(Vec::new()),
-            Intercept::ShowTeam => Err(malformed("|showteam| is not a gen-3 line")),
-            Intercept::Request => {
-                if sm.len() > 2 && !sm[2].is_empty() {
-                    self.request(&sm[2..].join("|"))?;
+    /// [`Self::feed`] with the line's split ([`split_for_readings`]) and a `|request|` line's
+    /// payload ([`request_payload`]; ignored on every other line) ALREADY computed — so a stream
+    /// that folds the line into both readings (this one and the board reading,
+    /// `version::SideStream::fold`) splits it and parses the JSON once.
+    pub fn feed_with(&mut self, line: &Line, sm: &[String], req: Option<&Val>) -> CoreResult<Vec<Reading>> {
+        #[cfg(any(debug_assertions, feature = "emission-selfcheck"))]
+        check_precomputed(line, sm, req.is_some())?;
+        match line.kw.route() {
+            Route::Plain => Ok(Vec::new()),
+            Route::Intercept(Intercept::Request) => {
+                if let Some(v) = req {
+                    self.request(v)?;
                 }
                 Ok(Vec::new())
             }
+            Route::Intercept(i) => self.intercept(i, sm),
+            Route::Unsupported => Err(refuse(PyExc::UnsupportedMessageType, format!("UnsupportedMessageType: {:?}", line.kw.as_str()))),
+            Route::Control | Route::Cosmetic | Route::StateOnly => {
+                self.apply(line, sm)?;
+                Ok(Vec::new())
+            }
+            Route::Event(kind) => self.event(kind, line, sm),
+        }
+    }
+
+    fn intercept(&mut self, i: Intercept, sm: &[String]) -> CoreResult<Vec<Reading>> {
+        match i {
+            Intercept::Ignored | Intercept::BigError | Intercept::Win | Intercept::Tie => Ok(Vec::new()),
+            Intercept::ShowTeam => Err(malformed("|showteam| is not a gen-3 line")),
+            Intercept::Request => Err(fault("a |request| line is folded by feed_with")),
             Intercept::Error => {
                 // `Player._handle_battle_message`: `[Unavailable choice]` -> the out-of-band
                 // `record_choice_rejected` hook (`gen3_battle.py:350-379`); anything else writes
@@ -324,7 +386,7 @@ impl Reader {
                 if sm.len() > 2 && sm[2].starts_with("[Unavailable choice]") {
                     let actor = self.active_species(Some(Rel::Ours));
                     let reason = sm[2].clone();
-                    let r = self.new_reading(EventKind::ChoiceRejected, &sm, Some(Rel::Ours), actor, None,
+                    let r = self.new_reading(EventKind::ChoiceRejected, sm, Some(Rel::Ours), actor, None,
                                              vec![("reason", Value::Str(reason))]);
                     return Ok(vec![r]);
                 }
@@ -335,9 +397,7 @@ impl Reader {
 
     /// `Battle.parse_request` -> `_update_team_from_request`: our side's roster, HP/status (the
     /// `condition`), the active flag and the details-species, for every mon in the request.
-    fn request(&mut self, json: &str) -> CoreResult<()> {
-        use super::jsonval::Val;
-        let v = Val::parse(json).map_err(|e| malformed(format!("request JSON: {e}")))?;
+    fn request(&mut self, v: &Val) -> CoreResult<()> {
         let Some(Val::Arr(mons)) = v.get("side").and_then(|s| s.get("pokemon")) else {
             return Err(refuse(PyExc::KeyError, "request without side.pokemon"));
         };
@@ -361,8 +421,7 @@ impl Reader {
     }
 
     /// The state half of `AbstractBattle.parse_message` — only the five facts.
-    fn apply(&mut self, line: &Line) -> CoreResult<()> {
-        let sm = line.split_message();
+    fn apply(&mut self, line: &Line, sm: &[String]) -> CoreResult<()> {
         let f = |i: usize| -> &str { sm.get(i).map(String::as_str).unwrap_or("") };
         match line.kw {
             Kw::Turn => {
@@ -438,8 +497,7 @@ impl Reader {
         Ok(())
     }
 
-    fn event(&mut self, kind: EventKind, line: &Line) -> CoreResult<Vec<Reading>> {
-        let sm = line.split_message();
+    fn event(&mut self, kind: EventKind, line: &Line, sm: &[String]) -> CoreResult<Vec<Reading>> {
         let get = |i: usize| -> Option<&str> { sm.get(i).map(String::as_str) };
         // ---- `_capture_pre`: the facts this line is about to overwrite ----
         let mut pre_target: Option<Option<String>> = None;
@@ -479,7 +537,7 @@ impl Reader {
             _ => {}
         }
         // ---- poke-env mutates ----
-        self.apply(line)?;
+        self.apply(line, sm)?;
         // ---- `_build_event` ----
         let from_last = || -> Option<String> {
             // `_parse_from`: the LAST `[from]` token wins, stripped.
@@ -750,6 +808,48 @@ pub fn read_all(viewer: usize, lines: &[Line]) -> CoreResult<Vec<Vec<Reading>>> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_feed_with_whose_precomputed_split_or_payload_is_not_the_lines_refuses_in_a_test_build() {
+        let req = Line::parse(r#"|request|{"side":{"name":"me","id":"p1","pokemon":[]}}"#).unwrap();
+        let mv = Line::parse("|move|p1a: X|Tackle|p2a: Y").unwrap();
+        let mut r = Reader::new(0);
+        assert!(r.feed_with(&req, &[], None).is_err(), "a request's payload left out must refuse");
+        assert!(r.feed_with(&mv, &[], None).is_err(), "a split left out must refuse");
+        let mut b = crate::present::BoardReading::new(0, "me", None).unwrap();
+        assert!(b.feed_with(&req, &[], None).is_err(), "the board: a request's payload left out must refuse");
+        assert!(b.feed_with(&mv, &[], None).is_err(), "the board: a split left out must refuse");
+        // the right inputs pass
+        let p = request_payload(&req).unwrap();
+        assert!(r.feed_with(&req, &split_for_readings(&req), p.as_ref().map(|(_, v)| v)).is_ok());
+    }
+
+    #[test]
+    fn set_hp_status_reads_exactly_as_the_allocating_parse() {
+        // the reference: the filtered-copy parse the in-place one replaced
+        fn reference(text: &str) -> Result<(u32, u32), String> {
+            let hp = text.split_once(' ').map_or(text, |(hp, _)| hp);
+            let digits: String = hp.chars().filter(|c| c.is_ascii_digit() || *c == '/').collect();
+            let (c, m) = digits.split_once('/').ok_or_else(|| format!("set_hp_status({text:?}): no '/' (ValueError)"))?;
+            if m.contains('/') {
+                return Err(format!("set_hp_status({text:?}): too many values to unpack"));
+            }
+            Ok((
+                c.parse().map_err(|_| format!("set_hp_status({text:?}): bad hp (ValueError)"))?,
+                m.parse().map_err(|_| format!("set_hp_status({text:?}): bad max hp (ValueError)"))?,
+            ))
+        }
+        for t in ["300/300", "364/401 par", "0/1", "a1b/2c", "/", "12/", "/12", "1/2/3", "12", "", "4294967295/1", "4294967296/1",
+                  "1/4294967296", "007/010 slp", "٣/٤", "50/100 brn"] {
+            let mut m = Mon::new("x".into());
+            let got = m.set_hp_status(t).map(|()| (m.cur.unwrap(), m.max.unwrap())).map_err(|e| e.message().to_string());
+            assert_eq!(got, reference(t), "{t:?}");
+        }
+        for s in ["", "0", "00", "12", "4294967295", "4294967296", "99999999999", "1x2", "x", "٣"] {
+            let filtered: String = s.chars().filter(|c| c.is_ascii_digit()).collect();
+            assert_eq!(crate::core_events::int_of_digits(s), filtered.parse::<u32>().ok(), "{s:?}");
+        }
+    }
 
     const PREFIX: &[&str] = &[
         "|player|p1|me||",

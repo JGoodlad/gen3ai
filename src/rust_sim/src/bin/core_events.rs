@@ -333,7 +333,7 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
         }
         let after = sess.chunks().chunks.iter().rposition(|c| c.side == side).ok_or("a decision with no chunk")?;
         let mut window = String::new();
-        d.window.json_into(&mut window);
+        d.window.as_ref().ok_or("a tracker stream without its record")?.json_into(&mut window);
         if let Some(&(bs, bk, reps)) = OBS_BENCH.get() {
             if obs && bs == side && bk == caps[side].len() {
                 let b = obs_bench(v, side, reps)?;

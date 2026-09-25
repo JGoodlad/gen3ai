@@ -14,17 +14,53 @@ pub fn to_id(s: &str) -> String {
     crate::core_events::to_id(s)
 }
 
+/// FNV-1a — the hasher of the id INDEXES below: a lookup is on every move and mon of every
+/// reading, view and encode, and the std SipHash (or the binary search over the sorted table the
+/// index replaces) costs several times more on a ~10-byte id. Deterministic, std-only.
+#[derive(Clone, Copy)]
+pub struct IdHasher(u64);
+impl Default for IdHasher {
+    fn default() -> IdHasher {
+        IdHasher(0xcbf2_9ce4_8422_2325)
+    }
+}
+impl std::hash::Hasher for IdHasher {
+    fn write(&mut self, bytes: &[u8]) {
+        for &b in bytes {
+            self.0 = (self.0 ^ b as u64).wrapping_mul(0x0000_0100_0000_01b3);
+        }
+    }
+    fn finish(&self) -> u64 {
+        self.0
+    }
+}
+/// A map keyed by a table's `id` column.
+pub type IdIndex = std::collections::HashMap<&'static str, usize, std::hash::BuildHasherDefault<IdHasher>>;
+
+/// The row index of a table whose `id`s are UNIQUE (the generated tables are sorted strictly by
+/// `id` — `the_tables_are_sorted_so_binary_search_is_sound` — so the index answers exactly what the
+/// binary search over the sorted table answered).
+fn index_of<'a>(ids: impl Iterator<Item = &'static str>) -> IdIndex {
+    let mut m = IdIndex::default();
+    for (i, id) in ids.enumerate() {
+        m.entry(id).or_insert(i);
+    }
+    m
+}
+
 /// `GenData.pokedex[id]` (a `KeyError` when absent).
 pub fn species(id: &str) -> CoreResult<&'static SpeciesRow> {
-    SPECIES
-        .binary_search_by(|r| r.id.cmp(id))
-        .map(|i| &SPECIES[i])
-        .map_err(|_| refuse(PyExc::KeyError, format!("pokedex[{id:?}]: KeyError (not in poke-env's gen-3 pokedex)")))
+    static IX: std::sync::OnceLock<IdIndex> = std::sync::OnceLock::new();
+    IX.get_or_init(|| index_of(SPECIES.iter().map(|r| r.id)))
+        .get(id)
+        .map(|&i| &SPECIES[i])
+        .ok_or_else(|| refuse(PyExc::KeyError, format!("pokedex[{id:?}]: KeyError (not in poke-env's gen-3 pokedex)")))
 }
 
 /// `GenData.moves.get(id)`.
 pub fn move_row(id: &str) -> Option<&'static MoveRow> {
-    MOVES.binary_search_by(|r| r.id.cmp(id)).ok().map(|i| &MOVES[i])
+    static IX: std::sync::OnceLock<IdIndex> = std::sync::OnceLock::new();
+    IX.get_or_init(|| index_of(MOVES.iter().map(|r| r.id))).get(id).map(|&i| &MOVES[i])
 }
 
 /// `move.SPECIAL_MOVES`.
@@ -42,6 +78,20 @@ pub fn retrieve_id(name: &str) -> String {
         }
     }
     id
+}
+
+/// [`retrieve_id`] without a copy when `name` is already an id (lower-case ASCII letters and
+/// digits — every request moveset entry): `to_id` of an id is the id, so only the collapse applies.
+pub fn retrieve_id_of(name: &str) -> std::borrow::Cow<'_, str> {
+    if !name.is_empty() && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit()) {
+        for bare in ["return", "frustration", "hiddenpower"] {
+            if name.starts_with(bare) {
+                return std::borrow::Cow::Borrowed(bare);
+            }
+        }
+        return std::borrow::Cow::Borrowed(name);
+    }
+    std::borrow::Cow::Owned(retrieve_id(name))
 }
 
 /// `Move.should_be_stored(id, 3)`: not a special move, present in the move table, not a Z or Max
@@ -169,6 +219,33 @@ mod tests {
     }
 
     #[test]
+    fn the_id_indexes_answer_what_the_binary_search_answered() {
+        for (i, r) in MOVES.iter().enumerate() {
+            assert!(std::ptr::eq(move_row(r.id).unwrap(), &MOVES[i]));
+            assert_eq!(MOVES.binary_search_by(|x| x.id.cmp(r.id)), Ok(i));
+        }
+        for (i, r) in SPECIES.iter().enumerate() {
+            assert!(std::ptr::eq(species(r.id).unwrap(), &SPECIES[i]));
+        }
+        for miss in ["", "zzz", "Earthquake", "earthquak", "earthquakee", "hiddenpowerfire70"] {
+            assert_eq!(move_row(miss).is_some(), MOVES.binary_search_by(|x| x.id.cmp(miss)).is_ok(), "{miss:?}");
+            assert_eq!(species(miss).is_ok(), SPECIES.binary_search_by(|x| x.id.cmp(miss)).is_ok(), "{miss:?}");
+        }
+    }
+
+    #[test]
+    fn to_id_ascii_path_is_the_unicode_fold() {
+        let reference = |s: &str| -> String { s.chars().filter(|c| c.is_alphanumeric()).flat_map(|c| c.to_lowercase()).collect() };
+        for s in ["", "Mr. Mime", "p2a: Ho-Oh", "Farfetch’d", "Flabébé", "NIDORAN♀", "Hidden Power [Fire]", "\t\n 1-2_3 ~Zz", "İstanbul", "ǅ"] {
+            assert_eq!(to_id(s), reference(s), "{s:?}");
+        }
+        for b in 0u8..128 {
+            let s = (b as char).to_string();
+            assert_eq!(to_id(&s), reference(&s), "{b}");
+        }
+    }
+
+    #[test]
     fn effect_names_normalise_like_poke_env() {
         assert_eq!(effect_live_id(effect_from_message("move: Leech Seed")), "leechseed");
         assert_eq!(effect_live_id(effect_from_message("ability: Flash Fire")), "flashfire");
@@ -178,6 +255,9 @@ mod tests {
 
     #[test]
     fn move_keys_collapse_like_retrieve_id() {
+        for n in ["", "protect", "hiddenpowergrass", "hiddenpower", "return102", "return", "frustration", "Hidden Power", "Protect", "self-destruct", "x1", "ho oh", "ƒoo"] {
+            assert_eq!(retrieve_id_of(n), retrieve_id(n), "{n:?}");
+        }
         assert_eq!(retrieve_id("Hidden Power"), "hiddenpower");
         assert_eq!(retrieve_id("hiddenpowerfire70"), "hiddenpower");
         assert_eq!(retrieve_id("return102"), "return");
