@@ -603,6 +603,7 @@ returns and say whether the belief is current. Free — a mean and a std over an
 | `value_pred_std` | the critic's own output spread | RAW SHAPED RETURN |
 | `value_loss` | the fitted loss | NORMALIZED under PopArt, raw otherwise |
 | `policy_gradient_loss` · `entropy_loss` · `loss` · `approx_kl` · `clip_fraction` · `clip_range[_vf]` · `grad_norm` · `n_updates` | the stock PPO step | unitless / loss units |
+| `approx_kl_epoch_<k>` · `clip_fraction_epoch_<k>` | one pair per epoch the update ran, `k = 0…n_epochs−1` (fewer after a `target_kl` stop) — each epoch's mean of the SAME per-minibatch numbers the stock pair folds (`gen3_ppo_per_epoch_diag_v1`). ⚠️ stock `approx_kl` is the LAST epoch's mean; stock `clip_fraction` pools every epoch. Detail: [`ppo_step.md`](ppo_step.md) | unitless |
 | `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | the shaped critic vs the win-prob head — **DEGENERATE under `--critic winprob`**, where the two readouts are one head | unitless (rank) |
 | `noise_scale[_ratio][_<term>]` · `dose_rate` · `effective_batch` · `grad_accum_steps` · `train_ms` | the step-size controllers | see their sections |
 
@@ -774,7 +775,7 @@ Grouped by the question each answers, **with its currency**. Everything in the f
 15. `win_prob/coverage` — the fraction of rows carrying a label. A fall here invalidates every line above it.
 
 **Is the OPTIMIZATION healthy?** *(unitless)*
-16. `train/approx_kl` — the KL controller's input.
+16. `train/approx_kl` — the KL controller's input (the LAST epoch's mean; `train/approx_kl_epoch_<k>` is the per-epoch curve).
 17. `train/learning_rate` · **`train/dose_rate`** — the step size, and the quantity that predicts collateral.
 18. `train/clip_fraction` — how much of the surrogate is at the clip bound.
 19. `train/grad_norm`.

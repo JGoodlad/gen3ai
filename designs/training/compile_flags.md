@@ -346,6 +346,20 @@ Two limits, unchanged by the default flip — expect a SHRUNK event, not a gone 
 non-blocking.** gen-13 ran an **1865 s** eval cycle inside a **395 s** iteration. Attributing
 iteration cost to an overlapping eval (or vice versa) is a window coincidence; separate them by the
 compile path (`timed` vs `reused`), which is what actually distinguishes the expensive event.
+## FP32 matmul precision (`--matmul-precision {highest,high}`, DEFAULT `highest`)
+
+`gen3_matmul_precision_v1`. **`highest`** is PyTorch's own default — full FP32 matmuls, no TF32 —
+and `main.train.config.apply_matmul_precision` then calls NOTHING, so the default process is
+byte-for-byte what it was before the flag. **`high`** calls
+`torch.set_float32_matmul_precision("high")` in the TRAINER process, letting fp32 matmuls run on
+TF32 tensor cores (Ampere+; ~10-bit mantissa). It does not reach the env/opponent worker processes.
+The resolved value is read back from torch and **stamped at launch** as
+`🧮 [MATMUL PRECISION] <value>` (beside `🔭 [OBS SOURCE]`), and recorded per checkpoint in
+`metadata.json` as `matmul_precision`. A RUNTIME perf knob: not in `model_config.json`, not
+inherited on a resume (a launcher restart re-sends the original argv, so it holds across one
+run's restarts). **UNVERIFIED:** its speed-up and its effect on the trained policy on this box
+have not been measured.
+
 ## Compiled GPU trainer (`--compile-trainer`, DEFAULT ON for cuda)
 
 `torch.compile`s the LEARNER's feature extractor — the CUDA forward **and backward** the PPO step

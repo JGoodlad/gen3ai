@@ -319,7 +319,14 @@ from typing import Any, Dict
 #   that recorded a shaped reward is REFUSED by `model_version.shaped_reward` (never switched
 #   silently to the terminal alone). No weight shape moves: no ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change — a v121 production checkpoint loads and resumes unchanged.
-MODEL_CONFIG_VERSION = 122
+# v123 (gen3_policy_gae_lambda_v1): `policy_gae_lambda` — the PPO POLICY's GAE λ, until now
+#   HARDCODED to 0.80 at both model_build sites and so unrecorded. TRAINING-only, the td_aux_coef
+#   class exactly: it shapes the rollout buffer's advantages / returns, touches no forward pass and
+#   no weight shape, so there is nothing for `check_compatible` to compare. RECORDED for v100's
+#   reason — a resume that dropped it would silently return the policy to 0.80 — and read back by
+#   `_resolve` on a flagless resume. A pre-v123 config defaults to 0.80, which is not a guess but
+#   the only possible past. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 123
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

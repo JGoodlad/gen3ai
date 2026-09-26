@@ -118,7 +118,7 @@ here, because it is the thing a fold edit must not get wrong.**
 folded in is straight-line source order, and that is only checkable by reading while it stays one
 straight line. What DID move out is everything AROUND the sequence: the pre-loop setup
 (`train_setup`) and the metrics export (`metrics_export`), neither of which folds a term, plus the
-per-rollout probes (`rollout_probes`), which `train()` does not call at all. `ppo.py` is **1,331
+per-rollout probes (`rollout_probes`), which `train()` does not call at all. `ppo.py` is **1,502
 lines** — its floor with the loop intact is ~1,200, so the file-size ratchet's 1,000-line TARGET is
 unreachable here without splitting the sequence, which is the thing that must not happen.
 
@@ -431,6 +431,15 @@ terms, team PFSP, per-team win rates): the async collector wave-batches, so call
 recover which buffer ROW a step landed on. A capture that needs the row is INLINED into
 `collect_rollouts_async` instead (`WinProbLabelCallback`'s terminal capture).
 
+**`--policy-gae-lambda` (default 0.80) is the POLICY's GAE λ; `--win-prob-lambda` is the
+CRITIC's λ-return BCE target — two independent knobs** (`gen3_policy_gae_lambda_v1`, config v123).
+The former was a literal 0.80 at both `model_build` sites until 2026-09-26; it is now recorded on
+`ModelVersion` and INHERITED on a flagless resume (name it to change it). **`train()` logs one
+`train/approx_kl_epoch_<k>` / `train/clip_fraction_epoch_<k>` pair per epoch that ran**, folded
+from the numbers the loop already computes — ⚠️ stock `train/approx_kl` is the LAST epoch's mean
+while `train/clip_fraction` pools every epoch. Detail:
+[`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md).
+
 ## Where the trainee's observation comes from (`--obs-source {python,core}`, DEFAULT `core` on the rust bridge)
 
 `gen3_core_obs_source_v1` — the Rust core program's M6: **the production default since the cutover
@@ -453,6 +462,10 @@ neither): **`--compile-opponents`** is the CPU/ROLLOUT half — the frozen oppon
 workers, plus BLAS thread pinning. **`--compile-trainer`** is the GPU/LEARNER half (auto-on for
 cuda) — the CUDA forward **and backward** the PPO step runs, and the larger of the two. They are
 orthogonal; a run can take either, both or neither.
+**`--matmul-precision {highest,high}`** (default `highest` = PyTorch's default, no TF32, and the
+code then calls nothing) sets the TRAINER process's fp32 matmul precision; `high` enables TF32. It
+is stamped at launch as `🧮 [MATMUL PRECISION]` and recorded in `metadata.json`
+(`gen3_matmul_precision_v1`); a runtime knob, never inherited.
 **Full detail — in [`designs/training/compile_flags.md`](../../../designs/training/compile_flags.md).**
 
 ## Gradient-balance + value-scale diagnostics (`grad_balance.py`)

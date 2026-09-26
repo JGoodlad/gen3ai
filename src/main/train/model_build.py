@@ -481,6 +481,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             intent_label_bot_weight=args.intent_label_bot_weight,
             win_prob_strata_weight=args.win_prob_strata_weight,
             win_prob_lambda=args.win_prob_lambda,
+            policy_gae_lambda=args.policy_gae_lambda,
             win_prob_lambda_truncated=args.win_prob_lambda_truncated,
             win_prob_rollout_target=args.win_prob_rollout_target,
             win_prob_rollout_r=args.win_prob_rollout_r,
@@ -568,7 +569,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         apply_training_hparams(model, args, mappings=mappings,
                                attach_cf_labels=_attach_cf_labels)
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
-        model.gae_lambda = 0.80
+        # gen3_policy_gae_lambda_v1: `--policy-gae-lambda`, resolved by `_resolve` (a flagless resume
+        # INHERITS the parent's recorded value; a pre-v123 parent migrates to the old hardcoded 0.80).
+        model.gae_lambda = float(args.policy_gae_lambda)
         # Resume-path LR setup. Phase determines whether we read from the
         # optimizer (Phase 1, KL-driven) or compute the cosine (Phase 2).
         saved_lr: float | None = None  # only set in branches that read it
@@ -816,7 +819,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             batch_size=args.batch_size,
             n_epochs=args.n_epochs,
             gamma=args.gamma,
-            gae_lambda=0.80,
+            gae_lambda=float(args.policy_gae_lambda),   # gen3_policy_gae_lambda_v1 (default 0.80)
             clip_range=args.clip_range,
             clip_range_vf=args.clip_range_vf,
             ent_coef=args.ent_coef,
@@ -851,6 +854,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             intent_label_bot_weight=args.intent_label_bot_weight,
             win_prob_strata_weight=args.win_prob_strata_weight,
             win_prob_lambda=args.win_prob_lambda,
+            policy_gae_lambda=args.policy_gae_lambda,
             win_prob_lambda_truncated=args.win_prob_lambda_truncated,
             win_prob_rollout_target=args.win_prob_rollout_target,
             win_prob_rollout_r=args.win_prob_rollout_r,

@@ -136,7 +136,8 @@ def test_a_production_v121_config_still_LOADS_with_the_shaped_fields_popped(tmp_
     from agents.model.model_version import MODEL_CONFIG_VERSION, ModelVersion
     out = _migrate_config(_production_v121())
     assert not (set(DELETED_SHAPED_REWARD_FIELDS) & set(out))
-    assert out["config_version"] == MODEL_CONFIG_VERSION == SHAPED_DELETION_VERSION
+    # migrated all the way to HEAD, which is at or past the deletion (v123 added policy_gae_lambda)
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= SHAPED_DELETION_VERSION
     p = tmp_path / "model_config.json"
     p.write_text(json.dumps(_production_v121()))
     v = ModelVersion.from_json_file(str(p))

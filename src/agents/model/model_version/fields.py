@@ -686,3 +686,12 @@ class ModelVersionFields:
     # config rather than in a memory. Reading `ai_v12_01_winprob_critic`'s config afterwards told
     # you WHAT it built; no field told you whether anybody had chosen it.
     arch_source: Optional[str] = None
+    # ---- gen3_policy_gae_lambda_v1 (config v123) — the PPO POLICY's GAE λ --------------------
+    # TRAINING-only, the td_aux_coef class exactly: it sets how the rollout buffer turns rewards and
+    # recorded values into ADVANTAGES (and the scalar critic's `returns`), touches no forward pass
+    # and no weight shape, so it is recorded for PROVENANCE and for flagless-resume read-back
+    # (`_resolve` reads this field) and is never compared by check_compatible or any check_*. 0.80
+    # is the value both model_build sites HARDCODED before the flag existed, so a pre-v123 config
+    # migrates to it — not a guess but the only possible past. NOT `win_prob_lambda` (the critic's
+    # λ-return BCE target, a separate post-collection pass).
+    policy_gae_lambda: float = 0.80

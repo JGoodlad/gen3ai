@@ -9852,3 +9852,26 @@ runbook's test went with it.
 checkpoint loads and resumes. The production mirror drops the 14 keys (its `hand_shaping` override
 leaves `designs/baselines.json`). ⚠️ `reward_config_digest` hashes every `RewardConfig` field, so a cf
 label stamped by a pre-deletion producer no longer matches a post-deletion consumer (a loud refusal).
+
+## v123 — the policy's GAE λ becomes a flag; FP32 matmul precision; per-epoch PPO diagnostics (`gen3_policy_gae_lambda_v1`, `gen3_matmul_precision_v1`, `gen3_ppo_per_epoch_diag_v1`; config bump, no ARCH_SIGNATURE bump, every default byte-identical)
+
+Three training-side additions, 2026-09-26. Each defaults to the behaviour every run had before it.
+
+- **`--policy-gae-lambda FLOAT` (default 0.80).** The PPO policy's GAE λ was a literal `0.80` at both
+  `main/train/model_build.py` sites (fresh ctor, resume assignment) since `eff7ddee`; both now read
+  the resolved flag. Range `[0, 1]`. Recorded as the new `ModelVersion` field `policy_gae_lambda`
+  (the `td_aux_coef` class: provenance + `_resolve` read-back on a flagless resume, never compared by
+  `check_compatible`); a pre-v123 config migrates to 0.80. Distinct from `--win-prob-lambda` (the
+  critic's λ-return BCE target). `hparams/gae_lambda` and `metadata.json`'s `gae_lambda` unchanged.
+- **`--matmul-precision {highest,high}` (default `highest`).** `highest` is PyTorch's default and the
+  code then calls nothing; `high` calls `torch.set_float32_matmul_precision("high")` in the trainer
+  process (TF32). Stamped at launch as `🧮 [MATMUL PRECISION]`, recorded per checkpoint in
+  `metadata.json` as `matmul_precision` (read back from torch). Runtime knob: not versioned, not
+  inherited.
+- **`train/approx_kl_epoch_<k>` · `train/clip_fraction_epoch_<k>`.** One pair per epoch the update ran,
+  each the mean of that epoch's slice of the per-minibatch numbers the loop already computes (no
+  extra forward or device sync). Noted while adding it: stock `train/approx_kl` is the LAST epoch's
+  mean only, while `train/clip_fraction` pools every epoch.
+
+`MODEL_CONFIG_VERSION` 123 (one `setdefault` migration), `MIGRATION_FLOOR` 121 unchanged — a v121/v122
+checkpoint loads and resumes at 0.80. Tests: `src/agents/training/policy_gae_lambda_test.py`.

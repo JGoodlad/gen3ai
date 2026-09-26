@@ -333,6 +333,11 @@ def _migrate_config(data: dict) -> dict:
     # than introducing one, and their POP is version-independent (above). v108's shape.
     if version < 122:
         data["config_version"] = 122
+    # v123 (gen3_policy_gae_lambda_v1) — the PPO policy's GAE λ, a TRAINING-only field. The default
+    # is a RECORD, not a choice: every run before v123 trained at the hardcoded 0.80.
+    if version < 123:
+        data.setdefault("policy_gae_lambda", 0.80)
+        data["config_version"] = 123
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

@@ -338,8 +338,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         capacity_metrics, popart = _p.capacity_metrics, _p.popart
         signal_metrics, accum, noise_g_small_sq = _p.signal_metrics, _p.accum, _p.noise_g_small_sq
         noise_g_big_sq, _ns_terms, _dgp = _p.noise_g_big_sq, _p.ns_terms, _p.dgp
+        # +PER-EPOCH (gen3_ppo_per_epoch_diag_v1): one (approx_kl, clip_fraction) pair per epoch the
+        # loop actually ran, folded from the SAME per-minibatch numbers the stock tags already average
+        # — no extra forward, no extra device sync. An early KL stop leaves fewer than n_epochs rows.
+        epoch_approx_kl: list[float] = []
+        epoch_clip_fraction: list[float] = []
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
+            _epoch_cf_start = len(clip_fractions)   # +PER-EPOCH: this epoch's slice of the running list
             # +GRAD-ACCUM: start each accumulation group with a clean grad buffer; count micro-batches.
             self.policy.optimizer.zero_grad()
             micro_in_group = 0
@@ -1417,6 +1423,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 self.policy.optimizer.zero_grad()
                 micro_in_group = 0
 
+            # +PER-EPOCH: close this epoch's pair. Placed AFTER the minibatch loop so a KL early stop
+            # (which `break`s out of it) still records the partial epoch, tripping minibatch included.
+            if approx_kl_divs:
+                epoch_approx_kl.append(float(np.mean(approx_kl_divs)))
+            if len(clip_fractions) > _epoch_cf_start:
+                epoch_clip_fraction.append(float(np.mean(clip_fractions[_epoch_cf_start:])))
+
             self._n_updates += 1
             if not continue_training:
                 break
@@ -1454,6 +1467,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         self.logger.record("train/value_loss", np.mean(value_losses))
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
+        # +PER-EPOCH (gen3_ppo_per_epoch_diag_v1): `train/approx_kl` above is the LAST epoch's mean
+        # (stock SB3 resets its list per epoch) while `train/clip_fraction` pools EVERY epoch — the
+        # per-epoch series is what shows how the policy drifts across the n_epochs passes.
+        for _k, _kl in enumerate(epoch_approx_kl):
+            self.logger.record(f"train/approx_kl_epoch_{_k}", _kl)
+        for _k, _cf in enumerate(epoch_clip_fraction):
+            self.logger.record(f"train/clip_fraction_epoch_{_k}", _cf)
         self.logger.record("train/loss", loss.item())
         self.logger.record("train/explained_variance", explained_var)
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")

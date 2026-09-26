@@ -49,6 +49,42 @@ stays in the HUB on purpose: `instrumented_ppo_test` patches that global on the 
 imports, so moving it into a submodule would have left the patch reaching a different global than
 the function reads — a test that still passes, for the wrong reason.
 
+## The policy's GAE λ (`--policy-gae-lambda`, `gen3_policy_gae_lambda_v1`, config v123)
+
+**`--policy-gae-lambda FLOAT`, default `0.80`** — the λ `MaskableRolloutBuffer.compute_returns_and_advantage`
+uses to turn rewards and recorded values into the ADVANTAGES the clipped surrogate is trained on
+(and the `returns` the scalar value loss regresses toward). Until 2026-09-26 it was a literal
+`0.80` at both `main/train/model_build.py` sites (the fresh `InstrumentedMaskablePPO(gae_lambda=…)`
+and the resume path's `model.gae_lambda = …`); both now read `args.policy_gae_lambda`, so the
+default is byte-identical. Range `[0, 1]` (a parser error outside it).
+
+- **It is NOT `--win-prob-lambda`.** That is the CRITIC's λ-RETURN target for the win-prob BCE,
+  computed in a separate post-collection pass over the recorded values
+  ([`critic_and_value_losses.md`](critic_and_value_losses.md)). This one never touches the BCE
+  target; the two can be set independently.
+- **Recorded and inherited** — the `td_aux_coef` provenance class: a `ModelVersion` field
+  (`policy_gae_lambda`, so `model_config.json`), `_resolve`-inherited on a flagless resume, never
+  compared by `check_compatible`. A pre-v123 config migrates to 0.80 (the only possible past).
+  SB3 also pickles `gae_lambda` in the zip, but the resume path OVERWRITES it with the resolved
+  flag — so the recorded field, not the zip, is what a resume trains at. `metadata.json`'s
+  per-checkpoint `gae_lambda` and the one-shot `hparams/gae_lambda` TB scalar read the live
+  `model.gae_lambda`, as before.
+
+## Per-epoch PPO diagnostics (`gen3_ppo_per_epoch_diag_v1`)
+
+`train()` logs **`train/approx_kl_epoch_<k>`** and **`train/clip_fraction_epoch_<k>`** for
+`k = 0 … n_epochs−1` — one pair per epoch the update actually ran (a `target_kl` early stop leaves
+fewer; the tripping epoch is recorded, partial). Each is the MEAN of that epoch's per-minibatch
+numbers — the same `approx_kl_div` and `clip_fraction` values the loop already computes for the
+stock tags, sliced by epoch, so it adds no forward, no device sync, and no measurable cost.
+
+⚠️ **The two stock tags pool DIFFERENTLY, which is why the per-epoch pair is worth having.**
+`train/approx_kl` is the LAST epoch's mean only (stock SB3 resets its list every epoch), while
+`train/clip_fraction` pools EVERY epoch's minibatches. So `approx_kl` == `approx_kl_epoch_<last>`,
+and (with equal-size epochs) `clip_fraction` == the mean of the `clip_fraction_epoch_*` series.
+Epoch 0 starts on the rollout policy, so `approx_kl_epoch_0` is the smallest in a healthy update;
+the per-epoch curve is how the policy drifts across the `n_epochs` passes.
+
 ## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
 
 > `InstrumentedMaskablePPO.collect_rollouts` is what dispatches to it, which is why the detail

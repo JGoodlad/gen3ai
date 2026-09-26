@@ -180,6 +180,27 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "same order as the calibration error the win-prob critic exists to "
                              "improve. INERT ON A RESUME (SB3 restores the checkpoint's own gamma), "
                              "like --lr; a differing value is reported at startup, never applied.")
+    parser.add_argument("--policy-gae-lambda", "--policy_gae_lambda", dest="policy_gae_lambda",
+                        type=float, default=None,
+                        help="The PPO POLICY's GAE lambda (gen3_policy_gae_lambda_v1): the bias/variance "
+                             "knob of the ADVANTAGES the clipped surrogate is trained on, and of the "
+                             "`returns` the scalar value loss regresses toward. UNSET resolves to 0.80, "
+                             "the value every run to date trained with (it was hardcoded), so the default "
+                             "is byte-identical. NOT --win-prob-lambda: that is the CRITIC's lambda-RETURN "
+                             "target for the win-prob BCE, computed in a separate post-collection pass; "
+                             "this one never touches the BCE target. Must be in [0, 1]. TRAINING-only: "
+                             "recorded in model_config.json and INHERITED on a flagless resume "
+                             "(name it to change it on a resume/fork). Logged as hparams/gae_lambda.")
+    parser.add_argument("--matmul-precision", "--matmul_precision", dest="matmul_precision",
+                        choices=("highest", "high"), default="highest",
+                        help="torch.set_float32_matmul_precision for the TRAINER process "
+                             "(gen3_matmul_precision_v1). 'highest' (DEFAULT) is PyTorch's own default: "
+                             "full FP32 matmuls, no TF32 — byte-identical to every run to date. 'high' "
+                             "lets fp32 matmuls/convolutions run on TF32 tensor cores (Ampere+), faster "
+                             "and ~10-bit-mantissa accurate. Stamped at launch (🧮 [MATMUL PRECISION]) and "
+                             "recorded in metadata.json as `matmul_precision`. A RUNTIME perf knob: not in "
+                             "model_config.json, not inherited on a resume (a launcher restart re-sends "
+                             "the original argv, so it persists across restarts of one run).")
     parser.add_argument("--vf-coef", "--vf_coef", dest="vf_coef", type=float, default=0.5,
                         help="PPO value-loss coefficient (default 0.5, the SB3 default). Fixed for a "
                              "run's lifetime: it is recorded in model_config.json and resuming with a "

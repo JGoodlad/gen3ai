@@ -95,6 +95,11 @@ def _run_arch_toggles(args) -> dict:
             "critic": args.critic}
 
 
+def _matmul_precision() -> str:
+    import torch
+    return str(torch.get_float32_matmul_precision())
+
+
 def _model_hparams(model) -> dict:
     """The per-checkpoint hparam block, plus the two CONTROLLER states that are RUN STATE.
 
@@ -167,6 +172,10 @@ def _model_hparams(model) -> dict:
         "clip_range_vf": clip_range_vf,
         "optimizer": type(opt).__name__,
         "weight_decay": opt.param_groups[0].get("weight_decay", 0.0),
+        # gen3_matmul_precision_v1: what THIS (the trainer) process's fp32 matmuls actually ran at —
+        # read from torch rather than the argv, so the record is the realized value. `highest` (no
+        # TF32) is PyTorch's default and every run's value before `--matmul-precision` existed.
+        "matmul_precision": _matmul_precision(),
         # gen3_fork_lr_pin_v1 — THE DOSE. `lr x n_epochs / (batch_size*grad_accum_steps)`, plus the
         # provenance a reader needs to know whether that LR was chosen or inherited. Nested rather
         # than flattened so `python -m main.dose` reads one key and cannot collide with an hparam

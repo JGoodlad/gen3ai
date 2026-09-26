@@ -77,6 +77,7 @@ class ModelVersionConstruction(ModelVersionFields):
         teacher_scan_limit: int = 60,
         q_winprob_coef: float = 0.0,
         q_winprob_onpolicy_coef: float = 0.0,
+        policy_gae_lambda: float = 0.80,
     ) -> Self:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -339,6 +340,7 @@ class ModelVersionConstruction(ModelVersionFields):
             teacher_scan_limit=int(teacher_scan_limit),
             q_winprob_coef=float(q_winprob_coef),
             q_winprob_onpolicy_coef=float(q_winprob_onpolicy_coef),
+            policy_gae_lambda=float(policy_gae_lambda),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),

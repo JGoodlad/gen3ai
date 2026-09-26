@@ -11,7 +11,7 @@ stale twice:
 | | |
 |---|---|
 | Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **122** in the mirror this file is gated against (the `gen3_event_record_v2` signature-bump window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — and the shaped-reward deletion's field removal are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_event_record_v2`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate, and all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 121 / `gen3_event_record_v2`) |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 123 / `gen3_event_record_v2`) |
 | `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). The `gen3_event_record_v2` **signature-bump window is OPEN** (2026-09-26, the observation-architecture batch): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_event_record_v2`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
@@ -1423,13 +1423,22 @@ because a frozen forward never reads the reward.
 
 `--use-bridge rust` (serverless) · `--compile-opponents` + `--compile-opponents-preload` +
 `--compile-trainer` (all ON by default) · `--grad-accum-steps` at whatever `--batch-size` the run
-uses · `--grad-checkpointing` · `--async-rollout`. These do not appear in `model_config.json` and
+uses · `--grad-checkpointing` · `--async-rollout` · `--matmul-precision` (default `highest`: full FP32,
+no TF32 — PyTorch's default; `high` enables TF32 in the trainer process, stamped as
+`🧮 [MATMUL PRECISION]` and recorded in `metadata.json`, never in `model_config.json`). These do not appear in `model_config.json` and
 are **not** inherited on resume — with the compile flags defaulting ON it is the OPT-OUT that must
 be re-passed each launch, not the flag.
 
 ⚠️ **`--gamma` is not in `model_config.json` either.** `--critic winprob` implies γ 1.0 and the
 resume path restores the checkpoint's own γ, so the value in force is visible in `metadata.json`'s
 `cli_args` and in the startup lines — not in the mirror, and therefore not in §6's table.
+
+**The policy's GAE λ is 0.80** (`--policy-gae-lambda`, `gen3_policy_gae_lambda_v1`): the λ of the
+advantages the clipped surrogate trains on — NOT `--win-prob-lambda`, the critic's λ-return BCE
+target (§3.4, *WHICH readout is the critic*; default 1.0 = OFF). It was a hardcoded literal until config v123;
+from v123 it is a recorded, `_resolve`-inherited training field (`policy_gae_lambda` in
+`model_config.json`). The mirror is at v122 and so does not carry the key; every run this code can
+load (config ≥ v121) trained at the hardcoded 0.80 (older eras ran 0.95 and 0.85 — `eff7ddee` set 0.80).
 
 ---
 

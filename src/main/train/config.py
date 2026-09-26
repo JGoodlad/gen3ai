@@ -205,6 +205,26 @@ def enforce_not_shaped_parent(model_path: str) -> None:
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
 
+def apply_matmul_precision(args) -> str:
+    """gen3_matmul_precision_v1: apply `--matmul-precision` to THIS (the trainer) process and stamp it.
+
+    `highest` is PyTorch's own default (full FP32, no TF32), so the default path CALLS NOTHING — the
+    process is byte-for-byte what it was before the flag existed. `high` enables TF32 for fp32
+    matmuls on Ampere+. Returns the RESOLVED value, read back from torch rather than echoed from the
+    argv, so the stamp states what the process will actually do.
+    """
+    import torch
+    requested = getattr(args, "matmul_precision", None) or "highest"
+    if requested != "highest":
+        torch.set_float32_matmul_precision(requested)
+    resolved = torch.get_float32_matmul_precision()
+    emit(f"🧮 [MATMUL PRECISION] {resolved} — "
+         + ("full FP32 matmuls, no TF32 (PyTorch's default; byte-identical to every run to date)"
+            if resolved == "highest" else
+            "TF32 tensor-core matmuls enabled in the trainer process (Ampere+; ~10-bit mantissa)"))
+    return resolved
+
+
 def inherit_saved_flag(args, saved_ver, name, default) -> bool:
     """THE RESUME INHERITANCE RULE, in one function: `None` on the CLI means INHERIT.
 
@@ -598,6 +618,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # implied 1.0 above, so this line does not fire there.
     from agents.training.reward_weights import PBRS_GAMMA as _PBRS_GAMMA_DEFAULT
     _resolve("gamma", _PBRS_GAMMA_DEFAULT)
+    # gen3_policy_gae_lambda_v1: the PPO POLICY's GAE λ. 0.80 is the value both model_build sites
+    # hardcoded for every run to date, so an unset flag on a fresh run is byte-identical; a flagless
+    # resume inherits the parent's recorded value (a pre-v123 config migrates to 0.80 — the only
+    # possible past). NOT `win_prob_lambda` (the critic's λ-return BCE target, resolved below).
+    _resolve("policy_gae_lambda", 0.80)
     _resolve("use_popart", False)
     _resolve("opp_belief_cls_k", 0)
     _resolve("opp_belief_aux_coef", 0.0)
@@ -911,6 +936,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # alternates sign (λ < 0), and neither is a stronger version of this lever.
         parser.error("--win-prob-lambda must be in [0, 1] "
                      "(1 = off / the terminal outcome at every state; 0 = pure one-step bootstrap)")
+    if not (0.0 <= args.policy_gae_lambda <= 1.0):
+        # A single-value RANGE check. GAE's λ weights the n-step advantage estimators by
+        # (1-λ)λ^(n-1): outside [0, 1] that is not an average of estimators at all.
+        parser.error("--policy-gae-lambda must be in [0, 1] "
+                     "(0.80 = the default every run to date used; 1 = Monte-Carlo; 0 = one-step TD)")
     if args.win_prob_dense_aux is not None and args.win_prob_dense_aux < 0.0:
         # A single-value RANGE check, so it stays here rather than in `combination_checks` (which
         # owns the cross-flag half — `dense_aux_needs_the_winprob_critic`). There is no upper
@@ -1250,6 +1280,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
          + ("the Rust core's row (sim_bridge __OBS__ frames; Python encodes only terminal / "
             "non-decision embeds) — the production default" if args.obs_source == "core"
             else "the Python encoder (the opt-out; the default off the rust bridge)"))
+    apply_matmul_precision(args)
 
     annealing_mode = args.anneal_lr_start_steps is not None
 
