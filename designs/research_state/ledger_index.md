@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,402-line file. **The ledger itself is append-only and is never edited by this**;
+21,406-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**706 headings · 651 dated · 2026-08-01 → 2026-09-25 · ledger 21,402 lines.**
+**707 headings · 652 dated · 2026-08-01 → 2026-09-26 · ledger 21,406 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -726,3 +726,4 @@ rename.
   - `L21391` · `2026-09-25` · RESULT · **POPULATION LOOP ROUND 2: BRANCH N+ IS FINAL — both §4.3 KILL guards read clean and the reproduction check was exact (updates `aa8d56ea`'s PROVISIONAL N+). G-U, the untaught 8 (pin `6eb9c776`): B2 − C2 = −1.31 pp [−4.19, +1.19] against the 3.69 floor; `plateau_b1` 963/1600 = 60.19 EXACT. G-A, SmallRL greedy vs greedy (`7c511161`, `--server rust`): B2 − C2 = +1.75 pp [−2.13, +5.62] against the 11.0 floor. N+ counts 2 of 3. Power decision RESOLVED (owner, 09-25): NO round 3 on this lineage; the loop carries into the NEW lineage with both power levers registered up front (`--eval-battles 200` readers + a pooled multi-round read registered before its round 1).**
   - `L21395` · `2026-09-25` · OPS (MAJOR) · **THE RUST CORE CUTOVER: `--obs-source core` is the production default on the rust bridge (`ac0b6469`; owner decision).**
   - `L21399` · `2026-09-25` · DESCRIPTOR · **POPULATION LOOP ROUND 2 §4.4 CONVERGENCE SIDE-CHECK: row S — round 1's Δ SURVIVES a +50 % reader extension. Δ_late = −5.75 pp [−12.40, +0.97], and RB+ at 0.600 is within 5 pp of RB's cycles 3–4 (0.585, rise +1.5). Changes no branch and no count (round 1 N+, round 2 N+ FINAL).**
+  - `L21403` · `2026-09-26` · OPS · **RUST CORE DELETION PASS, part 1 (`43712881`, `97a30387`, `2c7e6acb`): search is core-only and rust-only; the port's one-sided VIEW projection is deleted. ~7,500 lines removed. Training input unchanged (boundary `ba839869`). Five manifest rows SKIPPED with verified blockers — the manifest assumed the Python pipeline was already only an oracle; it is not (policy opponents, eval, labels, reward, progress clock).**
