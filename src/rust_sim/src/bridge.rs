@@ -350,23 +350,6 @@ pub struct SideChunk {
 pub struct BridgeChunks {
     /// Every chunk, in flush order (both sides interleaved).
     pub chunks: Vec<SideChunk>,
-    /// What each side has been TOLD about the mons it does not own
-    /// (`gen3_one_sided_view_v1`). Folded HERE because `push_chunk` is the one funnel every
-    /// per-side line passes through, and CUMULATIVE from turn 1 — see
-    /// [`BridgeSession::clear_chunks`], which deliberately carries it across a branch's chunk
-    /// reset.
-    ///
-    /// 🚨 **`None` unless a reader asked for it** (`gen3_view_fold_opt_in_v1`): the fold is the
-    /// view road's input and nothing else, yet it cost the TRAINING transport ≈ 60 % of M1's
-    /// +13 % per-decision CPU (`designs/research_state/measurements/m1_transport_throughput_2026-09-23/`)
-    /// because `sim_bridge` paid it on every shipped line. A session that reads
-    /// [`crate::view::one_sided_view`] calls [`BridgeSession::enable_view_fold`]; `sim_bridge`
-    /// never does, and `tests/view_fold_opt_in_test.rs` pins that.
-    pub observed: Option<[crate::view::SideObservation; 2]>,
-    /// False once the chunk history was dropped ([`BridgeSession::clear_chunks`]) while the fold
-    /// was off: the history is then no longer the whole battle, so a LATE
-    /// [`BridgeSession::enable_view_fold`] could not rebuild the fold from it and refuses.
-    pub history_complete: bool,
     /// Core tracking (`gen3_core_events_v1`), on only for a session built with core recording:
     /// per side, one entry per shipped line (in flatten order) naming the SOURCE record the line
     /// was derived from, `None` for a side-only frame (a request, an error, a reframed rule).
@@ -375,15 +358,7 @@ pub struct BridgeChunks {
 
 impl Default for BridgeChunks {
     fn default() -> Self {
-        BridgeChunks { chunks: Vec::new(), observed: None, history_complete: true, core: None }
-    }
-}
-
-/// Fold one shipped chunk into `side`'s observation (the one-sided view's reveal fold).
-fn fold_observed(obs: &mut crate::view::SideObservation, side: usize, lines: &[String]) {
-    for line in lines {
-        let owner_is_self = ident_owner(line) == Some(side);
-        obs.observe(line, owner_is_self);
+        BridgeChunks { chunks: Vec::new(), core: None }
     }
 }
 
@@ -412,9 +387,6 @@ impl BridgeChunks {
     }
     fn push_chunk_lines(&mut self, side: usize, lines: Vec<String>) {
         if !lines.is_empty() {
-            if let Some(observed) = &mut self.observed {
-                fold_observed(&mut observed[side], side, &lines);
-            }
             self.chunks.push(SideChunk { side, lines });
         }
     }
@@ -1657,14 +1629,11 @@ impl BridgeSession {
     /// the engine emits from here, the per-ply SUFFIX a search branch reports), no script, no seed
     /// anchors, no queued commands, and the outstanding requests rendered from the engine's typed
     /// values' issued bytes (shared with the engine, never re-rendered). Core tracking is on iff
-    /// the engine records the typed source; the one-sided view fold cannot be enabled (the history
-    /// it would need is not here).
+    /// the engine records the typed source.
     pub fn resume(engine: Engine) -> BridgeSession {
         let request_json = [engine.issued_json(0).cloned(), engine.issued_json(1).cloned()];
         let chunks = BridgeChunks {
             chunks: Vec::new(),
-            observed: None,
-            history_complete: false,
             core: if engine.is_core() { Some([Vec::new(), Vec::new()]) } else { None },
         };
         BridgeSession {
@@ -1905,51 +1874,10 @@ impl BridgeSession {
     /// it would re-emit the whole battle's log into the next chunk. Nor does it touch the
     /// battle, the driver, the open boundary, or `request_seeds`/`script`.
     pub fn clear_chunks(&mut self) {
-        // The per-side OBSERVATION survives (`gen3_one_sided_view_v1`): a branch drops its
-        // parent's chunk HISTORY so its own chunks are exactly its suffix, but what a side has
-        // SEEN is cumulative from turn 1 and is not a property of the suffix. Resetting it here
-        // would make every branch's one-sided view claim the opponent's team is unrevealed.
-        let observed = self.chunks.observed.take();
-        // With the fold OFF the dropped history was its only source, so a later
-        // `enable_view_fold` must refuse rather than fold a suffix as if it were the battle.
-        let history_complete = observed.is_some();
         // A core session's tracking restarts with the chunks (its step events then describe a
         // SUFFIX, which `core_events` refuses on per-side conservation — a branch is not a record).
         let core = self.chunks.core.as_ref().map(|_| [Vec::new(), Vec::new()]);
-        self.chunks = BridgeChunks { chunks: Vec::new(), observed, history_complete, core };
-    }
-
-    /// Turn the one-sided view's reveal fold ON (`gen3_view_fold_opt_in_v1`) — LAZILY: the chunk
-    /// history shipped so far is folded now, and every later line as it ships. Idempotent. Only a
-    /// session that will call [`crate::view::one_sided_view`] needs it; the training transport
-    /// never calls it, so it pays nothing. Refuses when the history was already dropped by a
-    /// [`Self::clear_chunks`] with the fold off (the fold would then start mid-battle).
-    pub fn enable_view_fold(&mut self) -> Result<(), String> {
-        if self.chunks.observed.is_some() {
-            return Ok(());
-        }
-        if !self.chunks.history_complete {
-            return Err("enable_view_fold: the chunk history was cleared with the fold off — \
-                        enable it before the first clear_chunks"
-                .into());
-        }
-        let mut observed: [crate::view::SideObservation; 2] = Default::default();
-        for c in &self.chunks.chunks {
-            fold_observed(&mut observed[c.side], c.side, &c.lines);
-        }
-        self.chunks.observed = Some(observed);
-        Ok(())
-    }
-
-    /// Whether the one-sided view's fold is on (see [`Self::enable_view_fold`]).
-    pub fn view_fold_enabled(&self) -> bool {
-        self.chunks.observed.is_some()
-    }
-
-    /// What `side` has been told about the mons it does not own — the reveal half of
-    /// [`crate::view::one_sided_view`]. `None` when the fold is off ([`Self::enable_view_fold`]).
-    pub fn observed(&self, side: usize) -> Option<&crate::view::SideObservation> {
-        self.chunks.observed.as_ref().map(|o| &o[side])
+        self.chunks = BridgeChunks { chunks: Vec::new(), core };
     }
 
     /// The OPEN request kind for `side` at the current paused boundary, or `None` when no

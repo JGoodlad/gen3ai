@@ -42,15 +42,10 @@ coincide, so nothing caught it for as long as depth 1 was all that ran.
 and the dice, never the obs encoder (the one-sided / omniscient wall, identical to the re-roll
 path).
 
-``view_p1`` / ``view_p2`` are the OTHER side of that wall (`gen3_one_sided_view_v1`, rust only):
-the same board PROJECTED onto what each side has observed, in the shape
-:class:`~agents.battle.live_view.LiveView` holds, so a successor's read-models can be built
-without replaying its protocol. :mod:`agents.battle.view_adapter` is the constructor and
-``designs/rust_sim/one_sided_view.md`` is the contract. They are ``{}`` under ``impl="node"``.
-
-``view_p1_at`` / ``view_p2_at`` are the ordered boards at the decisions an arm resolved INSIDE
-itself (`gen3_view_at_intermediate_v1`, deferral D10) — a faint's replacement round is a second
-request in the same arm, and ``view_pN`` describes the board after it rather than at it.
+``core_p1`` / ``core_p2`` (a CORE root, rust only — ``gen3_core_search_v1``) are the OTHER side
+of that wall: the arm's leaf as a Rust-core version read from that side's own stream (with
+``rows``, its ENCODED observation row). The port's older one-sided ``view_pN`` projection is
+deleted (Rust Core deletion pass, program §4 M2).
 
 The protocol is synchronous request → one-line response; calls are strictly sequential
 (a beam expands one batch at a time), so a background reader thread feeds a queue that
@@ -66,7 +61,7 @@ import queue
 import subprocess
 import sys
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional, Sequence
 
 from utils.bridge.reconstruction import ReconstructionRecord
@@ -97,13 +92,6 @@ class RootView:
     pre_state: dict           # omniscient board snapshot (referee view)
     prefix_p1_chunks: List[str]
     prefix_p2_chunks: List[str]
-    # The ONE-SIDED VIEW of this board per side (`gen3_one_sided_view_v1`) — the projection of
-    # the same state onto what that side has OBSERVED, in the shape `LiveView` holds. Unlike
-    # `pre_state` (omniscient, referee-only) these ARE obs-legal: they are the other side of the
-    # wall, and `agents.battle.view_adapter` builds the read-models straight from one. `{}` from
-    # a driver that predates the field (node's `search_driver.js` emits none).
-    view_p1: dict = field(default_factory=dict)
-    view_p2: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -123,20 +111,7 @@ class ExpandedNode:
     choices_used: dict
     p1_chunks: List[str]      # THIS PLY's one-sided suffix — NOT root → this node
     p2_chunks: List[str]
-    # The arm's RESULTING board, projected per side (`gen3_one_sided_view_v1`). Obs-legal, unlike
-    # `outcome`; `{}` under `impl="node"`, which emits no such field.
-    view_p1: dict = field(default_factory=dict)
-    view_p2: dict = field(default_factory=dict)
-    # The boards at the decisions this ply resolved INSIDE itself, in order, per side
-    # (`gen3_view_at_intermediate_v1`, deferral D10). A ply that KOs one of our mons opens a
-    # SECOND request inside the same arm and the port answers it from its own follow-up policy,
-    # so `view_pN` above is one decision PAST the row a per-request consumer wants; entry `k`
-    # here is the board at that side's `k`-th non-final request of the ply. EMPTY on the
-    # ordinary arm, and empty under `impl="node"` and on a `recorded_exact` arm — a consumer
-    # that finds no entry falls back exactly as it did before the field existed.
-    view_p1_at: List[dict] = field(default_factory=list)
-    view_p2_at: List[dict] = field(default_factory=list)
-    # `materializer=core` (`gen3_core_search_v1`, rust only): the arm's LEAF as a Rust-core
+    # A CORE node (`gen3_core_search_v1`, rust only): the arm's LEAF as a Rust-core
     # version — with `rows`, `{mid, row, mask, tokens}` per asked-for side (the leaf's ENCODED
     # observation, `gen3_core_encoder_v1`; `row` null when the side does not decide there); without,
     # `{view, legal, request, events, mid}`, the view being
@@ -156,16 +131,15 @@ class ElidedSide(dict):
     """The payload of a side the request DECLINED to ask for — falsy, and LOUD on any real read.
 
     ``gen3_expand_many_side_elision_v1``. When :meth:`SearchSession.expand_many` is given a
-    ``side``, the rust driver omits the other side's ``view_pN`` / ``pN_chunks`` entirely (43.0%
+    ``side``, the rust driver omits the other side's ``pN_chunks`` (and ``core_pN``) entirely (43.0%
     of the reply bytes on the banked search decisions). What lands in the ``ExpandedNode`` in
     their place is one of these rather than ``{}`` / ``[]``, because the two failure modes are not
     the same failure: an empty board ENCODES — into a well-formed observation of a battle nobody
     played — while this raises.
 
-    It is a ``dict`` subclass with ``__len__`` == 0 on purpose, so the existing
-    ``payload or {}`` guards in :mod:`main.search_dividend.search` still read it as "no payload"
-    and take their COUNTED fallback (``view_fallback_no_payload``). Falsy is the recoverable
-    answer; every way of actually reading a value out of it is the unrecoverable one."""
+    It is a ``dict`` subclass with ``__len__`` == 0 on purpose, so a ``payload or default`` guard
+    still reads it as "no payload". Falsy is the recoverable answer; every way of actually reading
+    a value out of it is the unrecoverable one."""
 
     __slots__ = ("_field",)
 
@@ -191,25 +165,11 @@ class ElidedSide(dict):
         return f"<ElidedSide {self._field}>"
 
 
-def _side_payload_list(arm: dict, key: str, elided: bool):
-    """:func:`_side_payload` for a field the caller wants as a fresh ``list``.
-
-    The copy is taken ONLY on a present value: calling ``list()`` on an :class:`ElidedSide` would
-    raise here, at construction, rather than at the read that actually wanted the side — and an
-    error that fires where nobody asked for anything is a worse diagnostic than the one the
-    sentinel exists to give."""
-    if key in arm:
-        return list(arm[key] or [])
-    return ElidedSide(key) if elided else []
-
-
 def _side_payload(arm: dict, key: str, empty, elided: bool):
     """The arm's value for ``key``: the driver's when PRESENT, else empty-or-refusing.
 
-    The distinction is on the KEY, never on the request: ``search_driver.js`` emits no ``view_pN``
-    at all, so under ``impl="node"`` the absence means "this driver has none" and the historical
-    ``{}`` is right. Only a ``side``-bearing request can turn an absence into a refusal, and only
-    for the side it declined."""
+    The distinction is on the KEY, never on the request: only a ``side``-bearing request can turn
+    an absence into a refusal, and only for the side it declined."""
     if key in arm:
         return arm[key] or empty
     return ElidedSide(key) if elided else empty
@@ -337,8 +297,7 @@ class SearchSession:
         return RootView(
             node_id=out["node_id"], requests=out["requests"],
             recorded_choices=out["recorded_choices"], pre_state=out["pre_state"],
-            prefix_p1_chunks=out["prefix_p1_chunks"], prefix_p2_chunks=out["prefix_p2_chunks"],
-            view_p1=out.get("view_p1") or {}, view_p2=out.get("view_p2") or {})
+            prefix_p1_chunks=out["prefix_p1_chunks"], prefix_p2_chunks=out["prefix_p2_chunks"])
 
     def expand_many(self, arms: Sequence[dict], *,
                     side: Optional[str] = None, rows: bool = False) -> List[ExpandedNode]:
@@ -361,13 +320,12 @@ class SearchSession:
         own dilution. In a live decision, mint every seed.
 
         ``side="p1"``/``"p2"`` (``gen3_expand_many_side_elision_v1``, **rust only**) asks the
-        driver to SKIP the other side's ``view_pN`` / ``pN_chunks``. A search runs for ONE side
-        and reads exactly those two fields for it; the other side's copy measured **43.0% of the
+        driver to SKIP the other side's ``pN_chunks`` / ``core_pN``. A search runs for ONE side
+        and reads exactly its own; the other side's copy measured **43.0% of the
         reply bytes** — rendered, piped and ``json.loads``-ed only to be dropped
         (``designs/research_state/measurements/expand_many_2026-09-22/README.md``). The requested
         side's payload is BYTE-IDENTICAL either way. An elided side comes back as an
-        :class:`ElidedSide`: falsy, so the existing ``payload or {}`` guards take their COUNTED
-        fallback, but RAISING on any read, so a caller that wanted it fails loudly instead of
+        :class:`ElidedSide`: falsy, but RAISING on any read, so a caller that wanted it fails loudly instead of
         encoding an empty board. ``search_driver.js`` ignores the key and still returns both
         sides — the sentinel keys on the field being ABSENT, never on the request, so nothing is
         elided under ``impl="node"``."""
@@ -390,14 +348,6 @@ class SearchSession:
                 requests=a.get("requests"), choices_used=a.get("choices_used") or {},
                 p1_chunks=_side_payload(a, "p1_chunks", [], side == "p2"),
                 p2_chunks=_side_payload(a, "p2_chunks", [], side == "p1"),
-                view_p1=_side_payload(a, "view_p1", {}, side == "p2"),
-                view_p2=_side_payload(a, "view_p2", {}, side == "p1"),
-                # D10's per-intermediate-decision boards are ONE-SIDED payloads on the same
-                # terms, so they elide with their own side. `list(...)` only where the driver
-                # actually sent one — an `ElidedSide` must reach the dataclass INTACT, since
-                # `list()` on it would raise here instead of where a consumer reads it.
-                view_p1_at=_side_payload_list(a, "view_p1_at", side == "p2"),
-                view_p2_at=_side_payload_list(a, "view_p2_at", side == "p1"),
                 core_p1=a.get("core_p1"), core_p2=a.get("core_p2"))
             for a in out["arms"]
         ]

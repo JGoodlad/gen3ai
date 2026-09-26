@@ -111,7 +111,6 @@ read the row you are about to edit.**
 | `driver_timing.rs` | DONE | OPT-IN per-phase wall accounting inside `expand_many` (`POKESIM_SEARCH_TIMING=1`). **Off it renders the empty string**, so an un-set build is byte-identical and the cross-impl parity harness is unaffected. |
 | `core_events/` (+ `bin/core_events.rs`) | M1 BUILT, not used by training | The Rust Core's typed event layer (`gen3_core_events_v1`): every omniscient line is a typed `Line` whose text is its rendering; one side's stream → `CoreEvent`s carrying `Gen3Battle`'s reading; `parse(lines)`; the persisted record. Detail: [`designs/rust_sim/core_events.md`](../../designs/rust_sim/core_events.md). |
 | `emission_check.rs` | BUILT; ON in `cargo test` + the fuzzers, compiled OUT of `--release` | The EMISSION SELF-CHECK (`gen3_core_emission_selfcheck_v1`): at every emission, the omniscient line round-trips (`Line::parse(render(l)) == l`), each viewer's render is the line that viewer is owed (the typed `side_view`) and no secret (exact HP, an owner-only line, a one-side frame) reaches the other viewer; a failure panics with the line, both renders and the viewer. Detail: [`designs/rust_sim/emission_selfcheck.md`](../../designs/rust_sim/emission_selfcheck.md). |
-| `view.rs` | DONE, validated | The ONE-SIDED VIEW readout (`gen3_one_sided_view_v1`) — the PROJECTION of the omniscient board onto what one side has OBSERVED, in the shape `LiveView` holds, plus the per-side reveal fold it rides on. The obs-legal counterpart of `pre_state`. 🚨 **The fold is OPT-IN** (`BridgeSession::enable_view_fold`, `gen3_view_fold_opt_in_v1`) — `sim_bridge` never builds it. Contract + deferrals: [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md). |
 | `present/` | M2 BUILT; search reads it, training does not | the TRUE reading of one side's stream (`gen3_core_present_v1`): `BoardReading` (poke-env's `Battle` + `Pokemon`, minus its registered mistakes), `present()` (a `LiveView`-shaped view, NO board parameter), `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` GENERATED from poke-env. Every rule named (V1–V17) and pinned; poke-env's mistakes are FINDINGS, not rules. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `version.rs` | M2 BUILT | `BattleVersion` (`gen3_core_version_v1`): the persistent battle state — `Arc` parent, per-side stream (`BoardReading` + event `Reader`), per-transition events, memoized views, the `Engine` as REFEREE (step-built only); built by step (a fork: an engine clone in a fresh transport, its lines folded from their text), by observing a caller's session (linear), or by parse (one side's text), gated `parse == step` version by version. Detail: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md). |
 | `trackers/` | M3 BUILT; read by the encoder (slice O, search's rows), not by training | The per-decision TRACKERS on the version (`gen3_core_trackers_v1`): slots, the Hidden-Power belief, the progress clock (obs half), recency, pair history, the 32-row event window, the wish / sleep folds, the α/β label, the win-indicator reward — folded from one side's stream at each of its decisions, shared by a fork (`Arc`); and the NATIVE window record (`record.rs`: ordered actions + attributed effects, denials incl. the gen-3 turn cut, the information boundary as a type and a slice-T check). Opt-in (`SideStream::with_trackers`). The training-input semantics (the M3 loss catalogue's GIGO, fixed on both paths: `gen3_event_window_semantics_fixes_v1` / `gen3_intent_label_semantics_fixes_v1` / `gen3_progress_clock_attribution_fix_v1`; and the cutover stress's `gen3_hp_prior_support_v1`) are pinned in `tests/tracker_semantics_test.rs`. Detail: [`designs/rust_sim/trackers.md`](../../designs/rust_sim/trackers.md) §5. |
@@ -150,7 +149,7 @@ value-schema change (`rust_core_schema_test.py` fails the day it is stale).
 | `python3 -m pytest src/agents/battle/rust_core_parity_test.py -q` | the COMMIT tier: the core's readings == `Gen3Battle`'s, per viewer, per event, type-strict, no allowlist; the golden records round-trip byte-identically and re-parse |
 | `… rust_core_parity_test.py -m slow -q -n 2` | the MILESTONE tier (2 × 200 random + 2 × 50 policy battles played live, the protocol corpus × 2, every byte-fuzz fixture) |
 | `core_events --trackers` → `rust_core_parity_trackers.py` (slice T, both tiers) | the core's per-decision trackers, α/β label and reward == the `EpisodeTracker` / label / reward training builds, every decision, both viewers, every field, no allowlist (`designs/rust_sim/trackers.md` §4) |
-| `core_events --views` → `rust_core_parity_views.py` (slice V, both tiers) | the TRUTH AUDIT: `one_sided_view` AND `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, every decision, both viewers; the core's board audit at the reading and the truth; `parse == step` at every version (`designs/rust_sim/one_sided_view.md` §4a, `present.md` §5) |
+| `core_events --views` → `rust_core_parity_views.py` (slice V, both tiers) | `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, every decision, both viewers; the core's board audit against the engine; `parse == step` at every version (`present.md` §5) |
 
 ## The core's VERSION and READING — M2 (`gen3_core_version_v1`, `gen3_core_present_v1`)
 
@@ -172,11 +171,9 @@ gates: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md).
 🚨 **The poke-env tables are GENERATED**: `python -m agents.battle.rust_core_present_tables --write`
 after a poke-env data change (`rust_core_present_tables_test.py` fails the day it is stale).
 
-🚨 **A TRAINING SESSION BUILDS NO VIEW.** Neither the one-sided view's reveal fold nor any core
-recording runs in `sim_bridge`; a reader opts in (`enable_view_fold`, `new_core`). Pinned by
-`tests/view_fold_opt_in_test.rs` (the constructors + a source scan of `sim_bridge.rs`). The one
-exception is OPT-IN per battle: START's `core_obs` key makes the child fold a PARSE chain with
-trackers per requested side (its own `present()` reading, never the transport's reveal fold) and ship
+🚨 **A TRAINING SESSION BUILDS NO CORE RECORDING unless asked.** A reader opts in (`new_core`).
+The one exception is OPT-IN per battle: START's `core_obs` key makes the child fold a PARSE chain with
+trackers per requested side (its own `present()` reading) and ship
 `__OBS__` rows (`designs/rust_sim/encoder.md` §5a); absent, not one byte changes.
 
 ## The ENCODER — the observation row on the version — M4 (`gen3_core_encoder_v1`)
@@ -319,56 +316,18 @@ false, and that path killed **two production launches at ~8 minutes**
 only live entry in either harness is `.error` message TEXT; the verdict, the exit code and the error
 CLASS stay strict.
 
-## The ONE-SIDED VIEW — the obs-legal half of the wall (`gen3_one_sided_view_v1`)
+## The ONE-SIDED VIEW (`view.rs`) — DELETED
 
-`src/view.rs::one_sided_view(sess, side, dex)` emits the board PROJECTED onto what `side` has
-observed, in exactly the shape `agents.battle.live_view.LiveView` holds — so a search successor's
-observation can be built without replaying that ply's protocol through poke-env. It rides every
-`expand_many` arm and `open_root` as `view_p1` / `view_p2`; `agents.battle.view_adapter` is the
-Python constructor; the Python sub-encoders are UNCHANGED.
-
-🚨 **THE SPLIT IS THE CONTRACT: the port emits SIM FACTS + RAW PROTOCOL FACTS, and every poke-env
-PRESENTATION RULE is applied in Python.** Half of `LivePokemon` is not sim state at all — an
-opponent's move PP is a SIGHTING count (doubled against Pressure), `volatiles` is a protocol fold
-with poke-env's own `ends_on_turn` / countable rules, `status_counter` and `protect_counter` are
-poke-env counters with different transitions from the engine's, and the obs SLOT order is the
-first `|request|`'s roster (ours) / reveal order (theirs). Sending the port's own value for any of
-those reads plausible and is wrong.
-
-🚨 **Do NOT feed `search::volatile_names` to the obs layer.** That set is the port's TYPED fields
-and includes conditions the sim never announces — gen-3 Choice lock is one, and it raised
-`UnknownVolatileError: volatile 'choicelock' has no gen3 encoding slot` on the first real board.
-`view.rs` folds `|-start|`/`|-end|`/`|-activate|`/`|-singleturn|`/`|-singlemove|` instead.
-
-🚨 **`view_pN_at` is the SECOND payload and it exists because ONE arm can hold TWO decisions**
-(`gen3_view_at_intermediate_v1`, deferral D10 CLOSED). A ply that KOs one of a side's mons — or
-whose trapped switch is refused — opens another request inside the same `expand_many` arm, which
-`resolve_turn_sourced` answers from its follow-up policy, so `view_pN` is the board one decision
-PAST the row a per-request consumer needs. `Resolved::views_at` captures `one_sided_view` at the
-TOP of every loop iteration answering such a round and the driver emits it as an ORDERED array;
-empty is the normal case, and it stays empty on a `recorded_exact` arm (`resolve_turn_exact` has
-no production consumer on this path, and a second capture rule with no gate is worse than an
-honest absence). The port gains no poke-env rule from this — the two rules the close needed
-(`|error|[Unavailable choice]` is an out-of-band poke-env HOOK, and `Pokemon.faint` does not clear
-boosts while the sim does) are both fixed in PYTHON, which is what the split in §2 of the contract
-is for.
-
-Gates: `tests/one_sided_view_test.rs` (22 — the WALL against `pre_state` on a board with unrevealed
-mons, the reveal fold surviving `clear_chunks`, the id-form and PP contracts, the D10 capture
-predicate with its NEGATIVE twin, and one pin per READING RULE V3–V11, each citing the poke-env line
-it mirrors), `src/agents/battle/view_adapter_test.py` (33), the differential
-`src/agents/battle/core_row_parity_fuzz_test.py` (`sim`; the search road; no allowlist, prints
-a census), and **the TRUTH AUDIT** — slice V of the Rust Core parity harness
-(`src/agents/battle/rust_core_parity_views.py`, fed by `core_events --views`), which compares this
-projection AND the engine truth against the `LiveView` training builds at EVERY decision of every
-recorded battle, both viewers. 🚨 **Change the fold only with slice V's MILESTONE tier green** — its
-first full run closed the three §4b findings and eleven more projection classes, all invisible to
-the three-roots-per-battle search gate. Full contract, the named reading rules and the deferrals:
+The port's one-sided PROJECTION of the omniscient board (`view.rs::one_sided_view`, its per-side
+reveal fold in `BridgeChunks`, `enable_view_fold`, the `view_pN` / `view_pN_at` payloads of
+`search_driver` and `core_events --views`' `views` / `truth`) and its Python consumers are
+DELETED (Rust Core deletion pass, program §4 M2): every successor the search scores is a Rust-core
+version read from its own stream (`present()`), and slice V holds that reading to the training
+`LiveView` at every decision. 🚨 **Do NOT feed `search::volatile_names` to the obs layer** — that
+set is the port's TYPED fields and includes conditions the sim never announces (gen-3 Choice lock
+raised `UnknownVolatileError` on the first real board); the reading folds the announcing lines.
+History, the reading-rule table (V1–V13) and the findings the projection surfaced:
 [`designs/rust_sim/one_sided_view.md`](../../designs/rust_sim/one_sided_view.md).
-
-🚨 **`MonState::faint_boosts` is OBSERVATION-ONLY** — the stages a mon held when it fainted (the
-faint `clearVolatile` zeroes `boosts`), read by nothing in the battle path; the view emits it so
-the adapter can present poke-env's rule that a fainted mon keeps its stages until switched out.
 
 🚨 **`pre_state` VOLATILE NAMES ARE UNVERIFIED.** `pre_state` mirrors Node's `preState` and has no
 consumer today; its `volatiles` list is a RECONSTRUCTION from the port's typed fields, and exactly ONE
@@ -381,16 +340,15 @@ for coverage.
 default is customgame, and the sim then diverges from the golden.
 
 🚨 **`expand_many` SHIPS TWICE WHAT A SEARCH READS, UNLESS THE REQUEST SAYS OTHERWISE.** The
-driver renders `view_p1`+`view_p2`, `p1_chunks`+`p2_chunks` and `view_p1_at`+`view_p2_at` on every
-arm; a search reads ONE side of each. Measured on 864 banked arms the discarded half was **43.0% of the reply bytes**, and
+driver renders both sides' one-sided payload (`p1_chunks`+`p2_chunks`, and `core_p1`+`core_p2` on a
+core arm); a search reads ONE side. Measured on 864 banked arms the discarded half was **43.0% of the reply bytes**, and
 `expand_many`'s optional top-level **`side`** (`"p1"`/`"p2"`, `gen3_expand_many_side_elision_v1`)
 omits it — **30,326 → 17,330 B/arm**, with the surviving side byte-identical and an omitted `side`
 rendering the historical body byte-for-byte. Python's elided slot is a sentinel that is falsy but
 RAISES on read, never an empty dict (an empty dict ENCODES). Gates:
 `tests/search_side_elision_test.rs` (the byte diff, both ways, in one process) and
-`src/main/search_dividend/side_elision_test.py` (the sentinel's contract). Interleaved, load-matched, **one road per process**: **1.10x on the view
-road at wide B and 1.11x on the protocol road**, not resolved at B = 1; the span is 31.1% -> 26.6%
-of the decision wall. 🚨 **Two candidates that LOOKED certain were rejected on measurement**: a
+`src/main/search_dividend/side_elision_test.py` (the sentinel's contract). Measured (on the since-deleted view / protocol roads), interleaved, load-matched, one road per
+process: **1.10x / 1.11x at wide B**, not resolved at B = 1. 🚨 **Two candidates that LOOKED certain were rejected on measurement**: a
 compact fixed-order payload (0.024 ms/arm of parse, all of it given back re-keying for the
 existing adapter) and holding Python's cyclic collector off for the reply parse (**2.3x on a
 captured 454 KB reply, NOTHING end to end** — built, gated and reverted). **A micro-benchmark share

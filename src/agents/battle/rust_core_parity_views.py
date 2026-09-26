@@ -1,41 +1,24 @@
-"""The Rust Core parity harness — slice V, the TRUTH AUDIT (``gen3_core_parity_views_v1``).
+"""The Rust Core parity harness — slice V, the view + legality slice (``gen3_core_parity_views_v1``).
 
 At EVERY decision of a recorded battle, for BOTH viewers, the ``LiveView`` + ``LegalActions``
 TRAINING builds (a ``Gen3Battle`` fed the viewer's per-side text through
 :mod:`agents.battle.offline_feed`, read at the exact chunk ``Player._handle_battle_message``
-would dispatch the decision on) against the simulator's own projection of the same board — the
-port's ``one_sided_view`` captured at that board by ``core_events --views``, and the ENGINE truth
-beside it. Field by field, **no allowlist**.
-
-**Why ``one_sided_view`` is the projection and not the M1 core.** M1's ``CoreEvent`` stream is
-the EVENT reading; it carries no board. ``view.rs::one_sided_view`` is the only projection of the
-engine board onto one side that exists today, and it is exactly what M2's ``present(board, events,
-side)`` replaces — so M2 swaps the producer under this slice and keeps the comparison. That is
-why the slice rides ``rust_core_parity`` (one harness, one corpus, one core call per battle)
-rather than a second harness.
+would dispatch the decision on) against the CORE column: the Rust core's ``present()`` view and
+legality, built from that viewer's stream alone (``core_events --views``), compared TYPE-strict,
+field by field, **no allowlist**, plus its 11-bit action mask — and the core's own TRUTH AUDIT of
+that view against the ENGINE (``present::audit::check_view``, the ``[BOARD]`` checks).
 
 Every compared field carries a CLASS (:data:`MON_FIELDS`, :data:`SIDE_FIELDS`,
-:data:`VIEW_FIELDS`, :data:`LEGAL_FIELDS`):
+:data:`VIEW_FIELDS`, :data:`LEGAL_FIELDS`): **SIM-FACT** (a sim fact — boosts, HP, status,
+side conditions …) or **PRESENTATION** (a poke-env rule, each NAMED in :data:`RULES` with the
+poke-env line it mirrors).
 
-* **SIM-FACT** — the projection reads the ENGINE (boosts, HP, status, active, fainted, types,
-  side conditions, weather, our own moves / PP / item / ability / stats, team size). A
-  divergence is a READING bug on one side or the other, and the truth decides which.
-* **PRESENTATION** — the value is a poke-env rule, not a sim fact (an opponent's PP as a sighting
-  count, the volatile fold, the sleep/toxic counter, the protect streak, reveal gating, slot
-  order). The projection reproduces the rule, each one NAMED in :data:`RULES` with the poke-env
-  line it mirrors, and the comparison is still exact.
-
-Beside the field comparison, the TRUTH checks that no projection can make — the reading of a
-REVEALED opponent fact against the engine's own value (the other viewer's ``ours`` block, which
-is engine-sourced): a revealed item / ability / move must be the engine's, a consumed item must
-no longer be held, and every sim-state volatile in :data:`TRUTH_VOLATILES` must be present on
-the reading exactly when the engine holds it (both sides).
-
-🚨 **The motivating class is a READING bug about a sim fact that every other gate is blind to**:
-poke-env dropped every Baton-Passed stat stage for the fork's whole life (fixed 2026-08-23),
-and every read-model / obs gate agreed with it, because they all read the same ``Pokemon``. Here
-the other side of the comparison is the ENGINE, so that class fails on the first decision after
-the pass (``rust_core_parity_test.py::test_the_view_slice_catches_a_dropped_baton_pass``).
+🚨 **The motivating class is a READING bug about a sim fact**: poke-env dropped every Baton-Passed
+stat stage for the fork's whole life (fixed 2026-08-23). The core's view is audited against the
+engine, so a reading that drops them diverges from the core column on the first decision after the
+pass (``rust_core_parity_test.py::test_the_view_slice_catches_a_dropped_baton_pass``). (Until the
+Rust Core deletion pass, program §4 M2, this slice also compared the port's one-sided projection
+``view.rs`` and ran reading-vs-engine TRUTH checks off it; both are deleted with ``view.rs``.)
 """
 
 from __future__ import annotations
@@ -53,9 +36,10 @@ from agents.battle.poke_env_findings import explain
 SIM = "SIM-FACT"
 RULE = "PRESENTATION"
 
-#: The named PRESENTATION rules the projection reproduces — ``id: (the rule, the poke-env line
-#: it mirrors, where the projection applies it)``. A divergence on a PRESENTATION field is fixed
-#: by making the projection reproduce the rule, never by relaxing the comparison.
+#: The named PRESENTATION rules — ``id: (the rule, the poke-env line it mirrors, where the deleted
+#: view.rs projection applied it — the core applies each in ``src/rust_sim/src/present/``)``. A
+#: divergence on a PRESENTATION field is fixed by making the core reproduce the rule, never by
+#: relaxing the comparison.
 RULES: Dict[str, Tuple[str, str, str]] = {
     "V1-reveal": ("an opposing mon has a row only once a |switch|/|drag| line showed it; own "
                   "`revealed` is set by the same line", "abstract_battle.py switch → "
@@ -139,17 +123,6 @@ LEGAL_FIELDS: Dict[str, Tuple[str, Optional[str]]] = {
     "wait": (SIM, None), "struggle": (SIM, None), "own_hp_typed_id": (SIM, None),
 }
 
-#: Engine volatile (``search::volatile_names``) → the ``LivePokemon.volatiles`` key poke-env
-#: holds for it. The TRUTH check is two-way on this set: the reading has the key iff the engine
-#: holds the volatile. Only conditions the protocol ANNOUNCES belong here — a condition the sim
-#: never prints (choice lock, the stall counter) has no reading to check.
-TRUTH_VOLATILES: Dict[str, str] = {
-    "confusion": "confusion", "curse": "curse", "disable": "disable", "encore": "encore",
-    "focusenergy": "focusenergy", "leechseed": "leechseed", "substitute": "substitute",
-    "taunt": "taunt", "yawn": "yawn", "attract": "attract",
-}
-
-
 def field_census() -> Dict[str, int]:
     """How many compared fields sit in each class (the report's classification count)."""
     c: collections.Counter = collections.Counter()
@@ -172,7 +145,6 @@ class ViewCensus:
     viewers: int = 0
     decisions: int = 0
     fields: int = 0
-    truth_checks: collections.Counter = field(default_factory=collections.Counter)
     #: The core's TRUTH AUDIT checks (``present::audit::check_view`` against the engine).
     board_checks: collections.Counter = field(default_factory=collections.Counter)
     #: Per named rule the audit applies (V15), the facts the view held differently from the
@@ -200,7 +172,7 @@ class ViewCensus:
 
     def render(self) -> str:
         head = (f"{self.battles} battles, {self.viewers} viewers, {self.decisions} decisions, "
-                f"{self.fields} field comparisons, truth checks {dict(self.truth_checks)}, "
+                f"{self.fields} field comparisons, "
                 f"core board checks {dict(self.board_checks)}, "
                 f"named rules {dict(self.rules_fired)}, "
                 f"KNOWN poke-env findings (facts) {dict(self.known)} "
@@ -393,58 +365,6 @@ def _bare(move_id: str) -> str:
     return "hiddenpower" if move_id.startswith("hiddenpower") else move_id
 
 
-def truth_checks(live_p: LiveView, other_payload: Mapping[str, Any],
-                 truth: Sequence[Sequence[Mapping[str, Any]]], viewer_idx: int,
-                 census: ViewCensus, where: str) -> int:
-    """The READING of every revealed opposing fact, and every sim-state volatile on both sides,
-    against the ENGINE. ``other_payload`` is the OTHER viewer's one-sided view: its ``ours``
-    block is engine-sourced (item, ability, moveset, types), which is exactly the truth a
-    revealed-opponent reading has to equal."""
-    bad = 0
-
-    def check(kind: str, ok: bool, example: Any) -> None:
-        nonlocal bad
-        census.truth_checks[kind] += 1
-        if not ok:
-            census.diverge(f"[TRUTH] {kind}", (where,) + tuple(example))
-            bad += 1
-
-    eng_opp = {str(r["species"]): r for r in other_payload["ours"]["mons"]}
-    for m in live_p.opp.mons:
-        e = eng_opp.get(m.species)
-        if e is None:
-            check("opp.species-exists", False, (m.species, "not on the engine's team"))
-            continue
-        held = str(e.get("item") or "")
-        if m.item is not None:
-            check("opp.item", m.item == held, (m.species, "reading", m.item, "engine", held))
-        elif m.consumed_item is not None:
-            check("opp.consumed-item-not-held", held != m.consumed_item,
-                  (m.species, "consumed", m.consumed_item, "engine holds", held))
-        if m.ability is not None:
-            check("opp.ability", m.ability == e.get("ability"),
-                  (m.species, "reading", m.ability, "engine", e.get("ability")))
-        eng_moves = {_bare(str(x["move_id"])) for x in e.get("moves", ())}
-        for mv in m.moves:
-            check("opp.move-in-moveset", _bare(mv.id) in eng_moves,
-                  (m.species, "reading", mv.id, "engine", sorted(eng_moves)))
-        if not m.fainted:
-            check("opp.types", list(m.types) == list(e.get("types", ())),
-                  (m.species, "reading", m.types, "engine", e.get("types")))
-    # sim-state volatiles, both sides, active mons only (a benched mon holds none)
-    for side, eng_side in (("ours", truth[viewer_idx]), ("opp", truth[1 - viewer_idx])):
-        by_species = {str(r["species"]): r for r in eng_side}
-        for m in getattr(live_p, side).mons:
-            e = by_species.get(m.species)
-            if e is None or not m.active or m.fainted:
-                continue
-            eng = {TRUTH_VOLATILES[v] for v in e.get("vol", ()) if v in TRUTH_VOLATILES}
-            rd = {k for k in m.volatiles if k in TRUTH_VOLATILES.values()}
-            check(f"{side}.volatiles", eng == rd,
-                  (m.species, "reading", sorted(rd), "engine", sorted(eng)))
-    return bad
-
-
 # ---------------------------------------------------------------------------
 # one battle
 # ---------------------------------------------------------------------------
@@ -459,12 +379,10 @@ SCOPE_FORMATS = frozenset({"gen3ou"})
 def check_views(label: str, chunks: Sequence[Tuple[str, str]], caps: Sequence[Mapping[str, Any]],
                 census: ViewCensus, teams: Optional[Mapping[str, str]] = None,
                 battle_factory=None, format_id: str = "gen3ou") -> None:
-    """Every decision of both viewers of one battle. ``caps`` is ``core_events --views``'
-    ``views`` list; ``teams`` the packed team per viewer (what each ``Player`` was built with);
+    """Every decision of both viewers of one battle, against the CORE column. ``caps`` is
+    ``core_events --views``' ``views`` list; ``teams`` the packed team per viewer (what each ``Player`` was built with);
     ``battle_factory(viewer)`` (a test seam) builds the reading's battle. A battle whose
     ``format_id`` is outside :data:`SCOPE_FORMATS` is COUNTED as out of scope, never compared."""
-    from agents.battle.view_adapter import read_models_from_payload
-
     if format_id not in SCOPE_FORMATS:
         census.out_of_scope[format_id] += 1
         return
@@ -472,7 +390,7 @@ def check_views(label: str, chunks: Sequence[Tuple[str, str]], caps: Sequence[Ma
     for vi, viewer in enumerate(("p1", "p2")):
         census.viewers += 1
         mine = [c for c in caps if c["new_request"][vi]]
-        want = [c for c in mine if not (c[viewer].get("request") or {}).get("wait")]
+        want = [c for c in mine if not (c["legal"][vi] or {}).get("wait")]
         start = battle_factory(viewer) if battle_factory is not None else None
         pts = decision_points(chunks, viewer, start, (teams or {}).get(viewer))
         prev_after = 0
@@ -501,12 +419,7 @@ def check_views(label: str, chunks: Sequence[Tuple[str, str]], caps: Sequence[Ma
             census.decisions += 1
             where = f"{label}/{viewer}@t{battle.turn}#c{i}"
             sv = battle.strict_view()
-            live_v, legal_v, _ = read_models_from_payload(cap[viewer], battle_tag=battle.battle_tag)
-            bad = compare_decision(sv.live, sv.legal, live_v, legal_v, census, where)
-            other = "p2" if viewer == "p1" else "p1"
-            bad += truth_checks(sv.live, cap[other], cap["truth"], vi, census, where)
-            if "core" in cap:
-                bad += core_checks(cap, vi, sv.live, sv.legal, census, where)
+            bad = core_checks(cap, vi, sv.live, sv.legal, census, where)
             if bad:
                 census.bad_decisions[label] += 1
             want.remove(cap)

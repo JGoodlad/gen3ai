@@ -1,6 +1,6 @@
 //! `search_side_elision_test.rs` — the gate for `gen3_expand_many_side_elision_v1`.
 //!
-//! `expand_many` renders BOTH sides' one-sided payload (`view_pN` + `pN_chunks`) because the
+//! `expand_many` renders BOTH sides' one-sided payload (`pN_chunks`; `core_pN` on a core arm) because the
 //! driver holds both boards; a search reads exactly ONE of them. Measured on 864 banked arms the
 //! discarded copy was **43.0% of the reply bytes**
 //! (`designs/research_state/measurements/expand_many_2026-09-22/README.md`), paid twice — once
@@ -10,7 +10,7 @@
 //! that **what the requested side gets back does not change by one byte**. That is what this file
 //! pins, and the three negatives around it:
 //!
-//!   1. `side:"p1"` OMITS `p2_chunks` / `view_p2` — and the surviving `p1_chunks` / `view_p1` are
+//!   1. `side:"p1"` OMITS `p2_chunks` — and the surviving `p1_chunks` are
 //!      byte-identical to the same arm expanded with no `side` at all.
 //!   2. the mirror, `side:"p2"`.
 //!   3. NO `side` is the historical body — every field present, in its historical order.
@@ -147,26 +147,14 @@ fn asking_for_p1_only_drops_p2_and_leaves_p1_byte_identical() {
 
     // NON-VACUITY FIRST: the un-elided reply must actually carry both sides, or the assertions
     // below would pass on an empty payload.
-    let both_v1 = field(&both, "view_p1").expect("both: view_p1");
-    let both_v2 = field(&both, "view_p2").expect("both: view_p2");
-    assert!(both_v1.len() > 200, "the fixture must produce a real view: {both_v1}");
-    assert!(both.contains("\"p2_chunks\":"), "both: p2_chunks missing");
+    let both_c1 = field(&both, "p1_chunks").expect("both: p1_chunks");
+    let both_c2 = field(&both, "p2_chunks").expect("both: p2_chunks");
+    assert!(both_c1.len() > 20, "the fixture must produce real chunks: {both_c1}");
 
-    assert!(!only.contains("\"view_p2\":"), "side=p1 must OMIT view_p2: {only}");
     assert!(!only.contains("\"p2_chunks\":"), "side=p1 must OMIT p2_chunks: {only}");
-    // D10's per-intermediate-decision boards are one-sided payloads on the same terms.
-    assert!(!only.contains("\"view_p2_at\":"), "side=p1 must OMIT view_p2_at: {only}");
-    assert!(only.contains("\"view_p1_at\":"), "side=p1 must KEEP view_p1_at: {only}");
-    assert_eq!(field(&only, "view_p1_at").expect("only: view_p1_at"),
-               field(&both, "view_p1_at").expect("both: view_p1_at"),
-               "the REQUESTED side's intermediate boards must be byte-identical");
-
-    assert_eq!(field(&only, "view_p1").expect("only: view_p1"), both_v1,
-               "the REQUESTED side's view must be byte-identical to the un-elided one");
-    assert_eq!(field(&only, "p1_chunks").expect("only: p1_chunks"),
-               field(&both, "p1_chunks").expect("both: p1_chunks"),
+    assert_eq!(field(&only, "p1_chunks").expect("only: p1_chunks"), both_c1,
                "the REQUESTED side's chunks must be byte-identical to the un-elided one");
-    assert_ne!(both_v1, both_v2, "the two sides' views must differ, or this gate proves nothing");
+    assert_ne!(both_c1, both_c2, "the two sides' chunks must differ, or this gate proves nothing");
 }
 
 #[test]
@@ -177,16 +165,9 @@ fn asking_for_p2_only_drops_p1_and_leaves_p2_byte_identical() {
     let only = d.expand(Some("p2"));
     d.close();
 
-    let both_v2 = field(&both, "view_p2").expect("both: view_p2");
-    assert!(both_v2.len() > 200, "the fixture must produce a real view: {both_v2}");
-
-    assert!(!only.contains("\"view_p1\":"), "side=p2 must OMIT view_p1: {only}");
+    let both_c2 = field(&both, "p2_chunks").expect("both: p2_chunks");
     assert!(!only.contains("\"p1_chunks\":"), "side=p2 must OMIT p1_chunks: {only}");
-    assert!(!only.contains("\"view_p1_at\":"), "side=p2 must OMIT view_p1_at: {only}");
-    assert!(only.contains("\"view_p2_at\":"), "side=p2 must KEEP view_p2_at: {only}");
-    assert_eq!(field(&only, "view_p2").expect("only: view_p2"), both_v2);
-    assert_eq!(field(&only, "p2_chunks").expect("only: p2_chunks"),
-               field(&both, "p2_chunks").expect("both: p2_chunks"));
+    assert_eq!(field(&only, "p2_chunks").expect("only: p2_chunks"), both_c2);
 }
 
 // ===========================================================================
@@ -200,12 +181,11 @@ fn a_request_without_side_renders_every_field_in_its_historical_order() {
     let both = d.expand(None);
     d.close();
 
-    // The field ORDER is what a byte-level golden would see. The four one-sided fields keep
+    // The field ORDER is what a byte-level golden would see. The one-sided fields keep
     // their historical positions, which is what lets `search_impl_parity` (whose golden requests
     // carry no `side`) go on comparing this driver against node's field-for-field.
     let order = ["\"label\":", "\"node_id\":", "\"ended\":", "\"stuck\":", "\"outcome\":",
-                 "\"requests\":", "\"choices_used\":", "\"p1_chunks\":", "\"p2_chunks\":",
-                 "\"view_p1\":", "\"view_p2\":", "\"view_p1_at\":", "\"view_p2_at\":"];
+                 "\"requests\":", "\"choices_used\":", "\"p1_chunks\":", "\"p2_chunks\":"];
     let mut at = 0usize;
     for key in order {
         let found = both[at..].find(key)

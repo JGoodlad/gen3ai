@@ -6,14 +6,14 @@ program is `designs/endstate/program_rust_core.md` §2 M2. -->
 
 The Rust Core Program's M2 (`gen3_core_version_v1`, `gen3_core_present_v1`, `gen3_core_search_v1`).
 Built alongside the Python path: **training reads none of it** (§6 of the program — the cutover is
-M6); SEARCH adopts it (`materializer=core`, §4 below).
+M6); SEARCH runs on it (§4 below — its one successor road since the deletion pass, program §4 M2).
 
 | | |
 |---|---|
 | **Version** | `src/rust_sim/src/version.rs` — `BattleVersion`, `SideStream`, `Origin`, `parse_matches_step`, `streams_equal`; its engine is `src/rust_sim/src/engine.rs` |
 | **Reading** | `src/rust_sim/src/present/` — `BoardReading` (poke-env's `Battle` + `Pokemon` for one side), `present()`, `legal_actions()` / `mask()`, `check_view()` (the board audit), `tables.rs` (GENERATED from poke-env) |
-| **Python transport** | `src/agents/battle/core_view.py` (a `LiveView` / `LegalActions` from the core's JSON — no rule applied), `src/agents/training/core_successor.py` (the search successor) |
-| **Gates** | `cargo test` (`present::tests` one pin per rule, `tests/version_test.rs`, `tests/engine_split_test.rs`, `tests/view_fold_opt_in_test.rs`); `src/agents/battle/rust_core_present_test.py` (`sim`: every rule against poke-env ITSELF); slice V (`rust_core_parity_views.py`, COMMIT + MILESTONE); the three search gates with `core` as a road (§5) |
+| **Python transport** | `src/agents/battle/core_view.py` (a `LiveView` / `LegalActions` from the core's JSON — no rule applied) |
+| **Gates** | `cargo test` (`present::tests` one pin per rule, `tests/version_test.rs`, `tests/engine_split_test.rs`); `src/agents/battle/rust_core_present_test.py` (`sim`: every rule against poke-env ITSELF); slice V (`rust_core_parity_views.py`, COMMIT + MILESTONE); the three search gates with `core` as a road (§5) |
 
 ---
 
@@ -168,7 +168,7 @@ table, `Effect` lifecycle sets, `SideCondition`, type names and ignore set
 (`python -m agents.battle.rust_core_present_tables --write`; `rust_core_present_tables_test.py`
 fails the day it is stale).
 
-## 4. Search on the core — `materializer=core`
+## 4. Search on the core
 
 `search_driver`'s `open_root` takes `core: "text"` (the one path; `"typed"` is REFUSED — the typed
 shortcut is deleted, program §4 M4) and `side` (the one stream a tree folds); a core root is a
@@ -179,34 +179,30 @@ the trackers: `open_root`'s `trackers`), its mask and its choice tokens (`presen
 `row: null` where the side does not decide — and search wraps the row with `np.frombuffer`
 (`designs/rust_sim/encoder.md` §5); no Python tracker, view or encoder touches the successor.
 Without `rows` it returns the M2 payload `core_pN = {view, legal, request, events (the readings),
-mid}`, which Python's `CoreSuccessorFactory` encodes (kept, unused by search, until the deletion
-pass).
+mid}` (no Python consumer since `CoreSuccessorFactory`'s deletion, program §4 M4 row).
 
 * **D10 — a leaf AT the intermediate decision.** An arm whose ply opens a second decision (a KO's
   replacement, a refused trapped switch) returns the version AT that decision (`mid`), built from
   the engine snapshot `resolve_turn_capturing(Capture { sessions: true })` takes there; the child
   node IS that leaf. So a forced switch is a NON-BRANCHABLE node on the core road, where the old
-  roads expanded a D10 node from end-of-turn with the intermediate tokens — a semantic difference at
-  depth ≥ 2, recorded as a finding (§6).
+  (deleted) protocol / view roads expanded a D10 node from end-of-turn with the intermediate tokens
+  — a semantic difference at depth ≥ 2, recorded as a finding (§6).
 * **`recorded_exact` is REFUSED on core** (`resolve_turn_exact` has no production consumer on this
   path and no capture rule).
 * **The INTEGRITY mode is DELETED** with the typed shortcut (its only job was typed == text):
   `expand_many` REFUSES an `integrity` key, and `--search-integrity` / `--core-path` are gone
-  (`designs/deleted_flags.md`). Every battery row is stamped `materializer`, and `core_path: "text"`
-  on the core road (so a row stays comparable to the rows written before the deletion).
-* **Defaults**: `SearchConfig.materializer = "core"`; `--materializer {core,protocol,view}`
-  (default `core`). The protocol and view roads are NOT deleted — the cutover's deletion manifest
-  names them (program §4).
+  (`designs/deleted_flags.md`). Every battery row is stamped `materializer: "core"` and `core_path:
+  "text"` (so a row stays comparable to the rows written before the deletions).
+* **The core is the ONLY road.** The protocol and view roads, `SearchConfig.materializer` and
+  `--materializer` are deleted (program §4 M2 rows; `designs/deleted_flags.md`); search is rust-only.
 
 ## 5. The gates, and what each proves
 
 | gate | proves |
 |---|---|
 | slice V — COMMIT / MILESTONE (`rust_core_parity_views.py`, via `core_events --views`) | at every decision, both viewers: `present()` + `legal_actions()` + the mask == the `LiveView` / `LegalActions` training builds, type-strict, no allowlist but the registered poke-env FINDINGS (§3, value-aware, counted per decision — none registered today); the board audit; parse == step at every version |
-| `materializer_parity_integration_test.py` | `protocol`, `view` and `core` give identical decisions, values and obs bytes |
-| `fork_sharing_parity_integration_test.py` | the VIEW road: one root fork per DECISION, shared across the K worlds, gives the same successor obs bytes as one fork per world; the CORE road builds NO Python fork (`test_the_core_road_builds_no_python_fork`) |
-| `one_sided_view_parity_fuzz_test.py` (`sim`) | on real bridge battles, the core's root and arm views == the protocol road's `LiveView`, and the CORE ROW road's encoded rows == the protocol road's successor rows, byte for byte |
-| `core_successor_test.py` | the event transport; the driver REFUSES the deleted typed path and integrity mode |
+| `core_row_parity_fuzz_test.py` (`sim`) | on real bridge battles, search's encoded arm rows (D10 leaves included) == the poke-env replay's successor rows, byte for byte |
+| `search_test.py` | the core road's wiring: a deeper ply branches from its parent's driver node; an arm with no core payload RAISES; every root opens `core="text"` with the trackers; search is rust-only |
 
 ## 6. Measurements and findings
 

@@ -108,21 +108,9 @@ COMMIT_LADDER_KEYS = (0, 1)
 #: plays these ON THEIR OWN, where each must STILL diverge in EXACTLY its named census keys: an
 #: entry that outlives its fix (or grows a second class) fails the tier.
 LADDER_KNOWN_DIVERGENCES: Dict[int, Tuple[str, FrozenSet[str], str]] = {
-    173: ("mimic-overlay-projection",
-          frozenset({"[PRESENTATION/V3-opp-pp] opp.moves", "[PRESENTATION/V4-volatiles] opp.volatiles",
-                     "[PRESENTATION/V4-volatiles] ours.volatiles"}),
-          "TECH_DEBT_BACKLOG P3 'The view road does not present a Mimic overlay' — the "
-          "projection (view.rs + view_adapter) keeps `mimic` and folds `-activate|move: Mimic` "
-          "as a volatile where poke-env and the core's present() show the copied move; the view "
-          "road only, retired at M4"),
-    237: ("r3-residue-own-pp-after-faint",
-          frozenset({"[SIM-FACT] ours.moves"}),
-          "TECH_DEBT_BACKLOG P3 'Truth audit R3 residue' — an own mon that faints before its "
-          "next |request| keeps the sighting count of a PP an unrevealed Pressure took (Gengar "
-          "Explosion into a Pressure Aerodactyl that had just switched in); an information limit"),
-    260: ("r3-residue-own-pp-after-faint",
-          frozenset({"[SIM-FACT] ours.moves"}),
-          "the same R3-residue row (a Metagross Explosion into an unrevealed Pressure mon)"),
+    # EMPTY since the Rust Core deletion pass (program §4 M2): the three entries it held (keys 173,
+    # 237, 260 — the Mimic overlay and the R3 own-PP residue) were all divergences of the READING
+    # against the port's one-sided PROJECTION (`view.rs`), a column slice V no longer computes.
 }
 
 #: The compared fields of one event (``BattleEvent`` attribute, core JSON key).

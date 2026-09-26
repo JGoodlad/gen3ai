@@ -573,36 +573,14 @@ pub fn recorded_queues(rec: &Record, from: usize, cap: usize) -> [Vec<String>; 2
 pub struct Resolved {
     pub used: [Vec<String>; 2],
     pub stuck: bool,
-    /// **D10** (`gen3_view_at_intermediate_v1`) — the one-sided view captured at every
-    /// INTERMEDIATE decision this turn opened, per side, in order.
-    ///
-    /// A turn can contain more than one request round: our mon faints mid-turn and the
-    /// replacement round is a SECOND request inside the same arm. [`resolve_turn_sourced`]
-    /// answers it from the follow-up policy, so the board the caller finally renders is one
-    /// decision PAST the row a per-request consumer needs. Each entry here is
-    /// [`crate::view::one_sided_view`] rendered at the TOP of the loop iteration that round
-    /// opened — i.e. before any of that round's choices are committed — so entry `k` is the
-    /// board at that side's `k`-th non-final request of this turn.
-    ///
-    /// The turn's LAST request is never in here: the loop exits once the boundary turn moves,
-    /// so the final board is the one the caller renders itself. Empty is therefore the normal
-    /// case (no faint, no reject), and `views_at[i].len()` equals the number of `|request|`
-    /// lines side `i`'s suffix carries MINUS the last one — the quantity
-    /// `agents.training.view_successor.intermediate_decisions` reads off the protocol.
-    ///
-    /// 🚨 **Populated only under `Capture::views`** ([`resolve_turn_capturing`] /
-    /// [`resolve_turn_sourced_with`], on a session whose reveal fold is on —
-    /// `BridgeSession::enable_view_fold`); the plain wrappers capture nothing.
-    /// [`resolve_turn_exact`] leaves it
-    /// empty: its source answers every round from the record, it has no production consumer
-    /// on this path (`recorded_exact` arms are the `value_crn` anchor), and a second capture
-    /// rule with no gate is worse than an honest absence — a consumer that finds no entry
-    /// falls back exactly as it did before this field existed.
-    pub views_at: [Vec<String>; 2],
-    /// The same intermediate decisions as [`Resolved::views_at`], as ENGINE snapshots — what the
-    /// Rust core's search road (`materializer=core`, `gen3_core_search_v1`) makes a
-    /// [`crate::version::BattleVersion`] of, so a D10 leaf IS the version at its decision rather
-    /// than a projection beside a node one decision past it. Captured only by
+    /// **D10** — ENGINE snapshots at every INTERMEDIATE decision this turn opened, per side, in
+    /// order. A turn can contain more than one request round: our mon faints mid-turn and the
+    /// replacement round is a SECOND request inside the same arm, answered from the follow-up
+    /// policy, so the board the caller finally holds is one decision PAST the row a per-request
+    /// consumer needs. Each entry is taken at the TOP of the loop iteration that round opened
+    /// (before any of its choices are committed); the turn's LAST request is never in here. The
+    /// Rust core's search road (`gen3_core_search_v1`) makes a [`crate::version::BattleVersion`]
+    /// of it, so a D10 leaf IS the version at its decision. Captured only by
     /// [`resolve_turn_capturing`] with `Capture::sessions`; empty otherwise.
     pub sessions_at: [Vec<BridgeSession>; 2],
 }
@@ -612,24 +590,21 @@ impl std::fmt::Debug for Resolved {
         f.debug_struct("Resolved")
             .field("used", &self.used)
             .field("stuck", &self.stuck)
-            .field("views_at", &self.views_at)
             .field("sessions_at", &[self.sessions_at[0].len(), self.sessions_at[1].len()])
             .finish()
     }
 }
 
 /// What [`resolve_turn_capturing`] records at each intermediate decision (see
-/// [`Resolved::views_at`]): the view road's one-sided projection, the core road's engine
-/// snapshot, or both.
+/// [`Resolved::sessions_at`]): the core road's engine snapshot, or nothing.
 #[derive(Debug, Clone, Copy)]
 pub struct Capture {
-    pub views: bool,
     pub sessions: bool,
 }
 
 impl Capture {
     /// Capture nothing — what [`resolve_turn`] / [`resolve_turn_sourced`] use.
-    pub const NONE: Capture = Capture { views: false, sessions: false };
+    pub const NONE: Capture = Capture { sessions: false };
 }
 
 /// Reproduce turn T EXACTLY as the original battle did — Node's `resolveTurnExact`.
@@ -827,7 +802,7 @@ pub fn resolve_turn_sourced_with(
             out.stuck = true;
             break;
         }
-        // D10 (`gen3_view_at_intermediate_v1`) — see `Resolved::views_at`. Iteration 0 answers
+        // D10 — see `Resolved::sessions_at`. Iteration 0 answers
         // the requests that were ALREADY open when the caller cleared the chunk history (the
         // turn-start `move` round), so its board predates this arm and belongs to the parent.
         // Every LATER iteration answers a request the sim emitted INSIDE this arm — a faint's
@@ -841,14 +816,6 @@ pub fn resolve_turn_sourced_with(
                 };
                 if kind == RequestState::Wait || sess.is_choice_done(i) {
                     continue;
-                }
-                if capture.views {
-                    // A caller that asks for views owns a session with the fold on
-                    // (`BridgeSession::enable_view_fold`); asking without it is a wiring bug.
-                    out.views_at[i].push(
-                        crate::view::one_sided_view(sess, i, dex)
-                            .expect("Capture::views needs the session's view fold (enable_view_fold)"),
-                    );
                 }
                 if capture.sessions {
                     out.sessions_at[i].push(sess.snapshot());

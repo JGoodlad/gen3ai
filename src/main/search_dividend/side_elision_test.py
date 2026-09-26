@@ -22,7 +22,7 @@ def test_an_elided_side_refuses_to_be_read_rather_than_reading_empty():
     Falsy — so the existing ``payload or {}`` guards take their COUNTED fallback — but raising on
     every way of actually getting a value out. An empty dict would ENCODE, into a well-formed
     observation of a battle nobody played."""
-    el = ElidedSide("view_p2")
+    el = ElidedSide("p2_chunks")
 
     assert not el, "an elided side must be FALSY so `payload or {}` still works"
     assert len(el) == 0
@@ -36,7 +36,7 @@ def test_an_elided_side_refuses_to_be_read_rather_than_reading_empty():
                  lambda: "species" in el):
         with pytest.raises(SearchError, match="ELIDED"):
             read()
-    assert "view_p2" in repr(el)
+    assert "p2_chunks" in repr(el)
 
 
 def test_an_unknown_side_is_refused_in_python_before_the_driver_sees_it():

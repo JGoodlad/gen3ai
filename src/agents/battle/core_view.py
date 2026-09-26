@@ -5,10 +5,9 @@ stream into poke-env's reading of the board and renders it in ``LiveView``'s own
 (``src/rust_sim/src/present/``). **Every poke-env rule is applied on the Rust side** — the reading
 rules V1–V17 are that module's, each named and pinned there — so this module is a TRANSPORT and
 nothing else: it copies each field into the same frozen dataclass ``battle.strict_view()`` hands
-out, and computes no value, applies no rule, and defaults nothing. Contrast
-:mod:`agents.battle.view_adapter`, which builds the same objects from the port's
-``one_sided_view`` payload and still applies poke-env's presentation rules in Python (that road
-and its rules are on the Rust Core Program's deletion manifest).
+out, and computes no value, applies no rule, and defaults nothing. (Its predecessor, the
+``view_adapter`` over the port's ``one_sided_view`` payload, which re-applied poke-env's
+presentation rules in Python, is deleted — Rust Core deletion pass, program §4 M2.)
 
 Equality with the ``LiveView`` training builds is the Rust Core parity harness's slice V
 (``rust_core_parity_views.py``), at every decision of every recorded battle, both viewers.

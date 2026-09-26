@@ -19,7 +19,7 @@
 //! unconditionally would be a new key on every arm, and the node driver has none.
 //!
 //! The numbers are MICROSECONDS, summed over the arms of one `expand_many` batch, and they are a
-//! partition of the handler: `sim + view + chunks + render == total` up to the clock's own
+//! partition of the handler: `sim + chunks + render + core + core_render == total` up to the clock's own
 //! resolution. The record they were taken for is
 //! `designs/research_state/measurements/expand_many_2026-09-22/README.md`.
 
@@ -42,18 +42,16 @@ pub fn timing_enabled() -> bool {
 pub struct ArmTimings {
     /// Clone the parent node + resolve the joint turn — the ENGINE, the only irreducible row.
     pub sim_us: u64,
-    /// `one_sided_view` for both sides, including its JSON rendering.
-    pub view_us: u64,
     /// The per-side protocol chunk arrays, including their JSON quoting.
     pub chunks_us: u64,
     /// Everything else the handler renders (outcome, requests, choices_used, the child node).
     pub render_us: u64,
-    /// The whole handler, arms included — the denominator the three rows partition.
+    /// The whole handler, arms included — the denominator the other rows partition.
     pub total_us: u64,
-    /// `materializer=core` (`gen3_core_search_v1`): folding the arm's lines into its versions (the
+    /// The core road (`gen3_core_search_v1`): folding the arm's lines into its versions (the
     /// end-of-turn child and, on a D10 arm, the leaf), from their text.
     pub core_us: u64,
-    /// `materializer=core`: rendering the leaf's payload.
+    /// The core road: rendering the leaf's payload.
     pub core_render_us: u64,
 }
 
@@ -67,9 +65,9 @@ impl ArmTimings {
             return String::new();
         }
         format!(
-            ",\"timing_us\":{{\"sim\":{},\"view\":{},\"chunks\":{},\"render\":{},\"total\":{},\
+            ",\"timing_us\":{{\"sim\":{},\"chunks\":{},\"render\":{},\"total\":{},\
              \"core\":{},\"core_render\":{}}}",
-            self.sim_us, self.view_us, self.chunks_us, self.render_us, self.total_us, self.core_us,
+            self.sim_us, self.chunks_us, self.render_us, self.total_us, self.core_us,
             self.core_render_us
         )
     }
@@ -122,16 +120,16 @@ mod tests {
     /// a key is caught here rather than in a Python `KeyError` three layers away.
     #[test]
     fn the_rendered_field_is_the_documented_shape() {
-        let t = ArmTimings { sim_us: 1, view_us: 2, chunks_us: 3, render_us: 4, total_us: 10, core_us: 5,
+        let t = ArmTimings { sim_us: 1, chunks_us: 3, render_us: 4, total_us: 10, core_us: 5,
                              core_render_us: 6 };
         let rendered = format!(
-            ",\"timing_us\":{{\"sim\":{},\"view\":{},\"chunks\":{},\"render\":{},\"total\":{},\
+            ",\"timing_us\":{{\"sim\":{},\"chunks\":{},\"render\":{},\"total\":{},\
              \"core\":{},\"core_render\":{}}}",
-            t.sim_us, t.view_us, t.chunks_us, t.render_us, t.total_us, t.core_us, t.core_render_us
+            t.sim_us, t.chunks_us, t.render_us, t.total_us, t.core_us, t.core_render_us
         );
         assert_eq!(
             rendered,
-            ",\"timing_us\":{\"sim\":1,\"view\":2,\"chunks\":3,\"render\":4,\"total\":10,\"core\":5,\
+            ",\"timing_us\":{\"sim\":1,\"chunks\":3,\"render\":4,\"total\":10,\"core\":5,\
              \"core_render\":6}"
         );
     }

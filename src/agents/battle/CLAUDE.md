@@ -200,27 +200,6 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   * Why per-mon and not "a request arrived": a request arrives on **every** decision, so a
     global signal would mark all six of our mons dirty every decision and delete the cache it
     exists to protect.
-- **`view_adapter.py` — the SECOND constructor for the same read-models**
-  (`gen3_one_sided_view_v1`). `LiveView.from_view_json(payload)` /
-  `legal_actions_from_payload` build a `LiveView` + `LegalActions` from the Rust port's ONE-SIDED
-  VIEW payload instead of from a poke-env battle — the same board, reached without replaying the
-  protocol that produced it, which is what takes the parse off a search successor's per-arm path.
-  The objects are the SAME frozen dataclasses, so `strict_api_lock_test.py` is untouched.
-  ⚠️ **Half of `LivePokemon` is NOT a projection of sim state** and the adapter exists to say so:
-  an opponent's move PP is a SIGHTING count (doubled against Pressure, judged with the target's
-  ability AT USE TIME), `volatiles` is a protocol fold whose poke-env lifecycle the adapter REPLAYS
-  from each effect's announcement history (Baton Pass carries included), `status_counter` and
-  `protect_counter` are poke-env counters with different transitions from the engine's (the toxic
-  half is the sim's stage since `gen3_pe_reading_fixes_v1`), and the obs SLOT order is the first
-  `|request|`'s roster (ours) / reveal order (theirs) — every one a NAMED reading rule (V1–V13, V10
-  retired: a fainted mon holds no stages on either road, so the ply-folded boost ledger that used
-  to restore them at a D10 board is gone; gated by `rust_core_parity_views.py`). `ViewBattle` additionally feeds the
-  four sub-encoders that never took a `live_mon` (`items` / `abilities` / `types` / `moves` —
-  deferral D2) from the same read-model, and carries the successor's **whole-battle event log**,
-  which is what closes the last two obs deferrals (the pending-Wish pair and the sleep-wake
-  belief): both folds read `battle.events` + `battle.turn` and nothing else, so the payload was
-  never the problem — the missing LOG was. Contract, gates and the 10 deferrals:
-  [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md).
 - **`offline_feed.py` — one side's recorded protocol into a `Gen3Battle`, no `Player`, no loop**
   (`gen3_offline_feed_v1`). `feed_chunk(battle, chunk)` is a DISPATCH MIRROR of
   `Player._handle_battle_message` (request → `parse_request`, win/tie → `won_by`/`tied`,
@@ -241,35 +220,30 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   corpus × 2, every byte-fuzz fixture; pinned by `rust_core_parity_fixtures/manifest.json`). **Three
   team sources** (`utils.team_sources`): `play(key, source="ladder" | "procedural")` — slices T and O
   inherit them by calling `play`; the ladder tier's NAMED known divergences
-  (`LADDER_KNOWN_DIVERGENCES`, each with its backlog row) run in their own test and must still fire
-  (`designs/ops/testing.md` → THREE TEAM SOURCES). 🚨 **This layer is now the ORACLE of a second
+  (`LADDER_KNOWN_DIVERGENCES`, each with its backlog row — EMPTY since the view projection's
+  deletion) run in their own test and must still fire (`designs/ops/testing.md` → THREE TEAM SOURCES). 🚨 **This layer is now the ORACLE of a second
   implementation**: a change to `_build_event` / `_capture_pre` / the schema, or to a poke-env
   transition they read, fails the COMMIT tier the day it lands — mirror it in
   `src/rust_sim/src/core_events/reading.rs` in the same change (or behind a flag OFF in
   `production_config.json`). And `battle_event.py`'s tables are GENERATED into Rust:
   `python -m agents.battle.rust_core_schema --write` (`rust_core_schema_test.py` fails when stale).
   Contract: [`designs/rust_sim/core_events.md`](../../../designs/rust_sim/core_events.md).
-- **`rust_core_parity_views.py` — slice V, the TRUTH AUDIT of the training observation path**
-  (`gen3_core_parity_views_v1`). At EVERY decision of every recorded battle, both viewers, the
+- **`rust_core_parity_views.py` — slice V, the view + legality slice of the training observation
+  path** (`gen3_core_parity_views_v1`). At EVERY decision of every recorded battle, both viewers, the
   `LiveView` + `LegalActions` training builds (a `Gen3Battle` fed through `offline_feed`, read at
-  the exact chunk `Player._handle_battle_message` dispatches the decision on —
-  `decision_points`) against the port's `one_sided_view` captured at that board
-  (`core_events --views`) AND the ENGINE truth: every field classified SIM-FACT (the projection
-  reads the engine; a divergence is a READING bug on one side) or PRESENTATION (a NAMED rule
-  V1–V13 the projection reproduces, still compared exactly), plus truth checks on every revealed
-  opposing item / ability / move / type and ten sim-state volatiles. Rides `check_battles(…,
-  views=ViewCensus())` — one harness, one core call per battle — at COMMIT (the 12 recorded
-  battles incl. two Baton Pass and two LADDER ones + the in-scope byte-fuzz fixtures, ~2 s) and MILESTONE
-  (`slow`, the same played battles as slice E). gen3ou only; the `gen3customgame` scenarios are
-  counted out of scope. 🚨 **This is the gate a Baton-Pass-class poke-env reading bug fails**: it is
-  the one place the other side of the comparison is the SIM, not another reader of the same
-  `Pokemon` — and it already found three live ones (`designs/rust_sim/one_sided_view.md` §4b
-  R1–R3 FIXED in the fork, a training-input change; R1b fixed with M2's findings below; R4 an
-  information limit). Teeth: a re-introduced Baton Pass drop and a misread Spikes
-  layer each FAIL a routine test. `offline_feed.new_battle(…, packed_team=)` mirrors the
-  `Player`'s `_teambuilder_team` (our own spread's only source in gen 3). Contract + the rule table:
-  [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md) §2b / §4a.
-  **Since M2 it also checks the core's own reading** (the `core` column of `core_events --views`):
+  the exact chunk `Player._handle_battle_message` dispatches the decision on — `decision_points`)
+  against the core column of `core_events --views`: every field classified SIM-FACT or PRESENTATION
+  (a NAMED rule V1–V13). Rides `check_battles(…, views=ViewCensus())` — one harness, one core call
+  per battle — at COMMIT (the recorded battles incl. two Baton Pass and two LADDER ones + the in-scope
+  byte-fuzz fixtures, ~2 s) and MILESTONE (`slow`, the same played battles as slice E). gen3ou only.
+  🚨 **This is the gate a Baton-Pass-class poke-env reading bug fails**: the core's view is audited
+  against the ENGINE, so a reading that drops a sim fact diverges from it. Teeth: a re-introduced
+  Baton Pass drop and a misread Spikes layer each FAIL a routine test. `offline_feed.new_battle(…,
+  packed_team=)` mirrors the `Player`'s `_teambuilder_team`. (Until the Rust Core deletion pass,
+  program §4 M2, it also compared the port's `one_sided_view` projection and ran reading-vs-engine
+  truth checks off it; both went with `view.rs`. History and the rule table:
+  [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md).)
+  **The core column** (`core_events --views`):
   `present()` + `legal_actions()` + the 11-dim mask against the same `LiveView` / `LegalActions` /
   `Gen3ActionMasker`, type-strict, and the core's board audit (`check_view`, `[BOARD]`). The core
   reads the TRUTH, so a field where poke-env is WRONG is counted under its registered finding —

@@ -13,7 +13,7 @@ a regeneration — the ``rust_core_schema`` pattern.
 
 This is the ORACLE's data, deliberately: ``data/`` is the simulator's source of truth, and where
 poke-env's table and the simulator's disagree the READING follows poke-env (that is what "the
-reading" means). ``view_adapter._possible_abilities`` made the same choice for the same reason.
+reading" means).
 
     python -m agents.battle.rust_core_present_tables --write
     python -m agents.battle.rust_core_present_tables --check

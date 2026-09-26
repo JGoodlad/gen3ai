@@ -34,8 +34,9 @@
 //! `--check-records FILE…` instead checks persisted records (round trip + re-parse), one line each.
 //!
 //! `--views` also captures, at the end of every write that shipped a new `|request|`, BOTH
-//! sides' `one_sided_view` and the engine truth (`"views":[{"after","new_request","p1","p2",
-//! "truth"},…]`) — slice V of the parity harness (`agents.battle.rust_core_parity_views`).
+//! sides' core `present()` view, legality and board audit (`"views":[{"after","new_request",
+//! "core","legal","audit"},…]`) — slice V of the parity harness
+//! (`agents.battle.rust_core_parity_views`).
 //!
 //! `--trackers` also folds the per-decision TRACKERS on the version (`gen3_core_trackers_v1`) and
 //! reports, per viewer, per decision, `{"after", "reward", "trackers", "window"}` and a final
@@ -75,7 +76,6 @@ use pokesim::json::Json;
 use pokesim::prng::normalize_seed;
 use pokesim::trackers::clock::ClockConfig;
 use pokesim::version::{self, BattleVersion};
-use pokesim::{search, view};
 
 struct Battle {
     label: String,
@@ -127,65 +127,14 @@ fn side_of(tok: &str) -> Result<usize, String> {
 /// One DECISION-BOARD capture (`--views`, slice V of the parity harness), taken at the end of a
 /// write that shipped a new `|request|` to at least one side. `after` = the number of per-side
 /// chunks flushed so far, so the Python reference can feed each viewer exactly the chunks that
-/// preceded the board. Per side: the port's [`one_sided_view`] projection (the view road's), the
-/// CORE's `present()` view (the stream-built reading, M2) and its legality, and the core's TRUTH
-/// AUDIT of that view against the board.
+/// preceded the board. Per side: the CORE's `present()` view (the stream-built reading, M2), its
+/// legality, and the core's TRUTH AUDIT of that view against the board.
 struct ViewCap {
     after: usize,
     new_request: [bool; 2],
-    views: [String; 2],
-    truth: String,
     core: [String; 2],
     legal: [String; 2],
     audit: [String; 2],
-}
-
-/// The engine facts a one-sided view does NOT carry but the truth audit compares against: per
-/// side, per mon (engine roster order), the SIM's volatile set (`search::volatile_names` — the
-/// typed fields) and its raw status counter. Read by `agents.battle.rust_core_parity_views`.
-fn truth_json(sess: &BridgeSession, dex: &Dex) -> String {
-    use pokesim::state::Status;
-    let Some(st) = sess.battle_state() else { return "null".into() };
-    let mut o = String::from("[");
-    for (s, sd) in st.sides.iter().enumerate() {
-        if s > 0 {
-            o.push(',');
-        }
-        o.push('[');
-        for (i, m) in sd.pokemon.iter().enumerate() {
-            if i > 0 {
-                o.push(',');
-            }
-            let (status, counter) = match m.status {
-                Some(Status::Sleep(n)) => ("slp", n as i64),
-                Some(Status::Toxic(n)) => ("tox", n as i64),
-                Some(Status::Burn) => ("brn", 0),
-                Some(Status::Paralysis) => ("par", 0),
-                Some(Status::Freeze) => ("frz", 0),
-                Some(Status::Poison) => ("psn", 0),
-                None => ("", 0),
-            };
-            o.push_str("{\"name\":");
-            json_out::str_into(&mut o, &view::display_name(m, dex));
-            o.push_str(",\"species\":");
-            json_out::str_into(&mut o, &m.species_id);
-            o.push_str(&format!(
-                ",\"active\":{},\"status\":\"{status}\",\"status_n\":{counter},\"sleep_skipped\":{},\"vol\":[",
-                i == sd.active && !m.fainted,
-                m.sleep_skipped
-            ));
-            for (k, v) in search::volatile_names(m).iter().enumerate() {
-                if k > 0 {
-                    o.push(',');
-                }
-                json_out::str_into(&mut o, v);
-            }
-            o.push_str("]}");
-        }
-        o.push(']');
-    }
-    o.push(']');
-    o
 }
 
 /// `|request|` lines shipped to each side in `chunks[from..]`.
@@ -218,8 +167,6 @@ fn capture(v: &BattleVersion, sess: &BridgeSession, dex: &Dex, seen: &mut usize,
     caps.push(ViewCap {
         after: total,
         new_request: [n[0] > 0, n[1] > 0],
-        views: [view::one_sided_view(sess, 0, dex)?, view::one_sided_view(sess, 1, dex)?],
-        truth: truth_json(sess, dex),
         core: [c0, c1],
         legal: [l0, l1],
         audit: [a0, a1],
@@ -403,11 +350,6 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
     } else {
         BridgeSession::new_construct_turn0_core(&b.opts, dex)?
     };
-    if views {
-        // Slice V compares the view road's projection too, so this replay folds reveals
-        // (`gen3_view_fold_opt_in_v1` — off unless a reader asks).
-        sess.enable_view_fold()?;
-    }
     // The battle is replayed as a CHAIN OF VERSIONS (`gen3_core_version_v1`) OBSERVING the one
     // session this replay drives: each command advances the session and the chain folds each
     // side's new lines, typed at the source, into its stream; a one-side, engine-less parse chain
@@ -613,9 +555,9 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                         o.push(',');
                     }
                     o.push_str(&format!(
-                        "{{\"after\":{},\"new_request\":[{},{}],\"p1\":{},\"p2\":{},\"truth\":{},\
+                        "{{\"after\":{},\"new_request\":[{},{}],\
                          \"core\":[{},{}],\"legal\":[{},{}],\"audit\":[{},{}]}}",
-                        c.after, c.new_request[0], c.new_request[1], c.views[0], c.views[1], c.truth,
+                        c.after, c.new_request[0], c.new_request[1],
                         c.core[0], c.core[1], c.legal[0], c.legal[1], c.audit[0], c.audit[1]
                     ));
                 }

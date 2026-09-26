@@ -186,22 +186,18 @@ purely so this readout can name it. **Every other name (`choicelock`, `perishson
 right; `replay_impl_parity` prints a `pre_state:nonempty-volatiles` count on every run precisely so
 an all-empty record set cannot be mistaken for coverage.
 
-**THE RESPONSE CARRIES ONE PORT-ONLY FIELD: `view_p1` / `view_p2`** (`gen3_one_sided_view_v1`,
-`src/view.rs`) — on `open_root` and on every `expand_many` arm. It is the OBS-LEGAL counterpart of
-`pre_state`: the same board, projected onto what each side has OBSERVED, in the shape `LiveView`
-holds, so a successor's read-models can be built without replaying its protocol. Node emits no such
-field, and `search_impl_parity.py`'s allowlist forgives exactly that ABSENCE and nothing else (the
-predicate is value-aware). Contract, findings and deferrals:
+**The port-only one-sided `view_p1` / `view_p2` (and D10's `view_pN_at`) payloads are DELETED**
+(Rust Core deletion pass, program §4 M2); a CORE root's arms carry `core_pN` instead (the leaf
+version's reading, or with `rows` its encoded row — [`present.md`](present.md) §4). History:
 [`one_sided_view.md`](one_sided_view.md).
 
 ### THE REPLY IS SHIPPED, NOT JUST RENDERED — `side` ELIDES THE HALF NOBODY READS
 
 `gen3_expand_many_side_elision_v1`. An `expand_many` request may carry a top-level
-**`side`: `"p1"` | `"p2"`**, and the driver then OMITS the other side's `view_pN`, `pN_chunks`
-and `view_pN_at` (D10's per-intermediate-decision boards, which are one-sided payloads on the
-same terms) from every arm of that batch. A search runs for one side — `search._expand_ply` reads
-`view_p1 if side == "p1" else view_p2` and the matching chunk array, and nothing of the other —
-so on 864 banked arms the discarded copy was **43.0% of the reply bytes**, rendered, quoted, piped
+**`side`: `"p1"` | `"p2"`**, and the driver then OMITS the other side's one-sided payload
+(`pN_chunks`, and `core_pN` on a core arm) from every arm of that batch. A search runs for one side
+and reads nothing of the other — so on 864 banked arms (measured when the view payload still
+shipped) the discarded copy was **43.0% of the reply bytes**, rendered, quoted, piped
 and `json.loads`-ed to be dropped (the split, and the three candidates it killed:
 [`../research_state/measurements/expand_many_2026-09-22/README.md`](../research_state/measurements/expand_many_2026-09-22/README.md)).
 `requests` is NOT in that class and is never elided: BOTH sides are read (the opponent's legal
@@ -257,21 +253,16 @@ reply is byte-for-byte the old one. On a core node, `expand_many` steps a child 
 returns, per wanted side, **`core_pN = {view, legal, request, events, mid, text_view?}`** — the
 version's `present()` view, `legal_actions()`, the raw `|request|`, the READINGS of the ply's
 events, and `mid`: the same four AT each intermediate decision the ply resolved itself (D10), built
-from the engine snapshots `resolve_turn_capturing(Capture { views: false, sessions: true })` takes
+from the engine snapshots `resolve_turn_capturing(Capture { sessions: true })` takes
 there. The child node of a D10 arm IS that intermediate version (a forced replacement is
 non-branchable on this road). `recorded_exact` is REFUSED on a core node.
 
-**`expand_many`'s `integrity: N`** (core nodes only; 0 = off, the production default): every Nth
-arm is ALSO folded from its text (`child_text` / `root_text`), `version::streams_equal` asserts the
-two versions equal — tracker, events, view — and the reply carries the text path's view as
-`text_view`, which Python encodes and byte-compares (`agents/training/core_successor.py`).
-`POKESIM_SEARCH_TIMING=1` adds `core` (the typed fold), `core_render` (the leaf JSON) and
-`integrity` (the twin) to `timing_us`.
+`POKESIM_SEARCH_TIMING=1` adds `core` (the fold from text) and `core_render` (the leaf JSON) to
+`timing_us` (the typed shortcut and its `integrity` twin are deleted, program §4 M4).
 
 **Capture is explicit.** `resolve_turn` / `resolve_turn_sourced` capture NOTHING (`Capture::NONE`);
-the view road asks for `Capture { views: true }` on a session whose reveal fold is ON
-(`enable_view_fold`, done by `open_root` for a non-core root), the core road for
-`Capture { sessions: true }`, and the replay verbs for none. Contract of the version and the reading:
+the core road asks for `Capture { sessions: true }`, and a plain root's arms and the replay verbs
+for none. Contract of the version and the reading:
 [`present.md`](present.md).
 
 ## The REPLAY family: the one-shot `replay` / `reroll` / `reroll_many` verbs (`gen3_rust_replay_driver_v1`)

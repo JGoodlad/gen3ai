@@ -133,8 +133,7 @@ most one decision per side — either violation, and every parse / fold / encode
 `__ERR__` written IN PLACE of the write's chunks, and the mode stays failed for the rest of the
 battle (never a skipped frame, never a fall-back). A battle that ends ships no frame for its terminal
 board (no decision). The chains are dropped at every battle reset, and each START builds its own. The
-mode builds the core's reading on its own parse chain: the transport's reveal fold and the core source
-recording stay OFF (`tests/view_fold_opt_in_test.rs`).
+mode builds the core's reading on its own parse chain: the core source recording stays OFF.
 
 **Pins** (`tests/sim_bridge_core_obs_test.rs`, real binaries, the bridge corpus's real teams under a
 seeded random policy that also sends rejected choices and forfeits): every `__OBS__` row equals
@@ -209,7 +208,7 @@ each fail.
 
 ## 7. Search takes rows
 
-On `materializer=core` (the default) search opens its tree with the TRACKERS on and expands with
+Search (the core, its one road) opens its tree with the TRACKERS on and expands with
 `rows` (`search_driver`'s `expand_many`): each wanted side's leaf version is ENCODED in the driver and
 comes back as `core_pN = {mid, row, mask, tokens}` — the `<f4` frame, the 11-dim mask and the choice
 string per legal action (`present::choice_tokens`, the real mapper's `action_to_order` mirrored: a
@@ -219,9 +218,7 @@ null` where the side does not decide (a `wait` request, the battle over, no lega
 (`SearchEngine._materialize_core`) wraps the row with `np.frombuffer` and scores it: no view JSON, no
 event fold, no Python tracker, no Python encoder and no Python prefix fork run on a core successor.
 Slice O compares the tokens against the real mapper at every decision (12,677 at COMMIT);
-`one_sided_view_parity_fuzz_test`'s CORE ROW road compares each arm's row to the protocol road's,
-byte for byte; `fork_sharing_parity_integration_test::test_the_core_road_builds_no_python_fork` pins
-that no Python fork is built.
+`core_row_parity_fuzz_test` compares each arm's row to the poke-env replay's, byte for byte.
 
 ## 8. The benchmark's core row
 

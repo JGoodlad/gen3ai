@@ -28,7 +28,7 @@ _NUM = {
 #: Counter fields merged into a unit's totals (printed; the divergences are the verdict).
 _CTR = {
     "E": ("kinds", "selfcheck"),
-    "V": ("truth_checks", "board_checks", "rules_fired", "known", "known_decisions", "out_of_scope"),
+    "V": ("board_checks", "rules_fired", "known", "known_decisions", "out_of_scope"),
     "T": ("labels", "out_of_scope"),
     "O": ("nonzero_blocks",),
 }

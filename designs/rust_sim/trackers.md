@@ -69,7 +69,7 @@ lands in the same turn (`_set_effectiveness`, incl. Flash Fire's `|-start|`), TU
 that just resolved. That spans the whole turn, so a window that opened at a mid-turn forced switch
 does not contain it. The core keeps the same two slots on `BoardReading`
 (`pending_damaging` / `last_damaging` / `last_damaging_move`). A window-scoped reading (the rule
-`view_successor.view_context._to_dme` uses) diverged from training on the HP belief at 57 of 1,838
+the since-deleted `view_successor.view_context._to_dme` used) diverged from training on the HP belief at 57 of 1,838
 COMMIT decisions before this port — see §6.
 
 ## 2. On the version — shared by a fork
@@ -183,7 +183,7 @@ The census that proved the obs and label change touched only these fields, and t
   belief sees 0.0 / 0.5 / 2.0 and never 1.0 (in `ladderA_3459`, Lunatone's three neutral hits
   before the 2x reached neither tracker). An information loss, not a divergence; not changed.
 
-- **The search roads' Hidden-Power input is window-scoped** (`view_successor.view_context._to_dme`,
+- **The search roads' Hidden-Power input is window-scoped** (the since-deleted `view_successor.view_context._to_dme`,
   used by the view and core roads' Python successors): a decision whose window opened at a mid-turn
   forced switch misses the opponent's promoted damaging move of that turn, which training observes.
   A depth ≥ 2 search difference (a depth-1 successor's window is the whole ply); the core's own

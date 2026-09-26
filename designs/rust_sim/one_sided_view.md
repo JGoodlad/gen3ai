@@ -1,7 +1,15 @@
-# The ONE-SIDED VIEW — `gen3_one_sided_view_v1`
+# The ONE-SIDED VIEW — `gen3_one_sided_view_v1` — DELETED (history)
 
-<!-- ALWAYS-CURRENT (this tree OWNS what it holds; see the root CLAUDE.md). State the truth, never
-narrate a change. The code is `src/rust_sim/src/view.rs` + `src/agents/battle/view_adapter.py`. -->
+> 🗄️ **DELETED in the Rust Core deletion pass (program §4 M2 rows, 2026-09-26).** `view.rs`, the
+> per-side reveal fold, `enable_view_fold`, the `view_pN` / `view_pN_at` payloads, `core_events
+> --views`' `views` / `truth`, `view_adapter.py`, `view_successor.py`, `event_fold.py` and the
+> search's `view` / `protocol` roads are gone: every search successor is a Rust-core version
+> (`present.md`, `encoder.md`) and slice V compares the core's reading, audited against the engine,
+> to the training `LiveView`. This document is kept as the RECORD of the projection, its reading
+> rules (V1–V13, still the ids slice V and `present/` use) and the poke-env findings it surfaced;
+> nothing below describes code that exists.
+
+<!-- HISTORY since the deletion pass: the code this described is deleted. -->
 
 The Rust search server emits, per arm, the **projection of its own board onto what one side has
 observed**, in exactly the shape `agents.battle.live_view.LiveView` holds — so a search

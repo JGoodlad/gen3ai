@@ -45,12 +45,12 @@
 //! {id, cmd:"expand_many", side?:"p1"|"p2", arms:[{node_id, p1_action, p2_action, seed,
 //!                                                 label, recorded_exact?, followup?}]}
 //!   → {id, ok, arms:[{label, node_id, ended, stuck, outcome, requests,
-//!                     choices_used, p1_chunks, p2_chunks, view_p1, view_p2}]}
+//!                     choices_used, p1_chunks, p2_chunks, core_p1?, core_p2?}]}
 //! {id, cmd:"close"} → {id, ok, bye:true}, then exit 0
 //! ```
 //!
 //! **`side` ELIDES the one-sided payload the caller will not read** (`SideWant`,
-//! `gen3_expand_many_side_elision_v1`): with `side:"p1"` the `p2_chunks` / `view_p2` fields are
+//! `gen3_expand_many_side_elision_v1`): with `side:"p1"` the `p2_chunks` / `core_p2` fields are
 //! OMITTED, which is 43.0% of the reply bytes on the banked search decisions. Omitting `side`
 //! is the default and renders the historical body byte-for-byte.
 //!
@@ -98,7 +98,6 @@ use pokesim::search::{
 };
 use pokesim::trackers::clock::ClockConfig;
 use pokesim::version::BattleVersion;
-use pokesim::view::one_sided_view;
 
 /// One explored node: a paused session, plus (root only) the record + the index of the
 /// first command turn T did not consume. Only the root carries those, so a depth-1
@@ -110,8 +109,9 @@ struct Node {
     rest_idx: usize,
 }
 
-/// A node's paused battle: a bare engine (the `protocol` / `view` roads), or a
-/// [`BattleVersion`] (`materializer=core`, `gen3_core_search_v1`) — the engine plus each side's
+/// A node's paused battle: a bare engine (a plain root — the prober's counterfactual, the
+/// replay verbs, `search_impl_parity`), or a [`BattleVersion`] (the search's core road,
+/// `gen3_core_search_v1`) — the engine plus each side's
 /// stream folded from its TEXT (`parse(render)`, the one observation path, program §6c), so a
 /// successor's view is the version's, not a projection beside it.
 enum NodeState {
@@ -120,7 +120,7 @@ enum NodeState {
 }
 
 impl Node {
-    /// The paused session of a `protocol` / `view` node. A core node holds a VERSION, whose engine
+    /// The paused session of a plain node. A core node holds a VERSION, whose engine
     /// is forked through [`BattleVersion::fork_session`] instead.
     fn engine(&self) -> Result<&BridgeSession, String> {
         match &self.state {
@@ -356,7 +356,6 @@ fn resolve_arm(
             TurnSource::from_replay_spec(p1_action, &q[0]),
             TurnSource::from_replay_spec(p2_action, &q[1]),
         ];
-        // A replay verb renders no view, so it captures none (and its session has no fold).
         resolve_turn_sourced_with(&mut sess, &mut sources, followup, &mut rng, dex, Capture::NONE)
     };
 
@@ -507,12 +506,7 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
     // A fresh root starts a fresh tree; drop the previous search's nodes. ids stay
     // monotonic (see `Server::fresh_id`).
     srv.nodes.clear();
-    // The view / protocol roads read `one_sided_view` at every node, so their tree folds
-    // reveals (`gen3_view_fold_opt_in_v1`); a core tree's view is the version's own.
     let mut sess = session_from_record(&rec, dex)?;
-    if !core {
-        sess.enable_view_fold()?;
-    }
     let rest_idx = build_to_turn(&mut sess, &rec, turn, dex)?;
 
     let requests = requests_json(&sess);
@@ -522,23 +516,15 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
     let p2 = chunk_array(&sess, 1);
 
     let node_id = srv.fresh_id();
-    // The core road has no use for the port's projection (its view is the version's own), so a
-    // core root renders none.
-    let views = if core {
-        String::new()
-    } else {
-        format!(",\"view_p1\":{},\"view_p2\":{}", one_sided_view(&sess, 0, dex)?, one_sided_view(&sess, 1, dex)?)
-    };
     let body = format!(
         "\"node_id\":{},\"requests\":{},\"recorded_choices\":{},\"pre_state\":{},\
-         \"prefix_p1_chunks\":{},\"prefix_p2_chunks\":{}{}",
+         \"prefix_p1_chunks\":{},\"prefix_p2_chunks\":{}",
         json_quote(&node_id),
         requests,
         recorded,
         ps,
         p1,
         p2,
-        views
     );
     let state = if core {
         let names = [rec.p1.name.clone(), rec.p2.name.clone()];
@@ -557,14 +543,13 @@ fn open_root(srv: &mut Server, req: &Json, dex: &Dex) -> Result<String, String> 
 // expand_many
 // ===========================================================================
 
-/// Which side's ONE-SIDED payload (`view_pN` + `pN_chunks`) the caller wants back —
+/// Which side's ONE-SIDED payload (`pN_chunks`, and on a core arm `core_pN`) the caller wants back —
 /// `gen3_expand_many_side_elision_v1`.
 ///
 /// # Why a request can ask for less than the driver knows
 ///
 /// Both are emitted because both are cheap to produce; neither is cheap to SHIP. A search runs
-/// for exactly one side, and `search::_expand_ply` reads `view_p1 if side == "p1" else view_p2`
-/// and the matching chunk array and nothing else — so the other side's ~13 KB per arm was
+/// for exactly one side and reads that side's payload and nothing else — so the other side's ~13 KB per arm was
 /// rendered, quoted, piped, `json.loads`-ed and dropped. Measured on 864 banked arms it was
 /// **43.0% of the reply bytes**
 /// (`designs/research_state/measurements/expand_many_2026-09-22/README.md`).
@@ -686,8 +671,7 @@ fn expand_arm(
             }
             let mut rng = aux_rng_from_seed(&seed);
             let spec = [ActionSpec::parse(&p1_action), ActionSpec::parse(&p2_action)];
-            // The view road renders `view_pN_at` from the D10 captures (its session folds).
-            resolve_turn_capturing(&mut sess, &spec, &followup, &mut rng, dex, Capture { views: true, sessions: false })
+            resolve_turn_capturing(&mut sess, &spec, &followup, &mut rng, dex, Capture::NONE)
         };
         (sess, resolved)
     };
@@ -703,24 +687,6 @@ fn expand_arm(
     let p1_chunks = want.wants(0).then(|| chunk_array(&sess, 0));
     let p2_chunks = want.wants(1).then(|| chunk_array(&sess, 1));
     clk_chunks.stop(&mut timings.chunks_us);
-
-    // `gen3_one_sided_view_v1` — the arm's resulting board, PROJECTED per side, beside the
-    // protocol text that used to be the only way to reach it. Rendered BEFORE `clear_chunks`
-    // below (which is chunk-only anyway; the reveal fold is cumulative and survives it).
-    let clk_view = ArmClock::start();
-    let view_p1 = want.wants(0).then(|| one_sided_view(&sess, 0, dex)).transpose()?;
-    let view_p2 = want.wants(1).then(|| one_sided_view(&sess, 1, dex)).transpose()?;
-    // D10 (`gen3_view_at_intermediate_v1`) — the boards at the decisions this ply resolved
-    // INTERNALLY, in order, per side. Empty on the ordinary arm; one entry when the ply's
-    // faint forced a replacement round, which the two roads otherwise describe one decision
-    // apart. Already rendered by `resolve_turn_sourced`; this only splices them in.
-    //
-    // They are ONE-SIDED payloads like the two above, so `side` elides them on the same terms:
-    // a caller that reads `view_p1_at` reads `view_p1`, and neither is shipped for the side it
-    // did not ask for.
-    let view_p1_at = want.wants(0).then(|| format!("[{}]", resolved.views_at[0].join(",")));
-    let view_p2_at = want.wants(1).then(|| format!("[{}]", resolved.views_at[1].join(",")));
-    clk_view.stop(&mut timings.view_us);
 
     let clk_tail = ArmClock::start();
     let used = format!(
@@ -739,11 +705,11 @@ fn expand_arm(
     };
     clk_tail.stop(&mut timings.render_us);
 
-    // 🚨 The four one-sided fields keep their HISTORICAL POSITIONS and order, so a `SideWant::Both`
-    // arm renders the same bytes it always did; only an elided side's field vanishes entirely.
+    // 🚨 The two one-sided fields keep their HISTORICAL POSITIONS and order; only an elided side's
+    // field vanishes entirely.
     Ok(format!(
         "{{\"label\":{},\"node_id\":{},\"ended\":{},\"stuck\":{},\"outcome\":{},\"requests\":{},\
-         \"choices_used\":{}{}{}{}{}{}{}}}",
+         \"choices_used\":{}{}{}}}",
         label,
         child_id.as_deref().map_or("null".to_string(), json_quote),
         ended,
@@ -753,10 +719,6 @@ fn expand_arm(
         used,
         opt_field("p1_chunks", p1_chunks.as_deref()),
         opt_field("p2_chunks", p2_chunks.as_deref()),
-        opt_field("view_p1", view_p1.as_deref()),
-        opt_field("view_p2", view_p2.as_deref()),
-        opt_field("view_p1_at", view_p1_at.as_deref()),
-        opt_field("view_p2_at", view_p2_at.as_deref()),
     ))
 }
 
@@ -807,7 +769,7 @@ fn expand_arm_core(
     let mut rng = aux_rng_from_seed(&seed);
     let spec = [ActionSpec::parse(&p1_action), ActionSpec::parse(&p2_action)];
     let mut resolved =
-        resolve_turn_capturing(&mut sess, &spec, &followup, &mut rng, dex, Capture { views: false, sessions: true });
+        resolve_turn_capturing(&mut sess, &spec, &followup, &mut rng, dex, Capture { sessions: true });
     let mut at = std::mem::take(&mut resolved.sessions_at);
     clk_sim.stop(&mut timings.sim_us);
 

@@ -58,23 +58,6 @@ ALLOWLIST = [
         "error TEXT only: Node returns `e.stack` (a JS stack trace), the port a plain "
         "message. The ok/ok:false VERDICT is still compared strictly.",
     ),
-    (
-        lambda p, exp, got: (p.endswith(".view_p1") or p.endswith(".view_p2"))
-        and exp == "<absent>",
-        "the port-only ONE-SIDED VIEW payload (`gen3_one_sided_view_v1`): node's "
-        "`search_driver.js` has no such field, so the ONLY divergence representable here is "
-        "`<absent>` vs present — a VALUE difference is NOT forgiven. If node ever grows one, "
-        "delete this entry and compare the field. Contract: designs/rust_sim/one_sided_view.md",
-    ),
-    (
-        lambda p, exp, got: (p.endswith(".view_p1_at") or p.endswith(".view_p2_at"))
-        and exp == "<absent>",
-        "the port-only INTERMEDIATE-DECISION boards (`gen3_view_at_intermediate_v1`, deferral "
-        "D10): the ordered view at each decision an arm resolved inside itself. Node's "
-        "`search_driver.js` has no such field, so — exactly as for `view_pN` above — the ONLY "
-        "divergence representable here is `<absent>` vs present, and a VALUE difference is NOT "
-        "forgiven. Contract: designs/rust_sim/one_sided_view.md",
-    ),
 ]
 
 

@@ -132,7 +132,6 @@ pub mod prng;
 pub mod protocol;
 pub mod search;
 pub mod state;
-pub mod view;
 /// The Rust core's persistent battle state (`gen3_core_version_v1`, Rust Core Program M2): one
 /// immutable version per decision boundary, buildable from the sim's step or from one side's text.
 pub mod version;

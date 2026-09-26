@@ -124,12 +124,12 @@ def test_the_golden_records_round_trip_and_reparse():
 # slice V — the TRUTH AUDIT: every decision's LiveView + LegalActions, both viewers
 # ---------------------------------------------------------------------------
 
-def _assert_views_clean(views: V.ViewCensus, min_decisions: int, min_truth: int) -> None:
+def _assert_views_clean(views: V.ViewCensus, min_decisions: int, min_board: int) -> None:
     print("\n" + views.render())
     assert not views.refused, views.render()
     assert not views.divergences, views.render()
     assert views.decisions >= min_decisions, f"only {views.decisions} decisions — vacuous"
-    assert sum(views.truth_checks.values()) >= min_truth, dict(views.truth_checks)
+    assert sum(views.board_checks.values()) >= min_board, dict(views.board_checks)
 
 
 def _baton_pass_battles():
@@ -138,19 +138,21 @@ def _baton_pass_battles():
 
 
 def test_commit_tier_views_equal_liveview():
-    """Slice V at the COMMIT tier: the projection (``one_sided_view`` + the named reading rules)
-    and the engine truth against the LiveView training builds, at every decision of every
+    """Slice V at the COMMIT tier: the core's ``present()`` view + legality (and its board audit
+    against the engine) against the LiveView training builds, at every decision of every
     in-scope battle, both viewers — the recorded battles INCLUDING the two Baton Pass ones."""
     views = V.ViewCensus()
     P.check_battles(P.commit_corpus(), P.Census(), views=views)
-    _assert_views_clean(views, min_decisions=1_700, min_truth=35_000)
+    _assert_views_clean(views, min_decisions=1_700, min_board=300_000)
     assert views.battles >= 13, f"only {views.battles} in-scope battles"
 
 
 def test_the_view_slice_catches_a_dropped_baton_pass(monkeypatch):
     """TEETH, the motivating class: re-introduce poke-env's pre-2026-08-23 behaviour (a Baton
     Pass carries NOTHING to the entrant) and the gate must FAIL on the SIM-FACT boosts of the
-    entrant AND on the engine-truth volatiles (the passed Substitute)."""
+    entrant AND on its volatiles (the passed Substitute) — against the CORE column, whose own view
+    the board audit holds to the engine (the port's projection + reading-vs-engine TRUTH checks
+    that used to catch this directly are deleted, program §4 M2)."""
     from poke_env.battle.pokemon import Pokemon
 
     monkeypatch.setattr(Pokemon, "apply_baton_pass", lambda self, snapshot: None)
@@ -158,8 +160,8 @@ def test_the_view_slice_catches_a_dropped_baton_pass(monkeypatch):
     P.check_battles(_baton_pass_battles(), P.Census(), views=views)
     keys = set(views.divergences)
     print(views.render())
-    assert any(k.startswith("[SIM-FACT]") and k.endswith(".boosts") for k in keys), keys
-    assert any(k.startswith("[TRUTH]") and k.endswith(".volatiles") for k in keys), keys
+    assert any(k.startswith("[core][SIM-FACT]") and k.endswith(".boosts") for k in keys), keys
+    assert any(k.startswith("[core]") and k.endswith(".volatiles") for k in keys), keys
 
 
 def test_the_view_slice_catches_a_misread_hazard_layer(monkeypatch):
@@ -180,7 +182,7 @@ def test_the_view_slice_catches_a_misread_hazard_layer(monkeypatch):
     monkeypatch.setattr(AbstractBattle, "_side_start", misread)
     views = V.ViewCensus()
     P.check_battles(P.load_commit_fixture(), P.Census(), views=views)
-    assert any(k.startswith("[SIM-FACT]") and k.endswith("side_conditions")
+    assert any(k.startswith("[core][SIM-FACT]") and k.endswith("side_conditions")
                for k in views.divergences), views.render()
 
 
@@ -237,7 +239,7 @@ def test_commit_tier_trackers_equal_episode_tracker():
     # the version's memo, and slice V is what holds that view to the reading
     P.check_battles(P.commit_corpus(), P.Census(), trackers=t, views=views)
     _assert_trackers_clean(t, min_decisions=1_700, min_rows=40_000)
-    _assert_views_clean(views, min_decisions=1_700, min_truth=35_000)
+    _assert_views_clean(views, min_decisions=1_700, min_board=300_000)
 
 
 def _commit_trackers_with(monkeypatch, target, name, fn) -> T.TrackerCensus:
@@ -438,7 +440,7 @@ def test_milestone_seeded_random_battles(seed):
     P.check_manifest()
     census, views, trackers, obs = _played(P.MILESTONE_RANDOM_KEYS[seed])
     _assert_clean(census, min_events=180_000, min_kinds=24)
-    _assert_views_clean(views, min_decisions=55_000, min_truth=1_200_000)
+    _assert_views_clean(views, min_decisions=55_000, min_board=1_200_000)
     _assert_trackers_clean(trackers, min_decisions=55_000, min_rows=1_500_000)
     _assert_obs_clean(obs, min_decisions=55_000)
 
@@ -450,7 +452,7 @@ def test_milestone_production_policy_battles(seed):
     model = P.load_production_policy()
     census, views, trackers, obs = _played(P.MILESTONE_POLICY_KEYS[seed], policy=model)
     _assert_clean(census, min_events=5_000, min_kinds=15)
-    _assert_views_clean(views, min_decisions=3_000, min_truth=50_000)
+    _assert_views_clean(views, min_decisions=3_000, min_board=50_000)
     _assert_trackers_clean(trackers, min_decisions=3_000, min_rows=80_000)
     _assert_obs_clean(obs, min_decisions=3_000)
 
@@ -473,7 +475,7 @@ def test_milestone_ladder_battles(seed):
     keys = [k for k in P.MILESTONE_LADDER_KEYS[seed] if k not in P.LADDER_KNOWN_DIVERGENCES]
     census, views, trackers, obs = _played(keys, source="ladder")
     _assert_clean(census, min_events=120_000, min_kinds=24)
-    _assert_views_clean(views, min_decisions=20_000, min_truth=500_000)
+    _assert_views_clean(views, min_decisions=20_000, min_board=500_000)
     _assert_trackers_clean(trackers, min_decisions=20_000, min_rows=500_000)
     _assert_obs_clean(obs, min_decisions=20_000)
 
