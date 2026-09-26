@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,416-line file. **The ledger itself is append-only and is never edited by this**;
+21,420-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**710 headings · 655 dated · 2026-08-01 → 2026-09-26 · ledger 21,416 lines.**
+**711 headings · 656 dated · 2026-08-01 → 2026-09-26 · ledger 21,420 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -730,3 +730,4 @@ rename.
   - `L21407` · `2026-09-26` · BUILD (MAJOR) · **THE OBSERVATION-ARCHITECTURE BATCH LANDS (`gen3_event_record_v2`, `b0a28b5b`; NEW TRAINING-INPUT BOUNDARY `b0a28b5b`). Mud/Water Sport slots, E4 refused-switch target, E10 parameter-free hidden-slot Smogon mixture, E12 event rows 22→30 columns + DENIED rows + entity REL edges. Obs 2501→2761; model v121; MIGRATION_FLOOR 121 — no existing checkpoint loads on HEAD; meters on existing checkpoints run pinned ≤ `56837827` until the new lineage's first run.**
   - `L21411` · `2026-09-26` · REGISTRATION · **THE NEW LINEAGE IS REGISTERED, NOT LAUNCHED — `ai_v14_01_base` (N0), a FRESH 75M run on the clean-input boundary `b0a28b5b` (pin `8d07051a`, obs 2761, v121, `--obs-source core`, `--arch production`, pool-only opponents), the fresh-root recipe of `ai_v13_02_flywheel_winprob` token-exact with four moves (run-name, pin, +`--arch production`, +`--obs-source core`); checkargs 0 unrecognized and ARCH surface ✓, dry-run FRESH, nothing created. The population loop carries with BOTH power levers up front: readers at `--eval-battles 200` (800 games each) and a POOLED read over R = 4 rounds, D = mean_r[gap(RB_r) − gap(RC_r)], fixed-effect Wald, bar max(F′, 5.0) with F′ re-measured from a round-0 seed pair — detection needs D ≲ −7.4 pp, power 0.69 at a true −8 and ≈ 0.92 at the old rounds' −9; no per-round verdict, no extension.**
   - `L21415` · `2026-09-26` · DECISION · **NEW LINEAGE: the owner resolves the registration's §8 decisions and gives GO (slow tier green at `955d8f68`).** R = 4 rounds; the WINDOW stable set; the untaught meter's new fixed opponent = N0's 24M snapshot; the 3.69 floor carried provisionally; the burn-in `ai_v13_33_core_burnin` stopped at launch (31M+ clean core-obs steps, 0 refusals, memory flat over 5 restarts, bots 93.0% at 142.0M); on a Rust-core frame refusal: repro, then resume on `--obs-source python` or idle the GPU while fixing, the orchestrator's call per incident; the `ai_v14` prefix. Launch `ai_v14_01_base` delegated to the Training Run session.
+  - `L21417` · `2026-09-26` · OPS · **RUST CORE DELETION PASS, M3: the SHAPED reward path is deleted (`e3ef16db`, `gen3_shaped_reward_deletion_v1`, config v122) — PBRS potentials, BIAS terms, the no-progress tax and 14 flags; the reward is the terminal alone. Production reward parity MEASURED unchanged.**
