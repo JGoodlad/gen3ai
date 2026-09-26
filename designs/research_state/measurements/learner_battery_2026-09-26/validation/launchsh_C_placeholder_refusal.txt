@@ -1,0 +1,2 @@
+FATAL: <wt>/designs/research_state/measurements/learner_battery_2026-09-26/argv_C.txt still carries the D_g placeholder. D_g is the orchestrator's (registration §3,
+       FINDING F-1): run  scripts/build_argvs.py --final --dg <D_g>  first.

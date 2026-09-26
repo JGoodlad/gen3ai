@@ -1,0 +1,1 @@
+FATAL: STANDIN=1 is a validation mode; it never launches

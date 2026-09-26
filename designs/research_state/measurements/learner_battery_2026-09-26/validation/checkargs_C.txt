@@ -1,0 +1,14 @@
+checked 134 flags from --argv
+  parser                         : the PINNED commit 2cc83080's — --pin-commit in the argv
+  ✅ argv validated against PINNED parser @2cc83080 via the pinned build_parser() [mode=build_parser, 600 options, 3.0s]
+  accepted by the PINNED parser  : 132
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  resolved against the FORK PARENT: /home/goodlad/dev/gen3ai/models/ai_v14_01_base/model_config.json
+      56 unset flag(s) INHERITED from it — the checks below read the EFFECTIVE config, not the argv
+  [ForkLR] ✓ this fork names its own dose (--fork-lr 0.00043 --fork-lr-freeze)
+  shaped-reward parent             : none (no --model, or its reward was the terminal alone)
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@9598ca3554ca]
+    ✓ every ARCH-surface key matches the production mirror (39 of 51 registry toggles are the ARCH surface; 9 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  ✓ this command still launches (its own commit's parser accepts every flag)

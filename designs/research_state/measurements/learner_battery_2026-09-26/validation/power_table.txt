@@ -1,0 +1,8 @@
+Untaught-8 Δ between two refs, Wald on game noise alone (conservative vs the meter's cluster
+bootstrap, which read half-widths of 2.2–2.9 pp at 200 games/team in the old lineage).
+games/team  per ref  SE pp  hw pp | NON-INFERIORITY (CI low > −3.69) P(pass | true Δ) | SUPERIORITY P(OUTSIDE ABOVE | true Δ) | EQUIV P(| 0)
+       200     1600   1.73   3.39 | +0.00:0.57 -1.00:0.34 -2.00:0.16 -3.69:0.03 | +4:0.04 +6:0.27 +8:0.70 +10:0.95 | 0.14
+       400     3200   1.22   2.40 | +0.00:0.85 -1.00:0.59 -2.00:0.28 -3.69:0.03 | +4:0.04 +6:0.47 +8:0.94 +10:1.00 | 0.71
+       600     4800   1.00   1.96 | +0.00:0.96 -1.00:0.77 -2.00:0.39 -3.69:0.03 | +4:0.05 +6:0.64 +8:0.99 +10:1.00 | 0.92
+
+SmallRL G-A guard, 1,200 games per model at p ~ 0.5: Δ SE 2.04 pp, hw 4.00; the KILL needs Δ < −11.0 with the CI's top below it, i.e. a point below ≈ −15.0 pp — a guard against a gross loss only.

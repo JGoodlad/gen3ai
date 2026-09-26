@@ -1,0 +1,12 @@
+== C  ai_v14_01_base  rollouts 16 (4,030,464 .. 5,603,328)  n_epochs None  gae_lambda None  lr 0.00043200000072829425
+   median iteration 182.0 s   update 56.2 s   update share 0.309
+   approx_kl     by epoch: NO SCALAR (pre-2cc83080 tree) — absence is not a zero
+   clip_fraction by epoch: NO SCALAR (pre-2cc83080 tree) — absence is not a zero
+   [STALL LOGGED] 316 over 1,671,168 steps = 189.1 per 1M
+== X  ai_v14_01_base  rollouts 16 (4,030,464 .. 5,603,328)  n_epochs None  gae_lambda None  lr 0.00043200000072829425
+   median iteration 182.0 s   update 56.2 s   update share 0.309
+   approx_kl     by epoch: NO SCALAR (pre-2cc83080 tree) — absence is not a zero
+   clip_fraction by epoch: NO SCALAR (pre-2cc83080 tree) — absence is not a zero
+   [STALL LOGGED] 316 over 1,671,168 steps = 189.1 per 1M
+   SPEED vs C: S = +0.00 % [-1.32, +1.33]  (= +0.0 % steps per GPU-hour); measured iteration ratio 1.000 (descriptor)
+== FUTILITY (X): STOP — projected S < 2.5 %, the 5 % bar is out of reach

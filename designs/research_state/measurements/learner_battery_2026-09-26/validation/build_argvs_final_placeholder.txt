@@ -1,0 +1,21 @@
+== base ai_v14_01_base: 235 tokens; C: 233 tokens
+   C vs base  --arch: ['production'] -> None
+   C vs base  --bias-additivity: ['1.0'] -> None
+   C vs base  --checkpoint-every-steps: None -> ['500000']
+   C vs base  --fork-lr: None -> ['__DG__']
+   C vs base  --fork-lr-freeze: None -> []
+   C vs base  --mat-alive-weight: ['1.25'] -> None
+   C vs base  --matmul-precision: None -> ['highest']
+   C vs base  --model: None -> ['models/ai_v14_01_base/final_model.zip']
+   C vs base  --no-hand-shaping: [] -> None
+   C vs base  --no-progress-penalty: ['0.15'] -> None
+   C vs base  --pin-commit: ['8d07051aa767331cfa1ca2292029d5217cbf6d40'] -> ['2cc830804a72824dbb1870d7e1f278f9e1370ff5']
+   C vs base  --policy-gae-lambda: None -> ['0.8']
+   C vs base  --run-name: ['ai_v14_01_base'] -> ['ai_v14_02_lbat_ctrl']
+   C vs base  --self-ko-hp-penalty: ['0.0'] -> None
+   C vs base  --steps: ['75000000'] -> ['83005952']
+   C vs base  --switch-bias-weight: ['0.0'] -> None
+   E5  vs C   --fork-lr: ['__DG__'] -> ['__2DG__']; --n-epochs: ['10'] -> ['5']; --run-name: ['ai_v14_02_lbat_ctrl'] -> ['ai_v14_03_lbat_e5']
+   T32 vs C   --matmul-precision: ['highest'] -> ['high']; --run-name: ['ai_v14_02_lbat_ctrl'] -> ['ai_v14_04_lbat_t32']
+   L95 vs C   --policy-gae-lambda: ['0.8'] -> ['0.95']; --run-name: ['ai_v14_02_lbat_ctrl'] -> ['ai_v14_05_lbat_l95']
+wrote <wt>/designs/research_state/measurements/learner_battery_2026-09-26/argv_C.txt, <wt>/designs/research_state/measurements/learner_battery_2026-09-26/argv_E5.txt, <wt>/designs/research_state/measurements/learner_battery_2026-09-26/argv_T32.txt, <wt>/designs/research_state/measurements/learner_battery_2026-09-26/argv_L95.txt

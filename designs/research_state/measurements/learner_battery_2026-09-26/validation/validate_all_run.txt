@@ -1,0 +1,36 @@
+=== build_argvs --standin (models/ai_v14_01_base/checkpoints/checkpoint_4800000_steps.zip @ 4800000, D_g 4.3e-04) + --final (placeholder) (2026-09-26T11:37:32-07:00)
+    rc=0
+    rc=0
+=== C: checkargs (2026-09-26T11:37:32-07:00)
+    rc=0
+=== C: launcher --dry-run (2026-09-26T11:37:37-07:00)
+    rc=0
+=== C: STANDIN=1 launch_arm.sh --dry-run (2026-09-26T11:37:42-07:00)
+    rc=0
+=== E5: checkargs (2026-09-26T11:37:53-07:00)
+    rc=0
+=== E5: launcher --dry-run (2026-09-26T11:37:59-07:00)
+    rc=0
+=== E5: STANDIN=1 launch_arm.sh --dry-run (2026-09-26T11:38:04-07:00)
+    rc=0
+=== T32: checkargs (2026-09-26T11:38:16-07:00)
+    rc=0
+=== T32: launcher --dry-run (2026-09-26T11:38:21-07:00)
+    rc=0
+=== T32: STANDIN=1 launch_arm.sh --dry-run (2026-09-26T11:38:27-07:00)
+    rc=0
+=== L95: checkargs (2026-09-26T11:38:38-07:00)
+    rc=0
+=== L95: launcher --dry-run (2026-09-26T11:38:43-07:00)
+    rc=0
+=== L95: STANDIN=1 launch_arm.sh --dry-run (2026-09-26T11:38:49-07:00)
+    rc=0
+=== the committed placeholder argv must REFUSE (2026-09-26T11:38:56-07:00)
+    rc=2 (expected 2)
+=== STANDIN without --dry-run must REFUSE
+    rc=2 (expected 2)
+=== readers: speed_read on N0 (identity pair; bots-only window and self-play window), power table
+    rc=0
+    rc=0
+    rc=0
+=== models/ untouched (282 entries; no ai_v14_0[2-5]_lbat_* dir); summed rc of the checks = 0

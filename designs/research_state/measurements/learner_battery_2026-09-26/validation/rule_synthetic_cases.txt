@@ -1,0 +1,13 @@
+== SYNTH_E5_pass (speed)  untaught Δ vs C = -0.60 [-2.90, +1.70] pp -> EQUIVALENT; non-inferior at −3.69: YES
+   speed S = +14.10 % [+13.20, +15.00] -> PASSES the 5 % bar
+   VERDICT: ADOPT — speed passes, per-step non-inferior, guards clean
+== SYNTH_E5_ni_fail (speed)  untaught Δ vs C = -2.00 [-4.50, +0.40] pp -> NOT DETECTED; non-inferior at −3.69: NO
+   speed S = +14.10 % [+13.20, +15.00] -> PASSES the 5 % bar
+   VERDICT: NOT ADOPTED — per-step non-inferiority not shown (NOT DETECTED)
+== SYNTH_T32_slow (speed)  untaught Δ vs C = +0.30 [-2.00, +2.60] pp -> EQUIVALENT; non-inferior at −3.69: YES
+   speed S = +1.20 % [+0.80, +1.60] -> FAILS the 5 % bar
+   VERDICT: NOT ADOPTED — speed below the bar
+== SYNTH_L95_up (quality)  untaught Δ vs C = +7.10 [+4.60, +9.50] pp -> OUTSIDE, ABOVE; non-inferior at −3.69: YES
+   VERDICT: ADOPT — untaught OUTSIDE ABOVE, guards clean
+== SYNTH_L95_nd (quality)  untaught Δ vs C = +3.00 [+0.60, +5.40] pp -> NOT DETECTED; non-inferior at −3.69: YES
+   VERDICT: NOT ADOPTED — untaught NOT DETECTED (a change needs evidence; the status quo holds); stall ratio 2.1 > 1.5 (or not read)
