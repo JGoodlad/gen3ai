@@ -305,6 +305,14 @@ queued (the Metamon team files are not under `data/` today; verify where the rep
 
 ## 8. Decisions that are the OWNER's (recommendation beside each; none is decided here)
 
+> **RESOLVED by the owner, 2026-09-26 ~07:00 PT (added after registration, before launch):** (1) R = 4
+> rounds; (2) the WINDOW stable set; (3) the untaught meter's new fixed opponent = N0's 24M snapshot
+> under a new baseline name; (4) carry the 3.69 floor provisionally; (5) stop the burn-in at launch;
+> (6) on a Rust-core `__OBS__` refusal: save the repro, then EITHER resume on `--obs-source python`
+> (byte-identical inputs by construction) OR leave the GPU idle while the core is fixed — the
+> orchestrator's call per incident (the registration's "wait" recommendation was withdrawn);
+> (7) the `ai_v14` prefix.
+
 1. **R = 4 vs R = 5** (power at a true −8: 0.69 vs 0.78; +18 GPU-h). *Recommend R = 4:* it detects the old
    rounds' size (≈ −9) at ≥ 0.90 and keeps the loop under a week.
 2. **The stable-set WINDOW (§5.1) vs the old ACCUMULATING set.** *Recommend the window:* constant 0.12
