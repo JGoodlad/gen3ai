@@ -141,10 +141,13 @@ def test_no_linear_reads_a_raw_event_id():
     # column to `EventCol` fails this classification until someone decides its routing.
     ID_COLS = {C.TYPE: "kind_emb", C.ACTOR_SPECIES: "species", C.TARGET_SPECIES: "species",
                C.MOVE: "move", C.STATUS: "status_emb", C.CANT: "cant_emb",
-               C.FAINT_CAUSE: "faint_emb", C.ITEM_TRANSITION: "itemtr_emb"}
+               C.FAINT_CAUSE: "faint_emb", C.ITEM_TRANSITION: "itemtr_emb",
+               # gen3_event_record_v2 (E12)
+               C.REL_SPECIES: "species", C.ENTRY: "entry_emb", C.DENIAL: "denial_emb",
+               C.CALLER: "move", C.STAT: "stat_emb"}
     SCALAR_COLS = {C.ACTOR_SIDE, C.MAGNITUDE, C.OUT_HIT, C.OUT_MISS, C.OUT_FAIL, C.CRIT,
                    C.EFF_NEUTRAL, C.EFF_SUPER, C.EFF_RESIST, C.EFF_IMMUNE, C.WE_FIRST,
-                   C.TURNS_AGO, C.FORCED_WINDOW}
+                   C.TURNS_AGO, C.FORCED_WINDOW, C.REL_SIDE, C.LAYERS, C.PURSUIT_SWITCH}
     VALID_COL = {C.VALID}
     assert set(ID_COLS) | SCALAR_COLS | VALID_COL == set(range(EVENT_TOKEN_DIM)), (
         "every event column must be classified as an embedded id, a raw scalar, or the pad flag — "
@@ -152,5 +155,6 @@ def test_no_linear_reads_a_raw_event_id():
     assert es._N_SCALARS == len(SCALAR_COLS), (
         f"EventSeats says {es._N_SCALARS} raw scalars, the column map says {len(SCALAR_COLS)} — "
         "if a column changed routing, one of the two was not updated")
-    for attr in ("kind_emb", "status_emb", "cant_emb", "faint_emb", "itemtr_emb"):
+    for attr in ("kind_emb", "status_emb", "cant_emb", "faint_emb", "itemtr_emb",
+                 "entry_emb", "denial_emb", "stat_emb"):
         assert hasattr(es, attr), f"EventSeats lost its {attr} table"

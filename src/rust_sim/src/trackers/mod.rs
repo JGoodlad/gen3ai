@@ -168,7 +168,8 @@ impl SideTrackers {
     /// `record_context` then `advance_window`, exactly the live cadence (`Gen3Env.embed_battle`:
     /// `record(battle, mask, legal)` → `update_progress_clock(battle, legal)`).
     pub fn decide(&mut self, live: &OneSidedView, legal: Option<&LegalActions>, pending: &[Reading],
-                  opp_last_damaging: Option<turnview::DamagingMove>, dex: &Dex) -> CoreResult<()> {
+                  opp_last_damaging: Option<turnview::DamagingMove>, dex: &Dex,
+                  attempted_switch: Option<&str>) -> CoreResult<()> {
         for r in pending {
             self.wish.fold(r);
             self.sleep.fold(r);
@@ -196,7 +197,7 @@ impl SideTrackers {
         self.recency.update(turn, win, species(&live.ours, false).as_deref(), species(&live.opp, false).as_deref());
         let (oa, pa) = (species(&live.ours, true), species(&live.opp, true));
         self.pair.update(turn, win, oa.as_deref(), pa.as_deref(), dex);
-        self.window.update(turn, win, oa.as_deref(), pa.as_deref())?;
+        self.window.update(turn, win, oa.as_deref(), pa.as_deref(), attempted_switch)?;
         // --- the label (for the decision this window closes) and the obs-side wish flags ---
         self.prev_frame = std::mem::take(&mut self.opp_frame);
         self.label = Some(IntentLabel::build(&d, &self.prev_frame));
@@ -297,6 +298,8 @@ pub struct TrackerState {
     pending: Vec<Reading>,
     /// The latest decision this stream took.
     pub last: Option<Decision>,
+    /// The latest choice token this side sent (E4: a refused switch's target is resolved from it).
+    last_choice: Option<String>,
 }
 
 impl TrackerState {
@@ -306,6 +309,7 @@ impl TrackerState {
             record: Some(record::RecordBuilder::new(viewer)),
             pending: Vec::new(),
             last: None,
+            last_choice: None,
         }
     }
 
@@ -347,6 +351,7 @@ impl TrackerState {
         if let Some(r) = self.record.as_mut() {
             r.choose(token);
         }
+        self.last_choice = Some(token.to_string());
     }
 
     /// After the board took a `|request|` line (stream index `line`): if it opens a DECISION of this
@@ -370,10 +375,32 @@ impl TrackerState {
             move_id: Some(d.move_id.clone()),
             effectiveness: Some(d.effectiveness),
         });
-        std::sync::Arc::make_mut(&mut self.trackers).decide(&view, Some(&legal), &pending, dm, dex())?;
+        // E4 (gen3_event_record_v2): the species our previous choice tried to switch to — the target
+        // a refused switch aimed at, which the server's `|error|` does not name.
+        let attempted = self.last_choice.as_deref().and_then(|t| attempted_switch_species(br, t));
+        std::sync::Arc::make_mut(&mut self.trackers).decide(&view, Some(&legal), &pending, dm, dex(), attempted.as_deref())?;
         let window = self.record.as_mut().map(|r| std::sync::Arc::new(r.take()));
         let reward = reward(&view);
         self.last = Some(Decision { line, window, reward, view: Some(view) });
         Ok(())
     }
+}
+
+/// E4: the species a `switch …` choice token names, resolved against this side's reading — `switch N`
+/// is the N-th mon of the latest request's `side.pokemon` (Showdown's 1-based order), `switch <name>`
+/// the team mon of that nickname (or species). `None` for any other token.
+pub fn attempted_switch_species(br: &crate::present::BoardReading, token: &str) -> Option<String> {
+    let rest = token.trim().strip_prefix("switch ")?.trim();
+    if let Ok(n) = rest.parse::<usize>() {
+        let req = br.last_request.as_ref()?;
+        let crate::core_events::jsonval::Val::Arr(mons) = req.get("side")?.get("pokemon")? else { return None };
+        let ident = mons.get(n.checked_sub(1)?)?.str_at("ident")?;
+        let name = ident.split_once(": ").map_or(ident, |(_, nm)| nm);
+        return br.team.iter().find(|(_, m)| m.name.as_deref() == Some(name)).map(|(_, m)| m.species.clone());
+    }
+    br.team
+        .iter()
+        .find(|(_, m)| m.name.as_deref() == Some(rest))
+        .or_else(|| br.team.iter().find(|(_, m)| m.species == crate::core_events::to_id(rest)))
+        .map(|(_, m)| m.species.clone())
 }

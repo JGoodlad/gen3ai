@@ -6,7 +6,10 @@
 #![allow(dead_code)]
 
 /// `Gen3ObservationEncoder.dimension` — the flat row's length.
-pub const OBS_DIM: usize = 2501;
+pub const OBS_DIM: usize = 2761;
+/// The `<f4` wire frame's head, which spells the row's shape (`wire.rs`); generated so a
+/// layout change moves it with `OBS_DIM` instead of failing a hand-written assert.
+pub const FRAME_HEAD: &str = "{\"dtype\":\"<f4\",\"shape\":[2761],\"b64\":\"";
 pub const POKEMON_SPECIES_OFFSET: usize = 0;
 pub const POKEMON_ITEMS_OFFSET: usize = 7;
 pub const POKEMON_TYPES_OFFSET: usize = 10;
@@ -46,8 +49,8 @@ pub const CONDITION_DIM: usize = 7;
 pub const STATS_DIM: usize = 6;
 pub const POKEMON_COUNTER_DIM: usize = 2;
 pub const BOOSTS_DIM: usize = 14;
-pub const VOLATILES_DIM: usize = 44;
-pub const ACTIVE_CONTEXT_DIM: usize = 58;
+pub const VOLATILES_DIM: usize = 46;
+pub const ACTIVE_CONTEXT_DIM: usize = 60;
 pub const WEATHER_ONEHOT_DIM: usize = 5;
 pub const CLOCK_DIM: usize = 3;
 pub const CLOCK_OFFSET_IN_GLOBAL: usize = 9;
@@ -60,17 +63,17 @@ pub const REACTIVE_DIM: usize = 17;
 pub const PAIR_HISTORY_CELL_DIM: usize = 5;
 pub const PAIR_HISTORY_DIM: usize = 180;
 pub const EVENT_WINDOW_N: usize = 32;
-pub const EVENT_TOKEN_DIM: usize = 22;
-pub const EVENT_WINDOW_DIM: usize = 704;
+pub const EVENT_TOKEN_DIM: usize = 30;
+pub const EVENT_WINDOW_DIM: usize = 960;
 pub const TEAM_SIZE: usize = 6;
 pub const NUM_POKEMON: usize = 12;
 pub const OFFSET_OUR_TEAM: usize = 0;
 pub const OFFSET_OPP_TEAM: usize = 732;
 pub const OFFSET_CONTEXT: usize = 1464;
-pub const OFFSET_GLOBAL: usize = 1580;
-pub const OFFSET_REACTIVE: usize = 1600;
-pub const OFFSET_PAIR_HISTORY: usize = 1617;
-pub const OFFSET_EVENT_WINDOW: usize = 1797;
+pub const OFFSET_GLOBAL: usize = 1584;
+pub const OFFSET_REACTIVE: usize = 1604;
+pub const OFFSET_PAIR_HISTORY: usize = 1621;
+pub const OFFSET_EVENT_WINDOW: usize = 1801;
 pub const MAX_TURNS: usize = 250;
 pub const MAX_SPIKES: usize = 3;
 pub const MAX_PP: usize = 64;
@@ -85,12 +88,22 @@ pub const EVENT_T_ITEM_REVEAL: usize = 7;
 pub const EVENT_T_HAZARD: usize = 8;
 pub const EVENT_T_SWITCH_REJECTED: usize = 9;
 pub const EVENT_T_CANT: usize = 10;
-pub const N_EVENT_TYPES: usize = 11;
+pub const EVENT_T_DENIED: usize = 11;
+pub const N_EVENT_TYPES: usize = 12;
 pub const ITEM_TR_NONE: usize = 0;
 pub const ITEM_TR_REVEALED: usize = 1;
 pub const ITEM_TR_CONSUMED: usize = 2;
 pub const ITEM_TR_REMOVED: usize = 3;
 pub const ITEM_TR_SWAPPED: usize = 4;
+pub const ITEM_TR_RECEIVED: usize = 5;
+pub const ENTRY_NONE: usize = 0;
+pub const ENTRY_CHOSEN: usize = 1;
+pub const ENTRY_REPLACEMENT: usize = 2;
+pub const ENTRY_DRAG: usize = 3;
+pub const ENTRY_BATON_PASS: usize = 4;
+pub const DENIAL_NONE: usize = 0;
+pub const DENIAL_FAINTED_FIRST: usize = 1;
+pub const DENIAL_TURN_CUT: usize = 2;
 
 /// `constants.EventCol` — the 22 columns of one event row, by name.
 pub const EV_TYPE: usize = 0;
@@ -115,15 +128,23 @@ pub const EV_VALID: usize = 18;
 pub const EV_CANT: usize = 19;
 pub const EV_FAINT_CAUSE: usize = 20;
 pub const EV_ITEM_TRANSITION: usize = 21;
+pub const EV_REL_SPECIES: usize = 22;
+pub const EV_REL_SIDE: usize = 23;
+pub const EV_ENTRY: usize = 24;
+pub const EV_DENIAL: usize = 25;
+pub const EV_CALLER: usize = 26;
+pub const EV_STAT: usize = 27;
+pub const EV_LAYERS: usize = 28;
+pub const EV_PURSUIT_SWITCH: usize = 29;
 
 /// `constants.EVENT_STATUS_IDS` (the event row's STATUS column) — also `pokemon._STATUS_STR_IDX`.
 pub static EVENT_STATUS_IDS: [(&str, usize); 6] = [("brn", 1), ("par", 2), ("slp", 3), ("frz", 4), ("psn", 5), ("tox", 6)];
 pub static CONDITION_STATUS_IDX: [(&str, usize); 6] = [("brn", 1), ("par", 2), ("slp", 3), ("frz", 4), ("psn", 5), ("tox", 6)];
 
 /// `gen3_effects.VOLATILE_SLOTS` — the active context's volatile columns, in order.
-pub static VOLATILE_SLOTS: [&str; 44] = ["attract", "bide", "charge", "confusion", "curse", "defensecurl", "destinybond", "disable", "doomdesire", "encore", "endure", "flashfire", "flinch", "focusenergy", "focuspunch", "followme", "foresight", "futuresight", "grudge", "helpinghand", "imprison", "ingrain", "leechseed", "lockedmove", "lockon", "magiccoat", "minimize", "mustrecharge", "nightmare", "partiallytrapped", "protect", "pursuit", "rage", "snatch", "struggle", "substitute", "taunt", "torment", "trapped", "uproar", "yawn", "ability_activated", "perish", "stockpile"];
+pub static VOLATILE_SLOTS: [&str; 46] = ["attract", "bide", "charge", "confusion", "curse", "defensecurl", "destinybond", "disable", "doomdesire", "encore", "endure", "flashfire", "flinch", "focusenergy", "focuspunch", "followme", "foresight", "futuresight", "grudge", "helpinghand", "imprison", "ingrain", "leechseed", "lockedmove", "lockon", "magiccoat", "minimize", "mustrecharge", "nightmare", "partiallytrapped", "protect", "pursuit", "rage", "snatch", "struggle", "substitute", "taunt", "torment", "trapped", "uproar", "yawn", "ability_activated", "perish", "stockpile", "mudsport", "watersport"];
 /// `gen3_effects.GEN3_VOLATILE_TO_SLOT` — (id, slot index, value), sorted by id.
-pub static VOLATILE_TO_SLOT: [(&str, usize, f64); 68] = [
+pub static VOLATILE_TO_SLOT: [(&str, usize, f64); 70] = [
     ("attract", 0, 1.0),
     ("bide", 1, 1.0),
     ("bind", 29, 1.0),
@@ -159,6 +180,7 @@ pub static VOLATILE_TO_SLOT: [(&str, usize, f64); 68] = [
     ("magmaarmor", 41, 1.0),
     ("mindreader", 24, 1.0),
     ("minimize", 26, 1.0),
+    ("mudsport", 44, 1.0),
     ("mustrecharge", 27, 1.0),
     ("nightmare", 28, 1.0),
     ("oblivious", 41, 1.0),
@@ -188,6 +210,7 @@ pub static VOLATILE_TO_SLOT: [(&str, usize, f64); 68] = [
     ("trapped", 38, 1.0),
     ("uproar", 39, 1.0),
     ("vitalspirit", 41, 1.0),
+    ("watersport", 45, 1.0),
     ("waterveil", 41, 1.0),
     ("whirlpool", 29, 1.0),
     ("wrap", 29, 1.0),
@@ -197,8 +220,9 @@ pub static VOLATILE_TO_SLOT: [(&str, usize, f64); 68] = [
 pub static NOT_A_VOLATILE: [&str; 7] = ["focusband", "healbell", "magnitude", "mist", "safeguard", "spite", "typechange"];
 /// `gen3_effects.CANT_REASONS_LIVE` — the event row's CANT column is 1 + the index.
 pub static CANT_REASONS_LIVE: [&str; 13] = ["slp", "frz", "par", "flinch", "recharge", "attract", "disable", "taunt", "imprison", "focuspunch", "nopp", "truant", "damp"];
-/// `turn_view.FAINT_CAUSE_VOCAB` — the event row's FAINT_CAUSE column is 1 + the index.
-pub static FAINT_CAUSE_VOCAB: [&str; 8] = ["attack", "hazard", "weather", "status", "recoil", "selfko", "leechseed", "other"];
+/// `turn_view.FAINT_CAUSE_VOCAB_LIVE` — the event row's FAINT_CAUSE column is 1 + the index
+/// (the archive's eight + `destinybond` / `perishsong`, gen3_event_record_v2).
+pub static FAINT_CAUSE_VOCAB: [&str; 10] = ["attack", "hazard", "weather", "status", "recoil", "selfko", "leechseed", "other", "destinybond", "perishsong"];
 
 /// `TypeEncoder.TYPE_TO_IDX` — keyed by the `PokemonType` NAME the per-mon block reads
 /// (`THREE_QUESTION_MARKS` is NOT a key: a `???`-typed mon reads 0, as in Python), and by the

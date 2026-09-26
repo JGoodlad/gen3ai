@@ -162,13 +162,16 @@ NOT_A_VOLATILE: Dict[str, str] = {
                   "both. A volatile bit would duplicate the type block",
 }
 
-# NOT HERE, ON PURPOSE: two derived lines land as the id ``unknown`` because poke-env's ``Effect``
-# enum has no member for them — gen3 Mud Sport (``-start|<mon>|Mud Sport``) and Water Sport
-# (``-start|<mon>|move: Water Sport``). Both are real PERSISTENT volatiles on the user (halve
-# Electric / Fire moves while it is active) with no slot, so their only correct classification
-# changes the obs layout — the OWNER's call. They still RAISE; the derivation test holds them in
-# ``gen3_effect_sources.PENDING_OWNER_LINES`` so no other line can start landing as ``unknown``
-# unnoticed. Seen in 0 of 22,862 Metamon hl_05_26 gen3ou teams (2026-09-24); not in the pool.
+# FIELD SPORTS (``gen3_field_sport_slots_v1``). gen3 Mud Sport (``-start|<mon>|Mud Sport``) and Water
+# Sport (``-start|<mon>|move: Water Sport``) are PERSISTENT volatiles on the USER, verified on the
+# vendored sim (``data/mods/gen4/moves.ts`` over the gen5 base, which the gen3 dex inherits):
+# ``volatileStatus`` (not the gen5+ pseudo-weather), no ``duration`` — they last until the holder
+# leaves the field (a switch or a faint clears them, silently: no ``-end`` line) — and
+# ``noCopy: false``, so BATON PASS CARRIES them to the receiver, again with no line (poke-env's
+# ``BATON_PASS_COPIED_EFFECTS`` reconstructs it). While the holder is active, ``onAnyBasePower``
+# halves the base power of EVERY Electric (Mud Sport) / Fire (Water Sport) move, whoever uses it —
+# the holder's own included. Appended as the LAST two slots so every earlier index is unchanged.
+_SPORT_VOLATILES: Tuple[str, ...] = ("mudsport", "watersport")
 
 # Counter volatiles — every stage maps to the one normalised counter slot. poke-env
 # id-forms (confirmed against the Effect enum): Perish ``perish0..3``, Stockpile
@@ -187,7 +190,7 @@ _TRAP_VARIANTS: Tuple[str, ...] = (
 # is a retrain). Binary slots, the single collapsed ability-activation slot, then the two
 # collapsed counter slots.
 VOLATILE_SLOTS: Tuple[str, ...] = (
-    _BINARY_VOLATILES + (_ABILITY_ACTIVATED_SLOT, "perish", "stockpile")
+    _BINARY_VOLATILES + (_ABILITY_ACTIVATED_SLOT, "perish", "stockpile") + _SPORT_VOLATILES
 )
 VOLATILE_DIM: int = len(VOLATILE_SLOTS)
 _SLOT_INDEX: Dict[str, int] = {name: i for i, name in enumerate(VOLATILE_SLOTS)}
@@ -195,7 +198,7 @@ _SLOT_INDEX: Dict[str, int] = {name: i for i, name in enumerate(VOLATILE_SLOTS)}
 # id-form (as LiveView emits) -> (slot_name, value to write). Binary → 1.0; counters →
 # normalised level; ability activations → the one shared ability_activated slot.
 GEN3_VOLATILE_TO_SLOT: Dict[str, Tuple[str, float]] = {}
-for _v in _BINARY_VOLATILES:
+for _v in _BINARY_VOLATILES + _SPORT_VOLATILES:
     GEN3_VOLATILE_TO_SLOT[_v] = (_v, 1.0)
 for _v in _ABILITY_ACTIVATION_VOLATILES:
     GEN3_VOLATILE_TO_SLOT[_v] = (_ABILITY_ACTIVATED_SLOT, 1.0)
@@ -224,9 +227,9 @@ def encode_volatiles(volatiles: Iterable[str]) -> np.ndarray:
                 continue
             raise UnknownVolatileError(
                 "volatile 'unknown': poke-env's Effect enum has no member for this protocol "
-                "effect (Effect.UNKNOWN). In gen3 the derived cases are Mud Sport and Water "
-                "Sport, persistent states awaiting the OWNER's layout decision "
-                "(gen3_effect_sources.PENDING_OWNER_LINES); anything else is a new gap"
+                "effect (Effect.UNKNOWN). No derived gen3 line lands here (the last two, Mud "
+                "Sport / Water Sport, got slots in gen3_field_sport_slots_v1), so this is a new "
+                "gap: add the Effect member and classify it"
                 if vid == "unknown" else
                 f"volatile {vid!r} has no gen3 encoding slot — classify it in "
                 f"gen3_effects.py (a slot, or NOT_A_VOLATILE with where its information "

@@ -11,6 +11,7 @@ import torch
 
 from agents.battle.battle_event import BattleEvent, EventKind, OURS, OPP
 from agents.observation.constants import (
+    EVENT_T_DENIED,
     EVENT_T_BOOST, EVENT_T_CANT, EVENT_T_FAINT, EVENT_T_MOVE, EVENT_T_STATUS_APPLIED,
     EVENT_T_SWITCH_IN, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N, OFFSET_EVENT_WINDOW,
     EVENT_EFF_GROUP, EVENT_OUTCOME_GROUP, EventCol as C,
@@ -48,8 +49,12 @@ def test_fold_attaches_modifiers_and_is_seq_idempotent():
     t.update(4, _basic_events(), "tyranitar", None)    # replay: nothing may double
     w = t.window()
     kinds = [r["t"] for r in w]
+    # gen3_event_record_v2 (E12): turn 4 is a faint of a turn ACTOR that never acted, so the
+    # fold also records its DENIAL (fainted first) and the TURN CUT it forces on our actor.
     assert kinds == [EVENT_T_SWITCH_IN, EVENT_T_SWITCH_IN, EVENT_T_MOVE, EVENT_T_MOVE,
-                     EVENT_T_STATUS_APPLIED, EVENT_T_BOOST, EVENT_T_FAINT]
+                     EVENT_T_STATUS_APPLIED, EVENT_T_BOOST, EVENT_T_FAINT,
+                     EVENT_T_DENIED, EVENT_T_DENIED]
+    assert [(r["actor"], r["denial"]) for r in w[7:]] == [("skarmory", 1), ("tyranitar", 2)]
     our_move = w[2]
     assert our_move["move_id"] == "rockslide" and our_move["target"] == "skarmory"
     assert our_move["hp_delta"] == pytest.approx(-0.31)
@@ -168,7 +173,7 @@ def test_encoder_writes_rows_back_padded_and_typed():
     block = vec[OFFSET_EVENT_WINDOW:OFFSET_EVENT_WINDOW + EVENT_WINDOW_DIM] \
         .reshape(EVENT_WINDOW_N, EVENT_TOKEN_DIM)
     n_valid = int(block[:, C.VALID].sum())
-    assert n_valid == 7
+    assert n_valid == 9      # 7 + the two E12 DENIED rows (see the fold test above)
     assert float(block[: EVENT_WINDOW_N - n_valid].sum()) == 0.0     # front padding all-zero
     move_row = block[EVENT_WINDOW_N - n_valid + 2]                   # our rockslide
     assert move_row[C.TYPE] == EVENT_T_MOVE
@@ -176,8 +181,9 @@ def test_encoder_writes_rows_back_padded_and_typed():
     assert move_row[C.MOVE] > 0                                      # move num present
     assert move_row[C.MAGNITUDE] == pytest.approx(-0.31)             # attributed damage
     assert move_row[C.CRIT] == 1.0 and move_row[C.EFF_SUPER] == 1.0  # crit + supereffective
-    faint_row = block[EVENT_WINDOW_N - 1]
+    faint_row = block[EVENT_WINDOW_N - 3]                             # then the two DENIED rows
     assert faint_row[C.TYPE] == EVENT_T_FAINT and faint_row[C.ACTOR_SIDE] == -1.0
+    assert block[EVENT_WINDOW_N - 1][C.TYPE] == EVENT_T_DENIED
     assert 0.0 <= float(block[:, C.TURNS_AGO].max()) <= 1.0          # recency in range
 
 
@@ -501,7 +507,7 @@ def test_the_fuzz_ORACLE_derives_the_three_id_columns_it_used_to_declare_unmodel
         oracle_faint_cause_id, oracle_item_transition,
     )
     from agents.battle.battle_event import EventKind as K
-    from agents.observation.constants import ITEM_TR_REVEALED, ITEM_TR_SWAPPED
+    from agents.observation.constants import ITEM_TR_RECEIVED, ITEM_TR_REVEALED
 
     causes = {c: oracle_faint_cause_id(fc, False) for c, fc in (
         ("attack", None), ("hazard", "Spikes"), ("weather", "Sandstorm"),
@@ -523,8 +529,8 @@ def test_the_fuzz_ORACLE_derives_the_three_id_columns_it_used_to_declare_unmodel
     # item changing hands (Trick writes |-item| on BOTH mons, Thief/Covet on the taker) — reading
     # it as a disclosure recorded a Trick as two plain reveals. Without a transfer cause it IS a
     # disclosure.
-    assert oracle_item_transition(K.ITEM, "move: Trick") == ITEM_TR_SWAPPED
-    assert oracle_item_transition(K.ITEM, "move: Thief") == ITEM_TR_SWAPPED
+    assert oracle_item_transition(K.ITEM, "move: Trick") == ITEM_TR_RECEIVED   # gen3_event_record_v2: the receiving side
+    assert oracle_item_transition(K.ITEM, "move: Thief") == ITEM_TR_RECEIVED
     assert oracle_item_transition(K.ITEM, None) == ITEM_TR_REVEALED
     # W2: a faint no damage line KO'd (Destiny Bond / Perish Song) is not an attack
     assert oracle_faint_cause_id(None, False, False) == causes["other"]
@@ -720,7 +726,9 @@ def test_event_seats_scalar_count_matches_the_column_map():
     of the right one, which raises far from the cause."""
     from agents.model.team_transformer import EventSeats
     ids = {C.TYPE, C.ACTOR_SPECIES, C.TARGET_SPECIES, C.MOVE, C.STATUS,
-           C.CANT, C.FAINT_CAUSE, C.ITEM_TRANSITION}
+           C.CANT, C.FAINT_CAUSE, C.ITEM_TRANSITION,
+           # gen3_event_record_v2 (E12)
+           C.REL_SPECIES, C.ENTRY, C.DENIAL, C.CALLER, C.STAT}
     scalars = set(C) - ids - {C.VALID}
     assert EventSeats._N_SCALARS == len(scalars), (
         f"EventSeats._N_SCALARS={EventSeats._N_SCALARS} but the column map says {len(scalars)} "

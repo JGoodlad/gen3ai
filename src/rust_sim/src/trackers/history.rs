@@ -322,6 +322,8 @@ pub mod t {
     pub const HAZARD: u8 = 8;
     pub const SWITCH_REJECTED: u8 = 9;
     pub const CANT: u8 = 10;
+    /// gen3_event_record_v2 (E12): a turn actor chosen for the turn that never acted.
+    pub const DENIED: u8 = 11;
 }
 
 /// `ITEM_TR_*`.
@@ -330,6 +332,21 @@ pub mod item_tr {
     pub const CONSUMED: u8 = 2;
     pub const REMOVED: u8 = 3;
     pub const SWAPPED: u8 = 4;
+    pub const RECEIVED: u8 = 5;
+}
+
+/// `ENTRY_*` (E12).
+pub mod entry {
+    pub const CHOSEN: u8 = 1;
+    pub const REPLACEMENT: u8 = 2;
+    pub const DRAG: u8 = 3;
+    pub const BATON_PASS: u8 = 4;
+}
+
+/// `DENIAL_*` (E12).
+pub mod denial {
+    pub const FAINTED_FIRST: u8 = 1;
+    pub const TURN_CUT: u8 = 2;
 }
 
 /// `EventWindowTracker` capacity (`EVENT_WINDOW_N`).
@@ -358,12 +375,16 @@ fn event_status_id(status: Option<&str>) -> CoreResult<u8> {
     })
 }
 
-/// `_classify_item_transition`. A transfer move's item line is SWAPPED on BOTH mons — Trick's two
-/// `|-item|`s, Thief / Covet's taker `|-item|` (`gen3_event_window_semantics_fixes_v1`, W3).
+/// `_classify_item_transition`. A transfer move's item line: the `|-enditem|` side LOST it
+/// (SWAPPED), the `|-item|` side RECEIVED it (`gen3_event_record_v2`, E12; W3 before it).
 fn classify_item_transition(kind: K, from_clause: Option<&str>) -> u8 {
     let fc = from_clause.unwrap_or("").trim().to_lowercase();
     if ["trick", "thief", "covet", "switcheroo"].iter().any(|w| fc.contains(w)) {
-        item_tr::SWAPPED
+        if kind == K::Enditem {
+            item_tr::SWAPPED
+        } else {
+            item_tr::RECEIVED
+        }
     } else if kind == K::Item {
         item_tr::REVEALED
     } else if fc.contains("knock off") || fc.contains("knockoff") {
@@ -371,6 +392,38 @@ fn classify_item_transition(kind: K, from_clause: Option<&str>) -> u8 {
     } else {
         item_tr::CONSUMED
     }
+}
+
+/// `_is_residual_cause` — the end-of-turn residual block, recognised by its `[from]` cause.
+fn is_residual_cause(fc: Option<&str>) -> bool {
+    let Some(fc) = ev::nz(fc) else { return false };
+    let mut low = fc.trim().to_lowercase();
+    for prefix in ["item:", "move:", "ability:"] {
+        if let Some(rest) = low.strip_prefix(prefix) {
+            low = rest.trim().to_string();
+            break;
+        }
+    }
+    matches!(
+        low.as_str(),
+        "psn" | "tox" | "brn" | "sandstorm" | "hail" | "leech seed" | "nightmare" | "curse" | "leftovers" | "wish"
+            | "ingrain" | "future sight" | "doom desire"
+    )
+}
+
+/// `_event_stat_id` — CRASH on a stat outside gen 3's seven.
+fn event_stat_id(stat: Option<&str>) -> CoreResult<u8> {
+    let Some(s) = ev::nz(stat) else { return Ok(0) };
+    Ok(match s.trim().to_lowercase().as_str() {
+        "atk" => 1,
+        "def" => 2,
+        "spa" => 3,
+        "spd" => 4,
+        "spe" => 5,
+        "accuracy" => 6,
+        "evasion" => 7,
+        _ => return Err(refuse(PyExc::ValueError, format!("unknown stat {s:?} for the H-B event window (EVENT_STAT_IDS)"))),
+    })
 }
 
 /// One H-B row (the Python record dict; `faint_cause` / `item_tr` / `cant` only on their types).
@@ -395,6 +448,15 @@ pub struct EventRecord {
     pub item_tr: Option<u8>,
     /// `Some(reason)` on a CANT row (the key is present, its value may be `None`).
     pub cant: Option<Option<String>>,
+    // --- gen3_event_record_v2 (E12) ---
+    pub rel: Option<String>,
+    pub rel_side: Option<Rel>,
+    pub entry: u8,
+    pub denial: u8,
+    pub caller: Option<String>,
+    pub stat: u8,
+    pub layers: u32,
+    pub pursuit: bool,
 }
 
 impl EventRecord {
@@ -418,6 +480,14 @@ impl EventRecord {
             faint_cause: None,
             item_tr: None,
             cant: None,
+            rel: None,
+            rel_side: None,
+            entry: 0,
+            denial: 0,
+            caller: None,
+            stat: 0,
+            layers: 0,
+            pursuit: false,
         }
     }
 
@@ -437,6 +507,13 @@ impl EventRecord {
             self.missed, self.failed, self.crit, self.eff, self.we_first, self.status, self.turn
         ));
         json_out::f64_into(out, self.forced_window);
+        out.push_str(",\"rel\":");
+        json_out::opt_str_into(out, self.rel.as_deref());
+        out.push_str(",\"rel_side\":");
+        json_out::opt_str_into(out, self.rel_side.map(Rel::as_str));
+        out.push_str(&format!(",\"entry\":{},\"denial\":{},\"caller\":", self.entry, self.denial));
+        json_out::opt_str_into(out, self.caller.as_deref());
+        out.push_str(&format!(",\"stat\":{},\"layers\":{},\"pursuit\":{}", self.stat, self.layers, self.pursuit));
         if let Some(fc) = self.faint_cause {
             out.push_str(",\"faint_cause\":");
             json_out::str_into(out, fc);
@@ -451,6 +528,9 @@ impl EventRecord {
         out.push('}');
     }
 }
+
+/// `(actor, side, move_id)` of the latest MOVE action (`_last_act`).
+type LastAct = (String, Rel, Option<String>);
 
 /// `EventWindowTracker`.
 #[derive(Debug, Clone, PartialEq)]
@@ -467,12 +547,27 @@ pub struct EventWindow {
     /// `_last_dmg_lethal`: did that last damage take the mon to 0 HP (W2).
     last_dmg_lethal: [Option<bool>; 2],
     used_selfko: [Option<bool>; 2],
-    /// `_last_mover`: the side of the latest `|move|` — a bare `-damage` is the open move's own hit
-    /// only while its user is the one moving.
+    /// `_last_mover`: the side of the latest `|move|`.
     last_mover: Option<Rel>,
     first_mover_turn: i64,
     first_mover_side: Option<Rel>,
     forced: [bool; 2],
+    // --- gen3_event_record_v2 (E12) ---
+    fainted_pending: [Option<String>; 2],
+    baton_turn: [Option<i64>; 2],
+    spikes: [u32; 2],
+    /// `_open_entry`: side → the SWITCH_IN row still taking its entry chip.
+    open_entry: [Option<u64>; 2],
+    perish_pending: [Option<String>; 2],
+    db_pending: [bool; 2],
+    act_turn: i64,
+    turn_actors: [Option<String>; 2],
+    acted: [bool; 2],
+    last_act: Option<LastAct>,
+    /// `(species, side, cause, last_act)` of the turn's first action-phase faint.
+    first_faint: Option<(String, Rel, &'static str, Option<LastAct>)>,
+    pending_denials: Vec<EventRecord>,
+    actions_closed: bool,
 }
 
 impl Default for EventWindow {
@@ -492,11 +587,25 @@ impl Default for EventWindow {
             first_mover_turn: -1,
             first_mover_side: None,
             forced: [false, false],
+            fainted_pending: [None, None],
+            baton_turn: [None, None],
+            spikes: [0, 0],
+            open_entry: [None, None],
+            perish_pending: [None, None],
+            db_pending: [false, false],
+            act_turn: -1,
+            turn_actors: [None, None],
+            acted: [false, false],
+            last_act: None,
+            first_faint: None,
+            pending_denials: Vec::new(),
+            actions_closed: false,
         }
     }
 }
 
 const SELF_KO: [&str; 2] = ["explosion", "selfdestruct"];
+const SIDES: [Rel; 2] = [Rel::Ours, Rel::Opp];
 
 impl EventWindow {
     fn append(&mut self, mut rec: EventRecord) -> u64 {
@@ -532,8 +641,82 @@ impl EventWindow {
         }
     }
 
-    pub fn update(&mut self, turn: i64, events: &[&Reading], our_active: Option<&str>, opp_active: Option<&str>)
-        -> CoreResult<()> {
+    // ---- E12: the turn's action phase and its DENIALS ----
+    fn start_turn(&mut self, et: i64) {
+        self.act_turn = et;
+        self.turn_actors = [self.our_active.clone(), self.opp_active.clone()];
+        self.acted = [false, false];
+        self.first_faint = None;
+        self.last_act = None;
+        self.actions_closed = false;
+    }
+
+    fn mark_acted(&mut self, side: Option<Rel>, species: Option<&str>) {
+        if let (Some(side), Some(sp)) = (side, ev::nz(species)) {
+            if self.turn_actors[ri(side)].as_deref() == Some(sp) {
+                self.acted[ri(side)] = true;
+            }
+        }
+    }
+
+    fn flush_denials(&mut self, cut: bool) {
+        for rec in std::mem::take(&mut self.pending_denials) {
+            self.append(rec);
+        }
+        if !cut {
+            return;
+        }
+        let Some((f_sp, f_side, f_cause, f_act)) = self.first_faint.clone() else { return };
+        for side in SIDES {
+            let Some(actor) = ev::nz(self.turn_actors[ri(side)].as_deref()).map(str::to_string) else { continue };
+            if self.acted[ri(side)] {
+                continue;
+            }
+            self.acted[ri(side)] = true;
+            let mut r = EventRecord::new(t::DENIED, Some(&actor), Some(side), self.act_turn);
+            r.denial = denial::TURN_CUT;
+            r.rel = Some(f_sp.clone());
+            r.rel_side = Some(f_side);
+            r.faint_cause = Some(f_cause);
+            r.move_id = f_act.as_ref().and_then(|a| a.2.clone());
+            self.append(r);
+        }
+    }
+
+    fn close_actions(&mut self) {
+        if self.actions_closed || self.act_turn <= 0 {
+            self.actions_closed = true;
+            return;
+        }
+        self.flush_denials(true);
+        self.actions_closed = true;
+    }
+
+    fn faint_cause(&self, side: Rel, sp: &str) -> &'static str {
+        let s = ri(side);
+        if self.perish_pending[s].as_deref() == Some(sp) {
+            return "perishsong";
+        }
+        if self.db_pending[s] {
+            return "destinybond";
+        }
+        let fc = self.last_dmg_cause[s].clone().flatten();
+        classify_faint_cause(fc.as_deref(), self.used_selfko[s].unwrap_or(false), self.last_dmg_lethal[s].unwrap_or(false))
+    }
+
+    fn clear_side(&mut self, side: Rel) {
+        let s = ri(side);
+        self.last_dmg_cause[s] = None;
+        self.last_dmg_lethal[s] = None;
+        self.used_selfko[s] = None;
+        self.perish_pending[s] = None;
+        self.db_pending[s] = false;
+    }
+
+    /// `update(turn, events, our_active, opp_active, attempted_switch)` — `attempted_switch` (E4) is
+    /// the species our PREVIOUS decision tried to switch to, the target a refused switch aimed at.
+    pub fn update(&mut self, turn: i64, events: &[&Reading], our_active: Option<&str>, opp_active: Option<&str>,
+                  attempted_switch: Option<&str>) -> CoreResult<()> {
         self.turn = self.turn.max(turn);
         for e in events {
             let seq = e.seq as i64;
@@ -544,16 +727,28 @@ impl EventWindow {
             let side = e.side;
             let sp = ev::actor(e);
             let et = e.turn as i64;
+            if et != self.act_turn {
+                self.close_actions();
+                self.start_turn(et);
+            }
+            if matches!(e.kind, K::Move | K::Switch | K::Drag | K::Cant | K::ChoiceRejected) {
+                self.flush_denials(true);
+                if self.first_faint.is_some() {
+                    self.actions_closed = true;
+                }
+            } else if !self.actions_closed && is_residual_cause(ev::from_clause(e)) {
+                self.close_actions();
+            }
             match e.kind {
                 K::Move if side.is_some() && sp.is_some() => {
                     let side = side.unwrap();
+                    let spn = sp.unwrap();
                     if self.first_mover_turn != et {
                         self.first_mover_turn = et;
                         self.first_mover_side = Some(side);
                     }
                     let mut r = EventRecord::new(t::MOVE, sp, Some(side), et);
-                    // gen3_move_target_class_v1: the move's dex target class (the reading's R4) —
-                    // a self / side / field move is the USER's row; `adjacentAlly` has none.
+                    // gen3_move_target_class_v1: the move's dex target class (the reading's R4).
                     r.target = match implied_target(ev::move_id(e), sp) {
                         Implied::User => sp.map(str::to_string),
                         Implied::None => None,
@@ -561,18 +756,39 @@ impl EventWindow {
                     };
                     r.move_id = ev::move_id(e).map(str::to_string);
                     r.we_first = Some(side) == self.first_mover_side;
+                    r.caller = ev::nz(ev::s(e, "from_move")).map(str::to_string);
+                    r.pursuit = matches!(e.get("pursuit_switch"), Some(crate::core_events::Value::Int(x)) if *x != 0);
                     let id = self.append(r);
                     self.open_move[ri(side)] = Some(id);
                     self.last_mover = Some(side);
                     self.used_selfko[ri(side)] = Some(ev::move_id(e).is_some_and(|m| SELF_KO.contains(&m)));
+                    self.last_act = Some((spn.to_string(), side, ev::move_id(e).map(str::to_string)));
+                    self.mark_acted(Some(side), sp);
+                    if ev::move_id(e) == Some("batonpass") {
+                        self.baton_turn[ri(side)] = Some(et);
+                    }
                 }
                 K::Damage if side.is_some() => {
                     let side = side.unwrap();
                     let fc = ev::from_clause(e);
                     self.last_dmg_cause[ri(side)] = Some(fc.map(str::to_string));
                     self.last_dmg_lethal[ri(side)] = Some(ev::damage_is_lethal(e));
-                    let mover = ev::other(side);
+                    let fcl = fc.unwrap_or("").trim().to_lowercase();
+                    if fcl == "confusion" {
+                        // a confused mon that hit itself DID take its turn
+                        self.mark_acted(Some(side), sp);
+                    }
                     let amt = ev::amount(e);
+                    if fcl == "spikes" {
+                        if let (Some(id), Some(a), Some(spn)) = (self.open_entry[ri(side)], amt, sp) {
+                            if let Some(ent) = self.by_id(id) {
+                                if ent.turn == et && ent.actor.as_deref() == Some(spn) {
+                                    ent.hp_delta += a;
+                                }
+                            }
+                        }
+                    }
+                    let mover = ev::other(side);
                     let moving = self.last_mover == Some(mover);
                     if let Some(om) = self.open(mover) {
                         if om.turn == et
@@ -589,14 +805,21 @@ impl EventWindow {
                 }
                 K::Miss | K::Fail | K::Crit if side.is_some() => {
                     let external = e.kind == K::Fail && !matches!(ev::from_clause(e), None | Some("move-suffix"));
+                    let mut failed_pass = false;
                     if let Some(om) = self.open(side.unwrap()) {
                         if om.turn == et && !external {
                             match e.kind {
                                 K::Miss => om.missed = true,
-                                K::Fail => om.failed = true,
+                                K::Fail => {
+                                    om.failed = true;
+                                    failed_pass = om.move_id.as_deref() == Some("batonpass");
+                                }
                                 _ => om.crit = true,
                             }
                         }
+                    }
+                    if failed_pass {
+                        self.baton_turn[ri(side.unwrap())] = None; // a failed pass carries nothing
                     }
                 }
                 K::Activate if side.is_some() && ev::is_protect_block(ev::effect(e)) => {
@@ -608,6 +831,15 @@ impl EventWindow {
                             om.failed = true;
                         }
                     }
+                }
+                K::Activate if side.is_some() && ev::effect(e).unwrap_or("").to_lowercase().contains("destiny") => {
+                    // `|-activate|<DB user>|move: Destiny Bond` — the OTHER side's mon faints next
+                    self.db_pending[ri(ev::other(side.unwrap()))] = true;
+                }
+                K::VolatileStart
+                    if side.is_some() && sp.is_some() && ev::effect(e).unwrap_or("").trim().to_lowercase() == "perish0" =>
+                {
+                    self.perish_pending[ri(side.unwrap())] = sp.map(str::to_string);
                 }
                 K::Immune | K::Resisted | K::Supereffective if side.is_some() => {
                     if let Some(om) = self.open(side.unwrap()) {
@@ -622,35 +854,86 @@ impl EventWindow {
                 }
                 K::Switch | K::Drag if side.is_some() && sp.is_some() => {
                     let side = side.unwrap();
+                    let s = ri(side);
+                    let out = self.active(side).map(str::to_string);
+                    let mut move_id: Option<String> = None;
+                    let (ent, rel) = if e.kind == K::Drag {
+                        let other = ev::other(side);
+                        if let Some(om) = self.open(other) {
+                            if om.turn == et {
+                                move_id = om.move_id.clone(); // the phazing move
+                            }
+                        }
+                        (entry::DRAG, out.clone())
+                    } else if ev::nz(self.fainted_pending[s].as_deref()).is_some() {
+                        (entry::REPLACEMENT, self.fainted_pending[s].clone())
+                    } else if self.baton_turn[s] == Some(et) {
+                        move_id = Some("batonpass".to_string());
+                        (entry::BATON_PASS, out.clone())
+                    } else {
+                        (entry::CHOSEN, out.clone())
+                    };
+                    if ent == entry::CHOSEN || ent == entry::BATON_PASS {
+                        self.mark_acted(Some(side), out.as_deref());
+                    }
+                    self.baton_turn[s] = None;
+                    self.fainted_pending[s] = None;
                     let mut r = EventRecord::new(t::SWITCH_IN, sp, Some(side), et);
                     r.target = self.active(ev::other(side)).map(str::to_string);
-                    self.append(r);
-                    self.forced[ri(side)] = false;
+                    r.move_id = move_id;
+                    r.entry = ent;
+                    r.rel_side = if ev::nz(rel.as_deref()).is_some() { Some(side) } else { None };
+                    r.rel = rel;
+                    r.layers = self.spikes[s];
+                    let id = self.append(r);
+                    self.open_entry[s] = Some(id);
+                    self.forced[s] = false;
                     match side {
                         Rel::Ours => self.our_active = sp.map(str::to_string),
                         Rel::Opp => self.opp_active = sp.map(str::to_string),
                     }
-                    self.last_dmg_cause[ri(side)] = None;
-                    self.last_dmg_lethal[ri(side)] = None;
-                    self.used_selfko[ri(side)] = None;
+                    self.clear_side(side);
                 }
                 K::Faint if side.is_some() && sp.is_some() => {
                     let side = side.unwrap();
+                    let spn = sp.unwrap().to_string();
+                    let s = ri(side);
+                    let cause = self.faint_cause(side, &spn);
+                    let la = self.last_act.clone();
+                    let by_attack = cause == "attack" && la.as_ref().is_some_and(|a| a.1 != side);
                     let mut r = EventRecord::new(t::FAINT, sp, Some(side), et);
-                    let fc = self.last_dmg_cause[ri(side)].clone().flatten();
-                    r.faint_cause = Some(classify_faint_cause(
-                        fc.as_deref(),
-                        self.used_selfko[ri(side)].unwrap_or(false),
-                        self.last_dmg_lethal[ri(side)].unwrap_or(false),
-                    ));
+                    r.faint_cause = Some(cause);
+                    if by_attack {
+                        let a = la.as_ref().unwrap();
+                        r.rel = Some(a.0.clone());
+                        r.rel_side = Some(a.1);
+                    }
+                    r.layers = if cause == "hazard" { self.spikes[s] } else { 0 };
                     self.append(r);
-                    self.last_dmg_cause[ri(side)] = None;
-                    self.last_dmg_lethal[ri(side)] = None;
-                    self.used_selfko[ri(side)] = None;
-                    if side == Rel::Ours && self.our_active.as_deref() == sp {
+                    if !self.actions_closed && et > 0 {
+                        if self.first_faint.is_none() {
+                            self.first_faint = Some((spn.clone(), side, cause, la.clone()));
+                        }
+                        if self.turn_actors[s].as_deref() == Some(spn.as_str()) && !self.acted[s] {
+                            self.acted[s] = true;
+                            let mut d = EventRecord::new(t::DENIED, Some(&spn), Some(side), et);
+                            d.denial = denial::FAINTED_FIRST;
+                            d.faint_cause = Some(cause);
+                            if let Some(a) = &la {
+                                d.move_id = a.2.clone();
+                                d.rel = Some(a.0.clone());
+                                d.rel_side = Some(a.1);
+                            }
+                            self.pending_denials.push(d);
+                        }
+                    }
+                    self.clear_side(side);
+                    self.open_entry[s] = None;
+                    self.fainted_pending[s] = Some(spn.clone());
+                    if side == Rel::Ours && self.our_active.as_deref() == Some(spn.as_str()) {
                         self.our_active = None;
                         self.forced[0] = true;
-                    } else if side == Rel::Opp && self.opp_active.as_deref() == sp {
+                    } else if side == Rel::Opp && self.opp_active.as_deref() == Some(spn.as_str()) {
                         self.opp_active = None;
                         self.forced[1] = true;
                     }
@@ -669,22 +952,41 @@ impl EventWindow {
                     let mut r = EventRecord::new(t::BOOST, sp, side, et);
                     // W1: the reading's `amount` is ALREADY SIGNED (an `|-unboost|` reads negative)
                     r.hp_delta = amt;
+                    r.stat = event_stat_id(ev::stat(e))?;
                     self.append(r);
                 }
                 K::Item | K::Enditem if sp.is_some() => {
+                    let tr = classify_item_transition(e.kind, ev::from_clause(e));
                     let mut r = EventRecord::new(t::ITEM_REVEAL, sp, side, et);
-                    r.item_tr = Some(classify_item_transition(e.kind, ev::from_clause(e)));
+                    r.item_tr = Some(tr);
+                    if matches!(tr, item_tr::SWAPPED | item_tr::RECEIVED | item_tr::REMOVED) {
+                        if let Some(other) = side.map(ev::other) {
+                            if let Some(a) = ev::nz(self.active(other)) {
+                                r.rel = Some(a.to_string());
+                                r.rel_side = Some(other);
+                            }
+                        }
+                    }
                     self.append(r);
                 }
                 K::Side if side.is_some() => {
-                    // W5: +1 a side condition started, −1 one ended (Rapid Spin's clear, a screen's end)
+                    let s = ri(side.unwrap());
+                    let start = ev::s(e, "op") != Some("sideend");
+                    let is_spikes = ev::s(e, "condition").unwrap_or("").to_lowercase().contains("spikes");
+                    if is_spikes {
+                        self.spikes[s] = if start { (self.spikes[s] + 1).min(3) } else { 0 };
+                    }
+                    // W5: +1 a side condition started, −1 one ended
                     let mut r = EventRecord::new(t::HAZARD, None, side, et);
-                    r.hp_delta = if ev::s(e, "op") == Some("sideend") { -1.0 } else { 1.0 };
+                    r.hp_delta = if start { 1.0 } else { -1.0 };
+                    r.layers = if is_spikes { self.spikes[s] } else { 0 };
                     self.append(r);
                 }
                 K::Cant if sp.is_some() => {
                     let cs = ev::blocked_side(e).or(side);
                     let ca = ev::nz(ev::blocked_actor(e)).or(sp);
+                    self.mark_acted(cs, ca);
+                    self.last_act = None;
                     let mut r = EventRecord::new(t::CANT, ca, cs, et);
                     r.move_id = ev::cant_move(e).map(str::to_string);
                     r.failed = true;
@@ -692,12 +994,23 @@ impl EventWindow {
                     self.append(r);
                 }
                 K::ChoiceRejected => {
+                    // E4: the refused switch's TARGET.
                     let mut r = EventRecord::new(t::SWITCH_REJECTED, None, Some(Rel::Ours), et);
                     r.actor = self.our_active.clone();
+                    r.target = attempted_switch.map(str::to_string);
                     self.append(r);
                 }
                 _ => {}
             }
+            if matches!(e.kind, K::Switch | K::Drag | K::ChoiceRejected) {
+                self.last_act = None;
+            }
+        }
+        // A DECISION closes the window: a faint that cut the turn ends its action phase here.
+        let cut = self.first_faint.is_some();
+        self.flush_denials(cut);
+        if cut {
+            self.actions_closed = true;
         }
         if let Some(a) = ev::nz(our_active) {
             self.our_active = Some(a.to_string());

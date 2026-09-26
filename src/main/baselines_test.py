@@ -123,7 +123,21 @@ def test_production_declares_a_constructed_mirror():
     b = _prod()
     assert b.config_mirror_version == 109
     assert b.config_version == 97, "the SURFACE run's own recorded version"
-    assert len(b.config_overrides) == 13, "the 13-key critic block (CHANGELOG 2026-09-06)"
+    # The 13-key critic block (CHANGELOG 2026-09-06) PLUS the 3-key GENERATION STAMP that
+    # gen3_event_record_v2 (the observation-architecture batch, v121) moved the mirror onto: the
+    # surface run is gen-17 (gen3_critic_route_wave_v1, obs 2501), and the mirror follows the code.
+    # Pinned by NAME, so neither block can grow or shrink behind the other's count.
+    # The values are read off a FRESH current config (the mirror follows the code), never typed.
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    fresh = ModelVersion.from_layout_and_policy_kwargs(
+        Gen3ObservationEncoder(load_mappings()).get_layout(), {"net_arch": [512, 512]})
+    generation_stamp = {k: getattr(fresh, k)
+                        for k in ("arch_signature", "total_dim", "active_context_dim")}
+    for k, want in generation_stamp.items():
+        assert b.config_overrides.get(k) == want, (k, b.config_overrides.get(k), want)
+    critic_block = {k: v for k, v in b.config_overrides.items() if k not in generation_stamp}
+    assert len(critic_block) == 13, "the 13-key critic block (CHANGELOG 2026-09-06)"
     assert b.config_overrides["critic"] == "winprob"
     assert b.pending.get("candidate") == "ai_v12_02_winprob_critic"
 

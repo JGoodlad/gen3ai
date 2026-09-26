@@ -7,7 +7,7 @@ two disagree, ARCHITECTURE.md wins.
 
 > 🚨 **[`../ARCHITECTURE.md`](../ARCHITECTURE.md) §2.1 is the live statement of the chain and the
 > tier table.** This doc holds the reasoning around it. **STALE:** step 2 below says the observation
-> is 2,667 dims (`gen3_entity_rehome_v1`); the live figure is **2501** — `ARCHITECTURE.md` §1, read
+> is 2,667 dims (`gen3_entity_rehome_v1`); the live figure is **2761** — `ARCHITECTURE.md` §1, read
 > from `Gen3ObservationEncoder.get_layout()`. The text is preserved as it was written.
 
 ## The chain, and the four tiers

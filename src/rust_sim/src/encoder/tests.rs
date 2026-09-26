@@ -56,12 +56,17 @@ fn an_unclassified_volatile_is_refused_and_a_not_a_volatile_encodes_nothing() {
     let mut out = [f32::NAN; VOLATILES_DIM];
     volatiles(&[("healbell".to_string(), 0)], &mut out).unwrap();
     assert!(out.iter().all(|x| *x == 0.0));
-    let err = volatiles(&[("mudsport".to_string(), 0)], &mut out).unwrap_err();
+    let err = volatiles(&[("unknown".to_string(), 0)], &mut out).unwrap_err();
     assert!(matches!(err, CoreError::Refusal { exc: PyExc::UnknownVolatileError, .. }), "{err:?}");
     // a counter keeps its max level: stockpile2 over stockpile1
     volatiles(&[("stockpile1".to_string(), 0), ("stockpile2".to_string(), 0)], &mut out).unwrap();
     let i = VOLATILE_SLOTS.iter().position(|s| *s == "stockpile").unwrap();
     assert_eq!(out[i], (2.0f64 / 3.0) as f32);
+    // gen3_field_sport_slots_v1: the two field sports own the LAST two volatile columns
+    volatiles(&[("mudsport".to_string(), 0), ("watersport".to_string(), 0)], &mut out).unwrap();
+    assert_eq!(&VOLATILE_SLOTS[VOLATILES_DIM - 2..], &["mudsport", "watersport"]);
+    assert_eq!(&out[VOLATILES_DIM - 2..], &[1.0, 1.0]);
+    assert_eq!(out.iter().sum::<f32>(), 2.0);
 }
 
 #[test]

@@ -14,7 +14,7 @@
    "purpose": "THE ARCHITECTURE SURFACE production runs. designs/production_config.json is CONSTRUCTED from this run's config \u2014 migrated v97 -> v109 with the 13-key critic override block below \u2014 and ARCHITECTURE.md, the delivery graph, the compile gate and the arch viewer are all generated from that mirror.",
    "set_on": "2026-09-06",
    "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
-   "notes": "THE MIRROR IS CONSTRUCTED, NOT COPIED (CHANGELOG -> production_config_2026-09-06; provenance in designs/production_config.README.md). gen-17 supplies the whole architecture SURFACE; the critic block is overridden to the win-prob era. Non-critic keys changed: ZERO. The entry names gen-17 rather than the era arm because the SURFACE is the thing every derived artifact reads, and because ai_v12_02_winprob_critic had not written a model_config.json when the mirror was built. It moves to ai_v12_02_winprob_critic once that arm passes its critic gate \u2014 see `pending`. Why the surface half matters: the era's FIRST arm launched from a design-doc block with a 38-flag argv, and 31 architecture fields silently reverted to their OFF defaults; mirroring it would have redefined production BY OMISSION, with the delivery graph dropping 60 of 120 nodes and every derived artifact agreeing.",
+   "notes": "THE MIRROR IS CONSTRUCTED, NOT COPIED (CHANGELOG -> production_config_2026-09-06; provenance in designs/production_config.README.md). gen-17 supplies the whole architecture SURFACE; the critic block is overridden to the win-prob era. Non-critic keys changed: ZERO. The entry names gen-17 rather than the era arm because the SURFACE is the thing every derived artifact reads, and because ai_v12_02_winprob_critic had not written a model_config.json when the mirror was built. It moves to ai_v12_02_winprob_critic once that arm passes its critic gate \u2014 see `pending`. Why the surface half matters: the era's FIRST arm launched from a design-doc block with a 38-flag argv, and 31 architecture fields silently reverted to their OFF defaults; mirroring it would have redefined production BY OMISSION, with the delivery graph dropping 60 of 120 nodes and every derived artifact agreeing. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary). The mirror's arch_signature / total_dim / active_context_dim overrides are the gen3_event_record_v2 SIGNATURE-BUMP WINDOW (designs/production_config.README.md): the mirror follows the code until the first new-lineage run exists, then it is re-synced from that run and these three overrides go.",
    "config_mirror": "designs/production_config.json",
    "config_mirror_readme": "designs/production_config.README.md",
    "config_mirror_version": 109,
@@ -31,13 +31,17 @@
     "hand_shaping": false,
     "terminal_indicator": true,
     "victory_value": 1.0,
-    "draw_penalty": 0.0
+    "draw_penalty": 0.0,
+    "arch_signature": "gen3_event_record_v2",
+    "total_dim": 2761,
+    "active_context_dim": 60
    },
    "pending": {
     "candidate": "ai_v12_02_winprob_critic",
     "condition": "passes its pre-registered read \u2014 `python -m main.critic_gate <run> --parent v9_fold_parent --control <G5 arms>` (designs/ai_v12/design_winprob_only_critic.md \u00a75.5)",
     "note": "Until then the surface source is gen-17. Switch it with `python -m main.baselines set production <run>/<ckpt> --reason \"<ledger entry title>\"`, never by hand \u2014 and re-derive config_overrides at the same time, since a run that records the critic block natively needs FEWER of them."
-   }
+   },
+   "era_checkout_only": true
   },
   "v9_long_baseline": {
    "kind": "checkpoint",
@@ -51,7 +55,8 @@
    "purpose": "rev-1: the gen-era FRESH from-zero 25M run, anchored ladder 2098 at 12 nodes \u2014 the long-run reference every gen-era arm is read against.",
    "set_on": "2026-09-06",
    "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
-   "notes": "The ORIGIN all eight R5F exploiters fork from. Its 24M snapshot is a separate entry (`untaught_meter_opponent`) because a meter opponent must stay pinned even if this one moves."
+   "notes": "The ORIGIN all eight R5F exploiters fork from. Its 24M snapshot is a separate entry (`untaught_meter_opponent`) because a meter opponent must stay pinned even if this one moves. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary).",
+   "era_checkout_only": true
   },
   "v9_fold_parent": {
    "kind": "checkpoint",
@@ -65,7 +70,8 @@
    "purpose": "R2ACTION: the gen-era FOLD PARENT \u2014 every rev-4 / 2x2 / K=6 / G1 / G5 arm forks from it, it is `main.critic_gate --parent`, and it is the FROZEN-PHI SOURCE the win-prob arm's FROZEN-phi rung would pass to `--win-prob-pbrs-source`.",
    "set_on": "2026-09-06",
    "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
-   "notes": "A role=fold fork of rev-1 at the same step, ending 28,115,184. It is NOT production \u2014 the 2026-09-06 near-miss was this run being written into production_config.json. ONE entry carries both roles deliberately: they are the same run and the same file, so a second name would be a second place the identity lives and a chance for the two to drift."
+   "notes": "A role=fold fork of rev-1 at the same step, ending 28,115,184. It is NOT production \u2014 the 2026-09-06 near-miss was this run being written into production_config.json. ONE entry carries both roles deliberately: they are the same run and the same file, so a second name would be a second place the identity lives and a chance for the two to drift. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary).",
+   "era_checkout_only": true
   },
   "v8_line": {
    "kind": "checkpoint",
@@ -109,8 +115,9 @@
    "purpose": "The FAMINE PRE-TEST's comparator: does terminal-only reward learn at the incumbent's rate? Read at matched SNAPSHOT COUNT against the win-prob arm.",
    "set_on": "2026-09-06",
    "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
-   "notes": "FLOOR = 38 Elo, and NOT the adjacent-node spread (172/186, dominated by the 2M->4M jump \u2014 steep early LEARNING, not noise). 38 is the max |delta| between gen17 and rev-1 at matched steps over 8 nodes (the max, never the mean); the ladder se (+/-9-10) was rejected as fit error on one node. The two runs are not true replicates, so 38 likely OVER-states pure noise \u2014 conservative in the right direction for a kill rule. AND-gated with win_rate_vs_bots not rising. Same run as v9_long_baseline, a DIFFERENT name because the two roles move independently.",
-   "floor_elo": 38.0
+   "notes": "FLOOR = 38 Elo, and NOT the adjacent-node spread (172/186, dominated by the 2M->4M jump \u2014 steep early LEARNING, not noise). 38 is the max |delta| between gen17 and rev-1 at matched steps over 8 nodes (the max, never the mean); the ladder se (+/-9-10) was rejected as fit error on one node. The two runs are not true replicates, so 38 likely OVER-states pure noise \u2014 conservative in the right direction for a kill rule. AND-gated with win_rate_vs_bots not rising. Same run as v9_long_baseline, a DIFFERENT name because the two roles move independently. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary).",
+   "floor_elo": 38.0,
+   "era_checkout_only": true
   },
   "untaught_meter_opponent": {
    "kind": "checkpoint",
@@ -124,7 +131,8 @@
    "purpose": "The untaught meter's ONE fixed opponent: rev-1's 24M snapshot, what offline_collateral_kl.py and exploiter_competence/compete.py both used.",
    "set_on": "2026-09-06",
    "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
-   "notes": "PINNED to the explicit snapshot zip on purpose \u2014 a bare run dir would resolve to the run's LAST snapshot and every banked meter level would stop being comparable."
+   "notes": "PINNED to the explicit snapshot zip on purpose \u2014 a bare run dir would resolve to the run's LAST snapshot and every banked meter level would stop being comparable. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary).",
+   "era_checkout_only": true
   },
   "untaught_meter_config": {
    "kind": "config",
@@ -138,7 +146,8 @@
    "purpose": "The ONE model_config.json every model in an untaught-meter series is loaded against, so a level here is comparable to a banked one.",
    "set_on": "2026-09-06",
    "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
-   "notes": "`--config auto` resolves each model's own config instead; that is a different measurement."
+   "notes": "`--config auto` resolves each model's own config instead; that is a different measurement. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary).",
+   "era_checkout_only": true
   }
  },
  "lists": {

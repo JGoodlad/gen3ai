@@ -5,7 +5,6 @@ ARCHIVE, not dead prose: it records what each deleted `if version < N` branch in
 which is the only surviving statement of what an archived checkpoint's config meant. It is
 preserved here verbatim and must not be trimmed.
 """
-from typing import Any
 
 from agents.model.model_version.constants import ARCH_SIGNATURE, ModelVersionError
 
@@ -18,7 +17,7 @@ from agents.model.model_version.constants import ARCH_SIGNATURE, ModelVersionErr
 # ⚠️ When ARCH_SIGNATURE next changes, raise this floor to the new signature's first stamped
 # version IN THE SAME COMMIT (and append the pairing to SIGNATURE_FIRST_VERSION below) —
 # migration_floor_test.py fails if the two drift apart.
-MIGRATION_FLOOR = 96
+MIGRATION_FLOOR = 121
 
 # The signature → first-stamped-version pairing the floor is derived from. Append-only: add the
 # new signature's row when it lands. migration_floor_test.py asserts
@@ -29,6 +28,7 @@ SIGNATURE_FIRST_VERSION = {
     "gen3_frame_deletion_v1": 90,
     "gen3_event_semantics_v1": 91,
     "gen3_critic_route_wave_v1": 96,
+    "gen3_event_record_v2": 121,
 }
 def _migrate_config(data: dict) -> dict:
     """Apply incremental forward-migrations to bring an old config up to the current schema.
@@ -318,228 +318,236 @@ def _migrate_config(data: dict) -> dict:
                     "97% of the critic's route dependence — is the successor.\n"
                     "To re-read this checkpoint, use the git_hash in its own metadata.json.")
     # ---- POST-FLOOR MIGRATION BRANCHES (N > MIGRATION_FLOOR) --------------------------------
-    # v97 (gen3_intent_label_bot_weight_v1) — a TRAINING-only loss weight, so a pre-v97 checkpoint
-    # trained with it OFF and the field simply defaults in. No forward, no weight shape, no gate:
-    # provenance + flagless-resume read-back only. Same shape as v92's since-floored td_aux_coef
-    # branch, and REACHABLE where that one no longer is: a v96 checkpoint is exactly at the floor
-    # and its config genuinely lacks the field.
-    if version < 97:
-        data.setdefault("intent_label_bot_weight", 1.0)
-        data["config_version"] = 97
-    # v98 (gen3_cf_evidential_head_v1) — a STRUCTURAL toggle, so unlike v97 this one is gated. It
-    # still DEFAULTS rather than refusing: a pre-v98 checkpoint could not have built the head (the
-    # module did not exist), so False is not a guess, it is the only possible past. The refusal
-    # direction is handled by check_compatible, which fires the moment a live run's True meets a
-    # migrated False.
-    if version < 98:
-        data.setdefault("cf_evidential", False)
-        data["config_version"] = 98
-    # v99 (gen3_cf_twin_heads_v1) — two STRUCTURAL toggles, both gated like v98's. Same reasoning
-    # for defaulting rather than refusing: a pre-v99 checkpoint could not have built either module,
-    # so False is the only possible past, and the refusal direction is check_compatible's the moment
-    # a live run's True meets a migrated False.
-    if version < 99:
-        data.setdefault("cf_twin_heads", False)
-        data.setdefault("cf_shadow_critic", False)
-        data["config_version"] = 99
-    # v100 (gen3_cf_coef_provenance_v1) — ten TRAINING-only coefficients ⇒ v97's shape, not
-    # v98/v99's: no gate, no refusal, just a default (the ARGPARSE one, which is what every
-    # pre-v100 run necessarily ran with). Any recorded value migrates untouched.
-    if version < 100:
-        for _k, _v in (("cf_records", False), ("cf_records_keep", 512),
-                       ("cf_winprob_coef", 0.0), ("cf_head_only", True),
-                       ("cf_label_lag_steps", 150_000), ("cf_label_likelihood", "binomial"),
-                       ("cf_evidential_coef", 0.0), ("cf_evidential_reg", 1e-3),
-                       ("cf_twin_coef", 0.0), ("cf_shadow_coef", 0.0)):
-            data.setdefault(_k, _v)
-        data["config_version"] = 100
-    # v101 (gen3_capacity_telemetry_v1) — four TRAINING-only DIAGNOSTIC knobs ⇒ v100's shape: no
-    # gate, no refusal, just a default (the ARGPARSE one, which is what every pre-v101 run
-    # necessarily ran with — the telemetry did not exist). Any recorded value migrates untouched.
-    if version < 101:
-        for _k, _v in (("capacity_telemetry", False), ("canary_reset_steps", 1_000_000),
-                       ("capacity_cosine_every", 50), ("capacity_velocity_every", 50)):
-            data.setdefault(_k, _v)
-        data["config_version"] = 101
-    # v102 (gen3_policy_grad_coef_v1) — one TRAINING-only coefficient ⇒ v97's shape: no gate, no refusal,
-    # just a default. 1.0 is not a guess: the policy-gradient term entered the loss at an implicit
-    # 1.0 in every pre-v102 run, so that is what every such run trained with.
-    if version < 102:
-        data.setdefault("policy_grad_coef", 1.0)
-        data["config_version"] = 102
-    # v103 (gen3_distill_target_gate_v1) — seven TRAINING-only knobs ⇒ v100's shape: no gate, no
-    # refusal, just the argparse defaults. Not a guess: "kl" IS the loss every pre-v103 run
-    # trained with (the one constant across every arm in the five-arm record), no run ever had a
-    # gate, and the rank tripwire did not exist (its "warn" default folds nothing into any
-    # update). Any recorded value migrates untouched.
-    if version < 103:
-        for _k, _v in (("distill_target", "kl"), ("distill_topk", 1),
-                       ("distill_gate", "none"), ("distill_gate_tau", 0.0),
-                       ("distill_beta", 1.0), ("rank_tripwire", "warn"),
-                       ("rank_tripwire_drop", 0.20)):
-            data.setdefault(_k, _v)
-        data["config_version"] = 103
-    # v104 (gen3_winprob_pbrs_v1) — ONE TRAINING-only coefficient ⇒ v97's shape, not v98/v99's:
-    # no gate, no refusal, just a default. 0.0 is the only possible past (the flag did not exist),
-    # and a recorded value migrates untouched. It edits the reward stream rather than the loss,
-    # which changes nothing here — the migration's job is provenance, and nothing version-checks it.
-    if version < 104:
-        data.setdefault("win_prob_pbrs_coef", 0.0)
-        data["config_version"] = 104
-    # v105 (gen3_clean_world_config_v1 + gen3_winprob_pbrs_source_v1) — FIVE keys whose defaults ARE
-    # the pre-v105 behaviour, so this is v100's shape: no gate, no refusal, just the values every
-    # earlier run necessarily trained with. `hand_shaping` / `pbrs_material` / `pbrs_belief` did not
-    # exist and their terms were UNCONDITIONAL, so True is the only possible past; `victory_value`
-    # was the `reward_weights.VICTORY_VALUE` module constant (30.0) in every run ever; and with no
-    # `--win-prob-pbrs-source` flag, φ was always read from the LIVE head ⇒ None.
-    # ⚠️ Four of the five are resume-IMMUTABLE (check_reward_config), so a migrated old config
-    # resumes cleanly against a default launch and mismatches LOUDLY against a clean-world one.
-    # That is the intent, not an accident: a run's reward must never flip underneath it.
-    if version < 105:
-        _v105: "tuple[tuple[str, Any], ...]" = (
-            ("hand_shaping", True), ("pbrs_material", True), ("pbrs_belief", True),
-            ("victory_value", 30.0), ("win_prob_pbrs_source", None))
-        for _k, _v in _v105:
-            data.setdefault(_k, _v)
-        data["config_version"] = 105
-    # v106 (gen3_progress_clock_intent_v1) — the no-progress clock's two OPT-IN fixes ⇒ v97's
-    # shape: no gate, no refusal, just a default. False is the only possible past (the flags did
-    # not exist), and it is also the reading every run through gen-15 trained under, so a resume of
-    # an archived run keeps charging exactly what it charged. A recorded value migrates untouched.
-    if version < 106:
-        data.setdefault("progress_decision_tense", False)
-        data.setdefault("progress_switch_freeze", False)
-        data["config_version"] = 106
-    # v107 (gen3_q_winprob_head_v1) — ONE STRUCTURAL mode (v98's shape) plus TWO TRAINING-only
-    # coefficients (v100's). The structural half still DEFAULTS rather than refusing, for v98's
-    # exact reason: a pre-v107 checkpoint could not have built the Q head, so "none" is not a guess
-    # but the only possible past. The refusal direction belongs to check_compatible, which fires
-    # the moment a live run's "read_only" meets a migrated "none". The two coefficients are pure
-    # provenance + flagless-resume read-back and are never gated.
-    if version < 107:
-        data.setdefault("q_winprob_mode", "none")
-        data.setdefault("q_winprob_coef", 0.0)
-        data.setdefault("q_winprob_onpolicy_coef", 0.0)
-        data["config_version"] = 107
-    # v108 (gen3_dead_flag_purge_v2) — THE STAMP ONLY. The purge's POP/REFUSE half for
-    # `threat_prob_outspeed` is version-INDEPENDENT and ran with the other sanitizers above, because
-    # a stale key TypeErrors in `cls(**data)` whatever vintage wrote it. Nothing is added or
-    # defaulted here: the deletion removes a field rather than introducing one, so the migration owes
-    # a v107 config only its new version number. Same shape as v88's and v96's stamp-only branches.
-    if version < 108:
-        data["config_version"] = 108
-    # v109 (gen3_winprob_critic_mode_v1) — ONE STRUCTURAL string plus TWO resume-immutable reward
-    # fields, all defaulted rather than refused, for v98's exact reason: a pre-v109 checkpoint
-    # could not have been trained under any of them, so these are not guesses but the only
-    # possible past. The refusal direction belongs to check_compatible (critic) and
-    # check_reward_config (the two reward fields), which fire the moment a live run's 'winprob'
-    # meets a migrated 'shaped'.
-    if version < 109:
-        data.setdefault("critic", "shaped")
-        data.setdefault("terminal_indicator", False)
-        data.setdefault("no_progress_tax_armed", False)
-        data["config_version"] = 109
-    # v110 (gen3_frozen_phi_actor_only_v1) — ONE training-only PATH, v105's shape exactly. None is
-    # not a guess: the flag did not exist, so no pre-v110 run can have had a frozen actor-only
-    # potential. Not version-locked and not in check_compatible — it edits the ADVANTAGE, never a
-    # forward pass or a weight shape.
-    if version < 110:
-        data.setdefault("win_prob_pbrs_frozen", None)
-        data["config_version"] = 110
-    # v111 (gen3_arch_surface_guard_v1) — ONE provenance-only string, defaulted to None. There is
-    # no refusal direction and never will be: `arch_source` gates nothing, so a pre-v111 config's
-    # honest value is "not recorded", which is exactly what None means here. Do NOT infer it from
-    # the config's other fields — a run whose surface happens to match today's mirror still did not
-    # SAY so, and a derived answer presented as a record is worse than no answer.
-    if version < 111:
-        data.setdefault("arch_source", None)
-        data["config_version"] = 111
-    # v112 (gen3_eval_sentinel_greedy_default_v1) — the EVAL OPPONENT REGIME + the gate it derives.
-    # A pre-v112 config defaults to `eval_sentinel_greedy=False`, and that is a RECORD rather than a
-    # guess for every run this migration can actually reach: MIGRATION_FLOOR is 96, and the flag's
-    # argparse default was False from the v9 launch (2026-06) until this bump, so every config in
-    # range trained with stochastic sentinels unless its launch typed the flag. ⚠️ THE EXCEPTION IS
-    # NAMED RATHER THAN PAPERED OVER: the 49 v5.5–v8 runs that DID type it sit far below the floor
-    # and cannot be migrated at all; their regime survives only in `metadata.json:cli_args`.
-    # `promote_threshold` is then DERIVED from the migrated regime by exactly the rule that produced
-    # it at launch — 0.55 greedy / 0.65 stochastic — rather than pinned to one number, so a config
-    # that carries a greedy regime does not migrate into a gate that would freeze its pool. A run
-    # that typed an explicit `--promote-threshold` pre-v112 recorded it in `cli_args` only; a resume
-    # of one must re-type it (the migration cannot invent what was never in this file).
-    # The two literals are NOT imported from `agents.training.snapshot_pool.promote_threshold_default`
-    # — `agents.model` does not depend on `agents.training` — so they are pinned to it by
-    # `main/train/eval_sentinel_regime_test.py::test_a_pre_v112_config_migrates_to_STOCHASTIC_and_its_own_gate`,
-    # which asserts this branch against that function's constants.
-    if version < 112:
-        data.setdefault("eval_sentinel_greedy", False)
-        data.setdefault("promote_threshold",
-                        0.55 if data.get("eval_sentinel_greedy") else 0.65)
-        data["config_version"] = 112
-    # v113 (gen3_teacher_scan_limit_flag_v1) — the search-teacher SELECTION scan width. 60 is a
-    # RECORD, not a default chosen for old configs: the number was hard-coded in
-    # `SearchTeacherCallback.__init__` and reachable by no flag, so every run this migration can
-    # touch ran at exactly 60 or ran no teacher cycle at all.
-    if version < 113:
-        data.setdefault("teacher_scan_limit", 60)
-        data["config_version"] = 113
-    # v114 (gen3_value_true_team_v1) — ONE STRUCTURAL bool, defaulted rather than refused, for
-    # v98's exact reason: a pre-v114 checkpoint could not have built the privileged true-team
-    # route, so False is not a guess but the only possible past. The refusal direction belongs to
-    # check_compatible, which fires the moment a live run's True meets a migrated False.
-    if version < 114:
-        data.setdefault("value_true_team", False)
-        data["config_version"] = 114
-    # v115 (gen3_winprob_strata_weight_v1) — ONE TRAINING-only loss weight, v100's shape exactly.
-    # 0.0 is not a default chosen for old configs, it is a RECORD: the flag did not exist, so no
-    # pre-v115 run can have weighted its win-prob BCE by opponent class. Not version-locked and not
-    # in check_compatible — it reweights a loss, never a forward pass or a weight shape.
-    if version < 115:
-        data.setdefault("win_prob_strata_weight", 0.0)
-        data["config_version"] = 115
-    # v116 (gen3_winprob_lambda_v1) — TWO TRAINING-only target-shape fields, v115's shape exactly.
-    # 1.0 is not a default chosen for old configs, it is a RECORD: λ = 1.0 IS the terminal-outcome
-    # target every pre-v116 run trained against, and it is the identity of the recursion. The
-    # truncation mode is inert at that λ, so "bootstrap" records no behaviour either way. Not
-    # version-locked and not in check_compatible — they re-aim a loss, never a forward pass.
-    if version < 116:
-        data.setdefault("win_prob_lambda", 1.0)
-        data.setdefault("win_prob_lambda_truncated", "bootstrap")
-        data["config_version"] = 116
-    # v117 (gen3_dense_aux_v1) — ONE STRUCTURAL bool + ONE training coefficient, defaulted rather
-    # than refused for v114's reason: False / 0.0 is not a guess about an old run, it is the only
-    # value a pre-v117 run could have had, because neither field existed and neither could be set.
-    # The bool IS in check_compatible (a state_dict delta with no shape error to catch it); the
-    # coefficient is not (it doses a loss).
-    if version < 117:
-        data.setdefault("dense_aux", False)
-        data.setdefault("win_prob_dense_aux", 0.0)
-        data["config_version"] = 117
-    # v118 (gen3_winprob_rollout_target_v1) — THREE TRAINING-only target-shape fields, v116's shape
-    # exactly. 0.0 is not a default chosen for old configs, it is a RECORD: the terminal bit IS the
-    # target every pre-v118 run trained against, and R / mode are inert at that fraction. Not
-    # version-locked and not in check_compatible — they re-aim a loss, never a forward pass.
-    if version < 118:
-        data.setdefault("win_prob_rollout_target", 0.0)
-        data.setdefault("win_prob_rollout_r", 8)
-        data.setdefault("win_prob_rollout_mode", "replace")
-        data["config_version"] = 118
-    # v119 (gen3_winprob_rollout_weight_v1) — ONE TRAINING-only loss weight, v116's shape exactly.
-    # 1.0 is a RECORD, not a chosen default: every scored row of every pre-v119 run weighed the
-    # same, because there was no flag that could make one weigh more. Not version-locked and not in
-    # check_compatible — it re-prices a loss, never a forward pass.
-    if version < 119:
-        data.setdefault("win_prob_rollout_weight", 1.0)
-        data["config_version"] = 119
-    # v120 (gen3_fork_v1) — SIX TRAINING-only fork knobs, v118's shape exactly. Every default is a
-    # RECORD, not a choice: no pre-v120 run could fork a decision, because there was no flag that
-    # could fork one, and the other five are inert at fraction 0. Not version-locked and not in
-    # check_compatible — they steer a post-collection callback, never a forward pass.
-    if version < 120:
-        data.setdefault("fork_fraction", 0.0)
-        data.setdefault("fork_branches", 3)
-        data.setdefault("fork_contested_gap", 0.40)
-        data.setdefault("fork_contested_absv", 0.0)
-        data.setdefault("fork_max_per_battle", 1)
-        data.setdefault("fork_crn", "dice_and_draws")
-        data["config_version"] = 120
+    # None: the floor is the current version (gen3_event_record_v2 raised it to 121).
+    #
+    # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
+    # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4
+    # refused-switch target, the Mud / Water Sport volatile slots, the E10 hidden-slot move mixture)
+    # bumped ARCH_SIGNATURE, so every config below v121 is refused at the floor and these branches
+    # can no longer run. Preserved VERBATIM (each line prefixed `| `) because they are the only
+    # statement of what a v97–v120 checkpoint's missing fields meant:
+    #   | # v97 (gen3_intent_label_bot_weight_v1) — a TRAINING-only loss weight, so a pre-v97 checkpoint
+    #   | # trained with it OFF and the field simply defaults in. No forward, no weight shape, no gate:
+    #   | # provenance + flagless-resume read-back only. Same shape as v92's since-floored td_aux_coef
+    #   | # branch, and REACHABLE where that one no longer is: a v96 checkpoint is exactly at the floor
+    #   | # and its config genuinely lacks the field.
+    #   | if version < 97:
+    #   |     data.setdefault("intent_label_bot_weight", 1.0)
+    #   |     data["config_version"] = 97
+    #   | # v98 (gen3_cf_evidential_head_v1) — a STRUCTURAL toggle, so unlike v97 this one is gated. It
+    #   | # still DEFAULTS rather than refusing: a pre-v98 checkpoint could not have built the head (the
+    #   | # module did not exist), so False is not a guess, it is the only possible past. The refusal
+    #   | # direction is handled by check_compatible, which fires the moment a live run's True meets a
+    #   | # migrated False.
+    #   | if version < 98:
+    #   |     data.setdefault("cf_evidential", False)
+    #   |     data["config_version"] = 98
+    #   | # v99 (gen3_cf_twin_heads_v1) — two STRUCTURAL toggles, both gated like v98's. Same reasoning
+    #   | # for defaulting rather than refusing: a pre-v99 checkpoint could not have built either module,
+    #   | # so False is the only possible past, and the refusal direction is check_compatible's the moment
+    #   | # a live run's True meets a migrated False.
+    #   | if version < 99:
+    #   |     data.setdefault("cf_twin_heads", False)
+    #   |     data.setdefault("cf_shadow_critic", False)
+    #   |     data["config_version"] = 99
+    #   | # v100 (gen3_cf_coef_provenance_v1) — ten TRAINING-only coefficients ⇒ v97's shape, not
+    #   | # v98/v99's: no gate, no refusal, just a default (the ARGPARSE one, which is what every
+    #   | # pre-v100 run necessarily ran with). Any recorded value migrates untouched.
+    #   | if version < 100:
+    #   |     for _k, _v in (("cf_records", False), ("cf_records_keep", 512),
+    #   |                    ("cf_winprob_coef", 0.0), ("cf_head_only", True),
+    #   |                    ("cf_label_lag_steps", 150_000), ("cf_label_likelihood", "binomial"),
+    #   |                    ("cf_evidential_coef", 0.0), ("cf_evidential_reg", 1e-3),
+    #   |                    ("cf_twin_coef", 0.0), ("cf_shadow_coef", 0.0)):
+    #   |         data.setdefault(_k, _v)
+    #   |     data["config_version"] = 100
+    #   | # v101 (gen3_capacity_telemetry_v1) — four TRAINING-only DIAGNOSTIC knobs ⇒ v100's shape: no
+    #   | # gate, no refusal, just a default (the ARGPARSE one, which is what every pre-v101 run
+    #   | # necessarily ran with — the telemetry did not exist). Any recorded value migrates untouched.
+    #   | if version < 101:
+    #   |     for _k, _v in (("capacity_telemetry", False), ("canary_reset_steps", 1_000_000),
+    #   |                    ("capacity_cosine_every", 50), ("capacity_velocity_every", 50)):
+    #   |         data.setdefault(_k, _v)
+    #   |     data["config_version"] = 101
+    #   | # v102 (gen3_policy_grad_coef_v1) — one TRAINING-only coefficient ⇒ v97's shape: no gate, no refusal,
+    #   | # just a default. 1.0 is not a guess: the policy-gradient term entered the loss at an implicit
+    #   | # 1.0 in every pre-v102 run, so that is what every such run trained with.
+    #   | if version < 102:
+    #   |     data.setdefault("policy_grad_coef", 1.0)
+    #   |     data["config_version"] = 102
+    #   | # v103 (gen3_distill_target_gate_v1) — seven TRAINING-only knobs ⇒ v100's shape: no gate, no
+    #   | # refusal, just the argparse defaults. Not a guess: "kl" IS the loss every pre-v103 run
+    #   | # trained with (the one constant across every arm in the five-arm record), no run ever had a
+    #   | # gate, and the rank tripwire did not exist (its "warn" default folds nothing into any
+    #   | # update). Any recorded value migrates untouched.
+    #   | if version < 103:
+    #   |     for _k, _v in (("distill_target", "kl"), ("distill_topk", 1),
+    #   |                    ("distill_gate", "none"), ("distill_gate_tau", 0.0),
+    #   |                    ("distill_beta", 1.0), ("rank_tripwire", "warn"),
+    #   |                    ("rank_tripwire_drop", 0.20)):
+    #   |         data.setdefault(_k, _v)
+    #   |     data["config_version"] = 103
+    #   | # v104 (gen3_winprob_pbrs_v1) — ONE TRAINING-only coefficient ⇒ v97's shape, not v98/v99's:
+    #   | # no gate, no refusal, just a default. 0.0 is the only possible past (the flag did not exist),
+    #   | # and a recorded value migrates untouched. It edits the reward stream rather than the loss,
+    #   | # which changes nothing here — the migration's job is provenance, and nothing version-checks it.
+    #   | if version < 104:
+    #   |     data.setdefault("win_prob_pbrs_coef", 0.0)
+    #   |     data["config_version"] = 104
+    #   | # v105 (gen3_clean_world_config_v1 + gen3_winprob_pbrs_source_v1) — FIVE keys whose defaults ARE
+    #   | # the pre-v105 behaviour, so this is v100's shape: no gate, no refusal, just the values every
+    #   | # earlier run necessarily trained with. `hand_shaping` / `pbrs_material` / `pbrs_belief` did not
+    #   | # exist and their terms were UNCONDITIONAL, so True is the only possible past; `victory_value`
+    #   | # was the `reward_weights.VICTORY_VALUE` module constant (30.0) in every run ever; and with no
+    #   | # `--win-prob-pbrs-source` flag, φ was always read from the LIVE head ⇒ None.
+    #   | # ⚠️ Four of the five are resume-IMMUTABLE (check_reward_config), so a migrated old config
+    #   | # resumes cleanly against a default launch and mismatches LOUDLY against a clean-world one.
+    #   | # That is the intent, not an accident: a run's reward must never flip underneath it.
+    #   | if version < 105:
+    #   |     _v105: "tuple[tuple[str, Any], ...]" = (
+    #   |         ("hand_shaping", True), ("pbrs_material", True), ("pbrs_belief", True),
+    #   |         ("victory_value", 30.0), ("win_prob_pbrs_source", None))
+    #   |     for _k, _v in _v105:
+    #   |         data.setdefault(_k, _v)
+    #   |     data["config_version"] = 105
+    #   | # v106 (gen3_progress_clock_intent_v1) — the no-progress clock's two OPT-IN fixes ⇒ v97's
+    #   | # shape: no gate, no refusal, just a default. False is the only possible past (the flags did
+    #   | # not exist), and it is also the reading every run through gen-15 trained under, so a resume of
+    #   | # an archived run keeps charging exactly what it charged. A recorded value migrates untouched.
+    #   | if version < 106:
+    #   |     data.setdefault("progress_decision_tense", False)
+    #   |     data.setdefault("progress_switch_freeze", False)
+    #   |     data["config_version"] = 106
+    #   | # v107 (gen3_q_winprob_head_v1) — ONE STRUCTURAL mode (v98's shape) plus TWO TRAINING-only
+    #   | # coefficients (v100's). The structural half still DEFAULTS rather than refusing, for v98's
+    #   | # exact reason: a pre-v107 checkpoint could not have built the Q head, so "none" is not a guess
+    #   | # but the only possible past. The refusal direction belongs to check_compatible, which fires
+    #   | # the moment a live run's "read_only" meets a migrated "none". The two coefficients are pure
+    #   | # provenance + flagless-resume read-back and are never gated.
+    #   | if version < 107:
+    #   |     data.setdefault("q_winprob_mode", "none")
+    #   |     data.setdefault("q_winprob_coef", 0.0)
+    #   |     data.setdefault("q_winprob_onpolicy_coef", 0.0)
+    #   |     data["config_version"] = 107
+    #   | # v108 (gen3_dead_flag_purge_v2) — THE STAMP ONLY. The purge's POP/REFUSE half for
+    #   | # `threat_prob_outspeed` is version-INDEPENDENT and ran with the other sanitizers above, because
+    #   | # a stale key TypeErrors in `cls(**data)` whatever vintage wrote it. Nothing is added or
+    #   | # defaulted here: the deletion removes a field rather than introducing one, so the migration owes
+    #   | # a v107 config only its new version number. Same shape as v88's and v96's stamp-only branches.
+    #   | if version < 108:
+    #   |     data["config_version"] = 108
+    #   | # v109 (gen3_winprob_critic_mode_v1) — ONE STRUCTURAL string plus TWO resume-immutable reward
+    #   | # fields, all defaulted rather than refused, for v98's exact reason: a pre-v109 checkpoint
+    #   | # could not have been trained under any of them, so these are not guesses but the only
+    #   | # possible past. The refusal direction belongs to check_compatible (critic) and
+    #   | # check_reward_config (the two reward fields), which fire the moment a live run's 'winprob'
+    #   | # meets a migrated 'shaped'.
+    #   | if version < 109:
+    #   |     data.setdefault("critic", "shaped")
+    #   |     data.setdefault("terminal_indicator", False)
+    #   |     data.setdefault("no_progress_tax_armed", False)
+    #   |     data["config_version"] = 109
+    #   | # v110 (gen3_frozen_phi_actor_only_v1) — ONE training-only PATH, v105's shape exactly. None is
+    #   | # not a guess: the flag did not exist, so no pre-v110 run can have had a frozen actor-only
+    #   | # potential. Not version-locked and not in check_compatible — it edits the ADVANTAGE, never a
+    #   | # forward pass or a weight shape.
+    #   | if version < 110:
+    #   |     data.setdefault("win_prob_pbrs_frozen", None)
+    #   |     data["config_version"] = 110
+    #   | # v111 (gen3_arch_surface_guard_v1) — ONE provenance-only string, defaulted to None. There is
+    #   | # no refusal direction and never will be: `arch_source` gates nothing, so a pre-v111 config's
+    #   | # honest value is "not recorded", which is exactly what None means here. Do NOT infer it from
+    #   | # the config's other fields — a run whose surface happens to match today's mirror still did not
+    #   | # SAY so, and a derived answer presented as a record is worse than no answer.
+    #   | if version < 111:
+    #   |     data.setdefault("arch_source", None)
+    #   |     data["config_version"] = 111
+    #   | # v112 (gen3_eval_sentinel_greedy_default_v1) — the EVAL OPPONENT REGIME + the gate it derives.
+    #   | # A pre-v112 config defaults to `eval_sentinel_greedy=False`, and that is a RECORD rather than a
+    #   | # guess for every run this migration can actually reach: MIGRATION_FLOOR is 96, and the flag's
+    #   | # argparse default was False from the v9 launch (2026-06) until this bump, so every config in
+    #   | # range trained with stochastic sentinels unless its launch typed the flag. ⚠️ THE EXCEPTION IS
+    #   | # NAMED RATHER THAN PAPERED OVER: the 49 v5.5–v8 runs that DID type it sit far below the floor
+    #   | # and cannot be migrated at all; their regime survives only in `metadata.json:cli_args`.
+    #   | # `promote_threshold` is then DERIVED from the migrated regime by exactly the rule that produced
+    #   | # it at launch — 0.55 greedy / 0.65 stochastic — rather than pinned to one number, so a config
+    #   | # that carries a greedy regime does not migrate into a gate that would freeze its pool. A run
+    #   | # that typed an explicit `--promote-threshold` pre-v112 recorded it in `cli_args` only; a resume
+    #   | # of one must re-type it (the migration cannot invent what was never in this file).
+    #   | # The two literals are NOT imported from `agents.training.snapshot_pool.promote_threshold_default`
+    #   | # — `agents.model` does not depend on `agents.training` — so they are pinned to it by
+    #   | # `main/train/eval_sentinel_regime_test.py::test_a_pre_v112_config_migrates_to_STOCHASTIC_and_its_own_gate`,
+    #   | # which asserts this branch against that function's constants.
+    #   | if version < 112:
+    #   |     data.setdefault("eval_sentinel_greedy", False)
+    #   |     data.setdefault("promote_threshold",
+    #   |                     0.55 if data.get("eval_sentinel_greedy") else 0.65)
+    #   |     data["config_version"] = 112
+    #   | # v113 (gen3_teacher_scan_limit_flag_v1) — the search-teacher SELECTION scan width. 60 is a
+    #   | # RECORD, not a default chosen for old configs: the number was hard-coded in
+    #   | # `SearchTeacherCallback.__init__` and reachable by no flag, so every run this migration can
+    #   | # touch ran at exactly 60 or ran no teacher cycle at all.
+    #   | if version < 113:
+    #   |     data.setdefault("teacher_scan_limit", 60)
+    #   |     data["config_version"] = 113
+    #   | # v114 (gen3_value_true_team_v1) — ONE STRUCTURAL bool, defaulted rather than refused, for
+    #   | # v98's exact reason: a pre-v114 checkpoint could not have built the privileged true-team
+    #   | # route, so False is not a guess but the only possible past. The refusal direction belongs to
+    #   | # check_compatible, which fires the moment a live run's True meets a migrated False.
+    #   | if version < 114:
+    #   |     data.setdefault("value_true_team", False)
+    #   |     data["config_version"] = 114
+    #   | # v115 (gen3_winprob_strata_weight_v1) — ONE TRAINING-only loss weight, v100's shape exactly.
+    #   | # 0.0 is not a default chosen for old configs, it is a RECORD: the flag did not exist, so no
+    #   | # pre-v115 run can have weighted its win-prob BCE by opponent class. Not version-locked and not
+    #   | # in check_compatible — it reweights a loss, never a forward pass or a weight shape.
+    #   | if version < 115:
+    #   |     data.setdefault("win_prob_strata_weight", 0.0)
+    #   |     data["config_version"] = 115
+    #   | # v116 (gen3_winprob_lambda_v1) — TWO TRAINING-only target-shape fields, v115's shape exactly.
+    #   | # 1.0 is not a default chosen for old configs, it is a RECORD: λ = 1.0 IS the terminal-outcome
+    #   | # target every pre-v116 run trained against, and it is the identity of the recursion. The
+    #   | # truncation mode is inert at that λ, so "bootstrap" records no behaviour either way. Not
+    #   | # version-locked and not in check_compatible — they re-aim a loss, never a forward pass.
+    #   | if version < 116:
+    #   |     data.setdefault("win_prob_lambda", 1.0)
+    #   |     data.setdefault("win_prob_lambda_truncated", "bootstrap")
+    #   |     data["config_version"] = 116
+    #   | # v117 (gen3_dense_aux_v1) — ONE STRUCTURAL bool + ONE training coefficient, defaulted rather
+    #   | # than refused for v114's reason: False / 0.0 is not a guess about an old run, it is the only
+    #   | # value a pre-v117 run could have had, because neither field existed and neither could be set.
+    #   | # The bool IS in check_compatible (a state_dict delta with no shape error to catch it); the
+    #   | # coefficient is not (it doses a loss).
+    #   | if version < 117:
+    #   |     data.setdefault("dense_aux", False)
+    #   |     data.setdefault("win_prob_dense_aux", 0.0)
+    #   |     data["config_version"] = 117
+    #   | # v118 (gen3_winprob_rollout_target_v1) — THREE TRAINING-only target-shape fields, v116's shape
+    #   | # exactly. 0.0 is not a default chosen for old configs, it is a RECORD: the terminal bit IS the
+    #   | # target every pre-v118 run trained against, and R / mode are inert at that fraction. Not
+    #   | # version-locked and not in check_compatible — they re-aim a loss, never a forward pass.
+    #   | if version < 118:
+    #   |     data.setdefault("win_prob_rollout_target", 0.0)
+    #   |     data.setdefault("win_prob_rollout_r", 8)
+    #   |     data.setdefault("win_prob_rollout_mode", "replace")
+    #   |     data["config_version"] = 118
+    #   | # v119 (gen3_winprob_rollout_weight_v1) — ONE TRAINING-only loss weight, v116's shape exactly.
+    #   | # 1.0 is a RECORD, not a chosen default: every scored row of every pre-v119 run weighed the
+    #   | # same, because there was no flag that could make one weigh more. Not version-locked and not in
+    #   | # check_compatible — it re-prices a loss, never a forward pass.
+    #   | if version < 119:
+    #   |     data.setdefault("win_prob_rollout_weight", 1.0)
+    #   |     data["config_version"] = 119
+    #   | # v120 (gen3_fork_v1) — SIX TRAINING-only fork knobs, v118's shape exactly. Every default is a
+    #   | # RECORD, not a choice: no pre-v120 run could fork a decision, because there was no flag that
+    #   | # could fork one, and the other five are inert at fraction 0. Not version-locked and not in
+    #   | # check_compatible — they steer a post-collection callback, never a forward pass.
+    #   | if version < 120:
+    #   |     data.setdefault("fork_fraction", 0.0)
+    #   |     data.setdefault("fork_branches", 3)
+    #   |     data.setdefault("fork_contested_gap", 0.40)
+    #   |     data.setdefault("fork_contested_absv", 0.0)
+    #   |     data.setdefault("fork_max_per_battle", 1)
+    #   |     data.setdefault("fork_crn", "dice_and_draws")
+    #   |     data["config_version"] = 120
     return data

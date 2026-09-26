@@ -555,6 +555,10 @@ impl Reader {
                 if let Some(src) = delegated_from(&sm, &move_id) {
                     value.push(("from_move", Value::Str(src)));
                 }
+                // gen3_event_record_v2 (E12): Pursuit's `[from] Pursuit` strike at a switching target
+                if move_id == "pursuit" && move_source(&sm).as_deref() == Some("pursuit") {
+                    value.push(("pursuit_switch", Value::Int(1)));
+                }
                 let actor_tok = get(2).map(str::to_string);
                 let side = actor_tok.as_deref().and_then(|t| self.side_of(t));
                 let actor = match actor_tok.as_deref() {
@@ -780,6 +784,12 @@ fn push_cause(value: &mut Vec<(&'static str, Value)>, sm: &[String]) {
 /// token that is not an item/ability cause, `move:` stripped, id-normalised — unless it is the
 /// executed move itself (Pursuit's self-tag) or the `lockedmove` marker.
 fn delegated_from(sm: &[String], executed: &str) -> Option<String> {
+    move_source(sm).filter(|sid| sid != executed && sid != "lockedmove")
+}
+
+/// `from_clause_move_source(sm[3:])`: the move a `|move|` line's `[from]` names (the first move-call
+/// `[from]` token, `move:` stripped, id-normalised), UNFILTERED — Pursuit's self-tag included.
+fn move_source(sm: &[String]) -> Option<String> {
     for tok in sm.iter().skip(3) {
         let t = tok.trim();
         let Some(src) = t.strip_prefix("[from]") else { continue };
@@ -793,7 +803,7 @@ fn delegated_from(sm: &[String], executed: &str) -> Option<String> {
         }
         let sid = to_id(&src);
         if !sid.is_empty() {
-            return (sid != executed && sid != "lockedmove").then_some(sid);
+            return Some(sid);
         }
     }
     None

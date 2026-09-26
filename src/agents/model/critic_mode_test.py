@@ -197,33 +197,58 @@ def test_the_critic_is_recorded_and_gated():
     saved.check_compatible(saved)
 
 
-def test_a_pre_v109_config_migrates_to_todays_behaviour():
-    """Not a guess: none of the three fields existed before v109, so these are the only possible
-    past. The REFUSAL direction belongs to check_compatible / check_reward_config."""
-    from agents.model.model_version import MODEL_CONFIG_VERSION
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+
+    from agents.model.model_version import ModelVersion
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_pre_v109_config_is_refused_and_a_current_one_records_todays_behaviour():
+    """The v109 `setdefault` branch (critic "shaped", both reward fields False) is FLOORED AWAY:
+    gen3_event_record_v2 raised MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s
+    v97–v120 history), so a v108 config is pre-generation and is REFUSED with the diagnosis. The
+    surviving property: a fresh current config RECORDS all three explicitly at today's behaviour.
+    The REFUSAL direction still belongs to check_compatible / check_reward_config."""
+    from agents.model.model_version import MODEL_CONFIG_VERSION, ModelVersionError
     from agents.model.model_version.migrations import _migrate_config
-    out = _migrate_config({"config_version": 108})
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 108})
+    out = _migrate_config(_fresh_current_config())
     assert out["critic"] == "shaped"
     assert out["terminal_indicator"] is False
     assert out["no_progress_tax_armed"] is False
-    # The migration walks to whatever the CURRENT version is — the subject here is the three v109
-    # DEFAULTS, and pinning the stamp to a literal 109 made this test fail on the next unrelated
-    # bump (v110, `gen3_frozen_phi_actor_only_v1`) while every claim it exists to make still held.
-    assert out["config_version"] == MODEL_CONFIG_VERSION >= 109
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
 
 
 def test_a_recorded_critic_survives_the_migration():
+    from agents.model.model_version import ModelVersion, ModelVersionError
     from agents.model.model_version.migrations import _migrate_config
-    assert _migrate_config({"config_version": 108, "critic": "winprob"})["critic"] == "winprob"
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 108, "critic": "winprob"})
+    out = _migrate_config(_fresh_current_config(critic="winprob"))
+    assert out["critic"] == "winprob"
+    assert ModelVersion(**out).critic == "winprob"
 
 
 def test_no_arch_signature_bump_at_v109():
     """`shaped` is the default and builds no module and moves no state_dict key, so v109 must NOT
-    bump the signature — the bump belongs to the DEFAULT FLIP, where it forces fresh weights."""
-    from agents.model.model_version import ARCH_SIGNATURE
-    assert ARCH_SIGNATURE == "gen3_critic_route_wave_v1", (
-        "v109 is a byte-identical-when-off mode; if the signature moved, it moved for another "
-        "reason and this pin should be updated deliberately alongside it.")
+    bump the signature — the bump belongs to the DEFAULT FLIP, where it forces fresh weights.
+
+    Pinned as HISTORY against the append-only SIGNATURE_FIRST_VERSION, not the live constant:
+    gen3_event_record_v2 (v121, the observation-architecture batch) later bumped the signature for
+    its own reasons, which does not make v109's rule untrue."""
+    from agents.model.model_version import SIGNATURE_FIRST_VERSION
+    assert 109 not in SIGNATURE_FIRST_VERSION.values(), (
+        "v109 is a byte-identical-when-off mode; no signature may be first-stamped at it.")
+    in_force = max((v, sig) for sig, v in SIGNATURE_FIRST_VERSION.items() if v <= 109)
+    assert in_force == (96, "gen3_critic_route_wave_v1")
 
 
 # --------------------------------------------------------------------------------------------

@@ -54,8 +54,11 @@ _USIZE_CONSTANTS = (
     "MAX_TURNS", "MAX_SPIKES", "MAX_PP",
     "EVENT_T_PAD", "EVENT_T_MOVE", "EVENT_T_SWITCH_IN", "EVENT_T_FAINT", "EVENT_T_STATUS_APPLIED",
     "EVENT_T_STATUS_CURED", "EVENT_T_BOOST", "EVENT_T_ITEM_REVEAL", "EVENT_T_HAZARD",
-    "EVENT_T_SWITCH_REJECTED", "EVENT_T_CANT", "N_EVENT_TYPES",
+    "EVENT_T_SWITCH_REJECTED", "EVENT_T_CANT", "EVENT_T_DENIED", "N_EVENT_TYPES",
     "ITEM_TR_NONE", "ITEM_TR_REVEALED", "ITEM_TR_CONSUMED", "ITEM_TR_REMOVED", "ITEM_TR_SWAPPED",
+    "ITEM_TR_RECEIVED",
+    "ENTRY_NONE", "ENTRY_CHOSEN", "ENTRY_REPLACEMENT", "ENTRY_DRAG", "ENTRY_BATON_PASS",
+    "DENIAL_NONE", "DENIAL_FAINTED_FIRST", "DENIAL_TURN_CUT",
 )
 
 
@@ -86,7 +89,7 @@ def _f64_table(w: _W, name: str, xs: Iterable[float]) -> None:
 
 
 def render() -> str:
-    from agents.battle.turn_view import FAINT_CAUSE_VOCAB
+    from agents.battle.turn_view import FAINT_CAUSE_VOCAB_LIVE
     from agents.gen3_mechanics import _PROTECT_COUNTER_MAX
     from agents.observation import constants as C
     from agents.observation import gen3_effects as E
@@ -112,6 +115,9 @@ def render() -> str:
     w("")
     w("/// `Gen3ObservationEncoder.dimension` — the flat row's length.")
     w(f"pub const OBS_DIM: usize = {obs_dim};")
+    w("/// The `<f4` wire frame's head, which spells the row's shape (`wire.rs`); generated so a")
+    w("/// layout change moves it with `OBS_DIM` instead of failing a hand-written assert.")
+    w('pub const FRAME_HEAD: &str = "{\\"dtype\\":\\"<f4\\",\\"shape\\":[' + str(obs_dim) + '],\\"b64\\":\\"";')
     for name in _USIZE_CONSTANTS:
         w(f"pub const {name}: usize = {int(getattr(C, name))};")
     w("")
@@ -136,8 +142,9 @@ def render() -> str:
     _str_table(w, "NOT_A_VOLATILE", sorted(E.NOT_A_VOLATILE))
     w("/// `gen3_effects.CANT_REASONS_LIVE` — the event row's CANT column is 1 + the index.")
     _str_table(w, "CANT_REASONS_LIVE", E.CANT_REASONS_LIVE)
-    w("/// `turn_view.FAINT_CAUSE_VOCAB` — the event row's FAINT_CAUSE column is 1 + the index.")
-    _str_table(w, "FAINT_CAUSE_VOCAB", FAINT_CAUSE_VOCAB)
+    w("/// `turn_view.FAINT_CAUSE_VOCAB_LIVE` — the event row's FAINT_CAUSE column is 1 + the index")
+    w("/// (the archive's eight + `destinybond` / `perishsong`, gen3_event_record_v2).")
+    _str_table(w, "FAINT_CAUSE_VOCAB", FAINT_CAUSE_VOCAB_LIVE)
     w("")
     w("/// `TypeEncoder.TYPE_TO_IDX` — keyed by the `PokemonType` NAME the per-mon block reads")
     w("/// (`THREE_QUESTION_MARKS` is NOT a key: a `???`-typed mon reads 0, as in Python), and by the")

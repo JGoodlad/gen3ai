@@ -10,7 +10,8 @@ lives here.
 | **Built as** | `models/ai_v9_21_gen17_pfspoff_0820/model_config.json` (gen-17, v97) migrated to the v109 schema, with the **critic family alone** overridden |
 | **Critic rows changed from gen-17** | 13 (listed below) · **non-critic rows changed: 0** |
 | **Mirror updated** | 2026-09-06 |
-| **`config_version` / `arch_signature`** | 109 / `gen3_critic_route_wave_v1` |
+| **`config_version` / `arch_signature`** | **121 / `gen3_event_record_v2`** — the SIGNATURE-BUMP WINDOW (2026-09-26): the observation-architecture batch changed the obs (2501 → 2761) and the signature, and the mirror follows the CODE until the first run at the new signature exists. Exactly four keys moved, each to what HEAD builds for this surface: `arch_signature` (`gen3_critic_route_wave_v1` → `gen3_event_record_v2`), `config_version` (109 → 121), `total_dim` (2501 → 2761), `active_context_dim` (58 → 60). Every other key is the run's, unchanged. When the first new-lineage run lands, re-sync from ITS `model_config.json` (`--sync-config`) and delete this note |
+| **Before the window** | 109 / `gen3_critic_route_wave_v1` (the run's own schema) |
 | **Previously** | gen-17's config verbatim (v97), from 2026-08-22 |
 
 ## Why it was CONSTRUCTED rather than copied from a run

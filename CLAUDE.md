@@ -376,7 +376,7 @@ tools/               # Acquisition layer (knows the 3 upstreams) — has CLAUDE.
 
 **[`designs/ARCHITECTURE.md`](designs/ARCHITECTURE.md) is the only document that states the model as it is NOW.** Read it before reasoning about the model. Orientation:
 
-- The observation is a flat **2501-dim float32 vector** + an 11-dim `action_mask`, as a Dict obs. 🚨 **NEVER hardcode an index** — read `Gen3ObservationEncoder.get_layout()`; every offset comes from `agents/observation/constants.py`. (This root's dim table was stale by two generations before 2026-08-17. Ask the code.)
+- The observation is a flat **2761-dim float32 vector** + an 11-dim `action_mask`, as a Dict obs. 🚨 **NEVER hardcode an index** — read `Gen3ObservationEncoder.get_layout()`; every offset comes from `agents/observation/constants.py`. (This root's dim table was stale by two generations before 2026-08-17. Ask the code.)
 - `Gen3FeaturesExtractor` returns a **`(pi_features, vf_features)` tuple** and MUST be paired with `Gen3DualHeadMaskablePolicy`. A stock SB3 policy will not work.
 - The action head is the **pointer head** — there is no flat `action_net` and no flag to restore one.
 - Architecture constants live in `src/agents/model/arch_constants.py` and **nowhere else**; `ARCH_SIGNATURE` / `MODEL_CONFIG_VERSION` in `src/agents/model/model_version/`. **Read the live values from the code — a version number quoted in prose is stale the moment the next one lands.**

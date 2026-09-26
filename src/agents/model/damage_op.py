@@ -54,10 +54,11 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _DMG_N_CHANNELS, _DMG_OAX, _DMG_OAX_IDX_CRIT, _DMG_OAX_IDX_HIGH, _DMG_OAX_IDX_LOW,
     _DMG_OAX_IDX_PKO, _DMG_OAX_N_MOVES, _DMG_OAX_PER_MON, _DMG_OAX_PER_MOVE, _DMG_OMX,
     _DMG_OMX_CELL, _DMG_OMX_IDX_CRIT, _DMG_OMX_IDX_HIGH, _DMG_OMX_IDX_LOW, _DMG_OMX_IDX_MULT,
+    _MUD_SPORT_CTX_IDX, _WATER_SPORT_CTX_IDX,
     _DMG_OMX_IDX_PKO, _DMG_OUTGOING, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_OUT_SEC,
     _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN, _DMG_SPEED_SCALE,
     _DMG_SPEED_STD_K, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_STATUS_REFINE, _DMG_TOPK_DEFAULT_K,
-    _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
+    _ELECTRIC_TIDX, _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
     _PAIR_REDUCE_N_CHANNELS, _PTR_MOVE_CELL, _PTR_SWITCH_CELL_IN, _SB_ATK, _SB_DEF, _SB_SPA,
     _SB_SPD, _SB_SPE, _SECONDARY_MAJOR_N, _SECONDARY_TO_STATUS_CAT, _SUBSTITUTE_CTX_IDX,
@@ -458,6 +459,33 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         rain = weather_feature[:, 2:3]                                               # [B,1]
         return 1.0 + rain * (0.5 * is_water - 0.5 * is_fire) + sun * (0.5 * is_fire - 0.5 * is_water)
 
+    @staticmethod
+    def _sport_mult(ctx: Any, is_electric: torch.Tensor, is_fire: torch.Tensor) -> torch.Tensor:
+        """gen3_field_sport_slots_v1: gen3 Mud Sport / Water Sport BP modifier. Each is a volatile on
+        its USER whose ``onAnyBasePower`` halves EVERY Electric (Mud) / Fire (Water) move while the
+        holder is active, whoever uses it (gen4 mod ``chainModify(0.5)``, inherited by gen3). Read off
+        BOTH actives' context blocks: either side's holder weakens every such move on the field.
+        ``is_electric`` / ``is_fire`` are per-candidate type flags shaped ``[B|1, ...]``; the result
+        broadcasts like them. WORLD APPROXIMATION (the weather convention): a hypothetical world that
+        swaps a holder out still reads the CURRENT actives' sports."""
+        B = ctx.our_ctx_raw.shape[0]
+        shape = (B,) + (1,) * (is_electric.dim() - 1)
+        mud = torch.maximum(ctx.our_ctx_raw[:, _MUD_SPORT_CTX_IDX],
+                            ctx.opp_ctx_raw[:, _MUD_SPORT_CTX_IDX]).reshape(shape)
+        water = torch.maximum(ctx.our_ctx_raw[:, _WATER_SPORT_CTX_IDX],
+                              ctx.opp_ctx_raw[:, _WATER_SPORT_CTX_IDX]).reshape(shape)
+        out: torch.Tensor = (1.0 - 0.5 * mud * is_electric) * (1.0 - 0.5 * water * is_fire)
+        return out
+
+    def _field_bp_mult(self, ctx: Any, move_ty: torch.Tensor) -> torch.Tensor:
+        """Every FIELD base-power modifier the op models, per candidate: weather (rain / sun) ×
+        the field sports. ``move_ty`` is a 2-D type-index tensor shaped ``[B|1, C]`` (the 3-D
+        attacker-grid site inlines the weather and calls :meth:`_sport_mult` itself)."""
+        is_water = (move_ty == _WATER_TIDX).float()
+        is_fire = (move_ty == _FIRE_TIDX).float()
+        return (self._weather_mult(ctx.weather_feature, is_water, is_fire)
+                * self._sport_mult(ctx, (move_ty == _ELECTRIC_TIDX).float(), is_fire))
+
     def _rolls(self, dmg_ns: torch.Tensor, screen: Optional[torch.Tensor], maxhp: torch.Tensor,
                cur_hp: torch.Tensor, acc: torch.Tensor,
                eps: float = 1e-6) -> Tuple[torch.Tensor, ...]:
@@ -750,8 +778,8 @@ class DamageOperator(DamageOperatorPairwise, DamageOperatorBlocks, torch.nn.Modu
         # channel instead (Seismic Toss=Fighting=phys, Night Shade=Ghost=phys), matching the outgoing block.
         phys_all = torch.where(fixed_all > 0, self.TYPE_IS_PHYS[mty_all], phys_all)             # [n_moves]
         # gen3_unified_op_physics_v1: per-candidate WEATHER BP modifier (rain/sun × Water/Fire), [B,n_moves].
-        weather_mult = self._weather_mult(ctx.weather_feature, (mty_all == _WATER_TIDX).float()[None, :],
-                                          (mty_all == _FIRE_TIDX).float()[None, :])             # [B,n_moves]
+        # gen3_field_sport_slots_v1: × the field sports (Mud Sport Electric / Water Sport Fire).
+        weather_mult = self._field_bp_mult(ctx, mty_all[None, :])                               # [B,n_moves]
         # gen3_typed_hp_belief_v1: the candidate belief weights — the typed HPs already carry
         # P(present)·P(type) from the composed posterior; only the bare-237 presence channel is masked.
         w_all = self._opp_candidate_weights(ctx, move_belief_logits)                            # [B, n_moves]

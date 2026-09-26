@@ -90,7 +90,7 @@ _EDGE_C2_CELL = 7   # [is_status, land, d_their_outspeed, d_in_phys_high, d_sche
 _EDGE_C5_CELL = 4   # [is_bp, d_best_high, d_best_pko, d_outspeed] per (E3 Baton-Pass seat, OUR
                     # mon) — the receiver's offense inheriting the active's stages (the first
                     # family on the (E3, our-mon) route)
-_EDGE_R_CELL = 2    # [is_actor, is_target] per (event seat e, mon token m) — Tier H-C ENTITY
+_EDGE_R_CELL = 3    # [is_actor, is_target, is_rel] per (event seat e, mon token m) — Tier H-C ENTITY
                     # REFERENCE edges (gen3_event_ref_edges_v1, design_history_entity.md §3 H-C):
                     # a STRUCTURAL identity, not a computed quantity — event e's recorded
                     # actor/target IS mon m (species-num equality, SIDE-GATED so a mirror match
@@ -375,11 +375,13 @@ class TeamTransformer(torch.nn.Module):
 
 def _event_reference_cells(event_window: torch.Tensor,
                            species_ids: torch.Tensor) -> torch.Tensor:
-    """Tier H-C (`_EDGE_R_CELL`): the [B, N, 12, 2] `[is_actor, is_target]` reference cells.
+    """Tier H-C (`_EDGE_R_CELL`): the [B, N, 12, 3] `[is_actor, is_target, is_rel]` reference cells.
 
-    Species-num equality between an event row's actor/target columns and the 12 mon slots,
-    SIDE-GATED — the actor lives on the event's own side, the target on the opposite side, so
-    a mirror species on the other team can never false-link. PAD rows (valid=0) contribute
+    Species-num equality between an event row's actor/target/REL columns and the 12 mon slots,
+    SIDE-GATED — the actor lives on the event's own side, the target on the opposite side, and the
+    REL mon (gen3_event_record_v2, E12: the mon a switch-in replaced, the mon that denied an action,
+    an item transfer's partner, an attack faint's KOer) on the side its own REL_SIDE column names —
+    so a mirror species on the other team can never false-link. PAD rows (valid=0) contribute
     nothing. Pure (no parameters) so the identity is testable without a forward."""
     ev = event_window
     C = EVENT_COL                  # PLAIN ints — an IntEnum member breaks torch.fx code-gen
@@ -392,7 +394,10 @@ def _event_reference_cells(event_window: torch.Tensor,
     eside = ev[:, :, C.ACTOR_SIDE:C.ACTOR_SIDE + 1]
     is_actor = (actor == sm) & (actor > 0) & (eside == ss) & valid             # [B,N,12]
     is_target = (tgt == sm) & (tgt > 0) & (-eside == ss) & valid
-    return torch.stack([is_actor.float(), is_target.float()], dim=-1)
+    rel = ev[:, :, C.REL_SPECIES:C.REL_SPECIES + 1]
+    rside = ev[:, :, C.REL_SIDE:C.REL_SIDE + 1]
+    is_rel = (rel == sm) & (rel > 0) & (rside == ss) & valid
+    return torch.stack([is_actor.float(), is_target.float(), is_rel.float()], dim=-1)
 
 
 class EventSeats(torch.nn.Module):
@@ -419,17 +424,23 @@ class EventSeats(torch.nn.Module):
     _CANT_EMB = 6
     _FAINT_EMB = 5
     _ITEMTR_EMB = 4
-    # side + [mag, hit, miss, fail, crit, eff×4, we_first] + ago + forced. Cross-checked against
-    # the `EventCol` map by feature_coverage/failed_protect_feature_test, which classifies every
-    # column as an embedded id / a raw scalar / the pad flag and demands the counts agree.
-    _N_SCALARS = 13
+    # gen3_event_record_v2 (E12): the entry reason, the denial reason and the boost stat.
+    _ENTRY_EMB = 4
+    _DENIAL_EMB = 3
+    _STAT_EMB = 4
+    # side + [mag, hit, miss, fail, crit, eff×4, we_first] + ago + forced + rel_side + layers +
+    # pursuit_switch. Cross-checked against the `EventCol` map by
+    # feature_coverage/failed_protect_feature_test, which classifies every column as an embedded
+    # id / a raw scalar / the pad flag and demands the counts agree.
+    _N_SCALARS = 16
 
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
         from agents.observation.constants import N_EVENT_STATUS, N_EVENT_TYPES
         from agents.observation.gen3_effects import CANT_DIM_LIVE
         from agents.observation.constants import N_ITEM_TRANSITIONS
-        from agents.battle.turn_view import FAINT_CAUSE_DIM
+        from agents.battle.turn_view import FAINT_CAUSE_DIM_LIVE
+        from agents.observation.constants import N_DENIAL, N_ENTRY, N_EVENT_STAT
         self.n = layout['event_window_n']
         self.kind_emb = torch.nn.Embedding(N_EVENT_TYPES, self._KIND_EMB)
         # `_STATUS_ROWS` is a WIDTH (a weight shape, so it is frozen); `N_EVENT_STATUS` is the
@@ -452,11 +463,18 @@ class EventSeats(torch.nn.Module):
         # gen3_event_semantics_v1: cols 20/21. Both sized +1 from the SAME vocabularies the
         # encoder writes ids from (FAINT_CAUSE_VOCAB / ITEM_TR_*), so extending either widens
         # both sides at once rather than silently clamping a new id onto an existing row.
-        self.faint_emb = torch.nn.Embedding(FAINT_CAUSE_DIM + 1, self._FAINT_EMB)
+        # gen3_event_record_v2: sized from the LIVE faint vocabulary (destinybond / perishsong).
+        self.faint_emb = torch.nn.Embedding(FAINT_CAUSE_DIM_LIVE + 1, self._FAINT_EMB)
         self.itemtr_emb = torch.nn.Embedding(N_ITEM_TRANSITIONS, self._ITEMTR_EMB)
-        in_dim = (self._KIND_EMB + 2 * layout['species_embedding_dim'] +
-                  layout['move_embedding_dim'] + self._STATUS_EMB + self._CANT_EMB +
-                  self._FAINT_EMB + self._ITEMTR_EMB + self._N_SCALARS)
+        self.entry_emb = torch.nn.Embedding(N_ENTRY, self._ENTRY_EMB)
+        self.denial_emb = torch.nn.Embedding(N_DENIAL, self._DENIAL_EMB)
+        self.stat_emb = torch.nn.Embedding(N_EVENT_STAT, self._STAT_EMB)
+        # three species reads (actor, target, REL) and two move reads (move, CALLER), all through
+        # the SHARED tables
+        in_dim = (self._KIND_EMB + 3 * layout['species_embedding_dim'] +
+                  2 * layout['move_embedding_dim'] + self._STATUS_EMB + self._CANT_EMB +
+                  self._FAINT_EMB + self._ITEMTR_EMB + self._ENTRY_EMB + self._DENIAL_EMB +
+                  self._STAT_EMB + self._N_SCALARS)
         self.proj = torch.nn.Linear(in_dim, D_MODEL)
         self.norm = torch.nn.LayerNorm(D_MODEL)
         self.event_marker = torch.nn.Parameter(torch.randn(1, 1, D_MODEL) * 0.02)
@@ -479,14 +497,21 @@ class EventSeats(torch.nn.Module):
         faint = ev[:, :, C.FAINT_CAUSE].long().clamp(min=0, max=self.faint_emb.num_embeddings - 1)
         itemtr = ev[:, :, C.ITEM_TRANSITION].long().clamp(
             min=0, max=self.itemtr_emb.num_embeddings - 1)
-        # The 13 raw scalars, as three contiguous runs: ACTOR_SIDE; MAGNITUDE..WE_FIRST (which
-        # spans the outcome + eff one-hots and CRIT); TURNS_AGO..FORCED_WINDOW. Slicing by named
+        rel = ev[:, :, C.REL_SPECIES].long().clamp(min=0)
+        caller = ev[:, :, C.CALLER].long().clamp(min=0)
+        entry = ev[:, :, C.ENTRY].long().clamp(min=0, max=self.entry_emb.num_embeddings - 1)
+        denial = ev[:, :, C.DENIAL].long().clamp(min=0, max=self.denial_emb.num_embeddings - 1)
+        stat = ev[:, :, C.STAT].long().clamp(min=0, max=self.stat_emb.num_embeddings - 1)
+        # The 16 raw scalars, as five contiguous runs: ACTOR_SIDE; MAGNITUDE..WE_FIRST (which
+        # spans the outcome + eff one-hots and CRIT); TURNS_AGO..FORCED_WINDOW; REL_SIDE; LAYERS..PURSUIT_SWITCH. Slicing by named
         # endpoints rather than literals is what makes `_N_SCALARS` checkable against the column
         # map (feature_coverage/failed_protect_feature_test) instead of hand-kept.
         scalars = torch.cat([
             ev[:, :, C.ACTOR_SIDE:C.ACTOR_SIDE + 1],
             ev[:, :, C.MAGNITUDE:C.WE_FIRST + 1],
             ev[:, :, C.TURNS_AGO:C.FORCED_WINDOW + 1],
+            ev[:, :, C.REL_SIDE:C.REL_SIDE + 1],
+            ev[:, :, C.LAYERS:C.PURSUIT_SWITCH + 1],
         ], dim=-1)
         row = torch.cat([
             self.kind_emb(kind),
@@ -497,6 +522,11 @@ class EventSeats(torch.nn.Module):
             self.cant_emb(cant),
             self.faint_emb(faint),
             self.itemtr_emb(itemtr),
+            embeddings.species_embedding(rel),
+            embeddings.move_embedding(caller),
+            self.entry_emb(entry),
+            self.denial_emb(denial),
+            self.stat_emb(stat),
             scalars,
         ], dim=-1)
         tokens = self.norm(self.proj(row)) + self.event_marker

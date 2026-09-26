@@ -636,6 +636,11 @@ impl RecordBuilder {
                         if let Cause::Spikes { .. } = cause {
                             cause = Cause::Spikes { layers: self.spikes[side as usize] };
                         }
+                        if let Cause::Confusion = cause {
+                            // a confused mon that hit itself TOOK its turn (no `|move|` line prints);
+                            // without this a later faint in the turn read it as TURN-CUT denied
+                            self.mark_acted(side, &sp);
+                        }
                         self.last_damage.retain(|(k, _)| *k != (side, sp.clone()));
                         self.last_damage.push(((side, sp), cause.clone()));
                     }

@@ -33,13 +33,70 @@ from utils.paths import main_models_dir, models_skip_reason
 # ---------------------------------------------------------------- structural (no archive, no torch)
 
 def _entry(**over):
-    """A synthetic entry — the registry's own shape, so the era logic is testable with no archive."""
+    """A synthetic entry — the registry's own shape, so the era logic is testable with no archive.
+
+    It records THIS tree's generation by default (the live ARCH_SIGNATURE at a version above the
+    floor), so every test that does not name an era is about a CURRENT-generation entry — which is
+    what they were written about. gen3_event_record_v2 moved the signature; a hard-coded one here
+    silently turned every such test into a pre-generation one."""
+    from agents.model.model_version import ARCH_SIGNATURE
     raw = {"kind": "checkpoint", "run": "ai_vX_fake", "checkpoint": "final_model.zip",
            "commit": "deadbeefcafe1234", "config_version": 999,
-           "arch_signature": "gen3_critic_route_wave_v1", "purpose": "p", "set_on": "2026-01-01",
+           "arch_signature": ARCH_SIGNATURE, "purpose": "p", "set_on": "2026-01-01",
            "set_by": "s", "sha256": "0" * 64}
     raw.update(over)
     return baselines._build("fake", raw)
+
+
+def _save_current_generation_checkpoint(run_dir, *, pickled_extra_fek=None) -> str:
+    """A LOADABLE current-generation checkpoint, built fresh and saved through the project's own
+    path (a real MaskablePPO `.save` + `save_model_snapshot`'s model_config.json/metadata.json).
+
+    `pickled_extra_fek` is written into the zip's PICKLED `features_extractor_kwargs` only — the
+    exact shape of the 2026-09-14 incident's bytes (a constructor flag deleted since the save),
+    which the recorded model_config.json does not carry."""
+    import gymnasium as gym
+    import numpy as np
+    from sb3_contrib import MaskablePPO
+    from stable_baselines3.common.vec_env import DummyVecEnv
+
+    from agents.model.features_extractor import Gen3FeaturesExtractor
+    from agents.model.model_version import ModelVersion
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    from agents.model.snapshot import save_model_snapshot
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    mappings = load_mappings()
+    layout = Gen3ObservationEncoder(mappings).get_layout()
+    total_dim = layout["total_dim"]
+    obs_space = gym.spaces.Dict({
+        "observation": gym.spaces.Box(-np.inf, np.inf, (total_dim,), np.float32),
+        "action_mask": gym.spaces.MultiBinary(11)})
+
+    class _E(gym.Env):
+        observation_space = obs_space
+        action_space = gym.spaces.Discrete(11)
+
+        def reset(self, **kwargs):
+            return {"observation": np.zeros(total_dim, np.float32),
+                    "action_mask": np.ones(11, np.int8)}, {}
+
+        def step(self, action):
+            return self.reset()[0], 0.0, False, False, {}
+
+    pk = {"features_extractor_class": Gen3FeaturesExtractor,
+          "features_extractor_kwargs": {"layout": layout, "mappings": mappings},
+          "net_arch": [512, 512]}
+    model = MaskablePPO(Gen3DualHeadMaskablePolicy, DummyVecEnv([_E]), policy_kwargs=pk,
+                        verbose=0, device="cpu")
+    if pickled_extra_fek:
+        model.policy_kwargs["features_extractor_kwargs"].update(pickled_extra_fek)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    model.save(str(run_dir / "final_model"))
+    save_model_snapshot(str(run_dir),
+                        ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]}),
+                        git_hash="test")
+    return str(run_dir / "final_model.zip")
 
 
 def test_the_generation_verdict_is_registry_data_only():
@@ -69,8 +126,8 @@ def test_every_registry_entry_declares_its_era_honestly():
 
 
 def test_a_pre_generation_name_raises_the_typed_error_naming_the_era_and_the_fix(monkeypatch):
-    monkeypatch.setattr(baselines, "get", lambda name, path=None: _entry(config_version=45,
-                                                                        era_checkout_only=True))
+    monkeypatch.setattr(baselines, "get", lambda name, path=None: _entry(
+        config_version=45, arch_signature="gen3_critic_route_wave_v1", era_checkout_only=True))
     monkeypatch.setattr(baselines, "names", lambda path=None: [])
     with pytest.raises(baselines.BaselineLoadError) as exc:
         baselines.check_era("v8_line")
@@ -185,20 +242,39 @@ def test_EVERY_named_baseline_either_loads_or_raises_the_typed_error_naming_the_
 
 
 @pytest.mark.integration
-def test_the_bare_load_that_started_this_STILL_fails_where_baselines_load_succeeds():
-    """Why `baselines.load` exists, pinned against the real bytes.
+def test_the_bare_load_that_started_this_STILL_fails_where_baselines_load_succeeds(
+        tmp_path, monkeypatch):
+    """Why `baselines.load` exists, pinned against real bytes.
 
-    `production` is the entry the backlog row named; `v9_long_baseline` is there to record the
-    measurement that killed the re-pointing hypothesis — the bare path fails identically on a
-    DIFFERENT entry, so the trap is the loader, not the name.
+    The original form loaded `production` and `v9_long_baseline` from the archive. Since
+    gen3_event_record_v2 (the observation-architecture batch, v121) both are PRE-GENERATION and
+    marked `era_checkout_only`, so on this tree they refuse by name at the era wall BEFORE any
+    loader runs — pinned first, because a by-name load that got past the wall would be the bug.
+    The loader contrast is then re-measured on a CURRENT-generation checkpoint built fresh and
+    saved through the project's own path, whose pickled extractor kwargs carry the incident's
+    exact deleted flag (`threat_prob_outspeed`): the bare `MaskablePPO.load` must still die on it,
+    and `baselines.load` — resolving a synthetic registry entry through the real `resolve` choke
+    point and the real sanitizing loader — must still return a model. No stub stands in for either
+    loader.
     """
-    if main_models_dir() is None:
-        pytest.skip(models_skip_reason())
+    for name in ("production", "v9_long_baseline"):
+        with pytest.raises(baselines.BaselineLoadError) as exc:
+            baselines.load(name)
+        assert exc.value.reason == "pre_generation", (name, exc.value.reason)
+        assert baselines.get(name).era_checkout_only, name
+
     from sb3_contrib import MaskablePPO
 
-    for name in ("production", "v9_long_baseline"):
-        r = baselines.resolve(name)
-        with pytest.raises(TypeError) as exc:
-            MaskablePPO.load(r.zip_path, env=None, device="cpu")
-        assert "unexpected keyword argument" in str(exc.value)
-        assert baselines.load(name) is not None, f"{name} must load through the sanitizing loader"
+    zip_path = _save_current_generation_checkpoint(
+        tmp_path / "ai_vX_current_gen", pickled_extra_fek={"threat_prob_outspeed": False})
+    run_dir = str(tmp_path / "ai_vX_current_gen")
+    entry = _entry(run=run_dir, checkpoint="final_model.zip")
+    assert not baselines.is_pre_generation(entry)
+    monkeypatch.setattr(baselines, "get", lambda name, path=None: entry)
+
+    with pytest.raises(TypeError) as bare:
+        MaskablePPO.load(zip_path, env=None, device="cpu")
+    assert "unexpected keyword argument" in str(bare.value)
+    assert "threat_prob_outspeed" in str(bare.value)
+    assert baselines.resolve("current_gen").zip_path == zip_path
+    assert baselines.load("current_gen") is not None, "must load through the sanitizing loader"

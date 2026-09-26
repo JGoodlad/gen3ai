@@ -363,7 +363,7 @@ fn cant_reason_id(reason: Option<&str>) -> CoreResult<usize> {
         .ok_or_else(|| raise(PyExc::UnknownCantReasonError, format!("cant reason {raw:?} (id {rid:?}) is not a known gen3 cause")))
 }
 
-/// `turn_view.faint_cause_id`.
+/// `turn_view.faint_cause_id_live` (the live vocabulary, gen3_event_record_v2).
 fn faint_cause_id(cause: Option<&str>) -> CoreResult<usize> {
     let Some(c) = cause else { return Ok(0) };
     FAINT_CAUSE_VOCAB
@@ -373,7 +373,7 @@ fn faint_cause_id(cause: Option<&str>) -> CoreResult<usize> {
         .ok_or_else(|| raise(PyExc::ValueError, format!("unknown faint cause {c:?}")))
 }
 
-/// `assembler.write_event_row(vec, o, rec, cur_turn)` — one 22-column row.
+/// `assembler.write_event_row(vec, o, rec, cur_turn)` — one `EVENT_TOKEN_DIM`-column row.
 fn event_row(t: &data::Tables, r: &EventRecord, cur_turn: i64, out: &mut [f32]) -> CoreResult<()> {
     zero(out, 0, EVENT_TOKEN_DIM);
     let species_num = |s: &Option<String>| {
@@ -423,6 +423,24 @@ fn event_row(t: &data::Tables, r: &EventRecord, cur_turn: i64, out: &mut [f32]) 
     put(out, EV_CANT, cant as f64);
     put(out, EV_FAINT_CAUSE, faint_cause_id(r.faint_cause)? as f64);
     put(out, EV_ITEM_TRANSITION, r.item_tr.unwrap_or(0) as f64);
+    // gen3_event_record_v2 (E12): the native record's attribution, entity-aligned.
+    put(out, EV_REL_SPECIES, species_num(&r.rel));
+    put(
+        out,
+        EV_REL_SIDE,
+        match r.rel_side {
+            Some(crate::core_events::Rel::Ours) => 1.0,
+            Some(crate::core_events::Rel::Opp) => -1.0,
+            None => 0.0,
+        },
+    );
+    put(out, EV_ENTRY, r.entry as f64);
+    put(out, EV_DENIAL, r.denial as f64);
+    let caller = r.caller.as_deref().filter(|m| !m.is_empty()).and_then(|m| t.moves.get(m)).map_or(0.0, |m| m.num as f64);
+    put(out, EV_CALLER, caller);
+    put(out, EV_STAT, r.stat as f64);
+    put(out, EV_LAYERS, r.layers as f64 / 3.0);
+    put(out, EV_PURSUIT_SWITCH, if r.pursuit { 1.0 } else { 0.0 });
     let ago = (cur_turn - r.turn).max(0).min(SAT_LUT.len() as i64 - 1) as usize;
     put(out, EV_TURNS_AGO, SAT_LUT[ago]);
     put(out, EV_FORCED_WINDOW, r.forced_window);

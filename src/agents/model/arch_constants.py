@@ -175,3 +175,12 @@ PAIR_VALUE_ROUTE_DIM = _PAIR_OUTCOME_RAW
 # TTV_DIM's, deliberately: the ladder's arms are meant to differ in what they SEE, not in how much
 # capacity they were handed.
 DENSE_AUX_HIDDEN = 64
+
+# gen3_hidden_slot_move_mixture_v1 (E10, the parameter-free hidden-slot move prior). An opponent
+# slot whose MON is unrevealed used to fuse its move delta with `move_prior_logits[0]` — the flat
+# floor row of the UNKNOWN-species sentinel — so its move posterior was a state-INDEPENDENT constant
+# (max deviation 0.0 over 57k decisions, belief-calibration read 2026-09-24). It now fuses with the
+# Smogon MIXTURE `P(m | hidden) = Σ_s P_T0(s | revealed) · P(m | s)` (the T0 team-composition species
+# prior times the same per-species move-prior buffer), which has NO learned parameters by design: it
+# cannot memorise the pool. The mixture probability is clamped into [EPS, 1 − EPS] before the logit.
+HIDDEN_SLOT_MIX_EPS = 1e-6

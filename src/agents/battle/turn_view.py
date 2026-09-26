@@ -49,6 +49,23 @@ FAINT_CAUSE_VOCAB: tuple = (
 FAINT_CAUSE_DIM: int = len(FAINT_CAUSE_VOCAB)  # 8
 _FAINT_CAUSE_TO_IDX: Dict[str, int] = {c: i for i, c in enumerate(FAINT_CAUSE_VOCAB)}
 
+# gen3_event_record_v2 (E12): the LIVE faint-cause vocabulary the EVENT WINDOW writes — the
+# archive's eight, then the two a faint with no lethal damage line really has. APPENDED to a
+# separate tuple for the reason `gen3_effects.CANT_REASONS_LIVE` is: `FAINT_CAUSE_DIM` sizes the
+# frozen TurnDelta lag frame the prober still decodes from ARCHIVED runs, so the archive vocabulary
+# cannot grow; the event window's embedding table is sized from THIS one.
+FAINT_CAUSE_VOCAB_LIVE: tuple = FAINT_CAUSE_VOCAB + ("destinybond", "perishsong")
+FAINT_CAUSE_DIM_LIVE: int = len(FAINT_CAUSE_VOCAB_LIVE)  # 10
+_FAINT_CAUSE_TO_IDX_LIVE: Dict[str, int] = {c: i for i, c in enumerate(FAINT_CAUSE_VOCAB_LIVE)}
+
+
+def faint_cause_id_live(cause: Optional[str]) -> int:
+    """:func:`faint_cause_id` over :data:`FAINT_CAUSE_VOCAB_LIVE` — the event window's column 20
+    (FAINT rows, and the denying faint's cause on a DENIED row). Raises on an unknown label."""
+    if cause is None:
+        return 0
+    return _FAINT_CAUSE_TO_IDX_LIVE[cause] + 1
+
 def damage_is_lethal(e: BattleEvent) -> bool:
     """False iff a DAMAGE event is KNOWN to have left its mon above 0 HP. ``hp_after`` is an
     OPTIONAL key (``EVENT_OPTIONAL_KEYS``; the live builder always writes it), so an event without

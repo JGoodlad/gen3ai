@@ -116,7 +116,7 @@ fn a_stream_without_trackers_refuses_and_a_wrong_length_row_is_refused() {
     let inp = encoder::Inputs { reading: &s.board_reading, view, legal: legal.as_ref(), trackers: &trk.trackers };
     let mut short = vec![0.0f32; OBS_DIM - 1];
     let err = encoder::encode_slice(&inp, &mut short).unwrap_err();
-    assert!(err.message().contains("2500 cells"), "{err:?}");
+    assert!(err.message().contains(&format!("{} cells", OBS_DIM - 1)), "{err:?}");
     assert!(short.iter().all(|x| *x == 0.0), "a refused row is left untouched");
     let mut exact = vec![0.0f32; OBS_DIM];
     encoder::encode_slice(&inp, &mut exact).unwrap();

@@ -878,7 +878,7 @@ fn bench_core_obs_stages() {
                         let mut tr = pre[side].take().unwrap();
                         let pend = std::mem::take(&mut pending[side]);
                         let t0 = Instant::now();
-                        tr.decide(&view, Some(&legal), &pend, dm, pokesim::trackers::dex()).expect("decide");
+                        tr.decide(&view, Some(&legal), &pend, dm, pokesim::trackers::dex(), None).expect("decide");
                         st.add("decide", false, t0.elapsed());
                         assert!(&tr == next.trackers(side).unwrap(), "{}: the decide replay differs from the chain's", b.label);
                         pre[side] = Some(tr);

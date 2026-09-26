@@ -30,6 +30,7 @@ import pytest
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION,
     ModelVersion,
+    ModelVersionError,
     _migrate_config,
 )
 
@@ -138,23 +139,30 @@ def test_none_of_them_is_gated_by_check_compatible(layout):
 
 # ------------------------------------------------------------------------------- 4. the migration
 
-def test_a_pre_v100_config_migrates_to_the_argparse_defaults(layout):
-    """Not a guess: the fields did not exist before v100, so a flagless resume of any such run got
-    exactly the argparse default. Reachable because v99 is above MIGRATION_FLOOR (96)."""
+def test_a_pre_v100_config_is_refused_and_a_current_one_records_the_argparse_defaults(layout):
+    """The v100 `setdefault` branch (the ten fields → their argparse defaults) is FLOORED AWAY:
+    gen3_event_record_v2 raised MIGRATION_FLOOR to 121 (the branch is archived verbatim in
+    `_migrate_config`'s v97–v120 history). A config lacking the family is a pre-generation one and
+    is REFUSED with the diagnosis — a test may not claim to cover a branch the floor makes
+    unreachable. The surviving property: a fresh current config RECORDS every field explicitly, at
+    exactly the argparse default, so a flagless resume reads the record, never a fallback."""
     v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
     old = json.loads(v.to_json())
     for field in CF_COEF_FIELDS:
         old.pop(field)
     old["config_version"] = 99
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(old)
 
-    migrated = _migrate_config(old)
-    # `>= 100`, not `== 100`: the property under test is that a pre-v100 config lands on the LIVE
-    # version with this family defaulted. Pinning the live number here made every later, unrelated
-    # schema bump fail in the counterfactual suite (it did, at v101).
-    assert migrated["config_version"] == MODEL_CONFIG_VERSION >= 100
+    fresh = json.loads(v.to_json())
+    assert fresh["config_version"] == MODEL_CONFIG_VERSION >= 121
+    for field, (default, _other) in CF_COEF_FIELDS.items():
+        assert field in fresh, field
+        assert fresh[field] == default, field
+    migrated = _migrate_config(fresh)
     for field, (default, _other) in CF_COEF_FIELDS.items():
         assert migrated[field] == default, field
-    ModelVersion(**migrated)   # the whole point of the setdefault: `cls(**data)` must not TypeError
+    ModelVersion(**migrated)
 
 
 def test_a_recorded_value_survives_the_migration_untouched(layout):

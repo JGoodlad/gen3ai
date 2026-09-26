@@ -239,7 +239,18 @@ impl BattleVersion {
             let Some(s) = streams[side].as_mut() else { continue };
             let texts = sess.side_lines(side);
             let scopes = if sess.is_core() { Some(sess.side_scopes(side, from[side]).map_err(fault)?) } else { None };
+            // E4 (gen3_event_record_v2): the CHOOSEs this transport was fed, noted where a live
+            // player notes them — before the lines that answer them — so a refused switch's target
+            // resolves exactly as on the parse chain (`note_choice`).
+            let choices: Vec<(usize, String)> = sess.side_choices(side).map(|(at, t)| (at, t.to_string())).collect();
+            let mut ci = choices.partition_point(|(at, _)| *at < from[side]);
             for (k, t) in texts.iter().skip(from[side]).enumerate() {
+                while ci < choices.len() && choices[ci].0 <= from[side] + k {
+                    if let Some(trk) = s.trk.as_mut() {
+                        trk.choose(&choices[ci].1);
+                    }
+                    ci += 1;
+                }
                 let (src, scope) = scopes.as_ref().map_or((None, None), |v| v[k]);
                 let line = Line::parse(t)
                     .map_err(|e| CoreError::from(e).context(format!("line {} {t:?}: ", s.lines)))?;

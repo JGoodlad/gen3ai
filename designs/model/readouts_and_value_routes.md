@@ -49,7 +49,7 @@ the `s3` edge family's softmax-normalised RATIO). The two stack additively and i
 
 ## The PRIVILEGED route — `--value-true-team` (v114, `gen3_value_true_team_v1`)
 
-Every route above re-reads, re-pools or re-weights the SAME 2501-dim observation both heads
+Every route above re-reads, re-pools or re-weights the SAME 2761-dim observation both heads
 consume; none of them adds information. **This one does.** `TrueTeamValueReadout`
 (`src/agents/model/true_team_value.py`) reads the opponent's ACTUAL party off a
 training-and-eval-only Dict key `opp_true_team` — `[6, POKEMON_FULL_DIM]`, the obs's OWN per-mon

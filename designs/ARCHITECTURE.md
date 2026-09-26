@@ -10,9 +10,9 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **109** in the mirror this file is gated against; the run's own `model_config.json` records **110**, the frozen-phi bump it launched on. `arch_signature` **`gen3_critic_route_wave_v1`**. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate, and all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 113 / `gen3_critic_route_wave_v1`) |
-| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). The `gen3_critic_route_wave_v1` **signature-bump window is CLOSED**: the production run records that signature, so the mirror tracks the RUN rather than the live code. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
+| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **121** in the mirror this file is gated against (the `gen3_event_record_v2` signature-bump window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — is what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_event_record_v2`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate, and all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 121 / `gen3_event_record_v2`) |
+| `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). The `gen3_event_record_v2` **signature-bump window is OPEN** (2026-09-26, the observation-architecture batch): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_event_record_v2`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
 machine-derived tables are **generated** (`python -m agents.model.arch_tables`, pinned by
@@ -50,7 +50,7 @@ python -m agents.model.delivery_graph \
 
 ## 1. Observation
 
-One flat `float32` vector of **2501** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
+One flat `float32` vector of **2761** dims, plus an 11-dim `action_mask`, delivered as a Dict obs.
 Every number below comes from `agents/observation/constants.py` and
 `Gen3ObservationEncoder.get_layout()`. **Never hardcode an offset — read the layout.**
 
@@ -60,21 +60,25 @@ Every number below comes from `agents/observation/constants.py` and
 |---|---|---|---|---|
 | Our team — 6 × per-mon slot | 0 | 732 | 732 | `OFFSET_OUR_TEAM`, `6 × POKEMON_FULL_DIM` |
 | Opp team — 6 × per-mon slot | 732 | 1464 | 732 | `OFFSET_OPP_TEAM` |
-| Active context ×2 (ours, theirs) | 1464 | 1580 | 116 | `OFFSET_CONTEXT`, `2 × ACTIVE_CONTEXT_DIM` (58) |
-| Global env | 1580 | 1600 | 20 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
-| Board (reactive) | 1600 | 1617 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
-| Pair history — 6×6×5 h[i,j] | 1617 | 1797 | 180 | `OFFSET_PAIR_HISTORY`, `PAIR_HISTORY_DIM` (`gen3_pair_history_v1`) |
-| Event window — 32 × 22 event records | 1797 | 2501 | 704 | `OFFSET_EVENT_WINDOW`, `EVENT_WINDOW_DIM` (`gen3_event_window_v1`) |
-| **Total** *(= `base_dim`)* | | **2501** | | `Gen3ObservationEncoder.dimension` |
+| Active context ×2 (ours, theirs) | 1464 | 1584 | 120 | `OFFSET_CONTEXT`, `2 × ACTIVE_CONTEXT_DIM` (60) |
+| Global env | 1584 | 1604 | 20 | `OFFSET_GLOBAL`, `GLOBAL_ENV_DIM` |
+| Board (reactive) | 1604 | 1621 | 17 | `OFFSET_REACTIVE`, `REACTIVE_DIM` |
+| Pair history — 6×6×5 h[i,j] | 1621 | 1801 | 180 | `OFFSET_PAIR_HISTORY`, `PAIR_HISTORY_DIM` (`gen3_pair_history_v1`) |
+| Event window — 32 × 30 event records | 1801 | 2761 | 960 | `OFFSET_EVENT_WINDOW`, `EVENT_WINDOW_DIM` (`gen3_event_record_v2`) |
+| **Total** *(= `base_dim`)* | | **2761** | | `Gen3ObservationEncoder.dimension` |
 
 The event window is the LAST block: `total_dim == base_dim`, and the encoder's output IS the
 observation. There is no appended tail — `Gen3Env.embed_battle` returns `encode(...)` unchanged.
 
-**The event window** (Tier H-B, `gen3_event_window_v1`): the last 32 decision-relevant EVENTS as
-typed 22-column records — type id · actor/target species + side · move id · attributed
-`hp_delta` · outcome/crit/effectiveness · `we_first` · status id · log-saturated recency ·
-forced-window phase tag · valid · cant-reason id · faint-cause id · item-transition id — folded by `EpisodeTracker.EventWindowTracker` from PUBLIC
-protocol events (seq-idempotent), most-recent LAST with zero-padding at the front. Ids are
+**The event window** (Tier H-B, `gen3_event_window_v1`, reshaped by `gen3_event_record_v2`): the
+last 32 decision-relevant EVENTS as typed 30-column records — type id · actor/target species +
+side · move id · attributed `hp_delta` · outcome/crit/effectiveness · `we_first` · status id ·
+log-saturated recency · forced-window phase tag · valid · cant-reason id · faint-cause id ·
+item-transition id · REL species + side · entry reason · denial reason · caller move · boost stat ·
+Spikes layers · Pursuit-on-switch — folded by `EventWindowTracker`
+(`agents/training/event_window_tracker.py`; the Rust core's `trackers::history::EventWindow`,
+slice T / O byte-equal) from PUBLIC protocol events (seq-idempotent), most-recent LAST with
+zero-padding at the front. The per-row-type schema is §1.6. Ids are
 embedding ids; **no Linear reads the block raw** — its only consumer is the opt-in
 `history_events` event-seat encoder (§ flag table). The columns are documented at
 `agents/observation/constants.py` (`EVENT_TOKEN_DIM`).
@@ -202,9 +206,20 @@ and that cliff is the link TD must fit FIRST before it can bootstrap value back 
 episode. Both remaining forms are provided as raw facts; which one matters is the model's to
 learn.
 
-### 1.5 Active context — 58 dims per side
+### 1.5 Active context — 60 dims per side
 
-`BOOSTS_DIM` 14 + `VOLATILES_DIM` 44 (`gen3_effects.VOLATILE_DIM`, source-derived).
+`BOOSTS_DIM` 14 + `VOLATILES_DIM` 46 (`gen3_effects.VOLATILE_DIM`, source-derived).
+
+The LAST two volatile columns are the gen-3 **field sports** (`gen3_field_sport_slots_v1`):
+`mudsport`, `watersport`. Verified on the vendored sim (the gen4 mod the gen3 dex inherits): each
+is a `volatileStatus` on its USER, with no duration, announced by `-start|<mon>|Mud Sport` /
+`-start|<mon>|move: Water Sport`; it ends silently when the holder leaves the field (switch or
+faint); `noCopy: false`, so **Baton Pass carries it** (poke-env's `BATON_PASS_COPIED_EFFECTS` and
+the core's reading rule V4 both reconstruct the silent copy); while the holder is active,
+`onAnyBasePower` halves the base power of EVERY Electric (Mud) / Fire (Water) move, the holder's
+own included. The `DamageOperator` honours both (§4). The Rust SIM does not implement either move
+(its census lists them fail-loud), so they reach the core only through a parsed stream (the
+ladder).
 
 ### 1.6 What happened last turn
 
@@ -213,8 +228,8 @@ Carried by the **event window** (§1.1), not by lag frames. The 7 × 159 TurnDel
 per-decision input and as the α/β intent label source, but it no longer has an obs encoding.
 
 Every fact the frames delivered has an event-window column — move id, outcome, crit,
-effectiveness, status applied/cured, boosts, switch-ins, forced-switch phase, move order —
-with one addition and one accepted loss:
+effectiveness, status applied/cured, boosts, switch-ins, forced-switch phase, move order,
+and the attempted switch target:
 
 - **`cant_id` (column 19) was ADDED for the deletion.** "This mon could not move, and why" (full
   paralysis / sleep / flinch / recharge) had NO event-window column: `EventKind.CANT` was in the
@@ -231,12 +246,60 @@ with one addition and one accepted loss:
   consumed flag — gen3 has three item-GONE routes (consumed berries/herbs · REMOVED by Knock
   Off, permanent in ADV · SWAPPED by Trick/Thief/Covet) and one flag would leave the conflation
   half-alive.
-- **`our_attempted_switch_spec` is LOST, knowingly.** When a switch is refused while trapped, the
-  window records that it happened (`EVENT_T_SWITCH_REJECTED`) but not WHICH bench mon was aimed
-  at. That is structural, not an omission: `Gen3Battle.record_choice_rejected` documents that the
-  attempted target "is not on the wire and is recovered at fold time from the action index", and
-  this window folds from events alone. Trappedness itself still reaches the model through the
-  per-mon slots (`gen3_entity_rehome_v1`).
+- **The refused-switch target is carried (E4, `gen3_event_record_v2`).** When a switch is refused
+  while trapped, the `SWITCH_REJECTED` row's TARGET is the bench mon the switch aimed at. The
+  server's `|error|[Unavailable choice]` does not name it, so each path supplies it from what it
+  SENT: the Python fold from the previous decision's action index (`EpisodeTracker.
+  _attempted_switch`, TurnDelta's decode), the core from the noted choice token
+  (`trackers::attempted_switch_species`: `switch N` against the request's `side.pokemon`, or
+  `switch <name>`). A search successor notes no choice, so its leaf row leaves the target 0.
+
+**The event record (`gen3_event_record_v2`, E12 — the event-block RESHAPE).** The Rust core's native
+per-action record (`record::Window`: ordered actions with attributed effects, denials, the
+information boundary as a type) is carried into the observation instead of flattened into the old
+22-column window. The shape stays ENTITY-aligned: a row names up to three mons (ACTOR on its own
+side, TARGET on the other, and a REL mon on the side its `REL_SIDE` states), each linked to its mon
+token by the `r` edge family's three reference cells (§5); a fact that is a property of a mon
+(the boosts and volatiles a Baton Pass carried, the item a mon now holds) stays on that mon's
+entity block rather than being copied into a row. Columns 22–29 (`constants.EventCol`):
+
+| column | meaning, per row type |
+|---|---|
+| `REL_SPECIES` / `REL_SIDE` (22, 23) | SWITCH_IN: the mon it replaced (the fainted mon for a replacement, the PASSER for a Baton Pass, the dragged-out mon for a drag). DENIED: the mon that denied it (fainted first: the KOer; turn cut: the turn's first faint). ITEM: the other party of a transfer / removal. FAINT with cause `attack`: the KOer |
+| `ENTRY` (24) | SWITCH_IN: 1 chosen · 2 REPLACEMENT (the free switch after a faint) · 3 DRAG (Roar / Whirlwind; MOVE = the phazing move, TARGET = the phazer) · 4 BATON PASS (MOVE = `batonpass`) |
+| `DENIAL` (25) | DENIED (row type 11): 1 fainted first · 2 TURN CUT |
+| `CALLER` (26) | MOVE: the calling move of a called move (Sleep Talk, Metronome, Mirror Move, Assist, Nature Power, Magic Coat, Snatch) |
+| `STAT` (27) | BOOST: atk def spa spd spe accuracy evasion = 1..7 |
+| `LAYERS` (28) | Spikes layers / 3 — SWITCH_IN: met by the entrant; HAZARD: on that side after a Spikes change; FAINT (hazard): at the KO |
+| `PURSUIT_SWITCH` (29) | MOVE: Pursuit struck a switching target (the line's `[from] Pursuit`, the MOVE event's `pursuit_switch`); the row precedes the switch |
+
+Changed meanings of existing columns: a SWITCH_IN row's MAGNITUDE is the Spikes chip on entry
+(signed HP fraction); MOVE on a SWITCH_IN / DENIED row is the move that caused the entry / the
+denying action's move; `FAINT_CAUSE` reads the LIVE vocabulary
+(`turn_view.FAINT_CAUSE_VOCAB_LIVE` — the archive's eight plus `destinybond` / `perishsong`); an
+item line `[from]` Trick / Thief / Covet is `ITEM_TR_RECEIVED` (5) on the `|-item|` side and
+`ITEM_TR_SWAPPED` (4, taken from this mon) on the `|-enditem|` side.
+
+**ACTION DENIAL** (`EVENT_T_DENIED`): every turn ACTOR (a side's active at the turn's first event)
+that was chosen for the turn and never acted gets one row. In gen-3 singles ANY faint in the action
+phase cancels every remaining queued action (`sim/battle.ts` `faintMessages`: "in gen 3, fainting
+skips all moves and switches", verified at the vendored source), so: an actor that FAINTS before
+acting is `fainted first` (REL/MOVE = the action that KOed it); every other actor still waiting is
+`turn cut` (REL = the first faint, `FAINT_CAUSE` = its cause, MOVE = its action's move) — a faster
+Explosion or a recoil self-KO denies the survivor. A mon acted if it moved, chose a switch (or
+passed), was refused (`CANT`), or hit itself in confusion; a faint in the residual block (a `[from]`
+psn / tox / brn / sandstorm / hail / Leech Seed / Nightmare / Curse / Leftovers / Wish / Ingrain /
+Future Sight / Doom Desire line opens it) cuts nothing. 🚨 **The information boundary holds by
+construction:** the fold receives no choices, so a DENIED row cannot carry what the denied side
+chose (the opponent's intent label is masked on these windows, `gen3_intent_label_semantics_fixes_v1`).
+REFUSED actions keep their `CANT` row. A Roar that drags out a mon that had not moved yet is NOT a
+denial row (the native record does not model it either).
+
+Constructed-battle fixtures, one per mechanic (denial fainted-first / turn cut by self-KO / by
+recoil, trade KOs by Destiny Bond and Perish Song, Roar into Spikes, Baton Pass into Spikes,
+Thief / Trick / Knock Off, a Spikes sack and its free replacement, Pursuit on a switch, called
+moves, the E4 trap), each run through the core and the Python path with slices T and O on:
+`src/agents/battle/event_record_v2_fixture_test.py`.
 
 **The α/β intent label and the progress clock read `TurnDelta`, and both mask or discount what
 was not a choice or not our doing** (`gen3_intent_label_semantics_fixes_v1`,
@@ -302,13 +365,13 @@ stashed for the aux loss and never fed forward, which is exactly what its T2 dec
 
 The concrete steps:
 
-1. **`ObsUnpack`** — slices the 2501-dim vector into `ExtractorContext` (~30 named tensors:
+1. **`ObsUnpack`** — slices the 2761-dim vector into `ExtractorContext` (~30 named tensors:
    per-mon blocks, categorical ids, active-slot indices, fainted key-masks,
    `our_active_req_move_{ids,type_ids,legal}`).
 2. **`PokemonEncoder`** — per-move network (`MOVE_NET_HIDDEN` `[96,32]`, with the `MoveLatentEncoder`
    latent concatenated in) → within-mon move self-attention → role encoder
    (`ROLE_ENCODER_HIDDEN` `[256,128]`) → **12 × 128 role tokens**. The role input carries the
-   E2 active-context injection: each side's 58-dim boosts+volatiles block scattered onto its
+   E2 active-context injection: each side's 60-dim boosts+volatiles block scattered onto its
    ACTIVE mon's row, bench rows zero (the §6-audited entity home; the global-token/projection
    routes remain — additive delivery, pinned by `e2_ctx_injection_test.py`). Stashes
    `last_move_tokens` `[B,12,4,32]` (sorted-by-id) for the seats and the pointer head.
@@ -322,6 +385,16 @@ The concrete steps:
    `move_candidate_floor` base, and a row about which nothing is known (national-dex num 0 — the
    unknown-species sentinel an unrevealed slot carries — or a dex gap) is the **flat floor**, never
    "no moves". Non-persistent, recomputed from `data/` at build.
+   **A HIDDEN slot does not read that flat row** (E10, `gen3_hidden_slot_move_mixture_v1`): its
+   prior is the parameter-free Smogon mixture `P(m | hidden) = Σ_s P_T0(s | revealed) · P(m | s)` —
+   the `T0SpeciesPrior` team-composition posterior (step 0 of this chain, Species Clause applied)
+   times the same per-species prior as probabilities, one `[B,S] @ [S,M]` matmul, clamped to
+   `[HIDDEN_SLOT_MIX_EPS, 1 − ε]` before the logit. It has NO learned parameters (it cannot
+   memorise the pool), so the hidden slot's posterior now moves with the revealed team; the head's
+   learned delta on the (state-independent) unknown-slot token still adds on top. The flat row
+   remains only when `t0_species_prior` is off. Before this, the hidden-slot posterior was a
+   state-independent constant (max deviation 0.0 over 57k decisions, belief-calibration read
+   2026-09-24). Pinned by `hidden_slot_move_mixture_test.py`.
 4. **`HPTypeBelief.compose_typed_hp`** (`hp_belief_mode` = `"composed"`) — inside the same step:
    rewrites the posterior so Hidden
    Power exists only at the 16 typed move-nums **355–370** (each `logit(presence · P(type))`) and
@@ -437,7 +510,7 @@ registered route each suite run, under BOTH critic parameterizations.
 **The seam has TWO members** — `value_entity_pool` (production, below) and, since v114,
 `value_true_team`, the PRIVILEGED route (`gen3_value_true_team_v1`, `--value-true-team`, **OFF in
 production and never in the mirror**). It is the only route in the tree whose input is not the
-shared 2501-dim observation: it reads the opponent's ACTUAL party — species, moves, item, ability,
+shared 2761-dim observation: it reads the opponent's ACTUAL party — species, moves, item, ability,
 derived stats, current HP and status — off a training-and-eval-only Dict key `opp_true_team`,
 encoded in the obs's OWN per-mon layout by the SAME `PokemonEncoder.encode`, and pools six rows
 through a shared per-mon MLP and `TTV_K`=4 learned queries over `TTV_DIM`=64 into a zero-init
@@ -1040,6 +1113,14 @@ Explosion `pko`), and the `incoming_matrix` call is where `last_topk_idx` / `las
 — the seat axis α aligns to — are selected. Turning either matrix flag off deletes those; turning
 `op_drop_renders` off re-widens the flat block to 660 and changes nothing else.
 
+**Field base-power modifiers.** Every damage kernel multiplies the candidate's base power by the
+gen-3 weather modifier (rain ×1.5 Water / ×0.5 Fire, sun the reverse) and by the **field sports**
+(`gen3_field_sport_slots_v1`): ×0.5 on an Electric move while EITHER active holds `mudsport`, ×0.5
+on a Fire move while either holds `watersport` (read off both actives' context blocks,
+`DamageOperator._sport_mult`). World approximation, the weather convention: a hypothetical world
+that swaps a holder out still reads the current actives' sports. Pinned by
+`damage_op_test.py::test_op_field_sports_halve_electric_and_fire_from_either_active`.
+
 The block passes through a learned per-channel `out_gain` (a Parameter, multiplicative only, so the
 "no threat ⇒ exactly 0" gates stay clean) before it reaches the heads and before `pointer_cells`
 slices it — so the pointer path and the flat concat can never disagree on a value.
@@ -1154,7 +1235,7 @@ E4 `[24:30]`, E5 `[30:36]`.
 | **d4** | our mon *i* × opp mon *j* (active column pre-zeroed) | 4 | `[phys_high, spec_high, phys_pko, spec_pko]` — the opp **bench**'s believed threat |
 | **v** | our mon *i* × opp mon *j* | 3 | `[p_outspeed, both_alive, revealed_j]` |
 | **h** | our mon *i* × opp mon *j* | 5 | `[switch_ins, attacks, status_clicks, shared_field_turns, pairing_recency]` — obs-fed pair-history TENDENCIES (`gen3_pair_history_v1`; EpisodeTracker-folded, log-saturated; **IN the production families string** since gen-12 — the one family whose cell the GPU cannot recompute, since it IS compiled battle history) |
-| **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 2 | `[is_actor, is_target]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C): event *e*'s recorded actor/target IS mon *m* (species-num equality, side-gated against mirror false-links; `_event_reference_cells`, pure). **IN the production string** — requires `--history-events`, which is ON (the seats are the rows) |
+| **r** | event seat *e* (the LAST-N tokens) × mon *m* (all 12) | 3 | `[is_actor, is_target, is_rel]` — STRUCTURAL reference edges (`gen3_event_ref_edges_v1`, Tier H-C; `is_rel` added by `gen3_event_record_v2`): event *e*'s recorded actor/target/REL mon IS mon *m* (species-num equality, side-gated against mirror false-links — actor on the row's side, target on the other, REL on its own `REL_SIDE`; `_event_reference_cells`, pure). **IN the production string** — requires `--history-events`, which is ON (the seats are the rows) |
 | **t** | our mon *i* × opp mon *j* | 2 | `[P(i traps j), P(j traps i)]` |
 | **x** | each mon × **global** (both sides) | 4 | `[entry_chip, pursuit_p, pursuit_eff, grounded]` |
 | **g** | each mon × **global** (both sides) | 4 | `[leftovers, weather_chip, status_tick, leech]` — signed maxhp fractions, Toxic at its ramped next tick |
@@ -1481,7 +1562,7 @@ not re-derive them.
    was **2925**; since `gen3_entity_rehome_v1` it was **2667**, and since
    `gen3_deadline_clock_v1` it was **2669** (the
    per-mon recency block added 12 × 3). ⚠️ **Every obs dim in this section is AS-FOUND in 2026-08;
-   live is 2501** — see §1. Its per-block reference section then describes the
+   live is 2761** — see §1. Its per-block reference section then describes the
    pre-deletion 414-dim reactive layout and the 51-dim incoming-damage / 44-dim move-effect blocks
    as if present. Its own inline banner says to treat the deletion note as authoritative — i.e. the
    file tells you not to trust the rest of the file.
@@ -1495,7 +1576,7 @@ not re-derive them.
    speed-stat GIGO stamp, 59 = `consequence_topk`; now 60 = the re-home stamp). Neither v58 nor
    v59 was described anywhere in the root file.
 5. **`src/agents/model/CLAUDE.md` describes `ObsUnpack` as peeling "the flat 3390-dim
-   observation"** — obs-layout generations out of date (2669 at audit time; **2501 live**).
+   observation"** — obs-layout generations out of date (2669 at audit time; **2761 live**).
 6. **`PointerNativeActionHead`'s docstring says the move cell is `[low,high,crit,pko,p_land,known,
    sec×10]`.** It is `sec×7` (`_PTR_MOVE_CELL` = 13, not 16) since the outgoing slp/psn/tox columns
    were dropped. `pointer_cells`' own docstring, 900 lines away, says 7 correctly.

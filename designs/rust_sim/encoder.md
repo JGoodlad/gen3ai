@@ -78,11 +78,11 @@ natures}.json` at runtime exactly as the facade does, so a `tools/` regeneration
 
 ## 5. The row on the wire
 
-`wire::frame(row)` = `{"dtype":"<f4","shape":[2501],"b64":…}` — the row's little-endian float32 bytes,
+`wire::frame(row)` = `{"dtype":"<f4","shape":[OBS_DIM],"b64":…}` (the head is GENERATED into `layout.rs` as `FRAME_HEAD`; 2761 since `gen3_event_record_v2`) — the row's little-endian float32 bytes,
 in the reply of a pipe that already exists (`core_events --obs`; the process and the pipe protocol
 are kept, program M4 "Transport"). Python wraps it with `np.frombuffer` (`core_obs.wrap_row`, a
 read-only view, no copy) and REFUSES — never converts — a wrong dtype, shape or byte length;
-`check_row` refuses an array that is not float32, `(2501,)` and C-contiguous. On the Rust side
+`check_row` refuses an array that is not float32, `(OBS_DIM,)` and C-contiguous. On the Rust side
 `encode` takes `&mut [f32; OBS_DIM]` (the shape is the type) and `encode_slice` refuses a slice of any
 other length before touching it. Pins: `core_obs_test.py`, `tests/encoder_test.rs`.
 
@@ -114,7 +114,7 @@ took a DECISION at the write's boundary gets ONE frame, written **BEFORE that wr
 when the request chunk is dispatched.
 
 ```text
-__OBS__ p1 {"frame":{"dtype":"<f4","shape":[2501],"b64":…},"mask":[11 ints],
+__OBS__ p1 {"frame":{"dtype":"<f4","shape":[2761],"b64":…},"mask":[11 ints],
             "tokens":{"<idx>":"<choice>",…},"turn":<int>,"line":<int>,"rqid":<int>|null,"n":<int>}
 ```
 

@@ -98,6 +98,7 @@ _DMG_PARA_SPEED = 0.25
 _COND_BRN_IDX, _COND_PAR_IDX = 1, 2
 from agents.observation.types import TypeEncoder as _TypeEncoder
 _WATER_TIDX, _FIRE_TIDX = _TypeEncoder.TYPE_TO_IDX["WATER"], _TypeEncoder.TYPE_TO_IDX["FIRE"]
+_ELECTRIC_TIDX = _TypeEncoder.TYPE_TO_IDX["ELECTRIC"]
 
 # OUTGOING direction (our active → opp active): per OUR move, in REQUEST-slot order (== action logits
 # 6+k) so the policy head can compare move A vs B directly — the equal-effectiveness tie-break (Earthquake
@@ -142,6 +143,9 @@ from agents.observation.gen3_effects import VOLATILE_SLOTS as _VOLATILE_SLOTS
 from agents.observation.constants import BOOSTS_DIM as _BOOSTS_DIM
 _SUBSTITUTE_CTX_IDX = _BOOSTS_DIM + list(_VOLATILE_SLOTS).index("substitute")
 _LEECH_SEED_CTX_SLOT = list(_VOLATILE_SLOTS).index("leechseed")   # gen3_edge_bias_trunk_v1 (G)
+# gen3_field_sport_slots_v1: Mud Sport / Water Sport's active-context indices (boosts ++ volatiles).
+_MUD_SPORT_CTX_IDX = _BOOSTS_DIM + list(_VOLATILE_SLOTS).index("mudsport")
+_WATER_SPORT_CTX_IDX = _BOOSTS_DIM + list(_VOLATILE_SLOTS).index("watersport")
 
 # gen3_per_move_matrices_v1 (v32): the OUTGOING per-move DAMAGE MATRIX — our active's 4 moves × the opp's
 # 6 mons (active + REVEALED bench). The legacy `_outgoing_block` prices our moves vs the opp ACTIVE only;

@@ -35,7 +35,6 @@ import numpy as np
 import pytest
 import torch
 
-from agents.model.model_version.migrations import _migrate_config
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.win_prob_callback import lambda_return_targets
 from agents.training.win_prob_rollout import (ROLLOUT_WEIGHT_KEY, ROLLOUT_WEIGHT_OFF,
@@ -366,12 +365,43 @@ def test_BOTH_ModelVersion_sites_carry_the_weight_at_config_119():
     assert "win_prob_rollout_weight=" in src
 
 
-def test_a_pre_v119_config_MIGRATES_to_an_unweighted_objective():
-    """1.0 is a RECORD, not a chosen default: every scored row of every pre-v119 run weighed the
-    same, because there was no flag that could make one weigh more."""
-    out = _migrate_config({"config_version": 118})
-    assert out["win_prob_rollout_weight"] == 1.0
-    assert out["config_version"] >= 119
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_pre_v119_config_is_REFUSED_and_a_current_one_records_an_unweighted_objective():
+    """The v119 `setdefault` branch (weight → 1.0) is FLOORED AWAY: gen3_event_record_v2 raised
+    MIGRATION_FLOOR to 121 (the branch is archived verbatim in `_migrate_config`'s v97–v120
+    history), so a v118 config is a pre-generation checkpoint and is REFUSED with the
+    diagnosis — a test may not claim to cover a branch the floor makes unreachable. The surviving
+    property: a fresh current config RECORDS the field(s) explicitly at the value that branch
+    supplied, and the current migration passes them through."""
+    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError,
+                                            _migrate_config)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 118})
+    fresh = _fresh_current_config()
+    out = _migrate_config(dict(fresh))
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert 'win_prob_rollout_weight' in fresh, 'win_prob_rollout_weight'
+    assert out['win_prob_rollout_weight'] == 1.0, 'win_prob_rollout_weight'
+    ModelVersion(**out)
+    # A RECORDED value passes through the current migration untouched (a pre-floor one is refused).
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 118, **{'win_prob_rollout_weight': 4.0}})
+    kept = _migrate_config(_fresh_current_config(win_prob_rollout_weight=4.0))
+    assert kept['win_prob_rollout_weight'] == 4.0
+    assert getattr(ModelVersion(**kept), 'win_prob_rollout_weight') == 4.0
 
 
 def test_the_weight_is_INHERITED_on_a_flagless_resume():

@@ -295,13 +295,27 @@ def test_arch_source_is_provenance_only_and_gates_nothing():
         "arch_source appears in the compatibility gate — it is PROVENANCE and gates nothing")
 
 
-def test_a_pre_v111_config_migrates_with_arch_source_absent_meaning_unknown():
+def test_a_pre_v111_config_is_refused_and_a_current_one_records_arch_source_unknown():
+    """The v111 `setdefault("arch_source", None)` branch is FLOORED AWAY: gen3_event_record_v2
+    raised MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s v97–v120 history), so
+    a v109 config is pre-generation and is REFUSED with the diagnosis. The surviving property: a
+    current config that did not SAY where its surface came from records None ('not recorded'),
+    never a guess, and the current migration does not infer one."""
+    import json
+
+    from agents.model.model_version import ModelVersion, ModelVersionError
     from agents.model.model_version.constants import ARCH_SIGNATURE, MODEL_CONFIG_VERSION
     from agents.model.model_version.migrations import _migrate_config
-    data = {"config_version": 109, "arch_signature": ARCH_SIGNATURE}
-    out = _migrate_config(dict(data))
-    assert out["config_version"] == MODEL_CONFIG_VERSION
-    assert out["arch_source"] is None, "a pre-v111 run must read 'not recorded', never a guess"
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 109, "arch_signature": ARCH_SIGNATURE})
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    fresh = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    assert "arch_source" in fresh
+    out = _migrate_config(dict(fresh))
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert out["arch_source"] is None, "an unrecorded surface must read 'not recorded', never a guess"
 
 
 # =============================================================================================
@@ -620,6 +634,14 @@ def test_every_key_the_incident_lost_is_either_REFUSED_or_NAMED():
     prod = arch_surface.load_production_config()
     cfg = vars(ns)
     differing = {k for k in prod if k in cfg and cfg[k] != prod[k]}
+    # The GENERATION STAMP. gen3_event_record_v2 (v121, the observation-architecture batch) moved
+    # the mirror across a deliberate retrain boundary, so these four now differ from the incident's
+    # recorded config for a reason that has nothing to do with the incident (whose run and mirror
+    # shared one generation). They are carved out BY NAME, and asserted to be exactly the extra set,
+    # so a genuine new difference cannot hide behind the carve-out.
+    generation_stamp = {"arch_signature", "config_version", "total_dim", "active_context_dim"}
+    assert generation_stamp <= differing, sorted(generation_stamp - differing)
+    differing -= generation_stamp
     assert len(differing) == 31, sorted(differing)      # the ledger's count, re-measured
 
     refused = {d.name for d in arch_surface.diff_against_production(types.SimpleNamespace(**cfg))}

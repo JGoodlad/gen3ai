@@ -333,362 +333,11 @@ class PairHistoryTracker:
         return tuple(out)
 
 
-# Tier H-B event-type vocabulary — SINGLE-SOURCED in `agents.observation.constants` (it is
-# the obs contract: column 0 of every event row). Re-imported here for the fold that emits it.
-from agents.observation.constants import (          # noqa: E402
-    EVENT_T_MOVE, EVENT_T_SWITCH_IN, EVENT_T_FAINT, EVENT_T_STATUS_APPLIED,
-    EVENT_T_STATUS_CURED, EVENT_T_BOOST, EVENT_T_ITEM_REVEAL, EVENT_T_HAZARD,
-    EVENT_T_SWITCH_REJECTED, EVENT_T_CANT,
-    ITEM_TR_REVEALED, ITEM_TR_CONSUMED, ITEM_TR_REMOVED, ITEM_TR_SWAPPED,
+# Tier H-B — the event-window fold lives in its own module (gen3_event_record_v2 split it out when
+# the E12 reshape grew it); re-exported here so every historical import path still resolves.
+from agents.training.event_window_tracker import (  # noqa: E402,F401
+    EventWindowTracker, _event_status_id, _classify_item_transition,
 )
-
-# Status-id axis for event records (0 = none/pad). Mirrors the per-mon condition one-hot's
-# vocabulary; kept as an ID here (the consumer embeds) rather than a one-hot (obs stays lean).
-def _event_status_id(status: "str | None") -> int:
-    """The H-B column-15 id for a status name — CRASH, don't drop (the `normalize_cant_reason`
-    contract). An absent status is legitimately 0; an unrecognised NAME is a parser or
-    vocabulary drift, and silently coding it as 0 would tell the model "no status" on a turn
-    the opponent was, say, badly poisoned — an unfalsifiable GIGO with no metric to show it.
-    Gen-3's status set is closed, so an unrecognised WORD is always a defect somewhere upstream.
-
-    **A `[...]` token is ABSENCE, not a bad name, and the distinction is the whole subtlety.**
-    `_build_event` reads the status positionally (`sm[3]`), and some real Showdown lines put a
-    protocol modifier there instead — measured live: `|-curestatus|` from Heal Bell /
-    Aromatherapy yields `'[from] move: Aromatherapy'`. That line genuinely carries no status
-    name, so 0 is the correct id (and is what shipped); what must never pass silently is a
-    plain word the vocabulary does not know.
-    """
-    from agents.observation.constants import EVENT_STATUS_IDS
-
-    if not status:
-        return 0
-    key = str(status).strip().lower()
-    if key.startswith("["):        # a protocol modifier in the status slot ⇒ no status on the line
-        return 0
-    if key not in EVENT_STATUS_IDS:
-        raise ValueError(
-            f"unknown status {status!r} for the H-B event window — the vocabulary is "
-            f"{sorted(EVENT_STATUS_IDS)} (agents.observation.constants.EVENT_STATUS_IDS). "
-            "Add it there (and widen EventSeats' table) rather than letting it read as 'none'.")
-    return EVENT_STATUS_IDS[key]
-
-
-# gen3_event_semantics_v1 — the two classifiers the H-B rows need.
-# `_classify_faint_cause` is IMPORTED from turn_view rather than reimplemented: the frames and
-# the event window must never disagree about what "weather" means, and one copy cannot drift.
-from agents.battle.turn_view import _classify_faint_cause, damage_is_lethal, is_protect_block
-
-_SELF_KO_MOVE_IDS: frozenset = frozenset({"explosion", "selfdestruct"})
-# The moves whose item lines move an item from one mon to the other (W3 above).
-_ITEM_TRANSFER_WORDS: tuple = ("trick", "thief", "covet", "switcheroo")
-
-def _classify_item_transition(kind, from_clause: "Optional[str]") -> int:
-    """|-item| / |-enditem| (+ its `[from]`) -> one of the ITEM_TR_* ids.
-
-    Gen3 has THREE ways an item stops being held and they mean different things to a player:
-    a CONSUMED berry is spent (the mon is now itemless by its own design), a Knock Off REMOVAL
-    is permanent in ADV (unlike later gens), and a Trick/Thief/Covet SWAP means the OPPONENT is
-    now holding it — which is information about their set, not just about ours. Collapsing them
-    into one "item gone" bit is the conflation this column exists to end."""
-    from agents.battle.battle_event import EventKind
-    fc = (from_clause or "").strip().lower()
-    # gen3_event_window_semantics_fixes_v1 (W3): a transfer move writes an item line on BOTH
-    # mons — Trick `|-item|` ×2, Thief / Covet `|-enditem|` on the victim + `|-item|` on the
-    # taker. Every one of them is the item CHANGING HANDS, so the `|-item|` side is SWAPPED too;
-    # reading it as REVEALED ("disclosed, still held") recorded a Trick as two plain reveals.
-    if any(w in fc for w in _ITEM_TRANSFER_WORDS):
-        return ITEM_TR_SWAPPED
-    if kind is EventKind.ITEM:
-        return ITEM_TR_REVEALED
-    if "knock off" in fc or "knockoff" in fc:
-        return ITEM_TR_REMOVED
-    return ITEM_TR_CONSUMED
-
-
-class EventWindowTracker:
-    """Tier H-B (`designs/ai_v9/design_history_entity.md` §3 H-B): the last-N DECISION-RELEVANT
-    events as typed records — the sequential residue the compiled tiers (recency, H-A) cannot
-    carry, made queryable. PUBLIC protocol events only; within-battle only; **seq-idempotent**
-    (the PairHistoryTracker convention), so an overlapping window or a rolled-back opponent
-    RE-DECIDE can never append twice.
-
-    One record per event in the H-B vocabulary (moves, switch-ins, faints, status
-    applied/cured, boosts, item reveals, hazards, our rejected switches). MODIFIER events
-    (DAMAGE / MISS / FAIL / CRIT / IMMUNE / RESISTED / SUPEREFFECTIVE) do not get records —
-    they ATTACH to their side's open same-turn MOVE record (the H-A attach rule, extended):
-    damage lands on the target side and accumulates into the move's ``hp_delta``; the
-    effectiveness trio sets ``eff``; the outcome trio sets flags. ``we_first`` marks the
-    records of whichever side MOVED first that turn (speed-inversion evidence, §2).
-    ``forced_window`` tags events emitted while a side's active slot was empty after a faint
-    (the "turn framing dissolves" phase tag). v1 TRIMS, recorded deliberately: no faint-cause
-    multi-hot (adjacent events + compiled state carry it), no item/hazard CONTENT ids (the
-    reveal event + per-mon state carry them), SETBOOST/CLEARBOOST skipped (rare, compiled
-    boosts are current-state).
-
-    Records are plain dicts (species/move ids as STRINGS — the encoder maps to nums, exactly
-    like H-A's last-action). The window is bounded (``maxlen``); reads return
-    most-recent-LAST so the encoder's padding convention is stable."""
-
-    def __init__(self, maxlen: int = 32):
-        self.maxlen = int(maxlen)
-        self._events: deque = deque(maxlen=self.maxlen)
-        self._max_seq: int = -1
-        self._turn: int = 0
-        self._our_active: Optional[str] = None
-        self._opp_active: Optional[str] = None
-        self._open_move: dict = {}
-        # gen3_event_semantics_v1: the FAINT row's cause needs to know what last damaged
-        # the mon — the protocol says it on the DAMAGE line's `[from]`, not on the faint.
-        # Per SIDE, reset when that side's mon leaves the field (a fresh mon's death has
-        # nothing to do with the previous occupant's last chip).
-        self._last_dmg_cause: dict = {}
-        # gen3_event_window_semantics_fixes_v1 (W2): did that last damage take the mon to 0 HP? A
-        # faint no damage line caused (Destiny Bond, Perish Song, Memento) is not an `attack`.
-        self._last_dmg_lethal: dict = {}
-        self._used_selfko: dict = {}   # side -> did its last move self-KO
-        # The CURRENT MOVER — the side of the latest `|move|`. A bare `-damage` is the open move's
-        # own hit only while its user is the one moving: the other side's Substitute / Belly Drum /
-        # Ghost-Curse HP cost also prints a `-damage` with no `[from]` (T1's class, on the row).
-        self._last_mover: Optional[str] = None
-        self._first_mover_turn: int = -1    # the turn whose first mover is recorded
-        self._first_mover_side: Optional[str] = None
-        self._forced: dict = {}             # side -> active slot empty (post-faint window)
-
-    def _append(self, rec: dict) -> dict:
-        rec["forced_window"] = 1.0 if (self._forced.get("our") or self._forced.get("opp")) else 0.0
-        self._events.append(rec)
-        return rec
-
-    def update(self, turn: int, events, our_active: Optional[str],
-               opp_active: Optional[str]) -> None:
-        from agents.battle.battle_event import (
-            IMPLIED_NONE, IMPLIED_USER, OURS, OPP, EventKind, implied_move_target)
-        self._turn = max(self._turn, int(turn))
-        for e in events or []:
-            seq = getattr(e, "seq", None)
-            if seq is not None:
-                if seq <= self._max_seq:
-                    continue
-                self._max_seq = seq
-            side = getattr(e, "side", None)
-            sp = getattr(e, "actor_species", None)
-            et = int(getattr(e, "turn", turn))
-            k = e.kind
-            if k is EventKind.MOVE and side is not None and sp:
-                if self._first_mover_turn != et:
-                    self._first_mover_turn = et
-                    self._first_mover_side = side
-                # gen3_move_target_class_v1: the move's dex target class (the reading's R4
-                # rule) — a self / side / field move (Refresh, Protect, Recover, Rain Dance) is
-                # the USER's row, not the foe's; `adjacentAlly` has none.
-                _implied = implied_move_target(e.move_id, sp)
-                rec = self._append({
-                    "t": EVENT_T_MOVE, "actor": sp, "side": side,
-                    "target": (sp if _implied == IMPLIED_USER
-                               else None if _implied == IMPLIED_NONE
-                               else (self._opp_active if side == OURS else self._our_active)),
-                    "move_id": e.move_id, "hp_delta": 0.0,
-                    "missed": False, "failed": False, "crit": False,
-                    "eff": 0, "we_first": side == self._first_mover_side,
-                    "status": 0, "turn": et,
-                })
-                self._open_move[side] = rec
-                self._last_mover = side
-                # Explosion / Self-Destruct kill their OWN user; the lethal damage carries no
-                # `[from]`, so without this the faint would classify as a plain `attack`.
-                self._used_selfko[side] = (e.move_id in _SELF_KO_MOVE_IDS)
-            elif k is EventKind.DAMAGE and side is not None:
-                # damage lands ON `side`; it attaches to the OTHER side's open move this turn
-                # ONLY when it is the move's own hit: no `[from]` clause (recoil / Sandstorm /
-                # status / item residuals all carry one) AND the damaged mon IS the move's
-                # recorded target (a switched-in replacement taking hazard chip is not the hit).
-                self._last_dmg_cause[side] = e.from_clause   # None ⇒ a direct hit
-                self._last_dmg_lethal[side] = damage_is_lethal(e)
-                mover = OPP if side == OURS else OURS
-                om = self._open_move.get(mover)
-                # `from_clause`, NOT `value.get("from")`. On a DAMAGE event the parser stores
-                # the `[from]` clause under `value["reason"]`, so the raw key is ALWAYS absent
-                # here and this guard never fired: every sandstorm/burn/poison/Leech-Seed/recoil
-                # residual landing on the move's target was folded into the move's attributed
-                # magnitude. Shipped v81, trained on for two generations.
-                if (om is not None and om["turn"] == et
-                        and not e.from_clause
-                        and self._last_mover == mover
-                        and sp and om["target"] == sp):
-                    amt = e.amount
-                    if amt is not None:
-                        om["hp_delta"] += float(amt)
-            elif k in (EventKind.MISS, EventKind.FAIL, EventKind.CRIT) and side is not None:
-                om = self._open_move.get(side)
-                # A `-fail` carrying a real `[from]` cause is NOT the open move's outcome — it is
-                # some other effect fizzling while this side happened to be the current mover
-                # (`|-fail|p2a: Metagross|unboost|[from] ability: Clear Body` = Intimidate blocked
-                # on a switch-in, observed mis-attributed onto a full-damage Earthquake). The
-                # synthetic "move-suffix" tag (`|move|…|[miss]`) IS the move's own outcome and
-                # still counts. Same `[from]` class as the v91 DAMAGE guard.
-                external_cause = (k is EventKind.FAIL
-                                  and e.from_clause not in (None, "move-suffix"))
-                if om is not None and om["turn"] == et and not external_cause:
-                    if k is EventKind.MISS:
-                        om["missed"] = True
-                    elif k is EventKind.FAIL:
-                        om["failed"] = True
-                    else:
-                        om["crit"] = True
-            elif k is EventKind.ACTIVATE and side is not None and is_protect_block(e.effect):
-                # gen3_event_window_semantics_fixes_v1 (W4): `|-activate|<target>|move: Protect` —
-                # the PROTECTOR is named, and the open move of the side that is MOVING was stopped.
-                # It read OUT_HIT (magnitude 0) until this, i.e. a blocked attack looked landed.
-                mover = OPP if side == OURS else OURS
-                om = self._open_move.get(mover)
-                if om is not None and om["turn"] == et and self._last_mover == mover:
-                    om["failed"] = True
-            elif k in (EventKind.IMMUNE, EventKind.RESISTED, EventKind.SUPEREFFECTIVE) \
-                    and side is not None:
-                # The producer tags these on the MOVER ("attach to the resolving mover",
-                # gen3_battle), the same convention as CRIT/MISS/FAIL one branch up. This
-                # consumer flipped it to the defender until 2026-08-19, so on every one-sided
-                # turn (the immune-on-pivot case above all) the lookup hit the side with no
-                # open move and the eff dropped — measured: EVERY move row in a gen-15 trace
-                # read neutral, including an immune whiff and a 4× KO. The fuzz oracle and the
-                # unit fixture shared the flip, which is why 73k checks stayed green.
-                om = self._open_move.get(side)
-                if om is not None and om["turn"] == et:
-                    om["eff"] = {EventKind.SUPEREFFECTIVE: 1, EventKind.RESISTED: 2,
-                                 EventKind.IMMUNE: 3}[k]
-            elif k in (EventKind.SWITCH, EventKind.DRAG) and side is not None and sp:
-                # append BEFORE clearing the forced flag: the arriving replacement IS the
-                # forced-window event (the tag is what lets a reader see "this switch-in was
-                # the post-faint replacement, not a chosen pivot").
-                self._append({
-                    "t": EVENT_T_SWITCH_IN, "actor": sp, "side": side,
-                    "target": (self._opp_active if side == OURS else self._our_active),
-                    "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
-                    "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
-                })
-                self._forced["our" if side == OURS else "opp"] = False
-                if side == OURS:
-                    self._our_active = sp
-                else:
-                    self._opp_active = sp
-                # A fresh mon inherits no chip history from the one it replaced — without this
-                # the incoming mon's first faint would read the PREVIOUS occupant's last cause.
-                self._last_dmg_cause.pop(side, None)
-                self._last_dmg_lethal.pop(side, None)
-                self._used_selfko.pop(side, None)
-            elif k is EventKind.FAINT and side is not None and sp:
-                self._append({
-                    "t": EVENT_T_FAINT, "actor": sp, "side": side, "target": None,
-                    "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
-                    "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
-                    # gen3_event_semantics_v1: WHY it fainted. Reuses `turn_view`'s classifier
-                    # so the event window and the TurnDelta fold cannot drift on the vocabulary.
-                    "faint_cause": _classify_faint_cause(
-                        self._last_dmg_cause.get(side), bool(self._used_selfko.get(side)),
-                        bool(self._last_dmg_lethal.get(side))),
-                })
-                self._last_dmg_cause.pop(side, None)
-                self._last_dmg_lethal.pop(side, None)
-                self._used_selfko.pop(side, None)
-                if side == OURS and self._our_active == sp:
-                    self._our_active = None
-                    self._forced["our"] = True
-                elif side == OPP and self._opp_active == sp:
-                    self._opp_active = None
-                    self._forced["opp"] = True
-            elif k in (EventKind.STATUS, EventKind.CURESTATUS) and sp:
-                self._append({
-                    "t": (EVENT_T_STATUS_APPLIED if k is EventKind.STATUS
-                          else EVENT_T_STATUS_CURED),
-                    "actor": sp, "side": side, "target": None, "move_id": None,
-                    "hp_delta": 0.0, "missed": False, "failed": False, "crit": False,
-                    "eff": 0, "we_first": False,
-                    "status": _event_status_id(e.status), "turn": et,
-                })
-            elif k in (EventKind.BOOST, EventKind.UNBOOST) and sp:
-                # gen3_event_window_semantics_fixes_v1 (W1): `amount` is ALREADY SIGNED — the
-                # event builder negates an `|-unboost|` (`gen3_battle._build_event`). Negating it
-                # again here stored every stat DROP (Intimidate, Curse's Speed, Overheat, Screech)
-                # as a RISE, 58 per 1,000 decisions.
-                amt = float(e.amount or 0.0)
-                self._append({
-                    "t": EVENT_T_BOOST, "actor": sp, "side": side, "target": None,
-                    "move_id": None,
-                    "hp_delta": amt,   # the magnitude col: the signed stage change
-                    "missed": False, "failed": False, "crit": False, "eff": 0,
-                    "we_first": False, "status": 0, "turn": et,
-                })
-            elif k in (EventKind.ITEM, EventKind.ENDITEM) and sp:
-                self._append({
-                    "t": EVENT_T_ITEM_REVEAL, "actor": sp, "side": side, "target": None,
-                    "move_id": None, "hp_delta": 0.0, "missed": False, "failed": False,
-                    "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
-                    "item_tr": _classify_item_transition(k, e.from_clause),
-                })
-            elif k is EventKind.SIDE and side is not None:
-                # gen3_event_window_semantics_fixes_v1 (W5): the magnitude column carries the
-                # direction, +1 a condition STARTED (a Spikes layer laid, Reflect up) and −1 one
-                # ENDED (Rapid Spin's clear, a screen expiring). A clear read exactly like a set.
-                self._append({
-                    "t": EVENT_T_HAZARD, "actor": None, "side": side, "target": None,
-                    "move_id": None,
-                    "hp_delta": (-1.0 if e.value.get("op") == "sideend" else 1.0),
-                    "missed": False, "failed": False,
-                    "crit": False, "eff": 0, "we_first": False, "status": 0, "turn": et,
-                })
-            elif k is EventKind.CANT and sp:
-                # gen3_frame_deletion_v1: "this mon could not move, and why" (full paralysis /
-                # sleep / flinch / recharge). The battle event log always carried it and the
-                # TurnDelta fold read it into `*_cant_reason`, but it reached the model ONLY
-                # through the lag frames — this window emitted no row. With those frames
-                # deleted this is the fact's only route, so it gets its own type + column.
-                # gen3_damp_cant_v1: attribute the row to the mon that LOST ITS TURN, not to
-                # the ability holder the protocol files it against. Falls back to the event's own
-                # actor/side for ordinary self-inflicted cants, where they are the same mon.
-                _cs = e.blocked_side or side
-                _ca = e.blocked_actor or sp
-                self._append({
-                    "t": EVENT_T_CANT, "actor": _ca, "side": _cs, "target": None,
-                    "move_id": e.cant_move, "hp_delta": 0.0, "missed": False,
-                    "failed": True, "crit": False, "eff": 0, "we_first": False,
-                    "status": 0, "cant": e.reason, "turn": et,
-                })
-            elif k is EventKind.CHOICE_REJECTED:
-                self._append({
-                    "t": EVENT_T_SWITCH_REJECTED, "actor": self._our_active, "side": OURS,
-                    "target": None, "move_id": None, "hp_delta": 0.0, "missed": False,
-                    "failed": False, "crit": False, "eff": 0, "we_first": False,
-                    "status": 0, "turn": et,
-                })
-        # Decision-time resync (the H-A alive-filter is applied by the CALLER, which passes
-        # None for a fainted "active" — same contract as PairHistoryTracker.update).
-        if our_active:
-            self._our_active = our_active
-            self._forced["our"] = False
-        if opp_active:
-            self._opp_active = opp_active
-            self._forced["opp"] = False
-
-    @property
-    def turn(self) -> int:
-        return self._turn
-
-    def window(self) -> list:
-        """The folded records, oldest-first (≤ ``maxlen``)."""
-        return list(self._events)
-
-    def open_records(self) -> tuple:
-        """The ≤2 records that may still be MUTATED IN PLACE (one open MOVE per side).
-
-        Every in-place write in :meth:`update` — accumulated ``hp_delta``, the
-        ``missed``/``failed``/``crit`` outcome trio, the ``eff`` code — goes through
-        ``self._open_move``, so this tuple IS the mutation surface. The incremental obs
-        assembler re-writes exactly these rows each decision instead of tracking a per-record
-        version, which makes "a row changed after it was appended" unrepresentable rather than
-        merely handled. A new mutation site that did not route through ``_open_move`` would
-        break that; today there is no other way to reach an already-appended record.
-        """
-        return tuple(self._open_move.values())
 
 
 class EpisodeTracker:
@@ -983,6 +632,15 @@ class EpisodeTracker:
         return self.advance_window(battle.strict_view().live, legal,
                                    delta_events, window_events)
 
+    def _attempted_switch(self) -> Optional[str]:
+        """E4: the species the action FROM the previous context switched to (TurnDelta's
+        ``our_attempted_switch_to`` decode), or None when it was not a switch."""
+        a = self._last_action
+        if len(self._history) < 2 or not (0 <= a < 6):
+            return None
+        order = self._history[-2].our_team_order
+        return order[a] if a < len(order) else None
+
     def advance_window(self, live: "LiveView", legal, delta_events: list,
                        window_events: list) -> TurnDelta:
         """:meth:`update_progress_clock`'s body once the board and the two event windows exist.
@@ -1016,11 +674,14 @@ class EpisodeTracker:
                 live.turn, _ev,
                 _oa.species if (_oa is not None and not _oa.fainted) else None,
                 _pa.species if (_pa is not None and not _pa.fainted) else None)
-            # Tier H-B: the SAME window and the SAME alive-filtered resync contract.
+            # Tier H-B: the SAME window and the SAME alive-filtered resync contract. E4
+            # (gen3_event_record_v2): the species our PREVIOUS decision tried to switch to — the
+            # target a refused switch aimed at (the server's `|error|` does not name it).
             self._event_window.update(
                 live.turn, _ev,
                 _oa.species if (_oa is not None and not _oa.fainted) else None,
-                _pa.species if (_pa is not None and not _pa.fainted) else None)
+                _pa.species if (_pa is not None and not _pa.fainted) else None,
+                attempted_switch=self._attempted_switch())
         return delta
 
     def reset(self) -> None:

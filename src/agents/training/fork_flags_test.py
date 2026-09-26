@@ -126,16 +126,45 @@ def test_the_model_version_records_every_field_and_the_config_version_is_bumped(
     assert MODEL_CONFIG_VERSION >= 120
 
 
-def test_a_pre_v120_config_MIGRATES_to_the_only_possible_past():
-    out = _migrate_config({"config_version": 119})
-    assert out["config_version"] == MODEL_CONFIG_VERSION
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_pre_v120_config_is_REFUSED_and_a_current_one_records_the_only_possible_past():
+    """The v120 `setdefault` branch (the six fork knobs → their inert defaults) is FLOORED AWAY:
+    gen3_event_record_v2 raised MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s
+    v97–v120 history), so a v119 config is pre-generation and is REFUSED with the diagnosis. The
+    surviving property: a fresh current config RECORDS all six explicitly at those defaults."""
+    from agents.model.model_version import ModelVersion, ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 119})
+    fresh = _fresh_current_config()
+    out = _migrate_config(dict(fresh))
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
     for name, want in DEFAULTS.items():
+        assert name in fresh, name
         assert out[name] == want, name
+    ModelVersion(**out)
 
 
 def test_migration_never_overwrites_a_recorded_value():
-    out = _migrate_config({"config_version": 119, "fork_fraction": 0.02, "fork_crn": "dice"})
+    from agents.model.model_version import ModelVersion, ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 119, "fork_fraction": 0.02, "fork_crn": "dice"})
+    out = _migrate_config(_fresh_current_config(fork_fraction=0.02, fork_crn="dice"))
     assert out["fork_fraction"] == 0.02 and out["fork_crn"] == "dice"
+    mv = ModelVersion(**out)
+    assert mv.fork_fraction == 0.02 and mv.fork_crn == "dice"
 
 
 def test_the_fraction_is_in_the_arch_table_so_a_headless_run_reads_INERT():

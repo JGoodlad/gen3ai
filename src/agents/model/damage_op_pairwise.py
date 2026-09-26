@@ -50,7 +50,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _DMG_OMX_IDX_PKO, _DMG_OUTGOING, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_OUT_SEC,
     _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN, _DMG_SPEED_SCALE,
     _DMG_SPEED_STD_K, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_STATUS_REFINE, _DMG_TOPK_DEFAULT_K,
-    _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
+    _ELECTRIC_TIDX, _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
     _PAIR_REDUCE_N_CHANNELS, _PTR_MOVE_CELL, _PTR_SWITCH_CELL_IN, _SB_ATK, _SB_DEF, _SB_SPA,
     _SB_SPD, _SB_SPE, _SECONDARY_MAJOR_N, _SECONDARY_TO_STATUS_CAT, _SUBSTITUTE_CTX_IDX,
@@ -91,6 +91,8 @@ class DamageOperatorPairwise:
         _boost_mult: Callable[..., torch.Tensor]
         _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]
         _weather_mult: Callable[..., torch.Tensor]
+        _sport_mult: Callable[..., torch.Tensor]
+        _field_bp_mult: Callable[..., torch.Tensor]
         _chan_max: Callable[..., torch.Tensor]
         _p_outspeed: Callable[..., torch.Tensor]
         _opp_candidate_weights: Callable[..., torch.Tensor]
@@ -502,9 +504,7 @@ class DamageOperatorPairwise:
         acc_k = self.MOVE_ACCURACY[nums]
         fixed_k = self.MOVE_FIXED_DAMAGE[nums]
         phys_k = torch.where(fixed_k > 0, self.TYPE_IS_PHYS[mty_k], phys_k)
-        weather_k = self._weather_mult(ctx.weather_feature,
-                                       (mty_k == _WATER_TIDX).float(),
-                                       (mty_k == _FIRE_TIDX).float())                # [B,K]
+        weather_k = self._field_bp_mult(ctx, mty_k)                                  # [B,K] × sports
         reflect = ctx.screen_feature[:, 0:1]                                         # [B,1] OUR side
         light_screen = ctx.screen_feature[:, 2:3]
         def _high(atk_x: torch.Tensor) -> torch.Tensor:

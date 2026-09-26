@@ -303,7 +303,14 @@ from typing import Any, Dict
 #   not a guess but the only possible past — no run could fork a decision it had no flag to fork
 #   with, and the other five are inert at fraction 0. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR
 #   change.
-MODEL_CONFIG_VERSION = 120
+# v121 (gen3_event_record_v2) — THE OBSERVATION-ARCHITECTURE BATCH, one deliberate retrain boundary
+#   (owner, 2026-09-25): the E12 event-row reshape (22 → 30 columns, a DENIED row type), the E4
+#   refused-switch target, the Mud Sport / Water Sport volatile slots (and the damage op honouring
+#   them), and the E10 parameter-free Smogon mixture for the hidden-slot move prior. The obs grows
+#   2501 → 2761, `EventSeats`' projection and the `r` edge cell (2 → 3) change shape, and the hidden
+#   slots' move posterior changes meaning — so ARCH_SIGNATURE bumps and MIGRATION_FLOOR rises to
+#   121. No field is added.
+MODEL_CONFIG_VERSION = 121
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -324,7 +331,7 @@ _BELIEF_GRAD_MODE_EFFECT = {
 # The signature-by-signature history (v2 -> gen3_ctx_dedup_v1: what broke weight
 # compatibility each time, and why) lives in designs/CHANGELOG.md under 'The
 # ARCH_SIGNATURE narrative' — moved there 2026-08-16.
-ARCH_SIGNATURE = "gen3_critic_route_wave_v1"
+ARCH_SIGNATURE = "gen3_event_record_v2"
 class ModelVersionError(Exception):
     pass
 

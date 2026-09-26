@@ -14,10 +14,11 @@ from agents.model.features_extractor import _event_reference_cells
 from agents.observation.constants import EVENT_T_MOVE, EVENT_TOKEN_DIM, EventCol as C
 
 
-def _ev_row(actor=0.0, side=0.0, target=0.0, valid=1.0):
+def _ev_row(actor=0.0, side=0.0, target=0.0, valid=1.0, rel=0.0, rel_side=0.0):
     r = torch.zeros(EVENT_TOKEN_DIM)
     r[C.TYPE] = EVENT_T_MOVE
     r[C.ACTOR_SPECIES], r[C.ACTOR_SIDE], r[C.TARGET_SPECIES] = actor, side, target
+    r[C.REL_SPECIES], r[C.REL_SIDE] = rel, rel_side
     r[C.VALID] = valid
     return r
 
@@ -35,7 +36,7 @@ def test_reference_cells_side_gated_exact():
         _ev_row(actor=248.0, side=1.0, target=145.0, valid=0), # PAD: links nothing
     ]).unsqueeze(0)                                            # [1, 3, 19]
     cells = _event_reference_cells(ev, species)
-    assert cells.shape == (1, 3, 12, 2)
+    assert cells.shape == (1, 3, 12, 3)
     # event 0: actor = OUR slot 2 only (never the mirror at 6); target = their slot 7 only
     assert cells[0, 0, :, 0].nonzero().flatten().tolist() == [2]
     assert cells[0, 0, :, 1].nonzero().flatten().tolist() == [7]
@@ -43,6 +44,24 @@ def test_reference_cells_side_gated_exact():
     assert cells[0, 1, :, 0].nonzero().flatten().tolist() == [6]
     # PAD row: nothing
     assert float(cells[0, 2].abs().sum()) == 0.0
+    # no REL column set on these rows ⇒ the third cell is empty everywhere
+    assert float(cells[..., 2].abs().sum()) == 0.0
+
+
+def test_the_rel_cell_links_the_rel_mon_on_its_own_side():
+    """gen3_event_record_v2 (E12): the REL mon (a switch-in's replaced mon, a denial's KOer, an item
+    transfer's partner) links on the side ITS column names — our replaced Tyranitar (slot 2), never
+    the opponent's mirror (slot 6); and an opponent-side REL links only theirs."""
+    species = torch.zeros(1, 12)
+    species[0, 2] = 248.0
+    species[0, 6] = 248.0
+    ev = torch.stack([
+        _ev_row(actor=145.0, side=1.0, rel=248.0, rel_side=1.0),    # our entry replacing our ttar
+        _ev_row(actor=145.0, side=1.0, rel=248.0, rel_side=-1.0),   # REL on THEIR side
+    ]).unsqueeze(0)
+    cells = _event_reference_cells(ev, species)
+    assert cells[0, 0, :, 2].nonzero().flatten().tolist() == [2]
+    assert cells[0, 1, :, 2].nonzero().flatten().tolist() == [6]
 
 
 def test_r_requires_history_events():

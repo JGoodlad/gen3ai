@@ -108,6 +108,26 @@ fn v4_baton_pass_carries_stages_and_copied_effects() {
     assert!(opp(&v, "zapdos").boosts.is_empty(), "switch_out clears the passer");
 }
 
+/// V4 — the gen-3 FIELD SPORTS (`gen3_field_sport_slots_v1`): `-start … Mud Sport` / `move: Water
+/// Sport` read as the `mudsport` / `watersport` volatiles, ride a Baton Pass (the gen4 mod's
+/// `noCopy: false`), and a plain switch-out clears them — the vendored sim's behaviour.
+#[test]
+fn v4_field_sports_are_volatiles_that_ride_a_baton_pass() {
+    let v = view(&with(&["|-start|p2a: Zapdos|Mud Sport", "|-start|p2a: Zapdos|move: Water Sport"]));
+    assert_eq!(opp(&v, "zapdos").volatiles, vec![("mudsport".to_string(), 0), ("watersport".to_string(), 0)]);
+    let v = view(&with(&[
+        "|-start|p2a: Zapdos|Mud Sport",
+        "|switch|p2a: Celebi|Celebi|100/100|[from] Baton Pass",
+    ]));
+    assert_eq!(opp(&v, "celebi").volatiles, vec![("mudsport".to_string(), 0)]);
+    let v = view(&with(&[
+        "|-start|p2a: Zapdos|Mud Sport",
+        "|switch|p2a: Celebi|Celebi|100/100",
+        "|switch|p2a: Zapdos|Zapdos|100/100",
+    ]));
+    assert!(opp(&v, "zapdos").volatiles.is_empty(), "a plain switch ends the sport");
+}
+
 /// V5 — fork R1: a CHANGED status restarts the count; `-cureteam` keeps it.
 #[test]
 fn v5_a_new_status_restarts_the_count() {

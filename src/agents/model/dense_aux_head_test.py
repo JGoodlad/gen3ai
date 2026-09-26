@@ -214,12 +214,47 @@ def test_check_compatible_REJECTS_a_flipped_head_but_allows_a_RE_DOSE():
     _ver(dense_aux=True, coef=0.5).check_compatible(_ver(dense_aux=True, coef=2.0))
 
 
-def test_a_pre_v117_config_migrates_to_off():
-    """Not a guess about an old run: neither field existed, so no run could have set either."""
-    from agents.model.model_version.migrations import _migrate_config
-    data = _migrate_config({"config_version": 116})
-    assert data["dense_aux"] is False and data["win_prob_dense_aux"] == 0.0
-    assert data["config_version"] == MODEL_CONFIG_VERSION
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_pre_v117_config_is_refused_and_a_current_one_records_off():
+    """The v117 `setdefault` branch (bool → False, coef → 0.0) is FLOORED AWAY: gen3_event_record_v2 raised
+    MIGRATION_FLOOR to 121 (the branch is archived verbatim in `_migrate_config`'s v97–v120
+    history), so a v116 config is a pre-generation checkpoint and is REFUSED with the
+    diagnosis — a test may not claim to cover a branch the floor makes unreachable. The surviving
+    property: a fresh current config RECORDS the field(s) explicitly at the value that branch
+    supplied, and the current migration passes them through."""
+    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError,
+                                            _migrate_config)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 116})
+    fresh = _fresh_current_config()
+    out = _migrate_config(dict(fresh))
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert 'dense_aux' in fresh, 'dense_aux'
+    assert out['dense_aux'] == False, 'dense_aux'
+    assert 'win_prob_dense_aux' in fresh, 'win_prob_dense_aux'
+    assert out['win_prob_dense_aux'] == 0.0, 'win_prob_dense_aux'
+    ModelVersion(**out)
+    # A RECORDED value passes through the current migration untouched (a pre-floor one is refused).
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 116, **{'dense_aux': True, 'win_prob_dense_aux': 0.1}})
+    kept = _migrate_config(_fresh_current_config(dense_aux=True, win_prob_dense_aux=0.1))
+    assert kept['dense_aux'] == True
+    assert getattr(ModelVersion(**kept), 'dense_aux') == True
+    assert kept['win_prob_dense_aux'] == 0.1
+    assert getattr(ModelVersion(**kept), 'win_prob_dense_aux') == 0.1
 
 
 def test_the_survival_and_hp_blocks_are_ordered_ours_then_theirs():

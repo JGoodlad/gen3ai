@@ -28,6 +28,7 @@ import pytest
 from agents.model.model_version import (
     MODEL_CONFIG_VERSION,
     ModelVersion,
+    ModelVersionError,
     _migrate_config,
 )
 
@@ -110,18 +111,23 @@ def test_it_is_not_gated_by_check_compatible(layout):
 
 # ------------------------------------------------------------------------------- 4. the migration
 
-def test_a_pre_v102_config_migrates_to_upstream_one(layout):
-    """Not a guess: the policy-gradient term entered the loss at an implicit 1.0 in every
-    pre-v102 run, so 1.0 is what every such run trained with."""
+def test_a_pre_v102_config_is_refused_and_a_current_one_records_upstream_one(layout):
+    """The v102 `setdefault("policy_grad_coef", 1.0)` branch is FLOORED AWAY: gen3_event_record_v2
+    raised MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s v97–v120 history), so a
+    config lacking the field is pre-generation and is REFUSED with the diagnosis. The surviving
+    property: a fresh current config RECORDS the coefficient explicitly at upstream's implicit 1.0,
+    and the current migration passes it through to a constructible ModelVersion."""
     v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
     old = json.loads(v.to_json())
     old.pop("policy_grad_coef")
     old["config_version"] = 101
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(old)
 
-    migrated = _migrate_config(old)
-    # `>= 102`, not `== 102` (the cf-family lesson): the property is that a pre-v102 config
-    # lands on the LIVE version with this field defaulted, whatever the live version is.
-    assert migrated["config_version"] == MODEL_CONFIG_VERSION >= 102
+    fresh = json.loads(v.to_json())
+    assert fresh["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert fresh["policy_grad_coef"] == _DEFAULT
+    migrated = _migrate_config(fresh)
     assert migrated["policy_grad_coef"] == _DEFAULT
     ModelVersion(**migrated)   # `cls(**data)` must not TypeError
 

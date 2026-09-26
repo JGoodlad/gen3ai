@@ -525,22 +525,32 @@ def test_none_of_them_is_gated_by_check_compatible():
     b.check_compatible(a)
 
 
-def test_a_pre_v101_config_migrates_to_the_argparse_defaults():
+def test_a_pre_v101_config_is_refused_and_a_current_one_records_the_argparse_defaults():
+    """The v101 `setdefault` branch (the four knobs → argparse defaults) is FLOORED AWAY:
+    gen3_event_record_v2 raised MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s
+    v97–v120 history), so a config lacking the family is pre-generation and is REFUSED with the
+    diagnosis. The surviving property: a fresh current config RECORDS every knob explicitly at its
+    argparse default, and the current migration passes it through to a constructible ModelVersion."""
     import json
 
-    from agents.model.model_version import MODEL_CONFIG_VERSION, ModelVersion, _migrate_config
+    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError,
+                                            _migrate_config)
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
-    old = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+    fresh = json.loads(ModelVersion.from_layout_and_policy_kwargs(
         layout, {"net_arch": [512, 512]}).to_json())
+    old = dict(fresh)
     for field in _FLAGS:
         old.pop(field)
     old["config_version"] = 100
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(old)
 
-    migrated = _migrate_config(old)
-    assert migrated["config_version"] == MODEL_CONFIG_VERSION >= 101
+    assert fresh["config_version"] == MODEL_CONFIG_VERSION >= 121
+    migrated = _migrate_config(fresh)
     for field, (default, _other, _flag) in _FLAGS.items():
+        assert field in fresh, field
         assert migrated[field] == default, field
     ModelVersion(**migrated)
 

@@ -1,0 +1,4 @@
+base reproduces committed fixture: True
+non-event cells bit-identical: True sport cells nonzero: 0
+decisions whose event window (old 22 cols) differs: 500 of 991
+explained by the intended E12 changes (new DENIED rows, switch-in chip/move, item-transfer direction, faint causes, E4 target): 500 unexplained: 0 []

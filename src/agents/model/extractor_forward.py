@@ -90,7 +90,11 @@ class ExtractorForward(ExtractorApi):
         raw = self.move_belief.move_logits(  # type: ignore[union-attr]
             opp_tokens,
             ctx.species_ids[:, TEAM_SIZE:],                                  # [B, 6]
-            ctx.all_move_ids[:, TEAM_SIZE:, :])                              # [B, 6, 4]
+            ctx.all_move_ids[:, TEAM_SIZE:, :],                              # [B, 6, 4]
+            # gen3_hidden_slot_move_mixture_v1 (E10): the hidden slots' prior is the Smogon mixture
+            # over the T0 species posterior (None when `t0_species_prior` is off ⇒ the flat row).
+            hidden_species_probs=self.stash.t0_species_probs,
+            opp_believed_mask=ctx.opp_believed_mask)
         logits, presence, hp_post, hp_logits = self._typed_hp_posterior(opp_tokens, ctx, raw)
         # gen3_belief_label_only_v1: register the LIVE tensors for the supervised losses BEFORE
         # publishing. `logits` is the TYPED posterior, so it carries BOTH the move head's and the

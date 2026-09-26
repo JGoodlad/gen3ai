@@ -115,13 +115,43 @@ def test_it_round_trips_through_model_config_json(tmp_path):
     assert json.loads(path.read_text())["config_version"] == MODEL_CONFIG_VERSION
 
 
-def test_a_pre_v113_config_migrates_to_the_hard_coded_60():
-    """Not a guess: no run could set anything else, because nothing could set it."""
-    from agents.model.model_version import _migrate_config
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
 
-    out = _migrate_config({"config_version": 112})
-    assert out["teacher_scan_limit"] == _callback_default()
-    assert out["config_version"] >= 113
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_pre_v113_config_is_refused_and_a_current_one_records_the_hard_coded_60():
+    """The v113 `setdefault` branch (width → the callback's hard-coded 60) is FLOORED AWAY: gen3_event_record_v2 raised
+    MIGRATION_FLOOR to 121 (the branch is archived verbatim in `_migrate_config`'s v97–v120
+    history), so a v112 config is a pre-generation checkpoint and is REFUSED with the
+    diagnosis — a test may not claim to cover a branch the floor makes unreachable. The surviving
+    property: a fresh current config RECORDS the field(s) explicitly at the value that branch
+    supplied, and the current migration passes them through."""
+    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError,
+                                            _migrate_config)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 112})
+    fresh = _fresh_current_config()
+    out = _migrate_config(dict(fresh))
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert 'teacher_scan_limit' in fresh, 'teacher_scan_limit'
+    assert out['teacher_scan_limit'] == _callback_default(), 'teacher_scan_limit'
+    ModelVersion(**out)
+    # A RECORDED value passes through the current migration untouched (a pre-floor one is refused).
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 112, **{'teacher_scan_limit': 5}})
+    kept = _migrate_config(_fresh_current_config(teacher_scan_limit=5))
+    assert kept['teacher_scan_limit'] == 5
+    assert getattr(ModelVersion(**kept), 'teacher_scan_limit') == 5
 
 
 def test_it_is_NOT_gated_by_check_compatible():

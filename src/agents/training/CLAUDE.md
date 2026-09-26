@@ -435,7 +435,7 @@ recover which buffer ROW a step landed on. A capture that needs the row is INLIN
 
 `gen3_core_obs_source_v1` — the Rust core program's M6: **the production default since the cutover
 (2026-09-25)**; `python` is the explicit opt-out (byte-identical by construction; removed by the
-deletion pass) and the default on `--use-bridge node|off`. `core` takes the trainee's 2501-dim row and 11-bit mask from the rust
+deletion pass) and the default on `--use-bridge node|off`. `core` takes the trainee's observation row (2761-dim) and 11-bit mask from the rust
 `sim_bridge` child (`__OBS__` frames; needs `--use-bridge rust`); `Gen3Env` REFUSES a frame of
 another battle, decision (`n`) or turn, a NaN cell or a mask that disagrees with the reading. Labels,
 reward, the tracker fold and the action mapping stay Python; terminal and non-decision embeds are

@@ -83,6 +83,18 @@ PE-R1b's "one BEHIND" shape, a decision between the residual chip and the next `
 and PE-V16 do not occur in this battle set (the same harness over 80 battles / 9,987 decisions
 shows PE-V10 at 55 decisions, `context[*].boosts` of a FAINTED active only; nothing else moves).
 Regressions: `poke_env/battle/reading_fixes_test.py` + `poke_env_gaps/pe_reading_fixes_obs_integration_test.py`.
+
+**Regen 2026-09-26** (`gen3_event_record_v2`, the observation-architecture batch: obs 2501 -> 2761 —
++2 field-sport volatile slots per active context, event rows 22 -> 30 columns, a DENIED row type).
+Proven confined before this regen by
+`designs/research_state/measurements/obs_arch_batch_2026-09-26/golden_confinement_census.py`: the
+base capture (56837827) reproduced the committed fixture 991/991; decision count UNCHANGED at 991;
+mapping the HEAD vectors back to the old layout (dropping the four sport columns, which are 0 in
+every decision, and the event window) reproduces the base **bit-for-bit on every non-event cell**;
+**500 / 991** decisions' event windows differ in the old 22 columns, and every one is explained by
+the batch's intended changes alone (inserted DENIED rows, a switch-in row's entry chip and causing
+move, an item transfer's RECEIVED direction, the destinybond / perishsong causes, the E4 target) —
+0 unexplained.
 """
 import json
 import os

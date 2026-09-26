@@ -182,3 +182,41 @@ def test_baton_pass_copied_effects_match_the_dex():
     assert not offenders, (
         f"these are marked `noCopy: true` in the dex and must not ride a Baton Pass: {offenders}"
     )
+
+
+def test_field_sports_ride_the_pass_and_end_on_a_plain_switch():
+    """gen 3 Mud Sport / Water Sport (`gen3_field_sport_slots_v1`): a volatile on the user that the
+    pass carries silently (the gen4 mod's `noCopy: false`), and that a plain switch-out clears —
+    verified on the vendored sim, where the receiver holds `mudsport` with no `-start` of its own
+    and the passer, switched back in, holds nothing."""
+    battle = _battle()
+    _feed(
+        battle,
+        "|switch|p1a: Wooper|Wooper, M|100/100",
+        "|switch|p2a: Raikou|Raikou|100/100",
+        "|-start|p1a: Wooper|Mud Sport",
+        "|-start|p1a: Wooper|move: Water Sport",
+    )
+    assert {Effect.MUD_SPORT, Effect.WATER_SPORT} <= set(battle.active_pokemon.effects)
+    _feed(battle, "|switch|p1a: Snorlax|Snorlax, F|100/100|[from] Baton Pass")
+    assert {Effect.MUD_SPORT, Effect.WATER_SPORT} <= set(battle.active_pokemon.effects)
+    _feed(battle, "|switch|p1a: Wooper|Wooper, M|100/100")
+    assert not {Effect.MUD_SPORT, Effect.WATER_SPORT} & set(battle.active_pokemon.effects)
+
+
+@pytest.mark.integration  # reads the vendored Showdown source tree
+def test_field_sports_are_copyable_in_the_gen3_dex():
+    """The allow-list carries the two sports because the gen4 mod (which gen3 inherits) overrides
+    the gen5 base's `noCopy: true` with `noCopy: false`. `test_baton_pass_copied_effects_match_the_dex`
+    scrapes only `data/moves.ts` / `conditions.ts` / the gen3 mod, where neither condition says
+    anything, so it is vacuous for these two; this pins the override where it lives."""
+    import re
+    from pathlib import Path
+
+    src = (Path(__file__).resolve().parents[3] / "deps" / "pokemon-showdown" / "data" / "mods"
+           / "gen4" / "moves.ts").read_text()
+    for move_id in ("mudsport", "watersport"):
+        m = re.search(rf"\n\t{move_id}: \{{(.*?)\n\t\}},", src, re.S)
+        assert m is not None, f"gen4 mod has no {move_id} entry — the inheritance changed"
+        assert "noCopy: false" in m.group(1), f"gen4 {move_id} no longer sets noCopy: false"
+    assert {Effect.MUD_SPORT, Effect.WATER_SPORT} <= BATON_PASS_COPIED_EFFECTS

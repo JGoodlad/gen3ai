@@ -24,7 +24,7 @@ use pokesim::battle::{BattleOptions, PackedTeam, PlayerOptions};
 use pokesim::bridge::{parse_choice, BridgeSession, Cmd};
 use pokesim::dex::Dex;
 use pokesim::trackers::clock::ClockConfig;
-use pokesim::trackers::history::{item_tr, t, EventRecord};
+use pokesim::trackers::history::{denial, entry, item_tr, t, EventRecord};
 use pokesim::trackers::{SideTrackers, KIND_MOVE, KIND_UNKNOWN};
 use pokesim::version::BattleVersion;
 
@@ -153,7 +153,9 @@ fn a_rapid_spin_clear_is_a_negative_hazard_row() {
 }
 
 #[test]
-fn trick_and_thief_item_lines_are_swapped_on_both_mons() {
+/// `gen3_event_record_v2` (E12): a transfer has a DIRECTION — every `|-item|` [from] Trick / Thief is
+/// this mon RECEIVING (both Trick lines), the Thief victim's `|-enditem|` is SWAPPED (taken from it).
+fn trick_and_thief_item_lines_are_transfers_with_a_direction() {
     let p1 = team(&[set("alakazam", "choiceband", "synchronize", "trick,psychic", 100), set("snorlax", "", "immunity", "rest", 100)]);
     let p2 = team(&[set("blissey", "leftovers", "naturalcure", "softboiled", 100), set("snorlax", "", "immunity", "rest", 100)]);
     let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "move 2"), (1, "move 1")]);
@@ -161,7 +163,7 @@ fn trick_and_thief_item_lines_are_swapped_on_both_mons() {
         let it: Vec<(Option<String>, Option<u8>)> =
             rows(&d, viewer).iter().filter(|r| r.t == t::ITEM_REVEAL).map(|r| (r.actor.clone(), r.item_tr)).take(2).collect();
         assert_eq!(it.len(), 2, "viewer {viewer}: two item lines");
-        assert!(it.iter().all(|(_, tr)| *tr == Some(item_tr::SWAPPED)), "viewer {viewer}: Trick = SWAPPED ×2, got {it:?}");
+        assert!(it.iter().all(|(_, tr)| *tr == Some(item_tr::RECEIVED)), "viewer {viewer}: Trick = RECEIVED ×2, got {it:?}");
     }
     let p1 = team(&[set("sneasel", "", "innerfocus", "thief", 100), set("snorlax", "", "immunity", "rest", 100)]);
     let p2 = team(&[set("blissey", "leftovers", "naturalcure", "softboiled", 100), set("snorlax", "", "immunity", "rest", 100)]);
@@ -171,7 +173,12 @@ fn trick_and_thief_item_lines_are_swapped_on_both_mons() {
             .into_iter()
             .find(|r| r.t == t::ITEM_REVEAL && r.actor.as_deref() == Some("sneasel"))
             .expect("the taker's item line");
-        assert_eq!(taker.item_tr, Some(item_tr::SWAPPED), "viewer {viewer}: the Thief taker's |-item| changed hands");
+        assert_eq!(taker.item_tr, Some(item_tr::RECEIVED), "viewer {viewer}: the Thief taker RECEIVED the item");
+        let victim = rows(&d, viewer)
+            .into_iter()
+            .find(|r| r.t == t::ITEM_REVEAL && r.actor.as_deref() == Some("blissey"))
+            .expect("the victim's item line");
+        assert_eq!(victim.item_tr, Some(item_tr::SWAPPED), "viewer {viewer}: the victim's item was taken");
     }
 }
 
@@ -186,7 +193,8 @@ fn a_faint_no_damage_line_caused_is_not_an_attack() {
         let causes: Vec<(Option<String>, Option<&str>)> =
             rows(&d, viewer).iter().filter(|r| r.t == t::FAINT).map(|r| (r.actor.clone(), r.faint_cause)).collect();
         assert!(causes.contains(&(Some("gengar".into()), Some("attack"))), "viewer {viewer}: {causes:?}");
-        assert!(causes.contains(&(Some("tyranitar".into()), Some("other"))), "viewer {viewer}: {causes:?}");
+        // gen3_event_record_v2 (E12): the bond's victim has its OWN live-vocabulary cause
+        assert!(causes.contains(&(Some("tyranitar".into()), Some("destinybond"))), "viewer {viewer}: {causes:?}");
     }
     // Perish Song: both mons' count hits 0; neither faint has a damage line.
     let p1 = team(&[set("lapras", "", "waterabsorb", "perishsong,rest", 100), set("snorlax", "", "immunity", "rest", 100)]);
@@ -195,7 +203,7 @@ fn a_faint_no_damage_line_caused_is_not_an_attack() {
                                        (0, "move 2"), (1, "move 1"), (0, "switch 2"), (1, "switch 2"), (0, "move 1"), (1, "move 1")]);
     for viewer in 0..2 {
         let causes: Vec<Option<&str>> = rows(&d, viewer).iter().filter(|r| r.t == t::FAINT).map(|r| r.faint_cause).collect();
-        assert!(!causes.is_empty() && causes.iter().all(|c| *c == Some("other")), "viewer {viewer}: {causes:?}");
+        assert!(!causes.is_empty() && causes.iter().all(|c| *c == Some("perishsong")), "viewer {viewer}: {causes:?}");
     }
 }
 
@@ -313,4 +321,28 @@ fn a_hidden_power_type_its_usage_prior_excludes_falls_back_to_the_flat_prior() {
     assert!(hp.prior_discarded.contains("lunatone"), "the refuted prior row is counted: {hp:?}");
     // p2 (the Hidden Power user's side) observes nothing: p1 carries no Hidden Power.
     assert!(d[1].last().unwrap().hp.state.is_empty());
+}
+
+/// `gen3_event_record_v2` (E12) on the Rust fold: a faster KO leaves a DENIED(fainted first) row
+/// naming the KOer, a self-KO Explosion leaves a DENIED(turn cut) row for the actor still waiting,
+/// and the replacement that follows is ENTRY replacement naming the fainted mon. (The Python fold is
+/// held to this row for row by slice T; `agents/battle/event_record_v2_fixture_test.py`.)
+#[test]
+fn denials_and_the_free_replacement_are_rows_of_their_own() {
+    let p1 = team(&[set("mewtwo", "", "pressure", "psychic", 100), set("snorlax", "", "immunity", "rest", 100)]);
+    let p2 = team(&[set("rattata", "", "guts", "tackle", 5), set("snorlax", "", "immunity", "rest", 100)]);
+    let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (1, "switch 2"), (0, "move 1"), (1, "move 1")]);
+    let r = rows(&d, 0);
+    let den: Vec<_> = r.iter().filter(|x| x.t == t::DENIED).collect();
+    assert_eq!(den.len(), 1, "{den:?}");
+    assert_eq!((den[0].actor.as_deref(), den[0].denial, den[0].rel.as_deref(), den[0].faint_cause),
+               (Some("rattata"), denial::FAINTED_FIRST, Some("mewtwo"), Some("attack")));
+    assert!(r.iter().any(|x| x.t == t::SWITCH_IN && x.entry == entry::REPLACEMENT && x.rel.as_deref() == Some("rattata")));
+
+    let p1 = team(&[set("electrode", "", "static", "explosion", 100), set("snorlax", "", "immunity", "rest", 100)]);
+    let p2 = team(&[set("snorlax", "", "immunity", "curse", 100), set("blissey", "", "naturalcure", "softboiled", 100)]);
+    let d = play(&p1, &p2, "1,2,3,4", &[(0, "move 1"), (1, "move 1"), (0, "switch 2"), (0, "move 1"), (1, "move 1")]);
+    let cut: Vec<_> = rows(&d, 0).into_iter().filter(|x| x.t == t::DENIED).collect();
+    assert!(cut.iter().any(|x| x.denial == denial::TURN_CUT && x.faint_cause == Some("selfko")
+        && x.rel.as_deref() == Some("electrode")), "{cut:?}");
 }

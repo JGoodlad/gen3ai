@@ -1,0 +1,96 @@
+
+⚠️  [obs-build benchmark] THE BOX IS BUSY — these numbers are not comparable to an idle-box baseline.
+    contention: load average 20.94/22.02/21.43 on 16 cpus (CPU-STARVED, expect ~1.3x slower). If this is a timeout and a training run is live, it is probably starvation, not a bug — confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head
+    Absolute timings are inflated ~1.3x. Re-run idle before recording a result, or treat this as a same-load A/B only.
+
+Obs-build benchmark — gen3ou — searching for a turn>=25 decision (≤200 battles, reps=400, top=22, seed=0)
+
+==============================================================================
+PER-DECISION OBS BUILD BENCHMARK  (obs dim 2761, turn 25, opp mons w/ revealed moves 5/6)
+==============================================================================
+  full per-decision obs build  :   0.354 ms   [COLD: view memo dropped each rep — the production mix, and the comparable series]
+    state_encoder.encode       :   0.351 ms  (  99%)
+    [live_view() alone         :   0.069 ms  (  19%)]
+  encode with the view memo WARM:   0.260 ms  (  73%)  [what encode costs when record/mask already built the view]
+  INCREMENTAL encode (assembler), view memo COLD:
+    cache invalidated each rep :   0.347 ms  (  98%)  [a full rebuild THROUGH the assembler — the episode's first decision]
+    cache WARM                 :   0.185 ms  (  52%)  [speedup vs COLD full: 1.92x]
+    cache WARM + view memo WARM:   0.103 ms  (  29%)  [THE PRODUCTION SHAPE — record() already built the view; vs 0.260 ms before: 2.54x]
+    ⚠️ the warm series re-encodes ONE decision, so its dirty set is the same every
+       rep — an OPTIMISTIC bound. trainer_turn_benchmark walks real consecutive
+       decisions and is the honest end-to-end number.
+
+  NOTE: absolute ms scale with machine load; the component ratios and the
+        cProfile ranking below are the load-stable signal.
+  NOTE: the reps loop re-encodes ONE decision, so a memo would be 100% warm from
+        rep 2 — every series above except the last drops it first. Judge
+        calls/encode from the COLD cProfile block below.
+
+  [COLD full rebuild] Top 22 by tottime — the series comparable to history:
+         1697201 function calls in 0.466 seconds
+
+   Ordered by: internal time
+   List reduced from 157 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    12800    0.055    0.000    0.079    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/assembler.py:80(write_event_row)
+     4800    0.038    0.000    0.084    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/moves.py:72(encode)
+     4800    0.037    0.000    0.099    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/battle/live_view.py:174(from_pokemon)
+     4800    0.030    0.000    0.179    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/pokemon.py:87(encode)
+      400    0.024    0.000    0.476    0.001 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/state_encoder.py:157(encode)
+   419200    0.024    0.000    0.027    0.000 {method 'get' of 'dict' objects}
+    14400    0.017    0.000    0.024    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/training/episode_tracker.py:310(pair_values)
+     4800    0.012    0.000    0.023    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/types.py:27(encode)
+     4800    0.009    0.000    0.015    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/battle/live_view.py:196(<listcomp>)
+     4800    0.008    0.000    0.011    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/species.py:25(encode)
+     4800    0.008    0.000    0.011    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/training/episode_tracker.py:122(values)
+     4800    0.007    0.000    0.012    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/items.py:25(encode)
+    40000    0.007    0.000    0.009    0.000 /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/enum.py:193(__get__)
+    21600    0.007    0.000    0.010    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/gen3_data/moves.py:166(get)
+     4800    0.006    0.000    0.014    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/abilities.py:67(encode)
+      400    0.006    0.000    0.008    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/wish_belief.py:42(build_wish_pending)
+    25200    0.006    0.000    0.009    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/gen3_data/species.py:61(get)
+    34800    0.006    0.000    0.006    0.000 {built-in method numpy.zeros}
+   110400    0.005    0.000    0.005    0.000 {built-in method builtins.len}
+   100800    0.005    0.000    0.005    0.000 {method 'append' of 'list' objects}
+    17600    0.005    0.000    0.006    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/poke_env/battle/pokemon.py:1492(type_2)
+    15200    0.005    0.000    0.014    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/poke_env/battle/move.py:1035(moves)
+
+
+
+  [WARM incremental] Top 22 by tottime — WHAT PRODUCTION RUNS:
+         537201 function calls in 0.137 seconds
+
+   Ordered by: internal time
+   List reduced from 136 to 22 due to restriction <22>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      400    0.018    0.000    0.137    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/state_encoder.py:157(encode)
+    14400    0.017    0.000    0.023    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/training/episode_tracker.py:310(pair_values)
+   156400    0.009    0.000    0.009    0.000 {method 'get' of 'dict' objects}
+     1600    0.008    0.000    0.012    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/assembler.py:80(write_event_row)
+      800    0.007    0.000    0.015    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/moves.py:72(encode)
+     4800    0.006    0.000    0.009    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/training/episode_tracker.py:122(values)
+      800    0.006    0.000    0.032    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/pokemon.py:87(encode)
+      400    0.004    0.000    0.009    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/reactive.py:99(encode)
+    89200    0.004    0.000    0.004    0.000 {method 'append' of 'list' objects}
+      800    0.003    0.000    0.005    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/active_context.py:36(encode)
+    27200    0.002    0.000    0.002    0.000 {built-in method builtins.max}
+      400    0.002    0.000    0.009    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/battle/live_view.py:500(from_battle)
+      400    0.002    0.000    0.003    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/global_env.py:47(encode)
+      800    0.002    0.000    0.004    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/types.py:27(encode)
+      400    0.002    0.000    0.015    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/assembler.py:438(update_window)
+    10800    0.002    0.000    0.003    0.000 /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/enum.py:193(__get__)
+      400    0.002    0.000    0.004    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/assembler.py:231(prepare)
+     2000    0.002    0.000    0.003    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/battle/live_view.py:511(<genexpr>)
+     5200    0.002    0.000    0.003    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/gen3_data/moves.py:166(get)
+      800    0.002    0.000    0.002    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/species.py:25(encode)
+     8800    0.001    0.000    0.001    0.000 {built-in method numpy.zeros}
+     4800    0.001    0.000    0.001    0.000 /home/goodlad/dev/gen3ai-wt-obsbatch/src/agents/observation/assembler.py:312(slot_is_clean)
+
+
+
+  CORE row (Rust encoder, release (zero prefill), turn 25, byte-equal to the Python row):
+    encode (view memoized)      :  0.0049 ms mean,  0.0049 ms median
+    present() + encode (COLD)   :  0.0080 ms mean,  0.0080 ms median
+    binary: /home/goodlad/dev/gen3ai-wt-obsbatch/src/rust_sim/target/release/core_events

@@ -1248,6 +1248,35 @@ def test_op_physics_boosts_burn_weather_para():
     assert inc("earthquake", _DMG_IDX_OUTSPEED, opp_par=True) > inc("earthquake", _DMG_IDX_OUTSPEED) + 0.3
 
 
+def test_op_field_sports_halve_electric_and_fire_from_either_active():
+    """gen3_field_sport_slots_v1 revert pin: Mud Sport halves an INCOMING Thunderbolt and Water Sport
+    an incoming Flamethrower, whichever ACTIVE holds the volatile (gen3 ``onAnyBasePower``: every
+    such move on the field, the holder's own included); neither touches another type."""
+    from agents.model.features_extractor import _DMG_IDX_SPEC_HIGH
+    from agents.model.damage_op_layout import _MUD_SPORT_CTX_IDX, _WATER_SPORT_CTX_IDX
+    from agents import gen3_data
+    op = DamageOperator(_make_layout())
+
+    def inc(move, *, ours=None, theirs=None):
+        ctx = _fake_ctx(op, attacker_num=145, attacker_t1=_T2I["ELECTRIC"], attacker_t2=_T2I["FLYING"],
+                        defenders=[(143, _T2I["NORMAL"], 0)] + [(0, 0, 0)] * 5, hp_probs_active=[0.0] * 16)
+        if ours is not None:
+            ctx.our_ctx_raw[:, ours] = 1.0
+        if theirs is not None:
+            ctx.opp_ctx_raw[:, theirs] = 1.0
+        lg = torch.full((1, TEAM_SIZE, op.MOVE_BP.shape[0]), -10.0)
+        lg[:, :, gen3_data.moves.get(move).num] = 10.0
+        return op(ctx, lg)[:, :TEAM_SIZE * _DMG_PER_MON].reshape(1, TEAM_SIZE, _DMG_PER_MON)[0, 0, _DMG_IDX_SPEC_HIGH].item()
+
+    tb0, ft0 = inc("thunderbolt"), inc("flamethrower")
+    assert tb0 > 0.05 and ft0 > 0.05
+    assert inc("thunderbolt", ours=_MUD_SPORT_CTX_IDX) == pytest.approx(0.5 * tb0, rel=0.02)
+    assert inc("thunderbolt", theirs=_MUD_SPORT_CTX_IDX) == pytest.approx(0.5 * tb0, rel=0.02)
+    assert inc("flamethrower", ours=_WATER_SPORT_CTX_IDX) == pytest.approx(0.5 * ft0, rel=0.02)
+    assert inc("flamethrower", ours=_MUD_SPORT_CTX_IDX) == pytest.approx(ft0, rel=1e-6)
+    assert inc("thunderbolt", theirs=_WATER_SPORT_CTX_IDX) == pytest.approx(tb0, rel=1e-6)
+
+
 def test_op_modifiers_match_cpu_reference_which_is_showdown_fuzz_validated():
     """gen3_unified_op_physics_v1 VALIDATION: the op's modifier physics (boost / weather / burn /
     paralysis / fixed-damage) MATCHES the CPU `incoming_damage` reference — which is itself bridge-fuzz-

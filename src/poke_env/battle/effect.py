@@ -126,6 +126,7 @@ class Effect(Enum):
     MIRACLE_EYE = auto()
     MIST = auto()
     MISTY_TERRAIN = auto()
+    MUD_SPORT = auto()
     MUMMY = auto()
     MUST_RECHARGE = auto()
     NIGHTMARE = auto()
@@ -229,6 +230,7 @@ class Effect(Enum):
     VITAL_SPIRIT = auto()
     WANDERING_SPIRIT = auto()
     WATER_BUBBLE = auto()
+    WATER_SPORT = auto()
     WATER_VEIL = auto()
     WHIRLPOOL = auto()
     WIDE_GUARD = auto()
@@ -547,6 +549,7 @@ _FROM_MOVE_EFFECTS: Set[Effect] = {
     Effect.MIRACLE_EYE,
     Effect.MIST,
     Effect.MISTY_TERRAIN,
+    Effect.MUD_SPORT,
     Effect.MUST_RECHARGE,
     Effect.NIGHTMARE,
     Effect.NO_RETREAT,
@@ -607,6 +610,7 @@ _FROM_MOVE_EFFECTS: Set[Effect] = {
     Effect.TYPEADD,
     Effect.TYPECHANGE,
     Effect.UPROAR,
+    Effect.WATER_SPORT,
     Effect.WHIRLPOOL,
     Effect.WIDE_GUARD,
     Effect.WRAP,
@@ -891,6 +895,7 @@ _FROM_DATA: Dict[str, Effect] = {
     "MIRACLEEYE": Effect.MIRACLE_EYE,
     "MIST": Effect.MIST,
     "MISTYTERRAIN": Effect.MISTY_TERRAIN,
+    "MUDSPORT": Effect.MUD_SPORT,
     "MUMMY": Effect.MUMMY,
     "MUSTRECHARGE": Effect.MUST_RECHARGE,
     "NIGHTMARE": Effect.NIGHTMARE,
@@ -994,6 +999,7 @@ _FROM_DATA: Dict[str, Effect] = {
     "VITALSPIRIT": Effect.VITAL_SPIRIT,
     "WANDERINGSPIRIT": Effect.WANDERING_SPIRIT,
     "WATERBUBBLE": Effect.WATER_BUBBLE,
+    "WATERSPORT": Effect.WATER_SPORT,
     "WATERVEIL": Effect.WATER_VEIL,
     "WHIRLPOOL": Effect.WHIRLPOOL,
     "WIDEGUARD": Effect.WIDE_GUARD,
@@ -1037,6 +1043,11 @@ BATON_PASS_COPIED_EFFECTS = frozenset(
         Effect.INGRAIN,
         Effect.FOCUS_ENERGY,
         Effect.CHARGE,
+        # gen 3 Mud Sport / Water Sport: the gen4 mod sets `noCopy: false` on both conditions
+        # (the gen5 base has `true`), so the pass carries them silently — verified on the
+        # vendored sim: the receiver holds `mudsport` with no `-start` line of its own.
+        Effect.MUD_SPORT,
+        Effect.WATER_SPORT,
         # `partiallytrapped` has no `noCopy`, so the wrap family transfers — the entrant
         # inherits the same duration and source and keeps being chipped, off its OWN maxhp.
         Effect.BIND,

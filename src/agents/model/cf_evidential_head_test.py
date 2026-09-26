@@ -222,20 +222,38 @@ def test_matching_toggle_loads(on):
     _ver(on).check_compatible(_ver(on))       # no raise
 
 
-def test_migration_defaults_a_v97_config_off():
-    """A pre-v98 checkpoint could not have built the head — the module did not exist — so False is
-    not a guess, it is the only possible past."""
-    out = _migrate_config({"config_version": 97})
-    assert out["cf_evidential"] is False
-    # The migration must carry the config all the way to the CURRENT version, not merely to the one
-    # this feature landed at — a chain that stops at 98 leaves every later branch unapplied.
-    assert out["config_version"] == MODEL_CONFIG_VERSION
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_v97_config_is_refused_below_the_floor():
+    """The v98 `setdefault("cf_evidential", False)` branch is FLOORED AWAY: gen3_event_record_v2
+    raised MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s v97–v120 history). A
+    v97 config is a pre-generation checkpoint and is refused with the diagnosis — a test may not
+    claim to cover a branch the floor makes unreachable. The surviving property: every current
+    config RECORDS the flag explicitly, and a fresh one records False (OFF)."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 97})
+    fresh = _fresh_current_config()
+    assert fresh["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert fresh["cf_evidential"] is False
 
 
 def test_a_recorded_on_config_round_trips():
-    """The other migration leg: a config that already RECORDS the flag must survive untouched."""
-    out = _migrate_config({"config_version": 98, "cf_evidential": True})
+    """The other migration leg: a config that already RECORDS the flag must survive untouched —
+    stated at the current generation (a v98 one is now refused at the floor)."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 98, "cf_evidential": True})
+    out = _migrate_config(_fresh_current_config(cf_evidential=True))
     assert out["cf_evidential"] is True and out["config_version"] == MODEL_CONFIG_VERSION
+    assert ModelVersion(**out).cf_evidential is True
 
 
 def test_the_flag_is_in_the_registry_as_a_structural_cli_toggle():

@@ -29,7 +29,7 @@ from agents.battle.turn_view import TurnView
 from agents.observation.assembler import write_event_row
 from agents.observation.constants import (
     EVENT_T_BOOST, EVENT_T_FAINT, EVENT_T_HAZARD, EVENT_T_ITEM_REVEAL, EVENT_T_MOVE,
-    EVENT_TOKEN_DIM, ITEM_TR_REVEALED, ITEM_TR_SWAPPED, EventCol as C,
+    EVENT_TOKEN_DIM, ITEM_TR_REVEALED, ITEM_TR_RECEIVED, EventCol as C,
 )
 from agents.training.episode_tracker import EventWindowTracker
 from agents.training.opp_intent_labels import KIND_MOVE, KIND_SWITCH, KIND_UNKNOWN, build_opp_intent_label
@@ -70,6 +70,8 @@ def test_w1_a_stat_drop_is_a_negative_boost_row():
 
 
 def test_w2_a_faint_no_damage_line_caused_is_other_not_attack():
+    """Never `attack`. Since gen3_event_record_v2 (E12) the two named cases have their OWN causes in
+    the live vocabulary (`FAINT_CAUSE_VOCAB_LIVE`): `destinybond` and `perishsong`."""
     # Destiny Bond: the attacker faints with NO damage line at all.
     rows = _window([ev(EventKind.MOVE, OPP, "skarmory", move_id="drillpeck"),
                     ev(EventKind.DAMAGE, OURS, "snorlax", amount=-1.0, hp_after=0.0),
@@ -77,11 +79,16 @@ def test_w2_a_faint_no_damage_line_caused_is_other_not_attack():
                     ev(EventKind.ACTIVATE, OURS, "snorlax", effect="move: Destiny Bond"),
                     ev(EventKind.FAINT, OPP, "skarmory")])
     faints = [(r["actor"], r["faint_cause"]) for r in rows if r["t"] == EVENT_T_FAINT]
-    assert faints == [("snorlax", "attack"), ("skarmory", "other")]
+    assert faints == [("snorlax", "attack"), ("skarmory", "destinybond")]
     # Perish Song: the mon took earlier NON-lethal chip, then its count hit 0.
     rows = _window([ev(EventKind.MOVE, OURS, "snorlax", move_id="bodyslam"),
                     ev(EventKind.DAMAGE, OPP, "skarmory", amount=-0.3, hp_after=0.7),
                     ev(EventKind.VOLATILE_START, OPP, "skarmory", turn=2, effect="perish0"),
+                    ev(EventKind.FAINT, OPP, "skarmory", turn=2)])
+    assert [r["faint_cause"] for r in rows if r["t"] == EVENT_T_FAINT] == ["perishsong"]
+    # a faint with no lethal line and neither announcement stays the honest catch-all
+    rows = _window([ev(EventKind.MOVE, OURS, "snorlax", move_id="bodyslam"),
+                    ev(EventKind.DAMAGE, OPP, "skarmory", amount=-0.3, hp_after=0.7),
                     ev(EventKind.FAINT, OPP, "skarmory", turn=2)])
     assert [r["faint_cause"] for r in rows if r["t"] == EVENT_T_FAINT] == ["other"]
 
@@ -107,13 +114,15 @@ def test_r4_a_self_move_row_targets_its_user():
     assert vec[C.TARGET_SPECIES] == float(gen3_data.species.get("skarmory").num)
 
 
-def test_w3_a_trick_or_thief_item_line_is_swapped_on_both_mons():
+def test_w3_a_trick_or_thief_item_line_is_a_transfer_on_both_mons():
+    """A transfer, never a plain reveal. gen3_event_record_v2 (E12) gives it a DIRECTION: an
+    `|-item|` [from] Trick / Thief / Covet is this mon RECEIVING the item."""
     rows = _window([ev(EventKind.ITEM, OPP, "skarmory", item="choiceband", **{"from": "move: Trick"}),
                     ev(EventKind.ITEM, OURS, "snorlax", item="leftovers", **{"from": "move: Trick"}),
                     ev(EventKind.ITEM, OURS, "snorlax", item="leftovers", **{"from": "move: Thief"}),
                     ev(EventKind.ITEM, OPP, "skarmory", item="leftovers")])
     assert [r["item_tr"] for r in rows if r["t"] == EVENT_T_ITEM_REVEAL] == \
-        [ITEM_TR_SWAPPED, ITEM_TR_SWAPPED, ITEM_TR_SWAPPED, ITEM_TR_REVEALED]
+        [ITEM_TR_RECEIVED, ITEM_TR_RECEIVED, ITEM_TR_RECEIVED, ITEM_TR_REVEALED]
 
 
 def test_w4_a_protect_block_fails_the_blocked_move():

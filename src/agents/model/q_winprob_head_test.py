@@ -354,14 +354,31 @@ def test_check_compatible_REJECTS_a_flipped_mode():
     on.check_compatible(_ver(q_winprob_mode="read_only"))          # matching: no raise
 
 
-def test_a_pre_v107_config_migrates_to_OFF():
-    """Defaulting rather than refusing is correct here for the v98 reason: a pre-v107 checkpoint
-    COULD not have built the head, so 'none' is not a guess, it is the only possible past."""
-    data = _migrate_config({"config_version": 106})
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_pre_v107_config_is_refused_and_a_current_one_records_OFF():
+    """The v107 `setdefault` branch (mode "none", both coefficients 0.0) is FLOORED AWAY:
+    gen3_event_record_v2 raised MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s
+    v97–v120 history), so a v106 config is pre-generation and is REFUSED with the diagnosis. The
+    surviving property: a fresh current config RECORDS the mode and both coefficients explicitly,
+    OFF, and a RECORDED value passes through the current migration untouched."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 106})
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 106, "q_winprob_mode": "read_only"})
+    data = _migrate_config(_fresh_current_config())
     assert data["q_winprob_mode"] == "none"
     assert data["q_winprob_coef"] == 0.0 and data["q_winprob_onpolicy_coef"] == 0.0
-    assert data["config_version"] == MODEL_CONFIG_VERSION
-    # A RECORDED value migrates untouched — the migration supplies an absent field, never
-    # overwrites a present one.
-    assert _migrate_config({"config_version": 106,
-                            "q_winprob_mode": "read_only"})["q_winprob_mode"] == "read_only"
+    assert data["config_version"] == MODEL_CONFIG_VERSION >= 121
+    out = _migrate_config(_fresh_current_config(q_winprob_mode="read_only"))
+    assert out["q_winprob_mode"] == "read_only"
+    assert ModelVersion(**out).q_winprob_mode == "read_only"

@@ -1,6 +1,6 @@
 # CLAUDE.md — Observation Encoder (`src/agents/observation/`)
 
-This directory builds the **2501-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
+This directory builds the **2761-dim per-decision observation vector** (`Gen3ObservationEncoder.encode`;
 the live value is `Gen3ObservationEncoder.dimension` — read it there, and see
 `designs/ARCHITECTURE.md` § Observation for the full block table).
 It runs once per agent decision across every training env, so it sits directly on the
@@ -467,10 +467,13 @@ rule-gated lines (`RULE_GATED_LINES`), and non-obtainable items.
   | `typechange` | the per-mon TYPE block: `type_1`/`type_2` read poke-env's `_temporary_types` |
 
   It's a named list, not a catch-all: `unknown` and any other id still raise.
-- **owner-pending** (`gen3_effect_sources.PENDING_OWNER_LINES`). gen3 **Mud Sport** and **Water
-  Sport** are real persistent volatiles with no slot. They also have no poke-env `Effect` member, so
-  they land as `unknown`. Their only correct classification changes the layout, so it's the owner's
-  call. Until then they RAISE. Metamon hl_05_26 gen3ou has 0 of 22,862 teams using them.
+- **the field sports** (`gen3_field_sport_slots_v1`, 2026-09-26). gen3 **Mud Sport** / **Water
+  Sport** own the LAST two volatile slots (`mudsport`, `watersport`; `VOLATILE_DIM` 44 → 46, so the
+  active context is 60). poke-env gained `Effect.MUD_SPORT` / `Effect.WATER_SPORT` (both in
+  `BATON_PASS_COPIED_EFFECTS`: the gen4 mod sets `noCopy: false`, so a pass carries them silently);
+  a switch or faint ends them. Semantics verified on the vendored sim — `designs/ARCHITECTURE.md`
+  §1.5. `PENDING_OWNER_LINES` is now EMPTY (kept as the mechanism); `unknown` still raises. The Rust
+  SIM does not implement either move, so the core sees them only on a parsed (ladder) stream.
 
 **Verified NOT to reach the encoder in gen3 OU:**
 
@@ -602,7 +605,13 @@ by their mon i while our mon j was active, shared-field turns, pairing recency; 
 over the 10 cap; consumed by the opt-in `h` edge family). **Tier H-B follows it**
 (`gen3_event_window_v1`, v81): the **event window** (`OFFSET_EVENT_WINDOW`,
 `EVENT_WINDOW_N` × `EVENT_TOKEN_DIM` typed event records) closes base, and
-**`gen3_frame_deletion_v1` made it the LAST block**:
+**`gen3_frame_deletion_v1` made it the LAST block**, and **`gen3_event_record_v2` (E12) reshaped
+its row to 30 columns** — entry reason / REL mon / denial / caller / boost stat / Spikes layers /
+Pursuit-on-switch, a DENIED row type (fainted first; the gen-3 TURN CUT), the refused-switch TARGET
+(E4) — with the schema in `designs/ARCHITECTURE.md` §1.6 and the fold moved to its own module,
+`agents/training/event_window_tracker.py` (`episode_tracker` re-exports it). One constructed battle
+per mechanic, run through the core and this path with slices T + O on:
+`agents/battle/event_record_v2_fixture_test.py`. With the frame deletion,
 the 11-dim prev-turn action mask and the 7 × 159 TurnDelta lag frames that used to follow are
 DELETED, so `total_dim == base_dim` and `encode`'s output IS the observation. The window grew a
 `cant_id` column in the same pass — the one lag-frame fact with no substitute. What that
@@ -651,7 +660,10 @@ SWAPPED — lives in the fold, `designs/ARCHITECTURE.md` §1.1).
 > ends resolve to the SAME object, and `EventSeats._N_SCALARS` (a weight shape) agrees with the
 > map's id/scalar classification.
 >
-> **The event-window fuzz oracle models ALL 22 columns** — `_ORACLE_UNMODELED_COLS` is EMPTY,
+> **The event-window fuzz oracle models ALL 30 columns** (the E12 columns and the DENIED rows too,
+> since `gen3_event_record_v2`: 2 × 25 fresh battles, 3,964 decisions, 0 mismatches; the
+> destinybond / perishsong branches did not occur there and are covered by the constructed
+> fixtures) — `_ORACLE_UNMODELED_COLS` is EMPTY,
 > and the coverage assert keeps it that way (a new `EventCol` member must be modelled or
 > declared, never silently unchecked). Two rounds got it here. First the three id columns were
 > found UNCHECKED with nothing saying so (`_want_vec` returned a 19-tuple compared with `zip`

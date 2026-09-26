@@ -298,7 +298,9 @@ EVENT_VALUE_KEYS: Dict[EventKind, frozenset] = {
 EVENT_OPTIONAL_KEYS: Dict[EventKind, frozenset] = {
     # `target_status` is written on every MOVE (value may be None); `from_move` only on a
     # delegated move (Sleep Talk / Metronome).
-    EventKind.MOVE: frozenset({"target_status", "from_move"}),
+    # `pursuit_switch` (1) only on Pursuit's `[from] Pursuit` strike at a switching target
+    # (gen3_event_record_v2).
+    EventKind.MOVE: frozenset({"target_status", "from_move", "pursuit_switch"}),
     EventKind.SWITCH: frozenset(),
     EventKind.DRAG: frozenset(),
     EventKind.FAINT: frozenset(),

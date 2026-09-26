@@ -225,14 +225,29 @@ def test_every_classified_non_slot_id_is_source_derived():
 
 @pytest.mark.integration
 def test_owner_pending_lines_are_live_and_still_raise():
-    """Mud Sport / Water Sport land as ``unknown`` (no poke-env Effect member) and have no slot:
-    the owner's call. They must stay DERIVED (else the entry is stale) and must still RAISE —
-    pending is never a silent drop."""
+    """No derived gen3 line lands as ``unknown`` any more (Mud Sport / Water Sport, the last two,
+    got Effect members and slots in ``gen3_field_sport_slots_v1``), the pending table is empty to
+    match, and ``unknown`` itself still RAISES — pending is never a silent drop."""
     from agents.observation.gen3_effect_sources import PENDING_OWNER_LINES
     srcs = {(kw, eff) for kw, eff, _ in _derived_encoder_ids().get("unknown", [])}
-    assert srcs == set(PENDING_OWNER_LINES), (srcs, set(PENDING_OWNER_LINES))
-    with pytest.raises(UnknownVolatileError, match="OWNER"):
+    assert srcs == set(PENDING_OWNER_LINES) == set(), (srcs, set(PENDING_OWNER_LINES))
+    with pytest.raises(UnknownVolatileError, match="new gap"):
         encode_volatiles(["unknown"])
+
+
+@pytest.mark.integration
+def test_field_sports_are_derived_and_land_on_their_own_slots():
+    """Revert pin for ``gen3_field_sport_slots_v1``: the two gen3 lines are derived from the
+    vendored Showdown, land as ``mudsport`` / ``watersport`` on a real ``Gen3Battle``, and each
+    writes exactly its own (last-two) slot."""
+    from agents.observation.gen3_effects import VOLATILE_SLOTS
+    derived = _derived_encoder_ids()
+    assert {eff for _kw, eff, _ in derived.get("mudsport", [])} == {"Mud Sport"}, derived.get("mudsport")
+    assert {eff for _kw, eff, _ in derived.get("watersport", [])} == {"move: Water Sport"}
+    assert VOLATILE_SLOTS[-2:] == ("mudsport", "watersport")
+    for vid in ("mudsport", "watersport"):
+        vec = encode_volatiles([vid])
+        assert vec.sum() == 1.0 and vec[VOLATILE_SLOTS.index(vid)] == 1.0
 
 
 @pytest.mark.integration
@@ -351,9 +366,11 @@ def test_not_a_volatile_is_not_a_catch_all():
 
 def test_the_layout_did_not_move():
     """The classification must not touch the obs layout: VOLATILE_DIM and the slot order are
-    what they were (44 = 41 binary + ability_activated + perish + stockpile)."""
-    assert VOLATILE_DIM == 44
-    assert VOLATILE_SLOTS[-3:] == ("ability_activated", "perish", "stockpile")
+    what they are (46 = 41 binary + ability_activated + perish + stockpile + the two field sports,
+    appended LAST by ``gen3_field_sport_slots_v1`` so no earlier index moved)."""
+    assert VOLATILE_DIM == 46
+    assert VOLATILE_SLOTS[-5:] == ("ability_activated", "perish", "stockpile",
+                                   "mudsport", "watersport")
     from agents.observation.gen3_effects import NOT_A_VOLATILE
     assert not set(NOT_A_VOLATILE) & set(VOLATILE_SLOTS)
 

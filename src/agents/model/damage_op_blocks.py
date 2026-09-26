@@ -48,7 +48,7 @@ from agents.model.damage_op_layout import (  # noqa: F401
     _DMG_OMX_IDX_PKO, _DMG_OUTGOING, _DMG_OUT_N_MOVES, _DMG_OUT_PER_MOVE, _DMG_OUT_SEC,
     _DMG_PARA_SPEED, _DMG_PER_MON, _DMG_REFINE_K, _DMG_ROLL_MIN, _DMG_SPEED_SCALE,
     _DMG_SPEED_STD_K, _DMG_STATUS, _DMG_STATUS_N_MOVES, _DMG_STATUS_REFINE, _DMG_TOPK_DEFAULT_K,
-    _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
+    _ELECTRIC_TIDX, _FIRE_TIDX, _IMMOBILIZE_STATUS_CATS, _LEECH_SEED_CTX_SLOT, _NAT_ATK, _NAT_DEF, _NAT_SPA,
     _NEUTRAL_BRN_ATK_LOSS, _NEUTRAL_PAR_FULL, _NEUTRAL_PSN_TICK, _NEUTRAL_TOX_FIRST_TICK,
     _TEMPO_CLERIC_TURNS, _TEMPO_CURE_TURNS, _TEMPO_NATURAL_CURE_TURNS,
     _NAT_SPD, _NAT_SPE, _N_OUT_SECONDARY, _OUT_SEC_COLS, _OUT_SEC_DROP, _OUT_SEC_KEEP,
@@ -90,6 +90,8 @@ class DamageOperatorBlocks:
         _boost_mult: Callable[..., torch.Tensor]
         _boost_stages: Callable[..., Tuple[torch.Tensor, ...]]
         _weather_mult: Callable[..., torch.Tensor]
+        _sport_mult: Callable[..., torch.Tensor]
+        _field_bp_mult: Callable[..., torch.Tensor]
         _chan_max: Callable[..., torch.Tensor]
         _p_outspeed: Callable[..., torch.Tensor]
         _opp_candidate_weights: Callable[..., torch.Tensor]
@@ -219,8 +221,7 @@ class DamageOperatorBlocks:
         is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()
         stab = 1.0 + 0.5 * is_stab
         core = 42.0 * bp * A / (D + eps) / 50.0 + 2.0
-        weather_mult = self._weather_mult(ctx.weather_feature, (move_ty == _WATER_TIDX).float(),
-                                          (move_ty == _FIRE_TIDX).float())             # [B,4] rain/sun
+        weather_mult = self._field_bp_mult(ctx, move_ty)                              # [B,4] rain/sun × sports
         dmg_ns = core * stab * eff * 0.925 * usable * weather_mult                    # [B,4] (non-usable → 0)
         opp_reflect = ctx.screen_feature[:, 1:2]                                      # OPP-side screens
         opp_ls = ctx.screen_feature[:, 3:4]
@@ -404,8 +405,7 @@ class DamageOperatorBlocks:
         is_stab = ((move_ty == at1[:, None]) | (move_ty == at2[:, None])).float()        # [B,4]
         stab = (1.0 + 0.5 * is_stab)[:, :, None]                                          # [B,4,1]
         core = 42.0 * bp[:, :, None] * A[:, :, None] / (D + eps) / 50.0 + 2.0             # [B,4,6]
-        weather = self._weather_mult(ctx.weather_feature, (move_ty == _WATER_TIDX).float(),
-                                     (move_ty == _FIRE_TIDX).float())[:, :, None]         # [B,4,1]
+        weather = self._field_bp_mult(ctx, move_ty)[:, :, None]                          # [B,4,1] × sports
         dmg_ns = core * stab * eff * 0.925 * usable[:, :, None] * weather                 # [B,4,6]
         opp_reflect = ctx.screen_feature[:, 1:2]; opp_ls = ctx.screen_feature[:, 3:4]     # OPP-side screens
         screen = (1.0 - 0.5 * (opp_reflect * phys + opp_ls * (1.0 - phys)))[:, :, None]   # [B,4,1]
@@ -531,6 +531,7 @@ class DamageOperatorBlocks:
         is_water = (move_ty == _WATER_TIDX).float(); is_fire = (move_ty == _FIRE_TIDX).float()   # [B,6,4]
         sun = ctx.weather_feature[:, 1:2, None]; rain = ctx.weather_feature[:, 2:3, None]        # [B,1,1]
         weather = 1.0 + rain * (0.5 * is_water - 0.5 * is_fire) + sun * (0.5 * is_fire - 0.5 * is_water)  # [B,6,4]
+        weather = weather * self._sport_mult(ctx, (move_ty == _ELECTRIC_TIDX).float(), is_fire)  # × sports
         dmg_ns = core * stab * eff * 0.925 * usable * weather                           # [B,6,4]
         opp_reflect = ctx.screen_feature[:, 1:2]; opp_ls = ctx.screen_feature[:, 3:4]   # OPP-side screens [B,1]
         screen = 1.0 - 0.5 * (opp_reflect[:, :, None] * phys + opp_ls[:, :, None] * (1.0 - phys))  # [B,6,4]

@@ -101,11 +101,10 @@ RULE_GATED_LINES: Dict[Tuple[str, str, str], Tuple[str, str]] = {
 
 #: Derived lines that land as ``unknown`` (no poke-env ``Effect`` member) and are PERSISTENT
 #: states with no slot: the owner's layout decision. ``(keyword, effect string)`` → why.
-PENDING_OWNER_LINES: Dict[Tuple[str, str], str] = {
-    ("-start", "Mud Sport"): "gen3 Mud Sport: a volatile on the user (gen5 mod `volatileStatus: "
-                             "'mudsport'`) halving Electric moves while it is active",
-    ("-start", "move: Water Sport"): "gen3 Water Sport: the same shape for Fire moves",
-}
+#: EMPTY since ``gen3_field_sport_slots_v1`` gave Mud Sport / Water Sport their Effect members and
+#: slots; kept as the mechanism so a future pending line has a place to be declared (it still
+#: RAISES in the encoder — pending is never a silent drop).
+PENDING_OWNER_LINES: Dict[Tuple[str, str], str] = {}
 
 _TRAP_MOVE_LINES: Tuple[str, ...] = (
     "move: Bind", "move: Clamp", "move: Fire Spin", "move: Sand Tomb", "move: Whirlpool",

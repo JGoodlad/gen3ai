@@ -9775,3 +9775,38 @@ still encodes through `RLPlayer` with the assembler), the shaped reward path (a 
 contract decision), the search-session JSON protocol and node drivers (M5; still diffed against),
 `turn_delta_legacy.py` (a test rewire), and `--obs-source python` (slice N's oracle side and the
 node-bridge path).
+
+
+## v121 — THE OBSERVATION-ARCHITECTURE BATCH: one deliberate retrain boundary (`gen3_event_record_v2`; ARCH_SIGNATURE bump, obs 2501 → 2761)
+
+Owner-decided 2026-09-25; nothing else went in. Four changes, in both the Rust core encoder and the
+Python encoder, byte-equal (slices E / V / T / O / N clean at COMMIT, no allowlist):
+
+1. **Mud Sport / Water Sport** (`gen3_field_sport_slots_v1`, TECH_DEBT (a) P0). Verified on the vendored
+   sim before encoding: a `volatileStatus` on the user, no duration, ended silently by switch / faint,
+   `noCopy: false` in the gen4 mod gen3 inherits (Baton Pass carries it silently), `onAnyBasePower` ×0.5
+   on EVERY Electric / Fire move while the holder is active. Two volatile slots appended LAST
+   (active context 58 → 60); poke-env `Effect.MUD_SPORT` / `WATER_SPORT`, both Baton-Pass copied; the
+   `DamageOperator` multiplies every kernel by `_sport_mult` (either active's holder).
+2. **E4 — the refused-switch target.** The `SWITCH_REJECTED` row's TARGET: the Python fold from the
+   previous action index, the core from the noted choice token (a step-built version notes the
+   transport's new `choice_log`, so search roots and children resolve it too).
+3. **E10 — the PARAMETER-FREE Smogon mixture** (`gen3_hidden_slot_move_mixture_v1`). A hidden opponent
+   slot's move prior is `Σ_s P_T0(s | revealed) · P(m | s)` instead of the unknown sentinel's flat row,
+   which had made its posterior a state-independent constant. No learned parameters.
+4. **E12 — the event-block reshape.** 22 → 30 columns (REL mon + side, entry reason, denial reason,
+   caller, boost stat, Spikes layers, Pursuit-on-switch), a DENIED row type (fainted first; the gen-3
+   TURN CUT), the live faint vocabulary (`destinybond`, `perishsong`), item transfers with a
+   direction (`ITEM_TR_RECEIVED`), the Spikes chip on the entry row; `EventSeats` embeds the new id
+   columns and the `r` edge family grows a third cell (`is_rel`). The fold moved to
+   `agents/training/event_window_tracker.py`. The native record (`record.rs`) now counts a confusion
+   self-hit as acting (it read a later faint as TURN-CUT denying it).
+
+`MODEL_CONFIG_VERSION` 121, `ARCH_SIGNATURE` `gen3_event_record_v2`, `MIGRATION_FLOOR` 121 (the v97–v120
+migration branches archived verbatim as comments; their tests now pin the refusal plus the surviving
+default on a current config). Every named baseline is `era_checkout_only` on this tree; the production
+mirror is in its signature-bump window (the four stamp keys follow the code). Goldens regenerated where
+the batch intends it: the obs golden (confinement census: 991 decisions, non-event cells bit-identical,
+500 event windows differ, all explained), the core event records of the two battles with a Pursuit on a
+switch, the delivery graph, the architecture viewer. Evidence:
+`designs/research_state/measurements/obs_arch_batch_2026-09-26/`.

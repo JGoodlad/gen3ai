@@ -243,13 +243,23 @@ PAIR_HISTORY_DIM = TEAM_SIZE * TEAM_SIZE * PAIR_HISTORY_CELL_DIM         # 180
 # N sized lean (events-not-turns: ~8-12 game turns) pending the usage audit the design
 # prescribes; the raw ids are consumed ONLY by the flag-gated event-seat encoder (no Linear
 # ever reads this block directly, so the manifest zeroing rule is satisfied by construction).
+#
+# `gen3_event_record_v2` (E12, the EVENT-BLOCK RESHAPE, 2026-09-26) widened the row from 22 to 30
+# columns so the Rust core's native per-action record (`record::Window`) survives into the
+# observation instead of being flattened: the entry REASON of every switch-in (chosen / the free
+# replacement after a faint / a Roar-Whirlwind drag / a Baton Pass), the mon it replaced, the move
+# that caused it and the Spikes layers + chip it met; a DENIED row per turn actor that was chosen
+# but never acted (fainted first / the gen-3 TURN CUT), with the mon and move that denied it; the
+# CALLER of a called move; Pursuit on a switching target; the stat of a boost row; the direction of
+# an item transfer; Destiny Bond / Perish Song faint causes. The design and each column's
+# per-row-type meaning: `designs/ARCHITECTURE.md` §1.6 and `EventCol` below.
 EVENT_WINDOW_N = 32
-EVENT_TOKEN_DIM = 22
-EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 704 (32*22)
+EVENT_TOKEN_DIM = 30
+EVENT_WINDOW_DIM = EVENT_WINDOW_N * EVENT_TOKEN_DIM                       # 960 (32*30)
 
 
 class EventCol(IntEnum):
-    """The 22 columns of ONE H-B event token row — the single declaration the producer
+    """The 30 columns of ONE H-B event token row — the single declaration the producer
     (`state_encoder.encode`) and the consumer (`team_transformer.EventSeats.forward`) BOTH
     import (gen3_event_col_names_v1).
 
@@ -284,8 +294,26 @@ class EventCol(IntEnum):
       FORCED_WINDOW   17 post-faint forced-switch phase tag
       VALID           18 1 = a real event, 0 = pad row (the key mask)
       CANT            19 cant-reason id (embedding-routed; 0 on every non-CANT row)
-      FAINT_CAUSE     20 faint-cause id (embedding-routed; 0 on every non-FAINT row)
+      FAINT_CAUSE     20 faint-cause id into `turn_view.FAINT_CAUSE_VOCAB_LIVE` (embedding-
+                         routed; 0 = none). FAINT: why it died; DENIED: the cause of the faint
+                         that denied the action
       ITEM_TRANSITION 21 `ITEM_TR_*` (embedding-routed; 0 on every non-ITEM row)
+      --- gen3_event_record_v2 (E12) ---
+      REL_SPECIES     22 the row's RELATED mon, species dex num (embedding-routed; 0 none).
+                         SWITCH_IN: the mon it replaced (the fainted one for a replacement, the
+                         passer for a Baton Pass, the dragged-out one for a drag); DENIED: the mon
+                         that denied it (fainted first: the KOer; turn cut: the first faint);
+                         ITEM: the other party of a transfer / removal; FAINT: the KOer of an
+                         `attack` faint
+      REL_SIDE        23 +1 ours / −1 opp / 0 none — the REL mon's side
+      ENTRY           24 SWITCH_IN entry id `ENTRY_*` (embedding-routed; 0 on every other row)
+      DENIAL          25 DENIED reason id `DENIAL_*` (embedding-routed; 0 on every other row)
+      CALLER          26 MOVE: the calling move's dex num (Sleep Talk / Metronome / Mirror Move /
+                         Assist / Nature Power / Magic Coat / Snatch) (embedding-routed; 0 none)
+      STAT            27 BOOST: the stat id `EVENT_STAT_IDS` (embedding-routed; 0 none)
+      LAYERS          28 Spikes layers / 3 — SWITCH_IN: met by the entrant; HAZARD: on that side
+                         after a Spikes change; FAINT (hazard): at the KO
+      PURSUIT_SWITCH  29 MOVE: Pursuit struck a target that was switching out
     """
 
     TYPE = 0
@@ -310,6 +338,14 @@ class EventCol(IntEnum):
     CANT = 19
     FAINT_CAUSE = 20
     ITEM_TRANSITION = 21
+    REL_SPECIES = 22
+    REL_SIDE = 23
+    ENTRY = 24
+    DENIAL = 25
+    CALLER = 26
+    STAT = 27
+    LAYERS = 28
+    PURSUIT_SWITCH = 29
 
 
 # The two CONTIGUOUS one-hot groups, named so a consumer slices them by group rather than by
@@ -355,7 +391,33 @@ EVENT_T_ITEM_REVEAL = 7
 EVENT_T_HAZARD = 8
 EVENT_T_SWITCH_REJECTED = 9
 EVENT_T_CANT = 10          # gen3_frame_deletion_v1 — the lag frames' one unsubstituted fact
-N_EVENT_TYPES = 11
+# gen3_event_record_v2 (E12): a turn ACTOR that was chosen for the turn and never acted, with no
+# line of its own — it fainted first, or a faint CUT the turn (gen 3 singles: any faint cancels
+# every remaining queued action, `sim/battle.ts` `faintMessages`). REFUSED actions keep their CANT
+# row. 🚨 The information boundary: a DENIED row never carries the denied side's CHOICE — the fold
+# receives no choices at all, so the opponent's denied intent cannot reach the viewer by
+# construction.
+EVENT_T_DENIED = 11
+N_EVENT_TYPES = 12
+
+# gen3_event_record_v2 (E12): column 24 — WHY a mon entered (0 = not a switch-in row).
+ENTRY_NONE = 0
+ENTRY_CHOSEN = 1        # the player chose the switch
+ENTRY_REPLACEMENT = 2   # the FREE switch that replaces a fainted mon
+ENTRY_DRAG = 3          # FORCED by Roar / Whirlwind (MOVE = the phazing move, TARGET = the phazer)
+ENTRY_BATON_PASS = 4    # Baton Pass (MOVE = batonpass, REL = the passer; the passed stages and
+                        # volatiles ride the receiver's active-context block)
+N_ENTRY = 5
+
+# gen3_event_record_v2 (E12): column 25 — why a DENIED row's action never happened.
+DENIAL_NONE = 0
+DENIAL_FAINTED_FIRST = 1   # the actor fainted before its turn came
+DENIAL_TURN_CUT = 2        # another faint earlier in the turn cancelled it (gen 3)
+N_DENIAL = 3
+
+# gen3_event_record_v2 (E12): column 27 — a BOOST row's stat. Crash-don't-drop on anything else.
+EVENT_STAT_IDS = {"atk": 1, "def": 2, "spa": 3, "spd": 4, "spe": 5, "accuracy": 6, "evasion": 7}
+N_EVENT_STAT = max(EVENT_STAT_IDS.values()) + 1     # 8
 
 # gen3_event_semantics_v1: the ITEM row's transition, column 21. 0 = not an item row.
 # A bare consumed/not flag would conflate the three gen3 item-GONE paths; these keep them apart.
@@ -363,9 +425,12 @@ ITEM_TR_NONE = 0
 ITEM_TR_REVEALED = 1   # |-item| — the item was merely disclosed, still held
 ITEM_TR_CONSUMED = 2   # |-enditem| with no [from] — berry/herb used up by its own trigger
 ITEM_TR_REMOVED = 3    # |-enditem| [from] Knock Off — gone for the rest of the battle (ADV)
-ITEM_TR_SWAPPED = 4    # an item line [from] Trick / Thief / Covet — the item CHANGED HANDS (on the
-                       # victim's |-enditem| the opponent now holds it; on an |-item| this mon just got it)
-N_ITEM_TRANSITIONS = 5
+ITEM_TR_SWAPPED = 4    # |-enditem| [from] Thief / Covet — the item was TAKEN from this mon (REL = the taker)
+# gen3_event_record_v2 (E12): the direction of a transfer. An |-item| [from] Trick / Thief / Covet
+# is this mon RECEIVING an item (REL = the mon it came from); before E12 it read SWAPPED like the
+# victim's line, so a Thief was two identical rows with no direction.
+ITEM_TR_RECEIVED = 5
+N_ITEM_TRANSITIONS = 6
 
 # The STATUS vocabulary of column 15, here for the same reason `EVENT_T_*` is: it is the obs
 # contract, written by `episode_tracker.EventWindowTracker` and embedded by

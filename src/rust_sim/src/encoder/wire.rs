@@ -85,8 +85,7 @@ pub fn frame(row: &[f32; OBS_DIM]) -> String {
 
 /// The byte length of every [`frame`] (the row's length is fixed).
 pub const FRAME_LEN: usize = FRAME_HEAD.len() + (OBS_DIM * 4).div_ceil(3) * 4 + 2;
-const FRAME_HEAD: &str = concat!("{\"dtype\":\"<f4\",\"shape\":[", "2501", "],\"b64\":\"");
-const _: () = assert!(OBS_DIM == 2501, "FRAME_HEAD spells the shape");
+use super::layout::FRAME_HEAD;
 
 /// [`frame`], appended to `out`.
 pub fn frame_into(row: &[f32; OBS_DIM], out: &mut String) {
@@ -190,6 +189,7 @@ mod tests {
         let mut row = [0.0f32; OBS_DIM];
         row[0] = 1.5;
         let f = frame(&row);
-        assert!(f.starts_with("{\"dtype\":\"<f4\",\"shape\":[2501],\"b64\":\"AADAPw"), "{}", &f[..60]);
+        let head = format!("{{\"dtype\":\"<f4\",\"shape\":[{OBS_DIM}],\"b64\":\"AADAPw");
+        assert!(f.starts_with(&head), "{}", &f[..60]);
     }
 }

@@ -339,17 +339,28 @@ def test_the_immutable_defaults_agree_with_RewardConfig():
         assert _REWARD_IMMUTABLE_FIELDS[name] == rc[name], name
 
 
-def test_a_pre_v105_config_migrates_to_TODAYS_behaviour_rather_than_refusing():
-    """Not a guess about the past: the flags did not exist, the two potentials were unconditional,
-    and `victory_value` was the module constant in every run ever."""
-    assert MODEL_CONFIG_VERSION >= 105
-    out = _migrate_config({"config_version": 104})
+def test_a_pre_v105_config_is_refused_and_a_current_one_records_TODAYS_behaviour():
+    """The v105 `setdefault` branch (the five reward keys → the only possible past) is FLOORED
+    AWAY: gen3_event_record_v2 raised MIGRATION_FLOOR to 121 (archived verbatim in
+    `_migrate_config`'s v97–v120 history), so a v104 config is pre-generation and is REFUSED with
+    the diagnosis. The surviving property: a fresh current config RECORDS all five explicitly at
+    today's default behaviour, and a RECORDED value passes through the current migration untouched."""
+    import json
+    assert MODEL_CONFIG_VERSION >= 121
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 104})
+    fresh = json.loads(_saved_version().to_json())
+    out = _migrate_config(dict(fresh))
+    for k in ("hand_shaping", "pbrs_material", "pbrs_belief", "victory_value",
+              "win_prob_pbrs_source"):
+        assert k in fresh, k
     assert out["hand_shaping"] is True and out["pbrs_material"] is True
     assert out["pbrs_belief"] is True and out["victory_value"] == 30.0
     assert out["win_prob_pbrs_source"] is None
     assert out["config_version"] == MODEL_CONFIG_VERSION
     # a recorded value migrates UNTOUCHED
-    assert _migrate_config({"config_version": 104, "victory_value": 1.0})["victory_value"] == 1.0
+    recorded = json.loads(_saved_version(victory_value=1.0).to_json())
+    assert _migrate_config(recorded)["victory_value"] == 1.0
 
 
 def _saved_version(**reward_fields):

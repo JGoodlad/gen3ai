@@ -669,14 +669,18 @@ def test_offsets_resolve_matches_layout():
     # gen3_pair_history_v1: the per-mon slot widened 116 -> 122 (+6 last-action), so every
     # top-level offset after the team blocks shifted +72, and the 180-dim pair block sits
     # between reactive and base; the H-B event window follows (total 3529).
-    assert off.wish_our_off == 1603   # OFFSET_REACTIVE(1600) + wish_floating_our offset(3)
-    assert off.wish_opp_off == 1604   # OFFSET_REACTIVE(1600) + wish_floating_opp offset(4)
+    # gen3_event_record_v2: each active context grew 58 -> 60 (the two field-sport volatile
+    # slots), so OFFSET_REACTIVE moved 1600 -> 1604.
+    assert off.wish_our_off == 1607   # OFFSET_REACTIVE(1604) + wish_floating_our offset(3)
+    assert off.wish_opp_off == 1608   # OFFSET_REACTIVE(1604) + wish_floating_opp offset(4)
     # gen3_frame_deletion_v1 took this 3529 -> 2437 (the event window became the LAST block,
     # so total == base); gen3_event_semantics_v1 then took it -> 2501, adding `faint_cause_id`
     # and `item_transition` to every event row (32 rows x 20 -> x 22). A LITERAL on purpose:
     # this is the tripwire that makes an UNINTENDED obs-width change fail loudly, so it moves
-    # only when someone decided it should.
-    assert off.total_dim == 2501
+    # only when someone decided it should. gen3_event_record_v2 (the observation-architecture
+    # batch) took it -> 2761: +4 (the field sports, 2 per active context) and +256 (event rows
+    # 22 -> 30 columns x 32).
+    assert off.total_dim == 2761
 
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     lay = Gen3ObservationEncoder(load_mappings()).get_layout()

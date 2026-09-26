@@ -146,18 +146,40 @@ def test_the_regime_round_trips_through_model_config_json(tmp_path, greedy, thre
     assert json.loads(path.read_text())["config_version"] == MODEL_CONFIG_VERSION
 
 
-def test_a_pre_v112_config_migrates_to_STOCHASTIC_and_its_own_gate():
-    """Not a guess: the argparse default was False from the v9 launch until this bump, so every
-    config the migration can reach (floor 96) trained stochastic unless its launch typed the flag.
-    The gate is then DERIVED by the rule that produced it, not pinned to one number."""
-    from agents.model.model_version import _migrate_config
+def test_a_pre_v112_config_is_REFUSED_and_a_current_one_records_its_regime_and_its_own_gate():
+    """The v112 branch (regime → stochastic, gate DERIVED from it) is FLOORED AWAY:
+    gen3_event_record_v2 raised MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s
+    v97–v120 history), so a v111 config is pre-generation and is REFUSED with the diagnosis. That
+    branch's two literals were pinned here against `promote_threshold_default`; the literals that
+    SURVIVE the floor are `ModelVersion`'s own defaults (the dataclass field and the constructor
+    kwarg), and `agents.model` still may not import `agents.training`, so THOSE are what this pins
+    now: a fresh current config RECORDS both fields explicitly, the regime at the argparse default
+    and the gate at exactly the value the one derivation rule gives for it — and a recorded
+    stochastic regime with its own gate passes through the current migration untouched."""
+    import dataclasses
+    import json
 
-    out = _migrate_config({"config_version": 111})
+    from agents.model.model_version import ModelVersion, ModelVersionError, _migrate_config
+
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 111})
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 111, "eval_sentinel_greedy": True})
+
+    fresh = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        _LAYOUT, _POLICY_KWARGS).to_json())
+    assert fresh["eval_sentinel_greedy"] is EVAL_SENTINEL_GREEDY_DEFAULT
+    assert fresh["promote_threshold"] == promote_threshold_default(EVAL_SENTINEL_GREEDY_DEFAULT)
+    field_default = {f.name: f.default for f in dataclasses.fields(ModelVersion)}
+    assert field_default["eval_sentinel_greedy"] is EVAL_SENTINEL_GREEDY_DEFAULT
+    assert field_default["promote_threshold"] == promote_threshold_default(
+        EVAL_SENTINEL_GREEDY_DEFAULT)
+
+    out = _migrate_config(dict(fresh, eval_sentinel_greedy=False,
+                               promote_threshold=PROMOTE_THRESHOLD_STOCHASTIC))
     assert out["eval_sentinel_greedy"] is False
     assert out["promote_threshold"] == PROMOTE_THRESHOLD_STOCHASTIC
-
-    greedy = _migrate_config({"config_version": 111, "eval_sentinel_greedy": True})
-    assert greedy["promote_threshold"] == PROMOTE_THRESHOLD_GREEDY
+    assert PROMOTE_THRESHOLD_GREEDY != PROMOTE_THRESHOLD_STOCHASTIC
 
 
 def test_neither_field_is_GATED_by_check_compatible():

@@ -406,7 +406,7 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         "x": "written for our mons AND opp mons",
         "g": "written for our mons AND opp mons",
         "h": "obs-fed compiled pair-history (gen3_pair_history_v1) — the GPU cannot recompute it",
-        "r": "structural [is_actor, is_target] identity to the live tokens (gen3_event_ref_edges_v1)",
+        "r": "structural [is_actor, is_target, is_rel] identity to the live tokens (gen3_event_ref_edges_v1; is_rel gen3_event_record_v2)",
     }
     # COVERAGE CHECK over the model's whole table, not just the families this config ENABLES. An
     # unrouted family already raised a bare `KeyError: '<fam>'` from the loop below — but only once

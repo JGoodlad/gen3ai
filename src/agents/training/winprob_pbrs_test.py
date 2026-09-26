@@ -367,23 +367,43 @@ def test_the_coefficient_is_recorded_on_model_version_for_provenance():
     assert "win_prob_pbrs_coef" in {f.name for f in __import__("dataclasses").fields(ModelVersion)}
 
 
-def test_a_pre_v104_config_migrates_to_the_off_default_rather_than_refusing():
-    """0.0 is not a guess about the past — the flag did not exist, so no run could have used it.
-    A REFUSAL here would make every archived checkpoint unreadable for a coefficient none of them
-    carried."""
-    from agents.model.model_version.constants import MODEL_CONFIG_VERSION
-    from agents.model.model_version.migrations import _migrate_config
-    # The migration chain must carry a pre-v104 config all the way to HEAD, not merely to 104 —
-    # pinning the live constant here would make every later bump a false failure in this file.
-    # `>=` because later versions keep landing above this one; what this test owns is that the
-    # v104 STEP still injects the off default and stamps at least v104, not that v104 is the tip.
-    assert MODEL_CONFIG_VERSION >= 104
-    out = _migrate_config({"config_version": 103})
-    assert out["win_prob_pbrs_coef"] == 0.0
-    assert out["config_version"] == MODEL_CONFIG_VERSION
-    # a recorded value migrates UNTOUCHED
-    out2 = _migrate_config({"config_version": 103, "win_prob_pbrs_coef": 0.3})
-    assert out2["win_prob_pbrs_coef"] == 0.3
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_pre_v104_config_is_refused_and_a_current_one_records_the_off_default():
+    """The v104 `setdefault` branch (coef → 0.0) is FLOORED AWAY: gen3_event_record_v2 raised
+    MIGRATION_FLOOR to 121 (the branch is archived verbatim in `_migrate_config`'s v97–v120
+    history), so a v103 config is a pre-generation checkpoint and is REFUSED with the
+    diagnosis — a test may not claim to cover a branch the floor makes unreachable. The surviving
+    property: a fresh current config RECORDS the field(s) explicitly at the value that branch
+    supplied, and the current migration passes them through."""
+    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError,
+                                            _migrate_config)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 103})
+    fresh = _fresh_current_config()
+    out = _migrate_config(dict(fresh))
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert 'win_prob_pbrs_coef' in fresh, 'win_prob_pbrs_coef'
+    assert out['win_prob_pbrs_coef'] == 0.0, 'win_prob_pbrs_coef'
+    ModelVersion(**out)
+    # A RECORDED value passes through the current migration untouched (a pre-floor one is refused).
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 103, **{'win_prob_pbrs_coef': 0.3}})
+    kept = _migrate_config(_fresh_current_config(win_prob_pbrs_coef=0.3))
+    assert kept['win_prob_pbrs_coef'] == 0.3
+    assert getattr(ModelVersion(**kept), 'win_prob_pbrs_coef') == 0.3
 
 
 @pytest.mark.parametrize("argv,needle", [

@@ -307,7 +307,8 @@ def test_the_weight_is_recorded_and_inherited_on_a_flagless_resume():
     revert to 1.0 — i.e. OFF — on every 3-hour restart."""
     import json
 
-    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, _migrate_config)
+    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError,
+                                            _migrate_config)
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
@@ -321,12 +322,23 @@ def test_the_weight_is_recorded_and_inherited_on_a_flagless_resume():
     other = ModelVersion.from_layout_and_policy_kwargs(layout, pk, intent_label_bot_weight=1.0)
     other.check_compatible(v)
 
-    # The v97 migration IS reachable (unlike v92's): the field is new at 97 and MIGRATION_FLOOR is
-    # 96, so a v96 config sits AT the floor and genuinely lacks it. Absent ⇒ 1.0 = OFF, which is
-    # what every pre-v97 checkpoint trained under.
+    # THE v97 MIGRATION LEG IS NOW UNREACHABLE, and asserting the refusal is the honest form (the
+    # td_aux_coef / v92 precedent). gen3_event_record_v2 bumped ARCH_SIGNATURE and raised
+    # MIGRATION_FLOOR to 121 in the same commit, so v97's `setdefault("intent_label_bot_weight",
+    # 1.0)` sits below the floor (archived verbatim in `_migrate_config`'s v97–v120 history). A
+    # config that lacks the field is a pre-generation one and is REFUSED with a diagnosis.
     old = json.loads(v.to_json())
     old.pop("intent_label_bot_weight")
     old["config_version"] = 96
-    migrated = _migrate_config(old)
-    assert migrated["intent_label_bot_weight"] == 1.0
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(old)
+
+    # The surviving property: every config at the floor RECORDS the weight explicitly (so the
+    # flagless-resume read-back above is what matters), a fresh one records 1.0 = OFF, and a
+    # recorded value passes through the current migration untouched.
+    fresh = json.loads(ModelVersion.from_layout_and_policy_kwargs(layout, pk).to_json())
+    assert fresh["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert fresh["intent_label_bot_weight"] == 1.0
+    migrated = _migrate_config(json.loads(v.to_json()))
+    assert migrated["intent_label_bot_weight"] == 0.25
     assert migrated["config_version"] == MODEL_CONFIG_VERSION

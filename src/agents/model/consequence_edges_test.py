@@ -135,7 +135,14 @@ def test_curse_non_ghost_prices_atk_up_spe_down():
         cells = fe.damage_op.pairwise_boost(ctx)
         base = fe.damage_op.pairwise_outgoing(ctx)
     assert bool((cells[:, 1, :, 0] > 0).any()), "non-Ghost Curse must fire is_boost"
-    live = base[..., 1].amax(dim=1) > 1e-6
+    # A line already at the roll-fraction CAP cannot be raised by +1 atk (the clamp holds it), so
+    # "live" is a line strictly between zero and the cap. The random ctx draw moved with the obs
+    # width (gen3_event_record_v2, 2501 -> 2761) and now lands matchups ON the cap, which the old
+    # `> 1e-6` read as live.
+    from agents.model.damage_op_layout import _DMG_CHIP_CAP
+    best = base[..., 1].amax(dim=1)
+    live = (best > 1e-6) & (best < _DMG_CHIP_CAP - 1e-6)
+    assert bool(live.any()), "the scenario must leave some uncapped physical line to price"
     assert bool((cells[:, 1, :, 1][live] > 0).all()), "+1 atk must raise the best physical line"
     d_spd = cells[:, 1, :, 3]
     assert float(d_spd.max()) <= 0.0, "-1 spe can never RAISE P(outspeed)"

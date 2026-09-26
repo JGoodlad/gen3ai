@@ -35,7 +35,6 @@ import numpy as np
 import pytest
 import torch
 
-from agents.model.model_version.migrations import _migrate_config
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.win_prob_callback import (
@@ -379,12 +378,45 @@ def test_the_ModelVersion_CONSTRUCTOR_accepts_BOTH_kwargs_and_FORWARDS_them():
     assert 'win_prob_lambda_truncated=str(win_prob_lambda_truncated or "bootstrap")' in src
 
 
-def test_a_pre_v116_config_migrates_to_OFF():
-    """1.0 is a RECORD, not a guess: λ = 1.0 IS the terminal-outcome target every prior run used."""
-    from agents.model.model_version.constants import MODEL_CONFIG_VERSION
-    out = _migrate_config({"config_version": 115})
-    assert out["win_prob_lambda"] == 1.0 and out["win_prob_lambda_truncated"] == "bootstrap"
-    assert out["config_version"] == MODEL_CONFIG_VERSION
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_pre_v116_config_is_refused_and_a_current_one_records_OFF():
+    """The v116 `setdefault` branch (λ → 1.0, truncation → "bootstrap") is FLOORED AWAY: gen3_event_record_v2 raised
+    MIGRATION_FLOOR to 121 (the branch is archived verbatim in `_migrate_config`'s v97–v120
+    history), so a v115 config is a pre-generation checkpoint and is REFUSED with the
+    diagnosis — a test may not claim to cover a branch the floor makes unreachable. The surviving
+    property: a fresh current config RECORDS the field(s) explicitly at the value that branch
+    supplied, and the current migration passes them through."""
+    from agents.model.model_version import (MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError,
+                                            _migrate_config)
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 115})
+    fresh = _fresh_current_config()
+    out = _migrate_config(dict(fresh))
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert 'win_prob_lambda' in fresh, 'win_prob_lambda'
+    assert out['win_prob_lambda'] == 1.0, 'win_prob_lambda'
+    assert 'win_prob_lambda_truncated' in fresh, 'win_prob_lambda_truncated'
+    assert out['win_prob_lambda_truncated'] == 'bootstrap', 'win_prob_lambda_truncated'
+    ModelVersion(**out)
+    # A RECORDED value passes through the current migration untouched (a pre-floor one is refused).
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 115, **{'win_prob_lambda': 0.9}})
+    kept = _migrate_config(_fresh_current_config(win_prob_lambda=0.9))
+    assert kept['win_prob_lambda'] == 0.9
+    assert getattr(ModelVersion(**kept), 'win_prob_lambda') == 0.9
 
 
 def test_it_is_NOT_gated_by_check_compatible():

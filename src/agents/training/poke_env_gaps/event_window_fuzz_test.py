@@ -1,15 +1,27 @@
-"""Tier H-B fuzz (gen3_event_window_v1) — the event-window obs block vs PROTOCOL TRUTH.
+"""Tier H-B fuzz (gen3_event_window_v1 → gen3_event_record_v2) — the event-window obs block vs
+PROTOCOL TRUTH.
 
 Real battles in-process via the local BattleStream bridge (no server). At EVERY decision the
 player runs the real tracker protocol (EpisodeTracker.record → update_progress_clock → encode
-with event_window threaded — the RLPlayer/Gen3Env path) and validates the whole 32×22 block —
-EVERY column, none declared unmodelled — against an INDEPENDENT from-scratch fold over the
-battle's FULL event log: the H-B type vocabulary, the modifier-attach rules (clause-free
+with event_window threaded → advance(action) — the RLPlayer/Gen3Env path) and validates the whole
+32×30 block — EVERY column, none declared unmodelled — against an INDEPENDENT from-scratch fold
+over the battle's FULL event log: the H-B type vocabulary, the modifier-attach rules (clause-free
 target-matched damage; miss/fail/crit; the effectiveness trio tagged on the MOVER — the
 producer's "attach to the resolving mover" convention, which this oracle MIRRORED as
-defender-tagged until 2026-08-19 and therefore never caught the tracker's identical flip),
-we_first, forced windows, the id columns (species/move dex nums), the three derived id columns
-(cant reason, faint CAUSE, item TRANSITION), recency and the front-padding convention.
+defender-tagged until 2026-08-19 and therefore never caught the tracker's identical flip), the
+MOVE row's implied target (user / foe / none from the move's dex target class), we_first, forced
+windows, the id columns (species/move dex nums), the derived id columns (cant reason, faint
+CAUSE over the LIVE vocabulary incl. destinybond / perishsong, item TRANSITION incl. the
+transfer DIRECTION), recency and the front-padding convention.
+
+gen3_event_record_v2 (E12) columns 22–29, all modelled: REL species + side (the replaced /
+passer / dragged-out mon on a SWITCH_IN, the KOer on an `attack` FAINT, the denier on a DENIED
+row, the other party of an item transfer / removal), the SWITCH_IN ENTRY reason (chosen /
+replacement / drag / Baton Pass, with the causing move on the row's MOVE and the Spikes entry
+chip on its MAGNITUDE), the DENIED row type and its DENIAL reason (fainted first / TURN CUT —
+gen 3 singles: any action-phase faint cancels every queued action), CALLER, BOOST STAT, Spikes
+LAYERS and PURSUIT_SWITCH. The refused-switch (E4) TARGET is derived from the switch this
+player actually SENT (its own BattleOrder), never from the tracker's decode.
 
 Any mismatch raises with (row, column, got, want) + an event trace on the first failure.
 
@@ -36,15 +48,17 @@ from agents.battle.battle_event import OURS, OPP, EventKind
 from agents.battle.gen3_battle import Gen3Battle
 from agents.gen3_data import moves as gen3_movedex
 from agents.observation.constants import (
-    EVENT_T_BOOST, EVENT_T_CANT, EVENT_T_FAINT, EVENT_T_HAZARD, EVENT_T_ITEM_REVEAL,
-    EVENT_T_MOVE, EVENT_T_STATUS_APPLIED, EVENT_T_STATUS_CURED, EVENT_T_SWITCH_IN,
-    EVENT_T_SWITCH_REJECTED,
-    EVENT_STATUS_IDS, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N,
-    ITEM_TR_CONSUMED, ITEM_TR_REMOVED, ITEM_TR_REVEALED, ITEM_TR_SWAPPED,
+    EVENT_T_BOOST, EVENT_T_CANT, EVENT_T_DENIED, EVENT_T_FAINT, EVENT_T_HAZARD,
+    EVENT_T_ITEM_REVEAL, EVENT_T_MOVE, EVENT_T_STATUS_APPLIED, EVENT_T_STATUS_CURED,
+    EVENT_T_SWITCH_IN, EVENT_T_SWITCH_REJECTED,
+    EVENT_STAT_IDS, EVENT_STATUS_IDS, EVENT_TOKEN_DIM, EVENT_WINDOW_DIM, EVENT_WINDOW_N,
+    ENTRY_BATON_PASS, ENTRY_CHOSEN, ENTRY_DRAG, ENTRY_REPLACEMENT,
+    DENIAL_FAINTED_FIRST, DENIAL_TURN_CUT,
+    ITEM_TR_CONSUMED, ITEM_TR_RECEIVED, ITEM_TR_REMOVED, ITEM_TR_REVEALED, ITEM_TR_SWAPPED,
     OFFSET_EVENT_WINDOW, EVENT_EFF_GROUP, EventCol as C,
 )
 from agents.observation.gen3_effects import cant_reason_id
-from agents.battle.turn_view import FAINT_CAUSE_VOCAB
+from agents.battle.turn_view import FAINT_CAUSE_VOCAB, FAINT_CAUSE_VOCAB_LIVE
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
 from agents.training.episode_tracker import EpisodeTracker
 from utils.team_loader import TeamLoader
@@ -77,6 +91,10 @@ class _Stats:
     # vacuous pass, and these three are exactly the ones that were unchecked before — so the
     # run reports how often each was actually put to work rather than leaving it to be assumed.
     derived: dict = field(default_factory=lambda: {"cant": 0, "faint_cause": 0, "item_tr": 0})
+    # gen3_event_record_v2 (E12): the same exercise ledger for the new columns and row type, split
+    # by the VALUE that matters (a Baton Pass entry, a turn cut, a received item …), because each
+    # is a separate branch of the fold and "0 failures" over an unset branch is a vacuous pass.
+    e12: dict = field(default_factory=dict)
 
 
 def attributable_damage(e) -> bool:
@@ -146,11 +164,15 @@ def oracle_faint_cause_id(from_clause, used_selfko: bool, lethal: bool = True) -
 def oracle_item_transition(kind, from_clause) -> int:
     """`|-item|` / `|-enditem|` (+ its `[from]`) → an `ITEM_TR_*` id. Gen3 has three ways an
     item stops being held and they mean different things: a CONSUMED berry was spent, a Knock
-    Off REMOVAL is permanent in ADV, and a Trick/Thief/Covet SWAP tells you the opponent now
-    holds it. Derived here from the event kind + clause alone."""
+    Off REMOVAL is permanent in ADV, and a Trick/Thief/Covet transfer tells you the opponent now
+    holds it. Derived here from the event kind + clause alone.
+
+    gen3_event_record_v2 (E12) splits a transfer by DIRECTION: the `|-enditem|` side LOST the
+    item (SWAPPED — taken from this mon), the `|-item|` side RECEIVED one (RECEIVED; Trick writes
+    two receipts)."""
     fc = (from_clause or "").strip().lower()
     if any(w in fc for w in ("trick", "thief", "covet", "switcheroo")):
-        return ITEM_TR_SWAPPED            # BOTH item lines of a transfer (W3), incl. an `|-item|`
+        return ITEM_TR_SWAPPED if kind is EventKind.ENDITEM else ITEM_TR_RECEIVED
     if kind is EventKind.ITEM:
         return ITEM_TR_REVEALED
     if "knock off" in fc or "knockoff" in fc:
@@ -158,11 +180,91 @@ def oracle_item_transition(kind, from_clause) -> int:
     return ITEM_TR_CONSUMED
 
 
+def oracle_live_faint_cause_id(label: str) -> int:
+    """A LIVE-vocabulary faint label → its 1-based id (`FAINT_CAUSE_VOCAB_LIVE`: the archive's
+    eight, then `destinybond` / `perishsong`). The archive prefix is shared, so an id
+    `oracle_faint_cause_id` returns is already a live id."""
+    return FAINT_CAUSE_VOCAB_LIVE.index(label) + 1
+
+
+# The dex `target` classes whose `|move|` line names the USER (Showdown writes the target into
+# the line before any `[still]` blanks it): self-targeting, the user's side, the whole field.
+# `adjacentAlly` (Helping Hand) has no target in singles. Curse is the one gen-3 move whose target
+# depends on the USER's typing (a non-Ghost Curse targets itself). Stated here from the dex, not
+# imported from the battle layer's classifier.
+_ORACLE_USER_TARGETS = frozenset({"self", "allySide", "allyTeam", "adjacentAllyOrSelf",
+                                  "allies", "all"})
+
+
+def oracle_move_target(move_id, user_sp, foe_sp):
+    d = gen3_movedex.get(move_id) if move_id else None
+    if d is None:
+        return foe_sp
+    if d.id == "curse":
+        u = gen3_data.species.get(user_sp) if user_sp else None
+        return user_sp if (u is not None and "GHOST" not in u.types) else foe_sp
+    if d.target in _ORACLE_USER_TARGETS:
+        return user_sp
+    if d.target == "adjacentAlly":
+        return None
+    return foe_sp
+
+
+# An end-of-turn RESIDUAL line, recognised by its `[from]` (prefix `item:` / `move:` / `ability:`
+# stripped): the action phase is over once one prints, so a faint after it cuts nothing
+# (designs/ARCHITECTURE.md §1.6, ACTION DENIAL).
+_ORACLE_RESIDUAL = frozenset({"psn", "tox", "brn", "sandstorm", "hail", "leech seed",
+                              "nightmare", "curse", "leftovers", "wish", "ingrain",
+                              "future sight", "doom desire"})
+
+
+def oracle_is_residual(from_clause) -> bool:
+    fc = (from_clause or "").strip().lower()
+    if ":" in fc and fc.split(":", 1)[0] in ("item", "move", "ability"):
+        fc = fc.split(":", 1)[1].strip()
+    return fc in _ORACLE_RESIDUAL
+
+
+_ACTION_KINDS = (EventKind.MOVE, EventKind.SWITCH, EventKind.DRAG, EventKind.CANT,
+                 EventKind.CHOICE_REJECTED)
+
+
+def _blank(t, actor, side, turn, fw, **kw):
+    r = dict(t=t, actor=actor, side=side, target=None, move=None, mag=0.0, hit=0.0, miss=0.0,
+             fail=0.0, crit=0.0, eff=0, wf=False, status=0, turn=turn, fw=fw,
+             rel=None, rel_side=None, entry=0, denial=0, caller=None, stat=0, layers=0,
+             pursuit=False)
+    r.update(kw)
+    return r
+
+
+class _TurnLedger:
+    """ONE turn's action phase, as the oracle reads the gen-3 rule: the ACTORS are the two
+    actives when the turn's first line prints; any faint while the phase is open cancels every
+    action still queued. The phase is a small ledger (who acted, which faints happened, which
+    denial rows are owed) that the fold SETTLES at the next settle point — an action line, a
+    residual line, the next turn, or a decision — rather than a state machine threaded through
+    the event loop."""
+
+    def __init__(self, turn, actors):
+        self.turn = turn
+        self.actors = dict(actors)          # side -> species (None ⇒ no actor)
+        self.done = {s: False for s in actors}
+        self.faints = []                    # [(species, side, cause_id, action)] in order
+        self.owed = []                      # fainted-first rows not yet placed (their fields)
+        self.open = True
+
+    def acted(self, side, species):
+        if side in self.actors and species and self.actors[side] == species:
+            self.done[side] = True
+
+
 def _oracle_rows(battle, resync_log):
     """From-scratch fold over the FULL log → the expected record dicts (all of them; the
     caller windows to the last EVENT_WINDOW_N). ``resync_log`` = this test's own record of the
-    (turn, our_active, opp_active) marks the tracker makes at each decision, replayed in
-    event order by seq so the running actives match the tracker's."""
+    (seq watermark, our_active, opp_active, switch_sent) marks it made at each decision,
+    replayed in event order by seq so the running actives match the tracker's; ``switch_sent``
+    is the species of the switch this player's order at that decision aimed at (or None)."""
     rows = []
     our_active = opp_active = None
     forced = {"ours": False, "opp": False}
@@ -175,11 +277,65 @@ def _oracle_rows(battle, resync_log):
     last_dmg_cause = {}
     last_dmg_lethal = {}
     used_selfko = {}
+    # E12 state, each keyed by side: the fainted mon a side's next entry replaces; the turn a
+    # side's (unfailed) Baton Pass is pending on; Spikes layers; the SWITCH_IN row still taking
+    # its entry chip; a Perish count at 0 (the species) and a triggered Destiny Bond (the victim
+    # side). `last_action` is the latest MOVE as (actor, side, move) — a switch / cant / refusal
+    # / a new turn clears it, so a faint's KOer is only ever the action that printed before it.
+    replaces, baton_on, layers, entry_row = {}, {}, {}, {}
+    perish_at_zero, bonded = {}, {}
+    last_action = None
+    ledger = None
+    switch_sent = None
     mover_now = None       # the side of the latest |move| — whose bare -damage is a hit
     resync = sorted(resync_log, key=lambda r: r[0])     # by seq watermark
 
     def flags():
         return 1.0 if (forced["ours"] or forced["opp"]) else 0.0
+
+    def active(side):
+        return our_active if side == OURS else opp_active
+
+    def other(side):
+        return OPP if side == OURS else OURS if side == OPP else None
+
+    def settle(cut, close):
+        """Place what the ledger owes: its fainted-first rows (in faint order), then — when a
+        faint has happened and the settle point cuts — one TURN-CUT row per actor (ours, then
+        theirs) that neither acted nor fainted. `close` ends the action phase."""
+        if ledger is None:
+            return
+        for kw in ledger.owed:
+            rows.append(_blank(EVENT_T_DENIED, fw=flags(), **kw))
+        ledger.owed = []
+        if cut and ledger.faints:
+            f_sp, f_side, f_cause, f_act = ledger.faints[0]
+            for sd in (OURS, OPP):
+                if ledger.actors.get(sd) and not ledger.done[sd]:
+                    ledger.done[sd] = True
+                    rows.append(_blank(EVENT_T_DENIED, ledger.actors[sd], sd, ledger.turn,
+                                       flags(), denial=DENIAL_TURN_CUT, rel=f_sp,
+                                       rel_side=f_side, faint=f_cause,
+                                       move=(f_act[2] if f_act else None)))
+        if close:
+            ledger.open = False
+
+    def decision(mark):
+        """A decision closes the fold's window: a faint that cut the turn ends its action phase
+        here; otherwise (a mid-turn decision) the phase stays open. Then the actives resync."""
+        nonlocal our_active, opp_active, switch_sent
+        cut = ledger is not None and bool(ledger.faints)
+        settle(cut=cut, close=cut)
+        _, o, p, sent = mark
+        if o:
+            our_active, forced["ours"] = o, False
+        if p:
+            opp_active, forced["opp"] = p, False
+        switch_sent = sent
+
+    def forget(side):
+        for d in (last_dmg_cause, last_dmg_lethal, used_selfko, perish_at_zero, bonded):
+            d.pop(side, None)
 
     ri = 0
     # THE H-A CONVENTION, inherited: the tracker's first decision folds an EMPTY window
@@ -194,32 +350,53 @@ def _oracle_rows(battle, resync_log):
 
     for e in battle.events_since(0):
         seq = e.seq
-        # apply every decision-time resync that happened BEFORE this event
+        # apply every decision that happened BEFORE this event
         while ri < len(resync) and resync[ri][0] <= seq:
-            _, o, p = resync[ri]
-            if o:
-                our_active, forced["ours"] = o, False
-            if p:
-                opp_active, forced["opp"] = p, False
+            decision(resync[ri])
             ri += 1
         side, sp, et = e.side, e.actor_species, e.turn
         k = e.kind
-        if k is EventKind.MOVE and side and sp and emit(seq):
-            if first_mover.get(et) is None:
-                first_mover[et] = side
-            r = dict(t=EVENT_T_MOVE, actor=sp, side=side,
-                     target=(opp_active if side == OURS else our_active),
-                     move=e.move_id, mag=0.0, hit=1.0, miss=0.0, fail=0.0, crit=0.0,
-                     eff=0, wf=(side == first_mover[et]), status=0, turn=et, fw=flags())
-            rows.append(r)
-            open_move[side] = r
+        fc_low = (e.from_clause or "").strip().lower()
+        # ---- the turn's action phase: open a new ledger on a new turn, settle at action lines
+        # and at the first residual line.
+        if ledger is None or ledger.turn != et:
+            if ledger is not None and ledger.open and ledger.turn > 0:
+                settle(cut=True, close=True)
+            ledger = _TurnLedger(et, {OURS: our_active, OPP: opp_active})
+            last_action = None
+        if k in _ACTION_KINDS:
+            had_faint = bool(ledger.faints)
+            settle(cut=True, close=had_faint)
+        elif ledger.open and oracle_is_residual(e.from_clause):
+            settle(cut=True, close=True)
+
+        if k is EventKind.MOVE and side and sp:
+            if emit(seq):
+                if first_mover.get(et) is None:
+                    first_mover[et] = side
+                r = _blank(EVENT_T_MOVE, sp, side, et, flags(),
+                           target=oracle_move_target(e.move_id, sp, active(other(side))),
+                           move=e.move_id, hit=1.0, wf=(side == first_mover[et]),
+                           caller=e.from_move, pursuit=bool(e.value.get("pursuit_switch")))
+                rows.append(r)
+                open_move[side] = r
             used_selfko[side] = e.move_id in _ORACLE_SELF_KO_MOVES
+            last_action = (sp, side, e.move_id)
+            ledger.acted(side, sp)
+            if e.move_id == "batonpass":
+                baton_on[side] = et
         if k is EventKind.MOVE and side:
             mover_now = side
         elif k is EventKind.DAMAGE and side:
             last_dmg_cause[side] = e.from_clause        # None ⇒ a direct hit
             _ha = e.value.get("hp_after")
             last_dmg_lethal[side] = _ha is None or float(_ha) <= 0.0
+            if fc_low == "confusion":
+                ledger.acted(side, sp)                   # hit itself: it DID take its turn
+            er = entry_row.get(side)
+            if (fc_low == "spikes" and er is not None and er["turn"] == et
+                    and sp and er["actor"] == sp and e.amount is not None):
+                er["mag"] += float(e.amount)             # the entry chip rides the entry row
             mover = OPP if side == OURS else OURS
             om = open_move.get(mover)
             if (om is not None and om["turn"] == et and attributable_damage(e)
@@ -235,6 +412,8 @@ def _oracle_rows(battle, resync_log):
                     om["miss"], om["hit"] = 1.0, 0.0
                 elif k is EventKind.FAIL:
                     om["fail"], om["hit"] = 1.0, 0.0
+                    if om["move"] == "batonpass":
+                        baton_on.pop(side, None)         # a failed pass passes nothing
                 else:
                     om["crit"] = 1.0
         elif k is EventKind.ACTIVATE and side and str(e.effect or "").strip().lower() in (
@@ -244,75 +423,129 @@ def _oracle_rows(battle, resync_log):
             om = open_move.get(mover)
             if om is not None and om["turn"] == et and mover_now == mover:
                 om["fail"], om["hit"] = 1.0, 0.0
+        elif k is EventKind.ACTIVATE and side and "destiny" in str(e.effect or "").lower():
+            bonded[other(side)] = True                   # the bond's USER names it; the foe dies
+        elif (k is EventKind.VOLATILE_START and side and sp
+              and str(e.effect or "").strip().lower() == "perish0"):
+            perish_at_zero[side] = sp
         elif k in (EventKind.IMMUNE, EventKind.RESISTED, EventKind.SUPEREFFECTIVE) and side:
             om = open_move.get(side)                      # producer tags the MOVER, like crit/miss/fail
             if om is not None and om["turn"] == et:
                 om["eff"] = {EventKind.SUPEREFFECTIVE: 1, EventKind.RESISTED: 2,
                              EventKind.IMMUNE: 3}[k]
         elif k in (EventKind.SWITCH, EventKind.DRAG) and side and sp:
+            leaving = active(side)
+            cause_move = None
+            if k is EventKind.DRAG:
+                entry, rel = ENTRY_DRAG, leaving
+                phazer = open_move.get(other(side))
+                if phazer is not None and phazer["turn"] == et:
+                    cause_move = phazer["move"]
+            elif replaces.get(side):
+                entry, rel = ENTRY_REPLACEMENT, replaces[side]
+            elif baton_on.get(side) == et:
+                entry, rel, cause_move = ENTRY_BATON_PASS, leaving, "batonpass"
+            else:
+                entry, rel = ENTRY_CHOSEN, leaving
+            if entry in (ENTRY_CHOSEN, ENTRY_BATON_PASS):
+                ledger.acted(side, leaving)
+            baton_on.pop(side, None)
+            replaces.pop(side, None)
             if emit(seq):
-                rows.append(dict(t=EVENT_T_SWITCH_IN, actor=sp, side=side,
-                                 target=(opp_active if side == OURS else our_active),
-                                 move=None, mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0,
-                                 eff=0, wf=False, status=0, turn=et, fw=flags()))
+                r = _blank(EVENT_T_SWITCH_IN, sp, side, et, flags(),
+                           target=active(other(side)), move=cause_move, entry=entry,
+                           rel=rel, rel_side=(side if rel else None),
+                           layers=layers.get(side, 0))
+                rows.append(r)
+                entry_row[side] = r
             forced["ours" if side == OURS else "opp"] = False
             if side == OURS:
                 our_active = sp
             else:
                 opp_active = sp
-            last_dmg_cause.pop(side, None)
-            last_dmg_lethal.pop(side, None)
-            used_selfko.pop(side, None)
+            forget(side)
         elif k is EventKind.FAINT and side and sp:
+            if perish_at_zero.get(side) == sp:
+                cause = oracle_live_faint_cause_id("perishsong")
+            elif bonded.get(side):
+                cause = oracle_live_faint_cause_id("destinybond")
+            else:
+                cause = oracle_faint_cause_id(last_dmg_cause.get(side),
+                                              bool(used_selfko.get(side)),
+                                              bool(last_dmg_lethal.get(side)))
+            koer = (last_action if (cause == oracle_live_faint_cause_id("attack")
+                                    and last_action is not None and last_action[1] != side)
+                    else None)
             if emit(seq):
-                rows.append(dict(t=EVENT_T_FAINT, actor=sp, side=side, target=None, move=None,
-                                 mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0,
-                                 wf=False, status=0, turn=et, fw=flags(),
-                                 faint=oracle_faint_cause_id(last_dmg_cause.get(side),
-                                                             bool(used_selfko.get(side)),
-                                                             bool(last_dmg_lethal.get(side)))))
-            last_dmg_cause.pop(side, None)
-            last_dmg_lethal.pop(side, None)
-            used_selfko.pop(side, None)
+                rows.append(_blank(EVENT_T_FAINT, sp, side, et, flags(), faint=cause,
+                                   rel=(koer[0] if koer else None),
+                                   rel_side=(koer[1] if koer else None),
+                                   layers=(layers.get(side, 0)
+                                           if cause == oracle_live_faint_cause_id("hazard")
+                                           else 0)))
+            if ledger.open and et > 0:
+                ledger.faints.append((sp, side, cause, last_action))
+                if ledger.actors.get(side) == sp and not ledger.done[side]:
+                    ledger.done[side] = True
+                    la = last_action
+                    ledger.owed.append(dict(actor=sp, side=side, turn=et,
+                                            denial=DENIAL_FAINTED_FIRST, faint=cause,
+                                            move=(la[2] if la else None),
+                                            rel=(la[0] if la else None),
+                                            rel_side=(la[1] if la else None)))
+            forget(side)
+            entry_row.pop(side, None)
+            replaces[side] = sp
             if side == OURS and our_active == sp:
                 our_active, forced["ours"] = None, True
             elif side == OPP and opp_active == sp:
                 opp_active, forced["opp"] = None, True
         elif k in (EventKind.STATUS, EventKind.CURESTATUS) and sp and emit(seq):
-            rows.append(dict(t=(EVENT_T_STATUS_APPLIED if k is EventKind.STATUS
-                                else EVENT_T_STATUS_CURED),
-                             actor=sp, side=side, target=None, move=None, mag=0.0,
-                             hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0, wf=False,
-                             status=EVENT_STATUS_IDS.get(str(e.status or "").lower(), 0),
-                             turn=et, fw=flags()))
+            rows.append(_blank((EVENT_T_STATUS_APPLIED if k is EventKind.STATUS
+                                else EVENT_T_STATUS_CURED), sp, side, et, flags(),
+                               status=EVENT_STATUS_IDS.get(str(e.status or "").lower(), 0)))
         elif k in (EventKind.BOOST, EventKind.UNBOOST) and sp and emit(seq):
-            amt = float(e.amount or 0.0)
-            rows.append(dict(t=EVENT_T_BOOST, actor=sp, side=side, target=None, move=None,
-                             mag=amt, hit=0.0, miss=0.0,        # amount is already SIGNED (W1)
-                             fail=0.0, crit=0.0, eff=0, wf=False, status=0, turn=et,
-                             fw=flags()))
+            rows.append(_blank(EVENT_T_BOOST, sp, side, et, flags(),
+                               mag=float(e.amount or 0.0),      # amount is already SIGNED (W1)
+                               stat=(EVENT_STAT_IDS[str(e.value["stat"]).strip().lower()]
+                                     if e.value.get("stat") else 0)))
         elif k in (EventKind.ITEM, EventKind.ENDITEM) and sp and emit(seq):
-            rows.append(dict(t=EVENT_T_ITEM_REVEAL, actor=sp, side=side, target=None,
-                             move=None, mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0,
-                             eff=0, wf=False, status=0, turn=et, fw=flags(),
-                             item_tr=oracle_item_transition(k, e.from_clause)))
-        elif k is EventKind.SIDE and side and emit(seq):
-            rows.append(dict(t=EVENT_T_HAZARD, actor=None, side=side, target=None, move=None,
-                             mag=(-1.0 if e.value.get("op") == "sideend" else 1.0), hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0,
-                             wf=False, status=0, turn=et, fw=flags()))
-        elif k is EventKind.CANT and sp and emit(seq):
+            tr = oracle_item_transition(k, e.from_clause)
+            partner_side = (other(side) if tr in (ITEM_TR_SWAPPED, ITEM_TR_RECEIVED,
+                                                  ITEM_TR_REMOVED) else None)
+            partner = active(partner_side) if partner_side else None
+            rows.append(_blank(EVENT_T_ITEM_REVEAL, sp, side, et, flags(), item_tr=tr,
+                               rel=partner, rel_side=(partner_side if partner else None)))
+        elif k is EventKind.SIDE and side:
+            starts = e.value.get("op") != "sideend"
+            spikes = "spikes" in str(e.value.get("condition") or "").lower()
+            if spikes:
+                layers[side] = min(3, layers.get(side, 0) + 1) if starts else 0
+            if emit(seq):
+                rows.append(_blank(EVENT_T_HAZARD, None, side, et, flags(),
+                                   mag=(1.0 if starts else -1.0),
+                                   layers=(layers.get(side, 0) if spikes else 0)))
+        elif k is EventKind.CANT and sp:
             # "this mon could not move, and why". ATTRIBUTED TO THE MON THAT LOST ITS TURN, not
             # to the ability holder the protocol files it against (Damp blocking someone else's
             # Explosion is filed on the Damp holder) — `blocked_actor`/`blocked_side` are the
             # event's own typed fields, so this is read from the log, not from the fold.
-            rows.append(dict(t=EVENT_T_CANT, actor=(e.blocked_actor or sp),
-                             side=(e.blocked_side or side), target=None, move=e.cant_move,
-                             mag=0.0, hit=0.0, miss=0.0, fail=0.0, crit=0.0, eff=0, wf=False,
-                             status=0, turn=et, fw=flags(), cant=e.reason))
+            lost_sp, lost_side = (e.blocked_actor or sp), (e.blocked_side or side)
+            ledger.acted(lost_side, lost_sp)             # a refused action still took its turn
+            if emit(seq):
+                rows.append(_blank(EVENT_T_CANT, lost_sp, lost_side, et, flags(),
+                                   move=e.cant_move, cant=e.reason))
         elif k is EventKind.CHOICE_REJECTED and emit(seq):
-            rows.append(dict(t=EVENT_T_SWITCH_REJECTED, actor=our_active, side=OURS,
-                             target=None, move=None, mag=0.0, hit=0.0, miss=0.0, fail=0.0,
-                             crit=0.0, eff=0, wf=False, status=0, turn=et, fw=flags()))
+            # E4: the target is the switch THIS player sent at its latest decision — read from
+            # its own order (`switch_sent`), which the server's `|error|` never names.
+            rows.append(_blank(EVENT_T_SWITCH_REJECTED, our_active, OURS, et, flags(),
+                               target=switch_sent))
+        if k in (EventKind.SWITCH, EventKind.DRAG, EventKind.CANT, EventKind.CHOICE_REJECTED):
+            last_action = None
+    # the decisions at/after the last event — the CURRENT one settles what the window owes
+    while ri < len(resync):
+        decision(resync[ri])
+        ri += 1
     return rows
 
 
@@ -326,8 +559,42 @@ def _oracle_rows(battle, resync_log):
 # than the missing columns: the oracle emitted one fewer record per `|cant|` than the tracker,
 # so once the 32-row window SATURATED its last-32 started earlier in the timeline and EVERY row
 # compared against its neighbour — 8209 failures over 5 battles, all one root. All three are
-# modelled now (`oracle_faint_cause_id` / `oracle_item_transition` / the CANT branch).
+# modelled now (`oracle_faint_cause_id` / `oracle_item_transition` / the CANT branch), and so
+# are gen3_event_record_v2's eight (REL species/side, ENTRY, DENIAL, CALLER, STAT, LAYERS,
+# PURSUIT_SWITCH) plus its DENIED row type — the same row-COUNT hazard, which is why the
+# DENIED rows are placed exactly where the gen-3 rule settles them.
 _ORACLE_UNMODELED_COLS: frozenset = frozenset()
+
+
+def _e12_keys(r):
+    """The E12 branches a row exercises — the coverage ledger's keys."""
+    t = r["t"]
+    if t == EVENT_T_SWITCH_IN:
+        yield f"entry={int(r['entry'])}"
+        if r["mag"]:
+            yield "spikes_entry_chip"
+        if r["layers"]:
+            yield "switch_in_layers"
+    elif t == EVENT_T_DENIED:
+        yield f"denial={int(r['denial'])}"
+    elif t == EVENT_T_FAINT:
+        if r["rel"]:
+            yield "faint_koer"
+        if r.get("faint", 0) > len(FAINT_CAUSE_VOCAB):
+            yield f"faint={FAINT_CAUSE_VOCAB_LIVE[int(r['faint']) - 1]}"
+    elif t == EVENT_T_ITEM_REVEAL and r["rel"]:
+        yield f"item_rel_tr={int(r['item_tr'])}"
+    elif t == EVENT_T_MOVE:
+        if r["caller"]:
+            yield "caller"
+        if r["pursuit"]:
+            yield "pursuit_switch"
+    elif t == EVENT_T_BOOST and r["stat"]:
+        yield "boost_stat"
+    elif t == EVENT_T_HAZARD and r["layers"]:
+        yield "hazard_layers"
+    elif t == EVENT_T_SWITCH_REJECTED:
+        yield "switch_rejected" + ("_target" if r["target"] else "_no_target")
 
 
 def _want_vec(r, cur_turn):
@@ -357,6 +624,16 @@ def _want_vec(r, cur_turn):
         C.CANT: float(cant_reason_id(r.get("cant"))),
         C.FAINT_CAUSE: float(r.get("faint", 0)),
         C.ITEM_TRANSITION: float(r.get("item_tr", 0)),
+        # gen3_event_record_v2 (E12) — every row type states all eight; the ones a type does not
+        # set are 0 by `_blank`, and must READ 0.
+        C.REL_SPECIES: _sp_num(r["rel"]),
+        C.REL_SIDE: (1.0 if r["rel_side"] == OURS else (-1.0 if r["rel_side"] == OPP else 0.0)),
+        C.ENTRY: float(r["entry"]),
+        C.DENIAL: float(r["denial"]),
+        C.CALLER: _mv_num(r["caller"]),
+        C.STAT: float(r["stat"]),
+        C.LAYERS: float(r["layers"]) / 3.0,
+        C.PURSUIT_SWITCH: 1.0 if r["pursuit"] else 0.0,
     }
     for i, col in enumerate(EVENT_EFF_GROUP):
         want[col] = 1.0 if (is_move and int(r["eff"]) == i) else 0.0
@@ -373,7 +650,7 @@ class _EventWindowFuzzPlayer(Player):
         self.stats = stats
         self.encoder = Gen3ObservationEncoder(load_mappings())
         self._trackers: dict = {}
-        self._resync_log: dict = {}      # tag -> [(seq watermark, our_sp, opp_sp)]
+        self._resync_log: dict = {}      # tag -> [[seq watermark, our_sp, opp_sp, switch_sent]]
 
     def choose_move(self, battle):
         tag = battle.battle_tag
@@ -385,9 +662,10 @@ class _EventWindowFuzzPlayer(Player):
         cur_turn = live.turn
         _oa, _pa = live.ours.active, live.opp.active
         rlog = self._resync_log.setdefault(tag, [])
-        rlog.append((battle.event_cursor,
+        rlog.append([battle.event_cursor,
                      _oa.species if (_oa is not None and not _oa.fainted) else None,
-                     _pa.species if (_pa is not None and not _pa.fainted) else None))
+                     _pa.species if (_pa is not None and not _pa.fainted) else None,
+                     None])
         obs = self.encoder.encode(battle, legal=None, event_window=tracker.event_window)
         s = self.stats
         s.decisions += 1
@@ -407,6 +685,8 @@ class _EventWindowFuzzPlayer(Player):
                                ("item_tr", C.ITEM_TRANSITION)):
                 if want[_col] > 0.0:
                     s.derived[_key] += 1
+            for _key in _e12_keys(r):
+                s.e12[_key] = s.e12.get(_key, 0) + 1
             if any(abs(got[int(c)] - w) > _TOL for c, w in want.items()):
                 rec = dict(tag=tag, turn=cur_turn, row=ri, got=got, want=want, record=r)
                 if not s.failures:
@@ -416,10 +696,21 @@ class _EventWindowFuzzPlayer(Player):
                         for e in battle.events_since(0)]
                 s.failures.append(rec)
 
+        order = self.choose_random_move(battle)
+        # The RLPlayer path's `advance(action)`: the tracker decodes a refused switch's TARGET
+        # (E4) from the action index against its own team order. The ORACLE never sees that
+        # index — it records the species of the switch this order actually SENT.
+        mon = getattr(order, "order", None)
+        team = list(battle.team.values())
+        if mon is not None and hasattr(mon, "species") and any(m is mon for m in team):
+            tracker.advance(next(i for i, m in enumerate(team) if m is mon))
+            rlog[-1][3] = mon.species
+        else:
+            tracker.advance(6)                   # a move (or struggle / default): not a switch
         if battle.finished:
             self._trackers.pop(tag, None)
             self._resync_log.pop(tag, None)
-        return self.choose_random_move(battle)
+        return order
 
     def _battle_finished_callback(self, battle):
         self._trackers.pop(battle.battle_tag, None)
@@ -441,6 +732,7 @@ def main(n_battles: int = 30) -> int:
     print(f"[event-window fuzz] {n_battles} battles, {stats.decisions} decisions, "
           f"{stats.checked} checks, {len(stats.failures)} failures")
     print(f"  derived-column rows exercised: {stats.derived}")
+    print(f"  E12 branches exercised (row-checks): {dict(sorted(stats.e12.items()))}")
     _idle = [k for k, v in stats.derived.items() if v == 0]
     if _idle:
         # Not a failure: an item transition needs a battle where an item is actually spent or

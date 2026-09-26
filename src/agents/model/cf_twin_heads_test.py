@@ -202,23 +202,40 @@ def test_matching_toggle_loads(flag, on):
     _ver(**{flag: on}).check_compatible(_ver(**{flag: on}))       # no raise
 
 
-def test_migration_defaults_a_v98_config_off():
-    """A pre-v99 checkpoint could not have built either module, so False is not a guess — it is the
-    only possible past. The refusal direction is `check_compatible`'s."""
-    out = _migrate_config({"config_version": 98})
-    assert out["cf_twin_heads"] is False and out["cf_shadow_critic"] is False
-    # NOT `== 99`: the migration must carry a config all the way to the CURRENT version, and a
-    # test pinned to the version a feature landed at goes red on the next bump for no defect — with
-    # the fastest "fix" indistinguishable from one that hides a chain that genuinely stopped early.
-    assert out["config_version"] == MODEL_CONFIG_VERSION
+def _fresh_current_config(**recorded) -> dict:
+    """A fresh CURRENT-generation config through the project's own constructor + JSON path, with
+    `recorded` written over it as a checkpoint that RECORDED those values would carry them."""
+    import json
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    data.update(recorded)
+    return data
+
+
+def test_a_v98_config_is_refused_below_the_floor():
+    """The v99 `setdefault` branch (both flags → False) is FLOORED AWAY: gen3_event_record_v2 raised
+    MIGRATION_FLOOR to 121 (archived verbatim in `_migrate_config`'s v97–v120 history), so a v98
+    config is a pre-generation checkpoint and is refused with the diagnosis. The surviving
+    property: every current config RECORDS both flags explicitly, and a fresh one records False.
+    The refusal direction for a recorded True meeting a live False is still `check_compatible`'s."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 98})
+    fresh = _fresh_current_config()
+    assert fresh["config_version"] == MODEL_CONFIG_VERSION >= 121
+    assert fresh["cf_twin_heads"] is False and fresh["cf_shadow_critic"] is False
 
 
 def test_a_recorded_on_config_round_trips():
-    """The other migration leg: a config that already RECORDS the flags must survive untouched."""
-    out = _migrate_config({"config_version": 99, "cf_twin_heads": True,
-                           "cf_shadow_critic": True})
+    """The other migration leg: a config that already RECORDS the flags must survive untouched —
+    stated at the current generation (a v99 one is now refused at the floor)."""
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config({"config_version": 99, "cf_twin_heads": True, "cf_shadow_critic": True})
+    out = _migrate_config(_fresh_current_config(cf_twin_heads=True, cf_shadow_critic=True))
     assert out["cf_twin_heads"] is True and out["cf_shadow_critic"] is True
     assert out["config_version"] == MODEL_CONFIG_VERSION
+    mv = ModelVersion(**out)
+    assert mv.cf_twin_heads is True and mv.cf_shadow_critic is True
 
 
 @pytest.mark.parametrize("flag", FLAGS)

@@ -183,6 +183,9 @@ struct TrackCap {
     reward: f64,
     /// `--obs`: the encoded row's wire frame, the 11-dim mask and the choice tokens (JSON).
     obs: Option<(String, [u8; 11], String)>,
+    /// The choice token this side sent AT this decision (the next `note_choice`), so the Python
+    /// half of slice T can replay the real action (E4's refused-switch target reads it).
+    choice: Option<String>,
 }
 
 /// `--obs-bench`: (side, decision index, reps).
@@ -303,6 +306,7 @@ fn track(v: &BattleVersion, sess: &BridgeSession, caps: &mut [Vec<TrackCap>; 2],
             window,
             reward: d.reward,
             obs,
+            choice: None,
         });
     }
     Ok(())
@@ -394,6 +398,11 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
                 if let Some(p) = parsed[cmd.side].as_mut() {
                     p.note_choice(cmd.side, tok);
                 }
+                if let Some(last) = tcaps[cmd.side].last_mut() {
+                    if last.choice.is_none() && last.after != usize::MAX {
+                        last.choice = Some(tok.to_string());
+                    }
+                }
                 sess.feed_cmd(cmd.clone(), dex)
             }
             Script::ForceLose(s) => sess.forfeit(*s),
@@ -463,7 +472,7 @@ fn run(b: &Battle, dex: &Dex, record_dir: Option<&str>, commit: &str, views: boo
         for side in 0..2 {
             let won = v.view(side).map(|w| w.won == Some(true)).unwrap_or(false);
             tcaps[side].push(TrackCap { after: usize::MAX, trackers: String::new(), window: String::new(),
-                                        reward: if won { 1.0 } else { 0.0 }, obs: None });
+                                        reward: if won { 1.0 } else { 0.0 }, obs: None, choice: None });
         }
     }
     Ok((sess, out, caps, tcaps))
@@ -536,6 +545,10 @@ fn render(b: &Battle, res: Result<Run, String>) -> String {
                                                 c.after, c.reward, c.trackers, c.window));
                             if let Some((frame, mask, tokens)) = &c.obs {
                                 o.push_str(&format!(",\"obs\":{frame},\"mask\":{mask:?},\"tokens\":{tokens}"));
+                            }
+                            if let Some(ch) = &c.choice {
+                                o.push_str(",\"choice\":");
+                                pokesim::core_events::json_out::str_into(&mut o, ch);
                             }
                             o.push('}');
                         }

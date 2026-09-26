@@ -51,7 +51,7 @@ import numpy as np
 
 from agents import gen3_data
 from agents.battle.battle_event import OPP, OURS, EventKind
-from agents.battle.turn_view import faint_cause_id
+from agents.battle.turn_view import faint_cause_id_live
 from agents.observation.constants import (
     EVENT_COL,
     EVENT_T_BOOST,
@@ -115,8 +115,20 @@ def write_event_row(vec: np.ndarray, o: int, rec: Dict[str, Any], cur_turn: int)
     # `.get` because only the CANT / FAINT / ITEM branches set their key — every other record
     # type leaves it absent, which must read as a clean 0.
     vec[o + _c.CANT] = float(cant_reason_id(rec.get("cant")))
-    vec[o + _c.FAINT_CAUSE] = float(faint_cause_id(rec.get("faint_cause")))
+    vec[o + _c.FAINT_CAUSE] = float(faint_cause_id_live(rec.get("faint_cause")))
     vec[o + _c.ITEM_TRANSITION] = float(rec.get("item_tr", 0))
+    # gen3_event_record_v2 (E12): the native record's attribution, entity-aligned.
+    _rel = gen3_data.species.get(rec["rel"]) if rec.get("rel") else None
+    vec[o + _c.REL_SPECIES] = float(_rel.num) if _rel is not None else 0.0
+    _rs = rec.get("rel_side")
+    vec[o + _c.REL_SIDE] = 1.0 if _rs == "ours" else (-1.0 if _rs == "opp" else 0.0)
+    vec[o + _c.ENTRY] = float(rec.get("entry", 0))
+    vec[o + _c.DENIAL] = float(rec.get("denial", 0))
+    _caller = _gen3_movedex.get(rec["caller"]) if rec.get("caller") else None
+    vec[o + _c.CALLER] = float(_caller.num) if _caller is not None else 0.0
+    vec[o + _c.STAT] = float(rec.get("stat", 0))
+    vec[o + _c.LAYERS] = float(rec.get("layers", 0)) / 3.0
+    vec[o + _c.PURSUIT_SWITCH] = 1.0 if rec.get("pursuit") else 0.0
     vec[o + _c.TURNS_AGO] = SAT_LUT[min(max(0, cur_turn - int(rec["turn"])), _SAT_CAP)]
     vec[o + _c.FORCED_WINDOW] = float(rec["forced_window"])
     vec[o + _c.VALID] = 1.0

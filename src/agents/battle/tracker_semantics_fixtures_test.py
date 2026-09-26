@@ -31,6 +31,7 @@ from agents.battle import rust_core_parity_trackers as T
 
 _T_MOVE, _T_FAINT, _T_BOOST, _T_ITEM, _T_HAZARD = 1, 3, 6, 7, 8
 _SWAPPED = 4
+_RECEIVED = 5   # gen3_event_record_v2
 _KIND_MOVE, _KIND_UNKNOWN = 0, 2
 
 # name → (p1 team, p2 team, seed, [(side, choice), …]) — M3's inputs verbatim.
@@ -90,19 +91,24 @@ def test_w1_curse_speed_drop_is_a_negative_boost_row(replays):
 
 
 def test_w2_destiny_bond_and_perish_song_faints_are_not_attacks(replays):
+    # gen3_event_record_v2 (E12): never `attack`, and now their OWN live-vocabulary causes
     for v in (0, 1):
         faints = {(x["actor"], x["faint_cause"]) for x in _rows(replays, "destiny_bond", v) if x["t"] == _T_FAINT}
-        assert faints == {("gengar", "attack"), ("tyranitar", "other")}, f"viewer {v}"
+        assert faints == {("gengar", "attack"), ("tyranitar", "destinybond")}, f"viewer {v}"
         causes = {x["faint_cause"] for x in _rows(replays, "perish", v) if x["t"] == _T_FAINT}
-        assert causes == {"other"}, f"viewer {v}"
+        assert causes == {"perishsong"}, f"viewer {v}"
 
 
-def test_w3_trick_and_thief_item_lines_are_swapped(replays):
+def test_w3_trick_and_thief_item_lines_are_transfers(replays):
+    # gen3_event_record_v2 (E12): a transfer with a DIRECTION — an `|-item|` [from] Trick / Thief is
+    # this mon RECEIVING (5); the Thief victim's `|-enditem|` is SWAPPED (4, taken from it)
     for v in (0, 1):
         trick = [x["item_tr"] for x in _rows(replays, "trick", v) if x["t"] == _T_ITEM][:2]
-        assert trick == [_SWAPPED, _SWAPPED], f"viewer {v}"
+        assert trick == [_RECEIVED, _RECEIVED], f"viewer {v}"
         taker = [x["item_tr"] for x in _rows(replays, "thief", v) if x["t"] == _T_ITEM and x["actor"] == "sneasel"]
-        assert taker[:1] == [_SWAPPED], f"viewer {v}"
+        assert taker[:1] == [_RECEIVED], f"viewer {v}"
+        victim = [x["item_tr"] for x in _rows(replays, "thief", v) if x["t"] == _T_ITEM and x["actor"] == "blissey"]
+        assert victim[:1] == [_SWAPPED], f"viewer {v}"
 
 
 def test_w4_t2_a_protect_block_fails_the_move_and_freezes_the_clock(replays):

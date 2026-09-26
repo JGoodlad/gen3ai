@@ -132,7 +132,7 @@ impl EventKind {
     /// `EVENT_OPTIONAL_KEYS[kind]` — the rest of the declared vocabulary.
     pub fn optional_keys(self) -> &'static [&'static str] {
         match self {
-            EventKind::Move => &["from_move", "target_status"],
+            EventKind::Move => &["from_move", "pursuit_switch", "target_status"],
             EventKind::Switch => &[],
             EventKind::Drag => &[],
             EventKind::Faint => &[],

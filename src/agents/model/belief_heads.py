@@ -308,15 +308,34 @@ class MoveBelief(torch.nn.Module):
                 "move_prior_logits",
                 build_move_prior_logits(n_species, n_moves, floor=move_candidate_floor),
                 persistent=False)
+            # gen3_hidden_slot_move_mixture_v1 (E10): P(m | s) per species, the mixture's right-hand
+            # factor — the SAME prior, as probabilities (recomputable → non-persistent).
+            self.register_buffer("move_prior_probs", torch.sigmoid(self.move_prior_logits),
+                                 persistent=False)
             # Zero-init the head so the cold-start delta is EXACTLY 0 → the fused posterior == the prior at
             # step 0 (the cleanest A/B baseline + matches the docstring claim). Only under fusion; the
             # from-scratch (no-fusion) path keeps the default init unchanged.
             torch.nn.init.zeros_(self.move_head.weight)
             torch.nn.init.zeros_(self.move_head.bias)
 
+    def hidden_slot_prior_logits(self, species_probs: torch.Tensor) -> torch.Tensor:
+        """gen3_hidden_slot_move_mixture_v1 (E10): the HIDDEN-slot move prior, `[B, M]` log-odds of
+
+            P(m | hidden slot) = Σ_s P_T0(s | revealed) · P(m | s)
+
+        from `species_probs` [B, S] (`T0SpeciesPrior`'s team-composition posterior, Species Clause
+        applied) and the per-species Smogon move prior. PARAMETER-FREE: nothing here can learn, so it
+        cannot memorise the pool (the learned E10 mixture is a separate, later change). One
+        `[B,S] @ [S,M]` matmul, broadcast over the 6 slots like the species prior itself."""
+        from agents.model.arch_constants import HIDDEN_SLOT_MIX_EPS
+        mix = species_probs.to(self.move_prior_probs.dtype) @ self.move_prior_probs     # [B, M]
+        return torch.logit(mix.clamp(HIDDEN_SLOT_MIX_EPS, 1.0 - HIDDEN_SLOT_MIX_EPS))
+
     def move_logits(self, opp_tokens: torch.Tensor,
                     opp_species_ids: Optional[torch.Tensor] = None,
-                    opp_move_ids: Optional[torch.Tensor] = None) -> torch.Tensor:
+                    opp_move_ids: Optional[torch.Tensor] = None,
+                    hidden_species_probs: Optional[torch.Tensor] = None,
+                    opp_believed_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """The POSTERIOR move logits [B,6,M] (NO reinjection) — the head delta, optionally fused with the
         prior + revealed-pinned. Factored out of `forward` so the ITERATIVE refinement path
         (gen3_iterative_damage_v1) can recompute the belief from the MID-transformer opp tokens each round
@@ -329,7 +348,13 @@ class MoveBelief(torch.nn.Module):
         read = opp_tokens.detach() if getattr(self, "detach_read", False) else opp_tokens
         logits = self.move_head(read)                                            # [B, 6, M] (learned delta)
         if self.prior_fusion and opp_species_ids is not None:
-            logits = logits + self.move_prior_logits[opp_species_ids]            # posterior = prior ⊕ delta
+            prior = self.move_prior_logits[opp_species_ids]                      # [B, 6, M]
+            if hidden_species_probs is not None and opp_believed_mask is not None:
+                # E10: a HIDDEN slot's prior is the Smogon mixture over the T0 species posterior,
+                # not the unknown-sentinel's flat row (which made its posterior state-independent).
+                hid = self.hidden_slot_prior_logits(hidden_species_probs)        # [B, M]
+                prior = torch.where(opp_believed_mask.bool().unsqueeze(-1), hid.unsqueeze(1), prior)
+            logits = logits + prior                                              # posterior = prior ⊕ delta
             if opp_move_ids is not None:
                 # REVEALED moves are certain → pin to a high logit (sigmoid ≈ 1). id 0 = unknown sentinel.
                 # BRANCHLESS + SYNC-FREE: the old form did `if bool(valid.any())` then `valid.nonzero()`

@@ -28,7 +28,8 @@ import dataclasses
 import pytest
 
 from agents.model.model_version import (
-    ARCH_SIGNATURE, MIGRATION_FLOOR, MODEL_CONFIG_VERSION, ModelVersion, ModelVersionError,
+    ARCH_SIGNATURE, MIGRATION_FLOOR, MODEL_CONFIG_VERSION, SIGNATURE_FIRST_VERSION, ModelVersion,
+    ModelVersionError,
     _migrate_config,
 )
 from agents.model.snapshot import sanitize_dead_extractor_kwargs
@@ -131,8 +132,16 @@ def test_the_signature_did_not_move_but_the_config_version_did():
     loadable — which is exactly why `ARCH_SIGNATURE` must NOT be bumped. A bump would refuse every
     gen-17 checkpoint for a deletion that cannot affect them, and (per the floor contract) would
     drag `MIGRATION_FLOOR` up with it in the same commit. The version stamp still advances, because
-    the recorded config genuinely changed shape."""
-    assert ARCH_SIGNATURE == "gen3_critic_route_wave_v1", (
+    the recorded config genuinely changed shape.
+
+    Pinned as HISTORY against SIGNATURE_FIRST_VERSION (append-only), not against the live
+    constants: gen3_event_record_v2 (v121, the observation-architecture batch) later bumped the
+    signature and raised the floor for its own reasons, which does not make v108's rule untrue.
+    What v108 owed is that it did NOT open a signature — the signature in force at v108 is the one
+    first stamped at v96, and no signature was first stamped AT v108."""
+    assert 108 not in SIGNATURE_FIRST_VERSION.values(), (
         "a dead-flag purge that moves no state_dict key must not bump the signature")
+    in_force = max((v, sig) for sig, v in SIGNATURE_FIRST_VERSION.items() if v <= 108)
+    assert in_force == (96, "gen3_critic_route_wave_v1"), (
+        "no signature bump at v108 ⇒ no floor raise: the floor that governed v108 is v96's")
     assert MODEL_CONFIG_VERSION >= 108
-    assert MIGRATION_FLOOR == 96, "no signature bump ⇒ no floor raise"

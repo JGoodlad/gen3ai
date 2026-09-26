@@ -16,7 +16,7 @@ deterministic 6-battle set, align column-wise, and name every cell that differs.
 | `--progress-decision-tense` | 49 / 991 | `[1602]` |
 | `--progress-switch-freeze`  | 153 / 991 | `[1602]` |
 
-Column 1602 is `turns_since_progress` — the clock's own scalar, and the ONLY route by which the
+Column 1602 (1606 since `gen3_event_record_v2`) is `turns_since_progress` — the clock's own scalar, and the ONLY route by which the
 clock reaches the observation at all. So each fix is confined to the counter it redefines: no other
 block moves, the decision COUNT does not change (the trajectory does not branch), and no dim moves.
 
@@ -84,7 +84,9 @@ def test_the_clock_column_is_where_this_file_says_it_is(arms):
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     assert layout["reactive_layout"]["turns_since_progress"] == {"offset": 2, "dim": 1}
-    assert _CLOCK_COL == 1602, f"the reactive block moved; re-measure this file's table ({_CLOCK_COL})"
+    # 1602 until gen3_event_record_v2 grew each active context by the two field-sport slots
+    # (+4 before the reactive block): the column moved, the clock's content did not.
+    assert _CLOCK_COL == 1606, f"the reactive block moved; re-measure this file's table ({_CLOCK_COL})"
     assert layout["total_dim"] == arms["default"].shape[1]
 
 

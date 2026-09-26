@@ -17,7 +17,7 @@ from agents.model.features_extractor import (
     _DMG_PER_MON, _DMG_CB, TEAM_SIZE,
 )
 from agents.observation.constants import (
-    POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM,
+    ACTIVE_CONTEXT_DIM, POKEMON_SPREAD_OFFSET, POKEMON_FULL_DIM,
 )
 from agents.observation.types import TypeEncoder
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
@@ -68,7 +68,7 @@ def _ctx(*, opp_species=0, opp_t1=0, opp_t2=0, defenders=None, opp_active=True,
         species_ids=species, type1_ids=t1, type2_ids=t2, ability1_ids=ability1,
         item_ids=torch.zeros(B, 2 * TEAM_SIZE, dtype=torch.long),   # no Choice Band by default (gen3_unified_choice_band_v1)
         all_move_ids=torch.zeros(B, n, 4, dtype=torch.long), screen_feature=screen,
-        our_ctx_raw=torch.zeros(B, 14), opp_ctx_raw=torch.zeros(B, 14),  # no boosts
+        our_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM), opp_ctx_raw=torch.zeros(B, ACTIVE_CONTEXT_DIM),  # no boosts, no volatiles
         weather_feature=torch.zeros(B, 7),                              # no weather
         hp_and_active=hp_and_active, pokemon_part=pokemon_part, hp_probs=torch.zeros(B, n, 16),
     )

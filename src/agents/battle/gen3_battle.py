@@ -639,6 +639,11 @@ class Gen3Battle(Battle):
             delegated = self._delegated_from(sm, move_id)
             if delegated:
                 value["from_move"] = delegated
+            # gen3_event_record_v2 (E12): Pursuit striking a target that is SWITCHING OUT tags its
+            # own line `[from] Pursuit` — the only trace on the wire that the hit landed on a
+            # switch (and before it).
+            if move_id == "pursuit" and from_clause_move_source(sm[3:]) == "pursuit":
+                value["pursuit_switch"] = 1
             return self._from_ident(
                 kind, sm, actor_ident, target=pre.get("target_species"), value=value
             )

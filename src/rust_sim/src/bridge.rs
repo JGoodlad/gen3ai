@@ -1535,6 +1535,23 @@ pub struct BridgeSession {
     request_seeds: Vec<PrngSeed>,
     /// The committed decisions, in order (parity with the genesis core's `script`).
     script: Vec<ScriptDecision>,
+    /// `gen3_event_record_v2` (E4): every CHOOSE fed, as `(side, the side's shipped-line count when
+    /// it was fed, its wire token)` — so a version folding this transport's lines notes each side's
+    /// choice exactly where a live player would (before the lines that answer it), and a refused
+    /// switch's target can be resolved from the token (the `|error|` line never names it).
+    choice_log: Vec<(usize, usize, String)>,
+}
+
+/// The wire token a [`WireChoice`] was parsed from (numeric slots back to 1-based).
+pub fn choice_token(c: &WireChoice) -> String {
+    match c {
+        WireChoice::Move(k) => format!("move {}", k + 1),
+        WireChoice::Switch(n) => format!("switch {}", n + 1),
+        WireChoice::MoveName(m) => format!("move {m}"),
+        WireChoice::SwitchSpecies(sp) => format!("switch {sp}"),
+        WireChoice::Default => "default".to_string(),
+        WireChoice::Pass => "pass".to_string(),
+    }
 }
 
 /// The transport as an [`EngineSink`]: every engine emission folded into the session's chunks.
@@ -1643,6 +1660,7 @@ impl BridgeSession {
             cmd_buf: VecDeque::new(),
             request_seeds: Vec::new(),
             script: Vec::new(),
+            choice_log: Vec::new(),
         }
     }
 
@@ -1729,6 +1747,7 @@ impl BridgeSession {
             cmd_buf: VecDeque::new(),
             request_seeds: Vec::new(),
             script: Vec::new(),
+            choice_log: Vec::new(),
         };
         sess.advance(dex);
         Ok(sess)
@@ -1748,13 +1767,28 @@ impl BridgeSession {
 
     /// Feed ONE command (the `sim_bridge` per-CHOOSE entry) and advance. O(1) amortized.
     pub fn feed_cmd(&mut self, cmd: Cmd, dex: &Dex) {
+        self.log_choice(&cmd);
         self.cmd_buf.push_back(cmd);
         self.advance(dex);
+    }
+
+    fn log_choice(&mut self, cmd: &Cmd) {
+        if cmd.side < 2 {
+            let at = self.side_line_count(cmd.side);
+            self.choice_log.push((cmd.side, at, choice_token(&cmd.choice)));
+        }
+    }
+
+    /// The CHOOSEs fed to `side` since the chunk stream last reset: `(shipped-line count when fed,
+    /// wire token)`, in order (E4 — see `choice_log`).
+    pub fn side_choices(&self, side: usize) -> impl Iterator<Item = (usize, &str)> + '_ {
+        self.choice_log.iter().filter(move |(s, _, _)| *s == side).map(|(_, at, t)| (*at, t.as_str()))
     }
 
     /// Feed a batch of commands and advance (the single-call oracle/parity path).
     pub fn feed_cmds(&mut self, cmds: &[Cmd], dex: &Dex) {
         for c in cmds {
+            self.log_choice(c);
             self.cmd_buf.push_back(c.clone());
         }
         self.advance(dex);
@@ -1878,6 +1912,8 @@ impl BridgeSession {
         // SUFFIX, which `core_events` refuses on per-side conservation — a branch is not a record).
         let core = self.chunks.core.as_ref().map(|_| [Vec::new(), Vec::new()]);
         self.chunks = BridgeChunks { chunks: Vec::new(), core };
+        // the choice log's positions are counts INTO the chunk stream, so it restarts with it
+        self.choice_log.clear();
     }
 
     /// The OPEN request kind for `side` at the current paused boundary, or `None` when no

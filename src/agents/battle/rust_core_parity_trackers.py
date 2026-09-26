@@ -58,10 +58,13 @@ def _status_name(st) -> Optional[str]:
 
 def _row(r: dict) -> dict:
     out = {k: r[k] for k in ("t", "actor", "side", "target", "move_id", "hp_delta", "missed", "failed",
-                            "crit", "eff", "we_first", "status", "turn", "forced_window")}
+                            "crit", "eff", "we_first", "status", "turn", "forced_window",
+                            # gen3_event_record_v2 (E12)
+                            "rel", "rel_side", "entry", "denial", "caller", "stat", "layers", "pursuit")}
     out["hp_delta"] = float(out["hp_delta"])
     out["eff"] = int(out["eff"])
     out["we_first"] = bool(out["we_first"])
+    out["pursuit"] = bool(out["pursuit"])
     for k in ("faint_cause", "item_tr", "cant"):
         if k in r:
             out[k] = r[k]
@@ -299,6 +302,33 @@ def boundary_violations(window: Sequence[Mapping]) -> List[Tuple[int, Any]]:
     return out
 
 
+def switch_action_of(battle, token: Optional[str]) -> int:
+    """The action index (0-5, a position in ``battle.team``'s order — the order the env's switch
+    actions and ``BattleContext.our_team_order`` use) a ``switch …`` choice token names; 6 (the
+    first move action) for any other recorded token; 0 when no token was recorded.
+    ``switch N`` is the N-th mon of the latest request's ``side.pokemon``; ``switch <name>`` the team
+    mon of that nickname (or species) — the Rust ``trackers::attempted_switch_species`` rule."""
+    from agents.battle.battle_event import to_id_str
+    if not token:
+        return 0
+    if not token.strip().startswith("switch "):
+        return 6
+    rest = token.strip()[len("switch "):].strip()
+    team = list(battle.team.values())
+    target = None
+    if rest.isdigit():
+        mons = ((battle.last_request or {}).get("side") or {}).get("pokemon") or []
+        n = int(rest)
+        if 1 <= n <= len(mons):
+            ident = mons[n - 1].get("ident") or ""
+            name = ident.split(": ", 1)[1] if ": " in ident else ident
+            target = next((m for m in team if m.name == name), None)
+    else:
+        target = next((m for m in team if m.name == rest), None) or \
+            next((m for m in team if m.species == to_id_str(rest)), None)
+    return team.index(target) if target is not None else 0
+
+
 def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: Sequence[Sequence[Mapping]],
                    census: TrackerCensus, teams: Optional[Mapping[str, str]] = None,
                    format_id: str = "gen3ou", ended: Optional[Mapping[str, Any]] = None,
@@ -332,6 +362,7 @@ def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: 
         mgr = Gen3RewardManager(config=RewardConfig(**_WIN_INDICATOR), progress_clock=tr.progress_clock)
         frame: List[str] = []
         k = 0
+        next_action = 0
         for i, b in decision_points(chunks, viewer, battle):
             sv = b.strict_view()
             legal = sv.legal
@@ -350,8 +381,11 @@ def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: 
             census.decisions += 1
             for j, act in boundary_violations(cap.get("window") or ()):
                 census.diverge("[BOUNDARY] a denial's choice crosses the information boundary", (where, j, act))
-            tr.advance(0)
+            # the action taken at the PREVIOUS decision, recovered from the choice token the core
+            # records for it (E4: a refused switch's target is decoded from it); 0 otherwise
+            tr.advance(next_action)
             tr.record(b, mask, legal=legal)
+            next_action = switch_action_of(b, cap.get("choice"))
             delta = tr.update_progress_clock(b, legal)
             if obs is not None:
                 from agents.battle.rust_core_parity_obs import compare_row, python_row, python_tokens

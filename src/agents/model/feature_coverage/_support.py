@@ -153,6 +153,9 @@ def obs_with_event(layout, slot_from_recent: int = 0, **cols) -> torch.Tensor:
         "forced_window": C.FORCED_WINDOW, "valid": C.VALID,
         "cant_id": C.CANT, "faint_cause_id": C.FAINT_CAUSE,
         "item_transition": C.ITEM_TRANSITION,
+        # gen3_event_record_v2 (E12)
+        "rel": C.REL_SPECIES, "rel_side": C.REL_SIDE, "entry": C.ENTRY, "denial": C.DENIAL,
+        "caller": C.CALLER, "stat": C.STAT, "layers": C.LAYERS, "pursuit_switch": C.PURSUIT_SWITCH,
     }
     assert set(named.values()) == set(C), (
         "the probe's friendly names must cover every EventCol member — a new column with no "

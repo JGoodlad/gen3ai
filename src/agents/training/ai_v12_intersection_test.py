@@ -241,38 +241,66 @@ def _fabricated_v104() -> dict:
     return filled
 
 
+def _current_generation_config() -> dict:
+    """`_fabricated_v104`'s all-defaults record, but WHOLE and stamped at the live version — the
+    shape every config at or above the floor has (the floor rise at gen3_event_record_v2 means
+    every such config RECORDS each wave key explicitly)."""
+    filled = _fabricated_v104()
+    filled.update(_WAVE_KEYS)
+    filled["config_version"] = MODEL_CONFIG_VERSION
+    return filled
+
+
 def test_the_three_migrations_stack_on_a_v104_config():
-    out = _migrate_config(_fabricated_v104())
-    # `>= 104`, not `== 107`: the property under test is that a v104 config lands on the LIVE
-    # version with the wave keys filled, not which number that happens to be today. Pinning the live
-    # number made this fail on the next unrelated schema bump (it did, at v108) — the identical
-    # lesson `cf_coef_provenance_test.py` records having learned at v101.
-    assert out["config_version"] == MODEL_CONFIG_VERSION >= 104
+    """The v105 / v106 / v107 branches are FLOORED AWAY: gen3_event_record_v2 raised
+    MIGRATION_FLOOR to 121 (all three archived verbatim in `_migrate_config`'s v97–v120 history),
+    so the fabricated v104 config is pre-generation and is REFUSED with the diagnosis — a test may
+    not claim to cover a chain the floor makes unreachable. The surviving property: the wave's ten
+    keys are recorded, at exactly those values, on a FRESH current config built through the
+    project's own constructor, and the current chain passes them through."""
+    from agents.model.model_version import ModelVersionError
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        _migrate_config(_fabricated_v104())
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    fresh = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}).to_json())
+    out = _migrate_config(dict(fresh))
+    assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
     for k, want in _WAVE_KEYS.items():
-        assert k in out, f"v10x migration left {k} unset"
+        assert k in fresh, f"a current config does not record {k}"
         assert out[k] == want, (k, out[k], want)
 
 
 def test_the_chain_leaves_a_v104_config_CONSTRUCTIBLE():
     """A migration that fills a dict but produces something `ModelVersion(**d)` refuses is a
-    migration that only looks complete."""
-    out = _migrate_config(_fabricated_v104())
-    mv = ModelVersion(**out)
+    migration that only looks complete. A v104 config now never reaches `cls(**d)` (the floor
+    refuses it first); the property that survives is that a whole current-generation record goes
+    through the live chain and constructs."""
+    from agents.model.model_version import ModelVersionError
+    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+        ModelVersion(**_migrate_config(_fabricated_v104()))
+    mv = ModelVersion(**_migrate_config(_current_generation_config()))
     assert mv.config_version == MODEL_CONFIG_VERSION
+    for k, want in _WAVE_KEYS.items():
+        assert getattr(mv, k) == want, k
 
 
 def test_the_chain_runs_on_EVERY_real_archived_config_of_this_generation():
     """The fabricated case shares its author's assumptions; the archive does not. Every
     current-generation `model_config.json` on this box goes through the whole chain and must come
-    out with every field present and constructible.
+    out with every field present and constructible — and every PRE-floor one must be REFUSED with
+    the diagnosis, never half-migrated (the floor moved to 121 at gen3_event_record_v2, so until a
+    new-lineage run exists the refusal leg is where the archive's teeth are).
 
     SKIPS when there is no models archive (another machine, CI) — `main_models_dir` returns None
     there, and a test that silently passes on an empty set is the failure this docstring names."""
+    from agents.model.model_version import MIGRATION_FLOOR, ModelVersionError
     from utils.paths import main_models_dir
     root = main_models_dir()
     if root is None:
         pytest.skip("no models archive on this box")
-    seen = 0
+    seen = refused = 0
     for name in sorted(os.listdir(root)):
         path = os.path.join(root, name, "model_config.json")
         if not os.path.isfile(path):
@@ -281,7 +309,10 @@ def test_the_chain_runs_on_EVERY_real_archived_config_of_this_generation():
             cfg = json.load(open(path))
         except Exception:                                          # noqa: BLE001 - a truncated file
             continue
-        if int(cfg.get("config_version", 0)) < 96:                 # pre-generation: refused by design
+        if int(cfg.get("config_version", 0)) < MIGRATION_FLOOR:    # pre-generation: refused by design
+            with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
+                _migrate_config(dict(cfg))
+            refused += 1
             continue
         out = _migrate_config(dict(cfg))
         assert out["config_version"] == MODEL_CONFIG_VERSION, name
@@ -289,8 +320,8 @@ def test_the_chain_runs_on_EVERY_real_archived_config_of_this_generation():
         assert not missing, f"{name}: {missing}"
         ModelVersion(**out)
         seen += 1
-    if seen == 0:
-        pytest.skip("no current-generation configs in the archive")
+    if seen == 0 and refused == 0:
+        pytest.skip("no readable configs in the archive")
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────
