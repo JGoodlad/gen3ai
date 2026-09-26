@@ -17,10 +17,15 @@ value · raw`` — type-strict, NO allowlist. The corpus, the replay and the com
   ``rust_core_parity_fixtures/commit_tier.json.gz`` + the six byte-fuzz fixtures carrying the four
   ambiguity-prone shapes + the first battle of each of the 22 protocol capture scenarios.
 * **MILESTONE** (``slow``; its verdicts land in ``designs/ops/slow_tier_status.json``): 2 × 360
-  seeded-random and 2 × 50 production-policy battles PLAYED live — the live logs must ALSO equal
+  seeded-random and 2 × 50 POLICY battles PLAYED live — the live logs must ALSO equal
   the offline feed's — 2 × 150 LADDER battles (the LADDER-USAGE corpus; its NAMED known
   divergences run in their own test and must still fire), plus the protocol corpus × 2 seeds and
   every byte-fuzz fixture, under the committed manifest (the tier refuses on a mismatch).
+  The POLICY battles are driven by a FRESHLY BUILT, seeded, untrained current-architecture model
+  (``main.fresh_checkpoint``), not the ``production`` baseline: the observation-architecture
+  batch (v121, MIGRATION_FLOOR 121) put every named baseline behind the pre-generation wall, and
+  this slice needs a policy that DRIVES battles, not a strong one. It returns to ``production``
+  once a v121 production node exists (the ``ai_v14_01_base`` lineage).
 
     python3 -m pytest src/agents/battle/rust_core_parity_test.py -q                # COMMIT
     python3 -m pytest src/agents/battle/rust_core_parity_test.py -m slow -q -n 2   # MILESTONE
@@ -447,9 +452,13 @@ def test_milestone_seeded_random_battles(seed):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("seed", [0, 1], ids=["policy_keys_100_149", "policy_keys_6000_6049"])
-def test_milestone_production_policy_battles(seed):
+def test_milestone_production_policy_battles(seed, tmp_path):
+    """Named for the ``production`` policy it will play again once a v121 production node exists;
+    until then a fresh seeded v121 model (seed fixed per parametrization) drives the battles."""
+    from main.fresh_checkpoint import load_fresh_policy
+
     P.check_manifest()
-    model = P.load_production_policy()
+    model = load_fresh_policy(tmp_path / "fresh_v121", seed=20260926 + seed)
     census, views, trackers, obs = _played(P.MILESTONE_POLICY_KEYS[seed], policy=model)
     _assert_clean(census, min_events=5_000, min_kinds=15)
     _assert_views_clean(views, min_decisions=3_000, min_board=50_000)

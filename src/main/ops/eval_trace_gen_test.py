@@ -3,22 +3,24 @@
 Two tiers, deliberately. The PURE half (the provenance vocabulary, the refusals, the seed
 derivation, the read-root spellings) is unmarked and runs in every gate — it is where the rules
 that stop a wrong number from being reported live, and a rule that only runs in the slow tier is a
-rule that rides main RED. The one test that actually PLAYS battles is marked ``slow`` + ``sim``,
-takes a real saved checkpoint out of the run archive, and SKIPS when there is none (a linked
-worktree, or a box that has never trained).
+rule that rides main RED. The one test that actually PLAYS battles is marked ``slow`` + ``sim``
+and plays a run BUILT in ``tmp_path``: a freshly built, seeded, untrained current-architecture
+checkpoint (``main.fresh_checkpoint``) laid out as a live run lays one out. It used to take
+a real saved run out of the archive; the observation-architecture batch (v121, MIGRATION_FLOOR 121)
+put every archived run behind the pre-generation wall, and this test is about the cycle's SHAPE,
+not any network's strength. It returns to an archived run once v121 runs with eval cycles exist
+(the ``ai_v14_01_base`` lineage).
 """
 from __future__ import annotations
 
 import glob
 import json
 import os
-import re
 from pathlib import Path
 
 import pytest
 
 from main.ops import eval_trace_gen as ETG
-from utils.paths import main_models_dir
 
 
 # --------------------------------------------------------------------------- the vocabulary
@@ -473,36 +475,29 @@ def test_the_ledger_quote_marks_an_offline_read():
 
 # --------------------------------------------------------------------------- the real thing
 
-def _a_run_with_a_checkpoint():
-    """A saved run with a cycle whose snapshot is on disk, a RECORDED eval regime, and at least
-    one pool snapshot BELOW that step to serve as a sentinel.
+#: The read step and the one pool snapshot below it (the sentinel) of the built run.
+_FRESH_STEP = 8_192
+_FRESH_SENTINEL_STEP = 4_096
 
-    All three are needed and none can be assumed: a run may have been groomed of its eval
-    snapshots, may predate the regime key, or — like the currently-LIVE arm, which is the newest
-    thing in the archive and therefore the first candidate — may simply not have reached its
-    second snapshot yet.
-    """
-    models = main_models_dir()
-    if models is None:
-        return None
-    for snap in sorted(glob.glob(str(models / "*" / "eval_traces" / "step_*" / "snapshot.zip")),
-                       reverse=True):
-        run = Path(snap).parents[2]
-        m = re.search(r"step_(\d+)", snap)
-        if m is None:
-            continue
-        step = int(m.group(1))
-        try:
-            cfg = json.loads((run / "model_config.json").read_text())
-        except (OSError, ValueError):
-            continue
-        if "eval_sentinel_greedy" not in cfg:
-            continue
-        pool = [int(mm.group(1)) for p in glob.glob(str(run / "snapshots" / "snapshot_*.zip"))
-                if (mm := re.search(r"snapshot_(\d+)\.zip$", os.path.basename(p)))]
-        if any(s < step for s in pool):
-            return run, step
-    return None
+
+def _a_fresh_run(root: Path) -> "tuple[Path, int]":
+    """A run directory shaped like a live one: ``model_config.json`` with a RECORDED eval regime,
+    ``eval_traces/step_<N>/snapshot.zip``, and one pool snapshot BELOW that step for the sentinel —
+    every checkpoint a freshly built, seeded, current-architecture model."""
+    import shutil
+
+    from main.fresh_checkpoint import save_fresh_checkpoint
+
+    run = root / "ai_vX_fresh_v121"
+    save_fresh_checkpoint(run, 13, num_timesteps=_FRESH_STEP,
+                          config_extra={"eval_sentinel_greedy": True})
+    step_dir = run / "eval_traces" / f"step_{_FRESH_STEP}"
+    step_dir.mkdir(parents=True)
+    shutil.copy2(run / "final_model.zip", step_dir / "snapshot.zip")
+    snap = save_fresh_checkpoint(root / "sentinel_build", 14, num_timesteps=_FRESH_SENTINEL_STEP)
+    (run / "snapshots").mkdir()
+    shutil.copy2(snap, run / "snapshots" / f"snapshot_{_FRESH_SENTINEL_STEP:012d}.zip")
+    return run, _FRESH_STEP
 
 
 @pytest.mark.slow
@@ -514,11 +509,7 @@ def test_a_generated_cycle_is_shaped_like_a_live_one(tmp_path):
     Two games against two opponents — the smallest thing that still exercises the whole worker
     path, since the point of the tool is that it is NOT a re-implementation.
     """
-    found = _a_run_with_a_checkpoint()
-    if found is None:
-        pytest.skip("no run archive with a snapshot + recorded eval regime (worktree, or a box "
-                    "that has never trained)")
-    run, step = found
+    run, step = _a_fresh_run(tmp_path / "archive")
     out = tmp_path / "cycle"
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     rc = ETG.main([f"{run}@{step}", "--games", "2", "--sentinels", "1",

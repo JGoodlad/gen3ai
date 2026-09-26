@@ -12,6 +12,8 @@ across six workers; here it is a standing gate.
 
 Marked ``sim`` (bridge battles, no server) and ``slow`` (two full measurement runs, 24 battles plus
 four model loads — cost tracks battle COUNT, and ``slow`` is the marker that means expensive).
+Both runs play two freshly built, seeded v121 checkpoints (see ``_fresh_models``), so it needs no
+run archive.
 
 Run it alone::
 
@@ -28,25 +30,28 @@ import sys
 import pytest
 
 from agents.training import untaught_meter as engine
-from utils.paths import main_models_dir, src_root
+from utils.paths import src_root
 
 pytestmark = [pytest.mark.sim, pytest.mark.slow]
 
-#: Two FROZEN, explicitly-named files. Naming the .zip (rather than a run dir) pins resolution, so
-#: a run that is still training cannot move the file under the test between its two invocations.
-_REF = "ai_v9_59_R2ACTION_0827/final_model.zip"
-_BASELINE = "ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip"
-_CONFIG = "ai_v9_29_rev1_0823/snapshots/model_config.json"
+#: The ARM and the BASELINE are two FRESHLY BUILT, seeded, untrained current-architecture
+#: checkpoints (``main.fresh_checkpoint``), saved ONCE per test to ``tmp_path`` and read by
+#: both runs — so the two invocations still measure the SAME files. They used to be two archived
+#: v9 checkpoints; the observation-architecture batch (v121, MIGRATION_FLOOR 121) put every archived
+#: run behind the pre-generation wall, and reproducibility is a property of the METER, not of any
+#: one checkpoint's strength. It returns to the named files once v121 nodes exist (the
+#: ``ai_v14_01_base`` lineage).
+_ARM_SEED = 20260926
+_BASE_SEED = 20260927
 
 
-def _models_or_skip():
-    models = main_models_dir()
-    if models is None:
-        pytest.skip("no models/ archive on this box ($GEN3AI_MODELS_DIR / the main checkout)")
-    for rel in (_REF, _BASELINE, _CONFIG):
-        if not os.path.exists(models / rel):
-            pytest.skip(f"the meter's fixture checkpoint is absent: {rel}")
-    return models
+def _fresh_models(tmp_path) -> dict:
+    from main.fresh_checkpoint import save_fresh_checkpoint
+
+    arm = save_fresh_checkpoint(tmp_path / "fresh_arm", _ARM_SEED)
+    base = save_fresh_checkpoint(tmp_path / "fresh_base", _BASE_SEED)
+    return {"ref": str(arm), "baseline": str(base),
+            "config": str(tmp_path / "fresh_base" / "model_config.json")}
 
 
 def _teams_manifest(tmp_path) -> str:
@@ -72,8 +77,8 @@ def _run(models, manifest, out_path) -> dict:
     if "POKESIM_SIM_BRIDGE_BIN" not in env and prebuilt.exists():
         env["POKESIM_SIM_BRIDGE_BIN"] = str(prebuilt)     # never pay a cargo build inside a test
     argv = [sys.executable, "-m", "main.untaught_meter",
-            f"ARM={models / _REF}", "--baseline", f"BASE={models / _BASELINE}",
-            "--opponent", str(models / _BASELINE), "--config", str(models / _CONFIG),
+            f"ARM={models['ref']}", "--baseline", f"BASE={models['baseline']}",
+            "--opponent", models["baseline"], "--config", models["config"],
             "--teams", manifest, "--games-per-team", "3", "--workers", "2",
             "--quiet", "--json", out_path]
     proc = subprocess.run(argv, env=env, capture_output=True, text=True)
@@ -96,7 +101,7 @@ def test_two_sharded_runs_of_the_meter_are_byte_identical(tmp_path):
     the levels start wandering and every delta read off them becomes a draw rather than a
     measurement.
     """
-    models = _models_or_skip()
+    models = _fresh_models(tmp_path)
     manifest = _teams_manifest(tmp_path)
     out = str(tmp_path / "run.json")
 

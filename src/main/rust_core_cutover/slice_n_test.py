@@ -6,7 +6,12 @@ every step. **No allowlist.**
 
 * COMMIT (routine gate): a handful of pool episodes, seeded-random trainee.
 * MILESTONE (``slow``; its verdict lands in ``designs/ops/slow_tier_status.json``): pool
-  seeded-random, the ``production`` policy, ladder full-tier and procedural episodes.
+  seeded-random, a POLICY-driven pool slice, ladder full-tier and procedural episodes. The policy
+  is a FRESHLY BUILT, seeded, untrained current-architecture model (``main.fresh_checkpoint``)
+  stood in for ``envs``' ``production`` load: the observation-architecture batch (v121,
+  MIGRATION_FLOOR 121) put every named baseline behind the pre-generation wall, and the slice needs
+  a policy that drives episodes, not a strong one. It returns to ``production`` once a v121
+  production node exists (the ``ai_v14_01_base`` lineage).
 
 The cutover stress runs the same harness (``envs.run_envn``) at the registered counts.
 """
@@ -66,7 +71,13 @@ def test_the_env_slice_has_teeth(tmp_path, monkeypatch):
 @pytest.mark.parametrize("source,policy,n", [("pool", False, 60), ("pool", True, 15),
                                              ("ladder", False, 30), ("procedural", False, 20)],
                          ids=["pool_random", "pool_policy", "ladder_full", "procedural"])
-def test_milestone_env_slice(tmp_path, source, policy, n):
+def test_milestone_env_slice(tmp_path, monkeypatch, source, policy, n):
+    if policy:
+        from agents.battle import rust_core_parity
+        from main.fresh_checkpoint import load_fresh_policy
+
+        fresh = load_fresh_policy(tmp_path / "fresh_v121", seed=20260926)
+        monkeypatch.setattr(rust_core_parity, "load_production_policy", lambda: fresh)
     row = E.run_envn(_stream(f"envn_ms_{source}{'_p' if policy else ''}", n, n, source=source,
                              policy=policy, key_base=49_000 + 100 * ["pool", "ladder", "procedural"].index(source)
                              + (50 if policy else 0)), 0, tmp_path)
