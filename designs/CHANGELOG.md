@@ -9890,3 +9890,25 @@ per-snapshot probability cache (so a pruned pool snapshot still serves as a refe
 probe set, resume from rows, and nice 15 on CPU. `report` prints a table with a one-line verdict per
 row. The verdict thresholds are uncalibrated reading aids. `churn_probe.collect_probe_states` gained
 `seed_base` (fixed per-battle dice) and accepts `config_path=None`.
+
+## 2026-09-26 — LAUNCHER: a restart re-launches from the RESUME role; a FRESH launch into an existing run is refused (no version bump, no training-input change)
+
+**Incident (12:23 PT).** The fresh run `ai_v14_01_base`, launched with `--arch production` (FRESH-only),
+reached its first `--restart-interval-hours` restart. The supervisor re-passed the ORIGINAL argv plus
+`--model <latest>`; the pinned trainer refused `--arch` beside `--model` (`arch_umbrella_is_fresh_only`,
+argparse exit 2) three times and the circuit-breaker gave up — ~40 GPU-min lost. The operator also found
+that the same argv with `--arch` dropped and no `--model` resolved as a FRESH step-0 run INTO the existing
+run dir: `resolve_launch_run_dir` had a clobber guard for forks only.
+
+**Fix.** (1) `CombinationCheck` gains `fresh_only=` (the argv options a check refuses on a resume) and
+`combination_checks.fresh_only_flags()` reads them; the arch-umbrella check declares `("--arch",)` and
+now exits `FATAL_CONFIG`, so a restart that ever hits it gives up at once instead of crash-looping.
+`launcher.checkpoint.resume_child_args` builds every same-run restart's argv — strip those flags (both
+spellings), `--model` → the latest checkpoint, `--run-dir` → the run — and `run._supervise` uses it,
+announcing what it dropped. (2) `resolve_launch_run_dir` refuses a FRESH launch whose run dir holds a
+resumable checkpoint or a `model_config.json` (`FreshRunDirHasProgress`, `FATAL_CONFIG`), naming
+`--model <latest>` and a new `--run-name`; `--dry-run` exits 3 on it and prints an `on restart :` line
+for every launch. Tests: `src/main/launcher/restart_resume_role_test.py`, `dry_run_test.py::test_h_*`,
+two new `combination_checks_test.py` rows. The learner-battery fork argvs still resolve as FORK.
+Runs pinned before this commit keep the old launcher only if their LAUNCHER process runs old code; the
+launcher runs from the tree it was started in, not the pin.

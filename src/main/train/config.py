@@ -360,7 +360,7 @@ def desugar_umbrella_flags(args) -> None:
     # DEFAULT that the sugar and every explicit flag alike still override — precedence in one
     # direction, top to bottom, with no special cases.
     #
-    # A resume is REFUSED (`combination_checks`' `arch_umbrella_on_resume`, which both surfaces
+    # A resume is REFUSED (`combination_checks`' `arch_umbrella_is_fresh_only`, which both surfaces
     # read) rather than handled here: a fork INHERITS its parent's surface through `_resolve`, and
     # writing production's values over that would replace inheritance with a mirror the parent may
     # never have matched — a check_compatible FATAL at best, a silently different network at worst.

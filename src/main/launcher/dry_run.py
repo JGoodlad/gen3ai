@@ -48,6 +48,7 @@ from main.launcher.checkpoint import (
     _peek_arg,
     resolve_launch_run_dir,
     resolve_fork_resume_model,
+    resume_child_args,
     run_dir_for_checkpoint,
 )
 from main.launcher.child import PYTHON_ENV_VAR, resolve_child_python
@@ -183,8 +184,8 @@ def dry_run(
 
     ``0`` = it would launch. ``FATAL_CONFIG`` (3) = a refusal the real path also makes (an
     unresolvable ``--pin-commit``, a restart that would move the pin, a refused flag combination, a
-    flag the parser no longer knows). ``1`` = the run-dir resolution itself refused, matching
-    ``_prepare_session``'s own exit for that case.
+    flag the parser no longer knows, a FRESH launch into a run dir that already holds a run).
+    ``1`` = a fork onto an existing run without a checkpoint, matching ``_prepare_session``.
 
     Creates nothing, modifies nothing, spawns nothing — see the module docstring.
     """
@@ -197,8 +198,11 @@ def dry_run(
     try:
         run_dir = resolve_launch_run_dir(child_args, time.strftime("%Y%m%d_%H%M%S"))
     except ValueError as e:
-        out(f"  ✗ REFUSED: {e}")
-        return 1
+        # Same exit code the real path leaves with: FATAL_CONFIG for a FRESH launch into a dir
+        # that already holds a run (`FreshRunDirHasProgress`), 1 for the historical fork refusal.
+        out(f"  ✗ REFUSED (run dir): {e}")
+        out("  ✗ DRY RUN — this command would NOT launch. Nothing was created or modified.")
+        return getattr(e, "exit_code", 1)
 
     # 2. The idempotent-fork swap, exactly as `_prepare_session` does it and for the same reason:
     #    once a fork has its own progress, the relaunch is a RESTART of the fork, and the pin guard
@@ -228,6 +232,16 @@ def dry_run(
         f"   [{'EXISTS — a real launch WRITES INTO IT' if exists else 'would be created'}]")
     if model_path:
         out(f"  --model     : {model_path}")
+
+    # 2b. What a same-run RESTART (interval / crash / forced) would re-launch. The supervisor builds
+    #     that argv from the RESUME role (`resume_child_args`): every FRESH-only flag the trainer
+    #     refuses beside --model is dropped, --model → the run's latest checkpoint. Shown because
+    #     the 2026-09-26 crash loop lived exactly here, three hours after a clean launch.
+    if interval_hours > 0 or not model_path:
+        _restart_argv, stripped = resume_child_args(child_args, "<latest checkpoint>", run_dir)
+        dropped = (f"drops FRESH-only {', '.join(sorted(set(stripped)))} (inherited from "
+                   "model_config.json); " if stripped else "")
+        out(f"  on restart  : RESUME role — {dropped}--model → the run's latest checkpoint")
 
     # 3. The pin decision — the real `resolve_pin`, so every refusal it makes, this makes.
     pinned: Optional[ParseReport] = None

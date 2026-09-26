@@ -5,6 +5,8 @@ import glob
 import os
 import re
 
+from main.exit_codes import TrainExitCode
+
 
 # The subdir resumable training checkpoints live in (current layout): <run>/checkpoints/.
 # Legacy runs kept them directly in <run>/; both are discovered.
@@ -203,6 +205,81 @@ def _insert_or_replace_run_dir_arg(args: list, run_dir: str) -> list:
     return _set_arg(args, "--run-dir", run_dir)
 
 
+def _strip_value_flags(args: list, flags) -> "tuple[list, list]":
+    """Remove every ``--flag value`` / ``--flag=value`` occurrence of each of ``flags``.
+
+    Returns ``(new_args, removed)`` where ``removed`` names each flag actually dropped, so the
+    caller can announce it. Each flag is assumed to take exactly ONE value — the contract
+    ``combination_checks.CombinationCheck.fresh_only`` declares and its test pins."""
+    flags = tuple(flags)
+    out: list = []
+    removed: list = []
+    i = 0
+    while i < len(args):
+        tok = args[i]
+        if tok in flags:
+            removed.append(tok)
+            i += 2
+            continue
+        eq = next((f for f in flags if tok.startswith(f + "=")), None)
+        if eq is not None:
+            removed.append(eq)
+            i += 1
+            continue
+        out.append(tok)
+        i += 1
+    return out, removed
+
+
+def resume_child_args(args: list, checkpoint: str, run_dir: str) -> "tuple[list, list]":
+    """The child argv for a same-run RESTART (interval, crash, forced) — built from the RESUME role.
+
+    The launcher re-launches the argv it was started with. For a run that started FRESH that argv
+    may carry a FRESH-run-only flag (``--arch production``) that the trainer REFUSES beside
+    ``--model`` — 2026-09-26, ``ai_v14_01_base``: its first 3 h restart exited 2 three times and
+    the circuit-breaker gave up (~40 GPU-min). So every flag the trainer refuses on a resume
+    (``main.train.combination_checks.fresh_only_flags()`` — the trainer's own list, not a copy) is
+    stripped, ``--model`` points at ``checkpoint`` and ``--run-dir`` at ``run_dir``. Nothing is
+    lost: what ``--arch production`` expanded to is in the run's saved ``model_config.json``,
+    which a resume inherits.
+
+    Returns ``(child_args, stripped_flags)``."""
+    from main.train.combination_checks import fresh_only_flags
+
+    out, removed = _strip_value_flags(args, fresh_only_flags())
+    out = _insert_or_replace_model_arg(out, checkpoint)
+    out = _insert_or_replace_run_dir_arg(out, run_dir)
+    return out, removed
+
+
+class FreshRunDirHasProgress(ValueError):
+    """A FRESH launch (no ``--model``) whose run dir already holds a run's progress.
+
+    A fresh child starts from step 0 and writes INTO that dir — overwriting ``latest.txt``,
+    ``model_config.json`` and ``metadata.json`` and interleaving step-0 checkpoints with the old
+    run's (2026-09-26: the ``ai_v14_01_base`` argv with ``--arch`` dropped and no ``--model``
+    resolved exactly that way). Refused with ``FATAL_CONFIG``: re-running cannot change it."""
+
+    exit_code = int(TrainExitCode.FATAL_CONFIG)
+
+
+def run_dir_progress(run_dir: str) -> "list[str]":
+    """What in ``run_dir`` marks it as an existing run's progress (empty when none).
+
+    A resumable checkpoint (the launcher's own ``find_latest_checkpoint``, run-scoped — the
+    step-0 self-play seed in ``snapshots/`` is not one) or a ``model_config.json`` (written at
+    every save)."""
+    found: list = []
+    if not os.path.isdir(run_dir):
+        return found
+    ckpt = find_latest_checkpoint("models", run_dir=run_dir)
+    if ckpt is not None:
+        found.append(f"checkpoint {os.path.relpath(ckpt, run_dir)}")
+    if os.path.exists(os.path.join(run_dir, "model_config.json")):
+        found.append("model_config.json")
+    return found
+
+
 def _resolve_fresh_run_dir(args: list, timestamp: str) -> str:
     """Run dir for a fresh (no --model) launcher run.
 
@@ -224,6 +301,8 @@ def resolve_launch_run_dir(args: list, timestamp: str) -> str:
     """The run dir for a launch, covering all three cases:
 
     - **fresh** (no ``--model``) → ``_resolve_fresh_run_dir`` (honours ``--run-dir``/``--run-name``).
+      REFUSES (``FreshRunDirHasProgress``, exit ``FATAL_CONFIG``) when that dir already holds a
+      run's progress (``run_dir_progress``) — a fresh child would restart it from step 0 in place.
     - **fork** (a ``--model`` resume WITH an explicit ``--run-name``, or ``--exploiter``) → a fresh
       dir: the ``--model`` is only the INIT (an exploiter trained vs a frozen target, or a named
       experiment forked off a still-running run), so its OWN checkpoints must land in a NEW dir, not
@@ -236,7 +315,17 @@ def resolve_launch_run_dir(args: list, timestamp: str) -> str:
     is_fork = bool(_peek_arg(args, "--run-name") or _peek_arg(args, "--run_name")
                    or "--exploiter" in args)
     if not existing_model:
-        return _resolve_fresh_run_dir(args, timestamp)
+        run_dir = _resolve_fresh_run_dir(args, timestamp)
+        progress = run_dir_progress(run_dir)
+        if progress:
+            latest = find_latest_checkpoint("models", run_dir=run_dir)
+            resume = (f"--model {latest}" if latest else "--model <checkpoint>")
+            raise FreshRunDirHasProgress(
+                f"this is a FRESH launch (no --model) but its run dir {run_dir!r} already holds a "
+                f"run ({', '.join(progress)}) — a fresh child would start from step 0 and write "
+                f"INTO it. To CONTINUE that run pass {resume}; to start a new one use a new "
+                f"--run-name / --run-dir.")
+        return run_dir
     if is_fork:
         run_dir = _resolve_fresh_run_dir(args, timestamp)
         # IDEMPOTENT FORK ("copy once from the source, resume in place after"): a fork COPIES the

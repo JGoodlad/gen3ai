@@ -75,6 +75,13 @@ class CombinationCheck(NamedTuple):
     #: finding as ADVISORY rather than dropping it silently. Currently one value: "saved_config"
     #: (the resumed checkpoint's recorded `model_config.json` was read).
     needs: Tuple[str, ...] = ()
+    #: The argv option(s) this check REFUSES ON A RESUME — a FRESH-run-only flag. Declared here so
+    #: the launcher's restart path strips exactly what the trainer refuses (`fresh_only_flags()`),
+    #: rather than keeping a second list that drifts (2026-09-26: an interval restart of a
+    #: `--arch production` run re-passed `--arch` beside `--model` and crash-looped out). Every
+    #: option named here takes exactly ONE value (`combination_checks_test.py` pins that against
+    #: the real parser), which is what the launcher's stripper assumes.
+    fresh_only: Tuple[str, ...] = ()
 
     def text(self, args) -> str:
         """The message as the launch path prints it."""
@@ -298,7 +305,10 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "(main.train.config's `_resolve`), which is the ONLY value that can load its weights; "
         "writing production's values over that would either FATAL at check_compatible or train a "
         "network the parent never was. Drop --arch, and read the ARCH SURFACE block that "
-        "`--dry-run` / `python -m main.checkargs` print for a fork — it is INFO there, not a gate."),
+        "`--dry-run` / `python -m main.checkargs` print for a fork — it is INFO there, not a gate.",
+        # A restart would hit the IDENTICAL refusal, so the launcher must give up, not crash-loop.
+        exit_style="fatal_config",
+        fresh_only=("--arch",)),
 
     # ---- gen3_winprob_critic_mode_v1: THE CRITIC MODE ---------------------------------------
     # `--critic winprob` makes the win-prob head the value function. Everything below either
@@ -1147,6 +1157,21 @@ def _floor_is_non_default(args) -> bool:
 
 
 BY_NAME = {c.name: c for c in COMBINATION_CHECKS}
+
+
+def fresh_only_flags() -> Tuple[str, ...]:
+    """Every argv option the trainer REFUSES on a resume (`--model` set), in declaration order.
+
+    The launcher's same-run restart builds its child argv from the RESUME role, and strips these
+    first: the resumed run INHERITS what they applied from its recorded `model_config.json`, so
+    nothing is lost — and leaving them in makes every restart die on the refusal.
+    """
+    out: List[str] = []
+    for check in COMBINATION_CHECKS:
+        for flag in check.fresh_only:
+            if flag not in out:
+                out.append(flag)
+    return tuple(out)
 
 
 def failing_checks(args) -> List[CombinationCheck]:

@@ -43,6 +43,14 @@ render loop. `LauncherState` (a lock-protected snapshot) is the bridge.
   guarantee to a full launcher-process restart.) Tests: `launcher_test.py::TestResolveLaunchRunDir`
   (`test_idempotent_fork_with_checkpoint_resumes_not_raises` / `test_fork_first_launch_keeps_source_model`
   / `test_fork_onto_existing_run_without_checkpoint_raises`).
+  🚨 **A FRESH launch into a run dir that already holds a run is REFUSED** (`FreshRunDirHasProgress`,
+  exit `FATAL_CONFIG`, `--dry-run` too): a resumable checkpoint (`find_latest_checkpoint`, run-scoped —
+  the step-0 `snapshots/` seed does not count) or a `model_config.json` (`checkpoint.run_dir_progress`).
+  The message names both fixes — `--model <that run's latest checkpoint>` to continue, or a new
+  `--run-name`/`--run-dir`. Before 2026-09-26 there was no fresh-side guard at all (the fork guard
+  above never covered a no-`--model` argv), so `ai_v14_01_base`'s argv with `--arch` dropped and no
+  `--model` resolved as a step-0 FRESH run INTO the live run dir. A dir with only `metadata.json`
+  (a fresh run that crashed before its first save) is still accepted.
 - `LauncherApp` (a `Gen3App` subclass) renders from `state.snapshot()` on a `set_interval(0.5)`
   timer. Input is split by latency sensitivity: **view navigation** (`l`/`e`/`d`, the `q` confirm
   overlay, `n`/`y`, ctrl-c) is handled **app-locally** via the `view_mode` reactive — switching is
@@ -117,6 +125,18 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   without `start_new_session`), so closing the controlling terminal/tmux window SIGHUPs the
   whole group; without that handler the child died mid-iteration with no checkpoint. Running
   the launcher under `nohup` prevents the SIGHUP entirely; the handler is the in-code backstop.
+- 🚨 **Every same-run restart (interval, crash, forced `r`) re-launches from the RESUME role** —
+  `checkpoint.resume_child_args`: strip every FRESH-only flag the trainer refuses beside `--model`
+  (`main.train.combination_checks.fresh_only_flags()` — the trainer's OWN list, declared per check as
+  `fresh_only=`; today `--arch`), then `--model <latest checkpoint>` + `--run-dir`. The stripped
+  flags are announced (`✂️  Resume argv: dropped FRESH-only --arch`); nothing is lost, the run's
+  `model_config.json` holds what `--arch production` expanded to. Before 2026-09-26 the loop
+  re-passed the original argv, so a fresh `--arch production` run (`ai_v14_01_base`) died at its
+  first 3 h restart: exit 2 ×3, circuit-breaker, ~40 GPU-min. `--dry-run` prints the restart argv as
+  an `on restart :` line. That refusal now also exits `FATAL_CONFIG` (not argparse's 2), so if a new
+  fresh-only flag ever slips the list the launcher stops at once instead of crash-looping. Tests:
+  `restart_resume_role_test.py`, `dry_run_test.py::test_h_*`,
+  `combination_checks_test.py::test_every_check_refusing_a_resume_declares_what_to_strip`.
 - **Crash auto-restart** — when the child *self-crashes* (unhandled exception → any
   non-`INTERRUPTED` exit), the launcher snapshots its output to a per-crash
   `<run_dir>/crashes/restart_err_<token>.txt` (a timestamp + random hex so back-to-back crashes
@@ -298,7 +318,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 | `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
 | `--pin-commit COMMIT` | unset | **Pin the isolated worktree to a NAMED commit** (full sha or unambiguous prefix — resolved with `git rev-parse --verify <spec>^{commit}` and announced at startup as the full sha plus its subject line). Spelled `--pin-to-hash` before 2026-09-05; both spellings still parse, `--pin-commit` is the name. Beats the checkpoint's recorded `git_hash` on a genuine FORK and HEAD on a fresh run; **refused** beside `--sync-to-main` (argparse — they name two different sources of truth) and beside `--no-pin`; **refused** on a same-run RESTART whose checkpoint records a different hash (see the resume contract). An unresolvable commit exits `FATAL_CONFIG` naming it — never a silent fall-back to HEAD, which is the whole failure it exists to prevent. |
 
-| `--arch production` | unset | *(forwarded)* Apply the whole ARCH surface from `designs/production_config.json` as if typed — see **Is this the ARCHITECTURE you meant?** below. Refused on a resume. |
+| `--arch production` | unset | *(forwarded)* Apply the whole ARCH surface from `designs/production_config.json` as if typed — see **Is this the ARCHITECTURE you meant?** below. Refused on a resume (`FATAL_CONFIG`); the launcher's own restarts STRIP it (resume role). |
 | `--allow-nonproduction-arch` | off | *(forwarded)* Consent to a FRESH run whose architecture differs from the production mirror; without it that launch is REFUSED. |
 | `--dry-run` | off | **Resolve this launch and PRINT it, then exit — creating nothing.** Role (FRESH / FORK of <parent> / RESTART of <run>), the run dir the argv would write into, the pin (sha + subject + source), `--steps` beside the checkpoint's recorded `num_timesteps` so `+X steps` is visible, the effective config a `--model` inherits (per-flag `INHERITED` vs `from the argv`), the pool as recorded, and a `(child-only: …)` line for everything that needs torch. Exits `0`, or `FATAL_CONFIG` (3) on any refusal the real path makes. See **Validating a launch without launching** below. |
 

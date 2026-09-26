@@ -25,6 +25,14 @@ eval cycle is already running), `q`/ctrl-c quit, `v` copy mode
 and **live crash-log
 streaming** to `<run_dir>/launcher_child.log`.
 
+🚨 **A restart re-launches from the RESUME role, and a FRESH argv never lands on an existing run**
+(2026-09-26). Every periodic/crash restart strips the trainer's FRESH-only flags
+(`combination_checks.fresh_only_flags()` — today `--arch`) and sets `--model <latest checkpoint>`, so a
+`--arch production` launch survives its first restart (`ai_v14_01_base` did not: exit 2 ×3, ~40
+GPU-min). A FRESH launch (no `--model`) whose run dir holds a checkpoint or `model_config.json` is
+REFUSED `FATAL_CONFIG` — pass `--model` to continue it, or use a new `--run-name`. `--dry-run` shows
+both (`on restart :` line; `REFUSED (run dir)`). Detail: `src/main/launcher/CLAUDE.md`.
+
 The UI is **Textual** (built on the shared `src/main/tui/` base), launched with
 `python -m main.launcher …` (or the back-compat alias `python -m main.launcher.tui …`). A closed
 terminal (SIGHUP) or external `kill` (SIGTERM) is caught and turned into a clean,
@@ -162,7 +170,8 @@ from it (still clamped into `[--min-lr, --max-lr]`). **`--fork-lr-freeze`** addi
 the KL adaptation and the two-phase cosine, so the fold runs at one constant, recordable step size.
 
 **The pin applies ONLY on a genuine fork** — a checkpoint from OUTSIDE the target run dir. A
-launcher PERIODIC RESTART re-invokes the same argv into the same run dir every N hours, and
+launcher PERIODIC RESTART re-invokes the same argv (in its RESUME form: FRESH-only flags stripped,
+`--model` → the latest checkpoint) into the same run dir every N hours, and
 re-pinning there would reset the controller's adapted rate forever; the FREEZE is a property of the
 run and does persist (re-read from the pin recorded in `metadata.json`). `--fork-lr` on a fresh run
 is refused (use `--lr`).

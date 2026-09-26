@@ -486,3 +486,34 @@ def test_the_g5_control_arm_is_reported_without_a_model():
     names = [c.name for c, _ in res["combinations"]]
     assert "anchor_needs_live_distill" in names, names
     assert "distill_team_bias_needs_teacher" in names, names
+
+
+def test_fresh_only_flags_are_parser_options_that_take_exactly_one_value():
+    """The launcher's restart path strips `fresh_only_flags()` as `--flag VALUE` / `--flag=VALUE`
+    (`main.launcher.checkpoint.resume_child_args`). A fresh-only flag with another arity would be
+    stripped wrongly — a value left behind as a stray positional, or a neighbouring flag eaten."""
+    from main.train.combination_checks import fresh_only_flags
+    from main.train_rl_agent import build_parser
+
+    flags = fresh_only_flags()
+    assert "--arch" in flags, "the 2026-09-26 incident's flag must stay declared fresh-only"
+    by_option = {opt: a for a in build_parser()._actions for opt in a.option_strings}
+    for flag in flags:
+        assert flag in by_option, f"{flag}: declared fresh_only but the trainer parser lacks it"
+        action = by_option[flag]
+        assert action.nargs is None and action.const is None, (
+            f"{flag}: takes nargs={action.nargs!r} — the stripper assumes exactly one value")
+
+
+def test_every_check_refusing_a_resume_declares_what_to_strip():
+    """A check that fires on `--model` + X (a FRESH-only X) must name X in `fresh_only`, or the
+    launcher's interval/crash restart re-passes it and crash-loops (2026-09-26). Probed by
+    evaluating each check that reads `model` with and without a `--model`."""
+    for check in COMBINATION_CHECKS:
+        if "model" not in check.dests:
+            continue
+        if check.name == "fork_lr_is_resume_only":
+            continue    # the opposite direction: refused on a FRESH run, never on a resume
+        assert check.fresh_only, (
+            f"{check.name}: reads `model` but declares no fresh_only flag for the launcher's "
+            f"restart path to strip")

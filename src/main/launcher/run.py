@@ -34,6 +34,7 @@ from main.launcher.checkpoint import (
     _peek_arg,
     resolve_launch_run_dir,
     resolve_fork_resume_model,
+    resume_child_args,
     _strip_launcher_args,
 )
 from main.launcher.child import (
@@ -243,8 +244,10 @@ def _prepare_session(
     try:
         run_dir = resolve_launch_run_dir(child_args, time.strftime("%Y%m%d_%H%M%S"))
     except ValueError as e:
-        print(f"[launcher] ERROR: {e}")
-        sys.exit(1)
+        # A FRESH launch into a dir that already holds a run is FATAL_CONFIG (3); the other
+        # run-dir refusals (a fork onto an existing run) keep their historical exit 1.
+        print(f"[launcher] ERROR: {e}", file=sys.stderr)
+        sys.exit(getattr(e, "exit_code", 1))
 
     # Idempotent fork: if this fork dir ALREADY holds its own progress (a prior launch of this same
     # fork checkpointed), resume from THAT checkpoint rather than re-copying the source --model — so
@@ -646,8 +649,13 @@ def _supervise(
             )
         else:
             state.add_event(f"✅ Restarting from {os.path.basename(checkpoint)}")
-        child_args = _insert_or_replace_model_arg(child_args, checkpoint)
-        child_args = _insert_or_replace_run_dir_arg(child_args, run_dir)
+        # Built from the RESUME role: every FRESH-only flag the trainer refuses beside --model
+        # (`--arch production`) is stripped, or the restart dies on it (2026-09-26).
+        child_args, stripped = resume_child_args(child_args, checkpoint, run_dir)
+        if stripped:
+            state.add_event(
+                f"✂️  Resume argv: dropped FRESH-only {', '.join(sorted(set(stripped)))} "
+                f"(inherited from the run's model_config.json)")
         state.restart_count += 1
         state.view_mode = "dashboard"
 

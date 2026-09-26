@@ -380,3 +380,39 @@ def test_g_a_PINNED_launch_demotes_the_finding_to_advisory(isolated, monkeypatch
     out = capsys.readouterr().out
     assert "ARCH SURFACE" in out and "ADVISORY" in out
     assert "would launch" in out
+
+
+# ---------------------------------------------------------------------------------------
+# (h) 2026-09-26: the RESTART argv of an `--arch production` run, and FRESH-into-a-run
+# ---------------------------------------------------------------------------------------
+
+def test_h_a_fresh_arch_production_dry_run_shows_the_resume_role_restart(
+        isolated, monkeypatch, capsys):
+    """`ai_v14_01_base` launched clean and died at its first 3 h restart, when the launcher
+    re-passed `--arch` beside `--model`. The dry run now prints what that restart re-launches."""
+    _root, (_first, second), work = isolated
+    monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
+    _dry_run(["--restart-interval-hours", "3", "--arch", "production",
+              "--run-name", "ai_v14_01_base", "--steps", "1000"], monkeypatch)
+    out = capsys.readouterr().out
+    assert "role        : FRESH" in out
+    assert "on restart  : RESUME role — drops FRESH-only --arch" in out
+    assert "--model → the run's latest checkpoint" in out
+    assert not os.path.exists(work / "models"), "a dry run must not mint the run dir"
+
+
+def test_h_a_fresh_dry_run_into_an_existing_run_is_refused_and_touches_nothing(
+        isolated, monkeypatch, capsys):
+    """The second hazard: the same argv with `--arch` dropped and no `--model` resolved as a FRESH
+    run from step 0 INTO the existing run dir. Refused, FATAL_CONFIG, both remedies named."""
+    _root, (first, second), work = isolated
+    monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
+    run_dir, ckpt = _make_run(work, first, name="ai_v14_01_base")
+    before = _snapshot_tree(run_dir)
+    _dry_run(["--run-name", "ai_v14_01_base", "--steps", "1000", *_ARCH_OK],
+             monkeypatch, expect=int(TrainExitCode.FATAL_CONFIG))
+    out = capsys.readouterr().out
+    assert "REFUSED (run dir)" in out and "FRESH launch" in out
+    assert f"--model {ckpt}" in out or "--model models/ai_v14_01_base/checkpoints" in out
+    assert "--run-name" in out and "would NOT launch" in out
+    assert _snapshot_tree(run_dir) == before
