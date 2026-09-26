@@ -313,24 +313,149 @@ batching is 2.6–3.7× per row (4.5× at four threads).
 
 ### M5 — N envs per process, successors, the Rust env (Tier 1, env shape)
 
-**What crosses.** A Rust env process stepping N battles, writing obs rows + masks into shared
-rollout columns, opponents on T2. `successors(side, k)` = fork, step, present, encode, **plus an
-optional leaf hook** (§6). Built alongside: selected only by the parity and throughput harnesses,
-never by a research arm.
+**Status (2026-09-26): PHASE A DONE — the transport is decided and the build is planned. Nothing
+is built in `src/`, and no production byte changed.** The owner's direction the same day: do not
+pick one transport. Carry BOTH front ends over ONE env core, because the consumers differ. The
+measurement record and the prototype (a std-only crate + two thin front ends + the parity and bench
+scripts) are in
+[`research_state/measurements/rust_core_m5_transport_2026-09-26/`](../research_state/measurements/rust_core_m5_transport_2026-09-26/README.md).
+The prototype is the SEED of Lane 0 below. It stays in the measurement directory, and Lane 0 moves
+what it keeps into `src/`.
 
-**Gate.** Slice N (env level): obs rows, masks, rewards and dones equal the Python `Gen3Env` on
-recorded battles with both sides scripted from the recording; a depth-3 successor slice (search's
-default depth) equal to the protocol road; training throughput at `--n-envs 48` measured as an
-interleaved A/B against the current path. **Size: 5–8 agent-days.**
+**What crosses.** ONE Rust env core stepping N battles on its own worker threads. It writes the obs,
+mask, need, reward, done and label COLUMNS into caller-provided buffers. Policy opponents are on T2:
+their rows go out in the same batch, and Rust never runs a network. `successors(side, k)` means
+fork, step, present and encode, **plus an optional leaf hook** (§6). The core has TWO thin front
+ends: a C-ABI `cdylib` (FFI, loaded with `ctypes`) and a separate env process over `/dev/shm` (one
+opcode byte per batch). **Neither front end holds battle logic.** Both forward to one
+`core::dispatch(op, cols)`. Built alongside, the core is selected only by the parity and throughput
+harnesses, never by a research arm, until M5's gate.
 
-**Transport at M5 is decided BY BENCHMARK:** in-process FFI, EnvPool-style (the Rust library steps N
-envs on its own threads with the GIL released and fills the learner's NumPy arrays, so there is no
-IPC and no shared-memory segment), against a separate Rust env process that writes into shared memory
-and signals once per BATCH. Once Python leaves the per-decision loop, a per-env round trip becomes
-a real fraction of the step. Prerequisites: `trainer_turn_benchmark.py` must default to the Rust
-bridge first (TECH_DEBT_BACKLOG P2); if FFI wins, every build stamps the module with its commit and
-source hash, and Python REFUSES a mismatch at import. Python imports whichever `.so` comes first on
-`sys.path`, which is the 09-09 rust-target incident's class.
+**THE TRANSPORT BENCHMARK (registered above; measured 2026-09-26 on a quiet box).** Contention
+factor 1.0; the lineage `ai_v14_01_base` had not launched. Interleaved A B / B A pairs, 95 %
+bootstrap CIs, the rule "warn, never stretch". Both front ends ran the same core on real battles:
+the bridge corpus's 46 gen3ou teams, the production parse chain and encoder, and seeded random
+policies.
+
+| consumer shape | FFI | process | proc / FFI |
+|---|---|---|---|
+| training, N = 48, T = 8, both sides' rows out | 12.14 µs/decision [11.60, 12.41], 82 k/s | 11.96 [11.61, 12.31] | **0.994 [0.943, 1.026]**, not detected |
+| eval, N = 16, T = 4 | 19.92 [19.82, 19.95] | 20.10 [20.02, 20.21] | 1.012 [1.006, 1.014] |
+| search, `successors(64)` | 8.72 ms/call (136 µs/successor) | 8.46 | 0.952 [0.932, 0.965] |
+| one-off: start-up to the first row / N = 1 latency | 24.1 ms / 64.5 µs | 26.1 ms / 62.3 µs | +2.0 ms / 0.972 |
+
+- **Transport per batch:** 6.9 µs (FFI) and 14.1 µs (process), against 1.05 ms of core work at
+  N = 48. At most 1.4 % either way. **The transport does not decide M5.**
+- **Parity:** the two front ends, T = 1 vs 4, and a rerun are **byte-identical** on every column at
+  every step, and so are `successors` rows.
+- **Scaling:** the core scales 5.8× at T = 8.
+- **Against today's path:** 69 µs of single-thread CPU per decision against today's 1.07–1.19 ms
+  full cycle (cutover §6). That is ~15–17× less CPU per decision, and it is an upper bound: the
+  prototype has no labels and no stall bookkeeping.
+- **GIL:** both front ends release it; both pay the same GIL re-take on return.
+
+**Defaults per consumer (the rule: PROCESS when the Python host holds state a core fault must not
+destroy; FFI when the host is disposable):**
+- **Training rollout: process.** The learner's optimizer, rollout buffer and GPU context survive a
+  core abort, and a dead child is a typed error plus a respawn.
+- **Eval: process** inside the trainer; **FFI** inside a disposable eval worker.
+- **Offline search, probes, meters, reruns: FFI.** 2 ms faster to the first row, no child or shm to
+  reap, one process under a debugger, version handles as pointers.
+
+**The build stamp covers BOTH front ends.** The 09-09 incident was a stale binary; a stale `.so` is
+the same class. The stamp is the commit plus a hash over the `(path, git-blob-id)` listing of every
+source that reaches the build. Both front ends REFUSE a mismatch at load, and the teeth were proven
+(2.7 ms at import). **Carrying two front ends instead of one costs +1.5–2 agent-days** (Lane B and
+the FFI == process gate, ≈ 6–8 % of M5). One dispatch entry keeps the running cost near zero.
+
+**THE INVENTORY — what must move for Python to leave the per-decision loop** (Python LOC today):
+
+| item | today (Python) | depends on | Rust status | parity gate |
+|---|---|---|---|---|
+| trainee obs row | `sim_bridge` `core_obs` → `Gen3Env._core_row` (Python still encodes the non-decision embeds) | — | **DONE** (M4 / M6) | slice O + slice N (existing) |
+| mask + mapper (action index → choice token) | `action/mapper.py` 252, `mask_generator.py` 98, `serialize.py` 99, `LegalActions` | the reading | **DONE in the core** (`present::legal_actions` / `mask` / `choice_tokens`, compared token for token by slice O); the env takes action INDICES | slice O tokens + slice N |
+| tracker fold (recency, pair history, 32-row window, progress clock, HP / wish / sleep beliefs, α/β label, `TurnDelta` consumers) | `episode_tracker.py` 706, `turn_delta.py` 637, `progress_clock.py` 526, `hidden_power_tracker.py` 280, … (~2,985) | the event stream | **DONE** (M3, slice T), per side on the version | slice T + slice N |
+| reward (win indicator) + episode end | `reward_manager.py` 178 (the shaped path DELETED, `e3ef16db`, v122), `stall.py` 62 (forfeit at `StallConfig().threshold`), `Gen3Env.step` / `reset` bookkeeping | the engine's winner, the turn count | reward DONE (M3); stall forfeit, truncation vs termination, tie, terminal-observation semantics NOT BUILT | slice N reward / `terminated` / `truncated` |
+| **training labels** (production keys) | `observation/belief_labels.py` 353 + `Gen3Env` label methods ~300 (`_belief_labels`, `_spread_labels`, `_nature_ev_map`, `_hp_type_labels`, `_item_labels`, `_merge_training_keys`) + `belief_tables.invert_nature_evs` | the OPPONENT's TRUE team (the Rust env holds both packed teams and the engine board); `species_known` read from the row (revealed-first slot packing); the species / move / item NUM tables; `win_margin` reads `reward_manager._last_material_margin` (`material_margin.py` 50, a by-product of the live view, not a reward term) | NOT BUILT. `belief_species` / `belief_moves` / `known_moves`, spread / nature / EV (+ masks), `hp_type_label`, `item_label`, `opp_class` (a per-episode routing column), `win_target` / `win_mask` (zero placeholders, back-filled per ROLLOUT by `WinProbLabelCallback`, which stays Python), `win_margin` (port `material_margin.py`). Every flag OFF in production (intent labels, defensive / bait opportunity, distill mask, true team, dense aux) is a typed REFUSAL in the Rust env until ported | slice N: every key the production config emits, per decision, equal to `Gen3Env` |
+| policy-opponent encoding + forward (T2) | `RLPlayer.embed_battle` (`inference/player.py` 770) with the assembler, `compile_opponents.py` / `compile_preload.py` / `compile_prewarm.py` 673, `snapshot_pool.py` 505's per-env model cache | T2 (the inference service); an opponent's arch MUST equal the core's obs layout (`MIGRATION_FLOOR`) | the opponent row is DONE (the core encodes either side; the prototype ships both). T2 NOT BUILT | T2's gate (greedy actions byte-identical, max\|Δ\| on a named tensor) + slice N with a policy opponent |
+| per-episode opponent + team choice | `snapshot_pool.py`, `fixed_opponent_pool.py` 558, `team_pfsp_callback.py` 214, `pool_seed.py` 349, the teambuilder | per-EPISODE, not per-decision | **STAYS PYTHON**: passed per env at reset (packed teams, seed, opponent `model_id` / class) | the reset op's inputs recorded; slice N replays them |
+| scripted bots (eval edges; `heuristic_opponents`) | `opponents.py` 842 (`Gen3HeuristicV2Player`), `baitbot.py` 153, `poke_env/player/baselines.py` 461 (`SimpleHeuristicsPlayer`) — all read a poke-env `Battle` | the reading (`BoardReading` is poke-env-shaped) | NOT BUILT. **Owner decision:** port them (action equality per decision on a banked corpus), or keep bot battles on the old path until M7 | per-bot action equality on a banked decision corpus |
+| eval | `eval_callback.py` 1,826 + `eval_sharding/` + trace recording (the trace quota, `eval_manifest.json`) | T2, bots, the greedy regime (`eval_sentinel_greedy`), the persisted record (`gen3_core_event_v1`) | NOT BUILT | the same seed set played on both paths: equal results in the greedy regime; traces readable by the prober |
+| the env surface callbacks read | 71 `env_method` / `get_attr` sites in `agents/training` + `main/train` (non-test) | — | NOT BUILT | each site mapped to a column or an info field, or deleted |
+| search's transport | `utils/bridge/search_session.py` 405 (JSON `open_root` / `expand_many`), `search_driver`'s verbs, `driver_timing.rs` 128, the node drivers still diffed against | `successors()` in-process | NOT BUILT (the prototype's `successors` is the seed) | depth-3 successor slice equal to `search_driver`'s rows + the three search gates |
+
+**THE LANE PLAN** (agent-days include the §2 1.5× surprise allowance; **H** = opus-high,
+**M** = opus-medium). Each lane OWNS its files; nothing outside them changes without a hand-off
+line in this section.
+
+The Rust env is a NEW crate, `src/rust_env/` (package `pokesim_env`, std-only). It path-depends on
+the port, so the port crate, its `release` build and `sim_bridge` (what training execs today) are
+untouched until M5's gate. The Python side is `src/utils/rust_env/`.
+
+| lane | owns | gate it must pass | depends on | size |
+|---|---|---|---|---|
+| **0 — the shared core boundary (FIRST)** | `src/rust_env/{Cargo.toml, build.rs, src/lib.rs, src/core/{mod, spec, columns, pool, dispatch, refusal}.rs}`; `src/utils/rust_env/{protocol.py, columns.py, stamp.py}` | ① rows byte-equal to `sim_bridge`'s `__OBS__` / `core_events --obs` on the same input log (F-M5-5); ② determinism: seed → bytes, thread-count-invariant; ③ the column schema GENERATED from one table and pinned by a routine test; ④ the refusal policy (quarantine + banked input log + typed `CoreError` class); ⑤ the stamp's teeth | — | **H, 2.5–3.5** |
+| A — FFI front end | `src/rust_env/src/ffi.rs`, `src/utils/rust_env/ffi.py` (signatures GENERATED, absolute-path load, stamp refusal) | the Lane-0 corpus through FFI byte-equal to the core's in-Rust run; a panic → typed error, not a crash | 0 | **M, 1** |
+| B — process front end | `src/rust_env/src/bin/rust_env_proc.rs`, `src/rust_env/src/shm.rs`, `src/utils/rust_env/proc.py` (respawn on death, `/dev/shm` hygiene) | **FFI == process byte-identical** on recorded battles (routine tier); SIGKILL → typed error + respawn; no leaked segment | 0 | **M, 1.5** |
+| C — training labels | `src/rust_env/src/labels/`, `src/agents/training/rust_env_labels_parity_test.py` | slice N label columns == `Gen3Env`'s production keys per decision (COMMIT in the routine gate, MILESTONE slow) | 0 | **H, 3–4** |
+| D — episode + reward | `src/rust_env/src/episode.rs` | slice N `reward` / `terminated` / `truncated`, the stall forfeit at `StallConfig().threshold`, ties, the terminal observation | 0 | **M, 1–1.5** |
+| T2 — the inference service (already in the program) | `src/agents/inference/service/` | T2's own gate | — (parallel with everything) | **H, 4–6** |
+| E — opponent routing | `src/rust_env/src/opponents.rs`, `src/agents/training/rust_env_opponents.py` (per-episode `model_id` / class in; opponent rows out to T2) | slice N with a POLICY opponent: its actions through T2 equal the per-env compiled path's (greedy byte-identical) | 0, T2 | **H, 1.5–2** |
+| F — scripted bots (IF the owner chooses to port) | `src/rust_env/src/bots/` | per-bot action equality on a banked decision corpus | 0 | **H, 3–4** (0 if bots stay on the old path) |
+| G — training integration | `src/agents/training/rust_vec_env.py`, `src/main/train/env_factory.py` (a new `--env-core` flag, OFF), the parser, `metadata.json`'s env-core stamp; the 71 `env_method` / `get_attr` sites | slice N at the ROLLOUT level (the buffer the learner sees equal on scripted recorded battles); the `--debug` smoke on the Rust env; **the first two minutes of a real launch**; throughput at `--n-envs 48` interleaved against today's path (`trainer_turn_benchmark.py` defaulting to the rust bridge first — TECH_DEBT P2); F-M5-3's GIL constraint | A or B, C, D, E | **H, 3–4** |
+| H — eval on the core | `src/agents/training/eval_callback.py` + `eval_sharding/` (behind the same flag), traces as `gen3_core_event_v1` records | the same seed set on both paths → equal greedy results; traces load in the prober | G, T2 (+ F or the bot decision) | **H, 3–4** |
+| I — search on `successors()` in-process | `src/rust_env/src/search.rs`, `src/utils/rust_env/successors.py` (replaces `search_session.py`'s JSON for the in-process road) | the depth-3 successor slice equal to `search_driver`'s rows; the three search gates | 0, A | **H, 2–3** |
+| J — the M5 gate harness | `src/main/rust_core_m5/` (slice N env level, the depth-3 slice, the throughput A/B) | it IS the gate; starts on the Lane-0 prototype and grows as lanes land | 0 | **H, 2–3** |
+
+**Order constraints.**
+1. **Lane 0 first.** Every lane reads its column contract and its dispatch.
+2. **After Lane 0:** A, B, C, D, F, I and J run in parallel (disjoint files), and T2 runs from day 1.
+3. E needs T2. G needs (A or B) + C + D + E. H needs G + T2 + the bot decision.
+4. **M5's gate** is J's slice N at MILESTONE, plus the depth-3 slice, plus the throughput A/B at
+   `--n-envs 48`.
+
+**Mechanical enough for opus-medium:** A, B, D. **opus-high:** 0, C, E, F, G, H, I, J, T2.
+
+**Total: ≈ 24–33 agent-days** (F excluded: 21–29), including T2's 4–6 (F-M5-2: the §2 estimate of
+5–8 assumed labels, reward, opponents and eval were already off Python). **Critical path:**
+0 → C / D → G → H plus T2, about 12–16 agent-days. With four lanes in flight that is ~2 calendar
+weeks.
+
+**What M5 then unblocks in §4:**
+- `SubprocVecEnv` + `async_vec_env.py` + the per-env bridge child for training;
+- `gen3_env.py` + `wrappers.py`'s opponent plumbing;
+- `--compile-opponents*` + the per-env model cache;
+- the Python trackers / `TurnDelta` (after C + D + E);
+- the assembler and the `live_view()` memos (after E + H);
+- `search_session.py`'s JSON protocol (after I).
+
+**Gate.** Slice N (env level): obs rows, masks, labels, rewards and dones equal the Python
+`Gen3Env` on recorded battles with both sides scripted from the recording. A depth-3 successor slice
+(search's default depth) equals `search_driver`'s rows. The two front ends are byte-identical.
+Training throughput at `--n-envs 48` is measured as an interleaved A/B against the current path.
+**Size: see the lane plan (≈ 24–33 agent-days, T2 included).**
+
+**Transport at M5 (DECIDED 2026-09-26, owner + benchmark): BOTH front ends, one core.** The
+benchmark above measured them equal on speed, so the default per consumer follows the
+crash-isolation rule. Prerequisites that stand:
+- `trainer_turn_benchmark.py` defaults to the Rust bridge before G's A/B (TECH_DEBT_BACKLOG P2).
+- Every build stamps the core with its commit and source hash, and BOTH front ends refuse a mismatch
+  at load.
+- The FFI module loads from an absolute path, never from whichever `.so` comes first on `sys.path`
+  (the 09-09 class).
+
+**Findings Phase A hands to the build** (detail in the record's §5):
+- **F-M5-1:** a shared READING-class Hidden-Power refusal. A transformed mon KO'd by Hidden Power
+  loses its temporary types at switch-out, and both trackers re-read the live board. It is not
+  reachable from `data/teams/`, but it is reachable from 20 ladder-corpus teams, so M7 is exposed.
+  The fix is proposed, not applied (a training-input change).
+- **F-M5-2:** the M5 size above.
+- **F-M5-3:** the GIL re-take bounds a rollout thread that shares an interpreter with a busy Python
+  thread, on both front ends.
+- **F-M5-4:** the core ran 2.8–4.8 % faster out of process at N = 1. Cause unverified.
+- **F-M5-5:** the prototype's rows were not byte-diffed against `sim_bridge`. That diff is Lane 0's
+  first gate.
+- **F-M5-6:** `ctypes` over a C ABI keeps the crate std-only.
 
 ### M6 — THE CUTOVER, then the DELETION PASS
 
@@ -371,7 +496,7 @@ the deletion pass ~2 agent-days.
 Python client's; the prober walks versions instead of re-parsing traces. Removes the last
 production use of poke-env. **Size: 3–4 agent-days.**
 
-**Program total: ≈ 38–56 agent-days** of build, gating and deletion, wall time dominated by the
+**Program total: ≈ 38–56 agent-days** (as planned 2026-09-23; M5 alone re-sized 2026-09-26 to ≈ 24–33 incl. T2 — the M5 lane plan) of build, gating and deletion, wall time dominated by the
 gates. The order M1 → M2 → M3 → M4 → M5 → M6 is forced (each slice folds the previous one's
 output); T2 interleaves after M1.
 

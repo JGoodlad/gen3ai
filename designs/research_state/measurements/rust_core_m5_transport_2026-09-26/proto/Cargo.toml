@@ -1,0 +1,32 @@
+# m5proto — the M5 Phase-A TRANSPORT PROTOTYPE (measurement scaffolding, NOT production).
+#
+# ONE env core (`src/core.rs`: N battles, N/T worker threads, caller-provided column buffers)
+# behind TWO thin front ends that hold no battle logic:
+#   * `src/ffi.rs`          — an `extern "C"` cdylib, loaded by Python through ctypes
+#                             (ctypes.CDLL releases the GIL for the duration of every call);
+#   * `src/bin/m5_envproc.rs` — a separate process over a /dev/shm segment, one pipe byte
+#                             per batch in each direction.
+# It path-depends on the port and builds into ITS OWN target/ (never main's; never
+# src/rust_sim/target). Std-only, like the port: no PyO3, no libc crate.
+
+[package]
+name = "m5proto"
+version = "0.0.0"
+edition = "2021"
+publish = false
+build = "build.rs"
+
+[lib]
+name = "m5proto"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "m5_envproc"
+path = "src/bin/m5_envproc.rs"
+
+[dependencies]
+pokesim = { path = "../../../../../src/rust_sim" }
+
+[profile.release]
+# The port's production build is plain `--release` (no LTO, unwind); match it.

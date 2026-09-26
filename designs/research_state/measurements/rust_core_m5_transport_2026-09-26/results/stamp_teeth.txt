@@ -1,0 +1,5 @@
+ffi REFUSED: libm5proto.so: build stamp src=81db71690ff8b832 nfiles=84 but this tree hashes to src=565336dfad3f1e19 nfiles=84 — a stale or foreign build; rebuild it from THI
+proc REFUSED: libm5proto.so: build stamp src=81db71690ff8b832 nfiles=84 but this tree hashes to src=565336dfad3f1e19 nfiles=84 — a stale or foreign build; rebuild it from THI
+restored tree: proc loads
+restored tree: ffi loads
+proc (own stamp line, no .so involved) REFUSED: m5_envproc: build stamp src=81db71690ff8b832 nfiles=84 but this tree hashes to src=565336dfad3f1e19 nfiles=84 — a stale or foreign build; rebuild it f

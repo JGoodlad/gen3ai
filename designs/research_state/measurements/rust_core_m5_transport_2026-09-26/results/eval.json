@@ -1,0 +1,393 @@
+{
+ "shape": "eval",
+ "stamp": "commit=663d11bc5376f70115cde3a623bee4cd1be69c37;src=81db71690ff8b832;nfiles=84",
+ "argv": [
+  "bench.py",
+  "eval",
+  "--pairs",
+  "10",
+  "--steps",
+  "1000"
+ ],
+ "when": "2026-09-26T08:47:12-0700",
+ "load1_start": 3.78369140625,
+ "contention_start": 1.0,
+ "contention_end": 1.0,
+ "cpu_count": 16,
+ "result": {
+  "n": 16,
+  "threads": 4,
+  "opp_external": true,
+  "pairs": 10,
+  "steps_per_block": 1000,
+  "contention_before": 1.0,
+  "contention_after": 1.0,
+  "blocks": [
+   {
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30306,
+     "wall_per_batch_us": 564.289,
+     "core_per_batch_us": 559.45,
+     "transport_per_batch_us": 5.801,
+     "us_per_decision": 20.29344598429354,
+     "decisions_per_s": 49276.99321120558,
+     "policy_numpy_us_per_batch": 17.994,
+     "load1": 3.93359375,
+     "refusals_total": 0
+    },
+    "proc": {
+     "batches": 1000,
+     "decisions": 30306,
+     "wall_per_batch_us": 563.3425,
+     "core_per_batch_us": 555.142,
+     "transport_per_batch_us": 6.8275,
+     "us_per_decision": 19.923084768692668,
+     "decisions_per_s": 50193.03042726645,
+     "policy_numpy_us_per_batch": 6.111,
+     "load1": 3.93359375,
+     "refusals_total": 0
+    }
+   },
+   {
+    "proc": {
+     "batches": 1000,
+     "decisions": 30260,
+     "wall_per_batch_us": 567.4495,
+     "core_per_batch_us": 559.069,
+     "transport_per_batch_us": 6.948,
+     "us_per_decision": 20.179819695968277,
+     "decisions_per_s": 49554.45663371263,
+     "policy_numpy_us_per_batch": 6.202,
+     "load1": 3.93359375,
+     "refusals_total": 0
+    },
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30260,
+     "wall_per_batch_us": 570.806,
+     "core_per_batch_us": 564.79,
+     "transport_per_batch_us": 6.102,
+     "us_per_decision": 19.93249699272968,
+     "decisions_per_s": 50169.32902910996,
+     "policy_numpy_us_per_batch": 19.0205,
+     "load1": 3.93359375,
+     "refusals_total": 0
+    }
+   },
+   {
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30332,
+     "wall_per_batch_us": 567.6605,
+     "core_per_batch_us": 562.541,
+     "transport_per_batch_us": 6.002,
+     "us_per_decision": 19.94984639984175,
+     "decisions_per_s": 50125.69921380108,
+     "policy_numpy_us_per_batch": 18.72,
+     "load1": 3.93359375,
+     "refusals_total": 0
+    },
+    "proc": {
+     "batches": 1000,
+     "decisions": 30332,
+     "wall_per_batch_us": 569.99,
+     "core_per_batch_us": 558.914,
+     "transport_per_batch_us": 11.822,
+     "us_per_decision": 20.13978445206383,
+     "decisions_per_s": 49652.96437904652,
+     "policy_numpy_us_per_batch": 18.775,
+     "load1": 3.93359375,
+     "refusals_total": 0
+    }
+   },
+   {
+    "proc": {
+     "batches": 1000,
+     "decisions": 30332,
+     "wall_per_batch_us": 571.773,
+     "core_per_batch_us": 559.6555,
+     "transport_per_batch_us": 11.992,
+     "us_per_decision": 20.061964954503495,
+     "decisions_per_s": 49845.566088257016,
+     "policy_numpy_us_per_batch": 19.026,
+     "load1": 3.93896484375,
+     "refusals_total": 0
+    },
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30332,
+     "wall_per_batch_us": 567.8055,
+     "core_per_batch_us": 561.664,
+     "transport_per_batch_us": 5.992,
+     "us_per_decision": 19.91554424370302,
+     "decisions_per_s": 50212.034768579535,
+     "policy_numpy_us_per_batch": 19.1305,
+     "load1": 3.93896484375,
+     "refusals_total": 0
+    }
+   },
+   {
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30455,
+     "wall_per_batch_us": 571.8635,
+     "core_per_batch_us": 565.572,
+     "transport_per_batch_us": 5.9805,
+     "us_per_decision": 19.905590444918733,
+     "decisions_per_s": 50237.143317457754,
+     "policy_numpy_us_per_batch": 19.046,
+     "load1": 3.93896484375,
+     "refusals_total": 0
+    },
+    "proc": {
+     "batches": 1000,
+     "decisions": 30455,
+     "wall_per_batch_us": 571.628,
+     "core_per_batch_us": 559.344,
+     "transport_per_batch_us": 11.973,
+     "us_per_decision": 19.968678509275982,
+     "decisions_per_s": 50078.42654863082,
+     "policy_numpy_us_per_batch": 18.775,
+     "load1": 3.93896484375,
+     "refusals_total": 0
+    }
+   },
+   {
+    "proc": {
+     "batches": 1000,
+     "decisions": 30343,
+     "wall_per_batch_us": 576.1115,
+     "core_per_batch_us": 563.332,
+     "transport_per_batch_us": 12.8095,
+     "us_per_decision": 20.241613650594868,
+     "decisions_per_s": 49403.17591580016,
+     "policy_numpy_us_per_batch": 18.895,
+     "load1": 3.93896484375,
+     "refusals_total": 0
+    },
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30343,
+     "wall_per_batch_us": 571.0315,
+     "core_per_batch_us": 565.0905,
+     "transport_per_batch_us": 5.981,
+     "us_per_decision": 19.957412582803283,
+     "decisions_per_s": 50106.69573778671,
+     "policy_numpy_us_per_batch": 19.0205,
+     "load1": 3.93896484375,
+     "refusals_total": 0
+    }
+   },
+   {
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30387,
+     "wall_per_batch_us": 566.338,
+     "core_per_batch_us": 561.1835,
+     "transport_per_batch_us": 5.781,
+     "us_per_decision": 19.95080356731497,
+     "decisions_per_s": 50123.29436385617,
+     "policy_numpy_us_per_batch": 18.3445,
+     "load1": 3.93896484375,
+     "refusals_total": 0
+    },
+    "proc": {
+     "batches": 1000,
+     "decisions": 30387,
+     "wall_per_batch_us": 574.954,
+     "core_per_batch_us": 563.487,
+     "transport_per_batch_us": 11.922,
+     "us_per_decision": 20.211409385592525,
+     "decisions_per_s": 49477.004840287824,
+     "policy_numpy_us_per_batch": 18.445,
+     "load1": 3.93896484375,
+     "refusals_total": 0
+    }
+   },
+   {
+    "proc": {
+     "batches": 1000,
+     "decisions": 30323,
+     "wall_per_batch_us": 574.7435,
+     "core_per_batch_us": 562.26,
+     "transport_per_batch_us": 12.7835,
+     "us_per_decision": 20.06874560564588,
+     "decisions_per_s": 49828.72470707253,
+     "policy_numpy_us_per_batch": 18.8655,
+     "load1": 3.78369140625,
+     "refusals_total": 0
+    },
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30323,
+     "wall_per_batch_us": 557.8115,
+     "core_per_batch_us": 554.4905,
+     "transport_per_batch_us": 2.024,
+     "us_per_decision": 19.782513999274478,
+     "decisions_per_s": 50549.6925232392,
+     "policy_numpy_us_per_batch": 6.161,
+     "load1": 3.78369140625,
+     "refusals_total": 0
+    }
+   },
+   {
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30360,
+     "wall_per_batch_us": 563.3875,
+     "core_per_batch_us": 559.76,
+     "transport_per_batch_us": 2.3295,
+     "us_per_decision": 19.820672266139656,
+     "decisions_per_s": 50452.37550838953,
+     "policy_numpy_us_per_batch": 6.973,
+     "load1": 3.78369140625,
+     "refusals_total": 0
+    },
+    "proc": {
+     "batches": 1000,
+     "decisions": 30360,
+     "wall_per_batch_us": 574.5935,
+     "core_per_batch_us": 564.329,
+     "transport_per_batch_us": 10.189,
+     "us_per_decision": 20.059438010540184,
+     "decisions_per_s": 49851.84527475557,
+     "policy_numpy_us_per_batch": 18.8,
+     "load1": 3.78369140625,
+     "refusals_total": 0
+    }
+   },
+   {
+    "proc": {
+     "batches": 1000,
+     "decisions": 30372,
+     "wall_per_batch_us": 573.927,
+     "core_per_batch_us": 561.93,
+     "transport_per_batch_us": 11.6725,
+     "us_per_decision": 20.5625,
+     "decisions_per_s": 48632.2188449848,
+     "policy_numpy_us_per_batch": 18.815,
+     "load1": 3.78369140625,
+     "refusals_total": 0
+    },
+    "ffi": {
+     "batches": 1000,
+     "decisions": 30372,
+     "wall_per_batch_us": 560.1015,
+     "core_per_batch_us": 555.593,
+     "transport_per_batch_us": 5.4155,
+     "us_per_decision": 19.71068046226788,
+     "decisions_per_s": 50733.91565117695,
+     "policy_numpy_us_per_batch": 17.032,
+     "load1": 3.78369140625,
+     "refusals_total": 0
+    }
+   }
+  ],
+  "ffi_us_per_decision": {
+   "median": 19.92402061821635,
+   "ci95": [
+    19.820672266139656,
+    19.953629491322516
+   ]
+  },
+  "proc_us_per_decision": {
+   "median": 20.104265028854854,
+   "ci95": [
+    20.01532173188974,
+    20.211409385592525
+   ]
+  },
+  "ratio_proc_over_ffi_us_per_decision": {
+   "median": 1.0122271565350909,
+   "ci95": [
+    1.0063450709028376,
+    1.014240376432187
+   ]
+  },
+  "ffi_wall_per_batch_us": {
+   "median": 566.99925,
+   "ci95": [
+    562.19525,
+    570.806
+   ]
+  },
+  "proc_wall_per_batch_us": {
+   "median": 572.85,
+   "ci95": [
+    569.5387499999999,
+    574.77375
+   ]
+  },
+  "ratio_proc_over_ffi_wall_per_batch_us": {
+   "median": 1.007941804823769,
+   "ci95": [
+    0.9995881884400736,
+    1.0199487243132195
+   ]
+  },
+  "ffi_transport_per_batch_us": {
+   "median": 5.890750000000001,
+   "ci95": [
+    4.05525,
+    5.992
+   ]
+  },
+  "proc_transport_per_batch_us": {
+   "median": 11.872,
+   "ci95": [
+    9.31025,
+    12.378250000000001
+   ]
+  },
+  "ratio_proc_over_ffi_transport_per_batch_us": {
+   "median": 2.0321397421745218,
+   "ci95": [
+    1.589143681548391,
+    3.257799345563017
+   ]
+  },
+  "ffi_core_per_batch_us": {
+   "median": 561.4237499999999,
+   "ci95": [
+    557.6765,
+    564.79
+   ]
+  },
+  "proc_core_per_batch_us": {
+   "median": 560.79275,
+   "ci95": [
+    559.069,
+    563.332
+   ]
+  },
+  "ratio_proc_over_ffi_core_per_batch_us": {
+   "median": 0.9966560638515749,
+   "ci95": [
+    0.9917115206580542,
+    1.0081624267543232
+   ]
+  },
+  "ffi_decisions_per_s": {
+   "median": 50190.68189884475,
+   "ci95": [
+    50116.197475793895,
+    50452.37550838953
+   ]
+  },
+  "proc_decisions_per_s": {
+   "median": 49740.844543059524,
+   "ci95": [
+    49477.004840287824,
+    49961.99631844392
+   ]
+  },
+  "ratio_proc_over_ffi_decisions_per_s": {
+   "median": 0.9879205724405316,
+   "ci95": [
+    0.9859595646524342,
+    0.9937048308308911
+   ]
+  }
+ }
+}

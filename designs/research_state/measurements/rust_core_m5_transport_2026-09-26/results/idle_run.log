@@ -1,0 +1,83 @@
+[train] load1=0.38 contention=1.0 nice=15
+  pair 0: ffi 11.4 us/dec  proc 11.7 us/dec  (transport ffi 6.7 / proc 13.9 us/batch)  load1 0.4
+  pair 1: ffi 12.4 us/dec  proc 12.3 us/dec  (transport ffi 6.9 / proc 14.0 us/batch)  load1 0.4
+  [refusals so far 1]  pair 2: ffi 11.5 us/dec  proc 11.4 us/dec  (transport ffi 6.8 / proc 14.1 us/batch)  load1 0.4
+  [refusals so far 3]  pair 3: ffi 12.0 us/dec  proc 12.7 us/dec  (transport ffi 6.8 / proc 14.3 us/batch)  load1 0.8
+  [refusals so far 3]  pair 4: ffi 12.3 us/dec  proc 11.3 us/dec  (transport ffi 6.7 / proc 14.3 us/batch)  load1 0.8
+  [refusals so far 3]  pair 5: ffi 12.5 us/dec  proc 11.8 us/dec  (transport ffi 7.0 / proc 14.3 us/batch)  load1 1.4
+  [refusals so far 3]  pair 6: ffi 11.6 us/dec  proc 11.9 us/dec  (transport ffi 7.0 / proc 13.9 us/batch)  load1 1.4
+  [refusals so far 3]  pair 7: ffi 12.2 us/dec  proc 12.3 us/dec  (transport ffi 7.0 / proc 14.1 us/batch)  load1 1.9
+  [refusals so far 3]  pair 8: ffi 13.0 us/dec  proc 12.0 us/dec  (transport ffi 6.8 / proc 14.5 us/batch)  load1 1.9
+  [refusals so far 3]  pair 9: ffi 12.1 us/dec  proc 12.0 us/dec  (transport ffi 7.0 / proc 14.0 us/batch)  load1 2.4
+  ffi_us_per_decision: {'median': 12.14141179748686, 'ci95': [11.598075026618808, 12.405721043309903]}
+  proc_us_per_decision: {'median': 11.95675558702368, 'ci95': [11.606894760959207, 12.314077192171876]}
+  ratio_proc_over_ffi_us_per_decision: {'median': 0.9938900626348584, 'ci95': [0.9430402120375835, 1.0260333617903405]}
+  ratio_proc_over_ffi_wall_per_batch_us: {'median': 0.9912199209324589, 'ci95': [0.9296433249046862, 1.0321799791320063]}
+  ratio_proc_over_ffi_transport_per_batch_us: {'median': 2.0550985771004475, 'ci95': [2.0145576648984904, 2.1001831480947146]}
+  ratio_proc_over_ffi_core_per_batch_us: {'median': 0.9839438311000139, 'ci95': [0.921779302233883, 1.0248651332271015]}
+  ratio_proc_over_ffi_decisions_per_s: {'median': 1.0061491599337993, 'ci95': [0.9746271780627928, 1.0604001687683564]}
+-> /home/goodlad/dev/gen3ai-wt/m5-phase-a/designs/research_state/measurements/rust_core_m5_transport_2026-09-26/results/train.json
+[trainbot] load1=2.39 contention=1.0 nice=15
+  pair 0: ffi 23.8 us/dec  proc 22.6 us/dec  (transport ffi 7.1 / proc 14.5 us/batch)  load1 2.4
+  pair 1: ffi 22.4 us/dec  proc 24.5 us/dec  (transport ffi 7.1 / proc 14.0 us/batch)  load1 2.8
+  [refusals so far 1]  pair 2: ffi 22.3 us/dec  proc 22.7 us/dec  (transport ffi 7.2 / proc 14.5 us/batch)  load1 2.8
+  [refusals so far 2]  pair 3: ffi 23.9 us/dec  proc 23.7 us/dec  (transport ffi 7.0 / proc 13.9 us/batch)  load1 2.8
+  [refusals so far 2]  pair 4: ffi 22.7 us/dec  proc 22.4 us/dec  (transport ffi 7.1 / proc 12.5 us/batch)  load1 2.8
+  [refusals so far 2]  pair 5: ffi 22.4 us/dec  proc 23.7 us/dec  (transport ffi 7.1 / proc 13.3 us/batch)  load1 3.2
+  [refusals so far 2]  pair 6: ffi 23.1 us/dec  proc 24.1 us/dec  (transport ffi 7.0 / proc 14.6 us/batch)  load1 3.2
+  [refusals so far 2]  pair 7: ffi 22.2 us/dec  proc 22.8 us/dec  (transport ffi 7.2 / proc 14.6 us/batch)  load1 3.6
+  [refusals so far 2]  pair 8: ffi 22.9 us/dec  proc 23.8 us/dec  (transport ffi 7.1 / proc 14.7 us/batch)  load1 3.6
+  [refusals so far 2]  pair 9: ffi 23.5 us/dec  proc 23.9 us/dec  (transport ffi 7.1 / proc 14.3 us/batch)  load1 3.6
+  ffi_us_per_decision: {'median': 22.78636036458333, 'ci95': [22.35852304166667, 23.479248104166665]}
+  proc_us_per_decision: {'median': 23.72798464583333, 'ci95': [22.680697208333335, 23.934369260416666]}
+  ratio_proc_over_ffi_us_per_decision: {'median': 1.022421528635849, 'ci95': [0.9934846266869248, 1.0476247419236435]}
+  ratio_proc_over_ffi_wall_per_batch_us: {'median': 1.0364241201470077, 'ci95': [0.9829193667315591, 1.077144074699767]}
+  ratio_proc_over_ffi_transport_per_batch_us: {'median': 2.014702837534645, 'ci95': [1.927620496767052, 2.0596063995469347]}
+  ratio_proc_over_ffi_core_per_batch_us: {'median': 1.0309526225296286, 'ci95': [0.9773761165991458, 1.0703214891417367]}
+  ratio_proc_over_ffi_decisions_per_s: {'median': 0.9780878177540139, 'ci95': [0.9546228515699456, 1.0065581017944916]}
+-> /home/goodlad/dev/gen3ai-wt/m5-phase-a/designs/research_state/measurements/rust_core_m5_transport_2026-09-26/results/trainbot.json
+[eval] load1=3.93 contention=1.0 nice=15
+  pair 0: ffi 20.3 us/dec  proc 19.9 us/dec  (transport ffi 5.8 / proc 6.8 us/batch)  load1 3.9
+  pair 1: ffi 19.9 us/dec  proc 20.2 us/dec  (transport ffi 6.1 / proc 6.9 us/batch)  load1 3.9
+  pair 2: ffi 19.9 us/dec  proc 20.1 us/dec  (transport ffi 6.0 / proc 11.8 us/batch)  load1 3.9
+  pair 3: ffi 19.9 us/dec  proc 20.1 us/dec  (transport ffi 6.0 / proc 12.0 us/batch)  load1 3.9
+  pair 4: ffi 19.9 us/dec  proc 20.0 us/dec  (transport ffi 6.0 / proc 12.0 us/batch)  load1 3.9
+  pair 5: ffi 20.0 us/dec  proc 20.2 us/dec  (transport ffi 6.0 / proc 12.8 us/batch)  load1 3.9
+  pair 6: ffi 20.0 us/dec  proc 20.2 us/dec  (transport ffi 5.8 / proc 11.9 us/batch)  load1 3.9
+  pair 7: ffi 19.8 us/dec  proc 20.1 us/dec  (transport ffi 2.0 / proc 12.8 us/batch)  load1 3.8
+  pair 8: ffi 19.8 us/dec  proc 20.1 us/dec  (transport ffi 2.3 / proc 10.2 us/batch)  load1 3.8
+  pair 9: ffi 19.7 us/dec  proc 20.6 us/dec  (transport ffi 5.4 / proc 11.7 us/batch)  load1 3.8
+  ffi_us_per_decision: {'median': 19.92402061821635, 'ci95': [19.820672266139656, 19.953629491322516]}
+  proc_us_per_decision: {'median': 20.104265028854854, 'ci95': [20.01532173188974, 20.211409385592525]}
+  ratio_proc_over_ffi_us_per_decision: {'median': 1.0122271565350909, 'ci95': [1.0063450709028376, 1.014240376432187]}
+  ratio_proc_over_ffi_wall_per_batch_us: {'median': 1.007941804823769, 'ci95': [0.9995881884400736, 1.0199487243132195]}
+  ratio_proc_over_ffi_transport_per_batch_us: {'median': 2.0321397421745218, 'ci95': [1.589143681548391, 3.257799345563017]}
+  ratio_proc_over_ffi_core_per_batch_us: {'median': 0.9966560638515749, 'ci95': [0.9917115206580542, 1.0081624267543232]}
+  ratio_proc_over_ffi_decisions_per_s: {'median': 0.9879205724405316, 'ci95': [0.9859595646524342, 0.9937048308308911]}
+-> /home/goodlad/dev/gen3ai-wt/m5-phase-a/designs/research_state/measurements/rust_core_m5_transport_2026-09-26/results/eval.json
+[threads] load1=3.78 contention=1.0 nice=15
+  T=1: 69.0 us/decision, 14500 decisions/s
+  T=2: 35.0 us/decision, 28552 decisions/s
+  T=4: 19.4 us/decision, 51587 decisions/s
+  T=8: 11.9 us/decision, 84310 decisions/s
+-> /home/goodlad/dev/gen3ai-wt/m5-phase-a/designs/research_state/measurements/rust_core_m5_transport_2026-09-26/results/threads.json
+[search] load1=3.23 contention=1.0 nice=15
+  ratio_proc_over_ffi: {'median': 0.9521146610745492, 'ci95': [0.9317573205038517, 0.9653334791982531]}
+-> /home/goodlad/dev/gen3ai-wt/m5-phase-a/designs/research_state/measurements/rust_core_m5_transport_2026-09-26/results/search.json
+[oneoff] load1=3.05 contention=1.0 nice=15
+  pair 0: ffi 65.0 us/dec  proc 62.7 us/dec  (transport ffi 2.3 / proc 5.0 us/batch)  load1 3.1
+  pair 1: ffi 66.7 us/dec  proc 64.5 us/dec  (transport ffi 2.3 / proc 5.0 us/batch)  load1 3.1
+  pair 2: ffi 65.5 us/dec  proc 63.9 us/dec  (transport ffi 2.4 / proc 5.0 us/batch)  load1 3.1
+  pair 3: ffi 64.6 us/dec  proc 60.7 us/dec  (transport ffi 2.2 / proc 4.9 us/batch)  load1 3.1
+  pair 4: ffi 62.3 us/dec  proc 63.3 us/dec  (transport ffi 2.3 / proc 4.9 us/batch)  load1 3.1
+  pair 5: ffi 62.1 us/dec  proc 60.0 us/dec  (transport ffi 2.2 / proc 4.9 us/batch)  load1 3.1
+  pair 6: ffi 64.4 us/dec  proc 63.8 us/dec  (transport ffi 2.2 / proc 5.0 us/batch)  load1 3.1
+  pair 7: ffi 60.7 us/dec  proc 59.4 us/dec  (transport ffi 2.2 / proc 4.9 us/batch)  load1 3.1
+  pair 8: ffi 61.8 us/dec  proc 60.8 us/dec  (transport ffi 2.2 / proc 4.9 us/batch)  load1 3.1
+  pair 9: ffi 64.9 us/dec  proc 62.0 us/dec  (transport ffi 2.3 / proc 5.0 us/batch)  load1 3.1
+-> /home/goodlad/dev/gen3ai-wt/m5-phase-a/designs/research_state/measurements/rust_core_m5_transport_2026-09-26/results/oneoff.json
+[gil] load1=3.05 contention=1.0 nice=15
+  none: other-thread 24,783,410 it/s while the main thread did 490 steps
+  ffi: other-thread 24,772,509 it/s while the main thread did 144 steps
+  proc: other-thread 24,646,620 it/s while the main thread did 141 steps
+-> /home/goodlad/dev/gen3ai-wt/m5-phase-a/designs/research_state/measurements/rust_core_m5_transport_2026-09-26/results/gil.json

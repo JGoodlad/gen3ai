@@ -1,0 +1,15 @@
+opp_external=True: ffi T=1 reference: 300 steps, 6841 decisions, 36 episodes ended
+  ffi  T=4: IDENTICAL
+  proc T=1: IDENTICAL
+  proc T=4: IDENTICAL
+  ffi  T=1: IDENTICAL
+  teeth: a different seed differs: True
+opp_external=False: ffi T=1 reference: 300 steps, 3600 decisions, 35 episodes ended
+  ffi  T=4: IDENTICAL
+  proc T=1: IDENTICAL
+  proc T=4: IDENTICAL
+  ffi  T=1: IDENTICAL
+  teeth: a different seed differs: True
+successors k=48 over 60 roots: ffi == proc: True
+PARITY PASS
+exit 0

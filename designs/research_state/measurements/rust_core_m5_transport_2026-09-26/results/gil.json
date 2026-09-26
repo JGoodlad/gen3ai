@@ -1,0 +1,27 @@
+{
+ "shape": "gil",
+ "stamp": "commit=663d11bc5376f70115cde3a623bee4cd1be69c37;src=81db71690ff8b832;nfiles=84",
+ "argv": [
+  "bench.py",
+  "gil"
+ ],
+ "when": "2026-09-26T08:47:47-0700",
+ "load1_start": 2.73828125,
+ "contention_start": 1.0,
+ "contention_end": 1.0,
+ "cpu_count": 16,
+ "result": {
+  "none": {
+   "spin_iters_per_s": 24783409.666666668,
+   "main_steps": 490
+  },
+  "ffi": {
+   "spin_iters_per_s": 24772509.0,
+   "main_steps": 144
+  },
+  "proc": {
+   "spin_iters_per_s": 24646620.0,
+   "main_steps": 141
+  }
+ }
+}

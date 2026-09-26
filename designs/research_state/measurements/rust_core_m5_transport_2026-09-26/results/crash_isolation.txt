@@ -1,0 +1,2 @@
+parent survived; typed error: m5_envproc DIED (rc=-9) — the parent survives
+respawned child serves rows: 8 decisions open
