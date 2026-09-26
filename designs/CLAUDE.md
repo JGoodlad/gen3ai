@@ -155,9 +155,10 @@ becomes when it stops being a barometer and becomes the value function.**
   bump and §5.3's deletion list are a LATER commit, after an arm has run.**
 - [`launch_runbook.md`](ai_v12/launch_runbook.md) — the three generation-scale arms **SPARSE /
   SELF-φ / FROZEN-φ**, identical but for where the potential comes from, ahead of them a paired 5M
-  pre-test. `src/main/launch_runbook_test.py` parses its blocks OUT OF the document through the live
-  parser, so a flag deleted anywhere fails a test naming this doc — but a runbook is not a
-  registration; the arms are registered in the ledger.
+  pre-test. SUPERSEDED: its test (which parsed these blocks through the live parser) was deleted
+  with the shaped reward path on 2026-09-26 — every arm carries `--no-hand-shaping` and the
+  `pt_shaped` control the deleted shaped flags, so the runbook's arms now run PINNED to ≤ `029cee83`.
+  A runbook is not a registration; the arms are registered in the ledger.
 - [`probe_risk_modulation_capstone.md`](ai_v12/probe_risk_modulation_capstone.md) — does a P(win)
   value function buy correct risk modulation? Three offline instruments with **frozen per-arm
   predictions**; a FLAT sparse slope falsifies "P(win) buys risk for free" and must be reported as

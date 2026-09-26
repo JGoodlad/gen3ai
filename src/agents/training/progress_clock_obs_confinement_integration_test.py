@@ -58,9 +58,9 @@ def _capture(**clock_flags):
     constructor, which is the same one `EpisodeTracker` calls."""
     original = _pc.ProgressClock.__init__
 
-    def patched(self, no_progress_penalty=0.15, **kw):
+    def patched(self, **kw):
         kw.update(clock_flags)
-        original(self, no_progress_penalty, **kw)
+        original(self, **kw)
 
     _pc.ProgressClock.__init__ = patched          # type: ignore[method-assign]
     try:

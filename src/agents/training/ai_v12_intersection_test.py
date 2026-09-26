@@ -54,7 +54,7 @@ from agents.model.model_version.migrations import _migrate_config
 from main.train_rl_agent import build_parser
 
 #: The registered clean-world reward set (kept spelled the same as `clean_world_config_test`).
-CLEAN_REWARD = ["--no-hand-shaping", "--victory-value", "1.0", "--draw-penalty", "-1.0"]
+CLEAN_REWARD = ["--victory-value", "1.0", "--draw-penalty", "-1.0"]
 #: The production distributional critic, verbatim off `ai_v9_72_R3SELF_0828/model_config.json`.
 PROD_DIST = ["--value-dist-mode", "shaping", "--value-dist-bins", "51",
              "--value-dist-vmin", "-12", "--value-dist-vmax", "12", "--value-from-dist"]
@@ -204,8 +204,9 @@ def test_a_real_unshaped_stream_still_reports_a_finite_share():
 # ──────────────────────────────────────────────────────────────────────────────────────────────
 
 _WAVE_KEYS = {
-    # wave A (v105)
-    "hand_shaping": True, "pbrs_material": True, "pbrs_belief": True, "victory_value": 30.0,
+    # wave A (v105) — its three shaped keys (hand_shaping / pbrs_material / pbrs_belief) left the
+    # config at v122 (gen3_shaped_reward_deletion_v1)
+    "victory_value": 30.0,
     "win_prob_pbrs_source": None,
     # wave D (v106)
     "progress_decision_tense": False, "progress_switch_freeze": False,

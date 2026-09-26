@@ -10,7 +10,7 @@ stale twice:
 
 | | |
 |---|---|
-| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **121** in the mirror this file is gated against (the `gen3_event_record_v2` signature-bump window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — is what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_event_record_v2`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate, and all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
+| Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **122** in the mirror this file is gated against (the `gen3_event_record_v2` signature-bump window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — and the shaped-reward deletion's field removal are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_event_record_v2`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate, and all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
 | Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 121 / `gen3_event_record_v2`) |
 | `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). The `gen3_event_record_v2` **signature-bump window is OPEN** (2026-09-26, the observation-architecture batch): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_event_record_v2`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
@@ -841,7 +841,7 @@ families, the pointer cells and the belief stack are that run's, unchanged.
 
 | `--critic` | `V(s)` is | trained by | reward stream | PopArt | `gamma` |
 |---|---|---|---|---|---|
-| `shaped` (the argparse default) | `value_net`, or the distributional `E[Z]` under `value_from_dist` | the MSE / HL-Gauss CE at `vf_coef`, in PopArt-normalized units | 1 TERMINAL + 7 PBRS + 1 BIAS, ±30 with a −35 timeout | on | 0.9999 |
+| `shaped` (the argparse default) | `value_net`, or the distributional `E[Z]` under `value_from_dist` | the MSE / HL-Gauss CE at `vf_coef`, in PopArt-normalized units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | on | 0.9999 |
 | **`winprob`** (**this config**) | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal WIN INDICATOR**, at `vf_coef` **0.5** | the TERMINAL **WIN INDICATOR** alone — `+victory_value` (**1.0**) on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **absent** (`use_popart` false, refused here) | **1.0** |
 
 The critic and the return are the same quantity by construction: at `--victory-value 1.0` the
@@ -864,7 +864,7 @@ Under `--critic shaped` the mode builds the other route instead: `value_dist_hea
 head over `value_dist_bins` atoms spanning `[value_dist_vmin, value_dist_vmax]`, trained by an
 HL-Gauss cross-entropy at `vf_coef`), which becomes the critic itself whenever `value_from_dist` is
 true, with `value_net` frozen as its fallback; PopArt normalizes the value targets (and forces
-`--clip-range-vf none`); the reward is the 1 TERMINAL + 7 PBRS + 1 BIAS composition at γ 0.9999;
+`--clip-range-vf none`); the reward is the SIGNED terminal (±`victory_value`, `--draw-penalty` at the 250-turn cap) at γ 0.9999;
 and `win_head` demotes to an auxiliary readout weighted by `--win-prob-coef`. That mode is
 STRUCTURAL — it selects a different set of heads to carry the value — so `critic` is recorded in
 `model_config.json` and string-compared by `check_compatible`. It carries **no `ARCH_SIGNATURE`
@@ -874,17 +874,16 @@ exactly why the recorded-and-compared field is the whole safety.
 ⚠️ **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** The `−35 < −30`
 ordering `--draw-penalty` exists to set is not merely unused here, it is unrepresentable — so
 `--draw-penalty` is REFUSED at any non-zero value, and the anti-stall pressure comes from the obs
-deadline clock (§1.4) plus `--arm-no-progress-tax`, which re-arms `no_progress_tax` alone under
-`--no-hand-shaping` without reviving the other 24 BIAS terms. **Stall rate and mean episode length
+deadline clock (§1.4) — the reward has no anti-stall term at all since the shaped reward path was
+deleted (§6.3). **Stall rate and mean episode length
 are PRIMARY endpoints, not monitored ones.** The 250-turn cap, forfeits and ties are TERMINAL under
 this mode rather than SB3 truncations — as truncations at γ = 1 the bootstrapped `γ·V(s_last)` made
 every timeout's TD error identically zero, so the critic could not see them at all.
 
 Three flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`,
 `--no-use-popart`) because their argparse default is the `None` sentinel, so "unset" is
-representable and an implication can never overwrite a typed value. Four are REQUIRED and named by
-their own refusal (`--no-hand-shaping`, `--terminal-indicator`, `--victory-value 1.0`,
-`--draw-penalty 0`) because theirs are concrete, so an implication could not be told apart from an
+representable and an implication can never overwrite a typed value. Three are REQUIRED and named by
+their own refusal (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because theirs are concrete, so an implication could not be told apart from an
 overwrite. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so a fork of a `shaped`
 parent cannot inherit that parent's `use_popart` / `win_prob_mode` and break the mode with a value
 nobody typed. Design of record:
@@ -1396,65 +1395,29 @@ does nothing given another setting.
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)
 
-**The production reward is ONE TERMINAL TERM.** `hand_shaping` **false** · `terminal_indicator`
-**true** · `victory_value` **1.0** · `draw_penalty` **0.0** · `no_progress_tax_armed` **false** ·
-γ **1.0**. The composition is **1 TERMINAL (`win_loss`) + 0 PBRS + 0 BIAS**: `+1.0` on a win, `0.0`
-on a loss, a draw and a 250-turn timeout alike.
+**The production reward is ONE TERMINAL TERM.** `terminal_indicator` **true** · `victory_value`
+**1.0** · `draw_penalty` **0.0** · γ **1.0**. The composition is **1 TERMINAL (`win_loss`) + 0 PBRS +
+0 BIAS**: `+1.0` on a win, `0.0` on a loss, a draw and a 250-turn timeout alike. `draw_penalty` is
+INERT under the indicator (the resolved reading `inert_reward_flags` names, written beside the
+values in `model_config.json` and in `metadata.json`'s `reward_composition` block).
 
-🚨 **Three fields are recorded `true` and are INERT — read the composition, never these.**
-`all_shaping_pbrs` **true**, `pbrs_material` **true** and `pbrs_belief` **true** are all in
-`model_config.json` and none of them emits a term: `--no-hand-shaping` zeroes the whole shaping
-surface and `--terminal-indicator` replaces the terminal itself, so the flags describe a composition
-that is not built. They are recorded because `RewardConfig` is resume-immutable and every field must
-round-trip — they are *the values a resume must re-pass*, not a description of the objective. The
-authority is `metadata.json`'s `reward_composition` block (0 pbrs terms, 0 bias terms), which a
-launch also prints: `train_rl_agent` emits `[Reward] composition: …`
-(`reward_composition.format_reward_composition`) and records the census
-(`reward_composition.reward_class_composition`).
+**It is the ONLY reward the code has.** The hand-shaped reward path — eight PBRS potentials, ~25
+BIAS terms, the bias-additivity refund, the no-progress tax — and its 14 recorded fields were
+DELETED (`gen3_shaped_reward_deletion_v1`, config v122, 2026-09-26; the fields are listed in
+`designs/deleted_flags.md`). Without `--terminal-indicator` the terminal is SIGNED: `±victory_value`,
+a pre-cap tie scoring as a loss, and `draw_penalty` (default −35) at the 250-turn cap.
+`reward_golden_test` was recorded at the last pre-deletion commit (`029cee83`) and passes unchanged
+after it — the measured proof that production's reward, and the `win_margin` training-only obs key
+(`material_margin.py`, the material balance that used to be Φ_mat's by-product), did not move.
 
-**A reader no longer has to know the INERT rule to apply it: the RESOLVED reading is recorded
-beside the raw values.** `agents.training.reward_composition.inert_reward_flags(config)` is the
-resolver — it routes each recorded flag's terms through the folds' own
-`_pbrs_term_active` / `_bias_term_active` predicates, so it cannot drift from the census — and its
-sorted list is written in **two** places: as a derived sibling key `inert_reward_flags` in
-`model_config.json` (`agents.model.snapshot.save_model_snapshot`) and inside `metadata.json`'s
-`reward_composition` block (`reward_composition.reward_composition_block`, which also carries
-`composition_line` verbatim and `class_shares`). On the live `--critic winprob
---terminal-indicator` surface it names eleven flags — `all_shaping_pbrs`, `pbrs_material` and
-`pbrs_belief` among them, and `draw_penalty`, the one entry that is inert by MAGNITUDE rather than
-by term, since the indicator terminal pays `+victory_value` on a win and `0.0` on a loss, a draw
-and a 250-turn timeout alike.
-
-🚨 **It is written BESIDE the values and never in place of them, and that is the resume contract
-rather than caution.** `check_reward_config` compares each RECORDED value against the one
-`RewardConfig.from_args` rebuilds from the RESUMING argv, and that argv still carries
-`all_shaping_pbrs=True` (its default) — so recording `false` would FATAL every restart of the run
-the annotation exists to describe. It is not a `ModelVersion` field either (it is a pure function
-of fields already in the file); `_migrate_config` pops the key on the way in as a
-version-independent sanitizer, and `to_json()` stays exactly `asdict(self)`.
-
-The remaining fields are the DEFAULTS, recorded and inert for the same reason: `no_progress_penalty`
-0.15 · `mat_alive_weight` 1.25 · `bias_additivity` 1.0 · `self_ko_hp_penalty` 0.0 ·
-`switch_bias_weight` 0.0 · `bias_redesign` false · `drop_redundant_bias` false ·
-`drop_switch_bias` false · `stall_pbrs` false.
-
-Under `--critic shaped` the same fields resolve to a real composition — **1 TERMINAL + 7 PBRS +
-1 BIAS (`no_progress_tax`)** at `all_shaping_pbrs` true and a −35 `draw_penalty`, every non-stall
-shaping term a telescoping potential and the anti-stall tilt the single acknowledged objective bias;
-`--no-all-shaping-pbrs` is its fallback and a different objective rather than a smaller one
-(2 potentials and **26 additive BIAS terms**, with `no_progress_tax` itself disarmed, its clock
-charge gating on `bias_redesign OR all_shaping_pbrs`).
-
-`stall_pbrs` stays off deliberately. Turning it on additionally zeroes `no_progress_tax` and folds
-Φ_progress instead — the zero-BIAS destination, but a separate single-variable step, since the
-stall tilt carries a documented stall-regression risk.
-
-**Resume:** every field here is enforced on the training-resume path only. A run recorded under the
-pre-2026-08-18 defaults (`all_shaping_pbrs` false, `draw_penalty` −30.0 — every `ai_v9_*` run
-through gen-14) therefore FATALs on a flagless resume and must re-pass
-`--no-all-shaping-pbrs --draw-penalty -30.0`; the error names the flags. Frozen eval / pool /
-distill opponents are unaffected — `check_compatible` excludes reward fields, because their forward
-never reads the reward.
+**Resume:** every field here is enforced on the training-resume path only (a flagless resume of a
+win-indicator run under the signed defaults FATALs and the error names the flags to re-pass).
+🚨 **A resume or FORK of a checkpoint trained WITH the shaped reward REFUSES LOUDLY**
+(`agents.model.model_version.shaped_reward`, enforced in `resolve_config` and `main.checkargs`,
+typed `ShapedRewardCheckpointError`): it would otherwise continue on the terminal alone under the
+same run name. Run it pinned to ≤ `029cee83`. Frozen eval / pool / distill opponents are
+unaffected — `check_compatible` excludes reward fields and `_migrate_config` pops the deleted ones,
+because a frozen forward never reads the reward.
 
 ### 6.4 Runtime knobs (never versioned, must be re-passed on every resume)
 

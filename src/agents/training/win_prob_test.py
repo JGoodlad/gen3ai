@@ -55,7 +55,7 @@ def test_a_FLAT_margin_is_treated_as_absent():
     """`gen3_tb_relevance_v1`: a margin with no SPREAD cannot stratify, so the six tags it would
     produce are copies of their pooled siblings plus two constants — worse than publishing
     nothing, because all six READ AS MEASUREMENTS. This is the exact shape the pre-fix win-prob
-    arm shipped (`win_margin` pinned at 0.0 by `_fold_material_pbrs`'s early return)."""
+    arm shipped (`win_margin` pinned at 0.0 by the since-deleted `_fold_material_pbrs`'s early return)."""
     logits = torch.tensor([[2.0], [-2.0], [1.0], [-1.0]])
     target = torch.tensor([[1.0], [0.0], [1.0], [0.0]])
     _, m = InstrumentedMaskablePPO._win_prob_loss(
@@ -70,15 +70,13 @@ def test_a_REAL_margin_spread_selects_a_STRICT_SUBSET():
     Pre-fix, every one of these read 0.0, so `|margin| < tau` was always true: `contested_frac`
     was a flat 1.0, every `*_contested` tag was a byte-identical copy of its pooled sibling, and
     `P_mat` was a constant 0.5 — `skill_vs_material` scored the head against a coin flip."""
-    from agents.training.progress_clock import ProgressClock
     from agents.training.reward_manager import Gen3RewardManager, RewardConfig
     from agents.training.reward_test_fakes import _Battle, _delta, _full_team_live
 
-    winprob = RewardConfig(hand_shaping=False, terminal_indicator=True,
-                           victory_value=1.0, draw_penalty=0.0)
+    winprob = RewardConfig(terminal_indicator=True, victory_value=1.0, draw_penalty=0.0)
     margins = []
     for ours, opp in ((6, 1), (6, 2), (4, 4), (3, 3), (2, 6), (1, 6)):
-        mgr = Gen3RewardManager(config=winprob, progress_clock=ProgressClock())
+        mgr = Gen3RewardManager(config=winprob)
         mgr.process_turn_reward(_Battle(_full_team_live(our_alive=ours, opp_alive=opp), turn=5),
                                 _delta())
         margins.append([mgr._last_material_margin])

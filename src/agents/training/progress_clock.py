@@ -3,14 +3,14 @@
 A cross-turn counter is NOT current-board state, so it cannot live in ``LiveView`` (primitives only,
 no past-turn state). The precedent is ``HiddenPowerTracker``: owned by ``EpisodeTracker``, updated at
 ``record()`` (embed) time, threaded into ``encode()``. ``turns_since_progress`` follows the identical
-pattern — and crucially it is read by BOTH the obs encoder (the ``value()`` scalar) and the reward
-(``last_penalty``), so obs and reward key on ONE value (the whole point of the Markovian design).
+pattern. It is read by the obs encoder (the ``value()`` scalar) ALONE: its reward half — the
+``last_penalty`` the no-progress tax charged — was DELETED with the shaped reward path
+(program_rust_core §4 M3 row, 2026-09-26). The "charge" language below describes where the clock
+ADVANCES; since the deletion nothing is charged.
 
 **Timing (design §5.1).** poke-env's ``env.step`` runs ``embed_battle`` (the *next* obs) BEFORE
 ``calc_reward`` (the *current* reward). ``EpisodeTracker.record`` (inside ``embed_battle``) calls
-:meth:`update` for the just-completed decision window — so the obs is always FRESH — and stashes the
-penalty for that window in :attr:`last_penalty`; ``Gen3RewardManager.process_turn_reward`` then reads
-it. Result: the obs the model saw and the value the penalty keys on are the same number.
+:meth:`update` for the just-completed decision window — so the obs is always FRESH.
 
 **Three outcomes per window** (design §4.1 / §4.1.1 / §4.1.2):
   * PROGRESS — our-attributed offense advanced the game, OR a NON-redundant own setup advanced our
@@ -110,13 +110,10 @@ def _winning_residual(delta, live) -> bool:
 
 class ProgressClock:
     """Episode-scoped ``turns_since_progress`` counter. Owned by ``EpisodeTracker``; read by the obs
-    encoder (:meth:`value`) and the reward manager (:attr:`last_penalty`)."""
+    encoder (:meth:`value`)."""
 
-    def __init__(self, no_progress_penalty: float = 0.15, *,
-                 decision_tense: bool = False,
-                 switch_freeze: bool = False) -> None:
+    def __init__(self, *, decision_tense: bool = False, switch_freeze: bool = False) -> None:
         self.n: int = 0
-        self.last_penalty: float = 0.0   # penalty for the most-recently-folded window (read by reward)
         # --- The two intent-restoring fixes, both OPT-IN (default False = today's behavior) ---
         # F1 (`--progress-decision-tense`): read BOTH gates off the decision that OPENED the window
         # instead of the one that follows it. See :meth:`_gates` below and
@@ -128,11 +125,6 @@ class ProgressClock:
         # F2b (`--progress-switch-freeze`): a VOLUNTARY switch that fails the predicate FREEZES the
         # window instead of charging it. See `_is_progress`'s note below and the review's §4/F2b.
         self.switch_freeze: bool = switch_freeze
-        # The FLAT per-no-op magnitude (>0). A per-run constant set once from
-        # RewardConfig.no_progress_penalty (the env wires it); inference/standalone use the default,
-        # which is inert there (only the reward reads last_penalty). Keeping it on the clock means
-        # update() stays an obs-side call that needs no reward param.
-        self.no_progress_penalty: float = no_progress_penalty
         self._prev_spikes: int = 0        # opp-side spike layers after last window (hazard-add check)
         self._prev_our_spikes: int = 0    # our-side spike layers after last window (filler-spin check)
         # gen3_setup_progress_v1 trackers: our active's Σ positive boost stages + whether it had a
@@ -150,7 +142,6 @@ class ProgressClock:
 
     def reset(self) -> None:
         self.n = 0
-        self.last_penalty = 0.0
         self._prev_spikes = 0
         self._prev_our_spikes = 0
         self._prev_our_boost_sum = 0
@@ -165,7 +156,7 @@ class ProgressClock:
         return math.log(1.0 + min(self.n, PROGRESS_CLOCK_CAP)) / _LOG_DENOM
 
     def apply_reward_config(self, cfg) -> None:
-        """Adopt the per-run reward config's clock settings — the SINGLE place the three per-run
+        """Adopt the per-run reward config's clock settings — the SINGLE place the two per-run
         knobs are threaded, used by BOTH the training env and the server-free ``RewardTracker``.
 
         It exists because this exact class of bug has already shipped here once: a hand-threaded
@@ -174,7 +165,6 @@ class ProgressClock:
         standalone/inference clock keeps its constructor defaults."""
         if cfg is None:
             return
-        self.no_progress_penalty = float(getattr(cfg, "no_progress_penalty", self.no_progress_penalty))
         self.decision_tense = bool(getattr(cfg, "progress_decision_tense", self.decision_tense))
         self.switch_freeze = bool(getattr(cfg, "progress_switch_freeze", self.switch_freeze))
 
@@ -205,12 +195,12 @@ class ProgressClock:
         return forced, switch_legal
 
     def update(self, delta, live, legal, legal_prev=None) -> None:
-        """Fold one resolved decision window: classify PROGRESS / DENIED / NO_OP, update ``n``, and
-        stash :attr:`last_penalty` (= the FLAT :attr:`no_progress_penalty` on a charged no-op).
+        """Fold one resolved decision window: classify PROGRESS / DENIED / NO_OP and update ``n``.
 
         ``legal_prev`` is the :class:`LegalActions` of the decision that OPENED this window; it is
         read ONLY under ``--progress-decision-tense`` (see :meth:`_gates`)."""
-        forced_window, switch_legal = self._gates(delta, legal, legal_prev)
+        # `switch_legal` gated only the deleted no-progress CHARGE; `n` never read it.
+        forced_window, _switch_legal = self._gates(delta, legal, legal_prev)
         opp_spikes_now = self._opp_spikes(live)
         prev_spikes = self._prev_spikes
         self._prev_spikes = opp_spikes_now
@@ -236,7 +226,6 @@ class ProgressClock:
         # Forced-switch / post-faint replacement: only switches were legal → the clock sits out.
         # WHICH decision that describes is `_gates`' business (see the tense note there).
         if forced_window:
-            self.last_penalty = 0.0
             return
 
         # Spikes AT THE 3-LAYER CAP is a deliberate, obs-knowable wheel-spin: the move can NEVER add a
@@ -252,7 +241,6 @@ class ProgressClock:
                 and opp_spikes_now >= 3 and opp_spikes_now - prev_spikes <= 0
                 and not _winning_residual(delta, live)):
             self.n = min(self.n + 1, PROGRESS_CLOCK_CAP)
-            self.last_penalty = (-abs(self.no_progress_penalty)) if switch_legal else 0.0
             self._heal_streak = 0
             return
 
@@ -266,7 +254,6 @@ class ProgressClock:
         # Refresh while you net-out-chip the opp is a winning play, not a wheel-spin).
         if self._is_wasted_self_cure(delta) and not _winning_residual(delta, live):
             self.n = min(self.n + 1, PROGRESS_CLOCK_CAP)
-            self.last_penalty = (-abs(self.no_progress_penalty)) if switch_legal else 0.0
             self._heal_streak = 0
             return
 
@@ -285,7 +272,6 @@ class ProgressClock:
                 prev_our_boost_sum, our_boost_sum_now,
                 prev_our_has_sub, our_has_sub_now):
             self.n = 0
-            self.last_penalty = 0.0
             self._heal_streak = 0
             return
 
@@ -294,7 +280,6 @@ class ProgressClock:
             # A genuine attempt denied by RNG / the opponent (cant / miss / Protect-block) — not a
             # stall. FREEZE — neither increment nor charge. (Leaves _heal_streak intact so a heal-war
             # interrupted by one miss still accumulates.)
-            self.last_penalty = 0.0
             return
         if kind == "heal":
             # A productive defensive heal. Free for the first HEAL_FREEZE_GRACE consecutive windows
@@ -305,7 +290,6 @@ class ProgressClock:
             # turn the moment it repeats, so it falls straight through to the NO_OP charge.
             self._heal_streak += 1
             if not self._is_rest_loop and self._heal_streak <= HEAL_FREEZE_GRACE:
-                self.last_penalty = 0.0
                 return
         else:
             self._heal_streak = 0   # a non-heal no-op breaks any heal-war run
@@ -324,13 +308,11 @@ class ProgressClock:
         # (Placed AFTER the classification, so a switch that DOES reset the clock — clauses ii/iv/v,
         # 27% of them empirically — still resets rather than merely freezing.)
         if self.switch_freeze and getattr(delta, "our_switch_to", None) is not None:
-            self.last_penalty = 0.0
             return
 
         # NO_OP (deliberate wheel-spin) or a sustained heal-war → increment + charge, unless trapped
         # with no switch (helplessness must not be punished).
         self.n = min(self.n + 1, PROGRESS_CLOCK_CAP)
-        self.last_penalty = (-abs(self.no_progress_penalty)) if switch_legal else 0.0
 
     # ------------------------------------------------------------------ #
     @staticmethod

@@ -84,7 +84,7 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   scalars read it via `gen3_mechanics.protect_success_probability`), and the **incoming-damage belief
   inputs** (`stats` — the EV/IV/nature-computed {atk,def,spa,spd,spe}; integer `current_hp`/`max_hp` —
   own-side reliable, opp HP is %-based), so the incoming-KO belief reads the read-model instead
-  of the raw `Pokemon` (shared by the obs `encode_block(live)` and the reward PBRS shaping);
+  of the raw `Pokemon` (read by `encode_block(live)`; the reward PBRS that also read it was deleted 2026-09-26);
   `moves` is a tuple of `LiveMove(id, current_pp, max_pp)` with a `move_ids` accessor for id-only
   call-sites. `LiveView` carries the meta `turn`/`battle_tag`/`finished`/`won`/`lost`.
 

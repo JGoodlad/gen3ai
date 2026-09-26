@@ -194,7 +194,7 @@ the branch's own outcome bit and `win_mask` is 1.
 
 🚨 **Why the arm REFUSES any critic but `winprob`.** Under `--critic winprob` the reward stream is
 the **terminal win indicator alone** (`--terminal-indicator`, `--victory-value 1.0`,
-`--no-hand-shaping`), so a branch's ENTIRE reward sequence is reconstructible from its outcome bit —
+the terminal-only reward), so a branch's ENTIRE reward sequence is reconstructible from its outcome bit —
 which is the only reason `fork_buffer.branch_rewards` can build one outside the env. Under `shaped`
 a per-turn reward is a PBRS/bias composition the env's `RewardManager` folds from a `TurnDelta` that
 no branch has, and the injected rows would silently carry zero reward, i.e. would teach the critic

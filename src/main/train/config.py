@@ -15,6 +15,7 @@ Three jobs, in order, and the order is load-bearing:
 `ResolvedRunConfig`.
 """
 import dataclasses
+import sys
 from typing import Any
 
 from agents.model.damage_tables import _MIN_PRIOR_FLOOR, _PRIOR_FLOOR
@@ -188,6 +189,20 @@ def _announce_cf_duty_cycle(args) -> None:
     if duty >= CF_DUTY_CYCLE_FLOOR:
         emit(line)
         return
+
+
+def enforce_not_shaped_parent(model_path: str) -> None:
+    """The LAUNCH-path wrapper over `model_version.shaped_reward.check_not_shaped`: print the typed
+    refusal and exit `FATAL_CONFIG` (restarting would hit the identical checkpoint every time, so
+    the launcher must give up rather than loop). `main.checkargs` reads the same predicate."""
+    from agents.model.model_version.shaped_reward import (
+        ShapedRewardCheckpointError, check_not_shaped, saved_config_path)
+    from main.exit_codes import TrainExitCode
+    try:
+        check_not_shaped(saved_config_path(model_path))
+    except ShapedRewardCheckpointError as e:
+        print(f"\n[ModelVersion] FATAL: {e}", flush=True)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
 
 def inherit_saved_flag(args, saved_ver, name, default) -> bool:
@@ -439,16 +454,15 @@ def resolve_critic_mode(args, saved_ver=None) -> None:
     `shaped` parent would otherwise inherit that parent's `use_popart=True` / `win_prob_mode='none'`
     from its recorded config, and the mode would be broken by a value nobody typed.
 
-    🚨 **NOT IMPLIED, and that is a decision rather than an omission:** `--no-hand-shaping`,
-    `--terminal-indicator`, `--victory-value 1.0` and `--draw-penalty 0`. Those four are
-    resume-immutable REWARD fields with concrete argparse defaults (True / False / 30.0 / −35.0),
-    so "the operator left it alone" and "the operator typed the default" are indistinguishable —
-    an implication there would silently overwrite a typed value, and the refusal meant to catch a
-    conflicting one could never fire. They are instead REQUIRED, each by its own
-    `combination_checks` entry naming the flag to pass. That is this tree's standing preference for
-    a composition-changing combination (`--use-popart` requires an explicit `--clip-range-vf none`
-    for the same reason): a self-documenting config beats a silent override, and the reward
-    composition a run trained under is exactly the thing the v8→v9 drift proved must be stated.
+    🚨 **NOT IMPLIED, and that is a decision rather than an omission:** `--terminal-indicator`,
+    `--victory-value 1.0` and `--draw-penalty 0`. Those three are resume-immutable REWARD fields
+    with concrete argparse defaults (False / 30.0 / −35.0), so "the operator left it alone" and "the
+    operator typed the default" are indistinguishable — an implication there would silently
+    overwrite a typed value, and the refusal meant to catch a conflicting one could never fire.
+    They are instead REQUIRED, each by its own `combination_checks` entry naming the flag to pass:
+    a self-documenting config beats a silent override, and the reward a run trained under is
+    exactly the thing the v8→v9 drift proved must be stated. (`--no-hand-shaping` was the fourth
+    until the shaped reward path was deleted, 2026-09-26.)
     """
     from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
 
@@ -547,6 +561,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # saved value (the documented `--model … --steps …` command), instead of falling back to OFF and
     # FATALing at check_compatible (saved-ON vs current-default-OFF). An EXPLICIT flag that flips a
     # toggle still FATALs at load (desirable). A fresh run (no --model) → the toggle's OFF default.
+    # gen3_shaped_reward_deletion_v1: a RESUME or FORK of a checkpoint trained with the DELETED
+    # shaped reward is REFUSED here — before the inheritance sweep reads one recorded flag, and
+    # before the migration pops the deleted fields that prove it. Never a silent switch to the
+    # terminal alone (owner decision, 2026-09-26).
+    if args.model:
+        enforce_not_shaped_parent(args.model)
     _saved_ver = _load_saved_version(args.model) if args.model else None
     if args.model and _saved_ver is None:
         print("[Resume] WARNING: saved model_config.json unreadable — structural toggles fall back to "

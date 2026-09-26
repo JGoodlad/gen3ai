@@ -1,32 +1,14 @@
-"""Shared fakes for the reward-manager unit tests — NOT a test module.
+"""Shared fakes for the reward-manager and progress-clock unit tests — NOT a test module.
 
-The Markovian / PBRS reward redesign (design_markovian_reward_and_features.md) is specified by a
-family of per-term spec files (`reward_registry_test.py`, `reward_pbrs_*_test.py`,
-`reward_bias_terms_test.py`, `reward_end_state_test.py`, `reward_progress_clock_test.py`). They all
-need the same minimal LiveView / battle / TurnDelta stubs, so those live here once.
+`reward_manager_test.py`, `reward_registry_test.py`, `reward_progress_clock_test.py` and the
+terminal helper `reward_terminal_test_support.py` need the same minimal LiveView / battle /
+TurnDelta stubs, so those live here once.
 
 The name deliberately does NOT match pytest's `python_files` patterns (`*_test.py`), so this module
 is imported, never collected.
 """
 import numpy as np
 
-from agents.training.reward_manager import Gen3RewardManager, RewardConfig
-from agents.training.progress_clock import ProgressClock
-
-
-def _mgr_additive_bias(**kw):
-    """A manager in the ADDITIVE-BIAS regime — i.e. `--no-all-shaping-pbrs`.
-
-    Since 2026-08-18 the DEFAULT config is `--all-shaping-pbrs` (the validated ai_v8 composition):
-    the four end-state potentials FOLD and every BIAS term but `no_progress_tax` is ZEROED. A test
-    that wants to see a BIAS term fire, or to observe the potentials' OFF branch, must therefore
-    STATE the fallback regime rather than inherit it from a default that no longer means that.
-
-    `src/main/reward_defaults_test.py` owns the default composition itself; this helper keeps the
-    per-term mechanics tests readable about which regime they exercise.
-    """
-    kw.setdefault("config", RewardConfig(all_shaping_pbrs=False))
-    return Gen3RewardManager(**kw)
 
 
 # --------------------------------------------------------------------------- #
@@ -111,10 +93,3 @@ def _full_team_live(our_alive=6, opp_alive=6, our_hp=1.0, opp_hp=1.0, **kw):
     our = [our_hp] * our_alive + [0.0] * (6 - our_alive)
     opp = [opp_hp] * opp_alive + [0.0] * (6 - opp_alive)
     return _Live(our, opp, **kw)
-
-
-def _mgr_pbrs(**cfg):
-    """A FULLY-PBRS manager (both end-state switches ON) + a real ProgressClock, so every new
-    potential is live — incl. Φ_progress, which gates on stall_pbrs (the 'stall' switch)."""
-    return Gen3RewardManager(config=RewardConfig(all_shaping_pbrs=True, stall_pbrs=True, **cfg),
-                             progress_clock=ProgressClock())

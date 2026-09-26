@@ -243,12 +243,12 @@ refused (a bounded Bernoulli payoff has no scale to track).
 
 🚨 **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** That ordering is
 not merely unused under `winprob` — it is *unrepresentable*, so `--draw-penalty` is REFUSED. The
-anti-stall pressure comes from the obs deadline clock plus **`--arm-no-progress-tax`**. **Stall rate
+anti-stall pressure comes from the obs deadline clock (the reward has no anti-stall term). **Stall rate
 and mean episode length are PRIMARY endpoints on any `winprob` arm, not monitored ones.**
 
 Three flags are IMPLIED (`--win-prob-mode shaping`, `--gamma 1.0`, `--no-use-popart`) because their
-argparse default is a `None` sentinel; four are REQUIRED and named by their own refusal
-(`--no-hand-shaping`, `--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because
+argparse default is a `None` sentinel; three are REQUIRED and named by their own refusal
+(`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because
 theirs are concrete and an implication could not be told apart from an overwrite. Everything the
 mode SUBSUMES is refused rather than ignored. `python -m main.checkargs` reports every one offline.
 

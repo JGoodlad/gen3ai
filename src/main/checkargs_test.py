@@ -529,7 +529,7 @@ _CURRENT_ONLY_FLAG = "--critic"
 # command for a different, correct reason — a bare fresh argv is not the production architecture —
 # which would make the pinned/unpinned arms differ in two things instead of one. That the guard
 # fires on this exact shape is `main/train/arch_surface_test.py`'s subject.
-_WINPROB_ARGV = ("--steps 1000 --critic winprob --no-hand-shaping --terminal-indicator "
+_WINPROB_ARGV = ("--steps 1000 --critic winprob --terminal-indicator "
                  "--victory-value 1.0 --draw-penalty 0 --device cuda "
                  "--allow-nonproduction-arch")
 

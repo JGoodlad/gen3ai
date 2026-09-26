@@ -143,8 +143,8 @@ OFF = ["--unified-moves", "off"]
 TEACHER = "models/parent/final_model.zip:data/teams/sample/t1.txt"
 
 #: The composition `--critic winprob` REQUIRES. Declared once so a row that is about something
-#: ELSE does not also trip the four requirement rules and make its own failure ambiguous.
-_WP = ["--critic", "winprob", "--no-hand-shaping", "--terminal-indicator",
+#: ELSE does not also trip the three requirement rules and make its own failure ambiguous.
+_WP = ["--critic", "winprob", "--terminal-indicator",
        "--victory-value", "1.0", "--draw-penalty", "0"]
 
 ARGVS: dict[str, list[str]] = {
@@ -206,8 +206,8 @@ ARGVS: dict[str, list[str]] = {
     "cf_shadow_coef_needs_critic": ["--cf-shadow-coef", "0.1", "--no-cf-shadow-critic"],
     "q_winprob_coef_needs_mode": ["--q-winprob-coef", "0.1", "--q-winprob-mode", "none"],
     # ---- gen3_winprob_critic_mode_v1. `_WP` is the composition `--critic winprob` REQUIRES, so a
-    # row below trips its own rule rather than the four "you did not pass the reward flags" ones.
-    # The four requirement rows themselves each OMIT exactly one member of `_WP`.
+    # row below trips its own rule rather than the three "you did not pass the reward flags" ones.
+    # The three requirement rows themselves each OMIT exactly one member of `_WP`.
     "winprob_critic_needs_a_head": _WP + ["--win-prob-mode", "none"],
     "winprob_critic_refuses_popart": _WP + ["--use-popart"],
     "winprob_critic_refuses_value_dist": _WP + ["--value-dist-mode", "read_only",
@@ -250,17 +250,15 @@ ARGVS: dict[str, list[str]] = {
     "dense_aux_needs_the_winprob_critic": ["--win-prob-dense-aux", "1.0"],
     "winprob_critic_refuses_self_phi_pbrs": _WP + ["--win-prob-pbrs-coef", "0.5"],
     "winprob_critic_refuses_self_phi_source": _WP + ["--win-prob-pbrs-source", "models/p.zip"],
-    "winprob_critic_refuses_draw_penalty": ["--critic", "winprob", "--no-hand-shaping",
+    "winprob_critic_refuses_draw_penalty": ["--critic", "winprob",
                                             "--terminal-indicator", "--victory-value", "1.0",
                                             "--draw-penalty", "-1.0"],
-    "winprob_critic_needs_the_indicator_terminal": ["--critic", "winprob", "--no-hand-shaping",
+    "winprob_critic_needs_the_indicator_terminal": ["--critic", "winprob",
                                                     "--victory-value", "1.0",
                                                     "--draw-penalty", "0"],
-    "winprob_critic_needs_unit_victory_value": ["--critic", "winprob", "--no-hand-shaping",
+    "winprob_critic_needs_unit_victory_value": ["--critic", "winprob",
                                                 "--terminal-indicator", "--victory-value", "7.5",
                                                 "--draw-penalty", "0"],
-    "winprob_critic_needs_no_hand_shaping": ["--critic", "winprob", "--terminal-indicator",
-                                             "--victory-value", "1.0", "--draw-penalty", "0"],
     # gen3_frozen_phi_actor_only_v1: BUILDABLE under winprob, refused under shaped, so the plain
     # (shaped-default) argv is the row that fires the routing refusal.
     "win_prob_pbrs_frozen_needs_the_winprob_critic": ["--win-prob-pbrs-frozen", "models/p.zip"],

@@ -152,20 +152,20 @@ whole family of loss terms without breaking an import) and `MaskablePPO` staying
 module reached only through `train_setup` still counts as reachable — requiring a direct edge from
 `__init__`/`ppo` would forbid a decomposition rather than check one.
 
-## Reward redesign — registry + PBRS + the no-progress clock (`reward_manager.py`, `progress_clock.py`)
+## The reward — the TERMINAL alone (`reward_manager.py`); the no-progress clock (`progress_clock.py`)
 
-**Where the reward lives — six modules, one import path.** `reward_manager.py` re-exports every
-public name the other five declare (`reward_bias_terms` · `reward_config` — the `_REGISTRY`, the
-reward's source of truth · `reward_potentials` · `reward_composition` · `reward_weights`), plus
-`reward_verify.py` (the `GEN3AI_REWARD_VERIFY=1` shadow twin) and `progress_clock.py`.
-🚨 **Changing a value in `reward_weights.py` is a RETRAIN-class change, not a knob.**
-🚨 **THE SEQUENCE IS NOT SPLIT, AND THAT IS THE DESIGN** — the ORDER `process_turn_reward` folds
-its terms in is a CONTRACT and stays one straight line there, exactly like `instrumented_ppo/ppo.py`'s
-minibatch fold. 🚨 **A PATCH TARGET FOLLOWS THE SYMBOL** (`_encode_incoming_block` is read in
-`reward_potentials`, not `reward_manager`); `src/test_stub_vacuity_gate_test.py` fails a stale one
-rather than letting it pass.
+**The shaped reward path is DELETED** (`gen3_shaped_reward_deletion_v1`, config v122, 2026-09-26):
+the PBRS potentials, the BIAS terms, the bias refund, the no-progress TAX and their 14 flags
+(`designs/deleted_flags.md`). The reward is the terminal — production's win indicator
+(`--terminal-indicator --victory-value 1.0`), or the signed ±`victory_value` / `--draw-penalty`
+terminal. `reward_golden_test.py` was recorded at the last pre-deletion commit and passes unchanged,
+which is the proof production's reward did not move. 🚨 **A resume or fork of a checkpoint trained
+WITH shaping REFUSES** (`agents.model.model_version.shaped_reward`, enforced in `resolve_config`
+and `main.checkargs`) — run it pinned to ≤ `029cee83`; never continue it silently on the terminal
+alone. `material_margin.py` is the `win_margin` training-only OBS key, not a reward term, and
+`ProgressClock` is now an OBS-only counter (no `last_penalty`).
 
-**Full detail — every flag, gate, measurement and hazard — is in [`designs/training/reward.md`](../../../designs/training/reward.md).**
+**Full detail — the terminal table, the parity proof, the refusal, the clock — is in [`designs/training/reward.md`](../../../designs/training/reward.md).**
 
 ## State-conditioned defensive-exploration entropy (`--defensive-entropy-boost`)
 
@@ -493,11 +493,11 @@ and saturation is a trend.
 | `--win-prob-coef` | weights the auxiliary BCE, tagged `aux` | refused — the BCE is the value loss now |
 | PopArt · `--value-dist-*` · every `--win-prob-pbrs-*` | available | **REFUSED** |
 
-🚨 **`winprob` REQUIRES all four of `--no-hand-shaping --terminal-indicator --victory-value 1.0
---draw-penalty 0`**, each named by its own `combination_checks` refusal, so the undiscounted return
+🚨 **`winprob` REQUIRES all three of `--terminal-indicator --victory-value 1.0 --draw-penalty 0`**,
+each named by its own `combination_checks` refusal, so the undiscounted return
 is exactly `1{win}` and at `--gamma 1.0` `V(s) = P(win|s)` with no approximation term.
 🚨 **THE COST IS STATED, NOT BURIED: a critic bounded in [0,1] cannot represent "a timeout is worse
-than a loss."** The anti-stall pressure is the obs deadline clock plus `--arm-no-progress-tax`, and
+than a loss."** The anti-stall pressure is the obs deadline clock (the reward has no anti-stall term), and
 **stall rate and mean episode length are PRIMARY, kill-condition-bearing endpoints on a `winprob`
 arm.** 🚨 **A `winprob` run's `train/*` value tags are not comparable with a `shaped` run's.**
 

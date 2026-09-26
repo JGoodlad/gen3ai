@@ -29,7 +29,7 @@ DEFAULTS = {"fork_fraction": 0.0, "fork_branches": 3, "fork_contested_gap": 0.40
             "fork_contested_absv": 0.0, "fork_max_per_battle": 1, "fork_crn": "dice_and_draws"}
 
 
-_WP = ["--critic", "winprob", "--no-hand-shaping", "--terminal-indicator", "--victory-value",
+_WP = ["--critic", "winprob", "--terminal-indicator", "--victory-value",
        "1.0", "--draw-penalty", "0", "--steps", "1000"]
 
 

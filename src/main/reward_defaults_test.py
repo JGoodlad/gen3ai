@@ -1,32 +1,17 @@
-"""The reward DEFAULTS are the validated ai_v8 composition — and the defaults themselves are the
-contract.
+"""The reward DEFAULTS, and the reward flag surface — which since 2026-09-26 is the TERMINAL's alone.
 
-Owner decision (2026-08-18), after `designs/research_state/ledger.md` recorded the drift: all 20
-`ai_v8_*` runs trained with `--all-shaping-pbrs` ON and `--draw-penalty -35`; every `ai_v9_*` run
-through gen-14 trained with neither, with no recorded rationale anywhere. The flag was simply not
-carried across the fresh-generation reset. It was invisible for a year because the reward config is
-**training-only** — it bumps no `ARCH_SIGNATURE`, is absent from `check_compatible`, and no launch
-line ever stated what the reward was composed of. Nothing failed; the objective just quietly became
-a fully-additive 25-term BIAS where the validated one was near-policy-invariant.
-(The count read 26 until 2026-08-18, when the dead `RewardBreakdown.explosion` field — a
-permanent 0.0 nothing had assigned since design §2.5 deleted its literal — was removed. The
-census counts terms a config can EMIT, so a field that could never fire was over-counting it.)
+History (kept because the defaults are a contract): the 2026-08-18 owner decision pinned
+`--all-shaping-pbrs` ON and `--draw-penalty -35` after the silent v8→v9 composition drift. The shaped
+reward path was then DELETED (`gen3_shaped_reward_deletion_v1`, program_rust_core §4 M3 row); its 14
+flags are in `designs/deleted_flags.md`. What this file pins now:
 
-So the two defaults are pinned here BY VALUE, beside their opt-outs, in the shape
-`compile_defaults_test.py` established for the same class of change (an inverted default is
-invisible once landed — nothing fails, the run just quietly takes a different path).
-
-Three things this file holds that a `assert default is True` would not:
-
-1. **The composition pins.** The counts and the BIAS term list under each of the two regimes, so
-   the drift class is legible forever: the default composition has ONE acknowledged bias term, and
-   the fallback has 25. A future edit that silently re-adds an additive term fails here.
-2. **The actionable resume error.** Flipping a resume-immutable default makes every pre-flip run
-   mismatch on a flagless resume — correct and required (a live run's reward must never flip under
-   it), but only useful if the error names the flags to re-pass.
-3. **The default agreement between `RewardConfig` and `ModelVersion`.** They are separate
-   declarations of the same field set; a divergence would mean an absent field meant one thing to
-   the reward and another to the version record — the drift class one level down.
+1. **The terminal defaults, by value** — ±30, draw −35, the signed terminal; the production values
+   are typed, never defaulted.
+2. **The deleted flags are GONE from the parser** — a revert that brought one back would be a
+   shaped reward reachable by flag again.
+3. **The three declarations agree** — `RewardConfig`, `ModelVersion`'s fields and
+   `_REWARD_IMMUTABLE_FIELDS` decide what an ABSENT field means; a divergence is a silent drift.
+4. **The actionable resume error** — it names the flags to re-pass, and they parse back.
 """
 
 import dataclasses
@@ -34,18 +19,13 @@ import dataclasses
 import pytest
 
 from agents.model.model_version import (
+    DELETED_SHAPED_REWARD_FIELDS,
     _REWARD_FIELD_FLAGS,
     _REWARD_IMMUTABLE_FIELDS,
     ModelVersion,
     ModelVersionError,
 )
-from agents.training.reward_manager import (
-    RewardBreakdown,
-    RewardClass,
-    RewardConfig,
-    format_reward_composition,
-    reward_class_composition,
-)
+from agents.training.reward_manager import RewardConfig, reward_class_composition
 from main.train_rl_agent import build_parser
 
 
@@ -53,85 +33,56 @@ def _args(argv):
     return build_parser().parse_args(list(argv))
 
 
-def _v9_config():
-    """The composition every ai_v9 run through gen-14 actually trained with."""
-    return RewardConfig(all_shaping_pbrs=False, draw_penalty=-30.0)
+def _version(**reward_fields):
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    return dataclasses.replace(v, **reward_fields)
 
 
 # --------------------------------------------------------------------------- the parser defaults
 
-def test_all_shaping_pbrs_defaults_on():
-    assert _args([]).all_shaping_pbrs is True
-
-
-def test_all_shaping_pbrs_opt_out_is_no_all_shaping_pbrs():
-    assert _args(["--no-all-shaping-pbrs"]).all_shaping_pbrs is False
-
-
-def test_all_shaping_pbrs_also_takes_an_explicit_value():
-    """BoolFlag's value form — the spelling every other tri-state toggle here accepts."""
-    assert _args(["--all-shaping-pbrs", "false"]).all_shaping_pbrs is False
-    assert _args(["--all-shaping-pbrs=false"]).all_shaping_pbrs is False
-    assert _args(["--all-shaping-pbrs"]).all_shaping_pbrs is True
-
-
-def test_draw_penalty_defaults_to_minus_35():
-    assert _args([]).draw_penalty == -35.0
+def test_the_terminal_defaults_are_pinned_by_value():
+    a = _args([])
+    assert (a.victory_value, a.draw_penalty, a.terminal_indicator) == (30.0, -35.0, False)
+    assert (a.progress_decision_tense, a.progress_switch_freeze) == (False, False)
 
 
 def test_draw_penalty_opt_out_is_the_old_number():
-    """A float flag has no negation — the way back is the old value, which is why the resume
-    error renders it as `--draw-penalty -30.0` rather than a `--no-` form."""
     assert _args(["--draw-penalty", "-30"]).draw_penalty == -30.0
 
 
-def test_stall_pbrs_stays_default_off():
-    """DELIBERATELY unchanged. Zero-bias is a later, single-variable step: --stall-pbrs additionally
-    zeroes `no_progress_tax`, and that tilt carries a documented stall-regression risk. Bundling it
-    with this flip would make the generation a two-variable change."""
-    assert _args([]).stall_pbrs is False
-    assert _args(["--stall-pbrs"]).stall_pbrs is True
+@pytest.mark.parametrize("flag", sorted(set(DELETED_SHAPED_REWARD_FIELDS.values())))
+def test_every_deleted_shaped_flag_is_REFUSED_by_the_parser(flag, capsys):
+    """Bringing one back is bringing a shaped reward back — a research event, not a refactor."""
+    with pytest.raises(SystemExit):
+        _args([flag, "1"] if flag in ("--bias-additivity", "--mat-alive-weight",
+                                      "--no-progress-penalty", "--switch-bias-weight",
+                                      "--self-ko-hp-penalty") else [flag])
+    assert "unrecognized arguments" in capsys.readouterr().err
+    dest = next(k for k, v in DELETED_SHAPED_REWARD_FIELDS.items() if v == flag)
+    assert not hasattr(_args([]), dest)
 
 
-@pytest.mark.parametrize("dest,expected", [
-    ("bias_additivity", 1.0), ("mat_alive_weight", 1.25), ("bias_redesign", False),
-    ("switch_bias_weight", 0.0), ("self_ko_hp_penalty", 0.0),
-    ("drop_redundant_bias", False), ("drop_switch_bias", False),
-    ("no_progress_penalty", 0.15),
-    # gen3_progress_clock_intent_v1 (probes M/N, 2026-08-29): the no-progress clock's two
-    # intent-restoring fixes ship OFF. They are retrain-class when ON (the clock's `n` is the obs
-    # scalar as well as the charge basis), so a default flip here would silently change what a
-    # flagless launch trains — the exact class this file exists for.
-    ("progress_decision_tense", False), ("progress_switch_freeze", False),
-])
-def test_every_other_reward_default_is_unchanged(dest, expected):
-    """The flip is exactly two fields wide. This is the guard against it growing by accident."""
-    assert getattr(_args([]), dest) == expected
-
-
-# --------------------------------------------------- RewardConfig agrees with the parser defaults
+# --------------------------------------------------- the three declarations agree
 
 def test_reward_config_dataclass_defaults_match_the_parser():
-    """`RewardConfig()` is what `from_dict` falls back to for a field an older config omits, so its
-    defaults are a second declaration of the same contract and must not drift from argparse."""
     parsed = RewardConfig.from_args(_args([]))
     assert parsed == dataclasses.replace(RewardConfig(), gamma=parsed.gamma)
 
 
 def test_model_version_default_reward_fields_match_reward_config():
-    """The third declaration. `ModelVersion`'s field defaults and `_REWARD_IMMUTABLE_FIELDS` decide
-    what an ABSENT field means to the version record; `RewardConfig` decides what it means to the
-    reward. A divergence is the drift class one level down from the one this file exists for."""
     cfg = RewardConfig()
     for name, fallback in _REWARD_IMMUTABLE_FIELDS.items():
         assert getattr(cfg, name) == fallback, f"{name}: RewardConfig disagrees with the version fallback"
         field = ModelVersion.__dataclass_fields__[name]
         assert field.default == fallback, f"{name}: ModelVersion's dataclass default disagrees"
+    for name in DELETED_SHAPED_REWARD_FIELDS:
+        assert not hasattr(cfg, name) and name not in ModelVersion.__dataclass_fields__, name
 
 
 def test_every_immutable_reward_field_has_a_flag():
-    """The resume error is only actionable if every flag it can print is a flag that exists — a
-    renamed CLI option would otherwise produce a confidently-wrong instruction."""
+    """The resume error is only actionable if every flag it can print is a flag that exists."""
     assert set(_REWARD_IMMUTABLE_FIELDS) == set(_REWARD_FIELD_FLAGS)
     known = build_parser()._option_string_actions
     for name, flag in _REWARD_FIELD_FLAGS.items():
@@ -139,147 +90,37 @@ def test_every_immutable_reward_field_has_a_flag():
         assert known[flag].dest == name, f"{flag} does not set {name}"
 
 
-# ---------------------------------------------------------------- the composition, both regimes
-
-def test_default_composition_is_the_v8_shape():
-    """1 TERMINAL + 7 PBRS + exactly ONE acknowledged BIAS term.
-
-    (The ledger's prose says "8 PBRS"; it counted the PBRS registry class size. `pbrs_progress` is
-    `--stall-pbrs`-gated and that flag stays off, so 7 potentials are actually reachable — the
-    census counts what the config can emit, not what the class contains.)
-    """
-    comp = reward_class_composition(RewardConfig())
-    assert comp["terminal"] == 1
-    assert comp["pbrs"] == 7
-    assert comp["bias"] == 1
-    assert comp["bias_terms"] == ["no_progress_tax"]
-    assert set(comp["pbrs_terms"]) == {
-        "pbrs_material", "pbrs_belief", "pbrs_status",
-        "pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts", "pbrs_roar"}
-
-
-def test_no_all_shaping_pbrs_composition_is_the_v9_shape():
-    """The fallback restores the fully-additive objective: 2 potentials and 25 BIAS terms, none of
-    them telescoping. This is what every ai_v9 run through gen-14 trained (as 26 terms — one of
-    them, `explosion`, was a dead field that could never fire and is now deleted)."""
-    comp = reward_class_composition(_v9_config())
-    assert comp["terminal"] == 1
-    assert comp["pbrs"] == 2
-    assert set(comp["pbrs_terms"]) == {"pbrs_material", "pbrs_belief"}
-    assert comp["bias"] == 25
-    # `no_progress_tax` is the one BIAS term the v9 regime does NOT have — its clock charge is gated
-    # on `bias_redesign OR all_shaping_pbrs`, so turning the flag off also disarms the stall tilt.
-    assert "no_progress_tax" not in comp["bias_terms"]
-    assert {"stall_tax", "matchup_penalty", "switch_base", "status"} <= set(comp["bias_terms"])
-
-
-@pytest.mark.parametrize("field", ["progress_decision_tense", "progress_switch_freeze"])
-def test_the_clock_fixes_change_no_reward_TERM(field):
-    """They change what the no-progress clock COUNTS, never which terms exist — so the census must
-    read identically with either on. A census that moved would mean a clock knob had quietly become
-    a composition change, and `format_reward_composition` is what a launch line reports."""
-    assert (reward_class_composition(RewardConfig(**{field: True}))
-            == reward_class_composition(RewardConfig()))
-
-
-def test_the_two_regimes_are_the_whole_point_of_the_census():
-    """Stated as a single comparison so the drift is one assertion, not two files."""
-    v8, v9 = reward_class_composition(RewardConfig()), reward_class_composition(_v9_config())
-    assert v8["bias"] == 1 and v9["bias"] == 25
-
-
-def test_composition_covers_the_registry_exactly():
-    """Every census member is a real registry field of its class — a typo'd name would otherwise
-    read as a silently missing term."""
-    comp = reward_class_composition(RewardConfig())
-    reg = RewardBreakdown._REGISTRY
-    assert all(reg[n] is RewardClass.PBRS for n in comp["pbrs_terms"])
-    assert all(reg[n] is RewardClass.BIAS for n in comp["bias_terms"])
-    assert comp["terminal"] == len(RewardBreakdown.registry_fields(RewardClass.TERMINAL))
-
-
-def test_stall_pbrs_zeroes_the_last_bias_term():
-    """The zero-bias destination, for reference — running BOTH switches empties the BIAS class."""
-    comp = reward_class_composition(RewardConfig(stall_pbrs=True))
-    assert comp["bias"] == 0 and comp["bias_terms"] == []
-    assert "pbrs_progress" in comp["pbrs_terms"]   # Φ_progress carries the anti-stall signal instead
-
-
-def test_the_announcer_line_names_the_sole_bias_term():
-    line = format_reward_composition(RewardConfig())
-    assert line == "[Reward] composition: 1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)"
-
-
-def test_the_announcer_truncates_the_additive_pathology_but_keeps_the_count():
-    """25 term names is not a line anyone reads; the COUNT is the signal."""
-    line = format_reward_composition(_v9_config())
-    assert "25 BIAS" in line and "+19 more" in line and len(line) < 200
-
-
-def test_the_announcer_says_so_when_there_is_no_bias_left():
-    assert "none — fully policy-invariant" in format_reward_composition(RewardConfig(stall_pbrs=True))
-
-
-def test_the_census_reads_a_model_version_too():
-    """Duck-typed on field names, so the recorded `ModelVersion` of an ARCHIVED run can be censused
-    without reconstructing its RewardConfig — what an offline launch-diff needs."""
-    class _V9Version:
-        all_shaping_pbrs, stall_pbrs, bias_redesign = False, False, False
-        drop_redundant_bias = drop_switch_bias = False
-        switch_bias_weight = self_ko_hp_penalty = 0.0
-    assert reward_class_composition(_V9Version()) == reward_class_composition(_v9_config())
+def test_the_default_composition_is_one_terminal():
+    comp = reward_class_composition(RewardConfig.from_args(_args([])))
+    assert (comp["terminal"], comp["pbrs"], comp["bias"]) == (1, 0, 0)
 
 
 # ------------------------------------------------- the resume FATAL, and that it names the fix
 
-def _saved_v9_version():
-    """A ModelVersion as a pre-flip (v9-era) run recorded it."""
-    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
-    v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
-    return dataclasses.replace(v, all_shaping_pbrs=False, draw_penalty=-30.0)
+def _saved_production():
+    return _version(terminal_indicator=True, victory_value=1.0, draw_penalty=0.0)
 
 
-def test_a_v9_run_resumed_under_the_new_defaults_is_a_hard_error():
-    """THE hazard of flipping a resume-immutable default. A flagless resume of a pre-flip run now
-    requests a different reward than the one it trained under; that must FATAL, never flip
-    silently under a live run."""
+def test_a_production_run_resumed_under_the_defaults_is_a_hard_error():
+    """A flagless resume of a win-indicator run would request the signed ±30 terminal; that must
+    FATAL, never flip silently under a live run."""
     with pytest.raises(ModelVersionError) as exc:
-        _saved_v9_version().check_reward_config(RewardConfig())
+        _saved_production().check_reward_config(RewardConfig())
     msg = str(exc.value)
-    assert "all_shaping_pbrs" in msg and "draw_penalty" in msg
-
-
-def test_the_resume_error_names_both_flags_to_re_pass():
-    """A diff alone leaves the reader to reconstruct the flag spelling — including that the opt-out
-    is `--no-all-shaping-pbrs` and that a float flag's way back is just the old number."""
-    with pytest.raises(ModelVersionError) as exc:
-        _saved_v9_version().check_reward_config(RewardConfig())
-    msg = str(exc.value)
-    # Fields are reported in `_REWARD_IMMUTABLE_FIELDS` order (draw_penalty precedes
-    # all_shaping_pbrs), so the assertion is per-field rather than on one baked sentence.
-    assert "This run recorded draw_penalty=-30.0, all_shaping_pbrs=False." in msg
-    assert "re-pass `--draw-penalty -30.0 --no-all-shaping-pbrs`" in msg
+    assert "terminal_indicator" in msg and "victory_value" in msg and "draw_penalty" in msg
     assert "start a fresh run" in msg
 
 
 def test_the_re_passed_flags_actually_parse_back_to_the_saved_values():
-    """The strongest form of "actionable": take the flags out of the message, feed them to the real
-    parser, and the resulting config must pass the very check that produced the message."""
-    saved = _saved_v9_version()
+    saved = _saved_production()
     with pytest.raises(ModelVersionError) as exc:
         saved.check_reward_config(RewardConfig())
     fix = str(exc.value).split("re-pass `")[1].split("`")[0]
+    assert "--terminal-indicator" in fix and "--victory-value 1.0" in fix
     saved.check_reward_config(RewardConfig.from_args(_args(fix.split())))   # must not raise
 
 
-def test_a_v9_run_resumed_with_its_own_flags_is_accepted():
-    _saved_v9_version().check_reward_config(_v9_config())   # must not raise
-
-
 def test_a_fresh_default_run_resumes_flaglessly():
-    """The other direction: a run STARTED under the new defaults must resume with no reward flags
-    at all, or the flip would have made every launcher restart a FATAL."""
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     v = ModelVersion.from_layout_and_policy_kwargs(
@@ -288,12 +129,9 @@ def test_a_fresh_default_run_resumes_flaglessly():
 
 
 def test_frozen_opponents_are_exempt_from_the_reward_check():
-    """`check_compatible` gates EVERY load — eval workers, self-play sentinels, distill teachers —
-    whose forward never reads the reward. A reward field inside it would make a v9-era snapshot
-    unloadable as an opponent, which is a different and much worse failure than a resume FATAL."""
-    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
-    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
-    current = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
+    """`check_compatible` gates EVERY load — eval workers, sentinels, teachers — whose forward never
+    reads the reward. A reward field inside it would make a snapshot unloadable as an opponent."""
+    current = _version()
     for name in _REWARD_IMMUTABLE_FIELDS:
         saved = getattr(current, name)
         other = (not saved) if isinstance(saved, bool) else saved + 1.0

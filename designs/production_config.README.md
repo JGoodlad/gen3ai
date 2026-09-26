@@ -41,7 +41,7 @@ and then VERIFIED against the relaunched arm.
 | `value_dist_vmax` | 12.0 | **0.0** | " |
 | `value_from_dist` | true | **false** | REFUSED |
 | `value_tail_weight` | 0.3 | **0.0** | REFUSED → its concrete argparse default |
-| `hand_shaping` | true | **false** | REQUIRED (`--no-hand-shaping`) |
+| `hand_shaping` | true | *(deleted)* | the override LEFT the mirror with the field (config v122, `gen3_shaped_reward_deletion_v1`, 2026-09-26): the reward is terminal-only by construction, and the 14 shaped fields are gone from the mirror |
 | `terminal_indicator` | false | **true** | REQUIRED |
 | `victory_value` | 30.0 | **1.0** | REQUIRED — at 1.0 the undiscounted return IS `1{win}` |
 | `draw_penalty` | −35.0 | **0.0** | REQUIRED — a [0,1] critic cannot rank a timeout below a loss |

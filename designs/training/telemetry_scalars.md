@@ -521,22 +521,17 @@ residual is a GIGO guard rather than a rounding term — is in
 | `reward/total_{mean,abs_mean}` · `reward/n_decisions` | the stream itself and the window size |
 | `reward/untracked_abs_mean` | **THE GIGO GUARD** — `mean\|bd.total − Σ tracked\|`. Reads exactly 0.0 when the startup composition census and the folds agree; anything else means they do not |
 
-The tracked set is derived from `reward_class_composition(config)` — the SAME `_pbrs_term_active` /
-`_bias_term_active` predicates the folds are gated on — so the exported terms cannot disagree with
-the startup line. Under the `shaped`-critic default composition that is 10 terms (1 terminal +
-7 PBRS + 1 bias + the refund mechanism) → 46 tags; under `--no-all-shaping-pbrs` it is 28 terms →
-~100 tags. ⚠️ **The production run is neither**: `--no-hand-shaping --terminal-indicator` is ONE
-terminal term, so it emits the smallest tag set of the three. Bounded
-by the REGISTRY, never per-team.
+The tracked set is derived from `reward_class_composition(config)`, so the exported terms cannot
+disagree with the startup line. Since the shaped reward path was deleted (2026-09-26) every
+composition is ONE terminal term (`win_loss`), so the group is `reward/win_loss_*`, `reward/total_*`,
+`reward/class_terminal_*` and the guard below. Bounded by the REGISTRY, never per-team.
 
 **Transport: an `env_method` PULL, not an info-dict thread.** The reward is computed in the env
 WORKER, and under `--async-rollout` the callback's step locals arrive wave-batched with no way to
 recover which buffer row a step landed on — the same reason `TeamWinRateCallback` uses this seam.
 `AsyncSubprocVecEnv.env_method` is drain-safe, so one seam covers both collectors, and
 `RewardTermAccumulator.drain()` zeroes the window so a double pull cannot double-count. ALWAYS ON,
-no flag: the accumulator folds only the ACTIVE terms — 9 of 35 under the `shaped` default, and
-**1 of 35 under the production composition** (`--no-hand-shaping --terminal-indicator`: 1 TERMINAL,
-0 PBRS, 0 BIAS). Read `metadata.json`'s `reward_composition`, never a remembered count.
+no flag: the accumulator folds the ACTIVE terms — the one terminal term. Read `metadata.json`'s `reward_composition`, never a remembered count.
 
 #### `win_prob/` — the head's PREDICTION, its CALIBRATION, and the paired episode-start read
 

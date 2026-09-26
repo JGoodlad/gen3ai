@@ -254,30 +254,17 @@ def _reward_cfg(**kw):
 
 
 def test_check_reward_config_match_does_not_raise(version):
-    saved = dataclasses.replace(version, bias_additivity=0.5, mat_alive_weight=1.25,
-                                bias_redesign=False, switch_bias_weight=1.5)
-    saved.check_reward_config(_reward_cfg(bias_additivity=0.5, mat_alive_weight=1.25,
-                                          bias_redesign=False, switch_bias_weight=1.5))  # no raise
+    saved = dataclasses.replace(version, terminal_indicator=True, victory_value=1.0, draw_penalty=0.0)
+    saved.check_reward_config(_reward_cfg(terminal_indicator=True, victory_value=1.0,
+                                          draw_penalty=0.0))  # no raise
 
 
-def test_check_reward_config_switch_bias_weight_mismatch_raises(version):
-    """switch_bias_weight is resume-immutable (it changes the objective) — a drift must FATAL."""
-    saved = dataclasses.replace(version, switch_bias_weight=1.5)
+def test_check_reward_config_terminal_indicator_mismatch_raises(version):
+    """terminal_indicator is resume-immutable (it changes the objective) — a drift must FATAL."""
+    saved = dataclasses.replace(version, terminal_indicator=True)
     with pytest.raises(ModelVersionError) as exc_info:
-        saved.check_reward_config(_reward_cfg(switch_bias_weight=0.0))
-    assert "switch_bias_weight" in str(exc_info.value)
-
-
-def test_check_reward_config_default_off_matches(version):
-    """A fresh default run (lever OFF) matches a default-OFF saved config."""
-    dataclasses.replace(version, switch_bias_weight=0.0).check_reward_config(_reward_cfg())  # no raise
-
-
-def test_check_compatible_ignores_switch_bias_weight(version):
-    """Like vf_coef, switch_bias_weight is value-meaning, NOT weight-shape — frozen eval / pool /
-    distill loads (which go through check_compatible) must accept any value."""
-    differing = dataclasses.replace(version, switch_bias_weight=version.switch_bias_weight + 1.0)
-    version.check_compatible(differing)  # must not raise
+        saved.check_reward_config(_reward_cfg(terminal_indicator=False))
+    assert "terminal_indicator" in str(exc_info.value)
 
 
 def test_check_reward_config_draw_penalty_mismatch_raises(version):
@@ -299,133 +286,6 @@ def test_check_compatible_ignores_draw_penalty(version):
     (which go through check_compatible) must accept any value."""
     differing = dataclasses.replace(version, draw_penalty=version.draw_penalty - 5.0)
     version.check_compatible(differing)  # must not raise
-
-
-@pytest.mark.parametrize("field", ["drop_redundant_bias", "drop_switch_bias"])
-def test_check_reward_config_debias_flag_mismatch_raises(version, field):
-    """The de-bias cleanup flags are resume-immutable (they change the reward) — a drift must FATAL."""
-    saved = dataclasses.replace(version, **{field: True})
-    with pytest.raises(ModelVersionError) as exc_info:
-        saved.check_reward_config(_reward_cfg(**{field: False}))
-    assert field in str(exc_info.value)
-
-
-def test_check_reward_config_debias_default_off_matches(version):
-    """A fresh default run (both flags OFF) matches a default-OFF saved config (no raise)."""
-    dataclasses.replace(version, drop_redundant_bias=False,
-                        drop_switch_bias=False).check_reward_config(_reward_cfg())
-
-
-@pytest.mark.parametrize("field", ["drop_redundant_bias", "drop_switch_bias"])
-def test_check_compatible_ignores_debias_flags(version, field):
-    """The de-bias flags are value-meaning, NOT weight-shape — frozen eval / pool / distill loads
-    (which go through check_compatible) must accept any value."""
-    differing = dataclasses.replace(version, **{field: not getattr(version, field)})
-    version.check_compatible(differing)  # must not raise
-
-
-def test_migrate_v11_adds_debias_flags_default(version):
-    """The v13 de-bias-flags injection branch is pre-floor (MIGRATION_FLOOR): a v11 config is a
-    pre-generation checkpoint and is refused outright instead of migrating."""
-    data = json.loads(version.to_json())
-    data.pop("drop_redundant_bias", None)
-    data.pop("drop_switch_bias", None)
-    data["config_version"] = 11
-    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
-        _migrate_config(data)
-
-
-# ---------------------------------------------------------------------------
-# v13 — all_shaping_pbrs (end-state PBRS switch) + no_progress_penalty (now recorded)
-# ---------------------------------------------------------------------------
-@pytest.mark.parametrize("field", ["all_shaping_pbrs", "no_progress_penalty"])
-def test_check_reward_config_v13_field_mismatch_raises(version, field):
-    """all_shaping_pbrs + no_progress_penalty are resume-immutable (they change the reward) — drift FATAL."""
-    diff = {"all_shaping_pbrs": False, "no_progress_penalty": 0.30}[field]
-    saved = dataclasses.replace(version, **{field: diff})
-    with pytest.raises(ModelVersionError) as exc_info:
-        saved.check_reward_config(_reward_cfg(**{field: {"all_shaping_pbrs": True,
-                                                         "no_progress_penalty": 0.15}[field]}))
-    assert field in str(exc_info.value)
-
-
-def test_check_reward_config_v13_default_matches(version):
-    """A fresh default run matches a saved config recorded with the same defaults (no raise).
-    all_shaping_pbrs DEFAULTS ON since 2026-08-18 (the validated ai_v8 composition)."""
-    dataclasses.replace(version, all_shaping_pbrs=True,
-                        no_progress_penalty=0.15).check_reward_config(_reward_cfg())
-
-
-@pytest.mark.parametrize("field", ["all_shaping_pbrs", "no_progress_penalty"])
-def test_check_compatible_ignores_v13_fields(version, field):
-    """all_shaping_pbrs + no_progress_penalty are value-meaning, NOT weight-shape — frozen eval / pool /
-    distill loads (which go through check_compatible) must accept any value."""
-    diff = {"all_shaping_pbrs": not version.all_shaping_pbrs,
-            "no_progress_penalty": version.no_progress_penalty + 0.1}[field]
-    version.check_compatible(dataclasses.replace(version, **{field: diff}))  # must not raise
-
-
-def test_all_shaping_pbrs_recorded_and_config_version(layout):
-    """from_layout_and_policy_kwargs records all_shaping_pbrs + no_progress_penalty from reward_config."""
-    rc = _reward_cfg(all_shaping_pbrs=True, no_progress_penalty=0.25)
-    v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]}, reward_config=rc)
-    assert v.all_shaping_pbrs is True and v.no_progress_penalty == 0.25
-    assert v.config_version == MODEL_CONFIG_VERSION
-    v0 = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
-    # With NO reward_config the getattr fallbacks apply, and they track RewardConfig's defaults —
-    # so a version built without one records the composition a default run actually trains with.
-    assert v0.all_shaping_pbrs is True and v0.no_progress_penalty == 0.15
-
-
-def test_migrate_v12_adds_v13_fields_default(version):
-    """The v14 all_shaping_pbrs/no_progress_penalty injection branch is pre-floor
-    (MIGRATION_FLOOR): a v12 config is a pre-generation checkpoint and is refused outright."""
-    data = json.loads(version.to_json())
-    data.pop("all_shaping_pbrs", None)
-    data.pop("no_progress_penalty", None)
-    data["config_version"] = 12
-    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
-        _migrate_config(data)
-
-
-# ---------------------------------------------------------------------------
-# v14 — stall_pbrs (the "stall" end-state switch, split out of all_shaping_pbrs)
-# ---------------------------------------------------------------------------
-def test_check_reward_config_v14_stall_pbrs_mismatch_raises(version):
-    """stall_pbrs is resume-immutable (it changes the anti-stall reward) — a drift must FATAL."""
-    saved = dataclasses.replace(version, stall_pbrs=True)
-    with pytest.raises(ModelVersionError) as exc_info:
-        saved.check_reward_config(_reward_cfg(stall_pbrs=False))
-    assert "stall_pbrs" in str(exc_info.value)
-
-
-def test_check_reward_config_v14_default_matches(version):
-    """A fresh default run (stall_pbrs OFF) matches a default-OFF saved config (no raise)."""
-    dataclasses.replace(version, stall_pbrs=False).check_reward_config(_reward_cfg())
-
-
-def test_check_compatible_ignores_stall_pbrs(version):
-    """stall_pbrs is value-meaning, NOT weight-shape — frozen eval / pool / distill loads must accept it."""
-    version.check_compatible(dataclasses.replace(version, stall_pbrs=not version.stall_pbrs))
-
-
-def test_stall_pbrs_recorded_and_config_version(layout):
-    """from_layout_and_policy_kwargs records stall_pbrs from reward_config; absent → False."""
-    rc = _reward_cfg(all_shaping_pbrs=True, stall_pbrs=True)
-    v = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]}, reward_config=rc)
-    assert v.stall_pbrs is True and v.config_version == MODEL_CONFIG_VERSION
-    v0 = ModelVersion.from_layout_and_policy_kwargs(layout, {"net_arch": [512, 512]})
-    assert v0.stall_pbrs is False
-
-
-def test_migrate_v13_adds_stall_pbrs_default(version):
-    """The v15 stall_pbrs injection branch is pre-floor (MIGRATION_FLOOR): a v13 config is a
-    pre-generation checkpoint and is refused outright instead of migrating."""
-    data = json.loads(version.to_json())
-    data.pop("stall_pbrs", None)
-    data["config_version"] = 13
-    with pytest.raises(ModelVersionError, match="PRE-GENERATION"):
-        _migrate_config(data)
 
 
 # ---------------------------------------------------------------------------
@@ -894,7 +754,7 @@ def test_check_opponent_compatible_ignores_vf_coef_and_reward(version):
     """vf_coef / reward-config are value-meaning training hparams, irrelevant to an opponent forward."""
     differing = dataclasses.replace(
         version, vf_coef=version.vf_coef + 0.25,
-        bias_additivity=0.0, switch_bias_weight=version.switch_bias_weight + 1.0,
+        terminal_indicator=not version.terminal_indicator, draw_penalty=version.draw_penalty - 5.0,
     )
     version.check_opponent_compatible(differing)  # must not raise
 

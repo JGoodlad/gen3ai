@@ -49,54 +49,23 @@ class ModelVersionFields:
     # test) need not supply it.
     vf_coef: float = 0.5
 
-    # Reward-config hparams (v4) — resume-immutable VALUE-meaning, NOT weight-shape. Default = the
-    # single-variable run (material clutch-fix only; BIAS additive). Enforced via check_reward_config.
-    bias_additivity: float = 1.0
-    mat_alive_weight: float = 1.25
-    bias_redesign: bool = False
-    switch_bias_weight: float = 0.0   # v5: belief-risk-scaled stay-into-KO BIAS lever (default OFF)
-    # v7: terminal reward for a DRAW / 250-turn timeout. Resume-immutable VALUE-meaning
-    # (check_reward_config), excluded from the weight-shape check. The default tracks
-    # RewardConfig.draw_penalty (flipped -30.0 -> -35.0, owner decision 2026-08-18) so a version
-    # built with no reward_config records what a default run actually trains with.
+    # Reward-config hparams — resume-immutable VALUE-meaning, NOT weight-shape; enforced via
+    # check_reward_config and excluded from check_compatible (a frozen forward never reads the
+    # reward). The 14 SHAPED-reward fields (bias_additivity … no_progress_tax_armed) were DELETED at
+    # v122 (gen3_shaped_reward_deletion_v1): `_migrate_config` pops them from an older config, and a
+    # resume/fork of a config that recorded a shaped reward is refused by
+    # `model_version.shaped_reward` before this record is ever built.
+    # v7: terminal reward for a DRAW / 250-turn timeout under the SIGNED terminal.
     draw_penalty: float = -35.0
-    # v12: de-bias cleanup — zero audit-flagged distorting BIAS terms. Resume-immutable VALUE-meaning
-    # (check_reward_config), excluded from the weight-shape check. False = the prior behavior.
-    drop_redundant_bias: bool = False   # drop stall_tax + matchup_penalty (redundant w/ clock+draw / pbrs_belief)
-    drop_switch_bias: bool = False      # drop the hand-coded switch-strategy subsidy family
-
-    # v13/v14: end-state PBRS switches + the now-immutable no-progress penalty (Φ_progress's weight).
-    # all_shaping_pbrs = "everything but stall"; stall_pbrs (v14) = the "stall" switch (Φ_progress).
-    # `all_shaping_pbrs` defaults TRUE, tracking RewardConfig (owner decision 2026-08-18 — the
-    # validated ai_v8 composition). Every config at/above MIGRATION_FLOOR records the key explicitly,
-    # so this default is reached only by a ModelVersion built with no reward_config at all; keeping
-    # it in step with RewardConfig is what stops such a version recording a composition no run uses.
-    all_shaping_pbrs: bool = True
-    stall_pbrs: bool = False
-    no_progress_penalty: float = 0.15
-
-    # v105 (gen3_clean_world_config_v1): the CLEAN-WORLD reward switches. Resume-immutable
-    # VALUE-meaning (check_reward_config), excluded from the weight-shape check; every default
-    # below is today's behaviour. `hand_shaping` False zeroes ALL eight hand PBRS potentials AND
-    # the whole BIAS class — the composition `--no-all-shaping-pbrs` could NOT reach, because that
-    # flag is also `_bias_term_active`'s master gate and disabling it REVIVES 25 BIAS terms.
-    # `pbrs_material` / `pbrs_belief` gate the two potentials that had no flag at all.
-    # `victory_value` promotes the ±30 terminal off a module constant so ±1 is reachable by flag.
-    hand_shaping: bool = True
-    pbrs_material: bool = True
-    pbrs_belief: bool = True
+    # v105: the TERMINAL magnitude (a ±1 terminal reachable by flag).
     victory_value: float = 30.0
     # v105: the no-progress clock's two intent-restoring fixes (probe M/N, 2026-08-29). Both default
-    # OFF = the behaviour every run through gen-15 trained. Resume-immutable VALUE-meaning
-    # (check_reward_config), excluded from the weight-shape check: they change what the clock counts
-    # (and hence the `turns_since_progress` obs scalar) but no dim and no weight.
+    # OFF. They change what the clock counts — the `turns_since_progress` obs scalar — but no dim
+    # and no weight.
     progress_decision_tense: bool = False   # gates read decision t, not t+1
-    progress_switch_freeze: bool = False   # a voluntary switch freezes rather than charges
-    # v109 resume-IMMUTABLE reward fields (gen3_winprob_critic_mode_v1). Both defaults are today's
-    # behaviour; `check_reward_config` enforces them, `check_compatible` excludes them (a frozen
-    # opponent's forward never reads the reward). See RewardConfig for what each one does.
+    progress_switch_freeze: bool = False   # a voluntary switch freezes the clock
+    # v109 (gen3_winprob_critic_mode_v1): the TERMINAL as a WIN INDICATOR.
     terminal_indicator: bool = False
-    no_progress_tax_armed: bool = False
 
     # v6 feature toggle (value-checked, not weight-shape): PopArt value-target normalization. The
     # value head's parameterization + buffers differ when on, so it cannot be toggled on a resume.
@@ -132,11 +101,6 @@ class ModelVersionFields:
     # opponents whose forward never touches it). Defaulted so weight-shape-only callers need not supply it.
     value_tail_weight: float = 0.0
 
-    # v12 resume-immutable VALUE-meaning reward hparam (like draw_penalty — NOT weight-shape): the
-    # decision-time-HP-scaled self-KO penalty weight (−w·hp on Explosion/Self-Destruct + we_fainted).
-    # 0.0 = OFF (byte-identical). Enforced via check_reward_config; excluded from check_compatible.
-    # Defaulted so weight-shape-only callers need not supply it.
-    self_ko_hp_penalty: float = 0.0
 
     # v16 STRUCTURAL toggle (weight-shape via the BeliefHead + unknown-slot params): the in-place
     # hidden-opponent BELIEF AUX. ON fills un-revealed opp slots with distinct learned unknown-mon

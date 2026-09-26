@@ -49,14 +49,13 @@ rather than the loss-enriched eval quota, so it needs no selection reweighting a
 **`{}`, never zeros**: a calibration of nothing and a perfect calibration must not render the same.
 
 **What `winprob` does to the REWARD, and the one thing it gives up.** The stream becomes the
-TERMINAL **win indicator** alone (`--no-hand-shaping` + `--terminal-indicator` +
-`--victory-value 1.0` + `--draw-penalty 0`, all four REQUIRED and each named by its own
+TERMINAL **win indicator** (`--terminal-indicator` + `--victory-value 1.0` + `--draw-penalty 0`,
+all three REQUIRED and each named by its own
 `combination_checks` refusal), so the undiscounted return is exactly `1{win}` and, at `--gamma 1.0`,
 `V(s) = P(win | s)` with no approximation term. The cost is stated rather than buried: **a critic
 bounded in [0,1] cannot represent "a timeout is worse than a loss."** `--draw-penalty`'s
 `−35 < −30` ordering is unrepresentable there, so the anti-stall pressure is the obs deadline clock
-plus **`--arm-no-progress-tax`** (design gap B4) — which re-arms `no_progress_tax` alone under
-`--no-hand-shaping`, without reviving the other 24 BIAS terms. **Stall rate and mean episode length
+(the reward has no anti-stall term since the shaped reward path was deleted, 2026-09-26). **Stall rate and mean episode length
 are PRIMARY, kill-condition-bearing endpoints on a `winprob` arm.**
 
 **THE DRAW BRANCH IS EXPLICIT, and `signal/draw_rate` states its frequency** (design §3.2 / gap
@@ -81,10 +80,8 @@ loss). Under `--terminal-indicator` they agree: a timeout pays 0.0, exactly like
 
 **`--gamma` is now a flag** (design gap B6; it was hardcoded at `model_build.py`'s
 `InstrumentedMaskablePPO(...)` call). Its `shaped` default is `reward_weights.PBRS_GAMMA` itself
-rather than a retyped `0.9999`, and the `PBRS_GAMMA == reward_config.gamma == model.gamma` assert
-is now **GATED on a hand potential actually being folded** on both build paths — under
-`--no-hand-shaping` every `_fold_*_pbrs` early-returns, so there is nothing for the invariance
-claim to be about and an ungated assert would refuse a coherent run. It is **INERT ON A RESUME**
+rather than a retyped `0.9999` (the `PBRS_GAMMA == model.gamma` assert went with the hand
+potentials when the shaped reward path was deleted, 2026-09-26). It is **INERT ON A RESUME**
 like `--lr`: SB3 restores the checkpoint's own γ, the resume path SAYS so, and it re-points
 `reward_config.gamma` at the value actually in force so the two cannot silently disagree.
 
@@ -344,7 +341,7 @@ than the single terminal draw.
 
 ### The recursion
 
-γ = 1 and the clean-world stream is **terminal-only** (`--no-hand-shaping --terminal-indicator`), so
+γ = 1 and the clean-world stream is **terminal-only** (`--terminal-indicator`), so
 an n-step return has no intermediate reward term at all and **IS** `V(s[t+n])`. The λ-weighted
 average over n collapses to one backward pass per episode:
 

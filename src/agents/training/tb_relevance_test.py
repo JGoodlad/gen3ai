@@ -11,7 +11,7 @@ publishing, as confident constants and byte-identical duplicates, on the first a
 | `train/scaffolding_{gauge,rho,n}` | ρ = 1.0, gauge = 5.5e-13, both flat | V IS `sigmoid(win_prob_logit)`; a rank gauge between a quantity and itself is a tautology |
 | `grad/win_prob_{share,norm_shared,policy_cosine}` | equal to `grad/value_*` to the last bit | the critic loss IS the win-prob BCE — the SAME tensor, reported twice AND double-counted in the shared denominator |
 | `win_prob/{brier,acc}_contested`, `contested_{frac,label_mean}`, `brier_material`, `skill_vs_material` | *(RECLASSIFIED 2026-09-07 — see below; these are LIVE)* | — |
-| `reward/{bias_refund,class_refund}_*` | six flat zeros | the refund is the BIAS class's mechanism and the composition has no bias term |
+| `reward/{bias_refund,class_refund}_*` | six flat zeros | the refund is the BIAS class's mechanism and the composition has no bias term (since 2026-09-26 the whole BIAS class is DELETED, so these cannot appear on any run) |
 
 The rule these tests pin is one rule, applied four times: **the gate is on the SOURCE, never on the
 value**, and turning a source off must leave a GAP in the curve rather than a confident number. Each
@@ -231,27 +231,13 @@ def test_an_absent_margin_is_unchanged():
 
 _TERMINAL_ONLY = {"terminal": 1, "pbrs": 0, "bias": 0,
                   "terminal_terms": ["win_loss"], "pbrs_terms": [], "bias_terms": []}
-_PRODUCTION = {"terminal": 1, "pbrs": 7, "bias": 1,
-               "terminal_terms": ["win_loss"],
-               "pbrs_terms": [f"p{i}" for i in range(7)],
-               "bias_terms": ["no_progress_tax"]}
 
 
-def test_a_composition_with_no_bias_term_does_not_track_the_refund():
-    assert "bias_refund" not in tracked_terms(_TERMINAL_ONLY)
+def test_a_terminal_only_composition_tracks_the_terminal_and_nothing_else():
+    """Since the shaped-reward deletion (2026-09-26) there is no BIAS class, so no refund mechanism
+    to track at all — the `refund` rollup cannot appear."""
+    assert tracked_terms(_TERMINAL_ONLY) == ["win_loss"]
     assert "refund" not in term_class_map(_TERMINAL_ONLY).values()
-
-
-def test_the_production_composition_still_tracks_the_refund():
-    """The negative control — a shaped run's tag set must not move."""
-    assert tracked_terms(_PRODUCTION)[-1] == "bias_refund"
-    assert term_class_map(_PRODUCTION)["bias_refund"] == "refund"
-
-
-def test_the_count_and_the_term_list_agree_and_either_alone_suffices():
-    """`reward_class_composition` emits both; a hand-built census may carry only one."""
-    assert "bias_refund" in tracked_terms({"terminal_terms": ["w"], "bias_terms": ["t"]})
-    assert "bias_refund" not in tracked_terms({"terminal_terms": ["w"], "bias": 0})
 
 
 def test_no_refund_curves_are_exported_for_a_terminal_only_run():
@@ -324,7 +310,7 @@ CRITIC_MODE_TAGS = (
     "win_prob/critic_decomp_residual",
 )
 
-_WINPROB_ARGV = ["--critic", "winprob", "--no-hand-shaping", "--terminal-indicator",
+_WINPROB_ARGV = ["--critic", "winprob", "--terminal-indicator",
                  "--victory-value", "1.0", "--draw-penalty", "0"]
 _SHAPED_ARGV = ["--win-prob-mode", "read_only"]
 
@@ -386,9 +372,7 @@ def test_a_shaped_run_keeps_every_tag_the_gates_touch(tmp_path):
     """
     tags, _series = _run_smoke(tmp_path, "tbrel_shaped", _SHAPED_ARGV)
     for tag in ("train/scaffolding_gauge", "train/scaffolding_rho", "train/scaffolding_n",
-                *MARGIN_TAGS,
-                "reward/bias_refund_mean", "reward/bias_refund_abs_mean",
-                "reward/class_refund_mean", "reward/class_refund_abs_mean"):
+                *MARGIN_TAGS):
         assert tag in tags, f"{tag} lost on a SHAPED run — a gate fired where its source is live"
     missing = sorted(t for t in LIVE_TAGS if t not in tags)
     assert not missing, f"shaped run missing: {missing}"

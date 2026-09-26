@@ -730,7 +730,7 @@ def test_the_source_is_INHERITED_on_a_flagless_resume():
 #
 # `reward_share`'s denominator is the unshaped stream's own mean |reward|. That is the right
 # question on a dense stream and a broken one on the stream this lever was built for: under
-# `--no-hand-shaping` the unshaped reward is TERMINAL-ONLY, so the denominator is exactly 0 on a
+# the terminal-only reward the unshaped reward is TERMINAL-ONLY, so the denominator is exactly 0 on a
 # rollout with no episode end and is "±V ÷ episode length" otherwise — a meter that moves with the
 # episode length rather than with the coefficient. The companions divide by the run's terminal
 # magnitude instead, which is a constant.

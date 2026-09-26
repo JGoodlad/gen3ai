@@ -9810,3 +9810,45 @@ the batch intends it: the obs golden (confinement census: 991 decisions, non-eve
 500 event windows differ, all explained), the core event records of the two battles with a Pursuit on a
 switch, the delivery graph, the architecture viewer. Evidence:
 `designs/research_state/measurements/obs_arch_batch_2026-09-26/`.
+
+## v122 — THE SHAPED REWARD PATH IS DELETED: the reward is the TERMINAL alone (`gen3_shaped_reward_deletion_v1`; config bump, no ARCH_SIGNATURE bump, no training-input change)
+
+The Rust core deletion manifest's M3 "SHAPED reward path" row (program_rust_core §4), owner-approved
+2026-09-26. Production had trained on `1 TERMINAL + 0 PBRS + 0 BIAS` (the win indicator, `--critic
+winprob`) since the win-prob era, and slice T's Rust reward is the win indicator; the shaped terms were
+gated OFF in production but still ran THROUGH its reward fold.
+
+**Deleted:** `reward_potentials.py` (the eight Φ potentials), `reward_bias_terms.py` (~25 BIAS terms),
+`reward_verify.py` (the `GEN3AI_REWARD_VERIFY=1` shadow twin), the bias-additivity refund, the
+suppressed-term and terminal-only fast paths, the no-progress TAX (`ProgressClock.last_penalty` /
+`no_progress_penalty` — the clock survives as the OBS-only `turns_since_progress` counter), the
+eval-side reward clock in `RewardTracker`, the `PBRS_GAMMA == model.gamma` build asserts, the
+`winprob_critic_needs_no_hand_shaping` combination check, and 14 flags / recorded fields:
+`--hand-shaping`, `--all-shaping-pbrs`, `--pbrs-material`, `--pbrs-belief`, `--stall-pbrs`,
+`--bias-redesign`, `--bias-additivity`, `--mat-alive-weight`, `--no-progress-penalty`,
+`--arm-no-progress-tax`, `--switch-bias-weight`, `--self-ko-hp-penalty`, `--drop-redundant-bias`,
+`--drop-switch-bias` (`designs/deleted_flags.md`). Kept: the terminal (`--terminal-indicator`,
+`--victory-value`, `--draw-penalty`), the `reward/` export, the census, and the material MARGIN — the
+`win_margin` training-only obs key — moved to `agents/training/material_margin.py` with the alive
+weight frozen at 1.25. Tests of the deleted terms went with them (~6,000 lines); `reward_manager_test`
+was rewritten for the terminal.
+
+**Parity proof.** `reward_golden_test` → `gen3_reward_golden_v2`: every decision's reward, `win_loss`
+and `win_margin` over 30 bridge battles × six terminal-only compositions (`production` read from the
+mirror), RECORDED at `029cee83` with the shaped code in the tree and passing unchanged after the
+deletion — 2,772 decisions, sha256 `2075c3f7b6edc725…`. Production's reward and its obs did not move.
+
+**The resume/fork contract (owner decision).** A resume or fork of a checkpoint trained WITH shaping
+REFUSES LOUDLY — typed `ShapedRewardCheckpointError` (a `ModelVersionError`) from
+`agents.model.model_version.shaped_reward`, read from the RAW config before migration; enforced in
+`main.train.config.resolve_config` (exit `FATAL_CONFIG`) and in `main.checkargs` (ADVISORY when the
+argv is pinned at or before `029cee83`). The fix it names: run it pinned to ≤ `029cee83`. It never
+switches silently to the terminal alone. Belt-and-braces today (`MIGRATION_FLOOR` 121 refuses every
+pre-v121 checkpoint; every v121 run on record is terminal-only). Frozen loads pop the 14 fields
+silently. Arm S (the shaped comparator) is no longer re-runnable on HEAD; the SUPERSEDED ai_v12 launch
+runbook's test went with it.
+
+`MODEL_CONFIG_VERSION` 122 (stamp-only migration), `MIGRATION_FLOOR` 121 unchanged — a v121 production
+checkpoint loads and resumes. The production mirror drops the 14 keys (its `hand_shaping` override
+leaves `designs/baselines.json`). ⚠️ `reward_config_digest` hashes every `RewardConfig` field, so a cf
+label stamped by a pre-deletion producer no longer matches a post-deletion consumer (a loud refusal).

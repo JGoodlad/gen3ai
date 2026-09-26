@@ -311,8 +311,8 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     # THE CRITIC MODE, in the same place and for the same reason (gen3_winprob_critic_mode_v1).
     # `--critic winprob` IMPLIES `--win-prob-mode shaping`, `--gamma 1.0` and `--no-use-popart`; a
     # checker that skipped them would report a launching command as broken on the very flags the
-    # mode fills in. The four reward flags it does NOT imply (--no-hand-shaping,
-    # --terminal-indicator, --victory-value 1.0, --draw-penalty 0) are REQUIRED, and the checks
+    # mode fills in. The three reward flags it does NOT imply (--terminal-indicator,
+    # --victory-value 1.0, --draw-penalty 0) are REQUIRED, and the checks
     # below are what report a command missing one -- which is the point of running them here.
     with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
         resolve_critic_mode(ns, None)
@@ -440,6 +440,48 @@ def teacher_spec_findings(argv: List[str], ns=None) -> List[str]:
     return check_teacher_spec(spec, resolve_wildcard=_resolve, resolve_path=resolve_models_path)
 
 
+def shaped_reward_finding(argv: List[str]) -> dict | None:
+    """`gen3_shaped_reward_deletion_v1` — does this argv resume or fork a checkpoint TRAINED WITH
+    THE DELETED SHAPED REWARD? ``None`` when there is no `--model`, no readable parent config, or the
+    parent's reward was the terminal alone; else ``{"config_path", "evidence", "message"}``.
+
+    The SAME predicate `main.train.config.resolve_config` refuses on
+    (`agents.model.model_version.shaped_reward`), read from the RAW parent config — before the
+    migration pops the deleted fields and before `MIGRATION_FLOOR` could refuse the file for its
+    architecture, so a shaped parent is named as such whatever else is wrong with it. Pure JSON:
+    no torch, keeping this module's promise.
+    """
+    model = model_arg(argv)
+    if not model:
+        return None
+    from agents.model.model_version.shaped_reward import (
+        ShapedRewardCheckpointError, check_not_shaped)
+    config_path, _tried = parent_config_path(model)
+    try:
+        check_not_shaped(config_path)
+    except ShapedRewardCheckpointError as e:
+        return {"config_path": config_path, "evidence": e.evidence, "message": str(e)}
+    return None
+
+
+def pin_predates_shaped_deletion(sha: str | None) -> bool | None:
+    """Is `sha` at or before the last commit with the shaped reward path? ``None`` when git cannot
+    say (no sha, unknown object) — the caller then reports rather than refuses."""
+    if not sha:
+        return None
+    import subprocess
+    from agents.model.model_version.shaped_reward import LAST_SHAPED_COMMIT
+    from utils.paths import repo_root
+    try:
+        r = subprocess.run(["git", "merge-base", "--is-ancestor", sha, LAST_SHAPED_COMMIT],
+                           cwd=str(repo_root()), capture_output=True, timeout=30)
+    except Exception:                                 # noqa: BLE001 — no git: unknown
+        return None
+    if r.returncode in (0, 1):
+        return r.returncode == 0
+    return None
+
+
 def check(argv: List[str], *, advisory: bool = False) -> dict:
     """Every flag in `argv` classified against the live parser. Pure — unit-testable.
 
@@ -463,7 +505,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "accepted": ok, "launcher_only": launcher, "unknown": unknown,
            "unsatisfiable": unsatisfiable_pairs(argv),
            "resolution": None, "combinations": [], "teacher_spec": [], "ns": None,
-           "arch": None}
+           "arch": None, "shaped_reward": shaped_reward_finding(argv)}
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
         # more to the point, the reader has to fix that first. Report it alone.
@@ -814,6 +856,7 @@ def main(raw: List[str] | None = None) -> int:
 
     _print_resolution(res["resolution"])
     _print_fork_lr_inheritance(res["resolution"])
+    shaped_fatal = _print_shaped_reward(res.get("shaped_reward"), argv, a.pin)
 
     if res["unsatisfiable"]:
         print(f"  unsatisfiable combinations     : {len(res['unsatisfiable'])}  "
@@ -861,6 +904,12 @@ def main(raw: List[str] | None = None) -> int:
         for line in arch_surface.report_lines(arch):
             print(f"  {line}")
 
+    if shaped_fatal:
+        # A separate verdict: the parent's REWARD, not a flag. resolve_config exits FATAL_CONFIG on
+        # it in any tree that no longer has the shaped path, whatever the parser says.
+        print("\n  ✗ this command would be REFUSED at launch: its --model parent trained with the "
+              "DELETED shaped reward (above).")
+        return int(TrainExitCode.FATAL_CONFIG)
     if refusals:
         # The launcher's argparse kills this argv before a run dir, a worktree or a child exists,
         # so no parser verdict below can make it launchable. Everything above is still printed —
@@ -914,6 +963,36 @@ def main(raw: List[str] | None = None) -> int:
         print("  ✓ this command still launches")
         return 0
     return 1
+
+
+def _print_shaped_reward(finding: dict | None, argv: List[str], explicit_pin: str | None) -> bool:
+    """Print the SHAPED-REWARD PARENT verdict (gen3_shaped_reward_deletion_v1); True ⇔ it refuses.
+
+    Printed even when clean, like every other block here. It REFUSES unless the child will run a
+    PINNED commit that still has the shaped path (at or before `LAST_SHAPED_COMMIT`) — which is the
+    fix the refusal names, and what the launcher does for a same-run restart by default (the
+    checkpoint's recorded git_hash is the pin).
+    """
+    if finding is None:
+        print("  shaped-reward parent             : none (no --model, or its reward was the "
+              "terminal alone)")
+        return False
+    sha, why = resolve_pin_for(argv, explicit_pin)
+    from main.launcher.pinned_argv import differs_from_head
+    if sha and not differs_from_head(sha):
+        sha = None                      # the pin IS this tree, which has no shaped path
+    before = pin_predates_shaped_deletion(sha)
+    print("  shaped-reward parent             : YES — " + "; ".join(finding["evidence"]))
+    if before:
+        print(f"      ℹ️  ADVISORY — the child runs PINNED commit {sha[:8]} ({why}), which still "
+              "has the shaped reward path, so its own resolve_config accepts it.")
+        return False
+    for line in finding["message"].splitlines():
+        print(f"      {line}")
+    print("      ✗ WOULD FAIL IN resolve_config (main.train.config.enforce_not_shaped_parent exits "
+          "FATAL_CONFIG)" + (f"; the pin {sha[:8]} is AFTER the deletion" if before is False and sha
+                             else ""))
+    return True
 
 
 def _print_fork_lr_inheritance(resolution: dict | None) -> None:

@@ -28,7 +28,6 @@
     "value_dist_vmax": 0.0,
     "value_from_dist": false,
     "value_tail_weight": 0.0,
-    "hand_shaping": false,
     "terminal_indicator": true,
     "victory_value": 1.0,
     "draw_penalty": 0.0,

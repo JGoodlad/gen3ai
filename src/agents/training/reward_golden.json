@@ -1,140 +1,138 @@
 {
- "schema": "gen3_reward_golden_v1",
- "sha256": "9463dc242efde3fabadd652db4bef6e158eb24b5a0e53680e29be077b6a1926f",
- "produced_at_commit": "bbbb66c13237838f4550d60ca14eab4199b4d68f",
- "produced_on": "2026-09-07",
- "first_recorded_at_commit": "b0b3a253",
- "note": "The BEFORE/AFTER reference of the reward_manager.py decomposition (b0b3a253, 2026-09-07); this file records the same bytes reproduced in a fresh worktree at the commit above. Regenerate ONLY for an intended reward change: python3 src/agents/training/reward_golden_test.py --write, then a ledger entry.",
+ "schema": "gen3_reward_golden_v2",
+ "sha256": "2075c3f7b6edc725f21b2e47d7a61913a4f2b554aa72bf21e831771a33d7b7f9",
+ "produced_at_commit": "029cee837a36025e6191dd635b29852839faa30f",
+ "produced_on": "2026-09-26",
  "n_battles": 4,
  "rows": 2802,
  "compositions": [
-  "additive_bias",
-  "clean_world",
-  "drops_and_stall",
-  "fully_pbrs",
-  "production_default",
-  "redesign_levers"
+  "indicator_30",
+  "indicator_unit",
+  "production",
+  "signed_default",
+  "signed_draw_worse",
+  "signed_unit_draw_loss"
  ],
  "sweeps": {
-  "production_default key=0": {
+  "production key=0": {
    "decisions": 80,
-   "sha256": "d21649203471199137778841051bb385070a58c7b55637e14ccd518b7cf497c5"
+   "sha256": "b6003917430a3e5c927e78d215bc3f7c4994d4b55a902a2a991da281e9ecec6e"
   },
-  "production_default key=1": {
+  "production key=1": {
    "decisions": 54,
-   "sha256": "473d7dab989bc574d3587b78f7487c7bcfe85976e190e9b81a7c6844d85d3f99"
+   "sha256": "006bc4020328f1501c258a294da6e87102532958a0d2b45a1d17ac3cdc1519da"
   },
-  "production_default key=2": {
+  "production key=2": {
    "decisions": 83,
-   "sha256": "fe39daf437fd74757f5426cfafa6e79f6b4c1c7ca6385da61842cf83cb3fd1c4"
+   "sha256": "6527f392445947b60d5aaf4dda327a9230f29fb7b0bcd7e85c9dc73545ae04d1"
   },
-  "production_default key=3": {
+  "production key=3": {
    "decisions": 80,
-   "sha256": "758c56a7d6a294fd55a39094c9a642ba8a699519606e1f2a1a42c0e6a4d8e5e7"
+   "sha256": "5b3e4c4d6a6a0104230e0d7c97cd501b829f9759d03f34091c9141fa2b41431e"
   },
-  "production_default mixed": {
+  "production mixed": {
    "decisions": 165,
-   "sha256": "98eaa795431a783ef944becb628b949c21ab4a5628e3a07569dd9ab54e31c07e"
+   "sha256": "4c079a2f4cd8cecfac56470630362f8d38c8fad6681a475bcdadf7abe077eee1"
   },
-  "additive_bias key=0": {
+  "indicator_30 key=0": {
    "decisions": 80,
-   "sha256": "7ed3c3180430f65613db0d863f8b1c261505c479b01437f6f5d9589a4fc4112b"
+   "sha256": "b523c9abffd87c26c93bdb4f8c8b4147d74b1fa80a6e24b670497c152ba5ec5e"
   },
-  "additive_bias key=1": {
+  "indicator_30 key=1": {
    "decisions": 54,
-   "sha256": "1a084735496cc7d0dbda8087fb1cb27a9ffccc4fbd379c243c01cf90302f1fc8"
+   "sha256": "0c7c80398e2b3616f7506ecbf7362c21f2033823eb1c816842e271048fe7e0e8"
   },
-  "additive_bias key=2": {
+  "indicator_30 key=2": {
    "decisions": 83,
-   "sha256": "f42ca90c3ebad6e93526817d5daf94fd56e35753c465bcc9f302f5c37ad8a64b"
+   "sha256": "f3acce3d9420a4bbb15d1ee072506810be9afe5ed9a3b668a0d365ebbbe6725c"
   },
-  "additive_bias key=3": {
+  "indicator_30 key=3": {
    "decisions": 80,
-   "sha256": "e13bea3bacdccf742ce9fcb3e09ed996cdcd61c0729ed08ade87c2ab71b0bab6"
+   "sha256": "bceb029145b0622626163335ece893ac057201db1a0f42045c2b3e68a241568a"
   },
-  "additive_bias mixed": {
+  "indicator_30 mixed": {
    "decisions": 165,
-   "sha256": "2f8f0c21f2bcfccaefe18b23a54f6b14698d3e0b6d309d9260b8a8144ec4692b"
+   "sha256": "1dff179fb40cd60565e208c2c4f72ad7f7f60f60429d42d17452e7dbe8c90319"
   },
-  "redesign_levers key=0": {
+  "signed_unit_draw_loss key=0": {
    "decisions": 80,
-   "sha256": "7ee02c056ef8740eb2284b868ba84d857c316ec08b644ce873efa5ebd18050a1"
+   "sha256": "9cc00884a31e30e07b7eac1a208e718c7031e5cf54e439d66d816d783b1397b5"
   },
-  "redesign_levers key=1": {
+  "signed_unit_draw_loss key=1": {
    "decisions": 54,
-   "sha256": "9c51bc0c0094391c6a1a714952e0b167983bf2dec3ca02d57f2dffaaa7d407dd"
+   "sha256": "28e8a759f87e09ef3d818cb33beaae351a62559834402bb8db452d85a2525ca3"
   },
-  "redesign_levers key=2": {
+  "signed_unit_draw_loss key=2": {
    "decisions": 83,
-   "sha256": "045cb426815c37e9aa8f23896bddf2221d3110deb4d9dd30a116fdc9bd75b214"
+   "sha256": "6f8e8a4102a6caf2ee0f73e5de46c5f9322c6fc4e41e1be933fe7a67c3ad65a2"
   },
-  "redesign_levers key=3": {
+  "signed_unit_draw_loss key=3": {
    "decisions": 80,
-   "sha256": "bfe591d730bdcad1dc43b1a571270d6211caf70d9c52247695528db6bf4a8cbb"
+   "sha256": "c8cc20ca3c25d8ec5c3f686db85e197f7df3ce84357d850e9f90787d035977ef"
   },
-  "redesign_levers mixed": {
+  "signed_unit_draw_loss mixed": {
    "decisions": 165,
-   "sha256": "72dcc5c810e0e3f4f567c7336651fd97a702836c7bf62ee4843be668de7e85a9"
+   "sha256": "8fb3921eb66ad6cdab83c2260183966467636da8f00bda4230c0f9a42a118c57"
   },
-  "drops_and_stall key=0": {
+  "signed_default key=0": {
    "decisions": 80,
-   "sha256": "115b463a8cf08f4ade0104a68923bc03645bb1957ad16de75490e9c95fc79bae"
+   "sha256": "906d9a4cb319d2bedc25206b2fa241c12410799834d068bf317160254d4955a2"
   },
-  "drops_and_stall key=1": {
+  "signed_default key=1": {
    "decisions": 54,
-   "sha256": "3c787c751ee59df3ceac5aad12ae969b222615b9502a6c44abe5a30e76ac1050"
+   "sha256": "177ba31d5663eda2b796bc857ee43b01ae0a3b155a25f7695e07ce55b4319410"
   },
-  "drops_and_stall key=2": {
+  "signed_default key=2": {
    "decisions": 83,
-   "sha256": "c4024cfa1dff20154312e2becb42713bb10a74ac3eb9d7a1a62352ae648d2329"
+   "sha256": "f57941ee6e0b85aed1f6fc89662625e76ee2f3ee1644cf7110a6d10fbf438dfd"
   },
-  "drops_and_stall key=3": {
+  "signed_default key=3": {
    "decisions": 80,
-   "sha256": "6fc0dd9d668977377aaf93c9756da7a0db15d2cd32f68667b3eac8a9caa2f6ce"
+   "sha256": "d8f8aa613245f8ed9adb0699bfb877ec3209cebbcc8deaa81abe42ef496ed455"
   },
-  "drops_and_stall mixed": {
+  "signed_default mixed": {
    "decisions": 165,
-   "sha256": "5737d2d4d3b5c718423342a462cf5fab5859e46546901965b5468fd63828d2f6"
+   "sha256": "7c7ec2a4e2eaae59fab537895a19e3e201e34d98d3c8988799ca3634b247d6a0"
   },
-  "fully_pbrs key=0": {
+  "signed_draw_worse key=0": {
    "decisions": 80,
-   "sha256": "3bbca00894f733813f8e5575402d024fc7c8b0d82436286b3b449cbcb12b8c65"
+   "sha256": "6e8cb78e623fc72e101388e64697584e8dfe65d2f8ab0b4315aed62c100a12ba"
   },
-  "fully_pbrs key=1": {
+  "signed_draw_worse key=1": {
    "decisions": 54,
-   "sha256": "41c2927b5c6f692083eab4399538fa2d8f3baa29be21ba21083fdd57776f3f61"
+   "sha256": "ad98ff434ae055b8245ce5efaad473bbc5a852abb2398ce4b794e1905191e037"
   },
-  "fully_pbrs key=2": {
+  "signed_draw_worse key=2": {
    "decisions": 83,
-   "sha256": "bb5acc057a8135674c1760add71891491332593c8f8b95ff4d10f19dd602b98e"
+   "sha256": "64de370116223e6f9e58ce775e9818d15b42309e09b5812e8018b6b8d9cb4828"
   },
-  "fully_pbrs key=3": {
+  "signed_draw_worse key=3": {
    "decisions": 80,
-   "sha256": "4b535e72c6836e07f6341fd9d64b167c8c58acaebc53f61247a7ee5d2e6d7d1f"
+   "sha256": "9059bd42ed58a741266a0128db4354fbec209e8c5daa29b7c15899521bba4a0c"
   },
-  "fully_pbrs mixed": {
+  "signed_draw_worse mixed": {
    "decisions": 165,
-   "sha256": "88ced339dbedf0e1d1222479b50241314fed5fc11407a7cfbe97f01f14686b28"
+   "sha256": "0c76a5420bc47100b48040249ed744487e0fed7c35d29610feb9a4f9eca15661"
   },
-  "clean_world key=0": {
+  "indicator_unit key=0": {
    "decisions": 80,
-   "sha256": "b8740caa5565872ed08a8274b1582769feb8f93631a8aaaaba5ffbe41af2ed50"
+   "sha256": "daae3d9d58e52aad3ddece37a6f3799549b372d4c57fa2b700a4e2336b303cf1"
   },
-  "clean_world key=1": {
+  "indicator_unit key=1": {
    "decisions": 54,
-   "sha256": "6ea8bf966bb0523e6f47b6d95990068950f559bb0ee3d1697fa36cd32e365df4"
+   "sha256": "f97676319c112d25c3042920703f3535080398060947dd2536e0b803adf478e9"
   },
-  "clean_world key=2": {
+  "indicator_unit key=2": {
    "decisions": 83,
-   "sha256": "da2c5773e8f498e295b6bad48511125ed9446e0b7ba46b1e41bafc0f97bf56a5"
+   "sha256": "20572f5cff73b4dfcaafe65aa434b032a95a0a650286290260b443c9ddb17b71"
   },
-  "clean_world key=3": {
+  "indicator_unit key=3": {
    "decisions": 80,
-   "sha256": "8160b2ab2b4f5edbc4811db02ed2529d2cbccb33c9deb9a78ca6a266f17ac184"
+   "sha256": "9f3f2729529f076f4a1d63be37f404d067f17e09441b1bfa5150902967d77d48"
   },
-  "clean_world mixed": {
+  "indicator_unit mixed": {
    "decisions": 165,
-   "sha256": "bd35dba784d83d47408d0049c052179a0d5cd07fe543878d27feceba1878598b"
+   "sha256": "ed013b068d50ece2227826670639ab3a2d9348daba392f311d330aef24afd12c"
   }
  }
 }

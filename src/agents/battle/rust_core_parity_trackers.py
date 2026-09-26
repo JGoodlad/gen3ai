@@ -36,7 +36,7 @@ from agents.battle.offline_feed import new_battle, player_names
 from agents.battle.rust_core_parity_views import decision_points
 
 #: The reward config every win-prob-era run trains on (`1 TERMINAL + 0 PBRS + 0 BIAS`).
-_WIN_INDICATOR = dict(hand_shaping=False, terminal_indicator=True, victory_value=1.0, draw_penalty=0.0)
+_WIN_INDICATOR = dict(terminal_indicator=True, victory_value=1.0, draw_penalty=0.0)
 
 
 def _rank(side: str) -> int:
@@ -359,7 +359,7 @@ def check_trackers(label: str, chunks: Sequence[Tuple[str, str]], core_viewers: 
         terminal = next((c for c in core_viewers[vi] if "terminal" in c), None)
         battle = new_battle(viewer, names, packed_team=(teams or {}).get(viewer))
         tr = EpisodeTracker(history_cap=1)
-        mgr = Gen3RewardManager(config=RewardConfig(**_WIN_INDICATOR), progress_clock=tr.progress_clock)
+        mgr = Gen3RewardManager(config=RewardConfig(**_WIN_INDICATOR))
         frame: List[str] = []
         k = 0
         next_action = 0

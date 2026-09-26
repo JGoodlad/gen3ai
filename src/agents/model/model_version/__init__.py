@@ -15,6 +15,8 @@ gate's hard bound, one line from tripping it — and is now one module per conce
     resume_checks.py  `check_opponent_compatible` + the six resume-immutable hparam gates
     spec.py           `ModelVersion` = fields + the three mixins, plus `to_json` /
                       `from_json_file`
+    shaped_reward.py  a checkpoint TRAINED WITH THE DELETED SHAPED REWARD, recognised from its
+                      raw config, so a resume / fork refuses (`ShapedRewardCheckpointError`)
 
 **The import graph is a DAG rooted at `constants`**, which imports nothing from the package. No
 submodule imports this hub back — that would close a cycle whose symptom is an `AttributeError`
@@ -37,6 +39,10 @@ from agents.model.model_version.migrations import (
     _migrate_config,
 )
 from agents.model.model_version.fields import ModelVersionFields
+from agents.model.model_version.shaped_reward import (
+    DELETED_SHAPED_REWARD_FIELDS,
+    ShapedRewardCheckpointError,
+)
 from agents.model.model_version.spec import ModelVersion
 
 __all__ = [
@@ -46,6 +52,8 @@ __all__ = [
     "ModelVersion",
     "ModelVersionError",
     "ModelVersionFields",
+    "DELETED_SHAPED_REWARD_FIELDS",
+    "ShapedRewardCheckpointError",
     "SIGNATURE_FIRST_VERSION",
     "_BELIEF_GRAD_MODE_EFFECT",
     "_REWARD_FIELD_FLAGS",

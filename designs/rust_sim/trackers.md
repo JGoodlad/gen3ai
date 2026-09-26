@@ -36,9 +36,9 @@ line, over the side's READINGS (the `BattleEvent`s slice E holds equal to `Gen3B
 | `opp_intent_labels.build_opp_intent_label` | `IntentLabel` (ids; the num tables cross at M4) | the α/β heads |
 | `Gen3RewardManager` under the win indicator | `trackers::reward` | the value target |
 
-**Not ported, by decision:** the SHAPED reward terms (program M3: every win-prob-era run trains on
-`1 TERMINAL + 0 PBRS + 0 BIAS`), and with them the progress clock's CHARGE (`last_penalty`,
-`switch_legal`); the choice-band belief (`ChoiceBandTracker` has no production reader — it has been
+**Not ported, by decision — and since 2026-09-26 DELETED on the Python side too:** the SHAPED
+reward terms (program M3 row, `gen3_shaped_reward_deletion_v1`), and with them the progress clock's
+CHARGE (`last_penalty`, `switch_legal`); the choice-band belief (`ChoiceBandTracker` has no production reader — it has been
 a no-op since it landed, `9a37b712`). **Not a first-class structure:** `TurnDelta`. Its layout is
 frozen and its obs frames were deleted (`gen3_frame_deletion_v1`); the core keeps only
 `delta::DeltaProjection` — the fields the clock and the label read — and slice T gates those

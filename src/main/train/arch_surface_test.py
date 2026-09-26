@@ -40,7 +40,7 @@ INCIDENT_ARGV_FALLBACK = (
     "--run-name ai_v12_01_winprob_critic --restart-interval-hours 3 --pin-commit e798c13a "
     "--steps 75000000 --n-envs 64 --batch-size 4096 --grad-accum-steps 16 --n-epochs 10 "
     "--n-steps 2048 --lr 0.0003 --ent-coef 0.02 --device cuda --log-level periodic "
-    "--critic winprob --no-hand-shaping --terminal-indicator --victory-value 1.0 "
+    "--critic winprob --terminal-indicator --victory-value 1.0 "
     "--draw-penalty 0 --vf-coef 0.5 --self-play"
 )
 
@@ -58,8 +58,11 @@ def _incident_argv() -> list:
                 with open(meta) as fh:
                     cmd = json.load(fh).get("original_command")
                 if cmd:
-                    # argv[0] is the launcher's __main__.py; the rest is the command.
-                    return shlex.split(cmd)[1:]
+                    # argv[0] is the launcher's __main__.py; the rest is the command. The
+                    # recorded command carries `--no-hand-shaping`, DELETED with the shaped reward
+                    # path (2026-09-26; a no-op there — the arm trained terminal-only), so it is
+                    # dropped: this test is about the ARCH surface, not about that flag.
+                    return [t for t in shlex.split(cmd)[1:] if t != "--no-hand-shaping"]
             except Exception:                            # noqa: BLE001 — fall back to the literal
                 pass
     return shlex.split(INCIDENT_ARGV_FALLBACK)
@@ -457,7 +460,7 @@ def test_the_arch_verdict_never_shares_a_line_with_a_combination_refusal(capsys)
     stripped surface), so the two must read as two findings — separate blocks, separate closing
     lines — or a reader who fixes the loud one believes they have fixed the silent one."""
     from main.checkargs import main as checkargs_main
-    argv = ("--steps 100 --critic winprob --no-hand-shaping --terminal-indicator "
+    argv = ("--steps 100 --critic winprob --terminal-indicator "
             "--victory-value 1.0 --draw-penalty 0 --use-popart --value-from-dist")
     rc = checkargs_main(["--argv", argv])
     out = capsys.readouterr().out

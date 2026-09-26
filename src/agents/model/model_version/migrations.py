@@ -317,8 +317,22 @@ def _migrate_config(data: dict) -> dict:
                     "on the end-of-run critic_route_audit; `--value-entity-pool` — which carries "
                     "97% of the critic's route dependence — is the successor.\n"
                     "To re-read this checkpoint, use the git_hash in its own metadata.json.")
+    # v122 (gen3_shaped_reward_deletion_v1): the 14 SHAPED-reward fields left the config. POPped
+    # SILENTLY here, whatever their value, and version-INDEPENDENTLY (`cls(**data)` TypeErrors on a
+    # stale key whatever vintage wrote it). Silent is right HERE and only here: this is every load,
+    # and a frozen forward (an eval opponent, a pool snapshot, a teacher, the prober) never reads the
+    # reward, so a shaped-trained snapshot is a perfectly good opponent. The one path where the
+    # recorded value MATTERS — a resume or fork, which would keep TRAINING under it — refuses
+    # BEFORE this runs, from the raw file (`model_version.shaped_reward.check_not_shaped`, called by
+    # `main.train.config.resolve_config` and `main.checkargs`).
+    from agents.model.model_version.shaped_reward import DELETED_SHAPED_REWARD_FIELDS
+    for _dead in DELETED_SHAPED_REWARD_FIELDS:
+        data.pop(_dead, None)
     # ---- POST-FLOOR MIGRATION BRANCHES (N > MIGRATION_FLOOR) --------------------------------
-    # None: the floor is the current version (gen3_event_record_v2 raised it to 121).
+    # v122 (gen3_shaped_reward_deletion_v1) — THE STAMP ONLY: the deletion removes fields rather
+    # than introducing one, and their POP is version-independent (above). v108's shape.
+    if version < 122:
+        data["config_version"] = 122
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

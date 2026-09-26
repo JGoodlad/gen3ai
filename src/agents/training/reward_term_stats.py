@@ -2,7 +2,8 @@
 
 `gen3_reward_term_export_v1`.
 
-The reward is a registry of ~35 class-tagged terms (`reward_manager.RewardBreakdown`), and a run
+The reward is a registry of class-tagged terms (`reward_manager.RewardBreakdown`) -- ONE term, the
+terminal, since the shaped-reward deletion (2026-09-26) -- and a run
 STATES its composition once at startup (`reward_class_composition` -> the `metadata.json`
 `reward_composition` block). What no run has ever recorded is the composition's MAGNITUDES: which
 potential is actually carrying the signal, how big it is against the terminal, and whether a term
@@ -25,10 +26,9 @@ telescoping IS the reading (a potential whose signed mean drifts far from 0 over
 episode-complete window is not telescoping).
 
 **THE RESIDUAL IS A GIGO GUARD, not a rounding term.** `reward/untracked_abs_mean` is
-`mean |bd.total - sum(tracked terms)|`. The tracked set comes from `reward_class_composition`, i.e.
-from the same `_pbrs_term_active` / `_bias_term_active` predicates the folds are gated on -- so a
-non-zero residual means the census and the folds disagree about what this config emits, which is
-exactly the class of defect the v9 drift (`--all-shaping-pbrs` silently ceasing to be passed) was.
+`mean |bd.total - sum(tracked terms)|`. The tracked set comes from `reward_class_composition`, so a
+non-zero residual means the census and the fold disagree about what this config emits, which is
+exactly the class of defect the v9 drift (a shaping flag silently ceasing to be passed) was.
 It reads 0.0 on every correct config, and it is PUBLISHED rather than asserted because a reward
 manager must never take down a run.
 
@@ -41,14 +41,9 @@ from __future__ import annotations
 from typing import Dict, Iterable, List, Mapping, Sequence
 
 # Reward-class rollup names, matching `RewardClass`'s own values. Declared here rather than
-# imported so this module stays free of the reward manager (which pulls in numpy, the data facade
-# and the whole battle layer); `reward_term_stats_test` pins the two against each other.
-CLASS_NAMES: tuple = ("terminal", "pbrs", "bias")
-
-# The BIAS accumulate-and-refund MECHANISM. It is a `RewardBreakdown` float field and part of
-# `total`, but it is deliberately not in the registry (it is not a term), so it gets its own
-# rollup rather than being folded into `bias` -- at `--bias-additivity 1.0` it is identically 0.
-REFUND_FIELD: str = "bias_refund"
+# imported so this module stays free of the reward manager's import graph; `reward_term_stats_test`
+# pins the two against each other. ONE class since the shaped-reward deletion (2026-09-26).
+CLASS_NAMES: tuple = ("terminal",)
 
 
 class RewardTermAccumulator:
@@ -58,10 +53,8 @@ class RewardTermAccumulator:
     once per decision from `process_turn_reward`; `drain()` returns plain primitives and ZEROES the
     window, so two consecutive drains can never double-count.
 
-    ``terms`` is the tracked set -- the ACTIVE terms of this run's composition plus
-    ``bias_refund`` -- and it is fixed for the manager's lifetime, which is legal for exactly the
-    reason the suppressed-term fast path is: every flag `_pbrs_term_active` / `_bias_term_active`
-    reads is resume-immutable and value-checked by `check_reward_config`.
+    ``terms`` is the tracked set -- the ACTIVE terms of this run's composition -- and it is fixed
+    for the manager's lifetime (the reward config is resume-immutable).
     """
 
     __slots__ = ("terms", "_sum", "_abs", "_n", "_total_sum", "_total_abs_sum", "_resid_abs_sum")
@@ -137,8 +130,7 @@ def merge_drained(payloads: Iterable[dict]) -> dict:
 def reward_term_metrics(merged: Mapping, term_class: Mapping[str, str]) -> Dict[str, float]:
     """`reward/*` scalars (keys WITHOUT the `reward/` prefix) from a merged window.
 
-    ``term_class`` maps each tracked term name to its class rollup -- one of `CLASS_NAMES`, or
-    ``"refund"`` for `bias_refund`. A term absent from the map is rolled up as ``"other"`` rather
+    ``term_class`` maps each tracked term name to its class rollup (one of `CLASS_NAMES`). A term absent from the map is rolled up as ``"other"`` rather
     than dropped, so a new registry entry is visible before anyone updates a table.
 
     Returns ``{}`` for an empty window (no decisions), so a rollout in which nothing was scored
@@ -181,48 +173,20 @@ def reward_term_metrics(merged: Mapping, term_class: Mapping[str, str]) -> Dict[
     return out
 
 
-def _has_bias(composition: Mapping) -> bool:
-    """Does this composition carry any BIAS term? `gen3_tb_relevance_v1`.
-
-    The refund is the BIAS class's accumulate-and-refund MECHANISM, so with no bias term there is
-    nothing it could ever refund and it is structurally 0.0 -- which is exactly what it published,
-    six flat-zero curves per rollout, on the first `--critic winprob` arm (`--no-hand-shaping`
-    leaves the composition at 1 terminal term and nothing else). Reads the COUNT when present and
-    falls back to the term list, because `reward_class_composition` emits both and a caller may
-    hand us a hand-built census with only one.
-    """
-    n = composition.get("bias")
-    if n is not None:
-        return int(n) > 0
-    return bool(composition.get("bias_terms"))
-
-
 def tracked_terms(composition: Mapping) -> List[str]:
-    """The tracked set from a `reward_class_composition(config)` census: every ACTIVE terminal,
-    PBRS and BIAS term, plus the refund mechanism **when this composition has a BIAS class to
-    refund** (`gen3_tb_relevance_v1`; see `_has_bias`). Ordered terminal -> pbrs -> bias -> refund
-    so the TensorBoard tag order reads the way the fold does.
-
-    Dropping the refund from the tracked set does not weaken `untracked_abs_mean` -- it STRENGTHENS
-    it. The residual is `|total - sum(tracked)|`, so a `bias_refund` that somehow became non-zero
-    with no bias term in the census would now be REPORTED by the GIGO guard instead of being
-    quietly absorbed into a curve nobody reads.
+    """The tracked set from a `reward_class_composition(config)` census: every ACTIVE term, in
+    census order (terminal -> pbrs -> bias; the last two are empty since the shaped-reward
+    deletion). Anything in `total` outside this set lands in `untracked_abs_mean`, the GIGO guard.
     """
     terms: List[str] = list(composition.get("terminal_terms") or ())
     terms += list(composition.get("pbrs_terms") or ())
     terms += list(composition.get("bias_terms") or ())
-    if _has_bias(composition):
-        terms.append(REFUND_FIELD)
     seen: set = set()
     return [t for t in terms if not (t in seen or seen.add(t))]
 
 
 def term_class_map(composition: Mapping) -> Dict[str, str]:
-    """`{term name -> rollup name}` for `reward_term_metrics`, derived from the same census.
-
-    Carries the refund entry only when `tracked_terms` tracks it, so the two read one predicate and
-    a `class_refund_*` rollup can never appear over an empty set (`gen3_tb_relevance_v1`).
-    """
+    """`{term name -> rollup name}` for `reward_term_metrics`, derived from the same census."""
     out: Dict[str, str] = {}
     for name in composition.get("terminal_terms") or ():
         out[name] = "terminal"
@@ -230,6 +194,4 @@ def term_class_map(composition: Mapping) -> Dict[str, str]:
         out[name] = "pbrs"
     for name in composition.get("bias_terms") or ():
         out[name] = "bias"
-    if _has_bias(composition):
-        out[REFUND_FIELD] = "refund"
     return out

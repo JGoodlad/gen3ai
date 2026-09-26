@@ -114,9 +114,7 @@ class TestTheRegistration:
 
         cmap = term_class_map(reward_class_composition(RewardConfig()))
         cb = RewardTermMetricsCallback(term_class=cmap)
-        assert cb.term_class["win_loss"] == "terminal"
-        assert cb.term_class["pbrs_material"] == "pbrs"
-        assert cb.term_class["no_progress_tax"] == "bias"
+        assert cb.term_class == {"win_loss": "terminal"}
 
     def test_it_is_in_the_base_callback_list_of_a_default_run(self):
         import inspect

@@ -230,10 +230,9 @@ def branch_rewards(n_rows: int, outcome: float) -> np.ndarray:
     🚨 **This is why the arm REFUSES any critic but ``winprob``.** Under ``--critic winprob`` the
     reward stream IS the terminal indicator (`combination_checks
     .winprob_critic_needs_the_indicator_terminal`, plus ``--victory-value 1.0`` and
-    ``--no-hand-shaping``), so a branch's rewards are reconstructible from its outcome bit alone.
-    Under ``shaped`` they are a per-turn PBRS/bias composition computed by the env's
-    `RewardManager` from a `TurnDelta`, and a branch has no env — so the rows would have to carry
-    a reward this process cannot compute. A flag that silently injected zero-reward rows into a
+    the terminal-only reward), so a branch's rewards are reconstructible from its outcome bit alone.
+    Under ``shaped`` the terminal is the SIGNED one (±V, ``--draw-penalty`` at the cap), which
+    this builder does not reproduce. A flag that silently injected zero-reward rows into a
     shaped objective would be teaching the critic that a third of the buffer is inert.
     """
     r = np.zeros(int(n_rows), dtype=np.float32)

@@ -10,7 +10,7 @@ which this change extends rather than duplicates.
 What is specific to the critic mode, and therefore lives here:
 
 * the **asymmetry between implied and required**. Three flags are implied because their argparse
-  default is `None`, so "unset" is representable; four reward flags are REQUIRED because theirs is
+  default is `None`, so "unset" is representable; three reward flags are REQUIRED because theirs is
   concrete, so an implication would silently overwrite a typed value and the refusal meant to
   catch a conflicting one could never fire. That asymmetry is a property of the flag surface and
   will read as an inconsistency to anyone who does not know why — pin it with the reason.
@@ -59,9 +59,8 @@ def test_the_flagless_namespace_is_unchanged():
     out of the `winprob` branch shows up first."""
     a = _ns([])
     assert a.critic == "shaped"
-    assert a.hand_shaping is True
+    assert not hasattr(a, "hand_shaping")   # deleted with the shaped reward path
     assert a.terminal_indicator is False
-    assert a.no_progress_tax_armed is False
     assert a.victory_value == 30.0
     assert a.draw_penalty == -35.0
     assert a.win_prob_mode is None      # still the sentinel; `_resolve` fills it to 'none'
@@ -97,7 +96,7 @@ def test_winprob_implies_the_three_tristate_flags():
 ])
 def test_an_explicit_value_survives_the_implication(argv, dest, value):
     """An implication that overwrote a typed flag would make the refusals unreachable and the
-    operator's choice invisible — which is exactly why the four concrete-default reward flags are
+    operator's choice invisible — which is exactly why the three concrete-default reward flags are
     NOT implied (see the test below)."""
     assert getattr(_ns(["--critic", "winprob"] + argv), dest) == value
 
@@ -128,11 +127,10 @@ def test_the_critic_itself_is_INHERITED_on_a_flagless_resume():
 
 
 # --------------------------------------------------------------------------------------------
-# the REQUIRED four, and why they are not implied
+# the REQUIRED three, and why they are not implied
 # --------------------------------------------------------------------------------------------
 
 _REQUIRED = {
-    "winprob_critic_needs_no_hand_shaping": ["--no-hand-shaping"],
     "winprob_critic_needs_the_indicator_terminal": ["--terminal-indicator"],
     "winprob_critic_needs_unit_victory_value": ["--victory-value", "1.0"],
     "winprob_critic_refuses_draw_penalty": ["--draw-penalty", "0"],
@@ -141,7 +139,7 @@ _REQUIRED = {
 
 @pytest.mark.parametrize("check", sorted(_REQUIRED))
 def test_each_required_reward_flag_is_refused_when_missing(check):
-    """These four have CONCRETE argparse defaults, so `resolve_critic_mode` cannot tell "left
+    """These three have CONCRETE argparse defaults, so `resolve_critic_mode` cannot tell "left
     alone" from "typed the default" and refuses to guess. Each is required by its own check, and
     each message names the flag to pass — this tree's standing preference for a
     composition-changing combination (`--use-popart` requires an explicit `--clip-range-vf none`
@@ -157,7 +155,7 @@ def test_the_full_required_set_launches_clean():
     assert not [h for h in _hits(argv) if "winprob" in h or "frozen" in h]
 
 
-def test_none_of_the_four_is_silently_overwritten():
+def test_none_of_the_three_is_silently_overwritten():
     """The positive half: a typed value reaches the checks unchanged, so a conflicting one is
     REPORTED rather than replaced."""
     a = _ns(["--critic", "winprob", "--victory-value", "7.5", "--draw-penalty", "-3"])
@@ -184,7 +182,7 @@ def test_none_of_the_four_is_silently_overwritten():
      "winprob_critic_refuses_value_dist"),
 ])
 def test_each_incompatible_flag_is_refused(argv, check):
-    base = ["--critic", "winprob", "--no-hand-shaping", "--terminal-indicator",
+    base = ["--critic", "winprob", "--terminal-indicator",
             "--victory-value", "1.0", "--draw-penalty", "0"]
     assert check in _hits(base + argv)
 
@@ -207,7 +205,7 @@ def test_win_prob_pbrs_frozen_is_BUILDABLE_under_the_winprob_critic():
     """gen3_frozen_phi_actor_only_v1 lifted the hold. The rung the owner amendment kept ONE EDIT
     away is now that edit: under `winprob` the flag must raise no refusal of its own, so a
     FROZEN-phi arm is a launch rather than a message."""
-    hits = _hits(["--critic", "winprob", "--no-hand-shaping", "--terminal-indicator",
+    hits = _hits(["--critic", "winprob", "--terminal-indicator",
                   "--victory-value", "1.0", "--draw-penalty", "0",
                   "--win-prob-pbrs-frozen", "models/p.zip"])
     assert "win_prob_pbrs_frozen_needs_the_winprob_critic" not in hits

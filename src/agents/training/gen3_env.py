@@ -420,16 +420,12 @@ class Gen3Env(SinglesEnv):
         # gen3_frame_deletion_v1: the lag frames are gone, so the tracker only needs the
         # one-step window `build_delta` folds over (see EpisodeTracker.__init__).
         self._tracker = EpisodeTracker(history_cap=_TRACKER_HISTORY_CAP)
-        # Share ONE ProgressClock between obs and reward (design §5.1): the tracker owns it (updated
-        # at embed time so the obs is fresh); the reward READS its stashed last_penalty. Set the
-        # clock's per-run penalty magnitude once from the reward config (single source of truth).
-        if hasattr(self.reward_manager, "progress_clock"):
-            self.reward_manager.progress_clock = self._tracker.progress_clock
-            # ONE call sets the penalty magnitude AND the two clock-behaviour switches
-            # (--progress-decision-tense / --progress-switch-freeze), so the env and the
-            # server-free RewardTracker cannot drift apart on what the clock does.
-            self._tracker.progress_clock.apply_reward_config(
-                getattr(self.reward_manager, "config", None))
+        # The tracker owns the ProgressClock (updated at embed time so the `turns_since_progress`
+        # obs scalar is fresh). ONE call adopts the run's two clock-behaviour switches
+        # (--progress-decision-tense / --progress-switch-freeze) from the reward config. The clock
+        # no longer feeds the reward: its no-progress tax was deleted with the shaped path.
+        self._tracker.progress_clock.apply_reward_config(
+            getattr(self.reward_manager, "config", None))
         self._pending_delta = None   # delta folded once at embed time, reused by calc_reward
         self._opp_slot_map = {}      # species -> opp slot as of the CURRENT decision
         # ...and the PREVIOUS decision's copy, which is the one beta's label must read. The label
@@ -909,8 +905,8 @@ class Gen3Env(SinglesEnv):
         if self._emit_win_target:
             agent_obs["win_target"] = np.zeros(1, dtype=np.float32)
             agent_obs["win_mask"] = np.zeros(1, dtype=np.float32)
-            # The material margin _compute_phi_mat stashed this turn (calc_reward runs before this in
-            # step(); 0.0 at reset). A REAL value (present-state), unlike the back-filled win_target.
+            # The material margin the reward manager stashed this turn (`material_margin.py`;
+            # calc_reward runs before this in step(); 0.0 at reset). A REAL value (present-state), unlike the back-filled win_target.
             agent_obs["win_margin"] = np.array(
                 [float(getattr(self.reward_manager, "_last_material_margin", 0.0))], dtype=np.float32)
         if self._emit_win_row_weight:

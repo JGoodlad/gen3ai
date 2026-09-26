@@ -12,7 +12,7 @@ real state that makes the new branch raise.
 Per-window invariants (a violation raises immediately):
   1. NO CRASH — the clock + the new ``_is_progress`` residual branch + ``_denial_kind`` never raise
      on a real state (implicit: any raise aborts the episode).
-  2. RANGES — ``last_penalty ∈ {0, -no_progress_penalty}``; ``n ∈ [0, PROGRESS_CLOCK_CAP]``;
+  2. RANGES — ``n`` advances by at most 1 a window; ``n ∈ [0, PROGRESS_CLOCK_CAP]``;
      ``_heal_streak ≥ 0``.
   3. WINNING-RESIDUAL GUARD (the part-1 regression guard) — a window where an our-owned residual
      (Toxic / poison / burn status, or Leech Seed / Curse / Nightmare on the opp active) chipped the
@@ -89,7 +89,8 @@ def _instrument_clock(env, windows: list):
     def wrapped(delta, live, legal, **kw):
         # **kw passes `legal_prev` through untouched — the OPENING decision's legality, read only
         # under --progress-decision-tense. Swallowing it here would silently fuzz a different clock.
-        orig(delta, live, legal, **kw)   # run the REAL logic (sets last_penalty / n / _heal_streak)
+        n_before = int(clock.n)
+        orig(delta, live, legal, **kw)   # run the REAL logic (sets n / _heal_streak)
         opp_mon = getattr(getattr(live, "opp", None), "active", None) if live is not None else None
         status = getattr(opp_mon, "status", None) if opp_mon is not None else None
         vols = (getattr(opp_mon, "volatiles", None) or ()) if opp_mon is not None else ()
@@ -100,7 +101,7 @@ def _instrument_clock(env, windows: list):
         except (AttributeError, TypeError):
             opp_net = 0.0
         windows.append({
-            "last_penalty": float(clock.last_penalty),
+            "n_before": n_before,
             "n": int(clock.n),
             "heal_streak": int(getattr(clock, "_heal_streak", 0)),
             "owned_residual": bool(owned_residual),
@@ -124,20 +125,21 @@ def _play_episode(wrapped, rng, max_steps: int = 600) -> int:
     raise AssertionError(f"episode did not finish within {max_steps} steps")
 
 
-def _assert_window(w, charge_mag: float, battle_idx: int, win_idx: int):
-    lp, n, hs = w["last_penalty"], w["n"], w["heal_streak"]
+def _assert_window(w, battle_idx: int, win_idx: int):
+    n, hs = w["n"], w["heal_streak"]
+    advanced = n > w["n_before"]
     # (2) ranges
     assert n == max(0, min(n, PROGRESS_CLOCK_CAP)) and 0 <= n <= PROGRESS_CLOCK_CAP, \
         f"battle {battle_idx} window {win_idx}: n={n} out of [0,{PROGRESS_CLOCK_CAP}]"
     assert hs >= 0, f"battle {battle_idx} window {win_idx}: _heal_streak={hs} < 0"
-    assert abs(lp) < 1e-9 or abs(abs(lp) - charge_mag) < 1e-6, \
-        f"battle {battle_idx} window {win_idx}: last_penalty={lp} not in {{0, -{charge_mag}}}"
-    # (3) the winning-residual guard: opp dying to OUR residual must NOT be charged
+    assert n - w["n_before"] <= 1, \
+        f"battle {battle_idx} window {win_idx}: n jumped {w['n_before']} -> {n} (at most +1 a window)"
+    # (3) the winning-residual guard: opp dying to OUR residual must NOT advance the clock
     if w["owned_residual"] and w["opp_net"] <= -PROGRESS_DMG_EPS and not w["forced_switch"]:
-        assert lp == 0.0, (
+        assert not advanced, (
             f"WINNING-RESIDUAL GUARD VIOLATED — battle {battle_idx} window {win_idx}: our residual "
-            f"chipped the opp net {w['opp_net']:+.3f} yet the clock charged last_penalty={lp}. A "
-            f"winning defensive stall must never be taxed.")
+            f"chipped the opp net {w['opp_net']:+.3f} yet the clock advanced to n={n}. A "
+            f"winning defensive stall is progress, never a wheel-spin.")
 
 
 def main(n_battles: int = 40) -> int:
@@ -146,7 +148,6 @@ def main(n_battles: int = 40) -> int:
     wrapped, env = _build_bridge_env(teams, idx=1)
     windows: list = []
     _instrument_clock(env, windows)
-    charge_mag = abs(env._tracker._progress_clock.no_progress_penalty)
 
     stats = Counter()
     t0 = __import__("time").time()
@@ -159,9 +160,9 @@ def main(n_battles: int = 40) -> int:
             # validate the windows produced by THIS battle
             for wi in range(win_cursor, len(windows)):
                 w = windows[wi]
-                _assert_window(w, charge_mag, b, wi - win_cursor)
+                _assert_window(w, b, wi - win_cursor)
                 stats["windows"] += 1
-                if w["last_penalty"] < 0:
+                if w["n"] > w["n_before"]:
                     stats["charged"] += 1
                 if w["owned_residual"] and w["opp_net"] <= -PROGRESS_DMG_EPS and not w["forced_switch"]:
                     stats["residual_progress"] += 1

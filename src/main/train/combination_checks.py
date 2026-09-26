@@ -429,18 +429,15 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         # 🚨 THE ONE THAT IS NOT A CONVENTION. Under `winprob` the reward stream is the TERMINAL
         # WIN INDICATOR alone, so a branch's ENTIRE reward sequence is reconstructible from its
         # outcome bit — which is the only reason `fork_buffer.branch_rewards` can build one outside
-        # the env. Under `shaped` a reward is a per-turn PBRS/bias composition the env's
-        # RewardManager folds from a TurnDelta, and a branch has no env: the injected rows would
-        # silently carry zero reward, i.e. would teach the critic that a third of the buffer is
-        # inert.
+        # the env. Under `shaped` the terminal is the SIGNED one, which the builder does not make.
         "fork_needs_the_winprob_critic", ("fork_fraction", "critic"),
         lambda a: float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _winprob(a),
         "--fork-fraction > 0 requires --critic winprob. A forked branch's transitions are built "
         "OUTSIDE the env, and only under this critic is a branch's reward sequence reconstructible "
-        "from its outcome (the terminal win indicator, --victory-value 1.0, --no-hand-shaping). "
-        "Under `shaped` the per-turn reward is a PBRS/bias composition the env's RewardManager "
-        "folds from a TurnDelta that no branch has, so every injected row would carry a zero "
-        "reward it did not earn. Pass --critic winprob, or drop the flag."),
+        "from its outcome as the WIN INDICATOR (--terminal-indicator, --victory-value 1.0), which "
+        "is what `fork_buffer.branch_rewards` builds. Under `shaped` the terminal is SIGNED "
+        "(+V / -V / --draw-penalty), which the branch builder does not reproduce. Pass --critic "
+        "winprob, or drop the flag."),
     CombinationCheck(
         # THE EXPENSIVE SILENT NO-OP, in the shape `winprob_rollout_needs_cf_records` already has.
         "fork_needs_cf_records", ("fork_fraction", "cf_records"),
@@ -514,8 +511,8 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    "the WIN INDICATOR (+victory_value on a win, 0.0 on a loss, a tie AND a "
                    "250-turn timeout alike), so there is no separate draw magnitude to set, and a "
                    "critic bounded in [0,1] cannot represent 'a timeout is worse than a loss' at "
-                   "all. The anti-stall pressure comes from the obs deadline clock and, if the "
-                   "stall rate rises, from --arm-no-progress-tax. Pass --draw-penalty 0.")),
+                   "all. The anti-stall pressure comes from the obs deadline clock. "
+                   "Pass --draw-penalty 0.")),
     CombinationCheck(
         "winprob_critic_needs_the_indicator_terminal", ("critic", "terminal_indicator"),
         lambda a: _winprob(a) and not bool(_val(a, "terminal_indicator", False)),
@@ -533,15 +530,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    "sigmoid(logit) in [0,1], so the two agree at exactly one scale. At 1.0 the "
                    "return IS the win indicator and V(s) == P(win|s) with no approximation term "
                    "-- the identity the whole mode rests on.")),
-    CombinationCheck(
-        "winprob_critic_needs_no_hand_shaping", ("critic", "hand_shaping"),
-        lambda a: _winprob(a) and bool(_val(a, "hand_shaping", True)),
-        "--critic winprob requires --no-hand-shaping. The identity V(s) = P(win|s) rests on a "
-        "TERMINAL-ONLY reward: under PBRS with Phi(terminal)=0 the return from s telescopes to "
-        "`R_T - Phi(s)`, so a critic minimizing its loss learns `V_game(s) - Phi(s)` -- not "
-        "P(win), and broken by a KNOWN function rather than approximately. Every PBRS term is "
-        "policy-INVARIANT, so deleting them costs learning SPEED, never correctness. NOTE it also "
-        "drops `no_progress_tax`; re-arm it with --arm-no-progress-tax if the stall rate rises."),
     CombinationCheck(
         # Owner amendment, 2026-09-06 (design_winprob_only_critic.md §3.7). The SELF-phi shape,
         # refused for a REASON rather than deferred: with V == phi the shaping term IS the

@@ -310,7 +310,16 @@ from typing import Any, Dict
 #   2501 → 2761, `EventSeats`' projection and the `r` edge cell (2 → 3) change shape, and the hidden
 #   slots' move posterior changes meaning — so ARCH_SIGNATURE bumps and MIGRATION_FLOOR rises to
 #   121. No field is added.
-MODEL_CONFIG_VERSION = 121
+# v122 (gen3_shaped_reward_deletion_v1) — THE SHAPED REWARD PATH IS DELETED (program_rust_core §4 M3
+#   row, owner-approved 2026-09-26). FOURTEEN resume-immutable reward fields LEAVE the config:
+#   bias_additivity, mat_alive_weight, bias_redesign, switch_bias_weight, self_ko_hp_penalty,
+#   drop_redundant_bias, drop_switch_bias, all_shaping_pbrs, stall_pbrs, no_progress_penalty,
+#   hand_shaping, pbrs_material, pbrs_belief, no_progress_tax_armed. `_migrate_config` POPs them
+#   (version-independent, so a frozen load of any vintage works), and a RESUME or FORK of a config
+#   that recorded a shaped reward is REFUSED by `model_version.shaped_reward` (never switched
+#   silently to the terminal alone). No weight shape moves: no ARCH_SIGNATURE bump, no
+#   MIGRATION_FLOOR change — a v121 production checkpoint loads and resumes unchanged.
+MODEL_CONFIG_VERSION = 122
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are
@@ -342,52 +351,25 @@ class ModelVersionError(Exception):
 # `src/main/reward_defaults_test.py` — a divergence would make an absent field mean one thing to the
 # reward and another to the version record, which is the drift class this whole file guards.
 _REWARD_IMMUTABLE_FIELDS: Dict[str, Any] = {
-    "bias_additivity": 1.0,
-    "mat_alive_weight": 1.25,
-    "bias_redesign": False,
-    "switch_bias_weight": 0.0,
     "draw_penalty": -35.0,
-    "self_ko_hp_penalty": 0.0,
-    "drop_redundant_bias": False,
-    "drop_switch_bias": False,
-    "all_shaping_pbrs": True,
-    "stall_pbrs": False,
-    "no_progress_penalty": 0.15,
-    # gen3_clean_world_config_v1 — the CLEAN-WORLD switches. Every default is today's behaviour.
-    "hand_shaping": True,
-    "pbrs_material": True,
-    "pbrs_belief": True,
     "victory_value": 30.0,
     "progress_decision_tense": False,
     "progress_switch_freeze": False,
-    # gen3_winprob_critic_mode_v1 — both defaults are today's behaviour, so a pre-v109 config
-    # migrates to them and a flagless resume of any existing run is unchanged.
+    # gen3_winprob_critic_mode_v1 — the default is today's behaviour, so a pre-v109 config
+    # migrates to it and a flagless resume of any existing run is unchanged.
     "terminal_indicator": False,
-    "no_progress_tax_armed": False,
+    # (The 14 SHAPED-reward fields left this table at v122, gen3_shaped_reward_deletion_v1 — see
+    # `model_version.shaped_reward.DELETED_SHAPED_REWARD_FIELDS`.)
 }
 
 # field -> the CLI flag that sets it. Bools use the BoolFlag `--no-` negation (the documented
 # opt-out spelling); floats take their value positionally.
 _REWARD_FIELD_FLAGS: Dict[str, str] = {
-    "bias_additivity": "--bias-additivity",
-    "mat_alive_weight": "--mat-alive-weight",
-    "bias_redesign": "--bias-redesign",
-    "switch_bias_weight": "--switch-bias-weight",
     "draw_penalty": "--draw-penalty",
-    "self_ko_hp_penalty": "--self-ko-hp-penalty",
-    "drop_redundant_bias": "--drop-redundant-bias",
-    "drop_switch_bias": "--drop-switch-bias",
-    "all_shaping_pbrs": "--all-shaping-pbrs",
-    "stall_pbrs": "--stall-pbrs",
-    "no_progress_penalty": "--no-progress-penalty",
-    "hand_shaping": "--hand-shaping",
-    "pbrs_material": "--pbrs-material",
-    "pbrs_belief": "--pbrs-belief",
     "victory_value": "--victory-value",
     "progress_decision_tense": "--progress-decision-tense",
     "progress_switch_freeze": "--progress-switch-freeze",
     "terminal_indicator": "--terminal-indicator",
-    "no_progress_tax_armed": "--arm-no-progress-tax",
 }
 
 

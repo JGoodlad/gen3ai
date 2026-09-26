@@ -3,7 +3,7 @@
 Three things live here, and they answer different questions:
 
 1. **The default path is a CHECKSUM.** `SCENARIO` is a scripted 14-window episode and
-   `test_default_path_matches_the_recorded_trace` pins the exact `(n, last_penalty)` sequence it
+   `test_default_path_matches_the_recorded_trace` pins the exact `n` sequence it
    produces. The literal was captured by running the SAME scenario against the pre-change clock
    (`git show <pre>:src/agents/training/progress_clock.py`, loaded as a separate module — see
    `_capture_reference_trace` in the docstring below), so it is a genuine A/B against the shipped
@@ -40,7 +40,6 @@ import pytest
 from agents.training.progress_clock import PROGRESS_CLOCK_CAP, ProgressClock
 from agents.training.reward_manager import RewardConfig
 
-_PENALTY = 0.15
 
 
 # --------------------------------------------------------------------------- synthetic fixtures
@@ -82,10 +81,10 @@ def legal(switches=(1, 2)):
 
 
 def fold(clock, d, *, lv=None, lg=None, lg_prev=None):
-    """One window, returning the observable pair the obs scalar and the reward read."""
+    """One window, returning `n` — the obs scalar's input (the reward no longer reads the clock)."""
     clock.update(d, lv if lv is not None else live(), lg if lg is not None else legal(),
                  legal_prev=lg_prev)
-    return clock.n, round(clock.last_penalty, 6)
+    return clock.n
 
 
 # --------------------------------------------------------------------------- 1. the default checksum
@@ -121,21 +120,21 @@ SCENARIO = [
 # loaded as a standalone module and driven by `run_scenario`). This is the byte-identity claim for
 # the default path: with both flags OFF the clock produces the sequence it always produced.
 REFERENCE_TRACE = [
-    (1, -0.15),   # plain no-op — charged
-    (0, 0.0),     # damaging move — PROGRESS, reset
-    (0, 0.0),     # miss — exogenous denial, frozen
-    (0, 0.0),     # heal 1 — in grace
-    (0, 0.0),     # heal 2 — in grace
-    (1, -0.15),   # heal 3 — heal-war, charged
-    (0, 0.0),     # Spikes adds the 3rd layer — hazard PROGRESS, reset
-    (1, -0.15),   # capped Spikes — short-circuit charge
-    (2, -0.15),   # filler Rapid Spin — no progress reset, charged
-    (3, 0.0),     # trapped — increments, charge suppressed
-    (4, -0.15),   # voluntary switch — charged NO_OP
-    (4, 0.0),     # window CLOSING on a forced switch — sit-out
-    (5, -0.15),   # window OPENING on a forced switch — charged (the off-by-one)
-    (0, 0.0),     # boost — setup PROGRESS, reset
-    (1, -0.15),   # plain no-op — charged
+    1,  # plain no-op — charged
+    0,  # damaging move — PROGRESS, reset
+    0,  # miss — exogenous denial, frozen
+    0,  # heal 1 — in grace
+    0,  # heal 2 — in grace
+    1,  # heal 3 — heal-war, charged
+    0,  # Spikes adds the 3rd layer — hazard PROGRESS, reset
+    1,  # capped Spikes — short-circuit charge
+    2,  # filler Rapid Spin — no progress reset, charged
+    3,  # trapped — increments, charge suppressed
+    4,  # voluntary switch — charged NO_OP
+    4,  # window CLOSING on a forced switch — sit-out
+    5,  # window OPENING on a forced switch — charged (the off-by-one)
+    0,  # boost — setup PROGRESS, reset
+    1,  # plain no-op — charged
 ]
 
 
@@ -149,14 +148,12 @@ def run_scenario(clock):
 
 
 def test_default_path_matches_the_recorded_trace():
-    assert run_scenario(ProgressClock(_PENALTY)) == REFERENCE_TRACE
+    assert run_scenario(ProgressClock()) == REFERENCE_TRACE
 
 
 def test_the_scenario_actually_exercises_every_outcome():
     """A checksum over a scenario that only ever charges would pass while proving nothing."""
-    ns = [n for n, _ in REFERENCE_TRACE]
-    penalties = {p for _, p in REFERENCE_TRACE}
-    assert penalties == {0.0, -0.15}                    # charged AND uncharged windows present
+    ns = list(REFERENCE_TRACE)
     assert 0 in ns and max(ns) > 1                      # resets AND accumulation present
     assert len(SCENARIO) == len(REFERENCE_TRACE) == 15
 
@@ -167,7 +164,7 @@ def test_both_fixes_default_off():
 
 
 def test_a_default_reward_config_leaves_the_clock_alone():
-    c = ProgressClock(_PENALTY)
+    c = ProgressClock()
     c.apply_reward_config(RewardConfig())
     assert (c.decision_tense, c.switch_freeze) == (False, False)
     assert run_scenario(c) == REFERENCE_TRACE
@@ -178,8 +175,8 @@ def test_a_default_reward_config_leaves_the_clock_alone():
 def _both(dkw, **fold_kw):
     """The same window folded by an OFF clock and an ON clock. The ONLY difference is the flag, so
     a revert of the fix collapses the two and every caller's assertion fails."""
-    off = ProgressClock(_PENALTY)
-    on = ProgressClock(_PENALTY, decision_tense=True)
+    off = ProgressClock()
+    on = ProgressClock(decision_tense=True)
     return fold(off, delta(**dkw), **fold_kw), fold(on, delta(**dkw), **fold_kw)
 
 
@@ -188,61 +185,25 @@ def test_a_window_opened_by_a_forced_switch_is_charged_off_and_sits_out_on():
     36.3% of all charges. No action available to it can satisfy the progress predicate."""
     off, on = _both(dict(our_move_id=None, our_switch_to="benchmon",
                          decision_was_forced_switch=True, phase_is_forced_switch=False))
-    assert off == (1, -0.15)
-    assert on == (0, 0.0)
+    assert off == 1
+    assert on == 0
 
 
 def test_a_window_closed_by_a_forced_switch_sits_out_off_and_is_charged_on():
     """The mirror half — probe M's SITOUT class: 19,503 FULL-agency decisions exempted because our
     mon happened to be KO'd on them. The costliest class in its corpus at −5.1pp."""
     off, on = _both(dict(phase_is_forced_switch=True, decision_was_forced_switch=False))
-    assert off == (0, 0.0)
-    assert on == (1, -0.15)
+    assert off == 0
+    assert on == 1
 
 
 def test_the_two_flags_of_the_same_window_are_independent_facts():
     """A window can be both (KO'd on a replacement turn) or neither; the fix is a choice of WHICH
     one the clock reads, not a redefinition of either."""
     both_true, _ = _both(dict(phase_is_forced_switch=True, decision_was_forced_switch=True))
-    assert both_true == (0, 0.0)
-    on = ProgressClock(_PENALTY, decision_tense=True)
-    assert fold(on, delta(phase_is_forced_switch=True, decision_was_forced_switch=True)) == (0, 0.0)
-
-
-def test_the_trapped_gate_moves_with_the_tense_third_defect():
-    """Probe N §3.3 — the SAME call passes the SAME upcoming-request legality to the helplessness
-    gate, so a mon genuinely trapped at t is charged whenever its successor could switch. It is one
-    off-by-one in one call; a fix that moved only the phase would be half-done."""
-    trapped_then, free_now = legal(switches=()), legal(switches=(1,))
-    off = ProgressClock(_PENALTY)
-    on = ProgressClock(_PENALTY, decision_tense=True)
-    assert fold(off, delta(), lg=free_now, lg_prev=trapped_then) == (1, -0.15)
-    assert fold(on, delta(), lg=free_now, lg_prev=trapped_then) == (1, 0.0)
-
-
-def test_the_trapped_gate_mirror_a_free_choice_is_not_exempted():
-    free_then, trapped_now = legal(switches=(1,)), legal(switches=())
-    off = ProgressClock(_PENALTY)
-    on = ProgressClock(_PENALTY, decision_tense=True)
-    assert fold(off, delta(), lg=trapped_now, lg_prev=free_then) == (1, 0.0)
-    assert fold(on, delta(), lg=trapped_now, lg_prev=free_then) == (1, -0.15)
-
-
-def test_an_absent_legal_prev_degrades_to_the_pre_fix_reading_not_to_trapped():
-    """`RewardTrackingMixin` builds contexts without a legality snapshot. Reading `None` as
-    "trapped" would silently zero every charge on that path — a fix that turns a term off is worse
-    than the off-by-one it replaces."""
-    on = ProgressClock(_PENALTY, decision_tense=True)
-    assert fold(on, delta(), lg=legal(switches=(1,)), lg_prev=None) == (1, -0.15)
-    on2 = ProgressClock(_PENALTY, decision_tense=True)
-    assert fold(on2, delta(), lg=legal(switches=()), lg_prev=None) == (1, 0.0)
-
-
-def test_legal_prev_is_ignored_entirely_when_the_flag_is_off():
-    """The threading is unconditional; only its CONSUMPTION is gated. Everything the env now passes
-    must be inert at the default, or landing this would move a live run."""
-    off = ProgressClock(_PENALTY)
-    assert fold(off, delta(), lg=legal(switches=(1,)), lg_prev=legal(switches=())) == (1, -0.15)
+    assert both_true == 0
+    on = ProgressClock(decision_tense=True)
+    assert fold(on, delta(phase_is_forced_switch=True, decision_was_forced_switch=True)) == 0
 
 
 # ------------------------------------------------- probe M's alignment discriminator, as a test
@@ -263,14 +224,14 @@ def _sitout_violations(clock_kwargs, *, candidate: str):
     alignment; a large fraction means it is the other one."""
     n_candidate = moved = 0
     for opening, closing in _windows():
-        clock = ProgressClock(_PENALTY, **clock_kwargs)
+        clock = ProgressClock(**clock_kwargs)
         before = clock.n
         clock.update(delta(decision_was_forced_switch=opening, phase_is_forced_switch=closing),
                      live(), legal(), legal_prev=legal())
         says_sitout = opening if candidate == "opening" else closing
         if says_sitout:
             n_candidate += 1
-            if clock.n != before or clock.last_penalty != 0.0:
+            if clock.n != before:
                 moved += 1
     return n_candidate, moved
 
@@ -296,8 +257,8 @@ def test_the_alignment_discriminator_the_fix_tracks_the_OPENING_decision():
 # --------------------------------------------------------------------------- 3. F2b, switch freeze
 
 def _both_freeze(dkw, **fold_kw):
-    off = ProgressClock(_PENALTY)
-    on = ProgressClock(_PENALTY, switch_freeze=True)
+    off = ProgressClock()
+    on = ProgressClock(switch_freeze=True)
     return fold(off, delta(**dkw), **fold_kw), fold(on, delta(**dkw), **fold_kw)
 
 
@@ -305,35 +266,35 @@ def test_a_voluntary_no_progress_switch_is_charged_off_and_frozen_on():
     """42.7% of all charges. `_is_progress` is offense-only — none of its eight clauses can be
     satisfied BY a switch — so the tax prices the action KIND, not the choice within it."""
     off, on = _both_freeze(dict(our_move_id=None, our_switch_to="benchmon"))
-    assert off == (1, -0.15)
-    assert on == (0, 0.0)
+    assert off == 1
+    assert on == 0
 
 
 def test_a_frozen_switch_freezes_rather_than_resets():
     """FREEZE, not PROGRESS: an accumulated clock must survive a pivot, or a switch would launder
     a stall into a clean slate — the `switch_bouncing_tax` failure mode in a new spelling."""
-    on = ProgressClock(_PENALTY, switch_freeze=True)
-    assert fold(on, delta()) == (1, -0.15)
-    assert fold(on, delta()) == (2, -0.15)
-    assert fold(on, delta(our_move_id=None, our_switch_to="benchmon")) == (2, 0.0)
-    assert fold(on, delta()) == (3, -0.15)
+    on = ProgressClock(switch_freeze=True)
+    assert fold(on, delta()) == 1
+    assert fold(on, delta()) == 2
+    assert fold(on, delta(our_move_id=None, our_switch_to="benchmon")) == 2
+    assert fold(on, delta()) == 3
 
 
 def test_a_switch_that_IS_progress_still_resets_the_clock_under_the_flag():
     """Probe M measures 27% of voluntary switches escaping via clauses ii/iv/v (the opponent also
     committed, a residual is ticking). Those are RESETS today and must stay resets — the freeze is
     placed after the classification precisely so it only replaces the NO_OP outcome."""
-    on = ProgressClock(_PENALTY, switch_freeze=True)
-    assert fold(on, delta()) == (1, -0.15)
+    on = ProgressClock(switch_freeze=True)
+    assert fold(on, delta()) == 1
     assert fold(on, delta(our_move_id=None, our_switch_to="benchmon",
-                          opp_switch_to="theirmon")) == (0, 0.0)
+                          opp_switch_to="theirmon")) == 0
 
 
 def test_a_move_no_op_is_still_charged_under_the_flag():
     """The anti-stall job is not removed, only re-aimed: a pivot-loop still pays on every move turn
     between the pivots. If this ever passes for moves too, the term has been deleted by accident."""
-    on = ProgressClock(_PENALTY, switch_freeze=True)
-    assert fold(on, delta()) == (1, -0.15)
+    on = ProgressClock(switch_freeze=True)
+    assert fold(on, delta()) == 1
 
 
 def test_the_freeze_does_not_rescue_a_forced_replacement_on_its_own():
@@ -342,38 +303,36 @@ def test_the_freeze_does_not_rescue_a_forced_replacement_on_its_own():
     no agency; that is F1's job, and the default clock still charges it here."""
     off, on = _both_freeze(dict(our_move_id=None, our_switch_to="benchmon",
                                 decision_was_forced_switch=True))
-    assert off == (1, -0.15)
-    assert on == (0, 0.0)   # frozen for the WRONG reason — F1 is what makes it a sit-out
+    assert off == 1
+    assert on == 0   # frozen for the WRONG reason — F1 is what makes it a sit-out
 
 
 def test_both_fixes_together_compose():
-    both = ProgressClock(_PENALTY, decision_tense=True, switch_freeze=True)
-    assert fold(both, delta()) == (1, -0.15)                                    # move no-op: charged
-    assert fold(both, delta(our_move_id=None, our_switch_to="b")) == (1, 0.0)   # pivot: frozen
-    assert fold(both, delta(decision_was_forced_switch=True)) == (1, 0.0)       # replacement: sit-out
-    assert fold(both, delta(phase_is_forced_switch=True)) == (2, -0.15)         # KO turn: now charged
+    both = ProgressClock(decision_tense=True, switch_freeze=True)
+    assert fold(both, delta()) == 1                                    # move no-op: charged
+    assert fold(both, delta(our_move_id=None, our_switch_to="b")) == 1   # pivot: frozen
+    assert fold(both, delta(decision_was_forced_switch=True)) == 1       # replacement: sit-out
+    assert fold(both, delta(phase_is_forced_switch=True)) == 2         # KO turn: now charged
 
 
 # --------------------------------------------------------------------------- 4. the config seam
 
-def test_apply_reward_config_threads_all_three_knobs():
-    """One call, because hand-threading a reward field is exactly how the eval path once measured a
+def test_apply_reward_config_threads_both_knobs():
+    """One call, because hand-threading a config field is exactly how the eval path once measured a
     different reward than training (RewardConfig's own note)."""
     c = ProgressClock()
-    c.apply_reward_config(RewardConfig(no_progress_penalty=0.25,
-                                       progress_decision_tense=True,
-                                       progress_switch_freeze=True))
-    assert (c.no_progress_penalty, c.decision_tense, c.switch_freeze) == (0.25, True, True)
+    c.apply_reward_config(RewardConfig(progress_decision_tense=True, progress_switch_freeze=True))
+    assert (c.decision_tense, c.switch_freeze) == (True, True)
 
 
 def test_apply_reward_config_none_is_a_no_op():
-    c = ProgressClock(0.4, decision_tense=True)
+    c = ProgressClock(decision_tense=True)
     c.apply_reward_config(None)
-    assert (c.no_progress_penalty, c.decision_tense) == (0.4, True)
+    assert c.decision_tense is True
 
 
 def test_the_cap_still_bounds_the_counter_under_both_fixes():
-    c = ProgressClock(_PENALTY, decision_tense=True, switch_freeze=True)
+    c = ProgressClock(decision_tense=True, switch_freeze=True)
     for _ in range(PROGRESS_CLOCK_CAP + 5):
         fold(c, delta())
     assert c.n == PROGRESS_CLOCK_CAP

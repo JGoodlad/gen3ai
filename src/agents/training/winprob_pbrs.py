@@ -176,7 +176,7 @@ def episode_dose(shaping: np.ndarray, episode_starts: np.ndarray, gamma: float) 
 
     WHY IT EXISTS — `reward_share`'s denominator dies on the stream this lever was designed for.
     `reward_share` divides by the UNSHAPED stream's mean |reward|, and in the clean-world
-    composition (`--no-hand-shaping`) that stream is **terminal-only**: exactly zero on every
+    composition that stream is **terminal-only**: exactly zero on every
     non-terminal step. A rollout with no episode end therefore has a denominator of exactly 0, and
     one with a handful of ends has a denominator that is really "±V ÷ episode length" — so the
     ratio moves with the EPISODE LENGTH rather than with the coefficient, which is the one thing a
@@ -316,7 +316,7 @@ def apply_winprob_pbrs(model, rollout_buffer) -> Dict[str, float]:
     THE SIZING METERS, and WHICH ONE TO READ ON WHICH STREAM. `reward_share` is the mean absolute
     shaping over the mean absolute UNSHAPED reward — the right question on a DENSE stream, and
     structurally the wrong one on a sparse one, because its denominator is drawn from the data. In
-    the clean-world composition (`--no-hand-shaping`) the unshaped stream is terminal-only, so that
+    the terminal-only reward (the only one since the shaped-reward deletion) the unshaped stream is terminal-only, so that
     denominator is exactly 0 on a rollout with no episode end (the ratio is then not "0" — it is
     undefined, and is OMITTED rather than reported as a rounding-error zero) and is really
     "±V ÷ episode length" otherwise, which moves the meter with the EPISODE LENGTH rather than with
@@ -378,7 +378,7 @@ def apply_winprob_pbrs(model, rollout_buffer) -> Dict[str, float]:
         # ⚠️ NaN, NEVER 0.0, when the unshaped stream is empty. `raw_absmean == 0` means the
         # shaping is 100% of this rollout's reward, and 0.0 is the reading an operator scans past
         # — "the shaping is negligible" — for the one case where it is everything. That case is
-        # not hypothetical: under `--no-hand-shaping` (gen3_clean_world_config_v1) the unshaped
+        # not hypothetical: under the terminal-only reward the unshaped
         # stream is TERMINAL-ONLY, so any rollout that ends no episode has exactly zero unshaped
         # reward, and the clean-world arm is precisely where this metric is meant to be watched.
         # Same rule the Q head's `train/q_winprob_loss` follows one wave later: a defaulted zero is

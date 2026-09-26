@@ -10,11 +10,10 @@ wrong in a way no assertion catches:
 * a **tie** is `finished` with neither `won` nor `lost`, *before* the cap — it shares the decisive
   loss's branch, which is exactly the conflation `--victory-value` had to be threaded through;
 * a **decisive loss** has to be well before the cap or it reads as the timeout;
-* and every one of them needs a prior non-terminal turn first, or `_prev_phi_mat` is unset and the
-  material PBRS folds its first-window special case into the number under test.
+* and every one of them is folded after a prior non-terminal turn, the way a real episode reaches it.
 
 Writing those four boards inline is what makes a terminal test a test of the harness. This module
-is the one place they live, so `reward_end_state_test` (the ±30 / −35 ordering) and
+is the one place they live, so `reward_manager_test` (the ±30 / −35 ordering) and
 `critic_mode_test` (the win INDICATOR) fold the SAME boards and any disagreement between them is
 about the config, never about the setup.
 
@@ -42,16 +41,14 @@ OUTCOMES = tuple(_BOARDS)
 def terminal_reward(config, outcome: str) -> float:
     """The `win_loss` TERMINAL term a fresh manager folds for `outcome` under `config`.
 
-    Returns the TERMINAL field alone, not the episode's total: the shaping classes are a separate
-    question with their own tests, and a total would make a terminal assertion depend on whichever
-    potentials the config happens to leave on.
+    Returns the TERMINAL field — since the shaped-reward deletion the only field, so it is also
+    the turn's whole reward.
     """
     if outcome not in _BOARDS:
         raise KeyError(f"unknown terminal outcome {outcome!r} (want one of {OUTCOMES})")
     live_kw, turn, delta_kw = _BOARDS[outcome]
     mgr = Gen3RewardManager(config=config)
-    # Seed a non-terminal turn first so `_prev_phi_mat` is set — otherwise the material PBRS's
-    # first-window branch lands inside the same fold as the terminal being measured.
+    # A non-terminal turn first, the way a real episode reaches its terminal.
     mgr.process_turn_reward(_Battle(_full_team_live(), turn=1), _delta())
     mgr.process_turn_reward(_Battle(_full_team_live(**live_kw), turn=turn), _delta(**delta_kw))
     return float(mgr._last_breakdown.win_loss)

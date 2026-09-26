@@ -353,7 +353,7 @@ def _battle_seed(seed: int, index: int) -> List[int]:
 def _reward_config_from_argv(reward_argv: "str | None") -> "RewardConfig | None":
     """Build the reward config under test from a string of REAL `train_rl_agent` flags.
 
-    e.g. ``--reward-argv '--no-hand-shaping --terminal-indicator --victory-value 1.0'``.
+    e.g. ``--reward-argv '--terminal-indicator --victory-value 1.0 --draw-penalty 0'``.
     It goes through `build_parser()` + `RewardConfig.from_args` — the launch path's own two
     steps — rather than constructing a `RewardConfig(...)` here by hand, so the arm this
     benchmark times is provably the arm a launch produces from the same flags. A hand-built
@@ -446,9 +446,9 @@ def _parse_args(argv):
                         "still samples the board distribution.")
     p.add_argument("--reward-argv", default=None,
                    help="real train_rl_agent flags naming the reward composition to time, as "
-                        "ONE quoted string (e.g. '--no-hand-shaping --terminal-indicator "
+                        "ONE quoted string (e.g. '--terminal-indicator "
                         "--victory-value 1.0'). Parsed by the launcher's own build_parser + "
-                        "RewardConfig.from_args. Unset = the shaped production default.")
+                        "RewardConfig.from_args. Unset = the default signed terminal.")
     p.add_argument("--bridge", choices=("rust", "node"), default="rust",
                    help="the sim child: 'rust' (DEFAULT — training's `--use-bridge` default, the "
                         "production release `sim_bridge`) or 'node' (local_sim_bridge.js, the old "

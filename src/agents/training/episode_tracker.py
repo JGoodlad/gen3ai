@@ -372,7 +372,7 @@ class EpisodeTracker:
         self._last_cursor: int = 0      # event_cursor at the last record() call
         self._hidden_power_tracker = HiddenPowerTracker()
         # Episode-scoped no-progress counter (design §5.1). Updated at record()/embed time so the
-        # obs is fresh; read by BOTH the obs encoder (value()) and the reward (last_penalty).
+        # obs is fresh; read by the obs encoder (value()).
         self._progress_clock = ProgressClock()
         # E9 step 1 (roadmap §3.9): per-entity recency, fed by the same decision window.
         self._recency = RecencyTracker()
@@ -612,13 +612,12 @@ class EpisodeTracker:
 
     def update_progress_clock(self, battle, legal) -> TurnDelta:
         """Fold the just-completed window's delta and advance the shared ``ProgressClock``, so the obs
-        scalar (``value()``) and the reward's no-progress penalty (``last_penalty``) key on ONE value.
+        scalar (``value()``) is fresh.
 
         Call from ``embed_battle`` AFTER :meth:`record`, BEFORE ``encode`` — poke-env runs
         ``embed_battle`` before ``calc_reward``, so updating here (not at reward time) keeps the obs
         fresh. Returns the folded delta so the caller can reuse it (the env caches it for
-        ``calc_reward``, avoiding a second fold). The penalty magnitude lives on the clock itself
-        (set once from the reward config), so this stays an obs-side call with no reward param.
+        ``calc_reward``, avoiding a second fold). An obs-side call with no reward param.
         Single home for the 3-step protocol the env + inference players both need (no copy-paste).
         """
         cursor = self._cursors[-1] if self._cursors else 0

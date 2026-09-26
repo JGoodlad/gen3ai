@@ -247,7 +247,7 @@ def _live():
 
 
 def _n(d):
-    c = ProgressClock(0.15)
+    c = ProgressClock()
     c.update(d, _live(), SimpleNamespace(switches=[1]))
     return c.n
 

@@ -11431,7 +11431,7 @@
     "arch_signature": "gen3_event_record_v2",
     "base_seats": 13,
     "config": "production_config.json",
-    "config_version": 121,
+    "config_version": 122,
     "edge_bias_families": [
       "c1",
       "c2",

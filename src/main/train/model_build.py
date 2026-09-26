@@ -532,7 +532,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 current_version=current_version,
                 device=args.device,
                 enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
-                enforce_reward_config=reward_config,  # FATAL if bias_additivity/mat_alive_weight/redesign drift
+                enforce_reward_config=reward_config,  # FATAL if victory_value/terminal_indicator/draw_penalty drift
                 enforce_value_tail_weight=args.value_tail_weight,  # FATAL if the value-loss tail weight drifts
                 enforce_value_dist=(args.value_dist_vmin, args.value_dist_vmax),  # FATAL if the dist support drifts
                 enforce_belief_grad_mode=args.belief_grad_mode,  # FATAL if the belief-trunk-grad mode drifts (v41)
@@ -681,21 +681,13 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # gen3_winprob_critic_mode_v1: `--gamma` is INERT ON A RESUME, exactly like `--lr` —
             # SB3 restores the checkpoint's own gamma, so the argv's value never reaches GAE. STATE
             # it rather than let a resumed run silently discount differently from what its command
-            # says, and RE-POINT the reward config's copy at the value actually in force so the
-            # PBRS invariance premise (PBRS_GAMMA == reward gamma == model gamma) stays a fact.
+            # says, and RE-POINT the reward config's copy at the value actually in force (it is
+            # recorded, and hashed into `reward_config_digest`).
             if abs(float(reward_config.gamma) - float(model.gamma)) > 1e-12:
                 print(f"[Resume] gamma: using the checkpoint's {float(model.gamma):g} "
                       f"(arg --gamma={float(reward_config.gamma):g} ignored on resume, like --lr); "
-                      f"the reward config's copy follows it so PBRS stays coherent.")
+                      f"the reward config's copy follows it.")
                 reward_config.gamma = float(model.gamma)
-            from agents.training.reward_manager import PBRS_GAMMA as _PBRS_GAMMA_R
-            from agents.training.reward_manager import reward_class_composition as _composition_r
-            if _composition_r(reward_config)["pbrs"] > 0:
-                assert abs(_PBRS_GAMMA_R - float(model.gamma)) < 1e-12, (
-                    f"PBRS_GAMMA ({_PBRS_GAMMA_R}) must equal the RESUMED model.gamma "
-                    f"({model.gamma}) — PBRS is only policy-invariant when they match. This "
-                    "checkpoint was trained at a different discount; a hand potential cannot be "
-                    "folded under it.")
             _maybe_compile_trainer(model, args)
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
@@ -901,22 +893,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             rank_tripwire_drop=args.rank_tripwire_drop,
             teacher_scan_limit=args.teacher_scan_limit,
         )
-        # PBRS_GAMMA must equal the PPO gamma for both potentials to be policy-invariant (design §7.1).
-        # The reward manager is built before the model (in the env factory), so assert here where both
-        # exist. A non-default --gamma would silently break PBRS — make it a fast startup crash.
-        #
-        # gen3_winprob_critic_mode_v1 GATES it on a potential actually being FOLDED. `PBRS_GAMMA` is
-        # a module constant of 0.9999, so a run at `--gamma 1.0` would trip an assert about the
-        # invariance of terms it does not emit — and under `--no-hand-shaping` (which `--critic
-        # winprob` implies) EVERY hand potential early-returns. The invariance claim is about the
-        # terms that exist; with none, there is nothing to be invariant.
-        from agents.training.reward_manager import PBRS_GAMMA as _PBRS_GAMMA
-        from agents.training.reward_manager import reward_class_composition as _composition
-        if _composition(reward_config)["pbrs"] > 0:
-            assert abs(_PBRS_GAMMA - float(model.gamma)) < 1e-12 and abs(reward_config.gamma - float(model.gamma)) < 1e-12, (
-                f"PBRS_GAMMA ({_PBRS_GAMMA}) / reward_config.gamma ({reward_config.gamma}) must equal "
-                f"model.gamma ({model.gamma}) — PBRS is only policy-invariant when they match."
-            )
+        # (A `PBRS_GAMMA == model.gamma` assert lived here while the reward folded hand potentials;
+        # it went with them in the shaped-reward deletion, 2026-09-26.)
         _maybe_compile_trainer(model, args)
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)

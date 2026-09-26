@@ -1,34 +1,21 @@
 """THE COMPOSITION ANNOUNCER — what a config's reward is MADE OF, as a census and one line.
 
-Split out of `reward_manager.py` (2026-09-06, alongside `gen3_winprob_critic_mode_v1`), which was
-11 lines short of the file-size gate's 2,000-line hard bound. It is a natural seam rather than an
-arbitrary cut: everything here is **stateless and duck-typed over a CONFIG** — it reads field NAMES
-off any config-shaped object (a `RewardConfig`, a recorded `ModelVersion`, an argparse namespace)
-and never touches a manager, a battle or a turn. `reward_manager.py`'s subject is the per-decision
-FOLD; this module's subject is the STATIC question *"which terms can this config emit at all?"*,
-and the two never needed to share a file.
+Stateless and duck-typed over a CONFIG: it reads field NAMES off any config-shaped object (a
+`RewardConfig`, a recorded `ModelVersion`, an argparse namespace) and never touches a manager, a
+battle or a turn.
 
-⚠️ **THE GATES HERE ARE THE FOLDS' OWN, AND THAT IS THE WHOLE POINT.**
-`Gen3RewardManager._hand_pbrs_on` delegates to `_pbrs_term_active`, and
-`_apply_pbrs_suppression` / `_apply_bias_drops` / `__init__`'s `_active_bias` fast path all read
-`_bias_term_active`. They were two hand-maintained copies of the same conditions until 2026-08-29,
-which is exactly how a census can advertise a composition the folds do not implement. Keep the
-delegation: a rename here must break three call sites loudly rather than silently un-gate a term.
-
-**The three declarations this module reads come from `reward_config`, at MODULE level.** They
-were function-local imports of `reward_manager` until 2026-09-07, deferred to call time because
-`reward_manager` re-exports every public name below (so `from agents.training.reward_manager
-import reward_class_composition` — and `_pbrs_term_active` / `_bias_term_active` / `_rc`, which
-the tests read — still resolves) and the dependency was therefore mutual. The decomposition moved
-`RewardBreakdown` / `RewardClass` / `SWITCH_BIAS_DROP_FAMILY` into `reward_config`, whose only
-import is `reward_weights` — so there is no cycle left to defer around, and the deferral went with
-it. The re-export through `reward_manager` is unchanged.
+**Since the shaped-reward deletion (2026-09-26, program_rust_core §4 M3 row) every config's census
+is the same: `1 TERMINAL + 0 PBRS + 0 BIAS`.** The announcer is kept, with its output format and its
+`metadata.json` block unchanged, because it exists for the v8→v9 lesson — a run STATES its reward
+composition rather than implying it — and because its readers (the startup line, the `reward/`
+export's tracked set, the `metadata.json` `reward_composition` block, `reward_config_digest`'s
+cf-label stamp) are unchanged. The PBRS and BIAS keys stay in the census (always 0 / empty) so a
+reader of an old and a new `metadata.json` reads one schema.
 """
 import hashlib
 from dataclasses import fields
 
-from agents.training.reward_config import (
-    RewardBreakdown, RewardClass, SWITCH_BIAS_DROP_FAMILY)
+from agents.training.reward_config import RewardBreakdown, RewardClass
 
 
 def _rc(config, name, default):
@@ -36,90 +23,28 @@ def _rc(config, name, default):
     return getattr(config, name, default)
 
 
-def _pbrs_term_active(config, name: str) -> bool:
-    """Is PBRS term `name` folded under `config`? THE gate — every `_fold_*_pbrs` calls this through
-    ``Gen3RewardManager._hand_pbrs_on``, so the census below and the folds cannot drift apart (they
-    were two hand-maintained copies of the same conditions until 2026-08-29)."""
-    if not bool(_rc(config, "hand_shaping", True)):
-        return False                   # --no-hand-shaping: every hand potential off, TERMINAL alone
-    asp = bool(_rc(config, "all_shaping_pbrs", True))
-    if name == "pbrs_material":        # _fold_material_pbrs — its OWN flag, not asp's (see RewardConfig)
-        return bool(_rc(config, "pbrs_material", True))
-    if name == "pbrs_belief":          # _fold_belief_pbrs — likewise
-        return bool(_rc(config, "pbrs_belief", True))
-    if name == "pbrs_status":          # _fold_status_pbrs
-        return bool(_rc(config, "bias_redesign", False)) or asp
-    if name == "pbrs_progress":        # _fold_progress_pbrs
-        return bool(_rc(config, "stall_pbrs", False))
-    if name in ("pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts", "pbrs_roar"):
-        return asp
-    return True
-
-
-def _bias_term_active(config, name: str) -> bool:
-    """Is BIAS term `name` reachable under `config`? Mirrors `_apply_pbrs_suppression`,
-    `_apply_bias_drops`, `_apply_progress_clock` and the three weight-gated terms."""
-    if not bool(_rc(config, "hand_shaping", True)):
-        # --no-hand-shaping zeroes the WHOLE BIAS class, tilt included — UNLESS the anti-stall
-        # tilt was explicitly re-armed (gen3_winprob_critic_mode_v1, design gap B4). The re-armed
-        # term still has to satisfy its OWN gate below, so `--arm-no-progress-tax` re-arms the
-        # tilt rather than reviving the other 24 BIAS terms.
-        if not (name == "no_progress_tax" and bool(_rc(config, "no_progress_tax_armed", False))):
-            return False
-    asp = bool(_rc(config, "all_shaping_pbrs", True))
-    stall = bool(_rc(config, "stall_pbrs", False))
-    if name == "no_progress_tax":
-        # Charged only under --bias-redesign OR --all-shaping-pbrs; --stall-pbrs then zeroes it
-        # (Φ_progress carries the anti-stall signal policy-invariantly instead).
-        return (bool(_rc(config, "bias_redesign", False)) or asp) and not stall
-    if asp:
-        return False                   # everything-but-stall → every other BIAS term is zeroed
-    if name == "stall_tax":
-        return not (stall or bool(_rc(config, "drop_redundant_bias", False)))
-    if name == "matchup_penalty":
-        return not bool(_rc(config, "drop_redundant_bias", False))
-    if name in SWITCH_BIAS_DROP_FAMILY:
-        return not bool(_rc(config, "drop_switch_bias", False))
-    if name in ("stay_risk_tax", "escape_risk_bonus"):
-        return float(_rc(config, "switch_bias_weight", 0.0)) > 0.0
-    if name == "self_ko_penalty":
-        return float(_rc(config, "self_ko_hp_penalty", 0.0)) > 0.0
-    return True
-
-
 def reward_class_composition(config) -> dict:
     """The per-class ACTIVE-term census of `config` — what this run's reward is MADE OF.
 
     Returns ``{"terminal": n, "pbrs": n, "bias": n, "bias_terms": [names], "pbrs_terms": [names],
-    "terminal_terms": [names]}``. `bias_terms` is the one a reader acts on: the BIAS class is the
-    only one that biases the converged optimum, so naming its members is naming the run's
-    hand-coded incentives. `terminal_terms` is ADDITIVE (`gen3_reward_term_export_v1`) — the
-    counts and the two older lists are unchanged, and the `reward/` live export derives its
-    tracked set from all three so the exported terms cannot disagree with the census.
+    "terminal_terms": [names]}``. Every term in the registry is TERMINAL now, so the PBRS and BIAS
+    halves are always empty; `config` is still taken so the signature (and every caller) is stable.
     """
     reg = RewardBreakdown._REGISTRY
-    pbrs = [n for n, c in reg.items() if c is RewardClass.PBRS and _pbrs_term_active(config, n)]
-    bias = [n for n, c in reg.items() if c is RewardClass.BIAS and _bias_term_active(config, n)]
     terminal = [n for n, c in reg.items() if c is RewardClass.TERMINAL]
-    return {"terminal": len(terminal), "pbrs": len(pbrs), "bias": len(bias),
-            "bias_terms": bias, "pbrs_terms": pbrs, "terminal_terms": terminal}
+    return {"terminal": len(terminal), "pbrs": 0, "bias": 0,
+            "bias_terms": [], "pbrs_terms": [], "terminal_terms": terminal}
 
 
 def reward_config_digest(config) -> str:
     """A stable sha1 over EVERY field of a `RewardConfig` — the identity of a reward function.
 
-    `gen3_cf_twin_heads_v1`. A shaped RETURN is a fact about a board *under a reward composition*,
-    so a Monte-Carlo return label manufactured by an offline producer is only a label for THIS run
-    if the producer used THIS run's reward. There is no other way to tell: the number is a float,
-    and a return computed under a different composition is not a noisier sample of ours — it is a
-    measurement of a different value function, and averaging it in is silent GIGO.
-
-    Stable across processes and Python versions: the fields are sorted by name and rendered with
-    `repr`, so it depends on the VALUES and not on dataclass declaration order or dict iteration.
-    Floats go through `repr` deliberately — two configs that differ in the 15th decimal of a weight
-    ARE different rewards, and rounding here would hide exactly the drift the digest exists to
-    catch. Duck-typed (`fields()` when available, else `vars()`) like everything else that consumes
-    a reward config.
+    `gen3_cf_twin_heads_v1`. A Monte-Carlo return label manufactured by an offline producer is only
+    a label for THIS run if the producer used THIS run's reward, and the number itself cannot say
+    so. Stable across processes and Python versions: fields sorted by name, rendered with `repr`.
+    ⚠️ The shaped-reward deletion REMOVED fields, so a digest stamped by a pre-deletion producer
+    does not match a post-deletion consumer's for the same (terminal-only) reward — a loud
+    mismatch, never a silent one.
     """
     try:
         items = {f.name: getattr(config, f.name) for f in fields(config)}
@@ -130,120 +55,29 @@ def reward_config_digest(config) -> str:
 
 
 def format_reward_composition(config) -> str:
-    """One human line: ``[Reward] composition: 1 TERMINAL + 7 PBRS + 1 BIAS (no_progress_tax)``.
-
-    Printed at startup so a launch STATES its reward composition instead of implying it. With no
-    BIAS terms the tail reads ``(none — fully policy-invariant)``; with many it truncates, because
-    the count is the signal and the long additive list is the pathology, not the detail.
-    """
+    """One human line: ``[Reward] composition: 1 TERMINAL + 0 PBRS + 0 BIAS (none — fully
+    policy-invariant)``, printed at startup so a launch STATES its reward composition."""
     comp = reward_class_composition(config)
     names = comp["bias_terms"]
-    if not names:
-        tail = "none — fully policy-invariant"
-    elif len(names) <= 6:
-        tail = ", ".join(names)
-    else:
-        tail = ", ".join(names[:6]) + f", … +{len(names) - 6} more"
+    tail = ", ".join(names) if names else "none — fully policy-invariant"
     return (f"[Reward] composition: {comp['terminal']} TERMINAL + {comp['pbrs']} PBRS "
             f"+ {comp['bias']} BIAS ({tail})")
 
 
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-# WHICH RECORDED FLAGS THIS CONFIG MAKES INERT (gen3_frozen_phi_actor_only_v1, 2026-09-06)
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-
-#: Which reward TERMS each recorded flag governs. A flag is INERT when none of its terms can be
-#: emitted, and "can be emitted" is decided by `_pbrs_term_active` / `_bias_term_active` above —
-#: the folds' OWN gates — so this table never re-states a condition, it only says which switch
-#: reaches which term. That is the one hand-maintained fact here, and it is the smallest one
-#: available: the alternative is a second copy of the gates, which is exactly the drift the module
-#: docstring warns about.
-_FLAG_TERMS: "dict[str, tuple[str, ...]]" = {
-    "all_shaping_pbrs": ("pbrs_status", "pbrs_hazard", "pbrs_boost", "pbrs_opp_boosts",
-                         "pbrs_roar", "no_progress_tax"),
-    "pbrs_material": ("pbrs_material",),
-    "pbrs_belief": ("pbrs_belief",),
-    "stall_pbrs": ("pbrs_progress", "no_progress_tax", "stall_tax"),
-    "bias_redesign": ("pbrs_status", "no_progress_tax"),
-    "no_progress_penalty": ("pbrs_progress", "no_progress_tax"),
-    "mat_alive_weight": ("pbrs_material",),
-    "switch_bias_weight": ("stay_risk_tax", "escape_risk_bonus"),
-    "self_ko_hp_penalty": ("self_ko_penalty",),
-    "drop_redundant_bias": ("stall_tax", "matchup_penalty"),
-}
-
-
-def _term_active(config, name: str) -> bool:
-    """Is term `name` emittable under `config`? Routes to whichever class predicate owns it, so a
-    term that moves classes needs no edit here. A TERMINAL term is always active."""
-    cls = RewardBreakdown._REGISTRY.get(name)
-    if cls is RewardClass.PBRS:
-        return _pbrs_term_active(config, name)
-    if cls is RewardClass.BIAS:
-        return _bias_term_active(config, name)
-    return cls is not None          # TERMINAL (or unknown → treat as live, never as inert)
-
-
 def inert_reward_flags(config) -> list:
-    """The recorded reward flags this config's own gates make INERT — sorted, possibly empty.
+    """The recorded reward flags this config makes INERT — sorted, possibly empty.
 
-    🚨 **THIS EXISTS BECAUSE A RECORDED VALUE IS NOT A RUNNING VALUE, AND NOTHING SAID SO.**
-    Observed on the live `--critic winprob --terminal-indicator` arm: `model_config.json` reads
-    `all_shaping_pbrs=True`, `pbrs_material=True`, `pbrs_belief=True` — their argparse defaults,
-    faithfully recorded — while the startup announcer prints
-    `1 TERMINAL + 0 PBRS + 0 BIAS (none — fully policy-invariant)`. Both are correct and they
-    disagree, because `--no-hand-shaping` makes every one of those three unreachable without
-    changing what any of them RECORDS. A reader who opens the config concludes the run trained
-    with shaping on; a reader who reads the log concludes it did not. This names the gap in the
-    artifact rather than leaving each reader to derive it.
-
-    **IT IS DOCUMENTATION, NOT A SECOND SOURCE OF TRUTH.** The recorded flag VALUES are left
-    exactly as they are — see `snapshot.save_model_snapshot`, which writes this beside them as a
-    derived sibling key and never in place of one. Rewriting the values would be a change to the
-    resume contract: `ModelVersion.check_reward_config` compares the RECORDED value against the
-    one `RewardConfig.from_args` builds from the resuming argv, and the resuming argv still says
-    `all_shaping_pbrs=True` (that is its default) — so a config recording False would FATAL every
-    restart of the very run this exists to describe. The live ai_v12_01 arm is a restarting run.
-
-    TWO SOURCES OF INERTNESS, and they are different in kind:
-
-    * **TERM-SHAPED** — a flag every one of whose terms is structurally unemittable. Decided by
-      the folds' own `_pbrs_term_active` / `_bias_term_active` predicates through `_FLAG_TERMS`,
-      so this half cannot drift from the census above it.
-    * **MAGNITUDE-SHAPED** — `draw_penalty` under `--terminal-indicator`. The term is still
-      emitted; the flag's number is simply not read, because the indicator terminal pays
-      `+victory_value` on a win and `0.0` on a loss, a tie AND a 250-turn timeout alike. There is
-      no term to declare inactive, so it is stated as its own rule rather than forced into the
-      table.
-
-    `bias_additivity` is deliberately ABSENT even under `--no-hand-shaping`: it mixes the BIAS
-    class's additive and telescoping halves, and with the class empty the refund is identically 0
-    at every value — so it is inert in effect, but by having nothing to act on rather than by a
-    gate, and listing it would make this a list of "flags that happen not to matter" instead of
-    "flags a gate switched off".
+    One source survives the deletion: `draw_penalty` under `--terminal-indicator`. The term is
+    still emitted; the flag's number is simply not read, because the indicator pays
+    `+victory_value` on a win and `0.0` on a loss, a tie AND a 250-turn timeout alike. It is
+    DOCUMENTATION written beside the fields (`snapshot.save_model_snapshot`), never in place of one.
     """
-    out = [flag for flag, terms in _FLAG_TERMS.items()
-           if terms and not any(_term_active(config, t) for t in terms)]
-    if bool(_rc(config, "terminal_indicator", False)):
-        out.append("draw_penalty")
-    return sorted(set(out))
+    return ["draw_penalty"] if bool(_rc(config, "terminal_indicator", False)) else []
 
 
 def reward_composition_block(config) -> dict:
-    """The `reward_composition` block `metadata.json` records — the census PLUS what a reader
-    needs to interpret it without re-deriving anything.
-
-    Additive over `reward_class_composition`: every existing key keeps its meaning and its value,
-    so a consumer that reads `["pbrs"]` (both `model_build` gamma asserts) or the three term lists
-    (`callbacks`' term→class map, the `reward/` export) is untouched.
-
-    * `composition_line` — the announcer's own string, VERBATIM. The launch prints it and nothing
-      kept it, so a run's composition survived only in a log a launcher restart rotates away.
-    * `class_shares` — each class's share of the ACTIVE terms. Derived, but derived once here
-      rather than in every reader, and it is the number that says at a glance whether a
-      composition is terminal-dominated or bias-dominated.
-    * `inert_reward_flags` — see above.
-    """
+    """The `reward_composition` block `metadata.json` records — the census PLUS the announcer's own
+    line, each class's share of the active terms, and `inert_reward_flags`."""
     comp = dict(reward_class_composition(config))
     total = comp["terminal"] + comp["pbrs"] + comp["bias"]
     comp["composition_line"] = format_reward_composition(config)

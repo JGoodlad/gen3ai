@@ -348,8 +348,8 @@ def _run(cfg: dict) -> None:
 
     # The trainee's reward factory — built from the RUN's model_config.json (the single source of
     # truth the version check already records), so eval MEASURES with the same reward the policy was
-    # TRAINED with (bias_redesign / draw_penalty / …). Threaded to every EvalRLPlayer below; a bare
-    # default here once silently scored eval with the wrong (bias_redesign=False) reward.
+    # TRAINED with (terminal_indicator / draw_penalty / …). Threaded to every EvalRLPlayer below; a bare
+    # default here once silently scored eval with the wrong reward.
     _reward_cfg = {}
     if model_dir:
         try:

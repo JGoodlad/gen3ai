@@ -232,8 +232,7 @@ async def main():
     # The census PLUS the announced LINE, the class shares and the INERT-flag list — additive over
     # `reward_class_composition`, so every existing reader of this block is untouched. The line is
     # recorded because a launch PRINTED its composition and nothing kept it: a launcher rotates the
-    # child log, and `model_config.json`'s recorded flag values can read shaping-ON on a run whose
-    # composition is `1 TERMINAL + 0 PBRS + 0 BIAS` (see `reward_composition.inert_reward_flags`).
+    # child log. (Since the shaped-reward deletion every run's composition is 1 TERMINAL.)
     reward_composition = reward_composition_block(reward_config)
     # `emit` prints when there is no launcher pipe, so this reaches BOTH a bare run's stdout and the
     # launcher Events panel — the composition must never be visible in only one of them.
@@ -252,9 +251,7 @@ async def main():
              f"TERMINAL WIN INDICATOR alone; gamma={args.gamma:g}; PopArt OFF; win_prob_mode="
              f"{args.win_prob_mode!r}. At victory_value 1.0 and gamma 1.0, V(s) == P(win|s) "
              f"exactly. ⚠️ A [0,1] critic cannot express 'a timeout is worse than a loss' — stall "
-             f"rate and mean episode length are PRIMARY endpoints on this arm"
-             + ("" if args.no_progress_tax_armed else
-                " (--arm-no-progress-tax is the contingency, currently OFF)") + ".")
+             f"rate and mean episode length are PRIMARY endpoints on this arm.")
     else:
         emit(f"🎯 [CRITIC] shaped — V(s) = "
              f"{'the distributional E[Z]' if args.value_from_dist else 'value_net'} in raw "

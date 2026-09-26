@@ -137,7 +137,10 @@ def test_production_declares_a_constructed_mirror():
     for k, want in generation_stamp.items():
         assert b.config_overrides.get(k) == want, (k, b.config_overrides.get(k), want)
     critic_block = {k: v for k, v in b.config_overrides.items() if k not in generation_stamp}
-    assert len(critic_block) == 13, "the 13-key critic block (CHANGELOG 2026-09-06)"
+    # 13 keys on 2026-09-06; `hand_shaping` left it with the shaped-reward deletion (v122,
+    # 2026-09-26) — the field no longer exists, so there is nothing to override.
+    assert len(critic_block) == 12, "the critic block (CHANGELOG 2026-09-06, less hand_shaping)"
+    assert "hand_shaping" not in b.config_overrides
     assert b.config_overrides["critic"] == "winprob"
     assert b.pending.get("candidate") == "ai_v12_02_winprob_critic"
 

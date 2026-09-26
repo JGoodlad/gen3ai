@@ -225,10 +225,10 @@ class ValueTerms:
         # Information value the aggregate Brier hides (only when the material margin is available): the
         # head's skill on CLOSE games + a skill score beyond a material-only baseline.
         # gen3_tb_relevance_v1: a CONSTANT margin cannot stratify anything, and publishing the
-        # split anyway is worse than publishing nothing. `win_margin` is a by-product of the
-        # MATERIAL potential (`reward_manager._last_material_margin`), so a composition with no
-        # material PBRS term — every `--critic winprob` arm, which runs `--no-hand-shaping` — leaves
-        # it identically 0.0. The whole family then degenerates: `close` is all-ones so every
+        # split anyway is worse than publishing nothing. `win_margin` (`material_margin.py`) was once
+        # a by-product of the material PBRS term, so a composition without that term left it
+        # identically 0.0; it is computed unconditionally now, and this guard stays as the consumer
+        # side of the same contract. The whole family then degenerates: `close` is all-ones so every
         # `*_contested` tag is a byte-identical copy of its pooled sibling, `contested_frac` is a
         # flat 1.0, the material baseline `p_mat` is a constant 0.5 so `brier_material` is a flat
         # 0.25, and `skill_vs_material` collapses to the affine transform `1 − 4·brier`. All six

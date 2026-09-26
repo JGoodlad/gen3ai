@@ -19,7 +19,6 @@ from agents.training.reward_manager import (
 )
 from agents.training.reward_term_stats import (
     CLASS_NAMES,
-    REFUND_FIELD,
     RewardTermAccumulator,
     merge_drained,
     reward_term_metrics,
@@ -28,41 +27,30 @@ from agents.training.reward_term_stats import (
 )
 
 
-def _bd(**fields) -> RewardBreakdown:
-    return RewardBreakdown(**fields)
+def _bd(**fields):
+    """A breakdown-shaped object. The accumulator is GENERIC over term names (it reads them by
+    `getattr`), so its arithmetic is pinned with arbitrary names — the real breakdown has one term
+    since the shaped-reward deletion, too few to exercise shares and residuals."""
+    from types import SimpleNamespace
+    return SimpleNamespace(total=sum(fields.values()), **fields)
 
 
 class TestTheClassVocabulary:
     def test_class_names_match_the_reward_registrys_own_enum(self):
-        # The module deliberately does NOT import RewardClass (it stays free of the reward
-        # manager's heavy import graph), so the two lists are pinned against each other here.
+        # The module deliberately does NOT import RewardClass, so the two are pinned here.
         assert set(CLASS_NAMES) == {c.value for c in RewardClass}
-
-    def test_the_refund_field_is_a_real_breakdown_field_and_not_a_registry_term(self):
-        assert REFUND_FIELD in RewardBreakdown.field_names()
-        assert REFUND_FIELD not in RewardBreakdown._REGISTRY
 
 
 class TestTheTrackedSet:
-    def test_the_production_composition_tracks_terminal_pbrs_bias_and_the_refund(self):
-        comp = reward_class_composition(RewardConfig())
-        terms = tracked_terms(comp)
-        assert terms[0] == "win_loss"                      # terminal first
-        assert terms[-1] == REFUND_FIELD                   # the mechanism last
-        assert set(comp["pbrs_terms"]).issubset(terms)
-        assert set(comp["bias_terms"]).issubset(terms)
-        assert len(terms) == len(set(terms))               # no duplicates
+    def test_the_production_composition_tracks_the_terminal_alone(self):
+        for cfg in (RewardConfig(), RewardConfig(terminal_indicator=True, victory_value=1.0)):
+            comp = reward_class_composition(cfg)
+            assert tracked_terms(comp) == ["win_loss"]
+            assert term_class_map(comp) == {"win_loss": "terminal"}
 
     def test_every_tracked_term_is_a_real_breakdown_field(self):
-        for cfg in (RewardConfig(), RewardConfig(all_shaping_pbrs=False)):
-            for name in tracked_terms(reward_class_composition(cfg)):
-                assert name in RewardBreakdown.field_names(), name
-
-    def test_the_class_map_labels_every_tracked_term(self):
-        comp = reward_class_composition(RewardConfig())
-        cmap = term_class_map(comp)
-        for name in tracked_terms(comp):
-            assert cmap[name] in (*CLASS_NAMES, "refund"), name
+        for name in tracked_terms(reward_class_composition(RewardConfig())):
+            assert name in RewardBreakdown.field_names(), name
 
 
 class TestTheAccumulator:
@@ -95,7 +83,7 @@ class TestTheAccumulator:
         assert d["residual_abs_sum"] == pytest.approx(0.5)
 
     def test_a_fully_tracked_breakdown_has_a_residual_of_exactly_zero(self):
-        acc = RewardTermAccumulator(RewardBreakdown.field_names())
+        acc = RewardTermAccumulator(["win_loss", "pbrs_material", "spikes", "bias_refund"])
         bd = _bd(win_loss=-30.0, pbrs_material=1.25, spikes=0.5, bias_refund=-0.75)
         acc.observe(bd, total=bd.total)
         assert acc.drain()["residual_abs_sum"] == pytest.approx(0.0, abs=1e-12)
@@ -192,13 +180,6 @@ class TestTheManagerSeam:
             tracked_terms(reward_class_composition(mgr.config)))
         drained = mgr.drain_reward_terms()
         assert drained is not None and drained["n"] == 0
-
-    def test_the_shadow_twin_never_accumulates(self):
-        # The verify twin must stay observationally identical to the production manager, and an
-        # accumulator on it would double-count every decision into a shared metric.
-        mgr = Gen3RewardManager(config=RewardConfig(), _shadow=True)
-        assert mgr._term_stats is None
-        assert mgr.drain_reward_terms() is None
 
     def test_the_accumulator_survives_an_episode_reset(self):
         # The window is a ROLLOUT window, drained by the callback — not an episode window.

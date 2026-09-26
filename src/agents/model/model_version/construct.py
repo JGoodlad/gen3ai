@@ -106,31 +106,13 @@ class ModelVersionConstruction(ModelVersionFields):
             role_encoder_hidden=list(ROLE_ENCODER_HIDDEN),
             net_arch=list(policy_kwargs.get("net_arch", NET_ARCH)),
             vf_coef=vf_coef,
-            bias_additivity=float(getattr(reward_config, "bias_additivity", 1.0)),
-            mat_alive_weight=float(getattr(reward_config, "mat_alive_weight", 1.25)),
-            bias_redesign=bool(getattr(reward_config, "bias_redesign", False)),
-            switch_bias_weight=float(getattr(reward_config, "switch_bias_weight", 0.0)),
-            # The two getattr fallbacks below track the RewardConfig defaults (owner decision
-            # 2026-08-18): a version built with reward_config=None must record the composition a
-            # default run actually trains with, not the superseded one.
+            # The fallbacks track the RewardConfig defaults: a version built with reward_config=None
+            # records what a default run actually trains with.
             draw_penalty=float(getattr(reward_config, "draw_penalty", -35.0)),
-            self_ko_hp_penalty=float(getattr(reward_config, "self_ko_hp_penalty", 0.0)),
-            drop_redundant_bias=bool(getattr(reward_config, "drop_redundant_bias", False)),
-            drop_switch_bias=bool(getattr(reward_config, "drop_switch_bias", False)),
-            all_shaping_pbrs=bool(getattr(reward_config, "all_shaping_pbrs", True)),
-            stall_pbrs=bool(getattr(reward_config, "stall_pbrs", False)),
-            no_progress_penalty=float(getattr(reward_config, "no_progress_penalty", 0.15)),
-            # gen3_clean_world_config_v1 — the CLEAN-WORLD switches; the fallbacks track the
-            # RewardConfig defaults, i.e. today's behaviour.
-            hand_shaping=bool(getattr(reward_config, "hand_shaping", True)),
-            pbrs_material=bool(getattr(reward_config, "pbrs_material", True)),
-            pbrs_belief=bool(getattr(reward_config, "pbrs_belief", True)),
             victory_value=float(getattr(reward_config, "victory_value", 30.0)),
             progress_decision_tense=bool(getattr(reward_config, "progress_decision_tense", False)),
             progress_switch_freeze=bool(getattr(reward_config, "progress_switch_freeze", False)),
             terminal_indicator=bool(getattr(reward_config, "terminal_indicator", False)),
-            no_progress_tax_armed=bool(
-                getattr(reward_config, "no_progress_tax_armed", False)),
             use_popart=bool(policy_kwargs.get("use_popart", False)),
             attend_unrevealed_opponents=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(

@@ -139,7 +139,7 @@ target does — see the design doc's §2.1.
   |UNSHAPED reward|, i.e. how much of the return signal the coefficient has replaced. Quoted against the
   unshaped stream on purpose, so the ratio does not flatter itself as the coefficient rises.
   ⚠️ **It reads `NaN`, never `0.0`, when the unshaped stream is empty** (R1 adversarial review). Under
-  `--no-hand-shaping` the unshaped stream is TERMINAL-ONLY, so any rollout that ends no episode has
+  the terminal-only reward (the only one since 2026-09-26) the unshaped stream is TERMINAL-ONLY, so any rollout that ends no episode has
   `mean|r| == 0` exactly — and the shaping is then 100% of the reward. The old `0.0` sentinel was the
   reading an operator scans past ("negligible") for the one case where it is everything, in precisely
   the arm the metric exists to watch. Same ABSENT-never-zero rule as `train/q_winprob_loss`.

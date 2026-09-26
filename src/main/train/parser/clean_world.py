@@ -28,7 +28,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "THE CRITIC: V(s) = sigmoid(logit) in [0,1], the value loss IS that "
                              "head's BCE against the terminal outcome (weighted by --vf-coef, NOT "
                              "--win-prob-coef -- one critic, one coefficient), the reward stream is "
-                             "the TERMINAL WIN INDICATOR alone (--no-hand-shaping implied, "
+                             "the TERMINAL WIN INDICATOR (--terminal-indicator and "
                              "--victory-value 1.0 required, so V(s) == E[return] exactly), PopArt "
                              "is OFF (a bounded stationary Bernoulli payoff has no scale to track) "
                              "and --gamma defaults to 1.0 (a win on turn 200 is worth a win on turn "
@@ -68,56 +68,17 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         help="Seed for the sidecar sampler (default 0). Seeded per (seed, rollout "
                              "index), not as one stream, so a restart re-draws the same states an "
                              "uninterrupted run would.")
-    parser.add_argument("--arm-no-progress-tax", "--arm_no_progress_tax",
-                        dest="no_progress_tax_armed", action=BoolFlag, default=False,
-                        help="Keep the anti-stall `no_progress_tax` BIAS term ARMED even under "
-                             "--no-hand-shaping (default OFF = today's behaviour exactly: the "
-                             "master switch zeroes the whole BIAS class, tilt included). It exists "
-                             "because the clean-world composition and the win-prob critic each drop "
-                             "an anti-stall defence -- --no-hand-shaping drops the tilt, and a "
-                             "critic bounded in [0,1] CANNOT express 'a timeout is worse than a "
-                             "loss' the way --draw-penalty -35 does -- so this is the CONTINGENCY "
-                             "for a run whose stall rate rises, re-armable without reviving the "
-                             "other 24 BIAS terms. Resume-immutable, value-checked.")
-    # --- gen3_clean_world_config_v1 (ai_v12 build wave A): the CLEAN-WORLD reward switches. Every
-    #     default below is today's behaviour, so a flagless launch is byte-identical. ---
-    parser.add_argument("--hand-shaping", "--hand_shaping", dest="hand_shaping",
-                        action=BoolFlag, default=True, help="MASTER switch for every HAND-DESIGNED "
-                        "dense reward term. Default ON = today's reward. --no-hand-shaping is the "
-                        "CLEAN-WORLD composition: all EIGHT PBRS potentials off (material and belief "
-                        "included) AND the WHOLE BIAS class zeroed, no_progress_tax included, leaving "
-                        "1 TERMINAL + 0 PBRS + 0 BIAS. It exists because --no-all-shaping-pbrs cannot "
-                        "get you there: that flag is ALSO the BIAS class's master gate, so disabling "
-                        "it silences 5 potentials while REVIVING 25 BIAS terms. NOTE, and state it in "
-                        "any write-up: every PBRS term is policy-INVARIANT, so removing them cannot "
-                        "change the optimal policy -- it changes learning dynamics and conceptual "
-                        "complexity. Resume-immutable, value-checked.")
-    parser.add_argument("--pbrs-material", "--pbrs_material", dest="pbrs_material",
-                        action=BoolFlag, default=True, help="Fold the material PBRS potential "
-                        "Phi_mat (default ON = today's reward). --no-pbrs-material drops it; the "
-                        "field stays 0.0 and its carry-over stays unset, the same shape every other "
-                        "PBRS fold's off-state takes. INDEPENDENT of --all-shaping-pbrs on purpose "
-                        "(that flag is anti-correlated -- see --hand-shaping). Resume-immutable, "
-                        "value-checked.")
-    parser.add_argument("--pbrs-belief", "--pbrs_belief", dest="pbrs_belief",
-                        action=BoolFlag, default=True, help="Fold the incoming-KO belief PBRS "
-                        "potential Phi_belief (default ON = today's reward). --no-pbrs-belief drops "
-                        "the EMITTED term only: the decision-time KO-risk / safe-pivot snapshots it "
-                        "also computes still run, because the belief-scaled BIAS terms read them and "
-                        "a gate here must skip a compute, never a cross-turn mutation. INDEPENDENT "
-                        "of --all-shaping-pbrs on purpose. Resume-immutable, value-checked.")
+    # --- gen3_clean_world_config_v1: the TERMINAL's switches. (`--hand-shaping`, `--pbrs-material`,
+    #     `--pbrs-belief` and `--arm-no-progress-tax` were DELETED with the shaped reward path,
+    #     gen3_shaped_reward_deletion_v1, 2026-09-26 — the reward is the terminal alone.) ---
     parser.add_argument("--victory-value", "--victory_value", dest="victory_value", type=float,
                         default=30.0, help="TERMINAL magnitude: a win scores +V, a decisive loss and "
                         "a rare pre-cap tie score -V, a 250-turn TIMEOUT scores --draw-penalty. "
                         "Default 30.0 = the historical reward_weights.VICTORY_VALUE constant. Pass "
-                        "1.0 for the clean-world +-1 terminal. THE OUTCOME ORDERING IS LOAD-BEARING: "
-                        "--draw-penalty must stay <= -V, or a 250-turn stall becomes the best "
-                        "non-winning outcome and a losing agent's optimal play is to run out the "
-                        "clock. Pair --victory-value 1.0 with --draw-penalty -1.0 (draw = loss) and "
-                        "make stall rate + mean game length a PRIMARY endpoint. Note MAT_HP_WEIGHT / "
-                        "MAT_ALIVE_WEIGHT are calibrated against the 30 scale, so a +-1 terminal "
-                        "wants Phi_mat off (--no-hand-shaping does that). Resume-immutable, "
-                        "value-checked.")
+                        "1.0 for the +-1 terminal (production, with --terminal-indicator). Under the "
+                        "SIGNED terminal THE OUTCOME ORDERING IS LOAD-BEARING: --draw-penalty must "
+                        "stay <= -V, or a 250-turn stall becomes the best non-winning outcome. "
+                        "Resume-immutable, value-checked.")
     parser.add_argument("--terminal-indicator", "--terminal_indicator",
                         dest="terminal_indicator", action=BoolFlag, default=False,
                         help="TERMINAL SHAPE: OFF (default, and every generation to date) pays "
@@ -129,9 +90,8 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "this flag; you rarely set it by hand. ⚠️ It makes --draw-penalty and "
                              "the draw<=loss ORDERING inapplicable, not merely inert -- a [0,1] "
                              "critic cannot represent 'a timeout is worse than a loss' -- so the "
-                             "anti-stall pressure must come from the obs deadline clock and, if "
-                             "the stall rate rises, --arm-no-progress-tax. Resume-immutable, "
-                             "value-checked.")
+                             "anti-stall pressure must come from the obs deadline clock. "
+                             "Resume-immutable, value-checked.")
     parser.add_argument("--progress-decision-tense", "--progress_decision_tense",
                         dest="progress_decision_tense", action=BoolFlag, default=False,
                         help="No-progress clock: read BOTH window gates (the forced-switch sit-out "

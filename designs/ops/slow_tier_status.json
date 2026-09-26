@@ -171,18 +171,18 @@
   },
   "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
    "status": "pass",
-   "commit": "8d07051aa767331cfa1ca2292029d5217cbf6d40",
-   "at": "2026-09-26T13:09:47Z",
-   "duration_s": 40.3,
-   "contention": 2.1,
+   "commit": "9d1ec65d582c3a2e9e2bbafedcc6eb3c8daaa34d",
+   "at": "2026-09-26T15:35:13Z",
+   "duration_s": 27.43,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/tb_relevance_test.py::test_a_winprob_run_emits_no_noise_tag_and_every_live_tag": {
    "status": "pass",
-   "commit": "8d07051aa767331cfa1ca2292029d5217cbf6d40",
-   "at": "2026-09-26T13:09:47Z",
-   "duration_s": 55.88,
-   "contention": 2.1,
+   "commit": "9d1ec65d582c3a2e9e2bbafedcc6eb3c8daaa34d",
+   "at": "2026-09-26T15:35:13Z",
+   "duration_s": 27.32,
+   "contention": 1.0,
    "detail": ""
   },
   "src/main/ops/eval_trace_gen_test.py::test_a_generated_cycle_is_shaped_like_a_live_one": {
@@ -778,5 +778,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-26T13:48:04Z"
+ "last_written": "2026-09-26T15:35:13Z"
 }

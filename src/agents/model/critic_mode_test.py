@@ -223,7 +223,7 @@ def test_a_pre_v109_config_is_refused_and_a_current_one_records_todays_behaviour
     out = _migrate_config(_fresh_current_config())
     assert out["critic"] == "shaped"
     assert out["terminal_indicator"] is False
-    assert out["no_progress_tax_armed"] is False
+    assert "no_progress_tax_armed" not in out      # deleted with the shaped reward path (v122)
     assert out["config_version"] == MODEL_CONFIG_VERSION >= 121
 
 
@@ -252,7 +252,7 @@ def test_no_arch_signature_bump_at_v109():
 
 
 # --------------------------------------------------------------------------------------------
-# the REWARD — the win INDICATOR, and the re-armed tilt
+# the REWARD — the win INDICATOR
 # --------------------------------------------------------------------------------------------
 
 def test_the_indicator_terminal_pays_zero_on_every_non_win():
@@ -260,7 +260,7 @@ def test_the_indicator_terminal_pays_zero_on_every_non_win():
     [0,1] and V(s) == E[return] only holds when the return is `victory_value * 1{win}`."""
     from agents.training.reward_manager import RewardConfig
     from agents.training.reward_terminal_test_support import terminal_reward
-    cfg = RewardConfig(terminal_indicator=True, victory_value=1.0, hand_shaping=False)
+    cfg = RewardConfig(terminal_indicator=True, victory_value=1.0)
     assert terminal_reward(cfg, "win") == pytest.approx(1.0)
     assert terminal_reward(cfg, "loss") == pytest.approx(0.0)
     assert terminal_reward(cfg, "tie") == pytest.approx(0.0)
@@ -272,37 +272,16 @@ def test_the_default_terminal_is_unchanged():
     from agents.training.reward_manager import RewardConfig
     from agents.training.reward_terminal_test_support import terminal_reward
     cfg = RewardConfig()
-    assert cfg.terminal_indicator is False and cfg.no_progress_tax_armed is False
+    assert cfg.terminal_indicator is False
     assert terminal_reward(cfg, "win") == pytest.approx(30.0)
     assert terminal_reward(cfg, "loss") == pytest.approx(-30.0)
     assert terminal_reward(cfg, "tie") == pytest.approx(-30.0)
     assert terminal_reward(cfg, "timeout") == pytest.approx(-35.0)
 
 
-def test_arm_no_progress_tax_re_arms_ONLY_that_term():
-    """Design gap B4. `--no-hand-shaping` zeroes the WHOLE BIAS class; this re-arms the anti-stall
-    tilt without reviving the other 24, which is the entire reason it is its own flag."""
-    from agents.training.reward_manager import RewardConfig, reward_class_composition
-    plain = reward_class_composition(RewardConfig(hand_shaping=False))
-    armed = reward_class_composition(RewardConfig(hand_shaping=False, no_progress_tax_armed=True))
-    assert plain["bias_terms"] == []
-    assert armed["bias_terms"] == ["no_progress_tax"]
-    assert armed["pbrs_terms"] == plain["pbrs_terms"] == []
-    assert armed["terminal"] == plain["terminal"] == 1
-
-
-def test_arming_is_a_no_op_with_hand_shaping_ON():
-    """The term is already reachable there, so the flag must change nothing — otherwise it is a
-    second, hidden gate on a term that already has one."""
-    from agents.training.reward_manager import RewardConfig, reward_class_composition
-    assert (reward_class_composition(RewardConfig())
-            == reward_class_composition(RewardConfig(no_progress_tax_armed=True)))
-
-
-def test_the_two_reward_fields_are_resume_immutable_and_name_a_real_flag():
+def test_the_indicator_field_is_resume_immutable_and_names_a_real_flag():
     from agents.model.model_version.constants import _REWARD_FIELD_FLAGS, _REWARD_IMMUTABLE_FIELDS
-    for name, flag in (("terminal_indicator", "--terminal-indicator"),
-                       ("no_progress_tax_armed", "--arm-no-progress-tax")):
+    for name, flag in (("terminal_indicator", "--terminal-indicator"),):
         assert name in _REWARD_IMMUTABLE_FIELDS, f"{name} is not value-checked on resume"
         assert _REWARD_IMMUTABLE_FIELDS[name] is False, "the default must be today's behaviour"
         assert _REWARD_FIELD_FLAGS[name] == flag, "the resume message must name a real flag"
@@ -314,7 +293,7 @@ def test_the_reward_defaults_track_the_dataclass():
     from agents.model.model_version.constants import _REWARD_IMMUTABLE_FIELDS
     from agents.training.reward_manager import RewardConfig
     rc = RewardConfig()
-    for name in ("terminal_indicator", "no_progress_tax_armed"):
+    for name in _REWARD_IMMUTABLE_FIELDS:
         assert getattr(rc, name) == _REWARD_IMMUTABLE_FIELDS[name]
 
 

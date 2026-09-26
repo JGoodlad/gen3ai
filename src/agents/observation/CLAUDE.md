@@ -755,9 +755,8 @@ The 5 scalars sit BEFORE `active_req_moves`, so the extractor picks them up in
 
 - `turns_since_progress` — the log-saturated no-progress clock (`log(1+min(n,10))/log(11)`), owned by
   the **EpisodeTracker's `ProgressClock`** (NOT LiveView — it is cross-turn state) and threaded into
-  `encode()` like the HP tracker. The reward's `no_progress_tax` keys on the SAME clock instance, so
-  obs and reward-key are one value. Lets the model state-condition on the penalty it is about to be
-  charged.
+  `encode()` like the HP tracker. (The reward's `no_progress_tax` keyed on the same clock until the
+  shaped reward path was deleted, 2026-09-26; the clock is now an obs-only counter.)
 **Do not confuse `turns_since_progress` with the DEADLINE clock** — they answer different
 questions and live in different blocks. `turns_since_progress` (board block, above) is a
 *resettable* stall counter: it measures how long since anything productive happened and it goes
@@ -803,18 +802,19 @@ Their long descriptions moved verbatim to `designs/CHANGELOG.md` §5. Where the 
 | per-our-mon incoming-damage / OHKO belief | 51 | the `DamageOperator`'s incoming block, off the LEARNED move belief instead of this block's FIXED usage prior — that substitution was the whole point of `--damage-op` |
 | active-move scalars (base power ×4, type mult ×4) | 8 | the op's OUTGOING per-move block, request-ordered, with real gen3 physics rather than `bp/200` and `mult/4` |
 
-**`agents/observation/incoming_damage.py` STAYS** — the reward PBRS (`reward_manager.py`) and the
-prober import its math core, and its fuzz test now targets `encode_block` directly. Only the obs
-write was removed.
+**`agents/observation/incoming_damage.py` STAYS** — the prober imports its math core, and its fuzz
+test targets `encode_block` directly. Only the obs write was removed. (The reward's Φ_belief, its
+other reader, was deleted with the shaped reward path on 2026-09-26.)
 
-> ⚠️ **`reward_manager.py` is now the ONLY per-decision caller of `encode_block`**, and it measured
-> **60.0% of `process_turn_reward`** — so the pipeline carries a **content-keyed memo**
+> ⚠️ **`reward_manager.py` WAS the only per-decision caller of `encode_block`** (60.0% of
+> `process_turn_reward`) until the shaped reward path was deleted (2026-09-26); the **content-keyed
+> memo** it motivated survives with NO production caller passing it (a follow-up deletion candidate)
 > (`IncomingBeliefMemo` + `attacker_state_key` in `incoming_damage_encoder.py`;
 > `inc.compute_mon_row` + the optional `row_cache`/`attacker_key` in `incoming_damage.py`). It is
 > exact by construction — identical inputs ⇒ identical outputs, cached or not — and the key's
 > completeness is gated STRUCTURALLY (an AST walk over `_attacker_threat`'s board reads,
-> `incoming_damage_memo_test.py`) as well as differentially on real battles
-> (`agents/training/reward_skip_parity_fuzz_test.py`). **If you add a board read to
+> `incoming_damage_memo_test.py`); its differential leg on real battles went with the reward's
+> skip-parity fuzz. **If you add a board read to
 > `_attacker_threat`, add it to `attacker_state_key` in the same edit** — the AST gate will tell
 > you, but an under-key is a silently wrong reward, not a crash. Rationale + measurements:
 > `designs/training/reward.md` → *The belief-block memo*.

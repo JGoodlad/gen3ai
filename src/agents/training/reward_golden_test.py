@@ -1,50 +1,47 @@
-"""`gen3_reward_golden_v1` — THE REWARD STREAM, BIT FOR BIT, AS A COLLECTED TEST.
+"""`gen3_reward_golden_v2` — THE REWARD STREAM, BIT FOR BIT, AS A COLLECTED TEST.
 
-Every field of every `RewardBreakdown`, for every decision of 30 real bridge battles, under SIX
-reward compositions, hashed. If the number the trainer optimizes changes, this says so — and says
-it in the routine gate, not in a one-off script somebody remembers to run.
+The reward (`RewardBreakdown.total`), its TERMINAL term (`win_loss`) and the material margin the
+env publishes as the `win_margin` obs key (`Gen3RewardManager._last_material_margin`), for every
+decision of 30 real bridge battles under SIX terminal-only compositions, hashed. If the number the
+trainer optimizes changes, this says so — in the routine gate, not in a one-off script.
 
-**Where it came from.** It was built as a throwaway during the 2026-09-07 `reward_manager.py`
-decomposition (`b0b3a253`, 1,990 → 808 lines across four modules) to prove the refactor moved no
-bytes: BEFORE and AFTER hashed identically at
-``9463dc242efde3fabadd652db4bef6e158eb24b5a0e53680e29be077b6a1926f``. A byte-identity reference
-that exists only in one agent's scratch directory protects exactly one refactor; promoted here it
-protects every future one, which is the whole difference between an artifact and a habit.
+**v2 is the SHAPED-REWARD DELETION's parity proof** (program_rust_core §4 M3 row, 2026-09-26).
+v1 hashed every `RewardBreakdown` field under six compositions, five of them SHAPED; the deletion
+removed those fields and those compositions, so a v1 hash could only ever move. v2 hashes what
+survives — the reward a run actually trains on — and was RECORDED AT THE LAST PRE-DELETION COMMIT
+(`produced_at_commit` in `reward_golden.json`), with the shaped code still in the tree. It passing
+unchanged at the deletion commit is the statement "production reward is byte-identical", measured
+rather than argued. The compositions are written as raw `model_config.json`-shaped dicts and built
+through `RewardConfig.from_dict`, which ignores unknown keys — so the SAME source constructs the
+same config on both sides of the deletion (before it, `hand_shaping: False` switches the shaping
+off; after it, the key is simply gone).
+
+`production` is read from the production mirror itself (`baselines.production_config()`), not
+retyped, so the golden follows what production IS rather than what someone remembered it to be.
 
 **REPRODUCIBLE BY CONSTRUCTION — the four clauses, all of them.** `designs/ops/testing.md`: a
 pytest-collected test wants the SAME battle every run, and `random.seed(k)` is not enough because
 two players share the global module RNG and the bridge interleaves their `choose_move` calls. So:
 fixed teams by pool index · a per-player `RandomState` / `random.Random` (never the module RNG) ·
 a fixed sim PRNG seed · **`concurrency=1`**, the clause that gets missed (at concurrency 3 two runs
-of the same measurement differed by up to +0.043). Verified end-to-end: the hash reproduces
-bit-for-bit in a FRESH worktree with an independently checked-out ``data/`` (2026-09-07).
+of the same measurement differed by up to +0.043).
 
 ⚠️ **Why not `obs_roundtrip_fuzz_test.record_fixture_battle`**, which testing.md names as the source
-of record for a collected test's battle. That helper plays its battle and hands back the OBS
-artifacts *afterwards* — a reconstruction record, a summary, an npz of observation rows. The reward
-stream is not in any of them: a `RewardBreakdown` is produced by folding a live `Gen3RewardManager`
-across the battle AS it happens, and this test needs six different folds (six compositions) over the
-same board. So it reuses the helper's RECIPE rather than its return value — the same
-:class:`SeededRandomPlayer` opponent, the same teams-by-index, the same
-``seed=[11+key, 22+key, 33+key, 44+key]``, the same ``concurrency=1``. The reproducibility clauses
-are identical; only the thing being recorded differs.
+of record for a collected test's battle: it hands back OBS artifacts after the battle, and the
+reward stream is not in them — a `RewardBreakdown` is produced by folding a live
+`Gen3RewardManager` across the battle AS it happens. So this reuses the helper's RECIPE (the same
+:class:`SeededRandomPlayer`, teams-by-index, ``seed=[11+key, 22+key, 33+key, 44+key]``,
+``concurrency=1``) rather than its return value.
 
-**Tier: `sim`, and deliberately NOT `slow`.** It plays real battles in-process through the
-`deps/pokemon-showdown` bridge, so `sim` is what it NEEDS. It costs **19.7 s of CALL time measured
-under pytest beside a live training run AND a concurrent `-m slow -n 2` suite** (2026-09-07; 24.5 s
-as a standalone script), and `slow` means *minutes, not seconds* — the marker that decides
-routine cost. A reward-stream golden belongs in the routine gate for the same reason the six-battle
-obs golden does: it is battle-backed AND cheap, and the one time this tree put a cheap battle-backed
-linchpin behind a cost wall it rode main RED three separate times.
+**Tier: `sim`, and deliberately NOT `slow`** — it plays real battles in-process through the bridge
+(~20 s), and a cheap battle-backed linchpin belongs in the routine gate.
 
 Regenerate (only when a reward change is INTENDED) and record the new hash in the ledger:
 
     export PYTHONPATH=$PYTHONPATH:src
     python3 src/agents/training/reward_golden_test.py --write
 
-which rewrites `reward_golden.json` beside this file with the new hash and the commit it was
-produced at. It is never a routine step: the hash moving means the number the trainer optimizes
-moved, and that is a research event before it is a maintenance one.
+It is never a routine step: the hash moving means the number the trainer optimizes moved.
 """
 from __future__ import annotations
 
@@ -85,50 +82,36 @@ MANIFEST = Path(__file__).with_name("reward_golden.json")
 #: Battle keys 0..N_BATTLES-1 are drawn from the team pool; key N_BATTLES is the MIXED_TEAM mirror.
 N_BATTLES = 4
 
-#: name -> RewardConfig kwargs. Each names WHAT it covers, so a hash change can be LOCALISED to a
-#: composition instead of "the reward moved". Together they reach every fold family: the PBRS
-#: potentials, the additive BIAS regime, the bias-refund, the redesign levers, the fully-PBRS arm,
-#: and the win-prob era's terminal-indicator-only world.
-COMPOSITIONS = {
-    "production_default":  dict(),
-    "additive_bias":       dict(all_shaping_pbrs=False),
-    "redesign_levers":     dict(all_shaping_pbrs=False, bias_redesign=True,
-                                switch_bias_weight=0.5, self_ko_hp_penalty=1.0,
-                                bias_additivity=0.5, mat_alive_weight=1.5),
-    "drops_and_stall":     dict(all_shaping_pbrs=False, drop_redundant_bias=True,
-                                drop_switch_bias=True, no_progress_penalty=0.25),
-    "fully_pbrs":          dict(all_shaping_pbrs=True, stall_pbrs=True),
-    "clean_world":         dict(hand_shaping=False, pbrs_material=False, pbrs_belief=False,
-                                terminal_indicator=True, victory_value=1.0,
-                                no_progress_tax_armed=True),
-}
+#: The terminal-only compositions, as RAW `model_config.json`-shaped dicts built through
+#: `RewardConfig.from_dict` (unknown keys ignored — see the module docstring for why that matters to
+#: a before/after proof). `production` is the mirror itself; the other five vary the TERMINAL's own
+#: three knobs (indicator, magnitude, timeout score), which are all that survives the deletion.
+#: The `hand_shaping: False` keys are the PRE-deletion spelling of "no shaping"; after the deletion
+#: `from_dict` drops them and the config is the same one.
+_NO_SHAPING = {"hand_shaping": False, "pbrs_material": False, "pbrs_belief": False,
+               "no_progress_tax_armed": False}
 
 
-class _StubClock:
-    """A DETERMINISTIC stand-in for `ProgressClock` — this pins the reward manager's arithmetic,
-    not the clock's. Ticked once per decision so `no_progress_tax` (BIAS) and Φ_progress (PBRS)
-    both carry non-zero values instead of the clock-absent 0.0."""
-
-    def __init__(self) -> None:
-        self.n = 0
-        self.last_penalty = 0.0
-
-    def tick(self) -> None:
-        self.n += 1
-        self.last_penalty = -0.15 if (self.n % 3 == 0) else 0.0
-
-    def value(self) -> float:
-        return ((self.n * 7) % 13) / 13.0
-
-    def reset(self) -> None:
-        self.n = 0
-        self.last_penalty = 0.0
+def compositions() -> dict:
+    """name -> the raw dict a `RewardConfig` is built from. A function, not a constant, because
+    `production` is READ from the committed mirror."""
+    from agents.training.baselines import production_config
+    return {
+        "production":            dict(production_config()),
+        "indicator_30":          {**_NO_SHAPING, "terminal_indicator": True, "victory_value": 30.0},
+        "signed_unit_draw_loss": {**_NO_SHAPING, "terminal_indicator": False, "victory_value": 1.0,
+                                  "draw_penalty": -1.0},
+        "signed_default":        {**_NO_SHAPING, "terminal_indicator": False},
+        "signed_draw_worse":     {**_NO_SHAPING, "terminal_indicator": False, "victory_value": 1.0,
+                                  "draw_penalty": -2.0},
+        "indicator_unit":        {**_NO_SHAPING, "terminal_indicator": True, "victory_value": 1.0,
+                                  "draw_penalty": 0.0},
+    }
 
 
 class _BattleState:
     def __init__(self, config: RewardConfig):
-        self.clock = _StubClock()
-        self.mgr = Gen3RewardManager(config=config, progress_clock=self.clock)
+        self.mgr = Gen3RewardManager(config=config)
         self.prev_ctx = None
         self.last_action = None
         self.prev_cursor = 0
@@ -162,13 +145,13 @@ class GoldenPlayer(Player):
     def _fold(self, battle, state, curr_ctx) -> None:
         events = battle.events_since(state.prev_cursor)
         delta = TurnDelta.build_from_events(state.prev_ctx, curr_ctx, state.last_action, events)
-        state.clock.tick()
-        state.mgr.process_turn_reward(battle, delta)
+        reward = state.mgr.process_turn_reward(battle, delta)
         bd = state.mgr._last_breakdown
         self.decisions += 1
-        row = " ".join(f"{n}={float(getattr(bd, n)).hex()}"
-                       for n in type(bd).field_names())
-        self._sink.append(f"{self.decisions:05d} total={float(bd.total).hex()} {row}")
+        margin = float(state.mgr._last_material_margin)
+        self._sink.append(f"{self.decisions:05d} reward={float(reward).hex()} "
+                          f"total={float(bd.total).hex()} win_loss={float(bd.win_loss).hex()} "
+                          f"win_margin={margin.hex()}")
 
     def _battle_finished_callback(self, battle) -> None:
         tag = battle.battle_tag
@@ -317,8 +300,8 @@ async def build_golden(n_battles: int = N_BATTLES, progress=False):
     lines: list = []
     sweeps: dict = {}
     errors: list = []
-    for name, kwargs in COMPOSITIONS.items():
-        config = RewardConfig(**kwargs)
+    for name, raw in compositions().items():
+        config = RewardConfig.from_dict(raw)
         for key in range(n_battles + 1):
             # key == n_battles is the MIXED_TEAM mirror battle (broad signal coverage).
             teams = (MIXED_TEAM, MIXED_TEAM) if key == n_battles else None
@@ -351,9 +334,9 @@ WHICH SWEEPS MOVED ({n_moved} of {n_sweeps}):
 {moved}
 
 If this is UNINTENDED, it is a reward regression: something in `reward_manager.py`,
-`reward_bias_terms.py`, `reward_potentials.py` or `reward_config.py` changed the number the
-trainer optimizes. The composition names above localise it — a term that only exists in one
-composition moves only that composition's hash; a change to the fold SEQUENCE moves them all.
+`reward_config.py` or `material_margin.py` changed the number the trainer optimizes (or the
+`win_margin` obs key). The composition names above localise it — `production` moving is the one
+that matters most.
 
 If it is INTENDED, regenerate and record it in the ledger:
 
@@ -370,12 +353,12 @@ def _load_manifest() -> dict:
         f"Restore it with `git checkout -- {MANIFEST}`, or regenerate with "
         f"`python3 {src_path('agents', 'training', 'reward_golden_test.py')} --write`.")
     doc = json.loads(MANIFEST.read_text())
-    assert doc.get("schema") == "gen3_reward_golden_v1", f"{MANIFEST}: unexpected schema"
+    assert doc.get("schema") == "gen3_reward_golden_v2", f"{MANIFEST}: unexpected schema"
     return doc
 
 
 def test_the_reward_stream_matches_the_recorded_golden():
-    """The whole point: 2,772 decisions x every `RewardBreakdown` field x 6 compositions, hashed."""
+    """The whole point: every decision's reward, terminal and win_margin x 6 compositions, hashed."""
     want = _load_manifest()
     with _in_repo_root():
         body, sweeps, errors = asyncio.run(build_golden(want["n_battles"]))
@@ -408,13 +391,14 @@ def test_the_reward_stream_matches_the_recorded_golden():
             script=src_path("agents", "training", "reward_golden_test.py")))
 
 
-def test_every_composition_in_the_sweep_is_a_constructible_reward_config():
-    """Cheap and independent of the battles: a renamed lever must fail HERE, with its own name,
-    rather than as an opaque hash mismatch 25 seconds later."""
-    for name, kwargs in COMPOSITIONS.items():
-        cfg = RewardConfig(**kwargs)
-        for k, v in kwargs.items():
-            assert getattr(cfg, k) == v, f"{name}: RewardConfig.{k} did not take {v!r}"
+def test_every_composition_in_the_sweep_is_terminal_only():
+    """Cheap and independent of the battles: every swept composition is a reward the tree can
+    still build, and it is TERMINAL-only — the only class that survives the deletion."""
+    for name, raw in compositions().items():
+        cfg = RewardConfig.from_dict(raw)
+        for k in ("victory_value", "terminal_indicator", "draw_penalty"):
+            if k in raw:
+                assert getattr(cfg, k) == raw[k], f"{name}: RewardConfig.{k} did not take {raw[k]!r}"
 
 
 def _write_manifest(n_battles: int) -> None:
@@ -425,13 +409,13 @@ def _write_manifest(n_battles: int) -> None:
     assert not errors, "\n".join(errors)
     digest = hashlib.sha256(body.encode()).hexdigest()
     doc = {
-        "schema": "gen3_reward_golden_v1",
+        "schema": "gen3_reward_golden_v2",
         "sha256": digest,
         "produced_at_commit": get_git_hash(),
         "produced_on": datetime.date.today().isoformat(),
         "n_battles": n_battles,
         "rows": len(body.splitlines()),
-        "compositions": sorted(COMPOSITIONS),
+        "compositions": sorted(compositions()),
         "sweeps": sweeps,
     }
     MANIFEST.write_text(json.dumps(doc, indent=1) + "\n")

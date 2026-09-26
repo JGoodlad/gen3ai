@@ -192,17 +192,15 @@ class ModelVersionResumeChecks(ModelVersionFields):
 
     def check_reward_config(self, reward_config: Any) -> None:
         """Raise ModelVersionError if the resume `reward_config` differs from this saved config's
-        reward hparams (bias_additivity / mat_alive_weight / bias_redesign / …). Like check_vf_coef:
+        reward hparams (victory_value / terminal_indicator / draw_penalty / …). Like check_vf_coef:
         these are VALUE-meaning (changing them mid-run silently shifts the reward), NOT weight-shape,
         so they are enforced ONLY on the training-resume path and excluded from check_compatible().
         Call as: saved_version.check_reward_config(args_reward_config).
 
-        The error NAMES the fix. That matters more than usual since 2026-08-18, when
-        `--all-shaping-pbrs` defaulted ON and `--draw-penalty` to -35.0: every pre-flip run now
-        mismatches on a flagless resume, and a diff that only reports "saved=X, requested=Y" leaves
-        the reader to reconstruct the flag spelling (including that the opt-out is
-        `--no-all-shaping-pbrs`, not `--all-shaping-pbrs false`, and that the negation of a float
-        flag is just the old number).
+        The error NAMES the fix: a diff that only reports "saved=X, requested=Y" leaves the reader
+        to reconstruct the flag spelling (a bool's `--no-` negation, a float's old number). A
+        checkpoint that recorded the DELETED shaped reward never reaches this check — the resume
+        path refuses it first (`model_version.shaped_reward`).
         """
         problems, repass, recorded_pairs = [], [], []
         for name, default in _REWARD_IMMUTABLE_FIELDS.items():
@@ -224,8 +222,5 @@ class ModelVersionResumeChecks(ModelVersionFields):
                 "Reward-config mismatch on resume — these hparams are fixed for a run's lifetime "
                 "(changing them silently shifts the reward / objective):\n" + "\n".join(problems) +
                 f"\n\nThis run recorded {recorded}.\n"
-                f"Fix: re-pass `{' '.join(repass)}` to resume it, or start a fresh run.\n"
-                "(The reward DEFAULTS changed on 2026-08-18 — --all-shaping-pbrs now defaults ON "
-                "and --draw-penalty to -35.0 — so a run started under the old defaults must state "
-                "them explicitly on every resume.)"
+                f"Fix: re-pass `{' '.join(repass)}` to resume it, or start a fresh run."
             )

@@ -75,47 +75,24 @@ an arch error. To add another such hparam, follow the optional-feature playbook 
 `MODEL_CONFIG_VERSION` bump + `_migrate_config` default) **plus** a dedicated `check_*` + an
 `enforce_*` opt-in on `load_model_snapshot`, and leave it out of `_WEIGHT_FIELDS`.
 
-The **reward-config** hparams are the same kind, bundled into one check: `bias_additivity`
-(`--bias-additivity`), `mat_alive_weight` (`--mat-alive-weight`), `bias_redesign` (`--bias-redesign`),
-`switch_bias_weight` (`--switch-bias-weight`, the belief-risk stay-into-KO BIAS lever, v5),
-`draw_penalty` (`--draw-penalty`, the DRAW/250-turn-timeout terminal, v7 — **DEFAULT −35.0**, so a
-stall-to-cap is strictly worse than a clean loss; `-30` restores the historical value, where a tie
-scored as a decisive loss), `self_ko_hp_penalty`
-(`--self-ko-hp-penalty`, the HP-scaled self-KO penalty — default 0.0 = OFF; >0 charges −w·hp when
-our mon self-KOs via Explosion/Self-Destruct, since the symmetric material PBRS prices a healthy 1-for-1
-trade at ~0 and the critic then over-values it), the de-bias cleanup pair `drop_redundant_bias` +
-`drop_switch_bias` (`--drop-redundant-bias` / `--drop-switch-bias` — zero the audit-flagged
-distorting BIAS terms: stall_tax + matchup_penalty redundant with the no-progress clock/`--draw-penalty`
-and `pbrs_belief`; the hand-coded switch subsidy), and the **two end-state PBRS switches**
-`all_shaping_pbrs` (**DEFAULT ON**) + `stall_pbrs` (default off) plus `no_progress_penalty`
-(`--all-shaping-pbrs` / `--stall-pbrs` / `--no-progress-penalty`):
-`all_shaping_pbrs` = "everything but stall" — folds
-Φ_hazard/Φ_boost/Φ_opp_boosts + Φ_status and **zeros every BIAS term except the anti-stall tilt
-`no_progress_tax`** (so all non-stall shaping is policy-invariant; the bad turn-ramp `stall_tax` is
-zeroed); `stall_pbrs` = "stall" — folds Φ_progress and zeros `no_progress_tax`+`stall_tax`. Run BOTH ⇒
-the whole BIAS class is zero (TERMINAL + PBRS only); run only `all_shaping_pbrs` ⇒ keep the
-`no_progress` stall tilt as the single acknowledged BIAS. `no_progress_penalty` is recorded+checked
-because it is Φ_progress's weight. (`--all-shaping-pbrs` ALSO now folds the DEDICATED phaze-out-boosts PBRS
-**`pbrs_roar`** Φ_roar = −`ROAR_BOOST_WEIGHT`(0.25)·Σmax(0,opp-active-boost) — NO separate flag/field, it
-rides the existing `all_shaping_pbrs` toggle, stacking with the bundled `pbrs_opp_boosts` for stronger
-proportional roar-out-boosts shaping; safe since both telescope to 0.) All are recorded on
-`ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, since they silently
-shift the reward/objective), excluded from `check_compatible`. They are reward-VALUE changes — **no
-`ARCH_SIGNATURE` bump** (the network/obs are unchanged) — so a fresh run is needed to measure them but
-old checkpoints don't fail an arch check — a fresh run is needed to measure them.
+The **reward-config** hparams are the same kind, bundled into one check: `victory_value`
+(`--victory-value`), `terminal_indicator` (`--terminal-indicator`), `draw_penalty` (`--draw-penalty`,
+the DRAW/250-turn-timeout score of the SIGNED terminal, **DEFAULT −35.0**), and the no-progress
+clock's two OBS switches `progress_decision_tense` / `progress_switch_freeze`. All are recorded on
+`ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, and the error
+NAMES the flags to re-pass), excluded from `check_compatible` because a frozen eval / pool / distill
+forward never reads the reward. They are reward-VALUE changes — **no `ARCH_SIGNATURE` bump**.
 
-🚨 **Two of these defaults FLIPPED on 2026-08-18** (`all_shaping_pbrs` false→**true**,
-`draw_penalty` −30.0→**−35.0**), restoring the validated ai_v8 composition after the ledger recorded
-that the flag had silently stopped being passed at the v8→v9 generation boundary. Consequences that
-belong to THIS file: (1) the `ModelVersion` field defaults and `_REWARD_IMMUTABLE_FIELDS`'
-per-field fallbacks track `RewardConfig`'s, so a version built with `reward_config=None` records
-what a default run actually trains with — pinned by `src/main/reward_defaults_test.py`; (2) every
-pre-flip run now FATALs on a FLAGLESS resume, which is correct (a live run's reward must never flip
-under it) and is why `check_reward_config`'s error NAMES the flags to re-pass
-(`--no-all-shaping-pbrs --draw-penalty -30.0`) rather than only printing a diff; (3) frozen
-eval/pool/distill opponents are untouched, because reward fields stay out of `check_compatible`.
-The composition each config resolves to — and the announcer that states it at launch — is in
-`designs/training/reward.md` → *The reward COMPOSITION*.
+🚨 **The 14 SHAPED-reward fields LEFT the config at v122** (`gen3_shaped_reward_deletion_v1`,
+2026-09-26): `bias_additivity`, `mat_alive_weight`, `bias_redesign`, `switch_bias_weight`,
+`self_ko_hp_penalty`, `drop_redundant_bias`, `drop_switch_bias`, `all_shaping_pbrs`, `stall_pbrs`,
+`no_progress_penalty`, `hand_shaping`, `pbrs_material`, `pbrs_belief`, `no_progress_tax_armed`.
+`_migrate_config` POPs them version-independently (so a frozen load of any vintage works), and a
+RESUME or FORK of a config that recorded a shaped reward is REFUSED from the raw file before the
+migration runs — `agents.model.model_version.shaped_reward` (`ShapedRewardCheckpointError`,
+enforced in `main.train.config.resolve_config` and `main.checkargs`), never silently continued on
+the terminal alone. The fix it names is a pin to ≤ `029cee83`. Detail:
+`designs/training/reward.md`.
 
 ## Where the per-version entries went
 
