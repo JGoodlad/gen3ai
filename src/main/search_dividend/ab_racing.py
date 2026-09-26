@@ -522,7 +522,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--replay", metavar="BANK", help="phase 2 only: read a bank and report")
     p.add_argument("--out", help="write the phase-2 report JSON here")
     p.add_argument("--device", default="cpu")
-    p.add_argument("--search-impl", default="rust", choices=["node", "rust"])
+    p.add_argument("--search-impl", default="rust", choices=["rust"])
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--pool-size", type=int, default=0)
     p.add_argument("--racing-rule", default=RacingConfig.rule, choices=list(RULES))

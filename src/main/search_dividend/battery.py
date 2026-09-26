@@ -553,12 +553,11 @@ async def run_cell(cell: Cell, *, model, mappings, cfg: SearchConfig, games: int
                 # because `--root-strategy defensive` names its own head and a row recording
                 # "auto" would misdescribe which leaf the cell was measured on.
                 "score_mode": cfg.effective_score(), "search_impl": cfg.search_impl,
-                # WHICH ROAD built every successor (`gen3_core_search_v1`: every search number
-                # after the M2 adoption is stamped `materializer=core`), and — on the core road —
-                # the fold path: always "text" since the typed shortcut's deletion (program §4 M4),
-                # stamped so a row stays comparable to the rows written before it.
-                "materializer": cfg.materializer,
-                "core_path": "text" if cfg.materializer == "core" else None,
+                # WHICH ROAD built every successor: always the core (`gen3_core_search_v1`) — the
+                # protocol / view roads are deleted (program §4 M2) — and its fold path, always
+                # "text" (program §4 M4); both stamped so a row stays comparable to older rows.
+                "materializer": "core",
+                "core_path": "text",
                 "root_strategy": cfg.root_strategy,
                 "max_depth": int(getattr(cfg, "max_depth", 1)),
                 "playoff_rollouts": (int(playoff_cfg.rollouts) if playoff_cfg

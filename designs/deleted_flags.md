@@ -28,6 +28,7 @@ reactions from a reader.
 
 | flag | citation | note |
 |---|---|---|
+| `--materializer` | Rust Core deletion pass (program §4 M2 rows, 2026-09-26) | `python -m main.search_dividend`'s successor road (`core` / `protocol` / `view`); the protocol and view roads, the one-sided view payload and their fallbacks are deleted, so `core` is the one road and the flag has nothing to choose (`--search-impl` keeps only `rust` for the same reason) |
 | `--core-path` | `gen3_core_encoder_v1` (Rust Core M4, 2026-09-24; program §4 M4 row) | `python -m main.search_dividend`'s core-road fold path (`typed` / `text`); the typed shortcut is deleted and `text` is the one path, so the flag has nothing to choose |
 | `--search-integrity` | `gen3_core_encoder_v1` (Rust Core M4, 2026-09-24; program §4 M4 row) | the core road's INTEGRITY mode (every Nth arm folded typed AND text, asserted equal); its only job was typed == text, deleted with the shortcut |
 | `--use-showdown-bridge` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L2905) | the deprecated `--use-bridge=node` alias; deleted when `rust` became the default, precisely so the legacy spelling could not silently select the slower impl |

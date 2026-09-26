@@ -1,5 +1,5 @@
 //! [`choice_tokens`] — the sim CHOICE STRING of every legal action, as the real action mapper
-//! produces it (`view_successor._choice_map` → `Gen3ActionMapper.action_to_order(idx, battle,
+//! produces it (`Gen3ActionMapper.action_to_order(idx, battle,
 //! legal=legal).message[len("/choose "):]`): the tokens a search branches on at the next ply.
 //!
 //! The mapper's three steps, each mirrored at one site:

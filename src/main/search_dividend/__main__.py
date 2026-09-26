@@ -93,18 +93,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", default="cpu")
     p.add_argument("--impl", default="node", choices=["node", "rust"],
                    help="live battle bridge child")
-    p.add_argument("--search-impl", default="rust", choices=["node", "rust"],
-                   help="search-driver child (rust, the default, is what --materializer core "
-                        "needs; node is the reference search_impl_parity diffs against)")
-    p.add_argument("--materializer", default="core", choices=["core", "protocol", "view"],
-                   help="WHICH road builds a successor's observation. `core` (the default, the "
-                        "Rust Core Program's M2 adoption) takes each successor from the driver's "
-                        "Rust-core VERSION — its view, legality and ply events — and runs only the "
-                        "trackers + encoder in Python; rust-only, no fallback. `view` reads the "
-                        "port's one-sided projection and folds the ply in Python, falling back to "
-                        "`protocol` per arm; `protocol` replays the ply through poke-env. All three "
-                        "decide identically at depth 1 (the parity gates); every result row is "
-                        "stamped with the road.")
+    p.add_argument("--search-impl", default="rust", choices=["rust"],
+                   help="search-driver child. RUST only: every successor is a Rust-core version "
+                        "whose encoded row the driver ships (gen3_core_search_v1); the node "
+                        "driver's protocol / view roads are deleted (program §4 M2)")
     p.add_argument("--leaf-head", default=None, metavar="PATH",
                    help="replace the WIN-PROB head's weights with a state_dict from PATH after "
                         "loading the checkpoint. The win head is a leak-safe SIDE readout (never "
@@ -464,7 +456,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         for budget in ([0.0] if arm == "base" else budgets):
             cfg = SearchConfig(arm=arm, budget_s=budget, caps=caps, score=args.score,
                                search_impl=args.search_impl,
-                               materializer=args.materializer,
                                honest_swap_moves=args.honest_swap_moves, seed=args.seed,
                                max_depth=args.max_depth,
                                root_strategy=args.root_strategy,

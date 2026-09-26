@@ -164,9 +164,9 @@ disagreement is a registered FINDING (`agents/battle/poke_env_findings.py` — o
 value-aware predicate, the reproduction, whether it reaches the obs; EMPTY since M2's three,
 PE-V10 / PE-R1b / PE-V16, were fixed in the fork as `gen3_pe_reading_fixes_v1`); never add a rule
 whose only purpose is to reproduce a poke-env mistake, and never fix the fork from here (that moves
-the training input — the owner's call). Search adopts it:
-`materializer=core` (the default) makes every successor a `BattleVersion` (`search_driver`'s
-`open_root` `core: "text"` / `side`). Contract, the rules, the search road, the
+the training input — the owner's call). Search runs on it:
+every successor is a `BattleVersion` (`search_driver`'s `open_root` `core: "text"` / `side`; the
+protocol / view roads are deleted, program §4 M2). Contract, the rules, the search road, the
 gates: [`designs/rust_sim/present.md`](../../designs/rust_sim/present.md).
 
 🚨 **The poke-env tables are GENERATED**: `python -m agents.battle.rust_core_present_tables --write`
@@ -200,7 +200,7 @@ gates: [`designs/rust_sim/encoder.md`](../../designs/rust_sim/encoder.md).
 | `tests/encoder_test.rs` (`cargo test`) | no NaN left at any decision; step-built == parse-built bytes; the trackerless and wrong-length refusals; `version::parse_encode_matches_step` refuses a parse chain whose trackers fold differently |
 | `core_events --obs` (slice O, every tier) — the PARSE-chain gate (`gen3_core_parse_obs_gate_v1`) | each side's parse chain (trackers on, the same `note_choice` tokens) decides at exactly the step chain's decisions, one per write, and encodes a BYTE-identical row, mask and tokens — the encode path `sim_bridge`'s `core_obs` ships |
 | `tests/sim_bridge_core_obs_test.rs` (`cargo test`) | `sim_bridge`'s `__OBS__` rows == `core_events --obs`'s, byte for byte, one per decision, before the request chunk; recycled child == fresh child; OFF byte-identical; the clock flags reach the rows; a malformed key refused; the parse-chain gate refuses (`POKESIM_CORE_EVENTS_TEETH=parse_clock`, a test-build hook) |
-| `one_sided_view_parity_fuzz_test.py`'s CORE ROW road + the search parity gates | search's rows (`expand_many`'s `rows`: row + mask + `present::choice_tokens`) == the protocol road's successor rows, byte for byte |
+| `src/agents/battle/core_row_parity_fuzz_test.py` (`sim`) | search's rows (`expand_many`'s `rows`: row + mask + `present::choice_tokens`) == the poke-env replay's successor rows, byte for byte, D10 leaves included |
 
 ## The EMISSION SELF-CHECK — every line checked as it is emitted (`gen3_core_emission_selfcheck_v1`)
 
@@ -357,7 +357,7 @@ Gates: `tests/one_sided_view_test.rs` (22 — the WALL against `pre_state` on a 
 mons, the reveal fold surviving `clear_chunks`, the id-form and PP contracts, the D10 capture
 predicate with its NEGATIVE twin, and one pin per READING RULE V3–V11, each citing the poke-env line
 it mirrors), `src/agents/battle/view_adapter_test.py` (33), the differential
-`src/agents/battle/one_sided_view_parity_fuzz_test.py` (`sim`; the search road; no allowlist, prints
+`src/agents/battle/core_row_parity_fuzz_test.py` (`sim`; the search road; no allowlist, prints
 a census), and **the TRUTH AUDIT** — slice V of the Rust Core parity harness
 (`src/agents/battle/rust_core_parity_views.py`, fed by `core_events --views`), which compares this
 projection AND the engine truth against the `LiveView` training builds at EVERY decision of every
@@ -388,8 +388,7 @@ omits it — **30,326 → 17,330 B/arm**, with the surviving side byte-identical
 rendering the historical body byte-for-byte. Python's elided slot is a sentinel that is falsy but
 RAISES on read, never an empty dict (an empty dict ENCODES). Gates:
 `tests/search_side_elision_test.rs` (the byte diff, both ways, in one process) and
-`src/main/search_dividend/side_elision_parity_integration_test.py` (the whole decision, including
-both fallback counters). Interleaved, load-matched, **one road per process**: **1.10x on the view
+`src/main/search_dividend/side_elision_test.py` (the sentinel's contract). Interleaved, load-matched, **one road per process**: **1.10x on the view
 road at wide B and 1.11x on the protocol road**, not resolved at B = 1; the span is 31.1% -> 26.6%
 of the decision wall. 🚨 **Two candidates that LOOKED certain were rejected on measurement**: a
 compact fixed-order payload (0.024 ms/arm of parse, all of it given back re-keying for the

@@ -135,7 +135,7 @@ def _block_spans():
 
 
 def python_tokens(battle, legal, mask) -> Dict[str, str]:
-    """``view_successor._choice_map`` over the reference battle: the REAL mapper's choice string
+    """The REAL mapper's choice string over the reference battle
     per legal action index (an index the mapper refuses is absent) — what a search branches on."""
     from agents.action.mapper import Gen3ActionMapper
 

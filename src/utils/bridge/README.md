@@ -653,13 +653,11 @@ requests via `getRequests`; PRNG continuity restored from the live counter), at 
 - **`search_session.py`** (`SearchSession`) — the Python wrapper: one process per `better_line` call
   (context-managed), a synchronous request→one-line-response protocol over a background-drained queue
   (a wedged child fails ONE call, never hangs the prober). `open_root` / `expand_many` / `close`.
-  Both carry **`view_p1` / `view_p2`** under `impl="rust"` (`{}` under node): the same board
-  PROJECTED onto what each side has observed, in the shape `LiveView` holds, so a successor's
-  read-models need no protocol replay. Together with the arm's own `pN_chunks` — which
-  `agents.battle.event_fold` folds into the ply's `BattleEvent`s without poke-env — that is the
-  whole input a search leaf's observation needs, trackers included. Constructor:
-  `agents.battle.view_adapter`; consumer: `agents.training.view_successor` (the default
-  `--materializer view` road); contract: `designs/rust_sim/one_sided_view.md`.
+  A CORE root (`open_root(core="text", side=..., trackers=True)`, rust only) makes every arm a
+  Rust-core `BattleVersion`; `expand_many(rows=True)` then returns each leaf's ENCODED row + mask +
+  choice tokens (`core_pN`), which is all a search leaf needs (`gen3_core_search_v1`,
+  `gen3_core_encoder_v1`; contract `designs/rust_sim/encoder.md`). The one-sided `view_pN` payload
+  and its Python consumers are deleted (program §4 M2).
 
 🚨 **A DEEPENING caller must ACCUMULATE the per-ply suffixes; `expand_many` will not do it.** The
 composition is `root-prefix + ply₁ + … + ply_d` — the same plies the branch's `actions` list names.

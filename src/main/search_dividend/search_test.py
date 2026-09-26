@@ -64,9 +64,6 @@ class _FakeSession:
 
 
 def _engine(arm, **kw):
-    # These doubles answer with VIEW / PROTOCOL payloads, so the engine is pinned to that road
-    # (the core road's own gates are the parity tests and `core_successor_test.py`).
-    kw.setdefault("materializer", "view")
     cfg = SearchConfig(arm=arm, budget_s=1.0, caps=WidthCaps(m_opp=3, k_worlds=2, r_dice=2), **kw)
     return SearchEngine(model=None, mappings=None, cfg=cfg, pool_packed=[])
 
@@ -233,7 +230,7 @@ def test_NO_arm_is_ever_expanded_on_the_sims_own_realized_dice():
     # `choose` swallows into `search_error` — this assertion's `seen` would then be empty and the
     # test would read as "the engine expanded nothing", which is a different and wrong diagnosis.
     eng._session.expand_many = (
-        lambda arms, *, side=None: seen.extend(a["seed"] for a in arms) or [])
+        lambda arms, *, side=None, rows=False: seen.extend(a["seed"] for a in arms) or [])
     _choose(eng, opp_true_packed="T")
     assert seen, "the test needs the engine to have expanded at least one arm"
     assert "original" not in seen, seen
@@ -417,44 +414,30 @@ def test_a_win_prob_stash_from_a_DIFFERENT_forward_raises_instead_of_scoring_one
         batch_scores(m, obs, mask, "auto")
 
 
-# -- the deepening chunk contract ---------------------------------------------
-# `gen3_search_depth2_chunk_gap_v1`. `expand_many` returns the arm's OWN ply, so a branch at depth
-# d must carry every ply from the root — the same list of plies its `actions` names. Handing the
-# materializer the bare suffix replayed `prefix` + ply d with plies 1..d-1 MISSING, which is a
-# different battle, not a coarser one: poke-env keeps applying lines to the board it last saw, so a
-# switch in the gap logs "Message thinks p1: X is active, but it's not" and an opponent reveal in
-# the gap makes a later reference build a Pokemon whose species is the NICKNAME (KeyError). The
-# end-to-end proof is `depth2_replay_integration_test`; these two pin the arithmetic without a sim.
+# -- the core deepening contract ---------------------------------------------
+# A deeper ply branches from its PARENT's driver node (a core leaf's continuation is the driver's
+# version, not a Python object), and every arm's row comes from the driver's `core_pN` payload.
 
 
 class _PlySession:
-    """A session whose expands are scripted per ply, so a two-ply tree is deterministic."""
+    """A session whose expands are scripted per ply, answering with CORE row payloads."""
 
     def __init__(self, per_ply):
         self.per_ply = list(per_ply)
         self.calls = 0
+        self.expanded_from: list = []
 
     def expand_many(self, arms, *, side=None, rows=False):
-        # `side` accepted and IGNORED on purpose: this double answers both sides, which is the
-        # `impl="node"` shape, and the elision is a rust-driver behaviour with its own gates
-        # (`tests/search_side_elision_test.rs`, `side_elision_parity_integration_test.py`).
-        # What it must not do is refuse the kwarg the production caller always sends.
-        chunk, node_id = self.per_ply[self.calls]
+        assert rows, "the engine must ask the driver for ENCODED rows"
+        node_id = self.per_ply[self.calls]
         self.calls += 1
+        self.expanded_from.append(sorted({a["node_id"] for a in arms}))
         req = {"p1": {"active": [{"moves": [{"id": "surf"}]}]},
                "p2": {"active": [{"moves": [{"id": "surf"}]}]}}
-        # `view_p1` / `view_p2` EMPTY on purpose: this test is about the PROTOCOL road's
-        # cumulative-chunk contract, and an empty payload is exactly what `search_driver.js`
-        # returns — so `_materialize` falls back per arm and the captured `Branch` list is the
-        # one under test. A stub that grew a view payload would quietly stop exercising it.
-        # `view_pN_at` is empty for the same reason and must be PRESENT: `ExpandedNode` carries
-        # it (`gen3_view_at_intermediate_v1`), and a stub missing a field the code reads raises
-        # inside the engine, which swallows it as `fallback="search_error"` — a green-looking
-        # nothing rather than a failure.
+        core = {"row": [0.0] * 3, "mask": [1, 1, 1, 1], "tokens": {"0": "move surf"}}
         return [_SimpleNamespace(label=a["label"], node_id=node_id, ended=False, stuck=False,
                                  outcome={}, requests=req, choices_used={},
-                                 p1_chunks=[chunk], p2_chunks=[chunk],
-                                 view_p1={}, view_p2={}, view_p1_at=[], view_p2_at=[])
+                                 p1_chunks=["c"], p2_chunks=["c"], core_p1=core, core_p2=core)
                 for a in arms]
 
 
@@ -464,39 +447,16 @@ class _SimpleNamespace:
 
 
 def _two_ply_engine(monkeypatch, per_ply):
-    """An engine whose sim + materializer + scorer are scripted, returning the captured
-    ``Branch`` list handed to the materializer on each ply.
-
-    🚨 **TWO seams, because ``materialize_branches`` was SPLIT** (`gen3_one_fork_per_decision_v1`,
-    so K determinized worlds share one prefix replay). ``search._materialize`` now calls
-    ``open_branch_fork`` and ``materialize_branches_from``, and a stub left on the old name would
-    reach nothing — the scripted engine would drive the REAL poke-env replay player and this test
-    would be asserting about a battle it never built."""
     import numpy as np
 
-    from agents.training import obs_materializer as om
+    import agents.battle.core_obs as core_obs
 
-    seen = []
-
-    def _fake_open_branch_fork(prefix_chunks, **kw):
-        return _SimpleNamespace(prefix=list(prefix_chunks), dec_i=kw["map_actions_at"])
-
-    def _fake_materialize_from(fork, branches):
-        seen.append((list(fork.prefix), [list(b.chunks) for b in branches],
-                     [list(b.actions) for b in branches]))
-        dec_i = fork.dec_i
-        row = _SimpleNamespace(obs=np.zeros(3, dtype=np.float32),
-                               mask=np.ones(4, dtype=np.float32))
-        return [_SimpleNamespace(decisions=[row] * (dec_i + 1),
-                                 action_choices={0: "move surf"}) for _ in branches]
-
-    monkeypatch.setattr(om, "open_branch_fork", _fake_open_branch_fork)
-    monkeypatch.setattr(om, "materialize_branches_from", _fake_materialize_from)
     engine = _engine("honest")
     engine._session = _PlySession(per_ply)
+    monkeypatch.setattr(core_obs, "wrap_row", lambda row: np.asarray(row, dtype=np.float32))
     monkeypatch.setattr(engine, "_score_batch",
                         lambda obs, masks: (np.zeros(len(obs), dtype=np.float32), "value"))
-    return engine, seen
+    return engine
 
 
 def _ply_ctx(prefix):
@@ -511,63 +471,46 @@ class _Cand:
         self.token, self.weight = token, weight
 
 
-def test_a_deepened_branch_carries_EVERY_ply_from_the_root_not_just_its_own(monkeypatch):
-    """THE REGRESSION. Pre-fix the ply-2 branch's chunks were ``["PLY2"]``; they must be
-    ``["PLY1", "PLY2"]`` — the plies its ``actions`` list names, and nothing else."""
+def test_a_deeper_ply_branches_from_its_parents_driver_node(monkeypatch):
     from main.search_dividend.budget import RealizedWidths
     from main.search_dividend.deepen import TreeNode
+    from main.search_dividend.search import _CORE_LEAF
 
-    engine, seen = _two_ply_engine(monkeypatch, [("PLY1", "n1"), ("PLY2", "n2")])
+    engine = _two_ply_engine(monkeypatch, ["n1", "n2", "n3"])
     ctx = _ply_ctx(["PREFIX"])
     widths = RealizedWidths(planned={})
-    root = TreeNode(node_id="n0", ended=False, our_tokens={0: "move surf"}, path=(), chunks=())
-
-    engine._expand_ply(ctx, [(root, [_Cand()])], ply=1, widths=widths, deep=False)
-    child = root.children[0][0][1]
-    assert child.chunks == ("PLY1",), "a depth-1 child is its own ply — unchanged behaviour"
-    assert seen[-1][1] == [["PLY1"]] and seen[-1][2] == [[0]]
-
-    engine._expand_ply(ctx, [(child, [_Cand()])], ply=2, widths=widths, deep=True)
-    grand = child.children[0][0][1]
-    assert seen[-1][0] == ["PREFIX"], "the shared prefix is still the ROOT prefix"
-    assert seen[-1][1] == [["PLY1", "PLY2"]], (
-        "the ply-2 branch replayed with a HOLE where ply 1 should be — "
-        f"got {seen[-1][1]}, the depth-2 chunk-gap defect")
-    assert seen[-1][2] == [[0, 0]], "chunks and actions must name the same plies"
-    assert grand.chunks == ("PLY1", "PLY2")
-    assert grand.path == (0, 0)
-
-
-def test_the_chunks_a_branch_replays_always_name_the_same_plies_as_its_actions(monkeypatch):
-    """The invariant behind the fix, at depth 3 — one chunk group per action, in order. Stated
-    separately because it is the property a future refactor has to preserve, whereas the test
-    above pins the one composition that was wrong."""
-    from main.search_dividend.budget import RealizedWidths
-    from main.search_dividend.deepen import TreeNode
-
-    engine, seen = _two_ply_engine(monkeypatch,
-                                   [("P1", "n1"), ("P2", "n2"), ("P3", "n3")])
-    ctx = _ply_ctx(["PREFIX"])
-    widths = RealizedWidths(planned={})
-    node = TreeNode(node_id="n0", ended=False, our_tokens={0: "move surf"}, path=(), chunks=())
-    for ply in (1, 2, 3):
+    node = TreeNode(node_id="n0", ended=False, our_tokens={0: "move surf"}, path=())
+    for ply, parent_id in ((1, "n0"), (2, "n1"), (3, "n2")):
         engine._expand_ply(ctx, [(node, [_Cand()])], ply=ply, widths=widths, deep=ply > 1)
+        assert engine._session.expanded_from[-1] == [parent_id]
         node = node.children[0][0][1]
-        chunks, actions = seen[-1][1][0], seen[-1][2][0]
-        assert len(chunks) == len(actions) == ply, (
-            f"ply {ply}: {len(chunks)} chunk groups for {len(actions)} actions")
-    assert node.chunks == ("P1", "P2", "P3")
+        assert node.fork == _CORE_LEAF and dict(node.our_tokens) == {0: "move surf"}
+    assert node.path == (0, 0, 0)
+    assert widths.core_arms == 3 and widths.arms_scored == 3
 
 
-def test_the_core_roads_session_kwargs_travel_only_on_the_core_road():
-    """`gen3_core_search_v1`: `open_root`'s `core` / `side` go to the driver ONLY on the core road.
-    A view / protocol engine sends the historical request — a session with the pre-M2 signature
-    must still open its roots (the routine gate caught the default flip breaking exactly that:
-    every view-road double raised a TypeError that `choose` swallowed as `root_failed`)."""
-    class _Historical:
-        def open_root(self, turn, record=None):
-            return ("root", turn, record)
+def test_a_core_arm_with_no_payload_raises_rather_than_falling_back(monkeypatch):
+    from main.search_dividend.budget import RealizedWidths
+    from main.search_dividend.deepen import TreeNode
 
+    engine = _two_ply_engine(monkeypatch, ["n1"])
+    real = engine._session.expand_many
+
+    def no_core(arms, *, side=None, rows=False):
+        out = real(arms, side=side, rows=rows)
+        for n in out:
+            n.core_p1 = None
+        return out
+
+    engine._session.expand_many = no_core
+    node = TreeNode(node_id="n0", ended=False, our_tokens={0: "move surf"}, path=())
+    with pytest.raises(RuntimeError, match="no core_p1 payload"):
+        engine._expand_ply(_ply_ctx(["PREFIX"]), [(node, [_Cand()])], ply=1,
+                           widths=RealizedWidths(planned={}), deep=False)
+
+
+def test_a_root_is_opened_on_the_core_with_the_trackers():
+    """`gen3_core_search_v1`: every root folds the searched side's stream with its trackers."""
     class _Core:
         kw: dict = {}
 
@@ -575,6 +518,10 @@ def test_the_core_roads_session_kwargs_travel_only_on_the_core_road():
             _Core.kw = kw
             return "core-root"
 
-    assert _engine("honest").open_root(_Historical(), 5, "rec", "p1") == ("root", 5, "rec")
-    assert _engine("honest", materializer="core").open_root(_Core(), 5, "rec", "p2") == "core-root"
+    assert _engine("honest").open_root(_Core(), 5, "rec", "p2") == "core-root"
     assert _Core.kw == {"core": "text", "side": "p2", "trackers": True}
+
+
+def test_search_is_rust_only():
+    with pytest.raises(ValueError, match="RUST-only"):
+        SearchConfig(search_impl="node")

@@ -9,7 +9,7 @@ a blanket tolerance**: each entry names ONE field and a VALUE-AWARE predicate th
 difference to count as that finding; any other difference in the same field is still a divergence.
 
 Every comparison of the core's reading against poke-env's (slice V's core column,
-``rust_core_present_test.py``, ``one_sided_view_parity_fuzz_test.py``'s core road) routes a field
+``rust_core_present_test.py``, ``core_row_parity_fuzz_test.py``) routes a field
 difference through :func:`explain`. **When the poke-env fix lands (a TRAINING-INPUT change —
 ``designs/CHANGELOG.md``, the owner's call), delete the entry: the check tightens by itself.**
 
@@ -44,7 +44,7 @@ class Finding:
     #: Whether a difference reaches the 2501-dim observation, and where.
     reaches_obs: str
     #: ``fnmatch`` patterns over the obs block names a difference may touch
-    #: (``one_sided_view_parity_fuzz_test._block_of``: ``context[0]``, ``opp_team[3].status_counters``).
+    #: (e.g. ``context[0]``, ``opp_team[3].status_counters``).
     obs_blocks: Tuple[str, ...]
     #: ``(reading LivePokemon, core LivePokemon) -> bool`` — True iff THIS finding explains the
     #: difference in :attr:`field` exactly (value-aware).

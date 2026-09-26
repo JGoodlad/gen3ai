@@ -35,24 +35,20 @@ Three properties of the first-ply expression are the whole experiment and none i
   real one — the single most important thing this module can get wrong.
 
 **Where the arms come from.** ``SearchSession`` (the warm clone-and-branch search server) opens a
-root at the current turn from a LIVE-synthesized reconstruction record and expands every arm in
-one round trip. The successor OBS is materialized through :func:`materialize_branches`, which
-replays the shared battle prefix ONCE for the whole arm set rather than once per arm — the prefix
-is the measured majority of a counterfactual arm's cost and grows linearly in the turn number, so
-without prefix sharing the realized widths would collapse in exactly the late-game positions the
-probe cares about.
+CORE root at the current turn from a LIVE-synthesized reconstruction record — a tree of Rust-core
+``BattleVersion``s folding the searched side's own stream (`gen3_core_search_v1`) — and expands
+every arm in one round trip. The driver ENCODES each leaf version itself and ships its row + mask +
+choice tokens (`gen3_core_encoder_v1`), so no Python view, event fold, tracker or encoder touches a
+successor. (The poke-env PROTOCOL road and the one-sided VIEW road that preceded it are deleted —
+Rust Core deletion pass, program §4 M2.)
 
-**The one-sided / omniscient wall holds.** ``expand_many`` returns per-side chunks AND an
-omniscient ``outcome``. Only the chunks reach the encoder — that is the same wall the re-roll path
-keeps. (It also returns ``view_p1`` / ``view_p2`` under ``--search-impl rust``
-(``gen3_one_sided_view_v1``): the OBS-LEGAL half of the same wall — the board PROJECTED onto what
-each side observed, which ``agents.battle.view_adapter`` turns into the read-models directly. This
-probe does NOT consume it yet; the per-decision trackers are the open item, deferral D5 in
-``designs/rust_sim/one_sided_view.md``.) The ORACLE arm's privilege is the true opponent TEAM in the record it searches, nothing
-more; it never reads a referee-view board into an observation.
+**The one-sided / omniscient wall holds.** ``expand_many`` returns per-side chunks, the side's
+core payload AND an omniscient ``outcome``; only the side's own stream reaches its version. The
+ORACLE arm's privilege is the true opponent TEAM in the record it searches, nothing more; it never
+reads a referee-view board into an observation.
 
-**Threading.** ``materialize_branches`` refuses to run on ``POKE_LOOP`` (it drives a replay player
-through that loop and would deadlock on its own result), and ``choose_move`` runs there. So the
+**Threading.** The search blocks on the driver for seconds, and ``choose_move`` runs on
+``POKE_LOOP``. So the
 whole search executes in a worker thread and the player's ``choose_move`` is an ``async def`` that
 awaits it — poke-env awaits an awaitable choice (``player.py``: ``if isinstance(choice, Awaitable)``),
 which frees POKE_LOOP for exactly as long as the search holds it.
@@ -110,24 +106,11 @@ class SearchConfig:
     budget_s: float = 1.0
     caps: WidthCaps = field(default_factory=WidthCaps)
     score: str = "auto"                 # auto | value | win_prob
-    #: The search-driver child. ``"rust"`` (the DEFAULT — the core road needs it); ``"node"`` is the
-    #: validated reference ``search_impl_parity`` diffs against.
+    #: The search-driver child. RUST only: every successor is a Rust-core ``BattleVersion``
+    #: (`gen3_core_search_v1`) whose ENCODED row the driver ships (`gen3_core_encoder_v1`). The
+    #: ``protocol`` / ``view`` materializers — the only roads the node driver could serve — are
+    #: DELETED (Rust Core deletion pass, program §4 M2); the field stays so a battery row stamps it.
     search_impl: str = "rust"
-    #: WHICH road a successor's observation is built on (the Rust Core Program's M2 adoption):
-    #:
-    #: * ``"core"`` (the DEFAULT, `gen3_core_search_v1`) — the driver's tree is Rust-core
-    #:   ``BattleVersion``s; a successor's view, legality and ply events come from the VERSION
-    #:   (every poke-env reading rule applied in Rust), and only the trackers + encoder run here
-    #:   (:mod:`agents.training.core_successor`). Rust-only, and NO fallback: an arm it cannot
-    #:   answer raises. A D10 arm's leaf is the version AT its intermediate decision.
-    #: * ``"view"`` — the port's one-sided projection + Python presentation rules + a Python
-    #:   re-parse of the ply (`gen3_view_successor_v1`), falling back to ``"protocol"`` per arm.
-    #: * ``"protocol"`` — replay the ply through poke-env (``materialize_branches``).
-    #:
-    #: The three decide identically at depth 1 (``materializer_parity_integration_test``,
-    #: ``fork_sharing_parity_integration_test``, ``one_sided_view_parity_fuzz_test``). ``view`` and
-    #: ``protocol`` are on the Rust Core Program's deletion manifest (one pass, after the cutover).
-    materializer: str = "core"
     honest_swap_moves: bool = False     # axis M — see determinize.swap_unused_moves
     seed: int = 0
     # The iterative-deepening CAP, not a target: the wall-clock budget governs the realized depth,
@@ -145,13 +128,10 @@ class SearchConfig:
     defensive: dfn.DefensiveConfig = field(default_factory=dfn.DefensiveConfig)
 
     def __post_init__(self) -> None:
-        if self.materializer not in ("core", "protocol", "view"):
-            raise ValueError(f"unknown materializer {self.materializer!r} "
-                             f"(expected 'core', 'protocol' or 'view')")
-        if self.materializer == "core" and self.search_impl != "rust":
-            raise ValueError("materializer='core' is RUST-only (its successors are Rust-core "
-                             "versions): pass search_impl='rust', or materializer='protocol' for the "
-                             "node driver")
+        if self.search_impl != "rust":
+            raise ValueError(f"search_impl={self.search_impl!r}: search is RUST-only (its successors "
+                             f"are Rust-core versions; the node driver's protocol / view roads are "
+                             f"deleted, program §4 M2)")
         if self.root_strategy not in ROOT_STRATEGIES:
             raise ValueError(f"unknown root_strategy {self.root_strategy!r} "
                              f"(want one of {ROOT_STRATEGIES})")
@@ -265,7 +245,7 @@ def batch_scores(model, obs: np.ndarray, masks: np.ndarray, mode: str) -> Tuple[
     🚨 **THE STASH IS SHARED MUTABLE STATE AND ITS WIDTH IS CHECKED, NEVER ASSUMED.**
     ``last_win_prob_logits`` is an attribute of ONE extractor object, and in the MIRROR mode both
     sides play the same ``model``: the searched side runs this call in a worker thread (so
-    ``materialize_branches`` is off ``POKE_LOOP``) while the unsearched side's own B=1 forward runs
+    the search is off ``POKE_LOOP``) while the unsearched side's own B=1 forward runs
     on ``POKE_LOOP``. A forward that lands between ``predict_values`` returning and the ``getattr``
     below leaves a stash describing a DIFFERENT state — and at B=1 against an N-arm batch the
     consequence is not a wrong number but a SHORT one, which ``zip`` in ``_expand_ply`` would
@@ -351,13 +331,9 @@ _CORE_LEAF = "core-leaf"
 
 @dataclass(frozen=True)
 class _Leaf:
-    """ONE arm's materialized leaf, whichever road built it.
-
-    The two roads return different objects — a ``MaterializedTrace`` and a
-    :class:`~agents.training.view_successor.ViewSuccessor` — and the rest of ``_expand_ply``
-    must not care which. ``fork`` is the VIEW road's continuation and is ``None`` on the
-    protocol road, which is precisely the fact a deeper ply needs in order to know it cannot
-    take the view road from here."""
+    """ONE arm's leaf: the driver's encoded row + mask + choice tokens for a core version.
+    ``fork`` is :data:`_CORE_LEAF` — the marker a deeper ply reads to know its parent is a core
+    leaf it can branch from (the continuation is the driver's node)."""
 
     obs: "np.ndarray"
     mask: "np.ndarray"
@@ -386,16 +362,6 @@ class SearchEngine:
         # turn) re-plans its widths instead of missing the deadline by a constant factor.
         self._cost = CostModel()
         self._pool_packed = pool_packed
-        #: ONE VIEW FORK PER DECISION, not per world (`gen3_one_fork_per_decision_v1`). The fork
-        #: is a pure function of the one-sided PREFIX + our action history, and
-        #: :func:`~main.search_dividend.determinize.prefix_matches` is what gates every world of a
-        #: decision to the SAME observed prefix — so K worlds re-replayed one identical prefix K
-        #: times. The key is the prefix BYTES (not the gate's verdict), which is what makes the
-        #: reuse safe by construction rather than by argument: a world whose prefix differs by one
-        #: byte — the post-`|turn|` `|request|` the gate truncates away, say — misses the cache and
-        #: replays its own. Reset per :meth:`choose`, so nothing outlives the decision it belongs
-        #: to and the memory is one fork.
-        self._fork_cache: Dict[Any, Any] = {}
         self._pool_mons: Optional[List[List[dz.MonSet]]] = None
         self._gender_tbl: Optional[Dict[str, str]] = None
         self._move_bank: Optional[Dict[str, list]] = None
@@ -442,10 +408,6 @@ class SearchEngine:
         other strategy.
         """
         caps = self.cfg.resolved_caps()
-        # CLEARED, not reassigned: the cache object itself is a seam a test replaces to run the
-        # un-shared control (`fork_sharing_parity_integration_test`), and a fresh dict here would
-        # silently put the experiment back.
-        self._fork_cache.clear()
         widths = RealizedWidths(planned={}, n_our_actions=len(our_tokens))
         if self.cfg.arm == "base" or caps.k_worlds <= 0:
             widths.planned = WidthPlan(0, 0, 0).as_dict()
@@ -1019,8 +981,8 @@ class SearchEngine:
     def _expand_ply(self, ctx: _PlyContext, frontier: Sequence[Tuple[TreeNode, list]], *,
                     ply: int, widths: RealizedWidths, deep: bool) -> dict:
         """Grow ONE ply: expand every (our action x their candidate x dice) arm of every frontier
-        node, materialize the successors' observations in a single shared-prefix replay, score
-        them, and hang the results on the tree.
+        node, take each successor's core-encoded row, score them in one batch, and hang the
+        results on the tree.
 
         The root ply and a deepening ply are the SAME operation — that is why deepening is a loop
         over this method rather than a second code path. Two things differ and both are arguments:
@@ -1028,8 +990,6 @@ class SearchEngine:
         a deeper ply is ONE freshly minted CRN seed shared across the whole ply (the dice axis is
         last in the registered width order, so a deeper ply never spends budget resampling it).
         """
-        from agents.training.obs_materializer import Branch
-
         seeds = list(ctx.seeds) if ply == 1 else [self._crn_seed(0, ply)]
         parents: List[TreeNode] = []
         acts: List[int] = []
@@ -1050,37 +1010,20 @@ class SearchEngine:
         if not payload:
             return {"n_scored": 0, "n_terminal": 0, "score_mode": self.cfg.effective_score()}
 
-        # `gen3_expand_many_side_elision_v1` — this loop reads `view_p<side>` and
-        # `p<side>_chunks` and NOTHING of the other side (see the two reads below), so the driver
-        # is told not to render, quote or ship the other copy. It was 43.0% of the reply bytes.
-        # The requested side's payload is byte-identical either way; the other side's slot comes
-        # back as a refusing sentinel rather than an empty dict.
-        core = self.cfg.materializer == "core"
+        # `gen3_expand_many_side_elision_v1` — this loop reads `core_p<side>`
+        # and NOTHING of the other side, so the driver is told not to render, quote or ship the
+        # other copy. The other side's slot comes back as a refusing sentinel.
         # The core road takes each successor as its ENCODED ROW (`gen3_core_encoder_v1`): the
         # driver encodes the leaf version itself and ships the row + mask + choice tokens, so no
-        # view JSON, no event re-fold, no Python tracker and no Python encoder touch a core arm.
-        expanded = (self.session().expand_many(payload, side=ctx.side, rows=True) if core
-                    else self.session().expand_many(payload, side=ctx.side))
+        # view JSON, no event re-fold, no Python tracker and no Python encoder touch an arm.
+        expanded = self.session().expand_many(payload, side=ctx.side, rows=True)
         widths.arms_expanded += len(expanded)
         if deep:
             widths.deep_arms_expanded += len(expanded)
 
         username = ctx.record.username(ctx.side)
-        branches: List[Branch] = []
         branch_of: List[int] = []
-        #: label -> the cumulative root→child chunks, so the scored child carries what its own
-        #: materialization used rather than re-deriving it a second time.
-        child_chunks: Dict[int, Tuple[str, ...]] = {}
-        #: label -> THIS ply's own suffix + the port's one-sided view of the arm's board. The
-        #: VIEW road wants both, and the protocol road wants neither — so they are collected
-        #: beside the Branch rather than derived from it (a Branch's chunks are CUMULATIVE).
-        arm_suffix: Dict[int, Tuple[str, ...]] = {}
-        arm_view: Dict[int, dict] = {}
-        #: label -> the port's boards at the decisions the ply resolved INSIDE itself, in order
-        #: (D10, `gen3_view_at_intermediate_v1`). Empty on the ordinary arm and under
-        #: `impl="node"`.
-        arm_view_at: Dict[int, List[dict]] = {}
-        #: label -> the arm's LEAF as a Rust-core version (`materializer="core"` only).
+        #: label -> the arm's LEAF as a Rust-core version.
         arm_core: Dict[int, dict] = {}
         n_terminal = 0
         n_scored = 0
@@ -1096,38 +1039,16 @@ class SearchEngine:
                 n_terminal += 1
                 n_scored += 1
                 continue
-            # 🚨 CUMULATIVE, not this ply's suffix. `expand_many` returns the arm's OWN turn only,
-            # so a branch's chunks must be every ply from the root — exactly the plies its
-            # `actions` names. Passing the bare suffix at ply >= 2 replays `prefix` + ply-d with
-            # plies 1..d-1 missing (see `TreeNode.chunks`).
-            suffix = e.p1_chunks if ctx.side == "p1" else e.p2_chunks
-            chunks = list(parent.chunks) + list(suffix)
-            branches.append(Branch(chunks=chunks,
-                                   actions=list(parent.path) + [acts[li]], label=li))
             branch_of.append(li)
-            child_chunks[li] = tuple(chunks)
-            arm_suffix[li] = tuple(suffix)
-            if core:
-                c = e.core_p1 if ctx.side == "p1" else e.core_p2
-                if c is None:
-                    raise RuntimeError(f"materializer='core': arm {li} came back with no core_{ctx.side} "
-                                       f"payload — is the search driver the rust one, built from this tree?")
-                arm_core[li] = c
-                arm_view[li], arm_view_at[li] = {}, []
-                continue
-            arm_view[li] = (e.view_p1 if ctx.side == "p1" else e.view_p2) or {}
-            arm_view_at[li] = list(
-                (e.view_p1_at if ctx.side == "p1" else e.view_p2_at) or [])
+            c = e.core_p1 if ctx.side == "p1" else e.core_p2
+            if c is None:
+                raise RuntimeError(f"arm {li} came back with no core_{ctx.side} payload — is the "
+                                   f"search driver the rust one, built from this tree?")
+            arm_core[li] = c
 
         score_mode = self.cfg.effective_score()
-        if branches:
-            dec_i = ctx.decision_index(ply)
-            if core:
-                leaves = self._materialize_core(ctx, branch_of, parents, acts, arm_core, ply, widths)
-            else:
-                leaves = self._materialize(
-                    ctx, branches, branch_of, parents, acts, arm_suffix, arm_view, arm_view_at,
-                    dec_i, ply, widths)
+        if branch_of:
+            leaves = self._materialize_core(ctx, branch_of, parents, acts, arm_core, ply, widths)
             keys = [li for li in branch_of if leaves.get(li) is not None]
             if keys:
                 sc, score_mode = self._score_batch(
@@ -1138,176 +1059,23 @@ class SearchEngine:
                     parent = parents[li]
                     e = by_label[li]
                     leaf = leaves[li]
-                    # The child's OWN legal surface, from the REAL mapper — this is what makes a
-                    # deeper ply possible at all, and it is already a by-product of the
-                    # materialization the depth-1 pass ran. EMPTIED on a node that is not a clean
-                    # move selection (see `branchable`), which makes such a node a leaf by
-                    # construction everywhere downstream — `expandable()`, `leaves_under` and the
-                    # cost estimate all agree without any of them having to know the rule.
-                    # 🚨 NOT materialized here (`gen3_lazy_action_choices_v1`). The token map is
-                    # the REAL action mapper over every legal index and ONLY a node that gets
-                    # DEEPENED reads one, so at a depth-1 decision — which is what the default
-                    # width caps buy — every one of these was built and thrown away. `LazyTokens`
-                    # builds on first read; `branchable` still decides EMPTY-or-not eagerly,
-                    # because that rule is what makes a non-move-selection node a leaf everywhere
-                    # downstream and it costs a request lookup, not a mapper sweep.
+                    # The child's OWN legal surface: the core's choice tokens (``present::
+                    # choice_tokens``) — what makes a deeper ply possible at all. EMPTIED on a node
+                    # that is not a clean move selection (see `branchable`), which makes such a
+                    # node a leaf by construction everywhere downstream — `expandable()`,
+                    # `leaves_under` and the cost estimate all agree without knowing the rule.
                     tokens = (leaf.action_choices if branchable(e.requests, ctx.side) else {})
                     parent.add_child(
                         acts[li], weights[li],
                         TreeNode(node_id=e.node_id, ended=False, value=float(v),
                                  our_tokens=tokens, requests=e.requests,
                                  path=parent.path + (acts[li],),
-                                 chunks=child_chunks[li], fork=leaf.fork))
+                                 fork=leaf.fork))
                     n_scored += 1
         widths.arms_scored += n_scored
         if deep:
             widths.deep_arms_scored += n_scored
         return {"n_scored": n_scored, "n_terminal": n_terminal, "score_mode": score_mode}
-
-    def _materialize(self, ctx: _PlyContext, branches, branch_of, parents, acts,
-                     arm_suffix, arm_view, arm_view_at, dec_i: int, ply: int,
-                     widths: RealizedWidths) -> "Dict[int, _Leaf]":
-        """``{label: leaf}`` for every arm that produced a decision — by whichever ROAD the cell
-        is configured for, with the two roads' outputs byte-identical.
-
-        **PROTOCOL** is ``materialize_branches``: replay the shared prefix once, then per arm
-        restore the pickled replay player and feed the arm's plies through poke-env.
-
-        **VIEW** (`gen3_view_successor_v1`, the default) reads the port's one-sided ``view_pN``
-        for the arm's board and folds the arm's own protocol into events in Python, so the
-        per-arm cost is neither a snapshot restore nor a poke-env parse. It still pays the shared
-        prefix ONCE, through :func:`~agents.training.obs_materializer.open_view_fork` — the very
-        first half of ``materialize_branches``, so the fork is the same state and not merely an
-        equivalent one.
-
-        🚨 **Three arms the VIEW road cannot answer, each COUNTED and each falling back rather
-        than guessing.** A silent fallback is how an arm comes to be measured on a road nobody
-        thinks it is on:
-
-        * ``view_pN`` absent — ``search_driver.js`` emits none, so ``search_impl="node"`` falls
-          back for every arm;
-        * the ply resolved an intermediate decision AND the port sent no board at it — see
-          below;
-        * a deeper ply whose parent carries no fork (its own arm fell back).
-
-        🚨 **An INTERMEDIATE decision is now ANSWERED, not fallen back from**
-        (`gen3_view_at_intermediate_v1`, D10). A ply that KOs one of our mons opens a SECOND
-        request inside the same arm, which the port resolves from its own follow-up policy — so
-        ``view_pN`` is the board one decision PAST the row this method must return. The port now
-        also emits ``view_pN_at``, the board at each decision it resolved internally, and the arm
-        is served from ``view_pN_at[0]`` folded over
-        :func:`~agents.training.view_successor.split_at_intermediate`'s chunk cut — the BOARD and
-        the EVENT history both stop where ``materialize_branches`` stops. ``view_arms_intermediate``
-        counts it; the fallback survives for an arm the port sent no entry for (``impl="node"``, a
-        ``recorded_exact`` arm) and is still counted in ``view_fallback_intermediate``.
-
-        🚨 **A D10-served leaf carries NO fork, deliberately.** The rust child ``node_id`` this
-        leaf is paired with sits at the END of the arm's turn, not at the intermediate decision
-        the leaf describes, so a deeper ply expanded from it would branch from a state the leaf is
-        not. Handing ``fork=None`` makes ply d+1 fall back to the protocol road — exactly what a
-        D10 arm did at every depth before this change, so the closure is scoped to the depth-1 row
-        it is evidenced at.
-        """
-        from agents.training.view_successor import (intermediate_decisions,
-                                                    split_at_intermediate)
-
-        out: "Dict[int, _Leaf]" = {}
-        todo = list(branch_of)
-        if self.cfg.materializer == "view":
-            fallback: List[int] = []
-            root_fork = None
-            for li in todo:
-                parent = parents[li]
-                fork = (parent.fork.child(self._encoder())
-                        if (ply > 1 and parent.fork is not None) else None)
-                if ply == 1:
-                    if root_fork is None and arm_view[li]:
-                        root_fork = self._root_fork(ctx, widths)
-                    fork = root_fork
-                if fork is None or not arm_view[li]:
-                    widths.view_fallback_no_payload += 1
-                    fallback.append(li)
-                    continue
-                payload, fold_chunks = arm_view[li], arm_suffix[li]
-                n_mid = intermediate_decisions(arm_suffix[li])
-                mid = bool(n_mid)
-                if mid:
-                    at = arm_view_at[li]
-                    head = split_at_intermediate(arm_suffix[li]) if at else None
-                    # 🚨 `len(at) == n_mid` is an INVARIANT between the two roads' independent
-                    # counts — the port captures one board per round its source could not answer,
-                    # Python counts one per non-final decision `|request|` in the same side's
-                    # suffix — and it is CHECKED rather than assumed. A disagreement means the two
-                    # are describing different rounds, so the arm falls back instead of being
-                    # served a board from the wrong one.
-                    if not at or len(at) != n_mid or not at[0] or head is None:
-                        widths.view_fallback_intermediate += 1
-                        fallback.append(li)
-                        continue
-                    payload, fold_chunks = at[0], head
-                got = fork.successor(payload, fold_chunks, acts[li])
-                if got is None:
-                    continue                 # no decision here — the protocol road agrees
-                out[li] = _Leaf(obs=got.obs, mask=got.mask,
-                                action_choices=got.action_choices,
-                                fork=None if mid else got)
-                widths.view_arms += 1
-                if mid:
-                    widths.view_arms_intermediate += 1
-            todo = fallback
-            branches = [b for b in branches if int(b.label) in set(todo)]
-        if todo and branches:
-            from agents.training.obs_materializer import materialize_branches_from
-
-            traces = materialize_branches_from(self._branch_fork(ctx, dec_i, widths), branches)
-            for b, mt in zip(branches, traces):
-                if len(mt.decisions) <= dec_i:
-                    continue                 # the successor never produced a request (rare)
-                d = mt.decisions[dec_i]
-                out[int(b.label)] = _Leaf(obs=d.obs, mask=np.asarray(d.mask),
-                                          action_choices=dict(mt.action_choices or {}),
-                                          fork=None)
-        return out
-
-    def _root_fork(self, ctx: "_PlyContext", widths: RealizedWidths):
-        """The ply-1 :class:`~agents.training.view_successor.ViewSuccessorFactory` for ``ctx`` —
-        built once per DECISION rather than once per world.
-
-        🚨 **Why one fork can serve K worlds, and why the key is the bytes.** The fork is
-        ``materialize_branches``' first half over ``(prefix chunks, our action history, OUR packed
-        team)``, and a determinized world changes only the OPPONENT's team
-        (:func:`~main.search_dividend.determinize.record_with_team`). Every world that reaches
-        here has already passed :func:`~main.search_dividend.determinize.prefix_matches`, which
-        holds the one-sided prefix byte-identical to the protocol we observed **through the
-        ``|turn|`` marker** — so the worlds agree about the replay this fork performs. The gate
-        truncates at that marker, so it does NOT by itself license reuse of whatever follows it;
-        keying the cache on the prefix bytes closes that gap without relying on the gate's scope.
-        A world whose prefix differs at all simply misses and replays its own, and
-        ``fork_cache_miss`` counts it — a non-zero count on a run is news, not noise.
-
-        The factory is immutable across arms and therefore across worlds: ``successor()``
-        branches the event folder, thaws the frozen tracker and concatenates the prior-event list,
-        mutating none of the three. That is the same property that already let one fork serve the
-        arms of one world.
-        """
-        from agents.training.obs_materializer import open_view_fork
-
-        road = "core" if self.cfg.materializer == "core" else "view"
-        key = (road, ctx.side, tuple(int(a) for a in ctx.our_history), tuple(ctx.prefix))
-        got = self._fork_cache.get(key)
-        if got is not None:
-            widths.fork_cache_hit += 1
-            return got
-        widths.fork_cache_miss += 1
-        got = open_view_fork(
-            ctx.prefix, username=ctx.record.username(ctx.side),
-            packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
-            prefix_actions=list(ctx.our_history),
-            battle_format=ctx.record.format_id,
-            battle_tag=ctx.record.battle_tag, mappings=self.mappings,
-            encoder=self._encoder(), road=road)[0]
-        self._fork_cache[key] = got
-        return got
 
     def _materialize_core(self, ctx: "_PlyContext", branch_of, parents, acts, arm_core,
                           ply: int, widths: RealizedWidths) -> "Dict[int, _Leaf]":
@@ -1329,10 +1097,10 @@ class SearchEngine:
         for li in branch_of:
             parent = parents[li]
             if ply > 1 and parent.fork is None:
-                raise RuntimeError(f"materializer='core': ply {ply} arm {li}'s parent is not a core leaf")
+                raise RuntimeError(f"core search: ply {ply} arm {li}'s parent is not a core leaf")
             payload = arm_core[li]
             if "row" not in payload:
-                raise RuntimeError(f"materializer='core': arm {li} carries no encoded row — is the "
+                raise RuntimeError(f"core search: arm {li} carries no encoded row — is the "
                                    f"search driver the rust one, built from this tree?")
             widths.core_arms += 1
             if payload.get("mid"):
@@ -1345,67 +1113,12 @@ class SearchEngine:
                             action_choices=tokens, fork=_CORE_LEAF)
         return out
 
-    def _branch_fork(self, ctx: "_PlyContext", dec_i: int, widths: RealizedWidths):
-        """The PROTOCOL road's shared-prefix fork for ``ctx`` at decision ``dec_i`` — built once
-        per decision, exactly like :meth:`_root_fork`, and for the same reason.
-
-        🚨 **This is the D10 road, and it is the one the VIEW road still pays.** An arm whose ply
-        resolved an intermediate decision falls back here, and ``materialize_branches`` used to
-        replay the whole shared prefix again for every WORLD that had one — on top of the view
-        fork's own replay. The profile put that fallback at 21.1% of the view road's decision wall
-        while serving 16.8% of its arms
-        (``designs/research_state/measurements/search_profile_2026-09-22/README.md``).
-
-        The cache key is :attr:`~agents.training.obs_materializer.BranchFork.key`, which carries
-        the prefix BYTES **and** the three decision-indexed knobs baked into the player at
-        construction (``map_actions_at`` / ``stop_after_decision`` / ``encode_only_at``) — a
-        deeper ply asks about a different decision index and must not be served a ply-1 fork."""
-        from agents.training.obs_materializer import open_branch_fork
-
-        key = ("branch", ctx.side, tuple(int(a) for a in ctx.our_history),
-               tuple(ctx.prefix), dec_i)
-        got = self._fork_cache.get(key)
-        if got is not None:
-            widths.branch_fork_cache_hit += 1
-            return got
-        widths.branch_fork_cache_miss += 1
-        got = open_branch_fork(
-            ctx.prefix, username=ctx.record.username(ctx.side),
-            packed_team=ctx.record.packed_team(ctx.side), side=ctx.side,
-            prefix_actions=list(ctx.our_history), battle_format=ctx.record.format_id,
-            battle_tag=ctx.record.battle_tag, mappings=self.mappings,
-            map_actions_at=dec_i, stop_after_decision=dec_i, encode_only_at={dec_i})
-        self._fork_cache[key] = got
-        return got
-
-    def _core_open(self) -> Optional[str]:
-        """The ``core`` argument of ``open_root``: ``"text"`` on the core road (the one fold path —
-        the typed shortcut is deleted, program §4 M4), else ``None``."""
-        return "text" if self.cfg.materializer == "core" else None
-
     def open_root(self, ss, turn: int, record, side: str):
-        """Open a search root for ``side`` on this engine's road. The core road's ``core`` /
-        ``side`` arguments are sent ONLY on the core road (a core tree folds that side's stream);
-        every other road sends the historical request. Every root this engine expands must be
-        opened here — a core engine expanding a root opened without ``core`` would find no
-        ``core_pN`` on its arms."""
-        core = self._core_open()
-        if core is None:
-            return ss.open_root(turn, record=record)
-        # the core tree folds the per-decision TRACKERS: the driver's encoder reads them
-        return ss.open_root(turn, record=record, core=core, side=side, trackers=True)
-
-    def _encoder(self):
-        """The observation encoder the VIEW road encodes a successor with — the same
-        ``mappings`` the protocol road's replay player is built from, so the two cannot hold
-        different dexes."""
-        enc = getattr(self, "_enc_cache", None)
-        if enc is None:
-            from agents.observation.state_encoder import get_observation_encoder, load_mappings
-            if self.mappings is None:
-                self.mappings = load_mappings()
-            enc = self._enc_cache = get_observation_encoder(self.mappings)
-        return enc
+        """Open a CORE search root for ``side`` (`gen3_core_search_v1`): a tree of Rust-core
+        versions folding that side's stream (``core="text"``, the one fold path) with the
+        per-decision TRACKERS the driver's encoder reads. Every root this engine expands must be
+        opened here — a root opened without ``core`` carries no ``core_pN`` on its arms."""
+        return ss.open_root(turn, record=record, core="text", side=side, trackers=True)
 
     def _worlds(self, record, opp_side: str, observed_our_lines: Sequence[str], k: int,
                 opp_true_packed: Optional[str]) -> List[Tuple[object, dict]]:

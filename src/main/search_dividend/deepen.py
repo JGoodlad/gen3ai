@@ -93,43 +93,18 @@ class TreeNode:
     node_id: Optional[str]
     ended: bool
     value: Optional[float] = None
-    #: ``{action_index: sim choice string}`` for OUR legal actions here, straight from the REAL
-    #: mapper (``MaterializedTrace.action_choices``). Empty when the node was never materialized —
-    #: which is exactly when it cannot be deepened, so the two facts stay together.
-    #:
-    #: 🚨 It may be a :class:`~agents.training.view_successor.LazyTokens`, which computes on
-    #: first read — every reader must treat
-    #: it as a ``Mapping`` (``len`` / ``in`` / ``[]`` / ``sorted`` / ``.get`` / ``.items``), never
-    #: as a dict to mutate or ``.copy()``. The three readers are :meth:`expandable`,
-    #: :func:`plan_beam` and ``search._expand_ply``, and all three are inside the deepening loop,
-    #: which is the whole point: a depth-1 decision never pays the mapper for its successors.
+    #: ``{action_index: sim choice string}`` for OUR legal actions here — the core leaf's choice
+    #: tokens (``present::choice_tokens``, the real mapper's rule). Empty when the node was never
+    #: scored — which is exactly when it cannot be deepened, so the two facts stay together.
+    #: Treat it as a ``Mapping``, never as a dict to mutate.
     our_tokens: Mapping = field(default_factory=dict)
     #: The child's open requests, as the search driver returned them. The opponent's marginalization
     #: set at the next ply is built from this and nothing else.
     requests: Optional[dict] = None
-    #: OUR action indices from the branch decision to here — the ``Branch.actions`` a deeper
-    #: materialization needs, accumulated rather than re-derived.
+    #: OUR action indices from the branch decision to here.
     path: Tuple[int, ...] = ()
-    #: OUR-side protocol chunks from the ROOT to here, accumulated one ply at a time — the
-    #: ``Branch.chunks`` that go with ``path``.
-    #:
-    #: 🚨 THE DRIVER RETURNS ONE PLY, NOT THE PATH. ``expand_many`` hands back only the arm's own
-    #: turn (``search_driver.js`` slices at a per-expand baseline), so a node at depth d must carry
-    #: the d-1 plies before it or its materialization replays a protocol with a HOLE in it —
-    #: ``prefix`` (ends at the root request) followed by ply d's resolution, with plies 1..d-1
-    #: missing. That hole is not a degradation, it is a different battle: poke-env keeps applying
-    #: lines to the board it last saw, so a switch inside the gap yields
-    #: ``"Message thinks p1: X is active, but it's not"`` and an opponent REVEAL inside the gap
-    #: makes a later reference construct a Pokémon whose *species* is the nickname —
-    #: ``KeyError: 'ptãra'`` (``gen3_search_depth2_chunk_gap_v1``; it shipped because
-    #: ``ExpandedNode``'s docstring promised the accumulation the driver never did).
-    #: ``path`` and ``chunks`` must always describe the same plies; they grow on the same line.
-    chunks: Tuple[str, ...] = ()
-    #: The VIEW road's fork at this node (`gen3_view_successor_v1`) — a
-    #: :class:`~agents.training.view_successor.ViewSuccessor`, whose ``child()`` is the factory a
-    #: DEEPER ply branches from. ``None`` on a node the protocol road materialized, which is
-    #: exactly the node a deeper ply must also materialize by protocol: the view road cannot
-    #: start from a board it never built.
+    #: :data:`~main.search_dividend.search._CORE_LEAF` on a scored core leaf — its continuation is
+    #: the DRIVER's node, so a deeper ply branches from ``node_id``; ``None`` on the root.
     fork: Any = None
     children: Dict[int, List[Tuple[float, "TreeNode"]]] = field(default_factory=dict)
 

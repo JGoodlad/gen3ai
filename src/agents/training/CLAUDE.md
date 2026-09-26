@@ -1018,80 +1018,20 @@ rust fails loud, so the node cell ran the same wrong rollouts and reported a cle
 by `main/search_dividend/recon_tag_isolation_test.py`.
 **Full detail — in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
-🚨 **IT IS SPLIT IN TWO, AND THE SPLIT IS THE POINT** (`gen3_one_fork_per_decision_v1`).
-`open_branch_fork` does the prefix replay and freezes the `_PlayerSnapshot`;
-`materialize_branches_from` runs the arms off it; `materialize_branches` is exactly the
-composition, so its own gate is unchanged. A search decision opens K determinized WORLDS whose
-one-sided prefixes `determinize.prefix_matches` holds byte-identical, and it was replaying that
-one prefix once per world — `SearchEngine._branch_fork` now caches the fork per decision. **The
-key carries the prefix bytes AND `map_actions_at` / `stop_after_decision` / `encode_only_at`**,
-which are baked into the player at construction: a deeper ply asks about a different decision
-index and must not be served a ply-1 fork. Reuse is exact because every arm starts by restoring
-the snapshot — which is also what it ASSERTS, since a field the snapshot forgets would leak world
-1's last arm into world 2's first and still produce a well-formed obs
-(`main/search_dividend/fork_sharing_parity_integration_test.py`).
-
-`clone_pins.py` is the ONE definition of WHICH objects a per-arm clone must SHARE rather than copy
-(a `logging.Logger`, a `MappingProxyType`, the append-only immutable records, the `GenData`
-singleton) **and** of the pinned-pickle freeze/thaw that makes a clone ~9× cheaper than a
-`deepcopy`. Two consumers — this materializer and `view_successor` — and a second copy of the rules
-would be a second way for the two roads to clone differently.
-
-## The one-sided VIEW road (`view_successor.py`, `gen3_view_successor_v1`)
-
-The other materializer: a search successor's FULL observation built from the Rust port's one-sided
-VIEW payload instead of by replaying the ply's protocol through poke-env. `ViewSuccessorFactory`
-is opened once per DECISION (`obs_materializer.open_view_fork`, which IS `materialize_branches`'
-own first half, so the fork is the same state and not merely an equivalent one) and then answers
-each arm: fold the ply's events (`agents.battle.event_fold`), build the read-models, thaw a
-tracker clone, `record_context` → `advance_window` → `encode`. **Per decision, not per world** —
-the factory mutates none of its three carried objects, so the K worlds of one decision share it
-(`SearchEngine._root_fork`, keyed on the prefix BYTES because `prefix_matches` only compares
-through the `|turn|` marker). Selected by
-`SearchConfig.materializer` / `--materializer {protocol,view}`; **`view` is the DEFAULT**, and it
-falls back to protocol PER ARM (never per cell, never silently — three counters on
-`RealizedWidths`) where it cannot answer.
-
-🚨 **An INTERMEDIATE decision is ANSWERED, not fallen back from** (`gen3_view_at_intermediate_v1`,
-deferral D10 CLOSED). A ply that KOs one of our mons opens a SECOND request inside the same arm,
-which the port resolves from its own follow-up policy — so `view_pN` describes the board one
-decision PAST the row `materialize_branches` returns. The port now also emits **`view_pN_at`**, the
-ordered board at each decision it resolved internally, and such an arm is served from
-`view_pN_at[0]` folded over `view_successor.split_at_intermediate`'s chunk cut, so the BOARD and
-the EVENT history both stop where the protocol road stops. The cut is at a CHUNK boundary because
-that is poke-env's own rule (`_handle_battle_message` parses a whole message before dispatching
-the request). `RealizedWidths.view_arms_intermediate` counts it; `view_fallback_intermediate`
-survives for an arm with no entry (`impl="node"`, a `recorded_exact` arm). **A D10-served leaf
-carries `fork=None` deliberately** — the rust child `node_id` sits at the END of the arm's turn,
-not at the decision the leaf describes, so a deeper ply must fall back exactly as it did before.
-
-🚨 **A poke-env rule the port cannot supply, found by the gate and fixed in PYTHON**, which is the
-contract's own split (`designs/rust_sim/one_sided_view.md` §2): `|error|[Unavailable choice]` is
-intercepted by the player but NOT dropped — it is routed to `Gen3Battle.record_choice_rejected` —
-so `ViewEventFolder.fold` mirrors the hook or a trapped switch's rejection goes missing from the
-H-B event window (~200 obs cells); it is invisible on an ordinary arm and fires on a replacement
-round. (A second one — `Pokemon.faint` kept a fainted mon's stages, which the light board's boost
-ledger reproduced at a D10 board — is gone: the fork now clears them at the faint as the sim does,
-`gen3_pe_reading_fixes_v1`, and the ledger was deleted with it.)
+`materialize_branches` (the prober's counterfactual lookahead) replays the shared prefix ONCE
+(`open_branch_fork`, which freezes a `_PlayerSnapshot`) and runs every arm off it
+(`materialize_branches_from`); `clone_pins.py` is the ONE definition of WHICH objects a per-arm
+clone must SHARE rather than copy (a `logging.Logger`, a `MappingProxyType`, the append-only
+immutable records, the `GenData` singleton) and of the pinned-pickle freeze/thaw that makes a
+clone ~9× cheaper than a `deepcopy`. **The SEARCH no longer materializes anything in Python** — its
+successors are Rust-core versions whose rows the driver encodes (`gen3_core_search_v1`); the
+search's protocol road, its one-sided VIEW road (`view_successor.py`, the M1 event folder, the
+per-decision fork caches) and `core_successor.py` are DELETED (Rust Core deletion pass, program
+§4 M2). `materialize_branches`, `_PlayerSnapshot` and `clone_pins.py` leave at M7 with the prober.
 
 🚨 **`EpisodeTracker.record` and `update_progress_clock` are SPLIT, not copied.** `record_context`
 and `advance_window` are their bodies once the context and the event windows exist; `record` /
-`update_progress_clock` are the poke-env-battle wrappers. One implementation of the per-decision
-bookkeeping is what makes the two roads' trackers comparable at all.
-
-🚨 **`ViewSuccessor.action_choices` is a `LazyTokens`, not a dict** (`gen3_lazy_action_choices_v1`).
-It runs the real action mapper over every legal index on FIRST READ, and the only readers are in
-the DEEPENING loop — a depth-1 decision builds none. It is a `Mapping`, so `bool()` falls through
-to `__len__` and materializes; `x or {}` on one would force the build, and nothing may mutate it.
-Gated by `main/search_dividend/lazy_action_choices_integration_test.py` (0 of 18 built at
-`max_depth=1`; 17 of 17 built and equal to their producer at `max_depth=2`).
-
-⚠️ **A successor's `ViewContext` RAISES on a field it does not carry.** The observation path reads
-fifteen `BattleContext` fields and all fifteen are fed; the rest are the REWARD's and the
-recorder's poke-env turn-gated state, which has no source on this road. A plausible `None` there is
-the failure this class exists to refuse.
-
-**Contract, deferrals, gates and cost — [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md).**
+`update_progress_clock` are the poke-env-battle wrappers.
 
 ## Counterfactual win-prob grounding (`--cf-records` / `--cf-winprob-coef`, `gen3_cf_label_plumbing_v1`)
 

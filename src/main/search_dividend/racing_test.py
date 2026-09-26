@@ -265,9 +265,8 @@ REQ = {"p2": {"active": [{"moves": [{"id": "eq", "move": "Earthquake"}]}]}}
 
 def _engine(strategy="grid", *, racing=RacingConfig(), caps=WidthCaps(m_opp=2, k_worlds=4,
                                                                      r_dice=2)):
-    # The doubles answer with VIEW payloads: the engine is pinned to that road.
     cfg = SearchConfig(arm="oracle", budget_s=100.0, caps=caps, root_strategy=strategy,
-                       racing=racing, materializer="view")
+                       racing=racing)
     return SearchEngine(model=None, mappings=None, cfg=cfg, pool_packed=[])
 
 

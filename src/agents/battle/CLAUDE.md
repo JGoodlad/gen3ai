@@ -221,24 +221,6 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
   belief): both folds read `battle.events` + `battle.turn` and nothing else, so the payload was
   never the problem — the missing LOG was. Contract, gates and the 10 deferrals:
   [`designs/rust_sim/one_sided_view.md`](../../../designs/rust_sim/one_sided_view.md).
-- **`event_fold.py` — ONE ply's `BattleEvent`s WITHOUT poke-env's state tracker**
-  (`gen3_view_event_fold_v1`). `ViewEventFolder.seed_from(battle).fold(chunks)` is the other half
-  of a search successor's observation: the read-models give it a BOARD, and the per-decision
-  trackers (recency, pair history, the event window, the progress clock, the Hidden-Power belief)
-  fold an EVENT LOG, which a board is not. 🚨 **It is not a second event builder** — it SUBCLASSES
-  `Gen3Battle` and keeps `_build_event` / `_capture_pre` verbatim, replacing only the five board
-  reads they make (a mon's species, its status, its HP fraction, which mon is active on a side,
-  and which side's move is resolving) with a light dict folded from the same lines. That is why
-  the per-arm cost is neither a poke-env parse nor a battle-graph clone. Differential gate:
-  `event_fold_parity_fuzz_test.py`, field by field including `raw`. The consumer is
-  `agents/training/view_successor.py`. 🚨 **Every light-board transition mirrors a named poke-env
-  line, and that gate cannot see the ones that only bite ACROSS a `|turn|`** — it seeds at depth 1
-  and folds one ply. `event_fold_test.py` pins them on constructed protocol against `Gen3Battle`:
-  `|turn|` CLOSES the move scope (`end_turn`, `gen3_view_fold_turn_reset_v1`, the Rust Core
-  Program's finding F2 — a start-of-turn Intimidate→Clear Body `-fail` read as the last mover's at
-  depth ≥ 2), and the status/species rules (`gen3_view_fold_poke_env_status_v1`): a faint is FNT,
-  an HP line with no status token CLEARS the status, `-curestatus` clears only the named status,
-  `-cureteam` cures only the named side's living mons, and `-formechange` never renames the species.
 - **`offline_feed.py` — one side's recorded protocol into a `Gen3Battle`, no `Player`, no loop**
   (`gen3_offline_feed_v1`). `feed_chunk(battle, chunk)` is a DISPATCH MIRROR of
   `Player._handle_battle_message` (request → `parse_request`, win/tie → `won_by`/`tied`,
@@ -313,7 +295,7 @@ lock) + the `src/agents/enums.py` re-export seam. The one remaining open item is
 - **`core_view.py` — a `LiveView` / `LegalActions` from the Rust core's `present()` JSON**
   (`gen3_core_present_v1`, the Rust Core Program's M2). A pure TRANSPORT: every presentation rule is
   applied in Rust (`src/rust_sim/src/present/`), so nothing here derives a field. Its consumers are
-  search's `materializer=core` (`agents/training/core_successor.py`) and the pins in
+  slice V's core column (`rust_core_parity_views.py`) and the pins in
   `rust_core_present_test.py` (`sim`), which feed each reading rule's scenario to BOTH poke-env
   (through `offline_feed`) and the core (`core_events --present-stream`) and compare field by field.
   Slice T (`rust_core_parity_trackers.py`, `gen3_core_parity_trackers_v1`) holds the core's

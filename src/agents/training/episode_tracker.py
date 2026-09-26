@@ -796,14 +796,8 @@ class EpisodeTracker:
     def record_context(self, ctx: BattleContext, live: "LiveView", *,
                        event_cursor: int = 0) -> BattleContext:
         """:meth:`record`'s body once the context and the board already exist — the entry point
-        for a caller with no poke-env ``Battle`` to build them from.
-
-        `gen3_view_successor_v1`: a SEARCH successor reached through the one-sided view
-        (``designs/rust_sim/one_sided_view.md``) has a ``LiveView`` and a folded event window
-        but no battle object, and :meth:`record` is the only reason it would need one. Splitting
-        here rather than duplicating the four steps keeps ONE implementation of the per-decision
-        bookkeeping, which is the property that makes the two roads' trackers comparable at
-        all."""
+        for a caller with no poke-env ``Battle`` to build them from. (Its first caller, the search's
+        one-sided VIEW successor, is deleted — Rust Core deletion pass, program §4 M2.)"""
         if self._history:
             self._actions.append(self._last_action)
             self._cursors.append(self._last_cursor)
@@ -960,8 +954,7 @@ class EpisodeTracker:
         return self.build_delta_from(self._get_events_for_window(battle, cursor))
 
     def build_delta_from(self, events: list) -> TurnDelta:
-        """:meth:`build_delta` once the event window is in hand — the view path's entry point
-        (`gen3_view_successor_v1`), and the single fold both roads run."""
+        """:meth:`build_delta` once the event window is in hand."""
         if len(self._history) < 2:
             return TurnDelta.empty()
         prev_ctx = self._history[-2]
@@ -994,10 +987,7 @@ class EpisodeTracker:
                        window_events: list) -> TurnDelta:
         """:meth:`update_progress_clock`'s body once the board and the two event windows exist.
 
-        `gen3_view_successor_v1` — the view path's entry point. It hands the SAME list for both
-        windows, because a search successor's window is exactly the ply that was just folded and
-        the first-decision fallback above cannot arise there (the root decision is always
-        already recorded)."""
+        A caller with the board and the event windows already in hand enters here."""
         delta = self.build_delta_from(delta_events)
         # `legal` is the legality of the request the caller is about to answer — decision t+1 for
         # the window being folded. The clock's trapped-vs-wall gate was specified against "a switch

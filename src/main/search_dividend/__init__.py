@@ -65,31 +65,22 @@ Four things that breakdown settles, each with the number that settles it:
   trace included), far less on a search cell. It stays opt-in because it perturbs the forward at
   ~1e-6 and an argmax over near-tied actions could flip on that; measured, it did not (20/20
   battles identical), which is evidence and not a proof. See ``perf.py``.
-* **The MATERIALIZER HAS TWO ROADS now, and the default changed** (``gen3_view_successor_v1``,
-  2026-09-19). ``--materializer view`` builds each successor's observation from the Rust port's
-  ONE-SIDED VIEW payload — the board without replaying the ply's protocol — and folds the ply's
-  events in Python for the trackers, so the per-arm cost is neither a pickled-player restore nor a
-  poke-env parse. It is byte-identical to ``--materializer protocol`` where both can answer
-  (``materializer_parity_integration_test.py`` compares the real engine's per-action SCORES, not
-  just the obs) and it FALLS BACK per arm, with a counter, where it cannot: no ``view_pN``
-  (i.e. ``--search-impl node``), an arm whose ply resolved a replacement round (deferral D10,
-  measured at 6.9% of branch points), or a deeper ply whose parent had itself fallen back.
-  Measured per successor on a busy box: **1.35x at B=33, 0.98x at B=1** — the win is per-ARM, so it
-  appears as the ply widens, and at B=1 the cost IS the shared prefix, which both roads pay once.
-  ⚠️ An earlier 47x/6.4x figure for this change is in the ledger and it measured a DIFFERENT
-  thing: a tracker-less encode with no prefix replay, i.e. a leaf no search scores. See
-  ``designs/rust_sim/one_sided_view.md`` §6.
+* **ONE successor road: the Rust core** (``gen3_core_search_v1`` + ``gen3_core_encoder_v1``). Every
+  arm's leaf is a Rust-core ``BattleVersion`` and the driver ships its ENCODED row + mask + choice
+  tokens, so no Python replay, view, tracker or encoder touches a successor. The earlier
+  ``--materializer protocol`` (a poke-env replay of the ply) and ``view`` (the port's one-sided
+  projection + a Python fold) roads are DELETED (Rust Core deletion pass, program §4 M2); their
+  measurements are history (``designs/rust_sim/one_sided_view.md``).
 * **The sim side is batched too** — one ``expand_many`` per ply carries every
-  (action x candidate x seed) arm, and ``materialize_branches`` replays the shared prefix once for
-  the whole set. Nothing here expands an arm at a time.
+  (action x candidate x seed) arm. Nothing here expands an arm at a time.
 * **Nothing respawns per decision or per game.** The search-driver child is opened once per cell
   and reused (``SearchEngine.session``); ``engine.close()`` is the cell boundary.
 
 **The two sides of a mirror game effectively SERIALIZE, and that is not fixable in-process.** The
 searched side hands its search to an executor so ``choose_move`` frees ``POKE_LOOP`` — but
-``materialize_branches`` then drives its replay player back THROUGH ``POKE_LOOP``, and the
-opponent's own forward runs there too. Measured: the instrumented stages sum to **97% of the game
-wall**, i.e. at most ~3% of anything overlaps anything. Cross-game process-level parallelism (more
+(measured while the protocol road still drove its replay player back THROUGH ``POKE_LOOP``) the
+instrumented stages summed to **97% of the game wall**, i.e. at most ~3% of anything overlapped
+anything. Cross-game process-level parallelism (more
 cells) is the answer, and it is what the driver already does.
 
 **What the 2026-08-23 audit changed, and what it bought.** Two things, neither of which alters a

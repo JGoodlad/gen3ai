@@ -87,7 +87,7 @@ import asyncio
 import copy
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence
 
 import numpy as np
 
@@ -577,13 +577,11 @@ def materialize_branches(
 class BranchFork:
     """The state ONE decision's arms all branch from — :func:`materialize_branches`' first half.
 
-    ``gen3_one_fork_per_decision_v1``. It is split out for the same reason ``open_view_fork``
-    is: a search decision opens K determinized WORLDS whose one-sided prefixes
-    ``determinize.prefix_matches`` gates to be byte-identical, so replaying that prefix once per
-    world is K-1 replays of the same bytes. Holding the (player, client, snapshot, tail) tuple
-    lets the caller reuse it across worlds, and :meth:`~_PlayerSnapshot.restore` is what makes
-    the reuse exact — it is the SAME mechanism that already resets the player between two arms
-    of one world, applied one level out.
+    ``gen3_one_fork_per_decision_v1``. Split out so a caller holding K arm SETS over one prefix
+    (the search's K determinized worlds, before the search moved to the Rust core) replays the
+    prefix once; :meth:`~_PlayerSnapshot.restore` is what makes the reuse exact. Its one remaining
+    caller is :func:`materialize_branches` (the prober's counterfactual lookahead — program §4
+    moves it to M7).
 
     🚨 **A fork is only reusable for the decision index it was BUILT for.** ``map_actions_at``,
     ``stop_after_decision`` and ``encode_only_at`` are baked into the player at construction, so a
@@ -688,64 +686,6 @@ def materialize_branches_from(fork: "BranchFork",
             action_choices=player.action_choices,
         ))
     return out
-
-
-def open_view_fork(
-    prefix_chunks: Sequence[str],
-    *,
-    username: str,
-    packed_team: str,
-    side: str,
-    prefix_actions: Sequence[int] = (),
-    battle_format: str = "gen3ou",
-    battle_tag: Optional[str] = None,
-    mappings=None,
-    encoder=None,
-    road: str = "view",
-) -> "Tuple[Any, Dict[int, str]]":
-    """Replay the shared prefix ONCE and return the fork every arm of that decision branches from.
-
-    ``gen3_view_successor_v1``. This is :func:`materialize_branches`' first half and nothing
-    else — the same player, the same feed, the same "stop at the branch decision without
-    advancing the tracker" fork point — so the VIEW road starts from a state that is not merely
-    equivalent to the protocol road's but IS it. What it does not do is the second half: no
-    snapshot is frozen, because no arm will restore one.
-
-    ``road="core"`` (``gen3_core_search_v1``) returns the CORE road's factory over the same fork:
-    the same tracker and event log, no board (the board is the version the driver holds).
-
-    Returns ``(ViewSuccessorFactory | CoreSuccessorFactory, {action index: choice string} at the
-    branch decision)``.
-    """
-    from agents.training.view_successor import ViewSuccessorFactory
-
-    factory: Any = ViewSuccessorFactory
-    if road == "core":
-        from agents.training.core_successor import CoreSuccessorFactory
-
-        factory = CoreSuccessorFactory
-    elif road != "view":
-        raise ValueError(f"open_view_fork: road must be 'view' or 'core', got {road!r}")
-
-    prefix_actions = [int(a) for a in prefix_actions]
-    n_prefix = len(prefix_actions)
-    tag = _next_tag(battle_tag, battle_format)
-    player, client = _build_replay_player(
-        username=username, packed_team=packed_team, side=side, actions=prefix_actions,
-        battle_format=battle_format, mappings=mappings, stall_config=None,
-        map_actions_at=n_prefix, stop_after_decision=n_prefix, encode_only_at=set(),
-    )
-    _refuse_poke_loop("open_view_fork")
-    asyncio.run_coroutine_threadsafe(
-        _feed(client, player, prefix_chunks, tag, first=True), POKE_LOOP).result()
-    if len(player._materialized) != n_prefix + 1:
-        raise RuntimeError(
-            f"prefix replay produced {len(player._materialized)} decisions for a branch at "
-            f"index {n_prefix} — prefix_chunks and prefix_actions disagree, so the arms "
-            f"would branch from the wrong state")
-    battle = player._battles[tag]
-    return (factory.at_fork(player._get_tracker(battle), battle, encoder),
-            dict(player.action_choices or {}))
 
 
 class _InvertingReplayPlayer(_ReplayObsPlayer):

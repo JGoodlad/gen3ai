@@ -172,44 +172,11 @@ class RealizedWidths:
     arms_expanded: int = 0
     arms_scored: int = 0
     arms_terminal: int = 0
-    # WHICH ROAD each successor's observation was built on (`gen3_view_successor_v1`). The VIEW
-    # road is the default and the cheap one; the two fall-back counters are separate on purpose,
-    # for the same reason `worlds_open_failed` and `worlds_gate_failed` are: one means the
-    # TRANSPORT cannot answer (a node search driver emits no `view_pN`, or a parent arm had
-    # already fallen back) and the other means the ARM cannot be answered on that road (the ply
-    # resolved a replacement round — deferral D10). Folding them would let "we ran the whole cell
-    # on node" read as a property of the battles.
-    view_arms: int = 0
-    view_fallback_no_payload: int = 0
-    view_fallback_intermediate: int = 0
-    # Of `view_arms`, how many were arms whose ply resolved an INTERMEDIATE decision and were
-    # answered from the port's `view_pN_at[0]` board rather than by falling back
-    # (`gen3_view_at_intermediate_v1`, D10). Counted apart from `view_arms` because it is the
-    # NON-VACUITY reading of the close: a run in which this is 0 while
-    # `view_fallback_intermediate` is also 0 met no replacement round at all and says nothing
-    # about whether the intermediate path works.
-    view_arms_intermediate: int = 0
-    # The CORE road (`gen3_core_search_v1`): arms answered from a Rust-core VERSION, of which how
-    # many had an INTERMEDIATE (D10) leaf — the version AT that decision, not a projection beside
-    # a node one decision past it. The core road has NO fallback: an arm it cannot answer RAISES.
+    # Arms answered from a Rust-core VERSION (`gen3_core_search_v1`, the one road), of which how
+    # many had an INTERMEDIATE (D10) leaf — the version AT that decision. There is NO fallback:
+    # an arm the core cannot answer RAISES.
     core_arms: int = 0
     core_arms_intermediate: int = 0
-    # ONE VIEW FORK PER DECISION (`gen3_one_fork_per_decision_v1`). The ply-1 fork is a pure
-    # function of the one-sided prefix + our action history, so the K worlds of one decision share
-    # it instead of replaying one identical prefix K times. HIT and MISS are counted apart because
-    # they mean different things: a miss past the first world says two worlds produced DIFFERENT
-    # prefix bytes, which the determinization gate's through-`|turn|` scope permits and nobody had
-    # measured. `fork_cache_miss > worlds_gated_ok` is impossible; `== worlds_gated_ok` means the
-    # sharing bought nothing on that decision and is the number to look at first.
-    fork_cache_hit: int = 0
-    fork_cache_miss: int = 0
-    # The same sharing on the PROTOCOL road's own shared-prefix fork, which the view road still
-    # pays on every D10 fallback arm. Counted APART from the view fork's because the two answer
-    # different questions: `fork_cache_*` says how many worlds one view fork served, and these say
-    # how many worlds one poke-env prefix replay served. A decision with no fallback arm has both
-    # of these at 0, which is the shape to expect once D10 is closed.
-    branch_fork_cache_hit: int = 0
-    branch_fork_cache_miss: int = 0
     # ITERATIVE DEEPENING (the registered depth amendment). `depth_planned` is the cap the CLI
     # asked for; `depth_realized` is what the wall-clock actually bought, which is the reportable
     # one — the whole content of the amendment is that a budget cell should say what depth it

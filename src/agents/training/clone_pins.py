@@ -1,11 +1,9 @@
 """``clone_pins`` — which objects a per-arm CLONE must SHARE instead of copying.
 
-One definition, two clone mechanisms. :mod:`agents.training.obs_materializer`'s
-``_PlayerSnapshot`` pickles the whole replay player per decision and rebuilds it per arm;
-:class:`agents.training.view_successor.ViewSuccessorFactory` deep-copies the ``EpisodeTracker``
-per arm on the one-sided VIEW road. Both must pin the same set, and a second copy of the rules
-would be a second chance for the two roads to clone differently — which is exactly the class of
-difference a byte-identity gate is least able to explain.
+:mod:`agents.training.obs_materializer`'s ``_PlayerSnapshot`` pickles the whole replay player per
+decision and rebuilds it per arm (``materialize_branches`` — the prober's counterfactual
+lookahead). Its second user, the search's one-sided VIEW road, is deleted (Rust Core deletion pass,
+program §4 M2); this module leaves with ``materialize_branches`` at M7.
 
 The pin walk is run ONCE per fork point; the resulting ``{id: obj}`` map stays valid for every
 clone taken from it, because a pinned object is the SAME object in the source graph each time.

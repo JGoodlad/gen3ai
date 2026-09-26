@@ -1,29 +1,22 @@
 """ms per SEARCHED DECISION, and WHERE the per-arm wall goes — the real ``SearchEngine`` over a
-BANKED eval trace, on either materializer road.
+BANKED eval trace, on the search's one road (the Rust core, ``gen3_core_search_v1``).
 
     export PYTHONPATH=$PYTHONPATH:src
     python3 src/main/search_dividend/search_decision_benchmark.py \
-        --traces models/<run>/eval_traces --decisions 6 --b 1 33
+        --traces models/<run>/eval_traces --decisions 6 --rust-timing
 
-**What this is, and what `view_materialize_benchmark.py` is.** That one times the two
-materializer roads on a hand-built arm set: it is the road A/B. This one drives
-``SearchEngine.choose`` — the thing production calls — on a decision reconstructed from a banked
-eval trace, and breaks the wall into the phases a change can actually attack. The two answer
-different questions and both are kept.
+It drives ``SearchEngine.choose`` — the thing production calls — on a decision reconstructed from
+a banked eval trace. (The protocol / view roads it used to A/B are deleted, program §4 M2; the
+measurements that used it describe those roads.)
 
-**The scorer is the pure ``obs.sum``, deliberately** — the same one
-``materializer_parity_integration_test`` uses. A trained net's forward is a real cost but it is
-not a cost this file's consumers can change, and threading a checkpoint in would make the table a
-statement about which checkpoint was on disk.
+**The scorer is the pure ``obs.sum``, deliberately.** A trained net's forward is a real cost but
+not one this file's consumers can change.
 
 **The phase table is EXCLUSIVE time, stack-accounted.** Each wrapper subtracts whatever nested
 wrapper ran inside it, so the rows sum to the instrumented total and the remainder is reported as
-`python glue` rather than hidden. A row is attributed to the road that pays it: the VIEW road has
-no snapshot restore and the PROTOCOL road has no event fold, and both print as `-`.
+`python glue` rather than hidden. ``--rust-timing`` splits the driver's own share.
 
-🚨 **WARN, NEVER STRETCH.** The load is printed with every table and the ratios are the claim.
-Run the two roads back to back — this script already interleaves them per decision, which is the
-only honest A/B on a shared box.
+🚨 **WARN, NEVER STRETCH.** The load is printed with every table.
 """
 
 from __future__ import annotations
@@ -56,7 +49,7 @@ class Phases:
     """Exclusive wall per named phase, with nesting handled.
 
     A plain per-function accumulator double-counts the moment one instrumented call sits inside
-    another (``open_view_fork`` contains the prefix's own ``encode``), and a table whose rows sum
+    another, and a table whose rows sum
     to 180% of the wall is worse than no table."""
 
     def __init__(self) -> None:
@@ -112,64 +105,21 @@ def _wrap(obj, attr: str, name: str, patches: list) -> None:
 
 @contextlib.contextmanager
 def instrumented():
-    """Wrap every phase BOTH roads can pay. The set was read out of the code, not guessed:
-    ``search._materialize`` is the one seam and each name below is a call it makes."""
-    import agents.battle.event_fold as EF
-    import agents.battle.view_adapter as VA
-    import agents.training.obs_materializer as OM
-    import agents.training.view_successor as VS
-    import agents.action.mask_generator as MG
+    """Wrap every phase the CORE road pays. The search's one road (`gen3_core_search_v1`) opens a
+    root and expands arms on the driver, which encodes each leaf itself; Python only wraps the
+    row and scores the batch — so the port calls are the phases and the rest is glue."""
+    import agents.battle.core_obs as CO
     import utils.bridge.search_session as SS
-    import agents.observation.state_encoder as SE
 
     patches: list = []
     try:
-        # --- the port (rust) ------------------------------------------------
         _wrap(SS.SearchSession, "expand_many", "port expand_many (rust)", patches)
         _wrap(SS.SearchSession, "open_root", "port open_root (rust)", patches)
-        # --- shared prefix, and the PROTOCOL road's own internals -----------
-        _wrap(OM, "open_view_fork", "prefix replay (open_view_fork)", patches)
-        _wrap(OM, "materialize_branches", "protocol road (materialize_branches)", patches)
-        # `gen3_one_fork_per_decision_v1` split `materialize_branches` in two and the search calls
-        # the halves directly, so BOTH names are wrapped: an un-wrapped half would silently land
-        # in `python glue` and read as an improvement.
-        _wrap(OM, "open_branch_fork", "protocol prefix replay (open_branch_fork)", patches)
-        _wrap(OM, "materialize_branches_from", "protocol arms (materialize_branches_from)",
-              patches)
-        _wrap(OM, "_feed", "poke-env protocol feed", patches)
-        _wrap(OM, "_build_replay_player", "replay player build", patches)
-        _wrap(OM._PlayerSnapshot, "restore", "snapshot restore (protocol)", patches)
-        _wrap(OM._PlayerSnapshot, "_freeze", "snapshot freeze (protocol)", patches)
-        _wrap(OM._ReplayObsPlayer, "_encode_or_track", "decision encode/track", patches)
-        _wrap(OM._ReplayObsPlayer, "_choice_map", "action_choices / map_actions_at", patches)
-        # --- per arm, VIEW road ---------------------------------------------
-        _wrap(VS.ViewSuccessorFactory, "_clone_tracker", "tracker fork (thaw)", patches)
-        # the Python trackers' per-successor fold — with the thaw, what M3's trackers replace
-        import agents.training.episode_tracker as ET
-        _wrap(ET.EpisodeTracker, "record_context", "python trackers (record_context)", patches)
-        _wrap(ET.EpisodeTracker, "advance_window", "python trackers (advance_window)", patches)
-        _wrap(EF.ViewEventFolder, "fold", "event fold (ply protocol)", patches)
-        _wrap(EF.ViewEventFolder, "branch", "event-fold branch", patches)
-        _wrap(VA, "read_models_from_payload", "view_adapter read-models", patches)
-        _wrap(MG.Gen3ActionMasker, "get_mask", "action mask", patches)
-        _wrap(VS, "view_context", "successor context", patches)
-        _wrap(VS, "_choice_map", "action_choices / map_actions_at", patches)
-        _wrap(SE.Gen3ObservationEncoder, "encode", "encode (obs)", patches)
-        # --- per arm, CORE road (`gen3_core_search_v1`) ------------------------
-        # `core_successor` imports these by name, so its OWN bindings are the ones to wrap.
-        import agents.training.core_successor as CS
-        _wrap(CS, "live_view_from_core", "core read-models (transport)", patches)
-        _wrap(CS, "legal_actions_from_core", "core read-models (transport)", patches)
-        _wrap(CS, "events_from_readings", "core ply events (readings)", patches)
-        _wrap(CS, "view_context", "successor context", patches)
-        _wrap(CS, "_choice_map", "action_choices / map_actions_at", patches)
-        # `view_successor` imports the two names at module import time.
-        VS.read_models_from_payload = VA.read_models_from_payload
+        _wrap(CO, "wrap_row", "core row wrap", patches)
         yield PH
     finally:
         for obj, attr, orig in reversed(patches):
             setattr(obj, attr, orig)
-        VS.read_models_from_payload = VA.read_models_from_payload
 
 
 # ---------------------------------------------------------------------------
@@ -198,7 +148,7 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
     from main.search_dividend import determinize as dz
     from utils.bridge.reconstruction import ReconstructionRecord
     from utils.bridge.search_session import SearchSession
-    import agents.battle.one_sided_view_parity_fuzz_test as G
+    import agents.battle.core_row_parity_fuzz_test as G
 
     record = ReconstructionRecord.load(stem + "_reconstruction.json")
     with open(stem + "_summary.json") as fh:
@@ -231,16 +181,15 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
 # ---------------------------------------------------------------------------
 
 
-#: road name -> materializer. ``core`` takes every successor as the Rust core's ENCODED row (its
-#: lines folded from text, its trackers and encoder on the version — ``gen3_core_encoder_v1``).
-ROADS = {"protocol": "protocol", "view": "view", "core": "core"}
+#: The one road: every successor is the Rust core's ENCODED row (``gen3_core_encoder_v1``). The
+#: protocol / view roads this benchmark used to A/B are deleted (program §4 M2).
+ROADS = ("core",)
 
 
 def _cfg(materializer: str, *, m_opp: int, k_worlds: int, arm: str, impl: str) -> SearchConfig:
-    mat = ROADS[materializer]
+    assert materializer in ROADS, materializer
     return SearchConfig(
         arm=arm, budget_s=1e9, seed=7, max_depth=1, search_impl=impl,
-        materializer=mat,
         caps=WidthCaps(m_opp=m_opp, k_worlds=k_worlds, r_dice=1))
 
 
@@ -330,9 +279,6 @@ def _run(args) -> int:
     phases: Dict[str, Dict[str, float]] = {r: {} for r in roads}
     spans: Dict[str, Dict[str, float]] = {r: {} for r in roads}
     arms: Dict[str, int] = {r: 0 for r in roads}
-    view_arms = 0
-    fb_mid = 0
-    fb_nopay = 0
     used = 0
 
     with instrumented():
@@ -379,10 +325,6 @@ def _run(args) -> int:
                     phases[road][k] = phases[road].get(k, 0.0) + v
                 for k, v in inc.items():
                     spans[road][k] = spans[road].get(k, 0.0) + v
-                if road == "view":
-                    view_arms += int(getattr(res.widths, "view_arms", 0))
-                    fb_mid += int(getattr(res.widths, "view_fallback_intermediate", 0))
-                    fb_nopay += int(getattr(res.widths, "view_fallback_no_payload", 0))
             t = row[roads[0]]
             w0 = row[roads[0]][3].widths
             print(f"  turn {fx[2]:>3}  arms={t[1]:>3}  worlds={w0.worlds_gated_ok}"
@@ -402,9 +344,6 @@ def _run(args) -> int:
         a, b = roads
         print(f"  speedup {a} -> {b}: "
               f"{statistics.median(wall[a]) / statistics.median(wall[b]):.2f}x per decision")
-    if "view" in roads:
-        print(f"  view_arms={view_arms}  fallback_intermediate={fb_mid}  "
-              f"fallback_no_payload={fb_nopay}")
 
     for road in roads:
         tot = sum(phases[road].values())
@@ -419,11 +358,7 @@ def _run(args) -> int:
         print(f"  {'python glue (uninstrumented)':<38} {glue:>10.1f} "
               f"{glue / max(arms[road], 1):>9.3f} {100 * glue / max(dec_tot, 1e-9):>6.1f}%")
         print(f"  SPANS (INCLUSIVE, so they overlap the rows above) — {road}")
-        for k in ("prefix replay (open_view_fork)",
-                  "protocol prefix replay (open_branch_fork)",
-                  "protocol arms (materialize_branches_from)",
-                  "protocol road (materialize_branches)",
-                  "port open_root (rust)", "port expand_many (rust)"):
+        for k in ("port open_root (rust)", "port expand_many (rust)"):
             v = spans[road].get(k)
             if v:
                 print(f"    {k:<36} {v * 1000:>10.1f} ms  "
@@ -464,11 +399,8 @@ def main() -> int:
     ap.add_argument("--impl", default="rust")
     ap.add_argument("--frac", type=float, default=0.55)
     ap.add_argument("--seed", type=int, default=11)
-    ap.add_argument("--roads", nargs="+", default=["protocol", "view"],
-                    choices=tuple(ROADS),
-                    help="ONE road per process for an A/B claim (the two roads in one interpreter "
-                         "are not independent — expand_many_2026-09-22/README.md); `core` folds "
-                         "every successor from its text (the typed shortcut is deleted)")
+    ap.add_argument("--roads", nargs="+", default=["core"], choices=ROADS,
+                    help="the search's one road (the protocol / view roads are deleted)")
     ap.add_argument("--rust-timing", action="store_true",
                     help="set POKESIM_SEARCH_TIMING=1 for the driver child and sum its per-phase "
                          "`timing_us` (sim / chunks / core fold / core render / …) per road")

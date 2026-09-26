@@ -465,7 +465,7 @@ node src/rust_sim/harness/ab_fuzz.js --mode ladder [--ladder-tier full] --battle
 node src/rust_sim/harness/bridge_ab_fuzz.js --mode ladder --format gen3ou --battles 100
 node src/rust_sim/harness/gen_sim_bridge_diff.js --mode ladder --format gen3ou --persistent --battles 100
 python3 src/agents/training/obs_roundtrip_fuzz_test.py 20 20 --team-source ladder         # also: event_log /
-#   one_sided_view_parity / live_view_memo fuzz scripts take --team-source {pool,procedural,ladder}
+#   core_row_parity / live_view_memo fuzz scripts take --team-source {pool,procedural,ladder}
 ```
 
 The parity harness's hook is `rust_core_parity.play(key, source="ladder")`, so slices T and O get
@@ -513,17 +513,15 @@ python3 src/agents/training/obs_build_benchmark.py [--turn 25] [--reps 400] [--t
 python3 src/agents/training/trainer_turn_benchmark.py [--decisions 150] [--warmup 3] [--seed 0] [--pin-battles] [--reward-argv '…'] [--bridge rust|node]   # rust is the default (training's)
 # A/B one implementation of LiveView.from_battle against the previous one, on ONE frozen board
 python3 src/agents/training/live_view_build_benchmark.py [--reps 2500] [--rounds 6] [--turn 12] [--profile]
-# ms per SEARCH SUCCESSOR: the protocol road vs the one-sided VIEW road, on a hand-built arm set
-python3 src/agents/training/view_materialize_benchmark.py [--battles N] [--b 1 33]
-# WHERE ONE SEARCHED DECISION's wall goes — the real SearchEngine over BANKED eval traces, broken
-#   into stack-accounted phases (tracker fork / prefix replay / rust / read-models / encode / …)
+# WHERE ONE SEARCHED DECISION's wall goes — the real SearchEngine (the Rust-core road) over BANKED
+#   eval traces, in stack-accounted phases (port open_root / expand_many / row wrap / glue)
 python3 src/main/search_dividend/search_decision_benchmark.py --traces models/<run>/eval_traces \
-    [--decisions 12] [--m-opp 3] [--n-actions N] [--arm honest] [--k-worlds 4] [--cprofile out.prof]
+    [--decisions 12] [--m-opp 3] [--n-actions N] [--arm honest] [--k-worlds 4] [--rust-timing] [--cprofile out.prof]
 ```
 
 🚨 **A cProfile SHARE IS NOT A WALL SHARE, and it has already cost this project a wrong
-priority.** `designs/rust_sim/one_sided_view.md` carried "`map_actions_at` is ~24% of the view
-road's per-arm wall" off a cProfile run; measured with `search_decision_benchmark`'s wall timer it
+priority.** `designs/rust_sim/one_sided_view.md` carried "`map_actions_at` is ~24% of the (since
+deleted) view road's per-arm wall" off a cProfile run; measured with `search_decision_benchmark`'s wall timer it
 is **1.2%**, and re-running that same benchmark UNDER cProfile does not restore the 24% either.
 In the same pair, encode reads 9.5% un-profiled and 15.6% profiled and the action mask 14.7%
 against 2.2%. Rank work by a wall measurement; use cProfile to find WHICH function, not HOW MUCH.
