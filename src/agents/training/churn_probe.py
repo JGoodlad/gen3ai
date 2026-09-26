@@ -21,6 +21,8 @@ Two modes (CLI):
   python -m agents.training.churn_probe compare <ckpt_a> <ckpt_b> <config> <probe.npz>
 
 Pure math (`masked_kl`, `roster_keys`) is bridge-free and unit-tested (churn_probe_test.py).
+The per-snapshot SERIES (several references, flip-by-margin, action mix, cycling, a live-run watch)
+is `python -m main.policy_drift` (`policy_drift.py`), which reuses `collect_probe_states` + `masked_kl`.
 """
 import argparse
 import asyncio
@@ -87,8 +89,11 @@ def churn(ckpt_a: str, ckpt_b: str, config_path: str, probe_npz: str, top_groups
     }
 
 
-async def collect_probe_states(ckpt: str, config_path: str, out_npz: str, battles: int = 40) -> int:
-    """Play bridge battles (ckpt vs itself, both on the full pool) and freeze obs+mask to npz."""
+async def collect_probe_states(ckpt: str, config_path, out_npz: str, battles: int = 40,
+                               seed_base=None) -> int:
+    """Play bridge battles (ckpt vs itself, both on the full pool) and freeze obs+mask to npz.
+    ``config_path=None`` finds the ``model_config.json`` beside the zip or in its parent;
+    ``seed_base`` fixes the per-battle sim dice (see ``run_local_battles``)."""
     from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguration
     from agents.inference.player import RLPlayer
     from agents.observation.state_encoder import load_mappings
@@ -123,7 +128,7 @@ async def collect_probe_states(ckpt: str, config_path: str, out_npz: str, battle
     o = RLPlayer(model=model, team=pool_tb, battle_format="gen3ou",
                  server_configuration=LocalhostServerConfiguration, mappings=mappings,
                  account_configuration=_acct("ChB"), stochastic=False, start_listening=False)
-    await run_local_battles(c, o, battles, concurrency=2)
+    await run_local_battles(c, o, battles, concurrency=2, seed_base=seed_base)
     obs, mask = np.stack(c.O), np.stack(c.M)
     np.savez_compressed(out_npz, obs=obs, mask=mask)
     print(f"[churn] froze {obs.shape[0]} probe states from {battles} battles -> {out_npz}", flush=True)

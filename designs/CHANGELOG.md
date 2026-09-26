@@ -9875,3 +9875,18 @@ Three training-side additions, 2026-09-26. Each defaults to the behaviour every 
 
 `MODEL_CONFIG_VERSION` 123 (one `setdefault` migration), `MIGRATION_FLOOR` 121 unchanged — a v121/v122
 checkpoint loads and resumes at 0.80. Tests: `src/agents/training/policy_gae_lambda_test.py`.
+
+## 2026-09-26 — THE POLICY DRIFT METER: `python -m main.policy_drift` (a descriptor; no version bump, no training-input change)
+
+The owner asked for a high-level read of whether training is REFINING the current strategy or ADOPTING
+NEW ONES over time. The churn probe gave one pair's KL on a frozen probe set. The new meter
+(`agents/training/policy_drift.py` + `main/policy_drift.py`) turns it into a per-snapshot SERIES.
+Each snapshot is compared with three references: the previous snapshot, the one about 10M steps
+earlier, and a fixed anchor. For each it records the masked KL (mean and median), the greedy flip rate
+bucketed by the older policy's top-1 − top-2 margin, and the greedy action-mix shares (switch vs move;
+moves by dex class) with their deltas. A cycling flag is raised when the policy moves back toward an
+older reference. `watch` follows a live run read-only, with durable fsynced rows OUTSIDE `models/`, a
+per-snapshot probability cache (so a pruned pool snapshot still serves as a reference), a sha-pinned
+probe set, resume from rows, and nice 15 on CPU. `report` prints a table with a one-line verdict per
+row. The verdict thresholds are uncalibrated reading aids. `churn_probe.collect_probe_states` gained
+`seed_base` (fixed per-battle dice) and accepts `config_path=None`.

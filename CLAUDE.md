@@ -251,6 +251,7 @@ python -m main.launcher --restart-interval-hours 3 --model models/<run>/checkpoi
 **Defaults worth knowing:** `--use-bridge` is **`rust`** (serverless — no Showdown server needed for training or eval); `--compile-opponents` and `--compile-trainer` are **ON** (the latter auto-on for cuda, and it **drops the ObservationDebugger**); `--critic` is `shaped`. Checkpoints land in `models/run_<ts>/checkpoints/`.
 
 **Offline meters** (no training, nothing written under `models/`): `main.elo` · `main.untaught_meter` · `main.critic_gate` · `main.exploitability` · `main.scaffolding_gauge` · `main.capacity` · `main.lineage` · `main.dose` · `main.sidecar_audit` · `main.baselines` · `main.tb_curate` · `main.best_response_gap` · `main.anchors` *(this one PLAYS — see the LADDER block)*.
+`main.policy_drift` is the refining-vs-new-strategy DESCRIPTOR: it gives per-snapshot KL, margin-bucketed flips and action mix vs the previous, 10M-back and anchor snapshots, and has a detached `watch` mode for a live run (`src/agents/training/CLAUDE.md`).
 
 🚨 **`main.best_response_gap` is the POPULATION loop's meter, and it REFUSES an unmatched comparison.** `gap = (a fresh exploiter's win rate against the generalist G_t it was trained on) − 0.5`, read per ROUND and per team ARCHETYPE from each exploiter run's own recorded vs-target cycles; **the loop is working iff the gap FALLS round over round.** Two exploiters compared at unmatched BUDGET, DOSE or REGIME are a typed refusal naming the cause — the 2026-09-21 era-2/era-1 read was confounded by exactly a 4.5× dose gap (`--fork-lr` unset, the parent's annealed rate inherited) — and `--allow-unmatched` prints it with the confound carried in the header and the JSON. 🚨 **The training-time series it reads is GREEDY-vs-GREEDY** (the eval regime; `eval_sentinel_greedy` does not govern it), while its optional `--play N` defaults to the TRAINING regime, so the two rates are different populations and are never folded together. Detail: [`designs/training/exploiter_and_distillation.md`](designs/training/exploiter_and_distillation.md).
 
@@ -342,7 +343,7 @@ src/
     tui/             # Shared Textual base — has CLAUDE.md
     *.py             # The offline CLIs: elo, dose, lineage, baselines, critic_gate,
                      #   untaught_meter, exploitability, scaffolding_gauge, capacity,
-                     #   checkargs, sidecar_audit, tb_curate, tb_inherit, play, promote_teams,
+                     #   checkargs, sidecar_audit, tb_curate, tb_inherit, play, promote_teams, policy_drift,
                      #   ledger_index
   poke_env/          # Forked poke-env library (vendored — see the Python Environment warning)
   rust_sim/          # The Rust Showdown port — has CLAUDE.md

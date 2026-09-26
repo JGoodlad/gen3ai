@@ -942,6 +942,33 @@ measurement of a terminal-only run, which has no scaffolding to measure.
 
 **Full detail — every flag, gate, measurement and hazard — is in [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md).**
 
+## The POLICY DRIFT meter — refining or adopting a new strategy? (`policy_drift.py`, `python -m main.policy_drift`)
+
+🚨 **A DESCRIPTOR, not a test.** It extends the churn probe (`churn_probe.py`: masked KL between two
+checkpoints on a FROZEN probe-state set) into a per-snapshot SERIES. Each snapshot is compared with
+(a) the PREVIOUS one, (b) the latest one at least `--back-steps` (10M) earlier, (c) a fixed ANCHOR (the
+first snapshot recorded — pool snapshots exist only once self-play is seeded — or `--anchor <zip>`).
+Per reference it records the masked KL (mean and median), the greedy FLIP RATE bucketed by the OLDER
+policy's top-1 − top-2 margin (`<0.1 | 0.1-0.3 | >0.3`; single-legal states excluded), and the
+ACTION-MIX shares on "choice" states (both a switch and a move legal): switch / attack / status / setup
+/ hazard / recovery / phazing / self_ko, classed from the dex (`agents.gen3_data.moves`) through the
+REQUEST-order `active_req_moves` block. Self-KO is a curated id set (Explosion / Selfdestruct / Memento),
+because the dex carries no self-faint flag. **Cycling?** means the current policy is closer to an older
+reference than the previous snapshot was. The verdict thresholds (`SHIFT_ABS`, `CONF_FLIP_RATE`,
+`CYCLE_*`) are reading aids, not calibrated against a null.
+
+- `collect <run>` freezes a probe set once per lineage, from the latest pool snapshot (or the latest
+  checkpoint, with a warning to RECOLLECT once the pool seeds). `watch <run>` is DETACHABLE and
+  RESUMABLE. It writes one fsynced row per snapshot to `~/gen3ai_archive/policy_drift/<run>/rows.jsonl`
+  (`$GEN3AI_ARCHIVE_DIR` overrides) and never writes under `models/`, which it REFUSES. It also caches
+  each snapshot's action probabilities in `probs/`, so a snapshot the sliding pool window has pruned
+  still serves as a 10M-back reference. `report <run>` prints the table.
+- 🚨 **The probe set is pinned by sha256 in `meta.json`**, and a watch on a different one is REFUSED.
+  To recollect, start a NEW out dir. Comparisons across two probe sets are not comparable.
+- `--source snapshots` (the default) follows the PROMOTION-gated pool, so a run that stops being
+  promoted stops producing rows. `--source both` adds the periodic checkpoints. Note that the default
+  anchor is then the first CHECKPOINT, which may predate self-play.
+
 ## ⚠️ Reading a belief target: `belief_supervision(...)`, never `last_*`
 
 Cross-cutting rule for **every** belief loss below (`gen3_belief_label_only_v1`). Under
