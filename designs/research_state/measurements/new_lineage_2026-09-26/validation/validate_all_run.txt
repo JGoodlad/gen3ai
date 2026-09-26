@@ -1,0 +1,7 @@
+=== base: checkargs (2026-09-26T06:04:09-07:00)
+    rc=0  -> <wt>/designs/research_state/measurements/new_lineage_2026-09-26/validation/checkargs_base.txt
+=== base: launcher --dry-run (2026-09-26T06:04:10-07:00)
+    rc=0  -> <wt>/designs/research_state/measurements/new_lineage_2026-09-26/validation/dryrun_base.txt
+=== launch_base.sh --dry-run (2026-09-26T06:04:12-07:00)
+    rc=0  -> <wt>/designs/research_state/measurements/new_lineage_2026-09-26/validation/launchsh_base.txt
+=== models/ untouched (281 entries; no models/ai_v14_01_base)

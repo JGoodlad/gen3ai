@@ -1,0 +1,6 @@
+== base  ai_v14_01_base  (231 -> 235 tokens vs ai_v13_02_flywheel_winprob)
+     --arch: None -> ['production']
+     --obs-source: None -> ['core']
+     --pin-commit: ['6eb9c776940ed6040ddb90acfbc28b038457fc42'] -> ['8d07051aa767331cfa1ca2292029d5217cbf6d40']
+     --run-name: ['ai_v13_02_flywheel_winprob'] -> ['ai_v14_01_base']
+wrote <wt>/designs/research_state/measurements/new_lineage_2026-09-26/argv_base.txt

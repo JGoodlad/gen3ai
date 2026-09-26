@@ -168,9 +168,51 @@ of the gen-era archive is accepted. Decisions are taken arm by arm from the data
 | **ai_v8** | the conditioning epoch on the flat-positional action head with a two-round physics `damage_refine_rounds` loop. **The one line that ever gifted** | closed; its code still runs from a pinned era checkout at `b13b30b2` |
 | **ai_v9** | the entity-graph FRESH generation: pointer-NATIVE action head, no refine loop, physics as attention edge biases. Every generation gen-1…gen-17 | the incumbent line |
 | **ai_v10 / ai_v11** | exploiter-SCALING and human-ladder-replay. **Nothing built**; ai_v11 is owner-PUNTED | open, unrun |
-| **ai_v12** | clean-world / win-prob. `design_winprob_only_critic.md` is the design of record | **LIVE** |
+| **ai_v12 / ai_v13** | clean-world / win-prob (`design_winprob_only_critic.md`), then the flywheel / teacher / population-loop reads on its 75M root `ai_v13_02_flywheel_winprob` | **CLOSED 2026-09-26** at the clean-input boundary (below); its checkpoints load only on trees ≤ `56837827` |
+| **ai_v14** | the NEW LINEAGE: fresh from scratch on the clean-input boundary `b0a28b5b` (obs 2761, v121), Rust-core observation, pool-only opponents, the population loop with a pooled read registered up front | **REGISTERED, not launched** — [`new_lineage_2026-09-26.md`](new_lineage_2026-09-26.md) |
 
-The live ARM is **`ai_v12_02_winprob_critic`** (relaunched 2026-09-06, pinned `f971caf2`);
+### The era close-out (2026-09-26): what the old-input lineage established, and what it did not
+
+Every number below was measured on the PRE-`b0a28b5b` inputs, which carried GIGO since fixed (three poke-env
+reading bugs, the event-window / intent-label / progress-clock semantics, the phantom-decision steps). None is a
+level the new lineage can be compared against; each is a DIRECTION to re-test, not a baseline.
+
+**Established.**
+- **The 75M win-prob root still learned under continuation:** +15.50 pp untaught over 12M at a frozen dose,
+  replicated at +12.94 [+10.25, +15.44] on seed 1002, then exhausted: the next 8M block read −1.50 [−3.75,
+  +0.62], WITHIN the 3.69 floor → the plateau parent G0 (`ai_v13_12_plateau`). [SIGNIFICANT (two-seed family) ·
+  ledger 2026-09-23 *THE WIN-PROB CONTINUATION'S UNTAUGHT GAIN REPLICATES*; WITHIN FLOOR · 2026-09-20 *THE
+  PLATEAU IS REACHED AT BLOCK 1*]
+- **Exploiters are counterplay, not skill:** no 5-team teacher was admitted (five built, five refused), and
+  4.55× more dose bought no more exploitation while costing ~7 pp on-slice and ~15 pp off-slice. [REFUTED (the
+  dose account) · ledger 2026-09-21 *NONE OF THE THREE 5-TEAM TEACHERS IS ADMITTED*; 2026-09-22 *THE DOSE
+  ACCOUNT IS DEAD*]
+- **Wider distillation targets cost MORE off-slice and on-slice, not less** (K = 1 / 3 / 11, and the
+  share-matched arm). [SIGNIFICANT · ledger 2026-09-22 *THE K LADDER REVERSES ITS OWN PREDICTION*; 2026-09-23
+  *THE SHARE-MATCHED ARM CLOSES THE CONFOUND*]
+- **The population loop ENGAGES without a measurable cost:** both rounds absorbed their specialists (M = +8.50
+  and +8.67 pp, CIs above 0; round 2 +17.0 against the new specialist) and neither KILL guard fired.
+  [SIGNIFICANT (manipulation) · ledger 2026-09-24 *POPULATION LOOP ROUND 1*; 2026-09-25 *POPULATION LOOP ROUND 2:
+  BRANCH N+ IS FINAL*]
+- **The learned belief heads memorise the pool:** ~+5 pp against the pool, nothing detectable against Metamon
+  ladder teams, and worse than the Smogon prior off-pool. [SIGNIFICANT · ledger 2026-09-24 *BELIEF-HEAD
+  CALIBRATION OFF THE POOL*; *BELIEF WIN-RATE A/B READ*]
+- **The Rust core reproduces training's observation byte-for-byte** and is now its source. [MEASURED · ledger
+  2026-09-24 *RUST CORE M4 CLOSED*; 2026-09-25 *THE RUST CORE CUTOVER*]
+
+**Not established.**
+- **Whether the loop lowers exploitability.** A fresh best responder found a smaller gap on the loop than on the
+  control twice, −10.00 [−16.60, −3.27] and −8.25 [−15.01, −1.38], both NOT DETECTED at the 5.0 pp bar with 400
+  games per reader (pooled after the fact: −9.13 [−13.91, −4.34], still NOT DETECTED, and not a registered test).
+  The instrument was underpowered, which is why the new lineage registers a pooled read at 800 games per reader.
+  [NOT DETECTED · ledger 2026-09-24 *ROUND 1*; 2026-09-25 *ROUND 2*]
+- **Whether the continuation's untaught gain is real strength:** 8,400 anchor games put it at +0.039 [−0.000,
+  +0.079] over the arm without it. [NOT DETECTED · ledger 2026-09-20 *THE CONTINUATION'S +15.50 pp DOES NOT
+  APPEAR EXTERNALLY*]
+- **Whether any of it survives clean inputs.** No old-lineage result was re-measured after the GIGO fixes.
+  [UNVERIFIED]
+
+The live ARM was **`ai_v12_02_winprob_critic`** (relaunched 2026-09-06, pinned `f971caf2`);
 `ai_v12_01_winprob_critic` ran ~7 h on a STRIPPED architecture and is dead. `ARCHITECTURE.md` and
 `designs/CLAUDE.md`'s state table both name it (the 2026-09-07 ⚠️ that they did not is discharged),
 and gen-17 `ai_v9_21_gen17_pfspoff_0820` is what the §4/§5 measurements were taken on — the last

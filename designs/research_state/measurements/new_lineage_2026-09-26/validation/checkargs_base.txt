@@ -1,0 +1,14 @@
+checked 134 flags from --argv
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (8d07051a)
+  accepted by the trainer parser : 132
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@3469d0ce8440]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — `--arch` writes the ARCHITECTURE only. The mirror's CRITIC readouts and its SUPERVISION DOSES are outside that surface by class (an experiment varies the first; the second is a training dose, not a network). Type them yourself if you want production's values:
+        --win-prob-mode 'shaping'  --value-dist-mode 'none'  --value-dist-bins 0  --value-dist-vmin 0.0  --value-dist-vmax 0.0  --belief-grad-mode 'shaping'  --cf-evidential False  --cf-twin-heads False  --cf-shadow-critic False  --q-winprob-mode 'none'  --move-belief-coef 0.05  --move-belief-latent-coef 0.05  --spread-belief-coef 0.05  --hp-type-belief-coef 0.05  --intent-label-bot-weight 0.25  --item-belief-coef 0.05
+    ✓ every ARCH-surface key matches the production mirror (39 of 51 registry toggles are the ARCH surface; 9 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  ✓ this command still launches

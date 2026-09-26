@@ -1,0 +1,49 @@
+=== [base] checkargs 2026-09-26T06:04:12-07:00 ===
+checked 134 flags from --argv
+  parser                         : the CURRENT tree's — --pin-commit in the argv names HEAD (8d07051a)
+  accepted by the trainer parser : 132
+  launcher-owned (not forwarded) : 2
+  unrecognized                   : 0
+  no --model: the argv IS the config (nothing to inherit) — the checks below read it with the launch path's own desugars applied
+  [ForkLR] no --model: a fresh run has no parent LR to inherit
+
+  ARCH SURFACE vs designs/production_config.json  [production_config@3469d0ce8440]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — `--arch` writes the ARCHITECTURE only. The mirror's CRITIC readouts and its SUPERVISION DOSES are outside that surface by class (an experiment varies the first; the second is a training dose, not a network). Type them yourself if you want production's values:
+        --win-prob-mode 'shaping'  --value-dist-mode 'none'  --value-dist-bins 0  --value-dist-vmin 0.0  --value-dist-vmax 0.0  --belief-grad-mode 'shaping'  --cf-evidential False  --cf-twin-heads False  --cf-shadow-critic False  --q-winprob-mode 'none'  --move-belief-coef 0.05  --move-belief-latent-coef 0.05  --spread-belief-coef 0.05  --hp-type-belief-coef 0.05  --intent-label-bot-weight 0.25  --item-belief-coef 0.05
+    ✓ every ARCH-surface key matches the production mirror (39 of 51 registry toggles are the ARCH surface; 9 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  ✓ this command still launches
+=== [base] launcher --dry-run 2026-09-26T06:04:14-07:00 ===
+
+── launcher --dry-run — resolving only, nothing will be created ────────────
+  role        : FRESH
+  run dir     : models/ai_v14_01_base   [would be created]
+  pin         : 8d07051aa767331cfa1ca2292029d5217cbf6d40  (source: pin_commit)
+                ↳ ledger: observation-architecture batch lands (gen3_event_record_v2, b0a28b5b) — new training-input boundary; obs 2501->2761; v121
+                (a real launch would create an isolated worktree at this commit — the dry run does not)
+  steps       : --steps 75,000,000 (fresh run, from 0)
+  interpreter : /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3
+  transport   : in-process bridge [rust] (no Showdown server)
+  obs source  : core (the Rust core row)
+  restarts    : every 3.0h, grace 20.0 min, max 3 crash restart(s), nice 10
+  effective   : the argv IS the config (no --model, nothing to inherit)
+      --distill-teacher      None         (from the argv)
+      --distill-target       None         (from the argv)
+      --distill-coef         0.0          (from the argv)
+      --distill-topk         None         (from the argv)
+      --grad-accum-steps     32           (from the argv)
+      --fork-lr              None         (from the argv)
+      --fork-lr-freeze       False        (from the argv)
+  (child-only: architecture compatibility (check_compatible against the checkpoint's model_config.json))
+  (child-only: the ModelVersion round-trip smoke test)
+  (child-only: the resolved --compile-trainer / --compile-opponents decisions (they read the device))
+  (child-only: self-play pool SEEDING from a fork parent (agents.training.pool_seed runs in the child))
+  (child-only: the observation dimension and arch signature)
+  arch        : --arch production — 39 ARCH-surface key(s) applied from designs/production_config.json for every flag this argv leaves unset
+  ARCH SURFACE vs designs/production_config.json  [production_config@3469d0ce8440]
+    --arch production applied the production surface (explicit flags still win)
+    ⚠️  NOT applied — `--arch` writes the ARCHITECTURE only. The mirror's CRITIC readouts and its SUPERVISION DOSES are outside that surface by class (an experiment varies the first; the second is a training dose, not a network). Type them yourself if you want production's values:
+        --win-prob-mode 'shaping'  --value-dist-mode 'none'  --value-dist-bins 0  --value-dist-vmin 0.0  --value-dist-vmax 0.0  --belief-grad-mode 'shaping'  --cf-evidential False  --cf-twin-heads False  --cf-shadow-critic False  --q-winprob-mode 'none'  --move-belief-coef 0.05  --move-belief-latent-coef 0.05  --spread-belief-coef 0.05  --hp-type-belief-coef 0.05  --intent-label-bot-weight 0.25  --item-belief-coef 0.05
+    ✓ every ARCH-surface key matches the production mirror (39 of 51 registry toggles are the ARCH surface; 9 critic readouts + 3 non-structural rows are excluded by their own declaration)
+  ✓ DRY RUN — this command would launch. Nothing was created or modified.
+=== [base] --dry-run requested: stopping here. Nothing was created. ===

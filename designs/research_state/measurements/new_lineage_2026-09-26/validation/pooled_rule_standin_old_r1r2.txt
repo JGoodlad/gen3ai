@@ -1,0 +1,6 @@
+POOLED READ (new-lineage registration §5.3)  — STAND-IN, a mechanics check, NOT a read
+  round 1: ai_v13_24_popr1_read_loop 228/400  vs  ai_v13_25_popr1_read_ctrl 268/400   d = -10.00 pp [-16.60, -3.27] (Newcombe, descriptor)
+  round 2: ai_v13_29_popr2_read_loop 210/400  vs  ai_v13_30_popr2_read_ctrl 243/400   d = -8.25 pp [-15.01, -1.38] (Newcombe, descriptor)
+  POOLED D = -9.13 pp  [-13.91, -4.34]  (fixed-effect Wald, R = 2, SE 2.44)
+  heterogeneity: Cochran Q = 0.13 on 1 df (descriptor)
+  bar 5.00 pp  ->  VERDICT: NOT DETECTED

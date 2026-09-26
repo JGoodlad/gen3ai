@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,410-line file. **The ledger itself is append-only and is never edited by this**;
+21,414-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**708 headings · 653 dated · 2026-08-01 → 2026-09-26 · ledger 21,410 lines.**
+**709 headings · 654 dated · 2026-08-01 → 2026-09-26 · ledger 21,414 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -728,3 +728,4 @@ rename.
   - `L21399` · `2026-09-25` · DESCRIPTOR · **POPULATION LOOP ROUND 2 §4.4 CONVERGENCE SIDE-CHECK: row S — round 1's Δ SURVIVES a +50 % reader extension. Δ_late = −5.75 pp [−12.40, +0.97], and RB+ at 0.600 is within 5 pp of RB's cycles 3–4 (0.585, rise +1.5). Changes no branch and no count (round 1 N+, round 2 N+ FINAL).**
   - `L21403` · `2026-09-26` · OPS · **RUST CORE DELETION PASS, part 1 (`43712881`, `97a30387`, `2c7e6acb`): search is core-only and rust-only; the port's one-sided VIEW projection is deleted. ~7,500 lines removed. Training input unchanged (boundary `ba839869`). Five manifest rows SKIPPED with verified blockers — the manifest assumed the Python pipeline was already only an oracle; it is not (policy opponents, eval, labels, reward, progress clock).**
   - `L21407` · `2026-09-26` · BUILD (MAJOR) · **THE OBSERVATION-ARCHITECTURE BATCH LANDS (`gen3_event_record_v2`, `b0a28b5b`; NEW TRAINING-INPUT BOUNDARY `b0a28b5b`). Mud/Water Sport slots, E4 refused-switch target, E10 parameter-free hidden-slot Smogon mixture, E12 event rows 22→30 columns + DENIED rows + entity REL edges. Obs 2501→2761; model v121; MIGRATION_FLOOR 121 — no existing checkpoint loads on HEAD; meters on existing checkpoints run pinned ≤ `56837827` until the new lineage's first run.**
+  - `L21411` · `2026-09-26` · REGISTRATION · **THE NEW LINEAGE IS REGISTERED, NOT LAUNCHED — `ai_v14_01_base` (N0), a FRESH 75M run on the clean-input boundary `b0a28b5b` (pin `8d07051a`, obs 2761, v121, `--obs-source core`, `--arch production`, pool-only opponents), the fresh-root recipe of `ai_v13_02_flywheel_winprob` token-exact with four moves (run-name, pin, +`--arch production`, +`--obs-source core`); checkargs 0 unrecognized and ARCH surface ✓, dry-run FRESH, nothing created. The population loop carries with BOTH power levers up front: readers at `--eval-battles 200` (800 games each) and a POOLED read over R = 4 rounds, D = mean_r[gap(RB_r) − gap(RC_r)], fixed-effect Wald, bar max(F′, 5.0) with F′ re-measured from a round-0 seed pair — detection needs D ≲ −7.4 pp, power 0.69 at a true −8 and ≈ 0.92 at the old rounds' −9; no per-round verdict, no extension.**
