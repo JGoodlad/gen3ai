@@ -328,6 +328,17 @@ update-time ratios are banked as descriptors whatever the verdicts are.
 
 ## 9. Decisions (recommendation beside each)
 
+> **RESOLVED 2026-09-26 ~12:00 PT by the orchestrator under the owner's standing delegation ("keep making
+> decisions for me"), recorded before any arm launches:** **O1 D_g = 2.8e-5** — the rate the old lineage's
+> continuation generalists actually trained at (C2's `--fork-lr 2.8e-5` frozen) and gained with; F-1 is
+> accepted (the lineage registration's "N0's own final lr" rule rested on a false premise and is replaced by
+> this fixed value for every generalist continuation block, including K1 = C). **O2: E5 DOSE-MATCHED** at
+> `--fork-lr 5.6e-5` (no fifth lr-matched arm). Orchestrator items all as recommended: C doubles as K1 and the
+> continuation pin moves to `2cc83080`; K2 runs at the unchanged recipe during the reads; adoption applies to
+> generalists only; winners combine under the guard; 600 games/team; order C → E5 → T32 (early stop at
+> rollout 11) → L95. Caveat carried: at D_g = 2.8e-5 clipping is rare (F-3), so E5's verdict is about THIS
+> dose regime.
+
 **The owner's:**
 - **O1 — D_g (F-1), upstream of both the battery and K1.** Either 2.8e-5 (the rate the old lineage's
   continuation actually ran at: +15.50 pp, replicated +12.94, plateau reached; 0.20× v8), or N0's final rate
