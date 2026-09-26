@@ -9751,3 +9751,27 @@ bridge. Owner decision; switched before the CUTOVER tier's registered counts wer
 deviation — `designs/endstate/program_rust_core.md` §2 M6): the stress continues to its counts, and a
 CUTOVER-class divergence reverts the default.
 
+
+## 2026-09-26 — THE RUST CORE DELETION PASS, part 1: search runs on the core only; the port's one-sided view is deleted (no version bump — no training input, dim or weight shape changes)
+
+`43712881` deletes the search's non-core successor roads: the M1 event folder (`event_fold.py`),
+the one-sided VIEW road (`view_successor.py`, `open_view_fork`), the search's PROTOCOL road
+(`SearchEngine._materialize` / `_root_fork` / `_branch_fork`, the fork caches, `TreeNode.chunks`),
+the per-arm fallbacks and their `RealizedWidths` counters, `core_successor.py`,
+`SearchConfig.materializer` and `--materializer` (`designs/deleted_flags.md`; `--search-impl` keeps
+only `rust`). `97a30387` deletes the port's one-sided view projection: `view.rs` and its reveal fold,
+the `view_pN` / `view_pN_at` payloads, `core_events --views`' `views` / `truth`, `view_adapter.py`,
+`LiveView.from_view_json`, and slice V's projection column and reading-vs-engine TRUTH checks —
+slice V now compares the training `LiveView` to the core's `present()` reading, which the core's
+board audit holds to the engine (the Baton-Pass / Spikes teeth fire on that column). The search
+parity gate is now `core_row_parity_fuzz_test.py` (search's encoded arm rows == the poke-env
+replay's rows, byte for byte, D10 leaves included). ~7,500 lines removed. Training never read any
+of it (the view fold was opt-in and off in `sim_bridge`; the search is not on the training path),
+so the training-input boundary (`ba839869`) does not move. Kept until M7: `materialize_branches`,
+`_PlayerSnapshot`, `clone_pins.py` (the prober's lookahead). Skipped with their blockers recorded in
+`designs/endstate/program_rust_core.md` §4: the Python trackers / `TurnDelta` (live in training for
+the label, the progress clock and the reward), the Python obs PERF layers (every policy opponent
+still encodes through `RLPlayer` with the assembler), the shaped reward path (a resume/fork
+contract decision), the search-session JSON protocol and node drivers (M5; still diffed against),
+`turn_delta_legacy.py` (a test rewire), and `--obs-source python` (slice N's oracle side and the
+node-bridge path).
