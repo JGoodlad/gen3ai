@@ -957,12 +957,27 @@ because the dex carries no self-faint flag. **Cycling?** means the current polic
 reference than the previous snapshot was. The verdict thresholds (`SHIFT_ABS`, `CONF_FLIP_RATE`,
 `CYCLE_*`) are reading aids, not calibrated against a null.
 
+**CONDITIONAL class rates are the primary action read** (`policy_drift_cond.py`). The overall share
+("hazard 2%") confounds LIKING a class with how often it is AVAILABLE, so each class is also reported
+among the probe states (≥ 2 legal actions) where it was LEGAL: the greedy rate, its n, a Wilson 95%
+interval, the mean probability MASS on the class (a lean before the argmax flips), and the delta vs
+prev / back / anchor with a PAIRED bootstrap 95% interval (same states, seeded). For hazard / recovery
+/ setup a USEFUL grain is added from obs facts read through the layout, each rule verified in
+deps/pokemon-showdown: hazard = opp Spikes < 3; recovery = HP < 100% (Wish: none pending — it is useful
+at full HP; Rest: not asleep; Swallow: stockpiled); setup = a raised stat < +6 (Belly Drum: HP > 50%;
+non-Ghost Curse assumed). The verdict names a class by its conditional change (useful grain where
+defined) **only when that interval excludes 0** and |Δ| ≥ `SHIFT_ABS`; the overall shares stay as a
+secondary line. Rows written before the block existed get it from `backfill <run>` (from the cached
+`probs/`, no model run) into a `cond.jsonl` sidecar — `rows.jsonl` is never rewritten; `watch` runs
+the backfill at startup and drops the checkpoint's DEEP TRACE debugger like `collect` does.
+
 - `collect <run>` freezes a probe set once per lineage, from the latest pool snapshot (or the latest
   checkpoint, with a warning to RECOLLECT once the pool seeds). `watch <run>` is DETACHABLE and
   RESUMABLE. It writes one fsynced row per snapshot to `~/gen3ai_archive/policy_drift/<run>/rows.jsonl`
   (`$GEN3AI_ARCHIVE_DIR` overrides) and never writes under `models/`, which it REFUSES. It also caches
   each snapshot's action probabilities in `probs/`, so a snapshot the sliding pool window has pruned
-  still serves as a 10M-back reference. `report <run>` prints the table.
+  still serves as a 10M-back reference. `report <run>` prints the KL/flip table, then the conditional
+  tables (rates, plain-legal rates for the gated classes, Δ vs the long reference with intervals).
 - 🚨 **The probe set is pinned by sha256 in `meta.json`**, and a watch on a different one is REFUSED.
   To recollect, start a NEW out dir. Comparisons across two probe sets are not comparable.
 - `--source snapshots` (the default) follows the PROMOTION-gated pool, so a run that stops being

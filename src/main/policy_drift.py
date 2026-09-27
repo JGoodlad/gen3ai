@@ -10,12 +10,16 @@ words ("refining" / "shifting (…)" / "cycling?") are reading aids with uncalib
   nohup nice -n 15 python -m main.policy_drift watch models/<run> > <out>/watch.log 2>&1 < /dev/null &
   # 3. read it any time
   python -m main.policy_drift report <run>
+  # (rows written before the conditional block existed: fill it from the cached probs, no model run;
+  #  `watch` also does this at startup)
+  python -m main.policy_drift backfill <run>
 
 Output (never under models/): ``$GEN3AI_ARCHIVE_DIR`` or ``~/gen3ai_archive``, then
 ``policy_drift/<run>/`` — ``probe.npz`` (+ ``probe.json`` provenance), ``meta.json`` (the probe's
 sha256, pinned at the first watch; a different probe is REFUSED), ``rows.jsonl`` (one row per
 snapshot), ``probs/<step>.npz`` (each snapshot's action probabilities on the probe — what makes a
-pruned snapshot still usable as a 10M-back reference, and what a resume reuses).
+pruned snapshot still usable as a 10M-back reference, and what a resume reuses), ``cond.jsonl``
+(the CONDITIONAL block backfilled for rows that predate it — rows.jsonl is never rewritten).
 
 RECOLLECTING the probe set invalidates every comparison across the change: move the old out dir
 aside (or pass a new ``--out``) and re-run ``collect`` then ``watch``; the old rows stay readable.
@@ -29,7 +33,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
@@ -87,6 +91,11 @@ def make_probs_fn(device: str, obs: np.ndarray, mask: np.ndarray):
 
     def fn(zp: Path) -> np.ndarray:
         model, _ = load_foreign_opponent(str(zp), current_version=cv, device=device)
+        # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a DEEP
+        # TRACE board on every forward — it floods watch.log. `collect` drops it the same way.
+        for mod in model.policy.modules():
+            if hasattr(mod, "_debugger"):
+                mod._debugger = None
         try:
             return masked_action_probs(model, obs, mask)
         finally:
@@ -131,6 +140,31 @@ def cmd_collect(a) -> int:
     return 0
 
 
+def _cond_inputs(obs, layout):
+    from agents.training import policy_drift_cond as pc
+    return pd.move_class_by_num(), pc.move_ids_by_num(), pc.state_facts(obs, layout)
+
+
+# ── backfill ──────────────────────────────────────────────────────────────────────────────────
+def cmd_backfill(a) -> int:
+    out_dir = Path(a.out) if a.out else default_out(Path(a.run).name)
+    refuse_under_models(out_dir)
+    probe = Path(a.probe) if a.probe else out_dir / "probe.npz"
+    if not probe.exists():
+        sys.exit(f"[policy_drift] no probe set at {probe}")
+    mp = out_dir / "meta.json"
+    if mp.exists() and json.loads(mp.read_text())["probe_sha256"] != pd.file_sha256(probe):
+        sys.exit(f"[policy_drift] REFUSED: {probe} is not the probe set this series was built on")
+    with np.load(probe) as z:
+        obs, mask = z["obs"], z["mask"]
+    _, layout = _obs_layout()
+    nums = pd.req_move_nums(obs, layout)
+    table, ids, facts = _cond_inputs(obs, layout)
+    done = pd.backfill_cond(out_dir, mask, nums, table=table, ids=ids, facts=facts)
+    print(f"[policy_drift] backfill: {len(done)} row(s) → {out_dir / pd.COND_SIDECAR}")
+    return 0
+
+
 # ── watch ─────────────────────────────────────────────────────────────────────────────────────
 def _pin_meta(out_dir: Path, probe: Path, run: Path, source: str) -> None:
     sha = pd.file_sha256(probe)
@@ -167,6 +201,9 @@ def cmd_watch(a) -> int:
         obs, mask = z["obs"], z["mask"]
     _, layout = _obs_layout()
     nums = pd.req_move_nums(obs, layout)
+    table, ids, facts = _cond_inputs(obs, layout)
+    pd.backfill_cond(out_dir, mask, nums, table=table, ids=ids, facts=facts,
+                     log=lambda s: print(s, flush=True))
     probs_fn = make_probs_fn(a.device, obs, mask)
     if a.anchor and not (out_dir / pd.ANCHOR_FILE).exists():
         azp = Path(a.anchor)
@@ -180,7 +217,8 @@ def cmd_watch(a) -> int:
     log = lambda s: print(s, flush=True)                  # noqa: E731
     while True:
         new = pd.process_pending(run, out_dir, obs, mask, nums, probs_fn, source=a.source,
-                                 back_steps=a.back_steps, settle_s=a.settle_s, log=log)
+                                 back_steps=a.back_steps, settle_s=a.settle_s, table=table,
+                                 ids=ids, facts=facts, log=log)
         if a.once:
             return 0
         pending = set(pd.list_run_models(run, a.source)) - {int(r["step"]) for r in pd.load_rows(out_dir)}
@@ -193,6 +231,78 @@ def cmd_watch(a) -> int:
 # ── report ────────────────────────────────────────────────────────────────────────────────────
 def _f(x, fmt="{:.3f}"):
     return "   -  " if x is None else fmt.format(x)
+
+
+_CW = 14
+
+
+def _pct(x, signed=False):
+    if x is None:
+        return "-"
+    return f"{x * 100:+.0f}" if signed else f"{x * 100:.0f}"
+
+
+def _cond_cell(g) -> str:
+    """rate% [mass%] n — the greedy rate among eligible states, the mean probability mass there,
+    and how many states it is over."""
+    if g is None or not g["n"]:
+        return "-"
+    return f"{_pct(g['rate'])}[{_pct(g['mass'])}] {g['n']}"
+
+
+def _delta_cell(g, ref) -> str:
+    r = g and (g.get("refs") or {}).get(ref)
+    if not r or r.get("delta") is None:
+        return "-"
+    lo, hi = r["ci"]
+    mark = "*" if (lo > 0 or hi < 0) else " "
+    return f"{_pct(r['delta'], True)}{mark}[{_pct(lo, True)},{_pct(hi, True)}]"
+
+
+def render_cond(rows: list) -> List[str]:
+    from agents.training import policy_drift_cond as pc
+    ok = sorted((r for r in rows if r.get("status") == "ok" and r.get("cond")), key=lambda r: r["step"])
+    missing = [r["step"] for r in rows if r.get("status") == "ok" and not r.get("cond")]
+    lines = [""]
+    if missing:
+        lines.append(f"⚠️  {len(missing)} row(s) have no conditional block — run "
+                     "`python -m main.policy_drift backfill <run>`")
+    if not ok:
+        return lines
+    cls = pc.COND_CLASSES
+    head = f"{'step':>12} " + " ".join(f"{(c + ('*' if c in pc.USEFUL_CLASSES else '')):>{_CW}}" for c in cls)
+    lines += [
+        "CONDITIONAL greedy rate — among the probe states (>=2 legal actions) where the class is LEGAL;",
+        "  * = USEFUL-eligible (hazard: opp Spikes < 3 · recovery: HP < 100% (Wish: none pending; Rest: not",
+        "  asleep; Swallow: stockpiled) · setup: a raised stat < +6 (Belly Drum: HP > 50%)). Cell: rate% [mean",
+        "  prob mass %] n.",
+        head,
+    ]
+    for r in ok:
+        cells = [_cond_cell(pc.primary_grain(r["cond"]["classes"][c])[1]) for c in cls]
+        lines.append(f"{r['step']:>12,} " + " ".join(f"{x:>{_CW}}" for x in cells)
+                     + ("  (backfilled)" if r.get("cond_backfilled") else ""))
+    lines += ["plain LEGAL eligibility for the useful-gated classes — rate% [mass%] n:",
+              f"{'step':>12} " + " ".join(f"{c:>{_CW}}" for c in pc.USEFUL_CLASSES)]
+    for r in ok:
+        lines.append(f"{r['step']:>12,} " + " ".join(
+            f"{_cond_cell(r['cond']['classes'][c]['elig']):>{_CW}}" for c in pc.USEFUL_CLASSES))
+    lines += ["Δ conditional rate vs the LONG reference (back10M, else anchor, else prev), pp, with its",
+              "  paired-bootstrap 95% interval; `*` = the interval excludes 0:",
+              head]
+    for r in ok:
+        ln = pd._long_ref_name(r.get("refs", {}))
+        cells = [_delta_cell(pc.primary_grain(r["cond"]["classes"][c])[1], ln) if ln else "-" for c in cls]
+        lines.append(f"{r['step']:>12,} " + " ".join(f"{x:>{_CW}}" for x in cells) + f"  vs {ln or '-'}")
+    last = ok[-1]
+    lines.append(f"latest ({last['step']:,}) Δ conditional rate vs each reference, pp [95%]:")
+    lines.append(f"{'':>12} " + " ".join(f"{c:>{_CW}}" for c in cls))
+    for ref in ("prev", "back", "anchor"):
+        b = last["refs"].get(ref)
+        cells = [_delta_cell(pc.primary_grain(last["cond"]["classes"][c])[1], ref) for c in cls]
+        lab = f"{ref}@{b['step'] / 1e6:.1f}M" if b else ref
+        lines.append(f"{lab:>12} " + " ".join(f"{x:>{_CW}}" for x in cells))
+    return lines
 
 
 def render(rows: list) -> str:
@@ -215,17 +325,19 @@ def render(rows: list) -> str:
         fl = "/".join(_f(pv and pv["flip"]["buckets"][l]["rate"], "{:.2f}") for l in labs) if pv else "-"
         lines.append(f"{r['step']:>12,} {cells[0]:>13} {cells[1]:>13} {cells[2]:>13} {fl:>20}  "
                      f"{pd.verdict(r)}")
+    lines += render_cond(rows)
     ok = [r for r in rows if r.get("status") == "ok"]
     if ok:
         last = max(ok, key=lambda r: r["step"])
-        lines.append("latest action mix (choice states): " + ", ".join(
+        lines.append("secondary — latest OVERALL action mix (share of choice states, availability "
+                     "confounded): " + ", ".join(
             f"{c} {last['shares'][c] * 100:.0f}%" for c in pd.CLASSES if last["shares"].get(c, 0) > 0))
     return "\n".join(lines)
 
 
 def cmd_report(a) -> int:
     out_dir = Path(a.out) if a.out else default_out(Path(a.run).name)
-    rows = pd.load_rows(out_dir)
+    rows = pd.load_rows_merged(out_dir)
     if not rows:
         sys.exit(f"[policy_drift] no rows in {out_dir}")
     if a.json:
@@ -258,6 +370,10 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--poll", type=float, default=300.0)
     w.add_argument("--settle-s", type=float, default=60.0)
     w.add_argument("--once", action="store_true")
+    bf = sub.add_parser("backfill", help="the conditional block for rows that predate it, from the "
+                        "CACHED probs (no model run); writes the cond.jsonl sidecar, never rows.jsonl")
+    bf.add_argument("run", help="run name (or path; only its basename is used)")
+    bf.add_argument("--out"); bf.add_argument("--probe")
     r = sub.add_parser("report", help="compact table + a one-line verdict per snapshot")
     r.add_argument("run", help="run name (or path; only its basename is used)")
     r.add_argument("--out"); r.add_argument("--json", action="store_true")
@@ -266,7 +382,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> int:
     a = build_parser().parse_args(argv)
-    return {"collect": cmd_collect, "watch": cmd_watch, "report": cmd_report}[a.mode](a)
+    return {"collect": cmd_collect, "watch": cmd_watch, "backfill": cmd_backfill,
+            "report": cmd_report}[a.mode](a)
 
 
 if __name__ == "__main__":

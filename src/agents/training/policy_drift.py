@@ -11,7 +11,11 @@ probe-state set) from ONE pair into a per-snapshot SERIES with several reference
     low-margin states read as refinement, flips in confident states as a strategy change;
   * ACTION-MIX shares of the greedy choice by class (switch vs move; moves split into attack /
     status / setup / hazard / recovery / phazing / self_ko from the dex via `agents.gen3_data`),
-    and each class's delta vs each reference;
+    and each class's delta vs each reference — kept as the SECONDARY line;
+  * CONDITIONAL class rates (`policy_drift_cond`): among the probe states where a class was LEGAL
+    (and, for hazard / recovery / setup, USEFUL — the move would not fail), how often the greedy
+    choice is that class, with its n, a Wilson interval, the mean probability mass, and a PAIRED
+    bootstrap interval on the delta vs each reference. The verdict names classes by THIS change;
   * a CYCLING indicator: the current policy is CLOSER to an older reference than the previous
     snapshot was.
 
@@ -35,6 +39,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 import numpy as np
 
 from agents.action.constants import MOVE_END, MOVE_START, SWITCH_END
+from agents.training import policy_drift_cond as _cond
 
 # ── action classes ────────────────────────────────────────────────────────────────────────────
 MOVE_CLASSES: Tuple[str, ...] = ("attack", "status", "setup", "hazard", "recovery", "phazing", "self_ko")
@@ -185,25 +190,60 @@ def cycling_refs(kl_cur: Dict[str, Optional[float]], kl_prev: Dict[str, Optional
     return out
 
 
+def _long_ref_name(refs: dict) -> Optional[str]:
+    return next((k for k in ("back", "anchor", "prev") if refs.get(k)), None)
+
+
+def cond_shifts(row: dict) -> List[Tuple[float, str]]:
+    """Classes whose CONDITIONAL rate (useful-eligible where defined, else eligible) moved vs the
+    long reference with its paired 95% interval EXCLUDING 0 and |Δ| ≥ SHIFT_ABS, and whose step vs
+    the previous snapshot does not point the other way. A class whose interval straddles 0 is
+    never named, however large its point delta."""
+    cond = row.get("cond")
+    long_name = _long_ref_name(row.get("refs", {}))
+    if not cond or long_name is None:
+        return []
+    out = []
+    for c, entry in cond["classes"].items():
+        grain, g = _cond.primary_grain(entry)
+        r = (g.get("refs") or {}).get(long_name)
+        if not r or r.get("delta") is None or not _cond.interval_clear(r.get("ci")):
+            continue
+        d = r["delta"]
+        if abs(d) < SHIFT_ABS:
+            continue
+        rp = (g.get("refs") or {}).get("prev") or {}
+        dp = rp.get("delta") or 0.0
+        if long_name != "prev" and dp * d < 0 and abs(dp) >= SHIFT_ABS / 2 and _cond.interval_clear(rp.get("ci")):
+            continue
+        tag = "|useful" if grain == "useful" else "|legal"
+        out.append((abs(d), f"{c}{tag} {d * 100:+.0f}pp (n={g['n']})"))
+    return out
+
+
 def verdict(row: dict) -> str:
     """"cycling?" > "shifting (…)" > "refining". The LONG reference is back (≈10M earlier) when one
-    exists, else the anchor, else the previous snapshot. A class counts as shifted when its share
-    moved ≥ SHIFT_ABS vs the long reference AND the step vs the previous snapshot does not point the
-    other way (coherent, not a one-snapshot reversal)."""
+    exists, else the anchor, else the previous snapshot. A class is named by its CONDITIONAL change
+    (`cond_shifts`) — only when that change's interval excludes 0. A row without a conditional
+    block (pre-backfill) falls back to the overall-share rule."""
     if row.get("status") != "ok":
         return row.get("status", "?")
     if row.get("cycling"):
         return "cycling? (closer to " + ", ".join(row["cycling"]) + ")"
     refs = row.get("refs", {})
-    long_ref = next((refs[k] for k in ("back", "anchor", "prev") if refs.get(k)), None)
-    if long_ref is None:
+    long_name = _long_ref_name(refs)
+    if long_name is None:
         return "first (no reference)"
-    prev = refs.get("prev") or {}
-    shifted = []
-    for c, d in long_ref["share_delta"].items():
-        dp = (prev.get("share_delta") or {}).get(c, 0.0)
-        if abs(d) >= SHIFT_ABS and not (dp * d < 0 and abs(dp) >= SHIFT_ABS / 2):
-            shifted.append((abs(d), f"{c} {d * 100:+.0f}pp"))
+    long_ref = refs[long_name]
+    if row.get("cond"):
+        shifted = cond_shifts(row)
+    else:
+        prev = refs.get("prev") or {}
+        shifted = []
+        for c, d in long_ref["share_delta"].items():
+            dp = (prev.get("share_delta") or {}).get(c, 0.0)
+            if abs(d) >= SHIFT_ABS and not (dp * d < 0 and abs(dp) >= SHIFT_ABS / 2):
+                shifted.append((abs(d), f"{c} {d * 100:+.0f}pp"))
     conf = long_ref["flip"]["buckets"].get(bucket_labels()[-1], {})
     if conf.get("rate") is not None and conf["rate"] >= CONF_FLIP_RATE:
         shifted.append((conf["rate"], f"confident flips {conf['rate'] * 100:.0f}%"))
@@ -302,14 +342,16 @@ def process_pending(run_dir: Path, out_dir: Path, obs: np.ndarray, mask: np.ndar
                     move_nums: np.ndarray, probs_fn: Callable[[Path], np.ndarray], *,
                     source: str = "snapshots", back_steps: int = 10_000_000,
                     anchor_step: Optional[int] = None, settle_s: float = 60.0,
-                    table: Optional[Dict[int, str]] = None, log=print) -> List[dict]:
+                    table: Optional[Dict[int, str]] = None, ids: Optional[Dict[int, str]] = None,
+                    facts: Optional[dict] = None, log=print) -> List[dict]:
     """Process every model in ``run_dir`` that has no row yet, oldest first; one durable row each.
 
     RESUMABLE at two grains: a step with a row is skipped outright; a step whose action
     probabilities are already cached under ``out_dir/probs`` (the row write was interrupted) is not
     re-forwarded. The cached probabilities are also what makes pruned snapshots usable as
     references — the pool is a sliding window, so a 10M-old zip is usually gone from disk.
-    ``probs_fn(zip) → [N, A]`` is injected (the CLI passes the model forward). Never writes under
+    ``facts`` (`policy_drift_cond.state_facts`) enables USEFUL eligibility; without it only plain
+    eligibility is reported. ``probs_fn(zip) → [N, A]`` is injected (the CLI passes the model forward). Never writes under
     ``run_dir``. A zip modified within ``settle_s`` is left for the next poll (may be mid-write)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "probs").mkdir(exist_ok=True)
@@ -317,6 +359,7 @@ def process_pending(run_dir: Path, out_dir: Path, obs: np.ndarray, mask: np.ndar
     done = {int(r["step"]) for r in load_rows(out_dir)}
     avail = list_run_models(run_dir, source)
     choice = ((mask[:, :SWITCH_END] > 0.5).any(-1) & (mask[:, MOVE_START:MOVE_END] > 0.5).any(-1))
+    cls_act, useful_act = _cond.action_tables(mask, move_nums, table, ids, facts)
     new_rows = []
     for step in sorted(s for s in avail if s not in done):
         zp = avail[step]
@@ -362,12 +405,15 @@ def process_pending(run_dir: Path, out_dir: Path, obs: np.ndarray, mask: np.ndar
         cls_cur = _shares_for(p_cur, mask, move_nums, table, choice)
         shares_cache: Dict[int, Dict[str, float]] = {}
         refs = {}
+        ref_probs: Dict[str, Optional[Tuple[int, np.ndarray]]] = {}
         kl_cur, kl_prev = {}, {}
         for name, rs in refs_steps.items():
             if rs is None:
                 refs[name] = None
+                ref_probs[name] = None
                 continue
             p_ref = load(rs)
+            ref_probs[name] = (rs, p_ref)
             if rs not in shares_cache:
                 shares_cache[rs] = _shares_for(p_ref, mask, move_nums, table, choice)
             refs[name] = _ref_block(p_cur, p_ref, mask, rs, cls_cur, shares_cache[rs])
@@ -381,9 +427,88 @@ def process_pending(run_dir: Path, out_dir: Path, obs: np.ndarray, mask: np.ndar
             "shares": cls_cur, "refs": refs,
             "kl_prev_vs_ref": kl_prev,
             "cycling": cycling_refs(kl_cur, kl_prev),
+            "cond": _cond.cond_block(p_cur, ref_probs, mask, cls_act, useful_act),
         }
         row["verdict"] = verdict(row)
         append_row(out_dir, row)
         new_rows.append(row)
         log(f"[policy_drift] step {step:,}: {row['verdict']}")
     return new_rows
+
+
+# ── backfill: the conditional block for rows written before it existed ────────────────────────
+COND_SIDECAR = "cond.jsonl"     # {"step", "cond", "computed_at"} per backfilled row; rows.jsonl untouched
+
+
+def load_cond_sidecar(out_dir: Path) -> Dict[int, dict]:
+    p = out_dir / COND_SIDECAR
+    out: Dict[int, dict] = {}
+    if not p.exists():
+        return out
+    for line in p.read_text().splitlines():
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        out[int(r["step"])] = r["cond"]
+    return out
+
+
+def load_rows_merged(out_dir: Path) -> List[dict]:
+    """rows.jsonl with each row's conditional block filled from the sidecar where the row itself
+    predates it. The original rows are never rewritten."""
+    side = load_cond_sidecar(out_dir)
+    rows = load_rows(out_dir)
+    for r in rows:
+        if r.get("status") == "ok" and not r.get("cond") and int(r["step"]) in side:
+            r["cond"] = side[int(r["step"])]
+            r["cond_backfilled"] = True
+    return rows
+
+
+def backfill_cond(out_dir: Path, mask: np.ndarray, move_nums: np.ndarray, *,
+                  table: Optional[Dict[int, str]] = None, ids: Optional[Dict[int, str]] = None,
+                  facts: Optional[dict] = None, log=print) -> List[int]:
+    """Compute the conditional block for every ok row that has none (in the row or the sidecar),
+    from the CACHED probabilities — no model is run. The references are the ones the row recorded.
+    A reference whose probabilities are gone is recorded as None. Appends to the sidecar."""
+    table = table if table is not None else move_class_by_num()
+    cls_act, useful_act = _cond.action_tables(mask, move_nums, table, ids, facts)
+    cache = cached_probs(out_dir)
+    ext = out_dir / ANCHOR_FILE
+    ext_step, ext_probs = None, None
+    if ext.exists():
+        with np.load(ext) as z:
+            ext_step, ext_probs = int(z["step"]), z["probs"]
+
+    def probs_of(s: int) -> Optional[np.ndarray]:
+        if s in cache:
+            return np.load(cache[s])["probs"]
+        if ext_step is not None and s == ext_step:
+            return ext_probs
+        return None
+
+    done = []
+    side = load_cond_sidecar(out_dir)
+    for r in load_rows(out_dir):
+        step = int(r["step"])
+        if r.get("status") != "ok" or r.get("cond") or step in side:
+            continue
+        p_cur = probs_of(step)
+        if p_cur is None:
+            log(f"[policy_drift] backfill: no cached probs for step {step:,}; skipped")
+            continue
+        ref_probs: Dict[str, Optional[Tuple[int, np.ndarray]]] = {}
+        for name, b in (r.get("refs") or {}).items():
+            pr = probs_of(int(b["step"])) if b else None
+            ref_probs[name] = (int(b["step"]), pr) if (b and pr is not None) else None
+        cond = _cond.cond_block(p_cur, ref_probs, mask, cls_act, useful_act)
+        with open(out_dir / COND_SIDECAR, "a") as f:
+            f.write(json.dumps({"step": step, "cond": cond, "computed_at": time.time()},
+                               sort_keys=True) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        done.append(step)
+    if done:
+        log(f"[policy_drift] backfilled the conditional block for {len(done)} row(s)")
+    return done
