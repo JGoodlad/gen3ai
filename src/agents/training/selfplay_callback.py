@@ -799,8 +799,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             self._pool_generation += 1
             self.logger.record("train/selfplay_promoted_steps", float(step))
             # Pay the one-time snapshot-ladder tax for the NEW frozen node — a DETACHED subprocess
-            # (bridge round-robin vs the current frozen pool, ~pool_size × N games), fully off the
-            # training path. Frozen-vs-frozen is stationary → measured once, appended to
+            # (bridge round-robin vs the current frozen pool: 200 FRESH games vs each sentinel this
+            # cycle used — its own games decided the promotion and are never reused as edges,
+            # recipe v3 — plus N per other pair), fully off the training path. Frozen-vs-frozen is stationary → measured once, appended to
             # snapshot_ladder/games.jsonl forever. Best-effort: a failure never touches training.
             self._spawn_snapshot_ladder_update(step)
 
@@ -849,10 +850,11 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         ``symmetric_teams`` — **both players drew from the LADDER's own builder** (the full pool
         with a 0.1 sample-team bias). That is a stricter claim than "the two players drew the same
         way", and deliberately so: it is the condition under which an eval edge and a dense-ladder
-        edge for the same frozen pair are the SAME EXPERIMENT, which is what licenses the ladder to
-        reuse the pair instead of replaying it. A SPECIALIST run (``--trainee-team`` /
+        edge for the same frozen pair are the SAME EXPERIMENT (recipe v2 used it to REUSE the pair;
+        recipe v3, 2026-09-27, never reuses a promotion-deciding eval game as a ladder edge, so
+        today the stamp is provenance and the winner's-curse comparator). A SPECIALIST run (``--trainee-team`` /
         ``--trainee-teams``) draws both players from the taught team(s) — symmetric between the
-        players, but not the ladder's draw — so it records False and its pairs are always replayed.
+        players, but not the ladder's draw — so it records False.
         """
         return {"greedy": bool(self._eval_sentinel_greedy),
                 "symmetric_teams": bool(self._eval_sentinel_greedy) and not self._trainee_team_str}

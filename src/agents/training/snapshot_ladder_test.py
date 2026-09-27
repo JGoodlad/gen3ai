@@ -237,11 +237,10 @@ def test_the_per_cycle_eval_elo_star_fit_still_counts_sentinel_edges(tmp_path):
     assert fit.ratings[elo_mod.snap_key(200)] - fit.ratings[elo_mod.snap_key(100)] > 100.0
 
 
-# ── OPTION A: reusing an eval-measured pair (gen3_eval_sentinel_greedy_default_v1, 2026-09-07) ──
-# Once a run's eval cycles play their sentinels GREEDY with the ladder's own (symmetric) team draw,
-# the eval edge and the ladder edge for a frozen pair are the SAME experiment — so the ladder counts
-# the pair as covered instead of spending another 100 battles on it. BOTH halves of the regime must
-# hold: either alone is the asymmetric measurement worth +8.9 pp [+7.0, +10.7] to the newer snapshot.
+# ── RECIPE v3 (owner decision 2026-09-27): the games that SELECTED a snapshot never RATE it ─────
+# Promotion is decided by the eval cycle's games vs the sentinels; v2 then REUSED those games as
+# ladder edges (`source: "eval_cycle"`) — a winner's curse of ~+15..+40 Elo at n = 100. v3 plays a
+# FRESH 200-game baseline vs each sentinel the eval used, plus the usual 100 vs every other node.
 
 def _symmetric_row(trainee, sentinels, *, greedy=True, symmetric=True, n_games=100):
     return {"step": trainee, "n_games": n_games,
@@ -251,18 +250,16 @@ def _symmetric_row(trainee, sentinels, *, greedy=True, symmetric=True, n_games=1
 
 
 def test_eval_measured_pairs_reads_only_fully_symmetric_rows(tmp_path):
+    """The READ of what an eval cycle measured under the ladder's protocol survives (the
+    winner's-curse comparator and the writer→row contract) — it just never becomes an edge."""
     run = str(tmp_path)
     _plant_eval_log(run, [
         _symmetric_row(300, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}]),
-        # greedy but the TEAM draw was still asymmetric → a different experiment, not reusable
         _symmetric_row(300, [{"step": 200, "win_rate": 0.6, "counts": [60, 100]}], symmetric=False),
-        # symmetric teams but the sentinel SAMPLED → likewise not reusable
         _symmetric_row(400, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}], greedy=False),
-        # no regime stamp at all = written before 2026-09-07 ⇒ unknown ⇒ not reusable
         {"step": 400, "n_games": 100, "sentinels": [{"step": 200, "win_rate": 0.6}]},
     ])
-    pairs = sl.eval_measured_pairs(run)
-    assert pairs == {(100, 300): [40, 100]}, pairs   # 300 won 60 ⇒ the LO node (100) won 40
+    assert sl.eval_measured_pairs(run) == {(100, 300): [40, 100]}
 
 
 def test_eval_measured_pairs_falls_back_to_win_rate_when_a_row_has_no_counts(tmp_path):
@@ -271,97 +268,175 @@ def test_eval_measured_pairs_falls_back_to_win_rate_when_a_row_has_no_counts(tmp
     assert sl.eval_measured_pairs(run) == {(100, 300): [74, 200]}   # 200 - round(0.63*200)
 
 
-def test_promotion_REUSES_a_symmetric_eval_pair_instead_of_replaying_it(tmp_path, monkeypatch):
-    """The whole point: 5 sentinels a cycle = 500 battles a promotion that need not be played."""
+def test_promotion_sentinel_steps_reads_the_promoting_cycles_sentinels_in_ANY_regime(tmp_path):
+    """Selection is what causes the curse, not the protocol — so a stochastic-regime row's
+    sentinels get the fresh 200-game baseline too."""
     run = str(tmp_path)
-    _plant_eval_log(run, [_symmetric_row(300, [
+    _plant_eval_log(run, [
+        _symmetric_row(300, [{"step": 100, "win_rate": 0.6}], greedy=False, symmetric=False),
+        {"step": 300, "n_games": 100, "sentinels": [{"step": 200, "win_rate": 0.6}]},
+        _symmetric_row(400, [{"step": 250, "win_rate": 0.6}]),     # a different cycle
+    ])
+    assert sl.promotion_sentinel_steps(run, 300) == [100, 200]
+    assert sl.promotion_sentinel_steps(run, 999) == []
+
+
+def _stub_players(monkeypatch, played):
+    """Stub the bridge + the heavy loaders `_measure_missing` imports in its body (attributes on
+    the real modules — see `test_measure_once_contract`)."""
+    import agents.model.snapshot            # noqa: F401
+    import agents.observation.state_encoder  # noqa: F401
+    import utils.team_loader                 # noqa: F401
+
+    def fake_play(run_dir, a, b, n, *a_, **k_):
+        played.append((a, b, n))
+        return n // 2 + 1, n
+
+    class _Loader:
+        def get_all_teams(self): return ["t"]
+        def get_sample_teams(self): return ["t"]
+
+    monkeypatch.setattr(sl, "_play_pair", fake_play)
+    monkeypatch.setattr("agents.observation.state_encoder.load_mappings", lambda: {})
+    monkeypatch.setattr("agents.model.snapshot.current_model_version", lambda m: None)
+    monkeypatch.setattr("utils.team_loader.TeamLoader", _Loader)
+
+
+def test_v3_promotion_ingests_NO_eval_cycle_edge_and_plays_200_FRESH_vs_each_sentinel(
+        tmp_path, monkeypatch, capsys):
+    """🚨 Fails on revert: v2 folded the greedy+symmetric eval edges in as `eval_cycle` rows and
+    then skipped those pairs. v3 writes no eval_cycle row, plays each sentinel pair FRESH at 200
+    (tagged `promotion_baseline`), plays the rest at 100, and prints the fresh-game cost."""
+    run = str(tmp_path)
+    _plant_eval_log(run, [_symmetric_row(400, [
         {"step": 100, "win_rate": 0.60, "counts": [60, 100]},
         {"step": 200, "win_rate": 0.55, "counts": [55, 100]},
     ])])
-    played: list[tuple[int, int]] = []
-    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 200, 300])
-    monkeypatch.setattr(sl, "_measure_missing",
-                        lambda d, pairs, *a, **k: (played.extend(pairs), 0)[1])
+    played: list = []
+    _stub_players(monkeypatch, played)
+    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 200, 300, 400])
     monkeypatch.setattr(sl, "fit_ladder", lambda d, *a, **k: {"ratings": {}})
 
-    sl.update_for_promotion(run, 300, n_games=100)
+    sl.update_for_promotion(run, 400, n_games=100)
 
-    # BOTH pairs came from the eval cycle, so _measure_missing is handed them and finds them present
-    games = sl.load_games(run)
-    assert games == {(100, 300): [40, 100], (200, 300): [45, 100]}
+    assert sorted(played) == [(400, 100, 200), (400, 200, 200), (400, 300, 100)]
     rows = [json.loads(x) for x in open(sl.games_log_path(run))]
-    assert {r["source"] for r in rows} == {"eval_cycle"}
-    # the reuse leaves nothing for the round-robin to do
-    have = sl.load_games(run)
-    assert all(have[sl._pair_key(a, b)][1] > 0 for a, b in played)
+    assert all(r.get("source") != sl.EVAL_CYCLE_SOURCE for r in rows)
+    by_pair = {(r["a"], r["b"]): r for r in rows}
+    assert by_pair[(400, 100)]["source"] == sl.PROMOTION_BASELINE_SOURCE
+    assert by_pair[(400, 100)]["games"] == 200
+    assert "source" not in by_pair[(400, 300)]
+    assert all(r["recipe_version"] == sl.LADDER_FITTER_VERSION == 3 for r in rows)
+    out = capsys.readouterr().out
+    assert "FRESH GAMES THIS PROMOTION: 500" in out            # 2 x 200 + 1 x 100
 
 
-def test_promotion_does_NOT_reuse_a_pair_whose_row_is_only_HALF_symmetric(tmp_path, monkeypatch):
-    """The planted half-and-half case. `greedy` without `symmetric_teams` (and vice versa) is the
-    asymmetric measurement the +8.9 pp figure was measured ON — it must still be replayed."""
+def test_promotion_plan_is_the_cost_line(tmp_path, monkeypatch):
     run = str(tmp_path)
-    _plant_eval_log(run, [
-        _symmetric_row(300, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}], symmetric=False),
-        _symmetric_row(300, [{"step": 200, "win_rate": 0.6, "counts": [60, 100]}], greedy=False),
-    ])
+    _plant_eval_log(run, [_symmetric_row(400, [{"step": 100, "win_rate": 0.6},
+                                                {"step": 50, "win_rate": 0.6}])])   # 50 groomed
+    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 200, 300, 400])
+    _append_pair(run, 400, 300, 50, 100)                       # already measured: never replayed
+    plan = sl.promotion_plan(run, 400)
+    assert plan["baseline"] == [(400, 100)] and plan["round_robin"] == [(400, 200)]
+    assert plan["already_measured"] == 1 and plan["sentinels_not_in_pool"] == [50]
+    assert plan["fresh_games"] == 200 + 100
+
+
+def test_a_v2_eval_cycle_row_is_NOT_a_rating_edge_and_reads_as_missing(tmp_path, monkeypatch):
+    """A games.jsonl a v2 tree wrote: the eval_cycle row is ignored by the fit, the pair reads
+    unmeasured, and it is exactly `--backfill-fresh`'s work list."""
+    run = str(tmp_path)
+    sl._append_game(run, 100, 300, 40, 100, source=sl.EVAL_CYCLE_SOURCE)
+    _append_pair(run, 100, 200, 50, 100)
+    _append_pair(run, 200, 300, 50, 100)
+    assert sl.load_games(run) == {(100, 200): [50, 100], (200, 300): [50, 100]}
+    assert sl.load_games(run, include_eval_cycle=True)[(100, 300)] == [40, 100]
+    assert sl.missing_pairs(run, [(300, 100)]) == [(300, 100)]
+    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 200, 300])
+    assert sl.eval_cycle_only_pairs(run) == [(100, 300)]
+    monkeypatch.setattr(sl.elo_mod, "load_bot_anchors", lambda: None)
+    ladder = sl.fit_ladder(run, write=False)
+    assert ladder["n_frozen_pairs_measured"] == 2
+    assert ladder["recipe"]["eval_cycle_pair_edges_used"] is False
+    assert ladder["recipe"]["eval_cycle_pair_edges_dropped_count"] == 1
+    assert ladder["pairs_by_source"] == {"eval_cycle": 1, "ladder": 2}   # provenance still shown
+
+
+def test_backfill_fresh_replaces_the_eval_cycle_pairs_at_200_and_is_idempotent(
+        tmp_path, monkeypatch):
+    run = str(tmp_path)
+    sl._append_game(run, 100, 300, 40, 100, source=sl.EVAL_CYCLE_SOURCE)
+    _append_pair(run, 100, 200, 50, 100)
+    played: list = []
+    _stub_players(monkeypatch, played)
     monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 200, 300])
     monkeypatch.setattr(sl, "fit_ladder", lambda d, *a, **k: {"ratings": {}})
-    played: list[tuple[int, int]] = []
-
-    def fake_measure(d, pairs, *a, **k):
-        played.extend(pairs)
-        return len(pairs)
-
-    monkeypatch.setattr(sl, "_measure_missing", fake_measure)
-    sl.update_for_promotion(run, 300, n_games=100)
-
-    assert sl.load_games(run) == {}                       # nothing ingested
-    assert sorted(played) == [(300, 100), (300, 200)]     # both still handed to the round-robin
+    assert sl.backfill_fresh(run, dry_run=True) == {} and played == []
+    sl.backfill_fresh(run)
+    assert played == [(100, 300, 200)]
+    sl.backfill_fresh(run)
+    assert played == [(100, 300, 200)]                       # nothing left to replace
+    assert sl.load_games(run)[(100, 300)] == [101, 200]
 
 
-def test_a_stochastic_run_ingests_nothing_and_its_rows_carry_no_source_key(tmp_path, monkeypatch):
-    """Today's behaviour, byte-identically: an asymmetric run's games.jsonl rows are exactly the
-    rows it wrote before this change — no `source` key — and `pairs_by_source` says so."""
-    run = str(tmp_path)
-    _plant_eval_log(run, [{"step": 300, "n_games": 100,
-                           "sentinels": [{"step": 100, "win_rate": 0.6}]}])
-    assert sl.ingest_eval_measured_pairs(run, [(100, 300)]) == 0
-    _append_pair(run, 100, 300, 40, 100)
-    row = json.loads(open(sl.games_log_path(run)).readline())
-    assert set(row) == {"a", "b", "wins_a", "games", "at"}
+# ── THE RELATIVE COLUMN — Elo above a pinned frozen reference node ─────────────────────────────
+
+def _bt_consistent(run, strengths, n=10_000):
+    """Append every pair with counts EXACTLY consistent with Bradley-Terry at `strengths`."""
+    steps = sorted(strengths)
+    for i, a in enumerate(steps):
+        for b in steps[i + 1:]:
+            p_a = sl.elo_mod.win_prob(strengths[a], strengths[b])
+            _append_pair(run, a, b, int(round(p_a * n)), n)
+
+
+def test_the_relative_column_is_INVARIANT_to_adding_a_stronger_node(tmp_path, monkeypatch):
+    """🚨 Fails on revert (no column). Frozen pairs never change, so adding a node — however
+    strong — must not move the existing nodes' Elo above the reference, while the reference sits
+    at exactly 0."""
     monkeypatch.setattr(sl.elo_mod, "load_bot_anchors", lambda: None)
-    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 300])
-    assert sl.fit_ladder(run, write=False)["pairs_by_source"] == {"ladder": 1}
+    monkeypatch.setattr(sl.elo_mod, "load_rows", lambda run_dir, source="log": [])
+    strengths = {100: 1500.0, 200: 1560.0, 300: 1610.0, 400: 1640.0}
+    before_dir, after_dir = str(tmp_path / "before"), str(tmp_path / "after")
+    os.makedirs(before_dir), os.makedirs(after_dir)
+    _bt_consistent(before_dir, strengths)
+    _bt_consistent(after_dir, {**strengths, 500: 1900.0})     # a much STRONGER newcomer
+    before = sl.fit_ladder(before_dir, write=False, steps=[100, 200, 300, 400])
+    after = sl.fit_ladder(after_dir, write=False, steps=[100, 200, 300, 400, 500])
+
+    assert before["reference"]["step"] == after["reference"]["step"] == 100   # first snapshot
+    for s in ("100", "200", "300", "400"):
+        assert abs(before["ratings_relative"][s] - after["ratings_relative"][s]) < 0.5, s
+    assert before["ratings_relative"]["100"] == 0.0
+    assert abs(before["ratings_relative"]["300"] - 110.0) < 1.0      # the true gap is recovered
+    assert abs(after["ratings_relative"]["500"] - 400.0) < 2.0
 
 
-def test_ingestion_is_idempotent_so_a_reused_edge_is_never_double_weighted(tmp_path):
-    """`load_games` SUMS duplicate lines by design, so a second ingest of the same cycle would
-    silently double the edge's weight in the fit."""
-    run = str(tmp_path)
-    _plant_eval_log(run, [_symmetric_row(300, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}])])
-    assert sl.ingest_eval_measured_pairs(run, [(100, 300)]) == 1
-    assert sl.ingest_eval_measured_pairs(run, [(100, 300)]) == 0
-    assert sl.load_games(run) == {(100, 300): [40, 100]}
-
-
-def test_a_reused_edge_reaches_the_fit_exactly_once(tmp_path, monkeypatch):
-    """The double-count that ruled this approach out is gone because `fit_ladder` drops EVERY
-    snap-vs-snap eval edge from source (2) — so an ingested pair enters through games.jsonl alone."""
-    run = str(tmp_path)
-    _plant_eval_log(run, [_symmetric_row(300, [{"step": 100, "win_rate": 0.6, "counts": [60, 100]}])])
-    sl.ingest_eval_measured_pairs(run, [(100, 300)])
-
-    seen: list[list] = []
-    real_fit = sl.elo_mod.fit_pairwise
-    monkeypatch.setattr(sl.elo_mod, "fit_pairwise",
-                        lambda results, *a, **k: (seen.append(list(results)),
-                                                  real_fit(results, *a, **k))[1])
+def test_an_explicit_reference_and_a_disconnected_node(tmp_path, monkeypatch):
     monkeypatch.setattr(sl.elo_mod, "load_bot_anchors", lambda: None)
-    monkeypatch.setattr(sl, "pool_snapshot_steps", lambda d: [100, 300])
-    ladder = sl.fit_ladder(run, write=False)
+    monkeypatch.setattr(sl.elo_mod, "load_rows", lambda run_dir, source="log": [])
+    run = str(tmp_path)
+    _bt_consistent(run, {100: 1500.0, 200: 1560.0})
+    lad = sl.fit_ladder(run, write=False, steps=[100, 200], reference=200)
+    assert lad["reference"]["step"] == 200 and lad["ratings_relative"]["200"] == 0.0
+    assert abs(lad["ratings_relative"]["100"] + 60.0) < 1.0
+    # 300 has no frozen edge to the reference's component: omitted, never a prior-only number
+    rel, _ = sl.fit_relative([(sl.elo_mod.snap_key(100), sl.elo_mod.snap_key(200), 50, 100),
+                              (sl.elo_mod.snap_key(300), sl.elo_mod.snap_key(400), 50, 100)], 100)
+    assert set(rel) == {"100", "200"}
 
-    snap_pairs = [r for r in seen[0]
-                  if sl.elo_mod.is_snapshot(r[0]) and sl.elo_mod.is_snapshot(r[1])]
-    assert len(snap_pairs) == 1 and snap_pairs[0][2:] == (40, 100)
-    assert ladder["eval_sentinel_edges_dropped"] == 1        # the log copy was dropped
-    assert ladder["pairs_by_source"] == {"eval_cycle": 1}
+
+def test_the_default_reference_is_the_registry_baseline_ONLY_when_this_ladder_holds_its_file(
+        tmp_path):
+    from agents.training import baselines
+    b = baselines.get(sl.DEFAULT_REFERENCE_BASELINE)
+    run = str(tmp_path / b.run)
+    os.makedirs(run)
+    ref, why = sl.resolve_reference(run, [16_000_032, b.num_timesteps, 30_000_000])
+    assert ref == b.num_timesteps and sl.DEFAULT_REFERENCE_BASELINE in why
+    # same step number in a DIFFERENT run with no matching zip → the first snapshot instead
+    other = str(tmp_path / "some_other_run")
+    os.makedirs(other)
+    ref, why = sl.resolve_reference(other, [16_000_032, b.num_timesteps])
+    assert ref == 16_000_032 and "first snapshot" in why

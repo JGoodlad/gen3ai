@@ -41,9 +41,16 @@ cross-run reader refuses it. ``refit`` re-fits from ``games.jsonl`` — append-o
 NOTHING IS PLAYED — over **the committed file's own node set**, because Bradley-Terry re-solves
 every node on every add: a fit over a different node set is a different object, and its deltas
 would conflate the recipe change with a node-set change. ``--pool`` fits the snapshots on disk
-instead. ``--apply`` keeps the file it replaces as ``snapshot_ladder/ladder.pre_recipe.json`` —
-the only remaining evidence of what a banked number was quoted from — and refuses rather than
-overwrite one that is already there.
+instead. ``--apply`` keeps the file it replaces as ``snapshot_ladder/ladder.pre_recipe.json``
+(an unstamped file) or ``ladder.pre_recipe_vN.json`` (one stamped with fitter version N) — the only
+remaining evidence of what a banked number was quoted from — and refuses rather than overwrite one
+that is already there.
+
+Recipe v3 (2026-09-27): a refit DROPS the eval-cycle pair rows a v2 tree reused in ``games.jsonl``
+(the games that decided each promotion — a winner's curse). The report counts the pairs that
+carried ONLY such rows and names ``snapshot_ladder --backfill-fresh``, the one step that plays.
+Every table also carries the RELATIVE column: Elo above a pinned frozen reference node, frozen
+edges only (``ladder.json``'s ``ratings_relative``) — a second column, never the headline.
 """
 from __future__ import annotations
 
@@ -246,7 +253,13 @@ def ladder_refit_report(run_dir: str, *, pool: bool = False) -> dict:
         c, n = rated.get(k), rr.get(k)
         nodes.append({"step": int(k), "committed": c, "refit": n,
                       "delta": None if (c is None or n is None) else round(n - c, 1)})
+    rel = refit.get("ratings_relative") or {}
+    for n in nodes:
+        n["relative"] = rel.get(str(n["step"]))
     deltas = [n["delta"] for n in nodes if n["delta"] is not None]
+    # Recipe v3: pairs whose ONLY rows are v2's reused eval-cycle rows are not rating edges any
+    # more. Refitting DROPS them (plays nothing); replacing them needs fresh games.
+    eval_only = sl.eval_cycle_only_pairs(run_dir, sorted(int(k) for k in (rr or rated)))
     rated_nodes = [n for n in nodes if n["refit"] is not None]
     newest = rated_nodes[-1] if rated_nodes else None
     return {
@@ -263,6 +276,10 @@ def ladder_refit_report(run_dir: str, *, pool: bool = False) -> dict:
                           and n["refit"] is None],
         "new_nodes": [n["step"] for n in nodes if n["committed"] is None],
         "newest": newest,
+        "reference": refit.get("reference"),
+        "eval_cycle_only_pairs": eval_only,
+        "backfill_fresh_games": len(eval_only) * sl.PROMOTION_BASELINE_GAMES,
+        "backup_path": sl.pre_recipe_backup_path(run_dir, committed),
     }
 
 
@@ -272,13 +289,17 @@ def _print_refit(rep: dict) -> None:
     print(f"[ladder] refit recipe    : {sl.recipe_status(rep['refit'])[1]}")
     print(f"[ladder] node set        : {rep['node_set']} "
           f"({len([n for n in rep['nodes'] if n['refit'] is not None])} rated)")
-    print(f"\n{'step':>10}  {'committed':>10}  {'refit':>10}  {'Δ':>8}")
-    print("  " + "─" * 44)
+    ref = rep.get("reference") or {}
+    if ref.get("step") is not None:
+        print(f"[ladder] relative column: Elo above {ref['step']:,} — {ref.get('reason', '')}")
+    print(f"\n{'step':>10}  {'committed':>10}  {'refit':>10}  {'Δ':>8}  {'vs ref':>8}")
+    print("  " + "─" * 54)
     for n in rep["nodes"]:
         c = f"{n['committed']:10.1f}" if n["committed"] is not None else f"{'—':>10}"
         r = f"{n['refit']:10.1f}" if n["refit"] is not None else f"{'—':>10}"
         d = f"{n['delta']:+8.1f}" if n["delta"] is not None else f"{'—':>8}"
-        print(f"{n['step']:>10,}  {c}  {r}  {d}")
+        v = f"{n['relative']:+8.1f}" if n.get("relative") is not None else f"{'—':>8}"
+        print(f"{n['step']:>10,}  {c}  {r}  {d}  {v}")
     print(f"\nmax |Δ| {rep['max_abs_delta']:.1f} Elo", end="")
     if rep["newest"] and rep["newest"]["delta"] is not None:
         print(f"   |   NEWEST node {rep['newest']['step']:,}: "
@@ -292,6 +313,15 @@ def _print_refit(rep: dict) -> None:
         print(f"🚨 {len(rep['dropped_nodes'])} committed node(s) are UNRATEABLE under the current "
               f"recipe — no dense pair and no bot edge survives: "
               f"{', '.join(f'{s:,}' for s in rep['dropped_nodes'])}")
+    if rep.get("eval_cycle_only_pairs"):
+        # Recipe v3 (2026-09-27): the refit above already DROPS these — they were the games that
+        # decided each promotion (a winner's curse). Replacing them is the only step that plays.
+        print(f"⚠️  {len(rep['eval_cycle_only_pairs'])} pair(s) among these nodes carried ONLY "
+              f"reused eval-cycle rows and are DROPPED by this refit (no edge now). A fresh "
+              f"replacement costs {rep['backfill_fresh_games']:,} games "
+              f"(@{sl.PROMOTION_BASELINE_GAMES}):\n"
+              f"    python -m agents.training.snapshot_ladder {rep['run_dir']} --backfill-fresh "
+              f"[--dry-run]")
     if rep["new_nodes"]:
         print(f"note: {len(rep['new_nodes'])} node(s) not in the committed file are rated by this "
               f"fit: {', '.join(f'{s:,}' for s in rep['new_nodes'])}")
@@ -304,7 +334,8 @@ def refit_main(argv: list[str]) -> int:
     ap.add_argument("run_dir", help="models/run_<ts>, or a NAME from designs/baselines.json")
     ap.add_argument("--apply", action="store_true",
                     help="WRITE the refit to snapshot_ladder/ladder.json, keeping the committed "
-                         f"file as snapshot_ladder/{sl.PRE_RECIPE_BACKUP_NAME}")
+                         f"file as snapshot_ladder/{sl.PRE_RECIPE_BACKUP_NAME} (or "
+                         f"ladder.pre_recipe_vN.json for a file stamped vN)")
     ap.add_argument("--pool", action="store_true",
                     help="fit the snapshots on DISK instead of the committed file's node set "
                          "(changes the node set, so the deltas stop being recipe-only)")
@@ -338,7 +369,7 @@ def refit_main(argv: list[str]) -> int:
         # Rewriting would only churn `computed_at`; the file is already on this scale.
         print("\n(already on the current recipe and identical — nothing written.)")
         return 0
-    backup = sl.pre_recipe_backup_path(run_dir)
+    backup = rep["backup_path"]
     if os.path.exists(backup):
         print(f"\nerror: {backup} already exists. That file is the ONLY surviving copy of what "
               f"this run's banked numbers were quoted from; refusing to overwrite it. Move it "
@@ -378,8 +409,13 @@ def ladder_headline(run_dir: str) -> str:
     if latest is None:
         return f"[ladder] {detail}: no rated node yet."
     step, elo, se = latest
+    rel = (doc.get("ratings_relative") or {}).get(str(step))
+    ref = (doc.get("reference") or {}).get("step")
+    rel_txt = (f"   |   {rel:+.0f} vs the {ref / 1e6:g}M reference (frozen-only column)"
+               if rel is not None and ref is not None else "")
     return (f"[ladder] HEADLINE (dense): {step / 1e6:.1f}M → ELO {elo:.0f} ± "
-            f"{_ci95(se):.0f}   [{detail}]   — the star fit below is the ±29 read, not this one.")
+            f"{_ci95(se):.0f}{rel_txt}   [{detail}]   — the star fit below is the ±29 read, "
+            f"not this one.")
 
 
 def main() -> int:

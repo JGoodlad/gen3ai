@@ -806,8 +806,10 @@ fine ordering rides on the sparse, near-50% sentinel edges (±15 Elo CIs). Fix f
 a promoted snapshot is FROZEN, so snapshot-A-vs-snapshot-B is a STATIONARY Bernoulli — measure it
 ONCE (dense round-robin) and it is permanent. On each promotion, `SelfPlayCallback._spawn_snapshot_ladder_update`
 fires a **DETACHED** `python -m agents.training.snapshot_ladder <run> --promote <step>` subprocess
-(bridge, off the training path) that plays the new frozen node vs the current frozen pool
-(`--snapshot-ladder-games`, default 100/pair; 0 disables) and appends to
+(bridge, off the training path) that plays the new frozen node vs the current frozen pool —
+**200 FRESH games vs each sentinel the promoting eval cycle used** (`source: "promotion_baseline"`,
+recipe v3 — see below) and `--snapshot-ladder-games` (default 100/pair; 0 disables the whole
+update) vs every other frozen node — and appends to
 `<run>/snapshot_ladder/games.jsonl` (**forever, race-safe line appends; a measured pair is NEVER
 replayed**). `fit_ladder` combines that dense frozen-vs-frozen matrix with each snapshot's
 historical bot edges (from `eval_results.jsonl` — the anchor connection, **and only the BOT edges**:
@@ -846,8 +848,10 @@ not drop them", and the 2026-09-08 file that started this records the key as `nu
 `fit_ladder` now writes a **`recipe` block**:
 
 ```json
-"recipe": {"name": "gen3_ladder_recipe_v1", "fitter_version": 2,
+"recipe": {"name": "gen3_ladder_recipe_v1", "fitter_version": 3,
            "eval_sentinel_edges_dropped": true, "eval_sentinel_edges_dropped_count": 37,
+           "eval_cycle_pair_edges_used": false, "eval_cycle_pair_edges_dropped_count": 0,
+           "promotion_baseline_games": 200,
            "commit": "<40-char HEAD of the tree that fit it>"}
 ```
 
@@ -889,8 +893,10 @@ Both **refit and play NOTHING** — `games.jsonl` is append-only and never stale
 every node on every add and the newest node is systematically inflated, so a fit over a different
 node set is a different object and its deltas would conflate the recipe change with a node-set
 change. `--apply` keeps the file it replaces as **`snapshot_ladder/ladder.pre_recipe.json`** — the
-only surviving evidence of what a banked number was quoted from — and REFUSES rather than
-overwrite one that is already there; on an already-current identical file it is a no-op.
+only surviving evidence of what a banked number was quoted from (a file stamped with an older
+fitter version N is kept as **`ladder.pre_recipe_vN.json`** instead, so a run converted once can be
+converted again) — and REFUSES rather than overwrite one that is already there; on an
+already-current identical file it is a no-op.
 `--fit-only` on the `snapshot_ladder` CLI does the same fit but rewrites in place, keeping nothing.
 
 **The whole archive was audited this way on 2026-09-22 without writing to `models/`**:
@@ -913,39 +919,72 @@ only resolution the saturated bots cannot give (removing them from one cycle mov
 −110 Elo and WIDENS the CI ±30 → ±41). The exclusion is the LADDER's alone, and
 `snapshot_ladder_test.py` pins that separation with a test on `fit_from_run`.
 
-#### Reusing the pairs an eval cycle already measured — OPTION A (2026-09-07)
+#### The games that SELECTED a snapshot never RATE it — recipe v3 (owner decision 2026-09-27)
 
-The exclusion above is what a *different* measurement of the same pair costs. Once the two
-measurements are **the same experiment**, the opposite move becomes available: the ladder can count
-an eval-measured pair as COVERED instead of replaying it. The eval cycle freezes the live model to
-the very file promotion copies into the pool (`selfplay_callback.py` → `snapshot_pool.add_from_path`
-— byte-identical weights, zero step gap), so the players were never in question; only the protocol
-was.
+**What v2 did (2026-09-07 → 2026-09-27, "OPTION A").** Once a run's eval sentinels played greedy
+with the ladder's own team draw (`sentinel_regime` = `greedy` AND `symmetric_teams`), the ladder
+REUSED the eval cycle's sentinel pairs as edges — `ingest_eval_measured_pairs` appended them to
+`games.jsonl` tagged `"source": "eval_cycle"` and the round-robin skipped them, saving ~400–500
+battles a promotion (N0's 54M promotion reused 4 of 19 pairs).
 
-**The gate is BOTH halves of the regime, read off the row and never assumed.** A pair is reusable
-only when its `eval_results.jsonl` row's `sentinel_regime` says `greedy` **and** `symmetric_teams`.
-Either alone is the asymmetric measurement the +8.9 pp was measured on, and a row with no stamp
-(written before 2026-09-07) is UNKNOWN, which reads as not-reusable. A `--no-eval-sentinel-greedy`
-run therefore reuses nothing and pays the full round-robin tax, byte-identically.
+**Why v3 stops.** Promotion is DECIDED by those very games (win rate vs the pool ≥ the threshold).
+Rating a snapshot on the sample that selected it is a **winner's curse** — about **+15 to +40 Elo at
+n = 100**, analytic — one reason a new node reads high and drifts down (N0's 20M went 2030 → 1968).
+So under `gen3_ladder_recipe_v1` **v3**:
 
-**The mechanics** (`snapshot_ladder.py`): `eval_measured_pairs` parses the reusable edges (exact
-`counts` when the row has them, else `win_rate × n_games`); `ingest_eval_measured_pairs` appends the
-ones among this promotion's target pairs that `games.jsonl` does not already hold, tagged
-`"source": "eval_cycle"`; `_measure_missing` then finds them present and skips them.
-`update_for_promotion` prints `N REUSED … M played` per promotion, and `fit_ladder` reports
-`pairs_by_source` (a run that reuses nothing reads `{"ladder": N}` and its rows carry no `source`
-key at all). **Landing the edge in `games.jsonl` rather than teaching the FIT a second source is
-what keeps the arithmetic honest** — source (2) drops every `snap:`-vs-`snap:` eval edge
-unconditionally, so an ingested pair is counted exactly ONCE; the double-count that ruled this
-approach out before that filter landed cannot occur.
+- **Each promotion plays a FRESH 200-game pair vs every sentinel the promoting eval used**
+  (`PROMOTION_BASELINE_GAMES`; the sentinels are read from that step's `eval_results.jsonl` rows in
+  ANY regime — selection, not protocol, causes the curse), tagged `"source": "promotion_baseline"`.
+  A sentinel groomed out of the pool is named and skipped; a hand `--promote` with no eval row plays
+  everything as round-robin.
+- **Every other pair is the ordinary round-robin** at `--snapshot-ladder-games` (100), never
+  replayed. The promotion decision itself is unchanged.
+- **The eval games stay in `eval_results.jsonl` only.** `load_games` skips every `eval_cycle` row a
+  v2 tree left behind, so such a pair reads as UNMEASURED; `eval_measured_pairs` survives as the
+  read of what the eval measured (the winner's-curse comparator; the writer→row contract).
+- Every new `games.jsonl` row carries `"recipe_version": 3`.
+- **The cost line:** `update_for_promotion` prints `FRESH GAMES THIS PROMOTION: N` (and
+  `--promote <step> --dry-run` prints the plan without playing). On a 20-node pool with 4 sentinels
+  in it: v2 played 15 × 100 = **1,500**; v3 plays 4 × 200 + 15 × 100 = **2,300** (+800, +53%).
 
-**The saving:** 5 sentinels per cycle = **500 battles per promotion** at the default
-`--snapshot-ladder-games 100`; on a 15-snapshot pool that is 5 of 14 pairs = **36% of the
-per-promotion tax**. On `ai_v12_02_winprob_critic` (the pre-fix run, measured but not applied) 60 of
-105 pairs — 6,000 battles — had been measured twice. Tests: `snapshot_ladder_test.py` (the
-regime read incl. the planted HALF-symmetric row that must NOT be reused, the counts fallback, the
-promotion path, idempotence, exactly-once-in-the-fit, and the byte-identical stochastic path);
-`elo_row_contract_test.py` (the writer→row→ladder join, so the two field names cannot drift).
+**Converting a v2 ladder.** A v2 file reads `differs` everywhere the recipe is checked. `python -m
+main.elo refit <run>` already DROPS the eval-cycle pairs (it plays nothing) and names how many pairs
+carried ONLY such rows and what their fresh replacement costs; `python -m
+agents.training.snapshot_ladder <run> --backfill-fresh [--dry-run]` plays exactly those pairs at 200
+games (idempotent; the old rows are never deleted — `games.jsonl` is append-only). A v2 run whose
+log holds no `eval_cycle` rows refits to IDENTICAL ratings. Measured 2026-09-27 on N0
+(`ai_v14_01_base`, read-only refit of its 20 committed nodes): **54 of 190 pairs** were
+eval-cycle-only; dropping them moves nodes by at most **12.8 Elo** (20M 1965.2 → 1952.4, newest 58M
++1.5), and the fresh backfill is **54 × 200 = 10,800 games** (~1.5 h single-process at the ~50–100 s
+per 100-game pair its updater.log shows).
+
+**Scope:** runs LAUNCHED on the v3 code. A live or pinned run keeps its pinned tree's v2 behaviour
+(`ai_v14_01_base` at `8d07051a`, the learner-battery arms at `2cc83080`) and keeps writing v2
+stamps, which every main-tree cross-run reader flags as stale.
+
+Tests: `snapshot_ladder_test.py` (a v3 promotion writes no `eval_cycle` row and plays 200 fresh
+games per sentinel pair; the plan/cost line; a v2 `eval_cycle` row is not an edge and reads as
+missing; `--backfill-fresh` idempotence), `ladder_recipe_test.py` (the v3 stamp, the v2 file flagged
+stale and refused, the versioned backup, the refit report pricing the backfill).
+
+#### The RELATIVE column — Elo above a pinned frozen reference node (2026-09-27)
+
+`ladder.json` carries a SECOND rating column beside the bot-anchored headline:
+**`ratings_relative`** (+ `se_relative`) = each node's Elo **above the reference node**
+(`reference.step`, pinned at exactly 0), fitted by BT over the **frozen-vs-frozen `games.jsonl`
+edges ALONE** — no bot edges, no eval edges, a weak prior (SD 2000) that only keeps a sweep finite.
+The reference defaults to the registry baseline **`untaught_meter_opponent_v14`** (N0's 24M
+snapshot) when the run's ladder holds THAT FILE (its own run, or a matching sha256), else the run's
+**first** snapshot; `--reference <step>` overrides. Nodes with no frozen path to the reference are
+omitted.
+
+**Why it exists:** a frozen pair is measured once and never changes, so this column moves only when a
+new edge genuinely says something about an existing node — adding a stronger node leaves the others'
+relative Elo unchanged on a transitive matrix (pinned by a hand-built test). The bot-anchored level,
+by contrast, re-solves against bot edges whose newest nodes keep arriving. **The headline is still
+the bot-anchored `ratings`**; the relative column is for "how far above the pinned reference", within
+a run or across runs that share that reference file. The `snapshot_ladder` CLI table, the `main.elo`
+headline line and the `main.elo refit` table all print it.
 
 ### Hodge decomposition — the SPINE and the WIDTH (`hodge.py`)
 

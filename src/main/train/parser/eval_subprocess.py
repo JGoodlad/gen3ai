@@ -78,7 +78,9 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                         dest="snapshot_ladder_games", type=int, default=100,
                         help="Frozen-snapshot ELO ladder: games per pair for the per-promotion "
                              "round-robin tax (0 = disable). On each promotion a DETACHED bridge "
-                             "subprocess plays the new frozen snapshot vs the current pool and "
+                             "subprocess plays the new frozen snapshot vs the current pool (the "
+                             "pairs vs the promoting eval's sentinels at a FIXED 200 fresh games, "
+                             "never this value — recipe v3) and "
                              "appends to <run>/snapshot_ladder/games.jsonl (measured once, kept "
                              "forever) — a dense, high-resolution internal ladder the saturated "
                              "bots can't provide. Off the training path.")

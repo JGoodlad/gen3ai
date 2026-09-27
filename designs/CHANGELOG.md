@@ -9912,3 +9912,32 @@ for every launch. Tests: `src/main/launcher/restart_resume_role_test.py`, `dry_r
 two new `combination_checks_test.py` rows. The learner-battery fork argvs still resolve as FORK.
 Runs pinned before this commit keep the old launcher only if their LAUNCHER process runs old code; the
 launcher runs from the tree it was started in, not the pin.
+
+## 2026-09-27 — SNAPSHOT LADDER RECIPE v3: the games that SELECTED a snapshot no longer RATE it; fresh 200-game promotion baselines; the RELATIVE column (`gen3_ladder_recipe_v1` fitter_version 3; no model version bump, no training-input change)
+
+Owner decision 2026-09-27. Promotion is decided by the eval cycle's games vs the pool's sentinels,
+and recipe v2 then REUSED those same games as ladder edges (`games.jsonl` rows tagged
+`source: "eval_cycle"`; N0's 54M promotion reused 4 of 19 pairs) — a winner's curse of about
++15..+40 Elo at n = 100 (analytic), one reason a new node read high and drifted down.
+
+- `snapshot_ladder.update_for_promotion` now plays **200 FRESH games vs each sentinel the promoting
+  eval used** (`PROMOTION_BASELINE_GAMES`, rows tagged `source: "promotion_baseline"`) plus the
+  usual `--snapshot-ladder-games` (100) vs every other frozen node, and prints
+  `FRESH GAMES THIS PROMOTION: N`. `ingest_eval_measured_pairs` is deleted; `load_games` ignores
+  `eval_cycle` rows. Every new row carries `"recipe_version": 3`. The promotion decision is unchanged.
+- `LADDER_FITTER_VERSION` 2 → 3; the recipe block adds `eval_cycle_pair_edges_used: false`, the
+  dropped count and `promotion_baseline_games`. Every v2 `ladder.json` now reads `differs`.
+- `ladder.json` gains `ratings_relative` / `se_relative` / `reference`: Elo above a pinned frozen
+  reference node (default `untaught_meter_opponent_v14` when the ladder holds that file, else the
+  first snapshot), fitted from frozen-vs-frozen edges only. The bot-anchored `ratings` stay the
+  headline.
+- `snapshot_ladder --backfill-fresh [--dry-run]` replaces a v2 run's eval-cycle-only pairs at 200
+  games; `--promote <step> --dry-run` prints the plan; `main.elo refit` prices that backfill and
+  keeps a vN file as `ladder.pre_recipe_vN.json`.
+- Cost on a 20-node pool with 4 sentinels in it: 1,500 fresh games per promotion (v2) → 2,300 (v3).
+- N0 (`ai_v14_01_base`), read-only refit at this commit: 54 of 190 pairs were eval-cycle-only;
+  dropping them moves nodes by ≤ 12.8 Elo; the fresh backfill would be 10,800 games. Not applied.
+
+**Scope: runs LAUNCHED on this code.** Live and pinned runs are unaffected and keep writing v2 —
+`ai_v14_01_base` is pinned at `8d07051a`, the learner-battery arms at `2cc83080`. No existing
+`models/<run>/snapshot_ladder/` file was refit or rewritten.

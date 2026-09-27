@@ -390,9 +390,18 @@ frozen pair the dense ladder plays symmetrically. `--promote-threshold` follows 
 greedy / 0.65 stochastic) and an explicit value still wins. Both are `ModelVersion` fields (config
 **v112**) with argparse default `None`, so **a flagless resume or launcher restart INHERITS the
 checkpoint's regime** rather than silently crossing an opponent-regime boundary (rule of evidence
-15); every launch prints `⚖️  [EVAL REGIME] …` naming both resolved values and their source. Under
-the symmetric regime the dense ladder **REUSES** the pairs a cycle already measured (≈500 battles
-saved per promotion) — gated on the row's own `sentinel_regime` stamp, both halves required.
+15); every launch prints `⚖️  [EVAL REGIME] …` naming both resolved values and their source.
+
+🚨 **THE GAMES THAT SELECTED A SNAPSHOT NEVER RATE IT** (ladder recipe **v3**, owner decision
+2026-09-27). v2 reused the promoting eval cycle's sentinel games as ladder edges (`source:
+"eval_cycle"`) — a winner's curse of ~+15..+40 Elo at n = 100. Now each promotion plays **200 FRESH
+games vs each sentinel the eval used** (`source: "promotion_baseline"`) plus the usual 100 vs every
+other frozen node, logs `FRESH GAMES THIS PROMOTION: N`, and `load_games` ignores any `eval_cycle`
+row; `snapshot_ladder --backfill-fresh` replaces a v2 run's. `ladder.json` also carries
+**`ratings_relative`** — Elo above a pinned frozen reference node (default the
+`untaught_meter_opponent_v14` baseline when the ladder holds it, else the first snapshot), frozen
+edges only, a second column beside the bot-anchored headline. Detail:
+`designs/training/eval_and_rating.md` (recipe v3, the relative column).
 
 🚨 **EVERY `snapshot_ladder/ladder.json` CARRIES A `recipe` STAMP, AND A CROSS-RUN READER REFUSES
 OR REFITS WITHOUT IT** (`snapshot_ladder.recipe_status` → `current`/`absent`/`differs`;
@@ -406,7 +415,8 @@ whenever the fit changes what a rating MEANS.**
 
 **Converting a stale file: `python -m main.elo refit [--apply] <run>`** — refits from the
 append-only `games.jsonl` (plays nothing) over the COMMITTED file's node set, and with `--apply`
-writes the stamped fit while keeping the old one as `snapshot_ladder/ladder.pre_recipe.json`.
+writes the stamped fit while keeping the old one as `snapshot_ladder/ladder.pre_recipe.json`
+(`ladder.pre_recipe_vN.json` for a file stamped vN).
 Every file on disk before `0f230405` is stale; **68 of 93 move** (median max |Δ| 53.4 Elo, 65 of
 68 newest nodes DOWN) and the v9 generation ladder reverses 21 of 153 orderings — the whole audit,
 one JSON per run, is `designs/research_state/measurements/ladder_refit_audit_2026-09-22/`.

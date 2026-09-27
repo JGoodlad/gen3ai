@@ -177,3 +177,67 @@ def test_latest_promoted_elo_does_NOT_check_the_stamp(tmp_path):
     run = str(tmp_path)
     _write(run, pre_recipe_ladder())
     assert sl.latest_promoted_elo(run) == (6000000, 2000.0, 9.0)
+
+
+# ── v2 → v3 (2026-09-27): the promotion-deciding eval-cycle pair edges are dropped ────────────
+
+def v2_ladder() -> dict:
+    """A file stamped by a v2 tree — e.g. N0 (`ai_v14_01_base`, pinned at 8d07051a), whose
+    games.jsonl reuses eval-cycle pairs as edges."""
+    doc = current_ladder()
+    doc["recipe"] = {"name": sl.LADDER_RECIPE_NAME, "fitter_version": 2,
+                     "eval_sentinel_edges_dropped": True, "eval_sentinel_edges_dropped_count": 12,
+                     "commit": "8d07051aa767331cfa1ca2292029d5217cbf6d40"}
+    return doc
+
+
+def test_the_fitter_is_v3_and_stamps_the_eval_cycle_policy():
+    """🚨 Fails on revert: the stamp is v3 and records that eval-cycle pair edges are not used."""
+    assert sl.LADDER_FITTER_VERSION == 3
+    r = sl.ladder_recipe(0, 4)
+    assert r["fitter_version"] == 3
+    assert r["eval_cycle_pair_edges_used"] is False
+    assert r["eval_cycle_pair_edges_dropped_count"] == 4
+    assert r["promotion_baseline_games"] == sl.PROMOTION_BASELINE_GAMES == 200
+
+
+def test_a_v2_file_is_still_READABLE_but_flagged_stale_and_refused(tmp_path):
+    doc = v2_ladder()
+    status, detail = sl.recipe_status(doc)
+    assert status == "differs" and "fitter_version 2" in detail and "v3" in detail
+    path = _write(str(tmp_path), doc)
+    with pytest.raises(sl.LadderRecipeError) as exc:
+        sl.check_recipe(doc, path, run_dir=str(tmp_path))
+    assert "STALE LADDER RECIPE" in str(exc.value)
+    # still readable as a within-run trend scalar
+    assert sl.latest_promoted_elo(str(tmp_path)) == (6000000, 2000.0, 9.0)
+
+
+def test_a_v2_files_backup_does_not_collide_with_the_v1_backup(tmp_path):
+    """A run already converted v1 → v2 holds `ladder.pre_recipe.json`; its v2 → v3 conversion
+    keeps its own copy instead of being blocked by refuse-rather-than-clobber."""
+    run = str(tmp_path)
+    assert sl.pre_recipe_backup_path(run, pre_recipe_ladder()).endswith("ladder.pre_recipe.json")
+    assert sl.pre_recipe_backup_path(run).endswith("ladder.pre_recipe.json")
+    assert sl.pre_recipe_backup_path(run, v2_ladder()).endswith("ladder.pre_recipe_v2.json")
+
+
+def test_refit_of_a_v2_ladder_DROPS_its_eval_cycle_pairs_and_prices_the_backfill(tmp_path,
+                                                                                 monkeypatch):
+    from main import elo as elo_cli
+    run = str(tmp_path)
+    doc = v2_ladder()
+    doc["ratings"] = {"2000000": 1900.0, "4000000": 1950.0, "6000000": 2000.0}
+    _write(run, doc)
+    sl._append_game(run, 2000000, 4000000, 40, 100)
+    sl._append_game(run, 4000000, 6000000, 40, 100)
+    sl._append_game(run, 2000000, 6000000, 10, 100, source=sl.EVAL_CYCLE_SOURCE)
+    monkeypatch.setattr(sl.elo_mod, "load_bot_anchors", lambda: None)
+    monkeypatch.setattr(sl.elo_mod, "load_rows", lambda run_dir, source="log": [])
+    rep = elo_cli.ladder_refit_report(run)
+    assert rep["recipe_status"] == "differs"
+    assert rep["refit"]["n_frozen_pairs_measured"] == 2
+    assert rep["eval_cycle_only_pairs"] == [(2000000, 6000000)]
+    assert rep["backfill_fresh_games"] == 200
+    assert rep["backup_path"].endswith("ladder.pre_recipe_v2.json")
+    assert sl.recipe_status(rep["refit"])[0] == "current"
