@@ -5,10 +5,10 @@ Registration: ``../README.md`` §5. One DETACHED supervisor runs minutes-long UN
 priority order; every unit's output is durable and self-describing, so the queue is resumable by
 simply starting it again (a unit is DONE iff its own output says so).
 
-    queue.py run      # the supervisor — start it DETACHED (see ``start_queue.sh``)
-    queue.py status   # progress from the outputs on disk; safe at any time
-    queue.py plan     # every unit in order, with its readiness and state; starts nothing
-    queue.py stop     # ask the supervisor to exit after its running units finish
+    n0_queue.py run      # the supervisor — start it DETACHED (see ``start_queue.sh``)
+    n0_queue.py status   # progress from the outputs on disk; safe at any time
+    n0_queue.py plan     # every unit in order, with its readiness and state; starts nothing
+    n0_queue.py stop     # ask the supervisor to exit after its running units finish
 
 Rules the code enforces:
 * battery units (C → E5 → T32 → L95, each once its ``final_model.zip`` is complete and stable) come
@@ -421,6 +421,8 @@ def status() -> int:
         if e.get("event") == "end":
             live.pop(e["unit"], None)
     for name, e in live.items():
+        if not Path(f"/proc/{e['pid']}").exists():
+            continue                 # a start whose supervisor was killed before its end event
         print(f"  running: {name} pid {e['pid']} since {e['t']}")
     return 0
 

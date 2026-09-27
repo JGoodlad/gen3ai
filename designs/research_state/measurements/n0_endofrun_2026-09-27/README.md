@@ -203,3 +203,30 @@ costs before N0 ends.**
 ## Amendments
 
 *(Append-only. None may change a bar, an n, or a cell after the first N0 game.)*
+
+### Amendment A — the pre-N0 smoke (2026-09-27 ~11:10–11:55 PT; no bar, n or cell changed)
+
+Taken on N0's **48M snapshot** (`snapshots/snapshot_000048000000.zip`), never the read's subject, from the
+pinned tree with its own release binaries. Rows: `/home/goodlad/dev/gen3ai-reads/n0_smoke_2026-09-27/`.
+
+| check | result |
+|---|---|
+| **v121 loads on the v123 tree** (`MIGRATION_FLOOR` 121) | ✅ `main.search_dividend`, `main.anchors` (`loader=bare`, `explicit_zip`) and the U unit (`load_foreign_opponent`, `--config auto`) all load it; `--score auto → win_prob` announced |
+| leaf, 1 pair each | `defB` 2–8 s/battle (realized K = 35 worlds on its one raced decision — ~7× the node road's K ≈ 5, so the width is NOT the 09-11 width), `base` **2.5 s/battle** (hazard 8's ~92 s is gone on the Rust core), `grid` ~31 s/battle |
+| U unit, 25 battles | ~1.7 s/battle median (~60 s per unit with the loads); **SIGKILLed after 6 rows and re-run: exactly 25 rows, indices 0–24, no duplicate**; two full runs of the same unit gave the same 16 wins (a pure function) |
+| queue supervisor | killed (SIGKILL) mid-unit and restarted: the partial unit's rows were moved to `.partial.<epoch>` and the window re-ran |
+| pair cell, `--opponent-a foulplay --opponent-b metamon:SmallRL`, home72, 2 games @100 ms | OK, 72/72 teams, `forfeit limit NONE`, realized 99,783 visits/decision. 🚨 **Its first run read `regime VERIFIED: False` on a Metamon side with argmax 45/45**: the anchor-vs-anchor path read OUR report through the OPPONENT's adapter (Foul Play's reader has no argmax rate; Metamon-vs-Metamon hid it). **Fixed** (`runner.pair_adapters`, tested) before any read; re-run: VERIFIED True |
+| model vs `metamon:SmallRL` away, 2 games | OK, VERIFIED, 20/20 teams |
+| model vs `foulplay` @1000 ms, home72, 2 games | OK, VERIFIED, 72/72, realized **728,539 visits/decision**, ~130 s/game |
+
+**File rename:** the queue is `scripts/n0_queue.py` (a script named `queue.py` shadows the standard
+library's `queue` for everything it imports — the first U smoke died on it). §5's `scripts/queue.py` means it.
+
+**Expected times, re-derived from the smoke** (one unit at a time while a GPU arm is live): leaf ≈ 4 h
+(`defB` 800 battles ≈ 1.5–2 h, `base` 200 ≈ 10 min, `grid` 200 ≈ 1.7 h); U ≈ 3 h per ref at one worker,
+≈ 0.5 h at eight; G-A ≈ 1–1.5 h per model; A1+A2+A4 ≈ 2 h; A3 ≈ 3.5 h; §3 ≈ 3 h. With N0 at ~23:15
+Sun and the arms at C ≈ 03:45, E5 ≈ 08:00, T32 ≈ 08:45–12:15, L95 ≈ 16:30 Mon: the leaf read runs
+~23:20–03:30; C's U + G-A ~03:50–08:30; E5's ~08:30–13:00; T32's ~13:00–17:30; L95's ~17:30–22:00
+(sooner if the GPU is idle then: U at eight workers); then A1–A4 and §3 (~8.5 h) to ~Tue 06:30, then
+N0's descriptors (U(N0), G-A(N0)) to ~Tue 09:00. **Consequence: the era-gate anchors (A1) land ~Tue
+morning, behind every battery read, as the brief's priority order requires.**

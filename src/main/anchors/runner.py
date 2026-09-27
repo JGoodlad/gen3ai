@@ -263,9 +263,9 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
             stop_peer(proc)
     state.records = read_peer_battles(results_dir)
 
-    adapter = peers_mod.PEERS[plan.opponent_kind]
-    report = adapter.read_report(theirs)
-    our_report = adapter.read_report(ours)
+    their_adapter, our_adapter = pair_adapters(plan)
+    report = their_adapter.read_report(theirs)
+    our_report = our_adapter.read_report(ours)
     report["peer_rc"] = procs[-1].returncode if procs else None
     report["team_count"] = peers_mod.team_source_count(theirs)
     report["version"] = theirs.version
@@ -291,6 +291,16 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
         print(f"[anchors] ⚠️  {half}: {note['cause']} — the games stand, the process does not.",
               flush=True)
     return state.records, report, failure
+
+
+def pair_adapters(plan: SeriesPlan) -> Tuple[Any, Any]:
+    """``(their adapter, our adapter)`` for an anchor-vs-anchor cell. 🚨 EACH side's report is
+    read by ITS OWN adapter: reading a Metamon report through Foul Play's reader finds no argmax
+    rate, so a pair cell against Foul Play read ``regime_verified_decisions = false`` on a Metamon
+    side whose every decision matched (found by the n0_endofrun_2026-09-27 smoke). Metamon vs
+    Metamon hid it, because there the two adapters are the same one."""
+    return (peers_mod.PEERS[plan.opponent_kind],
+            peers_mod.PEERS[plan.our_side.partition(":")[0]])
 
 
 #: In a pair cell OUR peer challenges in ``ours_challenge``, so hazard H17's "the half where

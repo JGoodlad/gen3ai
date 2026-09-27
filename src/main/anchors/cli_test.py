@@ -599,3 +599,14 @@ def test_a_pair_half_names_H17_only_for_the_metamon_side_that_challenged(
     # an INCOMPLETE half is never excused
     assert runner_mod.pair_exit_note(plan, half, {"error": theirs_err}, {"error": ours_err},
                                      n_records=4, expected=5) is None
+
+
+def test_each_side_of_a_pair_cell_is_read_by_its_OWN_adapter(cfg) -> None:
+    """A Metamon report read through Foul Play's reader has no argmax rate, and the cell then reads
+    UNVERIFIED on a side whose every decision matched (the n0_endofrun_2026-09-27 smoke)."""
+    from main.anchors import peers as peers_mod
+
+    plan = build_plan(_pair("--opponent-a", "foulplay", "--opponent-b", "metamon:SyntheticRLV2",
+                            "--dry-run"), cfg)
+    theirs, ours = runner_mod.pair_adapters(plan)
+    assert theirs is peers_mod.PEERS["foulplay"] and ours is peers_mod.PEERS["metamon"]

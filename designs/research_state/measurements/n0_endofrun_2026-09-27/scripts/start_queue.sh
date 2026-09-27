@@ -11,7 +11,7 @@ if [ -f "$STATE/supervisor.pid" ] && kill -0 "$(cat "$STATE/supervisor.pid")" 2>
   echo "already running: pid $(cat "$STATE/supervisor.pid")"; exit 0
 fi
 cd "$TREE"
-PYTHONPATH="$TREE/src" setsid nohup nice -n 15 "$PY" "$HERE/queue.py" run \
+PYTHONPATH="$TREE/src" setsid nohup nice -n 15 "$PY" "$HERE/n0_queue.py" run \
   >> "$STATE/supervisor.log" 2>&1 < /dev/null &
 sleep 2
 echo "started: pid $(cat "$STATE/supervisor.pid")  state $STATE  tree $TREE"
