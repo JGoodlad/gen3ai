@@ -147,6 +147,19 @@
    "set_by": "2026-09-06 \u00b7 BASELINES REGISTRY \u2014 the named baselines become first-class objects (gen3_baselines_registry_v1)",
    "notes": "`--config auto` resolves each model's own config instead; that is a different measurement. era checkout only since gen3_event_record_v2 (2026-09-26, the observation-architecture batch: obs 2501 -> 2761, ARCH_SIGNATURE bump): it does NOT load under current code; read it from its own commit, or from 56837827 (the last commit before the boundary).",
    "era_checkout_only": true
+  },
+  "untaught_meter_opponent_v14": {
+   "kind": "checkpoint",
+   "run": "ai_v14_01_base",
+   "checkpoint": "snapshots/snapshot_000024000000.zip",
+   "purpose": "The new lineage's untaught-meter fixed opponent (v121+): N0 ai_v14_01_base's 24M self-play snapshot (owner decision 3, 2026-09-26).",
+   "set_on": "2026-09-27",
+   "set_by": "NEW LINEAGE: the owner resolves the registration's \u00a78 decisions and gives GO",
+   "commit": "8d07051aa767331cfa1ca2292029d5217cbf6d40",
+   "config_version": 121,
+   "arch_signature": "gen3_event_record_v2",
+   "sha256": "8a387206cefd8da91a3788ed277da64c2549f8f7f5d5f56557dff040f19418c1",
+   "num_timesteps": 24000000
   }
  },
  "lists": {
