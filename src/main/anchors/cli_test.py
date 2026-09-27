@@ -531,3 +531,71 @@ def test_a_matched_metamon_cell_is_NOT_refused(cfg, regime: str) -> None:
     recurring read itself — and the bug costs no games."""
     plan = build_plan(_args("--opponent", "metamon:SmallRL", "--regime", regime), cfg)
     assert plan.regime_matched is True
+
+
+# ------------------------------------------------------------ opponent-vs-opponent (pair) cells
+def _pair(*argv: str):
+    return build_parser().parse_args(list(argv))
+
+
+def test_a_pair_cell_is_reported_from_the_metamon_side_whatever_the_flag_order(cfg) -> None:
+    """Foul Play writes no per-game record we parse; Metamon's battle CSV is the instrument, so the
+    Metamon peer is the record side even when it is named second."""
+    plan = build_plan(_pair("--opponent-a", "foulplay", "--opponent-b", "metamon:SyntheticRLV2",
+                            "--search-time-ms", "1000", "--dry-run"), cfg)
+    assert plan.our_side == "metamon:SyntheticRLV2" and plan.our_side_is_peer
+    assert plan.opponent_kind == "foulplay" and plan.search_time_ms == 1000
+    assert plan.model_zip == "" and plan.regime_matched is True
+    same = build_plan(_pair("--opponent-a", "metamon:SyntheticRLV2", "--opponent-b", "foulplay",
+                            "--dry-run"), cfg)
+    assert (same.our_side, same.opponent) == (plan.our_side, plan.opponent)
+
+
+def test_a_metamon_pair_keeps_the_A_side_as_the_record_side(cfg) -> None:
+    plan = build_plan(_pair("--opponent-a", "metamon:SmallRL", "--opponent-b",
+                            "metamon:SyntheticRLV2", "--dry-run"), cfg)
+    assert plan.our_side == "metamon:SmallRL" and plan.opponent == "metamon:SyntheticRLV2"
+
+
+@pytest.mark.parametrize("argv", [
+    ("--opponent-a", "foulplay"),                                        # half a pair
+    ("--opponent-b", "metamon:SmallRL"),
+    ("--opponent-a", "foulplay", "--opponent-b", "foulplay"),            # no per-game record
+    ("--opponent-a", "metamon:SmallRL", "--opponent-b", "metamon:SmallRL"),  # itself
+    ("--model", "x.zip", "--opponent-a", "foulplay", "--opponent-b", "metamon:SmallRL"),
+    ("--our-side", "bot:random", "--opponent-a", "foulplay", "--opponent-b", "metamon:SmallRL"),
+])
+def test_a_malformed_pair_is_refused_before_anything_starts(cfg, argv) -> None:
+    with pytest.raises(SystemExit):
+        build_plan(_pair(*argv, "--dry-run"), cfg)
+
+
+def test_a_pair_cell_forfeits_nothing_and_the_plan_says_so(cfg) -> None:
+    """The 250-turn forfeit lives in main.play, which a pair cell never runs — stamping 250 on its
+    rows would claim a rule nobody enforced."""
+    plan = build_plan(_pair("--opponent-a", "foulplay", "--opponent-b", "metamon:SmallRL",
+                            "--dry-run"), cfg)
+    assert plan.forfeit_turn_limit == 0
+    assert "forfeit limit     NONE" in render_plan(plan, cfg)
+    model = build_plan(_args("--opponent", "foulplay", "--dry-run"), cfg)
+    assert model.forfeit_turn_limit > 0
+
+
+@pytest.mark.parametrize("half, ours_err, theirs_err, expect", [
+    # OUR Metamon challenges in ours_challenge: its post-game recursion there is H17
+    ("ours_challenge", "RecursionError: maximum recursion depth", "", "peer_recursion_upstream"),
+    # ... but not in the half where it ACCEPTS
+    ("peer_challenge", "RecursionError: maximum recursion depth", "", None),
+    # Foul Play is never given the excuse
+    ("peer_challenge", "", "RecursionError: maximum recursion depth", None),
+])
+def test_a_pair_half_names_H17_only_for_the_metamon_side_that_challenged(
+        cfg, half, ours_err, theirs_err, expect) -> None:
+    plan = build_plan(_pair("--opponent-a", "foulplay", "--opponent-b", "metamon:SyntheticRLV2",
+                            "--dry-run"), cfg)
+    note = runner_mod.pair_exit_note(plan, half, {"error": theirs_err}, {"error": ours_err},
+                                     n_records=5, expected=5)
+    assert (note or {}).get("cause") == expect
+    # an INCOMPLETE half is never excused
+    assert runner_mod.pair_exit_note(plan, half, {"error": theirs_err}, {"error": ours_err},
+                                     n_records=4, expected=5) is None

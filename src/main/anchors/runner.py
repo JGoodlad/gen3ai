@@ -285,7 +285,28 @@ async def run_peer_pair_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int
     report["peer_error_free"] = bool(report.get("peer_error_free")) and bool(
         our_report.get("peer_error_free"))
     finalize_regime_fields(report, peer_rcs=[p.returncode for p in procs] or [None])
+    note = pair_exit_note(plan, half, report, our_report, len(state.records), n_games)
+    if note is not None:
+        report["peer_exit_note"] = note
+        print(f"[anchors] ⚠️  {half}: {note['cause']} — the games stand, the process does not.",
+              flush=True)
     return state.records, report, failure
+
+
+#: In a pair cell OUR peer challenges in ``ours_challenge``, so hazard H17's "the half where
+#: METAMON challenges" is the MIRROR of the half's name when the Metamon process is ours.
+_MIRROR_HALF = {"ours_challenge": "peer_challenge", "peer_challenge": "ours_challenge"}
+
+
+def pair_exit_note(plan: SeriesPlan, half: str, their_report: Dict[str, Any],
+                   our_report: Dict[str, Any], n_records: int,
+                   expected: int) -> Optional[Dict[str, str]]:
+    """Hazard **H17** for an anchor-vs-anchor half: either side may be the Metamon process that
+    CHALLENGES in this half, so each side is classified in its own challenging half. At most one
+    side challenges per half, so at most one note is returned."""
+    our_kind = plan.our_side.partition(":")[0]
+    return (classify_peer_error(their_report, half, plan.opponent_kind, n_records, expected)
+            or classify_peer_error(our_report, _MIRROR_HALF[half], our_kind, n_records, expected))
 
 
 async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,

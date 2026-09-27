@@ -161,6 +161,25 @@ flags, because there is no player of ours in the process. That instrument books 
 (its `won` field is a boolean), so the rows say so; ties ran 0–1 per 100 games in the 2026-09-14
 batteries.
 
+### `--opponent-a X --opponent-b Y` — OPPONENT-vs-OPPONENT (a pair cell)
+
+Two external anchors head to head — e.g. `--opponent-a foulplay --opponent-b
+metamon:SyntheticRLV2 --regime greedy --teamset home --search-time-ms 1000` — replacing `--model`,
+`--our-side` and `--opponent`. It is the anchor-vs-anchor path above, spelled without pretending
+one side is ours and extended to Foul Play: the same server started and stopped by PID, the same
+shared team set, the same role-balanced halves, the regime stamp on every row, and hazard **H17**
+named for whichever Metamon process challenged in that half. Three facts a reader needs:
+
+* 🚨 **The cell is reported FROM the Metamon side**, whatever order the flags came in — its battle
+  CSV is the only per-game record (a tie is booked as a loss there). Foul Play vs Foul Play is
+  refused: it has no record.
+* 🚨 **Nothing forfeits at 250 turns.** That rule lives in `main.play`, which a pair cell never
+  runs; the rows carry `forfeit_turn_limit = 0` and the sim's **1000-turn TIE** is the only cap.
+  A pair cell is therefore NOT under the forfeit rule its model-vs-anchor neighbours are, and a
+  long stall between two non-forfeiting bots needs a `--progress-timeout` above the 900 s default.
+* A Foul Play pair cell's `team_source_asymmetry` compares the two PEERS' directories — both must
+  be the same files (see **H19**).
+
 ### `--model-load {auto,bare,foreign}` — HOW the checkpoint is loaded
 
 🚨 **A cross-run frozen snapshot FAILS a bare `MaskablePPO.load`.** The extractor is rebuilt from
@@ -290,6 +309,8 @@ the pin on the env the plan actually carries.
 
 | **H17** | 🚨 **Metamon's post-game `RecursionError` is about WHO CHALLENGES, not about sampling — and it is the SAME defect class as H14, on their side of the wire.** Metamon drives the ACCEPTOR role through its own `_accept_challenge_loop`, whose docstring says it "accepts one challenge at a time and **fully awaits the battle** before accepting the next … ensuring terminated/truncated signals propagate correctly" — and drives the CHALLENGER role through poke-env's **pipelined** `start_challenging(n_challenges=num_battles)`. The env's `current_battle` and the agent's then disagree, `openai_api.step` raises `Battle is already finished, call reset`, and `MetamonAMAGOWrapper.step`'s handler answers **any** exception with `self.reset(); return self.step(action)` — unbounded, no re-raise — so an error `reset()` cannot clear becomes ~988 frames and a `RecursionError`. Four recorded occurrences, all in the half where **Metamon challenges**; three were `mixed`-regime and the fourth (2026-09-18) was MATCHED greedy, which is what retired "it is the mixed regime" | the peer exits nonzero AFTER its last game; `peer_clean` false, every `argmax_match_rate` 1.0000 | **upstream, and it costs no games.** `main.anchors` NAMES it: a COMPLETE `peer_challenge` half whose peer died of a `RecursionError` is stamped `peer_recursion_upstream` in `summary.json` and printed with its cause, instead of leaving an rc for a reader to diagnose. An INCOMPLETE half, the other half, or any other error is **not** given the excuse. The **`mixed` cell is refused outright** (`--allow-unmatched-regime` against metamon), being the one shape with three crashes and no recorded success — but 🚨 **that refusal is not the fix and must not be read as one**: the fourth occurrence was matched, so refusing on the regime axis is refusing on the axis F-D retired. The minimal upstream patch is in `designs/research_state/measurements/anchors_p2_batch_2026-09-22/README.md` |
 | **H18** | 🚨 **METAMON READS A BATON PASS WRONG — it loses every passed stat stage.** Upstream poke-env 0.8.3.3 (the package Metamon runs) clears the entrant's boosts on `\|switch\|…\|[from] Baton Pass`, and the protocol emits nothing else about the pass (`sim/pokemon.ts:1249` — `this.boosts = pokemon.boosts`). **Our fork fixed this 2026-08-23** (`src/poke_env/battle/baton_pass_carryover_test.py`); theirs is unfixed. Measured 2026-09-22 over 871 decision points in 20 greedy `SmallRL` battles: **13 mismatches, 3 of 20 battles**, Metamon reading `atk 0` where the sim held `−1` and `+2`. 🚨 **It is NOT something our server does** — the same battles replayed through Metamon's OWN bundled Showdown (`d62d3a398`) are **byte-identical on 20/20**, so this fires wherever Metamon plays, its published numbers included | our anchor win rate is **OPTIMISTIC** on Baton Pass teams (Metamon under-reads passed setup on BOTH sides) — and nothing warns: 0 log warnings, 0 `UNKNOWN_TOKEN`s, `Average Valid Actions` 1.0000 | **unfixed, deliberately** — patching a third-party checkout would make the anchor a different opponent from the one its authors publish. Exposure is recorded (**8 of 21 `competitive` teams and 157 of 719 pool teams carry Baton Pass**); the SIZE of the bias is **NOT measured**. **Backlog**: the patched-vs-unpatched 2×400 cell in `designs/research_state/measurements/metamon_obs_faithfulness_2026-09-22/` §8 |
+| **H19** | 🚨 **Foul Play's stock `home` directory is NOT the pool, and 11 of its 72 files are incomplete.** `designs/ops/anchors.json`'s `foulplay.team_dirs.home` holds the **72 `data/teams/sample` teams** while our `home` source is the **719-team pool**, so every stock Foul Play `home` cell is `team_source_asymmetry = true` by construction. Worse, those files still carry **nicknames** (H2) and **23 bracketless `- Hidden Power Grass`-style moves on 11 teams with NO `IVs:` line** — the 2026-09-14 exporter matched only `Hidden Power [Grass]` — so Foul Play plays those mons with a different Hidden Power from the one our teambuilder patches in (H3) | a "shared" team set that is neither shared nor the same teams | found 2026-09-27; **worked around, not fixed**: `designs/research_state/measurements/n0_endofrun_2026-09-27/scripts/make_home72.py` writes a sanitized, validator-checked copy of the 72 that ALL THREE clients read in that campaign. The stock directory is unchanged |
+
 > **H18 SIZED 2026-09-22** (`measurements/h18_baton_pass_bias_2026-09-22/`): |bias| < 0.02 on both team sets, NOT DETECTED (paired, 2×2×400). The VOLATILE half of the carry-over (Substitute etc.) is the larger half on a Baton-Pass-enriched set; per-exposure bound ±0.14–0.22. Anchor numbers stand with this bound attached.
 
 **One more, and it is about US, not them:** ⚠️ a long campaign that imports the MAIN checkout is not

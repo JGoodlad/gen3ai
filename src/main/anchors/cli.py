@@ -86,6 +86,41 @@ def parse_opponent(spec: str) -> "tuple[str, str]":
     return kind, agent
 
 
+def apply_opponent_pair(args: argparse.Namespace) -> Optional[str]:
+    """``--opponent-a X --opponent-b Y``: an OPPONENT-vs-OPPONENT cell — two external anchors on
+    the same server, the same shared team set and the same role-balanced halves, with nothing of
+    ours on the board. Returns the side the cell is REPORTED from (its win rate), or ``None``.
+
+    It is the existing anchor-vs-anchor path (``--our-side metamon:<Agent>``) given a spelling
+    that does not pretend one side is "ours", and extended to Foul Play. 🚨 **The per-game record
+    is Metamon's own battle CSV** — Foul Play writes none we parse — so at least one side must be
+    a Metamon peer, and the cell is reported FROM that side whatever order the flags came in (the
+    other side's rate is one minus it, ties aside). Rewrites ``args.our_side`` / ``args.opponent``
+    in place so every downstream check (the identical-pair refusal, the regime rules, the
+    reserved ports) runs unchanged.
+    """
+    a, b = args.opponent_a, args.opponent_b
+    if a is None and b is None:
+        return None
+    if a is None or b is None:
+        raise SystemExit("--opponent-a and --opponent-b go TOGETHER: a pair cell names both sides")
+    if args.model or args.our_side != "model":
+        raise SystemExit("--opponent-a/--opponent-b replace --model/--our-side: in a pair cell "
+                         "no checkpoint of ours plays, so naming one would be ignored silently")
+    kind_a, _ = parse_opponent(a)
+    kind_b, _ = parse_opponent(b)
+    if "metamon" not in (kind_a, kind_b):
+        raise SystemExit(f"--opponent-a {a} --opponent-b {b}: neither side is a Metamon peer, so "
+                         "the cell has no per-game record (Metamon's battle CSV is the only one "
+                         "a pair cell reads). Foul Play vs Foul Play is not supported.")
+    record, other = (a, b) if kind_a == "metamon" else (b, a)
+    if record != a:
+        print(f"[anchors] NOTE: the pair cell is REPORTED FROM {record}'s side (its battle CSV is "
+              f"the per-game record); {other}'s win rate is one minus it, ties aside.", flush=True)
+    args.our_side, args.opponent = record, other
+    return record
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="python -m main.anchors",
@@ -106,6 +141,16 @@ def build_parser() -> argparse.ArgumentParser:
                         "through one of our own checkpoints: the bots carry fixed ratings from "
                         "the bot-vs-bot round robin. A bot has no sampling knob, so such a cell "
                         "is stamped regime_matched=false and our_regime='bot:<name>'.")
+    p.add_argument("--opponent-a", dest="opponent_a", default=None,
+                   help="OPPONENT-vs-OPPONENT mode (with --opponent-b, replacing --model / "
+                        "--our-side / --opponent): two external anchors, e.g. --opponent-a "
+                        "foulplay --opponent-b metamon:SyntheticRLV2 — same server and PID "
+                        "discipline, same shared team set, role-balanced halves. At least one "
+                        "side must be metamon (its battle CSV is the per-game record) and the "
+                        "cell is reported from that side. Neither side forfeits at 250 turns: the "
+                        "sim's 1000-turn TIE is the only cap, and the plan says so.")
+    p.add_argument("--opponent-b", dest="opponent_b", default=None,
+                   help="the other side of an --opponent-a pair cell")
     p.add_argument("--model-load", dest="model_load", default="auto",
                    choices=("auto", "bare", "foreign"),
                    help="how to load --model. 'bare' is MaskablePPO.load, what a ladder session "
@@ -269,6 +314,7 @@ showdown_pin = server_mod.showdown_pin
 
 def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
                ) -> runner_mod.SeriesPlan:
+    apply_opponent_pair(args)
     kind, agent = parse_opponent(args.opponent)
     our_side = parse_our_side(args.our_side)
 
@@ -394,7 +440,9 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         team_seed=args.team_seed,
         search_time_ms=args.search_time_ms if kind == "foulplay" else None,
         search_parallelism=args.search_parallelism if kind == "foulplay" else None,
-        forfeit_turn_limit=DEFAULT_FORFEIT_TURN_LIMIT,
+        # 🚨 A PEER our-side forfeits NOTHING: the 250-turn rule lives in `main.play`, which a
+        # pair cell never runs. 0 = no forfeit limit; the sim's 1000-turn TIE is the only cap.
+        forfeit_turn_limit=(0 if our_side.startswith("metamon:") else DEFAULT_FORFEIT_TURN_LIMIT),
         connect_timeout_s=args.connect_timeout,
         peer_ready_timeout_s=args.peer_ready_timeout,
         first_game_timeout_s=args.first_game_timeout,
@@ -428,7 +476,10 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         f"  showdown pin      {plan.showdown_pin}",
         f"  usernames         ours={plan.our_username}<N> peer={plan.peer_username}<N>  "
         "(a per-half suffix; a name still held by the previous half logs in as a GUEST)",
-        f"  forfeit limit     {plan.forfeit_turn_limit} turns (the TRAINER's number)",
+        (f"  forfeit limit     {plan.forfeit_turn_limit} turns (the TRAINER's number)"
+         if plan.forfeit_turn_limit else
+         "  forfeit limit     NONE — no client of ours plays, so nothing forfeits at 250; the "
+         "sim's 1000-turn TIE is the only cap (set --progress-timeout for a long stall)"),
         f"  challenge mode    {plan.challenge_mode}"
         + ("  (the next /challenge waits for the previous battle to END — hazard H14)"
            if plan.challenge_mode == "serial"
