@@ -1,13 +1,28 @@
 # Design — The three-tier environment: a Rust battle core, one inference tier, and the retirement of poke-env
 
-**Status: DESIGN, not scheduled.** Authored 2026-09-22 at the owner's request, after a month in which
-every search-cost crossing (the Rust bridge, the one-sided view, the materializer flip, the
-one-fork-per-decision landing) bought a large per-op speedup and a small end-to-end one. This document
-states the end state those crossings are approaching, so the next profile has something to decide
-against. Nothing in it is a commitment; the ordering in §7 is the recommendation.
+**Status: END STATE, being built (updated 2026-09-27).** Authored 2026-09-22 at the owner's request,
+after a month in which every search-cost crossing (the Rust bridge, the one-sided view, the
+materializer flip, the one-fork-per-decision landing) bought a large per-op speedup and a small
+end-to-end one. The owner licensed the build on 2026-09-23 as the RUST CORE PROGRAM, on unification
+grounds; [`program_rust_core.md`](program_rust_core.md) is the plan, and this document stays the
+statement of the end state and its "why". 🚨 **ALWAYS-CURRENT (owner, 2026-09-27)**: see
+[`README.md`](README.md). Where the build overrode a part of this design, the part is marked
+**SUPERSEDED** in place, with its pointer, and its reasoning is kept.
 
 **Companion:** [`design_model_management.md`](design_model_management.md) — the model-side end state
 (the registry, the pool, the inference tier's catalogue). This document owns the environment side.
+
+**Where it stands (2026-09-27).** Detail and evidence: `program_rust_core.md` §2 and the ledger.
+
+| piece | status |
+|---|---|
+| Tier 1a–1c: typed events at the source (M1), `BattleVersion` + `present()` + legality (M2), trackers + `TurnDelta` + the win-indicator reward on the version (M3), the whole observation in Rust (M4) | **BUILT** 2026-09-23 → 09-24, each at zero parity divergences (ledger 2026-09-23 *M1 BUILT*, *M2 LANDED*; 2026-09-24 *M3 CLOSED*, *M4 CLOSED*) |
+| The cutover (M6): training reads the Rust core's observation (`--obs-source core`, the default on the rust bridge) | **DONE** `ac0b6469`, 2026-09-25 (owner); labels, reward, the Python tracker fold and the mapper still run in Python |
+| Deletion pass, part 1: search is core-only; the port's one-sided view projection deleted; the shaped reward path deleted | **DONE** `43712881`, `97a30387`, `2c7e6acb`, `e3ef16db` (2026-09-26). Five manifest rows blocked on M5 / M7 (TASK_BACKLOG T10) |
+| M5 — N envs per process (§3.6) | **Phase A DONE** 2026-09-26: ONE env core with TWO thin front ends (FFI and a shared-memory process), the default per consumer set by crash isolation, 12 build lanes. Lane 0 scheduled (TASK_BACKLOG T1) |
+| Tier 2 — the inference service (§4) | **scheduled with Lane 0** (TASK_BACKLOG T2); shape re-stated in §4.5 |
+| Memory-triggered restarts; allocator discipline | **proposed / in Lane 0** — §3.7 |
+| M7 — the ladder client on the core (§6's `play.py` row) | **proposed** (TASK_BACKLOG T9) |
 
 ---
 
@@ -29,9 +44,10 @@ production path and survives as a parity oracle.
 
 ---
 
-## 1. What is true now, with the numbers that motivate this
+## 1. What was true on 2026-09-22, with the numbers that motivated this
 
-Measured facts, each with its record. This section is the argument; §2 onward is the design.
+Measured facts, each with its record, as of authoring (kept as the argument; the "Where it stands"
+table above is the present). §2 onward is the design.
 
 | fact | number | record |
 |---|---|---|
@@ -137,6 +153,12 @@ board, the events and both views. That is a stronger and simpler gate than today
 codebases (the port's emitter and poke-env's parser) agree only because a differential fuzzer says
 so. The ladder client then cannot skew from training by construction — it is the same struct.
 
+> **DECIDED since (owner, 2026-09-23; `program_rust_core.md` §6c):** the OBSERVATION always comes
+> through entry point 2, in training too: per-side protocol text → `parse` → the reading → the view →
+> encode, so the ladder's parser runs on every training decision. Only search's successors keep the
+> typed-at-source shortcut, licensed by M1's `parse(emit(step)) == step` gate. Cost measured at
+> 21.6–30.8 µs per decision.
+
 ### 3.3 The presentation rules — the part that is NOT a port
 
 `designs/rust_sim/one_sided_view.md` §2 is the standing finding: half of `LivePokemon` is not sim
@@ -146,7 +168,9 @@ right split for a crossing. **For the end state the rules cross too, and they cr
 as a re-derivation:**
 
 - `OneSidedView` is computed from the omniscient board + this side's `events` by an explicit
-  `present(board, events, side) -> OneSidedView` function whose every rule is named, tested
+  `present(board, events, side) -> OneSidedView` function *(**SUPERSEDED in its signature** by M2,
+  2026-09-23: `present()` is built from ONE side's stream with NO board parameter, which is what makes
+  it usable on a third party's server; the board is used only by the core's audit)* whose every rule is named, tested
   individually, and pinned to the poke-env line it mirrors (the doc already lists them: sighting
   counts doubled against Pressure; the volatile fold's drop rules; the status-counter transitions;
   the protect-counter as a stall-move count; `revealed` set by the `|switch|` line; team order from
@@ -156,6 +180,10 @@ as a re-derivation:**
   truth**, until a model is retrained on the truth. `present()` is where that choice lives, one rule
   at a time, each behind a flag that defaults to "poke-env's reading" and can be flipped to "the
   sim's truth" for a retrain. Today the choice is implicit and unflippable.
+  *(**What happened instead**, Phase 0 and M2, 2026-09-23/24: the core's event is a SUPERSET, the
+  truth fields plus the reading projection, with the truth read by nothing until a retrain chooses it.
+  Where the reading was simply WRONG, the fix went into the fork rather than behind a flag: three
+  poke-env reading bugs, R1–R3, fixed at the training-input boundary `c97358e8`, `gen3_pe_reading_fixes_v1`.)*
 - **Third-party parsers are the reason to own this.** Metamon's poke-env drops Baton Pass boosts;
   ours does not; a future opponent's will differ somewhere else. When our view is `present()` over
   the sim's truth, a third party's divergence is a diff against a known-correct reference, not a
@@ -200,9 +228,27 @@ its keep.
 
 An env is a `BattleVersion` handle plus a team pair plus an opponent id — a struct, not a process.
 One Rust process steps hundreds in a tight loop, writes each one's obs row into the rollout buffer,
-and hands the batch to Tier 2. The forkserver, the per-env bridge child, `SubprocVecEnv` and the
+and hands the batch to Tier 2. *(**Refined by M5 Phase A**, 2026-09-26, owner + benchmark: ONE env
+core stepping N battles on its own worker threads into caller-owned columns, with TWO thin front ends
+over one `core::dispatch`: an FFI `cdylib` and a separate env process over `/dev/shm`. They measured
+equal at N = 48 (proc/FFI 0.994 [0.943, 1.026]) and byte-identical, so the default is set per
+consumer by crash isolation: PROCESS where the Python host holds state a core abort must not destroy
+(training rollout, in-trainer eval), FFI where the host is disposable (search, probes, meters).
+Rust never runs a network. `program_rust_core.md` §2 M5.)* The forkserver, the per-env bridge child, `SubprocVecEnv` and the
 async vec-env all retire; the async scheduler's *idea* (forward whichever envs are ready) survives
 as "the batch is whatever is ready at the flush".
+
+### 3.7 Long-lived processes: memory-triggered restarts and allocator discipline (added 2026-09-27)
+
+N envs in one long-lived process make memory growth a first-class failure mode. Two rows carry it
+(TASK_BACKLOG, 2026-09-27):
+- **Allocator discipline** (in M5 Lane 0, T1): a global allocator (mimalloc or jemalloc) and per-env
+  buffers REUSED across episodes rather than reallocated. *(Rationale not recorded beyond the row.)*
+- **Memory-triggered restarts** (T7, proposed): the launcher restarts on RSS over a baseline, with a
+  ~24 h backstop, in place of restarts on a fixed clock; an env child respawns without the learner.
+  The recorded reason is fewer killed games (a restart ends the games in flight). The measurement
+  behind it: the core-obs burn-in `ai_v13_33_core_burnin` held memory flat over five restarts across
+  31M+ steps (ledger 2026-09-26 *NEW LINEAGE … GO*).
 
 ---
 
@@ -243,9 +289,11 @@ arrived — the flush timer bounds that tail, and Tier 1's N-per-process steppin
 
 ### 4.3 What it changes, in order of size
 
-1. **CPU inference goes to near zero across all six consumers at once** — sixty-four opponents
-   stop costing sixty-four cores of dispatch-bound B = 1 forwards. That CPU is what constrains envs
-   in flight and agents in parallel today.
+1. ~~**CPU inference goes to near zero across all six consumers at once** — sixty-four opponents
+   stop costing sixty-four cores of dispatch-bound B = 1 forwards.~~ **SUPERSEDED by Phase 0
+   (2026-09-23, `program_rust_core.md` §0):** a compiled B = 1 opponent forward costs 2.4–4.6 ms, which
+   at the live arm's rate is **0.4–2.1 cores of 16**, not sixty-four. Tier 2's case is unification, the
+   batched search leaf, and that N envs per process cannot exist without it.
 2. **Batch size becomes a throughput knob with latency governed by one timer**, instead of six
    accidental settings.
 3. **The env simplifies to a simulator plus an encoder**, which is the shape Tier 1 wants to be.
@@ -256,6 +304,21 @@ arrived — the flush timer bounds that tail, and Tier 1's N-per-process steppin
 
 Throughput of the gradient step (89 % of a training step). This tier is the enabler for Tier 1's
 scale and for search; on its own it moves steps/hour by a few percent and frees cores.
+
+### 4.5 The service as scheduled (2026-09-27, TASK_BACKLOG T2)
+
+The shape §4.2 sketched, made concrete for the build:
+- **Fixed GPU weight SLOTS**: same-architecture networks (trainee, pool opponents, sentinels) held as
+  stacked weights in fixed slots, and every request **tagged with its slot**, so one forward can
+  serve many models. This replaces §4.2's catalogue keyed by an open set of model ids.
+- **Fixed-width buckets** (or a compiled graph with dynamic shapes), in place of a menu of bucket sizes.
+- **Priority classes**: the training rollout first; **eval runs as background filler** in the gaps
+  (which is what lets eval run continuously, TASK_BACKLOG T6).
+- **A GPU-over-CPU bias**: forwards go to the GPU by default.
+- **Judged on the learner's END-TO-END throughput**, not on the service's own calls per second.
+
+*(The reasons for these choices are not recorded beyond the row. Its training use rides M5;
+bf16 inference for opponents is a separate fidelity experiment, EXPERIMENT_BACKLOG X19.)*
 
 ---
 
@@ -285,9 +348,19 @@ the trainee's weights for a collection window exactly as `collect_rollouts_async
 | `play.py` (ladder client) | parse → version → encode → Tier 2 → act; one path with training |
 | the differential fuzzers and the e2e capstone | **survive unchanged**; they gate the simulator, which does not change |
 
+*(Status of each row, as of 2026-09-27: the deletion manifest in `program_rust_core.md` §4. The
+shaped reward path, not in this table, was also deleted, `e3ef16db`. The scripted bots, also not in
+the table, are to be PORTED to the core, owner decision recorded in TASK_BACKLOG T3, Lane F.)*
+
 ---
 
 ## 7. Ordering, gates, and when to decide
+
+> **SUPERSEDED as the plan (2026-09-23).** The owner licensed the program on unification grounds
+> and re-cut this ordering in `program_rust_core.md`: build the whole core ALONGSIDE, one continuous
+> parity gate, ONE cutover, one deletion pass; and the cutover (M6) BEFORE N-envs-per-process (M5).
+> The decision point below read LICENSED on its own terms (Python glue + trackers + folds 59% of a
+> searched decision, Phase 0) but was recorded only. The table is kept as the original reasoning.
 
 **The recommendation is incremental replacement behind byte gates, encoder last, with a decision
 point after the current crossings.** A rewrite started on speculation would run for weeks with two
@@ -308,10 +381,11 @@ licenses each step.
 | 8 | N envs per process; retire the forkserver path | training FPS non-regression; a full `--debug` smoke and the first two minutes of a real launch (the only test of the preload layer) | — |
 | 9 | the ladder client on entry point 2 | `ladder_drift_scan` + a Metamon/Foul Play anchor cell byte-identical to the Python client's | — |
 
-**Not before a research read completes.** Steps 4–9 each change what a measurement runs on; each
+**Not before a research read completes.** *(Still the rule; the cutover landed between reads.)* Steps 4–9 each change what a measurement runs on; each
 lands between reads with its own entry stating which path every subsequent number used.
 
-**Sized honestly.** Steps 5–7 are several agent-weeks of grinding with gates, most of it in
+**Sized honestly.** *(As built, M1–M4 landed within two calendar days, 2026-09-23 → 09-24,
+with agents in parallel; M5 alone is re-sized at ≈ 24–33 agent-days, `program_rust_core.md` §2.)* Steps 5–7 are several agent-weeks of grinding with gates, most of it in
 `present()`'s rules and the parser's attribution. The one-sided view (a fraction of step 5) took two
 agent-days and found four contract changes on real boards that no code reading predicted; budget for
 that rate.
@@ -337,10 +411,43 @@ that rate.
 
 1. **Reading vs truth.** Which `present()` rules should flip to the sim's truth at the next retrain,
    and what that costs the reward — a registered experiment, not a design choice.
-2. **Tier 2's placement for search at inference on a ladder box** — same process as the tree, or a
+2. **Tier 2's placement for search at inference on a ladder box** *(still open; M5 Phase A's
+   per-consumer rule puts offline search on the FFI front end)* — same process as the tree, or a
    sidecar; decided by the flush-timer latency the tree can tolerate.
-3. **Whether the Python encoder survives as an oracle forever** or is retired once the Rust one has
+3. **Whether the Python encoder survives as an oracle forever** *(still open; it survives the
+   cutover as a named oracle, `program_rust_core.md` §4)* or is retired once the Rust one has
    its own goldens; the one-sided view's experience says keep the oracle until two full seeds of
    fresh boards have been byte-clean.
 4. **The generated-layout mechanism** (Python constants → Rust table) — a build step or a checked-in
    table with a pin; the latter is simpler and matches `arch_tables`.
+
+---
+
+## Decision record
+
+Owner decisions are marked **(owner)**. Ledger entries are cited by date and title; `L…` is the
+line in `ledger_index.md`'s numbering.
+
+| date | decision | chosen | rejected / alternatives | evidence |
+|---|---|---|---|---|
+| 2026-09-22 | The environment's end state | Three tiers: a Rust battle core owning board, per-side view, typed events and encoder; one inference tier; PPO unchanged | Continuing crossing by crossing (each moved the cost to the next link: per-op 7–47×, end-to-end 1.33–1.89×) | §1; `measurements/search_profile_2026-09-22/` |
+| 2026-09-22 | History structure | Persistent versions (fork = handle clone, history = parent chain) | An LSM tree (solves write-heavy on-disk storage, not O(1) fork) | §3.1 |
+| 2026-09-22 | Crossing order | Encoder LAST (most rules, largest byte-parity burden) | — | §7; kept by the program (M4 last of the Tier 1 slices) |
+| 2026-09-23 | License to build **(owner)** | The RUST CORE PROGRAM, licensed on UNIFICATION ("a low tech debt, robust, performant and unified approach") | Waiting for §7's re-profile decision point (it read LICENSED, 59% glue, but was recorded only) | ledger 2026-09-23 *PHASE 0* (L21259); `program_rust_core.md` §0 |
+| 2026-09-23 | Operating model **(owner)** | Build alongside, one continuous parity gate, ONE cutover, one deletion pass | A flag / flip / delete per milestone | `program_rust_core.md` §1 |
+| 2026-09-23 | Order **(owner)** | The cutover (M6) BEFORE N envs per process (M5): change one thing at a time | §7's order (N envs per process before the ladder client, one path) | `program_rust_core.md` §2 |
+| 2026-09-23 | Observation path **(owner)** | The observation ALWAYS comes through the parser, training included; search keeps the typed shortcut | Training reading typed-at-source events | `program_rust_core.md` §6c; `parse` 21.6–30.8 µs/decision |
+| 2026-09-23 | Reading vs truth | The core's event is a SUPERSET (truth + reading projection); reading BUGS fixed in the fork | §3.3's per-rule flags defaulting to the reading | Phase 0 (8 reading rules, 0 residual on 259,782 comparisons); R1–R3 fixed `65f22334`, boundary `c97358e8` (ledger 2026-09-23 *THE TRUTH AUDIT*, 2026-09-24 *TRAINING-INPUT BOUNDARY*) |
+| 2026-09-23 | `present()` signature | Built from one side's stream, no board parameter | `present(board, events, side)` | ledger 2026-09-23 *RUST CORE M2 LANDED* (L21293) |
+| 2026-09-23 | Tier 2's justification | Unification, the batched search leaf, and N-per-process needs it | "Frees sixty-four cores" (measured: 0.4–2.1 of 16) | `program_rust_core.md` §0 |
+| 2026-09-23 | The reward on the core | Win indicator only; shaping NOT ported | Porting PBRS / bias terms | `c49ef704`; then deleted, below |
+| 2026-09-25 | The cutover **(owner)** | `--obs-source core` default on the rust bridge; a registered DEVIATION: switched at ~60–70% of the stress counts, the stress continuing as confirmation and any CUTOVER-class divergence reverting the default | Waiting for 100% of the counts | `ac0b6469`; ledger 2026-09-25 *THE RUST CORE CUTOVER* (L21395) |
+| 2026-09-26 | On a core frame refusal in a live run **(owner)** | Save the repro, then resume on `--obs-source python` OR idle the GPU while fixing, the orchestrator's call per incident | Always waiting for the fix (the registration's recommendation, withdrawn) | ledger 2026-09-26 *NEW LINEAGE … GO* (L21415) |
+| 2026-09-26 | Deletion pass, part 1 | Search core-only; the port's one-sided view deleted; five rows SKIPPED with verified blockers | Deleting on the manifest's premise that Python was already only an oracle (false: opponents, eval, labels, reward, clock) | `43712881`, `97a30387`, `2c7e6acb`; ledger L21403 |
+| 2026-09-26 | Shaped reward **(owner)** | Deleted; a resume or fork of a shaped checkpoint REFUSES (`ShapedRewardCheckpointError`) | A silent switch to terminal-only | `e3ef16db`; ledger L21417 |
+| 2026-09-26 | M5 transport **(owner + benchmark)** | BOTH front ends (FFI and a `/dev/shm` process) over ONE core; default per consumer by crash isolation; 12 lanes | Picking one transport (they measured equal: 0.994 [0.943, 1.026]) | `measurements/rust_core_m5_transport_2026-09-26/`; ledger L21421 |
+| 2026-09-27 | Scripted bots **(owner)** | Port them to the core (Lane F) | Keeping bot battles on the old path until M7 | TASK_BACKLOG T3 (`93745a66`); rationale not recorded |
+| 2026-09-27 | Tier 2 shape (TASK_BACKLOG row; whose decision is not recorded) | Fixed weight slots, slot-tagged requests, fixed-width or compiled buckets, priority classes with eval as background filler, GPU-over-CPU, judged on the learner's end-to-end throughput | §4.2's open catalogue with a menu of bucket sizes | TASK_BACKLOG T2 (`93745a66`); rationale not recorded |
+| 2026-09-27 | Long-lived processes (TASK_BACKLOG rows) | Allocator discipline in Lane 0; memory-triggered restarts (proposed) | Restarts on a fixed clock only | TASK_BACKLOG T1, T7 (`93745a66`) |
+| 2026-09-27 | Ladder client | M7 after the cutover (TASK_BACKLOG T9) | Moving the ladder client early (would ADD a path) | `program_rust_core.md` §1 rule 5 |
+

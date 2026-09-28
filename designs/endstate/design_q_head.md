@@ -225,3 +225,22 @@ information map (where scouting pays). **Never a training target for the public 
 - The team hypothesis budget: 6 vs 7–8 (read OTHER_species mass early in games).
 - The weight of the branch-ranking losses into the trunk, set by the gradient-cosine guard.
 - Shared vs detached α.
+
+---
+
+## Decision record
+
+Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_index.md` lists it.
+
+| date | decision | chosen | rejected / alternatives | evidence |
+|---|---|---|---|---|
+| 2026-09-27 | The value side's end state **(owner-directed)** | Q(s,a,b) = V + A + B + I in probability space, double-centred under π × α; calibration (V) separated from discrimination (A, I) | Another scalar win-prob head (six sat on the null as search leaves, mirror 0.485–0.507) | §0, §4; `556eb4f8` |
+| 2026-09-27 | Principles **(owner)** | Discrete-first entities with one OTHER entity; measure before adopting; pool memorization a SUCCESS milestone (on-pool first) | Blob belief slots | §0, §1 |
+| 2026-09-27 | Opponent model | One flat pointer α over concrete candidates, OTHER as entities, masked when impossible; belief misses become OTHER labels | Separate α and β heads; masking misses (`opp_intent/alpha_mask_rate`) | §3; TASK_BACKLOG T4 |
+| 2026-09-27 | Our readout | A SIBLING MLP on the policy's per-action inputs with its own weights and the value context | Reusing the policy pointer logit (an uncalibrated PPO preference) | §4 |
+| 2026-09-27 | Gradient routing **(owner)** | Q heads trained into the shared trunk, with a detached probe as the baseline and gradient-cosine guards | — (the detached probe runs alongside as the baseline) | §5 |
+| 2026-09-27 | α's gradient mode **(owner)** | `label_only`: α's label loss shapes the trunk (route B on); PPO and Q cannot bend α (route C cut) | Letting the policy / Q gradient reach α (motivated cognition: "they won't switch, so I attack") | §5; EXPERIMENT_BACKLOG X20 (`503872c6`) |
+| 2026-09-27 | Critic data at scale | A DELAYED-LABEL BUFFER back-fills outcomes, every row once | Rejecting incomplete games (biases toward short games) | §5 |
+| 2026-09-27 | Omniscient twin | OFFLINE only, own parameters, never a training target | Training the public V on true values (the 09-10 `truevalue` arm: +0.08 optimistic, NOT DETECTED on discrimination) | §7 |
+| 2026-09-27 | Priority **(owner)** | Q first in the research queue; memorization chipped in parallel | Root-causing memorization first | EXPERIMENT_BACKLOG header (`93745a66`) |
+| 2026-09-27 | V calibration **(owner)** | Fix under-dispersion NATIVELY (X21); post-hoc temperature / Platt only as an isolation control | Post-hoc recalibration as the end state | EXPERIMENT_BACKLOG X21 (`503872c6`) |

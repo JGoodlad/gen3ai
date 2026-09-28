@@ -1,7 +1,8 @@
 # Design — The ladder campaign: stages, their meters, and the training ecology
 
-**Status: DESIGN, not scheduled.** Authored 2026-09-23 by the orchestrator at the owner's request,
-from a design conversation the same day. It organises the research into **stages** that each own
+**Status: DESIGN, being executed stage by stage (updated 2026-09-27).** Authored 2026-09-23 by the
+orchestrator at the owner's request, from a design conversation the same day. 🚨 **ALWAYS-CURRENT
+(owner, 2026-09-27)**: see [`README.md`](README.md). §2a states the new lineage the stages now run in. It organises the research into **stages** that each own
 one artifact, one meter and one plateau test, and it states the **training ecology** (who plays
 which team, and why) that the stages need. Nothing here is a commitment; §7's ordering is the
 recommendation.
@@ -43,15 +44,45 @@ re-runs only when one of its inputs changes, and only one stage trains at a time
 
 ## 2. The stages
 
-| # | stage | artifact | meter | plateau test | where it stands (2026-09-23) |
+| # | stage | artifact | meter | plateau test | where it stands (2026-09-27) |
 |---|---|---|---|---|---|
-| 0 | environment | the Rust core | parity + throughput | — (infrastructure) | Phase 0 done; M1 next (`program_rust_core.md`) |
-| 1 | **generalist** | broad pilot, all teams | untaught meter; SmallRL anchor; best-response gap | an 8M block's untaught Δ inside the 3.69 pp floor | **PLATEAUED ONCE**: `ai_v13_12_plateau` (G0), ledger 2026-09-21 |
-| 2 | **main agent** | G-derived, fine-tuned on ~5 iconic sample teams | anchors ON those teams; win rate vs pressure opponents per team | per-team gain inside its floor over a block | one WARNING point: stage A (below) |
-| 3 | **exploiters** | best responses to the stage-1 or stage-2 artifact | `main.best_response_gap` per archetype | the gap stops falling across rounds | round 1 aimed at G0, queued 2026-09-23 |
-| 4 | **value function** | the critic | DISCRIMINATION: pairwise sibling accuracy on rollout-labelled forks | accuracy flat across a lever | **PLATEAUED**: twelve learned heads at 0.567–0.578; a 4-rollout leaf beats them (+0.057 DETECTED) |
+| 0 | environment | the Rust core | parity + throughput | — (infrastructure) | M1–M4 built; the cutover (M6) DONE `ac0b6469` (training reads core observations); deletion pass part 1 done; M5 Phase A done, Lane 0 scheduled (`program_rust_core.md`) |
+| 1 | **generalist** | broad pilot, all teams | untaught meter; SmallRL anchor; best-response gap | an 8M block's untaught Δ inside the 3.69 pp floor | **NEW ERA (§2a):** N0 = `ai_v14_01_base`, fresh 75M on the clean-input boundary `b0a28b5b`, running (end-of-run reads registered, EXPERIMENT_BACKLOG X1); G0′ = its first continuation block inside the floor. *History:* the old lineage PLATEAUED ONCE at `ai_v13_12_plateau` (G0), ledger 2026-09-21 |
+| 2 | **main agent** | G-derived, fine-tuned on ~5 iconic sample teams | anchors ON those teams; win rate vs pressure opponents per team | per-team gain inside its floor over a block | one WARNING point: stage A (below); not re-run in the new era |
+| 3 | **exploiters** | best responses to the stage-1 or stage-2 artifact | `main.best_response_gap` per archetype | the gap stops falling across rounds | old lineage: rounds 1 and 2 both NOT DETECTED against the 5.0 bar (Δ −10.00 and −8.25 pp), branch N+ FINAL, no round 3 (owner). Carried into the new lineage with more power (§2a) |
+| 4 | **value function** | the critic | DISCRIMINATION: pairwise sibling accuracy on rollout-labelled forks | accuracy flat across a lever | **PLATEAUED**: twelve learned heads at 0.567–0.578; a 4-rollout leaf beats them (+0.057 DETECTED). Next levers: N0's leaf read (X1), a hand-eval leaf (X3), and the Q head ([`design_q_head.md`](design_q_head.md), X4), which outranks every other research row (owner, 2026-09-27) |
 | 5 | search | search over 2 + 4 | win-rate dividend at fixed compute | — | gated on 4; wound down as an objective |
 | 6 | ladder | the deployed agent | ladder Elo | — | — |
+
+### 2a. The new lineage (2026-09-26 →): what the stages run in now
+
+The observation-architecture batch (`b0a28b5b`, v121) folded in every GIGO fix of the week and made
+`MIGRATION_FLOOR` 121, so no old checkpoint loads: stage 1 restarted from scratch. Registration:
+[`../research_state/new_lineage_2026-09-26.md`](../research_state/new_lineage_2026-09-26.md);
+owner GO 2026-09-26.
+
+- **N0 = `ai_v14_01_base`**: a FRESH 75M run, the old fresh root's recipe (`ai_v13_02_flywheel_winprob`)
+  token-exact except the run name, the pin (`8d07051a`), `--arch production` and `--obs-source core`.
+- **Opponents: the POOL only, first.** The Metamon ladder teams enter only after their Hidden Power
+  fields are repaired (TASK_BACKLOG T8), as a SEPARATE **ladder-teams arm** that reproduces N0's
+  recipe with them added and is read at matched snapshot count (EXPERIMENT_BACKLOG X9). The repair must
+  not change any file a live pinned run reads from `data/`.
+- **The population loop carries over**, with both power levers registered before round 1: readers at
+  `--eval-battles 200` (800 games each) and a **POOLED read over R = 4 rounds**
+  (D = mean_r[gap(RB_r) − gap(RC_r)], one verdict, no per-round verdict, no extension; detection needs
+  D ≲ −7.4 pp). The stable set is a WINDOW {A′, A2′, the most recent reader} at share 0.40, so each
+  specialist's exposure stays at 0.12. KILL guards: the untaught 8 against `untaught_meter_opponent_v14`
+  (N0's 24M snapshot) and the SmallRL anchor.
+- **Archetype exploiters from ladder teams** join the loop once the repaired teams exist (X10): a wider
+  exploiter set, read by the same pooled rule.
+- **Pool memorization is a SUCCESS milestone, then generalize (owner, 2026-09-27).** The belief heads
+  measurably memorize the pool (on-pool DiD +4.8 pp; nothing detectable on ladder teams, ledger
+  2026-09-24). That is reported on-pool FIRST, off-pool second, and the ladder-teams arm is the
+  generalization step. Root-causing it (X8) runs in parallel, below the Q head.
+- **The learner battery** (X2; [`../research_state/learner_battery_2026-09-26.md`](../research_state/learner_battery_2026-09-26.md)):
+  four +8.06M forks of N0's final at the frozen generalist dose (control, `--n-epochs 5`
+  dose-matched, TF32, policy GAE λ 0.95), judged on strength per GPU-hour. It runs BEFORE the G0′
+  continuation blocks; its control doubles as the first block, K1.
 
 **Stage 2's warning point.** Stage A (`ai_v13_16_teach5_offense_dist`) was a stage-2 experiment in
 all but name: G0 fine-tuned for +8M on five offense teams against a distribution of opponents. It
@@ -91,6 +122,9 @@ once. That is the root of several confounds this month, the unregistered `--team
 lever among them.
 
 ### 4.1 Our team: the deployment target lives here
+
+*(`data/teams/sample/` today holds the 32 Smogon sample teams AND the 40 promoted fleet teams: the
+split that separated them was REVERTED, §7 step 0. "The 32" below means the Smogon teams.)*
 
 | source | share (registered per stage, illustrative) | job |
 |---|---|---|
@@ -182,14 +216,17 @@ The **mixture weights** are experiment levers, set by registered arms, never by 
 
 | step | what | cost | gates |
 |---|---|---|---|
-| 0 | the sample-team split: `sample/` = the 32 Smogon teams; the 40 promoted fleet teams get their own role (dispatched 2026-09-23) | small build | — |
+| 0 | the sample-team split: `sample/` = the 32 Smogon teams; the 40 promoted fleet teams get their own role — **LANDED and REVERTED 2026-09-23** (`33da2cf6`, reverted `e74c0610`): pinned runs read `data/teams/` from the MAIN checkout, so moving files changed a live run's inputs. Not re-landed; any data move now waits for no pinned run to be live or queued | small build | — |
 | 1 | the strength/piloting split on existing eval data; is stall a piloting deficit? | free, offline | — |
 | 2 | choose the stage-2 teams (~5, one per archetype plus iconic extras) from the 32, with the owner | a conversation | step 1 informs it |
-| 3 | finish population-loop round 1 (stage 3 aimed at stage 1): does absorbing exploiter pressure work at all? | ~21 GPU-h, queued | — |
+| 3 | finish population-loop round 1 (stage 3 aimed at stage 1): does absorbing exploiter pressure work at all? — **DONE**: the loop ABSORBED its specialists (M = +8.50 pp), but the gap's fall (−10.00 pp) did not clear the bar; round 2 the same (−8.25, N+ FINAL). Underpowered, so the new lineage pools four rounds (§2a) | ~21 GPU-h | — |
 | 4 | first stage-2 arm: G0 fine-tuned on the chosen teams against pressure opponents, read by the anchors on those teams | ~1 arm | a plateau is a result |
 | 5 | E1: our-side breadth, sample-only vs + pool vs + pool + procedural | 3 arms | sets §4.1's shares |
 | 6 | the narrow-critic question: discrimination on the stage-2 teams vs broad | 1 arm + the offline meter | decides whether stage 5 reopens |
 | 7 | the match sampler + ecology block + cell tagging | a build; after the Rust core's M2, where team sources and tagging belong | — |
+
+*(Steps 1, 2, 4–7 not started as of 2026-09-27; the new lineage (§2a) and the Q head took the GPU
+and the build slots first. EXPERIMENT_BACKLOG is the ranking now.)*
 
 ## 8. Open questions this document does not settle
 
@@ -201,4 +238,28 @@ The **mixture weights** are experiment levers, set by registered arms, never by 
    representation; novel states only the opponent creates build defence. They may be worth
    different amounts.
 4. **Should the population loop's target move from the generalist to the main agent** once stage 2
-   exists? Probably yes; round 1's answer about absorption comes first.
+   exists? Probably yes. *(Round 1 answered absorption: yes. The new lineage still aims the loop at
+   the generalist G0′, since no stage-2 artifact exists.)*
+
+---
+
+## Decision record
+
+Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_index.md` lists it.
+
+| date | decision | chosen | rejected / alternatives | evidence |
+|---|---|---|---|---|
+| 2026-09-23 | How to organize the research **(owner conversation)** | STAGES, each with one artifact, one meter, one plateau test and a written un-plateau guess; one stage trains at a time | One big loop whose stall has no address | this doc §0–§1 |
+| 2026-09-23 | The deployment target **(owner)** | A main agent on ~5 iconic SMOGON sample teams (the 32), not the 40 promoted fleet teams | — | this doc §0, §4.1 |
+| 2026-09-23 | Team sources | Sample, pool and procedural (Smogon-only generator), three draws with three jobs | One 719-team pool serving all draws through accreted flags | §4 |
+| 2026-09-23 | Sample-team split | Landed, then REVERTED the same day | Keeping it (it changed a live pinned run's inputs: pinned runs read `data/` from main) | `33da2cf6`, `e74c0610`; ledger L21269, L21273 |
+| 2026-09-23 | Population loop round 1 | B (loop, share 0.40, PFSP on, no distillation) vs C (share 0.0), each read by a fresh exploiter | — | `da0ab0b0`; ledger L21246 |
+| 2026-09-24 | Round 1 verdict | NOT DETECTED → branch N+ (Δ −10.00 [−16.60, −3.27] vs bar 5.0); the loop absorbed | — | ledger L21329 |
+| 2026-09-25 | After round 2 **(owner)** | No round 3 on the old lineage; carry the loop into the NEW lineage with both power levers registered up front | A round 3 on the old lineage | ledger L21387, L21391 (N+ FINAL) |
+| 2026-09-25/26 | A new era **(owner)** | One retrain boundary on clean inputs (`b0a28b5b`), a FRESH lineage N0 on the Rust-core observation | Continuing the `ai_v13` lineage | ledger L21407, L21411 |
+| 2026-09-26 | N0's opponents | Pool only first; ladder teams as a separate arm after the Hidden Power repair | Ladder teams in N0 (their HP fields are unrepaired) | `new_lineage_2026-09-26.md` §0, §7 |
+| 2026-09-26 | Loop design in the new lineage **(owner)** | R = 4 rounds, pooled read, 200-game readers, WINDOW stable set, `untaught_meter_opponent_v14`, the 3.69 floor carried provisionally, the `ai_v14` prefix | R = 5 (+18 GPU-h for power 0.78 vs 0.69); the accumulating stable set; re-measuring the floor | ledger L21415; registration §8 |
+| 2026-09-26 | The learner battery | Four forks of N0's final (C, E5, T32, L95), strength per GPU-hour, BEFORE the continuation blocks; D_g = 2.8e-5 (orchestrator, owner-delegated) | — | `6df5160f`; ledger L21425 |
+| 2026-09-27 | Research priority **(owner)** | Q right first; memorization chipped in parallel; pool memorization is a SUCCESS milestone, then generalize (on-pool reported first) | Root-causing memorization before Q | EXPERIMENT_BACKLOG header (`93745a66`) |
+| 2026-09-27 | Exploiter breadth | Archetype exploiters from repaired ladder teams inside the pooled loop (proposed, X10) | — | EXPERIMENT_BACKLOG X10 |
+

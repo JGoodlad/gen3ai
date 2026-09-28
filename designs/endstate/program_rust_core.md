@@ -805,3 +805,31 @@ the training observation by parsing its own per-side stream.
 | T2 non-training adoptions (one entry each) | unchanged | the leaf on T2 | each meter stamps `inference: service`; greedy actions proven byte-identical, so the numbers are value-neutral |
 | **M6 CUTOVER — DONE 2026-09-25** (ledger entry, between reads; the stress continues as post-switch confirmation, §2 M6) | **every number after it runs on the core**; `metadata.json` records the env core + commit; a resume pinned to a pre-cutover commit stays on Python (the launcher's pin), so no run spans the cutover without a re-pin | core | core for training-side evals |
 | M7 | — | — | anchors / ladder stamp `client: core` |
+
+---
+
+## Decision record
+
+Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_index.md` lists it.
+
+| date | decision | chosen | rejected / alternatives | evidence |
+|---|---|---|---|---|
+| 2026-09-23 | Build the core **(owner)** | The RUST CORE PROGRAM, licensed on unification ("a low tech debt, robust, performant and unified approach; search will be on the table") | Licensing on the design's §7 re-profile (it read LICENSED at 59% glue; recorded only) | §0; Phase 0 record `measurements/rust_core_phase0_2026-09-23/`; ledger L21259 |
+| 2026-09-23 | Operating model **(owner)** | Build alongside, continuous parity gate, ONE cutover, ONE deletion pass; search the only early adopter | A flag / flip / delete per milestone; moving the prober, anchors or ladder client early (each would ADD a path) | §1 |
+| 2026-09-23 | Parity gate **(owner)** | One harness, three tiers (COMMIT / MILESTONE / CUTOVER), cost proportional to the decision guarded | — | §3 (owner amendment 2) |
+| 2026-09-23 | Order **(owner)** | M1 → M4, then the CUTOVER (M6) in today's process-per-env shape, then the deletion pass, then M5; M5 not started until the owner says so | M5 before the cutover (two changes at once) | §2 |
+| 2026-09-23 | Events **(Phase 0)** | The core emits a SUPERSET: truth fields + the reading projection; `gen3_event_value_schema_v1` kept verbatim on the projection | — | §0 |
+| 2026-09-23 | Observation path **(owner)** | Always through the parser, training included; search keeps the typed shortcut | Typed-at-source observation in training | §6c |
+| 2026-09-23 | Search determinization **(owner)** | DEFERRED ("kick search determinization down the road") | Building worlds now | §6a |
+| 2026-09-23 | Reward in slice T **(orchestrator; owner consulted)** | Win indicator alone; shaping not ported, the shaped path into the deletion manifest | Porting PBRS / bias terms | §2 M3; `c49ef704` |
+| 2026-09-24 | Poke-env reading bugs **(owner)** | Fixed in the fork (R1–R3), a training-input change; the findings registry emptied | Carrying them as allowlisted divergences | `c97358e8`; ledger L21305 |
+| 2026-09-24 | M3 gate **(owner)** | Slice T gates the CONSUMERS; `TurnDelta` not ported as a structure | Field-by-field `TurnDelta` parity | §2 M3; ledger L21313 |
+| 2026-09-24 | Corpus **(owner)** | The Metamon ladder-usage corpus joins the M4 gate and every fuzz / parity gate | Pool-only corpora | `886ae28f`; ledger L21319 |
+| 2026-09-24 | Emission self-check | Every emitted line checked at emission; ON in tests and fuzzers, compiled OUT of release | — | `239ebe3e`; ledger L21297 |
+| 2026-09-24 | CUTOVER stress **(owner, option 2)** | Run CONCURRENTLY with the training queue at low priority, gated on coverage and count, targets pre-registered | option 1 (not recorded in this doc) | §3 |
+| 2026-09-25 | The switch **(owner)** | `--obs-source core` default; registered DEVIATION at ~60–70% of the counts, the stress continuing as confirmation, a CUTOVER-class divergence reverting the default | Waiting for the full counts | `ac0b6469`; ledger L21395 |
+| 2026-09-26 | Deletion pass part 1 | Delete what is only an oracle; SKIP five rows with verified blockers | Deleting on the manifest's premise (Python was not yet only an oracle) | §4; ledger L21403 |
+| 2026-09-26 | Shaped checkpoints **(owner)** | Refuse a resume or fork of a shaped checkpoint | A silent switch | `e3ef16db`; ledger L21417 |
+| 2026-09-26 | M5 transport **(owner + benchmark)** | BOTH front ends over ONE core; default per consumer by crash isolation; 12 lanes, ≈ 24–33 agent-days incl. T2 | One transport; the registered 5–8 agent-day size | §2 M5; ledger L21421 |
+| 2026-09-27 | Scripted bots **(owner)** | Port them (Lane F) | Keeping bot battles on the old path until M7 | TASK_BACKLOG T3 ("owner yes"); this doc's §2 still reads it as open |
+| 2026-09-27 | Doc status **(owner)** | ALWAYS-CURRENT while implemented; the Q-head spec is its sibling | Explicit-only updates | `556eb4f8`, `51e36c09` |

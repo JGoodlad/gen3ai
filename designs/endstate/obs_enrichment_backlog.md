@@ -172,3 +172,21 @@ So E10 (and any joint set belief) is a LEARNED MIXTURE, not a hand-supplied set 
   DIAGNOSTICS, never as model input.
 - Pool-derived priors: the owner's Smogon-only rule applies to every prior an entry introduces.
 - Shipping an entry because it is cheap. Cheapness is why it is on the list, not why it lands.
+
+---
+
+## Decision record
+
+Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_index.md` lists it.
+
+| date | decision | chosen | rejected / alternatives | evidence |
+|---|---|---|---|---|
+| 2026-09-23 | Terms for any enrichment **(owner request)** | Parity first (no entry before the cutover), then one registered hypothesis per entry; no omniscient fact as input; Smogon-only priors | Adding facts because the core makes them cheap | §0, §3 |
+| 2026-09-24 | Mechanic coverage **(owner)** | E12: Roar, Baton Pass, Thief, Spikes sacks, ACTION DENIAL (the gen-3 turn cut) and the like must be covered by the event rows | — | §1a |
+| 2026-09-24 | Mud / Water Sport **(owner)** | P0 in the next obs arch change | — | `efd3ee78`; §1b |
+| 2026-09-24 | E10's shape **(owner)** | A LEARNED mixture of set prototypes, exact reveal updates | A hand-supplied set catalogue; an autoregressive decoder (kept as fallback) | §1c |
+| 2026-09-24 | Synergy rulings **(owner)** | No hand-built role exclusivity; prototypes shared across species with per-mon nuance; ROSTER and SET meters reported separately, the roster headline per reveal count (k = 3, k = 5) | Imposed constraints; one pooled meter | §1d |
+| 2026-09-24 | E11 | Moved here from the tech-debt backlog (`[of]` attribution, M1 rule R9) | — | §1 |
+| 2026-09-25 | One retrain boundary **(owner)** | Batch Mud/Water Sport, E4, E10's parameter-free half and E12 into ONE boundary | Several boundaries, each breaking checkpoints | ledger L21407 |
+| 2026-09-26 | The batch lands | `gen3_event_record_v2`, obs 2501 → 2761, v121; the learned half of E10 stays open | — | `b0a28b5b`; `measurements/obs_arch_batch_2026-09-26/` |
+| 2026-09-27 | Next arms | E1 / E11 as registered observation arms, ranked in the experiment queue | — | EXPERIMENT_BACKLOG X18 |
