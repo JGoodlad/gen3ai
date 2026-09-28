@@ -160,7 +160,7 @@ runs alongside as the baseline for "what PPO alone learns". **Guards:**
 - trunk gradient cosines: cos(∇L_Q, ∇L_V), cos(∇L_Q, ∇L_policy), and per A/B/I;
 - V calibration (BCE, ECE) non-inferior to the control;
 - strength and entropy held.
-The opponent pointer is tested shared vs detached too (today's α runs detached).
+**The opponent pointer's gradient mode is `label_only`** (owner, 2026-09-27; X20): α's label loss SHAPES the trunk (route B on — a richer trunk), but PPO and the Q losses can NOT reach α through its publication (route C cut). The failure this prevents is MOTIVATED COGNITION: a head whose output feeds action selection can be bent by the policy/Q gradient into predicting what justifies the preferred action ("they won't switch, so I attack"). α must stay a truthful predictor, scored only against real opponent actions. Meter: α's calibration SPLIT BY OUR CHOSEN ACTION — P(stay) must not inflate when we attack. Today's α runs `detached` (route B cut); `label_only` is a built, non-default mode.
 
 **Critic data at scale (with M5).** A DELAYED-LABEL BUFFER keeps unfinished games' rows and back-fills
 the outcome when the game ends (every row once; no rejection of incomplete games — that would bias
