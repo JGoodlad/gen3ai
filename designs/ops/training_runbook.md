@@ -527,7 +527,14 @@ extractor is what ships — same win, less graph.
 
 **CUDA only, and fail-loud by design.** A silent fall back to eager would be a 1.75× regression that
 no metric surfaces (the run trains correctly, just ~38% fewer steps/hour, forever), so a failed,
-slower, or numerically-divergent compile is a hard `FATAL_CONFIG` exit rather than a warning — and
+slower, or numerically-divergent compile is a hard `FATAL_CONFIG` exit rather than a warning. The
+parity check runs on a committed fixture of REAL obs rows, at the decision level (masked legal
+log-probs, V) and on the train graph's gradient; under `--matmul-precision high` it uses the
+precision-aware TF32 rule. 🚨 **Every cuda run with the default `--compile-trainer` from `28eaef29`
+(2026-08-17) up to `gen3_inductor_trunk_split_v1` (2026-09-28) trained its LEARNER on a miscompiled
+single CUDA graph** (argmax agreement 70.9%, gradient cosine 0.778 vs eager). Its eval, opponents
+and traces ran the CPU compile and are clean.
+Detail: `designs/training/compile_flags.md` → "The single-graph CUDA miscompile". And
 `--device cpu` is refused up front, because the CPU backward provably does not lower (Inductor's C++
 backend refuses the damage op's `atomic_add` scatter).
 

@@ -1425,7 +1425,14 @@ because a frozen forward never reads the reward.
 `--compile-trainer` (all ON by default) · `--grad-accum-steps` at whatever `--batch-size` the run
 uses · `--grad-checkpointing` · `--async-rollout` · `--matmul-precision` (default `highest`: full FP32,
 no TF32 — PyTorch's default; `high` enables TF32 in the trainer process, stamped as
-`🧮 [MATMUL PRECISION]` and recorded in `metadata.json`, never in `model_config.json`). These do not appear in `model_config.json` and
+`🧮 [MATMUL PRECISION]` and recorded in `metadata.json`, never in `model_config.json`). **The CUDA
+learner compile runs the extractor as TWO Inductor graphs, split at the attention trunk**
+(`gen3_inductor_trunk_split_v1`, `TeamTransformer.forward`). Eager, the CPU compile and the weights
+are unchanged. As one CUDA graph it miscompiled on real observations: argmax agreement 70.9%,
+gradient cosine 0.778 vs eager, measured 2026-09-28 on `ai_v14_01_base`. That affected every
+default cuda run from 2026-08-17 (`28eaef29`) to 2026-09-28. `--compile-trainer`'s startup gate now
+checks real obs at the decision level (`designs/training/compile_flags.md`). **UNVERIFIED:** the
+root-cause op. These do not appear in `model_config.json` and
 are **not** inherited on resume — with the compile flags defaulting ON it is the OPT-OUT that must
 be re-passed each launch, not the flag.
 

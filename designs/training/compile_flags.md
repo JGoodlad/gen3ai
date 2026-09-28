@@ -360,6 +360,12 @@ inherited on a resume (a launcher restart re-sends the original argv, so it hold
 run's restarts). **UNVERIFIED:** its speed-up and its effect on the trained policy on this box
 have not been measured.
 
+**Under `high`, `--compile-trainer`'s startup parity gate switches to a precision-aware rule**
+(`gen3_tf32_parity_gate_v1`): a fixed fp32 tolerance is the wrong question once eager and compiled
+each run their OWN TF32 kernels. The first TF32 launch (`ai_v14_04_lbat_t32`, 2026-09-28) died on
+the fixed 1e-4 at a compiled-vs-eager 7.62e-03 on zero obs. The rule, and the measurement behind
+it, are under "The startup parity gate" below.
+
 ## Compiled GPU trainer (`--compile-trainer`, DEFAULT ON for cuda)
 
 `torch.compile`s the LEARNER's feature extractor — the CUDA forward **and backward** the PPO step
@@ -448,10 +454,106 @@ refusals, each guarding an otherwise-invisible outcome:
 | `--device cpu` | The CPU BACKWARD does not lower — `CppTile2DKernel.store` asserts on the `atomic_add` mode. Pinned by `extractor_compiles_test::test_cpu_backward_still_does_not_compile`, which builds at `belief_grad_mode="shaping"` ON PURPOSE: under `label_only` (production since gen-11) those gather-backwards do not exist and the compile succeeds, so an unpinned test would have gone green while testing nothing. Costs nothing in practice — the compiled backward we run is CUDA, where Triton emits `tl.atomic_add` |
 | compile raised | bisect the op — the whole "torch cannot compile our model" story was ONE op (see `src/agents/model/CLAUDE.md`, the `species_posterior` precedent) |
 | compiled is not faster (< 1.05x) | the graph fragmented or the backend fell back per-frame; the measured figure is ~1.75x, so parity is a defect |
-| compiled disagrees with eager (> 1e-4) | a faster wrong model is not a win |
+| compiled disagrees with eager on the committed REAL-obs rows — features, masked legal log-probs, V, or the train graph's gradient (the bars and the TF32 rule: "The startup parity gate" below) | a faster wrong model is not a win |
 
 Every rejection **uninstalls** the compiled callable before raising, so the process never keeps
 running something it just declared unacceptable.
+
+### 🚨 The single-graph CUDA miscompile, and the trunk split (`gen3_inductor_trunk_split_v1`, 2026-09-28)
+
+**Measured** (torch 2.5.1+cu121, RTX 3080 Ti, fp32 `highest`, `ai_v14_01_base` weights on 3,840 REAL
+rows from its own `eval_traces`): with the whole extractor as ONE CUDA Inductor graph, the compiled
+learner disagreed with eager by up to **7.65 on pi_features** (scale ~16). At the decision level,
+**argmax agreement was 70.9%**, masked-policy TV had median 0.12 and p99 0.63, win-prob |dV| had
+median 0.024 and max 0.33, and in the TRAIN graph the extractor gradient's **cosine to eager was
+0.778**. dynamo `backend="eager"` and `"aot_eager"` matched exactly, and the CPU Inductor compile
+(`--compile-opponents`: eval workers, sentinels, pool, stable and exploiter opponents, so every eval
+trace) matched to 3e-5, the batch-shape noise floor. **Scope: the GPU LEARNER only**, since
+`--compile-trainer` became default-on for cuda in `28eaef29` (2026-08-17). A run's rollouts, its PPO
+ratio and its gradients were computed on the diverged function, while its eval, opponents and
+traces used the correct one. The old startup probe used ALL-ZERO obs, and those agreed to 4.8e-7:
+zero obs exercise no masking, no top-K seat selection and no edge family.
+
+**The fix is a deliberate graph break** in `TeamTransformer.forward`, placed right after the attention
+bias and its edge families are built. It fires only when compiling on CUDA
+(`_CUDA_TRUNK_SPLIT and attn_bias.is_cuda and torch.compiler.is_compiling()`), so eager is
+bit-identical and the CPU compile keeps its one graph (`extractor_compiles_test`'s one-graph pins
+are CPU). After the split, on the same 3,840 rows: argmax agreement 1.0000, TV p99 1.5e-6, |dV| max
+1.0e-6, legal logits max 2.7e-5, gradient cosine 1.000000 (rel err 4.7e-7). The effect depends on
+WHERE the break sits:
+
+| break at | parity |
+|---|---|
+| after the edge families / the transformer's start / the transformer's end | restored (1.2e-5) |
+| after `unpack`, after the entity seats, before the projection | still 7.65 |
+
+**No Inductor knob fixes it.** Tried: math-only SDPA, `pattern_matcher=False`,
+`allow_buffer_reuse=False`, `inplace_buffers=False`, `comprehensive_padding=False` and
+`shape_padding=False`. **UNVERIFIED — the root-cause op is not named.** The accuracy minifier's
+dumped 9,805-node AOT graph does not reproduce the failure standalone.
+
+**Speed cost of the split, measured under the live L95 arm's contention.** Compiled fwd+bwd
+minimum-of-15 at batch 1024: 46.3/46.6 ms with the split vs 45.7/45.8 ms without (+1.5%). Medians
+48.4-50.5 vs 46.4-47.9 ms (≤ +4%). Batch 512 is noise-dominated. Batch 2048 could not be measured
+beside the live run's VRAM. The split also lowers peak memory: 1.7 vs 2.2 GiB at batch 1024.
+
+### The startup parity gate (`gen3_compile_parity_real_obs_v1` + `gen3_tf32_parity_gate_v1`)
+
+`compile_trainer_extractor` validates on **REAL observation rows, never zeros**. The rows are a
+committed fixture, `src/agents/model/compile_parity_obs.npz`: 64 decision rows from 8 reproducible
+in-process bridge battles, made by `python -m agents.model.compile_parity_fixture --write`. It can be
+regenerated on any box for any layout. A missing fixture, or one of the wrong width, **REFUSES**
+(`FATAL_CONFIG`) rather than falling back to zeros, and
+`compile_trainer_test::test_the_committed_real_obs_fixture_matches_the_live_layout` fails the
+routine gate the moment the layout changes. It checks four things, eager vs compiled:
+
+| quantity | fp32 (`highest`) bar | healthy (after the split) | the miscompile |
+|---|---|---|---|
+| (pi ‖ vf) features, no-grad | 1e-4 (unchanged) | 2.4e-05 | 10.7 |
+| MASKED legal log-probs (what the rollout samples and PPO's ratio reads) | 1e-3 | 1.2e-05 | legal logits off by up to 7.39 (3,840 rows) |
+| V (the win-prob sigmoid under `--critic winprob`) | 1e-4 | 5.4e-07 | 0.33 (3,840 rows) |
+| TRAIN graph: fwd features + extractor-gradient cosine on the gate's own loss | 1e-4 · cos ≥ 0.9999 | 1.9e-05 · 1.000000 | 7.65 · 0.778 |
+
+The healthy column is the gate's own line on `ai_v14_01_base/final_model.zip`.
+`compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate` pins that turning
+the split off makes the gate refuse. Measured through the real gate: with the split OFF it FAILS at
+10.7.
+
+**At reduced precision (`--matmul-precision high`, TF32) two checks run.**
+
+1. **The TF32 graph, against an fp32 EAGER REFERENCE.** The reference is the same weights and rows
+   with matmul precision temporarily `highest`, restored even on an exception. For each quantity:
+   `e_eager = max|eager_tf32 − ref|`, `e_comp = max|compiled_tf32 − ref|`, and PASS iff
+   `e_comp ≤ 4·e_eager + 1e-4`. The gradient check is `1−cos(comp, ref) ≤ 4·(1−cos(eager, ref)) + 1e-4`.
+   EPS equals the fp32 bar, so a quantity TF32 does not touch is held to the fp32 bar.
+2. **The SAME compiled callable at `highest`, held to the strict fp32 bars against the fp32
+   reference.** dynamo guards on the TF32 flag, so this is a second graph of the same trace. It
+   exists because the TF32 rule alone cannot resolve a defect smaller than ~4× TF32's own rounding.
+   **Measured:** a DROPPED projection bias and a projection weight scaled by 1.001 both PASS rule 1,
+   and both FAIL rule 2 (3.1e-2 and 2.9e-2 against a 1e-4 bar).
+
+**Why K = 4.** The measured `e_comp/e_eager` ratios at TF32 on the real weights:
+
+| rows | features | legal log-prob | V | train features | grad 1−cos |
+|---|---|---|---|---|---|
+| fixture | 1.33 | 0.87 | 1.27 | 1.14 | 1.24 |
+| zero obs | ≤ 0.92 | | | | |
+
+On a random-init extractor on zero obs the ratio reached ≤ 2.31. K = 4 is about 1.7× above the worst healthy
+ratio. The miscompile read 538, and a 1%-scaled projection weight read 14.7. **The resolution limit
+is honest.** A TF32-ONLY kernel defect smaller than ~4× TF32 rounding passes; for this extractor that
+is about 8e-2 on features (scale ~16), 6e-2 on legal log-probs and 3e-3 on V. A precision-independent
+defect of any size is caught by rule 2.
+
+**Measured TF32 rounding on the real extractor** (fixture rows, `ai_v14_01_base`): `e_eager` is
+2.0e-2 on features, 1.5e-2 on legal log-probs and 7.2e-4 on V, and gradient 1−cos is 3.2e-5.
+On zero obs it is 9.4e-3. The failed T32 launch's 7.62e-03 was this rounding, not a bug; the real
+bug (the miscompile above) was invisible to it.
+
+**Cost.** The gate adds a readout and a train step per arm. At TF32 it adds a second (fp32) graph of
+the same trace. dynamo's `cache_size_limit` (8) holds with room to spare: measured 6 entries per
+code object after the TF32 gate plus alternating rollout (48, no-grad) and train (512, grad) shapes,
+0 cache-limit hits. At `highest` it is 4 entries.
 
 **Two MORE refusals, decided at startup, and the reasoning behind them is counter-intuitive enough
 to be worth stating.** Recompiles here are NORMAL: `share_features_extractor=True` means one

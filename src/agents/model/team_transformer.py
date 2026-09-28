@@ -20,6 +20,12 @@ from agents.model.arch_constants import (
     TRANSFORMER_FFN_DIM,
 )
 
+# gen3_inductor_trunk_split_v1: split the CUDA-compiled extractor into two graphs at the attention
+# trunk (see the note in `TeamTransformer.forward`). A module-level switch ONLY so the
+# revert-must-fail test (`compile_trainer_test`) can prove the real-obs parity gate catches the
+# single-graph miscompile; nothing in production turns it off.
+_CUDA_TRUNK_SPLIT = True
+
 
 
 
@@ -347,6 +353,22 @@ class TeamTransformer(torch.nn.Module):
             batch_size, TRANSFORMER_N_HEADS, n_tok, n_tok).contiguous()
         if edge_bias_fn is not None:
             attn_bias = edge_bias_fn(attn_bias)
+
+        # gen3_inductor_trunk_split_v1 — a DELIBERATE graph break, CUDA + compile only. MEASURED
+        # 2026-09-28 (torch 2.5.1+cu121, RTX 3080 Ti, ai_v14_01_base @72M on 3,840 REAL eval-trace
+        # rows, fp32): with the whole extractor as ONE Inductor/Triton graph, the compiled forward
+        # disagreed with eager by up to 7.65 on pi_features (argmax agreement 70.9%, |dV| median
+        # 0.024) — while dynamo backend='eager' and 'aot_eager' matched EXACTLY and CPU Inductor
+        # matched to 3e-5. So it is a CUDA Inductor codegen defect in the single fused graph, and
+        # all-zero obs (the old startup probe) hid it (4.8e-7). A break here — or at the
+        # transformer's start or end — restores parity (1.35e-05); a break after the entity seats,
+        # after unpack or before the projection does NOT. The root-cause op is NOT yet named
+        # (designs/training/compile_flags.md). Eager never reaches this line's effect
+        # (`is_compiling()` is False), so the deployed function is bit-identical; the CPU opponent
+        # compile keeps its one graph. The standing guard is `compile_trainer`'s REAL-obs,
+        # decision-level parity gate, which fails the launch if the split stops being enough.
+        if _CUDA_TRUNK_SPLIT and attn_bias.is_cuda and torch.compiler.is_compiling():
+            torch._dynamo.graph_break()
 
         # Gradient checkpointing only helps when a graph is being built for backward
         # (the PPO update); under inference's no_grad it would be pure overhead, so gate on

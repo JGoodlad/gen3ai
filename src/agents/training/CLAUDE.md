@@ -483,6 +483,16 @@ orthogonal; a run can take either, both or neither.
 code then calls nothing) sets the TRAINER process's fp32 matmul precision; `high` enables TF32. It
 is stamped at launch as `🧮 [MATMUL PRECISION]` and recorded in `metadata.json`
 (`gen3_matmul_precision_v1`); a runtime knob, never inherited.
+🚨 **`--compile-trainer`'s startup parity gate runs on REAL obs rows**, never zeros. The rows are the
+committed fixture `src/agents/model/compile_parity_obs.npz`; regenerate it with
+`python -m agents.model.compile_parity_fixture --write` after an obs-layout change, and a stale
+fixture REFUSES. It checks four things: features, MASKED legal log-probs, V, and the train graph's
+gradient cosine (≥ 0.9999). Under `--matmul-precision high` it switches to the precision-aware TF32
+rule (`e_comp ≤ 4·e_eager + 1e-4` against an fp32 eager reference), plus the same compiled graph
+at fp32 held to the strict bars. **The GPU learner compile needs its trunk split**
+(`gen3_inductor_trunk_split_v1`): as ONE CUDA Inductor graph it miscompiled on real rows. That
+affected every default cuda run from `28eaef29` (2026-08-17) to 2026-09-28: argmax agreement 70.9%,
+gradient cosine 0.778. The CPU compile (eval, opponents, traces) is clean.
 **Full detail — in [`designs/training/compile_flags.md`](../../../designs/training/compile_flags.md).**
 
 ## Gradient-balance + value-scale diagnostics (`grad_balance.py`)

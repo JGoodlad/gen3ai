@@ -9941,3 +9941,41 @@ and recipe v2 then REUSED those same games as ladder edges (`games.jsonl` rows t
 **Scope: runs LAUNCHED on this code.** Live and pinned runs are unaffected and keep writing v2 —
 `ai_v14_01_base` is pinned at `8d07051a`, the learner-battery arms at `2cc83080`. No existing
 `models/<run>/snapshot_ladder/` file was refit or rewritten.
+
+## 2026-09-28 — the CUDA learner compile MISCOMPILED as one graph; trunk split + a REAL-obs, decision-level, precision-aware parity gate (`gen3_inductor_trunk_split_v1`, `gen3_compile_parity_real_obs_v1`, `gen3_tf32_parity_gate_v1`; no model version bump, weights and eager unchanged)
+
+Found by the T32 learner-battery arm (`ai_v14_04_lbat_t32`, `--matmul-precision high`). It died at
+startup on the old gate's fixed 1e-4: compiled vs eager differed by 7.62e-03 on all-zero obs,
+which is TF32 rounding. Chasing that turned up the real defect.
+
+- **The defect.** Measured on torch 2.5.1+cu121, RTX 3080 Ti, fp32, `ai_v14_01_base` against
+  3,840 real eval-trace rows. With the extractor compiled as ONE CUDA Inductor graph, the learner's
+  compiled forward disagreed with eager by up to 7.65 on pi_features. Argmax agreement was 70.9%,
+  win-prob |dV| had median 0.024 and max 0.33, and the train-graph gradient's cosine to eager was
+  0.778. dynamo `eager`/`aot_eager` were exact, and the CPU compile (eval, opponents, traces) was
+  clean to 3e-5. **Scope:** the GPU learner of every cuda run on the default `--compile-trainer`,
+  since `28eaef29` (2026-08-17). All-zero obs agree to 4.8e-7, which is why the old gate never saw
+  it. **UNVERIFIED:** the root-cause op. No Inductor knob fixes it, and the minifier's dump does not
+  reproduce it standalone.
+- **The fix.** A graph break in `TeamTransformer.forward` right after the attention bias and edge
+  families are built. It fires only for a CUDA compile, so eager is bit-identical and the CPU
+  compile stays one graph. After it: argmax agreement 1.0000, TV p99 1.5e-6, |dV| max 1.0e-6,
+  gradient cosine 1.000000. Measured cost: about +1.5% (minimum) to ≤ +4% (median) on compiled
+  fwd+bwd at batch 1024, and lower peak memory.
+- **The gate.** `compile_trainer_extractor` now validates on a committed fixture of 64 REAL rows
+  (`src/agents/model/compile_parity_obs.npz`, from reproducible bridge battles, regenerated with
+  `python -m agents.model.compile_parity_fixture --write`). A stale or missing fixture REFUSES.
+  It checks four things: features (1e-4), MASKED legal log-probs (1e-3), V (1e-4), and the train
+  graph's forward plus gradient cosine (≥ 0.9999). It throws `FATAL_CONFIG`.
+- **Under TF32 it applies two rules:**
+  1. Against an fp32 eager reference, `e_comp ≤ 4·e_eager + 1e-4` (for the gradient,
+     `1−cos ≤ 4·(1−cos_eager) + 1e-4`).
+  2. The same compiled callable run at `highest` must meet the strict fp32 bars.
+
+  Measured TF32 rounding on the real extractor: e_eager is 2.0e-2 on features and 7.2e-4 on V,
+  and the healthy e_comp/e_eager ratio is ≤ 1.33. A dropped projection bias passes rule 1 and
+  fails rule 2. The miscompile fails both, with ratio 538.
+- Tests: `compile_trainer_test.py` covers the fixture freshness and refusal, the decision and train
+  verdicts, the TF32 rule, and `test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate`. The
+  CUDA-only cells skip while a trainer holds the card. They were run by hand on the card for this
+  commit.

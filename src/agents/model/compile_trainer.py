@@ -42,9 +42,11 @@ so at startup beats a confusing backend traceback ten minutes in.
 from __future__ import annotations
 
 import time
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
+
+from agents.model.compile_parity_fixture import ParityFixtureError, load_parity_rows
 
 
 class CompileTrainerError(RuntimeError):
@@ -66,7 +68,28 @@ _VALIDATE_REPS = 3
 _VALIDATE_BATCH = 64
 
 # A compiled forward that disagrees with eager by more than this is a wrong kernel, not a speedup.
+# This is THE rule at matmul precision 'highest' (full fp32, the default) and it is unchanged there.
 _MAX_NUMERIC_DRIFT = 1e-4
+
+# gen3_tf32_parity_gate_v1 — the rule under REDUCED matmul precision (`--matmul-precision high`,
+# TF32 tensor cores). There a fixed 1e-4 is the wrong question: eager and compiled each run their
+# own TF32 kernels (cuBLAS vs Inductor/Triton, different tiling and accumulation order), so the two
+# legitimately differ by TF32 rounding (~10-bit mantissa), which on this extractor is ~1e-2 absolute
+# — the ai_v14_04_lbat_t32 launch died on exactly that (7.62e-03). So at reduced precision BOTH arms
+# are measured against an fp32 EAGER REFERENCE (same weights, same obs, matmul precision temporarily
+# 'highest') and the compiled arm must be no worse than K x what eager TF32 itself pays:
+#
+#     e_eager = max|eager_tf32    - ref_fp32|      (the rounding TF32 costs a CORRECT graph)
+#     e_comp  = max|compiled_tf32 - ref_fp32|
+#     PASS iff e_comp <= _TF32_K * e_eager + _TF32_EPS
+#
+# K is justified by measurement in `designs/training/compile_flags.md` (the ratio
+# e_comp/e_eager on the real production extractor); EPS is the fp32 gate's own tolerance, so a
+# graph that is exact under TF32 (e_eager == 0, e.g. no matmul on the path) is held to the SAME bar
+# as at 'highest', never a looser one. A wrong kernel is a disagreement with the fp32 reference that
+# does not shrink with precision; TF32 rounding cannot hide one larger than K x e_eager.
+_TF32_K = 4.0
+_TF32_EPS = _MAX_NUMERIC_DRIFT
 
 
 def check_shape_stability(*, n_steps: int, n_envs: int, batch_size: int,
@@ -151,18 +174,245 @@ def check_speedup(eager_ms: float, comp_ms: float) -> float:
     return speedup
 
 
-def check_numerics(err: float) -> None:
-    """Pure verdict: a compile that changes the numbers is not a speedup.
+def check_numerics(err: float, *, precision: str = "highest", eager_err: Optional[float] = None,
+                   what: str = "features", tol: Optional[float] = None) -> str:
+    """Pure verdict: a compile that changes the numbers is not a speedup. Returns the log line.
 
-    Tolerance is looser than the CPU path's 1e-5 because cuBLAS/cuDNN may pick a different reduction
-    order or TF32 for the fused kernels; 1e-4 still catches a wrong kernel while tolerating a
-    differently-ordered correct one.
+    ``precision`` is the RESOLVED `torch.get_float32_matmul_precision()` the arms ran at; ``what``
+    names the quantity (``features``, ``legal_logprob``, ``value``, ``train features``).
+
+    * ``'highest'`` (full fp32, the default): ``err`` is max|compiled - eager| and must be below
+      ``tol`` (default 1e-4, the features bar, UNCHANGED). Looser than the CPU path's 1e-5 because
+      cuBLAS may pick a different reduction order for the fused kernels; 1e-4 still catches a wrong
+      kernel while tolerating a reordered correct one. ``eager_err`` is ignored.
+    * anything else (``'high'`` = TF32): ``err`` is e_comp = max|compiled - fp32_ref| and
+      ``eager_err`` is e_eager = max|eager - fp32_ref|; PASS iff e_comp <= K*e_eager + EPS. A missing
+      or non-finite ``eager_err`` FAILS: a reduced-precision parity claim without its fp32 reference
+      is no claim at all.
+
+    Every comparison is written ``not (x <= tol)`` so a NaN FAILS rather than sailing through.
     """
-    if not (err < _MAX_NUMERIC_DRIFT):
+    if precision == "highest":
+        bar = _MAX_NUMERIC_DRIFT if tol is None else float(tol)
+        rule = f"{what}: fp32 max|compiled-eager| {err:.2e} < {bar:g}"
+        if not (err < bar):
+            raise CompileTrainerError(
+                f"--compile-trainer: the compiled extractor DISAGREES with eager on {what} "
+                f"(max|delta| {err:.2e} > {bar:g}, matmul precision 'highest'). A faster wrong "
+                f"model is not a win — investigate before re-enabling.")
+        return rule
+    if eager_err is None or not (eager_err >= 0.0) or eager_err == float("inf"):
         raise CompileTrainerError(
-            f"--compile-trainer: the compiled extractor DISAGREES with eager (max|delta| {err:.2e} "
-            f"> {_MAX_NUMERIC_DRIFT:g}). A faster wrong model is not a win — investigate before "
-            f"re-enabling.")
+            f"--compile-trainer: at matmul precision {precision!r} the parity gate needs the eager "
+            f"arm's own error against an fp32 reference (got {eager_err!r}) for {what}. Refusing "
+            f"to enable the compile unvalidated.")
+    bar = _TF32_K * eager_err + _TF32_EPS
+    rule = (f"{what}: e_comp=max|compiled-fp32ref| {err:.2e} <= {_TF32_K:g} x "
+            f"e_eager=max|eager-fp32ref| {eager_err:.2e} + {_TF32_EPS:g} = {bar:.2e} "
+            f"(matmul precision {precision!r}, TF32)")
+    if not (err <= bar):
+        raise CompileTrainerError(
+            f"--compile-trainer: the compiled extractor DISAGREES with the fp32 reference beyond "
+            f"TF32 rounding — {rule} FAILED (ratio e_comp/e_eager "
+            f"{(err / eager_err) if eager_err > 0 else float('inf'):.2f}). Eager at the same "
+            f"precision stays within e_eager, so this is a wrong kernel, not rounding. A faster "
+            f"wrong model is not a win — investigate before re-enabling.")
+    return rule
+
+
+def _max_abs_delta(a: Tuple["torch.Tensor", "torch.Tensor"],
+                   b: Tuple["torch.Tensor", "torch.Tensor"]) -> float:
+    """max|a - b| over the (pi, vf) pair, computed in fp32."""
+    return max(float((x.float() - y.float()).abs().max()) for x, y in zip(a, b))
+
+
+def fp32_reference(fn: Callable[[Any], Any], obs: Any) -> Tuple["torch.Tensor", "torch.Tensor"]:
+    """One no-grad EAGER forward at matmul precision 'highest', restoring the caller's precision.
+
+    The reference the reduced-precision gate measures both arms against. Restored in ``finally`` so
+    an exception cannot leave the trainer silently running at a precision its argv did not ask for.
+    """
+    prev = torch.get_float32_matmul_precision()
+    try:
+        torch.set_float32_matmul_precision("highest")
+        with torch.no_grad():
+            pi, vf = fn(obs)
+        return pi.clone(), vf.clone()
+    finally:
+        torch.set_float32_matmul_precision(prev)
+
+
+def parity_verdict(*, eager: Tuple["torch.Tensor", "torch.Tensor"],
+                   compiled: Tuple["torch.Tensor", "torch.Tensor"],
+                   reference: Optional[Tuple["torch.Tensor", "torch.Tensor"]] = None,
+                   precision: Optional[str] = None) -> str:
+    """The numerics gate over the arms' OUTPUTS. Raises `CompileTrainerError` or returns the rule line.
+
+    ``precision`` defaults to the process's current `torch.get_float32_matmul_precision()`. At
+    'highest' ``reference`` is not needed (and not read); at any other precision it is REQUIRED.
+    """
+    precision = precision or torch.get_float32_matmul_precision()
+    if precision == "highest":
+        return check_numerics(_max_abs_delta(compiled, eager), precision=precision)
+    if reference is None:
+        raise CompileTrainerError(
+            f"--compile-trainer: matmul precision {precision!r} but no fp32 reference was "
+            f"measured — refusing to validate the compile against a tolerance meant for fp32.")
+    return check_numerics(_max_abs_delta(compiled, reference), precision=precision,
+                          eager_err=_max_abs_delta(eager, reference))
+
+
+# gen3_compile_parity_real_obs_v1 — the DECISION-level tolerances at matmul precision 'highest'.
+# MEASURED after the trunk split (2026-09-28, 3,840 real eval-trace rows, ai_v14_01_base @72M and
+# final): legal log-prob max|d| 2.7e-05, win-prob |dV| max 1.0e-06, pi_features max 6.9e-05; the
+# broken single graph read 7.39 / 0.33 / 11.8. Each bar sits >= 10x over the healthy maximum and
+# >= 1000x under the defect.
+_FP32_TOL = {"features": _MAX_NUMERIC_DRIFT, "legal_logprob": 1e-3, "value": 1e-4}
+# The train graph: cosine between the compiled and eager gradients of the gate's own loss over the
+# extractor's parameters. Healthy after the split: 1.000000 (rel err 4.7e-07); the defect: 0.778.
+_MIN_GRAD_COSINE = 0.9999
+
+
+def _parity_obs(obs_dim: int, batch: int, device: Any) -> Tuple[Dict[str, "torch.Tensor"], Any]:
+    """The committed REAL rows as the gate's obs dict + their legal-action masks (numpy bool).
+
+    Rows are repeated when ``batch`` exceeds the fixture. Raises `ParityFixtureError` (turned into
+    a `CompileTrainerError` by the caller) when the fixture is missing or stale — never zeros.
+    """
+    import numpy as np
+
+    rows, mask = load_parity_rows(obs_dim)
+    idx = np.arange(int(batch)) % len(rows)
+    return ({"observation": torch.as_tensor(rows[idx], device=device)}, mask[idx])
+
+
+class _matmul_precision:
+    """Temporarily set fp32 matmul precision; restored even on an exception."""
+
+    def __init__(self, value: str):
+        self.value = value
+        self.prev = torch.get_float32_matmul_precision()
+
+    def __enter__(self) -> None:
+        self.prev = torch.get_float32_matmul_precision()
+        torch.set_float32_matmul_precision(self.value)
+
+    def __exit__(self, *exc: Any) -> None:
+        torch.set_float32_matmul_precision(self.prev)
+
+
+def _readout(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch.Tensor"]:
+    """One no-grad forward through whatever `fe.forward` is installed, read at the DECISION level.
+
+    ``features`` — (pi_features ‖ vf_features). When the policy is the Gen3 dual-head policy (it
+    exposes the pointer-head seam and the critic read), also ``legal_logprob`` — the MASKED
+    policy's log-probabilities on legal actions (0 elsewhere), i.e. exactly what the rollout
+    samples from and PPO's ratio reads — and ``value``, the critic's value (the win-prob sigmoid
+    under ``critic='winprob'``). A stand-in policy yields ``features`` only.
+    """
+    policy: Any = getattr(model, "policy", None)
+    with torch.no_grad():
+        pi, vf = fe(obs)
+        out = {"features": torch.cat([pi.flatten(1), vf.flatten(1)], dim=1).float().clone()}
+        if all(hasattr(policy, a) for a in ("mlp_extractor", "_critic_value",
+                                            "_get_action_dist_from_latent")):
+            lp = policy.mlp_extractor.forward_actor(pi)
+            lv = policy.mlp_extractor.forward_critic(vf)
+            out["value"] = policy._critic_value(lv).float().flatten().clone()
+            dist = policy._get_action_dist_from_latent(lp)
+            dist.apply_masking(legal_mask)
+            logp = dist.distribution.logits.float()
+            legal = torch.as_tensor(legal_mask, device=logp.device, dtype=torch.bool)
+            out["legal_logprob"] = torch.where(legal, logp, torch.zeros_like(logp)).clone()
+    return out
+
+
+def _train_step(fe: Any, obs: Any) -> Dict[str, "torch.Tensor"]:
+    """The TRAIN graph: one forward+backward of the gate's own loss (`_one_step`), read as the
+    forward features and the flattened gradient over every extractor parameter."""
+    pi, vf = _one_step(fe, obs)
+    grad = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).detach()
+                      .float().flatten() for p in fe.parameters()])
+    feats = torch.cat([pi.detach().flatten(1), vf.detach().flatten(1)], dim=1).float().clone()
+    fe.zero_grad(set_to_none=True)
+    return {"features": feats, "grad": grad}
+
+
+def _cos(a: "torch.Tensor", b: "torch.Tensor") -> float:
+    na, nb = float(a.norm()), float(b.norm())
+    if na == 0.0 and nb == 0.0:
+        return 1.0
+    return float(torch.dot(a, b) / (na * nb)) if na > 0 and nb > 0 else 0.0
+
+
+def decision_verdicts(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
+                      reference: Optional[Dict[str, "torch.Tensor"]] = None,
+                      precision: Optional[str] = None) -> List[str]:
+    """The no-grad parity gate over each readout quantity. Raises `CompileTrainerError` or returns
+    one rule line per quantity. At 'highest' each quantity uses its `_FP32_TOL` bar on
+    max|compiled - eager|; at reduced precision the TF32 rule (`check_numerics`) against the fp32
+    ``reference``, which is then REQUIRED."""
+    precision = precision or torch.get_float32_matmul_precision()
+    if precision != "highest" and reference is None:
+        raise CompileTrainerError(
+            f"--compile-trainer: matmul precision {precision!r} but no fp32 reference was "
+            f"measured — refusing to validate the compile against a tolerance meant for fp32.")
+    lines = []
+    for key in ("features", "legal_logprob", "value"):
+        if key not in eager:
+            continue
+        if key not in compiled:
+            raise CompileTrainerError(f"--compile-trainer: the compiled arm produced no {key!r}")
+        if precision == "highest":
+            err = float((compiled[key] - eager[key]).abs().max())
+            lines.append(check_numerics(err, precision=precision, what=key, tol=_FP32_TOL[key]))
+        else:
+            assert reference is not None
+            lines.append(check_numerics(
+                float((compiled[key] - reference[key]).abs().max()), precision=precision,
+                eager_err=float((eager[key] - reference[key]).abs().max()), what=key))
+    return lines
+
+
+def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
+                  reference: Optional[Dict[str, "torch.Tensor"]] = None,
+                  precision: Optional[str] = None) -> str:
+    """The TRAIN-graph parity gate: forward features (the numerics rule) AND the gradient's cosine.
+
+    At 'highest': cos(compiled_grad, eager_grad) >= 0.9999. At reduced precision:
+    (1 - cos(compiled, fp32)) <= K * (1 - cos(eager, fp32)) + 1e-4 — TF32's own angular error on
+    the eager arm, scaled by the same K as the value rule."""
+    precision = precision or torch.get_float32_matmul_precision()
+    if precision == "highest":
+        feat = check_numerics(float((compiled["features"] - eager["features"]).abs().max()),
+                              precision=precision, what="train features")
+        cos = _cos(compiled["grad"], eager["grad"])
+        if not (cos >= _MIN_GRAD_COSINE):
+            raise CompileTrainerError(
+                f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with eager — "
+                f"cosine {cos:.6f} < {_MIN_GRAD_COSINE} on the gate's own loss over the "
+                f"extractor's parameters. PPO would be stepping along the wrong direction. A "
+                f"faster wrong model is not a win — investigate before re-enabling.")
+        return f"{feat}; grad cosine {cos:.6f} >= {_MIN_GRAD_COSINE}"
+    if reference is None:
+        raise CompileTrainerError(
+            f"--compile-trainer: matmul precision {precision!r} but the train graph has no fp32 "
+            f"reference — refusing to validate it against a tolerance meant for fp32.")
+    feat = check_numerics(float((compiled["features"] - reference["features"]).abs().max()),
+                          precision=precision,
+                          eager_err=float((eager["features"] - reference["features"]).abs().max()),
+                          what="train features")
+    d_comp = 1.0 - _cos(compiled["grad"], reference["grad"])
+    d_eager = 1.0 - _cos(eager["grad"], reference["grad"])
+    bar = _TF32_K * max(d_eager, 0.0) + _TF32_EPS
+    rule = (f"grad 1-cos vs fp32: compiled {d_comp:.2e} <= {_TF32_K:g} x eager {d_eager:.2e} "
+            f"+ {_TF32_EPS:g} = {bar:.2e}")
+    if not (d_comp <= bar):
+        raise CompileTrainerError(
+            f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with the fp32 "
+            f"reference beyond TF32 rounding at matmul precision {precision!r} — {rule} FAILED. "
+            f"A faster wrong model is not a win — investigate before re-enabling.")
+    return f"{feat}; {rule}"
 
 
 def resolve_device(fe: Any) -> "torch.device":
@@ -283,14 +533,13 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
 
     was_training = fe.training
     fe.train()                                 # the backward path is what we are compiling
-    # ZEROS, not `torch.rand` — matching `snapshot._zero_obs` on the opponent path, and for a reason
-    # this module learned the hard way. A random float vector is NOT a valid observation: the
-    # ObservationDebugger rejects it outright ("CRITICAL INTEGRITY FAILURE: multiple active Pokemon"),
-    # so it can drive the forward down branches no real battle reaches. An all-zero obs is the
-    # canonical "nothing known" state — every categorical id is 0, every flag clear — which is
-    # structurally legal, and it was ALSO what turned a mystifying `CUDA error: invalid configuration
-    # argument` into the honest `OutOfMemoryError` underneath it when this was being debugged.
-    obs = {"observation": torch.zeros(batch, obs_dim, device=device)}
+    # gen3_compile_parity_real_obs_v1: REAL observation rows, never zeros. Until 2026-09-28 this
+    # probe was an all-zero obs, on which the single-graph CUDA compile agreed with eager to 4.8e-7
+    # while it was off by 7.65 on real rows (70.9% argmax agreement, gradient cosine 0.778) — zero
+    # obs exercise no masking, no top-K seat selection and no edge family. The rows are a committed
+    # fixture of reproducible bridge-battle states (`compile_parity_fixture`); a missing or stale
+    # fixture REFUSES rather than falling back to zeros.
+    obs, legal_mask = _parity_obs(obs_dim, batch, device)
     # …and every FLAG-GATED Dict key this extractor's forward reads, from the declared registry.
     # dynamo guards on a dict's KEY SET, so an under-built warmup is either a crash (the privileged
     # value route RAISES on a missing `opp_true_team` — the ai_v12_14_ladder_truevalue launch) or a
@@ -299,20 +548,41 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
     obs.update(zero_extra_obs(fe, batch=batch, device=device))
 
     original = fe.forward
+    precision = torch.get_float32_matmul_precision()
     try:
         torch._dynamo.config.suppress_errors = False   # a partial compile must be LOUD, not silent
         eager_ms = _time_steps(fe, obs, _VALIDATE_REPS)
-        with torch.no_grad():
-            ref_pi, ref_vf = fe(obs)
-            ref_pi, ref_vf = ref_pi.clone(), ref_vf.clone()
+        # The EAGER arm: the deployed function's decision readout and its train-step gradient,
+        # plus (reduced precision only) the same two at fp32 — the reference both arms are
+        # measured against. All taken BEFORE the compile is installed (eager by construction).
+        eager_read = _readout(model, fe, obs, legal_mask)
+        eager_train = _train_step(fe, obs)
+        ref_read = ref_train = None
+        if precision != "highest":
+            with _matmul_precision("highest"):
+                ref_read = _readout(model, fe, obs, legal_mask)
+                ref_train = _train_step(fe, obs)
 
         compiled = torch.compile(original)
         fe.forward = compiled
         comp_ms = _time_steps(fe, obs, _VALIDATE_REPS)
-        with torch.no_grad():
-            got_pi, got_vf = fe(obs)
-    except CompileTrainerError:
+        comp_read = _readout(model, fe, obs, legal_mask)
+        comp_train = _train_step(fe, obs)
+        # gen3_tf32_parity_gate_v1: under reduced precision the TF32 rule above can only resolve
+        # a defect larger than ~K x TF32's own rounding (measured: a DROPPED projection bias passes
+        # it). So the same compiled callable is ALSO run at 'highest' — dynamo guards on the TF32
+        # flag, so that is a separate fp32 graph of the SAME trace — and held to the strict fp32
+        # bars against the fp32 eager reference. Every precision-independent graph defect (a wrong
+        # fusion, a dropped term, the single-graph miscompile) fails there at full resolution.
+        comp_read32 = comp_train32 = None
+        if precision != "highest":
+            with _matmul_precision("highest"):
+                comp_read32 = _readout(model, fe, obs, legal_mask)
+                comp_train32 = _train_step(fe, obs)
+    except (CompileTrainerError, ParityFixtureError) as exc:
         fe.forward = original
+        if isinstance(exc, ParityFixtureError):
+            raise CompileTrainerError(f"--compile-trainer: {exc}") from exc
         raise
     except Exception as exc:
         fe.forward = original
@@ -335,13 +605,24 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
         if not was_training:
             fe.eval()
 
-    err = max(float((ref_pi - got_pi).abs().max()), float((ref_vf - got_vf).abs().max()))
     try:
-        check_numerics(err)
+        rules = decision_verdicts(eager=eager_read, compiled=comp_read, reference=ref_read,
+                                  precision=precision)
+        rules.append(train_verdict(eager=eager_train, compiled=comp_train, reference=ref_train,
+                                   precision=precision))
+        if comp_read32 is not None and ref_read is not None and ref_train is not None \
+                and comp_train32 is not None:
+            rules += ["[same graph at fp32] " + r for r in decision_verdicts(
+                eager=ref_read, compiled=comp_read32, precision="highest")]
+            rules.append("[same graph at fp32] " + train_verdict(
+                eager=ref_train, compiled=comp_train32, precision="highest"))
         speedup = check_speedup(eager_ms, comp_ms)
     except CompileTrainerError:
         fe.forward = original          # never leave a rejected compile installed
         raise
+    # Said on EVERY passing launch (a failure says it in the raised message): which rules ran, at
+    # which precision, and the numbers — so a TF32 run records how close to its bar it sat.
+    _say(f"[CompileTrainer] parity PASS on {batch} REAL obs rows — " + " | ".join(rules))
 
     prod = int(getattr(model, "batch_size", 0) or 0)
     shape_note = (f" — VALIDATION shape only; the production batch is {prod} and the measured "
