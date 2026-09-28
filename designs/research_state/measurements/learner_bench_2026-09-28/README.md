@@ -1,7 +1,6 @@
 # Learner-only PPO update benchmark — 2026-09-28 (T13)
 
-**Status: INSTRUMENT BUILT; GPU READ PENDING.** The read runs on an idle 3080 Ti after the T32b arm
-ends. Its report JSON goes in this directory (`--publish`), and this README gets the numbers.
+**Status: READ DONE 2026-09-28 13:59–14:49 PT** on an idle 3080 Ti (no trainer; box load 1.8–5.0 on 16 cpus, CPU reads at nice 19), HEAD `201b1128`, arm C's `final_model.zip` (sha256 `06efae2c…`). Report: `learner_bench.json` in this directory. Results are in §Results at the end.
 
 ## The question
 
@@ -74,3 +73,30 @@ The tiny timings themselves are noise, and none of them is quotable.
   phases, so the profiler windows are the source for the launch/sync question.
 - **The noise-probe window.** The per-term noise probe samples only epoch 0's first accumulation
   group. So "noise probe OFF" saves a fixed cost per update, not a per-epoch one.
+
+
+## Results (2026-09-28, K = 5 repeats per config after 1 warm-up; repeats agree to ±1%)
+
+| config | train_ms median | vs baseline |
+|---|---:|---:|
+| baseline (production: fp32, compiled, noise probe on) | **58.5 s** | — |
+| noise-scale probe OFF | 51.8 s | **−11.5%** |
+| all optional telemetry OFF | 51.1 s | −12.7% |
+| 5 epochs (E5) | 33.9 s | **−42.1%** |
+| TF32 (`--matmul-precision high`) | 54.4 s | −7.0% |
+
+The live arm-C `train/train_ms` (56.9 s) is reproduced, so the live timer is honest.
+
+**Phase breakdown** (cuda-synchronized brackets; bracketing cost +0.6%):
+backward 28.7 s (49%) · forward 13.1 s (22%) · loss assembly 6.9 s (12%) · noise-scale probe 7.1 s (12%) · minibatch get 2.3 s (4%) · logging + KL + epoch end + capacity < 0.2 s.
+Two-point epoch fit: 4.93 s per epoch (102.8 ms per 2,048-sample micro-batch), 9.2 s fixed.
+
+**The host-sync hypothesis is REFUTED.** 66,852 blocking scalar reads per update (≈ 240 per micro-batch) cost **1.0 s in total (1.7%)**. The profiler shows the GPU **99.2–99.5% busy** through every epoch window, so the host never starves it. Moving the diagnostics on-device is hygiene, not speed.
+
+**What the GPU is doing instead:** ≈ 4,270 kernel launches per micro-batch in steady epochs (≈ 24 µs of GPU time each), dominated by Inductor's fused `triton_` kernels (~1,000 per micro-batch, ~31% of kernel time), the memory-efficient attention BACKWARD (~7%), and fp32 SGEMMs. Matmuls are a minority, which is why TF32 buys only 7%. Reading: the update is **GPU-bound on many small, mostly elementwise/memory-bound kernels**, not on tensor-core math and not on the host. Epoch 0 carries the noise-scale probe (≈ 8,100 launches per micro-batch vs 4,270).
+
+**Implications (feed M5 Lane K and T13):**
+1. The noise probe on a cadence (every Nth update) recovers ~11% of the update ≈ 3.5% of wall time.
+2. Fewer, larger kernels are the next lever: a larger micro-batch at the same effective batch (e.g. 8,192 × accum 8 instead of 2,048 × 32; same math up to float order) — NOT measured yet; add it as a benchmark config.
+3. Loss assembly at 12% is worth a look (aux/belief heads).
+4. For the GPU purchase (T13): a workload of small memory-bound kernels scales with clocks, cache and bandwidth far more than with tensor-core FLOPs — the clock sweep will confirm.
