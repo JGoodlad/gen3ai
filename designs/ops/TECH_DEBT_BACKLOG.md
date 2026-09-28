@@ -1,7 +1,9 @@
 # TECH-DEBT BACKLOG
 
-The one list of tech-debt work. Research and measurement work is NOT tracked here; it lives in
-`designs/research_state/UNDERSTANDING.md` §6 and the ledger. Model and observation CONTENT proposals
+The one list of tech-debt work. Research and measurement work is NOT tracked here; its ranked queue is
+[`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md) (open questions in
+`designs/research_state/UNDERSTANDING.md` §6, results in the ledger). Build tasks that are not debt live in
+[`TASK_BACKLOG.md`](TASK_BACKLOG.md). Model and observation CONTENT proposals
 live in `designs/endstate/obs_enrichment_backlog.md` (observation facts) or `UNDERSTANDING.md` §6
 (everything else).
 

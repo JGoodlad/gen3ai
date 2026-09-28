@@ -1216,6 +1216,8 @@ z=−1.40" rules out >4.5pp, not >0.
 
 ## 6. Open questions
 
+> The RANKED queue of experiments that answer these questions is [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md) (owner, 2026-09-27); build tasks are in [`../ops/TASK_BACKLOG.md`](../ops/TASK_BACKLOG.md).
+
 | question | the test that would settle it | cost |
 |---|---|---|
 | **Does the win-prob critic RESOLVE better than the shaped one?** | `python -m main.critic_gate ai_v12_02_winprob_critic --parent ai_v9_59_R2ACTION_0827 --control <G5 arms>` — G1 is the primary endpoint | free once the arm reaches its eval cycles; the arm is ~14 h at the measured 5.2M steps/h (a FLOOR: `ep_len_mean` lengthens as play improves) |
