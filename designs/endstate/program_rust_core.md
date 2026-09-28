@@ -407,6 +407,7 @@ untouched until M5's gate. The Python side is `src/utils/rust_env/`.
 | H — eval on the core | `src/agents/training/eval_callback.py` + `eval_sharding/` (behind the same flag), traces as `gen3_core_event_v1` records | the same seed set on both paths → equal greedy results; traces load in the prober | G, T2 (+ F or the bot decision) | **H, 3–4** |
 | I — search on `successors()` in-process | `src/rust_env/src/search.rs`, `src/utils/rust_env/successors.py` (replaces `search_session.py`'s JSON for the in-process road) | the depth-3 successor slice equal to `search_driver`'s rows; the three search gates | 0, A | **H, 2–3** |
 | J — the M5 gate harness | `src/main/rust_core_m5/` (slice N env level, the depth-3 slice, the throughput A/B) | it IS the gate; starts on the Lane-0 prototype and grows as lanes land | 0 | **H, 2–3** |
+| **K — the learner pipeline (owner, 2026-09-28: "scope all of this into the M5 overhaul")** | K1 **torch ≥ 2.8 in a NEW conda env** (never mutate `gen3ai_stable` under live or pinned runs; switch via `$GEN3AI_PYTHON` at a run boundary), then drop the `6521f420` CUDA graph split; K2 **a sync-free update**: the ~270 per-micro-batch `.item()`/`float()` host reads accumulate ON DEVICE and are read once per epoch; the noise-scale probe (5.35 s = 9% of C's update) and the other optional telemetry on a CADENCE (every N updates, flag-set), never every update; K3 a **persistent compile cache** across restarts (the first update after each restart is 147 s vs 57 s steady); K4 **CPU-lane hygiene**: offline reads, anchors and their peers (Foul Play / Metamon) under a cgroup `cpu.max` or nice 19 inherited by every child, so a GPU arm keeps its rollout CPU (L95 lost 35% fps to X22 on 09-28); K5 the epochs/TF32 defaults from the learner battery's verdicts (a decision, no build) | the learner-only benchmark (`2d39b130`) is the gate: update time per phase before/after; K1 the real-obs parity gate green at fp32 and TF32 on the eval AND train graphs with the split OFF, plus a speed A/B; K2 **learning bit-identical** with diagnostics on vs off at the same seed (loss/params after one update), and the cadence's skipped updates log nothing rather than a stale value | K1 and K2 none (dispatch in the first wave); K3 with G's restart policy | **M–H, 3–4.5** |
 
 **Order constraints.**
 1. **Lane 0 first.** Every lane reads its column contract and its dispatch.
@@ -415,9 +416,11 @@ untouched until M5's gate. The Python side is `src/utils/rust_env/`.
 4. **M5's gate** is J's slice N at MILESTONE, plus the depth-3 slice, plus the throughput A/B at
    `--n-envs 48`.
 
-**Mechanical enough for opus-medium:** A, B, D. **opus-high:** 0, C, E, F, G, H, I, J, T2.
+**Mechanical enough for opus-medium:** A, B, D, K4. **opus-high:** 0, C, E, F, G, H, I, J, K1–K3, T2.
 
-**Total: ≈ 24–33 agent-days** (F excluded: 21–29), including T2's 4–6 (F-M5-2: the §2 estimate of
+**Lane K first wave (2026-09-28):** K1 (torch) and K2 (sync-free update) dispatch with Lane 0 on M5's first night — disjoint files (`environment.yml` + `team_transformer.py`'s split; `instrumented_ppo/`), and the learner benchmark already exists as their gate.
+
+**Total: ≈ 24–33 agent-days, plus Lane K (3–4.5, added 2026-09-28) ⇒ ≈ 27–37.5** (F excluded: 21–29), including T2's 4–6 (F-M5-2: the §2 estimate of
 5–8 assumed labels, reward, opponents and eval were already off Python). **Critical path:**
 0 → C / D → G → H plus T2, about 12–16 agent-days. With four lanes in flight that is ~2 calendar
 weeks.
@@ -832,3 +835,4 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-26 | M5 transport **(owner + benchmark)** | BOTH front ends over ONE core; default per consumer by crash isolation; 12 lanes, ≈ 24–33 agent-days incl. T2 | One transport; the registered 5–8 agent-day size | §2 M5; ledger L21421 |
 | 2026-09-27 | Scripted bots **(owner)** | Port them (Lane F) | Keeping bot battles on the old path until M7 | TASK_BACKLOG T3 ("owner yes"); this doc's §2 still reads it as open |
 | 2026-09-27 | Doc status **(owner)** | ALWAYS-CURRENT while implemented; the Q-head spec is its sibling | Explicit-only updates | `556eb4f8`, `51e36c09` |
+| 2026-09-28 | Learner pipeline **(owner)** | Lane K in M5: torch ≥ 2.8 in a new env (drop the miscompile split), a sync-free update with diagnostics on a cadence, a persistent compile cache, CPU-lane hygiene; K1+K2 in the first wave | Leaving the learner out of M5 (env-only); upgrading torch in place under live pinned runs | ledger 2026-09-28 (compile miscompile, `6521f420`); learner benchmark `2d39b130`; C's TB (`train_ms` 56.9 s, noise probe 5.35 s) |
