@@ -193,9 +193,9 @@ into the owning section there, not into a memory file.
 [`ops/EXTERNAL_ANCHORS_SOP.md`](ops/EXTERNAL_ANCHORS_SOP.md) — how our strength is read against an
 agent NOBODY here trained (Metamon's pretrained policies, Foul Play's search bot): the three tiers
 (dense ladder per promotion, `SmallRL` greedy on both team sets per milestone, `SyntheticRLV2` and
-Foul Play at era gates), the **greedy-vs-greedy rule and why** — T = 1.0 is not one regime across
+Foul Play at era gates) plus the `Kakuna` goal read (Metamon's best public policy, wired 2026-09-28), the **greedy-vs-greedy rule and why** — T = 1.0 is not one regime across
 models, so a number never leaves without it — the exact `python -m main.anchors` commands, the cost
-per read, the twelve hazards, and the standing 2×2. Its box-specific paths live beside it in
+per read, the known hazards (H1–H20), and the standing 2×2. Its box-specific paths live beside it in
 [`ops/anchors.json`](ops/anchors.json). [`ops/TECH_DEBT_BACKLOG.md`](ops/TECH_DEBT_BACKLOG.md) — the
 one tech-debt list; nothing on it is dispatched without the owner's word.
 
