@@ -1432,7 +1432,10 @@ are unchanged. As one CUDA graph it miscompiled on real observations: argmax agr
 gradient cosine 0.778 vs eager, measured 2026-09-28 on `ai_v14_01_base`. That affected every
 default cuda run from 2026-08-17 (`28eaef29`) to 2026-09-28. `--compile-trainer`'s startup gate now
 checks real obs at the decision level (`designs/training/compile_flags.md`). **UNVERIFIED:** the
-root-cause op. These do not appear in `model_config.json` and
+root-cause op. **The compile sentinel** (`gen3_compile_sentinel_v1`) then drops the gate's graphs,
+prewarms the production signatures and LOCKS after the first rollout + update: a later recompile or
+a dynamo cache-limit hit (a silent eager fallback) exits `FATAL_CONFIG` — measured headroom at lock
+5 of 8 per code object at fp32 and TF32 (`designs/training/compile_flags.md`). These do not appear in `model_config.json` and
 are **not** inherited on resume — with the compile flags defaulting ON it is the OPT-OUT that must
 be re-passed each launch, not the flag.
 

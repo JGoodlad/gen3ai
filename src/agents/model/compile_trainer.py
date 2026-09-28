@@ -41,8 +41,9 @@ so at startup beats a confusing backend traceback ten minutes in.
 """
 from __future__ import annotations
 
+import contextlib
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 import torch
 
@@ -141,11 +142,8 @@ def check_shape_stability(*, n_steps: int, n_envs: int, batch_size: int,
 
 
 def _dynamo_cache_limit() -> int:
-    try:
-        import torch._dynamo.config as _c
-        return int(getattr(_c, "cache_size_limit", 8))
-    except Exception:
-        return 8
+    from agents.model.compile_control import cache_size_limit   # the one torch._dynamo adapter
+    return cache_size_limit()
 
 
 def _largest_divisor_at_most(n: int, cap: int) -> int:
@@ -549,61 +547,66 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
 
     original = fe.forward
     precision = torch.get_float32_matmul_precision()
-    try:
-        torch._dynamo.config.suppress_errors = False   # a partial compile must be LOUD, not silent
-        eager_ms = _time_steps(fe, obs, _VALIDATE_REPS)
-        # The EAGER arm: the deployed function's decision readout and its train-step gradient,
-        # plus (reduced precision only) the same two at fp32 — the reference both arms are
-        # measured against. All taken BEFORE the compile is installed (eager by construction).
-        eager_read = _readout(model, fe, obs, legal_mask)
-        eager_train = _train_step(fe, obs)
-        ref_read = ref_train = None
-        if precision != "highest":
-            with _matmul_precision("highest"):
-                ref_read = _readout(model, fe, obs, legal_mask)
-                ref_train = _train_step(fe, obs)
+    # gen3_compile_sentinel_v1: phase 1 of `compile_control` — the gate compiles FREELY, with the
+    # cache-limit detector already listening (it also sets suppress_errors=False: a partial compile
+    # must be LOUD). Phase 2 (`reset`, dropping every graph compiled here) and 3-4 (prewarm, lock)
+    # run in `arm_compile_sentinel`, after grad checkpointing is applied and before `learn()`.
+    from agents.model.compile_control import control
+    with control(emit).gate():
+        try:
+            eager_ms = _time_steps(fe, obs, _VALIDATE_REPS)
+            # The EAGER arm: the deployed function's decision readout and its train-step gradient,
+            # plus (reduced precision only) the same two at fp32 — the reference both arms are
+            # measured against. All taken BEFORE the compile is installed (eager by construction).
+            eager_read = _readout(model, fe, obs, legal_mask)
+            eager_train = _train_step(fe, obs)
+            ref_read = ref_train = None
+            if precision != "highest":
+                with _matmul_precision("highest"):
+                    ref_read = _readout(model, fe, obs, legal_mask)
+                    ref_train = _train_step(fe, obs)
 
-        compiled = torch.compile(original)
-        fe.forward = compiled
-        comp_ms = _time_steps(fe, obs, _VALIDATE_REPS)
-        comp_read = _readout(model, fe, obs, legal_mask)
-        comp_train = _train_step(fe, obs)
-        # gen3_tf32_parity_gate_v1: under reduced precision the TF32 rule above can only resolve
-        # a defect larger than ~K x TF32's own rounding (measured: a DROPPED projection bias passes
-        # it). So the same compiled callable is ALSO run at 'highest' — dynamo guards on the TF32
-        # flag, so that is a separate fp32 graph of the SAME trace — and held to the strict fp32
-        # bars against the fp32 eager reference. Every precision-independent graph defect (a wrong
-        # fusion, a dropped term, the single-graph miscompile) fails there at full resolution.
-        comp_read32 = comp_train32 = None
-        if precision != "highest":
-            with _matmul_precision("highest"):
-                comp_read32 = _readout(model, fe, obs, legal_mask)
-                comp_train32 = _train_step(fe, obs)
-    except (CompileTrainerError, ParityFixtureError) as exc:
-        fe.forward = original
-        if isinstance(exc, ParityFixtureError):
-            raise CompileTrainerError(f"--compile-trainer: {exc}") from exc
-        raise
-    except Exception as exc:
-        fe.forward = original
-        # Include the TRACEBACK, not just str(exc). "Bisect the op" is useless advice without a
-        # stack, and the one failure this has actually seen in the wild (a CUDA "invalid
-        # configuration argument") carries its whole diagnosis in the frames — `str(exc)` alone
-        # names no op, no shape and no file.
-        import traceback as _tb
-        _stack = "".join(_tb.format_exception(type(exc), exc, exc.__traceback__))[-3000:]
-        raise CompileTrainerError(
-            f"--compile-trainer: the learner's extractor FAILED to compile — "
-            f"{type(exc).__name__}: {exc}\n\n--- traceback (last frames) ---\n{_stack}\n"
-            "This is fatal by design: falling back to eager here is a ~1.75x throughput regression "
-            "that nothing in the run would surface. Either fix the op that will not lower (bisect "
-            "it — see `src/agents/model/CLAUDE.md`, the species_posterior precedent, where the whole "
-            "'torch cannot compile our model' story was ONE op), or drop --compile-trainer."
-        ) from exc
-    finally:
-        fe.zero_grad(set_to_none=True)
-        if not was_training:
-            fe.eval()
+            compiled = torch.compile(original)
+            fe.forward = compiled
+            comp_ms = _time_steps(fe, obs, _VALIDATE_REPS)
+            comp_read = _readout(model, fe, obs, legal_mask)
+            comp_train = _train_step(fe, obs)
+            # gen3_tf32_parity_gate_v1: under reduced precision the TF32 rule above can only resolve
+            # a defect larger than ~K x TF32's own rounding (measured: a DROPPED projection bias passes
+            # it). So the same compiled callable is ALSO run at 'highest' — dynamo guards on the TF32
+            # flag, so that is a separate fp32 graph of the SAME trace — and held to the strict fp32
+            # bars against the fp32 eager reference. Every precision-independent graph defect (a wrong
+            # fusion, a dropped term, the single-graph miscompile) fails there at full resolution.
+            comp_read32 = comp_train32 = None
+            if precision != "highest":
+                with _matmul_precision("highest"):
+                    comp_read32 = _readout(model, fe, obs, legal_mask)
+                    comp_train32 = _train_step(fe, obs)
+        except (CompileTrainerError, ParityFixtureError) as exc:
+            fe.forward = original
+            if isinstance(exc, ParityFixtureError):
+                raise CompileTrainerError(f"--compile-trainer: {exc}") from exc
+            raise
+        except Exception as exc:
+            fe.forward = original
+            # Include the TRACEBACK, not just str(exc). "Bisect the op" is useless advice without a
+            # stack, and the one failure this has actually seen in the wild (a CUDA "invalid
+            # configuration argument") carries its whole diagnosis in the frames — `str(exc)` alone
+            # names no op, no shape and no file.
+            import traceback as _tb
+            _stack = "".join(_tb.format_exception(type(exc), exc, exc.__traceback__))[-3000:]
+            raise CompileTrainerError(
+                f"--compile-trainer: the learner's extractor FAILED to compile — "
+                f"{type(exc).__name__}: {exc}\n\n--- traceback (last frames) ---\n{_stack}\n"
+                "This is fatal by design: falling back to eager here is a ~1.75x throughput regression "
+                "that nothing in the run would surface. Either fix the op that will not lower (bisect "
+                "it — see `src/agents/model/CLAUDE.md`, the species_posterior precedent, where the whole "
+                "'torch cannot compile our model' story was ONE op), or drop --compile-trainer."
+            ) from exc
+        finally:
+            fe.zero_grad(set_to_none=True)
+            if not was_training:
+                fe.eval()
 
     try:
         rules = decision_verdicts(eager=eager_read, compiled=comp_read, reference=ref_read,
@@ -641,3 +644,149 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
              "--no-compile-trainer to keep the debugger (at ~1.75x less throughput on the train "
              "step).")
     return speedup
+
+
+# ------------------------------------------------------------------------------------------------
+# gen3_compile_sentinel_v1 — phases 2-4 of `compile_control`: reset, prewarm, attach (lock later)
+# ------------------------------------------------------------------------------------------------
+
+def _prewarm_obs(model: Any, batch: int) -> Dict[str, "torch.Tensor"]:
+    """A batch shaped EXACTLY like the rollout's `obs_as_tensor(self._last_obs)`: every key of the
+    policy's observation space (dynamo guards the dict), `observation` from the committed REAL rows,
+    `action_mask` from their masks, every other key zeros of its space's shape and dtype."""
+    import numpy as np
+
+    policy = model.policy
+    device = resolve_device(policy.features_extractor)
+    space = policy.observation_space
+    rows, mask = load_parity_rows(int(space.spaces["observation"].shape[0]))
+    idx = np.arange(int(batch)) % len(rows)
+    out: Dict[str, "torch.Tensor"] = {}
+    for key, sub in space.spaces.items():
+        if key == "observation":
+            arr = rows[idx]
+        elif key == "action_mask" and tuple(sub.shape) == tuple(mask.shape[1:]):
+            arr = mask[idx].astype(sub.dtype)
+        else:
+            arr = np.zeros((int(batch),) + tuple(sub.shape or ()), dtype=sub.dtype)
+        out[key] = torch.as_tensor(arr, device=device)
+    return out
+
+
+def production_prewarm_calls(model: Any, *, n_envs: int, batch_size: int,
+                             batch1: bool) -> List[Tuple[str, Callable[[], None]]]:
+    """Every compiled-extractor signature the learner process reaches in production, in the order
+    production first reaches them (rollout first, so its graph specializes on n_envs as it would).
+
+    Found by reading every learner-process caller (designs/training/compile_flags.md, "The compile
+    sentinel" — the late-shape table):
+      * rollout `policy(obs)` + end-of-rollout `predict_values`: EVAL, no-grad, batch n_envs;
+      * the update's `evaluate_actions`: TRAIN, grad, batch batch_size (fwd + bwd);
+      * `rank_probe` (first minibatch of every update): TRAIN, no-grad, batch batch_size;
+      * a second TRAIN/grad size (batch_size // 2 — the capacity half-batch cosine) so the train
+        graph is dynamic in batch before the lock: variable-size train callers (td-aux, the
+        distill-anchor fallback) then reuse it;
+      * ``batch1``: EVAL, no-grad, batch 1 — the truncated-episode `predict_values` under
+        `--critic shaped` (dynamo always specializes size 1; `winprob` relabels those ends as
+        terminal, so production never reaches it).
+    """
+    policy = model.policy
+
+    def _eval_nograd(b: int) -> Callable[[], None]:
+        def run() -> None:
+            was = policy.training
+            policy.set_training_mode(False)
+            try:
+                with torch.no_grad():
+                    policy.extract_features(_prewarm_obs(model, b))
+            finally:
+                policy.set_training_mode(was)
+        return run
+
+    def _train(b: int, grad: bool) -> Callable[[], None]:
+        def run() -> None:
+            was = policy.training
+            policy.set_training_mode(True)
+            try:
+                if grad:
+                    pi, vf = policy.extract_features(_prewarm_obs(model, b))
+                    (pi.float().square().mean() + vf.float().square().mean()).backward()
+                else:
+                    with torch.no_grad():
+                        policy.extract_features(_prewarm_obs(model, b))
+            finally:
+                policy.zero_grad(set_to_none=True)
+                policy.set_training_mode(was)
+        return run
+
+    calls: List[Tuple[str, Callable[[], None]]] = [
+        (f"rollout eval/no-grad B={n_envs}", _eval_nograd(n_envs)),
+        (f"update train/grad B={batch_size}", _train(batch_size, True)),
+        (f"rank-probe train/no-grad B={batch_size}", _train(batch_size, False)),
+    ]
+    half = max(2, int(batch_size) // 2)
+    if half != int(batch_size):
+        calls.append((f"capacity train/grad B={half}", _train(half, True)))
+    if batch1:
+        calls.append(("shaped truncation value eval/no-grad B=1", _eval_nograd(1)))
+    return calls
+
+
+def _is_winprob(critic: Any) -> bool:
+    from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+    return bool(is_winprob(critic or CRITIC_DEFAULT))
+
+
+def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int, critic: Any,
+                         emit: Optional[Callable[[str], None]] = None) -> Optional[str]:
+    """Phases 2-4 for a compiled learner: reset the gate's graphs, prewarm every production
+    signature, and attach the lock (after the first rollout + update) and the per-rollout /
+    per-update checks. A no-op (returns None) when the learner is not compiled.
+
+    MUST run after `_apply_grad_checkpointing` (the forward reads `grad_checkpointing`, so a graph
+    compiled before it is a stale entry) and before `learn()`. Raises `CompileSentinelError`.
+    """
+    fe = getattr(getattr(model, "policy", None), "features_extractor", None)
+    if fe is None or "forward" not in vars(fe):
+        return None
+    from agents.model.compile_control import control
+    ctl = control(emit)
+
+    def _say(msg: str) -> None:
+        print(msg, flush=True)
+        if emit is not None:
+            try:
+                emit(msg)
+            except Exception:
+                pass
+
+    t0 = time.perf_counter()
+    _say(ctl.reset())
+    calls = production_prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size),
+                                     batch1=not _is_winprob(critic))
+    line = ctl.prewarm(calls)
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    _say(f"{line} — reset + prewarm took {time.perf_counter() - t0:.1f}s")
+    ctl.attach(model)
+    return line
+
+
+@contextlib.contextmanager
+def eager_extractor(fe: Any) -> Iterator[None]:
+    """Route `fe` to its EAGER forward for the block (a compiled `fe.forward` is an INSTANCE
+    attribute over the class method; removing it for the block exposes the class method).
+
+    For the learner-process callers whose signature can FIRST appear after the lock and cannot be
+    pre-warmed — a different obs KEY SET or a batch that may be 1 (search-teacher/OPD, fork-arm
+    scoring, the distill grad-projection). Same parameters, same autograd; eager numerics.
+    """
+    compiled = vars(fe).get("forward") if fe is not None and hasattr(fe, "__dict__") else None
+    if compiled is None:                          # not compiled (or no extractor): nothing to route
+        yield
+        return
+    del fe.forward
+    try:
+        yield
+    finally:
+        fe.forward = compiled

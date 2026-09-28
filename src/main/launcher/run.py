@@ -78,7 +78,8 @@ _FAST_CRASH_SECONDS = 600.0
 # failure — restarting would hit the exact same error every time. The dedicated
 # FATAL_CONFIG exit code is the primary signal; matching one of these ALSO surfaces the
 # specific reason line(s) in the Events panel (vs the generic exit-code-only fallback).
-_FATAL_CONFIG_SIGNATURES = ("[ModelVersion] FATAL", "[StableOpponent] FATAL")
+_FATAL_CONFIG_SIGNATURES = ("[ModelVersion] FATAL", "[StableOpponent] FATAL", "[CompileTrainer] FATAL",
+                            "[CompileSentinel] FATAL")
 
 
 def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":

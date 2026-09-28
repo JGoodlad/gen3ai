@@ -51,6 +51,7 @@ table exists to prevent:
 | `extractor_forward.py` | `ExtractorForward` — `forward_internal`, the T0/T1 belief+physics stack, `_value_pooled_routes` |
 | `features_extractor.py` | the `Gen3FeaturesExtractor` class + `forward`; **the re-export HUB for every moved name** |
 | `compile_opponents.py` | `maybe_compile_extractor` — the CPU-opponent compile path (split out of `snapshot.py`) |
+| `compile_control.py` | `gen3_compile_sentinel_v1` — the ONLY runtime module that touches `torch._dynamo`: the gate → reset → prewarm → lock → stats phases, the cache-limit detector, the torch version table and the source-hash drift tripwire (`designs/training/compile_flags.md`) |
 
 ## The table LAYERING — `damage_tables` → `belief_tables` → `dex_ids`
 

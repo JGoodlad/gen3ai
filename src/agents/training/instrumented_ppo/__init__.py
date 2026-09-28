@@ -50,6 +50,9 @@ If upstream changes (e.g. after a `pip install -U sb3_contrib`):
    from (last known hash is in `_EXPECTED_UPSTREAM_TRAIN_HASH`).
 2. Port any non-instrumentation changes into the `train()` override below.
 3. Recompute the hash and update `_EXPECTED_UPSTREAM_TRAIN_HASH`.
+
+The same pattern guards the torch._dynamo internals the compile sentinel rests on:
+`agents.model.compile_control.verify_torch_internals` (`_SOURCE_HASHES`).
 """
 
 import hashlib

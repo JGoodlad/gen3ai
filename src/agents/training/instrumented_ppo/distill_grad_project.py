@@ -217,7 +217,11 @@ def behaviour_constraints(policy, observations: Dict[str, th.Tensor],
     it needs no label, no reference forward and no second policy.
     """
     obs = {k: v[rows] for k, v in observations.items()}
-    logits = policy.get_distribution(obs).distribution.logits
+    # EAGER: a variable row count (possibly 1) is a signature the compile lock would kill
+    # (gen3_compile_sentinel_v1); same parameters, same autograd.
+    from agents.model.compile_trainer import eager_extractor
+    with eager_extractor(getattr(policy, "features_extractor", None)):
+        logits = policy.get_distribution(obs).distribution.logits
     neg = (action_masks[rows].to(logits.dtype) - 1.0) * 1e9
     logp = th.log_softmax(logits + neg, dim=-1)
     star = logp.detach().argmax(-1)

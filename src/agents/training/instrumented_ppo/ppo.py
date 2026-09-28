@@ -62,6 +62,7 @@ from agents.training.instrumented_ppo.rollout_probes import RolloutProbes
 from agents.training.instrumented_ppo.train_setup import TrainSetup
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.rank_metrics import rank_probe
+from agents.model.compile_trainer import eager_extractor as _eager_fe  # gen3_compile_sentinel_v1
 
 
 def train_step_source() -> str:
@@ -1072,7 +1073,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     if _batch:
                         from agents.training.teacher.buffer import CorrectionBuffer as _CB
                         _td = _CB.to_tensors(_batch, self.device)
-                        _dist = self.policy.get_distribution(_td["obs_dict"])
+                        # EAGER: a (obs, action_mask)-only key set at a ring-sized batch is a
+                        # signature the compile lock would kill (gen3_compile_sentinel_v1).
+                        with _eager_fe(getattr(self.policy, "features_extractor", None)):
+                            _dist = self.policy.get_distribution(_td["obs_dict"])
                         _st = self._searchteacher_loss(
                             _dist.distribution.logits, _td["action_mask"], _td["better_action"],
                             _td["advantage"], beta_awr=self.search_teacher_beta)
@@ -1080,7 +1084,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             _st_loss, _st_m = _st
                             searchteacher_term = self.search_teacher_coef * _st_loss
                             if self.search_teacher_value_coef != 0.0:   # OFF by default (soundness)
-                                _vt = self.policy.predict_values(_td["obs_dict"]).flatten()
+                                with _eager_fe(getattr(self.policy, "features_extractor", None)):
+                                    _vt = self.policy.predict_values(_td["obs_dict"]).flatten()
                                 _vtgt = (popart.normalize(_td["confirmed_value"]) if popart is not None
                                          else _td["confirmed_value"])
                                 searchteacher_term = searchteacher_term + \
@@ -1103,7 +1108,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         from agents.training.teacher.buffer import CorrectionBuffer as _CB
                         _otd = _CB.to_tensors(_obatch, self.device)
                         if _otd.get("pi_target") is not None:   # skip an AWR-only (π'-less) sample
-                            _odist = self.policy.get_distribution(_otd["obs_dict"])
+                            with _eager_fe(getattr(self.policy, "features_extractor", None)):   # see search-teacher
+                                _odist = self.policy.get_distribution(_otd["obs_dict"])
                             _opd = self._opd_loss(
                                 _odist.distribution.logits, _otd["action_mask"], _otd["pi_target"])
                             if _opd is not None:

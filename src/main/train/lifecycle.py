@@ -71,6 +71,39 @@ def _maybe_compile_trainer(model, args) -> None:
         sys.exit(TrainExitCode.FATAL_CONFIG)
 
 
+def _arm_compile_sentinel(model, args) -> None:
+    """gen3_compile_sentinel_v1 — phases 2-4 of `agents.model.compile_control` for a compiled
+    learner: drop the startup gate's graphs (`torch._dynamo.reset()`), prewarm every production
+    signature, and attach the per-rollout / per-update checks + the lock after the first update.
+
+    Placed AFTER `_apply_grad_checkpointing` (the forward reads that attribute, so anything compiled
+    before it is a stale cache entry) and before `learn()`. No-op when the learner is not compiled.
+    """
+    from agents.model.compile_trainer import CompileTrainerError, arm_compile_sentinel
+    if not getattr(args, "compile_trainer", False):
+        return
+    if getattr(args, "debug", False) and getattr(args, "compile_opponents", False):
+        # --debug is ONE DummyVecEnv: the opponents live IN THIS PROCESS, and each pool snapshot
+        # compiles `Gen3FeaturesExtractor.forward` lazily — the SAME code objects (the SAME
+        # cache_size_limit slots) as the learner, and after the lock. Refuse at startup rather than
+        # die at the first snapshot load with a sentinel FATAL that names the learner's frame.
+        msg = ("[CompileSentinel] FATAL: --debug with --compile-trainer AND --compile-opponents "
+               "compiles opponents inside the learner process, on the learner's own dynamo code "
+               "objects, after the compile lock. Pass --no-compile-opponents with --debug "
+               "--compile-trainer (production's SubprocVecEnv compiles opponents in the workers).")
+        print(f"\n{msg}", file=sys.stderr, flush=True)
+        send_event(msg)
+        sys.exit(TrainExitCode.FATAL_CONFIG)
+    try:
+        arm_compile_sentinel(model, n_envs=int(getattr(model, "n_envs", 0) or args.n_envs),
+                             batch_size=int(model.batch_size),
+                             critic=getattr(args, "critic", None), emit=send_event)
+    except CompileTrainerError as exc:
+        print(f"\n[CompileSentinel] FATAL: {exc}", file=sys.stderr, flush=True)
+        send_event(f"[CompileSentinel] FATAL: {exc}")
+        sys.exit(TrainExitCode.FATAL_CONFIG)
+
+
 def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
     """Startup smoke test: save → reload → zero forward pass → assert output shape.
 

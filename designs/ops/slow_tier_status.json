@@ -153,6 +153,22 @@
    "contention": 2.1,
    "detail": ""
   },
+  "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[high]": {
+   "status": "pass",
+   "commit": "201b1128c26d349be7d6502c4a47ba3cbcc004d8",
+   "at": "2026-09-28T20:44:35Z",
+   "duration_s": 338.32,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[highest]": {
+   "status": "pass",
+   "commit": "201b1128c26d349be7d6502c4a47ba3cbcc004d8",
+   "at": "2026-09-28T20:44:35Z",
+   "duration_s": 398.07,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/model/compile_prewarm_test.py::test_preload_compiles_single_threaded_end_to_end": {
    "status": "pass",
    "commit": "8d07051aa767331cfa1ca2292029d5217cbf6d40",
@@ -778,5 +794,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-26T15:35:13Z"
+ "last_written": "2026-09-28T20:44:35Z"
 }

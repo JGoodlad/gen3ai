@@ -426,6 +426,21 @@ wake. Re-create it on the next GO, written to this contract.
   between consecutive rollouts while its 20-rollout median sat at +0.15; three single-sample readings
   in one day would each have produced the wrong call (ledger 2026-09-06 · *REGISTRATION — the vf_coef
   restart rule*).
+- **🧊 Compile sentinel (`--compile-trainer` runs, `gen3_compile_sentinel_v1`).** Every launch and
+  every restart prints `🧊 [COMPILE LOCK] after the first rollout + update: max N cache entries per
+  code object (limit 8, headroom H) …` — grep the child log for `COMPILE LOCK`; headroom at the
+  shipped config is 5 at fp32 AND TF32. TB `compile/recompiles_after_lock` and
+  `compile/cache_limit_hits` must read 0 for the life of the process; the child's last word on it is
+  `🧊 [COMPILE LOCK] released — learn() returned; 0 compile(s) after the lock` (the final eval runs
+  after the release, unlocked, by design). **A `[CompileSentinel] FATAL`
+  line means the learner recompiled after the lock, hit dynamo's cache limit (it would have run
+  EAGER, ~1.75x slower, silently), or runs on a torch whose internals drifted** — the child exits
+  `FATAL_CONFIG` (3) and the launcher does NOT restart it (no checkpoint is written on that exit;
+  resume from the last periodic one). It is a watch item: read the FATAL's `Frames:` / guard-failure
+  text, reproduce on a short fork with `TORCH_LOGS=recompiles`, fix the caller (prewarm it or route it
+  through `compile_trainer.eager_extractor`), relaunch. `⚠️ [COMPILE REGRESSION?]` (train_ms > 1.4x the
+  post-lock baseline for 3 updates; `compile/regression_flag`) is a WARN — check contention first.
+  Detail: `designs/training/compile_flags.md` "The compile sentinel".
 - **Composition guard:** `reward/untracked_abs_mean` must read 0; the launch banner must match the
   registered composition (e.g. "1 TERMINAL + 0 PBRS + 0 BIAS").
 

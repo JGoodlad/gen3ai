@@ -290,8 +290,11 @@ class ForkArmCallback(BaseCallback):
         d = {k: th.as_tensor(np.ascontiguousarray(v)).to(dev) for k, v in batch.items()}
         was_training = self.model.policy.training
         self.model.policy.set_training_mode(False)
+        # EAGER: the candidate-pool size varies per rollout — a signature the compile lock would
+        # kill (gen3_compile_sentinel_v1).
+        from agents.model.compile_trainer import eager_extractor
         try:
-            with th.no_grad():
+            with th.no_grad(), eager_extractor(getattr(self.model.policy, "features_extractor", None)):
                 dist = self.model.policy.get_distribution(d)
                 logits = dist.distribution.logits.float().cpu().numpy()
                 values = self.model.policy.predict_values(d).reshape(-1).float().cpu().numpy()

@@ -418,6 +418,8 @@ untouched until M5's gate. The Python side is `src/utils/rust_env/`.
 
 **Mechanical enough for opus-medium:** A, B, D, K4. **opus-high:** 0, C, E, F, G, H, I, J, K1–K3, T2.
 
+**Lane K1 and the compile sentinel (2026-09-28, `gen3_compile_sentinel_v1`):** `--compile-trainer` is now guarded by `src/agents/model/compile_control.py` (gate → reset → prewarm → lock after the first update; a late recompile or a cache-limit hit is `FATAL_CONFIG`), built on torch 2.5.1's `error_on_recompile` + a cache-limit log detector. K1 swaps the lock for `torch.compiler.set_stance("fail_on_recompile")` + `fullgraph=True` once the split is gone: the adapter's `_SUPPORTED` / `_SOURCE_HASHES` tables REFUSE the new torch by design until its contract tests pass and its row is recorded.
+
 **Lane K first wave (2026-09-28):** K1 (torch) and K2 (sync-free update) dispatch with Lane 0 on M5's first night — disjoint files (`environment.yml` + `team_transformer.py`'s split; `instrumented_ppo/`), and the learner benchmark already exists as their gate.
 
 **Total: ≈ 24–33 agent-days, plus Lane K (3–4.5, added 2026-09-28) ⇒ ≈ 27–37.5** (F excluded: 21–29), including T2's 4–6 (F-M5-2: the §2 estimate of

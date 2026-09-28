@@ -534,9 +534,15 @@ class PpoHyperparameters:
         # belongs beside the startup banner, which every restart also re-prints, and the run's
         # `--vf-coef` may have been changed between them — a latch that rode the checkpoint would
         # silence the reading for the rest of the run's life after its first three hours.
+        # `collect_rollouts` / `train` / `learn` / `_compile_control` (gen3_compile_sentinel_v1) are the compile
+        # sentinel's INSTANCE wrappers (`CompileControl.attach`): closures over a process-local
+        # CompileControl holding a logging handler and dynamo callbacks. Pickled, every save after
+        # the first update would carry (or fail on) them, and a loaded model would re-install a
+        # dead process's sentinel. Re-attached fresh by every process that compiles.
         return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
                                                   "_distill_teachers", "_cf_buffer",
                                                   "_capacity_state", "_winprob_phi_source",
                                                   "_distill_anchor_parent", "_distill_anchor_ref",
                                                   "_distill_anchor_ref_writer",
-                                                  "_vf_scale_announced"]
+                                                  "_vf_scale_announced", "collect_rollouts",
+                                                  "train", "learn", "_compile_control"]

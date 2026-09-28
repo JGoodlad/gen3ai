@@ -9979,3 +9979,29 @@ which is TF32 rounding. Chasing that turned up the real defect.
   verdicts, the TF32 rule, and `test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate`. The
   CUDA-only cells skip while a trainer holds the card. They were run by hand on the card for this
   commit.
+
+## 2026-09-28 — THE COMPILE SENTINEL: `--compile-trainer` can no longer silently recompile or fall back to eager (`gen3_compile_sentinel_v1`; no model version bump, no training-input change, numerics unchanged)
+
+- **Owner:** "I just can't stand the idea that that could be subtly happening to us. Is there no
+  way to force it to raise or reject?" On torch 2.5.1 a dynamo `cache_size_limit` (8 per code
+  object) hit logs one warning and runs the frame EAGER forever; a late recompile costs a stall.
+- **`src/agents/model/compile_control.py`**, the one adapter over `torch._dynamo`, in phases: the
+  startup parity gate compiles freely → `torch._dynamo.reset()` → prewarm every production
+  signature → LOCK after the first rollout + update (`error_on_recompile` + a compile-start
+  callback + a cache-limit log detector) → `compile/*` TB scalars. A violation exits
+  `[CompileSentinel] FATAL` / `FATAL_CONFIG`; `⚠️ [COMPILE REGRESSION?]` warns on train_ms > 1.4x
+  its post-lock baseline for 3 updates.
+- **The gate spent production's cache.** Measured on `ai_v14_01_base`: without the reset, entries
+  at lock were max 5 per code object at fp32 and **7 of 8 at TF32** (headroom 1); with it, 3 at both.
+  The reset costs ~0 (TF32: 220.8 s vs 223.0 s for reset+prewarm vs prewarm alone, same conditions).
+- Late callers with a new signature (search-teacher/OPD, fork-arm scoring, `fork_driver`, the distill
+  grad-projection) run the EAGER forward (`compile_trainer.eager_extractor`); `--debug` +
+  `--compile-trainer` + `--compile-opponents` is refused (in-process opponents share the code
+  objects).
+- End-to-end on the real trainer (T32b argv at TF32, tiny fork): locked after iteration 1 at max 4
+  of 8, iterations 2-3 clean, saves fine — and it exposed that the in-process FINAL evaluation ran on
+  the still-locked compiled forward (`RecompileError`); the lock is now released when `learn()` ends.
+- Guardrails: an exact torch version table and an SB3-style source-hash tripwire over the 13 torch
+  internals the adapter rests on, verified at import and in the routine tier, plus behavioural
+  contract tests. Lane K1 (torch ≥ 2.8) swaps the lock for `set_stance("fail_on_recompile")`.
+

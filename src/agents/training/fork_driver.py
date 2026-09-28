@@ -82,8 +82,11 @@ def _score(model, obs: np.ndarray, masks: np.ndarray, actions: np.ndarray
     dev = model.device
     was_training = model.policy.training
     model.policy.set_training_mode(False)
+    # EAGER: an (observation, action_mask)-only key set with a variable remainder chunk is a
+    # signature the compile lock would kill (gen3_compile_sentinel_v1).
+    from agents.model.compile_trainer import eager_extractor
     try:
-        with th.no_grad():
+        with th.no_grad(), eager_extractor(getattr(model.policy, "features_extractor", None)):
             for lo in range(0, n, chunk):
                 hi = min(n, lo + chunk)
                 d = {"observation": th.as_tensor(obs[lo:hi]).to(dev),

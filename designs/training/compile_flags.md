@@ -629,6 +629,132 @@ testable without a GPU — a contract that needs a free card is a contract that 
 plus a CUDA test that the `state_dict` keys and a save/reload survive) and the compile itself in
 `agents/model/extractor_compiles_test.py`.
 
+### The compile sentinel (`gen3_compile_sentinel_v1`, 2026-09-28)
+
+The owner's question: *"Is there no way to force it to raise or reject?"* — yes, on torch 2.5.1,
+behind ONE adapter: **`src/agents/model/compile_control.py` is the only runtime module that touches
+`torch._dynamo`** (the one exception is `team_transformer`'s in-graph `graph_break()`, which is model
+code dynamo traces). Two failures were silent before it:
+
+* **CACHE-LIMIT FALLBACK.** Dynamo keeps at most `cache_size_limit` (8) entries per CODE OBJECT per
+  ID-matched `self`. The ninth is not compiled: `convert_frame._compile` logs ONE warning
+  (`torch._dynamo hit config.cache_size_limit (8)`), raises a SOFT failure that
+  `ConvertFrame.__call__` swallows, and that frame runs EAGER from then on — ~1.75x slower, no error.
+* **LATE RECOMPILES.** A stall each, spending the cache toward the fallback.
+
+**THE PHASES** (`compile_control.control()`, one per process):
+
+| phase | where | what |
+|---|---|---|
+| 1 `gate()` | `compile_trainer_extractor` | the startup parity gate compiles FREELY; the cache-limit detector already listens (a hit here is fatal too) |
+| 2 `reset()` | `_arm_compile_sentinel`, after `_apply_grad_checkpointing` | `torch._dynamo.reset()` — drops every graph the gate compiled |
+| 3 `prewarm(calls)` | same | runs every production signature NOW (`compile_trainer.production_prewarm_calls`), RNG-neutral (`fork_rng`), gradients zeroed |
+| 4 `lock(where)` | the end of the first `train()` (after one real rollout + update) | `error_on_recompile = True` + a compile-START callback counting every frame compile. `🧊 [COMPILE LOCK] …` states the per-code-object entry count and the headroom to the limit |
+| — `release(why)` | when `learn()` returns or raises | the lock's scope is TRAINING: the trainer's FINAL EVALUATION runs in-process on the same compiled forward at batch 1 / no-grad — new signatures by design. MEASURED on the real trainer (the end-to-end smoke below): a still-locked sentinel broke it with `RecompileError`. Prints `🧊 [COMPILE LOCK] released …` with the post-lock compile count (must be 0) |
+| 5 `stats()` | every update | TB `compile/graphs_total`, `compile/recompiles_after_lock` (**must stay 0**), `compile/cache_limit_hits`, `compile/max_cache_entries_per_code`, `compile/locked`, `compile/regression_flag`, `compile/train_ms_vs_lock_baseline` |
+
+The checks run at every rollout end and every update end (`CompileControl.attach` wraps the model's
+`collect_rollouts`, `train` and `learn` as INSTANCE attributes — all three, plus `_compile_control`,
+are in `_excluded_save_params`, so no checkpoint carries a live sentinel). A `RecompileError` raised at a call site, a cache-limit hit, or any
+compile that STARTS after the lock is `CompileSentinelError` → **`[CompileSentinel] FATAL …` and
+`os._exit(FATAL_CONFIG)`** — an exception inside `learn()` would reach `model_build`'s generic
+`except` and become a restartable CRASH, and a restart would replay it. The launcher also matches
+`[CompileSentinel] FATAL` / `[CompileTrainer] FATAL` in `_FATAL_CONFIG_SIGNATURES`. There is no
+checkpoint save on this exit (the last periodic checkpoint stands); the weights are not wrong, the
+throughput is.
+
+**Why the reset (phase 2) — the gate's graphs spent production's slots.** The cache is keyed per
+code object (`Gen3FeaturesExtractor.forward.__code__`, `TeamTransformer.forward.__code__`, the
+trunk split's resume frames …), shared by every instance and every `torch.compile` wrapper of that
+code — so a separate compiled callable for the gate would NOT have isolated it in 2.5.1
+(`compile_control_test::test_contract_cache_is_per_code_object_shared_across_compiled_wrappers`).
+The gate compiles train/grad + train/no-grad at batch 64, and under TF32 the same pair again at
+`highest`; production rolls out in EVAL mode at `n_envs`, so **none of the gate's entries is a
+production signature** (entries at lock = gate's + production's, exactly additive below). MEASURED
+2026-09-28 on the real `ai_v14_01_base/final_model.zip` policy (RTX 3080 Ti, torch 2.5.1+cu121,
+rollout batch 48, train batch 512 as the dynamic-train proxy — the train graph is dynamic in batch
+either way, so 2048 lands on the same entry; `~/.claude/jobs/compile_sentinel_2026-09-28/`):
+
+| precision | gate entries / code obj | at lock WITHOUT reset | at lock WITH reset (ships) |
+|---|---|---|---|
+| fp32 `highest` | 2 | max **5** (headroom 3), 13 code objects, 39 entries | max **3** (headroom 5), 9 code objects, 23 entries |
+| TF32 `high` | 4 | max **7** (headroom **1**), 13 code objects, 57 entries | max **3** (headroom 5), 9 code objects, 23 entries |
+
+TF32 without the reset sat ONE signature from the silent fallback (a `--critic shaped` batch-1
+truncation value alone would have been the eighth) — the risk to the TF32 arm. **Startup cost of the
+reset: ~0.** At TF32, run concurrently under identical conditions, reset+prewarm took 220.8 s vs
+223.0 s for the prewarm alone on top of the gate's cache: the production graphs are compiled
+either way (before `learn()` now, inside iteration 1 before), and the reset re-compiles nothing
+production would have reused. Absolute prewarm times on this box ranged 192–359 s across the four
+measurements (first-ever compile of a graph vs Inductor's on-disk FX-graph-cache hits, a live
+trainer's CPU load, 3 concurrent measurements) — **UNVERIFIED on a quiet box**; the ledger figure
+for production is the first update after a restart at 147 s vs 57 s steady (Lane K3).
+
+**The late-shape table** — every learner-process caller of the compiled forward (read from the code,
+2026-09-28) and how each is handled. Dynamo guards batch (dim 0 goes dynamic at the 2nd size, but 1
+is ALWAYS specialized), grad mode, `module.training`, the obs DICT KEY SET, dtype/device, the TF32
+flag and read attributes (`grad_checkpointing`):
+
+| caller | signature | handled by |
+|---|---|---|
+| rollout `policy(obs)`, end-of-rollout `predict_values`, `WinProbLabelCallback` bootstrap, frozen-φ / PBRS | eval · no-grad · `n_envs` (PBRS: 2048-chunks) | prewarm (rollout) + iteration 1 (PBRS runs every rollout) |
+| `evaluate_actions` | train · grad · `batch_size` | prewarm |
+| `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm |
+| capacity half-batch cosine (every 50 minibatches), td-aux, distill-anchor fallback | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
+| truncated-episode `predict_values` under `--critic shaped` | eval · no-grad · **1** | prewarm (only when the critic is not `winprob`, which relabels those ends as terminal) |
+| search-teacher / OPD (`ppo.py`), fork-arm `_score_pool`, `fork_driver._score`, distill grad-projection | a different KEY SET and/or a variable batch that may be 1 | `compile_trainer.eager_extractor(fe)` — the EAGER forward for the block (same params, same autograd) |
+| cf terms, capacity velocity, win-prob episode-start read | — | already eager (`type(fe).forward(fe, …)`) |
+| eval, snapshot ladder, search-teacher workers, the opponents | — | other processes (fresh dynamo per process) |
+| `--debug` (DummyVecEnv) + `--compile-opponents` | opponents compile IN the learner process, on the learner's code objects, after the lock | **refused at startup** (`FATAL_CONFIG`): pass `--no-compile-opponents` |
+| the FINAL evaluation after `learn()` (in-process, the live compiled model) | eval · no-grad · 1, a smaller obs key set | runs AFTER `release()` — recompiles freely, as before |
+
+A launcher restart is a fresh process (fresh cache, a new gate, a new lock).
+
+**END-TO-END on the real trainer** (2026-09-28, the T32b argv at TF32 made tiny — `n_envs` 2, a fork
+of `ai_v14_01_base` into `~/gen3ai_archive/compile_sentinel_smoke/`, 3 iterations): gate PASS →
+`reset` dropped the gate's 36 entries → prewarm (4 signatures, max 3 entries per code object, 229 s
+incl. the reset) → `🧊 [COMPILE LOCK] after the first rollout + update: max 4 cache entries per code
+object (limit 8, headroom 4)` — iteration 1 added one signature the prewarm did not (UNVERIFIED
+which; the lock-after-iteration-1 design exists for exactly that) → iterations 2-3 clean (`train_ms`
+12.8 s → 2.8 s), checkpoint saves after the lock fine, `Training complete`. It then exposed the
+final-eval defect `release()` fixes; **the fix is unit-tested, not re-run on the card** (the card
+was handed back to a live benchmark). Nothing toggles TF32 /
+matmul precision / autocast after startup.
+
+**THE BEHAVIOURAL BACKSTOP, independent of dynamo:** the baseline is the median `train/train_ms` of
+the first 5 updates AFTER the lock update (which may carry iteration 1's compiles), then FROZEN; `train_ms > 1.4x` it for 3 consecutive updates prints
+`⚠️ [COMPILE REGRESSION?] …` once and sets `compile/regression_flag` = 1. WARN, never fatal —
+contention (an eval burst, a peer job) has the same signature.
+
+**THE TORCH GUARDRAILS.** (1) An exact version table (`_SUPPORTED`, `2.5.1+cu121` → the
+`error_on_recompile` mode); an unknown torch REFUSES. (2) **A source-hash drift tripwire** (the SB3
+`instrumented_ppo._verify_upstream_unchanged` pattern): `_SOURCE_HASHES` = {torch version →
+{qualname → SHA256 of `inspect.getsource`}} over every internal the adapter rests on
+(`cache_size.compute_cache_size` / `is_recompilation` / `exceeds_cache_size_limit`,
+`guards.get_and_maybe_log_recompilation_reason`, `convert_frame._compile` (emits the warning),
+`ConvertFrame.__call__` (the soft-fail swallow), `ConvertFrameAssert.__call__` + `Tracker` +
+`eval_frame._debug_get_cache_entry_list` (the per-code read), `callback.CompilationCallbackHandler`,
+`OutputGraph.compile_and_call_fx_graph` (the graph counter), `torch._dynamo.reset`,
+`torch.compiler.reset`). Verified at the adapter's import — every `--compile-trainer` process — and
+in the routine tier; a mismatch raises naming each drifted qualname with both hashes. Re-record with
+`python -m agents.model.compile_control --record` AFTER re-reading the functions and re-running
+(3) the behavioural CONTRACT tests in `compile_control_test.py` (the warning's text and logger, the
+raw `RecompileError`, the start callback, the counter / entry list / reset, the per-code-object
+cache). Hash = the code changed; contract = the behaviour changed; both are kept. **Lane K1** (torch
+≥ 2.8) hits the tripwire by design and swaps the lock for `torch.compiler.set_stance(
+"fail_on_recompile")` + `fullgraph=True` once the trunk split is gone — the `"stance"` mode, enabled
+by adding the new version's row (**UNVERIFIED on 2.8**).
+
+**Tests** (`src/agents/model/compile_control_test.py`; CPU with dynamo's `eager` backend — the
+cache, guards, limit and recompile path are dynamo's, independent of the backend): >8 guard
+signatures trip the detector → FATAL (also before the lock); after the lock a new shape raises the
+typed FATAL at the call site; a SWALLOWED `RecompileError` and a late FIRST compile are still
+caught; the healthy two-shape alternation locks and runs clean; **the sentinel changes no numerics**
+(outputs + gradients bit-identical on vs off); `attach` locks after the first update and exits
+`FATAL_CONFIG`; `eager_extractor`; the version refusal and the hash tripwire; the contract tests;
+and `test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32` (CUDA, `slow`; skips while
+a trainer holds the card).
+
 ### Every non-training model can use it
 
 `maybe_compile_extractor` is safe to apply to ANY frozen model, because the wrapper routes
