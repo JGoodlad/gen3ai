@@ -3,9 +3,8 @@
 🚨 **ALWAYS-CURRENT WHILE BEING IMPLEMENTED (owner, 2026-09-27).** Any build that differs from this program (a milestone's scope, a lane plan, a gate, the deletion manifest) updates this doc in the same commit, saying what changed and why. The Q-head / opponent-pointer spec is its sibling, [`design_q_head.md`](design_q_head.md).
 
 **Status: PLAN, authored 2026-09-23 at the owner's request (Phase 0 of the RUST CORE PROGRAM).
-M1 and M2 BUILT; the per-emission EMISSION SELF-CHECK (§3) BUILT, ON in every test and fuzzer build,
-compiled out of production.**
-Explicit-only, like every document in `endstate/`: update it on the owner's word. It implements
+M1–M4 BUILT; M6 CUTOVER DONE (`ac0b6469`) and deletion pass part 1 DONE; M5 Phase A DONE (`17757d09`), the M5 build GO'd by the owner for Mon 2026-09-28 ~22:00; M7 after. The per-emission EMISSION SELF-CHECK (§3) BUILT, ON in every test and fuzzer build, compiled out of production.**
+ALWAYS-CURRENT (see the banner above; owner, 2026-09-27 — this replaced the old "explicit-only" rule). It implements
 [`design_three_tier_environment.md`](design_three_tier_environment.md) (the end state; its §7 is the
 ordering this plan re-cuts) and is licensed on **unification** grounds — the owner's goal is "a low
 tech debt, robust, performant and unified approach; search will be on the table in our true end
@@ -62,7 +61,7 @@ tech-debt inventory are in
 > as its own later change with its own gate. Why: the switch to Rust for training is derisked by
 > changing ONE thing at a time. The cutover swaps what builds the observation while the process
 > model stays fixed; M5 then changes the process model on a Rust-built observation that is already
-> proven. **M5 is not started until the owner says so.** T2 (the inference tier) is M5's prerequisite,
+> proven. **M5 was not to start until the owner said so — the owner GO'd the M5 build on 2026-09-27 ("launch M5 on Monday if we have quota", then "bump launch to Monday night, say 10pm").** T2 (the inference tier) is M5's prerequisite,
 > so it waits with M5 unless a non-training consumer adopts it earlier.
 
 Sizes are **agent-days**, calibrated to two measured rates: the one-sided view (a fraction of
@@ -403,7 +402,7 @@ untouched until M5's gate. The Python side is `src/utils/rust_env/`.
 | D — episode + reward | `src/rust_env/src/episode.rs` | slice N `reward` / `terminated` / `truncated`, the stall forfeit at `StallConfig().threshold`, ties, the terminal observation | 0 | **M, 1–1.5** |
 | T2 — the inference service (already in the program) | `src/agents/inference/service/` | T2's own gate | — (parallel with everything) | **H, 4–6** |
 | E — opponent routing | `src/rust_env/src/opponents.rs`, `src/agents/training/rust_env_opponents.py` (per-episode `model_id` / class in; opponent rows out to T2) | slice N with a POLICY opponent: its actions through T2 equal the per-env compiled path's (greedy byte-identical) | 0, T2 | **H, 1.5–2** |
-| F — scripted bots (IF the owner chooses to port) | `src/rust_env/src/bots/` | per-bot action equality on a banked decision corpus | 0 | **H, 3–4** (0 if bots stay on the old path) |
+| F — scripted bots (owner 2026-09-27: PORT them — "happy to rewrite the bots as needed") | `src/rust_env/src/bots/` | per-bot action equality on a banked decision corpus | 0 | **H, 3–4** (0 if bots stay on the old path) |
 | G — training integration | `src/agents/training/rust_vec_env.py`, `src/main/train/env_factory.py` (a new `--env-core` flag, OFF), the parser, `metadata.json`'s env-core stamp; the 71 `env_method` / `get_attr` sites | slice N at the ROLLOUT level (the buffer the learner sees equal on scripted recorded battles); the `--debug` smoke on the Rust env; **the first two minutes of a real launch**; throughput at `--n-envs 48` interleaved against today's path (`trainer_turn_benchmark.py` defaulting to the rust bridge first — TECH_DEBT P2); F-M5-3's GIL constraint | A or B, C, D, E | **H, 3–4** |
 | H — eval on the core | `src/agents/training/eval_callback.py` + `eval_sharding/` (behind the same flag), traces as `gen3_core_event_v1` records | the same seed set on both paths → equal greedy results; traces load in the prober | G, T2 (+ F or the bot decision) | **H, 3–4** |
 | I — search on `successors()` in-process | `src/rust_env/src/search.rs`, `src/utils/rust_env/successors.py` (replaces `search_session.py`'s JSON for the in-process road) | the depth-3 successor slice equal to `search_driver`'s rows; the three search gates | 0, A | **H, 2–3** |

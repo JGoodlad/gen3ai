@@ -4,8 +4,7 @@
 the current 2,501-dim observation lacks (or carries poorly), because deriving them through
 `LiveView` / `TurnDelta` / the trackers was expensive, and which become cheap once the Rust core
 ([`program_rust_core.md`](program_rust_core.md)) owns the battle as typed, attributed events plus a
-per-side projection. **Explicit-only** like every document in `endstate/`: update it on the owner's
-word.
+per-side projection. **ALWAYS-CURRENT** like every document in `endstate/` (owner, 2026-09-27; see `README.md`).
 
 **Companions:** [`design_ladder_campaign.md`](design_ladder_campaign.md) (several entries serve its
 stage-2 piloting question) · [`design_three_tier_environment.md`](design_three_tier_environment.md)
