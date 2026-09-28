@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,434-line file. **The ledger itself is append-only and is never edited by this**;
+21,442-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**714 headings · 659 dated · 2026-08-01 → 2026-09-27 · ledger 21,434 lines.**
+**716 headings · 661 dated · 2026-08-01 → 2026-09-28 · ledger 21,442 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -734,3 +734,5 @@ rename.
   - `L21421` · `2026-09-26` · MEASUREMENT · **RUST CORE M5 PHASE A: the transport does not decide M5 — FFI and a separate env process over one core are EQUAL at N = 48 (proc/FFI 0.994 [0.943, 1.026], 12 µs/decision, 82 k decisions/s at 8 threads) and BYTE-IDENTICAL; both are carried (owner), the default per consumer set by crash isolation; M5 re-planned as 12 lanes, ≈ 24–33 agent-days incl. T2 (the registered 5–8 assumed Python was already only an oracle).**
   - `L21425` · `2026-09-26` · REGISTRATION · **THE LEARNER BATTERY IS REGISTERED, NOT LAUNCHED (`6df5160f`): four +8,060,928-step forks of `ai_v14_01_base`'s final (pin `2cc83080`, all frozen at D_g): C (control, doubles as the lineage's K1), E5 (`--n-epochs 5` at 2·D_g, dose-matched), T32 (`--matmul-precision high`), L95 (`--policy-gae-lambda 0.95`). Primary = strength per GPU-hour: projected speed S from `train/train_ms` (bar ≥ 5%, CI > 0) combined with per-step untaught-8 non-inferiority (600 games/team, CI low > −3.69); L95 needs OUTSIDE ABOVE; SmallRL and stall guards. Power: P(pass | harmless) 0.96, at the margin 0.03; L95 detected at 0.99 for +8 pp. Order C → E5 → T32 (early stop at rollout 11) → L95, ≈ 13.5–17.3 GPU-h (9.0–12.8 beyond K1), BEFORE the G0′ continuation blocks. DECISIONS (orchestrator, owner-delegated): D_g = 2.8e-5; E5 dose-matched at 5.6e-5.**
   - `L21431` · `2026-09-27` · DECISION · **OWNER DECISIONS OF 09-26/27, recorded in one place (they were scattered across commits and backlogs; the end-state refresh `a6532774` flagged that none had a ledger entry).**
+  - `L21435` · `2026-09-28` · FINDING (MAJOR, GIGO) · **THE CUDA `--compile-trainer` LEARNER WAS A DIFFERENT FUNCTION FROM THE DEPLOYED (EAGER) POLICY — on real observations, at fp32, argmax agreement 70.9%, masked-policy TV median 0.123 (p99 0.63), |ΔV| median 0.024 (max 0.33), train-graph gradient cosine 0.778. A torch 2.5.1 Inductor miscompile of the fused pre-attention (bias + edge families) → TeamTransformer → consumers graph; the startup parity gate probed ALL-ZERO obs (4.8e-7) and was blind. SUSPECT: every cuda run with the default since `28eaef29` (2026-08-17). CLEAN: the CPU compile (eval workers, sentinels, pool/stable/exploiter opponents, traces) and eager (prober, ladder, anchors). FIXED `6521f420`: a CUDA-compile-only graph break in `TeamTransformer.forward` (eager bit-identical; parity on 3,840 real rows argmax 1.0000, TV p99 1.5e-6, |ΔV| max 1.0e-6, grad cosine 1.000000) + a real-obs, decision- AND gradient-level startup gate that throws (revert ⇒ FAIL). Split cost +1.5–4% of fwd+bwd.**
+  - `L21439` · `2026-09-28` · MEASUREMENT · **X22 (b)/(c) — THE NEAR-TERM GOAL IS NOT MET: N0 final (`ai_v14_01_base` @75,005,952, greedy, eager) vs `metamon:Kakuna` (ckpt 34) on home72: Kakuna greedy 0.460 [0.392, 0.529] n=200; T=0.5 0.440 [0.347, 0.538] n=100; T=1.0 (Kakuna's STRONGEST) 0.380 [0.316, 0.449] n=200 — the whole CI below 0.50 (goal: lower bound > 0.50 at the strongest temperature).**
