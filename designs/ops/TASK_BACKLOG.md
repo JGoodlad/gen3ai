@@ -9,6 +9,8 @@ experiment needs says so in "unblocks".
 **Rows move** to §3 with the commit that finished them. Rank = what unblocks the most important
 experiments soonest, within the week's quota.
 
+**NORTH STAR (owner, 2026-09-27), now → ~2 weeks:** the Rust end state (M5 lanes; deletion part 2) + architectural tech-debt pay-down, including DISCRETE mons with OTHER tokens (`design_q_head.md` §1) and the opponent pointer's OTHER label (T4), landed as ONE retrain boundary so a fresh lineage starts on the Rust many-envs env. Next north star: search enablement.
+
 ---
 
 ## 1. SCHEDULED

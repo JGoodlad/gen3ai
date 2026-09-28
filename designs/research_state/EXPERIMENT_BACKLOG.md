@@ -19,6 +19,12 @@ is still chipped at in parallel, because Q's opponent columns are BUILT FROM the
 becomes Q's generalization problem the day opponents switch to ladder teams. Pool memorization is a
 SUCCESS milestone, not a failure: report on-pool first, off-pool second.
 
+**NORTH STARS (owner, 2026-09-27).** **Now → ~2 weeks: the Rust end state + architectural tech-debt
+pay-down**, including the switch to DISCRETE mons with OTHER tokens (X5), batched into ONE new retrain
+boundary. Q (X4) is NOT built yet; instead **A and B ride along for free** (X4a: detached heads on
+on-policy labels) to give the baseline a later Q must beat. **Next: search enablement**, on the main
+agent only if need be — gated on the leaf (X1's N0 leaf read, X3).
+
 ---
 
 ## 1. RUNNING / QUEUED (have a registration or a launch slot)
@@ -33,6 +39,7 @@ SUCCESS milestone, not a failure: report on-pool first, off-pool second.
 | rank | # | experiment | question / hypothesis | meter(s) | prerequisite | cost |
 |---|---|---|---|---|---|---|
 | 1 | X3 | **Poor man's leaf** — our policy's top-N as the prior + Foul Play's hand eval (poke-engine `gen3/evaluate.rs`, MIT) as the leaf, root-relative | Is a within-game DISCRIMINATING leaf the missing piece? Does our prior + their leaf beat their brute force? | mirror battery vs unsearched self; vs Foul Play | N0 final; Tue quota reset | ~1 agent-day, CPU |
+| 1a | X4a | **A/B ride-along baseline** (NORTH STAR 1, owner 2026-09-27) — DETACHED A and B heads (stop-grad: zero risk to V and the policy) trained only on labels PPO already produces: A regresses the GAE advantage of the action actually taken; B regresses the outcome contrast across the opponent actions actually played; no counterfactual branches, no I term. Rides on whatever lineage runs after X5 lands | What do A/B learn with NO counterfactual labels? (the floor the full X4 must beat) | A/B vs held-out outcomes; corr(policy logit, A); α(OTHER)-aware B; same meters as X4 | X5 (discrete mons + OTHER) | ~0 GPU; small build |
 | 2 | X4 | **The Q-head experiment** (spec: `designs/endstate/design_q_head.md`) — joint Q(s,a,b) = V + A + B + I (probability space, centred under π × α); sibling-readout MLP on shared tokens; flat opponent pointer (one softmax α over concrete candidates, OTHER as entities, masked when impossible); branch labels (Gumbel top-k rows, α columns, CRN dice, racing, fresh labels, stored inclusion probabilities) | Does a paired-comparison-trained A/I give the leaf quality six win-prob heads lacked? | leaf rows (mirror L2, separation, overrules); V calibration non-inferiority; strength guard; trunk gradient cosines (Q vs V, Q vs policy, per A/B/I); detached probe vs shared; corr(policy logit, A); α(OTHER) calibration; V-vs-table gap | M5 successors + T2 inference service | several agent-days |
 | 3 | X5 | **Fixed-mass hypothesis tokens** (arch arm, bundled with X4) — team: 6 tokens (revealed + species hypotheses) + OTHER_species, mass 6; moves: 6 seats + OTHER_move, mass 4; per-slot categorical q = Smogon prior ⊕ learned delta, presence = min(1, k·q), OTHER = leftover; log-weight attention bias; replaces the blob belief slots | Do concrete, fixed-mass beliefs beat blob tokens for intent prediction and the Q interaction term? | intent NLL/calibration; OTHER rates falling; I-term quality; on-pool belief metrics (X8); strength guard | with X4 | in X4 |
 | 4 | X6 | **Branch successors train V too** (AlphaGo-style: one alternative action then on-policy to terminal) | Does off-path coverage improve V as a search leaf without hurting on-trajectory calibration? | leaf rows; NEW off-path calibration meter; on-trajectory ECE non-inferiority | X4's label machinery | small add-on |
