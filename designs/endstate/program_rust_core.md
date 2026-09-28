@@ -1,5 +1,7 @@
 # Program — the Rust core: milestones, gates, and the one cutover
 
+🚨 **ALWAYS-CURRENT WHILE BEING IMPLEMENTED (owner, 2026-09-27).** Any build that differs from this program (a milestone's scope, a lane plan, a gate, the deletion manifest) updates this doc in the same commit, saying what changed and why. The Q-head / opponent-pointer spec is its sibling, [`design_q_head.md`](design_q_head.md).
+
 **Status: PLAN, authored 2026-09-23 at the owner's request (Phase 0 of the RUST CORE PROGRAM).
 M1 and M2 BUILT; the per-emission EMISSION SELF-CHECK (§3) BUILT, ON in every test and fuzzer build,
 compiled out of production.**
