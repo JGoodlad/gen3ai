@@ -501,7 +501,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ### Benchmarks (`*_benchmark.py`, run directly as scripts)
 
-Five profilers, each answering a different question. All print a loud **"THE BOX IS BUSY"** banner
+Six profilers, each answering a different question. All print a loud **"THE BOX IS BUSY"** banner
 via `warn_if_contended()` when the box is not idle — a benchmark's output IS the measurement, so
 its bounds are never scaled, only warned about.
 
@@ -517,7 +517,19 @@ python3 src/agents/training/live_view_build_benchmark.py [--reps 2500] [--rounds
 #   eval traces, in stack-accounted phases (port open_root / expand_many / row wrap / glue)
 python3 src/main/search_dividend/search_decision_benchmark.py --traces models/<run>/eval_traces \
     [--decisions 12] [--m-opp 3] [--n-actions N] [--arm honest] [--k-worlds 4] [--rust-timing] [--cprofile out.prof]
+# WHERE ONE PPO UPDATE's wall goes — the REAL train() of arm C on ONE real rollout buffer (collected by
+#   the trainer in-process as a fork into ~/gen3ai_archive/learner_bench/, never models/), K repeats
+#   from identical state; phases (sync-bracketed), ablations, a per-epoch torch.profiler read (T13).
+#   cuda REFUSES a GPU with any compute process or a live trainer; --tiny is the CPU code-path check
+python3 -m agents.training.learner_benchmark run --device cuda [--k 5] [--warmup 1] [--buffer <pkl>] [--publish <dir>]
+python3 -m agents.training.learner_benchmark run --device cpu --tiny
 ```
+
+🚨 **`learner_benchmark`'s bracketed phases are NOT the un-bracketed update cut into pieces.** Every
+mark adds a `torch.cuda.synchronize()`, which removes exactly the CPU/GPU overlap an update with
+~270 host-blocking scalar reads per micro-batch lives on. So it reports BOTH train_ms sets, and the
+launch/sync-bound question is answered by the profiler windows (GPU busy % = device-interval union
+over the window's span; launches and syncs per micro-batch), not by the phase table.
 
 🚨 **A cProfile SHARE IS NOT A WALL SHARE, and it has already cost this project a wrong
 priority.** `designs/rust_sim/one_sided_view.md` carried "`map_actions_at` is ~24% of the (since

@@ -118,9 +118,16 @@ here, because it is the thing a fold edit must not get wrong.**
 folded in is straight-line source order, and that is only checkable by reading while it stays one
 straight line. What DID move out is everything AROUND the sequence: the pre-loop setup
 (`train_setup`) and the metrics export (`metrics_export`), neither of which folds a term, plus the
-per-rollout probes (`rollout_probes`), which `train()` does not call at all. `ppo.py` is **1,502
+per-rollout probes (`rollout_probes`), which `train()` does not call at all. `ppo.py` is **1,522
 lines** — its floor with the loop intact is ~1,200, so the file-size ratchet's 1,000-line TARGET is
 unreachable here without splitting the sequence, which is the thing that must not happen.
+
+**`train()` carries BENCHMARK-ONLY phase marks** (`gen3_learner_phase_hook_v1`): ~14 lines of
+`if _ph is not None: _ph("<phase>")`, `_ph` read ONCE per call from `instrumented_ppo/phase_hook.py`
+(None in production). A new mark must use exactly that guarded one-line form and a name in
+`phase_hook.PHASES`; `learner_benchmark_test.py` pins the guard, the names, and that installing a
+hook changes no parameter. The one consumer is `learner_benchmark.py` (where an update's wall time
+goes — `designs/ops/testing.md` → Benchmarks).
 
 Per minibatch:
 

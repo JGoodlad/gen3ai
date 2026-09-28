@@ -57,6 +57,7 @@ from agents.training.instrumented_ppo.hparams import PpoHyperparameters
 from agents.training.instrumented_ppo.metrics_export import TrainMetricsExport
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
 from agents.training.instrumented_ppo.noise_scale_terms import NULL_TAGGER
+from agents.training.instrumented_ppo.phase_hook import current as _current_phase_hook
 from agents.training.instrumented_ppo.rollout_probes import RolloutProbes
 from agents.training.instrumented_ppo.train_setup import TrainSetup
 from agents.training.instrumented_ppo.value_terms import ValueTerms
@@ -172,6 +173,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # the denominator every "this probe costs X% of the train step" claim in this file needs,
         # and reading it live is the only way that claim can stay true as the fold grows.
         _t_train0 = time.perf_counter()
+        # +PHASE HOOK (gen3_learner_phase_hook_v1): BENCHMARK-ONLY segment marks, read ONCE here.
+        # None in production, so every `if _ph is not None:` below is the whole cost; see
+        # `phase_hook.py` for what each name books. No mark sits inside a compiled region.
+        _ph = _current_phase_hook()
+        if _ph is not None: _ph("start")
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         # Update optimizer learning rate
@@ -343,6 +349,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # — no extra forward, no extra device sync. An early KL stop leaves fewer than n_epochs rows.
         epoch_approx_kl: list[float] = []
         epoch_clip_fraction: list[float] = []
+        if _ph is not None: _ph("setup")
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             _epoch_cf_start = len(clip_fractions)   # +PER-EPOCH: this epoch's slice of the running list
@@ -351,6 +358,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             micro_in_group = 0
             # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(self.batch_size):
+                if _ph is not None: _ph("batch")
                 # +NOISE-SCALE PER-TERM: collect on epoch 0's FIRST accumulation group only — the
                 # same window the total's two points are read from, so both readings score the very
                 # same data and a disagreement can only be the gradient. NULL elsewhere ⇒ the
@@ -374,6 +382,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     self._capacity_snapshot_features(self.policy.features_extractor,
                                                      int(values.shape[0]))
                     if capacity is not None else None)
+                if _ph is not None: _ph("forward")
 
                 values = values.flatten()
                 # Normalize advantage
@@ -1280,6 +1289,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 belief_present = any(
                     k in aux_probe_terms for k in ("species_belief", "move_belief", "move_latent")
                 )
+                if _ph is not None: _ph("loss")
 
                 # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
                 # minibatch (graph alive here; the probe uses read-only autograd.grad with
@@ -1327,6 +1337,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         rollout_data.observations,
                         self.policy.extract_features,
                     )
+                if _ph is not None: _ph("probes")
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
@@ -1347,6 +1358,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     self.policy.optimizer.zero_grad()
                     micro_in_group = 0
                     break
+                if _ph is not None: _ph("kl")
 
                 # Optimization step. +GRAD-ACCUM: accumulate the 1/accum-scaled gradient (accum
                 # micro-batches of size batch_size sum to the exact (batch_size·accum) gradient) and
@@ -1355,6 +1367,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # still alive and `.grad` still holds only what previous micro-batches put there.
                 # `autograd.grad` writes no `.grad`, so the accumulation below is untouched.
                 _ntg.flush_micro()
+                if _ph is not None: _ph("noise_probe")
                 # +DISTILL-GRAD-PROJECT: the removal vector is computed while the graph is alive
                 # (read-only `autograd.grad`, no `.grad` written) and applied to `.grad` immediately
                 # after the real backward — so `.grad` goes from `g_ppo + g_distill` to
@@ -1364,6 +1377,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 (loss / accum).backward()
                 _dgp.after_backward(accum)
                 micro_in_group += 1
+                if _ph is not None: _ph("backward")
                 # +INSTRUMENTATION: per-edge-family liveness, sampled ONCE per train() and read
                 # HERE because it wants `.grad` populated but not yet cleared by the optimizer
                 # step. Parameters only — no forward touched, so the hot path pays nothing.
@@ -1374,11 +1388,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # that never comes off its zero init is invisible without it.
                 if not cell_metrics:
                     cell_metrics = cell_family_metrics(self.policy.features_extractor)
+                if _ph is not None: _ph("probes")
                 # +NOISE-SCALE: after the FIRST micro-batch of group 0 (epoch 0), .grad holds exactly
                 # g_1/accum (this micro's gradient, scaled) → ‖g_1‖² = accum²·‖.grad‖². The single
                 # micro-batch (B=batch_size) sample for the noise-scale estimate.
                 if accum >= 2 and epoch == 0 and micro_in_group == 1 and noise_g_small_sq is None:
                     noise_g_small_sq = (accum ** 2) * self._global_grad_sq(self.policy.parameters())
+                if _ph is not None: _ph("noise_base")
                 if micro_in_group == accum:
                     grad_norm = float(  # +INSTRUMENTATION: pre-clip total grad norm (per step)
                         th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
@@ -1391,6 +1407,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     self.policy.optimizer.step()
                     self.policy.optimizer.zero_grad()
                     micro_in_group = 0
+                if _ph is not None: _ph("optim")
 
                 # +CAPACITY TELEMETRY: LAST in the minibatch body, deliberately — after the loss
                 # fold, after `loss.backward()`, after the optimizer step. Nothing it does can
@@ -1399,6 +1416,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 if capacity is not None:
                     self._capacity_observe(capacity, rollout_data, actions, advantages,
                                            shared_trunk, clip_range, cap_features)
+                if _ph is not None: _ph("capacity")
 
             # +GRAD-ACCUM: flush a trailing partial group (#minibatches not divisible by accum).
             # Rescale its accumulated grad from 1/accum to 1/micro_in_group so the short group's step
@@ -1431,6 +1449,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 epoch_clip_fraction.append(float(np.mean(clip_fractions[_epoch_cf_start:])))
 
             self._n_updates += 1
+            if _ph is not None: _ph("epoch_end")
             if not continue_training:
                 break
 
@@ -1499,4 +1518,5 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         self._record_capacity_and_popart_metrics(capacity_metrics, popart, aux_metrics)
         # +INSTRUMENTATION: LAST line of train(), so it bounds the whole call — the honest
         # denominator for `train/noise_per_term_ms` and for every other probe's cost claim.
+        if _ph is not None: _ph("logging")
         self.logger.record("train/train_ms", 1000.0 * (time.perf_counter() - _t_train0))
