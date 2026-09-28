@@ -30,6 +30,15 @@ a time; the rest stay frozen.** Every game any stage plays is drawn from a decla
 
 ---
 
+## 0a. The goals, stated as numbers (owner, 2026-09-27)
+
+| horizon | goal | what it would mean |
+|---|---|---|
+| **near term** | **beat Metamon's BEST model on OUR teams, with Metamon at its STRONGEST sampling temperature** — the lower 95% bound of our win rate above 0.50 | we are in the ball park of a state-of-the-art gen3 OU model |
+| **long term** | **beat Foul Play** (on shared teams, at a stated search budget) | we are in the ball park of the best known gen3 OU bot |
+
+⚠️ **Metamon's best is `Kakuna`, not `SyntheticRLV2`.** The local Metamon checkout (`~/dev/metamon` @ `0a00a759`, 2026-05-22) documents `Kakuna` as "the current best Metamon policy" (Superkazam finetuned on +7.8M higher-temperature self-play battles; estimated gen3ou GXE vs humans ~63%). Our standing era-gate reference has been `SyntheticRLV2` (the paper's model). The near-term goal is read against `Kakuna`; upstream may have newer models than this checkout — verify before the read. **"Strongest sampling temperature"** is measured, not assumed: hold our side fixed (greedy) and vary Metamon's temperature; the goal read uses Metamon's best cell. The last era's standing on our teams was `SyntheticRLV2` greedy · home **0.500 [0.404, 0.596]** (`ai_v12_02_winprob_critic` @75M) and Foul Play @1 s **0.388** (asymmetric teams, not like-for-like). Tracked as EXPERIMENT_BACKLOG X22.
+
 ## 1. Why stages (and why not a waterfall)
 
 A plateau is information only when it has an address. "Round 1's gap did not fall" means little
