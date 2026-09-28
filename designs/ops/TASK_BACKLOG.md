@@ -34,7 +34,6 @@ experiments soonest, within the week's quota.
 | 8 | T10 | **Deletion pass, part 2** — the rows blocked on M5/M7 (Python trackers, obs speed-up layers, JSON search protocol + node drivers, `turn_delta_legacy.py`) | less to keep in sync | M |
 | 9 | T11 | **Transform + Hidden Power belief crash** (both trackers; TECH_DEBT (a) P1) | live ladder | S |
 | 10 | T12 | **Imprison livelock — verify it is gone** (TECH_DEBT (a) P1; likely fixed by `0896b7d9`) | live ladder | S |
-
 | 11 | T13 | **GPU-upgrade benchmark** (owner, 2026-09-27: mini-ITX, so ONE card — a newer-generation replacement, not a second GPU) — after T2 lands, run a learner-only PPO update benchmark (one 98,304-sample rollout) + a batched-inference benchmark at M5 bucket sizes on the 3080 Ti and on rented cards (a consumer 4090/5090 from a GPU marketplace for a like-for-like buy decision; GCP L4/A100 as architecture references). Report speedup per card on the post-M5 bottleneck, plus power (SFX PSU) and thermals (small-case throttling) | the buy decision | S |
 
 ## 3. DONE
