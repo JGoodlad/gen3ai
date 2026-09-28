@@ -142,7 +142,8 @@ class MetamonPeer(Peer):
 
     def plan(self, *, cfg: Any, agent: str, regime: str, teamset: str, battle_format: str,
              server_uri: str, username: str, opponent_username: str, role: str, n_games: int,
-             team_seed: int, out_dir: Path, **_: Any) -> PeerPlan:
+             team_seed: int, out_dir: Path, temperature: Optional[float] = None,
+             **_: Any) -> PeerPlan:
         cfg.require(agent)
         checkpoint = cfg.agents[agent].get("checkpoint")
         team_set = cfg.team_set(teamset)
@@ -166,6 +167,9 @@ class MetamonPeer(Peer):
         ]
         if checkpoint is not None:
             argv += ["--checkpoint", str(checkpoint)]
+        if temperature is not None:
+            # Only `t1` samples; the peer IGNORES a temperature under greedy (hazard H7).
+            argv += ["--temperature", repr(float(temperature))]
         env = dict(os.environ)
         env.update({
             "PYTHONUNBUFFERED": "1",                    # H5
@@ -196,7 +200,8 @@ class MetamonPeer(Peer):
             ready_pattern=r"Made Challenge Env|\[peer\] READY",
             log_path=log_path,
             report_path=report_path,
-            their_regime=regime,
+            their_regime=(f"sample:T={float(temperature):g}" if temperature is not None
+                          else regime),
             version=f"{agent}@ckpt{checkpoint}",
             commit=git_head(cfg.checkout),
             team_dir=cfg.team_dir(teamset, battle_format),

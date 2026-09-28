@@ -79,6 +79,36 @@ def test_kakuna_plans_with_its_pinned_checkpoint(cfg) -> None:
     assert theirs.version == "Kakuna@ckpt34"
 
 
+def test_opponent_temperature_samples_only_the_metamon_peer_and_is_stamped_unmatched(cfg) -> None:
+    """X22(b): `--opponent-temperature T` — the peer runs `t1` at action_temperature T, OUR side
+    stays `--temperature 0.0`, and the cell says regime_matched=false with their_regime naming T."""
+    plan = build_plan(_args("--opponent", "metamon:Kakuna", "--opponent-temperature", "0.5",
+                            "--dry-run"), cfg)
+    assert plan.regime == "greedy" and plan.regime_matched is False
+    assert plan.opponent_temperature == 0.5
+    theirs = runner_mod.peer_plan(plan, cfg, "acceptor", 2, "ours_challenge")
+    line = theirs.command_line()
+    assert "--regime t1" in line and "--temperature 0.5" in line
+    assert theirs.their_regime == "sample:T=0.5"
+    ours = runner_mod.our_argv(plan, "accept", 2)
+    assert ours[ours.index("--temperature") + 1] == "0.0"
+    # without the flag the peer command carries no temperature at all (greedy ignores it, H7)
+    plain = build_plan(_args("--opponent", "metamon:Kakuna", "--dry-run"), cfg)
+    assert "--temperature" not in runner_mod.peer_plan(
+        plain, cfg, "acceptor", 2, "ours_challenge").command_line()
+
+
+@pytest.mark.parametrize("argv", [
+    ("--opponent", "foulplay", "--opponent-temperature", "0.5"),
+    ("--opponent", "metamon:Kakuna", "--regime", "t1", "--opponent-temperature", "0.5"),
+    ("--opponent", "metamon:Kakuna", "--opponent-temperature", "0"),
+    ("--opponent", "metamon:Kakuna", "--our-side", "bot:random", "--opponent-temperature", "0.5"),
+])
+def test_opponent_temperature_is_refused_outside_its_one_shape(cfg, argv) -> None:
+    with pytest.raises(SystemExit):
+        build_plan(_args(*argv, "--dry-run"), cfg)
+
+
 # ------------------------------------------------------------------------------- reserved ports
 @pytest.mark.parametrize("port", sorted(RESERVED_PORTS))
 def test_a_reserved_port_is_refused_on_the_port_flag(cfg, port: int) -> None:

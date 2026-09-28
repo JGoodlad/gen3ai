@@ -231,6 +231,14 @@ def build_parser() -> argparse.ArgumentParser:
                         "dropped challenge presents as a HANG, not an error.")
     p.add_argument("--progress-timeout", type=float, default=900.0, metavar="SECONDS",
                    help="no game finishing inside this ⇒ FAIL 'no_progress'")
+    p.add_argument("--opponent-temperature", dest="opponent_temperature", type=float,
+                   default=None, metavar="T",
+                   help="metamon opponent + a checkpoint our-side + --regime greedy ONLY: the "
+                        "OPPONENT samples at action_temperature T while OUR side stays greedy — "
+                        "the 'strongest opponent temperature' read (X22). Every row is stamped "
+                        "regime_matched=false and their_regime='sample:T=<T>'. NOT the SOP's "
+                        "recurring protocol; hazard H17 (Metamon-challenges post-game "
+                        "RecursionError) is expected in this shape and costs no games.")
     p.add_argument("--allow-unmatched-regime", action="store_true",
                    help="permit a cell where the two sides are NOT at the same regime. Every row "
                         "is then stamped regime_matched=false. Foul Play has no sampling knob at "
@@ -366,6 +374,20 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
             "RecursionError in THREE campaigns with no recorded success. Use --regime greedy "
             "(both sides move together) or --regime t1 (both sides sample).")
 
+    # `--opponent-temperature`: the ONE sanctioned mixed Metamon cell — named, stamped, and
+    # separate from --allow-unmatched-regime (which stays refused against metamon). Our side is
+    # greedy (plan.regime), the peer samples at T; the rows say regime_matched=false.
+    opp_t = getattr(args, "opponent_temperature", None)
+    if opp_t is not None:
+        if kind != "metamon" or our_side != "model" or args.regime != "greedy":
+            raise SystemExit(
+                "--opponent-temperature needs a metamon --opponent, a checkpoint our-side and "
+                "--regime greedy: it samples ONLY the Metamon peer while our side stays greedy.")
+        if not (opp_t > 0.0):
+            raise SystemExit("--opponent-temperature must be > 0 (greedy is --regime greedy "
+                             "alone: no temperature can express Metamon's greedy, hazard H7)")
+        matched = False
+
     # The reproducibility pair is the FRONT END's, and there is no Node counterpart — a
     # `--seed-base` silently ignored on the Node path would make an unrepeatable series look
     # seeded, which is the one failure a seed exists to prevent.
@@ -452,6 +474,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         our_team_spec=cfg.our_team_source(args.teamset),
         our_side=our_side,
         model_loader=args.model_load,
+        opponent_temperature=opp_t,
     )
 
 
@@ -460,7 +483,9 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
     lines = [
         "ANCHOR READ — PLAN (nothing has been started)",
         f"  opponent          {plan.opponent}",
-        f"  regime            {plan.regime}  (both sides; matched={plan.regime_matched})",
+        f"  regime            {plan.regime}  (both sides; matched={plan.regime_matched})"
+        + (f"  OPPONENT samples at T={plan.opponent_temperature}"
+           if plan.opponent_temperature is not None else ""),
         f"  team set          {plan.teamset}  ours={plan.our_team_spec}",
         f"  games             {plan.games}  ->  {plan.half_sizes()}",
         f"  our side          {plan.our_side}"

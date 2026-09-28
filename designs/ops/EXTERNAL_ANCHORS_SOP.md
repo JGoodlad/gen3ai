@@ -71,7 +71,7 @@ is an implementation fact about Metamon that could change in a release.
 | **A — per promotion** | every time a snapshot is promoted | the **dense ladder** (`<run>/snapshot_ladder/ladder.json`), greedy-vs-greedy, compared at **matched snapshot COUNT** | already paid by the run |
 | **B — per milestone** | each eval milestone | `metamon:SmallRL` **greedy, BOTH team sets, 100 games each** + **ONE t1 cell** as the distribution check | ~15 min |
 | **C — era gate** | opening or closing an era | `metamon:SyntheticRLV2` **greedy, away** — bar: **Wilson lower bound > 0.50**; and **Foul Play** at a fixed `--search-time-ms` with its realized visit count | ~2 h |
-| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). Wired 2026-09-28; **no standing number yet** — its strongest temperature is X22(b)'s question, so do not assume greedy is its best | ~15 min / 100 games on CPU (est.) |
+| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). Standing (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
 
 ### Tier A — per promotion: the dense ladder
 
@@ -181,6 +181,18 @@ named for whichever Metamon process challenged in that half. Three facts a reade
 * A Foul Play pair cell's `team_source_asymmetry` compares the two PEERS' directories — both must
   be the same files (see **H19**).
 
+### `--opponent-temperature T` — the Metamon peer SAMPLES, our side stays greedy
+
+The one sanctioned MIXED Metamon cell (added 2026-09-28 for X22(b), "at which temperature is
+Kakuna strongest?"): `--opponent metamon:<Agent> --regime greedy --opponent-temperature 0.5`. The
+peer runs `t1` at `action_temperature` T and verifies it samples (`argmax_match_rate` < 1); our
+side is `--temperature 0.0` exactly as in a greedy cell. Every row is stamped
+`regime_matched = false`, `their_regime = sample:T=<T>`. It is refused with any other opponent,
+our-side or `--regime`, and for T ≤ 0 (greedy is `--regime greedy` alone — H7). It is **not** the
+recurring protocol (RULE 2) and it does NOT reopen `--allow-unmatched-regime` against metamon,
+which stays refused; hazard **H17** (the Metamon-challenges post-game `RecursionError`) is expected
+in this shape and is named, not excused, by the usual complete-half rule.
+
 ### `--model-load {auto,bare,foreign}` — HOW the checkpoint is loaded
 
 🚨 **A cross-run frozen snapshot FAILS a bare `MaskablePPO.load`.** The extractor is rebuilt from
@@ -274,7 +286,7 @@ nothing here touches the GPU.
 |---|---:|---:|---|
 | `metamon:SmallRL` | **3.0** | **~5 min** | 12–17 ms/decision; seconds to load. On `--server rust` (the default) the same cell took **126 s** on a quiet box against **203 s** on Node, 2026-09-20 |
 | `metamon:SyntheticRLV2` | **6.1** | **~10 min** | 56–113 ms/decision, **plus a multi-minute build per half** (200M params, 804 MB) |
-| `metamon:Kakuna` | **~10–18** (smoke, n = 4) | **~15–25 min** (est.) | **median 73–78 ms, p90 86–88 ms/decision** over 157 greedy decisions; the FIRST decision of each peer is a 4–19 s warm-up; build ~10 s per half; **peak RSS ~2.0 GB per peer** (571 MB fp32 weights). Load 21–27 on 16 cores, 2026-09-28 (`measurements/kakuna_wiring_2026-09-28/`). s/game is dominated by OUR side and the server at n = 4 — re-measure on the first 100-game cell |
+| `metamon:Kakuna` | **~10–18** (smoke, n = 4) | **~15–25 min** (est.) | **median 73–78 ms, p90 86–88 ms/decision** over 157 greedy decisions; the FIRST decision of each peer is a 4–19 s warm-up; build ~10 s per half; **peak RSS ~2.0 GB per peer** (571 MB fp32 weights). Load 21–27 on 16 cores, 2026-09-28 (`measurements/kakuna_wiring_2026-09-28/`). **Measured 2026-09-28 over 500 games vs N0: ~6 s/game** (a 20-game unit in ~120 s wall, load 24–25); a Kakuna-vs-SyntheticRLV2 pair cell ~13–16 s/game (50 games in 620–815 s, load ~28) |
 | `foulplay` @ 1000 ms | **~88** | **~2.5 h** | **~80 core-seconds/game** — ~17× ours; cost is linear in `--search-time-ms` × `--search-parallelism` × the ×2 world multiplier while the opponent's active has <3 revealed moves |
 
 🚨 **ONE THREAD PER PEER, and it is worth ~20×.** Measured 2026-09-14 on a box at load 63: each

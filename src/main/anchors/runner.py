@@ -119,6 +119,10 @@ class SeriesPlan:
     #: that reads its PMs only between battles (Foul Play) drops it and then waits forever for a
     #: challenge that was already consumed. See `session.serialized_send_challenges`.
     challenge_mode: str = "serial"
+    #: `--opponent-temperature`: the Metamon peer SAMPLES at this action temperature while our
+    #: side stays greedy (`regime` stays "greedy" — it names OUR half). None = the peer follows
+    #: `regime`. A cell with it set is stamped regime_matched=false.
+    opponent_temperature: Optional[float] = None
 
     @property
     def our_side_is_bot(self) -> bool:
@@ -170,10 +174,13 @@ def our_argv(plan: SeriesPlan, mode: str, n_games: int, our_name: str = "",
 def peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str) -> Any:
     our_name, peer_name = half_usernames(plan, half)
     adapter = peers_mod.PEERS[plan.opponent_kind]
+    opp_t = plan.opponent_temperature
+    extra = {} if opp_t is None else {"temperature": opp_t}
     return adapter.plan(
         cfg=cfg.opponent(plan.opponent_kind),
         agent=plan.opponent_agent,
-        regime=plan.regime,
+        regime=plan.regime if opp_t is None else "t1",
+        **extra,
         teamset=plan.teamset,
         battle_format=plan.battle_format,
         server_uri=plan.server_uri,
