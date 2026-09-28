@@ -45,6 +45,7 @@ def _args(*argv: str):
 @pytest.mark.parametrize("spec, kind, agent", [
     ("metamon:SmallRL", "metamon", "SmallRL"),
     ("metamon:SyntheticRLV2", "metamon", "SyntheticRLV2"),
+    ("metamon:Kakuna", "metamon", "Kakuna"),
     ("foulplay", "foulplay", ""),
     ("FoulPlay", "foulplay", ""),
 ])
@@ -62,10 +63,20 @@ def test_an_unpinned_metamon_agent_is_refused_at_plan_time(cfg) -> None:
     """REFUSAL 4. The refusal must come from the CONFIG, not from a hardcoded list here."""
     from main.anchors.config import AnchorConfigError
 
-    plan = build_plan(_args("--opponent", "metamon:Kakuna", "--dry-run"), cfg)
+    plan = build_plan(_args("--opponent", "metamon:NotAMetamonAgent", "--dry-run"), cfg)
     with pytest.raises(AnchorConfigError) as excinfo:
         runner_mod.peer_plan(plan, cfg, "acceptor", 2, "ours_challenge")
-    assert "Kakuna" in str(excinfo.value)
+    assert "NotAMetamonAgent" in str(excinfo.value)
+
+
+def test_kakuna_plans_with_its_pinned_checkpoint(cfg) -> None:
+    """X22(a): `metamon:Kakuna` is a pinned anchor — the peer command carries the checkpoint from
+    the committed config (34, upstream's own default), never the hub's latest epoch."""
+    plan = build_plan(_args("--opponent", "metamon:Kakuna", "--dry-run"), cfg)
+    theirs = runner_mod.peer_plan(plan, cfg, "acceptor", 2, "ours_challenge")
+    line = theirs.command_line()
+    assert "--agent Kakuna" in line and "--checkpoint 34" in line
+    assert theirs.version == "Kakuna@ckpt34"
 
 
 # ------------------------------------------------------------------------------- reserved ports

@@ -1,0 +1,43 @@
+{
+ "n_decisions": 67,
+ "mean_s": 0.3550009536426584,
+ "median_s": 0.07801167399156839,
+ "p90_s": 0.08590162202017382,
+ "max_s": 18.594667533005122,
+ "sample_kwarg_values": [
+  false
+ ],
+ "argmax_checked": 67,
+ "argmax_matched": 67,
+ "argmax_match_rate": 1.0,
+ "wall_s": 34.46429896354675,
+ "agent": "Kakuna",
+ "checkpoint": 34,
+ "backend": "metamon",
+ "regime": "greedy",
+ "role": "acceptor",
+ "team_set": "competitive",
+ "team_seed": 20260915,
+ "action_temperature": null,
+ "n_team_draws": 2,
+ "team_draws": [
+  "team_8.gen3ou_team",
+  "team_11.gen3ou_team"
+ ],
+ "error": null,
+ "attention": "WindowedVanillaAttention",
+ "attention_window": [
+  96,
+  0
+ ],
+ "peer_results": {
+  "Average Total Return in psladder_MetaKakuna1": "98.92520262347534",
+  "Average Total Return (Across All Env Names)": "98.92520262347534",
+  "Average Win Rate in psladder_MetaKakuna1": "0.5",
+  "Average Valid Actions in psladder_MetaKakuna1": "1.0",
+  "Bottom Quintile Total Return in psladder_MetaKakuna1": "32.94008114114404"
+ },
+ "regime_verified_decisions": true,
+ "peer_error_free": true,
+ "regime_check_ok": true
+}

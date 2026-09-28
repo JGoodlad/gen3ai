@@ -128,7 +128,9 @@ class MetamonPeer(Peer):
       constructor argument. The driver rebinds the module global before any env is built.
     * **H2, FlashAttention.** ``amago``'s ``TformerTrajEncoder`` defaults to ``FlashAttention``, a
       CUDA-only wheel, so every Metamon transformer is unrunnable on CPU as shipped.
-      ``VanillaAttention`` is the same exact causal softmax attention, computed the slow way.
+      ``VanillaAttention`` is the same exact causal softmax attention, computed the slow way —
+      and for a model whose gin file sets a sliding window (Kakuna: ``(96, 0)``) the driver swaps
+      in a WINDOWED vanilla attention with flash-attn's own mask (SOP hazard H20).
     * **H5, unflushed prints.** Metamon's ``print()`` calls carry no ``flush=True``, so a redirected
       stdout is block-buffered and the banner a driver waits on never lands.
     * **H-D, the clipped distribution.** ``MetamonDiscrete`` clips probabilities to [0.001, 0.99]

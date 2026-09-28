@@ -49,7 +49,7 @@ from main.anchors import server as server_mod
 #: ``--opponent`` values. Metamon policies are named ``metamon:<AgentName>``; the agent must be in
 #: ``designs/ops/anchors.json`` WITH its checkpoint, because a policy is only an anchor once its
 #: checkpoint is pinned.
-OPPONENT_HELP = ("metamon:SmallRL | metamon:SyntheticRLV2 | foulplay "
+OPPONENT_HELP = ("metamon:SmallRL | metamon:SyntheticRLV2 | metamon:Kakuna | foulplay "
                  "(metamon agents come from designs/ops/anchors.json)")
 
 

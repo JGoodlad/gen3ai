@@ -51,6 +51,21 @@ Metamon transformer policy is unrunnable on CPU as shipped. ``VanillaAttention``
 causal softmax attention computed the slow way, injected through the supported
 ``PretrainedModel.gin_overrides`` seam — so the policy's outputs are unchanged and only speed
 differs.
+
+🚨 **A GIN FILE BINDING BEATS THE ``gin_overrides`` DICT, and the newer models SLIDE A WINDOW**
+(found 2026-09-28 wiring ``Kakuna``). ``amago.cli_utils.use_config`` binds the dict FIRST and then
+parses the model's ``.gin`` files, so a file that itself says
+``TformerTrajEncoder.attention_type = @transformer.FlashAttention`` (``superkazam.gin`` — Kakuna,
+Superkazam — and ``alakazam*.gin``, ``smaller_multitaskagent*.gin``) silently re-wins and the peer
+dies on the missing flash-attn wheel. Those same files also set
+``FlashAttention.window_size = (96, 0)`` (or ``(32, 0)``): each query sees only the last 96 keys.
+Plain ``VanillaAttention`` would attend to the whole 128-step cache — a DIFFERENT function from the
+one the weights were trained under, on exactly the long games where it matters, and nothing would
+say so. So :func:`install_cpu_attention` re-binds ``attention_type`` AFTER the files are parsed and
+reads the window the file configured: no window → ``VanillaAttention`` (``SmallRL`` and
+``SyntheticRLV2``, whose gin files bind neither key, are unchanged); a window →
+:class:`WindowedVanillaAttention`, the same mask flash-attn applies (key ``j`` visible to query
+``i`` iff ``i - left <= j <= i``). The choice and the window are written to ``--report-out``.
 """
 
 import argparse
@@ -217,6 +232,102 @@ def install_regime(sample):
     PretrainedModel.initialize_agent = initialize_agent
 
 
+def _flash_window():
+    """The ``(left, right)`` window the parsed gin config gave ``FlashAttention`` — ``(-1, -1)``
+    (flash-attn's "full attention") when nothing bound it."""
+    import gin
+
+    try:
+        return tuple(gin.query_parameter("transformer.FlashAttention.window_size"))
+    except ValueError:
+        return (-1, -1)
+
+
+def make_windowed_vanilla_attention(left):
+    """``VanillaAttention`` restricted to flash-attn's sliding window ``(left, 0)``.
+
+    Eager (no ``torch.compile``): the masks differ per call length and this is B = 1 CPU work. The
+    arithmetic is ``VanillaAttention``'s own, line for line, plus one extra mask term.
+    """
+    import math
+
+    import torch
+    from amago.nets.transformer import VanillaAttention
+
+    class WindowedVanillaAttention(VanillaAttention):
+        window_left = int(left)
+
+        def _inference_with_cache(self, qkv, key_cache, val_cache, cache_seqlens):
+            queries, keys, values = torch.unbind(qkv, dim=2)
+            B, L, H, E = queries.shape
+            assert L == 1
+            scale = 1.0 / math.sqrt(E)
+            cache_idxs = torch.arange(key_cache.shape[0], device=key_cache.device)
+            key_cache[cache_idxs, cache_seqlens] = keys[:, 0]
+            val_cache[cache_idxs, cache_seqlens] = values[:, 0]
+            end = cache_seqlens + 1
+            max_len = end.max()
+            k_cache = torch.nan_to_num(key_cache[:, :max_len])
+            v_cache = torch.nan_to_num(val_cache[:, :max_len])
+            scores = scale * torch.einsum("blhe,blhe->blh", queries, k_cache)
+            pos = torch.arange(max_len, device=cache_seqlens.device)[None, :]
+            # the query sits at index cache_seqlens; it sees keys [q - left, q]
+            mask = (pos >= end[:, None]) | (pos < (cache_seqlens[:, None] - self.window_left))
+            scores.masked_fill_(mask[:, :, None], -torch.inf)
+            A = self.dropout(torch.softmax(scores, dim=1))
+            return torch.einsum("blh,blhd->bhd", A, v_cache).unsqueeze(1)
+
+        def _forward_without_cache(self, qkv, mask):
+            queries, keys, values = torch.unbind(qkv, dim=2)
+            B, L, H, E = queries.shape
+            scale = 1.0 / math.sqrt(E)
+            scores = torch.einsum("blhe,bshe->bhls", queries, keys)
+            # `mask` is VanillaAttention's causal triu; add the keys older than the window
+            too_old = torch.tril(torch.ones((L, L), dtype=torch.bool, device=qkv.device),
+                                 diagonal=-(self.window_left + 1))
+            scores.masked_fill_(mask | too_old[None, None], -torch.inf)
+            A = self.dropout(torch.softmax(scale * scores, dim=-1))
+            return torch.einsum("bhls,bshd->blhd", A, values)
+
+    return WindowedVanillaAttention
+
+
+def install_cpu_attention(choice, record):
+    """Re-bind the trajectory encoder's attention AFTER the model's gin files are parsed.
+
+    See the module docstring: the ``gin_overrides`` dict loses to a file binding, and a sliding
+    window must survive the swap. ``record`` receives ``attention`` and ``attention_window``.
+    """
+    import amago.cli_utils
+    import gin
+    import amago.nets.transformer as _tf
+
+    inner = amago.cli_utils.use_config
+
+    def use_config(custom_params, gin_configs=None, finalize=True):
+        inner(custom_params, gin_configs, finalize=False)
+        left, right = _flash_window()
+        if right not in (0, -1):
+            raise SystemExit(f"FlashAttention.window_size={(left, right)}: a right-hand window "
+                             "has no CPU equivalent here")
+        if left < 0:
+            attn = {"vanilla": _tf.VanillaAttention, "flex": _tf.VanillaFlexAttention}[choice]
+        elif choice == "vanilla":
+            attn = make_windowed_vanilla_attention(left)
+        else:
+            raise SystemExit(f"--attention {choice} has no sliding-window form; this model's gin "
+                             f"sets FlashAttention.window_size={(left, right)} — use vanilla")
+        gin.bind_parameter("traj_encoders.TformerTrajEncoder.attention_type", attn)
+        record["attention"] = attn.__name__
+        record["attention_window"] = [left, right]
+        print(f"[peer] attention -> {attn.__name__} window={(left, right)} "
+              "(CPU; flash-attn is CUDA-only)", flush=True)
+        if finalize:
+            gin.finalize()
+
+    amago.cli_utils.use_config = use_config
+
+
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -238,7 +349,7 @@ def build_parser():
                          "MetamonDiscrete clips probabilities and cannot express it)")
     ap.add_argument("--no-verify", dest="verify", action="store_false")
     ap.add_argument("--battle-backend", default=None,
-                    help="default: the model's own (SmallRL/SyntheticRLV2 want 'poke-env')")
+                    help="default: the model's own (SmallRL/SyntheticRLV2 want 'poke-env', Kakuna 'metamon')")
     ap.add_argument("--attention", default="vanilla", choices=("vanilla", "flex", "flash"))
     ap.add_argument("--results-dir", default=None)
     ap.add_argument("--report-out", required=True)
@@ -263,14 +374,10 @@ def main(argv=None):
     model = get_pretrained_model(args.agent)
     backend = args.battle_backend or model.battle_backend
 
+    attention_record = {"attention": "FlashAttention" if args.attention == "flash" else None,
+                        "attention_window": None}
     if args.attention != "flash":
-        import amago.nets.transformer as _tf
-
-        attn = {"vanilla": _tf.VanillaAttention, "flex": _tf.VanillaFlexAttention}[args.attention]
-        overrides = dict(model.gin_overrides or {})
-        overrides["traj_encoders.TformerTrajEncoder.attention_type"] = attn
-        model.gin_overrides = overrides
-        print(f"[peer] attention -> {attn.__name__} (CPU; flash-attn is CUDA-only)", flush=True)
+        install_cpu_attention(args.attention, attention_record)
 
     team_set = metamon.env.get_metamon_teams(args.battle_format, args.team_set)
 
@@ -313,6 +420,7 @@ def main(argv=None):
         "action_temperature": args.temperature if sample else None,
         "n_team_draws": len(draw_log), "team_draws": draw_log,
         "error": error,
+        **attention_record,
     })
     # Metamon's own scoreboard, complementing ours — the independent cross-check that the win
     # accounting is right. Its `won` field is a BOOLEAN, so it books a TIE as its own loss

@@ -62,8 +62,11 @@ def test_the_committed_default_parses_and_names_both_anchors() -> None:
     """The file that ships. If it stops parsing, every anchor read stops with it."""
     cfg = load_config()
     assert cfg.source == config_path()
-    assert {"SmallRL", "SyntheticRLV2"} <= set(cfg.metamon.agents)
+    assert {"SmallRL", "SyntheticRLV2", "Kakuna"} <= set(cfg.metamon.agents)
     assert cfg.metamon.agents["SmallRL"]["checkpoint"] == 40
+    # Kakuna is pinned at upstream's own `default_checkpoint` (metamon/rl/pretrained.py @0a00a759)
+    # — the hub carries epochs up to 40, so an unpinned name would be a moving target.
+    assert cfg.metamon.agents["Kakuna"]["checkpoint"] == 34
     assert cfg.metamon.team_sets["away"] == "competitive"
     assert set(cfg.our_team_sources) == {"home", "away"}
     assert cfg.port_range == [9500, 9599], "9XXX only — 8000/8001 must be unreachable by default"
@@ -110,8 +113,21 @@ def test_an_unpinned_metamon_agent_is_refused_by_name(tmp_path: Path) -> None:
     (tmp_path / "metamon" / "cache").mkdir(parents=True)
     (tmp_path / "metamon" / "python").write_text("")
     with pytest.raises(AnchorConfigError) as excinfo:
-        cfg.metamon.require("Kakuna")
-    assert "Kakuna" in str(excinfo.value) and "SmallRL" in str(excinfo.value)
+        cfg.metamon.require("NotAMetamonAgent")
+    assert "NotAMetamonAgent" in str(excinfo.value) and "SmallRL" in str(excinfo.value)
+
+
+def test_a_pinned_metamon_agent_is_accepted(tmp_path: Path) -> None:
+    """The positive twin of the refusal: once a name is in the file with its checkpoint, `require`
+    passes — so the refusal above is about the NAME, not about Metamon being refused wholesale."""
+    agents = {"SmallRL": {"checkpoint": 40}, "Kakuna": {"checkpoint": 34}}
+    blob = json.loads(_write(tmp_path).read_text())
+    blob["opponents"]["metamon"]["agents"] = agents
+    (tmp_path / "anchors.json").write_text(json.dumps(blob))
+    cfg = load_config(tmp_path / "anchors.json")
+    (tmp_path / "metamon" / "cache").mkdir(parents=True)
+    (tmp_path / "metamon" / "python").write_text("")
+    cfg.metamon.require("Kakuna")
 
 
 def test_an_unknown_team_set_is_refused_rather_than_defaulted(tmp_path: Path) -> None:

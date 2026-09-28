@@ -20,7 +20,8 @@
       "cache_dir": "/home/goodlad/dev/metamon/cache",
       "agents": {
         "SmallRL": {"checkpoint": 40, "params": 13938567},
-        "SyntheticRLV2": {"checkpoint": 48, "params": 200894911}
+        "SyntheticRLV2": {"checkpoint": 48, "params": 200894911},
+        "Kakuna": {"checkpoint": 34, "params": 142832563}
       },
       "team_sets": {
         "home": "gen3ai_pool",
