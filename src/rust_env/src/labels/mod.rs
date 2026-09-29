@@ -15,6 +15,7 @@ use crate::core::columns::labels::{FAMILIES, NOT_CORE};
 use crate::core::columns::EnvCols;
 
 pub mod belief;
+pub mod intent;
 pub mod per_slot;
 pub mod spread;
 
@@ -34,7 +35,7 @@ impl EpisodeState {
 }
 
 /// The `core` families whose producer exists (grows one Lane-C unit at a time).
-pub const BUILT: &[&str] = &["belief", "hp_type", "item", "spread"];
+pub const BUILT: &[&str] = &["belief", "hp_type", "item", "spread", "intent"];
 
 /// Write every DECLARED family's columns for `side`'s open decision. `own` is the side's reading,
 /// `truth` the OTHER side's (its own team = `battle2.team`), `row` the row just encoded for `side`.
@@ -43,6 +44,7 @@ pub fn write(
     families: &[&'static str],
     side: usize,
     own: &BoardReading,
+    own_trk: Option<&pokesim::trackers::SideTrackers>,
     truth: &BoardReading,
     row: &[f32],
     st: &mut EpisodeState,
@@ -90,6 +92,13 @@ pub fn write(
                     &mut c.belief_ev[side * T * n..(side + 1) * T * n],
                     &mut c.belief_ev_mask[side * T..(side + 1) * T],
                 )
+            }
+            "intent" => {
+                let [kind, num, slot, species] = intent::label(own_trk, truth);
+                c.opp_action_kind[side] = kind;
+                c.opp_action_num[side] = num;
+                c.opp_switch_slot[side] = slot;
+                c.opp_switch_species[side] = species;
             }
             other => return Err(format!("label family {other:?} was declared but has no producer (labels::BUILT drifted)")),
         }

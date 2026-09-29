@@ -143,4 +143,5 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
    400 milestone episodes, 0 divergences). **`hp_type` and `item` BUILT**
    (`src/rust_env/src/labels/per_slot.rs`, the same gate: 0 divergences). **`spread` BUILT**
    (`src/rust_env/src/labels/spread.rs`, a port of `invert_nature_evs`, its tables loaded at startup
-   from the stamp's data dir; the same gate: 0 divergences).
+   from the stamp's data dir; the same gate: 0 divergences). **`intent` BUILT**
+   (`src/rust_env/src/labels/intent.rs`, over `trackers::IntentLabel`; the same gate: 0 divergences).

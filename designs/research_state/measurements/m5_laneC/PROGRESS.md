@@ -20,8 +20,8 @@ runs in the routine gate; the MILESTONE tier is `slow`.
 | 3 | family `belief` (`belief_species`, `belief_moves`, `known_moves`) + the parity harness `rust_env_labels_parity_test.py` (COMMIT 8 pool episodes / 843 decisions routine; MILESTONE `slow` 200 pool + 200 ladder episodes, 31,564 decisions, 94,692 key compares, 0 divergences; teeth: one cell of `belief_moves` moved fails 73/73) | LANDED | see git log (`M5 Lane C unit 3`) |
 | 4 | families `hp_type` + `item` (`labels/per_slot.rs`); the same slice, now 7 keys per decision: MILESTONE 400 episodes / 31,564 decisions / 220,948 key compares, 0 divergences; per-family teeth (one moved cell fails every decision) | LANDED | see git log (`M5 Lane C unit 4`) |
 | 5 | family `spread` (`labels/spread.rs`: the derived stats + a port of `invert_nature_evs`, its tables read from the stamp's `data/pokemon`, the inversion cached per episode per side); 13 keys per decision: MILESTONE 400 episodes / 410,332 key compares, 0 divergences; teeth on `belief_ev` | LANDED | see git log (`M5 Lane C unit 5`) |
-| 6 | family `intent` (on `trackers::IntentLabel`) | NEXT | |
-| 7 | family `margin` (`material_margin` on `present()`) | | |
+| 6 | family `intent` (`labels/intent.rs`: nums over the port's `trackers::IntentLabel`, the bare Hidden Power resolved to the attacker's truth typed num); 17 keys per decision; the slice now runs the core with Lane D's production stall forfeit, so per-side decision counts must match EXACTLY: COMMIT 8 episodes / 827 decisions, MILESTONE 400 episodes / 31,979 decisions / 543,643 key compares, 0 divergences; every branch exercised (move 15,163 incl. 1,088 typed-HP resolutions, switch 9,322 of which 1,628 to a hidden mon, unknown 7,494 — `/tmp` script over the recorded core runs); teeth on `opp_action_num` | LANDED | see git log (`M5 Lane C unit 6`) |
+| 7 | family `margin` (`material_margin` on `present()`) | NEXT | |
 
 ## The inventory headline
 
@@ -60,13 +60,11 @@ Record in Rust and replay in Python, the direction Lane 0's gate ① uses:
 
 Details as built:
 
-- The core runs through the FFI front end (N = 1, T = 1, `labels` = the built families).
+- The core runs through the FFI front end (N = 1, T = 1, `labels` = the built families), with Lane D's production stall forfeit (`turn_limit` = `StallConfig().threshold`), so both paths end every episode at the same decision and the per-side decision counts must match EXACTLY.
 - The Python opponent consumes a recorded p2 index only when `agent2_to_move`: the wrapper also
   calls `choose_move` on steps whose action is never sent.
 - At every trainee decision, the `observation` row must equal the core's row first. That is the
   alignment check.
-- Decision counts must match per side, unless Python forfeited at the stall threshold. The core
-  plays with `turn_limit` 1000, so an episode Python forfeits is compared up to the forfeit.
 - A new family is compared by adding it to the test's `BUILT` (and to `labels::BUILT` in Rust).
 
 The core computes labels in `pool.rs` `advance`. Its fold order changed: every side's chain now

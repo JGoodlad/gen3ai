@@ -36,7 +36,7 @@ pytestmark = [pytest.mark.sim, pytest.mark.integration]
 FEATURES = ("--profile", "selfcheck", "--features", "emission-selfcheck")
 #: The families the core builds today (mirrors `labels::BUILT`; a family missing here is simply
 #: not compared yet — the Rust unit test pins BUILT, and the spec refuses an unbuilt one).
-BUILT = ("belief", "hp_type", "item", "spread")
+BUILT = ("belief", "hp_type", "item", "spread", "intent")
 NAMES = ("lcpone", "lcptwo")
 
 
@@ -69,13 +69,16 @@ def _seed(key: int):
 
 # --------------------------------------------------------------------------------- 1. record
 
-def record(lib, teams, n_episodes: int, *, key_base: int, families=BUILT, turn_limit: int = 1000):
+def record(lib, teams, n_episodes: int, *, key_base: int, families=BUILT, turn_limit=None):
     """Play ``n_episodes`` in the core (episode e: team ``2e`` vs ``2e + 1``, seed ``_seed(key_base
     + e)``); return per episode ``{"p1": [idx…], "p2": [idx…], "rows": [(dec_n, obs, mask,
     {key: array})…]}``."""
+    from utils.rust_env import episode as EP
     from utils.rust_env import ffi
     from utils.rust_env import protocol as P
 
+    if turn_limit is None:
+        turn_limit = EP.stall_threshold()   # the production stall forfeit (Lane D), as Gen3Env's
     assert len(teams) >= 2 * n_episodes
     spec = P.spec_json(n=1, threads=1, teams=list(teams[:2 * n_episodes]), names=NAMES, decision_tense=False,
                        switch_freeze=False, turn_limit=turn_limit, refusal_budget=0, bank_dir=None,
@@ -228,11 +231,11 @@ def replay(recs, teams, *, key_base: int, families=BUILT, tag: str = "LC"):
                     break
             else:
                 raise AssertionError(f"episode {e} did not end in 5000 steps")
-            forfeited = int(getattr(env.battle1, "turn", 0)) >= threshold
-            counts["forfeited"] += forfeited
-            if k != len(rec["rows"]) and not forfeited and "observation" not in div:
+            counts["forfeited"] += int(getattr(env.battle1, "turn", 0)) >= threshold
+            # the core forfeits at the same stall threshold (Lane D), so the counts match EXACTLY
+            if k != len(rec["rows"]) and "observation" not in div:
                 diverge("[decisions]", (e, k), f"Python took {k} decisions, the core {len(rec['rows'])}")
-            if opp.j != len(rec["p2"]) and not forfeited and "observation" not in div:
+            if opp.j != len(rec["p2"]) and "observation" not in div:
                 diverge("[p2 decisions]", (e, opp.j), f"Python p2 took {opp.j}, the core {len(rec['p2'])}")
             counts["episodes"] += 1
     finally:
@@ -275,15 +278,15 @@ def test_commit_tier_the_core_labels_equal_gen3env(lib):
 
 @pytest.mark.parametrize("method,key", [("_belief_labels", "belief_moves"), ("_hp_type_labels", "hp_type_label"),
                                         ("_item_labels", "item_label"),
-                                        ("_spread_labels", "belief_ev")])
+                                        ("_spread_labels", "belief_ev"), ("_opp_intent_labels", "opp_action_num")])
 def test_the_label_slice_has_teeth(lib, monkeypatch, method, key):
     """A Python label that differs in ONE cell from the core's must fail the slice — per family."""
     from agents.training import gen3_env
 
     real = getattr(gen3_env.Gen3Env, method)
 
-    def perturbed(self, obs_vec):
-        out = real(self, obs_vec)
+    def perturbed(self, *a):
+        out = real(self, *a)
         out[key] = out[key].copy()
         out[key].reshape(-1)[-1] += 1
         return out
