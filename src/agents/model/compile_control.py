@@ -5,7 +5,9 @@ gen3_compile_sentinel_v1. The owner (2026-09-28): "I just can't stand the idea t
 subtly happening to us. Is there no way to force it to raise or reject?" — and: reach into torch
 internals only BEHIND ONE CLEAN INTERFACE, with explicit phases. This module is that interface.
 **It is the only runtime module that touches `torch._dynamo`** (the lone exception is
-`team_transformer`'s in-graph `graph_break()`, which is model code dynamo traces, not control).
+`team_transformer`'s in-graph `graph_break()`, which is model code dynamo traces, not control), and
+the only one that sets torch compile config (`_COMPILE_CONFIG`: `donated_buffer=False` and, on 2.8,
+an Inductor cache-key tag — per torch version, at `install()`; Lane K1b, see that row's comment).
 
 THE PHASES (one `CompileControl` per process — `control()`):
 
@@ -52,7 +54,8 @@ after the recompile check and so never sees a rejection; `wrap_compiled` (the le
 installed through it) records rejections so a swallowed one is still fatal at the next check.
 `fullgraph=True` is K6's, not done here.
 
-What it deliberately does NOT do: change a number. `error_on_recompile` acts only on the recompile
+What it deliberately does NOT do: change a number (the `donated_buffer` pin included — it changes
+buffer REUSE in the compiled backward, never a value; `compile_control_test` pins the gradient). `error_on_recompile` acts only on the recompile
 path; the handler and the callback only count; `prewarm` runs under `torch.random.fork_rng` and
 zeroes the gradients it made. `compile_control_test` pins identical outputs + gradients on vs off.
 """
@@ -136,6 +139,10 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
             "e4997fcbc979934efa007509d39b8913ff4dd0023162de0b0a8c1225d164a7f2",
         "torch.compiler.reset":
             "ae358f0c70af992ce82f8b4ea5e25e8800221a841c8078841335f98c34e13092",
+        "torch._functorch._aot_autograd.jit_compile_runtime_wrappers.aot_dispatch_autograd":
+            "e2643523ff8ef0275f91e9d13bd57a87c129c33197d12ad8be6829a08a7d388a",
+        "torch._functorch._aot_autograd.runtime_wrappers.AOTDispatchAutograd.post_compile":
+            "86054f751d5c3d75e0962b96761efb06038960b6739c223395770ca6c5aa4816",
     },
     "2.8.0+cu126": {
         "torch._dynamo.cache_size.compute_cache_size":
@@ -172,7 +179,51 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
             "9ca4f2d3cc7aa6da5421e9723cb517ca44fcef8c010f6edbb9bc60b7d4ccb13b",
         "torch.compiler.set_stance":
             "88da974587d1867ee52e4fddca8f5696bef4e104a591dacdc2e891a9ed9b8963",
+        "torch._functorch._aot_autograd.jit_compile_runtime_wrappers.aot_dispatch_autograd":
+            "b402fadc54770102d1340918e9b928d0217c04a7b3c67f221a01fa2a84bdfd02",
+        "torch._functorch._aot_autograd.runtime_wrappers.AOTDispatchAutograd.post_compile":
+            "e07599a5fc3a236f180cd43e65e959799f9d36eff4813597b09f4afc3a9991c7",
+        "torch._inductor.codecache.FxGraphHashDetails.__init__":
+            "6ef2f0617932b76eea3d0a26571d5f6b5ea18cd4482d3e97e03691ca77707611",
     },
+}
+
+# THE COMPILE CONFIG ROW (gen3_donated_buffer_off_v1, Lane K1b, 2026-09-29) — the torch compile-config
+# values this adapter PINS, per exact torch version, keyed by their full dotted path; set at
+# `install()` (so before the gate's first compile and before the post-gate prewarm) and restored at
+# `uninstall()`.
+#
+#   torch._functorch.config.donated_buffer = False. Torch 2.6+ defaults it True (2.5.1: False):
+#   AOTAutograd then lets the compiled BACKWARD reuse the forward's saved activations IN PLACE,
+#   which is legal only when every backward through that graph is single-use. Our learner is not:
+#   the read-only probes (`grad_balance._flat_grads`, the per-term noise-scale probe) and the distill
+#   grad-projection call `autograd.grad(..., retain_graph=True)` on the compiled graph. The donated
+#   indices are collected when the graph compiles (`aot_dispatch_autograd`) and cleared only if the
+#   FIRST backward through it retains the graph (`AOTDispatchAutograd.post_compile`'s lazy backward
+#   compile); the sentinel's prewarm does a plain `.backward()` first, so on torch 2.8 the first
+#   update's grad-balance probe raised "This backward function was compiled with non-empty donated
+#   buffers ..." (the K1 learner-bench A/B, 2026-09-29, both workers). Off, the backward keeps its
+#   saved tensors as eager does — same kernels, same numbers (`compile_control_test` pins the
+#   gradient bit-for-bit on vs off); measured cost on 2.8: none in time, +0.3% peak memory
+#   (`designs/research_state/measurements/m5_k1/`).
+#
+#   torch.compiler.config.cache_key_tag = "gen3_donated_buffer_off_v1" (2.8 only; 2.5.1 has no such
+#   config and never donated). Setting donated_buffer alone was NOT enough — measured 2026-09-29: the
+#   Inductor FX-graph cache key (`codecache.FxGraphHashDetails`) does not include the backward's
+#   donated indices, so a backward compiled WITH donation by any earlier torch-2.8 process (the
+#   crashed K1 A/B, any test that compiles a train graph without this adapter) is served from the
+#   shared on-disk cache to a donation-OFF compile of the same graph. Its kernels still write into
+#   the saved activations, so the probe's first `retain_graph` backward corrupted saved tensor
+#   [2048, 128] (version 1 -> 2) and the second raised "modified by an inplace operation"; with a
+#   fresh `TORCHINDUCTOR_CACHE_DIR` the same run completed. The tag is part of that key (and of the
+#   AOTAutograd cache key), so our graphs can never be served an artifact compiled under the
+#   default config. A kernel that reused a saved buffer WITHOUT an ATen op would not have bumped a
+#   version counter — i.e. this could have been SILENT — which is why the tag is not optional.
+#   Both readers are in the hashed row above (`FxGraphHashDetails.__init__` reads the tag).
+_COMPILE_CONFIG: Dict[str, Dict[str, Any]] = {
+    "2.5.1+cu121": {"torch._functorch.config.donated_buffer": False},   # already the 2.5.1 default
+    "2.8.0+cu126": {"torch._functorch.config.donated_buffer": False,
+                    "torch.compiler.config.cache_key_tag": "gen3_donated_buffer_off_v1"},
 }
 
 # The logger `convert_frame` writes the cache-limit warning to (`logging.getLogger(__name__)`).
@@ -269,6 +320,42 @@ def cache_size_limit() -> int:
         return int(getattr(cfg, "recompile_limit", None) or cfg.cache_size_limit)
     except Exception:
         return 8
+
+
+def apply_compile_config(version: Optional[str] = None) -> Dict[str, Any]:
+    """Set this torch version's `_COMPILE_CONFIG` row; return the PREVIOUS values (to restore).
+
+    Must run before the learner's first compile — AOTAutograd reads `donated_buffer` when it
+    compiles a graph, and the cache-key tag must be in force when a graph is looked up."""
+    import importlib
+    ver = str(version or torch.__version__)
+    row = _COMPILE_CONFIG.get(ver)
+    if row is None:
+        raise CompileSentinelError(
+            f"[CompileControl] no compile-config row for torch {ver!r} (recorded: "
+            f"{sorted(_COMPILE_CONFIG)}) — {_RERECORD}")
+    prev: Dict[str, Any] = {}
+    for path, val in row.items():
+        mod_name, key = path.rsplit(".", 1)
+        try:
+            mod = importlib.import_module(mod_name)
+        except ImportError as exc:
+            raise CompileSentinelError(
+                f"[CompileControl] DRIFT: cannot import {mod_name} on torch {ver} — {_RERECORD}"
+            ) from exc
+        if not hasattr(mod, key):            # a renamed key is drift, never a silent skip
+            raise CompileSentinelError(
+                f"[CompileControl] DRIFT: {mod_name} has no {key!r} on torch {ver} — {_RERECORD}")
+        prev[path] = getattr(mod, key)
+        setattr(mod, key, val)
+    return prev
+
+
+def restore_compile_config(prev: Dict[str, Any]) -> None:
+    import importlib
+    for path, val in prev.items():
+        mod_name, key = path.rsplit(".", 1)
+        setattr(importlib.import_module(mod_name), key, val)
 
 
 def set_strict_errors() -> None:
@@ -385,6 +472,7 @@ class CompileControl:
         self._prev_level: Optional[int] = None
         self._prev_error_on_recompile: Optional[bool] = None
         self._stance_set = False
+        self._prev_config: Dict[str, Any] = {}
 
     # -- wiring --------------------------------------------------------------------------------
     def install(self) -> "CompileControl":
@@ -402,6 +490,7 @@ class CompileControl:
         lg.addHandler(self._handler)
         callback_handler.register_start_callback(self._on_compile_start)
         self._prev_error_on_recompile = bool(torch._dynamo.config.error_on_recompile)
+        self._prev_config = apply_compile_config()
         self.installed = True
         return self
 
@@ -419,6 +508,8 @@ class CompileControl:
         if self._prev_error_on_recompile is not None:
             torch._dynamo.config.error_on_recompile = self._prev_error_on_recompile
         self._unset_stance()
+        restore_compile_config(self._prev_config)
+        self._prev_config = {}
         self.installed = False
         self.locked = False
 

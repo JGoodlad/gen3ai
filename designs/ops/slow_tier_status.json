@@ -155,17 +155,17 @@
   },
   "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[high]": {
    "status": "pass",
-   "commit": "201b1128c26d349be7d6502c4a47ba3cbcc004d8",
-   "at": "2026-09-28T20:44:35Z",
-   "duration_s": 338.32,
+   "commit": "964ddf4139368f75c6da4f6102b809ae7aec0cea",
+   "at": "2026-09-29T18:51:10Z",
+   "duration_s": 190.56,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[highest]": {
    "status": "pass",
-   "commit": "201b1128c26d349be7d6502c4a47ba3cbcc004d8",
-   "at": "2026-09-28T20:44:35Z",
-   "duration_s": 398.07,
+   "commit": "964ddf4139368f75c6da4f6102b809ae7aec0cea",
+   "at": "2026-09-29T18:51:10Z",
+   "duration_s": 86.37,
    "contention": 1.0,
    "detail": ""
   },
@@ -183,6 +183,22 @@
    "at": "2026-09-26T13:09:47Z",
    "duration_s": 61.31,
    "contention": 2.1,
+   "detail": ""
+  },
+  "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cpu": {
+   "status": "pass",
+   "commit": "964ddf4139368f75c6da4f6102b809ae7aec0cea",
+   "at": "2026-09-29T18:46:17Z",
+   "duration_s": 110.35,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cuda": {
+   "status": "pass",
+   "commit": "964ddf4139368f75c6da4f6102b809ae7aec0cea",
+   "at": "2026-09-29T18:46:17Z",
+   "duration_s": 139.22,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
@@ -818,5 +834,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-29T06:48:04Z"
+ "last_written": "2026-09-29T18:51:10Z"
 }

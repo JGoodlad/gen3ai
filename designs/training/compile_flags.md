@@ -530,8 +530,64 @@ now asserts, per torch: 2.5.1 ⇒ split ON and unsplit FAILS; 2.8 ⇒ split OFF 
 — and 3 graphs / 2 breaks with it kept (the debugger's rate-limited logger calls `time.time()`,
 `utils/logging/rate_limiter.py:14`). On CUDA the 2.5.1 split adds one; on 2.8 the CUDA explain is also **1 graph / 0 breaks** (6,870 ops) — the unsplit graph, K8's post-K1 target for the extractor.
 
-**Speed A/B — NOT yet measured** (needs an idle GPU): `python -m agents.training.learner_benchmark
-run --device cuda` under each interpreter.
+**Speed A/B (2026-09-29, idle RTX 3080 Ti, the same saved rollout buffer, `learner_benchmark`,
+K=5):** 2.8-unsplit is 1–2% FASTER than 2.5.1-split — baseline 57.21 s vs 58.45 s per update,
+diag_skipped 50.47 vs 51.27, TF32 53.42 vs 54.46, epochs_half 33.08 vs 32.97 — almost all of it in the
+backward (27.31 vs 28.33 s); the loss agrees to 5 decimals. Within ~2× the run-to-run spread, so a
+small effect at most. Table and reports: `designs/research_state/measurements/m5_k1/`.
+
+### Lane K1b — two backwards through one compiled graph (`gen3_donated_buffer_off_v1`, 2026-09-29)
+
+K1's parity checks never put TWO backwards through one compiled graph; the first real update does —
+`grad_balance._flat_grads` and the per-term noise-scale probe call `autograd.grad(retain_graph=True)`
+on the compiled train graph before `loss.backward()` (K2 runs every probe on a process's first
+update), as does the distill grad-projection. On torch 2.8 that failed twice, for two reasons:
+
+1. **`torch._functorch.config.donated_buffer` defaults True from torch 2.6** (2.5.1: False). A
+   donating backward reuses the forward's saved activations in place, legal only for single-use
+   backwards. The donated set is fixed at compile time and cleared only if the graph's FIRST backward
+   retains it; the sentinel's prewarm does a plain `.backward()` first, so the first update's
+   grad-balance probe raised *"This backward function was compiled with non-empty donated buffers"*.
+2. **The Inductor FX-graph cache key is blind to donation** (`FxGraphHashDetails` carries no donated
+   indices). With donation OFF, the same graph was still SERVED the donating backward the crashed run
+   had cached in `/tmp/torchinductor_goodlad`: the probe's first backward overwrote saved tensor
+   `[2048, 128]` (version 1 → 2) and the second raised *"modified by an inplace operation"*; with a
+   fresh `TORCHINDUCTOR_CACHE_DIR` the same run completed. Here a version counter caught it; a
+   donating Triton kernel that overwrites a saved activation without an ATen op would not bump one —
+   **UNVERIFIED** whether any graph of ours does that, which is why the tag is not optional.
+
+**The fix is one row in `compile_control._COMPILE_CONFIG`**, applied at `install()` (before the
+gate's first compile) and restored at `uninstall()`: `donated_buffer = False` on both torches, and on
+2.8 `torch.compiler.config.cache_key_tag = "gen3_donated_buffer_off_v1"` — a public knob that IS in
+the Inductor and AOTAutograd cache keys, so our graphs can never be served an artifact compiled under
+the default config by any other process. The readers (`aot_dispatch_autograd`,
+`AOTDispatchAutograd.post_compile`, `FxGraphHashDetails.__init__`) are in the hashed drift row.
+Restructuring the calls instead was rejected: the outcome depends on which backward reaches each
+graph first (prewarm order, K2 cadence, the distill projection's loop), and it would not touch the
+cache hazard. Donation OFF runs the same kernels on the same inputs — `compile_control_test` pins the
+gradient bit-for-bit on vs off — and costs nothing measurable: production extractor fwd+bwd on 2.8,
+batch 64 ~10.1 ms and batch 2048 ~74.8 ms either way, peak memory +0.3%
+(`designs/research_state/measurements/m5_k1/`).
+
+**Tests.** `compile_control_test` (routine, both torches): install pins the row and uninstall
+restores it; a donating backward REFUSES a retain-graph probe and the pinned row accepts it; the pin
+changes no gradient; on 2.8, the cache key carries the tag and not donation.
+`agents/training/compiled_train_probes_test.py` (`slow`; CPU, plus CUDA under
+`GEN3AI_TEST_ALLOW_GPU=1`): the production policy surface, the
+same signatures compiled first under the donating default, then the real pipeline (compile, reset,
+production prewarm, attach) and ONE full `train()` with every first-update probe, plus a
+repeated-`retain_graph`-backward check (bitwise on CPU; ≤ 1e-5 relative on CUDA, whose scatter-add
+atomics give 2.1e-7). Revert `donated_buffer` ⇒ the probe raises (CPU and CUDA, measured). ⚠️ Reverting
+ONLY the tag passes this toy (2.2e-7, measured) — that half is proven by the real-graph A/B and pinned
+by the cache-key contract test, not by this test.
+
+**Open (K1 finding, not fixed here):** on torch 2.8.0+cu126 a **batch-1 CUDA eval/no-grad** graph of
+the production extractor fails to LOWER — Triton `CompilationError` (`'constexpr_type' object has no
+attribute 'is_block'` on a fully-constant `tl.broadcast_to` index); batch 2 and 4 compile, and 2.5.1
+compiles batch 1. It is reached by `--critic shaped`'s batch-1 prewarm signature and by the trainer's
+in-process FINAL EVALUATION (batch 1 on the compiled forward, after the lock is released, per the
+sentinel table above) — **UNVERIFIED:** that a 2.8 `--compile-trainer` run dies at its end (inferred
+from the batch-1 repro, not observed on a real run).
 
 ### The startup parity gate (`gen3_compile_parity_real_obs_v1` + `gen3_tf32_parity_gate_v1`)
 
@@ -670,7 +726,9 @@ plus a CUDA test that the `state_dict` keys and a save/reload survive) and the c
 The owner's question: *"Is there no way to force it to raise or reject?"* — yes, on torch 2.5.1,
 behind ONE adapter: **`src/agents/model/compile_control.py` is the only runtime module that touches
 `torch._dynamo`** (the one exception is `team_transformer`'s in-graph `graph_break()`, which is model
-code dynamo traces). Two failures were silent before it:
+code dynamo traces). It is also the only module that sets `torch._functorch.config` — the
+per-version `_FUNCTORCH_CONFIG` row (`donated_buffer = False`, Lane K1b below), applied at `install()`.
+Two failures were silent before it:
 
 * **CACHE-LIMIT FALLBACK.** Dynamo keeps at most `cache_size_limit` (8) entries per CODE OBJECT per
   ID-matched `self`. The ninth is not compiled: `convert_frame._compile` logs ONE warning

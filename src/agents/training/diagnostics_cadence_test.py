@@ -173,7 +173,7 @@ def test_the_two_grad_share_scalars_are_gaps_on_a_skipped_update():
 
 
 # ── THE GUARANTEE: bit-identical learning, on a real Gen3 policy ─────────────────────────────
-def _real_gen3_ppo():
+def _real_gen3_ppo(device: str = "cpu"):
     import gymnasium as gym
     from gymnasium import spaces
     from stable_baselines3.common.vec_env import DummyVecEnv
@@ -221,7 +221,7 @@ def _real_gen3_ppo():
     model = InstrumentedMaskablePPO(
         Gen3DualHeadMaskablePolicy,
         DummyVecEnv([(lambda s=s: _Env(layout["total_dim"], s)) for s in range(2)]),
-        n_steps=8, batch_size=4, n_epochs=2, device="cpu", seed=0, policy_kwargs=pk)
+        n_steps=8, batch_size=4, n_epochs=2, device=device, seed=0, policy_kwargs=pk)
     model.win_prob_coef = 0.0           # …and no win-prob BCE term at all, for the same reason
     model.grad_accum_steps = 2          # the accumulation branch: the noise probes need it
     orig = InstrumentedMaskablePPO.train

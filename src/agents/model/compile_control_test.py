@@ -436,6 +436,112 @@ def test_every_hashed_internal_resolves():
     assert not [q for q, h in got.items() if h.startswith("<missing")]
 
 
+# --------------------------------------------------------------------------- functorch config row
+# gen3_donated_buffer_off_v1 (Lane K1b). The learner's read-only probes put a `retain_graph=True`
+# backward through the compiled graph after the prewarm's plain one; with AOTAutograd's donated
+# buffers ON (the torch >= 2.6 default) that raises. Revert `apply_compile_config` in `install()`
+# and the first two tests fail; the third pins that the pin changes no number; the fourth pins
+# the torch-2.8 hazard that made the cache-key tag necessary (the Inductor cache key is blind to
+# donation, so the tag must reach the key).
+def _donating_step(fn, lin, x):
+    """The production order: a plain backward FIRST (the prewarm), then a retain-graph probe and
+    the real backward on a second forward (grad-balance, then `loss.backward()`)."""
+    fn(x).square().sum().backward()
+    plain = lin.weight.grad.clone()
+    lin.zero_grad(set_to_none=True)
+    out = fn(x).square().sum()
+    probe = torch.autograd.grad(out, [lin.weight], retain_graph=True)[0]
+    out.backward()
+    return plain, probe, lin.weight.grad.clone()
+
+
+def _saved_intermediate_net():
+    torch.manual_seed(0)
+    lin = torch.nn.Linear(16, 8)
+    # sin's backward saves its INPUT, an intermediate that is not a graph output: a donated buffer.
+    return lin, torch.compile(lambda x: torch.sin(lin(x)) * 2.0, backend="aot_eager")
+
+
+def test_install_pins_donated_buffer_OFF_and_uninstall_restores_it():
+    import torch._functorch.config as fcfg
+    prev = fcfg.donated_buffer
+    try:
+        fcfg.donated_buffer = True                       # the torch >= 2.6 default
+        ctl = CompileControl().install()
+        assert fcfg.donated_buffer is False
+        if _MODE == "stance":                            # torch 2.8: the Inductor cache-key tag
+            import torch.compiler.config as ccfg
+            assert ccfg.cache_key_tag == "gen3_donated_buffer_off_v1"
+        ctl.uninstall()
+        assert fcfg.donated_buffer is True
+        if _MODE == "stance":
+            assert ccfg.cache_key_tag == ""
+        assert set(cc._COMPILE_CONFIG) == set(cc._SUPPORTED)     # every supported torch has a row
+    finally:
+        fcfg.donated_buffer = prev
+
+
+def test_contract_a_donated_backward_REFUSES_a_retain_graph_probe_and_the_pinned_row_accepts_it():
+    import torch._functorch.config as fcfg
+    prev = fcfg.donated_buffer
+    x = torch.rand(4, 16)
+    try:
+        torch._dynamo.reset()
+        fcfg.donated_buffer = True
+        lin, fn = _saved_intermediate_net()
+        with pytest.raises(RuntimeError, match="donated buffers"):
+            _donating_step(fn, lin, x)
+        torch._dynamo.reset()
+        ctl = CompileControl().install()
+        try:
+            lin, fn = _saved_intermediate_net()
+            _, probe, full = _donating_step(fn, lin, x)
+            assert torch.equal(probe, full)              # the probe read the same gradient
+        finally:
+            ctl.uninstall()
+    finally:
+        fcfg.donated_buffer = prev
+        torch._dynamo.reset()
+
+
+def test_the_donated_buffer_pin_changes_no_gradient():
+    import torch._functorch.config as fcfg
+    prev = fcfg.donated_buffer
+    x = torch.rand(4, 16)
+    grads = {}
+    try:
+        for donated in (True, False):
+            torch._dynamo.reset()
+            fcfg.donated_buffer = donated
+            lin, fn = _saved_intermediate_net()
+            fn(x).square().sum().backward()
+            grads[donated] = (lin.weight.grad.clone(), lin.bias.grad.clone())
+    finally:
+        fcfg.donated_buffer = prev
+        torch._dynamo.reset()
+    assert all(torch.equal(a, b) for a, b in zip(grads[True], grads[False]))
+
+
+@pytest.mark.skipif(_MODE != "stance", reason="torch.compiler.config.cache_key_tag exists from 2.6")
+def test_contract_the_cache_key_tag_reaches_the_Inductor_cache_key_and_donation_does_not():
+    """Why the tag is in the row: `FxGraphHashDetails` (the Inductor FX-graph cache key) carries
+    `cache_key_tag` but NOT the backward's donated indices — so, without the tag, a backward compiled
+    with donation by another process is served to our donation-off compile (measured 2026-09-29)."""
+    import inspect
+
+    import torch.compiler.config as ccfg
+    from torch._inductor.codecache import FxGraphHashDetails
+    src = inspect.getsource(FxGraphHashDetails.__init__)
+    assert "cache_key_tag" in src and "donated" not in src
+    prev = ccfg.cache_key_tag
+    try:
+        ccfg.cache_key_tag = "gen3_donated_buffer_off_v1"
+        d = FxGraphHashDetails(None, [], {}, [])
+        assert d.cache_key_tag == "gen3_donated_buffer_off_v1"
+    finally:
+        ccfg.cache_key_tag = prev
+
+
 # --------------------------------------------------------------------------- CONTRACT tests
 # BEHAVIOUR = the semantics changed. Each internal the adapter relies on, exercised on the
 # installed torch (the hash row says the code is the same; these say it still DOES the same).
