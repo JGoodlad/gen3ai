@@ -312,6 +312,106 @@ price it is judged against** (Phase 0 (b), one torch thread, loads 30–35): com
 2.44–4.64 ms/call (6.5–7.3× over eager), a B = 48 CPU batch 0.92–1.26 ms/row — so even on CPU,
 batching is 2.6–3.7× per row (4.5× at four threads).
 
+**T2 DESIGN (M5 Lane T2, 2026-09-29; progress and resume point:
+[`research_state/measurements/m5_t2/PROGRESS.md`](../research_state/measurements/m5_t2/PROGRESS.md)).**
+The owner's 2026-09-27 decision (ledger L21431 (2)) makes T2 UNIFIED inference: the trainee, the
+policy opponents and eval all forward through one service of fixed GPU weight SLOTS, fixed-shape
+BUCKETS and PRIORITY classes. Package `src/agents/inference/service/`; standalone — nothing in
+training calls it until Lane G. Measured facts it rests on (RTX 3080 Ti, torch 2.5.1+cu121, idle GPU,
+`ai_v14_06_lbat_ctrl_fix` final, the 64-row real-obs fixture, 2026-09-29): the production policy
+has **3.07M parameters (12.3 MB) + 0.97M buffer elements** — a slot is ~16 MB, so slots are cheap;
+an EAGER decision forward costs **~28–31 ms per call at ANY batch 2–128** (flat: launch-bound, ~11k
+ops), while the Inductor-compiled forward replayed as a CUDA graph costs **1.06 / 1.23 / 1.97 /
+2.94 ms at B = 2 / 8 / 48 / 128** (23 µs/row at 128; 14× eager at 48, 26× at 2), within 1e-5 of
+eager on legal log-probs and 7e-7 on V. Because a replay is nearly flat in B, padding is cheap and
+the bucket set should be COARSE.
+
+* **The decision forward** (`decision.py`). One pure callable per policy, `DecisionModule(obs [B,D]
+  f32, mask [B,A] bool) → (logp [B,A] f32, V [B] f32)`: the policy's own extractor, towers, pointer
+  head and `_critic_value` (every critic mode), with sb3's two-step mask normalisation written out
+  in the same order, so it is **BIT-IDENTICAL** to `MaskableCategorical`'s log-probs on the same
+  device (measured, CPU). Illegal entries are `-inf`. Greedy = `argmax(logp)`. Sampling is the
+  CALLER's, from `logp`, with its own RNG. An architecture whose extractor reads a Dict key beyond
+  `observation` (`extra_obs_keys`, today `--value-true-team`) is REFUSED at declaration.
+* **Slots.** A SLOT GROUP is one architecture (the state-dict signature: keys × shapes × dtypes)
+  with `n_slots` declared at startup. Each slot is a private replica of the group's template
+  policy whose persistent parameters and buffers are VIEWS into one STACKED `[n_slots, …]` tensor
+  per state-dict entry, allocated once at startup. `load(slot, state_dict, model_id)` is an
+  in-place `copy_` into those views — no allocation, no recompile, and a captured CUDA graph (which
+  holds the storage pointers) serves the new weights on its next replay. A signature mismatch is
+  a typed `SlotArchMismatch`. Every load is parity-verified at one bucket against the eager
+  reference of the SAME weights (a miscompile can be weight-dependent: the 2026-09-28 defect showed
+  on real weights), so every weight set served has passed the gate. Stacked storage is also the
+  seam for a later MULTI-SLOT forward (`torch.func.vmap` over the stack); v1 forwards one slot per
+  batch, and the vmap arm is a measured go/no-go unit, not assumed.
+* **Buckets.** A declared ascending tuple of batch sizes, **minimum 2** (torch 2.8 cannot lower a
+  batch-1 CUDA graph of this extractor — K1 finding; and a batch dim of 1 is a degenerate
+  broadcast). A slot's pending rows are packed into chunks of the largest bucket and a remainder
+  padded up to the smallest bucket that holds it; pad rows repeat a REAL row of the batch and
+  their outputs are discarded. Default `(8, 48, 128)`; a service declares its own. Rows are
+  independent in this forward up to float rounding (measured on CPU: 8 rows alone equal the same
+  rows inside 64 bit-for-bit, while a padded batch differs from an unpadded one by ≤ 4.8e-7 on
+  log-probs), which the parity gate re-proves per bucket with a partially-filled batch.
+* **API** (what Lane E's opponent routing and Lane H's eval call). `svc = InferenceService(spec)`
+  → `svc.startup()` (build, warm, capture, parity-gate, FREEZE) → `slot = svc.slot(group, i)`;
+  `svc.load(slot, state_dict, model_id)`; `ticket = svc.submit(slot, obs, mask, priority)` (numpy
+  or tensor rows; any count); `svc.flush()`; `ticket.result() → Decision(logp, value, greedy)`;
+  `svc.score(...)` = submit + flush for a synchronous caller. Results are VIEWS into a declared
+  output arena, valid until the next flush (the caller copies what it keeps), so a flush allocates
+  nothing. Requests are SLOT-TAGGED; tickets for the same slot and class are packed together.
+  v1 is an in-process object driven by the caller's loop (the M5 core is in-process over FFI); a
+  timer-flushed thread or process front end is added only when a consumer needs one.
+* **Priority.** `ROLLOUT` > `EVAL` > `FILLER`. `flush()` serves EVERY pending `ROLLOUT` row, then at
+  most `filler_batches_per_flush` (declared, default 1) bucket batches of the lower classes, oldest
+  first — eval rides along as background filler and never delays a rollout step by more than one
+  batch; `drain()` serves everything (eval's own end-of-cycle).
+* **The lifecycle** (the M5 DESIGN PRINCIPLE). `DECLARED → startup() → FROZEN`, and `POISONED` on a
+  violation (every later call raises `LifecycleViolation`). Startup acquires everything: the slot
+  replicas and stacked storage, per-bucket pinned host staging and static device inputs, the output
+  arena, one compiled forward per bucket, one CUDA graph per slot × bucket (all in ONE shared
+  memory pool — graphs never run concurrently and outputs are copied out right after each replay),
+  and runs the parity gate; then it freezes. After the freeze a flush only copies in, replays and
+  copies out. Counters that must stay 0: `compiles_after_freeze` (dynamo graph count),
+  `captures_after_freeze`, `cuda_segments_after_freeze` (`torch.cuda.memory_stats`
+  `segment.all.allocated` across the service's own calls); a non-zero one is a typed
+  `LifecycleViolation` at the point it happens. Nothing is lazily compiled: an undeclared bucket
+  cannot be reached (rows are packed into declared buckets), and a new slot cannot be added.
+* **Validation — the same bars as the compile gate.** At startup, for EVERY slot × bucket, the
+  committed real-obs fixture (`compile_parity_obs.npz`; full bucket AND a partially-filled one)
+  through the backend vs the policy's own eager sb3 path on the same weights and device
+  (`decision.policy_reference`), judged by `compile_trainer.decision_verdicts`: legal log-probs
+  1e-3, V 1e-4 at fp32 (the TF32 rule against an fp32 reference otherwise); illegal entries
+  exactly `-inf`; greedy equal on every row whose eager top-2 legal margin exceeds the log-prob bar
+  (near-ties are counted and reported, never silently passed — a fresh or real policy has EXACT
+  ties, measured). The same check runs on every `load` and as the K6 IN-RUN CANARY
+  (`svc.canary(slot)`, the caller's cadence). A failure is a typed `ParityFailure` that names the
+  slot, bucket and quantity.
+* **Backends — decided by measurement on 2.5.1 (the production env).** `eager` (the reference;
+  CPU and CUDA) and `graph`: `torch.compile` (Inductor, `dynamic=False`, one compile per bucket,
+  reused by every slot of the group — measured: a second module instance of the same class does
+  not recompile) captured into a `torch.cuda.CUDAGraph` per slot × bucket. **AOT
+  (`torch.export` → AOTInductor) is BLOCKED on 2.5.1**, three causes, all measured: (1) an AOT
+  artifact is ONE graph, so the `6521f420` trunk split (a dynamo graph break) cannot exist in it,
+  and the unsplit graph reproduces the 2.5.1 Inductor miscompile — max|Δ legal log-prob| **0.68**,
+  |ΔV| 0.012 on the real checkpoint at B = 8 (0.21 on V on a fresh one); (2) the box has no CUDA
+  toolkit (AOTInductor's C++ build needs `CUDA_HOME`; a shim from the pip/Triton headers works);
+  (3) `x[...] = 0.0` in `extractor_ctx.slice_pokemon_categoricals` exports as `fill.Tensor` of a
+  lifted constant, which 2.5.1 AOTInductor cannot lower (an FX rewrite to `fill.Scalar` fixes it).
+  With (2) and (3) worked around AOT is 1.86 ms at B = 8 — no faster than the graph backend's 1.23.
+  **On torch 2.8.0+cu126** (`gen3ai_torch28`) AOT is blocked by the toolkit alone: the AOTInductor
+  C++ build needs CCCL's `<nv/target>`, which neither the pip CUDA packages nor Triton ship, and
+  installing a CUDA toolkit is a box change this lane did not make; the graph backend there is
+  1.22 / 1.77 ms at B = 8 / 48, parity 8.6e-6 / 7.2e-7, ~42 s compile per bucket (vs ~75 s on
+  2.5.1). So T2 uses compile + CUDA graphs on both torches, with the K6 lock structural: after the freeze dynamo is never
+  entered (a replay is not a dynamo call). **Two capture blockers**, measured: the EAGER forward
+  makes **24 host syncs** (Python-scalar `index_put`s and host-built constants in `extractor_ctx`,
+  `damage_op*`, `team_transformer`), so eager cannot be captured; and the compiled forward had ONE
+  (`team_transformer._event_reference_cells` built a constant on the CPU and copied it each call —
+  also what made Inductor's own `reduce-overhead` mode skip cudagraphs and run at 2.1 s/call). That
+  one is fixed at its source (built on the device; eager bit-identical). Dynamic-shape compile
+  (`mark_dynamic`, one compile for all buckets) FAILS on 2.5.1 (a sympy assertion), so startup
+  pays ~75 s per bucket; the K3 per-run cache is what makes a restart cheap.
+
 ### M5 — N envs per process, successors, the Rust env (Tier 1, env shape)
 
 **Status (2026-09-26): PHASE A DONE — the transport is decided and the build is planned. Nothing
@@ -857,3 +957,4 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-28 | Declared lifecycle **(owner)** | M5 design principle: startup declares + acquires every resource, steady state acquires nothing, `*_after_freeze` counters must stay 0; K7 AOT training-step spike decides dynamo vs AOT for training | Lazy initialization in production runs; assuming training export is immature without measuring | owner 2026-09-28 |
 | 2026-09-29 | Entropy / policy sharpness **(owner)** | NO direct adoption of a lower entropy bonus; the entropy-anneal arm (X23) runs only after the architecture is stable (M5 + the discrete-token boundary), judged by Lane S's policy-spectrum instrument on a fixed turn bank (rank-mass spectrum; near-best vs dominated mass and starvation over the whole move space, from branch ground truth) | Adopting a lower `ent_coef` on X23's strength read alone; a contrived single-move (Toxic) starvation probe | owner 2026-09-29 |
 | 2026-09-29 | FFI signatures (Lane A) | GENERATED from one Python table into a marked region of `ffi.rs` (wrappers call `imp::<name>` with the same arguments) + ctypes argtypes from the same rows + a compiled-in table id compared at load | Hand-written ctypes declarations (the prototype); a C header + cbindgen (a new dependency, and it would generate from Rust, not from the table both languages already read) | `m5_laneA/PROGRESS.md`; `ffi_test.py` |
+| 2026-09-29 | T2 inference backend **(Lane T2, measured)** | `torch.compile` per bucket + one CUDA graph per slot × bucket (shared pool), weights in stacked per-group slot storage loaded by in-place copy, every load and startup slot × bucket parity-gated at the compile gate's decision bars | AOTInductor (blocked on 2.5.1: the unsplit graph miscompiles, 0.68 legal log-prob; blocked on 2.8: no CUDA toolkit on the box; not faster where it ran); Inductor `reduce-overhead` (2.1 s/call: a host-built constant skipped cudagraphs); dynamic-shape compile (fails on 2.5.1); eager CUDA graphs (24 host syncs in the eager forward) | this doc's T2 DESIGN paragraph; `research_state/measurements/m5_t2/` |

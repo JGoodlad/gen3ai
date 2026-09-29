@@ -89,6 +89,22 @@
    "contention": 2.1,
    "detail": ""
   },
+  "src/agents/inference/service/service_cuda_test.py::test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons": {
+   "status": "pass",
+   "commit": "050f7b1ed803dcfdea87df4b9aac7d5d4615f1f0",
+   "at": "2026-09-29T21:17:37Z",
+   "duration_s": 0.97,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/inference/service/service_cuda_test.py::test_graph_backend_parity_weight_swap_and_a_frozen_steady_state": {
+   "status": "pass",
+   "commit": "050f7b1ed803dcfdea87df4b9aac7d5d4615f1f0",
+   "at": "2026-09-29T21:17:37Z",
+   "duration_s": 144.18,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/model/build_arch_viewer_render_integration_test.py::test_dark_is_the_default_with_no_hash": {
    "status": "pass",
    "commit": "8d07051aa767331cfa1ca2292029d5217cbf6d40",
@@ -834,5 +850,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-29T18:51:10Z"
+ "last_written": "2026-09-29T21:17:37Z"
 }

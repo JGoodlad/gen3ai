@@ -413,8 +413,11 @@ def _event_reference_cells(event_window: torch.Tensor,
     ev = event_window
     C = EVENT_COL                  # PLAIN ints — an IntEnum member breaks torch.fx code-gen
     sm = species_ids.float()[:, None, :]                                       # [B,1,12]
-    ss = torch.cat([torch.ones(TEAM_SIZE), -torch.ones(TEAM_SIZE)]) \
-        .to(ev.device)[None, None, :]                                          # [1,1,12]
+    # Built ON the event window's device: the old CPU-built `.to(ev.device)` was an H2D copy on
+    # every forward — the one host sync left in the compiled graph, which made it uncapturable as a
+    # CUDA graph (M5 T2, measured 2026-09-29). Same values, so eager is bit-identical.
+    ss = torch.cat([torch.ones(TEAM_SIZE, device=ev.device),
+                    -torch.ones(TEAM_SIZE, device=ev.device)])[None, None, :]   # [1,1,12]
     valid = (ev[:, :, C.VALID] > 0.5)[:, :, None]
     actor = ev[:, :, C.ACTOR_SPECIES:C.ACTOR_SPECIES + 1]
     tgt = ev[:, :, C.TARGET_SPECIES:C.TARGET_SPECIES + 1]

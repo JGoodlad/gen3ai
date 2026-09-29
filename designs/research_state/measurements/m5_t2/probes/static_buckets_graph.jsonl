@@ -1,0 +1,5 @@
+{"torch": "2.5.1+cu121", "dyn": true, "error": "AssertionError: not simple sympy type <class 'NoneType'>: None (mark_dynamic batch, min=2)"}
+{"torch": "2.5.1+cu121", "dyn": false, "B": 2, "compile_s": 75.1, "new_graphs": 6, "capture_s": 0.57, "graph_ms": 1.059, "us_row": 529.5, "eager_ms": 27.89, "dlogp": 5.245208740234375e-06, "dv": 5.960464477539063e-08, "mem_mb": 274}
+{"torch": "2.5.1+cu121", "dyn": false, "B": 8, "compile_s": 70.6, "new_graphs": 6, "capture_s": 1.16, "graph_ms": 1.228, "us_row": 153.6, "eager_ms": 28.13, "dlogp": 2.86102294921875e-06, "dv": 2.384185791015625e-07, "mem_mb": 291}
+{"torch": "2.5.1+cu121", "dyn": false, "B": 48, "compile_s": 76.8, "new_graphs": 6, "capture_s": 1.85, "graph_ms": 1.974, "us_row": 41.1, "eager_ms": 28.42, "dlogp": 9.5367431640625e-06, "dv": 6.556510925292969e-07, "mem_mb": 317}
+{"torch": "2.5.1+cu121", "dyn": false, "B": 128, "compile_s": 78.7, "new_graphs": 6, "capture_s": 2.18, "graph_ms": 2.938, "us_row": 23.0, "eager_ms": 28.44, "dlogp": 9.5367431640625e-06, "dv": 5.960464477539062e-07, "mem_mb": 369}

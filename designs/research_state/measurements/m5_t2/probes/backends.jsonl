@@ -1,0 +1,10 @@
+# torch 2.5.1 eager/inductor (fresh process per arm; eager_graph poisons the process)
+{"B": 8, "arm": "eager", "build_s": 0.0, "ms": 30.495, "us_row": 3811.9, "dlogp": 0.0, "dv": 0.0, "argmax": 1.0}
+{"B": 8, "arm": "inductor", "build_s": 91.7, "ms": 3.932, "us_row": 491.5, "dlogp": 3.337860107421875e-06, "dv": 2.384185791015625e-07, "argmax": 1.0}
+{"B": 8, "arm": "inductor_graph", "build_s": 78.4, "ms": 1.224, "us_row": 152.9, "dlogp": 3.814697265625e-06, "dv": 1.7881393432617188e-07, "argmax": 1.0}
+{"B": 8, "arm": "aot", "build_s": 131.0, "ms": 1.863, "us_row": 232.8, "dlogp": 0.6828045845031738, "dv": 0.012218594551086426, "argmax": 1.0}
+{"B": 8, "arm": "inductor_ro", "build_s": 104.1, "ms": 2091.278, "us_row": 261409.7, "dlogp": 3.337860107421875e-06, "dv": 2.384185791015625e-07, "argmax": 1.0}
+# torch 2.8.0+cu126
+{"B": 8, "arm": "inductor_graph", "build_s": 41.8, "ms": 1.223, "us_row": 152.8, "dlogp": 2.86102294921875e-06, "dv": 1.7881393432617188e-07, "argmax": 1.0}
+{"B": 48, "arm": "inductor_graph", "build_s": 42.8, "ms": 1.767, "us_row": 36.8, "dlogp": 8.58306884765625e-06, "dv": 7.152557373046875e-07, "argmax": 1.0}
+{"B": 8, "arm": "aot", "torch": "2.8.0+cu126", "error": "CppCompileError: cuda_fp16.h: fatal error: nv/target: No such file or directory (no CUDA toolkit / CCCL headers on the box)"}

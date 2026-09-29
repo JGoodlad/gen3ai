@@ -536,6 +536,19 @@ diag_skipped 50.47 vs 51.27, TF32 53.42 vs 54.46, epochs_half 33.08 vs 32.97 —
 backward (27.31 vs 28.33 s); the loss agrees to 5 decimals. Within ~2× the run-to-run spread, so a
 small effect at most. Table and reports: `designs/research_state/measurements/m5_k1/`.
 
+### CUDA-graph capturability of the compiled extractor (M5 T2, 2026-09-29)
+
+The compiled decision forward is captured as a `torch.cuda.CUDAGraph` by the T2 inference service
+(`src/agents/inference/service/`), which requires a graph with NO host synchronisation. Measured
+with `torch.cuda.set_sync_debug_mode` on torch 2.5.1: the compiled forward had exactly ONE —
+`team_transformer._event_reference_cells` built its `[1,1,12]` side-sign constant on the CPU and
+`.to(device)`-copied it every call. That copy was also why Inductor's own `mode="reduce-overhead"`
+skipped cudagraphs ("cpu device (cat_100)") and ran at 2.1 s/call. It is now built on the device
+(same values; eager bit-identical). The EAGER forward still makes 24 host syncs (Python-scalar
+`index_put`s and host-built constants across `extractor_ctx`, `damage_op*`, `team_transformer`), so
+eager itself cannot be captured; only the compiled graph is. Detail and the AOT verdict:
+`designs/endstate/program_rust_core.md` §2, "T2 DESIGN".
+
 ### Lane K1b — two backwards through one compiled graph (`gen3_donated_buffer_off_v1`, 2026-09-29)
 
 K1's parity checks never put TWO backwards through one compiled graph; the first real update does —

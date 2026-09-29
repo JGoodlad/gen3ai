@@ -18,7 +18,7 @@ experiments soonest, within the week's quota.
 | # | task | unblocks | when |
 |---|---|---|---|
 | T1 | **Rust core M5, Lane 0** — the shared env core boundary (`src/rust_env/`: generated column schema, refusal policy, build stamp, mimalloc/jemalloc global allocator, reused per-env buffers) | every other M5 lane | Mon 09-28 ~22:00 |
-| T2 | **M5 T2 inference service** — one GPU service for trainee, opponent and eval forwards: fixed weight SLOTS (stacked, same-arch), slot-tagged requests, fixed-width (or compiled dynamic) buckets, priority classes (training rollout > eval filler), measured by the learner's end-to-end throughput; GPU-over-CPU bias | X4, X7, X14, X19; background eval | with T1 |
+| T2 | **M5 T2 inference service** — BUILDING 2026-09-29 (`src/agents/inference/service/`; design + backend decision in `designs/endstate/program_rust_core.md` §2 "T2 DESIGN"; resume point `designs/research_state/measurements/m5_t2/PROGRESS.md`) — one GPU service for trainee, opponent and eval forwards: fixed weight SLOTS (stacked, same-arch), slot-tagged requests, fixed-width (or compiled dynamic) buckets, priority classes (training rollout > eval filler), measured by the learner's end-to-end throughput; GPU-over-CPU bias | X4, X7, X14, X19; background eval | with T1 |
 
 ## 2. PROPOSED — ranked
 
