@@ -132,9 +132,10 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
 ## 4. Build order (Lane C units)
 
 1. The inventory and its routine test.
-2. The GENERATED label columns (`columns.py` rows owned by lane C). The spec also gains a
-   `labels` declaration: the families the caller wants. A family marked `refused` is refused at
-   startup.
+2. **(BUILT)** The GENERATED label columns: `columns.py` builds one column per `core` row,
+   18 in all, named by the key. The spec gains a `labels` declaration: the families the caller
+   wants. `src/rust_env/src/labels/mod.rs` refuses, at STARTUP and by name, a `host_*` family, a
+   `refused` family, an unknown family, and a `core` family not built yet (`labels::BUILT`).
 3. One unit per `core` family, each with its slice-N parity gate against `Gen3Env` on recorded
    battles: COMMIT tier in the routine gate, MILESTONE tier `slow`. The order is belief, hp_type +
    item, spread (the inversion port), intent, then margin.

@@ -10,7 +10,8 @@
 //! ```text
 //! {"n": 48, "threads": 8, "format_id": "gen3ou", "names": ["p1name", "p2name"],
 //!  "teams": ["<packed>", …], "decision_tense": false, "switch_freeze": false,
-//!  "turn_limit": null | <int>, "refusal_budget": <int>, "bank_dir": null | "<abs path>"}
+//!  "turn_limit": null | <int>, "refusal_budget": <int>, "bank_dir": null | "<abs path>",
+//!  "labels": ["<family>", …]}
 //! ```
 
 use std::path::PathBuf;
@@ -44,6 +45,9 @@ pub struct Spec {
     /// Where each quarantined battle's input log is written the moment it is banked (`None`: kept
     /// in memory only).
     pub bank_dir: Option<PathBuf>,
+    /// The LABEL FAMILIES the core writes (Lane C; `crate::labels::declare` — a family the core
+    /// does not build is refused here, at startup), in table order.
+    pub labels: Vec<&'static str>,
 }
 
 /// GENERATED from `protocol.SPEC_KEYS` (one table for both languages).
@@ -94,6 +98,14 @@ impl Spec {
             Some(j) => Some(PathBuf::from(j.as_str().ok_or("spec: `bank_dir` must be a path string or null")?)),
             None => None,
         };
+        let labels = v
+            .get("labels")
+            .and_then(Json::as_array)
+            .ok_or("spec: `labels` must be an array of label-family names")?
+            .iter()
+            .map(|t| t.as_str().map(str::to_string).ok_or("spec: every label family must be a string".to_string()))
+            .collect::<Result<Vec<_>, _>>()?;
+        let labels = crate::labels::declare(&labels)?;
         let spec = Spec {
             n: uint(&v, "n")? as usize,
             threads: uint(&v, "threads")? as usize,
@@ -104,6 +116,7 @@ impl Spec {
             turn_limit,
             refusal_budget: uint(&v, "refusal_budget")? as usize,
             bank_dir,
+            labels,
         };
         spec.validate()?;
         Ok(spec)
@@ -148,7 +161,7 @@ impl Spec {
         let teams: Vec<String> = self.teams.iter().map(|t| q(t)).collect();
         format!(
             "{{\"n\":{},\"threads\":{},\"format_id\":{},\"names\":[{},{}],\"teams\":[{}],\"decision_tense\":{},\
-             \"switch_freeze\":{},\"turn_limit\":{},\"refusal_budget\":{},\"bank_dir\":{}}}",
+             \"switch_freeze\":{},\"turn_limit\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}]}}",
             self.n,
             self.threads,
             q(&self.format_id),
@@ -160,6 +173,7 @@ impl Spec {
             self.turn_limit.map_or("null".to_string(), |t| t.to_string()),
             self.refusal_budget,
             self.bank_dir.as_ref().map_or("null".to_string(), |d| q(&d.to_string_lossy())),
+            self.labels.iter().map(|f| q(f)).collect::<Vec<_>>().join(","),
         )
     }
 }
@@ -179,6 +193,7 @@ mod tests {
             turn_limit: Some(300),
             refusal_budget: 4,
             bank_dir: Some(PathBuf::from("/tmp/x")),
+            labels: Vec::new(),
         }
     }
 
@@ -196,7 +211,7 @@ mod tests {
         vec![
             ("n", "3"), ("threads", "2"), ("format_id", "\"gen3ou\""), ("names", "[\"a\",\"b\"]"),
             ("teams", "[\"X|||\"]"), ("decision_tense", "false"), ("switch_freeze", "true"), ("turn_limit", "null"),
-            ("refusal_budget", "0"), ("bank_dir", "null"),
+            ("refusal_budget", "0"), ("bank_dir", "null"), ("labels", "[]"),
         ]
     }
 

@@ -20,6 +20,13 @@ Symbolic dims: ``N`` (envs in the pool, declared at startup), ``SIDES`` = 2, ``A
 and a front end reads it from the loaded core), ``NCOUNTERS`` (``len(protocol.COUNTERS)``).
 
 A lane that needs a new column adds a row here (its ``owner``) and regenerates; nothing else.
+
+The LABEL columns (Lane C) are not hand-written rows: one per ``core`` row of
+``label_inventory.LABELS``, named by its ``Gen3Env`` key, with its dtype and ``(N, SIDES, *shape)``,
+so the table the inventory test pins against ``Gen3Env`` is the table the columns are built from.
+A label column is written iff ``need`` = 1 AND its family is declared in the spec's ``labels``;
+otherwise it is stale. ``LABEL_FAMILIES`` (rendered as ``labels::FAMILIES``) maps each ``core``
+family to its columns; the spec refuses a ``host_*`` or ``refused`` family by name.
 """
 from __future__ import annotations
 
@@ -29,6 +36,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Mapping, Tuple, Union
 
 from utils.paths import src_path
+from utils.rust_env import label_inventory as LI
 from utils.rust_env import protocol as P
 
 Dim = Union[str, int]
@@ -42,6 +50,7 @@ _DTYPES = {  # table dtype -> (rust type, numpy dtype string, bytes)
     "i32": ("i32", "<i4", 4),
     "u32": ("u32", "<u4", 4),
     "u64": ("u64", "<u8", 8),
+    "i64": ("i64", "<i8", 8),
 }
 
 
@@ -92,7 +101,18 @@ COLUMNS: Tuple[Column, ...] = (
     Column("turn", "u32", ("N",), "out", "0", "the battle's turn after the op"),
     Column("counters", "u64", ("NCOUNTERS",), "out", "0",
            "pool counters, indexed by `protocol.COUNTERS` (the `*_AFTER_FREEZE` ones must stay 0)"),
+) + tuple(
+    Column(r.key, r.dtype, ("N", "SIDES") + r.shape, "out", "C",
+           f"label `{r.key}` (family `{r.family}`; written iff need = 1 and the family is declared): {r.derivation}")
+    for r in LI.LABELS if r.rust == "core"
 )
+
+#: ``core`` family -> its label columns, in table order (``labels::FAMILIES`` in Rust).
+LABEL_FAMILIES: Dict[str, Tuple[str, ...]] = {
+    fam: tuple(r.key for r in rows) for fam, rows in LI.families("core").items()}
+#: Families the core never writes, with why (the spec refuses each by name).
+LABEL_NOT_CORE: Dict[str, str] = {
+    fam: rows[0].rust for fam, rows in LI.families().items() if rows[0].rust != "core"}
 
 OUT = src_path("rust_env", "src", "core", "columns.rs")
 
@@ -154,6 +174,8 @@ def schema_text() -> str:
     lines += [f"counter {i} {k.name}" for i, k in enumerate(P.COUNTERS)]
     lines += [f"dim {k} {v}" for k, v in sorted(FIXED_DIMS.items())]
     lines += [f"spec {k}" for k in P.SPEC_KEYS]
+    lines += [f"labelfamily {f} {' '.join(ks)}" for f, ks in LABEL_FAMILIES.items()]
+    lines += [f"labelnotcore {f} {why}" for f, why in LABEL_NOT_CORE.items()]
     return "\n".join(lines) + "\n"
 
 
@@ -224,13 +246,27 @@ def render() -> str:
     w(f"    pub const AFTER_FREEZE: [usize; {len(af)}] = [{', '.join(af)}];")
     w("}")
     w("")
+    w("// ---- the label families (Lane C; `label_inventory.py`)")
+    w("pub mod labels {")
+    w("    /// Every family the CORE writes: (name, its columns' indices).")
+    fams = list(LABEL_FAMILIES.items())
+    w(f"    pub const FAMILIES: [(&str, &[usize]); {len(fams)}] = [")
+    for f, ks in fams:
+        idx = ", ".join(f"super::col::{k.upper()}" for k in ks)
+        w(f"        ({_rs_str(f)}, &[{idx}]),")
+    w("    ];")
+    w("    /// Every other family, with where it comes from instead (`host_const`, `host_episode`, `refused`).")
+    nc = list(LABEL_NOT_CORE.items())
+    w(f"    pub const NOT_CORE: [(&str, &str); {len(nc)}] = [{', '.join(f'({_rs_str(f)}, {_rs_str(k)})' for f, k in nc)}];")
+    w("}")
+    w("")
     w("// ---- the columns")
     w("#[derive(Clone, Copy, Debug, PartialEq, Eq)]")
-    w("pub enum Dtype { F32, U8, I32, U32, U64 }")
+    w("pub enum Dtype { F32, U8, I32, U32, U64, I64 }")
     w("")
     w("impl Dtype {")
     w("    pub const fn size(self) -> usize {")
-    w("        match self { Dtype::F32 | Dtype::I32 | Dtype::U32 => 4, Dtype::U8 => 1, Dtype::U64 => 8 }")
+    w("        match self { Dtype::F32 | Dtype::I32 | Dtype::U32 => 4, Dtype::U8 => 1, Dtype::U64 | Dtype::I64 => 8 }")
     w("    }")
     w("}")
     w("")

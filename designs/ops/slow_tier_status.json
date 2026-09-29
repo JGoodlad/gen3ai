@@ -827,28 +827,28 @@
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_procedural_teams": {
    "status": "pass",
-   "commit": "9bf7b7880ebb2cbc8890607e36f53861cb6f59e3",
-   "at": "2026-09-29T06:48:04Z",
-   "duration_s": 35.78,
-   "contention": 1.53,
+   "commit": "7bd3855da9d49cab67bd78794fc54c1c9fc50166",
+   "at": "2026-09-29T21:49:57Z",
+   "duration_s": 26.45,
+   "contention": 1.0,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_milestone_tier": {
    "status": "pass",
-   "commit": "9bf7b7880ebb2cbc8890607e36f53861cb6f59e3",
-   "at": "2026-09-29T06:48:04Z",
-   "duration_s": 71.98,
-   "contention": 1.53,
+   "commit": "7bd3855da9d49cab67bd78794fc54c1c9fc50166",
+   "at": "2026-09-29T21:49:57Z",
+   "duration_s": 34.56,
+   "contention": 1.0,
    "detail": ""
   },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_training_pool": {
    "status": "pass",
-   "commit": "9bf7b7880ebb2cbc8890607e36f53861cb6f59e3",
-   "at": "2026-09-29T06:48:04Z",
-   "duration_s": 60.62,
-   "contention": 1.53,
+   "commit": "7bd3855da9d49cab67bd78794fc54c1c9fc50166",
+   "at": "2026-09-29T21:49:57Z",
+   "duration_s": 27.8,
+   "contention": 1.0,
    "detail": ""
   }
  },
- "last_written": "2026-09-29T21:17:37Z"
+ "last_written": "2026-09-29T21:49:57Z"
 }

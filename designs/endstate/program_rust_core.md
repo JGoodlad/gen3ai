@@ -543,6 +543,8 @@ untouched until M5's gate. The Python side is `src/utils/rust_env/`.
 
 It found one latent bug: an intent-only `Gen3Env` raised `UnboundLocalError` at construction. That bug was unreachable in production. The fix is a hand-off line in `gen3_env.py`: `_imax` is hoisted out of the belief block.
 
+Unit 2, the GENERATED label columns. `columns.py` builds one output column per `core` row of the inventory, named by its `Gen3Env` key, with its dtype and `(N, SIDES, *shape)`: 18 columns. The table gains an `i64` dtype, so the int64 labels cross byte-equal. `columns.rs` gains `labels::FAMILIES` (family → column indices) and `labels::NOT_CORE`. A label column is written iff `need` = 1 AND its family is declared in the spec's new `labels` key (a hand-off: one `SPEC_KEYS` row + `spec.rs`). The declaration is checked at STARTUP by `src/rust_env/src/labels/mod.rs`, and each wrong kind is refused by name: a `host_*` family ("filled by the HOST"), a `refused` one ("OFF the production surface … not ported"), an unknown one, and a `core` family whose producer is not built yet. So no column is ever silently stale. The pin is `src/utils/rust_env/label_columns_test.py` (routine): columns == the inventory's core rows, the family map partitions them, and the rendering and the schema id cover them.
+
 **Total: ≈ 24–33 agent-days, plus Lane K (3–4.5, added 2026-09-28) ⇒ ≈ 27–37.5** (F excluded: 21–29), including T2's 4–6 (F-M5-2: the §2 estimate of
 5–8 assumed labels, reward, opponents and eval were already off Python). **Critical path:**
 0 → C / D → G → H plus T2, about 12–16 agent-days. With four lanes in flight that is ~2 calendar

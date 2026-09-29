@@ -16,8 +16,8 @@ runs in the routine gate; the MILESTONE tier is `slow`.
 | # | unit | status | commit |
 |---|---|---|---|
 | 1 | the INVENTORY (30 keys, 21 in production) + its routine test + `designs/rust_sim/env_labels.md`; ARCHITECTURE.md §7 corrected (the intent labels are ON in production; 9 off-surface keys added) | LANDED | see git log (`M5 Lane C unit 1`) |
-| 2 | the GENERATED label columns + the spec's `labels` declaration (a refused family refused at startup) | NEXT | |
-| 3 | family `belief` (`belief_species`, `belief_moves`, `known_moves`) + the parity harness | | |
+| 2 | the GENERATED label columns (18, one per `core` row; `i64` added to the table) + the spec's `labels` declaration, refused at startup by kind (host / off-surface / unknown / not yet built); pin `src/utils/rust_env/label_columns_test.py` | LANDED | see git log (`M5 Lane C unit 2`) |
+| 3 | family `belief` (`belief_species`, `belief_moves`, `known_moves`) + the parity harness | NEXT | |
 | 4 | families `hp_type` + `item` | | |
 | 5 | family `spread` (port `invert_nature_evs`) | | |
 | 6 | family `intent` (on `trackers::IntentLabel`) | | |

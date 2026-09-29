@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// FNV-1a-64 of `columns.schema_text()`; a front end compares it with its own table at load.
-pub const SCHEMA_ID: &str = "629e03424189b266";
+pub const SCHEMA_ID: &str = "1038d1f361b0d7ce";
 
 // ---- dims
 pub const SIDES: usize = 2;
@@ -15,7 +15,7 @@ pub const NCOUNTERS: usize = 11;
 pub const OBS_DIM: usize = pokesim::encoder::OBS_DIM;
 
 /// The startup declaration's keys (`protocol.SPEC_KEYS`): every one required, no other accepted.
-pub const SPEC_KEYS: [&str; 10] = ["n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit", "refusal_budget", "bank_dir"];
+pub const SPEC_KEYS: [&str; 11] = ["n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit", "refusal_budget", "bank_dir", "labels"];
 
 // ---- ops (`core::dispatch`'s first argument)
 pub mod op {
@@ -72,13 +72,28 @@ pub mod counter {
     pub const AFTER_FREEZE: [usize; 4] = [THREADS_SPAWNED_AFTER_FREEZE, ENVS_ADDED_AFTER_FREEZE, COLUMN_REBINDS_AFTER_FREEZE, BANK_GROWTH_AFTER_FREEZE];
 }
 
+// ---- the label families (Lane C; `label_inventory.py`)
+pub mod labels {
+    /// Every family the CORE writes: (name, its columns' indices).
+    pub const FAMILIES: [(&str, &[usize]); 6] = [
+        ("belief", &[super::col::BELIEF_SPECIES, super::col::BELIEF_MOVES, super::col::KNOWN_MOVES]),
+        ("spread", &[super::col::BELIEF_SPREAD, super::col::BELIEF_SPREAD_MASK, super::col::BELIEF_NATURE, super::col::BELIEF_NATURE_MASK, super::col::BELIEF_EV, super::col::BELIEF_EV_MASK]),
+        ("hp_type", &[super::col::HP_TYPE_LABEL, super::col::HP_TYPE_MASK]),
+        ("item", &[super::col::ITEM_LABEL, super::col::ITEM_MASK]),
+        ("margin", &[super::col::WIN_MARGIN]),
+        ("intent", &[super::col::OPP_ACTION_KIND, super::col::OPP_ACTION_NUM, super::col::OPP_SWITCH_SLOT, super::col::OPP_SWITCH_SPECIES]),
+    ];
+    /// Every other family, with where it comes from instead (`host_const`, `host_episode`, `refused`).
+    pub const NOT_CORE: [(&str, &str); 9] = [("winprob", "host_const"), ("opp_class", "host_episode"), ("winprob_weight", "host_const"), ("fork", "host_const"), ("true_team", "refused"), ("dense_aux", "refused"), ("defensive", "refused"), ("bait", "refused"), ("distill", "refused")];
+}
+
 // ---- the columns
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Dtype { F32, U8, I32, U32, U64 }
+pub enum Dtype { F32, U8, I32, U32, U64, I64 }
 
 impl Dtype {
     pub const fn size(self) -> usize {
-        match self { Dtype::F32 | Dtype::I32 | Dtype::U32 => 4, Dtype::U8 => 1, Dtype::U64 => 8 }
+        match self { Dtype::F32 | Dtype::I32 | Dtype::U32 => 4, Dtype::U8 => 1, Dtype::U64 | Dtype::I64 => 8 }
     }
 }
 
@@ -113,9 +128,27 @@ pub mod col {
     pub const DEC_N: usize = 10;
     pub const TURN: usize = 11;
     pub const COUNTERS: usize = 12;
+    pub const BELIEF_SPECIES: usize = 13;
+    pub const BELIEF_MOVES: usize = 14;
+    pub const KNOWN_MOVES: usize = 15;
+    pub const BELIEF_SPREAD: usize = 16;
+    pub const BELIEF_SPREAD_MASK: usize = 17;
+    pub const BELIEF_NATURE: usize = 18;
+    pub const BELIEF_NATURE_MASK: usize = 19;
+    pub const BELIEF_EV: usize = 20;
+    pub const BELIEF_EV_MASK: usize = 21;
+    pub const HP_TYPE_LABEL: usize = 22;
+    pub const HP_TYPE_MASK: usize = 23;
+    pub const ITEM_LABEL: usize = 24;
+    pub const ITEM_MASK: usize = 25;
+    pub const WIN_MARGIN: usize = 26;
+    pub const OPP_ACTION_KIND: usize = 27;
+    pub const OPP_ACTION_NUM: usize = 28;
+    pub const OPP_SWITCH_SLOT: usize = 29;
+    pub const OPP_SWITCH_SPECIES: usize = 30;
 }
 
-pub const N_COLUMNS: usize = 13;
+pub const N_COLUMNS: usize = 31;
 
 pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     // STEP: the action index (0..ACT) for every (env, side) with need = 1; ignored where need = 0
@@ -144,6 +177,42 @@ pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     ColSpec { name: "turn", dtype: Dtype::U32, dir: Dir::Out, per_env: true, row_elems: 1, owner: "0" },
     // pool counters, indexed by `protocol.COUNTERS` (the `*_AFTER_FREEZE` ones must stay 0)
     ColSpec { name: "counters", dtype: Dtype::U64, dir: Dir::Out, per_env: false, row_elems: NCOUNTERS, owner: "0" },
+    // label `belief_species` (family `belief`; written iff need = 1 and the family is declared): species NUM of the hidden opp mon assigned to each BELIEVED slot (`assign_hidden_to_slots`: the other side's own team minus the revealed species, sorted by num; the j-th fills the j-th believed slot); -1 elsewhere
+    ColSpec { name: "belief_species", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `belief_moves` (family `belief`; written iff need = 1 and the family is declared): that hidden mon's move NUMS in its own set order (typed Hidden Power num), -1 pad
+    ColSpec { name: "belief_moves", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 6 * 4, owner: "C" },
+    // label `known_moves` (family `belief`; written iff need = 1 and the family is declared): at the side's REVEALED opponent slots (`species_known` read from the side's own row, the leading-contiguous block; the reading's `opp` list in encoder order): that species' FULL move NUMS from the other side's own team, -1 pad
+    ColSpec { name: "known_moves", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 6 * 4, owner: "C" },
+    // label `belief_spread` (family `spread`; written iff need = 1 and the family is declared): at the side's REVEALED opponent slots (`species_known` read from the side's own row, the leading-contiguous block; the reading's `opp` list in encoder order): the TRUE derived stats (atk, def, spa, spd, spe) — the other side's own reading's `stats` (the request's `baseStoredStats`)
+    ColSpec { name: "belief_spread", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6 * 5, owner: "C" },
+    // label `belief_spread_mask` (family `spread`; written iff need = 1 and the family is declared): 1 where `belief_spread` holds a complete 5-stat tuple
+    ColSpec { name: "belief_spread_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `belief_nature` (family `spread`; written iff need = 1 and the family is declared): nature num INVERTED from those derived stats + the species' base stats (`damage_tables.invert_nature_evs`, cached per battle) — not the set's declared nature
+    ColSpec { name: "belief_nature", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `belief_nature_mask` (family `spread`; written iff need = 1 and the family is declared): 1 where the inversion returned a nature
+    ColSpec { name: "belief_nature_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `belief_ev` (family `spread`; written iff need = 1 and the family is declared): the inverted EVs (atk, def, spa, spd, spe)
+    ColSpec { name: "belief_ev", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6 * 5, owner: "C" },
+    // label `belief_ev_mask` (family `spread`; written iff need = 1 and the family is declared): 1 where the inversion returned EVs
+    ColSpec { name: "belief_ev_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `hp_type_label` (family `hp_type`; written iff need = 1 and the family is declared): at the side's REVEALED opponent slots (`species_known` read from the side's own row, the leading-contiguous block; the reading's `opp` list in encoder order): the HP type index 0..15 of that species' typed `hiddenpower<type>` move on the other side's own team; -1 where it runs none
+    ColSpec { name: "hp_type_label", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `hp_type_mask` (family `hp_type`; written iff need = 1 and the family is declared): 1 where `hp_type_label` is set
+    ColSpec { name: "hp_type_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `item_label` (family `item`; written iff need = 1 and the family is declared): at the side's REVEALED opponent slots (`species_known` read from the side's own row, the leading-contiguous block; the reading's `opp` list in encoder order): the item NUM the other side's own reading holds NOW (0 = nothing — a consumed / knocked-off item reads 0); -1 pad
+    ColSpec { name: "item_label", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `item_mask` (family `item`; written iff need = 1 and the family is declared): 1 where `item_label` is set
+    ColSpec { name: "item_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
+    // label `win_margin` (family `margin`; written iff need = 1 and the family is declared): the normalized MATERIAL MARGIN of the side's LiveView at this decision (`material_margin.py`: HP + alive over the declared team size, unrevealed opp mons full-HP-alive); 0.0 at reset
+    ColSpec { name: "win_margin", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
+    // label `opp_action_kind` (family `intent`; written iff need = 1 and the family is declared): what the opponent DID at the PREVIOUS decision (move / switch / unknown) — the α/β label the port's trackers already fold (`trackers::IntentLabel`, slice T)
+    ColSpec { name: "opp_action_kind", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
+    // label `opp_action_num` (family `intent`; written iff need = 1 and the family is declared): that move's NUM, Hidden Power resolved to the attacker's TRUE typed num from the other side's own team
+    ColSpec { name: "opp_action_num", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
+    // label `opp_switch_slot` (family `intent`; written iff need = 1 and the family is declared): the switch-in's REVEALED slot as of the previous decision (`_opp_slot_map_prev`), SWITCH_SLOT_NONE otherwise
+    ColSpec { name: "opp_switch_slot", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
+    // label `opp_switch_species` (family `intent`; written iff need = 1 and the family is declared): the switch-in's species NUM (content-addressed β)
+    ColSpec { name: "opp_switch_species", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 1, owner: "C" },
 ];
 
 /// Bytes of every column for a pool of `n` envs.
@@ -177,6 +246,24 @@ pub struct EnvCols<'a> {
     pub episode: &'a mut [u32],
     pub dec_n: &'a mut [u32],
     pub turn: &'a mut [u32],
+    pub belief_species: &'a mut [i64],
+    pub belief_moves: &'a mut [i64],
+    pub known_moves: &'a mut [i64],
+    pub belief_spread: &'a mut [f32],
+    pub belief_spread_mask: &'a mut [f32],
+    pub belief_nature: &'a mut [i64],
+    pub belief_nature_mask: &'a mut [f32],
+    pub belief_ev: &'a mut [f32],
+    pub belief_ev_mask: &'a mut [f32],
+    pub hp_type_label: &'a mut [i64],
+    pub hp_type_mask: &'a mut [f32],
+    pub item_label: &'a mut [i64],
+    pub item_mask: &'a mut [f32],
+    pub win_margin: &'a mut [f32],
+    pub opp_action_kind: &'a mut [i64],
+    pub opp_action_num: &'a mut [i64],
+    pub opp_switch_slot: &'a mut [i64],
+    pub opp_switch_species: &'a mut [i64],
 }
 
 impl ColAddrs {
@@ -200,6 +287,24 @@ impl ColAddrs {
             episode: std::slice::from_raw_parts_mut((self.0[9] as *mut u32).add(i * COLUMNS[9].row_elems), COLUMNS[9].row_elems),
             dec_n: std::slice::from_raw_parts_mut((self.0[10] as *mut u32).add(i * COLUMNS[10].row_elems), COLUMNS[10].row_elems),
             turn: std::slice::from_raw_parts_mut((self.0[11] as *mut u32).add(i * COLUMNS[11].row_elems), COLUMNS[11].row_elems),
+            belief_species: std::slice::from_raw_parts_mut((self.0[13] as *mut i64).add(i * COLUMNS[13].row_elems), COLUMNS[13].row_elems),
+            belief_moves: std::slice::from_raw_parts_mut((self.0[14] as *mut i64).add(i * COLUMNS[14].row_elems), COLUMNS[14].row_elems),
+            known_moves: std::slice::from_raw_parts_mut((self.0[15] as *mut i64).add(i * COLUMNS[15].row_elems), COLUMNS[15].row_elems),
+            belief_spread: std::slice::from_raw_parts_mut((self.0[16] as *mut f32).add(i * COLUMNS[16].row_elems), COLUMNS[16].row_elems),
+            belief_spread_mask: std::slice::from_raw_parts_mut((self.0[17] as *mut f32).add(i * COLUMNS[17].row_elems), COLUMNS[17].row_elems),
+            belief_nature: std::slice::from_raw_parts_mut((self.0[18] as *mut i64).add(i * COLUMNS[18].row_elems), COLUMNS[18].row_elems),
+            belief_nature_mask: std::slice::from_raw_parts_mut((self.0[19] as *mut f32).add(i * COLUMNS[19].row_elems), COLUMNS[19].row_elems),
+            belief_ev: std::slice::from_raw_parts_mut((self.0[20] as *mut f32).add(i * COLUMNS[20].row_elems), COLUMNS[20].row_elems),
+            belief_ev_mask: std::slice::from_raw_parts_mut((self.0[21] as *mut f32).add(i * COLUMNS[21].row_elems), COLUMNS[21].row_elems),
+            hp_type_label: std::slice::from_raw_parts_mut((self.0[22] as *mut i64).add(i * COLUMNS[22].row_elems), COLUMNS[22].row_elems),
+            hp_type_mask: std::slice::from_raw_parts_mut((self.0[23] as *mut f32).add(i * COLUMNS[23].row_elems), COLUMNS[23].row_elems),
+            item_label: std::slice::from_raw_parts_mut((self.0[24] as *mut i64).add(i * COLUMNS[24].row_elems), COLUMNS[24].row_elems),
+            item_mask: std::slice::from_raw_parts_mut((self.0[25] as *mut f32).add(i * COLUMNS[25].row_elems), COLUMNS[25].row_elems),
+            win_margin: std::slice::from_raw_parts_mut((self.0[26] as *mut f32).add(i * COLUMNS[26].row_elems), COLUMNS[26].row_elems),
+            opp_action_kind: std::slice::from_raw_parts_mut((self.0[27] as *mut i64).add(i * COLUMNS[27].row_elems), COLUMNS[27].row_elems),
+            opp_action_num: std::slice::from_raw_parts_mut((self.0[28] as *mut i64).add(i * COLUMNS[28].row_elems), COLUMNS[28].row_elems),
+            opp_switch_slot: std::slice::from_raw_parts_mut((self.0[29] as *mut i64).add(i * COLUMNS[29].row_elems), COLUMNS[29].row_elems),
+            opp_switch_species: std::slice::from_raw_parts_mut((self.0[30] as *mut i64).add(i * COLUMNS[30].row_elems), COLUMNS[30].row_elems),
         }
     }
 

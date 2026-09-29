@@ -75,7 +75,7 @@ impl Core {
             let align = match spec.dtype {
                 Dtype::U8 => 1,
                 Dtype::F32 | Dtype::I32 | Dtype::U32 => 4,
-                Dtype::U64 => 8,
+                Dtype::U64 | Dtype::I64 => 8,
             };
             if a == 0 || a % align != 0 {
                 return Err(DispatchError::lifecycle(format!("freeze: column `{}` at {a:#x} is null or not {align}-aligned", spec.name)));

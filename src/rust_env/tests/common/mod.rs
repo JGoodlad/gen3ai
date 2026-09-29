@@ -38,6 +38,7 @@ pub fn spec(n: usize, threads: usize, teams: Vec<String>) -> Spec {
         turn_limit: Some(300),
         refusal_budget: 64,
         bank_dir: None,
+        labels: Vec::new(),
     }
 }
 
