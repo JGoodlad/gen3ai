@@ -35,10 +35,16 @@ FAIL rather than quietly skip.
 It skips, naming which, only when there is genuinely no browser on the box.
 
 CONTENTION. Every wall-clock bound here goes through `scale_timeout`, per the project's timeout
-doctrine: a chrome run that takes ~25s idle takes several times that beside a live trainer, and a
+doctrine: a page that settles in ~0.1 s idle takes several times that beside a live trainer, and a
 raw constant would report the load average as a rendering failure. Nothing here ASSERTS on time —
 the measurements are layout and mark counts, which contention cannot move — so scaling the bounds
 costs no signal. (Idle box ⇒ factor exactly 1.0 ⇒ no change.)
+
+HOW IT DRIVES THE BROWSER (2026-09-29). One headless chrome per module over the DevTools pipe
+(`utils/headless_chrome.py`), a fresh browser CONTEXT per probe (per-test isolation of cookies,
+storage and cache), and a wait on the page's own SETTLED signal (`data-busy` == "0", set by
+`static/app.js`) instead of a fixed `--virtual-time-budget`. The CLICK-level tests at the end
+dispatch real mouse events — the coverage `--dump-dom` never had.
 """
 
 from __future__ import annotations
@@ -47,7 +53,6 @@ import html as _html
 import json
 import os
 import re
-import shutil
 import socket
 import subprocess
 import sys
@@ -59,30 +64,27 @@ import pytest
 
 from main.prober.web import fixture_run
 from utils.contention import describe_contention, scale_timeout
+from utils.headless_chrome import LOOPBACK_ONLY, Chrome, ChromeTimeout, find_chrome
 from utils.paths import repo_root
 
-# MEASURED 2026-08-14: this file alone is 1280 s — 79% of the entire integration tier, and more
-# than the whole rest of the suite put together. Not because the assertions are heavy but because
-# `_probe` launches a FRESH headless chrome per test (deliberately — a clean browser per probe is
-# what makes the readback trustworthy), and a chrome cold start is ~25 s. 44 tests x ~25 s is
-# almost all of it. `slow` is what keeps that out of the routine gate; `browser` is what lets you
-# select or skip it by what it needs. See the root CLAUDE.md tier table.
+# MEASURED 2026-08-14: this file alone was 1280 s, blamed on "a chrome cold start is ~25 s".
+# RE-MEASURED 2026-09-29 — that attribution was WRONG: a bare headless chrome starts in 0.37 s, and
+# the virtual-time budget (20,000 → 2,000 → 500 ms → none) moved nothing. The 25 s was a D-Bus
+# keyring timeout paid by every page that touched the network stack; `--password-store=basic`
+# removes it. See `utils/headless_chrome.py`. The file now runs ONE browser per module over the
+# DevTools pipe, with a fresh browser context per probe — ~40 probes in well under a minute.
+# `slow` stays for now (the tier also needs chrome, which the routine gate must not require);
+# `browser` is what lets you select or skip it by what it needs.
 pytestmark = [pytest.mark.integration, pytest.mark.browser, pytest.mark.slow]
 
 _REPO = str(repo_root())
 
 
-def _chrome() -> str:
-    for name in ("chrome", "google-chrome", "google-chrome-stable", "chromium",
-                 "chromium-browser"):
-        path = shutil.which(name)
-        if path:
-            return path
-    for path in (os.path.expanduser("~/.local/bin/chrome"),
-                 "/usr/bin/google-chrome", "/usr/bin/chromium"):
-        if os.path.exists(path):
-            return path
-    pytest.skip("no chrome/chromium on PATH — cannot render the prober web views")
+def _chrome_binary() -> str:
+    path = find_chrome()
+    if not path:
+        pytest.skip("no chrome/chromium on PATH — cannot render the prober web views")
+    return path
 
 
 def _free_port() -> int:
@@ -128,19 +130,53 @@ def server(tmp_path_factory):
             proc.kill()
 
 
-# Viewport widths under test. 500 is not an arbitrary "narrow" — it is the FLOOR headless
-# chrome will give you: `--window-size=390,844` silently renders a 500px-wide page (measured,
-# both `--headless` and `--headless=new`), so a test asking for an iPhone width would be testing
-# 500 while claiming 390. The iframe trick the arch viewer uses to get a true 390 needs the frame
-# to be same-origin, and these pages are served over http while a harness file is not; forcing it
-# with `--disable-web-security --user-data-dir` hung chrome outright. So the narrow case is 500px,
-# honestly labelled, and the layout's breakpoint is 720 — comfortably above it, so every phone
-# rule IS exercised (the record's `narrow` flag asserts the media query actually matched).
+class _Browser:
+    """The module's one chrome, relaunched if it dies — so one crash costs one probe, not the
+    rest of the file. Isolation between probes is a fresh BROWSER CONTEXT each (own cookies,
+    storage and cache), which is what the old fresh-process-per-probe bought, minus the process."""
+
+    def __init__(self, binary: str) -> None:
+        self.binary = binary
+        self._chrome: Chrome | None = None
+
+    def get(self) -> Chrome:
+        if self._chrome is None or self._chrome.proc.poll() is not None:
+            # Everything the page needs is served from loopback. Mapping every other host to a
+            # dead address turns "the assets are vendored" from a claim in a docstring into a
+            # property the browser enforces: a remote <script> would simply not load.
+            self._chrome = Chrome(self.binary, LOOPBACK_ONLY)
+        return self._chrome
+
+    def close(self) -> None:
+        if self._chrome is not None:
+            self._chrome.close()
+
+
+@pytest.fixture(scope="module")
+def browser():
+    holder = _Browser(_chrome_binary())
+    try:
+        yield holder
+    finally:
+        holder.close()
+
+
+# Viewport widths under test. The layout viewport is now set exactly over CDP
+# (`Emulation.setDeviceMetricsOverride`), so the old 500 px floor of `--window-size` no longer
+# binds; 500 is KEPT so the measurements below stay comparable with their history. The layout's
+# breakpoint is 720, so every phone rule IS exercised (the record's `narrow` flag asserts the
+# media query actually matched).
 NARROW = (500, 900)
 DESKTOP = (1280, 900)
 
 
-_CHROME_TIMEOUT = 180.0     # generous on an idle box; scaled at CALL time when it is not
+# A page is SETTLED when app.js says so (`data-busy` == "0": loaded, every HTMX request answered,
+# every swap re-embedded and re-recorded — see the header of `static/app.js`). `data-ready` alone
+# is NOT enough: it lands before HTMX issues its `load` requests. This replaces the fixed
+# `--virtual-time-budget` wait.
+_SETTLED = ("document.readyState === 'complete' && !!document.body && "
+            "document.body.dataset.busy === '0'")
+_SETTLE_TIMEOUT = 30.0      # a settled fixture page takes ~0.1 s idle; scaled at CALL time
 
 # 🚨 QUIET IS DECIDED ON THE RAW LOAD RATIO, NOT ON `cpu_contention_factor`.
 #
@@ -165,48 +201,34 @@ def _load_ratio() -> float:
         return 1.0
 
 
-def _dump_dom(binary: str, url: str, *, budget_ms: int = 20000, size=DESKTOP,
-              dark: bool = False) -> str:
-    """Render `url` in headless chrome and return the DOM.
+def _with_timeout_doctrine(what: str, attempt_fn):
+    """Run `attempt_fn()` under the project's timeout doctrine and return its result.
 
-    🚨 **A TIMEOUT IS NEVER A SEMANTIC OUTCOME** (root CLAUDE.md → *Running beside a live training
-    run*), and until 2026-09-06 this function broke that rule: a starved chrome raised
-    `TimeoutExpired`, pytest recorded a FAILURE, and a load average was reported as a rendering
-    bug. Measured on the win-prob-era landing: three failures at load 36.8/16 cores, every one a
-    timeout and not one a layout assertion — and on a re-run the failing SET MOVED (`/` passed,
-    then failed, on identical code), which is the signature no real regression has.
+    🚨 **A TIMEOUT IS NEVER A SEMANTIC OUTCOME** (root CLAUDE.md → *Running Tests*), and until
+    2026-09-06 this suite broke that rule: a starved chrome raised `TimeoutExpired`, pytest recorded
+    a FAILURE, and a load average was reported as a rendering bug. Measured on the win-prob-era
+    landing: three failures at load 36.8/16 cores, every one a timeout and not one a layout
+    assertion — and on a re-run the failing SET MOVED, the signature no real regression has.
 
-    So a timeout now gets its own bucket, and the quiet/busy asymmetry decides what it means:
+    * **quiet box** (`_load_ratio()` < `_QUIET_LOAD`) — RETRY once, then a hard FAILURE. A page that
+      cannot settle on an idle machine is genuinely broken (a JS error before the record hook, or a
+      request that never answered, both leave `data-busy` above 0).
+    * **contended box** — SKIP immediately, loudly, with `describe_contention()`. INCONCLUSIVE.
 
-    * **quiet box** (`_load_ratio()` < `_QUIET_LOAD`) — RETRY once, then a hard FAILURE. A page
-      that cannot render in 180 s on an idle machine is genuinely broken, and softening that would
-      gut the gate this file exists to be. The bound is deliberately NOT inflated to paper over
-      starvation either: *scaling does not rescue a cap*, because a starved subprocess slows by a
-      multiple of `loadavg / cpus`, so a bigger constant only buys a confidently-reported wrong
-      answer later.
-    * **contended box** — SKIP immediately, loudly, with `describe_contention()`. The run is
-      INCONCLUSIVE about this page, which is a different claim from "this page is broken" and must
-      read differently.
-
-    ⚠️ **The retry is QUIET-ONLY, and that asymmetry is measured rather than tidy.** On an idle box
-    the cheapest explanation for one timeout is a lost scheduling race, so a second attempt is
-    worth 180 s. On a busy box the first timeout is already the answer, and retrying only doubles
-    the slow path — which is not hypothetical: a two-attempt-everywhere draft turned a 45-test tier
-    into 7 tests in 50 minutes and was killed mid-line by its own wrapper, destroying the pytest
-    summary and every failure message with it.
+    ⚠️ **The retry is QUIET-ONLY, and that asymmetry is measured rather than tidy**: a
+    two-attempt-everywhere draft turned a 45-test tier into 7 tests in 50 minutes and was killed
+    mid-line by its own wrapper, destroying the pytest summary and every failure message with it.
     """
     quiet = _load_ratio() < _QUIET_LOAD
     attempts = 2 if quiet else 1
-    last: "subprocess.TimeoutExpired | None" = None
-    for attempt in range(1, attempts + 1):
+    last: BaseException | None = None
+    for _attempt in range(1, attempts + 1):
         try:
-            return _run_chrome(binary, url, budget_ms=budget_ms, size=size, dark=dark)
-        except subprocess.TimeoutExpired as e:
+            return attempt_fn()
+        except (subprocess.TimeoutExpired, ChromeTimeout) as e:
             last = e
     ratio = _load_ratio()
-    waited = getattr(last, "timeout", None) or 0.0
-    detail = (f"headless chrome did not return within {waited:.0f}s "
-              f"on {attempts} attempt(s) for {url}")
+    detail = f"{what} did not settle on {attempts} attempt(s): {last}"
     if ratio < _QUIET_LOAD:
         raise AssertionError(
             f"{detail} — and THE BOX WAS QUIET (load/cpu {ratio:.2f} < {_QUIET_LOAD}), so this is a "
@@ -218,29 +240,35 @@ def _dump_dom(binary: str, url: str, *, budget_ms: int = 20000, size=DESKTOP,
         f"load/cpu {_QUIET_LOAD} a timeout here FAILS.")
 
 
-def _run_chrome(binary: str, url: str, *, budget_ms: int, size, dark: bool) -> str:
-    # The wall-clock bound is SCALED by measured CPU contention, per the project's timeout
-    # doctrine (root CLAUDE.md → "Running beside a live training run"). A chrome run that takes
-    # ~25s on an idle box takes several times that beside a live trainer, and a raw 180s constant
-    # then turns a healthy page into a TimeoutExpired — a load average reported as a rendering
-    # bug. On an idle box the factor is exactly 1.0, so this is a no-op there.
-    proc = subprocess.run(
-        [binary, "--headless", "--no-sandbox", "--disable-gpu",
-         # `--force-dark-mode` is what makes `prefers-color-scheme: dark` match (MEASURED: there
-         # is no CLI switch for the media feature itself). NOTE it ALSO darkens the browser's own
-         # widgets, which a real dark-mode visitor does not get — so a dark screenshot flatters the
-         # page, and the `colorscheme` assertion below is what actually covers that gap.
-         *(["--force-dark-mode"] if dark else []),
-         # Everything the page needs is served from loopback. Mapping every other host to a dead
-         # address turns "the assets are vendored" from a claim in a docstring into a property the
-         # browser enforces: a remote <script> would simply not load.
-         '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',
-         f"--window-size={size[0]},{size[1]}",
-         f"--virtual-time-budget={budget_ms}", "--dump-dom", url],
-        capture_output=True, text=True, timeout=scale_timeout(_CHROME_TIMEOUT))
-    if proc.returncode != 0:
-        pytest.skip(f"headless chrome failed ({proc.returncode}): {proc.stderr[-400:]}")
-    return proc.stdout
+def _dump_dom(browser, url: str, *, size=DESKTOP, dark: bool = False) -> str:
+    """Render `url` in a fresh browser context, wait for the page to SETTLE, return its DOM."""
+    return _with_timeout_doctrine(
+        url, lambda: _run_chrome(browser, url, size=size, dark=dark))
+
+
+def _open_settled(browser, url: str, *, size, dark: bool):
+    """A settled `Page` in its own context. The CALLER closes it (the click tests keep it open)."""
+    page = browser.get().page(width=size[0], height=size[1], dark=dark)
+    try:
+        page.goto(url)
+        try:
+            page.wait_for(_SETTLED, timeout=scale_timeout(_SETTLE_TIMEOUT))
+        except ChromeTimeout as exc:
+            state = page.eval("document.body ? JSON.stringify(document.body.dataset) : null")
+            exc.args = (f"{exc} — the page's record at the deadline: {state}",)
+            raise
+    except BaseException:
+        page.close()
+        raise
+    return page
+
+
+def _run_chrome(browser, url: str, *, size, dark: bool) -> str:
+    page = _open_settled(browser, url, size=size, dark=dark)
+    try:
+        return page.dom()
+    finally:
+        page.close()
 
 
 def _body_data(dom: str) -> dict:
@@ -252,8 +280,8 @@ def _body_data(dom: str) -> dict:
             for k, v in re.findall(r'data-([a-z-]+)="([^"]*)"', body.group(0))}
 
 
-def _probe(binary: str, base: str, path: str, size=DESKTOP, dark: bool = False) -> dict:
-    data = _body_data(_dump_dom(binary, base + path, size=size, dark=dark))
+def _probe(browser, base: str, path: str, size=DESKTOP, dark: bool = False) -> dict:
+    data = _body_data(_dump_dom(browser, base + path, size=size, dark=dark))
     assert data.get("ready") == "1", (
         f"{path}: the bootstrap never completed — a JS error before the record hook. "
         f"chartError={data.get('chart-error')!r}, record={data}")
@@ -265,22 +293,22 @@ def _probe(binary: str, base: str, path: str, size=DESKTOP, dark: bool = False) 
 
 @pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle", "/analyze",
                                   "/falsify", "/calibration"])
-def test_every_page_boots_with_its_vendored_libraries(server, path):
+def test_every_page_boots_with_its_vendored_libraries(server, browser, path):
     """Both bundles must define their globals with the network taken away.
 
     This is the assertion the arch viewer cannot make: its equivalent skips when the CDN is
     unreachable, so offline it proves nothing at all.
     """
-    data = _probe(_chrome(), server, path)
+    data = _probe(browser, server, path)
     assert data["htmx"] == "1", f"{path}: htmx did not load from /static/vendor"
     assert data["vega"] != "missing", f"{path}: the vega runtime did not load"
     assert data["vega-lite"] != "missing", f"{path}: the vega-lite compiler did not load"
     assert data["page"] == path.strip("/") or (path == "/" and data["page"] == "run")
 
 
-def test_the_run_page_draws_its_chart(server):
+def test_the_run_page_draws_its_chart(server, browser):
     """The spec is embedded server-side, so this is the pure "does Vega draw it" case."""
-    data = _probe(_chrome(), server, "/")
+    data = _probe(browser, server, "/")
     assert int(data["charts"]) == 1
     assert int(data["chart-marks"]) > 0, (
         "the outcome chart embedded but drew ZERO marks — a spec can compile cleanly and plot "
@@ -288,7 +316,7 @@ def test_the_run_page_draws_its_chart(server):
     assert int(data["rows"]) > 0, "the steps table rendered no rows"
 
 
-def test_the_scan_page_fetches_its_table_and_chart_over_htmx(server):
+def test_the_scan_page_fetches_its_table_and_chart_over_htmx(server, browser):
     """The strongest single assertion here.
 
     Nothing on /scan's table or chart exists in the page source: the filter form fires
@@ -296,7 +324,7 @@ def test_the_scan_page_fetches_its_table_and_chart_over_htmx(server):
     `app.js` re-embeds it on `htmx:afterSwap`. A non-zero mark count therefore proves the whole
     chain — server fragment, swap, re-embed, draw — end to end.
     """
-    data = _probe(_chrome(), server, "/scan")
+    data = _probe(browser, server, "/scan")
     assert int(data["swaps"]) >= 1, (
         "the HTMX load trigger never completed a swap — /scan is the one view still fetched "
         "asynchronously, because the scan itself measured ~2 s on a real run")
@@ -306,12 +334,12 @@ def test_the_scan_page_fetches_its_table_and_chart_over_htmx(server):
     assert not data.get("htmx-error")
 
 
-def test_the_run_page_fetches_its_awareness_panel_over_htmx(server):
+def test_the_run_page_fetches_its_awareness_panel_over_htmx(server, browser):
     """The run summary paints server-side, but the 'did it know?' panel reads every captured
     loss's npz — so it arrives the way /scan's table does, and the run summary is not held behind
     it. Nothing in the panel exists in the page source; a completed swap is what proves the whole
     chain (fragment, swap, render) rather than a route that merely returns 200 to a test client."""
-    data = _probe(_chrome(), server, "/")
+    data = _probe(browser, server, "/")
     assert int(data["swaps"]) >= 1, (
         "the awareness panel's hx-trigger=load never completed a swap — the run page would show "
         "its spinner forever")
@@ -319,46 +347,46 @@ def test_the_run_page_fetches_its_awareness_panel_over_htmx(server):
     assert int(data["rows"]) > 0
 
 
-def test_the_triage_page_arrives_already_populated(server):
+def test_the_triage_page_arrives_already_populated(server, browser):
     """Triage renders SERVER-SIDE on first paint (measured 436 ms on a real run) rather than
     landing empty and fetching, so the assertion inverts: the rows and the chart must be there
     with NO swap having happened."""
-    data = _probe(_chrome(), server, "/triage")
+    data = _probe(browser, server, "/triage")
     assert int(data["rows"]) > 0, "the triage table did not render on first paint"
     assert int(data["chart-marks"]) > 0, "the lever chart drew nothing on first paint"
     assert int(data["swaps"]) == 0, (
         "triage made an HTMX round trip on load — the first paint should already carry the data")
 
 
-def test_the_battles_page_arrives_already_populated(server):
+def test_the_battles_page_arrives_already_populated(server, browser):
     """Also server-rendered (119 ms). No chart here, so it still pins that a chart-free page
     reaches `ready` — an embed loop that throws on zero specs would break exactly here."""
-    data = _probe(_chrome(), server, "/battles")
+    data = _probe(browser, server, "/battles")
     assert int(data["rows"]) > 0, "the battles table did not render on first paint"
     assert int(data["charts"]) == 0
     assert int(data["swaps"]) == 0
 
 
 @pytest.mark.parametrize("path", ["/falsify", "/calibration"])
-def test_the_job_pages_render_before_anything_is_submitted(server, path):
+def test_the_job_pages_render_before_anything_is_submitted(server, browser, path):
     """These start empty by design — the probes take minutes. Reaching `ready` with no charts is
     the correct state, and it must not read as a broken page."""
-    data = _probe(_chrome(), server, path)
+    data = _probe(browser, server, path)
     assert int(data["charts"]) == 0
     assert int(data["chart-marks"]) == 0
 
 
-def test_a_404_page_still_renders_the_shell(server):
-    data = _body_data(_dump_dom(_chrome(), server + "/no-such-page"))
+def test_a_404_page_still_renders_the_shell(server, browser):
+    data = _body_data(_dump_dom(browser, server + "/no-such-page"))
     assert data.get("ready") == "1", "the error page must be a real page, not a bare JSON body"
     assert data["page"] == "error"
 
 
-def test_the_pages_reference_no_remote_asset(server):
+def test_the_pages_reference_no_remote_asset(server, browser):
     """Belt and braces on the host-resolver block: assert the markup itself is CDN-free, so this
     fails as a clear "someone added a CDN tag" rather than as a mysterious missing global."""
     for path in ("/", "/scan", "/calibration"):
-        dom = _dump_dom(_chrome(), server + path)
+        dom = _dump_dom(browser, server + path)
         assert "cdn." not in dom and "https://" not in re.sub(r'"https://vega\.github\.io[^"]*"',
                                                               "", dom), (
             f"{path} pulls a remote asset; the render gate would then depend on the network")
@@ -372,7 +400,7 @@ def test_the_pages_reference_no_remote_asset(server):
 
 @pytest.mark.parametrize("path", ["/", "/battles", "/scan", "/triage", "/battle", "/analyze",
                                   "/falsify", "/calibration"])
-def test_no_page_scrolls_sideways_on_a_narrow_viewport(server, path):
+def test_no_page_scrolls_sideways_on_a_narrow_viewport(server, browser, path):
     """The single rule the whole responsive layout serves.
 
     Wide content — the forensic tables, an oversized chart — must scroll inside its own
@@ -380,7 +408,7 @@ def test_no_page_scrolls_sideways_on_a_narrow_viewport(server, path):
     the nav goes with them. `overflowWhat` names the offending element so this fails with the fix
     in the message.
     """
-    data = _probe(_chrome(), server, path, size=NARROW)
+    data = _probe(browser, server, path, size=NARROW)
     assert data["narrow"] == "1", (
         f"the max-width:720px rules did not match at {data['vw']}px — the viewport meta tag "
         "or the breakpoint is wrong")
@@ -391,7 +419,7 @@ def test_no_page_scrolls_sideways_on_a_narrow_viewport(server, path):
         f"{path}: document scrollWidth {data['docw']} > viewport {data['vw']}")
 
 
-def test_a_wide_table_scrolls_inside_its_wrapper_not_the_page(server):
+def test_a_wide_table_scrolls_inside_its_wrapper_not_the_page(server, browser):
     """The mechanism behind the rule above, asserted directly.
 
     `scan` is the widest table in the app (14 columns of forensic numbers) and it deliberately
@@ -399,7 +427,7 @@ def test_a_wide_table_scrolls_inside_its_wrapper_not_the_page(server):
     worse than one you scroll. So at least one wrapper must actually be scrolling here; if none
     is, the table is fitting by luck and the rule is untested.
     """
-    data = _probe(_chrome(), server, "/scan", size=NARROW)
+    data = _probe(browser, server, "/scan", size=NARROW)
     assert int(data["rows"]) > 0
     assert int(data["scrollers"]) >= 1, "the scan table lost its .scroll-x wrapper"
     assert int(data["scrollingwrappers"]) >= 1, (
@@ -414,13 +442,13 @@ def test_a_wide_table_scrolls_inside_its_wrapper_not_the_page(server):
 _REPLAY = "/battle?battle=step_4000000%2Fheuristic2%2Floss_003"
 
 
-def test_the_battle_replay_stacks_on_a_phone_and_scrolls_nowhere(server):
+def test_the_battle_replay_stacks_on_a_phone_and_scrolls_nowhere(server, browser):
     """Everywhere else on this site the phone answer is "scroll the table, don't reflow it",
     because a row of forensic numbers read out of column order is worse than one you scroll. A
     TURN is different — it is a short narrative — so here the answer IS to reflow, and the claim
     that it does is a measurement rather than a screenshot someone looked at once.
     """
-    data = _probe(_chrome(), server, _REPLAY, size=NARROW)
+    data = _probe(browser, server, _REPLAY, size=NARROW)
     assert data["narrow"] == "1"
     assert int(data["rows"]) > 0, "no turn cards rendered at 500px"
     assert data["monstack"] == "1", (
@@ -433,29 +461,28 @@ def test_the_battle_replay_stacks_on_a_phone_and_scrolls_nowhere(server):
         "card layout and the phone rules above need rethinking, not a scrollbar")
 
 
-def test_the_replay_metrics_are_tappable_in_the_browser(server):
+def test_the_replay_metrics_are_tappable_in_the_browser(server, browser):
     """The `title` tooltips have no TOUCH equivalent, so each metric is also tappable and the page
     carries a no-JS anchor to its legend. What a `--dump-dom` browser can prove is that the markup
     reached the live DOM and that app.js's own selector matches it — `metrics` is counted by that
     selector, not by the test.
 
-    ⚠ COVERAGE LIMIT, stated rather than implied: `--dump-dom` cannot dispatch a click, so the tap
-    BEHAVIOUR (the panel opening, its toggle) is not gated here — only that every piece it needs is
-    present. Closing that would take a CDP driver, which this suite deliberately does not have.
+    The tap BEHAVIOUR (the panel opening, its toggle, the legend jump) is gated by the CLICK-level
+    tests at the end of this file, which dispatch real mouse events through the DevTools pipe.
     """
-    data = _probe(_chrome(), server, _REPLAY)
+    data = _probe(browser, server, _REPLAY)
     assert int(data["metrics"]) >= 6, (
         "no tappable metrics in the live DOM — app.js's `.metric[title]` selector matches nothing, "
         "so a tap would explain nothing on a phone")
-    dom = _dump_dom(_chrome(), server + _REPLAY)
+    dom = _dump_dom(browser, server + _REPLAY)
     assert 'id="turncard-legend"' in dom, "the legend has no anchor for the no-JS fallback to reach"
     assert 'class="whatsthis"' in dom, "no per-row link to the legend"
 
 
-def test_the_battle_replay_is_side_by_side_on_a_desktop(server):
+def test_the_battle_replay_is_side_by_side_on_a_desktop(server, browser):
     """The other half of the same claim: reflowing on a phone must not mean a phone layout on a
     1280px screen, where the two boards belong on one line for read-across."""
-    data = _probe(_chrome(), server, _REPLAY, size=DESKTOP)
+    data = _probe(browser, server, _REPLAY, size=DESKTOP)
     assert data["narrow"] == "0"
     assert data["monstack"] == "0", "the mons stacked at desktop width — the phone rule leaked up"
     assert data["overflowby"] == "0"
@@ -473,41 +500,41 @@ _UA_LINK_BLUE = "rgb(0, 0, 238)"
 
 
 @pytest.mark.parametrize("path", ["/", "/battles", "/battle"])
-def test_the_dark_palette_is_actually_painted(server, path):
-    data = _probe(_chrome(), server, path, dark=True)
+def test_the_dark_palette_is_actually_painted(server, browser, path):
+    data = _probe(browser, server, path, dark=True)
     assert data["scheme"] == "dark", "prefers-color-scheme did not match — the probe is not testing dark"
     assert data["bg"] == _DARK_BG, (
         f"{path} painted {data['bg']} in dark mode — the dark palette is defined but not applied")
 
 
 @pytest.mark.parametrize("path", ["/", "/battles", "/battle"])
-def test_links_follow_the_theme_rather_than_the_browser_default(server, path):
+def test_links_follow_the_theme_rather_than_the_browser_default(server, browser, path):
     """MEASURED before the fix: an unclassed <a> was the UA default `rgb(0, 0, 238)` in BOTH
     schemes — about 2.4:1 against the dark background, under the 4.5:1 floor. Styling only the
     specific link classes left every plain link behind."""
     for dark, expected in ((True, _DARK_ACCENT), (False, _LIGHT_ACCENT)):
-        data = _probe(_chrome(), server, path, dark=dark)
+        data = _probe(browser, server, path, dark=dark)
         assert data["linkcolor"] != _UA_LINK_BLUE, f"{path}: a link kept the browser default blue"
         assert data["linkcolor"] == expected, f"{path}: link is {data['linkcolor']}, want {expected}"
 
 
-def test_the_browsers_own_widgets_are_told_which_palette_is_live(server):
+def test_the_browsers_own_widgets_are_told_which_palette_is_live(server, browser):
     """`color-scheme` is what makes a <select>, a scrollbar and the canvas behind the page follow
     the theme. Undeclared, a dark-mode visitor gets a WHITE dropdown on a dark page — and a
     `--force-dark-mode` screenshot cannot show it, because that flag darkens UA widgets anyway."""
     for dark in (True, False):
-        data = _probe(_chrome(), server, "/battles", dark=dark)
+        data = _probe(browser, server, "/battles", dark=dark)
         assert data["colorscheme"] == "light dark", (
             f"color-scheme is {data['colorscheme']!r} — the browser will render its own widgets "
             "in the light style regardless of the page")
 
 
-def test_chart_text_is_legible_on_whichever_palette_is_live(server):
+def test_chart_text_is_legible_on_whichever_palette_is_live(server, browser):
     """Vega-Lite's default text is near-black and `_BASE` makes the chart background transparent,
     so on the dark palette the axis labels, titles and legends are black-on-#16161a. `app.js`
     themes each spec at embed time from the stylesheet's own custom properties."""
-    dark = _probe(_chrome(), server, "/", dark=True)
-    light = _probe(_chrome(), server, "/", dark=False)
+    dark = _probe(browser, server, "/", dark=True)
+    light = _probe(browser, server, "/", dark=False)
     assert int(dark["chart-marks"]) > 0 and int(light["chart-marks"]) > 0
     assert dark["axistext"] == "rgb(154, 154, 149)", (
         f"dark axis text is {dark['axistext']} — Vega's default would be near-black and invisible")
@@ -515,24 +542,24 @@ def test_chart_text_is_legible_on_whichever_palette_is_live(server):
     assert dark["axistext"] != light["axistext"], "the chart is not following the theme at all"
 
 
-def test_form_controls_are_large_enough_not_to_trap_ios_zoom(server):
+def test_form_controls_are_large_enough_not_to_trap_ios_zoom(server, browser):
     """Below 16px, iOS zooms the whole page when a <select> takes focus and does not zoom back
     out — one tap on the opponent filter and the page is stuck magnified."""
     for path in ("/battles", "/scan", "/falsify"):
-        data = _probe(_chrome(), server, path, size=NARROW)
+        data = _probe(browser, server, path, size=NARROW)
         assert data["ctlfont"] != "none", f"{path} has no filter control to measure"
         assert float(data["ctlfont"].rstrip("px")) >= 16.0, (
             f"{path} controls are {data['ctlfont']} on a phone — iOS will zoom and stay zoomed")
 
 
-def test_the_narrow_header_stays_compact_and_hides_nothing(server):
+def test_the_narrow_header_stays_compact_and_hides_nothing(server, browser):
     """The nav WRAPS rather than becoming a horizontal strip.
 
     The arch viewer shipped that strip: six controls in a scrollable bar of which exactly one was
     ever visible, with nothing to say the rest existed. Wrapping costs a line and hides nothing —
     so the header is allowed to be tallish, but must not be a scroll.
     """
-    data = _probe(_chrome(), server, "/scan", size=NARROW)
+    data = _probe(browser, server, "/scan", size=NARROW)
     # 160px buys three wrapped rows at this width: brand + auth badge, six nav tabs, and the run
     # picker. That is more furniture than the 130px this allowed before the picker existed, and
     # the trade is deliberate — the header is NOT sticky on narrow, so its height costs one scroll
@@ -543,21 +570,21 @@ def test_the_narrow_header_stays_compact_and_hides_nothing(server):
     assert data["overflowby"] == "0", "the nav is overflowing rather than wrapping"
 
 
-def test_charts_still_draw_at_a_narrow_width(server):
+def test_charts_still_draw_at_a_narrow_width(server, browser):
     """A chart that silently collapses to zero marks when the container narrows is a chart that
     only works on the machine it was built on."""
     for path, expect_marks in (("/", True), ("/scan", True), ("/triage", True)):
-        data = _probe(_chrome(), server, path, size=NARROW)
+        data = _probe(browser, server, path, size=NARROW)
         assert int(data["charts"]) == 1, path
         if expect_marks:
             assert int(data["chart-marks"]) > 0, f"{path}: the chart drew nothing at 500px"
 
 
 @pytest.mark.parametrize("path", ["/", "/scan", "/calibration"])
-def test_the_desktop_layout_does_not_inherit_the_phone_rules(server, path):
+def test_the_desktop_layout_does_not_inherit_the_phone_rules(server, browser, path):
     """The narrow rules must not leak upward: full-size controls, an inline run path, and no
     page-level horizontal scroll there either."""
-    data = _probe(_chrome(), server, path, size=DESKTOP)
+    data = _probe(browser, server, path, size=DESKTOP)
     assert data["narrow"] == "0", "the max-width:720px rules matched at 1280px"
     assert int(data["vw"]) == DESKTOP[0]
     assert data["overflowby"] == "0", (
@@ -566,7 +593,7 @@ def test_the_desktop_layout_does_not_inherit_the_phone_rules(server, path):
         f"the desktop header is {data['headerh']}px — it should be a single row")
 
 
-def test_the_api_answers_over_the_real_socket(server):
+def test_the_api_answers_over_the_real_socket(server, browser):
     """The handlers are covered in-process; this covers the socket, which is a separate program
     concern — `arch_viewer_serve`'s split shipped two 500ing routes behind a healthy /healthz."""
     health = json.loads(urllib.request.urlopen(server + "/api/health", timeout=10).read())
@@ -582,12 +609,127 @@ def test_the_api_answers_over_the_real_socket(server):
         assert "error" in json.loads(exc.read())
 
 
-def test_the_copy_button_actually_copies(server):
+def test_the_copy_button_actually_copies(server, browser):
     """The scan table's whole point after this change is that a row can be taken onward — the id
     and the CLI command are the handoff, and a copy button that silently does nothing would be
     indistinguishable from one that works, in the DOM."""
-    binary = _chrome()
-    dom = _dump_dom(binary, server + "/scan?run=run_fixture", size=DESKTOP)
+    dom = _dump_dom(browser, server + "/scan?run=run_fixture", size=DESKTOP)
     assert 'class="linky copybtn"' in dom, "the scan rows lost their take-it-onward buttons"
     assert "main.prober.query analyze" in dom, "the copyable command is missing"
     assert "data-battle-id=" in dom, "rows no longer carry the id a reader needs"
+
+
+# -- CLICK level ---------------------------------------------------------------------------------
+# Everything above reads what a page DREW. These read what it DOES when a reader acts on it — the
+# coverage `--dump-dom` could never give. Each one dispatches a real mouse press/release at the
+# element's centre (`Page.click`), so the event goes through hit testing: a target covered by
+# another element, or collapsed to zero size, misses exactly as a finger would. They are written
+# against the prober's DOM for the fixture trace, never against the Python that produced it, so
+# they hold whichever engine serves the page.
+
+def _clicked(browser, server, path, size, fn):
+    """Open `path` settled, run `fn(page)`, always close the context."""
+    def attempt():
+        page = _open_settled(browser, server + path, size=size, dark=False)
+        try:
+            return fn(page)
+        finally:
+            page.close()
+    return _with_timeout_doctrine(server + path, attempt)
+
+
+_METRIC_STATE = """(() => {
+  const el = document.querySelectorAll('.metric[title]')[%d];
+  const row = el.closest('p'), next = row.nextElementSibling;
+  const panels = document.querySelectorAll('p.metric-help');
+  return {label: (el.textContent || '').trim().split(/\\s+/)[0], title: el.getAttribute('title'),
+          panels: panels.length,
+          nextIsPanel: !!(next && next.classList.contains('metric-help')),
+          panelText: next && next.classList.contains('metric-help') ? next.textContent : null,
+          panelFor: next && next.dataset ? (next.dataset.forMetric || null) : null,
+          record: document.body.dataset.metrichelp};
+})()"""
+
+
+@pytest.mark.parametrize("size", [NARROW, DESKTOP], ids=["phone", "desktop"])
+def test_tapping_a_metric_opens_its_explanation_under_the_row_and_tapping_again_closes_it(
+        server, browser, size):
+    """THE TAP PATH, driven. `title` has no touch equivalent, so a tap on a turn-card metric must
+    render that metric's OWN title into a panel directly under its row, and a second tap on the
+    same metric must close it (a toggle, not a stack). Tapping a DIFFERENT metric moves the one
+    panel rather than adding a second."""
+    def drive(page):
+        n = page.eval("document.querySelectorAll('.metric[title]').length")
+        assert n >= 2, f"need two tappable metrics on the replay, found {n}"
+        before = page.eval(_METRIC_STATE % 0)
+        assert before["panels"] == 0, "a help panel is open before anything was tapped"
+
+        page.click(".metric[title]", 0)
+        opened = page.wait_for(
+            "document.querySelectorAll('p.metric-help').length === 1 && (%s)" % (_METRIC_STATE % 0),
+            timeout=scale_timeout(10.0))
+        assert opened["nextIsPanel"], "the panel did not open DIRECTLY under the tapped row"
+        assert opened["panelFor"] == opened["label"]
+        assert opened["record"] == opened["label"], (
+            f"app.js recorded {opened['record']!r} for a tap on {opened['label']!r}")
+        assert opened["panelText"] == f"{opened['label']} {opened['title']}", (
+            "the panel does not carry the metric's own title — the tooltip and the tap disagree")
+
+        # The same metric again: a toggle, so the panel goes and the record clears.
+        page.click(".metric[title]", 0)
+        closed = page.wait_for(
+            "document.querySelectorAll('p.metric-help').length === 0 && (%s)" % (_METRIC_STATE % 0),
+            timeout=scale_timeout(10.0))
+        assert closed["record"] == "", "the record still names a metric after the panel closed"
+
+        # Two DIFFERENT metrics in turn: still exactly one panel, now for the second.
+        page.click(".metric[title]", 0)
+        page.wait_for("document.querySelectorAll('p.metric-help').length === 1",
+                      timeout=scale_timeout(10.0))
+        page.click(".metric[title]", 1)
+        second = page.eval(_METRIC_STATE % 1)
+        assert second["panels"] == 1, f"tapping a second metric stacked {second['panels']} panels"
+        assert second["record"] == second["label"]
+    _clicked(browser, server, _REPLAY, size, drive)
+
+
+def test_the_whatsthis_link_takes_a_reader_to_the_legend(server, browser):
+    """THE LEGEND PATH, driven. The per-row `?` is the no-JS route to what the numbers mean; a
+    click on it must land the reader AT the legend — the hash set, and the legend scrolled to the
+    top of a phone-sized viewport rather than left 50 turns away."""
+    def drive(page):
+        page.eval("window.scrollTo(0, document.body.scrollHeight)")      # start far from it
+        n = page.eval("document.querySelectorAll('a.whatsthis').length")
+        assert n >= 1, "no `?` link on any turn card"
+        page.click("a.whatsthis", n - 1)                                  # the LAST row's link
+        state = page.wait_for(
+            "location.hash === '#turncard-legend' && (() => {"
+            " const r = document.getElementById('turncard-legend').getBoundingClientRect();"
+            " return {top: r.top, vh: window.innerHeight}; })()",
+            timeout=scale_timeout(10.0))
+        assert 0 <= state["top"] < state["vh"] / 2, (
+            f"the hash moved but the legend is at {state['top']:.0f}px of a {state['vh']}px "
+            "viewport — the reader was not taken to it")
+    _clicked(browser, server, _REPLAY, NARROW, drive)
+
+
+def test_clicking_a_copy_button_copies_its_command(server, browser):
+    """The copy button, CLICKED. The DOM test above proves the button exists; only a click proves
+    it does something — and "does nothing" is exactly the failure a reader would report. app.js
+    records what it copied on success; the clipboard itself is read back where the browser allows.
+    """
+    def drive(page):
+        chrome = browser.get()
+        origin = server.rstrip("/")
+        chrome.send("Browser.grantPermissions", {
+            "origin": origin, "browserContextId": page.ctx,
+            "permissions": ["clipboardReadWrite", "clipboardSanitizedWrite"]})
+        want = page.wait_for(
+            "(() => { const b = document.querySelector('.copybtn'); return b && b.dataset.copy; })()",
+            timeout=scale_timeout(10.0))
+        page.click(".copybtn", 0)
+        got = page.wait_for("document.body.dataset.copied", timeout=scale_timeout(10.0))
+        assert got == want, f"the button copied {got!r}, its row offers {want!r}"
+        clip = page.eval("navigator.clipboard.readText()")
+        assert clip == want, f"the clipboard holds {clip!r}, not the row's command"
+    _clicked(browser, server, "/scan?run=run_fixture", DESKTOP, drive)

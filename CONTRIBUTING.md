@@ -97,7 +97,7 @@ Two **orthogonal** marker axes. A *capability* marker says what a test **needs**
 |---|---|---|
 | Inner loop — fastest true/false | `pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` | ~1.5 min |
 | **The routine gate — before any commit** | `pytest src/ -m "not slow and not e2e" -q -n 2` | ~4 min |
-| Everything — before a release | `pytest src/ -q` | ~31 min |
+| Everything — before a release | `pytest src/ -q` | ~47 min |
 
 Those durations were measured on an idle box on 2026-08-14 and the tree has grown since; treat them
 as an order of magnitude, not a budget. The counts are current: 10,186 tests collected in all,

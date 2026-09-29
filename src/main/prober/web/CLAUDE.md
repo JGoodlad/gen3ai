@@ -551,7 +551,27 @@ Regenerate deliberately: `python -m main.prober.web --openapi`.
 
 `static/app.js` publishes a record into `document.body.dataset` at the end of init, and
 `render_integration_test.py` reads it back out of headless chrome (skipping, loudly, only when
-there is no browser):
+there is no browser).
+
+**How it drives chrome** (2026-09-29): ONE browser per test module over the DevTools pipe
+(`src/utils/headless_chrome.py` — stdlib only, no Playwright), a fresh **browser context** per probe
+(its own cookies/storage/cache — the isolation a fresh process used to buy), and a wait on the
+page's own **`busy` == "0"** settled signal instead of a fixed `--virtual-time-budget`. The whole
+`-m browser` tier (both files, 57 tests) runs in **~19 s** on a quiet box. 🚨 **`ready` alone is NOT
+a settled signal**: it is set by the first-paint record, which on a chart-free page lands BEFORE
+DOMContentLoaded — before HTMX has issued its `load`-triggered request. Swap the wait to `ready`
+and `/scan`'s swap test fails (measured). 🚨 **Every launch goes through
+`headless_chrome.BASE_FLAGS`, whose `--password-store=basic` is load-bearing**: without it every page
+that touches chrome's network stack pays a 25 s D-Bus keyring timeout — that, not "cold start" and
+not the virtual-time budget, was the old tier's ~25 s per test (bare chrome starts in 0.37 s).
+`src/utils/headless_chrome_test.py` pins it.
+
+**The CLICK-level tests** (end of the file) dispatch real mouse press/release at an element's centre
+(`Page.click`, through hit testing — a covered or zero-size target misses as a finger would): a tap
+on a turn-card metric opens ITS title in a panel directly under the row and a second tap closes it
+(phone and desktop); the `?` link lands the reader at `#turncard-legend`; a copy button puts its
+row's command on the clipboard. Each was proven to FAIL with the behaviour broken in `app.js`.
+They are written against the DOM for the fixture trace, never the Python that produced it.
 
 | key | proves |
 |---|---|
@@ -563,6 +583,8 @@ there is no browser):
 | `monstack` | on `/battle`: whether the two mons stacked (phone) or sat side by side (desktop) |
 | `scheme` · `bg` · `colorscheme` · `linkcolor` · `axistext` | the PALETTE, measured (see below) |
 | `swaps` | completed HTMX swaps |
+| `busy` | outstanding work (page load, in-flight HTMX requests, embed passes); **"0" = SETTLED** — the signal the tests wait on |
+| `metrichelp` · `copied` | set by the tap and copy handlers — what the click-level tests read back |
 | `chart-error` / `htmx-error` | a failure surfaced on the page rather than only in the console |
 | `vw` · `docw` · `narrow` · `headerh` · `ctlfont` · `overflowby` + `overflowwhat` · `scrollers` + `scrollingwrappers` | the LAYOUT, measured (see below) |
 
@@ -593,11 +615,11 @@ until the record started measuring it (`scheme` · `bg` · `colorscheme` · `lin
 - **`color-scheme` was never declared** (measured `normal`), so the browser rendered its OWN
   widgets — `<select>` menus, scrollbars — in the light style: a white dropdown on a dark page.
 
-**A dark screenshot FLATTERS the page, which is why the third one hid.** `--force-dark-mode` is
-the only way to make `prefers-color-scheme: dark` match in headless chrome (there is no CLI switch
-for the media feature), and it *also* darkens UA widgets — which a real dark-mode visitor does not
-get. So the widget defect was invisible in every screenshot and only the `colorscheme` reading
-catches it. The expected colours in `render_integration_test.py` are written out literally rather
+**A dark screenshot FLATTERS the page, which is why the third one hid.** `--force-dark-mode` (the
+only CLI way to make `prefers-color-scheme: dark` match) *also* darkens UA widgets — which a real
+dark-mode visitor does not get. So the widget defect was invisible in every screenshot and only the
+`colorscheme` reading catches it. The render test now sets the media feature per context over CDP
+(`Emulation.setEmulatedMedia`), which does NOT touch the widgets; `colorscheme` stays the gate. The expected colours in `render_integration_test.py` are written out literally rather
 than re-derived from the stylesheet: a test that computes its expectation from the same source it
 is checking cannot catch the palette failing to apply.
 
@@ -646,7 +668,7 @@ A timeout now gets its own bucket, and the quiet/busy asymmetry decides what it 
 
 | box | a timeout means | why |
 |---|---|---|
-| **quiet** (`_load_ratio()` < `_QUIET_LOAD` = **0.5**) | retry once, then hard **FAILURE** | a page that cannot render in 180 s on an idle machine is broken, and bucketing every timeout as "busy" would quietly delete this gate |
+| **quiet** (`_load_ratio()` < `_QUIET_LOAD` = **0.5**) | retry once, then hard **FAILURE** | a page that cannot SETTLE within the (scaled) 30 s bound on an idle machine is broken — a JS error before the record hook, or a request that never answered, both leave `busy` above 0, and bucketing every timeout as "busy" would quietly delete this gate |
 | **busy** | **SKIP** immediately, loudly, with `describe_contention()` | INCONCLUSIVE about the page — a different claim from "broken", and it must read differently |
 
 🚨 **QUIET IS THE RAW LOAD RATIO, NOT `cpu_contention_factor`** — and getting that wrong is the
@@ -658,7 +680,7 @@ turned every starvation timeout into a hard FAILURE — *strictly worse than the
 `TimeoutExpired`* it replaced. The unfloored ratio separates the cases cleanly: 3.89/16 = 0.24
 (idle) vs 12.89/16 = 0.81 (a live trainer), with the bar at 0.5.
 
-⚠️ **The retry is QUIET-ONLY.** On an idle box a second attempt is worth 180 s; on a busy box the
+⚠️ **The retry is QUIET-ONLY.** On an idle box a second attempt is cheap; on a busy box the
 first timeout is already the answer, and retrying only doubles the slow path. Also measured: a
 two-attempt-everywhere draft turned the 45-test tier into **7 tests in 50 minutes** and was killed
 mid-line by its own wrapper, destroying the pytest summary and every failure message with it.
@@ -668,25 +690,26 @@ subprocess slows by a multiple of `loadavg / cpus`, so a bigger constant only bu
 confidently-reported wrong answer later.
 
 The asymmetry is pinned in **`app_test.py`** (unmarked, stubbed chrome, milliseconds) rather than
-beside the browser tests it guards — the rule needs no browser, and a guard that only runs inside a
-24-minute tier is one nobody sees fail. Four cases: the retry, busy⇒skip, **quiet⇒still fails**,
+beside the browser tests it guards — the rule needs no browser, and a guard that only runs inside the
+`slow` browser tier is one nobody sees fail. Four cases: the retry, busy⇒skip, **quiet⇒still fails**,
 and that the quiet bar is not the looks-idle bar. ⚠️ `Skipped` derives from `BaseException`, so
 `pytest.raises(Exception)` does NOT catch it — a test written that way skips itself while looking
 like it asserted something (which is exactly what the first draft of these did).
 
-**Headless chrome clamps its window to 500px wide** — `--window-size=390,844` silently renders a
-500px page (measured, both `--headless` and `--headless=new`). So the narrow case is **500×900**,
-labelled as such rather than claiming an iPhone width it is not testing; the 720px breakpoint sits
-comfortably above it, so every phone rule is exercised. The arch viewer gets a true 390 with a
-same-origin `file://` iframe; that does not transfer here (these pages are served over http, and
-forcing it with `--disable-web-security --user-data-dir` hung chrome outright).
+**The narrow case is 500×900.** Under `--dump-dom` that was forced — headless chrome clamps
+`--window-size` to ≥500 px wide (measured, both `--headless` and `--headless=new`). The CDP driver
+sets the layout viewport exactly (`Emulation.setDeviceMetricsOverride`), so a true 390 is now
+possible; 500 is KEPT so every layout measurement stays comparable with its history, and the 720px
+breakpoint sits comfortably above it, so every phone rule is exercised. Moving to 390 is a
+deliberate change of what is gated, not a free cleanup (the header-height bound, for one, was set
+at 500).
 
 ## Tests
 
 ```bash
 # in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
 python3 -m pytest src/main/prober/web -q                       # unit + the snapshot gate
-python3 -m pytest src/main/prober/web -q -m integration        # + headless chrome (needs a browser)
+python3 -m pytest src/main/prober/web -q -m integration        # + headless chrome (~15 s; needs a browser)
 ```
 
 - `runs_test.py` — **path confinement**, written as a list of ATTACKS rather than behaviour

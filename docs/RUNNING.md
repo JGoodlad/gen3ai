@@ -113,7 +113,7 @@ Two orthogonal marker axes: capability (*what a test needs* — `integration`, `
 |---|---|---|
 | Fast inner loop | `pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` | ~1.5 min |
 | **The routine gate** (before any commit) | `pytest src/ -m "not slow and not e2e" -q -n 2` | ~4 min |
-| Everything (before a release/ship) | `pytest src/ -q` | ~31 min |
+| Everything (before a release/ship) | `pytest src/ -q` | ~47 min |
 
 Eight static gates run inside the suite, unmarked so they run in every tier: mypy, ruff, file size,
 `CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md` mode-flag mirror and

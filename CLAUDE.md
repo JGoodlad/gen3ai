@@ -156,8 +156,8 @@ Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`
 |---|---|
 | **inner loop** — fastest true/false | `python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` |
 | **THE ROUTINE GATE — before a commit** | `python3 -m pytest src/ -m "not slow and not e2e" -q -n 2` |
-| **before `/gen3ai-ship`, and in CI** | `python3 -m pytest src/ -q` *(~31 min, ~24 of it browser)* |
-| just the bridge / just the browser | `-m sim` *(~100 s)* / `-m browser` *(~24 min)* |
+| **before `/gen3ai-ship`, and in CI** | `python3 -m pytest src/ -q` *(~47 min serial, 2026-09-29 — browser is ~19 s of it)* |
+| just the bridge / just the browser | `-m sim` *(~100 s)* / `-m browser` *(~19 s)* |
 
 Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4` when the box is yours. Serial when you need `-s` or a debugger.
 

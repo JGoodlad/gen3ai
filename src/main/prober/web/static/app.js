@@ -17,6 +17,11 @@
  *   monstack     on the battle replay: did the two mons stack (phone) or sit side by side?
  *   swaps        completed HTMX swaps (0 on first paint; >0 proves an interaction re-rendered)
  *   chartError   the first embed failure, if any
+ *   busy         outstanding work: "0" means the page has SETTLED — loaded, every HTMX request
+ *                answered, every swap re-embedded and re-recorded. This is the "rendered" signal
+ *                the browser tier waits on. `ready` alone is NOT: it is set by the first-paint
+ *                record, which on a chart-free page lands before DOMContentLoaded — i.e. before
+ *                HTMX has even issued a `load`-triggered request (measured 2026-09-29 over CDP)
  *
  * It also publishes LAYOUT measurements, so "it works on a phone" is a checkable claim rather
  * than a screenshot someone looked at once: the viewport width, whether the narrow breakpoint is
@@ -32,6 +37,24 @@
   "use strict";
 
   var swaps = 0;
+
+  /* The SETTLED signal (`data-busy`, see the header). It starts at 1 for "the page itself is still
+   * loading" and that unit is released on window `load` — by which time HTMX's `load` triggers have
+   * already issued their requests (they fire at DOMContentLoaded, which precedes `load`). Each
+   * request holds a unit from `htmx:beforeRequest` to `htmx:afterRequest`, and each embed pass holds
+   * one until its record lands. MEASURED order in htmx 2.0.4: beforeRequest → afterSwap →
+   * afterRequest, so the swap's embed unit is taken BEFORE the request's is released and the count
+   * never touches zero mid-flight. A unit that is never released leaves busy > 0 and the wait FAILS
+   * loudly — never a false "settled". */
+  var busy = 1;
+  function hold(delta) {
+    busy = Math.max(0, busy + delta);
+    document.body.dataset.busy = String(busy);
+  }
+  document.body.dataset.busy = "1";
+  window.addEventListener("load", function () { setTimeout(function () { hold(-1); }, 0); });
+  document.body.addEventListener("htmx:beforeRequest", function () { hold(1); });
+  document.body.addEventListener("htmx:afterRequest", function () { hold(-1); });
 
   function specNodes(root) {
     return Array.prototype.slice.call(root.querySelectorAll(".chart[data-chart]"));
@@ -227,10 +250,13 @@
     }));
   }
 
-  function boot() {
-    embedAll(document).then(function () { record(null); },
-                            function (e) { record(e && e.message ? e.message : e); });
+  function embedAndRecord() {
+    hold(1);
+    embedAll(document).then(function () { record(null); hold(-1); },
+                            function (e) { record(e && e.message ? e.message : e); hold(-1); });
   }
+
+  function boot() { embedAndRecord(); }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
@@ -243,8 +269,7 @@
    * 200 with markup nobody drew. */
   document.body.addEventListener("htmx:afterSwap", function () {
     swaps += 1;
-    embedAll(document).then(function () { record(null); },
-                            function (e) { record(e && e.message ? e.message : e); });
+    embedAndRecord();
   });
 
   /* Copy-to-clipboard for the "take it onward" buttons.

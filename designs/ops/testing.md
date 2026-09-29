@@ -68,7 +68,7 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 | *(unmarked)* | nothing — pure in-process | 6570 tests, **127 s** serial (~56 s at `-n 4`) |
 | `integration` | an out-of-process dep, no battles, no browser | 158 tests, ~16 s total |
 | `sim` | real battles in-process via the bridge, no server | 60 tests, ~100 s total |
-| `browser` | headless chrome | 53 tests, **1426 s** — ALL of it also `slow` |
+| `browser` | headless chrome | 57 tests, **~19 s** (re-measured 2026-09-29, quiet box, 5 runs 18.0–20.3 s; was 1426 s) — ALL of it also `slow` |
 | `e2e` | a live Showdown server | run directly as scripts |
 | `slow` | *(orthogonal)* minutes, not seconds | 75 tests |
 
@@ -76,10 +76,15 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 this corpus moves faster than the doc describing it. Durations were taken on a quiet box and have
 not been re-taken, because a duration measured beside a live run is not a measurement.
 
-🚨 **MEASURE BEFORE YOU TIER — the intuitive answer was wrong.** The **browser** tests are 88% of
-the whole integration tier (1426 s of 1623 s), because each launches a fresh headless chrome at
-~25 s of cold start; every bridge test *combined* is ~170 s. Tier by the profile
-(`pytest -m <tier> --durations=0`), not by which subsystem feels riskiest.
+🚨 **MEASURE BEFORE YOU TIER — the intuitive answer was wrong, TWICE.** In 2026-08 the **browser**
+tests were 88% of the whole integration tier (1426 s of 1623 s), and this doc blamed "a fresh
+headless chrome at ~25 s of cold start" — UNMEASURED. Measured 2026-09-29, both that and the next
+guess (the 20 s `--virtual-time-budget`) were wrong: bare chrome starts in **0.37 s**, the budget
+(20,000 → 500 ms → none) moved nothing, and the 25 s was a **D-Bus keyring timeout** paid by any page
+touching chrome's network stack — `--password-store=basic` took it to 0.65 s per page. With one
+browser per module over the DevTools pipe (`src/utils/headless_chrome.py`) the tier is ~19 s. Tier
+by the profile (`pytest -m <tier> --durations=0`), not by which subsystem feels riskiest — and
+**time the cause before you name it**.
 
 🚨 **Cost tracks battle COUNT, not "does it battle"**, so `sim` cannot be the marker that decides
 routine cost — `slow` is. `gen3_data_obs_parity` is battle-backed and CHEAP, and putting it behind
@@ -149,9 +154,9 @@ a number in the run's own events survives the next person's assumptions better t
 |---|---|---|
 | **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 6570 tests, **127 s** (~56 s at `-n 4`) |
 | **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 6676 tests, **4 m 36 s** |
-| **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | 6751 tests, **31 m** |
+| **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | 11,578 tests, **~47 m** serial (2026-09-29, nice 19, load ~3; the browser tier is ~19 s of it — the rest is corpus growth since 2026-08) |
 | just the bridge | `-m sim` | ~100 s |
-| just the browser views | `-m browser` | ~24 m |
+| just the browser views | `-m browser` | **~19 s** (2026-09-29) |
 
 ```bash
 # THE ROUTINE GATE — everything cheap, whatever it needs. Add -n 2 (~1.8x, two cores).
@@ -386,7 +391,7 @@ serial when you need `-s`, a debugger, or a readable single failure.
 > not work here.
 
 ### Everything, including the slow tiers (requires symlinked deps/pokemon-showdown + chrome)
-**Run this before a `/gen3ai-ship`, and in CI.** ~31 minutes, ~24 of them the browser suite.
+**Run this before a `/gen3ai-ship`, and in CI.** ~47 minutes serial (2026-09-29); the browser suite is ~19 s of it.
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -q
 ```

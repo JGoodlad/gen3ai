@@ -88,9 +88,10 @@ Three things about it are deliberate:
     duplicated into a data attribute that could drift from the tooltip);
   - a **`?` link on every row** anchors to `#turncard-legend` — the no-JS, always-works route.
   The dotted underline is the discoverability half: without a visible affordance nobody learns a
-  number can be tapped. ⚠ `--dump-dom` cannot dispatch a click, so the browser gate proves the
-  markup and app.js's own selector match the live DOM (`metrics`), NOT the panel opening — stated
-  in the test rather than implied by a green tick.
+  number can be tapped. The browser gate DRIVES both paths with real clicks over CDP (since
+  2026-09-29): the panel opens under the tapped row with that metric's title, a second tap closes
+  it, a second metric moves it, and the `?` link lands on the legend — each proven to fail with the
+  handler broken (`render_integration_test.py`, the CLICK-level block).
 - **P(win) sits beside V, not instead of it** (`win_prob`/`delta_win_prob`, in percentage POINTS
   via the `signed_pp` macro — a difference of probabilities is not a "%"). V is a shaped,
   discounted return whose zero is not "even" (a measured self-mirror 50/50 reads about −6.5), so

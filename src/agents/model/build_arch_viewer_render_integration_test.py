@@ -26,16 +26,18 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
 import subprocess
 import tempfile
 
 import pytest
 
 from agents.model import build_arch_viewer as B
+from utils.headless_chrome import BASE_FLAGS, find_chrome
 
-# MEASURED 2026-08-14: 147 s for 9 tests — a fresh headless chrome per test at ~25 s each. Second
-# only to the prober's own render suite. `browser` = what it needs, `slow` = what it costs.
+# MEASURED 2026-08-14: 147 s for 9 tests, ~25 s each — then blamed on chrome cold start. RE-MEASURED
+# 2026-09-29: 8 tests in 6.3 s. The 25 s was a D-Bus keyring timeout paid by any page touching the
+# network stack (this one fetches cytoscape), removed by `--password-store=basic` in `BASE_FLAGS`
+# (see `utils/headless_chrome.py`). `browser` = what it needs, `slow` = what it costs.
 pytestmark = [pytest.mark.integration, pytest.mark.browser, pytest.mark.slow]
 
 # Both themes' `--surface-2`, which is what a node is filled with. These are the literal values in
@@ -45,16 +47,10 @@ _SURFACE_2 = {"light": (242, 242, 239), "dark": (36, 36, 35)}
 
 
 def _chrome() -> str:
-    for name in ("chrome", "google-chrome", "google-chrome-stable", "chromium",
-                 "chromium-browser"):
-        path = shutil.which(name)
-        if path:
-            return path
-    for path in (os.path.expanduser("~/.local/bin/chrome"),
-                 "/usr/bin/google-chrome", "/usr/bin/chromium"):
-        if os.path.exists(path):
-            return path
-    pytest.skip("no chrome/chromium on PATH — cannot render the viewer")
+    path = find_chrome()
+    if not path:
+        pytest.skip("no chrome/chromium on PATH — cannot render the viewer")
+    return path
 
 
 # A phone viewport, via an iframe. Headless chrome clamps its window to ~500px wide on Linux, so
@@ -103,7 +99,7 @@ def _probe_at(binary: str, page, width: int, height: int) -> dict:
         with open(harness, "w") as fh:
             fh.write(_PHONE_HARNESS.format(w=width, h=height, url=f"file://{page}"))
         proc = subprocess.run(
-            [binary, "--headless", "--no-sandbox", "--disable-gpu",
+            [binary, *BASE_FLAGS,
              "--allow-file-access-from-files", "--virtual-time-budget=25000", "--dump-dom",
              f"--window-size={max(width, 520)},{max(height, 560)}", f"file://{harness}"],
             capture_output=True, text=True, timeout=180)
@@ -122,7 +118,7 @@ def _probe_at(binary: str, page, width: int, height: int) -> dict:
 def _dump_dom(binary: str, url: str) -> str:
     """Load the page in headless chrome and return the DOM after the script has run."""
     proc = subprocess.run(
-        [binary, "--headless", "--no-sandbox", "--disable-gpu", "--virtual-time-budget=15000",
+        [binary, *BASE_FLAGS, "--virtual-time-budget=15000",
          "--dump-dom", url],
         capture_output=True, text=True, timeout=180)
     if proc.returncode != 0:

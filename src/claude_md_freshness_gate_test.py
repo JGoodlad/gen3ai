@@ -298,6 +298,8 @@ _EXTERNAL_TOOL_FLAGS: Dict[str, str] = {
     "--window-size": "chrome",
     "--dump-dom": "chrome",
     "--force-dark-mode": "chrome",
+    "--password-store": "chrome",
+    "--virtual-time-budget": "chrome",
     "--accent": "chrome",
 }
 
