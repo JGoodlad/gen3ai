@@ -27,6 +27,7 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
 | 1 | crate skeleton + the GENERATED column / op / status / counter contract + its routine pin (gate ③) | LANDED | `32341863` |
 | 2 | `spec.rs` + `pool.rs` + `dispatch.rs` + `refusal.rs`; gate ② (`tests/determinism_test.rs`), gate ④ + lifecycle (`tests/lifecycle_refusal_test.rs`), run by the routine `core_cargo_test.py`; `protocol.spec_json` / `error_from_json` | LANDED | `2be7e4e3` |
 | 3+4 | `build.rs` stamp + `stamp.py` + teeth (gate ⑤); gate ① `tests/sim_bridge_parity_test.rs` (4,545 frames byte-equal over 34 logs; teeth: `decision_tense` moves 14/97 rows) | LANDED | `c803dd9f` |
+| 7 | gate ① over the TRAINING POOL (719 teams, 90,556 frames) and PROCEDURAL teams (200, 90,844 frames), both `slow` | LANDED | see git log (`M5 Lane 0 unit 7`) |
 | 5+6 | gate ① over the LADDER corpus (commit tier routine: 9,198 frames; milestone tier `slow`: 121,463 frames over 717 logs, 800 teams); quarantined battles compared (sim_bridge must refuse the same one); gate ② with quarantines (bank identical at 1/3/6 threads); `tests/bench_test.rs` (ignored) | LANDED | see git log (`M5 Lane 0 units 5+6`) |
 
 ## Design decisions so far (mirrored in the program doc's Lane-0 paragraph)
@@ -46,9 +47,10 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
 
 ## Next
 
-- Lane 0's five gates are built and routine. What is left of the lane's 2.5–3.5 agent-days:
-  (a) gate ① over PROCEDURAL teams (the third team source; `designs/ops/testing.md` → THREE TEAM
-  SOURCES) — not run; (b) a quiet-box benchmark of the core (the only reading was on a loaded box);
+- Lane 0's five gates are built and routine; gate ① covers all three team sources (ladder commit
+  tier routine; ladder milestone, training pool and procedural as `slow` tests, verdicts in
+  `designs/ops/slow_tier_status.json`). What is left of the lane's 2.5–3.5 agent-days:
+  (b) a quiet-box benchmark of the core (the only reading was on a loaded box);
   (c) review of the dispatch API by Lanes A/B once they start (their first use is the real test of
   the contract). Lanes A (FFI) and B (process) can start NOW: they forward to
   `Core::new(Spec::from_json)` → `freeze(ColAddrs)` → `dispatch(op, ColAddrs)`, allocate / map
@@ -78,7 +80,7 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
   validated by use at startup, so only a seed-specific construction refusal can reach it. Lane D
   owns end-of-episode semantics.
 - **F-L0-4 (closed, unit 5):** gate ① now runs the ladder corpus (commit tier routine, milestone
-  tier slow). Procedural teams are NOT yet in it (see Next).
+  tier slow), the training pool (slow) and procedural teams (slow).
 - **F-L0-5 (closed, unit 6):** gate ② now exercises quarantines across thread counts.
 - **F-L0-6:** the placeholder turn limit is checked AFTER the op's feeds, so the decisions that
   write opened are encoded and then discarded by the forfeit (10 frames in the milestone run) —

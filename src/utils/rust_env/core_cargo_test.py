@@ -73,33 +73,54 @@ def test_the_rust_env_core_suite_passes():
     stamp.check_stamp(lines[0].split("=", 1)[1], "the rust env self-check build", nan_poison=True)
 
 
-def _ladder_gate_1(tmp_path, tier: str, n: int, steps: int, seed: int) -> str:
-    """Gate ① over the Metamon ladder-usage corpus's ``tier`` (owner 2026-09-24: the ladder corpus
-    joins every parity gate)."""
-    from utils.ladder_corpus import teams
-
-    f = tmp_path / f"ladder_{tier}.txt"
-    f.write_text("\n".join(teams(tier)) + "\n")
+def _gate_1(tmp_path, name: str, teams, n: int, steps: int, seed: int) -> str:
+    """Gate ① over ``teams`` (packed strings): the core's rows == ``sim_bridge``'s ``__OBS__``."""
+    f = tmp_path / f"{name}.txt"
+    f.write_text("\n".join(teams) + "\n")
     r = _cargo_test(
         {"RUST_ENV_PARITY_TEAMS": str(f), "RUST_ENV_PARITY_N": str(n), "RUST_ENV_PARITY_STEPS": str(steps),
          "RUST_ENV_PARITY_SEED": str(seed)},
         ("--test", "sim_bridge_parity_test", "the_cores_rows_are_sim_bridges_obs_rows_byte_for_byte"),
     )
     out = r.stdout + r.stderr
-    assert r.returncode == 0, f"gate 1 on the ladder {tier} tier failed:\n{out[-6000:]}"
+    assert r.returncode == 0, f"gate 1 on {name} failed:\n{out[-6000:]}"
     assert "the_cores_rows_are_sim_bridges_obs_rows_byte_for_byte ... ok" in r.stdout, out[-3000:]
     line = next(ln for ln in out.splitlines() if ln.startswith("gate 1:"))
-    assert f"{len(teams(tier))} teams" in line, line
+    assert f"{len(teams)} teams" in line, line
     return line
 
 
 def test_gate_1_on_the_ladder_commit_tier(tmp_path):
-    """COMMIT tier: the 16-team ladder slice, 8 envs x 600 steps (~5 s warm)."""
-    _ladder_gate_1(tmp_path, "commit", 8, 600, 11)
+    """COMMIT tier: the 16-team ladder slice (owner 2026-09-24: the Metamon ladder-usage corpus joins
+    every parity gate), 8 envs x 600 steps (~5 s warm)."""
+    from utils.ladder_corpus import teams
+
+    _gate_1(tmp_path, "ladder_commit", teams("commit"), 8, 600, 11)
 
 
 @pytest.mark.slow
 def test_gate_1_on_the_ladder_milestone_tier(tmp_path):
     """MILESTONE tier: the 800-team ladder tier, 16 envs x 4000 steps (~90 s warm; 2026-09-28:
     121,463 frames byte-equal over 717 logs)."""
-    _ladder_gate_1(tmp_path, "milestone", 16, 4000, 24)
+    from utils.ladder_corpus import teams
+
+    _gate_1(tmp_path, "ladder_milestone", teams("milestone"), 16, 4000, 24)
+
+
+@pytest.mark.slow
+def test_gate_1_on_the_training_pool(tmp_path):
+    """MILESTONE tier: the 719 training-pool teams, packed exactly as training packs them
+    (``Gen3Teambuilder``), 16 envs x 3000 steps (~40 s warm; 2026-09-28: 90,556 frames over 641 logs)."""
+    from utils.team_sources import team_list
+    from utils.teambuilder import Gen3Teambuilder
+
+    _gate_1(tmp_path, "pool", Gen3Teambuilder(team_list("pool")).packed_teams, 16, 3000, 7)
+
+
+@pytest.mark.slow
+def test_gate_1_on_procedural_teams(tmp_path):
+    """MILESTONE tier: 200 PROCEDURAL teams (``ou_random_teams.js``, Smogon-derived, TeamValidator-legal,
+    seeded), 16 envs x 3000 steps (~35 s warm; 2026-09-28: 90,844 frames over 557 logs)."""
+    from utils.team_sources import team_list
+
+    _gate_1(tmp_path, "procedural", team_list("procedural", n=200), 16, 3000, 7)
