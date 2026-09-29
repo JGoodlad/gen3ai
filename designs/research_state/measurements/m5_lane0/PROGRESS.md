@@ -25,9 +25,10 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
 | # | unit | status | commit |
 |---|---|---|---|
 | 1 | crate skeleton + the GENERATED column / op / status / counter contract + its routine pin (gate ③) | LANDED | `32341863` |
-| 2 | `spec.rs` + `pool.rs` + `dispatch.rs` + `refusal.rs`; gate ② (`tests/determinism_test.rs`), gate ④ + lifecycle (`tests/lifecycle_refusal_test.rs`), run by the routine `core_cargo_test.py`; `protocol.spec_json` / `error_from_json` | LANDED | see git log (`M5 Lane 0 unit 2`) |
-| 3 | `build.rs` stamp (commit + source hash over port + env sources + the table, profile/features) + `stamp.py` + teeth (gate ⑤) | NEXT | |
-| 4 | gate ①: the core's rows vs the worktree's `sim_bridge` `__OBS__` (core_obs both sides) on the banked input logs | | |
+| 2 | `spec.rs` + `pool.rs` + `dispatch.rs` + `refusal.rs`; gate ② (`tests/determinism_test.rs`), gate ④ + lifecycle (`tests/lifecycle_refusal_test.rs`), run by the routine `core_cargo_test.py`; `protocol.spec_json` / `error_from_json` | LANDED | `2be7e4e3` |
+| 3+4 | `build.rs` stamp + `stamp.py` + teeth (gate ⑤); gate ① `tests/sim_bridge_parity_test.rs` (4,545 frames byte-equal over 34 logs; teeth: `decision_tense` moves 14/97 rows) | LANDED | see git log (`M5 Lane 0 units 3+4`) |
+| 5 | gate ① at the MILESTONE tier over the METAMON LADDER corpus + procedural teams (owner 2026-09-24: the ladder corpus joins every parity gate) — `slow`-marked, verdict in `slow_tier_status.json` | NEXT | |
+| 6 | a core benchmark (the prototype's `train` shape through `Core`, release build) to re-measure the per-decision cost and F-M5-4; a thread-count determinism run that INCLUDES quarantines (the gate-② corpus had 0) | | |
 
 ## Design decisions so far (mirrored in the program doc's Lane-0 paragraph)
 
@@ -44,7 +45,15 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
   `last_error().json()`, `bank()`, `counters()`; `OwnedCols` for Rust-side harnesses;
   `inline_env(i)` (threads <= 1) exposes `log` / `prev_log` / `open_tokens` for gate ①.
 
-## Next (unit 3, then 4)
+## Next
+
+- Unit 5 / 6 above. Lanes A (FFI) and B (process) can start NOW: they forward to
+  `Core::new(Spec::from_json)` → `freeze(ColAddrs)` → `dispatch(op, ColAddrs)`, allocate / map
+  the columns from `columns.py` (`allocate`, `nbytes`, `shapes`), decode failures with
+  `protocol.error_from_json`, compare `columns::SCHEMA_ID` with `columns.schema_id()` and call
+  `stamp.check_stamp(core STAMP, …, nan_poison=…)` BEFORE the first op.
+
+## (history) the unit-3/4 plan as written before they landed
 
 - Unit 3: `build.rs` writes `STAMP` (commit informational; the refusal key = FNV-1a-64 over the
   `(path, git-blob-id)` listing of every `.rs` under `src/rust_sim/src` + `src/rust_env/src`, both
@@ -65,6 +74,10 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
   `reward = 0` — the ended episode's reward is lost in that (start-refusal) case. Starts are
   validated by use at startup, so only a seed-specific construction refusal can reach it. Lane D
   owns end-of-episode semantics.
+- **F-L0-4:** gate ① runs on the port's 46 bridge-corpus teams only; the owner's 2026-09-24
+  decision puts the Metamon ladder-usage corpus in every parity gate — that is unit 5 (not yet run).
+- **F-L0-5:** gate ② (thread-count invariance) ran with 0 quarantines, so the cross-thread
+  ordering of the BANK is proven by construction (reports sorted by env) but not exercised; unit 6.
 - **F-L0-3:** heap ALLOCATIONS after freeze are not counted: the engine and the parse chains
   build protocol lines and persistent versions every step (the count is NOT measured), so an allocation counter cannot
   be a 0-gate. The `*_AFTER_FREEZE` counters cover threads, envs, column rebinds and bank growth.

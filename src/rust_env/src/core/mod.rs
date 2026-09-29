@@ -14,6 +14,11 @@ pub mod refusal;
 pub mod spec;
 
 pub use dispatch::{Core, DispatchError, OwnedCols};
+
+/// THE BUILD STAMP (`build.rs`): `stamp=v1;commit=…;src=…;nfiles=…;nan_poison=…;schema=…;data=…`.
+/// Both front ends report it and `src/utils/rust_env/stamp.py` REFUSES a build that is not this
+/// tree's (gate ⑤).
+pub const STAMP: &str = env!("POKESIM_ENV_STAMP");
 pub use spec::Spec;
 
 #[cfg(test)]
@@ -35,5 +40,16 @@ mod tests {
             assert!(counter::NAMES[k].ends_with("_AFTER_FREEZE"));
         }
         assert_eq!(OBS_DIM, pokesim::encoder::OBS_DIM);
+    }
+
+    #[test]
+    fn the_stamp_is_well_formed_and_names_this_schema() {
+        let f: Vec<(&str, &str)> = super::STAMP.split(';').map(|kv| kv.split_once('=').unwrap()).collect();
+        let keys: Vec<&str> = f.iter().map(|(k, _)| *k).collect();
+        assert_eq!(keys, ["stamp", "commit", "src", "nfiles", "nan_poison", "schema", "data"]);
+        assert!(f.contains(&("schema", SCHEMA_ID)));
+        assert!(f.contains(&("nan_poison", if cfg!(any(debug_assertions, feature = "emission-selfcheck")) { "1" } else { "0" })));
+        // Printed so `core_cargo_test.py` can check the Python recompute agrees with this build.
+        println!("POKESIM_ENV_STAMP={}", super::STAMP);
     }
 }
