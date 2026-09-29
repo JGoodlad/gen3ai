@@ -504,6 +504,8 @@ the deletion pass ~2 agent-days.
 Python client's; the prober walks versions instead of re-parsing traces. Removes the last
 production use of poke-env. **Size: 3–4 agent-days.**
 
+**M7 RUST-ONLY READINESS (owner, 2026-09-28: "make sure everything will work once we are rust only for parsing").** M7 is not done when the three named consumers move; it is done when NOTHING parses through Python. Required: (1) an INVENTORY, generated not hand-written, of every importer of `poke_env`, `agents.battle` (Gen3Battle / LiveView / TurnView / TurnDelta) and the Python trackers — production code, tools, meters, the prober and its web views, AND tests/fixtures — each mapped to its core replacement or to deletion; (2) a routine-tier IMPORT GATE that fails if any non-allowlisted module imports them after M7 (the allowlist shrinks to empty with the deletion pass, as the size gate's did); (3) every consumer's parity on the SAME recorded battles before its Python path is deleted (the prober's views on core-walked traces equal to today's; anchors byte-identical actions; the ladder client via `ladder_drift_scan`); (4) the test tiers re-run with poke-env UNINSTALLABLE (a clean env without the vendored fork on the path) — a test that only passes because the Python parse is present is found there, not in production.
+
 **Program total: ≈ 38–56 agent-days** (as planned 2026-09-23; M5 alone re-sized 2026-09-26 to ≈ 24–33 incl. T2 — the M5 lane plan) of build, gating and deletion, wall time dominated by the
 gates. The order M1 → M2 → M3 → M4 → M5 → M6 is forced (each slice folds the previous one's
 output); T2 interleaves after M1.

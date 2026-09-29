@@ -53,8 +53,9 @@ says and leave a one-line pointer at the end of §2.
 
 | tier | item | why | size | done when |
 |---|---|---|---|---|
+| P2 | **Browser tier: ~24 min → ~1–2 min** (owner, 2026-09-28: "put it on the backlog"). Step 0 (~10 min): time ONE `render_integration_test` with `--virtual-time-budget` cut from 20,000 to 2,000 ms — the hypothesis is that the budget (not chrome cold start, as `designs/ops/testing.md` says) is the ~25 s per test, because the prober pages' live API fetches pause virtual time. Then: ONE browser per session + a fresh browser CONTEXT per test (keeps per-test isolation), Playwright or raw CDP, wait on a page-set "rendered" signal / selector instead of a fixed budget, and add the CLICK coverage `--dump-dom` cannot give. Write the tests against the prober's DOM for a given trace, not against the Python parse path, so they survive M7's move of the prober onto the core (see `designs/endstate/program_rust_core.md` M7 readiness) | the full pre-ship suite is ~31 min, 24 of it this tier; the testing doc's stated cause is unmeasured | S–M | `-m browser` < 3 min on a quiet box, same 53 assertions or more, a click-level test on the tap/legend path, testing.md's cost table re-measured |
 
-*(Empty as of 2026-09-07 — both accepted rows landed the same day: the mode-flag doc gate and
+*(Was empty from 2026-09-07 — both accepted rows landed the same day: the mode-flag doc gate and
 the anti-vacuity stub audit; see §3. Per the rule above, with ACCEPTED empty and quota
 remaining, the orchestrator notifies the owner with the top PROPOSED rows and, absent a reply
 in 15 minutes, starts the highest one.)*
