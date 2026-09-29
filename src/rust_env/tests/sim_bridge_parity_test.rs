@@ -182,11 +182,10 @@ fn the_cores_rows_are_sim_bridges_obs_rows_byte_for_byte() {
         let mut per_side = [0u32; 2];
         let (mut frames, errs) = sim_bridge_frames(&bin, log);
         // The core never EXPOSES a decision its own op then closes: a write whose fold opened a
-        // decision and was then (a) refused on the other side's fold (sim_bridge writes p1's frame
-        // before p2's fold fails) or (b) followed by the turn-limit FORCELOSE in the same op. Such
-        // frames are the LAST ones of the log, at most one per side, and only in those two cases.
-        let forfeited = log.cmds.last().is_some_and(|c| c.starts_with("FORCELOSE"));
-        if *refused || forfeited {
+        // decision and was then refused on the other side's fold (sim_bridge writes p1's frame
+        // before p2's fold fails). Such frames are the LAST ones of the log, at most one per side.
+        // A stall forfeit leaves NONE since Lane D (F-L0-6): it is decided before the op's feeds.
+        if *refused {
             let mut dropped = 0usize;
             while dropped < 2 {
                 let Some((s, v)) = frames.last() else { break };

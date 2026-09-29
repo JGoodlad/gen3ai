@@ -78,14 +78,14 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
 - **F-L0-2:** an episode that ENDS naturally and whose NEXT start is refused reads `refused = 1`,
   `reward = 0` — the ended episode's reward is lost in that (start-refusal) case. Starts are
   validated by use at startup, so only a seed-specific construction refusal can reach it. Lane D
-  owns end-of-episode semantics.
+  owns end-of-episode semantics. **CLOSED by Lane D** (`m5_laneD/PROGRESS.md`).
 - **F-L0-4 (closed, unit 5):** gate ① now runs the ladder corpus (commit tier routine, milestone
   tier slow), the training pool (slow) and procedural teams (slow).
 - **F-L0-5 (closed, unit 6):** gate ② now exercises quarantines across thread counts.
 - **F-L0-6:** the placeholder turn limit is checked AFTER the op's feeds, so the decisions that
   write opened are encoded and then discarded by the forfeit (10 frames in the milestone run) —
   wasted encode work and a Lane-D decision (check at the decision boundary instead, and which side
-  forfeits: `StallConfig().threshold` semantics).
+  forfeits: `StallConfig().threshold` semantics). **CLOSED by Lane D** (`m5_laneD/PROGRESS.md`).
 - **F-L0-7:** the only cost reading (23.5–23.9 µs per row at N = 48, T = 8, release) was taken at
   load1 19–32 with a production run on the box; T = 1 read 126 vs 252 µs in two consecutive
   blocks. UNVERIFIED as a cost; F-M5-4 (in- vs out-of-process) needs the front ends.

@@ -35,6 +35,7 @@ use pokesim::version::BattleVersion;
 use super::columns::{ColAddrs, EnvCols, ACT, OBS_DIM, SEED_WORDS, SIDES};
 use super::refusal::{Class, EnvError, InputLog};
 use super::spec::Spec;
+use crate::episode::Banked;
 
 /// Read-only state every worker shares (acquired at startup).
 pub struct Ctx {
@@ -43,31 +44,34 @@ pub struct Ctx {
 }
 
 /// An open decision: the real mapper's token per legal action index, and its frame index `n`.
-struct Open {
+pub(crate) struct Open {
     tokens: Vec<(usize, String)>,
-    n: u32,
+    pub(crate) n: u32,
 }
 
 /// One env.
 pub struct Env {
-    id: usize,
+    pub(crate) id: usize,
     /// Episodes started (the `episode` column is this minus one while one runs).
-    started: u32,
-    sess: Option<BridgeSession>,
-    chains: [Option<BattleVersion>; 2],
+    pub(crate) started: u32,
+    pub(crate) sess: Option<BridgeSession>,
+    pub(crate) chains: [Option<BattleVersion>; 2],
     /// Lines of each side's stream its chain has folded.
     folded: [usize; 2],
     /// Decisions each chain has taken (= the next frame's `n`).
     decided: [u32; 2],
     /// Chunks already folded (the write cursor, `sim_bridge`'s `emitted`).
     emitted: usize,
-    open: [Option<Open>; 2],
+    pub(crate) open: [Option<Open>; 2],
     pub log: InputLog,
     /// The previous episode's input log (moved, not copied, at every start) — a harness reads it
     /// after `done` to replay that episode elsewhere (gate ①).
     pub prev_log: InputLog,
     /// The label families' per-episode state (M5 Lane C), cleared at every start.
     labels: crate::labels::EpisodeState,
+    /// PARKED: the last start was refused (a quarantine-class error); no battle, `need` = 0 0, and
+    /// the next op starts from the staged inputs (M5 Lane D, `crate::episode`, F-L0-2).
+    pub(crate) parked: bool,
 }
 
 /// What one env did in one op (folded into the pool counters in env order).
@@ -96,6 +100,7 @@ impl Env {
             log: InputLog::default(),
             prev_log: InputLog::default(),
             labels: crate::labels::EpisodeState::default(),
+            parked: false,
         }
     }
 
@@ -112,7 +117,7 @@ impl Env {
 
     /// Start the next episode from the staged inputs, fold its first write and encode its first
     /// decisions into `c`.
-    fn start(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
+    pub(crate) fn start(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
         let spec = &ctx.spec;
         let team_idx = [c.ep_team[0] as usize, c.ep_team[1] as usize];
         for (s, &ti) in team_idx.iter().enumerate() {
@@ -172,7 +177,7 @@ impl Env {
     /// opened is encoded and labelled — a label reads the OTHER side's chain (its own team, the
     /// Python env's `battle2`), which must already hold the same write. The encode reads only its
     /// own chain, so the rows are unchanged by the order.
-    fn advance(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
+    pub(crate) fn advance(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
         let sess = self.sess.as_ref().ok_or_else(|| EnvError::fault("no battle"))?;
         if let Some(f) = sess.fatal() {
             return Err(EnvError::engine(format!("engine fatal: {f}")));
@@ -251,7 +256,7 @@ impl Env {
     }
 
     /// Feed one side's action (an index the caller chose from the mask).
-    fn feed(&mut self, ctx: &Ctx, side: usize, action: i32, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
+    pub(crate) fn feed(&mut self, ctx: &Ctx, side: usize, action: i32, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
         let open = self.open[side].take().ok_or_else(|| EnvError::fault(format!("p{}: no decision open", side + 1)))?;
         let tok = open
             .tokens
@@ -271,87 +276,7 @@ impl Env {
         self.advance(ctx, c, t)
     }
 
-    /// The placeholder turn limit: p1 forfeits (`FORCELOSE p1`), as `sim_bridge` runs it.
-    fn forfeit_p1(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
-        self.log.cmds.push("FORCELOSE p1".into());
-        self.sess.as_mut().ok_or_else(|| EnvError::fault("no battle"))?.forfeit(0);
-        self.open = [None, None];
-        self.advance(ctx, c, t)
-    }
-
-    fn write_state(&self, c: &mut EnvCols) -> Result<(), EnvError> {
-        let mut any = false;
-        for side in 0..SIDES {
-            let o = self.open[side].as_ref();
-            c.need[side] = o.is_some() as u8;
-            c.dec_n[side] = o.map_or(0, |o| o.n);
-            any |= o.is_some();
-        }
-        c.episode[0] = self.episode();
-        c.turn[0] = self.sess.as_ref().map_or(0, |s| s.turn());
-        if !any {
-            return Err(EnvError::fault("stuck: no decision open and the battle is not over"));
-        }
-        Ok(())
-    }
-
-    /// RESET: start a fresh episode.
-    pub fn reset(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
-        c.reward[0] = 0.0;
-        c.done[0] = 0;
-        c.refused[0] = 0;
-        self.start(ctx, c, t)?;
-        self.write_state(c)
-    }
-
-    /// STEP: feed every open side (p1 first — the script order), then end / auto-reset.
-    pub fn step(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
-        c.reward[0] = 0.0;
-        c.done[0] = 0;
-        c.refused[0] = 0;
-        let act = [c.action[0], c.action[1]];
-        let to_feed: Vec<usize> = (0..SIDES).filter(|&s| self.open[s].is_some()).collect();
-        for side in to_feed {
-            if self.sess.as_ref().is_some_and(BridgeSession::is_ended) {
-                break;
-            }
-            // A side whose decision a previous feed of this op closed (none today) is skipped.
-            if self.open[side].is_some() {
-                self.feed(ctx, side, act[side], c, t)?;
-            }
-        }
-        let sess = self.sess.as_ref().ok_or_else(|| EnvError::fault("no battle"))?;
-        if !sess.is_ended() {
-            if let Some(limit) = ctx.spec.turn_limit {
-                if sess.turn() > limit {
-                    self.forfeit_p1(ctx, c, t)?;
-                }
-            }
-        }
-        let sess = self.sess.as_ref().ok_or_else(|| EnvError::fault("no battle"))?;
-        if sess.is_ended() {
-            let r = match sess.winner() {
-                Some(0) => 1.0,
-                Some(_) => -1.0,
-                None => 0.0,
-            };
-            t.ended += 1;
-            self.start(ctx, c, t)?;
-            c.reward[0] = r;
-            c.done[0] = 1;
-        }
-        self.write_state(c)
-    }
-
-    /// QUARANTINE: the battle in progress is dropped (its log was banked by the caller) and the
-    /// next episode starts from the staged inputs.
-    pub fn quarantine(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
-        self.start(ctx, c, t)?;
-        c.reward[0] = 0.0;
-        c.done[0] = 1;
-        c.refused[0] = 1;
-        self.write_state(c)
-    }
+    // RESET / STEP / QUARANTINE, the stall forfeit and the episode outcome: `crate::episode` (Lane D).
 }
 
 // ------------------------------------------------------------------ one block (one worker's envs)
@@ -366,8 +291,9 @@ pub enum Job {
 pub struct EnvReport {
     pub env: usize,
     pub tally: Tally,
-    /// A quarantine this op (the banked battle's error + input log + episode).
-    pub quarantined: Option<(EnvError, InputLog, u32)>,
+    /// The battles quarantined this op, in order (error + input log + episode): the battle in
+    /// progress and/or a refused start (`crate::episode` parks the env on the latter).
+    pub quarantined: Vec<(EnvError, InputLog, u32)>,
     /// A batch failure (the class is not `Quarantine`), with the env's input log.
     pub failed: Option<(EnvError, InputLog, u32)>,
 }
@@ -384,37 +310,36 @@ fn run_block(ctx: &Ctx, envs: &mut [Env], lo: usize, job: Job, cols: ColAddrs) -
     for (k, env) in envs.iter_mut().enumerate() {
         let i = lo + k;
         let mut tally = Tally::default();
+        let mut banked: Vec<Banked> = Vec::new();
         // SAFETY: the pool validated `cols` at freeze for n envs; env i's rows belong to this worker.
         let r = catch_unwind(AssertUnwindSafe(|| {
             let mut c = unsafe { cols.env(i) };
             match job {
-                Job::Reset => env.reset(ctx, &mut c, &mut tally),
-                Job::Step => env.step(ctx, &mut c, &mut tally),
+                Job::Reset => env.reset(ctx, &mut c, &mut tally, &mut banked),
+                Job::Step => env.step(ctx, &mut c, &mut tally, &mut banked),
             }
         }))
         .unwrap_or_else(|p| Err(EnvError::panic(format!("PANIC inside the core: {}", panic_msg(p)))));
-        let mut rep = EnvReport { env: i, tally, quarantined: None, failed: None };
+        let mut rep = EnvReport { env: i, tally, quarantined: Vec::new(), failed: None };
         match r {
             Ok(()) => {}
             Err(e) if e.class == Class::Quarantine => {
-                let banked = (e, env.log.clone(), env.episode());
+                let (msg, log, ep) = (e.message.clone(), env.log.clone(), env.episode());
+                banked.push((e, log.clone(), ep));
                 let again = catch_unwind(AssertUnwindSafe(|| {
                     let mut c = unsafe { cols.env(i) };
-                    env.quarantine(ctx, &mut c, &mut rep.tally)
+                    env.quarantine(ctx, &mut c, &mut rep.tally, &mut banked)
                 }))
                 .unwrap_or_else(|p| Err(EnvError::panic(format!("PANIC in the reset after a quarantine: {}", panic_msg(p)))));
-                match again {
-                    Ok(()) => rep.quarantined = Some(banked),
-                    Err(e2) => {
-                        // The next episode cannot start either: nothing is left to quarantine INTO.
-                        let class = if e2.class == Class::Quarantine { Class::Fault } else { e2.class };
-                        let msg = format!("{} — and the reset after its quarantine failed: {}", banked.0.message, e2.message);
-                        rep.failed = Some((EnvError { class, kind: e2.kind, py_class: e2.py_class, message: msg }, banked.1, banked.2));
-                    }
+                if let Err(e2) = again {
+                    // A refused start PARKS (never errs), so this is a caller / fault / panic class.
+                    let msg = format!("{msg} — and the reset after its quarantine failed: {}", e2.message);
+                    rep.failed = Some((EnvError { class: e2.class, kind: e2.kind, py_class: e2.py_class, message: msg }, log, ep));
                 }
             }
             Err(e) => rep.failed = Some((e, env.log.clone(), env.episode())),
         }
+        rep.quarantined = banked;
         out.push(rep);
     }
     out

@@ -5,12 +5,16 @@
 //! same way (the process front end receives the same text in a file). EVERY key is REQUIRED — the
 //! clock flags are read, never defaulted (`sim_bridge`'s `core_obs` rule) — and an unknown key is
 //! refused, so a typo can never select a default silently. `turn_limit` and `bank_dir` are present
-//! but may be `null`.
+//! but may be `null`. `turn_limit` is the STALL FORFEIT threshold and `terminal` the terminal-reward
+//! declaration (M5 Lane D, `crate::episode`).
 //!
 //! ```text
 //! {"n": 48, "threads": 8, "format_id": "gen3ou", "names": ["p1name", "p2name"],
 //!  "teams": ["<packed>", …], "decision_tense": false, "switch_freeze": false,
-//!  "turn_limit": null | <int>, "refusal_budget": <int>, "bank_dir": null | "<abs path>",
+//!  "turn_limit": null | <int>,
+//!  "terminal": {"victory_value": <num>, "terminal_indicator": <bool>, "draw_penalty": <num>,
+//!               "timeout_turn_cap": <int>},
+//!  "refusal_budget": <int>, "bank_dir": null | "<abs path>",
 //!  "labels": ["<family>", …]}
 //! ```
 
@@ -36,9 +40,12 @@ pub struct Spec {
     /// The progress clock's two flags (training's `--progress-decision-tense` /
     /// `--progress-switch-freeze`).
     pub clock: ClockConfig,
-    /// A battle still running after this turn is forfeited by p1 (`FORCELOSE p1` in its input log).
-    /// A PLACEHOLDER until Lane D ports the stall forfeit at `StallConfig().threshold`.
+    /// The STALL FORFEIT threshold (`StallConfig().threshold` in production): at a p1 decision whose
+    /// turn is `>=` it, p1 forfeits instead of acting (`FORCELOSE p1` in its input log; nothing else
+    /// is fed that op). `None`: no forfeit (harnesses only). `crate::episode`.
     pub turn_limit: Option<u32>,
+    /// The terminal reward (`crate::episode::Terminal`).
+    pub terminal: crate::episode::Terminal,
     /// Quarantines allowed over the pool's life; the next one is a `BUDGET` failure (a refusal STORM
     /// is systemic). The refusal bank reserves exactly this capacity at startup.
     pub refusal_budget: usize,
@@ -114,6 +121,7 @@ impl Spec {
             teams,
             clock: ClockConfig { decision_tense: flag("decision_tense")?, switch_freeze: flag("switch_freeze")? },
             turn_limit,
+            terminal: crate::episode::Terminal::from_json(v.get("terminal"))?,
             refusal_budget: uint(&v, "refusal_budget")? as usize,
             bank_dir,
             labels,
@@ -142,6 +150,7 @@ impl Spec {
         if self.turn_limit == Some(0) {
             return Err("spec: `turn_limit` must be >= 1 or null".into());
         }
+        self.terminal.validate()?;
         if let Some(d) = &self.bank_dir {
             if !d.is_absolute() {
                 return Err(format!("spec: `bank_dir` must be absolute, got {}", d.display()));
@@ -161,7 +170,7 @@ impl Spec {
         let teams: Vec<String> = self.teams.iter().map(|t| q(t)).collect();
         format!(
             "{{\"n\":{},\"threads\":{},\"format_id\":{},\"names\":[{},{}],\"teams\":[{}],\"decision_tense\":{},\
-             \"switch_freeze\":{},\"turn_limit\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}]}}",
+             \"switch_freeze\":{},\"turn_limit\":{},\"terminal\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}]}}",
             self.n,
             self.threads,
             q(&self.format_id),
@@ -171,6 +180,7 @@ impl Spec {
             self.clock.decision_tense,
             self.clock.switch_freeze,
             self.turn_limit.map_or("null".to_string(), |t| t.to_string()),
+            self.terminal.to_json(),
             self.refusal_budget,
             self.bank_dir.as_ref().map_or("null".to_string(), |d| q(&d.to_string_lossy())),
             self.labels.iter().map(|f| q(f)).collect::<Vec<_>>().join(","),
@@ -191,6 +201,7 @@ mod tests {
             teams: vec!["X|||".into()],
             clock: ClockConfig { decision_tense: true, switch_freeze: false },
             turn_limit: Some(300),
+            terminal: crate::episode::Terminal { victory_value: 30.0, indicator: false, draw_penalty: -35.0, timeout_turn_cap: 250 },
             refusal_budget: 4,
             bank_dir: Some(PathBuf::from("/tmp/x")),
             labels: Vec::new(),
@@ -211,6 +222,7 @@ mod tests {
         vec![
             ("n", "3"), ("threads", "2"), ("format_id", "\"gen3ou\""), ("names", "[\"a\",\"b\"]"),
             ("teams", "[\"X|||\"]"), ("decision_tense", "false"), ("switch_freeze", "true"), ("turn_limit", "null"),
+            ("terminal", "{\"victory_value\":1,\"terminal_indicator\":true,\"draw_penalty\":0,\"timeout_turn_cap\":250}"),
             ("refusal_budget", "0"), ("bank_dir", "null"), ("labels", "[]"),
         ]
     }

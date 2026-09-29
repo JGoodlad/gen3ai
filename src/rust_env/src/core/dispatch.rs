@@ -165,7 +165,7 @@ impl Core {
             self.counters[counter::DECISIONS] += rep.tally.decisions;
             self.counters[counter::EPISODES_STARTED] += rep.tally.started;
             self.counters[counter::EPISODES_ENDED] += rep.tally.ended;
-            if let Some((e, log, episode)) = rep.quarantined {
+            for (e, log, episode) in rep.quarantined {
                 self.counters[counter::REFUSALS] += 1;
                 let b = Banked { env: rep.env, episode, error: e, log };
                 if let Some(d) = &self.spec().bank_dir {

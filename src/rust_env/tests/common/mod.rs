@@ -36,6 +36,7 @@ pub fn spec(n: usize, threads: usize, teams: Vec<String>) -> Spec {
         teams,
         clock: ClockConfig::default(),
         turn_limit: Some(300),
+        terminal: pokesim_env::episode::Terminal::PRODUCTION,
         refusal_budget: 64,
         bank_dir: None,
         labels: Vec::new(),
@@ -98,7 +99,7 @@ pub fn digest(cols: &OwnedCols) -> u64 {
             h = h.wrapping_mul(0x0000_0100_0000_01b3);
         }
     };
-    for c in [col::OBS, col::MASK, col::NEED, col::REWARD, col::DONE, col::REFUSED, col::EPISODE, col::DEC_N, col::TURN] {
+    for c in [col::OBS, col::MASK, col::NEED, col::REWARD, col::DONE, col::TERMINATED, col::TRUNCATED, col::REFUSED, col::EPISODE, col::DEC_N, col::TURN] {
         eat(cols.bytes(c));
     }
     let k = cols.slice::<u64>(col::COUNTERS);

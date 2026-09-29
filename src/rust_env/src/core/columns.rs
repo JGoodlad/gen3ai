@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// FNV-1a-64 of `columns.schema_text()`; a front end compares it with its own table at load.
-pub const SCHEMA_ID: &str = "1038d1f361b0d7ce";
+pub const SCHEMA_ID: &str = "f694eea5bd468144";
 
 // ---- dims
 pub const SIDES: usize = 2;
@@ -15,7 +15,7 @@ pub const NCOUNTERS: usize = 11;
 pub const OBS_DIM: usize = pokesim::encoder::OBS_DIM;
 
 /// The startup declaration's keys (`protocol.SPEC_KEYS`): every one required, no other accepted.
-pub const SPEC_KEYS: [&str; 11] = ["n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit", "refusal_budget", "bank_dir", "labels"];
+pub const SPEC_KEYS: [&str; 12] = ["n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit", "terminal", "refusal_budget", "bank_dir", "labels"];
 
 // ---- ops (`core::dispatch`'s first argument)
 pub mod op {
@@ -123,32 +123,34 @@ pub mod col {
     pub const NEED: usize = 5;
     pub const REWARD: usize = 6;
     pub const DONE: usize = 7;
-    pub const REFUSED: usize = 8;
-    pub const EPISODE: usize = 9;
-    pub const DEC_N: usize = 10;
-    pub const TURN: usize = 11;
-    pub const COUNTERS: usize = 12;
-    pub const BELIEF_SPECIES: usize = 13;
-    pub const BELIEF_MOVES: usize = 14;
-    pub const KNOWN_MOVES: usize = 15;
-    pub const BELIEF_SPREAD: usize = 16;
-    pub const BELIEF_SPREAD_MASK: usize = 17;
-    pub const BELIEF_NATURE: usize = 18;
-    pub const BELIEF_NATURE_MASK: usize = 19;
-    pub const BELIEF_EV: usize = 20;
-    pub const BELIEF_EV_MASK: usize = 21;
-    pub const HP_TYPE_LABEL: usize = 22;
-    pub const HP_TYPE_MASK: usize = 23;
-    pub const ITEM_LABEL: usize = 24;
-    pub const ITEM_MASK: usize = 25;
-    pub const WIN_MARGIN: usize = 26;
-    pub const OPP_ACTION_KIND: usize = 27;
-    pub const OPP_ACTION_NUM: usize = 28;
-    pub const OPP_SWITCH_SLOT: usize = 29;
-    pub const OPP_SWITCH_SPECIES: usize = 30;
+    pub const TERMINATED: usize = 8;
+    pub const TRUNCATED: usize = 9;
+    pub const REFUSED: usize = 10;
+    pub const EPISODE: usize = 11;
+    pub const DEC_N: usize = 12;
+    pub const TURN: usize = 13;
+    pub const COUNTERS: usize = 14;
+    pub const BELIEF_SPECIES: usize = 15;
+    pub const BELIEF_MOVES: usize = 16;
+    pub const KNOWN_MOVES: usize = 17;
+    pub const BELIEF_SPREAD: usize = 18;
+    pub const BELIEF_SPREAD_MASK: usize = 19;
+    pub const BELIEF_NATURE: usize = 20;
+    pub const BELIEF_NATURE_MASK: usize = 21;
+    pub const BELIEF_EV: usize = 22;
+    pub const BELIEF_EV_MASK: usize = 23;
+    pub const HP_TYPE_LABEL: usize = 24;
+    pub const HP_TYPE_MASK: usize = 25;
+    pub const ITEM_LABEL: usize = 26;
+    pub const ITEM_MASK: usize = 27;
+    pub const WIN_MARGIN: usize = 28;
+    pub const OPP_ACTION_KIND: usize = 29;
+    pub const OPP_ACTION_NUM: usize = 30;
+    pub const OPP_SWITCH_SLOT: usize = 31;
+    pub const OPP_SWITCH_SPECIES: usize = 32;
 }
 
-pub const N_COLUMNS: usize = 31;
+pub const N_COLUMNS: usize = 33;
 
 pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     // STEP: the action index (0..ACT) for every (env, side) with need = 1; ignored where need = 0
@@ -163,11 +165,15 @@ pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     ColSpec { name: "mask", dtype: Dtype::U8, dir: Dir::Out, per_env: true, row_elems: SIDES * ACT, owner: "0" },
     // 1 iff the caller must supply this side's action at the next STEP (a decision is open)
     ColSpec { name: "need", dtype: Dtype::U8, dir: Dir::Out, per_env: true, row_elems: SIDES, owner: "0" },
-    // the win indicator from p1's view (+1 / -1 / 0 tie) of an episode that ENDED this op; 0 otherwise and 0 for a quarantined battle
-    ColSpec { name: "reward", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: 1, owner: "0" },
-    // 1 iff an episode ended this op (its end, or a quarantine); the env has auto-reset, so obs / mask / need already describe the NEXT episode's first decision (EnvPool semantics)
+    // the TERMINAL reward from p1's (the trainee's) view of an episode that ENDED this op — `Gen3RewardManager.process_turn_reward` under the spec's `terminal` (indicator: victory_value on a win, 0 otherwise; signed: +victory_value / -victory_value, draw_penalty when the end turn >= timeout_turn_cap); 0 on every other op and for a battle QUARANTINED in progress. It SURVIVES a refused auto-reset (F-L0-2): the ended episode's reward/terminated/truncated stand
+    ColSpec { name: "reward", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: 1, owner: "D" },
+    // 1 iff an episode the caller saw ended this op (terminated, truncated, or quarantined in progress); the env has auto-reset, so obs / mask / need already describe the NEXT episode's first decision (EnvPool semantics) — unless the auto-reset was refused (then the env is PARKED: need = 0 0)
     ColSpec { name: "done", dtype: Dtype::U8, dir: Dir::Out, per_env: true, row_elems: 1, owner: "0" },
-    // 1 iff the episode that ended this op was QUARANTINED (a core refusal; its input log is banked)
+    // `PokeEnv.calc_term_trunc` from p1's reading of the ended battle: exactly ONE side wiped (p1's team size minus each side's fainted count)
+    ColSpec { name: "terminated", dtype: Dtype::U8, dir: Dir::Out, per_env: true, row_elems: 1, owner: "D" },
+    // `PokeEnv.calc_term_trunc`: the battle ended with neither or both sides wiped — the stall forfeit (p1 FORCELOSEs at its first decision with turn >= turn_limit) and a tie. RAW env flags: the learner-side re-label (`wrappers.resolve_episode_end`, winprob => terminal) is the host's. NO terminal observation is produced (Lane D decision)
+    ColSpec { name: "truncated", dtype: Dtype::U8, dir: Dir::Out, per_env: true, row_elems: 1, owner: "D" },
+    // 1 iff a battle was QUARANTINED this op (its input log banked): the one in progress (done = 1, terminated = truncated = 0) or the START of the next (the env is PARKED: need = 0 0, and the next STEP starts it from the then-staged ep_team / ep_seed)
     ColSpec { name: "refused", dtype: Dtype::U8, dir: Dir::Out, per_env: true, row_elems: 1, owner: "0" },
     // the env's 0-based episode ordinal of the battle obs / need describe (it moves on every start)
     ColSpec { name: "episode", dtype: Dtype::U32, dir: Dir::Out, per_env: true, row_elems: 1, owner: "0" },
@@ -242,6 +248,8 @@ pub struct EnvCols<'a> {
     pub need: &'a mut [u8],
     pub reward: &'a mut [f32],
     pub done: &'a mut [u8],
+    pub terminated: &'a mut [u8],
+    pub truncated: &'a mut [u8],
     pub refused: &'a mut [u8],
     pub episode: &'a mut [u32],
     pub dec_n: &'a mut [u32],
@@ -283,28 +291,30 @@ impl ColAddrs {
             need: std::slice::from_raw_parts_mut((self.0[5] as *mut u8).add(i * COLUMNS[5].row_elems), COLUMNS[5].row_elems),
             reward: std::slice::from_raw_parts_mut((self.0[6] as *mut f32).add(i * COLUMNS[6].row_elems), COLUMNS[6].row_elems),
             done: std::slice::from_raw_parts_mut((self.0[7] as *mut u8).add(i * COLUMNS[7].row_elems), COLUMNS[7].row_elems),
-            refused: std::slice::from_raw_parts_mut((self.0[8] as *mut u8).add(i * COLUMNS[8].row_elems), COLUMNS[8].row_elems),
-            episode: std::slice::from_raw_parts_mut((self.0[9] as *mut u32).add(i * COLUMNS[9].row_elems), COLUMNS[9].row_elems),
-            dec_n: std::slice::from_raw_parts_mut((self.0[10] as *mut u32).add(i * COLUMNS[10].row_elems), COLUMNS[10].row_elems),
-            turn: std::slice::from_raw_parts_mut((self.0[11] as *mut u32).add(i * COLUMNS[11].row_elems), COLUMNS[11].row_elems),
-            belief_species: std::slice::from_raw_parts_mut((self.0[13] as *mut i64).add(i * COLUMNS[13].row_elems), COLUMNS[13].row_elems),
-            belief_moves: std::slice::from_raw_parts_mut((self.0[14] as *mut i64).add(i * COLUMNS[14].row_elems), COLUMNS[14].row_elems),
-            known_moves: std::slice::from_raw_parts_mut((self.0[15] as *mut i64).add(i * COLUMNS[15].row_elems), COLUMNS[15].row_elems),
-            belief_spread: std::slice::from_raw_parts_mut((self.0[16] as *mut f32).add(i * COLUMNS[16].row_elems), COLUMNS[16].row_elems),
-            belief_spread_mask: std::slice::from_raw_parts_mut((self.0[17] as *mut f32).add(i * COLUMNS[17].row_elems), COLUMNS[17].row_elems),
-            belief_nature: std::slice::from_raw_parts_mut((self.0[18] as *mut i64).add(i * COLUMNS[18].row_elems), COLUMNS[18].row_elems),
-            belief_nature_mask: std::slice::from_raw_parts_mut((self.0[19] as *mut f32).add(i * COLUMNS[19].row_elems), COLUMNS[19].row_elems),
-            belief_ev: std::slice::from_raw_parts_mut((self.0[20] as *mut f32).add(i * COLUMNS[20].row_elems), COLUMNS[20].row_elems),
-            belief_ev_mask: std::slice::from_raw_parts_mut((self.0[21] as *mut f32).add(i * COLUMNS[21].row_elems), COLUMNS[21].row_elems),
-            hp_type_label: std::slice::from_raw_parts_mut((self.0[22] as *mut i64).add(i * COLUMNS[22].row_elems), COLUMNS[22].row_elems),
-            hp_type_mask: std::slice::from_raw_parts_mut((self.0[23] as *mut f32).add(i * COLUMNS[23].row_elems), COLUMNS[23].row_elems),
-            item_label: std::slice::from_raw_parts_mut((self.0[24] as *mut i64).add(i * COLUMNS[24].row_elems), COLUMNS[24].row_elems),
-            item_mask: std::slice::from_raw_parts_mut((self.0[25] as *mut f32).add(i * COLUMNS[25].row_elems), COLUMNS[25].row_elems),
-            win_margin: std::slice::from_raw_parts_mut((self.0[26] as *mut f32).add(i * COLUMNS[26].row_elems), COLUMNS[26].row_elems),
-            opp_action_kind: std::slice::from_raw_parts_mut((self.0[27] as *mut i64).add(i * COLUMNS[27].row_elems), COLUMNS[27].row_elems),
-            opp_action_num: std::slice::from_raw_parts_mut((self.0[28] as *mut i64).add(i * COLUMNS[28].row_elems), COLUMNS[28].row_elems),
-            opp_switch_slot: std::slice::from_raw_parts_mut((self.0[29] as *mut i64).add(i * COLUMNS[29].row_elems), COLUMNS[29].row_elems),
-            opp_switch_species: std::slice::from_raw_parts_mut((self.0[30] as *mut i64).add(i * COLUMNS[30].row_elems), COLUMNS[30].row_elems),
+            terminated: std::slice::from_raw_parts_mut((self.0[8] as *mut u8).add(i * COLUMNS[8].row_elems), COLUMNS[8].row_elems),
+            truncated: std::slice::from_raw_parts_mut((self.0[9] as *mut u8).add(i * COLUMNS[9].row_elems), COLUMNS[9].row_elems),
+            refused: std::slice::from_raw_parts_mut((self.0[10] as *mut u8).add(i * COLUMNS[10].row_elems), COLUMNS[10].row_elems),
+            episode: std::slice::from_raw_parts_mut((self.0[11] as *mut u32).add(i * COLUMNS[11].row_elems), COLUMNS[11].row_elems),
+            dec_n: std::slice::from_raw_parts_mut((self.0[12] as *mut u32).add(i * COLUMNS[12].row_elems), COLUMNS[12].row_elems),
+            turn: std::slice::from_raw_parts_mut((self.0[13] as *mut u32).add(i * COLUMNS[13].row_elems), COLUMNS[13].row_elems),
+            belief_species: std::slice::from_raw_parts_mut((self.0[15] as *mut i64).add(i * COLUMNS[15].row_elems), COLUMNS[15].row_elems),
+            belief_moves: std::slice::from_raw_parts_mut((self.0[16] as *mut i64).add(i * COLUMNS[16].row_elems), COLUMNS[16].row_elems),
+            known_moves: std::slice::from_raw_parts_mut((self.0[17] as *mut i64).add(i * COLUMNS[17].row_elems), COLUMNS[17].row_elems),
+            belief_spread: std::slice::from_raw_parts_mut((self.0[18] as *mut f32).add(i * COLUMNS[18].row_elems), COLUMNS[18].row_elems),
+            belief_spread_mask: std::slice::from_raw_parts_mut((self.0[19] as *mut f32).add(i * COLUMNS[19].row_elems), COLUMNS[19].row_elems),
+            belief_nature: std::slice::from_raw_parts_mut((self.0[20] as *mut i64).add(i * COLUMNS[20].row_elems), COLUMNS[20].row_elems),
+            belief_nature_mask: std::slice::from_raw_parts_mut((self.0[21] as *mut f32).add(i * COLUMNS[21].row_elems), COLUMNS[21].row_elems),
+            belief_ev: std::slice::from_raw_parts_mut((self.0[22] as *mut f32).add(i * COLUMNS[22].row_elems), COLUMNS[22].row_elems),
+            belief_ev_mask: std::slice::from_raw_parts_mut((self.0[23] as *mut f32).add(i * COLUMNS[23].row_elems), COLUMNS[23].row_elems),
+            hp_type_label: std::slice::from_raw_parts_mut((self.0[24] as *mut i64).add(i * COLUMNS[24].row_elems), COLUMNS[24].row_elems),
+            hp_type_mask: std::slice::from_raw_parts_mut((self.0[25] as *mut f32).add(i * COLUMNS[25].row_elems), COLUMNS[25].row_elems),
+            item_label: std::slice::from_raw_parts_mut((self.0[26] as *mut i64).add(i * COLUMNS[26].row_elems), COLUMNS[26].row_elems),
+            item_mask: std::slice::from_raw_parts_mut((self.0[27] as *mut f32).add(i * COLUMNS[27].row_elems), COLUMNS[27].row_elems),
+            win_margin: std::slice::from_raw_parts_mut((self.0[28] as *mut f32).add(i * COLUMNS[28].row_elems), COLUMNS[28].row_elems),
+            opp_action_kind: std::slice::from_raw_parts_mut((self.0[29] as *mut i64).add(i * COLUMNS[29].row_elems), COLUMNS[29].row_elems),
+            opp_action_num: std::slice::from_raw_parts_mut((self.0[30] as *mut i64).add(i * COLUMNS[30].row_elems), COLUMNS[30].row_elems),
+            opp_switch_slot: std::slice::from_raw_parts_mut((self.0[31] as *mut i64).add(i * COLUMNS[31].row_elems), COLUMNS[31].row_elems),
+            opp_switch_species: std::slice::from_raw_parts_mut((self.0[32] as *mut i64).add(i * COLUMNS[32].row_elems), COLUMNS[32].row_elems),
         }
     }
 
@@ -313,6 +323,6 @@ impl ColAddrs {
     /// # Safety
     /// As [`ColAddrs::env`], and no env borrow reaches this column.
     pub unsafe fn counters<'a>(&self) -> &'a mut [u64] {
-        std::slice::from_raw_parts_mut(self.0[12] as *mut u64, COLUMNS[12].row_elems)
+        std::slice::from_raw_parts_mut(self.0[14] as *mut u64, COLUMNS[14].row_elems)
     }
 }

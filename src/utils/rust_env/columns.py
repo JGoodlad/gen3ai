@@ -85,14 +85,28 @@ COLUMNS: Tuple[Column, ...] = (
            "`present::mask` — the side's 11-dim legal-action mask; written iff need = 1"),
     Column("need", "u8", ("N", "SIDES"), "out", "0",
            "1 iff the caller must supply this side's action at the next STEP (a decision is open)"),
-    Column("reward", "f32", ("N",), "out", "0",
-           "the win indicator from p1's view (+1 / -1 / 0 tie) of an episode that ENDED this op; 0 otherwise "
-           "and 0 for a quarantined battle"),
+    Column("reward", "f32", ("N",), "out", "D",
+           "the TERMINAL reward from p1's (the trainee's) view of an episode that ENDED this op — "
+           "`Gen3RewardManager.process_turn_reward` under the spec's `terminal` (indicator: victory_value on a "
+           "win, 0 otherwise; signed: +victory_value / -victory_value, draw_penalty when the end turn >= "
+           "timeout_turn_cap); 0 on every other op and for a battle QUARANTINED in progress. It SURVIVES a "
+           "refused auto-reset (F-L0-2): the ended episode's reward/terminated/truncated stand"),
     Column("done", "u8", ("N",), "out", "0",
-           "1 iff an episode ended this op (its end, or a quarantine); the env has auto-reset, so obs / mask / "
-           "need already describe the NEXT episode's first decision (EnvPool semantics)"),
+           "1 iff an episode the caller saw ended this op (terminated, truncated, or quarantined in progress); "
+           "the env has auto-reset, so obs / mask / need already describe the NEXT episode's first decision "
+           "(EnvPool semantics) — unless the auto-reset was refused (then the env is PARKED: need = 0 0)"),
+    Column("terminated", "u8", ("N",), "out", "D",
+           "`PokeEnv.calc_term_trunc` from p1's reading of the ended battle: exactly ONE side wiped (p1's "
+           "team size minus each side's fainted count)"),
+    Column("truncated", "u8", ("N",), "out", "D",
+           "`PokeEnv.calc_term_trunc`: the battle ended with neither or both sides wiped — the stall forfeit "
+           "(p1 FORCELOSEs at its first decision with turn >= turn_limit) and a tie. RAW env flags: the "
+           "learner-side re-label (`wrappers.resolve_episode_end`, winprob => terminal) is the host's. NO "
+           "terminal observation is produced (Lane D decision)"),
     Column("refused", "u8", ("N",), "out", "0",
-           "1 iff the episode that ended this op was QUARANTINED (a core refusal; its input log is banked)"),
+           "1 iff a battle was QUARANTINED this op (its input log banked): the one in progress (done = 1, "
+           "terminated = truncated = 0) or the START of the next (the env is PARKED: need = 0 0, and the next "
+           "STEP starts it from the then-staged ep_team / ep_seed)"),
     Column("episode", "u32", ("N",), "out", "0",
            "the env's 0-based episode ordinal of the battle obs / need describe (it moves on every start)"),
     Column("dec_n", "u32", ("N", "SIDES"), "out", "0",

@@ -93,23 +93,31 @@ COUNTERS: Tuple[Counter, ...] = (
 #: which ``spec.rs`` reads, so the two languages cannot disagree about the spec's shape.
 SPEC_KEYS: Tuple[str, ...] = (
     "n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit",
-    "refusal_budget", "bank_dir", "labels",
+    "terminal", "refusal_budget", "bank_dir", "labels",
 )
 
 
 def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, str]",
               decision_tense: bool, switch_freeze: bool, turn_limit: Optional[int],
               refusal_budget: int, bank_dir: Optional[str], format_id: str = "gen3ou",
-              labels: "tuple[str, ...]" = ()) -> str:
+              labels: "tuple[str, ...]" = (), terminal: "Optional[dict]" = None) -> str:
     """The startup declaration as the core parses it (every key explicit in the JSON — nothing
     defaulted except ``format_id``, the one format the core runs, and ``labels``: the Lane-C label
-    FAMILIES the core writes, ``label_inventory`` names; none by default)."""
+    FAMILIES the core writes, ``label_inventory`` names; none by default), and ``terminal`` (M5 Lane
+    D): the terminal-reward declaration, defaulting to the PRODUCTION terminal
+    (``episode.PRODUCTION_TERMINAL``, pinned against ``designs/production_config.json`` by
+    ``episode_test.py``). ``turn_limit`` is the STALL FORFEIT threshold — ``StallConfig().threshold``
+    in production (``episode.stall_threshold()``); ``None`` = no forfeit (harnesses only)."""
     import json
+
+    from utils.rust_env import episode as EP
+
+    term = EP.terminal_json(EP.PRODUCTION_TERMINAL if terminal is None else terminal)
 
     spec = {
         "n": n, "threads": threads, "format_id": format_id, "names": list(names), "teams": list(teams),
         "decision_tense": bool(decision_tense), "switch_freeze": bool(switch_freeze), "turn_limit": turn_limit,
-        "refusal_budget": refusal_budget, "bank_dir": bank_dir, "labels": list(labels),
+        "terminal": term, "refusal_budget": refusal_budget, "bank_dir": bank_dir, "labels": list(labels),
     }
     assert tuple(spec) == SPEC_KEYS, "spec_json and SPEC_KEYS drifted"
     return json.dumps(spec)
