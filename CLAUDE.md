@@ -348,7 +348,8 @@ src/
                      #   ledger_index
   poke_env/          # Forked poke-env library (vendored — see the Python Environment warning)
   rust_sim/          # The Rust Showdown port — has CLAUDE.md
-  utils/             # paths.py (path discovery), git.py, bridge/, teambuilder, logging
+  rust_env/          # The M5 Rust ENV core (N battles, columns out; being built — program §2 M5)
+  utils/             # paths.py (path discovery), git.py, bridge/, rust_env/ (its Python side), teambuilder, logging
 designs/             # ARCHITECTURE.md, CHANGELOG.md, baselines.json, production_config.json,
                      #   ops/, training/, rust_sim/, research_state/, ai_vN/ — has CLAUDE.md
 data/                # Source of truth — derived by tools/, read via agents.gen3_data

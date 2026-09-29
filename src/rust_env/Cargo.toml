@@ -1,0 +1,35 @@
+# pokesim_env — the RUST ENV CORE (M5, `designs/endstate/program_rust_core.md` §2 M5, Lane 0).
+#
+# ONE env core stepping N battles on its own worker threads, writing the observation / mask /
+# need / reward / done / … COLUMNS into caller-provided buffers. Two thin front ends (Lane A's FFI
+# `cdylib`, Lane B's process over /dev/shm) forward an opcode and a column set to ONE
+# `core::dispatch`; neither holds battle logic. The column contract is GENERATED
+# (`src/core/columns.rs` from `src/utils/rust_env/columns.py`).
+#
+# It path-depends on the port (`../rust_sim`), which it never modifies: the port, its `release`
+# build and `sim_bridge` are untouched until M5's gate. Std-only, like the port. It builds into ITS
+# OWN `target/` (never the port's, never main's — the 09-09 rust-target incident).
+
+[package]
+name = "pokesim_env"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+
+[lib]
+name = "pokesim_env"
+path = "src/lib.rs"
+# rlib for the tests and the process front end's binary; cdylib for the FFI front end (Lane A).
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+pokesim = { path = "../rust_sim" }
+
+[features]
+# The port's EMISSION SELF-CHECK (+ its NaN-prefilled rows), for the test / fuzz surface exactly as
+# the port's own `selfcheck` build: `cargo build --profile selfcheck --features emission-selfcheck`.
+emission-selfcheck = ["pokesim/emission-selfcheck"]
+
+[profile.selfcheck]
+inherits = "release"
