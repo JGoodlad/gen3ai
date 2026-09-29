@@ -141,4 +141,6 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
    item, spread (the inversion port), intent, then margin. **`belief` BUILT**
    (`src/rust_env/src/labels/belief.rs`, gated by `src/agents/training/rust_env_labels_parity_test.py`:
    400 milestone episodes, 0 divergences). **`hp_type` and `item` BUILT**
-   (`src/rust_env/src/labels/per_slot.rs`, the same gate: 0 divergences).
+   (`src/rust_env/src/labels/per_slot.rs`, the same gate: 0 divergences). **`spread` BUILT**
+   (`src/rust_env/src/labels/spread.rs`, a port of `invert_nature_evs`, its tables loaded at startup
+   from the stamp's data dir; the same gate: 0 divergences).

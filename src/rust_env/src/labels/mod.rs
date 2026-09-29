@@ -16,14 +16,38 @@ use crate::core::columns::EnvCols;
 
 pub mod belief;
 pub mod per_slot;
+pub mod spread;
+
+/// Per-episode label state (one env; cleared at every episode start).
+#[derive(Default)]
+pub struct EpisodeState {
+    /// `spread`'s nature / EV inversion, per side (the truth team is fixed for an episode).
+    pub spread: [spread::Cache; 2],
+}
+
+impl EpisodeState {
+    pub fn clear(&mut self) {
+        for c in &mut self.spread {
+            c.clear();
+        }
+    }
+}
 
 /// The `core` families whose producer exists (grows one Lane-C unit at a time).
-pub const BUILT: &[&str] = &["belief", "hp_type", "item"];
+pub const BUILT: &[&str] = &["belief", "hp_type", "item", "spread"];
 
 /// Write every DECLARED family's columns for `side`'s open decision. `own` is the side's reading,
 /// `truth` the OTHER side's (its own team = `battle2.team`), `row` the row just encoded for `side`.
 /// `Err` is a label invariant the Python env raises on (the caller makes it a FAULT).
-pub fn write(families: &[&'static str], side: usize, own: &BoardReading, truth: &BoardReading, row: &[f32], c: &mut EnvCols) -> Result<(), String> {
+pub fn write(
+    families: &[&'static str],
+    side: usize,
+    own: &BoardReading,
+    truth: &BoardReading,
+    row: &[f32],
+    st: &mut EpisodeState,
+    c: &mut EnvCols,
+) -> Result<(), String> {
     use pokesim::encoder::layout::TEAM_SIZE as T;
     for &f in families {
         match f {
@@ -52,6 +76,21 @@ pub fn write(families: &[&'static str], side: usize, own: &BoardReading, truth: 
                 &mut c.item_label[side * T..(side + 1) * T],
                 &mut c.item_mask[side * T..(side + 1) * T],
             ),
+            "spread" => {
+                let n = spread::N_SPREAD;
+                spread::write(
+                    own,
+                    truth,
+                    row,
+                    &mut st.spread[side],
+                    &mut c.belief_spread[side * T * n..(side + 1) * T * n],
+                    &mut c.belief_spread_mask[side * T..(side + 1) * T],
+                    &mut c.belief_nature[side * T..(side + 1) * T],
+                    &mut c.belief_nature_mask[side * T..(side + 1) * T],
+                    &mut c.belief_ev[side * T * n..(side + 1) * T * n],
+                    &mut c.belief_ev_mask[side * T..(side + 1) * T],
+                )
+            }
             other => return Err(format!("label family {other:?} was declared but has no producer (labels::BUILT drifted)")),
         }
     }
@@ -77,7 +116,11 @@ pub fn declare(names: &[String]) -> Result<Vec<&'static str>, String> {
             return Err(format!("spec: label family {n:?} is not built yet in the Rust env (M5 Lane C)"));
         }
     }
-    Ok(FAMILIES.iter().map(|(f, _)| *f).filter(|f| names.iter().any(|n| n == f)).collect())
+    let out: Vec<&'static str> = FAMILIES.iter().map(|(f, _)| *f).filter(|f| names.iter().any(|n| n == f)).collect();
+    if out.contains(&"spread") {
+        spread::prepare().map_err(|e| format!("spec: label family \"spread\": {e}"))?;
+    }
+    Ok(out)
 }
 
 #[cfg(test)]

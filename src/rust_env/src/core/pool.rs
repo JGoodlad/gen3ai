@@ -66,6 +66,8 @@ pub struct Env {
     /// The previous episode's input log (moved, not copied, at every start) — a harness reads it
     /// after `done` to replay that episode elsewhere (gate ①).
     pub prev_log: InputLog,
+    /// The label families' per-episode state (M5 Lane C), cleared at every start.
+    labels: crate::labels::EpisodeState,
 }
 
 /// What one env did in one op (folded into the pool counters in env order).
@@ -93,6 +95,7 @@ impl Env {
             open: [None, None],
             log: InputLog::default(),
             prev_log: InputLog::default(),
+            labels: crate::labels::EpisodeState::default(),
         }
     }
 
@@ -144,6 +147,7 @@ impl Env {
         self.decided = [0, 0];
         self.emitted = 0;
         self.open = [None, None];
+        self.labels.clear();
         for side in 0..SIDES {
             self.chains[side] = Some(
                 BattleVersion::parse_root_unrecorded(side, &spec.names[side], Some(&self.log.teams[side]), spec.clock)
@@ -234,7 +238,7 @@ impl Env {
                     .ok_or_else(|| EnvError::fault(format!("p{tag}: the truth side's chain lost its stream")))?;
                 let mut row_now = [0f32; OBS_DIM]; // on the stack: an op allocates nothing new for labels
                 row_now.copy_from_slice(&c.obs[side * OBS_DIM..(side + 1) * OBS_DIM]);
-                crate::labels::write(&ctx.spec.labels, side, &s.board_reading, &truth.board_reading, &row_now, c)
+                crate::labels::write(&ctx.spec.labels, side, &s.board_reading, &truth.board_reading, &row_now, &mut self.labels, c)
                     .map_err(|e| EnvError::fault(format!("labels p{tag}: {e}")))?;
             }
             let n = self.decided[side];

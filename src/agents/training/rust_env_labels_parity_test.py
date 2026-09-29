@@ -36,7 +36,7 @@ pytestmark = [pytest.mark.sim, pytest.mark.integration]
 FEATURES = ("--profile", "selfcheck", "--features", "emission-selfcheck")
 #: The families the core builds today (mirrors `labels::BUILT`; a family missing here is simply
 #: not compared yet — the Rust unit test pins BUILT, and the spec refuses an unbuilt one).
-BUILT = ("belief", "hp_type", "item")
+BUILT = ("belief", "hp_type", "item", "spread")
 NAMES = ("lcpone", "lcptwo")
 
 
@@ -274,7 +274,8 @@ def test_commit_tier_the_core_labels_equal_gen3env(lib):
 
 
 @pytest.mark.parametrize("method,key", [("_belief_labels", "belief_moves"), ("_hp_type_labels", "hp_type_label"),
-                                        ("_item_labels", "item_label")])
+                                        ("_item_labels", "item_label"),
+                                        ("_spread_labels", "belief_ev")])
 def test_the_label_slice_has_teeth(lib, monkeypatch, method, key):
     """A Python label that differs in ONE cell from the core's must fail the slice — per family."""
     from agents.training import gen3_env

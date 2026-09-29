@@ -19,8 +19,8 @@ runs in the routine gate; the MILESTONE tier is `slow`.
 | 2 | the GENERATED label columns (18, one per `core` row; `i64` added to the table) + the spec's `labels` declaration, refused at startup by kind (host / off-surface / unknown / not yet built); pin `src/utils/rust_env/label_columns_test.py` | LANDED | see git log (`M5 Lane C unit 2`) |
 | 3 | family `belief` (`belief_species`, `belief_moves`, `known_moves`) + the parity harness `rust_env_labels_parity_test.py` (COMMIT 8 pool episodes / 843 decisions routine; MILESTONE `slow` 200 pool + 200 ladder episodes, 31,564 decisions, 94,692 key compares, 0 divergences; teeth: one cell of `belief_moves` moved fails 73/73) | LANDED | see git log (`M5 Lane C unit 3`) |
 | 4 | families `hp_type` + `item` (`labels/per_slot.rs`); the same slice, now 7 keys per decision: MILESTONE 400 episodes / 31,564 decisions / 220,948 key compares, 0 divergences; per-family teeth (one moved cell fails every decision) | LANDED | see git log (`M5 Lane C unit 4`) |
-| 5 | family `spread` (port `invert_nature_evs`) | NEXT | |
-| 6 | family `intent` (on `trackers::IntentLabel`) | | |
+| 5 | family `spread` (`labels/spread.rs`: the derived stats + a port of `invert_nature_evs`, its tables read from the stamp's `data/pokemon`, the inversion cached per episode per side); 13 keys per decision: MILESTONE 400 episodes / 410,332 key compares, 0 divergences; teeth on `belief_ev` | LANDED | see git log (`M5 Lane C unit 5`) |
+| 6 | family `intent` (on `trackers::IntentLabel`) | NEXT | |
 | 7 | family `margin` (`material_margin` on `present()`) | | |
 
 ## The inventory headline
@@ -94,3 +94,19 @@ OTHER side's chain. The rows are unchanged, and gate ① stays green.
   times in 55 episodes; 61 of those changes went to "nothing" (a consumed berry, Knock Off). Every
   decision is equal on both paths. `/tmp`-script measurement, 2026-09-29: the recorded core runs
   of the two milestone streams.
+- **F-LC-5 (a label-coverage FINDING, not a parity one):** `invert_nature_evs` assumes IV 31 on all
+  five stats. On the TRAINING POOL, **54.6 % of revealed-slot decisions carry no nature / EV label**
+  (mask 0): 46,678 of 85,554 over the milestone's 200 pool episodes. On the ladder corpus the figure
+  is 1.2 % (1,168 of 95,812). The measurement is a `/tmp` script over the recorded core runs,
+  2026-09-29. The likely cause is the pool's Hidden-Power IV adjustment (`Gen3Teambuilder`); 711 of
+  719 pool teams run HP. **UNVERIFIED** as the cause. The Rust env reproduces it exactly, as a
+  parity port must. Whether the nature/EV head should be supervised on those mons (invert with the
+  set's real IVs, or read nature / EVs from the truth team directly) is an owner / research call.
+  It is not Lane C's.
+- **F-LC-6 (a latent Python cache bug, not reached by the gate):** `Gen3Env._nature_ev_map` keys its
+  per-battle cache by the opponent team's SPECIES SET alone. A next episode whose opponent has the
+  same six species but different spreads reuses the previous battle's inversion, which is a wrong
+  label. The Rust env recomputes per episode, so it is correct there, and the two would diverge on
+  such a pair. The frequency is UNMEASURED; it needs two pool teams with the same species set
+  drawn back-to-back for one env. Proposed fix: key the cache by `(species, stats)` per mon. This is
+  a training-input change and is NOT applied.
