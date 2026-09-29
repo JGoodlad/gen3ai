@@ -195,9 +195,14 @@ def test_species_posterior_is_stable_for_large_logits():
 _PRODUCTION_CONFIG = str(repo_path("designs", "production_config.json"))
 
 
-def _build_production_extractor(**overrides):
+def _build_production_extractor(*, fresh: bool = False, **overrides):
     """The literal production arch. `overrides` pin a field the live config happens to sit at —
-    use it only where a test's SUBJECT is that field, and say why at the call site."""
+    use it only where a test's SUBJECT is that field, and say why at the call site.
+
+    PERTURBED by default (gen3_fresh_parity_probe_v1): a fresh extractor's zero-init projections
+    output exactly 0, so a compiled-vs-eager comparison cannot see a defect in any branch behind
+    one; the shared seeded perturbation (`agents.model.parity_probe`) opens them. ``fresh=True``
+    returns the untouched init for a test whose subject IS the fresh init."""
     import json
 
     from agents.model.model_version import ARCH_SIGNATURE
@@ -222,7 +227,11 @@ def _build_production_extractor(**overrides):
     # construction — the same seam delivery_graph uses — rather than editing the historical record.
     sanitize_historical_move_floor(kw)
     torch.manual_seed(0)
-    return Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval(), layout
+    fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval()
+    if not fresh:
+        from agents.model.parity_probe import perturb_
+        perturb_(fe)
+    return fe, layout
 
 
 @_skip_compile

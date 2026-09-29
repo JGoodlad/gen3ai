@@ -48,10 +48,18 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 import torch
 
 from agents.model.compile_parity_fixture import ParityFixtureError, load_parity_rows
+from agents.model.parity_probe import (PERTURB_SCALE, PERTURB_SEED, VacuousParityError, fresh_reason,
+                                       perturbed_parameters, require_informative)
 
 
 class CompileTrainerError(RuntimeError):
     """Raised when `--compile-trainer` cannot deliver a compiled learner. Always fatal."""
+
+
+class VacuousCompileParityError(CompileTrainerError, VacuousParityError):
+    """The parity gate was asked to judge a quantity that does not vary (gen3_fresh_parity_probe_v1)
+    — e.g. a FRESH policy's legal log-probs, constant per row under the zero-init pointer head. A
+    `CompileTrainerError`, so the launcher treats it as config-fatal like any other gate failure."""
 
 
 # A compiled learner must beat eager by at least this, or something is wrong with the assumption
@@ -343,14 +351,31 @@ def _cos(a: "torch.Tensor", b: "torch.Tensor") -> float:
     return float(torch.dot(a, b) / (na * nb)) if na > 0 and nb > 0 else 0.0
 
 
+def _require_informative(quantities: Dict[str, "torch.Tensor"], bars: Dict[str, float],
+                         where: str) -> None:
+    try:
+        require_informative(quantities, bars, where=where)
+    except VacuousParityError as exc:
+        raise VacuousCompileParityError(str(exc)) from exc
+
+
 def decision_verdicts(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
                       reference: Optional[Dict[str, "torch.Tensor"]] = None,
-                      precision: Optional[str] = None) -> List[str]:
+                      precision: Optional[str] = None, allow_vacuous: bool = False) -> List[str]:
     """The no-grad parity gate over each readout quantity. Raises `CompileTrainerError` or returns
     one rule line per quantity. At 'highest' each quantity uses its `_FP32_TOL` bar on
     max|compiled - eager|; at reduced precision the TF32 rule (`check_numerics`) against the fp32
-    ``reference``, which is then REQUIRED."""
+    ``reference``, which is then REQUIRED.
+
+    FAIL-CLOSED ON A VACUOUS COMPARISON (gen3_fresh_parity_probe_v1): every compared quantity of the
+    EAGER arm must vary by more than its own bar (`parity_probe.spread`), else
+    `VacuousCompileParityError` — a fresh policy's legal log-probs are constant per row and pass any
+    miscompile. ``allow_vacuous=True`` is for a caller that has ALREADY judged the same graph on a
+    perturbed, informative copy of the weights (the gate's fresh path) and only it."""
     precision = precision or torch.get_float32_matmul_precision()
+    if not allow_vacuous:
+        _require_informative({k: v for k, v in eager.items() if k in _FP32_TOL}, _FP32_TOL,
+                             "--compile-trainer parity (decision readout)")
     if precision != "highest" and reference is None:
         raise CompileTrainerError(
             f"--compile-trainer: matmul precision {precision!r} but no fp32 reference was "
@@ -374,13 +399,19 @@ def decision_verdicts(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "
 
 def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
                   reference: Optional[Dict[str, "torch.Tensor"]] = None,
-                  precision: Optional[str] = None) -> str:
+                  precision: Optional[str] = None, allow_vacuous: bool = False) -> str:
     """The TRAIN-graph parity gate: forward features (the numerics rule) AND the gradient's cosine.
 
     At 'highest': cos(compiled_grad, eager_grad) >= 0.9999. At reduced precision:
     (1 - cos(compiled, fp32)) <= K * (1 - cos(eager, fp32)) + 1e-4 — TF32's own angular error on
-    the eager arm, scaled by the same K as the value rule."""
+    the eager arm, scaled by the same K as the value rule. The eager arm's features must vary
+    across rows and its gradient must be non-zero (`VacuousCompileParityError` otherwise; an
+    all-zero gradient has cosine 1.0 with anything's zero)."""
     precision = precision or torch.get_float32_matmul_precision()
+    if not allow_vacuous:
+        _require_informative({"features": eager["features"], "grad": eager["grad"]},
+                             {"features": _MAX_NUMERIC_DRIFT, "grad": 0.0},
+                             "--compile-trainer parity (train graph)")
     if precision == "highest":
         feat = check_numerics(float((compiled["features"] - eager["features"]).abs().max()),
                               precision=precision, what="train features")
@@ -440,6 +471,42 @@ def _time_steps(fe: Any, obs: Any, reps: int) -> float:
             torch.cuda.synchronize()         # async: else we time the LAUNCH, not the work
         best = min(best, time.perf_counter() - t0)
     return best * 1000.0
+
+
+_Arm = Tuple[Dict[str, "torch.Tensor"], Dict[str, "torch.Tensor"],
+             Optional[Dict[str, "torch.Tensor"]], Optional[Dict[str, "torch.Tensor"]]]
+
+
+def _gate_arm(model: Any, fe: Any, obs: Any, legal_mask: Any, precision: str) -> _Arm:
+    """One arm of the gate through whatever `fe.forward` is installed: ``(read, train, read32,
+    train32)`` — the decision readout and the train step at the process precision, plus the same
+    two at 'highest' when that precision is reduced (else None). For the EAGER arm the fp32 pair is
+    the reference; for the COMPILED arm it is the same trace's fp32 graph."""
+    read, train = _readout(model, fe, obs, legal_mask), _train_step(fe, obs)
+    read32 = train32 = None
+    if precision != "highest":
+        with _matmul_precision("highest"):
+            read32, train32 = _readout(model, fe, obs, legal_mask), _train_step(fe, obs)
+    return read, train, read32, train32
+
+
+def _arm_verdicts(eager: _Arm, comp: _Arm, precision: str, *,
+                  allow_vacuous: bool = False) -> List[str]:
+    """Every rule over one (eager, compiled) pair of arms. Raises `CompileTrainerError`."""
+    e_read, e_train, ref_read, ref_train = eager
+    c_read, c_train, c_read32, c_train32 = comp
+    rules = decision_verdicts(eager=e_read, compiled=c_read, reference=ref_read,
+                              precision=precision, allow_vacuous=allow_vacuous)
+    rules.append(train_verdict(eager=e_train, compiled=c_train, reference=ref_train,
+                               precision=precision, allow_vacuous=allow_vacuous))
+    if c_read32 is not None and ref_read is not None and ref_train is not None \
+            and c_train32 is not None:
+        rules += ["[same graph at fp32] " + r for r in decision_verdicts(
+            eager=ref_read, compiled=c_read32, precision="highest", allow_vacuous=allow_vacuous)]
+        rules.append("[same graph at fp32] " + train_verdict(
+            eager=ref_train, compiled=c_train32, precision="highest",
+            allow_vacuous=allow_vacuous))
+    return rules
 
 
 def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int] = None,
@@ -547,6 +614,10 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
 
     original = fe.forward
     precision = torch.get_float32_matmul_precision()
+    # gen3_fresh_parity_probe_v1: the module whose parameters a FRESH-weights pass perturbs — the
+    # whole policy (extractor AND heads) when there is one, else the extractor.
+    probe_module = policy if isinstance(policy, torch.nn.Module) else fe
+    fresh: Optional[str] = None
     # gen3_compile_sentinel_v1: phase 1 of `compile_control` — the gate compiles FREELY, with the
     # cache-limit detector already listening (it also sets suppress_errors=False: a partial compile
     # must be LOUD). Phase 2 (`reset`, dropping every graph compiled here) and 3-4 (prewarm, lock)
@@ -558,13 +629,18 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             # The EAGER arm: the deployed function's decision readout and its train-step gradient,
             # plus (reduced precision only) the same two at fp32 — the reference both arms are
             # measured against. All taken BEFORE the compile is installed (eager by construction).
-            eager_read = _readout(model, fe, obs, legal_mask)
-            eager_train = _train_step(fe, obs)
-            ref_read = ref_train = None
-            if precision != "highest":
-                with _matmul_precision("highest"):
-                    ref_read = _readout(model, fe, obs, legal_mask)
-                    ref_train = _train_step(fe, obs)
+            eager_arm = _gate_arm(model, fe, obs, legal_mask, precision)
+            # gen3_fresh_parity_probe_v1: FRESH weights (the zero-init pointer head makes every
+            # legal log-prob -log(n_legal)) cannot judge the decision readout. Detect it on the
+            # eager arm and ALSO run both arms on a seeded perturbation of the SAME parameters —
+            # in place, restored bit-exactly, private RNG — so the graph judged is the one that
+            # ships. `decision_verdicts` refuses a vacuous comparison, so this cannot be skipped.
+            fresh = fresh_reason({k: v for k, v in eager_arm[0].items() if k in _FP32_TOL},
+                                 _FP32_TOL)
+            p_eager_arm = None
+            if fresh is not None:
+                with perturbed_parameters(probe_module):
+                    p_eager_arm = _gate_arm(model, fe, obs, legal_mask, precision)
 
             compiled = torch.compile(original)
             # `wrap_compiled` records a lock rejection raised through the learner forward before it
@@ -572,19 +648,18 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             # start callback no longer sees a rejected recompile). Pass-through otherwise.
             fe.forward = control(emit).wrap_compiled(compiled)
             comp_ms = _time_steps(fe, obs, _VALIDATE_REPS)
-            comp_read = _readout(model, fe, obs, legal_mask)
-            comp_train = _train_step(fe, obs)
             # gen3_tf32_parity_gate_v1: under reduced precision the TF32 rule above can only resolve
             # a defect larger than ~K x TF32's own rounding (measured: a DROPPED projection bias passes
-            # it). So the same compiled callable is ALSO run at 'highest' — dynamo guards on the TF32
-            # flag, so that is a separate fp32 graph of the SAME trace — and held to the strict fp32
-            # bars against the fp32 eager reference. Every precision-independent graph defect (a wrong
-            # fusion, a dropped term, the single-graph miscompile) fails there at full resolution.
-            comp_read32 = comp_train32 = None
-            if precision != "highest":
-                with _matmul_precision("highest"):
-                    comp_read32 = _readout(model, fe, obs, legal_mask)
-                    comp_train32 = _train_step(fe, obs)
+            # it). So `_gate_arm` ALSO runs the same compiled callable at 'highest' — dynamo guards on
+            # the TF32 flag, so that is a separate fp32 graph of the SAME trace — and it is held to the
+            # strict fp32 bars against the fp32 eager reference. Every precision-independent graph
+            # defect (a wrong fusion, a dropped term, the single-graph miscompile) fails there at
+            # full resolution.
+            comp_arm = _gate_arm(model, fe, obs, legal_mask, precision)
+            p_comp_arm = None
+            if fresh is not None:
+                with perturbed_parameters(probe_module):   # same seed -> the same perturbed weights
+                    p_comp_arm = _gate_arm(model, fe, obs, legal_mask, precision)
         except (CompileTrainerError, ParityFixtureError) as exc:
             fe.forward = original
             if isinstance(exc, ParityFixtureError):
@@ -612,20 +687,22 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
                 fe.eval()
 
     try:
-        rules = decision_verdicts(eager=eager_read, compiled=comp_read, reference=ref_read,
-                                  precision=precision)
-        rules.append(train_verdict(eager=eager_train, compiled=comp_train, reference=ref_train,
-                                   precision=precision))
-        if comp_read32 is not None and ref_read is not None and ref_train is not None \
-                and comp_train32 is not None:
-            rules += ["[same graph at fp32] " + r for r in decision_verdicts(
-                eager=ref_read, compiled=comp_read32, precision="highest")]
-            rules.append("[same graph at fp32] " + train_verdict(
-                eager=ref_train, compiled=comp_train32, precision="highest"))
+        if p_eager_arm is not None and p_comp_arm is not None:
+            # The informative verdict FIRST, with the vacuity guard ON: a perturbation that still
+            # left a quantity constant refuses the launch rather than passing it.
+            rules = ["[fresh weights, seeded perturbation] " + r
+                     for r in _arm_verdicts(p_eager_arm, p_comp_arm, precision)]
+            rules += _arm_verdicts(eager_arm, comp_arm, precision, allow_vacuous=True)
+        else:
+            rules = _arm_verdicts(eager_arm, comp_arm, precision)
         speedup = check_speedup(eager_ms, comp_ms)
     except CompileTrainerError:
         fe.forward = original          # never leave a rejected compile installed
         raise
+    if fresh is not None:
+        _say(f"[CompileTrainer] FRESH weights ({fresh} on the fixture — vacuous on their own): the "
+             f"parity gate ALSO ran on a seeded perturbation of every policy parameter (seed "
+             f"{PERTURB_SEED}, scale {PERTURB_SCALE}; restored bit-exactly, private RNG)")
     # Said on EVERY passing launch (a failure says it in the raised message): which rules ran, at
     # which precision, and the numbers — so a TF32 run records how close to its bar it sat.
     _say(f"[CompileTrainer] parity PASS on {batch} REAL obs rows — " + " | ".join(rules))

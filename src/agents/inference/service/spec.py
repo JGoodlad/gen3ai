@@ -41,6 +41,13 @@ class ParityFailure(ServiceError):
     """The served decision disagrees with the eager reference beyond the compile gate's bars."""
 
 
+class VacuousParity(ParityFailure):
+    """The parity comparison cannot bite: the eager reference's legal log-probs are constant per row
+    (a FRESH policy — zero-init pointer head) or its V is constant across rows. Fail-closed: a
+    caller that does not re-run the gate on a seeded perturbation of the weights gets a
+    `ParityFailure` (gen3_fresh_parity_probe_v1)."""
+
+
 class CallerError(ServiceError):
     """A malformed request (shapes, dtypes, an all-illegal row, a stale result, over capacity)."""
 

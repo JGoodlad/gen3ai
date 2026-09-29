@@ -624,6 +624,43 @@ The healthy column is the gate's own line on `ai_v14_01_base/final_model.zip`.
 the split off makes the gate refuse. Measured through the real gate: with the split OFF it FAILS at
 10.7.
 
+**On FRESH weights the gate ALSO runs on a seeded perturbation (`gen3_fresh_parity_probe_v1`).** A
+fresh launch (`--arch production`, no `--model`) runs the gate on the freshly initialised policy, and
+the pointer head's three scorers are zero-init, so every legal log-prob on a row is `-log(n_legal)`
+whatever the extractor computed. On those weights the legal-log-prob check cannot fail, and the
+features and gradient checks are blind to what feeds only the pointer head. On the fresh production
+policy, 52 of 232 extractor parameters get zero gradient from the gate's loss. **Measured** (M5 T2,
+2026-09-29): an AOT miscompile read max|dlogp| 0.0 on a fresh policy and 0.68 on a real one. So:
+
+- **Detection.** The gate reads the eager arm's decision readout. It counts the weights as fresh when
+  any quantity is not above its own bar (`agents.model.parity_probe.spread`). For log-probs that is
+  the within-row spread over the legal entries; for everything else it is the spread across rows.
+  On a fresh production policy the log-prob spread is exactly 0.0.
+- **The perturbed pass.** Both arms run again on every policy parameter plus seeded Gaussian noise
+  (seed `20260929`, scale 0.05), with the SAME installed compiled graph. Parameters are graph
+  inputs, so the change neither recompiles nor escapes the graph. The noise comes from a private CPU
+  generator, so training's RNG stream is untouched. The parameters are restored bit-exactly and
+  re-checked; a mismatch raises. Its verdicts are prefixed `[fresh weights, seeded perturbation]` in
+  the PASS line, and a `[CompileTrainer] FRESH weights (…)` line says it ran.
+- **Fail-closed.** `decision_verdicts` / `train_verdict` refuse a vacuous comparison
+  (`VacuousCompileParityError`, a `CompileTrainerError`, so it is `FATAL_CONFIG`). Only the gate's
+  own real-weights pass waives the check with `allow_vacuous=True`, and only after the perturbed
+  pass has passed with the check ON.
+
+**Measured end to end** (RTX 3080 Ti, torch 2.5.1, fresh production policy, 64 fixture rows,
+2026-09-29). The real pass read legal log-prob max|Δ| **0.00e+00**, which is vacuous. The perturbed
+pass read 5.96e-07 (features 5.25e-06, V 4.77e-07, grad cosine 1.000000), and the gate PASSED. With
+the trunk split forced OFF (the known torch-2.5.1 miscompile) the gate REFUSED on the perturbed
+arm's features at 3.61. In both cases the weights and the CPU/CUDA RNG states were bit-identical
+afterwards. `parity_probe_test` pins the wiring on CPU. A "compile" whose features and gradient are
+exact but whose per-action move cells (read only by the pointer head) are wrong is REFUSED on fresh
+weights, and PASSES the pre-fix gate.
+
+The inference service's parity gate (`agents.inference.service`) does the same per slot. A
+`VacuousParity` (a `ParityFailure`) triggers a re-run of the slot on the perturbed weights, in place
+in the group's stacked storage, which the CUDA graphs read. The real weights then run with the check
+waived.
+
 **At reduced precision (`--matmul-precision high`, TF32) two checks run.**
 
 1. **The TF32 graph, against an fp32 EAGER REFERENCE.** The reference is the same weights and rows

@@ -23,8 +23,10 @@ import torch
 
 from agents.inference.service.parity import ParityReport, fixture_rows, gate_slot
 from agents.inference.service.slots import SlotGroup
+from agents.model.parity_probe import perturbed_parameters
 from agents.inference.service.spec import (
     CallerError, LifecycleViolation, ParityFailure, Priority, ServiceError, ServiceSpec,
+    VacuousParity,
 )
 
 
@@ -291,8 +293,22 @@ class InferenceService:
                 outs = self._run(gi, i, b)
             return tuple(t[:n].clone() for t in outs)   # read before anything else runs
 
-        return gate_slot(where=where, policy=g.policies[i], obs_dim=self.obs_dim, bucket=b,
-                         device=self.device, serve=serve)
+        try:
+            return gate_slot(where=where, policy=g.policies[i], obs_dim=self.obs_dim, bucket=b,
+                             device=self.device, serve=serve)
+        except VacuousParity:
+            # gen3_fresh_parity_probe_v1: FRESH weights (a zero-init pointer head) cannot judge the
+            # slot. Judge the SAME slot and graph on a seeded perturbation of its weights — in place
+            # (the slot's parameters are views into the group's stacked storage, which the graphs
+            # read), restored bit-exactly, private RNG — then the real weights with the vacuity
+            # guard waived. The real report stays first (`load` returns reports[0]).
+            with perturbed_parameters(g.policies[i]):
+                probe = gate_slot(where=f"{where} [fresh weights, seeded perturbation]",
+                                  policy=g.policies[i], obs_dim=self.obs_dim, bucket=b,
+                                  device=self.device, serve=serve)
+            real = gate_slot(where=where, policy=g.policies[i], obs_dim=self.obs_dim, bucket=b,
+                             device=self.device, serve=serve, allow_vacuous=True)
+            return real + probe
 
     @contextlib.contextmanager
     def _startup_guard(self, where: str) -> Iterator[None]:

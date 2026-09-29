@@ -496,7 +496,10 @@ is stamped at launch as `🧮 [MATMUL PRECISION]` and recorded in `metadata.json
 committed fixture `src/agents/model/compile_parity_obs.npz`; regenerate it with
 `python -m agents.model.compile_parity_fixture --write` after an obs-layout change, and a stale
 fixture REFUSES. It checks four things: features, MASKED legal log-probs, V, and the train graph's
-gradient cosine (≥ 0.9999). Under `--matmul-precision high` it switches to the precision-aware TF32
+gradient cosine (≥ 0.9999). **On FRESH weights** (a fresh launch: the zero-init pointer head makes
+every legal log-prob `-log(n_legal)`, so that check cannot fail) it ALSO runs both arms on a seeded,
+bit-exactly-restored perturbation of the policy (`agents.model.parity_probe`,
+`gen3_fresh_parity_probe_v1`), and a vacuous comparison REFUSES rather than passes. Under `--matmul-precision high` it switches to the precision-aware TF32
 rule (`e_comp ≤ 4·e_eager + 1e-4` against an fp32 eager reference), plus the same compiled graph
 at fp32 held to the strict bars. **On torch 2.5.1 the GPU learner compile needs its trunk split**
 (`gen3_inductor_trunk_split_v1`): as ONE CUDA Inductor graph it miscompiled on real rows. That

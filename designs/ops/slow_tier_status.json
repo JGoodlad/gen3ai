@@ -203,10 +203,10 @@
   },
   "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cpu": {
    "status": "pass",
-   "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
-   "at": "2026-09-29T22:35:55Z",
-   "duration_s": 390.72,
-   "contention": 1.0,
+   "commit": "7bd3855da9d49cab67bd78794fc54c1c9fc50166",
+   "at": "2026-09-29T23:19:46Z",
+   "duration_s": 750.39,
+   "contention": 1.04,
    "detail": ""
   },
   "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cuda": {

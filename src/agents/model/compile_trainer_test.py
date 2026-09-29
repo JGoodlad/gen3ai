@@ -585,8 +585,13 @@ def test_decision_level_bars_catch_a_value_or_policy_shift_that_features_alone_m
     """The gate reads what the rollout and PPO read: masked legal log-probs and V, each at its
     own fp32 bar."""
     from agents.model.compile_trainer import _FP32_TOL, decision_verdicts
-    base = {"features": torch.zeros(4, 8), "legal_logprob": torch.zeros(4, 11),
-            "value": torch.full((4,), 0.5)}
+    # INFORMATIVE rows (gen3_fresh_parity_probe_v1): a quantity constant across rows / within
+    # every row's legal entries is REFUSED as vacuous — `parity_probe_test` pins that.
+    g = torch.Generator().manual_seed(0)
+    lp = torch.zeros(4, 11)
+    lp[:, :3] = torch.log_softmax(torch.randn(4, 3, generator=g), dim=-1)
+    base = {"features": torch.randn(4, 8, generator=g), "legal_logprob": lp,
+            "value": torch.linspace(0.2, 0.8, 4)}
     ok = decision_verdicts(eager=base, compiled={k: v.clone() for k, v in base.items()},
                            precision="highest")
     assert len(ok) == 3
@@ -607,7 +612,7 @@ def test_train_graph_gradient_cosine_is_gated():
     way. The train verdict must refuse that at fp32, and apply the relative rule at TF32."""
     from agents.model.compile_trainer import _MIN_GRAD_COSINE, train_verdict
     g = torch.randn(1000, generator=torch.Generator().manual_seed(0))
-    f = torch.zeros(2, 4)
+    f = torch.randn(2, 4, generator=torch.Generator().manual_seed(2))   # informative rows
     assert "grad cosine" in train_verdict(eager={"features": f, "grad": g},
                                           compiled={"features": f, "grad": g.clone()},
                                           precision="highest")

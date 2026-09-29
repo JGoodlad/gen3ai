@@ -266,3 +266,54 @@ def test_the_gate_fails_a_wrong_greedy_action_on_a_decisive_row(policies):
     greedy[row] = top2.indices[row, 1]
     with pytest.raises(ParityFailure, match="greedy"):
         judge(where="t", policy=p, obs=o, mask=m, served=(logp, value, greedy))
+
+
+# ---------------------------------------------------------------- FRESH weights (gen3_fresh_parity_probe_v1)
+@pytest.fixture(scope="module")
+def fresh_policy():
+    """An UNPERTURBED fresh production policy — exactly what a fresh launch would serve."""
+    from main.fresh_checkpoint import build_fresh_model
+    torch.set_num_threads(2)
+    return build_fresh_model(3)[0].policy.eval()
+
+
+def _temperature_bug(real):
+    """A served path that doubles the logits' sharpness: invisible on a uniform (fresh) row, wrong
+    on every informative one — the shape of a miscompile a fresh-weights gate cannot see."""
+    def decide(module, obs, mask):
+        logp, value, _ = real(module, obs, mask)
+        sharp = torch.log_softmax(torch.where(mask, 2.0 * logp, torch.full_like(logp, -1e9)), -1)
+        sharp = torch.where(mask, sharp, torch.full_like(sharp, float("-inf")))
+        return sharp, value, sharp.argmax(-1)
+    return decide
+
+
+def test_judge_REFUSES_a_vacuous_comparison_on_fresh_weights(fresh_policy):
+    from agents.inference.service.spec import VacuousParity
+    obs, mask = fixture_rows(fresh_policy.observation_space["observation"].shape[0], 8)
+    o, m = torch.as_tensor(obs), torch.as_tensor(mask)
+    logp, value = policy_reference(fresh_policy, o, m)
+    with pytest.raises(VacuousParity, match="VACUOUS.*legal_logprob"):
+        judge(where="fresh", policy=fresh_policy, obs=o, mask=m,
+              served=(logp, value, logp.argmax(-1)))
+    assert issubclass(VacuousParity, ParityFailure), "an unhandled vacuous gate must fail closed"
+
+
+def test_a_FRESH_slot_is_gated_on_a_perturbation_and_its_weights_come_back_bit_exact(fresh_policy):
+    before = {k: v.clone() for k, v in fresh_policy.state_dict().items()}
+    svc = _service(fresh_policy, n_slots=1, buckets=(2, 8))
+    wheres = [r.where for r in svc.startup_reports]
+    assert any("[fresh weights, seeded perturbation]" in w for w in wheres), wheres
+    slot_sd = svc.groups[0].policies[0].state_dict()
+    assert all(torch.equal(before[k], slot_sd[k].cpu()) for k in before), \
+        "the perturbed gate must leave the slot's weights bit-identical"
+    rep = svc.load(0, fresh_policy, "fresh-again")
+    assert "[fresh weights" not in rep.where, "load() must return the REAL weights' report first"
+
+
+def test_a_miscompile_invisible_on_fresh_weights_is_CAUGHT_by_the_perturbed_gate(
+        monkeypatch, fresh_policy):
+    import agents.inference.service.service as svc_mod
+    monkeypatch.setattr(svc_mod, "_decide", _temperature_bug(svc_mod._decide))
+    with pytest.raises(ParityFailure, match="seeded perturbation"):
+        _service(fresh_policy, n_slots=1, buckets=(2, 8))

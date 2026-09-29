@@ -137,6 +137,36 @@ leg-level test measures a leg's correctness, and only a whole run can tell you w
 Where a composition gate can cheaply record such a cost as a scalar (`teacher/step_block_ms`), do —
 a number in the run's own events survives the next person's assumptions better than a comment.
 
+### PARITY tests on a policy: never on FRESH weights, and prove the check can fail (`gen3_fresh_parity_probe_v1`)
+
+A **parity test** says two paths agree: compiled == eager, served == reference, diagnostics ON == OFF.
+It is only as strong as the variation in what it compares. **A freshly built production policy is a
+VACUOUS probe.** The pointer head's scorers are zero-init, so every legal log-prob on a row is
+`-log(n_legal)` whatever the extractor did. The other zero-init projections output exactly 0, and on
+the fresh policy 52 of 232 extractor parameters get zero gradient from a features-only loss.
+**Measured** (M5 T2, 2026-09-29): an AOT miscompile read max|dlogp| **0.0 on fresh weights and
+0.68 on real ones**. The rules:
+
+1. **Perturb a fresh policy before a parity check.** Use `agents.model.parity_probe`:
+   `perturb_(module)` or `perturbed_copy(module)` in a test, or `perturbed_parameters(module)` in a
+   gate that must judge its own installed graph (restored bit-exactly, private RNG). The helpers
+   already in use are `agents.inference.service.fixtures.perturbed_fresh_policy` and
+   `extractor_compiles_test._build_production_extractor()`, which is perturbed by default
+   (`fresh=True` opts out).
+2. **Feed REAL rows, never zeros.** Use the committed `compile_parity_obs.npz` via
+   `compile_parity_fixture.load_parity_rows`. An all-zero obs has no valid move seat. In
+   `diagnostics_cadence_test`'s bit-identity check it left **106 of 254** parameters unmoved by the
+   update, so "a diagnostic changed parameter k" could not fail for them. Real rows plus the
+   perturbation leave 19.
+3. **Guard the compared quantity, fail-closed.** `parity_probe.require_informative` raises
+   `VacuousParityError` when a quantity's spread is not above the check's own bar.
+   `compile_trainer.decision_verdicts` / `train_verdict` (and so the inference service's `judge`)
+   apply it by default. `allow_vacuous=True` is reserved for a caller that has already judged the
+   same graph on perturbed weights.
+4. **Prove the test fails on revert**, as for any edge case. `parity_probe_test` carries a
+   pointer-only miscompile: its features and gradient are exact, but it corrupts the move cells only
+   the pointer head reads. That miscompile PASSES the pre-fix gate on fresh weights.
+
 ### Test file naming conventions
 
 | Pattern | Requires | Marker |

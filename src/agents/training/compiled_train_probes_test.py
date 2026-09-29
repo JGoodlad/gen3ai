@@ -91,8 +91,11 @@ def _compiled_first_update(device: str):
         # The first update of a process: every gated probe runs (K2). Prime the noise EMAs past
         # warm-up so the per-term probe's EMIT gate passes and its tags prove it ran.
         model.diagnostics_every = 1
-        model._noise_ema_s, model._noise_ema_g2, model._noise_ema_n = 50.0, 2.0, 500
-        model._noise_ema_terms = {g: [50.0, 2.0, 500] for g in NOISE_TERM_GROUPS}
+        # Primed LARGE: on the perturbed real-row toy (`_real_gen3_ppo`, gen3_fresh_parity_probe_v1)
+        # one sample's g2 can sign-flip by more than a small prime absorbs, and the emit gate then
+        # (correctly) withholds a tag this test reads as proof that the probe ran.
+        model._noise_ema_s, model._noise_ema_g2, model._noise_ema_n = 1e6, 1e6, 500
+        model._noise_ema_terms = {g: [1e6, 1e6, 500] for g in NOISE_TERM_GROUPS}
         model.logger.name_to_value.clear()
         # REPEATABILITY of a retain-graph backward through the compiled TRAIN graph (the prewarmed
         # signature): a backward that reuses its saved activations in place — a donating kernel —

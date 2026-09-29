@@ -25,7 +25,7 @@ import numpy as np
 import torch
 
 from agents.inference.service.decision import policy_reference
-from agents.inference.service.spec import ParityFailure
+from agents.inference.service.spec import ParityFailure, VacuousParity
 
 #: The greedy rule's near-tie band = the legal log-prob bar at fp32.
 _TIE_BAND = 1e-3
@@ -67,10 +67,17 @@ def fixture_rows(obs_dim: int, n: int) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
-          served: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> ParityReport:
+          served: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+          allow_vacuous: bool = False) -> ParityReport:
     """Compare ``served = (logp, value, greedy)`` for ``obs``/``mask`` against the eager reference.
-    Raises `ParityFailure` naming ``where`` and the quantity; returns the report on a pass."""
-    from agents.model.compile_trainer import CompileTrainerError, decision_verdicts
+    Raises `ParityFailure` naming ``where`` and the quantity; returns the report on a pass.
+
+    A comparison that cannot bite — the eager legal log-probs constant within every row (a FRESH
+    policy) or V constant across rows — raises `VacuousParity` (a `ParityFailure`) unless
+    ``allow_vacuous``, which only a caller that has judged the SAME slot on a seeded perturbation of
+    its weights may pass (`InferenceService._gate`)."""
+    from agents.model.compile_trainer import (CompileTrainerError, VacuousCompileParityError,
+                                              decision_verdicts)
 
     s_logp, s_value, s_greedy = (t.detach() for t in served)
     precision = torch.get_float32_matmul_precision()
@@ -90,7 +97,9 @@ def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
     comp = {"legal_logprob": _legal(s_logp, mask), "value": s_value.float()}
     try:
         lines = decision_verdicts(eager=eager, compiled=comp, reference=reference,
-                                  precision=precision)
+                                  precision=precision, allow_vacuous=allow_vacuous)
+    except VacuousCompileParityError as exc:
+        raise VacuousParity(f"{where}: {exc}") from exc
     except CompileTrainerError as exc:
         raise ParityFailure(f"{where}: {exc}") from exc
 
@@ -119,9 +128,11 @@ def _legal(logp: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
 
 
 def gate_slot(*, where: str, policy: object, obs_dim: int, bucket: int, device: torch.device,
-              serve: Callable[[np.ndarray, np.ndarray], Tuple[torch.Tensor, ...]]) -> Tuple[ParityReport, ...]:
+              serve: Callable[[np.ndarray, np.ndarray], Tuple[torch.Tensor, ...]],
+              allow_vacuous: bool = False) -> Tuple[ParityReport, ...]:
     """Run ``serve`` (the backend under test, one slot) on the fixture at ``bucket`` rows AND at a
-    partially-filled ``bucket - 1`` rows (pad rows), and judge both. Returns both reports."""
+    partially-filled ``bucket - 1`` rows (pad rows), and judge both. Returns both reports.
+    ``allow_vacuous`` is `judge`'s."""
     reports = []
     for n in sorted({int(bucket), max(1, int(bucket) - 1)}, reverse=True):
         obs, mask = fixture_rows(obs_dim, n)
@@ -129,5 +140,6 @@ def gate_slot(*, where: str, policy: object, obs_dim: int, bucket: int, device: 
         o = torch.as_tensor(obs, device=device)
         m = torch.as_tensor(mask, device=device)
         reports.append(judge(where=f"{where} rows={n}", policy=policy, obs=o, mask=m,
-                             served=(served[0], served[1], served[2])))
+                             served=(served[0], served[1], served[2]),
+                             allow_vacuous=allow_vacuous))
     return tuple(reports)

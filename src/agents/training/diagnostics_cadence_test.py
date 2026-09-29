@@ -190,9 +190,15 @@ def _real_gen3_ppo(device: str = "cpu"):
             self.action_space = spaces.Discrete(ACTION_SPACE_SIZE)
             self._d, self._t, self._seed = dim, 0, seed
 
+        def _row(self):
+            return (self._t * 5 + self._seed * 17) % len(_ROWS)
+
         def _o(self):
-            return {"observation": np.zeros(self._d, np.float32),
-                    "action_mask": np.ones(ACTION_SPACE_SIZE, np.int8)}
+            # gen3_fresh_parity_probe_v1: the committed REAL-obs fixture rows and their masks, not
+            # an all-zero obs — a zero obs has no valid move seat, so the seat projections, edge
+            # maps and everything behind them never received a gradient (measured below).
+            return {"observation": _ROWS[self._row()].astype(np.float32),
+                    "action_mask": _MASKS[self._row()].astype(np.int8)}
 
         def reset(self, **kw):
             self._t = 0
@@ -206,12 +212,14 @@ def _real_gen3_ppo(device: str = "cpu"):
             return self._o(), r, self._t >= 3 + self._seed, False, {}
 
         def action_masks(self):
-            return np.ones(ACTION_SPACE_SIZE, bool)
+            return _MASKS[self._row()].astype(bool)
 
     # THE PRODUCTION SURFACE (`main.fresh_checkpoint`'s kwargs — every edge family and pointer
     # cell production builds), so every gated probe has its real modules to read.
     from main.fresh_checkpoint import _production_policy_kwargs
     _args, layout, pk = _production_policy_kwargs()
+    from agents.model.compile_parity_fixture import load_parity_rows
+    _ROWS, _MASKS = load_parity_rows(layout["total_dim"])
     # The SCALAR critic: the win-prob critic's BCE needs outcome labels that only the full
     # callback stack attaches, and without them the grad-balance probe (correctly) waits for a
     # minibatch that has a win-prob term — for ever, on this toy. The probes' read-only-ness does
@@ -223,6 +231,12 @@ def _real_gen3_ppo(device: str = "cpu"):
         DummyVecEnv([(lambda s=s: _Env(layout["total_dim"], s)) for s in range(2)]),
         n_steps=8, batch_size=4, n_epochs=2, device=device, seed=0, policy_kwargs=pk)
     model.win_prob_coef = 0.0           # …and no win-prob BCE term at all, for the same reason
+    # gen3_fresh_parity_probe_v1: and off the fresh zero-init weights — the shared seeded
+    # perturbation (private RNG, so the seeded stream below is unchanged) opens the zero-init
+    # projections' paths from the first minibatch on. `test_learning_is_BIT_IDENTICAL…` asserts
+    # the coverage both buy.
+    from agents.model.parity_probe import perturb_
+    perturb_(model.policy)
     model.grad_accum_steps = 2          # the accumulation branch: the noise probes need it
     orig = InstrumentedMaskablePPO.train
     InstrumentedMaskablePPO.train = lambda self: None    # stop at the first update's buffer
@@ -271,6 +285,7 @@ def three_arms():
     on = _one_update(model, pristine, state0, skip=False)
     on_again = _one_update(model, pristine, state0, skip=False)
     off = _one_update(model, pristine, state0, skip=True)
+    state0 = {**state0, "param_names": sorted(n for n, _ in model.policy.named_parameters())}
     return state0, on, on_again, off
 
 
@@ -289,8 +304,18 @@ def test_learning_is_BIT_IDENTICAL_with_the_diagnostics_on_and_skipped(three_arm
     # The control: two ON arms from the restored state agree bit for bit …
     for k in p_on:
         assert th.equal(p_on[k], on_again[0][k]), f"restore does not reproduce the update ({k})"
-    # … and the update really moved the weights, so the equalities below are not vacuous.
+    # … and the update really moved the weights, so the equalities below are not vacuous — not
+    # just SOME weight: nearly every parameter (gen3_fresh_parity_probe_v1). Measured 2026-09-29,
+    # parameters that never moved in the ON update: all-zero obs + fresh weights 106/254 (so "a
+    # diagnostic changed parameter k" could not fail for them), zero obs + perturbed 107, real
+    # rows + fresh 22, real rows + perturbed 19 (the belief/win heads, whose loss terms this toy
+    # does not train, and two edge maps).
     assert any(not th.equal(p_on[k], state0["policy"][k]) for k in p_on)
+    names = state0["param_names"]
+    unmoved = [k for k in names if th.equal(p_on[k], state0["policy"][k])]
+    assert len(unmoved) <= 0.1 * len(names), (
+        f"{len(unmoved)}/{len(names)} parameters never moved in the update — the bit-identity "
+        f"check is VACUOUS for them (fresh zero-init weights?): {unmoved[:8]}")
     p_off, o_off, l_off, r_off = off
     for k in p_on:
         assert th.equal(p_on[k], p_off[k]), f"a diagnostic changed parameter {k}"
