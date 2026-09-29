@@ -75,7 +75,7 @@ from utils.paths import repo_root
 # DevTools pipe, with a fresh browser context per probe — ~40 probes in well under a minute.
 # `slow` stays for now (the tier also needs chrome, which the routine gate must not require);
 # `browser` is what lets you select or skip it by what it needs.
-pytestmark = [pytest.mark.integration, pytest.mark.browser, pytest.mark.slow]
+pytestmark = [pytest.mark.integration, pytest.mark.browser]
 
 _REPO = str(repo_root())
 

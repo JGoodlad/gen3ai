@@ -38,7 +38,7 @@ from utils.headless_chrome import BASE_FLAGS, find_chrome
 # 2026-09-29: 8 tests in 6.3 s. The 25 s was a D-Bus keyring timeout paid by any page touching the
 # network stack (this one fetches cytoscape), removed by `--password-store=basic` in `BASE_FLAGS`
 # (see `utils/headless_chrome.py`). `browser` = what it needs, `slow` = what it costs.
-pytestmark = [pytest.mark.integration, pytest.mark.browser, pytest.mark.slow]
+pytestmark = [pytest.mark.integration, pytest.mark.browser]
 
 # Both themes' `--surface-2`, which is what a node is filled with. These are the literal values in
 # the template's `:root` / `html[data-theme=dark]` blocks; a palette change should update them
