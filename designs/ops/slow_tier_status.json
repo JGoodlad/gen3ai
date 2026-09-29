@@ -792,7 +792,15 @@
    "duration_s": 0.0,
    "contention": 2.1,
    "detail": ""
+  },
+  "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_the_ladder_milestone_tier": {
+   "status": "pass",
+   "commit": "c803dd9fd18c143c657325fbfee135c4fefe8cec",
+   "at": "2026-09-29T06:24:12Z",
+   "duration_s": 76.94,
+   "contention": 1.95,
+   "detail": ""
   }
  },
- "last_written": "2026-09-28T20:44:35Z"
+ "last_written": "2026-09-29T06:24:12Z"
 }

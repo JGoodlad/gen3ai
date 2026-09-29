@@ -26,9 +26,8 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
 |---|---|---|---|
 | 1 | crate skeleton + the GENERATED column / op / status / counter contract + its routine pin (gate ③) | LANDED | `32341863` |
 | 2 | `spec.rs` + `pool.rs` + `dispatch.rs` + `refusal.rs`; gate ② (`tests/determinism_test.rs`), gate ④ + lifecycle (`tests/lifecycle_refusal_test.rs`), run by the routine `core_cargo_test.py`; `protocol.spec_json` / `error_from_json` | LANDED | `2be7e4e3` |
-| 3+4 | `build.rs` stamp + `stamp.py` + teeth (gate ⑤); gate ① `tests/sim_bridge_parity_test.rs` (4,545 frames byte-equal over 34 logs; teeth: `decision_tense` moves 14/97 rows) | LANDED | see git log (`M5 Lane 0 units 3+4`) |
-| 5 | gate ① at the MILESTONE tier over the METAMON LADDER corpus + procedural teams (owner 2026-09-24: the ladder corpus joins every parity gate) — `slow`-marked, verdict in `slow_tier_status.json` | NEXT | |
-| 6 | a core benchmark (the prototype's `train` shape through `Core`, release build) to re-measure the per-decision cost and F-M5-4; a thread-count determinism run that INCLUDES quarantines (the gate-② corpus had 0) | | |
+| 3+4 | `build.rs` stamp + `stamp.py` + teeth (gate ⑤); gate ① `tests/sim_bridge_parity_test.rs` (4,545 frames byte-equal over 34 logs; teeth: `decision_tense` moves 14/97 rows) | LANDED | `c803dd9f` |
+| 5+6 | gate ① over the LADDER corpus (commit tier routine: 9,198 frames; milestone tier `slow`: 121,463 frames over 717 logs, 800 teams); quarantined battles compared (sim_bridge must refuse the same one); gate ② with quarantines (bank identical at 1/3/6 threads); `tests/bench_test.rs` (ignored) | LANDED | see git log (`M5 Lane 0 units 5+6`) |
 
 ## Design decisions so far (mirrored in the program doc's Lane-0 paragraph)
 
@@ -47,7 +46,11 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
 
 ## Next
 
-- Unit 5 / 6 above. Lanes A (FFI) and B (process) can start NOW: they forward to
+- Lane 0's five gates are built and routine. What is left of the lane's 2.5–3.5 agent-days:
+  (a) gate ① over PROCEDURAL teams (the third team source; `designs/ops/testing.md` → THREE TEAM
+  SOURCES) — not run; (b) a quiet-box benchmark of the core (the only reading was on a loaded box);
+  (c) review of the dispatch API by Lanes A/B once they start (their first use is the real test of
+  the contract). Lanes A (FFI) and B (process) can start NOW: they forward to
   `Core::new(Spec::from_json)` → `freeze(ColAddrs)` → `dispatch(op, ColAddrs)`, allocate / map
   the columns from `columns.py` (`allocate`, `nbytes`, `shapes`), decode failures with
   `protocol.error_from_json`, compare `columns::SCHEMA_ID` with `columns.schema_id()` and call
@@ -74,10 +77,16 @@ python3 -m pytest src/utils/rust_env/core_cargo_test.py -q   # the same, as the 
   `reward = 0` — the ended episode's reward is lost in that (start-refusal) case. Starts are
   validated by use at startup, so only a seed-specific construction refusal can reach it. Lane D
   owns end-of-episode semantics.
-- **F-L0-4:** gate ① runs on the port's 46 bridge-corpus teams only; the owner's 2026-09-24
-  decision puts the Metamon ladder-usage corpus in every parity gate — that is unit 5 (not yet run).
-- **F-L0-5:** gate ② (thread-count invariance) ran with 0 quarantines, so the cross-thread
-  ordering of the BANK is proven by construction (reports sorted by env) but not exercised; unit 6.
+- **F-L0-4 (closed, unit 5):** gate ① now runs the ladder corpus (commit tier routine, milestone
+  tier slow). Procedural teams are NOT yet in it (see Next).
+- **F-L0-5 (closed, unit 6):** gate ② now exercises quarantines across thread counts.
+- **F-L0-6:** the placeholder turn limit is checked AFTER the op's feeds, so the decisions that
+  write opened are encoded and then discarded by the forfeit (10 frames in the milestone run) —
+  wasted encode work and a Lane-D decision (check at the decision boundary instead, and which side
+  forfeits: `StallConfig().threshold` semantics).
+- **F-L0-7:** the only cost reading (23.5–23.9 µs per row at N = 48, T = 8, release) was taken at
+  load1 19–32 with a production run on the box; T = 1 read 126 vs 252 µs in two consecutive
+  blocks. UNVERIFIED as a cost; F-M5-4 (in- vs out-of-process) needs the front ends.
 - **F-L0-3:** heap ALLOCATIONS after freeze are not counted: the engine and the parse chains
   build protocol lines and persistent versions every step (the count is NOT measured), so an allocation counter cannot
   be a 0-gate. The `*_AFTER_FREEZE` counters cover threads, envs, column rebinds and bank growth.

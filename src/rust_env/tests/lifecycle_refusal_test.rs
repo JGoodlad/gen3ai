@@ -125,7 +125,7 @@ fn repro() -> Repro {
 
 /// Drive a one-env inline core through the repro's commands; returns the status of the step that
 /// consumed the last command, the core and its columns.
-fn replay_repro(budget: usize, bank_dir: Option<std::path::PathBuf>) -> (i32, Core, OwnedCols, Vec<String>) {
+fn replay_repro(budget: usize, bank_dir: Option<std::path::PathBuf>) -> (i32, Core, OwnedCols, Vec<String>, Vec<[i32; 2]>) {
     let r = repro();
     let mut spec = common::spec(1, 1, vec![r.teams[0].clone(), r.teams[1].clone()]);
     spec.refusal_budget = budget;
@@ -139,6 +139,7 @@ fn replay_repro(budget: usize, bank_dir: Option<std::path::PathBuf>) -> (i32, Co
     assert_eq!(core.dispatch(b'R', a), status::OK);
     let mut q = r.cmds.clone().into_iter().peekable();
     let mut fed = Vec::new();
+    let mut steps: Vec<[i32; 2]> = Vec::new();
     loop {
         let env = core.inline_env(0).unwrap();
         let mut acts = [-1i32; 2];
@@ -152,9 +153,10 @@ fn replay_repro(budget: usize, bank_dir: Option<std::path::PathBuf>) -> (i32, Co
             }
         }
         cols.slice_mut::<i32>(col::ACTION).copy_from_slice(&acts);
+        steps.push(acts);
         let st = core.dispatch(b'S', a);
         if st != status::OK || q.peek().is_none() || cols.slice::<u8>(col::DONE)[0] == 1 {
-            return (st, core, cols, fed);
+            return (st, core, cols, fed, steps);
         }
     }
 }
@@ -163,7 +165,7 @@ fn replay_repro(budget: usize, bank_dir: Option<std::path::PathBuf>) -> (i32, Co
 fn a_refused_battle_is_quarantined_banked_and_replayable() {
     let dir = std::env::temp_dir().join(format!("rust_env_bank_{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    let (st, core, cols, fed) = replay_repro(4, Some(dir.clone()));
+    let (st, core, cols, fed, _) = replay_repro(4, Some(dir.clone()));
     assert_eq!(st, status::OK, "a quarantine is not a batch failure: {:?}", core.last_error());
     assert_eq!(cols.slice::<u8>(col::DONE)[0], 1);
     assert_eq!(cols.slice::<u8>(col::REFUSED)[0], 1, "the quarantine is told apart from a tie by `refused`");
@@ -187,9 +189,50 @@ fn a_refused_battle_is_quarantined_banked_and_replayable() {
 
 #[test]
 fn a_quarantine_over_the_declared_budget_is_a_budget_failure() {
-    let (st, core, _cols, _) = replay_repro(0, None);
+    let (st, core, _cols, _, _) = replay_repro(0, None);
     assert_eq!(st, status::BUDGET, "{:?}", core.last_error());
     let e = core.last_error().unwrap();
     assert!(e.message.contains("refusal budget") && e.script.is_some(), "{}", e.message);
     assert_eq!(core.counters()[counter::BANK_GROWTH_AFTER_FREEZE], 0);
+}
+
+/// Gate ② WITH quarantines (the random-policy determinism corpus has none): N envs all replay the
+/// refused battle's action indices, so every env quarantines at the same step — the bank (its order,
+/// its records) and every column are identical at 1, 3 and N worker threads.
+#[test]
+fn quarantines_are_thread_count_invariant() {
+    let r = repro();
+    let (_, _, _, _, steps) = replay_repro(4, None);
+    let run = |threads: usize| {
+        let n = 6;
+        let mut spec = common::spec(n, threads, vec![r.teams[0].clone(), r.teams[1].clone()]);
+        spec.refusal_budget = 2 * n;
+        let mut core = Core::new(spec).unwrap();
+        let mut cols = OwnedCols::new(n);
+        for i in 0..n {
+            cols.slice_mut::<u32>(col::EP_TEAM)[2 * i..2 * i + 2].copy_from_slice(&[0, 1]);
+            cols.slice_mut::<u32>(col::EP_SEED)[4 * i..4 * i + 4].copy_from_slice(&r.seed);
+        }
+        let a = cols.addrs();
+        core.freeze(a).unwrap();
+        assert_eq!(core.dispatch(b'R', a), status::OK);
+        let mut digests = vec![common::digest(&cols)];
+        for acts in &steps {
+            for i in 0..n {
+                cols.slice_mut::<i32>(col::ACTION)[2 * i..2 * i + 2].copy_from_slice(acts);
+            }
+            assert_eq!(core.dispatch(b'S', a), status::OK, "{:?}", core.last_error());
+            digests.push(common::digest(&cols));
+        }
+        let bank: Vec<String> = core.bank().items().iter().map(|b| b.json()).collect();
+        (digests, bank, cols.slice::<u8>(col::REFUSED).to_vec())
+    };
+    let base = run(1);
+    assert_eq!(base.1.len(), 6, "every env quarantined once");
+    assert!(base.2.iter().all(|&x| x == 1));
+    for t in [3, 6] {
+        let got = run(t);
+        assert_eq!(got.0, base.0, "threads = {t}: the columns differ");
+        assert_eq!(got.1, base.1, "threads = {t}: the bank differs (order or content)");
+    }
 }

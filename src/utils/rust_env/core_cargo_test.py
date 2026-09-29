@@ -24,12 +24,18 @@ from utils.rust_env import stamp
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
 
-def test_the_rust_env_core_suite_passes():
+def _cargo() -> str:
     cargo = shutil.which("cargo") or os.path.expanduser("~/.cargo/bin/cargo")
     if not os.path.exists(cargo):
         pytest.fail("cargo is not installed — the rust env core's gates cannot run (install rustup)")
+    return cargo
+
+
+def _cargo_test(extra_env=None, args=()):
+    """Build THIS checkout's self-check ``sim_bridge`` (into the port's own target, never main's),
+    then ``cargo test`` the env crate against it. Returns the completed process."""
+    cargo = _cargo()
     port = src_path("rust_sim")
-    # The port's self-check sim_bridge, built into THIS checkout's port target (never main's).
     b = subprocess.run(
         [cargo, "build", "--profile", "selfcheck", "--features", "emission-selfcheck", "--bin", "sim_bridge",
          "--manifest-path", str(port / "Cargo.toml")],
@@ -40,11 +46,16 @@ def test_the_rust_env_core_suite_passes():
     assert bridge.exists(), bridge
     crate = src_path("rust_env")
     env = dict(os.environ, CARGO_TARGET_DIR=str(crate / "target"), POKESIM_SIM_BRIDGE_BIN=str(bridge))
-    r = subprocess.run(
+    env.update(extra_env or {})
+    return subprocess.run(
         [cargo, "test", "--profile", "selfcheck", "--features", "emission-selfcheck",
-         "--manifest-path", str(crate / "Cargo.toml"), "--", "--show-output"],
-        env=env, capture_output=True, text=True, timeout=1800,
+         "--manifest-path", str(crate / "Cargo.toml"), *args, "--", "--show-output"],
+        env=env, capture_output=True, text=True, timeout=3600,
     )
+
+
+def test_the_rust_env_core_suite_passes():
+    r = _cargo_test()
     tail = (r.stdout + r.stderr)[-6000:]
     assert r.returncode == 0, f"cargo test failed:\n{tail}"
     # Non-vacuity: the gates actually ran (a filtered or empty run passes too).
@@ -53,9 +64,42 @@ def test_the_rust_env_core_suite_passes():
                  "the_lifecycle_is_enforced_and_typed",
                  "the_cores_rows_are_sim_bridges_obs_rows_byte_for_byte",
                  "the_byte_comparison_has_teeth",
+                 "quarantines_are_thread_count_invariant",
                  "the_stamp_is_well_formed_and_names_this_schema"):
         assert f"{name} ... ok" in r.stdout, f"{name} did not run:\n{tail}"
     # Gate ⑤, cross-language: the Rust build's stamp is what this tree recomputes (a self-check build).
     lines = [ln for ln in r.stdout.splitlines() if ln.startswith("POKESIM_ENV_STAMP=")]
     assert lines, f"the build did not print its stamp:\n{tail}"
     stamp.check_stamp(lines[0].split("=", 1)[1], "the rust env self-check build", nan_poison=True)
+
+
+def _ladder_gate_1(tmp_path, tier: str, n: int, steps: int, seed: int) -> str:
+    """Gate ① over the Metamon ladder-usage corpus's ``tier`` (owner 2026-09-24: the ladder corpus
+    joins every parity gate)."""
+    from utils.ladder_corpus import teams
+
+    f = tmp_path / f"ladder_{tier}.txt"
+    f.write_text("\n".join(teams(tier)) + "\n")
+    r = _cargo_test(
+        {"RUST_ENV_PARITY_TEAMS": str(f), "RUST_ENV_PARITY_N": str(n), "RUST_ENV_PARITY_STEPS": str(steps),
+         "RUST_ENV_PARITY_SEED": str(seed)},
+        ("--test", "sim_bridge_parity_test", "the_cores_rows_are_sim_bridges_obs_rows_byte_for_byte"),
+    )
+    out = r.stdout + r.stderr
+    assert r.returncode == 0, f"gate 1 on the ladder {tier} tier failed:\n{out[-6000:]}"
+    assert "the_cores_rows_are_sim_bridges_obs_rows_byte_for_byte ... ok" in r.stdout, out[-3000:]
+    line = next(ln for ln in out.splitlines() if ln.startswith("gate 1:"))
+    assert f"{len(teams(tier))} teams" in line, line
+    return line
+
+
+def test_gate_1_on_the_ladder_commit_tier(tmp_path):
+    """COMMIT tier: the 16-team ladder slice, 8 envs x 600 steps (~5 s warm)."""
+    _ladder_gate_1(tmp_path, "commit", 8, 600, 11)
+
+
+@pytest.mark.slow
+def test_gate_1_on_the_ladder_milestone_tier(tmp_path):
+    """MILESTONE tier: the 800-team ladder tier, 16 envs x 4000 steps (~90 s warm; 2026-09-28:
+    121,463 frames byte-equal over 717 logs)."""
+    _ladder_gate_1(tmp_path, "milestone", 16, 4000, 24)
