@@ -36,7 +36,7 @@ pytestmark = [pytest.mark.sim, pytest.mark.integration]
 FEATURES = ("--profile", "selfcheck", "--features", "emission-selfcheck")
 #: The families the core builds today (mirrors `labels::BUILT`; a family missing here is simply
 #: not compared yet — the Rust unit test pins BUILT, and the spec refuses an unbuilt one).
-BUILT = ("belief",)
+BUILT = ("belief", "hp_type", "item")
 NAMES = ("lcpone", "lcptwo")
 
 
@@ -273,21 +273,23 @@ def test_commit_tier_the_core_labels_equal_gen3env(lib):
     _assert_clean(div, ex, counts, 8)
 
 
-def test_the_label_slice_has_teeth(lib, monkeypatch):
-    """A Python label that differs in ONE cell from the core's must fail the slice."""
+@pytest.mark.parametrize("method,key", [("_belief_labels", "belief_moves"), ("_hp_type_labels", "hp_type_label"),
+                                        ("_item_labels", "item_label")])
+def test_the_label_slice_has_teeth(lib, monkeypatch, method, key):
+    """A Python label that differs in ONE cell from the core's must fail the slice — per family."""
     from agents.training import gen3_env
 
-    real = gen3_env.Gen3Env._belief_labels
+    real = getattr(gen3_env.Gen3Env, method)
 
     def perturbed(self, obs_vec):
         out = real(self, obs_vec)
-        out["belief_moves"] = out["belief_moves"].copy()
-        out["belief_moves"][5, 3] += 1
+        out[key] = out[key].copy()
+        out[key].reshape(-1)[-1] += 1
         return out
 
-    monkeypatch.setattr(gen3_env.Gen3Env, "_belief_labels", perturbed)
-    div, _ex, _counts = run_slice(lib, "pool", 1, key_base=61_500)
-    assert div.get("belief_moves"), div
+    monkeypatch.setattr(gen3_env.Gen3Env, method, perturbed)
+    div, _ex, counts = run_slice(lib, "pool", 1, key_base=61_500)
+    assert div.get(key) == counts["decisions"] > 0, (div, counts)
 
 
 @pytest.mark.slow

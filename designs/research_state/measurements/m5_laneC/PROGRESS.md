@@ -18,8 +18,8 @@ runs in the routine gate; the MILESTONE tier is `slow`.
 | 1 | the INVENTORY (30 keys, 21 in production) + its routine test + `designs/rust_sim/env_labels.md`; ARCHITECTURE.md §7 corrected (the intent labels are ON in production; 9 off-surface keys added) | LANDED | see git log (`M5 Lane C unit 1`) |
 | 2 | the GENERATED label columns (18, one per `core` row; `i64` added to the table) + the spec's `labels` declaration, refused at startup by kind (host / off-surface / unknown / not yet built); pin `src/utils/rust_env/label_columns_test.py` | LANDED | see git log (`M5 Lane C unit 2`) |
 | 3 | family `belief` (`belief_species`, `belief_moves`, `known_moves`) + the parity harness `rust_env_labels_parity_test.py` (COMMIT 8 pool episodes / 843 decisions routine; MILESTONE `slow` 200 pool + 200 ladder episodes, 31,564 decisions, 94,692 key compares, 0 divergences; teeth: one cell of `belief_moves` moved fails 73/73) | LANDED | see git log (`M5 Lane C unit 3`) |
-| 4 | families `hp_type` + `item` | NEXT | |
-| 5 | family `spread` (port `invert_nature_evs`) | | |
+| 4 | families `hp_type` + `item` (`labels/per_slot.rs`); the same slice, now 7 keys per decision: MILESTONE 400 episodes / 31,564 decisions / 220,948 key compares, 0 divergences; per-family teeth (one moved cell fails every decision) | LANDED | see git log (`M5 Lane C unit 4`) |
+| 5 | family `spread` (port `invert_nature_evs`) | NEXT | |
 | 6 | family `intent` (on `trackers::IntentLabel`) | | |
 | 7 | family `margin` (`material_margin` on `present()`) | | |
 
@@ -88,7 +88,9 @@ OTHER side's chain. The rows are unchanged, and gate ① stays green.
   moves by `Move.retrieve_id`, which folds the power, so the label sees `return`. The milestone
   tier runs 400 episodes with zero divergences. The pool has 53 Return / Frustration teams out of
   719, and the ladder 1,422 of 22,813. Per-episode coverage of those teams was NOT counted.
-- **F-LC-4 (the truth side's timing):** the concern was the Python env reading `battle2` at the
-  trainee's step. The belief family depends only on static truth fields, so its gate cannot
-  decide this concern. The ITEM family (unit 4) is the first to read a dynamic truth field and
-  will decide it.
+- **F-LC-4 (closed by unit 4's gate):** the Python env reads `battle2` at the trainee's step, and
+  the question was whether the truth side's timing matches. The item label is the first dynamic
+  truth field. Across the milestone's 400 episodes, a revealed slot's item label changed 65
+  times in 55 episodes; 61 of those changes went to "nothing" (a consumed berry, Knock Off). Every
+  decision is equal on both paths. `/tmp`-script measurement, 2026-09-29: the recorded core runs
+  of the two milestone streams.

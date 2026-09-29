@@ -219,17 +219,17 @@
   },
   "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[ladder]": {
    "status": "pass",
-   "commit": "896272d3bb971719fb7bf9e0e3881ab368a7033b",
-   "at": "2026-09-29T22:19:39Z",
-   "duration_s": 35.34,
+   "commit": "13cc85eceda03db945142dc99f76b7af44437333",
+   "at": "2026-09-29T22:41:56Z",
+   "duration_s": 36.5,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[pool]": {
    "status": "pass",
-   "commit": "896272d3bb971719fb7bf9e0e3881ab368a7033b",
-   "at": "2026-09-29T22:19:39Z",
-   "duration_s": 32.23,
+   "commit": "13cc85eceda03db945142dc99f76b7af44437333",
+   "at": "2026-09-29T22:41:56Z",
+   "duration_s": 31.32,
    "contention": 1.0,
    "detail": ""
   },
@@ -866,5 +866,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-29T22:19:39Z"
+ "last_written": "2026-09-29T22:41:56Z"
 }

@@ -15,9 +15,10 @@ use crate::core::columns::labels::{FAMILIES, NOT_CORE};
 use crate::core::columns::EnvCols;
 
 pub mod belief;
+pub mod per_slot;
 
 /// The `core` families whose producer exists (grows one Lane-C unit at a time).
-pub const BUILT: &[&str] = &["belief"];
+pub const BUILT: &[&str] = &["belief", "hp_type", "item"];
 
 /// Write every DECLARED family's columns for `side`'s open decision. `own` is the side's reading,
 /// `truth` the OTHER side's (its own team = `battle2.team`), `row` the row just encoded for `side`.
@@ -37,6 +38,20 @@ pub fn write(families: &[&'static str], side: usize, own: &BoardReading, truth: 
                     &mut c.known_moves[side * T * m..(side + 1) * T * m],
                 )?
             }
+            "hp_type" => per_slot::write_hp_type(
+                own,
+                truth,
+                row,
+                &mut c.hp_type_label[side * T..(side + 1) * T],
+                &mut c.hp_type_mask[side * T..(side + 1) * T],
+            ),
+            "item" => per_slot::write_item(
+                own,
+                truth,
+                row,
+                &mut c.item_label[side * T..(side + 1) * T],
+                &mut c.item_mask[side * T..(side + 1) * T],
+            ),
             other => return Err(format!("label family {other:?} was declared but has no producer (labels::BUILT drifted)")),
         }
     }

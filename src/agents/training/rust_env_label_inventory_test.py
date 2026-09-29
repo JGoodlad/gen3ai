@@ -126,3 +126,12 @@ def test_each_family_is_one_rust_kind():
     """A Lane-C build unit is one family, so a family is wholly built, host-filled or refused."""
     for fam, rows in LI.families().items():
         assert len({r.rust for r in rows}) == 1, (fam, [(r.key, r.rust) for r in rows])
+
+
+def test_the_rust_hp_type_table_is_the_python_one():
+    """`labels/per_slot.rs` spells `belief_labels.HP_TYPE_NAMES` by hand; the index IS the label."""
+    from agents.observation.belief_labels import HP_TYPE_NAMES
+
+    text = src_path("rust_env", "src", "labels", "per_slot.rs").read_text()
+    body = text.split("pub const HP_TYPE_NAMES: [&str; 16] = [", 1)[1].split("];", 1)[0]
+    assert tuple(re.findall(r'"([a-z]+)"', body)) == HP_TYPE_NAMES

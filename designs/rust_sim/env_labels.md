@@ -118,10 +118,10 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
 
 ## 3. Hazards the parity gate must decide (no claim made here)
 
-- **The truth side's timing.** Python reads `battle2` when the trainee's step returns, whatever
-  poke-env has processed for agent2 by then. The core reads the truth chain after the same write.
-  They should agree, but it is **UNVERIFIED** until the gate runs. `item` is the only dynamic truth
-  field today.
+- **The truth side's timing (DECIDED by the item gate).** Python reads `battle2` when the trainee's
+  step returns; the core reads the truth chain after the same write. `item` is the only dynamic
+  truth field today. It changed 65 times over the milestone's 400 episodes, and every decision is
+  equal on both paths.
 - **`return` / `frustration` / typed-HP ids (CLOSED by the belief gate).** Showdown's request
   spells `return102`. Both readings key an own mon's moves by `Move.retrieve_id`, which folds it
   to `return`, while a Hidden Power keeps its type (`Move._id`). The belief milestone runs 400
@@ -140,4 +140,5 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
    battles: COMMIT tier in the routine gate, MILESTONE tier `slow`. The order is belief, hp_type +
    item, spread (the inversion port), intent, then margin. **`belief` BUILT**
    (`src/rust_env/src/labels/belief.rs`, gated by `src/agents/training/rust_env_labels_parity_test.py`:
-   400 milestone episodes, 0 divergences).
+   400 milestone episodes, 0 divergences). **`hp_type` and `item` BUILT**
+   (`src/rust_env/src/labels/per_slot.rs`, the same gate: 0 divergences).
