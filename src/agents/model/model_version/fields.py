@@ -695,3 +695,12 @@ class ModelVersionFields:
     # migrates to it — not a guess but the only possible past. NOT `win_prob_lambda` (the critic's
     # λ-return BCE target, a separate post-collection pass).
     policy_gae_lambda: float = 0.80
+    # ---- gen3_diagnostics_cadence_v1 (config v124) — the OPTIONAL-TELEMETRY CADENCE -------------
+    # `--diagnostics-every N`: the per-term noise, grad-balance, rank and edge/cell probes run on
+    # every Nth update (`instrumented_ppo/diagnostics_cadence.py`). Changes NO training math
+    # (bit-identity is pinned), so it is never compared by check_compatible or any check_*. It is
+    # RECORDED because it is the REGIME of those TB series — which steps carry a `grad/*` reading
+    # — and a flagless resume must keep the regime a run's series were written under (`_resolve`
+    # reads this field). 1 is what every pre-v124 run did, so a pre-v124 config migrates to it —
+    # the only possible past; a FRESH CLI run resolves to `DIAGNOSTICS_EVERY_DEFAULT` (10).
+    diagnostics_every: int = 1

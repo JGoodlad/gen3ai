@@ -86,6 +86,62 @@ and (with equal-size epochs) `clip_fraction` == the mean of the `clip_fraction_e
 Epoch 0 starts on the rollout policy, so `approx_kl_epoch_0` is the smallest in a healthy update;
 the per-epoch curve is how the policy drifts across the `n_epochs` passes.
 
+## The optional-telemetry cadence (`--diagnostics-every N`, `gen3_diagnostics_cadence_v1`, config v124)
+
+M5 Lane K2. The learner benchmark measured one production update at 58.5 s, of which the OPTIONAL
+probes are **12.7%** (the per-term noise-scale probe alone 11.5%;
+`designs/research_state/measurements/learner_bench_2026-09-28/README.md`). None of them changes a
+number the optimizer sees, so they run on **every Nth update**; the module that owns the rule is
+`instrumented_ppo/diagnostics_cadence.py`.
+
+| gated probe | its tags (written ONLY on a diagnostics update — a skipped update leaves a GAP) |
+|---|---|
+| per-term noise sampler (`noise_scale_terms.py`) | `train/noise_scale_<g>`, `train/noise_scale_ratio_<g>`, `train/noise_scale_share_<g>`, `train/noise_per_term_ms` |
+| grad balance (`grad_balance_metrics`) | `grad/*`, and the two scalars read off it: `train/cf_grad_share`, `train/cf_evidential_grad_share` |
+| effective rank (`rank_probe`) | `rank/{trunk,value_cls,policy,vf_feat}_*` |
+| edge / cell liveness | `edge/*`, `cell/*` |
+
+**Every update, unchanged:** the loss terms, `train/approx_kl{,_epoch_k}`, the clip fractions,
+`train/grad_norm`, `train/train_ms`, the TOTAL `train/noise_scale{,_ratio}` (two grad-norm reads the
+accumulation makes anyway — and `--adaptive-batch total`'s input), `signal/*`, the head metrics.
+`--capacity-telemetry` (off in production) keeps its own `--capacity-*-every` cadences.
+
+- **Which updates.** `rollout_index = num_timesteps // (n_steps · n_envs)`; an update is a
+  diagnostics update iff `N == 1`, or `rollout_index % N == 0`, or it is **the first update of the
+  process**. The phase rides the restored step counter, so it survives a restart. The first-update
+  rule is the DECLARED LIFECYCLE's: `compile_control` locks after the first update, so every
+  signature the probes use (the rank probe's no-grad train-mode forward, their
+  `autograd.grad(retain_graph=True)`) must be seen by then — a probe first reached on update N
+  would be a post-lock recompile, a typed FATAL. Its latch `_diagnostics_ran_in_process` is in
+  `_excluded_save_params`, so every process re-arms it.
+- **Load-bearing exemptions** (derived in `model_build.apply_training_hparams` from the SAME
+  predicates `main.train.callbacks` registers the consumer with): `--rank-tripwire warn|abort`
+  (production: `warn`) keeps `rank/*` EVERY update — the tripwire's skip / baseline / half-life /
+  persistence constants are counted in READINGS and were validated at one per update;
+  `--adaptive-batch policy` keeps the per-term sampler every update — the controller steps K off
+  that EMA and its warm-up counts its samples.
+- **Default and provenance.** A FRESH run resolves to **10** (≈ 90% of the 12.7% back; one reading
+  per ~1.3M env steps at 64 × 2048). `ModelVersion.diagnostics_every`, `_resolve`-inherited on a
+  flagless resume, never compared by `check_compatible` — the `policy_gae_lambda` class. A pre-v124
+  config migrates to **1**, so a live or resumed older run keeps every-update series until the flag
+  is NAMED. `main.checkargs` reports it through its parser sweep.
+- ⚠️ **Readers that window by READING COUNT now span N× the updates.** The vf_coef restart rule's
+  "last 20 `grad/value_policy_logratio`" (`scripts/ops/restart_read.sh`, `main.ops.tb_read`,
+  `main.ops.vf_framings`) is 20 readings = 200 rollouts at N = 10; the readers print the step span.
+  They already treat an absent tag as "no reading", never 0.
+- **THE GUARANTEE — bit-identical learning** (`diagnostics_cadence_test.py`): on the production
+  extractor surface (every edge family and pointer cell), one update with every probe ON and one
+  with all of them SKIPPED leave identical parameters, AdamW state, loss / KL / clip / grad-norm
+  scalars and torch / numpy / python RNG state; a second ON arm is the reproducibility control, and
+  the ON arm must emit all five families. Mutation-checked 2026-09-29: a `th.rand(1)` inside the rank
+  probe fails the RNG assertion, a 1e-7 parameter nudge fails the parameter assertion. No probe
+  consumed an RNG before this change (the rank forward is `no_grad` at dropout 0), so none needed an
+  isolated generator.
+- **The measurement.** `learner_benchmark`'s `diag_skipped` config is a skipped update at the run's
+  own flags (so the tripwire's `rank/*` still runs — the honest production saving). CPU `--tiny`
+  exercises the path; the GPU number is `python3 -m agents.training.learner_benchmark run --device
+  cuda` on an idle GPU (**UNVERIFIED** until that read lands).
+
 ## Rollout collection: sync barrier vs `--async-rollout` (`async_vec_env.py`)
 
 > `InstrumentedMaskablePPO.collect_rollouts` is what dispatches to it, which is why the detail

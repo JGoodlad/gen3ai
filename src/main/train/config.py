@@ -623,6 +623,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # resume inherits the parent's recorded value (a pre-v123 config migrates to 0.80 — the only
     # possible past). NOT `win_prob_lambda` (the critic's λ-return BCE target, resolved below).
     _resolve("policy_gae_lambda", 0.80)
+    # gen3_diagnostics_cadence_v1: the optional learner telemetry's cadence. A FRESH run takes the
+    # production default; a flagless resume keeps the parent's recorded regime (a pre-v124 parent
+    # migrates to 1 — every update, what it actually ran), so a live run's TB series never change
+    # cadence at a restart unless the flag is NAMED.
+    from agents.training.instrumented_ppo.diagnostics_cadence import DIAGNOSTICS_EVERY_DEFAULT
+    _resolve("diagnostics_every", DIAGNOSTICS_EVERY_DEFAULT)
     _resolve("use_popart", False)
     _resolve("opp_belief_cls_k", 0)
     _resolve("opp_belief_aux_coef", 0.0)
@@ -936,6 +942,8 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # alternates sign (λ < 0), and neither is a stronger version of this lever.
         parser.error("--win-prob-lambda must be in [0, 1] "
                      "(1 = off / the terminal outcome at every state; 0 = pure one-step bootstrap)")
+    if args.diagnostics_every < 1:
+        parser.error("--diagnostics-every must be >= 1 (1 = the optional telemetry every update)")
     if not (0.0 <= args.policy_gae_lambda <= 1.0):
         # A single-value RANGE check. GAE's λ weights the n-step advantage estimators by
         # (1-λ)λ^(n-1): outside [0, 1] that is not an average of estimators at all.

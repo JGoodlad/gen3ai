@@ -408,7 +408,9 @@ wake. Re-create it on the next GO, written to this contract.
   read `<run>/snapshot_ladder/ladder.json` at run END, and compare runs at matched snapshot count,
   never matched step (`feedback_elo_reading_rules`).
 - **First-restart checks:** the decision that is registered for it (today: `vf_coef` from the median
-  of the last 20 rollouts' `grad/value_policy_logratio`, **read from the TB EVENTS**); `python -m
+  of the last 20 rollouts' `grad/value_policy_logratio`, **read from the TB EVENTS**; ⚠️ on a run
+  at `--diagnostics-every N > 1` — every fresh run from config v124 — `grad/*` exists on 1 update in
+  N, so "the last 20" readings span 20·N rollouts: read the printed step span); `python -m
   main.sidecar_audit <run>` shows the pin is unchanged across the restart. One command:
   `scripts/ops/restart_read.sh <run>` — it reads the statistic from the events and prints the child
   log's figure only as a labelled CROSS-CHECK (warning above 0.10 log10, never deciding).

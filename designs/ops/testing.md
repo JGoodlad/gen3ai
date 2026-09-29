@@ -519,7 +519,8 @@ python3 src/main/search_dividend/search_decision_benchmark.py --traces models/<r
     [--decisions 12] [--m-opp 3] [--n-actions N] [--arm honest] [--k-worlds 4] [--rust-timing] [--cprofile out.prof]
 # WHERE ONE PPO UPDATE's wall goes — the REAL train() of arm C on ONE real rollout buffer (collected by
 #   the trainer in-process as a fork into ~/gen3ai_archive/learner_bench/, never models/), K repeats
-#   from identical state; phases (sync-bracketed), ablations, a per-epoch torch.profiler read (T13).
+#   from identical state; phases (sync-bracketed), ablations (incl. `diag_skipped`: an update the
+#   --diagnostics-every cadence skips, at the run's own flags), a per-epoch torch.profiler read (T13).
 #   cuda REFUSES a GPU with any compute process or a live trainer; --tiny is the CPU code-path check
 python3 -m agents.training.learner_benchmark run --device cuda [--k 5] [--warmup 1] [--buffer <pkl>] [--publish <dir>]
 python3 -m agents.training.learner_benchmark run --device cpu --tiny

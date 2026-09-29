@@ -457,6 +457,15 @@ from the numbers the loop already computes — ⚠️ stock `train/approx_kl` is
 while `train/clip_fraction` pools every epoch. Detail:
 [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md).
 
+**`--diagnostics-every N` (fresh default 10; `gen3_diagnostics_cadence_v1`, config v124) runs the
+OPTIONAL probes — per-term noise scale, `grad/*`, `rank/*`, `edge/*`, `cell/*` — on every Nth update
+only**, and a skipped update writes NONE of their tags (a gap, never a stale value). The first update
+of every process always runs them (the compile lock follows it), `--rank-tripwire` keeps `rank/*`
+every update and `--adaptive-batch policy` keeps the per-term probe every update. Learning is
+BIT-IDENTICAL at any N (`diagnostics_cadence_test.py`). Recorded + inherited; a pre-v124 run inherits
+1. ⚠️ A reader that windows by reading COUNT (the vf_coef "last 20") now spans N× the updates.
+Detail: [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md).
+
 ## Where the trainee's observation comes from (`--obs-source {python,core}`, DEFAULT `core` on the rust bridge)
 
 `gen3_core_obs_source_v1` — the Rust core program's M6: **the production default since the cutover

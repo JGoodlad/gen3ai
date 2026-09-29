@@ -291,7 +291,10 @@ class TrainMetricsExport:
             for _ck2, _cvals in cf_metrics.items():
                 self.logger.record(f"cf/{_ck2}", float(np.mean(_cvals)))
             self.logger.record("train/cf_loss", float(np.mean(cf_metrics.get("loss", [0.0]))))
-        if cf_winprob_on:
+        # Both `*_grad_share` scalars are READ OFF the grad-balance probe, so they exist only on an
+        # update that ran it (gen3_diagnostics_cadence_v1): a skipped update writes a GAP, never a
+        # 0.0 the probe did not measure.
+        if cf_winprob_on and grad_balance:
             self.logger.record("train/cf_grad_share",
                                float(grad_balance.get("grad/cf_winprob_share", 0.0)))
         # +CF-EVIDENTIAL (gen3_cf_evidential_head_v1) — `cf/evid_*`, its own sub-prefix so a reader
@@ -311,7 +314,7 @@ class TrainMetricsExport:
                 self.logger.record(f"cf/evid_{_ek}", float(np.mean(_evals)))
             self.logger.record("train/cf_evidential_loss",
                                float(np.mean(cf_evid_metrics.get("nll", [0.0]))))
-        if cf_evid_on:
+        if cf_evid_on and grad_balance:
             # Reads 0.0 by construction (the head's input is always detached). Published so the
             # always-detached contract is a LIVE measurement rather than a claim in a docstring.
             self.logger.record("train/cf_evidential_grad_share",

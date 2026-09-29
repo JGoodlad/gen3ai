@@ -27,7 +27,7 @@ repeatedly with `retain_graph` by that probe). When the feature is off, the null
 a two-instruction passthrough and no gradient is taken at all.
 
 WHAT IT COSTS. `len(groups)` extra backward traversals per micro-batch, on `accum` micro-batches,
-on one `train()` call in `_NOISE_PER_TERM_EVERY`. Peak extra memory is
+on one `train()` call in `--diagnostics-every` (`diagnostics_cadence.py`). Peak extra memory is
 `len(active groups) × Σ|params|` (one gradient accumulator per group, freed at the end of the
 call). The measured overhead and the resulting default live in `designs/training/step_size_and_batch.md`.
 

@@ -345,6 +345,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         capacity_metrics, popart = _p.capacity_metrics, _p.popart
         signal_metrics, accum, noise_g_small_sq = _p.signal_metrics, _p.accum, _p.noise_g_small_sq
         noise_g_big_sq, _ns_terms, _dgp = _p.noise_g_big_sq, _p.ns_terms, _p.dgp
+        diag = _p.diag   # gen3_diagnostics_cadence_v1: which optional probes run on THIS call
         # +PER-EPOCH (gen3_ppo_per_epoch_diag_v1): one (approx_kl, clip_fraction) pair per epoch the
         # loop actually ran, folded from the SAME per-minibatch numbers the stock tags already average
         # — no extra forward, no extra device sync. An early KL stop leaves fewer than n_epochs rows.
@@ -1304,7 +1305,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # Sample once per train(). When an aux is ON, wait for a minibatch that actually HAS
                 # scored slots (belief_present) so the per-aux shares aren't silently dropped for the
                 # call; when off, sample on the first minibatch as before.
-                if (shared_trunk and not grad_balance
+                if (shared_trunk and diag.grad_balance and not grad_balance
                         and (not aux_on or belief_present)
                         and (not win_prob_on or win_prob_term is not None)   # don't drop grad/win_prob_share
                         # …nor grad/cf_winprob_share. A STARVING buffer yields a None term on every
@@ -1337,7 +1338,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # +INSTRUMENTATION: effective-rank of the trunk / value_cls / policy reps, sampled
                 # ONCE per train() (first minibatch) via one no_grad forward — how many dims each
                 # readout actually uses (rank_metrics.py). {} for a non-Gen3 extractor.
-                if shared_trunk and not rank_metrics:
+                if shared_trunk and diag.rank and not rank_metrics:
                     rank_metrics = rank_probe(
                         self.policy.features_extractor,
                         rollout_data.observations,
@@ -1387,12 +1388,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # +INSTRUMENTATION: per-edge-family liveness, sampled ONCE per train() and read
                 # HERE because it wants `.grad` populated but not yet cleared by the optimizer
                 # step. Parameters only — no forward touched, so the hot path pays nothing.
-                if not edge_metrics:
+                if diag.liveness and not edge_metrics:
                     edge_metrics = edge_family_metrics(self.policy.features_extractor)
                 # +INSTRUMENTATION: the same read for the zero-init POINTER CELLS (switch-branch,
                 # pair-outcome move/switch, conditional-threat). Same window, same reason: a cell
                 # that never comes off its zero init is invisible without it.
-                if not cell_metrics:
+                if diag.liveness and not cell_metrics:
                     cell_metrics = cell_family_metrics(self.policy.features_extractor)
                 if _ph is not None: _ph("probes")
                 # +NOISE-SCALE: after the FIRST micro-batch of group 0 (epoch 0), .grad holds exactly

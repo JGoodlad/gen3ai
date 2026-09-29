@@ -228,13 +228,14 @@ which reproduces exactly this failure. ⚠️ **A CONSTANT synthetic stream cann
 — an anchored fold reads a constant correctly too — so the constant-stream test is the analytic
 anchor and the outlier test is the guard.
 
-Two levers, both ENV/constant rather than CLI flags — the probe changes no training math, so it
-never belongs in `model_config.json` and should not have to survive a resume's argv:
+Two levers:
 - **`$GEN3AI_NOISE_SCALE_PER_TERM=0`** turns it off for a process (wins over the class default).
-- **`_NOISE_PER_TERM_EVERY`** (`constants.py`, currently `1`) samples one `train()` call in N,
-  dividing the cost directly. It slows the per-group EMA's convergence in wall-clock, never its
-  value — the EMA is per SAMPLE. **Raise it on a config with few minibatches per `train()`**, which
-  is the only regime where this probe is expensive.
+- **`--diagnostics-every N`** (`gen3_diagnostics_cadence_v1`, config v124; fresh default 10, a
+  pre-v124 run inherits 1) samples one update in N — together with the grad-balance, rank and
+  liveness probes ([`ppo_step.md`](ppo_step.md)). It replaced the `_NOISE_PER_TERM_EVERY` constant
+  (which stood at 1) after the learner benchmark measured this probe at 11.5% of a production
+  update. It slows the per-group EMA's convergence in wall-clock, never its value — the EMA is per
+  SAMPLE — and `--adaptive-batch policy`, which steers by that EMA, keeps the probe every update.
 
 Tests: `instrumented_ppo_noise_scale_terms_test.py` — the per-group fold recovers a planted
 `B_simple` per group (with `aux` planted 4000x below `policy`, the confound itself); `share` is

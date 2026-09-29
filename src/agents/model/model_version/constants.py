@@ -326,7 +326,14 @@ from typing import Any, Dict
 #   reason — a resume that dropped it would silently return the policy to 0.80 — and read back by
 #   `_resolve` on a flagless resume. A pre-v123 config defaults to 0.80, which is not a guess but
 #   the only possible past. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 123
+# v124 (gen3_diagnostics_cadence_v1): `diagnostics_every` — `--diagnostics-every N`, the cadence of
+#   the OPTIONAL learner telemetry (per-term noise scale, grad balance, rank, edge/cell liveness;
+#   M5 Lane K2). Changes no training math (bit-identity pinned by `diagnostics_cadence_test.py`),
+#   so there is nothing for `check_compatible` to compare. RECORDED as the REGIME of those TB
+#   series and read back by `_resolve` on a flagless resume. A pre-v124 config defaults to 1 —
+#   every run before the flag ran them every update. A FRESH run resolves to 10. No ARCH_SIGNATURE
+#   bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 124
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

@@ -191,6 +191,21 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "this one never touches the BCE target. Must be in [0, 1]. TRAINING-only: "
                              "recorded in model_config.json and INHERITED on a flagless resume "
                              "(name it to change it on a resume/fork). Logged as hparams/gae_lambda.")
+    parser.add_argument("--diagnostics-every", "--diagnostics_every", dest="diagnostics_every",
+                        type=int, default=None,
+                        help="Run the OPTIONAL learner telemetry on every Nth PPO update only "
+                             "(gen3_diagnostics_cadence_v1): the per-term noise-scale probe "
+                             "(train/noise_scale_{ratio_,share_,}<group>, train/noise_per_term_ms), "
+                             "the grad-balance probe (grad/*, train/cf_grad_share, "
+                             "train/cf_evidential_grad_share), rank/* and edge/* + cell/*. A skipped "
+                             "update writes NONE of those tags (a gap, never a stale value); the "
+                             "first update of every process always runs them. Loss terms, KL, clip "
+                             "fractions, train/noise_scale (total) and train_ms stay every update. "
+                             "Learning is bit-identical at any N. UNSET resolves to 10 on a fresh "
+                             "run; recorded in model_config.json and INHERITED on a flagless resume "
+                             "(a pre-v124 run inherits 1). --rank-tripwire keeps rank/* every "
+                             "update and --adaptive-batch policy keeps the per-term probe every "
+                             "update (their readers need every reading).")
     parser.add_argument("--matmul-precision", "--matmul_precision", dest="matmul_precision",
                         choices=("highest", "high"), default="highest",
                         help="torch.set_float32_matmul_precision for the TRAINER process "

@@ -15,6 +15,8 @@ pristine pre-`train()` buffer, the RNG seeds), so every repeat is the same work.
     phase as seconds per update and % of that set's train_ms, plus the host time spent blocked in
     scalar reads (`.item()` / `float()`). Bracketing adds syncs, so BOTH train_ms sets are reported;
   * ABLATIONS, K repeats each: the per-term noise-scale probe OFF; all optional telemetry OFF;
+    `diag_skipped` — an update `--diagnostics-every` skips, at the run's own flags (so the
+    `--rank-tripwire` exemption still runs `rank/*`: the honest production saving);
     n_epochs halved; matmul precision 'high' (TF32) in a separate worker — only when the TF32
     compile-parity gate exists at HEAD (the real startup gate then decides), else SKIPPED + said;
   * one `torch.profiler` trace of a single epoch (CUDA + CPU) with GPU busy % (union of device
@@ -469,7 +471,10 @@ def _scalar_read_meter(acc: Dict[str, float]):
 def _config(model: Any, name: str, base_epochs: int):
     """Apply one ablation for the block and undo it after. Every switch is reported by name."""
     from agents.training.instrumented_ppo import ppo as ppo_mod
-    saved_attrs = {k: getattr(model, k) for k in ("noise_scale_per_term", "n_epochs")}
+    _missing = object()
+    saved_attrs = {k: getattr(model, k, _missing)
+                   for k in ("noise_scale_per_term", "n_epochs", "diagnostics_every",
+                             "_diagnostics_ran_in_process")}
     saved_mod = {k: getattr(ppo_mod, k) for k in ("grad_balance_metrics", "rank_probe",
                                                   "edge_family_metrics", "cell_family_metrics")}
     try:
@@ -482,6 +487,13 @@ def _config(model: Any, name: str, base_epochs: int):
                 return {"bench/telemetry_off": 1.0}
             for k in saved_mod:
                 setattr(ppo_mod, k, _off)
+        if name == "diag_skipped":
+            # gen3_diagnostics_cadence_v1: the update `--diagnostics-every N` SKIPS, at the run's
+            # own flags — so a load-bearing exemption (`--rank-tripwire` keeps `rank/*`) still
+            # runs, exactly as it would in production. Past the process's first update, and a
+            # cadence no restored rollout index is a multiple of.
+            model.diagnostics_every = 2 ** 31 - 1
+            model._diagnostics_ran_in_process = True
         if name == "epochs_half":
             model.n_epochs = max(1, base_epochs // 2)
         if name == "profile":
@@ -489,7 +501,11 @@ def _config(model: Any, name: str, base_epochs: int):
         yield
     finally:
         for k, v in saved_attrs.items():
-            setattr(model, k, v)
+            if v is _missing:
+                if k in vars(model):
+                    delattr(model, k)
+            else:
+                setattr(model, k, v)
         for k, v in saved_mod.items():
             setattr(ppo_mod, k, v)
 
@@ -970,7 +986,8 @@ def run_main(a: argparse.Namespace) -> int:
 
     plan_a: List[Tuple[str, bool]] = [("baseline", False), ("baseline", True)]
     if not a.no_ablations:
-        plan_a += [("noise_probe_off", False), ("telemetry_off", False), ("epochs_half", False)]
+        plan_a += [("noise_probe_off", False), ("telemetry_off", False), ("diag_skipped", False),
+                   ("epochs_half", False)]
     argv_a = build_trainer_argv(original, model_zip=str(model_zip), run_dir=str(out / "run_main"),
                                 steps=steps, device=device, tiny=tiny, launcher_only=LAUNCHER_ONLY)
     cfg_a = {**base_cfg, "name": "main", "plan": plan_a, "trainer_argv": argv_a,

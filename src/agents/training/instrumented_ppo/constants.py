@@ -46,9 +46,5 @@ _WINPROB_START_MAX_ROWS = 1024
 # ≈ a few-hundred-train()-call window — long enough to denoise, short enough to track drift.
 _NOISE_SCALE_EMA_DECAY = 0.99
 
-# +PER-TERM NOISE SCALE: sample the per-loss-GROUP noise-scale probe on one train() call in this
-# many. 1 = every call. The probe costs len(groups) extra backward traversals on `accum`
-# micro-batches of the sampled call, so the cadence divides that cost directly; it slows only the
-# per-group EMA's convergence in wall-clock, never its value (the EMA is per SAMPLE). Sized from
-# the measured overhead — see `src/agents/training/CLAUDE.md` -> the per-term section.
-_NOISE_PER_TERM_EVERY = 1
+# (`_NOISE_PER_TERM_EVERY`, the per-term probe's own cadence constant, was folded into
+# `--diagnostics-every` — `diagnostics_cadence.py` — on 2026-09-29; it had stood at 1.)

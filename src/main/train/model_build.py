@@ -232,6 +232,14 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
 
     # DERIVED, not passthrough: the arg is the flag, the attribute is the predicate.
     model._search_teacher_on = bool(args.search_teacher)
+    # gen3_diagnostics_cadence_v1: `--diagnostics-every` (resolved: a fresh run's default, or the
+    # parent's recorded value on a flagless resume), plus the two LOAD-BEARING exemptions DERIVED
+    # from the consumers' own flags — each predicate is the one that registers that consumer
+    # (`main.train.callbacks`), so a registered consumer can never read a thinned series.
+    # (A namespace without the dest — a hand-built test namespace — keeps the class default 1.)
+    model.diagnostics_every = int(getattr(args, "diagnostics_every", None) or 1)
+    model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
+    model.noise_terms_every_update = getattr(args, "adaptive_batch", "off") not in ("off", "total")
     # DERIVED likewise — the PBRS sizing meter's denominator is the TERMINAL magnitude, not a knob
     # of its own. `train/pbrs_reward_share` prices the shaping against the unshaped reward stream,
     # which the clean-world composition makes terminal-only (so: 0 on a rollout with no episode end,
@@ -482,6 +490,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             win_prob_strata_weight=args.win_prob_strata_weight,
             win_prob_lambda=args.win_prob_lambda,
             policy_gae_lambda=args.policy_gae_lambda,
+            diagnostics_every=args.diagnostics_every,
             win_prob_lambda_truncated=args.win_prob_lambda_truncated,
             win_prob_rollout_target=args.win_prob_rollout_target,
             win_prob_rollout_r=args.win_prob_rollout_r,
@@ -856,6 +865,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             win_prob_strata_weight=args.win_prob_strata_weight,
             win_prob_lambda=args.win_prob_lambda,
             policy_gae_lambda=args.policy_gae_lambda,
+            diagnostics_every=args.diagnostics_every,
             win_prob_lambda_truncated=args.win_prob_lambda_truncated,
             win_prob_rollout_target=args.win_prob_rollout_target,
             win_prob_rollout_r=args.win_prob_rollout_r,

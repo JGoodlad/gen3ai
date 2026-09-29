@@ -129,6 +129,7 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         win_prob_strata_weight=float(getattr(model, "win_prob_strata_weight", 0.0)),
         win_prob_lambda=float(getattr(model, "win_prob_lambda", 1.0)),
         policy_gae_lambda=float(model.gae_lambda),
+        diagnostics_every=int(getattr(model, "diagnostics_every", 1)),
         win_prob_lambda_truncated=str(getattr(model, "win_prob_lambda_truncated", "bootstrap")),
         win_prob_rollout_target=float(getattr(model, "win_prob_rollout_target", 0.0)),
         win_prob_rollout_r=int(getattr(model, "win_prob_rollout_r", 8)),

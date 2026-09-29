@@ -427,13 +427,20 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 | `eval_final/` | 2 | 10 | once, at run end | win rate | LIVE | `main/train/final_eval.py` |
 | `signal/` | 4 | 12 | per rollout | NORMALIZED (adv) / probability (outcome) / rate (draw) | LIVE — `draw_rate` is **promoted to a PRIMARY endpoint** (the G7 kill condition) | `signal_metrics`, `signal_callback` |
 | `popart/` | 5 | 5 | per rollout | raw (μ,σ) + unitless (norm) | CONDITIONAL — **structurally silent**: PopArt is REFUSED under `winprob` | `ppo.py` |
-| `grad/` | (dynamic) | 16 | per rollout | unitless shares | LIVE — `win_prob_*` **NOISE (gated)**: it IS the value term, and counting it twice deflated every share | `grad_balance` |
-| `rank/` | 6 | 18 | per rollout | unitless | CONDITIONAL (needs the rank probe); `tripwire_no_reading` correctly reports its own blindness | `rank_tripwire`, `rank_metrics` |
+| `grad/` | (dynamic) | 16 | **every `--diagnostics-every` update** (fresh default 10; a skipped update is a GAP) | unitless shares | LIVE — `win_prob_*` **NOISE (gated)**: it IS the value term, and counting it twice deflated every share | `grad_balance` |
+| `rank/` | 6 | 18 | per rollout under `--rank-tripwire` (production), else every `--diagnostics-every` update | unitless | CONDITIONAL (needs the rank probe); `tripwire_no_reading` correctly reports its own blindness | `rank_tripwire`, `rank_metrics` |
 | `belief/` | 1 | 8 | per rollout | accuracy / CE | LIVE (unchanged by the critic mode) | `belief_bank` |
 | `distill/` | 7 | — | per rollout | KL / MSE / rate | CONDITIONAL — silent, no teacher | `distill_terms`, `distill_anchor*`, `distill_stop_callback` |
 | `cf/` | 5 | — | per rollout | probability + counts | CONDITIONAL — silent, no `--cf-records` | `cf_terms`, `cf_label_buffer` |
 | `teacher/` · `opd/` | 11 | — | per cycle / rollout | CE / KL | CONDITIONAL — silent | `teacher/callback`, `ppo.py` |
 | `team_pfsp/` · `hparams/` · `capacity/` · `defent/` · `baitent/` · `value_dist/` · `td_aux/` · `q_winprob/` | 20 | — | per rollout | see each section | CONDITIONAL — all silent; `value_dist/` is **REFUSED** by the mode, the rest are flag-off | their own callbacks |
+
+**The diagnostics cadence (`gen3_diagnostics_cadence_v1`, config v124):** `grad/*` (with
+`train/cf_grad_share` / `train/cf_evidential_grad_share`), `edge/*`, `cell/*`, the per-term
+`train/noise_scale_{,ratio_,share_}<g>` and `train/noise_per_term_ms` are written only on an update
+`--diagnostics-every` runs (fresh default 10; a pre-v124 run stays at 1), and `rank/*` too unless
+`--rank-tripwire` is on. A skipped update is a GAP, never a repeat. The rule, the exemptions and the
+bit-identity guarantee: [`ppo_step.md`](ppo_step.md).
 
 ### ERA RELEVANCE — a tag whose SOURCE is absent is not emitted (`gen3_tb_relevance_v1`)
 

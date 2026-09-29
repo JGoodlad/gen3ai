@@ -296,7 +296,6 @@ def _arm(per_term):
     # warm up through `debiased_ema`, whose effective decay is `1 - 1/(n+1)`, so an EMA primed with
     # a value but not a count is still on sample 1 and would take the next sample whole.
     model._noise_ema_terms = {g: [50.0, 2.0, 500] for g in NOISE_TERM_GROUPS}
-    model._noise_per_term_calls = 0
     model._logger = _Rec()
     sd = _train_from_init(model, init_sd, init_opt, batch_size=4, accum=2)
     return sd, model.logger.vals

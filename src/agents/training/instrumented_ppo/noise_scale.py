@@ -53,8 +53,6 @@ class NoiseScaleDiagnostics:
     # None until the first sampled call; same process-local, unsaved lifetime as the two scalars
     # above. The third slot drives the debiased warm-up (see `_fold_per_term_noise`).
     _noise_ema_terms: dict = None
-    # +PER-TERM: how many train() calls have gone by, for the `_NOISE_PER_TERM_EVERY` cadence.
-    _noise_per_term_calls: int = 0
 
     @staticmethod
     def _global_grad_sq(params) -> float:
@@ -218,7 +216,7 @@ class NoiseScaleDiagnostics:
         """`B_simple(group) / b_big` from the smoothed per-group EMAs, or None if not yet readable.
 
         Read from the EMA state rather than from the fold's return value on purpose: under a
-        `_NOISE_PER_TERM_EVERY > 1` cadence most `train()` calls take no per-term sample, but the
+        `--diagnostics-every N > 1` cadence most `train()` calls take no per-term sample, but the
         advisor still fires on them, and a warning that silently drops the policy-term half on 3
         calls in 4 would be read as "no per-term reading exists" rather than "not sampled here".
         """

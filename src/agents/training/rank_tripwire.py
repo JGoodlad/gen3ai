@@ -22,6 +22,9 @@ The spec (§4.1, implemented verbatim):
 * TRIP at `ema < (1 - drop)·base` ×3 — loud event + `rank/tripwire_fired = 1` latched; under
   mode="abort" the callback returns False from `_on_step`, so SB3 stops `learn()` cleanly and the
   normal end-of-learn path saves the checkpoint.
+* Its input is LOAD-BEARING under the diagnostics cadence (`--diagnostics-every`,
+  `instrumented_ppo/diagnostics_cadence.py`): while this callback is registered the rank probe runs
+  EVERY update, so the reading-counted constants below keep their validated meaning.
 * A missing reading is "no reading", never a trip and never an all-clear: logged as
   `rank/tripwire_no_reading`, and neither the EMA nor any persistence counter advances (nor
   resets). A diagnostic must never crash a run, and must never *silently* stop speaking either.

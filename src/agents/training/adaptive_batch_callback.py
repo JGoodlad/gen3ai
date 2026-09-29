@@ -27,6 +27,10 @@ total reads "over-batched" (0.001-0.06 measured) while the policy term reads "no
 policy gradient needed. `total` exists so the legacy scalar can still drive the loop when someone
 wants that arm.
 
+UNDER THE DIAGNOSTICS CADENCE (`--diagnostics-every`): `policy` mode makes the per-term probe
+LOAD-BEARING, so it runs every update while this loop is on (`model_build.apply_training_hparams`);
+`total` reads the total EMA, which is never gated.
+
 IT READS THE EXISTING EMA, IT DOES NOT FORK THE ESTIMATOR.
 `NoiseScaleDiagnostics.noise_ratio_sample` returns the smoothed ratio and its sample count
 straight from the EMAs `train()` already maintains, so the number the controller acts on is

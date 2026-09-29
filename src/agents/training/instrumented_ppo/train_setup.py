@@ -18,7 +18,7 @@ import torch as th
 from agents.model.critic_mode import is_winprob
 from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.grad_balance import shared_trunk_parameters
-from agents.training.instrumented_ppo.constants import _NOISE_PER_TERM_EVERY
+from agents.training.instrumented_ppo.diagnostics_cadence import DiagnosticsPlan, mark_ran, plan_for
 from agents.training.instrumented_ppo.distill_grad_project import make_projector
 from agents.training.instrumented_ppo.noise_scale_terms import (
     NULL_TAGGER,
@@ -79,6 +79,7 @@ class ProbeSetup(NamedTuple):
     noise_g_big_sq: Any
     ns_terms: Any
     dgp: Any
+    diag: DiagnosticsPlan
 
 
 class TrainSetup:
@@ -297,6 +298,13 @@ class TrainSetup:
         # The dual-head extractor shares one trunk; both losses' gradients compete there. We
         # sample that pull ONCE per train() call (first minibatch) so vf_coef / return
         # normalization (PopArt) can be tuned to a number rather than inferred from KL.
+        # +DIAGNOSTICS CADENCE (gen3_diagnostics_cadence_v1): which OPTIONAL probes run on this call
+        # — every `--diagnostics-every`-th update, the first update of the process, and any probe a
+        # consumer declared load-bearing. A skipped probe leaves its dict EMPTY, so its TB tags are
+        # not written at all (a gap, never a stale repeat). Read-only either way: bit-identical
+        # learning is pinned by `diagnostics_cadence_test.py`.
+        diag = plan_for(self)
+        mark_ran(self, diag)
         shared_trunk = shared_trunk_parameters(self.policy.features_extractor)
         grad_balance: dict[str, float] = {}
         rank_metrics: dict[str, float] = {}  # effective rank of trunk / value_cls / policy reps (once/train)
@@ -344,12 +352,11 @@ class TrainSetup:
         noise_g_big_sq = None     # ‖accumulated group gradient‖²   (B = batch_size·accum)
         # +NOISE-SCALE PER-TERM: the same two points, taken per LOSS GROUP so the total reading can
         # be told apart from the PPO policy term's own (noise_scale_terms.py's docstring is the why).
-        # Built only on a sampled call — the cadence divides its cost — and NULL otherwise, in which
-        # case every `_ntg.add(...)` below is a passthrough and no extra gradient is ever taken.
-        self._noise_per_term_calls += 1
+        # Built only on a DIAGNOSTICS-CADENCE update (`--diagnostics-every`, diagnostics_cadence.py:
+        # the cadence divides its cost) and NULL otherwise, in which case every `_ntg.add(...)`
+        # below is a passthrough and no extra gradient is ever taken.
         _ns_terms = NULL_TAGGER
-        if (accum >= 2 and per_term_enabled(self)
-                and self._noise_per_term_calls % max(1, _NOISE_PER_TERM_EVERY) == 0):
+        if accum >= 2 and per_term_enabled(self) and diag.noise_terms:
             _ns_terms = PerTermNoiseSampler(list(self.policy.parameters()))
         # +DISTILL-GRAD-PROJECT (gen3_distill_grad_project_v1): SOURCE-SEPARATED anchoring — project
         # the DISTILL gradient off the off-slice behaviour subspace and leave PPO's gradient free.
@@ -362,5 +369,5 @@ class TrainSetup:
             edge_metrics=edge_metrics, cell_metrics=cell_metrics, grad_norms=grad_norms,
             capacity=capacity, capacity_metrics=capacity_metrics, popart=popart,
             signal_metrics=signal_metrics, accum=accum, noise_g_small_sq=noise_g_small_sq,
-            noise_g_big_sq=noise_g_big_sq, ns_terms=_ns_terms, dgp=_dgp,
+            noise_g_big_sq=noise_g_big_sq, ns_terms=_ns_terms, dgp=_dgp, diag=diag,
         )

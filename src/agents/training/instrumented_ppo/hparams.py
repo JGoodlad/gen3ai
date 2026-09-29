@@ -42,6 +42,17 @@ class PpoHyperparameters:
     # disables it and wins over this default (see `noise_scale_terms.per_term_enabled`), because a
     # switch that changes no training math should not have to survive a launcher resume's argv.
     noise_scale_per_term: bool = True
+    # +DIAGNOSTICS CADENCE (gen3_diagnostics_cadence_v1, `--diagnostics-every`, config v124): the
+    # OPTIONAL probes (per-term noise, grad balance, rank, edge/cell liveness) run on every Nth
+    # update only — `diagnostics_cadence.py` owns the set, the phase and the first-update rule. The
+    # class default 1 is every update (what a bare construction and every pre-v124 run did); the
+    # CLI resolves a FRESH run to `DIAGNOSTICS_EVERY_DEFAULT` and a flagless resume to the recorded
+    # value. Changes no training math (bit-identity pinned by `diagnostics_cadence_test.py`).
+    diagnostics_every: int = 1
+    # The two LOAD-BEARING exemptions, DERIVED from the run's flags by `apply_training_hparams`:
+    # a consumer that reads the probe every update keeps it every update.
+    rank_probe_every_update: bool = False     # `--rank-tripwire warn|abort`
+    noise_terms_every_update: bool = False    # `--adaptive-batch policy`
     # Set by train_rl_agent after construction (like _async_rollout); resume-immutable (recorded +
     # version-checked). 0.0 = plain MSE value loss (byte-identical to upstream). >0 blends in the CVaR
     # of the worst value misses — see _value_loss_from_se.
@@ -534,6 +545,10 @@ class PpoHyperparameters:
         # belongs beside the startup banner, which every restart also re-prints, and the run's
         # `--vf-coef` may have been changed between them — a latch that rode the checkpoint would
         # silence the reading for the rest of the run's life after its first three hours.
+        # `_diagnostics_ran_in_process` (gen3_diagnostics_cadence_v1) is a once-per-PROCESS latch like
+        # `_vf_scale_announced`: the first update of every process runs every optional probe, so
+        # the compile lock (taken after that update) has seen their signatures. Pickled, a
+        # restarted process would skip them on its first update and reach them after the lock.
         # `collect_rollouts` / `train` / `learn` / `_compile_control` (gen3_compile_sentinel_v1) are the compile
         # sentinel's INSTANCE wrappers (`CompileControl.attach`): closures over a process-local
         # CompileControl holding a logging handler and dynamo callbacks. Pickled, every save after
@@ -544,5 +559,6 @@ class PpoHyperparameters:
                                                   "_capacity_state", "_winprob_phi_source",
                                                   "_distill_anchor_parent", "_distill_anchor_ref",
                                                   "_distill_anchor_ref_writer",
-                                                  "_vf_scale_announced", "collect_rollouts",
+                                                  "_vf_scale_announced", "_diagnostics_ran_in_process",
+                                                  "collect_rollouts",
                                                   "train", "learn", "_compile_control"]

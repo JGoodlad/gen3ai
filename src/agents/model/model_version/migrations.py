@@ -338,6 +338,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 123:
         data.setdefault("policy_gae_lambda", 0.80)
         data["config_version"] = 123
+    # v124 (gen3_diagnostics_cadence_v1) — the optional-telemetry cadence, a RECORD of the regime:
+    # every run before v124 ran those probes on every update.
+    if version < 124:
+        data.setdefault("diagnostics_every", 1)
+        data["config_version"] = 124
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

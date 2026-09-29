@@ -10021,3 +10021,19 @@ which is TF32 rounding. Chasing that turned up the real defect.
   `recompilation_reasons`, the stance functions) locking with `set_stance("fail_on_recompile")`;
   `wrap_compiled` makes a lock rejection sticky on both versions (2.8's start callback runs after
   the recompile check). Contract tests run on both envs.
+
+## v124 — the optional learner telemetry runs on a CADENCE (`gen3_diagnostics_cadence_v1`; config bump, no ARCH_SIGNATURE bump, learning bit-identical)
+
+- **`--diagnostics-every N`** (M5 Lane K2): the per-term noise-scale probe, `grad/*` (+
+  `train/cf_grad_share`, `train/cf_evidential_grad_share`), `rank/*`, `edge/*` and `cell/*` run on
+  every Nth update (`rollout_index % N == 0`) and on the first update of every process; a skipped
+  update writes none of their tags. Measured motivation: the learner benchmark (2026-09-28) put these
+  probes at 12.7% of the 58.5 s production update. Everything else stays every update.
+- Exemptions derived from the consumers' flags: `--rank-tripwire warn|abort` keeps `rank/*` every
+  update; `--adaptive-batch policy` keeps the per-term probe every update.
+- Recorded as `ModelVersion.diagnostics_every` (MODEL_CONFIG_VERSION 124), `_resolve`-inherited, never
+  compared; a fresh run resolves to 10, a pre-v124 config migrates to 1 (what it ran). Replaces the
+  `_NOISE_PER_TERM_EVERY` constant (was 1) and its `_noise_per_term_calls` counter.
+- Bit-identity pinned by `diagnostics_cadence_test.py` on the production extractor surface
+  (parameters, AdamW state, loss scalars, RNG state); no probe consumed an RNG.
+- `learner_benchmark` gains a `diag_skipped` config. The GPU speed read is pending (UNVERIFIED).
