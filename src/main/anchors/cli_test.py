@@ -109,6 +109,45 @@ def test_opponent_temperature_is_refused_outside_its_one_shape(cfg, argv) -> Non
         build_plan(_args(*argv, "--dry-run"), cfg)
 
 
+
+def test_our_temperature_samples_OUR_checkpoint_and_is_stamped_on_the_cell(cfg) -> None:
+    """X22(f): `--our-temperature T` — main.play gets `--temperature T`, the peer follows
+    --regime greedy (or --opponent-temperature), our_regime names T, and the cell is MATCHED only
+    when both nominal temperatures are equal."""
+    vs_greedy = build_plan(_args("--opponent", "metamon:Kakuna", "--our-temperature", "1.0",
+                                 "--dry-run"), cfg)
+    assert vs_greedy.our_temperature == 1.0 and vs_greedy.regime_matched is False
+    ours = runner_mod.our_argv(vs_greedy, "accept", 2)
+    assert ours[ours.index("--temperature") + 1] == "1.0"
+    assert "--temperature" not in runner_mod.peer_plan(
+        vs_greedy, cfg, "acceptor", 2, "ours_challenge").command_line()
+    spec = runner_mod.cell_spec(vs_greedy, {"their_regime": "greedy"}, 72)
+    assert spec.our_regime == "sample:T=1" and spec.regime_matched is False
+
+    both = build_plan(_args("--opponent", "metamon:Kakuna", "--our-temperature", "1.0",
+                            "--opponent-temperature", "1.0", "--dry-run"), cfg)
+    assert both.regime_matched is True
+    assert "--temperature 1.0" in runner_mod.peer_plan(
+        both, cfg, "acceptor", 2, "ours_challenge").command_line()
+    uneven = build_plan(_args("--opponent", "metamon:Kakuna", "--our-temperature", "1.0",
+                              "--opponent-temperature", "0.5", "--dry-run"), cfg)
+    assert uneven.regime_matched is False
+    # without the flag our side is exactly as before
+    plain = build_plan(_args("--opponent", "metamon:Kakuna", "--dry-run"), cfg)
+    assert plain.our_temperature is None
+    assert runner_mod.cell_spec(plain, {}, 72).our_regime == "greedy"
+
+
+@pytest.mark.parametrize("argv", [
+    ("--opponent", "foulplay", "--our-temperature", "1.0"),
+    ("--opponent", "metamon:Kakuna", "--regime", "t1", "--our-temperature", "1.0"),
+    ("--opponent", "metamon:Kakuna", "--our-temperature", "0"),
+    ("--opponent", "metamon:Kakuna", "--our-side", "bot:random", "--our-temperature", "1.0"),
+])
+def test_our_temperature_is_refused_outside_its_one_shape(cfg, argv) -> None:
+    with pytest.raises(SystemExit):
+        build_plan(_args(*argv, "--dry-run"), cfg)
+
 # ------------------------------------------------------------------------------- reserved ports
 @pytest.mark.parametrize("port", sorted(RESERVED_PORTS))
 def test_a_reserved_port_is_refused_on_the_port_flag(cfg, port: int) -> None:

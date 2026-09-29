@@ -151,6 +151,10 @@ class GameRow:
     # Realized search WIDTH (foulplay). None everywhere else; never silently zero.
     their_visits_mean: Optional[float] = None
     their_visits_n: Optional[int] = None
+    # OUR per-decision argmax check (X22 f3), per GAME: decisions that chose our own argmax /
+    # decisions observed. Counted from each decision's masked logits, never assumed.
+    our_argmax_matches: Optional[int] = None
+    our_argmax_decisions: Optional[int] = None
 
     def to_json(self) -> Dict[str, Any]:
         row = self.cell.stamp()
@@ -175,6 +179,8 @@ class GameRow:
             "regime_verified": self.regime_verified,
             "their_visits_mean": self.their_visits_mean,
             "their_visits_n": self.their_visits_n,
+            "our_argmax_matches": self.our_argmax_matches,
+            "our_argmax_decisions": self.our_argmax_decisions,
         })
         return row
 
@@ -239,6 +245,9 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
     rates = sorted({r.their_argmax_match_rate for r in rows
                     if r.their_argmax_match_rate is not None})
 
+    our_m = sum(r.our_argmax_matches or 0 for r in rows)
+    our_d = sum(r.our_argmax_decisions or 0 for r in rows)
+
     out: Dict[str, Any] = {
         "status": status,
         "cell": cell.stamp(),
@@ -263,6 +272,11 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
         "realized_visits_per_decision_mean": (sum(visits) / len(visits)) if visits else None,
         "realized_visits_samples": len(visits),
         "their_argmax_match_rates": rates,
+        # OUR side's argmax rate, pooled over every observed decision of the cell (None when no
+        # decision was observed — a bot or peer our-side). 1.0 under greedy by construction.
+        "our_argmax_matches": our_m,
+        "our_argmax_decisions": our_d,
+        "our_argmax_match_rate": (our_m / our_d) if our_d else None,
         # 🚨 THE SPLIT, at cell level. An AND over the rows, with an EMPTY cell verifying nothing
         # rather than vacuously everything — `all([])` is True and that is the wrong answer here.
         "regime_verified_decisions": (bool(rows)

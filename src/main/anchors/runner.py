@@ -123,6 +123,10 @@ class SeriesPlan:
     #: side stays greedy (`regime` stays "greedy" — it names OUR half). None = the peer follows
     #: `regime`. A cell with it set is stamped regime_matched=false.
     opponent_temperature: Optional[float] = None
+    #: `--our-temperature`: OUR checkpoint SAMPLES at this temperature (``main.play
+    #: --temperature T``) instead of the regime's own setting. None = the regime decides. A cell
+    #: with it set is stamped our_regime='sample:T=<T>' (X22 f).
+    our_temperature: Optional[float] = None
 
     @property
     def our_side_is_bot(self) -> bool:
@@ -165,7 +169,8 @@ def our_argv(plan: SeriesPlan, mode: str, n_games: int, our_name: str = "",
         "--concurrency", "1",
         # THE REGIME, our half. `--temperature 0` is `play.py`'s documented measurement setting and
         # the protocol every other strength number in this project is taken under.
-        "--temperature", "0.0" if plan.regime == "greedy" else "1.0",
+        "--temperature", (repr(float(plan.our_temperature)) if plan.our_temperature is not None
+                          else "0.0" if plan.regime == "greedy" else "1.0"),
         "--connect-timeout", str(plan.connect_timeout_s),
         "--forfeit-turn-limit", str(plan.forfeit_turn_limit),
     ]
@@ -422,6 +427,11 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     report["their_regime"] = pplan.their_regime
     report["our_stochastic_kwargs"] = list(state.stochastic_kwargs)
     report["model_loader"] = state.model_loader
+    # `--our-temperature`: OUR half's regime is verified too — every decision must have received
+    # stochastic=True. A sampled cell whose decisions ran greedy is not the cell it names.
+    if plan.our_temperature is not None and state.stochastic_kwargs != [True]:
+        report["regime_verified_decisions"] = False
+        report["our_regime_mismatch"] = list(state.stochastic_kwargs)
     finalize_regime_fields(report, peer_rcs=[proc.returncode if proc is not None else None])
     note = classify_peer_error(report, half, plan.opponent_kind, len(state.records), n_games)
     if note is not None:
@@ -452,7 +462,8 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         # label. `regime_matched` is False here by construction, and that is the honest stamp.
         our_regime=(plan.our_side if plan.our_side_is_bot
                     else (f"{plan.regime} ({plan.our_side})" if plan.our_side_is_peer
-                          else plan.regime)),
+                          else (f"sample:T={float(plan.our_temperature):g}"
+                                if plan.our_temperature is not None else plan.regime))),
         their_regime=str(report.get("their_regime") or plan.regime),
         regime_matched=plan.regime_matched and not plan.our_side_is_bot,
         teamset=plan.teamset,
@@ -582,6 +593,8 @@ def rows_from(records: List[Any], half: str, cell: CellSpec, report: Dict[str, A
             their_argmax_match_rate=report.get("argmax_match_rate"),
             their_visits_mean=report.get("visits_mean"),
             their_visits_n=report.get("visits_n"),
+            our_argmax_matches=getattr(rec, "our_argmax_matches", None),
+            our_argmax_decisions=getattr(rec, "our_argmax_decisions", None),
         ))
     return out
 

@@ -144,6 +144,11 @@ class BattleRecord:
     n_defaults: Optional[int]
     n_redecides: Optional[int]
     t_finished: float
+    #: OUR per-decision argmax check (X22 f3): of the decisions our policy made in this battle,
+    #: how many chose the policy's own argmax. Counted per decision from that decision's masked
+    #: logits, never assumed from the temperature. Greedy ⇒ equal by construction.
+    our_argmax_matches: Optional[int] = None
+    our_argmax_decisions: Optional[int] = None
 
     @property
     def result(self) -> str:
@@ -163,6 +168,8 @@ class OurSideState:
     records: List[BattleRecord] = field(default_factory=list)
     draws: List[Optional[str]] = field(default_factory=list)
     stochastic_kwargs: List[bool] = field(default_factory=list)
+    #: battle_tag -> [decisions whose chosen action == the policy's argmax, decisions observed].
+    argmax_counts: Dict[str, List[int]] = field(default_factory=dict)
     decision_times: List[float] = field(default_factory=list)
     player: Any = None
     last_progress: float = field(default_factory=time.time)
@@ -410,6 +417,10 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
                 n_defaults=getattr(self, "_n_defaults", None),
                 n_redecides=getattr(self, "_n_redecides", None),
                 t_finished=time.time(),
+                our_argmax_matches=(state.argmax_counts[tag][0]
+                                    if tag in state.argmax_counts else None),
+                our_argmax_decisions=(state.argmax_counts[tag][1]
+                                      if tag in state.argmax_counts else None),
             ))
             state.last_progress = time.time()
             rec = state.records[-1]
@@ -430,10 +441,23 @@ def install_our_side(state: OurSideState, team_spec: Dict[str, Any], team_seed: 
         if value not in state.stochastic_kwargs:
             state.stochastic_kwargs.append(value)
         t0 = time.perf_counter()
+        self._last_masked_logits = None
         try:
-            return saved_predict(self, *a, **k)
+            out = saved_predict(self, *a, **k)
         finally:
             state.decision_times.append(time.perf_counter() - t0)
+        # OUR argmax check, per decision: the chosen index against the argmax of the SAME masked
+        # logits the decision sampled from (stashed by `_predict_best_action`). A decision with no
+        # legal action (idx None) is not a decision and is not counted.
+        idx = out[0] if isinstance(out, tuple) and out else None
+        ml = getattr(self, "_last_masked_logits", None)
+        if idx is not None and ml is not None:
+            battle = a[0] if a else k.get("battle")
+            tag = getattr(battle, "battle_tag", "")
+            c = state.argmax_counts.setdefault(tag, [0, 0])
+            c[0] += int(int(ml.argmax(dim=-1).reshape(-1)[0].item()) == int(idx))
+            c[1] += 1
+        return out
 
     play.build_teambuilder = build_teambuilder
     play.resolve_server = resolve_server

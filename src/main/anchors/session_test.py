@@ -290,6 +290,42 @@ def test_the_observer_still_prefers_the_strict_view_for_our_own_player() -> None
     assert state.records[0].hit_forfeit_limit is True
 
 
+def test_the_observer_counts_OUR_argmax_matches_per_decision_per_battle(monkeypatch) -> None:
+    """X22 f3: our own-argmax rate is COUNTED per decision — the chosen index against the argmax
+    of the masked logits that decision sampled from — and lands on the battle's record. A
+    decision with no legal action (idx None) is not counted."""
+    import torch
+
+    from agents.inference.player import RLPlayer
+
+    # (masked logits, chosen idx) per call; argmax is index 2 on the first two, 0 on the third.
+    script = [([0.0, 1.0, 3.0], 2), ([0.0, 1.0, 3.0], 1), ([5.0, 1.0, 3.0], 0), (None, None)]
+
+    def fake_predict(self, battle, stochastic=False, need_aux=True, temperature=1.0):
+        logits, idx = script.pop(0)
+        if logits is not None:
+            self._last_masked_logits = torch.tensor([logits])
+        return idx, None, None
+
+    monkeypatch.setattr(RLPlayer, "_predict_best_action", fake_predict)
+    state = OurSideState()
+    undo = install_our_side(state, {"kind": "pool"}, 7, 250, object())
+    try:
+        dummy = object.__new__(RLPlayer)
+        dummy._stall_loggers = {}
+        dummy._trackers = {}
+        dummy._battles = {}
+        battle = _ForkBattle("battle-gen3ou-5", 30)
+        for _ in range(4):
+            RLPlayer._predict_best_action(dummy, battle, stochastic=True)
+        RLPlayer._battle_finished_callback(dummy, battle)
+    finally:
+        undo()
+    assert state.stochastic_kwargs == [True]
+    rec = state.records[0]
+    assert (rec.our_argmax_matches, rec.our_argmax_decisions) == (2, 3)
+
+
 def test_the_observer_is_installed_on_the_bot_class_and_removed_again() -> None:
     """The patch must reach the class the BOT instances resolve through, and the undo must restore
     the INHERITED lookup — a bot subclass defines no callback of its own, so writing the base

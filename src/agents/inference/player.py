@@ -489,6 +489,10 @@ class RLPlayer(Gen3Player):
             dist = self.model.policy.get_distribution(policy_in)
             logits = dist.distribution.logits
             masked_logits = logits + (mask_tensor - 1.0) * 1e9
+            # The masked logits of THIS decision, kept as a tensor reference (no device sync, no
+            # copy) so an observer can ask "did the sample equal the argmax?" per decision
+            # without a second forward — `main.anchors`' our-side argmax_match_rate (X22 f3).
+            self._last_masked_logits = masked_logits
 
             if stochastic:
                 # Temperature-scaled sampling. The -1e9 mask offset stays hugely

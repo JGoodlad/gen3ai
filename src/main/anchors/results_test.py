@@ -146,6 +146,17 @@ def test_a_tie_is_in_the_denominator_and_not_the_numerator() -> None:
     assert (s["n"], s["wins"], s["losses"], s["ties"]) == (3, 1, 1, 1)
     assert s["win_rate"] == pytest.approx(1 / 3)
 
+def test_our_argmax_rate_is_pooled_over_DECISIONS_not_averaged_over_games() -> None:
+    """X22 f3: the cell's our_argmax_match_rate is matches / decisions summed over every game,
+    and each row carries its own game's counts."""
+    cell = _cell(our_regime="sample:T=1", regime_matched=False)
+    rows = [_row(cell, "win", index=1, our_argmax_matches=9, our_argmax_decisions=10),
+            _row(cell, "loss", index=2, our_argmax_matches=21, our_argmax_decisions=30)]
+    s = summarize(cell, rows, status="OK")
+    assert (s["our_argmax_matches"], s["our_argmax_decisions"]) == (30, 40)
+    assert s["our_argmax_match_rate"] == pytest.approx(0.75)
+    assert rows[0].to_json()["our_argmax_decisions"] == 10
+    assert summarize(_cell(), [_row(_cell(), "win")], status="OK")["our_argmax_match_rate"] is None
 
 def test_the_summary_splits_by_role_because_a_single_role_is_not_a_cell() -> None:
     cell = _cell()
@@ -156,14 +167,12 @@ def test_the_summary_splits_by_role_because_a_single_role_is_not_a_cell() -> Non
     assert s["by_half"]["peer_challenge"]["win_rate"] == 0.0
     assert s["win_rate"] == 0.5
 
-
 def test_a_team_source_asymmetry_is_flagged_rather_than_averaged_away() -> None:
     """Both sides must draw from the same distribution, or the number mixes skill with matchup."""
     even = summarize(_cell(our_team_count=20, their_team_count=20), [], status="OK")
     assert even["team_source_asymmetry"] is False
     odd = summarize(_cell(our_team_count=719, their_team_count=72), [], status="OK")
     assert odd["team_source_asymmetry"] is True
-
 
 def test_a_failed_summary_keeps_the_games_that_did_finish_and_says_so(tmp_path: Path) -> None:
     """A partial n is honest only when it is LABELLED partial — never a quiet short series."""
@@ -177,7 +186,6 @@ def test_a_failed_summary_keeps_the_games_that_did_finish_and_says_so(tmp_path: 
     write_summary(path, s)
     assert json.loads(path.read_text())["failure"]["cause"] == "peer_exited"
 
-
 def test_render_states_the_regime_before_the_number() -> None:
     """The human-readable block obeys the same rule as the file. Order is deliberate."""
     cell = _cell()
@@ -186,7 +194,6 @@ def test_render_states_the_regime_before_the_number() -> None:
     assert "matched=True" in text
     assert "argmax_match_rate = 1.0000" in text
     assert "Wilson 95%" in text
-
 
 def test_render_names_a_failure_rather_than_printing_a_bare_rate() -> None:
     cell = _cell()

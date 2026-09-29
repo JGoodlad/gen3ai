@@ -24,6 +24,8 @@ decisions:
 |---|---:|---:|
 | `SmallRL` (13.9M) | **64.7%** | 35% of decisions |
 | `SyntheticRLV2` (200.9M) | **88.0%** | 12% of decisions |
+| `Kakuna` (142.8M, ckpt 34) | **85–93%** per half | 7–15% of decisions (2026-09-28, X22 (c)/(f1), home72) |
+| **OUR N0** (`ai_v14_01_base` final) | **62.8%** (5,287 / 8,418, vs Kakuna T = 1.0); 63.4% (2,605 / 4,108, vs Kakuna greedy) | **~37%** of decisions (2026-09-28, X22 (f3), `--our-temperature 1.0`, counted per decision) |
 
 The same nominal knob is a large behavioural change for one policy and a small one for the other,
 and the two models' temperature effects come out with **opposite signs** because of it. The
@@ -71,7 +73,7 @@ is an implementation fact about Metamon that could change in a release.
 | **A — per promotion** | every time a snapshot is promoted | the **dense ladder** (`<run>/snapshot_ladder/ladder.json`), greedy-vs-greedy, compared at **matched snapshot COUNT** | already paid by the run |
 | **B — per milestone** | each eval milestone | `metamon:SmallRL` **greedy, BOTH team sets, 100 games each** + **ONE t1 cell** as the distribution check | ~15 min |
 | **C — era gate** | opening or closing an era | `metamon:SyntheticRLV2` **greedy, away** — bar: **Wilson lower bound > 0.50**; and **Foul Play** at a fixed `--search-time-ms` with its realized visit count | ~2 h |
-| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). Standing (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
+| **goal read** | the near-term goal (X22) | `metamon:Kakuna` — Metamon's best public policy (142.8M, ckpt 34, upstream's stated gen3ou GXE ~63%). Standing (2026-09-28, `measurements/kakuna_goal_read_2026-09-28/`, home72, N0 final greedy): Kakuna's strongest temperature by point estimate is **T = 1.0** (N0 **0.380** [0.316, 0.449], n = 200 — goal NOT met); at greedy N0 **0.460** [0.392, 0.529]; the temperature differences are NOT DETECTED, so the goal read is taken at BOTH (`--opponent-temperature 1.0` and greedy). Our side stays GREEDY: N0 sampling at T = 1.0 (`--our-temperature 1.0`) reads 0.310 vs Kakuna T = 1.0 and 0.280 vs Kakuna greedy (X22 (f)) | **~2 min / 20 games** on CPU (6 s/game, load ~25) |
 
 ### Tier A — per promotion: the dense ladder
 
@@ -192,6 +194,19 @@ our-side or `--regime`, and for T ≤ 0 (greedy is `--regime greedy` alone — H
 recurring protocol (RULE 2) and it does NOT reopen `--allow-unmatched-regime` against metamon,
 which stays refused; hazard **H17** (the Metamon-challenges post-game `RecursionError`) is expected
 in this shape and is named, not excused, by the usual complete-half rule.
+
+### `--our-temperature T` — OUR checkpoint SAMPLES (the mirror)
+
+Added 2026-09-28 for X22(f) ("does our model play better greedy?"). Same one shape — a metamon
+`--opponent`, a checkpoint our-side, `--regime greedy` — and it composes with
+`--opponent-temperature`: `main.play` gets `--temperature T`, the peer follows `--regime greedy` or
+its own `--opponent-temperature`. Every row is stamped `our_regime = sample:T=<T>`;
+`regime_matched` is true only when both nominal temperatures are equal. Our half is VERIFIED per
+decision: every decision must receive `stochastic=True` (else `regime_verified_decisions = false`),
+and each row carries `our_argmax_matches` / `our_argmax_decisions` — the chosen action against the
+argmax of that same decision's masked logits — pooled to the summary's `our_argmax_match_rate`
+(OUR side of the §0 argmax table). Seed our sampling with `$GEN3AI_POLICY_SEED` for a repeatable
+series. Refused with any other opponent, our-side or `--regime`, and for T ≤ 0.
 
 ### `--model-load {auto,bare,foreign}` — HOW the checkpoint is loaded
 
