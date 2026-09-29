@@ -1473,11 +1473,15 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `hp_type_label` / `hp_type_mask` | int64 `[6]` / f32 `[6]` | HP-type CE | `move_belief_mode != off` **and** `hp_belief_mode == composed` **and** `hp_type_belief_coef > 0` | ✅ **emitted and consumed** |
 | `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ✅ emitted and consumed (`item_belief_coef` 0.05) |
 | `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by `WinProbLabelCallback`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
-| `opp_action_kind` / `opp_action_num` / `opp_switch_slot` / `opp_switch_species` | int64 `[1]` each | opponent-intent CE (`gen3_opp_intent_v1`) — what they did at the PREVIOUS decision, shifted one row back in `train()` | `opp_intent_labels` | ❌ (no intent loss in this config) |
-| `opp_class` | int64 `[1]` | **two consumers**: the intent metrics, which it SPLITS (bot / pool / stable / exploiter — one pooled intent accuracy over random bots, heuristics and frozen selves cannot be read); and the training-side value sidecar's per-class calibration slice | `opp_intent_labels` **or** `win_prob_mode != none` | ✅ emitted (win-prob gate), consumed by the sidecar, not by any loss |
+| `opp_action_kind` / `opp_action_num` / `opp_switch_slot` / `opp_switch_species` | int64 `[1]` each | opponent-intent CE (`gen3_opp_intent_v1`) — what they did at the PREVIOUS decision, shifted one row back in `train()` | `opp_intent_coef > 0` | ✅ emitted and consumed (`opp_intent` true ⇒ `--arch production` sets `opp_intent_coef` 0.05) |
+| `opp_class` | int64 `[1]` | **two consumers**: the intent metrics, which it SPLITS (bot / pool / stable / exploiter — one pooled intent accuracy over random bots, heuristics and frozen selves cannot be read); and the training-side value sidecar's per-class calibration slice | `opp_intent_coef > 0` **or** `win_prob_mode != none` | ✅ emitted (both gates hold), read by the intent metrics and the sidecar, not by any loss |
 | `defensive_opportunity` | f32 `[1]` | state-conditioned entropy boost | `--defensive-entropy-boost > 1.0` (default 1.0) | ❌ |
 | `bait_opportunity` | f32 `[1]` | state-conditioned entropy boost (bait) | `--bait-entropy-boost > 1.0` (default 1.0) | ❌ |
 | `distill_mask` | f32 `[1]` | exploiter-distillation KL gate | `--distill-coef > 0` with teacher teams | ❌ |
+| `win_row_w` | f32 `[1]` | the win-prob BCE's per-row WEIGHT (`gen3_winprob_rollout_weight_v1`; placeholder 1.0, overwritten post-collection) | `--win-prob-rollout-weight > 1` **and** `--win-prob-rollout-target > 0` | ❌ |
+| `fork_pg_m` | f32 `[1]` | the policy term's per-row mask (`gen3_fork_v1`; placeholder 1.0) | `--fork-fraction > 0` | ❌ |
+| `opp_true_team` | f32 `[6,122]` | the PRIVILEGED value route (`gen3_value_true_team_v1`) — the one key the forward reads, value side only | `--value-true-team` | ❌ |
+| `aux_target` / `aux_mask` / `aux_turn` | f32 `[25]` / `[25]` / `[1]` | the dense-auxiliary loss (`gen3_dense_aux_v1`; the target a placeholder back-filled by `DenseAuxLabelCallback`) | `--win-prob-dense-aux > 0` | ❌ |
 
 🚨 **In this config a privileged key is no longer merely auxiliary — `win_target` IS the critic's
 training target.** The leak-safety property is unchanged and is exactly what makes that safe: the
@@ -1486,11 +1490,15 @@ being visible to it at decision time. But the consequence for reasoning is real 
 now means "not in the forward", never "not load-bearing".
 
 Every belief label above is both emitted AND consumed here (all six supervised coefficients are at
-0.05), so the whole emitted set is read. **Do not infer supervision from emission**, though: the
+0.05), and so are the four intent labels (`opp_intent_coef` 0.05), so the whole emitted set is read:
+**21 keys** (the list, each key's producer, consumer and where the Rust env gets it:
+`src/utils/rust_env/label_inventory.py`, pinned against `Gen3Env` by
+`agents/training/rust_env_label_inventory_test.py`, which also reads this table's ✅/❌). **Do not infer supervision from emission**, though: the
 emit gates and the loss coefficients are separate conditions, and a config that drops a coefficient
 to 0 keeps paying the buffer cost while training nothing — which reads identically in every metric.
-`--defensive-entropy-boost`, `--bait-entropy-boost` and `--distill-coef` are off, so their three
-keys are not emitted at all.
+`--defensive-entropy-boost`, `--bait-entropy-boost`, `--distill-coef`, `--win-prob-rollout-weight`,
+`--fork-fraction`, `--value-true-team` and `--win-prob-dense-aux` are off, so their nine keys are not
+emitted at all.
 
 🚨 **`opp_class` IS EMITTED UNDER TWO GATES, AND THAT IS DELIBERATE** (`gen3_value_sidecar_v1`,
 2026-09-08). It used to ride the intent labels alone. A win-prob arm normally runs with no intent

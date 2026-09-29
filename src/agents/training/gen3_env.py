@@ -276,8 +276,11 @@ class Gen3Env(SinglesEnv):
             "observation": self.vector_space,
             "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
         }
+        # The int64 labels' upper bound. Hoisted out of the belief block: the intent keys read it
+        # too, and an intent-only env (no belief labels) raised UnboundLocalError at construction
+        # (found by `rust_env_label_inventory_test`, M5 Lane C, 2026-09-29).
+        _imax = np.iinfo(np.int64).max
         if self._emit_belief_labels:
-            _imax = np.iinfo(np.int64).max
             # low=-1 keeps the PAD / not-scored sentinel in-space; Box(int64) (NOT Discrete, which
             # rejects -1 and the rollout buffer special-cases it).
             base_obs["belief_species"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE,), dtype=np.int64)

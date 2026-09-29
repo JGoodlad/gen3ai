@@ -1,0 +1,79 @@
+# M5 Lane C — the training labels in the Rust env: PROGRESS (resume point)
+
+Lane C of `designs/endstate/program_rust_core.md` §2 M5. It owns these files:
+
+- `src/rust_env/src/labels/`
+- `src/agents/training/rust_env_labels_parity_test.py`
+- the inventory: `src/utils/rust_env/label_inventory.py`, `src/agents/training/rust_env_label_inventory_test.py`
+  and `designs/rust_sim/env_labels.md`
+- the lane-C rows of `src/utils/rust_env/columns.py` / `protocol.py` (hand-off)
+
+**Gate:** the slice-N label columns equal `Gen3Env`'s production keys per decision. The COMMIT tier
+runs in the routine gate; the MILESTONE tier is `slow`.
+
+## Units
+
+| # | unit | status | commit |
+|---|---|---|---|
+| 1 | the INVENTORY (30 keys, 21 in production) + its routine test + `designs/rust_sim/env_labels.md`; ARCHITECTURE.md §7 corrected (the intent labels are ON in production; 9 off-surface keys added) | LANDED | see git log (`M5 Lane C unit 1`) |
+| 2 | the GENERATED label columns + the spec's `labels` declaration (a refused family refused at startup) | NEXT | |
+| 3 | family `belief` (`belief_species`, `belief_moves`, `known_moves`) + the parity harness | | |
+| 4 | families `hp_type` + `item` | | |
+| 5 | family `spread` (port `invert_nature_evs`) | | |
+| 6 | family `intent` (on `trackers::IntentLabel`) | | |
+| 7 | family `margin` (`material_margin` on `present()`) | | |
+
+## The inventory headline
+
+The table of record is `src/utils/rust_env/label_inventory.py`. Production is
+`trainee_env_kwargs(production_args())`, EXECUTED, not read from a doc. It emits 21 keys:
+
+- **18 `core`** (the env core computes them per decision):
+  - belief: 3
+  - spread / nature / EV: 6
+  - HP type: 2
+  - item: 2
+  - intent: 4
+  - margin: 1
+- **2 `host_const`**: `win_target` / `win_mask` = 0.0, back-filled by `WinProbLabelCallback`.
+- **1 `host_episode`**: `opp_class`.
+
+Nine keys are off the production surface:
+
+- `win_row_w` and `fork_pg_m` are host constants of 1.0.
+- `opp_true_team`, `aux_target`, `aux_mask`, `aux_turn`, `defensive_opportunity`,
+  `bait_opportunity` and `distill_mask` are REFUSED.
+
+## The parity-harness plan (unit 3)
+
+Record in Rust and replay in Python, the direction Lane 0's gate ① uses:
+
+1. The core runs a battle with a seeded random policy. The harness records every label column at
+   every p1 decision, with the input log (seed, teams, each side's `CHOOSE` token, and p1's action
+   index).
+2. `Gen3Env` replays that battle with the production kwargs on the rust bridge:
+   - teams from a `SequenceTeambuilder`;
+   - the seed through the bridge session's `seed`;
+   - the trainee's recorded action indices;
+   - an opponent that sends the recorded p2 tokens verbatim.
+3. Every production key the core computes is compared at every trainee decision.
+
+Pre-existing parts to reuse:
+
+- `main.rust_core_cutover.envs` (`production_args`, `build_lockstep_env`, `SequenceTeambuilder`);
+- the bridge's per-battle `seed`.
+
+## Open findings
+
+- **F-LC-1 (fixed in unit 1):** `Gen3Env(emit_opp_intent_labels=True)` without belief labels raised
+  `UnboundLocalError: _imax` at construction. It was unreachable in production, where the belief
+  labels are on. `_imax` is now hoisted (hand-off line in `gen3_env.py`).
+- **F-LC-2 (corrected in unit 1):** ARCHITECTURE.md §7 and the program doc's inventory row said
+  the four intent labels were OFF in production. They are ON: `opp_intent: true` ⇒ `--arch
+  production` sets `opp_intent_coef` 0.05. The intent CE consumes them. The slice-N cutover test's
+  key check (`slice_n_test._assert_clean`) does not name an intent key. Slice N compares every
+  emitted key anyway, so they WERE compared; only the explicit presence check omits them.
+- **F-LC-3 (hazard for the gate):** Showdown's request spells `return<bp>` / `frustration<bp>`
+  (`sim/pokemon.ts` `getSwitchRequestData`). The label maps own-team move ids through
+  `to_id_str(mv.id)`, so what the Python label actually emits for those moves must be measured,
+  not assumed, before the Rust belief family copies it.
