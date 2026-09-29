@@ -163,6 +163,10 @@ def test_c_the_healthy_two_shape_alternation_converges_LOCKS_and_runs_clean(sent
     _one_iteration(net)
     line = sentinel.lock("iteration 1")
     assert "COMPILE LOCK" in line
+    # the HEALTHY lock line must not trip scripts/ops/watch_run.sh's failure grep (2026-09-28:
+    # the old "... is FATAL." wording made every watcher on a sentinel pin exit after update 1)
+    import re
+    assert not re.search(r"OutOfMemory|CUDA out of memory|FATAL|Traceback", line, re.I), line
     ent = cache_entries_by_code()
     assert ent and max(ent.values()) < torch._dynamo.config.cache_size_limit
     for _ in range(5):                          # steady state: the same shapes forever

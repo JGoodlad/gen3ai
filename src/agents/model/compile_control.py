@@ -438,7 +438,10 @@ class CompileControl:
             per = "per-code cache entries UNKNOWN (dynamo introspection unavailable)"
         return (f"🧊 [COMPILE LOCK] after {self.lock_where}: {per}; {self.graphs_at_lock} graphs "
                 f"compiled in this process (incl. the gate's); mode {self.mode}. Any further "
-                f"dynamo compile or a cache-limit hit is FATAL.")
+                f"dynamo compile or a cache-limit hit now stops the run with a typed exit.")
+        # NB: this HEALTHY line must carry none of scripts/ops/watch_run.sh's failure words
+        # (FATAL / Traceback / OutOfMemory) — the stock watcher greps the child log for them and
+        # exited on the old wording (2026-09-28, T32b). Pinned by compile_control_test.
 
     # -- the check -----------------------------------------------------------------------------
     def violation(self) -> Optional[str]:
