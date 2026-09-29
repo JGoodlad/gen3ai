@@ -567,7 +567,10 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
                     ref_train = _train_step(fe, obs)
 
             compiled = torch.compile(original)
-            fe.forward = compiled
+            # `wrap_compiled` records a lock rejection raised through the learner forward before it
+            # propagates (sticky: a caller's `except Exception` cannot hide it — torch >= 2.8's
+            # start callback no longer sees a rejected recompile). Pass-through otherwise.
+            fe.forward = control(emit).wrap_compiled(compiled)
             comp_ms = _time_steps(fe, obs, _VALIDATE_REPS)
             comp_read = _readout(model, fe, obs, legal_mask)
             comp_train = _train_step(fe, obs)

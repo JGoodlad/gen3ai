@@ -1,0 +1,150 @@
+# =====================================================================================
+# LANE K1 (2026-09-28): the torch 2.8 environment — `gen3ai_torch28`. A SIBLING of
+# environment.yml (`gen3ai_stable`, torch 2.5.1+cu121), NOT a replacement, and deliberately a
+# SEPARATE FILE: scripts/bootstrap.sh runs `conda env update -n gen3ai_stable -f environment.yml
+# --prune` whenever environment.yml's hash changes, so editing THAT file's pins would rewrite the
+# interpreter under every live and pinned run on the next worktree bootstrap.
+#
+# Built on this box as `conda create --clone gen3ai_stable -n gen3ai_torch28` + `pip install
+# --index-url https://download.pytorch.org/whl/cu126 torch==2.8.0+cu126 torchvision==0.23.0+cu126
+# torchaudio==2.8.0+cu126` (which pulled triton 3.4.0, sympy 1.14.0 and the cu126 nvidia wheels
+# below; `pip check` clean). Every other pin is identical to environment.yml — keep them in sync.
+# The code runs on BOTH envs (the version-keyed trunk split in team_transformer.py and the
+# per-version rows in compile_control.py). Which interpreter a NEW run uses is `$GEN3AI_PYTHON`,
+# switched at a run boundary; see designs/training/compile_flags.md "Lane K1".
+# To build it elsewhere: `conda env create -f environment_torch28.yml`.
+# =====================================================================================
+name: gen3ai_torch28
+channels:
+  - defaults
+dependencies:
+  - python=3.11.15
+  - pip=26.0.1
+  - pip:
+      # ------------------------------------------------------------------------------------
+      # THE PYTORCH WHEEL INDEX. `torch==2.8.0+cu126` (and torchaudio/torchvision) are
+      # LOCAL-VERSION builds — the `+cu121` suffix — and local versions are NOT PUBLISHED ON
+      # PyPI. Without this line `conda env create -f environment.yml` fails outright on ANY
+      # fresh machine at the very first step, with
+      #
+      #     ERROR: Could not find a version that satisfies the requirement torch==2.8.0+cu126
+      #
+      # (verified 2026-08-22: PyPI offers 2.5.1, never 2.5.1+cu121 — the same holds for +cu126). conda hands this pip
+      # block to `pip install -r`, and a requirements file honours pip flags as lines — so the
+      # flag belongs here, not in a README someone has to read first.
+      #
+      # `--extra-index-url` (not `--index-url`): PyPI stays primary and only the four torch
+      # wheels resolve here. Do not "tidy" it away; it is the fix for a reproducibility bug,
+      # not a preference.
+      #
+      # CPU-ONLY MACHINES: nothing here is CUDA-gated at import time, but this file installs
+      # ~2 GB of `nvidia-*-cu12` wheels a CPU box will never use. To build a CPU environment,
+      # copy this file and (a) point this line at https://download.pytorch.org/whl/cpu,
+      # (b) drop the `+cu126` local-version suffixes and the `triton` pin, (c) delete the
+      # fourteen `nvidia-*-cu12` lines. Everything else — training on `--device cpu`, the whole
+      # test suite, the prober — works unchanged. We ship no such file because nobody here
+      # runs one; it is documented rather than engineered.
+      - --extra-index-url https://download.pytorch.org/whl/cu126
+      # ------------------------------------------------------------------------------------
+      - absl-py==2.4.0
+      - beautifulsoup4==4.14.3
+      - certifi==2026.4.22
+      - charset-normalizer==3.4.7
+      - cloudpickle==3.1.2
+      - farama-notifications==0.0.6
+      # fastapi + uvicorn + httpx + python-multipart (and their transitive deps annotated-doc,
+      # annotated-types, anyio, click, h11, httpcore, pydantic, pydantic-core, starlette,
+      # typing-inspection) serve the prober's web views — src/main/prober/web/. httpx is not
+      # optional: it is what starlette's TestClient runs on, so the web unit tests need it.
+      # python-multipart backs the login form's `Form(...)` fields.
+      - fastapi==0.141.1
+      - filelock==3.25.2
+      - fsspec==2026.2.0
+      - grpcio==1.80.0
+      - gymnasium==1.2.3
+      - httpx==0.28.1
+      - idna==3.14
+      - iniconfig==2.3.0
+      - jinja2==3.1.6
+      - lxml==6.1.0
+      - markdown==3.10.2
+      - markupsafe==3.0.3
+      - matplotlib==3.10.9
+      - mpmath==1.3.0
+      # The two STATIC gates in the routine suite (`src/agents/model/mypy_gate_test.py`,
+      # `src/ruff_gate_test.py`) shell out to these. They are test-suite dependencies, not
+      # optional dev conveniences: without them installed those gates FAIL rather than skip,
+      # because a linter that silently opts out reads green while enforcing nothing.
+      - mypy==2.3.1
+      - networkx==3.6.1
+      - numpy==2.4.3
+      - nvidia-cublas-cu12==12.6.4.1
+      - nvidia-cuda-cupti-cu12==12.6.80
+      - nvidia-cuda-nvrtc-cu12==12.6.77
+      - nvidia-cuda-runtime-cu12==12.6.77
+      - nvidia-cudnn-cu12==9.10.2.21
+      - nvidia-cufft-cu12==11.3.0.4
+      - nvidia-cufile-cu12==1.11.1.6
+      - nvidia-curand-cu12==10.3.7.77
+      - nvidia-cusolver-cu12==11.7.1.2
+      - nvidia-cusparse-cu12==12.5.4.2
+      - nvidia-cusparselt-cu12==0.7.1
+      - nvidia-nccl-cu12==2.27.3
+      - nvidia-nvjitlink-cu12==12.6.85
+      - nvidia-nvtx-cu12==12.6.77
+      - orjson==3.11.9
+      - pandas==3.0.2
+      - pettingzoo==1.26.1
+      - pillow==12.1.1
+      - pluggy==1.6.0
+      # ------------------------------------------------------------------------------------
+      # DELIBERATELY ABSENT — do not re-add either of these.
+      #
+      # `poke-env` (was pinned at 0.15.0 from PyPI). This repo VENDORS A FORK at `src/poke_env/`
+      # and that fork is authoritative — it is 57 modules to upstream 0.15.0's 45, and the
+      # battle layer depends on the additions. Installing the PyPI package alongside it creates
+      # a SILENT SHADOWING HAZARD: two importable `poke_env` packages, and which one wins is
+      # decided by sys.path order. It works today only because PYTHONPATH outranks
+      # site-packages. Under a `pip install -e .` (the packaging phase that follows this one)
+      # the editable `.pth` lands AFTER site-packages, so UPSTREAM WOULD SILENTLY WIN and the
+      # battle layer would quietly run on unforked code — no error, no warning, wrong results.
+      # Proved by experiment in both directions, 2026-08-22. Nothing in the environment
+      # declares poke-env as a dependency (every distribution's `requires` was scanned), so
+      # removing it costs nothing. `src/poke_env_fork_gate_test.py` is the permanent guard.
+      #
+      # `asyncio` (was pinned at 4.0.0). PyPI's own description: "Deprecated backport of the
+      # asyncio module; use the stdlib package instead." Python 3.11 ships asyncio in the
+      # standard library. The backport is at best inert and at worst a shadowing hazard of the
+      # same shape as the one above.
+      # ------------------------------------------------------------------------------------
+      - protobuf==7.34.1
+      - pygments==2.20.0
+      - pyparsing==3.3.2
+      - pytest==9.0.3
+      - pytest-asyncio==1.3.0
+      - pytest-xdist==3.8.0
+      - python-multipart==0.0.20
+      - python-socks[asyncio]
+      - requests==2.33.1
+      - requests[socks]
+      - ruff==0.16.3
+      - sb3-contrib==2.8.0
+      - setuptools==69.5.1
+      - shimmy==2.0.1
+      - six==1.17.0
+      - soupsieve==2.8.3
+      - stable-baselines3==2.8.0
+      - sympy==1.14.0
+      - tabulate==0.10.0
+      - tensorboard==2.20.0
+      - tensorboard-data-server==0.7.2
+      - textual==8.2.7
+      - torch==2.8.0+cu126
+      - torchaudio==2.8.0+cu126
+      - torchvision==0.23.0+cu126
+      - triton==3.4.0
+      - typing-extensions==4.15.0
+      - uvicorn==0.52.1
+      - urllib3==2.7.0
+      - websockets==16.0
+      - werkzeug==3.1.8

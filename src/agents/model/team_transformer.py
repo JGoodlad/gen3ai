@@ -21,10 +21,14 @@ from agents.model.arch_constants import (
 )
 
 # gen3_inductor_trunk_split_v1: split the CUDA-compiled extractor into two graphs at the attention
-# trunk (see the note in `TeamTransformer.forward`). A module-level switch ONLY so the
-# revert-must-fail test (`compile_trainer_test`) can prove the real-obs parity gate catches the
-# single-graph miscompile; nothing in production turns it off.
-_CUDA_TRUNK_SPLIT = True
+# trunk (see the note in `TeamTransformer.forward`) — KEYED ON THE TORCH VERSION (Lane K1). The split
+# works around a torch 2.5.1 CUDA Inductor miscompile of the single fused graph. On a torch listed in
+# `_SPLIT_NOT_NEEDED_ON` the UNSPLIT graph was measured correct on the real-obs parity gate (fp32 and
+# TF32, eval AND train graphs — designs/training/compile_flags.md, "Lane K1") and the split is OFF;
+# on every other torch (2.5.1 included) it stays ON. Still a module-level switch so the
+# revert-must-fail test (`compile_trainer_test`) can flip it.
+_SPLIT_NOT_NEEDED_ON = frozenset({"2.8.0+cu126"})
+_CUDA_TRUNK_SPLIT = torch.__version__ not in _SPLIT_NOT_NEEDED_ON
 
 
 
@@ -367,6 +371,7 @@ class TeamTransformer(torch.nn.Module):
         # (`is_compiling()` is False), so the deployed function is bit-identical; the CPU opponent
         # compile keeps its one graph. The standing guard is `compile_trainer`'s REAL-obs,
         # decision-level parity gate, which fails the launch if the split stops being enough.
+        # Lane K1: OFF on torch 2.8.0+cu126 (`_SPLIT_NOT_NEEDED_ON`), where the unsplit graph passed.
         if _CUDA_TRUNK_SPLIT and attn_bias.is_cuda and torch.compiler.is_compiling():
             torch._dynamo.graph_break()
 

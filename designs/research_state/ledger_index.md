@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,442-line file. **The ledger itself is append-only and is never edited by this**;
+21,447-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**716 headings · 661 dated · 2026-08-01 → 2026-09-28 · ledger 21,442 lines.**
+**717 headings · 662 dated · 2026-08-01 → 2026-09-28 · ledger 21,447 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -736,3 +736,4 @@ rename.
   - `L21431` · `2026-09-27` · DECISION · **OWNER DECISIONS OF 09-26/27, recorded in one place (they were scattered across commits and backlogs; the end-state refresh `a6532774` flagged that none had a ledger entry).**
   - `L21435` · `2026-09-28` · FINDING (MAJOR, GIGO) · **THE CUDA `--compile-trainer` LEARNER WAS A DIFFERENT FUNCTION FROM THE DEPLOYED (EAGER) POLICY — on real observations, at fp32, argmax agreement 70.9%, masked-policy TV median 0.123 (p99 0.63), |ΔV| median 0.024 (max 0.33), train-graph gradient cosine 0.778. A torch 2.5.1 Inductor miscompile of the fused pre-attention (bias + edge families) → TeamTransformer → consumers graph; the startup parity gate probed ALL-ZERO obs (4.8e-7) and was blind. SUSPECT: every cuda run with the default since `28eaef29` (2026-08-17). CLEAN: the CPU compile (eval workers, sentinels, pool/stable/exploiter opponents, traces) and eager (prober, ladder, anchors). FIXED `6521f420`: a CUDA-compile-only graph break in `TeamTransformer.forward` (eager bit-identical; parity on 3,840 real rows argmax 1.0000, TV p99 1.5e-6, |ΔV| max 1.0e-6, grad cosine 1.000000) + a real-obs, decision- AND gradient-level startup gate that throws (revert ⇒ FAIL). Split cost +1.5–4% of fwd+bwd.**
   - `L21439` · `2026-09-28` · MEASUREMENT · **X22 (b)/(c) — THE NEAR-TERM GOAL IS NOT MET: N0 final (`ai_v14_01_base` @75,005,952, greedy, eager) vs `metamon:Kakuna` (ckpt 34) on home72: Kakuna greedy 0.460 [0.392, 0.529] n=200; T=0.5 0.440 [0.347, 0.538] n=100; T=1.0 (Kakuna's STRONGEST) 0.380 [0.316, 0.449] n=200 — the whole CI below 0.50 (goal: lower bound > 0.50 at the strongest temperature).**
+  - `L21443` · `2026-09-28` · MEASUREMENT · **LANE K1: torch 2.8.0+cu126 compiles the UNSPLIT CUDA learner graph CORRECTLY — the real-obs startup gate PASSES at fp32 and TF32 on the eval AND train graphs with the `6521f420` trunk split OFF (fp32 gradient cosine 1.000000; 3,840 trace rows argmax 1.0000, |dV| max 1.4e-6). The split is now keyed on the torch version (ON for 2.5.1, OFF for 2.8); the interpreter switch for new runs is pending (orchestrator, at a run boundary).**

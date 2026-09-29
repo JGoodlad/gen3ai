@@ -39,15 +39,18 @@ THE TWO SILENT FAILURES, verified in torch 2.5.1 source:
   * LATE RECOMPILES — each costs a stall and spends the cache toward the fallback.
     `error_on_recompile` raises `RecompileError` at the call site (raised raw, before `_compile`'s
     own try); the start callback is the backstop for what it cannot see — the FIRST compile of a
-    never-seen code object, and a `RecompileError` a caller's `except Exception` swallowed.
+    never-seen code object, and (2.5.1 only) a `RecompileError` a caller's `except Exception`
+    swallowed; `wrap_compiled` covers the swallow on every version.
 
 TORCH VERSION GUARD. The internals used here are pinned per version in `_SUPPORTED`; an unknown
 torch REFUSES (typed FATAL) rather than run a sentinel whose semantics may have moved. Each internal
-is exercised on the installed torch by `compile_control_test.py`'s CONTRACT tests. Lane K1 (torch
->= 2.8, `designs/endstate/program_rust_core.md`) swaps the lock to
-`torch.compiler.set_stance("fail_on_recompile")` + `fullgraph=True` once the trunk split is gone:
-that is the `"stance"` mode below, and enabling it is adding the new version to `_SUPPORTED` after
-its contract tests pass there — **UNVERIFIED on 2.8 until then.**
+is exercised on the installed torch by `compile_control_test.py`'s CONTRACT tests, which run on BOTH
+supported versions. 2.5.1+cu121 locks with `error_on_recompile`; 2.8.0+cu126 (Lane K1,
+`designs/endstate/program_rust_core.md`) locks with `torch.compiler.set_stance("fail_on_recompile")`
+(the `"stance"` mode), which rejects ANY cache miss at the call site. On 2.8 the start callback runs
+after the recompile check and so never sees a rejection; `wrap_compiled` (the learner forward is
+installed through it) records rejections so a swallowed one is still fatal at the next check.
+`fullgraph=True` is K6's, not done here.
 
 What it deliberately does NOT do: change a number. `error_on_recompile` acts only on the recompile
 path; the handler and the callback only count; `prewarm` runs under `torch.random.fork_rng` and
@@ -69,9 +72,13 @@ from agents.model.compile_trainer import CompileTrainerError
 
 # EXACT torch version (local tag included) -> lock mechanism. "error_on_recompile" = config flag +
 # log-warning detector + compile-start callback (2.5.1, contract-tested). "stance" =
-# torch.compiler.set_stance("fail_on_recompile") — K1's path, NOT enabled until its contract tests
-# and `_SOURCE_HASHES` row exist for that torch.
-_SUPPORTED: Dict[str, str] = {"2.5.1+cu121": "error_on_recompile"}
+# `torch.compiler.set_stance("fail_on_recompile")` + the same detector and callback (Lane K1,
+# torch 2.8.0+cu126, contract-tested 2026-09-28 — `compile_control_test` runs on BOTH envs).
+_SUPPORTED: Dict[str, str] = {"2.5.1+cu121": "error_on_recompile", "2.8.0+cu126": "stance"}
+
+# What `stance` mode's rejection raises (torch 2.8 `eval_frame._callback_from_stance`): a plain
+# RuntimeError, NOT a `RecompileError` — `find_recompile_error` matches it by this text.
+_STANCE_REJECT_TEXT = "Detected recompile when torch.compile stance is 'fail_on_recompile'"
 
 # THE SOURCE-HASH DRIFT TRIPWIRE (the `instrumented_ppo._verify_upstream_unchanged` pattern, for
 # torch): SHA256 of `inspect.getsource(...)` of EVERY torch internal this adapter's semantics rest
@@ -88,6 +95,19 @@ _SUPPORTED: Dict[str, str] = {"2.5.1+cu121": "error_on_recompile"}
 #   CompilationCallbackHandler    — the compile-start callback registry
 #   OutputGraph.compile_and_call_fx_graph — increments counters['stats']['unique_graphs']
 #   torch._dynamo.reset / torch.compiler.reset — the post-gate reset
+# TORCH 2.8 (Lane K1, re-read 2026-09-28) — what MOVED, and what the row hashes instead:
+#   cache_size.exceeds_cache_size_limit -> exceeds_recompile_limit; config.cache_size_limit is now an
+#     ALIAS of config.recompile_limit, and the warning names `config.recompile_limit (8)` /
+#     `accumulated_recompile_limit`. The soft failure is `RecompileLimitExceeded` (was
+#     CacheLimitExceeded), still swallowed by ConvertFrame.__call__ -> the frame runs EAGER.
+#   guards.get_and_maybe_log_recompilation_reason -> ..._reasons (plural); still raises
+#     RecompileError under error_on_recompile.
+#   the compile-START callback now runs inside `compile_inner`, i.e. AFTER the recompile check and
+#     the limit check (2.5.1: at the top of `_compile`) — so a REJECTED recompile no longer fires it —
+#     and it now takes a `CallbackArgs` and also fires for LAZY_BACKWARD / TRITON_AUTOTUNING /
+#     CUDAGRAPH_RECORDING triggers (all late compile work, all counted after the lock).
+#   NEW: eval_frame._callback_from_stance (the "fail_on_recompile" branch) + eval_frame._set_stance
+#     + decorators.set_stance — what `stance` mode rests on.
 _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
     "2.5.1+cu121": {
         "torch._dynamo.cache_size.compute_cache_size":
@@ -116,6 +136,42 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
             "e4997fcbc979934efa007509d39b8913ff4dd0023162de0b0a8c1225d164a7f2",
         "torch.compiler.reset":
             "ae358f0c70af992ce82f8b4ea5e25e8800221a841c8078841335f98c34e13092",
+    },
+    "2.8.0+cu126": {
+        "torch._dynamo.cache_size.compute_cache_size":
+            "8c4f31bf7bfaebb8f69a761d58f96f8fdef06ee3cb860887b5458af2e41b2935",
+        "torch._dynamo.cache_size.is_recompilation":
+            "b99d3c1f88fa3f80ec61ddcaa3c75d19d780b0a5245a3b9f07e00188799f8842",
+        "torch._dynamo.cache_size.exceeds_recompile_limit":
+            "55a9866b420fb1bf58f4517d51b3a4e8cb593e85508310096503e49a19c637e0",
+        "torch._dynamo.guards.get_and_maybe_log_recompilation_reasons":
+            "8ce6be66f4e7e46d8d06053da39b8531ed2c1626dbb6ec1ca6c2ae7c97f535c6",
+        "torch._dynamo.convert_frame._compile":
+            "9c06510380dc7d32cbf44b144990107819602b60cb23e9b6c7070ebb88210529",
+        "torch._dynamo.convert_frame.ConvertFrame.__call__":
+            "6a8ed9a68161aa826c0ce2e5772edfad382eee2822257f6ad0dd6bed5ca24eef",
+        "torch._dynamo.convert_frame.ConvertFrameAssert.__call__":
+            "dd854a3ba6d2d84b0ed8f2bcf68ab35f776af92dfe97233a2c886ba495a3eeca",
+        "torch._dynamo.convert_frame.Tracker":
+            "5d102b1c017588532b961b4b999bb03bbcfdd1d20127b2095eefd1617c883ffd",
+        "torch._dynamo.eval_frame._debug_get_cache_entry_list":
+            "5ccaff8b8c1b7d40c4543ba8eef308c357bdfd835ac2e2180dc0cd22428d1691",
+        "torch._dynamo.callback.CompilationCallbackHandler":
+            "f6ed0187be8dc06c4957bb66584cbb537f258f4ee2c982cb3231c821c4aeb410",
+        "torch._dynamo.output_graph.OutputGraph.compile_and_call_fx_graph":
+            "d64581c0eba11b32e5c5a5c03433bafde2de6602d9f0e0b8c8550a00f94420d1",
+        "torch._dynamo.reset":
+            "0c3e45397def4debeb93673514a4db39e6e4cd6873dd24961c9593349eb9c2d1",
+        "torch.compiler.reset":
+            "ae358f0c70af992ce82f8b4ea5e25e8800221a841c8078841335f98c34e13092",
+        "torch._dynamo.eval_frame._callback_from_stance":
+            "ceac5c59c840964d6962b08228a9fa621367bd75c4b6507a1259c802f4867dcd",
+        "torch._dynamo.eval_frame._set_stance":
+            "b4abd0bdeab1342f21be96ae0bdf3b033e793398d2784877a4f100b17ba0ad14",
+        "torch._dynamo.decorators.set_stance":
+            "9ca4f2d3cc7aa6da5421e9723cb517ca44fcef8c010f6edbb9bc60b7d4ccb13b",
+        "torch.compiler.set_stance":
+            "88da974587d1867ee52e4fddca8f5696bef4e104a591dacdc2e891a9ed9b8963",
     },
 }
 
@@ -206,8 +262,11 @@ def verify_torch_internals(version: Optional[str] = None) -> None:
 
 # --------------------------------------------------------------------------- thin dynamo shims
 def cache_size_limit() -> int:
+    """dynamo's per-code-object entry limit (`recompile_limit` on torch >= 2.8, where
+    `cache_size_limit` is its alias; `cache_size_limit` on 2.5.1)."""
+    cfg = torch._dynamo.config
     try:
-        return int(torch._dynamo.config.cache_size_limit)
+        return int(getattr(cfg, "recompile_limit", None) or cfg.cache_size_limit)
     except Exception:
         return 8
 
@@ -265,7 +324,8 @@ def _compiling_code_name() -> str:
 
 
 def find_recompile_error(exc: BaseException) -> Optional[BaseException]:
-    """The `RecompileError` in `exc`'s cause/context chain, if any."""
+    """The lock's rejection in `exc`'s cause/context chain, if any: a `RecompileError`
+    (`error_on_recompile`) or the `fail_on_recompile` stance's RuntimeError (torch >= 2.8)."""
     try:
         from torch._dynamo.exc import RecompileError
     except Exception:
@@ -274,7 +334,8 @@ def find_recompile_error(exc: BaseException) -> Optional[BaseException]:
     for _ in range(16):
         if cur is None:
             break
-        if isinstance(cur, RecompileError):
+        if isinstance(cur, RecompileError) or (
+                isinstance(cur, RuntimeError) and _STANCE_REJECT_TEXT in str(cur)):
             return cur
         cur = cur.__cause__ or cur.__context__
     return None
@@ -316,12 +377,14 @@ class CompileControl:
         self.prewarmed: List[str] = []
         self.compile_starts = 0
         self.compiles_after_lock = 0
+        self.rejected_after_lock = 0
         self.after_lock_frames: List[str] = []
         self.limit_hits: List[Tuple[str, str]] = []
         self.watch = TrainMsWatch()
         self._handler: Optional[_CacheLimitHandler] = None
         self._prev_level: Optional[int] = None
         self._prev_error_on_recompile: Optional[bool] = None
+        self._stance_set = False
 
     # -- wiring --------------------------------------------------------------------------------
     def install(self) -> "CompileControl":
@@ -355,16 +418,50 @@ class CompileControl:
             callback_handler.remove_start_callback(self._on_compile_start)
         if self._prev_error_on_recompile is not None:
             torch._dynamo.config.error_on_recompile = self._prev_error_on_recompile
+        self._unset_stance()
         self.installed = False
         self.locked = False
 
     # -- dynamo hooks (never raise) ------------------------------------------------------------
-    def _on_compile_start(self) -> None:
+    def _on_compile_start(self, args: Any = None) -> None:
+        # torch 2.5.1 calls this with no argument; torch 2.8 passes a `CallbackArgs` whose
+        # `callback_trigger` is DYNAMO / LAZY_BACKWARD / TRITON_AUTOTUNING / CUDAGRAPH_RECORDING.
         self.compile_starts += 1
         if self.locked:
             self.compiles_after_lock += 1
             if len(self.after_lock_frames) < 8:
-                self.after_lock_frames.append(_compiling_code_name())
+                trig = getattr(getattr(args, "callback_trigger", None), "name", None)
+                name = _compiling_code_name()
+                self.after_lock_frames.append(f"{name} [{trig}]" if trig else name)
+
+    def _on_rejected(self, exc: BaseException) -> None:
+        """The lock REJECTED a compile at a watched call site. Sticky, so a caller's
+        `except Exception` cannot hide it (on torch 2.8 the start callback never sees a rejected
+        recompile: it runs after the recompile check)."""
+        self.rejected_after_lock += 1
+        if len(self.after_lock_frames) < 8:
+            self.after_lock_frames.append(f"rejected: {str(exc).splitlines()[0][:200]}")
+
+    def wrap_compiled(self, compiled: Callable[..., Any]) -> Callable[..., Any]:
+        """Wrap a compiled callable so a lock rejection raised through it is RECORDED (sticky)
+        before it propagates. `compile_trainer_extractor` installs the learner forward through
+        this. Pure pass-through otherwise (no numerics, no extra dynamo frame)."""
+        ctl = self
+
+        def watched(*a: Any, **k: Any) -> Any:
+            try:
+                return compiled(*a, **k)
+            except BaseException as exc:
+                if ctl.locked and find_recompile_error(exc) is not None:
+                    ctl._on_rejected(exc)
+                raise
+        watched._compile_control_inner = compiled  # type: ignore[attr-defined]
+        return watched
+
+    def _unset_stance(self) -> None:
+        if getattr(self, "_stance_set", False):
+            torch.compiler.set_stance("default")  # type: ignore[attr-defined]
+            self._stance_set = False
 
     def _on_limit_hit(self, limit_type: str, msg: str) -> None:
         self.limit_hits.append((limit_type, msg))
@@ -417,8 +514,10 @@ class CompileControl:
         set_strict_errors()                  # a swallowed RecompileError is still counted, not eaten
         if self.mode == "error_on_recompile":
             torch._dynamo.config.error_on_recompile = True
-        else:                                # "stance" (K1) — unreachable until _SUPPORTED lists it
+        else:                                # "stance" (torch >= 2.8, Lane K1): any cache MISS on a
+            # compiled callable raises at the call site — a recompile AND a never-seen frame
             torch.compiler.set_stance("fail_on_recompile")  # type: ignore[attr-defined]
+            self._stance_set = True
         self.locked = True
         self.lock_where = where
         self.phase = "locked"
@@ -450,8 +549,9 @@ class CompileControl:
             kind, msg = self.limit_hits[0]
             return (f"dynamo hit config.{kind} ({len(self.limit_hits)} hit(s)) during phase "
                     f"'{self.phase}' — that frame now runs EAGER, silently. First warning:\n{msg}")
-        if self.compiles_after_lock:
-            return (f"{self.compiles_after_lock} dynamo compile(s) started AFTER the compile lock "
+        if self.compiles_after_lock or self.rejected_after_lock:
+            return (f"{self.compiles_after_lock} dynamo compile(s) started and "
+                    f"{self.rejected_after_lock} rejected AFTER the compile lock "
                     f"({self.lock_where}); graphs at lock {self.graphs_at_lock}, now "
                     f"{dynamo_graphs_total()}. Frames: {self.after_lock_frames}")
         return None
@@ -481,7 +581,8 @@ class CompileControl:
         ent = cache_entries_by_code()
         out = {
             "compile/graphs_total": float(dynamo_graphs_total()),
-            "compile/recompiles_after_lock": float(self.compiles_after_lock),
+            "compile/recompiles_after_lock": float(self.compiles_after_lock
+                                                   + self.rejected_after_lock),
             "compile/cache_limit_hits": float(len(self.limit_hits)),
             "compile/max_cache_entries_per_code": float(max(ent.values())) if ent else -1.0,
             "compile/locked": 1.0 if self.locked else 0.0,
@@ -547,8 +648,10 @@ class CompileControl:
         self.phase = "released"
         prev = self._prev_error_on_recompile
         torch._dynamo.config.error_on_recompile = bool(prev) if prev is not None else False
+        self._unset_stance()
         self._say(f"🧊 [COMPILE LOCK] released — {why}; {self.compiles_after_lock} compile(s) "
-                  f"after the lock during training (must be 0).")
+                  f"after the lock during training (must be 0); {self.rejected_after_lock} rejected "
+                  f"(must be 0).")
 
     def record(self, model: Any, *, observe_train_ms: bool = True) -> None:
         """TB scalars + the train_ms backstop, after an update. Never raises."""
@@ -670,6 +773,8 @@ if __name__ != "__main__":
     verify_torch_internals()
 else:  # pragma: no cover — the re-record helper: `python -m agents.model.compile_control --record`
     import json as _json
-    _rows = sorted(next(iter(_SOURCE_HASHES.values())))
+    # the installed torch's own row if it has one, else the NEWEST row's qualnames (then edit the
+    # renamed ones by hand — a '<missing: ...>' value names each)
+    _rows = sorted(_SOURCE_HASHES.get(torch.__version__) or list(_SOURCE_HASHES.values())[-1])
     if "--record" in sys.argv:
         print(_json.dumps({torch.__version__: source_hashes(_rows)}, indent=4))

@@ -489,15 +489,18 @@ committed fixture `src/agents/model/compile_parity_obs.npz`; regenerate it with
 fixture REFUSES. It checks four things: features, MASKED legal log-probs, V, and the train graph's
 gradient cosine (≥ 0.9999). Under `--matmul-precision high` it switches to the precision-aware TF32
 rule (`e_comp ≤ 4·e_eager + 1e-4` against an fp32 eager reference), plus the same compiled graph
-at fp32 held to the strict bars. **The GPU learner compile needs its trunk split**
+at fp32 held to the strict bars. **On torch 2.5.1 the GPU learner compile needs its trunk split**
 (`gen3_inductor_trunk_split_v1`): as ONE CUDA Inductor graph it miscompiled on real rows. That
 affected every default cuda run from `28eaef29` (2026-08-17) to 2026-09-28: argmax agreement 70.9%,
-gradient cosine 0.778. The CPU compile (eval, opponents, traces) is clean.
+gradient cosine 0.778. The CPU compile (eval, opponents, traces) is clean. **On torch 2.8.0+cu126
+(`gen3ai_torch28`, Lane K1) the split is OFF** — keyed on the torch version, after the unsplit graph
+passed the real-obs gate at fp32 and TF32 on the eval and train graphs; which env a run uses is its
+interpreter (`designs/training/compile_flags.md` "Lane K1").
 🚨 **THE COMPILE SENTINEL (`gen3_compile_sentinel_v1`) makes a silent recompile / eager fallback
 FATAL.** `src/agents/model/compile_control.py` is the ONLY runtime module that touches
 `torch._dynamo` — add nothing that does elsewhere. Phases: the gate compiles freely →
 `torch._dynamo.reset()` (the gate's graphs share production's per-code-object `cache_size_limit`
-slots: at TF32 they left headroom 1 of 8) → prewarm every production signature → LOCK after the
+(2.8: `recompile_limit`) slots: at TF32 they left headroom 1 of 8) → prewarm every production signature → LOCK after the
 first rollout + update (`🧊 [COMPILE LOCK]`) → RELEASE when `learn()` returns (the final eval runs
 in-process on the compiled forward). While locked, any recompile, late first compile or
 cache-limit hit exits `[CompileSentinel] FATAL` / `FATAL_CONFIG` (not restarted). A learner-process

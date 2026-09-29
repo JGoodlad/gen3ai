@@ -630,7 +630,9 @@ def test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate(monkeypatch):
     """gen3_inductor_trunk_split_v1 — THE revert-must-fail pin. The single CUDA Inductor graph of
     the production extractor miscompiles on REAL observations (measured 2026-09-28: pi_features
     off by up to 7.65, argmax agreement 70.9%, gradient cosine 0.778 on ai_v14_01_base). With the
-    split the real-obs gate passes; with the split OFF it must refuse. SKIPS (naming why) when the
+    split the real-obs gate passes; with the split OFF it must refuse — on torch 2.5.1. On a torch
+    in `_SPLIT_NOT_NEEDED_ON` (Lane K1: 2.8.0+cu126) the split defaults OFF and the unsplit gate
+    must PASS. SKIPS (naming why) when the
     GPU is hidden or busy — a skip is NOT a pass."""
     import agents.model.team_transformer as tt
     from agents.model.extractor_compiles_test import _build_production_extractor
@@ -646,6 +648,13 @@ def test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate(monkeypatch):
         m.policy.features_extractor = fe
         return compile_trainer_extractor(m, True)
 
+    if torch.__version__ in tt._SPLIT_NOT_NEEDED_ON:
+        # Lane K1: on this torch the UNSPLIT graph is correct — the split defaults OFF, and the
+        # real-obs gate must PASS without it (the verification that licensed turning it off).
+        assert tt._CUDA_TRUNK_SPLIT is False
+        assert _run(False) is not None
+        return
+    assert tt._CUDA_TRUNK_SPLIT is True               # every other torch (2.5.1 included): ON
     assert _run(True) is not None
     with pytest.raises(CompileTrainerError, match="DISAGREES"):
         _run(False)

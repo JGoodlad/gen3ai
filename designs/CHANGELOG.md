@@ -10005,3 +10005,19 @@ which is TF32 rounding. Chasing that turned up the real defect.
   internals the adapter rests on, verified at import and in the routine tier, plus behavioural
   contract tests. Lane K1 (torch ≥ 2.8) swaps the lock for `set_stance("fail_on_recompile")`.
 
+## 2026-09-28 — LANE K1: a torch 2.8 environment beside torch 2.5.1; the trunk split OFF on 2.8; the compile sentinel's `stance` mode (no model version bump, weights and eager unchanged)
+
+- New conda env `gen3ai_torch28` (clone of `gen3ai_stable` + torch 2.8.0+cu126, torchvision
+  0.23.0+cu126, torchaudio 2.8.0+cu126, triton 3.4.0, sympy 1.14.0, cu126 nvidia wheels), recorded in
+  `environment_torch28.yml`. `gen3ai_stable` and `environment.yml` unchanged (bootstrap re-applies
+  `environment.yml` to `gen3ai_stable` on any hash change). The interpreter switch for new runs is
+  not made here.
+- `team_transformer._CUDA_TRUNK_SPLIT` is keyed on the torch version: ON for 2.5.1, OFF for
+  2.8.0+cu126 (`_SPLIT_NOT_NEEDED_ON`). Measured on `ai_v14_06_lbat_ctrl_fix` final, split OFF on
+  2.8: the real-obs startup gate PASSES at fp32 (features 2.4e-5, V 4.2e-7, gradient cosine
+  1.000000) and TF32 (every rule, gradient 1−cos 6.1e-5 vs eager's 4.6e-5); 3,840 trace rows at
+  fp32 argmax 1.0000, TV p99 1.6e-6, |dV| max 1.4e-6; at TF32 identical to 2.5.1 with the split.
+- `compile_control`: a 2.8.0+cu126 row (17 hashed internals, re-read: `exceeds_recompile_limit`,
+  `recompilation_reasons`, the stance functions) locking with `set_stance("fail_on_recompile")`;
+  `wrap_compiled` makes a lock rejection sticky on both versions (2.8's start callback runs after
+  the recompile check). Contract tests run on both envs.

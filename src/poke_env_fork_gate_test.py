@@ -51,6 +51,8 @@ import sys
 import textwrap
 from pathlib import Path
 
+import pytest
+
 # `src/poke_env_fork_gate_test.py` -> `src/` -> repo root. Derived from __file__ so a worktree
 # checks ITSELF rather than the main checkout (an absolute path here would make the test either
 # wrong in a worktree or silently skipped on another machine).
@@ -163,14 +165,16 @@ def test_the_gate_catches_a_shadowing_copy(tmp_path: Path) -> None:
     )
 
 
-def test_environment_yml_does_not_reinstall_poke_env() -> None:
+@pytest.mark.parametrize("env_file", ["environment.yml", "environment_torch28.yml"])
+def test_environment_yml_does_not_reinstall_poke_env(env_file: str) -> None:
     """The upstream half: catch the re-added pin at the source, before ordering can matter.
+    Both env files (the torch-2.8 sibling from Lane K1 included).
 
     Text-scanned rather than YAML-parsed on purpose — `yaml` is not a dependency of this
     project, and adding one so a guard can read a file would be a poor trade.
     """
-    env_yml = _REPO_ROOT / "environment.yml"
-    assert env_yml.is_file(), f"environment.yml not found at {env_yml}"
+    env_yml = _REPO_ROOT / env_file
+    assert env_yml.is_file(), f"{env_file} not found at {env_yml}"
 
     offenders = [
         line.strip()
@@ -180,7 +184,7 @@ def test_environment_yml_does_not_reinstall_poke_env() -> None:
         if line.strip().startswith("- ") and line.strip()[2:].lstrip().startswith(("poke-env", "poke_env"))
     ]
     assert not offenders, (
-        "environment.yml re-adds the PyPI poke-env package: "
+        f"{env_file} re-adds the PyPI poke-env package: "
         f"{offenders}\n"
         "This repo VENDORS the fork at src/poke_env/ and it is authoritative. A second "
         "installed copy makes `import poke_env` depend on sys.path order — and under an "

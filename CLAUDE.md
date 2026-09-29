@@ -110,7 +110,7 @@ Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
 `./scripts/bootstrap.sh` does all setup idempotently — conda env, submodule, Showdown build, worktree symlinks, the optional cargo build — and verifies with the ruff/mypy gates, the two import-precedence gates and a ~10 s smoke. `--dry-run` prints the plan. `CONTRIBUTING.md` is the human version.
 
-The env is **`gen3ai_stable`** (not `deps/venv`, which is outdated — ignore it):
+The env is **`gen3ai_stable`** (not `deps/venv`, which is outdated — ignore it). **`gen3ai_torch28`** (torch 2.8, `environment_torch28.yml`) is its sibling for Lane K1: the code runs on both, so a change to anything under `torch._dynamo`/compile runs its compile tests under BOTH interpreters (`designs/training/compile_flags.md` "Lane K1"); never edit `environment.yml`'s torch pins — `bootstrap.sh` re-applies it to `gen3ai_stable` under live runs:
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src

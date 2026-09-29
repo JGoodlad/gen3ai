@@ -533,7 +533,9 @@ log-probs, V) and on the train graph's gradient; under `--matmul-precision high`
 precision-aware TF32 rule. 🚨 **Every cuda run with the default `--compile-trainer` from `28eaef29`
 (2026-08-17) up to `gen3_inductor_trunk_split_v1` (2026-09-28) trained its LEARNER on a miscompiled
 single CUDA graph** (argmax agreement 70.9%, gradient cosine 0.778 vs eager). Its eval, opponents
-and traces ran the CPU compile and are clean.
+and traces ran the CPU compile and are clean. The split is torch-2.5.1-only: under the
+`gen3ai_torch28` interpreter (torch 2.8, Lane K1) the unsplit graph passed the gate and the split is
+OFF — an interpreter switch for a new run is set with `$GEN3AI_PYTHON`, at a run boundary.
 Detail: `designs/training/compile_flags.md` → "The single-graph CUDA miscompile". And
 `--device cpu` is refused up front, because the CPU backward provably does not lower (Inductor's C++
 backend refuses the damage op's `atomic_add` scatter).

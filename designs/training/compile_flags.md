@@ -497,6 +497,42 @@ minimum-of-15 at batch 1024: 46.3/46.6 ms with the split vs 45.7/45.8 ms without
 48.4-50.5 vs 46.4-47.9 ms (≤ +4%). Batch 512 is noise-dominated. Batch 2048 could not be measured
 beside the live run's VRAM. The split also lowers peak memory: 1.7 vs 2.2 GiB at batch 1024.
 
+### Lane K1 — torch 2.8 (`gen3ai_torch28`), the split OFF there (2026-09-28)
+
+**Two envs, one code base.** `gen3ai_stable` stays torch 2.5.1+cu121 (NEVER mutated — live and pinned
+runs use it); `gen3ai_torch28` is its clone with torch **2.8.0+cu126**, torchvision 0.23.0+cu126,
+torchaudio 2.8.0+cu126, triton 3.4.0, sympy 1.14.0 and the cu126 `nvidia-*` wheels
+(`environment_torch28.yml` — a SEPARATE file because `scripts/bootstrap.sh` re-applies
+`environment.yml` to `gen3ai_stable` whenever its hash changes). The split is keyed on the torch
+version: `team_transformer._SPLIT_NOT_NEEDED_ON = {"2.8.0+cu126"}` ⇒ `_CUDA_TRUNK_SPLIT` is OFF on
+2.8 and ON on every other torch. A new run moves to 2.8 by its interpreter (`$GEN3AI_PYTHON=
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3`), switched at a run boundary.
+
+**Measured, split OFF on 2.8** (RTX 3080 Ti beside a live training run, `ai_v14_06_lbat_ctrl_fix`
+`final_model.zip`):
+
+| check | fp32 (`highest`) | TF32 (`high`) |
+|---|---|---|
+| the real startup gate (64 fixture rows) — eval readout | PASS: features 2.4e-5, legal log-prob 9.5e-6, V 4.2e-7 | PASS (rule: e_comp ≤ 4·e_eager + 1e-4 vs an fp32 reference): features 5.1e-2 ≤ 1.7e-1, legal log-prob 2.1e-2 ≤ 7.3e-2, V 2.0e-3 ≤ 5.2e-3; the same graph re-run at fp32 passes the strict bars |
+| the real startup gate — TRAIN graph gradient cosine | 1.000000 | PASS: 1−cos vs fp32 compiled 6.1e-5 ≤ 4 × eager 4.6e-5 + 1e-4 (cosine 0.99994) |
+| 3,840 rows of its own `eval_traces` (steps 78M/80M/82M) — argmax agreement | 1.0000 | 0.9992 (2.5.1 WITH the split: 0.9992) |
+| same — masked-policy TV p99 / max | 1.6e-6 / 2.7e-6 | 2.5e-3 / 1.8e-2 (2.5.1 split: 2.5e-3 / 1.8e-2) |
+| same — win-prob \|dV\| max | 1.4e-6 | 3.5e-3 (2.5.1 split: 3.5e-3) |
+| train graph, 64 rows, loss = mean pi² + mean vf² — gradient cosine | 1.000000 (rel 7.3e-7) | 0.999977 (rel 6.7e-3) |
+
+At TF32 compiled-vs-eager differs by TF32's own rounding, identically on 2.8-unsplit and on
+2.5.1-split — the gate's TF32 rule (vs an fp32 reference, plus the same graph re-run at fp32) is
+what resolves a real defect there. `compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate`
+now asserts, per torch: 2.5.1 ⇒ split ON and unsplit FAILS; 2.8 ⇒ split OFF and unsplit PASSES.
+
+**Graph count** (`torch._dynamo.explain`, the extractor's `forward`, 32 fixture rows, CPU): **1 graph /
+0 breaks on both torches with the ObservationDebugger dropped** — which the compiled path always does
+— and 3 graphs / 2 breaks with it kept (the debugger's rate-limited logger calls `time.time()`,
+`utils/logging/rate_limiter.py:14`). On CUDA the 2.5.1 split adds one; on 2.8 the CUDA explain is also **1 graph / 0 breaks** (6,870 ops) — the unsplit graph, K8's post-K1 target for the extractor.
+
+**Speed A/B — NOT yet measured** (needs an idle GPU): `python -m agents.training.learner_benchmark
+run --device cuda` under each interpreter.
+
 ### The startup parity gate (`gen3_compile_parity_real_obs_v1` + `gen3_tf32_parity_gate_v1`)
 
 `compile_trainer_extractor` validates on **REAL observation rows, never zeros**. The rows are a
@@ -740,10 +776,27 @@ in the routine tier; a mismatch raises naming each drifted qualname with both ha
 `python -m agents.model.compile_control --record` AFTER re-reading the functions and re-running
 (3) the behavioural CONTRACT tests in `compile_control_test.py` (the warning's text and logger, the
 raw `RecompileError`, the start callback, the counter / entry list / reset, the per-code-object
-cache). Hash = the code changed; contract = the behaviour changed; both are kept. **Lane K1** (torch
-≥ 2.8) hits the tripwire by design and swaps the lock for `torch.compiler.set_stance(
-"fail_on_recompile")` + `fullgraph=True` once the trunk split is gone — the `"stance"` mode, enabled
-by adding the new version's row (**UNVERIFIED on 2.8**).
+cache). Hash = the code changed; contract = the behaviour changed; both are kept.
+
+**Per torch version** (`_SUPPORTED`, `_SOURCE_HASHES` — one row each; the contract tests run on BOTH
+envs and assert each version's own semantics): **2.5.1+cu121 → `error_on_recompile`** (13 hashed
+internals); **2.8.0+cu126 → `stance`** (17): the lock is `torch.compiler.set_stance(
+"fail_on_recompile")`, which raises at the call site on ANY cache miss of a compiled callable — a
+recompile AND the first call of a never-compiled one — compiling nothing; `release`/`uninstall` set
+the stance back to `"default"`. **What moved in 2.8** (re-read at the source): `exceeds_cache_size_limit`
+→ `exceeds_recompile_limit`, and `config.cache_size_limit` is now an ALIAS of `config.recompile_limit`
+(the warning reads `hit config.recompile_limit (8)`; the soft failure is `RecompileLimitExceeded`,
+still swallowed into eager); `get_and_maybe_log_recompilation_reason` → `..._reasons`; the
+compile-START callback takes a `CallbackArgs`, fires for LAZY_BACKWARD / TRITON_AUTOTUNING /
+CUDAGRAPH_RECORDING too, and now runs AFTER the recompile check — so it no longer sees a REJECTED
+recompile, and a caller's `except Exception` could have hidden one. **`CompileControl.wrap_compiled`**
+closes that on both versions: the learner forward is installed through it and records any lock
+rejection (sticky, `rejected_after_lock`) before it propagates. The stance's rejection is a plain
+`RuntimeError` (text `_STANCE_REJECT_TEXT`), which `find_recompile_error` matches. Measured on the
+real extractor on 2.8 (fp32, prewarm B=48/256/128): lock at 3 entries on 1 code object (headroom
+5 of 8), steady iterations 0 compiles / 0 rejections, an undeclared batch-1 eval signature after the
+lock → the typed FATAL. **Not done in K1:** `fullgraph=True` and 2.8's
+`config.fail_on_recompile_limit_hit` (a HARD cache-limit failure) — both belong to K6.
 
 **Tests** (`src/agents/model/compile_control_test.py`; CPU with dynamo's `eager` backend — the
 cache, guards, limit and recompile path are dynamo's, independent of the backend): >8 guard
