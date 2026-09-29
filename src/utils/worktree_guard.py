@@ -59,6 +59,8 @@ BENIGN_SUFFIXES = (".pyc", ".pyo", ".egg-info")
 BENIGN_PATHS = (
     "src/rust_sim/target",
     "src/rust_sim/Cargo.lock",
+    "src/rust_env/target",        # the M5 env crate (Lanes 0/A/B/C/D), same kind of build output
+    "src/rust_env/Cargo.lock",
     "deps/pokemon-showdown/dist",
     "deps/pokemon-showdown/node_modules",
 )

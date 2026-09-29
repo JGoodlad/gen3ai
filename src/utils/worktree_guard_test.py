@@ -165,6 +165,7 @@ def test_allowlisted_build_artifacts_never_count(repos):
 
 @pytest.mark.parametrize("rel,benign", [
     ("src/rust_sim/target/", True), ("src/rust_sim/Cargo.lock", True),
+    ("src/rust_env/target/", True), ("src/rust_env/Cargo.lock", True), ("src/rust_env/targetx", False),
     ("deps/pokemon-showdown/dist", True), ("src/a/__pycache__/", True), (".ruff_cache/", True),
     ("x.egg-info/", True), ("models/", False), ("tmp/", False), ("harvest/", False),
     ("src/rust_sim/targetx", False), ("scratch/big.bin", False),
