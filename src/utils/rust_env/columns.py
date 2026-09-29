@@ -153,6 +153,7 @@ def schema_text() -> str:
     lines += [f"status {s.name} {s.code}" for s in P.STATUSES]
     lines += [f"counter {i} {k.name}" for i, k in enumerate(P.COUNTERS)]
     lines += [f"dim {k} {v}" for k, v in sorted(FIXED_DIMS.items())]
+    lines += [f"spec {k}" for k in P.SPEC_KEYS]
     return "\n".join(lines) + "\n"
 
 
@@ -192,6 +193,9 @@ def render() -> str:
         w(f"pub const {k}: usize = {v};")
     w("/// The encoder's row length — the port's own constant, never a literal here.")
     w("pub const OBS_DIM: usize = pokesim::encoder::OBS_DIM;")
+    w("")
+    w("/// The startup declaration's keys (`protocol.SPEC_KEYS`): every one required, no other accepted.")
+    w(f"pub const SPEC_KEYS: [&str; {len(P.SPEC_KEYS)}] = [{', '.join(_rs_str(k) for k in P.SPEC_KEYS)}];")
     w("")
     w("// ---- ops (`core::dispatch`'s first argument)")
     w("pub mod op {")

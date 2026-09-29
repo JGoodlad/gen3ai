@@ -88,6 +88,41 @@ COUNTERS: Tuple[Counter, ...] = (
 )
 
 
+#: The STARTUP DECLARATION's keys (``core::spec::Spec::from_json``): EVERY one is required (null
+#: where the doc allows), an unknown one is refused. Rendered into ``columns.rs`` as ``SPEC_KEYS``,
+#: which ``spec.rs`` reads, so the two languages cannot disagree about the spec's shape.
+SPEC_KEYS: Tuple[str, ...] = (
+    "n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit",
+    "refusal_budget", "bank_dir",
+)
+
+
+def spec_json(*, n: int, threads: int, teams: "list[str]", names: "tuple[str, str]",
+              decision_tense: bool, switch_freeze: bool, turn_limit: Optional[int],
+              refusal_budget: int, bank_dir: Optional[str], format_id: str = "gen3ou") -> str:
+    """The startup declaration as the core parses it (every key explicit — nothing defaulted
+    except ``format_id``, the one format the core runs)."""
+    import json
+
+    spec = {
+        "n": n, "threads": threads, "format_id": format_id, "names": list(names), "teams": list(teams),
+        "decision_tense": bool(decision_tense), "switch_freeze": bool(switch_freeze), "turn_limit": turn_limit,
+        "refusal_budget": refusal_budget, "bank_dir": bank_dir,
+    }
+    assert tuple(spec) == SPEC_KEYS, "spec_json and SPEC_KEYS drifted"
+    return json.dumps(spec)
+
+
+def error_from_json(text: str) -> RustEnvError:
+    """The typed exception for ``DispatchError::json`` (``{"status", "env", "kind", "class",
+    "message", "script"}``)."""
+    import json
+
+    d = json.loads(text)
+    return error_for(int(d["status"]), d["message"], kind=d.get("kind"), py_class=d.get("class"),
+                     env=d.get("env"), script=d.get("script"))
+
+
 def counter_index() -> Dict[str, int]:
     return {c.name: i for i, c in enumerate(COUNTERS)}
 

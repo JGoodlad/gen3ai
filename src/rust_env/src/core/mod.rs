@@ -3,7 +3,18 @@
 //!
 //! * [`columns`] — the GENERATED column contract, opcodes, statuses and counters
 //!   (`python -m utils.rust_env.columns --write`; never edit it by hand).
+//! * [`spec`] — the STARTUP declaration (one JSON object, every key required).
+//! * [`pool`] — N envs on T persistent workers, acquired at startup and frozen.
+//! * [`dispatch`] — [`dispatch::Core`], THE entry both front ends call: `dispatch(op, cols)`.
+//! * [`refusal`] — the refusal policy: quarantine + banked input log + typed class.
 pub mod columns;
+pub mod dispatch;
+pub mod pool;
+pub mod refusal;
+pub mod spec;
+
+pub use dispatch::{Core, DispatchError, OwnedCols};
+pub use spec::Spec;
 
 #[cfg(test)]
 mod tests {
