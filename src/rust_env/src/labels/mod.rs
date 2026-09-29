@@ -9,10 +9,39 @@
 //! `refused` one is off the production surface and not ported, a `core` family not yet built is
 //! refused as such — never a silently stale column.
 
+use pokesim::present::board_reading::BoardReading;
+
 use crate::core::columns::labels::{FAMILIES, NOT_CORE};
+use crate::core::columns::EnvCols;
+
+pub mod belief;
 
 /// The `core` families whose producer exists (grows one Lane-C unit at a time).
-pub const BUILT: &[&str] = &[];
+pub const BUILT: &[&str] = &["belief"];
+
+/// Write every DECLARED family's columns for `side`'s open decision. `own` is the side's reading,
+/// `truth` the OTHER side's (its own team = `battle2.team`), `row` the row just encoded for `side`.
+/// `Err` is a label invariant the Python env raises on (the caller makes it a FAULT).
+pub fn write(families: &[&'static str], side: usize, own: &BoardReading, truth: &BoardReading, row: &[f32], c: &mut EnvCols) -> Result<(), String> {
+    use pokesim::encoder::layout::TEAM_SIZE as T;
+    for &f in families {
+        match f {
+            "belief" => {
+                let m = belief::MOVE_SLOTS;
+                belief::write(
+                    own,
+                    truth,
+                    row,
+                    &mut c.belief_species[side * T..(side + 1) * T],
+                    &mut c.belief_moves[side * T * m..(side + 1) * T * m],
+                    &mut c.known_moves[side * T * m..(side + 1) * T * m],
+                )?
+            }
+            other => return Err(format!("label family {other:?} was declared but has no producer (labels::BUILT drifted)")),
+        }
+    }
+    Ok(())
+}
 
 /// Validate the spec's `labels` declaration; the families in TABLE order (deterministic).
 pub fn declare(names: &[String]) -> Result<Vec<&'static str>, String> {

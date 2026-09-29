@@ -122,10 +122,10 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
   poke-env has processed for agent2 by then. The core reads the truth chain after the same write.
   They should agree, but it is **UNVERIFIED** until the gate runs. `item` is the only dynamic truth
   field today.
-- **`return` / `frustration` / typed-HP ids.** Showdown's request appends the base power to
-  `return` / `frustration` (`return102`), and poke-env's `Move.retrieve_id` folds it. The label maps
-  a mon's moves through `to_id_str(mv.id)`. What id the Python label actually looks up for these is
-  measured by the gate, not assumed.
+- **`return` / `frustration` / typed-HP ids (CLOSED by the belief gate).** Showdown's request
+  spells `return102`. Both readings key an own mon's moves by `Move.retrieve_id`, which folds it
+  to `return`, while a Hidden Power keeps its type (`Move._id`). The belief milestone runs 400
+  episodes with 0 divergences.
 - **Episode edges.** At a decision where `battle2` does not exist yet, Python emits the all-PAD /
   all-zero form. Whether any trainee decision is ever labelled that way is measured.
 
@@ -138,4 +138,6 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
    `refused` family, an unknown family, and a `core` family not built yet (`labels::BUILT`).
 3. One unit per `core` family, each with its slice-N parity gate against `Gen3Env` on recorded
    battles: COMMIT tier in the routine gate, MILESTONE tier `slow`. The order is belief, hp_type +
-   item, spread (the inversion port), intent, then margin.
+   item, spread (the inversion port), intent, then margin. **`belief` BUILT**
+   (`src/rust_env/src/labels/belief.rs`, gated by `src/agents/training/rust_env_labels_parity_test.py`:
+   400 milestone episodes, 0 divergences).

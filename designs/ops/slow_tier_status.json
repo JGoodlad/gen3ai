@@ -217,6 +217,22 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[ladder]": {
+   "status": "pass",
+   "commit": "896272d3bb971719fb7bf9e0e3881ab368a7033b",
+   "at": "2026-09-29T22:19:39Z",
+   "duration_s": 35.34,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[pool]": {
+   "status": "pass",
+   "commit": "896272d3bb971719fb7bf9e0e3881ab368a7033b",
+   "at": "2026-09-29T22:19:39Z",
+   "duration_s": 32.23,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
    "status": "pass",
    "commit": "9d1ec65d582c3a2e9e2bbafedcc6eb3c8daaa34d",
@@ -850,5 +866,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-29T21:49:57Z"
+ "last_written": "2026-09-29T22:19:39Z"
 }

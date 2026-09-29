@@ -158,17 +158,23 @@ impl Env {
         };
         // A battle the engine cannot even construct is the engine's refusal (quarantine class).
         self.sess = Some(BridgeSession::new_construct_turn0(&opts, &ctx.dex).map_err(EnvError::engine)?);
-        self.advance(c, t)
+        self.advance(ctx, c, t)
     }
 
     /// Fold every chunk past the write cursor through each side's chain — `sim_bridge`'s
     /// `CoreObs::step_inner`, rule for rule — and encode each decision that opened into `c`.
-    fn advance(&mut self, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
+    ///
+    /// TWO passes (M5 Lane C): every side's chain folds the write FIRST, then each decision that
+    /// opened is encoded and labelled — a label reads the OTHER side's chain (its own team, the
+    /// Python env's `battle2`), which must already hold the same write. The encode reads only its
+    /// own chain, so the rows are unchanged by the order.
+    fn advance(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
         let sess = self.sess.as_ref().ok_or_else(|| EnvError::fault("no battle"))?;
         if let Some(f) = sess.fatal() {
             return Err(EnvError::engine(format!("engine fatal: {f}")));
         }
         let chunks = &sess.chunks().chunks[self.emitted..];
+        let mut opened_now = [false; SIDES];
         for side in 0..SIDES {
             let tag = side + 1;
             let chain = self.chains[side].take().ok_or_else(|| EnvError::fault(format!("p{tag}: chain lost")))?;
@@ -196,16 +202,7 @@ impl Env {
                             d.line, s.lines
                         )));
                     }
-                    let row: &mut [f32; OBS_DIM] = (&mut c.obs[side * OBS_DIM..(side + 1) * OBS_DIM])
-                        .try_into()
-                        .map_err(|_| EnvError::fault("obs row slice"))?;
-                    next.encode(side, row).map_err(core_err(&format!("encode p{tag}")))?;
-                    let legal = next.legal(side).ok_or_else(|| EnvError::fault(format!("p{tag}: a decision with no legality")))?;
-                    let reading = &s.board_reading;
-                    let tokens = present::choice_tokens(reading, &legal).map_err(core_err(&format!("tokens p{tag}")))?;
-                    c.mask[side * ACT..(side + 1) * ACT].copy_from_slice(&present::mask(&legal));
-                    self.open[side] = Some(Open { tokens, n: self.decided[side] });
-                    t.decisions += 1;
+                    opened_now[side] = true;
                 }
                 (d, n) => {
                     return Err(EnvError::fault(format!(
@@ -214,8 +211,36 @@ impl Env {
                     )));
                 }
             }
-            self.decided[side] = decisions;
+            if !opened_now[side] {
+                self.decided[side] = decisions;
+            }
             self.chains[side] = Some(next);
+        }
+        for side in (0..SIDES).filter(|&s| opened_now[s]) {
+            let tag = side + 1;
+            let chain = self.chains[side].as_ref().ok_or_else(|| EnvError::fault(format!("p{tag}: chain lost")))?;
+            let row: &mut [f32; OBS_DIM] =
+                (&mut c.obs[side * OBS_DIM..(side + 1) * OBS_DIM]).try_into().map_err(|_| EnvError::fault("obs row slice"))?;
+            chain.encode(side, row).map_err(core_err(&format!("encode p{tag}")))?;
+            let legal = chain.legal(side).ok_or_else(|| EnvError::fault(format!("p{tag}: a decision with no legality")))?;
+            let s = chain.stream(side).ok_or_else(|| EnvError::fault(format!("p{tag}: the chain lost its stream")))?;
+            let tokens = present::choice_tokens(&s.board_reading, &legal).map_err(core_err(&format!("tokens p{tag}")))?;
+            c.mask[side * ACT..(side + 1) * ACT].copy_from_slice(&present::mask(&legal));
+            if !ctx.spec.labels.is_empty() {
+                let other = 1 - side;
+                let truth = self.chains[other]
+                    .as_ref()
+                    .and_then(|ch| ch.stream(other))
+                    .ok_or_else(|| EnvError::fault(format!("p{tag}: the truth side's chain lost its stream")))?;
+                let mut row_now = [0f32; OBS_DIM]; // on the stack: an op allocates nothing new for labels
+                row_now.copy_from_slice(&c.obs[side * OBS_DIM..(side + 1) * OBS_DIM]);
+                crate::labels::write(&ctx.spec.labels, side, &s.board_reading, &truth.board_reading, &row_now, c)
+                    .map_err(|e| EnvError::fault(format!("labels p{tag}: {e}")))?;
+            }
+            let n = self.decided[side];
+            self.decided[side] = chain.trackers(side).map_or(0, |tr| tr.decisions);
+            self.open[side] = Some(Open { tokens, n });
+            t.decisions += 1;
         }
         self.emitted = self.sess.as_ref().map_or(0, |s| s.chunks().chunks.len());
         Ok(())
@@ -239,15 +264,15 @@ impl Env {
         }
         self.log.cmds.push(format!("CHOOSE p{} {tok}", side + 1));
         self.sess.as_mut().ok_or_else(|| EnvError::fault("no battle"))?.feed_cmd(Cmd { side, choice }, &ctx.dex);
-        self.advance(c, t)
+        self.advance(ctx, c, t)
     }
 
     /// The placeholder turn limit: p1 forfeits (`FORCELOSE p1`), as `sim_bridge` runs it.
-    fn forfeit_p1(&mut self, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
+    fn forfeit_p1(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
         self.log.cmds.push("FORCELOSE p1".into());
         self.sess.as_mut().ok_or_else(|| EnvError::fault("no battle"))?.forfeit(0);
         self.open = [None, None];
-        self.advance(c, t)
+        self.advance(ctx, c, t)
     }
 
     fn write_state(&self, c: &mut EnvCols) -> Result<(), EnvError> {
@@ -295,7 +320,7 @@ impl Env {
         if !sess.is_ended() {
             if let Some(limit) = ctx.spec.turn_limit {
                 if sess.turn() > limit {
-                    self.forfeit_p1(c, t)?;
+                    self.forfeit_p1(ctx, c, t)?;
                 }
             }
         }
