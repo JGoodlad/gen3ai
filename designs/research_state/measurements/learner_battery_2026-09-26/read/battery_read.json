@@ -1,0 +1,2747 @@
+{
+ "state": "/home/goodlad/dev/gen3ai-reads/n0_endofrun_2026-09-27",
+ "teams": [
+  "U_61590463",
+  "U_90b94599",
+  "U_92832108",
+  "U_9909f2e9",
+  "U_9d5f8458",
+  "U_ce35b736",
+  "U_dbf81d8e",
+  "U_f7ba5702"
+ ],
+ "bootstrap": {
+  "draws": 20000,
+  "seed": 20260915,
+  "sensitivity_seed": 20260906,
+  "index_set": "ONE fixed set shared by every contrast (paired)"
+ },
+ "provenance": {
+  "C": {
+   "trees": [
+    "d4799e8a2e0ae728a79a3a758c8ee1ca4e2cd0a3"
+   ],
+   "refs": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip"
+   ],
+   "opponents": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip"
+   ],
+   "games_per_team": {
+    "U_61590463": 600,
+    "U_90b94599": 600,
+    "U_92832108": 600,
+    "U_9909f2e9": 600,
+    "U_9d5f8458": 600,
+    "U_ce35b736": 600,
+    "U_dbf81d8e": 600,
+    "U_f7ba5702": 600
+   }
+  },
+  "E5": {
+   "trees": [
+    "d4799e8a2e0ae728a79a3a758c8ee1ca4e2cd0a3"
+   ],
+   "refs": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip"
+   ],
+   "opponents": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip"
+   ],
+   "games_per_team": {
+    "U_61590463": 600,
+    "U_90b94599": 600,
+    "U_92832108": 600,
+    "U_9909f2e9": 600,
+    "U_9d5f8458": 600,
+    "U_ce35b736": 600,
+    "U_dbf81d8e": 600,
+    "U_f7ba5702": 600
+   }
+  },
+  "L95": {
+   "trees": [
+    "d4799e8a2e0ae728a79a3a758c8ee1ca4e2cd0a3"
+   ],
+   "refs": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip"
+   ],
+   "opponents": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip"
+   ],
+   "games_per_team": {
+    "U_61590463": 600,
+    "U_90b94599": 600,
+    "U_92832108": 600,
+    "U_9909f2e9": 600,
+    "U_9d5f8458": 600,
+    "U_ce35b736": 600,
+    "U_dbf81d8e": 600,
+    "U_f7ba5702": 600
+   }
+  },
+  "Cfix": {
+   "trees": [
+    "d4799e8a2e0ae728a79a3a758c8ee1ca4e2cd0a3"
+   ],
+   "refs": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip"
+   ],
+   "opponents": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip"
+   ],
+   "games_per_team": {
+    "U_61590463": 600,
+    "U_90b94599": 600,
+    "U_92832108": 600,
+    "U_9909f2e9": 600,
+    "U_9d5f8458": 600,
+    "U_ce35b736": 600,
+    "U_dbf81d8e": 600,
+    "U_f7ba5702": 600
+   }
+  },
+  "K2": {
+   "trees": [
+    "d4799e8a2e0ae728a79a3a758c8ee1ca4e2cd0a3"
+   ],
+   "refs": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip"
+   ],
+   "opponents": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip"
+   ],
+   "games_per_team": {
+    "U_61590463": 600,
+    "U_90b94599": 600,
+    "U_92832108": 600,
+    "U_9909f2e9": 600,
+    "U_9d5f8458": 600,
+    "U_ce35b736": 600,
+    "U_dbf81d8e": 600,
+    "U_f7ba5702": 600
+   }
+  },
+  "K3": {
+   "trees": [
+    "d4799e8a2e0ae728a79a3a758c8ee1ca4e2cd0a3"
+   ],
+   "refs": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip"
+   ],
+   "opponents": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip"
+   ],
+   "games_per_team": {
+    "U_61590463": 600,
+    "U_90b94599": 600,
+    "U_92832108": 600,
+    "U_9909f2e9": 600,
+    "U_9d5f8458": 600,
+    "U_ce35b736": 600,
+    "U_dbf81d8e": 600,
+    "U_f7ba5702": 600
+   }
+  },
+  "N0": {
+   "trees": [
+    "d4799e8a2e0ae728a79a3a758c8ee1ca4e2cd0a3"
+   ],
+   "refs": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/final_model.zip"
+   ],
+   "opponents": [
+    "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/snapshots/snapshot_000024000000.zip"
+   ],
+   "games_per_team": {
+    "U_61590463": 595,
+    "U_90b94599": 575,
+    "U_92832108": 591,
+    "U_9909f2e9": 585,
+    "U_9d5f8458": 574,
+    "U_ce35b736": 587,
+    "U_dbf81d8e": 575,
+    "U_f7ba5702": 571
+   }
+  },
+  "T32b": {
+   "trees": [],
+   "refs": [],
+   "opponents": [],
+   "games_per_team": {
+    "U_61590463": 0,
+    "U_90b94599": 0,
+    "U_92832108": 0,
+    "U_9909f2e9": 0,
+    "U_9d5f8458": 0,
+    "U_ce35b736": 0,
+    "U_dbf81d8e": 0,
+    "U_f7ba5702": 0
+   }
+  }
+ },
+ "complete_600": {
+  "C": true,
+  "E5": true,
+  "L95": true,
+  "Cfix": true,
+  "K2": true,
+  "K3": true,
+  "N0": false,
+  "T32b": false
+ },
+ "levels_600": {
+  "C": {
+   "level_pp": [
+    74.47916666666667,
+    72.4375,
+    76.4375
+   ],
+   "counts": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3575,
+    "ties": 4
+   },
+   "per_team_pp": {
+    "U_61590463": 76.5,
+    "U_90b94599": 77.83,
+    "U_92832108": 70.83,
+    "U_9909f2e9": 75.67,
+    "U_9d5f8458": 73.0,
+    "U_ce35b736": 73.33,
+    "U_dbf81d8e": 70.17,
+    "U_f7ba5702": 78.5
+   }
+  },
+  "E5": {
+   "level_pp": [
+    75.22916666666667,
+    74.47916666666667,
+    76.0
+   ],
+   "counts": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3611,
+    "ties": 5
+   },
+   "per_team_pp": {
+    "U_61590463": 75.33,
+    "U_90b94599": 75.33,
+    "U_92832108": 75.17,
+    "U_9909f2e9": 77.0,
+    "U_9d5f8458": 74.33,
+    "U_ce35b736": 76.67,
+    "U_dbf81d8e": 73.5,
+    "U_f7ba5702": 74.5
+   }
+  },
+  "L95": {
+   "level_pp": [
+    64.375,
+    62.5,
+    65.875
+   ],
+   "counts": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3090,
+    "ties": 9
+   },
+   "per_team_pp": {
+    "U_61590463": 66.67,
+    "U_90b94599": 67.17,
+    "U_92832108": 62.83,
+    "U_9909f2e9": 58.83,
+    "U_9d5f8458": 65.0,
+    "U_ce35b736": 64.83,
+    "U_dbf81d8e": 65.83,
+    "U_f7ba5702": 63.83
+   }
+  },
+  "Cfix": {
+   "level_pp": [
+    77.54166666666666,
+    75.41666666666667,
+    79.91666666666666
+   ],
+   "counts": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3722,
+    "ties": 16
+   },
+   "per_team_pp": {
+    "U_61590463": 75.83,
+    "U_90b94599": 76.17,
+    "U_92832108": 74.33,
+    "U_9909f2e9": 83.5,
+    "U_9d5f8458": 79.5,
+    "U_ce35b736": 75.67,
+    "U_dbf81d8e": 73.83,
+    "U_f7ba5702": 81.5
+   }
+  },
+  "K2": {
+   "level_pp": [
+    78.27083333333333,
+    76.91666666666667,
+    79.75000000000001
+   ],
+   "counts": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3757,
+    "ties": 12
+   },
+   "per_team_pp": {
+    "U_61590463": 76.67,
+    "U_90b94599": 76.5,
+    "U_92832108": 75.83,
+    "U_9909f2e9": 81.5,
+    "U_9d5f8458": 81.0,
+    "U_ce35b736": 77.67,
+    "U_dbf81d8e": 77.0,
+    "U_f7ba5702": 80.0
+   }
+  },
+  "K3": {
+   "level_pp": [
+    78.47916666666667,
+    75.97916666666666,
+    81.27083333333334
+   ],
+   "counts": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3767,
+    "ties": 10
+   },
+   "per_team_pp": {
+    "U_61590463": 77.33,
+    "U_90b94599": 75.83,
+    "U_92832108": 74.83,
+    "U_9909f2e9": 84.67,
+    "U_9d5f8458": 80.17,
+    "U_ce35b736": 74.83,
+    "U_dbf81d8e": 75.67,
+    "U_f7ba5702": 84.5
+   }
+  }
+ },
+ "battery": {
+  "E5": {
+   "a": "E5",
+   "b": "C",
+   "games_per_team": [
+    600
+   ],
+   "level_a_pp": [
+    75.22916666666667,
+    74.47916666666667,
+    76.0
+   ],
+   "level_b_pp": [
+    74.47916666666667,
+    72.4375,
+    76.4375
+   ],
+   "delta_pp": 0.7499999999999993,
+   "ci95_pp": [
+    -1.2083333333333361,
+    2.6458333333333335
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": -1.17,
+    "U_90b94599": -2.5,
+    "U_92832108": 4.33,
+    "U_9909f2e9": 1.33,
+    "U_9d5f8458": 1.33,
+    "U_ce35b736": 3.33,
+    "U_dbf81d8e": 3.33,
+    "U_f7ba5702": -4.0
+   },
+   "teams_up": 5,
+   "counts_a": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3611,
+    "ties": 5
+   },
+   "counts_b": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3575,
+    "ties": 4
+   },
+   "ci95_pp_engine_default_seed": [
+    -1.2083333333333361,
+    2.645833333333335
+   ],
+   "class": "EQUIVALENT",
+   "non_inferior": true
+  },
+  "L95": {
+   "a": "L95",
+   "b": "C",
+   "games_per_team": [
+    600
+   ],
+   "level_a_pp": [
+    64.375,
+    62.5,
+    65.875
+   ],
+   "level_b_pp": [
+    74.47916666666667,
+    72.4375,
+    76.4375
+   ],
+   "delta_pp": -10.104166666666668,
+   "ci95_pp": [
+    -12.770833333333337,
+    -7.645833333333334
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": -9.83,
+    "U_90b94599": -10.67,
+    "U_92832108": -8.0,
+    "U_9909f2e9": -16.83,
+    "U_9d5f8458": -8.0,
+    "U_ce35b736": -8.5,
+    "U_dbf81d8e": -4.33,
+    "U_f7ba5702": -14.67
+   },
+   "teams_up": 0,
+   "counts_a": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3090,
+    "ties": 9
+   },
+   "counts_b": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3575,
+    "ties": 4
+   },
+   "ci95_pp_engine_default_seed": [
+    -12.72916666666667,
+    -7.666666666666664
+   ],
+   "class": "OUTSIDE, BELOW",
+   "non_inferior": false
+  }
+ },
+ "bug_effect_U": {
+  "a": "Cfix",
+  "b": "C",
+  "games_per_team": [
+   600
+  ],
+  "level_a_pp": [
+   77.54166666666666,
+   75.41666666666667,
+   79.91666666666666
+  ],
+  "level_b_pp": [
+   74.47916666666667,
+   72.4375,
+   76.4375
+  ],
+  "delta_pp": 3.0624999999999987,
+  "ci95_pp": [
+   0.9999999999999996,
+   5.145833333333331
+  ],
+  "per_team_delta_pp": {
+   "U_61590463": -0.67,
+   "U_90b94599": -1.67,
+   "U_92832108": 3.5,
+   "U_9909f2e9": 7.83,
+   "U_9d5f8458": 6.5,
+   "U_ce35b736": 2.33,
+   "U_dbf81d8e": 3.67,
+   "U_f7ba5702": 3.0
+  },
+  "teams_up": 6,
+  "counts_a": {
+   "attempted": 4800,
+   "finished": 4800,
+   "timeouts": 0,
+   "wins": 3722,
+   "ties": 16
+  },
+  "counts_b": {
+   "attempted": 4800,
+   "finished": 4800,
+   "timeouts": 0,
+   "wins": 3575,
+   "ties": 4
+  },
+  "ci95_pp_engine_default_seed": [
+   0.9791666666666656,
+   5.124999999999994
+  ],
+  "class": "NOT DETECTED"
+ },
+ "bug_effect_U_first200": {
+  "a": "Cfix",
+  "b": "C",
+  "games_per_team": [
+   200
+  ],
+  "level_a_pp": [
+   78.25,
+   75.1875,
+   81.62499999999999
+  ],
+  "level_b_pp": [
+   74.5,
+   72.24999999999999,
+   76.8125
+  ],
+  "delta_pp": 3.7500000000000004,
+  "ci95_pp": [
+   0.437499999999999,
+   6.375000000000002
+  ],
+  "per_team_delta_pp": {
+   "U_61590463": 2.5,
+   "U_90b94599": -6.5,
+   "U_92832108": 3.0,
+   "U_9909f2e9": 8.0,
+   "U_9d5f8458": 7.0,
+   "U_ce35b736": 3.0,
+   "U_dbf81d8e": 7.5,
+   "U_f7ba5702": 5.5
+  },
+  "teams_up": 7,
+  "counts_a": {
+   "attempted": 1600,
+   "finished": 1600,
+   "timeouts": 0,
+   "wins": 1252,
+   "ties": 4
+  },
+  "counts_b": {
+   "attempted": 1600,
+   "finished": 1600,
+   "timeouts": 0,
+   "wins": 1192,
+   "ties": 1
+  }
+ },
+ "plateau": {
+  "block1 (N0->Cfix)": {
+   "200": {
+    "a": "Cfix",
+    "b": "N0",
+    "games_per_team": [
+     200
+    ],
+    "level_a_pp": [
+     78.25,
+     75.1875,
+     81.62499999999999
+    ],
+    "level_b_pp": [
+     63.375,
+     61.375,
+     65.25000000000001
+    ],
+    "delta_pp": 14.875,
+    "ci95_pp": [
+     10.687499999999996,
+     18.875000000000004
+    ],
+    "per_team_delta_pp": {
+     "U_61590463": 8.5,
+     "U_90b94599": 5.0,
+     "U_92832108": 12.5,
+     "U_9909f2e9": 22.0,
+     "U_9d5f8458": 19.0,
+     "U_ce35b736": 11.5,
+     "U_dbf81d8e": 19.0,
+     "U_f7ba5702": 21.5
+    },
+    "teams_up": 8,
+    "counts_a": {
+     "attempted": 1600,
+     "finished": 1600,
+     "timeouts": 0,
+     "wins": 1252,
+     "ties": 4
+    },
+    "counts_b": {
+     "attempted": 1600,
+     "finished": 1600,
+     "timeouts": 0,
+     "wins": 1014,
+     "ties": 4
+    },
+    "plateau": false,
+    "class": "OUTSIDE, ABOVE"
+   },
+   "600_or_common": {
+    "a": "Cfix",
+    "b": "N0",
+    "games_per_team": [
+     571,
+     574,
+     575,
+     585,
+     587,
+     591,
+     595
+    ],
+    "level_a_pp": [
+     77.88111101123249,
+     75.70293267204397,
+     80.30741175389045
+    ],
+    "level_b_pp": [
+     64.57519331355071,
+     63.290435672904074,
+     65.92040271495647
+    ],
+    "delta_pp": 13.305917697681775,
+    "ci95_pp": [
+     11.180554713439284,
+     15.486919174489744
+    ],
+    "per_team_delta_pp": {
+     "U_61590463": 8.57,
+     "U_90b94599": 10.43,
+     "U_92832108": 11.17,
+     "U_9909f2e9": 16.92,
+     "U_9d5f8458": 17.42,
+     "U_ce35b736": 13.12,
+     "U_dbf81d8e": 12.17,
+     "U_f7ba5702": 16.64
+    },
+    "teams_up": 8,
+    "counts_a": {
+     "attempted": 4653,
+     "finished": 4653,
+     "timeouts": 0,
+     "wins": 3623,
+     "ties": 16
+    },
+    "counts_b": {
+     "attempted": 4653,
+     "finished": 4653,
+     "timeouts": 0,
+     "wins": 3005,
+     "ties": 8
+    },
+    "plateau": false,
+    "class": "OUTSIDE, ABOVE"
+   }
+  },
+  "block2 (Cfix->K2)": {
+   "200": {
+    "a": "K2",
+    "b": "Cfix",
+    "games_per_team": [
+     200
+    ],
+    "level_a_pp": [
+     79.125,
+     75.875,
+     82.18749999999999
+    ],
+    "level_b_pp": [
+     78.25,
+     75.1875,
+     81.62499999999999
+    ],
+    "delta_pp": 0.8749999999999993,
+    "ci95_pp": [
+     -1.7500000000000016,
+     3.5625000000000004
+    ],
+    "per_team_delta_pp": {
+     "U_61590463": -2.0,
+     "U_90b94599": 2.5,
+     "U_92832108": 6.5,
+     "U_9909f2e9": -1.5,
+     "U_9d5f8458": 3.0,
+     "U_ce35b736": 5.5,
+     "U_dbf81d8e": -5.0,
+     "U_f7ba5702": -2.0
+    },
+    "teams_up": 4,
+    "counts_a": {
+     "attempted": 1600,
+     "finished": 1600,
+     "timeouts": 0,
+     "wins": 1266,
+     "ties": 3
+    },
+    "counts_b": {
+     "attempted": 1600,
+     "finished": 1600,
+     "timeouts": 0,
+     "wins": 1252,
+     "ties": 4
+    },
+    "plateau": true,
+    "class": "EQUIVALENT"
+   },
+   "600_or_common": {
+    "a": "K2",
+    "b": "Cfix",
+    "games_per_team": [
+     600
+    ],
+    "level_a_pp": [
+     78.27083333333333,
+     76.91666666666667,
+     79.75000000000001
+    ],
+    "level_b_pp": [
+     77.54166666666666,
+     75.41666666666667,
+     79.91666666666666
+    ],
+    "delta_pp": 0.7291666666666683,
+    "ci95_pp": [
+     -0.4374999999999962,
+     1.812500000000003
+    ],
+    "per_team_delta_pp": {
+     "U_61590463": 0.83,
+     "U_90b94599": 0.33,
+     "U_92832108": 1.5,
+     "U_9909f2e9": -2.0,
+     "U_9d5f8458": 1.5,
+     "U_ce35b736": 2.0,
+     "U_dbf81d8e": 3.17,
+     "U_f7ba5702": -1.5
+    },
+    "teams_up": 6,
+    "counts_a": {
+     "attempted": 4800,
+     "finished": 4800,
+     "timeouts": 0,
+     "wins": 3757,
+     "ties": 12
+    },
+    "counts_b": {
+     "attempted": 4800,
+     "finished": 4800,
+     "timeouts": 0,
+     "wins": 3722,
+     "ties": 16
+    },
+    "plateau": true,
+    "class": "EQUIVALENT"
+   }
+  },
+  "block3 (K2->K3)": {
+   "200": {
+    "a": "K3",
+    "b": "K2",
+    "games_per_team": [
+     200
+    ],
+    "level_a_pp": [
+     78.8125,
+     76.8125,
+     81.18749999999999
+    ],
+    "level_b_pp": [
+     79.125,
+     75.875,
+     82.18749999999999
+    ],
+    "delta_pp": -0.3124999999999989,
+    "ci95_pp": [
+     -3.3765625000000012,
+     2.9375000000000027
+    ],
+    "per_team_delta_pp": {
+     "U_61590463": 3.5,
+     "U_90b94599": 1.5,
+     "U_92832108": -5.5,
+     "U_9909f2e9": -2.5,
+     "U_9d5f8458": -6.0,
+     "U_ce35b736": -4.0,
+     "U_dbf81d8e": 7.5,
+     "U_f7ba5702": 3.0
+    },
+    "teams_up": 4,
+    "counts_a": {
+     "attempted": 1600,
+     "finished": 1600,
+     "timeouts": 0,
+     "wins": 1261,
+     "ties": 4
+    },
+    "counts_b": {
+     "attempted": 1600,
+     "finished": 1600,
+     "timeouts": 0,
+     "wins": 1266,
+     "ties": 3
+    },
+    "plateau": true,
+    "class": "EQUIVALENT"
+   },
+   "600_or_common": {
+    "a": "K3",
+    "b": "K2",
+    "games_per_team": [
+     600
+    ],
+    "level_a_pp": [
+     78.47916666666667,
+     75.97916666666666,
+     81.27083333333334
+    ],
+    "level_b_pp": [
+     78.27083333333333,
+     76.91666666666667,
+     79.75000000000001
+    ],
+    "delta_pp": 0.2083333333333312,
+    "ci95_pp": [
+     -1.250000000000001,
+     1.874999999999996
+    ],
+    "per_team_delta_pp": {
+     "U_61590463": 0.67,
+     "U_90b94599": -0.67,
+     "U_92832108": -1.0,
+     "U_9909f2e9": 3.17,
+     "U_9d5f8458": -0.83,
+     "U_ce35b736": -2.83,
+     "U_dbf81d8e": -1.33,
+     "U_f7ba5702": 4.5
+    },
+    "teams_up": 3,
+    "counts_a": {
+     "attempted": 4800,
+     "finished": 4800,
+     "timeouts": 0,
+     "wins": 3767,
+     "ties": 10
+    },
+    "counts_b": {
+     "attempted": 4800,
+     "finished": 4800,
+     "timeouts": 0,
+     "wins": 3757,
+     "ties": 12
+    },
+    "plateau": true,
+    "class": "EQUIVALENT"
+   }
+  },
+  "buggy block1 (N0->C)": {
+   "200": {
+    "a": "C",
+    "b": "N0",
+    "games_per_team": [
+     200
+    ],
+    "level_a_pp": [
+     74.5,
+     72.24999999999999,
+     76.8125
+    ],
+    "level_b_pp": [
+     63.375,
+     61.375,
+     65.25000000000001
+    ],
+    "delta_pp": 11.124999999999998,
+    "ci95_pp": [
+     9.124999999999996,
+     13.125
+    ],
+    "per_team_delta_pp": {
+     "U_61590463": 6.0,
+     "U_90b94599": 11.5,
+     "U_92832108": 9.5,
+     "U_9909f2e9": 14.0,
+     "U_9d5f8458": 12.0,
+     "U_ce35b736": 8.5,
+     "U_dbf81d8e": 11.5,
+     "U_f7ba5702": 16.0
+    },
+    "teams_up": 8,
+    "counts_a": {
+     "attempted": 1600,
+     "finished": 1600,
+     "timeouts": 0,
+     "wins": 1192,
+     "ties": 1
+    },
+    "counts_b": {
+     "attempted": 1600,
+     "finished": 1600,
+     "timeouts": 0,
+     "wins": 1014,
+     "ties": 4
+    },
+    "plateau": false,
+    "class": "OUTSIDE, ABOVE"
+   },
+   "600_or_common": {
+    "a": "C",
+    "b": "N0",
+    "games_per_team": [
+     571,
+     574,
+     575,
+     585,
+     587,
+     591,
+     595
+    ],
+    "level_a_pp": [
+     74.45331543888345,
+     72.41155863602447,
+     76.44159155871046
+    ],
+    "level_b_pp": [
+     64.57519331355071,
+     63.290435672904074,
+     65.92040271495647
+    ],
+    "delta_pp": 9.878122125332732,
+    "ci95_pp": [
+     8.769252508078585,
+     11.072414643388646
+    ],
+    "per_team_delta_pp": {
+     "U_61590463": 9.08,
+     "U_90b94599": 11.83,
+     "U_92832108": 7.61,
+     "U_9909f2e9": 9.4,
+     "U_9d5f8458": 9.58,
+     "U_ce35b736": 10.39,
+     "U_dbf81d8e": 8.17,
+     "U_f7ba5702": 12.96
+    },
+    "teams_up": 8,
+    "counts_a": {
+     "attempted": 4653,
+     "finished": 4653,
+     "timeouts": 0,
+     "wins": 3464,
+     "ties": 4
+    },
+    "counts_b": {
+     "attempted": 4653,
+     "finished": 4653,
+     "timeouts": 0,
+     "wins": 3005,
+     "ties": 8
+    },
+    "plateau": false,
+    "class": "OUTSIDE, ABOVE"
+   }
+  }
+ },
+ "cumulative": {
+  "K3-Cfix": {
+   "a": "K3",
+   "b": "Cfix",
+   "games_per_team": [
+    600
+   ],
+   "level_a_pp": [
+    78.47916666666667,
+    75.97916666666666,
+    81.27083333333334
+   ],
+   "level_b_pp": [
+    77.54166666666666,
+    75.41666666666667,
+    79.91666666666666
+   ],
+   "delta_pp": 0.9374999999999994,
+   "ci95_pp": [
+    0.1666666666666622,
+    1.7291666666666692
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": 1.5,
+    "U_90b94599": -0.33,
+    "U_92832108": 0.5,
+    "U_9909f2e9": 1.17,
+    "U_9d5f8458": 0.67,
+    "U_ce35b736": -0.83,
+    "U_dbf81d8e": 1.83,
+    "U_f7ba5702": 3.0
+   },
+   "teams_up": 6,
+   "counts_a": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3767,
+    "ties": 10
+   },
+   "counts_b": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3722,
+    "ties": 16
+   }
+  },
+  "K3-N0": {
+   "a": "K3",
+   "b": "N0",
+   "games_per_team": [
+    571,
+    574,
+    575,
+    585,
+    587,
+    591,
+    595
+   ],
+   "level_a_pp": [
+    78.76686271802107,
+    76.39053021939955,
+    81.41599965828689
+   ],
+   "level_b_pp": [
+    64.57519331355071,
+    63.290435672904074,
+    65.92040271495647
+   ],
+   "delta_pp": 14.191669404470343,
+   "ci95_pp": [
+    11.921767970216003,
+    16.545321810545925
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": 10.08,
+    "U_90b94599": 10.43,
+    "U_92832108": 11.51,
+    "U_9909f2e9": 17.95,
+    "U_9d5f8458": 17.07,
+    "U_ce35b736": 12.27,
+    "U_dbf81d8e": 14.96,
+    "U_f7ba5702": 19.26
+   },
+   "teams_up": 8,
+   "counts_a": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3664,
+    "ties": 10
+   },
+   "counts_b": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3005,
+    "ties": 8
+   }
+  },
+  "K2-N0": {
+   "a": "K2",
+   "b": "N0",
+   "games_per_team": [
+    571,
+    574,
+    575,
+    585,
+    587,
+    591,
+    595
+   ],
+   "level_a_pp": [
+    78.36995144852617,
+    76.98589418425094,
+    79.9018068249384
+   ],
+   "level_b_pp": [
+    64.57519331355071,
+    63.290435672904074,
+    65.92040271495647
+   ],
+   "delta_pp": 13.794758134975444,
+   "ci95_pp": [
+    11.86944449675922,
+    15.598831986212147
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": 9.24,
+    "U_90b94599": 10.09,
+    "U_92832108": 13.03,
+    "U_9909f2e9": 14.87,
+    "U_9d5f8458": 18.29,
+    "U_ce35b736": 14.99,
+    "U_dbf81d8e": 14.96,
+    "U_f7ba5702": 14.89
+   },
+   "teams_up": 8,
+   "counts_a": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3646,
+    "ties": 11
+   },
+   "counts_b": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3005,
+    "ties": 8
+   }
+  },
+  "K3-C": {
+   "a": "K3",
+   "b": "C",
+   "games_per_team": [
+    600
+   ],
+   "level_a_pp": [
+    78.47916666666667,
+    75.97916666666666,
+    81.27083333333334
+   ],
+   "level_b_pp": [
+    74.47916666666667,
+    72.4375,
+    76.4375
+   ],
+   "delta_pp": 3.9999999999999982,
+   "ci95_pp": [
+    1.604166666666662,
+    6.312499999999998
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": 0.83,
+    "U_90b94599": -2.0,
+    "U_92832108": 4.0,
+    "U_9909f2e9": 9.0,
+    "U_9d5f8458": 7.17,
+    "U_ce35b736": 1.5,
+    "U_dbf81d8e": 5.5,
+    "U_f7ba5702": 6.0
+   },
+   "teams_up": 7,
+   "counts_a": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3767,
+    "ties": 10
+   },
+   "counts_b": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3575,
+    "ties": 4
+   }
+  },
+  "K2-C": {
+   "a": "K2",
+   "b": "C",
+   "games_per_team": [
+    600
+   ],
+   "level_a_pp": [
+    78.27083333333333,
+    76.91666666666667,
+    79.75000000000001
+   ],
+   "level_b_pp": [
+    74.47916666666667,
+    72.4375,
+    76.4375
+   ],
+   "delta_pp": 3.791666666666667,
+   "ci95_pp": [
+    1.6250000000000013,
+    5.895833333333337
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": 0.17,
+    "U_90b94599": -1.33,
+    "U_92832108": 5.0,
+    "U_9909f2e9": 5.83,
+    "U_9d5f8458": 8.0,
+    "U_ce35b736": 4.33,
+    "U_dbf81d8e": 6.83,
+    "U_f7ba5702": 1.5
+   },
+   "teams_up": 7,
+   "counts_a": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3757,
+    "ties": 12
+   },
+   "counts_b": {
+    "attempted": 4800,
+    "finished": 4800,
+    "timeouts": 0,
+    "wins": 3575,
+    "ties": 4
+   }
+  },
+  "C-N0": {
+   "a": "C",
+   "b": "N0",
+   "games_per_team": [
+    571,
+    574,
+    575,
+    585,
+    587,
+    591,
+    595
+   ],
+   "level_a_pp": [
+    74.45331543888345,
+    72.41155863602447,
+    76.44159155871046
+   ],
+   "level_b_pp": [
+    64.57519331355071,
+    63.290435672904074,
+    65.92040271495647
+   ],
+   "delta_pp": 9.878122125332732,
+   "ci95_pp": [
+    8.769252508078585,
+    11.072414643388646
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": 9.08,
+    "U_90b94599": 11.83,
+    "U_92832108": 7.61,
+    "U_9909f2e9": 9.4,
+    "U_9d5f8458": 9.58,
+    "U_ce35b736": 10.39,
+    "U_dbf81d8e": 8.17,
+    "U_f7ba5702": 12.96
+   },
+   "teams_up": 8,
+   "counts_a": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3464,
+    "ties": 4
+   },
+   "counts_b": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3005,
+    "ties": 8
+   }
+  },
+  "E5-N0": {
+   "a": "E5",
+   "b": "N0",
+   "games_per_team": [
+    571,
+    574,
+    575,
+    585,
+    587,
+    591,
+    595
+   ],
+   "level_a_pp": [
+    75.3442260808435,
+    74.72415735862404,
+    75.97188965400734
+   ],
+   "level_b_pp": [
+    64.57519331355071,
+    63.290435672904074,
+    65.92040271495647
+   ],
+   "delta_pp": 10.769032767292783,
+   "ci95_pp": [
+    9.620494426315766,
+    11.975682238848686
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": 8.07,
+    "U_90b94599": 9.39,
+    "U_92832108": 11.84,
+    "U_9909f2e9": 9.74,
+    "U_9d5f8458": 11.5,
+    "U_ce35b736": 13.8,
+    "U_dbf81d8e": 11.83,
+    "U_f7ba5702": 9.98
+   },
+   "teams_up": 8,
+   "counts_a": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3506,
+    "ties": 5
+   },
+   "counts_b": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3005,
+    "ties": 8
+   }
+  },
+  "L95-N0": {
+   "a": "L95",
+   "b": "N0",
+   "games_per_team": [
+    571,
+    574,
+    575,
+    585,
+    587,
+    591,
+    595
+   ],
+   "level_a_pp": [
+    64.35232712536933,
+    62.43649609244055,
+    65.97799594756346
+   ],
+   "level_b_pp": [
+    64.57519331355071,
+    63.290435672904074,
+    65.92040271495647
+   ],
+   "delta_pp": -0.22286618818137816,
+   "ci95_pp": [
+    -2.7725162746762315,
+    1.7515698986538695
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": -0.34,
+    "U_90b94599": 1.04,
+    "U_92832108": -0.68,
+    "U_9909f2e9": -8.03,
+    "U_9d5f8458": 1.57,
+    "U_ce35b736": 1.7,
+    "U_dbf81d8e": 4.0,
+    "U_f7ba5702": -1.05
+   },
+   "teams_up": 4,
+   "counts_a": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 2994,
+    "ties": 9
+   },
+   "counts_b": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3005,
+    "ties": 8
+   }
+  },
+  "Cfix-N0": {
+   "a": "Cfix",
+   "b": "N0",
+   "games_per_team": [
+    571,
+    574,
+    575,
+    585,
+    587,
+    591,
+    595
+   ],
+   "level_a_pp": [
+    77.88111101123249,
+    75.70293267204397,
+    80.30741175389045
+   ],
+   "level_b_pp": [
+    64.57519331355071,
+    63.290435672904074,
+    65.92040271495647
+   ],
+   "delta_pp": 13.305917697681775,
+   "ci95_pp": [
+    11.180554713439284,
+    15.486919174489744
+   ],
+   "per_team_delta_pp": {
+    "U_61590463": 8.57,
+    "U_90b94599": 10.43,
+    "U_92832108": 11.17,
+    "U_9909f2e9": 16.92,
+    "U_9d5f8458": 17.42,
+    "U_ce35b736": 13.12,
+    "U_dbf81d8e": 12.17,
+    "U_f7ba5702": 16.64
+   },
+   "teams_up": 8,
+   "counts_a": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3623,
+    "ties": 16
+   },
+   "counts_b": {
+    "attempted": 4653,
+    "finished": 4653,
+    "timeouts": 0,
+    "wins": 3005,
+    "ties": 8
+   }
+  }
+ },
+ "ga_levels": {
+  "C": {
+   "problems": [],
+   "missing": [],
+   "wins": 768,
+   "n": 1200,
+   "rate": 0.64,
+   "wilson95": [
+    0.612434887620647,
+    0.6666716322101692
+   ],
+   "by_teamset": {
+    "away": [
+     370,
+     600
+    ],
+    "home": [
+     398,
+     600
+    ]
+   },
+   "hit_forfeit_limit": 14,
+   "complete": true
+  },
+  "E5": {
+   "problems": [],
+   "missing": [],
+   "wins": 752,
+   "n": 1200,
+   "rate": 0.6266666666666667,
+   "wilson95": [
+    0.5989363741672312,
+    0.6535885723463645
+   ],
+   "by_teamset": {
+    "away": [
+     346,
+     600
+    ],
+    "home": [
+     406,
+     600
+    ]
+   },
+   "hit_forfeit_limit": 9,
+   "complete": true
+  },
+  "L95": {
+   "problems": [],
+   "missing": [],
+   "wins": 757,
+   "n": 1200,
+   "rate": 0.6308333333333334,
+   "wilson95": [
+    0.6031522614419137,
+    0.6576794267333134
+   ],
+   "by_teamset": {
+    "away": [
+     363,
+     600
+    ],
+    "home": [
+     394,
+     600
+    ]
+   },
+   "hit_forfeit_limit": 4,
+   "complete": true
+  },
+  "Cfix": {
+   "problems": [],
+   "missing": [],
+   "wins": 825,
+   "n": 1200,
+   "rate": 0.6875,
+   "wilson95": [
+    0.6607115267524578,
+    0.7130918480209568
+   ],
+   "by_teamset": {
+    "away": [
+     395,
+     600
+    ],
+    "home": [
+     430,
+     600
+    ]
+   },
+   "hit_forfeit_limit": 8,
+   "complete": true
+  },
+  "K2": {
+   "problems": [],
+   "missing": [],
+   "wins": 828,
+   "n": 1200,
+   "rate": 0.69,
+   "wilson95": [
+    0.6632609217264939,
+    0.7155264980438995
+   ],
+   "by_teamset": {
+    "away": [
+     375,
+     600
+    ],
+    "home": [
+     453,
+     600
+    ]
+   },
+   "hit_forfeit_limit": 10,
+   "complete": true
+  },
+  "K3": {
+   "problems": [],
+   "missing": [],
+   "wins": 805,
+   "n": 1200,
+   "rate": 0.6708333333333333,
+   "wilson95": [
+    0.6437378544102825,
+    0.6968385537166062
+   ],
+   "by_teamset": {
+    "away": [
+     376,
+     600
+    ],
+    "home": [
+     429,
+     600
+    ]
+   },
+   "hit_forfeit_limit": 10,
+   "complete": true
+  },
+  "N0": {
+   "problems": [],
+   "missing": [
+    "GA_N0_away_s0",
+    "GA_N0_away_s10",
+    "GA_N0_away_s20",
+    "GA_N0_away_s30",
+    "GA_N0_away_s40",
+    "GA_N0_away_s50",
+    "GA_N0_home_s0",
+    "GA_N0_home_s10",
+    "GA_N0_home_s20",
+    "GA_N0_home_s30",
+    "GA_N0_home_s40",
+    "GA_N0_home_s50"
+   ],
+   "wins": 0,
+   "n": 0,
+   "rate": null,
+   "wilson95": null,
+   "by_teamset": {
+    "away": [
+     0,
+     0
+    ],
+    "home": [
+     0,
+     0
+    ]
+   },
+   "hit_forfeit_limit": 0,
+   "complete": false
+  }
+ },
+ "ga_units": {
+  "C": {
+   "GA_C_away_s0": {
+    "n": 100,
+    "wins": 61,
+    "losses": 39,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_away_s10": {
+    "n": 100,
+    "wins": 61,
+    "losses": 39,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_away_s20": {
+    "n": 100,
+    "wins": 67,
+    "losses": 33,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_away_s30": {
+    "n": 100,
+    "wins": 50,
+    "losses": 50,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_away_s40": {
+    "n": 100,
+    "wins": 69,
+    "losses": 31,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_away_s50": {
+    "n": 100,
+    "wins": 62,
+    "losses": 37,
+    "ties": 1,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_home_s0": {
+    "n": 100,
+    "wins": 65,
+    "losses": 34,
+    "ties": 1,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_home_s10": {
+    "n": 100,
+    "wins": 61,
+    "losses": 38,
+    "ties": 1,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_home_s20": {
+    "n": 100,
+    "wins": 67,
+    "losses": 33,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_home_s30": {
+    "n": 100,
+    "wins": 70,
+    "losses": 30,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_home_s40": {
+    "n": 100,
+    "wins": 69,
+    "losses": 30,
+    "ties": 1,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_C_home_s50": {
+    "n": 100,
+    "wins": 66,
+    "losses": 34,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 3,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_02_lbat_ctrl/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   }
+  },
+  "E5": {
+   "GA_E5_away_s0": {
+    "n": 100,
+    "wins": 52,
+    "losses": 48,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_away_s10": {
+    "n": 100,
+    "wins": 58,
+    "losses": 42,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_away_s20": {
+    "n": 100,
+    "wins": 66,
+    "losses": 34,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_away_s30": {
+    "n": 100,
+    "wins": 48,
+    "losses": 52,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_away_s40": {
+    "n": 100,
+    "wins": 61,
+    "losses": 39,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_away_s50": {
+    "n": 100,
+    "wins": 61,
+    "losses": 39,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 3,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_home_s0": {
+    "n": 100,
+    "wins": 71,
+    "losses": 29,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_home_s10": {
+    "n": 100,
+    "wins": 61,
+    "losses": 39,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_home_s20": {
+    "n": 100,
+    "wins": 63,
+    "losses": 37,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_home_s30": {
+    "n": 100,
+    "wins": 75,
+    "losses": 25,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_home_s40": {
+    "n": 100,
+    "wins": 68,
+    "losses": 32,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_E5_home_s50": {
+    "n": 100,
+    "wins": 68,
+    "losses": 32,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_03_lbat_e5/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   }
+  },
+  "L95": {
+   "GA_L95_away_s0": {
+    "n": 100,
+    "wins": 58,
+    "losses": 42,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_away_s10": {
+    "n": 100,
+    "wins": 65,
+    "losses": 35,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_away_s20": {
+    "n": 100,
+    "wins": 60,
+    "losses": 40,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_away_s30": {
+    "n": 100,
+    "wins": 59,
+    "losses": 41,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_away_s40": {
+    "n": 100,
+    "wins": 62,
+    "losses": 38,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_away_s50": {
+    "n": 100,
+    "wins": 59,
+    "losses": 41,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_home_s0": {
+    "n": 100,
+    "wins": 70,
+    "losses": 30,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_home_s10": {
+    "n": 100,
+    "wins": 64,
+    "losses": 35,
+    "ties": 1,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_home_s20": {
+    "n": 100,
+    "wins": 51,
+    "losses": 49,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_home_s30": {
+    "n": 100,
+    "wins": 70,
+    "losses": 30,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_home_s40": {
+    "n": 100,
+    "wins": 69,
+    "losses": 31,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_L95_home_s50": {
+    "n": 100,
+    "wins": 70,
+    "losses": 30,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_05_lbat_l95/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   }
+  },
+  "Cfix": {
+   "GA_Cfix_away_s0": {
+    "n": 100,
+    "wins": 63,
+    "losses": 37,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_away_s10": {
+    "n": 100,
+    "wins": 65,
+    "losses": 35,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_away_s20": {
+    "n": 100,
+    "wins": 74,
+    "losses": 26,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_away_s30": {
+    "n": 100,
+    "wins": 57,
+    "losses": 43,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_away_s40": {
+    "n": 100,
+    "wins": 65,
+    "losses": 35,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_away_s50": {
+    "n": 100,
+    "wins": 71,
+    "losses": 27,
+    "ties": 2,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_home_s0": {
+    "n": 100,
+    "wins": 73,
+    "losses": 27,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_home_s10": {
+    "n": 100,
+    "wins": 80,
+    "losses": 20,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_home_s20": {
+    "n": 100,
+    "wins": 60,
+    "losses": 40,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_home_s30": {
+    "n": 100,
+    "wins": 69,
+    "losses": 31,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_home_s40": {
+    "n": 100,
+    "wins": 75,
+    "losses": 25,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_Cfix_home_s50": {
+    "n": 100,
+    "wins": 73,
+    "losses": 27,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+    "model_step": 83066880,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   }
+  },
+  "K2": {
+   "GA_K2_away_s0": {
+    "n": 100,
+    "wins": 58,
+    "losses": 41,
+    "ties": 1,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_away_s10": {
+    "n": 100,
+    "wins": 67,
+    "losses": 33,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_away_s20": {
+    "n": 100,
+    "wins": 70,
+    "losses": 30,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_away_s30": {
+    "n": 100,
+    "wins": 50,
+    "losses": 50,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_away_s40": {
+    "n": 100,
+    "wins": 66,
+    "losses": 34,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_away_s50": {
+    "n": 100,
+    "wins": 64,
+    "losses": 36,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_home_s0": {
+    "n": 100,
+    "wins": 79,
+    "losses": 21,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_home_s10": {
+    "n": 100,
+    "wins": 77,
+    "losses": 22,
+    "ties": 1,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_home_s20": {
+    "n": 100,
+    "wins": 68,
+    "losses": 32,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_home_s30": {
+    "n": 100,
+    "wins": 75,
+    "losses": 25,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_home_s40": {
+    "n": 100,
+    "wins": 75,
+    "losses": 25,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K2_home_s50": {
+    "n": 100,
+    "wins": 79,
+    "losses": 21,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+    "model_step": 91127808,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   }
+  },
+  "K3": {
+   "GA_K3_away_s0": {
+    "n": 100,
+    "wins": 64,
+    "losses": 36,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_away_s10": {
+    "n": 100,
+    "wins": 66,
+    "losses": 34,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_away_s20": {
+    "n": 100,
+    "wins": 65,
+    "losses": 35,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_away_s30": {
+    "n": 100,
+    "wins": 56,
+    "losses": 44,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_away_s40": {
+    "n": 100,
+    "wins": 63,
+    "losses": 37,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_away_s50": {
+    "n": 100,
+    "wins": 62,
+    "losses": 38,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 2,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_home_s0": {
+    "n": 100,
+    "wins": 71,
+    "losses": 29,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_home_s10": {
+    "n": 100,
+    "wins": 74,
+    "losses": 26,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_home_s20": {
+    "n": 100,
+    "wins": 65,
+    "losses": 35,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 0,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_home_s30": {
+    "n": 100,
+    "wins": 71,
+    "losses": 29,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_home_s40": {
+    "n": 100,
+    "wins": 73,
+    "losses": 26,
+    "ties": 1,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   },
+   "GA_K3_home_s50": {
+    "n": 100,
+    "wins": 75,
+    "losses": 25,
+    "ties": 0,
+    "status": "OK",
+    "hit_forfeit_limit": 1,
+    "regime_verified_decisions": true,
+    "argmax_match_rate": 1.0,
+    "team_source_asymmetry": false,
+    "model_zip": "/home/goodlad/dev/gen3ai/models/ai_v14_08_g0p_k3/final_model.zip",
+    "model_step": 99188736,
+    "server_version": "ws_frontend@d4799e8a+rust:/home/goodlad/dev/gen3ai-wt/pin-dcddac0b-n0reads/src/rust_sim/target/release/sim_bridge"
+   }
+  },
+  "N0": {}
+ },
+ "ga_contrasts": {
+  "E5-C": {
+   "a": "E5",
+   "b": "C",
+   "delta_pp": -1.3333333333333308,
+   "ci95_pp": [
+    -5.180858624814576,
+    2.5197491027338015
+   ],
+   "n": [
+    1200,
+    1200
+   ],
+   "OUTSIDE_BELOW_floor": false,
+   "verdict_vs_0": "NOT DETECTED"
+  },
+  "L95-C": {
+   "a": "L95",
+   "b": "C",
+   "delta_pp": -0.9166666666666656,
+   "ci95_pp": [
+    -4.760645992589842,
+    2.9311225054772683
+   ],
+   "n": [
+    1200,
+    1200
+   ],
+   "OUTSIDE_BELOW_floor": false,
+   "verdict_vs_0": "NOT DETECTED"
+  },
+  "Cfix-C": {
+   "a": "Cfix",
+   "b": "C",
+   "delta_pp": 4.749999999999998,
+   "ci95_pp": [
+    0.9697906622928666,
+    8.511353620193281
+   ],
+   "n": [
+    1200,
+    1200
+   ],
+   "OUTSIDE_BELOW_floor": false,
+   "verdict_vs_0": "DETECTED"
+  },
+  "K2-Cfix": {
+   "a": "K2",
+   "b": "Cfix",
+   "delta_pp": 0.24999999999999467,
+   "ci95_pp": [
+    -3.451244374591389,
+    3.9503032326006533
+   ],
+   "n": [
+    1200,
+    1200
+   ],
+   "OUTSIDE_BELOW_floor": false,
+   "verdict_vs_0": "NOT DETECTED"
+  },
+  "K3-K2": {
+   "a": "K3",
+   "b": "K2",
+   "delta_pp": -1.9166666666666665,
+   "ci95_pp": [
+    -5.639255927456383,
+    1.8132794376346775
+   ],
+   "n": [
+    1200,
+    1200
+   ],
+   "OUTSIDE_BELOW_floor": false,
+   "verdict_vs_0": "NOT DETECTED"
+  },
+  "K3-Cfix": {
+   "a": "K3",
+   "b": "Cfix",
+   "delta_pp": -1.6666666666666718,
+   "ci95_pp": [
+    -5.3937401341438544,
+    2.066822031745145
+   ],
+   "n": [
+    1200,
+    1200
+   ],
+   "OUTSIDE_BELOW_floor": false,
+   "verdict_vs_0": "NOT DETECTED"
+  }
+ },
+ "ga_contrasts_by_teamset": {
+  "E5-C": {
+   "away": {
+    "delta": -4.0000000000000036,
+    "lo": -9.51299871967559,
+    "hi": 1.5475900333580408
+   },
+   "home": {
+    "delta": 1.3333333333333308,
+    "lo": -3.97967206758822,
+    "hi": 6.635904512931756
+   }
+  },
+  "L95-C": {
+   "away": {
+    "delta": -1.1666666666666714,
+    "lo": -6.662701940338303,
+    "hi": 4.339324355268664
+   },
+   "home": {
+    "delta": -0.666666666666671,
+    "lo": -6.011096782627618,
+    "hi": 4.683079935943716
+   }
+  },
+  "Cfix-C": {
+   "away": {
+    "delta": 4.1666666666666625,
+    "lo": -1.2707641377905934,
+    "hi": 9.569674331196914
+   },
+   "home": {
+    "delta": 5.333333333333334,
+    "lo": 0.09955792217685513,
+    "hi": 10.527227546495743
+   }
+  }
+ }
+}

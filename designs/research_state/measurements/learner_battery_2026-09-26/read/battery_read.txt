@@ -1,0 +1,51 @@
+teams: ['U_61590463', 'U_90b94599', 'U_92832108', 'U_9909f2e9', 'U_9d5f8458', 'U_ce35b736', 'U_dbf81d8e', 'U_f7ba5702']
+complete at 600/team: {'C': True, 'E5': True, 'L95': True, 'Cfix': True, 'K2': True, 'K3': True, 'N0': False, 'T32b': False}
+  U(C   ) =  74.48 [ 72.44,  76.44]  timeouts 0/4800 ties 4
+  U(E5  ) =  75.23 [ 74.48,  76.00]  timeouts 0/4800 ties 5
+  U(L95 ) =  64.38 [ 62.50,  65.88]  timeouts 0/4800 ties 9
+  U(Cfix) =  77.54 [ 75.42,  79.92]  timeouts 0/4800 ties 16
+  U(K2  ) =  78.27 [ 76.92,  79.75]  timeouts 0/4800 ties 12
+  U(K3  ) =  78.48 [ 75.98,  81.27]  timeouts 0/4800 ties 10
+
+== BATTERY (untaught Δ vs C, 600/team)
+  E5   − C =  +0.75 [ -1.21,  +2.65]  EQUIVALENT  non-inferior True  teams up 5/8  (seed-default CI [-1.2083333333333361, 2.645833333333335])
+  L95  − C = -10.10 [-12.77,  -7.65]  OUTSIDE, BELOW  non-inferior False  teams up 0/8  (seed-default CI [-12.72916666666667, -7.666666666666664])
+
+== BUG EFFECT  Cfix − C =  +3.06 [ +1.00,  +5.15]  NOT DETECTED  teams up 6/8  (seed-default CI [0.9791666666666656, 5.124999999999994])
+   first 200/team:  +3.75 [ +0.44,  +6.38]
+
+== PLATEAU blocks (PLATEAU iff |Δ| < 3.69 and not OUTSIDE ABOVE)
+  block1 (N0->Cfix)      n/team=[200] +14.88 [+10.69, +18.88] OUTSIDE, ABOVE plateau=False  teams up 8/8
+  block1 (N0->Cfix)      n/team=[571, 574, 575, 585, 587, 591, 595] +13.31 [+11.18, +15.49] OUTSIDE, ABOVE plateau=False  teams up 8/8
+  block2 (Cfix->K2)      n/team=[200]  +0.87 [ -1.75,  +3.56] EQUIVALENT     plateau=True  teams up 4/8
+  block2 (Cfix->K2)      n/team=[600]  +0.73 [ -0.44,  +1.81] EQUIVALENT     plateau=True  teams up 6/8
+  block3 (K2->K3)        n/team=[200]  -0.31 [ -3.38,  +2.94] EQUIVALENT     plateau=True  teams up 4/8
+  block3 (K2->K3)        n/team=[600]  +0.21 [ -1.25,  +1.87] EQUIVALENT     plateau=True  teams up 3/8
+  buggy block1 (N0->C)   n/team=[200] +11.12 [ +9.12, +13.12] OUTSIDE, ABOVE plateau=False  teams up 8/8
+  buggy block1 (N0->C)   n/team=[571, 574, 575, 585, 587, 591, 595]  +9.88 [ +8.77, +11.07] OUTSIDE, ABOVE plateau=False  teams up 8/8
+
+== cumulative (600/team or common)
+  K3-Cfix   +0.94 [ +0.17,  +1.73]  n/team=[600]
+  K3-N0    +14.19 [+11.92, +16.55]  n/team=[571, 574, 575, 585, 587, 591, 595]
+  K2-N0    +13.79 [+11.87, +15.60]  n/team=[571, 574, 575, 585, 587, 591, 595]
+  K3-C      +4.00 [ +1.60,  +6.31]  n/team=[600]
+  K2-C      +3.79 [ +1.63,  +5.90]  n/team=[600]
+  C-N0      +9.88 [ +8.77, +11.07]  n/team=[571, 574, 575, 585, 587, 591, 595]
+  E5-N0    +10.77 [ +9.62, +11.98]  n/team=[571, 574, 575, 585, 587, 591, 595]
+  L95-N0    -0.22 [ -2.77,  +1.75]  n/team=[571, 574, 575, 585, 587, 591, 595]
+  Cfix-N0  +13.31 [+11.18, +15.49]  n/team=[571, 574, 575, 585, 587, 591, 595]
+
+== G-A SmallRL greedy (pooled 1,200)
+  C    768/1200 = 0.64 wilson [0.612434887620647, 0.6666716322101692] problems [] missing 0 forfeit-limit 14
+  E5   752/1200 = 0.6267 wilson [0.5989363741672312, 0.6535885723463645] problems [] missing 0 forfeit-limit 9
+  L95  757/1200 = 0.6308 wilson [0.6031522614419137, 0.6576794267333134] problems [] missing 0 forfeit-limit 4
+  Cfix 825/1200 = 0.6875 wilson [0.6607115267524578, 0.7130918480209568] problems [] missing 0 forfeit-limit 8
+  K2   828/1200 = 0.69 wilson [0.6632609217264939, 0.7155264980438995] problems [] missing 0 forfeit-limit 10
+  K3   805/1200 = 0.6708 wilson [0.6437378544102825, 0.6968385537166062] problems [] missing 0 forfeit-limit 10
+  N0   0/0 = None wilson None problems [] missing 12 forfeit-limit 0
+  E5-C      -1.33 [ -5.18,  +2.52]  OUTSIDE BELOW −11.0: False  vs 0: NOT DETECTED
+  L95-C     -0.92 [ -4.76,  +2.93]  OUTSIDE BELOW −11.0: False  vs 0: NOT DETECTED
+  Cfix-C    +4.75 [ +0.97,  +8.51]  OUTSIDE BELOW −11.0: False  vs 0: DETECTED
+  K2-Cfix   +0.25 [ -3.45,  +3.95]  OUTSIDE BELOW −11.0: False  vs 0: NOT DETECTED
+  K3-K2     -1.92 [ -5.64,  +1.81]  OUTSIDE BELOW −11.0: False  vs 0: NOT DETECTED
+  K3-Cfix   -1.67 [ -5.39,  +2.07]  OUTSIDE BELOW −11.0: False  vs 0: NOT DETECTED

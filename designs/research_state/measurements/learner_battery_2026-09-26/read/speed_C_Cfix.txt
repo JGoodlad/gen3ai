@@ -1,0 +1,6 @@
+== Cfix  ai_v14_06_lbat_ctrl_fix  rollouts 79 (75,202,560 .. 83,066,880)  n_epochs 10.0  gae_lambda 0.800000011920929  lr 2.8000000384054147e-05
+   median iteration 191.1 s   update 59.7 s   update share 0.312
+   approx_kl     by epoch: 0.0000 0.0004 0.0012 0.0017 0.0021 0.0025 0.0030 0.0034 0.0037 0.0040
+   clip_fraction by epoch: 0.0000 0.0036 0.0196 0.0307 0.0394 0.0487 0.0590 0.0673 0.0739 0.0804
+   [STALL LOGGED] 397 over 7,962,624 steps = 49.9 per 1M
+   SPEED vs C: S = -1.50 % [-1.60, -1.35]  (= -1.5 % steps per GPU-hour); measured iteration ratio 1.048 (descriptor)

@@ -1,0 +1,5 @@
+   approx_kl     by epoch: 0.0000 0.0006 0.0017 0.0022 0.0027 0.0032 0.0038 0.0043 0.0047 0.0051
+   clip_fraction by epoch: 0.0001 0.0063 0.0289 0.0412 0.0525 0.0632 0.0775 0.0877 0.0948 0.1027
+   [STALL LOGGED] 69 over 1,179,648 steps = 58.5 per 1M
+   SPEED vs C: S = +2.48 % [+2.24, +2.91]  (= +2.5 % steps per GPU-hour); measured iteration ratio 1.022 (descriptor)
+== FUTILITY (T32b): STOP — projected S < 2.5 %, the 5 % bar is out of reach

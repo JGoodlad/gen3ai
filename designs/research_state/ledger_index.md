@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,450-line file. **The ledger itself is append-only and is never edited by this**;
+21,462-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**718 headings · 663 dated · 2026-08-01 → 2026-09-29 · ledger 21,450 lines.**
+**721 headings · 666 dated · 2026-08-01 → 2026-09-29 · ledger 21,462 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -738,3 +738,6 @@ rename.
   - `L21439` · `2026-09-28` · MEASUREMENT · **X22 (b)/(c) — THE NEAR-TERM GOAL IS NOT MET: N0 final (`ai_v14_01_base` @75,005,952, greedy, eager) vs `metamon:Kakuna` (ckpt 34) on home72: Kakuna greedy 0.460 [0.392, 0.529] n=200; T=0.5 0.440 [0.347, 0.538] n=100; T=1.0 (Kakuna's STRONGEST) 0.380 [0.316, 0.449] n=200 — the whole CI below 0.50 (goal: lower bound > 0.50 at the strongest temperature).**
   - `L21443` · `2026-09-28` · MEASUREMENT · **LANE K1: torch 2.8.0+cu126 compiles the UNSPLIT CUDA learner graph CORRECTLY — the real-obs startup gate PASSES at fp32 and TF32 on the eval AND train graphs with the `6521f420` trunk split OFF (fp32 gradient cosine 1.000000; 3,840 trace rows argmax 1.0000, |dV| max 1.4e-6). The split is now keyed on the torch version (ON for 2.5.1, OFF for 2.8); the interpreter switch for new runs is pending (orchestrator, at a run boundary).**
   - `L21447` · `2026-09-29` · MEASUREMENT · **X22 (d)/(e)/(f) — the home72 round robin around Kakuna, and the owner's "does our model play better greedy?": YES. (d) Kakuna vs SyntheticRLV2 greedy-greedy 0.655 [0.587, 0.717] n=200 (Kakuna BETTER); (e) Kakuna greedy vs Foul Play @1000 ms 0.490 [0.422, 0.559] n=200 (NOT DETECTED, FP width 601 k visits/decision under load ~26); (f) N0 final SAMPLING at T=1.0: vs Kakuna T=1.0 0.310 [0.250, 0.377] n=200, vs Kakuna greedy 0.280 [0.201, 0.375] n=100. Greedy − sampled on the same seeds: +0.070 [−0.023, +0.161] vs Kakuna T=1.0 (NOT DETECTED), +0.230 [+0.095, +0.354] vs Kakuna greedy (DETECTED; Newcombe, independent Wilson). N0 plays its own argmax on only 62.8% of T=1.0 decisions (5,287/8,418, counted per decision).**
+  - `L21451` · `2026-09-29` · RESULT · **LEARNER BATTERY VERDICT (registered rule, `battery_rule.py`): E5 ADOPT — 5 PPO epochs at 2× the lr (same dose) saves S = +13.59 % [+13.38, +13.71] of GPU time per step (+15.7 % steps per GPU-hour) with untaught Δ vs C +0.75 pp [−1.21, +2.65] (EQUIVALENT, non-inferior at −3.69), SmallRL −1.33 [−5.18, +2.52], stall ratio 1.10. L95 NOT ADOPTED and a FINDING — policy GAE λ 0.95 reads −10.10 [−12.77, −7.65], OUTSIDE BELOW, 0/8 teams up: λ 0.80 is better. T32 NOT RUN (compile-gate crash); T32b STOPPED by futility, S = +2.48 % [+2.24, +2.91] vs C_fix over 12 rollouts (< 2.5 %). C, E5 and L95 all trained on the MISCOMPILED CUDA learner: comparable arm-vs-arm, transfer to the fixed learner UNVERIFIED.**
+  - `L21455` · `2026-09-29` · MEASUREMENT · **THE MISCOMPILE'S FIRST MEASURED COST ON LEARNING: C_fix − C (the same +8.06M fork of N0, the same argv, only the compile fix) = untaught +3.06 pp [+1.00, +5.15] (6/8 teams up) and SmallRL +4.75 pp [+0.97, +8.51] (0.688 vs 0.640). Both CIs exclude zero, and both points sit inside their replicate floors (3.69 / 11.0), so by the ruled vocabulary this is WITHIN FLOOR: a small, consistent cost of ≈ 3–5 pp over one 8M block, not an established effect size.**
+  - `L21459` · `2026-09-29` · RESULT · **G0′ IS K2 — THE NEW LINEAGE PLATEAUS AT BLOCK 2 (on the fixed learner). Block 1 N0 → C_fix +14.88 pp [+10.69, +18.88] (OUTSIDE ABOVE, 8/8 teams) does not pass; block 2 C_fix → K2 +0.87 [−1.75, +3.56] (200/team; +0.73 [−0.44, +1.81] at 600) passes. So G0′ = `ai_v14_07_g0p_k2` final @91,127,808. K3, run before the verdict, confirms: K2 → K3 −0.31 [−3.38, +2.94] (+0.21 at 600). DEVIATION recorded: the registered block 1 was C (buggy learner), replaced by C_fix. The buggy block 1 also fails (+11.12), so the passing block index is unchanged.**

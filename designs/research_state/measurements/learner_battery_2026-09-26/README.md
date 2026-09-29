@@ -22,6 +22,8 @@ TF32 matmuls. **L95** = `ai_v14_05_lbat_l95`, policy GAE λ 0.95. **D_g** = the 
 | `scripts/battery_rule.py` | the decision rule (`rule`) and the power table (`--power`) |
 | `scripts/validate_all.sh` | everything below, and FAILS if `models/` gained an entry |
 | `validation/` | every output, verbatim (the worktree path shortened to `<wt>`) |
+| `READ.md` | **THE READ (2026-09-29):** the battery verdicts (E5 ADOPT, L95 NOT ADOPTED / OUTSIDE BELOW, T32 NOT RUN, T32b futile), the C_fix − C bug-effect read, the G0′ plateau read (G0′ = K2), with the working tables |
+| `read/` | `battery_read.py` (untaught-8 + SmallRL aggregation from the N0 end-of-run queue's rows) and every output of that read, `speed_read.py` and `battery_rule.py` |
 
 ## To launch (Training Run, after the go)
 

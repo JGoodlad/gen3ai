@@ -1,0 +1,17 @@
+== C  ai_v14_02_lbat_ctrl  rollouts 79 (75,202,560 .. 83,066,880)  n_epochs 10.0  gae_lambda 0.800000011920929  lr 2.8000000384054147e-05
+   median iteration 182.4 s   update 56.9 s   update share 0.312
+   approx_kl     by epoch: 0.0000 0.0003 0.0011 0.0017 0.0020 0.0024 0.0028 0.0032 0.0035 0.0039
+   clip_fraction by epoch: 0.0000 0.0027 0.0176 0.0300 0.0374 0.0457 0.0548 0.0630 0.0699 0.0766
+   [STALL LOGGED] 377 over 7,962,624 steps = 47.3 per 1M
+== E5  ai_v14_03_lbat_e5  rollouts 79 (75,202,560 .. 83,066,880)  n_epochs 5.0  gae_lambda 0.800000011920929  lr 5.6000000768108293e-05
+   median iteration 157.3 s   update 32.2 s   update share 0.205
+   approx_kl     by epoch: 0.0001 0.0011 0.0022 0.0026 0.0033
+   clip_fraction by epoch: 0.0003 0.0174 0.0422 0.0505 0.0653
+   [STALL LOGGED] 413 over 7,962,624 steps = 51.9 per 1M
+   SPEED vs C: S = +13.59 % [+13.38, +13.71]  (= +15.7 % steps per GPU-hour); measured iteration ratio 0.862 (descriptor)
+== L95  ai_v14_05_lbat_l95  rollouts 79 (75,202,560 .. 83,066,880)  n_epochs 10.0  gae_lambda 0.949999988079071  lr 2.8000000384054147e-05
+   median iteration 211.9 s   update 59.1 s   update share 0.279
+   approx_kl     by epoch: 0.0000 0.0003 0.0012 0.0017 0.0019 0.0023 0.0027 0.0031 0.0034 0.0037
+   clip_fraction by epoch: 0.0000 0.0031 0.0190 0.0297 0.0353 0.0438 0.0530 0.0614 0.0675 0.0737
+   [STALL LOGGED] 417 over 7,962,624 steps = 52.4 per 1M
+   SPEED vs C: S = -1.18 % [-1.70, -0.61]  (= -1.2 % steps per GPU-hour); measured iteration ratio 1.162 (descriptor)

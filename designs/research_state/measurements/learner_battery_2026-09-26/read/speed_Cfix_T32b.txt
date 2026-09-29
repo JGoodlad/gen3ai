@@ -1,0 +1,11 @@
+== C  ai_v14_06_lbat_ctrl_fix  rollouts 79 (75,202,560 .. 83,066,880)  n_epochs 10.0  gae_lambda 0.800000011920929  lr 2.8000000384054147e-05
+   median iteration 191.1 s   update 59.7 s   update share 0.312
+   approx_kl     by epoch: 0.0000 0.0004 0.0012 0.0017 0.0021 0.0025 0.0030 0.0034 0.0037 0.0040
+   clip_fraction by epoch: 0.0000 0.0036 0.0196 0.0307 0.0394 0.0487 0.0590 0.0673 0.0739 0.0804
+   [STALL LOGGED] 397 over 7,962,624 steps = 49.9 per 1M
+== T32b  ai_v14_04b_lbat_t32  rollouts 12 (75,202,560 .. 76,283,904)  n_epochs 10.0  gae_lambda 0.800000011920929  lr 2.8000000384054147e-05
+   median iteration 195.3 s   update 54.9 s   update share 0.281
+   approx_kl     by epoch: 0.0000 0.0006 0.0017 0.0022 0.0027 0.0032 0.0038 0.0043 0.0047 0.0051
+   clip_fraction by epoch: 0.0001 0.0063 0.0289 0.0412 0.0525 0.0632 0.0775 0.0877 0.0948 0.1027
+   [STALL LOGGED] 69 over 1,179,648 steps = 58.5 per 1M
+   SPEED vs C: S = +2.48 % [+2.24, +2.91]  (= +2.5 % steps per GPU-hour); measured iteration ratio 1.022 (descriptor)
