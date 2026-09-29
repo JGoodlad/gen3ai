@@ -63,7 +63,10 @@
     26.61,
     26.61
    ],
+   "our_argmax_matches": 0,
+   "our_argmax_decisions": 0,
    "win_rate": 0.46,
+   "our_argmax_match_rate": null,
    "wilson95": [
     0.39232931140961247,
     0.5291783690638533
@@ -116,7 +119,10 @@
     24.71,
     27.94
    ],
+   "our_argmax_matches": 0,
+   "our_argmax_decisions": 0,
    "win_rate": 0.44,
+   "our_argmax_match_rate": null,
    "wilson95": [
     0.34671865400968327,
     0.537720722887437
@@ -199,7 +205,10 @@
     29.94,
     24.38
    ],
+   "our_argmax_matches": 0,
+   "our_argmax_decisions": 0,
    "win_rate": 0.38,
+   "our_argmax_match_rate": null,
    "wilson95": [
     0.3155889366123922,
     0.4489341048080049
@@ -242,7 +251,10 @@
     27.67,
     27.34
    ],
+   "our_argmax_matches": 0,
+   "our_argmax_decisions": 0,
    "win_rate": 0.655,
+   "our_argmax_match_rate": null,
    "wilson95": [
     0.5867546071792236,
     0.7174031309860971
@@ -266,14 +278,28 @@
     "e_09",
     "e_10",
     "e_11",
-    "e_12"
+    "e_12",
+    "e_13",
+    "e_14",
+    "e_15",
+    "e_16",
+    "e_17",
+    "e_18",
+    "e_19"
    ],
    "excluded_units": [],
-   "wins": 64,
-   "losses": 66,
+   "wins": 98,
+   "losses": 102,
    "ties": 0,
-   "n": 130,
+   "n": 200,
    "argmax_match_rates": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
     [],
     [],
     [],
@@ -302,20 +328,167 @@
     25.29,
     26.19,
     27.5,
-    23.12
+    23.12,
+    27.28,
+    27.74,
+    26.23,
+    29.92,
+    28.46,
+    26.75,
+    27.84
    ],
-   "win_rate": 0.49230769230769234,
+   "our_argmax_matches": 0,
+   "our_argmax_decisions": 0,
+   "win_rate": 0.49,
+   "our_argmax_match_rate": null,
    "wilson95": [
-    0.40782903157362527,
-    0.5772279312839617
+    0.4215615528275274,
+    0.5588153672908391
    ],
-   "load1_mean_over_units": 25.79692307692308,
-   "median_turns": 48,
-   "fp_visits_per_decision_mean": 601194.796569144,
+   "load1_mean_over_units": 26.479000000000003,
+   "median_turns": 46,
+   "fp_visits_per_decision_mean": 601044.0584075444,
    "fp_visits_range": [
-    481333.86327503977,
-    783035.5191256831
+    387591.6870415648,
+    884504.1551246537
    ]
+  },
+  "f1_n0t1_vs_kakuna_t1": {
+   "units": [
+    "f1_00",
+    "f1_01",
+    "f1_02",
+    "f1_03",
+    "f1_04",
+    "f1_05",
+    "f1_06",
+    "f1_07",
+    "f1_08",
+    "f1_09"
+   ],
+   "excluded_units": [],
+   "wins": 62,
+   "losses": 137,
+   "ties": 1,
+   "n": 200,
+   "argmax_match_rates": [
+    [
+     0.8997613365155132,
+     0.9211087420042644
+    ],
+    [
+     0.8916876574307305,
+     0.9060773480662984
+    ],
+    [
+     0.9047619047619048,
+     0.9052924791086351
+    ],
+    [
+     0.9056047197640118,
+     0.9142212189616253
+    ],
+    [
+     0.89,
+     0.8997821350762527
+    ],
+    [
+     0.8753246753246753,
+     0.9
+    ],
+    [
+     0.8781725888324873,
+     0.9151785714285714
+    ],
+    [
+     0.88268156424581,
+     0.8934782608695652
+    ],
+    [
+     0.8893280632411067,
+     0.8992974238875878
+    ],
+    [
+     0.9209183673469388,
+     0.9224598930481284
+    ]
+   ],
+   "peer_clean_false_units": [],
+   "load1_means": [
+    18.24,
+    18.62,
+    20.51,
+    20.95,
+    18.86,
+    18.77,
+    23.12,
+    23.29,
+    17.57,
+    17.2
+   ],
+   "our_argmax_matches": 5287,
+   "our_argmax_decisions": 8418,
+   "win_rate": 0.31,
+   "our_argmax_match_rate": 0.6280589213589927,
+   "wilson95": [
+    0.24998842733633997,
+    0.377173054912622
+   ],
+   "load1_mean_over_units": 19.712999999999997,
+   "median_turns": 31,
+   "fp_visits_per_decision_mean": null,
+   "fp_visits_range": null
+  },
+  "f2_n0t1_vs_kakuna_greedy": {
+   "units": [
+    "f2_00",
+    "f2_01",
+    "f2_02",
+    "f2_03",
+    "f2_04"
+   ],
+   "excluded_units": [],
+   "wins": 28,
+   "losses": 72,
+   "ties": 0,
+   "n": 100,
+   "argmax_match_rates": [
+    [
+     1.0
+    ],
+    [
+     1.0
+    ],
+    [
+     1.0
+    ],
+    [
+     1.0
+    ],
+    [
+     1.0
+    ]
+   ],
+   "peer_clean_false_units": [],
+   "load1_means": [
+    26.81,
+    26.99,
+    22.59,
+    22.14,
+    28.05
+   ],
+   "our_argmax_matches": 2605,
+   "our_argmax_decisions": 4108,
+   "win_rate": 0.28,
+   "our_argmax_match_rate": 0.6341285296981499,
+   "wilson95": [
+    0.2013955916759837,
+    0.37488212361345724
+   ],
+   "load1_mean_over_units": 25.316,
+   "median_turns": 31,
+   "fp_visits_per_decision_mean": null,
+   "fp_visits_range": null
   }
  },
  "topup": {
@@ -327,5 +500,55 @@
   },
   "rule": "lowest N0 win rate over paired seeds 0-4 (100 games each)",
   "decided_at": "2026-09-28T09:18:18.956378"
+ },
+ "f_deltas": {
+  "vs_kakuna_t1: c(b_t10) - f1, seeds 0-9": {
+   "greedy": [
+    76,
+    200
+   ],
+   "sampled": [
+    62,
+    200
+   ],
+   "delta": 0.07,
+   "ci95": [
+    -0.023062817577411104,
+    0.16139474800823952
+   ],
+   "method": "Newcombe hybrid score (independent Wilson)"
+  },
+  "vs_kakuna_greedy: b_greedy seeds 0-4 - f2": {
+   "greedy": [
+    51,
+    100
+   ],
+   "sampled": [
+    28,
+    100
+   ],
+   "delta": 0.22999999999999998,
+   "ci95": [
+    0.09465467776360176,
+    0.35390425865737013
+   ],
+   "method": "Newcombe hybrid score (independent Wilson)"
+  },
+  "vs_kakuna_greedy: b_greedy all 200 - f2": {
+   "greedy": [
+    92,
+    200
+   ],
+   "sampled": [
+    28,
+    100
+   ],
+   "delta": 0.18,
+   "ci95": [
+    0.06346061746880673,
+    0.2847087730288641
+   ],
+   "method": "Newcombe hybrid score (independent Wilson)"
+  }
  }
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""X22 (b)-(e) — the Kakuna goal read's CPU work queue. Incremental, resumable, detached.
+"""X22 (b)-(f) — the Kakuna goal read's CPU work queue. Incremental, resumable, detached.
 
     kq.py run [--stop-at ISO8601]    # supervisor: 2 lanes, one unit per lane at a time
     kq.py status                     # per-cell pooled W/L/T + Wilson, units done/pending
@@ -60,6 +60,15 @@ def units():
                     ["--opponent-a", "metamon:Kakuna", "--opponent-b", "foulplay",
                      "--regime", "greedy", "--search-time-ms", str(FP_MS),
                      "--search-parallelism", "1", "--progress-timeout", "3600"], 1100))
+    # (f) owner 2026-09-28: does N0 play better greedy? N0 SAMPLING at T=1.0 (`--our-temperature`).
+    # Seeds PAIRED with the banked cells: f1 with (c) b_t10 seeds 0-9, f2 with (b) b_greedy 0-4.
+    # Our sampling generator is seeded per unit (GEN3AI_POLICY_SEED = unit seed), see run_unit.
+    for i in range(10):                      # f1: N0 T=1.0 vs Kakuna T=1.0, 200 games
+        out.append((f"f1_{i:02d}", "f1_n0t1_vs_kakuna_t1", 20, i,
+                    common + ["--our-temperature", "1.0", "--opponent-temperature", "1.0"], 400))
+    for i in range(5):                       # f2: N0 T=1.0 vs Kakuna greedy, 100 games
+        out.append((f"f2_{i:02d}", "f2_n0t1_vs_kakuna_greedy", 20, i,
+                    common + ["--our-temperature", "1.0"], 400))
     return out
 
 
@@ -208,14 +217,19 @@ def run_unit(u, port, lane, stop_at):
         out.rename(out.with_name(f"{name}.partial.{int(time.time())}"))
     argv = [PY, "-m", "main.anchors", *extra, "--teamset", "home", "--games", str(games),
             "--team-seed", str(seed), "--seed-base", str(seed), "--device", "cpu",
-            "--port", str(port), "--nice", "15", "--out", str(out)]
+            "--port", str(port), "--nice", "19", "--out", str(out)]
     t0 = time.time()
     meta = {"unit": name, "cell": cell, "lane": lane, "port": port, "games": games,
             "seed": seed, "argv": argv, "load_start": os.getloadavg(), "t": t0,
             "fp_search_time_ms": FP_MS if cell.startswith("e_") else None}
     jl_append(STATE / "units.jsonl", {"event": "start", **meta})
     log = open(STATE / "logs" / f"{name}.log", "ab")
-    proc = subprocess.Popen(argv, cwd=str(TREE), env=child_env(), stdout=log,
+    env = child_env()
+    if cell.startswith("f"):
+        env["GEN3AI_POLICY_SEED"] = str(seed)   # our T=1 sampling, reproducible per unit
+    meta_seed = env.get("GEN3AI_POLICY_SEED")
+    jl_append(STATE / "units.jsonl", {"event": "policy_seed", "unit": name, "seed": meta_seed})
+    proc = subprocess.Popen(argv, cwd=str(TREE), env=env, stdout=log,
                             stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                             start_new_session=True)
     jl_append(STATE / "units.jsonl", {"event": "pid", "unit": name, "pid": proc.pid})
@@ -278,7 +292,8 @@ def cmd_run(argv):
 
 
 def cmd_status():
-    for cell in ("b_greedy", "b_t05", "b_t10", "d_kakuna_vs_synthv2", "e_kakuna_vs_fp1000"):
+    for cell in ("b_greedy", "b_t05", "b_t10", "d_kakuna_vs_synthv2", "e_kakuna_vs_fp1000",
+                 "f1_n0t1_vs_kakuna_t1", "f2_n0t1_vs_kakuna_greedy"):
         w, l, t, n = pooled(cell)
         lo, hi = wilson(w, n)
         tot = sum(1 for u in all_units() if u[1] == cell)
