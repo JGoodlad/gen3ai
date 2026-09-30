@@ -108,9 +108,13 @@ all three `*_after_freeze` counters 0.
 
 - **Lanes default to 1 in the spec (declared, never inferred).** Lane E should declare
   `lanes = min(n_slots, 8)` — 8 lanes read 2.58 ms for 8 slots vs 4.26 at 4 (raw replay).
-- **The double-buffer event wait has NO proven teeth.** The back-to-back-flush check in
-  `service_cuda_test` passes with it; a revert-must-fail run of that wait was not done (only the
-  capture-stream revert was). It may be unable to catch the race it guards.
+- **CLOSED (2026-09-29): the double-buffer event wait has a revert-must-fail proof** —
+  `service_cuda_test.test_the_double_buffer_wait_stops_a_repack_before_the_queued_copy_reads_it`
+  holds the GPU with a sleep kernel so every flush's copy is still queued while the host issues the
+  next flushes: passes with the wait, FAILS with it removed ("flush 0: served another flush's
+  rows", twice in two runs). It needs backend `graph`: on `eager` the forward's 24 host syncs block
+  the host inside each flush and the reverted wait PASSED (measured) — so the eager backend never
+  exercises this race at all.
 - **vmap over stacked weights needs a model-wide out-of-place rewrite** (first blocker
   `t0_species.py:82` `zeros(...).scatter_(1, ids, src)`). Owner-level call if the lanes' 2.5x is not
   enough.

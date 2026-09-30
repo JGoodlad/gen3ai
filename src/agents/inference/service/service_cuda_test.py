@@ -127,6 +127,37 @@ def test_two_lanes_replaying_concurrently_serve_their_own_slots(fresh_compile_ca
     svc.canary()
 
 
+def test_the_double_buffer_wait_stops_a_repack_before_the_queued_copy_reads_it(
+        fresh_compile_caches):
+    """THE REVERT-MUST-FAIL proof for unit 4's per-arena event wait (`Engine.execute`'s
+    ``ev.synchronize()``). The GPU is held busy by a ~0.3 s sleep kernel queued on the caller's
+    stream, so every flush's host-to-device copy is still QUEUED when the host issues the next
+    flushes. Flush 2 re-packs the arena flush 0's queued copy has not read yet: with the wait it
+    blocks until that copy ran; without it, flush 0 is served flush 2's rows — deterministically,
+    not by timing luck. Backend ``graph``: the EAGER forward makes 24 host syncs, which block the
+    host on the GPU inside every flush and hide the race (measured: the reverted wait PASSED on
+    eager) — only a sync-free replay lets the host run ahead of the queued copies."""
+    a = _perturbed_policy(0)
+    svc = InferenceService(ServiceSpec(groups=(SlotGroupSpec("pool", 1, a),), device="cuda",
+                                       backend="graph", buckets=(8,))).startup()
+    obs, mask = fixture_rows(svc.obs_dim, 32)
+    torch.cuda.synchronize()
+    torch.cuda._sleep(int(3e8))                       # ~0.2-0.3 s of GPU time on this card
+    kept = []
+    for k in range(4):                                # arenas 0, 1, 0, 1 — distinct rows each
+        rows = slice(8 * k, 8 * k + 8)
+        t = svc.submit(0, obs[rows], mask[rows])
+        svc.flush()
+        kept.append((t.result().logp.clone(), t.result().value.clone(), rows))
+    torch.cuda.synchronize()
+    for k, (logp, value, rows) in enumerate(kept):
+        ref = _ref(a, obs[rows], mask[rows])
+        fin = torch.isfinite(ref[0])
+        assert torch.equal(fin, torch.isfinite(logp)), f"flush {k}: served another flush's rows"
+        assert float((value - ref[1]).abs().max()) < 1e-4, f"flush {k}: served another flush's rows"
+        assert float((logp - ref[0])[fin].abs().max()) < 1e-3
+
+
 def test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons():
     a = _perturbed_policy(0)
     svc = InferenceService(ServiceSpec(groups=(SlotGroupSpec("pool", 1, a),), device="cuda",

@@ -113,6 +113,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/inference/service/service_cuda_test.py::test_the_double_buffer_wait_stops_a_repack_before_the_queued_copy_reads_it": {
+   "status": "pass",
+   "commit": "7d16e5604b8e28a515f16da5d82cbabd273622f5",
+   "at": "2026-09-30T02:01:36Z",
+   "duration_s": 85.06,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/inference/service/service_cuda_test.py::test_two_lanes_replaying_concurrently_serve_their_own_slots": {
    "status": "pass",
    "commit": "6dde3b68a877c281ee6bd6296a07fbe9f09c3cdc",
@@ -970,5 +978,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T01:22:22Z"
+ "last_written": "2026-09-30T02:01:36Z"
 }
