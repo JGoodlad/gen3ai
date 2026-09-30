@@ -21548,3 +21548,34 @@ Mechanics verified in `deps/pokemon-showdown` before branching. In gen ≤ 3 a f
 Hazard found and fixed on the way: a recorded opponent answer can be a REJECTED switch (Showdown's hidden trap, `sim/side.ts:966–978`) followed by its retry. One banked turn had one.
 
 Tag: **MEASUREMENT · V BLIND to starvation (3/3 checkpoints, both opponent variants, every S) · one-ply ARGMAX teacher +0.04 to +0.06 over the policy (3/3, variant M) · the truth is a greedy continuation, not Nash**. Evidence: `designs/research_state/measurements/x4_preread/READOUT.md` (+ `readout_tables.md`, `readout.json.gz`, `mechanics.md`), `src/main/policy_spectrum/qhat.py`, `qhat_report.py`; rows in `~/gen3ai_archive/x4_preread/`.
+
+### 2026-09-30 · MILESTONE · **M5 GATE MET — every lane of the Rust env core passes its own parity gate at the milestone tier (E, T2 and H with their GPU parts), slice N and the depth-3 successor slice pass, and the throughput A/B is measured: on the production 95 / 5 self-play mix at 48 envs the Rust core runs 5.11× [4.72, 5.63] the trainee decisions/s of today's path (3,780 vs 743) at 0.038× [0.037, 0.039] the CPU per decision, and an eval cycle takes ≈ 16.5 s vs ≈ 117 s. PYTHON IS STILL THE DEFAULT env core (`--env-core python`); nothing a run reads has moved.**
+
+Landed with Lane H at `6b5df359` (`python -m main.rust_core_m5 verdict` → `M5 GATE: MET`). The verdict table (`designs/research_state/measurements/m5_laneJ/results/verdict.json`):
+
+| component | verdict | tier / evidence |
+|---|---|---|
+| lane 0 — the shared core boundary (column contract, N-env pool, refusal policy, build stamp) | PASS | milestone |
+| lane A — the FFI front end | PASS | milestone |
+| lane B — the process front end (shared memory) | PASS | milestone |
+| lane C — the 18 production training label keys | PASS | milestone |
+| lane D — episodes and reward (terminal, terminated / truncated, stall forfeit, ties) | PASS | milestone |
+| lane E — opponent routing (route table, policy opponents through T2, bots in the core) | PASS | milestone, GPU part PASS (`gates_milestone_lanes_E_G_H.json`) |
+| lane F — all ten pooled scripted bots in the core | PASS | milestone |
+| lane I — search on `successors()` in process | PASS | milestone |
+| lane T2 — the inference service (fixed weight slots + buckets) | PASS | milestone, GPU part PASS (`gates_milestone_lanes_E_T2.json`) |
+| lane G — the Rust env as the trainer's vec env, behind `--env-core` | PASS | milestone (`gates_milestone_lanes_E_G_H.json`) |
+| lane H — eval on the core (the cycle, its opponents, its traces) | PASS | milestone, GPU part PASS (`gates_milestone_lanes_H.json`) |
+| slice N at the env level | PASS | MILESTONE at `d58b12de` |
+| the depth-3 successor slice | PASS | MILESTONE at `d58b12de`; 25 batches refused by both roads (F-LI-1) |
+| throughput A/B at `--n-envs 48` | MEASURED | a DESCRIPTOR, no bar registered; 6 reads, 4 at the production shape |
+
+**Throughput** (Lane G, `m5_laneJ/results/throughput_production_sp95_n48.json`): release builds, the GPU under the lock, fresh per-run compile caches, 6 rounds of interleaved 20 s blocks, percentile-bootstrap CIs. Python (today's path: 48 forkserver workers) 743 [674, 783] trainee decisions/s at 12,993 CPU µs a decision; Rust serial (keyed opponent draw) 3,780 [3,650, 3,941] at 496 µs. Ratio **5.11× [4.72, 5.63]**, CPU per decision **0.038× [0.037, 0.039]**. Env-step / inference OVERLAP is NOT adopted at N = 48 (0.71× of serial [0.69, 0.73]). Two Rust arms of identical configuration differ by up to ~3 % with CIs that exclude 1 (F-LG-10), so no Rust-arm difference under ~3 % is a finding.
+
+**Eval** (Lane H, `m5_laneH/bench_eval_cycle_production_shape.json`): the production self-play eval cycle (9 roster bots + 5 pool sentinels × 100 games, shard 25; 1,400 games), interleaved R P P R. Rust ≈ 16.5 s a cycle (16.28 / 16.60 / 16.23 / 16.71) vs Python ≈ 117 s (116.0 / 118.6), about 7.1× less wall-clock. It is not the same resource: the Rust cycle BLOCKS the trainer (~1 % of an eval interval at the Lane G rate), while the Python cycle runs beside training on 10 CPU processes. Two blocks per arm, so no CI is claimed.
+
+**What did NOT change.** `--env-core python` is still the default. Every run launched so far, and every number in this ledger, ran on the Python env path (with the core's observation since the 2026-09-25 cutover, `--obs-source core`). The switch to `--env-core rust` is a separate decision with its own ledger entry. It changes two declared streams: a trainee sample is the keyed draw and an eval game is seeded by the game (F-LG-2, F-LH-1), so no Python-path stream is reproducible across it. **Provenance note:** the three result files above are stamped `55a7846f`, the HEAD the Lane H worktree sat on when they ran. That stamp records the base, not the uncommitted H tree that was run; the tree landed as `6b5df359`.
+
+**Cutover preparation the same day (after the gate; no production read moved):** every `*_summary.json` reader outside the prober now goes through `main.prober.core_trace` (expanded, stored meta, or a typed refusal), and a static gate holds that with an EMPTY allowlist (F-LH-5 closed, `9ccd1c7a` + `12907463`). Lane E's near-tie flake is re-verified in file order, and its assert path is pinned by a test that fails on revert (`b9431fab`). OPEN at the time of writing, and recorded in `m5_laneG/PROGRESS.md` / `m5_laneH/PROGRESS.md` as they close: the launcher restart / pin path on a Rust-core run (F-LG-6), and Lane H gate rows for fixed / stable opponents and the sampled-sentinel regime (F-LH-10).
+
+Tag: **MILESTONE · M5 GATE MET · BOUNDARY-FREE (the default is unchanged; no run's stream moves until the switch)**. Evidence: `designs/research_state/measurements/m5_laneJ/results/verdict.json`, `m5_laneJ/PROGRESS.md`, `m5_laneG/PROGRESS.md` (the 95 / 5 table), `m5_laneH/PROGRESS.md` (the gate table + the eval benchmark), `designs/endstate/program_rust_core.md` §2 M5.
