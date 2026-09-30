@@ -52,6 +52,31 @@ early does not merely lose a cycle, it collects **partial** results that flow in
 ramp, the promotion gate and the ELO fit — and a truncated sample is whichever shards got scheduled,
 not a random subsample. Measurements + the incident record:
 `designs/research_state/claude_md_archive/contention_measurements.md`.
+### Test TEMP DIRS live on the real disk, and a PASS leaves nothing (`gen3_test_tmp_on_disk_v1`)
+
+`/tmp` on this box is **tmpfs** — RAM plus a FIXED 1,048,576-inode table. On 2026-09-30 its inodes
+went 42% → 61% in 15 minutes: each concurrent `-n 2` routine gate retained a
+`pytest-of-<user>/pytest-NNNN` of ~80k files (~900 per frame-building test), five sessions were
+alive across worktrees, and pytest's default keeps the last 3 on top of the in-flight ones. Two
+halves fix it at the source:
+
+- **WHERE** — the root `conftest.py`'s `pytest_configure` (tryfirst) sets `tempfile.tempdir` and
+  `$TMPDIR` to `_test_scratch_root()`: `$GEN3AI_SCRATCH`, else `~/.cache/gen3ai/tmp` — the same
+  root the K3 compile caches use. So `tmp_path`, every bare `tempfile.mkdtemp()`, every xdist
+  worker and every subprocess a test spawns land on disk. A tmpfs/ramfs root is **REFUSED** with a
+  `UsageError` naming `$GEN3AI_SCRATCH`.
+- **HOW LONG** — `pytest.ini` sets `tmp_path_retention_policy = failed` and
+  `tmp_path_retention_count = 1` (pytest 9.0.3 in both `gen3ai_stable` and `gen3ai_torch28`): a
+  passing test's `tmp_path` is removed at its teardown, a passing session's basetemp at
+  sessionfinish; a FAILED test's dir is kept for the post-mortem.
+
+Pinned by `src/utils/pytest_tmp_on_disk_test.py`, which runs a CHILD session (`-n 2`, plus a
+grandchild subprocess) and fails on a revert of either half. ⚠️ A deep `tmp_path` can exceed a unix
+socket's 108-byte `sun_path` — bind by a RELATIVE name from inside the dir (as
+`src/main/ops/tmp_sweep_test.py` does). Hard-coded `/tmp` defaults that remain for bulk data:
+`main/ladder_drift_scan.py --cache /tmp/psreplays` and
+`agents/training/selfplay_opponent_leak_fuzz_test.py`'s stall dir (a script, not collected).
+
 ### Test tiers — TWO AXES, and keeping them apart is the point
 
 A marker says **what a test NEEDS** (capability). A separate marker says **what it COSTS** (`slow`).

@@ -22,6 +22,8 @@ scripts are run directly (not via pytest), so they are unaffected and still use 
 """
 import os
 
+import pytest
+
 if not os.environ.get("GEN3AI_TEST_ALLOW_GPU"):
     # Empty string => no visible CUDA device => torch.cuda.is_available() is False
     # => SB3 device="auto" resolves to CPU. Hard-set (not setdefault) so an already-exported
@@ -132,9 +134,67 @@ _slow_collected: "set[str]" = set()
 _slow_write_note = []
 
 
+# --- the TEST TEMP ROOT lives on the REAL DISK, never tmpfs `/tmp` (gen3_test_tmp_on_disk_v1) -----
+#
+# `/tmp` on this box is tmpfs: RAM, and a FIXED 1,048,576-inode table. On 2026-09-30 inodes went 42% ->
+# 61% in 15 minutes: every concurrent `-n 2` routine gate left a `pytest-of-<user>/pytest-NNNN` of ~80k
+# files (~900 per test for the frame-building tests), five sessions were alive across worktrees, and
+# pytest keeps the last 3 on top of the in-flight ones. Two halves, both needed:
+#   * WHERE — `tempfile.tempdir` and `$TMPDIR` point at `_test_scratch_root()` BEFORE anything asks
+#     for a temp dir, so `tmp_path`, every bare `tempfile.mkdtemp()` / `TemporaryDirectory()`, every
+#     xdist worker (execnet spawns them after this, with this environ) and every subprocess a test
+#     starts land on disk. The root must not itself be tmpfs — it is REFUSED.
+#   * HOW LONG — `pytest.ini` sets `tmp_path_retention_policy = failed` and `_count = 1`: a PASSING
+#     test's `tmp_path` is removed at its teardown and a passing session's basetemp at sessionfinish.
+# Pinned by `src/utils/pytest_tmp_on_disk_test.py` (a child session; fails on revert of either half).
+_TMP_ENV = "GEN3AI_SCRATCH"
+
+
+def _fs_type(path):
+    """The filesystem type of the mount holding `path` (longest /proc/mounts prefix), or None."""
+    real = os.path.realpath(path)
+    best, kind = "", None
+    try:
+        with open("/proc/mounts") as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) < 3:
+                    continue
+                mnt = parts[1].replace("\\040", " ")
+                if (real == mnt or real.startswith(mnt.rstrip("/") + "/")) and len(mnt) >= len(best):
+                    best, kind = mnt, parts[2]
+    except OSError:
+        return None
+    return kind
+
+
+def _test_scratch_root():
+    """`$GEN3AI_SCRATCH` or `~/.cache/gen3ai/tmp` (created) — the REAL disk. Refuses tmpfs/ramfs.
+    Mirrors `agents.model.compile_cache.scratch_root` (K3); inlined because this runs before anything
+    guarantees `src/` is importable."""
+    root = os.environ.get(_TMP_ENV) or os.path.join(os.path.expanduser("~"), ".cache", "gen3ai", "tmp")
+    os.makedirs(root, exist_ok=True)
+    fs = _fs_type(root)
+    if fs in ("tmpfs", "ramfs"):
+        raise pytest.UsageError(
+            f"the test temp root {root!r} is on {fs} (RAM + a fixed inode table); point "
+            f"${_TMP_ENV} at a directory on a real disk")
+    return root
+
+
+def _declare_test_tmp_root():
+    import tempfile
+    root = _test_scratch_root()
+    os.environ["TMPDIR"] = root
+    tempfile.tempdir = root
+
+
+@pytest.hookimpl(tryfirst=True)
 def pytest_configure(config):
-    """Publish the live `slow`-set object on `config`, so the gate test reads it off `request.config`
-    rather than by importing the root conftest as a module (which depends on sys.path order)."""
+    """Point every temp dir at the on-disk scratch root (above), then publish the live `slow`-set
+    object on `config`, so the gate test reads it off `request.config` rather than by importing the
+    root conftest as a module (which depends on sys.path order)."""
+    _declare_test_tmp_root()
     config._gen3ai_slow_collected = _slow_collected
 
 
@@ -422,7 +482,6 @@ def _refuse_unfinished_checkout():
 # the value — restoring would hide the leak — and has NO allowlist: fix it at the source.
 # Per-test cost is two snapshots + a diff (measured in `designs/ops/testing.md`). Escape hatch:
 # GEN3AI_SKIP_TORCH_STATE_GUARD=1.
-import pytest  # noqa: E402
 
 _tsg = {"module": None, "baseline": None, "reported": set(), "primed": False}
 
