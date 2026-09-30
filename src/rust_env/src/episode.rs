@@ -203,22 +203,46 @@ impl Env {
 
     /// p1 forfeits (`FORCELOSE p1` in its input log — `ForfeitBattleOrder`).
     fn forfeit_p1(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
-        self.log.cmds.push("FORCELOSE p1".into());
-        self.sess.as_mut().ok_or_else(|| EnvError::fault("no battle"))?.forfeit(0);
+        self.forfeit_side(ctx, 0, c, t)
+    }
+
+    /// `side` forfeits (`FORCELOSE p<side+1>`).
+    fn forfeit_side(&mut self, ctx: &Ctx, side: usize, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
+        self.log.cmds.push(format!("FORCELOSE p{}", side + 1));
+        self.sess.as_mut().ok_or_else(|| EnvError::fault("no battle"))?.forfeit(side);
         self.open = [None, None];
         self.advance(ctx, c, t)
     }
 
-    fn write_state(&self, c: &mut EnvCols) -> Result<(), EnvError> {
+    /// M5 Lane E: p2's route forfeits at the stall threshold and its decision has reached it
+    /// (`crate::opponents`). Such a decision is NEVER exposed (`need` = 0): today's
+    /// `RLPlayer.choose_move` runs its stall check BEFORE any forward, so no row is scored and no
+    /// sample drawn — whether its forfeit is then sent (no p1 decision open: [`Env::p2_forfeit_due`])
+    /// or dropped because p1 forfeits first (Lane D's rule).
+    fn p2_at_stall(&self, ctx: &Ctx) -> bool {
+        let p2_turn = self.chains[1].as_ref().and_then(|ch| ch.stream(1)).map_or(0, |s| s.board_reading.turn);
+        ctx.spec.opponents.p2_stall_forfeits(self.route) && stall_forfeit_due(ctx.spec.turn_limit, self.open[1].is_some(), p2_turn)
+    }
+
+    /// p2 forfeits this STEP: it is at the stall threshold and no p1 decision is open.
+    fn p2_forfeit_due(&self, ctx: &Ctx) -> bool {
+        self.open[0].is_none() && self.p2_at_stall(ctx)
+    }
+
+    fn write_state(&self, ctx: &Ctx, c: &mut EnvCols) -> Result<(), EnvError> {
         let mut any = false;
+        let p2_hidden = self.p2_at_stall(ctx);
         for side in 0..SIDES {
             let o = self.open[side].as_ref();
-            c.need[side] = o.is_some() as u8;
+            c.need[side] = (o.is_some() && !(side == 1 && (p2_hidden || self.bot_route(ctx)))) as u8;
             c.dec_n[side] = o.map_or(0, |o| o.n);
             any |= o.is_some();
         }
         c.episode[0] = self.episode();
         c.turn[0] = self.sess.as_ref().map_or(0, |s| s.turn());
+        // M5 Lane E: the route this episode's start consumed (a hand-off line: `crate::opponents`).
+        c.opp_route[0] = self.route;
+        c.opp_slot[0] = ctx.spec.opponents.slot_of(self.route);
         if !any && !self.parked {
             return Err(EnvError::fault("stuck: no decision open and the battle is not over"));
         }
@@ -229,7 +253,7 @@ impl Env {
     pub(crate) fn reset(&mut self, ctx: &Ctx, c: &mut EnvCols, t: &mut Tally, banked: &mut Vec<Banked>) -> Result<(), EnvError> {
         clear_outcome(c);
         self.start_or_park(ctx, c, t, banked)?;
-        self.write_state(c)
+        self.write_state(ctx, c)
     }
 
     /// STEP: the stall forfeit OR feed every open side (p1 first — the script order); then, if the
@@ -238,11 +262,15 @@ impl Env {
         clear_outcome(c);
         if self.parked {
             self.start_or_park(ctx, c, t, banked)?;
-            return self.write_state(c);
+            return self.write_state(ctx, c);
         }
         let p1_turn = self.p1_reading().map_or(0, |r| r.turn);
         if stall_forfeit_due(ctx.spec.turn_limit, self.open[0].is_some(), p1_turn) {
             self.forfeit_p1(ctx, c, t)?;
+        } else if self.p2_forfeit_due(ctx) {
+            // M5 Lane E (hand-off): a POLICY opponent is today's `RLPlayer`, which forfeits at its
+            // own decision at the threshold when p1 did not forfeit first (`crate::opponents`).
+            self.forfeit_side(ctx, 1, c, t)?;
         } else {
             // Only the decisions open when the op began are fed (the ones the caller answered).
             let act = [c.action[0], c.action[1]];
@@ -253,9 +281,16 @@ impl Env {
                 }
                 // A side whose decision an earlier feed of this op closed or replaced is skipped.
                 if to_feed[side].is_some() && self.open[side].as_ref().map(|o| o.n) == to_feed[side] {
-                    self.feed(ctx, side, act[side], c, t)?;
+                    if side == 1 && self.bot_route(ctx) {
+                        // M5 Lane E: the bot answers its own (unexposed) decision, after p1's feed.
+                        let tok = self.bot_token()?;
+                        self.feed_token(ctx, 1, tok, c, t)?;
+                    } else {
+                        self.feed(ctx, side, act[side], c, t)?;
+                    }
                 }
             }
+            self.run_bots(ctx, c, t)?;
         }
         if self.sess.as_ref().ok_or_else(|| EnvError::fault("no battle"))?.is_ended() {
             let r = self.p1_reading().ok_or_else(|| EnvError::fault("p1: chain lost"))?;
@@ -269,7 +304,7 @@ impl Env {
             t.ended += 1;
             self.start_or_park(ctx, c, t, banked)?;
         }
-        self.write_state(c)
+        self.write_state(ctx, c)
     }
 
     /// QUARANTINE: the battle in progress is dropped (the caller banked it) and the next episode
@@ -279,7 +314,7 @@ impl Env {
         self.start_or_park(ctx, c, t, banked)?;
         c.done[0] = 1;
         c.refused[0] = 1;
-        self.write_state(c)
+        self.write_state(ctx, c)
     }
 }
 
@@ -356,6 +391,7 @@ mod tests {
             refusal_budget: 4,
             bank_dir: None,
             labels: Vec::new(),
+            opponents: crate::opponents::Routes::external(),
         };
         let mut core = Core::new(spec).unwrap();
         let mut cols = OwnedCols::new(1);

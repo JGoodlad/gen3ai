@@ -15,7 +15,8 @@
 //!  "terminal": {"victory_value": <num>, "terminal_indicator": <bool>, "draw_penalty": <num>,
 //!               "timeout_turn_cap": <int>},
 //!  "refusal_budget": <int>, "bank_dir": null | "<abs path>",
-//!  "labels": ["<family>", …]}
+//!  "labels": ["<family>", …],
+//!  "opponents": [{"kind": "external"} | {"kind": "policy", "slot": <int>} | {"kind": "bot", "bot": "<name>"}, …]}
 //! ```
 
 use std::path::PathBuf;
@@ -55,6 +56,8 @@ pub struct Spec {
     /// The LABEL FAMILIES the core writes (Lane C; `crate::labels::declare` — a family the core
     /// does not build is refused here, at startup), in table order.
     pub labels: Vec<&'static str>,
+    /// The OPPONENT ROUTE TABLE (M5 Lane E; `crate::opponents`): the `ep_opp` column indexes it.
+    pub opponents: crate::opponents::Routes,
 }
 
 /// GENERATED from `protocol.SPEC_KEYS` (one table for both languages).
@@ -113,6 +116,7 @@ impl Spec {
             .map(|t| t.as_str().map(str::to_string).ok_or("spec: every label family must be a string".to_string()))
             .collect::<Result<Vec<_>, _>>()?;
         let labels = crate::labels::declare(&labels)?;
+        let opponents = crate::opponents::Routes::from_json(v.get("opponents"))?;
         let spec = Spec {
             n: uint(&v, "n")? as usize,
             threads: uint(&v, "threads")? as usize,
@@ -125,6 +129,7 @@ impl Spec {
             refusal_budget: uint(&v, "refusal_budget")? as usize,
             bank_dir,
             labels,
+            opponents,
         };
         spec.validate()?;
         Ok(spec)
@@ -151,6 +156,7 @@ impl Spec {
             return Err("spec: `turn_limit` must be >= 1 or null".into());
         }
         self.terminal.validate()?;
+        self.opponents.validate()?;
         if let Some(d) = &self.bank_dir {
             if !d.is_absolute() {
                 return Err(format!("spec: `bank_dir` must be absolute, got {}", d.display()));
@@ -170,7 +176,7 @@ impl Spec {
         let teams: Vec<String> = self.teams.iter().map(|t| q(t)).collect();
         format!(
             "{{\"n\":{},\"threads\":{},\"format_id\":{},\"names\":[{},{}],\"teams\":[{}],\"decision_tense\":{},\
-             \"switch_freeze\":{},\"turn_limit\":{},\"terminal\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}]}}",
+             \"switch_freeze\":{},\"turn_limit\":{},\"terminal\":{},\"refusal_budget\":{},\"bank_dir\":{},\"labels\":[{}],\"opponents\":{}}}",
             self.n,
             self.threads,
             q(&self.format_id),
@@ -184,6 +190,7 @@ impl Spec {
             self.refusal_budget,
             self.bank_dir.as_ref().map_or("null".to_string(), |d| q(&d.to_string_lossy())),
             self.labels.iter().map(|f| q(f)).collect::<Vec<_>>().join(","),
+            self.opponents.to_json(),
         )
     }
 }
@@ -205,6 +212,10 @@ mod tests {
             refusal_budget: 4,
             bank_dir: Some(PathBuf::from("/tmp/x")),
             labels: Vec::new(),
+            opponents: crate::opponents::Routes(vec![
+                crate::opponents::Route::External,
+                crate::opponents::Route::Policy { slot: 2 },
+            ]),
         }
     }
 
@@ -224,6 +235,7 @@ mod tests {
             ("teams", "[\"X|||\"]"), ("decision_tense", "false"), ("switch_freeze", "true"), ("turn_limit", "null"),
             ("terminal", "{\"victory_value\":1,\"terminal_indicator\":true,\"draw_penalty\":0,\"timeout_turn_cap\":250}"),
             ("refusal_budget", "0"), ("bank_dir", "null"), ("labels", "[]"),
+            ("opponents", "[{\"kind\":\"external\"}]"),
         ]
     }
 

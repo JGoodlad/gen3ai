@@ -77,6 +77,9 @@ COLUMNS: Tuple[Column, ...] = (
            "RESET and at every auto-reset, so the caller keeps it staged for the episode after the current one"),
     Column("ep_seed", "u32", ("N", "SEED_WORDS"), "in", "0",
            "the NEXT episode's Showdown seed \"a,b,c,d\" (each word < 65536); read with ep_team"),
+    Column("ep_opp", "u32", ("N",), "in", "E",
+           "the NEXT episode's OPPONENT ROUTE, an index into the spec's `opponents` table (M5 Lane E, "
+           "`crate::opponents`); read with ep_team / ep_seed, so the caller keeps it staged one episode ahead"),
     # ---- outputs
     Column("obs", "f32", ("N", "SIDES", "OBS_DIM"), "out", "0",
            "the side's observation row (`BattleVersion::encode` on its PARSE chain — the row sim_bridge's "
@@ -113,6 +116,12 @@ COLUMNS: Tuple[Column, ...] = (
            "the index of the side's open decision among its decisions in this battle — sim_bridge's __OBS__ "
            "`n`, the alignment key; valid iff need = 1"),
     Column("turn", "u32", ("N",), "out", "0", "the battle's turn after the op"),
+    Column("opp_route", "u32", ("N",), "out", "E",
+           "the route (`ep_opp` as consumed at the start) of the episode obs / need describe — correct across "
+           "auto-resets; after a refused start (PARKED) it names the refused episode's route"),
+    Column("opp_slot", "i32", ("N",), "out", "E",
+           "the T2 slot answering p2 in that episode (the route's `slot`), -1 when its route is not a policy — "
+           "the host groups p2's rows by it"),
     Column("counters", "u64", ("NCOUNTERS",), "out", "0",
            "pool counters, indexed by `protocol.COUNTERS` (the `*_AFTER_FREEZE` ones must stay 0)"),
 ) + tuple(

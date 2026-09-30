@@ -46,7 +46,7 @@ The `rust` column says where the Rust env gets each key:
   `rust_env_labels_parity_test.py`.
 - `host_const`: a placeholder the host writes as a constant. A rollout callback overwrites it after
   collection.
-- `host_episode`: a per-episode value the host owns, keyed by the core's `episode` column.
+- `host_episode`: a per-episode value the host owns, keyed by the core's `episode` column. `opp_class` is the class of the episode's opponent ROUTE: `rust_env_opponents.RustEnvOpponents.opp_class(cols)` reads it off the core's `opp_route` column (M5 Lane E), so it can never describe the previous opponent.
 - `refused`: off the production surface. A spec that asks for it is refused at startup.
 
 | key | dtype `shape` | family | prod | producer (Python) | consumer | rust |

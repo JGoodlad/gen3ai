@@ -281,6 +281,30 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[greedy]": {
+   "status": "pass",
+   "commit": "e5478fcbe450c52b3042e3face8c38d61f395bc4",
+   "at": "2026-09-30T04:44:55Z",
+   "duration_s": 166.63,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[sampled]": {
+   "status": "pass",
+   "commit": "e5478fcbe450c52b3042e3face8c38d61f395bc4",
+   "at": "2026-09-30T04:44:55Z",
+   "duration_s": 381.42,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/rust_env_opponents_parity_test.py::test_slow_compiled_per_env_path": {
+   "status": "pass",
+   "commit": "e5478fcbe450c52b3042e3face8c38d61f395bc4",
+   "at": "2026-09-30T04:44:55Z",
+   "duration_s": 143.34,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
    "status": "pass",
    "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
@@ -986,5 +1010,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T04:41:10Z"
+ "last_written": "2026-09-30T04:44:55Z"
 }

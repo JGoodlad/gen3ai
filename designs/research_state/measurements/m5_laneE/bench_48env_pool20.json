@@ -1,0 +1,136 @@
+{
+ "torch": "2.5.1+cu121",
+ "device": "cuda",
+ "backend": "graph",
+ "buckets": [
+  2,
+  4,
+  8,
+  16
+ ],
+ "lanes": 8,
+ "n_envs": 48,
+ "threads": 8,
+ "profile": "release",
+ "pool": [
+  "snapshot_000032000016.zip",
+  "snapshot_000034000032.zip",
+  "snapshot_000036000000.zip",
+  "snapshot_000038000016.zip",
+  "snapshot_000040000032.zip",
+  "snapshot_000042000000.zip",
+  "snapshot_000044000016.zip",
+  "snapshot_000046000032.zip",
+  "snapshot_000048000000.zip",
+  "snapshot_000052000032.zip",
+  "snapshot_000054000000.zip",
+  "snapshot_000058000032.zip",
+  "snapshot_000062000016.zip",
+  "snapshot_000068000016.zip",
+  "snapshot_000070000032.zip",
+  "snapshot_000072000000.zip",
+  "snapshot_000076000032.zip",
+  "snapshot_000078000000.zip",
+  "snapshot_000080000016.zip",
+  "snapshot_000082000032.zip"
+ ],
+ "slots": 24,
+ "bots": [
+  "heuristic",
+  "heuristic2",
+  "staller",
+  "staller_v2",
+  "aggressive",
+  "aggressive_v2",
+  "setup_sweep",
+  "setup_sweep_v2"
+ ],
+ "self_play_fraction": 0.9,
+ "mode": "sampled",
+ "busy_box_warnings": [
+  "other GPU processes: ['1700054']"
+ ],
+ "startup_s": 425.3,
+ "startup_phases_s": {
+  "allocate": 0.8,
+  "build": 415.6,
+  "parity": 8.8
+ },
+ "pool_admit_s": 16.19,
+ "load_s_per_snapshot": {
+  "mean": 809.522,
+  "p50": 847.007,
+  "p95": 858.642
+ },
+ "steps_timed": 600,
+ "per_step_ms": {
+  "serve": {
+   "mean": 5.898,
+   "p50": 5.907,
+   "p95": 6.177
+  },
+  "core_step": {
+   "mean": 1.646,
+   "p50": 1.637,
+   "p95": 1.943
+  },
+  "p1_random": {
+   "mean": 0.174,
+   "p50": 0.172,
+   "p95": 0.182
+  },
+  "stage": {
+   "mean": 0.033,
+   "p50": 0.037,
+   "p95": 0.053
+  }
+ },
+ "serve_split_s": {
+  "gather": 0.09047357470262796,
+  "flush": 0.6918432425009087,
+  "sample": 3.0540777762653306
+ },
+ "rows_per_flush": {
+  "mean": 39.53,
+  "p50": 40.0,
+  "p95": 44.0
+ },
+ "slots_per_flush_mean": 17.59,
+ "rows_per_slot_hist": {
+  "1": 3690,
+  "2": 3408,
+  "3": 1497,
+  "4": 1286,
+  "5": 461,
+  "6": 212
+ },
+ "p1_decisions_per_s": 5973.7,
+ "episodes_by_class": {
+  "0": 68,
+  "1": 716
+ },
+ "svc_after_freeze_delta": {
+  "compiles_after_freeze": 0,
+  "captures_after_freeze": 0,
+  "cuda_segments_after_freeze": 0
+ },
+ "core_after_freeze": {
+  "THREADS_SPAWNED_AFTER_FREEZE": 0,
+  "ENVS_ADDED_AFTER_FREEZE": 0,
+  "COLUMN_REBINDS_AFTER_FREEZE": 0,
+  "BANK_GROWTH_AFTER_FREEZE": 0
+ },
+ "core_counters": {
+  "DISPATCHES": 651,
+  "DECISIONS": 55867,
+  "EPISODES_STARTED": 784,
+  "EPISODES_ENDED": 736,
+  "REFUSALS": 0,
+  "CORE_NS_LAST": 1693679,
+  "CORE_NS_TOTAL": 1070774215,
+  "THREADS_SPAWNED_AFTER_FREEZE": 0,
+  "ENVS_ADDED_AFTER_FREEZE": 0,
+  "COLUMN_REBINDS_AFTER_FREEZE": 0,
+  "BANK_GROWTH_AFTER_FREEZE": 0
+ }
+}

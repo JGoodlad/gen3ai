@@ -68,7 +68,15 @@ class SingleAgentWrapper(Env[Dict[str, Any], ActionType]):
             f"POLL-OPP post-settle battle.turn={getattr(self.env.battle2, 'turn', '?')} "
             f"wait={self.env.battle2.wait} force_switch={getattr(self.env.battle2, 'force_switch', '?')}",
         )
-        if self.env.battle2.wait:
+        # gen3_no_phantom_opponent_poll_v1 (M5 Lane E finding, the OPPONENT twin of F1's
+        # gen3_no_phantom_decision_v1): the opponent is polled ONLY when this step will SEND its
+        # order (`agent2_to_move` — the flag `PokeEnv.step` gates order2 on). A poll on any other
+        # step was a PHANTOM: its order was dropped, but `choose_move` ran — an RLPlayer embedded
+        # the stale request, recording a decision that advanced its progress clock (measured: the
+        # next rows' `turns_since_progress` one step high vs the Rust core, `rust_env_opponents_
+        # parity`) and drew a sample from its generator; a scripted bot drew from its RNG (F-LF-2).
+        # The default order stands in, exactly as for a `wait` request; the sim sees nothing new.
+        if self.env.battle2.wait or not getattr(self.env, "agent2_to_move", True):
             opp_action = self.env.order_to_action(
                 DefaultBattleOrder(),
                 self.env.battle2,

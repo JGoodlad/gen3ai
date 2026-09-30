@@ -480,7 +480,7 @@ still encoded here and counted (`Gen3Env.core_obs_counts`). The env-level parity
 (`main/rust_core_cutover/slice_n_test.py`), zero differences, no allowlist. 🚨 **A DECISION is recorded only when the env
 asks the trainee to move** (`gen3_no_phantom_decision_v1`, a TRAINING-INPUT change): poke-env embeds
 `battle1` on every step, including a `wait` request or its re-embed of an answered request, and the
-trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES.
+trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES. 🚨 **The OPPONENT is polled only when its order will be SENT** (`gen3_no_phantom_opponent_poll_v1`, M5 Lane E, the opponent twin): `SingleAgentWrapper.step` asked `choose_move` on steps whose p2 order was dropped, so a self-play `RLPlayer` recorded a phantom decision (progress clock one step high) and drew a sample, and a bot drew from its RNG.
 Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
 
 ## The two compile flags (`--compile-opponents` · `--compile-trainer`, both DEFAULT ON)

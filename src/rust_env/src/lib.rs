@@ -10,6 +10,8 @@ pub mod episode;
 pub mod ffi;
 /// The TRAINING LABELS (M5 Lane C): which label families are built, and their producers.
 pub mod labels;
+/// OPPONENT ROUTING (M5 Lane E): the per-episode route table (external / T2 policy slot / Lane F bot).
+pub mod opponents;
 /// SEARCH ON `successors()` IN PROCESS (M5 Lane I): the search tree and the playouts.
 pub mod search;
 /// FRONT END B's transport — the shared mapping of the process front end (M5 Lane B; the child is

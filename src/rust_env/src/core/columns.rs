@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// FNV-1a-64 of `columns.schema_text()`; a front end compares it with its own table at load.
-pub const SCHEMA_ID: &str = "f694eea5bd468144";
+pub const SCHEMA_ID: &str = "759d479521053cd4";
 
 // ---- dims
 pub const SIDES: usize = 2;
@@ -15,7 +15,7 @@ pub const NCOUNTERS: usize = 11;
 pub const OBS_DIM: usize = pokesim::encoder::OBS_DIM;
 
 /// The startup declaration's keys (`protocol.SPEC_KEYS`): every one required, no other accepted.
-pub const SPEC_KEYS: [&str; 12] = ["n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit", "terminal", "refusal_budget", "bank_dir", "labels"];
+pub const SPEC_KEYS: [&str; 13] = ["n", "threads", "format_id", "names", "teams", "decision_tense", "switch_freeze", "turn_limit", "terminal", "refusal_budget", "bank_dir", "labels", "opponents"];
 
 // ---- ops (`core::dispatch`'s first argument)
 pub mod op {
@@ -118,39 +118,42 @@ pub mod col {
     pub const ACTION: usize = 0;
     pub const EP_TEAM: usize = 1;
     pub const EP_SEED: usize = 2;
-    pub const OBS: usize = 3;
-    pub const MASK: usize = 4;
-    pub const NEED: usize = 5;
-    pub const REWARD: usize = 6;
-    pub const DONE: usize = 7;
-    pub const TERMINATED: usize = 8;
-    pub const TRUNCATED: usize = 9;
-    pub const REFUSED: usize = 10;
-    pub const EPISODE: usize = 11;
-    pub const DEC_N: usize = 12;
-    pub const TURN: usize = 13;
-    pub const COUNTERS: usize = 14;
-    pub const BELIEF_SPECIES: usize = 15;
-    pub const BELIEF_MOVES: usize = 16;
-    pub const KNOWN_MOVES: usize = 17;
-    pub const BELIEF_SPREAD: usize = 18;
-    pub const BELIEF_SPREAD_MASK: usize = 19;
-    pub const BELIEF_NATURE: usize = 20;
-    pub const BELIEF_NATURE_MASK: usize = 21;
-    pub const BELIEF_EV: usize = 22;
-    pub const BELIEF_EV_MASK: usize = 23;
-    pub const HP_TYPE_LABEL: usize = 24;
-    pub const HP_TYPE_MASK: usize = 25;
-    pub const ITEM_LABEL: usize = 26;
-    pub const ITEM_MASK: usize = 27;
-    pub const WIN_MARGIN: usize = 28;
-    pub const OPP_ACTION_KIND: usize = 29;
-    pub const OPP_ACTION_NUM: usize = 30;
-    pub const OPP_SWITCH_SLOT: usize = 31;
-    pub const OPP_SWITCH_SPECIES: usize = 32;
+    pub const EP_OPP: usize = 3;
+    pub const OBS: usize = 4;
+    pub const MASK: usize = 5;
+    pub const NEED: usize = 6;
+    pub const REWARD: usize = 7;
+    pub const DONE: usize = 8;
+    pub const TERMINATED: usize = 9;
+    pub const TRUNCATED: usize = 10;
+    pub const REFUSED: usize = 11;
+    pub const EPISODE: usize = 12;
+    pub const DEC_N: usize = 13;
+    pub const TURN: usize = 14;
+    pub const OPP_ROUTE: usize = 15;
+    pub const OPP_SLOT: usize = 16;
+    pub const COUNTERS: usize = 17;
+    pub const BELIEF_SPECIES: usize = 18;
+    pub const BELIEF_MOVES: usize = 19;
+    pub const KNOWN_MOVES: usize = 20;
+    pub const BELIEF_SPREAD: usize = 21;
+    pub const BELIEF_SPREAD_MASK: usize = 22;
+    pub const BELIEF_NATURE: usize = 23;
+    pub const BELIEF_NATURE_MASK: usize = 24;
+    pub const BELIEF_EV: usize = 25;
+    pub const BELIEF_EV_MASK: usize = 26;
+    pub const HP_TYPE_LABEL: usize = 27;
+    pub const HP_TYPE_MASK: usize = 28;
+    pub const ITEM_LABEL: usize = 29;
+    pub const ITEM_MASK: usize = 30;
+    pub const WIN_MARGIN: usize = 31;
+    pub const OPP_ACTION_KIND: usize = 32;
+    pub const OPP_ACTION_NUM: usize = 33;
+    pub const OPP_SWITCH_SLOT: usize = 34;
+    pub const OPP_SWITCH_SPECIES: usize = 35;
 }
 
-pub const N_COLUMNS: usize = 33;
+pub const N_COLUMNS: usize = 36;
 
 pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     // STEP: the action index (0..ACT) for every (env, side) with need = 1; ignored where need = 0
@@ -159,6 +162,8 @@ pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     ColSpec { name: "ep_team", dtype: Dtype::U32, dir: Dir::In, per_env: true, row_elems: SIDES, owner: "0" },
     // the NEXT episode's Showdown seed "a,b,c,d" (each word < 65536); read with ep_team
     ColSpec { name: "ep_seed", dtype: Dtype::U32, dir: Dir::In, per_env: true, row_elems: SEED_WORDS, owner: "0" },
+    // the NEXT episode's OPPONENT ROUTE, an index into the spec's `opponents` table (M5 Lane E, `crate::opponents`); read with ep_team / ep_seed, so the caller keeps it staged one episode ahead
+    ColSpec { name: "ep_opp", dtype: Dtype::U32, dir: Dir::In, per_env: true, row_elems: 1, owner: "E" },
     // the side's observation row (`BattleVersion::encode` on its PARSE chain — the row sim_bridge's __OBS__ ships); written iff need = 1, stale otherwise
     ColSpec { name: "obs", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * OBS_DIM, owner: "0" },
     // `present::mask` — the side's 11-dim legal-action mask; written iff need = 1
@@ -181,6 +186,10 @@ pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     ColSpec { name: "dec_n", dtype: Dtype::U32, dir: Dir::Out, per_env: true, row_elems: SIDES, owner: "0" },
     // the battle's turn after the op
     ColSpec { name: "turn", dtype: Dtype::U32, dir: Dir::Out, per_env: true, row_elems: 1, owner: "0" },
+    // the route (`ep_opp` as consumed at the start) of the episode obs / need describe — correct across auto-resets; after a refused start (PARKED) it names the refused episode's route
+    ColSpec { name: "opp_route", dtype: Dtype::U32, dir: Dir::Out, per_env: true, row_elems: 1, owner: "E" },
+    // the T2 slot answering p2 in that episode (the route's `slot`), -1 when its route is not a policy — the host groups p2's rows by it
+    ColSpec { name: "opp_slot", dtype: Dtype::I32, dir: Dir::Out, per_env: true, row_elems: 1, owner: "E" },
     // pool counters, indexed by `protocol.COUNTERS` (the `*_AFTER_FREEZE` ones must stay 0)
     ColSpec { name: "counters", dtype: Dtype::U64, dir: Dir::Out, per_env: false, row_elems: NCOUNTERS, owner: "0" },
     // label `belief_species` (family `belief`; written iff need = 1 and the family is declared): species NUM of the hidden opp mon assigned to each BELIEVED slot (`assign_hidden_to_slots`: the other side's own team minus the revealed species, sorted by num; the j-th fills the j-th believed slot); -1 elsewhere
@@ -243,6 +252,7 @@ pub struct EnvCols<'a> {
     pub action: &'a [i32],
     pub ep_team: &'a [u32],
     pub ep_seed: &'a [u32],
+    pub ep_opp: &'a [u32],
     pub obs: &'a mut [f32],
     pub mask: &'a mut [u8],
     pub need: &'a mut [u8],
@@ -254,6 +264,8 @@ pub struct EnvCols<'a> {
     pub episode: &'a mut [u32],
     pub dec_n: &'a mut [u32],
     pub turn: &'a mut [u32],
+    pub opp_route: &'a mut [u32],
+    pub opp_slot: &'a mut [i32],
     pub belief_species: &'a mut [i64],
     pub belief_moves: &'a mut [i64],
     pub known_moves: &'a mut [i64],
@@ -286,35 +298,38 @@ impl ColAddrs {
             action: std::slice::from_raw_parts((self.0[0] as *const i32).add(i * COLUMNS[0].row_elems), COLUMNS[0].row_elems),
             ep_team: std::slice::from_raw_parts((self.0[1] as *const u32).add(i * COLUMNS[1].row_elems), COLUMNS[1].row_elems),
             ep_seed: std::slice::from_raw_parts((self.0[2] as *const u32).add(i * COLUMNS[2].row_elems), COLUMNS[2].row_elems),
-            obs: std::slice::from_raw_parts_mut((self.0[3] as *mut f32).add(i * COLUMNS[3].row_elems), COLUMNS[3].row_elems),
-            mask: std::slice::from_raw_parts_mut((self.0[4] as *mut u8).add(i * COLUMNS[4].row_elems), COLUMNS[4].row_elems),
-            need: std::slice::from_raw_parts_mut((self.0[5] as *mut u8).add(i * COLUMNS[5].row_elems), COLUMNS[5].row_elems),
-            reward: std::slice::from_raw_parts_mut((self.0[6] as *mut f32).add(i * COLUMNS[6].row_elems), COLUMNS[6].row_elems),
-            done: std::slice::from_raw_parts_mut((self.0[7] as *mut u8).add(i * COLUMNS[7].row_elems), COLUMNS[7].row_elems),
-            terminated: std::slice::from_raw_parts_mut((self.0[8] as *mut u8).add(i * COLUMNS[8].row_elems), COLUMNS[8].row_elems),
-            truncated: std::slice::from_raw_parts_mut((self.0[9] as *mut u8).add(i * COLUMNS[9].row_elems), COLUMNS[9].row_elems),
-            refused: std::slice::from_raw_parts_mut((self.0[10] as *mut u8).add(i * COLUMNS[10].row_elems), COLUMNS[10].row_elems),
-            episode: std::slice::from_raw_parts_mut((self.0[11] as *mut u32).add(i * COLUMNS[11].row_elems), COLUMNS[11].row_elems),
-            dec_n: std::slice::from_raw_parts_mut((self.0[12] as *mut u32).add(i * COLUMNS[12].row_elems), COLUMNS[12].row_elems),
-            turn: std::slice::from_raw_parts_mut((self.0[13] as *mut u32).add(i * COLUMNS[13].row_elems), COLUMNS[13].row_elems),
-            belief_species: std::slice::from_raw_parts_mut((self.0[15] as *mut i64).add(i * COLUMNS[15].row_elems), COLUMNS[15].row_elems),
-            belief_moves: std::slice::from_raw_parts_mut((self.0[16] as *mut i64).add(i * COLUMNS[16].row_elems), COLUMNS[16].row_elems),
-            known_moves: std::slice::from_raw_parts_mut((self.0[17] as *mut i64).add(i * COLUMNS[17].row_elems), COLUMNS[17].row_elems),
-            belief_spread: std::slice::from_raw_parts_mut((self.0[18] as *mut f32).add(i * COLUMNS[18].row_elems), COLUMNS[18].row_elems),
-            belief_spread_mask: std::slice::from_raw_parts_mut((self.0[19] as *mut f32).add(i * COLUMNS[19].row_elems), COLUMNS[19].row_elems),
-            belief_nature: std::slice::from_raw_parts_mut((self.0[20] as *mut i64).add(i * COLUMNS[20].row_elems), COLUMNS[20].row_elems),
-            belief_nature_mask: std::slice::from_raw_parts_mut((self.0[21] as *mut f32).add(i * COLUMNS[21].row_elems), COLUMNS[21].row_elems),
-            belief_ev: std::slice::from_raw_parts_mut((self.0[22] as *mut f32).add(i * COLUMNS[22].row_elems), COLUMNS[22].row_elems),
-            belief_ev_mask: std::slice::from_raw_parts_mut((self.0[23] as *mut f32).add(i * COLUMNS[23].row_elems), COLUMNS[23].row_elems),
-            hp_type_label: std::slice::from_raw_parts_mut((self.0[24] as *mut i64).add(i * COLUMNS[24].row_elems), COLUMNS[24].row_elems),
-            hp_type_mask: std::slice::from_raw_parts_mut((self.0[25] as *mut f32).add(i * COLUMNS[25].row_elems), COLUMNS[25].row_elems),
-            item_label: std::slice::from_raw_parts_mut((self.0[26] as *mut i64).add(i * COLUMNS[26].row_elems), COLUMNS[26].row_elems),
-            item_mask: std::slice::from_raw_parts_mut((self.0[27] as *mut f32).add(i * COLUMNS[27].row_elems), COLUMNS[27].row_elems),
-            win_margin: std::slice::from_raw_parts_mut((self.0[28] as *mut f32).add(i * COLUMNS[28].row_elems), COLUMNS[28].row_elems),
-            opp_action_kind: std::slice::from_raw_parts_mut((self.0[29] as *mut i64).add(i * COLUMNS[29].row_elems), COLUMNS[29].row_elems),
-            opp_action_num: std::slice::from_raw_parts_mut((self.0[30] as *mut i64).add(i * COLUMNS[30].row_elems), COLUMNS[30].row_elems),
-            opp_switch_slot: std::slice::from_raw_parts_mut((self.0[31] as *mut i64).add(i * COLUMNS[31].row_elems), COLUMNS[31].row_elems),
-            opp_switch_species: std::slice::from_raw_parts_mut((self.0[32] as *mut i64).add(i * COLUMNS[32].row_elems), COLUMNS[32].row_elems),
+            ep_opp: std::slice::from_raw_parts((self.0[3] as *const u32).add(i * COLUMNS[3].row_elems), COLUMNS[3].row_elems),
+            obs: std::slice::from_raw_parts_mut((self.0[4] as *mut f32).add(i * COLUMNS[4].row_elems), COLUMNS[4].row_elems),
+            mask: std::slice::from_raw_parts_mut((self.0[5] as *mut u8).add(i * COLUMNS[5].row_elems), COLUMNS[5].row_elems),
+            need: std::slice::from_raw_parts_mut((self.0[6] as *mut u8).add(i * COLUMNS[6].row_elems), COLUMNS[6].row_elems),
+            reward: std::slice::from_raw_parts_mut((self.0[7] as *mut f32).add(i * COLUMNS[7].row_elems), COLUMNS[7].row_elems),
+            done: std::slice::from_raw_parts_mut((self.0[8] as *mut u8).add(i * COLUMNS[8].row_elems), COLUMNS[8].row_elems),
+            terminated: std::slice::from_raw_parts_mut((self.0[9] as *mut u8).add(i * COLUMNS[9].row_elems), COLUMNS[9].row_elems),
+            truncated: std::slice::from_raw_parts_mut((self.0[10] as *mut u8).add(i * COLUMNS[10].row_elems), COLUMNS[10].row_elems),
+            refused: std::slice::from_raw_parts_mut((self.0[11] as *mut u8).add(i * COLUMNS[11].row_elems), COLUMNS[11].row_elems),
+            episode: std::slice::from_raw_parts_mut((self.0[12] as *mut u32).add(i * COLUMNS[12].row_elems), COLUMNS[12].row_elems),
+            dec_n: std::slice::from_raw_parts_mut((self.0[13] as *mut u32).add(i * COLUMNS[13].row_elems), COLUMNS[13].row_elems),
+            turn: std::slice::from_raw_parts_mut((self.0[14] as *mut u32).add(i * COLUMNS[14].row_elems), COLUMNS[14].row_elems),
+            opp_route: std::slice::from_raw_parts_mut((self.0[15] as *mut u32).add(i * COLUMNS[15].row_elems), COLUMNS[15].row_elems),
+            opp_slot: std::slice::from_raw_parts_mut((self.0[16] as *mut i32).add(i * COLUMNS[16].row_elems), COLUMNS[16].row_elems),
+            belief_species: std::slice::from_raw_parts_mut((self.0[18] as *mut i64).add(i * COLUMNS[18].row_elems), COLUMNS[18].row_elems),
+            belief_moves: std::slice::from_raw_parts_mut((self.0[19] as *mut i64).add(i * COLUMNS[19].row_elems), COLUMNS[19].row_elems),
+            known_moves: std::slice::from_raw_parts_mut((self.0[20] as *mut i64).add(i * COLUMNS[20].row_elems), COLUMNS[20].row_elems),
+            belief_spread: std::slice::from_raw_parts_mut((self.0[21] as *mut f32).add(i * COLUMNS[21].row_elems), COLUMNS[21].row_elems),
+            belief_spread_mask: std::slice::from_raw_parts_mut((self.0[22] as *mut f32).add(i * COLUMNS[22].row_elems), COLUMNS[22].row_elems),
+            belief_nature: std::slice::from_raw_parts_mut((self.0[23] as *mut i64).add(i * COLUMNS[23].row_elems), COLUMNS[23].row_elems),
+            belief_nature_mask: std::slice::from_raw_parts_mut((self.0[24] as *mut f32).add(i * COLUMNS[24].row_elems), COLUMNS[24].row_elems),
+            belief_ev: std::slice::from_raw_parts_mut((self.0[25] as *mut f32).add(i * COLUMNS[25].row_elems), COLUMNS[25].row_elems),
+            belief_ev_mask: std::slice::from_raw_parts_mut((self.0[26] as *mut f32).add(i * COLUMNS[26].row_elems), COLUMNS[26].row_elems),
+            hp_type_label: std::slice::from_raw_parts_mut((self.0[27] as *mut i64).add(i * COLUMNS[27].row_elems), COLUMNS[27].row_elems),
+            hp_type_mask: std::slice::from_raw_parts_mut((self.0[28] as *mut f32).add(i * COLUMNS[28].row_elems), COLUMNS[28].row_elems),
+            item_label: std::slice::from_raw_parts_mut((self.0[29] as *mut i64).add(i * COLUMNS[29].row_elems), COLUMNS[29].row_elems),
+            item_mask: std::slice::from_raw_parts_mut((self.0[30] as *mut f32).add(i * COLUMNS[30].row_elems), COLUMNS[30].row_elems),
+            win_margin: std::slice::from_raw_parts_mut((self.0[31] as *mut f32).add(i * COLUMNS[31].row_elems), COLUMNS[31].row_elems),
+            opp_action_kind: std::slice::from_raw_parts_mut((self.0[32] as *mut i64).add(i * COLUMNS[32].row_elems), COLUMNS[32].row_elems),
+            opp_action_num: std::slice::from_raw_parts_mut((self.0[33] as *mut i64).add(i * COLUMNS[33].row_elems), COLUMNS[33].row_elems),
+            opp_switch_slot: std::slice::from_raw_parts_mut((self.0[34] as *mut i64).add(i * COLUMNS[34].row_elems), COLUMNS[34].row_elems),
+            opp_switch_species: std::slice::from_raw_parts_mut((self.0[35] as *mut i64).add(i * COLUMNS[35].row_elems), COLUMNS[35].row_elems),
         }
     }
 
@@ -323,6 +338,6 @@ impl ColAddrs {
     /// # Safety
     /// As [`ColAddrs::env`], and no env borrow reaches this column.
     pub unsafe fn counters<'a>(&self) -> &'a mut [u64] {
-        std::slice::from_raw_parts_mut(self.0[14] as *mut u64, COLUMNS[14].row_elems)
+        std::slice::from_raw_parts_mut(self.0[17] as *mut u64, COLUMNS[17].row_elems)
     }
 }

@@ -314,7 +314,7 @@ class SnapshotPool:
         p = min(max(p, 0.0), 1.0)
         return recency * (1.0 + self.pfsp_scale * (1.0 - p))
 
-    def sample(self) -> SnapshotEntry:
+    def sample(self, rng: "random.Random | None" = None) -> SnapshotEntry:
         """Return one entry weighted toward recent snapshots (× PFSP hardness when enabled).
 
         ``recency_weight=0`` → uniform; ``recency_weight=1`` → strongly recent. With
@@ -325,7 +325,10 @@ class SnapshotPool:
             raise RuntimeError("Pool is empty — call seed() first")
         default_p = self._pfsp_default_p(self._entries) if self.pfsp_scale > 0.0 else None
         weights = [self._entry_weight_with(e, self._entries, default_p) for e in self._entries]
-        return self._rng.choices(self._entries, weights=weights, k=1)[0]
+        # ``rng`` (M5 Lane E, `rust_env_opponents`): ONE pool shared by every env of a Rust env core
+        # draws each env's snapshot from that env's own stream — what a per-worker pool with a
+        # private `_rng` does today. None (every existing caller) → `self._rng`, byte-identical.
+        return (self._rng if rng is None else rng).choices(self._entries, weights=weights, k=1)[0]
 
     def entry_weight(self, entry: SnapshotEntry) -> float:
         """Sampling weight for a specific entry (same formula used in sample())."""

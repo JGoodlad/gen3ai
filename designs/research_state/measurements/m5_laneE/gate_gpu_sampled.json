@@ -1,0 +1,145 @@
+{
+ "record": {
+  "cfg": {
+   "pool": "run:/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots:6",
+   "n_envs": 16,
+   "threads": 4,
+   "episodes": 64,
+   "mode": "sampled",
+   "device": "cuda",
+   "backend": "graph",
+   "buckets": [
+    2,
+    8,
+    16
+   ],
+   "lanes": 0,
+   "turn_limit": 0,
+   "compile": true,
+   "refresh_at": 120,
+   "key_base": 73000,
+   "teams": "pool",
+   "pool_dir": "/tmp/laneE_gpu_sampled/pool"
+  },
+  "startup_s": 272.03807376499753,
+  "steps": 167,
+  "t_steps": 0.6859410126926377,
+  "loads": [
+   [
+    0,
+    "pool:32000016",
+    0.08598374598659575
+   ],
+   [
+    1,
+    "pool:38000016",
+    0.8687001370126382
+   ],
+   [
+    2,
+    "pool:44000016",
+    0.8644693659152836
+   ],
+   [
+    3,
+    "pool:54000000",
+    0.8564434729050845
+   ],
+   [
+    4,
+    "pool:68000016",
+    0.8619506589602679
+   ],
+   [
+    5,
+    "pool:76000032",
+    0.8586859110509977
+   ],
+   [
+    6,
+    "pool:82000032",
+    0.8696396599989384
+   ]
+  ],
+  "refresh": {
+   "step": 120,
+   "routes_loaded": [
+    6
+   ],
+   "roster": [
+    "pool:32000016",
+    "pool:38000016",
+    "pool:44000016",
+    "pool:54000000",
+    "pool:68000016",
+    "pool:76000032",
+    "pool:82000032"
+   ]
+  },
+  "svc_counters_delta": {
+   "compiles_after_freeze": 0,
+   "captures_after_freeze": 0,
+   "cuda_segments_after_freeze": 0
+  },
+  "svc_loads": 7,
+  "core_after_freeze": {
+   "THREADS_SPAWNED_AFTER_FREEZE": 0,
+   "ENVS_ADDED_AFTER_FREEZE": 0,
+   "COLUMN_REBINDS_AFTER_FREEZE": 0,
+   "BANK_GROWTH_AFTER_FREEZE": 0
+  },
+  "route_counts": [
+   16,
+   13,
+   6,
+   15,
+   20,
+   10,
+   0,
+   0,
+   0,
+   0
+  ],
+  "serve": {
+   "steps": 167,
+   "rows": 2339,
+   "flush_s": 0.09845067700371146,
+   "sample_s": 0.3286578038241714,
+   "gather_s": 0.015022477018646896,
+   "per_slot_rows": {
+    "0": 435,
+    "1": 443,
+    "2": 146,
+    "3": 447,
+    "4": 564,
+    "5": 304
+   }
+  },
+  "startup_parity_worst": 4.76837158203125e-06,
+  "n_episodes": 64,
+  "p2_decisions": 2052
+ },
+ "replay": {
+  "decisions": 2052,
+  "phantom_polls": 0,
+  "phantom_draws": 0,
+  "no_decision_sent": 0,
+  "near_tie_greedy": 2,
+  "near_tie_sample": 2,
+  "max_dlogp": 2.6702880859375e-05,
+  "div": {},
+  "episodes": 64,
+  "p2_forfeits": 0,
+  "p1_forfeits": 0,
+  "models": [
+   "pool:32000016",
+   "pool:38000016",
+   "pool:44000016",
+   "pool:54000000",
+   "pool:68000016",
+   "pool:76000032"
+  ],
+  "replay_s": 108.7037183829816,
+  "compiled": true
+ }
+}

@@ -140,7 +140,7 @@ which a list-literal read missed on the first try. Teeth: a dropped row and an a
   - (Pre-fix) ported as-is: `calc::target_is_self_str` returned false.
   - The same bots also carry upstream poke-env's `"stealhrock"` typo in `ENTRY_HAZARDS`. It is inert
     in gen 3, which has no Stealth Rock.
-- **F-LF-2 (Lanes E / G / H).** PHANTOM POLLS: the training wrapper (`SingleAgentWrapper.step`)
+- **F-LF-2 (Lanes E / G / H) — CLOSED by Lane E (`gen3_no_phantom_opponent_poll_v1`, F-LE-1: the wrapper now polls the opponent only when its order is sent; the COMMIT bank re-recorded with 0 phantom polls, the gate green).** PHANTOM POLLS (as found): the training wrapper (`SingleAgentWrapper.step`)
   calls `choose_move(env.battle2)` on steps whose p2 order is never sent.
   - Where they appear: runs of turns where p1 decides and p2 holds a live move request it is not
     asked to answer.

@@ -268,9 +268,9 @@ mod imp {
 // Each wrapper runs `imp::<name>` (hand-written, the SAME arguments) inside `guard`.
 
 /// `ffi.sig_id()` — FNV-1a-64 of the table's canonical text; compared by the loader.
-pub const FFI_SIG_ID: &str = "d963f6f8448f5620";
+pub const FFI_SIG_ID: &str = "d8a8df7cf9f63283";
 /// The same, NUL-terminated, for `rust_env_ffi_sig`.
-const FFI_SIG_ID_C: &str = "d963f6f8448f5620\0";
+const FFI_SIG_ID_C: &str = "d8a8df7cf9f63283\0";
 
 /// the build stamp (`stamp.py`'s format); static
 ///

@@ -40,6 +40,7 @@ pub fn spec(n: usize, threads: usize, teams: Vec<String>) -> Spec {
         refusal_budget: 64,
         bank_dir: None,
         labels: Vec::new(),
+        opponents: pokesim_env::opponents::Routes::external(),
     }
 }
 

@@ -35,7 +35,7 @@ small forwards (< 3 GB) and never within 10 min of a trainer launch. Fresh
 | 3 | multi-slot throughput: vmap over stacked weights NO-GO (in-place writes into forward-created tensors); LANES instead — per-lane stream + graph pool + static inputs, graphs captured on their lane's stream (the shared-capture-stream cuBLAS-workspace defect found + regression test that fails on revert), CONCURRENT parity gate at startup + canary; Lane E's shape 9.89 → 3.95 ms per flush at 4 lanes | LANDED | see git log (`M5 T2 units 3+4 + AOT`) |
 | 4 | staging: `engine.py` — double-buffered pinned host input arenas + event waits, ONE H2D and ONE D2H per flush, device-side chunk staging; `submit` copies rows; `ticket.host()` | LANDED | same |
 | 4b | backend `aot` (torch ≥ 2.8, weights as inputs; `aot.py`) + CUDA 12.6 headers in `gen3ai_torch28` (`environment_torch28.yml`) + the C++ loader proof (`probes/cpp/`) | LANDED | same |
-| 5 | Lane E's adapter (opponent rows from the core's columns → `submit` per slot, greedy/sampled actions back) — with Lane E | LATER | |
+| 5 | Lane E's adapter (opponent rows from the core's columns → `submit` per slot, greedy/sampled actions back) — BUILT by Lane E as `agents.training.rust_env_opponents.PolicyOpponentServer` (gated: `m5_laneE/PROGRESS.md`) | LANDED (Lane E) | Lane E's commit |
 | 6 | K3 hermetic per-run compile cache for the service's buckets (restart cost); a torch-2.8 run of `service_cuda_test` in `gen3ai_torch28` | LATER | |
 
 ## Units 3/4/4b measurements (RTX 3080 Ti, idle GPU via a coordinator training pause, 2026-09-29; `window_2026-09-29/`)

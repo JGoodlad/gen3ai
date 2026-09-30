@@ -45,7 +45,7 @@ pub struct Ctx {
 
 /// An open decision: the real mapper's token per legal action index, and its frame index `n`.
 pub(crate) struct Open {
-    tokens: Vec<(usize, String)>,
+    pub(crate) tokens: Vec<(usize, String)>,
     pub(crate) n: u32,
 }
 
@@ -72,6 +72,12 @@ pub struct Env {
     /// PARKED: the last start was refused (a quarantine-class error); no battle, `need` = 0 0, and
     /// the next op starts from the staged inputs (M5 Lane D, `crate::episode`, F-L0-2).
     pub(crate) parked: bool,
+    /// The OPPONENT ROUTE of the episode in progress (M5 Lane E, `crate::opponents`): `ep_opp` as
+    /// the last start consumed it.
+    pub(crate) route: u32,
+    /// This env's scripted bots, one per route (M5 Lane E + F): built at STARTUP, streams persisting
+    /// across episodes (`crate::opponents`).
+    pub(crate) bots: Vec<Option<crate::bots::Bot>>,
 }
 
 /// What one env did in one op (folded into the pool counters in env order).
@@ -87,7 +93,7 @@ fn core_err(at: &str) -> impl Fn(pokesim::core_error::CoreError) -> EnvError + '
 }
 
 impl Env {
-    fn new(id: usize) -> Env {
+    fn new(id: usize, spec: &Spec) -> Env {
         Env {
             id,
             started: 0,
@@ -101,6 +107,8 @@ impl Env {
             prev_log: InputLog::default(),
             labels: crate::labels::EpisodeState::default(),
             parked: false,
+            route: 0,
+            bots: spec.opponents.build_bots(id),
         }
     }
 
@@ -130,6 +138,9 @@ impl Env {
                 )));
             }
         }
+        // The opponent route is read WITH the teams (M5 Lane E): a bad index is the caller's, found
+        // before the start moves any state.
+        let route = spec.opponents.check(self.id, c.ep_opp[0])?;
         let words: [u32; SEED_WORDS] = c.ep_seed[..SEED_WORDS].try_into().expect("seed row");
         if let Some(w) = words.iter().find(|w| **w >= 65536) {
             return Err(EnvError::caller(format!("env {}: ep_seed word {w} is not < 65536", self.id)));
@@ -138,6 +149,7 @@ impl Env {
         Prng::validate_seed(&seed).map_err(|e| EnvError::caller(format!("env {}: ep_seed {seed:?}: {e}", self.id)))?;
         self.started += 1;
         t.started += 1;
+        self.route = route;
         self.prev_log = std::mem::take(&mut self.log);
         self.log = InputLog {
             format_id: spec.format_id.clone(),
@@ -167,7 +179,8 @@ impl Env {
         };
         // A battle the engine cannot even construct is the engine's refusal (quarantine class).
         self.sess = Some(BridgeSession::new_construct_turn0(&opts, &ctx.dex).map_err(EnvError::engine)?);
-        self.advance(ctx, c, t)
+        self.advance(ctx, c, t)?;
+        self.run_bots(ctx, c, t)
     }
 
     /// Fold every chunk past the write cursor through each side's chain — `sim_bridge`'s
@@ -225,9 +238,20 @@ impl Env {
             }
             self.chains[side] = Some(next);
         }
+        let bot_p2 = ctx.spec.opponents.is_bot(self.route);
         for side in (0..SIDES).filter(|&s| opened_now[s]) {
             let tag = side + 1;
             let chain = self.chains[side].as_ref().ok_or_else(|| EnvError::fault(format!("p{tag}: chain lost")))?;
+            if side == 1 && bot_p2 {
+                // M5 Lane E: a bot's decision is never exposed — no row, mask or label; only its tokens.
+                let legal = chain.legal(side).ok_or_else(|| EnvError::fault(format!("p{tag}: a decision with no legality")))?;
+                let s = chain.stream(side).ok_or_else(|| EnvError::fault(format!("p{tag}: the chain lost its stream")))?;
+                let tokens = present::choice_tokens(&s.board_reading, &legal).map_err(core_err(&format!("tokens p{tag}")))?;
+                let n = self.decided[side];
+                self.decided[side] = chain.trackers(side).map_or(0, |tr| tr.decisions);
+                self.open[side] = Some(Open { tokens, n });
+                continue;
+            }
             let row: &mut [f32; OBS_DIM] =
                 (&mut c.obs[side * OBS_DIM..(side + 1) * OBS_DIM]).try_into().map_err(|_| EnvError::fault("obs row slice"))?;
             chain.encode(side, row).map_err(core_err(&format!("encode p{tag}")))?;
@@ -273,7 +297,7 @@ impl Env {
 
     /// Feed one side's action (an index the caller chose from the mask).
     pub(crate) fn feed(&mut self, ctx: &Ctx, side: usize, action: i32, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
-        let open = self.open[side].take().ok_or_else(|| EnvError::fault(format!("p{}: no decision open", side + 1)))?;
+        let open = self.open[side].as_ref().ok_or_else(|| EnvError::fault(format!("p{}: no decision open", side + 1)))?;
         let tok = open
             .tokens
             .iter()
@@ -282,6 +306,12 @@ impl Env {
             .ok_or_else(|| {
                 EnvError::caller(format!("env {}: p{} action {action} is not legal here (the mask forbids it)", self.id, side + 1))
             })?;
+        self.feed_token(ctx, side, tok, c, t)
+    }
+
+    /// Feed one side's CHOICE TOKEN (M5 Lane E hand-off: a bot's order, which may be `default`).
+    pub(crate) fn feed_token(&mut self, ctx: &Ctx, side: usize, tok: String, c: &mut EnvCols, t: &mut Tally) -> Result<(), EnvError> {
+        self.open[side].take().ok_or_else(|| EnvError::fault(format!("p{}: no decision open", side + 1)))?;
         let choice = parse_choice(&tok).ok_or_else(|| EnvError::fault(format!("the mapper produced an unparseable token {tok:?}")))?;
         // `sim_bridge`'s order: the chain notes the raw token BEFORE the command is fed.
         if let Some(ch) = self.chains[side].as_mut() {
@@ -415,7 +445,7 @@ impl Pool {
         let n = spec.n;
         let t = spec.effective_threads();
         let ctx = Arc::new(Ctx { dex, spec });
-        let envs: Vec<Env> = (0..n).map(Env::new).collect();
+        let envs: Vec<Env> = (0..n).map(|i| Env::new(i, &ctx.spec)).collect();
         let mut pool = Pool {
             ctx: Arc::clone(&ctx),
             inline: Vec::new(),
