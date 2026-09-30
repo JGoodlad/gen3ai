@@ -131,9 +131,18 @@ def test_masked_extra_seats_do_not_change_the_team_tokens():
         assert torch.equal(our_b, our_c), "output moved when the MASKED seats got louder — a leak"
         assert torch.equal(our_b, our_d), "output depends on MASKED seat content — a leak"
         assert torch.equal(their_b, their_c) and torch.equal(their_b, their_d)
-        # And the masked forward still matches the no-extra forward to float32 precision.
-        assert torch.allclose(our_a, our_b, atol=1e-6, rtol=0)
-        assert torch.allclose(their_a, their_b, atol=1e-6, rtol=0)
+        # And the masked forward still matches the no-extra forward to float32 precision. The
+        # bound is SCALE-AWARE, not a fixed atol: n=13 vs n=18 reduce in a different order, so the
+        # two forwards differ by a few ULPs of the output magnitude. MEASURED 2026-09-30 over 800
+        # fresh-weight draws (200 each at OMP_NUM_THREADS 1/2/5/8): max |a-b| = 3.9 x eps32 x
+        # max|out| (1.43e-6 at max|out| ~4.2), independent of the thread count — the old fixed
+        # `atol=1e-6` sat INSIDE that spread and failed ~1-3% of draws at every thread count. 16x
+        # eps gives 4x headroom and is still ~1e6 below what an unmasked seat does to the output
+        # (MEASURED with `extra_pad` dropped from the key mask: median |a-b| = 3.5, 20/20 draws).
+        tol = 16 * torch.finfo(torch.float32).eps * max(our_a.abs().max().item(),
+                                                        their_a.abs().max().item())
+        assert (our_a - our_b).abs().max().item() <= tol
+        assert (their_a - their_b).abs().max().item() <= tol
 
 def test_e3_only_forward_stashes_refined_dmodel_tokens():
     fe = _make().eval()
