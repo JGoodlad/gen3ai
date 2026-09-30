@@ -117,7 +117,14 @@ intermittently during the run (`busy_box_warnings`): no ratio is claimed from th
 - **F-LE-6 (for Lane G / H):** the exploiter LADDER swaps weights between episodes; the plan gives
   the exploiter TWO slots when `--exploiter-ladder` is declared so a rung LOADS into the idle one
   (`set_exploiter_rung`). The temperature push is immediate (sampling is the host's).
-- **F-LE-8 (for Lane G — the biggest cost at this shape):** SAMPLING is 5.1 of the 5.9 ms opponent
+- **F-LE-8 — CORRECTED 2026-09-30 (Lane G + the coordinator): the "5.1 ms of SAMPLING" below was
+  MISATTRIBUTED.** `serve()` billed the GPU forward's completion wait (`ticket.host()` → the event sync)
+  to `sample_s`; the draws themselves cost 0.13 / 0.25 / 0.38 ms at 8 / 40 / 48 rows. The timer is now
+  split — `ServeStats.wait_s` (the wait) vs `draw_s` (the draws), `sample_s` = their sum kept as a
+  property — and the real cost at this shape is the opponent forward FAN-OUT (~18 slot replays per
+  step); Lane G's T2 fan-out read (`main.rust_core_m5.fanout`) measures it. The keyed draw Lane G
+  adopted is still right, for REPLAYABILITY, and saves ~0.2 ms, no more. The original entry, as
+  believed at the time: SAMPLING is 5.1 of the 5.9 ms opponent
   serve: `sample_actions` draws each row's Exp(1) variates from that env's own `torch.Generator` in
   a Python loop, to stay bit-identical to today's per-player `torch.multinomial` (what makes the
   sampled gate EXACT). Options: one batched draw from a single seeded stream per step (distribution-

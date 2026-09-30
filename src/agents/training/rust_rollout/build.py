@@ -28,6 +28,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 import numpy as np
 
+from agents.training.rust_rollout import store as S
 from agents.training.rust_rollout.collector import CollectorConfig, RustCollector
 from agents.training.rust_rollout.teams import TeamStager, TeamTable
 from agents.training.rust_rollout.trigger import trigger_for
@@ -67,7 +68,7 @@ class RustEnvDecl:
     trainee_slots: int = 1
     max_game_rows: int = 0
     op_timeout: Optional[float] = None
-    opponent_sampling: str = "generator"
+    opponent_sampling: str = "keyed"
     policy_seed: int = 0
 
     def __post_init__(self) -> None:
@@ -180,8 +181,10 @@ class OpponentSources:
 def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, plan: Any, sources: OpponentSources,
                     trainee_builder: Any, opponent_builder: Any, route_builders: Optional[Mapping[int, Any]] = None,
                     external_p2: Optional[Callable[..., np.ndarray]] = None, team_wr_tracking: bool = True,
-                    emit: Callable[[str], None] = print) -> RustCollector:
-    """Acquire everything ``decl`` names and return the collector (``start()`` is the caller's)."""
+                    emit: Callable[[str], None] = print, svc: Any = None) -> RustCollector:
+    """Acquire everything ``decl`` names and return the collector (``start()`` is the caller's). ``svc``: an
+    already STARTED service with this plan's slot layout (a benchmark's arms share one; training builds
+    its own)."""
     import time
 
     from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
@@ -191,6 +194,13 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     from utils.rust_env import columns as C
 
     n = int(decl.n_envs)
+    fe = getattr(trainee_policy, "features_extractor", None)
+    if fe is not None and "forward" in vars(fe):
+        raise S.CollectorError(
+            "the trainee policy's extractor carries an instance-level `forward` (--compile-trainer's patch): T2 "
+            "deep-copies the policy as its slot templates, and a copied bound forward runs the ORIGINAL extractor "
+            "— start the Rust env BEFORE the trainer compile (model_build._start_rust_env), or pass an uncompiled "
+            "load of the checkpoint")
     trig = trigger_for(decl.trigger, n_envs=n, n_steps=decl.n_steps, micro_batch=decl.micro_batch,
                        target=decl.target, band_lo=decl.band_lo, band_hi=decl.band_hi)
     fams = core_label_families(obs_space)
@@ -212,13 +222,16 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     lanes = int(decl.lanes) or (min(n_slots, 8) if str(decl.device).startswith("cuda") else 1)
     buckets = decl.resolved_buckets
     t0 = time.perf_counter()
-    svc = InferenceService(ServiceSpec(
+    shared = svc is not None
+    if shared and len(getattr(svc, "_slots", ())) != n_slots:
+        raise S.CollectorError(f"the shared service declares {len(svc._slots)} slots; this plan needs {n_slots}")
+    svc = svc if shared else InferenceService(ServiceSpec(
         groups=tuple(SlotGroupSpec(name, k, tpl) for name, k, tpl in groups), device=decl.device,
         backend=decl.backend, buckets=buckets, lanes=lanes,
         # T2's startup CONCURRENT gate puts one full chunk of the largest bucket per slot into ONE flush,
         # so the declared arena must hold n_slots x the largest bucket (F-LG-4: T2 does not check it).
         max_rows_per_flush=max(1024, 4 * n, buckets[-1] * 4, n_slots * buckets[-1]))).startup()
-    emit(f"🦀 [RUST ENV] T2 up in {time.perf_counter() - t0:.1f}s: {len(groups)} slot group(s) "
+    emit(f"🦀 [RUST ENV] T2 {'SHARED' if shared else 'up'} in {time.perf_counter() - t0:.1f}s: {len(groups)} slot group(s) "
          f"{[(g[0], g[1]) for g in groups]}, trainee slot(s) {trainee_slots}, buckets {buckets}, lanes {lanes}, "
          f"backend {decl.backend} on {decl.device}")
 

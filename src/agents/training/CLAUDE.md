@@ -510,6 +510,16 @@ a separate decision. Hazards an agent must know before touching it:
   behaviour log-prob (max |Δ| < 1e-4); the same forward logs `staleness/*` (ratio, clip fraction, KL by
   row AGE) and `behaviour/*`. Per-game version pinning (`--version-pinning per_game`) is the first
   staleness remedy, OFF unless those measurements call for it.
+- **Every micro-batch is FULL — no padding, no drop.** `--rollout-target-samples` must be a multiple of
+  lcm(`--batch-size`, `--n-envs`) (refused at parse, at the trigger, at every adaptive move, and by the
+  collector before a fill); the one game straddling the target is split and its tail trained next
+  update. Only the last ACCUMULATION group can be short, and the learner flushes it as a FULL-weight step
+  normalised by its real rows — which the dose now counts as such (K10(c)).
+- **Stochastic actions are the KEYED DRAW** (`gen3_keyed_draw_v1`; the trainee always, policy opponents
+  by default — `--opponent-sampling keyed`): replayable from the decision's key, which is what keeps the
+  parity gates exact. It is NOT a speed lever (~0.2 ms a step: F-LE-8's "5.1 ms of sampling" was the host
+  waiting for the forward). A core RESPAWN (up to `--rust-env-respawn-budget`) cuts the live games,
+  derives a new segment seed and re-stages; past the budget it is fatal.
 - `rollout/collect_ms` + `rollout/collect_decisions` are logged on BOTH cores (the A/B reads them);
   `rust_env/*` is the collector's per-phase read. `metadata.json` records `env_core` on every save.
 - ⚠️ A launcher RESUME pins to the checkpoint's commit; a commit before Lane G has no `--env-core`.
@@ -991,7 +1001,10 @@ batch on the total.** `--adaptive-batch policy` closes that loop, moving K only 
 own values, so a FORK inherits whatever the parent's KL controller had annealed to. **`--fork-lr`
 pins it** and fires ONLY on a genuine fork (a checkpoint outside the run dir); `--fork-lr-freeze`
 makes it constant and persists across every restart. 🚨 **The quantity that predicts a fold's
-collateral is the DOSE**, `lr × n_epochs / (batch_size × grad_accum_steps)` — three folds launched
+collateral is the DOSE**, `lr × n_epochs × optimizer steps per epoch / rollout rows` (=
+`lr × n_epochs / (batch_size × grad_accum_steps)` when the rollout divides evenly; the learner's short
+last accumulation group is a FULL-weight step, so 98,304 rows at 2,048 × 32 take 2 steps an epoch, not
+1.5 — K10(c), `agents/training/dose.py`) — three folds launched
 at the same `--lr` ran at 1.00× / 6.62× / 3.19× v8's rate and nothing in any of them said so. Read
 it with `python -m main.dose <run>` or the live `train/dose_rate`.
 🚨 **A FORK INHERITS THE PARENT'S LR BUT NOT ITS FREEZE**, so forking a `--fork-lr-freeze` run

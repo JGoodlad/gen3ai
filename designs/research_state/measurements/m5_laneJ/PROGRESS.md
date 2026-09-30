@@ -108,7 +108,7 @@ Three things were open; the reading:
 | F | scripted bots | PASS | 23/0/0 | — |
 | I | search on successors() in process | PASS | 10/0/0 | — |
 | T2 | the inference service | PASS | 27/0/0 | NOT RUN here; PASS in the GPU read below |
-| G | training integration | NOT BUILT | — | — |
+| G | training integration | NOT BUILT *at this read* — BUILT since (2026-09-30); re-run `gates` for its verdict | — | — |
 | H | eval on the core | NOT BUILT | — | — |
 | S *(beside M5)* | the policy-spectrum instrument | PASS | 49/0/0 | — |
 | K *(beside M5)* | the learner pipeline (K1, K2) | PASS | 53/0/5 | — |
@@ -149,35 +149,59 @@ Every core `*_AFTER_FREEZE` and T2 `*_after_freeze` counter 0 in both reads; 0 q
 ## What Lanes G and E plug in (the hooks)
 
 - **`hooks.TraineeInference`** — `(obs [n, OBS_DIM] f32, masks [n, 11]) -> actions [n] int` + `describe()`.
-  Built: `RandomLegal(seed)`, `T2Inference(ckpt, backend, device, buckets)`. Lane G's rollout host
-  replaces it with the learner's SAMPLING forward (log-probs, values and the behaviour μ(a|s) out,
-  not only actions) — the A/B needs only the actions.
+  Built: `RandomLegal(seed)`, `T2Inference(ckpt, backend, device, buckets)`, and (Lane G, 2026-09-30)
+  `LearnerSampling(ckpt, device, compile)` — the LEARNER's sampling forward (`--inference learner`;
+  `--compile-trainee` compiles it as `--compile-trainer` would). On the production Rust arms the trainee
+  is served by T2 inside the collector (one flush with the opponents); the Python arm calls the learner.
 - **`hooks.OpponentMix`** — `python_opponent(idx, tag, teambuilder)`, `rust_routes()`, `ep_opp(env)`.
-  Built: `UniformRandom`. DECLARED, NOT BUILT: `ProductionMix` (raises `HookNotBuilt`) — Lane G builds
-  BOTH arms from ONE resolved args namespace and ONE pool: the args, the snapshot pool dir, a started
-  T2 service with `OpponentPlan.n_policy_slots` slots, Lane E's `RustEnvOpponents` (its
-  `after_op(cols)` after EVERY core op — F-LE-4 — and `PolicyOpponentServer.serve(cols)` before
-  every step), and on the Python arm `create_training_env_random`'s kwargs from the same args. Lane
-  E's `ep_opp(env)` then comes from the sampler's staged route instead of the constant 0.
-- **`hooks.Collector`** — `observe(dones)`, `ready()`, `describe()`. Built: `StepCollector(n_steps)`.
-  DECLARED, NOT BUILT: `CompleteGameCollector` (Lane G, order constraint 6). Lane G's unit 1 LANDED
-  while this lane was finishing (`11073fe1`: `agents.training.rust_rollout.build.build_collector` →
-  `RustCollector`, not yet wired into training): plugging it in = the A/B's rust arm steps that
-  collector (which already serves p2 + trainee rows in one T2 flush) instead of the bare core. What
-  the hook must carry: the sample-count trigger
-  (a startup input from the SIZING study), a buffer keyed by (env, episode) that back-fills each row's
-  outcome at game end, games carried over at the trigger, and its gate — slice N at the ROLLOUT level
-  with the trigger set to reproduce today's window.
-- **The registry rows:** G and H flip `built=True` with their `tests=` (and `gpu_tests=`) the day
-  their gates land; `lanes_test.py` fails the day this doc marks them BUILT and the row does not.
+  Built: `UniformRandom`, and (Lane G) `ProductionMix(pool, pool_size, self_play_fraction,
+  compile_opponents)` — ONE resolved args namespace (`rust_core_cutover.envs.production_args()`, self-play
+  on) and ONE pool (the last `pool_size` snapshots of `--pool`, symlinked into a temp dir). It selects the
+  PRODUCTION arms (`production.py`): `ProductionPythonArm` (`create_training_env_random`'s workers with the
+  production kwargs, per-worker compiled `RLPlayer` opponents) and `CollectorRustArm` /
+  `OverlappedRustArm` (Lane G's `build_collector` + Lane E's `RustEnvOpponents`, one T2 service shared by
+  every rust arm of one A/B). Arm names: `rust_<serial|overlap>_<keyed|generator>[_p<K>]` — `_p<K>` routes
+  to only the K newest pool snapshots (the fewer-active-snapshots candidate). Every row is stamped with
+  the mix, the pool size, the active snapshots, T2's slots / buckets / lanes / backend and p2's sampling.
+- **`hooks.Collector`** — `observe(dones)`, `ready()`, `describe()`. Built: `StepCollector(n_steps)`, and
+  (Lane G) `CompleteGameCollector(target)` — the rust arms step `RustCollector` (`--collector
+  complete_game`, the fill counted); its gate is Lane G's slice N at the ROLLOUT level
+  (`rust_rollout/parity.py`), on the registry's G row.
+- **The registry rows:** G is BUILT (2026-09-30) with its `tests=` / `gpu_tests=`; H flips the day its
+  gate lands; `lanes_test.py` fails the day this doc marks a lane BUILT and the row does not.
 
+### The PRODUCTION throughput A/B (Lane G, 2026-09-30; `results/throughput_production_*.json`)
+
+The owner's registered comparison: 48 envs, the production opponent mix (95 % self-play against a
+20-snapshot pool of `ai_v14_06_lbat_ctrl_fix`, served through T2 on the Rust arms and by per-worker
+compiled `RLPlayer`s on CPU on the Python arm; 5 % the 8 training-floor bots — in the core on Rust), the
+trainee = that run's final checkpoint (the learner's compiled sampling forward on Python; T2 `graph` on
+Rust), release builds, fp32 `highest` (the run's own precision), GPU under the lock, fresh per-run
+Inductor / Triton caches, 50 warm-up steps, then 6 rounds of interleaved 20 s blocks (rotating order);
+95 % CIs are percentile bootstraps over blocks (per-arm) and over rounds (ratios). Load1 ~2 at the
+start, self-driven by the Python arm's 48 workers; no bystander in the measured trees; no warning. See
+Lane G's PROGRESS for the component split, the fan-out read and the decisions.
+
+| read (N = 48, 95 % self-play / 5 % bots) | arm | trainee decisions / s [95 % CI] | ms / step | CPU µs / decision | GPU util |
+|---|---|---|---|---|---|
+| `throughput_production_sp95_n48.json` | Python (today's path) | 743 [674, 783] | 65.4 | 12,993 | 6 % |
+| | Rust serial, keyed | 3,780 [3,650, 3,941] | 11.7 | 496 | 67 % |
+| | Rust serial, generator | 3,769 [3,593, 3,921] | 11.7 | 493 | 68 % |
+| | Rust overlapped, keyed | 2,690 [2,643, 2,732] | 16.3 | 723 | 86 % |
+| | Rust overlapped, generator | 2,662 [2,586, 2,726] | 16.5 | 731 | 85 % |
+| | **ratios** | **serial / Python 5.11× [4.72, 5.63]; CPU 0.038× [0.037, 0.039]; generator / keyed 0.997× [0.957, 1.030]; overlapped / serial 0.712× [0.690, 0.734]** | | | |
+| `…_active_snapshots.json` (quiet box, Rust only) | serial keyed, 20 / 8 / 4 / 1 active snapshots | 4,116 / 6,530 / 5,913 / 7,151 | 10.7 / 6.8 / 7.5 / 6.2 | 451 / 359 / 370 / 349 | 74 / 62 / 67 / 58 % |
+| | **ratios vs 20** | **8: 1.59× [1.58, 1.60]; 4: 1.44×; 1: 1.74×** | | | |
+| `…_null_identical_arms.json` | four IDENTICAL serial arms (a void fewer-snapshots run) | ratios 0.97–1.00 | | | |
+
+The 90 % self-play read (`throughput_production_sp90_n48.json`, the day before, 2 arms): 5.10× [4.93, 5.26].
 ## Next (resume point)
 
 1. When E's / T2's GPU-inclusive read is in, fold it here and in the program doc's Lane J paragraph.
 2. Lane E: make `test_slow_compiled_per_env_path` reproducible (F-LJ-6) — Lane E's file, not J's.
-3. On Lane G's landing: its rows + `ProductionMix` + `CompleteGameCollector`, then the A/B at
-   `--n-envs 48` with the learner's forward and the production mix (the program's registered shape),
-   then the SIZING study (order constraint 5: N ∈ {48, 256, 1024, 2048} at a fixed rollout size;
+3. ~~On Lane G's landing: its rows + `ProductionMix` + `CompleteGameCollector`, then the A/B at
+   `--n-envs 48` with the learner's forward and the production mix~~ DONE by Lane G (2026-09-30, above).
+   Next: a recorded `gates` read with G's row (not yet re-run), then the SIZING study (order constraint 5: N ∈ {48, 256, 1024, 2048} at a fixed rollout size;
    the A/B takes `--n-envs` / `--threads` for it).
 4. A quiet-box re-read of the A/B (these ran beside nothing else, but at `nice` 15 with the arms'
    own load) is optional; the ratio's CI excludes 1 by an order of magnitude.

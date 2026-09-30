@@ -23,9 +23,17 @@ starts and the win labels. ``values`` / ``log_probs`` within ``FLOAT_BAR`` = 1e-
 ``advantages`` / ``returns`` within ``GAE_BAR`` = 1e-4: the two paths forward the SAME weights on the
 SAME rows in DIFFERENT batch compositions (T2 pads the trainee's rows to its bucket; sb3 forwards all
 N envs each step), and CPU matmul rounding depends on the batch shape — measured ~6e-7 on log-probs
-(``consistency_test``) — which GAE accumulates over up to ``n_steps`` rows. A disagreeing ACTION is
-never tolerated; if one occurs at a keyed-draw margin below ``NEAR_BAR`` it is reported as a NEAR-TIE
-(the rounding moved u across a CDF boundary) and the gate still FAILS unless the caller allows it.
+(``consistency_test``) — which GAE accumulates over up to ``n_steps`` rows.
+
+**Trainee action FLIPS (declared rule, Lane E's ``judge_flips``).** The recorder keeps every trainee
+decision's recorded action AND its keyed-draw margin (``min |c_i − u·c_last| / c_last``). When the
+replay's own draw differs from the recorded action, that FLIP is data: recorded with both sides'
+margins, and the RECORDED action is played on (so one flip cannot hide the rest, and the buffers stay
+comparable row for row). A |Δ log-prob| ≤ ``FLOAT_BAR`` on both sides moves every cumulative share by
+≲ 2 × ``FLOAT_BAR``, so a flip can come from rounding only if u lies that close to a boundary on BOTH
+sides: a flip whose LARGER margin is below ``NEAR_TIE_FACTOR`` × ``FLOAT_BAR`` is a TIE (counted,
+reported, excused); every other flip is FATAL (a divergence). ``NEAR`` (the same product) is the ONE
+near-boundary threshold both sides' counts use.
 
 **The learner-level check.** Two identical production learners (same fresh seed, same perturbation,
 the production training hparams), ONE UPDATE each — one epoch, the whole buffer in ``ACCUM`` = 4
@@ -57,9 +65,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from agents.training.rust_env_opponents_parity import NEAR_TIE_FACTOR, judge_flips
+
 FLOAT_BAR = 1e-5
 GAE_BAR = 1e-4
-NEAR_BAR = 1e-5
+#: the ONE near-boundary threshold (both sides' counts and the tie rule): Lane E's factor x this gate's
+#: |Δ log-prob| bar (module docs)
+NEAR = NEAR_TIE_FACTOR * FLOAT_BAR
 LEARNER_PARAM_BAR = 1e-5      # max |Δ param| after one update (absolute)
 ACCUM = 4                     # the learner check's micro-batches per optimizer step (the production path)
 LEARNER_LOSS_BAR = 1e-4       # relative allowance of any logged scalar after the update ...
@@ -75,10 +87,14 @@ class EnvScript:
     teams: List[Tuple[str, str]] = field(default_factory=list)
     seeds: List[List[int]] = field(default_factory=list)
     p2: List[List[int]] = field(default_factory=list)
+    #: the trainee's recorded (action, keyed-draw margin) per decision, per episode
+    p1: List[List[Tuple[int, float]]] = field(default_factory=list)
 
 
 class _EpisodeRecorder:
-    """Collector hook: each env's episodes as the core started them (teams, seed)."""
+    """Collector hook: each env's episodes as the core started them (teams, seed), and every trainee
+    decision's recorded action with its keyed-draw margin (recomputed from the served log-probs and the
+    key's uniform — the collector's own function, so it is the margin the collector drew at)."""
 
     def __init__(self, n: int):
         self.scripts = [EnvScript() for _ in range(n)]
@@ -95,12 +111,21 @@ class _EpisodeRecorder:
             p1, p2 = (int(x) for x in col.stager.cur_teams[e])
             s.teams.append((table[p1], table[p2]))
             s.seeds.append(battle_seed(col.cfg.run_seed, e, k))
+            s.p1.append([])
 
     def p2(self, col: Any) -> None:
         pass
 
-    def trainee(self, *a: Any) -> None:
-        pass
+    def trainee(self, col: Any, envs: np.ndarray, logp: np.ndarray, act: np.ndarray, *_a: Any) -> None:
+        from agents.training import keyed_draw as KD
+
+        u = _a[2]
+        a2, margin = KD.keyed_actions(logp, u)
+        if not np.array_equal(a2, act):
+            raise AssertionError("the recorder's keyed draw disagrees with the collector's")
+        for j, e in enumerate(envs.tolist()):
+            k = int(col.cols["episode"][e])
+            self.scripts[e].p1[k].append((int(act[j]), float(margin[j])))
 
 
 def _snapshot(buf: Any) -> Dict[str, Any]:
@@ -144,11 +169,11 @@ def record(*, n_envs: int, n_steps: int, windows: int, run_seed: int = 17, p2_se
                 raise AssertionError("the collector stopped")
             bufs.append(_snapshot(model.rollout_buffer))
         life = col.check_lifecycle()
-        near = int(col.stats.near_boundary)
     finally:
         env.close()
     for e, s in enumerate(rec.scripts):
         s.p2 = [list(p2.log.get((e, k), [])) for k in range(len(s.teams))]
+    near = sum(int(m < NEAR) for s in rec.scripts for ep in s.p1 for _a, m in ep)
     return {"buffers": bufs, "scripts": rec.scripts, "run_seed": run_seed, "n_envs": n_envs, "n_steps": n_steps,
             "windows": windows, "model_seed": model_seed, "perturb_seed": perturb_seed, "lifecycle": life,
             "near_boundary_rust": near, "record_s": time.perf_counter() - t0}
@@ -286,12 +311,16 @@ class _ScriptedWrapper(_scripted_wrapper_base()):
 
 class _KeyedForward:
     """``Gen3DualHeadMaskablePolicy.forward`` line for line, with the SAMPLE replaced by the keyed draw
-    keyed by each env's (episode, decision) (module docs). Installed on the policy INSTANCE."""
+    keyed by each env's (episode, decision) (module docs). Installed on the policy INSTANCE. A draw that
+    differs from the recorded action is a FLIP: recorded with both margins, then the recorded action is
+    played on (module docs, the tie rule)."""
 
-    def __init__(self, policy: Any, venv: Any, run_seed: int):
+    def __init__(self, policy: Any, venv: Any, run_seed: int, scripts: Optional[List[EnvScript]] = None):
         self.policy, self.venv, self.run_seed = policy, venv, int(run_seed)
+        self.scripts = scripts
         self.near = 0
         self.margins: List[float] = []
+        self.flips: List[Dict[str, Any]] = []
 
     def __call__(self, obs: Any, deterministic: bool = False, action_masks: Any = None) -> Any:
         import torch as th
@@ -316,7 +345,17 @@ class _KeyedForward:
         u = KD.keyed_uniforms(self.run_seed, KD.STREAM_TRAINEE, env, ep, dec)
         a, margin = KD.keyed_actions(logp, u)
         self.margins.extend(margin.tolist())
-        self.near += int((margin < NEAR_BAR).sum())
+        self.near += int((margin < NEAR).sum())
+        for i in range(len(wrappers)) if self.scripts is not None else ():
+            recd = self.scripts[i].p1[int(ep[i])] if int(ep[i]) < len(self.scripts[i].p1) else []
+            if int(dec[i]) >= len(recd):
+                continue                                  # past the recorded decisions: the rows will say so
+            ra, rm = recd[int(dec[i])]
+            if int(a[i]) != ra:
+                self.flips.append({"kind": "keyed", "env": i, "episode": int(ep[i]), "dec": int(dec[i]),
+                                   "path": int(a[i]), "recorded": ra, "margin_python": float(margin[i]),
+                                   "margin_rust": rm, "margin": max(float(margin[i]), rm)})
+                a[i] = ra                                  # play the RECORDED action on (alignment)
         actions = th.as_tensor(a.astype(np.int64))
         log_prob = distribution.log_prob(actions)
         actions = actions.reshape((-1, *p.action_space.shape))
@@ -335,7 +374,7 @@ def replay(rec: Dict[str, Any], *, tag: str = "LG") -> Dict[str, Any]:
     venv = DummyVecEnv([_replay_env_factory(i, s, tag) for i, s in enumerate(rec["scripts"])])
     model = TK.fresh_model(venv, n_steps=n_steps, batch_size=n_steps, seed=int(rec["model_seed"]),
                            perturb_seed=int(rec["perturb_seed"]))
-    kf = _KeyedForward(model.policy, venv, int(rec["run_seed"]))
+    kf = _KeyedForward(model.policy, venv, int(rec["run_seed"]), rec["scripts"])
     model.policy.forward = kf
     cb = CallbackList([WinProbLabelCallback()])
     t0 = time.perf_counter()
@@ -349,7 +388,8 @@ def replay(rec: Dict[str, Any], *, tag: str = "LG") -> Dict[str, Any]:
             bufs.append(_snapshot(model.rollout_buffer))
     finally:
         _close(venv)
-    return {"buffers": bufs, "near_boundary_python": kf.near, "replay_s": time.perf_counter() - t0}
+    return {"buffers": bufs, "near_boundary_python": kf.near, "flips": kf.flips,
+            "replay_s": time.perf_counter() - t0}
 
 
 def _close(venv: Any) -> None:
@@ -484,9 +524,14 @@ def run(*, n_envs: int = 3, n_steps: int = 24, windows: int = 2, learner: bool =
     rec = record(n_envs=n_envs, n_steps=n_steps, windows=windows, **kw)
     rep = replay(rec)
     cmp = compare(rec["buffers"], rep["buffers"])
+    ties, fatal = judge_flips(rep, FLOAT_BAR)
+    if fatal:
+        cmp["divergences"]["trainee_action_flips"] = {"fatal": fatal[:10], "n_fatal": len(fatal)}
     out = {"n_envs": n_envs, "n_steps": n_steps, "windows": windows, "rows_compared": windows * n_envs * n_steps,
            "episodes": sum(len(s.teams) for s in rec["scripts"]), **cmp,
-           "near_boundary": {"rust": rec["near_boundary_rust"], "python": rep["near_boundary_python"]},
+           "flips": {"ties": ties, "fatal": len(fatal), "tie_margin": NEAR, "examples": rep["flips"][:10]},
+           "near_boundary": {"threshold": NEAR, "rust": rec["near_boundary_rust"],
+                             "python": rep["near_boundary_python"]},
            "lifecycle": rec["lifecycle"], "record_s": rec["record_s"], "replay_s": rep["replay_s"],
            "win_mask_rows": int(sum(float(b["obs:win_mask"].sum()) for b in rec["buffers"])),
            "episode_starts": int(sum(float(b["episode_starts"].sum()) for b in rec["buffers"]))}

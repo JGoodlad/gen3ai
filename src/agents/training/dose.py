@@ -9,10 +9,13 @@ every fold comparison the program has made.
 
 The quantity that predicts a fold's collateral is not the LR alone but the DOSE:
 
-    updates_per_env_step = n_epochs / (batch_size * grad_accum_steps)
+    updates_per_env_step = n_epochs * optimizer_steps_per_epoch / rollout_rows
     dose_rate            = lr * updates_per_env_step
 
-i.e. the learning rate times how many optimizer steps one env step buys. `grad_accum_steps`
+i.e. the learning rate times how many optimizer steps one env step buys. When the rollout divides
+by the effective batch (`batch_size * grad_accum_steps`) this is `n_epochs / effective_batch`; when
+it does not, the learner's short last group is still a FULL-weight step (K10(c), 2026-09-30), so the
+step count is ceil(ceil(rows / batch_size) / grad_accum_steps), not rows / effective_batch. `grad_accum_steps`
 belongs in the denominator because K micro-batches are summed into ONE optimizer step, so the
 effective batch is `batch_size * K` and the step count falls by K. Two runs at the same `--lr`
 differ by 6x in dose when one accumulates 16 micro-batches and the other 2 — which is exactly what
@@ -35,21 +38,45 @@ def effective_batch(batch_size: int, grad_accum_steps: int = 1) -> int:
     return int(batch_size) * max(1, int(grad_accum_steps or 1))
 
 
+def optimizer_steps_per_epoch(*, rollout_rows: int, batch_size: int, grad_accum_steps: int = 1) -> int:
+    """The optimizer steps ONE epoch over `rollout_rows` actually takes (K10(c), 2026-09-30).
+
+    The learner cuts the rollout into ceil(rows / batch_size) micro-batches and steps once per
+    `grad_accum_steps` of them, flushing a SHORT trailing group as one more step — which it rescales
+    to its own micro count (`instrumented_ppo/ppo.py`, the partial-group flush), i.e. a FULL-weight
+    step normalised by its real rows. So 98,304 rows at 2,048 x 32 take TWO steps an epoch, not the
+    1.5 that `rows / effective_batch` says."""
+    b = int(batch_size)
+    if b <= 0 or int(rollout_rows) <= 0:
+        raise ValueError(f"rollout rows and batch size must be positive (got {rollout_rows}, {batch_size})")
+    k = max(1, int(grad_accum_steps or 1))
+    micros = -(-int(rollout_rows) // b)
+    return -(-micros // k)
+
+
 def updates_per_env_step(*, batch_size: int, grad_accum_steps: int = 1,
-                         n_epochs: int) -> float:
-    """Optimizer steps per collected env step = `n_epochs / effective_batch`."""
+                         n_epochs: int, rollout_rows: Optional[int] = None) -> float:
+    """Optimizer steps per collected env step. With `rollout_rows` known: the steps the learner really
+    takes, `n_epochs * optimizer_steps_per_epoch / rollout_rows` (K10(c)); without it, the old
+    `n_epochs / effective_batch`, which is EXACT only when the rollout divides by the effective batch
+    and UNDER-counts a ragged last step (3/4 of the truth at 98,304 / 65,536)."""
     eff = effective_batch(batch_size, grad_accum_steps)
     if eff <= 0:
         raise ValueError(f"effective batch must be positive (got batch_size={batch_size}, "
                          f"grad_accum_steps={grad_accum_steps})")
+    if rollout_rows:
+        steps = optimizer_steps_per_epoch(rollout_rows=rollout_rows, batch_size=batch_size,
+                                          grad_accum_steps=grad_accum_steps)
+        return float(n_epochs) * steps / float(rollout_rows)
     return float(n_epochs) / float(eff)
 
 
 def dose_rate(*, lr: float, batch_size: int, grad_accum_steps: int = 1,
-              n_epochs: int) -> float:
+              n_epochs: int, rollout_rows: Optional[int] = None) -> float:
     """`lr * updates_per_env_step` — the number to compare two folds on."""
     return float(lr) * updates_per_env_step(
-        batch_size=batch_size, grad_accum_steps=grad_accum_steps, n_epochs=n_epochs)
+        batch_size=batch_size, grad_accum_steps=grad_accum_steps, n_epochs=n_epochs,
+        rollout_rows=rollout_rows)
 
 
 def kl_controller_snapshot(callback: Any) -> Optional[Dict[str, Any]]:
@@ -121,8 +148,16 @@ def dose_block(model: Any) -> Dict[str, Any]:
     grad_accum = max(1, int(getattr(model, "grad_accum_steps", 1) or 1))
     n_epochs = int(getattr(model, "n_epochs", 0) or 0)
     eff = effective_batch(batch_size, grad_accum)
+    # the rollout the learner is handed: n_steps x n_envs (the Rust collector sets n_steps to its
+    # update target / n_envs, so this is its declared target too)
+    ns, ne_ = getattr(model, "n_steps", None), getattr(model, "n_envs", None)
+    rows = (int(ns) * int(ne_) if all(isinstance(x, int) and not isinstance(x, bool) for x in (ns, ne_))
+            else 0)
+    rows = rows if rows > 0 else 0
     ups = (updates_per_env_step(batch_size=batch_size, grad_accum_steps=grad_accum,
-                                n_epochs=n_epochs) if eff > 0 else None)
+                                n_epochs=n_epochs, rollout_rows=rows or None) if eff > 0 else None)
+    steps = (optimizer_steps_per_epoch(rollout_rows=rows, batch_size=batch_size, grad_accum_steps=grad_accum)
+             if (rows and batch_size > 0) else None)
     pin = getattr(model, "_fork_lr_pin", None)
     kl_snapshot = getattr(model, "_dose_kl", None)
     frozen = bool((kl_snapshot or {}).get("frozen", False)) or bool((pin or {}).get("frozen", False))
@@ -136,6 +171,8 @@ def dose_block(model: Any) -> Dict[str, Any]:
         "grad_accum_steps": grad_accum,
         "effective_batch": eff,
         "n_epochs": n_epochs,
+        "rollout_rows": rows or None,
+        "optimizer_steps_per_epoch": steps,
         "updates_per_env_step": ups,
         "dose_rate_now": (lr_now * ups) if (lr_now is not None and ups is not None) else None,
         "kl_controller": kl_controller_block(

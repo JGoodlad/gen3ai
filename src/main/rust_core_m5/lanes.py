@@ -70,7 +70,9 @@ LANES: Tuple[LaneGate, ...] = (
         tests=("src/agents/training/rust_env_episode_parity_test.py", _CARGO_SUITE)),
     LaneGate(
         "E", "opponent routing — per-episode route table, policy opponents through T2, bots played in the core",
-        "a POLICY opponent's decisions through T2 == the per-env RLPlayer path (greedy and sampled, bit for bit)",
+        "a POLICY opponent's decisions through T2 == the per-env RLPlayer path (greedy, sampled and keyed): rows "
+        "bytes-equal, legal log-probs within the tier's bar, an action flip excused only as a TIE under the margin "
+        "rule (top-2 margin < 2 x the bar; `judge_flips`), every other flip fatal",
         built=True,
         tests=("src/agents/training/rust_env_opponents_test.py", "src/agents/training/rust_env_opponents_parity_test.py",
                _CARGO_SUITE),
@@ -94,13 +96,17 @@ LANES: Tuple[LaneGate, ...] = (
         tests=("src/agents/inference/service/service_test.py", "src/agents/inference/service/service_cuda_test.py"),
         gpu_tests=("src/agents/inference/service/service_cuda_test.py",)),
     LaneGate(
-        "G", "training integration — the Rust env as the trainer's vec env, behind --env-core",
-        "", built=False,
-        pending="BUILDING — units 1–3 landed: the complete-game collector, the trainer wiring behind --env-core "
-                "rust (the --debug smoke and a real GPU launch completed), and slice N at the ROLLOUT level + the "
-                "learner-level check (src/agents/training/rust_rollout/parity_test.py, COMMIT routine / MILESTONE "
-                "slow); still to come: the opponent sampling change (F-LE-8) and the throughput A/B at --n-envs 48 "
-                "through this harness's hooks"),
+        "G", "training integration — the Rust env as the trainer's vec env, behind --env-core (the complete-game collector)",
+        "slice N at the ROLLOUT level: the learner's buffer from the Rust collector == today's Python path on the same "
+        "games (every obs key / label / action / reward / episode start exact; values / log-probs <= 1e-5, GAE <= "
+        "1e-4) + one production optimizer step on each buffer lands on the same weights (<= 1e-5); the collector's "
+        "no-drop accounting, the keyed draw, version pinning, the respawn policy, K9(b) (commit routine, milestone slow)",
+        built=True,
+        tests=("src/agents/training/keyed_draw_test.py", "src/agents/training/rust_rollout/store_test.py",
+               "src/agents/training/rust_rollout/trigger_test.py",
+               "src/agents/training/rust_rollout/collector_integration_test.py",
+               "src/agents/training/rust_rollout/consistency_test.py", "src/agents/training/rust_rollout/parity_test.py",
+               "src/agents/training/rust_vec_env_test.py", "src/main/train/rust_env_setup_test.py")),
     LaneGate(
         "H", "eval on the core — the eval callback and its traces on the Rust env",
         "", built=False,

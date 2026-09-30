@@ -85,10 +85,10 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                         help="Inference backend; default 'graph' on CUDA, 'eager' on CPU.")
     parser.add_argument("--opponent-sampling", "--opponent_sampling", dest="opponent_sampling",
                         choices=("keyed", "generator"), default=None,
-                        help="How a policy opponent's stochastic action is drawn under --env-core rust: "
-                             "'generator' (DEFAULT, one torch generator per env per opponent — today's RLPlayer "
-                             "stream, bit for bit) or 'keyed' (gen3_keyed_draw_v1: a counter-based draw keyed by "
-                             "(run seed, env, episode, decision) — one vectorised op, exactly replayable).")
+                        help="How a policy opponent's stochastic action is drawn under --env-core rust: 'keyed' "
+                             "(DEFAULT, gen3_keyed_draw_v1: a counter-based draw keyed by (run seed, env, episode, "
+                             "decision) — one vectorised op, exactly replayable; F-LE-8) or 'generator' (one torch "
+                             "generator per env per opponent — today's RLPlayer stream, bit for bit).")
     parser.add_argument("--behaviour-check", "--behaviour_check", dest="behaviour_check",
                         choices=("off", "warn", "fatal"), default=None,
                         help="K9(b) BEHAVIOUR-POLICY CONSISTENCY: before any optimizer step of every update, "

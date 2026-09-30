@@ -15,7 +15,9 @@ There is no generator and no state: the draw for a decision can be recomputed an
 and its log-probabilities — the collector draws it, and the parity gate's Python replay recomputes
 it from ITS OWN log-probabilities, so the gate stays EXACT (an action either equals or it does not)
 instead of dropping to a distribution test. It replaces Lane E's per-row ``torch.Generator`` loop
-(5.1 of the 5.9 ms opponent serve at 48 envs, F-LE-8) with one vectorised NumPy op.
+with one vectorised NumPy op. Its reason is REPLAYABILITY, not speed: F-LE-8's "5.1 ms of sampling"
+was the host waiting for the T2 forward (corrected 2026-09-30); the generator loop itself costs
+~0.13 / 0.25 / 0.38 ms at 8 / 40 / 48 rows, so the keyed draw saves ~0.2 ms a step at most.
 
 The chain (every step wraps at 2**64):
 
@@ -51,6 +53,13 @@ import numpy as np
 KEYED_DRAW_ID = "gen3_keyed_draw_v1"
 
 #: A decision's side: the trainee (p1) or the opponent (p2).
+#: THE near-boundary threshold for a keyed draw's margin (a CDF fraction): the collector's and the
+#: opponent server's ``near_boundary`` telemetry, both sides of the rollout gate's counts, and its tie
+#: rule all use it — 2 (``rust_env_opponents_parity.NEAR_TIE_FACTOR``) x the rollout gate's |Δ log-prob|
+#: bar 1e-5 (``rust_rollout.parity.FLOAT_BAR``): two paths whose log-probs differ by less than the bar
+#: can disagree only on a row whose margin is below it.
+NEAR_MARGIN = 2e-5
+
 STREAM_TRAINEE = 0
 STREAM_OPPONENT = 1
 

@@ -501,7 +501,13 @@ class RLPlayer(Gen3Player):
                 sample_logits = masked_logits / temperature if temperature != 1.0 else masked_logits
                 cat = torch.distributions.Categorical(logits=sample_logits)
                 gen = self._policy_generator(sample_logits.device)
-                if gen is None:
+                # M5 Lane G: an OPT-IN external sampler (the keyed draw's replay, a gate harness only):
+                # ``_action_sampler(masked_logits, temperature) -> index``. None (every production player)
+                # leaves the two branches below byte-identical.
+                sampler = getattr(self, "_action_sampler", None)
+                if sampler is not None:
+                    idx = int(sampler(masked_logits, temperature))
+                elif gen is None:
                     # DEFAULT — the shared torch global generator, exactly as before.
                     idx = cat.sample().item()
                 else:

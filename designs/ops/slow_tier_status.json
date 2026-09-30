@@ -297,6 +297,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[keyed]": {
+   "status": "pass",
+   "commit": "a2b26acbe12a1820436adc1efe809e73c7742393",
+   "at": "2026-09-30T08:20:21Z",
+   "duration_s": 376.33,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[sampled]": {
    "status": "pass",
    "commit": "101f14b768b25a2c51bb35452dd65c32e0f5e9cc",
@@ -315,17 +323,17 @@
   },
   "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[ladder]": {
    "status": "pass",
-   "commit": "408651d41898acd8f280d9936bb48de8ca2a0d80",
-   "at": "2026-09-30T10:11:48Z",
-   "duration_s": 47.7,
+   "commit": "1afd259085404fb3c484b542e3209fb4ca960fde",
+   "at": "2026-09-30T11:12:25Z",
+   "duration_s": 45.19,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[pool]": {
    "status": "pass",
-   "commit": "408651d41898acd8f280d9936bb48de8ca2a0d80",
-   "at": "2026-09-30T10:11:48Z",
-   "duration_s": 53.77,
+   "commit": "1afd259085404fb3c484b542e3209fb4ca960fde",
+   "at": "2026-09-30T11:12:25Z",
+   "duration_s": 46.49,
    "contention": 1.0,
    "detail": ""
   },
@@ -1042,5 +1050,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T10:11:48Z"
+ "last_written": "2026-09-30T11:12:25Z"
 }

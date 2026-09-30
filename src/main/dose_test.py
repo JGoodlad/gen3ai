@@ -211,3 +211,23 @@ def test_a_run_that_recorded_no_step_reads_UNKNOWN_not_zero(tmp_path):
     row = read_run(str(_run(tmp_path, "r", lrs=[1e-4])))
     assert row["num_timesteps"] is None
     assert "—" in render([row], None)
+
+
+def test_the_rollout_rows_come_from_the_recorded_block_then_the_original_command(tmp_path):
+    """K10(c): a ragged last step is a FULL optimizer step, so the dose needs the rollout size."""
+    run = _run(tmp_path, "ragged", lrs=[2.8e-5], batch_size=2048, grad_accum_steps=32, n_epochs=10)
+    row = read_run(str(run))
+    assert row["rollout_rows"] is None and row["dose_rate"] == pytest.approx(2.8e-5 * 10 / 65_536)
+    assert "ROWS UNKNOWN" in render([row], None)
+    meta = {"original_command": "x --n-envs 48 --steps 1"}
+    (run / "metadata.json").write_text(json.dumps(meta))
+    side = run / "checkpoints" / "checkpoint_1000_steps.json"
+    d = json.loads(side.read_text())
+    side.write_text(json.dumps({**d, "n_steps": 2048}))
+    row = read_run(str(run))
+    assert (row["rollout_rows"], row["optimizer_steps_per_epoch"]) == (98_304, 2)
+    assert row["rollout_source"].startswith("n_steps") and row["dose_rate"] == pytest.approx(2.8e-5 * 20 / 98_304)
+    side.write_text(json.dumps({**d, "n_steps": 2048, "dose": {"rollout_rows": 131_072}}))
+    row = read_run(str(run))
+    assert (row["rollout_rows"], row["rollout_source"], row["optimizer_steps_per_epoch"]) == (131_072, "recorded", 2)
+    assert "ROWS UNKNOWN" not in render([row], None)

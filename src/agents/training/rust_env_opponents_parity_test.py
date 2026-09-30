@@ -20,6 +20,7 @@ import shutil
 import subprocess
 from unittest.mock import MagicMock
 
+import numpy as np
 import pytest
 
 from utils.paths import main_models_dir, src_path
@@ -63,7 +64,7 @@ BAR_GPU = 1e-3
 
 
 def _assert_clean(summary, rep, *, dlogp_bar):
-    from agents.training.rust_env_opponents_parity import NEAR_TIE_FACTOR, judge_flips
+    from agents.training.rust_env_opponents_parity import NEAR_TIE_FACTOR, judge_flips, near_ties
 
     assert rep["div"] == {}, (rep["div"], {k: rep.get(k) for k in ("row_examples", "outcome_examples", "p2_count_examples")})
     assert rep["phantom_polls"] == 0, rep["phantom_polls"]
@@ -71,8 +72,10 @@ def _assert_clean(summary, rep, *, dlogp_bar):
     assert rep["max_dlogp"] < dlogp_bar, rep["max_dlogp"]
     ties, fatal = judge_flips(rep, dlogp_bar)
     assert not fatal, f"argmax flips at margin >= {NEAR_TIE_FACTOR} x {dlogp_bar}: {fatal}"
+    near = near_ties(rep, dlogp_bar)
     print(f"[laneE gate] {rep['decisions']} decisions, max|dlogp| {rep['max_dlogp']:.3g} (bar {dlogp_bar}), "
-          f"{ties} TIE flip(s) (margin < {NEAR_TIE_FACTOR * dlogp_bar:g}): {[f for f in rep['flips']][:5]}")
+          f"{ties} TIE flip(s) (margin < {NEAR_TIE_FACTOR * dlogp_bar:g}), decisions in the tie band {near}: "
+          f"{[f for f in rep['flips']][:5]}")
     assert all(v == 0 for v in summary["svc_counters_delta"].values()), summary["svc_counters_delta"]
     assert all(v == 0 for v in summary["core_after_freeze"].values()), summary["core_after_freeze"]
     return ties
@@ -99,9 +102,37 @@ def test_commit_sampled_with_stall_forfeits_and_a_refresh(built, tmp_path):
     assert summary["svc_loads"] == 3, summary["svc_loads"]           # 2 at startup + 1 refresh: LOADS, never compiles
 
 
+def test_commit_keyed_sampling_replays_from_its_key(built, tmp_path):
+    """M5 Lane G (F-LE-8): p2's sample is the KEYED DRAW; the replay recomputes it from the per-env path's
+    OWN log-probs and the decision's key (no generator state crosses) — equal on every sent decision,
+    through stall forfeits and a mid-run refresh."""
+    from agents.training.rust_env_opponents_parity import run
+
+    summary, rep = run(_cfg(n_envs=8, episodes=40, mode="keyed", turn_limit=6, refresh_at=20, key_base=71_950),
+                       str(tmp_path))
+    _assert_clean(summary, rep, dlogp_bar=BAR_EAGER)
+    assert rep["decisions"] >= 200, rep["decisions"]
+    assert summary["refresh"] is not None and summary["svc_loads"] == 3
+
+
+def test_the_keyed_gate_has_teeth(built, tmp_path):
+    """The replay must draw from the RECORDED key: shift every decision's key (its dec_n) and the replay's
+    own draws move off the recorded actions — FATAL flips (margins far above the tie band), while the
+    recorded actions are still played on, so the battles stay aligned."""
+    from agents.training.rust_env_opponents_parity import judge_flips, run
+
+    def mutate(rec):
+        for ep in rec["episodes"]:
+            for d in ep.p2:
+                d.dec_n += 1000
+
+    _summary, rep = run(_cfg(n_envs=2, episodes=2, mode="keyed", key_base=71_560), str(tmp_path), mutate=mutate)
+    _ties, fatal = judge_flips(rep, BAR_EAGER)
+    assert any(f["kind"] == "keyed" for f in fatal), rep["flips"]
+
+
 def test_the_gate_has_teeth(built, tmp_path):
     """One recorded opponent action moved to another legal action must be caught."""
-    import numpy as np
 
     from agents.training.rust_env_opponents_parity import run
 
@@ -218,7 +249,7 @@ def test_slow_compiled_per_env_path(built, tmp_path):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("mode", ["sampled", "greedy"])
+@pytest.mark.parametrize("mode", ["sampled", "greedy", "keyed"])
 def test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool(built, tmp_path, mode):
     """Run under ``flock /home/goodlad/.claude/jobs/gpu.lock`` with ``GEN3AI_TEST_ALLOW_GPU=1``."""
     import torch
@@ -233,5 +264,16 @@ def test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool(built, tmp_p
 
     summary, rep = run(_cfg(pool=f"run:{snaps}:6", device="cuda", backend="graph", buckets=[2, 8, 16], n_envs=16,
                             threads=4, episodes=64, mode=mode, compile=True, refresh_at=120,
-                            key_base=73_000 if mode == "sampled" else 74_000), str(tmp_path))
+                            key_base={"sampled": 73_000, "greedy": 74_000, "keyed": 75_000}[mode]), str(tmp_path))
     _assert_clean(summary, rep, dlogp_bar=BAR_GPU)
+
+
+def test_the_near_tie_counts_use_the_tiers_bar_and_the_flip_rules_threshold():
+    """One threshold: a decision is in the tie band iff its margin < NEAR_TIE_FACTOR x the TIER's bar —
+    the same band `judge_flips` excuses — not a fixed 2e-3 (coordinator, 2026-09-30)."""
+    from agents.training.rust_env_opponents_parity import near_ties
+
+    rep = {"margins_greedy": [0.0, 1.5e-5, 2.5e-5, 1e-3], "margins_sample": [1e-6, 3e-3]}
+    assert near_ties(rep, 1e-5) == {"greedy": 2, "sample": 1}
+    assert near_ties(rep, 1e-3) == {"greedy": 4, "sample": 1}          # 1e-3 < 2 x 1e-3
+    assert near_ties({}, 1e-5) == {"greedy": 0, "sample": 0}

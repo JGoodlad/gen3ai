@@ -99,8 +99,46 @@ inverse CDF over `softmax(logp / T)` of the legal actions (`keyed_draw.py` state
 No generator, no state: the Python replay recomputes it from ITS OWN log-probs, so the parity gates stay
 EXACT, and the margin `min |c_i − u·c_last| / c_last` names the near-boundary rows two paths whose
 log-probs differ in the last bits could disagree on (counted, never a silent pass). The trainee always
-uses it (stream 0). The RUN SEED is a hash of `--seed` and `num_timesteps` at the process's startup,
-so a launcher restart never replays the first segment's teams, battle seeds or draws.
+uses it (stream 0); a POLICY OPPONENT's stochastic action uses it too by default (stream 1,
+`--opponent-sampling keyed`; `generator` keeps today's per-env `torch.Generator` stream, bit for bit
+with `RLPlayer`). The reason is REPLAYABILITY — Lane E's opponent gate then replays a sampled game
+EXACTLY from its key (`rust_env_opponents_parity.py` mode `keyed`) — not speed: the draws cost
+~0.13 / 0.25 / 0.38 ms at 8 / 40 / 48 rows either way (F-LE-8's "5.1 ms of sampling" was the host
+waiting for the forward, corrected 2026-09-30), so the keyed draw saves ~0.2 ms a step at most. The
+RUN SEED is a hash of `--seed` and `num_timesteps` at the process's startup, so a launcher restart
+never replays the first segment's teams, battle seeds or draws; a core RESPAWN re-derives it too.
+
+## Every micro-batch is full — no padding, no drop
+
+The update takes EXACTLY the target, and the target is a multiple of lcm(`--batch-size`, N) (refused
+off the quantum at parse — `rollout_target_on_the_quantum` — at the trigger's construction, at every
+adaptive move, and by `_ensure_buffer` if the learner's micro-batch ever moved under a built
+collector). The one game straddling the D-th row is SPLIT, its tail trained next update (F-LG-1), so
+the row count never varies and no rows are dropped. Every micro-batch the learner sees is therefore
+full-shaped: one compiled learner graph, no pad rows, no masked means. What CAN be short is the last
+ACCUMULATION group (98,304 = 1.5 × 65,536 at the live shape: 32 micros, then 16): the learner flushes
+it as one FULL-weight step, rescaling its summed gradient from 1/K to 1/(its micro count) — i.e.
+normalised by the step's real rows (`instrumented_ppo/ppo.py`, the trailing-group flush; pinned equal
+to the unaccumulated step over the same rows by `instrumented_ppo_test.test_grad_accum_matches_full_batch`'s
+`(4, 3, 12)` case). The dose now counts that step as the full step it is (K10(c),
+`agents/training/dose.py`: 2 steps an epoch, not 1.5).
+
+## Where a host step's time goes (the timers, and what is NOT a lever)
+
+`CollectorStats.seconds`: `submit` (gathering + submits), `flush` (the T2 flush CALL — it only
+launches the replays), `gpu_wait` (the host waiting on `ticket.host()`: the forward's completion),
+`opp_draw` / `draw` (the opponents' / the trainee's draws), `write` (the arena), `core`, `post`,
+`fill`. At the production mix (95 % self-play, a 20-snapshot pool, N = 48; the owner's registered A/B,
+2026-09-30) a step is 11.7 ms. The T2 forward is 8.7 ms of it (launch 1.6 + wait 7.1), and that is the
+opponents' FAN-OUT: ~19.5 distinct slot replays a step, each latency-bound. The core is 1.9 ms, the
+draws 0.25 ms, the glue 0.9 ms. Neither the keyed draw nor an env-step / inference overlap is a speed
+lever at this N:
+
+- overlap measured 0.71× of serial — splitting the envs doubles the replays;
+- the keyed draw is replayability, not speed.
+
+A grouped forward across slots is capped at 4.7 of 8.4 ms a flush. Both are re-measured by the SIZING
+study at larger N; the rules are in the program doc's Decision record.
 
 ## The declared lifecycle
 
@@ -111,6 +149,10 @@ the compile would carry the patched `forward` bound to the learner's extractor) 
 the opponents; then nothing. After every update `check_lifecycle` reads every `*_after_freeze` counter
 (core + T2) and raises on a non-zero one. A process-front-end RESPAWN is the one counted steady-state
 event, allowed up to a declared budget (F-LB-1): its games are cut and the core is RESET (F-LB-2).
+The recovery (`RustCollector.recover_respawn`) checks the budget, cuts every live game (rows released,
+counted), derives a NEW segment seed (so the reset never replays a draw), forgets every env's staged
+opponent episode, re-stages opponents and teams, RESETs and re-stages the next episodes — pinned by
+`collector_integration_test`'s SIGKILL-the-child test (training continues, the lifecycle stays clean).
 
 ## Teams, seeds, the opponent route
 

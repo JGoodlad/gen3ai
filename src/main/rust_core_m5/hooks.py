@@ -6,12 +6,15 @@ is cut — is a hook, so the A/B isolates the env and a lane that lands later pl
 without touching the harness:
 
 * :class:`TraineeInference` — ``(obs [n, OBS_DIM] f32, masks [n, 11]) -> actions [n] int``.
-  BUILT: :class:`RandomLegal` (CPU, the default) and :class:`T2Inference` (greedy argmax over the
-  legal log-probs of a T2 ``InferenceService``). Both arms call the SAME hook instance type.
+  BUILT: :class:`RandomLegal` (CPU, the default), :class:`T2Inference` (greedy argmax over the
+  legal log-probs of a T2 ``InferenceService``) and :class:`LearnerSampling` (the learner policy's own
+  SAMPLING forward — Lane G). Both arms call the SAME hook instance type, except under the production
+  arms, where the rust arm's trainee is the collector's T2 slot holding the SAME checkpoint.
 * :class:`OpponentMix` — BUILT: :class:`UniformRandom` (python: poke-env's ``RandomPlayer``; rust:
-  the in-core bot ``random``). DECLARED, NOT BUILT: :class:`ProductionMix` (Lane E + Lane G).
-* :class:`Collector` — BUILT: :class:`StepCollector` (today's fixed window). DECLARED, NOT BUILT:
-  :class:`CompleteGameCollector` (Lane G, order constraint 6).
+  the in-core bot ``random``) and :class:`ProductionMix` (Lane G over Lane E: one resolved args
+  namespace, one real pool; it selects ``production``'s arms).
+* :class:`Collector` — BUILT: :class:`StepCollector` (today's fixed window) and
+  :class:`CompleteGameCollector` (Lane G, order constraint 6 — the rust arm under the production arms).
 
 A NOT-BUILT hook RAISES :class:`HookNotBuilt` at construction, naming exactly what must be plugged
 in. It never falls back to a built one: a throughput number measured against a silently different
@@ -153,6 +156,54 @@ def _load_policy(ckpt: Optional[str]) -> Any:
     return model.policy.eval()
 
 
+class LearnerSampling:
+    """The LEARNER's own sampling forward (M5 Lane G): ``policy(obs, action_masks)`` under ``no_grad`` on
+    the device — the call ``collect_rollouts`` makes for every vec step on today's path (a SAMPLE, not
+    the argmax). ``ckpt`` is a checkpoint ``.zip``; ``compile`` applies ``--compile-trainer``'s extractor
+    compile (CUDA only), as a production rollout forward runs. On the rust arm the same checkpoint's
+    policy is the T2 trainee slot's template (the collector owns that forward)."""
+
+    name = "learner_sampling"
+
+    def __init__(self, ckpt: Optional[str], device: str = "cuda", compile: bool = False):
+        if not ckpt:
+            raise ValueError("LearnerSampling needs --ckpt (the trainee checkpoint .zip)")
+        from main.rust_core_m5.production import load_trainee
+
+        t0 = time.perf_counter()
+        self.ckpt, self.device = ckpt, device
+        self.model = load_trainee(ckpt, device)
+        self.policy = self.model.policy.eval()
+        self.compiled = False
+        if compile and str(device).startswith("cuda"):
+            from agents.model.compile_trainer import compile_trainer_extractor
+
+            compile_trainer_extractor(self.model, True)
+            self.compiled = True
+        self.load_s = time.perf_counter() - t0
+        self.calls = 0
+        self.rows = 0
+
+    def __call__(self, obs: "np.ndarray", masks: "np.ndarray") -> "np.ndarray":
+        import numpy as np
+        import torch
+
+        m = np.asarray(masks).astype(bool)
+        with torch.no_grad():
+            o = torch.as_tensor(np.asarray(obs, dtype=np.float32), device=self.policy.device)
+            mt = torch.as_tensor(m, device=self.policy.device)
+            actions, values, logp = self.policy({"observation": o, "action_mask": mt}, action_masks=m)
+            values.cpu()
+            logp.cpu()                    # collect_rollouts copies both to the host every step
+        self.calls += 1
+        self.rows += int(m.shape[0])
+        return actions.cpu().numpy().astype(np.int64)
+
+    def describe(self) -> Dict[str, Any]:
+        return {"name": self.name, "ckpt": self.ckpt, "device": self.device, "compiled": self.compiled,
+                "load_s": round(self.load_s, 2)}
+
+
 # ---------------------------------------------------------------------------------------------
 # 2. the opponent
 # ---------------------------------------------------------------------------------------------
@@ -203,32 +254,43 @@ class UniformRandom:
 
 
 class ProductionMix:
-    """DECLARED, NOT BUILT — the PRODUCTION opponent mixture on both arms.
-
-    The Rust side exists (Lane E: ``agents.training.rust_env_opponents.RustEnvOpponents`` +
-    ``PolicyOpponentServer`` over T2 slots, bots in the core); the Python side is today's
-    ``main.train.env_factory.create_training_env_random`` (``MaskableAgentWrapper`` with the bot
-    roster, the snapshot pool, stable / exploiter opponents). What is missing is the harness-side
-    wiring that builds BOTH from ONE resolved args namespace and ONE pool, which is Lane G's
-    rollout host (it owns the per-step ``after_op`` call inside the collector)."""
+    """The PRODUCTION opponent mixture on both arms (M5 Lane G): built from ONE resolved args namespace
+    (``production_args()``: self-play on, the stable share, the floor roster) and ONE pool — the last
+    ``pool_size`` snapshots of ``pool`` (a real run's ``snapshots/``), symlinked into a temp dir — at the
+    declared self-play fraction. It does not answer ``python_opponent`` / ``rust_routes``: the arms it
+    selects (``production.ProductionPythonArm`` / ``CollectorRustArm``) build the worker env and the
+    collector themselves (``create_training_env_random`` / ``build_collector``)."""
 
     name = "production_mix"
-    NEEDS = (
-        "the resolved training args namespace (main.rust_core_cutover.envs.production_args() or the run's own)",
-        "a snapshot pool directory (SnapshotPool; the model_config.json of the pool's version)",
-        "a started T2 InferenceService with the pool's policy slots (OpponentPlan.n_policy_slots)",
-        "Lane G unit 1's build_collector (agents.training.rust_rollout.build) with an OpponentSources over the "
-        "pool — it already does the ONE-flush serve of p2 + trainee rows; on the Rust arm it replaces this hook",
-        "Lane E's RustEnvOpponents host, whose after_op(cols) must run after EVERY core op (F-LE-4 re-staging) "
-        "and PolicyOpponentServer.serve(cols) before every step",
-        "on the Python arm, create_training_env_random's kwargs (OPPONENT_CLASSES, stable_opponents, "
-        "exploiter_entry, heuristic_weights, the self-play fraction) from the SAME args",
-    )
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        raise HookNotBuilt("OpponentMix 'production_mix'", "Lane G (rollout host) over Lane E's routing",
-                           self.NEEDS, "Both arms must face the SAME production mixture drawn from one "
-                           "declared plan, and nothing builds that pair yet.")
+    def __init__(self, pool: Optional[str] = None, pool_size: int = 20, self_play_fraction: float = 0.9,
+                 compile_opponents: bool = True):
+        if not pool:
+            raise ValueError("ProductionMix needs --pool (a run's snapshots/ directory, read-only)")
+        from main.rust_core_cutover.envs import production_args
+        from main.rust_core_m5.production import pool_dir_from
+
+        self.source = str(pool)
+        self.pool_dir, self.snapshots = pool_dir_from(pool, int(pool_size))
+        self.self_play_fraction = float(self_play_fraction)
+        self.args = production_args()
+        self.args.self_play = True
+        self.args.compile_opponents = bool(compile_opponents)
+        self.args.compile_opponents_strict = False
+
+    def python_opponent(self, idx: int, tag: str, teambuilder: Any) -> Any:
+        raise NotImplementedError("ProductionMix selects the production arms; they build the opponents")
+
+    def rust_routes(self) -> List[Dict[str, Any]]:
+        raise NotImplementedError("ProductionMix selects the production arms; they build the routes")
+
+    def ep_opp(self, env: int) -> int:
+        raise NotImplementedError("ProductionMix selects the production arms; they stage the routes")
+
+    def describe(self) -> Dict[str, Any]:
+        return {"name": self.name, "pool": self.source, "snapshots": list(self.snapshots),
+                "self_play_fraction": self.self_play_fraction, "bots": "the 8-bot training floor roster",
+                "compile_opponents_python": bool(self.args.compile_opponents)}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -280,28 +342,43 @@ class StepCollector:
 
 
 class CompleteGameCollector:
-    """DECLARED, NOT BUILT — Lane G's COMPLETE-GAME BUFFER + SAMPLE-COUNT TRIGGER (program doc §2 M5,
-    order constraint 6, owner 2026-09-29): a rollout is complete GAMES, cut when the buffer holds a
-    declared sample count, so the win-prob critic never drops the rows of a game still running at
-    a window edge."""
+    """Lane G's COMPLETE-GAME BUFFER + SAMPLE-COUNT TRIGGER (program doc §2 M5, order constraint 6):
+    the rust arm steps ``RustCollector.host_step`` and, when the buffer holds ``target`` completed-game
+    rows, pays the fill into a learner-shaped buffer inside the timed block. This object COUNTS (host
+    steps, games, fills); the trigger itself is the collector's. The python arm keeps today's window
+    (``StepCollector``) — today's path has no complete-game collector."""
 
     name = "complete_game"
-    NEEDS = (
-        "Lane G unit 1's collector (BUILT 2026-09-29, not yet wired): agents.training.rust_rollout.build."
-        "build_collector(RustEnvDecl, obs_space=, trainee_policy=, plan=, sources=OpponentSources) -> RustCollector "
-        "— the A/B steps IT instead of stepping the core itself",
-        "the declared SAMPLE-COUNT trigger (rows per rollout; a startup input per the SIZING study, constraint 5)",
-        "a complete-game buffer keyed by (env, episode) that back-fills each row's outcome when its game ends",
-        "the rule for games still running at the trigger (carried into the next rollout, never dropped)",
-        "its gate: slice N at the ROLLOUT level with the trigger set to reproduce today's fixed window",
-    )
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        raise HookNotBuilt("Collector 'complete_game'", "Lane G (order constraint 6)", self.NEEDS,
-                           "The fixed-window StepCollector is today's shape, not this one.")
+    def __init__(self, target: int = 98_304):
+        if int(target) < 1:
+            raise ValueError("CompleteGameCollector: target must be >= 1")
+        self.target = int(target)
+        self.steps = 0
+        self.fills = 0
+        self.episodes_ended = 0
+
+    def observe(self, dones: "np.ndarray") -> None:
+        import numpy as np
+
+        self.observe_step(int(np.count_nonzero(dones)))
+
+    def observe_step(self, games_ended: int) -> None:
+        self.steps += 1
+        self.episodes_ended += int(games_ended)
+
+    def observe_fill(self) -> None:
+        self.fills += 1
+
+    def ready(self) -> bool:
+        return False                      # the RustCollector's trigger decides; see observe_fill
+
+    def describe(self) -> Dict[str, Any]:
+        return {"name": self.name, "target": self.target, "host_steps": self.steps, "fills": self.fills,
+                "episodes_ended": self.episodes_ended}
 
 
 #: The CLI's names -> constructors (a NOT-BUILT name raises on construction, never falls back).
-INFERENCE = {"random": RandomLegal, "t2": T2Inference}
+INFERENCE = {"random": RandomLegal, "t2": T2Inference, "learner": LearnerSampling}
 OPPONENTS = {"uniform_random": UniformRandom, "production": ProductionMix}
 COLLECTORS = {"step": StepCollector, "complete_game": CompleteGameCollector}

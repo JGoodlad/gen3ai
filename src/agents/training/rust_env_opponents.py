@@ -453,12 +453,27 @@ def sample_actions(logp: Any, temperature: Any, gens: Sequence[Any]) -> np.ndarr
 
 @dataclass
 class ServeStats:
+    """Where an opponent serve's time goes. ``flush_s`` is the T2 flush CALL (it LAUNCHES the per-slot
+    graph replays asynchronously); ``wait_s`` is the host waiting for them (``ticket.host()`` → the output
+    event's sync — the GPU forward's completion); ``draw_s`` is choosing the actions (greedy / the sample)
+    itself. Until 2026-09-30 the wait was billed to a single ``sample_s`` (F-LE-8's "5.1 ms of sampling"
+    was the forward's completion wait — Lane G / the coordinator); ``sample_s`` stays their sum."""
+
     steps: int = 0
     rows: int = 0
     flush_s: float = 0.0
-    sample_s: float = 0.0
+    wait_s: float = 0.0
+    draw_s: float = 0.0
     gather_s: float = 0.0
     per_slot_rows: Dict[int, int] = field(default_factory=dict)
+    #: ``submit`` calls that had rows, and the DISTINCT slots they submitted to (their ratio is the mean
+    #: fan-out per flush — the number of slot replays one host step's opponent forward costs)
+    submits: int = 0
+    slot_submits: int = 0
+
+    @property
+    def sample_s(self) -> float:
+        return self.wait_s + self.draw_s
 
 
 class PolicyOpponentServer:
@@ -496,7 +511,7 @@ class PolicyOpponentServer:
         for r in self.routes:
             if r.kind == "policy":
                 self.temperature[r.player] = float(r.temperature if r.temperature is not None else 1.0)
-        players = sorted(self.temperature) if sampling == "generator" else []
+        players = sorted(self.temperature)       # built in either mode: `set_sampling` may switch (declared)
         self._gens: Dict[Tuple[int, str], Any] = {}
         for i in range(self.n):
             for p in players:
@@ -506,6 +521,12 @@ class PolicyOpponentServer:
         self._logp = np.zeros((self.n, 11), dtype=np.float32)
         self._greedy = np.zeros(self.n, dtype=np.int64)
         self.stats = ServeStats()
+
+    def set_sampling(self, sampling: str) -> None:
+        """Switch between ``generator`` and ``keyed`` (a benchmark's A/B; both streams exist from startup)."""
+        if sampling not in ("generator", "keyed"):
+            raise ValueError(f"PolicyOpponentServer: sampling {sampling!r}")
+        self.sampling = sampling
 
     def generator(self, env: int, player: str) -> Any:
         return self._gens[(env, player)]
@@ -546,6 +567,8 @@ class PolicyOpponentServer:
             tickets.append((rows, self.svc.submit(int(s), cols["obs"][rows, 1], cols["mask"][rows, 1],
                                                    Priority.ROLLOUT)))
         self.stats.gather_s += time.perf_counter() - t0
+        self.stats.submits += 1
+        self.stats.slot_submits += len(tickets)
         return order, tickets
 
     def complete(self, cols: Mapping[str, np.ndarray], pending: Tuple[np.ndarray, List[Any]], *,
@@ -559,6 +582,7 @@ class PolicyOpponentServer:
             lp, _v, gr = t.host()
             self._logp[rows] = lp
             self._greedy[rows] = gr
+        t2w = time.perf_counter()
         act = cols["action"]
         stoch_rows, temps, gens = [], [], []
         for i in order:
@@ -576,14 +600,15 @@ class PolicyOpponentServer:
             u = KD.keyed_uniforms(self.run_seed, KD.STREAM_OPPONENT, sr, cols["episode"][sr], cols["dec_n"][sr, 1])
             a, margin = KD.keyed_actions(self._logp[sr], u, np.asarray(temps, dtype=np.float64))
             act[sr, 1] = a
-            self.near_boundary += int((margin < 1e-6).sum())
+            self.near_boundary += int((margin < KD.NEAR_MARGIN).sum())
         elif stoch_rows:
             act[stoch_rows, 1] = sample_actions(self._logp[stoch_rows], temps, gens)
         t3 = time.perf_counter()
         st = self.stats
         st.steps += 1
         st.rows += int(order.size)
-        st.sample_s += t3 - t2
+        st.wait_s += t2w - t2
+        st.draw_s += t3 - t2w
         for s in slot[order]:
             st.per_slot_rows[int(s)] = st.per_slot_rows.get(int(s), 0) + 1
         if record is not None:

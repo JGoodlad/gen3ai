@@ -263,9 +263,20 @@ the PARENT had annealed to. `--batch-size` and `--n-steps` are inherited the sam
 **The quantity that predicts a distillation fold's collateral is the DOSE, not the LR** (ledger M7):
 
 ```
-updates_per_env_step = n_epochs / (batch_size * grad_accum_steps)
+updates_per_env_step = n_epochs * optimizer_steps_per_epoch / rollout_rows
+optimizer_steps_per_epoch = ceil(ceil(rollout_rows / batch_size) / grad_accum_steps)
 dose_rate            = lr * updates_per_env_step
 ```
+
+When the rollout divides by `batch_size * grad_accum_steps` this is `n_epochs / (batch_size *
+grad_accum_steps)`. When it does not, the learner flushes the short last group as one more
+FULL-weight step (rescaled to its own micro count, i.e. normalised by its real rows), so the old
+formula UNDER-counted it: 98,304 rows at 2,048 × 32 take 2 steps an epoch, not 1.5 — 4/3 of the
+old dose (K10(c), fixed 2026-09-30 in `agents/training/dose.py`; every save records `rollout_rows`
+and `optimizer_steps_per_epoch` in its `dose` block, and `main.dose` reads the rollout from that
+block, else from `n_steps` × the `--n-envs` of `original_command`, and flags a row with neither).
+The table below was computed with the old formula: it is exact only for rows whose rollout divides
+evenly — re-read a row with `python -m main.dose` before quoting it across shapes.
 
 `grad_accum_steps` is in the DENOMINATOR because K micro-batches are summed into ONE optimizer step
 (see *Gradient accumulation* above), so two runs at the same `--lr` differ 8× in dose when one

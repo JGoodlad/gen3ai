@@ -31,8 +31,11 @@ ERA2 = [("ai_v13_13_exploit5_offense", "offense", 0.70, 263),
         ("ai_v13_14_exploit5_balance", "balance", 0.53, 210),
         ("ai_v13_15_exploit5_stall", "stall", 0.45, 182)]
 
-#: `main.dose`'s reading of each era, and the gap that refuses the comparison.
-ERA1_DOSE, ERA2_DOSE = 3.815e-08, 8.392e-09
+#: `main.dose`'s reading of each era, and the gap that refuses the comparison. Both eras train 98,304
+#: rows at 2,048 x 32, i.e. TWO optimizer steps an epoch (K10(c), 2026-09-30: the short last group is a
+#: full step), so these are 4/3 of the ledger's 2026-09-21 readings (3.815e-08 / 8.392e-09, counted at
+#: 1.5 steps); the RATIO — what the refusal is about — is unchanged at 4.55x.
+ERA1_DOSE, ERA2_DOSE = 5.086e-08, 1.119e-08
 #: Both eras trained the same number of post-fork steps — the budget is MATCHED and must stay so,
 #: which is what makes DOSE the cause the refusal names.
 BUDGET = 8_060_928

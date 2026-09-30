@@ -134,3 +134,78 @@ def test_the_trainees_keyed_draw_replays_from_its_key(spaces):
                           np.array([x["blogp"] for x in rows], dtype=np.float32))
     # the draws are not degenerate: more than one action is played from the same kind of state
     assert len(set(a.tolist())) > 3
+
+
+def test_per_game_version_pinning_plays_each_game_on_one_version(spaces):
+    """``--version-pinning per_game`` (declared, OFF by default): after an update the new weights LOAD into
+    a FREE trainee slot; every game in progress keeps the slot — the version — it started with, so every
+    completed game's rows carry ONE version; a slot a game still plays is never reloaded."""
+    _args, obs, act = spaces
+    decl = RustEnvDecl(n_envs=N, threads=2, front="ffi", profile="selfcheck", trigger="complete_game",
+                       n_steps=N_STEPS, micro_batch=N_STEPS, device="cpu", backend="eager", run_seed=21,
+                       version_pinning=True, trainee_slots=3)
+    env = RustVecEnv(n_envs=N, observation_space=obs, action_space=act,
+                     build=lambda m: TK.collector_for(m, obs, decl=decl))
+    model = TK.fresh_model(env, n_steps=N_STEPS, batch_size=N_STEPS)
+    col = env.startup(model)
+    rec = Recorder()
+    col.hooks.append(rec)
+    cb = TK.NullCallback()
+    try:
+        for k in range(4):
+            if k:
+                TK.perturb_weights(model, k)
+                col.after_update(model)
+                # the loaded slot is one no game with rows in play is pinned to
+                assert all(int(col.env_slot[e]) != col.current_slot for e in range(N) if col.log.cur[e])
+            assert col.collect(model, cb, model.rollout_buffer)
+        # every game still resident in the arena (in play, or completed and carried) is ONE version
+        versions: Dict[tuple, set] = {}
+        for e in range(N):
+            if col.log.cur[e]:
+                vs = {int(col.store.version[s]) for s in col.log.cur[e]}
+                assert len(vs) == 1, (e, vs)
+        for g in list(col.log.completed):
+            vs = {int(v) for v in col.store.version[g]}
+            envs = {int(x) for x in col.store.env[g]}
+            eps = {int(x) for x in col.store.episode[g]}
+            assert len(vs) == 1 and len(envs) == 1 and len(eps) == 1, (vs, envs, eps)
+            versions[(envs.pop(), eps.pop())] = vs
+        assert versions
+        assert col.stats.updates == 3 and all(v == 0 for v in col.check_lifecycle().values())
+    finally:
+        env.close()
+
+
+def test_a_core_child_death_is_a_counted_budgeted_respawn(spaces):
+    """The process front end's child is SIGKILLed mid-rollout: the collector recovers (F-LB-1 / F-LB-2) —
+    the games in progress are CUT and counted, the run seed moves to a new segment, the core is RESET,
+    and the rollout completes; the respawn is counted in PROC_SPAWNS_AFTER_FREEZE and one more than the
+    declared budget is a typed LifecycleViolation."""
+    import os
+    import signal
+
+    from agents.training.rust_rollout.collector import LifecycleViolation
+
+    _args, obs, act = spaces
+    decl = RustEnvDecl(n_envs=N, threads=2, front="proc", profile="selfcheck", trigger="complete_game",
+                       n_steps=N_STEPS, micro_batch=N_STEPS, device="cpu", backend="eager", run_seed=31,
+                       respawn_budget=1)
+    env = RustVecEnv(n_envs=N, observation_space=obs, action_space=act,
+                     build=lambda m: TK.collector_for(m, obs, decl=decl))
+    model = TK.fresh_model(env, n_steps=N_STEPS, batch_size=N_STEPS)
+    col = env.startup(model)
+    cb = TK.NullCallback()
+    try:
+        for _ in range(20):
+            col.host_step()
+        seed0 = col.cfg.run_seed
+        os.kill(col.core.pid, signal.SIGKILL)
+        assert col.collect(model, cb, model.rollout_buffer)
+        assert col.stats.respawns == 1 and col.log.rows_cut > 0 and col.cfg.run_seed != seed0
+        assert col.check_lifecycle()["PROC_SPAWNS_AFTER_FREEZE"] == 1
+        os.kill(col.core.pid, signal.SIGKILL)
+        with pytest.raises(LifecycleViolation, match="budget"):
+            col.collect(model, cb, model.rollout_buffer)
+    finally:
+        env.close()

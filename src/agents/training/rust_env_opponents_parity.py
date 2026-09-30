@@ -122,6 +122,13 @@ def judge_flips(rep: Dict[str, Any], dlogp_bar: float) -> Tuple[int, List[Dict[s
     flips = rep.get("flips", [])
     fatal = [f for f in flips if f["margin"] is None or f["margin"] >= eps]
     return len(flips) - len(fatal), fatal
+
+
+def near_ties(rep: Dict[str, Any], dlogp_bar: float) -> Dict[str, int]:
+    """How many DECISIONS (flipped or not) sat inside the tie band at the TIER's bar — the same
+    ``NEAR_TIE_FACTOR x dlogp_bar`` threshold :func:`judge_flips` uses (one threshold, not a fixed one)."""
+    eps = NEAR_TIE_FACTOR * float(dlogp_bar)
+    return {k: sum(1 for m in rep.get(f"margins_{k}", []) if m is not None and m < eps) for k in ("greedy", "sample")}
 NAMES = ("lepone", "leptwo")
 
 
@@ -268,7 +275,12 @@ def _record(cfg: Dict[str, Any]) -> Dict[str, Any]:
                               pool_rng_seeds=[kb + i for i in range(n)], rng_seeds=list(range(n)))
     host.set_self_play_target(1.0, 0)
     greedy = cfg["mode"] == "greedy"
-    server = E.PolicyOpponentServer(plan, svc, n, policy_seed=kb, seed_stride=1, force_greedy=greedy)
+    keyed = cfg["mode"] == "keyed"
+    # M5 Lane G (F-LE-8): mode `keyed` draws p2's sample with the counter-based KEYED DRAW
+    # (`agents.training.keyed_draw`, key = (key_base, the opponent stream, env, episode, dec_n)); the replay
+    # recomputes it from ITS OWN log-probs — no generator state to carry.
+    server = E.PolicyOpponentServer(plan, svc, n, policy_seed=kb, seed_stride=1, force_greedy=greedy,
+                                    sampling="keyed" if keyed else "generator", run_seed=kb)
     teams = packed_teams(cfg.get("teams", "pool"))
     turn_limit = int(cfg["turn_limit"]) if cfg.get("turn_limit") else EP.stall_threshold()
     spec = P.spec_json(n=n, threads=int(cfg.get("threads", 4)), teams=list(teams), names=NAMES,
@@ -309,10 +321,10 @@ def _record(cfg: Dict[str, Any]) -> Dict[str, Any]:
                 route = int(c["opp_route"][i])
                 fam = host.families["pool"]
                 mid = fam.resident[fam.routes.index(route)]
-                g = server.generator(i, "pool")
+                gen = None if (greedy or keyed) else server.generator(i, "pool")
                 cur[i] = Episode(env=i, episode=int(c["episode"][i]), teams=staged[i][0], seed=staged[i][1],
                                  route=route, model_id=mid, temperature=server.temperature["pool"],
-                                 gen_state=None if greedy else bytes(g.get_state().numpy().tobytes()))
+                                 gen_state=None if gen is None else bytes(gen.get_state().numpy().tobytes()))
                 stage_team(c, i)
 
         moved_envs(host.after_op(c))
@@ -389,6 +401,25 @@ def _replay_player_cls() -> Any:
             self._cap = d
             return d
 
+        def _keyed_sample(self, masked_logits: Any, temperature: float) -> int:
+            """RLPlayer's ``_action_sampler`` under mode ``keyed``: the keyed draw of THIS path's masked
+            logits at the pending decision's key (a phantom poll, which has none, takes the argmax — its
+            result is never sent)."""
+            from agents.training import keyed_draw as KD
+
+            ml = masked_logits[0].detach().float()
+            if self._keyed_key is None:
+                self._last_keyed_margin = float("inf")
+                return int(torch.argmax(ml).item())
+            legal = (ml > -1e8).numpy()
+            lp = torch.log_softmax(ml, -1).numpy()
+            lpm = np.where(legal, lp, -np.inf).astype(np.float32)[None]
+            env, episode, dec = self._keyed_key
+            u = KD.keyed_uniforms(self._keyed_seed, KD.STREAM_OPPONENT, env, episode, dec)
+            a, m = KD.keyed_actions(lpm, np.atleast_1d(u), float(temperature))
+            self._last_keyed_margin = float(m[0])
+            return int(a[0])
+
         def _predict_best_action(self, battle: Any, stochastic: bool = False, need_aux: bool = True,
                                  temperature: float = 1.0) -> Any:
             o = self._out
@@ -397,6 +428,9 @@ def _replay_player_cls() -> Any:
             snap = tracker.snapshot()
             g = self.__dict__.get("_policy_gens", {}).get("cpu")
             gstate = g.get_state() if g is not None else None
+            if getattr(self, "_keyed_seed", None) is not None:
+                nxt = self._ep.p2[self._j] if (sent and self._j < len(self._ep.p2)) else None
+                self._keyed_key = None if nxt is None else (self._ep.env, self._ep.episode, nxt.dec_n)
             idx, probs, mask = super()._predict_best_action(battle, stochastic=stochastic, need_aux=need_aux,
                                                             temperature=temperature)
             if not sent:
@@ -434,12 +468,21 @@ def _replay_player_cls() -> Any:
             o["max_dlogp"] = max(o["max_dlogp"], float(np.abs(lp[legal] - d.logp[legal]).max()))
             srt = np.sort(d.logp[legal])[::-1]
             margin_g = float(srt[0] - srt[1]) if len(srt) > 1 else None
-            o["near_tie_greedy"] += int(margin_g is not None and margin_g <= 2 * LOGP_BAR)
+            if margin_g is not None:              # judged at the TIER's bar by `near_ties`
+                o["margins_greedy"].append(margin_g)
             dl_row = float(np.abs(lp[legal] - d.logp[legal]).max())
             where = {"env": ep.env, "episode": ep.episode, "dec": self._j - 1, "dlogp_row": dl_row}
             g_cpu = int(torch.argmax(ml).item())
             if g_cpu != d.greedy:        # an ARGMAX FLIP is data; `judge_flips` decides (THE BARS)
                 o["flips"].append({"kind": "greedy", "margin": margin_g, "path": g_cpu, "recorded": d.greedy, **where})
+            if getattr(self, "_keyed_seed", None) is not None:
+                # the KEYED draw (M5 Lane G): RLPlayer drew it from THIS path's log-probs through its
+                # `_action_sampler` hook (below), keyed by the decision. Its margin is a CDF fraction; a
+                # |Δ log p| <= B moves each cumulative share by <~ 2B, so the NEAR_TIE_FACTOR x B rule judges it.
+                margin_k = float(self._last_keyed_margin)
+                o["margins_sample"].append(margin_k)
+                if idx != d.action:
+                    o["flips"].append({"kind": "keyed", "margin": margin_k, "path": idx, "recorded": d.action, **where})
             if self._sampled:
                 g2 = torch.Generator(device="cpu")
                 g2.set_state(gstate)
@@ -447,7 +490,8 @@ def _replay_player_cls() -> Any:
                 r = d.logp[legal] / temperature - np.log(q[legal])
                 rs = np.sort(r)[::-1]
                 margin_s = float(rs[0] - rs[1]) * temperature if len(rs) > 1 else None
-                o["near_tie_sample"] += int(margin_s is not None and margin_s <= 2 * LOGP_BAR)
+                if margin_s is not None:
+                    o["margins_sample"].append(margin_s)
                 if idx != d.action:
                     o["flips"].append({"kind": "sample", "margin": margin_s, "path": idx, "recorded": d.action, **where})
             if idx != d.action:                     # play the RECORDED action on (alignment)
@@ -504,8 +548,9 @@ def _replay(rec_path: str, out_path: str) -> Dict[str, Any]:
     by_step = {e.step: e for e in pool._entries}
     Player = _replay_player_cls()
     sampled = cfg["mode"] == "sampled"
+    keyed_seed = int(cfg["key_base"]) if cfg["mode"] == "keyed" else None
     out: Dict[str, Any] = {"decisions": 0, "phantom_polls": 0, "phantom_draws": 0, "no_decision_sent": 0,
-                           "near_tie_greedy": 0, "near_tie_sample": 0, "max_dlogp": 0.0, "div": {}, "flips": [],
+                           "margins_greedy": [], "margins_sample": [], "max_dlogp": 0.0, "div": {}, "flips": [],
                            "episodes": 0, "p2_forfeits": 0, "p1_forfeits": 0, "models": sorted({e.model_id for e in eps})}
     w = None
     t0 = time.perf_counter()
@@ -518,8 +563,13 @@ def _replay(rec_path: str, out_path: str) -> Dict[str, Any]:
             model = pool.load_model(by_step[step])
             rl = Player(model=model, team=None, battle_format="gen3ou", server_configuration=None, mappings=mappings,
                         account_configuration=AccountConfiguration(f"LEo{k % 1000}", None), start_listening=False,
-                        stochastic=sampled, temperature=ep.temperature, stall_config=StallConfig(threshold=threshold))
+                        stochastic=sampled or keyed_seed is not None, temperature=ep.temperature,
+                        stall_config=StallConfig(threshold=threshold))
             rl.bind(env, ep, out, sampled)
+            rl._keyed_seed = keyed_seed
+            rl._keyed_key = None
+            if keyed_seed is not None:
+                rl._action_sampler = rl._keyed_sample
             if w is None:
                 w = SingleAgentWrapper(env, rl)
                 w.action_space, w.observation_space = env.action_space, env.observation_space
@@ -615,7 +665,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--n-envs", type=int, default=4)
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--episodes", type=int, default=8)
-    ap.add_argument("--mode", choices=("greedy", "sampled"), default="greedy")
+    ap.add_argument("--mode", choices=("greedy", "sampled", "keyed"), default="greedy")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--backend", default="eager", choices=("eager", "graph"))
     ap.add_argument("--buckets", default="2,8")
@@ -636,7 +686,7 @@ def main(argv: Optional[List[str]] = None) -> int:
            "lanes": a.lanes, "turn_limit": a.turn_limit, "compile": a.compile, "refresh_at": a.refresh_at,
            "key_base": a.key_base, "teams": a.teams}
     summary, rep = run(cfg, a.workdir)
-    res = {"record": summary, "replay": rep}
+    res = {"record": summary, "replay": rep, "near_ties_at_bar": {"bar": LOGP_BAR, **near_ties(rep, LOGP_BAR)}}
     print(json.dumps(res, indent=1, default=str))
     if a.json:
         Path(a.json).write_text(json.dumps(res, indent=1, default=str))

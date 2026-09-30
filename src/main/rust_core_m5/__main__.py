@@ -119,8 +119,11 @@ def compose(results: Path) -> dict:
     tp48 = [json.loads(p.read_text()) for p in tp]
     tp48 = [t for t in tp48 if int(t.get("regime", {}).get("n_envs", t.get("n_envs", 0)) or 0) == 48]
     if tp48:
+        prod = [t for t in tp48 if (t.get("regime", {}).get("opponent") or {}).get("name") == "production_mix"]
+        shape = (f"{len(prod)} at the PRODUCTION shape (Lane G: learner sampling + production mix + the "
+                 "complete-game collector on the rust arm)" if prod else "env step only")
         items.append(("throughput A/B at --n-envs 48", "MEASURED",
-                      f"{len(tp48)} read(s); a DESCRIPTOR (no bar registered); env step only until Lane G"))
+                      f"{len(tp48)} read(s), {shape}; a DESCRIPTOR (no bar registered)"))
     else:
         items.append(("throughput A/B at --n-envs 48", G.NOT_RUN, "run `throughput --n-envs 48 …`"))
     met = all(v in (G.PASS, "MEASURED") for _, v, _ in items)

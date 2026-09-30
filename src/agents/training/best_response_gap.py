@@ -62,7 +62,8 @@ every pair of exploiters in the invocation and a mismatch is a typed refusal nam
 
 ``--allow-unmatched`` downgrades each to a WARNING that is carried into the printed header AND into
 the JSON, because **the era-2/era-1 comparison of 2026-09-21 was confounded by exactly a 4.5×
-dose gap** (3.815e-08 against 8.392e-09) that nobody registered: same ``--lr 0.0003`` flag both
+dose gap** (3.815e-08 against 8.392e-09 as counted then; 5.086e-08 / 1.119e-08 under K10(c)'s corrected
+step count, 2026-09-30 — the same 4.55x) that nobody registered: same ``--lr 0.0003`` flag both
 times, but ``--fork-lr`` unset, so the new parent's annealed rate was inherited. A number that
 crosses that boundary must carry the reason it should not be trusted, on the same line.
 

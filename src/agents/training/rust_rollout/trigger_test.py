@@ -40,3 +40,35 @@ def test_a_declaration_off_the_quantum_or_outside_its_band_is_refused():
         SampleTrigger(target=96, quantum=48, lo=144, hi=192)
     with pytest.raises(TriggerError, match="unknown"):
         trigger_for("async", n_envs=4, n_steps=8, micro_batch=8)
+
+
+@pytest.mark.parametrize("n_envs,micro,accum", [(48, 2048, 32), (48, 4096, 16), (64, 2048, 8), (5, 3, 4), (7, 6, 1)])
+def test_no_legal_update_ever_hands_the_learner_a_ragged_micro_batch(n_envs, micro, accum):
+    """The collector's answer to a ragged final micro-batch is that it CANNOT occur: every legal target
+    (the default, and every in-band adaptive move) is a multiple of lcm(micro, N), so every micro-batch
+    is full — no padding rows, no dropped rows, one compiled learner shape. What CAN be short is the
+    last ACCUMULATION group (fewer full micros), which the learner rescales to its real rows
+    (``instrumented_ppo_test.test_grad_accum_matches_full_batch[4-3-12]``)."""
+    t = trigger_for("complete_game", n_envs=n_envs, n_steps=micro, micro_batch=micro,
+                    band_lo=0, band_hi=0)
+    q = t.quantum
+    assert t.target % micro == 0 and t.target % n_envs == 0
+    wide = trigger_for("complete_game", n_envs=n_envs, n_steps=micro, micro_batch=micro,
+                       target=4 * q, band_lo=q, band_hi=16 * q)
+    for k in range(1, 17):
+        assert wide.set_target(k * q) % micro == 0
+    for off in (1, micro // 2 or 1, n_envs):
+        if (4 * q + off) % q:
+            with pytest.raises(TriggerError, match="multiple"):
+                wide.set_target(4 * q + off)
+
+
+def test_a_learner_micro_batch_that_moved_under_a_built_collector_is_refused_not_padded():
+    from types import SimpleNamespace
+
+    from agents.training.rust_rollout.collector import RustCollector
+
+    t = trigger_for("complete_game", n_envs=48, n_steps=2048, micro_batch=2048)
+    host = SimpleNamespace(cfg=SimpleNamespace(trigger=t), n=48)
+    with pytest.raises(TriggerError, match="does not divide"):
+        RustCollector._ensure_buffer(host, SimpleNamespace(batch_size=3000))

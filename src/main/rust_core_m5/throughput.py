@@ -52,6 +52,11 @@ SCHEMA = "m5_laneJ_throughput_v1"
 from main.rust_core_m5.gates import GPU_LOCK  # noqa: E402 — one definition of the lock path
 GPU_LOCK_MARKER = "GEN3AI_M5J_GPU_LOCK"
 ARMS = ("python", "rust")
+#: The PRODUCTION-shape arms (M5 Lane G, ``production.py``): today's path, and the Rust collector SERIAL
+#: or OVERLAPPED (env-step / inference overlap on two core halves), each with p2's sampling KEYED or by
+#: per-row GENERATORS (F-LE-8's before / after).
+PRODUCTION_ARMS = ("python", "rust_serial_keyed", "rust_serial_generator", "rust_overlap_keyed",
+                   "rust_overlap_generator")
 _TICK = float(os.sysconf("SC_CLK_TCK")) if hasattr(os, "sysconf") else 100.0
 
 
@@ -82,13 +87,26 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--collector", choices=tuple(H.COLLECTORS), default="step")
     ap.add_argument("--n-steps", type=int, default=2048, help="the step collector's window")
     ap.add_argument("--seed", type=int, default=20260929)
+    # M5 Lane G — the PRODUCTION shape (``--opponent production --collector complete_game --inference learner``)
+    ap.add_argument("--pool", default=None, help="production: a run's snapshots/ dir (read-only; the last "
+                                                 "--pool-size are symlinked into a temp dir)")
+    ap.add_argument("--pool-size", type=int, default=20)
+    ap.add_argument("--self-play-fraction", type=float, default=0.9)
+    ap.add_argument("--target", type=int, default=98_304, help="complete_game: rows per update (the trigger)")
+    ap.add_argument("--opponent-sampling", choices=("keyed", "generator"), default="keyed",
+                    help="production rust arm: p2's sampling (Lane G, F-LE-8)")
+    ap.add_argument("--no-compile-opponents", dest="compile_opponents", action="store_false",
+                    help="production python arm: eager CPU opponents (production compiles them)")
+    ap.add_argument("--t2-buckets", default=None, help="production rust arms: T2 buckets (default the collector's (8, N))")
+    ap.add_argument("--compile-trainee", action="store_true",
+                    help="learner inference: --compile-trainer's extractor compile (CUDA)")
     ap.add_argument("--wait-while-exists", default=None,
                     help="before the timed blocks, wait while this file exists (a peer's busy flag); recorded")
     return ap
 
 
 def wants_cuda(a: argparse.Namespace) -> bool:
-    return a.inference == "t2" and str(a.device).startswith("cuda")
+    return a.inference in ("t2", "learner") and str(a.device).startswith("cuda")
 
 
 def flock_reexec_argv(argv: Sequence[str], env: Mapping[str, str], python: str) -> Optional[List[str]]:
@@ -441,6 +459,8 @@ def run_block(arm: Any, *, seconds: float, min_steps: int, root: Optional[int] =
     before = tree_snapshot(root)
     steps = decisions = dones = 0
     inf_s = env_s = 0.0
+    comp0 = arm.components() if hasattr(arm, "components") else None
+    gpu = _GpuUtil() if getattr(arm, "watch_gpu", False) else None
     t0 = time.perf_counter()
     while True:
         d, i_s, e_s, k = arm.step()
@@ -452,6 +472,11 @@ def run_block(arm: Any, *, seconds: float, min_steps: int, root: Optional[int] =
         wall = time.perf_counter() - t0
         if wall >= seconds and steps >= min_steps:
             break
+    gpu_mean = gpu.stop() if gpu is not None else None
+    comp = None
+    if comp0 is not None:
+        c1 = arm.components()
+        comp = {k: 1e3 * (c1[k] - comp0.get(k, 0.0)) / steps for k in c1}
     after = tree_snapshot(root)
     own = _subtree(after, arm.roots())
     cpu = cpu_delta(before, after)
@@ -464,14 +489,52 @@ def run_block(arm: Any, *, seconds: float, min_steps: int, root: Optional[int] =
             "cpu_s_tree": cpu, "cpu_s_host": host, "cpu_s_arm_subtree": own_cpu,
             "cpu_s_bystander": cpu - host - own_cpu,
             "cpu_us_per_decision": 1e6 * cpu / decisions if decisions else None,
-            "tree_processes": len(after)}
+            "tree_processes": len(after), "components_ms_per_step": comp, "gpu_util_mean": gpu_mean,
+            "stamp": getattr(arm, "stamp", None)}
+
+
+class _GpuUtil:
+    """GPU utilisation over a block: ``nvidia-smi --query-gpu=utilization.gpu -lms 250`` streamed from a
+    child for the block's length; ``stop()`` returns the mean % (None when nvidia-smi is unavailable)."""
+
+    def __init__(self, interval_ms: int = 250):
+        self.samples: List[float] = []
+        try:
+            self.p: Any = subprocess.Popen(
+                ["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits", f"-lms={interval_ms}"],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        except Exception:
+            self.p = None
+
+    def stop(self) -> Optional[float]:
+        if self.p is None:
+            return None
+        self.p.terminate()
+        try:
+            out, _ = self.p.communicate(timeout=5)
+        except Exception:
+            self.p.kill()
+            return None
+        vals = []
+        for line in (out or "").splitlines():
+            try:
+                vals.append(float(line.strip().split(",")[0]))
+            except ValueError:
+                continue
+        return float(sum(vals) / len(vals)) if vals else None
 
 
 def schedule(pairs: int, arms: Sequence[str]) -> List[Tuple[int, str]]:
-    """Interleaved ``(pair, arm)``: A B, B A, A B, … (one arm: that arm once per pair)."""
+    """Interleaved ``(pair, arm)``: A B, B A, A B, … for two arms (one arm: once per pair); more than two
+    arms ROTATE (A B C, B C A, C A B, …), so every arm takes every position equally often."""
     out = []
+    arms = list(arms)
     for k in range(pairs):
-        order = list(arms) if k % 2 == 0 else list(reversed(arms))
+        if len(arms) <= 2:
+            order = arms if k % 2 == 0 else list(reversed(arms))
+        else:
+            r = k % len(arms)
+            order = arms[r:] + arms[:r]
         out.extend((k, a) for a in order)
     return out
 
@@ -489,20 +552,85 @@ def summarize(blocks: Sequence[Mapping[str, Any]], arms: Sequence[str], seed: in
                   "vec_steps_per_s_mean": float(np.mean([b["vec_steps_per_s"] for b in bs])),
                   "cpu_us_per_decision_mean": float(np.mean(cpd)) if cpd else None,
                   "inference_share_mean": float(np.mean([b["inference_share"] for b in bs]))}
+    for a in arms:                        # a 95 % bootstrap CI over BLOCKS for the two headline rates
+        bs = [b for b in blocks if b["arm"] == a]
+        for key in ("decisions_per_s", "ms_per_vec_step"):
+            per[a][f"{key}_ci95"] = _mean_ci([b[key] for b in bs], seed=seed)
+        comps = [b["components_ms_per_step"] for b in bs if b.get("components_ms_per_step")]
+        if comps:
+            mean_c = {k: float(np.mean([c[k] for c in comps])) for k in comps[0]}
+            per[a]["components_ms_per_step_mean"] = mean_c
+            per[a]["owner_breakdown_ms_per_step"] = owner_breakdown(mean_c, per[a]["ms_per_vec_step_mean"])
+        gpu = [b["gpu_util_mean"] for b in bs if b.get("gpu_util_mean") is not None]
+        per[a]["gpu_util_mean"] = float(np.mean(gpu)) if gpu else None
+        stamps = [b.get("stamp") for b in bs if b.get("stamp")]
+        if stamps:
+            per[a]["stamp"] = stamps[0]
     ratios: Dict[str, Any] = {}
-    if set(arms) == set(ARMS):
-        pairs = sorted({b["pair"] for b in blocks})
-        by = {(b["pair"], b["arm"]): b for b in blocks}
-        ok = [k for k in pairs if (k, "python") in by and (k, "rust") in by
-              and by[(k, "python")]["decisions"] and by[(k, "rust")]["decisions"]]
+    pairs = sorted({b["pair"] for b in blocks})
+    by = {(b["pair"], b["arm"]): b for b in blocks}
+    for other in [x for x in arms if x != "python"] if "python" in arms else []:
+        ok = [k for k in pairs if (k, "python") in by and (k, other) in by
+              and by[(k, "python")]["decisions"] and by[(k, other)]["decisions"]]
+        if not ok:
+            continue
+        tag = "rust" if other == "rust" else other
+        ratios[f"decisions_per_s_{tag}_over_python"] = ratio_ci(
+            [by[(k, other)]["decisions_per_s"] for k in ok], [by[(k, "python")]["decisions_per_s"] for k in ok],
+            seed=seed)
+        ratios[f"cpu_s_per_decision_{tag}_over_python"] = ratio_ci(
+            [by[(k, other)]["cpu_us_per_decision"] for k in ok],
+            [by[(k, "python")]["cpu_us_per_decision"] for k in ok], seed=seed + 1)
+    rust_arms = [x for x in arms if x.startswith("rust_")]
+    for x in rust_arms:                   # the rust arms against the SERIAL keyed one (the overlap / sampling reads)
+        base = "rust_serial_keyed"
+        if x == base or base not in arms:
+            continue
+        ok = [k for k in pairs if (k, base) in by and (k, x) in by]
         if ok:
-            ratios["decisions_per_s_rust_over_python"] = ratio_ci(
-                [by[(k, "rust")]["decisions_per_s"] for k in ok], [by[(k, "python")]["decisions_per_s"] for k in ok],
-                seed=seed)
-            ratios["cpu_s_per_decision_rust_over_python"] = ratio_ci(
-                [by[(k, "rust")]["cpu_us_per_decision"] for k in ok],
-                [by[(k, "python")]["cpu_us_per_decision"] for k in ok], seed=seed + 1)
+            ratios[f"decisions_per_s_{x}_over_{base}"] = ratio_ci(
+                [by[(k, x)]["decisions_per_s"] for k in ok], [by[(k, base)]["decisions_per_s"] for k in ok], seed=seed)
     return per, ratios
+
+
+#: The owner's five components (2026-09-30) over the collector's timers. ``forward`` is ONE T2 flush
+#: serving the trainee AND every opponent slot (the split between them is the fan-out read's, not
+#: this timer's); ``gpu_wait`` is the host blocking on that flush's completion — F-LE-8's 5.1 ms was
+#: this, billed to sampling; ``sampling`` is the draws alone; ``host_glue`` is the named host work plus
+#: the RESIDUAL (the step's wall minus every timer), so the five always sum to ms/step.
+_OWNER_GROUPS = {"core_step": ("core",), "forward_launch_and_flush": ("submit", "flush"),
+                 "gpu_wait": ("gpu_wait",), "sampling": ("draw", "opp_draw"),
+                 "host_glue": ("write", "post", "fill")}
+
+
+def owner_breakdown(comp: Mapping[str, float], ms_per_step: float) -> Dict[str, float]:
+    """``comp`` (ms per vec step, one arm's timers) folded into the owner's five components."""
+    if "trainee_forward" in comp:                    # today's path: the forward vs everything the workers do
+        return {"trainee_forward": float(comp["trainee_forward"]),
+                "vec_step_env_and_opponents": float(comp.get("vec_step_env_and_opponents", 0.0)),
+                "host_glue": float(ms_per_step - comp["trainee_forward"]
+                                   - comp.get("vec_step_env_and_opponents", 0.0))}
+    out = {g: float(sum(comp.get(k, 0.0) for k in ks)) for g, ks in _OWNER_GROUPS.items()}
+    if "core_wait_unhidden" in comp:
+        out["core_step"] = float(comp["core_wait_unhidden"])     # overlapped: only the part NOT hidden
+        out["core_step_total_both_halves"] = float(comp.get("core", 0.0))
+    named = sum(v for k, v in out.items() if k != "core_step_total_both_halves")
+    out["host_glue"] += float(ms_per_step - named)
+    return out
+
+
+def _mean_ci(xs: Sequence[float], *, seed: int = 0, n_boot: int = 10_000) -> Dict[str, Any]:
+    import numpy as np
+
+    x = np.asarray(xs, dtype=np.float64)
+    if x.size == 0:
+        return {"mean": None, "lo": None, "hi": None, "n": 0}
+    if x.size < 2:
+        return {"mean": float(x.mean()), "lo": None, "hi": None, "n": int(x.size)}
+    boot = x[np.random.default_rng(seed).integers(0, x.size, (n_boot, x.size))].mean(axis=1)
+    lo, hi = np.percentile(boot, [2.5, 97.5])
+    return {"mean": float(x.mean()), "lo": float(lo), "hi": float(hi), "n": int(x.size),
+            "method": "percentile bootstrap of the block mean"}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -546,11 +674,63 @@ def build_hooks(a: argparse.Namespace) -> Tuple[Any, Any, Dict[str, Any]]:
         inference: Any = H.T2Inference(a.ckpt, backend=a.t2_backend, device=a.device,
                                        buckets=tuple(int(b) for b in a.buckets.split(",")),
                                        max_rows_per_flush=max(1024, a.n_envs))
+    elif a.inference == "learner":
+        inference = H.LearnerSampling(a.ckpt, device=a.device, compile=a.compile_trainee)
     else:
         inference = H.RandomLegal(a.seed)
-    opponent = H.OPPONENTS[a.opponent](seed=a.seed) if a.opponent == "uniform_random" else H.OPPONENTS[a.opponent]()
-    collectors = {arm: H.COLLECTORS[a.collector](a.n_steps) for arm in ARMS}
+    if a.opponent == "production":
+        opponent: Any = H.ProductionMix(a.pool, a.pool_size, a.self_play_fraction, a.compile_opponents)
+    else:
+        opponent = H.OPPONENTS[a.opponent](seed=a.seed)
+    if a.collector == "complete_game":
+        # today's path has no complete-game collector: its arm keeps today's window
+        collectors = {"python": H.StepCollector(a.n_steps)}
+        for name in PRODUCTION_ARMS[1:] + ("rust",):
+            collectors[name] = H.CompleteGameCollector(a.target)
+    else:
+        collectors = {arm: H.COLLECTORS[a.collector](a.n_steps) for arm in ARMS}
     return inference, opponent, collectors
+
+
+def parse_rust_arm(name: str) -> Optional[Tuple[str, str, Optional[int]]]:
+    """``rust_<serial|overlap>_<keyed|generator>[_p<K>]`` -> ``(shape, sampling, K or None)``, else None.
+    ``_p<K>`` is the FEWER-SNAPSHOTS candidate (F-LE-8 follow-up): the same pool, only K snapshots
+    routed to (so at most K distinct opponent slots in any flush)."""
+    import re
+
+    m = re.fullmatch(r"rust_(serial|overlap)_(keyed|generator)(?:_p([1-9][0-9]*))?", name)
+    return (m.group(1), m.group(2), int(m.group(3)) if m.group(3) else None) if m else None
+
+
+def make_arm(name: str, a: argparse.Namespace, inference: Any, opponent: Any, collector: Any) -> Any:
+    """The arm for ``name``: the PRODUCTION arms (Lane G, ``production.py``) under ``--opponent production``
+    (which needs ``--collector complete_game`` and ``--inference learner``), else Lane J's env-only arms."""
+    if a.opponent == "production":
+        if a.collector != "complete_game" or a.inference != "learner":
+            raise SystemExit("--opponent production needs --collector complete_game and --inference learner "
+                             "(both arms as training runs them)")
+        from main.rust_core_m5.production import CollectorRustArm, OverlappedRustArm, ProductionPythonArm
+
+        if name == "python":
+            arm: Any = ProductionPythonArm(a.n_envs, inference, opponent, collector, a.profile)
+        else:
+            parsed = parse_rust_arm(name)
+            if parsed is None:
+                raise SystemExit(f"unknown production arm {name!r}")
+            shape, sampling, active = parsed
+            cls = OverlappedRustArm if shape == "overlap" else CollectorRustArm
+            arm = cls(a.n_envs, a.threads, a.front, a.profile, inference, opponent, collector, a.seed,
+                      sampling=sampling, device=a.device, name=name, active_snapshots=active,
+                      backend=(a.t2_backend if a.t2_backend != "eager" or not str(a.device).startswith("cuda")
+                               else "graph"),
+                      buckets=tuple(int(b) for b in a.t2_buckets.split(",")) if a.t2_buckets else ())
+        arm.watch_gpu = str(a.device).startswith("cuda")
+        return arm
+    if a.collector == "complete_game":
+        raise SystemExit("--collector complete_game runs on the production arms: add --opponent production "
+                         "--inference learner")
+    return (PythonArm(a.n_envs, inference, opponent, collector, a.profile) if name == "python"
+            else RustArm(a.n_envs, a.threads, a.front, a.profile, inference, opponent, collector, a.seed))
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -565,8 +745,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     for v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
         os.environ.setdefault(v, "1")            # training's worker setting (train_rl_agent.py)
     arms = tuple(x.strip() for x in a.arms.split(",") if x.strip())
-    if not arms or set(arms) - set(ARMS) or len(set(arms)) != len(arms):
-        raise SystemExit(f"--arms must be a subset of {ARMS}, got {a.arms!r}")
+    allowed = PRODUCTION_ARMS if a.opponent == "production" else ARMS
+    if a.opponent == "production" and a.arms == "python,rust":
+        arms = ("python", "rust_serial_keyed")
+    bad = [x for x in arms if x not in allowed and not (a.opponent == "production" and parse_rust_arm(x))]
+    if not arms or bad or len(set(arms)) != len(arms):
+        raise SystemExit(f"--arms must be a subset of {allowed} (production: plus rust_<serial|overlap>_"
+                         f"<keyed|generator>_p<K>, K active snapshots), got {a.arms!r}")
     from utils.contention import warn_if_contended
 
     warnings: List[str] = []
@@ -574,16 +759,26 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if warn_if_contended("m5 throughput A/B"):
         warnings.append(f"BUSY BOX at start: contention factor {load_start['contention_factor']:.2f} "
                         "(warn, never stretch — a same-load A/B only)")
+    prod = (a.opponent == "production", a.collector == "complete_game", a.inference == "learner")
+    if any(prod[:2]) and not all(prod):
+        print("[throughput] the PRODUCTION arms need all three: --opponent production --collector complete_game "
+              "--inference learner (both arms as training runs them)", file=sys.stderr)
+        return 2
     try:
         inference, opponent, collectors = build_hooks(a)
-    except H.HookNotBuilt as exc:
+        for name in arms:                    # a _p<K> arm's collector (the fewer-snapshots candidate)
+            if a.collector == "complete_game" and name not in collectors:
+                collectors[name] = H.CompleteGameCollector(a.target)
+    except (H.HookNotBuilt, ValueError, OSError) as exc:
         print(f"[throughput] {exc}", file=sys.stderr)
         return 2
     regime: Dict[str, Any] = {
         "n_envs": a.n_envs, "threads": a.threads, "front": a.front, "profile": a.profile, "arms": list(arms),
         "pairs": a.pairs, "block_seconds": a.block_seconds, "min_steps": a.min_steps, "warmup_steps": a.warmup_steps,
         "inference": inference.describe(), "opponent": opponent.describe(),
-        "collector": {"name": collectors["python"].name, "n_steps": a.n_steps}, "seed": a.seed,
+        "collector": {"name": collectors[arms[0]].name, "n_steps": a.n_steps,
+                      "per_arm": {arm: collectors[arm].name for arm in arms}},
+        "target": a.target if a.collector == "complete_game" else None, "seed": a.seed,
         "cpu_count": os.cpu_count(), "affinity": len(os.sched_getaffinity(0)), "nice": os.nice(0),
         "git": _git(), "python": sys.version.split()[0], "device": a.device,
         "gpu_processes": _gpu_processes() if str(a.device).startswith("cuda") else None,
@@ -596,9 +791,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         for name in arms:
             t0 = time.perf_counter()
-            arm: Any = (PythonArm(a.n_envs, inference, opponent, collectors[name], a.profile) if name == "python"
-                        else RustArm(a.n_envs, a.threads, a.front, a.profile, inference, opponent,
-                                     collectors[name], a.seed))
+            arm: Any = make_arm(name, a, inference, opponent, collectors[name])
             built[name] = arm
             arm.build()
             startup[name] = time.perf_counter() - t0
@@ -631,7 +824,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     regime["load_end"] = _load()
     if regime["load_end"]["contention_factor"] >= 1.25:
         warnings.append(f"BUSY BOX at end: contention factor {regime['load_end']['contention_factor']:.2f}")
-    refused = getattr(built.get("rust"), "refused", 0)
+    refused = sum(int(getattr(x, "refused", 0) or 0) for n_, x in built.items() if n_ != "python")
     if refused:
         warnings.append(f"the rust arm QUARANTINED {refused} battle(s) during the run")
     res = {"schema": SCHEMA, "verdict": "DESCRIPTOR — no throughput bar is registered for M5 (program doc §2 M5)",

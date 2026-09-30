@@ -40,7 +40,7 @@ import numpy as np
 from agents.training import keyed_draw as KD
 from agents.training.rust_rollout import store as S
 from agents.training.rust_rollout.teams import TeamStager
-from agents.training.rust_rollout.trigger import WindowTrigger
+from agents.training.rust_rollout.trigger import TriggerError, WindowTrigger
 
 
 class LifecycleViolation(S.CollectorError):
@@ -81,7 +81,8 @@ class CollectorStats:
     updates: int = 0
     near_boundary: int = 0
     seconds: Dict[str, float] = field(default_factory=lambda: {
-        "submit": 0.0, "flush": 0.0, "draw": 0.0, "write": 0.0, "core": 0.0, "post": 0.0, "fill": 0.0})
+        "submit": 0.0, "flush": 0.0, "gpu_wait": 0.0, "opp_draw": 0.0, "draw": 0.0, "write": 0.0, "core": 0.0,
+        "post": 0.0, "fill": 0.0})
 
 
 class RustCollector:
@@ -165,7 +166,20 @@ class RustCollector:
 
     # ------------------------------------------------------------------ one host step
     def host_step(self) -> int:
-        """One host step (module docs). Returns the trainee decisions it played."""
+        """One host step (module docs): ``prepare`` (every action chosen) → ``step_core`` → ``finish``.
+        Returns the trainee decisions it played."""
+        k = self.prepare()
+        self.step_core()
+        self.finish()
+        return k
+
+    def prepare(self) -> int:
+        """Everything before the core STEP: p2's policy rows and the trainee's rows to T2, ONE flush, the
+        wait for its outputs, p2's actions, the trainee's keyed draw, the rows into the arena. Timers
+        (``stats.seconds``): ``submit`` (gathering + submits), ``flush`` (the flush CALL — it only
+        LAUNCHES the replays), ``gpu_wait`` (the host waiting for the forward: ``ticket.host()``),
+        ``opp_draw`` (p2's greedy / sample), ``draw`` (the trainee's keyed draw), ``write`` (the arena).
+        Returns the trainee rows it prepared."""
         c = self.cols
         st = self.stats
         sec = st.seconds
@@ -190,8 +204,12 @@ class RustCollector:
         if pend is not None or tickets:
             self.svc.flush()
         t2 = time.perf_counter()
+        wait = 0.0
         if pend is not None:
+            w0, d0 = self.server.stats.wait_s, self.server.stats.draw_s
             served = self.server.complete(c, pend)
+            wait += self.server.stats.wait_s - w0
+            sec["opp_draw"] += self.server.stats.draw_s - d0
             self.p2_policy_by_env[served] += 1
             st.p2_policy_decisions += int(served.size)
         k = int(envs1.size)
@@ -200,6 +218,7 @@ class RustCollector:
             value = np.empty(k, dtype=np.float32)
             version = np.empty(k, dtype=np.int64)
             pos = {int(e): j for j, e in enumerate(envs1.tolist())}
+            tw = time.perf_counter()
             for rows, t in tickets:
                 lp, v, _g = t.host()
                 at = np.fromiter((pos[int(e)] for e in rows), dtype=np.int64, count=rows.size)
@@ -207,11 +226,12 @@ class RustCollector:
                 value[at] = v
                 version[at] = self.slot_version[int(self.env_slot[rows[0]])]
             t3 = time.perf_counter()
+            wait += t3 - tw
             u = KD.keyed_uniforms(self.cfg.run_seed, KD.STREAM_TRAINEE, envs1, c["episode"][envs1],
                                   c["dec_n"][envs1, 0])
             act, margin = KD.keyed_actions(logp, u)
             blogp = logp[np.arange(k), act]
-            st.near_boundary += int((margin < 1e-6).sum())
+            st.near_boundary += int((margin < KD.NEAR_MARGIN).sum())
             t4 = time.perf_counter()
             slots_ = self.store.alloc(k)
             S.write_rows(self.store, slots_, c, envs1, label_keys=self.cfg.label_keys,
@@ -228,18 +248,27 @@ class RustCollector:
             sec["write"] += t5 - t4
         for h in self.hooks:
             h.p2(self)
-        t6 = time.perf_counter()
-        self.core.step()
-        t7 = time.perf_counter()
-        self._after_step()
-        t8 = time.perf_counter()
         sec["submit"] += t1 - t0
         sec["flush"] += t2 - t1
-        sec["core"] += t7 - t6
-        sec["post"] += t8 - t7
-        st.host_steps += 1
-        st.trainee_decisions += k
+        sec["gpu_wait"] += wait
+        self._prepared = k
         return k
+
+    def step_core(self) -> None:
+        """The core STEP (GIL released while the core runs: the process front end blocks in ``os.read``,
+        the FFI in a ctypes call) — the phase an overlapped host can run on a worker thread."""
+        t6 = time.perf_counter()
+        self.core.step()
+        self.stats.seconds["core"] += time.perf_counter() - t6
+
+    def finish(self) -> None:
+        """After the STEP: games that ended, re-staging (``post``); the step's counters."""
+        t7 = time.perf_counter()
+        self._after_step()
+        self.stats.seconds["post"] += time.perf_counter() - t7
+        self.stats.host_steps += 1
+        self.stats.trainee_decisions += int(getattr(self, "_prepared", 0))
+        self._prepared = 0
 
     def _after_step(self) -> None:
         c = self.cols
@@ -303,7 +332,13 @@ class RustCollector:
         snap = self._snapshot()
         callback.on_rollout_start()
         while not self.ready():
-            k = self.host_step()
+            try:
+                k = self.host_step()
+            except Exception as exc:
+                if not self._is_respawned_death(exc):
+                    raise
+                self.recover_respawn()
+                k = 0
             model.num_timesteps += k
             self._pending_decisions += k
             while self._pending_decisions >= self.n:
@@ -354,7 +389,7 @@ class RustCollector:
         logger.record("rust_env/host_steps", d["host_steps"])
         logger.record("rust_env/trainee_decisions_per_s", d["trainee_decisions"] / max(1e-9, d["t"]))
         logger.record("rust_env/trainee_rows_per_host_step", d["trainee_decisions"] / steps)
-        for k in ("submit", "flush", "draw", "write", "core", "post"):
+        for k in ("submit", "flush", "gpu_wait", "opp_draw", "draw", "write", "core", "post"):
             logger.record(f"rust_env/{k}_ms_per_host_step", 1000.0 * d[f"s_{k}"] / steps)
         logger.record("rust_env/fill_ms", 1000.0 * d["s_fill"])
         for k in ("p2_policy_decisions", "games_ended", "games_cut", "quarantines", "near_boundary"):
@@ -370,6 +405,13 @@ class RustCollector:
         sb3 itself re-allocates every array at every rollout's ``reset()``."""
         trig = self.cfg.trigger
         n_steps = trig.n_steps if isinstance(trig, WindowTrigger) else trig.take() // self.n
+        micro = int(getattr(model, "batch_size", 0) or 0)
+        if micro and (n_steps * self.n) % micro:
+            # the trigger's quantum is lcm(batch_size, n_envs), so this cannot happen unless the
+            # learner's micro-batch moved under a built collector: a ragged micro-batch is a second
+            # compiled shape (declared lifecycle) and the no-drop rule forbids trimming it — refuse
+            raise TriggerError(f"an update of {n_steps * self.n:,} rows does not divide by the learner's "
+                               f"micro-batch {micro:,}: every micro-batch must be full (no padding, no drop)")
         buf = model.rollout_buffer
         if int(buf.buffer_size) == n_steps and int(buf.n_envs) == self.n:
             return
@@ -424,10 +466,27 @@ class RustCollector:
                 ("compiles_after_freeze", "captures_after_freeze", "cuda_segments_after_freeze")}}
 
     # ------------------------------------------------------------------ a dead core child
+    @staticmethod
+    def _is_respawned_death(exc: BaseException) -> bool:
+        """A process-front-end child death with a FRESH core already up (``auto_respawn``) — the one
+        recoverable failure. Every other core failure POISONS the core (F-LA-1) and propagates."""
+        try:
+            from utils.rust_env.proc import CoreProcessDied
+        except Exception:                               # pragma: no cover
+            return False
+        return isinstance(exc, CoreProcessDied) and bool(getattr(exc, "respawned", False))
+
     def recover_respawn(self) -> int:
-        """After ``CoreProcessDied`` with auto-respawn: every game in progress is CUT (no outcome, F-LB-1),
-        the staged inputs survive in the mapping (F-LB-2), and the core is RESET. Returns rows cut."""
+        """After ``CoreProcessDied`` with auto-respawn (F-LB-1 / F-LB-2 — the DECLARED policy): the death is
+        COUNTED (``PROC_SPAWNS_AFTER_FREEZE``) and checked against the declared respawn budget; every game
+        in progress is CUT (no outcome — its rows released and counted, never trained on); the run seed
+        moves to a new segment (a fresh core restarts its episode ordinals at 0, and the keyed draws and
+        battle seeds must not repeat the segment's first episodes); every env is re-staged and the core
+        RESET from the staged inputs the mapping kept. Returns the rows cut."""
         self.stats.respawns += 1
+        spawns = int(self.core.after_freeze().get("PROC_SPAWNS_AFTER_FREEZE", self.stats.respawns))
+        if spawns > self.cfg.respawn_budget:
+            raise LifecycleViolation(f"core respawn #{spawns} exceeds the declared budget {self.cfg.respawn_budget}")
         cut = 0
         for e in range(self.n):
             n0 = len(self.log.cur[e])
@@ -435,8 +494,17 @@ class RustCollector:
                 self.log.cut(e)
                 self.stats.games_cut += 1
                 cut += n0
+        seed = int(KD.draw_keys(self.cfg.run_seed, 11, 0, self.stats.respawns, 0)) & 0x7FFFFFFFFFFF
+        self.cfg.run_seed = seed
+        self.stager.run_seed = seed
+        if self.server is not None:
+            self.server.run_seed = seed
+        c = self.cols
+        self.opponents._last_episode[:] = -1            # a fresh core restarts its ordinals: every env "moved"
+        self.opponents.stage_all(c)
+        self.stager.stage(c, range(self.n), self.opponents.staged, np.zeros(self.n, dtype=np.int64))
         self.core.reset()
-        self._restage(self.opponents.after_op(self.cols))
+        self._restage(self.opponents.after_op(c))
         return cut
 
     def close(self) -> None:

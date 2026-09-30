@@ -65,7 +65,7 @@ def _row(lane):
 
 
 def test_a_not_built_lane_never_reads_as_a_pass():
-    v = G.fold(_row("G"), {"src/agents/training/anything_test.py::test_x": "pass"}, source="run:commit", gpu_ran=True)
+    v = G.fold(_row("H"), {"src/agents/training/anything_test.py::test_x": "pass"}, source="run:commit", gpu_ran=True)
     assert v.verdict == G.NOT_BUILT and not v.counts
 
 
@@ -107,7 +107,7 @@ def test_recorded_reads_the_slow_tier_bank_and_marks_stale():
     assert by["D"].verdict == G.PASS and "STALE" not in by["D"].detail
     assert by["F"].verdict == G.FAIL and "STALE" in by["F"].detail
     assert by["A"].verdict == G.UNRECORDED
-    assert by["G"].verdict == G.NOT_BUILT
+    assert by["H"].verdict == G.NOT_BUILT
 
 
 def test_the_m5_verdict_is_not_met_while_a_component_is_missing(tmp_path):
@@ -120,9 +120,9 @@ def test_the_m5_verdict_is_not_met_while_a_component_is_missing(tmp_path):
         (tmp_path / f"{comp}_milestone.json").write_text(json.dumps({"ok": True, "commit": "c" * 40, "refused_both": 0}))
     (tmp_path / "throughput_n48.json").write_text(json.dumps({"regime": {"n_envs": 48}}))
     res = M.compose(tmp_path)
-    # everything measured and green — still NOT MET: lanes G and H are NOT BUILT
+    # everything measured and green — still NOT MET: lane H is NOT BUILT
     assert res["m5_gate"] == "NOT MET"
-    assert sorted(k.split(" — ")[0] for k in res["missing"]) == ["lane G", "lane H"], res["missing"]
+    assert sorted(k.split(" — ")[0] for k in res["missing"]) == ["lane H"], res["missing"]
 
 
 def test_a_commit_tier_slice_is_not_the_milestone_gate(tmp_path):

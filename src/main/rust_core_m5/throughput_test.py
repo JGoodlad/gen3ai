@@ -145,32 +145,32 @@ def test_uniform_random_declares_the_in_core_random_bot_route():
     assert isinstance(H.StepCollector(4), H.Collector)
 
 
-@pytest.mark.parametrize("cls,owner", [(H.ProductionMix, "Lane G"), (H.CompleteGameCollector, "order constraint 6")])
-def test_not_built_hooks_raise_and_name_what_to_plug_in(cls, owner):
-    with pytest.raises(H.HookNotBuilt) as ei:
-        cls()
-    e = ei.value
-    assert owner in str(e) and e.needs == cls.NEEDS and len(e.needs) >= 3
-    for need in cls.NEEDS:
-        assert need in str(e)
-
-
-def test_not_built_hooks_never_silently_construct():
-    """The teeth: if someone makes a NOT-BUILT hook return an object (a silent fallback), this fails."""
-    made = []
-    for cls in (H.ProductionMix, H.CompleteGameCollector):
-        try:
-            made.append(cls())
-        except H.HookNotBuilt:
-            continue
-    assert made == [], f"a NOT-BUILT hook constructed silently: {made}"
+def test_the_lane_g_hooks_are_built_and_refuse_a_missing_input():
+    """Lane G plugged in the three hooks J declared: each constructs from its inputs and refuses by name
+    without them (never a silent fallback to a built one)."""
     assert H.OPPONENTS["production"] is H.ProductionMix and H.COLLECTORS["complete_game"] is H.CompleteGameCollector
+    assert H.INFERENCE["learner"] is H.LearnerSampling
+    with pytest.raises(ValueError, match="--pool"):
+        H.ProductionMix()
+    with pytest.raises(ValueError, match="--ckpt"):
+        H.LearnerSampling(None)
+    c = H.CompleteGameCollector(96)
+    assert isinstance(c, H.Collector)
+    c.observe_step(2)
+    c.observe(np.array([True, False, True]))
+    c.observe_fill()
+    assert c.describe() == {"name": "complete_game", "target": 96, "host_steps": 2, "fills": 1, "episodes_ended": 4}
+    assert not c.ready()
 
 
-def test_the_cli_refuses_a_not_built_hook(tmp_path):
+def test_the_production_arms_need_all_three_hooks(tmp_path):
     out = tmp_path / "t.json"
-    for extra in (["--opponent", "production"], ["--collector", "complete_game"]):
+    for extra in (["--opponent", "production"], ["--collector", "complete_game"],
+                  ["--opponent", "production", "--collector", "complete_game"]):
         assert T.main(["--out", str(out), "--n-envs", "2", *extra]) == 2
+    # all three, but no pool: refused by the hook, by name
+    assert T.main(["--out", str(out), "--n-envs", "2", "--opponent", "production", "--collector", "complete_game",
+                   "--inference", "learner", "--ckpt", "/nonexistent.zip", "--device", "cpu"]) != 0
     assert not out.exists()
 
 
@@ -191,6 +191,7 @@ def test_flock_reexec_only_for_cuda_and_only_once():
     cpu = ["--out", "o.json", "--inference", "t2", "--device", "cpu"]
     assert T.flock_reexec_argv(cpu, {}, py) is None
     assert T.flock_reexec_argv(["--out", "o.json", "--device", "cuda"], {}, py) is None   # random inference: no GPU
+    assert T.flock_reexec_argv(["--out", "o.json", "--inference", "learner", "--device", "cuda"], {}, py) is not None
     gpu = ["--out", "o.json", "--inference", "t2", "--device", "cuda:0", "--n-envs", "48"]
     assert T.flock_reexec_argv(gpu, {}, py) == ["flock", T.GPU_LOCK, py, "-m", "main.rust_core_m5.throughput", *gpu]
     assert T.flock_reexec_argv(gpu, {T.GPU_LOCK_MARKER: "1"}, py) is None
@@ -248,3 +249,28 @@ def test_smoke_both_arms_tiny(tmp_path):
     r = res["ratios"]["decisions_per_s_rust_over_python"]
     assert r["point"] > 0 and r["n_pairs"] == 1
     print(f"smoke wall {time.monotonic() - t0:.1f} s")
+
+
+def test_the_owner_breakdown_always_sums_to_the_step_and_bills_only_the_unhidden_core():
+    from main.rust_core_m5.throughput import owner_breakdown
+
+    serial = {"submit": 0.1, "flush": 1.0, "gpu_wait": 6.0, "draw": 0.1, "opp_draw": 0.2, "write": 0.3,
+              "core": 1.5, "post": 0.1, "fill": 0.0}
+    out = owner_breakdown(serial, 10.0)
+    assert set(out) == {"core_step", "forward_launch_and_flush", "gpu_wait", "sampling", "host_glue"}
+    assert abs(sum(out.values()) - 10.0) < 1e-9 and abs(out["host_glue"] - (0.4 + 0.7)) < 1e-9
+    over = dict(serial, core=3.0, core_wait_unhidden=0.25)
+    out = owner_breakdown(over, 9.0)
+    assert out["core_step"] == 0.25 and out["core_step_total_both_halves"] == 3.0
+    assert abs(sum(v for k, v in out.items() if k != "core_step_total_both_halves") - 9.0) < 1e-9
+    py = owner_breakdown({"trainee_forward": 2.0, "vec_step_env_and_opponents": 50.0}, 54.5)
+    assert abs(py["host_glue"] - 2.5) < 1e-9
+
+
+def test_the_production_arm_names_parse_and_a_bad_one_is_refused():
+    from main.rust_core_m5.throughput import parse_rust_arm
+
+    assert parse_rust_arm("rust_serial_keyed") == ("serial", "keyed", None)
+    assert parse_rust_arm("rust_overlap_generator_p4") == ("overlap", "generator", 4)
+    for bad in ("rust", "rust_serial", "rust_serial_keyed_p0", "rust_serial_keyed_4", "rust_async_keyed"):
+        assert parse_rust_arm(bad) is None, bad

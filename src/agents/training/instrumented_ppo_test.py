@@ -673,13 +673,17 @@ def test_distill_target_class_default_is_kl_and_dispatch_is_source_guarded():
         "_distill_loss call")
 
 
-@pytest.mark.parametrize("micro,accum,full", [(4, 4, 16), (8, 2, 16), (5, 3, 15)])
+@pytest.mark.parametrize("micro,accum,full", [(4, 4, 16), (8, 2, 16), (5, 3, 15), (4, 3, 12)])
 def test_grad_accum_matches_full_batch(micro, accum, full):
     """accum=K over micro-batches of size B reproduces the parameter update of accum=1 over a single
     (B·K)=`full` batch — the BIT-EXACT-gradient guarantee (with normalize_advantage off so this
     isolates the accumulation math; empirically max|Δ|~3e-8, the float32 noise floor). The 32-sample
     buffer with micro∈{4,8} divides cleanly (all groups = K equal-size micros); micro=5 (→ a size-2
-    trailing group that is a single micro) exercises the partial-group rescale and is still exact."""
+    trailing group that is a single micro) exercises the partial-group rescale and is still exact.
+    (4, 3, 12) is the RUST COLLECTOR's shape (M5 Lane G): every micro-batch FULL (the update target is
+    a multiple of lcm(batch_size, n_envs)), the last optimizer step a SHORT group of two full micros —
+    the live 98,304 / 65,536 = 1.5 case — and its step equals the unaccumulated step over the same rows,
+    i.e. normalised by the step's REAL rows, with no padding and no second graph shape."""
     model, _venv = _build_tiny_ppo(n_steps=8, n_envs=4)   # 32 transitions in the buffer
     init_sd = copy.deepcopy(model.policy.state_dict())
     init_opt = copy.deepcopy(model.policy.optimizer.state_dict())

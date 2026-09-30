@@ -184,3 +184,36 @@ def test_the_tensorboard_callback_publishes_the_rate_and_the_effective_batch():
     recorded = dict(c.args for c in cb.model.logger.record.call_args_list)
     assert recorded["train/dose_rate"] == pytest.approx(1e-4 * 7 / 32768)
     assert recorded["train/effective_batch"] == 32768
+
+
+# ---------------------------------------------------------------------------
+# K10(c): a ragged last group is a FULL optimizer step
+# ---------------------------------------------------------------------------
+
+
+def test_a_ragged_last_group_counts_as_a_full_step():
+    from agents.training.dose import optimizer_steps_per_epoch
+
+    # the live shape: 98,304 rows at 2,048 x 32 -> 48 micros -> groups of 32 + 16 -> TWO steps
+    assert optimizer_steps_per_epoch(rollout_rows=98_304, batch_size=2048, grad_accum_steps=32) == 2
+    ups = updates_per_env_step(batch_size=2048, grad_accum_steps=32, n_epochs=10, rollout_rows=98_304)
+    assert ups == pytest.approx(10 * 2 / 98_304)
+    old = updates_per_env_step(batch_size=2048, grad_accum_steps=32, n_epochs=10)
+    assert ups / old == pytest.approx(4 / 3)                     # the recipe review's 4/3
+    # an even division is unchanged, so every even-shape comparison already made stands
+    assert updates_per_env_step(batch_size=2048, grad_accum_steps=16, n_epochs=7, rollout_rows=98_304) == \
+        pytest.approx(7 / 32768)
+    # a ragged last MICRO-batch (today's python path only) is one more micro in the last group
+    assert optimizer_steps_per_epoch(rollout_rows=100, batch_size=30, grad_accum_steps=2) == 2
+    with pytest.raises(ValueError, match="positive"):
+        optimizer_steps_per_epoch(rollout_rows=0, batch_size=30)
+
+
+def test_the_block_records_the_rollout_and_the_real_step_count():
+    b = dose_block(_model(lr=2.8e-5, batch_size=2048, grad_accum_steps=32, n_epochs=10, n_steps=2048, n_envs=48))
+    assert (b["rollout_rows"], b["optimizer_steps_per_epoch"]) == (98_304, 2)
+    assert b["updates_per_env_step"] == pytest.approx(20 / 98_304)
+    assert b["dose_rate_now"] == pytest.approx(2.8e-5 * 20 / 98_304)
+    # a model with no integer rollout shape keeps the old formula and says so by a None
+    b = dose_block(_model(lr=1e-4))
+    assert b["rollout_rows"] is None and b["updates_per_env_step"] == pytest.approx(7 / 32768)

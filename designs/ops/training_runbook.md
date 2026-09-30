@@ -163,7 +163,9 @@ Detail: `src/agents/training/CLAUDE.md` → *A FORK starts POOLLESS*.
 checkpoint's own optimizer LR and prints `(arg --lr=… ignored on resume)`, so a FORK inherits
 whatever rate the PARENT's KL controller had annealed to. Measured (ledger M7): three distillation
 folds launched with the same flags ran at a median **5.8e-5 / 2.8e-5 / 1.0e-4**, and the quantity
-that predicts a fold's collateral is the **DOSE** = `lr × n_epochs / (batch_size × grad_accum_steps)`
+that predicts a fold's collateral is the **DOSE** = `lr × n_epochs × optimizer steps per epoch / rollout rows`
+(= `lr × n_epochs / (batch_size × grad_accum_steps)` when the rollout divides evenly; a ragged last
+accumulation group is a FULL step — K10(c))
 — v8's fold was 2.15e-8, every gen-era fold 2–6.6× higher. **`--fork-lr FLOAT`** pins that: on a
 genuine fork it sets the optimizer LR *and* `model.lr_schedule` at load and seeds the KL controller
 from it (still clamped into `[--min-lr, --max-lr]`). **`--fork-lr-freeze`** additionally disables
@@ -577,7 +579,9 @@ with half the envs** (≈half the RAM). Off by default (= stock `SubprocVecEnv`)
 in one core process), the trainee and the policy opponents forwarded through the inference service in
 one flush, bots in the core, and the COMPLETE-GAME collector (an update fires at
 `--rollout-target-samples` completed-game rows; no row dropped for age; `staleness/*` measures the
-rest). It needs `--critic winprob` and refuses, by name at startup, every flag whose path it does not
+rest; `--rollout-target-samples` must be a multiple of lcm(`--batch-size`, `--n-envs`) — every
+micro-batch is full). Measured at the production mix (N = 48, 95 % self-play): 5.1× today's trainee
+decisions/s at 0.04× the CPU per decision, the step 74 % T2 forward. It needs `--critic winprob` and refuses, by name at startup, every flag whose path it does not
 serve yet (`src/agents/training/CLAUDE.md` → "The env core"). Validate an argv with `checkargs` first.
 ⚠️ A launcher resume pins to the checkpoint's commit, where `--env-core` may not exist — pin a commit
 that has it. It is a CUTOVER candidate, not the production path: design, gates and measurements in

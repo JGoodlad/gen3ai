@@ -31,8 +31,8 @@ def test_the_rust_core_resolves_to_the_stated_defaults():
     a = _args("--env-core", "rust")
     resolve_env_core_args(a)
     assert (a.rollout_trigger, a.rust_env_front, a.rust_env_profile, a.version_pinning, a.trainee_slots,
-            a.behaviour_check, a.rollout_target_samples) == (
-        "complete_game", "proc", "release", "off", 1, "fatal", 0)
+            a.behaviour_check, a.rollout_target_samples, a.opponent_sampling) == (
+        "complete_game", "proc", "release", "off", 1, "fatal", 0, "keyed")
     b = _args("--env-core", "rust", "--version-pinning", "per_game")
     resolve_env_core_args(b)
     assert b.trainee_slots == 3

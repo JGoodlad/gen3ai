@@ -11,8 +11,15 @@
   "returns": 1.1920928955078125e-07,
   "values": 3.5762786865234375e-07
  },
+ "flips": {
+  "ties": 0,
+  "fatal": 0,
+  "tie_margin": 2e-05,
+  "examples": []
+ },
  "near_boundary": {
-  "rust": 0,
+  "threshold": 2e-05,
+  "rust": 1,
   "python": 1
  },
  "lifecycle": {
@@ -25,8 +32,8 @@
   "captures_after_freeze": 0,
   "cuda_segments_after_freeze": 0
  },
- "record_s": 9.350137974019162,
- "replay_s": 14.966696899966337,
+ "record_s": 7.415511221042834,
+ "replay_s": 12.311374982004054,
  "win_mask_rows": 2126,
  "episode_starts": 46,
  "learner": {

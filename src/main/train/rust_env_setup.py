@@ -24,7 +24,7 @@ def resolve_env_core_args(args: Any) -> None:
     defaults = {
         "rollout_trigger": "complete_game", "rollout_target_samples": 0, "rust_env_front": "proc",
         "rust_env_threads": 8, "rust_env_profile": "release", "rust_env_refusal_budget": 64,
-        "rust_env_respawn_budget": 2, "version_pinning": "off", "t2_lanes": 0, "opponent_sampling": "generator",
+        "rust_env_respawn_budget": 2, "version_pinning": "off", "t2_lanes": 0, "opponent_sampling": "keyed",
     }
     for k, v in defaults.items():
         if getattr(args, k, None) is None:

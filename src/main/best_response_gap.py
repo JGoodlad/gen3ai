@@ -15,7 +15,7 @@ python -m main.best_response_gap \
     ai_v13_13_exploit5_offense ai_v13_14_exploit5_balance ai_v13_15_exploit5_stall \
     --json /tmp/brgap.json --md /tmp/brgap.md
 
-# ... which REFUSES on dose (3.815e-08 vs 8.392e-09, 4.55x apart). Print it anyway:
+# ... which REFUSES on dose (5.086e-08 vs 1.119e-08 under K10(c)'s step count, 4.55x apart). Print it anyway:
 python -m main.best_response_gap <the six runs> --allow-unmatched
 
 # one round alone, on the endpoint convention the banked numbers use

@@ -13,8 +13,11 @@ rate the PARENT's KL controller had annealed to. Three folds launched with the s
 ran at three different rates, and the quantity that predicts a fold's collateral is not the rate
 alone but the DOSE:
 
-    updates_per_env_step = n_epochs / (batch_size * grad_accum_steps)
+    updates_per_env_step = n_epochs * optimizer_steps_per_epoch / rollout_rows
     dose_rate            = lr_median * updates_per_env_step
+
+(`agents.training.dose` has the K10(c) step count; with the rollout unknown it falls back to
+`n_epochs / (batch_size * grad_accum_steps)` and the row is flagged.)
 
 `--fork-lr` makes that chosen and `metadata.json`'s `dose` block makes it recorded — for runs from
 here on. This tool answers the same question for every run ALREADY on disk, from what those runs
@@ -51,7 +54,7 @@ import statistics
 import sys
 from typing import Any, Dict, List, Optional
 
-from agents.training.dose import effective_batch, updates_per_env_step
+from agents.training.dose import effective_batch, optimizer_steps_per_epoch, updates_per_env_step
 
 #: The v8 fold whose dose every gen-era fold is compared against (ledger M7). Used only when it
 #: exists under the resolved models dir; a missing reference is omitted, never faked.
@@ -133,6 +136,7 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         "source": None, "n_lr": 0, "lr_median": None, "lr_min": None, "lr_max": None,
         "batch_size": None, "grad_accum_steps": None, "effective_batch": None, "n_epochs": None,
         "updates_per_env_step": None, "dose_rate": None, "shape_stable": None,
+        "rollout_rows": None, "rollout_source": None, "optimizer_steps_per_epoch": None,
         "recorded_dose": None, "fork_lr": None, "lr_frozen": None, "num_timesteps": None,
         "error": None,
     }
@@ -179,7 +183,8 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         return out
 
     bs, ga, ne = shapes[-1]        # the LAST row's shape — see the module docstring
-    ups = updates_per_env_step(batch_size=bs, grad_accum_steps=ga, n_epochs=ne)
+    rollout, rollout_source = _rollout_rows(rows, meta)
+    ups = updates_per_env_step(batch_size=bs, grad_accum_steps=ga, n_epochs=ne, rollout_rows=rollout)
     med = statistics.median(lrs)
     out.update({
         "source": source, "n_lr": len(lrs), "lr_median": med,
@@ -187,8 +192,30 @@ def read_run(run_dir: str) -> Dict[str, Any]:
         "batch_size": bs, "grad_accum_steps": ga, "effective_batch": effective_batch(bs, ga),
         "n_epochs": ne, "updates_per_env_step": ups, "dose_rate": med * ups,
         "shape_stable": len(set(shapes)) == 1,
+        "rollout_rows": rollout, "rollout_source": rollout_source,
+        "optimizer_steps_per_epoch": (optimizer_steps_per_epoch(rollout_rows=rollout, batch_size=bs,
+                                                                grad_accum_steps=ga) if rollout else None),
     })
     return out
+
+
+def _rollout_rows(rows: List[Dict[str, Any]], meta: Dict[str, Any]) -> tuple:
+    """``(rows per update, where it came from)`` — K10(c): a ragged last step is a FULL optimizer step,
+    so the dose needs the rollout size. The LAST row's recorded ``dose.rollout_rows`` first (every
+    save from 2026-09-30); else its ``n_steps`` x the ``--n-envs`` the run's ``original_command``
+    names; else ``(None, None)`` — the old ``n_epochs / effective_batch``, exact only when the rollout
+    divides by the effective batch, and the table flags it."""
+    import re
+
+    last = rows[-1] if rows else {}
+    rec = (last.get("dose") or {}).get("rollout_rows") if isinstance(last.get("dose"), dict) else None
+    if isinstance(rec, (int, float)) and rec > 0:
+        return int(rec), "recorded"
+    n_steps = last.get("n_steps")
+    m = re.search(r"--n-envs[= ](\d+)", str(meta.get("original_command") or ""))
+    if isinstance(n_steps, (int, float)) and n_steps > 0 and m:
+        return int(n_steps) * int(m.group(1)), "n_steps x original_command --n-envs"
+    return None, None
 
 
 def _fmt(value: Any, spec: str = "") -> str:
@@ -210,6 +237,8 @@ def render(rows: List[Dict[str, Any]], reference: Optional[Dict[str, Any]],
             flags.append("SHAPE MOVED")
         if r.get("lr_frozen"):
             flags.append("FROZEN")
+        if r.get("dose_rate") is not None and not r.get("rollout_rows"):
+            flags.append("ROWS UNKNOWN: assumes the rollout divides by the effective batch")
         if r.get("fork_lr") is not None:
             flags.append(f"pinned {r['fork_lr']:.2e}")
         if r.get("error"):
