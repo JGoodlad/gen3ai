@@ -238,6 +238,10 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     # (`main.train.callbacks`), so a registered consumer can never read a thinned series.
     # (A namespace without the dest — a hand-built test namespace — keeps the class default 1.)
     model.diagnostics_every = int(getattr(args, "diagnostics_every", None) or 1)
+    # M5 Lane G — K9(b) behaviour-policy consistency (`--behaviour-check`): resolved per env core
+    # (`rust_env_setup.resolve_env_core_args`: fatal under rust, off under python). A namespace
+    # without the dest keeps it off.
+    model.behaviour_check = str(getattr(args, "behaviour_check", None) or "off")
     model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
     model.noise_terms_every_update = getattr(args, "adaptive_batch", "off") not in ("off", "total")
     # DERIVED likewise — the PBRS sizing meter's denominator is the TERMINAL magnitude, not a knob
@@ -383,6 +387,16 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     if args.search_teacher:
         from agents.training.teacher.buffer import CorrectionBuffer
         model._correction_buffer = CorrectionBuffer(args.search_teacher_buffer_size)
+
+
+def _start_rust_env(env, model) -> None:
+    """M5 Lane G (`--env-core rust`): the Rust env's STARTUP (core, T2, arena) from the model's own
+    policy and hyperparameters. It must run BEFORE `--compile-trainer`: T2 deep-copies the policy as its
+    slot templates, and a copy taken after the compile would carry the patched `forward` bound to the
+    LEARNER's extractor. A no-op on the python env core."""
+    startup = getattr(env, "startup", None)
+    if callable(startup):
+        startup(model)
 
 
 async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level, n_envs,
@@ -700,6 +714,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                       f"(arg --gamma={float(reward_config.gamma):g} ignored on resume, like --lr); "
                       f"the reward config's copy follows it.")
                 reward_config.gamma = float(model.gamma)
+            _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer compile patches the extractor
             _maybe_compile_trainer(model, args)
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
@@ -913,6 +928,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         )
         # (A `PBRS_GAMMA == model.gamma` assert lived here while the reward folded hand potentials;
         # it went with them in the shaped-reward deletion, 2026-09-26.)
+        _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer compile patches the extractor
         _maybe_compile_trainer(model, args)
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)

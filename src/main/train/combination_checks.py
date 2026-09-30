@@ -270,6 +270,74 @@ def _cf_duty_cycle_message(args) -> str:
 # THE LIST. Declaration order is the source order these refusals had inside `resolve_config`.
 # --------------------------------------------------------------------------------------------
 
+# ---- `--env-core rust` (M5 Lane G) -------------------------------------------------------------
+
+def _rust_core(args) -> bool:
+    return _val(args, "env_core", "python") == "rust"
+
+
+#: What `--env-core rust` does not serve yet, as (dest, predicate, reason). Each is a path the Python
+#: env or a Python-only callback owns today; the collector refuses rather than silently dropping it.
+_ENV_CORE_UNPORTED: Tuple[Tuple[str, Callable[[Any], bool], str], ...] = (
+    ("win_prob_lambda", lambda a: float(_val(a, "win_prob_lambda", 1.0)) < 1.0,
+     "--win-prob-lambda < 1 (the λ-return recursion is WinProbLabelCallback's)"),
+    ("win_prob_rollout_target", lambda a: _positive(_val(a, "win_prob_rollout_target", 0.0)),
+     "--win-prob-rollout-target (R-rollout MC targets replay cf_records)"),
+    ("fork_fraction", lambda a: _positive(_val(a, "fork_fraction", 0.0)), "--fork-fraction (the fork arm)"),
+    ("win_prob_dense_aux", lambda a: _positive(_val(a, "win_prob_dense_aux", 0.0)),
+     "--win-prob-dense-aux (end-of-battle facts from battle1)"),
+    ("value_true_team", lambda a: bool(_val(a, "value_true_team", False)),
+     "--value-true-team (T2 refuses an extractor that reads a Dict key beyond 'observation')"),
+    ("defensive_entropy_boost", lambda a: float(_val(a, "defensive_entropy_boost", 1.0)) > 1.0,
+     "--defensive-entropy-boost (its opportunity key is Python-built)"),
+    ("bait_entropy_boost", lambda a: float(_val(a, "bait_entropy_boost", 1.0)) > 1.0,
+     "--bait-entropy-boost (its opportunity key is Python-built)"),
+    ("distill_coef", lambda a: _positive(_val(a, "distill_coef", 0.0)),
+     "--distill-coef > 0 (the distill_mask key and the per-team teachers)"),
+    ("win_prob_pbrs_coef", lambda a: float(_val(a, "win_prob_pbrs_coef", 0.0) or 0.0) != 0.0,
+     "--win-prob-pbrs-coef (a rollout-level reshaping)"),
+    ("win_prob_pbrs_frozen", lambda a: getattr(a, "win_prob_pbrs_frozen", None) is not None,
+     "--win-prob-pbrs-frozen"),
+    ("cf_records", lambda a: bool(_val(a, "cf_records", False)), "--cf-records (a bridge reconstruction tap)"),
+    ("search_teacher", lambda a: bool(_val(a, "search_teacher", False)), "--search-teacher"),
+    ("team_pfsp", lambda a: _val(a, "team_pfsp", "off") != "off", "--team-pfsp (per-worker PFSP pulls)"),
+    ("exploiter_ladder", lambda a: bool(_val(a, "exploiter_ladder", None)),
+     "--exploiter-ladder (the rung loader is not wired to T2 yet)"),
+    ("async_rollout", lambda a: bool(_val(a, "async_rollout", False)),
+     "--async-rollout (a SubprocVecEnv scheduling mode)"),
+)
+_ENV_CORE_UNPORTED_DESTS: Tuple[str, ...] = ("env_core",) + tuple(d for d, _, _ in _ENV_CORE_UNPORTED)
+
+#: Flags that act only under `--env-core rust`.
+_ENV_CORE_ONLY_DESTS: Tuple[str, ...] = (
+    "rollout_trigger", "rollout_target_samples", "rollout_target_band", "version_pinning", "trainee_slots",
+    "t2_buckets", "t2_lanes", "t2_backend", "rust_env_front", "rust_env_threads", "rust_env_profile",
+    "rust_env_refusal_budget", "rust_env_respawn_budget", "opponent_sampling")
+
+
+def _env_core_unported(args) -> List[str]:
+    out: List[str] = []
+    for _dest, pred, why in _ENV_CORE_UNPORTED:
+        try:
+            if pred(args):
+                out.append(why)
+        except (TypeError, ValueError, AttributeError):
+            continue
+    return out
+
+
+def _quantum(args) -> int:
+    from math import gcd
+
+    b, n = int(args.batch_size), int(args.n_envs)
+    return b * n // gcd(b, n)
+
+
+def _target_off_quantum(args) -> bool:
+    t = int(_val(args, "rollout_target_samples", 0) or 0)
+    return t > 0 and t % _quantum(args) != 0
+
+
 COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
 
     # ---- the --adaptive-batch family: range checks that only exist in a mode -------------------
@@ -1147,6 +1215,35 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         ("compile_opponents_preload", "compile_opponents"),
         lambda a: bool(a.compile_opponents_preload) and not a.compile_opponents,
         _PRELOAD_WITHOUT_OPPONENTS),
+
+    # ---- the env core (M5 Lane G): what `--env-core rust` serves, refused by name -------------
+    CombinationCheck(
+        "env_core_rust_needs_the_winprob_critic", ("env_core", "critic"),
+        lambda a: _rust_core(a) and not _winprob(a),
+        "--env-core rust requires --critic winprob: the Rust env produces NO terminal observation "
+        "(Lane D's decision), and a shaped critic bootstraps a truncation from one (F-LD-2)",
+        exit_style="fatal_config"),
+    CombinationCheck(
+        "env_core_rust_unported_paths", _ENV_CORE_UNPORTED_DESTS,
+        lambda a: _rust_core(a) and bool(_env_core_unported(a)),
+        lambda a: ("--env-core rust does not serve these paths yet: " + "; ".join(_env_core_unported(a))
+                   + ". Turn them off, or run --env-core python (designs/training/rust_collector.md, "
+                   "'What --env-core rust refuses')"),
+        exit_style="fatal_config"),
+    CombinationCheck(
+        "env_core_flags_need_the_rust_core", _ENV_CORE_ONLY_DESTS,
+        lambda a: not _rust_core(a) and any(_typed(a, d) for d in _ENV_CORE_ONLY_DESTS),
+        "the rollout-collector flags (--rollout-trigger / --rollout-target-samples / --rollout-target-band / "
+        "--version-pinning / --trainee-slots / --t2-*) act only under --env-core rust — typed on the python "
+        "env core they would be silently inert"),
+    CombinationCheck(
+        "rollout_target_on_the_quantum", ("env_core", "rollout_target_samples", "batch_size", "n_envs"),
+        lambda a: _rust_core(a) and _target_off_quantum(a),
+        lambda a: (f"--rollout-target-samples {int(_val(a, 'rollout_target_samples', 0) or 0):,} must be a "
+                   f"multiple of lcm(--batch-size {a.batch_size}, --n-envs {a.n_envs}) = {_quantum(a):,}: no "
+                   "ragged micro-batch may reach the compiled learner graph, and the buffer keeps its "
+                   "[n_steps, n_envs] shape"),
+        exit_style="fatal_config"),
 )
 
 

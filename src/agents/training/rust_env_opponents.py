@@ -486,7 +486,9 @@ class PolicyOpponentServer:
         slot_route = {r.slot: r for r in self.routes if r.kind == "policy"}
         if svc is not None:
             n_svc = len(getattr(svc, "_slots", ())) or None
-            if n_svc is not None and n_svc != plan.n_policy_slots:
+            # The policy routes own global slots 0 .. n_policy_slots - 1; a service may declare MORE
+            # (M5 Lane G: the trainee's slot(s) follow them in the same service, one flush for both).
+            if n_svc is not None and n_svc < plan.n_policy_slots:
                 raise OpponentRoutingError(
                     f"the service declares {n_svc} slots; the plan's policy routes need {plan.n_policy_slots}")
         self._slot_route = slot_route

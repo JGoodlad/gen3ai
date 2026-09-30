@@ -554,7 +554,14 @@ class PpoHyperparameters:
         # CompileControl holding a logging handler and dynamo callbacks. Pickled, every save after
         # the first update would carry (or fail on) them, and a loaded model would re-install a
         # dead process's sentinel. Re-attached fresh by every process that compiles.
-        return super()._excluded_save_params() + ["_correction_buffer", "_distill_teacher",
+        # `_rust_collector` (M5 Lane G, `--env-core rust`) is the live env core + inference service
+        # + row arena (locks, a child process, GPU slot storage): process-local by construction and
+        # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
+        # `_behaviour_probe_metrics` are the last update's staleness record — transient like the buffer.
+        # `_env_core_stamp` is written to metadata.json by `_model_hparams` on every save instead.
+        return super()._excluded_save_params() + ["_rust_collector", "_rust_fill", "_rust_row_versions",
+                                                  "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
+                                                  "_correction_buffer", "_distill_teacher",
                                                   "_distill_teachers", "_cf_buffer",
                                                   "_capacity_state", "_winprob_phi_source",
                                                   "_distill_anchor_parent", "_distill_anchor_ref",

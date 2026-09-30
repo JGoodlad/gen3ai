@@ -276,7 +276,9 @@ async def main():
     else:
         EnvClass = SubprocVecEnv
 
-    emit(f"⚙️ Initializing {n_envs} envs ({EnvClass.__name__})"
+    _rust_core = getattr(args, "env_core", "python") == "rust"
+    emit(f"⚙️ Initializing {n_envs} envs "
+         + ("(RustVecEnv — the M5 Rust env core, --env-core rust)" if _rust_core else f"({EnvClass.__name__})")
          + (" — non-barrier async rollout" if _async_rollout else ""))
 
     # --compile-opponents: warm the SHARED on-disk Inductor cache in THIS process before any env
@@ -291,7 +293,9 @@ async def main():
     # loop thread — the 2026-08 attempt forked 2 of 48 workers and hung forever. The preload now
     # proves single-threadedness after its compile and RAISES otherwise (loud env-construction
     # failure, never a silent wedge); `compile_prewarm_test.py` pins the import invariant.
-    if args.compile_opponents and not args.debug:
+    # (Under --env-core rust every policy opponent forwards through the inference service, T2, so
+    # the per-worker opponent compile, its quorum, preload and prewarm have nothing to compile.)
+    if args.compile_opponents and not args.debug and not _rust_core:
         # Publish ONE tally directory for this process tree before any worker exists. Every env
         # worker / eval worker inherits it through the environment and reports its keep-or-revert
         # verdict there, which is what lets --compile-opponents-strict be fatal on a SYSTEMIC
@@ -377,8 +381,17 @@ async def main():
             for i in range(n_envs)
         ]
 
-    env_factories = _make_factories()
-    env = EnvClass(env_factories)
+    if _rust_core:
+        from main.train.rust_env_setup import build_rust_vec_env
+        env = build_rust_vec_env(
+            args, mappings=mappings, trainee_teambuilder=trainee_teambuilder,
+            opponent_teambuilder=opponent_teambuilder, opponent_classes=OPPONENT_CLASSES,
+            bot_weights=_bot_weight_vec, fixed_opponents=_fixed_opponents, exploiter_entry=_exploiter_entry,
+            snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
+            opponent_version=_opp_version, self_play_fraction=_initial_self_play_fraction, n_envs=n_envs)
+    else:
+        env_factories = _make_factories()
+        env = EnvClass(env_factories)
     # NOTE: the subprocess watchdog is started LATER, just before model.learn() — nothing steps
     # the env before then (model construction/load only reads its spaces).
 

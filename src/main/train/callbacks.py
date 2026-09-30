@@ -389,7 +389,10 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             window=args.exploiter_ladder_window, run_dir=model_dir))
     # Win-probability head: captures each episode's win/loss outcome during collection + back-fills the
     # rollout buffer's MC label before train() (only when the head is on → a default run pays nothing).
-    if args.win_prob_mode != "none":
+    # M5 Lane G: under `--env-core rust` the COLLECTOR fills `win_target` / `win_mask` (complete
+    # games: every row its own outcome; the window fill: this callback's `backfill_terminal_labels`),
+    # and this callback's per-step scratch has no vec-step rows to read — so it is not registered.
+    if args.win_prob_mode != "none" and getattr(args, "env_core", "python") != "rust":
         from agents.training.win_prob_callback import WinProbLabelCallback
         # gen3_winprob_rollout_target_v1: the callback needs the `cf_records` RING (a sampled
         # state's replayable episode) and the sim TRANSPORT the continuations play on — the same

@@ -1200,6 +1200,9 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `combination_checks_test.py` AST-scans this file and fails if a cross-flag
     # `parser.error` reappears outside the list.
     refuse_first(args, parser)
+    # M5 Lane G: the collector flags' defaults, AFTER the sweep (which must see "untyped" as None).
+    from main.train.rust_env_setup import resolve_env_core_args
+    resolve_env_core_args(args)
 
     # --- gen3_arch_surface_guard_v1: IS THIS THE ARCHITECTURE YOU MEANT? -----------------------
     # AFTER the combination sweep, deliberately: a broken flag combination is a bug in the command

@@ -358,6 +358,12 @@ ARGVS: dict[str, list[str]] = {
     "anneal_start_below_steps": ["--anneal-lr-start-steps", "500", "--anneal-min-lr", "1e-6"],
     "compile_preload_needs_compile_opponents": ["--compile-opponents-preload",
                                                 "--no-compile-opponents"],
+    # M5 Lane G — `--env-core rust`
+    "env_core_rust_needs_the_winprob_critic": ["--env-core", "rust", "--critic", "shaped"],
+    "env_core_rust_unported_paths": ["--env-core", "rust", *_WP, "--team-pfsp", "var"],
+    "env_core_flags_need_the_rust_core": ["--rollout-trigger", "window"],
+    "rollout_target_on_the_quantum": ["--env-core", "rust", *_WP, "--n-envs", "48", "--batch-size", "2048",
+                                      "--rollout-target-samples", "100000"],
 }
 
 

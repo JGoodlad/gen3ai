@@ -117,6 +117,15 @@ class TrainSetup:
                                   ("opp_class", 0)):
                     _obs_buf[_k] = align_labels_to_predictions(_obs_buf[_k], _starts, _fill)
 
+    def _behaviour_probe(self) -> None:
+        # +K9(b) BEHAVIOUR-POLICY CONSISTENCY + the STALENESS probe (M5 Lane G): one learner forward
+        # on one micro-batch, BEFORE any optimizer step and while the buffer is still [n_steps, n_envs]
+        # (the rows' policy versions are aligned to that layout). Off (`--behaviour-check off`, the
+        # python env core's default) → not even imported. See `rust_rollout/consistency.py`.
+        if str(getattr(self, "behaviour_check", "off") or "off") != "off":
+            from agents.training.rust_rollout.consistency import behaviour_probe
+            behaviour_probe(self)
+
     def _resolve_fold_flags(self) -> FoldFlags:
         """WHICH terms are live this call. Pure resolution plus ONE side effect — the counterfactual
         buffer's single disk poll, which sits where it always did: right after `cf_any_on` is known."""

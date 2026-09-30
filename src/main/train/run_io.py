@@ -194,6 +194,12 @@ def _model_hparams(model) -> dict:
         _val = getattr(model, _key, None)
         if isinstance(_val, dict):
             out[_key] = _val
+    # M5 Lane G — WHICH ENV CORE this process's rollouts ran on (`--env-core`): the Rust core's stamp
+    # (front end, build stamp, trigger, T2 backend + buckets, the keyed draw) or "python". Written on
+    # every save like `matmul_precision`, so each checkpoint's sidecar names the core that produced it.
+    _ec = getattr(model, "_env_core_stamp", None)
+    out["env_core"] = ({k: v for k, v in _ec.items() if k != "summary"} if isinstance(_ec, dict)
+                       else {"env_core": "python"})
     return out
 
 

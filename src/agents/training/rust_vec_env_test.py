@@ -40,6 +40,14 @@ def test_every_env_method_a_callback_calls_is_served_or_refused_by_flag():
     assert not unmapped, f"env_method(s) neither served nor refused under --env-core rust: {unmapped}"
 
 
+def test_every_refused_method_names_a_flag_the_startup_refuses():
+    from main.train import combination_checks as CC
+
+    reasons = " ".join(why for _d, _p, why in CC._ENV_CORE_UNPORTED)
+    for method, flag in R.REFUSED_WITH_FLAG.items():
+        assert flag in reasons, (method, flag)
+
+
 class _Opp:
     def __init__(self):
         self.calls = []

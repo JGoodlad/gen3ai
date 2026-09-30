@@ -300,6 +300,7 @@ class RustCollector:
         stopped training."""
         if not self._started:
             raise S.CollectorError("collect before start(): the declared startup has not run")
+        snap = self._snapshot()
         callback.on_rollout_start()
         while not self.ready():
             k = self.host_step()
@@ -329,8 +330,39 @@ class RustCollector:
         model._rust_row_versions = versions
         model._rust_version = self.version
         model._win_prob_terminal_outcome = None
+        self._record(model, snap)
         callback.on_rollout_end()
         return True
+
+    def _snapshot(self) -> Dict[str, float]:
+        st = self.stats
+        out = {k: float(getattr(st, k)) for k in ("host_steps", "trainee_decisions", "p2_policy_decisions",
+                                                  "p2_external_decisions", "games_ended", "games_cut",
+                                                  "quarantines", "near_boundary")}
+        out.update({f"s_{k}": v for k, v in st.seconds.items()})
+        out["t"] = time.perf_counter()
+        return out
+
+    def _record(self, model: Any, snap: Dict[str, float]) -> None:
+        """``rust_env/*``: this rollout's collector read (per-phase ms per host step, decisions/s, games)."""
+        logger = getattr(model, "_logger", None)
+        if logger is None:
+            return
+        now = self._snapshot()
+        d = {k: now[k] - snap[k] for k in snap}
+        steps = max(1.0, d["host_steps"])
+        logger.record("rust_env/host_steps", d["host_steps"])
+        logger.record("rust_env/trainee_decisions_per_s", d["trainee_decisions"] / max(1e-9, d["t"]))
+        logger.record("rust_env/trainee_rows_per_host_step", d["trainee_decisions"] / steps)
+        for k in ("submit", "flush", "draw", "write", "core", "post"):
+            logger.record(f"rust_env/{k}_ms_per_host_step", 1000.0 * d[f"s_{k}"] / steps)
+        logger.record("rust_env/fill_ms", 1000.0 * d["s_fill"])
+        for k in ("p2_policy_decisions", "games_ended", "games_cut", "quarantines", "near_boundary"):
+            logger.record(f"rust_env/{k}", d[k])
+        if self.server is not None:
+            logger.record("rust_env/p2_near_boundary_total", float(getattr(self.server, "near_boundary", 0)))
+        logger.record("rust_env/version", float(self.version))
+        logger.record("rust_env/arena_live_rows", float(self.store.live_count))
 
     def _ensure_buffer(self, model: Any) -> None:
         """The learner's buffer is ``[n_steps, n_envs]`` for THIS update (complete-game: target / n_envs;

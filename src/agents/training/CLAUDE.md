@@ -484,6 +484,38 @@ asks the trainee to move** (`gen3_no_phantom_decision_v1`, a TRAINING-INPUT chan
 trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES. 🚨 **The OPPONENT is polled only when its order will be SENT** (`gen3_no_phantom_opponent_poll_v1`, M5 Lane E, the opponent twin): `SingleAgentWrapper.step` asked `choose_move` on steps whose p2 order was dropped, so a self-play `RLPlayer` recorded a phantom decision (progress clock one step high) and drew a sample, and a bot drew from its RNG.
 Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
 
+## The env core — `--env-core {python,rust}` (DEFAULT `python`; M5 Lane G)
+
+`--env-core rust` runs the rollout on the M5 Rust env core: N envs in ONE core (process front end by
+default, `--rust-env-front`), the trainee and every policy opponent forwarded through the inference
+service in ONE flush, the scripted bots played inside the core, and the COMPLETE-GAME collector
+(`--rollout-trigger complete_game`, the default there): a game's rows are buffered until it ends, GAE
+and the win label run on the complete game (every row `win_mask` 1), and an update fires at
+`--rollout-target-samples` completed-game rows (default `n_steps × n_envs`), consuming exactly that many
+— no row is dropped or down-weighted for age. `python` is untouched and stays the default; the cutover is
+a separate decision. Hazards an agent must know before touching it:
+
+- 🚨 **Startup runs BEFORE `--compile-trainer`** (`model_build._start_rust_env`): the inference service
+  deep-copies the policy as its slot templates, and a copy taken after the compile would carry the
+  patched `forward` bound to the LEARNER's extractor.
+- 🚨 **Every flag whose path the Rust core does not serve is REFUSED at startup, by name**
+  (`combination_checks`' `env_core_rust_*`): a non-winprob critic (no terminal observation), λ < 1,
+  rollout targets, the fork arm, dense aux, `--value-true-team`, the entropy boosts, distillation, PBRS,
+  `--cf-records`, the search teacher, `--team-pfsp`, `--exploiter-ladder`, `--async-rollout`. The
+  collector flags typed on the python core are refused too (they would be silently inert).
+- **`WinProbLabelCallback` is not registered** under `rust`: the collector fills `win_target` /
+  `win_mask` (the window fill calls the callback's own `backfill_terminal_labels`).
+- **K9(b) `--behaviour-check`** (fatal under `rust`, off under `python`): before any optimizer step of
+  every update, the learner's log π on rows played at the CURRENT version must equal the stored
+  behaviour log-prob (max |Δ| < 1e-4); the same forward logs `staleness/*` (ratio, clip fraction, KL by
+  row AGE) and `behaviour/*`. Per-game version pinning (`--version-pinning per_game`) is the first
+  staleness remedy, OFF unless those measurements call for it.
+- `rollout/collect_ms` + `rollout/collect_decisions` are logged on BOTH cores (the A/B reads them);
+  `rust_env/*` is the collector's per-phase read. `metadata.json` records `env_core` on every save.
+- ⚠️ A launcher RESUME pins to the checkpoint's commit; a commit before Lane G has no `--env-core`.
+
+Detail: [`designs/training/rust_collector.md`](../../../designs/training/rust_collector.md).
+
 ## The two compile flags (`--compile-opponents` · `--compile-trainer`, both DEFAULT ON)
 
 **Split by WHO and WHERE** (renamed 2026-08-14 from the single `--compile-extractor`, which said

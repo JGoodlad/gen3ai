@@ -7,6 +7,7 @@ read-only probe the metrics export publishes. They live here so `ppo.py` holds t
 contract and nothing else.
 """
 import contextlib
+import time
 
 import numpy as np
 import torch as th
@@ -30,6 +31,17 @@ class RolloutProbes:
     `super().collect_rollouts(...)` below reaches upstream."""
 
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
+        # `rollout/collect_ms` + `rollout/collect_decisions` (M5 Lane G): the wall clock of this
+        # collection and the trainee decisions it played — on EITHER env core, so the two are A/B'd
+        # from the same tags. Recorded, never read by anything that trains.
+        _t0, _n0 = time.perf_counter(), int(self.num_timesteps)
+        # M5 Lane G (`--env-core rust`): the rollout is the Rust collector's (`_collect_rust`). The
+        # python env core below is unchanged.
+        rc = getattr(self, "_rust_collector", None)
+        if rc is not None:
+            ok = self._collect_rust(rc, callback, rollout_buffer)
+            self._record_collect(_t0, _n0)
+            return ok
         if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
             ok = collect_rollouts_async(
                 self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
@@ -43,7 +55,26 @@ class RolloutProbes:
             from agents.training.winprob_pbrs import apply_winprob_pbrs
             self._pbrs_metrics = apply_winprob_pbrs(self, rollout_buffer)
         frozen_phi.shape_after_rollout(self, rollout_buffer, ok)   # --win-prob-pbrs-frozen
+        self._record_collect(_t0, _n0)
         return ok
+
+    def _collect_rust(self, rc, callback, rollout_buffer):
+        """M5 Lane G: the learner's weights are LOADED into the inference service after every update
+        (`after_update`, detected by the update counter moving), then the complete-game (or window)
+        fill replaces the model's buffer contents. PBRS / frozen-φ are refused under `--env-core rust`
+        (`combination_checks`), so neither post-rollout seam applies. `rust_rollout/collector.py`."""
+        if getattr(rc, "seen_updates", None) is None:
+            rc.seen_updates = self._n_updates
+        elif self._n_updates != rc.seen_updates:
+            rc.after_update(self)
+            rc.seen_updates = self._n_updates
+        return rc.collect(self, callback, rollout_buffer)
+
+    def _record_collect(self, t0: float, n0: int) -> None:
+        logger = getattr(self, "_logger", None)
+        if logger is not None:
+            logger.record("rollout/collect_ms", 1000.0 * (time.perf_counter() - t0))
+            logger.record("rollout/collect_decisions", float(int(self.num_timesteps) - n0))
 
     def _annealed_entropy_boost(self, B: float, af: float) -> float:
         """The state-conditioned entropy-boost multiplier at the CURRENT step. Constant `B` if the anneal

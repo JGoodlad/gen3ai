@@ -187,6 +187,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # predictions ONCE, here, while the [n_steps, n_envs] structure and `episode_starts` still
         # exist — after `get()` shuffles, the adjacency is gone. See `train_setup.py`.
         self._align_opp_intent_labels()
+        # +K9(b) / STALENESS (M5 Lane G): before any optimizer step; a no-op unless --behaviour-check.
+        self._behaviour_probe()
 
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress_remaining)  # type: ignore[operator]

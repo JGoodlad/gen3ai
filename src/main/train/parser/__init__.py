@@ -23,6 +23,7 @@ order, and `build_parser()` calls them in the original order; `--help` is byte-i
     capacity.py          `# --- LIVE CAPACITY TELEMETRY ---`
     distillation.py      `# --- ADVANTAGE-GATED / ACTION-FORM DISTILLATION + the RANK TRIPWIRE ---`
     eval_subprocess.py   `# --- Subprocess eval ---` (workers, self-play pool, exploiter, teams)
+    env_core.py          `# --- THE ENV CORE (M5 Lane G) ---` (--env-core, the complete-game collector)
 
 Adding a flag means editing ONE family module — and appending it at the end of that family's
 function, since the position inside a family is the position in `--help`.
@@ -36,6 +37,7 @@ from main.train.parser.capacity import add_capacity_flags
 from main.train.parser.cf_grounding import add_cf_grounding_flags
 from main.train.parser.clean_world import add_clean_world_flags
 from main.train.parser.distillation import add_distillation_flags
+from main.train.parser.env_core import add_env_core_flags
 from main.train.parser.eval_subprocess import add_eval_subprocess_flags
 from main.train.parser.hyperparameters import add_hyperparameter_flags
 from main.train.parser.operational import add_operational_flags
@@ -78,5 +80,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_capacity_flags(parser)
     add_distillation_flags(parser)
     add_eval_subprocess_flags(parser)
+    add_env_core_flags(parser)
 
     return parser

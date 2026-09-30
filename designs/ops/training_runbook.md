@@ -571,6 +571,18 @@ production `--n-envs 64` (1489→1695); `--async-rollout --n-envs 32` matches pr
 with half the envs** (≈half the RAM). Off by default (= stock `SubprocVecEnv`), ignored under
 `--debug`. Full design: `designs/ai_v5/design_async_rollout.md`.
 
+### The Rust env core (`--env-core rust`, opt-in; M5 Lane G — python stays the default)
+
+`--env-core rust` replaces the `SubprocVecEnv` of `Gen3Env` workers with the M5 Rust env core (N envs
+in one core process), the trainee and the policy opponents forwarded through the inference service in
+one flush, bots in the core, and the COMPLETE-GAME collector (an update fires at
+`--rollout-target-samples` completed-game rows; no row dropped for age; `staleness/*` measures the
+rest). It needs `--critic winprob` and refuses, by name at startup, every flag whose path it does not
+serve yet (`src/agents/training/CLAUDE.md` → "The env core"). Validate an argv with `checkargs` first.
+⚠️ A launcher resume pins to the checkpoint's commit, where `--env-core` may not exist — pin a commit
+that has it. It is a CUTOVER candidate, not the production path: design, gates and measurements in
+`designs/training/rust_collector.md` and `designs/research_state/measurements/m5_laneG/PROGRESS.md`.
+
 ### Bot evaluation
 
 Bot eval runs in **frozen-snapshot subprocesses** (`--eval-workers`, default 5) that

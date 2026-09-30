@@ -215,7 +215,9 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     svc = InferenceService(ServiceSpec(
         groups=tuple(SlotGroupSpec(name, k, tpl) for name, k, tpl in groups), device=decl.device,
         backend=decl.backend, buckets=buckets, lanes=lanes,
-        max_rows_per_flush=max(1024, 4 * n, buckets[-1] * 4))).startup()
+        # T2's startup CONCURRENT gate puts one full chunk of the largest bucket per slot into ONE flush,
+        # so the declared arena must hold n_slots x the largest bucket (F-LG-4: T2 does not check it).
+        max_rows_per_flush=max(1024, 4 * n, buckets[-1] * 4, n_slots * buckets[-1]))).startup()
     emit(f"🦀 [RUST ENV] T2 up in {time.perf_counter() - t0:.1f}s: {len(groups)} slot group(s) "
          f"{[(g[0], g[1]) for g in groups]}, trainee slot(s) {trainee_slots}, buckets {buckets}, lanes {lanes}, "
          f"backend {decl.backend} on {decl.device}")
