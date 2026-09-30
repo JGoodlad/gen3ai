@@ -143,6 +143,11 @@ impl Game {
         self.sess.winner()
     }
 
+    /// `side`'s whole reading (M5 Lane F hand-off: a scripted bot decides on it).
+    pub fn reading(&self, side: usize) -> &pokesim::present::BoardReading {
+        &self.streams[side].board_reading
+    }
+
     /// `side`'s reading of the turn (what the env's stall forfeit reads).
     pub fn turn(&self, side: usize) -> u32 {
         self.streams[side].board_reading.turn

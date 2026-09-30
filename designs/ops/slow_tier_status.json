@@ -929,6 +929,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/utils/rust_env/bots_gate_test.py::test_milestone_every_decision_is_equal_at_scale": {
+   "status": "pass",
+   "commit": "98ef6e6135e2affecd55ee7145854707672ba3fc",
+   "at": "2026-09-30T02:12:55Z",
+   "duration_s": 73.01,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/utils/rust_env/core_cargo_test.py::test_gate_1_on_procedural_teams": {
    "status": "pass",
    "commit": "13cc85eceda03db945142dc99f76b7af44437333",
@@ -978,5 +986,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T02:01:36Z"
+ "last_written": "2026-09-30T02:12:55Z"
 }

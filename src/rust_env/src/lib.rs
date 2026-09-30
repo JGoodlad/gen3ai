@@ -1,6 +1,8 @@
 //! `pokesim_env` — the Rust env core (M5). See `core` for the contract; the column schema is
 //! GENERATED (`core::columns`).
 pub mod core;
+/// THE SCRIPTED BOTS (M5 Lane F): the inventoried bots, reading the core's per-side reading.
+pub mod bots;
 /// EPISODES AND REWARD (M5 Lane D): the terminal reward, `terminated` / `truncated`, the stall
 /// forfeit, ties, the (absent) terminal observation, and the refused-start PARK.
 pub mod episode;

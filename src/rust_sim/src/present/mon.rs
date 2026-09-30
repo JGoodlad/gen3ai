@@ -26,6 +26,9 @@ pub struct PMove {
     pub from_transform: bool,
     /// `Move._base_power_override` — the digits of a `hiddenpowerfire70` raw id.
     pub base_power_override: Option<u32>,
+    /// `Move._is_last_used` — `Pokemon.last_move` (M5 Lane F hand-off: the scripted bots read it;
+    /// written by `moved` and cleared by `switch_out`, exactly poke-env's two writers).
+    pub last_used: bool,
 }
 
 /// The fields of `Move.entry` the reading reads.
@@ -54,7 +57,7 @@ impl PMove {
                 id = dex::to_id(raw).chars().filter(|c| !c.is_ascii_digit()).collect();
             }
         }
-        let mut m = PMove { id, current_pp: 0, from_transform, base_power_override: bpo };
+        let mut m = PMove { id, current_pp: 0, from_transform, base_power_override: bpo, last_used: false };
         let max = m.max_pp()?;
         m.current_pp = if from_transform { max.min(5) } else { max };
         Ok(m)
@@ -179,6 +182,25 @@ impl MoveSet {
         }
         r.base.iter().any(|(k, _)| k == key).then(|| MoveRef::Base(key.to_string()))
     }
+    /// `for m in self.moves.values(): m._is_last_used = m is <at>` — over the objects the
+    /// `moves` VIEW holds (the resolved base set, the Mimic overlay standing in for the `mimic`
+    /// key); a base `mimic` entry hidden by the overlay is not in the view and keeps its flag.
+    pub fn mark_last_used(&mut self, at: Option<&MoveRef>) {
+        let r = self.resolved_mut();
+        let overlay = r.mimic.is_some() && r.base.iter().any(|(k, _)| k == "mimic");
+        for (k, v) in r.base.iter_mut() {
+            if overlay && k == "mimic" {
+                continue;
+            }
+            v.last_used = matches!(at, Some(MoveRef::Base(b)) if b == k);
+        }
+        if overlay {
+            if let Some(mm) = r.mimic.as_mut() {
+                mm.last_used = matches!(at, Some(MoveRef::Mimic));
+            }
+        }
+    }
+
     /// A mutable handle on the object a [`MoveRef`] names.
     pub fn get_mut(&mut self, at: &MoveRef) -> Option<&mut PMove> {
         let r = self.resolved_mut();
@@ -843,6 +865,8 @@ impl PMon {
                     m.use_move(pressure, false);
                 }
             }
+            // `for m in self.moves.values(): m._is_last_used = m is move` (M5 Lane F)
+            self.moves.mark_last_used(at.as_ref());
         }
         let mv: Option<PMove> = at.as_ref().and_then(|a| self.moves.get(a).cloned());
         let protect = match &mv {
@@ -918,6 +942,8 @@ impl PMon {
         if self.status == Some(Status::Tox) {
             self.status_counter = 0;
         }
+        // `for move in self.moves.values(): move._is_last_used = False` (M5 Lane F)
+        self.moves.mark_last_used(None);
     }
 
     /// `Pokemon.was_illusioned(fields)` — the request said this mon is NOT active while the

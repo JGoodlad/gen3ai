@@ -1,0 +1,103 @@
+"""THE SCRIPTED-BOT INVENTORY — every bot class a pool plays, where, what it reads, what it draws
+(M5 Lane F, `designs/endstate/program_rust_core.md` §2 M5).
+
+The table of record for porting the scripted bots into the Rust env core (`src/rust_env/src/bots/`).
+`bot_inventory_test.py` (routine) derives every roster FROM THE CODE and fails when:
+
+* a class appears in a roster (the training pool, the eval roster, the post-training final eval,
+  the warm-start smoke) with no row here — a new bot must be inventoried before it plays;
+* a row's ``used_by`` disagrees with the rosters (a bot dropped from a pool reads as dropped here);
+* a ``Player`` subclass is defined in one of the bot modules with no row (defined-but-unused bots
+  are listed with ``used_by=()`` so "not in any pool" is a stated fact, not an omission);
+* the exploiter keep-bots mix stops being the training roster (it is today: `env_factory` builds
+  ``heuristic_opponents`` from ``OPPONENT_CLASSES``, and `MaskableAgentWrapper._pick_floor_opponent`
+  draws the keep-bots episodes from it);
+* a row marked PORTED names a Rust bot the crate does not define.
+
+THE STATE a bot reads is ONE object: the opponent side's poke-env ``Battle`` (in training
+``env.battle2``, agent2's own battle; in eval / anchors / final eval the bot player's own battle).
+The Rust port reads the env core's ``BoardReading`` for that side — the port of that object — through
+the bot VIEW (`utils.rust_env.bot_view`), whose equality is checked at every banked decision.
+
+THE RANDOMNESS, per stream (the seed route is the PRODUCTION one; every stream is the process-wide
+``random`` module unless a seed arrives):
+
+* ``choice`` — ``Player._choice_rng`` (`gen3_player_choice_rng_v1`): ``choose_random_move``, every
+  bot's fallback and RandomPlayer's whole policy, and ``DEFAULT_CHOICE_CHANCE`` on a rejected order.
+  Seeded by ``rng_seed=`` or ``$GEN3AI_PLAYER_SEED``; production passes neither.
+* ``protect`` — the two stallers' Protect coin (``_protect_rng``): ``protect_seed=`` or
+  ``$GEN3AI_STALLER_SEED``; production passes neither.
+* ``bait`` — ``Gen3BaitBotPlayer._rng = random.Random(seed)``; production ``seed=None`` ⇒ seeded
+  from OS entropy (NOT the global stream, and not reproducible at all).
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+#: The roster SITES a bot can be used from (the test derives each from the code).
+SITES = {
+    "train": "the training floor roster — `main/train/matchup_setup.py` OPPONENT_CLASSES (also the "
+             "exploiter --exploiter-keep-bots mix: `env_factory` builds heuristic_opponents from it)",
+    "train_bait": "the training roster, ONLY with --bait-bot-share > 0 (`make_baitbot_class(--bait-bot-p)`)",
+    "eval": "the eval roster — `agents/training/eval_callback.py` _EVAL_OPPONENT_SPECS (also "
+            "`main.anchors` `bot:<name>` and the prober's replay, both through that table)",
+    "final_eval": "the post-training evaluation — `main/train/final_eval.py`",
+    "warmstart": "the warm-start smoke — `agents/training/warmstart.py`",
+}
+
+
+@dataclass(frozen=True)
+class BotRow:
+    name: str            # display name (`eval_callback.opponent_name`)
+    cls: str             # dotted class path
+    used_by: tuple       # keys of SITES
+    rng: tuple           # streams the bot can draw from ("choice", "protect", "bait")
+    reads: str           # what it reads off the Battle (beyond what every bot reads)
+    rust: str            # the Rust bot (`bots::Kind::<X>`), or "" while not ported
+
+
+#: Every bot the fallbacks share: ``choose_random_move`` reads ``valid_orders`` (``wait``,
+#: ``trapped``, ``force_switch``, ``available_switches``, ``available_moves``) and draws one ``choice``.
+ROWS: tuple = (
+    BotRow("random", "poke_env.player.baselines.RandomPlayer", ("eval", "final_eval"), ("choice",),
+           "valid_orders only — one choice draw per decision (its WHOLE policy)", "Random"),
+    BotRow("heuristic", "poke_env.player.baselines.SimpleHeuristicsPlayer",
+           ("train", "eval", "final_eval", "warmstart"), ("choice",),
+           "matchup (types, base spe, HP), _stat_estimation (base stats, boosts), own stats "
+           "(_should_switch_out), hazards (side conditions), setup (move boosts/target — NEVER fires: "
+           "`move.target == 'self'` compares a Target enum to a str), fallback draw", "Heuristic"),
+    BotRow("heuristic2", "agents.opponents.Gen3HeuristicV2Player", ("train", "eval", "final_eval"), ("choice",),
+           "damage calc (base stats, boosts, HP, ability, status FRZ), revealed opp moves, own bench movesets, "
+           "hazards, recovery, setup (NEVER fires — the same Target-vs-str compare), status immunity", "HeuristicV2"),
+    BotRow("staller", "agents.opponents.Gen3StallerPlayer", ("train", "eval", "final_eval"), ("choice", "protect"),
+           "opp status, Protect coin when TOX, recovery, side_conditions (any), best damage v1, best switch v1",
+           "Staller"),
+    BotRow("staller_v2", "agents.opponents.Gen3StallerV2Player", ("train", "eval", "final_eval"), ("choice", "protect"),
+           "+ revealed opp damage (pivot), status immunity, last_move (is_last_used), damage v2, switch v2",
+           "StallerV2"),
+    BotRow("aggressive", "agents.opponents.Gen3AggressivePlayer", ("train", "eval", "final_eval"), ("choice",),
+           "damage v1 over damaging moves, forced-switch by base atk/spa", "Aggressive"),
+    BotRow("aggressive_v2", "agents.opponents.Gen3AggressiveV2Player", ("train", "eval", "final_eval"), ("choice",),
+           "KO calc, matchup, immunity escape, damage v2, switch v2", "AggressiveV2"),
+    BotRow("setup_sweep", "agents.opponents.Gen3SetupSweepPlayer", ("train", "eval", "final_eval"), ("choice",),
+           "matchup, boosts, setup (NEVER fires — Target-vs-str), damage v1, switch v1", "SetupSweep"),
+    BotRow("setup_sweep_v2", "agents.opponents.Gen3SetupSweepV2Player", ("train", "eval", "final_eval"), ("choice",),
+           "KO calc, revealed opp damage, matchup, setup (NEVER fires), damage v2, switch v2", "SetupSweepV2"),
+    BotRow("baitbot", "agents.baitbot.Gen3BaitBotPlayer", ("train_bait",), ("choice", "bait"),
+           "revealed opp attacks × bench immunity (effective_multiplier), bait coin, damage v2, switch v2",
+           "BaitBot"),
+    BotRow("max_base_power", "poke_env.player.baselines.MaxBasePowerPlayer", (), ("choice",),
+           "max base_power; in NO pool (upstream poke-env baseline, defined only)", ""),
+)
+
+
+def by_class() -> dict:
+    return {r.cls: r for r in ROWS}
+
+
+def by_name() -> dict:
+    return {r.name: r for r in ROWS}
+
+
+def ported() -> tuple:
+    return tuple(r for r in ROWS if r.rust)
