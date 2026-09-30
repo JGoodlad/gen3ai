@@ -188,6 +188,46 @@ the TUI. `--compile-opponents-strict` promotes them to a `CompileExtractorError`
 rather fail at startup than find it in the FPS graph a day later — **but a below-floor TIMING verdict
 is promoted only on a quorum**, for the reason immediately below.
 
+### The opponents' decision-level parity check (`gen3_opponent_compile_parity_v1`, 2026-09-29)
+
+Until 2026-09-29 a compiled opponent was checked for SPEED only, on an all-zero observation. Nothing
+compared its decisions with eager, so a CPU Inductor miscompile would have handed the learner a wrong
+self-play / eval / teacher opponent with every gate green. `maybe_compile_extractor` now runs
+`agents.model.opponent_parity.check_opponent_parity` after forcing the compile and before installing
+it. The check compares eager with the compiled callable on features, MASKED legal log-probs and V,
+at the learner gate's bars (`compile_trainer._FP32_TOL` via `decision_verdicts`). It uses 16 rows of
+the committed real-obs fixture, each fed at **B=1** with the float `action_mask` and every declared
+extra key. That is the warm-up's exact key set, dtypes and shape, so the check judges the graph that
+plays and triggers no recompile. **On fresh weights** both arms also run on the seeded in-place
+perturbation (`parity_probe.perturbed_parameters`), judged with the vacuity guard ON, exactly as the
+learner gate does.
+
+- **It RAISES the learner gate's typed error** (`CompileTrainerError`, or `VacuousCompileParityError`)
+  whatever `--compile-opponents-strict` says, after uninstalling the compile. A timing miss costs
+  throughput. A parity miss is a WRONG opponent (GIGO), and a CPU miscompile is systemic, since the
+  same code object runs in every worker. Any other exception from the check (a backend crash on the
+  real rows) takes the usual warn / fall-back / strict path. A stand-in policy without the Gen3 heads
+  is refused rather than installed unvalidated.
+- **Cost, measured** (CPU, one thread, torch 2.5.1, 2026-09-29): **~0.28 s on trained weights**
+  (`ai_v14_01_base/final_model.zip`: features 1.5e-05, legal log-prob 4.3e-06, V 2.4e-07, all PASS)
+  and **~0.55 s on fresh ones**, where the perturbed pass doubles it. For comparison, the first
+  compile of a process took 106 s with a cold cache and ~6 s warm, and a reused-compile load took
+  ~0.3 s.
+- **Cadence: once per DISTINCT WEIGHTS per process, never per game.** One consumer loads per game:
+  the search-teacher worker re-`MaskablePPO.load`s its snapshot opponent every iteration. So a PASS
+  is cached process-locally under a blake2b fingerprint of the policy's `state_dict` bytes plus
+  every submodule's train/eval mode (`weights_fingerprint`, ~18 ms for the 7.0M-parameter policy).
+  The compiled callable is shared per process by dynamo's code-object cache and the parameters are
+  graph inputs, so the same weights through the same graph cannot give a different verdict. A
+  changed weight is a new key and is checked again. A failure is never cached. The PASS line (with
+  its ms, or `[cached: …]`) is printed on every load.
+- **Pinned by** `agents/model/opponent_parity_test.py`, on the real production policy with
+  `torch.compile` stubbed. A pointer-only miscompile (move cells read only by the pointer head) is
+  refused on fresh and on informative weights, under strict and under non-strict. With
+  `compile_opponents.py` reverted to its pre-check version the same test FAILS (`DID NOT RAISE`), and
+  `test_REVERT_…` pins that the path installs the miscompile once the seam is neutralised.
+  `compile_extractor_test` stubs the seam, because its stand-ins are 8 wide and have no heads.
+
 ### 🧯 The floor's MEASUREMENT was broken, and the fix is under the gate, not on it (2026-08-24)
 
 **The gate killed three production launches on timing noise, and it was uninformative in BOTH
@@ -617,7 +657,7 @@ routine gate the moment the layout changes. It checks four things, eager vs comp
 | (pi ‖ vf) features, no-grad | 1e-4 (unchanged) | 2.4e-05 | 10.7 |
 | MASKED legal log-probs (what the rollout samples and PPO's ratio reads) | 1e-3 | 1.2e-05 | legal logits off by up to 7.39 (3,840 rows) |
 | V (the win-prob sigmoid under `--critic winprob`) | 1e-4 | 5.4e-07 | 0.33 (3,840 rows) |
-| TRAIN graph: fwd features + extractor-gradient cosine on the gate's own loss | 1e-4 · cos ≥ 0.9999 | 1.9e-05 · 1.000000 | 7.65 · 0.778 |
+| TRAIN graph: fwd features + gradient cosine on the gate's own loss (since `gen3_gate_grad_coverage_v1`: the probe loss over the whole policy, plus the coverage guard and the per-parameter rule below) | 1e-4 · cos ≥ 0.9999 | 1.9e-05 · 1.000000 | 7.65 · 0.778 |
 
 The healthy column is the gate's own line on `ai_v14_01_base/final_model.zip`.
 `compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate` pins that turning
@@ -629,7 +669,8 @@ fresh launch (`--arch production`, no `--model`) runs the gate on the freshly in
 the pointer head's three scorers are zero-init, so every legal log-prob on a row is `-log(n_legal)`
 whatever the extractor computed. On those weights the legal-log-prob check cannot fail, and the
 features and gradient checks are blind to what feeds only the pointer head. On the fresh production
-policy, 52 of 232 extractor parameters get zero gradient from the gate's loss. **Measured** (M5 T2,
+policy, 52 of 232 extractor parameters got zero gradient from the gate's loss at the time (the
+train-graph coverage fix below closes that). **Measured** (M5 T2,
 2026-09-29): an AOT miscompile read max|dlogp| 0.0 on a fresh policy and 0.68 on a real one. So:
 
 - **Detection.** The gate reads the eager arm's decision readout. It counts the weights as fresh when
@@ -660,6 +701,45 @@ The inference service's parity gate (`agents.inference.service`) does the same p
 `VacuousParity` (a `ParityFailure`) triggers a re-run of the slot on the perturbed weights, in place
 in the group's stacked storage, which the CUDA graphs read. The real weights then run with the check
 waived.
+
+**The train graph's COVERAGE (`gen3_gate_grad_coverage_v1`, 2026-09-29).** Until this change the
+train-graph check backpropagated `mean pi² + mean vf²`, a loss over the extractor's two feature
+outputs only. The pointer head reads the extractor's STASH (`stash.pointer_inputs`: move seats, team
+tokens, per-action move/switch cells), and the aux heads read further stash fields. Every parameter
+that feeds only those paths got a ZERO gradient from the gate's loss. On the perturbed production
+policy (CPU, 64 fixture rows) that was **43 of 232 extractor parameters (65 of 254 policy
+parameters)**, so a backward-only miscompile there passed on any weights. Three changes:
+
+- **The probe loss** (`agents.model.compile_gate_probe.gate_loss`) is the old features term plus
+  what the production loss reads: the MASKED legal log-probs through the real pointer head, `V`
+  (`policy._critic_value`), the scalar `value_net`, and every graph-carrying stash tensor. Each term
+  gets fixed, deterministic, sign-varying weights (no RNG). The gradient is read over the WHOLE
+  policy (extractor and heads). It leaves **1 of 254** parameters with zero gradient (0.39%, the same
+  on CUDA, fresh-perturbed and trained): `edge_bias.c5_map.weight`, the Baton-Pass receiver edge.
+  Its input cells are all zero because no fixture row has a Baton-Pass seat.
+- **The coverage guard** (`coverage_verdict`) refuses the launch (`VacuousCompileParityError`) when
+  more than **2%** of the policy's parameters (5 of 254) get zero gradient from the probe loss, and it
+  names them. The bar sits 5x above the healthy count and 13x below the old loss. It applies to the
+  informative pass only: on unperturbed fresh weights the zero-init heads zero 35 of 254 by
+  construction.
+- **The per-parameter rule.** A GLOBAL cosine is dominated by the largest gradients. On CPU, dropping
+  the whole move-cell gradient left it at 0.9999998 (float64), and removing the switch-cell
+  gradient left it at 0.9999989. The cosine is now computed in float64: in fp32 it read 1.0005 over
+  the 7.0M-entry gradient. So every parameter whose eager gradient norm is above 1e-3 x the largest
+  is also held to a relative error `||c_p − e_p|| / ||e_p||`, with **two bars**:
+
+| weights | per-param bar | healthy max (RTX 3080 Ti, torch 2.5.1, fp32) | backward defects |
+|---|---|---|---|
+| FRESH, seeded-perturbation pass (every fresh launch) | 1e-3 | 7.3e-06 over 6 perturbation seeds | move cells ×0.9 → 1.01e-02 REFUSED; dropped → 1.01e-01 REFUSED |
+| REAL (trained) weights | 0.2 | 9.3e-04 on `ai_v14_01_base/final` (and isolated 4.9e-02 alpha seat-scorer outliers on 2 of 6 perturbed trained states) | move cells dropped → 1.00 REFUSED; team tokens ×0.5 → cosine 0.9928 REFUSED; **move cells ×0.9 → 1.0e-01 PASSES** (below the resolution on trained weights) |
+
+  At TF32 the per-parameter rule rides on the "same graph at fp32" check. Measured end to end, the
+  gate PASSES correct compiles on fresh and trained weights at `highest` and at `high`: fresh
+  per-param max 6.6e-06, trained 9.3e-04, coverage 1/254. It REFUSES every defect in the table
+  except the ×0.9 case on trained weights. `compile_gate_probe_test` pins this on CPU with a
+  backward-only fake: identity forward, scaled gradient on a pointer-only stash path. With
+  `compile_trainer.py` reverted to `23f4f85c`, the same fakes (move cells ×0, switch cells ×0.5,
+  move tokens ×0.9) all PASS the gate on fresh weights.
 
 **At reduced precision (`--matmul-precision high`, TF32) two checks run.**
 

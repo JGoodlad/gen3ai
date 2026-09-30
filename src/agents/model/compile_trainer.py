@@ -47,6 +47,8 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 import torch
 
+from agents.model.compile_gate_probe import (GradCoverageError, coverage_verdict, gate_loss,
+                                             grad_parameters, per_param_grad_errors)
 from agents.model.compile_parity_fixture import ParityFixtureError, load_parity_rows
 from agents.model.parity_probe import (PERTURB_SCALE, PERTURB_SEED, VacuousParityError, fresh_reason,
                                        perturbed_parameters, require_informative)
@@ -277,6 +279,22 @@ _FP32_TOL = {"features": _MAX_NUMERIC_DRIFT, "legal_logprob": 1e-3, "value": 1e-
 # The train graph: cosine between the compiled and eager gradients of the gate's own loss over the
 # extractor's parameters. Healthy after the split: 1.000000 (rel err 4.7e-07); the defect: 0.778.
 _MIN_GRAD_COSINE = 0.9999
+# gen3_gate_grad_coverage_v1 — the PER-PARAMETER gradient rule. The global cosine above is dominated
+# by the largest gradients: on the perturbed production policy (CPU, 64 fixture rows) DROPPING the
+# whole gradient through the pointer head's move cells left it at 1.0000 (the path's parameters are
+# a sliver of the norm), while the per-parameter relative error ||c_p - e_p|| / ||e_p|| read 0.10 on
+# `damage_op.out_gain`. So every parameter whose eager gradient norm is above
+# `_PARAM_GRAD_FLOOR` x the largest one is ALSO held to a per-parameter bar. TWO bars, because the
+# healthy noise differs by 100x between the two weight regimes (RTX 3080 Ti, torch 2.5.1, 64 rows,
+# fp32, 2026-09-29; `designs/training/compile_flags.md`, "The train graph's coverage"):
+#   * the FRESH-weights perturbed pass (every fresh launch): healthy max 7.3e-06 over 6 seeds;
+#     a 10% backward error on the pointer's move cells reads 1.01e-02 -> bar 1e-3;
+#   * REAL (trained) weights: healthy max 9.3e-04 on ai_v14_01_base/final, and perturbed trained
+#     states showed isolated 4.9e-02 outliers (the alpha seat scorer) -> bar 0.2, which still
+#     refuses any >=20% backward error on a path (a DROPPED path reads ~1.0).
+_MAX_PARAM_GRAD_REL = 1e-3
+_MAX_PARAM_GRAD_REL_TRAINED = 0.2
+_PARAM_GRAD_FLOOR = 1e-3
 
 
 def _parity_obs(obs_dim: int, batch: int, device: Any) -> Tuple[Dict[str, "torch.Tensor"], Any]:
@@ -333,18 +351,34 @@ def _readout(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch
     return out
 
 
-def _train_step(fe: Any, obs: Any) -> Dict[str, "torch.Tensor"]:
-    """The TRAIN graph: one forward+backward of the gate's own loss (`_one_step`), read as the
-    forward features and the flattened gradient over every extractor parameter."""
-    pi, vf = _one_step(fe, obs)
-    grad = torch.cat([(p.grad if p.grad is not None else torch.zeros_like(p)).detach()
-                      .float().flatten() for p in fe.parameters()])
+def _train_step(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch.Tensor"]:
+    """The TRAIN graph: one forward+backward of the gate's PROBE loss
+    (`compile_gate_probe.gate_loss`: the features, the masked legal log-probs, V and every
+    graph-carrying stash tensor — gen3_gate_grad_coverage_v1), read as the forward features, the
+    flattened gradient over every POLICY parameter (extractor AND heads; `grad_parameters`), each
+    parameter's size (``grad_sizes``, for the per-parameter rule) and its max|grad|
+    (``grad_absmax``, for the coverage guard)."""
+    params = [p for _, p in grad_parameters(model, fe)]
+    for p in params:
+        p.grad = None
+    loss, pi, vf = gate_loss(model, fe, obs, legal_mask)
+    loss.backward()
+    gs = [(p.grad if p.grad is not None else torch.zeros_like(p)).detach().float().flatten()
+          for p in params]
+    grad = torch.cat(gs)
     feats = torch.cat([pi.detach().flatten(1), vf.detach().flatten(1)], dim=1).float().clone()
-    fe.zero_grad(set_to_none=True)
-    return {"features": feats, "grad": grad}
+    for p in params:
+        p.grad = None
+    return {"features": feats, "grad": grad,
+            "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long),
+            "grad_absmax": torch.stack([g.abs().max() if g.numel() else g.new_zeros(())
+                                        for g in gs]).cpu()}
 
 
 def _cos(a: "torch.Tensor", b: "torch.Tensor") -> float:
+    """Cosine in FLOAT64: over ~10^7 fp32 entries an fp32 dot/norm reads > 1 (1.0005 measured on
+    the production policy's gradient), which would put the 0.9999 bar inside rounding noise."""
+    a, b = a.detach().double(), b.detach().double()
     na, nb = float(a.norm()), float(b.norm())
     if na == 0.0 and nb == 0.0:
         return 1.0
@@ -397,21 +431,69 @@ def decision_verdicts(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "
     return lines
 
 
+def _param_verdict(compiled: Dict[str, "torch.Tensor"], eager: Dict[str, "torch.Tensor"],
+                   param_names: Optional[List[str]], *, allow_vacuous: bool = False,
+                   bar: float = _MAX_PARAM_GRAD_REL) -> Optional[str]:
+    """The per-parameter gradient rule (fp32 only). None when the arms carry no ``grad_sizes``
+    (a hand-built verdict input)."""
+    if "grad_sizes" not in eager or "grad_sizes" not in compiled:
+        return None
+    sizes = [int(x) for x in eager["grad_sizes"].tolist()]
+    if sizes != [int(x) for x in compiled["grad_sizes"].tolist()]:
+        raise CompileTrainerError("--compile-trainer: the two arms' gradients cover different "
+                                  "parameter sets — the gate is mis-wired")
+    errs = per_param_grad_errors(compiled["grad"], eager["grad"], sizes,
+                                 floor_frac=_PARAM_GRAD_FLOOR)
+    if not errs:
+        if allow_vacuous:
+            return None
+        raise VacuousCompileParityError("--compile-trainer parity (train graph): no parameter's "
+                                        "gradient is above the per-parameter floor")
+    worst_i, worst = max(errs, key=lambda t: (not (t[1] == t[1]), t[1]))   # NaN sorts worst
+    name = param_names[worst_i] if param_names and worst_i < len(param_names) else f"#{worst_i}"
+    rule = (f"per-param grad rel err max {worst:.2e} ({name}) over {len(errs)} params "
+            f"<= {bar:g}")
+    if not (worst <= bar):
+        bad = [(param_names[i] if param_names and i < len(param_names) else f"#{i}", e)
+               for i, e in errs if not (e <= bar)]
+        raise CompileTrainerError(
+            f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with eager on "
+            f"{len(bad)} parameter(s) — {rule} FAILED (e.g. "
+            f"{', '.join(f'{n} {e:.2e}' for n, e in bad[:5])}). A backward miscompile in a path "
+            f"the global cosine cannot resolve. A faster wrong model is not a win — investigate "
+            f"before re-enabling.")
+    return rule
+
+
 def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
                   reference: Optional[Dict[str, "torch.Tensor"]] = None,
-                  precision: Optional[str] = None, allow_vacuous: bool = False) -> str:
+                  precision: Optional[str] = None, allow_vacuous: bool = False,
+                  param_names: Optional[List[str]] = None,
+                  param_bar: float = _MAX_PARAM_GRAD_REL) -> str:
     """The TRAIN-graph parity gate: forward features (the numerics rule) AND the gradient's cosine.
 
     At 'highest': cos(compiled_grad, eager_grad) >= 0.9999. At reduced precision:
     (1 - cos(compiled, fp32)) <= K * (1 - cos(eager, fp32)) + 1e-4 — TF32's own angular error on
     the eager arm, scaled by the same K as the value rule. The eager arm's features must vary
     across rows and its gradient must be non-zero (`VacuousCompileParityError` otherwise; an
-    all-zero gradient has cosine 1.0 with anything's zero)."""
+    all-zero gradient has cosine 1.0 with anything's zero).
+
+    gen3_gate_grad_coverage_v1: when the arms carry the per-parameter reads (`_train_step` always
+    does), the eager arm must ALSO give a non-zero gradient to all but
+    `compile_gate_probe.MAX_ZERO_GRAD_FRACTION` of the parameters (`VacuousCompileParityError`
+    otherwise), and at fp32 every parameter above the floor is held to `_MAX_PARAM_GRAD_REL`."""
     precision = precision or torch.get_float32_matmul_precision()
+    coverage = None
     if not allow_vacuous:
         _require_informative({"features": eager["features"], "grad": eager["grad"]},
                              {"features": _MAX_NUMERIC_DRIFT, "grad": 0.0},
                              "--compile-trainer parity (train graph)")
+        if "grad_absmax" in eager:
+            try:
+                coverage = coverage_verdict(eager["grad_absmax"], param_names,
+                                            where="--compile-trainer parity (train graph)")
+            except GradCoverageError as exc:
+                raise VacuousCompileParityError(str(exc)) from exc
     if precision == "highest":
         feat = check_numerics(float((compiled["features"] - eager["features"]).abs().max()),
                               precision=precision, what="train features")
@@ -422,7 +504,10 @@ def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torc
                 f"cosine {cos:.6f} < {_MIN_GRAD_COSINE} on the gate's own loss over the "
                 f"extractor's parameters. PPO would be stepping along the wrong direction. A "
                 f"faster wrong model is not a win — investigate before re-enabling.")
-        return f"{feat}; grad cosine {cos:.6f} >= {_MIN_GRAD_COSINE}"
+        per_param = _param_verdict(compiled, eager, param_names, allow_vacuous=allow_vacuous,
+                                   bar=param_bar)
+        return "; ".join(x for x in (feat, f"grad cosine {cos:.6f} >= {_MIN_GRAD_COSINE}",
+                                     per_param, coverage) if x)
     if reference is None:
         raise CompileTrainerError(
             f"--compile-trainer: matmul precision {precision!r} but the train graph has no fp32 "
@@ -441,7 +526,7 @@ def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torc
             f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with the fp32 "
             f"reference beyond TF32 rounding at matmul precision {precision!r} — {rule} FAILED. "
             f"A faster wrong model is not a win — investigate before re-enabling.")
-    return f"{feat}; {rule}"
+    return "; ".join(x for x in (feat, rule, coverage) if x)
 
 
 def resolve_device(fe: Any) -> "torch.device":
@@ -482,30 +567,34 @@ def _gate_arm(model: Any, fe: Any, obs: Any, legal_mask: Any, precision: str) ->
     train32)`` — the decision readout and the train step at the process precision, plus the same
     two at 'highest' when that precision is reduced (else None). For the EAGER arm the fp32 pair is
     the reference; for the COMPILED arm it is the same trace's fp32 graph."""
-    read, train = _readout(model, fe, obs, legal_mask), _train_step(fe, obs)
+    read, train = _readout(model, fe, obs, legal_mask), _train_step(model, fe, obs, legal_mask)
     read32 = train32 = None
     if precision != "highest":
         with _matmul_precision("highest"):
-            read32, train32 = _readout(model, fe, obs, legal_mask), _train_step(fe, obs)
+            read32 = _readout(model, fe, obs, legal_mask)
+            train32 = _train_step(model, fe, obs, legal_mask)
     return read, train, read32, train32
 
 
 def _arm_verdicts(eager: _Arm, comp: _Arm, precision: str, *,
-                  allow_vacuous: bool = False) -> List[str]:
+                  allow_vacuous: bool = False,
+                  param_names: Optional[List[str]] = None,
+                  param_bar: float = _MAX_PARAM_GRAD_REL_TRAINED) -> List[str]:
     """Every rule over one (eager, compiled) pair of arms. Raises `CompileTrainerError`."""
     e_read, e_train, ref_read, ref_train = eager
     c_read, c_train, c_read32, c_train32 = comp
     rules = decision_verdicts(eager=e_read, compiled=c_read, reference=ref_read,
                               precision=precision, allow_vacuous=allow_vacuous)
     rules.append(train_verdict(eager=e_train, compiled=c_train, reference=ref_train,
-                               precision=precision, allow_vacuous=allow_vacuous))
+                               precision=precision, allow_vacuous=allow_vacuous,
+                               param_names=param_names, param_bar=param_bar))
     if c_read32 is not None and ref_read is not None and ref_train is not None \
             and c_train32 is not None:
         rules += ["[same graph at fp32] " + r for r in decision_verdicts(
             eager=ref_read, compiled=c_read32, precision="highest", allow_vacuous=allow_vacuous)]
         rules.append("[same graph at fp32] " + train_verdict(
             eager=ref_train, compiled=c_train32, precision="highest",
-            allow_vacuous=allow_vacuous))
+            allow_vacuous=allow_vacuous, param_names=param_names, param_bar=param_bar))
     return rules
 
 
@@ -617,6 +706,7 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
     # gen3_fresh_parity_probe_v1: the module whose parameters a FRESH-weights pass perturbs — the
     # whole policy (extractor AND heads) when there is one, else the extractor.
     probe_module = policy if isinstance(policy, torch.nn.Module) else fe
+    param_names = [n for n, _ in grad_parameters(model, fe)]
     fresh: Optional[str] = None
     # gen3_compile_sentinel_v1: phase 1 of `compile_control` — the gate compiles FREELY, with the
     # cache-limit detector already listening (it also sets suppress_errors=False: a partial compile
@@ -683,6 +773,7 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             ) from exc
         finally:
             fe.zero_grad(set_to_none=True)
+            probe_module.zero_grad(set_to_none=True)   # the probe loss reaches the heads too
             if not was_training:
                 fe.eval()
 
@@ -691,10 +782,13 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             # The informative verdict FIRST, with the vacuity guard ON: a perturbation that still
             # left a quantity constant refuses the launch rather than passing it.
             rules = ["[fresh weights, seeded perturbation] " + r
-                     for r in _arm_verdicts(p_eager_arm, p_comp_arm, precision)]
-            rules += _arm_verdicts(eager_arm, comp_arm, precision, allow_vacuous=True)
+                     for r in _arm_verdicts(p_eager_arm, p_comp_arm, precision,
+                                            param_names=param_names,
+                                            param_bar=_MAX_PARAM_GRAD_REL)]
+            rules += _arm_verdicts(eager_arm, comp_arm, precision, allow_vacuous=True,
+                                   param_names=param_names)
         else:
-            rules = _arm_verdicts(eager_arm, comp_arm, precision)
+            rules = _arm_verdicts(eager_arm, comp_arm, precision, param_names=param_names)
         speedup = check_speedup(eager_ms, comp_ms)
     except CompileTrainerError:
         fe.forward = original          # never leave a rejected compile installed

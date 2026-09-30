@@ -499,7 +499,12 @@ fixture REFUSES. It checks four things: features, MASKED legal log-probs, V, and
 gradient cosine (≥ 0.9999). **On FRESH weights** (a fresh launch: the zero-init pointer head makes
 every legal log-prob `-log(n_legal)`, so that check cannot fail) it ALSO runs both arms on a seeded,
 bit-exactly-restored perturbation of the policy (`agents.model.parity_probe`,
-`gen3_fresh_parity_probe_v1`), and a vacuous comparison REFUSES rather than passes. Under `--matmul-precision high` it switches to the precision-aware TF32
+`gen3_fresh_parity_probe_v1`), and a vacuous comparison REFUSES rather than passes. The train
+graph's loss reaches the pointer head and every stash readout (`agents.model.compile_gate_probe`,
+`gen3_gate_grad_coverage_v1`). It refuses more than 2% zero-gradient parameters and judges every
+parameter's gradient, not only the global cosine. The CPU `--compile-opponents` path now runs a
+decision-level parity check once per distinct weights (`agents.model.opponent_parity`), which RAISES
+on a mismatch. Under `--matmul-precision high` it switches to the precision-aware TF32
 rule (`e_comp ≤ 4·e_eager + 1e-4` against an fp32 eager reference), plus the same compiled graph
 at fp32 held to the strict bars. **On torch 2.5.1 the GPU learner compile needs its trunk split**
 (`gen3_inductor_trunk_split_v1`): as ONE CUDA Inductor graph it miscompiled on real rows. That

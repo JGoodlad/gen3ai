@@ -30,6 +30,10 @@ def _isolate_module_state(monkeypatch):
     monkeypatch.setattr(S, "_COMPILE_VALIDATED", False)
     monkeypatch.setattr(S, "_LOCAL_TALLY", {"reverts": 0, "total": 0})
     monkeypatch.delenv(S.COMPILE_QUORUM_ENV, raising=False)
+    # These are CONTROL-FLOW tests on an 8-wide stand-in with no policy heads; the decision-level
+    # parity check (gen3_opponent_compile_parity_v1) needs the real policy and the real-width
+    # fixture, and is pinned on it by `opponent_parity_test.py`.
+    monkeypatch.setattr(S, "_check_parity", lambda *a, **k: "parity (stubbed in this file)")
 
 
 class _FE(torch.nn.Module):

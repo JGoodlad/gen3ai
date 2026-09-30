@@ -190,6 +190,29 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
             raise CompileExtractorError(msg) from e
         return False
 
+    # gen3_opponent_compile_parity_v1: the DECISION-level parity check (legal log-probs, V and the
+    # features on the committed real-obs fixture, at B=1, perturbed when fresh), on EVERY call —
+    # i.e. once per model LOAD, never per game — because the weights are this load's own. A parity
+    # FAILURE raises the learner gate's typed error whatever `strict` says: a timing miss costs
+    # throughput, a parity miss is a wrong opponent. Any OTHER exception from the check (a backend
+    # crash on the real rows) is a compile failure and takes the usual warn/fall-back/strict path.
+    from agents.model.compile_trainer import CompileTrainerError
+    t_parity = time.perf_counter()
+    try:
+        parity = _check_parity(model, original, compiled, label)
+    except CompileTrainerError:
+        fe.forward = original
+        raise
+    except Exception as e:
+        fe.forward = original
+        msg = f"{label}: DISABLED — parity check crashed: {type(e).__name__}: {str(e)[:200]}"
+        _compile_warn(msg)
+        if strict:
+            raise CompileExtractorError(msg) from e
+        return False
+    parity_ms = (time.perf_counter() - t_parity) * 1e3
+    print(f"[CompileExtractor] {label}: {parity} ({parity_ms:.0f} ms)", flush=True)
+
     if not revalidate:
         # Already proven in this process — keep it without re-timing. STILL LOG IT: a silent success
         # is indistinguishable from "never ran" in a run log, and that is not hypothetical — the
@@ -229,6 +252,14 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
     print(f"[CompileExtractor] {label}: ON — median {eager_ms:.2f} -> {comp_ms:.2f} ms "
           f"({speedup:.1f}x, cache {cache_dir})", flush=True)
     return True
+
+
+def _check_parity(model: Any, original: Callable[[Any], Any], compiled: Callable[[Any], Any],
+                  label: str) -> str:
+    """The decision-level parity check (`agents.model.opponent_parity`). A module-level seam so a
+    stand-in-model unit test can stub it; production never does."""
+    from agents.model.opponent_parity import check_opponent_parity
+    return check_opponent_parity(model, original, compiled, label=label)
 
 
 def _eager_fallback_on_error(compiled: Callable[[Any], Any], original: Callable[[Any], Any],
