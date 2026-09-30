@@ -1256,10 +1256,11 @@ out on seeds the Q̂ did not use.
 
 | claim | tag |
 |---|---|
-| One-ply labels from this V cannot fix starvation. They are fine for argmax teaching and for sharp softmax distillation (τ ≤ 0.03 on the ±1 scale), not for top-k rescue or an anti-starvation floor. Fixing starvation needs depth, playouts or a better V (X6), or a plain entropy floor, which feeds the starved moves as much as Q̂ does | MEASURED · 3/3 checkpoints · the truth is a greedy continuation (not Nash) |
+| One-ply labels from this V cannot fix starvation: as a target, softmax(Q̂/τ) feeds the starved moves no more than a plain entropy floor does, and V is blind to them. Their one measured positive is the ARGMAX, as a one-ply lookahead. **Implication (owner ruling, 2026-09-30, `design_q_head.md` §5.0, `006156b7`): a V-bootstrapped one-ply Q̂ is used ONLY as an inference-time one-ply lookahead and as a diagnostic. It is never a distillation target, an anti-starvation target or a Q-head training label.** The pre-read's finding that sharp softmax targets (τ ≤ 0.03 on the ±1 scale) would copy the argmax does not license them as a use. The cheap starvation lever is X23 (zero ply). Anything that needs playouts to terminal (MC-outcome labels, depth, a better V through X6) is DEFERRED | MEASURED · 3/3 checkpoints · the truth is a greedy continuation (not Nash); the use rule is an owner DECISION, not a measurement |
 
 [ledger 2026-09-30 · *X4 PRE-READ — THE CRITIC IS BLIND TO THE MOVES THE POLICY STARVES*; meas:
-[`measurements/x4_preread/READOUT.md`](measurements/x4_preread/READOUT.md)]
+[`measurements/x4_preread/READOUT.md`](measurements/x4_preread/READOUT.md); the use rule:
+[`../endstate/design_q_head.md`](../endstate/design_q_head.md) §5.0 (`006156b7`)]
 
 ---
 

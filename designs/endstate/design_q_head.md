@@ -34,6 +34,13 @@ milestone** — on-pool metrics first, off-pool second.
 
 ## 1. The board — fixed-mass belief tokens (T0)
 
+**X5 STANDS ALONE (orchestrator, 2026-09-30).** This section was specified bundled with the Q head
+(X4). X4 is now deferred (§5.0, §9). The tokens add no ply, since they are an architecture change
+over the same observation, so they stay in scope under the owner's one-ply rule and land on their own
+at the North Star 1 retrain boundary. They are judged on intent prediction, OTHER rates, the on-pool
+belief metrics (X8) and a strength guard. Their value to the Q interaction term (I) is read later, if
+X4 returns.
+
 Two groups of concrete entity tokens replace today's blob belief slots. **Token budgets are fixed;
 each group's probability MASS equals the real count, OTHER included.**
 
@@ -339,9 +346,13 @@ runs alongside as the baseline for "what PPO alone learns". **Guards:**
 - strength and entropy held.
 **The opponent pointer's gradient mode is `label_only`** (owner, 2026-09-27; X20): α's label loss SHAPES the trunk (route B on — a richer trunk), but PPO and the Q losses can NOT reach α through its publication (route C cut). The failure this prevents is MOTIVATED COGNITION: a head whose output feeds action selection can be bent by the policy/Q gradient into predicting what justifies the preferred action ("they won't switch, so I attack"). α must stay a truthful predictor, scored only against real opponent actions. Meter: α's calibration SPLIT BY OUR CHOSEN ACTION — P(stay) must not inflate when we attack. Today's α runs `detached` (route B cut); `label_only` is a built, non-default mode. **Whatever α's mode, the α weights used for Q's CENTRING and MARGINALIZATION are always stop-grad**: a Q loss that could move α would "explain away" value errors by shifting the opponent model, breaking the decomposition's identifiability and the V-vs-table gap meter. PPO/Q may still shape α's hidden `h_b` (arm iii of X20). History: the 2026-09-1x search-era program already planned "contrastive, sibling-differenced, opponent-marginalized MC labels" for the win-prob head (ledger ~line 5980); this design's ranking losses are its successor.
 
-**Critic data at scale (with M5).** A DELAYED-LABEL BUFFER keeps unfinished games' rows and back-fills
-the outcome when the game ends (every row once; no rejection of incomplete games — that would bias
-toward short games). Branch successors training V (AlphaGo-style; X6, on the outcomes of the
+**Critic data at scale (with M5).** Lane G's COMPLETE-GAME COLLECTOR (`program_rust_core.md` order
+constraint 6, BUILT 2026-09-30; `designs/training/rust_collector.md`) supplies this. It replaced the
+delayed-label buffer this section specified on 2026-09-27. A game's rows wait in the collector's
+arena until the game ENDS, then take their complete-game GAE and their own outcome as the win label.
+The update fires on a sample count, and the one game that straddles it is split, never dropped. Every
+row is labelled once. No incomplete game is rejected, which would bias toward short games, and no row
+is dropped at a window edge, which biased the old fixed-window path toward short games too. Branch successors training V (AlphaGo-style; X6, on the outcomes of the
 playouts of §5.0, with an off-path calibration meter) is DEFERRED with those playouts (owner,
 2026-09-30).
 
@@ -472,14 +483,16 @@ PRIORITY (§5.0).
    - the one-ply V-bootstrapped Q̂ as an **inference-time lookahead** and as a **diagnostic** (§5.0,
      §6), never an anti-starvation or distillation target;
    - **X4a**, the A/B ride-along on the labels PPO already produces (zero extra ply);
-   - **X23** (entropy / temperature, zero ply) stays the starvation lever (§5.2).
+   - **X23** (entropy / temperature, zero ply) stays the starvation lever (§5.2);
+   - **X5**, the fixed-mass belief tokens (§1), zero ply, STANDALONE. It is no longer bundled with
+     X4 (orchestrator, 2026-09-30), and it lands at the North Star 1 retrain boundary.
 3. **DEFERRED, lower priority:**
    - **X4 as a whole moves DOWN.** Its counterfactual-label training has no in-scope label source:
      one-ply Q̂ is not a training label (§5.0), and the grounded option, Monte-Carlo playout OUTCOMES,
      needs a playout to terminal. When it returns, it is ready after the M5 switch and the M5 sizing
-     study (`program_rust_core.md` order constraint 5), with the fixed-mass tokens and the flat
-     opponent pointer, then the Q heads (detached probe + shared main arm), judged on the leaf rows
-     with V and strength guards;
+     study (`program_rust_core.md` order constraint 5), on top of the fixed-mass tokens (X5, landed
+     on their own by then) and the flat opponent pointer, then the Q heads (detached probe + shared
+     main arm), judged on the leaf rows with V and strength guards;
    - **X6** (branch successors train V through an on-policy continuation to terminal), for the same
      reason. When playouts return, X6 rides on the same outcomes, and it is a prerequisite for any
      V-bootstrapped TRAINING label (V's within-turn discrimination is the measured bottleneck);
@@ -513,7 +526,7 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-27 | Our readout | A SIBLING MLP on the policy's per-action inputs with its own weights and the value context | Reusing the policy pointer logit (an uncalibrated PPO preference) | §4 |
 | 2026-09-27 | Gradient routing **(owner)** | Q heads trained into the shared trunk, with a detached probe as the baseline and gradient-cosine guards | — (the detached probe runs alongside as the baseline) | §5 |
 | 2026-09-27 | α's gradient mode **(owner)** | `label_only`: α's label loss shapes the trunk (route B on); PPO and Q cannot bend α (route C cut) | Letting the policy / Q gradient reach α (motivated cognition: "they won't switch, so I attack") | §5; EXPERIMENT_BACKLOG X20 (`503872c6`) |
-| 2026-09-27 | Critic data at scale | A DELAYED-LABEL BUFFER back-fills outcomes, every row once | Rejecting incomplete games (biases toward short games) | §5 |
+| 2026-09-27 | Critic data at scale — **SUPERSEDED 2026-09-30** by Lane G's complete-game collector (below) | A DELAYED-LABEL BUFFER back-fills outcomes, every row once | Rejecting incomplete games (biases toward short games) | §5 |
 | 2026-09-27 | Omniscient twin | OFFLINE only, own parameters, never a training target | Training the public V on true values (the 09-10 `truevalue` arm: +0.08 optimistic, NOT DETECTED on discrimination) | §7 |
 | 2026-09-27 | Priority **(owner)** | Q first in the research queue; memorization chipped in parallel | Root-causing memorization first | EXPERIMENT_BACKLOG header (`93745a66`) |
 | 2026-09-27 | V calibration **(owner)** | Fix under-dispersion NATIVELY (X21); post-hoc temperature / Platt only as an isolation control | Post-hoc recalibration as the end state | EXPERIMENT_BACKLOG X21 (`503872c6`) |
@@ -528,4 +541,6 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-30 | **Starvation** (orchestrator; the owner may revise) | X23 (entropy / temperature) stays the CHEAP starvation lever; MC-outcome labels are the GROUNDED one, because they carry the truth signal (DEFERRED with them, owner 2026-09-30; X4 measures whether they un-starve; not assumed) | "Counterfactual labels complement X23 against starvation" for any label: for one-ply labels from THIS V the measurement contradicts it. A softmax(Q̂/τ) target puts 0.12–0.19 of its mass on starved moves, vs 0.17–0.18 for uniform | §5.2; READOUT "Verdict" |
 | 2026-09-30 | **Cost model re-measured** (orchestrator) | MEASURED: successor 133 µs, CPU forward 946 µs a row at 1 thread (~7× the sim), loop 3,780 decisions / s. ESTIMATED: a playout label ≈ 7 actions × ≈ 12 remaining decisions ≈ 80–90 policy decisions per side; the A layer at 1 / 2 / 5 % coverage ≈ +0.8–0.9× / +1.6–1.8× / +4.0–4.5× the loop's decision rate. CPU forwards are infeasible beyond ~1 %, so the rows ride T2. The GPU forward cost is NOT measured; the sizing study sets coverage | The one-ply V-scored model (~6 cores at 100 %, ~0.3 core at 5 %, from a 232 µs successor, which was the search TREE's step-built row) | §8.1; x4_preread READOUT "Cost"; m5_laneJ `throughput_production_sp95_n48.json` |
 | 2026-09-30 | **Turn mechanics corrected** (verified at source) | After a SINGLE faint only the fainted side chooses, mid-turn in gen ≤ 3, and the opponent's next-turn reply must be modelled (confirmed). A DOUBLE faint is a SIMULTANEOUS blind choice. A mid-turn replacement (incl. Baton Pass) can face an opponent move ALREADY LOCKED in the queue. The branch rules per decision type are §5.1a's table | "Sequential after a faint; the opponent's reply must be modelled" for every faint (this spec's §5.1 until 2026-09-30) | §5.1a; `../research_state/measurements/x4_preread/mechanics.md` (`sim/battle.ts:2861–2864`, `:2933`, `:1420–1428`, `:3021–3040`, `:3081–3090`) |
+| 2026-09-30 | **Critic data at scale: the complete-game collector** (brings §5.2 in line with `program_rust_core.md`) | Lane G's complete-game collector (order constraint 6, owner 2026-09-29; BUILT 2026-09-30) is the critic-data mechanism: rows wait in its arena until their game ends, get complete-game GAE and their own outcome, and the sample-count trigger splits (never drops) the one straddling game, so every row is labelled once | The delayed-label buffer this doc specified on 2026-09-27 (SUBSUMED: K10(b), a bolt-on beside fixed n_steps windows; the collector retires the windows themselves) | §5.2; `program_rust_core.md` order constraint 6 and its 2026-09-29 Lane G collector row; `../training/rust_collector.md` |
+| 2026-09-30 | **X5 unbundled from X4** (orchestrator) | The fixed-mass belief tokens (§1, X5) STAND ALONE: a zero-ply architecture change, in scope under the owner's one-ply rule, landing at the North Star 1 retrain boundary; judged on intent NLL / calibration, OTHER rates, on-pool belief metrics and a strength guard; the I-term readout waits for X4's return | Keeping X5 "bundled with X4" (it would inherit X4's deferral although it adds no ply) | §1, §9; EXPERIMENT_BACKLOG X5 |
 | 2026-09-30 | **Label construction hazards** | F-X4-1 (Lane S truth answered an open root opponent GREEDY on 90 % of turns), F-X4-2 (hidden-trap switch retries: two commands for one decision in banked logs), F-X4-3 (`rec_action` empty on the untraced side), each with its rule | — | §5.3; `src/main/policy_spectrum/qhat.py` |
