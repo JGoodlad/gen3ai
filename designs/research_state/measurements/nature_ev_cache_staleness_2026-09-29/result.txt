@@ -1,0 +1,26 @@
+== pool: 719 teams, 602 species sets (82 shared by 2+ teams)
+   EXACT  P(same species set, consecutive draws) = 0.20253%
+   EXACT  P(stale nature/EV labels per battle)   = 0.06190%
+   SIMULATED (4,799,952 transitions, real draw): 3,133 stale = 0.06527% [batch-means 95 % 0.06269%, 0.06786%]  (naive Wilson 0.06303%, 0.06760%)
+   differing fields over stale (pair, species): {'evs': 1396, 'nature': 684, 'ivs': 772}
+   offender   5.6% of stale | 5 teams, 4 spreads | blissey/dugtrio/forretress/gengar/swampert/tyranitar | e.g. [('blissey', ['nature', 'evs', 'ivs']), ('forretress', ['nature', 'evs']), ('swampert', ['evs']), ('tyranitar', ['evs', 'ivs'])]
+   offender   3.8% of stale | 4 teams, 4 spreads | blissey/gengar/skarmory/starmie/swampert/tyranitar | e.g. [('blissey', ['evs']), ('gengar', ['evs']), ('skarmory', ['evs']), ('starmie', ['evs']), ('swampert', ['nature', 'evs']), ('tyranitar', ['evs', 'ivs'])]
+   offender   3.8% of stale | 4 teams, 4 spreads | aerodactyl/gengar/skarmory/swampert/tyranitar/zapdos | e.g. [('aerodactyl', ['evs']), ('gengar', ['nature', 'evs']), ('skarmory', ['evs']), ('swampert', ['nature', 'evs', 'ivs']), ('tyranitar', ['evs', 'ivs']), ('zapdos', ['evs', 'ivs'])]
+   offender   3.8% of stale | 4 teams, 4 spreads | blissey/claydol/dugtrio/milotic/skarmory/tyranitar | e.g. [('blissey', ['evs'])]
+   offender   3.8% of stale | 4 teams, 4 spreads | aerodactyl/celebi/magneton/skarmory/swampert/tyranitar | e.g. [('aerodactyl', ['evs', 'ivs']), ('celebi', ['nature', 'evs', 'ivs']), ('magneton', ['evs', 'ivs']), ('skarmory', ['evs', 'ivs']), ('swampert', ['nature', 'evs', 'ivs']), ('tyranitar', ['nature', 'evs', 'ivs'])]
+   offender   3.8% of stale | 4 teams, 4 spreads | blissey/forretress/jirachi/salamence/swampert/tyranitar | e.g. [('blissey', ['nature']), ('forretress', ['evs', 'ivs']), ('jirachi', ['evs']), ('salamence', ['nature', 'evs', 'ivs']), ('tyranitar', ['evs'])]
+   offender   3.8% of stale | 4 teams, 4 spreads | metagross/salamence/snorlax/swampert/tyranitar/zapdos | e.g. [('metagross', ['evs', 'ivs']), ('salamence', ['nature', 'evs', 'ivs']), ('snorlax', ['evs']), ('swampert', ['nature', 'evs']), ('tyranitar', ['nature', 'evs', 'ivs']), ('zapdos', ['nature', 'evs', 'ivs'])]
+   offender   3.8% of stale | 4 teams, 4 spreads | blissey/magneton/salamence/skarmory/swampert/tyranitar | e.g. [('blissey', ['nature', 'evs', 'ivs']), ('swampert', ['ivs']), ('tyranitar', ['nature', 'evs', 'ivs'])]
+== ladder_full: 22813 teams, 7624 species sets (2541 shared by 2+ teams)
+   EXACT  P(same species set, consecutive draws) = 0.17969%
+   EXACT  P(stale nature/EV labels per battle)   = 0.17529%
+   SIMULATED (4,799,952 transitions, real draw): 8,509 stale = 0.17727% [batch-means 95 % 0.17262%, 0.18192%]  (naive Wilson 0.17355%, 0.18108%)
+   differing fields over stale (pair, species): {'nature': 2269946, 'evs': 4126410, 'ivs': 34888}
+   offender  14.5% of stale | 364 teams, 361 spreads | aerodactyl/gengar/skarmory/swampert/tyranitar/zapdos | e.g. [('gengar', ['evs']), ('skarmory', ['evs']), ('tyranitar', ['nature', 'evs']), ('zapdos', ['nature', 'evs'])]
+   offender  13.5% of stale | 351 teams, 346 spreads | blissey/gengar/skarmory/starmie/swampert/tyranitar | e.g. [('blissey', ['nature', 'evs']), ('gengar', ['evs']), ('skarmory', ['evs']), ('starmie', ['evs']), ('swampert', ['nature', 'evs']), ('tyranitar', ['nature', 'evs'])]
+   offender   9.2% of stale | 290 teams, 288 spreads | gengar/jolteon/metagross/skarmory/starmie/tyranitar | e.g. [('gengar', ['evs']), ('jolteon', ['evs']), ('metagross', ['evs']), ('starmie', ['nature', 'evs']), ('tyranitar', ['nature'])]
+   offender   5.9% of stale | 232 teams, 232 spreads | magneton/medicham/metagross/salamence/snorlax/suicune | e.g. [('magneton', ['evs']), ('metagross', ['evs']), ('snorlax', ['nature', 'evs']), ('suicune', ['nature', 'evs'])]
+   offender   4.3% of stale | 199 teams, 198 spreads | blissey/celebi/metagross/salamence/skarmory/starmie | e.g. [('blissey', ['nature', 'evs']), ('celebi', ['nature', 'evs']), ('metagross', ['evs']), ('skarmory', ['evs']), ('starmie', ['nature', 'evs'])]
+   offender   2.7% of stale | 158 teams, 158 spreads | heracross/magneton/metagross/salamence/snorlax/suicune | e.g. [('heracross', ['evs']), ('magneton', ['evs']), ('metagross', ['evs']), ('salamence', ['nature', 'evs']), ('snorlax', ['nature', 'evs']), ('suicune', ['evs'])]
+   offender   2.4% of stale | 149 teams, 146 spreads | blissey/claydol/dugtrio/milotic/skarmory/tyranitar | e.g. [('blissey', ['evs']), ('claydol', ['nature', 'evs']), ('dugtrio', ['nature', 'evs']), ('milotic', ['evs']), ('skarmory', ['evs']), ('tyranitar', ['nature', 'evs'])]
+   offender   2.4% of stale | 149 teams, 146 spreads | blissey/metagross/salamence/skarmory/starmie/tyranitar | e.g. [('blissey', ['evs']), ('metagross', ['nature', 'evs']), ('salamence', ['nature', 'evs']), ('skarmory', ['evs']), ('starmie', ['evs']), ('tyranitar', ['nature', 'evs'])]
