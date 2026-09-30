@@ -1,0 +1,82 @@
+{
+ "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
+ "component": "verdict",
+ "items": [
+  [
+   "lane 0 \u2014 the shared core boundary \u2014 the column contract, the pool of N envs, the refusal policy, the build stamp",
+   "PASS",
+   "milestone"
+  ],
+  [
+   "lane A \u2014 the FFI front end \u2014 the core loaded in-process through a generated C ABI",
+   "PASS",
+   "milestone"
+  ],
+  [
+   "lane B \u2014 the process front end \u2014 the core in a child process over one shared memory mapping",
+   "PASS",
+   "milestone"
+  ],
+  [
+   "lane C \u2014 training labels \u2014 the 18 production label keys the core computes",
+   "PASS",
+   "milestone"
+  ],
+  [
+   "lane D \u2014 episodes and reward \u2014 terminal reward, terminated / truncated, the stall forfeit, ties",
+   "PASS",
+   "milestone"
+  ],
+  [
+   "lane E \u2014 opponent routing \u2014 per-episode route table, policy opponents through T2, bots played in the core",
+   "FAIL",
+   "milestone, GPU part PASS (gates_milestone_lanes_E_T2.json)"
+  ],
+  [
+   "lane F \u2014 scripted bots \u2014 all ten pooled bot classes ported into the core",
+   "PASS",
+   "milestone"
+  ],
+  [
+   "lane I \u2014 search on successors() in process \u2014 the search tree and play-to-the-end without the JSON child",
+   "PASS",
+   "milestone"
+  ],
+  [
+   "lane T2 \u2014 the inference service \u2014 every network forward through fixed GPU weight slots and buckets",
+   "PASS",
+   "milestone, GPU part PASS (gates_milestone_lanes_E_T2.json)"
+  ],
+  [
+   "lane G \u2014 training integration \u2014 the Rust env as the trainer's vec env, behind --env-core",
+   "NOT BUILT",
+   "milestone"
+  ],
+  [
+   "lane H \u2014 eval on the core \u2014 the eval callback and its traces on the Rust env",
+   "NOT BUILT",
+   "milestone"
+  ],
+  [
+   "slice N at the env level",
+   "PASS",
+   "MILESTONE at d58b12de"
+  ],
+  [
+   "the depth-3 successor slice",
+   "PASS",
+   "MILESTONE at d58b12de, refused by both roads: 25 (F-LI-1)"
+  ],
+  [
+   "throughput A/B at --n-envs 48",
+   "MEASURED",
+   "2 read(s); a DESCRIPTOR (no bar registered); env step only until Lane G"
+  ]
+ ],
+ "m5_gate": "NOT MET",
+ "missing": [
+  "lane E \u2014 opponent routing \u2014 per-episode route table, policy opponents through T2, bots played in the core",
+  "lane G \u2014 training integration \u2014 the Rust env as the trainer's vec env, behind --env-core",
+  "lane H \u2014 eval on the core \u2014 the eval callback and its traces on the Rust env"
+ ]
+}

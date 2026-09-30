@@ -1,0 +1,450 @@
+{
+ "schema": "m5_laneJ_throughput_v1",
+ "verdict": "DESCRIPTOR \u2014 no throughput bar is registered for M5 (program doc \u00a72 M5)",
+ "regime": {
+  "n_envs": 48,
+  "threads": 8,
+  "front": "proc",
+  "profile": "release",
+  "arms": [
+   "python",
+   "rust"
+  ],
+  "pairs": 4,
+  "block_seconds": 25.0,
+  "min_steps": 1,
+  "warmup_steps": 30,
+  "inference": {
+   "name": "t2_greedy",
+   "ckpt": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+   "backend": "graph",
+   "device": "cuda",
+   "buckets": [
+    8,
+    48
+   ],
+   "load_s": 1.51,
+   "startup_s": 163.33,
+   "startup_phases_s": {
+    "allocate": 0.26,
+    "build": 162.83,
+    "parity": 0.24
+   },
+   "after_freeze": {
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+   }
+  },
+  "opponent": {
+   "name": "uniform_random",
+   "python": "poke_env.player.RandomPlayer",
+   "rust": [
+    {
+     "kind": "bot",
+     "bot": "random",
+     "seed": 20260929
+    }
+   ]
+  },
+  "collector": {
+   "name": "fixed_window_steps",
+   "n_steps": 2048
+  },
+  "seed": 20260929,
+  "cpu_count": 16,
+  "affinity": 16,
+  "nice": 15,
+  "git": {
+   "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
+   "branch": "m5-laneJ",
+   "dirty_files": 4
+  },
+  "python": "3.11.15",
+  "device": "cuda",
+  "gpu_processes": [
+   "1921068, 512 MiB"
+  ],
+  "gpu_lock": "/home/goodlad/.claude/jobs/gpu.lock",
+  "load_start": {
+   "load1": 4.3916015625,
+   "load5": 10.6298828125,
+   "load15": 7.05224609375,
+   "contention_factor": 1.0
+  },
+  "schedule": "each arm built ONCE, then interleaved timed blocks (A B, B A, ...)",
+  "waited_for_busy_flag": {
+   "path": "/tmp/m5J_busy",
+   "seconds": 0.0
+  },
+  "load_before_blocks": {
+   "load1": 21.76953125,
+   "load5": 11.6376953125,
+   "load15": 7.83349609375,
+   "contention_factor": 1.360595703125
+  },
+  "load_end": {
+   "load1": 26.94775390625,
+   "load5": 16.2724609375,
+   "load15": 10.25048828125,
+   "contention_factor": 1.684234619140625
+  }
+ },
+ "startup_s": {
+  "python": 19.303126951912418,
+  "rust": 1.133324027992785
+ },
+ "arm_info": {
+  "python": {
+   "vec_env": "SubprocVecEnv",
+   "start_method": "forkserver",
+   "sim_bridge": "/home/goodlad/dev/gen3ai-wt/m5-laneJ/src/rust_sim/target/release/sim_bridge",
+   "obs_source": "core",
+   "wrapper": "MaskableAgentWrapper + Monitor",
+   "worker_pids": [
+    1932720,
+    1932721,
+    1932722,
+    1932723,
+    1932724,
+    1932725,
+    1932726,
+    1932727,
+    1932728,
+    1932729,
+    1932730,
+    1932731,
+    1932732,
+    1932733,
+    1932734,
+    1932735,
+    1932736,
+    1932737,
+    1932738,
+    1932739,
+    1932740,
+    1932741,
+    1932742,
+    1932743,
+    1932744,
+    1932745,
+    1932746,
+    1932747,
+    1932748,
+    1932749,
+    1932750,
+    1932751,
+    1932752,
+    1932753,
+    1932754,
+    1932755,
+    1932756,
+    1932757,
+    1932758,
+    1932759,
+    1932760,
+    1932761,
+    1932762,
+    1932763,
+    1932764,
+    1932765,
+    1932766,
+    1932767
+   ]
+  },
+  "rust": {
+   "front": "proc",
+   "binary": "/home/goodlad/dev/gen3ai-wt/m5-laneJ/src/rust_env/target/release/rust_env_proc",
+   "threads": 8,
+   "labels": [
+    "belief",
+    "hp_type",
+    "intent",
+    "item",
+    "margin",
+    "spread"
+   ],
+   "turn_limit": 250,
+   "terminal": {
+    "victory_value": 1.0,
+    "terminal_indicator": true,
+    "draw_penalty": 0.0,
+    "timeout_turn_cap": 250
+   },
+   "opponents": [
+    {
+     "kind": "bot",
+     "bot": "random",
+     "seed": 20260929
+    }
+   ],
+   "teams": 719,
+   "proc_pid": [
+    1934222
+   ],
+   "after_freeze": {
+    "THREADS_SPAWNED_AFTER_FREEZE": 0,
+    "ENVS_ADDED_AFTER_FREEZE": 0,
+    "COLUMN_REBINDS_AFTER_FREEZE": 0,
+    "BANK_GROWTH_AFTER_FREEZE": 0,
+    "PROC_SPAWNS_AFTER_FREEZE": 0
+   },
+   "counters": {
+    "DISPATCHES": 24221,
+    "DECISIONS": 1162608,
+    "EPISODES_STARTED": 42755,
+    "EPISODES_ENDED": 42707,
+    "REFUSALS": 0,
+    "CORE_NS_LAST": 1863407,
+    "CORE_NS_TOTAL": 47527519453,
+    "THREADS_SPAWNED_AFTER_FREEZE": 0,
+    "ENVS_ADDED_AFTER_FREEZE": 0,
+    "COLUMN_REBINDS_AFTER_FREEZE": 0,
+    "BANK_GROWTH_AFTER_FREEZE": 0
+   }
+  }
+ },
+ "collectors": {
+  "python": {
+   "name": "fixed_window_steps",
+   "n_steps": 2048,
+   "steps": 4520,
+   "windows": 2,
+   "episodes_ended": 7951
+  },
+  "rust": {
+   "name": "fixed_window_steps",
+   "n_steps": 2048,
+   "steps": 24220,
+   "windows": 11,
+   "episodes_ended": 42707
+  }
+ },
+ "blocks": [
+  {
+   "arm": "python",
+   "wall_s": 25.02106931398157,
+   "vec_steps": 1302,
+   "decisions": 62496,
+   "episodes_ended": 2296,
+   "ms_per_vec_step": 19.217411147451283,
+   "vec_steps_per_s": 52.036145364596905,
+   "decisions_per_s": 2497.7349775006514,
+   "inference_s": 3.3540211321087554,
+   "env_s": 21.6106404135935,
+   "inference_share": 0.1340478734150085,
+   "cpu_s_tree": 249.2,
+   "cpu_s_host": 6.94,
+   "cpu_s_arm_subtree": 242.25,
+   "cpu_s_bystander": 0.009999999999990905,
+   "cpu_us_per_decision": 3987.4551971326164,
+   "tree_processes": 117,
+   "pair": 0,
+   "load1_after": 23.17431640625
+  },
+  {
+   "arm": "rust",
+   "wall_s": 25.002703755977564,
+   "vec_steps": 6079,
+   "decisions": 291792,
+   "episodes_ended": 10685,
+   "ms_per_vec_step": 4.112963276193052,
+   "vec_steps_per_s": 243.13370503166695,
+   "decisions_per_s": 11670.417841520013,
+   "inference_s": 12.69540686008986,
+   "env_s": 11.955014093080536,
+   "inference_share": 0.5077613598911151,
+   "cpu_s_tree": 87.31,
+   "cpu_s_host": 13.15,
+   "cpu_s_arm_subtree": 74.16,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 299.2199923232988,
+   "tree_processes": 117,
+   "pair": 0,
+   "load1_after": 17.2080078125
+  },
+  {
+   "arm": "rust",
+   "wall_s": 25.000346891931258,
+   "vec_steps": 5951,
+   "decisions": 285648,
+   "episodes_ended": 10437,
+   "ms_per_vec_step": 4.2010329174813075,
+   "vec_steps_per_s": 238.0366970796176,
+   "decisions_per_s": 11425.761459821644,
+   "inference_s": 12.494564470485784,
+   "env_s": 12.15637366566807,
+   "inference_share": 0.49977564409389635,
+   "cpu_s_tree": 85.61,
+   "cpu_s_host": 12.95,
+   "cpu_s_arm_subtree": 72.66,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 299.7045314512967,
+   "tree_processes": 117,
+   "pair": 1,
+   "load1_after": 13.62744140625
+  },
+  {
+   "arm": "python",
+   "wall_s": 25.014793684938923,
+   "vec_steps": 1029,
+   "decisions": 49392,
+   "episodes_ended": 1805,
+   "ms_per_vec_step": 24.30980921762772,
+   "vec_steps_per_s": 41.13565808138355,
+   "decisions_per_s": 1974.5115879064103,
+   "inference_s": 2.673537999158725,
+   "env_s": 22.293776821228676,
+   "inference_share": 0.10687827502524745,
+   "cpu_s_tree": 207.05,
+   "cpu_s_host": 5.66,
+   "cpu_s_arm_subtree": 201.38,
+   "cpu_s_bystander": 0.010000000000019327,
+   "cpu_us_per_decision": 4191.974408811144,
+   "tree_processes": 117,
+   "pair": 1,
+   "load1_after": 14.365234375
+  },
+  {
+   "arm": "python",
+   "wall_s": 25.011116445064545,
+   "vec_steps": 1099,
+   "decisions": 52752,
+   "episodes_ended": 1939,
+   "ms_per_vec_step": 22.758067738912235,
+   "vec_steps_per_s": 43.94046153093122,
+   "decisions_per_s": 2109.142153484699,
+   "inference_s": 3.0748122803634033,
+   "env_s": 21.874817544594407,
+   "inference_share": 0.12293782595099458,
+   "cpu_s_tree": 221.14,
+   "cpu_s_host": 6.12,
+   "cpu_s_arm_subtree": 215.02,
+   "cpu_s_bystander": -2.842170943040401e-14,
+   "cpu_us_per_decision": 4192.068547164088,
+   "tree_processes": 117,
+   "pair": 2,
+   "load1_after": 22.33984375
+  },
+  {
+   "arm": "rust",
+   "wall_s": 25.002073852927424,
+   "vec_steps": 6067,
+   "decisions": 291216,
+   "episodes_ended": 10809,
+   "ms_per_vec_step": 4.120994536497021,
+   "vec_steps_per_s": 242.65987036469903,
+   "decisions_per_s": 11647.673777505554,
+   "inference_s": 12.693010508199222,
+   "env_s": 11.953365452005528,
+   "inference_share": 0.5076783063222986,
+   "cpu_s_tree": 87.2,
+   "cpu_s_host": 13.15,
+   "cpu_s_arm_subtree": 74.04,
+   "cpu_s_bystander": 0.009999999999990905,
+   "cpu_us_per_decision": 299.43409702763586,
+   "tree_processes": 117,
+   "pair": 2,
+   "load1_after": 16.55029296875
+  },
+  {
+   "arm": "rust",
+   "wall_s": 25.000584497931413,
+   "vec_steps": 6093,
+   "decisions": 292464,
+   "episodes_ended": 10741,
+   "ms_per_vec_step": 4.103165025099527,
+   "vec_steps_per_s": 243.7143019797855,
+   "decisions_per_s": 11698.286495029703,
+   "inference_s": 12.659023084910586,
+   "env_s": 11.994023046689108,
+   "inference_share": 0.5063490849967133,
+   "cpu_s_tree": 86.99,
+   "cpu_s_host": 13.12,
+   "cpu_s_arm_subtree": 73.86,
+   "cpu_s_bystander": 0.009999999999990905,
+   "cpu_us_per_decision": 297.4383171945949,
+   "tree_processes": 117,
+   "pair": 3,
+   "load1_after": 13.34912109375
+  },
+  {
+   "arm": "python",
+   "wall_s": 25.017188259982504,
+   "vec_steps": 1060,
+   "decisions": 50880,
+   "episodes_ended": 1879,
+   "ms_per_vec_step": 23.601120999983493,
+   "vec_steps_per_s": 42.370868739696704,
+   "decisions_per_s": 2033.8016995054418,
+   "inference_s": 2.7641739171231166,
+   "env_s": 22.201084828586318,
+   "inference_share": 0.11049099076992155,
+   "cpu_s_tree": 215.26,
+   "cpu_s_host": 6.01,
+   "cpu_s_arm_subtree": 209.24,
+   "cpu_s_bystander": 0.009999999999990905,
+   "cpu_us_per_decision": 4230.738993710692,
+   "tree_processes": 117,
+   "pair": 3,
+   "load1_after": 26.94775390625
+  }
+ ],
+ "arms": {
+  "python": {
+   "blocks": 4,
+   "decisions": 215520,
+   "decisions_per_s_mean": 2153.797604599301,
+   "ms_per_vec_step_mean": 22.471602275993682,
+   "vec_steps_per_s_mean": 44.8707834291521,
+   "cpu_us_per_decision_mean": 4150.559286704635,
+   "inference_share_mean": 0.11858874129029301
+  },
+  "rust": {
+   "blocks": 4,
+   "decisions": 1161120,
+   "decisions_per_s_mean": 11610.534893469228,
+   "ms_per_vec_step_mean": 4.134538938817727,
+   "vec_steps_per_s_mean": 241.88614361394224,
+   "cpu_us_per_decision_mean": 298.94923449920657,
+   "inference_share_mean": 0.5053910988260059
+  }
+ },
+ "ratios": {
+  "decisions_per_s_rust_over_python": {
+   "point": 5.413499831158508,
+   "per_pair": [
+    4.672400373396688,
+    5.786626692799744,
+    5.5224697672754814,
+    5.751930730451433
+   ],
+   "n_pairs": 4,
+   "method": "geometric mean of per-pair ratios; percentile bootstrap",
+   "lo": 4.9216242004831425,
+   "hi": 5.769252629237638,
+   "level": 0.95,
+   "n_boot": 10000,
+   "note": "4 pairs: a bootstrap over so few pairs is coarse (its CI can only take a few values)"
+  },
+  "cpu_s_per_decision_rust_over_python": {
+   "point": 0.07204531743949051,
+   "per_pair": [
+    0.07504033964782056,
+    0.07149483804608762,
+    0.07142872156281924,
+    0.0703041047052912
+   ],
+   "n_pairs": 4,
+   "method": "geometric mean of per-pair ratios; percentile bootstrap",
+   "lo": 0.07059991581849033,
+   "hi": 0.07412066593986746,
+   "level": 0.95,
+   "n_boot": 10000,
+   "note": "4 pairs: a bootstrap over so few pairs is coarse (its CI can only take a few values)"
+  }
+ },
+ "warnings": [
+  "BUSY BOX at end: contention factor 1.68"
+ ]
+}

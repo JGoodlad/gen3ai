@@ -197,6 +197,7 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | 11,578 tests, **~47 m** serial (2026-09-29, nice 19, load ~3; the browser tier is ~19 s of it — the rest is corpus growth since 2026-08) |
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
+| **the M5 milestone** (the Rust env core, every M5 lane) | `python -m main.rust_core_m5 gates --tier milestone [--gpu]`, `slice-n` / `depth3 --tier milestone`, `throughput`, then `verdict` — the ONE place M5 is judged (`src/main/rust_core_m5/`, program doc §2 M5 Lane J) | gates ~7.5 m at `-n 2` (2026-09-29); `gates --from-status` reads the banked verdicts in ~1 s |
 
 ```bash
 # THE ROUTINE GATE — everything cheap, whatever it needs. Add -n 2 (~1.8x, two cores).

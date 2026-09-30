@@ -1,0 +1,250 @@
+"""The THROUGHPUT A/B scaffold (``throughput`` + ``hooks``): the math, the ``/proc`` reading, the
+NOT-BUILT hooks, the GPU-lock re-exec decision and the ``models/`` refusal are routine UNIT tests (no
+battles). ``test_smoke_both_arms_tiny`` runs both arms end to end at N = 2 and is ``sim`` +
+``integration``.
+"""
+import json
+import math
+import os
+import subprocess
+import sys
+import time
+
+import numpy as np
+import pytest
+
+from main.rust_core_m5 import hooks as H
+from main.rust_core_m5 import throughput as T
+
+
+# ------------------------------------------------------------------ the ratio + CI
+
+def test_ratio_ci_point_is_the_geometric_mean_of_pair_ratios():
+    r = T.ratio_ci([20.0, 40.0, 10.0, 80.0], [10.0, 10.0, 10.0, 10.0], seed=1)
+    assert math.isclose(r["point"], (2 * 4 * 1 * 8) ** 0.25, rel_tol=1e-12)
+    assert r["per_pair"] == pytest.approx([2.0, 4.0, 1.0, 8.0])
+    assert r["lo"] <= r["point"] <= r["hi"]
+    assert r["lo"] >= 1.0 - 1e-12 and r["hi"] <= 8.0 + 1e-12   # a bootstrap of a mean stays inside the data
+
+
+def test_ratio_ci_constant_ratio_has_a_degenerate_ci():
+    r = T.ratio_ci([3.0, 6.0, 9.0, 12.0, 15.0], [1.0, 2.0, 3.0, 4.0, 5.0])
+    assert r["point"] == pytest.approx(3.0) and r["lo"] == pytest.approx(3.0) and r["hi"] == pytest.approx(3.0)
+    assert "note" not in r
+
+
+def test_ratio_ci_covers_the_truth_on_noisy_synthetic_pairs():
+    """Over many synthetic replicates the 95 % CI covers the true ratio most of the time (a
+    percentile bootstrap on 12 pairs under-covers a little; the bar is loose on purpose)."""
+    rng = np.random.default_rng(7)
+    true = 5.0
+    hits = 0
+    for rep in range(200):
+        den = rng.uniform(100, 200, 12)
+        num = den * true * np.exp(rng.normal(0, 0.05, 12))
+        r = T.ratio_ci(list(num), list(den), seed=rep, n_boot=2000)
+        assert r["lo"] <= r["point"] <= r["hi"] and r["hi"] / r["lo"] < 1.2
+        hits += r["lo"] < true < r["hi"]
+    assert 0.85 <= hits / 200 <= 1.0, hits
+
+
+def test_ratio_ci_one_pair_and_bad_input():
+    r = T.ratio_ci([2.0], [1.0])
+    assert r["point"] == 2.0 and r["lo"] is None and r["hi"] is None and "one pair" in r["note"]
+    with pytest.raises(ValueError):
+        T.ratio_ci([1.0, 2.0], [1.0])
+    with pytest.raises(ValueError):
+        T.ratio_ci([0.0], [1.0])
+
+
+def test_schedule_interleaves_ab_ba():
+    assert T.schedule(3, ("python", "rust")) == [(0, "python"), (0, "rust"), (1, "rust"), (1, "python"),
+                                                 (2, "python"), (2, "rust")]
+    assert T.schedule(2, ("rust",)) == [(0, "rust"), (1, "rust")]
+
+
+def test_summarize_pairs_blocks_by_pair():
+    def blk(arm, pair, dps, cpd):
+        return {"arm": arm, "pair": pair, "decisions": 100, "decisions_per_s": dps, "ms_per_vec_step": 1.0,
+                "vec_steps_per_s": 1.0, "cpu_us_per_decision": cpd, "inference_share": 0.0}
+
+    blocks = [blk("python", 0, 100.0, 1000.0), blk("rust", 0, 1000.0, 100.0),
+              blk("rust", 1, 1200.0, 80.0), blk("python", 1, 100.0, 1000.0)]
+    per, ratios = T.summarize(blocks, ("python", "rust"), seed=0)
+    assert per["rust"]["decisions_per_s_mean"] == 1100.0 and per["python"]["blocks"] == 2
+    assert ratios["decisions_per_s_rust_over_python"]["per_pair"] == pytest.approx([10.0, 12.0])
+    assert ratios["cpu_s_per_decision_rust_over_python"]["per_pair"] == pytest.approx([0.1, 0.08])
+    assert T.summarize(blocks[1:3], ("rust",), seed=0)[1] == {}
+
+
+# ------------------------------------------------------------------ /proc over a tree
+
+_BURN = "import time\nt = time.process_time()\nwhile time.process_time() - t < {s}:\n    pass\ntime.sleep(30)\n"
+
+
+def test_tree_cpu_counts_a_burning_descendant():
+    """A child that burns ~0.6 s of CPU inside the window shows up in the tree delta and in its own
+    subtree, and the parent's own share stays small."""
+    before = T.tree_snapshot(os.getpid())
+    p = subprocess.Popen([sys.executable, "-c", _BURN.format(s=0.6)])
+    try:
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            s = T.read_stat(p.pid)
+            if s is not None and s[2] / T._TICK >= 0.55:   # tick granularity: 0.6 s may read 0.59
+                break
+            time.sleep(0.05)
+        else:
+            pytest.fail("the burning child never reached 0.55 CPU-s in 15 s")
+        after = T.tree_snapshot(os.getpid())
+        assert any(k[0] == p.pid for k in after), "the child is not in this process's tree"
+        own = T._subtree(after, [p.pid])
+        child = T.cpu_delta(before, after, only=own)
+        assert 0.5 <= child <= 2.0, child
+        assert T.cpu_delta(before, after) >= child
+        host = T.cpu_delta(before, after, only={k for k in after if k[0] == os.getpid()})
+        assert host < child
+    finally:
+        p.kill()   # the process this test started, by its PID
+        p.wait()
+
+
+def test_read_stat_of_a_gone_process_is_none():
+    p = subprocess.Popen([sys.executable, "-c", "pass"])
+    p.wait()
+    assert T.read_stat(p.pid) is None
+
+
+def test_cpu_delta_counts_a_new_process_whole_and_ignores_the_vanished():
+    before = {(1, 10): (0, 100), (2, 20): (1, 50)}
+    after = {(1, 10): (0, 160), (3, 30): (1, 40)}
+    assert T.cpu_delta(before, after) == pytest.approx((60 + 40) / T._TICK)
+
+
+# ------------------------------------------------------------------ the hooks
+
+def test_random_legal_only_picks_legal_actions_and_is_seeded():
+    rng = np.random.default_rng(0)
+    masks = rng.random((500, 11)) < 0.3
+    masks[np.arange(500), rng.integers(0, 11, 500)] = True
+    a = H.RandomLegal(5)(np.zeros((500, 4), np.float32), masks)
+    assert a.dtype == np.int64 and masks[np.arange(500), a].all()
+    assert (H.RandomLegal(5)(None, masks) == a).all()
+    one = np.zeros((2000, 11), bool)
+    one[:, [2, 7]] = True
+    counts = np.bincount(H.RandomLegal(1)(None, one), minlength=11)
+    assert counts[2] + counts[7] == 2000 and 850 < counts[2] < 1150
+    with pytest.raises(ValueError):
+        H.RandomLegal(0)(None, np.zeros((1, 11), bool))
+
+
+def test_uniform_random_declares_the_in_core_random_bot_route():
+    u = H.UniformRandom(seed=9)
+    assert u.rust_routes() == [{"kind": "bot", "bot": "random", "seed": 9}] and u.ep_opp(3) == 0
+    assert isinstance(u, H.OpponentMix) and isinstance(H.RandomLegal(0), H.TraineeInference)
+    assert isinstance(H.StepCollector(4), H.Collector)
+
+
+@pytest.mark.parametrize("cls,owner", [(H.ProductionMix, "Lane G"), (H.CompleteGameCollector, "order constraint 6")])
+def test_not_built_hooks_raise_and_name_what_to_plug_in(cls, owner):
+    with pytest.raises(H.HookNotBuilt) as ei:
+        cls()
+    e = ei.value
+    assert owner in str(e) and e.needs == cls.NEEDS and len(e.needs) >= 3
+    for need in cls.NEEDS:
+        assert need in str(e)
+
+
+def test_not_built_hooks_never_silently_construct():
+    """The teeth: if someone makes a NOT-BUILT hook return an object (a silent fallback), this fails."""
+    made = []
+    for cls in (H.ProductionMix, H.CompleteGameCollector):
+        try:
+            made.append(cls())
+        except H.HookNotBuilt:
+            continue
+    assert made == [], f"a NOT-BUILT hook constructed silently: {made}"
+    assert H.OPPONENTS["production"] is H.ProductionMix and H.COLLECTORS["complete_game"] is H.CompleteGameCollector
+
+
+def test_the_cli_refuses_a_not_built_hook(tmp_path):
+    out = tmp_path / "t.json"
+    for extra in (["--opponent", "production"], ["--collector", "complete_game"]):
+        assert T.main(["--out", str(out), "--n-envs", "2", *extra]) == 2
+    assert not out.exists()
+
+
+def test_step_collector_counts_windows():
+    c = H.StepCollector(3)
+    for i in range(7):
+        c.observe(np.array([i == 4, False]))
+    assert c.describe() == {"name": "fixed_window_steps", "n_steps": 3, "steps": 7, "windows": 2, "episodes_ended": 1}
+    assert not c.ready()
+    with pytest.raises(ValueError):
+        H.StepCollector(0)
+
+
+# ------------------------------------------------------------------ the GPU lock + --out
+
+def test_flock_reexec_only_for_cuda_and_only_once():
+    py = "/x/python3"
+    cpu = ["--out", "o.json", "--inference", "t2", "--device", "cpu"]
+    assert T.flock_reexec_argv(cpu, {}, py) is None
+    assert T.flock_reexec_argv(["--out", "o.json", "--device", "cuda"], {}, py) is None   # random inference: no GPU
+    gpu = ["--out", "o.json", "--inference", "t2", "--device", "cuda:0", "--n-envs", "48"]
+    assert T.flock_reexec_argv(gpu, {}, py) == ["flock", T.GPU_LOCK, py, "-m", "main.rust_core_m5.throughput", *gpu]
+    assert T.flock_reexec_argv(gpu, {T.GPU_LOCK_MARKER: "1"}, py) is None
+    assert T.flock_reexec_argv(gpu, {T.GPU_LOCK_MARKER: "0"}, py) is not None
+
+
+def test_out_under_models_is_refused(tmp_path):
+    models = tmp_path / "models"
+    with pytest.raises(ValueError, match="run archive"):
+        T.refuse_models_out(str(models / "run" / "t.json"), [None, models])
+    with pytest.raises(ValueError):
+        T.refuse_models_out(str(models), [models])
+    assert T.refuse_models_out(str(tmp_path / "models_not" / "t.json"), [models]) == (tmp_path / "models_not" / "t.json")
+    from utils.paths import main_models_dir
+
+    md = main_models_dir()
+    if md is not None:   # the default list holds the real archive
+        with pytest.raises(ValueError):
+            T.refuse_models_out(str(md / "x" / "throughput.json"))
+
+
+def test_the_cli_refuses_models_before_building_anything(tmp_path, monkeypatch):
+    models = tmp_path / "models"
+    models.mkdir()
+    monkeypatch.setenv("GEN3AI_MODELS_DIR", str(models))
+    with pytest.raises(ValueError, match="run archive"):
+        T.main(["--out", str(models / "run" / "t.json"), "--n-envs", "2"])
+    assert not (models / "run").exists()
+
+
+# ------------------------------------------------------------------ the smoke (both arms, real battles)
+
+@pytest.mark.sim
+@pytest.mark.integration
+def test_smoke_both_arms_tiny(tmp_path):
+    out = tmp_path / "throughput_smoke.json"
+    t0 = time.monotonic()
+    rc = T.main(["--out", str(out), "--n-envs", "2", "--threads", "2", "--pairs", "1", "--block-seconds", "0.5",
+                 "--warmup-steps", "2", "--profile", "selfcheck", "--front", "proc"])
+    assert rc == 0
+    res = json.loads(out.read_text())
+    assert res["schema"] == T.SCHEMA and res["regime"]["n_envs"] == 2 and res["regime"]["threads"] == 2
+    for k in ("front", "profile", "inference", "opponent", "collector", "git", "load_start", "load_end", "cpu_count"):
+        assert k in res["regime"], k
+    assert res["regime"]["inference"]["name"] == "random_legal"
+    assert res["regime"]["opponent"]["name"] == "uniform_random"
+    assert res["regime"]["collector"]["name"] == "fixed_window_steps"
+    assert [(b["pair"], b["arm"]) for b in res["blocks"]] == [(0, "python"), (0, "rust")]
+    for b in res["blocks"]:
+        assert b["decisions"] > 0 and b["cpu_s_tree"] > 0 and b["cpu_us_per_decision"] > 0, b
+    assert res["arm_info"]["rust"]["labels"] and res["arm_info"]["rust"]["after_freeze"]
+    assert all(v == 0 for v in res["arm_info"]["rust"]["after_freeze"].values())
+    assert res["arm_info"]["python"]["obs_source"] == "core"
+    assert set(res["startup_s"]) == {"python", "rust"}
+    r = res["ratios"]["decisions_per_s_rust_over_python"]
+    assert r["point"] > 0 and r["n_pairs"] == 1
+    print(f"smoke wall {time.monotonic() - t0:.1f} s")

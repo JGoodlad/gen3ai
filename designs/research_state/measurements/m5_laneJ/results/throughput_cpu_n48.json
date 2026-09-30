@@ -1,0 +1,431 @@
+{
+ "schema": "m5_laneJ_throughput_v1",
+ "verdict": "DESCRIPTOR \u2014 no throughput bar is registered for M5 (program doc \u00a72 M5)",
+ "regime": {
+  "n_envs": 48,
+  "threads": 8,
+  "front": "proc",
+  "profile": "release",
+  "arms": [
+   "python",
+   "rust"
+  ],
+  "pairs": 4,
+  "block_seconds": 25.0,
+  "min_steps": 1,
+  "warmup_steps": 30,
+  "inference": {
+   "name": "random_legal",
+   "seed": 20260929,
+   "device": "cpu"
+  },
+  "opponent": {
+   "name": "uniform_random",
+   "python": "poke_env.player.RandomPlayer",
+   "rust": [
+    {
+     "kind": "bot",
+     "bot": "random",
+     "seed": 20260929
+    }
+   ]
+  },
+  "collector": {
+   "name": "fixed_window_steps",
+   "n_steps": 2048
+  },
+  "seed": 20260929,
+  "cpu_count": 16,
+  "affinity": 16,
+  "nice": 15,
+  "git": {
+   "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
+   "branch": "m5-laneJ",
+   "dirty_files": 3
+  },
+  "python": "3.11.15",
+  "device": "cpu",
+  "gpu_processes": null,
+  "gpu_lock": null,
+  "load_start": {
+   "load1": 0.78369140625,
+   "load5": 1.6103515625,
+   "load15": 2.44482421875,
+   "contention_factor": 1.0
+  },
+  "schedule": "each arm built ONCE, then interleaved timed blocks (A B, B A, ...)",
+  "waited_for_busy_flag": {
+   "path": "/tmp/m5J_busy",
+   "seconds": 0.0
+  },
+  "load_before_blocks": {
+   "load1": 14.53271484375,
+   "load5": 4.5908203125,
+   "load15": 3.40625,
+   "contention_factor": 1.0
+  },
+  "load_end": {
+   "load1": 23.72314453125,
+   "load5": 14.9921875,
+   "load15": 7.86767578125,
+   "contention_factor": 1.482696533203125
+  }
+ },
+ "startup_s": {
+  "python": 17.148004755028524,
+  "rust": 1.0360053590266034
+ },
+ "arm_info": {
+  "python": {
+   "vec_env": "SubprocVecEnv",
+   "start_method": "forkserver",
+   "sim_bridge": "/home/goodlad/dev/gen3ai-wt/m5-laneJ/src/rust_sim/target/release/sim_bridge",
+   "obs_source": "core",
+   "wrapper": "MaskableAgentWrapper + Monitor",
+   "worker_pids": [
+    1919172,
+    1919173,
+    1919174,
+    1919175,
+    1919176,
+    1919177,
+    1919178,
+    1919179,
+    1919180,
+    1919181,
+    1919182,
+    1919183,
+    1919184,
+    1919185,
+    1919186,
+    1919187,
+    1919188,
+    1919189,
+    1919190,
+    1919191,
+    1919192,
+    1919193,
+    1919194,
+    1919195,
+    1919196,
+    1919197,
+    1919198,
+    1919199,
+    1919200,
+    1919201,
+    1919202,
+    1919203,
+    1919204,
+    1919205,
+    1919206,
+    1919207,
+    1919208,
+    1919209,
+    1919210,
+    1919211,
+    1919212,
+    1919213,
+    1919214,
+    1919215,
+    1919216,
+    1919217,
+    1919218,
+    1919219
+   ]
+  },
+  "rust": {
+   "front": "proc",
+   "binary": "/home/goodlad/dev/gen3ai-wt/m5-laneJ/src/rust_env/target/release/rust_env_proc",
+   "threads": 8,
+   "labels": [
+    "belief",
+    "hp_type",
+    "intent",
+    "item",
+    "margin",
+    "spread"
+   ],
+   "turn_limit": 250,
+   "terminal": {
+    "victory_value": 1.0,
+    "terminal_indicator": true,
+    "draw_penalty": 0.0,
+    "timeout_turn_cap": 250
+   },
+   "opponents": [
+    {
+     "kind": "bot",
+     "bot": "random",
+     "seed": 20260929
+    }
+   ],
+   "teams": 719,
+   "proc_pid": [
+    1920492
+   ],
+   "after_freeze": {
+    "THREADS_SPAWNED_AFTER_FREEZE": 0,
+    "ENVS_ADDED_AFTER_FREEZE": 0,
+    "COLUMN_REBINDS_AFTER_FREEZE": 0,
+    "BANK_GROWTH_AFTER_FREEZE": 0,
+    "PROC_SPAWNS_AFTER_FREEZE": 0
+   },
+   "counters": {
+    "DISPATCHES": 71186,
+    "DECISIONS": 3416928,
+    "EPISODES_STARTED": 47668,
+    "EPISODES_ENDED": 47620,
+    "REFUSALS": 0,
+    "CORE_NS_LAST": 1443529,
+    "CORE_NS_TOTAL": 93502756227,
+    "THREADS_SPAWNED_AFTER_FREEZE": 0,
+    "ENVS_ADDED_AFTER_FREEZE": 0,
+    "COLUMN_REBINDS_AFTER_FREEZE": 0,
+    "BANK_GROWTH_AFTER_FREEZE": 0
+   }
+  }
+ },
+ "collectors": {
+  "python": {
+   "name": "fixed_window_steps",
+   "n_steps": 2048,
+   "steps": 6685,
+   "windows": 3,
+   "episodes_ended": 4480
+  },
+  "rust": {
+   "name": "fixed_window_steps",
+   "n_steps": 2048,
+   "steps": 71185,
+   "windows": 34,
+   "episodes_ended": 47620
+  }
+ },
+ "blocks": [
+  {
+   "arm": "python",
+   "wall_s": 25.00876913499087,
+   "vec_steps": 1600,
+   "decisions": 76800,
+   "episodes_ended": 1067,
+   "ms_per_vec_step": 15.630480709369294,
+   "vec_steps_per_s": 63.977558885989694,
+   "decisions_per_s": 3070.9228265275055,
+   "inference_s": 0.09412698226515204,
+   "env_s": 24.854241178254597,
+   "inference_share": 0.003763759094143295,
+   "cpu_s_tree": 264.34,
+   "cpu_s_host": 4.01,
+   "cpu_s_arm_subtree": 260.33,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 3441.927083333333,
+   "tree_processes": 100,
+   "pair": 0,
+   "load1_after": 28.3212890625
+  },
+  {
+   "arm": "rust",
+   "wall_s": 25.00029916607309,
+   "vec_steps": 18017,
+   "decisions": 864816,
+   "episodes_ended": 12164,
+   "ms_per_vec_step": 1.3875950028347168,
+   "vec_steps_per_s": 720.6713759829784,
+   "decisions_per_s": 34592.22604718296,
+   "inference_s": 0.690044202725403,
+   "env_s": 23.655036689597182,
+   "inference_share": 0.02760143781246564,
+   "cpu_s_tree": 150.29,
+   "cpu_s_host": 1.6,
+   "cpu_s_arm_subtree": 148.69,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 173.78263121866385,
+   "tree_processes": 100,
+   "pair": 0,
+   "load1_after": 21.38671875
+  },
+  {
+   "arm": "rust",
+   "wall_s": 25.000770863029175,
+   "vec_steps": 17799,
+   "decisions": 854352,
+   "episodes_ended": 11906,
+   "ms_per_vec_step": 1.404616599979166,
+   "vec_steps_per_s": 711.9380477311977,
+   "decisions_per_s": 34173.026291097485,
+   "inference_s": 0.6871427671285346,
+   "env_s": 23.665451267152093,
+   "inference_share": 0.027484863202545194,
+   "cpu_s_tree": 150.33,
+   "cpu_s_host": 1.57,
+   "cpu_s_arm_subtree": 148.76,
+   "cpu_s_bystander": 2.842170943040401e-14,
+   "cpu_us_per_decision": 175.9579189842126,
+   "tree_processes": 100,
+   "pair": 1,
+   "load1_after": 16.34375
+  },
+  {
+   "arm": "python",
+   "wall_s": 25.00077485095244,
+   "vec_steps": 1754,
+   "decisions": 84192,
+   "episodes_ended": 1182,
+   "ms_per_vec_step": 14.253577452082348,
+   "vec_steps_per_s": 70.15782552568281,
+   "decisions_per_s": 3367.575625232775,
+   "inference_s": 0.10625761526171118,
+   "env_s": 24.827316581853665,
+   "inference_share": 0.004250172880448269,
+   "cpu_s_tree": 295.51,
+   "cpu_s_host": 4.53,
+   "cpu_s_arm_subtree": 290.98,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 3509.9534397567463,
+   "tree_processes": 100,
+   "pair": 1,
+   "load1_after": 30.45703125
+  },
+  {
+   "arm": "python",
+   "wall_s": 25.00198202696629,
+   "vec_steps": 1728,
+   "decisions": 82944,
+   "episodes_ended": 1178,
+   "ms_per_vec_step": 14.468739598938825,
+   "vec_steps_per_s": 69.1145205262622,
+   "decisions_per_s": 3317.4969852605855,
+   "inference_s": 0.10545409866608679,
+   "env_s": 24.829942253651097,
+   "inference_share": 0.004217829552566976,
+   "cpu_s_tree": 293.47,
+   "cpu_s_host": 4.51,
+   "cpu_s_arm_subtree": 288.96,
+   "cpu_s_bystander": 5.684341886080802e-14,
+   "cpu_us_per_decision": 3538.1703317901233,
+   "tree_processes": 100,
+   "pair": 2,
+   "load1_after": 34.39990234375
+  },
+  {
+   "arm": "rust",
+   "wall_s": 25.000531404046342,
+   "vec_steps": 17580,
+   "decisions": 843840,
+   "episodes_ended": 11785,
+   "ms_per_vec_step": 1.422100762459974,
+   "vec_steps_per_s": 703.1850529847006,
+   "decisions_per_s": 33752.88254326563,
+   "inference_s": 0.6903689043829218,
+   "env_s": 23.658993844757788,
+   "inference_share": 0.027614169204066813,
+   "cpu_s_tree": 150.17,
+   "cpu_s_host": 1.59,
+   "cpu_s_arm_subtree": 148.58,
+   "cpu_s_bystander": -2.842170943040401e-14,
+   "cpu_us_per_decision": 177.96027682973076,
+   "tree_processes": 100,
+   "pair": 2,
+   "load1_after": 24.71875
+  },
+  {
+   "arm": "rust",
+   "wall_s": 25.00067779805977,
+   "vec_steps": 17759,
+   "decisions": 852432,
+   "episodes_ended": 11764,
+   "ms_per_vec_step": 1.4077750885781728,
+   "vec_steps_per_s": 710.3407412969509,
+   "decisions_per_s": 34096.355582253644,
+   "inference_s": 0.6928723097080365,
+   "env_s": 23.654937903978862,
+   "inference_share": 0.027714141004681413,
+   "cpu_s_tree": 150.74,
+   "cpu_s_host": 1.59,
+   "cpu_s_arm_subtree": 149.15,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 176.83521970080898,
+   "tree_processes": 100,
+   "pair": 3,
+   "load1_after": 17.6953125
+  },
+  {
+   "arm": "python",
+   "wall_s": 25.000655897078104,
+   "vec_steps": 1573,
+   "decisions": 75504,
+   "episodes_ended": 1049,
+   "ms_per_vec_step": 15.893614683457155,
+   "vec_steps_per_s": 62.918349281541886,
+   "decisions_per_s": 3020.0807655140106,
+   "inference_s": 0.095905905473046,
+   "env_s": 24.84356103569735,
+   "inference_share": 0.0038361355745172585,
+   "cpu_s_tree": 270.67,
+   "cpu_s_host": 4.1,
+   "cpu_s_arm_subtree": 266.57,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 3584.8431871159146,
+   "tree_processes": 100,
+   "pair": 3,
+   "load1_after": 23.72314453125
+  }
+ ],
+ "arms": {
+  "python": {
+   "blocks": 4,
+   "decisions": 319440,
+   "decisions_per_s_mean": 3194.019050633719,
+   "ms_per_vec_step_mean": 15.061603110961904,
+   "vec_steps_per_s_mean": 66.54206355486915,
+   "cpu_us_per_decision_mean": 3518.7235104990295,
+   "inference_share_mean": 0.004016974275418949
+  },
+  "rust": {
+   "blocks": 4,
+   "decisions": 3415440,
+   "decisions_per_s_mean": 34153.62261594993,
+   "ms_per_vec_step_mean": 1.4055218634630076,
+   "vec_steps_per_s_mean": 711.5338044989569,
+   "cpu_us_per_decision_mean": 176.13401168335406,
+   "inference_share_mean": 0.027603652805939766
+  }
+ },
+ "ratios": {
+  "decisions_per_s_rust_over_python": {
+   "point": 10.70449926261014,
+   "per_pair": [
+    11.264440040096567,
+    10.147664104420926,
+    10.174201421501632,
+    11.289882036135056
+   ],
+   "n_pairs": 4,
+   "method": "geometric mean of per-pair ratios; percentile bootstrap",
+   "lo": 10.160924099515777,
+   "hi": 11.277153863267392,
+   "level": 0.95,
+   "n_boot": 10000,
+   "note": "4 pairs: a bootstrap over so few pairs is coarse (its CI can only take a few values)"
+  },
+  "cpu_s_per_decision_rust_over_python": {
+   "point": 0.050059761478695154,
+   "per_pair": [
+    0.05048992236359758,
+    0.05013112623978487,
+    0.0502972610534814,
+    0.04932857881660281
+   ],
+   "n_pairs": 4,
+   "method": "geometric mean of per-pair ratios; percentile bootstrap",
+   "lo": 0.04956898618754566,
+   "hi": 0.05039998330158579,
+   "level": 0.95,
+   "n_boot": 10000,
+   "note": "4 pairs: a bootstrap over so few pairs is coarse (its CI can only take a few values)"
+  }
+ },
+ "warnings": [
+  "BUSY BOX at end: contention factor 1.48"
+ ]
+}

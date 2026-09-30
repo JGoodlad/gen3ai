@@ -1,0 +1,85 @@
+{
+ "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
+ "component": "depth3",
+ "default_depth": 3,
+ "ok": true,
+ "parts": [
+  {
+   "arms": 23764,
+   "battles": 12,
+   "by_depth": {
+    "1": 3870,
+    "2": 10426,
+    "3": 9468
+   },
+   "d10_leaves": 2186,
+   "differences": [],
+   "n_differences": 0,
+   "nonvacuous": true,
+   "ok": true,
+   "refused_both": 12,
+   "refused_examples": [
+    "b0 T1 p2 d2: bridge fatal: unresolvable choice for p2: SwitchSpecies(\"Magneton\") \u2014 active magneton has moves [\"Thunderbolt\", \"Protect\", \"Substitute\", \"Toxic\"]; bench [\"metagross\", \"celebi\", \"tyranitar\", \"salamence\", \"swampert\"]. Re-requesting would loop",
+    "b0 T5 p2 d2: bridge fatal: unresolvable choice for p2: SwitchSpecies(\"Metagross\") \u2014 active metagross has moves [\"Earthquake\", \"Meteor Mash\", \"Protect\", \"Explosion\"]; bench [\"salamence\", \"celebi\", \"tyranitar\", \"magneton\", \"swampert\"]. Re-requesting would",
+    "b1 T5 p2 d2: bridge fatal: unresolvable choice for p2: SwitchSpecies(\"Celebi\") \u2014 active celebi has moves [\"Leech Seed\", \"Light Screen\", \"Hidden Power\", \"Recover\"]; bench [\"swampert\", \"skarmory\", \"tyranitar\", \"magneton\", \"aerodactyl\"]. Re-requesting woul"
+   ],
+   "roots": 88,
+   "rows": 26495,
+   "seconds": 18.1,
+   "source": "ladder_milestone",
+   "terminal_arms": 535
+  },
+  {
+   "arms": 12780,
+   "battles": 6,
+   "by_depth": {
+    "1": 2064,
+    "2": 5994,
+    "3": 4722
+   },
+   "d10_leaves": 1173,
+   "differences": [],
+   "n_differences": 0,
+   "nonvacuous": true,
+   "ok": true,
+   "refused_both": 10,
+   "refused_examples": [
+    "b0 T1 p1/both d2: bridge fatal: unresolvable choice for p1: SwitchSpecies(\"Airmure\") \u2014 active skarmory has moves [\"Protect\", \"Spikes\", \"Roar\", \"Thief\"]; bench [\"armaldo\", \"claydol\", \"blissey\", \"gyarados\"]. Re-requesting would loop forever, so this fails loud",
+    "b1 T1 p1/both d2: bridge fatal: unresolvable choice for p1: SwitchSpecies(\"Dugtrio\") \u2014 active dugtrio has moves [\"Earthquake\", \"Hidden Power Bug\", \"Aerial Ace\", \"Sunny Day\"]; bench [\"blissey\", \"suicune\", \"skarmory\", \"claydol\"]. Re-requesting would loop forev",
+    "b1 T47 p2 d3: bridge fatal: unresolvable choice for p2: SwitchSpecies(\"Salamence\") \u2014 active salamence has moves [\"Dragon Dance\", \"Earthquake\", \"Rock Slide\", \"Hidden Power Flying\"]; bench [\"celebi\", \"swampert\", \"tyranitar\", \"metagross\", \"heracross\"]. Re-r"
+   ],
+   "roots": 46,
+   "rows": 13993,
+   "seconds": 12.1,
+   "source": "pool",
+   "terminal_arms": 35
+  },
+  {
+   "arms": 11312,
+   "battles": 6,
+   "by_depth": {
+    "1": 1704,
+    "2": 5000,
+    "3": 4608
+   },
+   "d10_leaves": 1063,
+   "differences": [],
+   "n_differences": 0,
+   "nonvacuous": true,
+   "ok": true,
+   "refused_both": 3,
+   "refused_examples": [
+    "b2 T1 p1/both d3: bridge fatal: unresolvable choice for p1: SwitchSpecies(\"Suicune\") \u2014 active suicune has moves [\"Roar\", \"Surf\", \"Rest\", \"Ice Beam\"]; bench [\"dugtrio\", \"tyranitar\", \"skarmory\", \"magneton\"]. Re-requesting would loop forever, so this fails loud",
+    "b2 T20 p2 d3: bridge fatal: unresolvable choice for p2: SwitchSpecies(\"Registeel\") \u2014 active registeel has moves [\"Curse\", \"Seismic Toss\", \"Earthquake\", \"Thunder Wave\"]; bench [\"tyranitar\", \"starmie\", \"snorlax\"]. Re-requesting would loop forever, so this ",
+    "b5 T13 p2 d3: bridge fatal: unresolvable choice for p2: SwitchSpecies(\"Suicune\") \u2014 active suicune has moves [\"Ice Beam\", \"Rest\", \"Roar\", \"Calm Mind\"]; bench [\"salamence\", \"metagross\", \"aerodactyl\", \"breloom\"]. Re-requesting would loop forever, so this fa"
+   ],
+   "roots": 42,
+   "rows": 13248,
+   "seconds": 10.0,
+   "source": "procedural",
+   "terminal_arms": 80
+  }
+ ],
+ "refused_both": 25,
+ "tier": "milestone"
+}

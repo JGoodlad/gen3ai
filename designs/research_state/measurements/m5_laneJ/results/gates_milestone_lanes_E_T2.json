@@ -1,0 +1,34 @@
+{
+ "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
+ "component": "gates",
+ "gpu": true,
+ "rows": [
+  {
+   "counts": {
+    "fail": 1,
+    "pass": 22
+   },
+   "detail": "",
+   "gpu": "PASS",
+   "lane": "E",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "opponent routing \u2014 per-episode route table, policy opponents through T2, bots played in the core",
+   "verdict": "FAIL"
+  },
+  {
+   "counts": {
+    "pass": 31,
+    "skip": 1
+   },
+   "detail": "",
+   "gpu": "PASS",
+   "lane": "T2",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "the inference service \u2014 every network forward through fixed GPU weight slots and buckets",
+   "verdict": "PASS"
+  }
+ ],
+ "tier": "milestone"
+}

@@ -1,0 +1,162 @@
+{
+ "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
+ "component": "gates",
+ "gpu": false,
+ "rows": [
+  {
+   "counts": {
+    "pass": 22
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "0",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "the shared core boundary \u2014 the column contract, the pool of N envs, the refusal policy, the build stamp",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "pass": 13
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "A",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "the FFI front end \u2014 the core loaded in-process through a generated C ABI",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "pass": 24
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "B",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "the process front end \u2014 the core in a child process over one shared memory mapping",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "pass": 22
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "C",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "training labels \u2014 the 18 production label keys the core computes",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "pass": 9
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "D",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "episodes and reward \u2014 terminal reward, terminated / truncated, the stall forfeit, ties",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "fail": 1,
+    "pass": 20
+   },
+   "detail": "",
+   "gpu": "NOT RUN",
+   "lane": "E",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "opponent routing \u2014 per-episode route table, policy opponents through T2, bots played in the core",
+   "verdict": "FAIL"
+  },
+  {
+   "counts": {
+    "pass": 23
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "F",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "scripted bots \u2014 all ten pooled bot classes ported into the core",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "pass": 10
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "I",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "search on successors() in process \u2014 the search tree and play-to-the-end without the JSON child",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "pass": 27
+   },
+   "detail": "",
+   "gpu": "NOT RUN",
+   "lane": "T2",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "the inference service \u2014 every network forward through fixed GPU weight slots and buckets",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {},
+   "detail": "slice N at the ROLLOUT level (the learner's buffer equal on scripted recorded battles); the --debug smoke on the Rust env; the first two minutes of a real launch; throughput at --n-envs 48 vs today",
+   "gpu": "",
+   "lane": "G",
+   "m5_gate": true,
+   "source": "",
+   "title": "training integration \u2014 the Rust env as the trainer's vec env, behind --env-core",
+   "verdict": "NOT BUILT"
+  },
+  {
+   "counts": {},
+   "detail": "the same seed set played on both paths gives equal greedy results; traces load in the prober",
+   "gpu": "",
+   "lane": "H",
+   "m5_gate": true,
+   "source": "",
+   "title": "eval on the core \u2014 the eval callback and its traces on the Rust env",
+   "verdict": "NOT BUILT"
+  },
+  {
+   "counts": {
+    "pass": 49
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "S",
+   "m5_gate": false,
+   "source": "run:milestone",
+   "title": "the policy-spectrum instrument \u2014 a fixed re-encodable turn bank and its reader",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "pass": 53,
+    "skip": 5
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "K",
+   "m5_gate": false,
+   "source": "run:milestone",
+   "title": "the learner pipeline \u2014 torch 2.8 env, diagnostics cadence, compile lifecycle (K1\u2013K10)",
+   "verdict": "PASS"
+  }
+ ],
+ "tier": "milestone"
+}

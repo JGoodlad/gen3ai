@@ -1,0 +1,180 @@
+{
+ "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
+ "component": "slice_n",
+ "ok": true,
+ "parts": [
+  {
+   "census": {
+    "auto_resets": 279,
+    "decisions_p1": 18054,
+    "decisions_p2": 18102,
+    "filler_episodes": 39,
+    "ops": 539
+   },
+   "counts": {
+    "decisions": 18054,
+    "envs": 48,
+    "episodes": 240,
+    "forfeits": 5,
+    "label_compares": 324972,
+    "mask_compares": 36108,
+    "terminated": 231,
+    "ties": 4,
+    "truncated": 9,
+    "wins": 108
+   },
+   "divergences": {},
+   "examples": {},
+   "families": [
+    "belief",
+    "spread",
+    "hp_type",
+    "item",
+    "margin",
+    "intent"
+   ],
+   "front_end_diffs": [],
+   "n_envs": 48,
+   "n_episodes": 240,
+   "ok": true,
+   "record_s": 3.0,
+   "replay_s": 27.3,
+   "source": "pool",
+   "threads": [
+    8,
+    5
+   ],
+   "turn_limit": 250
+  },
+  {
+   "census": {
+    "auto_resets": 307,
+    "decisions_p1": 19746,
+    "decisions_p2": 19788,
+    "filler_episodes": 67,
+    "ops": 614
+   },
+   "counts": {
+    "decisions": 19746,
+    "envs": 48,
+    "episodes": 240,
+    "forfeits": 4,
+    "label_compares": 355428,
+    "mask_compares": 39492,
+    "terminated": 234,
+    "ties": 2,
+    "truncated": 6,
+    "wins": 122
+   },
+   "divergences": {},
+   "examples": {},
+   "families": [
+    "belief",
+    "spread",
+    "hp_type",
+    "item",
+    "margin",
+    "intent"
+   ],
+   "front_end_diffs": [],
+   "n_envs": 48,
+   "n_episodes": 240,
+   "ok": true,
+   "record_s": 3.7,
+   "replay_s": 31.4,
+   "source": "ladder",
+   "threads": [
+    8,
+    5
+   ],
+   "turn_limit": 250
+  },
+  {
+   "census": {
+    "auto_resets": 213,
+    "decisions_p1": 7945,
+    "decisions_p2": 7938,
+    "filler_episodes": 117,
+    "ops": 352
+   },
+   "counts": {
+    "decisions": 7945,
+    "envs": 48,
+    "episodes": 96,
+    "forfeits": 2,
+    "label_compares": 143010,
+    "mask_compares": 15890,
+    "terminated": 93,
+    "ties": 1,
+    "truncated": 3,
+    "wins": 45
+   },
+   "divergences": {},
+   "examples": {},
+   "families": [
+    "belief",
+    "spread",
+    "hp_type",
+    "item",
+    "margin",
+    "intent"
+   ],
+   "front_end_diffs": [],
+   "n_envs": 48,
+   "n_episodes": 96,
+   "ok": true,
+   "record_s": 2.2,
+   "replay_s": 12.8,
+   "source": "procedural",
+   "threads": [
+    8,
+    5
+   ],
+   "turn_limit": 250
+  },
+  {
+   "census": {
+    "auto_resets": 48,
+    "decisions_p1": 608,
+    "decisions_p2": 609,
+    "filler_episodes": 0,
+    "ops": 19
+   },
+   "counts": {
+    "decisions": 608,
+    "envs": 48,
+    "episodes": 48,
+    "forfeits": 48,
+    "label_compares": 10944,
+    "mask_compares": 1216,
+    "terminated": 0,
+    "ties": 0,
+    "truncated": 48,
+    "wins": 0
+   },
+   "divergences": {},
+   "examples": {},
+   "families": [
+    "belief",
+    "spread",
+    "hp_type",
+    "item",
+    "margin",
+    "intent"
+   ],
+   "front_end_diffs": [],
+   "n_envs": 48,
+   "n_episodes": 48,
+   "ok": true,
+   "record_s": 0.2,
+   "replay_s": 1.0,
+   "source": "ladder",
+   "threads": [
+    8,
+    5
+   ],
+   "turn_limit": 12
+  }
+ ],
+ "tier": "milestone"
+}
