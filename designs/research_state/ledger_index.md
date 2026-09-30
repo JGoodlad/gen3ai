@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,650-line file. **The ledger itself is append-only and is never edited by this**;
+21,683-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**734 headings · 679 dated · 2026-08-01 → 2026-09-30 · ledger 21,650 lines.**
+**735 headings · 680 dated · 2026-08-01 → 2026-09-30 · ledger 21,683 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -754,3 +754,4 @@ rename.
   - `L21552` · `2026-09-30` · MILESTONE · **M5 GATE MET — every lane of the Rust env core passes its own parity gate at the milestone tier (E, T2 and H with their GPU parts), slice N and the depth-3 successor slice pass, and the throughput A/B is measured: on the production 95 / 5 self-play mix at 48 envs the Rust core runs 5.11× [4.72, 5.63] the trainee decisions/s of today's path (3,780 vs 743) at 0.038× [0.037, 0.039] the CPU per decision, and an eval cycle takes ≈ 16.5 s vs ≈ 117 s. PYTHON IS STILL THE DEFAULT env core (`--env-core python`); nothing a run reads has moved.**
   - `L21583` · `2026-09-30` · BOUNDARY · **LIVE PYTHON EVAL MEASURED A MULTI-TEAM FIXED OPPONENT ON ITS FIRST TEAM ONLY (F-LH-13). From this commit a `--stable-opponents` / `--exploiter` opponent that is a multi-team specialist is evaluated sampling among ALL its pinned teams, as it trains, so its `ext_` / vs-target eval win rate is NOT comparable across this commit. 20 of 272 runs in `models/` evaluated such an opponent. Bots, sentinels and single-team opponents are unchanged. Also a pre-data fix: under `--env-core rust`, a non-reused fixed opponent's eval slot was never loaded (F-LH-12).**
   - `L21608` · `2026-09-30` · AUDIT · **F-LH-13 AUDIT: NO DECISION CHANGES. The population loop's primary reads never used the first-team-only `ext_` eval rate: every exploiter target in the archive is an unpinned generalist. Both MANIPULATION CHECKS were affected. Re-measured over all five of each specialist's teams, both still read ABSORBED: M1 +9.33 pp [+3.77, +14.81] (banked +8.50) and M2 +6.67 [+2.09, +11.20] (banked +8.67). Round 2's "+17.0 against the new specialist RB" does NOT survive: +5.33 [−2.58, +13.16], NOT DETECTED.**
+  - `L21651` · `2026-09-30` · BOUNDARY · **CfLabelBuffer INODE REUSE (`a7627744`) — PRE-DATA: no row was ever dropped, no claim moves. Only 3 runs ever ingested a cf label, and their producer could not reach the defective path. SEPARATE FINDING: `ai_v12_12_ladder_cflabels` never received a single label, so its reads say nothing about the cf-label lever**

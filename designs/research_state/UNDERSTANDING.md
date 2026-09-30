@@ -992,7 +992,11 @@ resolution and for the head/mixture defect, both present at 10M. Two 10M lever a
 +0.015 on bot resolution with CIs over zero; the replicate floor (`ctrl10M_b`, next) says whether that is
 the control's shortfall.
 
-**Ladder arm `cflabels` read (2026-09-09, cf continuation labels vs the control, pinned 10M):** [MEASURED · NOT
+**Ladder arm `cflabels` read (2026-09-09, cf continuation labels vs the control, pinned 10M):** 🚨 **SUPERSEDED
+(2026-09-30): the arm received ZERO cf labels** — no producer ran; `cf/labels_ingested_total` 0 and no `train/cf_loss`
+for all 10M steps — so everything below measures a control run (+ `--cf-records`, the 40/40/10 quota, the 377a5aa1
+pin), NOT the lever; the cf continuation-label lever is UNTESTED [ledger 2026-09-30 · *BOUNDARY · CfLabelBuffer INODE
+REUSE*, `measurements/cf_label_inode_audit/`]. As originally read: [MEASURED · NOT
 DETECTED, `measurements/critic_ladder_reads/cflabels_vs_ctrl10M_2026-09-09/` + `matched_quota/`] the own-team
 decode delta +0.084 [+0.032, +0.183] first read as DETECTED was a DECODER-POWER ARTEFACT of the arm's 4× trace
 quota (arm R² −0.025 on the battle-matched frame; a monotone frame-size curve) and is WITHDRAWN; every
@@ -1382,7 +1386,7 @@ z=−1.40" rules out >4.5pp, not >0.
 
 [MEASURED, `search_dividend_winprob_heads_2026-09-11`, 5,556 mirror battles, zero timeouts] **No head pays as a leaf**: at the registered 3 s defensive operating point the paired mirror win rate is 0.506 / 0.503 / 0.495 (ladder control @10M / λ-0.9 @10M / the 75M run @73M), none clear of 0.50; naive search loses 74–80 % of games to its own unsearched self. The promoted win-prob head is a WORSE leaf than the shaped critic it replaced (separation-of-raced 12–15 % vs 45 %, overrules 1–1.6 % vs 5.8 %). Steps do not buy leaf quality (the 73M head is the worst leaf) and calibration does not (the best-calibrated head is not the best leaf). **Leaf quality is within-game successor discrimination, a different property from the between-game opponent conditioning the ladder's decision row measures; the ladder has no row for it yet.** The search-and-distill path is blocked at this leaf; the binding constraint is the critic objective. Follow-up: the same battery on `strata` and `denseaux` (dense within-game targets) to test whether the two axes separate. [ledger 2026-09-11 · *MEASUREMENT (MAJOR) · THE MIRROR METER*]
 
-[MEASURED, phase 2/3, 6,000 more battles, zero timeouts] **The follow-up ran: `strata`, `denseaux` and `cflabels` @10M — L2 is 0.507 / 0.494 / 0.485, none clear of 0.50, each at or slightly below its own CONTEMPORANEOUS `ctrl10M` anchor (all NOT DETECTED). Six win-prob heads sit on the structural null.** The registered branch is "neither pays": a lever that moved the conditioning row (`strata`, before its replicate failed) leaves leaf quality where it was, and two levers null on conditioning leave it too — so the ladder's decision row is not yet shown to be the row the search path should be steered by, and the axes question is not settled. **L1 is CONVICTED as a width meter** (rule 23) and its 18.1 % bar is withdrawn as a fixed bar.
+[MEASURED, phase 2/3, 6,000 more battles, zero timeouts] **The follow-up ran: `strata`, `denseaux` and `cflabels` (⚠️ an arm that received zero cf labels — ledger 2026-09-30) @10M — L2 is 0.507 / 0.494 / 0.485, none clear of 0.50, each at or slightly below its own CONTEMPORANEOUS `ctrl10M` anchor (all NOT DETECTED). Six win-prob heads sit on the structural null.** The registered branch is "neither pays": a lever that moved the conditioning row (`strata`, before its replicate failed) leaves leaf quality where it was, and two levers null on conditioning leave it too — so the ladder's decision row is not yet shown to be the row the search path should be steered by, and the axes question is not settled. **L1 is CONVICTED as a width meter** (rule 23) and its 18.1 % bar is withdrawn as a fixed bar.
 
 [MEASURED (MAJOR), `paired_refit_discrimination_2026-09-14` as CORRECTED by `fork_arm_read_2026-09-16`] **The promoted
 win-prob head ranks successor states one move apart at 0.587 [0.553, 0.623] on 562 held-out non-tied contested pairs

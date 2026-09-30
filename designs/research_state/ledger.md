@@ -21647,3 +21647,36 @@ Tag: **BOUNDARY (live eval, multi-team fixed opponents) · 20 past runs on first
 - The NEW lineage's manipulation check must be read on a post-`40b37a34` eval (or the Rust eval core, which plays all pinned teams).
 
 Record: `designs/research_state/measurements/ext_first_team_audit/` (README, PREREG, `remeasure/` rows + result + driver, `exposure/`, `inventory/`). Tag: **AUDIT · F-LH-13 · 20 runs exposed · primary loop reads UNAFFECTED · M1 +9.33 [+3.77, +14.81] / M2 +6.67 [+2.09, +11.20] ABSORBED HOLD · RB +17.0 → +5.33 NOT DETECTED · team 0 reads 4–11 pp hard · no decision changes**.
+
+### 2026-09-30 · BOUNDARY · **CfLabelBuffer INODE REUSE (`a7627744`) — PRE-DATA: no row was ever dropped, no claim moves. Only 3 runs ever ingested a cf label, and their producer could not reach the defective path. SEPARATE FINDING: `ai_v12_12_ladder_cflabels` never received a single label, so its reads say nothing about the cf-label lever**
+
+**The boundary.** Before `a7627744`, `CfLabelBuffer` keyed its per-file offset on `(name, inode)`. ext4 reuses a freed inode number, so a label file RECREATED under the same name could keep that number. The buffer then skipped its first `offset` bytes without any warning. From `a7627744` the first 4 KB consumed from each file are also re-checked on every poll.
+
+**Exposure (read-only scan of `models/`).**
+- 98 run dirs record a non-zero cf coefficient.
+- Only **3 ever ingested a label** (`cf/labels_ingested_total > 0` in their own TB, not inherited): `ai_v9_29_rev1_0823`, `ai_v9_34_tick1_0824` and `ai_v9_37_tick1_dosext_0825`.
+- The rest had an empty `cf_labels/`, so no row could be dropped.
+- Those 3 runs' labels reached only detached side heads (evidential, twin B/C, shadow; head-only, grad share 0.0). The trunk, the policy and V never saw one.
+
+**Recreation: none, and the path could not be reached.**
+- `cf_producer` writes every batch to a new name, `labels_cf_producer_<step>_<seq>.jsonl`, via `.tmp` + `os.replace`. The tmp coexists with any old file, so it cannot take the old file's inode number.
+- On disk, `seq` is unique, gap-free and equal to the producer's persisted counter: 2,200 / 2,448 / 1,342 files.
+- Rows on disk equal the producer's `labels_total`: 6,600 / 7,344 / 4,026.
+- Per TB segment, rows parsed = ingested + expired-at-ingest + skipped. The bound on that sum brackets the on-disk rows in 9 of 10 segments. The tenth is 6 rows (two 3-row files) short, which the gap between the last poll and the log explains.
+- **Estimated dropped fraction: 0.** The bounds alone cap it below 4% per segment.
+- R1's "~2,646 of 6,600 ingested" is exactly rev1's summed `ingested`. The shortfall is lag-bound expiry, as banked.
+
+**Claims.** R1 FIRST READ (2026-08-24), R1 DOSE READ (`r1_dose_read_ai_v9_37`), the REV-1 HOUR-2 INCIDENT, every tick1/dosext policy or strength claim, the cost model and the G0 bias map: all **UNAFFECTED**. No past decision needs revisiting because of this bug.
+
+**🚨 FINDING (not the inode bug): `ai_v12_12_ladder_cflabels` trained with ZERO cf labels.**
+- **What was measured.** The arm launched with `--cf-records --cf-winprob-coef 0.5`, but no producer ever ran for it:
+  - `cf_labels/` is empty, and there is no `cf_producer_state.json` or producer log.
+  - `cf/labels_ingested_total`, `cf/buffer_fill` and `cf/rows_sampled` read 0 at every point, 0.2M–10.0M.
+  - `train/cf_loss` was never written.
+  - Its 522 `cf_records/` files were never consumed.
+- **Why the ops checks missed it.** The launcher does not start `cf_producer`. The duty-cycle guard checks cadence, not whether a producer exists. "No expired/starved line" (2026-09-09 · *OPS · CRITIC LADDER — cflabels COMPLETE*) is vacuous when nothing arrives at all.
+- **What the arm was.** A control run plus `--cf-records`, the 40/40/10 forensic quota and the 377a5aa1 pin. So the 2026-09-09 `cflabels` READ and its RETRACTION, the "unbiased against its own continuation, Δ +0.040" row, and the 2026-09-12 L2 leaf row 0.485 are **not evidence about the cf-label lever**. The lever never engaged. Those numbers stand as measurements of that run, not of that lever.
+- **Consequence.** The cf continuation-label lever at production scale is **UNTESTED**, not NOT DETECTED.
+- **Class fix, not built here.** A STOP/FATAL row when a cf coefficient is live and `labels_ingested_total` is still 0 after N cycles, or have the launcher own the producer.
+
+Tag: **BOUNDARY (`a7627744`) · PRE-DATA (0 rows dropped, 3 consuming runs, all claims UNAFFECTED) · FINDING: `cflabels` arm's lever never engaged — its reads re-labelled "lever UNTESTED"**. Evidence: `designs/research_state/measurements/cf_label_inode_audit/` (`README.md`, `audit.py`, `audit.json`).
