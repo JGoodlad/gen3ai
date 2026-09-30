@@ -295,7 +295,10 @@
    "at": "2026-09-30T14:50:32Z",
    "duration_s": 167.39,
    "contention": 1.0,
-   "detail": ""
+   "detail": "",
+   "last_skipped_at": "2026-09-30T16:00:52Z",
+   "last_skipped_commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
+   "last_skip_detail": ""
   },
   "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[keyed]": {
    "status": "pass",
@@ -303,7 +306,10 @@
    "at": "2026-09-30T14:50:32Z",
    "duration_s": 188.54,
    "contention": 1.0,
-   "detail": ""
+   "detail": "",
+   "last_skipped_at": "2026-09-30T16:00:52Z",
+   "last_skipped_commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
+   "last_skip_detail": ""
   },
   "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[sampled]": {
    "status": "pass",
@@ -311,13 +317,16 @@
    "at": "2026-09-30T14:50:32Z",
    "duration_s": 360.62,
    "contention": 1.0,
-   "detail": ""
+   "detail": "",
+   "last_skipped_at": "2026-09-30T16:00:52Z",
+   "last_skipped_commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
+   "last_skip_detail": ""
   },
   "src/agents/training/rust_env_opponents_parity_test.py::test_slow_compiled_per_env_path": {
    "status": "pass",
-   "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
-   "at": "2026-09-30T14:33:13Z",
-   "duration_s": 126.11,
+   "commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
+   "at": "2026-09-30T16:00:52Z",
+   "duration_s": 176.35,
    "contention": 1.0,
    "detail": ""
   },

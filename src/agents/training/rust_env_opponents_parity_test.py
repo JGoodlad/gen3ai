@@ -162,6 +162,31 @@ def test_the_tie_rule_is_declared_and_exact():
     assert ties == 2 and [f["margin"] for f in fatal] == [2e-5, None, 0.3]
 
 
+def test_the_assert_path_counts_a_near_tie_and_stays_fatal_above_the_margin():
+    """The flake (`{'greedy_neartie': 1}` in `test_slow_compiled_per_env_path`): the ASSERT PATH itself
+    must follow the declared tie rule — a flip under NEAR_TIE_FACTOR x bar is COUNTED and REPORTED
+    (returned, printed), never a divergence; a flip at / above the margin, or with no margin, is FATAL;
+    and a real divergence (`div`) stays fatal whatever the flips say. FAILS on revert (an assertion
+    that treats any flip — or a tie filed under `div` — as fatal)."""
+    summary = {"n_episodes": 3, "p2_decisions": 50, "svc_counters_delta": {"compiles": 0},
+               "core_after_freeze": {"allocs": 0}}
+
+    def rep(*flips, div=None):
+        return {"div": dict(div or {}), "phantom_polls": 0, "episodes": 3, "decisions": 50, "max_dlogp": 1.4e-6,
+                "flips": [{"kind": k, "margin": m} for k, m in flips], "margins_greedy": [m for _k, m in flips],
+                "margins_sample": []}
+
+    assert _assert_clean(summary, rep(), dlogp_bar=BAR_COMPILED_CPU) == 0
+    # the flake's shape: one greedy argmax flip at a log-prob gap inside the tie band — a counted TIE
+    assert _assert_clean(summary, rep(("greedy", 1.2e-5)), dlogp_bar=BAR_COMPILED_CPU) == 1
+    assert _assert_clean(summary, rep(("greedy", 0.0), ("sample", 1.9e-5)), dlogp_bar=BAR_COMPILED_CPU) == 2
+    for fatal in (("greedy", 2e-5), ("sample", 0.3), ("keyed", None)):
+        with pytest.raises(AssertionError, match="argmax flips at margin"):
+            _assert_clean(summary, rep(("greedy", 1e-6), fatal), dlogp_bar=BAR_COMPILED_CPU)
+    with pytest.raises(AssertionError):
+        _assert_clean(summary, rep(("greedy", 1e-6), div={"row": 1}), dlogp_bar=BAR_COMPILED_CPU)
+
+
 def test_the_declared_torch_state_is_pinned_restored_and_guarded():
     """F-LJ-6: the gate pins its thread count, RESTORES the one it found, and refuses an undeclared
     global (fp32 matmul precision) loudly. FAILS on revert (the leak: `record` set the count and left it)."""
