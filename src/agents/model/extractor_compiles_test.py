@@ -235,6 +235,7 @@ def _build_production_extractor(*, fresh: bool = False, **overrides):
 
 
 @_skip_compile
+@pytest.mark.slow   # 65–117 s with a cold compile cache vs the 30 s routine budget (2026-09-29); it made the routine gate exit 1
 def test_production_arch_compiles_without_suppression():
     """THE regression. The `species_posterior` softmax spelling is what crashed Inductor; with
     suppression OFF a reintroduced bad spelling raises `BackendCompilerFailed` here instead of
