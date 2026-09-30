@@ -51,7 +51,7 @@ counts the phantoms — the stream today's path consumes is not reproducible by 
 
     export PYTHONPATH=$PYTHONPATH:src
     python -m agents.training.rust_env_opponents_parity --pool fresh:3 --n-envs 4 --episodes 8
-    flock /home/goodlad/.claude/jobs/gpu.lock python -m agents.training.rust_env_opponents_parity \\
+    scripts/ops/gpu_lock.sh python -m agents.training.rust_env_opponents_parity \\
         --pool run:/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots:6 --device cuda \\
         --backend graph --n-envs 16 --episodes 64 --mode sampled --compile --refresh-at 150
 """

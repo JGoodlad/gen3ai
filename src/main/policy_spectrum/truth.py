@@ -292,12 +292,16 @@ def run(bank: Bank, ids: Sequence[str], policy, continuation: str, out: Path, s:
         workers: int = 1, chunk: int = 32, lock_path: Optional[Path] = None) -> int:
     """Branch every id not already in ``out`` (JSONL, one durable row per turn, fsync'd):
     resumable, incremental. ``workers`` turns run concurrently (one core handle per thread; the core
-    releases the GIL). With ``lock_path`` an exclusive ``flock`` is held per CHUNK of ``chunk``
-    turns and released between chunks, so a shared GPU is never held for the whole run. Returns the
+    releases the GIL). With ``lock_path`` the lock is taken through ``utils.gpu_lock`` per CHUNK of
+    ``chunk`` turns and released between chunks, so a shared GPU is never held for the whole run —
+    and under a holder that already has it (``scripts/ops/gpu_lock.sh … truth --lock <same file>``) the
+    per-chunk take is a verified no-op instead of a self-deadlock. Returns the
     number of rows written."""
-    import fcntl
+    import contextlib
     import threading
     from concurrent.futures import ThreadPoolExecutor
+
+    from utils.gpu_lock import gpu_lock
 
     from utils.rust_env.successors import SearchCore
 
@@ -330,11 +334,9 @@ def run(bank: Bank, ids: Sequence[str], policy, continuation: str, out: Path, s:
         with open(out, "a") as f, ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
             for c0 in range(0, len(todo), chunk):
                 part = todo[c0:c0 + chunk]
-                lock_fd = None
-                if lock_path is not None:
-                    lock_fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT)
-                    fcntl.flock(lock_fd, fcntl.LOCK_EX)
-                try:
+                held = gpu_lock(lock_path, what="policy_spectrum truth chunk") if lock_path is not None \
+                    else contextlib.nullcontext()
+                with held:
                     for row in ex.map(one, part):
                         with write_lock:
                             f.write(json.dumps(row, sort_keys=True) + "\n")
@@ -343,10 +345,6 @@ def run(bank: Bank, ids: Sequence[str], policy, continuation: str, out: Path, s:
                             wrote += 1
                         if not row["ok"]:
                             log(f"[truth] REFUSED {row['id']}: {row['error'][:200]}")
-                finally:
-                    if lock_fd is not None:
-                        fcntl.flock(lock_fd, fcntl.LOCK_UN)
-                        os.close(lock_fd)
                 el = time.monotonic() - t0
                 log(f"[truth] {c0 + len(part)}/{len(todo)} turns, {el / 60:.1f} min, "
                     f"eta {el / (c0 + len(part)) * (len(todo) - c0 - len(part)) / 60:.1f} min")
@@ -586,7 +584,7 @@ def _cli(argv=None) -> int:
     r.add_argument("--device", default="cpu")
     r.add_argument("--workers", type=int, default=1)
     r.add_argument("--chunk", type=int, default=32)
-    r.add_argument("--lock", default=None, help="flock this file per chunk (the shared GPU lock)")
+    r.add_argument("--lock", default=None, help="take this lock per chunk via utils.gpu_lock (the shared GPU lock; re-entrant under gpu_lock.sh)")
     q = sub.add_parser("read")
     q.add_argument("--bank", required=True)
     q.add_argument("--rows", required=True)

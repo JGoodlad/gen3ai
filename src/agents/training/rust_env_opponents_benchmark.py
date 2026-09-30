@@ -9,7 +9,7 @@ NOT in these numbers). Per env step it reports the core STEP, the opponent SERVE
 bucket choice. A benchmark's output IS the measurement: it WARNS on a busy box and never stretches.
 
     export PYTHONPATH=$PYTHONPATH:src
-    flock /home/goodlad/.claude/jobs/gpu.lock python -m agents.training.rust_env_opponents_benchmark \\
+    scripts/ops/gpu_lock.sh python -m agents.training.rust_env_opponents_benchmark \\
         --snapshots /home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots --n-envs 48
 """
 from __future__ import annotations

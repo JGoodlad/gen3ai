@@ -163,3 +163,49 @@ def test_compact_round_trips_and_regenerates_the_seeds(tmp_path):
     assert T.write_compact(src, tmp_path / "rows.c.jsonl.gz") == 1
     back = T.load_rows(tmp_path / "rows.c.jsonl.gz")[0]
     assert back["outcomes"] == r["outcomes"] and back["seeds"] == r["seeds"]
+
+
+class _NoCore:
+    def close(self) -> None:
+        pass
+
+
+def _run_with_lock(monkeypatch, tmp_path, lock):
+    monkeypatch.setattr(T, "branch_turn", lambda bank, did, *a, **k: {"id": did, "ok": True})
+    return T.run(None, [f"d{i}" for i in range(5)], None, "fake", tmp_path / "rows.jsonl", s=2,
+                 log=lambda m: None, core_factory=_NoCore, chunk=2, lock_path=lock)
+
+
+def test_the_per_chunk_lock_is_reentrant_under_an_outer_hold(monkeypatch, tmp_path):
+    """``gpu_lock.sh … truth run --lock <the same file>`` used to be a self-deadlock: the per-chunk
+    ``flock`` opened the file again and waited on the outer holder. Through ``utils.gpu_lock`` the
+    per-chunk take is a verified no-op. (Run in a thread so a revert FAILS instead of hanging.)"""
+    import threading
+
+    from utils.gpu_lock import HELD_ENV, gpu_lock
+
+    monkeypatch.delenv(HELD_ENV, raising=False)
+    lock = tmp_path / "gpu.lock"
+    out: list = []
+    with gpu_lock(lock, timeout_s=5):
+        t = threading.Thread(target=lambda: out.append(_run_with_lock(monkeypatch, tmp_path, lock)), daemon=True)
+        t.start()
+        t.join(timeout=30)
+    assert out == [5], "truth.run blocked on a lock this process already holds"
+
+
+def test_the_per_chunk_lock_is_taken_and_released(monkeypatch, tmp_path):
+    import fcntl
+    import os
+
+    from utils.gpu_lock import HELD_ENV
+
+    monkeypatch.delenv(HELD_ENV, raising=False)
+    lock = tmp_path / "gpu.lock"
+    assert _run_with_lock(monkeypatch, tmp_path, lock) == 5
+    assert lock.exists()
+    fd = os.open(str(lock), os.O_RDWR)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)      # released after the last chunk
+    finally:
+        os.close(fd)

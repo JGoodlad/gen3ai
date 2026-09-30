@@ -198,6 +198,7 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
 | **the M5 milestone** (the Rust env core, every M5 lane) | `python -m main.rust_core_m5 gates --tier milestone [--gpu]`, `slice-n` / `depth3 --tier milestone`, `throughput`, then `verdict` — the ONE place M5 is judged (`src/main/rust_core_m5/`, program doc §2 M5 Lane J) | gates ~7.5 m at `-n 2` (2026-09-29); `gates --from-status` reads the banked verdicts in ~1 s |
+| **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`**. The helper (`src/utils/gpu_lock.py`, Python: `with gpu_lock():`) exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`rust_core_m5 gates --gpu`, `policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); an ancestor held by a bare `flock` raises `GpuLockSelfDeadlock` at once | — |
 
 ```bash
 # THE ROUTINE GATE — everything cheap, whatever it needs. Add -n 2 (~1.8x, two cores).

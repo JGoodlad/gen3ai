@@ -1,5 +1,6 @@
 """``utils.procfs`` on SYNTHETIC input: the ``/proc/locks`` grammar and the tree arithmetic.
-(The real-process behaviour is pinned by ``main/ops/idle_waiter_watchdog_test.py``.)"""
+(The real-process behaviour is pinned by ``main/ops/idle_waiter_watchdog_test.py`` and
+``utils/gpu_lock_test.py``.)"""
 from __future__ import annotations
 
 import os

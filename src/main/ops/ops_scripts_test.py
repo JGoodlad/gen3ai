@@ -37,6 +37,10 @@ _ALL_SCRIPTS = sorted(_OPS_DIR.glob("*.sh"))
 #: is tested for executability before use and superseded by `$GEN3AI_PYTHON`.
 _HOME_LITERAL_EXEMPT = {"_common.sh"}
 
+#: Entry points that act on no RUN, so they have no run to resolve (they still source `_common.sh`
+#: for the interpreter and the checkout root). `gpu_lock.sh` wraps an arbitrary command.
+_RUN_AGNOSTIC = {"gpu_lock.sh"}
+
 
 def test_there_are_scripts_to_check() -> None:
     assert len(_ENTRY_POINTS) >= 4, sorted(p.name for p in _OPS_DIR.glob("*"))
@@ -102,4 +106,7 @@ def test_the_script_sources_the_shared_path_resolution(path) -> None:
     "where is models/" and it matches `utils.paths.main_models_dir()`."""
     text = path.read_text()
     assert "_common.sh" in text, f"{path.name} does not source _common.sh"
+    if path.name in _RUN_AGNOSTIC:
+        assert "ops_resolve_run" not in text, f"{path.name} resolves a run — drop it from _RUN_AGNOSTIC"
+        return
     assert "ops_resolve_run" in text, f"{path.name} does not resolve its run through _common.sh"

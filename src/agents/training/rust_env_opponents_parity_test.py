@@ -10,7 +10,7 @@ fails; the wrapper polling the opponent on a step whose order is never sent fail
 (``gen3_no_phantom_opponent_poll_v1``).
 
 ``slow``: the COMPILED per-env path (``--compile-opponents``). MILESTONE (``slow`` + an idle GPU,
-``GEN3AI_TEST_ALLOW_GPU=1``, under ``flock /home/goodlad/.claude/jobs/gpu.lock``): T2's ``graph``
+``GEN3AI_TEST_ALLOW_GPU=1``, under ``scripts/ops/gpu_lock.sh``): T2's ``graph``
 backend on CUDA vs the compiled CPU path on a real production pool.
 """
 from __future__ import annotations
@@ -251,7 +251,7 @@ def test_slow_compiled_per_env_path(built, tmp_path):
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["sampled", "greedy", "keyed"])
 def test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool(built, tmp_path, mode):
-    """Run under ``flock /home/goodlad/.claude/jobs/gpu.lock`` with ``GEN3AI_TEST_ALLOW_GPU=1``."""
+    """Run under ``scripts/ops/gpu_lock.sh`` (the GPU lock, re-entrant) with ``GEN3AI_TEST_ALLOW_GPU=1``."""
     import torch
 
     if os.environ.get("GEN3AI_TEST_ALLOW_GPU") != "1" or not torch.cuda.is_available():

@@ -459,6 +459,38 @@ a session's wall clock more than the compute did.
   no watcher. Re-verify (`pgrep -af train_rl_agent | grep "bin/python3"`) before arming, and prefer
   watching the LOG for a success/failure token over watching a pid.
 
+### 7.w — The agent-health layers (standing practice, 2026-09-30)
+
+On 2026-09-29/30 agent-owned background waits failed SILENTLY for up to 4 h each — seven
+`while pgrep -f PAT` loops matching their own `bash -c` wrapper, and a `flock gpu.lock` around a
+command that takes the same lock itself (15 min at 0% CPU on its own ancestor's lock). Only the
+hourly LLM check caught them. Three layers now stand, cheapest first:
+
+1. **Prevention — the self-match hook** (`~/.claude/hooks/self_match_guard.py`, user-level
+   PreToolUse on Bash): refuses `pgrep -f` / `pgrep --full` with an unbracketed pattern, any
+   `pkill -f`, and an unbracketed `ps … | grep` inside a `while`/`until`. Allowed: `while kill -0
+   <pid>`, `[x]`-bracketed patterns. Escape hatch: a `# self-match-ok` comment saying why. The GPU
+   half of the class is fixed in code: every lock taker goes through `utils.gpu_lock` /
+   `scripts/ops/gpu_lock.sh`, which is re-entrant for children and raises `GpuLockSelfDeadlock`
+   on an ancestor holder.
+2. **The 15-minute mechanical watchdog** — `python3 /home/goodlad/dev/gen3ai/scripts/ops/idle_waiter_watchdog.py`
+   on this session's cron (`*/15`). Silent + exit 0 when all is well; one line per flag (pid, age,
+   Claude session pid + cwd, command, reason) + exit 1 otherwise. It flags a lock SELF-DEADLOCK on
+   the first run and an IDLE-WAITER (a >10-min poll loop / flock / lock wait under a Claude session
+   whose subtree CPU and wait targets have not moved since the last run). A detector only — it
+   never kills. A flagged line is a prompt for step 2 of the hourly check below, not a verdict.
+3. **The hourly agent health check at :07** — a cron whose prompt asks every live dispatched agent
+   (SendMessage) for four points: **(1) PIDs** — every background process or waiter it owns, with
+   elapsed time and command; **(2) waiter safety** — each waiter uses `kill -0 <pid>` or a
+   `[x]`-bracketed pattern and cannot match its own argv; kill (by explicit PID) any that is idle-
+   looping on a finished target; **(3) progress** — the log advanced since the last check, and
+   idle CPU means a deadlock, so `py-spy dump` it; **(4) a one-line status + revised ETA**.
+   **Every finding gets a CLASS fix** (a hook, a helper, a gate), not just the instance killed.
+
+**Crons are session-only**: a `CronCreate` job dies with the session and expires after 7 days.
+After any orchestrator restart or handoff, RE-CREATE both the :07 hourly check and the */15
+watchdog cron — nothing else will notice they are gone.
+
 ### 7.x — 2026-09-09 · THE STALLS ARE FIRST-BYTE HANGS, AND THE 09-06 FIX NEVER COVERED THAT PATH (measured)
 
 ~35 subagent deaths in 36 h, every one "Agent stalled: no progress for 600s (stream watchdog did not recover)", every one AT A MODEL REQUEST (after a prompt or a tool result), never inside a tool. Over 5,174 subagent turns + 373 parent turns from the transcripts: a hard spike at **300–320 s** (171 turns); of turns with ≥600 output tokens, **95 of 175 took ≥295 s**; the parent (Fable) shows the same wall on 10 % of its turns — not model-specific. Stall rate per request ~4–6 % flat across idle gaps, **14 % after a >600 s idle** (stale keep-alive contributes a minority).
