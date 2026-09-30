@@ -223,7 +223,8 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "cycle (cuts the 'only ~¼ of the pool re-measured' staleness on a deep pool). "
                              "Cost: each extra sentinel is +100 games/cycle, work-stolen by the doubled "
                              "eval pool; eval is non-blocking + skip-while-running so it self-throttles. "
-                             "Pairs with a larger --max-snapshots. Training-only (not version-locked).")
+                             "The pool window itself is SnapshotPool.DEFAULT_MAX_SNAPSHOTS (20) — no flag sets it. "
+                             "Training-only (not version-locked).")
     parser.add_argument("--pool-spread", "--pool_spread", dest="pool_spread",
                         action=BoolFlag, default=False,
                         help="Self-play pool retention: keep a temporally-DIVERSE ladder (newest + "

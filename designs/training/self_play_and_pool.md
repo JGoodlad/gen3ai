@@ -96,6 +96,25 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   *competent* model — never the random/weak step-0 seed of old. By default nothing is pinned: the
   oldest snapshot (incl. the seed) ages out as the window slides past `max_snapshots`, so the floor
   stays a recent self; anti-forgetting is the heuristic floor, not a pinned seed.
+- 🚨 **THE WINDOW HOLDS ON EVERY PATH THAT POPULATES THE POOL** (`gen3_pool_cap_every_path_v1`,
+  2026-09-30). `max_snapshots` used to be applied only when a snapshot was ADDED, so a pool built by a
+  directory SCAN — every env worker's, every resume's, the Rust env core's (`rust_env_setup`), any
+  harness's — held whatever the directory held. Now `_scan`, `seed`, `add` and `add_from_path` all end
+  in `_enforce_cap`: the add path's own eviction order (oldest first, or spread retention under
+  `--pool-spread`), then a hard `PoolOverCapError` if the pool is still over (all pinned); `sample()`
+  re-checks. Only the pool that WRITES the directory — the trainer's, built with `owns_dir=True` in
+  `train_rl_agent` before any worker exists — deletes what its scan evicts; every reader trims IN
+  MEMORY, so a harness reading a real run's `snapshots/` never touches it. A trimmed scan prints a
+  `⚠️  [SELFPLAY] Pool dir … over its declared max_snapshots` line naming the dropped steps.
+  **Audit (2026-09-30):** production never had a `max_snapshots` flag (20 everywhere) and has one
+  writer whose add path trims, so the only way a production pool went over is a directory written
+  behind the trainer's back. `eval/pool_snapshot_count` (logged every eval, BEFORE that eval's
+  promotion, since the pool existed) exceeds 20 in exactly ONE of 734 tagged event files under
+  `models/`: `ai_v6_13_outgoing_dmg_0620_exp_v1`, a pre-auto-seed fork whose parent's 20-snapshot pool
+  was hand-copied into its 2-snapshot pool at 2026-06-24 16:47 — 22 selves (2 over, spread retention)
+  from the 16:53 restart to the 122M promotion at 19:02, i.e. ~118M→122M steps and the 120M eval's
+  sentinels. Ledger 2026-09-30. M5 Lane G's first fewer-snapshots benchmark was void for the same
+  reason (a harness declaring K < the directory).
 
 ### 🚨 A FORK starts POOLLESS — auto-seed, and REFUSE the silent bot fallback (`pool_seed.py`)
 

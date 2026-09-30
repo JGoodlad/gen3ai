@@ -280,7 +280,10 @@ snapshots of the agent itself, drawn from a directory-backed `SnapshotPool` (`sn
 state reconstructed from `<run_dir>/snapshots/` on every restart — no manifest). Design:
 `designs/ai_v5/`. 🚨 **A FORK starts with an EMPTY pool, and an empty pool does not disable
 `--self-play` — it falls back to the BOT pool**; a genuine fork auto-seeds its parent's and exits
-`FATAL_CONFIG` if it still has none (`pool_seed.py`).
+`FATAL_CONFIG` if it still has none (`pool_seed.py`). 🚨 **`max_snapshots` holds on EVERY path that
+populates the pool, a directory SCAN included** (`gen3_pool_cap_every_path_v1`): a scan applies the add
+path's eviction order, only the trainer's `owns_dir` pool deletes what it evicts, and a pool still over
+its cap raises `PoolOverCapError`.
 **Full detail — in [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md).**
 
 ## WHICH FILE a run spec names — the ONE resolution rule (`gen3_last_snapshot_resolution_v1`)

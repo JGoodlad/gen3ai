@@ -337,10 +337,12 @@ class TestTeamDrawRng:
 # ---------------------------------------------------------------------------
 
 def _pool(seed=None, n=6):
-    """A `SnapshotPool` past its directory scan — `sample()` reads only these three fields. The
-    RNG goes in through `_install_pool_rng`, the same and only writer `__init__` uses."""
+    """A `SnapshotPool` past its directory scan — `sample()` reads only these fields (the cap too,
+    since gen3_pool_cap_every_path_v1). The RNG goes in through `_install_pool_rng`, the same and only
+    writer `__init__` uses."""
     p = SnapshotPool.__new__(SnapshotPool)
     p._entries = [SnapshotEntry(path=None, step=1000 * (i + 1)) for i in range(n)]
+    p.max_snapshots = n
     p.recency_weight = 0.3
     p.pfsp_scale = 0.0
     _pool_mod._install_pool_rng(p, seed)

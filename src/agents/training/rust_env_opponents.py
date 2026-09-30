@@ -65,6 +65,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 
+from agents.training.snapshot_pool import DEFAULT_MAX_SNAPSHOTS
 from agents.training.wrappers import STABLE_CHALLENGE_SHARE, MaskableAgentWrapper as _W
 
 ROUTE_KINDS = ("external", "policy", "bot")
@@ -217,7 +218,7 @@ class OpponentPlan:
 
     @classmethod
     def from_args(cls, args: Any, *, bot_names: Sequence[str], stable_entries: Sequence[Any] = (),
-                  exploiter_entry: Any = None, max_snapshots: int = 20,
+                  exploiter_entry: Any = None, max_snapshots: int = DEFAULT_MAX_SNAPSHOTS,
                   pool_spare: int = DEFAULT_POOL_SPARE, heuristic_weights: Optional[Sequence[float]] = None,
                   bot_seed: int = 0) -> "OpponentPlan":
         """The plan ``env_factory.create_training_env_random`` builds per worker today, from the SAME
@@ -225,7 +226,7 @@ class OpponentPlan:
         ``stable_opponent_pfsp``, ``exploiter_keep_bots``, ``exploiter_bot_fraction``,
         ``exploiter_ladder``), the resolved stable entries and exploiter entry (``label`` /
         ``temperature`` / ``team_strs``), the floor roster's names and ``--bot-weights``.
-        ``max_snapshots`` is the pool's window (``SnapshotPool``'s, 20 in production)."""
+        ``max_snapshots`` is the pool's window (``SnapshotPool``'s ``DEFAULT_MAX_SNAPSHOTS`` in production)."""
         self_play = bool(getattr(args, "self_play", False))
         ex = None
         if exploiter_entry is not None:

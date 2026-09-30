@@ -51,6 +51,19 @@ def _install_pool_rng(obj, rng_seed):
         obj._rng = rng
 
 
+#: The pool's declared window when a caller names none — the value every production construction
+#: (the trainer's writer pool, each env worker's reader pool, the Rust env core's routing pool) and
+#: ``rust_env_opponents.OpponentPlan.from_args``'s slot count have always used. ONE definition.
+DEFAULT_MAX_SNAPSHOTS = 20
+
+
+class PoolOverCapError(RuntimeError):
+    """A pool holds more snapshots than its declared ``max_snapshots`` after the declared eviction ran
+    (``gen3_pool_cap_every_path_v1``) — e.g. every surplus entry is pinned. Training or evaluating
+    against it would mean facing selves outside the declared window, so it is a hard error, never a
+    quiet oversize pool."""
+
+
 @dataclass
 class SnapshotEntry:
     path: Path
@@ -139,6 +152,11 @@ class SnapshotPool:
     seed. Seeding is gated on competence by the caller (only seed once win rate clears
     ``SELF_PLAY_START``), so the seed is captured from a competent model.
 
+    **The window holds on every path that populates the pool** (``gen3_pool_cap_every_path_v1``):
+    a directory SCAN applies the same eviction order as an add, and a pool still over
+    ``max_snapshots`` after it raises :class:`PoolOverCapError`. Only an ``owns_dir`` pool (the
+    trainer's) deletes what its scan evicts; readers trim in memory.
+
     Two opt-in **PFSP / league-lite** modes layer on top (both OFF → byte-identical):
 
     - ``pfsp_scale > 0`` — blend per-snapshot HARDNESS into ``sample()``: oversample the selves
@@ -163,7 +181,7 @@ class SnapshotPool:
         pool_dir: Path,
         current_version: ModelVersion,
         device: str = "auto",
-        max_snapshots: int = 20,
+        max_snapshots: int = DEFAULT_MAX_SNAPSHOTS,
         recency_weight: float = 0.3,
         lru_cache_size: int = 3,
         pfsp_scale: float = 0.0,
@@ -172,6 +190,7 @@ class SnapshotPool:
         compile_hide_cuda: bool = True,
         compile_strict: bool = False,
         rng_seed: int | None = None,
+        owns_dir: bool = False,
     ):
         # ── The pool draw — per-instance RNG (OPT-IN)  [gen3_pool_sample_rng_v1] ──
         # GLOBAL-RANDOM COUPLING, and an INTERNAL INCONSISTENCY besides: the only caller of
@@ -203,7 +222,22 @@ class SnapshotPool:
         # a silent ~6.5x-slower opponent forward. Off by default (a perf knob must not kill a run),
         # on for anyone who would rather find out at startup than in the FPS graph a day later.
         self._compile_strict = bool(compile_strict)
-        self.max_snapshots = max_snapshots
+        # ── The declared window holds on EVERY path that populates the pool  [gen3_pool_cap_every_path_v1]
+        # It used to be applied only when ADDING, so a pool built by a directory SCAN (every env
+        # worker's, every resume's, the Rust env core's, any harness's) held whatever the directory
+        # held — M5 Lane G's first fewer-snapshots benchmark (2026-09-30) was void for exactly that.
+        # Now `_scan`, `seed`, `add` and `add_from_path` all end in `_enforce_cap`: the SAME eviction
+        # order the add path always used (`_evict`: oldest-first, or spread retention under
+        # `pool_spread`), then a hard `PoolOverCapError` if the pool is still over (all pinned).
+        #
+        # `owns_dir` says whether a SCAN may delete what it evicts. Only the pool that WRITES the
+        # directory (the trainer's, `train_rl_agent`) owns it; every reader (env workers, the Rust
+        # env core, harnesses reading a real run's `snapshots/`) trims IN MEMORY and never touches
+        # disk — `models/` is read-only to them. The add path deletes as it always did.
+        if int(max_snapshots) < 1:
+            raise ValueError(f"max_snapshots must be >= 1, got {max_snapshots!r}")
+        self.max_snapshots = int(max_snapshots)
+        self._owns_dir = bool(owns_dir)
         self.recency_weight = recency_weight
         # PFSP (prioritized fictitious self-play): when > 0, blend a per-entry HARDNESS factor
         # into the sampling weight — oversample snapshots the trainee is LOSING to (low win-rate)
@@ -235,6 +269,7 @@ class SnapshotPool:
         if existing:
             return existing
         entry = self._write(model, step=0, pinned=False)
+        self._enforce_cap(unlink=True)
         emit(f"🌱 [SELFPLAY] Pool seeded at step 0 → {entry.path.name}")
         return entry
 
@@ -245,7 +280,7 @@ class SnapshotPool:
         ``max_snapshots`` after the addition.
         """
         entry = self._write(model, step=step, pinned=False)
-        self._evict()
+        self._enforce_cap(unlink=True)
         emit(f"📦 [SELFPLAY] Snapshot promoted at step {step:,} → {entry.path.name} "
              f"(pool size: {len(self._entries)})")
         return entry
@@ -272,7 +307,7 @@ class SnapshotPool:
         self._entries = [e for e in self._entries if e.step != step]
         self._entries.append(entry)
         self._entries.sort(key=lambda e: e.step)
-        self._evict()
+        self._enforce_cap(unlink=True)
         emit(f"📦 [SELFPLAY] Snapshot promoted at step {step:,} → {entry.path.name} "
              f"(pool size: {len(self._entries)})")
         return entry
@@ -323,6 +358,7 @@ class SnapshotPool:
         """
         if not self._entries:
             raise RuntimeError("Pool is empty — call seed() first")
+        self._check_cap()   # a draw from outside the declared window is GIGO — refuse it
         default_p = self._pfsp_default_p(self._entries) if self.pfsp_scale > 0.0 else None
         weights = [self._entry_weight_with(e, self._entries, default_p) for e in self._entries]
         # ``rng`` (M5 Lane E, `rust_env_opponents`): ONE pool shared by every env of a Rust env core
@@ -443,7 +479,12 @@ class SnapshotPool:
     # ── Internals ──────────────────────────────────────────────────────────
 
     def _scan(self) -> None:
-        """Reconstruct pool state from the directory on disk."""
+        """Reconstruct pool state from the directory on disk, then apply the declared window.
+
+        A directory holding more than ``max_snapshots`` (a crash between a promotion's copy and its
+        eviction, a hand-seeded or harness dir, a caller declaring a smaller window than the dir it
+        reads) is trimmed by the add path's own eviction order and REPORTED; only an ``owns_dir``
+        pool deletes the surplus files (see ``__init__``)."""
         paths = sorted(self.pool_dir.glob("snapshot_*.zip"))
         self._entries = []
         for p in paths:
@@ -454,6 +495,19 @@ class SnapshotPool:
                 self._entries.append(SnapshotEntry(path=p, step=step, pinned=False))
             except (IndexError, ValueError):
                 pass  # ignore malformed filenames
+        # A glob sorts by NAME; the zero-padded name sorts by step only while every step fits in 12
+        # digits. Sort by the parsed step so the eviction order never depends on the filename format.
+        self._entries.sort(key=lambda e: e.step)
+        found = [e.step for e in self._entries]
+        self._enforce_cap(unlink=self._owns_dir)
+        if len(found) > len(self._entries):
+            kept = set(self.steps())
+            dropped = [s for s in found if s not in kept]
+            emit(f"⚠️  [SELFPLAY] Pool dir {self.pool_dir} holds {len(found)} snapshots, over its declared "
+                 f"max_snapshots={self.max_snapshots} — the declared window "
+                 f"({'spread retention' if self._pool_spread else 'oldest evicted first'}) keeps "
+                 f"{len(self._entries)}; dropped steps {dropped} "
+                 f"({'deleted' if self._owns_dir else 'left on disk, not in this pool'})")
 
     def _write(self, model: MaskablePPO, step: int, pinned: bool) -> SnapshotEntry:
         path = self.pool_dir / f"snapshot_{step:012d}.zip"
@@ -471,18 +525,38 @@ class SnapshotPool:
         self._entries.sort(key=lambda e: e.step)
         return entry
 
-    def _evict(self) -> None:
+    def _enforce_cap(self, *, unlink: bool) -> None:
+        """THE one cap step every population path ends in: the declared eviction, then the check."""
+        self._evict(unlink=unlink)
+        self._check_cap()
+
+    def _check_cap(self) -> None:
+        if len(self._entries) > self.max_snapshots:
+            raise PoolOverCapError(
+                f"SnapshotPool at {self.pool_dir} holds {len(self._entries)} snapshots, over its declared "
+                f"max_snapshots={self.max_snapshots} after eviction (pinned: "
+                f"{[e.step for e in self._entries if e.pinned]}) — refusing to train or evaluate against "
+                f"selves outside the declared window")
+
+    def _drop(self, entry: SnapshotEntry, *, unlink: bool) -> None:
+        if unlink:
+            entry.path.unlink(missing_ok=True)
+        self._model_cache.pop(str(entry.path), None)
+
+    def _evict(self, *, unlink: bool = True) -> None:
+        """The DECLARED eviction order: oldest non-pinned first, or spread retention under
+        ``pool_spread``. ``unlink`` deletes the evicted files (the writer's add path, an
+        ``owns_dir`` scan); False evicts in memory only (a reader's scan)."""
         if self._pool_spread:
-            self._evict_spread()
+            self._evict_spread(unlink=unlink)
             return
         unpinned = [e for e in self._entries if not e.pinned]
         while len(self._entries) > self.max_snapshots and unpinned:
             oldest = unpinned.pop(0)
             self._entries.remove(oldest)
-            oldest.path.unlink(missing_ok=True)
-            self._model_cache.pop(str(oldest.path), None)
+            self._drop(oldest, unlink=unlink)
 
-    def _evict_spread(self) -> None:
+    def _evict_spread(self, *, unlink: bool = True) -> None:
         """Spread-retention eviction: keep a temporally-DIVERSE ladder instead of the most-recent
         ``max_snapshots``. Retains the newest (the freshest self) and the oldest (a weak early self —
         a forgetting tripwire PFSP can up-weight if the trainee starts losing to it); thins the most
@@ -501,8 +575,7 @@ class SnapshotPool:
                     return float("inf")  # structural anchors — never thinned while an interior remains
                 return float(self._entries[i + 1].step - self._entries[i - 1].step)
             victim = self._entries.pop(min(droppable, key=_redundancy))
-            victim.path.unlink(missing_ok=True)
-            self._model_cache.pop(str(victim.path), None)
+            self._drop(victim, unlink=unlink)
 
     def _find_step(self, step: int) -> SnapshotEntry | None:
         return next((e for e in self._entries if e.step == step), None)

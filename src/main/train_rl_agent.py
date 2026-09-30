@@ -338,8 +338,11 @@ async def main():
         _snapshot_dir = _Path(args.snapshot_dir) if args.snapshot_dir else _Path(model_dir) / "snapshots"
         _cv = _current_model_version(mappings, **_run_arch_toggles(args))
         _opp_version = _cv
+        # owns_dir=True: THIS is the pool that writes the directory (seed / promote), so it is the one
+        # whose startup scan may DELETE snapshots outside the declared window (gen3_pool_cap_every_path_v1)
+        # — before any env worker scans it. Every other pool over this dir is a reader.
         _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device=args.device,
-                             pfsp_scale=args.pfsp_scale, pool_spread=args.pool_spread)
+                             pfsp_scale=args.pfsp_scale, pool_spread=args.pool_spread, owns_dir=True)
         _persisted_wr = _pool.load_persisted_win_rate()
         _initial_self_play_fraction = 1.0 - heuristic_fraction(
             _persisted_wr, floor=_heuristic_floor, start=_sp_start_wr, full=_sp_full_wr)

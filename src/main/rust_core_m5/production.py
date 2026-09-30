@@ -194,7 +194,8 @@ def _build_rust_collector(arm: Any, n: int) -> Any:
         raise ValueError(f"{arm.name}: {active} active snapshots from a pool of {len(mix.snapshots)}")
     # FEWER ACTIVE SNAPSHOTS (``_p<K>``): the plan (so the slot layout and the shared service) is the full
     # pool's; the arm's POOL holds only the mix's K newest snapshots (its own temp dir of symlinks —
-    # ``max_snapshots`` alone would not do it: SnapshotPool applies its window only when ADDING), so every
+    # ``max_snapshots`` stays the full pool's so the plan's slot count matches; the pool's own window has held on a
+    # SCAN too since gen3_pool_cap_every_path_v1 — before it, a scan held the whole dir), so every
     # env routes to one of <= K slots and a flush meets at most K distinct pool slots
     pool_dir = mix.pool_dir if active == len(mix.snapshots) else pool_dir_from(str(mix.pool_dir), active)[0]
     pool = SnapshotPool(pool_dir, current_version=ver, device=arm.device, max_snapshots=len(mix.snapshots),
