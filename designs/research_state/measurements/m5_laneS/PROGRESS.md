@@ -39,7 +39,7 @@ once** — a second build refuses without `--force`. It is byte-deterministic (t
 | 1 | the BANK (`bank.py`, `replay.py`, `categories.py`) + `bank_v1/` + gates ① and ② | LANDED (git log: `M5 Lane S unit 1+2`) |
 | 2 | the READER (`reader.py`, `spectrum.py`, `report.py`, CLI) + gate ③ | LANDED (same commit) |
 | 3 | the BASELINE READ over the fixed lineage (`baseline_2026-09-29/`) | LANDED (same commit) |
-| 4 | gate ④: ground truth via Lane I — FIRST READ on 236 turns (K2 final greedy continuation, S = 16), below | LANDED (git log: `M5 Lane S unit 4`); growing to ~1–2k turns + a second continuation is the next unit |
+| 4 | gate ④: ground truth via Lane I — first read (236 turns, K2, S = 16) then AT SCALE (1,600 turns, S = 64, THREE continuations), below | LANDED (git log: `M5 Lane S unit 4` and `unit 4b`) |
 | 5 | gate ⑤: the trend with ground truth | after ④ (spec below) |
 
 ## The bank (`bank_v1/`, content sha `8ca1bfa544bf…`)
@@ -147,6 +147,69 @@ Headline (all 20,712 turns; rank-1 / rank-2 / rank-3 mass, entropy in nats):
   against Kakuna on Kakuna games' states. Same order; different states.
 - A′ (interrupted) is BROADER than its parent K2 (rank 1 −0.044 [−0.050, −0.038]) — consistent with a
   fresh fork training against one target at `ent_coef` 0.05, but it is 1M steps old.
+
+## Gate ④ AT SCALE (`truth_v2/`, 2026-09-29) — the verdict
+
+**Subset** `truth_v2/gt_subset_v2.json`: 1,600 turns (1,500 free + 100 forced switches) from 549
+battles; v1's 236 turns first, then free turns OVER-SAMPLED where setup (430) / recovery (363) /
+hazard (250) / status (877) is legal, then a stratified random remainder (phase × opponent class);
+each id carries why it was drawn. **Truth:** every legal action × **64** shared dice seeds played
+to the end (~11,400 actions, ~730k playouts per continuation) under **three** greedy continuations
+on both sides — **K2 final** (G0′), **N0 final** (75.0M) and **C_fix final** (83.1M) — on the GPU
+(fp32, TF32 off; the lock held per 48-turn chunk), 49–61 min each, **0 refused turns**. The rows are
+committed in compact form (`rows_*_S64.compact.jsonl.gz`, outcomes as `+ / - / 0` per seed; the
+seeds regenerate from the id); the full rows with per-branch end states are in
+`~/gen3ai_archive/policy_spectrum/truth_v2/`. Readout: `truth_v2/READOUT.md` + `readout_S64.json`
+(`python -m main.policy_spectrum.truth_report`).
+- **Consistency check:** v1's 236 turns re-read through the first 16 of v2's seeds under the same K2
+  continuation: 26,719 of 26,720 playout outcomes identical (v1 ran on CPU, one turn at a time; v2
+  on the GPU with six turns' rows merged into one forward — the one difference is a greedy
+  near-tie).
+- **Coverage:** a near-best action of the category on 200–208 turns (setup), 177–199 (recovery),
+  141–152 (hazard), ~523 (status), ~860 (attack), ~1,180 (switch); on DECISIVE turns (≥ 1 action
+  separably worse than the best, 949–951 of 1,600) setup 86–98, recovery 50–75, hazard 36–52.
+
+**Definitions.** HEALTHY SHARPENING = the policy's mass on DOMINATED actions (worse than the best by
+> ε = 0.1 on the ±1 scale, separably: gap − 1.96·SE > ε) falls. STARVATION = on a decisive turn, some
+NEAR-BEST action (gap ≤ ε) gets < 1 % of the policy's mass; STRICT starvation requires it to be
+near-best even at its upper bound. Paired deltas on the same turns, battle-clustered 95 %.
+
+**THE VERDICT (N0 @ 75M → C_fix → K2 → K3; ranges are over the three continuations):**
+- **Healthy sharpening is SMALL:** mass on dominated actions 0.345–0.379 → 0.328–0.360 (N0 75M → K3
+  Δ −0.017 to −0.019, detected under all three).
+- **Starvation is LARGE:** decisive turns with a starved near-best action 0.31–0.35 → 0.47–0.48
+  (C_fix) → 0.50–0.51 (K2) → 0.48–0.49 (K3); N0 75M → K3 **+0.137 to +0.164** (all three detected;
+  strict +0.118 to +0.126, all three detected). About half of the decisive turns now put < 1 % on a
+  move that is as good as the best one.
+- **Where:** the N0 75M → C_fix step (the compile fix + 8M steps) carries nearly all of it
+  (starved +0.12 to +0.16, dominated −0.012 to −0.014, all detected); C_fix → K2 adds +0.027 to
+  +0.036 (all detected); K2 → K3 gives back −0.021 to −0.026 (all detected).
+- **By category (N0 75M → K3, starvation / dominated mass):**
+  - **switch:** starved 0.35–0.38 → 0.53–0.56, +0.15 to +0.18 (3/3); dominated −0.016 to −0.024 (3/3)
+    — both at once: healthy AND starving; the biggest category.
+  - **attack:** starved +0.058 to +0.063 (3/3); dominated not detected.
+  - **status:** starved 0.10–0.19 → 0.22–0.25, +0.066 to +0.129 (3/3); dominated −0.017 to −0.029
+    (1/3).
+  - **setup:** starved 0.13–0.14 → 0.22–0.27, +0.092 to +0.128 (2/3 detected, the third's interval
+    touches 0); dominated not detected. **The owner's delayed-payoff case is real at this n.**
+  - **recovery:** starved +0.015 to +0.107 (1/3); not established.
+  - **hazard (Spikes):** no change (0/3).
+- **Noise check (16 → 64 seeds, nested):** more seeds find MORE near-best actions (2.9 → 3.4–3.5 per
+  turn) and more decisive turns (740–754 → 949–951), and every starvation level is HIGHER at 64
+  (N0 75M 0.28–0.31 → 0.31–0.35; K3 0.43–0.44 → 0.48–0.49). The N0 → K3 delta is +0.13 to +0.14 at
+  16 and +0.14 to +0.16 at 64. The feared inflation (noisy near-best sets) is not what drives it.
+- **Continuation check:** of 84 (step × category × measure) verdicts, 60 are unanimous across the
+  three continuations and **none flips sign** — the rest differ only between detected and not
+  detected. N0-final playing both sides (which, if anything, favours N0's own choices) gives the same
+  verdict as K2 playing both sides.
+
+**Honest limits:** every value is conditional on a greedy continuation (not a Nash value, and not
+the opponent the turn was recorded against); V* carries the winner's curse; the subset over-samples
+non-attacking categories (the per-category rows condition on them; `levels_unweighted_all` gives the
+all-category level on the v1 + random turns only); every N0 checkpoint was trained under the compile
+miscompile, and the fix step is confounded with 8M more steps. **Tag: MEASUREMENT · starvation
+DETECTED at scale (3/3 continuations, strict and at 16 and 64 seeds) · healthy sharpening DETECTED
+but ~8× smaller in the same step · setup starvation DETECTED 2/3.**
 
 ## Gate ④ — FIRST READ (`truth_v1/`, 2026-09-29)
 

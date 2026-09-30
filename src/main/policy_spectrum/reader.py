@@ -87,7 +87,9 @@ def _find_config(zip_path: Path) -> Path:
     raise FileNotFoundError(f"no model_config.json within 3 levels above {zip_path}")
 
 
-def load_checkpoint(zip_path: Path, threads: int):
+def load_checkpoint(zip_path: Path, threads: int, device: str = "cpu"):
+    """Inference load. ``device="cuda"`` keeps fp32 (TF32 matmuls OFF) so a GPU continuation is the
+    same function as the CPU reads up to float reassociation."""
     import torch as th
 
     from agents.model.snapshot import current_model_version, load_foreign_opponent
@@ -99,7 +101,10 @@ def load_checkpoint(zip_path: Path, threads: int):
                          "the run's LAST snapshot and moves")
     th.set_num_threads(threads)
     cv = current_model_version(load_mappings())
-    model, _ = load_foreign_opponent(str(zip_path), current_version=cv, device="cpu",
+    if device.startswith("cuda"):
+        th.backends.cuda.matmul.allow_tf32 = False
+        th.backends.cudnn.allow_tf32 = False
+    model, _ = load_foreign_opponent(str(zip_path), current_version=cv, device=device,
                                      config_path=str(_find_config(zip_path)))
     for mod in model.policy.modules():
         if hasattr(mod, "_debugger"):
@@ -114,11 +119,12 @@ def policy_logits(model, rows: np.ndarray, masks: np.ndarray, batch: int = BATCH
 
     from agents.model.extra_obs_keys import zero_extra_obs
 
+    dev = next(model.policy.parameters()).device
     out = []
     for i in range(0, len(rows), batch):
-        mb = th.tensor(masks[i:i + batch].astype(np.float32))
-        ob = {"observation": th.tensor(rows[i:i + batch]), "action_mask": mb}
-        ob.update(zero_extra_obs(model.policy.features_extractor, batch=len(mb), device="cpu"))
+        mb = th.tensor(masks[i:i + batch].astype(np.float32), device=dev)
+        ob = {"observation": th.tensor(rows[i:i + batch], device=dev), "action_mask": mb}
+        ob.update(zero_extra_obs(model.policy.features_extractor, batch=len(mb), device=dev))
         with th.no_grad():
             out.append(model.policy.get_distribution(ob).distribution.logits.cpu().numpy())
     return np.concatenate(out, 0).astype(np.float32)

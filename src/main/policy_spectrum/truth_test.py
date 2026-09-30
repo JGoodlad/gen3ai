@@ -108,3 +108,58 @@ def test_readout_starvation_regret_and_guess(v1):
     assert dec["turns"] == 2 and dec["starved"]["mean"] == pytest.approx(0.5)
     s = T.value_summary(rows[:2])
     assert s["turns"] == 2 and s["mean_near_best"] == 2.0 and s["vstar_eq_+1"] == 2
+
+
+def test_micro_batcher_merges_concurrent_calls_and_returns_each_callers_slice():
+    import threading
+    import time as _t
+
+    seen = []
+
+    def fn(rows, masks):
+        seen.append(len(rows))
+        _t.sleep(0.05)
+        return rows[:, :11] * 2
+
+    mb = T.MicroBatcher(fn)
+    outs = {}
+
+    def call(k):
+        r = np.full((k, 20), float(k), dtype=np.float32)
+        outs[k] = mb(r, np.ones((k, 11), np.uint8))
+
+    ths = [threading.Thread(target=call, args=(k,)) for k in range(1, 7)]
+    for t in ths:
+        t.start()
+    for t in ths:
+        t.join()
+    for k in range(1, 7):
+        assert outs[k].shape == (k, 11) and np.all(outs[k] == 2 * k)
+    assert mb.calls == 6 and mb.forwards < 6 and sum(seen) == 21
+
+
+def test_first_seeds_nests():
+    r = {"id": "x", "ok": True, "seeds": ["a", "b", "c", "d"], "outcomes": {"6": [1, -1, 1, 0]},
+         "ends": {"6": [{}, {}, {}, {}]}}
+    q = T.first_seeds(r, 2)
+    assert q["seeds"] == ["a", "b"] and q["outcomes"] == {"6": [1, -1]}
+    assert T.turn_seeds("id", 64)[:16] == T.turn_seeds("id", 16)
+    with pytest.raises(ValueError):
+        T.first_seeds(r, 8)
+
+
+def test_compact_round_trips_and_regenerates_the_seeds(tmp_path):
+    import json
+
+    r = {"schema": T.TRUTH_SCHEMA, "id": "b#p1#3", "ok": True, "continuation": "c", "at": 5, "side": "p1",
+         "stall": "production", "max_turns": 999, "seeds": T.turn_seeds("b#p1#3", 3),
+         "outcomes": {"6": [1.0, -1.0, 0.0], "7": [1.0, 1.0, 1.0]}, "ends": {"6": [{}, {}, {}]}}
+    c = T.compact(r)
+    assert c["outcomes"] == {"6": "+-0", "7": "+++"} and "seeds" not in c
+    e = T.expand(json.loads(json.dumps(c)))
+    assert e["seeds"] == r["seeds"] and e["outcomes"] == r["outcomes"]
+    src = tmp_path / "rows.jsonl"
+    src.write_text(json.dumps(r) + "\n")
+    assert T.write_compact(src, tmp_path / "rows.c.jsonl.gz") == 1
+    back = T.load_rows(tmp_path / "rows.c.jsonl.gz")[0]
+    assert back["outcomes"] == r["outcomes"] and back["seeds"] == r["seeds"]

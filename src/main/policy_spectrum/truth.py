@@ -104,6 +104,77 @@ def select_subset(bank: Bank, n_free: int = 200, n_forced: int = 20, per_battle:
     return [bank.decisions[i]["id"] for i in sorted(chosen)]
 
 
+#: v2's over-sampling targets: FREE turns on which the category is LEGAL (the delayed-payoff
+#: categories need ≥ ~100 turns where one of their actions is NEAR-BEST; the v1 read found a legal
+#: setup move near-best on ~35 % of its turns, recovery ~46 %, hazard ~57 %).
+OVERSAMPLE_V2 = {"setup": 420, "recovery": 330, "hazard": 250, "status": 500}
+
+
+def select_subset_v2(bank: Bank, include: Sequence[str] = (), n_free: int = 1500, n_forced: int = 100,
+                     per_battle: int = 4, oversample: Dict[str, int] = OVERSAMPLE_V2,
+                     seed: str = SUBSET_SEED + "-v2") -> Dict[str, object]:
+    """The at-scale subset: ``include`` (v1's turns) first, then free turns where each
+    over-sampled category is legal until its target, then a stratified random remainder
+    (phase × opponent class, proportional) up to ``n_free`` free turns, plus ``n_forced`` forced
+    switches. Hash order everywhere; ≤ ``per_battle`` turns per battle. Returns the ids and, per
+    id, WHY it was drawn (``v1`` / ``over:<category>`` / ``random`` / ``forced``) so a readout can
+    re-weight the over-sampling away."""
+    order = sorted(range(len(bank.decisions)), key=lambda i: _h(f"{seed}:{bank.decisions[i]['id']}"))
+    pos = {d["id"]: i for i, d in enumerate(bank.decisions)}
+    why: Dict[int, str] = {}
+    per_b: Dict[str, int] = {}
+
+    def take(i: int, reason: str, cap: bool = True) -> bool:
+        b = bank.decisions[i]["battle"]
+        if i in why or (cap and per_b.get(b, 0) >= per_battle):
+            return False
+        why[i] = reason
+        per_b[b] = per_b.get(b, 0) + 1
+        return True
+
+    for did in include:
+        take(pos[did], "v1", cap=False)
+    free = [i for i in order if bank.decisions[i]["kind"] == "free"]
+    for cat, target in oversample.items():
+        have = sum(1 for i in why if bank.decisions[i]["kind"] == "free"
+                   and cat in bank.decisions[i]["cats"].values())
+        for i in free:
+            if have >= target:
+                break
+            if cat in bank.decisions[i]["cats"].values() and take(i, f"over:{cat}"):
+                have += 1
+    strata: Dict[str, int] = {}
+    for i in free:
+        d = bank.decisions[i]
+        strata[f"{d['phase']}|{d['opp_class']}"] = strata.get(f"{d['phase']}|{d['opp_class']}", 0) + 1
+    n_free_now = sum(1 for i in why if bank.decisions[i]["kind"] == "free")
+    room = max(0, n_free - n_free_now)
+    quota = {k: round(room * v / len(free)) for k, v in strata.items()}
+    got: Dict[str, int] = {}
+    for i in free:
+        if n_free_now >= n_free:
+            break
+        d = bank.decisions[i]
+        k = f"{d['phase']}|{d['opp_class']}"
+        if got.get(k, 0) < quota[k] and take(i, "random"):
+            got[k] = got.get(k, 0) + 1
+            n_free_now += 1
+    for i in free:                                   # rounding / cap shortfall: fill in hash order
+        if n_free_now >= n_free:
+            break
+        if take(i, "random"):
+            n_free_now += 1
+    n_forced_now = sum(1 for i in why if bank.decisions[i]["kind"] == "forced_switch")
+    for i in order:
+        if n_forced_now >= n_forced:
+            break
+        if bank.decisions[i]["kind"] == "forced_switch" and take(i, "forced"):
+            n_forced_now += 1
+    ids = sorted(why)
+    return {"ids": [bank.decisions[i]["id"] for i in ids],
+            "why": {bank.decisions[i]["id"]: why[i] for i in ids}}
+
+
 # ---------------------------------------------------------------------------------------------
 # branching
 # ---------------------------------------------------------------------------------------------
@@ -167,10 +238,67 @@ def branch_turn(bank: Bank, did: str, policy, seeds: Sequence[str], continuation
     return row
 
 
+class MicroBatcher:
+    """A thread-safe scorer that merges concurrent calls into one forward. A caller enqueues its
+    rows, then takes the forward lock; whoever holds it drains the WHOLE queue into one batch and
+    hands each caller its slice. Results are the same function of each row, but a row's float
+    rounding can depend on the batch it rode in (GPU kernels choose by size) — so a greedy argmax at
+    an exact near-tie may differ from a serial run (measured: see PROGRESS)."""
+
+    def __init__(self, fn: Callable[[np.ndarray, np.ndarray], np.ndarray]):
+        import threading
+
+        self.fn = fn
+        self.fwd = threading.Lock()
+        self.qlock = threading.Lock()
+        self.queue: List[dict] = []
+        self.calls = 0
+        self.forwards = 0
+
+    def __call__(self, rows: np.ndarray, masks: np.ndarray) -> np.ndarray:
+        import threading
+
+        item = {"rows": rows, "masks": masks, "out": None, "done": threading.Event()}
+        with self.qlock:
+            self.queue.append(item)
+            self.calls += 1
+        with self.fwd:
+            if not item["done"].is_set():
+                with self.qlock:
+                    batch, self.queue = self.queue, []
+                try:
+                    out = self.fn(np.concatenate([b["rows"] for b in batch]),
+                                  np.concatenate([b["masks"] for b in batch]))
+                except BaseException as exc:
+                    for b in batch:
+                        b["out"] = exc
+                        b["done"].set()
+                    raise
+                self.forwards += 1
+                k = 0
+                for b in batch:
+                    n = len(b["rows"])
+                    b["out"] = out[k:k + n]
+                    k += n
+                    b["done"].set()
+        item["done"].wait()
+        if isinstance(item["out"], BaseException):
+            raise RuntimeError("the batched forward failed") from item["out"]
+        return item["out"]
+
+
 def run(bank: Bank, ids: Sequence[str], policy, continuation: str, out: Path, s: int = 16,
-        log: Callable[[str], None] = print, core_factory: Optional[Callable] = None) -> int:
+        log: Callable[[str], None] = print, core_factory: Optional[Callable] = None,
+        workers: int = 1, chunk: int = 32, lock_path: Optional[Path] = None) -> int:
     """Branch every id not already in ``out`` (JSONL, one durable row per turn, fsync'd):
-    resumable, incremental. Returns the number of rows written."""
+    resumable, incremental. ``workers`` turns run concurrently (one core handle per thread; the core
+    releases the GIL). With ``lock_path`` an exclusive ``flock`` is held per CHUNK of ``chunk``
+    turns and released between chunks, so a shared GPU is never held for the whole run. Returns the
+    number of rows written."""
+    import fcntl
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
     from utils.rust_env.successors import SearchCore
 
     done = set()
@@ -181,24 +309,68 @@ def run(bank: Bank, ids: Sequence[str], policy, continuation: str, out: Path, s:
                 if r.get("continuation") == continuation and len(r.get("seeds", [])) == s:
                     done.add(r["id"])
     todo = [i for i in ids if i not in done]
-    log(f"[truth] {len(done)} turns already done, {len(todo)} to go (S = {s}, {continuation})")
+    log(f"[truth] {len(done)} turns already done, {len(todo)} to go (S = {s}, {continuation}, "
+        f"{workers} worker(s))")
+    factory = core_factory or SearchCore
+    local = threading.local()
+    cores: List = []
+    write_lock = threading.Lock()
     wrote = 0
-    with (core_factory or SearchCore)() as core, open(out, "a") as f:
-        for k, did in enumerate(todo):
-            row = branch_turn(bank, did, policy, turn_seeds(did, s), continuation, core=core)
-            f.write(json.dumps(row, sort_keys=True) + "\n")
-            f.flush()
-            os.fsync(f.fileno())
-            wrote += 1
-            if k % 10 == 0 or not row["ok"]:
-                log(f"[truth] {k + 1}/{len(todo)} {did} ok={row['ok']} "
-                    f"{row.get('wall_s')} s{'' if row['ok'] else ' ' + row['error'][:160]}")
+    t0 = time.monotonic()
+
+    def one(did: str) -> dict:
+        core = getattr(local, "core", None)
+        if core is None:
+            core = local.core = factory()
+            with write_lock:
+                cores.append(core)
+        return branch_turn(bank, did, policy, turn_seeds(did, s), continuation, core=core)
+
+    try:
+        with open(out, "a") as f, ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+            for c0 in range(0, len(todo), chunk):
+                part = todo[c0:c0 + chunk]
+                lock_fd = None
+                if lock_path is not None:
+                    lock_fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT)
+                    fcntl.flock(lock_fd, fcntl.LOCK_EX)
+                try:
+                    for row in ex.map(one, part):
+                        with write_lock:
+                            f.write(json.dumps(row, sort_keys=True) + "\n")
+                            f.flush()
+                            os.fsync(f.fileno())
+                            wrote += 1
+                        if not row["ok"]:
+                            log(f"[truth] REFUSED {row['id']}: {row['error'][:200]}")
+                finally:
+                    if lock_fd is not None:
+                        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                        os.close(lock_fd)
+                el = time.monotonic() - t0
+                log(f"[truth] {c0 + len(part)}/{len(todo)} turns, {el / 60:.1f} min, "
+                    f"eta {el / (c0 + len(part)) * (len(todo) - c0 - len(part)) / 60:.1f} min")
+    finally:
+        for c in cores:
+            c.close()
     return wrote
 
 
 # ---------------------------------------------------------------------------------------------
 # the readout
 # ---------------------------------------------------------------------------------------------
+
+def first_seeds(row: dict, k: int) -> dict:
+    """The same row as if only its first ``k`` seeds had been played (seeds are nested: the first
+    ``k`` of ``turn_seeds(id, S)`` ARE ``turn_seeds(id, k)``)."""
+    if not row.get("ok"):
+        return row
+    if len(row["seeds"]) < k:
+        raise ValueError(f"{row['id']}: {len(row['seeds'])} seeds < {k}")
+    return dict(row, seeds=row["seeds"][:k],
+                outcomes={a: v[:k] for a, v in row["outcomes"].items()},
+                ends={a: v[:k] for a, v in row.get("ends", {}).items()})
+
 
 def turn_truth(row: dict, eps: float = EPS) -> dict:
     """Per-action gap to the best (paired over seeds) and its class."""
@@ -311,6 +483,45 @@ def paired(bank: Bank, rows: Sequence[dict], pa: np.ndarray, pb: np.ndarray, eps
     return out
 
 
+_ENC = {1.0: "+", -1.0: "-", 0.0: "0"}
+_DEC = {"+": 1.0, "-": -1.0, "0": 0.0}
+
+
+def compact(row: dict) -> dict:
+    """The committed form of a row: outcomes as one ``+ / - / 0`` character per seed, the seeds as
+    their COUNT (``turn_seeds(id, n)`` regenerates them exactly), no per-branch end records (kept in
+    the archive's full rows)."""
+    c = {k: row[k] for k in ("schema", "id", "ok", "continuation", "at", "side", "stall", "max_turns")
+         if k in row}
+    c["n_seeds"] = len(row["seeds"])
+    if row.get("ok"):
+        c["outcomes"] = {a: "".join(_ENC[float(x)] for x in v) for a, v in row["outcomes"].items()}
+    else:
+        c["error"] = row.get("error")
+    return c
+
+
+def expand(row: dict) -> dict:
+    """A compact row back to the full shape (a full row is returned unchanged)."""
+    if "n_seeds" not in row:
+        return row
+    r = dict(row)
+    r["seeds"] = turn_seeds(r["id"], r.pop("n_seeds"))
+    if r.get("ok"):
+        r["outcomes"] = {a: [_DEC[ch] for ch in v] for a, v in r["outcomes"].items()}
+    return r
+
+
+def write_compact(src: Path, dst: Path) -> int:
+    import gzip
+
+    rows = load_rows(src)
+    with gzip.GzipFile(dst, "wb", mtime=0) as g:
+        for r in sorted(rows, key=lambda x: x["id"]):
+            g.write((json.dumps(compact(r), sort_keys=True) + "\n").encode())
+    return len(rows)
+
+
 def load_rows(path: Path, continuation: Optional[str] = None) -> List[dict]:
     path = Path(path)
     if path.suffix == ".gz":
@@ -320,7 +531,7 @@ def load_rows(path: Path, continuation: Optional[str] = None) -> List[dict]:
             text = f.read()
     else:
         text = path.read_text()
-    rows = [json.loads(line) for line in text.splitlines() if line.strip()]
+    rows = [expand(json.loads(line)) for line in text.splitlines() if line.strip()]
     return [r for r in rows if continuation is None or r["continuation"] == continuation]
 
 
@@ -361,6 +572,9 @@ def _cli(argv=None) -> int:
     s.add_argument("--out", required=True)
     s.add_argument("--n-free", type=int, default=200)
     s.add_argument("--n-forced", type=int, default=20)
+    s.add_argument("--v2-include", default=None,
+                   help="v2 (at scale): the subset file whose turns come first; over-samples setup / "
+                        "recovery / hazard / status (OVERSAMPLE_V2)")
     r = sub.add_parser("run")
     r.add_argument("--bank", required=True)
     r.add_argument("--subset", required=True)
@@ -369,6 +583,10 @@ def _cli(argv=None) -> int:
     r.add_argument("--seeds", type=int, default=16)
     r.add_argument("--threads", type=int, default=4)
     r.add_argument("--lib-profile", default="release")
+    r.add_argument("--device", default="cpu")
+    r.add_argument("--workers", type=int, default=1)
+    r.add_argument("--chunk", type=int, default=32)
+    r.add_argument("--lock", default=None, help="flock this file per chunk (the shared GPU lock)")
     q = sub.add_parser("read")
     q.add_argument("--bank", required=True)
     q.add_argument("--rows", required=True)
@@ -380,11 +598,18 @@ def _cli(argv=None) -> int:
     a = ap.parse_args(argv)
     bank = load_bank(Path(a.bank))
     if a.cmd == "select":
-        ids = select_subset(bank, n_free=a.n_free, n_forced=a.n_forced)
-        Path(a.out).write_text(json.dumps({"schema": TRUTH_SCHEMA, "seed": SUBSET_SEED,
-                                           "bank": bank.manifest["content_sha256"],
-                                           "n_free": a.n_free, "n_forced": a.n_forced,
-                                           "ids": ids}, indent=1) + "\n")
+        meta = {"schema": TRUTH_SCHEMA, "bank": bank.manifest["content_sha256"],
+                "n_free": a.n_free, "n_forced": a.n_forced}
+        if a.v2_include:
+            inc = json.loads(Path(a.v2_include).read_text())["ids"]
+            sel = select_subset_v2(bank, include=inc, n_free=a.n_free, n_forced=a.n_forced)
+            meta.update({"seed": SUBSET_SEED + "-v2", "include": a.v2_include,
+                         "oversample": OVERSAMPLE_V2, "ids": sel["ids"], "why": sel["why"]})
+            ids = sel["ids"]
+        else:
+            ids = select_subset(bank, n_free=a.n_free, n_forced=a.n_forced)
+            meta.update({"seed": SUBSET_SEED, "ids": ids})
+        Path(a.out).write_text(json.dumps(meta, indent=1) + "\n")
         print(f"[truth] {len(ids)} turns -> {a.out}")
         return 0
     if a.cmd == "run":
@@ -396,14 +621,23 @@ def _cli(argv=None) -> int:
         if sub_["bank"] != bank.manifest["content_sha256"]:
             sys.exit("[truth] the subset was drawn from a different bank")
         path, _, label = a.continuation.partition("=")
-        model = load_checkpoint(Path(path), a.threads)
-        pol = greedy(lambda rows, masks: policy_logits(model, rows, masks.astype(bool)))
+        model = load_checkpoint(Path(path), a.threads, device=a.device)
+        # The extractor keeps per-forward state on the module (`self.stash`), so ONE model shared by
+        # the worker threads forwards one batch at a time — and the batcher MERGES every thread's
+        # pending rows into that one forward (the GPU cost of 3 small batches ≈ 1 big one).
+        scorer = MicroBatcher(lambda rows, masks: policy_logits(model, rows, masks.astype(bool), batch=8192))
+        pol = greedy(scorer)
         lib = F.load(F.default_path(a.lib_profile))
 
         from utils.rust_env.successors import SearchCore
 
+        # the continuation's name is the POLICY (device is stamped per row, not in the name: a CUDA
+        # and a CPU continuation of the same checkpoint gave identical outcomes, 28 / 28 actions
+        # at 64 seeds, 67k scored rows — measured 2026-09-29)
         run(bank, sub_["ids"], pol, f"{label or Path(path).stem} greedy (both sides)", Path(a.out),
-            s=a.seeds, core_factory=lambda: SearchCore(lib=lib))
+            s=a.seeds, core_factory=lambda: SearchCore(lib=lib), workers=a.workers, chunk=a.chunk,
+            lock_path=Path(a.lock) if a.lock else None,
+            log=lambda m: print(m, flush=True))
         return 0
     from main.policy_spectrum.reader import load_probs
 

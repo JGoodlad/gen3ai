@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,496-line file. **The ledger itself is append-only and is never edited by this**;
+21,500-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**727 headings · 672 dated · 2026-08-01 → 2026-09-29 · ledger 21,496 lines.**
+**728 headings · 673 dated · 2026-08-01 → 2026-09-29 · ledger 21,500 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -747,3 +747,4 @@ rename.
   - `L21475` · `2026-09-29` · GIGO FIX · F-LF-1 — **the SETUP step of four scripted bots never fired, for their whole life: `heuristic`, `heuristic2`, `setup_sweep` and `setup_sweep_v2` compared poke-env's `Target` ENUM to the string `"self"`. FIXED (Python and the Rust port together); every earlier eval row, bot mix and bot anchor using them is an ERA BOUNDARY.**
   - `L21481` · `2026-09-29` · BOUNDARY · **THE NATURE / EV BELIEF LABEL IS NOW THE OPPONENT'S DECLARED SET (`gen3_true_spread_labels_v1`), a TRAINING-TARGET boundary. The old IV-31 stat inversion left 55.8 % of pool mons unlabelled (54.6 % of revealed-slot decisions), every one of them an IV-30 Hidden Power set, and 18.2 % of the labels it did give were WRONG. After the fix: 100 % coverage (parity milestone pool 83,905 / 83,905 slot-decisions), Rust == Python, 0 divergences.**
   - `L21493` · `2026-09-29` · BOT BEHAVIOUR · F-LF-1 follow-up — **a NON-Ghost's Curse is now a setup move for `heuristic`, `heuristic2`, `setup_sweep` and `setup_sweep_v2` (owner: "allow Curse — it gives the bots a little more strength"); a Ghost's Curse never is. The bots' behaviour changed again, inside the SAME era boundary as the F-LF-1 fix (no run used the fixed bots in between).**
+  - `L21497` · `2026-09-29` · MEASUREMENT · **M5 LANE S GATE ④ AT SCALE — THE LINEAGE STARVES NEAR-BEST MOVES. On 1,600 turns branched to the end (every legal action × 64 shared dice seeds, three greedy continuations), from N0 75M to K3 the share of DECISIVE turns where an action as good as the best gets < 1 % of the policy rises from 0.31–0.35 to 0.48–0.49 (+0.14 to +0.16, detected under all three), while the mass on DOMINATED actions falls only −0.017 to −0.019: the sharpening is mostly starvation. Largest on switches (+0.15 to +0.18), detected on attacks and status moves (3/3) and setup moves (+0.09 to +0.13, 2/3); hazard unchanged. Nearly all of it at the N0 → C_fix step.**
