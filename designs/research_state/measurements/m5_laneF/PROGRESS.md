@@ -88,16 +88,18 @@ which a list-literal read missed on the first try. Teeth: a dropped row and an a
   choice token, and its 11-dim index (`serialize.order_to_action`). That index is what the env core
   takes. In the probe (4,614) and COMMIT (1,976) corpora the sent order never differed from the
   bot's own (the milestone recorder does not re-check it; the gate compares the sent one).
-- **Behaviour is ported AS IS, bugs included** (F-LF-1). Fixing a bot is a training-distribution
-  change and is the owner's call.
+- **Behaviour is ported AS IS, bugs included** — except F-LF-1, which the orchestrator ordered
+  FIXED on 2026-09-29 as GIGO (no training was running; the next era starts on M5): the Python bots
+  and the port changed together, and the bank was re-recorded.
 
 ## Gate results (2026-09-29)
 
 | tier | corpus | decisions | result |
 |---|---|---|---|
-| COMMIT (routine) | banked, 51 episodes: 10 bots × (3 pool + 1 ladder + 1 procedural) + 1 chosen `staller_v2` battle | 1,976 | **0 mismatches** (view, action, token, RNG offsets, replay) |
+| COMMIT (routine) | banked, 52 episodes: 10 bots × (3 pool + 1 ladder + 1 procedural) + 1 chosen `staller_v2` battle + 1 chosen `heuristic2` battle (its setup step) | 2,165 | **0 mismatches** (view, action, token, RNG offsets, replay); re-banked after the F-LF-1 fix |
 | probe (one-off) | 120 episodes, pool + ladder | 4,614 | 0 mismatches |
-| MILESTONE (`slow`) | 520 fresh episodes, 10 bots × (20 pool + 20 ladder + 12 procedural) | **20,229** | **0 mismatches**, 73 s |
+| MILESTONE (`slow`) | 520 fresh episodes, 10 bots × (20 pool + 20 ladder + 12 procedural) | **20,229** | **0 mismatches**, 73 s (pre-fix bots) |
+| MILESTONE after the F-LF-1 fix | the same 520 keys, fixed bots | ~20.4k | **0 mismatches**, 79 s; the setup site fires on heuristic 65 / 1,573, heuristic2 58 / 1,376, setup_sweep 86 / 1,706, setup_sweep_v2 44 / 1,650 decisions (0 before the fix, by construction) |
 
 - **Draws exercised (milestone):** random 4,348 decisions; staller 174; staller_v2 108; baitbot 83
   (bait coin + forced-switch path).
@@ -115,14 +117,20 @@ which a list-literal read missed on the first try. Teeth: a dropped row and an a
 
 ## Findings
 
-- **F-LF-1 (MAJOR, owner — behaviour, not port).** The setup branch NEVER fires in four bots:
+- **F-LF-1 (MAJOR) — FIXED 2026-09-29** (ledger `2026-09-29 · GIGO FIX · F-LF-1`). The bots now
+  test `move.target is Target.SELF`, the port `calc::target_is_self` (the table's name `"SELF"`),
+  `bot_tables_test.py` pins the fixed fact on both sides, `bots_gate_test.py::test_the_setup_bots_actually_set_up`
+  and the COMMIT gate's setup-site coverage fail on a revert of either half, and
+  `src/poke_env_enum_str_compare_gate_test.py` (mypy `--strict-equality`) fails any poke-env enum
+  compared to a str. Curse is in `_SETUP_MOVES` but its dex target is not self and it has no static
+  boosts, so no setup step picks it (unchanged; a behaviour decision). What it was:
+  the setup branch NEVER fired in four bots:
   `SimpleHeuristicsPlayer`, `Gen3HeuristicV2Player`, `Gen3SetupSweepPlayer` and
   `Gen3SetupSweepV2Player`. Each tests `move.target == "self"`, and poke-env's `Move.target` is a
   `Target` ENUM (`Target.SELF == "self"` is False).
   - So `setup_sweep` / `setup_sweep_v2` never set up. They are attackers with switch logic, and every
     eval row named for them measures that.
-  - Ported as-is: `calc::target_is_self_str` returns false.
-  - `bot_tables_test.py` pins the Python fact, so a fix fails there first and the port must follow.
+  - (Pre-fix) ported as-is: `calc::target_is_self_str` returned false.
   - The same bots also carry upstream poke-env's `"stealhrock"` typo in `ENTRY_HAZARDS`. It is inert
     in gen 3, which has no Stealth Rock.
 - **F-LF-2 (Lanes E / G / H).** PHANTOM POLLS: the training wrapper (`SingleAgentWrapper.step`)

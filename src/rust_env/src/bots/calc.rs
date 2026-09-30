@@ -287,10 +287,9 @@ pub fn best_switch_v2(v: &View) -> R<Option<usize>> {
     Ok(argmax(&v.switches, score)?.map(|i| v.switches[i]))
 }
 
-/// `move.target == "self"` — ALWAYS False: poke-env's `Move.target` is a `Target` ENUM and the bots
-/// compare it to a STRING. So the setup branch of `SimpleHeuristicsPlayer`, `Gen3HeuristicV2Player`,
-/// `Gen3SetupSweepPlayer` and `Gen3SetupSweepV2Player` never fires (finding F-LF-1). Ported as the
-/// Python bot behaves; `bot_tables_test.py` pins the Python fact, so a Python fix fails there first.
-pub fn target_is_self_str(_m: &MoveV) -> bool {
-    false
+/// `move.target is Target.SELF` — the table's `Target` NAME is `"SELF"`. (Until F-LF-1 was fixed
+/// the Python bots compared the ENUM to the STRING `"self"`, which is never true, so no setup move
+/// was ever chosen; `bot_tables_test.py` pins the fixed fact on both sides.)
+pub fn target_is_self(m: &MoveV) -> bool {
+    m.target == Some("SELF")
 }

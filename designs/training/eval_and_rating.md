@@ -119,6 +119,14 @@ because eval is non-blocking and **skips a cycle while the previous one is still
 (below): a heavier roster self-throttles to a sparser cadence instead of needing tuned
 ceilings.
 
+🚨 **BOT ERA BOUNDARY — F-LF-1, fixed 2026-09-29.** Until then the SETUP step of `heuristic`,
+`heuristic2`, `setup_sweep` and `setup_sweep_v2` never fired (each compared poke-env's `Target`
+enum to the string `"self"`), so `setup_sweep` / `setup_sweep_v2` were attackers with switch logic.
+Every `eval/win_rate_vs_{heuristic,heuristic2,setup_sweep,setup_sweep_v2}` row, every
+`win_rate_vs_bots` aggregate, every training bot mix and every `bot:<name>` anchor / prober replay
+before the fix measured the BROKEN bots and is not comparable with a later one (ledger
+`2026-09-29 · GIGO FIX · F-LF-1`).
+
 ### ⚠️ GLOBAL-RANDOM COUPLING — the five seeds a paired-arm design must set
 
 A drawer that reaches into a **process-wide** RNG couples itself to every other drawer in the

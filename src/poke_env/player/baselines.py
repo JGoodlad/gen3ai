@@ -329,7 +329,7 @@ class SimpleHeuristicsPlayer(Player):
                     if (
                         move.boosts
                         and sum(move.boosts.values()) >= 2
-                        and move.target == "self"
+                        and move.target is Target.SELF
                         and min(
                             [active.boosts[s] for s, v in move.boosts.items() if v > 0]
                         )

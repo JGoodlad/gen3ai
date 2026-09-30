@@ -261,8 +261,9 @@ class Move:
             return self.target
         elif self.request_target:
             return self.request_target
-        elif self.target == "randomNormal":
-            return self.request_target
+        # (upstream poke-env had `elif self.target == "randomNormal": return self.request_target`
+        # here — a Target ENUM compared to a str, so never true; removed as dead, behaviour
+        # unchanged. Enum-vs-str compares are gated by src/poke_env_enum_str_compare_gate_test.py.)
         return self.target
 
     @property

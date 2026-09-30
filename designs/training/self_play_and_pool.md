@@ -251,7 +251,10 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   SetupSweepV2}` — because they play differently and the extra playstyle diversity is the
   point. There is no roster flag; the same nine names (eight bots + `random`) feed every
   path. `Random` is eval-only (a cheap "is the model broken" floor, excluded from
-  `win_rate_vs_bots`); it is never a training opponent.
+  `win_rate_vs_bots`); it is never a training opponent. ⚠️ The setup step of `Heuristic`,
+  `Heuristic2`, `SetupSweep` and `SetupSweepV2` was DEAD until 2026-09-29 (F-LF-1 — a `Target`
+  enum compared to a str); every training mix before then played the broken bots
+  (`eval_and_rating.md`, BOT ERA BOUNDARY).
 - **Resume state in `summary.json`.** `SelfPlayCallback` writes
   `<snapshot_dir>/summary.json` each eval (`win_rate_vs_bots`, `self_play_fraction`,
   `last_eval_step`, `seeded`, `pool_generation`) — `SnapshotPool.persist_summary`/`load_summary`.

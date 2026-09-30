@@ -165,7 +165,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 
 **Two axes, and keeping them apart is the point.** A marker says what a test NEEDS (*(unmarked)* · `integration` · `sim` · `browser` · `e2e`); a separate marker says what it COSTS (`slow`). **A tier is DECLARED, never inferred** — cost arrives transitively, so no filename or import graph can classify a test. `conftest.py` reports an unmarked test that overruns 30 s, and **enforces only on a quiet box** (factor < 1.05); on a busy one it is advisory, because a duration measured under starvation is not a measurement.
 
-**Eight static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
+**Nine static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|
@@ -177,6 +177,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 | `src/slow_tier_status_gate_test.py` | the last recorded verdict of every `slow` test (`designs/ops/slow_tier_status.json`, written by the slow tier itself). **A recorded FAIL fails the ROUTINE gate**, naming the test and the commit it failed at; inconclusive (a timeout, or a test killed in flight), unrecorded and stale are REPORTED, never fatal | `GEN3AI_SKIP_SLOW_STATUS_GATE=1` |
 | `src/mode_flag_doc_gate_test.py` | every MODE-flag value `designs/ARCHITECTURE.md`'s PROSE states equals `designs/production_config.json` (read via `agents.training.baselines.production_config()`), and every key the mirror marks INERT is called INERT. The (doc pattern → key) table is DECLARED, so a renamed key FAILS instead of going quiet | `GEN3AI_SKIP_MODE_FLAG_DOC_GATE=1` |
 | `src/ledger_index_gate_test.py` | `designs/research_state/ledger_index.md` (the generated date · line · title index over the 13.8k-line ledger) matches what `python -m main.ledger_index` renders — an entry appended without a regeneration FAILS here. **On a rebase conflict take either side and re-run the generator; never hand-merge it, and never edit the ledger** | `GEN3AI_SKIP_LEDGER_INDEX_GATE=1` |
+| `src/poke_env_enum_str_compare_gate_test.py` | no poke-env ENUM (`Target`, `Status`, `MoveCategory`, `Weather`, … derived) is compared to a value it can never equal — mypy strict-equality mode over `agents`/`main`/`utils`/`poke_env`, typed, so `live_mon.status == "slp"` (a str) is not flagged. F-LF-1: `move.target == "self"` killed four bots' setup step for their whole life. Cold ~24 s once, warm ~0.3 s | `GEN3AI_SKIP_ENUM_STR_GATE=1` |
 
 A path or flag named deliberately as HISTORY goes in `designs/deleted_flags.md` with its citation.
 

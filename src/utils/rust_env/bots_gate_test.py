@@ -88,6 +88,49 @@ def test_commit_tier_every_banked_decision_is_equal(built, bank, tmp_path):
         assert rep["bots"][bot]["decisions"] >= 40, (bot, rep["bots"][bot])
     for bot in DRAWING:
         assert rep["bots"][bot]["draw_decisions"] > 0, f"{bot}: no decision drew — its stream is untested"
+    # F-LF-1: each setup step's Rust return site is REACHED by the bank (it was dead before the fix).
+    sites = _setup_sites()
+    for bot, line in sites.items():
+        assert rep["bots"][bot]["branches"].get(str(line), 0) >= 1, \
+            (f"{bot}: the setup site logic.rs:{line} is never reached", rep["bots"][bot]["branches"])
+
+
+SETUP_BOTS = ("heuristic", "setup_sweep", "setup_sweep_v2", "heuristic2")   # logic.rs order
+
+
+def _setup_sites() -> dict:
+    """The line of each `// F-LF-1 SETUP SITE` return in `logic.rs` (the gate keys a branch by it)."""
+    lines = src_path("rust_env", "src", "bots", "logic.rs").read_text().splitlines()
+    found = [i + 2 for i, ln in enumerate(lines) if "F-LF-1 SETUP SITE" in ln]
+    assert len(found) == len(SETUP_BOTS), found
+    return dict(zip(SETUP_BOTS, found))
+
+
+def _is_setup_token(tok) -> bool:
+    """A chosen move that the setup steps select: ``target is Target.SELF`` raising >= 2 stages."""
+    from poke_env.battle.move import Move
+    from poke_env.battle.target import Target
+
+    if not tok or not tok.startswith("move "):
+        return False
+    m = Move(tok.split()[1], 3)
+    return m.target is Target.SELF and bool(m.boosts) and sum(m.boosts.values()) >= 2
+
+
+def test_the_setup_bots_actually_set_up(bank):
+    """F-LF-1 (fixed): before the fix, `move.target == "self"` compared a ``Target`` ENUM to a str,
+    so the four setup steps never fired — the bank then held ZERO setup-move choices for these bots.
+    Reverting the Python fix makes the re-record test above fail AND this one; reverting only the
+    Rust port fails the COMMIT gate's action counter and its setup-site coverage."""
+    counts = {b: 0 for b in SETUP_BOTS}
+    for ep in bank["episodes"]:
+        if ep["bot"] in counts:
+            counts[ep["bot"]] += sum(_is_setup_token(d["tok"]) for d in ep["p2"])
+    assert all(n >= 1 for n in counts.values()), counts
+    # And LIVE, not only from the bank: the chosen heuristic2 battle re-plays with its Calm Minds.
+    bot, src, n, key = next(x for x in BC.COMMIT_EXTRA if x[0] == "heuristic2")
+    eps = BC.record(bot, BC.team_list(src, n, key), key_base=key)
+    assert sum(_is_setup_token(d["tok"]) for e in eps for d in e["p2"]) >= 1
 
 
 def test_commit_tier_the_bank_is_what_the_python_bots_do_today(bank):

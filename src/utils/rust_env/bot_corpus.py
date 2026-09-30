@@ -247,8 +247,10 @@ def commit_path():
 
 #: CHOSEN batches ``(bot, source, n, key)``: `staller_v2` draws its Protect coin only once the foe is
 #: badly poisoned and no heal / status comes first — rare against a random p1, so the tier includes
-#: a battle where it fires (3 draws), picked from a probe run rather than hoped for.
-COMMIT_EXTRA = (("staller_v2", "pool", 1, 74_000),)
+#: a battle where it fires (3 draws), picked from a probe run rather than hoped for. `heuristic2`'s
+#: SETUP step (5th in its order, F-LF-1) fires in none of its five base battles, so the tier also
+#: carries one where it does (18 Calm Minds; key found by a probe over pool keys 75,000 + 100k).
+COMMIT_EXTRA = (("staller_v2", "pool", 1, 74_000), ("heuristic2", "pool", 1, 75_800))
 
 
 def build_commit_tier() -> dict:

@@ -57,14 +57,18 @@ pub fn heuristic(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order> {
                 return Ok(hit(br, line!(), Order::Move(i)));
             }
         }
-        // Setup: `active.current_hp_fraction == 1 and _estimate_matchup(...) > 0` then a move with
-        // `move.target == "self"` — never true (calc::target_is_self_str), so nothing returns here.
-        // `_estimate_matchup` is pure; its only observable effect would be a raise, which the
-        // `_should_switch_out` call above already surfaced for the same pair.
+        // Setup: `active.current_hp_fraction == 1 and _estimate_matchup(...) > 0`, then the first move
+        // with `move.boosts`, `sum(boosts) >= 2`, `target is Target.SELF` and an uncapped raised stat.
         if active.hp == 1.0 && estimate_matchup(active, opp)? > 0.0 {
-            for m in &v.moves {
-                if m.boosts.is_some_and(|b| b.iter().map(|(_, x)| x).sum::<i32>() >= 2) && target_is_self_str(m) {
-                    unreachable!("target_is_self_str is always false");
+            for (i, m) in v.moves.iter().enumerate() {
+                if let Some(b) = m.boosts {
+                    if b.iter().map(|(_, x)| x).sum::<i32>() >= 2
+                        && target_is_self(m)
+                        && b.iter().filter(|(_, x)| *x > 0).map(|(s, _)| active.boost(s)).min().expect("sum >= 2") < 6
+                    {
+                        // F-LF-1 SETUP SITE — bots_gate_test.py asserts the COMMIT bank reaches it
+                        return Ok(hit(br, line!(), Order::Move(i)));
+                    }
                 }
             }
         }
@@ -144,6 +148,16 @@ pub fn aggressive(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order> {
     Ok(hit(br, line!(), random_move(v, choice)))
 }
 
+/// The setup step of both setup sweepers: the first move with `move.id in _SETUP_MOVES and
+/// move.target is Target.SELF` that raises a `_SETUP_STATS` stat not yet at +6.
+fn setup_move(v: &View, active: &super::view::MonV) -> Option<usize> {
+    v.moves.iter().position(|m| {
+        has(t::SETUP_MOVES, &m.id)
+            && target_is_self(m)
+            && m.boosts.unwrap_or(&[]).iter().any(|(s, x)| *x > 0 && has(t::SETUP_STATS, s) && active.boost(s) < 6)
+    })
+}
+
 fn offensive_boosts(v: &View) -> i32 {
     let a = v.active_mon().expect("checked");
     t::SETUP_STATS.iter().map(|s| a.boost(s)).sum()
@@ -159,8 +173,10 @@ pub fn setup_sweep(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order> {
     let should_switch = matchup < t::SWITCH_OUT_MATCHUP_THRESHOLD && !v.switches.is_empty();
     if !v.moves.is_empty() && !should_switch {
         if active.hp >= t::SETUP_HP_THRESHOLD && matchup > 0.0 && total < t::SETUP_BOOST_CAP {
-            // `move.id in _SETUP_MOVES and move.target == "self"` — never true (F-LF-1).
-            debug_assert!(!v.moves.iter().any(|m| has(t::SETUP_MOVES, &m.id) && target_is_self_str(m)));
+            if let Some(i) = setup_move(v, active) {
+                // F-LF-1 SETUP SITE — bots_gate_test.py asserts the COMMIT bank reaches it
+                return Ok(hit(br, line!(), Order::Move(i)));
+            }
         }
         if let Some(i) = best_damage_move(v)? {
             return Ok(hit(br, line!(), Order::Move(i)));
@@ -281,8 +297,10 @@ pub fn setup_sweep_v2(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order>
     let should_switch = matchup < t::SWITCH_OUT_MATCHUP_THRESHOLD && !v.switches.is_empty() && total == 0;
     if !v.moves.is_empty() && !should_switch {
         if active.hp >= t::SETUP_HP_THRESHOLD && matchup > 0.0 && safe_to_setup && total < t::SETUP_BOOST_CAP {
-            // `move.id in _SETUP_MOVES and move.target == "self"` — never true (F-LF-1).
-            debug_assert!(!v.moves.iter().any(|m| has(t::SETUP_MOVES, &m.id) && target_is_self_str(m)));
+            if let Some(i) = setup_move(v, active) {
+                // F-LF-1 SETUP SITE — bots_gate_test.py asserts the COMMIT bank reaches it
+                return Ok(hit(br, line!(), Order::Move(i)));
+            }
         }
         if let Some(b) = best {
             return Ok(hit(br, line!(), Order::Move(b)));
@@ -339,9 +357,19 @@ pub fn heuristic_v2(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order> {
                 return Ok(hit(br, line!(), Order::Move(i)));
             }
         }
-        // 5. Setup at full HP into a winning matchup — `move.target == "self"` never holds (F-LF-1).
+        // 5. Setup at full HP into a winning matchup.
         if active.hp == 1.0 && matchup > 0.0 {
-            debug_assert!(!v.moves.iter().any(target_is_self_str));
+            for (i, m) in v.moves.iter().enumerate() {
+                if let Some(b) = m.boosts {
+                    if b.iter().map(|(_, x)| x).sum::<i32>() >= 2
+                        && target_is_self(m)
+                        && b.iter().filter(|(_, x)| *x > 0).map(|(s, _)| active.boost(s)).min().expect("sum >= 2") < 6
+                    {
+                        // F-LF-1 SETUP SITE — bots_gate_test.py asserts the COMMIT bank reaches it
+                        return Ok(hit(br, line!(), Order::Move(i)));
+                    }
+                }
+            }
         }
         if opp.status.is_none() && matchup <= 0.0 && best_frac < t::WALL_FRACTION && opp.hp > t::STATUS_WALL_HP_THRESHOLD {
             if let Some(o) = first_move(v, |m| has(t::STATUS_MOVES, &m.id) && m.bp == 0 && !is_status_move_immune(&m.id, opp)) {

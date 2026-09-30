@@ -5,6 +5,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from poke_env.battle.status import Status
+from poke_env.battle.target import Target
 from poke_env.player.battle_order import BattleOrder
 
 from agents import opponents as _opponents
@@ -25,7 +26,9 @@ def _make_move(id_, base_power=80, type_=None, accuracy=1.0, target="normal", bo
     move.id = id_
     move.base_power = base_power
     move.accuracy = accuracy
-    move.target = target
+    # The REAL type: `Move.target` is a `Target` ENUM. This mock once stored the raw str "self",
+    # which is exactly what hid F-LF-1 (the bots compared to "self" and this test agreed).
+    move.target = Target.from_showdown_message(target)
     move.boosts = boosts
     if type_ is not None:
         move.type = type_

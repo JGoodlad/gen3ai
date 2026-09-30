@@ -26,6 +26,7 @@ import random
 from poke_env.battle.battle import Battle
 from poke_env.battle.move import Move
 from poke_env.battle.pokemon import Pokemon
+from poke_env.battle.target import Target
 from poke_env.player.battle_order import BattleOrder
 from poke_env.player.baselines import SimpleHeuristicsPlayer
 
@@ -447,7 +448,7 @@ class Gen3SetupSweepPlayer(Player):
                 and total_offensive_boosts < _SETUP_BOOST_CAP
             ):
                 for move in battle.available_moves:
-                    if move.id in _SETUP_MOVES and move.target == "self":
+                    if move.id in _SETUP_MOVES and move.target is Target.SELF:
                         boosted_stat_not_capped = any(
                             active.boosts.get(s, 0) < 6
                             for s, v in (move.boosts or {}).items()
@@ -676,7 +677,7 @@ class Gen3SetupSweepV2Player(Player):
                 and total_offensive_boosts < _SETUP_BOOST_CAP
             ):
                 for move in battle.available_moves:
-                    if move.id in _SETUP_MOVES and move.target == "self":
+                    if move.id in _SETUP_MOVES and move.target is Target.SELF:
                         boosted_stat_not_capped = any(
                             active.boosts.get(s, 0) < 6
                             for s, v in (move.boosts or {}).items()
@@ -804,7 +805,7 @@ class Gen3HeuristicV2Player(Player):
                     if (
                         move.boosts
                         and sum(move.boosts.values()) >= 2
-                        and move.target == "self"
+                        and move.target is Target.SELF
                         and min(
                             active.boosts.get(s, 0)
                             for s, v in move.boosts.items()
