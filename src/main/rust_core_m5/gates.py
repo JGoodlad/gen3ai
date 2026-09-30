@@ -105,9 +105,10 @@ def fold(row: L.LaneGate, outcomes: Dict[str, str], *, source: str, gpu_ran: boo
 def bank_without_skip_clobber(scratch: Path, target: Path) -> List[str]:
     """Merge the slow-tier rows a session wrote into ``scratch`` (a copy of ``target``) back into
     ``target`` — every changed row EXCEPT a ``skip`` that would replace an existing verdict. A GPU
-    test skips without ``GEN3AI_TEST_ALLOW_GPU``, and the slow tier's merge replaces rows outright,
-    so a plain milestone run would overwrite a banked GPU PASS with a SKIP (F-LJ-5): a skip is not a
-    measurement. Returns the node ids banked."""
+    test skips without ``GEN3AI_TEST_ALLOW_GPU``, so a plain milestone run used to overwrite a
+    banked GPU PASS with a SKIP (F-LJ-5): a skip is not a measurement. ``record_results`` now
+    refuses that for every writer (``slow_tier_status.merge_row``), so this is belt-and-braces; it
+    also leaves a skip-over-skip row unbanked. Returns the node ids banked."""
     from utils.slow_tier_status import record_results
 
     if not scratch.is_file():

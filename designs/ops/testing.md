@@ -323,6 +323,13 @@ reads it:
   `pass`, so a test interrupted mid-call once banked as PASS at 0.0 s through the session-finish
   sweep (2026-09-24, a MILESTONE run stopped with SIGTERM). A test with no call report now banks
   `inconclusive`; `src/slow_tier_status_interrupt_test.py` interrupts a real session to pin it.
+  🚨 **A SKIP never replaces a measurement** (`slow_tier_status.merge_row`): a skipped test did not
+  run, so over a banked `pass` / `fail` / `inconclusive` the old row is KEPT — verdict, commit and
+  `at` untouched, so staleness still ages the last real run — and gains `last_skipped_at` /
+  `last_skipped_commit` / `last_skip_detail`. On 2026-09-29 a slow-tier run without
+  `GEN3AI_TEST_ALLOW_GPU` overwrote seven banked GPU PASS rows with SKIP; over a FAIL the same
+  replacement would have hidden a red. A skip banks as a row's status only where nothing measured
+  is on file.
 * **Artifact** — `designs/ops/slow_tier_status.json`, **committed**.
 * **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, in every tier, ~0.03 s plus one
   `git rev-list` per distinct recorded commit.
@@ -369,9 +376,10 @@ restore command and `GEN3AI_SKIP_SLOW_STATUS_GATE=1`, so it can never strand any
 rows is reading nothing at all.
 
 The recording side can be turned off on its own with `GEN3AI_SKIP_SLOW_STATUS_RECORD=1` (a run whose
-verdict should not be banked — a deliberate experiment, a starved box). Twelve meta-tests in the gate
+verdict should not be banked — a deliberate experiment, a starved box). Thirteen meta-tests in the gate
 file plant each condition — a red, an inconclusive, an unrecorded, a stale row, an unknown commit,
-a merge that must not truncate, a setup-only pass that must not bank green — so the gate's
+a merge that must not truncate, a setup-only pass that must not bank green, a skip that must not
+replace a banked verdict — so the gate's
 behaviour is pinned rather than described. Contract: `src/utils/slow_tier_status.py`.
 
 ### The REWARD GOLDEN (`src/agents/training/reward_golden_test.py`) — `sim`, ~20 s

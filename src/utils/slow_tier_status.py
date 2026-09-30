@@ -20,6 +20,12 @@ in the routine suite READS it — so a red `slow` test costs one JSON read to su
   verdicts.
 * **Reader** — `src/slow_tier_status_gate_test.py`, unmarked, in every tier, ~free.
 
+**A SKIP IS NOT A MEASUREMENT, so it never replaces one.** A slow test that skipped (a GPU test run
+without `GEN3AI_TEST_ALLOW_GPU`, a missing optional dependency) keeps its banked pass / fail /
+inconclusive row — verdict, commit and timestamp unchanged, so staleness keeps reporting the age of
+the last REAL run — and gains a `last_skipped_at` note. A skip is banked as a row's status only
+where nothing measured is on file. (`merge_row`; 2026-09-29, seven GPU PASS rows lost to SKIP.)
+
 **FOUR VERDICT CLASSES, and only one of them is fatal.**
 
 | class | meaning | gate |
@@ -168,7 +174,8 @@ def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = No
     """MERGE ``{nodeid: row}`` into the status file and return the path written.
 
     Merge, never replace: running one slow test must not erase the other rows, and two xdist
-    workers finishing at the same moment must not lose each other's results. The read-modify-write
+    workers finishing at the same moment must not lose each other's results. Per row, a SKIP never
+    replaces a recorded pass / fail / inconclusive — it only annotates it (`merge_row`). The read-modify-write
     is done under an exclusive `flock` (in the temp dir, never beside the artifact) and committed
     with an atomic rename,
     so a crashed writer can never leave a half-written artifact behind.
@@ -190,7 +197,8 @@ def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = No
             doc = _read(target) if target.exists() else {"schema": SCHEMA, "tests": {}}
             doc.setdefault("schema", SCHEMA)
             tests = doc.setdefault("tests", {})
-            tests.update(results)
+            for nodeid, row in results.items():
+                tests[nodeid] = merge_row(tests.get(nodeid), row)
             doc["tests"] = dict(sorted(tests.items()))
             doc["last_written"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix=".slow_status.")
@@ -201,6 +209,37 @@ def record_results(results: Dict[str, Dict[str, Any]], path: Optional[Path] = No
         finally:
             fcntl.flock(lf, fcntl.LOCK_UN)
     return target
+
+
+#: The verdicts a later SKIP may NOT replace — everything that is a measurement. See `merge_row`.
+_MEASURED = frozenset({"pass", "fail", "inconclusive"})
+
+
+def merge_row(old: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, Any]:
+    """The row to bank for one test, given the row already on file (``old``) and this run's.
+
+    🚨 **A SKIP NEVER REPLACES A MEASUREMENT.** A skip means the test did not run — most often a
+    GPU test run without ``GEN3AI_TEST_ALLOW_GPU`` — so it carries no information about whether the
+    test passes. Replacing a banked PASS with it throws the measurement away; replacing a banked
+    FAIL with it HIDES A RED from the routine gate, which is the one thing this artifact must never
+    do. Measured 2026-09-29: one slow-tier run without the GPU flag overwrote seven banked GPU PASS
+    rows with SKIP (restored by hand; Lane J's harness had guarded only its own path, F-LJ-5).
+
+    So when ``new`` is a skip and ``old`` holds a measured verdict (pass / fail / inconclusive —
+    an inconclusive row records an attempt that did not finish, which a skip does not supersede
+    either), the OLD row is kept — its ``status``, ``commit`` and ``at`` untouched, so the
+    staleness report still measures the age of the last real measurement — and it gains
+    ``last_skipped_at`` / ``last_skipped_commit`` / ``last_skip_detail``, so the file still says
+    the tier tried and could not run it. Any non-skip verdict replaces the row outright (dropping
+    those notes); a skip over a skip, or over no row, is banked as itself.
+    """
+    if old is None or new.get("status") != "skip" or old.get("status") not in _MEASURED:
+        return dict(new)
+    kept = dict(old)
+    kept["last_skipped_at"] = new.get("at", "")
+    kept["last_skipped_commit"] = new.get("commit", "")
+    kept["last_skip_detail"] = new.get("detail", "")
+    return kept
 
 
 def make_row(status: str, *, commit: str, duration_s: float,
@@ -238,6 +277,8 @@ class Verdict:
     n_rows: int = 0
     n_pass: int = 0
     n_skip: int = 0
+    #: Rows whose banked verdict was kept over a later SKIP (they carry `last_skipped_at`).
+    skipped_since: List[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -286,6 +327,8 @@ def evaluate(doc: Dict[str, Any], collected: Optional[set] = None,
             v.n_pass += 1
         elif st == "skip":
             v.n_skip += 1
+        if st != "skip" and row.get("last_skipped_at"):
+            v.skipped_since.append(nodeid)
         if commit_distance is not None:
             d = commit_distance(row.get("commit", ""))
             if d is None:

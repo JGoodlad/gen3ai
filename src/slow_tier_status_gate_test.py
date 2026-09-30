@@ -42,6 +42,7 @@ from utils.slow_tier_status import (
     evaluate,
     make_row,
     merge_outcome,
+    merge_row,
     record_results,
     settle,
     status_path,
@@ -129,7 +130,8 @@ def _report(v: Verdict, path) -> None:
     """The three NON-fatal classes, as warnings — visible in `-q`'s warnings summary."""
     print(f"[slow-tier status] {path}: {v.n_rows} row(s), {v.n_pass} pass, {v.n_skip} skip, "
           f"{len(v.reds)} FAIL, {len(v.inconclusive)} inconclusive, "
-          f"{len(v.unrecorded)} unrecorded, {len(v.stale)} stale")
+          f"{len(v.unrecorded)} unrecorded, {len(v.stale)} stale, "
+          f"{len(v.skipped_since)} kept over a later skip")
     if v.inconclusive:
         warnings.warn(
             "slow-tier INCONCLUSIVE (a timeout signature or an interrupted run — never a verdict): "
@@ -252,6 +254,40 @@ def test_recording_MERGES_and_never_truncates_the_other_rows(tmp_path):
     assert doc["schema"] == SCHEMA
     v = evaluate(doc)
     assert not v.ok and [n for n, _ in v.reds] == ["b::t2"]
+
+
+def test_a_SKIP_never_replaces_a_banked_PASS_or_FAIL_and_leaves_a_note(tmp_path):
+    """2026-09-29: a slow-tier run WITHOUT the GPU flag overwrote seven banked GPU PASS rows with
+    SKIP. A skip is not a measurement: the banked verdict, commit and timestamp must survive (so the
+    staleness report still ages the last REAL run), and the row gains a `last_skipped_at` note.
+    Over a FAIL this is sharper still — a skip that replaced it would hide a red from the gate."""
+    path = tmp_path / "status.json"
+    record_results({
+        "g::pass": make_row("pass", commit="c_pass", duration_s=5, contention=1),
+        "g::fail": make_row("fail", commit="c_fail", duration_s=5, contention=1, detail="boom"),
+        "g::incon": make_row("inconclusive", commit="c_inc", duration_s=5, contention=1),
+    }, path)
+    before = json.loads(path.read_text())["tests"]
+    record_results({n: make_row("skip", commit="c_skip", duration_s=0, contention=1,
+                                detail="GPU test: set GEN3AI_TEST_ALLOW_GPU=1")
+                    for n in ("g::pass", "g::fail", "g::incon", "g::new")}, path)
+    tests = json.loads(path.read_text())["tests"]
+    for n, st, c in (("g::pass", "pass", "c_pass"), ("g::fail", "fail", "c_fail"),
+                     ("g::incon", "inconclusive", "c_inc")):
+        assert tests[n]["status"] == st and tests[n]["commit"] == c, tests[n]
+        assert tests[n]["at"] == before[n]["at"], "a skip must not refresh the staleness clock"
+        assert tests[n]["last_skipped_commit"] == "c_skip" and tests[n]["last_skipped_at"]
+        assert "GEN3AI_TEST_ALLOW_GPU" in tests[n]["last_skip_detail"]
+    assert tests["g::new"]["status"] == "skip", "a skip with nothing measured on file banks as itself"
+    v = evaluate({"tests": tests})
+    assert [n for n, _ in v.reds] == ["g::fail"], "the red must survive the skip"
+    assert sorted(v.skipped_since) == ["g::fail", "g::incon", "g::pass"]
+    # A real verdict afterwards replaces the row outright and drops the skip note.
+    record_results({"g::pass": make_row("fail", commit="c_new", duration_s=5, contention=1)}, path)
+    row = json.loads(path.read_text())["tests"]["g::pass"]
+    assert row["status"] == "fail" and row["commit"] == "c_new" and "last_skipped_at" not in row
+    # And a skip over a skip is just a skip.
+    assert merge_row(_row("skip", commit="a"), _row("skip", commit="b"))["commit"] == "b"
 
 
 def test_the_env_override_points_the_reader_at_a_scratch_file(tmp_path, monkeypatch):
