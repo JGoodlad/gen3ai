@@ -8,6 +8,8 @@ pub mod episode;
 pub mod ffi;
 /// The TRAINING LABELS (M5 Lane C): which label families are built, and their producers.
 pub mod labels;
+/// SEARCH ON `successors()` IN PROCESS (M5 Lane I): the search tree and the playouts.
+pub mod search;
 /// FRONT END B's transport — the shared mapping of the process front end (M5 Lane B; the child is
 /// `src/bin/rust_env_proc.rs`, the host `src/utils/rust_env/proc.py`).
 pub mod shm;

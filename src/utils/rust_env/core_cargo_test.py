@@ -65,7 +65,10 @@ def test_the_rust_env_core_suite_passes():
                  "the_cores_rows_are_sim_bridges_obs_rows_byte_for_byte",
                  "the_byte_comparison_has_teeth",
                  "quarantines_are_thread_count_invariant",
-                 "the_stamp_is_well_formed_and_names_this_schema"):
+                 "the_stamp_is_well_formed_and_names_this_schema",
+                 # M5 Lane I (hand-off): the playout's battle is the core's row path; playouts are CRN-deterministic
+                 "a_game_is_the_env_cores_row_path_and_its_branch_is_exact",
+                 "playouts_are_deterministic_with_common_random_numbers_and_the_recorded_continuation_is_reproduced"):
         assert f"{name} ... ok" in r.stdout, f"{name} did not run:\n{tail}"
     # Gate ⑤, cross-language: the Rust build's stamp is what this tree recomputes (a self-check build).
     lines = [ln for ln in r.stdout.splitlines() if ln.startswith("POKESIM_ENV_STAMP=")]

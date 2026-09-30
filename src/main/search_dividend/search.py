@@ -110,6 +110,10 @@ class SearchConfig:
     #: (`gen3_core_search_v1`) whose ENCODED row the driver ships (`gen3_core_encoder_v1`). The
     #: ``protocol`` / ``view`` materializers — the only roads the node driver could serve — are
     #: DELETED (Rust Core deletion pass, program §4 M2); the field stays so a battery row stamps it.
+    #: ``inproc`` (M5 Lane I) is the SAME core road in process — ``utils.rust_env.successors.
+    #: Successors`` over the env core's FFI: no driver child, no JSON row; its arms are gated
+    #: byte-equal to the driver's (``successors_parity``) and its decisions equal to ``rust``'s
+    #: (``successors_decision_integration_test``).
     search_impl: str = "rust"
     honest_swap_moves: bool = False     # axis M — see determinize.swap_unused_moves
     seed: int = 0
@@ -128,10 +132,11 @@ class SearchConfig:
     defensive: dfn.DefensiveConfig = field(default_factory=dfn.DefensiveConfig)
 
     def __post_init__(self) -> None:
-        if self.search_impl != "rust":
+        if self.search_impl not in ("rust", "inproc"):
             raise ValueError(f"search_impl={self.search_impl!r}: search is RUST-only (its successors "
                              f"are Rust-core versions; the node driver's protocol / view roads are "
-                             f"deleted, program §4 M2)")
+                             f"deleted, program §4 M2) — 'rust' (the search_driver child) or "
+                             f"'inproc' (the same core road in process, M5 Lane I)")
         if self.root_strategy not in ROOT_STRATEGIES:
             raise ValueError(f"unknown root_strategy {self.root_strategy!r} "
                              f"(want one of {ROOT_STRATEGIES})")
@@ -369,10 +374,16 @@ class SearchEngine:
     # -- lifecycle ----------------------------------------------------------
 
     def session(self):
-        from utils.bridge.search_session import SearchSession
-
         if self._session is None:
-            self._session = SearchSession(impl=self.cfg.search_impl)
+            if self.cfg.search_impl == "inproc":
+                # M5 Lane I: the core road in process (no pN_chunks: no core-road reader reads them).
+                from utils.rust_env.successors import Successors
+
+                self._session = Successors(chunks=False)
+            else:
+                from utils.bridge.search_session import SearchSession
+
+                self._session = SearchSession(impl=self.cfg.search_impl)
         return self._session
 
     def close(self) -> None:
@@ -1091,7 +1102,7 @@ class SearchEngine:
         intermediate decision, and a deeper ply always branches from its parent's driver node. A
         leaf the side does not decide at (a ``wait`` request, the battle over, no legal action)
         comes back ``row: null`` and is not scored — the live player defers there too."""
-        from agents.battle.core_obs import wrap_row
+        from agents.battle.core_obs import check_row, wrap_row
 
         out: "Dict[int, _Leaf]" = {}
         for li in branch_of:
@@ -1108,7 +1119,9 @@ class SearchEngine:
             if payload["row"] is None:
                 continue                     # no decision here — every road agrees
             tokens = {int(k): str(v) for k, v in (payload.get("tokens") or {}).items()}
-            out[li] = _Leaf(obs=wrap_row(payload["row"]),
+            # the in-process road (`search_impl="inproc"`) hands the row as a float32 array already
+            row = payload["row"]
+            out[li] = _Leaf(obs=check_row(row) if isinstance(row, np.ndarray) else wrap_row(row),
                             mask=np.asarray(payload["mask"], dtype=np.int8),
                             action_choices=tokens, fork=_CORE_LEAF)
         return out

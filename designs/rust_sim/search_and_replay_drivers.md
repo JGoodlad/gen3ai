@@ -265,6 +265,26 @@ the core road asks for `Capture { sessions: true }`, and a plain root's arms and
 for none. Contract of the version and the reading:
 [`present.md`](present.md).
 
+### THE IN-PROCESS TWIN — the core road without the child (M5 Lane I)
+
+`src/rust_env/src/search/tree.rs` serves this driver's CORE road (`open_root` with `core: "text"` +
+trackers, `expand_many` with `rows`) IN PROCESS over the env core's FFI
+(`utils/rust_env/successors.py::Successors`, a drop-in for `SearchSession` on that road;
+`SearchConfig(search_impl="inproc")`). It calls the same kernels statement for statement, so its
+replies are BYTE-EQUAL to this binary's — root fields, node ids, every arm field and every leaf row
+to depth 3 (`src/utils/rust_env/successors_parity.py`, routine COMMIT + `slow` MILESTONE). A change
+to the core road here must land in `tree.rs` too, or that gate fails. Contract, gates and numbers:
+`designs/endstate/program_rust_core.md` §2 M5 (Lane I).
+
+🚨 **A known kernel defect both roads share (F-LI-1, not fixed):** `resolve_turn_sourced_with` feeds
+the second side inside the same loop iteration after the first side's feed, without re-checking the
+boundary — when side 1's REPLACEMENT switch ends the turn, side 2's fresh next-turn move request is
+answered by the FOLLOW-UP policy inside this arm. The child node's engine then disagrees with its
+own leaf, and a deeper arm fed the leaf's own token fails the whole `expand_many`
+(`bridge fatal: unresolvable choice`). Node's `resolveTurn` has the same shape (this port is
+faithful), so a fix moves both drivers' bytes. Repro and counts:
+`designs/research_state/measurements/m5_laneI/PROGRESS.md` F-LI-1.
+
 ## The REPLAY family: the one-shot `replay` / `reroll` / `reroll_many` verbs (`gen3_rust_replay_driver_v1`)
 
 The SECOND half of the offline layer, served by the SAME `src/bin/search_driver.rs` binary. It

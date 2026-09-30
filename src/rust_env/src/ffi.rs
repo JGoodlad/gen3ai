@@ -43,19 +43,19 @@ thread_local! {
     static OUT: RefCell<CString> = RefCell::new(CString::default());
 }
 
-fn cstring(s: String) -> CString {
+pub(crate) fn cstring(s: String) -> CString {
     CString::new(s.replace('\0', " ")).expect("NULs replaced")
 }
 
-fn set_err(e: &DispatchError) {
+pub(crate) fn set_err(e: &DispatchError) {
     LAST_ERROR.with(|c| *c.borrow_mut() = cstring(e.json()));
 }
 
-fn err(st: i32, kind: &str, message: impl Into<String>) -> DispatchError {
+pub(crate) fn err(st: i32, kind: &str, message: impl Into<String>) -> DispatchError {
     DispatchError { status: st, env: None, kind: kind.into(), class: None, message: message.into(), script: None }
 }
 
-fn panic_msg(p: Box<dyn std::any::Any + Send>) -> String {
+pub(crate) fn panic_msg(p: Box<dyn std::any::Any + Send>) -> String {
     p.downcast_ref::<String>()
         .cloned()
         .or_else(|| p.downcast_ref::<&str>().map(|s| s.to_string()))
@@ -88,6 +88,12 @@ impl FfiRet for *mut Handle {
 }
 impl FfiRet for () {
     fn on_panic() {}
+}
+// Hand-off (M5 Lane I): the search handle's null on a caught panic.
+impl FfiRet for *mut crate::search::SearchHandle {
+    fn on_panic() -> *mut crate::search::SearchHandle {
+        std::ptr::null_mut()
+    }
 }
 
 /// THE BOUNDARY: no unwind leaves an export. A caught panic is recorded as this thread's error.
@@ -150,6 +156,9 @@ unsafe fn read_addrs(addrs: *const usize) -> Result<ColAddrs, DispatchError> {
 /// The hand-written implementations the generated wrappers call (the SAME argument lists).
 mod imp {
     use super::*;
+    // Hand-off (M5 Lane I): the `rust_env_search_*` / `rust_env_playout_*` rows are implemented in
+    // `crate::search::ffi_imp`.
+    pub use crate::search::ffi_imp::*;
 
     const STAMP_C: &str = concat!(env!("POKESIM_ENV_STAMP"), "\0");
 
@@ -259,9 +268,9 @@ mod imp {
 // Each wrapper runs `imp::<name>` (hand-written, the SAME arguments) inside `guard`.
 
 /// `ffi.sig_id()` — FNV-1a-64 of the table's canonical text; compared by the loader.
-pub const FFI_SIG_ID: &str = "7de40c7f1f4c96ba";
+pub const FFI_SIG_ID: &str = "d963f6f8448f5620";
 /// The same, NUL-terminated, for `rust_env_ffi_sig`.
-const FFI_SIG_ID_C: &str = "7de40c7f1f4c96ba\0";
+const FFI_SIG_ID_C: &str = "d963f6f8448f5620\0";
 
 /// the build stamp (`stamp.py`'s format); static
 ///
@@ -401,6 +410,86 @@ pub unsafe extern "C" fn rust_env_free(h: *mut Handle) {
 #[no_mangle]
 pub unsafe extern "C" fn rust_env_panic_probe(h: *mut Handle, kind: i32) -> i32 {
     guard(AssertUnwindSafe(|| imp::panic_probe(h, kind)))
+}
+
+/// STARTUP of a SEARCH handle (`SearchSpec::from_json`); null on failure (then `rust_env_last_error`)
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_search_new(spec_json: *const c_char) -> *mut crate::search::SearchHandle {
+    guard(AssertUnwindSafe(|| imp::search_new(spec_json)))
+}
+
+/// drop a search handle; null is a no-op
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_search_free(h: *mut crate::search::SearchHandle) {
+    guard(AssertUnwindSafe(|| imp::search_free(h)))
+}
+
+/// `search_driver`'s `open_root` (core road) in process: the reply BODY as JSON, null on failure
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_search_open_root(h: *mut crate::search::SearchHandle, req_json: *const c_char) -> *const c_char {
+    guard(AssertUnwindSafe(|| imp::search_open_root(h, req_json)))
+}
+
+/// `expand_many` with rows in process: each leaf row ENCODED into slot k of `rows` (cap slots of OBS_DIM f32); the reply BODY as JSON (`core_pN.row` = the slot), null on failure
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_search_expand(h: *mut crate::search::SearchHandle, req_json: *const c_char, rows: *mut f32, cap: usize) -> *const c_char {
+    guard(AssertUnwindSafe(|| imp::search_expand(h, req_json, rows, cap)))
+}
+
+/// the handle's tree / playout counters as JSON
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_search_stats(h: *mut crate::search::SearchHandle) -> *const c_char {
+    guard(AssertUnwindSafe(|| imp::search_stats(h)))
+}
+
+/// OPEN a playout root (a core input log at a decision; one branch per action x seed): the root as JSON, null on failure
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_playout_open(h: *mut crate::search::SearchHandle, req_json: *const c_char) -> *const c_char {
+    guard(AssertUnwindSafe(|| imp::playout_open(h, req_json)))
+}
+
+/// FEED the last pending list's n actions, advance every branch, write the next pending rows / masks / who (2*branch+side); returns its length (0 = every branch ended), usize::MAX on failure
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_playout_step(h: *mut crate::search::SearchHandle, actions: *const i32, n: usize, rows: *mut f32, masks: *mut u8, who: *mut u32, cap: usize) -> usize {
+    guard(AssertUnwindSafe(|| imp::playout_step(h, actions, n, rows, masks, who, cap)))
+}
+
+/// every branch's end as JSON
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_playout_results(h: *mut crate::search::SearchHandle) -> *const c_char {
+    guard(AssertUnwindSafe(|| imp::playout_results(h)))
 }
 
 // ---- @generated-end

@@ -93,10 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", default="cpu")
     p.add_argument("--impl", default="node", choices=["node", "rust"],
                    help="live battle bridge child")
-    p.add_argument("--search-impl", default="rust", choices=["rust"],
+    p.add_argument("--search-impl", default="rust", choices=["rust", "inproc"],
                    help="search-driver child. RUST only: every successor is a Rust-core version "
                         "whose encoded row the driver ships (gen3_core_search_v1); the node "
-                        "driver's protocol / view roads are deleted (program §4 M2)")
+                        "driver's protocol / view roads are deleted (program §4 M2). 'inproc' is "
+                        "the same core road IN PROCESS over the env core's FFI (M5 Lane I)")
     p.add_argument("--leaf-head", default=None, metavar="PATH",
                    help="replace the WIN-PROB head's weights with a state_dict from PATH after "
                         "loading the checkpoint. The win head is a leak-safe SIDE readout (never "

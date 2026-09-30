@@ -920,7 +920,31 @@
    "duration_s": 34.66,
    "contention": 1.17,
    "detail": ""
+  },
+  "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[ladder_milestone-12]": {
+   "status": "pass",
+   "commit": "5acd7b7a2796c9430d4a3c720269be953a64df29",
+   "at": "2026-09-30T00:39:31Z",
+   "duration_s": 16.91,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[pool-6]": {
+   "status": "pass",
+   "commit": "5acd7b7a2796c9430d4a3c720269be953a64df29",
+   "at": "2026-09-30T00:39:31Z",
+   "duration_s": 10.75,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/utils/rust_env/successors_integration_test.py::test_gate_1_the_depth_3_successor_slice_milestone[procedural-6]": {
+   "status": "pass",
+   "commit": "5acd7b7a2796c9430d4a3c720269be953a64df29",
+   "at": "2026-09-30T00:39:31Z",
+   "duration_s": 9.82,
+   "contention": 1.0,
+   "detail": ""
   }
  },
- "last_written": "2026-09-29T23:55:41Z"
+ "last_written": "2026-09-30T00:39:31Z"
 }

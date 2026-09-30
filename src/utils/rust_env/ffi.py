@@ -56,6 +56,12 @@ ABI: Dict[str, Tuple[str, object]] = {
     "i32": ("i32", ctypes.c_int32),
     "usize": ("usize", ctypes.c_size_t),
     "void": ("()", None),
+    # M5 Lane I (search on successors in-process): the search handle and the caller's buffers.
+    "shandle": ("*mut crate::search::SearchHandle", ctypes.c_void_p),
+    "f32_out": ("*mut f32", ctypes.c_void_p),
+    "u8_out": ("*mut u8", ctypes.c_void_p),
+    "u32_out": ("*mut u32", ctypes.c_void_p),
+    "i32_in": ("*const i32", ctypes.c_void_p),
 }
 
 
@@ -91,6 +97,24 @@ FUNCTIONS: Tuple[Fn, ...] = (
     Fn("rust_env_panic_probe", (("h", "handle"), ("kind", "i32")), "i32",
        "TEST HOOK: panic on purpose (0: a string payload; 1: a non-string payload; 2: inside the handle's "
        "locked section, which poisons it) — proves a panic becomes status PANIC, never an abort"),
+    # ---- M5 Lane I's rows (`crate::search::ffi_imp`; the Python side is `successors.py`).
+    Fn("rust_env_search_new", (("spec_json", "cstr"),), "shandle",
+       "STARTUP of a SEARCH handle (`SearchSpec::from_json`); null on failure (then `rust_env_last_error`)"),
+    Fn("rust_env_search_free", (("h", "shandle"),), "void", "drop a search handle; null is a no-op"),
+    Fn("rust_env_search_open_root", (("h", "shandle"), ("req_json", "cstr")), "cstr",
+       "`search_driver`'s `open_root` (core road) in process: the reply BODY as JSON, null on failure"),
+    Fn("rust_env_search_expand", (("h", "shandle"), ("req_json", "cstr"), ("rows", "f32_out"), ("cap", "usize")), "cstr",
+       "`expand_many` with rows in process: each leaf row ENCODED into slot k of `rows` (cap slots of OBS_DIM f32); "
+       "the reply BODY as JSON (`core_pN.row` = the slot), null on failure"),
+    Fn("rust_env_search_stats", (("h", "shandle"),), "cstr", "the handle's tree / playout counters as JSON"),
+    Fn("rust_env_playout_open", (("h", "shandle"), ("req_json", "cstr")), "cstr",
+       "OPEN a playout root (a core input log at a decision; one branch per action x seed): the root as JSON, null on failure"),
+    Fn("rust_env_playout_step",
+       (("h", "shandle"), ("actions", "i32_in"), ("n", "usize"), ("rows", "f32_out"), ("masks", "u8_out"),
+        ("who", "u32_out"), ("cap", "usize")), "usize",
+       "FEED the last pending list's n actions, advance every branch, write the next pending rows / masks / "
+       "who (2*branch+side); returns its length (0 = every branch ended), usize::MAX on failure"),
+    Fn("rust_env_playout_results", (("h", "shandle"),), "cstr", "every branch's end as JSON"),
 )
 
 MARK_BEGIN = "// ---- @generated-begin by `python -m utils.rust_env.ffi --write` — DO NOT EDIT this region."
