@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,514-line file. **The ledger itself is append-only and is never edited by this**;
+21,551-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**730 headings · 675 dated · 2026-08-01 → 2026-09-30 · ledger 21,514 lines.**
+**731 headings · 676 dated · 2026-08-01 → 2026-09-30 · ledger 21,551 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -750,3 +750,4 @@ rename.
   - `L21497` · `2026-09-29` · MEASUREMENT · **M5 LANE S GATE ④ AT SCALE — THE LINEAGE STARVES NEAR-BEST MOVES. On 1,600 turns branched to the end (every legal action × 64 shared dice seeds, three greedy continuations), from N0 75M to K3 the share of DECISIVE turns where an action as good as the best gets < 1 % of the policy rises from 0.31–0.35 to 0.48–0.49 (+0.14 to +0.16, detected under all three), while the mass on DOMINATED actions falls only −0.017 to −0.019: the sharpening is mostly starvation. Largest on switches (+0.15 to +0.18), detected on attacks and status moves (3/3) and setup moves (+0.09 to +0.13, 2/3); hazard unchanged. Nearly all of it at the N0 → C_fix step.**
   - `L21501` · `2026-09-30` · GIGO FIX · **`SnapshotPool`'s `max_snapshots` now holds on EVERY path that populates the pool (`gen3_pool_cap_every_path_v1`); before it, the window was applied only when a snapshot was ADDED, so a pool built by a directory SCAN held whatever the directory held. Production was affected ONCE: `ai_v6_13_outgoing_dmg_0620_exp_v1` trained against 22 selves (declared 20) for ~4M steps (~118M → 122M, 2026-06-24 16:53 → 19:02) and ran its 120M eval's sentinels over the same 22. Every other run held its window.**
   - `L21509` · `2026-09-30` · BOUNDARY · **DOSE COUNT (K10(c), commit `55a7846f`): `main.dose` now counts a SHORT final gradient-accumulation group as a FULL optimizer step, so every run with a RAGGED shape reads a HIGHER dose than the figures this ledger quotes — 4/3 higher at 98,304 rows / 2,048 × 32. Every dose figure in an entry dated before this one is on the OLD count. Ratios between runs of the SAME shape are unchanged (the `best_response_gap` era-2 / era-1 refusal still reads 4.55×); ratios ACROSS shapes move.**
+  - `L21515` · `2026-09-30` · MEASUREMENT · **X4 PRE-READ — THE CRITIC IS BLIND TO THE MOVES THE POLICY STARVES: one-ply counterfactual Q̂ from each checkpoint's own win-prob critic puts the policy's STARVED near-best moves in its top-2 at CHANCE (0.20–0.25 vs ~0.27), where it puts the near-best moves the policy FEEDS at 0.44–0.48. Its ARGMAX still beats the policy's argmax by +0.04 to +0.06 truth value on decisive turns (3/3). One-ply labels can teach an argmax. They cannot rescue starved moves.**

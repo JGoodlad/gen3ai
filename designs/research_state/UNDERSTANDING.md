@@ -1235,6 +1235,25 @@ meas: [`measurements/m5_laneS/truth_v2/READOUT.md`](measurements/m5_laneS/truth_
 ledger 2026-09-29 · *M5 LANE S — THE POLICY-SPECTRUM BASELINE*, `m5_laneS/baseline_2026-09-29/REPORT.md`; the bot
 fix: ledger 2026-09-29 · *GIGO FIX · F-LF-1*]
 
+**The critic is blind to the same moves (X4 pre-read, 2026-09-30).** One-ply counterfactual Q from
+each checkpoint's own win-prob critic was read on the same 1,600 ground-truth turns, the truth held
+out on seeds the Q̂ did not use.
+- The starved near-best moves land in Q̂'s top-2 at **0.20–0.25**, against **~0.27 by chance**. The
+  near-best moves the policy feeds land there at 0.44–0.48. V shares the policy's blind spot, in
+  every category, setup included.
+- A Q̂ target feeds the starved moves no more than a UNIFORM floor does.
+- Q̂'s ARGMAX still beats the policy's argmax by **+0.04 to +0.06** truth value on decisive turns
+  (3/3 checkpoints, with the opponent modelled as the truth models it; not detected with the
+  opponent held at its recorded action).
+- S = 1 dice seed reads like 32: V's error, not the dice, is the limit.
+
+| claim | tag |
+|---|---|
+| One-ply labels from this V cannot fix starvation. They are fine for argmax teaching and for sharp softmax distillation (τ ≤ 0.03 on the ±1 scale), not for top-k rescue or an anti-starvation floor. Fixing starvation needs depth, playouts or a better V (X6), or a plain entropy floor, which feeds the starved moves as much as Q̂ does | MEASURED · 3/3 checkpoints · the truth is a greedy continuation (not Nash) |
+
+[ledger 2026-09-30 · *X4 PRE-READ — THE CRITIC IS BLIND TO THE MOVES THE POLICY STARVES*; meas:
+[`measurements/x4_preread/READOUT.md`](measurements/x4_preread/READOUT.md)]
+
 ---
 
 ## 5. Retired hypotheses

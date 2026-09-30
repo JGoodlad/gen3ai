@@ -21511,3 +21511,40 @@ Tag: **GIGO FIX · BOUNDARY-FREE (no production read moves) · one run affected,
 The change: `updates_per_env_step` was `n_epochs / (batch_size × grad_accum_steps)`; it is now `n_epochs × S / R`, with `R` the rollout rows (`n_steps × n_envs`) and `S = ceil(ceil(R / batch_size) / grad_accum_steps)` the optimizer steps the learner really takes an epoch (its short last group is flushed as one more step, rescaled to its own micro count — a full-weight step). Conversion for any quoted figure: **new = old × S × batch_size × grad_accum_steps / R**. The factor is exactly 1 when `R` divides by the effective batch and > 1 otherwise: 98,304 rows at 2,048 × 32 (effective 65,536) take 2 steps an epoch, not 1.5 → × 4/3; 98,304 at 2,048 × 16 (effective 32,768, v8's `ai_v8_14_distill3_0725`) divide exactly → × 1. So the v13 exploiter eras read 5.086e-08 (era 1) and 1.119e-08 (era 2) today against the 3.815e-08 / 8.392e-09 quoted on 2026-09-21 — the 4.55× gap `best_response_gap` refuses on is unchanged, because both eras share the shape — while any ratio between a ragged-shape run and a divisible-shape run (e.g. a 2,048 × 32 run "vs v8") moves by the ratio of the two factors (× 4/3 in that example). A run's own `metadata.json` dose block saved before `55a7846f` also carries the old count; `main.dose` prints it as `recorded_dose` beside the new reading (`ai_v13_06_exploit_ddtar_spikes`: recorded 3.815e-08, read 5.086e-08). Re-read with `python -m main.dose <run> …` before quoting a cross-shape ratio; never convert an old entry in place.
 
 Tag: **BOUNDARY (instrument) · no training changed · same-shape ratios INVARIANT, cross-shape ratios MOVE**. Evidence: `src/agents/training/dose.py` (`optimizer_steps_per_epoch`), `src/main/best_response_gap_integration_test.py` (the era constants), `designs/training/step_size_and_batch.md`.
+
+### 2026-09-30 · MEASUREMENT · **X4 PRE-READ — THE CRITIC IS BLIND TO THE MOVES THE POLICY STARVES: one-ply counterfactual Q̂ from each checkpoint's own win-prob critic puts the policy's STARVED near-best moves in its top-2 at CHANCE (0.20–0.25 vs ~0.27), where it puts the near-best moves the policy FEEDS at 0.44–0.48. Its ARGMAX still beats the policy's argmax by +0.04 to +0.06 truth value on decisive turns (3/3). One-ply labels can teach an argmax. They cannot rescue starved moves.**
+
+The question (owner, after Lane S `a41dcfca`): on ~half of the decisive turns the ai_v14 policy puts < 1 % on an action within ε = 0.1 of the best; does V see those actions? Q̂_V(s, a) = the mean over dice seeds of the terminal reward if the game ends before our next decision, else 2·V(s′_a) − 1, with V = the checkpoint's own `--critic winprob` head on the trainee's own row at its next decision. The branch uses Lane I's playout core, advanced one decision at a time. The sanity teeth: the played action under the battle's own dice, with the opponent on its recorded answers, reproduces the recorded next observation BYTE-EQUAL on 1,548 / 1,548 turns for all three checkpoints. Checkpoints: K2 final (G0′), N0 final (75.0M), C_fix final (83.1M); each is read against its own continuation's Lane S truth (1,600 turns, 64 seeds), with both cross combinations reported. Q̂ uses truth's own seeds, and every read holds the truth OUT on seeds Q̂ did not use (Q̂ on 0–7, truth on 8–63).
+
+Two opponent variants. On 1,441 / 1,600 turns the opponent's root request is still open at the branch point, and the truth answered it with the continuation's GREEDY choice, not the recorded one. So variant M (the checkpoint's greedy) is the like-for-like read of V, and variant R (the recorded action, as briefed) is reported beside it. Headline, variant M, K2 / N0 / C_fix (95 % battle-clustered bootstrap):
+- within-turn Spearman ρ 0.230 / 0.226 / 0.243 (R 0.17);
+- Q̂ top-2 holds a truth near-best 0.747 / 0.733 / 0.754;
+- STARVED near-best inside Q̂'s top-2: 0.251 [0.215, 0.289] / 0.204 [0.164, 0.245] / 0.245 [0.207, 0.283], chance 0.266 / 0.268 / 0.264; Q̂-near (within ε of Q̂'s best) 0.522 / 0.453 / 0.506 against chance 0.52 / 0.52 / 0.51;
+- dominated actions: Q̂-near 0.40–0.43, top-2 0.19–0.20; starved − dominated Q̂-near +0.118 [+0.069, +0.162] / +0.021 [−0.044, +0.076] / +0.092 [+0.039, +0.148];
+- under R, every checkpoint's starved moves sit BELOW the dominated ones in Q̂'s top-2 (−0.04 to −0.05, all three detected).
+
+As a TARGET, softmax(Q̂/τ) puts 0.12–0.19 of its mass on the starved actions (R 0.08–0.17), against 0.17–0.18 for UNIFORM. So a Q̂ target un-starves them only as much as an entropy floor does. Regret (truth V* − truth value of the pick) on decisive turns, K2 / N0 / C_fix:
+- Q̂ argmax 0.274 / 0.289 / 0.260;
+- uniform Q̂ top-2 0.299 / 0.315 / 0.292, top-3 0.325 / 0.343 / 0.320;
+- softmax τ = 0.01 / 0.03 / 0.1 / 0.3: 0.273–0.293 / 0.275–0.304 / 0.311–0.342 / 0.356–0.382;
+- the policy's argmax 0.312 / 0.345 / 0.299 and distribution 0.316 / 0.351 / 0.311.
+
+Gain of Q̂ argmax over the policy argmax, decisive: +0.038 [+0.017, +0.060] / +0.056 [+0.033, +0.079] / +0.039 [+0.016, +0.062]. On STARVED turns: +0.064 / +0.072 / +0.073, all three intervals clear of 0. Under R, decisive −0.007 to +0.020 (not detected); starved +0.019 to +0.036 (N0 only detected).
+
+Categories (M; starved near-best in Q̂ top-2, chance ~0.27): switch 0.21–0.23 (n 272–430) · attack 0.23–0.35 · status 0.17–0.29 · setup 0.18–0.25 (n 11–20; Q̂-near 0.27–0.31 against ~0.5 chance) · hazard / recovery n ≤ 7. No category is on the "sees it" side.
+
+Errors:
+- mean |Q̂ − truth| 0.31–0.35;
+- signed +0.14 to +0.19 (V optimistic against the greedy truth; calibrated per branch on the exact successors: mean V 0.66–0.68 vs win rate 0.58–0.59, ECE 0.07–0.09, Brier 0.163–0.167 vs 0.241 for a constant);
+- 68–71 % of the error variance is a per-turn offset (within-turn error correlation 0.63–0.66), so pair differences are better than levels (RMS 0.34–0.36 vs 0.57–0.63 if independent), but still ~2.7× the noise floor (0.13);
+- terminal vs V mixing: +0.02 to +0.05 for actions with a game-ending branch, not detected.
+
+S: Q̂ on 1 seed ≈ on 32 (K2 ρ 0.206 → 0.226, regret 0.313 → 0.305).
+
+Cost per labelled decision (every legal action × 8 seeds ≈ 56 successors, single worker, CPU): ~98 ms at 1 torch thread, ~65 ms at 4. Per successor: 133 µs of sim and 946 µs of V forward (1 thread), so the forward is ~7× the sim. At S = 1 a label is ~12 ms.
+
+Mechanics verified in `deps/pokemon-showdown` before branching. In gen ≤ 3 a faint is replaced MID-TURN after every action, by the fainted side only (`sim/battle.ts:2861–2864`, `:2933`). A double faint is SIMULTANEOUS. Baton Pass leaves the opponent's move LOCKED in the saved queue (`:3021–3040`). The next turn's choice sees the switch-in (`:1797`). The X4 spec §5.1 "sequential after a faint" is partly contradicted: a double faint is simultaneous, and a mid-turn replacement can face an already-locked move rather than a reply.
+
+Hazard found and fixed on the way: a recorded opponent answer can be a REJECTED switch (Showdown's hidden trap, `sim/side.ts:966–978`) followed by its retry. One banked turn had one.
+
+Tag: **MEASUREMENT · V BLIND to starvation (3/3 checkpoints, both opponent variants, every S) · one-ply ARGMAX teacher +0.04 to +0.06 over the policy (3/3, variant M) · the truth is a greedy continuation, not Nash**. Evidence: `designs/research_state/measurements/x4_preread/READOUT.md` (+ `readout_tables.md`, `readout.json.gz`, `mechanics.md`), `src/main/policy_spectrum/qhat.py`, `qhat_report.py`; rows in `~/gen3ai_archive/x4_preread/`.
