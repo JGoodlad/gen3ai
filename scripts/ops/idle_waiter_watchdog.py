@@ -21,8 +21,12 @@ WHAT IS FLAGGED
    one of its OWN ancestors. It can never resolve, so it is reported on the FIRST run, at any age.
 2. **IDLE-WAITER** — a process descended from a Claude Code session (nearest ancestor whose comm or
    exe is ``claude``, incl. ``~/.local/share/claude/versions/<v>``) that
-     * is a WAITER: a shell with a live ``sleep`` child (a poll loop), a ``flock`` process, or a
-       process blocked in a lock wait (``/proc/locks`` or its ``wchan``);
+     * is a WAITER: a POLL LOOP (a shell with a live ``sleep`` child; a shell whose own command
+       line is a ``while``/``until`` loop that sleeps; or a shell seen with a ``sleep`` child at the
+       previous run), a ``flock`` process, or a process blocked in a lock wait (``/proc/locks`` or
+       its ``wchan``). The live ``sleep`` child alone is NOT enough: between two sleeps the shell's
+       child is its loop CONDITION (``pgrep``, ``test``, a probe script), and a scan that lands
+       there would miss the loop — with a probe as slow as its sleep, half the time;
      * has lived longer than ``--min-age-s`` (10 min);
      * whose SUBTREE CPU (utime+stime+cutime+cstime of it and every live descendant) advanced by
        less than ``--idle-frac`` (1%) of one core since the previous run — a fork-per-poll loop
@@ -34,7 +38,7 @@ WHAT IS FLAGGED
        blocked on, and files it names (written since the last run, or named by a live process
        that is progressing). Progress is TRANSITIVE: a waiter on a pid that is itself blocked on a
        lock whose holder is busy is healthy.
-   A shell whose ``sleep`` child is the SAME process as at the last run is one long deliberate
+   A shell whose live ``sleep`` child is the SAME process as at the last run is one long deliberate
    sleep, not a poll loop, and is skipped.
 
 STATE: ``~/.claude/jobs/idle_waiter_watchdog.json`` (``--state``), keyed by ``pid:starttime`` so a
@@ -66,6 +70,8 @@ STATE_PATH = Path.home() / ".claude" / "jobs" / "idle_waiter_watchdog.json"
 CMD_WIDTH = 160
 
 SHELLS = frozenset({"bash", "sh", "dash", "zsh", "ksh"})
+# A shell whose OWN command line is a poll loop: ``while``/``until`` ... ``do`` ... ``sleep``.
+_POLL_LOOP = re.compile(r"\b(?:while|until)\b.*?\bdo\b.*?\bsleep\b", re.S)
 _LOCK_WCHAN = re.compile(r"flock|locks_|posix_lock|fcntl|lease")
 _PID_TARGETS = [re.compile(r"\bkill\s+-0\s+(\d+)"), re.compile(r"--pid[= ](\d+)"),
                 re.compile(r"/proc/(\d+)(?:/|\b)"), re.compile(r"\bps\s+(?:-\w+\s+)*-p\s*(\d+)"),
@@ -192,6 +198,13 @@ class Scan:
                 if c in self.procs and self.procs[c].comm == "sleep":
                     self.sleep_child[p.key] = self.procs[c].key
                     return "sleep-loop"
+            # No live sleep child: the loop may be between sleeps, running its condition. Judge it
+            # by what does not change from one instant to the next — its own loop text, or a sleep
+            # child OBSERVED at the previous run (a real key, not this "" marker, so the memory
+            # lasts one run unless re-observed) — never by which child the snapshot caught.
+            if _POLL_LOOP.search(self.cmd(pid)) or (self.prev is not None and self.prev.get("sleep", {}).get(p.key)):
+                self.sleep_child[p.key] = ""        # a known poll loop, with no sleep in flight now
+                return "sleep-loop"
         if _LOCK_WCHAN.search(P.wchan(pid)):
             return "lock-wait"
         return ""
@@ -315,7 +328,8 @@ class Scan:
                 continue
             assert self.prev is not None
             key = self.procs[pid].key
-            if kind == "sleep-loop" and self.prev.get("sleep", {}).get(key) == self.sleep_child.get(key):
+            now_sleep = self.sleep_child.get(key)
+            if kind == "sleep-loop" and now_sleep and self.prev.get("sleep", {}).get(key) == now_sleep:
                 continue                # the SAME sleep as last run: one long deliberate delay
             ok, why = self.progress(pid)
             if ok:

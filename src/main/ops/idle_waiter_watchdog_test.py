@@ -148,6 +148,57 @@ def test_idle_loops_are_flagged_and_healthy_ones_are_not(session, tmp_path):
         assert not _flagged(second, healthy), (healthy, second)
 
 
+def _child_comm_is(pid: int, comm: str) -> bool:
+    procs = P.snapshot()
+    kids = [c for c in P.children_map(procs).get(pid, ()) if c in procs]
+    return [procs[c].comm for c in kids] == [comm] and procs[kids[0]].state == "S"
+
+
+def test_a_poll_loop_caught_mid_condition_is_still_a_waiter(session, tmp_path):
+    """The race behind the 3-in-8 flake of the test above: a scan that lands while the loop runs
+    its CONDITION (there, ``pgrep``) sees no ``sleep`` child. Here the condition blocks on a FIFO
+    nobody opens, so BOTH scans land mid-condition every time — deterministic, not a timing race."""
+    fifo = tmp_path / "nobody_writes.fifo"
+    os.mkfifo(fifo)
+    root = session(f"bash -c 'until cat {fifo} >/dev/null; do sleep 1; done' &")
+    loop = _pid_of(root.pid, f"until cat {fifo}", comm="bash")
+    _wait_for(lambda: _child_comm_is(loop, "cat"), f"pid {loop}'s cat child to block on the fifo")
+
+    first, second = _two_scans()
+    assert first == []
+    assert _child_comm_is(loop, "cat"), "the premise: no sleep child at either scan"
+    hit = _flagged(second, loop)
+    assert len(hit) == 1, second
+    assert hit[0].reason.startswith("sleep-loop") and str(fifo) in hit[0].reason
+
+
+def test_a_script_loop_seen_sleeping_last_run_is_still_a_waiter(session, tmp_path):
+    """A loop in a script FILE has no loop text on its command line; mid-condition it is known
+    only by the previous run's record of its sleep child."""
+    fifo = tmp_path / "nobody_writes.fifo"
+    os.mkfifo(fifo)
+    script = tmp_path / "poll.sh"
+    script.write_text(f"until cat {fifo} >/dev/null; do sleep 1; done\n")
+    script.chmod(0o755)                          # a program being run, not a file waited on
+    old = time.time() - 3600
+    os.utime(fifo, (old, old))                   # untouched since before the synthetic baseline
+    root = session(f"bash {script} &")
+    loop = _pid_of(root.pid, f"bash {script}", comm="bash", exact=True)
+    _wait_for(lambda: _child_comm_is(loop, "cat"), f"pid {loop}'s cat child to block on the fifo")
+    s0 = W.Scan(None, scope_pid=os.getpid(), **KW)
+    key = s0.procs[loop].key
+    assert s0.waiter_kind(loop) == "", "the premise: nothing in THIS snapshot marks it a loop"
+    # the previous run: 60 s ago, the same subtree CPU (idle), and a sleep child it no longer has
+    stale = {"version": 1, "t": time.time() - 60, "cpu": dict(s0.next_state()["cpu"]), "sleep": {key: "1:1"}}
+    hit = _flagged(W.Scan(stale, scope_pid=os.getpid(), **KW).run(), loop)
+    assert len(hit) == 1 and hit[0].reason.startswith("sleep-loop"), hit
+    # ...and with no such record it is not a waiter at all (the shape is unknowable from one snapshot)
+    assert not _flagged(W.Scan({**stale, "sleep": {}}, scope_pid=os.getpid(), **KW).run(), loop)
+    # ...nor with only the "" marker (a loop known WITHOUT an observed sleep): the memory lasts one
+    # run unless a sleep is seen again, so a shell that once slept is not a waiter forever
+    assert not _flagged(W.Scan({**stale, "sleep": {key: ""}}, scope_pid=os.getpid(), **KW).run(), loop)
+
+
 def test_self_deadlock_is_reported_on_the_first_run(session, tmp_path):
     lock = tmp_path / "held_by_parent.lock"
     lock.touch()
