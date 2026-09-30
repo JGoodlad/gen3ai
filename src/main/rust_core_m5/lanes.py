@@ -96,10 +96,11 @@ LANES: Tuple[LaneGate, ...] = (
     LaneGate(
         "G", "training integration — the Rust env as the trainer's vec env, behind --env-core",
         "", built=False,
-        pending="BUILDING — unit 1 (the complete-game collector, src/agents/training/rust_rollout/) landed "
-                "unwired; the gate still to come: slice N at the ROLLOUT level (the learner's buffer equal on scripted "
-                "recorded battles); the --debug smoke on the Rust env; the first two minutes of a real launch; "
-                "throughput at --n-envs 48 vs today"),
+        pending="BUILDING — units 1–3 landed: the complete-game collector, the trainer wiring behind --env-core "
+                "rust (the --debug smoke and a real GPU launch completed), and slice N at the ROLLOUT level + the "
+                "learner-level check (src/agents/training/rust_rollout/parity_test.py, COMMIT routine / MILESTONE "
+                "slow); still to come: the opponent sampling change (F-LE-8) and the throughput A/B at --n-envs 48 "
+                "through this harness's hooks"),
     LaneGate(
         "H", "eval on the core — the eval callback and its traces on the Rust env",
         "", built=False,

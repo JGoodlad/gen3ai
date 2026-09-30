@@ -305,6 +305,22 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[ladder]": {
+   "status": "pass",
+   "commit": "ac67fa6c8a835b58d4784c69ae58fa17b2bb9b8c",
+   "at": "2026-09-30T07:54:54Z",
+   "duration_s": 50.43,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[pool]": {
+   "status": "pass",
+   "commit": "ac67fa6c8a835b58d4784c69ae58fa17b2bb9b8c",
+   "at": "2026-09-30T07:54:54Z",
+   "duration_s": 49.58,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
    "status": "pass",
    "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
@@ -1018,5 +1034,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T07:40:40Z"
+ "last_written": "2026-09-30T07:54:54Z"
 }

@@ -133,3 +133,19 @@ call in the training sources and fails on one in neither table.
 One slot group per ARCHITECTURE in the route table's slot order (pool, stables, exploiter — two slots
 under a ladder, F-LE-6), then the trainee's slot(s); consecutive same-architecture routes share a group
 (F-LE-7). Default buckets `(8, N)` (`build.py` states why; decision: the program doc's Decision record).
+
+## The gate — slice N at the ROLLOUT level + the learner-level check (`rust_rollout/parity.py`)
+
+RECORD in Rust (the collector in WINDOW mode — today's schedule, so the collector is proven before the
+schedule changes — a fixed policy, p2 an external seeded-random route whose actions are recorded), REPLAY
+in Python through today's path itself: `InstrumentedMaskablePPO.collect_rollouts` over a `DummyVecEnv` of
+production-surface `Gen3Env`s wrapped as `env_factory` wraps a worker (`Monitor(MaskableAgentWrapper)`),
+`WinProbLabelCallback` registered. The one substitution into sb3's loop is the policy forward's SAMPLE:
+the replay draws the trainee's action with the keyed draw from its OWN log-probs, so reproducing every
+recorded action is itself a check. Compared per window: every observation key, actions, masks, rewards,
+episode starts EXACT; values / log-probs within 1e-5 and advantages / returns within 1e-4 (the paths
+forward different batch compositions, and CPU matmul rounds by batch shape — measured ≤ 7.2e-7). The
+learner check runs ONE optimizer step (the buffer in 4 accumulated micro-batches) from identical
+production learners on each buffer and compares the weights (≤ 1e-5) and every logged scalar
+(≤ 1e-6 + 1e-4 × |value|); over several steps PPO amplifies the rounding (F-LG-8). COMMIT in the routine
+gate, MILESTONE (`slow`) on pool and ladder teams. Numbers: PROGRESS.

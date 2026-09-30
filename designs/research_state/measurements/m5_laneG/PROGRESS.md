@@ -25,8 +25,8 @@ python3 -m pytest src/agents/training/keyed_draw_test.py src/agents/training/rus
 | # | unit | status |
 |---|---|---|
 | 1 | THE COLLECTOR + BUFFER: the row arena, complete-game GAE (sb3 bit for bit), the complete-game and window fills, the sample-count trigger + adaptive hook, team / seed staging, the host loop (one T2 flush for trainee + opponents), the keyed draw for the trainee, version pinning (declared, off), `RustVecEnv` + its surface table | SHIPPED `11073fe1` |
-| 2 | THE TRAINER WIRING behind `--env-core rust` (python stays the default): parser family (`parser/env_core.py`), combination refusals (`env_core_rust_*`), the startup hook BEFORE the trainer compile, `collect_rollouts` routing + the T2 LOAD after each update, K9(b) + the staleness probe (`consistency.py`), `rollout/collect_ms` on both cores, `rust_env/*` tags, `metadata.json`'s `env_core` | BUILT (this commit) |
-| 3 | THE PARITY GATES: slice N at the ROLLOUT level (window mode vs today's Python path) + the learner-level check | — |
+| 2 | THE TRAINER WIRING behind `--env-core rust` (python stays the default): parser family (`parser/env_core.py`), combination refusals (`env_core_rust_*`), the startup hook BEFORE the trainer compile, `collect_rollouts` routing + the T2 LOAD after each update, K9(b) + the staleness probe (`consistency.py`), `rollout/collect_ms` on both cores, `rust_env/*` tags, `metadata.json`'s `env_core` | SHIPPED `ac67fa6c` |
+| 3 | THE PARITY GATES: slice N at the ROLLOUT level (window mode vs today's Python path, `rust_rollout/parity.py`) + the learner-level check; COMMIT routine, MILESTONE `slow` | BUILT (this commit) |
 | 4 | THE SAMPLING CHANGE for policy opponents (F-LE-8) + buckets (F-LE-9), measured | — |
 
 ## Measurements so far (descriptors)
@@ -65,6 +65,28 @@ the 8 training bots in the core, opponent sampling KEYED. Idle box otherwise (lo
   collection per 98,304 decisions ≈ **712 decisions/s**; that run also had its eval workers and whatever
   else shared the box. The interleaved A/B is unit 4 (Lane J's harness).
 
+## The rollout-level slice N + the learner-level check (unit 3; `rust_rollout/parity.py`)
+
+RECORD in Rust (the collector in WINDOW mode, a fixed perturbed-fresh production policy, p2 an external
+seeded-random route), REPLAY in Python (`InstrumentedMaskablePPO.collect_rollouts` over a `DummyVecEnv`
+of production-surface `Gen3Env`s in `Monitor(MaskableAgentWrapper)`, `WinProbLabelCallback` registered;
+the one substitution: the policy forward's SAMPLE is the keyed draw from the replay's own log-probs).
+
+| tier | rows | games | win-labelled rows | divergences | max \|Δ\| values / log-probs / adv / returns | learner: max \|Δ param\| (update moves) | scalars within allowance |
+|---|---|---|---|---|---|---|---|
+| COMMIT (routine) — 4 envs × 48 × 2 windows, pool | 384 | 8 | 151 | 0 | 3.0e-7 / 6.0e-7 / 2.9e-7 / 1.2e-7 | 1.2e-7 (3.0e-4) | 234 / 234 |
+| MILESTONE pool — 8 × 128 × 3 (`parity_milestone_pool.json`) | 3,072 | 48 | 2,126 | 0 | 3.6e-7 / 7.2e-7 / 3.5e-7 / 1.2e-7 | 6.0e-8 (3.0e-4) | 249 / 249 (worst 2 % of allowance) |
+| MILESTONE ladder — 8 × 128 × 3 (`parity_milestone_ladder.json`) | 3,072 | 45 | 1,933 | 0 | 3.6e-7 / 6.0e-7 / 3.6e-7 / 3.6e-7 | 6.0e-8 (3.0e-4) | 250 / 250 (worst 1.7 %) |
+
+EXACT on every observation key (the row, the mask, all 18 core labels, `opp_class`, `win_target`,
+`win_mask`), actions, masks, rewards, episode starts; every recorded trainee action reproduced by the
+replay's own keyed draw (1 near-boundary row on the Python side in each milestone, no disagreement).
+Teeth: one Python label cell moved fails the slice (per key); the comparator refuses one bit and a
+float past its bar. **The learner check is ONE optimizer step** (one epoch, the buffer in 4 accumulated
+micro-batches): with 8 optimizer steps it read 3.4e-4 (0.15 of the update's movement) at the milestone —
+iterated PPO steps amplify a ≤ 7e-7 input difference; the same learner on the same buffer twice is
+bit-identical (F-LG-8).
+
 ## Findings
 
 - **F-LG-1 (design, declared):** the complete-game fill SPLITS at most one game per update (the one
@@ -86,5 +108,9 @@ the 8 training bots in the core, opponent sampling KEYED. Idle box otherwise (lo
   (whose resume PINS to the checkpoint's commit — before Lane G there is no `--env-core`: a Rust-core
   resume must pin a commit that has it). The launcher's restart / crash loop around a Rust-core run is
   untested.
+- **F-LG-8 (the learner check's scope, declared):** "one update on each buffer lands on the same weights" holds
+  for ONE optimizer step (Δ 6e-8); over several steps PPO's clip gates and Adam amplify the paths' ≤ 7e-7
+  log-prob / value rounding (the two paths forward different batch compositions, and CPU matmul rounds
+  by batch shape) into 3.4e-4. Exact float equality would need batch-invariant forwards — not pursued.
 - **F-LG-7:** T2 startup costs ~205 s at 25 slots × 2 buckets (the per-slot × bucket eager parity gate
   dominates); K3's per-run cache does not cover the parity gate. A launcher restart pays it again.
