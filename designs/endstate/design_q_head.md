@@ -132,26 +132,83 @@ keeps cells in range — check early how often they leave it.
 | part | label | loss |
 |---|---|---|
 | V | the real game outcome | BCE (calibration) |
-| A | branch rollouts of sibling actions, same state, same dice | pairwise ranking: BT logit = A(a₁) − A(a₂) |
-| I | branch rollouts per (a, b) | ranking WITHIN a column (cancels game AND opponent-choice noise) |
+| A | branch labels of sibling actions, same state, same dice (CRN), the opponent's sampled action held fixed | paired-difference regression (MSE): A(a₁) − A(a₂) onto the label difference — LINEAR in the labels (§5.1) |
+| I | branch labels per (a, b) | paired-difference regression WITHIN a column (cancels game AND opponent-choice noise; linear, §5.1) |
 | B | outcome contrasts across their candidates | regression |
 | α | their real action (OTHER included) | cross-entropy |
 | belief masses | the true team and moves | the belief losses |
 
-**Branch labels (the sampling recipe).**
-- States: weighted toward close calls (policy top-2 near) and high **EVPI**, plus a uniform share.
-- Our rows: **Gumbel top-k** at T ≈ 2 (k ≈ 3–4), plus one uniformly random legal move.
-- Their columns: the top candidates by α, plus with small probability one below-cutoff action ∝ α
-  rolled out as the OTHER column.
-- Rollouts: the CURRENT stochastic policies (T = 1) on both sides, **shared dice across siblings**.
-- **Racing / sequential halving for ALLOCATION only**; labels from every rollout (or fresh ones) — never
-  the racing statistics (no winner's curse).
-- Every label stores its **inclusion probability**, the candidate-generator version, the candidate set
-  and the opponent class. Accuracy is measured on a small **uniformly sampled** held-out cell set.
+**Branch labels (the sampling recipe).** Generated INSIDE the training loop on a subsample, from
+the M5 core's live in-memory state (§8.1 prices it); no side factory.
+- **One-ply (the broad layer):** every legal action (~7) on a broad subsample of decisions — each
+  branch is a successor (clone, advance one turn, fold, encode) scored by a value-only forward. With
+  every legal row labelled, the row inclusion probability is 1: no row-selection bias to correct.
+- **Two-ply (the narrow layer):** only on a narrow TARGETED subsample (decisive turns, §5.2); here the
+  branch count (~49 to ~200) binds, so rows are chosen by **Gumbel top-k** at T ≈ 2 (k ≈ 3–4) plus one
+  uniformly random legal move, and columns are the top candidates by α plus, with small probability,
+  one below-cutoff action ∝ α labelled as the OTHER column.
+- States: the subsample is weighted toward close calls (policy top-2 near), high **EVPI** and decisive
+  turns, plus a uniform share.
+- **One sample per branch (M = 1), shared dice across siblings** (common random numbers), the
+  opponent's actually-sampled action held fixed — §5.1. Deeper continuations (rollout to terminal
+  under the CURRENT stochastic policies, T = 1, both sides) stay a valid, costlier label form.
+- **Racing / sequential halving is an ALLOCATION device for search (§6) and offline studies only.**
+  It needs repeated draws per arm, which the in-loop labels do not take (§5.1); where it runs, labels
+  come from every rollout, never from the racing statistics (no winner's curse).
+- Every label stores its **inclusion probability** (the state's subsample weight, and the row / column
+  selection probability where Gumbel top-k or α-sampling chose it), the candidate-generator version,
+  the candidate set and the opponent class — the linear losses weight by it. Accuracy is measured on a
+  small **uniformly sampled** held-out cell set.
 - The real played pair is labelled with its outcome for free; a real opponent action outside the list
   is labelled by identity AND as OTHER.
 - Early check: does the bilinear head's filled-in matrix agree with FULLY labelled matrices on a
   held-out set (matrix completion)?
+
+### 5.1 Label policy — M = 1, breadth over repeats (owner, 2026-09-30)
+
+**No per-decision repeat knob.** Each branch gets ONE opponent/dice sample (M = 1), and the compute a
+repeat would cost goes to MORE DISTINCT DECISIONS. The owner's question — why not take one sample and
+let the average form across many decisions and PPO updates — is right whenever the label is used
+LINEARLY, so the design commits to it:
+
+- **Labels are unbiased single samples.** Common random numbers share the dice across a decision's
+  branches, and the opponent's actually-sampled action is held fixed. A gen-3 turn is SIMULTANEOUS, so
+  the opponent's choice is independent of ours and each branch is an unbiased counterfactual draw of
+  Q(s, a) under the opponent's real policy. At a forced replacement after a faint the turn is
+  SEQUENTIAL — the opponent's next choice is made after it sees ours — so no recorded opponent action
+  can be held fixed across our branches; its reply must be MODELLED (inside the successor's value at
+  one ply; from α / the opponent policy in a deeper continuation).
+- **Every CONSUMER of a raw label is LINEAR in it**: MSE regression of the Q head (the paired
+  differences of §5's A and I rows included), or an all-action advantage multiplying log π. SGD across
+  updates then does the averaging: the expected gradient equals the gradient at the true mean.
+- **Any NONLINEAR use reads the LEARNED Q HEAD, never a raw label** — a softmax / argmax / Gumbel
+  top-k distillation target, a best-action pick, clipping. A max of noisy means is biased upward (the
+  winner's curse; M5 Lane S found exactly this bias in its ground truth — UNDERSTANDING §4.4's
+  caveats). The head is the amortised average.
+- **The extra gradient noise from M = 1 is the adaptive-batch controller's job** (the noise scale
+  grows, so K grows — `--adaptive-batch policy`, `design_learner_recipe.md`), not per-decision repeats.
+- **A small AUDIT fraction** may draw a second independent sample, only to MEASURE label variance — a
+  diagnostic, never a training input.
+- **Rejected: "M = 1–4 repeats per decision."** With linear consumers a repeat only lowers the variance
+  of a label the SGD average already de-noises, while a new decision adds a new STATE — coverage the
+  average can never manufacture. Breadth is the better use of the same compute.
+
+### 5.2 Placement
+
+- **One-ply on a broad subsample; two-ply only on a narrow targeted one** (decisive turns — a turn with
+  at least one dominated action, UNDERSTANDING §4.4). Precedent: KataGo's playout-cap randomisation
+  (Wu 2019: a small share of positions get the full search and train the policy, the rest are cheap)
+  and Gumbel MuZero's policy improvement from few simulations (Danihelka et al. 2022).
+- **The tie to starvation.** M5 Lane S found the ai_v14 lineage's sharpening is mostly STARVATION of
+  near-best moves (the starved share of decisive turns ~0.33 → ~0.50; UNDERSTANDING §4.4). A PPO
+  gradient reaches only the action sampled; a counterfactual label gives an UNSAMPLED action a
+  gradient, so these labels attack the same failure as X23 (policy sharpness) from the other side —
+  complements, not substitutes.
+- **Soundness rule (standing, the search-as-teacher lesson):** Q and search values train the POLICY
+  side or the Q head, NEVER PPO's GAE critic target. A search value is the IMPROVED policy's value;
+  regressing the GAE critic toward it biases every advantage (`../ai_v6/design_search_teacher.md`).
+  X6's branch successors may train V only as on-policy values of off-path states (the continuation is
+  the current π, never a max), with its off-path calibration meter.
 
 **Gradient routing (owner: heads + trunk shared).** The main arm trains the Q heads into the trunk. A
 **detached probe copy** (stop-grad, observation-based replay re-encoded through the current trunk, fast
@@ -199,7 +256,8 @@ information map (where scouting pays). **Never a training target for the public 
 ## 8. Cost
 
 - A/B/I heads: < 1% of the forward (they read tokens the forward already computes); the real cost is
-  the branch LABELS, set by k × rollouts × the labelled-state share, run in background slots after M5.
+  the branch LABELS, set by branches per decision × the labelled-state share — priced in §8.1, and run
+  INSIDE the training loop on a subsample (not in background slots).
 - Fixed-mass tokens: ≈ 2 more attention tokens; a small model-version bump (no observation change —
   hypotheses are built in the forward from dex tables).
 - Omniscient twin: offline, ≈ 0% of training.
@@ -207,14 +265,41 @@ information map (where scouting pays). **Never a training target for the public 
   anything diagnostic runs off the training critical path; any instrument costing > ~2% of
   training throughput moves offline or is cut.
 
+### 8.1 The label cost model on the M5 core (2026-09-30)
+
+Each figure is tagged **MEASURED** (with its source) or **ESTIMATED** (arithmetic on the measured
+ones; the step-time share is not yet read in the live loop — the sizing study reads it).
+
+| quantity | figure | tag · source |
+|---|---|---|
+| one successor — clone, advance one turn, fold, encode | **~232 µs CPU per thread**, in process (4,314 / s; release, one thread) | MEASURED · `../research_state/measurements/m5_laneI/PROGRESS.md` Unit 4 (search's depth-1 ply row) |
+| the training loop at the production shape (95/5 self-play, 48 envs, complete-game collector, T2) | **3,780 [3,650, 3,941] trainee decisions / s**, **~0.5 ms CPU per decision** (496 µs) | MEASURED · Lane G, `../research_state/measurements/m5_laneJ/results/throughput_production_sp95_n48.json` (arm `rust_serial_keyed`) |
+| the box | **16 cores** | MEASURED · same file, `cpu_count` |
+| one-ply, every legal action (~7), M = 1, on 100% of decisions | ≈ 7 × 232 µs ≈ **1.6 ms CPU per decision ≈ 6 cores** at 3,780 / s, plus ~7 value-only forward rows per decision (roughly a **15–25% longer step**) | ESTIMATED |
+| one-ply at 5% coverage (decisive turns) | ≈ **0.3 core** — under one core, effectively free | ESTIMATED |
+| two-ply (~49 to ~200 branches) at full coverage | ≈ 11–46 ms CPU per decision ≈ **40–170 cores** — infeasible; on a **1–3% targeted subsample** ≈ 0.4–5 cores | ESTIMATED |
+
+**Against the August factory.** The 2026-08-21 counterfactual label factory reached **1.7% coverage on
+4 cores**; full coverage would have needed **~230 cores**, because **91% of its time was PREFIX
+REPLAY** — each arm re-played the battle from turn 1 (arm ≈ 4.78 + 0.853·turn ms, ~26 ms at the mean
+turn, before prefix sharing's measured 2.91×) (ledger 2026-08-21 · the counterfactual cost model; the
+`cf_audit` command it produced). The M5 core holds the LIVE in-memory state, so a branch is a clone of
+the state the loop is already at — no replay — and one successor costs ~232 µs.
+
+**Conclusion.** One-ply labels for every legal action fit INSIDE the training loop on a broad
+subsample for a few cores and a modest step-time share; two-ply fits only on a narrow targeted
+subsample. The labels are generated in the loop (§5), not in a side factory.
+
 ---
 
 ## 9. Staging
 
 1. **X3** (no training): policy top-N prior + Foul Play's hand eval as the leaf — is discrimination
    the missing piece?
-2. **X4 + X5**, after M5's successors and T2: the fixed-mass tokens and the flat opponent pointer, then
-   the Q heads (detached probe + shared main arm), judged on the leaf rows with V and strength guards.
+2. **X4 + X5** — M5's successors and T2 are BUILT, so X4 is ready after the M5 switch (training on the
+   Rust env core) and the M5 sizing study (`program_rust_core.md` order constraint 5), with the labels
+   costed in §8.1: the fixed-mass tokens and the flat opponent pointer, then the Q heads (detached
+   probe + shared main arm), judged on the leaf rows with V and strength guards.
 3. **X6** (branch successors train V), then the Gumbel-search arm, then expert iteration (X15).
 4. **X11** (the omniscient twin) as background infrastructure whenever a checkpoint is read.
 
@@ -244,3 +329,9 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-27 | Omniscient twin | OFFLINE only, own parameters, never a training target | Training the public V on true values (the 09-10 `truevalue` arm: +0.08 optimistic, NOT DETECTED on discrimination) | §7 |
 | 2026-09-27 | Priority **(owner)** | Q first in the research queue; memorization chipped in parallel | Root-causing memorization first | EXPERIMENT_BACKLOG header (`93745a66`) |
 | 2026-09-27 | V calibration **(owner)** | Fix under-dispersion NATIVELY (X21); post-hoc temperature / Platt only as an isolation control | Post-hoc recalibration as the end state | EXPERIMENT_BACKLOG X21 (`503872c6`) |
+| 2026-09-30 | Label cost model on the M5 core | One-ply labels for every legal action generated INSIDE the training loop on a subsample (~6 cores at 100%, ~0.3 core at 5%, ESTIMATED from a MEASURED 232 µs successor and 3,780 decisions / s); two-ply only on a 1–3% targeted subsample | A side label factory (August: 1.7% coverage on 4 cores, ~230 cores for full, 91% prefix replay); two-ply at full coverage (~40–170 cores) | §8.1; m5_laneI PROGRESS Unit 4; m5_laneJ `throughput_production_sp95_n48.json`; ledger 2026-08-21 |
+| 2026-09-30 | Label repeats **(owner)** | NO per-decision repeat knob: M = 1 opponent/dice sample per branch (CRN dice, the opponent's sampled action held fixed), compute to MORE DISTINCT DECISIONS; every raw-label consumer LINEAR; nonlinear uses read the learned Q head; M = 1 noise → the adaptive-batch controller; an audit fraction's second draw measures variance only | M = 1–4 repeats per decision (with linear consumers breadth is the better use of the same compute; a max over raw labels carries the winner's curse Lane S found) | §5.1; UNDERSTANDING §4.4 |
+| 2026-09-30 | A and I losses (reconciles §5 with the M = 1 decision) | Paired-difference REGRESSION (MSE) of A(a₁) − A(a₂) / within-column I differences onto the CRN label difference | The pairwise BT ranking loss this doc specified on 2026-09-27: on a single noisy draw its target is P(label₁ > label₂), a nonlinear function of the label, not the difference of means — SGD's averaging would not recover A. The pairing (noise cancellation) is kept | §5 table, §5.1 |
+| 2026-09-30 | Label recipe (reconciles §5) | One-ply labels EVERY legal row (inclusion probability 1); Gumbel top-k rows + α columns with stored inclusion probabilities kept for two-ply; inclusion probabilities now also carry the state-subsample weight; racing / sequential halving kept for search and offline studies only | "fresh labels" and in-loop racing (both need repeated draws per arm, which the M = 1 decision rejects); Gumbel top-k at one ply (every row is affordable there) | §5, §8.1 |
+| 2026-09-30 | Placement | One-ply broad, two-ply narrow on decisive turns (precedent: KataGo playout-cap randomisation, Wu 2019; Gumbel MuZero, Danihelka et al. 2022); counterfactual labels give unsampled actions a gradient, complementing X23 against starvation; Q / search values never train PPO's GAE critic target | Uniform two-ply; search values as the critic target (biases the advantage — the search-as-teacher lesson) | §5.2; UNDERSTANDING §4.4; `../ai_v6/design_search_teacher.md` |
+| 2026-09-30 | X4 readiness | M5 successors and T2 are built; X4 is ready after the M5 switch and the sizing study | "after M5's successors and T2" (both now built) | §9; EXPERIMENT_BACKLOG X4 |
