@@ -622,8 +622,8 @@ def run(cfg: Dict[str, Any], workdir: Optional[str] = None, mutate: Any = None
     """Record here, replay in a CUDA-less child; returns (record summary, replay result). ``mutate``
     (teeth tests) edits the recording before the replay reads it."""
     wd = Path(workdir or tempfile.mkdtemp(prefix="laneE_gate_"))
-    for var in ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR"):
-        os.environ.setdefault(var, tempfile.mkdtemp(prefix=f"laneE_{var.lower()}_"))
+    from agents.model.compile_cache import ensure_hermetic_cache
+    ensure_hermetic_cache("rust_env_opponents_parity")      # K3: the declared cache, or a private one
     if "pool_dir" not in cfg:
         build_gate_pool(wd / "pool", cfg["pool"])
         cfg = dict(cfg, pool_dir=str(wd / "pool"))
@@ -633,11 +633,16 @@ def run(cfg: Dict[str, Any], workdir: Optional[str] = None, mutate: Any = None
     rp = wd / "record.pkl"
     with open(rp, "wb") as f:
         pickle.dump(rec, f)
-    env = dict(os.environ, CUDA_VISIBLE_DEVICES="",
-               TORCHINDUCTOR_CACHE_DIR=tempfile.mkdtemp(prefix="laneE_replay_inductor_"),
-               TRITON_CACHE_DIR=tempfile.mkdtemp(prefix="laneE_replay_triton_"))
-    r = subprocess.run([sys.executable, "-m", "agents.training.rust_env_opponents_parity", "--replay", str(rp),
-                        "--out", str(wd / "replay.json")], env=env, capture_output=True, text=True, timeout=7200)
+    # K3: the replay child's compile cache is FRESH and DELETED when the child is done (it used to be
+    # two `mkdtemp`s nobody removed — ~2 GB of them on tmpfs by 2026-09-30).
+    from agents.model.compile_cache import scratch_root
+    with tempfile.TemporaryDirectory(prefix="laneE_replay_cache_", dir=scratch_root()) as cache:
+        env = dict(os.environ, CUDA_VISIBLE_DEVICES="", GEN3AI_COMPILE_CACHE_DIR=cache,
+                   TORCHINDUCTOR_CACHE_DIR=os.path.join(cache, "inductor"),
+                   TRITON_CACHE_DIR=os.path.join(cache, "triton"))
+        r = subprocess.run([sys.executable, "-m", "agents.training.rust_env_opponents_parity", "--replay",
+                            str(rp), "--out", str(wd / "replay.json")], env=env, capture_output=True,
+                           text=True, timeout=7200)
     if r.returncode != 0:
         raise RuntimeError(f"replay child failed ({r.returncode}):\n{r.stderr[-6000:]}")
     rep = json.loads((wd / "replay.json").read_text())

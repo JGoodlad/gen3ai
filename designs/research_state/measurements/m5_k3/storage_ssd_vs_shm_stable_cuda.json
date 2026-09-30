@@ -1,0 +1,287 @@
+{
+  "schema": "k3_compile_cache_benchmark_v1",
+  "device": "cuda",
+  "bases": [
+    "/home/goodlad/.cache/gen3ai/tmp",
+    "/dev/shm"
+  ],
+  "rows": [
+    {
+      "part": "learner",
+      "torch": "2.5.1+cu121",
+      "gate_s": 280.9664845180232,
+      "prewarm_s": 529.2126983009512,
+      "startup_s": 810.1791828189744,
+      "process_s": 812.8442680389853,
+      "cache_bytes": 492294505,
+      "wall_s": 832.9678997750161,
+      "round": 0,
+      "phase": "cold",
+      "base": "/home/goodlad/.cache/gen3ai/tmp",
+      "base_fs": "ext4",
+      "contention_before": {
+        "load1": 16.9384765625,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "learner",
+      "torch": "2.5.1+cu121",
+      "gate_s": 295.0996617070632,
+      "prewarm_s": 474.9847929220414,
+      "startup_s": 770.0844546291046,
+      "process_s": 772.605330929975,
+      "cache_bytes": 474790302,
+      "wall_s": 799.061934420024,
+      "round": 0,
+      "phase": "cold",
+      "base": "/dev/shm",
+      "base_fs": "tmpfs",
+      "contention_before": {
+        "load1": 7.14208984375,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "learner",
+      "torch": "2.5.1+cu121",
+      "gate_s": 79.3718941010302,
+      "prewarm_s": 174.284733923967,
+      "startup_s": 253.6566280249972,
+      "process_s": 256.7554570150096,
+      "cache_bytes": 492294501,
+      "wall_s": 261.1790161760291,
+      "round": 0,
+      "phase": "warm",
+      "base": "/home/goodlad/.cache/gen3ai/tmp",
+      "base_fs": "ext4",
+      "contention_before": {
+        "load1": 10.07470703125,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "learner",
+      "torch": "2.5.1+cu121",
+      "gate_s": 70.63343774492387,
+      "prewarm_s": 176.26572378899436,
+      "startup_s": 246.89916153391823,
+      "process_s": 249.41329929803032,
+      "cache_bytes": 474790299,
+      "wall_s": 254.620408960036,
+      "round": 0,
+      "phase": "warm",
+      "base": "/dev/shm",
+      "base_fs": "tmpfs",
+      "contention_before": {
+        "load1": 6.45654296875,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "learner",
+      "torch": "2.5.1+cu121",
+      "gate_s": 59.48553723306395,
+      "prewarm_s": 136.32446156500373,
+      "startup_s": 195.80999879806768,
+      "process_s": 198.27773667289875,
+      "cache_bytes": 492294503,
+      "wall_s": 202.1927625569515,
+      "round": 0,
+      "phase": "warm2",
+      "base": "/home/goodlad/.cache/gen3ai/tmp",
+      "base_fs": "ext4",
+      "contention_before": {
+        "load1": 4.9306640625,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "learner",
+      "torch": "2.5.1+cu121",
+      "gate_s": 64.98455400206149,
+      "prewarm_s": 167.66615547600668,
+      "startup_s": 232.65070947806817,
+      "process_s": 234.89483614696655,
+      "cache_bytes": 474790300,
+      "wall_s": 239.19764411798678,
+      "round": 0,
+      "phase": "warm2",
+      "base": "/dev/shm",
+      "base_fs": "tmpfs",
+      "contention_before": {
+        "load1": 2.5078125,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.5.1+cu121",
+      "startup_s": 240.2222571609309,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 242.44625367899425,
+      "cache_bytes": 123556783,
+      "wall_s": 249.08308749110438,
+      "round": 0,
+      "phase": "cold",
+      "base": "/home/goodlad/.cache/gen3ai/tmp",
+      "base_fs": "ext4",
+      "contention_before": {
+        "load1": 5.88623046875,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.5.1+cu121",
+      "startup_s": 273.28737904992886,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 277.0275313250022,
+      "cache_bytes": 118730948,
+      "wall_s": 284.2744876149809,
+      "round": 0,
+      "phase": "cold",
+      "base": "/dev/shm",
+      "base_fs": "tmpfs",
+      "contention_before": {
+        "load1": 9.12353515625,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.5.1+cu121",
+      "startup_s": 78.3966723009944,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 80.93066334107425,
+      "cache_bytes": 123556782,
+      "wall_s": 82.49212558800355,
+      "round": 0,
+      "phase": "warm",
+      "base": "/home/goodlad/.cache/gen3ai/tmp",
+      "base_fs": "ext4",
+      "contention_before": {
+        "load1": 9.56103515625,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.5.1+cu121",
+      "startup_s": 75.39365398301743,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 78.00436378503218,
+      "cache_bytes": 118730947,
+      "wall_s": 79.93794530304149,
+      "round": 0,
+      "phase": "warm",
+      "base": "/dev/shm",
+      "base_fs": "tmpfs",
+      "contention_before": {
+        "load1": 8.98046875,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.5.1+cu121",
+      "startup_s": 89.7752868210664,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 92.49256519798655,
+      "cache_bytes": 123556782,
+      "wall_s": 94.4972697639605,
+      "round": 0,
+      "phase": "warm2",
+      "base": "/home/goodlad/.cache/gen3ai/tmp",
+      "base_fs": "ext4",
+      "contention_before": {
+        "load1": 8.77783203125,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.5.1+cu121",
+      "startup_s": 84.05675262399018,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 87.09239548095502,
+      "cache_bytes": 118730947,
+      "wall_s": 88.62415970792063,
+      "round": 0,
+      "phase": "warm2",
+      "base": "/dev/shm",
+      "base_fs": "tmpfs",
+      "contention_before": {
+        "load1": 10.8173828125,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    }
+  ],
+  "when": "2026-09-30T13:59:48-0700"
+}

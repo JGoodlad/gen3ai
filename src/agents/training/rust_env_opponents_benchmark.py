@@ -60,8 +60,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--mode", default="sampled", choices=("sampled", "greedy"))
     ap.add_argument("--json", default=None)
     a = ap.parse_args(argv)
-    for var in ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR"):
-        os.environ.setdefault(var, tempfile.mkdtemp(prefix=f"laneE_bench_{var.lower()}_"))
+    from agents.model.compile_cache import ensure_hermetic_cache
+    ensure_hermetic_cache("rust_env_opponents_benchmark")   # K3: fresh, private, deleted at exit
     import torch
 
     from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec

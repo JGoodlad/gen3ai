@@ -19,12 +19,14 @@ import tempfile
 import time
 from typing import Any, Callable, Dict, List, Tuple
 
-# Shared Inductor cache. Under `spawn` every worker re-imports and re-traces from scratch, but a
-# SHARED on-disk cache turns all but the first process's CODEGEN into a hit (measured 19.1s cold ->
-# 5.8s warm). This is the only compile artifact that crosses a process boundary: `torch.compile`
-# returns a live Python object, so the compiled callable itself can never be handed to a spawned
-# child — see `prewarm_extractor_compile`.
-DEFAULT_INDUCTOR_CACHE_DIR = "/tmp/gen3ai_inductor_cache"
+# The on-disk Inductor cache. Under `spawn` every worker re-imports and re-traces from scratch, but a
+# cache SHARED BY THE RUN'S PROCESS TREE turns all but the first process's CODEGEN into a hit
+# (measured 19.1s cold -> 5.8s warm). This is the only compile artifact that crosses a process
+# boundary: `torch.compile` returns a live Python object, so the compiled callable itself can never be
+# handed to a spawned child — see `prewarm_extractor_compile`. Since K3 (gen3_hermetic_compile_cache_v1)
+# it is the RUN's own `<run>/compile_cache/inductor` (the trainer declares it before any worker
+# exists; workers inherit it), never the retired shared `/tmp/gen3ai_inductor_cache` — see
+# `agents.model.compile_cache`.
 
 # A compile must beat eager by at least this much to be kept. A floor on "worth the risk at all",
 # not a safety margin against noise — the noise is handled by the MEASUREMENT below, not by moving
@@ -86,12 +88,16 @@ def _compile_warn(msg: str) -> None:
 
 
 def _inductor_cache_dir() -> str:
-    """Set (once) and return the shared Inductor cache dir. Deliberately NOT an import-time side
-    effect — `snapshot.py` is imported by the prober, eval workers and offline tooling that never
-    compile anything, and a module that mutates the environment on import is the kind of thing that
-    is impossible to reason about later. Inductor reads this when it first codegens, which is always
-    inside `maybe_compile_extractor`, so setting it here is early enough."""
-    return os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", DEFAULT_INDUCTOR_CACHE_DIR)
+    """The Inductor cache dir in force for this process: the run's own (inherited from the trainer),
+    or — for a process no run declared one for — a FRESH private temp dir
+    (`compile_cache.ensure_hermetic_cache`). Deliberately NOT an import-time side effect —
+    `snapshot.py` is imported by the prober, eval workers and offline tooling that never compile
+    anything, and a module that mutates the environment on import is the kind of thing that is
+    impossible to reason about later. Inductor reads this when it first codegens, which is always
+    inside `maybe_compile_extractor`, so resolving it here is early enough."""
+    from agents.model.compile_cache import ENV_INDUCTOR, ensure_hermetic_cache
+    ensure_hermetic_cache("opponent compile")
+    return os.environ[ENV_INDUCTOR]
 
 
 class CompileExtractorError(RuntimeError):

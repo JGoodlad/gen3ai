@@ -19,6 +19,7 @@ gpu_lock.sh — run a command while holding the box's GPU lock (re-entrant; see 
 USAGE
     scripts/ops/gpu_lock.sh <cmd> [args...]
     scripts/ops/gpu_lock.sh --status          # who holds it now (pid + command line)
+    scripts/ops/gpu_lock.sh timeout 3000 <cmd>  # a WALL TIMEOUT goes INSIDE (outside, it counts lock-wait)
 
 The lock is ~/.claude/jobs/gpu.lock ($GEN3AI_GPU_LOCK overrides). The command runs as a CHILD of
 the lock holder with GEN3AI_GPU_LOCK_HELD=<holder pid> exported, so any take of the same lock inside

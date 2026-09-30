@@ -40,6 +40,28 @@ def _apply_grad_checkpointing(model, enabled: bool) -> None:
           f"(bit-exact; trades idle-GPU compute for ~5GB activation VRAM)")
 
 
+def _declare_compile_cache(args, model_dir: str) -> None:
+    """K3 (gen3_hermetic_compile_cache_v1): declare `<run>/compile_cache/` as this process tree's
+    ONLY compile cache — EMPTY at a fresh launch or a fork, reused only on this run's own restart
+    when its stamp (code commit + torch + compile-config row) matches. Must run the moment the run
+    dir exists: before any compile, env worker, forkserver, eval subprocess or T2 service, every one
+    of which inherits the three environment variables it sets. `args.model` here is the ARGV's
+    (before a consensus warm-start re-points it at `<run>/warmstart/`, which is an init, not this
+    run's progress — `is_same_run_checkpoint` says so)."""
+    from agents.model.compile_cache import CompileCacheError, prepare_run_cache
+    from main.launcher.ipc import emit
+    from main.train.fork_lr import is_same_run_checkpoint
+    try:
+        prepare_run_cache(model_dir,
+                          same_run_resume=is_same_run_checkpoint(getattr(args, "model", None) or "",
+                                                                 model_dir),
+                          emit=emit)
+    except CompileCacheError as exc:
+        print(f"\n[CompileCache] FATAL: {exc}", file=sys.stderr, flush=True)
+        send_event(f"[CompileCache] FATAL: {exc}")
+        sys.exit(TrainExitCode.FATAL_CONFIG)
+
+
 def _maybe_compile_trainer(model, args) -> None:
     """Apply `--compile-trainer` to the LEARNER, or die trying (see `agents.model.compile_trainer`).
 

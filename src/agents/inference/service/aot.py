@@ -109,9 +109,11 @@ def build_package(module: torch.nn.Module, static_obs: torch.Tensor, static_mask
 
 
 def artifact_dir(explicit: Optional[str]) -> Path:
-    """Where packages are written: the declared dir, else a fresh temp dir (never shared)."""
+    """Where packages are written: the declared dir, else a fresh dir INSIDE the compile-cache root in
+    force (the run's `compile_cache/t2_aot/`, or the process's private one — K3), never shared and
+    never a stray `/tmp` dir that outlives its process."""
     if explicit:
         return Path(explicit)
-    import tempfile
+    from agents.model.compile_cache import t2_aot_dir
 
-    return Path(tempfile.mkdtemp(prefix="t2_aot_"))
+    return Path(t2_aot_dir())

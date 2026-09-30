@@ -1,0 +1,6 @@
+{"schema": "k3_compile_cache_benchmark_v1", "device": "cpu", "torch": "2.5.1+cu121",
+ "when": "2026-09-30T09:40-07:00", "note": "compile_cache_benchmark.py run --device cpu --rounds 1 --parts opponent; one env worker's opponent compile (maybe_compile_extractor, CUDA hidden); load ~8 on 16 cores from peer agents' test gates",
+ "rows": [
+  {"round": 0, "part": "opponent", "phase": "cold", "startup_s": 93.536, "process_s": 95.365, "wall_s": 100.688, "cache_bytes": 13357897},
+  {"round": 0, "part": "opponent", "phase": "warm", "startup_s": 26.593, "process_s": 28.450, "wall_s": 29.556, "cache_bytes": 13357897},
+  {"round": 0, "part": "opponent", "phase": "warm2", "startup_s": 26.498, "process_s": 28.339, "wall_s": 29.465, "cache_bytes": 13357897}]}

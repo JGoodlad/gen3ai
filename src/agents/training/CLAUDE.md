@@ -584,6 +584,17 @@ forward with a NEW signature (a different obs key set, a batch that may be 1) mu
 `compile_trainer.eager_extractor(fe)` or be added to `production_prewarm_calls` — the late-shape
 table in the doc lists every caller. An unknown torch or a drifted torch internal
 (`_SOURCE_HASHES`) REFUSES. TB: `compile/recompiles_after_lock` must stay 0.
+🚨 **THE COMPILE CACHE IS THE RUN'S OWN (K3, `gen3_hermetic_compile_cache_v1`).** Every process of a
+run's tree compiles into `<run>/compile_cache/` (Inductor, Triton, T2's AOT packages), declared by
+`lifecycle._declare_compile_cache` the moment the run dir exists — EMPTY at a fresh launch or fork,
+reused only by the run's own restart under a matching stamp (commit, clean tree, torch, interpreter,
+`compile_control.config_row_hash()`), wiped otherwise; printed as `🧊 [CompileCache]`. Tests and
+every other compiling process get a fresh private dir on the REAL DISK (`$GEN3AI_SCRATCH`, else
+`~/.cache/gen3ai/tmp`; never tmpfs `/tmp`), deleted at exit, swept by PID if its owner died
+(`agents.model.compile_cache`). **A new
+`torch.compile` site must call `ensure_hermetic_cache()` first** — `compile_cache_test` fails a
+production module that does not. The box-wide `/tmp/torchinductor_<user>` and
+`/tmp/gen3ai_inductor_cache` are no longer used. Cost: a fresh launch always compiles cold (see the doc).
 **Full detail — in [`designs/training/compile_flags.md`](../../../designs/training/compile_flags.md).**
 
 ## Gradient-balance + value-scale diagnostics (`grad_balance.py`)

@@ -266,6 +266,12 @@ def test_production_arch_compiles_to_one_graph():
 
 
 @_skip_compile
+# `slow` since K3 (gen3_hermetic_compile_cache_v1, 2026-09-30): every pytest process compiles into a
+# FRESH cache, so the first CPU codegen of the production extractor in a process is COLD — 88 s in
+# the -n 2 routine gate (was ~15 s against the retired box-wide warm cache). Same cost class, and
+# since production carries the H tiers the same graph, as `test_production_arch_compiles_without_
+# suppression` (already slow); the one-graph `explain` twin below stays in the routine tier.
+@pytest.mark.slow
 def test_h_tier_arch_compiles_without_suppression(restore_torch_globals):
     """The gen-13 enable gate: production + the H tiers (`--history-events` seats + the `r`
     reference family) must survive Inductor BEFORE a launch depends on `--compile-opponents`
@@ -316,15 +322,31 @@ def test_intent_threshold_arch_compiles_to_one_graph():
     routine gate. They get their own explain-only cell below."""
     torch._dynamo.reset()
     torch._dynamo.config.suppress_errors = False
-    fe, layout = _build_production_extractor(intent_threshold=True, intent_conditional=True,
-                                            pair_outcome_cell=True,
-                                            damage_matrices_outgoing=True,
-                                            op_drop_renders=True, op_believed_lean=True)
+    fe, layout = _build_intent_threshold_extractor()
     obs = {"observation": torch.zeros(_BATCH, layout["total_dim"])}
     explained = torch._dynamo.explain(fe.forward)(obs)
     assert explained.graph_break_count == 0, explained.break_reasons
     assert explained.graph_count == 1
+
+
+def _build_intent_threshold_extractor():
+    return _build_production_extractor(intent_threshold=True, intent_conditional=True,
+                                       pair_outcome_cell=True, damage_matrices_outgoing=True,
+                                       op_drop_renders=True, op_believed_lean=True)
+
+
+@_skip_compile
+# The CODEGEN half of the cell above, split out and `slow` since K3 (gen3_hermetic_compile_cache_v1,
+# 2026-09-30): every pytest process compiles into a FRESH cache, so a CPU Inductor lowering of the
+# production extractor is COLD (70–90 s when it is the process's first). The one-graph `explain`
+# half stays routine; this numerics half runs in the slow tier (compile_flags.md: a compile-path
+# change runs it under both torches before shipping).
+@pytest.mark.slow
+def test_intent_threshold_arch_compiled_output_matches_eager():
     torch._dynamo.reset()
+    torch._dynamo.config.suppress_errors = False
+    fe, layout = _build_intent_threshold_extractor()
+    obs = {"observation": torch.zeros(_BATCH, layout["total_dim"])}
     with torch.no_grad():
         ref = fe(obs)
         got = torch.compile(fe.forward)(obs)
@@ -455,6 +477,10 @@ def _assert_real_gradient(fe, grads, where):
     assert trunk, f"{where}: no shared-trunk parameter received a gradient at all"
 
 
+# Does the CPU forward+BACKWARD of the production extractor (belief_grad_mode `shaping`) lower in
+# Inductor? Per EXACT torch version; an unknown torch FAILS the pin below rather than guessing.
+_CPU_BACKWARD_LOWERS = {"2.5.1+cu121": False, "2.8.0+cu126": True}
+
 # gen3 test tiers (MEASURED 2026-08-14): 37-59 s, by far the slowest test in the routine gate and
 # ~20% of it on its own. It is slow for a structural reason that will not improve — it drives a
 # compile that is SUPPOSED to fail, so it pays a full Inductor lowering attempt and then the error
@@ -505,6 +531,16 @@ def test_cpu_backward_still_does_not_compile(restore_torch_globals):
     # `shaping` is the subject: it is the mode under which the atomic_add scatter HAS a backward.
     fe, layout = _build_production_extractor(belief_grad_mode="shaping")
     fe.train()
+    # PER TORCH (measured 2026-09-30, K3's both-torch slow-tier run): on 2.8.0+cu126 the limitation
+    # has LIFTED — the CPU forward+backward compiles under `shaping`. The pin is kept per version:
+    # while 2.5.1 is supported, `maybe_compile_extractor`'s eager route for grad-enabled calls stays
+    # load-bearing; the 2.8 row pins that the lift holds (designs/training/compile_flags.md, K3).
+    lowers = _CPU_BACKWARD_LOWERS.get(torch.__version__)
+    assert lowers is not None, (f"no recorded CPU-backward expectation for torch {torch.__version__} — "
+                                f"run this test on it and record the answer in _CPU_BACKWARD_LOWERS")
+    if lowers:
+        _backward_through(fe, torch.compile(fe.forward)(_obs(layout, "cpu")))
+        return
     try:
         _backward_through(fe, torch.compile(fe.forward)(_obs(layout, "cpu")))
     except Exception as exc:

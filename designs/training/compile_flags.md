@@ -76,8 +76,10 @@ opponent, and `ep_len_mean` is unchanged (47.4 vs 45.9), so it is not an artifac
 
 Three properties make it cheap: the compile is keyed on the CODE OBJECT (a second extractor instance
 in the same process compiles in **0.00 s**, so pool promotions are free), parameters are graph INPUTS
-(a different checkpoint's `load_state_dict` does NOT recompile), and a shared
-`TORCHINDUCTOR_CACHE_DIR` turns each worker's cold codegen into a cache hit.
+(a different checkpoint's `load_state_dict` does NOT recompile), and an on-disk
+`TORCHINDUCTOR_CACHE_DIR` shared by the RUN's process tree turns each worker's cold codegen into a
+cache hit. Since K3 that dir is the run's own `<run>/compile_cache/inductor`, never a box-wide one
+("The HERMETIC per-run compile cache" below).
 
 Four guards, each protecting against a failure that actually happened while building it:
 - **CUDA-context OOM.** Compiling even a CPU model in a CUDA-visible process initialises CUDA and takes
@@ -349,7 +351,7 @@ load a 41 MB checkpoint *and* pay their process's first compile (the `revalidate
 times eager-vs-compiled). It happens once per run. The recurring cost is **+77 s per promotion ≈
 2.7% of wall-clock ≈ 16 min over a 25M run**, and `--compile-opponents` is net **+40%**.
 
-**The caches work.** The shared Inductor cache is HIT at a promotion (13 files written, vs 6600+ at
+**The caches work.** The Inductor cache (then box-wide; the run's own since K3) is HIT at a promotion (13 files written, vs 6600+ at
 run startup), `SnapshotPool._model_cache` keeps one compile per worker per snapshot, and
 `_COMPILE_VALIDATED` puts every compile after a process's first on the cheap path. Nothing here
 needs fixing.
@@ -383,6 +385,118 @@ Two limits, unchanged by the default flip — expect a SHRUNK event, not a gone 
 non-blocking.** gen-13 ran an **1865 s** eval cycle inside a **395 s** iteration. Attributing
 iteration cost to an overlapping eval (or vice versa) is a window coincidence; separate them by the
 compile path (`timed` vs `reused`), which is what actually distinguishes the expensive event.
+## The HERMETIC per-run compile cache (K3, `gen3_hermetic_compile_cache_v1`, 2026-09-30)
+
+**The owner (2026-09-29): "always initialize from a fresh setup — who knows how many silent errors a
+shared cache allows."** Until K3 the learner's Inductor/Triton caches were UNMANAGED: one box-wide
+`/tmp/torchinductor_goodlad` (12 GB on tmpfs, i.e. RAM, on 2026-09-30) used by every run, pin, torch
+env, benchmark and test, and the opponents' CPU compile in a second box-wide dir
+(`/tmp/gen3ai_inductor_cache`, 142 MB). The K1b fault (below) proved a cache KEY can omit a setting that
+changes the artifact, so the rule does not trust the key. `agents.model.compile_cache` is the one
+module; every compile site calls it.
+
+| process | its compile cache | reused when |
+|---|---|---|
+| a TRAINING RUN (the trainer, its env workers, forkserver, eval subprocess, T2 service — every child inherits) | `<run>/compile_cache/{inductor,triton,t2_aot}` — `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`, `GEN3AI_COMPILE_CACHE_DIR` | only by the run's OWN restart (`--model` = a checkpoint this run wrote, `fork_lr.is_same_run_checkpoint`) AND a matching `stamp.json`; a fresh launch or a fork WIPES it to EMPTY |
+| a pytest process (controller and each xdist worker) | a fresh `gen3ai_pytest_compile_<pid>_*` dir under the SCRATCH root (root `conftest.py`) | within that process's session only; deleted at unconfigure |
+| anything else that compiles (a benchmark, the prober, an offline meter, a standalone eval) | a fresh private `gen3ai_compile_<pid>_*` dir under the SCRATCH root (`ensure_hermetic_cache`) | never; deleted when its creator exits |
+
+**The SCRATCH root is the REAL DISK: `$GEN3AI_SCRATCH`, else `~/.cache/gen3ai/tmp` — never `/tmp`**
+(`utils.scratch.scratch_root` — the ONE helper, which the root `conftest.py` also loads, by path, for pytest's own temp root — and which REFUSES a tmpfs/ramfs root). `/tmp` on this box is tmpfs: RAM
+(45 GB, shared with every process), and a 1,048,576-inode cap. A compile cache is thousands of files
+and up to 1.5 GB (torch 2.8). The benchmark's cold/warm roots and Lane E's replay-child cache live
+there too.
+
+**Does the disk cost startup time vs tmpfs? No detectable difference (measured 2026-09-30, the owner's
+question).** `compile_cache_benchmark --root-bases ~/.cache/gen3ai/tmp,/dev/shm` (ext4 NVMe vs tmpfs;
+the explicit benchmark override — the production path refuses tmpfs), torch 2.5.1, one fresh root per
+base, COLD on each then two WARM reads INTERLEAVED, load 2.5–17 (`m5_k3/storage_ssd_vs_shm_stable_cuda.json`):
+
+| part | COLD ext4 / tmpfs (s) | WARM ext4 / tmpfs (s) | 2nd WARM ext4 / tmpfs (s) |
+|---|---|---|---|
+| learner (gate + prewarm) | 810 / 770 | 254 / 247 | **196 / 233** |
+| T2 startup | **240 / 273** | 78 / 75 | 90 / 84 |
+
+The sign flips between reps and every delta (4–40 s) is inside the rep-to-rep spread of the same arm
+(learner warm 196–254 s on ext4 alone) and tracks the load average, not the medium. As expected:
+cold startup is CPU-bound codegen + the C++/Triton compilers; warm reads of just-written files are
+served by the page cache; and steady-state training never reads the on-disk cache at all (compiled
+kernels live in process memory). n = 1 round per part: a difference below ~10% is NOT excluded.
+
+- **THE STAMP** (`<run>/compile_cache/stamp.json`): the code's commit (`utils.git.get_git_hash`, i.e. a
+  pinned child's PIN) + whether `src/` is dirty + `torch.__version__` + the interpreter +
+  `compile_control.config_row_hash()` (SHA256 of the `_COMPILE_CONFIG` row). Any field that differs
+  WIPES; a DIRTY or unnamed tree NEVER reuses (a sha cannot name it); an unreadable stamp WIPES. The
+  decision is printed at startup: `🧊 [CompileCache] CREATED | WIPED | REUSED <root> — <reason>`.
+- **WHERE IT IS DECLARED.** `main.train.lifecycle._declare_compile_cache`, called in
+  `train_rl_agent.main` the moment `model_dir` exists — before the quorum dir, the forkserver preload,
+  the parent prewarm, the vec env, T2 and `build_and_train`. A shared value already in force at that
+  point (torch exports its default on a process's FIRST compile) means something compiled first: a
+  typed `CompileCacheError` → `FATAL_CONFIG`.
+- **A torch default is never honoured.** `ensure_hermetic_cache` treats `/tmp/torchinductor_<user>`
+  and the retired `/tmp/gen3ai_inductor_cache` as undeclared. T2's AOT packages now go under the root
+  in force (`compile_cache.t2_aot_dir`), not a stray `/tmp/t2_aot_*` that outlived its process.
+- **The parity gates are unchanged and still run at EVERY start** — the real-obs learner gate, T2's
+  startup gate and the opponents' decision-level check verify OUTPUTS whatever was loaded; the cache
+  decides only what may be loaded.
+- **Pinned by** `agents/model/compile_cache_test.py` (each test fails on a revert of the rule it names:
+  fresh/fork wipe, restart reuse, every stamp field, dirty never reuses, a real `torch.compile` lands
+  in the run's dir, a private dir deleted at exit, shared values refused, the trainer's call precedes
+  every compile/spawn site, every production `torch.compile` / `aoti_compile_and_package` module
+  calls the cache helper, no string literal names a box-wide dir) and `compile_extractor_test`.
+- **A crash loop on a corrupt cache** (not observed): delete `<run>/compile_cache/`; the next start is
+  cold and correct.
+- **Temp caches never outlive their owner (`/tmp` is tmpfs: RAM AND a 1M-inode cap — 2026-09-30 the
+  box ran OUT OF INODES, 1,047,791 / 1,048,576, and a routine gate died with 40 `could not create
+  numbered dir` errors; the box-wide Inductor dir alone held 395k files).** Every temp cache is named
+  `gen3ai_compile_<pid>_*` / `gen3ai_pytest_compile_<pid>_*` under the scratch root; its creator deletes it (`atexit`;
+  pytest at `pytest_unconfigure`, which runs after a FAILING session too, with `atexit` as backstop),
+  and every new declaration SWEEPS the ones whose creator PID is dead — so a SIGKILL leaks only until
+  the next compile anywhere on the box. Lane E's replay child now gets a `TemporaryDirectory` cache
+  (it leaked two `mkdtemp`s per gate run, ~2 GB by 2026-09-30). Pinned by
+  `compile_cache_test::test_a_pytest_session_removes_its_cache_even_when_it_fails` (a real child
+  session, passing and failing) and `::test_a_SIGKILLED_owner_s_cache_is_swept_by_the_next_declaration`.
+- 🚨 **A COMPILE-PATH CHANGE RUNS THE COMPILE FILES' `slow` TIER UNDER BOTH TORCHES BEFORE SHIPPING**
+  (orchestrator, 2026-09-30). K3 made the first CPU codegen of the production extractor in each pytest
+  process COLD (70–90 s), so the codegen-numerics tests of `extractor_compiles_test`
+  (`…_without_suppression`, `test_cpu_backward_still_does_not_compile`) are `slow`; the one-graph
+  `explain` tests stay routine. So: `python3 -m pytest src/agents/model/extractor_compiles_test.py
+  src/agents/model/compile_control_test.py src/agents/model/compile_prewarm_test.py
+  src/agents/inference/service/service_cuda_test.py -m slow` under `gen3ai_stable` AND
+  `gen3ai_torch28` (the CUDA file under `scripts/ops/gpu_lock.sh`); the rows land in
+  `designs/ops/slow_tier_status.json`, which the routine gate reads. Production's guard is unchanged:
+  the real-obs parity gate runs at every start. **First finding of that rule (2026-09-30): on torch
+  2.8.0+cu126 the CPU forward+BACKWARD of the production extractor now LOWERS** (the 2.5.1
+  `atomic_add` scatter refusal is gone); `test_cpu_backward_still_does_not_compile` is now keyed per
+  torch (`_CPU_BACKWARD_LOWERS`). `maybe_compile_extractor`'s eager route for grad-enabled calls
+  stays load-bearing while 2.5.1 is supported; on 2.8 the compiled opponent artifact is no longer
+  inference-only by necessity (UNVERIFIED numerically — the pin checks that it lowers and runs).
+
+**COST — cold vs warm, measured (`src/agents/model/compile_cache_benchmark.py`, 2026-09-30, RTX 3080 Ti,
+`gen3ai_stable` torch 2.5.1, a perturbed fresh production-arch policy, each number a FRESH process;
+COLD = the first process on an empty root = a fresh launch, WARM = the next process on it = the run's
+own restart; load average ~7–9 on 16 cores from peer agents' test gates, so absolute numbers are
+contended — REPORTED, not rescaled):**
+
+| part (a fresh process each) | COLD, round 0 / 1 (s) | WARM, round 0 / 1 (s) | 2nd WARM, round 0 / 1 (s) | cache |
+|---|---|---|---|---|
+| **learner** — the real-obs parity gate + the sentinel's prewarm (n_envs 48, micro-batch 2048, half-batch) | **681 / 746** (gate 242 / 252 + prewarm 440 / 494) | **229 / 251** (gate 63 / 72 + prewarm 165 / 179) | 188 / 262 | 466 MB |
+| **T2** — `InferenceService.startup()`, 1 trainee + 20 pool slots, buckets (8, 48), 8 lanes, `graph` | **202 / 252** | **57 / 79** | 56 / 81 | 116 MB |
+
+Load average at each phase's start: round 0 1.3–4.5, round 1 2.2–10.9 (the round-1 warm reads are the
+contended ones); no other GPU process. Raw rows: `designs/research_state/measurements/m5_k3/`. **What
+a restart saves: ~430–500 s of learner startup and ~145–175 s of T2 startup — WARM ≈ 0.3× COLD for
+both.** T2's cold read sits at the low end of Lane G's 205–430 s with fresh caches (**UNVERIFIED** why:
+Lane G's slot/bucket shapes and box load differ and are not re-measured here). torch 2.8 (`gen3ai_torch28`): **learner 394 s cold → 117 / 134 s warm (cache 1.5 GB — 3.2× 2.5.1's); T2 172 s cold → 32 / 33 s warm (382 MB)** (one round, 2026-09-30, same shapes, load not re-recorded per phase; `m5_k3/cold_warm_torch28_cuda.json`). A 2.8 run's cache is ~2 GB on disk.
+
+The warm residual is dynamo tracing + guard construction + CUDA-graph capture + the parity gates,
+which no on-disk cache removes. Per-run disk: ~0.6 GB (learner 466 MB + T2 116 MB + opponents 13 MB) on the run's own disk, not tmpfs — `models/` retention may delete `compile_cache/` freely (it is regenerable; the next start is cold). The CPU opponents' compile in one env worker
+(`maybe_compile_extractor`, CUDA hidden, same load): **93.5 s cold → 26.6 s warm** (13 MB). At a fresh
+launch the parent prewarm (or the forkserver preload) pays the cold opponent compile once and the
+workers read it warm, exactly as with the old box-wide dir — but now once PER RUN rather than once per
+box. What K3 changes is only what a FRESH launch pays: the old box-wide cache was usually warm for a
+new run of an unchanged graph; the run's own cache is always cold at a fresh launch, by design.
+
 ## FP32 matmul precision (`--matmul-precision {highest,high}`, DEFAULT `highest`)
 
 `gen3_matmul_precision_v1`. **`highest`** is PyTorch's own default — full FP32 matmuls, no TF32 —
@@ -921,7 +1035,8 @@ flag and read attributes (`grad_checkpointing`):
 | `--debug` (DummyVecEnv) + `--compile-opponents` | opponents compile IN the learner process, on the learner's code objects, after the lock | **refused at startup** (`FATAL_CONFIG`): pass `--no-compile-opponents` |
 | the FINAL evaluation after `learn()` (in-process, the live compiled model) | eval · no-grad · 1, a smaller obs key set | runs AFTER `release()` — recompiles freely, as before |
 
-A launcher restart is a fresh process (fresh cache, a new gate, a new lock).
+A launcher restart is a fresh process (a fresh dynamo cache, a new gate, a new lock; the ON-DISK
+Inductor/Triton cache is the run's own and is reused only under a matching stamp — K3 below).
 
 **END-TO-END on the real trainer** (2026-09-28, the T32b argv at TF32 made tiny — `n_envs` 2, a fork
 of `ai_v14_01_base` into `~/gen3ai_archive/compile_sentinel_smoke/`, 3 iterations): gate PASS →

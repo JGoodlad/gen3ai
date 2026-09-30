@@ -617,6 +617,10 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
     """
     if not enabled:
         return None
+    # K3 (gen3_hermetic_compile_cache_v1): the learner compiles into the RUN's own cache (declared
+    # by the trainer before this), or a private one — never torch's shared default.
+    from agents.model.compile_cache import ensure_hermetic_cache
+    ensure_hermetic_cache("learner compile")
 
     # VALIDATE AT A SMALL, SAFE BATCH — and label the number with the shape it was measured at.
     #

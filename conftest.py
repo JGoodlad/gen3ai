@@ -21,6 +21,7 @@ Note this only affects pytest-collected tests; the ``*_fuzz_test.py`` / ``*_benc
 scripts are run directly (not via pytest), so they are unaffected and still use the GPU.
 """
 import os
+import sys
 
 import pytest
 
@@ -153,39 +154,36 @@ _slow_write_note = []
 #   * HOW LONG — `pytest.ini` sets `tmp_path_retention_policy = failed` and `_count = 1`: a PASSING
 #     test's `tmp_path` is removed at its teardown and a passing session's basetemp at sessionfinish.
 # Pinned by `src/utils/pytest_tmp_on_disk_test.py` (a child session; fails on revert of either half).
-_TMP_ENV = "GEN3AI_SCRATCH"
 
 
-def _fs_type(path):
-    """The filesystem type of the mount holding `path` (longest /proc/mounts prefix), or None."""
-    real = os.path.realpath(path)
-    best, kind = "", None
-    try:
-        with open("/proc/mounts") as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) < 3:
-                    continue
-                mnt = parts[1].replace("\\040", " ")
-                if (real == mnt or real.startswith(mnt.rstrip("/") + "/")) and len(mnt) >= len(best):
-                    best, kind = mnt, parts[2]
-    except OSError:
-        return None
-    return kind
+def _scratch_module():
+    """`src/utils/scratch.py` — the ONE scratch-root helper (shared with `agents.model.compile_cache`),
+    loaded BY PATH: this runs before anything guarantees `src/` is importable, and a `sys.path` edit
+    here would mask the import-precedence gates. The file is stdlib-only by contract."""
+    import importlib
+    import importlib.util
+    mod = sys.modules.get("_gen3ai_conftest_scratch")
+    if mod is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "utils", "scratch.py")
+        if os.path.exists(path):
+            spec = importlib.util.spec_from_file_location("_gen3ai_conftest_scratch", path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+        else:
+            # a COPY of this conftest in a test's temp dir (the conftest's own tests do that): the
+            # same module, reached through the import path the child session was given
+            mod = importlib.import_module("utils.scratch")
+        sys.modules["_gen3ai_conftest_scratch"] = mod
+    return mod
 
 
 def _test_scratch_root():
-    """`$GEN3AI_SCRATCH` or `~/.cache/gen3ai/tmp` (created) — the REAL disk. Refuses tmpfs/ramfs.
-    Mirrors `agents.model.compile_cache.scratch_root` (K3); inlined because this runs before anything
-    guarantees `src/` is importable."""
-    root = os.environ.get(_TMP_ENV) or os.path.join(os.path.expanduser("~"), ".cache", "gen3ai", "tmp")
-    os.makedirs(root, exist_ok=True)
-    fs = _fs_type(root)
-    if fs in ("tmpfs", "ramfs"):
-        raise pytest.UsageError(
-            f"the test temp root {root!r} is on {fs} (RAM + a fixed inode table); point "
-            f"${_TMP_ENV} at a directory on a real disk")
-    return root
+    """The REAL-disk temp root (`utils.scratch.scratch_root`); a tmpfs/ramfs root is a usage error."""
+    m = _scratch_module()
+    try:
+        return m.scratch_root()
+    except m.ScratchOnRamError as exc:
+        raise pytest.UsageError(str(exc)) from exc
 
 
 def _declare_test_tmp_root():
@@ -195,13 +193,83 @@ def _declare_test_tmp_root():
     tempfile.tempdir = root
 
 
+# --- K3: a HERMETIC compile cache per test process (gen3_hermetic_compile_cache_v1) --------------
+#
+# Every pytest process (the controller and each xdist worker) compiles into a FRESH private temp dir,
+# created here and deleted at unconfigure — never torch's shared `/tmp/torchinductor_<user>` and
+# never a dir any other run, pin or torch env wrote. Overwrites an inherited value on purpose: a
+# test run is its own run. Subprocesses a test spawns inherit it. The names mirror
+# `agents.model.compile_cache` (pinned by `compile_cache_test.py`); inlined because this runs before
+# anything guarantees `src/` is importable.
+_COMPILE_CACHE_ENV = ("GEN3AI_COMPILE_CACHE_DIR", "TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR")
+_compile_cache_session = {"root": None, "pid": None}
+
+
+def _sweep_dead_test_compile_caches():
+    """Remove this user's `gen3ai_pytest_compile_<pid>_*` / `gen3ai_compile_<pid>_*` dirs whose PID is
+    dead (a session that was SIGKILLed never reached unconfigure). Mirrors
+    `compile_cache.sweep_stale_temp_caches`."""
+    import shutil
+    base = _test_scratch_root()
+    try:
+        names = os.listdir(base)
+    except OSError:
+        return
+    for name in names:
+        for prefix in ("gen3ai_pytest_compile_", "gen3ai_compile_"):
+            if not name.startswith(prefix):
+                continue
+            head = name[len(prefix):].split("_", 1)[0]
+            if not head.isdigit():
+                continue
+            try:
+                os.kill(int(head), 0)
+                continue                                   # alive (or not ours to judge)
+            except ProcessLookupError:
+                pass
+            except PermissionError:
+                continue
+            path = os.path.join(base, name)
+            try:
+                if os.lstat(path).st_uid == os.getuid():
+                    shutil.rmtree(path, ignore_errors=True)
+            except OSError:
+                pass
+
+
+def _declare_test_compile_cache():
+    import atexit
+    import tempfile
+    _sweep_dead_test_compile_caches()
+    root = tempfile.mkdtemp(prefix=f"gen3ai_pytest_compile_{os.getpid()}_", dir=_test_scratch_root())
+    atexit.register(_remove_test_compile_cache)          # backstop if unconfigure never runs
+    os.environ[_COMPILE_CACHE_ENV[0]] = root
+    os.environ[_COMPILE_CACHE_ENV[1]] = os.path.join(root, "inductor")
+    os.environ[_COMPILE_CACHE_ENV[2]] = os.path.join(root, "triton")
+    _compile_cache_session.update(root=root, pid=os.getpid())
+
+
+def _remove_test_compile_cache():
+    root = _compile_cache_session["root"]
+    if root and _compile_cache_session["pid"] == os.getpid():
+        import shutil
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def pytest_unconfigure(config):
+    """Session teardown — runs after a FAILING session too. SIGKILL is covered by the dead-PID sweep."""
+    _remove_test_compile_cache()
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config):
     """Point every temp dir at the on-disk scratch root (above), then publish the live `slow`-set
     object on `config`, so the gate test reads it off `request.config` rather than by importing the
-    root conftest as a module (which depends on sys.path order)."""
+    root conftest as a module (which depends on sys.path order). Then declare this process's fresh
+    compile cache (K3, above) — on the same on-disk scratch root."""
     _declare_test_tmp_root()
     config._gen3ai_slow_collected = _slow_collected
+    _declare_test_compile_cache()
 
 
 def pytest_itemcollected(item):

@@ -1,0 +1,133 @@
+{
+  "schema": "k3_compile_cache_benchmark_v1",
+  "device": "cuda",
+  "rows": [
+    {
+      "part": "learner",
+      "torch": "2.8.0+cu126",
+      "gate_s": 115.21629552496597,
+      "prewarm_s": 278.75312609702814,
+      "startup_s": 393.9694216219941,
+      "process_s": 396.14460359700024,
+      "cache_bytes": 1506400281,
+      "wall_s": 407.0152879790403,
+      "round": 0,
+      "phase": "cold",
+      "contention_before": {
+        "load1": 3.68701171875,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "learner",
+      "torch": "2.8.0+cu126",
+      "gate_s": 34.52439755597152,
+      "prewarm_s": 82.76436271006241,
+      "startup_s": 117.28876026603393,
+      "process_s": 119.39466715394519,
+      "cache_bytes": 1506400307,
+      "wall_s": 123.96125500893686,
+      "round": 0,
+      "phase": "warm",
+      "contention_before": {
+        "load1": 9.517578125,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "learner",
+      "torch": "2.8.0+cu126",
+      "gate_s": 38.06278737005778,
+      "prewarm_s": 96.18259214994032,
+      "startup_s": 134.2453795199981,
+      "process_s": 136.73679579806048,
+      "cache_bytes": 1506400337,
+      "wall_s": 141.4479399790289,
+      "round": 0,
+      "phase": "warm2",
+      "contention_before": {
+        "load1": 6.05029296875,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.8.0+cu126",
+      "startup_s": 171.92238281003665,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 174.4005091659492,
+      "cache_bytes": 382180911,
+      "wall_s": 179.21563979692291,
+      "round": 0,
+      "phase": "cold",
+      "contention_before": {
+        "load1": 10.8759765625,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.8.0+cu126",
+      "startup_s": 31.865122616989538,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 33.96196450293064,
+      "cache_bytes": 382180910,
+      "wall_s": 36.56552929605823,
+      "round": 0,
+      "phase": "warm",
+      "contention_before": {
+        "load1": 9.14990234375,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    },
+    {
+      "part": "t2",
+      "torch": "2.8.0+cu126",
+      "startup_s": 32.548136361991055,
+      "counters": {
+        "compiles_after_freeze": 0,
+        "captures_after_freeze": 0,
+        "cuda_segments_after_freeze": 0,
+        "rows_served": 0,
+        "rows_padded": 0,
+        "batches": 0,
+        "loads": 0,
+        "flushes": 0
+      },
+      "process_s": 35.2900962800486,
+      "cache_bytes": 382180910,
+      "wall_s": 37.24397026095539,
+      "round": 0,
+      "phase": "warm2",
+      "contention_before": {
+        "load1": 7.3408203125,
+        "cpus": 16,
+        "gpu_apps": []
+      }
+    }
+  ],
+  "when": "2026-09-30T11:16:52-0700"
+}

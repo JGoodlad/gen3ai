@@ -118,6 +118,10 @@ def _preload() -> None:
     # diagnosis named; a single compile thread never creates it.
     torch._inductor.config.compile_threads = 1
 
+    # K3: the forkserver inherited the RUN's cache from the trainer; a preload outside a run gets a
+    # private one — never torch's shared default.
+    from agents.model.compile_cache import ensure_hermetic_cache
+    ensure_hermetic_cache("forkserver preload")
     fe, layout = build_preload_extractor(json.loads(cfg_json))
     compiled = torch.compile(fe.forward)
     with torch.no_grad():

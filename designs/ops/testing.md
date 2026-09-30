@@ -272,7 +272,7 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
 | **the M5 milestone** (the Rust env core, every M5 lane) | `python -m main.rust_core_m5 gates --tier milestone [--gpu]`, `slice-n` / `depth3 --tier milestone`, `throughput`, then `verdict` — the ONE place M5 is judged (`src/main/rust_core_m5/`, program doc §2 M5 Lane J) | gates ~7.5 m at `-n 2` (2026-09-29); `gates --from-status` reads the banked verdicts in ~1 s |
-| **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`**. The helper (`src/utils/gpu_lock.py`, Python: `with gpu_lock():`) exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`rust_core_m5 gates --gpu`, `policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); an ancestor held by a bare `flock` raises `GpuLockSelfDeadlock` at once | — |
+| **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`**. The helper (`src/utils/gpu_lock.py`, Python: `with gpu_lock():`) exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`rust_core_m5 gates --gpu`, `policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); an ancestor held by a bare `flock` raises `GpuLockSelfDeadlock` at once. **A wall timeout goes INSIDE the lock** — `scripts/ops/gpu_lock.sh timeout 3000 <cmd>`, never `timeout 3000 scripts/ops/gpu_lock.sh <cmd>`, which counts lock-WAIT time and killed a queued job that never ran (2026-09-30); every acquisition prints `[gpu_lock] acquired … at <time> after <N> s waiting` | — |
 
 ```bash
 # THE ROUTINE GATE — everything cheap, whatever it needs. Add -n 2 (~1.8x, two cores).
@@ -456,6 +456,25 @@ file plant each condition — a red, an inconclusive, an unrecorded, a stale row
 a merge that must not truncate, a setup-only pass that must not bank green, a skip that must not
 replace a banked verdict — so the gate's
 behaviour is pinned rather than described. Contract: `src/utils/slow_tier_status.py`.
+
+### A FRESH compile cache per test process (root `conftest.py`; K3, `gen3_hermetic_compile_cache_v1`)
+
+Every pytest process — the controller and each xdist worker — compiles into its OWN fresh dir
+(`gen3ai_pytest_compile_<pid>_*`: `TORCHINDUCTOR_CACHE_DIR`, `TRITON_CACHE_DIR`,
+`GEN3AI_COMPILE_CACHE_DIR`) on the REAL DISK — `$GEN3AI_SCRATCH`, else `~/.cache/gen3ai/tmp`, never tmpfs
+`/tmp`, resolved by the ONE helper `src/utils/scratch.py` that the pytest temp root uses too —
+declared in `pytest_configure` and deleted at `pytest_unconfigure`; subprocesses a test spawns inherit
+it. An inherited value is OVERWRITTEN on purpose: no test reads an artifact another run, pin or torch
+env wrote (the 2026-09-29 K1b fault was a donated-buffer backward served from the box-wide cache).
+Benchmarks and every other process that compiles without a declared cache get a fresh PRIVATE one,
+deleted by its creator at exit (`agents.model.compile_cache.ensure_hermetic_cache`); to measure a WARM
+start, export the variables yourself. Every such dir carries its creator's PID and is SWEPT by the next
+declaration once that PID is dead (a SIGKILLed session leaks only until then — `/tmp` is tmpfs, and
+on 2026-09-30 it ran out of INODES). Consequence: a session's first compile of each graph is COLD, so
+the production extractor's CPU codegen tests are `slow`, and a compile-path change runs the compile
+files' `slow` tier under both torches before shipping (`designs/training/compile_flags.md`).
+`compile_cache_test.py` pins all of it; the full rule is `designs/training/compile_flags.md`
+"The HERMETIC per-run compile cache".
 
 ### The TORCH GLOBAL-STATE guard (root `conftest.py` + `src/utils/torch_state_guard.py`)
 

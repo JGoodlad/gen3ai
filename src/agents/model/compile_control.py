@@ -351,6 +351,18 @@ def apply_compile_config(version: Optional[str] = None) -> Dict[str, Any]:
     return prev
 
 
+def config_row_hash(version: Optional[str] = None) -> str:
+    """SHA256 of this torch version's `_COMPILE_CONFIG` row (canonical JSON), or of `null` for a
+    torch with no row (which `install()` refuses anyway). One of the three fields of the hermetic
+    compile cache's stamp (`agents.model.compile_cache`, K3): a change to what this adapter pins
+    changes what Inductor compiles, and the K1b fault proved the cache KEY can omit such a setting
+    — so a changed row WIPES a run's cache instead of trusting the key."""
+    import hashlib
+    import json as _json
+    row = _COMPILE_CONFIG.get(str(version or torch.__version__))
+    return hashlib.sha256(_json.dumps(row, sort_keys=True, default=repr).encode()).hexdigest()
+
+
 def restore_compile_config(prev: Dict[str, Any]) -> None:
     import importlib
     for path, val in prev.items():

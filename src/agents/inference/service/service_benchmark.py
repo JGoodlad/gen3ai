@@ -9,7 +9,9 @@ measurement: it WARNS on a busy box (another GPU process, a high load average) a
     python3 src/agents/inference/service/service_benchmark.py --backend graph --buckets 8,48,128 \\
         --slots 2 [--ckpt models/<run>/final_model.zip]
 
-Fresh Inductor/Triton cache dirs are created per run unless the caller exported its own.
+Compile cache (K3): a FRESH private Inductor/Triton cache per run, deleted at exit, unless a caller
+declared one (`agents.model.compile_cache.ensure_hermetic_cache`) — pass a shared dir by exporting
+`GEN3AI_COMPILE_CACHE_DIR` + `TORCHINDUCTOR_CACHE_DIR` to measure a WARM start.
 """
 from __future__ import annotations
 
@@ -17,7 +19,6 @@ import argparse
 import json
 import os
 import subprocess
-import tempfile
 import time
 from typing import Any, Dict, List
 
@@ -61,8 +62,8 @@ def main(argv: "list[str] | None" = None) -> int:
     ap.add_argument("--json", default=None, help="also write the result here")
     args = ap.parse_args(argv)
 
-    for var in ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR"):
-        os.environ.setdefault(var, tempfile.mkdtemp(prefix=f"t2bench_{var.lower()}_"))
+    from agents.model.compile_cache import ensure_hermetic_cache
+    ensure_hermetic_cache("service_benchmark")              # K3: fresh, private, deleted at exit
     import numpy as np
     import torch
 

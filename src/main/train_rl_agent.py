@@ -105,7 +105,7 @@ from main.train.run_io import (   # noqa: F401 — re-export hub
     _resolve_fresh_model_dir, _run_arch_toggles, _write_latest_txt,
 )
 from main.train.lifecycle import (   # noqa: F401 — re-export hub
-    _apply_grad_checkpointing, _maybe_compile_trainer, _run_roundtrip_test,
+    _apply_grad_checkpointing, _declare_compile_cache, _maybe_compile_trainer, _run_roundtrip_test,
     _setup_signal_handlers,
 )
 from main.train.config import resolve_config
@@ -190,6 +190,8 @@ async def main():
     enforce_inherited_fork_lr(args, model_dir)
 
     os.makedirs(model_dir, exist_ok=True)
+    # K3: the run's OWN compile cache, declared before anything compiles or spawns (lifecycle.py).
+    _declare_compile_cache(args, model_dir)
     # Full CLI namespace (JSON-safe) → persisted into metadata.json for run provenance.
     cli_args = json.loads(json.dumps(vars(args), default=str))
     # Matchup provenance (designs/ai_v8/design_matchup_config.md): the DECLARED matchup + its hash

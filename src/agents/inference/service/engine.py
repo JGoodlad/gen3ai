@@ -111,6 +111,8 @@ class Engine:
             torch.cuda.synchronize(self.device)
 
     def _build_graphs(self) -> None:
+        from agents.model.compile_cache import ensure_hermetic_cache
+        ensure_hermetic_cache("T2 graph")         # K3: the run's cache, or a private one — never shared
         compiled = torch.compile(decide, dynamic=False)
         pools = [torch.cuda.graph_pool_handle() for _ in range(self.n_lanes)]
         limit = max(int(torch._dynamo.config.cache_size_limit),

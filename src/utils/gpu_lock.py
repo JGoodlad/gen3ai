@@ -11,6 +11,11 @@ USAGE
     python -m utils.gpu_lock -- <cmd> [args...]          # the same, without the wrapper
     python -m utils.gpu_lock --status                     # who holds it now
 
+    # a WALL TIMEOUT goes INSIDE the lock, never around it — outside, it counts LOCK-WAIT time and
+    # kills a job that never ran (2026-09-30: a 3000 s timeout expired while the job queued):
+    scripts/ops/gpu_lock.sh timeout 3000 <cmd>            # right
+    timeout 3000 scripts/ops/gpu_lock.sh <cmd>            # WRONG
+
 WHY. On 2026-09-30 an agent wrapped ``python -m main.rust_core_m5 gates … --gpu`` in
 ``flock ~/.claude/jobs/gpu.lock``. ``gates.py`` takes that same lock itself around its GPU pytest, and a
 ``flock`` on a NEW open of the file is a different lock owner, so the inner flock waited 15 min at 0%
@@ -155,8 +160,9 @@ def _acquire(fd: int, path: Path, *, report_every_s: float, poll_s: float, timeo
         if got.wait(timeout=max(0.0, deadline - time.monotonic())):
             if box["err"] is not None:
                 raise box["err"]
-            if time.monotonic() - t0 > report_every_s:
-                log(f"[gpu_lock] acquired {path}{what} after {time.monotonic() - t0:.0f} s")
+            # ALWAYS stamped (wall clock + wait), so a log separates LOCK-WAIT time from RUN time.
+            log(f"[gpu_lock] acquired {path}{what} at {time.strftime('%Y-%m-%dT%H:%M:%S%z')} "
+                f"after {time.monotonic() - t0:.0f} s waiting")
             return
         now = time.monotonic()
         if now >= next_check:

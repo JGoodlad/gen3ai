@@ -602,18 +602,34 @@ def test_the_warmup_obs_uses_the_LIVE_call_signature(monkeypatch):
 
 def test_cache_dir_is_not_an_import_side_effect():
     """`compile_opponents.py` is imported (via `snapshot.py`'s re-export) by the prober, eval
-    workers and offline tooling that never compile. The cache dir is set when a compile actually
-    happens, not at import."""
+    workers and offline tooling that never compile. The cache dir is resolved when a compile actually
+    happens, not at import — and (K3, gen3_hermetic_compile_cache_v1) a process no run declared a
+    cache for gets a FRESH PRIVATE one, never the retired shared `/tmp/gen3ai_inductor_cache` nor
+    torch's shared `/tmp/torchinductor_<user>`."""
     import os
-    monkey = os.environ.pop("TORCHINDUCTOR_CACHE_DIR", None)
+    from agents.model import compile_cache as CC
+    keys = (CC.ENV_ROOT, CC.ENV_INDUCTOR, CC.ENV_TRITON)
+    saved = {k: os.environ.pop(k, None) for k in keys}
+    saved_private = dict(CC._PRIVATE)
     try:
         import importlib
         importlib.reload(S)
-        assert "TORCHINDUCTOR_CACHE_DIR" not in os.environ, (
-            "importing compile_opponents.py must not mutate the environment"
-        )
-        assert S._inductor_cache_dir() == S.DEFAULT_INDUCTOR_CACHE_DIR
-        assert os.environ["TORCHINDUCTOR_CACHE_DIR"] == S.DEFAULT_INDUCTOR_CACHE_DIR
+        assert all(k not in os.environ for k in keys), (
+            "importing compile_opponents.py must not mutate the environment")
+        got = S._inductor_cache_dir()
+        assert got == os.environ["TORCHINDUCTOR_CACHE_DIR"]
+        assert not CC._is_shared(got), f"an undeclared process compiled into a SHARED cache: {got}"
+        assert "/tmp/gen3ai_inductor_cache" not in got and "torchinductor_" not in got
+        assert os.path.basename(os.environ[CC.ENV_ROOT]).startswith("gen3ai_compile_")
+        private = os.environ[CC.ENV_ROOT]
+        assert S._inductor_cache_dir() == got, "a second call must not re-declare"
     finally:
-        if monkey is not None:
-            os.environ["TORCHINDUCTOR_CACHE_DIR"] = monkey
+        CC._cleanup_private()                      # this test's private dir, not the session's
+        CC._PRIVATE.clear()
+        CC._PRIVATE.update(saved_private)
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    assert not os.path.exists(private), "the private cache must be deleted by its creator"

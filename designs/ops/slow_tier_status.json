@@ -90,43 +90,43 @@
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
-   "status": "pass",
-   "commit": "6dde3b68a877c281ee6bd6296a07fbe9f09c3cdc",
-   "at": "2026-09-30T00:33:40Z",
-   "duration_s": 93.94,
-   "contention": 1.0,
-   "detail": ""
+   "status": "fail",
+   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
+   "at": "2026-09-30T19:46:42Z",
+   "duration_s": 198.17,
+   "contention": 1.29,
+   "detail": "A test (or a fixture, or an import) that changes process-global torch/numeric state must RESTORE it \u2014 `try/finally`, `utils.torch_state_guard.torch_globals(num_threads=..., float32_matmul_precision=...)`, `torch._dynamo.config.patch(...)`, or a yield fixture that restores at its own scope's end. The"
   },
   "src/agents/inference/service/service_cuda_test.py::test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons": {
    "status": "pass",
-   "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
-   "at": "2026-09-30T06:23:23Z",
-   "duration_s": 0.98,
-   "contention": 1.0,
+   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
+   "at": "2026-09-30T19:43:24Z",
+   "duration_s": 2.03,
+   "contention": 1.48,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_graph_backend_parity_weight_swap_and_a_frozen_steady_state": {
    "status": "pass",
-   "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
-   "at": "2026-09-30T06:23:23Z",
-   "duration_s": 145.21,
-   "contention": 1.0,
+   "commit": "f71897089172edfa42120e2521ec71fe89001467",
+   "at": "2026-09-30T23:31:41Z",
+   "duration_s": 172.5,
+   "contention": 2.44,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_the_double_buffer_wait_stops_a_repack_before_the_queued_copy_reads_it": {
    "status": "pass",
-   "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
-   "at": "2026-09-30T06:23:23Z",
-   "duration_s": 40.77,
-   "contention": 1.0,
+   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
+   "at": "2026-09-30T19:43:22Z",
+   "duration_s": 82.94,
+   "contention": 1.48,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_two_lanes_replaying_concurrently_serve_their_own_slots": {
    "status": "pass",
-   "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
-   "at": "2026-09-30T06:23:23Z",
-   "duration_s": 44.48,
-   "contention": 1.0,
+   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
+   "at": "2026-09-30T19:41:59Z",
+   "duration_s": 90.54,
+   "contention": 1.38,
    "detail": ""
   },
   "src/agents/model/build_arch_viewer_render_integration_test.py::test_dark_is_the_default_with_no_hash": {
@@ -195,42 +195,58 @@
   },
   "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[high]": {
    "status": "skip",
-   "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
-   "at": "2026-09-30T09:55:35Z",
+   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
+   "at": "2026-09-30T18:58:37Z",
    "duration_s": 0.0,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[highest]": {
    "status": "skip",
-   "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
-   "at": "2026-09-30T09:55:35Z",
+   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
+   "at": "2026-09-30T18:58:37Z",
    "duration_s": 0.0,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_prewarm_test.py::test_preload_compiles_single_threaded_end_to_end": {
    "status": "pass",
-   "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
-   "at": "2026-09-30T09:55:35Z",
-   "duration_s": 4.11,
+   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
+   "at": "2026-09-30T18:58:37Z",
+   "duration_s": 14.36,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_cpu_backward_still_does_not_compile": {
    "status": "pass",
-   "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
-   "at": "2026-09-30T09:55:35Z",
-   "duration_s": 32.06,
-   "contention": 1.0,
+   "commit": "f71897089172edfa42120e2521ec71fe89001467",
+   "at": "2026-09-30T23:02:52Z",
+   "duration_s": 119.97,
+   "contention": 1.79,
+   "detail": ""
+  },
+  "src/agents/model/extractor_compiles_test.py::test_h_tier_arch_compiles_without_suppression": {
+   "status": "pass",
+   "commit": "f71897089172edfa42120e2521ec71fe89001467",
+   "at": "2026-09-30T23:02:52Z",
+   "duration_s": 116.0,
+   "contention": 1.79,
+   "detail": ""
+  },
+  "src/agents/model/extractor_compiles_test.py::test_intent_threshold_arch_compiled_output_matches_eager": {
+   "status": "pass",
+   "commit": "f71897089172edfa42120e2521ec71fe89001467",
+   "at": "2026-09-30T23:02:52Z",
+   "duration_s": 25.82,
+   "contention": 1.77,
    "detail": ""
   },
   "src/agents/model/extractor_compiles_test.py::test_production_arch_compiles_without_suppression": {
    "status": "pass",
-   "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
-   "at": "2026-09-30T09:55:35Z",
-   "duration_s": 15.81,
-   "contention": 1.0,
+   "commit": "f71897089172edfa42120e2521ec71fe89001467",
+   "at": "2026-09-30T23:02:52Z",
+   "duration_s": 118.77,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cpu": {
@@ -1091,5 +1107,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T19:18:15Z"
+ "last_written": "2026-09-30T23:31:41Z"
 }
