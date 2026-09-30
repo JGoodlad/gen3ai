@@ -21,6 +21,9 @@ from main.policy_spectrum.bank_test import BANK_V1
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
 
+#: The reader-vs-recording probability bar (float reassociation between the recording and the read).
+DP_BAR = 1e-4
+
 
 def _subset(bank, per_source: int):
     seen = {}
@@ -109,7 +112,10 @@ def test_reader_reproduces_the_recording_policy_and_is_deterministic(tmp_path,
     r2 = read_checkpoint(sub, rows, masks, gate, snap, "b", tmp_path, threads=2, models_root=md)
     agree = r1["recording_agreement"]
     assert agree["decisions"] == len(sub.decisions)
-    assert agree["max_abs_dp"] < 1e-4 and agree["argmax_agree"] == 1.0
+    assert agree["max_abs_dp"] < DP_BAR
+    # A flipped argmax is legal only at a DECLARED near-tie — Lane E's rule (`judge_flips`): a flip whose
+    # larger top-1 / top-2 margin is < 2 x the bar is a tie; any other flip is a real disagreement.
+    assert agree["argmax_agree"] == 1.0 or agree["argmax_flip_max_margin"] < 2 * DP_BAR, agree
     pa, pb = load_probs(tmp_path, "a", sub), load_probs(tmp_path, "b", sub)
     assert hashlib.sha256(pa.tobytes()).digest() == hashlib.sha256(pb.tobytes()).digest()
     strip = lambda r: {k: v for k, v in r.items() if k != "label"}   # noqa: E731

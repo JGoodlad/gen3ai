@@ -152,8 +152,18 @@ def recording_agreement(bank: Bank, probs: np.ndarray, zip_path: Path,
         return None
     rec = S.masked_probs(np.array([bank.decisions[i]["rec_logits"] for i in idx]),
                          np.array([[c == "1" for c in bank.decisions[i]["mask"]] for i in idx]))
-    return {"decisions": len(idx), "max_abs_dp": float(np.abs(rec - probs[idx]).max()),
-            "argmax_agree": float((rec.argmax(1) == probs[idx].argmax(1)).mean())}
+    read = probs[idx]
+    flips = rec.argmax(1) != read.argmax(1)
+
+    def _margin(p: np.ndarray) -> np.ndarray:        # top-1 minus top-2 probability, per row
+        top2 = np.sort(p, axis=1)[:, -2:]
+        return top2[:, 1] - top2[:, 0]
+
+    # A flipped argmax is judged by Lane E's tie rule: its LARGER margin (recorded or read) against a
+    # bar — so the caller can tell a near-tie flip from a real disagreement. None when nothing flipped.
+    flip_margin = (float(np.maximum(_margin(rec), _margin(read))[flips].max()) if flips.any() else None)
+    return {"decisions": len(idx), "max_abs_dp": float(np.abs(rec - read).max()),
+            "argmax_agree": float((~flips).mean()), "argmax_flip_max_margin": flip_margin}
 
 
 def read_checkpoint(bank: Bank, rows: np.ndarray, masks: np.ndarray, gate: dict, zip_path: Path,
