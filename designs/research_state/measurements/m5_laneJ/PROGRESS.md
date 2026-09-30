@@ -47,8 +47,8 @@ and for a NOT BUILT lane the gate it will have. Tier = MARKERS, as the repo's ti
 - a lane of the doc's lane table has no row at all (J itself excepted: it is the harness);
 - a declared file does not exist, or a declared `file::test` names no function in it (a renamed
   test cannot silently collect nothing);
-- a row claims BUILT where the doc does not, without a `doc_note` saying why (today: 0, C, T2 — see
-  F-LJ-3).
+- a row claims BUILT where the doc does not, without a `doc_note` saying why (today: none — 0, C
+  and T2 were, until the doc was flipped; F-LJ-3).
 
 The fold (`gates.fold`): NOT BUILT never runs and never passes; any fail ⇒ FAIL; a timeout
 (`slow_tier_status.classify`'s markers) ⇒ INCONCLUSIVE; nothing passed (skip-only or empty) ⇒
@@ -197,6 +197,8 @@ Every core `*_AFTER_FREEZE` and T2 `*_after_freeze` counter 0 in both reads; 0 q
 - **F-LJ-3 (this program doc's BUILT markers):** Lane 0's and Lane C's paragraphs say BUILDING and
   T2's lane-table row carries no BUILT marker, while all three have every gate built, routine and
   green. The registry records each as BUILT with a `doc_note`; their owners should flip them.
+  **CLOSED 2026-09-30:** the program doc now marks all three BUILT with their landing commits, and
+  the three `doc_note`s are removed (the registry and the doc agree; `lanes_test.py` green).
 - **F-LJ-4 (F-LI-1 stays open):** the one thing the depth-3 PASS does not cover — 25 batches both
   roads refuse at the milestone. The verdict prints the count every time.
 - **F-LJ-5 (slow-tier bank, FIXED in J's path):** a milestone run without

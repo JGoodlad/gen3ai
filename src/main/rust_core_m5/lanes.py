@@ -48,9 +48,7 @@ LANES: Tuple[LaneGate, ...] = (
         "slow); ② seed → bytes, thread-count-invariant; ③ the generated column schema; ④ quarantine + bank; ⑤ the stamp",
         built=True,
         tests=("src/utils/rust_env/core_cargo_test.py", "src/utils/rust_env/columns_test.py",
-               "src/utils/rust_env/protocol_test.py", "src/utils/rust_env/stamp_test.py"),
-        doc_note="the doc's Lane 0 paragraph still says BUILDING; all five gates are BUILT and routine "
-                 "(its PROGRESS: only a quiet-box benchmark and the front ends' API review remain)"),
+               "src/utils/rust_env/protocol_test.py", "src/utils/rust_env/stamp_test.py")),
     LaneGate(
         "A", "the FFI front end — the core loaded in-process through a generated C ABI",
         "the Lane-0 corpus replayed through ctypes byte-equal to the in-Rust run; a panic is a typed error, not a crash",
@@ -64,9 +62,7 @@ LANES: Tuple[LaneGate, ...] = (
         "label columns == Gen3Env's production keys per decision, byte for byte (commit routine, milestone slow)",
         built=True,
         tests=("src/utils/rust_env/label_columns_test.py", "src/agents/training/rust_env_label_inventory_test.py",
-               "src/agents/training/rust_env_labels_parity_test.py"),
-        doc_note="the doc's Lane C paragraph says BUILDING; every core label family is BUILT (unit 7: "
-                 "\"every core label key is now BUILT\") — left: a policy-driven stream and a release cost read"),
+               "src/agents/training/rust_env_labels_parity_test.py")),
     LaneGate(
         "D", "episodes and reward — terminal reward, terminated / truncated, the stall forfeit, ties",
         "reward / terminated / truncated == Gen3Env on the same battles, through both front ends",
@@ -96,9 +92,7 @@ LANES: Tuple[LaneGate, ...] = (
         "greedy actions equal + legal log-prob / V bars against eager, per slot × bucket (CPU routine; CUDA slow)",
         built=True,
         tests=("src/agents/inference/service/service_test.py", "src/agents/inference/service/service_cuda_test.py"),
-        gpu_tests=("src/agents/inference/service/service_cuda_test.py",),
-        doc_note="the doc's lane-table row has no BUILT marker; the T2 DESIGN paragraph and its PROGRESS record "
-                 "units 1–4b LANDED and Lane E consumes it (units 5–6 are Lane E's adapter and K3's cache)"),
+        gpu_tests=("src/agents/inference/service/service_cuda_test.py",)),
     LaneGate(
         "G", "training integration — the Rust env as the trainer's vec env, behind --env-core",
         "", built=False,
