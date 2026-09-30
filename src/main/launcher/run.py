@@ -92,6 +92,12 @@ def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
     a known FATAL signature in the captured output (defensive — catches a FATAL that came
     out as a generic exit 1)."""
     lines = list(log_lines or [])
+    if rc == int(TrainExitCode.FATAL_NONFINITE):
+        # K9's fail-closed learner guard (`NonFiniteLearnerError`): the restart would resume the
+        # checkpoint that produced the NaN / Inf and replay the same update — STOP, never loop.
+        found = [s for s in (l.strip() for l in lines) if "NonFiniteLearnerError" in s][-3:]
+        return (["non-finite learner (NaN / Inf loss or gradient) — a restart would replay it; "
+                 "see the crash log"] + found)
     for i, line in enumerate(lines):
         if any(sig in line for sig in _FATAL_CONFIG_SIGNATURES):
             # The FATAL line + a couple of following explanatory lines (the
@@ -584,7 +590,9 @@ def _supervise(
                 f" — saved {os.path.join('crashes', os.path.basename(err_path))}" if err_path
                 else ""
             )
-            state.add_event(f"🛑 Fatal config error — will NOT restart{saved}")
+            kind = ("Non-finite learner" if rc == int(TrainExitCode.FATAL_NONFINITE)
+                    else "Fatal config error")
+            state.add_event(f"🛑 {kind} — will NOT restart{saved}")
             for line in fatal_reason:
                 state.add_event(f"   {line}")
             _tick()

@@ -76,6 +76,7 @@ from agents.training.pool_seed import prepare_pool
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.async_vec_env import AsyncSubprocVecEnv
+from main.exit_codes import exit_code_for
 from main.launcher.ipc import emit
 
 # ── THE PHASES ────────────────────────────────────────────────────────────────────────────────
@@ -135,14 +136,16 @@ async def main():
         print("🛑 FATAL ERROR DETECTED - FAILING FAST")
         print("🛑" * 20)
         traceback.print_exception(exctype, value, tb)
-        os._exit(1) # Force immediate termination of all threads
+        # CRASH (1) — the launcher restarts — unless the error is one a restart would REPLAY
+        # (`exit_codes.exit_code_for`: a non-finite learner → FATAL_NONFINITE; the launcher stops).
+        os._exit(exit_code_for(value)) # Force immediate termination of all threads
 
     sys.excepthook = global_exception_handler
     
     def asyncio_exception_handler(loop, context):
         msg = context.get("exception", context["message"])
         print(f"\n🛑 Asyncio Error: {msg}")
-        os._exit(1)
+        os._exit(exit_code_for(context.get("exception")))
         
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(asyncio_exception_handler)
