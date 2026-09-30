@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,462-line file. **The ledger itself is append-only and is never edited by this**;
+21,466-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**721 headings · 666 dated · 2026-08-01 → 2026-09-29 · ledger 21,462 lines.**
+**722 headings · 667 dated · 2026-08-01 → 2026-09-29 · ledger 21,466 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -741,3 +741,4 @@ rename.
   - `L21451` · `2026-09-29` · RESULT · **LEARNER BATTERY VERDICT (registered rule, `battery_rule.py`): E5 ADOPT — 5 PPO epochs at 2× the lr (same dose) saves S = +13.59 % [+13.38, +13.71] of GPU time per step (+15.7 % steps per GPU-hour) with untaught Δ vs C +0.75 pp [−1.21, +2.65] (EQUIVALENT, non-inferior at −3.69), SmallRL −1.33 [−5.18, +2.52], stall ratio 1.10. L95 NOT ADOPTED and a FINDING — policy GAE λ 0.95 reads −10.10 [−12.77, −7.65], OUTSIDE BELOW, 0/8 teams up: λ 0.80 is better. T32 NOT RUN (compile-gate crash); T32b STOPPED by futility, S = +2.48 % [+2.24, +2.91] vs C_fix over 12 rollouts (< 2.5 %). C, E5 and L95 all trained on the MISCOMPILED CUDA learner: comparable arm-vs-arm, transfer to the fixed learner UNVERIFIED.**
   - `L21455` · `2026-09-29` · MEASUREMENT · **THE MISCOMPILE'S FIRST MEASURED COST ON LEARNING: C_fix − C (the same +8.06M fork of N0, the same argv, only the compile fix) = untaught +3.06 pp [+1.00, +5.15] (6/8 teams up) and SmallRL +4.75 pp [+0.97, +8.51] (0.688 vs 0.640). Both CIs exclude zero, and both points sit inside their replicate floors (3.69 / 11.0), so by the ruled vocabulary this is WITHIN FLOOR: a small, consistent cost of ≈ 3–5 pp over one 8M block, not an established effect size.**
   - `L21459` · `2026-09-29` · RESULT · **G0′ IS K2 — THE NEW LINEAGE PLATEAUS AT BLOCK 2 (on the fixed learner). Block 1 N0 → C_fix +14.88 pp [+10.69, +18.88] (OUTSIDE ABOVE, 8/8 teams) does not pass; block 2 C_fix → K2 +0.87 [−1.75, +3.56] (200/team; +0.73 [−0.44, +1.81] at 600) passes. So G0′ = `ai_v14_07_g0p_k2` final @91,127,808. K3, run before the verdict, confirms: K2 → K3 −0.31 [−3.38, +2.94] (+0.21 at 600). DEVIATION recorded: the registered block 1 was C (buggy learner), replaced by C_fix. The buggy block 1 also fails (+11.12), so the passing block index is unchanged.**
+  - `L21463` · `2026-09-29` · DECISION · **NO GPU TRAINING UNTIL M5 HAS FULLY LANDED (owner): the GPU is reserved for M5 / dev agents; the population loop's ROUND 0 is DEFERRED.**
