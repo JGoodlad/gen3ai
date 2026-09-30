@@ -27,6 +27,16 @@ holds that line for the shell layer (`bash -n`, `--help`, bare-invocation refusa
 | [`restart_read.sh`](restart_read.sh) | **The registered first-restart read.** The vf_coef statistic and its verdict **from the TB EVENTS** (`main.ops.tb_read`, verdict bar imported from `vf_framings`), with the child log's table demoted to a labelled CROSS-CHECK that prints both medians and their difference and warns above 0.10 log10 without ever deciding; then `main.sidecar_audit` (the pin must be unchanged across the restart), the restart evidence, `killbar` · `vf_framings` · `restart_startup`. |
 | [`_common.sh`](_common.sh) | Sourced, not executed. Repo root, MAIN checkout, `models/` (mirroring `utils.paths.main_models_dir()`, `$GEN3AI_MODELS_DIR` authoritative), run resolution and the interpreter. |
 
+## The agent-waiter layer — stdlib-only, reads `/proc`
+
+Not a training-run instrument: these guard the BACKGROUND WAITS agents leave running, which failed
+silently for hours on 2026-09-29/30 (seven self-matching `pgrep -f` loops; a `flock gpu.lock` around a
+command that takes the same lock itself). The /proc arithmetic they share is `src/utils/procfs.py`.
+
+| script | what it detects / does |
+|---|---|
+| [`idle_waiter_watchdog.py`](idle_waiter_watchdog.py) | **The 15-min mechanical layer under the hourly agent health check** (`designs/ops/ORCHESTRATOR_SOP.md` §7). Cron form: `python3 <main checkout>/scripts/ops/idle_waiter_watchdog.py` — prints NOTHING and exits 0 when all is well, one line per flag and exit 1 otherwise (2 = its own error, printed). Flags (1) a **SELF-DEADLOCK** — a process blocked on a lock (`/proc/locks`) whose holder is its OWN ancestor — on the FIRST run; (2) an **IDLE-WAITER** — under a Claude session, older than 10 min, a shell with a `sleep` child / a `flock` / a lock-blocked process, whose whole subtree's CPU advanced < 1% of a core since the last run AND whose wait targets (pids and `pgrep`/`ps\|grep` patterns on its command line, the holder of the lock it waits on, files it names) are not progressing either — progress is followed transitively. A pattern that now matches only the waiter's own tree is reported as the self-match class. State: `~/.claude/jobs/idle_waiter_watchdog.json`, keyed `pid:starttime`. Never kills. ~0.02 s per run over ~400 processes (plus interpreter start). Tests: `src/main/ops/idle_waiter_watchdog_test.py` (real process trees under a fake `claude`). |
+
 ## The Python layer — `src/main/ops/`
 
 | module | what it measures |
