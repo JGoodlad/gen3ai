@@ -1,0 +1,1366 @@
+[
+ {
+  "run": "ai_v13_05_exploit_big5starmie",
+  "kind": "exploiter",
+  "target": "models/ai_v13_02_flywheel_winprob/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_06_exploit_ddtar_spikes",
+  "kind": "exploiter",
+  "target": "models/ai_v13_02_flywheel_winprob/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_07_fold1",
+  "kind": "stable",
+  "target": "models/ai_v13_05_exploit_big5starmie",
+  "n_teams": 1,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_07_fold1",
+  "kind": "stable",
+  "target": "models/ai_v13_06_exploit_ddtar_spikes",
+  "n_teams": 1,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_08_fold1_cont",
+  "kind": "stable",
+  "target": "models/ai_v13_05_exploit_big5starmie",
+  "n_teams": 1,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_08_fold1_cont",
+  "kind": "stable",
+  "target": "models/ai_v13_06_exploit_ddtar_spikes",
+  "n_teams": 1,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_10_exploit_stall",
+  "kind": "exploiter",
+  "target": "models/ai_v13_02_flywheel_winprob/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_11_split_lossoff",
+  "kind": "stable",
+  "target": "models/ai_v13_05_exploit_big5starmie",
+  "n_teams": 1,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_11_split_lossoff",
+  "kind": "stable",
+  "target": "models/ai_v13_06_exploit_ddtar_spikes",
+  "n_teams": 1,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_13_exploit5_offense",
+  "kind": "exploiter",
+  "target": "models/ai_v13_12_plateau/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_14_exploit5_balance",
+  "kind": "exploiter",
+  "target": "models/ai_v13_12_plateau/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_15_exploit5_stall",
+  "kind": "exploiter",
+  "target": "models/ai_v13_12_plateau/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_17_fold_k1",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_18_fold_k3",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_18_teach5_offense_hidose",
+  "kind": "exploiter",
+  "target": "models/ai_v13_12_plateau/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_19_fold_k11",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_20_fold_k11_sharematched",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_22_popr1_loop",
+  "kind": "stable",
+  "target": "models/ai_v13_18_teach5_offense_hidose/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_22_popr1_loop",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_23_popr1_ctrl",
+  "kind": "stable",
+  "target": "models/ai_v13_18_teach5_offense_hidose/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_23_popr1_ctrl",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_24_popr1_read_loop",
+  "kind": "exploiter",
+  "target": "models/ai_v13_22_popr1_loop/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_25_popr1_read_ctrl",
+  "kind": "exploiter",
+  "target": "models/ai_v13_23_popr1_ctrl/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_26_popr0_exploit5_offense_s1002",
+  "kind": "exploiter",
+  "target": "models/ai_v13_12_plateau/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_27_popr2_loop",
+  "kind": "stable",
+  "target": "models/ai_v13_18_teach5_offense_hidose/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_27_popr2_loop",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_27_popr2_loop",
+  "kind": "stable",
+  "target": "models/ai_v13_24_popr1_read_loop/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_28_popr2_ctrl",
+  "kind": "stable",
+  "target": "models/ai_v13_18_teach5_offense_hidose/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_28_popr2_ctrl",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_28_popr2_ctrl",
+  "kind": "stable",
+  "target": "models/ai_v13_24_popr1_read_loop/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_29_popr2_read_loop",
+  "kind": "exploiter",
+  "target": "models/ai_v13_27_popr2_loop/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_30_popr2_read_ctrl",
+  "kind": "exploiter",
+  "target": "models/ai_v13_28_popr2_ctrl/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_31_popr1_read_loop_ext",
+  "kind": "exploiter",
+  "target": "models/ai_v13_22_popr1_loop/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_32_popr1_read_ctrl_ext",
+  "kind": "exploiter",
+  "target": "models/ai_v13_23_popr1_ctrl/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "6eb9c776"
+  ]
+ },
+ {
+  "run": "ai_v13_33_core_burnin",
+  "kind": "stable",
+  "target": "models/ai_v13_18_teach5_offense_hidose/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "ac0b6469"
+  ]
+ },
+ {
+  "run": "ai_v13_33_core_burnin",
+  "kind": "stable",
+  "target": "models/ai_v13_13_exploit5_offense/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "ac0b6469"
+  ]
+ },
+ {
+  "run": "ai_v13_33_core_burnin",
+  "kind": "stable",
+  "target": "models/ai_v13_24_popr1_read_loop/final_model.zip",
+  "n_teams": 5,
+  "pins": [
+   "ac0b6469"
+  ]
+ },
+ {
+  "run": "ai_v14_09_r0_offense_a",
+  "kind": "exploiter",
+  "target": "models/ai_v14_07_g0p_k2/final_model.zip",
+  "n_teams": 0,
+  "pins": [
+   "13cc85ec"
+  ]
+ },
+ {
+  "run": "ai_v5_10_tail1_23_0611",
+  "kind": "stable",
+  "target": "models/ai_v5_8_split_inc_dmg_38m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_10_tail1_23_0611",
+  "kind": "stable",
+  "target": "models/ai_v5_9_attend_unrevealed_56m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_11_tail2_53m_0611",
+  "kind": "stable",
+  "target": "models/ai_v5_8_split_inc_dmg_38m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_11_tail2_53m_0611",
+  "kind": "stable",
+  "target": "models/ai_v5_9_attend_unrevealed_56m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_12_bias_05_N_0612",
+  "kind": "stable",
+  "target": "models/ai_v5_8_split_inc_dmg_38m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_12_bias_05_N_0612",
+  "kind": "stable",
+  "target": "models/ai_v5_9_attend_unrevealed_56m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_13_shape_pbrs_43m_0612",
+  "kind": "stable",
+  "target": "models/ai_v5_8_split_inc_dmg_38m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_13_shape_pbrs_43m_0612",
+  "kind": "stable",
+  "target": "models/ai_v5_9_attend_unrevealed_56m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_6_stable_70m_0608",
+  "kind": "stable",
+  "target": "models/ai_v5_5_popart_50m_0607",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_7_switch_bias_41m_0609",
+  "kind": "stable",
+  "target": "models/ai_v5_5_popart_50m_0607",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_7_switch_bias_41m_0609",
+  "kind": "stable",
+  "target": "models/ai_v5_6_stable_70m_0608",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v5_9_attend_unrevealed_56m_0610",
+  "kind": "stable",
+  "target": "models/ai_v5_8_split_inc_dmg_38m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v6_01_belief_53m_0613",
+  "kind": "stable",
+  "target": "models/ai_v5_8_split_inc_dmg_38m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v6_01_belief_53m_0613",
+  "kind": "stable",
+  "target": "models/ai_v5_9_attend_unrevealed_56m_0610",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v6_01_belief_53m_0613",
+  "kind": "stable",
+  "target": "models/ai_v5_13_shape_pbrs_43m_0612",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v6_13_outgoing_dmg_0620_exploiter_v1",
+  "kind": "stable",
+  "target": "models/ai_v6_13_outgoing_dmg_0620",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v6_13_outgoing_dmg_0620_exploiter_v1",
+  "kind": "exploiter",
+  "target": "models/ai_v6_13_outgoing_dmg_0620",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v6_13_outgoing_dmg_0620_exploiter_v2",
+  "kind": "stable",
+  "target": "models/ai_v6_13_outgoing_dmg_0620",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v6_13_outgoing_dmg_0620_exploiter_v2",
+  "kind": "exploiter",
+  "target": "models/ai_v6_13_outgoing_dmg_0620",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_05_tss_specialist_0703",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_05_tss_specialist_0703",
+  "kind": "exploiter",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_05_tss_specialist_0703_aborted_noeval",
+  "kind": "exploiter",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_06_tss_temp_anneal_0706",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_06_tss_temp_anneal_0706",
+  "kind": "exploiter",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_07_tss_temp_ratchet_0707",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_07_tss_temp_ratchet_0707",
+  "kind": "exploiter",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_08_tss_bots_0707",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_09_tss_bots_pubval_0708",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_10_tss_exploiter_fixed_0709",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_10_tss_exploiter_fixed_0709",
+  "kind": "exploiter",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_11_tss_exploiter_nopubval",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_11_tss_exploiter_nopubval",
+  "kind": "exploiter",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_12_trap_exploiter_0711",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_12_trap_exploiter_0711",
+  "kind": "exploiter",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_13_cmpass_exploiter_0711",
+  "kind": "stable",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_13_cmpass_exploiter_0711",
+  "kind": "exploiter",
+  "target": "models/ai_v7_02_critic_shape_0627",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_14_league_capstone_0712",
+  "kind": "stable",
+  "target": "models/ai_v7_10_tss_exploiter_fixed_0709",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_14_league_capstone_0712",
+  "kind": "stable",
+  "target": "models/ai_v7_12_trap_exploiter_0711",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_14_league_capstone_0712",
+  "kind": "stable",
+  "target": "models/ai_v7_13_cmpass_exploiter_0711",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_15_tss_exploiter_vs14_0713",
+  "kind": "stable",
+  "target": "models/ai_v7_14_league_capstone_0712",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_15_tss_exploiter_vs14_0713",
+  "kind": "exploiter",
+  "target": "models/ai_v7_14_league_capstone_0712",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_17_stall_exploiter_0715",
+  "kind": "stable",
+  "target": "models/ai_v7_14_league_capstone_0712",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_17_stall_exploiter_0715",
+  "kind": "exploiter",
+  "target": "models/ai_v7_14_league_capstone_0712",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_19_combined_0716",
+  "kind": "stable",
+  "target": "models/ai_v7_10_tss_exploiter_fixed_0709",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_19_combined_0716",
+  "kind": "stable",
+  "target": "models/ai_v7_12_trap_exploiter_0711",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_19_combined_0716",
+  "kind": "stable",
+  "target": "models/ai_v7_13_cmpass_exploiter_0711",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v7_19_combined_0716",
+  "kind": "stable",
+  "target": "models/ai_v7_17_stall_exploiter_0715",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_01_zarch_film_0717",
+  "kind": "stable",
+  "target": "models/ai_v7_10_tss_exploiter_fixed_0709",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_01_zarch_film_0717",
+  "kind": "stable",
+  "target": "models/ai_v7_12_trap_exploiter_0711",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_01_zarch_film_0717",
+  "kind": "stable",
+  "target": "models/ai_v7_13_cmpass_exploiter_0711",
+  "n_teams": 1,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_05_semistall564_exploiter_0722",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_06_semistall_3team_exploiter_0722",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_07_semistall564_scratch_0722",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_08_defensive_6team_exploiter_0723",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_09_pool10_exploiter_0723",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_10_offense20_exploiter_0724",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_11_offense10_exploiter_0724",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_12_defensive20_exploiter_0724",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_13_defensive10_exploiter_0725",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_14_distill3_0725",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_09_pool10_exploiter_0723",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_14_distill3_0725",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_06_semistall_3team_exploiter_0722",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_14_distill3_0725",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_13_defensive10_exploiter_0725",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_16_def20_lut_0726",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_17_rand20_nolut_0726",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_18_rand20_lut_0726",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_19_def20_lut_zeroinit_0727",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v8_20_rand10_nolut_0727",
+  "kind": "exploiter",
+  "target": "models/ai_v8_04_distill_4teacher_0722",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_100_R5F08_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_101_R5F09_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_102_R5F10_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_103_R5F11_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_104_R5F12_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_105_R5F13_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_106_R5F14_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_107_R5F15_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_108_R5F16_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_109_R5F17_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_110_R5F18_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_111_R5F19_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_120_R5FUND00_0901",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_122_R5FUND02_0901",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_124_R5FUND04_0901",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_126_R5FUND06_0901",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_128_R5FUND08_0901",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_130_R5FUND10_0901",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_132_R5FUND12_0901",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_134_R5FUND14_0901",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_30_rev1_exploit_0824",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_31_tock1_k4_0824",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_32_tock1b_rain_0824",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_34_tick1_0824",
+  "kind": "stable",
+  "target": "models/ai_v9_31_tock1_k4_0824",
+  "n_teams": 4,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_34_tick1_0824",
+  "kind": "stable",
+  "target": "models/ai_v9_32_tock1b_rain_0824",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_35_tick1_exploit_0824",
+  "kind": "exploiter",
+  "target": "models/ai_v9_34_tick1_0824/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_36_tock1c_q6_0824",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_37_tick1_dosext_0825",
+  "kind": "stable",
+  "target": "models/ai_v9_31_tock1_k4_0824",
+  "n_teams": 4,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_37_tick1_dosext_0825",
+  "kind": "stable",
+  "target": "models/ai_v9_32_tock1b_rain_0824",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_38_fdA_coef03_0825",
+  "kind": "stable",
+  "target": "models/ai_v9_31_tock1_k4_0824",
+  "n_teams": 4,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_38_fdA_coef03_0825",
+  "kind": "stable",
+  "target": "models/ai_v9_32_tock1b_rain_0824",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_40_fdC_ecology_0825",
+  "kind": "stable",
+  "target": "models/ai_v9_31_tock1_k4_0824",
+  "n_teams": 4,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_40_fdC_ecology_0825",
+  "kind": "stable",
+  "target": "models/ai_v9_32_tock1b_rain_0824",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_44_tock2_v8shape_0825",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_53_R2F5a_0826",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_54_R2F5b_0826",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_55_R2F5c_0826",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_56_R2F5d_0826",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_57_R2F5e_0826",
+  "kind": "exploiter",
+  "target": "models/ai_v9_29_rev1_0823/snapshots/snapshot_000024000000.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_63_R3F6a_0828",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_64_R3F6b_0828",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_65_R3F6c_0828",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_66_R3F6d_0828",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_67_R3F6e_0828",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_68_R3F6f_0828",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_69_R3F6CURR_0828",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_73_R4S3a_0829",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_74_R4S3b_0829",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_75_R4S3c_0829",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_77_G1LEAN_0830",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_79_REVIVE1a_0830",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_80_REVIVE1b_0830",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_81_REVIVE1c_0830",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_92_R5F00_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_93_R5F01_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_94_R5F02_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_95_R5F03_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_96_R5F04_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_97_R5F05_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_98_R5F06_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "ai_v9_99_R5F07_0831",
+  "kind": "exploiter",
+  "target": "models/ai_v9_59_R2ACTION_0827/final_model.zip",
+  "n_teams": 0,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_A_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_09_pool10_exploiter_0723",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_A_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_06_semistall_3team_exploiter_0722",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_A_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_13_defensive10_exploiter_0725",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_B_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_09_pool10_exploiter_0723",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_B_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_06_semistall_3team_exploiter_0722",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_B_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_13_defensive10_exploiter_0725",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_C_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_09_pool10_exploiter_0723",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_C_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_06_semistall_3team_exploiter_0722",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p1_C_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_13_defensive10_exploiter_0725",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_A_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_09_pool10_exploiter_0723",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_A_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_06_semistall_3team_exploiter_0722",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_A_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_13_defensive10_exploiter_0725",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_B_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_09_pool10_exploiter_0723",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_B_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_06_semistall_3team_exploiter_0722",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_B_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_13_defensive10_exploiter_0725",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_C_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_09_pool10_exploiter_0723",
+  "n_teams": 10,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_C_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_06_semistall_3team_exploiter_0722",
+  "n_teams": 3,
+  "pins": []
+ },
+ {
+  "run": "v8rep_p2loss_C_0905",
+  "kind": "stable",
+  "target": "/home/goodlad/dev/gen3ai/models/ai_v8_13_defensive10_exploiter_0725",
+  "n_teams": 10,
+  "pins": []
+ }
+]

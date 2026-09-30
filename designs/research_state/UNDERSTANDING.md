@@ -195,10 +195,17 @@ level the new lineage can be compared against; each is a DIRECTION to re-test, n
 - **Wider distillation targets cost MORE off-slice and on-slice, not less** (K = 1 / 3 / 11, and the
   share-matched arm). [SIGNIFICANT · ledger 2026-09-22 *THE K LADDER REVERSES ITS OWN PREDICTION*; 2026-09-23
   *THE SHARE-MATCHED ARM CLOSES THE CONFOUND*]
-- **The population loop ENGAGES without a measurable cost:** both rounds absorbed their specialists (M = +8.50
-  and +8.67 pp, CIs above 0; round 2 +17.0 against the new specialist) and neither KILL guard fired.
+- **The population loop ENGAGES without a measurable cost:** both rounds absorbed their specialists, measured
+  over ALL five of each specialist's teams: M1 = +9.33 pp [+3.77, +14.81] and M2 = +6.67 [+2.09, +11.20]. The banked
+  +8.50 / +8.67 were team-0-only (F-LH-13). The absorption is concentrated on arm A (+16.0 / +12.7), with `ai_v13_13`
+  at ≈ +2 in both rounds. Round 2's "+17.0 against the new specialist RB" does NOT survive the all-teams read
+  (+5.33 [−2.58, +13.16], NOT DETECTED). Neither KILL guard fired.
   [SIGNIFICANT (manipulation) · ledger 2026-09-24 *POPULATION LOOP ROUND 1*; 2026-09-25 *POPULATION LOOP ROUND 2:
-  BRANCH N+ IS FINAL*]
+  BRANCH N+ IS FINAL*; 2026-09-30 *F-LH-13 AUDIT* (`measurements/ext_first_team_audit/`)]
+- **Every banked absolute "generalist vs multi-team specialist" `ext_` eval level from 2026-07-24 until the F-LH-13
+  fix is a TEAM-0-ONLY number**, and team 0 read 4–11 pp harder than the specialist's other teams where measured.
+  Within-run trends and matched-arm contrasts on it are bounded, not void. The population loop's gap reads never used
+  it. [MEASURED · ledger 2026-09-30 *F-LH-13 AUDIT*]
 - **The learned belief heads memorise the pool:** ~+5 pp against the pool, nothing detectable against Metamon
   ladder teams, and worse than the Smogon prior off-pool. [SIGNIFICANT · ledger 2026-09-24 *BELIEF-HEAD
   CALIBRATION OFF THE POOL*; *BELIEF WIN-RATE A/B READ*]

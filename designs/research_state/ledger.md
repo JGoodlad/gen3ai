@@ -21604,3 +21604,46 @@ Verdict audit dispatched 2026-09-30; results in a follow-up entry.
 - Fixed by `rust_eval.build.load_fixed_slots` (called once at startup). It was found by the new Lane H fixed-opponent gate row, which reads 3 FATAL games with the load removed.
 
 Tag: **BOUNDARY (live eval, multi-team fixed opponents) · 20 past runs on first-team-only `ext_` rates · verdict impact UNVERIFIED, audit dispatched · F-LH-12 pre-data**. Evidence: `m5_laneH/PROGRESS.md` F-LH-12 / F-LH-13; `src/agents/training/eval_sharding/units.py` (`EvalItem.fixed_from_cfg`); `src/agents/training/eval_callback.py` (`opponent_pins_of`); `src/agents/training/fixed_opponent_pool.py` (`_read_trainee_pin`).
+
+### 2026-09-30 · AUDIT · **F-LH-13 AUDIT: NO DECISION CHANGES. The population loop's primary reads never used the first-team-only `ext_` eval rate: every exploiter target in the archive is an unpinned generalist. Both MANIPULATION CHECKS were affected. Re-measured over all five of each specialist's teams, both still read ABSORBED: M1 +9.33 pp [+3.77, +14.81] (banked +8.50) and M2 +6.67 [+2.09, +11.20] (banked +8.67). Round 2's "+17.0 against the new specialist RB" does NOT survive: +5.33 [−2.58, +13.16], NOT DETECTED.**
+
+**The defect (F-LH-13).** From `b13b30b2` (2026-07-24) until `40b37a34` (the BOUNDARY entry directly above), the live Python eval measured a MULTI-TEAM stable or exploiter opponent piloting its pin index 0 only. Training sampled all of that opponent's teams. `eval_manifest.json` `opponent_pins` recorded the one team. This is the follow-up that entry promised: it answers its UNVERIFIED "which verdicts leaned on those rates".
+
+**Exposure, re-derived with `read_recorded_trainee_teams` over all of `models/`.**
+- 130 runs have a target. 20 have a multi-team target, all through `--stable-opponents`: exactly the brief's list.
+- NO `--exploiter` target anywhere recorded a pin. So `main.best_response_gap` (each exploiter's own vs-target cell) is unaffected archive-wide.
+- The measured teams:
+  - the v8 teachers pool10 and semistall were measured on the SAME team `564b9be3ae`, and defensive10 on `9278913bce`;
+  - all three 5-team offense specialists (`ai_v13_13`, `ai_v13_18` = arm A, `ai_v13_24` = RB) were measured on `9eb3abdc52876a63.txt`.
+- That one team carries three fingerprint conventions (manifest `c5676d264e`, `team_sha` `f36747ae7e`, TeamSlice `pin_sha` `6212de2e8c`).
+
+**Classifications (full table in the readout).**
+- UNAFFECTED:
+  - the loop's primary Δ −10.00 (r1) and Δ2 −8.25 (r2), the convergence side-check, and the 09-22 archive read;
+  - every verdict on the v8 replications (the era untaught meter), tick-1's INFERIOR grade (ladder, piloting, admission), the fd factorial, the K ladder (untaught 8), and the core burn-in.
+- AFFECTED, BOUNDED:
+  - D1's head-to-head leg "0.228 → 0.36" (`ai_v8_14`). It is a within-run trend, but on only two distinct teams, and the start is the fold's first eval, not the parent. D1 also stands on two separate-games legs (ELO and piloting) and cannot flip. NOT re-measured: it needs the era tree at `b13b30b2`.
+  - the capacity battery's ext-state share (tick-1 16.5 %);
+  - the R1 dose read's `ext_` calibration strata;
+  - the "C sits at G0's 0.36" descriptor, a cross-population comparison;
+  - the training mix: stable-opponent PFSP weights read the team-0 rate in every affected run with a nonzero stable share, bounded at ≤ ~1.8 : 1 with the share fixed; mastery never fired.
+- AFFECTED, RE-MEASURED: the two manipulation checks and their descriptors.
+
+**The re-measure.** Pre-registered in `ext_first_team_audit/PREREG.md` in its own commit (author time 14:20 PT), before the first battle (14:25).
+- Setup: the specialist pilots each of its 5 teams against the generalist on the pool, greedy vs greedy (the `ext_` regime), on pin `6eb9c776`, CPU only.
+- Size: 60 battles per (generalist, specialist, team), with B and C paired on seeds. 3,000 battles, 0 timeouts.
+- Checkpoints: B1 / C1 (round 1, loop / control) at the 100,000,032 snapshot; B2 / C2 (round 2) at 110,000,016.
+- Results:
+  - **M1 = 0.455 − 0.362 = +9.33 [+3.77, +14.81]: ABSORBED, HOLDS.**
+  - **M2 = 0.462 − 0.396 = +6.67 [+2.09, +11.20]: ABSORBED, HOLDS.**
+  - Per specialist: arm A +16.00 [+8.15, +23.57] (r1) and +12.67 [+4.72, +20.39] (r2); `ai_v13_13` +2.67 [−5.18, +10.47] and +2.00 [−5.84, +9.81]; RB +5.33 [−2.58, +13.16] (banked team-0 +17.0 [+7.3, +26.3]).
+- Team 0 is HARDER for the generalists than teams 1–4. C1 −10.83 [−19.28, −1.25] and B2 −9.86 [−17.57, −1.73]; B1 and C2 point the same way. So every banked absolute generalist-vs-specialist `ext_` level reads low.
+- Reproduction check (team-0 cell vs the banked same-cycle row): 3 of 4 PASS. B2 FAILS at nominal 95 %: −10.33 [−19.16, −1.15]. It passes under Bonferroni for four checks, and its direction makes M2 conservative. It is consistent with the live eval's 10 % sample-team tilt (deviation D2). It is reported, not resolved.
+
+**What changes.**
+- The branch assignments stand: r1 N+, r2 N+ FINAL, 2 of 3.
+- The owner's 09-25 decision (NO round 3 on the old lineage; the loop carries into the new lineage) is unchanged. It rested on power, and power is a property of the unaffected primary reads.
+- UNDERSTANDING's loop bullet now carries the all-teams M1 and M2 and withdraws "+17.0 vs RB". The endstate ladder campaign's row carries the all-teams M1.
+- The NEW lineage's manipulation check must be read on a post-`40b37a34` eval (or the Rust eval core, which plays all pinned teams).
+
+Record: `designs/research_state/measurements/ext_first_team_audit/` (README, PREREG, `remeasure/` rows + result + driver, `exposure/`, `inventory/`). Tag: **AUDIT · F-LH-13 · 20 runs exposed · primary loop reads UNAFFECTED · M1 +9.33 [+3.77, +14.81] / M2 +6.67 [+2.09, +11.20] ABSORBED HOLD · RB +17.0 → +5.33 NOT DETECTED · team 0 reads 4–11 pp hard · no decision changes**.
