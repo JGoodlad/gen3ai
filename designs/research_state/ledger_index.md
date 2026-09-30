@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,470-line file. **The ledger itself is append-only and is never edited by this**;
+21,474-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**723 headings · 668 dated · 2026-08-01 → 2026-09-29 · ledger 21,470 lines.**
+**724 headings · 669 dated · 2026-08-01 → 2026-09-29 · ledger 21,474 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -743,3 +743,4 @@ rename.
   - `L21459` · `2026-09-29` · RESULT · **G0′ IS K2 — THE NEW LINEAGE PLATEAUS AT BLOCK 2 (on the fixed learner). Block 1 N0 → C_fix +14.88 pp [+10.69, +18.88] (OUTSIDE ABOVE, 8/8 teams) does not pass; block 2 C_fix → K2 +0.87 [−1.75, +3.56] (200/team; +0.73 [−0.44, +1.81] at 600) passes. So G0′ = `ai_v14_07_g0p_k2` final @91,127,808. K3, run before the verdict, confirms: K2 → K3 −0.31 [−3.38, +2.94] (+0.21 at 600). DEVIATION recorded: the registered block 1 was C (buggy learner), replaced by C_fix. The buggy block 1 also fails (+11.12), so the passing block index is unchanged.**
   - `L21463` · `2026-09-29` · DECISION · **NO GPU TRAINING UNTIL M5 HAS FULLY LANDED (owner): the GPU is reserved for M5 / dev agents; the population loop's ROUND 0 is DEFERRED.**
   - `L21467` · `2026-09-29` · MEASUREMENT · **M5 LANE S — THE POLICY-SPECTRUM BASELINE (a DESCRIPTOR of sharpness, not of quality). On one fixed bank of 20,712 turns, the lineage's rank-1 mass (the mean probability on its own top choice): N0 0.474 @2.4M → 0.586 @9.5M, then FLAT to 75M (0.559; free turns drift back −0.033 [−0.041, −0.023] over 9.5M → 75M); the one large step is N0 75M → C_fix +0.057 [+0.052, +0.062] (entropy −0.155), then K2 0.629, K3 0.621. On the fixed learner the share of free turns where a LEGAL setup move holds < 1 % doubles (0.165 → 0.307 at K3; status 0.091 → 0.183, recovery 0.060 → 0.158) while the categories' mean mass barely moves: more decisive, not proven starved.**
+  - `L21471` · `2026-09-29` · MEASUREMENT · **M5 LANE S GATE ④, FIRST READ (PRELIMINARY) — the fixed-learner sharpening is BOTH healthy AND starving. On 92 DECISIVE turns (of 236 branched to the end: every legal action × 16 shared dice seeds, K2-greedy on both sides), N0 75M → K3 lowers the mass on dominated actions −0.039 [−0.064, −0.022] and the regret −0.036 [−0.061, −0.017], and raises the share of turns where a NEAR-BEST action gets < 1 % from 0.21 to 0.47 (+0.26 [+0.17, +0.34]), mostly on switches (0.24 → 0.53) and attacks (0.16 → 0.34).**

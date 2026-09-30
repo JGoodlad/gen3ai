@@ -217,8 +217,12 @@ def turn_truth(row: dict, eps: float = EPS) -> dict:
             "gap": gap, "se": se, "near": near, "strict_near": strict_near, "dominated": dominated}
 
 
-def readout(bank: Bank, rows: Sequence[dict], probs: np.ndarray, eps: float = EPS) -> dict:
-    """One policy's ground-truth readout on the branched turns (``probs`` in bank order)."""
+def readout(bank: Bank, rows: Sequence[dict], probs: np.ndarray, eps: float = EPS,
+            decisive_only: bool = False) -> dict:
+    """One policy's ground-truth readout on the branched turns (``probs`` in bank order).
+    ``decisive_only``: only turns where some action is DOMINATED (separably worse than the best) —
+    on a turn where every action is near-best (a won position, say), concentrating the mass on one
+    of them starves nothing that matters."""
     from main.policy_spectrum.spectrum import _boot_ci
 
     idx = {d["id"]: i for i, d in enumerate(bank.decisions)}
@@ -236,6 +240,8 @@ def readout(bank: Bank, rows: Sequence[dict], probs: np.ndarray, eps: float = EP
         i = idx[r["id"]]
         d = bank.decisions[i]
         t = turn_truth(r, eps)
+        if decisive_only and not t["dominated"].any():
+            continue
         p = probs[i, t["actions"]]
         cats = [d["cats"][str(a)] for a in t["actions"]]
         per["near"].append(float(p[t["near"]].sum()))
@@ -269,8 +275,52 @@ def readout(bank: Bank, rows: Sequence[dict], probs: np.ndarray, eps: float = EP
     return out
 
 
+def per_turn(bank: Bank, rows: Sequence[dict], probs: np.ndarray, eps: float = EPS,
+             decisive_only: bool = False) -> Dict[str, np.ndarray]:
+    """Per-turn readout arrays (turn order = ``rows``' ok turns): near / dom mass, starved flag,
+    regret, and the battle id (for clustering)."""
+    idx = {d["id"]: i for i, d in enumerate(bank.decisions)}
+    out: Dict[str, list] = {"near": [], "dom": [], "starved": [], "regret": [], "battle": []}
+    for r in rows:
+        if not r.get("ok"):
+            continue
+        t = turn_truth(r, eps)
+        if decisive_only and not t["dominated"].any():
+            continue
+        i = idx[r["id"]]
+        p = probs[i, t["actions"]]
+        out["near"].append(float(p[t["near"]].sum()))
+        out["dom"].append(float(p[t["dominated"]].sum()))
+        out["starved"].append(float((t["near"] & (p < STARVE)).any()))
+        out["regret"].append(float(t["vstar"] - (p * t["value"]).sum()))
+        out["battle"].append(bank.decisions[i]["battle"])
+    return {k: np.array(v) for k, v in out.items()}
+
+
+def paired(bank: Bank, rows: Sequence[dict], pa: np.ndarray, pb: np.ndarray, eps: float = EPS,
+           decisive_only: bool = False) -> dict:
+    """``b − a`` on the same branched turns, battle-clustered bootstrap."""
+    from main.policy_spectrum.spectrum import _boot_ci
+
+    A = per_turn(bank, rows, pa, eps, decisive_only)
+    Bq = per_turn(bank, rows, pb, eps, decisive_only)
+    out = {"turns": int(len(A["near"]))}
+    for k in ("near", "dom", "starved", "regret"):
+        d = Bq[k] - A[k]
+        out[k] = {"delta": round(float(d.mean()), 6), "ci": _boot_ci(d, A["battle"])}
+    return out
+
+
 def load_rows(path: Path, continuation: Optional[str] = None) -> List[dict]:
-    rows = [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+    path = Path(path)
+    if path.suffix == ".gz":
+        import gzip
+
+        with gzip.open(path, "rt") as f:
+            text = f.read()
+    else:
+        text = path.read_text()
+    rows = [json.loads(line) for line in text.splitlines() if line.strip()]
     return [r for r in rows if continuation is None or r["continuation"] == continuation]
 
 
@@ -326,6 +376,7 @@ def _cli(argv=None) -> int:
     q.add_argument("--labels", required=True)
     q.add_argument("--eps", type=float, default=EPS)
     q.add_argument("--out", required=True)
+    q.add_argument("--pair", action="append", help="<label a>:<label b>")
     a = ap.parse_args(argv)
     bank = load_bank(Path(a.bank))
     if a.cmd == "select":
@@ -362,7 +413,15 @@ def _cli(argv=None) -> int:
            "seeds": sorted({len(r["seeds"]) for r in rows}),
            "truth": value_summary(rows, a.eps), "policies": {}}
     for lab in [x for x in a.labels.split(",") if x]:
-        out["policies"][lab] = readout(bank, rows, load_probs(Path(a.reads), lab, bank), a.eps)
+        pr = load_probs(Path(a.reads), lab, bank)
+        out["policies"][lab] = readout(bank, rows, pr, a.eps)
+        out.setdefault("policies_decisive", {})[lab] = readout(bank, rows, pr, a.eps, decisive_only=True)
+    for spec in a.pair or []:
+        la, lb = spec.split(":", 1)
+        pa, pb = load_probs(Path(a.reads), la, bank), load_probs(Path(a.reads), lb, bank)
+        out.setdefault("paired", {})[spec] = {
+            "all": paired(bank, rows, pa, pb, a.eps),
+            "decisive": paired(bank, rows, pa, pb, a.eps, decisive_only=True)}
     Path(a.out).write_text(json.dumps(out, indent=1, sort_keys=True) + "\n")
     print(f"[truth] wrote {a.out}")
     return 0

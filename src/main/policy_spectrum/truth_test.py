@@ -101,5 +101,10 @@ def test_readout_starvation_regret_and_guess(v1):
     assert r["near"]["mean"] == pytest.approx((0.999 + 0.8) / 2)
     assert r["dom"]["mean"] == pytest.approx((0.001 + 0.2) / 2)
     assert r["regret"]["mean"] == pytest.approx(((1 - (0.999 - 0.001)) + (1 - (0.8 - 0.2))) / 2)
+    flat = next(d["id"] for d in v1.decisions if d["kind"] == "free" and d["id"] not in ids)
+    rows.append(_row(flat, {int(a): [1, 1] for a in dd[flat]["tokens"]}))     # every action wins
+    assert T.readout(v1, rows, probs)["turns"] == 3
+    dec = T.readout(v1, rows, probs, decisive_only=True)
+    assert dec["turns"] == 2 and dec["starved"]["mean"] == pytest.approx(0.5)
     s = T.value_summary(rows[:2])
     assert s["turns"] == 2 and s["mean_near_best"] == 2.0 and s["vstar_eq_+1"] == 2

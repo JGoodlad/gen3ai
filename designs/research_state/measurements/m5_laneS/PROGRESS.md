@@ -39,7 +39,7 @@ once** — a second build refuses without `--force`. It is byte-deterministic (t
 | 1 | the BANK (`bank.py`, `replay.py`, `categories.py`) + `bank_v1/` + gates ① and ② | LANDED (git log: `M5 Lane S unit 1+2`) |
 | 2 | the READER (`reader.py`, `spectrum.py`, `report.py`, CLI) + gate ③ | LANDED (same commit) |
 | 3 | the BASELINE READ over the fixed lineage (`baseline_2026-09-29/`) | LANDED (same commit) |
-| 4 | gate ④: ground truth via Lane I on a first ~200-turn subset | CODE LANDED (`truth.py`, `python -m main.policy_spectrum.truth select\|run\|read`; tests `truth_test.py`, `truth_integration_test.py`) + the subset `truth_v1/gt_subset_v1.json` (236 turns: 216 free + 20 forced); the first run (K2 final greedy continuation, S = 16) IN PROGRESS → `truth_v1/rows_K2final_S16.jsonl` |
+| 4 | gate ④: ground truth via Lane I — FIRST READ on 236 turns (K2 final greedy continuation, S = 16), below | LANDED (git log: `M5 Lane S unit 4`); growing to ~1–2k turns + a second continuation is the next unit |
 | 5 | gate ⑤: the trend with ground truth | after ④ (spec below) |
 
 ## The bank (`bank_v1/`, content sha `8ca1bfa544bf…`)
@@ -148,7 +148,55 @@ Headline (all 20,712 turns; rank-1 / rank-2 / rank-3 mass, entropy in nats):
 - A′ (interrupted) is BROADER than its parent K2 (rank 1 −0.044 [−0.050, −0.038]) — consistent with a
   fresh fork training against one target at `ent_coef` 0.05, but it is 1M steps old.
 
-## Gate ④ — the SPEC for the next unit (ground truth via Lane I, landed `2c84729e`)
+## Gate ④ — FIRST READ (`truth_v1/`, 2026-09-29)
+
+`truth_v1/gt_subset_v1.json`: 236 turns (216 free + 20 forced switches; hash-ordered, proportional
+over phase × opponent class, ≤ 2 per battle, each of hazard / setup / recovery / status legal on
+≥ 30). `truth_v1/rows_K2final_S16.jsonl.gz`: every legal action × 16 shared dice seeds (CRN) played
+to the end, both sides under **K2 final greedy** (`python -m main.policy_spectrum.truth run`,
+~34 min CPU at nice 19, **0 refused turns**, 1,670 actions, 26,720 playouts). `truth_v1/readout_K2final_S16.json`:
+every baseline read against it, all turns and DECISIVE turns (≥ 1 action separably worse than the
+best by > ε), with paired deltas. ε = 0.1 on the ±1 scale; starvation = some near-best action gets
+< 1 % of the policy's mass.
+
+The truth itself: 7.1 legal actions per turn, 3.2 of them near-best on average; 46 turns where EVERY
+action is near-best; V* = +1 on 97 turns (won whatever we do), −1 on 13; 92 decisive turns.
+
+| policy (decisive turns, n = 92) | near-best mass | dominated mass | starved | regret |
+|---|---|---|---|---|
+| N0 @ 2.4M | 0.250 | 0.257 | 0.098 | 0.437 |
+| N0 @ 9.5M | 0.263 | 0.214 | 0.337 | 0.402 |
+| N0 @ 75.0M | 0.295 | 0.219 | 0.207 | 0.387 |
+| C_fix @ 83.1M | 0.315 | 0.189 | 0.402 | 0.359 |
+| K2 @ 91.1M | 0.305 | 0.183 | 0.435 | 0.360 |
+| K3 @ 99.2M | 0.318 | 0.180 | 0.467 | 0.350 |
+
+Paired (same turns, battle-clustered 95 %), decisive turns:
+- **N0 75M → K3: dominated mass −0.039 [−0.064, −0.022], regret −0.036 [−0.061, −0.017] — AND
+  starvation +0.261 [+0.168, +0.344].** Both happen at once: the fixed-learner sharpening removes
+  dominated mass (healthy) and also pushes near-best alternatives below 1 % on about half the
+  decisive turns (starvation). The fix step alone (N0 75M → C_fix) carries most of it (starved
+  +0.196 [+0.111, +0.280], dominated −0.030 [−0.050, −0.014]); C_fix → K3 adds starved +0.065
+  [+0.022, +0.118] with no detected change in dominated mass or regret.
+- N0 2.4M → 9.5M: dominated −0.043 [−0.083, −0.005], starved +0.239 [+0.165, +0.322].
+- N0 9.5M → 75M: starved −0.130 [−0.233, −0.052] (N0 broadened again), dominated and regret not
+  detected.
+- WHICH near-best actions starve (decisive turns, share of the turns where that category has a
+  near-best action): switch 0.24 (N0 75M) → 0.53 (K3) of 59 turns; attack 0.16 → 0.34 of 38; status
+  0.08 → 0.31 of 13; setup 0 / 4 and recovery 0 / 6 at every checkpoint (too few turns to say
+  anything); hazard 1 of 3.
+
+**Caveats that bound this read (all carried in the JSON):** (1) the truth is CONDITIONAL on K2
+greedy playing both sides — K2 and K3 are read against a continuation that is K2 itself, a
+self-consistency that can flatter or penalise them; (2) at S = 16 a near-best set is noisy: an action
+can look near-best by luck, which INFLATES starvation, more so for sharper policies (they put < 1 %
+on more actions); the strict variant (near-best by its upper bound) is in the JSON and moves the
+same way; (3) V* is a max of noisy means (winner's curse); (4) 92 decisive turns, so the per-category
+rows beyond switch / attack are anecdotes; (5) every N0 checkpoint was trained under the compile
+miscompile. **Tag: PRELIMINARY — healthy sharpening AND starvation both DETECTED at the fix step;
+starvation's size is an upper-bound-leaning estimate until S grows.**
+
+## Gate ④ — the SPEC (as written before the first read; the remaining items are the next unit) (ground truth via Lane I, landed `2c84729e`)
 
 API (`src/utils/rust_env/successors.py`): `play_out(log, at, side, policy=greedy(scorer),
 seeds=[...], actions=None, stall="production", max_turns=999)` → `res.values()` = {action: mean value
