@@ -142,6 +142,10 @@ DEFAULT_LAG_BOUND = 150_000
 CF_SAMPLE_SIZE = 256
 
 _LABEL_GLOB = "labels_*.jsonl"
+#: A label file's IDENTITY beyond its inode: the first bytes consumed from it, re-checked each poll.
+#: The inode alone is not enough on ext4, which reuses a freed number on the next create. The honest
+#: limit: a replacement whose first `_HEAD_BYTES` are byte-identical to the old file's is not seen.
+_HEAD_BYTES = 4096
 
 # How many `obs_npz` FILES to keep decoded in memory. A label row points at one row of a battle's
 # `states.npz`, and a producer emits many rows per battle — so a per-row `np.load` re-opened,
@@ -223,11 +227,13 @@ class CfLabelBuffer:
         # repeat re-inserts at the end (keep-newest), so a re-labelled state also becomes the
         # youngest resident — which is the right FIFO position for the fresher measurement.
         self._rows: "OrderedDict[str, CfLabel]" = OrderedDict()
-        # name -> (inode, byte offset already consumed). The INODE is half the key on purpose: a
-        # producer that DELETES and RECREATES `labels_x.jsonl` (a restart that rotates in place)
-        # gets a new inode, and keying on the name alone would seek past the new file's first
-        # `offset` bytes and drop those rows SILENTLY — no skip counter, no warning, just missing
-        # labels. Measured before this was a tuple: a recreated 3-row file ingested 1 row.
+        # name -> (inode, byte offset already consumed, the file's first bytes). A producer that
+        # DELETES and RECREATES `labels_x.jsonl` (a restart that rotates in place) must be read from
+        # zero: keying on the name alone would seek past the new file's first `offset` bytes and
+        # drop those rows SILENTLY — no skip counter, no warning, just missing labels (measured: a
+        # recreated 3-row file ingested 1 row). The inode catches that only where the filesystem
+        # hands out a FRESH number (tmpfs); ext4 reuses the freed one, so the HEAD bytes are checked
+        # too (`_HEAD_BYTES`, 2026-09-30).
         self._offsets: Dict[str, tuple] = {}
         # Counters — monotonic for the whole process lifetime, so a TB curve of
         # `labels_ingested_total` going FLAT is unambiguous evidence the producer stopped.
@@ -286,15 +292,22 @@ class CfLabelBuffer:
         except OSError:                                            # pragma: no cover - defensive
             return 0
         size = st.st_size
-        prev_ino, start = self._offsets.get(key, (st.st_ino, 0))
+        prev_ino, start, prev_head = self._offsets.get(key, (st.st_ino, 0, b""))
         if prev_ino != st.st_ino:
             # A DIFFERENT FILE now wears this name (the producer rotated/recreated it). Its bytes
             # have nothing to do with the offset we remembered — read it from the beginning.
-            start = 0
+            start, prev_head = 0, b""
+        elif start and not self._same_head(path, prev_head):
+            # 🚨 The SAME inode number, a DIFFERENT file. ext4 hands a freed inode straight back
+            # to the next create, so an unlink + recreate usually KEEPS the number (tmpfs does not,
+            # which is how this hid until the test temp root moved onto disk, 2026-09-30). The
+            # bytes we already consumed are the file's identity: if its head no longer matches,
+            # it was replaced — read it from the beginning.
+            start, prev_head = 0, b""
         if size < start:
             # The file was TRUNCATED or replaced under us (a producer restart). Re-read it whole
             # rather than seeking past its new end and silently ingesting nothing forever.
-            start = 0
+            start, prev_head = 0, b""
         if size == start:
             return 0
         try:
@@ -311,7 +324,10 @@ class CfLabelBuffer:
         # Everything up to the last newline is complete; the remainder (if any) is a line the
         # producer has not finished writing, and is deliberately NOT advanced past.
         consumed = data[: cut + 1]
-        self._offsets[key] = (st.st_ino, start + len(consumed))
+        # Invariant: `head` is the file's first min(offset, _HEAD_BYTES) bytes — built from bytes we
+        # actually consumed (prev_head was verified against the file above, or cleared on a reset).
+        head = prev_head if len(prev_head) >= _HEAD_BYTES else (prev_head + consumed)[:_HEAD_BYTES]
+        self._offsets[key] = (st.st_ino, start + len(consumed), head)
         accepted = 0
         for line in consumed.splitlines():
             if not line.strip():
@@ -322,6 +338,18 @@ class CfLabelBuffer:
             self._push(row)
             accepted += 1
         return accepted
+
+    @staticmethod
+    def _read_head(path: Path, n: int) -> bytes:
+        try:
+            with open(path, "rb") as f:
+                return f.read(n)
+        except OSError:                                            # pragma: no cover - defensive
+            return b""
+
+    def _same_head(self, path: Path, head: bytes) -> bool:
+        """The file still starts with the bytes we consumed from it (its first `_HEAD_BYTES`)."""
+        return not head or self._read_head(path, len(head)) == head
 
     def _parse(self, line: bytes, current_step: int) -> Optional[CfLabel]:
         try:

@@ -199,10 +199,14 @@ the term trains the head's own params and provably cannot perturb the trunk.
   no-op).
 - **The LABEL BUFFER (`cf_label_buffer.py`).** Watches `<run_dir>/cf_labels/labels_*.jsonl`, remembering a
   per-file byte OFFSET so an appending producer is read incrementally and a partial trailing line waits
-  for the next poll instead of counting as malformed. **The offset is keyed on `(name, inode)`, and the
-  map is pruned to the files still on disk** — a producer that DELETES and RECREATES `labels_x.jsonl`
-  (an in-place rotation) gets a new inode, and keying on the name alone made the buffer seek past the
-  new file's first `offset` bytes and drop those rows with no counter and no warning. "Never a silent
+  for the next poll instead of counting as malformed. **The offset is keyed on `(name, inode)` PLUS the
+  file's first 4 KB consumed, and the map is pruned to the files still on disk** — a producer that
+  DELETES and RECREATES `labels_x.jsonl` (an in-place rotation) must be read from zero, and keying on
+  the name alone made the buffer seek past the new file's first `offset` bytes and drop those rows
+  with no counter and no warning. 🚨 The inode alone is NOT enough: ext4 reuses a freed inode number
+  on the next create (tmpfs does not, which hid it until the test temp root moved onto disk,
+  2026-09-30), so each poll re-checks the head bytes. Honest limit: a replacement whose first 4 KB
+  are byte-identical is read as an append. "Never a silent
   accept" has a mirror: never a silent DROP. Schema v1 is in the module docstring; obs resolve
   `obs_inline` > `obs_npz` > skip. **Everything unexpected is a COUNTED skip, never a crash and never a
   silent accept**: unknown `schema`, unknown `kind`, malformed JSON, out-of-range label, unresolvable

@@ -482,6 +482,27 @@ def test_a_repeated_state_REPLACES_its_resident_row_instead_of_stacking(tmp_path
     assert got == {0.9, 0.5}, "the SUPERSEDED label survived — dedup kept the older measurement"
 
 
+def test_an_in_place_rewrite_keeping_the_inode_is_read_from_the_START(tmp_path):
+    """ext4 reuses a freed inode number on the next create, so (name, inode) cannot tell a recreated
+    label file from the old one — the buffer seeked past the new file's first rows and DROPPED them
+    silently. This hid for as long as the test temp root was tmpfs (fresh inode numbers); it
+    surfaced the day the root moved onto disk (2026-09-30). Rewriting IN PLACE keeps the inode on
+    EVERY filesystem, so this pins the head-bytes identity check deterministically."""
+    p = _write(tmp_path, [_row(_obs(fill=float(i)), policy_step=100) for i in range(2)],
+               name="labels_a.jsonl")
+    buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
+    assert buf.poll(100) == 2
+    ino = p.stat().st_ino
+    new = b"".join(json.dumps(_row(_obs(fill=float(i)), policy_step=200)).encode() + b"\n"
+                   for i in range(10, 13))
+    with open(p, "r+b") as f:          # same inode, new content, longer than the old offset
+        f.write(new)
+        f.truncate()
+    assert p.stat().st_ino == ino
+    assert buf.poll(200) == 3, "rows of a file rewritten under the same inode were silently skipped"
+    assert len(buf) == 5 and buf.skipped_total == 0
+
+
 def test_a_rewritten_label_file_converges_to_the_file_s_own_row_count(tmp_path):
     """The truncate-and-rewrite re-ingest: a 5-row file re-read from zero must leave fill 5, not 6.
 
@@ -493,7 +514,12 @@ def test_a_rewritten_label_file_converges_to_the_file_s_own_row_count(tmp_path):
     buf = CfLabelBuffer(tmp_path, obs_dim=8, lag_bound=0)
     assert buf.poll(100) == 5 and len(buf) == 5
     p.unlink()
-    _write(tmp_path, rows + [_row(_obs(fill=99.0), policy_step=100)], name="labels_a.jsonl")
+    # The SAME five states RE-LABELLED, so the new file's bytes differ from its first byte and the
+    # buffer must re-read it from zero whatever inode the filesystem hands the new file (tmpfs a
+    # fresh one, ext4 usually the freed one). A byte-identical prefix is the append case, pinned
+    # separately by `test_an_in_place_rewrite_keeping_the_inode_is_read_from_the_START`.
+    relabelled = [_row(_obs(fill=float(i)), label=0.8, policy_step=100) for i in range(5)]
+    _write(tmp_path, relabelled + [_row(_obs(fill=99.0), policy_step=100)], name="labels_a.jsonl")
     buf.poll(100)
     assert len(buf) == 6, "the one genuinely new row did not land"
     assert buf.replaced_total == 5, "the five re-read rows were not recognised as re-reads"
