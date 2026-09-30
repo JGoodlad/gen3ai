@@ -565,7 +565,7 @@ now asserts, per torch: 2.5.1 ⇒ split ON and unsplit FAILS; 2.8 ⇒ split OFF 
 0 breaks on both torches, at every `--log-level`** (2026-09-30: 7,062 ops on 2.5.1, 6,870 on 2.8,
 production config). The ObservationDebugger that used to attach at `--log-level periodic` — and
 whose rate-limited logger's `time.time()` (`utils/logging/rate_limiter.py:14`) was the source of
-BOTH of the 3-graphs / 2-breaks the periodic build read — was removed that day. On CUDA the 2.5.1 split adds one; on 2.8 the CUDA explain is also **1 graph / 0 breaks** (6,870 ops) — the unsplit graph, K8's post-K1 target for the extractor.
+BOTH of the 3-graphs / 2-breaks the periodic build read — was removed that day. On CUDA the 2.5.1 split adds one; on 2.8 the CUDA explain is also **1 graph / 0 breaks** (6,870 ops) — the unsplit graph — so the extractor already meets K8's per-region rule on both torches on CPU and on 2.8 CUDA (the extractor as ONE declared `fullgraph=True` region; K8 is DECLARED COMPILE REGIONS, owner 2026-09-30, `designs/endstate/program_rust_core.md` Lane K).
 
 **Speed A/B (2026-09-29, idle RTX 3080 Ti, the same saved rollout buffer, `learner_benchmark`,
 K=5):** 2.8-unsplit is 1–2% FASTER than 2.5.1-split — baseline 57.21 s vs 58.45 s per update,
