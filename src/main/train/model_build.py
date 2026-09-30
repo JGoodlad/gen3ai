@@ -771,6 +771,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 _write_latest_txt(model_dir, "final_model_exception.zip")
                 raise
 
+            # Training is over: stand the worker watchdog down BEFORE the final save/eval, so a
+            # train-env worker SIGTERM'd in teardown (exitcode -15) is not an `exit 1` crash.
+            _shutdown_event.set()
             final_path = os.path.join(model_dir, "final_model")
             model.save(final_path)
             _write_latest_txt(model_dir, "final_model.zip")
@@ -960,6 +963,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             traceback.print_exc()
             os._exit(1) # Stop immediately, do not proceed to evaluation
 
+        # Training is over: stand the worker watchdog down (see the resume path's note).
+        _shutdown_event.set()
         final_path = os.path.join(model_dir, "final_model")
         model.save(final_path)
         _write_latest_txt(model_dir, "final_model.zip")

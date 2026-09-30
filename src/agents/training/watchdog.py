@@ -18,6 +18,12 @@ def start_subprocess_watchdog(vec_env, label="env", shutdown_event=None):
 
     def _watch():
         while True:
+            # Checked FIRST: once the caller says training is over, a worker that dies in teardown
+            # (SIGTERM'd → exitcode -15 as the env/eval shuts down) is not a crash. Checking the
+            # workers before the event let a -15 in the same poll turn every clean finish into
+            # `exit 1` → a spurious launcher "crash #1" at every run end (2026-09-27..29).
+            if shutdown_event is not None and shutdown_event.is_set():
+                return
             for p in processes:
                 if not p.is_alive() and p.exitcode not in (0, None):
                     print(f"\n🛑 [{label}] Worker PID {p.pid} died (exitcode={p.exitcode}). Exiting.")

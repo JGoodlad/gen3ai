@@ -64,10 +64,13 @@ Four self-describing records, all metadata-only + additive (old readers unaffect
   `cli_args` stamp): one `{hash, spec, recorded_at}` entry per ERA — a resume that changes the
   declared matchup appends a new era instead of silently overwriting the old one (cli_args keeps
   only the latest). Saves without cli_args (the periodic-checkpoint path) preserve it.
-- **The resume MATCHUP-DRIFT guard** (`train_rl_agent`, warn-not-fatal): a `--model` resume whose
-  declared matchup hash ≠ the run's recorded one emits a loud `⚠️ [MATCHUP DRIFT]` + the
+- **The MATCHUP-DRIFT guard** (`main.train.matchup_setup`, warn-not-fatal): a `--model` launch whose
+  declared matchup hash ≠ the checkpoint's recorded one emits a loud `⚠️ [MATCHUP DRIFT]` + the
   field-level diff (`matchup_spec.describe_drift`) — a mid-run curriculum change is legitimate,
-  doing it SILENTLY is not. Launcher restarts forward flags verbatim → never fire it.
+  doing it SILENTLY is not. The headline (`matchup_drift_header`) says **RESTART** when `--model` is
+  the run's own checkpoint and **FORK of <parent>** otherwise: a fork is compared against its
+  PARENT's matchup and is expected to differ (every exploiter fork of a self-play parent does).
+  Launcher restarts forward flags verbatim → never fire it.
 - **`eval_manifest.json` records the eval REGIME**: `matchup_hash`, `trainee_team_sha` (the pin
   the trainee piloted; None = pool), `opponent_pins` ({ext label: sha} for fold-back-pinned
   opponents) — a trace dir is self-describing about HOW its numbers were measured.

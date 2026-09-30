@@ -105,6 +105,44 @@ def apply_distill_team_bias(args, all_teams, trainee_teambuilder):
     return trainee_teambuilder
 
 
+def _planned_run_dir(args) -> "str | None":
+    """The run dir this process WILL write, as far as it is known before `run_io` resolves it:
+    `--run-dir` (a launcher restart), else `models/<--run-name>`, else None (a timestamped or
+    exploiter-derived dir, which a `--model` can never already live inside)."""
+    if getattr(args, "run_dir", None):
+        return args.run_dir
+    if getattr(args, "run_name", None):
+        return os.path.join("models", args.run_name)
+    return None
+
+
+def _checkpoint_run_name(model_path: str) -> str:
+    """The run a checkpoint belongs to: `<run>/checkpoints/x.zip` or `<run>/x.zip` → `<run>`."""
+    d = os.path.dirname(os.path.abspath(model_path))
+    if os.path.basename(d) == "checkpoints":
+        d = os.path.dirname(d)
+    return os.path.basename(d)
+
+
+def matchup_drift_header(model_path: str, run_dir: "str | None", new_hash: str, rec_hash: str) -> str:
+    """The `⚠️ [MATCHUP DRIFT]` headline, worded for what the launch IS.
+
+    A same-run RESTART (`--model` is this run's own checkpoint) whose matchup changed is a mid-run
+    curriculum change. A FORK (`--model` is another run's checkpoint) changing the matchup is the
+    ordinary case — every exploiter fork of a self-play parent does — so it names the PARENT whose
+    recorded matchup is being compared, instead of calling the fork "this resume". Pure → tested.
+    """
+    from main.train.fork_lr import is_same_run_checkpoint
+    tail = ("Metrics across the change are NOT comparable (a new era lands in "
+            "metadata.json:matchup_history).")
+    if run_dir and is_same_run_checkpoint(model_path, run_dir):
+        return (f"⚠️ [MATCHUP DRIFT] this RESTART declares matchup {new_hash} but the run last "
+                f"recorded {rec_hash} — the TRAINING DISTRIBUTION IS CHANGING mid-run. " + tail)
+    return (f"⚠️ [MATCHUP DRIFT] this FORK of {_checkpoint_run_name(model_path)} declares matchup "
+            f"{new_hash}; the parent recorded {rec_hash} — the fork trains on a DIFFERENT "
+            f"distribution than its parent did. " + tail)
+
+
 def build_matchup_and_opponents(args) -> MatchupSetup:
     """Load the team pool, declare the matchup, and resolve every opponent source."""
     # Load all teams using the new TeamLoader
@@ -202,10 +240,8 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
         from agents.training.matchup_spec import describe_drift
         _rec_hash, _rec_spec = read_recorded_matchup(args.model)
         if _rec_hash and _rec_hash != matchup.spec_hash():
-            emit(f"⚠️ [MATCHUP DRIFT] this resume declares matchup {matchup.spec_hash()} but the "
-                 f"run last recorded {_rec_hash} — the TRAINING DISTRIBUTION IS CHANGING mid-run. "
-                 "Metrics across the change are NOT comparable (a new era lands in "
-                 "metadata.json:matchup_history).")
+            emit(matchup_drift_header(args.model, _planned_run_dir(args),
+                                      matchup.spec_hash(), _rec_hash))
             for _d in describe_drift(_rec_spec, matchup.to_dict()):
                 emit(f"   ⚠️ {_d}")
 

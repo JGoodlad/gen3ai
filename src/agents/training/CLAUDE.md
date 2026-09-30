@@ -204,8 +204,10 @@ plays was assembled implicitly across seams that nothing forced to agree*.
 
 🚨 **`spec_hash()` is a MEASUREMENT-REGIME TAG: two runs or eras with different hashes are NOT
 metric-comparable.** It is stamped into `metadata.json`, every `eval_results.jsonl` row,
-`eval_manifest.json`, each checkpoint sidecar and `snapshot_history`; a `--model` resume whose
-declared matchup differs prints `⚠️ [MATCHUP DRIFT]` with the field-level diff. **The two sides are
+`eval_manifest.json`, each checkpoint sidecar and `snapshot_history`; a `--model` launch whose
+declared matchup differs from the checkpoint's recorded one prints `⚠️ [MATCHUP DRIFT]` with the
+field-level diff, worded **RESTART** (a mid-run change) or **FORK of <parent>** (the expected case for an
+exploiter fork of a self-play parent). **The two sides are
 independent BY CONSTRUCTION** (`trainee_teams` / `opponent_teams`), so the mirror-bug class is
 structurally closed.
 **Full detail — in [`designs/training/matchup_and_lineage.md`](../../../designs/training/matchup_and_lineage.md).**
@@ -1226,8 +1228,12 @@ Two daemon-thread watchdogs keep a hung/abandoned run from lingering:
 - **`start_subprocess_watchdog`** — for the `SubprocVecEnv` path. A crashed worker leaves the
   parent blocked on a pipe `recv` forever; this thread polls `processes` and `os._exit(1)`s the
   moment a worker dies with a nonzero exitcode. Started *after* env construction (and, in
-  self-play, after `_maybe_engage_self_play` rebuilds the env), right before `learn()`. It is a
-  **no-op on the `--debug` DummyVecEnv path** (no worker processes to watch).
+  self-play, after `_maybe_engage_self_play` rebuilds the env), right before `learn()`, and
+  **stood down the moment `learn()` returns** (`model_build` sets its shutdown event before the
+  final save/eval; the thread checks the event before the workers). Without that, a worker
+  SIGTERM'd in teardown (exitcode −15) turned every clean finish into a launcher "crash #1"
+  (`watchdog_teardown_test.py`). It is a **no-op on the `--debug` DummyVecEnv path** (no worker
+  processes to watch).
 - **`start_orphan_watchdog`** — for the `--debug` smoke path, which has no worker watchdog. A
   smoke run is a child of the launching shell/agent; if that parent dies the run is orphaned
   (PPID changes) and a hung smoke (e.g. a vanished `9XXX` server) would otherwise sit as a
