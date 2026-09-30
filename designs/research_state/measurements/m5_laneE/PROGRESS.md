@@ -42,6 +42,8 @@ The harness rebuild rule: a stale `.so` is REFUSED by the stamp (Lane 0 gate ⑤
 
 | tier | T2 backend | per-env path | pool | decisions | divergences | max \|Δ legal logp\| |
 |---|---|---|---|---|---|---|
+Assertion rule (declared, `judge_flips`): an argmax flip with top-2 margin < 2 x the tier's bar is a counted TIE; any other flip, or any |Δ| above the bar, is FATAL. Bars: eager 1e-5, compiled CPU 1e-5, GPU 1e-3.
+
 | COMMIT greedy (routine) | eager CPU | eager CPU RLPlayer | 2 perturbed fresh | 615 (12 eps, trial) | 0 | 9.5e-7 |
 | COMMIT sampled, stall threshold 6, refresh at step 20 | eager CPU | eager CPU | 2 + 1 refreshed | 259 (49 eps) | 0 (0 near-ties) | 9.5e-7 |
 | compiled (trial) | eager CPU | `--compile-opponents` CPU | 2 fresh | 386 | 0 | 1.4e-6 |
@@ -123,6 +125,21 @@ intermittently during the run (`busy_box_warnings`): no ratio is claimed from th
   into T2's graph. Not done here (it changes the gate's contract; G's call).
 - **F-LE-9 (for Lane G / the SIZING study):** at 48 envs and a pool of 20, 90 % of per-slot row
   counts are 1–4; buckets 8 / 16 cost startup (~100 s compile each) and serve almost nothing.
+- **F-LE-10 (= Lane J's F-LJ-6, FIXED 2026-09-30):** `test_slow_compiled_per_env_path` failed whenever it
+  ran after other tests. ROOT CAUSE: leaked PROCESS state — `record()` called `torch.set_num_threads(4)`
+  and never restored it, so the next `run()` built its fresh snapshots at 4 threads instead of the
+  process's 8; a fresh policy's orthogonal init (QR) is thread-sensitive (94 of 721 tensors differ, up to
+  7.5e-6), so the weights moved by rounding, the battles did not, and at the one EXACT tie of the run
+  (env 3, episode 3, decision 40: two switch targets at logp -2.0050578 each, margin 0.0) eager's argmax
+  (8) and the compiled path's (9, off by 2.4e-7) disagreed. Bisected by diffing the torch globals and the
+  recordings of the two orders (identical rows and actions, 1,720 of 1,881 logp rows differing by <= 1.4e-6,
+  94 weight tensors differing). The eager forward itself is bit-reproducible at a fixed thread count and
+  differs between 1 / 4 / 8 threads (probe). FIX: `declared_torch_state` (pin, verify precision / dtype /
+  threads on entry AND exit, restore; `GateStateError` otherwise) around the snapshot build (1 thread),
+  the recording (4) and the replay child (1); the tie rule DECLARED in the assertion (`judge_flips`).
+  Regression tests fail on revert (the build pin; the restore). VERIFIED: the compiled configuration after
+  the file's other tests and alone record byte-identical battles (sha `b48b83d0…`), 0 flips; a full-order
+  session of the whole file under the GPU lock: 10 passed (1,881 / 2,052 / 1,725 decisions, 0 flips).
 - **F-LE-7:** a stable / exploiter opponent of ANOTHER architecture (same obs family, other weight
   shapes) needs its own T2 slot group — `PolicyOpponentServer` takes the service as built; grouping
   by state-dict signature at startup is G's (T2's `SlotArchMismatch` refuses a wrong load).

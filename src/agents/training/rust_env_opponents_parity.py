@@ -23,11 +23,26 @@ RECORD through the new path, REPLAY through today's, compare every opponent deci
    counts. A mismatch is counted and the RECORDED action is played on, so one disagreement cannot
    hide the rest.
 
-THE BARS. Greedy: equal on every row whose recorded top-2 legal log-prob margin exceeds
-``2 x LOGP_BAR`` (``compile_trainer``'s legal log-prob bar 1e-3, T2's gate); a NEAR-TIE row is counted
-and reported, never silently passed. Sampled: equal on every draw whose top-2 margin of
-``logp / T - log q`` (``q`` the draw's Exp(1) variates, recomputed from the recorded generator state)
-exceeds ``2 x LOGP_BAR / T``; near-ties reported.
+THE BARS (declared in the ASSERTION, :func:`judge_flips`). Every legal log-prob agrees within the
+tier's bar ``B`` (``max_dlogp < B``). An ARGMAX FLIP (the per-env path's greedy or sample differs from
+the recorded one) is data, recorded with its MARGIN — the recorded top-2 legal log-prob gap (greedy),
+or the top-2 gap of ``logp / T - log q`` times ``T`` (sampled; ``q`` the draw's Exp(1) variates,
+recomputed from the recorded generator state) — and judged: a flip needs ``margin <= |Δ_a| + |Δ_b| <=
+2 x max|Δ|``, so with every |Δ| under ``B`` a flip at ``margin >= NEAR_TIE_FACTOR x B`` cannot come from
+rounding and is FATAL, while one below it is a TIE (an agreement, counted and reported). Exact ties
+(margin 0.0) exist in real and fresh policies (T2, measured) — two switch targets the pointer head
+scores identically — and there either argmax is correct.
+
+DECLARED TORCH STATE (F-LJ-6, found by Lane J). The recorded log-probs and the fresh snapshots depend
+on process-global torch state: the intra-op THREAD COUNT changes CPU rounding — measured: a fresh
+production policy's orthogonal init (a QR) differs in 94 of 721 tensors by up to 7.5e-6 between 8 and 4
+threads, and one policy's forward bytes differ between 1, 4 and 8 threads. A test that set the count
+and left it (this harness's own ``record``, before the fix) changed the NEXT test's snapshots, and so
+which way an exact tie fell. :func:`declared_torch_state` pins every such global for the region it
+wraps (the snapshot build at ``BUILD_THREADS``, the recording at ``RECORD_THREADS``, the replay child at
+1), refuses to start when a global it does not own is off its declared value
+(``GateStateError``: fp32 matmul precision "highest", default dtype float32), re-checks on exit, and
+restores the thread count it found.
 
 PHANTOM POLLS (F-LF-2's policy twin). The wrapper calls ``choose_move`` on steps whose p2 order is
 never sent; today that DRAWS from the opponent's generator. The core asks only at real decisions,
@@ -43,6 +58,7 @@ counts the phantoms — the stream today's path consumes is not reproducible by 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import pickle
@@ -52,11 +68,60 @@ import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 
 LOGP_BAR = 1e-3
+#: A flip below ``NEAR_TIE_FACTOR x`` the tier's |Δ legal log-prob| bar is a TIE (see THE BARS): 2 is the
+#: exact bound (each of the two compared log-probs moves by at most the bar).
+NEAR_TIE_FACTOR = 2.0
+#: Intra-op threads while BUILDING fresh snapshots (their init is thread-sensitive) and while RECORDING.
+BUILD_THREADS = 1
+RECORD_THREADS = 4
+#: The process-global torch state the gate declares (the values a fresh process has).
+DECLARED_MATMUL_PRECISION = "highest"
+
+
+class GateStateError(RuntimeError):
+    """A process-global torch setting the gate depends on is not what it declares."""
+
+
+@contextlib.contextmanager
+def declared_torch_state(threads: int) -> Iterator[None]:
+    """Pin the thread count for the block, refuse an undeclared global, restore what was found."""
+    import torch
+
+    def check(where: str) -> None:
+        bad = {}
+        if torch.get_float32_matmul_precision() != DECLARED_MATMUL_PRECISION:
+            bad["float32_matmul_precision"] = torch.get_float32_matmul_precision()
+        if torch.get_default_dtype() != torch.float32:
+            bad["default_dtype"] = str(torch.get_default_dtype())
+        if torch.get_num_threads() != int(threads):
+            bad["num_threads"] = torch.get_num_threads()
+        if bad:
+            raise GateStateError(f"{where}: torch state {bad} is not the declared one (precision "
+                                 f"{DECLARED_MATMUL_PRECISION!r}, float32, {threads} threads) — a test or "
+                                 "import left it changed; fix it at the source")
+
+    found = torch.get_num_threads()
+    torch.set_num_threads(int(threads))
+    try:
+        check("entering the gate region")
+        yield
+        check("leaving the gate region")
+    finally:
+        torch.set_num_threads(found)
+
+
+def judge_flips(rep: Dict[str, Any], dlogp_bar: float) -> Tuple[int, List[Dict[str, Any]]]:
+    """The declared tie rule: ``(ties, fatal)`` — flips whose margin is below ``NEAR_TIE_FACTOR x
+    dlogp_bar`` are TIES; every other flip is FATAL (see THE BARS)."""
+    eps = NEAR_TIE_FACTOR * float(dlogp_bar)
+    flips = rep.get("flips", [])
+    fatal = [f for f in flips if f["margin"] is None or f["margin"] >= eps]
+    return len(flips) - len(fatal), fatal
 NAMES = ("lepone", "leptwo")
 
 
@@ -135,6 +200,13 @@ def build_pool_dir(dst: Path, spec: str) -> Tuple[List[str], List[str]]:
     return names[:-1], [held]
 
 
+def build_gate_pool(dst: Path, spec: str) -> Tuple[List[str], List[str]]:
+    """:func:`build_pool_dir` under the declared state: a fresh policy's init is thread-sensitive
+    (F-LJ-6), so the gate's snapshots are built at ``BUILD_THREADS`` whatever the process holds."""
+    with declared_torch_state(BUILD_THREADS):
+        return build_pool_dir(dst, spec)
+
+
 def _pool_version(pool_dir: Path) -> Any:
     """The version every snapshot is checked against: the pool's own ``model_config.json`` — in
     training the TRAINEE's version (``SnapshotPool._write`` puts it there), never the code defaults."""
@@ -151,7 +223,13 @@ def _seed(key: int) -> List[int]:
 
 
 def record(cfg: Dict[str, Any]) -> Dict[str, Any]:
-    import torch
+    """Under :func:`declared_torch_state` (``RECORD_THREADS``): the thread count is pinned for the
+    recording and RESTORED after it — the leak F-LJ-6 traced."""
+    with declared_torch_state(RECORD_THREADS):
+        return _record(cfg)
+
+
+def _record(cfg: Dict[str, Any]) -> Dict[str, Any]:
 
     from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
     from agents.training import rust_env_opponents as E
@@ -161,7 +239,6 @@ def record(cfg: Dict[str, Any]) -> Dict[str, Any]:
     from utils.rust_env import ffi
     from utils.rust_env import protocol as P
 
-    torch.set_num_threads(int(cfg.get("torch_threads", 4)))
     pool_dir = Path(cfg["pool_dir"])
     ver = _pool_version(pool_dir)
     pool = SnapshotPool(pool_dir, current_version=ver, device="cpu", lru_cache_size=64)
@@ -356,26 +433,23 @@ def _replay_player_cls() -> Any:
             lp = torch.log_softmax(ml, -1).numpy()
             o["max_dlogp"] = max(o["max_dlogp"], float(np.abs(lp[legal] - d.logp[legal]).max()))
             srt = np.sort(d.logp[legal])[::-1]
-            near_g = len(srt) > 1 and (srt[0] - srt[1]) <= 2 * LOGP_BAR
-            o["near_tie_greedy"] += int(near_g)
+            margin_g = float(srt[0] - srt[1]) if len(srt) > 1 else None
+            o["near_tie_greedy"] += int(margin_g is not None and margin_g <= 2 * LOGP_BAR)
+            dl_row = float(np.abs(lp[legal] - d.logp[legal]).max())
+            where = {"env": ep.env, "episode": ep.episode, "dec": self._j - 1, "dlogp_row": dl_row}
             g_cpu = int(torch.argmax(ml).item())
-            if g_cpu != d.greedy:
-                k = "greedy_neartie" if near_g else "greedy"
-                o["div"][k] = o["div"].get(k, 0) + 1
+            if g_cpu != d.greedy:        # an ARGMAX FLIP is data; `judge_flips` decides (THE BARS)
+                o["flips"].append({"kind": "greedy", "margin": margin_g, "path": g_cpu, "recorded": d.greedy, **where})
             if self._sampled:
                 g2 = torch.Generator(device="cpu")
                 g2.set_state(gstate)
                 q = torch.empty(1, ml.shape[0]).exponential_(1, generator=g2)[0].numpy()
                 r = d.logp[legal] / temperature - np.log(q[legal])
                 rs = np.sort(r)[::-1]
-                near = len(rs) > 1 and (rs[0] - rs[1]) <= 2 * LOGP_BAR / temperature
-                o["near_tie_sample"] += int(near)
+                margin_s = float(rs[0] - rs[1]) * temperature if len(rs) > 1 else None
+                o["near_tie_sample"] += int(margin_s is not None and margin_s <= 2 * LOGP_BAR)
                 if idx != d.action:
-                    k = "sample_neartie" if near else "sample"
-                    o["div"][k] = o["div"].get(k, 0) + 1
-            elif idx != d.action:
-                k = "action_neartie" if near_g else "action"
-                o["div"][k] = o["div"].get(k, 0) + 1
+                    o["flips"].append({"kind": "sample", "margin": margin_s, "path": idx, "recorded": d.action, **where})
             if idx != d.action:                     # play the RECORDED action on (alignment)
                 tracker.restore(snap)
                 self.embed_battle(battle)
@@ -387,9 +461,12 @@ def _replay_player_cls() -> Any:
 
 
 def replay(rec_path: str, out_path: str) -> Dict[str, Any]:
-    import torch
 
-    torch.set_num_threads(1)                                  # an env worker's pin
+    with declared_torch_state(1):                             # an env worker's pin, declared
+        return _replay(rec_path, out_path)
+
+
+def _replay(rec_path: str, out_path: str) -> Dict[str, Any]:
     with open(rec_path, "rb") as f:
         rec = pickle.load(f)
     cfg, eps = rec["cfg"], rec["episodes"]
@@ -428,7 +505,7 @@ def replay(rec_path: str, out_path: str) -> Dict[str, Any]:
     Player = _replay_player_cls()
     sampled = cfg["mode"] == "sampled"
     out: Dict[str, Any] = {"decisions": 0, "phantom_polls": 0, "phantom_draws": 0, "no_decision_sent": 0,
-                           "near_tie_greedy": 0, "near_tie_sample": 0, "max_dlogp": 0.0, "div": {},
+                           "near_tie_greedy": 0, "near_tie_sample": 0, "max_dlogp": 0.0, "div": {}, "flips": [],
                            "episodes": 0, "p2_forfeits": 0, "p1_forfeits": 0, "models": sorted({e.model_id for e in eps})}
     w = None
     t0 = time.perf_counter()
@@ -498,7 +575,7 @@ def run(cfg: Dict[str, Any], workdir: Optional[str] = None, mutate: Any = None
     for var in ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR"):
         os.environ.setdefault(var, tempfile.mkdtemp(prefix=f"laneE_{var.lower()}_"))
     if "pool_dir" not in cfg:
-        build_pool_dir(wd / "pool", cfg["pool"])
+        build_gate_pool(wd / "pool", cfg["pool"])
         cfg = dict(cfg, pool_dir=str(wd / "pool"))
     rec = record(cfg)
     if mutate is not None:
@@ -517,6 +594,16 @@ def run(cfg: Dict[str, Any], workdir: Optional[str] = None, mutate: Any = None
     summary = {k: v for k, v in rec.items() if k != "episodes"}
     summary["n_episodes"] = len(rec["episodes"])
     summary["p2_decisions"] = sum(len(e.p2) for e in rec["episodes"])
+    import hashlib
+
+    h = hashlib.sha256()
+    for e in rec["episodes"]:
+        h.update(repr((e.env, e.episode, e.teams, e.seed, e.route, e.model_id, e.p1)).encode())
+        for d in e.p2:
+            h.update(d.row)
+            h.update(d.logp.tobytes())
+            h.update(bytes([d.action & 0xFF]))
+    summary["battles_sha"] = h.hexdigest()[:16]
     return summary, rep
 
 
@@ -553,7 +640,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(json.dumps(res, indent=1, default=str))
     if a.json:
         Path(a.json).write_text(json.dumps(res, indent=1, default=str))
-    return 0 if not rep["div"] else 1
+    ties, fatal = judge_flips(rep, LOGP_BAR)
+    return 0 if not rep["div"] and not fatal else 1
 
 
 if __name__ == "__main__":

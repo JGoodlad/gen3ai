@@ -283,25 +283,25 @@
   },
   "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[greedy]": {
    "status": "pass",
-   "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
-   "at": "2026-09-30T06:23:23Z",
-   "duration_s": 249.31,
+   "commit": "101f14b768b25a2c51bb35452dd65c32e0f5e9cc",
+   "at": "2026-09-30T07:40:40Z",
+   "duration_s": 199.25,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/rust_env_opponents_parity_test.py::test_milestone_gpu_graph_backend_vs_compiled_cpu_on_a_real_pool[sampled]": {
    "status": "pass",
-   "commit": "d58b12de52210c12e8ab1016633af82298d439f9",
-   "at": "2026-09-30T06:23:23Z",
-   "duration_s": 394.28,
+   "commit": "101f14b768b25a2c51bb35452dd65c32e0f5e9cc",
+   "at": "2026-09-30T07:40:40Z",
+   "duration_s": 456.76,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/rust_env_opponents_parity_test.py::test_slow_compiled_per_env_path": {
    "status": "pass",
-   "commit": "e5478fcbe450c52b3042e3face8c38d61f395bc4",
-   "at": "2026-09-30T04:44:55Z",
-   "duration_s": 143.34,
+   "commit": "101f14b768b25a2c51bb35452dd65c32e0f5e9cc",
+   "at": "2026-09-30T07:40:40Z",
+   "duration_s": 132.05,
    "contention": 1.0,
    "detail": ""
   },
@@ -1018,5 +1018,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T06:23:57Z"
+ "last_written": "2026-09-30T07:40:40Z"
 }
