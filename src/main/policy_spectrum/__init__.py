@@ -11,6 +11,12 @@ count, opponent class, our team, the move categories of the legal actions).
 - :mod:`.spectrum`   the rank-mass spectrum, entropy, per-category mass; battle-clustered intervals.
 - :mod:`.reader`     any checkpoint ``.zip`` on the whole bank, forward passes only, CPU.
 - :mod:`.report`     several reads side by side, with paired deltas on the same turns.
+- :mod:`.truth` / :mod:`.truth_report`   gate ④: every legal action × shared dice seeds played to
+                     the END under a greedy continuation; near-best / dominated / starved readouts.
+- :mod:`.qhat` / :mod:`.qhat_report`     the X4 PRE-READ: ONE-PLY counterfactual Q from the
+                     checkpoint's own critic (every legal action × truth's seeds, advanced only to our
+                     next decision, V on the trainee's row there) against that ground truth —
+                     ``designs/research_state/measurements/x4_preread/READOUT.md``.
 
 The committed v1 bank: ``designs/research_state/measurements/m5_laneS/bank_v1/``; progress, the
 baseline read and the gate ④ / ⑤ specification: ``designs/research_state/measurements/m5_laneS/PROGRESS.md``.
