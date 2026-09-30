@@ -32,7 +32,7 @@ no pointer is not a measurement.
 
 ---
 
-## TL;DR — fifteen bullets
+## TL;DR — the headline bullets
 
 1. **The goal is a gen3 OU generalist that keeps improving.** The intended engine is the
    **flywheel**: train narrow exploiters (best responses on a few pinned teams), distil them back
@@ -120,6 +120,11 @@ no pointer is not a measurement.
     exhausted by +20M: another +8.06M moved it −1.50 pp [−3.75, +0.62] against a 3.69 floor. Every
     era-2 fold reads against `ai_v13_12_plateau` @95,158,272, which removes the §2.2 confound by
     construction. [§2.2; ledger `3459ecce`]
+18. **The ai_v14 lineage's sharpening is mostly STARVATION.** From N0@75M to K3 the share of
+    decisive turns where a near-best action gets < 1 % rises ~0.33 → ~0.50 (3/3 continuations),
+    while the mass on dominated moves falls only ~0.018; worst on switches, almost all at the
+    N0 → C_fix step (confounded with +8M steps). It supports X23 and X25.
+    [MEASURED · DETECTED · §4.4; ledger 2026-09-29 · *M5 LANE S GATE ④ AT SCALE*]
 
 ---
 
@@ -1189,6 +1194,46 @@ critic is read on at 10M; offline reads pending. Eleven runs, six levers, no lev
 - ⚠️ **A provenance hazard, live**: `model_config.json` records `all_shaping_pbrs=True` while the
   child announces `1 TERMINAL + 0 PBRS + 0 BIAS`. Those flags are INERT under
   `--terminal-indicator`. **The announcer is the authority.**
+
+### 4.4 The ai_v14 lineage's sharpening is mostly STARVATION
+
+**Along N0@75M → C_fix → K2 (G0′) → K3 the policy grows sharper (rank-1 mass +0.057 at the fix
+step, CI clear of 0), and most of what it gives up is NOT bad moves: it pushes near-best
+alternatives below 1 %.** The meters, all on ground truth from branching every legal action to the
+end of the game under shared dice (CRN — common random numbers — 64 seeds per turn, 1,600 turns of
+the Lane S bank, three greedy continuations; M5 Lane S's policy-spectrum instrument
+`src/main/policy_spectrum/`):
+
+- **near-best** — an action whose paired value gap to the best is ≤ 0.1 on the ±1 scale;
+- **starved** — the policy puts < 1 % of its probability on a near-best action;
+- **dominated** — separably worse than the best by more than 0.1 (gap − 1.96·SE > 0.1);
+- **decisive turn** — a turn with at least one dominated action (~950 of the 1,600).
+
+| claim | tag |
+|---|---|
+| The starved share of decisive turns rises from **~0.33 (0.31–0.35) to ~0.50 (0.48–0.49)** from N0@75M to K3 (+0.14 to +0.16), while the mass on dominated actions falls only **~0.018 (−0.017 to −0.019)**. The healthy part of the sharpening is real but small; most of it is starvation | MEASURED · DETECTED under all three continuations (K2 final, N0 final, C_fix final), and in the strict form (near-best even at its upper bound, +0.12 to +0.13) |
+| **Most of the rise is at the N0 → C_fix step** (+0.12 to +0.16); C_fix → K2 adds +0.03, K2 → K3 gives back −0.02 to −0.03. That step is the miscompile fix **confounded with +8M training steps**, so it is an ASSOCIATION with the fix, not a cause | MEASURED · DETECTED 3/3 per step · cause UNVERIFIED |
+| **By category** (N0@75M → K3): **switches are worst** (+0.15 to +0.18); attacks and status moves starve too (3/3); **setup moves are real at 2 of 3 continuations** (+0.09 to +0.13; the K2 continuation straddles 0); **recovery is not established** (1 of 3); **hazards are unchanged** (0 of 3) | MEASURED · per-category rows condition on a subset that over-samples non-attacking categories |
+| **The verdict is not a noise or continuation artifact.** At 16 of the 64 seeds (nested) the N0 → K3 delta is +0.13 to +0.14 against +0.14 to +0.16 at 64 — fewer seeds find FEWER near-best actions and LOWER starvation, so noise does not drive it; of 84 (step × category × measure) verdicts across the three continuations, 60 are unanimous and **none flips sign** | MEASURED |
+
+**Caveats.** Every value is under a GREEDY continuation playing both sides — not Nash, and not the
+recorded opponent. The best action's value carries the winner's curse (a max of noisy means is
+biased upward), which widens the gaps to it. Every N0 checkpoint was trained under the CUDA compile
+miscompile. The bank's battles are eval traces recorded before the F-LF-1 bot fix (four scripted
+bots' setup step never fired), so its bot-opponent states come from the broken bots; what that does
+to this read is **UNVERIFIED**.
+
+**What it implies.** Whether the lineage's entropy is too low is now a measured question, not a
+hunch: it supports **X23** (the entropy / self-play-temperature arm, DEFERRED until the architecture
+is stable; row 5c) and **X25** (epistemic confidence for V and Q, validated on these same
+ground-truth turns; row 5e) in [`EXPERIMENT_BACKLOG.md`](EXPERIMENT_BACKLOG.md). This read is not
+a verdict on strength: it measures where the policy's mass goes, not what that costs in games.
+
+[ledger 2026-09-29 · *M5 LANE S GATE ④ AT SCALE — THE LINEAGE STARVES NEAR-BEST MOVES* (`a41dcfca`);
+meas: [`measurements/m5_laneS/truth_v2/READOUT.md`](measurements/m5_laneS/truth_v2/READOUT.md),
+`truth_v2/readout_S64.json`, `m5_laneS/PROGRESS.md` §"Gate ④ AT SCALE"; the sharpening baseline:
+ledger 2026-09-29 · *M5 LANE S — THE POLICY-SPECTRUM BASELINE*, `m5_laneS/baseline_2026-09-29/REPORT.md`; the bot
+fix: ledger 2026-09-29 · *GIGO FIX · F-LF-1*]
 
 ---
 
