@@ -903,6 +903,25 @@ announcement and every value-side flag below — is in
 | `--td-aux-coef` | `0.0` | the Bellman identity as an explicit loss over CONTIGUOUS pairs the PPO permutation destroys. 🚨 **Pre-registered band 1.0–3.0; `λ ≤ 0.1` measured significantly WORSE than control** — the small-coef regime is to be avoided, not treated as "a bit of the effect". Episode boundaries DROP the pair, never zero it |
 | `--value-dist-mode` / `--value-dist-coef` | `none` / `0.0` | HL-Gauss categorical readout off `value_pooled`, **interpretability only** — ledger K1 killed it as a win-rate lever. Validate PIT ≈ uniform, never win rate. REFUSED under `winprob` |
 
+## The DETACHED RIDE-ALONG heads (`--ridealong-ensemble` · `--ridealong-rnd` · `--ridealong-adv` · `--ridealong-opp`)
+
+`gen3_ridealong_heads_v1` (v126; `instrumented_ppo/ridealong_terms.py`, heads in
+`agents/model/ridealong_heads.py`). Baselines that OBSERVE: a V ensemble (epistemic uncertainty),
+RND novelty on the raw observation, and the Q = V + A + B main effects on PPO's own labels.
+`_ridealong_update` runs right after each minibatch's `evaluate_actions` and BEFORE PPO's loss is
+built: detached stashes → the heads' losses → their own backward, clip and Adam step → their grads
+back to None. So it sits OUTSIDE the fold order above, and nothing in the fold can see it.
+`ridealong_update_test` pins one real update ON vs OFF as bit-identical (params, PPO optimizer
+state, PPO scalars, RNG). Two things to know when reading `ridealong/*`. **The heads TRAIN and READ
+on epoch 0 only** (`RIDEALONG_EPOCHS` = 1: each rollout row seen once, scored before the heads train
+on it). All 10 epochs cost +13 % of a GPU update on the learner benchmark; one pass is ESTIMATED at a tenth of that (the re-measure is X26's `PREREGISTRATION.md` "Overhead").
+And **the heads' Adam state is not checkpointed** (a restart resumes their weights with a fresh Adam). B trains
+only where `--opp-intent-coef > 0`, because that is what aligns the one-ahead opponent labels. The
+meters are disagreement / novelty vs |V − z| (`*_auroc_err`, `*_spearman_err`, top vs bottom decile),
+`rnd_z_<class>`, `adv_corr_logit`, `adv_std_starved` vs `adv_std_fed`, `q_out_of_range`. These are
+MONITORING (rows the heads just trained on); the verdicts are the offline reader's. The
+pre-registered run is EXPERIMENT_BACKLOG X26.
+
 ## The PRIVILEGED true-team value channel (`--value-true-team`)
 
 `gen3_value_true_team_v1` (v114), the critic ladder's **arm-5 CEILING PROBE**

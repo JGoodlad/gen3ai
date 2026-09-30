@@ -341,7 +341,16 @@ from typing import Any, Dict
 #   check_compatible on `opp_intent`. A pre-v125 config migrates to 0.0 when `opp_intent` is OFF (the
 #   only possible past) and stays UNRECORDED (None) when ON — a resume then takes the run's
 #   `metadata.json:cli_args` dose or is REFUSED. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 125
+# v126 (gen3_ridealong_heads_v1): `ridealong_ensemble` / `ridealong_rnd` / `ridealong_adv` /
+#   `ridealong_opp` — the DETACHED RIDE-ALONG heads (V ensemble, RND novelty, A, B; owner
+#   2026-09-30, EXPERIMENT_BACKLOG X25 / X4a). STRUCTURAL (their params are the state_dict delta,
+#   gated in check_compatible) but INERT to training: every input is detached, the heads have their
+#   own optimizer and a private init RNG, so a run with them learns exactly what the same run
+#   without them learns (`ridealong_heads_test`). Built on the POLICY after SB3's `_build`, never
+#   called by the forward. A pre-v126 config defaults every toggle OFF (the only possible past).
+#   No ARCH_SIGNATURE bump (the observation vector and every existing module are unchanged), no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 126
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

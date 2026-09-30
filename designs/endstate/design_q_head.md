@@ -1,6 +1,8 @@
 # Design — the Q head, the opponent pointer, and fixed-mass belief tokens
 
-**Status: DESIGN (owner-directed, 2026-09-27). Not built.** Experiment rows X3–X6 and X11 in
+**Status: DESIGN (owner-directed, 2026-09-27).** The one built piece is X4a's DETACHED A and B
+heads, which ride along in the X26 baseline (`gen3_ridealong_heads_v1`, config v126, 2026-09-30;
+§5.4). The joint Q head, α-as-flat-pointer and the fixed-mass tokens are not built. Experiment rows X3–X6 and X11 in
 [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md); build rows T2–T4
 in [`../ops/TASK_BACKLOG.md`](../ops/TASK_BACKLOG.md). **Updated 2026-09-30 after the X4 pre-read**
 (`a831190b`, `54fd5a6b`; [`../research_state/measurements/x4_preread/READOUT.md`](../research_state/measurements/x4_preread/READOUT.md)).
@@ -237,6 +239,39 @@ they vary now.
   is labelled by identity AND as OTHER.
 - Early check: does the bilinear head's filled-in matrix agree with FULLY labelled matrices on a
   held-out set (matrix completion)?
+
+### 5.0a The ride-along A and B heads — BUILT (X4a, 2026-09-30; X26)
+
+What is built differs from §4–§5. It is the in-scope floor: zero ply, labels PPO already produces, and
+every input stop-grad. The code is `agents/model/ridealong_heads.py`, and
+`designs/model/readouts_and_value_routes.md` is the doc of record for it.
+- **A:** K = 5 bootstrapped members (per-state hash masks + randomized priors), each with
+  `QWinProbHead`'s shared-scorer shape over the pointer head's own per-action tokens, with
+  `value_pooled` as the context (this doc's `h^Q_a` with `value_pooled` in place of `latent_v`,
+  which the extractor cannot see). Each is centred under π (stop-grad). The label is the GAE advantage
+  of the action TAKEN (MSE on that single entry, linear per §5.1). The members' spread per action is
+  the per-action epistemic read (X25: "build A/B as a bootstrapped ensemble from the start").
+- **B:** K = 5 members over **α's current support**: their believed move seats, scored from the
+  seat's concrete MOVE ID through the head's own embedding, plus one SWITCH column from the context.
+  Each is centred under α (stop-grad). The label is the same advantage, at the column of the
+  opponent's actual action (α's own label, `match_seats_to_move_num`; misses are masked). **This
+  is the simple pre-X5 parameterisation, to be RE-BASED onto §3's flat pointer (seats + switch
+  targets + OTHER) when X5 lands.** Its declared limit: a move outside the believed seats is not a
+  label, so B is conditional on the opponent choosing a listed option. There is no OTHER mass, and
+  B cannot tell switch targets apart.
+- **Identification without counterfactual branches.** A gen-3 move turn is simultaneous, so a ⟂ b
+  given s. With A centred under π and B centred under α, E[adv | s, a] = A(s, a) and E[adv | s, b]
+  = B(s, b). Two MARGINAL regressions on the ONE observed label identify both main effects, and
+  there is no I term. The bias that remains is the label's: GAE at the run's λ is V-bootstrapped, so
+  A and B inherit V's within-turn blindness (§5.0). That is why X26 reads A against the pre-read's
+  Q̂ as a floor, not a target.
+- **Gradient routing:** DETACHED, the §5.2 "detached probe" in its simplest form. It is on-policy
+  and in the loop, with no replay re-encoding and no probe-refit gap. The heads have their own
+  optimizer, are outside PPO's grad clip, and use a private RNG. So they cannot move what the
+  run learns, and `ridealong_update_test` pins this bit-for-bit. The shared-trunk main arm of §5.2
+  is still the X4 plan.
+- **Q = V + A + B** is a derived meter (`ridealong/q_out_of_range`, and the reader's
+  Brier(V + A + B) at the played pair), never a training target and never a decision input.
 
 ### 5.1 Label policy — M = 1, breadth over repeats (owner, 2026-09-30)
 
@@ -482,7 +517,8 @@ PRIORITY (§5.0).
 2. **In scope now (at most one ply, subsampled):**
    - the one-ply V-bootstrapped Q̂ as an **inference-time lookahead** and as a **diagnostic** (§5.0,
      §6), never an anti-starvation or distillation target;
-   - **X4a**, the A/B ride-along on the labels PPO already produces (zero extra ply);
+   - **X4a**, the A/B ride-along on the labels PPO already produces (zero extra ply). **BUILT
+     2026-09-30 (§5.0a) and runs in the X26 baseline**, with B on α's support until X5;
    - **X23** (entropy / temperature, zero ply) stays the starvation lever (§5.2);
    - **X5**, the fixed-mass belief tokens (§1), zero ply, STANDALONE. It is no longer bundled with
      X4 (orchestrator, 2026-09-30), and it lands at the North Star 1 retrain boundary.
@@ -543,4 +579,5 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-30 | **Turn mechanics corrected** (verified at source) | After a SINGLE faint only the fainted side chooses, mid-turn in gen ≤ 3, and the opponent's next-turn reply must be modelled (confirmed). A DOUBLE faint is a SIMULTANEOUS blind choice. A mid-turn replacement (incl. Baton Pass) can face an opponent move ALREADY LOCKED in the queue. The branch rules per decision type are §5.1a's table | "Sequential after a faint; the opponent's reply must be modelled" for every faint (this spec's §5.1 until 2026-09-30) | §5.1a; `../research_state/measurements/x4_preread/mechanics.md` (`sim/battle.ts:2861–2864`, `:2933`, `:1420–1428`, `:3021–3040`, `:3081–3090`) |
 | 2026-09-30 | **Critic data at scale: the complete-game collector** (brings §5.2 in line with `program_rust_core.md`) | Lane G's complete-game collector (order constraint 6, owner 2026-09-29; BUILT 2026-09-30) is the critic-data mechanism: rows wait in its arena until their game ends, get complete-game GAE and their own outcome, and the sample-count trigger splits (never drops) the one straddling game, so every row is labelled once | The delayed-label buffer this doc specified on 2026-09-27 (SUBSUMED: K10(b), a bolt-on beside fixed n_steps windows; the collector retires the windows themselves) | §5.2; `program_rust_core.md` order constraint 6 and its 2026-09-29 Lane G collector row; `../training/rust_collector.md` |
 | 2026-09-30 | **X5 unbundled from X4** (orchestrator) | The fixed-mass belief tokens (§1, X5) STAND ALONE: a zero-ply architecture change, in scope under the owner's one-ply rule, landing at the North Star 1 retrain boundary; judged on intent NLL / calibration, OTHER rates, on-pool belief metrics and a strength guard; the I-term readout waits for X4's return | Keeping X5 "bundled with X4" (it would inherit X4's deferral although it adds no ply) | §1, §9; EXPERIMENT_BACKLOG X5 |
+| 2026-09-30 | **The ride-along A / B heads (X4a) — BUILT** (owner's baseline ask, 2026-09-30: "establish a baseline just with the ensemble of value heads … and the Q, A and B values") | DETACHED heads on labels PPO already produces. A = per-action, centred under π, MSE on the taken action's GAE advantage. B = over α's current support (seats by move ID + SWITCH), centred under α, MSE on the same advantage where the opponent's action is named. Both are identified by marginal regressions because the turn is simultaneous. Each is a K = 5 bootstrapped ensemble with randomized priors. No I term; Q = V + A + B is a meter. B is to be RE-BASED onto X5's flat pointer | (i) Deferring B until X5 (the backlog's stated prerequisite): rejected, because marginal identification needs only a centring distribution and α exists today; the limit (no OTHER, conditional on a listed option) is declared, not faked. (ii) One joint regression A(a) + B(b) onto the advantage: equivalent in expectation, but it couples the two heads' errors and doubles the per-row noise in each, so it was rejected. (iii) Training into the shared trunk (§5.2's main arm): out of scope for a baseline that must learn exactly what production learns | §5.0a; `agents/model/ridealong_heads.py`; `ridealong_heads_test` / `ridealong_update_test`; EXPERIMENT_BACKLOG X4a / X26 |
 | 2026-09-30 | **Label construction hazards** | F-X4-1 (Lane S truth answered an open root opponent GREEDY on 90 % of turns), F-X4-2 (hidden-trap switch retries: two commands for one decision in banked logs), F-X4-3 (`rec_action` empty on the untraced side), each with its rule | — | §5.3; `src/main/policy_spectrum/qhat.py` |

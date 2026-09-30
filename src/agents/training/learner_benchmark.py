@@ -498,8 +498,24 @@ def _config(model: Any, name: str, base_epochs: int):
             model.n_epochs = max(1, base_epochs // 2)
         if name == "profile":
             model.n_epochs = PROFILE_EPOCHS
+        if name == "ridealong":
+            # gen3_ridealong_heads_v1: the X26 baseline's four DETACHED heads at the baseline spec,
+            # attached to the loaded policy exactly as a v126 build makes them (fresh, private RNG,
+            # on the model's device) — rebuilt per call, so every repeat does the same work. The
+            # checkpoint predates v126, so the heads cannot come from the zip itself.
+            from agents.model.ridealong_heads import RideAlongSpec, build_ridealong
+            fe = model.policy.features_extractor
+            obs_dim = int(model.policy.observation_space["observation"].shape[0])
+            model.policy.ridealong = build_ridealong(
+                fe, obs_dim=obs_dim, spec=RideAlongSpec(ensemble=5, rnd=True, adv=5, opp=5)
+            ).to(model.device)
+            model._ridealong_opt = None
+            model._ridealong_disabled = False
         yield
     finally:
+        if name == "ridealong":
+            model.policy.ridealong = None
+            model._ridealong_opt = None
         for k, v in saved_attrs.items():
             if v is _missing:
                 if k in vars(model):
@@ -906,6 +922,11 @@ def print_summary(summary: Dict[str, Any]) -> None:
         for n, p in sorted(br.items(), key=lambda kv: -(kv[1]["s_per_update"] or 0)):
             print(f"  {n:12s} {p['s_per_update']:8.3f} s  {p['pct_of_bracketed_train_ms'] or 0:5.1f}%"
                   f"  {p.get('pct_of_unbracketed_train_ms') or 0:5.1f}%")
+    rb = cf.get("ridealong[bracketed]", {}).get("phases", {}).get("ridealong")
+    if rb:
+        print(f"\n  ride-along heads' own step (bracketed `ridealong` phase): "
+              f"{rb['s_per_update']:.3f} s/update = {rb['pct_of_bracketed_train_ms'] or 0:.1f}% "
+              "of that update")
     if summary.get("two_point_epoch_fit"):
         f = summary["two_point_epoch_fit"]
         print(f"\n  two-point fit: {f['per_epoch_ms'] / 1e3:.2f} s/epoch "
@@ -988,6 +1009,10 @@ def run_main(a: argparse.Namespace) -> int:
     if not a.no_ablations:
         plan_a += [("noise_probe_off", False), ("telemetry_off", False), ("diag_skipped", False),
                    ("epochs_half", False)]
+    if a.ridealong:
+        # the X26 ride-along heads' added update time: unbracketed (train_ms) and bracketed (the
+        # `ridealong` phase), against the `baseline` pair above on the same buffer and state.
+        plan_a += [("ridealong", False), ("ridealong", True)]
     argv_a = build_trainer_argv(original, model_zip=str(model_zip), run_dir=str(out / "run_main"),
                                 steps=steps, device=device, tiny=tiny, launcher_only=LAUNCHER_ONLY)
     cfg_a = {**base_cfg, "name": "main", "plan": plan_a, "trainer_argv": argv_a,
@@ -1062,6 +1087,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--warmup", type=int, default=None, help="warm-up calls per config (default 1)")
     r.add_argument("--seed", type=int, default=1234)
     r.add_argument("--no-ablations", action="store_true")
+    r.add_argument("--ridealong", action="store_true",
+                   help="also time the update with the X26 ride-along heads attached "
+                        "(ensemble 5, rnd, adv 5, opp 5; gen3_ridealong_heads_v1)")
     r.add_argument("--skip-tf32", action="store_true")
     r.add_argument("--no-profile", action="store_true")
     r.add_argument("--out-root", default=str(DEFAULT_OUT_ROOT))

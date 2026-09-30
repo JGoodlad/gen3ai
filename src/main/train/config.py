@@ -790,6 +790,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # the head is built at all. A flagless resume that dropped it would not merely stop dosing the
     # arm: it would fail `check_compatible` on `dense_aux`, which is the loud half working.
     _resolve("win_prob_dense_aux", 0.0)
+    # gen3_ridealong_heads_v1 (v126): four STRUCTURAL toggles, so a flagless resume must inherit
+    # them — dropping one would fail `check_compatible`, which is the loud half working.
+    _resolve("ridealong_ensemble", 0)
+    _resolve("ridealong_rnd", False)
+    _resolve("ridealong_adv", 0)
+    _resolve("ridealong_opp", 0)
     # (`opp_intent_grad_mode` had a `_resolve` here until 2026-08-23. It is config_only now —
     #  no argparse dest to inherit FROM, so a resolve line would be dead. Frozen "detached".)
     _resolve("intent_move_cell", False)        # v77 structural, version-checked (G3)
@@ -1025,6 +1031,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # (1-λ)λ^(n-1): outside [0, 1] that is not an average of estimators at all.
         parser.error("--policy-gae-lambda must be in [0, 1] "
                      "(0.80 = the default every run to date used; 1 = Monte-Carlo; 0 = one-step TD)")
+    for _ra in ("ridealong_ensemble", "ridealong_adv", "ridealong_opp"):
+        _k = getattr(args, _ra, None)
+        if _k is not None and not 0 <= int(_k) <= 12:
+            parser.error(f"--{_ra.replace('_', '-')} must be in [0, 12] members (0 = off)")
     if args.win_prob_dense_aux is not None and args.win_prob_dense_aux < 0.0:
         # A single-value RANGE check, so it stays here rather than in `combination_checks` (which
         # owns the cross-flag half — `dense_aux_needs_the_winprob_critic`). There is no upper

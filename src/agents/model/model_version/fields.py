@@ -508,6 +508,17 @@ class ModelVersionFields:
     # keys), no existing module moves, the head is built LAST and the forward never calls it.
     dense_aux: bool = False
     win_prob_dense_aux: float = 0.0
+    # ---- gen3_ridealong_heads_v1 (config v126) — THE DETACHED RIDE-ALONG HEADS ------------------
+    # Four STRUCTURAL toggles (member counts; 0 / False = not built). The heads live on the POLICY
+    # (`policy.ridealong`), so their params are the state_dict delta; nothing reads their output but
+    # the training-side `ridealong/*` meters and the offline readers, so no shape error anywhere
+    # would catch a flip and an int compare in check_compatible is the only gate. They cannot move
+    # what PPO learns (detached inputs, own optimizer, private RNG — `ridealong_heads_test`), which
+    # is why there are no training coefficients to record: the heads' own rate is a constant.
+    ridealong_ensemble: int = 0
+    ridealong_rnd: bool = False
+    ridealong_adv: int = 0
+    ridealong_opp: int = 0
     # ---- gen3_cf_coef_provenance_v1 (config v100) — THE COUNTERFACTUAL COEFFICIENT FAMILY -------
     # Ten TRAINING-only knobs, ONE family. Each shapes a LOSS computed in the PPO step; none is
     # read by the extractor forward, none changes a weight shape ⇒ the td_aux_coef class exactly:

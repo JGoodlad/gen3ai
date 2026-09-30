@@ -1251,6 +1251,10 @@ def current_model_version(
     q_winprob_mode: str = "none",
     value_true_team: bool = False,
     dense_aux: bool = False,
+    ridealong_ensemble: int = 0,
+    ridealong_rnd: bool = False,
+    ridealong_adv: int = 0,
+    ridealong_opp: int = 0,
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
     value_tail_weight: float = 0.0,
@@ -1317,6 +1321,14 @@ def current_model_version(
     # and a frozen eval/pool opponent's gate must see it or a dense-aux run FATALs loading its OWN
     # sentinels.
     ext_kwargs["dense_aux"] = dense_aux
+    # gen3_ridealong_heads_v1 (v126): same category — the heads' params are in the (policy's)
+    # state_dict and nothing consumes their output, so the recorded toggles are all a load gate can
+    # compare; a frozen eval/pool opponent's gate must see them or a baseline run FATALs loading its
+    # OWN sentinels.
+    ext_kwargs["ridealong_ensemble"] = int(ridealong_ensemble)
+    ext_kwargs["ridealong_rnd"] = bool(ridealong_rnd)
+    ext_kwargs["ridealong_adv"] = int(ridealong_adv)
+    ext_kwargs["ridealong_opp"] = int(ridealong_opp)
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
@@ -1417,6 +1429,11 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_dense_aux_v1 (v117): same category again — params in the state_dict whose only
         # output is a training-side loss, so the recorded toggle is all a load gate can compare.
         "dense_aux": bool(getattr(fe, "dense_aux", False)),
+        # gen3_ridealong_heads_v1 (v126): same category — the declarations the policy built from.
+        "ridealong_ensemble": int(getattr(fe, "ridealong_ensemble", 0) or 0),
+        "ridealong_rnd": bool(getattr(fe, "ridealong_rnd", False)),
+        "ridealong_adv": int(getattr(fe, "ridealong_adv", 0) or 0),
+        "ridealong_opp": int(getattr(fe, "ridealong_opp", 0) or 0),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

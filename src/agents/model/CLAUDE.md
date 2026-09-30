@@ -131,6 +131,18 @@ weight in it (the forward never calls it), and `grad/dense_aux_share` is the rea
 "the arm ran" from "the arm did what it was built to do". Targets, masks and the λ precedence:
 [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).
 
+**The DETACHED RIDE-ALONG heads live on the POLICY, not the extractor** (`gen3_ridealong_heads_v1`,
+v126, `ridealong_heads.py`). The extractor only RECORDS `ridealong_{ensemble,rnd,adv,opp}` (so the
+flag registry, the version gate and every worker rebuild see them); `Gen3DualHeadMaskablePolicy`
+builds `policy.ridealong` in `__init__` AFTER `_build`. Three rules keep "the baseline learns exactly
+what production learns" true, and each has a test that fails on revert: **(1)** build inside
+`torch.random.fork_rng` from `RIDEALONG_INIT_SEED` — a module built from the global RNG shifts every
+later draw (init, rollout sampling, minibatch shuffles); **(2)** never put them in `policy.optimizer`
+or fold their loss into PPO's `loss` — PPO's global `clip_grad_norm_` would include their gradient
+and rescale the trunk's; **(3)** every input goes through `RideAlongBatch.detached`. A frozen random
+network (RND target, randomized prior) is a BUFFER (`freeze_to_buffers`), never a
+`requires_grad=False` parameter. Detail: [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
+
 ### Phase-by-phase data flow
 The per-phase walkthrough and the static-width arithmetic:
 [`designs/model/phase_pipeline.md`](../../../designs/model/phase_pipeline.md). Two things stay here.

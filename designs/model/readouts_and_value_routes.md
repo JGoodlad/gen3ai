@@ -221,3 +221,53 @@ the op, the intent cells, the pair-outcome cells, the switch branch, the conditi
 Its two coefficients (`--q-winprob-coef`, `--q-winprob-onpolicy-coef`) are TRAINING-only and appear
 nowhere in this package; the fold and the starvation caveat that governs the second one live in
 `designs/training/cf_grounding.md` → *The PER-ACTION Q WIN-PROB HEAD*.
+
+## The DETACHED RIDE-ALONG heads — on the POLICY, not off the extractor (`gen3_ridealong_heads_v1`, v126)
+
+Owner, 2026-09-30: a baseline of epistemic confidence and of Q = V + A + B **before** any arm that
+changes learning. `agents/model/ridealong_heads.py`; flags `--ridealong-ensemble K`,
+`--ridealong-rnd`, `--ridealong-adv K`, `--ridealong-opp K` (all OFF by default; STRUCTURAL,
+`family=CRITIC`).
+
+| head | input (all `.detach()`ed) | label | loss |
+|---|---|---|---|
+| V ensemble (K) | LayerNorm(`value_pooled`) | the win bit (`win_target`, `win_mask`), V's own target | BCE per member, masked by its bootstrap bits |
+| RND | the RAW observation, per-dimension running mean / variance, clipped ±5 | a frozen random net's output | MSE (one visit per rollout row) |
+| A (K) | `stash.pointer_inputs` + `value_pooled` (`QWinProbHead`'s shape) | the GAE advantage of the action TAKEN | MSE of the π-centred member at the taken action |
+| B (K) | α's seat move IDs (own embedding) + `value_pooled`; SWITCH from the context | the same advantage | MSE of the α-centred member at the opponent's actual action (α's own `match_seats_to_move_num` target; misses masked) |
+
+**All four heads train on PPO's FIRST epoch only** (`RIDEALONG_EPOCHS` = 1): each rollout row once,
+scored before the step that trains on it. On the GPU learner benchmark, training them on all ten
+epochs cost +8.9 s on a 67.0 s update (+13 %), far past the ~2 % instrument budget.
+
+**Why the heads are NOT extractor modules, unlike every readout above.** The owner's rule is that the
+baseline learns EXACTLY what production learns, so this is tested bit-for-bit. Three things
+in the extractor would break it. SB3's ortho-init `apply` re-draws every `nn.Linear` in the extractor
+from the GLOBAL RNG, so any new Linear there shifts `mlp_extractor` / `value_net` init and every later
+sample. `policy.optimizer` is built from `self.parameters()`. And PPO's `clip_grad_norm_` runs over
+all policy parameters. So the extractor RECORDS the four kwargs and builds nothing, and the policy builds
+`policy.ridealong` after `_build` inside `fork_rng` from `RIDEALONG_INIT_SEED`. The heads' params
+are in no PPO param group. The learner steps them with its own Adam before PPO's loss exists and
+returns their grads to None.
+
+**Diversity is forced, because members sharing a detached trunk collapse otherwise.** There are three
+sources. Each member has its own init seed. Each has a per-STATE bootstrap mask: bit j of an exact-integer hash of the
+observation row, so it is identical in every epoch and minibatch and consumes no RNG
+(bootstrapped DQN, Osband et al. 2016). And each has a RANDOMIZED PRIOR, a frozen random copy
+added to its output (Osband et al. 2018; scale `RIDEALONG_PRIOR_SCALE_V` = 1 logit for V, `_Q` = 0.05
+probability for A / B). An action the policy never plays keeps its A members at their prior spread,
+which is the per-action "starved move" uncertainty.
+
+**RND reads the observation, not the features.** Trunk features drift as the trunk trains, so
+feature-space novelty confounds "rarely seen" with "the representation moved". The raw observation
+carries embedding IDs as scalars. After standardisation a random net is still a fixed function of them, so
+a rare id stays novel; what is lost is id-to-id semantics. The offline reader measures the choice
+(`designs/research_state/measurements/ridealong_baseline/`).
+
+**B is the simple pre-X5 parameterisation.** Its columns are α's support, and it is to be re-based onto X5's flat
+opponent pointer (seats + switch targets + OTHER). A and B are identified by two MARGINAL regressions
+on the ONE advantage label. The two actions are simultaneous and each head is centred under its
+side's policy (π for A, α for B, both stop-grad), so E[adv | s, a] = A(s, a) and E[adv | s, b] = B(s, b).
+B's declared limit: a move outside the believed seats is not a label, so B is conditional on the
+opponent choosing a listed option (α's mask rate). There is no I term. Q = V + A + B is a readout
+(`ridealong/q_out_of_range`).

@@ -462,6 +462,36 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "aux_hp_mae, aux_masked_frac and grad/dense_aux_share. STRUCTURAL: "
                              "the head is fixed for a run's lifetime (a resume may re-dose it, "
                              "not add or remove it); the dose is resume-inherited.")
+    # --- gen3_ridealong_heads_v1 (2026-09-30, owner): the DETACHED RIDE-ALONG baseline heads.
+    #     Each OFF by default; the baseline argv turns all four on. None of them can change what the
+    #     run learns (detached inputs, their own optimizer, a private init RNG) — they OBSERVE. ---
+    _ra_common = (" DETACHED: every input is stop-grad and the heads train on their own optimizer, "
+                  "so the run learns bit-for-bit what it would without them. STRUCTURAL: fixed for "
+                  "a run's lifetime; a flagless resume inherits it. TB: ridealong/*.")
+    parser.add_argument("--ridealong-ensemble", "--ridealong_ensemble", dest="ridealong_ensemble",
+                        type=int, default=None,
+                        help="K win-probability heads on the detached value_pooled (V's own target), "
+                             "each with a bootstrap mask and a randomized prior: their disagreement "
+                             "is V's EPISTEMIC uncertainty. 0 (default) = off; the baseline uses 5. "
+                             "Requires --win-prob-mode != none." + _ra_common)
+    parser.add_argument("--ridealong-rnd", "--ridealong_rnd", dest="ridealong_rnd",
+                        action=BoolFlag, default=None,
+                        help="An RND novelty head (Burda et al. 2018): a frozen random network of "
+                             "the running-normalised RAW observation and a trained predictor; the "
+                             "error is how rarely the state was seen." + _ra_common)
+    parser.add_argument("--ridealong-adv", "--ridealong_adv", dest="ridealong_adv",
+                        type=int, default=None,
+                        help="K per-action A heads over the pointer head's own action tokens, "
+                             "centred under pi and regressed on the GAE advantage of the action "
+                             "taken; their spread is per-ACTION uncertainty (starved moves). 0 "
+                             "(default) = off; the baseline uses 5." + _ra_common)
+    parser.add_argument("--ridealong-opp", "--ridealong_opp", dest="ridealong_opp",
+                        type=int, default=None,
+                        help="K opponent-effect B heads over alpha's support (their believed move "
+                             "seats by move id + SWITCH), centred under alpha and regressed on the "
+                             "same advantage where their actual action is named. Q = V + A + B is "
+                             "logged as a derived readout. 0 (default) = off; the baseline uses 5. "
+                             "Requires --opp-intent-coef > 0." + _ra_common)
     # --- gen3_winprob_rollout_target_v1 (2026-09-10, the critic ladder's arm 10): R-ROLLOUT
     #     MONTE-CARLO targets for the win-prob BCE. The fourth knob on the SAME loss — one scales
     #     it, `--win-prob-strata-weight` re-prices its MIX, `--win-prob-lambda` re-aims it at the

@@ -15,6 +15,7 @@ mark and this one":
     setup        label alignment, fold flags, probe setup, PopArt, advantage-density read
     batch        `rollout_buffer.get()` — the shuffle/index + host->device copy of one minibatch
     forward      `policy.evaluate_actions` (the extractor + every head it stashes) + capacity snapshot
+    ridealong    the DETACHED ride-along heads' own step (`gen3_ridealong_heads_v1`; ~0 when off)
     loss         the whole FOLD: PPO loss, belief/intent/win-prob/... terms and their per-minibatch
                  `.item()`/`float()` diagnostics
     probes       the once-per-call grad-balance, rank, edge- and cell-liveness probes
@@ -37,7 +38,7 @@ from typing import Callable, Iterator, Optional
 PHASE_HOOK: Optional[Callable[[str], None]] = None
 
 # Every name `train()` marks, in source order (``probes`` appears at two sites).
-PHASES = ("start", "setup", "batch", "forward", "loss", "probes", "kl", "noise_probe",
+PHASES = ("start", "setup", "batch", "forward", "ridealong", "loss", "probes", "kl", "noise_probe",
           "backward", "noise_base", "optim", "capacity", "epoch_end", "logging")
 
 

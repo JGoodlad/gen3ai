@@ -351,6 +351,15 @@ def _migrate_config(data: dict) -> dict:
     if version < 125:
         data.setdefault("opp_intent_coef", None if data.get("opp_intent", False) else 0.0)
         data["config_version"] = 125
+    # v126 (gen3_ridealong_heads_v1) — FOUR STRUCTURAL ride-along toggles, defaulted rather than
+    # refused: OFF is not a guess about an old run, it is the only possible past (the heads did not
+    # exist). The refusal direction is check_compatible's, the moment a live run's ON meets it.
+    if version < 126:
+        data.setdefault("ridealong_ensemble", 0)
+        data.setdefault("ridealong_rnd", False)
+        data.setdefault("ridealong_adv", 0)
+        data.setdefault("ridealong_opp", 0)
+        data["config_version"] = 126
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

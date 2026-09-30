@@ -948,30 +948,6 @@ unchanged, no module moves, the head is built last and the forward never calls i
 keeps it off the ARCH surface, so it does not appear in §6's flag table. Mechanics:
 `designs/training/critic_and_value_losses.md`.
 
-**`--win-prob-dense-aux` adds 25 DENSE TARGETS BESIDE this BCE** (`gen3_dense_aux_v1`, config v117,
-the critic ladder's **arm 9**). Default **`0.0` = OFF and BIT-identical** — the head is not BUILT, so
-there is no module, no obs key, no callback and no term; `--critic winprob` is REQUIRED and
-`win_prob_mode != none` is a registry `requires` the extractor constructor enforces. The three flags
-above all act on the SAME one-bit loss; this one does not touch it. It builds a small MLP on
-`value_pooled` — the same tensor the win head reads, NOT in the forward, built LAST, zero-init
-output — predicting for every state the episode's END-OF-BATTLE facts, back-filled the way the win
-bit is: **survival of all 12 slots (our 6 then theirs, in the observation's own team order), each
-slot's final HP fraction, and the scaled turns-left** — 25 sigmoid outputs, three masked-mean BCE
-terms averaged. The per-side KO counts are DERIVED from survival and published as meters, never
-predicted. It exists because four 10M levers on the one bit moved nothing at ±0.01 (ledger *THE ARMS
-AT 400 GAMES*) while only ~10 % of that bit's variance lies BETWEEN opponents, and because the
-literature's answer to a one-bit terminal signal is KataGo's (Wu 2019 §3) — dense auxiliary targets
-that share the win's CAUSE. 🚨 Its input is **NOT detached**: the gradient into the shared trunk is
-the arm, and `grad/dense_aux_share` is the verification. An opponent slot never revealed, and any
-slot the state's own observation does not carry, is MASKED rather than fabricated. `--win-prob-lambda`
-does NOT reach these targets — they are terminal FACTS, not returns. `dense_aux` is a STRUCTURAL
-`flag_registry` row (`derived` off the coefficient, `family=CRITIC`, gated by a bool compare in
-`check_compatible`); the COEFFICIENT is training-only and resume-mutable, so a resume may re-dose the
-arm but not add or remove its head. **No `ARCH_SIGNATURE` bump** — the observation vector is
-unchanged, no module moves, the head is built last and the forward never calls it. `family=CRITIC`
-keeps it off the ARCH surface, so it does not appear in §6's flag table. Mechanics:
-`designs/training/critic_and_value_losses.md`.
-
 **`--win-prob-rollout-target` BUYS NEW BITS for this BCE** (`gen3_winprob_rollout_target_v1`, config
 v118, the critic ladder's **arm 10**). Default **`0.0` = OFF and the loss is BIT-identical**;
 `--critic winprob` **and** `--cf-records` are both REQUIRED. Above 0.0 it is the FRACTION of the
@@ -1075,6 +1051,30 @@ construction. **LATENT — not enabled in any run.** The head is a state_dict de
 counterfactual likelihood; `--q-winprob-onpolicy-coef`, the weak and biased taken-action fallback)
 default to 0, so nothing about it is live until a run turns it on. §6's table carries it as
 `q_winprob_mode` `"none"` / OFF.
+
+**The DETACHED RIDE-ALONG heads EXIST in the code and are OFF here** (`gen3_ridealong_heads_v1`,
+config v126; owner 2026-09-30, EXPERIMENT_BACKLOG X25 / X4a; `agents/model/ridealong_heads.py`).
+Four STRUCTURAL flags, each 0 / false by default: `--ridealong-ensemble K` (K win-prob members on
+LayerNorm(`value_pooled`), each with a per-STATE bootstrap mask and a randomized prior; their spread is
+V's epistemic uncertainty), `--ridealong-rnd` (RND over the running-normalised RAW observation, not
+the trunk features, so novelty is not confounded by representation drift), `--ridealong-adv K`
+(per-action A over the pointer head's own tokens, `QWinProbHead`'s shared-scorer shape, centred
+under π, MSE on the GAE advantage of the action taken), `--ridealong-opp K` (B over α's support
+— their believed move seats by MOVE ID + SWITCH — centred under α, MSE on the same advantage where
+their actual action is named; requires `opp_intent`). Q = V + A + B is a derived `ridealong/*` meter;
+there is no I term. **They cannot change what the run learns, and that is tested, not asserted**:
+the extractor only RECORDS the four kwargs; `Gen3DualHeadMaskablePolicy` builds `policy.ridealong`
+after SB3's `_build` (so the heads are in no `policy.optimizer` group and outside the ortho-init
+apply), from a private seed inside `fork_rng`; the frozen networks are BUFFERS; the forward never calls
+them; and the learner steps them with their own Adam on `.detach()`ed stashes right after the
+minibatch forward, returning their grads to None before PPO's loss is assembled. They train on
+PPO's first epoch only, so each rollout row is seen once. `ridealong_heads_test`
+shows no ride-along loss reaches any trunk, policy or V parameter; `ridealong_update_test` shows one
+real update with the heads ON vs OFF leaves the policy, trunk, V, PPO optimizer state and RNG
+BIT-IDENTICAL. The compile gate's coverage count excludes `ridealong.*` (never in a compiled graph).
+Their Adam state is the LEARNER's and is not checkpointed (a restart resumes the weights with a fresh
+Adam). `family=CRITIC`, so they are off the ARCH surface; §6's table carries them OFF. The pre-registered
+baseline that turns them on is EXPERIMENT_BACKLOG's X26.
 
 Belief heads run under `belief_grad_mode` **`shaping`** (production mirror `belief_grad_mode:
 "shaping"`; §6's table carries it ACTIVE): all four routes are live — the label loss trains the
@@ -1357,6 +1357,10 @@ does nothing given another setting.
 | `pair_outcome_switch` | `true` | ACTIVE |
 | `pair_value_route` | `false` | OFF |
 | `q_winprob_mode` | `"none"` | OFF |
+| `ridealong_adv` | `0` | OFF |
+| `ridealong_ensemble` | `0` | OFF |
+| `ridealong_opp` | `0` | OFF |
+| `ridealong_rnd` | `false` | OFF |
 | `species_prior_fusion` | `true` | ACTIVE |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |

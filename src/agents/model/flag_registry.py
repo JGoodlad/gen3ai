@@ -574,6 +574,31 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "it exists to protect.",
               requires=("win_prob_mode",),
               family=Family.CRITIC),
+    ModelFlag("ridealong_ensemble", 0, Tier.CLI, Klass.STRUCTURAL, 126,
+              "K DETACHED win-prob heads on value_pooled (bootstrap masks + randomized priors): "
+              "their disagreement is V's EPISTEMIC uncertainty (0 = off)",
+              note="The DETACHED RIDE-ALONG baseline (owner, 2026-09-30; EXPERIMENT_BACKLOG X25 / X4a). The extractor builds NOTHING for it: it records the kwarg, and `Gen3DualHeadMaskablePolicy` builds `policy.ridealong` after SB3's `_build` (outside `policy.optimizer` and the ortho-init apply), from a PRIVATE seed inside `fork_rng`. Every input is `.detach()`ed and the learner steps the heads with their own optimizer before PPO's loss is assembled, so a run with the heads learns EXACTLY what the same run without them learns (pinned bit-for-bit by `ridealong_heads_test`). STRUCTURAL all the same: the heads' parameters are the state_dict delta, so check_compatible compares the value. family=CRITIC: readouts an experiment varies, never on the production ARCH surface." " It REQUIRES win_prob_mode: the members predict V's own win "
+                   "target.",
+              requires=("win_prob_mode",),
+              family=Family.CRITIC),
+    ModelFlag("ridealong_rnd", False, Tier.CLI, Klass.STRUCTURAL, 126,
+              "a DETACHED RND novelty head (frozen random target + trained predictor over the "
+              "running-normalised RAW observation): its error is how rarely a state was seen",
+              note="The DETACHED RIDE-ALONG baseline (owner, 2026-09-30; EXPERIMENT_BACKLOG X25 / X4a). The extractor builds NOTHING for it: it records the kwarg, and `Gen3DualHeadMaskablePolicy` builds `policy.ridealong` after SB3's `_build` (outside `policy.optimizer` and the ortho-init apply), from a PRIVATE seed inside `fork_rng`. Every input is `.detach()`ed and the learner steps the heads with their own optimizer before PPO's loss is assembled, so a run with the heads learns EXACTLY what the same run without them learns (pinned bit-for-bit by `ridealong_heads_test`). STRUCTURAL all the same: the heads' parameters are the state_dict delta, so check_compatible compares the value. family=CRITIC: readouts an experiment varies, never on the production ARCH surface." " The input is the observation, not the trunk features, so the "
+                   "novelty is not confounded by representation drift.",
+              family=Family.CRITIC),
+    ModelFlag("ridealong_adv", 0, Tier.CLI, Klass.STRUCTURAL, 126,
+              "K DETACHED per-action A heads over the pointer head's own tokens, centred under pi, "
+              "regressed on the GAE advantage of the action taken (0 = off)",
+              note="The DETACHED RIDE-ALONG baseline (owner, 2026-09-30; EXPERIMENT_BACKLOG X25 / X4a). The extractor builds NOTHING for it: it records the kwarg, and `Gen3DualHeadMaskablePolicy` builds `policy.ridealong` after SB3's `_build` (outside `policy.optimizer` and the ortho-init apply), from a PRIVATE seed inside `fork_rng`. Every input is `.detach()`ed and the learner steps the heads with their own optimizer before PPO's loss is assembled, so a run with the heads learns EXACTLY what the same run without them learns (pinned bit-for-bit by `ridealong_heads_test`). STRUCTURAL all the same: the heads' parameters are the state_dict delta, so check_compatible compares the value. family=CRITIC: readouts an experiment varies, never on the production ARCH surface.",
+              family=Family.CRITIC),
+    ModelFlag("ridealong_opp", 0, Tier.CLI, Klass.STRUCTURAL, 126,
+              "K DETACHED opponent-effect B heads over alpha's support (believed move seats by "
+              "move id + SWITCH), centred under alpha, regressed on the same advantage (0 = off)",
+              note="The DETACHED RIDE-ALONG baseline (owner, 2026-09-30; EXPERIMENT_BACKLOG X25 / X4a). The extractor builds NOTHING for it: it records the kwarg, and `Gen3DualHeadMaskablePolicy` builds `policy.ridealong` after SB3's `_build` (outside `policy.optimizer` and the ortho-init apply), from a PRIVATE seed inside `fork_rng`. Every input is `.detach()`ed and the learner steps the heads with their own optimizer before PPO's loss is assembled, so a run with the heads learns EXACTLY what the same run without them learns (pinned bit-for-bit by `ridealong_heads_test`). STRUCTURAL all the same: the heads' parameters are the state_dict delta, so check_compatible compares the value. family=CRITIC: readouts an experiment varies, never on the production ARCH surface." " It REQUIRES opp_intent: B's columns and centring are alpha's. "
+                   "The simple pre-X5 parameterisation, to be re-based onto X5's flat pointer.",
+              requires=("opp_intent",),
+              family=Family.CRITIC),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

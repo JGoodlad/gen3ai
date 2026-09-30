@@ -89,6 +89,10 @@
   "q_winprob_onpolicy_coef": 0.0,
   "rank_tripwire": "warn",
   "rank_tripwire_drop": 0.2,
+  "ridealong_adv": 0,
+  "ridealong_ensemble": 0,
+  "ridealong_opp": 0,
+  "ridealong_rnd": false,
   "role_encoder_hidden": [
     256,
     128

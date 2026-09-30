@@ -184,3 +184,23 @@ DENSE_AUX_HIDDEN = 64
 # prior times the same per-species move-prior buffer), which has NO learned parameters by design: it
 # cannot memorise the pool. The mixture probability is clamped into [EPS, 1 − EPS] before the logit.
 HIDDEN_SLOT_MIX_EPS = 1e-6
+
+# gen3_ridealong_heads_v1 (v126, `--ridealong-ensemble` / `--ridealong-rnd` / `--ridealong-adv` /
+# `--ridealong-opp`): the DETACHED RIDE-ALONG heads (`agents.model.ridealong_heads`). Every one
+# reads the trunk through `.detach()` and trains on its own optimizer, so none of these widths can
+# move what the policy or V learn. RIDEALONG_HIDDEN is the V-ensemble member width (DENSE_AUX_HIDDEN's,
+# for the same "differ in what they see, not in capacity" reason). The PRIOR scales are the
+# randomized-prior functions' (Osband et al. 2018) output scales: V members add β·p(x) in LOGIT
+# units, A/B members in PROBABILITY units (an advantage under the win-prob critic is a probability
+# difference, typically |A| < 0.1). RND (Burda et al. 2018): a frozen random target
+# obs → RND_HIDDEN → RND_OUT and a trained predictor one layer deeper.
+RIDEALONG_HIDDEN = 64
+RIDEALONG_PRIOR_SCALE_V = 1.0
+RIDEALONG_PRIOR_SCALE_Q = 0.05
+RIDEALONG_OPP_MOVE_EMB = 32
+RIDEALONG_RND_HIDDEN = 256
+RIDEALONG_RND_OUT = 64
+#: The PRIVATE init seed. Every ride-along module is built inside `torch.random.fork_rng` from this
+#: seed, so building the heads draws nothing from the global stream (heads ON and OFF leave the
+#: policy's own init, and every later draw, bit-identical).
+RIDEALONG_INIT_SEED = 20260930

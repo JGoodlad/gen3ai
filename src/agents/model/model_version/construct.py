@@ -267,6 +267,16 @@ class ModelVersionConstruction(ModelVersionFields):
             # has already been turned into this bool by `extractor_arch._DERIVED`.
             dense_aux=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("dense_aux", False)),
+            # gen3_ridealong_heads_v1 (v126): the four ride-along declarations ride the extractor
+            # kwargs (the policy builds the heads from them).
+            ridealong_ensemble=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_ensemble", 0)),
+            ridealong_rnd=bool(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_rnd", False)),
+            ridealong_adv=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_adv", 0)),
+            ridealong_opp=int(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_opp", 0)),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
             ),

@@ -128,7 +128,7 @@ def test_a_pre_v125_config_migrates_OFF_to_0_and_leaves_ON_unrecorded():
         d = dict(base, opp_intent=on, config_version=124)
         d.pop("opp_intent_coef")
         out = _migrate_config(d)
-        assert out["config_version"] == 125 and "opp_intent_coef" in out and out["opp_intent_coef"] == want
+        assert out["config_version"] >= 125 and "opp_intent_coef" in out and out["opp_intent_coef"] == want
 
 
 def _restart_argv(ckpt, run):

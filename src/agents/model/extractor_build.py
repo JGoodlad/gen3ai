@@ -108,6 +108,10 @@ class ExtractorBuild(torch.nn.Module):
                  q_winprob_mode: str = "none",
                  value_true_team: bool = False,
                  dense_aux: bool = False,
+                 ridealong_ensemble: int = 0,
+                 ridealong_rnd: bool = False,
+                 ridealong_adv: int = 0,
+                 ridealong_opp: int = 0,
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -1016,6 +1020,26 @@ class ExtractorBuild(torch.nn.Module):
                 "win head at all. Set --win-prob-mode read_only|shaping (--critic winprob implies "
                 "shaping), or drop --win-prob-dense-aux.")
         self.dense_aux_head = DenseAuxHead() if self.dense_aux else None
+
+        # gen3_ridealong_heads_v1 (v126) — the DETACHED RIDE-ALONG heads' DECLARATION. The extractor
+        # builds NOTHING for them: it records the four kwargs (so the flag registry's five surfaces,
+        # the version gate and every worker rebuild see them), and `Gen3DualHeadMaskablePolicy`
+        # builds `policy.ridealong` AFTER SB3's `_build` — outside the ortho-init `apply` (which
+        # would draw from the global RNG over their Linears) and outside `policy.optimizer`. See
+        # `agents.model.ridealong_heads`. The two dependencies are enforced HERE, where
+        # `flag_requires_test` can see them.
+        self.ridealong_ensemble = int(ridealong_ensemble or 0)
+        self.ridealong_rnd = bool(ridealong_rnd)
+        self.ridealong_adv = int(ridealong_adv or 0)
+        self.ridealong_opp = int(ridealong_opp or 0)
+        if self.ridealong_ensemble and self.win_head is None:
+            raise ValueError(
+                "ridealong_ensemble requires win_prob_mode != 'none': the ensemble members predict "
+                "V's own win-probability target, which only a run with a win head emits.")
+        if self.ridealong_opp and not self.opp_intent:
+            raise ValueError(
+                "ridealong_opp requires opp_intent (--opp-intent-coef > 0): B's columns are alpha's "
+                "support (their believed move seats + SWITCH) and its centring reads alpha.")
 
         # gen3_identity_init_guard_v1 — SNAPSHOT the identity-at-init contract. See
         # `restore_identity_init` for why this exists; it must be the LAST thing __init__ does, so

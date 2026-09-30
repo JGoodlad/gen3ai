@@ -170,6 +170,17 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             if hasattr(_fe, "restore_identity_init"):
                 _fe.restore_identity_init()
 
+        # gen3_ridealong_heads_v1 (v126): the DETACHED RIDE-ALONG heads (V ensemble, RND, A, B),
+        # declared by the extractor's `ridealong_*` kwargs and built HERE — after `_build` made
+        # `self.optimizer` (so they are in none of its param groups: the learner steps them with
+        # their own) and after the ortho-init `apply` (so it cannot draw from the global RNG over
+        # their Linears). Built from a PRIVATE seed inside `fork_rng`, so the global stream is
+        # untouched; never called by `forward`. None when every flag is off (no state_dict key).
+        from agents.model.ridealong_heads import build_ridealong  # local: keep import light
+        _obs_space = getattr(self.observation_space, "spaces", {}).get("observation")
+        _obs_dim = int(_obs_space.shape[0]) if _obs_space is not None else 0
+        self.ridealong = build_ridealong(self.features_extractor, obs_dim=_obs_dim)
+
     def set_value_from_dist(self, on: bool) -> None:
         """Apply value_from_dist at RUNTIME (the --value-from-dist migration path). SB3's load
         reconstructs the policy from the ZIP's SAVED policy_kwargs, so a first Phase-B resume (from a

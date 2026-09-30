@@ -612,6 +612,28 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "Resume with a matching --win-prob-dense-aux (any value > 0 keeps the head; 0 "
                 "removes it), or start a fresh training run."
             )
+        # gen3_ridealong_heads_v1 (v126): the DETACHED ride-along heads' params are the state_dict
+        # delta and nothing downstream consumes their output, so no shape error would catch a flip —
+        # a resume that dropped one would silently delete a trained baseline head, one that added
+        # one would start a fresh head mid-run and call it the same baseline. The member COUNT is
+        # the width of the state_dict delta, so the compare is on the value, not on "is it on".
+        # Spelled out per field (not a loop over names): the registry test scans this source for
+        # `self.<name> !=`, which is what keeps a structural row from going ungated.
+        _ra_diff = [n for n, differs in (
+            ("ridealong_ensemble", self.ridealong_ensemble != saved.ridealong_ensemble),
+            ("ridealong_rnd", self.ridealong_rnd != saved.ridealong_rnd),
+            ("ridealong_adv", self.ridealong_adv != saved.ridealong_adv),
+            ("ridealong_opp", self.ridealong_opp != saved.ridealong_opp)) if differs]
+        if _ra_diff:
+            _ra = _ra_diff[0]
+            raise ModelVersionError(
+                f"{_ra} mismatch: saved={getattr(saved, _ra)!r}, current={getattr(self, _ra)!r}.\n"
+                "The ride-along heads are fixed for a run's lifetime: building them changes the "
+                "state_dict, and because nothing downstream consumes their output there is no "
+                "shape error that would catch the mismatch.\n"
+                f"Resume with the matching --{_ra.replace('_', '-')} setting (a flagless resume "
+                "inherits it), or start a fresh training run."
+            )
         if self.value_dist_bins != saved.value_dist_bins:
             raise ModelVersionError(
                 f"value_dist_bins mismatch: saved={saved.value_dist_bins}, current={self.value_dist_bins}.\n"

@@ -58,6 +58,8 @@ from agents.training.instrumented_ppo.metrics_export import TrainMetricsExport
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
 from agents.training.instrumented_ppo.noise_scale_terms import NULL_TAGGER
 from agents.training.instrumented_ppo.phase_hook import current as _current_phase_hook
+from agents.training.instrumented_ppo.ridealong_terms import (RideAlongAccumulator,
+                                                             RideAlongTerms)
 from agents.training.instrumented_ppo.rollout_probes import RolloutProbes
 from agents.training.instrumented_ppo.train_setup import TrainSetup
 from agents.training.instrumented_ppo.value_terms import ValueTerms
@@ -97,6 +99,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                               ValueTerms,
                               AuxTerms,
                               CapacityTerms,
+                              RideAlongTerms,
                               TrainSetup,
                               TrainMetricsExport,
                               RolloutProbes,
@@ -333,6 +336,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         cf_twin_metrics: dict[str, list[float]] = {}     # +CF-TWIN (gen3_cf_twin_heads_v1)
         cf_shadow_metrics: dict[str, list[float]] = {}   # +CF-SHADOW (gen3_cf_twin_heads_v1)
         q_metrics: dict[str, list[float]] = {}           # +Q-WINPROB (gen3_q_winprob_head_v1)
+        # +RIDE-ALONG (gen3_ridealong_heads_v1): the detached heads' `ridealong/*` sink.
+        ridealong_acc = RideAlongAccumulator()
         cf_rows_sampled = 0
 
         continue_training = True
@@ -387,6 +392,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                                      int(values.shape[0]))
                     if capacity is not None else None)
                 if _ph is not None: _ph("forward")
+                # +RIDE-ALONG (gen3_ridealong_heads_v1): the DETACHED heads' own step, on THIS
+                # forward's stashes, BEFORE PPO's loss is assembled. Every input is stop-grad and the
+                # heads have their own optimizer; their grads are back to None when it returns, so
+                # nothing below — the loss, the clip, the probes — can see them. A no-op (one
+                # attribute read) when the policy has no heads.
+                self._ridealong_update(rollout_data, values, actions, epoch, ridealong_acc)
+                if _ph is not None: _ph("ridealong")
 
                 values = values.flatten()
                 # Normalize advantage
@@ -1525,6 +1537,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                 cf_shadow_metrics, cf_shadow_on, q_metrics, q_winprob_on,
                                 q_onpolicy_on, grad_balance)
         self._record_capacity_and_popart_metrics(capacity_metrics, popart, aux_metrics)
+        self._record_ridealong_metrics(ridealong_acc)
         # +INSTRUMENTATION: LAST line of train(), so it bounds the whole call — the honest
         # denominator for `train/noise_per_term_ms` and for every other probe's cost claim.
         if _ph is not None: _ph("logging")

@@ -10103,3 +10103,37 @@ which is TF32 rounding. Chasing that turned up the real defect.
   BOTH breaks were the debugger's `time.time()` (`rate_limiter.py:14`). After, it is 1 graph / 0 breaks
   at every level, on torch 2.5.1 (7,062 ops) and 2.8 (6,870 ops). The `forward_guard`, which the K8
   row had listed as the second break, traces clean whether or not a guard is installed.
+
+## v126 — the DETACHED RIDE-ALONG heads: V ensemble, RND, A and B (`gen3_ridealong_heads_v1`; config bump, no ARCH_SIGNATURE bump, learning bit-identical)
+
+- **Why (owner, 2026-09-30):** *"establish a baseline just with the ensemble of value heads to test
+  uncertainty, the trick where you predict a random output to see how often you've seen the state,
+  and the Q, A and B values. Start getting baselines before we add more complicated arms."* The first
+  GPU run on the M5 core is to be the production recipe plus these heads, and later arms (X23 first)
+  compare against it (EXPERIMENT_BACKLOG X26).
+- **What:** four STRUCTURAL flags, all OFF by default — `--ridealong-ensemble K` (K win-prob members,
+  bootstrap mask per state + randomized prior), `--ridealong-rnd` (RND over the raw observation),
+  `--ridealong-adv K` (per-action A centred under π, MSE on the GAE advantage of the action taken),
+  `--ridealong-opp K` (B over α's support, centred under α, MSE on the same advantage; the simple
+  pre-X5 parameterisation). Q = V + A + B is a derived meter; no I term. `ridealong/*` TB family.
+- **How they stay out of the learning:** the extractor records the kwargs and builds nothing; the
+  policy builds `policy.ridealong` after SB3's `_build` from a private seed inside `fork_rng`; the
+  frozen nets are buffers; the forward never calls them; the learner steps them on `.detach()`ed
+  stashes with their own Adam before PPO's loss exists and returns their grads to None. Pinned by
+  `ridealong_heads_test` (no gradient reaches a trunk / policy / V parameter; fails if the detach is
+  removed) and `ridealong_update_test` (one real update ON vs OFF: bit-identical params, PPO optimizer
+  state, PPO scalars and RNG; fails if the detach or the `fork_rng` is removed). The compile gate's
+  coverage count excludes `ridealong.*`.
+- **One pass, fail-closed for the heads:** the heads train on PPO's FIRST epoch only
+  (`RIDEALONG_EPOCHS` = 1, fused Adam on CUDA). On the GPU learner benchmark, training on all ten
+  epochs cost +8.9 s on a 67.0 s update (+13 %). A non-finite ride-along loss or gradient is never
+  stepped: the heads disable themselves for the rest of the process (`ridealong/disabled`), and PPO is
+  untouched.
+- **Meter definitions set by the reader's smoke:** the ensemble's uncertainty meters score the
+  LOGIT-space spread and log V's own entropy beside it, because a probability spread re-reads V's level.
+  `adv_std` is each member centred on its own legal-action mean, not under π: π-centring made even
+  untrained heads flag starved moves (AUROC 0.73–0.75 → 0.51–0.52).
+- **Config v126:** the four fields recorded, `_resolve`-inherited, compared in `check_compatible`;
+  a pre-v126 config migrates to OFF. `designs/production_config.json` records them OFF.
+- **Side fix:** `designs/ARCHITECTURE.md` §3.4 carried the `--win-prob-dense-aux` paragraph twice;
+  the duplicate is gone.

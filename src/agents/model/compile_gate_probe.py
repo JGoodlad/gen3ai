@@ -145,7 +145,11 @@ def grad_parameters(model: Any, fe: Any) -> List[Tuple[str, torch.nn.Parameter]]
     it is a module, else the extractor."""
     policy = getattr(model, "policy", None)
     mod = policy if isinstance(policy, torch.nn.Module) else fe
-    return list(mod.named_parameters())
+    # gen3_ridealong_heads_v1: the DETACHED ride-along heads (`policy.ridealong.*`) are in no
+    # compiled graph and no production loss — they run eager on stop-grad inputs, with their own
+    # optimizer — so the probe loss can never reach them and there is nothing to compare there.
+    # Counting them would read as a coverage hole the gate cannot close.
+    return [(n, p) for n, p in mod.named_parameters() if not n.startswith("ridealong.")]
 
 
 def zero_grad_names(per_param_absmax: torch.Tensor, names: Sequence[str]) -> List[str]:
