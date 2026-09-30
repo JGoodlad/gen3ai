@@ -69,8 +69,9 @@ def _call_name(fn: ast.expr) -> str:
 
 
 class _Carry:
-    def __init__(self, tainted: Set[str]):
+    def __init__(self, tainted: Set[str], returns: Optional[Set[str]] = None):
         self.tainted = tainted
+        self.returns = returns if returns is not None else set()
 
     def __call__(self, e: Optional[ast.expr]) -> bool:  # noqa: C901 — one dispatch over node kinds
         if e is None:
@@ -90,6 +91,10 @@ class _Carry:
             return self(e.right) or self(e.left)
         if isinstance(e, ast.Call):
             name = _call_name(e.func)
+            if name in self.returns:                     # a same-module function RETURNING a summary path
+                return True
+            if name in ("values", "items") and isinstance(e.func, ast.Attribute):
+                return self(e.func.value)                # a dict of summary paths
             if name in _PASS_THROUGH:
                 args = list(e.args)
                 if name == "join" and args:
@@ -105,6 +110,10 @@ class _Carry:
             return any(self(x) for x in e.elts)
         if isinstance(e, (ast.ListComp, ast.GeneratorExp, ast.SetComp)):
             return self(e.elt)
+        if isinstance(e, ast.DictComp):
+            return self(e.value)
+        if isinstance(e, ast.Dict):
+            return any(self(v) for v in e.values if v is not None)
         if isinstance(e, ast.IfExp):
             return self(e.body) or self(e.orelse)
         if isinstance(e, ast.BoolOp):
@@ -134,7 +143,7 @@ def _scope_nodes(scope: ast.AST) -> Iterator[ast.AST]:
             stack.extend(ast.iter_child_nodes(n))
 
 
-def _taint(scope: ast.AST, inherited: Set[str], params: Set[str]) -> Set[str]:
+def _taint(scope: ast.AST, inherited: Set[str], params: Set[str], returns: Set[str]) -> Set[str]:
     tainted = set(inherited) | set(params)
     nodes = list(_scope_nodes(scope))
     for n in [scope, *nodes]:       # a summary-ish NAME is a summary path wherever it is bound
@@ -147,7 +156,7 @@ def _taint(scope: ast.AST, inherited: Set[str], params: Set[str]) -> Set[str]:
         for arg in [*a.posonlyargs, *a.args, *a.kwonlyargs, a.vararg, a.kwarg]:
             if arg is not None and arg.arg in SUMMARY_PARAMS:
                 tainted.add(arg.arg)
-    carry = _Carry(tainted)
+    carry = _Carry(tainted, returns)
     changed = True
     while changed:
         changed = False
@@ -182,8 +191,8 @@ def _is_write_mode(call: ast.Call, pos: int) -> bool:
     return isinstance(mode, ast.Constant) and isinstance(mode.value, str) and any(c in mode.value for c in "wax")
 
 
-def _reads(scope: ast.AST, tainted: Set[str]) -> Iterator[int]:
-    carry = _Carry(tainted)
+def _reads(scope: ast.AST, tainted: Set[str], returns: Set[str]) -> Iterator[int]:
+    carry = _Carry(tainted, returns)
     for n in _scope_nodes(scope):
         if not isinstance(n, ast.Call):
             continue
@@ -209,13 +218,19 @@ def scan_source(src: str, filename: str = "<src>") -> List[int]:
     #: INTERPROCEDURAL, within the module: a carried path handed to a function defined HERE (by
     #: position or keyword) taints that parameter — ``_load_json(spath)`` is a summary read.
     param_taint: Dict[int, Set[str]] = {}
+    #: functions defined HERE whose return value carries a summary path (``names()`` → a dict of them).
+    returns: Set[str] = set()
     hits: List[int] = []
 
     def visit(scope: ast.AST, inherited: Set[str]) -> bool:
         grew = False
-        tainted = _taint(scope, inherited, param_taint.get(id(scope), set()))
-        hits.extend(_reads(scope, tainted))
-        carry = _Carry(tainted)
+        tainted = _taint(scope, inherited, param_taint.get(id(scope), set()), returns)
+        hits.extend(_reads(scope, tainted, returns))
+        carry = _Carry(tainted, returns)
+        if isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef)) and scope.name not in returns:
+            if any(isinstance(n, ast.Return) and carry(n.value) for n in _scope_nodes(scope)):
+                returns.add(scope.name)
+                grew = True
         for n in _scope_nodes(scope):
             if isinstance(n, ast.Call) and _call_name(n.func) in defs:
                 for fd in defs[_call_name(n.func)]:
@@ -291,6 +306,11 @@ def test_the_loader_module_exists_and_exports_the_three_entry_points():
     'import json, glob\nfiles = glob.glob("x/**/*_summary.json")\nfor f in files:\n    doc = json.load(open(f))\n',
     'import json, os\ndef _load(path):\n    with open(path) as fh:\n        return json.load(fh)\ndef g(d, b):\n    return _load(os.path.join(d, b + "_summary.json"))\n',
     'import json, sys\nsumm_path = sys.argv[1]\nsumm = json.load(open(summ_path))\n',
+    # a nested helper RETURNING a dict of summary paths (rust_eval.parity.compare_traces' shape)
+    'import json\ndef f(a, b):\n    def names(r):\n        return {str(p): p for p in r.rglob("*_summary.json")}\n'
+    '    pn = names(b)\n    for rel in pn:\n        json.loads(pn[rel].read_text())\n',
+    'import json, glob\ndef paths(d):\n    return sorted(glob.glob(d + "/*_summary.json"))\n'
+    'def g(d):\n    for p in paths(d):\n        json.load(open(p))\n',
 ])
 def test_the_scan_sees_every_reader_shape(src):
     assert scan_source(src), src

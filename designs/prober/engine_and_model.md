@@ -79,16 +79,17 @@ walks `summary.get("invocations", [])` reports ZERO decisions without raising. T
 
 The static gate `src/trace_summary_reader_gate_test.py` (unmarked, ~1 s, EMPTY allowlist) fails any
 module other than `core_trace.py` that opens a `*_summary.json` for reading. It tracks the path
-through names, `os.path.join` / `Path` / `glob`, for / comprehension targets, parameters named
-`summary_path` / `summ_path` / `spath` / `smf` / …, `.summary_path` attributes and same-module helper
-calls, and stops at a stripped or replaced suffix (the siblings). A path handed in from another module
+through names, `os.path.join` / `Path` / `glob`, for / list / dict comprehensions (`.values()` /
+`.items()`), parameters named `summary_path` / `summ_path` / `spath` / `smf` / …, `.summary_path`
+attributes, same-module helper calls (a carried argument taints the parameter; a function that
+RETURNS a carried path taints its call), and stops at a stripped or replaced suffix (the siblings). A path handed in from another module
 under an unrelated name is its blind spot. Opt out with `GEN3AI_SKIP_SUMMARY_READER_GATE=1`.
 
 **Which reader does what on a core trace** (behaviour pinned by `core_trace_readers_test.py`):
 
 | reader | entry point | on a core trace |
 |---|---|---|
-| `ProbeSession._summary` / `_meta` (every prober view, the search teacher's `selection`), `forensics`, `probe_replay`, `mechanic_usage_baseline`, `audit_states` (mask fallback), `search_dividend.search_decision_benchmark` / `ab_racing`, `rust_sim/harness/better_line_bench` / `gen_search_golden` | `load_summary` | expanded — reads every decision (`ab_racing` re-raises a `CoreTraceError` rather than log it as a skip) |
+| `ProbeSession._summary` / `_meta` (every prober view, the search teacher's `selection`), `forensics`, `rust_eval.parity.compare_traces` (both sides), `probe_replay`, `mechanic_usage_baseline`, `audit_states` (mask fallback), `search_dividend.search_decision_benchmark` / `ab_racing`, `rust_sim/harness/better_line_bench` / `gen_search_golden` | `load_summary` | expanded — reads every decision (`ab_racing` re-raises a `CoreTraceError` rather than log it as a skip) |
 | `ops.conditioning_meters.extract_cycle` | `load_summary` | expanded under `--v-column values`; REFUSED under the `win_probs` column (NaN head) |
 | `critic_gate._trace_turns` (G7), `ops.quota_match.classify_on_disk`, `harvest_meter._load_tail` / `control_battles` | `load_summary_meta` | stored meta; `harvest_meter`'s `recorded_phi_T` is `None` (not NaN) on a NaN head |
 | `cf_audit.build_frame`, `harvest.build_candidates` | `refuse_core_trace` | REFUSED — both sample by the recorded win-prob head; the refusal escapes their counted-skip `except` |

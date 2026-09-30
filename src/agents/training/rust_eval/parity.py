@@ -263,7 +263,7 @@ def compare_traces(rust_model_dir: Path, py_model_dir: Path, step: int, *, limit
     keys = ("turn", "phase", "chosen", "our", "opp")
     for rel in sorted(set(rn) & set(pn))[: limit or None]:
         rs = core_trace.load_summary(str(rn[rel]))
-        ps = json.loads(pn[rel].read_text())
+        ps = core_trace.load_summary(str(pn[rel]))      # the Python side: passed through as stored
         ri, pi = rs.get("invocations", []), ps.get("invocations", [])
         out["checked"] += 1
         if len(ri) != len(pi):
