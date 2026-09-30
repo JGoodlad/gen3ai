@@ -125,6 +125,55 @@ a busy one it is ADVISORY** — a compile-heavy test slows by multiples of the c
 would go red whenever a run is live. `tier_budget_guard_test.py` pins both halves and that the
 guard may only ever ADD a failure, never clear one.
 
+**The factor the guard reads is the WINDOWED meter, not the load average** (`src/utils/cpu_meter.py`,
+`gen3_contention_meter_v2`, 2026-09-30). The old reading was `load1 / cpus` taken once at session
+end, and that day every agent's routine gate went RED on the budget with 0 tests failed: load1 ~9-11
+on 16 cpus read **1.00, "quiet"**, while the flagged tests ran 1.3-2.7x their quiet times. Two blind
+spots — load1 is a 1-minute EMA sampled at one instant, and this box is **8 cores / 16 hardware
+threads**, so past ~8 busy threads cores are SHARED (a CPU-bound thread runs **1.70-1.83x** slower
+beside a busy sibling) with no run-queue wait at all, which Linux PSI `cpu some` cannot see either.
+The meter diffs three kernel-integrated counters across a window:
+
+| Counter | Gives | Term |
+|---|---|---|
+| `/proc/stat` per-cpu busy ticks | `U`, mean busy logical cpus | SMT: `g(U) = 1 + 0.75·min(1, 2(U−P)/U)` past `P` cores |
+| OUR tasks' `/proc/<pid>/task/<tid>/schedstat` (box-wide `/proc/schedstat` when there is no self) | run-queue stretch `1 + wait/run` (does not saturate) | × the stretch's EXTERNAL share |
+| `/proc/pressure/cpu` `some` total | stall share — REPORTED; the run-queue term only when schedstat is missing | `1/(1−some)` fallback |
+
+The run-queue term reads OUR OWN tasks because the box-wide counter is not what a test feels: it read
+1.06-1.23 with 5-8 of 16 cpus busy (one other agent's process queueing on itself), and once x11.1 at
+PSI 1.7 %. `load1 / cpus` is the last resort (no `/proc/stat`), and every reading names its SOURCE. **The pytest
+session's own process tree is subtracted** (and per test, that test's own xdist-worker subtree), so a
+test that saturates the box by itself is still caught. The controller samples at session start, on
+test-start events (≤ one per 2 s, ~3 ms each), at the end of every test over 30 s, and at session end
+— no thread. **A run FAILS only if the SESSION and the flagged test's OWN WINDOW both read < 1.05**:
+a session average can hide the burst that sat on the one long test. Each over-budget line prints its
+window's reading; the summary prints the session's, with the old load1 reading beside it. A test
+over 30 s but inside its contention-SCALED budget is never a verdict, but it is still NAMED in one
+`tier budget:` line — on a busy box a slow test must not vanish from the report.
+
+Calibration (2026-09-30, pure-Python probe, quiet 0.396 s, K busy `while 1: pass` workers, 6 s windows,
+same window for every column):
+
+| K | probe slowdown | OLD load1/cpus | PSI-only `1/(1−some)` | NEW |
+|---|---|---|---|---|
+| 0 | 1.00 | 1.00 | 1.00 | 1.00 |
+| 4 | 1.03 | 1.00 | 1.00 | 1.01 |
+| 8 | 1.92 | 1.00 | 1.00 | 1.52 |
+| 10 | 1.98 | 1.00 | 1.04 | 1.77 |
+| 12 | 2.01 | 1.00 | 1.19 | 2.05 |
+| 16 | 2.16 | 1.00 | 1.24 | 2.11 |
+| 24 | 3.51 | 1.00 | 2.51 | 2.94 |
+
+PSI-only under-reads the SMT band and over-reads saturation (`1/(1−some)` = 8.5 vs a measured 5.65 at
+K = 32). The new meter still under-reads the probe by up to ~25 % in the 8-core band, but it never
+calls a slowed window quiet — the direction the enforcement decision needs. `cpu_meter_test.py` pins
+the mapping (the incident case is a named test) and has one REAL test (`integration`, ~4 s: 12 busy
+workers read contended, and read as SELF when they are ours). ⚠️ No real-process test can assert an
+idle box reads quiet on a shared machine; that half is pinned with synthetic counters only.
+`GEN3AI_TIMEOUT_SCALE` still forces the factor. `scale_timeout` / `ProgressDeadline` still read the
+instantaneous load1 factor (`contention.py`) — **they are not on the new meter**.
+
 ### COMPOSITION gates — where a whole RUN is the unit under test
 
 Some properties exist only in the JOINS between subsystems, and no leg-level test can see them: the

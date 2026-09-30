@@ -154,7 +154,82 @@ def test_an_unmarked_overrun_is_recorded_and_a_marked_one_is_not(conf, monkeypat
     conf.pytest_runtest_logreport(_Rep("fast::t", 1.0, {}))
     conf.pytest_runtest_logreport(_Rep("slow_marked::t", 10_000.0, {"slow": 1}))
     conf.pytest_runtest_logreport(_Rep("sim_unmarked::t", 10_000.0, {"sim": 1}))
-    recorded = [n for n, _ in conf._over_budget]
+    recorded = [e[0] for e in conf._over_budget]
     assert recorded == ["sim_unmarked::t"], (
         f"expected only the unmarked overrun to be recorded, got {recorded}")
     conf._over_budget.clear()
+
+
+# --- gen3_contention_meter_v2: the verdict needs the session AND the test's own window quiet ------
+
+
+def _reading(factor):
+    from utils.cpu_meter import ContentionReading
+    return ContentionReading(factor, "synthetic")
+
+
+def test_a_contended_WINDOW_is_advisory_even_in_a_quiet_session(conf, monkeypatch):
+    """A session average can hide the burst that sat exactly on the one long test. Revert
+    `_enforceable` to "session only" and this fails."""
+    monkeypatch.delenv("GEN3AI_TIMEOUT_SCALE", raising=False)
+    conf._meter["final"] = _reading(1.0)                 # the session read quiet...
+    conf._over_budget.clear()
+    conf._over_budget.append(("burst::t", 45.0, _reading(1.6)))   # ...this test's window did not
+    s = _Session()
+    conf.pytest_sessionfinish(s, 0)
+    conf._over_budget.clear()
+    assert s.exitstatus == 0, "an overrun whose own window was contended must be advisory"
+
+
+def test_a_quiet_window_in_a_quiet_session_FAILS(conf, monkeypatch):
+    monkeypatch.delenv("GEN3AI_TIMEOUT_SCALE", raising=False)
+    conf._meter["final"] = _reading(1.0)
+    conf._over_budget.clear()
+    conf._over_budget.append(("slowpoke::t", 45.0, _reading(1.0)))
+    s = _Session()
+    conf.pytest_sessionfinish(s, 0)
+    conf._over_budget.clear()
+    assert s.exitstatus == 1
+
+
+def test_an_UNREADABLE_window_is_never_enforced(conf, monkeypatch):
+    """No reading is not a quiet reading."""
+    monkeypatch.delenv("GEN3AI_TIMEOUT_SCALE", raising=False)
+    conf._meter["final"] = _reading(1.0)
+    conf._over_budget.clear()
+    conf._over_budget.append(("blind::t", 45.0, None))
+    s = _Session()
+    conf.pytest_sessionfinish(s, 0)
+    conf._over_budget.clear()
+    assert s.exitstatus == 0
+
+
+def test_a_contended_session_is_advisory_even_with_a_quiet_window(conf, monkeypatch):
+    monkeypatch.delenv("GEN3AI_TIMEOUT_SCALE", raising=False)
+    conf._meter["final"] = _reading(1.4)
+    conf._over_budget.clear()
+    conf._over_budget.append(("slowpoke::t", 45.0, _reading(1.0)))
+    s = _Session()
+    conf.pytest_sessionfinish(s, 0)
+    conf._over_budget.clear()
+    assert s.exitstatus == 0
+
+
+def test_the_budget_stretches_by_the_tests_OWN_window(conf, monkeypatch):
+    monkeypatch.delenv("GEN3AI_TIMEOUT_SCALE", raising=False)
+    assert conf._tier_budget_seconds(_reading(2.0)) == 2 * conf._TIER_BUDGET_BASE_S
+
+
+def test_an_overrun_WITHIN_the_scaled_budget_is_named_not_dropped(conf, monkeypatch):
+    """On a busy box a 45 s test can sit inside its stretched budget. That is not a verdict, but it
+    must not vanish from the report either (observed 2026-09-30: a 45 s probe at x1.68, silent)."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "2")
+    conf._over_budget.clear()
+    conf._within_scaled.clear()
+
+    class _Rep:
+        when, skipped, keywords, nodeid, duration = "call", False, {}, "busy::t", 45.0
+
+    conf.pytest_runtest_logreport(_Rep())
+    assert [e[0] for e in conf._within_scaled] == ["busy::t"] and not conf._over_budget
+    conf._within_scaled.clear()

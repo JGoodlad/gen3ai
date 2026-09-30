@@ -86,11 +86,13 @@ os.environ.setdefault("POKESIM_EMISSION_SELFCHECK", "1")
 # are told immediately. It cannot flag a test it did not run — which is fine, because the full
 # pre-ship run is exactly where a mis-tiered test would otherwise reach main.
 #
-# The budget is SCALED BY MEASURED CONTENTION (`cpu_contention_factor`), the same rule the rest of
-# the tree uses for wall-clock bounds: on an idle box the factor is 1.0 and nothing changes, and
-# beside a live training run the budget stretches instead of producing a false failure. On an
-# over-budget test the message carries `describe_contention()`, so a starved run diagnoses itself
-# rather than starting an investigation. Escape hatch: GEN3AI_SKIP_TIER_BUDGET=1.
+# The budget is SCALED BY THE CONTENTION MEASURED OVER THAT TEST'S OWN CALL WINDOW
+# (`utils.cpu_meter`, `gen3_contention_meter_v2`): kernel-integrated /proc/stat occupancy (SMT) and
+# /proc/schedstat run-queue counters diffed from just before the test started to just after it
+# ended, with the test's own worker subtree subtracted — its own load is its cost, not contention.
+# On an idle box the factor is 1.0 and nothing changes. Every over-budget line carries that
+# reading, and the summary carries the SESSION's, each naming its source. Escape hatch:
+# GEN3AI_SKIP_TIER_BUDGET=1.
 #
 # ⚠️ ONLY the COST markers exempt a test, never the CAPABILITY ones. A `sim` test is not excused for
 # being slow — the six-battle obs-golden is `sim` and runs in ~5 s, and it BELONGS in the routine
@@ -110,7 +112,11 @@ os.environ.setdefault("POKESIM_EMISSION_SELFCHECK", "1")
 # 1.25 idle line below, learned twice in one day.
 _TIER_BUDGET_BASE_S = 30.0
 _COST_MARKERS = ("slow", "e2e", "benchmark")
-_over_budget: "list[tuple[str, float]]" = []
+# (nodeid, call duration, the contention reading over that call — None when it could not be read)
+_over_budget: "list[tuple]" = []
+# Over the BASE budget but within the contention-scaled one: never a verdict, but named in one line
+# so a slow test is not silently absorbed by a busy box.
+_within_scaled: "list[tuple]" = []
 
 
 # --- Slow-tier LAST-KNOWN STATUS: a red `slow` test must be visible to the ROUTINE gate ---------
@@ -230,12 +236,17 @@ def _record_slow_result(report):
             lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
             errs = [ln[1:].strip() for ln in lines if ln.startswith("E ")]
             detail = (errs[0] if errs else (lines[-1] if lines else "no detail"))
+        contention = (prev or {}).get("contention")
+        if report.when == "call" and not _meter["worker"]:
+            reading = _window_reading(report)       # this test's own call window
+            contention = reading.factor if reading is not None else None
         _slow_results[report.nodeid] = {
             "status": merged,
             "duration_s": (prev or {}).get("duration_s", 0.0) + float(report.duration),
             "detail": detail,
             # A PASS is only earned by a CALL phase — see `slow_tier_status.settle`.
             "call": bool((prev or {}).get("call")) or report.when == "call",
+            "contention": contention,
         }
     except Exception as exc:            # never let the recorder break a test run
         _slow_write_note.append(f"slow-tier status NOT recorded for {report.nodeid}: {exc!r}")
@@ -265,8 +276,9 @@ def _write_slow_results(nodeids=None):
             # session-finish sweep below would bank it GREEN. `settle` demotes it to inconclusive.
             status = settle(r["status"], r.get("call", False))
             detail = INTERRUPTED_DETAIL if status != r["status"] else r.get("detail", "")
+            own = r.get("contention")
             rows[nodeid] = make_row(status, commit=commit, duration_s=r["duration_s"],
-                                    contention=factor, detail=detail)
+                                    contention=factor if own is None else own, detail=detail)
         if not rows:
             return
         path = record_results(rows)
@@ -279,23 +291,101 @@ def _write_slow_results(nodeids=None):
             "lost, so the routine gate will keep reading the previous verdict.")
 
 
-def _tier_budget_seconds():
+def _tier_budget_seconds(reading=None):
+    """The budget for one test: the base, stretched by ``reading`` (that test's window) or, with
+    none, by the session reading so far."""
     try:
-        from utils.contention import cpu_contention_factor
-        return _TIER_BUDGET_BASE_S * cpu_contention_factor()
+        factor = (reading or _session_reading()).factor
     except Exception:
-        return _TIER_BUDGET_BASE_S      # never let the guard break collection
+        factor = 1.0                    # never let the guard break the run
+    return _TIER_BUDGET_BASE_S * factor
+
+
+# --- The contention METER: sampled across the session, diffed per window -------------------------
+#
+# Lives in the process that sees every report — the xdist CONTROLLER, or the sole process of a
+# serial run — and takes a sample at session start, at most every 2 s on test-start events, at the
+# end of every test long enough to matter, and at session end. No thread: a sampler thread in a
+# serial run would sit inside the test process, where fork-safety checks count threads.
+_meter = {"m": None, "final": None, "worker": False}
+
+
+def _is_xdist_worker(config):
+    return hasattr(config, "workerinput")
+
+
+def _start_meter():
+    try:
+        from utils.cpu_meter import WindowMeter
+        _meter["m"] = WindowMeter(lambda: [os.getpid()])
+    except Exception:
+        _meter["m"] = None              # a meter that cannot start leaves the load1 fallback
+
+
+def pytest_runtest_logstart(nodeid, location):
+    m = _meter["m"]
+    if m is not None:
+        try:
+            m.maybe_sample()
+        except Exception:
+            pass
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Stamp the pid that ran the test, so the controller can subtract THAT worker's own subtree
+    (the attribute rides xdist's report serialization untouched)."""
+    rep = yield
+    rep.gen3ai_pid = os.getpid()
+    return rep
+
+
+def _window_reading(report):
+    """Contention over one test's call, or None when it cannot be measured."""
+    from utils.cpu_meter import override_reading
+    over = override_reading()
+    if over is not None:
+        return over
+    m = _meter["m"]
+    start, stop = getattr(report, "start", None), getattr(report, "stop", None)
+    if m is None or start is None or stop is None:
+        return None
+    try:
+        return m.window(start, stop, getattr(report, "gen3ai_pid", None))
+    except Exception:
+        return None
+
+
+def _session_reading():
+    """The whole session's contention (its own process tree subtracted), or an instantaneous
+    fallback when no meter ran (a module loaded outside a session, e.g. by its own tests)."""
+    from utils.cpu_meter import loadavg_reading, override_reading
+    over = override_reading()
+    if over is not None:
+        return over
+    if _meter["final"] is not None:
+        return _meter["final"]
+    m = _meter["m"]
+    if m is None:
+        return loadavg_reading()
+    return m.session(os.getpid())
 
 
 def pytest_runtest_logreport(report):
     """Two jobs: the tier-budget overrun above, and the slow-tier status recording below."""
     _record_slow_result(report)         # every phase, so a setup/teardown error is not lost
-    if os.environ.get("GEN3AI_SKIP_TIER_BUDGET") or report.when != "call" or report.skipped:
-        return
+    if (os.environ.get("GEN3AI_SKIP_TIER_BUDGET") or report.when != "call" or report.skipped
+            or _meter["worker"]):
+        return                          # an xdist worker's copy: the CONTROLLER judges budgets
     if any(m in report.keywords for m in _COST_MARKERS):
         return                          # it declared its cost; that is the whole point of a tier
-    if report.duration > _tier_budget_seconds():
-        _over_budget.append((report.nodeid, report.duration))
+    if report.duration <= _TIER_BUDGET_BASE_S:
+        return                          # the factor is >= 1, so it cannot be over; skip the read
+    reading = _window_reading(report)
+    if report.duration > _tier_budget_seconds(reading):
+        _over_budget.append((report.nodeid, report.duration, reading))
+    else:
+        _within_scaled.append((report.nodeid, report.duration, reading))
 
 
 # A duration is only worth FAILING on when the box was genuinely quiet. This bar is deliberately
@@ -311,27 +401,53 @@ def pytest_runtest_logreport(report):
 # At <1.05 the box is unloaded in a way this one rarely is, so in practice the guard REPORTS here
 # and ENFORCES on a quiet box (CI, or a deliberate idle run). That asymmetry is the honest one:
 # you cannot take a trustworthy duration measurement on a machine that is always training.
+#
+# THE METER BEHIND IT WAS BLIND, and a threshold is only as good as its meter. Until
+# `gen3_contention_meter_v2` the factor was load1/cpus read ONCE at session end. On 2026-09-30 every
+# agent's routine gate went RED on this budget with 0 tests failed: load1 ~9-11 on 16 cpus read
+# 1.00, "quiet", while several suites and a 312%-CPU measurement ran and the flagged tests took
+# 1.3-2.7x their quiet times. Two blind spots: load1 is a 1-minute EMA sampled at one instant, and
+# on this 8-core/16-thread box ten busy threads already share cores (1.75x per thread) with NO
+# run-queue wait — which PSI `cpu some` cannot see either. `utils.cpu_meter` diffs kernel counters
+# over the whole session AND each flagged test's own window; its docstring holds the calibration.
+# A run FAILS only when both read < 1.05: a session average can hide the burst that sat on the test.
 _IDLE_FACTOR_MAX = 1.05
 
 
 def _contention_factor():
-    """Read FRESH (not off the module's TTL cache): the cached value is up to a minute stale, and a
-    verdict printed next to a contradicting load average reads as a bug in the guard."""
+    """The session's contention factor so far (see `_session_reading`)."""
     try:
-        from utils.contention import cpu_contention_factor
-        return cpu_contention_factor(refresh=True)
+        return _session_reading().factor
     except Exception:
         return 1.0         # can't measure ⇒ treat as idle, i.e. hold the guard to its promise
 
 
 def _box_is_idle():
-    """Was this run's timing trustworthy enough to FAIL on?"""
+    """Was this SESSION quiet enough to fail a duration on?"""
     return _contention_factor() < _IDLE_FACTOR_MAX
+
+
+def _enforceable(entry):
+    """An overrun FAILS the run only when its OWN window was quiet too. The session average can hide
+    a burst that sat exactly on the one long test, and a window we could not read is not quiet."""
+    reading = entry[2] if len(entry) > 2 else None
+    if reading is None:
+        from utils.cpu_meter import override_reading
+        reading = override_reading()
+    return reading is not None and reading.factor < _IDLE_FACTOR_MAX
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     for note in _slow_write_note:
         terminalreporter.write_line(note)
+    if _within_scaled:
+        top = sorted(_within_scaled, key=lambda x: -x[1])[:3]
+        terminalreporter.write_line(
+            f"tier budget: {len(_within_scaled)} unmarked test(s) ran over "
+            f"{_TIER_BUDGET_BASE_S:.0f}s but within their contention-scaled budget (a quiet-box run "
+            "decides): " + ", ".join(
+                f"{n.split('::')[-1]} {d:.1f}s @x{r.factor:.2f}" if r is not None
+                else f"{n.split('::')[-1]} {d:.1f}s" for n, d, r in top))
     if not _over_budget:
         return
     try:
@@ -340,41 +456,54 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     except Exception:
         diag = "contention: unavailable"
     idle = _box_is_idle()
-    terminalreporter.section("TIER BUDGET", red=idle)
-    verdict = ("exceeded" if idle else
+    enforced = [e for e in _over_budget if idle and _enforceable(e)]
+    terminalreporter.section("TIER BUDGET", red=bool(enforced))
+    verdict = ("exceeded" if enforced else
                "exceeded (ADVISORY — the box was busy, see below)")
     terminalreporter.write_line(
-        f"{len(_over_budget)} test(s) {verdict} the {_tier_budget_seconds():.0f}s default-tier "
-        f"budget while carrying no cost marker:")
-    for nodeid, dur in sorted(_over_budget, key=lambda x: -x[1]):
-        terminalreporter.write_line(f"  {dur:7.1f}s  {nodeid}")
+        f"{len(_over_budget)} test(s) {verdict} the {_TIER_BUDGET_BASE_S:.0f}s default-tier "
+        f"budget (x each test's own contention factor) while carrying no cost marker:")
+    for entry in sorted(_over_budget, key=lambda x: -x[1]):
+        nodeid, dur = entry[0], entry[1]
+        reading = entry[2] if len(entry) > 2 else None
+        tag = "ENFORCED" if entry in enforced else "advisory"
+        terminalreporter.write_line(f"  {dur:7.1f}s  {nodeid}  [{tag}]")
+        terminalreporter.write_line(
+            "           window: " + (reading.describe() if reading is not None
+                                     else "contention UNREADABLE for this window (not quiet)"))
     terminalreporter.write_line(
         "Mark each one `slow` (and keep whatever capability marker it already has — `sim`, "
         "`browser`, `integration` say what it NEEDS, `slow` says what it COSTS), or make it "
         "faster. A slow test in the routine gate is how the routine gate stops being routine.")
-    # State OUR verdict and the number behind it FIRST. `describe_contention()` calls anything
-    # under 1.25 "box looks idle", so on its own it printed "load average 19.90 on 16 cpus (box
-    # looks idle)" underneath a failure caused by that very load — the guard appearing to
-    # contradict itself. Its load figures and the `ps` hint are still worth having, so it follows.
-    factor = _contention_factor()
+    # State OUR verdict and the number behind it FIRST, with its SOURCE: the old guard printed
+    # "box looks idle" beside the very load that caused the overrun. `describe_contention()`'s
+    # load figures and `ps` hint follow as a diagnostic, never as the verdict.
+    try:
+        session = _session_reading().describe()
+    except Exception as exc:
+        session = f"contention UNREADABLE ({exc!r})"
     terminalreporter.write_line(
-        f"contention factor {factor:.2f} (fail threshold <{_IDLE_FACTOR_MAX}) — "
-        + ("box quiet enough to judge a duration." if idle else
+        f"session {session} (fail threshold <{_IDLE_FACTOR_MAX}, session AND the test's own "
+        "window) — "
+        + ("quiet enough to judge a duration." if enforced else
            "NOT failing the run: a duration measured on a contended box is not a measurement of "
-           "the test. Re-run on a quiet box for a verdict — the factor tracks the load average, "
-           "and a compile-heavy test competing for every core slows by far more than that "
-           "(measured: 12.3s idle -> 65.9s at load 22)."))
+           "the test. Re-run on a quiet box for a verdict."))
     terminalreporter.write_line(diag)
 
 
 def pytest_sessionfinish(session, exitstatus):
+    if _meter["m"] is not None and _meter["final"] is None and not os.environ.get(
+            "GEN3AI_TIMEOUT_SCALE"):
+        try:
+            _meter["final"] = _meter["m"].session(os.getpid())   # freeze: summary + exit agree
+        except Exception:
+            pass
     _write_slow_results()
-    # Fail ONLY on a trustworthy measurement. Scaling the budget is not enough on its own: the
-    # factor is loadavg/cpus (~1.4 at load 22), while the actual slowdown on a core-hungry test is
-    # multiples of that, so a scaled budget still false-fails beside a live training run — the
-    # exact failure this tree has eaten repeatedly (a starved parity run reporting 39/40 bogus
-    # skips as a clean pass). Contended ⇒ advisory; idle ⇒ a real verdict.
-    if _over_budget and exitstatus == 0 and _box_is_idle():
+    # Fail ONLY on a trustworthy measurement. Scaling the budget is not enough on its own — a
+    # core-hungry test slows by multiples of any average factor — so contended ⇒ advisory, and
+    # quiet (the session AND the test's own window) ⇒ a real verdict.
+    if (_over_budget and exitstatus == 0 and _box_is_idle()
+            and any(_enforceable(e) for e in _over_budget)):
         session.exitstatus = 1
 
 
@@ -446,10 +575,14 @@ Set GEN3AI_SKIP_DEPS_GUARD=1 to run anyway (a pure-unit CI with no submodule).""
 
 
 def pytest_sessionstart(session):
-    """Refuse the session on an unfinished checkout, with ONE message instead of ~15 failures."""
+    """Refuse the session on an unfinished checkout, with ONE message instead of ~15 failures; then
+    take the contention meter's first sample (controller / sole process only)."""
     if not os.environ.get("GEN3AI_SKIP_DEPS_GUARD"):
         _refuse_unfinished_checkout()
     _refuse_an_unimportable_torch_state_guard()
+    _meter["worker"] = _is_xdist_worker(session.config)
+    if not _meter["worker"]:
+        _start_meter()
 
 
 def _refuse_unfinished_checkout():
