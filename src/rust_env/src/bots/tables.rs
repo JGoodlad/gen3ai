@@ -1106,6 +1106,9 @@ pub static SETUP_STATS: &[&str] = &["atk", "spa", "spe"];
 /// `SimpleHeuristicsPlayer.ANTI_HAZARDS_MOVES`.
 pub static ANTI_HAZARDS_MOVES: &[&str] = &["defog", "rapidspin"];
 
+/// `baselines.CURSE_NON_GHOST_BOOSTS` (dict order) — a non-Ghost user's Curse, for `self_setup_boosts`.
+pub static CURSE_NON_GHOST_BOOSTS: &[(&str, i32)] = &[("atk", 1), ("def", 1), ("spe", -1)];
+
 /// `SimpleHeuristicsPlayer.ENTRY_HAZARDS` (dict order; `stealhrock` is upstream's own spelling).
 pub static ENTRY_HAZARDS: &[(&str, &str)] = &[
     ("spikes", "SPIKES"),

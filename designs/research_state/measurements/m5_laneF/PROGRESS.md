@@ -96,10 +96,11 @@ which a list-literal read missed on the first try. Teeth: a dropped row and an a
 
 | tier | corpus | decisions | result |
 |---|---|---|---|
-| COMMIT (routine) | banked, 52 episodes: 10 bots × (3 pool + 1 ladder + 1 procedural) + 1 chosen `staller_v2` battle + 1 chosen `heuristic2` battle (its setup step) | 2,165 | **0 mismatches** (view, action, token, RNG offsets, replay); re-banked after the F-LF-1 fix |
+| COMMIT (routine) | banked, 55 episodes: 10 bots × (3 pool + 1 ladder + 1 procedural) + 1 chosen `staller_v2` battle + 1 chosen `heuristic2` battle (its setup step) + 3 chosen Curse battles (`heuristic`, `setup_sweep`, `setup_sweep_v2`; `heuristic2` Curses in its base battles) | 2,165 at the F-LF-1 fix; re-banked again for Curse | **0 mismatches** (view, action, token, RNG offsets, replay); the re-record runs in 2 parts (one overran the 30 s tier budget) |
 | probe (one-off) | 120 episodes, pool + ladder | 4,614 | 0 mismatches |
 | MILESTONE (`slow`) | 520 fresh episodes, 10 bots × (20 pool + 20 ladder + 12 procedural) | **20,229** | **0 mismatches**, 73 s (pre-fix bots) |
 | MILESTONE after the F-LF-1 fix | the same 520 keys, fixed bots | ~20.4k | **0 mismatches**, 79 s; the setup site fires on heuristic 65 / 1,573, heuristic2 58 / 1,376, setup_sweep 86 / 1,706, setup_sweep_v2 44 / 1,650 decisions (0 before the fix, by construction) |
+| MILESTONE after Curse became setup (owner 2026-09-29) | the same 520 keys | per setup bot: heuristic 1,584 · heuristic2 1,333 · setup_sweep 1,661 · setup_sweep_v2 1,639 | **0 mismatches**, 73 s; setup site heuristic 87, heuristic2 78, setup_sweep 94, setup_sweep_v2 53; of those, **Curse** 16 / 10 / 13 / 8 (p2 teams carrying Curse: 17 / 11 / 10 / 11 of 52) |
 
 - **Draws exercised (milestone):** random 4,348 decisions; staller 174; staller_v2 108; baitbot 83
   (bait coin + forced-switch path).
@@ -122,8 +123,14 @@ which a list-literal read missed on the first try. Teeth: a dropped row and an a
   `bot_tables_test.py` pins the fixed fact on both sides, `bots_gate_test.py::test_the_setup_bots_actually_set_up`
   and the COMMIT gate's setup-site coverage fail on a revert of either half, and
   `src/poke_env_enum_str_compare_gate_test.py` (mypy `--strict-equality`) fails any poke-env enum
-  compared to a str. Curse is in `_SETUP_MOVES` but its dex target is not self and it has no static
-  boosts, so no setup step picks it (unchanged; a behaviour decision). What it was:
+  compared to a str. **Curse — owner 2026-09-29, "allow Curse":** poke-env's `Move("curse")` has
+  target NORMAL and no boosts, so the fix alone could not pick it; the four setup steps now read
+  `baselines.self_setup_boosts(move, user)` — a `Target.SELF` move's boosts, a NON-Ghost's Curse as
+  +1 Atk / +1 Def / −1 Spe (Showdown `data/mods/gen4/moves.ts`, which gen 3 inherits), and None for
+  a GHOST user (its Curse halves its own HP). The heuristic rule counts RAISED stages (identical for
+  every other move; `bot_tables_test.py` pins that no `Target.SELF` gen-3 move lowers a stat). Port:
+  `calc::self_setup_boosts` + the generated `CURSE_NON_GHOST_BOOSTS`; tests
+  `src/agents/opponents_curse_test.py` and `bots_gate_test.py::test_every_setup_bot_sets_up_with_curse`. What it was:
   the setup branch NEVER fired in four bots:
   `SimpleHeuristicsPlayer`, `Gen3HeuristicV2Player`, `Gen3SetupSweepPlayer` and
   `Gen3SetupSweepV2Player`. Each tests `move.target == "self"`, and poke-env's `Move.target` is a

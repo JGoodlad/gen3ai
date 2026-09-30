@@ -931,9 +931,9 @@
   },
   "src/utils/rust_env/bots_gate_test.py::test_milestone_every_decision_is_equal_at_scale": {
    "status": "pass",
-   "commit": "02b0ab1446d1cac53477066f432e5a1da52a05b1",
-   "at": "2026-09-30T03:05:53Z",
-   "duration_s": 76.1,
+   "commit": "c4588b05e1ad720854ecde53f896acb3eaab31c7",
+   "at": "2026-09-30T04:41:10Z",
+   "duration_s": 71.12,
    "contention": 1.0,
    "detail": ""
   },
@@ -986,5 +986,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T03:36:42Z"
+ "last_written": "2026-09-30T04:41:10Z"
 }

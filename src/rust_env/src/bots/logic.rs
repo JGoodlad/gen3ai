@@ -58,13 +58,13 @@ pub fn heuristic(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order> {
             }
         }
         // Setup: `active.current_hp_fraction == 1 and _estimate_matchup(...) > 0`, then the first move
-        // with `move.boosts`, `sum(boosts) >= 2`, `target is Target.SELF` and an uncapped raised stat.
+        // whose `self_setup_boosts` (Target.SELF boosts, or a non-Ghost's Curse) raise >= 2 stages
+        // with an uncapped raised stat.
         if active.hp == 1.0 && estimate_matchup(active, opp)? > 0.0 {
             for (i, m) in v.moves.iter().enumerate() {
-                if let Some(b) = m.boosts {
-                    if b.iter().map(|(_, x)| x).sum::<i32>() >= 2
-                        && target_is_self(m)
-                        && b.iter().filter(|(_, x)| *x > 0).map(|(s, _)| active.boost(s)).min().expect("sum >= 2") < 6
+                if let Some(b) = self_setup_boosts(m, active).filter(|b| !b.is_empty()) {
+                    if raised_stages(b) >= 2
+                        && b.iter().filter(|(_, x)| *x > 0).map(|(s, _)| active.boost(s)).min().expect("raised >= 2") < 6
                     {
                         // F-LF-1 SETUP SITE — bots_gate_test.py asserts the COMMIT bank reaches it
                         return Ok(hit(br, line!(), Order::Move(i)));
@@ -153,9 +153,14 @@ pub fn aggressive(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order> {
 fn setup_move(v: &View, active: &super::view::MonV) -> Option<usize> {
     v.moves.iter().position(|m| {
         has(t::SETUP_MOVES, &m.id)
-            && target_is_self(m)
-            && m.boosts.unwrap_or(&[]).iter().any(|(s, x)| *x > 0 && has(t::SETUP_STATS, s) && active.boost(s) < 6)
+            && self_setup_boosts(m, active)
+                .is_some_and(|b| b.iter().any(|(s, x)| *x > 0 && has(t::SETUP_STATS, s) && active.boost(s) < 6))
     })
+}
+
+/// `sum(v for v in boosts.values() if v > 0)` — the RAISED stages (Curse's −1 Spe does not count).
+fn raised_stages(b: &[(&str, i32)]) -> i32 {
+    b.iter().map(|(_, x)| *x).filter(|x| *x > 0).sum()
 }
 
 fn offensive_boosts(v: &View) -> i32 {
@@ -360,10 +365,9 @@ pub fn heuristic_v2(v: &View, choice: &mut PyRandom, br: &mut u32) -> R<Order> {
         // 5. Setup at full HP into a winning matchup.
         if active.hp == 1.0 && matchup > 0.0 {
             for (i, m) in v.moves.iter().enumerate() {
-                if let Some(b) = m.boosts {
-                    if b.iter().map(|(_, x)| x).sum::<i32>() >= 2
-                        && target_is_self(m)
-                        && b.iter().filter(|(_, x)| *x > 0).map(|(s, _)| active.boost(s)).min().expect("sum >= 2") < 6
+                if let Some(b) = self_setup_boosts(m, active).filter(|b| !b.is_empty()) {
+                    if raised_stages(b) >= 2
+                        && b.iter().filter(|(_, x)| *x > 0).map(|(s, _)| active.boost(s)).min().expect("raised >= 2") < 6
                     {
                         // F-LF-1 SETUP SITE — bots_gate_test.py asserts the COMMIT bank reaches it
                         return Ok(hit(br, line!(), Order::Move(i)));

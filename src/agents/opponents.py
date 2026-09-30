@@ -26,9 +26,8 @@ import random
 from poke_env.battle.battle import Battle
 from poke_env.battle.move import Move
 from poke_env.battle.pokemon import Pokemon
-from poke_env.battle.target import Target
 from poke_env.player.battle_order import BattleOrder
-from poke_env.player.baselines import SimpleHeuristicsPlayer
+from poke_env.player.baselines import SimpleHeuristicsPlayer, self_setup_boosts
 
 from agents.enums import MoveCategory, Status
 from poke_env.player.player import Player
@@ -448,10 +447,13 @@ class Gen3SetupSweepPlayer(Player):
                 and total_offensive_boosts < _SETUP_BOOST_CAP
             ):
                 for move in battle.available_moves:
-                    if move.id in _SETUP_MOVES and move.target is Target.SELF:
+                    # `self_setup_boosts`: a Target.SELF move's boosts, non-Ghost Curse's
+                    # +1 Atk/+1 Def/-1 Spe, or None (a Ghost's Curse costs half its HP).
+                    boosts = self_setup_boosts(move, active)
+                    if move.id in _SETUP_MOVES and boosts is not None:
                         boosted_stat_not_capped = any(
                             active.boosts.get(s, 0) < 6
-                            for s, v in (move.boosts or {}).items()
+                            for s, v in boosts.items()
                             if v > 0 and s in _SETUP_STATS
                         )
                         if boosted_stat_not_capped:
@@ -677,10 +679,13 @@ class Gen3SetupSweepV2Player(Player):
                 and total_offensive_boosts < _SETUP_BOOST_CAP
             ):
                 for move in battle.available_moves:
-                    if move.id in _SETUP_MOVES and move.target is Target.SELF:
+                    # `self_setup_boosts`: a Target.SELF move's boosts, non-Ghost Curse's
+                    # +1 Atk/+1 Def/-1 Spe, or None (a Ghost's Curse costs half its HP).
+                    boosts = self_setup_boosts(move, active)
+                    if move.id in _SETUP_MOVES and boosts is not None:
                         boosted_stat_not_capped = any(
                             active.boosts.get(s, 0) < 6
-                            for s, v in (move.boosts or {}).items()
+                            for s, v in boosts.items()
                             if v > 0 and s in _SETUP_STATS
                         )
                         if boosted_stat_not_capped:
@@ -801,14 +806,16 @@ class Gen3HeuristicV2Player(Player):
 
             # 5. Setup at full HP into a winning matchup.
             if active.current_hp_fraction == 1.0 and matchup > 0:
+                # Raised stages only (== the plain sum for every Target.SELF move; lets
+                # non-Ghost Curse's +1 Atk/+1 Def count past its -1 Spe). A Ghost's Curse: None.
                 for move in battle.available_moves:
+                    boosts = self_setup_boosts(move, active)
                     if (
-                        move.boosts
-                        and sum(move.boosts.values()) >= 2
-                        and move.target is Target.SELF
+                        boosts
+                        and sum(v for v in boosts.values() if v > 0) >= 2
                         and min(
                             active.boosts.get(s, 0)
-                            for s, v in move.boosts.items()
+                            for s, v in boosts.items()
                             if v > 0
                         )
                         < 6

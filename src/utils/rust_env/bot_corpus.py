@@ -250,14 +250,34 @@ def commit_path():
 #: a battle where it fires (3 draws), picked from a probe run rather than hoped for. `heuristic2`'s
 #: SETUP step (5th in its order, F-LF-1) fires in none of its five base battles, so the tier also
 #: carries one where it does (18 Calm Minds; key found by a probe over pool keys 75,000 + 100k).
-COMMIT_EXTRA = (("staller_v2", "pool", 1, 74_000), ("heuristic2", "pool", 1, 75_800))
+#: CURSE (owner 2026-09-29: a non-Ghost's Curse is a setup move): `heuristic2` already picks it in
+#: the base battles; the three batches after it are the first pool keys from 76,000 whose p2 team
+#: carries Curse and where that bot picks it (heuristic 1, setup_sweep 5, setup_sweep_v2 1).
+COMMIT_EXTRA = (("staller_v2", "pool", 1, 74_000), ("heuristic2", "pool", 1, 75_800),
+                ("heuristic", "pool", 1, 76_011), ("setup_sweep", "pool", 1, 76_011),
+                ("setup_sweep_v2", "pool", 1, 76_012))
+
+
+def commit_tier_plan() -> list:
+    """The COMMIT tier as its ordered ``(bot, source, n, key)`` batches — `build`'s keys for the base
+    tier, then `COMMIT_EXTRA`. Each batch banks exactly ``n`` episodes, in this order, so a slice of
+    the plan re-records a known slice of the bank (the routine re-record test runs it in parts)."""
+    plan = []
+    for bi, bot in enumerate(COMMIT_BOTS):
+        for si, src in enumerate(COMMIT_N):
+            plan.append((bot, src, COMMIT_N[src], COMMIT_KEY + 1000 * bi + 100 * si))
+    return plan + list(COMMIT_EXTRA)
+
+
+def record_plan(plan) -> list:
+    eps = []
+    for bot, src, n, key in plan:
+        eps += record(bot, team_list(src, n, key), key_base=key)
+    return eps
 
 
 def build_commit_tier() -> dict:
-    c = build(COMMIT_BOTS, tuple(COMMIT_N), COMMIT_N, COMMIT_KEY)
-    for bot, src, n, key in COMMIT_EXTRA:
-        c["episodes"] += record(bot, team_list(src, n, key), key_base=key)
-    return c
+    return {"schema": SCHEMA, "episodes": record_plan(commit_tier_plan())}
 
 
 def summary(corpus: dict) -> dict:

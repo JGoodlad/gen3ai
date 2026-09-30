@@ -107,12 +107,15 @@ def _setup_sites() -> dict:
 
 
 def _is_setup_token(tok) -> bool:
-    """A chosen move that the setup steps select: ``target is Target.SELF`` raising >= 2 stages."""
+    """A chosen move that the setup steps select: ``target is Target.SELF`` raising >= 2 stages,
+    or Curse (a non-Ghost's +1 Atk / +1 Def; no bot picks it any other way)."""
     from poke_env.battle.move import Move
     from poke_env.battle.target import Target
 
     if not tok or not tok.startswith("move "):
         return False
+    if tok == "move curse":
+        return True
     m = Move(tok.split()[1], 3)
     return m.target is Target.SELF and bool(m.boosts) and sum(m.boosts.values()) >= 2
 
@@ -133,11 +136,35 @@ def test_the_setup_bots_actually_set_up(bank):
     assert sum(_is_setup_token(d["tok"]) for e in eps for d in e["p2"]) >= 1
 
 
-def test_commit_tier_the_bank_is_what_the_python_bots_do_today(bank):
-    """Re-record on the bank's keys: the Python bots must reproduce it exactly."""
-    fresh = BC.build_commit_tier()
-    assert len(fresh["episodes"]) == len(bank["episodes"])
-    for e, (a, b) in enumerate(zip(fresh["episodes"], bank["episodes"])):
+def test_every_setup_bot_sets_up_with_curse(bank):
+    """Owner 2026-09-29, "allow Curse": a non-Ghost's Curse is a setup move for all four setup bots
+    (``baselines.self_setup_boosts``). Before, poke-env's Curse (target NORMAL, no boosts) could not
+    pass any setup step, so the bank held ZERO Curse choices. Reverting the Python change fails this
+    and the re-record test; reverting only the Rust port fails the COMMIT gate's action counter."""
+    counts = {b: 0 for b in SETUP_BOTS}
+    for ep in bank["episodes"]:
+        if ep["bot"] in counts:
+            counts[ep["bot"]] += sum(d["tok"] == "move curse" for d in ep["p2"])
+    assert all(n >= 1 for n in counts.values()), counts
+
+RERECORD_PARTS = 2   # the whole re-record overran the 30 s default-tier budget once the Curse batches landed
+
+
+def test_the_bank_holds_exactly_the_commit_tier_plan(bank):
+    assert sum(n for _, _, n, _ in BC.commit_tier_plan()) == len(bank["episodes"])
+
+
+@pytest.mark.parametrize("part", range(RERECORD_PARTS))
+def test_commit_tier_the_bank_is_what_the_python_bots_do_today(bank, part):
+    """Re-record on the bank's keys: the Python bots must reproduce it exactly (in parts — each part
+    re-records a contiguous slice of the plan and compares the matching slice of the bank)."""
+    plan = BC.commit_tier_plan()
+    cut = [len(plan) * i // RERECORD_PARTS for i in range(RERECORD_PARTS + 1)]
+    start = sum(n for _, _, n, _ in plan[:cut[part]])
+    fresh = BC.record_plan(plan[cut[part]:cut[part + 1]])
+    banked = bank["episodes"][start:start + len(fresh)]
+    assert len(fresh) == len(banked) and fresh
+    for e, (a, b) in enumerate(zip(fresh, banked), start):
         assert a == b, (f"episode {e} ({b['bot']}) re-records differently — a Python bot, the env or the "
                         "view changed; rebuild the bank with `python -m utils.rust_env.bot_corpus --commit-tier "
                         "--write` and re-run this gate")

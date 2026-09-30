@@ -64,11 +64,11 @@ ROWS: tuple = (
     BotRow("heuristic", "poke_env.player.baselines.SimpleHeuristicsPlayer",
            ("train", "eval", "final_eval", "warmstart"), ("choice",),
            "matchup (types, base spe, HP), _stat_estimation (base stats, boosts), own stats "
-           "(_should_switch_out), hazards (side conditions), setup (move boosts/target is Target.SELF — "
-           "dead until the F-LF-1 fix, 2026-09-29), fallback draw", "Heuristic"),
+           "(_should_switch_out), hazards (side conditions), setup (self_setup_boosts: Target.SELF boosts or a "
+           "non-Ghost's Curse — dead until the F-LF-1 fix, 2026-09-29), fallback draw", "Heuristic"),
     BotRow("heuristic2", "agents.opponents.Gen3HeuristicV2Player", ("train", "eval", "final_eval"), ("choice",),
            "damage calc (base stats, boosts, HP, ability, status FRZ), revealed opp moves, own bench movesets, "
-           "hazards, recovery, setup (Target.SELF; dead until the F-LF-1 fix), status immunity", "HeuristicV2"),
+           "hazards, recovery, setup (Target.SELF or non-Ghost Curse; dead until the F-LF-1 fix), status immunity", "HeuristicV2"),
     BotRow("staller", "agents.opponents.Gen3StallerPlayer", ("train", "eval", "final_eval"), ("choice", "protect"),
            "opp status, Protect coin when TOX, recovery, side_conditions (any), best damage v1, best switch v1",
            "Staller"),
@@ -80,9 +80,9 @@ ROWS: tuple = (
     BotRow("aggressive_v2", "agents.opponents.Gen3AggressiveV2Player", ("train", "eval", "final_eval"), ("choice",),
            "KO calc, matchup, immunity escape, damage v2, switch v2", "AggressiveV2"),
     BotRow("setup_sweep", "agents.opponents.Gen3SetupSweepPlayer", ("train", "eval", "final_eval"), ("choice",),
-           "matchup, boosts, setup (Target.SELF; dead until the F-LF-1 fix), damage v1, switch v1", "SetupSweep"),
+           "matchup, boosts, setup (Target.SELF or non-Ghost Curse; dead until the F-LF-1 fix), damage v1, switch v1", "SetupSweep"),
     BotRow("setup_sweep_v2", "agents.opponents.Gen3SetupSweepV2Player", ("train", "eval", "final_eval"), ("choice",),
-           "KO calc, revealed opp damage, matchup, setup (Target.SELF; dead until the F-LF-1 fix), damage v2, switch v2", "SetupSweepV2"),
+           "KO calc, revealed opp damage, matchup, setup (Target.SELF or non-Ghost Curse; dead until the F-LF-1 fix), damage v2, switch v2", "SetupSweepV2"),
     BotRow("baitbot", "agents.baitbot.Gen3BaitBotPlayer", ("train_bait",), ("choice", "bait"),
            "revealed opp attacks × bench immunity (effective_multiplier), bait coin, damage v2, switch v2",
            "BaitBot"),

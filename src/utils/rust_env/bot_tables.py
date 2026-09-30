@@ -44,7 +44,7 @@ def _opt(s) -> str:
 def render() -> str:
     from poke_env.battle.move import Move
     from poke_env.data import GenData
-    from poke_env.player.baselines import SimpleHeuristicsPlayer as SH
+    from poke_env.player.baselines import CURSE_NON_GHOST_BOOSTS, SimpleHeuristicsPlayer as SH
 
     from agents import baitbot, gen3_mechanics as GM, opponents as O
 
@@ -120,6 +120,9 @@ def render() -> str:
     idset("SETUP_MOVES", "`gen3_mechanics.SETUP_MOVES`.", GM.SETUP_MOVES)
     idset("SETUP_STATS", "`opponents._SETUP_STATS`.", O._SETUP_STATS)
     idset("ANTI_HAZARDS_MOVES", "`SimpleHeuristicsPlayer.ANTI_HAZARDS_MOVES`.", SH.ANTI_HAZARDS_MOVES)
+    L += ["", "/// `baselines.CURSE_NON_GHOST_BOOSTS` (dict order) — a non-Ghost user's Curse, for `self_setup_boosts`.",
+          "pub static CURSE_NON_GHOST_BOOSTS: &[(&str, i32)] = &["
+          + ", ".join(f"({_str(k)}, {int(v)})" for k, v in CURSE_NON_GHOST_BOOSTS.items()) + "];"]
     L += ["", "/// `SimpleHeuristicsPlayer.ENTRY_HAZARDS` (dict order; `stealhrock` is upstream's own spelling).",
           "pub static ENTRY_HAZARDS: &[(&str, &str)] = &["]
     L += [f"    ({_str(k)}, {_str(v.name)})," for k, v in SH.ENTRY_HAZARDS.items()]

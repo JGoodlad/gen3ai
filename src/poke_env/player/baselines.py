@@ -8,6 +8,7 @@ from poke_env.battle.effect import Effect
 from poke_env.battle.move import Move
 from poke_env.battle.move_category import MoveCategory
 from poke_env.battle.pokemon import Pokemon
+from poke_env.battle.pokemon_type import PokemonType
 from poke_env.battle.side_condition import SideCondition
 from poke_env.battle.target import Target
 from poke_env.data import GenData
@@ -24,6 +25,27 @@ from poke_env.player.player import (
     _random_singles_order,
     _rng_aware_static,
 )
+
+
+#: Gen 3 Curse used by a NON-Ghost: the user's own +1 Atk, +1 Def, -1 Spe (Showdown
+#: `data/mods/gen4/moves.ts` `curse.onModifyMove`, which gen 3 inherits: `move.self = {boosts:
+#: {atk: 1, def: 1, spe: -1}}`, `move.target = nonGhostTarget` = "self"). poke-env's `Move` cannot
+#: say this — the dex row's `target` is "normal" and it carries no `boosts` — so the setup steps of
+#: the scripted bots read `self_setup_boosts` instead of `move.boosts` / `move.target`.
+CURSE_NON_GHOST_BOOSTS = {"atk": 1, "def": 1, "spe": -1}
+
+
+def self_setup_boosts(move: Move, user: Pokemon):
+    """The stat stages ``move`` gives its USER when ``user`` uses it, or None if it gives none.
+
+    A ``Target.SELF`` move: its ``boosts``. Curse (owner 2026-09-29, "allow Curse"): the Gen 3
+    NON-Ghost effect ``CURSE_NON_GHOST_BOOSTS``; for a GHOST user it is the other Curse — the user
+    loses half its max HP to curse the target (1/4 max HP a turn) — which boosts nothing, so None
+    and no setup step ever picks it. Every other move: None.
+    """
+    if move.id == "curse":
+        return None if PokemonType.GHOST in user.types else dict(CURSE_NON_GHOST_BOOSTS)
+    return move.boosts if move.target is Target.SELF else None
 
 
 class RandomPlayer(Player):
@@ -325,14 +347,15 @@ class SimpleHeuristicsPlayer(Player):
                 active.current_hp_fraction == 1
                 and SimpleHeuristicsPlayer._estimate_matchup(active, opponent) > 0
             ):
+                # `self_setup_boosts`: a Target.SELF move's boosts, or non-Ghost Curse's. The
+                # stages counted are the RAISED ones — identical to the plain sum for every
+                # Target.SELF move (none lowers a stat); Curse's +1/+1 counts, its -1 Spe does not.
                 for move in battle.available_moves:
+                    boosts = self_setup_boosts(move, active)
                     if (
-                        move.boosts
-                        and sum(move.boosts.values()) >= 2
-                        and move.target is Target.SELF
-                        and min(
-                            [active.boosts[s] for s, v in move.boosts.items() if v > 0]
-                        )
+                        boosts
+                        and sum(v for v in boosts.values() if v > 0) >= 2
+                        and min([active.boosts[s] for s, v in boosts.items() if v > 0])
                         < 6
                     ):
                         return Player.create_order(move), 0

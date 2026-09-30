@@ -254,7 +254,8 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   `win_rate_vs_bots`); it is never a training opponent. ⚠️ The setup step of `Heuristic`,
   `Heuristic2`, `SetupSweep` and `SetupSweepV2` was DEAD until 2026-09-29 (F-LF-1 — a `Target`
   enum compared to a str); every training mix before then played the broken bots
-  (`eval_and_rating.md`, BOT ERA BOUNDARY).
+  (`eval_and_rating.md`, BOT ERA BOUNDARY). Since then a non-Ghost's Curse is also one of
+  their setup moves (+1 Atk / +1 Def / −1 Spe); a Ghost's never is.
 - **Resume state in `summary.json`.** `SelfPlayCallback` writes
   `<snapshot_dir>/summary.json` each eval (`win_rate_vs_bots`, `self_play_fraction`,
   `last_eval_step`, `seeded`, `pool_generation`) — `SnapshotPool.persist_summary`/`load_summary`.

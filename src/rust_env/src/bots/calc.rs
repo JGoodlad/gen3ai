@@ -293,3 +293,14 @@ pub fn best_switch_v2(v: &View) -> R<Option<usize>> {
 pub fn target_is_self(m: &MoveV) -> bool {
     m.target == Some("SELF")
 }
+
+/// `baselines.self_setup_boosts(move, user)` — the stat stages `m` gives its USER: a non-Ghost's
+/// Curse → `CURSE_NON_GHOST_BOOSTS` (+1 Atk, +1 Def, −1 Spe; Showdown gen4 mod, inherited by gen 3);
+/// a Ghost's Curse → None (the half-HP curse, no boosts); a `Target.SELF` move → its `boosts`;
+/// anything else → None. (Python returns a fresh dict for Curse; no caller mutates it.)
+pub fn self_setup_boosts(m: &MoveV, user: &MonV) -> Option<&'static [(&'static str, i32)]> {
+    if m.id == "curse" {
+        return if user.types.contains(&"GHOST") { None } else { Some(t::CURSE_NON_GHOST_BOOSTS) };
+    }
+    if target_is_self(m) { m.boosts } else { None }
+}

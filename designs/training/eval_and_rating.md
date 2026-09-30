@@ -125,7 +125,9 @@ enum to the string `"self"`), so `setup_sweep` / `setup_sweep_v2` were attackers
 Every `eval/win_rate_vs_{heuristic,heuristic2,setup_sweep,setup_sweep_v2}` row, every
 `win_rate_vs_bots` aggregate, every training bot mix and every `bot:<name>` anchor / prober replay
 before the fix measured the BROKEN bots and is not comparable with a later one (ledger
-`2026-09-29 · GIGO FIX · F-LF-1`).
+`2026-09-29 · GIGO FIX · F-LF-1`). The same day, before any run used the fixed bots, a NON-Ghost's
+Curse became a setup move for all four (owner: "allow Curse"; a Ghost's Curse never is) — the same
+boundary, no second one.
 
 ### ⚠️ GLOBAL-RANDOM COUPLING — the five seeds a paired-arm design must set
 
