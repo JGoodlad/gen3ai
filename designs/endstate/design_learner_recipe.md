@@ -74,7 +74,7 @@ and `new_lineage_2026-09-26/`):
 | # | knob | live value (K2) | grounded literature | recommendation | class |
 |---|---|---|---|---|---|
 | 1 | `n_envs` (N) | 48 | Rudin 2021: 2k–4k envs at ~100k-sample batches; performance drops when the per-env horizon gets too short | Decided by the registered SIZING study, not picked | KEEP (study) |
-| 2 | rollout size N × `n_steps` | 48 × 2048 = 98,304, fixed | Andrychowicz 2021: samples per iteration matter a lot; McCandlish 2018: batch ∝ √B_noise | **Size it dynamically from the policy noise scale**, inside a declared maximum. First land the delayed-label buffer, because short windows drop critic rows (§3.2) | ADAPTIVE (after a SAFE prerequisite) |
+| 2 | rollout size N × `n_steps` | 48 × 2048 = 98,304, fixed | Andrychowicz 2021: samples per iteration matter a lot; McCandlish 2018: batch ∝ √B_noise | **Size it dynamically from the policy noise scale**, inside a declared maximum. First land Lane G's complete-game collector (program_rust_core.md order constraint 6), because fixed short windows drop critic rows (§3.2); with it, the controller sets the SAMPLES-PER-UPDATE trigger rather than n_steps | ADAPTIVE (after a SAFE prerequisite) |
 | 3 | micro-batch | 2048 | — (a memory and compile lever) | Keep it fixed: one compiled learner graph | KEEP |
 | 4 | accumulation K / effective batch | 32 → 65,536, **plus a half-size second step every epoch** | Exact accumulation is standard; a ragged step is not | Rollout = a whole multiple of micro × K (no ragged step), then move K with `--adaptive-batch policy` | SAFE, then ADAPTIVE |
 | 5 | noise-scale estimator | two-point, raw gradient, epoch 0, first group, EMA 0.99 | McCandlish 2018 (raw B_simple predicted B_crit for Adam) | Add a split-half-by-GAME estimate: it is unbiased under within-game correlation and exposes the rollout's own noise | SAFE (telemetry) |
@@ -188,6 +188,7 @@ c > 1. How much above 1 is **UNMEASURED**.
 **PROPOSED rollout rule** (the constants come from the sizing study):
 
     n_steps(t) = clamp( ceil( max(m·micro·K(t), k·c·B_noise(t)) / N ), n_min, n_max )
+    (2026-09-29, owner: under Lane G's complete-game collector this quantity is the SAMPLES-PER-UPDATE trigger D(t) = N·n_steps(t); n_steps itself is retired as a knob — program_rust_core.md order constraint 6.)
 
 Suggested starting constants are m = 4 and k = 2. Andrychowicz and Rudin both use about 4 minibatches
 per epoch.
