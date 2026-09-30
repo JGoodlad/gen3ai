@@ -16,10 +16,26 @@
 # =====================================================================================
 name: gen3ai_torch28
 channels:
+  - nvidia/label/cuda-12.6.3
   - defaults
 dependencies:
   - python=3.11.15
   - pip=26.0.1
+  # ------------------------------------------------------------------------------------
+  # M5 T2 (owner, 2026-09-29): the CUDA 12.6 HEADERS AOTInductor's C++ build includes
+  # (`<nv/target>` from CCCL, `crt/host_defines.h`, `cuda_runtime_api.h` + libcudart for the
+  # link). THIS ENV ONLY — never gen3ai_stable, never system-wide. Headers only: no nvcc (the
+  # nvidia channel's cuda-nvcc drags in a gcc toolchain; Triton brings its own ptxas). They land
+  # under $CONDA_PREFIX/targets/x86_64-linux, which `agents.inference.service.aot.cuda_home()`
+  # uses as CUDA_HOME. Installed with
+  #   conda install -n gen3ai_torch28 -c nvidia/label/cuda-12.6.3 -c defaults \
+  #       cuda-cccl=12.6.77 cuda-cudart-dev=12.6.77 cuda-crt-dev_linux-64=12.6.85
+  # which also pulled cuda-cudart(-static)(_linux-64) 12.6.77, cuda-cccl_linux-64 12.6.77,
+  # cuda-version 12.6 and the libstdcxx-ng 15.2.0 metapackage (the env's libstdcxx is already
+  # 15.2.0). After it: `pip check` clean, torch 2.8.0+cu126 CUDA matmul OK.
+  - cuda-cccl=12.6.77
+  - cuda-cudart-dev=12.6.77
+  - cuda-crt-dev_linux-64=12.6.85
   - pip:
       # ------------------------------------------------------------------------------------
       # THE PYTORCH WHEEL INDEX. `torch==2.8.0+cu126` (and torchaudio/torchvision) are

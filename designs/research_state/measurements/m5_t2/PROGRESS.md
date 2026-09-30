@@ -32,12 +32,37 @@ small forwards (< 3 GB) and never within 10 min of a trainer launch. Fresh
 |---|---|---|---|
 | 1 | design note (program doc "T2 DESIGN" + a Decision-record row) + backend measurements (`probes/`) | LANDED | see git log (`M5 T2 unit 1+2`) |
 | 2 | service skeleton: `decision.py` (bit-identical decision forward), `spec.py`, `slots.py` (stacked storage, two load identities), `parity.py` (the compile gate's bars + mask contract + greedy), `service.py` (eager + graph backends, lifecycle, packing, priority, arena), tests (CPU routine + CUDA slow), `service_benchmark.py`; `team_transformer._event_reference_cells` built on-device (the one host sync in the compiled graph) | LANDED | see git log (`M5 T2 unit 1+2`) |
-| 3 | multi-slot forward over the stacked storage (`torch.func.vmap` / batched weights) — go/no-go by measurement vs per-slot replays at the Lane-E traffic shape (48 opponent rows over ~4–8 slots) | NEXT | |
-| 4 | double-buffered pinned staging (events) so the host packs batch k+1 while batch k replays; today every H2D is synchronous | NEXT | |
+| 3 | multi-slot throughput: vmap over stacked weights NO-GO (in-place writes into forward-created tensors); LANES instead — per-lane stream + graph pool + static inputs, graphs captured on their lane's stream (the shared-capture-stream cuBLAS-workspace defect found + regression test that fails on revert), CONCURRENT parity gate at startup + canary; Lane E's shape 9.89 → 3.95 ms per flush at 4 lanes | LANDED | see git log (`M5 T2 units 3+4 + AOT`) |
+| 4 | staging: `engine.py` — double-buffered pinned host input arenas + event waits, ONE H2D and ONE D2H per flush, device-side chunk staging; `submit` copies rows; `ticket.host()` | LANDED | same |
+| 4b | backend `aot` (torch ≥ 2.8, weights as inputs; `aot.py`) + CUDA 12.6 headers in `gen3ai_torch28` (`environment_torch28.yml`) + the C++ loader proof (`probes/cpp/`) | LANDED | same |
 | 5 | Lane E's adapter (opponent rows from the core's columns → `submit` per slot, greedy/sampled actions back) — with Lane E | LATER | |
 | 6 | K3 hermetic per-run compile cache for the service's buckets (restart cost); a torch-2.8 run of `service_cuda_test` in `gen3ai_torch28` | LATER | |
 
-## Measurements (RTX 3080 Ti, idle GPU, 2026-09-29; `probes/`)
+## Units 3/4/4b measurements (RTX 3080 Ti, idle GPU via a coordinator training pause, 2026-09-29; `window_2026-09-29/`)
+
+| read | result |
+|---|---|
+| 2.8 `graph` vs `aot`, real ckpt, 1 slot, per flush B = 8/48/128 | 1.25/1.81/2.76 vs **1.91/2.31/3.31 ms** |
+| 2.8 `aot` parity (real / perturbed fresh through the SAME package) | 1.9e-5 / 7.7e-7 ; 8.3e-7 / 4.5e-7 |
+| 2.8 `aot` build / size / load | ~77 s per bucket (graph ~51 s) / ~15 MB / 0.01–0.09 s |
+| `aot` from C++ (libtorch only, no libpython) | loads in 131 ms, equals eager at 6e-6 / 1.8e-7 |
+| embedded-weight package + `load_constants` swap | WRONG: 0.076 / 0.026 (folded constants) — hence weights as inputs |
+| `aot` inside a CUDA graph | fails: "operation not permitted when stream is capturing" |
+| lanes, 8 slots x B = 8, raw replay (1/2/4/8 lanes) | 9.81 / 6.79 / 4.26 / 2.58 ms; parity 7.2e-7; 212 → 399 MiB |
+| service, Lane E shape (48 rows over 8 slots, B = 8) | **9.89 ms (1 lane) → 3.95 ms (4 lanes)** |
+| lanes before the capture-stream fix | concurrent replays wrong: max|dlogp| 0.048 |
+
+Rebased over `23f4f85c` (gen3_fresh_parity_probe_v1, another agent): the per-slot gate's vacuity
+fallback is theirs; the CONCURRENT gate got the same treatment (every slot perturbed in place with
+seed PERTURB_SEED + slot, then the real weights waived). Verified on the GPU after the rebase: the
+lane regression + graph tests pass, and a FRESH 2-slot/2-lane service starts with the perturbed
+concurrent reports, weights restored bit-exact, canary clean (run beside another agent's 770 MiB
+probe — correctness only, no timing).
+
+`aot28_weights_as_inputs_probe.jsonl`'s LATENCIES are void (a trainer was starting on the card);
+its parity columns stand.
+
+## Measurements, units 1+2 (RTX 3080 Ti, idle GPU, 2026-09-29; `probes/`)
 
 Checkpoint `ai_v14_06_lbat_ctrl_fix/final_model.zip` (read-only), the 64-row real-obs fixture.
 
@@ -80,6 +105,15 @@ all three `*_after_freeze` counters 0.
   every slot × bucket (full and padded), on every load, and as `canary()`.
 
 ## Findings for the orchestrator
+
+- **Lanes default to 1 in the spec (declared, never inferred).** Lane E should declare
+  `lanes = min(n_slots, 8)` — 8 lanes read 2.58 ms for 8 slots vs 4.26 at 4 (raw replay).
+- **The double-buffer event wait has NO proven teeth.** The back-to-back-flush check in
+  `service_cuda_test` passes with it; a revert-must-fail run of that wait was not done (only the
+  capture-stream revert was). It may be unable to catch the race it guards.
+- **vmap over stacked weights needs a model-wide out-of-place rewrite** (first blocker
+  `t0_species.py:82` `zeros(...).scatter_(1, ids, src)`). Owner-level call if the lanes' 2.5x is not
+  enough.
 
 - **The eager forward makes 24 host syncs per call** (Python-scalar `index_put`s, host-built
   constants: `extractor_ctx.py` 337/348, `damage_op.py` 743/875/879, `damage_op_blocks.py` ×12,

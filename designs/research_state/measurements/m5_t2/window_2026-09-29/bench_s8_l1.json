@@ -1,0 +1,47 @@
+{
+  "torch": "2.5.1+cu121",
+  "backend": "graph",
+  "device": "cuda",
+  "ckpt": "fresh-perturbed(seed 0)",
+  "slots": 8,
+  "buckets": [
+    8
+  ],
+  "lanes": 1,
+  "matmul_precision": "highest",
+  "startup_s": 85.3,
+  "startup_phases_s": {
+    "allocate": 0.3,
+    "build": 84.3,
+    "parity": 0.6
+  },
+  "parity_worst": {
+    "legal_logprob": 4.76837158203125e-07,
+    "value": 1.7881393432617188e-07
+  },
+  "busy_box_warnings": [],
+  "per_bucket": {
+    "8": {
+      "ms_per_flush": 1.245,
+      "us_per_row": 155.6
+    }
+  },
+  "mixed_flush_ms": 9.857,
+  "lane_e_flush_ms": 9.891,
+  "lane_e_rows_per_slot": [
+    6,
+    6,
+    6,
+    6,
+    6,
+    6,
+    6,
+    6
+  ],
+  "after_freeze": {
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+  },
+  "max_memory_allocated_mib": 394
+}

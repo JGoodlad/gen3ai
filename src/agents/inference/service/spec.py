@@ -12,10 +12,12 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any, Optional, Tuple
 
-#: The two backends. ``eager`` is the reference (CPU or CUDA); ``graph`` is the Inductor-compiled
-#: decision forward captured as one CUDA graph per slot x bucket (CUDA only). Why not AOTInductor
-#: on torch 2.5.1: the program doc's T2 DESIGN paragraph (measured).
-BACKENDS = ("eager", "graph")
+#: The backends. ``eager`` is the reference (CPU or CUDA); ``graph`` is the Inductor-compiled
+#: decision forward captured as one CUDA graph per slot x bucket (CUDA only; the default); ``aot``
+#: is one AOTInductor package per slot group x bucket with the weights as inputs (CUDA, torch
+#: >= 2.8 only — ``aot.py`` says why, and why it is not the default). Measured choice: the program
+#: doc's T2 DESIGN paragraph.
+BACKENDS = ("eager", "graph", "aot")
 
 #: Smallest legal bucket. torch 2.8 cannot lower a batch-1 CUDA graph of this extractor (Lane K1
 #: finding, `designs/training/compile_flags.md`), and a batch dim of 1 is a degenerate broadcast
@@ -90,6 +92,11 @@ class ServiceSpec:
     filler_batches_per_flush: int = 1
     #: The bucket every ``load`` and ``canary`` verifies at (default: the smallest).
     verify_bucket: Optional[int] = None
+    #: Concurrency LANES (CUDA streams, each with its own graph pool and static inputs); slot s
+    #: runs on lane s % lanes. 1 on CPU.
+    lanes: int = 1
+    #: Where backend 'aot' writes its packages (default: a fresh temp dir — never shared).
+    artifact_dir: Optional[str] = None
 
     def validate(self) -> None:
         if not self.groups:
@@ -109,8 +116,10 @@ class ServiceSpec:
                              "broadcast; a single row is padded instead")
         if self.backend not in BACKENDS:
             raise ValueError(f"ServiceSpec: backend {self.backend!r} not in {BACKENDS}")
-        if self.backend == "graph" and not str(self.device).startswith("cuda"):
-            raise ValueError("ServiceSpec: backend 'graph' is CUDA graphs — CUDA only")
+        if self.backend in ("graph", "aot") and not str(self.device).startswith("cuda"):
+            raise ValueError(f"ServiceSpec: backend {self.backend!r} is CUDA only")
+        if int(self.lanes) < 1 or (int(self.lanes) > 1 and not str(self.device).startswith("cuda")):
+            raise ValueError("ServiceSpec: lanes must be >= 1, and > 1 only on CUDA")
         if int(self.max_rows_per_flush) < b[-1]:
             raise ValueError("ServiceSpec: max_rows_per_flush must hold at least the largest bucket")
         if int(self.filler_batches_per_flush) < 0:

@@ -2,39 +2,35 @@
 
 Design, measurements and the API contract: ``designs/endstate/program_rust_core.md`` §2, the "T2
 DESIGN" paragraph. In one breath: ``InferenceService(spec).startup()`` builds every slot replica in
-stacked storage, compiles one decision forward per bucket and captures one CUDA graph per slot x
-bucket (backend ``graph``), parity-gates EVERY slot x bucket on the committed real-obs fixture, and
-FREEZES. After the freeze a ``flush()`` only stages rows into pinned host buffers, copies them into
-the static device inputs, replays, and copies the outputs into the declared arena — it compiles,
-captures and allocates nothing, and three ``*_after_freeze`` counters prove it on every call.
+stacked storage, builds the ``Engine`` (arenas, lanes, one compiled forward per bucket captured as
+one CUDA graph per slot x bucket — backend ``graph`` — or one AOT package per group x bucket),
+parity-gates EVERY slot x bucket (and, with lanes, every slot at once) on the committed real-obs
+fixture, and FREEZES. After the freeze a ``flush()`` only packs, copies, replays and copies out —
+it compiles, captures and allocates nothing, and three ``*_after_freeze`` counters prove it on
+every call. This module is the API, the scheduling and the lifecycle; ``engine.py`` executes.
 
 Not thread-safe: one caller loop drives it (the M5 env core is in-process). Results are views into
-the arena, valid until the next ``flush()`` (a later read is a `CallerError`, never stale data).
+the arenas, valid until the next ``flush()`` (a later read is a `CallerError`, never stale data).
 """
 from __future__ import annotations
 
 import contextlib
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 import torch
 
-from agents.inference.service.parity import ParityReport, fixture_rows, gate_slot
+from agents.inference.service.engine import Engine, PlanItem
+from agents.inference.service.parity import ParityReport, fixture_rows, gate_slot, judge
 from agents.inference.service.slots import SlotGroup
-from agents.model.parity_probe import perturbed_parameters
+from agents.model.parity_probe import PERTURB_SEED, perturbed_parameters
 from agents.inference.service.spec import (
     CallerError, LifecycleViolation, ParityFailure, Priority, ServiceError, ServiceSpec,
     VacuousParity,
 )
 
-
-def _decide(module: torch.nn.Module, obs: torch.Tensor, mask: torch.Tensor
-            ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """The one callable every backend runs (and ``graph`` compiles): logp, V and greedy."""
-    logp, value = module(obs, mask)
-    return logp, value, logp.argmax(-1)
 
 
 @dataclass
@@ -73,7 +69,18 @@ class Ticket:
             raise CallerError(f"ticket {self.seq}: its result was overwritten by a later flush "
                               "(results are valid until the next flush; copy what you keep)")
         sl = slice(self._off, self._off + self.n)
-        return Decision(svc._arena_logp[sl], svc._arena_value[sl], svc._arena_greedy[sl])
+        e = svc.engine
+        return Decision(e.out_logp[sl], e.out_value[sl], e.out_greedy[sl])
+
+    def host(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """``(logp, value, greedy)`` as NumPy VIEWS into the pinned host output arena (the flush
+        copied every output there in one transfer). Waits for that transfer; same validity rule
+        as ``result()``: copy what you keep before the next flush."""
+        self.result()                                   # the validity checks
+        e = self._svc.engine
+        e.wait_host()
+        sl = slice(self._off, self._off + self.n)
+        return e.host_out[0][sl].numpy(), e.host_out[1][sl].numpy(), e.host_out[2][sl].numpy()
 
 
 def _segments(device: torch.device) -> int:
@@ -105,7 +112,6 @@ class InferenceService:
         self._pending: List[Ticket] = []
         self._seq = 0
         self._epoch = 0
-        self._captures = 0
         self._poison: Optional[str] = None
 
     # ------------------------------------------------------------------ lifecycle
@@ -124,9 +130,10 @@ class InferenceService:
     @contextlib.contextmanager
     def _frozen_guard(self, where: str) -> Iterator[None]:
         """Count what a steady-state call acquired; any acquisition poisons the service."""
-        g0, s0, c0 = _dynamo_graphs(), _segments(self.device), self._captures
+        g0, s0, c0 = _dynamo_graphs(), _segments(self.device), self.engine.captures
         yield
-        dg, ds, dc = _dynamo_graphs() - g0, _segments(self.device) - s0, self._captures - c0
+        dg, ds = _dynamo_graphs() - g0, _segments(self.device) - s0
+        dc = self.engine.captures - c0
         self.counters["compiles_after_freeze"] += max(dg, 0)
         self.counters["cuda_segments_after_freeze"] += max(ds, 0)
         self.counters["captures_after_freeze"] += max(dc, 0)
@@ -163,69 +170,29 @@ class InferenceService:
         self.obs_dim, self.n_actions = dims.pop()
         self._slots: List[Tuple[int, int]] = [(gi, i) for gi, g in enumerate(self.groups)
                                               for i in range(g.n_slots)]
-        R, A, D, dev = int(self.spec.max_rows_per_flush), self.n_actions, self.obs_dim, self.device
-        pin = dev.type == "cuda"
-        self._arena_logp = torch.empty(R, A, dtype=torch.float32, device=dev)
-        self._arena_value = torch.empty(R, dtype=torch.float32, device=dev)
-        self._arena_greedy = torch.empty(R, dtype=torch.int64, device=dev)
-        self._stage: Dict[int, Tuple[torch.Tensor, torch.Tensor]] = {}
-        self._static: Dict[int, Tuple[torch.Tensor, torch.Tensor]] = {}
-        for b in self.buckets:
-            o, m = fixture_rows(D, b)
-            ho = torch.empty(b, D, dtype=torch.float32, pin_memory=pin)
-            hm = torch.empty(b, A, dtype=torch.bool, pin_memory=pin)
-            ho.numpy()[:] = o
-            hm.numpy()[:] = m
-            self._stage[b] = (ho, hm)
-            self._static[b] = (ho.to(dev).clone(), hm.to(dev).clone())
+        self.engine = Engine(groups=self.groups, slots=self._slots, device=self.device,
+                             buckets=self.buckets, backend=self.spec.backend,
+                             max_rows=int(self.spec.max_rows_per_flush), lanes=int(self.spec.lanes),
+                             obs_dim=self.obs_dim, n_actions=self.n_actions,
+                             artifact_dir=self.spec.artifact_dir)
+        if self.spec.backend == "aot":
+            from agents.inference.service import aot
+
+            aot.check_available()
         self.startup_seconds["allocate"] = time.perf_counter() - t0
         t1 = time.perf_counter()
-        self._graphs: Dict[Tuple[int, int, int], Tuple[Any, Tuple[torch.Tensor, ...]]] = {}
-        if self.spec.backend == "graph":
-            self._build_graphs()
-        else:
-            with torch.no_grad():                     # warm every slot x bucket (allocator)
-                for gi, g in enumerate(self.groups):
-                    for i in range(g.n_slots):
-                        for b in self.buckets:
-                            _decide(g.modules[i], *self._static[b])
+        self.engine.build()
         self.startup_seconds["build"] = time.perf_counter() - t1
         t2 = time.perf_counter()
         for gi, g in enumerate(self.groups):
             for i in range(g.n_slots):
                 for b in self.buckets:
                     self.startup_reports.extend(self._gate(gi, i, b))
+        for b in self.buckets:                  # every slot AT ONCE: lanes replay concurrently
+            self.startup_reports.extend(self._gate_concurrent(b))
         self.startup_seconds["parity"] = time.perf_counter() - t2
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
-
-    def _build_graphs(self) -> None:
-        compiled = torch.compile(_decide, dynamic=False)
-        pool = torch.cuda.graph_pool_handle()
-        limit = max(int(torch._dynamo.config.cache_size_limit),
-                    len(self.buckets) * len(self.groups) + 4)
-        # suppress_errors=False: a compile failure RAISES rather than silently running eager (the
-        # eager forward would then fail capture anyway — it makes 24 host syncs — but the typed
-        # error names the real cause).
-        with torch._dynamo.config.patch(  # type: ignore[attr-defined]
-                suppress_errors=False, cache_size_limit=limit), \
-                torch.no_grad():
-            for b in self.buckets:
-                so, sm = self._static[b]
-                for gi, g in enumerate(self.groups):
-                    for i in range(g.n_slots):
-                        mod = g.modules[i]
-                        side = torch.cuda.Stream(self.device)
-                        side.wait_stream(torch.cuda.current_stream(self.device))
-                        with torch.cuda.stream(side):
-                            for _ in range(2):
-                                compiled(mod, so, sm)
-                        torch.cuda.current_stream(self.device).wait_stream(side)
-                        graph = torch.cuda.CUDAGraph()
-                        with torch.cuda.graph(graph, pool=pool):
-                            outs = compiled(mod, so, sm)
-                        self._captures += 1
-                        self._graphs[(gi, i, b)] = (graph, tuple(outs))
 
     # ------------------------------------------------------------------ slots
     def slot(self, group: str, index: int) -> int:
@@ -279,19 +246,77 @@ class InferenceService:
             except ParityFailure as exc:
                 self._die(f"canary(slot {s}) failed: {exc}")
                 raise
+        if slot is None:
+            try:
+                out.extend(self._gate_concurrent(self.spec.verify_at))
+            except ParityFailure as exc:
+                self._die(f"canary(concurrent) failed: {exc}")
+                raise
         return out
+
+    def _gate_concurrent(self, b: int) -> List[ParityReport]:
+        """ONE flush carrying every slot's fixture rows (a full chunk of bucket ``b``), so every
+        lane replays at the same time, each slot judged against its own eager reference. The
+        per-slot gate runs one slot per flush and can never see two lanes interfere (the shared
+        cuBLAS-workspace defect read 0.048 on log-probs only under concurrency).
+
+        FRESH weights (gen3_fresh_parity_probe_v1): if any slot's comparison is vacuous, the flush
+        is re-run with EVERY slot perturbed in place (a different seed per slot, so concurrent
+        slots compute different functions), then once more on the real weights with the vacuity
+        guard waived; the real reports come first."""
+        if self.engine.n_lanes < 2 or len(self._slots) < 2:
+            return []
+        try:
+            return self._concurrent_once(b, tag="", allow_vacuous=False)
+        except VacuousParity:
+            with contextlib.ExitStack() as stack:
+                for s, (gi, i) in enumerate(self._slots):
+                    stack.enter_context(perturbed_parameters(self.groups[gi].policies[i],
+                                                             seed=PERTURB_SEED + s))
+                probe = self._concurrent_once(b, tag=" [fresh weights, seeded perturbation]",
+                                              allow_vacuous=False)
+            return self._concurrent_once(b, tag="", allow_vacuous=True) + probe
+
+    def _concurrent_once(self, b: int, *, tag: str, allow_vacuous: bool) -> List[ParityReport]:
+        guard = self._frozen_guard if self.state == "FROZEN" else self._startup_guard
+        obs, mask = fixture_rows(self.obs_dim, b)
+        plan: List[PlanItem] = [(s, gi, i, obs, mask) for s, (gi, i) in enumerate(self._slots)]
+        self._epoch += 1
+        with guard(f"concurrent parity bucket={b}"):
+            offsets, _ = self.engine.execute(plan)
+        if self.device.type == "cuda":
+            torch.cuda.current_stream(self.device).synchronize()
+        e = self.engine
+        o = torch.as_tensor(obs, device=self.device)
+        m = torch.as_tensor(mask, device=self.device)
+        reports = []
+        for (s, gi, i, _, _), off in zip(plan, offsets):
+            sl = slice(off, off + b)
+            reports.append(judge(
+                where=f"{self.spec.backend} CONCURRENT lanes={e.n_lanes} slot={s} bucket={b}{tag}",
+                policy=self.groups[gi].policies[i], obs=o, mask=m,
+                served=(e.out_logp[sl].clone(), e.out_value[sl].clone(), e.out_greedy[sl].clone()),
+                allow_vacuous=allow_vacuous))
+        return reports
 
     def _gate(self, gi: int, i: int, b: int) -> Tuple[ParityReport, ...]:
         g = self.groups[gi]
         guard = self._frozen_guard if self.state == "FROZEN" else self._startup_guard
         where = f"{self.spec.backend} group={g.name} slot={i} bucket={b}"
 
+        slot = self._slots.index((gi, i))
+
         def serve(obs: np.ndarray, mask: np.ndarray) -> Tuple[torch.Tensor, ...]:
             n = obs.shape[0]
-            with guard(f"parity {where}"):       # the service's own execution only
-                self._stage_rows(b, [(obs, mask, 0, n)], n)
-                outs = self._run(gi, i, b)
-            return tuple(t[:n].clone() for t in outs)   # read before anything else runs
+            if n not in (b, b - 1):
+                raise ServiceError(f"parity rows {n} do not exercise bucket {b}")
+            self._epoch += 1                     # a gate run overwrites the output arena
+            with guard(f"parity {where}"):       # the service's own execution only, through the
+                self.engine.execute([(slot, gi, i, obs, mask)])      # REAL staging path
+            e = self.engine
+            if self.device.type == "cuda":
+                torch.cuda.current_stream(self.device).synchronize()
+            return (e.out_logp[:n].clone(), e.out_value[:n].clone(), e.out_greedy[:n].clone())
 
         try:
             return gate_slot(where=where, policy=g.policies[i], obs_dim=self.obs_dim, bucket=b,
@@ -318,8 +343,11 @@ class InferenceService:
     def submit(self, slot: int, obs: Any, mask: Any, priority: Priority = Priority.ROLLOUT) -> Ticket:
         self._require("FROZEN")
         self._slot(slot)
-        o = np.ascontiguousarray(np.asarray(obs, dtype=np.float32))
-        m = np.ascontiguousarray(np.asarray(mask).astype(bool, copy=False))
+        # COPIED: a caller's rows are often a view into a buffer its env core rewrites on the next
+        # step (Lane A/B's column mappings); a ticket must hold what was submitted, not what that
+        # buffer holds at flush time.
+        o = np.array(obs, dtype=np.float32, order="C", copy=True)
+        m = np.array(mask, dtype=bool, order="C", copy=True)
         if o.ndim != 2 or o.shape[1] != self.obs_dim:
             raise CallerError(f"obs must be [n, {self.obs_dim}] float32, got {o.shape}")
         if m.shape != (o.shape[0], self.n_actions):
@@ -352,13 +380,7 @@ class InferenceService:
         return out
 
     def _chunks(self, n: int) -> List[Tuple[int, int]]:
-        """``(bucket, rows)`` chunks for ``n`` rows: largest buckets, then the smallest that fits."""
-        big, out = self.buckets[-1], []
-        while n > big:
-            out.append((big, big))
-            n -= big
-        out.append((next(b for b in self.buckets if b >= n), n))
-        return out
+        return self.engine.chunks(n)
 
     def flush(self) -> int:
         """Serve every ROLLOUT row, then up to ``filler_batches_per_flush`` batches of the rest."""
@@ -395,78 +417,28 @@ class InferenceService:
         if not admitted:
             return 0
         self._epoch += 1
-        off = 0
+        plan: List[PlanItem] = []
         for t in admitted:
-            t._off, t._epoch = off, self._epoch
-            off += t.n
-        by_slot: Dict[int, List[Ticket]] = {}
-        for t in sorted(admitted, key=lambda t: t.seq):
-            by_slot.setdefault(t.slot, []).append(t)
+            gi, i = self._slot(t.slot)
+            plan.append((t.slot, gi, i, t.obs, t.mask))
         try:
             with self._frozen_guard("flush"):
-                for slot, tickets in by_slot.items():
-                    self._serve_slot(slot, tickets)
+                offsets, per_bucket = self.engine.execute(plan)
         except BaseException as exc:         # a half-served flush must never be read as served
             if self._poison is None:
                 self._die(f"flush failed mid-way: {type(exc).__name__}: {exc}")
             raise
+        for t, off in zip(admitted, offsets):
+            t._off, t._epoch = off, self._epoch
+        for b, k in per_bucket.items():
+            self.batches_by_bucket[b] += k
+            self.counters["batches"] += k
+        self.counters["rows_padded"] += sum(b * k for b, k in per_bucket.items()) - rows
         done = {id(t) for t in admitted}
         self._pending = [t for t in self._pending if id(t) not in done]
         self.counters["flushes"] += 1
         self.counters["rows_served"] += rows
         return rows
-
-    def _serve_slot(self, slot: int, tickets: Sequence[Ticket]) -> None:
-        gi, i = self._slot(slot)
-        # Flatten the tickets' rows into segments (ticket, row0, n), then cut into bucket chunks.
-        segs = [(t, 0, t.n) for t in tickets]
-        total = sum(t.n for t in tickets)
-        for b, n in self._chunks(total):
-            parts: List[Tuple[Ticket, int, int, int]] = []    # (ticket, t_row0, n, batch_row0)
-            k = 0
-            while k < n:
-                t, r0, left = segs[0]
-                take = min(left, n - k)
-                parts.append((t, r0, take, k))
-                k += take
-                segs[0] = (t, r0 + take, left - take)
-                if segs[0][2] == 0:
-                    segs.pop(0)
-            self._stage_rows(b, [(t.obs[r0:r0 + c], t.mask[r0:r0 + c], k0, c)
-                                 for t, r0, c, k0 in parts], n)
-            logp, value, greedy = self._run(gi, i, b)
-            for t, r0, c, k0 in parts:
-                dst = slice(t._off + r0, t._off + r0 + c)
-                self._arena_logp[dst].copy_(logp[k0:k0 + c])
-                self._arena_value[dst].copy_(value[k0:k0 + c])
-                self._arena_greedy[dst].copy_(greedy[k0:k0 + c])
-            self.counters["batches"] += 1
-            self.counters["rows_padded"] += b - n
-            self.batches_by_bucket[b] += 1
-
-    def _stage_rows(self, b: int, parts: Sequence[Tuple[np.ndarray, np.ndarray, int, int]],
-                    n: int) -> None:
-        """Rows into bucket ``b``'s pinned host buffers, pad rows = copies of row 0, then into the
-        static device inputs. Synchronous H2D: the host buffer is reused by the next batch."""
-        ho, hm = self._stage[b]
-        o_np, m_np = ho.numpy(), hm.numpy()
-        for obs, mask, k0, c in parts:
-            o_np[k0:k0 + c] = obs
-            m_np[k0:k0 + c] = mask
-        if n < b:
-            o_np[n:b] = o_np[0]
-            m_np[n:b] = m_np[0]
-        so, sm = self._static[b]
-        so.copy_(ho)
-        sm.copy_(hm)
-
-    def _run(self, gi: int, i: int, b: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        if self.spec.backend == "graph":
-            graph, outs = self._graphs[(gi, i, b)]
-            graph.replay()
-            return outs[0], outs[1], outs[2]
-        with torch.no_grad():
-            return _decide(self.groups[gi].modules[i], *self._static[b])
 
     # ------------------------------------------------------------------ reporting
     def stats(self) -> Dict[str, Any]:
@@ -474,6 +446,9 @@ class InferenceService:
         out["state"] = self.state
         out["batches_by_bucket"] = dict(self.batches_by_bucket)
         out["slots"] = len(getattr(self, "_slots", ()))
-        out["graphs"] = len(getattr(self, "_graphs", {}))
+        eng = getattr(self, "engine", None)
+        out["graphs"] = len(eng.graphs) if eng is not None else 0
+        out["packages"] = len(eng.packages) if eng is not None else 0
+        out["lanes"] = eng.n_lanes if eng is not None else 0
         out["startup_seconds"] = dict(self.startup_seconds)
         return out

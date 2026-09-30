@@ -75,6 +75,8 @@ def test_an_extra_obs_key_architecture_is_refused():
     (dict(buckets=(1, 8)), "smallest bucket"),
     (dict(buckets=(8, 2)), "ascending"),
     (dict(backend="graph"), "CUDA only"),
+    (dict(backend="aot"), "CUDA only"),
+    (dict(lanes=2), "lanes"),
     (dict(verify_bucket=4), "not a declared bucket"),
     (dict(max_rows_per_flush=4), "largest bucket"),
 ])
@@ -313,7 +315,36 @@ def test_a_FRESH_slot_is_gated_on_a_perturbation_and_its_weights_come_back_bit_e
 
 def test_a_miscompile_invisible_on_fresh_weights_is_CAUGHT_by_the_perturbed_gate(
         monkeypatch, fresh_policy):
-    import agents.inference.service.service as svc_mod
-    monkeypatch.setattr(svc_mod, "_decide", _temperature_bug(svc_mod._decide))
+    import agents.inference.service.engine as engine_mod
+    monkeypatch.setattr(engine_mod, "decide", _temperature_bug(engine_mod.decide))
     with pytest.raises(ParityFailure, match="seeded perturbation"):
         _service(fresh_policy, n_slots=1, buckets=(2, 8))
+
+# ---------------------------------------------------------------- staging (unit 4)
+def test_a_submitted_row_is_copied_so_a_caller_buffer_rewrite_cannot_reach_it(policies):
+    a, _ = policies
+    svc = _service(a, n_slots=1, buckets=(2, 8))
+    obs, mask = fixture_rows(svc.obs_dim, 5)
+    buf_o, buf_m = obs.copy(), mask.copy()            # the caller's (e.g. env core's) buffer
+    t = svc.submit(0, buf_o, buf_m)
+    buf_o[:] = 0.0                                    # the core steps before the flush
+    buf_m[:] = True
+    svc.flush()
+    _close(t.result(), _ref(a, obs, mask))
+
+
+def test_host_results_equal_device_results_across_flushes_of_both_buffers(policies):
+    a, b = policies
+    svc = _service(a, n_slots=2, buckets=(2, 8))
+    svc.load(1, b, "B")
+    obs, mask = fixture_rows(svc.obs_dim, 12)
+    for k in range(4):                                # both halves of the double buffer, twice
+        n = 3 + 2 * k
+        t0, t1 = svc.submit(0, obs[:n], mask[:n]), svc.submit(1, obs[k:k + 4], mask[k:k + 4])
+        svc.flush()
+        for t, pol, o, m in ((t0, a, obs[:n], mask[:n]), (t1, b, obs[k:k + 4], mask[k:k + 4])):
+            d = t.result()
+            lp, v, g = t.host()
+            assert np.array_equal(lp, d.logp.numpy()) and np.array_equal(v, d.value.numpy())
+            assert np.array_equal(g, d.greedy.numpy())
+            _close(d, _ref(pol, o, m))

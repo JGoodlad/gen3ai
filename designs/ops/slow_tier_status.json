@@ -89,19 +89,35 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
+   "status": "pass",
+   "commit": "6dde3b68a877c281ee6bd6296a07fbe9f09c3cdc",
+   "at": "2026-09-30T00:33:40Z",
+   "duration_s": 93.94,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/inference/service/service_cuda_test.py::test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons": {
    "status": "pass",
-   "commit": "050f7b1ed803dcfdea87df4b9aac7d5d4615f1f0",
-   "at": "2026-09-29T21:17:37Z",
-   "duration_s": 0.97,
+   "commit": "6dde3b68a877c281ee6bd6296a07fbe9f09c3cdc",
+   "at": "2026-09-30T00:33:40Z",
+   "duration_s": 1.07,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_graph_backend_parity_weight_swap_and_a_frozen_steady_state": {
    "status": "pass",
-   "commit": "050f7b1ed803dcfdea87df4b9aac7d5d4615f1f0",
-   "at": "2026-09-29T21:17:37Z",
-   "duration_s": 144.18,
+   "commit": "6dde3b68a877c281ee6bd6296a07fbe9f09c3cdc",
+   "at": "2026-09-30T00:33:40Z",
+   "duration_s": 92.82,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/inference/service/service_cuda_test.py::test_two_lanes_replaying_concurrently_serve_their_own_slots": {
+   "status": "pass",
+   "commit": "6dde3b68a877c281ee6bd6296a07fbe9f09c3cdc",
+   "at": "2026-09-30T00:33:40Z",
+   "duration_s": 47.4,
    "contention": 1.0,
    "detail": ""
   },

@@ -50,10 +50,13 @@ def _busy_box_warnings() -> List[str]:
 def main(argv: "list[str] | None" = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--ckpt", default=None, help="a checkpoint zip (default: perturbed fresh)")
-    ap.add_argument("--backend", default="graph", choices=("eager", "graph"))
+    ap.add_argument("--backend", default="graph", choices=("eager", "graph", "aot"))
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--buckets", default="8,48,128")
     ap.add_argument("--slots", type=int, default=2)
+    ap.add_argument("--lanes", type=int, default=1, help="concurrency lanes (CUDA streams)")
+    ap.add_argument("--opponent-rows", type=int, default=48,
+                    help="Lane E's shape: this many rows spread evenly over every slot per flush")
     ap.add_argument("--reps", type=int, default=50)
     ap.add_argument("--json", default=None, help="also write the result here")
     args = ap.parse_args(argv)
@@ -72,12 +75,13 @@ def main(argv: "list[str] | None" = None) -> int:
     buckets = tuple(int(b) for b in args.buckets.split(","))
     spec = ServiceSpec(groups=(SlotGroupSpec("bench", args.slots, policy),), device=args.device,
                        backend=args.backend, buckets=buckets,
-                       max_rows_per_flush=max(1024, buckets[-1] * args.slots))
+                       max_rows_per_flush=max(1024, buckets[-1] * args.slots), lanes=args.lanes)
     t0 = time.perf_counter()
     svc = InferenceService(spec).startup()
     result: Dict[str, Any] = {
         "torch": torch.__version__, "backend": args.backend, "device": args.device,
         "ckpt": args.ckpt or "fresh-perturbed(seed 0)", "slots": args.slots, "buckets": buckets,
+        "lanes": args.lanes,
         "matmul_precision": torch.get_float32_matmul_precision(),
         "startup_s": round(time.perf_counter() - t0, 1), "startup_phases_s":
         {k: round(v, 1) for k, v in svc.startup_seconds.items()},
@@ -111,6 +115,17 @@ def main(argv: "list[str] | None" = None) -> int:
             svc.submit(s, obs[:n], mask[:n])
         svc.flush()
     result["mixed_flush_ms"] = round(timed(mixed), 3)
+
+    per = [args.opponent_rows // args.slots + (1 if s < args.opponent_rows % args.slots else 0)
+           for s in range(args.slots)]
+
+    def lane_e() -> None:                      # Lane E: N opponent rows over every slot
+        for s, n in enumerate(per):
+            if n:
+                svc.submit(s, obs[:n], mask[:n])
+        svc.flush()
+    result["lane_e_flush_ms"] = round(timed(lane_e), 3)
+    result["lane_e_rows_per_slot"] = per
     st = svc.stats()
     result["after_freeze"] = {k: st[k] for k in ("compiles_after_freeze", "captures_after_freeze",
                                                   "cuda_segments_after_freeze")}

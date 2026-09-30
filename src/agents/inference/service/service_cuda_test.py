@@ -43,13 +43,16 @@ def _ref(policy, obs, mask):
 
 def test_graph_backend_parity_weight_swap_and_a_frozen_steady_state(fresh_compile_caches):
     a, b = _perturbed_policy(0), _perturbed_policy(1)
-    spec = ServiceSpec(groups=(SlotGroupSpec("pool", 2, a),), device="cuda", backend="graph",
-                       buckets=(4, 8), max_rows_per_flush=64)
+    # 3 slots on 2 LANES: slots 0 and 2 share lane 0 (its pool, in order), slot 1 runs on lane 1
+    spec = ServiceSpec(groups=(SlotGroupSpec("pool", 3, a),), device="cuda", backend="graph",
+                       buckets=(4, 8), max_rows_per_flush=64, lanes=2)
     svc = InferenceService(spec).startup()
     st = svc.stats()
-    assert st["graphs"] == 4 and st["state"] == "FROZEN"
-    # every slot x bucket, full and padded, passed the compile gate's bars
-    assert len(svc.startup_reports) == 2 * 2 * 2
+    assert st["graphs"] == 6 and st["state"] == "FROZEN" and st["lanes"] == 2
+    # every slot x bucket, full and padded, passed the compile gate's bars — and every slot at
+    # once per bucket (the CONCURRENT gate: lanes replaying together)
+    assert len(svc.startup_reports) == 3 * 2 * 2 + 3 * 2
+    assert sum("CONCURRENT" in r.where for r in svc.startup_reports) == 3 * 2
     assert all(r.legal_logprob_max < 1e-3 and r.value_max < 1e-4 for r in svc.startup_reports)
 
     s0, s1 = svc.slot("pool", 0), svc.slot("pool", 1)
@@ -68,6 +71,7 @@ def test_graph_backend_parity_weight_swap_and_a_frozen_steady_state(fresh_compil
             assert float((d.logp - ref[0])[fin].abs().max()) < 1e-3
             assert float((d.value - ref[1]).abs().max()) < 1e-4
         assert float((t2.result().value - b_cuda[1][:3]).abs().max()) < 1e-4
+    _assert_back_to_back_flushes_do_not_race(svc, (s0, a), (s1, b), (svc.slot("pool", 2), a))
     svc.canary()
     st = svc.stats()
     assert (st["compiles_after_freeze"], st["captures_after_freeze"],
@@ -78,6 +82,49 @@ def test_graph_backend_parity_weight_swap_and_a_frozen_steady_state(fresh_compil
     d = svc.score(s1, obs[:8], mask[:8])
     ref = _ref(a, obs[:8], mask[:8])
     assert float((d.value - ref[1]).abs().max()) < 1e-4
+
+
+def _assert_back_to_back_flushes_do_not_race(svc, *slot_policies):
+    """Unit 4's double buffer: flushes issued BACK TO BACK with no host sync between them (the
+    results cloned on the stream, never read on the host until the end) must each serve their own
+    rows. Without the per-arena event wait, flush k+2 re-packs the host arena that flush k's
+    still-queued host-to-device copy reads — the rows would be the later flush's."""
+    obs, mask = fixture_rows(svc.obs_dim, 64)
+    kept = []
+    for k in range(8):
+        tickets = [(svc.submit(s, obs[k:k + 6 + j], mask[k:k + 6 + j]), pol, k, 6 + j)
+                   for j, (s, pol) in enumerate(slot_policies)]
+        svc.flush()
+        kept += [(t.result().logp.clone(), t.result().value.clone(), pol, k0, n)
+                 for t, pol, k0, n in tickets]
+    torch.cuda.synchronize()
+    for logp, value, pol, k0, n in kept:
+        ref = _ref(pol, obs[k0:k0 + n], mask[k0:k0 + n])
+        fin = torch.isfinite(ref[0])
+        assert float((logp - ref[0])[fin].abs().max()) < 1e-3
+        assert float((value - ref[1]).abs().max()) < 1e-4
+
+
+def test_two_lanes_replaying_concurrently_serve_their_own_slots(fresh_compile_caches):
+    """THE REGRESSION for the shared-capture-stream defect: two slots on two lanes, served in ONE
+    flush so their graphs replay concurrently. With every graph captured on torch.cuda.graph's
+    single default capture stream they share one cuBLAS workspace and the concurrent results are
+    wrong (measured max|dlogp| 0.048) — startup's concurrent gate raises ParityFailure. Revert the
+    per-lane capture stream in `engine._build_graphs` and this test FAILS."""
+    a, b = _perturbed_policy(0), _perturbed_policy(1)
+    svc = InferenceService(ServiceSpec(groups=(SlotGroupSpec("pool", 2, a),), device="cuda",
+                                       backend="graph", buckets=(8,), lanes=2)).startup()
+    svc.load(1, b, "policy-B")
+    obs, mask = fixture_rows(svc.obs_dim, 8)
+    for _ in range(20):
+        t0, t1 = svc.submit(0, obs, mask), svc.submit(1, obs, mask)
+        svc.flush()
+        for t, pol in ((t0, a), (t1, b)):
+            ref = _ref(pol, obs, mask)
+            fin = torch.isfinite(ref[0])
+            assert float((t.result().logp - ref[0])[fin].abs().max()) < 1e-3
+            assert float((t.result().value - ref[1]).abs().max()) < 1e-4
+    svc.canary()
 
 
 def test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons():
@@ -93,3 +140,35 @@ def test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons():
             hold = torch.empty(64 * 2**20, dtype=torch.float32, device="cuda")   # 256 MiB, new
             del hold
     assert svc.state == "POISONED"
+
+
+def _aot_skip_reason():
+    from agents.inference.service import aot
+
+    try:
+        aot.check_available()
+    except Exception as exc:          # the typed refusal names the cause (torch version, headers)
+        return str(exc)
+    return None
+
+
+@pytest.mark.skipif(_aot_skip_reason() is not None, reason=_aot_skip_reason() or "")
+def test_aot_backend_one_package_per_bucket_serves_every_slot(fresh_compile_caches, tmp_path):
+    """torch >= 2.8 + the CUDA headers (gen3ai_torch28): weights-as-inputs packages, so a load is
+    served by the SAME package (no baked weight-derived constants — the embedded-constant package
+    served a swapped policy at max|dlogp| 0.076)."""
+    a, b = _perturbed_policy(0), _perturbed_policy(1)
+    svc = InferenceService(ServiceSpec(groups=(SlotGroupSpec("pool", 2, a),), device="cuda",
+                                       backend="aot", buckets=(8,),
+                                       artifact_dir=str(tmp_path / "aot"))).startup()
+    assert svc.stats()["packages"] == 1
+    svc.load(1, b, "policy-B")
+    obs, mask = fixture_rows(svc.obs_dim, 8)
+    t0, t1 = svc.submit(0, obs[:7], mask[:7]), svc.submit(1, obs[:7], mask[:7])
+    svc.flush()
+    for t, pol in ((t0, a), (t1, b)):
+        ref = _ref(pol, obs[:7], mask[:7])
+        fin = torch.isfinite(ref[0])
+        assert float((t.result().logp - ref[0])[fin].abs().max()) < 1e-3
+        assert float((t.result().value - ref[1]).abs().max()) < 1e-4
+    assert svc.stats()["cuda_segments_after_freeze"] == 0

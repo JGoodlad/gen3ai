@@ -1,0 +1,50 @@
+{
+  "torch": "2.8.0+cu126",
+  "backend": "aot",
+  "device": "cuda",
+  "ckpt": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+  "slots": 1,
+  "buckets": [
+    8,
+    48,
+    128
+  ],
+  "lanes": 1,
+  "matmul_precision": "highest",
+  "startup_s": 231.4,
+  "startup_phases_s": {
+    "allocate": 0.2,
+    "build": 230.9,
+    "parity": 0.3
+  },
+  "parity_worst": {
+    "legal_logprob": 1.8596649169921875e-05,
+    "value": 7.748603820800781e-07
+  },
+  "busy_box_warnings": [],
+  "per_bucket": {
+    "8": {
+      "ms_per_flush": 1.908,
+      "us_per_row": 238.6
+    },
+    "48": {
+      "ms_per_flush": 2.311,
+      "us_per_row": 48.1
+    },
+    "128": {
+      "ms_per_flush": 3.307,
+      "us_per_row": 25.8
+    }
+  },
+  "mixed_flush_ms": 3.295,
+  "lane_e_flush_ms": 2.312,
+  "lane_e_rows_per_slot": [
+    48
+  ],
+  "after_freeze": {
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+  },
+  "max_memory_allocated_mib": 130
+}

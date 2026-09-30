@@ -1,0 +1,8 @@
+{"S": 8, "B": 8, "lanes": 1, "ms_all_slots": 9.805, "ms_per_slot": 1.226, "worst_parity": 7.152557373046875e-07, "mem_mib": 212}
+{"S": 8, "B": 8, "lanes": 2, "ms_all_slots": 6.785, "ms_per_slot": 0.848, "worst_parity": 7.152557373046875e-07, "mem_mib": 293}
+{"S": 8, "B": 8, "lanes": 4, "ms_all_slots": 4.256, "ms_per_slot": 0.532, "worst_parity": 7.152557373046875e-07, "mem_mib": 391}
+{"S": 8, "B": 8, "lanes": 8, "ms_all_slots": 2.583, "ms_per_slot": 0.323, "worst_parity": 7.152557373046875e-07, "mem_mib": 399}
+{"S": 8, "B": 16, "lanes": 1, "ms_all_slots": 10.35, "ms_per_slot": 1.294, "worst_parity": 7.152557373046875e-07, "mem_mib": 405}
+{"S": 8, "B": 16, "lanes": 2, "ms_all_slots": 7.153, "ms_per_slot": 0.894, "worst_parity": 7.152557373046875e-07, "mem_mib": 405}
+{"S": 8, "B": 16, "lanes": 4, "ms_all_slots": 4.39, "ms_per_slot": 0.549, "worst_parity": 7.152557373046875e-07, "mem_mib": 405}
+{"S": 8, "B": 16, "lanes": 8, "ms_all_slots": 2.999, "ms_per_slot": 0.375, "worst_parity": 7.152557373046875e-07, "mem_mib": 405}
