@@ -40,6 +40,15 @@ WHAT IS FLAGGED
        lock whose holder is busy is healthy.
    A shell whose live ``sleep`` child is the SAME process as at the last run is one long deliberate
    sleep, not a poll loop, and is skipped.
+3. **DUPLICATE-WAITER** — two or more WAITERS (as in 2) under the SAME Claude session with the same
+   NORMALISED command line (whitespace collapsed; the Bash tool's per-call ``pwd -P >|
+   /tmp/claude-<hex>-cwd`` suffix erased), each older than ``--dup-min-age-s`` (2 min). A forked
+   subshell shares its parent's command line, so only the topmost of an ancestor chain counts.
+   Reported on the FIRST run with the count and every pid, whether or not the target is progressing:
+   on 2026-09-30 Lane K piled up FIVE identical ``until grep -q … <log>`` loops — each blocking wait
+   the Bash tool backgrounded at its 600 s timeout kept looping and every retry added one — and none
+   was idle, because the target (a job queued on the GPU lock behind a live holder) was legitimately
+   waiting. Never kills: which one to keep is the session's call.
 
 STATE: ``~/.claude/jobs/idle_waiter_watchdog.json`` (``--state``), keyed by ``pid:starttime`` so a
 reused PID is a new process. The first run only records a baseline (and reports self-deadlocks);
@@ -64,6 +73,7 @@ if str(_SRC) not in sys.path:
 from utils import procfs as P  # noqa: E402
 
 MIN_AGE_S = 600.0
+DUP_MIN_AGE_S = 120.0
 MIN_INTERVAL_S = 300.0
 IDLE_FRAC = 0.01
 STATE_PATH = Path.home() / ".claude" / "jobs" / "idle_waiter_watchdog.json"
@@ -82,11 +92,19 @@ _PSGREP = re.compile(r"\bps\b[^|;]*\|\s*grep\s+(?:-\S+\s+)*" + _QUOTED)
 _PATH = re.compile(r"(?<![\w.$/-])((?:~|/)[\w.@+/-]*\w)")
 _GENERIC_DIRS = frozenset({"/", "/tmp", "/var/tmp", "/home", "/usr", "/proc", "/dev", str(Path.home())})
 _SKIP_PREFIXES = ("/proc/", "/dev/", "/sys/", "/usr/", "/bin/", "/lib", "/etc/")
+# The Bash tool's wrapper ends every command with ``pwd -P >| /tmp/claude-<hex>-cwd``: the one token
+# that differs between two otherwise identical calls.
+_CWD_FILE = re.compile(r"/tmp/claude-[0-9a-f]+-cwd\b")
+
+
+def normalise_cmd(cmd: str) -> str:
+    """The command line with per-call noise removed, for duplicate detection."""
+    return " ".join(_CWD_FILE.sub("<cwd-file>", cmd).split())
 
 
 @dataclass
 class Finding:
-    kind: str           # SELF-DEADLOCK / IDLE-WAITER
+    kind: str           # SELF-DEADLOCK / IDLE-WAITER / DUPLICATE-WAITER
     pid: int
     age_s: float
     session: Optional[int]
@@ -111,7 +129,8 @@ class Scan:
 
     def __init__(self, state: Optional[dict], *, now: Optional[float] = None, min_age_s: float = MIN_AGE_S,
                  min_interval_s: float = MIN_INTERVAL_S, idle_frac: float = IDLE_FRAC,
-                 scope_pid: Optional[int] = None, self_pid: Optional[int] = None) -> None:
+                 scope_pid: Optional[int] = None, self_pid: Optional[int] = None,
+                 dup_min_age_s: float = DUP_MIN_AGE_S) -> None:
         self.now = time.time() if now is None else now
         self.uptime = P.uptime_s()
         self.procs = P.snapshot()
@@ -119,6 +138,7 @@ class Scan:
         self.cpu = P.subtree_cpu(self.procs, self.kids)
         self.locks = P.read_locks()
         self.min_age_s, self.min_interval_s, self.idle_frac = min_age_s, min_interval_s, idle_frac
+        self.dup_min_age_s = dup_min_age_s
         me = os.getpid() if self_pid is None else self_pid
         self.self_chain: Set[int] = {me, *P.ancestors(me, self.procs)}   # the watchdog and its cron chain
         self.claude = {pid for pid, p in self.procs.items() if _is_claude(p, P.readlink(pid, "exe"))}
@@ -341,6 +361,32 @@ class Scan:
         return [f for pid, f in found.items()
                 if not any(d in found or d in skip for d in P.descendants(pid, self.kids))]
 
+    # ------------------------------------------------------------------------------- 3. duplicates
+    def duplicate_waiters(self) -> List[Finding]:
+        groups: Dict[Tuple[int, str], List[int]] = {}
+        for pid in self.procs:
+            if pid in self.claude or pid in self.self_chain or not self.in_scope(pid):
+                continue
+            if self.age(pid) < self.dup_min_age_s or not self.waiter_kind(pid):
+                continue
+            s = self.session_of(pid)
+            if s is None:
+                continue
+            groups.setdefault((s, normalise_cmd(self.cmd(pid))), []).append(pid)
+        out = []
+        for pids in groups.values():
+            members = set(pids)
+            top = sorted((q for q in pids if not members & set(P.ancestors(q, self.procs))),
+                         key=lambda q: -self.age(q))           # oldest first
+            if len(top) < 2:
+                continue
+            ages = ", ".join(f"{q} ({int(self.age(q)) // 60}m)" for q in top)
+            out.append(self._finding("DUPLICATE-WAITER", top[0], (
+                f"{len(top)} identical waiters in this session: pids {ages} — a retried wait adds "
+                f"one each time (a Bash-tool timeout backgrounds the old loop, it does not end it); "
+                f"keep ONE and kill the rest by explicit PID")))
+        return out
+
     def _finding(self, kind: str, pid: int, reason: str) -> Finding:
         s = self.session_of(pid)
         return Finding(kind=kind, pid=pid, age_s=self.age(pid), session=s,
@@ -348,7 +394,7 @@ class Scan:
 
     def run(self) -> List[Finding]:
         dead = self.self_deadlocks()
-        return dead + self.idle_waiters({f.pid for f in dead})
+        return dead + self.idle_waiters({f.pid for f in dead}) + self.duplicate_waiters()
 
     def next_state(self) -> dict:
         cpu = {self.procs[pid].key: self.cpu[pid] for pid in self.procs}
@@ -385,6 +431,8 @@ def build_parser() -> argparse.ArgumentParser:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--state", type=Path, default=STATE_PATH, help=f"state file (default {STATE_PATH})")
     ap.add_argument("--min-age-s", type=float, default=MIN_AGE_S, help="flag only waiters older than this")
+    ap.add_argument("--dup-min-age-s", type=float, default=DUP_MIN_AGE_S,
+                    help="flag duplicate waiters only once at least two are older than this")
     ap.add_argument("--min-interval-s", type=float, default=MIN_INTERVAL_S,
                     help="judge idleness only against a baseline at least this old")
     ap.add_argument("--idle-frac", type=float, default=IDLE_FRAC,
@@ -399,7 +447,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     t0 = time.perf_counter()
     try:
         scan = Scan(load_state(a.state), min_age_s=a.min_age_s, min_interval_s=a.min_interval_s,
-                    idle_frac=a.idle_frac, scope_pid=a.scope_pid)
+                    idle_frac=a.idle_frac, scope_pid=a.scope_pid, dup_min_age_s=a.dup_min_age_s)
         findings = scan.run()
         save_state(a.state, scan.next_state())
     except Exception as e:  # a watchdog that dies quietly is the failure it exists to catch

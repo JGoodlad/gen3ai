@@ -288,3 +288,55 @@ def test_one_scan_of_the_whole_box_is_cheap(tmp_path):
     W.Scan(None).run()
     # 1 s on an idle box (measured ~0.02 s over ~400 processes), stretched by measured contention
     assert time.perf_counter() - t0 < scale_timeout(1.0)
+
+
+def test_duplicate_waiters_are_counted_on_the_first_run_and_never_killed(session, tmp_path):
+    """2026-09-30, Lane K: FIVE identical `until grep -q … <log>` loops in one session — each Bash-tool
+    wait backgrounded at its 600 s timeout kept looping, each retry added one — and none was IDLE,
+    because the target was legitimately waiting. Revert `duplicate_waiters` and this fails.
+
+    The three loops differ ONLY in the Bash tool's per-call cwd-file suffix (never reached: the loop
+    never ends), so normalisation is under test too; a fourth, different loop is not a duplicate."""
+    never = tmp_path / "never_written.log"
+    fifo = tmp_path / "nobody_writes.fifo"
+    os.mkfifo(fifo)
+    loop = f"until grep -q DONE {never} 2>/dev/null; do sleep 1; done"
+    root = session(
+        "".join(f"bash -c '{loop} && pwd -P >| /tmp/claude-{h}-cwd' &\n" for h in ("a1b2", "c3d4", "e5f6"))
+        + f"bash -c 'until [ -s {never}.other ]; do sleep 1; done' &\n"
+        # ONE loop whose $(...) condition forks a subshell with the SAME command line: not a duplicate
+        + f"bash -c 'until [ -n \"$(cat {fifo}; true)\" ]; do sleep 1; done' &\n")
+    _wait_for(lambda: len([q for q, c in _tree(root.pid).items() if c.startswith(f"bash -c {loop}")]) == 3,
+              "the three identical loops")
+    dups = sorted(q for q, c in _tree(root.pid).items() if c.startswith(f"bash -c {loop}"))
+    odd = _pid_of(root.pid, f"{never}.other", comm="bash")
+    forking = _pid_of(root.pid, f"cat {fifo}; true", comm="bash")
+    _wait_for(lambda: any(P.cmdline(c) == P.cmdline(forking)
+                          for c in P.children_map(P.snapshot()).get(forking, ())),
+              "the $(...) subshell that shares its parent's command line")
+
+    findings = W.Scan(None, scope_pid=os.getpid(), dup_min_age_s=0.0, **KW).run()
+    dup = [f for f in findings if f.kind == "DUPLICATE-WAITER"]
+    assert len(dup) == 1, findings
+    assert dup[0].pid in dups and dup[0].session == root.pid
+    assert dup[0].reason.startswith("3 identical waiters")
+    for q in dups:
+        assert str(q) in dup[0].reason, (q, dup[0].reason)
+    assert str(odd) not in dup[0].reason and str(forking) not in dup[0].reason
+    for q in (*dups, odd, forking):
+        assert P.read_stat(q) is not None, f"pid {q} is gone — the watchdog must never kill"
+
+    # below the age bar nothing is flagged (a wait being replaced must not flap)
+    assert not [f for f in W.Scan(None, scope_pid=os.getpid(), dup_min_age_s=3600.0, **KW).run()
+                if f.kind == "DUPLICATE-WAITER"]
+    # the CLI prints it on a first run and exits 1
+    r = subprocess.run([sys.executable, str(_SCRIPT), "--state", str(tmp_path / "s.json"), "--scope-pid",
+                        str(os.getpid()), "--dup-min-age-s", "0"], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 1 and "DUPLICATE-WAITER" in r.stdout, r
+
+
+def test_normalise_cmd_erases_only_the_per_call_cwd_file():
+    a = W.normalise_cmd("bash -c  until x; do sleep 1; done && pwd -P >| /tmp/claude-dd38-cwd")
+    b = W.normalise_cmd("bash -c until x; do sleep 1; done && pwd -P >| /tmp/claude-0f1e-cwd ")
+    assert a == b
+    assert W.normalise_cmd("sleep 1") != W.normalise_cmd("sleep 2")
