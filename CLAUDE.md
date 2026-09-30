@@ -108,9 +108,9 @@ Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
 ## Python Environment
 
-`./scripts/bootstrap.sh` does all setup idempotently — conda env, submodule, Showdown build, worktree symlinks, the optional cargo build — and verifies with the ruff/mypy gates, the two import-precedence gates and a ~10 s smoke. `--dry-run` prints the plan. `CONTRIBUTING.md` is the human version.
+`./scripts/bootstrap.sh` does all setup idempotently — conda env, submodule, Showdown build, worktree symlinks, the optional cargo build — and verifies with the ruff/mypy gates, the two import-precedence gates and a ~10 s smoke. `--dry-run` prints the plan. `CONTRIBUTING.md` is the human version. 🚨 **The conda env is SHARED, so a WORKTREE bootstrap never updates it silently:** its "current" stamp lives in the git COMMON dir (keyed by `environment.yml`'s hash), a worktree whose env is current does nothing, and one whose `environment.yml` differs prints the diff and REFUSES (exit 3) — `--update-shared-env` opts in, `--skip-env` finishes the setup without touching the env. The main checkout still updates.
 
-The env is **`gen3ai_stable`** (not `deps/venv`, which is outdated — ignore it). **`gen3ai_torch28`** (torch 2.8, `environment_torch28.yml`) is its sibling for Lane K1: the code runs on both, so a change to anything under `torch._dynamo`/compile runs its compile tests under BOTH interpreters (`designs/training/compile_flags.md` "Lane K1"); never edit `environment.yml`'s torch pins — `bootstrap.sh` re-applies it to `gen3ai_stable` under live runs:
+The env is **`gen3ai_stable`** (not `deps/venv`, which is outdated — ignore it). **`gen3ai_torch28`** (torch 2.8, `environment_torch28.yml`) is its sibling for Lane K1: the code runs on both, so a change to anything under `torch._dynamo`/compile runs its compile tests under BOTH interpreters (`designs/training/compile_flags.md` "Lane K1"); never edit `environment.yml`'s torch pins — a main-checkout `bootstrap.sh` (or `--update-shared-env`) re-applies it to `gen3ai_stable`, under whatever runs are live:
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src

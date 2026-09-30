@@ -25,7 +25,7 @@ skipped), fail-loud, and it announces what each step costs before spending it:
 | Step | What | Cost |
 |---|---|---|
 | 1 | prerequisite check — `git`, `conda`, `node`, `npm` | instant |
-| 2 | create/update the `gen3ai_stable` conda env from `environment.yml` | ~5-15 min fresh (≈2 GB of wheels) |
+| 2 | create/update the `gen3ai_stable` conda env from `environment.yml` — **a worktree never updates it silently** (see below) | ~5-15 min fresh (≈2 GB of wheels) |
 | 3 | `pip install -e .` — puts `src/` on the import path for good | ~2 s |
 | 4 | `git submodule update --init` — the Pokémon Showdown reference engine | ~30 s |
 | 5 | the Showdown build artifacts (`npm ci` + `node build`) — **or** worktree symlinks | ~3-6 min fresh |
@@ -33,7 +33,23 @@ skipped), fail-loud, and it announces what each step costs before spending it:
 | 7 | verify — the ruff and mypy gates, the two import-precedence gates, a ~10 s unit smoke | ~30-60 s |
 
 Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--no-rust`,
-`--force` (redo the conda step), `--no-check`, `--help`.
+`--force` (redo the conda step), `--update-shared-env`, `--skip-env`, `--no-check`, `--help`.
+
+**The conda env is SHARED; a checkout is not.** Every run, pinned launch and agent on the box uses
+the one `gen3ai_stable`, and a `conda env update --prune` under a live process can swap a package
+out from under it. So step 2's "env is current" stamp lives in the git **common** dir (one per
+clone, keyed by the sha256 of `environment.yml`, holding a copy of the file it was written for):
+
+| run from | `environment.yml` matches the stamp | it differs (or `--force`) |
+|---|---|---|
+| the main checkout | nothing to do | updates the env in place, and warns that it is shared |
+| a linked worktree | nothing to do | prints the diff and **REFUSES (exit 3)** |
+
+A worktree refusal names both ways forward: `--update-shared-env` (update it anyway — only when no
+live or pinned run uses it), or `--skip-env` (leave the env alone and finish the rest of the
+worktree's setup). A missing env is simply created, from anywhere — nothing can be running on it.
+The refusal exists because a worktree bootstrap cannot see which runs are live, queued or pinned;
+before it (2026-09-29) the stamp was per-worktree, so every fresh worktree ran a prune-update.
 
 **Say yes to the Rust build if you have ten minutes.** Training defaults to `--use-bridge rust`,
 and the first Rust-backed test builds those binaries *anyway* — mid-test, saturating every core, a
@@ -182,7 +198,7 @@ commits happen in a branch or a git worktree, and land on `main` by push:
 ```bash
 git worktree add ../gen3ai-myfeature -b myfeature
 cd ../gen3ai-myfeature
-./scripts/bootstrap.sh          # detects the worktree; symlinks instead of rebuilding
+./scripts/bootstrap.sh          # detects the worktree; symlinks instead of rebuilding; never updates the shared env
 export PYTHONPATH=$PYTHONPATH:src   # MANDATORY here — see below
 # ... work, test ...
 bash scripts/land.sh myfeature ../gen3ai-myfeature
