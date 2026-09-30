@@ -38,8 +38,8 @@ from typing import Any, Dict, List, Optional, Sequence
 import numpy as np
 
 from main.rust_core_m5.gates import GPU_LOCK
+from utils.gpu_lock import verified_holder
 
-_MARK = "GEN3AI_M5G_FANOUT_LOCKED"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -181,10 +181,10 @@ def derive(res: Dict[str, Any], slots: Sequence[int]) -> Dict[str, Any]:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     a = build_parser().parse_args(argv)
-    if str(a.device).startswith("cuda") and os.environ.get(_MARK) != "1":
-        env = dict(os.environ, **{_MARK: "1"})
+    if str(a.device).startswith("cuda") and verified_holder() is None:
         print(f"[fanout] CUDA requested — re-exec under {GPU_LOCK}", file=sys.stderr, flush=True)
-        os.execvpe("flock", ["flock", GPU_LOCK, sys.executable, "-m", "main.rust_core_m5.fanout", *argv], env)
+        os.execv(sys.executable, [sys.executable, "-m", "utils.gpu_lock", "--",
+                                  sys.executable, "-m", "main.rust_core_m5.fanout", *argv])
     from main.rust_core_m5.throughput import _load, refuse_models_out
     from utils.contention import warn_if_contended
 

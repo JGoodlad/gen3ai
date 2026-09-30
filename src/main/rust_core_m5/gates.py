@@ -6,8 +6,8 @@ Two ways to fill a row, never mixed silently:
 * **RUN** (``--tier commit|milestone``): ONE pytest session over the union of every BUILT row's
   tests at the tier's markers (a node shared by two rows — the Rust cargo suite — runs once and
   counts for both), verdicts read back per node id by ``outcomes_plugin``. GPU tests run in a
-  second session under ``flock /home/goodlad/.claude/jobs/gpu.lock`` with
-  ``GEN3AI_TEST_ALLOW_GPU=1`` — only with ``--gpu``; otherwise the row's GPU part reads NOT RUN.
+  second session under the GPU lock (``python -m utils.gpu_lock -- pytest …``, re-entrant: run under
+  ``scripts/ops/gpu_lock.sh`` it does not re-acquire) with ``GEN3AI_TEST_ALLOW_GPU=1`` — only with ``--gpu``; otherwise the row's GPU part reads NOT RUN.
 * **RECORDED** (``--from-status``): the MILESTONE (``slow``) verdicts the slow tier already banked
   in ``designs/ops/slow_tier_status.json``, with the commit each was recorded at — nothing runs.
 
@@ -27,9 +27,11 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence
 
 from main.rust_core_m5 import lanes as L
+from utils.gpu_lock import GPU_LOCK_ENV, lock_path
 
-#: The box's GPU lock (every GPU use goes through ``flock <it>``); ``$GEN3AI_GPU_LOCK`` overrides.
-GPU_LOCK = os.environ.get("GEN3AI_GPU_LOCK") or str(Path.home() / ".claude" / "jobs" / "gpu.lock")
+#: The box's GPU lock — taken ONLY through ``utils.gpu_lock`` (never a bare ``flock``, which a nested
+#: take cannot recognise: 2026-09-30, 15 min at 0% CPU); ``$GEN3AI_GPU_LOCK`` overrides.
+GPU_LOCK = str(lock_path())
 
 PASS, FAIL, NOT_BUILT, INCONCLUSIVE, NOT_RUN, UNRECORDED = (
     "PASS", "FAIL", "NOT BUILT", "INCONCLUSIVE", "NOT RUN", "UNRECORDED")
@@ -122,6 +124,13 @@ def bank_without_skip_clobber(scratch: Path, target: Path) -> List[str]:
     return sorted(keep)
 
 
+def gpu_locked_argv(argv: Sequence[str]) -> List[str]:
+    """``argv`` run as a child of the GPU-lock helper: it takes the lock (or, under a verified holder
+    ancestor, re-enters), exports ``GEN3AI_GPU_LOCK_HELD``, and refuses an ancestor that holds it via a
+    bare ``flock`` (exit 3, ``GpuLockSelfDeadlock`` in the log) instead of waiting forever."""
+    return [sys.executable, "-m", "utils.gpu_lock", "--", *argv]
+
+
 def _pytest(tests: Sequence[str], markers: str, workers: int, *, gpu: bool, log: Path) -> Dict[str, str]:
     import shutil
 
@@ -143,7 +152,8 @@ def _pytest(tests: Sequence[str], markers: str, workers: int, *, gpu: bool, log:
         argv += ["-n", str(workers)]
     if gpu:
         env["GEN3AI_TEST_ALLOW_GPU"] = "1"
-        argv = ["flock", GPU_LOCK, *argv]
+        env[GPU_LOCK_ENV] = GPU_LOCK          # the session takes exactly the lock this module names
+        argv = gpu_locked_argv(argv)
     with open(log, "a") as lf:
         lf.write(f"\n$ {' '.join(argv)}\n")
         lf.flush()

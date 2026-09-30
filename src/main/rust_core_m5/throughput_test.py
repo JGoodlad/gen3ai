@@ -186,16 +186,16 @@ def test_step_collector_counts_windows():
 
 # ------------------------------------------------------------------ the GPU lock + --out
 
-def test_flock_reexec_only_for_cuda_and_only_once():
+def test_gpu_lock_reexec_only_for_cuda_and_only_without_a_verified_holder():
     py = "/x/python3"
     cpu = ["--out", "o.json", "--inference", "t2", "--device", "cpu"]
-    assert T.flock_reexec_argv(cpu, {}, py) is None
-    assert T.flock_reexec_argv(["--out", "o.json", "--device", "cuda"], {}, py) is None   # random inference: no GPU
-    assert T.flock_reexec_argv(["--out", "o.json", "--inference", "learner", "--device", "cuda"], {}, py) is not None
+    assert T.gpu_lock_reexec_argv(cpu, None, py) is None
+    assert T.gpu_lock_reexec_argv(["--out", "o.json", "--device", "cuda"], None, py) is None   # random inference: no GPU
+    assert T.gpu_lock_reexec_argv(["--out", "o.json", "--inference", "learner", "--device", "cuda"], None, py) is not None
     gpu = ["--out", "o.json", "--inference", "t2", "--device", "cuda:0", "--n-envs", "48"]
-    assert T.flock_reexec_argv(gpu, {}, py) == ["flock", T.GPU_LOCK, py, "-m", "main.rust_core_m5.throughput", *gpu]
-    assert T.flock_reexec_argv(gpu, {T.GPU_LOCK_MARKER: "1"}, py) is None
-    assert T.flock_reexec_argv(gpu, {T.GPU_LOCK_MARKER: "0"}, py) is not None
+    assert T.gpu_lock_reexec_argv(gpu, None, py) == [py, "-m", "utils.gpu_lock", "--",
+                                                     py, "-m", "main.rust_core_m5.throughput", *gpu]
+    assert T.gpu_lock_reexec_argv(gpu, 1234, py) is None      # a VERIFIED holder ancestor: run here
 
 
 def test_out_under_models_is_refused(tmp_path):

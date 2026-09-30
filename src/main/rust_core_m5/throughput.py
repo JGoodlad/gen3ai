@@ -31,7 +31,8 @@ CPU-s per decision carries a 95 % bootstrap CI over pairs (geometric mean of per
     export PYTHONPATH=$PYTHONPATH:src
     python -m main.rust_core_m5 throughput --n-envs 48 --threads 8 --pairs 4 --out <dir>/throughput.json
 
-A CUDA inference hook re-executes this module under ``flock`` on the box's GPU lock (``gates.GPU_LOCK``).
+A CUDA inference hook re-executes this module under the box's GPU lock (``utils.gpu_lock``) unless a
+verified holder ancestor already has it.
 """
 from __future__ import annotations
 
@@ -50,7 +51,7 @@ from main.rust_core_m5 import hooks as H
 
 SCHEMA = "m5_laneJ_throughput_v1"
 from main.rust_core_m5.gates import GPU_LOCK  # noqa: E402 — one definition of the lock path
-GPU_LOCK_MARKER = "GEN3AI_M5J_GPU_LOCK"
+from utils.gpu_lock import verified_holder  # noqa: E402
 ARMS = ("python", "rust")
 #: The PRODUCTION-shape arms (M5 Lane G, ``production.py``): today's path, and the Rust collector SERIAL
 #: or OVERLAPPED (env-step / inference overlap on two core halves), each with p2's sampling KEYED or by
@@ -109,13 +110,14 @@ def wants_cuda(a: argparse.Namespace) -> bool:
     return a.inference in ("t2", "learner") and str(a.device).startswith("cuda")
 
 
-def flock_reexec_argv(argv: Sequence[str], env: Mapping[str, str], python: str) -> Optional[List[str]]:
-    """The argv to re-exec under the GPU lock, or ``None`` to run here: re-exec iff the run asks for
-    a CUDA device and ``$GEN3AI_M5J_GPU_LOCK`` is not already set (i.e. we are not already under it)."""
+def gpu_lock_reexec_argv(argv: Sequence[str], held: Optional[int], python: str) -> Optional[List[str]]:
+    """The argv to re-exec under the GPU lock, or ``None`` to run here: re-exec iff the run asks for a
+    CUDA device and no VERIFIED holder (``utils.gpu_lock.verified_holder()`` — this process or an
+    ancestor that ``/proc/locks`` lists holding the lock) already has it."""
     a, _ = build_parser().parse_known_args(list(argv))
-    if not wants_cuda(a) or env.get(GPU_LOCK_MARKER) == "1":
+    if not wants_cuda(a) or held is not None:
         return None
-    return ["flock", GPU_LOCK, python, "-m", "main.rust_core_m5.throughput", *argv]
+    return [python, "-m", "utils.gpu_lock", "--", python, "-m", "main.rust_core_m5.throughput", *argv]
 
 
 def refuse_models_out(out: str, models_dirs: Optional[Iterable[Optional[Path]]] = None) -> Path:
@@ -737,11 +739,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     a = build_parser().parse_args(argv)
     out = refuse_models_out(a.out)
-    reexec = flock_reexec_argv(argv, os.environ, sys.executable)
+    reexec = gpu_lock_reexec_argv(argv, verified_holder(), sys.executable)
     if reexec is not None:
-        env = dict(os.environ, **{GPU_LOCK_MARKER: "1"})
         print(f"[throughput] CUDA requested — re-exec under {GPU_LOCK}", file=sys.stderr, flush=True)
-        os.execvpe(reexec[0], reexec, env)
+        os.execv(reexec[0], reexec)
     for v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
         os.environ.setdefault(v, "1")            # training's worker setting (train_rl_agent.py)
     arms = tuple(x.strip() for x in a.arms.split(",") if x.strip())
@@ -782,7 +783,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "cpu_count": os.cpu_count(), "affinity": len(os.sched_getaffinity(0)), "nice": os.nice(0),
         "git": _git(), "python": sys.version.split()[0], "device": a.device,
         "gpu_processes": _gpu_processes() if str(a.device).startswith("cuda") else None,
-        "gpu_lock": GPU_LOCK if os.environ.get(GPU_LOCK_MARKER) == "1" else None,
+        "gpu_lock": ({"path": GPU_LOCK, "holder_pid": verified_holder()} if verified_holder() is not None
+                     else None),
         "load_start": load_start, "schedule": "each arm built ONCE, then interleaved timed blocks (A B, B A, ...)",
     }
     built: Dict[str, Any] = {}
