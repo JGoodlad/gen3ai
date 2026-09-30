@@ -1077,7 +1077,7 @@ spread/nature-EV/hp-type heads mask REVEALED ones.
 |---|---|---|---|
 | `--opp-belief-aux-coef` (+ `--opp-belief-moves-weight`) | `0.0` | the opponent's still-hidden mons — species CE + moves BCE, **order-invariant (Hungarian)** over the anonymous believed slots | `belief_species`/`belief_moves`, from agent2's own team |
 | `--move-belief-mode` / `--move-belief-coef` | `off` / `0.0` | the reinjected moveset, over two DISJOINT slot populations (revealed = direct BCE, unrevealed = Hungarian) | `known_moves` / `belief_moves` |
-| `--spread-belief-coef` (+ `--spread-belief-nature`) | `0.0` | the hidden derived stats the `DamageOperator` consumes; the nature⊕EV decomposition supervises it structurally | true `mon.stats`, and the nature/EVs **deterministically INVERTED** from them |
+| `--spread-belief-coef` (+ `--spread-belief-nature`) | `0.0` | the hidden derived stats the `DamageOperator` consumes; the nature⊕EV decomposition supervises it structurally | true `mon.stats`, and agent2's TRUE declared nature/EVs, guarded against them (`gen3_true_spread_labels_v1`) |
 | `--hp-type-belief-coef` | `0.05` | the discrete Hidden-Power type posterior | `hp_type_label`/`hp_type_mask` |
 | `--intent-label-bot-weight` | `1.0` (OFF) | a per-sample weight on the opponent-intent (α/β) LABELS produced against a **bot** | the existing `opp_class` obs key |
 

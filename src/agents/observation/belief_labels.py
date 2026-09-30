@@ -224,8 +224,8 @@ def build_known_nature_ev_labels(
     belief_ev[TEAM_SIZE, 5] float32, belief_ev_mask[TEAM_SIZE] float32) — the privileged NATURE/EV label for
     the generative spread belief (`gen3_nature_ev_belief_v1`), mirroring `build_known_spread_labels`.
 
-    Each REVEALED opp slot (species_known==1) whose species maps to a `(nature_num, [ev×5])` decomposition
-    (the caller INVERTS agent2's known `mon.stats` via `damage_tables.invert_nature_evs`) gets the true
+    Each REVEALED opp slot (species_known==1) whose species maps to a `(nature_num, [ev×5])` label (the
+    caller reads agent2's TRUE declared spread via `belief_tables.true_nature_ev_label`) gets the true
     nature index + EVs + mask 1; unmappable/believed/pad slots stay mask 0 (NOT scored). Never raises (hot
     path). The labels ride a training-only Dict-obs key read ONLY by the nature/EV loss — never the forward.
 

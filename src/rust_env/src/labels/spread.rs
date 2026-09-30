@@ -1,20 +1,21 @@
 //! Family `spread` — `belief_spread` (+ mask), `belief_nature` (+ mask), `belief_ev` (+ mask)
 //! (`Gen3Env._spread_labels` / `_nature_ev_map`, `belief_labels.build_known_spread_labels` /
-//! `build_known_nature_ev_labels`, `belief_tables.invert_nature_evs`), rule for rule.
+//! `build_known_nature_ev_labels`, `belief_tables.true_nature_ev_label`), rule for rule.
 //!
 //! * `belief_spread`: each revealed slot gets its species' TRUE derived stats (atk, def, spa, spd,
 //!   spe) from the OTHER side's own reading (`mon.stats`, the request's `baseStoredStats`); a mon
 //!   with any of the five unknown is omitted (mask 0). A later same-species mon overrides.
-//! * `belief_nature` / `belief_ev`: those stats INVERTED — for every nature, the smallest EV in
-//!   `0, 4, …, 252` with `gen3_stat(base, ev, mult) == stat` per stat, all five found and `Σ ≤ 510`;
-//!   among the valid natures the one with the highest Smogon spread-usage weight for the species,
-//!   then the smallest num. No valid nature ⇒ omitted (mask 0). A species with no dex row ⇒ omitted.
-//!   Computed ONCE per episode per side, at the side's first labelled decision (the Python env
-//!   caches it per battle, at its first label call).
+//! * `belief_nature` / `belief_ev` (`gen3_true_spread_labels_v1`): the truth mon's DECLARED spread,
+//!   which the reading backfills from the side's packed team exactly as poke-env does — the
+//!   nature's num and the EVs at their stat-effective `4·⌊ev/4⌋`. A THROWING guard: the declared
+//!   spread, at L100 with its TRUE IVs, must reproduce the five derived stats (else `Err`, which the
+//!   caller makes a FAULT — the Python env raises `SpreadLabelError`). A missing spread or an
+//!   unknown nature is an `Err` too. A mon with an unknown stat or no dex row is omitted (mask 0).
+//!   Read per decision, never cached (F-LC-6: a species-set-keyed cache served stale labels).
 //!
-//! The nature table and the spread priors are read from the SAME `data/pokemon` files the Python
-//! facade reads (`gen3_natures.json`, `gen3_spread_priors.json`), from the directory the build's
-//! stamp names (the port's compile-time data path), at STARTUP when the family is declared.
+//! The nature table is read from the SAME `data/pokemon/gen3_natures.json` the Python facade reads,
+//! from the directory the build's stamp names (the port's compile-time data path), at STARTUP when
+//! the family is declared.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -33,12 +34,8 @@ const STAT_IDX: [usize; N_SPREAD] = [1, 2, 3, 4, 5];
 const SPREAD_KEYS: [&str; N_SPREAD] = ["atk", "def", "spa", "spd", "spe"];
 
 struct Tables {
-    /// (num, multipliers in SPREAD order) per nature, in file order.
-    natures: Vec<(i64, [f64; N_SPREAD])>,
-    /// lower-cased nature name -> num.
-    nature_num: HashMap<String, i64>,
-    /// species id -> [(nature name, weight)] in file order.
-    spreads: HashMap<String, Vec<(String, f64)>>,
+    /// lower-cased nature name -> (num, multipliers in SPREAD order).
+    natures: HashMap<String, (i64, [f64; N_SPREAD])>,
 }
 
 static TABLES: OnceLock<Result<Tables, String>> = OnceLock::new();
@@ -55,27 +52,13 @@ fn load_json(name: &str) -> Result<Json, String> {
 
 fn build() -> Result<Tables, String> {
     let nat = load_json("gen3_natures.json")?;
-    let mut natures = Vec::new();
-    let mut nature_num = HashMap::new();
+    let mut natures = HashMap::new();
     for (name, v) in nat.as_object().ok_or("gen3_natures.json: not an object")? {
         let num = v.get("num").and_then(Json::as_f64).ok_or_else(|| format!("nature {name}: no num"))? as i64;
         let mult: [f64; N_SPREAD] = std::array::from_fn(|j| v.get(SPREAD_KEYS[j]).and_then(Json::as_f64).unwrap_or(1.0));
-        natures.push((num, mult));
-        nature_num.insert(name.to_lowercase(), num);
+        natures.insert(name.to_lowercase(), (num, mult));
     }
-    let sp = load_json("gen3_spread_priors.json")?;
-    let mut spreads = HashMap::new();
-    for (sid, rows) in sp.as_object().ok_or("gen3_spread_priors.json: not an object")? {
-        let mut out = Vec::new();
-        for r in rows.as_array().ok_or_else(|| format!("spreads {sid}: not a list"))? {
-            let a = r.as_array().ok_or_else(|| format!("spreads {sid}: a row is not a list"))?;
-            let nature = a.first().and_then(Json::as_str).ok_or_else(|| format!("spreads {sid}: no nature"))?;
-            let w = a.get(2).and_then(Json::as_f64).ok_or_else(|| format!("spreads {sid}: no weight"))?;
-            out.push((nature.to_string(), w));
-        }
-        spreads.insert(sid.clone(), out);
-    }
-    Ok(Tables { natures, nature_num, spreads })
+    Ok(Tables { natures })
 }
 
 /// Load the tables (STARTUP, from `labels::declare`); the error names the file.
@@ -87,9 +70,9 @@ fn t() -> &'static Tables {
     TABLES.get().and_then(|r| r.as_ref().ok()).expect("spread tables are loaded at startup (labels::declare)")
 }
 
-/// `priors.gen3_stat`: L100, IV 31, exact integer nature math.
-pub fn gen3_stat(base: i64, ev: i64, mult: f64) -> i64 {
-    let pre = 2 * base + 31 + ev / 4 + 5;
+/// `priors.gen3_stat(base, ev, mult, iv)`: L100, exact integer nature math.
+pub fn gen3_stat(base: i64, ev: i64, mult: f64, iv: i64) -> i64 {
+    let pre = 2 * base + iv + ev / 4 + 5;
     if mult > 1.0 {
         pre * 11 / 10
     } else if mult < 1.0 {
@@ -99,56 +82,40 @@ pub fn gen3_stat(base: i64, ev: i64, mult: f64) -> i64 {
     }
 }
 
-/// `belief_tables.invert_nature_evs(derived, base, species_id)`.
-pub fn invert(derived: [i64; N_SPREAD], base: [i64; N_SPREAD], species_id: &str) -> Option<(i64, [i64; N_SPREAD])> {
-    let tb = t();
-    let mut weight: HashMap<i64, f64> = HashMap::new();
-    if let Some(rows) = tb.spreads.get(species_id) {
-        for (nature, w) in rows {
-            if let Some(&num) = tb.nature_num.get(&nature.to_lowercase()) {
-                *weight.entry(num).or_insert(0.0) += *w;
-            }
-        }
-    }
-    let mut best: Option<(f64, i64, [i64; N_SPREAD])> = None;
-    for &(num, mult) in &tb.natures {
-        let mut evs = [0i64; N_SPREAD];
-        let mut ok = true;
-        for j in 0..N_SPREAD {
-            match (0..=252).step_by(4).find(|&ev| gen3_stat(base[j], ev, mult[j]) == derived[j]) {
-                Some(ev) => evs[j] = ev,
-                None => {
-                    ok = false;
-                    break;
-                }
-            }
-        }
-        if !ok || evs.iter().sum::<i64>() > 510 {
-            continue;
-        }
-        let w = weight.get(&num).copied().unwrap_or(0.0);
-        // highest prior weight, then the smallest num (Python: sort (w, -num, …) reverse)
-        let better = match &best {
-            None => true,
-            Some((bw, bn, _)) => w > *bw || (w == *bw && num < *bn),
-        };
-        if better {
-            best = Some((w, num, evs));
-        }
-    }
-    best.map(|(_, num, evs)| (num, evs))
-}
+/// poke-env's default nature for a set that declares none (`backfill_spread_from_teambuilder`).
+const DEFAULT_NATURE: &str = "serious";
 
-/// The per-episode, per-side inversion cache (`Gen3Env._nature_ev_map`).
-#[derive(Default)]
-pub struct Cache {
-    map: Option<Vec<(String, (i64, [i64; N_SPREAD]))>>,
-}
-
-impl Cache {
-    pub fn clear(&mut self) {
-        self.map = None;
+/// `belief_tables.true_nature_ev_label(species_id, derived, base, nature, evs, ivs)`: the declared
+/// `(nature num, [ev×5])`, or `Err` when the declared spread does not reproduce `derived`.
+pub fn true_label(
+    species_id: &str,
+    derived: [i64; N_SPREAD],
+    base: [i64; N_SPREAD],
+    nature: Option<&str>,
+    evs: Option<&[i64]>,
+    ivs: Option<&[i64]>,
+) -> Result<(i64, [i64; N_SPREAD]), String> {
+    let (Some(evs), Some(ivs)) = (evs, ivs) else {
+        return Err(format!("{species_id}: the truth mon carries no declared spread (evs={evs:?}, ivs={ivs:?})"));
+    };
+    if evs.len() != 6 || ivs.len() != 6 {
+        return Err(format!("{species_id}: a spread list is not six long (evs={evs:?}, ivs={ivs:?})"));
     }
+    let nname = nature.unwrap_or(DEFAULT_NATURE).to_lowercase();
+    let &(num, mult) = t().natures.get(&nname).ok_or_else(|| format!("{species_id}: unknown nature {nname:?}"))?;
+    let mut out = [0i64; N_SPREAD];
+    let mut got = [0i64; N_SPREAD];
+    for j in 0..N_SPREAD {
+        let k = STAT_IDX[j];
+        out[j] = evs[k] / 4 * 4;
+        got[j] = gen3_stat(base[j], evs[k], mult[j], ivs[k]);
+    }
+    if got != derived {
+        return Err(format!(
+            "{species_id}: the declared spread (nature {nname}, evs {evs:?}, ivs {ivs:?}) gives {got:?} at L100 but the server's stats are {derived:?}"
+        ));
+    }
+    Ok((num, out))
 }
 
 fn truth_stats(m: &pokesim::present::mon::PMon) -> Option<[i64; N_SPREAD]> {
@@ -159,7 +126,7 @@ fn truth_stats(m: &pokesim::present::mon::PMon) -> Option<[i64; N_SPREAD]> {
     Some(out)
 }
 
-fn nature_ev_map(truth: &BoardReading) -> Vec<(String, (i64, [i64; N_SPREAD]))> {
+fn nature_ev_map(truth: &BoardReading) -> Result<Vec<(String, (i64, [i64; N_SPREAD]))>, String> {
     let mut out: Vec<(String, (i64, [i64; N_SPREAD]))> = Vec::new();
     for (_, m) in &truth.team {
         let Some(derived) = truth_stats(m) else { continue };
@@ -169,14 +136,13 @@ fn nature_ev_map(truth: &BoardReading) -> Vec<(String, (i64, [i64; N_SPREAD]))> 
             Some(b) => std::array::from_fn(|j| b[STAT_IDX[j]].round() as i64),
             None => [0; N_SPREAD],
         };
-        if let Some(r) = invert(derived, base, &sid) {
-            match out.iter_mut().find(|(k, _)| *k == sid) {
-                Some(e) => e.1 = r,
-                None => out.push((sid, r)),
-            }
+        let r = true_label(&sid, derived, base, m.nature.as_deref(), m.evs.as_deref(), m.ivs.as_deref())?;
+        match out.iter_mut().find(|(k, _)| *k == sid) {
+            Some(e) => e.1 = r,
+            None => out.push((sid, r)),
         }
     }
-    out
+    Ok(out)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -184,14 +150,13 @@ pub fn write(
     own: &BoardReading,
     truth: &BoardReading,
     row: &[f32],
-    cache: &mut Cache,
     spread: &mut [f32],
     spread_mask: &mut [f32],
     nature: &mut [i64],
     nature_mask: &mut [f32],
     ev: &mut [f32],
     ev_mask: &mut [f32],
-) {
+) -> Result<(), String> {
     spread.fill(0.0);
     spread_mask.fill(0.0);
     nature.fill(0);
@@ -211,7 +176,7 @@ pub fn write(
             }
         }
     }
-    let ne = cache.map.get_or_insert_with(|| nature_ev_map(truth));
+    let ne = nature_ev_map(truth)?;
     let slots = (0..TEAM_SIZE).filter(|&i| known[i] >= 0.5);
     for (slot, sp) in slots.zip(revealed.iter()) {
         if let Some((_, s)) = stats.iter().find(|(k, _)| k == sp) {
@@ -229,6 +194,7 @@ pub fn write(
             ev_mask[slot] = 1.0;
         }
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -237,24 +203,25 @@ mod tests {
 
     #[test]
     fn gen3_stat_is_the_python_formula() {
-        // 2*100 + 31 + 252/4 + 5 = 299; ×1.1 floor = 328; ×0.9 floor = 269
-        assert_eq!(gen3_stat(100, 252, 1.0), 299);
-        assert_eq!(gen3_stat(100, 252, 1.1), 328);
-        assert_eq!(gen3_stat(100, 252, 0.9), 269);
+        // 2*100 + 31 + 252/4 + 5 = 299; ×1.1 floor = 328; ×0.9 floor = 269; IV 30 is one point less
+        assert_eq!(gen3_stat(100, 252, 1.0, 31), 299);
+        assert_eq!(gen3_stat(100, 252, 1.1, 31), 328);
+        assert_eq!(gen3_stat(100, 252, 0.9, 31), 269);
+        assert_eq!(gen3_stat(100, 0, 1.0, 30), 235);
     }
 
     #[test]
-    fn an_inversion_reproduces_the_stats_it_was_given() {
+    fn the_label_is_the_declared_set_and_a_mismatch_is_refused() {
         prepare().unwrap();
         let base = [134, 110, 95, 100, 61]; // Tyranitar's atk..spe
-        let mults = [1.1, 1.0, 0.9, 1.0, 1.0]; // Adamant
-        let evs = [252, 4, 0, 0, 252];
-        let derived: [i64; N_SPREAD] = std::array::from_fn(|j| gen3_stat(base[j], evs[j], mults[j]));
-        let (num, got) = invert(derived, base, "tyranitar").expect("a valid spread inverts");
-        let (_, mult) = t().natures.iter().find(|(n, _)| *n == num).unwrap();
-        for j in 0..N_SPREAD {
-            assert_eq!(gen3_stat(base[j], got[j], mult[j]), derived[j]);
-        }
-        assert!(invert([1, 1, 1, 1, 1], base, "tyranitar").is_none());
+        let (num, mult) = t().natures["adamant"];
+        let evs = [4, 252, 0, 0, 0, 255]; // hp..spe; 255 labels as 252
+        let ivs = [31, 30, 30, 31, 30, 31]; // Hidden Power Bug: def / spd have no IV-31 decomposition at 0 EVs
+        let derived: [i64; N_SPREAD] = std::array::from_fn(|j| gen3_stat(base[j], evs[j + 1], mult[j], ivs[j + 1]));
+        assert_eq!(true_label("tyranitar", derived, base, Some("adamant"), Some(&evs), Some(&ivs)), Ok((num, [252, 0, 0, 0, 252])));
+        assert!(true_label("tyranitar", derived, base, Some("adamant"), Some(&evs), Some(&[31; 6])).unwrap_err().contains("server's stats"));
+        assert!(true_label("tyranitar", derived, base, Some("jolly"), Some(&evs), Some(&ivs)).is_err());
+        assert!(true_label("tyranitar", derived, base, Some("grumpy"), Some(&evs), Some(&ivs)).unwrap_err().contains("unknown nature"));
+        assert!(true_label("tyranitar", derived, base, Some("adamant"), None, None).unwrap_err().contains("no declared spread"));
     }
 }

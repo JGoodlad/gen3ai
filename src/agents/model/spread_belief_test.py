@@ -119,18 +119,18 @@ def test_nature_buffers_sensible():
     assert ev.shape == (600, 5) and float(ev.min()) >= 0.0 and float(ev.max()) <= 252.5  # weighted mean ≤252 (+fp)
 
 
-def test_invert_nature_evs_round_trips_real_spreads():
-    """The inverter recovers a (nature, EVs) decomposition that EXACTLY reproduces the derived stats."""
+def test_true_nature_ev_label_reads_the_declared_set():
+    """The label is the set's own (nature, EVs) — checked against the derived stats it must reproduce
+    (gen3_true_spread_labels_v1; it replaced the IV-31 stat inversion, F-LC-5)."""
+    from agents.model.belief_tables import true_nature_ev_label
+
     cases = [("tyranitar", "adamant", [252, 0, 0, 0, 252]), ("salamence", "naive", [0, 0, 252, 0, 252]),
              ("blissey", "calm", [0, 252, 0, 252, 0]), ("skarmory", "impish", [0, 252, 0, 0, 4]),
              ("jolteon", "timid", [0, 0, 252, 4, 252])]
     for sid, nat, evs in cases:
         d = _derive(sid, nat, evs)
-        res = dt.invert_nature_evs(d, _base5(sid), species_id=sid)
-        assert res is not None
-        num, iev = res
-        inv_name = next(k for k, v in gen3_data.natures.raw().items() if int(v["num"]) == num)
-        assert _derive(sid, inv_name, iev) == d                              # reproduces the derived stats
+        num, lev = true_nature_ev_label(sid, d, _base5(sid), nat, [0] + evs, [31] * 6)
+        assert num == int(gen3_data.natures.raw()[nat]["num"]) and lev == evs
 
 
 # ---- Step 2: the generative head ----

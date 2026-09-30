@@ -55,7 +55,7 @@ _MOVED_TO = {
         "SPREAD_STAT_COLS", "N_SPREAD_STATS", "_SPREAD_BASE_IDX",
         "N_NATURES", "_NATURE_PRIOR_FLOOR",
         "build_opp_spread_prior", "build_nature_mult", "build_species_nature_prior",
-        "build_species_ev_prior", "build_species_base_stats", "invert_nature_evs",
+        "build_species_ev_prior", "build_species_base_stats",
         "build_hp_type_prior", "build_item_prior",
         # gen3_dex_ids_split_v1 — the MOVE prior and the team-composition SPECIES prior, with the
         # floor constants that define what "illegal" vs "legal but unobserved" means.

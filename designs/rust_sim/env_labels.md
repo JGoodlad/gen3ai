@@ -110,7 +110,7 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
 | family | keys | the Rust derivation |
 |---|---|---|
 | belief | `belief_species`, `belief_moves`, `known_moves` | `assign_hidden_to_slots`: hidden = truth team minus the revealed species (skipping a species with no num), sorted by species num; the j-th fills the j-th believed slot (`species_known < 0.5`). Moves are num-mapped in set order, max 4, unknown ids skipped. `known_moves` gives each revealed slot its species' full truth moveset. Nums come from `mappings.json`'s `species` / `moves` `num`, the same tables the encoder's embeddings index |
-| spread | the 6 spread keys | the truth `stats` in (atk, def, spa, spd, spe) order. Nature / EVs come from `damage_tables.invert_nature_evs(derived, base, species_id)` — a PORT of the inversion, including its tie-breaking and its "no valid spread ⇒ mask 0". It is cached per episode, because the truth team is fixed |
+| spread | the 6 spread keys | the truth `stats` in (atk, def, spa, spd, spe) order. Nature / EVs are the truth mon's DECLARED spread (`nature`, `evs`, `ivs`, which the reading backfills from the side's packed team exactly as poke-env's `backfill_spread_from_teambuilder` does): the nature's num and the EVs at `4·⌊ev/4⌋` — `belief_tables.true_nature_ev_label`, rule for rule (`gen3_true_spread_labels_v1`). A THROWING guard: the declared spread at L100 with its true IVs must reproduce the five stats, or the label write is an `Err` (a FAULT; Python raises `SpreadLabelError`). Read per decision, never cached |
 | hp_type | `hp_type_label`, `hp_type_mask` | the first `hiddenpower<type>` move of the truth mon → the index in `belief_labels.HP_TYPE_NAMES` |
 | item | `item_label`, `item_mask` | the truth mon's CURRENT item (`None` / "" ⇒ 0) → the item num (`gen3_data.items`); an unknown id is absent (mask 0) |
 | margin | `win_margin` | `material_margin(live)` on the side's `present()` view. **Timing:** Python computes it in `calc_reward` on the same board the obs describes, and 0.0 at reset |
@@ -138,13 +138,20 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
    `refused` family, an unknown family, and a `core` family not built yet (`labels::BUILT`).
 3. One unit per `core` family, each with its slice-N parity gate against `Gen3Env` on recorded
    battles: COMMIT tier in the routine gate, MILESTONE tier `slow`. The order is belief, hp_type +
-   item, spread (the inversion port), intent, then margin. **`belief` BUILT**
+   item, spread, intent, then margin. **`belief` BUILT**
    (`src/rust_env/src/labels/belief.rs`, gated by `src/agents/training/rust_env_labels_parity_test.py`:
    400 milestone episodes, 0 divergences). **`hp_type` and `item` BUILT**
    (`src/rust_env/src/labels/per_slot.rs`, the same gate: 0 divergences). **`spread` BUILT**
-   (`src/rust_env/src/labels/spread.rs`, a port of `invert_nature_evs`, its tables loaded at startup
-   from the stamp's data dir; the same gate: 0 divergences). **`intent` BUILT**
+   (`src/rust_env/src/labels/spread.rs`, the nature table loaded at startup from the stamp's data
+   dir; the same gate: 0 divergences — first as a port of the IV-31 stat inversion, since
+   2026-09-29 as the declared-spread read, `gen3_true_spread_labels_v1`). **`intent` BUILT**
    (`src/rust_env/src/labels/intent.rs`, over `trackers::IntentLabel`; the same gate: 0 divergences).
    **`margin` BUILT** (`src/rust_env/src/labels/margin.rs`; 0.0 at the RESET decision). **Every
    `core` family is BUILT:** the milestone covers 500 episodes (pool, ladder, procedural),
    714,978 key compares, 0 divergences.
+4. **Label COVERAGE is pinned by the same gate** (`gen3_true_spread_labels_v1`, 2026-09-29): every
+   revealed slot with a `belief_spread` label carries its nature / EV label too. Milestone:
+   83,905 / 83,905 pool, 91,316 / 91,316 ladder, 42,539 / 42,539 procedural slot-decisions (the
+   IV-31 inversion it replaced left 54.6 % of the pool's short and 1.2 % of the ladder's). Over all
+   719 pool teams, `src/agents/training/nature_ev_label_test.py` pins 4,314 / 4,314 mons labelled
+   with their declared set.

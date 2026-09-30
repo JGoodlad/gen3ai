@@ -95,7 +95,6 @@ from agents.model.belief_tables import (                                # noqa: 
     build_species_cooccur_prior,                                        # noqa: F401  (re-export)
     build_species_ev_prior,                                             # noqa: F401  (re-export)
     build_species_nature_prior,                                         # noqa: F401  (re-export)
-    invert_nature_evs,                                                  # noqa: F401  (re-export)
     sanitize_historical_move_floor,                                     # noqa: F401  (re-export)
 )
 

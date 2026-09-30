@@ -121,7 +121,7 @@ OTHER side's chain. The rows are unchanged, and gate ① stays green.
   times in 55 episodes; 61 of those changes went to "nothing" (a consumed berry, Knock Off). Every
   decision is equal on both paths. `/tmp`-script measurement, 2026-09-29: the recorded core runs
   of the two milestone streams.
-- **F-LC-5 (a label-coverage FINDING, not a parity one):** `invert_nature_evs` assumes IV 31 on all
+- **F-LC-5 — FIXED 2026-09-29 (`gen3_true_spread_labels_v1`, see the note after F-LC-6). Was (a label-coverage FINDING, not a parity one):** `invert_nature_evs` assumes IV 31 on all
   five stats. On the TRAINING POOL, **54.6 % of revealed-slot decisions carry no nature / EV label**
   (mask 0): 46,678 of 85,554 over the milestone's 200 pool episodes. On the ladder corpus the figure
   is 1.2 % (1,168 of 95,812). The measurement is a `/tmp` script over the recorded core runs,
@@ -130,13 +130,24 @@ OTHER side's chain. The rows are unchanged, and gate ① stays green.
   parity port must. Whether the nature/EV head should be supervised on those mons (invert with the
   set's real IVs, or read nature / EVs from the truth team directly) is an owner / research call.
   It is not Lane C's.
-- **F-LC-6 (a latent Python cache bug, not reached by the gate):** `Gen3Env._nature_ev_map` keys its
+- **F-LC-6 — FIXED 2026-09-29 (the cache is removed, Python and Rust). Was (a latent Python cache bug, not reached by the gate):** `Gen3Env._nature_ev_map` keys its
   per-battle cache by the opponent team's SPECIES SET alone. A next episode whose opponent has the
   same six species but different spreads reuses the previous battle's inversion, which is a wrong
   label. The Rust env recomputes per episode, so it is correct there, and the two would diverge on
   such a pair. The frequency is UNMEASURED; it needs two pool teams with the same species set
   drawn back-to-back for one env. Proposed fix: key the cache by `(species, stats)` per mon. This is
   a training-input change and is NOT applied.
+- **The F-LC-5 / F-LC-6 fix (2026-09-29, `gen3_true_spread_labels_v1`).** Cause VERIFIED over every
+  pool and ladder mon (`measurements/label_coverage_2026-09-29/`): each of the 2,406 pool mons (of
+  4,314) and 2,573 ladder mons (of 136,878) the inversion could not label has an IV-30 stat (the
+  Hidden Power IVs); zero IV-31 mons fail. The inversion was also WRONG where it answered: all 277
+  pool IV-30 mons it inverted got wrong EVs, and its Σ ≤ 510 budget omits HP EVs, so it named a wrong
+  nature for 71 pool and 3,352 ladder IV-31 mons. The label is now the truth mon's DECLARED nature
+  and stat-effective EVs (both readings already hold the set: poke-env's own-team backfill, mirrored
+  by the Rust reading), with a throwing guard that the set at its true IVs reproduces the stats, and
+  no cache on either side. The parity gate now also pins COVERAGE (nature / EV slots == spread
+  slots): milestone pool 83,905 / 83,905, ladder 91,316 / 91,316, procedural 42,539 / 42,539;
+  714,978 key compares, 0 divergences; the guard never fired over the 500 episodes.
 - **F-LC-7 (for Lanes B / J):** Lane B's FFI == process byte-identity runs record with `labels = ()`,
   so the 18 label columns are never WRITTEN in that gate. They are compared, but as the stale
   initial zeros. One recorded run with every family declared closes it.

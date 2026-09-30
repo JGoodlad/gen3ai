@@ -193,13 +193,13 @@ pub const COLUMNS: [ColSpec; N_COLUMNS] = [
     ColSpec { name: "belief_spread", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6 * 5, owner: "C" },
     // label `belief_spread_mask` (family `spread`; written iff need = 1 and the family is declared): 1 where `belief_spread` holds a complete 5-stat tuple
     ColSpec { name: "belief_spread_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
-    // label `belief_nature` (family `spread`; written iff need = 1 and the family is declared): nature num INVERTED from those derived stats + the species' base stats (`damage_tables.invert_nature_evs`, cached per battle) — not the set's declared nature
+    // label `belief_nature` (family `spread`; written iff need = 1 and the family is declared): the set's TRUE declared nature num (`belief_tables.true_nature_ev_label`, not cached; raises unless the declared spread at its true IVs reproduces the derived stats)
     ColSpec { name: "belief_nature", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
-    // label `belief_nature_mask` (family `spread`; written iff need = 1 and the family is declared): 1 where the inversion returned a nature
+    // label `belief_nature_mask` (family `spread`; written iff need = 1 and the family is declared): 1 where the truth mon has complete stats and a dex row (== `belief_spread_mask`)
     ColSpec { name: "belief_nature_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
-    // label `belief_ev` (family `spread`; written iff need = 1 and the family is declared): the inverted EVs (atk, def, spa, spd, spe)
+    // label `belief_ev` (family `spread`; written iff need = 1 and the family is declared): the set's TRUE EVs, stat-effective `4*floor(ev/4)` (atk, def, spa, spd, spe)
     ColSpec { name: "belief_ev", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6 * 5, owner: "C" },
-    // label `belief_ev_mask` (family `spread`; written iff need = 1 and the family is declared): 1 where the inversion returned EVs
+    // label `belief_ev_mask` (family `spread`; written iff need = 1 and the family is declared): == `belief_nature_mask`
     ColSpec { name: "belief_ev_mask", dtype: Dtype::F32, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },
     // label `hp_type_label` (family `hp_type`; written iff need = 1 and the family is declared): at the side's REVEALED opponent slots (`species_known` read from the side's own row, the leading-contiguous block; the reading's `opp` list in encoder order): the HP type index 0..15 of that species' typed `hiddenpower<type>` move on the other side's own team; -1 where it runs none
     ColSpec { name: "hp_type_label", dtype: Dtype::I64, dir: Dir::Out, per_env: true, row_elems: SIDES * 6, owner: "C" },

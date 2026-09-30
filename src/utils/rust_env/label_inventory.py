@@ -99,14 +99,14 @@ LABELS: Tuple[LabelKey, ...] = (
              (_BANK,), "core", "1 where `belief_spread` holds a complete 5-stat tuple"),
     LabelKey("belief_nature", "i64", (TEAM,), "spread", _SPREAD, True, "Gen3Env._spread_labels",
              (_BANK,), "core",
-             "nature num INVERTED from those derived stats + the species' base stats "
-             "(`damage_tables.invert_nature_evs`, cached per battle) — not the set's declared nature"),
+             "the set's TRUE declared nature num (`belief_tables.true_nature_ev_label`, not cached; "
+             "raises unless the declared spread at its true IVs reproduces the derived stats)"),
     LabelKey("belief_nature_mask", "f32", (TEAM,), "spread", _SPREAD, True, "Gen3Env._spread_labels",
-             (_BANK,), "core", "1 where the inversion returned a nature"),
+             (_BANK,), "core", "1 where the truth mon has complete stats and a dex row (== `belief_spread_mask`)"),
     LabelKey("belief_ev", "f32", (TEAM, SPREAD), "spread", _SPREAD, True, "Gen3Env._spread_labels",
-             (_BANK,), "core", "the inverted EVs (atk, def, spa, spd, spe)"),
+             (_BANK,), "core", "the set's TRUE EVs, stat-effective `4*floor(ev/4)` (atk, def, spa, spd, spe)"),
     LabelKey("belief_ev_mask", "f32", (TEAM,), "spread", _SPREAD, True, "Gen3Env._spread_labels",
-             (_BANK,), "core", "1 where the inversion returned EVs"),
+             (_BANK,), "core", "== `belief_nature_mask`"),
     # ---------------------------------------------------------------- Hidden Power type
     LabelKey("hp_type_label", "i64", (TEAM,), "hp_type", _HP, True, "Gen3Env._hp_type_labels",
              (_BANK,), "core",

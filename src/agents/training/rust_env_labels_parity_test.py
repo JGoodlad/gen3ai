@@ -190,7 +190,9 @@ def replay(recs, teams, *, key_base: int, families=BUILT, tag: str = "LC"):
     assert not missing, f"the production surface does not emit {missing} — the gate would compare nothing"
     threshold = StallConfig().threshold
     div, ex = {}, {}
-    counts = {"episodes": 0, "decisions": 0, "compared": 0, "forfeited": 0}
+    # label COVERAGE (gen3_true_spread_labels_v1): revealed slots with a spread label vs those with a
+    # nature / EV label — equal since the label reads the declared set (F-LC-5: 54.6 % short on the pool)
+    counts = {"episodes": 0, "decisions": 0, "compared": 0, "forfeited": 0, "spread_slots": 0, "nature_slots": 0}
 
     def diverge(k, where, detail):
         div[k] = div.get(k, 0) + 1
@@ -221,6 +223,9 @@ def replay(recs, teams, *, key_base: int, families=BUILT, tag: str = "LC"):
                         counts["compared"] += 1
                         if x.dtype != y.dtype or x.shape != y.shape or x.tobytes() != y.tobytes():
                             diverge(key, where, {"python": x.tolist(), "core": y.tolist()})
+                    if "belief_nature_mask" in labels:
+                        counts["spread_slots"] += int(labels["belief_spread_mask"].sum())
+                        counts["nature_slots"] += int(labels["belief_nature_mask"].sum())
                     act = rec["p1"][k]
                     k += 1
                     counts["decisions"] += 1
@@ -268,6 +273,8 @@ def _assert_clean(div, ex, counts, n_episodes):
     assert counts["episodes"] == n_episodes
     assert counts["decisions"] >= 10 * n_episodes, counts
     assert counts["compared"] == counts["decisions"] * len(_label_keys()), counts
+    # every revealed slot the spread label covers carries its nature / EV label too (F-LC-5)
+    assert counts["spread_slots"] > 0 and counts["nature_slots"] == counts["spread_slots"], counts
 
 
 def test_every_built_family_is_a_core_family_of_the_production_surface():

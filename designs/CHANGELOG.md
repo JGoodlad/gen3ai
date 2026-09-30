@@ -10037,3 +10037,25 @@ which is TF32 rounding. Chasing that turned up the real defect.
 - Bit-identity pinned by `diagnostics_cadence_test.py` on the production extractor surface
   (parameters, AdamW state, loss scalars, RNG state); no probe consumed an RNG.
 - `learner_benchmark` gains a `diag_skipped` config. The GPU speed read is pending (UNVERIFIED).
+
+## 2026-09-29 — THE NATURE / EV LABEL IS THE DECLARED SET (`gen3_true_spread_labels_v1`; no model version bump, weights unchanged, a TRAINING-TARGET change)
+
+- **What changed:** `belief_nature` / `belief_ev` (+ masks) are now the opponent mon's DECLARED
+  nature and stat-effective EVs (`4·⌊ev/4⌋`), read from the spread both readings already hold
+  (`belief_tables.true_nature_ev_label`; Rust `labels/spread.rs`, rule for rule). A THROWING guard
+  (`SpreadLabelError` / a core FAULT) requires the set at L100 with its TRUE IVs to reproduce the
+  request's stats. `invert_nature_evs` is DELETED, and so is its re-export. `gen3_data.priors.gen3_stat`
+  gains an `iv` argument (default 31).
+- **Why (M5 Lane C F-LC-5, cause verified):** the old IV-31 stat inversion found no decomposition for
+  an IV-30 stat with 0 EVs (the pool's Hidden Power sets). That left 2,406 of 4,314 pool mons
+  unlabelled (54.6 % of revealed-slot decisions). Where it did answer, it was wrong for all 277 IV-30
+  pool mons it inverted. Its Σ ≤ 510 check omits HP EVs, so it also named a wrong nature for 2.5 % of
+  the ladder's IV-31 mons.
+- **F-LC-6:** `Gen3Env`'s per-battle cache, keyed by the species SET, is removed. So is the Rust
+  env's per-episode cache (`labels::EpisodeState` is now empty).
+- **After:** coverage is 100 % of spread-labelled slots on every tier. The parity milestone reads
+  pool 83,905 / 83,905 and ladder 91,316 / 91,316 slot-decisions, with 0 divergences. The parity gate
+  now pins the coverage.
+- **Boundary:** runs trained before this commit supervised the nature/EV head on about half the
+  pool's revealed mons, about 18 % of those labels were wrong, and about 0.06 % of battles carried
+  stale labels. Evidence: `research_state/measurements/label_coverage_2026-09-29/`.

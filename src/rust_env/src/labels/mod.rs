@@ -20,19 +20,15 @@ pub mod margin;
 pub mod per_slot;
 pub mod spread;
 
-/// Per-episode label state (one env; cleared at every episode start).
+/// Per-episode label state (one env; cleared at every episode start). No family keeps any today:
+/// `spread` reads the truth team's declared spread per decision (its old per-episode inversion cache
+/// is gone with the inversion, `gen3_true_spread_labels_v1`). The hook stays so a family that needs
+/// episode state has one place to put it, cleared by the pool at every start.
 #[derive(Default)]
-pub struct EpisodeState {
-    /// `spread`'s nature / EV inversion, per side (the truth team is fixed for an episode).
-    pub spread: [spread::Cache; 2],
-}
+pub struct EpisodeState {}
 
 impl EpisodeState {
-    pub fn clear(&mut self) {
-        for c in &mut self.spread {
-            c.clear();
-        }
-    }
+    pub fn clear(&mut self) {}
 }
 
 /// The `core` families whose producer exists (grows one Lane-C unit at a time).
@@ -50,7 +46,7 @@ pub fn write(
     dec_n: u32,
     truth: &BoardReading,
     row: &[f32],
-    st: &mut EpisodeState,
+    _st: &mut EpisodeState,
     c: &mut EnvCols,
 ) -> Result<(), String> {
     use pokesim::encoder::layout::TEAM_SIZE as T;
@@ -87,14 +83,13 @@ pub fn write(
                     own,
                     truth,
                     row,
-                    &mut st.spread[side],
                     &mut c.belief_spread[side * T * n..(side + 1) * T * n],
                     &mut c.belief_spread_mask[side * T..(side + 1) * T],
                     &mut c.belief_nature[side * T..(side + 1) * T],
                     &mut c.belief_nature_mask[side * T..(side + 1) * T],
                     &mut c.belief_ev[side * T * n..(side + 1) * T * n],
                     &mut c.belief_ev_mask[side * T..(side + 1) * T],
-                )
+                )?
             }
             "intent" => {
                 let [kind, num, slot, species] = intent::label(own_trk, truth);

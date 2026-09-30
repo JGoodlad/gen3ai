@@ -138,10 +138,17 @@ against the *modal* opponent, not the real one. Off by default (`--spread-belief
   prior and COMPUTES the derived stat, so the asymmetry + EV budget are structural. A SECOND loss term
   `_nature_ev_belief_loss` (nature CE + EV smooth_l1 over REVEALED slots, folded at the SAME
   `spread_belief_coef`, metrics `belief/natureev_{nature_acc,nature_ce,ev_mae,n_slots,mask_rate}`) supervises the
-  decomposition DIRECTLY (the derived loss alone is many-to-one). Label: the TRUE (nature, EVs)
-  **deterministically INVERTED** from agent2's `mon.stats` (`damage_tables.invert_nature_evs`, GIGO-guarded —
-  gen3 hides them, so we invert the visible derived stats), emitted by `gen3_env._spread_labels` as
-  training-only `belief_nature`/`belief_ev`(+masks), cached per battle. The op-side
+  decomposition DIRECTLY (the derived loss alone is many-to-one). Label: agent2's TRUE DECLARED (nature,
+  EVs) — the spread poke-env backfills onto its own mons from the team it declared, EVs at their
+  stat-effective `4·⌊ev/4⌋` (`belief_tables.true_nature_ev_label`, `gen3_true_spread_labels_v1`). A THROWING
+  guard (`SpreadLabelError`): the declared set at L100 with its TRUE IVs must reproduce the request's
+  `mon.stats`. Emitted by `gen3_env._spread_labels` as training-only `belief_nature`/`belief_ev`(+masks),
+  per decision, never cached. Coverage: every revealed slot with a `belief_spread` label (the Rust env's
+  label gate pins the equality). It replaced an IV-31 stat INVERSION (to 2026-09-29) that left 54.6 % of
+  pool revealed-slot decisions unlabelled (the Hidden Power IV-30 sets), mislabelled the IV-30 mons it did
+  invert, named a wrong nature for 2.5 % of the ladder's IV-31 mons (its Σ ≤ 510 budget omits HP EVs), and
+  was cached by species set (stale on a same-species opponent) —
+  `research_state/measurements/label_coverage_2026-09-29/`. The op-side
   `--spread-belief-nature-marginalize` (an exact 3-point quadrature of P(KO) over the believed nature
   distribution) is **DELETED** (v66): measured on gen-8's own checkpoint across 1,075,200 alive
   (defender, candidate) cells it moved |ΔP(KO)| by 0.00000 at p50/p90/p95 and 0.00047 at p99, because a

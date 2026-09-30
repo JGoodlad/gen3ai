@@ -192,46 +192,59 @@ def build_species_base_stats(n_species: int) -> torch.Tensor:
     return base
 
 
-def invert_nature_evs(derived: Sequence[float], base: Sequence[float],
-                      species_id: Optional[str] = None) -> Optional[Tuple[int, List[int]]]:
-    """Recover a ``(nature_num, [ev×5])`` generative decomposition that EXACTLY reproduces the gen3 DERIVED
-    stats ``derived`` {atk,def,spa,spd,spe} for a mon with base stats ``base`` (same order), assuming IV 31 /
-    L100. Used to build the privileged NATURE/EV supervision label from agent2's known ``mon.stats`` (gen3
-    hides the opp's nature+EVs, so we INVERT the visible derived stats rather than need them in the obs).
+class SpreadLabelError(ValueError):
+    """The opponent's DECLARED spread does not describe the mon the server built (GIGO): the
+    nature / EV label would supervise the head toward a spread the battle never used."""
 
-    Returns ``None`` if no nature yields all-valid EVs (∈[0,252], multiple of 4, Σ≤510) — a GIGO guard (the
-    slot is left unscored). The map is occasionally many-to-one (the ``×11//10`` / ``×9//10`` floor loses a few
-    EV; the 5 all-neutral natures are degenerate), so among valid decompositions it prefers the one with the
-    highest Smogon nature prior for ``species_id`` (the most plausible TRUE nature), then smallest num —
-    deterministic and self-consistent (any returned pair reproduces ``derived`` by construction).
 
-    Relocated from `damage_tables.py` (`gen3_belief_tables_split_v1`, 2026-09-06)."""
-    nat_raw = gen3_data.natures.raw()
-    weight: Dict[int, float] = {}                                        # nature usage hint for disambiguation
-    if species_id is not None:
-        for nature, _evs, w in gen3_data.priors.spreads(species_id):
-            nd = nat_raw.get(str(nature).lower())
-            if nd is not None:
-                weight[int(nd["num"])] = weight.get(int(nd["num"]), 0.0) + float(w)
-    candidates: List[Tuple[float, int, int, List[int]]] = []
-    for _name, v in nat_raw.items():
-        num = int(v["num"])
-        evs, ok = [], True                       # type: List[int], bool
-        for j, stat in enumerate(SPREAD_STAT_COLS):
-            m = float(v.get(stat, 1.0))
-            D, b = int(round(float(derived[j]))), int(round(float(base[j])))
-            found = next((ev for ev in range(0, 253, 4) if gen3_data.priors.gen3_stat(b, ev, m) == D), None)
-            if found is None:
-                ok = False
-                break
-            evs.append(found)
-        if ok and sum(evs) <= 510:
-            candidates.append((weight.get(num, 0.0), -num, num, evs))    # highest prior, then smallest num
-    if not candidates:
-        return None
-    candidates.sort(reverse=True)
-    _, _, num, evs = candidates[0]
-    return num, evs
+#: poke-env's default for a set that declares no nature (``backfill_spread_from_teambuilder``);
+#: Showdown builds such a set neutral, and so does ``serious``.
+DEFAULT_NATURE = "serious"
+
+
+def true_nature_ev_label(species_id: str, derived: Sequence[float], base: Sequence[float],
+                         nature: Optional[str], evs: Optional[Sequence[int]],
+                         ivs: Optional[Sequence[int]]) -> Tuple[int, List[int]]:
+    """The TRUE ``(nature_num, [ev×5])`` label {atk,def,spa,spd,spe} of one opponent mon, read from
+    the spread its team DECLARES (``gen3_true_spread_labels_v1``) — the nature/EV head predicts the
+    set's nature and EVs, and the env holds that set (poke-env's own-team spread backfill; the
+    Rust reading mirrors it), so the label is the truth itself, not a reconstruction.
+
+    ``evs`` / ``ivs`` are the set's six-long lists (hp, atk, def, spa, spd, spe); an EV is labelled
+    at its stat-EFFECTIVE value ``4·⌊ev/4⌋`` (what the stat formula reads, inside the head's
+    ``[0, 252]`` range). ``nature`` is lower-case (``None`` ⇒ :data:`DEFAULT_NATURE`).
+
+    🚨 THROWING GUARD: the declared set, at L100 with its TRUE IVs, must reproduce the server's
+    derived stats ``derived`` (the request's stats) on all five — otherwise
+    :class:`SpreadLabelError`. A missing spread, an unknown nature or a non-six list raise too.
+
+    Replaces the old stat INVERSION (assumed IV 31, so it returned no label for 54.6 % of pool
+    revealed-mon decisions — every Hidden Power set with an IV-30 stat and 0 EVs in it — and it is
+    not identifiable: the Σ ≤ 510 budget omits HP EVs, so it named a WRONG nature for 2.5 % of the
+    ladder's IV-31 mons; `measurements/label_coverage_2026-09-29/`)."""
+    if evs is None or ivs is None:
+        raise SpreadLabelError(f"{species_id}: the truth mon carries no declared spread (evs={evs}, ivs={ivs}) — "
+                               "the opponent's packed team did not reach its battle (poke-env backfill)")
+    if len(evs) != 6 or len(ivs) != 6:
+        raise SpreadLabelError(f"{species_id}: a spread list is not six long (evs={list(evs)}, ivs={list(ivs)})")
+    nname = (nature or DEFAULT_NATURE).lower()
+    nd = gen3_data.natures.raw().get(nname)
+    if nd is None:
+        raise SpreadLabelError(f"{species_id}: unknown nature {nature!r}")
+    out: List[int] = []
+    got: List[int] = []
+    for j, stat in enumerate(SPREAD_STAT_COLS):
+        k = _SPREAD_BASE_IDX[stat]
+        ev, iv = int(evs[k]), int(ivs[k])
+        out.append(ev // 4 * 4)
+        got.append(gen3_data.priors.gen3_stat(int(round(float(base[j]))), ev, float(nd.get(stat, 1.0)), iv=iv))
+    want = [int(round(float(d))) for d in derived]
+    if got != want:
+        raise SpreadLabelError(
+            f"{species_id}: the declared spread (nature {nname}, evs {list(evs)}, ivs {list(ivs)}) gives "
+            f"{got} at L100 but the server's stats are {want} (atk, def, spa, spd, spe) — the label would "
+            "describe a mon the battle did not build (a non-L100 set, a mis-matched backfill, or a stat-formula drift)")
+    return int(nd["num"]), out
 
 
 # gen3_opp_hp_type_belief_v1: the per-species Smogon Hidden-Power-TYPE usage prior. The DamageOperator's

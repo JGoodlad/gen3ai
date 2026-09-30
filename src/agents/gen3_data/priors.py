@@ -78,11 +78,12 @@ def species_usage() -> Dict[str, float]:
     return out
 
 
-def gen3_stat(base: int, ev: int, mult: float) -> int:
-    """Gen-3 non-HP stat at level 100, IV 31, EV ``ev``, nature multiplier ``mult`` —
-    exact integer math (``×11//10`` / ``×9//10`` / ``×1``), not float. The single source of truth
-    for the L100/IV31 stat formula (the incoming-damage encoder uses it for its no-prior fallback)."""
-    pre = 2 * base + 31 + ev // 4 + 5
+def gen3_stat(base: int, ev: int, mult: float, iv: int = 31) -> int:
+    """Gen-3 non-HP stat at level 100, IV ``iv`` (31 unless given), EV ``ev``, nature multiplier
+    ``mult`` — exact integer math (``×11//10`` / ``×9//10`` / ``×1``), not float. The single source
+    of truth for the L100 stat formula (the incoming-damage encoder uses it for its no-prior
+    fallback; the nature/EV label's throwing guard passes the set's TRUE IV)."""
+    pre = 2 * base + iv + ev // 4 + 5
     if mult > 1.0:
         return pre * 11 // 10
     if mult < 1.0:

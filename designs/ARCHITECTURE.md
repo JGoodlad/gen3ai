@@ -1468,8 +1468,8 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `belief_moves` | int64 `[6,4]` | `BeliefHead` moves BCE (Hungarian) | " | ✅ emitted and consumed |
 | `known_moves` | int64 `[6,4]` | `MoveBelief` BCE | `move_belief_mode` ∈ {revealed, both} | ✅ emitted and consumed (`move_belief_coef` 0.05) |
 | `belief_spread` / `belief_spread_mask` | f32 `[6,5]` / `[6]` | `SpreadBelief` regression | `spread_belief` **and** `spread_belief_coef > 0` | ✅ emitted and consumed |
-| `belief_nature` / `belief_nature_mask` | int64 `[6]` / f32 `[6]` | nature CE | " | ✅ (`spread_belief_nature` true) |
-| `belief_ev` / `belief_ev_mask` | f32 `[6,5]` / `[6]` | EV smooth-L1 | " | ✅ |
+| `belief_nature` / `belief_nature_mask` | int64 `[6]` / f32 `[6]` | nature CE — agent2's TRUE declared nature, guarded against its stats; mask == `belief_spread_mask` (`gen3_true_spread_labels_v1`) | " | ✅ (`spread_belief_nature` true) |
+| `belief_ev` / `belief_ev_mask` | f32 `[6,5]` / `[6]` | EV smooth-L1 — the declared EVs at `4·⌊ev/4⌋` | " | ✅ |
 | `hp_type_label` / `hp_type_mask` | int64 `[6]` / f32 `[6]` | HP-type CE | `move_belief_mode != off` **and** `hp_belief_mode == composed` **and** `hp_type_belief_coef > 0` | ✅ **emitted and consumed** |
 | `item_label` / `item_mask` | int64 `[6]` / f32 `[6]` | item CE (`gen3_item_belief_v1`) | `item_belief` **and** `item_belief_coef > 0` | ✅ emitted and consumed (`item_belief_coef` 0.05) |
 | `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by `WinProbLabelCallback`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |

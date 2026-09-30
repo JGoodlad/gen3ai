@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,480-line file. **The ledger itself is append-only and is never edited by this**;
+21,492-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**725 headings · 670 dated · 2026-08-01 → 2026-09-29 · ledger 21,480 lines.**
+**726 headings · 671 dated · 2026-08-01 → 2026-09-29 · ledger 21,492 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -745,3 +745,4 @@ rename.
   - `L21467` · `2026-09-29` · MEASUREMENT · **M5 LANE S — THE POLICY-SPECTRUM BASELINE (a DESCRIPTOR of sharpness, not of quality). On one fixed bank of 20,712 turns, the lineage's rank-1 mass (the mean probability on its own top choice): N0 0.474 @2.4M → 0.586 @9.5M, then FLAT to 75M (0.559; free turns drift back −0.033 [−0.041, −0.023] over 9.5M → 75M); the one large step is N0 75M → C_fix +0.057 [+0.052, +0.062] (entropy −0.155), then K2 0.629, K3 0.621. On the fixed learner the share of free turns where a LEGAL setup move holds < 1 % doubles (0.165 → 0.307 at K3; status 0.091 → 0.183, recovery 0.060 → 0.158) while the categories' mean mass barely moves: more decisive, not proven starved.**
   - `L21471` · `2026-09-29` · MEASUREMENT · **M5 LANE S GATE ④, FIRST READ (PRELIMINARY) — the fixed-learner sharpening is BOTH healthy AND starving. On 92 DECISIVE turns (of 236 branched to the end: every legal action × 16 shared dice seeds, K2-greedy on both sides), N0 75M → K3 lowers the mass on dominated actions −0.039 [−0.064, −0.022] and the regret −0.036 [−0.061, −0.017], and raises the share of turns where a NEAR-BEST action gets < 1 % from 0.21 to 0.47 (+0.26 [+0.17, +0.34]), mostly on switches (0.24 → 0.53) and attacks (0.16 → 0.34).**
   - `L21475` · `2026-09-29` · GIGO FIX · F-LF-1 — **the SETUP step of four scripted bots never fired, for their whole life: `heuristic`, `heuristic2`, `setup_sweep` and `setup_sweep_v2` compared poke-env's `Target` ENUM to the string `"self"`. FIXED (Python and the Rust port together); every earlier eval row, bot mix and bot anchor using them is an ERA BOUNDARY.**
+  - `L21481` · `2026-09-29` · BOUNDARY · **THE NATURE / EV BELIEF LABEL IS NOW THE OPPONENT'S DECLARED SET (`gen3_true_spread_labels_v1`), a TRAINING-TARGET boundary. The old IV-31 stat inversion left 55.8 % of pool mons unlabelled (54.6 % of revealed-slot decisions), every one of them an IV-30 Hidden Power set, and 18.2 % of the labels it did give were WRONG. After the fix: 100 % coverage (parity milestone pool 83,905 / 83,905 slot-decisions), Rust == Python, 0 divergences.**
