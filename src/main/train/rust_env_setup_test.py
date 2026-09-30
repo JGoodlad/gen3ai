@@ -84,3 +84,59 @@ def test_every_save_records_the_env_core():
     assert out["env_core"] == {"env_core": "python"}
     m._env_core_stamp = {"env_core": "rust", "front": "proc", "summary": "x"}
     assert _model_hparams(m)["env_core"] == {"env_core": "rust", "front": "proc"}
+
+
+def test_startup_builds_this_checkouts_env_core_before_anything_else(monkeypatch):
+    """F-LG-6: the launcher's PINNED worktree is a fresh checkout with no ``src/rust_env/target``, so every
+    ``--env-core rust`` launch through ``main.launcher`` died ~10 s in (``rust_env_proc does not exist``).
+    ``build_rust_vec_env`` now builds THIS checkout's core, for the declared profile, first."""
+    import utils.rust_env.build as B
+    from main.train.rust_env_setup import build_rust_vec_env
+
+    class _Built(Exception):
+        pass
+
+    seen = []
+
+    def _fake(profile, *, emit=None):
+        seen.append(profile)
+        raise _Built(profile)
+
+    monkeypatch.setattr(B, "ensure_built", _fake)
+    for argv, profile in ((("--env-core", "rust"), "release"),
+                          (("--env-core", "rust", "--rust-env-profile", "selfcheck"), "selfcheck")):
+        with pytest.raises(_Built):
+            build_rust_vec_env(_args(*argv), mappings=None, trainee_teambuilder=None, opponent_teambuilder=None,
+                               opponent_classes=[], bot_weights=None, fixed_opponents=[], exploiter_entry=None,
+                               snapshot_dir=None, opponent_version=None, self_play_fraction=0.0, n_envs=4,
+                               emit=lambda _m: None)
+    assert seen == ["release", "selfcheck"]
+
+
+def test_a_resume_that_switches_env_core_is_announced_never_silent(tmp_path):
+    """`--env-core` is NOT inherited: the launcher's restart re-sends the argv, but a hand-typed resume
+    that omits it runs `python` on a `rust` checkpoint. `env_core_switch_line` names the switch (the
+    trainer emits it at startup; `--dry-run` prints it)."""
+    import json
+
+    from main.train.rust_env_setup import env_core_switch_line, recorded_env_core
+
+    run = tmp_path / "run"
+    (run / "checkpoints").mkdir(parents=True)
+    ckpt = run / "checkpoints" / "checkpoint_512_steps.zip"
+    ckpt.write_bytes(b"")
+    (run / "checkpoints" / "checkpoint_512_steps.json").write_text(json.dumps({"env_core": {"env_core": "rust"}}))
+    (run / "metadata.json").write_text(json.dumps({"env_core": {"env_core": "python"}}))
+    assert recorded_env_core(str(ckpt)) == "rust"             # the sidecar is the checkpoint's own record
+    line = env_core_switch_line(_args("--model", str(ckpt)))
+    assert line and "--env-core rust" in line and "NOT inherited" in line
+    assert env_core_switch_line(_args("--model", str(ckpt), "--env-core", "rust")) is None
+    assert env_core_switch_line(_args()) is None              # a fresh run has nothing to switch from
+    (run / "checkpoints" / "checkpoint_512_steps.json").unlink()
+    assert recorded_env_core(str(ckpt)) == "python"           # falls back to the run's metadata.json
+    import inspect
+
+    import main.launcher.dry_run as dr
+    import main.train.config as cfg
+    assert "env_core_switch_line(args)" in inspect.getsource(cfg.resolve_config)
+    assert "env_core_switch_line(ns)" in inspect.getsource(dr)

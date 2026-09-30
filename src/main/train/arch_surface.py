@@ -193,9 +193,9 @@ def resolved_value(flag: ModelFlag, ns: Any) -> Tuple[Any, str]:
 
     A derived row is read from its COEFFICIENT first and from its own NAME second, and that order
     matters in both directions. An argv namespace carries only `opp_intent_coef` (there is no
-    `--opp-intent` flag); a RECORDED `model_config.json` carries only `opp_intent` (the bool is
-    what the extractor was built from, and the coefficient is a training field the config does not
-    keep). Reading one shape only made the guard report `opp_intent False` against a config whose
+    `--opp-intent` flag); a RECORDED `model_config.json` from before config v125 carries only
+    `opp_intent` (the bool the extractor was built from; `opp_intent_coef` is recorded from v125 and
+    reads `None` on an older config). Reading one shape only made the guard report `opp_intent False` against a config whose
     recorded value is `True` — a false finding on the live win-prob run, and the reason this
     function is usable against a recorded config as well as an argv.
     """
@@ -319,8 +319,10 @@ def apply_production_arch(ns: Any, production: Optional[Dict[str, Any]] = None) 
         if flag.derived:
             # The mirror records the BOOL; the flag takes a coefficient. Prefer the coefficient the
             # mirror itself carries (`opp_belief_aux_coef` is a recorded training field); fall back
-            # to the row's declared `on_value` for the one — `opp_intent` — whose coefficient
-            # `model_config.json` does not record at all.
+            # to the row's declared `on_value` where the mirror carries none (`opp_intent`: the
+            # production mirror predates config v125, which made `opp_intent_coef` a recorded
+            # field). Whatever is written here IS recorded in the run's `model_config.json`, so a
+            # launcher restart (which strips `--arch`) inherits it — `derived_toggle_resume_test`.
             if not is_enabled(want):
                 continue
             want = prod.get(flag.arg, flag.on_value)

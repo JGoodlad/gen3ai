@@ -137,6 +137,16 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   fresh-only flag ever slips the list the launcher stops at once instead of crash-looping. Tests:
   `restart_resume_role_test.py`, `dry_run_test.py::test_h_*`,
   `combination_checks_test.py::test_every_check_refusing_a_resume_declares_what_to_strip`.
+  🚨 **"Nothing is lost" holds only for what `model_config.json` RECORDS.** Until config v125 it
+  recorded the `opp_intent` BOOL but not `opp_intent_coef`, the dose `--arch production` writes to
+  turn it on. So the first restart of a fresh `--arch production` run that did not also type
+  `--opp-intent-coef` died with `[ModelVersion] FATAL: opp_intent mismatch: saved=True,
+  current=False` (2026-09-30, `~/gen3ai_archive/cutover_prep/fresh2`, on the Rust core; the Python
+  core is identical). `opp_intent_coef` is now a `ModelVersion` field. A pre-v125 checkpoint migrates
+  the dose from its run's `metadata.json:cli_args`, announced as `[Resume] MIGRATION`. With neither
+  source the resume is REFUSED (`FATAL_CONFIG`, naming the flag); the dose is never guessed. Tests:
+  `main/train/derived_toggle_resume_test.py`. (a) Every key the umbrella writes is a recorded field.
+  (b) Fresh → save → this function's argv → resolve returns every surface value unchanged.
 - **Crash auto-restart** — when the child *self-crashes* (unhandled exception → any
   non-`INTERRUPTED` exit), the launcher snapshots its output to a per-crash
   `<run_dir>/crashes/restart_err_<token>.txt` (a timestamp + random hex so back-to-back crashes
@@ -296,6 +306,36 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
 
   ⚠️ The live launcher process runs OLD code and is **pinned**, so it will not pick this up.
   The rotating copy appears on the next launcher started from new code.
+
+## A `--env-core rust` run under the launcher (M5; F-LG-6, closed 2026-09-30)
+
+Exercised end to end on CPU: a fresh launch, an interval restart, a crash restart (the child
+SIGKILLed by PID) and a SIGTERM stop, all pinned. Run dirs: `~/gen3ai_archive/cutover_prep/fresh{1..4}`.
+What that established:
+
+- 🚨 **The pinned worktree has no Rust env build**, because `git worktree add` gives no `target/`. The
+  env core loads from THIS checkout's `src/rust_env/target/<profile>/`
+  (`utils.rust_env.proc.default_path` / `ffi.default_path`), so every `--env-core rust` launch through
+  the launcher died about 10 s in with `ProcLoadError: …/rust_env_proc does not exist`. The trainer
+  now builds its own checkout's core at startup, before the model exists
+  (`utils.rust_env.build.ensure_built`, from `rust_env_setup.build_rust_vec_env`). It is an
+  incremental `cargo build` into the crate's own `target/`: about 7 s cold in a fresh pin and 0.0 s
+  on a restart, printed as `🦀 [ENV CORE BUILD]`. The stamp check still refuses a foreign build. ⚠️ A
+  checkpoint recorded at a commit BEFORE this fix still cannot be resumed through the launcher on the
+  Rust core: its pin has no build step. Use `--sync-to-main`.
+- **`--env-core` is not inherited. The launcher keeps it by re-sending the argv**, so every restart
+  re-declares the same core, T2 slots and eval core. The events to look for are
+  `🦀 [RUST ENV] T2 up …`, `🦀 [RUST EVAL] eval core up …` and `🦀 [ENV CORE] rust — …`. A
+  HAND-TYPED resume that omits `--env-core` runs `python` on a `rust` checkpoint. `--dry-run` prints
+  `env core : …` beside what the checkpoint recorded, and the trainer emits `⚠️ [ENV CORE] …`
+  (`rust_env_setup.env_core_switch_line`). The switch is not refused, because switching on purpose
+  is an A/B.
+- **A pin that predates `--env-core` (before `ac67fa6c`) is refused before anything exists.** The
+  pinned parser check names `--env-core` / `--rust-eval-envs` as `NOT IN PINNED TREE`
+  (`FATAL_CONFIG`). No flag here is FRESH-only, so none is stripped on a restart.
+- `metadata.json` and every sidecar record `env_core` (the core's stamp, T2, trigger) beside
+  `git_hash` / `pin_history`. The `*_after_freeze` counters are ENFORCED after every update and eval
+  cycle (`LifecycleViolation`), not logged. A clean restart is the absence of that error.
 
 ## Exit codes (`src/main/exit_codes.py`)
 

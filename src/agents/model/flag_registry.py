@@ -142,9 +142,9 @@ class ModelFlag:
     family: Family = Family.ARCH    # which SURFACE it belongs to — see `Family`
     #: For a DERIVED row only: the value to write into `source_arg` to turn this toggle ON when
     #: `designs/production_config.json` cannot supply one. A derived toggle's CLI surface is a
-    #: training COEFFICIENT, and `model_config.json` records only the BOOL it derives — so
-    #: `opp_intent` has no recorded coefficient to copy and the umbrella would otherwise have no
-    #: way to enable a toggle production has ON. The magnitude is a training dose, not an
+    #: training COEFFICIENT; the production mirror predates config v125 (which made
+    #: `opp_intent_coef` a recorded `ModelVersion` field) and carries only the BOOL, so without this
+    #: the umbrella would have no way to enable a toggle production has ON. The magnitude is a training dose, not an
     #: architecture fact: `--arch production` writes it and an explicit `--opp-intent-coef` wins.
     on_value: Optional[Any] = None
     #: The SEPARATE training-coefficient field that supervises this toggle's head, where the toggle

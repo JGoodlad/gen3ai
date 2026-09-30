@@ -36,6 +36,53 @@ def resolve_env_core_args(args: Any) -> None:
         args.behaviour_check = "fatal" if rust else "off"
 
 
+def recorded_env_core(model_path: Optional[str]) -> Optional[str]:
+    """The env core a checkpoint was PRODUCED on (``"python"`` / ``"rust"``), or None when unrecorded.
+
+    Its sidecar (``<ckpt>.json``) first, else the run's ``metadata.json`` — both carry ``env_core`` on every
+    save (``run_io._model_hparams``). JSON only; no ``.zip`` is opened."""
+    import json
+    import os
+
+    if not model_path:
+        return None
+    try:
+        from agents.training.lineage import resolve_model_path, run_dir_of
+
+        path = resolve_model_path(model_path)
+        cands = [os.path.splitext(path)[0] + ".json"]
+        run_dir = run_dir_of(model_path)
+        if run_dir:
+            cands.append(os.path.join(run_dir, "metadata.json"))
+    except Exception:
+        return None
+    for c in cands:
+        try:
+            with open(c) as f:
+                ec = json.load(f).get("env_core")
+        except (OSError, ValueError):
+            continue
+        if isinstance(ec, dict) and ec.get("env_core") in ("python", "rust"):
+            return str(ec["env_core"])
+    return None
+
+
+def env_core_switch_line(args: Any) -> Optional[str]:
+    """A LOUD line when a resume runs on another env core than its checkpoint was produced on, else None.
+
+    ``--env-core`` is runtime-only and NOT inherited (``parser/env_core.py``): the launcher's own restart
+    re-sends the argv, so a run keeps its core across restarts, but a hand-typed resume that omits the
+    flag runs ``python`` (the default) on a ``rust`` checkpoint — a change of data stream (F-LG-2's keyed
+    draws, the complete-game trigger) under the same run name. Not a refusal: switching cores on purpose
+    is legitimate (an A/B); it must never be silent."""
+    rec = recorded_env_core(getattr(args, "model", None))
+    cur = getattr(args, "env_core", "python")
+    if rec is None or rec == cur:
+        return None
+    return (f"⚠️  [ENV CORE] this resume runs --env-core {cur}, but its checkpoint was produced on {rec} — "
+            f"--env-core is NOT inherited; pass --env-core {rec} to stay on it (a switch changes the data stream)")
+
+
 def _bot_names(opponent_classes: Sequence[Any]) -> List[str]:
     """The floor roster's classes as Lane F's bot names (``bot_inventory``); BaitBot's per-run subclass
     (``make_baitbot_class``) maps to ``baitbot``."""
@@ -79,6 +126,11 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
     from utils.rust_env import episode as EP
 
     resolve_env_core_args(args)
+    # F-LG-6: build THIS checkout's env core now (startup), so a launcher PIN — a fresh worktree with
+    # no src/rust_env/target — runs; incremental, a no-op when current (`utils.rust_env.build`).
+    from utils.rust_env.build import ensure_built
+
+    ensure_built(args.rust_env_profile, emit=emit)
     obs_space, act_space = trainee_spaces(args, mappings)
     plan = E.OpponentPlan.from_args(args, bot_names=_bot_names(opponent_classes),
                                     stable_entries=list(fixed_opponents or ()), exploiter_entry=exploiter_entry,

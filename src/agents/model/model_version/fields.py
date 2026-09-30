@@ -704,3 +704,14 @@ class ModelVersionFields:
     # reads this field). 1 is what every pre-v124 run did, so a pre-v124 config migrates to it —
     # the only possible past; a FRESH CLI run resolves to `DIAGNOSTICS_EVERY_DEFAULT` (10).
     diagnostics_every: int = 1
+    # ---- gen3_opp_intent_coef_recorded_v1 (config v125) — the DOSE that ENABLES opp_intent -------
+    # `--opp-intent-coef`: the weight of the alpha/beta intent supervision AND the enable signal of the
+    # derived `opp_intent` toggle (coef > 0 builds the heads; `flag_registry`'s `source_arg`). The
+    # td_aux_coef class — a loss weight, no forward, no weight shape, never compared by
+    # check_compatible — RECORDED for flagless-resume read-back: before v125 only the BOOL was, so a
+    # launcher RESTART of a fresh `--arch production` run (which strips the FRESH-only `--arch`) read
+    # the coefficient's OFF default, built no heads and FATALed at check_compatible (F-LG-6 run,
+    # 2026-09-30). `None` = UNRECORDED: the v125 migration leaves a pre-v125 config with
+    # `opp_intent=True` at None rather than invent a dose; `config.inherit_derived_enable_coefs`
+    # then takes the run's `metadata.json:cli_args` value, or REFUSES naming the flag.
+    opp_intent_coef: Optional[float] = None

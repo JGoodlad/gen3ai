@@ -39,6 +39,19 @@ a bool, so `--no-<flag>` can still turn one off explicitly on a resume, and let 
 OFF value for a fresh run. **That gate asserts against the BUILT parser, not the source text** — a
 default can be an expression, so only the constructed object knows what it is.
 
+🚨 **There is a third claim: the `_resolve` line needs a RECORDED value to read.** A reachable
+`_resolve` still returns the OFF default when `model_config.json` does not carry the key. Until
+config v125 that was true of `opp_intent_coef`: the file recorded the derived `opp_intent` BOOL and
+not the dose that enables it. A launcher restart strips `--arch production` and trusts the
+checkpoint's config to carry what the umbrella wrote, so every fresh `--arch production` run that
+did not type `--opp-intent-coef` FATALed at its first restart (2026-09-30, F-LG-6's launcher run).
+The gate is `main/train/derived_toggle_resume_test.py`. (a) Every dest `apply_production_arch` can
+write, including each derived row's `source_arg`, is a `ModelVersion` field. (b) Fresh → save → the
+launcher's resume argv → resolve returns every surface value unchanged. A pre-v125 config with
+`opp_intent` ON records no dose (the migration leaves it `None`). A resume takes the dose from
+`metadata.json:cli_args` or is REFUSED (`config.inherit_derived_enable_coefs`). It never takes the
+row's `on_value`.
+
 **Read `designs/flag_registry.md`** for the current table (generated; `--check` is the gate).
 ### The three TIERS — a flag can lose its CLI entry without losing explicitness
 

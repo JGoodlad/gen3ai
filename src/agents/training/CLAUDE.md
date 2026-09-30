@@ -525,7 +525,12 @@ a separate decision. Hazards an agent must know before touching it:
   derives a new segment seed and re-stages; past the budget it is fatal.
 - `rollout/collect_ms` + `rollout/collect_decisions` are logged on BOTH cores (the A/B reads them);
   `rust_env/*` is the collector's per-phase read. `metadata.json` records `env_core` on every save.
-- ⚠️ A launcher RESUME pins to the checkpoint's commit; a commit before Lane G has no `--env-core`.
+- ⚠️ A launcher RESUME pins to the checkpoint's commit. A commit before Lane G has no `--env-core`
+  and is refused by name. The trainer builds its checkout's env core at startup
+  (`utils.rust_env.build`), because a pin worktree has no `target/`. `--env-core` is NOT inherited:
+  the launcher re-sends it, a hand-typed resume must too, and a switch is announced
+  (`⚠️ [ENV CORE]`). Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the
+  launcher".
 - **EVAL runs on the core too** (M5 Lane H, `rust_eval/`): both eval callbacks write the same plan and
   manifest, then play the cycle IN PROCESS and BLOCKING on a declared eval core (`--rust-eval-envs`) and
   declared eval T2 slots, publish the workers' own shard records, and collect them with the unchanged

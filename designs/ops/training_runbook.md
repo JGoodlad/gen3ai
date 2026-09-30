@@ -583,8 +583,12 @@ rest; `--rollout-target-samples` must be a multiple of lcm(`--batch-size`, `--n-
 micro-batch is full). Measured at the production mix (N = 48, 95 % self-play): 5.1× today's trainee
 decisions/s at 0.04× the CPU per decision, the step 74 % T2 forward. It needs `--critic winprob` and refuses, by name at startup, every flag whose path it does not
 serve yet (`src/agents/training/CLAUDE.md` → "The env core"). Validate an argv with `checkargs` first.
-⚠️ A launcher resume pins to the checkpoint's commit, where `--env-core` may not exist — pin a commit
-that has it. It is a CUTOVER candidate, not the production path: design, gates and measurements in
+**Under the launcher** (F-LG-6, exercised 2026-09-30): the trainer builds its own checkout's env core
+at startup (`🦀 [ENV CORE BUILD]`, about 7 s cold in the launcher's fresh pin worktree). The interval
+and crash restarts re-send `--env-core rust` and re-declare the core, T2 and the eval core. A pin
+before `--env-core` existed is refused by name. ⚠️ `--env-core` is NOT inherited, so a hand-typed
+resume must re-pass it. The dry run and the trainer both flag a core switch. Detail:
+`src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the launcher". It is a CUTOVER candidate, not the production path: design, gates and measurements in
 `designs/training/rust_collector.md` and `designs/research_state/measurements/m5_laneG/PROGRESS.md`.
 
 ### Bot evaluation

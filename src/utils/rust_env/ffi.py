@@ -223,8 +223,9 @@ def load(path: Path, *, nan_poison: Optional[bool] = None, check: bool = True) -
     if not path.is_absolute():
         raise FfiLoadError(f"the rust env library must be loaded by ABSOLUTE path, got {path}")
     if not path.exists():
-        raise FfiLoadError(f"{path} does not exist — build it: (cd src/rust_env && CARGO_TARGET_DIR=$PWD/target "
-                           "cargo build --lib --profile selfcheck --features emission-selfcheck)")
+        from utils.rust_env.build import build_command
+
+        raise FfiLoadError(f"{path} does not exist — build it: {build_command(path.parent.name)}")
     lib = ctypes.CDLL(str(path), mode=ctypes.RTLD_LOCAL)
     for f in FUNCTIONS:
         try:

@@ -10059,3 +10059,25 @@ which is TF32 rounding. Chasing that turned up the real defect.
 - **Boundary:** runs trained before this commit supervised the nature/EV head on about half the
   pool's revealed mons, about 18 % of those labels were wrong, and about 0.06 % of battles carried
   stale labels. Evidence: `research_state/measurements/label_coverage_2026-09-29/`.
+
+## v125 — `opp_intent_coef` is RECORDED, and the launcher restarts a Rust-core run (`gen3_opp_intent_coef_recorded_v1`; config bump, no ARCH_SIGNATURE bump, training unchanged)
+
+- **The restart defect (found 2026-09-30 exercising F-LG-6):** a launcher restart strips the
+  FRESH-only `--arch` and relies on `model_config.json` for what `--arch production` wrote. That file
+  recorded the derived `opp_intent` BOOL and not `opp_intent_coef`, the dose that enables it. So the
+  first restart of any fresh `--arch production` run that did not also type `--opp-intent-coef` died
+  with `[ModelVersion] FATAL: opp_intent mismatch: saved=True, current=False`. That held on either
+  env core, and for any fork of such a run. No real run was exposed: `ai_v14_01_base` typed the coef.
+- **Fix:** `ModelVersion.opp_intent_coef` (MODEL_CONFIG_VERSION 125), recorded at both
+  `model_build` sites and the round-trip save, `_resolve`-inherited, never compared. A pre-v125
+  config migrates to 0.0 when `opp_intent` is OFF and stays `None` (unrecorded) when it is ON. Such a
+  resume takes the dose from its run's `metadata.json:cli_args` (announced `[Resume] MIGRATION`),
+  else it is REFUSED with `FATAL_CONFIG`, naming the flag. Gate: `derived_toggle_resume_test.py`.
+  It checks that every key the umbrella writes is a recorded field, and that fresh → save → resume
+  argv → resolve round-trips.
+- **The Rust core under the launcher (F-LG-6 closed):** the trainer builds its checkout's env core at
+  startup (`utils.rust_env.build`), because the launcher's pin worktree has no `src/rust_env/target`
+  and every `--env-core rust` launch died about 10 s in. Interval and crash restarts re-declare the
+  core, T2 and the eval core. `--env-core` stays un-inherited, and a core switch on a resume is now
+  announced (the trainer and `--dry-run`). `--dry-run` also prints a callable refusal message's TEXT
+  instead of `<function <lambda>>`.

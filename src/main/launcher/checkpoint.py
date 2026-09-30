@@ -14,8 +14,9 @@ CHECKPOINTS_DIRNAME = "checkpoints"
 
 
 # Directories that hold *.zip files which are NOT resumable training checkpoints:
-#   <run>/snapshots/snapshot_*.zip        self-play pool (the step-0 seed is written
-#                                         at startup, before any rollout)
+#   <run>/snapshots/snapshot_*.zip        self-play pool (a FRESH run writes its first one only
+#                                         when an eval PROMOTES — above --promote-threshold; a
+#                                         fork is seeded from its parent's pool at startup)
 #   <run>/best_model/best_model.zip       best-by-eval export
 #   <run>/eval_traces/step_*/snapshot.zip retained eval snapshots
 # Resumable checkpoints live in <run>/checkpoints/ (current) or <run>/ (legacy) — note

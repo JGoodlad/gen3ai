@@ -246,6 +246,73 @@ def inherit_saved_flag(args, saved_ver, name, default) -> bool:
     return False
 
 
+def _recorded_cli_arg(model_path, dest):
+    """``dest`` from the RESOLVED namespace the checkpoint's run recorded (``metadata.json:cli_args``),
+    or None. JSON only — no ``.zip`` is opened."""
+    import json
+    import os
+
+    from agents.training.lineage import run_dir_of
+
+    try:
+        run_dir = run_dir_of(model_path) if model_path else None
+        with open(os.path.join(run_dir, "metadata.json")) as f:
+            cli = json.load(f).get("cli_args")
+    except (OSError, TypeError, ValueError):
+        return None
+    return cli.get(dest) if isinstance(cli, dict) else None
+
+
+class UnrecordedEnableCoef(ValueError):
+    """A resume of a checkpoint whose derived toggle is ON but whose enabling dose was never recorded
+    (a pre-v125 ``model_config.json``) and cannot be recovered from the run's ``metadata.json``.
+    Re-running cannot change it — ``FATAL_CONFIG``."""
+
+
+def inherit_derived_enable_coefs(args, saved_ver, model_path, *, announce: bool = True) -> dict:
+    """The MIGRATION for a pre-v125 checkpoint whose derived toggle is ON but whose dose is unrecorded.
+
+    A DERIVED structural toggle (``flag_registry`` ``derived=True``) is switched on by a training
+    COEFFICIENT (``source_arg`` > 0). Every such coefficient is now a ``ModelVersion`` field, so a
+    flagless resume inherits it through the plain ``_resolve`` sweep like any other surface value —
+    ``opp_intent_coef`` became one at v125. Before that ``model_config.json`` recorded only the
+    ``opp_intent`` BOOL, and a launcher RESTART of a fresh ``--arch production`` run (the restart strips
+    the FRESH-only ``--arch``) resolved the coefficient to 0.0 and died at ``check_compatible``:
+    ``[ModelVersion] FATAL: opp_intent mismatch: saved=True, current=False`` (F-LG-6 run, 2026-09-30).
+
+    The v125 migration leaves that dose UNRECORDED (``None``) rather than invent one. Here, for each
+    such row the argv left untyped (a TYPED value always wins): take the dose the run recorded in its
+    ``metadata.json:cli_args`` (the resolved namespace of the launch that trained it), announced as a
+    migration; else raise :class:`UnrecordedEnableCoef` naming the flag — never the registry's
+    ``on_value``, which would be a training dose nobody chose. Returns ``{dest: (value, source)}``.
+    Module-level so ``main.checkargs`` resolves the same namespace.
+    """
+    from agents.model.flag_registry import REGISTRY, is_enabled
+
+    out: dict = {}
+    if saved_ver is None:
+        return out
+    for f in REGISTRY:
+        if not (f.derived and f.source_arg) or getattr(args, f.source_arg, None) is not None:
+            continue
+        if getattr(saved_ver, f.source_arg, None) is not None or not is_enabled(getattr(saved_ver, f.name, None)):
+            continue                     # recorded ⇒ the plain sweep inherits it; OFF ⇒ nothing to keep
+        flag = "--" + f.source_arg.replace("_", "-")
+        value = _recorded_cli_arg(model_path, f.source_arg)
+        if not is_enabled(value):
+            raise UnrecordedEnableCoef(
+                f"the checkpoint's model_config.json records {f.name}=True but not the dose that enables it "
+                f"({f.source_arg}; a config older than the field), and its run's metadata.json:cli_args has "
+                f"none either. Pass {flag} <the value the run trained with> — it is a training dose, so it "
+                f"is never guessed.")
+        setattr(args, f.source_arg, value)
+        out[f.source_arg] = (value, "metadata.json:cli_args")
+        if announce:
+            emit(f"[Resume] MIGRATION: {f.name} is ON but this checkpoint's model_config.json predates "
+                 f"{f.source_arg}; inheriting {flag} {value!r} from the run's metadata.json:cli_args")
+    return out
+
+
 def is_fold(args) -> bool:
     """A fold is actually RUNNING: at least one `--distill-teacher` AND `--distill-coef > 0`."""
     return bool(getattr(args, "distill_teacher", None)
@@ -607,6 +674,15 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # to `_resolve`, or a fork would inherit the parent's `shaped` composition under a `winprob`
     # argv. `--critic` itself is STRUCTURAL + resume-immutable, so it inherits like `win_prob_mode`.
     resolve_critic_mode(args, _saved_ver)
+    # A pre-v125 checkpoint with opp_intent ON records no dose: migrate it from metadata.json or
+    # REFUSE (never guess). Before the sweep, so `_resolve` sees the migrated coefficient as set.
+    try:
+        inherit_derived_enable_coefs(args, _saved_ver, args.model)
+    except UnrecordedEnableCoef as e:
+        from main.exit_codes import TrainExitCode
+        print(f"\n[Resume] FATAL: {e}", file=sys.stderr, flush=True)
+        emit(f"[Resume] FATAL: {e}")
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
     def _resolve(name, default):
         inherit_saved_flag(args, _saved_ver, name, default)
@@ -1201,8 +1277,11 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `parser.error` reappears outside the list.
     refuse_first(args, parser)
     # M5 Lane G: the collector flags' defaults, AFTER the sweep (which must see "untyped" as None).
-    from main.train.rust_env_setup import resolve_env_core_args
+    from main.train.rust_env_setup import env_core_switch_line, resolve_env_core_args
     resolve_env_core_args(args)
+    _switch = env_core_switch_line(args)
+    if _switch:
+        emit(_switch)
 
     # --- gen3_arch_surface_guard_v1: IS THIS THE ARCHITECTURE YOU MEANT? -----------------------
     # AFTER the combination sweep, deliberately: a broken flag combination is a bug in the command

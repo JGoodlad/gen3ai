@@ -416,3 +416,19 @@ def test_h_a_fresh_dry_run_into_an_existing_run_is_refused_and_touches_nothing(
     assert f"--model {ckpt}" in out or "--model models/ai_v14_01_base/checkpoints" in out
     assert "--run-name" in out and "would NOT launch" in out
     assert _snapshot_tree(run_dir) == before
+
+
+def test_g_a_refusal_whose_message_is_a_renderer_prints_the_TEXT(isolated, monkeypatch, capsys):
+    """`CombinationCheck.message` may be a callable that quotes a value; the dry run printed the
+    callable itself (`✗ REFUSED (resolve_config): <function <lambda> at 0x…>`, 2026-09-30, a
+    `--critic winprob` argv missing `--victory-value 1.0` / `--draw-penalty 0`). It must print
+    `combo.text(ns)`, as `main.checkargs` does."""
+    _root, (_first, second), _work = isolated
+    monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
+    _dry_run(["--steps", "1000", "--critic", "winprob", *_ARCH_OK], monkeypatch,
+             expect=int(TrainExitCode.FATAL_CONFIG))
+    out = capsys.readouterr().out
+    refused = [ln for ln in out.splitlines() if "(resolve_config):" in ln]
+    assert refused, out
+    assert not any("<function" in ln for ln in refused), refused
+    assert any("--victory-value" in ln for ln in refused), refused

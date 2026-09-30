@@ -209,10 +209,36 @@ holds more). The arms met 17.5 / 8.0 / 4.0 / 1.0 distinct opponent slots per flu
 - **F-LG-5 (Lane E's file, hand-off):** `PolicyOpponentServer` refused a service with MORE slots than the
   plan's policy routes; the trainee's slot(s) now follow them in the same service (one flush), so the
   check is `<`, not `!=`.
-- **F-LG-6:** the real-launch smoke ran `train_rl_agent.py` directly, not through `main.launcher`
-  (whose resume PINS to the checkpoint's commit — before Lane G there is no `--env-core`: a Rust-core
-  resume must pin a commit that has it). The launcher's restart / crash loop around a Rust-core run is
-  untested.
+- **F-LG-6 — CLOSED 2026-09-30 (cutover-prep unit 3).** The real-launch smoke had run `train_rl_agent.py`
+  directly, not through `main.launcher`, whose resume PINS to the checkpoint's commit. **What was run**
+  (CPU, `--arch production --critic winprob --env-core rust --n-envs 4 --self-play --n-sentinels 2`, a
+  3–6 min restart interval, all pinned; run dirs `~/gen3ai_archive/cutover_prep/fresh{1..4}`):
+  1. A fresh launch **FAILED** first (`fresh1`): `ProcLoadError: /tmp/launcher-…/src/rust_env/target/release/rust_env_proc
+     does not exist`, about 10 s in. The launcher's pin is a fresh worktree with no `target/`. **Fixed:**
+     the trainer builds its checkout's core at startup (`utils.rust_env.build.ensure_built`, called by
+     `rust_env_setup.build_rust_vec_env`). That takes about 7 s cold, 0.0 s warm. It then reached its
+     checkpoints and eval cycles on the eval core (`fresh3`, `fresh4`).
+  2. **The interval restart** (`fresh3` at 10:17, `fresh4` at 10:34) and **the crash restart** (the
+     `fresh4` child SIGKILLed by PID at 10:28) each re-declared `[RUST ENV] T2 up …`,
+     `[RUST EVAL] eval core up …` and `[ENV CORE] rust — …`, then trained and played eval cycles.
+     `--env-core` persists because the launcher re-sends the argv. It is not inherited. A hand-typed
+     flagless resume runs python, and that switch is now announced by the trainer and `--dry-run`.
+  3. The first restart attempt **FAILED** (`fresh2`), and not because of the Rust core: every fresh
+     `--arch production` run that did not type `--opp-intent-coef` FATALed at its first restart with
+     `opp_intent mismatch: saved=True, current=False`. **Fixed:** `opp_intent_coef` is recorded in
+     `model_config.json` (config v125, `main/train/derived_toggle_resume_test.py`).
+  4. `*_after_freeze` counters: enforced after every update and eval cycle, and no
+     `LifecycleViolation` fired in any run. They are not logged anywhere.
+  5. `metadata.json` records `env_core` (`rust`, the core stamp, T2) and `git_hash` / `pin_history`.
+  6. A pin before `--env-core` (`f07e74b0`) is refused by the pinned parser, naming `--env-core` /
+     `--rust-eval-envs` (`FATAL_CONFIG`, nothing created). No env-core flag is FRESH-only.
+  7. `python -m main.checkargs` exits 0 on the run dir and on its restart argv.
+  **Still open:** a checkpoint recorded at a commit before this fix cannot be resumed on the Rust core
+  through the launcher (that pin has no build step; use `--sync-to-main`). **New hazard (T2's):** the
+  per-slot parity gate REFUSES a near-constant critic (`VacuousParity`, value spread < 1e-4 even on
+  the seeded perturbation). It killed the tiny CPU runs on a trainee load after a few minutes, and
+  it crash-loops a resume of that checkpoint. Whether a production-scale fresh run can hit it is
+  UNVERIFIED. Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the launcher".
 - **F-LG-8 (the learner check's scope, declared):** "one update on each buffer lands on the same weights" holds
   for ONE optimizer step (Δ 6e-8); over several steps PPO's clip gates and Adam amplify the paths' ≤ 7e-7
   log-prob / value rounding (the two paths forward different batch compositions, and CPU matmul rounds
@@ -251,8 +277,7 @@ Units 1–4 are built; unit 4 ships with this commit. What remains before a CUTO
 lane's to decide alone:
 
 1. **Lane H** — eval on the core. Eval still runs Python workers.
-2. **The launcher's restart / pin path on a Rust-core run** (F-LG-6). A resume must pin a commit that has
-   `--env-core`; the crash loop around it is untested.
+2. ~~The launcher's restart / pin path on a Rust-core run (F-LG-6).~~ CLOSED 2026-09-30 (see F-LG-6).
 3. **The adaptive-batch controller → `SampleTrigger.set_target`.** The hook and its band exist; nothing
    calls it yet.
 4. **The SIZING study** (order constraint 5): N, buckets (a 16 bucket), overlap at every N, the

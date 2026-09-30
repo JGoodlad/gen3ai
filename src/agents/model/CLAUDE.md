@@ -308,6 +308,12 @@ a save writes, the two sanitizers and the `--critic` version gate:
 2. Bump `MODEL_CONFIG_VERSION`
 3. Add one `if version < N:` block in `_migrate_config()` with `data.setdefault(...)`
 
+🚨 **Every value `--arch production` writes must be a `ModelVersion` field**, including a DERIVED
+row's enabling coefficient. A launcher restart strips `--arch` and inherits only what
+`model_config.json` records. `opp_intent_coef` was not recorded until v125, and every such restart
+FATALed. When the past value is unknown, the migration leaves the field `None` rather than invent it
+(the v125 branch). Gate: `main/train/derived_toggle_resume_test.py`.
+
 **When you make a structural change** (different forward pass, new layer type):
 1. Change `ARCH_SIGNATURE` in `model_version/constants.py` (e.g. `"gen3_attn_v1"` → `"gen3_lstm_v1"`)
 2. Old models get a clear arch-family error on load

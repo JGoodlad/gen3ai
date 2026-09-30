@@ -333,7 +333,15 @@ from typing import Any, Dict
 #   series and read back by `_resolve` on a flagless resume. A pre-v124 config defaults to 1 —
 #   every run before the flag ran them every update. A FRESH run resolves to 10. No ARCH_SIGNATURE
 #   bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 124
+# v125 (gen3_opp_intent_coef_recorded_v1): `opp_intent_coef` — the dose that ENABLES the derived
+#   `opp_intent` toggle (`--opp-intent-coef > 0` builds the alpha/beta heads). TRAINING-only, the
+#   td_aux_coef class: recorded for flagless-resume read-back, never gated. Before v125
+#   `model_config.json` recorded only the bool, so a launcher RESTART of a fresh `--arch production`
+#   run (the restart strips the FRESH-only `--arch`) resolved the coefficient to 0.0 and FATALed at
+#   check_compatible on `opp_intent`. A pre-v125 config migrates to 0.0 when `opp_intent` is OFF (the
+#   only possible past) and stays UNRECORDED (None) when ON — a resume then takes the run's
+#   `metadata.json:cli_args` dose or is REFUSED. No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 125
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

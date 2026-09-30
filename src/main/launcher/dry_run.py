@@ -329,6 +329,16 @@ def dry_run(
             where = "INHERITED" if dest in inherited else "from the argv"
             out(f"      --{dest.replace('_', '-'):<20} {getattr(ns, dest)!r:<12} ({where})")
 
+    # 6b. The ENV CORE (M5): runtime-only, never inherited — so a resume that omits it switches cores.
+    if ns is not None:
+        from main.train.rust_env_setup import env_core_switch_line, recorded_env_core
+        rec = recorded_env_core(model_path) if model_path else None
+        out(f"  env core    : {getattr(ns, 'env_core', 'python')}"
+            + (f"  (the checkpoint was produced on {rec})" if rec else ""))
+        switch = env_core_switch_line(ns)
+        if switch:
+            out(f"  {switch}")
+
     # 7. Pool drift, when there is a directory to look in.
     if exists:
         pool = _pool_line(run_dir, child_args)
@@ -382,7 +392,7 @@ def dry_run(
         out(f"  {mark} (extractor): {flag} requires {dep}, but the config says `{token}`")
     for combo, provenance in res["combinations"]:
         failed = failed or not advisory
-        out(f"  {mark} (resolve_config): {combo.message}")
+        out(f"  {mark} (resolve_config): {combo.text(ns)}")
         for line in provenance:
             out(f"      · {line}")
     # Only the PARSER half is pinned. The extractor's `requires` graph and the value-conditional

@@ -837,8 +837,9 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
         aux_specs.append(("value_dist_head", "loss.value_dist_hl_gauss", "realized return G(s)",
                           _ROLLOUT))
     if getattr(fe, "alpha_head", None) is not None:
-        # `opp_intent_coef` is a TRAIN-LOOP flag, not a weight-shape param, so it is absent from
-        # model_config.json — the heads' existence is the only thing this config can witness. Drawn
+        # `opp_intent_coef` is a TRAIN-LOOP dose, not a weight-shape param: recorded in
+        # model_config.json only from config v125 (None before), so the heads' existence is the one
+        # thing every config can witness. Drawn
         # unconditionally rather than guessed, with the coefficient named as the real gate.
         aux_specs.append(("alpha_head", "loss.opp_intent_alpha_ce",
                           "opp_action_move_num (folded at the train-loop --opp-intent-coef)",

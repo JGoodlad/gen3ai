@@ -254,9 +254,9 @@ class ProcCore:
         if not self.binary.is_absolute():
             raise ProcLoadError(f"the rust env child must be spawned by ABSOLUTE path, got {self.binary}")
         if not self.binary.exists():
-            raise ProcLoadError(f"{self.binary} does not exist — build it: (cd src/rust_env && CARGO_TARGET_DIR="
-                                "$PWD/target cargo build --bin rust_env_proc --profile selfcheck --features "
-                                "emission-selfcheck)")
+            from utils.rust_env.build import build_command
+
+            raise ProcLoadError(f"{self.binary} does not exist — build it: {build_command(self.binary.parent.name)}")
         self.spec_json = spec_json
         self.nan_poison = nan_poison
         self.auto_respawn = auto_respawn

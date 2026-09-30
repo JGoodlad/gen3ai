@@ -79,6 +79,7 @@ class ModelVersionConstruction(ModelVersionFields):
         q_winprob_onpolicy_coef: float = 0.0,
         policy_gae_lambda: float = 0.80,
         diagnostics_every: int = 1,
+        opp_intent_coef: float = 0.0,
     ) -> Self:
         from agents.model.features_extractor import (
             ROLE_TOKEN_SIZE,
@@ -343,6 +344,7 @@ class ModelVersionConstruction(ModelVersionFields):
             q_winprob_onpolicy_coef=float(q_winprob_onpolicy_coef),
             policy_gae_lambda=float(policy_gae_lambda),
             diagnostics_every=int(diagnostics_every),
+            opp_intent_coef=float(opp_intent_coef),
             value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),

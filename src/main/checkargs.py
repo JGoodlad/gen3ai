@@ -282,8 +282,8 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     the parent's config could not be read — the paths tried, so the caller can WARN instead of
     passing silently.
     """
-    from main.train.config import (desugar_umbrella_flags, inherit_saved_flag,
-                                   resolve_critic_mode, resolve_eval_sentinel_regime)
+    from main.train.config import (UnrecordedEnableCoef, desugar_umbrella_flags, inherit_derived_enable_coefs,
+                                   inherit_saved_flag, resolve_critic_mode, resolve_eval_sentinel_regime)
     from main.train.fork_lr import is_same_run_checkpoint
     from main.train_rl_agent import build_parser
 
@@ -340,6 +340,7 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
 
     ns._saved_config_present = saved is not None
     inherited: Dict[str, Any] = {}
+    derived_refusal = None
     # THE EVAL OPPONENT REGIME, run BEFORE the blanket inheritance sweep and for
     # `resolve_critic_mode`'s reason. `--promote-threshold` is not a plain inherited flag: when the
     # argv TYPES the regime, the launch RE-DERIVES the gate from the new regime instead of
@@ -348,13 +349,18 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     # does not produce — and "what is the baseline?" is answered off this report.
     resolve_eval_sentinel_regime(ns, saved, announce=False)
     if saved is not None:
+        try:
+            for dest, (value, _src) in inherit_derived_enable_coefs(ns, saved, model, announce=False).items():
+                inherited[dest] = value
+        except UnrecordedEnableCoef as e:
+            derived_refusal = str(e)
         for dest in sorted({a.dest for a in parser._actions} - {"help"}):
             if not hasattr(ns, dest):
                 continue
             if inherit_saved_flag(ns, saved, dest, getattr(ns, dest)):
                 inherited[dest] = getattr(ns, dest)
     return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
-            "inherited": inherited, "same_run": same_run}
+            "inherited": inherited, "same_run": same_run, "derived_refusal": derived_refusal}
 
 
 def unsatisfiable_from_namespace(ns) -> List[Tuple[str, str, str]]:
@@ -904,6 +910,11 @@ def main(raw: List[str] | None = None) -> int:
         for line in arch_surface.report_lines(arch):
             print(f"  {line}")
 
+    derived_refusal = (res.get("resolution") or {}).get("derived_refusal")
+    if derived_refusal:
+        # Same verdict class as the shaped parent: resolve_config exits FATAL_CONFIG on it.
+        print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {derived_refusal}")
+        return int(TrainExitCode.FATAL_CONFIG)
     if shaped_fatal:
         # A separate verdict: the parent's REWARD, not a flag. resolve_config exits FATAL_CONFIG on
         # it in any tree that no longer has the shaped path, whatever the parser says.

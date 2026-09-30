@@ -125,6 +125,10 @@ def test_resolve_config_REFUSES_a_shaped_parent_with_FATAL_CONFIG(tmp_path, caps
 
 def test_resolve_config_ACCEPTS_a_production_v121_parent(tmp_path, capsys):
     zip_path = _write_run(tmp_path, _production_v121())
+    # A real production run's metadata.json carries its resolved namespace (`cli_args`); a pre-v125
+    # config records `opp_intent` but not its dose, which a resume migrates from there
+    # (`config.inherit_derived_enable_coefs`; ai_v14_01_base / ai_v14_06 both record 0.05).
+    (tmp_path / "run_shaped" / "metadata.json").write_text(json.dumps({"cli_args": {"opp_intent_coef": 0.05}}))
     # (the parent is a `--critic winprob` run, so the three terminal flags it REQUIRES are re-passed)
     _resolve(["--model", zip_path, "--terminal-indicator", "--victory-value", "1.0",
               "--draw-penalty", "0"])                      # no SystemExit

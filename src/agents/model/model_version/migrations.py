@@ -343,6 +343,14 @@ def _migrate_config(data: dict) -> dict:
     if version < 124:
         data.setdefault("diagnostics_every", 1)
         data["config_version"] = 124
+    # v125 (gen3_opp_intent_coef_recorded_v1) — `opp_intent_coef`, the dose that enables the derived
+    # `opp_intent` toggle. OFF is a RECORD (coef > 0 is the only way the heads get built, so a config
+    # with `opp_intent=False` trained at 0.0). ON is written as an explicit `None` = UNRECORDED: the
+    # dose was never recorded and a number would invent one — a resume reads it from the run's
+    # `metadata.json:cli_args` or is REFUSED (`main.train.config.inherit_derived_enable_coefs`).
+    if version < 125:
+        data.setdefault("opp_intent_coef", None if data.get("opp_intent", False) else 0.0)
+        data["config_version"] = 125
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

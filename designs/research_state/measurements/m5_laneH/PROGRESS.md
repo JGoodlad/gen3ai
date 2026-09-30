@@ -138,7 +138,8 @@ was live.
 - **F-LH-10 (not exercised):** fixed / stable opponents on the Rust eval path (their slots are declared and
   reused from the training plan; no gate game used one); the sampled-sentinel regime
   (`--no-eval-sentinel-greedy`: keyed draw keyed by the game — distribution-equal only, no gate); a p2
-  forfeit in a trace expansion; the launcher's restart loop around a Rust-eval run (F-LG-6's gap).
+  forfeit in a trace expansion. (The launcher's restart loop around a Rust-eval run is CLOSED with
+  F-LG-6, 2026-09-30: the eval core re-declares on every interval and crash restart.)
 
 - **F-LH-11 (harness hazard, Lane J's):** `python -m main.rust_core_m5 gates … --gpu` takes
   `/home/goodlad/.claude/jobs/gpu.lock` ITSELF around its GPU pytest. Wrapping the whole command in
@@ -153,4 +154,4 @@ Units 1–7 built; the registry row BUILT. What remains before a CUTOVER (none o
 1. ~~F-LH-5: the non-prober trace readers onto `load_summary` (or a loud refusal).~~ DONE 2026-09-30.
 2. F-LH-2: background (filler) eval, if the SIZING study's N makes the blocking cycle expensive.
 3. F-LH-10's unexercised paths: a gate row with a fixed opponent and one with the sampled regime.
-4. The launcher restart / pin path on a Rust-core run (Lane G's F-LG-6, now also eval's).
+4. ~~The launcher restart / pin path on a Rust-core run~~ — CLOSED with Lane G's F-LG-6 (2026-09-30).
