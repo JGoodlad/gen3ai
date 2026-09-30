@@ -21,7 +21,13 @@ through ``Any`` (an unannotated ``getattr``, an untyped container) is invisible 
 non-enum overlap findings (a wrong annotation, a pytest ``approx``) are PRINTED, not failed — they
 are not this class.
 
-Cost: COLD ~24 s (a fresh cache), WARM ~0.3 s; the cache lives in the temp dir keyed by checkout.
+Cost: COLD ~24 s (a fresh cache), WARM ~0.3 s. The cache lives in the temp dir, ONE dir per
+checkout (mypy's cache records absolute paths, so two checkouts sharing one would thrash each other
+cold). Each dir is ~60 MB on a RAM-backed tmpfs, and before 2026-09-30 nothing ever removed one — 20+
+accumulated in a day (~1.2 GB). So every run touches its own dir's ``.last_used`` marker and PRUNES
+its siblings: any unused for ``CACHE_MAX_AGE_DAYS``, and all but the ``CACHE_MAX_KEYS`` most recently
+used. A sibling used within ``CACHE_IN_USE_GRACE_S`` is never pruned — a concurrent run in another
+worktree may be reading it. ``GEN3AI_MYPY_STRICT_EQ_CACHE_ROOT`` moves the root (the tests use it).
 
     GEN3AI_SKIP_ENUM_STR_GATE=1 pytest src/ -q
 """
@@ -35,7 +41,9 @@ import pkgutil
 import re
 import subprocess
 import sys
+import shutil
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -46,6 +54,53 @@ pytestmark = pytest.mark.skipif(os.environ.get("GEN3AI_SKIP_ENUM_STR_GATE") == "
                                 reason="GEN3AI_SKIP_ENUM_STR_GATE=1")
 
 _PACKAGES = ("agents", "main", "utils", "poke_env")
+
+CACHE_PREFIX = "gen3ai_mypy_strict_eq_"
+CACHE_MARKER = ".last_used"
+CACHE_MAX_AGE_DAYS = 3.0
+CACHE_MAX_KEYS = 6
+CACHE_IN_USE_GRACE_S = 3600.0
+
+
+def cache_root() -> Path:
+    return Path(os.environ.get("GEN3AI_MYPY_STRICT_EQ_CACHE_ROOT") or tempfile.gettempdir())
+
+
+def cache_dir_for(src: Path) -> Path:
+    """This checkout's mypy cache: one dir per ``src/`` path, under ``cache_root()``."""
+    return cache_root() / f"{CACHE_PREFIX}{hashlib.sha1(str(src).encode()).hexdigest()[:12]}"
+
+
+def _last_used(d: Path) -> float:
+    try:
+        return (d / CACHE_MARKER).stat().st_mtime
+    except OSError:
+        return d.lstat().st_mtime       # a pre-marker dir: its own mtime is the best we have
+
+
+def prune_sibling_caches(own: Path, now: float | None = None) -> list[Path]:
+    """Remove the OTHER checkouts' cache dirs that are stale (by age) or surplus (beyond the
+    ``CACHE_MAX_KEYS`` most recently used, own included). Never one used within the grace window,
+    never a symlink, never another uid's. Returns what was removed."""
+    now = time.time() if now is None else now
+    sibs = []
+    for d in own.parent.glob(CACHE_PREFIX + "*"):
+        try:
+            if d == own or d.is_symlink() or not d.is_dir() or d.lstat().st_uid != os.getuid():
+                continue
+            sibs.append((_last_used(d), d))
+        except OSError:
+            continue
+    sibs.sort(reverse=True)             # most recently used first
+    removed = []
+    for rank, (used, d) in enumerate(sibs, start=1):     # rank 0 is our own dir
+        idle = now - used
+        if idle < CACHE_IN_USE_GRACE_S:
+            continue
+        if idle > CACHE_MAX_AGE_DAYS * 86400 or rank >= CACHE_MAX_KEYS:
+            shutil.rmtree(d, ignore_errors=True)
+            removed.append(d)
+    return removed
 
 
 def poke_env_enum_names() -> set[str]:
@@ -64,8 +119,10 @@ def poke_env_enum_names() -> set[str]:
 
 def run_mypy(targets: list[str], cwd: Path) -> list[str]:
     """``[comparison-overlap]`` lines from mypy ``--strict-equality`` over ``targets`` (argv form)."""
-    key = hashlib.sha1(str(src_root()).encode()).hexdigest()[:12]
-    cache = Path(tempfile.gettempdir()) / f"gen3ai_mypy_strict_eq_{key}"
+    cache = cache_dir_for(src_root())
+    cache.mkdir(parents=True, exist_ok=True)
+    (cache / CACHE_MARKER).touch()
+    prune_sibling_caches(cache)
     cmd = [sys.executable, "-m", "mypy", "--config-file", os.devnull, "--python-version", "3.11",
            "--ignore-missing-imports", "--follow-imports=silent", "--check-untyped-defs",
            "--strict-equality", "--no-pretty", "--no-color-output", "--hide-error-context",
@@ -124,3 +181,44 @@ def test_the_gate_has_teeth(tmp_path):
     lines = run_mypy([str(probe)], cwd=src_root())
     hit = {int(ln.split(":")[1]) for ln in enum_findings(lines, poke_env_enum_names())}
     assert {7, 9, 11, 13} <= hit, lines
+
+
+def test_the_cache_is_bounded_and_prunes_its_siblings(tmp_path, monkeypatch):
+    """Each run keeps ITS dir and bounds the rest: stale by age, surplus by count, in-use spared."""
+    monkeypatch.setenv("GEN3AI_MYPY_STRICT_EQ_CACHE_ROOT", str(tmp_path))
+    now = time.time()
+
+    def sibling(name: str, idle_h: float, marker: bool = True) -> Path:
+        d = tmp_path / f"{CACHE_PREFIX}{name}"
+        (d / "3.11").mkdir(parents=True)
+        t = now - idle_h * 3600
+        if marker:
+            (d / CACHE_MARKER).touch()
+            os.utime(d / CACHE_MARKER, (t, t))
+        os.utime(d, (t, t))
+        return d
+
+    stale = sibling("stale0000000", 24 * 10)
+    legacy = sibling("legacy000000", 24 * 10, marker=False)      # a pre-marker dir
+    busy = sibling("busy00000000", 0.1)                          # another worktree, right now
+    recent = [sibling(f"recent{i:06d}", 2 + i) for i in range(8)]
+    outside = tmp_path / "unrelated_dir"
+    outside.mkdir()
+
+    seen: dict = {}
+
+    def fake_run(cmd, **kw):
+        seen["cache"] = Path(cmd[cmd.index("--cache-dir") + 1])
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    run_mypy(["x.py"], cwd=tmp_path)
+
+    own = cache_dir_for(src_root())
+    assert seen["cache"] == own and own.parent == tmp_path
+    assert (own / CACHE_MARKER).exists()
+    assert not stale.exists() and not legacy.exists()
+    assert busy.exists() and outside.exists()
+    left = sorted(tmp_path.glob(CACHE_PREFIX + "*"))
+    assert len(left) <= CACHE_MAX_KEYS + 1, left     # the bound, + the in-use grace survivor
+    assert recent[0].exists() and not recent[-1].exists()   # most recently used survive
