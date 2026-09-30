@@ -103,7 +103,14 @@ def build_package(module: torch.nn.Module, static_obs: torch.Tensor, static_mask
                                            *weight_tensors(module, names)), strict=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     inductor: Any = torch._inductor               # 2.8 API; 2.5.1 is refused before this
-    pkg = inductor.aoti_compile_and_package(ep, package_path=str(path))
+    # torch 2.8's AOTI codegen writes `metadata["AOTI_DEVICE_KEY"] = device_type` INTO the
+    # process-global `torch._inductor.config.aot_inductor.metadata` dict (codecache.py, in place) and
+    # never restores it — a leaked global the torch-state guard (rightly) fails. Give this compile its
+    # OWN dict via `config.patch`: the mutation lands on the patched object, and the process's dict
+    # is handed back untouched. (Slow-tier row RED since the T2 AOT backend landed; K3, 2026-09-30.)
+    import torch._inductor.config as inductor_config
+    with inductor_config.patch({"aot_inductor.metadata": {}}):
+        pkg = inductor.aoti_compile_and_package(ep, package_path=str(path))
     runner = inductor.aoti_load_package(pkg)
     return runner, names
 

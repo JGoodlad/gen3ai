@@ -90,43 +90,43 @@
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_aot_backend_one_package_per_bucket_serves_every_slot": {
-   "status": "fail",
-   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
-   "at": "2026-09-30T19:46:42Z",
-   "duration_s": 198.17,
-   "contention": 1.29,
-   "detail": "A test (or a fixture, or an import) that changes process-global torch/numeric state must RESTORE it \u2014 `try/finally`, `utils.torch_state_guard.torch_globals(num_threads=..., float32_matmul_precision=...)`, `torch._dynamo.config.patch(...)`, or a yield fixture that restores at its own scope's end. The"
+   "status": "pass",
+   "commit": "501209f1da3bce2b18806d8936a35440dcfacd59",
+   "at": "2026-10-01T00:06:49Z",
+   "duration_s": 168.78,
+   "contention": 2.24,
+   "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_eager_cuda_steady_state_allocates_no_segment_and_a_new_one_poisons": {
    "status": "pass",
-   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
-   "at": "2026-09-30T19:43:24Z",
-   "duration_s": 2.03,
-   "contention": 1.48,
+   "commit": "501209f1da3bce2b18806d8936a35440dcfacd59",
+   "at": "2026-10-01T00:06:49Z",
+   "duration_s": 1.88,
+   "contention": 1.76,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_graph_backend_parity_weight_swap_and_a_frozen_steady_state": {
    "status": "pass",
-   "commit": "f71897089172edfa42120e2521ec71fe89001467",
-   "at": "2026-09-30T23:31:41Z",
-   "duration_s": 172.5,
-   "contention": 2.44,
+   "commit": "501209f1da3bce2b18806d8936a35440dcfacd59",
+   "at": "2026-10-01T00:06:49Z",
+   "duration_s": 132.49,
+   "contention": 1.69,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_the_double_buffer_wait_stops_a_repack_before_the_queued_copy_reads_it": {
    "status": "pass",
-   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
-   "at": "2026-09-30T19:43:22Z",
-   "duration_s": 82.94,
-   "contention": 1.48,
+   "commit": "501209f1da3bce2b18806d8936a35440dcfacd59",
+   "at": "2026-10-01T00:06:49Z",
+   "duration_s": 73.77,
+   "contention": 2.35,
    "detail": ""
   },
   "src/agents/inference/service/service_cuda_test.py::test_two_lanes_replaying_concurrently_serve_their_own_slots": {
    "status": "pass",
-   "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
-   "at": "2026-09-30T19:41:59Z",
-   "duration_s": 90.54,
-   "contention": 1.38,
+   "commit": "501209f1da3bce2b18806d8936a35440dcfacd59",
+   "at": "2026-10-01T00:06:49Z",
+   "duration_s": 71.57,
+   "contention": 1.98,
    "detail": ""
   },
   "src/agents/model/build_arch_viewer_render_integration_test.py::test_dark_is_the_default_with_no_hash": {
@@ -1107,5 +1107,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T23:31:41Z"
+ "last_written": "2026-10-01T00:06:49Z"
 }
