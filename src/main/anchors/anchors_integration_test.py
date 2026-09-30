@@ -11,7 +11,7 @@ the other, and that a row lands carrying its regime. Two games is the smallest t
 the pieces not fitting — is exactly the kind that a routine gate should see. It is NOT ``sim`` (no
 in-process bridge) and NOT ``e2e`` (no server on :8000; it starts and stops its own on 9500-9599).
 
-**Both transports, one test, parametrized.** The default (`rust`) is the one the owner's
+**Both transports, one test, parametrized.** (`node` is tiered `slow` — see the parametrize.) The default (`rust`) is the one the owner's
 direction put in the hot path and the one every read now takes unless it opts out; `node` is kept
 green because it is the reference a transport differential is taken against, and a reference
 nobody runs rots. The Node case additionally needs `node` on PATH and the submodule's build
@@ -121,7 +121,10 @@ def _skip_reason(server: str = "rust") -> "str | None":
 
 
 
-@pytest.mark.parametrize("server", ["rust", "node"])
+#: `node` is `slow` (tier declared 2026-09-30): 26.9-27.9 s alone and 30.3 / 31.5 s inside the routine
+#: gate at `-n 2` on a quiet box, against the 30 s default-tier budget — it tipped the routine gate red
+#: at random. The slow tier still runs it and banks its verdict. `rust` (~26 s) stays routine.
+@pytest.mark.parametrize("server", ["rust", pytest.param("node", marks=pytest.mark.slow)])
 def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str) -> None:
     """The whole tool, end to end, on the smallest sample that still exercises every seam — once
     per transport, because "it works" on one of them says nothing about the other."""

@@ -369,6 +369,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/anchors/anchors_integration_test.py::test_two_real_games_against_metamon_smallrl[node]": {
+   "status": "pass",
+   "commit": "c4ed9dc7697dbceb12f6572dcd99c196d375e0b4",
+   "at": "2026-09-30T16:22:38Z",
+   "duration_s": 18.44,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/main/ops/eval_trace_gen_test.py::test_a_generated_cycle_is_shaped_like_a_live_one": {
    "status": "pass",
    "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
@@ -1066,5 +1074,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T15:12:25Z"
+ "last_written": "2026-09-30T16:22:38Z"
 }
