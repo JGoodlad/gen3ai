@@ -43,6 +43,11 @@ OPTIONS
                          then the check CANNOT fire — an absent file is not a clean one.
     --wedge-seconds N    no step progress for this long = WEDGED (default 2100 = 35 min).
     --interval N         seconds between ticks (default 300).
+    --dir-wait-seconds N with --pid-file and a bare run NAME: if the run directory does not
+                         exist yet, WAIT for it (up to N s, default 900) while the launcher pid
+                         is alive, instead of refusing. A launch creates the dir only once its
+                         child starts, so a watcher started beside the launch used to refuse and
+                         leave the arm unwatched. A dir that never appears is still a refusal.
 
 WHAT IT WRITES
     one line per tick:  [<timestamp>] ok step=<n> ckpt=<n> marginal_fps=<n> ep_len=<n>
@@ -65,7 +70,7 @@ esac
 . "$(dirname "$(readlink -f "$0")")/_common.sh"
 
 RUN_ARG="$1"; shift
-PIDF=""; NO_PID=0; STATUS=""; LAUNCHER_LOG=""; WEDGE=2100; INTERVAL=300
+PIDF=""; NO_PID=0; STATUS=""; LAUNCHER_LOG=""; WEDGE=2100; INTERVAL=300; DIR_WAIT=900
 while [ $# -gt 0 ]; do
     case "$1" in
         --pid-file)       PIDF="$2"; shift 2 ;;
@@ -74,19 +79,37 @@ while [ $# -gt 0 ]; do
         --launcher-log)   LAUNCHER_LOG="$2"; shift 2 ;;
         --wedge-seconds)  WEDGE="$2"; shift 2 ;;
         --interval)       INTERVAL="$2"; shift 2 ;;
+        --dir-wait-seconds) DIR_WAIT="$2"; shift 2 ;;
         *) echo "REFUSING: unknown option $1" >&2; usage >&2; exit 2 ;;
     esac
 done
-
-D="$(ops_resolve_run "$RUN_ARG")" || exit 2
-CLOG="$D/launcher_child.log"
-STATUS="${STATUS:-$D/watch_status.txt}"
-PY="$(ops_python)"
 
 if [ "$NO_PID" -eq 0 ] && [ -z "$PIDF" ]; then
     echo "REFUSING: --pid-file is required (or pass --no-pid-check to watch progress only)." >&2
     exit 2
 fi
+
+# A watcher started beside a launch runs BEFORE the launcher's child has created models/<run>/.
+# With a pid file and a bare NAME, wait for the directory while the launcher lives (2026-09-28:
+# the T32 arm's watcher refused at start and the arm ran unwatched). ops_resolve_run below still
+# refuses a directory that never appeared, with its reason.
+case "$RUN_ARG" in
+    */*|.*) ;;
+    *)
+        if [ "$NO_PID" -eq 0 ] && m_dir="$(ops_models_dir 2>/dev/null)" && [ ! -d "$m_dir/$RUN_ARG" ]; then
+            waited=0
+            while [ ! -d "$m_dir/$RUN_ARG" ] && [ "$waited" -lt "$DIR_WAIT" ]; do
+                kill -0 "$(cat "$PIDF" 2>/dev/null || echo 0)" 2>/dev/null || break
+                sleep 5; waited=$((waited + 5))
+            done
+        fi
+        ;;
+esac
+
+D="$(ops_resolve_run "$RUN_ARG")" || exit 2
+CLOG="$D/launcher_child.log"
+STATUS="${STATUS:-$D/watch_status.txt}"
+PY="$(ops_python)"
 
 say() { echo "[$(date '+%F %T')] $*" >> "$STATUS"; }
 

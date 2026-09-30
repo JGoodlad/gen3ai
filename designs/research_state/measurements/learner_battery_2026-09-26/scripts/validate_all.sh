@@ -6,6 +6,14 @@
 #
 #   bash designs/research_state/measurements/learner_battery_2026-09-26/scripts/validate_all.sh \
 #        [<standin zip> <standin step> <standin D_g>]
+#   FINAL_DG=<D_g> bash …/validate_all.sh      # AFTER N0 has finished: required (see below)
+#
+# 🚨 FINAL_DG (2026-09-27 finding). The old script rebuilt `--final` WITHOUT --dg, which rewrote the
+#    committed argv_<ARM>.txt back to their __DG__ placeholders and still returned 0 (launch_arm.sh's
+#    placeholder refusal made it fail SAFE, but it undid the Training Run's build). Now: once N0's
+#    final_model.zip exists, FINAL_DG is REQUIRED, `--final --dg $FINAL_DG` is what gets built, and any
+#    surviving __DG__ / __2DG__ makes the run exit non-zero. The placeholder-refusal check runs on a
+#    TEMPORARY copy, so the committed argvs are never rewritten to placeholders.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 D="$(dirname "$HERE")"
@@ -18,14 +26,25 @@ DG="${3:-4.3e-04}"
 export PYTHONPATH="${PYTHONPATH:-}:$SRC"
 mkdir -p "$OUT"
 cd /home/goodlad/dev/gen3ai
+FINAL_DG="${FINAL_DG:-}"
+if [ -z "$FINAL_DG" ] && [ -f models/ai_v14_01_base/final_model.zip ]; then
+  echo "REFUSING: N0 has finished, so the argvs are FINAL. Pass FINAL_DG=<D_g> (the value the argvs were"
+  echo "          built with); without it this script would rewrite them to __DG__ placeholders."
+  exit 2
+fi
 before="$(ls models | wc -l)"
 for r in ai_v14_02_lbat_ctrl ai_v14_03_lbat_e5 ai_v14_04_lbat_t32 ai_v14_05_lbat_l95; do
   [ -e "models/$r" ] && { echo "FATAL: models/$r exists — validation must not run against a live arm"; exit 3; }
 done
 rcs=0
-echo "=== build_argvs --standin ($ZIP @ $STEP, D_g $DG) + --final (placeholder) ($(date -Is))"
+echo "=== build_argvs --standin ($ZIP @ $STEP, D_g $DG) + --final (${FINAL_DG:-placeholder}) ($(date -Is))"
 "$P" "$HERE/build_argvs.py" --standin --parent "$ZIP" --parent-step "$STEP" --dg "$DG" > "$OUT/build_argvs_standin.txt" 2>&1; r=$?; rcs=$((rcs+r)); echo "    rc=$r"
-"$P" "$HERE/build_argvs.py" --final > "$OUT/build_argvs_final_placeholder.txt" 2>&1; r=$?; rcs=$((rcs+r)); echo "    rc=$r"
+if [ -n "$FINAL_DG" ]; then
+  "$P" "$HERE/build_argvs.py" --final --dg "$FINAL_DG" > "$OUT/build_argvs_final.txt" 2>&1; r=$?
+else
+  "$P" "$HERE/build_argvs.py" --final > "$OUT/build_argvs_final_placeholder.txt" 2>&1; r=$?
+fi
+rcs=$((rcs+r)); echo "    rc=$r"
 for A in C E5 T32 L95; do
   ARGV="$(cat "$HERE/argv_${A}_STANDIN.txt")"
   echo "=== $A: checkargs ($(date -Is))"
@@ -36,8 +55,10 @@ for A in C E5 T32 L95; do
   echo "=== $A: STANDIN=1 launch_arm.sh --dry-run ($(date -Is))"
   STANDIN=1 bash "$D/launch_arm.sh" "$A" --dry-run > "$OUT/launchsh_$A.txt" 2>&1; r=$?; rcs=$((rcs+r)); echo "    rc=$r"
 done
-echo "=== the committed placeholder argv must REFUSE ($(date -Is))"
-bash "$D/launch_arm.sh" C --dry-run > "$OUT/launchsh_C_placeholder_refusal.txt" 2>&1; r=$?
+echo "=== a placeholder argv must REFUSE — on a TEMPORARY copy ($(date -Is))"
+PH="$(mktemp)"; sed -E 's/--fork-lr [^ ]+/--fork-lr __DG__/' "$D/argv_C.txt" > "$PH"
+ARGV_FILE="$PH" bash "$D/launch_arm.sh" C --dry-run > "$OUT/launchsh_C_placeholder_refusal.txt" 2>&1; r=$?
+rm -f "$PH"
 echo "    rc=$r (expected 2)"; [ "$r" = "2" ] || rcs=$((rcs+1))
 echo "=== STANDIN without --dry-run must REFUSE"
 STANDIN=1 bash "$D/launch_arm.sh" C > "$OUT/launchsh_standin_nodryrun_refusal.txt" 2>&1; r=$?
@@ -46,6 +67,11 @@ echo "=== readers: speed_read on N0 (identity pair; bots-only window and self-pl
 "$P" "$HERE/speed_read.py" --fork-step 0 --futility X C=ai_v14_01_base X=ai_v14_01_base > "$OUT/speed_read_standin_N0_from_0.txt" 2>&1; r=$?; rcs=$((rcs+r)); echo "    rc=$r"
 "$P" "$HERE/speed_read.py" --fork-step 4000032 --futility X C=ai_v14_01_base X=ai_v14_01_base > "$OUT/speed_read_standin_N0_from_4000032.txt" 2>&1; r=$?; rcs=$((rcs+r)); echo "    rc=$r"
 "$P" "$HERE/battery_rule.py" --power > "$OUT/power_table.txt" 2>&1; r=$?; rcs=$((rcs+r)); echo "    rc=$r"
+if [ -n "$FINAL_DG" ]; then
+  echo "=== no placeholder may survive in the FINAL argvs"
+  left="$(grep -l "__DG__\|__2DG__" "$D"/argv_C.txt "$D"/argv_E5.txt "$D"/argv_T32.txt "$D"/argv_L95.txt 2>/dev/null)"
+  if [ -n "$left" ]; then echo "    FAIL: placeholder survives in: $left"; rcs=$((rcs+1)); else echo "    ok"; fi
+fi
 after="$(ls models | wc -l)"
 if [ "$before" != "$after" ] || ls -d models/ai_v14_0[2-5]_lbat_* >/dev/null 2>&1; then
   echo "FATAL: validation CREATED something under models/ ($before -> $after entries)"; exit 9

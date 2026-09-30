@@ -1,0 +1,6 @@
+[2026-09-28 20:54:22] K3 CHAIN START (pid 3916266) — waiting on K2 launcher pid 3910747
+[2026-09-29 01:30:55] K2 complete
+[2026-09-29 01:30:56] tenant check: no trainer live (waited 0s)
+[2026-09-29 01:30:59] dry-run rc 0: FORK of ai_v14_07_g0p_k2, +8,000,000
+[2026-09-29 01:30:59] LAUNCHED K3 ai_v14_08_g0p_k3 launcher pid 42489
+[2026-09-29 01:31:09] watcher started for ai_v14_08_g0p_k3

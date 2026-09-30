@@ -15,6 +15,10 @@
 # Usage:  bash launch_arm.sh <C|E5|T32|L95> [--dry-run]
 #         STANDIN=1 bash launch_arm.sh <ARM> --dry-run   # the stand-in argv (N0's periodic checkpoint);
 #                                                         # REFUSED without --dry-run
+#         ARGV_FILE=<file> [CONTROL_RUN=<run>] bash launch_arm.sh <ARM> [--dry-run]
+#                          # launch an arm from ANOTHER argv file (a re-pinned rerun such as T32b); the
+#                          # run name is READ from the argv, and CONTROL_RUN names the arm's registered
+#                          # control when it is not argv_C.txt's run (T32b's matched control = C_fix).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO=/home/goodlad/dev/gen3ai
@@ -23,24 +27,28 @@ LOG_DIR="${LOG_DIR:-/home/goodlad/.claude/jobs/learner_battery_2026-09-26/launch
 ARM="${1:?usage: launch_arm.sh <C|E5|T32|L95> [--dry-run]}"
 MODE="${2:-}"
 case "$ARM" in
-  C) RUN=ai_v14_02_lbat_ctrl ;; E5) RUN=ai_v14_03_lbat_e5 ;;
-  T32) RUN=ai_v14_04_lbat_t32 ;; L95) RUN=ai_v14_05_lbat_l95 ;;
+  C|E5|T32|L95) ;;
   *) echo "FATAL: unknown arm $ARM"; exit 2 ;;
 esac
 PARENT_ZIP=models/ai_v14_01_base/final_model.zip
 PARENT_STEP=75005952
-CTRL=ai_v14_02_lbat_ctrl
 
+# The run name and the control are READ, never hard-coded (2026-09-28: the re-pinned C_fix / T32b arms
+# could not go through this script because it named ai_v14_0[2-5] literally).
+argv_run_name() { tr -s ' \n' '\n\n' < "$1" | grep -A1 -x -- '--run-name' | tail -1; }
 if [ "${STANDIN:-0}" = "1" ]; then
   [ "$MODE" = "--dry-run" ] || { echo "FATAL: STANDIN=1 is a validation mode; it never launches"; exit 2; }
   ARGV_FILE="$HERE/scripts/argv_${ARM}_STANDIN.txt"
-else
+elif [ -z "${ARGV_FILE:-}" ]; then
   ARGV_FILE="$HERE/argv_${ARM}.txt"
 fi
+[ -f "$ARGV_FILE" ] || { echo "FATAL: no argv at $ARGV_FILE"; exit 2; }
+RUN="$(argv_run_name "$ARGV_FILE")"
+[ -n "$RUN" ] || { echo "FATAL: $ARGV_FILE names no --run-name"; exit 2; }
+CTRL="${CONTROL_RUN:-$(argv_run_name "$HERE/argv_C.txt")}"
 
 export PYTHONPATH="${PYTHONPATH:-}:$REPO/src"
 cd "$REPO"
-[ -f "$ARGV_FILE" ] || { echo "FATAL: no argv at $ARGV_FILE"; exit 2; }
 ARGV="$(cat "$ARGV_FILE")"
 grep -q "__DG__\|__2DG__" <<<"$ARGV" && {
   echo "FATAL: $ARGV_FILE still carries the D_g placeholder. D_g is the orchestrator's (registration §3,"
@@ -68,7 +76,7 @@ for a in ("C", "E5", "T32", "L95"):
 assert len({round(v, 12) for v in lr.values()}) == 1, f"D_g differs across arms: {lr}"
 print(f"D_g = {lr['C']:.2e} on every arm (E5 at 2 D_g); dose lr x n_epochs identical")
 PY
-  if [ "$ARM" != "C" ]; then
+  if [ "$ARM" != "C" ] && [ "$RUN" != "$CTRL" ]; then
     grep -aq "Training complete" "models/$CTRL/launcher_child.full.log" 2>/dev/null || {
       echo "FATAL: the control $CTRL has not finished — the registered order is C first (both speed"
       echo "       endpoints and the T32 futility look read C's rollouts)."; exit 4; }
@@ -91,10 +99,14 @@ if [ -e "models/$RUN" ]; then
   echo "       A restart / re-fork is a decision, not a re-run (and is DESTRUCTIVE if wrong)."
   exit 3
 fi
-if pgrep -f "[t]rain_rl_agent.py" >/dev/null 2>&1 && [ "${ALLOW_CONCURRENT:-0}" != "1" ]; then
+# PRECISE tenant check: only a PYTHON process running train_rl_agent.py is a trainer. The old
+# `pgrep -f "[t]rain_rl_agent.py"` also matched any shell whose argv carried the text (it blocked
+# two launches on 2026-09-25).
+TRAINER_RE='^[^ ]*python[0-9.]* [^ ]*train_rl_agent\.py'
+if pgrep -f "$TRAINER_RE" >/dev/null 2>&1 && [ "${ALLOW_CONCURRENT:-0}" != "1" ]; then
   echo "FATAL: a trainer process is already running — the GPU is single-tenant, and the battery's"
   echo "       speed endpoint assumes it (registration §4.1)."
-  pgrep -af "[t]rain_rl_agent.py" | cut -c1-200
+  pgrep -af "$TRAINER_RE" | cut -c1-200
   exit 5
 fi
 

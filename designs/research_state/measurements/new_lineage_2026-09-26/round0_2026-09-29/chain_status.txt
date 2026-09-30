@@ -1,0 +1,7 @@
+[2026-09-29 15:42:21] LAUNCH-ONE START (pid 909235) ai_v14_09_r0_offense_a not-before 15:51
+[2026-09-29 15:51:01] waiting: gpu_apps=1 trainer=0 (951683 )
+[2026-09-29 15:53:32] GPU empty, no trainer (waited 150s)
+[2026-09-29 15:53:36] LAUNCHED ai_v14_09_r0_offense_a launcher pid 965625
+[2026-09-29 15:53:46] watcher started for ai_v14_09_r0_offense_a
+[2026-09-29 16:36:59] PAUSED ai_v14_09_r0_offense_a by SIGTERM (orchestrator request, M5 T2 GPU window)
+[2026-09-29 18:13:11] ROUND 0 DEFERRED (owner: no GPU training until M5 lands). A′ stays PAUSED at 92,110,848 (final_model_interrupted.zip + argv_ai_v14_09_r0_offense_a_RESUME.txt kept, resume dry-run rc 0). A2′ NOT launched. GPU reserved to M5 via flock /home/goodlad/.claude/jobs/gpu.lock — ask the orchestrator before any GPU job.

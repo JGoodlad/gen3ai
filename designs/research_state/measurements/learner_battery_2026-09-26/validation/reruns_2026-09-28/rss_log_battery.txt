@@ -1,0 +1,4 @@
+[2026-09-28 02:47] C ai_v14_02_lbat_ctrl life 2 (restart 02:32:12, resumed LR 2.80e-05 frozen pin persists): 117 procs, 48,122 MB, sim_bridge 581 MB (N0 last measured life: 50,178 MB)
+[2026-09-28 07:48] E5 ai_v14_03_lbat_e5 life 2 (restart 07:01:49, resumed LR 5.60e-05, frozen pin persists): 118 procs (>15min), 49583 MB, sim_bridge 581 MB (C life 2: 48,122 MB)
+[2026-09-28 11:50] L95 ai_v14_05_lbat_l95 life 2 (restart 11:10:35, resumed LR 2.80e-05, frozen pin persists): 117 procs steady (>=30 min), ~49,317 MB, sim_bridge 581 MB; excludes 18 py procs aged 10-20 min from the 11:30 eval (6,209 MB) (E5 life 2: 49,583 MB)
+[2026-09-28 18:46] Cfix ai_v14_06_lbat_ctrl_fix life 2 (restart ~17:56, resumed LR 2.80e-05, frozen pin persists, parity PASS again): 117 procs steady (>=30 min), 48,485 MB, sim_bridge 581 MB (C life 2: 48,122 MB)

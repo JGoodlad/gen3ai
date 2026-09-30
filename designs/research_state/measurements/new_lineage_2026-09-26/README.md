@@ -56,3 +56,8 @@ lineage's fresh-root recipe, `ai_v13_02_flywheel_winprob`, on the clean-input bo
 its diff against `production_config.json` is the launch entry's job), the 60-s `--debug` smoke (it creates a
 run directory under `models/`; registration S-3), and the first two minutes of the real launch — the only
 test of the preload layer.
+
+## After N0 (launch records, Training Run)
+
+- [`g0p_blocks_k2_k3/`](g0p_blocks_k2_k3/README.md) — G0′ continuation blocks 2 and 3 on the fixed learner. Block 1 = C_fix. G0′ = K2 = `ai_v14_07_g0p_k2` @ 91,127,808.
+- [`round0_2026-09-29/`](round0_2026-09-29/README.md) — round 0 (A′, A2′). The argvs, dry-runs and resume argvs are here. A′ is PAUSED at 92,110,848 and A2′ was never launched; round 0 is DEFERRED until M5 lands.

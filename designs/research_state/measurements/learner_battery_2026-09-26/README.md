@@ -3,7 +3,7 @@
 The registration (the arms, the dose, the rules, the power, the schedule amendment) is
 [`../../learner_battery_2026-09-26.md`](../../learner_battery_2026-09-26.md). **Nothing here was executed
 for real by the session that wrote it: no arm was launched, nothing was written under `models/`.**
-`launch_arm.sh` is **PREPARED BUT NEVER EXECUTED**, for the Training Run session after the orchestrator's go.
+`launch_arm.sh` was written unexecuted. **The Training Run then executed the battery on 2026-09-27/28:** C, E5 and L95 completed; T32 was blocked at the compile parity gate; the reruns are C_fix and T32b (`validation/reruns_2026-09-28/`). The verdicts are in `READ.md`.
 
 **Codes:** **N0** = `ai_v14_01_base`, the new lineage's fresh base run (the fork parent, at its
 `final_model.zip`, 75,005,952). **C** = `ai_v14_02_lbat_ctrl`, the control (N0's recipe continued = the
@@ -14,14 +14,16 @@ TF32 matmuls. **L95** = `ai_v14_05_lbat_l95`, policy GAE λ 0.95. **D_g** = the 
 
 | path | what |
 |---|---|
-| `argv_{C,E5,T32,L95}.txt` | the FINAL argvs with the `__DG__` / `__2DG__` placeholder — **they REFUSE to launch** until D_g is decided (registration F-1) |
-| `launch_arm.sh <ARM> [--dry-run]` | checkargs + launcher `--dry-run` every time; refuses the placeholder, an unfinished N0, a D_g that differs across arms, any arm before C has finished, a clobber, and a concurrent trainer; prints the STOP-list. `STANDIN=1 … --dry-run` validates the stand-in argv (refused without `--dry-run`) |
+| `argv_{C,E5,T32,L95}.txt` | the FINAL argvs, built with `--final --dg 2.8e-05` (the owner's D_g; landed `61f6ff7b`). A `__DG__` / `__2DG__` placeholder form REFUSES to launch |
+| `launch_arm.sh <ARM> [--dry-run]` | checkargs + launcher `--dry-run` every time; refuses the placeholder, an unfinished N0, a D_g that differs across arms, any arm before C has finished, a clobber, and a concurrent trainer; prints the STOP-list. `STANDIN=1 … --dry-run` validates the stand-in argv (refused without `--dry-run`). The run name is READ from the argv; `ARGV_FILE=<file>` launches another argv (a re-pinned rerun), and `CONTROL_RUN=<run>` names its registered control (default: `argv_C.txt`'s run). The tenant check matches only a PYTHON `train_rl_agent.py` process |
 | `scripts/build_argvs.py` | builds all four from the lineage kit's `argv_base.txt` and ASSERTS the design: the deleted flags and `--arch` dropped, each arm differs from C in exactly its registered value(s), the dose lr × n_epochs identical on every arm. `--final --dg <D_g>` writes the launchable argvs; `--standin …` the validation ones |
 | `scripts/argv_*_STANDIN.txt` | the validated stand-ins (parent N0's `checkpoint_4800000_steps.zip`, D_g 4.3e-04 = N0's lr at 4.8M) |
 | `scripts/speed_read.py` | the speed endpoint S (projected from `train/train_ms`, bootstrap CI), the per-epoch KL / clip descriptor, stalls per 1M, and the T32 futility look |
 | `scripts/battery_rule.py` | the decision rule (`rule`) and the power table (`--power`) |
-| `scripts/validate_all.sh` | everything below, and FAILS if `models/` gained an entry |
+| `scripts/validate_all.sh` | everything below, and FAILS if `models/` gained an entry. **After N0 has finished, `FINAL_DG=<D_g>` is REQUIRED**: it builds `--final --dg`, and FAILS if a placeholder survives. The placeholder refusal runs on a temporary copy. (2026-09-27: without it, the script rewrote the final argvs to placeholders and still returned 0.) |
 | `validation/` | every output, verbatim (the worktree path shortened to `<wt>`) |
+| `validation/final_*.txt` | checkargs / `--dry-run` / `launch_arm.sh --dry-run` on the FINAL argvs (2026-09-27, before C) |
+| `validation/reruns_2026-09-28/` | the C_fix and T32b argvs, their pre-launch logs, T32b's futility read (and its 11-rollout recompute), and the battery's RSS log |
 | `READ.md` | **THE READ (2026-09-29):** the battery verdicts (E5 ADOPT, L95 NOT ADOPTED / OUTSIDE BELOW, T32 NOT RUN, T32b futile), the C_fix − C bug-effect read, the G0′ plateau read (G0′ = K2), with the working tables |
 | `read/` | `battery_read.py` (untaught-8 + SmallRL aggregation from the N0 end-of-run queue's rows) and every output of that read, `speed_read.py` and `battery_rule.py` |
 

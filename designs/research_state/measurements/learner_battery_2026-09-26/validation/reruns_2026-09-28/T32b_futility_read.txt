@@ -1,0 +1,4 @@
+T32b FUTILITY (registration §4.3), control = C_fix (ai_v14_06_lbat_ctrl_fix), --fork-step 75005952
+As run live (20:28 PT, first poll with >=12 post-fork rollouts): 12 rollouts (75,202,560..76,283,904): median iter 195.3 s, update 54.9 s; S = +2.48 % [+2.24, +2.91]; iter ratio 1.022 -> STOP
+Recompute at exactly 11 rollouts (75,202,560..76,185,600; speed_read.py with T32b rows truncated to 11, script copy beside this file): median iter 193.0 s, update 54.9 s; S = +2.49 % [+2.23, +2.93]; iter ratio 1.010 -> STOP
+Verdict identical. T32b stopped by SIGTERM to launcher pid 3878113 at 20:29:50 PT; final_model_interrupted.zip @76,283,904. The orchestrator accepted the STOP; production stays matmul precision 'highest'.

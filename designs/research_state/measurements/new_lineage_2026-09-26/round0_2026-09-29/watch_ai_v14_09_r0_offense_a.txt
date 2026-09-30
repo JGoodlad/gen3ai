@@ -1,0 +1,12 @@
+[2026-09-29 15:53:46] WATCHER START (pid 965821) run=/home/goodlad/dev/gen3ai/models/ai_v14_09_r0_offense_a — wedge limit 2100s, interval 300s
+[2026-09-29 15:53:46] ok step=? ckpt=0 marginal_fps=n/a ep_len=?
+[2026-09-29 15:58:46] ok step=? ckpt=0 marginal_fps=n/a ep_len=?
+[2026-09-29 16:03:46] ok step=? ckpt=0 marginal_fps=n/a ep_len=?
+[2026-09-29 16:08:46] ok step=91324416 ckpt=0 marginal_fps=n/a ep_len=34.4
+[2026-09-29 16:13:46] ok step=91422720 ckpt=0 marginal_fps=n/a ep_len=34
+[2026-09-29 16:18:46] ok step=91521024 ckpt=0 marginal_fps=n/a ep_len=31.5
+[2026-09-29 16:23:46] ok step=91717632 ckpt=0 marginal_fps=n/a ep_len=31
+[2026-09-29 16:28:46] ok step=91815936 ckpt=0 marginal_fps=n/a ep_len=30.5
+[2026-09-29 16:33:46] ok step=92012544 ckpt=0 marginal_fps=n/a ep_len=36.6
+[2026-09-29 16:38:46] FAILURE: launcher pid 965625 GONE
+[2026-09-29 16:38:46] WATCHER EXIT
