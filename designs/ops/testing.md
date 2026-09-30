@@ -275,9 +275,20 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | **anything on the GPU** (a `GEN3AI_TEST_ALLOW_GPU=1` test, a cuda benchmark) | `scripts/ops/gpu_lock.sh <cmd>` — **never a bare `flock ~/.claude/jobs/gpu.lock`**. The helper (`src/utils/gpu_lock.py`, Python: `with gpu_lock():`) exports `GEN3AI_GPU_LOCK_HELD=<pid>`, so a command that takes the lock itself (`rust_core_m5 gates --gpu`, `policy_spectrum truth --lock`) re-enters instead of deadlocking on its own ancestor (2026-09-30: 15 min at 0% CPU); an ancestor held by a bare `flock` raises `GpuLockSelfDeadlock` at once. **A wall timeout goes INSIDE the lock** — `scripts/ops/gpu_lock.sh timeout 3000 <cmd>`, never `timeout 3000 scripts/ops/gpu_lock.sh <cmd>`, which counts lock-WAIT time and killed a queued job that never ran (2026-09-30); every acquisition prints `[gpu_lock] acquired … at <time> after <N> s waiting` | — |
 
 ```bash
-# THE ROUTINE GATE — everything cheap, whatever it needs. Add -n 2 (~1.8x, two cores).
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e" -q
+# THE ROUTINE GATE — everything cheap, whatever it needs; -n 2 (~1.8x, two cores), under a GATE SLOT.
+export PYTHONPATH=$PYTHONPATH:src && scripts/ops/gate_lock.sh \
+  /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 2
 ```
+
+**The gate SEMAPHORE** (`scripts/ops/gate_lock.sh`, `src/utils/gate_lock.py`, 2026-09-30): at most
+`GATE_SLOTS` = 2 routine gates at once (`$GEN3AI_GATE_SLOTS` overrides). Seven concurrent `-n 2` gates
+plus a compile inventory and a GPU benchmark put load ~36 on 8 cores / 16 threads; every gate crawled
+(one COMMIT test ran 160.8 s against ~21 s quiet), budgets tripped, benchmarks were contaminated. N
+`flock` slot files under `~/.claude/jobs/gate_slots/`: try each non-blocking, else block on one in the
+kernel while re-trying the rest; a crashed holder's slot frees when it dies. Re-entrant like the GPU
+lock (`GEN3AI_GATE_LOCK_HELD=<pid>:<slot>`, verified against `/proc/locks`); all slots held by
+ancestors is `GateLockSelfDeadlock` (exit 3); the timeout is inside (`--timeout-s`, exit 4). Wait and
+acquisition time go to stderr; `--status` names the holders.
 
 **Do not use the old `-m "not integration and not e2e"`.** It is what let the obs-golden linchpin
 rot on main three times: `integration` now spans a ~100x cost range, so excluding it throws away

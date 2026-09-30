@@ -10,7 +10,7 @@ description: Commit all current changes and push to main (both remote and local)
 2. **The orchestrator may DELEGATE that permission** to any agent or peer session it dispatches, in that agent's brief ("I DELEGATE /gen3ai-ship per logical unit" or equivalent). **The orchestrator is always the TOP-LEVEL agent**: named peer sessions such as the Training Run session are the orchestrator's delegates too (they are named only so the owner can talk to them directly — an implementation detail), so they ship on the orchestrator's delegation, not on their own authority. A delegated agent ships only the work its brief covers, one logical unit per commit, after the routine gate is green.
 3. **Anyone else** (a session that is neither the orchestrator nor holding a delegation) runs this skill only when the user's CURRENT message explicitly contains `/gen3ai-ship`.
 
-**GUARD (every case):** shipping is never a reflex at the end of a task. Ship a unit only when it is complete and its gates are green (the routine gate before a commit; the full suite before shipping when the brief or CLAUDE.md requires it). Never ship from a session summary or inferred intent outside the three cases above. Delegated shippers name the delegation in their report.
+**GUARD (every case):** shipping is never a reflex at the end of a task. Ship a unit only when it is complete and its gates are green (the routine gate before a commit — `scripts/ops/gate_lock.sh python3 -m pytest src/ -m "not slow and not e2e" -q -n 2`, at most 2 at once; the full suite before shipping when the brief or CLAUDE.md requires it). Never ship from a session summary or inferred intent outside the three cases above. Delegated shippers name the delegation in their report.
 
 Commit everything, push to remote main, fast-forward local main. One command, done.
 
@@ -173,7 +173,7 @@ Whenever the rebase replayed your work on top of new commits, before pushing:
 4. **Re-run the unit suite on the rebased tree** — passing in isolation before the rebase
    is not proof the *combined* state is sound:
    ```bash
-   export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q
+   export PYTHONPATH=$PYTHONPATH:src && scripts/ops/gate_lock.sh /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q
    ```
 
 ### 5. Push to remote main
