@@ -467,12 +467,22 @@ class PolicyOpponentServer:
     (env, opponent player) — today's ``RLPlayer`` objects, each with its own stream."""
 
     def __init__(self, plan: OpponentPlan, svc: Any, n_envs: int, *, policy_seed: int,
-                 seed_stride: int = 0, force_greedy: bool = False):
+                 seed_stride: int = 0, force_greedy: bool = False, sampling: str = "generator",
+                 run_seed: int = 0):
         import torch
 
         self.plan, self.svc, self.n = plan, svc, int(n_envs)
         self.routes = plan.routes()
         self.force_greedy = bool(force_greedy)
+        # M5 Lane G (F-LE-8): ``keyed`` draws p2's sample with the COUNTER-BASED keyed draw
+        # (``agents.training.keyed_draw``: key = (run_seed, the opponent stream, env, episode, p2's
+        # dec_n)) in one vectorised op; ``generator`` (the default here, Lane E's gate) is today's
+        # per-player ``torch.multinomial`` stream, bit for bit.
+        if sampling not in ("generator", "keyed"):
+            raise ValueError(f"PolicyOpponentServer: sampling {sampling!r}")
+        self.sampling = sampling
+        self.run_seed = int(run_seed)
+        self.near_boundary = 0
         slot_route = {r.slot: r for r in self.routes if r.kind == "policy"}
         if svc is not None:
             n_svc = len(getattr(svc, "_slots", ())) or None
@@ -484,7 +494,7 @@ class PolicyOpponentServer:
         for r in self.routes:
             if r.kind == "policy":
                 self.temperature[r.player] = float(r.temperature if r.temperature is not None else 1.0)
-        players = sorted(self.temperature)
+        players = sorted(self.temperature) if sampling == "generator" else []
         self._gens: Dict[Tuple[int, str], Any] = {}
         for i in range(self.n):
             for p in players:
@@ -506,7 +516,19 @@ class PolicyOpponentServer:
 
     def serve(self, cols: Mapping[str, np.ndarray], *, record: Optional[List[Any]] = None) -> np.ndarray:
         """Answer every p2 decision on a POLICY route; returns the env indices served. ``record``
-        (harnesses): appends ``(env, slot, logp row copy, greedy, action)`` per served row."""
+        (harnesses): appends ``(env, slot, logp row copy, greedy, action)`` per served row.
+        ``submit`` + ONE flush + ``complete``."""
+        pending = self.submit(cols)
+        if pending is None:
+            return np.zeros(0, dtype=np.int64)
+        t1 = time.perf_counter()
+        self.svc.flush()
+        self.stats.flush_s += time.perf_counter() - t1
+        return self.complete(cols, pending, record=record)
+
+    def submit(self, cols: Mapping[str, np.ndarray]) -> Optional[Tuple[np.ndarray, List[Any]]]:
+        """Phase 1 (M5 Lane G): submit p2's POLICY rows grouped by ``opp_slot`` WITHOUT flushing, so a
+        caller can put the trainee's rows in the same T2 flush. Returns ``(order, tickets)`` or None."""
         from agents.inference.service.spec import Priority
 
         t0 = time.perf_counter()
@@ -514,16 +536,23 @@ class PolicyOpponentServer:
         slot = cols["opp_slot"]
         envs = np.flatnonzero(need & (slot >= 0))
         if envs.size == 0:
-            return envs
+            return None
         order = envs[np.argsort(slot[envs], kind="stable")]
         tickets = []
         for s in np.unique(slot[order]):
             rows = order[slot[order] == s]
             tickets.append((rows, self.svc.submit(int(s), cols["obs"][rows, 1], cols["mask"][rows, 1],
                                                    Priority.ROLLOUT)))
-        t1 = time.perf_counter()
-        self.svc.flush()
+        self.stats.gather_s += time.perf_counter() - t0
+        return order, tickets
+
+    def complete(self, cols: Mapping[str, np.ndarray], pending: Tuple[np.ndarray, List[Any]], *,
+                 record: Optional[List[Any]] = None) -> np.ndarray:
+        """Phase 2: after the flush, read the served rows, choose p2's actions into ``action[:, 1]``
+        (greedy, or sampled at the route's temperature) and return the env indices served."""
         t2 = time.perf_counter()
+        order, tickets = pending
+        slot = cols["opp_slot"]
         for rows, t in tickets:
             lp, _v, gr = t.host()
             self._logp[rows] = lp
@@ -537,15 +566,21 @@ class PolicyOpponentServer:
             else:
                 stoch_rows.append(i)
                 temps.append(self.temperature[r.player])
-                gens.append(self._gens[(int(i), r.player)])
-        if stoch_rows:
+                gens.append(self._gens.get((int(i), r.player)))
+        if stoch_rows and self.sampling == "keyed":
+            from agents.training import keyed_draw as KD
+
+            sr = np.asarray(stoch_rows, dtype=np.int64)
+            u = KD.keyed_uniforms(self.run_seed, KD.STREAM_OPPONENT, sr, cols["episode"][sr], cols["dec_n"][sr, 1])
+            a, margin = KD.keyed_actions(self._logp[sr], u, np.asarray(temps, dtype=np.float64))
+            act[sr, 1] = a
+            self.near_boundary += int((margin < 1e-6).sum())
+        elif stoch_rows:
             act[stoch_rows, 1] = sample_actions(self._logp[stoch_rows], temps, gens)
         t3 = time.perf_counter()
         st = self.stats
         st.steps += 1
         st.rows += int(order.size)
-        st.gather_s += t1 - t0
-        st.flush_s += t2 - t1
         st.sample_s += t3 - t2
         for s in slot[order]:
             st.per_slot_rows[int(s)] = st.per_slot_rows.get(int(s), 0) + 1

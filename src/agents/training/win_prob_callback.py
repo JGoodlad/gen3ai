@@ -62,6 +62,32 @@ from agents.training.win_prob_rollout import (BANKED_CONTINUATION_DECISIONS, DEF
                                               rollout_metrics, select_rows)
 
 
+def backfill_terminal_labels(scratch: np.ndarray, episode_starts: np.ndarray, wt: np.ndarray,
+                             wm: np.ndarray) -> None:
+    """THE WINDOW BACK-FILL, as a function so the Rust collector's WINDOW fill (M5 Lane G,
+    ``rust_rollout.store.fill_window``) runs the same scan as this callback.
+
+    Backward scan per timestep (vectorised over envs): carry each episode's terminal outcome back to
+    its earlier steps, resetting at an episode boundary. ``scratch[t, e]`` is the outcome at a
+    terminal row (NaN elsewhere); ``known`` flags steps whose episode finished within the buffer (so
+    the label is real); the trailing in-progress episode stays 0. ``wt`` / ``wm`` are the buffer's
+    ``[n_steps, n_envs, 1]`` ``win_target`` / ``win_mask``, written IN PLACE."""
+    n_steps, n_envs = scratch.shape
+    known = np.zeros(n_envs, dtype=bool)
+    val = np.zeros(n_envs, dtype=np.float32)
+    for t in range(n_steps - 1, -1, -1):
+        s = scratch[t]                            # [n_envs]
+        has_terminal = ~np.isnan(s)
+        known = known | has_terminal
+        val = np.where(has_terminal, s, val).astype(np.float32)
+        wt[t, :, 0] = val
+        wm[t, :, 0] = known.astype(np.float32)
+        # An episode start at step t means the EARLIER (t-1) step belongs to a prior episode.
+        starts = episode_starts[t] >= 0.5
+        known = known & ~starts
+        val = np.where(starts, 0.0, val).astype(np.float32)
+
+
 class WinProbLabelCallback(BaseCallback):
     """Captures per-episode win/loss outcomes during rollout collection and back-fills the rollout
     buffer's ``win_target`` / ``win_mask`` obs keys with the Monte-Carlo label before ``train()``."""
@@ -186,23 +212,7 @@ class WinProbLabelCallback(BaseCallback):
         es = buf.episode_starts                       # [n_steps, n_envs] (1.0 = start of a new episode)
         wt = obs["win_target"]                        # [n_steps, n_envs, 1]
         wm = obs["win_mask"]                          # [n_steps, n_envs, 1]
-        n_steps, n_envs = scratch.shape
-        # Backward scan per timestep (vectorised over envs): carry each episode's terminal outcome back
-        # to its earlier steps, resetting at an episode boundary. `known` flags steps whose episode
-        # finished within the buffer (so the label is real); the trailing in-progress episode stays 0.
-        known = np.zeros(n_envs, dtype=bool)
-        val = np.zeros(n_envs, dtype=np.float32)
-        for t in range(n_steps - 1, -1, -1):
-            s = scratch[t]                            # [n_envs]
-            has_terminal = ~np.isnan(s)
-            known = known | has_terminal
-            val = np.where(has_terminal, s, val).astype(np.float32)
-            wt[t, :, 0] = val
-            wm[t, :, 0] = known.astype(np.float32)
-            # An episode start at step t means the EARLIER (t-1) step belongs to a prior episode.
-            starts = es[t] >= 0.5
-            known = known & ~starts
-            val = np.where(starts, 0.0, val).astype(np.float32)
+        backfill_terminal_labels(scratch, es, wt, wm)
         # 🚨 THE TERMINAL BIT, COPIED BEFORE ANYTHING OVERWRITES IT. Two consumers need the
         # pre-treatment label — the value sidecar (which must not describe a λ-return as an
         # outcome) and the rollout dose meter (`|rollout label − terminal bit|`) — and both of the

@@ -34,6 +34,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | the stall-tail harvest / head-repair pipeline | [`designs/training/stall_tail_harvest.md`](../../../designs/training/stall_tail_harvest.md) |
 | either `--compile-*` flag, BLAS pinning | [`designs/training/compile_flags.md`](../../../designs/training/compile_flags.md) |
 | `stats.py`, the replay-imputation probe | [`designs/training/offline_meters.md`](../../../designs/training/offline_meters.md) |
+| the RUST COLLECTOR — the rollout on the M5 Rust env core, the complete-game buffer, staleness, the keyed draw (`rust_rollout/`, `keyed_draw.py`, `rust_vec_env.py`) | [`designs/training/rust_collector.md`](../../../designs/training/rust_collector.md) |
 
 Closed history — **do not update it, and do not re-derive a plan from it**:
 `designs/research_state/claude_md_archive/training_leaf_faint_attribution_history.md` and
