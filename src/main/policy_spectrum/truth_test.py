@@ -1,0 +1,105 @@
+"""Gate ④'s subset, mapping and readout math (unit; no core)."""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from main.policy_spectrum import bank as B
+from main.policy_spectrum import truth as T
+from main.policy_spectrum.bank_test import BANK_V1
+
+
+@pytest.fixture(scope="module")
+def v1():
+    return B.load_bank(BANK_V1)
+
+
+def test_subset_is_fixed_stratified_and_covers_categories(v1):
+    a = T.select_subset(v1)
+    assert a == T.select_subset(v1)
+    dd = {d["id"]: d for d in v1.decisions}
+    free = [i for i in a if dd[i]["kind"] == "free"]
+    assert len(free) >= 200 and sum(dd[i]["kind"] == "forced_switch" for i in a) == 20
+    for c in ("hazard", "setup", "recovery", "status"):
+        assert sum(c in dd[i]["cats"].values() for i in free) >= 30
+    per_battle = {}
+    for i in a:
+        per_battle[dd[i]["battle"]] = per_battle.get(dd[i]["battle"], 0) + 1
+    assert max(per_battle.values()) <= 2
+    assert {dd[i]["opp_class"] for i in a} == {"bot", "pool_snapshot", "exploiter"}
+
+
+def test_cmd_index_is_the_sides_nth_choose_and_matches_the_played_token(v1):
+    b = v1.battles[0]
+    ds = [d for d in v1.decisions if d["battle"] == b.battle_id]
+    for d in ds:
+        at = T.cmd_index(b, d["side"], d["n"])
+        assert b.commands[at][0] == d["side"] and b.commands[at][1] == d["played"]
+    with pytest.raises(IndexError):
+        T.cmd_index(b, b.banked_side, 10_000)
+
+
+def test_to_log_equals_lane_i_record_to_log(v1):
+    from utils.bridge.reconstruction import ReconstructionRecord
+    from utils.rust_env.successors import record_to_log
+
+    b = v1.battles[3]
+    import json
+    rec = ReconstructionRecord(
+        format_id=b.format_id, prng_seed=b.seed,
+        input_log=(f">start {json.dumps({'formatid': b.format_id, 'seed': b.seed})}",
+                   f">player p1 {json.dumps(b.p1)}", f">player p2 {json.dumps(b.p2)}"),
+        commands=tuple(tuple(c) for c in b.commands))
+    assert T.to_log(b) == record_to_log(rec)
+
+
+def test_seeds_are_shared_format_and_per_turn():
+    s = T.turn_seeds("x#p1#3", 4)
+    assert s == T.turn_seeds("x#p1#3", 4) and len(set(s)) == 4
+    assert all(x.startswith("sodium,") and len(x) == 7 + 32 for x in s)
+    assert s != T.turn_seeds("x#p1#4", 4)
+
+
+def _row(did, outcomes):
+    return {"id": did, "ok": True, "outcomes": {str(a): v for a, v in outcomes.items()}}
+
+
+def test_turn_truth_classes():
+    # action 6 wins everywhere; 7 is CRN-identical to 6; 8 is clearly worse; 9 is noisy-close
+    r = _row("x", {6: [1, 1, 1, 1], 7: [1, 1, 1, 1], 8: [-1, -1, -1, -1], 9: [1, 1, 1, -1]})
+    t = T.turn_truth(r, eps=0.1)
+    assert t["actions"] == [6, 7, 8, 9] and t["vstar"] == 1.0
+    assert t["near"].tolist() == [True, True, False, False]
+    assert t["strict_near"].tolist() == [True, True, False, False]
+    assert t["dominated"].tolist() == [False, False, True, False]     # 9: gap 0.5, SE 0.5 -> uncertain
+
+
+def test_readout_starvation_regret_and_guess(v1):
+    # two synthetic turns on real bank ids (their categories are read from the bank)
+    ids = [d["id"] for d in v1.decisions if d["kind"] == "free" and d["n_legal"] >= 3][:2]
+    dd = {d["id"]: d for d in v1.decisions}
+    rows, probs = [], np.zeros((len(v1.decisions), 11))
+    pos = {d["id"]: i for i, d in enumerate(v1.decisions)}
+    for k, did in enumerate(ids):
+        legal = sorted(int(a) for a in dd[did]["tokens"])
+        a0, a1, a2 = legal[:3]
+        out = {a: [-1, -1] for a in legal}
+        out[a0] = [1, 1]
+        out[a1] = [1, 1]
+        rows.append(_row(did, out))
+        p = np.zeros(11)
+        if k == 0:
+            p[a0], p[a1], p[a2] = 0.995, 0.004, 0.001      # a1 near-best but starved
+        else:
+            p[a0], p[a1], p[a2] = 0.5, 0.3, 0.2
+        probs[pos[did]] = p
+    rows.append({"id": ids[0], "ok": False, "error": "refused"})
+    r = T.readout(v1, rows, probs)
+    assert r["turns"] == 2 and r["refused"] == 1
+    assert r["starved"]["mean"] == pytest.approx(0.5)
+    assert r["near"]["mean"] == pytest.approx((0.999 + 0.8) / 2)
+    assert r["dom"]["mean"] == pytest.approx((0.001 + 0.2) / 2)
+    assert r["regret"]["mean"] == pytest.approx(((1 - (0.999 - 0.001)) + (1 - (0.8 - 0.2))) / 2)
+    s = T.value_summary(rows[:2])
+    assert s["turns"] == 2 and s["mean_near_best"] == 2.0 and s["vstar_eq_+1"] == 2

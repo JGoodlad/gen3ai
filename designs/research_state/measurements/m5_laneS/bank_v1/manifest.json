@@ -1,0 +1,170 @@
+{
+ "bank_seed": "m5-laneS-bank-v1",
+ "built_at_commit": "7013c288e08f0daefb6b7e0da3cedf7bd5fad620",
+ "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+ "counts": {
+  "battles": 580,
+  "category_legal": {
+   "attack": 17538,
+   "hazard": 1642,
+   "recovery": 5258,
+   "setup": 3984,
+   "status": 11669,
+   "switch": 19533
+  },
+  "decisions": 20712,
+  "gate1_checkable": 19964,
+  "kind": {
+   "forced_switch": 1805,
+   "free": 18907
+  },
+  "legal_bucket": {
+   "2-3": 1154,
+   "4-6": 6335,
+   "7+": 13223
+  },
+  "opp_class": {
+   "bot": 11109,
+   "exploiter": 748,
+   "pool_snapshot": 8855
+  },
+  "opp_name": {
+   "aggressive": 1216,
+   "aggressive_v2": 1247,
+   "ai_v14_09_r0_offense_a": 748,
+   "heuristic": 1110,
+   "heuristic2": 1066,
+   "random": 1106,
+   "sentinel_0": 1742,
+   "sentinel_1": 1938,
+   "sentinel_2": 1499,
+   "sentinel_3": 1728,
+   "sentinel_4": 1948,
+   "setup_sweep": 1024,
+   "setup_sweep_v2": 1035,
+   "staller": 1632,
+   "staller_v2": 1673
+  },
+  "outcome": {
+   "draw": 1865,
+   "loss": 9147,
+   "win": 9700
+  },
+  "phase": {
+   "endgame": 5644,
+   "midgame": 13125,
+   "opening": 1943
+  },
+  "source": {
+   "C_fix@82M": 2239,
+   "K2@90M": 2453,
+   "K2final_vs_A'@92M": 748,
+   "K3@98M": 2377,
+   "N0@36M": 2743,
+   "N0@46M": 2261,
+   "N0@56M": 2746,
+   "N0@66M": 2397,
+   "N0@74M": 2748
+  },
+  "teams": 146
+ },
+ "dropped_single_legal": 368,
+ "encoder_identity": {
+  "arch_signature": "gen3_event_record_v2",
+  "obs_dim": 2761,
+  "obs_golden_sha256": "63b83dbb39f8fed0ee808d5608975d85451ab877d1db1ec84cff06bfce73b825"
+ },
+ "gate1": {
+  "battles_checked": 580,
+  "decisions_checked": 21087,
+  "decisions_unrecorded": 748,
+  "encoder": {
+   "core_events": "/home/goodlad/dev/gen3ai-wt/m5-laneS/src/rust_sim/target/release/core_events",
+   "core_events_sha256": "eed1f44610dfa853a263402ebedf740eec7e2fe39bce100569005252091443db"
+  },
+  "failures": [],
+  "result": "PASS",
+  "rule": "every recorded decision of every banked battle's traced side re-encodes byte-equal (float32 row), with an equal mask and the recorded action equal to the token the log played"
+ },
+ "outcome_quota": {
+  "draw": 1,
+  "loss": 2,
+  "win": 2
+ },
+ "schema": "gen3_policy_spectrum_bank_v1",
+ "selection_rule": "per (eval cycle, roster opponent): the traces of each outcome in sha256(bank_seed:prefix) order, 2 wins + 2 losses + 1 draw, a short bucket filled loss -> win -> draw; the exploiter source takes every trace and banks the UNTRACED (target) side",
+ "sources": [
+  {
+   "label": "N0@36M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "ai_v14_01_base",
+   "step_dir": "step_36000000"
+  },
+  {
+   "label": "N0@46M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "ai_v14_01_base",
+   "step_dir": "step_46000032"
+  },
+  {
+   "label": "N0@56M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "ai_v14_01_base",
+   "step_dir": "step_56000016"
+  },
+  {
+   "label": "N0@66M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "ai_v14_01_base",
+   "step_dir": "step_66000000"
+  },
+  {
+   "label": "N0@74M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "ai_v14_01_base",
+   "step_dir": "step_74000016"
+  },
+  {
+   "label": "C_fix@82M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "ai_v14_06_lbat_ctrl_fix",
+   "step_dir": "step_82000032"
+  },
+  {
+   "label": "K2@90M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "ai_v14_07_g0p_k2",
+   "step_dir": "step_90000000"
+  },
+  {
+   "label": "K3@98M",
+   "mode": "trainee",
+   "other_label": null,
+   "other_policy": null,
+   "run": "ai_v14_08_g0p_k3",
+   "step_dir": "step_98000016"
+  },
+  {
+   "label": "K2final_vs_A'@92M",
+   "mode": "other:ext_ai_v14_07_g0p_k2",
+   "other_label": "K2 final (91.1M)",
+   "other_policy": "ai_v14_07_g0p_k2/final_model.zip",
+   "run": "ai_v14_09_r0_offense_a",
+   "step_dir": "step_92000016"
+  }
+ ]
+}

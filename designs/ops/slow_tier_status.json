@@ -297,6 +297,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/main/policy_spectrum/policy_spectrum_integration_test.py::test_gate_one_on_the_whole_committed_bank": {
+   "status": "pass",
+   "commit": "d0bf1b9be91d5dbc139d9d81d5c0d8c306d46316",
+   "at": "2026-09-30T01:22:22Z",
+   "duration_s": 44.32,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/main/prober/web/render_integration_test.py::test_a_404_page_still_renders_the_shell": {
    "status": "pass",
    "commit": "6ea9f9ddf0131ea455d2122713b16169febf6246",
@@ -962,5 +970,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T00:39:31Z"
+ "last_written": "2026-09-30T01:22:22Z"
 }
