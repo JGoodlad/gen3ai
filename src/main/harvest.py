@@ -94,6 +94,7 @@ import numpy as np
 from agents.training.harvest_schema import (
     HarvestRow, obs_b64, obs_digest, write_rows,
 )
+from utils.torch_state_guard import restores_torch_globals
 
 #: Declared, versioned selection weights. A silent priority change is a distribution-shift
 #: confound for every downstream readout, so this string is written into every manifest and the
@@ -464,6 +465,7 @@ def battle_holdout(cands: Sequence[Candidate], frac: float, seed: int) -> List[s
 # Scoring — one batched CPU forward of the SUBJECT over every candidate
 # ---------------------------------------------------------------------------
 
+@restores_torch_globals          # it caps torch at 1 thread for its scoring, and gives the caller its own back
 def score_candidates(subject_ckpt: str, cands: Sequence[Candidate], *, models_root: str,
                      batch_size: int = 256, verbose: bool = True) -> dict:
     """Fill ``phi_head`` / ``beta_alpha`` / ``beta_beta`` in place, batched, on CPU.

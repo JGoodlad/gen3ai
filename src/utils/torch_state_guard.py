@@ -38,6 +38,7 @@ first appears DURING a test is compared against its declared DEFAULT. Measured p
 from __future__ import annotations
 
 import contextlib
+import functools
 import os
 import sys
 from dataclasses import dataclass
@@ -309,6 +310,19 @@ def torch_globals(*, num_threads: Optional[int] = None,
         torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32 = prev_tf32
         torch.set_float32_matmul_precision(prev_prec)
         torch.set_num_threads(prev_threads)
+
+
+def restores_torch_globals(fn: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorate a LIBRARY function that sets torch globals for its own work (a thread cap, TF32 off):
+    whatever it sets is restored when it returns or raises, so its caller — a test, a notebook, a CLI
+    that calls several of them — keeps its own settings. `torch_globals()` with no arguments, around
+    the whole call (a function returning a lazy iterator would restore too early — do not decorate
+    one)."""
+    @functools.wraps(fn)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        with torch_globals():
+            return fn(*args, **kwargs)
+    return wrapper
 
 
 if __name__ == "__main__":             # the per-snapshot cost the testing doc quotes

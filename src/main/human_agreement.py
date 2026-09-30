@@ -42,6 +42,7 @@ import numpy as np
 from agents.bc.log_reader import SpectatorLogReader
 from agents.observation.state_encoder import load_mappings
 from main.prober.model import ProbeModel
+from utils.torch_state_guard import restores_torch_globals
 
 _PLAYER_RE = re.compile(r"^\|player\|(p[12])\|([^|]*)\|[^|]*\|(\d+)\s*$")
 
@@ -243,6 +244,7 @@ class Aggregator:
 # --------------------------------------------------------------------------- #
 # Driver                                                                        #
 # --------------------------------------------------------------------------- #
+@restores_torch_globals          # it caps torch's threads for its forwards, and gives the caller its own back
 def run(run_dir: str, *, min_rating: int, max_replays: int, replay_dir: str,
         device: str, ckpt_override: Optional[str], threads: int = 4) -> dict:
     # Be a good neighbour: a live training run may own most cores, so cap torch

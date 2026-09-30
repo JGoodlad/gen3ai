@@ -613,7 +613,7 @@ def _cli(argv=None) -> int:
         print(f"[truth] {len(ids)} turns -> {a.out}")
         return 0
     if a.cmd == "run":
-        from main.policy_spectrum.reader import load_checkpoint, policy_logits
+        from main.policy_spectrum.reader import inference_globals, load_checkpoint, policy_logits
         from utils.rust_env import ffi as F
         from utils.rust_env.successors import greedy
 
@@ -621,23 +621,26 @@ def _cli(argv=None) -> int:
         if sub_["bank"] != bank.manifest["content_sha256"]:
             sys.exit("[truth] the subset was drawn from a different bank")
         path, _, label = a.continuation.partition("=")
-        model = load_checkpoint(Path(path), a.threads, device=a.device)
-        # The extractor keeps per-forward state on the module (`self.stash`), so ONE model shared by
-        # the worker threads forwards one batch at a time — and the batcher MERGES every thread's
-        # pending rows into that one forward (the GPU cost of 3 small batches ≈ 1 big one).
-        scorer = MicroBatcher(lambda rows, masks: policy_logits(model, rows, masks.astype(bool), batch=8192))
-        pol = greedy(scorer)
-        lib = F.load(F.default_path(a.lib_profile))
+        # the thread count, and TF32 OFF on CUDA, for the load AND every forward of the run — scoped,
+        # so nothing leaks past it (reader.inference_globals)
+        with inference_globals(a.threads, a.device):
+            model = load_checkpoint(Path(path), device=a.device)
+            # The extractor keeps per-forward state on the module (`self.stash`), so ONE model shared by
+            # the worker threads forwards one batch at a time — and the batcher MERGES every thread's
+            # pending rows into that one forward (the GPU cost of 3 small batches ≈ 1 big one).
+            scorer = MicroBatcher(lambda rows, masks: policy_logits(model, rows, masks.astype(bool), batch=8192))
+            pol = greedy(scorer)
+            lib = F.load(F.default_path(a.lib_profile))
 
-        from utils.rust_env.successors import SearchCore
+            from utils.rust_env.successors import SearchCore
 
-        # the continuation's name is the POLICY (device is stamped per row, not in the name: a CUDA
-        # and a CPU continuation of the same checkpoint gave identical outcomes, 28 / 28 actions
-        # at 64 seeds, 67k scored rows — measured 2026-09-29)
-        run(bank, sub_["ids"], pol, f"{label or Path(path).stem} greedy (both sides)", Path(a.out),
-            s=a.seeds, core_factory=lambda: SearchCore(lib=lib), workers=a.workers, chunk=a.chunk,
-            lock_path=Path(a.lock) if a.lock else None,
-            log=lambda m: print(m, flush=True))
+            # the continuation's name is the POLICY (device is stamped per row, not in the name: a CUDA
+            # and a CPU continuation of the same checkpoint gave identical outcomes, 28 / 28 actions
+            # at 64 seeds, 67k scored rows — measured 2026-09-29)
+            run(bank, sub_["ids"], pol, f"{label or Path(path).stem} greedy (both sides)", Path(a.out),
+                s=a.seeds, core_factory=lambda: SearchCore(lib=lib), workers=a.workers, chunk=a.chunk,
+                lock_path=Path(a.lock) if a.lock else None,
+                log=lambda m: print(m, flush=True))
         return 0
     from main.policy_spectrum.reader import load_probs
 

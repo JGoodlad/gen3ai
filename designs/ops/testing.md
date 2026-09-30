@@ -427,6 +427,11 @@ principle). Fix the leak at its source with one of these idioms:
   which restores all four globals. A module-scoped pin puts it inside a yield fixture.
 - the root conftest's `restore_torch_globals` fixture, for a body that sets them itself (a CLI
   `main()` run in-process)
+- `@utils.torch_state_guard.restores_torch_globals` on a LIBRARY function that sets them for its own
+  work (`untaught_meter.play_cells`, `harvest.score_candidates`, `human_agreement.run`), so every
+  caller gets its own back — not on a function returning a lazy iterator. A loader whose settings
+  must outlive it sets NOTHING and gives its callers a scope instead
+  (`policy_spectrum.reader.inference_globals`). Pinned by `src/main/torch_globals_restore_test.py`.
 - `torch._dynamo.config.patch(...)`
 - an autouse fixture that uninstalls what the test installed. `compile_trainer_test` resets the
   `CompileControl` singleton only when the test itself created it, so an earlier leak is never

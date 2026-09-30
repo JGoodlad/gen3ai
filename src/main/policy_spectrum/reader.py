@@ -87,11 +87,20 @@ def _find_config(zip_path: Path) -> Path:
     raise FileNotFoundError(f"no model_config.json within 3 levels above {zip_path}")
 
 
-def load_checkpoint(zip_path: Path, threads: int, device: str = "cpu"):
-    """Inference load. ``device="cuda"`` keeps fp32 (TF32 matmuls OFF) so a GPU continuation is the
-    same function as the CPU reads up to float reassociation."""
-    import torch as th
+def inference_globals(threads: int, device: str = "cpu"):
+    """The torch globals a read runs under, SCOPED: ``threads`` intra-op threads and, on CUDA, fp32
+    (TF32 matmuls OFF) so a GPU continuation is the same function as the CPU reads up to float
+    reassociation. Everything is restored on exit (``torch_globals``) — wrap the load AND every
+    forward that must see these settings; the loader itself sets nothing process-wide."""
+    from utils.torch_state_guard import torch_globals
 
+    return torch_globals(num_threads=int(threads),
+                         allow_tf32=False if str(device).startswith("cuda") else None)
+
+
+def load_checkpoint(zip_path: Path, device: str = "cpu"):
+    """Inference load onto ``device``. Sets NO torch global: run it, and the forwards that use the
+    model, inside :func:`inference_globals` (the thread count, and TF32 off on CUDA)."""
     from agents.model.snapshot import current_model_version, load_foreign_opponent
     from agents.observation.state_encoder import load_mappings
 
@@ -99,11 +108,7 @@ def load_checkpoint(zip_path: Path, threads: int, device: str = "cpu"):
     if zip_path.is_dir() or zip_path.suffix != ".zip":
         raise ValueError(f"{zip_path}: name the checkpoint .zip — a bare run directory resolves to "
                          "the run's LAST snapshot and moves")
-    th.set_num_threads(threads)
     cv = current_model_version(load_mappings())
-    if device.startswith("cuda"):
-        th.backends.cuda.matmul.allow_tf32 = False
-        th.backends.cudnn.allow_tf32 = False
     model, _ = load_foreign_opponent(str(zip_path), current_version=cv, device=device,
                                      config_path=str(_find_config(zip_path)))
     for mod in model.policy.modules():
@@ -154,8 +159,9 @@ def recording_agreement(bank: Bank, probs: np.ndarray, zip_path: Path,
 def read_checkpoint(bank: Bank, rows: np.ndarray, masks: np.ndarray, gate: dict, zip_path: Path,
                     label: str, out_dir: Path, threads: int = 4, commit: str = "unknown",
                     models_root: Optional[Path] = None, note: Optional[str] = None) -> dict:
-    model = load_checkpoint(zip_path, threads)
-    logits = policy_logits(model, rows, masks)
+    with inference_globals(threads):
+        model = load_checkpoint(zip_path)
+        logits = policy_logits(model, rows, masks)
     del model
     probs = S.masked_probs(logits, masks)
     body = S.read(probs, bank.decisions)

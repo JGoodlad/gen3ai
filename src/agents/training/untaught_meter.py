@@ -70,6 +70,7 @@ from agents.training import baselines
 from agents.training.fixed_opponent_pool import resolve_model_ref
 from agents.training.team_archetypes import team_sha
 from utils.paths import main_models_dir, repo_path
+from utils.torch_state_guard import restores_torch_globals
 
 # --------------------------------------------------------------------------------------------
 # Defaults — the recipe the banked artifacts were produced under
@@ -470,6 +471,7 @@ def _reseed_player(player, seed: int) -> None:
     player._policy_gens = {}
 
 
+@restores_torch_globals          # it caps torch at 1 thread for its games, and gives the caller its own back
 def play_cells(
     refs: Sequence[ResolvedRef],
     teams: Sequence[TeamSlice],
