@@ -391,7 +391,8 @@ async def main():
             opponent_teambuilder=opponent_teambuilder, opponent_classes=OPPONENT_CLASSES,
             bot_weights=_bot_weight_vec, fixed_opponents=_fixed_opponents, exploiter_entry=_exploiter_entry,
             snapshot_dir=str(_snapshot_dir) if _snapshot_dir is not None else None,
-            opponent_version=_opp_version, self_play_fraction=_initial_self_play_fraction, n_envs=n_envs)
+            opponent_version=_opp_version, self_play_fraction=_initial_self_play_fraction, n_envs=n_envs,
+            eval_trainee_team_str=_specialist_team_str)
     else:
         env_factories = _make_factories()
         env = EnvClass(env_factories)

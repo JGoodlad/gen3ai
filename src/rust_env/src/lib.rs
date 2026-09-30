@@ -17,3 +17,6 @@ pub mod search;
 /// FRONT END B's transport — the shared mapping of the process front end (M5 Lane B; the child is
 /// `src/bin/rust_env_proc.rs`, the host `src/utils/rust_env/proc.py`).
 pub mod shm;
+/// THE PERSISTED TRACE of a finished episode (M5 Lane H): its `gen3_core_event_v1` records and
+/// reconstruction record, replayed from its input log.
+pub mod trace;

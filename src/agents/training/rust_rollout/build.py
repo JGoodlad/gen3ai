@@ -24,7 +24,7 @@ a sub-0.2 ms saving. The SIZING study (order constraint 5) re-reads it at its N.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -123,6 +123,16 @@ def slot_groups(plan: Any, templates: Mapping[int, Any], trainee_policy: Any, n_
                 ) -> Tuple[List[Tuple[str, int, Any]], List[int]]:
     """``([(group name, n_slots, template)], trainee global slots)`` — module docs. ``templates`` maps
     a policy route's slot to the policy whose architecture (and weights) that slot serves."""
+    groups, trainee, _extra = slot_groups_with_extra(plan, templates, trainee_policy, n_trainee, ())
+    return groups, trainee
+
+
+def slot_groups_with_extra(plan: Any, templates: Mapping[int, Any], trainee_policy: Any, n_trainee: int,
+                           extra: Sequence[Tuple[str, Any]]
+                           ) -> Tuple[List[Tuple[str, int, Any]], List[int], List[int]]:
+    """:func:`slot_groups` plus EXTRA slots declared after the trainee's (M5 Lane H: eval's trainee,
+    sentinel and fixed-opponent slots), each ``(family, template)``; a run of the trainee's architecture
+    joins the trainee's group (the same compiled buckets). Returns the extra slots' global ids too."""
     runs: List[List[Any]] = []            # [name, n, template, key]
     for r in plan.routes():
         if r.kind != "policy":
@@ -140,7 +150,15 @@ def slot_groups(plan: Any, templates: Mapping[int, Any], trainee_policy: Any, n_
         runs[-1][1] += n_trainee
     else:
         runs.append([f"trainee{len(runs)}", n_trainee, trainee_policy, tkey])
-    return [(name, n, tpl) for name, n, tpl, _ in runs], list(range(first_trainee, first_trainee + n_trainee))
+    first_extra = first_trainee + n_trainee
+    for fam, pol in extra:
+        key = tkey if pol is trainee_policy else _arch_key(pol)
+        if runs[-1][3] == key:
+            runs[-1][1] += 1
+        else:
+            runs.append([f"{fam}{len(runs)}", 1, pol, key])
+    return ([(name, n, tpl) for name, n, tpl, _ in runs], list(range(first_trainee, first_trainee + n_trainee)),
+            list(range(first_extra, first_extra + len(extra))))
 
 
 def open_core(decl: RustEnvDecl, spec_json: str) -> Any:
@@ -181,7 +199,8 @@ class OpponentSources:
 def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, plan: Any, sources: OpponentSources,
                     trainee_builder: Any, opponent_builder: Any, route_builders: Optional[Mapping[int, Any]] = None,
                     external_p2: Optional[Callable[..., np.ndarray]] = None, team_wr_tracking: bool = True,
-                    emit: Callable[[str], None] = print, svc: Any = None) -> RustCollector:
+                    emit: Callable[[str], None] = print, svc: Any = None,
+                    extra_slots: Sequence[Tuple[str, Any]] = ()) -> RustCollector:
     """Acquire everything ``decl`` names and return the collector (``start()`` is the caller's). ``svc``: an
     already STARTED service with this plan's slot layout (a benchmark's arms share one; training builds
     its own)."""
@@ -217,7 +236,8 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
             templates[int(r.slot)] = sources.stable[r.family.split(":", 1)[1]]
         else:
             templates[int(r.slot)] = sources.exploiter
-    groups, trainee_slots = slot_groups(plan, templates, trainee_policy, int(decl.trainee_slots))
+    groups, trainee_slots, extra_ids = slot_groups_with_extra(plan, templates, trainee_policy,
+                                                              int(decl.trainee_slots), extra_slots)
     n_slots = sum(g[1] for g in groups)
     lanes = int(decl.lanes) or (min(n_slots, 8) if str(decl.device).startswith("cuda") else 1)
     buckets = decl.resolved_buckets
@@ -277,6 +297,7 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     col = RustCollector(cfg, core=core, obs_space=obs_space, svc=svc, trainee_slots=trainee_slots,
                         opponents=host, server=server, stager=stager, external_p2=external_p2)
     col.decl = decl
+    col.extra_slots = extra_ids      # M5 Lane H: the declared eval slots (``extra_slots``' order)
     emit(f"🦀 [RUST ENV] collector: {trig.describe()}; arena {cfg.capacity:,} rows; version pinning "
          f"{'ON' if decl.version_pinning else 'off'}; opponent sampling {decl.opponent_sampling}")
     return col

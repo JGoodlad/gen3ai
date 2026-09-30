@@ -261,6 +261,19 @@ def bot_stream_seed(seed: int, env: int, stream: int) -> int:
     return _splitmix64(int(seed) ^ _splitmix64(((int(env) << 2) | int(stream)) & 0xFFFFFFFFFFFFFFFF))
 
 
+def pack_seed_words(words: Sequence[int]) -> int:
+    """``opponents::pack_seed_words`` — an episode's four 16-bit battle-seed words, low word first."""
+    return sum((int(w) & 0xFFFF) << (16 * i) for i, w in enumerate(list(words)[:4]))
+
+
+def episode_bot_stream_seed(seed: int, words: Sequence[int], stream: int) -> int:
+    """``opponents::episode_stream_seed`` — stream ``stream`` (choice 0, protect 1, bait 2) of a bot route
+    declared ``"streams": "episode"`` (M5 Lane H), for the episode staged with battle seed ``words``: the
+    bot's streams are ``random.Random(episode_bot_stream_seed(route seed, words, stream))``, re-seeded at
+    every episode start, so a game's bot draws are a function of the game alone."""
+    return bot_stream_seed(int(seed) ^ pack_seed_words(words), 0, stream)
+
+
 # ------------------------------------------------------------------------------------ slots
 
 

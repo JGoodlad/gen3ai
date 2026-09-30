@@ -93,6 +93,12 @@ FUNCTIONS: Tuple[Fn, ...] = (
        "copy the pool counters (`len` must be NCOUNTERS) — readable before freeze too"),
     Fn("rust_env_bank_json", (("h", "handle"),), "cstr",
        "the refusal bank as a JSON array of `Banked::json` (valid until this thread's next call)"),
+    Fn("rust_env_finished_json", (("h", "handle"),), "cstr",
+       "the episodes that ENDED in the last op as a JSON array of `Finished::json` (M5 Lane H; valid until "
+       "this thread's next call)"),
+    Fn("rust_env_trace_json", (("script", "cstr"), ("commit", "cstr"), ("label", "cstr")), "cstr",
+       "PURE (no handle; M5 Lane H): replay a finished episode's input-log script and return its "
+       "`gen3_core_event_v1` records + reconstruction record as JSON (`crate::trace`); null on failure"),
     Fn("rust_env_free", (("h", "handle"),), "void", "drop the core (joins its workers); null is a no-op"),
     Fn("rust_env_panic_probe", (("h", "handle"), ("kind", "i32")), "i32",
        "TEST HOOK: panic on purpose (0: a string payload; 1: a non-string payload; 2: inside the handle's "
@@ -248,6 +254,17 @@ def _error(lib: ctypes.CDLL, status: int) -> P.RustEnvError:
 # ------------------------------------------------------------------ the pool
 
 
+def trace(lib: ctypes.CDLL, script: str, *, commit: str, label: str) -> dict:
+    """``rust_env_trace_json`` (M5 Lane H, ``crate::trace``): a finished episode's input-log ``script``
+    (``FfiCore.finished()[k]["script"]``) replayed into ``{"records": {"p1", "p2"}`` (each side's
+    ``gen3_core_event_v1`` record text), ``"recon"`` (the reconstruction record dict), ``"winner"``,
+    ``"turn"}``. Pure — no core handle."""
+    out = lib.rust_env_trace_json(script.encode(), commit.encode(), label.encode())
+    if out is None:
+        raise _error(lib, P.STATUSES[1].code)
+    return json.loads(out.decode())
+
+
 class FfiCore:
     """One env core behind the FFI: STARTUP (``Core::new`` + every column allocated + FREEZE) in the
     constructor, then :meth:`reset` / :meth:`step`. The columns are NumPy arrays named as in
@@ -322,6 +339,15 @@ class FfiCore:
     def bank(self) -> List[dict]:
         with self._lock:
             text = self.lib.rust_env_bank_json(self._h)
+        if text is None:
+            raise _error(self.lib, P.STATUSES[1].code)
+        return json.loads(text.decode())
+
+    def finished(self) -> List[dict]:
+        """The episodes that ENDED in the last op (M5 Lane H): ``[{"env", "episode", "winner" (1 p1, 2 p2,
+        0 tie), "end_turn", "forfeit" (the side that FORCELOSE'd, 0 none), "script"}]`` in env order."""
+        with self._lock:
+            text = self.lib.rust_env_finished_json(self._h)
         if text is None:
             raise _error(self.lib, P.STATUSES[1].code)
         return json.loads(text.decode())

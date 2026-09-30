@@ -104,6 +104,18 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   `*_replay.html` (the raw protocol every honest claim is checked against) and, on bridge-eval
   traces, `*_reconstruction.json` (what every counterfactual probe needs).
   Detail: `designs/prober/engine_and_model.md`.
+- **`core_trace.py`** — a Rust-eval **CORE TRACE** (`gen3_core_trace_v1`, written by
+  `agents.training.rust_eval.traces`) ships a META-ONLY `*_summary.json`; `ProbeSession._summary`
+  EXPANDS it on read to the full legacy shape (`teams` + `invocations`) by replaying the
+  reconstruction on the rust driver and driving a real `BattleRecorder` exactly as
+  `EvalRLPlayer.choose_move` does. 🚨 **The stored `<prefix>.p1.jsonl.gz` record is the AUTHORITY**:
+  a replay whose protocol differs from it, or whose decisions do not line up with `states.npz`
+  (count, per-row legal mask, result), RAISES `CoreTraceMismatch` — never repaired. `_meta` reads
+  the stored meta without expanding (so `run_summary` stays instant). Cached in memory only;
+  nothing is written into the run dir. ABSENT on a core trace: `*_replay.html` (its stand-in is the
+  expansion's own protocol log, `core_trace.protocol_log`), and every auxiliary head — `win_probs`
+  is NaN, `belief` / `opp_intent` / `value_dist` / `move_logits` / `spread_belief` are not stored
+  (`analyze` re-runs the model on the stored obs). Detail: `designs/prober/engine_and_model.md`.
 - **`web/`** — the browser front end (FastAPI + Jinja2/HTMX over `ProbeSession`). It is
   **first-class for the GPU obs**: the learned belief/op signals tagged `🔷 GPU` render PRIMARY
   and the decoded CPU obs regions they subsume tagged `📋 CPU-obs` render dimmed, because the
@@ -680,8 +692,9 @@ different retention, or a one-off deep clean.
 
 ## Tests
 
-Everything under `src/main/prober/` is unmarked (pure, no torch, no bridge) except the three
-`*_integration_test.py` files that carry `@sim` (real bridge battles), `web/`'s headless-chrome
+Everything under `src/main/prober/` is unmarked (pure, no torch, no bridge) except the
+`*_integration_test.py` files that carry `@sim` (real bridge battles; `core_trace_integration_test.py`
+also builds the rust env cdylib), `web/`'s headless-chrome
 render test (`@integration @browser`), and `belief_obs_fuzz_test.py`, which is run as a script. What each file pins — the engine's `FakeProbeModel` +
 offset regression, the session API and its `falsify_scan` / `calibration` folds, the pure
 falsifier / better-line / awareness / loops / forensics cases, the torch boundary's stash-location

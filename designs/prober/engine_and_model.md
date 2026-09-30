@@ -57,3 +57,60 @@ touching either — the engine/app seam, the module map, the per-battle resoluti
   replay/re-roll record (`utils/bridge/reconstruction.py`) — consumed by the
   `falsify` / `lookahead` / `replay_counterfactual` re-roll probes (and the
   privileged opp-team belief view).
+
+## Rust-eval CORE TRACES — expanded on read (`core_trace.py`)
+
+The Rust eval path (`--env-core rust`, M5 Lane H) has no poke-env battle, so
+`agents.training.rust_eval.traces.write_core_trace` persists a **core trace**
+(`meta.trace_source.schema == "gen3_core_trace_v1"`, `is_core_trace`): a META-ONLY
+`*_summary.json` (no `teams`, no `invocations`), the two sides' `gen3_core_event_v1` records
+(`<prefix>.p1.jsonl.gz` / `.p2.jsonl.gz`), the `*_reconstruction.json` and a `*_states.npz` in the
+Python recorder's keys (legal LOG-PROBS in `logits`, illegal = −1e9).
+
+**The expansion** (`core_trace.expand` / `load_summary`; `ProbeSession._summary` calls it, as does
+`forensics.build_decision_table`):
+
+1. `replay_battle(record, impl="rust")`;
+2. **CROSS-CHECK** — the replayed trainee-side protocol must equal the stored record's `text` lines,
+   `|t:|` lines and blanks dropped on both sides. **The record is the authority**: a difference
+   raises `CoreTraceMismatch` naming the first differing line;
+3. the replayed chunks go through `obs_materializer`'s transport-less replay player (the mirror of
+   `EvalRLPlayer.choose_move`: the stall check first, an all-zero mask is no decision), and at each
+   decision a real `BattleRecorder.record(battle, actions[i], softmax(masked logits[i]), mask,
+   {"obs", "logits", "value"})` runs — the same torch softmax the live player computes — then
+   `finalize` + `to_summary`. The per-turn `outcome.reward` is scored with the run's
+   `RewardConfig.from_dict(<run>/model_config.json)` (the eval worker's rule; absent ⇒ the default);
+4. **REFUSE** unless the decision count equals `meta.invocations` and the `states.npz` rows, each
+   decision's legal mask equals `action_mask[i]`, and the replayed result equals `meta.result`;
+5. the recomputed `meta` is replaced by the STORED one (it keeps `trace_source`).
+
+The trainee's stall forfeit mirrors the live rule on both sides: the decision at `turn >=` the
+threshold is a forfeit, not a row (`rust_env::episode::stall_forfeit_due`, the executor's row
+filter, `_handle_stall` here). The threshold is `trace_source.turn_limit` when the writer records
+it, else `StallConfig().threshold` (production runs the core at exactly that). An opponent forfeit
+just ends the protocol. Expansions are cached **in memory** by path + input mtimes (≤256); the run
+dir is never written.
+
+**Pinned equal to the live recorder.** `core_trace_integration_test.py` plays each core game again
+LIVE on the rust bridge (same seed and teams, p1 an `EvalRLPlayer`-shaped scripted player
+recording with `BattleRecorder`, p2 replaying the stored tokens, written by `write_battle_record`):
+the expanded summary equals that summary field for field (bar `meta.battle_id` /
+`meta.trace_source`), including a stall-forfeit game, and the live encoder's obs equal the core's
+stored obs row for row.
+
+**What a core trace does NOT carry:**
+
+| absent | what reads it | how it degrades |
+|---|---|---|
+| `*_replay.html` | `_protocol_lines` / `_protocol_for` (`turns`' timeline, `loops`, `analyze`'s raw protocol) | `core_trace.protocol_log` stands in — `battle._build_replay_events()` of the expansion's battle, exactly what `save_replay` would have rendered |
+| `win_probs` (NaN), `value_dist`, `move_logits`, `spread_belief` | the win-prob / value-dist / belief-trajectory views | read "unavailable" exactly as on a head-off run; `analyze` re-runs the model on the stored obs |
+| `belief` / `opp_intent` per invocation | `opp_intent` text, belief panels on the summary | absent, as on a head-off run |
+
+**Cost:** one rust replay subprocess + one poke-env feed per battle, measured 0.03–0.7 s on the
+fixture games (first call pays the imports). A `scan` over N core traces pays N of these once per
+process.
+
+**The room tag.** A core trace's `battle_tag` is its `battle_id` (`core-<step>-<opp>-g<k>`), which is
+not a poke-env room name (segment 1 must be the format). `obs_materializer._next_tag` now PREFIXES
+such a tag — before, every `falsify` / `lookahead` / `better_line` / `replay_counterfactual` on a
+core trace replayed ZERO decisions and read "replay desync".

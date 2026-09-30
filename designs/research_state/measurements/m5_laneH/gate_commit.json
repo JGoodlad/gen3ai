@@ -1,0 +1,267 @@
+{
+ "pass": true,
+ "workdir": "~/gen3ai_archive/m5_laneH/commit",
+ "cfg": {
+  "games": 2,
+  "shard_games": 1,
+  "sentinels": 2,
+  "n_envs": 8,
+  "device": "cpu",
+  "backend": "eager",
+  "front": "ffi",
+  "profile": "selfcheck",
+  "seed": 20260930,
+  "bots": [
+   "random",
+   "heuristic",
+   "heuristic2",
+   "staller",
+   "staller_v2",
+   "aggressive",
+   "aggressive_v2",
+   "setup_sweep",
+   "setup_sweep_v2"
+  ],
+  "trainee": null,
+  "sentinel_paths": null,
+  "bar": 1e-05,
+  "compile_python": false,
+  "trace_limit": 0
+ },
+ "games": {
+  "games": 22,
+  "python_games": 22,
+  "equal": 22,
+  "ties": [],
+  "fatal": [],
+  "decisions": 1038,
+  "missing": [],
+  "max_dlogp": 8.382663043704497e-07
+ },
+ "metrics_diffs": [],
+ "metrics_equal": true,
+ "metrics": {
+  "win_rates": {
+   "sentinel_0": 0.0,
+   "sentinel_1": 0.0,
+   "staller": 0.0,
+   "staller_v2": 0.0,
+   "aggressive": 0.0,
+   "aggressive_v2": 0.0,
+   "heuristic": 0.0,
+   "heuristic2": 0.0,
+   "setup_sweep": 0.0,
+   "setup_sweep_v2": 0.0,
+   "random": 1.0
+  },
+  "reward_means": {
+   "sentinel_0": -30.0,
+   "sentinel_1": -30.0,
+   "staller": -30.0,
+   "staller_v2": -30.0,
+   "aggressive": -30.0,
+   "aggressive_v2": -30.0,
+   "heuristic": -30.0,
+   "heuristic2": -30.0,
+   "setup_sweep": -30.0,
+   "setup_sweep_v2": -30.0,
+   "random": 30.0
+  },
+  "ep_lens": {
+   "sentinel_0": 36.0,
+   "sentinel_1": 86.0,
+   "staller": 26.0,
+   "staller_v2": 37.0,
+   "aggressive": 44.0,
+   "aggressive_v2": 23.0,
+   "heuristic": 40.0,
+   "heuristic2": 19.0,
+   "setup_sweep": 15.0,
+   "setup_sweep_v2": 32.0,
+   "random": 102.5
+  },
+  "td_resid_tails": {
+   "sentinel_0": -0.15478713124990465,
+   "sentinel_1": -0.08051650090350045,
+   "staller": -0.08697109778722127,
+   "staller_v2": -0.07186233513057234,
+   "aggressive": -0.11121148779988291,
+   "aggressive_v2": -0.11873470366001132,
+   "heuristic": -0.1275811776518822,
+   "heuristic2": -0.08524643659591674,
+   "setup_sweep": -0.08707053899765016,
+   "setup_sweep_v2": -0.07555730630954109,
+   "random": -0.09750161898136141
+  },
+  "counts": {
+   "sentinel_0": [
+    0,
+    2
+   ],
+   "sentinel_1": [
+    0,
+    2
+   ],
+   "staller": [
+    0,
+    2
+   ],
+   "staller_v2": [
+    0,
+    2
+   ],
+   "aggressive": [
+    0,
+    2
+   ],
+   "aggressive_v2": [
+    0,
+    2
+   ],
+   "heuristic": [
+    0,
+    2
+   ],
+   "heuristic2": [
+    0,
+    2
+   ],
+   "setup_sweep": [
+    0,
+    2
+   ],
+   "setup_sweep_v2": [
+    0,
+    2
+   ],
+   "random": [
+    2,
+    2
+   ]
+  },
+  "coverage": {
+   "sentinel_0": 1.0,
+   "sentinel_1": 1.0,
+   "staller": 1.0,
+   "staller_v2": 1.0,
+   "aggressive": 1.0,
+   "aggressive_v2": 1.0,
+   "heuristic": 1.0,
+   "heuristic2": 1.0,
+   "setup_sweep": 1.0,
+   "setup_sweep_v2": 1.0,
+   "random": 1.0
+  },
+  "traces": {
+   "sentinel_0": [
+    0,
+    2,
+    0
+   ],
+   "sentinel_1": [
+    0,
+    2,
+    0
+   ],
+   "staller": [
+    0,
+    2,
+    0
+   ],
+   "staller_v2": [
+    0,
+    2,
+    0
+   ],
+   "aggressive": [
+    0,
+    2,
+    0
+   ],
+   "aggressive_v2": [
+    0,
+    2,
+    0
+   ],
+   "heuristic": [
+    0,
+    2,
+    0
+   ],
+   "heuristic2": [
+    0,
+    2,
+    0
+   ],
+   "setup_sweep": [
+    0,
+    2,
+    0
+   ],
+   "setup_sweep_v2": [
+    0,
+    2,
+    0
+   ],
+   "random": [
+    2,
+    2,
+    0
+   ]
+  },
+  "draws": {
+   "sentinel_0": 0,
+   "sentinel_1": 0,
+   "staller": 0,
+   "staller_v2": 0,
+   "aggressive": 0,
+   "aggressive_v2": 0,
+   "heuristic": 0,
+   "heuristic2": 0,
+   "setup_sweep": 0,
+   "setup_sweep_v2": 0,
+   "random": 0
+  }
+ },
+ "traces": {
+  "rust": 22,
+  "python": 22,
+  "only_rust": [],
+  "only_python": [],
+  "checked": 22,
+  "decision_diffs": []
+ },
+ "rust_stats": {
+  "step": 1000,
+  "games": 22,
+  "units": 22,
+  "host_steps": 252,
+  "trainee_decisions": 1038,
+  "p2_policy_decisions": 254,
+  "traces": 22,
+  "near_ties": 2,
+  "seconds": {
+   "load": 0.23279540799558163,
+   "stage": 0.01407430088147521,
+   "submit": 0.019222767907194793,
+   "drain": 8.357799588469788,
+   "act": 0.01339652482420206,
+   "core": 0.2277817039284855,
+   "finish": 0.520947836805135,
+   "trace": 0.5103073788341135,
+   "total": 9.386490177013911
+  },
+  "lifecycle": {
+   "THREADS_SPAWNED_AFTER_FREEZE": 0,
+   "ENVS_ADDED_AFTER_FREEZE": 0,
+   "COLUMN_REBINDS_AFTER_FREEZE": 0,
+   "BANK_GROWTH_AFTER_FREEZE": 0,
+   "compiles_after_freeze": 0,
+   "captures_after_freeze": 0,
+   "cuda_segments_after_freeze": 0
+  }
+ },
+ "rust_wall_s": 14.16302766208537,
+ "python_wall_s": 39.16938663995825,
+ "svc_startup_s": 1.2751884399913251
+}

@@ -78,6 +78,9 @@ pub struct Env {
     /// This env's scripted bots, one per route (M5 Lane E + F): built at STARTUP, streams persisting
     /// across episodes (`crate::opponents`).
     pub(crate) bots: Vec<Option<crate::bots::Bot>>,
+    /// The episode that ENDED in the op in progress (M5 Lane H, `episode::Finished`), taken into the
+    /// op's report.
+    pub(crate) finished: Option<crate::episode::Finished>,
 }
 
 /// What one env did in one op (folded into the pool counters in env order).
@@ -109,6 +112,7 @@ impl Env {
             parked: false,
             route: 0,
             bots: spec.opponents.build_bots(id),
+            finished: None,
         }
     }
 
@@ -150,6 +154,11 @@ impl Env {
         self.started += 1;
         t.started += 1;
         self.route = route;
+        // A `"streams": "episode"` bot route (M5 Lane H) re-seeds its bot from THIS episode's battle
+        // seed, so the game's bot draws depend on the game alone.
+        if let Some(bot) = spec.opponents.episode_bot(route, &words) {
+            self.bots[route as usize] = Some(bot);
+        }
         self.prev_log = std::mem::take(&mut self.log);
         self.log = InputLog {
             format_id: spec.format_id.clone(),
@@ -342,6 +351,8 @@ pub struct EnvReport {
     pub quarantined: Vec<(EnvError, InputLog, u32)>,
     /// A batch failure (the class is not `Quarantine`), with the env's input log.
     pub failed: Option<(EnvError, InputLog, u32)>,
+    /// The episode that ended this op, if one did (M5 Lane H, `episode::Finished`).
+    pub finished: Option<crate::episode::Finished>,
 }
 
 fn panic_msg(p: Box<dyn std::any::Any + Send>) -> String {
@@ -366,7 +377,7 @@ fn run_block(ctx: &Ctx, envs: &mut [Env], lo: usize, job: Job, cols: ColAddrs) -
             }
         }))
         .unwrap_or_else(|p| Err(EnvError::panic(format!("PANIC inside the core: {}", panic_msg(p)))));
-        let mut rep = EnvReport { env: i, tally, quarantined: Vec::new(), failed: None };
+        let mut rep = EnvReport { env: i, tally, quarantined: Vec::new(), failed: None, finished: env.finished.take() };
         match r {
             Ok(()) => {}
             Err(e) if e.class == Class::Quarantine => {

@@ -571,6 +571,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             debug=args.debug,
             # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
             trainee_team_str=_specialist_team_str,
+            env_core=getattr(args, "env_core", "python"),
         )
         callbacks.append(eval_callback)
     elif _run_eval:
@@ -602,6 +603,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             fixed_opponents=_fixed_opponents,
             # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
             trainee_team_str=_specialist_team_str,
+            env_core=getattr(args, "env_core", "python"),
         )
         callbacks.append(eval_callback)
 

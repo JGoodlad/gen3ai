@@ -644,6 +644,57 @@ trainee + opponent per unit → independent measurement) + a per-worker model ca
 `eval_sharding_test.py` (partition + aggregation-exactness property + claim-once + coverage),
 `eval_sharding_fuzz_test.py` (real bridge battles through the real worker → exact pooled result).
 
+### Eval on the Rust env core (`--env-core rust`, M5 Lane H — `agents/training/rust_eval/`)
+
+Under `--env-core rust` an eval cycle is played on the M5 Rust env core, not on `main.eval_worker`
+processes. **What it keeps, exactly:** the plan (`ShardedEvalPool`: the nine roster bots, the pool
+sentinels, the fixed / stable opponents, the same shard units), the regime (the trainee GREEDY; the
+sentinels greedy on the trainee's own teams under `eval_sentinel_greedy`, else a sample at
+`--self-play-temp`; fixed opponents greedy on their own pinned teams), the forensic quota per unit and
+its LOSS-preferring selection, `eval_manifest.json` with its `selection` record, the promotion
+thresholds, and every metric — because the Rust cycle publishes the SAME per-unit `ShardResult` a
+worker publishes and the callback's collect / record / promote code is unchanged. **What changes,
+declared:**
+
+- **In process and BLOCKING.** The callback writes the plan and manifest, then `rust_eval.launch`
+  plays the cycle between two host steps of the collector and collects it in the same `_on_step`.
+  No subprocess, no work-stealing, no hung-worker watchdog; a failed cycle (`EvalCoreError`, e.g. a
+  quarantined battle) is logged and records nothing, like a crashed worker; a lifecycle violation and
+  a missing eval core (`RustEvalUnavailable`) are FATAL — never a silent fall-back to Python workers.
+- **Everything is declared at startup** (`rust_eval.build`, from `main.train.rust_env_setup`): the
+  eval CORE (`--rust-eval-envs`, default 64; the collector's threads / front end / build), the eval
+  SLOTS in the trainer's ONE T2 service — the trainee's eval slot and one slot per `--n-sentinels`
+  (under `--self-play`), both in the trainee's slot group, so eval rides the rollout's compiled
+  buckets; a fixed opponent reuses its training slot when the plan has one — and the eval ROUTE TABLE
+  (the roster bots in the core, the sentinel / fixed policy routes, a filler route). A cycle only
+  LOADS weights (the trainee's current policy; each sentinel's snapshot) into declared slots; every
+  core and T2 `*_after_freeze` counter is checked after each cycle.
+- **Units play in order on one env** (a Python worker at concurrency 1), so capture and the quota are
+  decided game by game in the same order; an env without a unit plays FILLER games (nothing recorded)
+  until the cycle ends.
+- **Every game is seeded by the game** (`gen3_eval_game_seed_v1`, `rust_eval/seeds.py`): key =
+  (cycle seed, opponent, game index in plan order) → the two teams (one `yield_team` of the eval
+  builders — `eval_worker`'s own — re-seeded per game), the battle seed, and a scripted bot's streams,
+  which the core re-seeds at the game's start from the route seed and the battle seed (the bot route's
+  `"streams": "episode"`). A game's result is therefore a function of the game and the weights, not of
+  the env, N, the threads or the schedule. The cycle seed is a hash of the collector's run seed and the
+  step. Today's live Python eval is unseeded — a declared change of STREAM, not of distribution.
+- **Traces are core traces** (`gen3_core_trace_v1`, `rust_eval/traces.py`): per kept game, both sides'
+  `gen3_core_event_v1` records (`.p1/.p2.jsonl.gz`, written by the core's record writer from the game's
+  input log), the reconstruction record, the states npz (the core's obs rows, T2's legal log-probs as
+  `logits`, V, the actions and masks) and a meta-only `_summary.json`. The prober EXPANDS the full
+  summary on read (`main.prober.core_trace`, cross-checked against the record); no `_replay.html`, and
+  the auxiliary heads (`win_probs` NaN, belief / intent / value-dist absent) — `analyze` re-runs the
+  model on the stored obs.
+- `rust_eval/*` TensorBoard tags: the cycle's wall-clock, games, trainee decisions/s, traces, near-ties.
+
+**The gate** (`rust_eval/parity.py`; the lane's PROGRESS has the numbers): one plan and one cycle seed
+played by the Rust executor AND by today's eval worker in its per-game-seeded mode
+(`eval_worker` `seed_rule = "per_game"`: each game alone on the rust bridge with the same teams, battle
+seed and bot streams) — every game's winner, end turn and trainee action equal (a first differing
+action excused only as a TIE under Lane E's margin rule), the pooled metrics equal, the kept traces the
+same files, and each Rust trace expanding to the Python trace's decisions.
+
 ### OFFLINE generation of an eval cycle (`main.ops.eval_trace_gen`) — and the PROVENANCE marker
 
 A live eval cycle is sized for a training run: `--eval-battles` games (100 by default) per opponent,

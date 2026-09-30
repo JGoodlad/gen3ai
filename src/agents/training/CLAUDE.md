@@ -526,6 +526,12 @@ a separate decision. Hazards an agent must know before touching it:
 - `rollout/collect_ms` + `rollout/collect_decisions` are logged on BOTH cores (the A/B reads them);
   `rust_env/*` is the collector's per-phase read. `metadata.json` records `env_core` on every save.
 - ⚠️ A launcher RESUME pins to the checkpoint's commit; a commit before Lane G has no `--env-core`.
+- **EVAL runs on the core too** (M5 Lane H, `rust_eval/`): both eval callbacks write the same plan and
+  manifest, then play the cycle IN PROCESS and BLOCKING on a declared eval core (`--rust-eval-envs`) and
+  declared eval T2 slots, publish the workers' own shard records, and collect them with the unchanged
+  code. Games are seeded by the GAME (`gen3_eval_game_seed_v1`); traces are CORE traces (records +
+  reconstruction + states; the prober expands them). A missing eval core under `rust` is FATAL, never a
+  fall-back to Python workers. Detail: `designs/training/eval_and_rating.md` → "Eval on the Rust env core".
 
 Detail: [`designs/training/rust_collector.md`](../../../designs/training/rust_collector.md).
 

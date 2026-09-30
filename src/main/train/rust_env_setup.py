@@ -25,6 +25,7 @@ def resolve_env_core_args(args: Any) -> None:
         "rollout_trigger": "complete_game", "rollout_target_samples": 0, "rust_env_front": "proc",
         "rust_env_threads": 8, "rust_env_profile": "release", "rust_env_refusal_budget": 64,
         "rust_env_respawn_budget": 2, "version_pinning": "off", "t2_lanes": 0, "opponent_sampling": "keyed",
+        "rust_eval_envs": 64,
     }
     for k, v in defaults.items():
         if getattr(args, k, None) is None:
@@ -68,6 +69,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
                        opponent_classes: Sequence[Any], bot_weights: Optional[Sequence[float]],
                        fixed_opponents: Sequence[Any], exploiter_entry: Any, snapshot_dir: Optional[str],
                        opponent_version: Any, self_play_fraction: float, n_envs: int,
+                       eval_trainee_team_str: Any = None,
                        emit: Callable[[str], None] = _emit) -> Any:
     """The ``RustVecEnv`` for this run (module docs)."""
     from agents.training import rust_env_opponents as E
@@ -123,10 +125,26 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
                                          config_path=exploiter_entry.config_path)
             sources.exploiter = m.policy.eval()
         model.behaviour_check = args.behaviour_check
+        # M5 Lane H: eval on the core — its slots are part of the ONE T2 declaration (startup only).
+        edecl = eval_decl(args, plan, fixed_opponents)
+        extra = ()
+        if edecl is not None:
+            from agents.training.rust_eval.build import eval_extra_slots
+
+            extra = tuple(eval_extra_slots(edecl, model.policy, sources.stable))
         col = build_collector(decl, obs_space=obs_space, trainee_policy=model.policy, plan=plan, sources=sources,
                               trainee_builder=trainee_teambuilder, opponent_builder=opponent_teambuilder,
                               route_builders=route_builders,
-                              team_wr_tracking=bool(getattr(args, "team_wr_tracking", True)), emit=emit)
+                              team_wr_tracking=bool(getattr(args, "team_wr_tracking", True)), emit=emit,
+                              extra_slots=extra)
+        col.evaluator = None
+        if edecl is not None:
+            from agents.training.rust_eval.build import build_eval_core, eval_builders
+
+            etb, eopp, efixed = eval_builders(eval_trainee_team_str, list(fixed_opponents or ()))
+            col.evaluator = build_eval_core(edecl, collector_decl=decl, svc=col.svc, extra_ids=col.extra_slots,
+                                            trainee_builder=etb, opp_builder=eopp, fixed_builders=efixed,
+                                            turn_limit=decl.turn_limit, terminal=decl.terminal, emit=emit)
         model._env_core_stamp = env_core_stamp(decl, col)
         emit(f"🦀 [ENV CORE] rust — {model._env_core_stamp['summary']}")
         return col
@@ -135,6 +153,22 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             f"T2 {backend} on {device}")
     return RustVecEnv(n_envs=int(n_envs), observation_space=obs_space, action_space=act_space, build=build,
                       describe=desc)
+
+
+def eval_decl(args: Any, plan: Any, fixed_opponents: Sequence[Any]) -> Any:
+    """The Rust eval declaration (M5 Lane H) — None when this run evaluates nothing (the callbacks'
+    ``_run_eval``: a ``--debug`` smoke without ``--debug-eval``)."""
+    from agents.training.rust_eval.build import EvalDecl
+
+    if bool(getattr(args, "debug", False)) and not bool(getattr(args, "debug_eval", False)):
+        return None
+    fixed = tuple(e.label for e in (fixed_opponents or ()))
+    training_slots = {r.family.split(":", 1)[1]: int(r.slot) for r in plan.routes()
+                      if r.kind == "policy" and r.family.startswith("stable:")}
+    return EvalDecl(n_envs=int(getattr(args, "rust_eval_envs", 64) or 64),
+                    n_sentinels=int(getattr(args, "n_sentinels", 5)) if bool(getattr(args, "self_play", False)) else 0,
+                    fixed_labels=fixed,
+                    reused_fixed=tuple((lab, training_slots[lab]) for lab in fixed if lab in training_slots))
 
 
 def env_core_stamp(decl: Any, col: Any) -> Dict[str, Any]:

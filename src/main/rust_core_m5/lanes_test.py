@@ -64,7 +64,19 @@ def _row(lane):
     return L.by_lane()[lane]
 
 
-def test_a_not_built_lane_never_reads_as_a_pass():
+def _with_h_not_built(monkeypatch):
+    """Every M5 lane is BUILT since Lane H (2026-09-30): the NOT BUILT paths are exercised on a registry
+    whose H row is put back to NOT BUILT (read at call time: ``gates`` and ``__main__`` use ``L.LANES``)."""
+    import dataclasses
+
+    rows = tuple(dataclasses.replace(r, built=False, tests=(), gpu_tests=(), pending="the gate")
+                 if r.lane == "H" else r for r in L.LANES)
+    monkeypatch.setattr(L, "LANES", rows)
+    return rows
+
+
+def test_a_not_built_lane_never_reads_as_a_pass(monkeypatch):
+    _with_h_not_built(monkeypatch)
     v = G.fold(_row("H"), {"src/agents/training/anything_test.py::test_x": "pass"}, source="run:commit", gpu_ran=True)
     assert v.verdict == G.NOT_BUILT and not v.counts
 
@@ -98,7 +110,8 @@ def test_a_shared_node_counts_for_every_row_that_declares_it():
     assert not G._belongs(node, _row("A").tests)
 
 
-def test_recorded_reads_the_slow_tier_bank_and_marks_stale():
+def test_recorded_reads_the_slow_tier_bank_and_marks_stale(monkeypatch):
+    _with_h_not_built(monkeypatch)
     st = {"tests": {"src/agents/training/rust_env_episode_parity_test.py::test_milestone_episodes_equal_gen3env[pool]":
                     {"status": "pass", "commit": "aaaaaaaa11", "at": "2026-09-29T00:00:00Z"},
                     "src/utils/rust_env/bots_gate_test.py::test_milestone_every_decision_is_equal_at_scale":
@@ -110,7 +123,8 @@ def test_recorded_reads_the_slow_tier_bank_and_marks_stale():
     assert by["H"].verdict == G.NOT_BUILT
 
 
-def test_the_m5_verdict_is_not_met_while_a_component_is_missing(tmp_path):
+def test_the_m5_verdict_is_not_met_while_a_component_is_missing(tmp_path, monkeypatch):
+    _with_h_not_built(monkeypatch)
     res = M.compose(tmp_path)
     assert res["m5_gate"] == "NOT MET"
     assert any("slice N" in k for k in res["missing"])
@@ -135,10 +149,11 @@ def test_the_depth3_slice_gates_searchs_default_depth():
     assert D3.default_depth() == 3
 
 
-def test_gates_from_status_runs_nothing_and_writes_its_table(tmp_path, capsys):
+def test_gates_from_status_runs_nothing_and_writes_its_table(tmp_path, capsys, monkeypatch):
+    _with_h_not_built(monkeypatch)
     rc = M.main(["--results", str(tmp_path), "gates", "--from-status"])
     out = capsys.readouterr().out
-    assert "| G |" in out and "NOT BUILT" in out
+    assert "| H |" in out and "NOT BUILT" in out
     doc = json.loads((tmp_path / "gates_recorded.json").read_text())
     assert {r["lane"] for r in doc["rows"]} == {r.lane for r in L.LANES}
     assert rc in (0, 1)

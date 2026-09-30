@@ -16,10 +16,10 @@ from __future__ import annotations
 from collections import Counter
 from typing import Optional, Sequence
 
-import json
 import numpy as np
 
 from agents.training.turn_delta import SELF_KO_MOVES
+from main.prober.core_trace import CoreTraceMismatch, load_summary
 from main.prober.engine import decode_incoming_belief, is_status_cure, parse_pct, self_cure_options
 from main.prober.model import ObsOffsets
 
@@ -119,8 +119,10 @@ def build_decision_table(
         n_battles += 1
         smf = b["id"]
         try:
-            s = json.load(open(smf))
+            s = load_summary(smf)          # a core trace is EXPANDED (main.prober.core_trace)
             d = np.load(smf.replace("_summary.json", "_states.npz"))
+        except CoreTraceMismatch:
+            raise                          # a core trace that disagrees with its record is REFUSED
         except Exception:
             continue
         invs = s.get("invocations", [])

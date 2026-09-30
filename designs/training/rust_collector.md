@@ -175,6 +175,10 @@ call in the training sources and fails on one in neither table.
 One slot group per ARCHITECTURE in the route table's slot order (pool, stables, exploiter — two slots
 under a ladder, F-LE-6), then the trainee's slot(s); consecutive same-architecture routes share a group
 (F-LE-7). Default buckets `(8, N)` (`build.py` states why; decision: the program doc's Decision record).
+EVAL's slots (M5 Lane H) are appended after the trainee's (`build_collector(extra_slots=)`: the trainee's
+eval slot, the sentinel slots, fixed opponents the plan does not already serve) — in the trainee's group
+when the architecture matches, so they reuse its compiled buckets; `col.extra_slots` names them and
+`col.evaluator` is the eval core built over the same service (`designs/training/eval_and_rating.md`).
 
 ## The gate — slice N at the ROLLOUT level + the learner-level check (`rust_rollout/parity.py`)
 

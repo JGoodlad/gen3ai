@@ -2,7 +2,8 @@
 
 File IO deliberately kept OUT of the pure engine: the engine takes these as arguments, this is
 where they are loaded from disk. Every reader is best-effort and returns None/empty rather than
-raising, because a websocket-era trace simply has no `reconstruction.json`.
+raising, because a websocket-era trace simply has no `reconstruction.json`. A Rust-eval CORE trace
+has no `*_replay.html`; its protocol comes from the expansion (`_core_protocol`).
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ class _TraceIOMixin:
         (249 times on the longest battle). Empty when the replay file is absent/unreadable."""
         replay = b.summary_path[: -len("_summary.json")] + "_replay.html"
         if not os.path.exists(replay):
-            return []
+            return list(self._core_protocol(b))
         try:
             with open(replay, encoding="utf-8") as f:
                 return list(parse_protocol_log(f.read()))
@@ -34,12 +35,23 @@ class _TraceIOMixin:
         collapses. Empty when the replay file is absent/unreadable."""
         replay = b.summary_path[: -len("_summary.json")] + "_replay.html"
         if not os.path.exists(replay):
-            return []
+            return list(protocol_for_turn(self._core_protocol(b), int(turn or 0)))
         try:
             with open(replay, encoding="utf-8") as f:
                 return list(protocol_for_turn(parse_protocol_log(f.read()), int(turn or 0)))
         except Exception:  # noqa: BLE001 — best-effort
             return []
+
+    def _core_protocol(self, b) -> tuple:
+        """A Rust-eval CORE TRACE ships no `*_replay.html`: its stand-in is the protocol log the
+        expansion's replayed battle carries (`core_trace.protocol_log` — exactly what
+        `save_replay` would have rendered). Empty for any other trace without a replay file."""
+        from main.prober.core_trace import is_core_trace, protocol_log
+
+        summary = self._summary(b)
+        if not is_core_trace(summary):
+            return ()
+        return protocol_log(b.summary_path, summary, run_dir=self.run_dir)
 
     def _our_hp_types(self, b) -> "dict | None":
         """OUR team's typed Hidden Power per species from the trace's `reconstruction.json` sibling

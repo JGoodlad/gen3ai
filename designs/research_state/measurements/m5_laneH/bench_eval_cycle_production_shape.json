@@ -1,0 +1,362 @@
+{
+ "what": "eval wall-clock per cycle, both paths, the production eval shape (9 roster bots + 5 pool sentinels x 100 games, shard 25), interleaved R P P R; a DESCRIPTOR (warn, never stretch)",
+ "tool": "python -m agents.training.rust_eval.eval_benchmark",
+ "trainee": "ai_v14_06_lbat_ctrl_fix final_model.zip",
+ "sentinels": "5 evenly spaced pool snapshots (32M, 40M, 52M, 70M, 82M)",
+ "arms": {
+  "r1": {
+   "arm": "rust",
+   "t2_startup_s": 40.469852079986595,
+   "eval_core_startup_s": 0.0702384589239955,
+   "cycles": [
+    {
+     "wall_s": 16.277293344028294,
+     "stats": {
+      "step": 0,
+      "games": 1400,
+      "units": 56,
+      "host_steps": 1433,
+      "trainee_decisions": 46389,
+      "p2_policy_decisions": 22072,
+      "traces": 221,
+      "near_ties": 0,
+      "seconds": {
+       "load": 0.4539917929796502,
+       "stage": 0.07396673294715583,
+       "submit": 0.20745707280002534,
+       "drain": 0.8319117019418627,
+       "act": 4.23168737324886,
+       "core": 2.740801394917071,
+       "finish": 4.024448718060739,
+       "trace": 3.8898753754328936,
+       "total": 12.566022209008224
+      },
+      "lifecycle": {
+       "THREADS_SPAWNED_AFTER_FREEZE": 0,
+       "ENVS_ADDED_AFTER_FREEZE": 0,
+       "COLUMN_REBINDS_AFTER_FREEZE": 0,
+       "BANK_GROWTH_AFTER_FREEZE": 0,
+       "PROC_SPAWNS_AFTER_FREEZE": 0,
+       "compiles_after_freeze": 0,
+       "captures_after_freeze": 0,
+       "cuda_segments_after_freeze": 0
+      }
+     },
+     "missing": [],
+     "regime": {
+      "load_avg": [
+       0.7548828125,
+       0.953125,
+       1.21630859375
+      ],
+      "contention": 1.0,
+      "cpus": 16,
+      "device": "cuda",
+      "contended_warning": false,
+      "torch": "2.5.1+cu121",
+      "gpu": "NVIDIA GeForce RTX 3080 Ti",
+      "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33"
+     }
+    },
+    {
+     "wall_s": 16.602630941895768,
+     "stats": {
+      "step": 1,
+      "games": 1400,
+      "units": 56,
+      "host_steps": 1523,
+      "trainee_decisions": 47017,
+      "p2_policy_decisions": 23496,
+      "traces": 217,
+      "near_ties": 1,
+      "seconds": {
+       "load": 0.4233612200478092,
+       "stage": 0.06874907878227532,
+       "submit": 0.22030576900579035,
+       "drain": 0.888384482706897,
+       "act": 4.470678996993229,
+       "core": 2.837511927704327,
+       "finish": 3.9820920322090387,
+       "trace": 3.8413627312984318,
+       "total": 12.89286723791156
+      },
+      "lifecycle": {
+       "THREADS_SPAWNED_AFTER_FREEZE": 0,
+       "ENVS_ADDED_AFTER_FREEZE": 0,
+       "COLUMN_REBINDS_AFTER_FREEZE": 0,
+       "BANK_GROWTH_AFTER_FREEZE": 0,
+       "PROC_SPAWNS_AFTER_FREEZE": 0,
+       "compiles_after_freeze": 0,
+       "captures_after_freeze": 0,
+       "cuda_segments_after_freeze": 0
+      }
+     },
+     "missing": [],
+     "regime": {
+      "load_avg": [
+       0.8095703125,
+       0.9560546875,
+       1.2119140625
+      ],
+      "contention": 1.0,
+      "cpus": 16,
+      "device": "cuda",
+      "contended_warning": false,
+      "torch": "2.5.1+cu121",
+      "gpu": "NVIDIA GeForce RTX 3080 Ti",
+      "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33"
+     }
+    }
+   ],
+   "n_envs": 64,
+   "threads": 8,
+   "backend": "graph",
+   "svc_counters": {
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0,
+    "rows_served": 138974,
+    "rows_padded": 101458,
+    "batches": 17689,
+    "loads": 12,
+    "flushes": 2956
+   },
+   "shape": {
+    "games": 100,
+    "shard_games": 25,
+    "bots": 9,
+    "sentinels": 5,
+    "trainee": "~/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip"
+   }
+  },
+  "p1": {
+   "arm": "python",
+   "wall_s": 116.04961035796441,
+   "games": 1400,
+   "missing": [],
+   "workers": 10,
+   "rc": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "regime": {
+    "load_avg": [
+     0.86474609375,
+     0.9599609375,
+     1.2060546875
+    ],
+    "contention": 1.0,
+    "cpus": 16,
+    "device": "cpu",
+    "contended_warning": false,
+    "torch": "2.5.1+cu121",
+    "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33"
+   },
+   "regime_end": {
+    "load_avg": [
+     8.3740234375,
+     3.9619140625,
+     2.28955078125
+    ],
+    "contention": 1.0,
+    "cpus": 16,
+    "device": "cpu",
+    "contended_warning": false,
+    "torch": "2.5.1+cu121",
+    "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33"
+   },
+   "shape": {
+    "games": 100,
+    "shard_games": 25,
+    "bots": 9,
+    "sentinels": 5,
+    "trainee": "~/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip"
+   }
+  },
+  "p2": {
+   "arm": "python",
+   "wall_s": 118.59552922891453,
+   "games": 1400,
+   "missing": [],
+   "workers": 10,
+   "rc": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "regime": {
+    "load_avg": [
+     8.3740234375,
+     3.9619140625,
+     2.28955078125
+    ],
+    "contention": 1.0,
+    "cpus": 16,
+    "device": "cpu",
+    "contended_warning": false,
+    "torch": "2.5.1+cu121",
+    "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33"
+   },
+   "regime_end": {
+    "load_avg": [
+     9.84619140625,
+     6.09765625,
+     3.28662109375
+    ],
+    "contention": 1.0,
+    "cpus": 16,
+    "device": "cpu",
+    "contended_warning": false,
+    "torch": "2.5.1+cu121",
+    "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33"
+   },
+   "shape": {
+    "games": 100,
+    "shard_games": 25,
+    "bots": 9,
+    "sentinels": 5,
+    "trainee": "~/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip"
+   }
+  },
+  "r2": {
+   "arm": "rust",
+   "t2_startup_s": 39.93407796905376,
+   "eval_core_startup_s": 0.0702799060381949,
+   "cycles": [
+    {
+     "wall_s": 16.225930655025877,
+     "stats": {
+      "step": 0,
+      "games": 1400,
+      "units": 56,
+      "host_steps": 1433,
+      "trainee_decisions": 46389,
+      "p2_policy_decisions": 22072,
+      "traces": 221,
+      "near_ties": 0,
+      "seconds": {
+       "load": 0.431280730990693,
+       "stage": 0.07459648896474391,
+       "submit": 0.2093781455187127,
+       "drain": 0.8183933967957273,
+       "act": 4.1565195340663195,
+       "core": 2.747663206537254,
+       "finish": 4.055801623966545,
+       "trace": 3.9200236421311274,
+       "total": 12.495381355984136
+      },
+      "lifecycle": {
+       "THREADS_SPAWNED_AFTER_FREEZE": 0,
+       "ENVS_ADDED_AFTER_FREEZE": 0,
+       "COLUMN_REBINDS_AFTER_FREEZE": 0,
+       "BANK_GROWTH_AFTER_FREEZE": 0,
+       "PROC_SPAWNS_AFTER_FREEZE": 0,
+       "compiles_after_freeze": 0,
+       "captures_after_freeze": 0,
+       "cuda_segments_after_freeze": 0
+      }
+     },
+     "missing": [],
+     "regime": {
+      "load_avg": [
+       5.220703125,
+       5.3974609375,
+       3.18115234375
+      ],
+      "contention": 1.0,
+      "cpus": 16,
+      "device": "cuda",
+      "contended_warning": false,
+      "torch": "2.5.1+cu121",
+      "gpu": "NVIDIA GeForce RTX 3080 Ti",
+      "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33"
+     }
+    },
+    {
+     "wall_s": 16.705777399009094,
+     "stats": {
+      "step": 1,
+      "games": 1400,
+      "units": 56,
+      "host_steps": 1523,
+      "trainee_decisions": 47017,
+      "p2_policy_decisions": 23496,
+      "traces": 217,
+      "near_ties": 1,
+      "seconds": {
+       "load": 0.41595600196160376,
+       "stage": 0.06882013462018222,
+       "submit": 0.22646550554782152,
+       "drain": 0.8739941888488829,
+       "act": 4.420316880568862,
+       "core": 2.93162938056048,
+       "finish": 4.003415157203563,
+       "trace": 3.8582988516427577,
+       "total": 12.942389711970463
+      },
+      "lifecycle": {
+       "THREADS_SPAWNED_AFTER_FREEZE": 0,
+       "ENVS_ADDED_AFTER_FREEZE": 0,
+       "COLUMN_REBINDS_AFTER_FREEZE": 0,
+       "BANK_GROWTH_AFTER_FREEZE": 0,
+       "PROC_SPAWNS_AFTER_FREEZE": 0,
+       "compiles_after_freeze": 0,
+       "captures_after_freeze": 0,
+       "cuda_segments_after_freeze": 0
+      }
+     },
+     "missing": [],
+     "regime": {
+      "load_avg": [
+       4.35302734375,
+       5.197265625,
+       3.1513671875
+      ],
+      "contention": 1.0,
+      "cpus": 16,
+      "device": "cuda",
+      "contended_warning": false,
+      "torch": "2.5.1+cu121",
+      "gpu": "NVIDIA GeForce RTX 3080 Ti",
+      "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33"
+     }
+    }
+   ],
+   "n_envs": 64,
+   "threads": 8,
+   "backend": "graph",
+   "svc_counters": {
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0,
+    "rows_served": 138974,
+    "rows_padded": 101458,
+    "batches": 17689,
+    "loads": 12,
+    "flushes": 2956
+   },
+   "shape": {
+    "games": 100,
+    "shard_games": 25,
+    "bots": 9,
+    "sentinels": 5,
+    "trainee": "~/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip"
+   }
+  }
+ }
+}

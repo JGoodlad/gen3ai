@@ -140,6 +140,7 @@ fn main() {
             match catch_unwind(AssertUnwindSafe(|| -> Result<String, DispatchError> {
                 match code {
                     ctl::BANK => Ok(format!("[{}]", core.bank().items().iter().map(|b| b.json()).collect::<Vec<_>>().join(","))),
+                    ctl::FINISHED => Ok(core.finished_json()),
                     ctl::PANIC_PROBE => panic!("rust_env_proc PANIC_PROBE: a deliberate panic inside the child's op section"),
                     op => match core.dispatch(op, addrs) {
                         status::OK => Ok(String::new()),

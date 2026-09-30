@@ -56,7 +56,12 @@ use crate::core::refusal::{Class, EnvError};
 pub enum Route {
     External,
     Policy { slot: u32 },
-    Bot { kind: Kind, seed: u64 },
+    /// `per_episode` (the spec key `"streams": "episode"`, M5 Lane H — eval): the bot's streams are
+    /// RE-SEEDED at every episode start from the route seed and that episode's staged battle seed
+    /// ([`episode_stream_seed`]), so a game's bot draws are a function of the GAME alone — not of the
+    /// env it ran on or the episodes that env played before (the default `"env"` rule: one stream per
+    /// env for the pool's life, the one `Player` a training worker holds).
+    Bot { kind: Kind, seed: u64, per_episode: bool },
 }
 
 /// The kinds a row may name (`rust_env_opponents.ROUTE_KINDS` on the host).
@@ -83,6 +88,19 @@ pub fn stream_seed(seed: u64, env: usize, stream: u64) -> u64 {
     splitmix64(seed ^ splitmix64(((env as u64) << 2) | stream))
 }
 
+/// The four 16-bit battle-seed words of an episode packed low word first (`w0 | w1 << 16 | …`).
+pub fn pack_seed_words(words: &[u32]) -> u64 {
+    words.iter().take(4).enumerate().fold(0u64, |acc, (i, w)| acc | ((*w as u64 & 0xFFFF) << (16 * i)))
+}
+
+/// The seed of stream `stream` (choice 0, protect 1, bait 2) of a `"streams": "episode"` bot route
+/// declared with `seed`, for the episode whose staged battle seed packs to `episode_key`
+/// ([`pack_seed_words`]) — `random.Random(episode_stream_seed(...))`. Python twin:
+/// `rust_env_opponents.episode_bot_stream_seed`.
+pub fn episode_stream_seed(seed: u64, episode_key: u64, stream: u64) -> u64 {
+    stream_seed(seed ^ episode_key, 0, stream)
+}
+
 /// The declared route table (see the module docs).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Routes(pub Vec<Route>);
@@ -104,8 +122,8 @@ impl Routes {
             let allowed: &[&str] = match kind {
                 "external" => &["kind"],
                 "policy" => &["kind", "slot"],
-                "bot" if bot == Some("baitbot") => &["kind", "bot", "seed", "p_bait"],
-                "bot" => &["kind", "bot", "seed"],
+                "bot" if bot == Some("baitbot") => &["kind", "bot", "seed", "p_bait", "streams"],
+                "bot" => &["kind", "bot", "seed", "streams"],
                 other => return Err(format!("spec: opponents[{i}]: unknown kind {other:?} (one of {KINDS:?})")),
             };
             for k in obj.keys() {
@@ -113,7 +131,7 @@ impl Routes {
                     return Err(format!("spec: opponents[{i}] ({kind}): unknown key {k:?}"));
                 }
             }
-            for k in allowed {
+            for k in allowed.iter().filter(|k| **k != "streams") {
                 if !obj.contains_key(*k) {
                     return Err(format!("spec: opponents[{i}] ({kind}): missing key {k:?}"));
                 }
@@ -137,7 +155,15 @@ impl Routes {
                         let p = r.get("p_bait").and_then(Json::as_f64).filter(|p| (0.0..=1.0).contains(p));
                         *p_bait = p.ok_or_else(|| format!("spec: opponents[{i}].p_bait must be a number in [0, 1] (the run's --bait-bot-p)"))?;
                     }
-                    Route::Bot { kind: k, seed: uint("seed", MAX_SEED)? }
+                    let per_episode = match r.get("streams") {
+                        None => false,
+                        Some(v) => match v.as_str() {
+                            Some("env") => false,
+                            Some("episode") => true,
+                            _ => return Err(format!("spec: opponents[{i}].streams must be \"env\" or \"episode\"")),
+                        },
+                    };
+                    Route::Bot { kind: k, seed: uint("seed", MAX_SEED)?, per_episode }
                 }
             });
         }
@@ -201,12 +227,30 @@ impl Routes {
         }
     }
 
+    /// At an episode START on `route` (with the episode's staged battle-seed `words`): the fresh bot
+    /// of a `"streams": "episode"` route, or None (every other route keeps its bot). The caller
+    /// replaces its bot in place — a fixed-size value, nothing acquired.
+    pub fn episode_bot(&self, route: u32, words: &[u32]) -> Option<Bot> {
+        match self.0.get(route as usize) {
+            Some(Route::Bot { kind, seed, per_episode: true }) => {
+                let key = pack_seed_words(words);
+                Some(Bot::new(
+                    *kind,
+                    episode_stream_seed(*seed, key, 0),
+                    episode_stream_seed(*seed, key, 1),
+                    episode_stream_seed(*seed, key, 2),
+                ))
+            }
+            _ => None,
+        }
+    }
+
     /// Env `env`'s bots, one per route (None for a non-bot route) — acquired at STARTUP.
     pub fn build_bots(&self, env: usize) -> Vec<Option<Bot>> {
         self.0
             .iter()
             .map(|r| match r {
-                Route::Bot { kind, seed } => {
+                Route::Bot { kind, seed, .. } => {
                     Some(Bot::new(*kind, stream_seed(*seed, env, 0), stream_seed(*seed, env, 1), stream_seed(*seed, env, 2)))
                 }
                 _ => None,
@@ -222,13 +266,23 @@ impl Routes {
             .map(|r| match r {
                 Route::External => "{\"kind\":\"external\"}".to_string(),
                 Route::Policy { slot } => format!("{{\"kind\":\"policy\",\"slot\":{slot}}}"),
-                Route::Bot { kind: Kind::BaitBot { p_bait }, seed } => {
-                    format!("{{\"kind\":\"bot\",\"bot\":\"baitbot\",\"seed\":{seed},\"p_bait\":{p_bait:?}}}")
+                Route::Bot { kind: Kind::BaitBot { p_bait }, seed, per_episode } => {
+                    format!("{{\"kind\":\"bot\",\"bot\":\"baitbot\",\"seed\":{seed},\"p_bait\":{p_bait:?}{}}}", streams_key(*per_episode))
                 }
-                Route::Bot { kind, seed } => format!("{{\"kind\":\"bot\",\"bot\":\"{}\",\"seed\":{seed}}}", kind.name()),
+                Route::Bot { kind, seed, per_episode } => {
+                    format!("{{\"kind\":\"bot\",\"bot\":\"{}\",\"seed\":{seed}{}}}", kind.name(), streams_key(*per_episode))
+                }
             })
             .collect();
         format!("[{}]", rows.join(","))
+    }
+}
+
+fn streams_key(per_episode: bool) -> &'static str {
+    if per_episode {
+        ",\"streams\":\"episode\""
+    } else {
+        ""
     }
 }
 
@@ -370,8 +424,8 @@ mod tests {
     #[test]
     fn a_bot_route_declares_its_seed_and_bait_dial() {
         let r = p(r#"[{"kind":"bot","bot":"staller","seed":5},{"kind":"bot","bot":"baitbot","seed":9,"p_bait":0.25}]"#).unwrap();
-        assert_eq!(r.0[0], Route::Bot { kind: Kind::Staller, seed: 5 });
-        assert_eq!(r.0[1], Route::Bot { kind: Kind::BaitBot { p_bait: 0.25 }, seed: 9 });
+        assert_eq!(r.0[0], Route::Bot { kind: Kind::Staller, seed: 5, per_episode: false });
+        assert_eq!(r.0[1], Route::Bot { kind: Kind::BaitBot { p_bait: 0.25 }, seed: 9, per_episode: false });
         assert_eq!(p(&r.to_json()).unwrap(), r);
         assert!(r.is_bot(0) && !r.p2_stall_forfeits(0) && r.slot_of(1) == -1);
         for (text, needle) in [
@@ -397,4 +451,21 @@ mod tests {
         );
     }
 
+
+    #[test]
+    fn a_per_episode_bot_route_reseeds_from_the_battle_seed() {
+        let r = p(r#"[{"kind":"bot","bot":"staller","seed":5,"streams":"episode"},{"kind":"bot","bot":"random","seed":7,"streams":"env"}]"#).unwrap();
+        assert_eq!(r.0[0], Route::Bot { kind: Kind::Staller, seed: 5, per_episode: true });
+        assert_eq!(r.0[1], Route::Bot { kind: Kind::Random, seed: 7, per_episode: false });
+        assert_eq!(p(&r.to_json()).unwrap(), r);
+        assert!(p(r#"[{"kind":"bot","bot":"staller","seed":5,"streams":"game"}]"#).unwrap_err().contains("streams"));
+        let w = [1u32, 2, 3, 4];
+        assert_eq!(pack_seed_words(&w), 1 | (2 << 16) | (3 << 32) | (4 << 48));
+        let b = r.episode_bot(0, &w).unwrap();
+        assert_eq!(b.choice.clone().getrandbits(32), crate::bots::rng::PyRandom::new(episode_stream_seed(5, pack_seed_words(&w), 0)).getrandbits(32));
+        assert!(r.episode_bot(1, &w).is_none(), "an env-stream route keeps its bot");
+        // the Python twin (`rust_env_opponents.episode_bot_stream_seed`) pins the same values
+        assert_eq!([episode_stream_seed(5, pack_seed_words(&w), 0), episode_stream_seed(9, 65535, 1)],
+                   [14338025463950524205, 12882590778465766730]);
+    }
 }

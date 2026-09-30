@@ -1,0 +1,45 @@
+{
+ "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
+ "component": "gates",
+ "gpu": true,
+ "rows": [
+  {
+   "counts": {
+    "pass": 30
+   },
+   "detail": "",
+   "gpu": "PASS",
+   "lane": "E",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "opponent routing \u2014 per-episode route table, policy opponents through T2, bots played in the core",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "pass": 55
+   },
+   "detail": "",
+   "gpu": "",
+   "lane": "G",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "training integration \u2014 the Rust env as the trainer's vec env, behind --env-core (the complete-game collector)",
+   "verdict": "PASS"
+  },
+  {
+   "counts": {
+    "fail": 1,
+    "pass": 28
+   },
+   "detail": "",
+   "gpu": "FAIL",
+   "lane": "H",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "eval on the core \u2014 the eval callbacks' cycle, its opponents and its traces on the Rust env",
+   "verdict": "FAIL"
+  }
+ ],
+ "tier": "milestone"
+}

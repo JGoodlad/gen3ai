@@ -1,0 +1,312 @@
+{
+ "pass": true,
+ "workdir": "~/gen3ai_archive/m5_laneH/milestone_cpu",
+ "cfg": {
+  "games": 25,
+  "shard_games": 25,
+  "sentinels": 5,
+  "n_envs": 64,
+  "device": "cpu",
+  "backend": "eager",
+  "front": "ffi",
+  "profile": "selfcheck",
+  "seed": 20261001,
+  "bots": [
+   "random",
+   "heuristic",
+   "heuristic2",
+   "staller",
+   "staller_v2",
+   "aggressive",
+   "aggressive_v2",
+   "setup_sweep",
+   "setup_sweep_v2"
+  ],
+  "trainee": null,
+  "sentinel_paths": null,
+  "bar": 1e-05,
+  "compile_python": false,
+  "trace_limit": 40
+ },
+ "games": {
+  "games": 350,
+  "python_games": 350,
+  "equal": 350,
+  "ties": [],
+  "fatal": [],
+  "decisions": 17508,
+  "missing": [],
+  "max_dlogp": 1.2761435579378144e-06
+ },
+ "metrics_diffs": [],
+ "metrics_equal": true,
+ "metrics": {
+  "win_rates": {
+   "sentinel_0": 0.24,
+   "sentinel_1": 0.56,
+   "sentinel_2": 0.72,
+   "sentinel_3": 0.96,
+   "sentinel_4": 0.92,
+   "staller": 0.04,
+   "staller_v2": 0.12,
+   "aggressive": 0.0,
+   "aggressive_v2": 0.04,
+   "heuristic": 0.04,
+   "heuristic2": 0.04,
+   "setup_sweep": 0.08,
+   "setup_sweep_v2": 0.0,
+   "random": 0.6
+  },
+  "reward_means": {
+   "sentinel_0": -15.6,
+   "sentinel_1": 3.6,
+   "sentinel_2": 13.2,
+   "sentinel_3": 27.4,
+   "sentinel_4": 25.2,
+   "staller": -27.6,
+   "staller_v2": -22.8,
+   "aggressive": -30.0,
+   "aggressive_v2": -27.6,
+   "heuristic": -27.6,
+   "heuristic2": -27.6,
+   "setup_sweep": -25.2,
+   "setup_sweep_v2": -30.0,
+   "random": 6.0
+  },
+  "ep_lens": {
+   "sentinel_0": 61.4,
+   "sentinel_1": 54.2,
+   "sentinel_2": 68.88,
+   "sentinel_3": 67.92,
+   "sentinel_4": 76.08,
+   "staller": 31.44,
+   "staller_v2": 35.6,
+   "aggressive": 31.48,
+   "aggressive_v2": 28.84,
+   "heuristic": 26.96,
+   "heuristic2": 27.76,
+   "setup_sweep": 38.2,
+   "setup_sweep_v2": 30.76,
+   "random": 61.72
+  },
+  "td_resid_tails": {
+   "sentinel_0": -0.1054405386433189,
+   "sentinel_1": -0.11477969193122757,
+   "sentinel_2": -0.10178259859594072,
+   "sentinel_3": -0.08889748734732468,
+   "sentinel_4": -0.09674438380253945,
+   "staller": -0.1456142553416165,
+   "staller_v2": -0.1375830004166584,
+   "aggressive": -0.15060563838617377,
+   "aggressive_v2": -0.135254752265244,
+   "heuristic": -0.14675758368090583,
+   "heuristic2": -0.14290015433079153,
+   "setup_sweep": -0.13200388212616626,
+   "setup_sweep_v2": -0.14420307629330215,
+   "random": -0.1092115025036037
+  },
+  "counts": {
+   "sentinel_0": [
+    6,
+    25
+   ],
+   "sentinel_1": [
+    14,
+    25
+   ],
+   "sentinel_2": [
+    18,
+    25
+   ],
+   "sentinel_3": [
+    24,
+    25
+   ],
+   "sentinel_4": [
+    23,
+    25
+   ],
+   "staller": [
+    1,
+    25
+   ],
+   "staller_v2": [
+    3,
+    25
+   ],
+   "aggressive": [
+    0,
+    25
+   ],
+   "aggressive_v2": [
+    1,
+    25
+   ],
+   "heuristic": [
+    1,
+    25
+   ],
+   "heuristic2": [
+    1,
+    25
+   ],
+   "setup_sweep": [
+    2,
+    25
+   ],
+   "setup_sweep_v2": [
+    0,
+    25
+   ],
+   "random": [
+    15,
+    25
+   ]
+  },
+  "coverage": {
+   "sentinel_0": 1.0,
+   "sentinel_1": 1.0,
+   "sentinel_2": 1.0,
+   "sentinel_3": 1.0,
+   "sentinel_4": 1.0,
+   "staller": 1.0,
+   "staller_v2": 1.0,
+   "aggressive": 1.0,
+   "aggressive_v2": 1.0,
+   "heuristic": 1.0,
+   "heuristic2": 1.0,
+   "setup_sweep": 1.0,
+   "setup_sweep_v2": 1.0,
+   "random": 1.0
+  },
+  "traces": {
+   "sentinel_0": [
+    5,
+    15,
+    0
+   ],
+   "sentinel_1": [
+    5,
+    15,
+    0
+   ],
+   "sentinel_2": [
+    5,
+    12,
+    0
+   ],
+   "sentinel_3": [
+    5,
+    6,
+    1
+   ],
+   "sentinel_4": [
+    5,
+    7,
+    0
+   ],
+   "staller": [
+    1,
+    11,
+    0
+   ],
+   "staller_v2": [
+    3,
+    13,
+    0
+   ],
+   "aggressive": [
+    0,
+    12,
+    2
+   ],
+   "aggressive_v2": [
+    1,
+    11,
+    0
+   ],
+   "heuristic": [
+    1,
+    11,
+    0
+   ],
+   "heuristic2": [
+    1,
+    11,
+    0
+   ],
+   "setup_sweep": [
+    2,
+    12,
+    0
+   ],
+   "setup_sweep_v2": [
+    0,
+    10,
+    0
+   ],
+   "random": [
+    5,
+    15,
+    0
+   ]
+  },
+  "draws": {
+   "sentinel_0": 0,
+   "sentinel_1": 0,
+   "sentinel_2": 0,
+   "sentinel_3": 1,
+   "sentinel_4": 0,
+   "staller": 0,
+   "staller_v2": 0,
+   "aggressive": 2,
+   "aggressive_v2": 0,
+   "heuristic": 0,
+   "heuristic2": 0,
+   "setup_sweep": 0,
+   "setup_sweep_v2": 0,
+   "random": 0
+  }
+ },
+ "traces": {
+  "rust": 161,
+  "python": 161,
+  "only_rust": [],
+  "only_python": [],
+  "checked": 40,
+  "decision_diffs": []
+ },
+ "rust_stats": {
+  "step": 1000,
+  "games": 350,
+  "units": 14,
+  "host_steps": 2066,
+  "trainee_decisions": 17508,
+  "p2_policy_decisions": 8817,
+  "traces": 161,
+  "near_ties": 11,
+  "seconds": {
+   "load": 0.45181890798266977,
+   "stage": 0.07810020982287824,
+   "submit": 0.44986306386999786,
+   "drain": 195.89261726930272,
+   "act": 0.2590108214644715,
+   "core": 9.32361974788364,
+   "finish": 4.08998696890194,
+   "trace": 3.9124142510117963,
+   "total": 210.54995971894823
+  },
+  "lifecycle": {
+   "THREADS_SPAWNED_AFTER_FREEZE": 0,
+   "ENVS_ADDED_AFTER_FREEZE": 0,
+   "COLUMN_REBINDS_AFTER_FREEZE": 0,
+   "BANK_GROWTH_AFTER_FREEZE": 0,
+   "compiles_after_freeze": 0,
+   "captures_after_freeze": 0,
+   "cuda_segments_after_freeze": 0
+  }
+ },
+ "rust_wall_s": 217.86322050797753,
+ "python_wall_s": 640.0755526459543,
+ "svc_startup_s": 2.0159373220521957
+}

@@ -15,7 +15,15 @@ concurrency-order-independence — plus the `calibration` pure helpers
 and the unattributed-split integration: over-valued vs lost via the reliability gap,
 + the selection-confound diagnostics), `discovery_test.py` (tmp_path trees, checkpoint
 precedence, **sharded `<outcome>_s<shard>_<idx>` parsing → distinct index**),
-`forensics_test.py` (pure `move_category` + `build_decision_table`/`decision_table_digest` over a
+`core_trace_test.py` (pure: the core-trace cross-check's refusal naming the first differing line,
+the live masked softmax, the core `battle_id` → room-tag prefix, and `ProbeSession._meta` reading a
+meta-only core summary without expanding it while `_summary` refuses its missing siblings) +
+`core_trace_integration_test.py` (`@sim @integration`, builds the rust env cdylib: REAL core games —
+two normal, one at a short `turn_limit` ending in the trainee's stall forfeit — expanded and matched
+against the `states.npz` rows; each game replayed LIVE on the rust bridge through a `BattleRecorder`
+exactly as `EvalRLPlayer` records, the two summaries equal field for field and the obs byte-equal; a
+tampered record line and misaligned states rows REFUSED; `query summary|scan|turns` exit 0 on the
+core-trace run), `forensics_test.py` (pure `move_category` + `build_decision_table`/`decision_table_digest` over a
 hand-written tmp trace via a fake session — no torch, no bridge),
 `falsifier_test.py` (pure: margin/percentile/paired-stats/verdict
 matrix, seed determinism, δ-anchor selection incl. the forced-switch remap, and

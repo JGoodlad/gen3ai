@@ -1,0 +1,20 @@
+{
+ "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
+ "component": "gates",
+ "gpu": true,
+ "rows": [
+  {
+   "counts": {
+    "pass": 29
+   },
+   "detail": "",
+   "gpu": "PASS",
+   "lane": "H",
+   "m5_gate": true,
+   "source": "run:milestone",
+   "title": "eval on the core \u2014 the eval callbacks' cycle, its opponents and its traces on the Rust env",
+   "verdict": "PASS"
+  }
+ ],
+ "tier": "milestone"
+}

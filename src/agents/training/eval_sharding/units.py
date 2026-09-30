@@ -150,6 +150,14 @@ def plan_units(items: list[EvalItem], shard_games: int) -> list[ShardUnit]:
     return units
 
 
+def game_range(unit: ShardUnit, shard_games: int) -> range:
+    """The unit's games as indices into its item's games in PLAN order (shard 0's first) — the game
+    index the per-game seed rule keys on (``rust_eval.seeds``), independent of who plays the unit."""
+    sizes = _split_games(unit.item.n_games, shard_games)
+    lo = sum(sizes[:unit.shard_index])
+    return range(lo, lo + unit.n_games)
+
+
 def shards_per_item(items: list[EvalItem], shard_games: int) -> dict[str, int]:
     """How many shards each item splits into (for forensic-quota scaling + coverage)."""
     return {it.key: len(_split_games(it.n_games, shard_games)) for it in items}

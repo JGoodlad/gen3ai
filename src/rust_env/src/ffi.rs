@@ -247,6 +247,42 @@ mod imp {
         }
     }
 
+    pub unsafe fn finished_json(h: *mut Handle) -> *const c_char {
+        match in_core(h, |c| Ok(c.finished_json())) {
+            Ok(s) => OUT.with(|o| {
+                *o.borrow_mut() = cstring(s);
+                o.borrow().as_ptr()
+            }),
+            Err(e) => {
+                set_err(&e);
+                std::ptr::null()
+            }
+        }
+    }
+
+    pub unsafe fn trace_json(script: *const c_char, commit: *const c_char, label: *const c_char) -> *const c_char {
+        let arg = |p: *const c_char, what: &str| -> Result<String, DispatchError> {
+            if p.is_null() {
+                return Err(err(status::CALLER, "caller", format!("trace_json: null {what}")));
+            }
+            CStr::from_ptr(p).to_str().map(str::to_string).map_err(|_| err(status::CALLER, "caller", format!("trace_json: {what} is not UTF-8")))
+        };
+        let r = (|| -> Result<String, DispatchError> {
+            let (s, c, l) = (arg(script, "script")?, arg(commit, "commit")?, arg(label, "label")?);
+            crate::trace::trace_json(&s, &c, &l).map_err(|m| err(status::CALLER, "trace", m))
+        })();
+        match r {
+            Ok(s) => OUT.with(|o| {
+                *o.borrow_mut() = cstring(s);
+                o.borrow().as_ptr()
+            }),
+            Err(e) => {
+                set_err(&e);
+                std::ptr::null()
+            }
+        }
+    }
+
     pub unsafe fn free(h: *mut Handle) {
         if !h.is_null() {
             drop(Box::from_raw(h));
@@ -268,9 +304,9 @@ mod imp {
 // Each wrapper runs `imp::<name>` (hand-written, the SAME arguments) inside `guard`.
 
 /// `ffi.sig_id()` — FNV-1a-64 of the table's canonical text; compared by the loader.
-pub const FFI_SIG_ID: &str = "d8a8df7cf9f63283";
+pub const FFI_SIG_ID: &str = "47643f4cc5417c6e";
 /// The same, NUL-terminated, for `rust_env_ffi_sig`.
-const FFI_SIG_ID_C: &str = "d8a8df7cf9f63283\0";
+const FFI_SIG_ID_C: &str = "47643f4cc5417c6e\0";
 
 /// the build stamp (`stamp.py`'s format); static
 ///
@@ -390,6 +426,26 @@ pub unsafe extern "C" fn rust_env_counters(h: *mut Handle, out: *mut u64, len: u
 #[no_mangle]
 pub unsafe extern "C" fn rust_env_bank_json(h: *mut Handle) -> *const c_char {
     guard(AssertUnwindSafe(|| imp::bank_json(h)))
+}
+
+/// the episodes that ENDED in the last op as a JSON array of `Finished::json` (M5 Lane H; valid until this thread's next call)
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_finished_json(h: *mut Handle) -> *const c_char {
+    guard(AssertUnwindSafe(|| imp::finished_json(h)))
+}
+
+/// PURE (no handle; M5 Lane H): replay a finished episode's input-log script and return its `gen3_core_event_v1` records + reconstruction record as JSON (`crate::trace`); null on failure
+///
+/// # Safety
+/// The caller passes what the table's row says (a handle from `rust_env_new`, a
+/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
+#[no_mangle]
+pub unsafe extern "C" fn rust_env_trace_json(script: *const c_char, commit: *const c_char, label: *const c_char) -> *const c_char {
+    guard(AssertUnwindSafe(|| imp::trace_json(script, commit, label)))
 }
 
 /// drop the core (joins its workers); null is a no-op

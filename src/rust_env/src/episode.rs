@@ -154,6 +154,39 @@ pub fn end_of(r: &BoardReading, t: &Terminal) -> Result<End, EnvError> {
 /// A battle banked this op: (the error, its input log, its episode ordinal).
 pub type Banked = (EnvError, InputLog, u32);
 
+/// An episode that ENDED this op (M5 Lane H — eval): what an eval host needs about a finished game
+/// and cannot read off the columns (after `done` they already describe the NEXT episode, and no
+/// column carries the winner or the end turn — a tie and p1's stall forfeit write the same reward
+/// and flags under the indicator terminal). Reported for EVERY ended episode, in env order, and held
+/// by the core for exactly one op (`Core::finished`, replaced at the next dispatch): a host that
+/// wants it reads it after each op; nothing accumulates (the store is reserved at startup).
+#[derive(Clone, Debug)]
+pub struct Finished {
+    pub episode: u32,
+    /// 1 = p1 won, 2 = p2 won, 0 = no winner (a tie) — p1's reading's `won`.
+    pub winner: u8,
+    /// The battle turn at the end (p1's reading's `turn`, poke-env's `battle.turn`).
+    pub end_turn: u32,
+    /// The side that FORCELOSE'd (1 / 2), 0 = none.
+    pub forfeit: u8,
+    /// The episode's input log (`InputLog::script` replays it: `core_events`, the record writer).
+    pub log: InputLog,
+}
+
+impl Finished {
+    /// `{"env","episode","winner","end_turn","forfeit","script"}` (`script` = `InputLog::script("")`).
+    pub fn json(&self, env: usize) -> String {
+        format!(
+            "{{\"env\":{env},\"episode\":{},\"winner\":{},\"end_turn\":{},\"forfeit\":{},\"script\":{}}}",
+            self.episode,
+            self.winner,
+            self.end_turn,
+            self.forfeit,
+            crate::core::refusal::json_str(&self.log.script(""))
+        )
+    }
+}
+
 fn clear_outcome(c: &mut EnvCols) {
     c.reward[0] = 0.0;
     c.done[0] = 0;
@@ -295,6 +328,13 @@ impl Env {
         if self.sess.as_ref().ok_or_else(|| EnvError::fault("no battle"))?.is_ended() {
             let r = self.p1_reading().ok_or_else(|| EnvError::fault("p1: chain lost"))?;
             let end = end_of(r, &ctx.spec.terminal)?;
+            let (winner, end_turn) = (match r.won { Some(true) => 1, Some(false) => 2, None => 0 }, r.turn);
+            let forfeit = match self.log.cmds.last().map(String::as_str) {
+                Some("FORCELOSE p1") => 1,
+                Some("FORCELOSE p2") => 2,
+                _ => 0,
+            };
+            self.finished = Some(Finished { episode: self.episode(), winner, end_turn, forfeit, log: self.log.clone() });
             // The ENDED episode's outcome is written BEFORE the auto-reset, so nothing the reset
             // does (a refused start parks) can lose it (F-L0-2).
             c.reward[0] = end.reward;

@@ -25,8 +25,8 @@ use crate::core::columns::{col_bytes, ColAddrs, N_COLUMNS, OBS_DIM};
 // Source of truth: the wire table in `src/utils/rust_env/proc.py`; pinned by `proc_test.py` (routine).
 
 /// `proc.wire_id()` — FNV-1a-64 of the wire's canonical text; compared at the handshake.
-pub const WIRE_ID: &str = "1e9577f453c72a7d";
-pub const WIRE_ID_U64: u64 = 0x1e9577f453c72a7d;
+pub const WIRE_ID: &str = "89d942296dcf35bb";
+pub const WIRE_ID_U64: u64 = 0x89d942296dcf35bb;
 /// Bytes before the first column (the header words live at its start).
 pub const HEADER_BYTES: usize = 4096;
 /// Every column's offset is a multiple of this.
@@ -53,6 +53,8 @@ pub mod ctl {
     pub const INIT: u8 = b'I';
     /// reply payload: the refusal bank, a JSON array of `Banked::json`
     pub const BANK: u8 = b'B';
+    /// reply payload: the episodes that ENDED in the last op, a JSON array of `Finished::json` (M5 Lane H)
+    pub const FINISHED: u8 = b'F';
     /// reply OK, drop the core (joins its workers), unmap, exit 0
     pub const QUIT: u8 = b'Q';
     /// TEST HOOK: a panic inside the child's guarded op section — status PANIC, and the child's core is POISONED (every later op LIFECYCLE)

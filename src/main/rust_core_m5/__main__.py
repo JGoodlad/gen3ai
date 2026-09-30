@@ -103,7 +103,8 @@ def compose(results: Path) -> dict:
             r = by.get(row.lane)
             v = r["verdict"] if r else G.NOT_RUN
             gpu = f", GPU part {r['gpu']}" if r and r.get("gpu") else ""
-            src = next((o for o in overlays if f"_{row.lane}_" in o.replace(".json", "_")), "")
+            # the LAST overlay naming this lane is the one whose row stands (they apply in mtime order)
+            src = next((o for o in reversed(overlays) if f"_{row.lane}_" in o.replace(".json", "_")), "")
             items.append((f"lane {row.lane} — {row.title}", v, f"{lanes['tier']}{gpu}" + (f" ({src})" if src else "")))
     for comp, label in (("slice_n", "slice N at the env level"), ("depth3", "the depth-3 successor slice")):
         m, c = load(f"{comp}_milestone"), load(f"{comp}_commit")

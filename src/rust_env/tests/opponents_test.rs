@@ -14,8 +14,8 @@ fn routes() -> Routes {
     Routes(vec![
         Route::External,
         Route::Policy { slot: 5 },
-        Route::Bot { kind: Kind::Staller, seed: 11 },
-        Route::Bot { kind: Kind::HeuristicV2, seed: 12 },
+        Route::Bot { kind: Kind::Staller, seed: 11, per_episode: false },
+        Route::Bot { kind: Kind::HeuristicV2, seed: 12, per_episode: false },
         Route::Policy { slot: 2 },
     ])
 }

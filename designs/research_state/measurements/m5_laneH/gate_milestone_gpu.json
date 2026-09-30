@@ -1,0 +1,336 @@
+{
+ "pass": true,
+ "workdir": "~/gen3ai_archive/m5_laneH/milestone_gpu",
+ "cfg": {
+  "games": 20,
+  "shard_games": 25,
+  "sentinels": 5,
+  "n_envs": 64,
+  "device": "cuda",
+  "backend": "graph",
+  "front": "ffi",
+  "profile": "selfcheck",
+  "seed": 20261002,
+  "bots": [
+   "random",
+   "heuristic",
+   "heuristic2",
+   "staller",
+   "staller_v2",
+   "aggressive",
+   "aggressive_v2",
+   "setup_sweep",
+   "setup_sweep_v2"
+  ],
+  "trainee": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+  "sentinel_paths": [
+   "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots/snapshot_000032000016.zip",
+   "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots/snapshot_000040000032.zip",
+   "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots/snapshot_000052000032.zip",
+   "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots/snapshot_000070000032.zip",
+   "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots/snapshot_000082000032.zip"
+  ],
+  "bar": 0.001,
+  "compile_python": true,
+  "trace_limit": 40
+ },
+ "games": {
+  "games": 280,
+  "python_games": 280,
+  "equal": 279,
+  "ties": [
+   {
+    "item": "aggressive_v2",
+    "game": 6,
+    "first_diff": 12,
+    "rust": [
+     1,
+     15,
+     16
+    ],
+    "python": [
+     1,
+     15,
+     16
+    ],
+    "margin_rust": 4.76837158203125e-07,
+    "margin_python": 9.5367431640625e-07
+   }
+  ],
+  "fatal": [],
+  "decisions": 9242,
+  "missing": [],
+  "max_dlogp": 1.4848299005221222e-05
+ },
+ "metrics_diffs": [],
+ "metrics_equal": true,
+ "metrics": {
+  "win_rates": {
+   "sentinel_0": 0.75,
+   "sentinel_1": 0.6,
+   "sentinel_2": 0.6,
+   "sentinel_3": 0.6,
+   "sentinel_4": 0.65,
+   "staller": 0.95,
+   "staller_v2": 1.0,
+   "aggressive": 0.95,
+   "aggressive_v2": 0.9,
+   "heuristic": 0.85,
+   "heuristic2": 0.9,
+   "setup_sweep": 0.9,
+   "setup_sweep_v2": 0.95,
+   "random": 1.0
+  },
+  "reward_means": {
+   "sentinel_0": 0.75,
+   "sentinel_1": 0.6,
+   "sentinel_2": 0.6,
+   "sentinel_3": 0.6,
+   "sentinel_4": 0.65,
+   "staller": 0.95,
+   "staller_v2": 1.0,
+   "aggressive": 0.95,
+   "aggressive_v2": 0.9,
+   "heuristic": 0.85,
+   "heuristic2": 0.9,
+   "setup_sweep": 0.9,
+   "setup_sweep_v2": 0.95,
+   "random": 1.0
+  },
+  "ep_lens": {
+   "sentinel_0": 42.5,
+   "sentinel_1": 45.6,
+   "sentinel_2": 41.95,
+   "sentinel_3": 36.65,
+   "sentinel_4": 37.25,
+   "staller": 24.85,
+   "staller_v2": 24.55,
+   "aggressive": 18.9,
+   "aggressive_v2": 23.3,
+   "heuristic": 33.05,
+   "heuristic2": 20.55,
+   "setup_sweep": 22.85,
+   "setup_sweep_v2": 21.85,
+   "random": 26.75
+  },
+  "td_resid_tails": {
+   "sentinel_0": -0.21703934023777643,
+   "sentinel_1": -0.19443870601909502,
+   "sentinel_2": -0.16427584235895087,
+   "sentinel_3": -0.21650570891916943,
+   "sentinel_4": -0.1650662484811619,
+   "staller": -0.09200888528273655,
+   "staller_v2": -0.13860523815338427,
+   "aggressive": -0.16635592356324197,
+   "aggressive_v2": -0.11760703831911087,
+   "heuristic": -0.1845155642093981,
+   "heuristic2": -0.20420339568094772,
+   "setup_sweep": -0.11615698404299717,
+   "setup_sweep_v2": -0.15909501165151596,
+   "random": -0.07811118827925788
+  },
+  "counts": {
+   "sentinel_0": [
+    15,
+    20
+   ],
+   "sentinel_1": [
+    12,
+    20
+   ],
+   "sentinel_2": [
+    12,
+    20
+   ],
+   "sentinel_3": [
+    12,
+    20
+   ],
+   "sentinel_4": [
+    13,
+    20
+   ],
+   "staller": [
+    19,
+    20
+   ],
+   "staller_v2": [
+    20,
+    20
+   ],
+   "aggressive": [
+    19,
+    20
+   ],
+   "aggressive_v2": [
+    18,
+    20
+   ],
+   "heuristic": [
+    17,
+    20
+   ],
+   "heuristic2": [
+    18,
+    20
+   ],
+   "setup_sweep": [
+    18,
+    20
+   ],
+   "setup_sweep_v2": [
+    19,
+    20
+   ],
+   "random": [
+    20,
+    20
+   ]
+  },
+  "coverage": {
+   "sentinel_0": 1.0,
+   "sentinel_1": 1.0,
+   "sentinel_2": 1.0,
+   "sentinel_3": 1.0,
+   "sentinel_4": 1.0,
+   "staller": 1.0,
+   "staller_v2": 1.0,
+   "aggressive": 1.0,
+   "aggressive_v2": 1.0,
+   "heuristic": 1.0,
+   "heuristic2": 1.0,
+   "setup_sweep": 1.0,
+   "setup_sweep_v2": 1.0,
+   "random": 1.0
+  },
+  "traces": {
+   "sentinel_0": [
+    5,
+    10,
+    0
+   ],
+   "sentinel_1": [
+    5,
+    13,
+    0
+   ],
+   "sentinel_2": [
+    5,
+    13,
+    0
+   ],
+   "sentinel_3": [
+    5,
+    13,
+    0
+   ],
+   "sentinel_4": [
+    5,
+    12,
+    0
+   ],
+   "staller": [
+    5,
+    6,
+    0
+   ],
+   "staller_v2": [
+    5,
+    5,
+    0
+   ],
+   "aggressive": [
+    5,
+    6,
+    0
+   ],
+   "aggressive_v2": [
+    5,
+    7,
+    0
+   ],
+   "heuristic": [
+    5,
+    8,
+    0
+   ],
+   "heuristic2": [
+    5,
+    7,
+    0
+   ],
+   "setup_sweep": [
+    5,
+    7,
+    0
+   ],
+   "setup_sweep_v2": [
+    5,
+    6,
+    0
+   ],
+   "random": [
+    5,
+    5,
+    0
+   ]
+  },
+  "draws": {
+   "sentinel_0": 0,
+   "sentinel_1": 0,
+   "sentinel_2": 0,
+   "sentinel_3": 0,
+   "sentinel_4": 0,
+   "staller": 0,
+   "staller_v2": 0,
+   "aggressive": 0,
+   "aggressive_v2": 0,
+   "heuristic": 0,
+   "heuristic2": 0,
+   "setup_sweep": 0,
+   "setup_sweep_v2": 0,
+   "random": 0
+  }
+ },
+ "traces": {
+  "rust": 118,
+  "python": 118,
+  "only_rust": [],
+  "only_python": [],
+  "checked": 40,
+  "decision_diffs": []
+ },
+ "rust_stats": {
+  "step": 1000,
+  "games": 280,
+  "units": 14,
+  "host_steps": 1086,
+  "trainee_decisions": 9258,
+  "p2_policy_decisions": 4540,
+  "traces": 118,
+  "near_ties": 2,
+  "seconds": {
+   "load": 0.43871600192505866,
+   "stage": 0.03826518263667822,
+   "submit": 0.17872905486728996,
+   "drain": 0.6135015969630331,
+   "act": 2.4874163415515795,
+   "core": 3.8804094719234854,
+   "finish": 2.4578879851615056,
+   "trace": 2.3927158041624352,
+   "total": 10.096321504097432
+  },
+  "lifecycle": {
+   "THREADS_SPAWNED_AFTER_FREEZE": 0,
+   "ENVS_ADDED_AFTER_FREEZE": 0,
+   "COLUMN_REBINDS_AFTER_FREEZE": 0,
+   "BANK_GROWTH_AFTER_FREEZE": 0,
+   "compiles_after_freeze": 0,
+   "captures_after_freeze": 0,
+   "cuda_segments_after_freeze": 0
+  }
+ },
+ "rust_wall_s": 84.50185142992996,
+ "python_wall_s": 128.2507349390071,
+ "svc_startup_s": 68.20113272697199
+}

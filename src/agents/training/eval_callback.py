@@ -512,6 +512,26 @@ def eval_run_nonce() -> str:
     return _b36(os.getpid() * 1_000_003 + int(time.time()) + _NONCE_COUNTER * 7919, 3)
 
 
+def launch_rust_eval_cycle(cb, pool, run_dir: str, step: int) -> None:
+    """M5 Lane H: play this cycle's plan on the Rust eval core (``rust_eval.launch``), in process and
+    blocking, publishing the same shard results a Python worker would. A cycle failure is logged and
+    leaves the shard files absent (the collect then reads it as missing, like a crashed worker); a
+    lifecycle violation or a missing eval core is RAISED."""
+    from agents.training.rust_eval.executor import EvalCoreError
+    from agents.training.rust_eval.launch import run_rust_eval_cycle
+
+    t0 = time.monotonic()
+    try:
+        st = run_rust_eval_cycle(cb, pool=pool, run_dir=run_dir, step=step)
+    except EvalCoreError as e:
+        print(f"⚠️ [EVAL] step {step:,}: the Rust eval cycle failed — {e}")
+        send_event(f"⚠️ Eval @ {step:,}: Rust eval cycle failed ({type(e).__name__})")
+        return
+    print(f"[EVAL] step {step:,}: Rust eval core played {st['games']:,} games in {time.monotonic() - t0:.1f}s "
+          f"({st['trainee_decisions']:,} trainee decisions, {st['traces']} traces, {st['near_ties']} near-ties)")
+
+
+
 def kill_eval_workers(procs: list[dict], wait_timeout: float = 5.0) -> None:
     """Kill any still-running eval workers and reap them (so none linger as zombies)."""
     for w in procs:
@@ -1084,6 +1104,9 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         # δ residuals pooled across THIS matchup's captured battles (one EvalRLPlayer per
         # opponent), folded into a tail statistic at collect via td_tail(). Reset each cycle.
         self._td_pool: list[float] = []
+        # M5 Lane H's gate (the per-game-seeded Python path): when a dict, every decision appends
+        # ``(action, top-2 legal log-prob margin)`` under its battle tag. None (every live eval) = off.
+        self.decision_log: "dict | None" = None
 
     def begin_forensic_cycle(self, forensic_dir: str | None, step: int, *,
                              trace_tag: str = "", win_quota: int | None = None,
@@ -1177,6 +1200,15 @@ class EvalRLPlayer(RewardTrackingMixin, RLPlayer):
         if idx is None:
             return self.choose_default_move()
         self._track_reward(battle, idx, mask)
+        if self.decision_log is not None:
+            ml = getattr(self, "_last_masked_logits", None)
+            legal = [float(x) for x, m in zip(ml[0].tolist(), mask) if m] if ml is not None else []
+            top = sorted(legal, reverse=True)
+            margin = top[0] - top[1] if len(top) > 1 else float("inf")
+            # the chosen action's legal log-prob (log-softmax over the legal logits, in float64)
+            lse = max(legal) + math.log(sum(math.exp(x - max(legal)) for x in legal)) if legal else 0.0
+            chosen = float(ml[0, idx].item()) - lse if ml is not None else float("nan")
+            self.decision_log.setdefault(battle.battle_tag, []).append((int(idx), margin, chosen))
         if capturing:
             rec = self._recorders.get(battle.battle_tag)
             if rec is None:
@@ -1405,9 +1437,13 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         keep_crashes: int = KEEP_CRASHES_DEFAULT,
         fixed_opponents: "list | None" = None,
         trainee_team_str: "str | list[str] | None" = None,
+        env_core: str = "python",
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # M5 Lane H: under --env-core rust the cycle plays IN PROCESS on the declared eval core
+        # (`rust_eval.launch`), never on Python workers.
+        self._env_core = env_core
         # Per-opponent games per eval cycle (--eval-games; None → the module default EVAL_GAMES).
         # n=100 → ±0.098 (95% CI) per cell; n=200 → ±0.069 — the owner opted into 200 (2026-07-21)
         # for tighter sentinel cells at ~2× eval cost (work-stolen, off the training path).
@@ -1578,11 +1614,18 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.
             "trainee_team_str": self._trainee_team_str,
         }
-        procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
+        if self._env_core == "rust":
+            procs = []
+            launch_rust_eval_cycle(self, pool, run_dir, step)
+        else:
+            procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 
         self._pending = {"step": step, "names": names, "procs": procs,
                          "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
                          "launched_at": time.monotonic()}
+        if self._env_core == "rust":
+            self._collect_pending()      # the cycle already played (blocking, in process)
+            return
         print(f"[EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
               f"{self._eval_device} ({len(names)} opponents, {pool.n_units} shard units, "
               f"conc {self._eval_concurrency}) — non-blocking")

@@ -316,19 +316,30 @@ def _next_tag(battle_tag: Optional[str], battle_format: str) -> str:
 
     The caller's tag is KEPT as a prefix so a replay is still traceable to the battle it replays,
     and the format stays in segment 1 because ``Player._create_battle`` checks exactly that.
+
+    🚨 **A caller's tag WITHOUT the format in segment 1 is PREFIXED, never passed through.** A
+    Rust-eval core trace's ``battle_tag`` is its ``battle_id`` (``core-<step>-<opp>-g<k>``), and a
+    room named that is silently NOT a battle to ``Player._create_battle`` — the replay then yields
+    ZERO decisions and every counterfactual view read "replay desync" (found 2026-09-30, M5 Lane H).
     """
     global _TAG_SEQ
     _TAG_SEQ += 1
-    return f"{battle_tag or f'battle-{battle_format}'}-recon{_TAG_SEQ}"
+    base = battle_tag or f"battle-{battle_format}"
+    if base.split("-")[1:2] != [battle_format]:
+        base = f"battle-{battle_format}-{base}"
+    return f"{base}-recon{_TAG_SEQ}"
 
 
 def _build_replay_player(*, username: str, packed_team: str, side: str,
                          actions: Sequence[int], battle_format: str, mappings,
-                         stall_config, map_actions_at, stop_after_decision, encode_only_at):
+                         stall_config, map_actions_at, stop_after_decision, encode_only_at,
+                         player_cls: "Optional[type]" = None):
     """The player + transport-less client every replay path uses. Split out so the
     single-shot and prefix-sharing entry points build IDENTICAL objects (any drift here
-    would silently break the bit-identity contract between them)."""
-    player = _ReplayObsPlayer(
+    would silently break the bit-identity contract between them). ``player_cls`` (a
+    :class:`_ReplayObsPlayer` subclass) lets a reader that records at each decision — the
+    prober's core-trace expansion — reuse this exact construction."""
+    player = (player_cls or _ReplayObsPlayer)(
         replay_actions=actions,
         map_actions_at=map_actions_at,
         stop_after_decision=stop_after_decision,

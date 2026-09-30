@@ -75,7 +75,7 @@ class _ReadingMixin:
                 if not og.battles:
                     continue
                 try:
-                    out.append(self._summary(og.battles[0]).get("meta") or {})
+                    out.append(self._meta(og.battles[0]))   # meta only: never expands a core trace
                 except Exception:      # noqa: BLE001 — an unreadable trace is not a vocabulary
                     continue
                 if len(out) >= limit:

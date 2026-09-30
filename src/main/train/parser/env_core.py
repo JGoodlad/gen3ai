@@ -89,6 +89,10 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                              "(DEFAULT, gen3_keyed_draw_v1: a counter-based draw keyed by (run seed, env, episode, "
                              "decision) — one vectorised op, exactly replayable; F-LE-8) or 'generator' (one torch "
                              "generator per env per opponent — today's RLPlayer stream, bit for bit).")
+    parser.add_argument("--rust-eval-envs", "--rust_eval_envs", dest="rust_eval_envs", type=int, default=None,
+                        help="--env-core rust only (M5 Lane H): envs of the EVAL core, declared at startup "
+                             "(default 64). An eval cycle plays each shard unit's games in order on one env, "
+                             "so about --eval-games / --eval-shard-games x opponents envs run it in one wave.")
     parser.add_argument("--behaviour-check", "--behaviour_check", dest="behaviour_check",
                         choices=("off", "warn", "fatal"), default=None,
                         help="K9(b) BEHAVIOUR-POLICY CONSISTENCY: before any optimizer step of every update, "

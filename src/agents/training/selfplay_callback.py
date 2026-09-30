@@ -64,6 +64,7 @@ from agents.training.eval_callback import (
     record_eval_selection,
     replay_last_eval_to_tui,
     spawn_eval_workers,
+    launch_rust_eval_cycle,
     write_eval_manifest,
 )
 from agents.training.artifact_retention import (
@@ -177,9 +178,12 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         debug: bool = False,
         trainee_team_str: "str | list[str] | None" = None,
         snapshot_ladder_games: int = 100,
+        env_core: str = "python",
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # M5 Lane H: under --env-core rust the cycle plays IN PROCESS on the declared eval core.
+        self._env_core = env_core
         # Per-opponent games per eval cycle (--eval-games; None → EVAL_GAMES). Sentinel cells at
         # n=100 carry ±0.098 95% CIs; 200 tightens to ±0.069 (~2× eval cost, work-stolen).
         self._eval_games = int(eval_games) if eval_games else EVAL_GAMES
@@ -471,7 +475,11 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.
             "trainee_team_str": self._trainee_team_str,
         }
-        procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
+        if self._env_core == "rust":
+            procs = []
+            launch_rust_eval_cycle(self, pool, run_dir, step)
+        else:
+            procs = spawn_eval_workers(run_dir, base_cfg, n_workers)
 
         self._pending = {
             "step": step, "bot_names": bot_names, "sentinels": sentinels,
@@ -480,6 +488,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
             "launched_at": time.monotonic(),
         }
+        if self._env_core == "rust":
+            self._collect_pending()      # the cycle already played (blocking, in process)
+            return
         print(f"[SELFPLAY EVAL] step {step:,}: spawned {n_workers} work-stealing worker(s) on "
               f"{self._eval_device} ({len(bot_names)} bots + {len(sentinels)} sentinels, "
               f"{pool.n_units} shard units, conc {self._eval_concurrency}) — non-blocking")

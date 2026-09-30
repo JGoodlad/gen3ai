@@ -184,6 +184,57 @@ def seed_unit_streams(seed_base, item_key, shard_index, trainee_tb, opp_tb):
     return us
 
 
+#: The stream attribute of each bot RNG (``bot_inventory``'s streams → the player's attribute).
+_BOT_STREAM_ATTR = {"choice": "_choice_rng", "protect": "_protect_rng", "bait": "_rng"}
+
+
+def _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, game_log_path=None):
+    """M5 Lane H — the PER-GAME seed rule (``rust_eval.seeds``, ``seed_rule = "per_game"``): each game of
+    the unit is played alone, in plan order, on the in-process bridge, with its OWN battle seed and — for a
+    scripted bot — its streams re-seeded exactly as the Rust eval core re-seeds them at the game's start.
+    The two players' teams were pre-drawn by the same rule (``_per_game_teams``). Optional: one JSON line
+    per game (winner, end turn, the trainee's actions and top-2 margins) into ``game_log_path``."""
+    import random as _random
+
+    from agents.training.eval_sharding import BOT
+    from agents.training.eval_sharding.units import game_range
+    from agents.training.rust_eval import seeds as SD
+
+    trainee.decision_log = {} if game_log_path else None
+    for g in game_range(unit, pool.shard_games):
+        key = SD.game_key(seed_base, item.key, g)
+        words = SD.battle_seed(key)
+        if item.kind == BOT:
+            for stream, s in SD.bot_stream_seeds(item.key, words).items():
+                attr = _BOT_STREAM_ATTR[stream]
+                if stream == "choice" or hasattr(opponent, attr):
+                    setattr(opponent, attr, _random.Random(s))
+        trainee._choice_rng = _random.Random(SD.derived_seed(key, "p1choice"))
+        before = set(trainee._battles)
+        asyncio.run(run_local_battles(trainee, opponent, 1, concurrency=1, impl=bridge_impl, seed=list(words)))
+        if game_log_path:
+            tag = next(t for t in trainee._battles if t not in before)
+            b = trainee._battles[tag]
+            dl = trainee.decision_log.get(tag, [])
+            with open(game_log_path, "a") as f:
+                f.write(json.dumps({"item": item.key, "game": g, "shard": unit.shard_index,
+                                    "winner": 1 if b.won else (2 if b.lost else 0), "end_turn": int(b.turn),
+                                    "actions": [d[0] for d in dl], "margins": [d[1] for d in dl],
+                                    "logp": [d[2] for d in dl],
+                                    "seed": list(words)}) + "\n")
+
+
+def _per_game_teams(unit, pool, item, seed_base, trainee_tb, opp_builder):
+    """The unit's teams under the per-game seed rule, as two ``SequenceTeambuilder``s (plan order)."""
+    from agents.training.eval_sharding.units import game_range
+    from agents.training.rust_eval import seeds as SD
+    from main.rust_core_cutover.envs import SequenceTeambuilder
+
+    keys = [SD.game_key(seed_base, item.key, g) for g in game_range(unit, pool.shard_games)]
+    return (SequenceTeambuilder([SD.draw_team(trainee_tb, k, SD.TRAINEE) for k in keys]),
+            SequenceTeambuilder([SD.draw_team(opp_builder, k, SD.OPPONENT) for k in keys]))
+
+
 async def _play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl="node",
                 seed_base=None):
     if use_bridge:
@@ -201,7 +252,7 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
                use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory,
                bridge_impl="node", compile_extractor=False,
                forensic_quota: "ForensicQuota | None" = None,
-               seed_base=None) -> ShardResult:
+               seed_base=None, seed_rule: str = "unit", game_log_path=None) -> ShardResult:
     """Play one shard unit and return its RAW (additive) result.
 
     A fresh trainee + opponent are built per unit so the measurement (win count, reward sum, δ
@@ -214,7 +265,18 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
     # Pin this unit's dice FIRST — before any player is built, because construction itself draws
     # (a scripted bot's setup, a teambuilder's first pick). Returns None for a live eval, which
     # sets nothing and leaves every stream exactly where it was.
-    unit_seed_base = seed_unit_streams(seed_base, item.key, unit.shard_index, trainee_tb, opp_tb)
+    per_game = seed_rule == "per_game"
+    if per_game:
+        if seed_base is None or not use_bridge or int(concurrency) != 1:
+            raise ValueError("seed_rule per_game needs a seed_base, the in-process bridge and concurrency 1")
+        opp_builder = (opp_tb if item.kind == BOT else
+                       _sentinel_tb(trainee_tb, opp_tb, sentinel_greedy) if item.kind == SENTINEL else
+                       _fixed_opponent_tb(item, opp_tb))
+        trainee_tb, _unit_opp_tb = _per_game_teams(unit, pool, item, seed_base, trainee_tb, opp_builder)
+        opp_tb = _unit_opp_tb
+        unit_seed_base = None
+    else:
+        unit_seed_base = seed_unit_streams(seed_base, item.key, unit.shard_index, trainee_tb, opp_tb)
 
     # One EvalRLPlayer (greedy trainee, reward + forensic tracking), account unique per claim.
     trainee = build_eval_players(
@@ -231,7 +293,7 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
                                         current_version=current_version, device=device),
             compile_extractor=compile_extractor, device=device)
         opponent = RLPlayer(
-            model=opp_model, team=_sentinel_tb(trainee_tb, opp_tb, sentinel_greedy),
+            model=opp_model, team=opp_tb if per_game else _sentinel_tb(trainee_tb, opp_tb, sentinel_greedy),
             battle_format=BATTLE_FORMAT,
             server_configuration=server_config, mappings=mappings,
             account_configuration=AccountConfiguration(f"SPse{tag}", "password"),
@@ -244,7 +306,7 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
             lambda: load_foreign_opponent(item.path, current_version=current_version,
                                           device=device, config_path=item.config_path)[0],
             compile_extractor=compile_extractor, device=device)
-        fixed_tb = _fixed_opponent_tb(item, opp_tb)
+        fixed_tb = opp_tb if per_game else _fixed_opponent_tb(item, opp_tb)
         opponent = RLPlayer(
             model=opp_model, team=fixed_tb, battle_format=BATTLE_FORMAT,
             server_configuration=server_config, mappings=mappings,
@@ -267,8 +329,11 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         win_quota=per_unit.win, loss_quota=per_unit.loss, draw_quota=per_unit.draw)
 
     start = datetime.now()
-    asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl,
-                      seed_base=unit_seed_base))
+    if per_game:
+        _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, game_log_path=game_log_path)
+    else:
+        asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl,
+                          seed_base=unit_seed_base))
     dur = (datetime.now() - start).total_seconds()
 
     res = ShardResult(
@@ -321,6 +386,10 @@ def _run(cfg: dict) -> None:
     # OFFLINE generation only (`main.ops.eval_trace_gen`). ABSENT — the live case — means every
     # stream is left alone and this worker is byte-identical to the pre-seed one.
     seed_base = cfg.get("seed_base")
+    # M5 Lane H: "per_game" = the Rust eval core's per-GAME seed rule (the gate's Python path);
+    # absent = today's per-UNIT rule (an offline generation) or no seed at all (a live eval).
+    seed_rule = cfg.get("seed_rule", "unit")
+    game_log_path = cfg.get("game_log_path")
     claim_dir = cfg["claim_dir"]
     result_dir = cfg["result_dir"]
     wid = cfg["worker_id"]
@@ -387,7 +456,8 @@ def _run(cfg: dict) -> None:
             unit, pool, model, opp_model_cache, current_version, trainee_tb, opp_tb,
             mappings, server_config, concurrency, device, model_dir, step, tag, wid,
             use_bridge, gamma, self_play_temp, sentinel_greedy, reward_factory, bridge_impl,
-            compile_extractor, forensic_quota, seed_base=seed_base)
+            compile_extractor, forensic_quota, seed_base=seed_base, seed_rule=seed_rule,
+            game_log_path=game_log_path)
         pool.publish(result_dir, res)
 
 

@@ -87,6 +87,8 @@ CONTROL: Tuple[Ctl, ...] = (
     Ctl("INIT", ord("I"), "STARTUP, the child's FIRST request (once): `[u32 LE length][spec JSON]`; "
                           "`Core::new`, map the columns, write the header, `freeze`"),
     Ctl("BANK", ord("B"), "reply payload: the refusal bank, a JSON array of `Banked::json`"),
+    Ctl("FINISHED", ord("F"), "reply payload: the episodes that ENDED in the last op, a JSON array of "
+                              "`Finished::json` (M5 Lane H)"),
     Ctl("QUIT", ord("Q"), "reply OK, drop the core (joins its workers), unmap, exit 0"),
     Ctl("PANIC_PROBE", ord("P"), "TEST HOOK: a panic inside the child's guarded op section — status PANIC, "
                                  "and the child's core is POISONED (every later op LIFECYCLE)"),
@@ -516,6 +518,10 @@ class ProcCore:
 
     def bank(self) -> List[dict]:
         return json.loads(self._control("BANK").decode())
+
+    def finished(self) -> List[dict]:
+        """The episodes that ENDED in the last op (M5 Lane H) — ``FfiCore.finished``'s shape."""
+        return json.loads(self._control("FINISHED").decode())
 
     # ---- teardown
     def close(self) -> None:

@@ -51,13 +51,25 @@ pub struct Core {
     reset_done: bool,
     poisoned: Option<String>,
     last_error: Option<DispatchError>,
+    /// The episodes that ended in the LAST op, in env order (M5 Lane H, `episode::Finished`);
+    /// capacity N reserved at startup, replaced at every dispatch.
+    finished: Vec<(usize, crate::episode::Finished)>,
 }
 
 impl Core {
     /// STARTUP: build the pool (every resource acquired) and reserve the bank.
     pub fn new(spec: Spec) -> Result<Core, String> {
         let budget = spec.refusal_budget;
-        Ok(Core { pool: Pool::new(spec)?, bank: Bank::new(budget), counters: [0; NCOUNTERS], reset_done: false, poisoned: None, last_error: None })
+        let n = spec.n;
+        Ok(Core {
+            pool: Pool::new(spec)?,
+            bank: Bank::new(budget),
+            counters: [0; NCOUNTERS],
+            reset_done: false,
+            poisoned: None,
+            last_error: None,
+            finished: Vec::with_capacity(n),
+        })
     }
 
     pub fn spec(&self) -> &Spec {
@@ -96,6 +108,16 @@ impl Core {
 
     pub fn bank(&self) -> &Bank {
         &self.bank
+    }
+
+    /// The episodes that ended in the last op (M5 Lane H), in env order.
+    pub fn finished(&self) -> &[(usize, crate::episode::Finished)] {
+        &self.finished
+    }
+
+    /// [`Core::finished`] as a JSON array of `Finished::json`.
+    pub fn finished_json(&self) -> String {
+        format!("[{}]", self.finished.iter().map(|(e, f)| f.json(*e)).collect::<Vec<_>>().join(","))
     }
 
     pub fn last_error(&self) -> Option<&DispatchError> {
@@ -160,11 +182,15 @@ impl Core {
         if job == Job::Reset {
             self.reset_done = true;
         }
+        self.finished.clear();
         let mut first: Option<DispatchError> = None;
         for rep in reports {
             self.counters[counter::DECISIONS] += rep.tally.decisions;
             self.counters[counter::EPISODES_STARTED] += rep.tally.started;
             self.counters[counter::EPISODES_ENDED] += rep.tally.ended;
+            if let Some(f) = rep.finished {
+                self.finished.push((rep.env, f));
+            }
             for (e, log, episode) in rep.quarantined {
                 self.counters[counter::REFUSALS] += 1;
                 let b = Banked { env: rep.env, episode, error: e, log };
