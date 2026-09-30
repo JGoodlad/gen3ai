@@ -408,20 +408,6 @@ def cells_from_rows_artifact(path: str) -> Dict[str, Cell]:
 # Playing — the battle harness (imports torch/poke-env lazily so the maths half stays cheap)
 # --------------------------------------------------------------------------------------------
 
-def _strip_debugger(model):
-    """Drop the ObservationDebugger a ``--log-level periodic`` checkpoint carries.
-
-    It ``print()``s a full DEEP TRACE board on EVERY forward. Verified output-neutral 2026-09-02
-    (actions and values bit-identical with and without), which matters because these levels are
-    compared against baselines measured before the strip existed.
-    """
-    obj = getattr(model, "policy", model)
-    for mod in (obj.modules() if hasattr(obj, "modules") else []):
-        if getattr(mod, "_debugger", None) is not None:
-            mod._debugger = None
-    return model
-
-
 def _teambuilders():
     """Build the two teambuilder subclasses lazily.
 
@@ -510,9 +496,9 @@ def play_cells(
 
     maps = load_mappings()
     cv = current_model_version(maps)
-    opp_model = _strip_debugger(load_foreign_opponent(
+    opp_model = load_foreign_opponent(
         opponent.zip_path, current_version=cv, device="cpu",
-        config_path=opponent.config_path)[0])
+        config_path=opponent.config_path)[0]
 
     pool = PairedPool(TeamLoader().get_all_teams())
     n_pool = len(pool.packed_teams)
@@ -520,8 +506,8 @@ def play_cells(
 
     out: Dict[str, Dict[str, Cell]] = {}
     for ref in refs:
-        model = _strip_debugger(load_foreign_opponent(
-            ref.zip_path, current_version=cv, device="cpu", config_path=ref.config_path)[0])
+        model = load_foreign_opponent(
+            ref.zip_path, current_version=cv, device="cpu", config_path=ref.config_path)[0]
         out[ref.label] = {}
         for team in teams:
             ti = team.index

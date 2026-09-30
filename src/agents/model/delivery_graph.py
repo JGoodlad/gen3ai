@@ -259,8 +259,6 @@ def build_extractor(config_path: str = _DEFAULT_CONFIG) -> "tuple[Any, Dict[str,
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     # the ctor never reads the space (`observation_space: spaces.Space`, deliberately unread)
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
-    if hasattr(fe, "disable_observation_debugger"):
-        fe.disable_observation_debugger()
     return fe, cfg, layout
 
 

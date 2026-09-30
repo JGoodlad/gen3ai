@@ -80,7 +80,6 @@ def build_preload_extractor(cfg: Dict[str, Any]) -> Tuple[Any, Dict[str, Any]]:
     # `Box` the encoder describes.
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs)
     fe.eval()
-    fe.disable_observation_debugger()                   # dynamo cannot trace its numpy asserts
     return fe, layout
 
 

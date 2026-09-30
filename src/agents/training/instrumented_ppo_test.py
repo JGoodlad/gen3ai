@@ -1508,59 +1508,6 @@ def test_head_only_plus_evidential_still_trains_BOTH_heads_own_params(tmp_path):
         assert th.equal(base[k], on[k]), f"head-only reached the trunk via {k}"
 
 
-def test_the_observation_debugger_is_suppressed_for_the_cf_forward_and_restored(tmp_path):
-    """The CF rows are RECORDED FOREIGN states — other episodes, other policy steps, read off disk.
-
-    The debugger's premise is "this is the board we are about to act on", so those rows are not its
-    business: it would report their integrity failures as though the live env had produced them.
-    Suppressed for that one forward and RESTORED after, including when the forward raises.
-    """
-    from agents.model.features_extractor import Gen3FeaturesExtractor
-
-    model = _build_cf_ppo()
-    fe = model.policy.features_extractor
-    sentinel = object()
-    fe._debugger = sentinel
-    # Borrow the real context manager — the stub extractor is not a Gen3FeaturesExtractor, but the
-    # seam under test is exactly that method, so binding it is the honest way to exercise it.
-    fe.suppress_observation_debugger = (
-        Gen3FeaturesExtractor.suppress_observation_debugger.__get__(fe, type(fe)))
-
-    inside = []
-    _base_forward = type(fe).forward
-    type(fe).forward = lambda self, obs: (                       # type: ignore[method-assign]
-        inside.append(self._debugger) if "action_mask" not in obs else None
-    ) or _base_forward(self, obs)
-    try:
-        _attach_cf_buffer(model, tmp_path)
-        model.cf_winprob_coef = 1.0
-        model.learn(total_timesteps=8 * 4)
-    finally:
-        type(fe).forward = _base_forward                         # type: ignore[method-assign]
-
-    assert inside, "preconditions: the CF forward never ran"
-    assert all(d is None for d in inside), "the debugger was fed recorded foreign CF rows"
-    assert fe._debugger is sentinel, "the debugger was not restored after the CF forward"
-
-
-def test_the_debugger_suppression_restores_even_when_the_forward_raises():
-    """Exception-safe, because the alternative is losing the live obs-integrity check for the rest
-    of a multi-day run over one transient failure in an aux term."""
-    from agents.model.features_extractor import Gen3FeaturesExtractor
-
-    class _Fake:
-        pass
-
-    fe = _Fake()
-    fe._debugger = "the-real-debugger"
-    cm = Gen3FeaturesExtractor.suppress_observation_debugger.__get__(fe, _Fake)
-    with pytest.raises(RuntimeError):
-        with cm() as had:
-            assert had is True and fe._debugger is None
-            raise RuntimeError("the forward blew up")
-    assert fe._debugger == "the-real-debugger"
-
-
 def test_cf_rows_sampled_reports_the_rows_the_fold_actually_ate(tmp_path):
     """Residency (`cf/buffer_fill`) and throughput are different questions, and only the second one
     goes to zero when a producer dies mid-run while its last labels are still resident."""

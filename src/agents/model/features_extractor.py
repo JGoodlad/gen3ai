@@ -287,8 +287,6 @@ class Gen3FeaturesExtractor(ExtractorForward):
     def _forward_unguarded(self, obs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor,
                                                                        torch.Tensor]:
         pi_combined, vf_combined = self.forward_internal(obs)
-        if self._debugger is not None:
-            self._debugger.on_forward(obs["observation"])
         pi_pre = self.projection(self.pre_proj_norm(pi_combined))
         vf_pre = self.value_projection(self.value_pre_norm(vf_combined))
         pi_features = self.activation(pi_pre)

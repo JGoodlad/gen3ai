@@ -48,13 +48,6 @@ def forward_fingerprint(policy: Any) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def _drop_debugger(policy: Any) -> None:
-    # The ObservationDebugger holds host-side state and is never part of an inference forward.
-    for m in policy.modules():
-        if hasattr(m, "_debugger"):
-            m._debugger = None
-
-
 def _tensor_at(module: torch.nn.Module, key: str) -> torch.Tensor:
     prefix, _, name = key.rpartition(".")
     owner = module.get_submodule(prefix) if prefix else module
@@ -80,7 +73,6 @@ class SlotGroup:
         replicas: List[Any] = []
         for _ in range(self.n_slots):
             r = copy.deepcopy(template)
-            _drop_debugger(r)
             r.optimizer = None            # a served replica never steps
             replicas.append(r.to(device).eval())
         # sb3 registers the shared extractor under three names, so one tensor appears under up to

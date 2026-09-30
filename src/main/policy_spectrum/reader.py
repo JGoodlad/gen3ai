@@ -111,9 +111,6 @@ def load_checkpoint(zip_path: Path, device: str = "cpu"):
     cv = current_model_version(load_mappings())
     model, _ = load_foreign_opponent(str(zip_path), current_version=cv, device=device,
                                      config_path=str(_find_config(zip_path)))
-    for mod in model.policy.modules():
-        if hasattr(mod, "_debugger"):
-            mod._debugger = None
     model.policy.eval()
     return model
 

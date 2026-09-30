@@ -112,8 +112,7 @@ network burning gradient on a representation that has stopped changing. `feature
 divides by the representation's own norm, because a falling raw velocity can also mean the features
 merely shrank. The forward is the EAGER `type(fe).forward` with an observation-key-only dict, for
 the reasons `cf_terms` gives (the compile flags patch the BOUND `fe.forward`, and a second obs
-shape through the compiled entry point would add a graph for a diagnostic); the
-ObservationDebugger is suppressed, since these are replayed rows.
+shape through the compiled entry point would add a graph for a diagnostic).
 
 ### Where it sits in `train()`, and the flag's class
 

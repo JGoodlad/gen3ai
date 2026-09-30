@@ -79,12 +79,13 @@ def test_builder_output_constructs_an_extractor(monkeypatch):
     assert EA.build_extractor_arch_kwargs(args)["opp_belief_slots"] is True
 
 
-def test_log_level_is_omitted_unless_given():
+def test_log_level_is_never_threaded():
+    """`log_level` only ever attached the ObservationDebugger (removed 2026-09-30); a new
+    checkpoint must not record it."""
     import types
     args = types.SimpleNamespace(**{a: False for a in EA.ARCH_ARG_KEYS.values()})
     args.opp_belief_aux_coef = 0.0
     assert "log_level" not in EA.build_extractor_arch_kwargs(args)
-    assert EA.build_extractor_arch_kwargs(args, log_level="periodic")["log_level"] == "periodic"
 
 
 def test_plain_form_is_json_serialisable_and_drops_unpicklables():
@@ -94,8 +95,9 @@ def test_plain_form_is_json_serialisable_and_drops_unpicklables():
     args = types.SimpleNamespace(**{a: False for a in EA.ARCH_ARG_KEYS.values()})
     args.opp_belief_aux_coef = 0.0
     args.opp_intent_coef = 0.0
-    kwargs = EA.build_extractor_arch_kwargs(args, base={"layout": {"np": object()}},
-                                            log_level="periodic")
+    # An OLD checkpoint's saved kwargs still carry `log_level`; the plain form drops it.
+    kwargs = EA.build_extractor_arch_kwargs(args, base={"layout": {"np": object()},
+                                                        "log_level": "periodic"})
     plain = EA.arch_kwargs_to_plain(kwargs)
     assert "layout" not in plain
     assert "log_level" not in plain

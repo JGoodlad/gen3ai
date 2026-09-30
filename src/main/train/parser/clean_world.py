@@ -300,9 +300,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "cpu and OFF under --debug**, so a working CPU invocation can never be "
                              "turned into a refusal by a default. An EXPLICIT --compile-trainer on cpu "
                              "still refuses, loudly (that contract is unchanged). "
-                             "--no-compile-trainer opts out and is also how you KEEP the "
-                             "ObservationDebugger, which the compile drops (dynamo cannot trace its "
-                             "numpy asserts). RUNTIME PERF KNOB: not versioned; with the auto default "
+                             "--no-compile-trainer opts out. RUNTIME PERF KNOB: not versioned; with the auto default "
                              "a flagless cuda resume gets it ON.")
     parser.add_argument("--consequence-topk", "--consequence_topk", dest="consequence_topk",
                         type=int, default=None,

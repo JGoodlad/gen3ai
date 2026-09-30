@@ -428,13 +428,6 @@ class ProbeModel:
             raise _arch_drift_error(ckpt_path, peek, dropped, exc) from exc
         policy = model.policy
         policy.set_training_mode(False)
-        # A checkpoint trained with --log-level periodic carries an ObservationDebugger
-        # that print()s a "DEEP TRACE" banner on forward passes. That noise pollutes the
-        # CLI and would corrupt the Textual screen, so silence it on the probed model
-        # (printing only; never affects the computed distribution / gradients).
-        for m in policy.modules():
-            if hasattr(m, "_debugger"):
-                m._debugger = None
         enc = Gen3ObservationEncoder(load_mappings())
         gp = enc.get_layout()["parts"]["global"]
         return cls(policy=policy, offsets=ObsOffsets.from_encoder(enc),

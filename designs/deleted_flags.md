@@ -63,6 +63,7 @@ reactions from a reader.
 | `--zarch-mode` | v78 `gen3_flag_surface_p1_v1` (CHANGELOG L3987) | as above |
 | `--spread-belief-nature-marginalize` | v66; guarded by `gen3_dead_kwarg_tripwire_v1`, 2026-08-17 (CHANGELOG L4682) | the op used to marginalise P(KO) over the nature posterior |
 | `--compile-damage-op` | the June 2026 integration, superseded 2026-08-14 by the `--compile-opponents` / `--compile-trainer` split | the inference-only damage-op compile; the surviving split is `--compile-opponents` / `--compile-trainer`. Named in `src/agents/training/CLAUDE.md` only as the precedent for why a CPU backward does not lower |
+| `--debug-obs` | `gen3_drop_observation_debugger_v1`, owner decision 2026-09-30 | `play.py`'s opt-in to KEEP a `--log-level periodic` checkpoint's `ObservationDebugger` board dumps. The debugger (`src/agents/model/observation_debugger.py`) is deleted with all its plumbing, including the eval worker's `disable_obs_debugger` cfg key (set by `main.ops.eval_trace_gen`); `--log-level` itself survives (env + reward manager). The extractor still ACCEPTS and ignores a saved `log_level` kwarg so old checkpoints load |
 
 ## 2. DEMOTED — the config field survives, the CLI flag does not
 

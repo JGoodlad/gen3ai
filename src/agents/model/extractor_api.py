@@ -3,13 +3,11 @@
 Split out of `features_extractor.py` 2026-08-23 (one responsibility per file). Everything here
 is read or called from OUTSIDE a forward pass — the `last_*` stash properties every consumer
 (the policy, `instrumented_ppo`'s aux losses, the prober, inference) reads, the pointer-cell
-widths the policy sizes its head from, the two `ObservationDebugger` detach paths the compile
-flags and the counterfactual term use, the SB3 ortho-init repair, and the belief-grad-mode
+widths the policy sizes its head from, the SB3 ortho-init repair, and the belief-grad-mode
 stamping. A base class rather than free functions so every body keeps its `self.` spelling and
 mypy still resolves each attribute against the constructor that assigns it.
 """
-import contextlib
-from typing import Dict, Iterator, Optional
+from typing import Dict, Optional
 
 import torch
 
@@ -26,48 +24,6 @@ from agents.model.intent_threshold import ThresholdProbs
 
 class ExtractorApi(ExtractorBuild):
     """The non-forward surface of `Gen3FeaturesExtractor` — see that class."""
-
-    def disable_observation_debugger(self) -> bool:
-        """Detach the `ObservationDebugger`. Returns True if one was attached.
-
-        The debugger runs NUMPY assertions inside `forward`. That is fine eagerly, but `torch.compile`
-        cannot trace it — dynamo dies building a guard over a numpy bool ("TypeError: 'numpy.bool'
-        object cannot be interpreted as an integer"). It is a LEARNER-side diagnostic and a frozen
-        opponent has no use for it, so the compile path drops it.
-
-        This is a METHOD rather than the caller reaching in and setting `fe._debugger = None`, so the
-        ownership stays here: if the debugger ever gains teardown state, this is the one place that
-        has to learn about it."""
-        had = self._debugger is not None
-        self._debugger = None
-        return had
-
-    @contextlib.contextmanager
-    def suppress_observation_debugger(self) -> Iterator[bool]:
-        """TEMPORARILY detach the debugger for one forward, restoring it on the way out.
-
-        Distinct from `disable_observation_debugger`, which is PERMANENT and belongs to the compile
-        paths (a traced graph can never carry the numpy asserts, so there is nothing to restore).
-        This is for the opposite case: an eager forward over observations that are not this
-        process's live decisions.
-
-        The concrete one is the counterfactual label term (`instrumented_ppo._cf_sample_and_forward`),
-        which forwards 256 RECORDED FOREIGN states — other episodes, other policy steps, replayed
-        off disk — through the learner's own extractor. The debugger's whole contract is
-        "this is the board we are about to act on", so those rows are neither its inputs nor its
-        business: it would report their integrity failures as though the live env had produced them,
-        and its per-forward state would be advanced by states nothing played. Suppressing is the
-        honest answer; permanently dropping it (the compile path's answer) would cost the run its
-        only live obs-integrity check for the sake of one aux term.
-
-        Exception-safe: `finally` restores whatever was attached, including `None`.
-        """
-        saved = self._debugger
-        self._debugger = None
-        try:
-            yield saved is not None
-        finally:
-            self._debugger = saved
 
     def restore_identity_init(self) -> int:
         """Re-zero every Linear this extractor deliberately zero-initialised. Returns the count.

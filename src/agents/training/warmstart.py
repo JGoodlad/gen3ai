@@ -149,9 +149,6 @@ async def run_consensus_warmstart(student_ckpt: str, student_cfg: str,
 
     def _load(ck, cfg, dv="cpu"):
         m, _ = load_foreign_opponent(ck, current_version=current_version, device=dv, config_path=cfg)
-        fe = m.policy.features_extractor
-        if hasattr(fe, "_debugger"):
-            fe._debugger = None
         return m
 
     def _log(msg):

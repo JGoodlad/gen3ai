@@ -813,7 +813,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # that the resume path above also uses.
         temp_encoder = Gen3ObservationEncoder(mappings)
         extractor_kwargs = build_extractor_arch_kwargs(
-            args, base=temp_encoder.get_features_extractor_kwargs(), log_level=log_level)
+            args, base=temp_encoder.get_features_extractor_kwargs())
 
         policy_kwargs = {
             "features_extractor_class": Gen3FeaturesExtractor,

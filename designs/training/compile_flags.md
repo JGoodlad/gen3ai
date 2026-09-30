@@ -98,10 +98,7 @@ Four guards, each protecting against a failure that actually happened while buil
   that degrades THIS opponent to eager (and says so) instead of killing a 3-hour run. This is the
   scoped replacement for global `suppress_errors`: same never-crash property, one model, and loud.
 - **Resume safety.** It patches the BOUND `fe.forward`, never the module — `torch.compile(module)`
-  would prefix every state_dict key with `_orig_mod.`. It also calls
-  `Gen3FeaturesExtractor.disable_observation_debugger()` (a method, not a reach-in assignment to
-  `fe._debugger`), because the debugger's numpy asserts inside `forward` make dynamo die creating a
-  guard.
+  would prefix every state_dict key with `_orig_mod.`.
 
 **Per-worker startup cost, measured (`tmp/compile_spawn_cost.py`, 16 workers, 16-core box).** Wall
 clock until all workers are ready: **private cache per worker 163.4 s / cold shared cache 59.6 s /
@@ -427,8 +424,7 @@ exit. The default is therefore **AUTO**, resolved by `train_rl_agent.resolve_com
 `--debug` is excluded outright because a smoke exists to prove the pipeline in ~1 minute and a
 multi-minute Inductor compile (plus a CUDA context taken from whatever run owns the card) defeats
 that. **The REFUSAL is unchanged**: an explicit `--compile-trainer --device cpu` still exits
-`FATAL_CONFIG` with the same message. `--no-compile-trainer` is the opt-out, and it is also how you
-KEEP the ObservationDebugger — see the trade below, which every default cuda run now makes.
+`FATAL_CONFIG` with the same message. `--no-compile-trainer` is the opt-out.
 
 **⚠️ The device is only HALF the auto default, and the other half is easy to miss.**
 `check_shape_stability` (below) refuses `--async-rollout` and a rollout that does not divide by
@@ -565,10 +561,11 @@ At TF32 compiled-vs-eager differs by TF32's own rounding, identically on 2.8-uns
 what resolves a real defect there. `compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate`
 now asserts, per torch: 2.5.1 ⇒ split ON and unsplit FAILS; 2.8 ⇒ split OFF and unsplit PASSES.
 
-**Graph count** (`torch._dynamo.explain`, the extractor's `forward`, 32 fixture rows, CPU): **1 graph /
-0 breaks on both torches with the ObservationDebugger dropped** — which the compiled path always does
-— and 3 graphs / 2 breaks with it kept (the debugger's rate-limited logger calls `time.time()`,
-`utils/logging/rate_limiter.py:14`). On CUDA the 2.5.1 split adds one; on 2.8 the CUDA explain is also **1 graph / 0 breaks** (6,870 ops) — the unsplit graph, K8's post-K1 target for the extractor.
+**Graph count** (`torch._dynamo.explain`, the extractor's `forward`, 32 rows, CPU): **1 graph /
+0 breaks on both torches, at every `--log-level`** (2026-09-30: 7,062 ops on 2.5.1, 6,870 on 2.8,
+production config). The ObservationDebugger that used to attach at `--log-level periodic` — and
+whose rate-limited logger's `time.time()` (`utils/logging/rate_limiter.py:14`) was the source of
+BOTH of the 3-graphs / 2-breaks the periodic build read — was removed that day. On CUDA the 2.5.1 split adds one; on 2.8 the CUDA explain is also **1 graph / 0 breaks** (6,870 ops) — the unsplit graph, K8's post-K1 target for the extractor.
 
 **Speed A/B (2026-09-29, idle RTX 3080 Ti, the same saved rollout buffer, `learner_benchmark`,
 K=5):** 2.8-unsplit is 1–2% FASTER than 2.5.1-split — baseline 57.21 s vs 58.45 s per update,
@@ -811,8 +808,7 @@ bug; it is the only shape the check can afford. The honesty problem it was meant
 batch-64 ratio reading as if it were the production figure — is fixed by NAMING the shape in the log
 line instead.
 
-*Why zeros and not `torch.rand`.* A random float vector is **not a valid observation** — the
-ObservationDebugger rejects it outright — so it can drive the forward down branches no real battle
+*Why zeros and not `torch.rand`.* A random float vector is **not a valid observation**, so it can drive the forward down branches no real battle
 reaches. All-zero is the canonical "nothing known" state (every categorical id 0, every flag clear),
 structurally legal, and it is what `snapshot._zero_obs` has always used on the opponent path. The
 trainer path briefly diverged to `rand` for no reason and that is what disguised the OOM as a CUDA
@@ -826,17 +822,10 @@ eager at each shape on a free GPU where memory is not contended. Measured once a
 gen-10 config on REAL observations off the rust bridge: **batch 48 -> 9.5e-07, batch 64 -> 7.2e-07,
 batch 4096 -> 3.6e-06**, against a value scale of 2.111 — float32 rounding, not a wrong kernel.
 
-**⚠️ It DROPS the ObservationDebugger, and that is a production-visible trade.** Dynamo cannot trace
-the debugger's numpy asserts at all (it dies building a guard over a numpy bool), so this is
-compile-or-debugger, not both. The debugger attaches at `log_level >= PERIODIC` — i.e. it is ON in
-production — so this flag costs you the per-forward obs-integrity check for that run.
-
-**With the default ON, that trade is now made by EVERY plain cuda run, with nobody having typed a
-flag — which makes the announcement more load-bearing, not less.** It is said twice: once at
-startup, when the auto default resolves to on (`⚡ --compile-trainer ON by default (device=cuda)`,
-naming the debugger and `--no-compile-trainer`), and once from `compile_trainer_extractor` when the
-debugger is actually dropped. Neither line is conditional on a launcher being attached. The opt-out
-is the only way to keep the debugger.
+**With the default ON, EVERY plain cuda run compiles the learner with nobody having typed a
+flag**, so it is announced at startup when the auto default resolves to on
+(`⚡ --compile-trainer ON by default (device=cuda)`, naming `--no-compile-trainer`), not
+conditional on a launcher being attached.
 
 **Mechanics.** Patches the BOUND `fe.forward`, never the module: `torch.compile(module)` returns an
 `OptimizedModule` and prefixes every `state_dict` key with `_orig_mod.`, which would land in every

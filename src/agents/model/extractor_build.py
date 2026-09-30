@@ -122,7 +122,11 @@ class ExtractorBuild(torch.nn.Module):
                 "construction contract and is not a usable value.")
         self.layout = layout
         self.mappings = mappings
-        self.log_level = log_level
+        # `log_level` is ACCEPTED AND IGNORED. It used to attach the `ObservationDebugger` (removed
+        # 2026-09-30, owner decision), and SB3 rebuilds a loaded policy from the ZIP's own saved
+        # `features_extractor_kwargs` — every checkpoint trained under `--log-level periodic` still
+        # carries the key, so dropping the parameter would make those runs unloadable.
+        del log_level
         # Behavioral toggle (no weight-shape change): unmask the opponent's still-hidden
         # party so the transformer attends to it. Version-checked, not in ARCH_SIGNATURE.
         self.attend_unrevealed_opponents = attend_unrevealed_opponents
@@ -871,12 +875,6 @@ class ExtractorBuild(torch.nn.Module):
         self.activation = torch.nn.ReLU()
         # Both heads emit PROJECTION_DIM; SB3 sizes the shared mlp_extractor from this.
         self.features_dim = self.projection_dim
-
-        if log_level >= LogLevel.PERIODIC and mappings:
-            from agents.model.observation_debugger import ObservationDebugger
-            self._debugger: Optional[ObservationDebugger] = ObservationDebugger(mappings)
-        else:
-            self._debugger = None
 
         # gen3_opp_intent_v1: the ALPHA/BETA intent heads. Built LAST (before the identity snapshot)
         # so appending their params cannot shift any existing optimizer position — SB3 restores

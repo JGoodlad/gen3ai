@@ -91,11 +91,6 @@ def make_probs_fn(device: str, obs: np.ndarray, mask: np.ndarray):
 
     def fn(zp: Path) -> np.ndarray:
         model, _ = load_foreign_opponent(str(zp), current_version=cv, device=device)
-        # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a DEEP
-        # TRACE board on every forward — it floods watch.log. `collect` drops it the same way.
-        for mod in model.policy.modules():
-            if hasattr(mod, "_debugger"):
-                mod._debugger = None
         try:
             return masked_action_probs(model, obs, mask)
         finally:

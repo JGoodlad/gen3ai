@@ -554,9 +554,6 @@ def generate(args) -> Dict[str, Any]:
         "arch_toggles": _arch_toggles(str(step_dir / "snapshot.zip")),
         "trainee_team_str": regime["trainee_team_str"],
         "seed_base": args.seed,
-        # See the worker: a `periodic` checkpoint print()s a DEEP TRACE banner from inside the
-        # forward, which at read-cycle volume is cost and noise, not a debugging aid.
-        "disable_obs_debugger": True,
     }
 
     _log(f"{run_dir.name} @ {step:,}: {len(names)} opponents x {args.games} games "

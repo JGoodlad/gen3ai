@@ -64,8 +64,6 @@ def _build(**overrides):
     space = gym.spaces.Box(0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)
     torch.manual_seed(0)
     fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kwargs).eval()
-    if hasattr(fe, "disable_observation_debugger"):
-        fe.disable_observation_debugger()
     g = torch.Generator().manual_seed(7)
     obs = {"observation": torch.rand((3, layout["total_dim"]), generator=g)}
     return fe, obs

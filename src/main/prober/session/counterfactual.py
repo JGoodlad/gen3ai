@@ -204,12 +204,6 @@ class _CounterfactualMixin:
                 custom_objects, _dropped = sanitized_load_custom_objects(path, "cpu")
                 m = MaskablePPO.load(path, env=None, device="cpu", custom_objects=custom_objects)
                 m.policy.set_training_mode(False)
-                # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a
-                # "DEEP TRACE" banner on every forward — it would corrupt the CLI's JSON stdout and the
-                # TUI screen. Silence it on the replay players, exactly as ProbeModel.load does.
-                for mod in m.policy.modules():
-                    if hasattr(mod, "_debugger"):
-                        mod._debugger = None
                 # These models are used ONLY for no-grad rollouts (better-line's beam,
                 # replay-counterfactual's Monte-Carlo re-rolls, falsify's paired sweeps) — thousands
                 # of B=1 CPU forwards, the exact shape --compile-opponents targets. Gated on

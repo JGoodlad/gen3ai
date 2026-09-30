@@ -43,13 +43,7 @@ class _FE(torch.nn.Module):
         super().__init__()
         self.lin = torch.nn.Linear(8, 8)
         self.layout = {"total_dim": 8}
-        self._debugger = None
         self._cost = cost_ms
-
-    def disable_observation_debugger(self):
-        had = self._debugger is not None
-        self._debugger = None
-        return had
 
     def forward(self, obs):
         if self._cost:
@@ -283,16 +277,6 @@ def test_patches_the_bound_method_not_the_module(monkeypatch):
     S.maybe_compile_extractor(_model(fe), True)
     assert set(fe.state_dict()) == keys_before
     assert not any(k.startswith("_orig_mod") for k in fe.state_dict())
-
-
-def test_drops_the_observation_debugger(monkeypatch):
-    """The debugger runs numpy asserts inside forward; dynamo dies creating a guard on it. The
-    helper calls the extractor's own method rather than assigning to a private attribute."""
-    fe = _FE(cost_ms=2.0)
-    fe._debugger = object()
-    monkeypatch.setattr(torch, "compile", _fast_compile(fe))
-    S.maybe_compile_extractor(_model(fe), True, label="dbg")
-    assert fe._debugger is None
 
 
 # ── The measurement under the floor (2026-08-24) ──────────────────────────────────────────────

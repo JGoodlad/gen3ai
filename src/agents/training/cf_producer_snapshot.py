@@ -240,11 +240,6 @@ def load_snapshot(path: str, step: Optional[int], *, device: str = "cpu",
     custom_objects, _dropped = sanitized_load_custom_objects(path, device)
     model = MaskablePPO.load(path, env=None, device=device, custom_objects=custom_objects)
     model.policy.set_training_mode(False)
-    # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a DEEP TRACE
-    # banner on every forward; it would drown the heartbeat this process communicates through.
-    for mod in model.policy.modules():
-        if hasattr(mod, "_debugger"):
-            mod._debugger = None
     compiled = False
     if compile_extractor:
         from agents.model.compile_opponents import maybe_compile_extractor

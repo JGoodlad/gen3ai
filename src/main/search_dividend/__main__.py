@@ -288,9 +288,6 @@ def _load_model(path: str, device: str):
     custom_objects, dropped = sanitized_load_custom_objects(ckpt, device)
     model = MaskablePPO.load(ckpt, env=None, device=device, custom_objects=custom_objects)
     model.policy.set_training_mode(False)
-    for mod in model.policy.modules():
-        if hasattr(mod, "_debugger"):
-            mod._debugger = None                 # a periodic-log checkpoint prints on every forward
     if dropped:
         print(f"[search_dividend] dropped saved extractor kwargs: {sorted(dropped)}",
               file=sys.stderr)

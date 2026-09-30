@@ -103,7 +103,7 @@ def cf_sample_and_forward(model):
     it must be run after every loss that reads them — it sits beside `_td_aux_term`, which
     carries the identical constraint.
 
-    TWO GUARDS ride on the forward itself:
+    ONE GUARD rides on the forward itself:
 
     * **`no_grad` when nothing downstream needs the graph.** Under `cf_head_only` the win-prob
       term detaches its input and the evidential term detaches unconditionally, so the whole
@@ -113,12 +113,6 @@ def cf_sample_and_forward(model):
       trunk-open arm, where silently dropping the graph would turn the lever into a no-op.
       The heads still train either way: `head(value_pooled)` is applied OUTSIDE this context,
       so their own parameters keep their gradients whatever the input tensor carries.
-    * **The ObservationDebugger is SUPPRESSED for it.** These are recorded FOREIGN states —
-      other episodes, other policy steps, read off disk — and the debugger's whole premise is
-      that it is looking at the board this process is about to act on. Feeding it 256 replayed
-      rows per minibatch would have it report their integrity against the live env's
-      expectations. Suppressed and restored, never permanently dropped (that is the compile
-      path's trade, and it costs the run its only live obs-integrity check).
     """
     from agents.training.cf_label_buffer import CF_SAMPLE_SIZE, batch_tensors
 
@@ -132,10 +126,7 @@ def cf_sample_and_forward(model):
     obs = batch.obs
     needs_graph = (not model.cf_head_only) and float(getattr(model, "cf_winprob_coef", 0.0)) != 0.0
     grad_ctx = contextlib.nullcontext() if needs_graph else th.no_grad()
-    # `getattr` + nullcontext: a test double / a non-Gen3 extractor has no debugger to suppress,
-    # and the cf fold must not require one to exist.
-    dbg_ctx = getattr(fe, "suppress_observation_debugger", contextlib.nullcontext)()
-    with dbg_ctx, grad_ctx:
+    with grad_ctx:
         # The EAGER forward, deliberately. `compile_trainer_extractor` patches the BOUND
         # `fe.forward`, so `type(fe).forward` is always the uncompiled one — and this call passes
         # an obs dict with ONLY the "observation" key (the sole key the model reads; a label

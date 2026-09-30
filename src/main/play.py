@@ -186,14 +186,6 @@ def build_model_player(args, teambuilder, server_config, account):
     from agents.observation.state_encoder import load_mappings
 
     model = load_policy(args.model, args.device)
-    if not args.debug_obs:
-        # A checkpoint trained with --log-level periodic carries a live
-        # ObservationDebugger that print()s a full 12-mon board dump on forward
-        # passes. Over a ladder session that is megabytes of stdout and a real
-        # per-decision cost, for nobody's benefit. Same silencing the prober does.
-        for m in model.policy.modules():
-            if hasattr(m, "_debugger"):
-                m._debugger = None
     return RLPlayer(
         model=model,
         team=teambuilder,
@@ -295,9 +287,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="sample from the whole data/teams pool instead of one team")
     p.add_argument("--temperature", type=float, default=0.0,
                    help="0 = greedy (the measurement setting); >0 samples the policy")
-    p.add_argument("--debug-obs", action="store_true",
-                   help="keep the checkpoint's ObservationDebugger board dumps (off by "
-                        "default — it prints a full board on every forward)")
     # Default None = "use the library's own deadline"
     # (agents.inference.player.DEFAULT_CONNECT_TIMEOUT_S, 30 s), resolved when the player is
     # built. Not read here, so `--help` and `--mode selfplay` stay free of the torch import that

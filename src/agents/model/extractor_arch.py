@@ -59,14 +59,13 @@ _DERIVED = {
 }
 
 
-def build_extractor_arch_kwargs(args, base: Optional[Dict[str, Any]] = None,
-                                log_level: Any = None) -> Dict[str, Any]:
+def build_extractor_arch_kwargs(args, base: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Layout kwargs (`base`) + every version-checked architecture toggle read off `args`.
 
     `base` is normally `Gen3ObservationEncoder(mappings).get_features_extractor_kwargs()` — the obs
     layout half. Pass None to get only the arch half (what the compile pre-warm wants when it builds
-    its own layout). `log_level` is threaded only on the fresh-run path; it is a diagnostic, not an
-    arch field, so it is omitted when None rather than being written as a null.
+    its own layout). `log_level` is never threaded: it only ever attached the `ObservationDebugger`
+    (removed 2026-09-30), and the extractor now accepts and ignores it for old checkpoints' sake.
     """
     kwargs: Dict[str, Any] = dict(base) if base else {}
     for kwarg, attr in ARCH_ARG_KEYS.items():
@@ -76,8 +75,6 @@ def build_extractor_arch_kwargs(args, base: Optional[Dict[str, Any]] = None,
     # The config-only tier LAST and unconditionally: there is no `args` attribute to read, and a
     # frozen value must not be overridable by one that happens to be lying around on the namespace.
     kwargs.update(FROZEN_ARCH_KWARGS)
-    if log_level is not None:
-        kwargs["log_level"] = log_level
     return kwargs
 
 

@@ -550,11 +550,9 @@ that works today into a `FATAL_CONFIG`. An explicit `--compile-trainer` on any o
 `FATAL_CONFIG` with the message it always did. **A default yields to the config you typed and says
 so; an explicit flag refuses.**
 
-**⚠️ It drops the ObservationDebugger**, which dynamo cannot trace. That debugger is on in
-production, so this is a real trade — and **with the default ON, every plain cuda run now makes it
-without anyone typing a flag**, which is why it announces itself twice: once at startup when the
-auto default resolves to on, and once from `compile_trainer_extractor` when the debugger is actually
-dropped. `--no-compile-trainer` is how you keep it. Full detail — the four refusals, the
+**With the default ON, every plain cuda run compiles the learner without anyone typing a flag**,
+which is why it announces itself at startup when the auto default resolves to on;
+`--no-compile-trainer` opts out. Full detail — the four refusals, the
 `state_dict` hazard, the measurement table — is in `src/agents/training/CLAUDE.md` → Compiled GPU
 trainer.
 

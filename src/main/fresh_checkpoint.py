@@ -115,8 +115,7 @@ def save_fresh_checkpoint(run_dir: Path, seed: int, *, name: str = "final_model"
 
 def load_fresh_policy(run_dir: Path, seed: int) -> Any:
     """Save a fresh seeded checkpoint to ``run_dir`` and load it back through the SAME loader a
-    by-name baseline load uses (``load_foreign_opponent``, as ``baselines.load`` calls it), with
-    the ObservationDebugger dropped exactly as ``rust_core_parity.load_production_policy`` does.
+    by-name baseline load uses (``load_foreign_opponent``, as ``baselines.load`` calls it).
     The stand-in for the ``production`` policy while no current-generation production node exists."""
     from agents.model.snapshot import current_model_version, load_foreign_opponent
     from agents.observation.state_encoder import load_mappings
@@ -124,7 +123,4 @@ def load_fresh_policy(run_dir: Path, seed: int) -> Any:
     zip_path = save_fresh_checkpoint(run_dir, seed)
     model, _ = load_foreign_opponent(str(zip_path), current_model_version(load_mappings()),
                                      device="cpu", config_path=str(run_dir / "model_config.json"))
-    for m in model.policy.modules():
-        if hasattr(m, "_debugger"):
-            setattr(m, "_debugger", None)
     return model

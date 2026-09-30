@@ -1090,7 +1090,7 @@ non-Ghost Curse assumed). The verdict names a class by its conditional change (u
 defined) **only when that interval excludes 0** and |Δ| ≥ `SHIFT_ABS`; the overall shares stay as a
 secondary line. Rows written before the block existed get it from `backfill <run>` (from the cached
 `probs/`, no model run) into a `cond.jsonl` sidecar — `rows.jsonl` is never rewritten; `watch` runs
-the backfill at startup and drops the checkpoint's DEEP TRACE debugger like `collect` does.
+the backfill at startup.
 
 - `collect <run>` freezes a probe set once per lineage, from the latest pool snapshot (or the latest
   checkpoint, with a warning to RECOLLECT once the pool seeds). `watch <run>` is DETACHABLE and

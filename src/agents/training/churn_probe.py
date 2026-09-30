@@ -105,9 +105,6 @@ async def collect_probe_states(ckpt: str, config_path, out_npz: str, battles: in
     mappings = load_mappings()
     model, _ = load_foreign_opponent(ckpt, current_version=current_model_version(mappings),
                                      device="cpu", config_path=config_path)
-    fe = model.policy.features_extractor
-    if hasattr(fe, "_debugger"):
-        fe._debugger = None
     pool_tb = Gen3Teambuilder(TeamLoader().get_all_teams())
 
     class _Coll(RLPlayer):

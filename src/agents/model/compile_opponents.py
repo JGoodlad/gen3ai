@@ -162,8 +162,6 @@ def maybe_compile_extractor(model: Any, enabled: bool, label: str = "opponent",
             return False
         os.environ["CUDA_VISIBLE_DEVICES"] = ""       # no per-worker CUDA context (the June OOM)
     cache_dir = _inductor_cache_dir()
-    if hasattr(fe, "disable_observation_debugger"):
-        fe.disable_observation_debugger()             # numpy asserts inside forward; dynamo can't trace
 
     global _COMPILE_VALIDATED
     revalidate = not _COMPILE_VALIDATED

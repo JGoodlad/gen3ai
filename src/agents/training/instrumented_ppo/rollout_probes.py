@@ -6,7 +6,6 @@ two entropy-boost accessors are a pure schedule the loop reads, and `_winprob_st
 read-only probe the metrics export publishes. They live here so `ppo.py` holds the fold and its
 contract and nothing else.
 """
-import contextlib
 import time
 
 import numpy as np
@@ -141,8 +140,7 @@ class RolloutProbes:
                 return {}
             fe = self.policy.features_extractor
             ob = th.as_tensor(obs["observation"][rows]).to(self.device)
-            dbg_ctx = getattr(fe, "suppress_observation_debugger", contextlib.nullcontext)()
-            with dbg_ctx, th.no_grad():
+            with th.no_grad():
                 type(fe).forward(fe, {"observation": ob})
                 z = getattr(fe, "last_win_prob_logits", None)
             if z is None:

@@ -14,10 +14,7 @@ touching either — the engine/app seam, the module map, the per-battle resoluti
   runs one clean forward and reads the belief head's stash
   (`features_extractor.last_belief_logits["species"]` + `last_opp_believed_mask`) →
   `(species_logits[6,n_species], believed_mask[6])`, or `None` when the checkpoint
-  has no belief head; the engine decodes/matches it (the OPP-TEAM belief, below). **On load it silences the
-  policy's `ObservationDebugger`** (a `--log-level periodic` checkpoint prints a
-  "DEEP TRACE" banner on every forward — pure noise that would corrupt the
-  output). Three **non-torch decode helpers** also live here (they need the encoder,
+  has no belief head; the engine decodes/matches it (the OPP-TEAM belief, below). Three **non-torch decode helpers** also live here (they need the encoder,
   so the model is the natural home): `describe_global` (weather/spikes/screens + a **pending-Wish**
   `wish_our`/`wish_opp` flag decoded from the `gen3_wish_wired_v1` reactive scalars — the floating heal,
   surfaced on the FIELD line as `💧wish: our/opp`); `describe_team` —

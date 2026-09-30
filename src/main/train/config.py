@@ -1448,12 +1448,9 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
                  f"it — leaving it OFF rather than refusing to launch. Reason: {_ct_why} "
                  "(pass --compile-trainer explicitly to make this a hard error instead.)")
         if args.compile_trainer:
-            # LOUD, and at STARTUP rather than only after the compile succeeds: with the default
-            # ON, every plain cuda run now trades away the ObservationDebugger, and a trade nobody
-            # typed a flag for is exactly the kind that has to announce itself.
+            # LOUD, and at STARTUP: a default nobody typed a flag for announces itself.
             emit("⚡ --compile-trainer ON by default (device=cuda) — ~1.75x on the PPO train step. "
-                 "⚠️ this DROPS the ObservationDebugger (dynamo cannot trace its numpy asserts); "
-                 "pass --no-compile-trainer to keep it. Compile failure is FATAL by design.")
+                 "--no-compile-trainer opts out. Compile failure is FATAL by design.")
 
     return ResolvedRunConfig(server_config=server_config, annealing_mode=annealing_mode,
                              log_level=log_level)

@@ -676,15 +676,6 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             "--compile-trainer: could not determine the extractor's observation width, so the "
             "compile could not be validated. Refusing to enable it unvalidated.")
 
-    # The ObservationDebugger runs NUMPY assertions inside `forward`; dynamo cannot trace them at
-    # all (it dies building a guard over a numpy bool), so this is compile-or-debugger, not both.
-    # It attaches at log_level >= PERIODIC — i.e. it IS on in production — so this is a real
-    # trade-off rather than a debug-mode detail, and it gets its own line rather than happening
-    # quietly. The opponent path drops it for the same reason.
-    dropped_debugger = False
-    if hasattr(fe, "disable_observation_debugger"):
-        dropped_debugger = bool(fe.disable_observation_debugger())
-
     was_training = fe.training
     fe.train()                                 # the backward path is what we are compiling
     # gen3_compile_parity_real_obs_v1: REAL observation rows, never zeros. Until 2026-09-28 this
@@ -807,16 +798,6 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
                   if prod and prod != batch else "")
     _say(f"[CompileTrainer] ON — learner fwd+bwd {eager_ms:.1f} -> {comp_ms:.1f} ms "
          f"({speedup:.2f}x) at batch {batch} on {device}{shape_note}")
-    if dropped_debugger:
-        # This flag DEFAULTS ON for a cuda run, so this trade is now made on every production
-        # launch by default rather than by someone who typed a flag and read its help. That makes
-        # the announcement MORE load-bearing, not less — it is the only place the run says it out
-        # loud, and it names the opt-out so the reader does not have to go looking.
-        _say("[CompileTrainer] ⚠️ the ObservationDebugger was DROPPED to allow the compile — dynamo "
-             "cannot trace its numpy asserts. You lose that per-forward obs-integrity check for "
-             "this run; every other guard is unaffected. This is the DEFAULT on cuda: pass "
-             "--no-compile-trainer to keep the debugger (at ~1.75x less throughput on the train "
-             "step).")
     return speedup
 
 

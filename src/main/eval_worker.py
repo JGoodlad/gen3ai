@@ -487,15 +487,6 @@ def _run(cfg: dict) -> None:
     compile_extractor = bool(cfg.get("compile_extractor", False))
     maybe_compile_extractor(model, compile_extractor, label="eval-trainee",
                             hide_cuda=str(device).startswith("cpu"))
-    # A `--log-level periodic` checkpoint carries an ObservationDebugger that print()s a multi-KB
-    # DEEP TRACE banner from inside the forward. A live cycle plays ~1.2k battles and the noise is
-    # someone's debugging aid; an OFFLINE read cycle plays tens of thousands and it is pure cost —
-    # string building on the hot path, and a worker log that buries the per-shard result lines.
-    # OPT-IN, so live eval keeps whatever the checkpoint was saved with.
-    if cfg.get("disable_obs_debugger"):
-        for mod in model.policy.modules():
-            if hasattr(mod, "_debugger"):
-                mod._debugger = None
 
     # The trainee's reward factory — built from the RUN's model_config.json (the single source of
     # truth the version check already records), so eval MEASURES with the same reward the policy was

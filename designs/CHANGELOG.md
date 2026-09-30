@@ -10081,3 +10081,25 @@ which is TF32 rounding. Chasing that turned up the real defect.
   core, T2 and the eval core. `--env-core` stays un-inherited, and a core switch on a resume is now
   announced (the trainer and `--dry-run`). `--dry-run` also prints a callable refusal message's TEXT
   instead of `<function <lambda>>`.
+
+## 2026-09-30 — the ObservationDebugger is DELETED (`gen3_drop_observation_debugger_v1`; no model version bump, weights and numerics unchanged)
+
+- **Owner decision (2026-09-30):** the periodic decoded-board print from inside the extractor's forward
+  was a legacy way to eyeball that board states were reasonable. The prober, the obs golden, the
+  byte-parity gates and the policy spectrum now do that job.
+- **Removed:** `src/agents/model/observation_debugger.py`; its construction in `extractor_build` and
+  its `on_forward` call; `Gen3FeaturesExtractor.disable_observation_debugger()` /
+  `suppress_observation_debugger()` and every caller (the compile paths, the CF term, the
+  capacity/win-prob-start probes); the compile trainer's "debugger DROPPED" announcement; every
+  `_debugger = None` strip on a loaded checkpoint (prober, play, eval worker, meters, workers); the
+  eval worker's `disable_obs_debugger` cfg key; `play.py --debug-obs` (listed in
+  `designs/deleted_flags.md`).
+- **Kept:** `--log-level` (the env and reward manager read it) and `RateLimitedLogger`. The extractor
+  still ACCEPTS a `log_level` kwarg and ignores it, because SB3 rebuilds a loaded policy from the zip's
+  saved `features_extractor_kwargs`, and every `--log-level periodic` checkpoint carries the key. New
+  runs no longer record it (`build_extractor_arch_kwargs` has no `log_level` parameter).
+- **Graph breaks (M5 Lane K8):** `torch._dynamo.explain` on the extractor's forward, production config,
+  32 zero rows, CPU. Before, under `--log-level periodic`, it was 3 graphs / 2 breaks on both torches.
+  BOTH breaks were the debugger's `time.time()` (`rate_limiter.py:14`). After, it is 1 graph / 0 breaks
+  at every level, on torch 2.5.1 (7,062 ops) and 2.8 (6,870 ops). The `forward_guard`, which the K8
+  row had listed as the second break, traces clean whether or not a guard is installed.

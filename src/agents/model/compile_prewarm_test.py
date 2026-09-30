@@ -102,9 +102,6 @@ def test_prewarm_filters_kwargs_to_the_extractor_signature(monkeypatch):
         def eval(self):
             return self
 
-        def disable_observation_debugger(self):
-            return False
-
         def forward(self, obs):
             return obs
 

@@ -617,11 +617,7 @@ def load_production_policy():
     from agents.training import baselines
 
     production_checkpoint()
-    model = baselines.load("production", device="cpu")
-    for m in model.policy.modules():
-        if hasattr(m, "_debugger"):
-            m._debugger = None
-    return model
+    return baselines.load("production", device="cpu")
 
 
 def record_commit_fixture(append: bool = False) -> None:

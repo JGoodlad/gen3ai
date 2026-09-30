@@ -37,12 +37,6 @@ def _read_control(path):
         return None
 
 
-def _silence(model):
-    for mod in model.policy.modules():
-        if hasattr(mod, "_debugger"):
-            mod._debugger = None
-
-
 def _publish_shard(output_dir, wid, seq, corrections):
     """Atomically publish one iteration's corrections (obs/mask [+ OPD π'] .npz + scalars .json, .json
     renamed LAST so the parent never ingests a half-written shard)."""
@@ -147,7 +141,6 @@ def run(cfg_path: str) -> None:
                     print(f"[SearchTeacher worker {wid}] snapshot load failed: {e}",
                           file=sys.stderr, flush=True)
                     time.sleep(1.0); continue
-                _silence(model)
                 # Frozen trainee, CPU, B=1 — the same shape as a training opponent, and this worker
                 # does nothing BUT forwards. Compile is gated on the run's --compile-opponents,
                 # threaded through the control file so the worker follows the parent's setting.
@@ -170,7 +163,7 @@ def run(cfg_path: str) -> None:
                 else:                                # 'sentinel' / 'self' snapshot — may have been pruned by now
                     if not os.path.exists(spec["path"]):
                         seq += 1; continue
-                    om = MaskablePPO.load(spec["path"], env=None, device="cpu"); _silence(om)
+                    om = MaskablePPO.load(spec["path"], env=None, device="cpu")
                     # Loaded EVERY iteration, so this leans on two properties: torch.compile keys on
                     # the code object (so it is ~free after the first), and the helper's timing
                     # validation is paid once per process.

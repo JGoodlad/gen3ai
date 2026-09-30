@@ -234,13 +234,6 @@ the term trains the head's own params and provably cannot perturb the trunk.
     whole buffer. Live tell, measured: `cf/label_age_steps_p50` reading **−4,999,000**. Future rows
     expire like stale ones, are counted separately (`cf/labels_future_total`) and trip a one-time
     loud warning naming the cause — a negative age is a diagnosis, not noise.
-  - **The ObservationDebugger is SUPPRESSED around the CF forward** (`--no-compile-trainer` runs, the
-    only ones that still have it). The CF rows are recorded FOREIGN states — other episodes, other
-    policy steps, read off disk — and the debugger's premise is "this is the board we are about to
-    act on"; it was being handed 256 replayed rows per minibatch and reporting their integrity
-    against the live env's expectations. `Gen3FeaturesExtractor.suppress_observation_debugger()` is a
-    context manager that restores on the way out (including on an exception) — deliberately NOT
-    `disable_observation_debugger()`, which is permanent and is the compile path's trade.
 - **The LOSS (`instrumented_ppo._cf_winprob_term`).** Per minibatch — the `_td_aux_term` / search-teacher /
   OPD shape, and for the same reason: the labelled states are recorded PAST decisions, absent from this
   rollout, so they cannot ride `rollout_data`, and a once-per-`train()` fold would make the coefficient

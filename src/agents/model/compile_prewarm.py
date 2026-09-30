@@ -76,8 +76,6 @@ def prewarm_extractor_compile(arch_kwargs: Dict[str, Any], mappings: Dict[str, A
         # `spaces.Space`, deliberately unread); every serverless probe path passes the flat
         # `Box` the encoder describes.
         fe = Gen3FeaturesExtractor(space, layout=layout, mappings=mappings, **kw).eval()
-        if hasattr(fe, "disable_observation_debugger"):
-            fe.disable_observation_debugger()
         with torch.no_grad():
             torch.compile(fe.forward)(_compile_warmup_obs(fe))
     except Exception as e:                       # noqa: BLE001 — never block a run for a pre-warm

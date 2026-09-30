@@ -88,8 +88,7 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   | `probes.py` | representation probing (`fit_probe`) |
 - **`model.py`** — `ProbeModel`: the torch boundary, and the ONLY place a forward or backward runs.
   `load(ckpt)` does a raw `MaskablePPO.load` (no env, no `ModelVersion` check), resolves `ObsOffsets`
-  once from `enc.get_layout()`, **silences the policy's `ObservationDebugger`** (a `--log-level
-  periodic` checkpoint would otherwise print a DEEP TRACE banner into the output), and raises
+  once from `enc.get_layout()`, and raises
   `ArchDriftError` on a stale checkpoint. `action_dist` / `logit_grad` are the forward/backward pair;
   `belief`, `damage_op_view`, `move_belief`, `value_dist_at` / `win_prob_at` and `architecture()` each
   read a head's stash after one clean forward. The three non-torch decode helpers (`describe_global`,

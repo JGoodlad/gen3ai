@@ -61,7 +61,6 @@ anything. `capacity_gradient_isolation` in the test file is that claim as a meas
 """
 from __future__ import annotations
 
-import contextlib
 import math
 from typing import Any, Dict, Optional
 
@@ -318,13 +317,10 @@ def probe_features(model, probe_obs: th.Tensor) -> Optional[th.Tensor]:
 
     EAGER (``type(fe).forward``) and observation-key-only, for the reasons `cf_terms` gives: the
     compile flags patch the BOUND ``fe.forward``, and routing a second, differently-shaped obs dict
-    through the compiled entry point would add a graph shape for a diagnostic. The
-    ObservationDebugger is suppressed — these are replayed rows, not the board this process is
-    about to act on.
+    through the compiled entry point would add a graph shape for a diagnostic.
     """
     fe = model.policy.features_extractor
-    dbg_ctx = getattr(fe, "suppress_observation_debugger", contextlib.nullcontext)()
-    with dbg_ctx, th.no_grad():
+    with th.no_grad():
         type(fe).forward(fe, {"observation": probe_obs})
     pooled = getattr(fe, "last_value_pooled", None)
     return None if pooled is None else pooled.detach().float()
