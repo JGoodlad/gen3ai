@@ -87,7 +87,8 @@ def test_gate_one_has_teeth():
         B.check_recorded(b, ds, wrong)
 
 
-def test_reader_reproduces_the_recording_policy_and_is_deterministic(tmp_path):
+def test_reader_reproduces_the_recording_policy_and_is_deterministic(tmp_path,
+                                                                     restore_torch_globals):
     from utils.paths import main_models_dir
 
     from main.policy_spectrum.reader import load_probs, read_checkpoint, reencode

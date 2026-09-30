@@ -26,6 +26,7 @@ from agents.model import parity_probe as pp
 from agents.model.compile_trainer import (_FP32_TOL, _readout, CompileTrainerError,
                                           VacuousCompileParityError, compile_trainer_extractor,
                                           decision_verdicts, train_verdict)
+from utils.torch_state_guard import torch_globals
 
 _ROWS = 16
 
@@ -117,12 +118,12 @@ def fresh():
     from agents.model.extra_obs_keys import zero_extra_obs
     from main.fresh_checkpoint import build_fresh_model
 
-    torch.set_num_threads(2)
-    model, _, _ = build_fresh_model(0)
-    fe = model.policy.features_extractor
-    obs, mask = _parity_obs(fe.layout["total_dim"], _ROWS, torch.device("cpu"))
-    obs.update(zero_extra_obs(fe, batch=_ROWS, device=torch.device("cpu")))
-    return model, obs, mask
+    with torch_globals(num_threads=2):          # restored at module end (the global-state guard)
+        model, _, _ = build_fresh_model(0)
+        fe = model.policy.features_extractor
+        obs, mask = _parity_obs(fe.layout["total_dim"], _ROWS, torch.device("cpu"))
+        obs.update(zero_extra_obs(fe, batch=_ROWS, device=torch.device("cpu")))
+        yield model, obs, mask
 
 
 def _decision(model, obs, mask):

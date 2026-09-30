@@ -387,11 +387,137 @@ Set GEN3AI_SKIP_DEPS_GUARD=1 to run anyway (a pure-unit CI with no submodule).""
 
 def pytest_sessionstart(session):
     """Refuse the session on an unfinished checkout, with ONE message instead of ~15 failures."""
-    if os.environ.get("GEN3AI_SKIP_DEPS_GUARD"):
-        return
+    if not os.environ.get("GEN3AI_SKIP_DEPS_GUARD"):
+        _refuse_unfinished_checkout()
+    _refuse_an_unimportable_torch_state_guard()
+
+
+def _refuse_unfinished_checkout():
     missing = [rel for rel in _REQUIRED_DEPS
                if not os.path.exists(os.path.join(_REPO_ROOT, rel))]
     if not missing:
         return
     import pytest
     raise pytest.UsageError(_DEPS_GUARD_MESSAGE.format(missing=", ".join(missing)))
+
+
+# --- Torch GLOBAL-STATE guard: a test that leaks process-global torch state FAILS ----------------
+#
+# `gen3_torch_state_guard_v1`. Lane E (`c256dd95`): a harness left `torch.set_num_threads(4)` behind,
+# the NEXT test built fresh weights at a different thread count (94 of 721 tensors moved by <=7.5e-6),
+# an exact-tie argmax flipped, and a compiled-vs-eager parity test failed only when it ran after
+# others. Any leaked global makes test ORDER an input. The declared list, the snapshot and the diff
+# live in `src/utils/torch_state_guard.py`; this block only decides WHEN to compare. Three windows,
+# because a leak can be made in three places and no single window sees all of them:
+#
+#   TEST       the autouse fixture below: the test body + its function-scoped fixtures. Module- and
+#              class-scoped fixtures set up BEFORE any function fixture, so they are outside it.
+#   MODULE     from before the first test of a module is set up to after the last one's teardown
+#              (which is when pytest finalizes module/class fixtures): a `scope="module"` fixture
+#              that sets a global and never restores it.
+#   COLLECTION every collector's `collect()` (a test module's import, a conftest.py load): a global
+#              set at import time, which happens before ANY test runs and so escapes both of the above.
+#
+# A difference FAILS, naming the global, both values and the test/module. The guard NEVER restores
+# the value — restoring would hide the leak — and has NO allowlist: fix it at the source.
+# Per-test cost is two snapshots + a diff (measured in `designs/ops/testing.md`). Escape hatch:
+# GEN3AI_SKIP_TORCH_STATE_GUARD=1.
+import pytest  # noqa: E402
+
+_tsg = {"module": None, "baseline": None, "reported": set(), "primed": False}
+
+
+def _refuse_an_unimportable_torch_state_guard():
+    """A guard that cannot load must SAY so: silently switching it off reads exactly like a clean
+    suite. Checked once at session start (cheap: the module imports nothing heavy)."""
+    if os.environ.get("GEN3AI_SKIP_TORCH_STATE_GUARD"):
+        return
+    try:
+        import utils.torch_state_guard  # noqa: F401
+    except ImportError as exc:
+        raise pytest.UsageError(
+            f"the torch global-state guard cannot import utils.torch_state_guard ({exc}). Put this "
+            "checkout's src/ on the path — `export PYTHONPATH=$PYTHONPATH:src` from the checkout "
+            "root, or an ABSOLUTE src path for a subprocess — or set "
+            "GEN3AI_SKIP_TORCH_STATE_GUARD=1 to run without the guard.") from exc
+
+
+def _tsg_mod():
+    """The guard module, or None when switched off. `prime()` imports torch once per process so
+    its rows always have a BEFORE (the xdist controller runs none of these hooks, so never pays)."""
+    if os.environ.get("GEN3AI_SKIP_TORCH_STATE_GUARD"):
+        return None
+    import utils.torch_state_guard as tsg
+    if not _tsg["primed"]:
+        tsg.prime()
+        _tsg["primed"] = True
+    return tsg
+
+
+@pytest.fixture(autouse=True)
+def _torch_global_state_guard(request):
+    tsg = _tsg_mod()
+    if tsg is None:
+        yield
+        return
+    before = tsg.snapshot()
+    yield
+    leaks = tsg.diff(before, tsg.snapshot())
+    if leaks:
+        _tsg["reported"].update(name for name, _, _ in leaks)
+        pytest.fail(tsg.describe(f"test {request.node.nodeid}", leaks), pytrace=False)
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_setup(item):
+    tsg = _tsg_mod()
+    module = getattr(item, "module", None)
+    if tsg is not None and module is not _tsg["module"]:
+        _tsg.update(module=module, baseline=tsg.snapshot(), reported=set())
+    return (yield)
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_teardown(item, nextitem):
+    result = yield
+    tsg = _tsg_mod()
+    module = getattr(item, "module", None)
+    if tsg is None or _tsg["baseline"] is None:
+        return result
+    if nextitem is not None and getattr(nextitem, "module", None) is module:
+        return result
+    # The module's last test in this process: its module/class fixtures were just finalized.
+    leaks = [lk for lk in tsg.diff(_tsg["baseline"], tsg.snapshot())
+             if lk[0] not in _tsg["reported"]]
+    _tsg.update(module=None, baseline=None, reported=set())
+    if leaks:
+        where = (f"module {getattr(module, '__name__', module)} (a module/class-scoped fixture, "
+                 f"or a test whose own leak was already reported; its last test here: "
+                 f"{item.nodeid})")
+        pytest.fail(tsg.describe(where, leaks), pytrace=False)
+    return result
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_make_collect_report(collector):
+    tsg = _tsg_mod()
+    before = tsg.snapshot() if tsg is not None else None
+    report = yield
+    if tsg is not None:
+        leaks = tsg.diff(before, tsg.snapshot())
+        if leaks:
+            report.outcome = "failed"
+            report.longrepr = tsg.describe(
+                f"collecting {collector.nodeid or collector.name} (IMPORT-TIME: a module-level "
+                "statement in this file, or in something it imports)", leaks)
+    return report
+
+
+@pytest.fixture
+def restore_torch_globals():
+    """For a test that sets `torch.set_num_threads` / `torch.set_float32_matmul_precision` in its
+    BODY: both are restored at teardown (before the guard above looks). A module-scoped pin uses
+    `utils.torch_state_guard.torch_globals(...)` inside a yield fixture instead."""
+    from utils.torch_state_guard import torch_globals
+    with torch_globals():
+        yield

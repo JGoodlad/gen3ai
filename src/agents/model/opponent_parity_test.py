@@ -18,6 +18,7 @@ import torch
 from agents.model import compile_opponents as S
 from agents.model import parity_probe as pp
 from agents.model.compile_trainer import CompileTrainerError
+from utils.torch_state_guard import torch_globals
 
 
 @pytest.fixture(autouse=True)
@@ -33,10 +34,10 @@ def _isolate(monkeypatch):
 @pytest.fixture(scope="module")
 def fresh():
     from main.fresh_checkpoint import build_fresh_model
-    torch.set_num_threads(2)
-    model, _, _ = build_fresh_model(0)
-    model.policy.set_training_mode(False)
-    return model
+    with torch_globals(num_threads=2):          # restored at module end (the global-state guard)
+        model, _, _ = build_fresh_model(0)
+        model.policy.set_training_mode(False)
+        yield model
 
 
 def _uninstall(fe):

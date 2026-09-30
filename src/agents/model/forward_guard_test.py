@@ -60,7 +60,7 @@ def _hammer(fe, obs_a, obs_b, rounds):
     return errs, outs[0], outs[1]
 
 
-def test_an_UNGUARDED_extractor_is_corrupted_by_a_second_thread():
+def test_an_UNGUARDED_extractor_is_corrupted_by_a_second_thread(restore_torch_globals):
     """The measurement that made the guard necessary. 2,400 interleaved forwards produced 1,063
     failures in seven classes; this asserts only that the unguarded case fails AT ALL, because
     the rate is a property of the box and the CLAIM is that the race exists."""
@@ -79,7 +79,8 @@ def test_an_UNGUARDED_extractor_is_corrupted_by_a_second_thread():
                or "Sizes of tensors" in e or "incoming_rows" in e for e in errs), errs[:5]
 
 
-def test_a_GUARDED_extractor_is_byte_identical_to_the_SINGLE_THREADED_control():
+def test_a_GUARDED_extractor_is_byte_identical_to_the_SINGLE_THREADED_control(
+        restore_torch_globals):
     """🚨 FAILS ON REVERT of the guard. The contract is not "it does not crash" — a corrupted
     forward that happens to have the right shapes returns WRONG NUMBERS, so the assertion is on
     the output bytes against the same forwards run alone."""
@@ -87,13 +88,17 @@ def test_a_GUARDED_extractor_is_byte_identical_to_the_SINGLE_THREADED_control():
 
     fe, layout = _extractor()
     obs_a, obs_b = _obs(layout, 1, 1), _obs(layout, 9, 2)
+    # The control and the hammered forwards run at the SAME intra-op thread count: the bytes of a
+    # CPU forward depend on it, so a control taken at the default and compared against 1-thread
+    # forwards passes only while the default happens to be 1 (the conftest's OMP pin). Measured
+    # 2026-09-30: at a 2-thread default this assertion failed with the guard INSTALLED.
+    torch.set_num_threads(1)
     with torch.no_grad():
         want_a = fe(obs_a)[0].clone()
         want_b = fe(obs_b)[0].clone()
 
     assert install_forward_guard(fe) is forward_guard_for(fe)
     assert install_forward_guard(fe) is forward_guard_for(fe), "installation is idempotent"
-    torch.set_num_threads(1)
     errs, got_a, got_b = _hammer(fe, obs_a, obs_b, rounds=60)
     assert not errs, errs[:5]
     assert got_a and got_b

@@ -382,6 +382,94 @@ a merge that must not truncate, a setup-only pass that must not bank green, a sk
 replace a banked verdict — so the gate's
 behaviour is pinned rather than described. Contract: `src/utils/slow_tier_status.py`.
 
+### The TORCH GLOBAL-STATE guard (root `conftest.py` + `src/utils/torch_state_guard.py`)
+
+`gen3_torch_state_guard_v1`. **A test that leaves process-global torch/numeric state changed FAILS**,
+naming the global, its before → after values and the test. Why it exists (Lane E, `c256dd95`,
+F-LJ-6): a harness called `torch.set_num_threads(4)` and never restored it. The NEXT test in the
+process then built fresh policy weights at a different intra-op thread count. 94 of 721 tensors moved
+by up to 7.5e-6, an exact-tie argmax flipped, and a compiled-vs-eager parity test failed only when
+it ran AFTER other tests. A leaked global makes test ORDER an input. Under xdist it also makes the
+worker's scheduling an input, so the same commit reads green or red depending on how the items were
+distributed.
+
+**The declared list is `DECLARED` in `src/utils/torch_state_guard.py`, and nowhere else.** It holds
+these globals:
+- the intra-op and inter-op thread counts, fp32 matmul precision, default dtype and default device
+- deterministic-algorithms mode and its warn-only flag
+- grad, inference and anomaly mode
+- cuda-matmul TF32 and reduced-precision reductions; cudnn TF32, benchmark, deterministic and
+  enabled; mkldnn enabled
+- every key of the dynamo, inductor, functorch and `torch.compiler` configs
+- the compiler stance, the dynamo compile-callback counts, and the `compile_control` singleton
+  (installed, locked)
+- `numpy.geterr()`
+
+A row is read only when its module is already imported, so the guard never imports a subsystem to
+inspect it. The exception is `torch`, which it imports once per process so the core rows always
+have a "before". A module first imported INSIDE a window is compared against its import-time
+default. That default was measured equal to the live values right after import on 2.5.1 and 2.8.0,
+and `torch_state_guard_test` re-checks it.
+
+**Three windows, because a leak can be made in three places:**
+
+| window | where | catches | reported as |
+|---|---|---|---|
+| TEST | the autouse fixture `_torch_global_state_guard` | the body plus its function-scoped fixtures | ERROR at teardown of that test |
+| MODULE | `pytest_runtest_setup` / `pytest_runtest_teardown` wrappers, from before a module's first test to after its last test's teardown | a `scope="module"` or class-scoped fixture that never restores. These set up BEFORE any function fixture, so the TEST window cannot see them | ERROR at teardown of the module's last test, naming the module |
+| COLLECTION | a `pytest_make_collect_report` wrapper around every collector | a module-level statement, or a `conftest.py` load. Both happen before any test runs | a collection error naming the file |
+
+**The guard NEVER restores the value, and it has NO allowlist.** Restoring would hide the leak, and
+an allowlist is where leaks go to live (the file-size gate's allowlist is empty on the same
+principle). Fix the leak at its source with one of these idioms:
+- `try/finally`
+- `utils.torch_state_guard.torch_globals(num_threads=…, float32_matmul_precision=…, allow_tf32=…)`,
+  which restores all four globals. A module-scoped pin puts it inside a yield fixture.
+- the root conftest's `restore_torch_globals` fixture, for a body that sets them itself (a CLI
+  `main()` run in-process)
+- `torch._dynamo.config.patch(...)`
+- an autouse fixture that uninstalls what the test installed. `compile_trainer_test` resets the
+  `CompileControl` singleton only when the test itself created it, so an earlier leak is never
+  masked.
+
+`GEN3AI_SKIP_TORCH_STATE_GUARD=1` switches the whole guard off. When `utils.torch_state_guard`
+cannot be imported, the session is REFUSED rather than run unguarded. A subprocess that copies the
+conftest therefore needs an ABSOLUTE `src` on `PYTHONPATH` (see `deps_guard_test`).
+
+**Cost.** A snapshot takes about 2 µs with only torch imported, and about 40 µs on 2.5.1 (about
+72 µs on 2.8.0) with every config module imported. Wall time was measured over 3,000 trivial tests
+under the real conftest, 2026-09-30, beside a running routine gate: **about 0.15 ms per test** with
+torch alone and **about 0.12 ms** with the configs imported. Most of that is pytest's cost for one
+more generator fixture, not the snapshot. Over the routine gate's ~12k tests it adds about 1.5 s
+of serial time.
+
+⚠️ **What it cannot see.**
+1. **The global RNGs.** Every test consumes them, so a before/after diff has no meaning. A test that
+   relies on an earlier test's seed is the READER's bug: seed your own generator.
+2. **A "leak" that writes the value already there.** The conftest pins `OMP_NUM_THREADS=1`, so
+   torch's default is 1 thread and a stray `set_num_threads(1)` changes nothing in the suite. It
+   becomes a leak only under `GEN3AI_TEST_ALLOW_THREADS=1`. **Run the routine gate under that
+   variable after touching thread handling**: it is how the masked sites surface. For example:
+   `GEN3AI_TEST_ALLOW_THREADS=1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 pytest src/ -m "not slow and not
+   e2e" -n 2`. Its first run (2026-09-30) found two things the 1-thread default had hidden:
+   - one more `cf_audit.main` leak
+   - `forward_guard_test`, which compared a control forward taken at the default thread count
+     against forwards run at 1 thread, and so passed only while the default was 1
+3. **An in-place mutation nested more than one container deep** in a config value.
+
+Revert-proof: `src/utils/torch_state_guard_test.py` copies the root conftest verbatim beside planted
+leaks (a body, a module fixture, an import, and a dynamo key), runs it in a subprocess, and asserts
+each one fails in its own window while the restoring idioms pass. It was verified by removing each
+window in turn: every removal fails exactly the test for that window.
+
+**The tie rule that goes with it.** Lane E's root cause was the leak, but what the leak exposed was
+an EXACT tie. Real policies produce exact and near ties between their top two actions. So a
+cross-path comparison of the greedy action (compiled vs eager, served vs reference, rust vs python)
+asserts equality only where the reference's top-2 margin exceeds a DECLARED bound. That bound is 2×
+the path's |Δ log-prob| bar in `rust_env_opponents_parity.judge_flips`, and `_TIE_BAND` in T2's
+`inference/service/parity.judge`. Strict argmax equality with no margin is a flake waiting for a
+tie.
+
 ### The REWARD GOLDEN (`src/agents/training/reward_golden_test.py`) — `sim`, ~20 s
 
 The reward stream, bit for bit: every field of every `RewardBreakdown` as `float.hex()`, for every

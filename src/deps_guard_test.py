@@ -16,8 +16,10 @@ only honest way to test it is to start a second pytest against a tree that is mi
 
 It copies the ACTUAL `conftest.py` rather than restating the guard, so a change to the message, the
 probe paths, or the opt-out is exercised here rather than drifting away from a copy. That is safe
-because the file's top-level imports are `os` alone — the torch/contention reads are all deferred
-into functions — so it stands up in a bare temp directory with nothing on the path.
+because the file's top-level imports are `os` and `pytest` alone — the torch/contention reads are
+all deferred into functions — so it stands up in a bare temp directory. The one thing it needs on
+the path is `src/` (ABSOLUTE — a relative `src` resolves against the temp dir): the torch
+global-state guard refuses the session when `utils.torch_state_guard` cannot be imported.
 """
 from __future__ import annotations
 
@@ -28,7 +30,7 @@ import sys
 from pathlib import Path
 
 
-from utils.paths import repo_root
+from utils.paths import repo_root, src_root
 
 _CONFTEST = repo_root() / "conftest.py"
 _PROBE = Path("deps") / "pokemon-showdown" / "dist" / "sim" / "index.js"
@@ -48,6 +50,7 @@ def _tree(tmp_path: Path, *, present: bool) -> Path:
 
 def _run_pytest(cwd: Path, **env_overrides) -> subprocess.CompletedProcess:
     env = {k: v for k, v in os.environ.items() if k != "GEN3AI_SKIP_DEPS_GUARD"}
+    env["PYTHONPATH"] = str(src_root())
     env.update(env_overrides)
     return subprocess.run(
         # `-p no:cacheprovider` keeps the temp tree free of a .pytest_cache; `-p no:randomly` is not

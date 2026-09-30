@@ -156,7 +156,7 @@ def _assert_full_update(before, after, logged):
     assert any(not torch.equal(before[k], after[k]) for k in before), "the update moved nothing"
 
 
-def test_a_compiled_first_update_with_every_probe_runs_on_cpu():
+def test_a_compiled_first_update_with_every_probe_runs_on_cpu(restore_torch_globals):
     """The CPU variant: torch.compile's C++ backend lowers this backward under production's
     `belief_grad_mode=label_only` (`extractor_compiles_test`), and the donated-buffer logic lives in
     AOTAutograd, which is device-agnostic — so this reproduces the torch 2.8 crash without a GPU."""

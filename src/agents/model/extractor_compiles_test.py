@@ -236,7 +236,7 @@ def _build_production_extractor(*, fresh: bool = False, **overrides):
 
 @_skip_compile
 @pytest.mark.slow   # 65–117 s with a cold compile cache vs the 30 s routine budget (2026-09-29); it made the routine gate exit 1
-def test_production_arch_compiles_without_suppression():
+def test_production_arch_compiles_without_suppression(restore_torch_globals):
     """THE regression. The `species_posterior` softmax spelling is what crashed Inductor; with
     suppression OFF a reintroduced bad spelling raises `BackendCompilerFailed` here instead of
     silently costing half the speedup in production."""
@@ -266,7 +266,7 @@ def test_production_arch_compiles_to_one_graph():
 
 
 @_skip_compile
-def test_h_tier_arch_compiles_without_suppression():
+def test_h_tier_arch_compiles_without_suppression(restore_torch_globals):
     """The gen-13 enable gate: production + the H tiers (`--history-events` seats + the `r`
     reference family) must survive Inductor BEFORE a launch depends on `--compile-opponents`
     with them on — the compile matrix's blind spot is exactly a flag combination nobody
@@ -463,7 +463,7 @@ def _assert_real_gradient(fe, grads, where):
 # the routine gate, so "the model stopped compiling" still fails fast.
 @pytest.mark.slow
 @_skip_compile
-def test_cpu_backward_still_does_not_compile():
+def test_cpu_backward_still_does_not_compile(restore_torch_globals):
     """CPU cell 2 — a LIMITATION PIN, not a capability test: the backward does NOT lower on CPU
     and the codebase depends on that being known.
 

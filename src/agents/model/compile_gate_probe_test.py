@@ -28,6 +28,7 @@ from agents.model.compile_trainer import (_MAX_PARAM_GRAD_REL, _MAX_PARAM_GRAD_R
                                           VacuousCompileParityError, _cos, _train_step,
                                           train_verdict)
 from agents.model.parity_probe_test import _drive_gate
+from utils.torch_state_guard import torch_globals
 
 _ROWS = 16
 
@@ -38,13 +39,13 @@ def fresh():
     from agents.model.extra_obs_keys import zero_extra_obs
     from main.fresh_checkpoint import build_fresh_model
 
-    torch.set_num_threads(2)
-    model, _, _ = build_fresh_model(0)
-    fe = model.policy.features_extractor
-    fe.train()
-    obs, mask = _parity_obs(fe.layout["total_dim"], _ROWS, torch.device("cpu"))
-    obs.update(zero_extra_obs(fe, batch=_ROWS, device=torch.device("cpu")))
-    return model, obs, mask
+    with torch_globals(num_threads=2):          # restored at module end (the global-state guard)
+        model, _, _ = build_fresh_model(0)
+        fe = model.policy.features_extractor
+        fe.train()
+        obs, mask = _parity_obs(fe.layout["total_dim"], _ROWS, torch.device("cpu"))
+        obs.update(zero_extra_obs(fe, batch=_ROWS, device=torch.device("cpu")))
+        yield model, obs, mask
 
 
 def _names(model):

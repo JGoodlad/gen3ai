@@ -152,7 +152,7 @@ def _build_run_dir(root: str) -> str:
     return root
 
 
-def test_cf_audit_runs_end_to_end_on_a_real_battle(tmp_path):
+def test_cf_audit_runs_end_to_end_on_a_real_battle(tmp_path, restore_torch_globals):
     run_dir = _build_run_dir(str(tmp_path / "run"))
     out = str(tmp_path / "out")
     session = {}
@@ -203,7 +203,8 @@ def test_cf_audit_runs_end_to_end_on_a_real_battle(tmp_path):
         assert cf_audit.obs_digest(obs) == r["obs_sha1"]
 
 
-def test_cf_audit_refuses_to_emit_labels_when_the_anchor_arm_fails(tmp_path):
+def test_cf_audit_refuses_to_emit_labels_when_the_anchor_arm_fails(tmp_path,
+                                                                  restore_torch_globals):
     """LABEL TRUST BEFORE MAP TRUST. If the recorded action on the recorded dice does not
     reproduce the recorded battle, the replay is not exact and everything downstream is GIGO
     — so the run must exit non-zero and write NO labels."""

@@ -22,12 +22,13 @@ from agents.inference.service import (
 from agents.inference.service.decision import _refuse_extra_obs_keys
 from agents.inference.service.fixtures import perturbed_fresh_policy as _perturbed_policy
 from agents.inference.service.parity import fixture_rows, judge
+from utils.torch_state_guard import torch_globals
 
 
 @pytest.fixture(scope="module")
 def policies():
-    torch.set_num_threads(2)
-    return _perturbed_policy(0), _perturbed_policy(1)
+    with torch_globals(num_threads=2):          # restored at module end (the global-state guard)
+        yield _perturbed_policy(0), _perturbed_policy(1)
 
 
 def _service(template, *, n_slots=2, buckets=(2, 8), **kw):
@@ -275,8 +276,8 @@ def test_the_gate_fails_a_wrong_greedy_action_on_a_decisive_row(policies):
 def fresh_policy():
     """An UNPERTURBED fresh production policy — exactly what a fresh launch would serve."""
     from main.fresh_checkpoint import build_fresh_model
-    torch.set_num_threads(2)
-    return build_fresh_model(3)[0].policy.eval()
+    with torch_globals(num_threads=2):
+        yield build_fresh_model(3)[0].policy.eval()
 
 
 def _temperature_bug(real):

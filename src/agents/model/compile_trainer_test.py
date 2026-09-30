@@ -178,6 +178,19 @@ def test_tf32_rule_refuses_without_a_reference_and_on_nan():
         check_numerics(float("nan"), precision="high", eager_err=1e-3)
 
 
+@pytest.fixture(autouse=True)
+def _uninstall_a_compile_control_this_test_created():
+    """A successful `compile_trainer_extractor` installs the process's `CompileControl` (a dynamo
+    start callback + a log handler) for the RUN's life — right in production, a leak in a test: the
+    next test in the process would compile under this one's sentinel (the torch global-state guard
+    names it). Reset only a control THIS test created, so an earlier leak is never masked."""
+    from agents.model import compile_control as cc
+    had = cc._CONTROL is not None
+    yield
+    if not had:
+        cc._reset_control_for_tests()
+
+
 @pytest.fixture
 def _restore_matmul_precision():
     prev = torch.get_float32_matmul_precision()
