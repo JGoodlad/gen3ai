@@ -18,6 +18,7 @@ and why each fork was taken.
 | 4 | [`design_q_head.md`](design_q_head.md) | The value side's end state: the Q decomposition (V + A + B + I), the opponent pointer, fixed-mass belief tokens, the offline omniscient twin |
 | 5 | [`obs_enrichment_backlog.md`](obs_enrichment_backlog.md) | What the observation carries, what it should carry next, and on what terms |
 | 6 | [`design_ladder_campaign.md`](design_ladder_campaign.md) | The research stages toward the ladder: artifacts, meters, plateau tests, the training ecology |
+| 7 | [`design_learner_recipe.md`](design_learner_recipe.md) | The TRAINING RECIPE re-grounded knob by knob (rollout, batch, epochs, step size, entropy, λ, critic, opponents): live value, provenance, literature, recommendation, and the migration order for the first M5 era |
 
 Ranked work lives outside this directory: experiments in
 [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md), build tasks in

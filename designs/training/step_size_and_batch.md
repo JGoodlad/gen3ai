@@ -33,7 +33,13 @@ upstream** (one step per minibatch).
   `batch_size·K` batch to the float32 noise floor (~3e-8, empirically) **when `batch_size` divides the
   rollout (`n_steps·n_envs`) AND `K` divides the minibatch count** — then every group is `K` equal-size
   micro-batches. Production power-of-2 configs satisfy this (e.g. rollout 131072, `--batch-size 4096
-  --grad-accum-steps 4` → 32 micro-batches, 8 groups, exact). For a NON-divisible rollout the single
+  --grad-accum-steps 4` → 32 micro-batches, 8 groups, exact).
+  ⚠️ **Correction (2026-09-29): the live lineage's shape does NOT.** `--n-envs 48 --n-steps 2048
+  --batch-size 2048 --grad-accum-steps 32` gives 48 micro-batches per epoch, i.e. one full group of 32
+  and a trailing group of 16 that is rescaled and stepped at full LR — two optimizer steps per epoch,
+  the second on 32,768 rows. `dose.py` counts 1.5 steps per epoch there, so the recorded dose
+  undercounts real steps by 4/3 (a common factor for arms at one shape; an error across shapes).
+  See [`../endstate/design_learner_recipe.md`](../endstate/design_learner_recipe.md) §3.3. For a NON-divisible rollout the single
   smaller remainder minibatch in the **final group of each epoch** is weighted as if full-size — a
   bounded mis-weighting of one remainder per epoch (≈8e-5 on params in a toy probe; negligible vs a
   100k-sample rollout, and no worse than stock SB3, which gives that remainder minibatch its own
