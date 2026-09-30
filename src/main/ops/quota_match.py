@@ -114,6 +114,8 @@ def classify_on_disk(trace_dir: str, opp: str) -> Dict[str, List[str]]:
     Only the ``_summary.json`` siblings are opened — a battle with no summary is not readable by
     the meters either, so it is not counted.
     """
+    from main.prober.core_trace import load_summary_meta
+
     out: Dict[str, List[str]] = {"WIN": [], "LOSS": [], "DRAW": []}
     odir = os.path.join(trace_dir, opp)
     if not os.path.isdir(odir):
@@ -126,8 +128,7 @@ def classify_on_disk(trace_dir: str, opp: str) -> Dict[str, List[str]]:
         if not os.path.exists(spath):
             continue
         try:
-            with open(spath) as fh:
-                res = (json.load(fh).get("meta") or {}).get("result")
+            res = load_summary_meta(spath).get("result")      # meta only: sound on a core trace too
         except (OSError, ValueError):
             continue
         out[res if res in ("WIN", "LOSS") else "DRAW"].append(base)

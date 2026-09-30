@@ -230,6 +230,7 @@ def extract_cycle(trace_dir: str, *, v_column: str = DEFAULT_V_COLUMN
     """
     if v_column not in V_COLUMNS:
         raise ConditioningRefusal(f"v_column must be one of {V_COLUMNS}, got {v_column!r}")
+    from main.prober.core_trace import CoreTraceUnsupported, is_core_trace, load_summary
     from main.scaffolding_gauge import opponent_class
 
     man_path = os.path.join(trace_dir, "eval_manifest.json")
@@ -270,7 +271,13 @@ def extract_cycle(trace_dir: str, *, v_column: str = DEFAULT_V_COLUMN
                 if not os.path.exists(spath):
                     refusals.append(f"{opp}/{base}: no summary.json")
                     continue
-                summ = _load_json(spath)
+                # EXPANDED on a Rust-eval core trace (its stored summary is meta only, F-LH-5); the
+                # rows need `invocations` (turns) and `teams` (team_id).
+                summ = load_summary(spath)
+                if is_core_trace(summ) and v_column != "values":
+                    raise CoreTraceUnsupported(
+                        f"conditioning_meters.extract_cycle: {spath} is a Rust-eval CORE trace, which "
+                        "records NO win-prob head (win_probs NaN, F-LH-4) — pass --v-column values")
                 res = (summ.get("meta") or {}).get("result")
                 if res not in ("WIN", "LOSS"):
                     n_draw_battles += 1
@@ -299,7 +306,7 @@ def extract_cycle(trace_dir: str, *, v_column: str = DEFAULT_V_COLUMN
                     refusals.append(f"{opp}/{base}: npz/invocation length mismatch "
                                     f"({wp.size} vs {len(invs)})")
                     continue
-                if wp_rec.size:
+                if wp_rec.size and np.isfinite(wp_rec).all():   # a core trace has no QC pair (NaN head)
                     vmax = max(vmax, float(np.max(np.abs(vals - wp_rec))))
                 turns = np.array([int(i.get("turn", -1)) for i in invs])
                 keep = (np.asarray(hs) == 1) & (turns > 0)

@@ -201,6 +201,7 @@ def select_winprob_candidates(
 
     Model-free: reads ``npz["win_probs"]`` and ``npz["action_mask"]``, both recorded at play time.
     """
+    from main.prober.core_trace import CoreTraceUnsupported, is_core_trace
     from main.prober.session import ProbeSession
     own = session is None
     sess = session if session is not None else ProbeSession(run_dir)
@@ -221,6 +222,12 @@ def select_winprob_candidates(
                 masks = np.asarray(npz["action_mask"])
             except (KeyError, FileNotFoundError, ValueError):
                 continue                     # a run with no win-prob head simply yields nothing
+            if is_core_trace(summary):
+                # A Rust-eval core trace records NO win-prob head (NaN, F-LH-4): every decision would
+                # read uncontested and the frame would come back EMPTY, silently (F-LH-5).
+                raise CoreTraceUnsupported(
+                    f"winprob_oneply.select_winprob_candidates: {summary_path} is a Rust-eval CORE trace, which "
+                    "records no win-prob head — contestedness cannot be ranked. Refused, not read as empty.")
             picked = 0
             for i, inv in enumerate(summary.get("invocations", [])):
                 if picked >= max_per_battle:

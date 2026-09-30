@@ -14,7 +14,6 @@ source of truth. This module is just argv parsing + text rendering.
 Usage:
   python -m main.probe_replay <ckpt.zip> <battle_summary.json> <battle_states.npz> <inv_index>
 """
-import json
 import sys
 
 import numpy as np
@@ -56,7 +55,9 @@ def _render_text(a: InvocationAnalysis) -> str:
 
 def main():
     ckpt, summ_path, npz_path, inv_i = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
-    summ = json.load(open(summ_path))
+    from main.prober.core_trace import load_summary   # a core trace EXPANDED (F-LH-5)
+
+    summ = load_summary(summ_path)
     npz = np.load(npz_path)
     if "has_state" in npz and not npz["has_state"][inv_i]:
         print(f"WARNING: invocation {inv_i} has no captured state.")

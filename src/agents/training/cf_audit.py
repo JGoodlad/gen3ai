@@ -143,6 +143,8 @@ class Decision:
 def build_frame(traces_dir: str) -> "tuple[List[Decision], Counter]":
     """Every reconstructable ``move_selection`` decision under ``traces_dir``, plus a census of
     what was skipped and why (a skip that is not counted is a skip that is not known)."""
+    from main.prober.core_trace import CoreTraceUnsupported, refuse_core_trace
+
     rows: List[Decision] = []
     skipped: Counter = Counter()
     for sp in sorted(glob.glob(os.path.join(traces_dir, "*", "*_summary.json"))):
@@ -151,10 +153,14 @@ def build_frame(traces_dir: str) -> "tuple[List[Decision], Counter]":
             skipped["no_reconstruction_sibling"] += 1
             continue
         try:
-            with open(sp) as f:
-                summ = json.load(f)
+            # The frame is sampled by the RECORDED win-prob head; a Rust-eval core trace records
+            # none (NaN, F-LH-4), so it would skip every decision and return an EMPTY frame.
+            summ = refuse_core_trace(sp, reader="cf_audit.build_frame",
+                                     why="the sampling frame needs the recorded win_probs head")
             with np.load(base + "_states.npz") as z:
                 npz = {k: z[k] for k in z.files}
+        except CoreTraceUnsupported:
+            raise                                                        # loud, never a counted skip
         except Exception as exc:                                        # noqa: BLE001
             skipped[f"load:{type(exc).__name__}"] += 1
             continue

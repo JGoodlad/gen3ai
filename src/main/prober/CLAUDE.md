@@ -115,7 +115,12 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   nothing is written into the run dir. ABSENT on a core trace: `*_replay.html` (its stand-in is the
   expansion's own protocol log, `core_trace.protocol_log`), and every auxiliary head — `win_probs`
   is NaN, `belief` / `opp_intent` / `value_dist` / `move_logits` / `spread_belief` are not stored
-  (`analyze` re-runs the model on the stored obs). Detail: `designs/prober/engine_and_model.md`.
+  (`analyze` re-runs the model on the stored obs). 🚨 **`core_trace` IS THE ONE `*_summary.json`
+  READER under `src/`** — `load_summary` (expanded), `load_summary_meta` (stored meta, never
+  expands), `refuse_core_trace` (a reader that needs a head a core trace lacks raises
+  `CoreTraceUnsupported` by name). `src/trace_summary_reader_gate_test.py` fails any module that
+  opens one itself (F-LH-5: such a reader saw meta only and read ZERO decisions, silently); its
+  allowlist is EMPTY. Detail: `designs/prober/engine_and_model.md`.
 - **`web/`** — the browser front end (FastAPI + Jinja2/HTMX over `ProbeSession`). It is
   **first-class for the GPU obs**: the learned belief/op signals tagged `🔷 GPU` render PRIMARY
   and the decoded CPU obs regions they subsume tagged `📋 CPU-obs` render dimmed, because the

@@ -43,7 +43,6 @@ is the bug, so an unrecoverable trace must stop the audit, never default to lega
 from __future__ import annotations
 
 import glob
-import json
 import os
 from collections import Counter
 from typing import Any, Dict, List, Sequence, Tuple
@@ -93,8 +92,9 @@ def recover_legal_mask(path: str, z: Any) -> np.ndarray:
     summary_path = (path[: -len("_states.npz")] + "_summary.json"
                     if path.endswith("_states.npz") else "")
     if summary_path and os.path.exists(summary_path):
-        with open(summary_path) as fh:
-            invocations = json.load(fh).get("invocations", [])
+        from main.prober.core_trace import load_summary   # a core trace EXPANDED (F-LH-5)
+
+        invocations = load_summary(summary_path).get("invocations", [])
         if len(invocations) != n_rows:
             raise TraceMaskUnavailable(
                 f"{path}: summary has {len(invocations)} invocations but the npz has {n_rows} "

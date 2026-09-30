@@ -18,6 +18,13 @@ precedence, **sharded `<outcome>_s<shard>_<idx>` parsing → distinct index**),
 `core_trace_test.py` (pure: the core-trace cross-check's refusal naming the first differing line,
 the live masked softmax, the core `battle_id` → room-tag prefix, and `ProbeSession._meta` reading a
 meta-only core summary without expanding it while `_summary` refuses its missing siblings) +
+`core_trace_readers_test.py` (pure, `core_trace.expand` stubbed: each reader family OUTSIDE the
+prober on a core trace — `mechanic_usage_baseline` counts the expanded decisions, the meta readers
+(`critic_gate._trace_turns`, `quota_match`, `harvest_meter`) never expand and never report a NaN phi,
+and `cf_audit`, `harvest`, `scaffolding_gauge` and the win-prob teacher REFUSE with
+`CoreTraceUnsupported`; each fails on revert) + `src/trace_summary_reader_gate_test.py` (the static
+gate: no module but `core_trace.py` opens a `*_summary.json`; EMPTY allowlist; its scanner's shapes
+pinned both ways) +
 `core_trace_integration_test.py` (`@sim @integration`, builds the rust env cdylib: REAL core games —
 two normal, one at a short `turn_limit` ending in the trainee's stall forfeit — expanded and matched
 against the `states.npz` rows; each game replayed LIVE on the rust bridge through a `BattleRecorder`

@@ -84,9 +84,10 @@ def _load_tail(prefix: str, k: int = K_TAIL) -> "Optional[Tuple[np.ndarray, dict
     ``has_state`` gates the rows exactly as probe O did — a decision with no recorded state is not
     a decision the head was asked about.
     """
+    from main.prober.core_trace import load_summary_meta   # meta only: sound on a core trace too
+
     try:
-        with open(prefix + "_summary.json") as fh:
-            summ = json.load(fh)
+        meta = load_summary_meta(prefix + "_summary.json")
         with np.load(prefix + "_states.npz") as z:
             if "obs" not in z.files or "has_state" not in z.files:
                 return None
@@ -99,11 +100,12 @@ def _load_tail(prefix: str, k: int = K_TAIL) -> "Optional[Tuple[np.ndarray, dict
     if len(idx) < k:
         return None
     idx = idx[-k:]
-    meta = summ.get("meta") or {}
+    phi_t = float(rec[idx[-1]]) if rec is not None and idx[-1] < len(rec) else None
     return obs[idx], {
         "result": str(meta.get("result") or "").lower(),
         "turns": int(meta.get("turns") or 0),
-        "recorded_phi_T": float(rec[idx[-1]]) if rec is not None and idx[-1] < len(rec) else None,
+        # a core trace records NO win-prob head (NaN, F-LH-4): not recorded, never a NaN in a mean
+        "recorded_phi_T": phi_t if phi_t is not None and np.isfinite(phi_t) else None,
     }
 
 
@@ -222,6 +224,7 @@ def control_battles(models_root: str, holdout: dict, *, n: int = 40,
     import random
 
     from main.harvest import current_arch_runs
+    from main.prober.core_trace import load_summary_meta
 
     used = set(holdout.get("holdout_battles", [])) | set(holdout.get("harvested_battles", []))
     found: List[str] = []
@@ -233,8 +236,7 @@ def control_battles(models_root: str, holdout: dict, *, n: int = 40,
             if tag in used:
                 continue
             try:
-                with open(sp) as fh:
-                    meta = (json.load(fh).get("meta") or {})
+                meta = load_summary_meta(sp)
             except Exception:                                           # noqa: BLE001
                 continue
             if str(meta.get("result") or "").lower() == "win" \

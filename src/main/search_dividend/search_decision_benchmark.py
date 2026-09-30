@@ -150,9 +150,10 @@ def load_decision(stem: str, impl: str, frac: float = 0.55):
     from utils.bridge.search_session import SearchSession
     import agents.battle.core_row_parity_fuzz_test as G
 
+    from main.prober.core_trace import load_summary   # a core trace EXPANDED (F-LH-5)
+
     record = ReconstructionRecord.load(stem + "_reconstruction.json")
-    with open(stem + "_summary.json") as fh:
-        summary = json.load(fh)
+    summary = load_summary(stem + "_summary.json")
     npz = np.load(stem + "_states.npz", allow_pickle=True)
     actions = np.asarray(npz["actions"], dtype=int)
     invs = summary.get("invocations", [])

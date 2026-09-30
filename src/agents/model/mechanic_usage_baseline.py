@@ -38,9 +38,11 @@ def measure(run_dir: str) -> dict:
                              recursive=True))
     stats = {m: {"available": 0, "chosen": 0, "prob_sum": 0.0} for m in MECHANICS}
     decisions = 0
+    from main.prober.core_trace import load_summary   # a core trace EXPANDED, never read as empty (F-LH-5)
+
     for f in files:
         try:
-            doc = json.load(open(f))
+            doc = load_summary(f)
         except (json.JSONDecodeError, OSError):
             continue
         for inv in doc.get("invocations", []):

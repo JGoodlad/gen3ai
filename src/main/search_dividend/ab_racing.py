@@ -383,6 +383,7 @@ def collect(model, mappings, *, traces_dir: str, n_decisions: int, rounds: int, 
     # first 8 KB, which on the first real invocation was mistaken for a hang in the pool loader.
     log = log or (lambda msg: print(msg, flush=True))
     from agents.training.obs_materializer import materialize_decisions
+    from main.prober.core_trace import CoreTraceError, load_summary
     from main.search_dividend.alpha import alpha_publication
     from utils.bridge.reconstruction import ReconstructionRecord, replay_battle
 
@@ -403,13 +404,15 @@ def collect(model, mappings, *, traces_dir: str, n_decisions: int, rounds: int, 
             break
         try:
             record = ReconstructionRecord.load(stem + "_reconstruction.json")
-            summary = json.load(open(stem + "_summary.json"))
+            summary = load_summary(stem + "_summary.json")     # a core trace EXPANDED (F-LH-5)
             npz = np.load(stem + "_states.npz", allow_pickle=True)
             acts = np.asarray(npz["actions"], dtype=int)
             side = record.side_of(record.trainee_username)
             username = record.username(side)
             rep = replay_battle(record, impl=search_impl)
             our_full = rep.p1_chunks if side == "p1" else rep.p2_chunks
+        except CoreTraceError:
+            raise                                    # a core trace that disagrees with its record: loud
         except Exception as e:                       # noqa: BLE001
             log(f"  skip {os.path.basename(stem)}: {type(e).__name__}: {e}")
             continue

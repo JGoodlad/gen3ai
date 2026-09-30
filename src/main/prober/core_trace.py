@@ -46,8 +46,9 @@ import numpy as np
 
 from agents.training.rust_eval.traces import is_core_trace
 
-__all__ = ["CoreTraceError", "CoreTraceMismatch", "expand", "is_core_trace", "load_summary",
-           "protocol_log", "record_text_lines", "protocol_lines"]
+__all__ = ["CoreTraceError", "CoreTraceMismatch", "CoreTraceUnsupported", "expand", "is_core_trace",
+           "load_summary", "load_summary_meta", "refuse_core_trace", "protocol_log", "record_text_lines",
+           "protocol_lines"]
 
 _CACHE_CAP = 256
 _cache: "OrderedDict[tuple, dict]" = OrderedDict()
@@ -61,15 +62,55 @@ class CoreTraceMismatch(CoreTraceError):
     """The replay DISAGREES with the stored record / states — refused, never repaired."""
 
 
+class CoreTraceUnsupported(CoreTraceError):
+    """A reader that CANNOT be sound on a core trace was handed one — refused by name (F-LH-5).
+
+    A core trace has no poke-env battle behind it (no ``_replay.html``, NaN ``win_probs``, no
+    auxiliary-head rows — PROGRESS F-LH-4); a reader that needs one of those refuses rather than
+    reading the gap as data."""
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
-def load_summary(summary_path: str) -> dict:
-    """``json.load`` of a summary, EXPANDED when it is a core trace — the one reader to call."""
+# THE LOADER. Every ``*_summary.json`` READ under ``src/`` goes through one of the three entry points
+# below — ``src/trace_summary_reader_gate_test.py`` fails any module that opens one itself (F-LH-5: a
+# direct reader of a core trace sees meta only and reads ZERO decisions, silently). Empty allowlist.
+
+def _read_stored(summary_path: str) -> dict:
     with open(summary_path) as f:
         summary = json.load(f)
-    return expand(summary_path, summary) if is_core_trace(summary) else summary
+    if not isinstance(summary, dict):
+        raise CoreTraceError(f"{summary_path}: a trace summary must be a JSON object, got {type(summary).__name__}")
+    return summary
+
+
+def load_summary(summary_path: str, *, run_dir: Optional[str] = None) -> dict:
+    """The full summary (``meta`` + ``teams`` + ``invocations``) of EITHER trace kind: a Python trace as
+    stored, a core trace EXPANDED (replayed + cross-checked; a disagreement raises
+    :class:`CoreTraceMismatch`). ``run_dir`` as :func:`expand`. The one reader of decisions."""
+    summary = _read_stored(summary_path)
+    return expand(summary_path, summary, run_dir=run_dir) if is_core_trace(summary) else summary
+
+
+def load_summary_meta(summary_path: str) -> dict:
+    """The STORED ``meta`` block alone — sound on both trace kinds (a core trace stores the full
+    ``meta``: result, turns, ``invocations`` count, ``trace_source``), and never expands (instant).
+    For a reader of outcomes / counts that never walks the decisions."""
+    return dict(_read_stored(summary_path).get("meta") or {})
+
+
+def refuse_core_trace(summary_path: str, *, reader: str, why: str) -> dict:
+    """The stored summary for a reader that CANNOT be sound on a core trace — which it REFUSES with
+    :class:`CoreTraceUnsupported`, naming ``reader`` and ``why``. A Python trace is returned as stored."""
+    summary = _read_stored(summary_path)
+    if is_core_trace(summary):
+        raise CoreTraceUnsupported(
+            f"{reader}: {summary_path} is a Rust-eval CORE trace (gen3_core_trace_v1) and this reader "
+            f"cannot read one soundly ({why}). Refused rather than read as empty — see "
+            "designs/research_state/measurements/m5_laneH/PROGRESS.md F-LH-4/F-LH-5.")
+    return summary
 
 
 def expand(summary_path: str, summary: dict, *, impl: str = "rust",

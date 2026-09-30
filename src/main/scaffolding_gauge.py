@@ -107,6 +107,24 @@ def _npz_for(summary_path: str) -> str:
     return summary_path.replace("_summary.json", "_states.npz")
 
 
+def _refuse_core_trace_without_head(summary_path: str) -> None:
+    """A Rust-eval CORE trace (``gen3_core_trace_v1``) records NO win-prob head (``win_probs`` NaN —
+    T2 serves no auxiliary head, PROGRESS F-LH-4). Counting it as "no win-prob column" would drop
+    every Rust-eval cycle from the gauge's time series and, on an all-core run, blame
+    ``--win-prob-mode none`` — so it is REFUSED by name (F-LH-5)."""
+    from main.prober.core_trace import CoreTraceUnsupported, is_core_trace, load_summary_meta
+
+    try:
+        meta = load_summary_meta(summary_path)
+    except (OSError, ValueError):
+        return
+    if is_core_trace({"meta": meta}):
+        raise CoreTraceUnsupported(
+            f"scaffolding_gauge.collect_slices: {summary_path} is a Rust-eval CORE trace, which records "
+            "no win-prob head (win_probs NaN, F-LH-4); the gauge compares V against the recorded "
+            "P(win) and cannot read it. Refused rather than dropped from the series.")
+
+
 def collect_slices(
     run_or_traces: str,
     *,
@@ -170,6 +188,7 @@ def collect_slices(
                 continue
             keep_rows = has & np.isfinite(v) & np.isfinite(p)
             if not keep_rows.any():
+                _refuse_core_trace_without_head(bt.summary_path)
                 coverage["n_traces_no_winprob"] += 1
                 continue
             n = int(keep_rows.sum())

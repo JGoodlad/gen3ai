@@ -67,6 +67,33 @@ The Rust eval path (`--env-core rust`, M5 Lane H) has no poke-env battle, so
 (`<prefix>.p1.jsonl.gz` / `.p2.jsonl.gz`), the `*_reconstruction.json` and a `*_states.npz` in the
 Python recorder's keys (legal LOG-PROBS in `logits`, illegal = −1e9).
 
+**THE LOADER — every `*_summary.json` read under `src/` goes through `core_trace`** (F-LH-5, closed
+2026-09-30). A direct `json.load` of a core trace's summary reads `meta` only, and a reader that then
+walks `summary.get("invocations", [])` reports ZERO decisions without raising. Three entry points:
+
+| entry point | returns | for |
+|---|---|---|
+| `load_summary(path, *, run_dir=None)` | the full summary; a core trace EXPANDED (below) | every reader of decisions / teams |
+| `load_summary_meta(path)` | the STORED `meta` (a core trace stores the full recorder meta + `trace_source`); never expands | outcome / turn-count / count readers |
+| `refuse_core_trace(path, *, reader, why)` | the stored summary of a Python trace; RAISES `CoreTraceUnsupported` on a core trace | a reader that needs what a core trace does not carry (the recorded `win_probs` head) |
+
+The static gate `src/trace_summary_reader_gate_test.py` (unmarked, ~1 s, EMPTY allowlist) fails any
+module other than `core_trace.py` that opens a `*_summary.json` for reading. It tracks the path
+through names, `os.path.join` / `Path` / `glob`, for / comprehension targets, parameters named
+`summary_path` / `summ_path` / `spath` / `smf` / …, `.summary_path` attributes and same-module helper
+calls, and stops at a stripped or replaced suffix (the siblings). A path handed in from another module
+under an unrelated name is its blind spot. Opt out with `GEN3AI_SKIP_SUMMARY_READER_GATE=1`.
+
+**Which reader does what on a core trace** (behaviour pinned by `core_trace_readers_test.py`):
+
+| reader | entry point | on a core trace |
+|---|---|---|
+| `ProbeSession._summary` / `_meta` (every prober view, the search teacher's `selection`), `forensics`, `probe_replay`, `mechanic_usage_baseline`, `audit_states` (mask fallback), `search_dividend.search_decision_benchmark` / `ab_racing`, `rust_sim/harness/better_line_bench` / `gen_search_golden` | `load_summary` | expanded — reads every decision (`ab_racing` re-raises a `CoreTraceError` rather than log it as a skip) |
+| `ops.conditioning_meters.extract_cycle` | `load_summary` | expanded under `--v-column values`; REFUSED under the `win_probs` column (NaN head) |
+| `critic_gate._trace_turns` (G7), `ops.quota_match.classify_on_disk`, `harvest_meter._load_tail` / `control_battles` | `load_summary_meta` | stored meta; `harvest_meter`'s `recorded_phi_T` is `None` (not NaN) on a NaN head |
+| `cf_audit.build_frame`, `harvest.build_candidates` | `refuse_core_trace` | REFUSED — both sample by the recorded win-prob head; the refusal escapes their counted-skip `except` |
+| `teacher.winprob_oneply.select_winprob_candidates`, `scaffolding_gauge.collect_slices` (and every meter over it: `critic_gate`, `ops.critic_readouts`, `ops.perbot_*`, `ops.negskill_null`) | `is_core_trace` on the NaN head | REFUSED — contestedness / the V-vs-P(win) gauge have no P(win); the gauge's old refusal blamed `--win-prob-mode none` |
+
 **The expansion** (`core_trace.expand` / `load_summary`; `ProbeSession._summary` calls it, as does
 `forensics.build_decision_table`):
 

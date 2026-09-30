@@ -17,7 +17,6 @@ switching the driver buys `better_line`, and the per-op table as the mechanism.
 from __future__ import annotations
 
 import asyncio
-import json
 import statistics
 import sys
 import tempfile
@@ -54,8 +53,9 @@ def record_one(out_dir, tag):
     asyncio.run(run_local_battles(trainee, opp, 1))
     p = trainee.trace_prefixes[0]
     rec = ReconstructionRecord.load(f"{p}_reconstruction.json")
-    with open(f"{p}_summary.json") as f:
-        summary = json.load(f)
+    from main.prober.core_trace import load_summary   # the one trace-summary reader (F-LH-5)
+
+    summary = load_summary(f"{p}_summary.json")
     with np.load(f"{p}_states.npz") as z:
         npz = {k: z[k] for k in z.files}
     return rec, summary, npz

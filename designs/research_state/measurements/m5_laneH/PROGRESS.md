@@ -112,12 +112,18 @@ was live.
   logs it and records nothing for that cycle (a crashed worker's shape). None observed.
 - **F-LH-4 (traces carry no auxiliary heads):** `win_probs` NaN, no belief / intent / value-dist rows in the
   npz; no `_replay.html` (the prober renders the protocol from the expansion). `analyze` re-runs the model.
-- **F-LH-5 (readers OUTSIDE the prober see meta only):** `cf_audit`, the search teacher's selection /
-  generation, `harvest`, `probe_replay`, `audit_states`, `scaffolding_gauge` (G7 stall rate uses meta only —
-  fine), `ops/eval_trace_gen`, `ops/conditioning_meters`, `ops/quota_match`, `mechanic_usage_baseline`,
-  `search_dividend/*` read `*_summary.json` directly and would see ZERO invocations on a Rust-eval run. They
-  must switch to `main.prober.core_trace.load_summary` (or refuse a core trace) before any Rust-eval run's
-  traces feed them — a cutover item (program M7).
+- **F-LH-5 (readers OUTSIDE the prober see meta only) — CLOSED 2026-09-30 (cutover prep):** a direct
+  `json.load` of a core trace's `*_summary.json` reads meta only, so a reader walking `invocations` saw
+  ZERO decisions, silently. Every reader now goes through `main.prober.core_trace` — `load_summary`
+  (expanded), `load_summary_meta` (stored meta) or `refuse_core_trace` (`CoreTraceUnsupported`) — and
+  the static gate `src/trace_summary_reader_gate_test.py` (EMPTY allowlist) fails any module that
+  opens one itself. The audit the gate produced: 16 direct read sites in 14 modules (`audit_states`,
+  `mechanic_usage_baseline`, `cf_audit`, `critic_gate`, `harvest`, `harvest_meter` ×2,
+  `ops/conditioning_meters`, `ops/quota_match`, `probe_replay`, the prober session ×2,
+  `search_dividend` ×2, two `rust_sim/harness` scripts); `ops/eval_trace_gen` and the teacher's
+  `generate` never read one. A second class the gate cannot see — ranking by the NaN `win_probs`
+  head — refuses in `winprob_oneply` and `scaffolding_gauge.collect_slices` (and so every meter over
+  it). The reader-by-reader table: `designs/prober/engine_and_model.md` "THE LOADER".
 - **F-LH-6 (prober, fixed):** `obs_materializer._next_tag` passed a non-Showdown battle tag through, and
   poke-env silently refuses such a room: every counterfactual view on a core trace read "replay desync".
   Now prefixed; well-formed tags unchanged.
@@ -144,7 +150,7 @@ was live.
 
 Units 1–7 built; the registry row BUILT. What remains before a CUTOVER (none of it gating H):
 
-1. F-LH-5: the non-prober trace readers onto `load_summary` (or a loud refusal).
+1. ~~F-LH-5: the non-prober trace readers onto `load_summary` (or a loud refusal).~~ DONE 2026-09-30.
 2. F-LH-2: background (filler) eval, if the SIZING study's N makes the blocking cycle expensive.
 3. F-LH-10's unexercised paths: a gate row with a fixed opponent and one with the sampled regime.
 4. The launcher restart / pin path on a Rust-core run (Lane G's F-LG-6, now also eval's).

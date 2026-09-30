@@ -13,7 +13,7 @@ from dataclasses import asdict
 
 import numpy as np
 
-from main.prober.core_trace import expand as expand_core_trace, is_core_trace
+from main.prober.core_trace import load_summary, load_summary_meta
 from main.prober.discovery import BattleTrace, ModelChoice, build_trace_tree, resolve_model_for_step
 from main.prober.awareness import awareness_from_npz
 from main.prober.engine import awareness_text, decode_incoming_belief
@@ -301,10 +301,7 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         `CoreTraceMismatch`), so every view reads one shape."""
         s = self._summaries.get(battle.summary_path)
         if s is None:
-            with open(battle.summary_path) as f:
-                s = json.load(f)
-            if is_core_trace(s):
-                s = expand_core_trace(battle.summary_path, s, run_dir=self.run_dir)
+            s = load_summary(battle.summary_path, run_dir=self.run_dir)
             self._summaries[battle.summary_path] = s
         return s
 
@@ -312,8 +309,7 @@ class ProbeSession(_ReadingMixin, _ScansMixin, _TraceIOMixin, _AnalysisMixin,
         """The stored ``meta`` alone — never expands a core trace (a meta read stays instant)."""
         s = self._summaries.get(battle.summary_path)
         if s is None:
-            with open(battle.summary_path) as f:
-                return json.load(f).get("meta") or {}
+            return load_summary_meta(battle.summary_path)
         return s.get("meta") or {}
 
     def _npz(self, battle: BattleTrace) -> dict:

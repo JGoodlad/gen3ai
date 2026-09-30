@@ -823,6 +823,7 @@ def _trace_turns(run_dir: str, stall_turns: int) -> Dict[int, Dict[str, Any]]:
     that is neither a win nor a loss. Loss-enriched by construction — labelled as such wherever it
     is printed, never presented as a population rate.
     """
+    from main.prober.core_trace import load_summary_meta   # meta only: sound on a core trace too
     from main.prober.discovery import build_trace_tree
     tree = build_trace_tree(run_dir)
     out: Dict[int, Dict[str, Any]] = {}
@@ -834,8 +835,7 @@ def _trace_turns(run_dir: str, stall_turns: int) -> Dict[int, Dict[str, Any]]:
         for og in sg.opponents:
             for bt in og.battles:
                 try:
-                    with open(bt.summary_path) as fh:
-                        m = (json.load(fh).get("meta") or {})
+                    m = load_summary_meta(bt.summary_path)
                 except (OSError, ValueError):
                     unreadable += 1
                     continue

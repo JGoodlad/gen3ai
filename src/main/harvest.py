@@ -326,6 +326,8 @@ def build_candidates(models_root: str, runs: Sequence[str], *, min_turn: int = 6
     """
     import glob
 
+    from main.prober.core_trace import CoreTraceUnsupported, refuse_core_trace
+
     rows: List[Candidate] = []
     skipped: Counter = Counter()
     for run in runs:
@@ -336,8 +338,10 @@ def build_candidates(models_root: str, runs: Sequence[str], *, min_turn: int = 6
                 skipped["no_reconstruction_sibling"] += 1
                 continue
             try:
-                with open(sp) as fh:
-                    summ = json.load(fh)
+                # Candidates are gated on the RECORDED win-prob head; a Rust-eval core trace records
+                # none (NaN, F-LH-4) and would be skipped whole — refused instead (F-LH-5).
+                summ = refuse_core_trace(sp, reader="harvest.build_candidates",
+                                         why="candidates are gated on the recorded win_probs head")
                 with np.load(base + "_states.npz") as z:
                     files = set(z.files)
                     if "win_probs" not in files or "actions" not in files:
@@ -346,6 +350,8 @@ def build_candidates(models_root: str, runs: Sequence[str], *, min_turn: int = 6
                     wps = np.asarray(z["win_probs"], dtype=float)
                     has = np.asarray(z["has_state"], dtype=int)
                     acts = np.asarray(z["actions"], dtype=int)
+            except CoreTraceUnsupported:
+                raise                                                    # loud, never a counted skip
             except Exception as exc:                                    # noqa: BLE001
                 skipped[f"load:{type(exc).__name__}"] += 1
                 continue

@@ -99,8 +99,9 @@ def record_one(out_dir, impl="rust"):
     asyncio.run(run_local_battles(trainee, opp, 1, impl=impl))
     prefix = trainee.trace_prefixes[0]
     record = ReconstructionRecord.load(f"{prefix}_reconstruction.json")
-    with open(f"{prefix}_summary.json") as f:
-        summary = json.load(f)
+    from main.prober.core_trace import load_summary   # the one trace-summary reader (F-LH-5)
+
+    summary = load_summary(f"{prefix}_summary.json")
     return record, summary
 
 
