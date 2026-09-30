@@ -36,7 +36,7 @@ pytestmark = [pytest.mark.sim, pytest.mark.integration]
 FEATURES = ("--profile", "selfcheck", "--features", "emission-selfcheck")
 #: The families the core builds today (mirrors `labels::BUILT`; a family missing here is simply
 #: not compared yet — the Rust unit test pins BUILT, and the spec refuses an unbuilt one).
-BUILT = ("belief", "hp_type", "item", "spread", "intent")
+BUILT = ("belief", "hp_type", "item", "spread", "intent", "margin")
 NAMES = ("lcpone", "lcptwo")
 
 
@@ -246,12 +246,17 @@ def replay(recs, teams, *, key_base: int, families=BUILT, tag: str = "LC"):
 def run_slice(lib, source: str, n_episodes: int, key_base: int, families=BUILT):
     from main.rust_core_cutover.envs import packed_teams
 
-    pool = packed_teams(source)
-    step = 7919
-    teams = [pool[(key_base + i * step) % len(pool)] for i in range(2 * n_episodes)]
-    for e in range(n_episodes):            # two distinct teams per battle
-        if teams[2 * e] == teams[2 * e + 1]:
-            teams[2 * e + 1] = pool[(key_base + (2 * e + 1) * step + 1) % len(pool)]
+    if source == "procedural":
+        from utils.team_sources import procedural_teams
+
+        teams = list(procedural_teams(2 * n_episodes, 20260929 + key_base))
+    else:
+        pool = packed_teams(source)
+        step = 7919
+        teams = [pool[(key_base + i * step) % len(pool)] for i in range(2 * n_episodes)]
+        for e in range(n_episodes):            # two distinct teams per battle
+            if teams[2 * e] == teams[2 * e + 1]:
+                teams[2 * e + 1] = pool[(key_base + (2 * e + 1) * step + 1) % len(pool)]
     recs = record(lib, teams, n_episodes, key_base=key_base, families=families)
     div, ex, counts = replay(recs, teams, key_base=key_base, families=families, tag=f"LC{source[:2]}{key_base % 1000}")
     print({"source": source, **counts, "divergences": div})
@@ -296,8 +301,20 @@ def test_the_label_slice_has_teeth(lib, monkeypatch, method, key):
     assert div.get(key) == counts["decisions"] > 0, (div, counts)
 
 
+def test_the_margin_slice_has_teeth(lib, monkeypatch):
+    """`win_margin` comes from the reward manager, not a `Gen3Env` label method: move its source."""
+    from agents.training import reward_manager
+
+    real = reward_manager._material_margin
+    monkeypatch.setattr(reward_manager, "_material_margin", lambda live: real(live) + 0.5)
+    div, _ex, counts = run_slice(lib, "pool", 1, key_base=61_500)
+    # every decision but the RESET one (0.0 there on both paths, the reward manager's reset value)
+    assert div.get("win_margin") == counts["decisions"] - 1 > 0, (div, counts)
+
+
 @pytest.mark.slow
-@pytest.mark.parametrize("source,n", [("pool", 200), ("ladder", 200)], ids=["pool", "ladder"])
+@pytest.mark.parametrize("source,n", [("pool", 200), ("ladder", 200), ("procedural", 100)],
+                         ids=["pool", "ladder", "procedural"])
 def test_milestone_the_core_labels_equal_gen3env(lib, source, n):
-    div, ex, counts = run_slice(lib, source, n, key_base=62_000 + (0 if source == "pool" else 5_000))
+    div, ex, counts = run_slice(lib, source, n, key_base=62_000 + 5_000 * ["pool", "ladder", "procedural"].index(source))
     _assert_clean(div, ex, counts, n)

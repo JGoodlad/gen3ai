@@ -235,18 +235,26 @@
   },
   "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[ladder]": {
    "status": "pass",
-   "commit": "a6924a84873862db00d5f592af6c73e02633db5e",
-   "at": "2026-09-29T23:33:47Z",
-   "duration_s": 70.58,
-   "contention": 1.32,
+   "commit": "514bc2109bc5eada74d41211f272c0e5c8ec56dc",
+   "at": "2026-09-29T23:55:41Z",
+   "duration_s": 27.94,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[pool]": {
    "status": "pass",
-   "commit": "a6924a84873862db00d5f592af6c73e02633db5e",
-   "at": "2026-09-29T23:33:47Z",
-   "duration_s": 64.2,
-   "contention": 1.32,
+   "commit": "514bc2109bc5eada74d41211f272c0e5c8ec56dc",
+   "at": "2026-09-29T23:55:41Z",
+   "duration_s": 27.69,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/rust_env_labels_parity_test.py::test_milestone_the_core_labels_equal_gen3env[procedural]": {
+   "status": "pass",
+   "commit": "514bc2109bc5eada74d41211f272c0e5c8ec56dc",
+   "at": "2026-09-29T23:55:41Z",
+   "duration_s": 13.41,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/tb_relevance_test.py::test_a_shaped_run_keeps_every_tag_the_gates_touch": {
@@ -914,5 +922,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-29T23:33:47Z"
+ "last_written": "2026-09-29T23:55:41Z"
 }

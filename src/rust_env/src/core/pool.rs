@@ -243,11 +243,18 @@ impl Env {
                     .ok_or_else(|| EnvError::fault(format!("p{tag}: the truth side's chain lost its stream")))?;
                 let mut row_now = [0f32; OBS_DIM]; // on the stack: an op allocates nothing new for labels
                 row_now.copy_from_slice(&c.obs[side * OBS_DIM..(side + 1) * OBS_DIM]);
+                let view = if ctx.spec.labels.contains(&"margin") {
+                    Some(chain.view(side).map_err(core_err(&format!("view p{tag}")))?)
+                } else {
+                    None
+                };
                 crate::labels::write(
                     &ctx.spec.labels,
                     side,
                     &s.board_reading,
                     chain.trackers(side),
+                    view,
+                    self.decided[side],
                     &truth.board_reading,
                     &row_now,
                     &mut self.labels,

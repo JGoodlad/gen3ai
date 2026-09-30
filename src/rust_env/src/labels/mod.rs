@@ -16,6 +16,7 @@ use crate::core::columns::EnvCols;
 
 pub mod belief;
 pub mod intent;
+pub mod margin;
 pub mod per_slot;
 pub mod spread;
 
@@ -35,7 +36,7 @@ impl EpisodeState {
 }
 
 /// The `core` families whose producer exists (grows one Lane-C unit at a time).
-pub const BUILT: &[&str] = &["belief", "hp_type", "item", "spread", "intent"];
+pub const BUILT: &[&str] = &["belief", "hp_type", "item", "spread", "intent", "margin"];
 
 /// Write every DECLARED family's columns for `side`'s open decision. `own` is the side's reading,
 /// `truth` the OTHER side's (its own team = `battle2.team`), `row` the row just encoded for `side`.
@@ -45,6 +46,8 @@ pub fn write(
     side: usize,
     own: &BoardReading,
     own_trk: Option<&pokesim::trackers::SideTrackers>,
+    own_view: Option<&pokesim::present::view::OneSidedView>,
+    dec_n: u32,
     truth: &BoardReading,
     row: &[f32],
     st: &mut EpisodeState,
@@ -99,6 +102,10 @@ pub fn write(
                 c.opp_action_num[side] = num;
                 c.opp_switch_slot[side] = slot;
                 c.opp_switch_species[side] = species;
+            }
+            "margin" => {
+                let v = own_view.ok_or("family \"margin\" needs the side's view")?;
+                margin::write(v, dec_n, &mut c.win_margin[side..side + 1]);
             }
             other => return Err(format!("label family {other:?} was declared but has no producer (labels::BUILT drifted)")),
         }

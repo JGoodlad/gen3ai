@@ -21,7 +21,36 @@ runs in the routine gate; the MILESTONE tier is `slow`.
 | 4 | families `hp_type` + `item` (`labels/per_slot.rs`); the same slice, now 7 keys per decision: MILESTONE 400 episodes / 31,564 decisions / 220,948 key compares, 0 divergences; per-family teeth (one moved cell fails every decision) | LANDED | see git log (`M5 Lane C unit 4`) |
 | 5 | family `spread` (`labels/spread.rs`: the derived stats + a port of `invert_nature_evs`, its tables read from the stamp's `data/pokemon`, the inversion cached per episode per side); 13 keys per decision: MILESTONE 400 episodes / 410,332 key compares, 0 divergences; teeth on `belief_ev` | LANDED | see git log (`M5 Lane C unit 5`) |
 | 6 | family `intent` (`labels/intent.rs`: nums over the port's `trackers::IntentLabel`, the bare Hidden Power resolved to the attacker's truth typed num); 17 keys per decision; the slice now runs the core with Lane D's production stall forfeit, so per-side decision counts must match EXACTLY: COMMIT 8 episodes / 827 decisions, MILESTONE 400 episodes / 31,979 decisions / 543,643 key compares, 0 divergences; every branch exercised (move 15,163 incl. 1,088 typed-HP resolutions, switch 9,322 of which 1,628 to a hidden mon, unknown 7,494 — `/tmp` script over the recorded core runs); teeth on `opp_action_num` | LANDED | see git log (`M5 Lane C unit 6`) |
-| 7 | family `margin` (`material_margin` on `present()`) | NEXT | |
+| 7 | family `margin` (`labels/margin.rs`: `material_margin` on the side's `present()` view, 0.0 at the RESET decision as the reward manager's reset); ALL 18 core keys now built; MILESTONE adds 100 PROCEDURAL episodes: 500 episodes / 39,721 decisions / 714,978 key compares, 0 divergences; teeth on `win_margin` (its source moved: every decision but the reset one fails) | LANDED | see git log (`M5 Lane C unit 7`) |
+
+## Status (2026-09-29): every `core` family BUILT and gated
+
+All 18 production keys the core computes are written by the env core and are byte-equal to
+`Gen3Env` per decision. The label slice's MILESTONE covers pool 200 + ladder 200 + procedural 100
+episodes: 39,721 decisions, 714,978 key compares, 0 divergences. The COMMIT tier is 8 pool
+episodes (827 decisions) in the routine gate. Declare the families with
+`labels=("belief", "hp_type", "item", "spread", "intent", "margin")` in `protocol.spec_json`.
+
+**Cost (a DESCRIPTOR, not an A/B claim).** Measured on the SELF-CHECK build (emission self-check
+on), N = 16, T = 1, FFI, the same seeded battles, three reps, load1 0.4–0.6, no run live
+(2026-09-29, `/tmp` script): all six families add +5.4 % per row (91.5 → 96.5 µs/row). A release
+build at production N / T is UNMEASURED.
+
+## What is left of Lane C (and what belongs to other lanes)
+
+- **Lane G owns the host-filled keys.** `win_target` / `win_mask` (0.0), `opp_class` (the
+  per-episode routing value, keyed by the `episode` column) and, off-surface, `win_row_w` /
+  `fork_pg_m` (1.0) are written by the vec env, not the core. `label_inventory.LABELS` (`rust`,
+  `const`) is the contract.
+- **The ROLLOUT-level check is J's / G's.** The label columns are gated per decision against
+  `Gen3Env`. That the buffer the learner sees carries them unchanged is the rollout-level slice N.
+- **Lane B / J:** the FFI == process gate compares every OUTPUT column, but its recorded runs
+  declare `labels = ()`, so the label columns stay unwritten there. Re-record one run with every
+  family declared (F-LC-7).
+- **Still open for Lane C:**
+  - a POLICY-driven stream: a fresh seeded model, like slice N's `pool_policy`. Today both sides
+    play the seeded random policy.
+  - a release-build cost read at production N / T.
 
 ## The inventory headline
 
@@ -108,3 +137,6 @@ OTHER side's chain. The rows are unchanged, and gate ① stays green.
   such a pair. The frequency is UNMEASURED; it needs two pool teams with the same species set
   drawn back-to-back for one env. Proposed fix: key the cache by `(species, stats)` per mon. This is
   a training-input change and is NOT applied.
+- **F-LC-7 (for Lanes B / J):** Lane B's FFI == process byte-identity runs record with `labels = ()`,
+  so the 18 label columns are never WRITTEN in that gate. They are compared, but as the stale
+  initial zeros. One recorded run with every family declared closes it.

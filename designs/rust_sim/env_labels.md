@@ -145,3 +145,6 @@ reveal order, and the Rust encoder indexes `reading.opp` directly.
    (`src/rust_env/src/labels/spread.rs`, a port of `invert_nature_evs`, its tables loaded at startup
    from the stamp's data dir; the same gate: 0 divergences). **`intent` BUILT**
    (`src/rust_env/src/labels/intent.rs`, over `trackers::IntentLabel`; the same gate: 0 divergences).
+   **`margin` BUILT** (`src/rust_env/src/labels/margin.rs`; 0.0 at the RESET decision). **Every
+   `core` family is BUILT:** the milestone covers 500 episodes (pool, ladder, procedural),
+   714,978 key compares, 0 divergences.
