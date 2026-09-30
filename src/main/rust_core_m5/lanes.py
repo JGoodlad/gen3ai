@@ -111,12 +111,14 @@ LANES: Tuple[LaneGate, ...] = (
         "H", "eval on the core — the eval callbacks' cycle, its opponents and its traces on the Rust env",
         "the same seed set on both eval paths: every game's winner, end turn and trainee action equal (a flip "
         "excused only as a TIE under `judge_flips`' margin rule), the pooled eval metrics equal, the kept traces "
-        "the same files and each Rust core trace expanding in the prober to the Python trace's decisions "
+        "the same files and each Rust core trace expanding in the prober to the Python trace's decisions; rows "
+        "for fixed opponents and the sampled (keyed) sentinel regime compare every opponent decision too "
         "(commit routine, milestone slow, GPU milestone)",
         built=True,
-        tests=("src/agents/training/rust_eval/seeds_test.py",
+        tests=("src/agents/training/rust_eval/seeds_test.py", "src/agents/training/rust_eval/build_test.py",
                "src/agents/training/rust_eval/core_seams_integration_test.py",
                "src/agents/training/rust_eval/parity_test.py", "src/agents/training/eval_callback_rust_test.py",
+               "src/main/eval_worker_test.py",
                "src/main/prober/core_trace_test.py", "src/main/prober/core_trace_integration_test.py"),
         gpu_tests=("src/agents/training/rust_eval/parity_test.py::"
                    "test_milestone_gpu_graph_backend_vs_the_compiled_python_worker_on_a_real_pool",)),

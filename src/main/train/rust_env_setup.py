@@ -196,7 +196,8 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             etb, eopp, efixed = eval_builders(eval_trainee_team_str, list(fixed_opponents or ()))
             col.evaluator = build_eval_core(edecl, collector_decl=decl, svc=col.svc, extra_ids=col.extra_slots,
                                             trainee_builder=etb, opp_builder=eopp, fixed_builders=efixed,
-                                            turn_limit=decl.turn_limit, terminal=decl.terminal, emit=emit)
+                                            turn_limit=decl.turn_limit, terminal=decl.terminal,
+                                            fixed_policies=sources.stable, emit=emit)
         model._env_core_stamp = env_core_stamp(decl, col)
         emit(f"🦀 [ENV CORE] rust — {model._env_core_stamp['summary']}")
         return col

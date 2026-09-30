@@ -801,6 +801,37 @@ def test_eval_manifest_records_the_regime(tmp_path):
     assert m2["trainee_team_sha"] is None and m2["opponent_pins"] == {}
 
 
+def test_opponent_pins_record_every_pinned_team_of_a_multi_team_opponent(tmp_path):
+    """F-LH-13 follow-through: a multi-team fixed opponent is MEASURED on all its pins
+    (`EvalItem.fixed_from_cfg`), so the manifest records all of them — a LIST of per-team shas — and
+    a single-team one keeps the one-sha shape. Both callbacks build the map through
+    `opponent_pins_of`. FAILS on revert (the callbacks passed `team_str`, the FIRST pin, and the
+    manifest read a 3-team specialist as a 1-team one)."""
+    import ast
+    import hashlib
+    from types import SimpleNamespace
+
+    from agents.training.eval_callback import opponent_pins_of, write_eval_manifest
+    from utils.paths import src_path
+
+    t = ["Skarmory @ Leftovers\n", "Blissey @ Leftovers\n", "Gengar @ Leftovers\n"]
+    fixed = [SimpleNamespace(label="ext_multi", team_str=t[0], team_strs=tuple(t)),
+             SimpleNamespace(label="ext_one", team_str=t[1], team_strs=(t[1],)),
+             SimpleNamespace(label="ext_gen", team_str=None, team_strs=())]
+    pins = opponent_pins_of(fixed)
+    assert pins == {"ext_multi": t, "ext_one": t[1], "ext_gen": None}
+    m = write_eval_manifest(str(tmp_path), 1000, opponents=["ext_multi", "ext_one", "ext_gen"],
+                            n_games=10, opponent_pins=pins)
+    sha = lambda x: hashlib.sha1(x.encode()).hexdigest()[:10]   # noqa: E731
+    assert m["opponent_pins"] == {"ext_multi": [sha(x) for x in t], "ext_one": sha(t[1])}
+    for rel in (("agents", "training", "eval_callback.py"), ("agents", "training", "selfplay_callback.py")):
+        tree = ast.parse(src_path(*rel).read_text())
+        kws = [k for c in ast.walk(tree) if isinstance(c, ast.Call) and getattr(c.func, "id", "") == "write_eval_manifest"
+               for k in c.keywords if k.arg == "opponent_pins"]
+        assert kws and all(isinstance(k.value, ast.Call) and getattr(k.value.func, "id", "") == "opponent_pins_of"
+                           for k in kws), f"{rel[-1]} builds opponent_pins without opponent_pins_of"
+
+
 def test_eval_games_override_flows_through_schedule():
     """--eval-games and --eval-freq override the cycle size/cadence via the _schedule() seam
     (None → the module defaults EVAL_GAMES / EVAL_FREQ_STEPS). Both callbacks read _schedule()

@@ -135,6 +135,11 @@ class _Game:
     margins: List[float] = field(default_factory=list)
     logp: List[float] = field(default_factory=list)
     sample_seed: int = 0
+    #: the policy opponent's decisions ``[dec_n, action, argmax, margin, turn]`` (only with a ``game_log``;
+    #: the margin is the keyed draw's CDF margin for a sampled sentinel, else the top-2 log-prob margin)
+    opp: List[List[Any]] = field(default_factory=list)
+    #: the battle turn at each trainee decision (the gate's clock for ordering two streams' first flips)
+    turns: List[int] = field(default_factory=list)
 
 
 @dataclass
@@ -268,6 +273,7 @@ class RustEvalCore:
         staged: List[_Game] = [self._filler() for _ in range(n)]
         pending = len(units)
         slot_route_temp = float(self_play_temp)
+        log_opp = game_log is not None
 
         def next_game(e: int) -> _Game:
             u = env_unit[e]
@@ -339,6 +345,7 @@ class RustEvalCore:
                     margin = float(srt[-1] - srt[-2]) if srt.size > 1 else float("inf")
                     st.near_ties += int(margin < NEAR_TIE)
                     gm.actions.append(a)
+                    gm.turns.append(int(c["turn"][e]))
                     gm.margins.append(margin)
                     gm.logp.append(float(lp[j, a]))
                     if gm.capturing:
@@ -351,10 +358,18 @@ class RustEvalCore:
                     gm = cur[e]
                     if gm.u is not None and gm.u.unit.item.kind == SENTINEL and not sentinel_greedy:
                         u = KD.keyed_uniforms(gm.sample_seed, KD.STREAM_OPPONENT, 0, 0, int(c["dec_n"][e, 1]))
-                        a, _m = KD.keyed_actions(np.asarray(lp2[j:j + 1]), u, slot_route_temp)
+                        a, m = KD.keyed_actions(np.asarray(lp2[j:j + 1]), u, slot_route_temp)
                         c["action"][e, 1] = int(a[0])
+                        om = float(m[0])
                     else:
                         c["action"][e, 1] = int(gr2[j])
+                        om = None
+                    if log_opp and gm.u is not None:
+                        if om is None:
+                            srt = np.sort(np.asarray(lp2[j])[np.isfinite(lp2[j])])
+                            om = float(srt[-1] - srt[-2]) if srt.size > 1 else float("inf")
+                        gm.opp.append([int(c["dec_n"][e, 1]), int(c["action"][e, 1]), int(gr2[j]), om,
+                                       int(c["turn"][e])])
                 st.p2_policy_decisions += int(rows.size)
             t3 = time.perf_counter()
             self.core.step()
@@ -444,7 +459,8 @@ class RustEvalCore:
                              "winner": int(f["winner"]), "end_turn": turn, "forfeit": int(f["forfeit"]),
                              "reward": reward, "result": result, "draw_kind": draw_kind, "actions": list(gm.actions),
                              "margins": list(gm.margins), "logp": list(gm.logp), "teams": list(gm.teams), "seed": list(gm.seed),
-                             "captured": gm.capturing, "trace": kept_path, "script": f["script"]})
+                             "captured": gm.capturing, "trace": kept_path, "script": f["script"], "opp": list(gm.opp),
+                             "turns": list(gm.turns)})
         u.done += 1
         u.t1 = time.perf_counter()
         if u.done < u.unit.n_games:

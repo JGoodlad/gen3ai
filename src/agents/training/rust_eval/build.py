@@ -8,7 +8,14 @@ collector's own declaration (``rust_rollout.build.RustEnvDecl``):
   the trainee's EVAL slot and one slot per declared sentinel (``--n-sentinels`` under self-play), both
   in the trainee's slot group (the same compiled buckets — eval rides the rollout's), plus one slot
   per FIXED opponent that the training plan does not already serve (a stable opponent under self-play
-  REUSES its training slot: the same weights, played greedy);
+  REUSES its training slot: the same weights, played greedy). 🚨 A slot holds its GROUP TEMPLATE's
+  weights at startup (T2 deep-copies the template into every slot), and a same-architecture fixed
+  slot joins the TRAINEE's group — so :func:`build_eval_core` LOADS each non-reused fixed opponent's
+  weights into its slot (:func:`load_fixed_slots`), once, at startup. Without that load a
+  ``--stable-opponents`` run without ``--self-play`` (no stable training route, so no reuse) measured
+  its ``ext_`` opponent against the TRAINEE's startup weights; an ``--exploiter`` target was right only
+  by accident (its training route is the group's first slot, so the template IS the target) — found
+  by the Lane H fixed-opponent gate row;
 * the eval ROUTE TABLE (``executor.EvalTable``): the nine roster bots in the core with per-episode
   streams, the sentinel and fixed policy routes, the filler route;
 * the eval TEAM TABLE: the eval trainee builder (``eval_worker._build_trainee_tb`` — the specialist
@@ -84,12 +91,35 @@ def eval_builders(trainee_team_str: Any, fixed_entries: Sequence[Any]) -> Tuple[
     return trainee, flat, fixed
 
 
+def load_fixed_slots(svc: Any, decl: EvalDecl, table: EvalTable, fixed_policies: Mapping[str, Any]
+                     ) -> List[Tuple[str, int]]:
+    """LOAD every fixed opponent the eval core does NOT reuse from the training plan into its declared
+    slot (module docs: a slot starts with its group template's weights, which for a same-architecture
+    fixed opponent are the TRAINEE's). A reused label's slot is the training plan's, loaded by its own
+    host. A missing policy is refused. Returns the ``(label, slot)`` pairs loaded."""
+    reused = dict(decl.reused_fixed)
+    done: List[Tuple[str, int]] = []
+    for lab, slot in table.fixed_slots:
+        if lab in reused:
+            continue
+        pol = fixed_policies.get(lab)
+        if pol is None:
+            raise RuntimeError(f"--env-core rust eval: fixed opponent {lab!r} has a declared eval slot ({slot}) "
+                               "but no policy to load into it")
+        svc.load(int(slot), pol, f"eval:fixed:{lab}")
+        done.append((lab, int(slot)))
+    return done
+
+
 def build_eval_core(decl: EvalDecl, *, collector_decl: Any, svc: Any, extra_ids: Sequence[int],
                     trainee_builder: Any, opp_builder: Any, fixed_builders: Mapping[str, Any],
                     turn_limit: int, terminal: Optional[Dict[str, Any]] = None,
+                    fixed_policies: Optional[Mapping[str, Any]] = None,
                     emit: Callable[[str], None] = print) -> RustEvalCore:
     """Acquire the eval core (module docs) over an already STARTED T2 service whose declaration carried
-    :func:`eval_extra_slots`; ``extra_ids`` are those slots' global ids (``col.extra_slots``)."""
+    :func:`eval_extra_slots`; ``extra_ids`` are those slots' global ids (``col.extra_slots``).
+    ``fixed_policies`` (label -> policy, the ``eval_extra_slots`` mapping) are LOADED into the
+    non-reused fixed slots here (:func:`load_fixed_slots`)."""
     import time
 
     from agents.training.eval_callback import eval_opponent_names
@@ -105,6 +135,7 @@ def build_eval_core(decl: EvalDecl, *, collector_decl: Any, svc: Any, extra_ids:
     if missing:
         raise RuntimeError(f"--env-core rust eval: roster bots with no Rust port (Lane F): {missing}")
     table = eval_table(decl, extra_ids, bots)
+    loaded = load_fixed_slots(svc, decl, table, dict(fixed_policies or {}))
     teams = TeamTable()
     for b in [trainee_builder, opp_builder, *fixed_builders.values()]:
         teams.add_builder(b)
@@ -125,6 +156,6 @@ def build_eval_core(decl: EvalDecl, *, collector_decl: Any, svc: Any, extra_ids:
                       names=NAMES, commit=commit, emit=emit)
     emit(f"🦀 [RUST EVAL] eval core up in {time.perf_counter() - t0:.1f}s: {decl.n_envs} envs, {len(teams)} teams "
          f"validated by use, routes: {len(bots)} bots (in core, per-episode streams) + {len(table.sentinel_slots)} "
-         f"sentinel slot(s) {list(table.sentinel_slots)} + fixed {list(table.fixed_slots)} + filler; trainee eval "
-         f"slot {table.trainee_slot}")
+         f"sentinel slot(s) {list(table.sentinel_slots)} + fixed {list(table.fixed_slots)} (loaded {loaded}) + "
+         f"filler; trainee eval slot {table.trainee_slot}")
     return ev

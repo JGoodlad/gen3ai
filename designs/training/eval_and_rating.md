@@ -665,10 +665,13 @@ declared:**
   eval CORE (`--rust-eval-envs`, default 64; the collector's threads / front end / build), the eval
   SLOTS in the trainer's ONE T2 service — the trainee's eval slot and one slot per `--n-sentinels`
   (under `--self-play`), both in the trainee's slot group, so eval rides the rollout's compiled
-  buckets; a fixed opponent reuses its training slot when the plan has one — and the eval ROUTE TABLE
-  (the roster bots in the core, the sentinel / fixed policy routes, a filler route). A cycle only
-  LOADS weights (the trainee's current policy; each sentinel's snapshot) into declared slots; every
-  core and T2 `*_after_freeze` counter is checked after each cycle.
+  buckets; a fixed opponent reuses its training slot when the plan has one (a stable opponent under
+  `--self-play`), else gets its own eval slot, which is LOADED with its weights once at startup
+  (`rust_eval.build.load_fixed_slots` — a T2 slot starts with its group template's weights, the
+  TRAINEE's for a same-architecture opponent) — and the eval ROUTE TABLE (the roster bots in the core,
+  the sentinel / fixed policy routes, a filler route). A cycle only LOADS weights (the trainee's
+  current policy; each sentinel's snapshot) into declared slots; every core and T2 `*_after_freeze`
+  counter is checked after each cycle.
 - **Units play in order on one env** (a Python worker at concurrency 1), so capture and the quota are
   decided game by game in the same order; an env without a unit plays FILLER games (nothing recorded)
   until the cycle ends.
@@ -693,7 +696,13 @@ played by the Rust executor AND by today's eval worker in its per-game-seeded mo
 (`eval_worker` `seed_rule = "per_game"`: each game alone on the rust bridge with the same teams, battle
 seed and bot streams) — every game's winner, end turn and trainee action equal (a first differing
 action excused only as a TIE under Lane E's margin rule), the pooled metrics equal, the kept traces the
-same files, and each Rust trace expanding to the Python trace's decisions.
+same files, and each Rust trace expanding to the Python trace's decisions. In that mode the worker also
+logs every POLICY opponent's decisions (sentinel, fixed), so an opponent's own near-tie flip is judged
+where it happens (the earliest first difference on the game's clock is the one judged), and a SAMPLED
+sentinel (`--no-eval-sentinel-greedy`) draws the Rust core's keyed draw at the same key
+(`eval_worker.install_opponent_log`, gate-only) — so the sampled regime and fixed / stable opponents
+(a reused training slot and an eval slot, pinned and pool teams) are compared game for game and draw
+for draw. What those rows do NOT prove is in the lane's PROGRESS (F-LH-10).
 
 ### OFFLINE generation of an eval cycle (`main.ops.eval_trace_gen`) — and the PROVENANCE marker
 

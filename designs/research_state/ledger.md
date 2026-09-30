@@ -21579,3 +21579,28 @@ Landed with Lane H at `6b5df359` (`python -m main.rust_core_m5 verdict` → `M5 
 **Cutover preparation the same day (after the gate; no production read moved):** every `*_summary.json` reader outside the prober now goes through `main.prober.core_trace` (expanded, stored meta, or a typed refusal), and a static gate holds that with an EMPTY allowlist (F-LH-5 closed, `9ccd1c7a` + `12907463`). Lane E's near-tie flake is re-verified in file order, and its assert path is pinned by a test that fails on revert (`b9431fab`). OPEN at the time of writing, and recorded in `m5_laneG/PROGRESS.md` / `m5_laneH/PROGRESS.md` as they close: the launcher restart / pin path on a Rust-core run (F-LG-6), and Lane H gate rows for fixed / stable opponents and the sampled-sentinel regime (F-LH-10).
 
 Tag: **MILESTONE · M5 GATE MET · BOUNDARY-FREE (the default is unchanged; no run's stream moves until the switch)**. Evidence: `designs/research_state/measurements/m5_laneJ/results/verdict.json`, `m5_laneJ/PROGRESS.md`, `m5_laneG/PROGRESS.md` (the 95 / 5 table), `m5_laneH/PROGRESS.md` (the gate table + the eval benchmark), `designs/endstate/program_rust_core.md` §2 M5.
+
+### 2026-09-30 · BOUNDARY · **LIVE PYTHON EVAL MEASURED A MULTI-TEAM FIXED OPPONENT ON ITS FIRST TEAM ONLY (F-LH-13). From this commit a `--stable-opponents` / `--exploiter` opponent that is a multi-team specialist is evaluated sampling among ALL its pinned teams, as it trains, so its `ext_` / vs-target eval win rate is NOT comparable across this commit. 20 of 272 runs in `models/` evaluated such an opponent. Bots, sentinels and single-team opponents are unchanged. Also a pre-data fix: under `--env-core rust`, a non-reused fixed opponent's eval slot was never loaded (F-LH-12).**
+
+**F-LH-13, the boundary.**
+- Both eval callbacks built a FIXED opponent's eval item from `FixedOpponentEntry.to_cfg()`'s `team_str` (the FIRST pin) and dropped `team_strs`. So the Python eval worker measured a multi-team specialist piloting its first team only, while training (`fixed_opponent_pool`, the fold-back contract since `b13b30b2`, 2026-07-24) and the Rust eval core sample among all of them.
+- Both callbacks now build it with `EvalItem.fixed_from_cfg` (pinned by `eval_worker_test`).
+- `eval_manifest.json`'s `opponent_pins` also recorded the first pin only, so the manifest misdescribed what was measured. It now records every pinned team as a list of per-team shas (`eval_callback.opponent_pins_of`, pinned by `eval_callback_test`).
+
+**Past exposure** (read-only scan: each run's `metadata.json` `cli_args` for `--stable-opponents` / `--exploiter`, matched against the 83 runs whose `model_config.json` records a multi-team pin through `matchup_spec.read_recorded_trainee_teams`, 2–20 teams each). Every `ext_` eval rate these runs logged against the listed opponent was a first-team-only measurement:
+- `ai_v8_14_distill3_0725` and the six v8 replications `v8rep_p1_{A,B,C}_0905` and `v8rep_p2loss_{A,B,C}_0905`, against `ai_v8_06_semistall_3team_exploiter_0722` (3 teams), `ai_v8_09_pool10_exploiter_0723` (10) and `ai_v8_13_defensive10_exploiter_0725` (10);
+- `ai_v9_34_tick1_0824`, `ai_v9_37_tick1_dosext_0825`, `ai_v9_38_fdA_coef03_0825` and `ai_v9_40_fdC_ecology_0825`, against `ai_v9_31_tock1_k4_0824` (4) and `ai_v9_32_tock1b_rain_0824` (3);
+- the K-ladder folds `ai_v13_17_fold_k1`, `ai_v13_18_fold_k3`, `ai_v13_19_fold_k11` and `ai_v13_20_fold_k11_sharematched`, against `ai_v13_13_exploit5_offense` (5);
+- the population loop's round-1 arms `ai_v13_22_popr1_loop` / `ai_v13_23_popr1_ctrl`, against `ai_v13_13_exploit5_offense` and `ai_v13_18_teach5_offense_hidose` (5 each);
+- round 2's `ai_v13_27_popr2_loop` / `ai_v13_28_popr2_ctrl` and `ai_v13_33_core_burnin`, against those two plus `ai_v13_24_popr1_read_loop` (5).
+
+UNVERIFIED: which verdicts leaned on those `ext_` rates. The untaught meter, `ladder.json` and bot edges play their own games and are unaffected. Anything that read `eval/ext_*` or a per-opponent eval win rate against these opponents is on first-team-only semantics.
+
+Verdict audit dispatched 2026-09-30; results in a follow-up entry.
+
+**F-LH-12, a pre-data fix (no data affected: no run has used `--env-core rust` for eval).**
+- T2 starts every slot with its group template's weights, and a same-architecture fixed opponent joins the trainee's group. Nothing loaded a fixed opponent that the training plan does not reuse.
+- So under `--env-core rust`, a `--stable-opponents` run without `--self-play` would have measured every `ext_` opponent against the TRAINEE's own startup weights. An `--exploiter` target was right only by accident.
+- Fixed by `rust_eval.build.load_fixed_slots` (called once at startup). It was found by the new Lane H fixed-opponent gate row, which reads 3 FATAL games with the load removed.
+
+Tag: **BOUNDARY (live eval, multi-team fixed opponents) · 20 past runs on first-team-only `ext_` rates · verdict impact UNVERIFIED, audit dispatched · F-LH-12 pre-data**. Evidence: `m5_laneH/PROGRESS.md` F-LH-12 / F-LH-13; `src/agents/training/eval_sharding/units.py` (`EvalItem.fixed_from_cfg`); `src/agents/training/eval_callback.py` (`opponent_pins_of`); `src/agents/training/fixed_opponent_pool.py` (`_read_trainee_pin`).

@@ -23,9 +23,12 @@ Opponent kinds (from the plan item): a bot plays the scripted roster path; a sen
 frozen trainee (greedy) vs a pool snapshot (stochastic + the flat pool teambuilder unless
 eval_sentinel_greedy, which makes the sentinel argmax AND gives it the trainee's own builder), loaded via
 ``load_model_snapshot`` and version-checked; a fixed/ext_ opponent plays a foreign frozen model
-(``load_foreign_opponent``, greedy yardstick). Sentinel/fixed model loads are CACHED per worker by
-path so a fine shard split doesn't pay an N× (~27MB) deserialize — the snapshot is immutable within
-a cycle, so a cache hit is safe (the version check runs on the first, real load).
+(``load_foreign_opponent``, greedy yardstick). Under ``seed_rule = "per_game"`` (the Lane H gate
+only) a policy opponent's decisions are logged and a SAMPLED sentinel draws the Rust eval core's keyed
+draw (``install_opponent_log``), so the gate compares that regime game for game. Sentinel/fixed model
+loads are CACHED per worker by path so a fine shard split doesn't pay an N× (~27MB) deserialize — the
+snapshot is immutable within a cycle, so a cache hit is safe (the version check runs on the first, real
+load).
 """
 import os
 
@@ -184,6 +187,76 @@ def seed_unit_streams(seed_base, item_key, shard_index, trainee_tb, opp_tb):
     return us
 
 
+def install_opponent_log(player, keyed: bool) -> None:
+    """M5 Lane H, ``seed_rule = "per_game"`` only (the gate's worker; a live eval never sets it): log the
+    POLICY OPPONENT's decisions, one ``[dec, action, argmax, margin]`` row per decision into
+    ``player._keyed_log`` (``_play_per_game`` resets it and sets ``_keyed_seed`` before every game), so
+    the gate compares a sentinel's / fixed opponent's own choices with the Rust eval core's — a greedy
+    opponent's near-tie flip is then JUDGED rather than surfacing as a trainee divergence. ``dec`` is the
+    index of the opponent's decision in the game (the core's ``dec_n``): one per ``choose_move`` that
+    reaches the forward, whatever its stale re-decides. The margin is the top-2 legal log-prob margin
+    (greedy) or the keyed draw's CDF margin.
+
+    ``keyed`` (the SAMPLED sentinel regime, ``eval_sentinel_greedy`` off): the opponent draws the Rust
+    eval core's KEYED draw instead of torch's global generator — the inverse-CDF action of its own legal
+    log-probs at ``--self-play-temp``, at the uniform keyed by (the game's ``sample_seed``, the opponent
+    stream, env 0, episode 0, ``dec``): exactly the executor's key, so the sampled regime is compared
+    GAME FOR GAME. Through RLPlayer's opt-in ``_action_sampler`` hook (Lane G)."""
+    import numpy as np
+    import torch
+
+    from agents.training import keyed_draw as KD
+
+    player._keyed_seed = None
+    player._keyed_log = []
+    player._opp_dec = None
+    player._opp_row = None
+    player._keyed_margin = None
+
+    def legal_logp(masked_logits):
+        ml = masked_logits[0].detach().float().cpu()
+        legal = (ml > -1e8).numpy()
+        lp = torch.log_softmax(ml, -1).numpy()
+        return np.where(legal, lp, -np.inf).astype(np.float32)
+
+    def sample(masked_logits, temperature):
+        if player._keyed_seed is None or player._opp_dec is None:
+            raise RuntimeError("keyed sampler: no game key / decision index (per_game sets them)")
+        lpm = legal_logp(masked_logits)[None]
+        u = KD.keyed_uniforms(int(player._keyed_seed), KD.STREAM_OPPONENT, 0, 0, int(player._opp_dec))
+        a, m = KD.keyed_actions(lpm, np.atleast_1d(u), float(temperature))
+        player._keyed_margin = float(m[0])
+        return int(a[0])
+
+    orig_predict = player._predict_best_action
+    orig_choose = player.choose_move
+
+    def predict(battle, stochastic=False, need_aux=True, temperature=1.0):
+        player._keyed_margin = None
+        idx, probs, mask = orig_predict(battle, stochastic=stochastic, need_aux=need_aux, temperature=temperature)
+        if idx is not None and player._opp_dec is not None:
+            lp = legal_logp(player._last_masked_logits)
+            srt = np.sort(lp[np.isfinite(lp)])
+            margin = player._keyed_margin if player._keyed_margin is not None else (
+                float(srt[-1] - srt[-2]) if srt.size > 1 else float("inf"))
+            player._opp_row = [int(player._opp_dec), int(idx), int(np.argmax(lp)), float(margin)]
+        return idx, probs, mask
+
+    def choose_move(battle):
+        player._opp_dec, player._opp_row = len(player._keyed_log), None
+        try:
+            return orig_choose(battle)
+        finally:
+            if player._opp_row is not None:
+                player._keyed_log.append(player._opp_row)
+            player._opp_dec = None
+
+    player._predict_best_action = predict
+    player.choose_move = choose_move
+    if keyed:
+        player._action_sampler = sample
+
+
 #: The stream attribute of each bot RNG (``bot_inventory``'s streams → the player's attribute).
 _BOT_STREAM_ATTR = {"choice": "_choice_rng", "protect": "_protect_rng", "bait": "_rng"}
 
@@ -210,6 +283,10 @@ def _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, 
                 if stream == "choice" or hasattr(opponent, attr):
                     setattr(opponent, attr, _random.Random(s))
         trainee._choice_rng = _random.Random(SD.derived_seed(key, "p1choice"))
+        logged = getattr(opponent, "_keyed_log", None) is not None     # a policy opponent (install_opponent_log)
+        if logged:
+            opponent._keyed_seed = SD.sample_seed(key)
+            opponent._keyed_log = []
         before = set(trainee._battles)
         asyncio.run(run_local_battles(trainee, opponent, 1, concurrency=1, impl=bridge_impl, seed=list(words)))
         if game_log_path:
@@ -221,6 +298,7 @@ def _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, 
                                     "winner": 1 if b.won else (2 if b.lost else 0), "end_turn": int(b.turn),
                                     "actions": [d[0] for d in dl], "margins": [d[1] for d in dl],
                                     "logp": [d[2] for d in dl],
+                                    "opp": list(opponent._keyed_log) if logged else None,
                                     "seed": list(words)}) + "\n")
 
 
@@ -300,6 +378,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
             max_concurrent_battles=concurrency,
             stochastic=not sentinel_greedy, temperature=self_play_temp,
             start_listening=not use_bridge)
+        if per_game:
+            install_opponent_log(opponent, keyed=not sentinel_greedy)
     elif item.kind == FIXED:
         opp_model = _get_opponent_model(
             opp_model_cache, item.path,
@@ -314,6 +394,8 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
             max_concurrent_battles=concurrency,
             stochastic=False, temperature=1.0,  # eval = greedy yardstick
             start_listening=not use_bridge)
+        if per_game:
+            install_opponent_log(opponent, keyed=False)
     else:  # pragma: no cover - guarded by EvalItem.__post_init__
         raise ValueError(f"unknown item kind {item.kind!r}")
 

@@ -7,8 +7,21 @@ CPU forward — every game equal, metrics equal, the kept traces the same files 
 Teeth: a Python path on another cycle seed is caught as FATAL game differences; one tampered shard
 record is caught as a metric difference; the tie rule excuses only a flip under its margin.
 
-MILESTONE (``slow``): the production eval shape on CPU — nine bots + five sentinels x 25 games, shard 25,
-64 envs. GPU MILESTONE (``slow`` + ``GEN3AI_TEST_ALLOW_GPU=1`` under ``scripts/ops/gpu_lock.sh``):
+COMMIT, F-LH-10's two paths (routine, CPU):
+* FIXED opponents — two perturbed-fresh ``ext_`` opponents, one REUSING the training plan's stable slot
+  and pinned to two sample teams, one on its own eval slot (which starts with ANOTHER policy's weights
+  until ``build_eval_core`` loads it) on the pool; every game equal on both paths.
+* the SAMPLED sentinel regime (``--no-eval-sentinel-greedy``) — the Rust keyed draw vs the Python worker's
+  keyed sampler: every game equal AND every sentinel draw ``[decision, action]`` equal, with most draws
+  off the argmax (the regime samples); the greedy commit row's sentinels read 0 off-argmax.
+Teeth (the Python path re-run on one item of each row, one input mutated): a fixed opponent playing the
+TRAINEE's weights (the shape of the bug the fixed row found) and a sentinel sampling at another
+temperature are each FATAL.
+
+MILESTONE (``slow``): the fixed + sampled rows at a larger shape (three sampled sentinels at
+``--self-play-temp 0.8`` and two fixed opponents, one pinned to three teams, 6 games each, shard 3,
+12 envs). The production eval
+shape on CPU — nine bots + five sentinels x 25 games, shard 25, 64 envs. GPU MILESTONE (``slow`` + ``GEN3AI_TEST_ALLOW_GPU=1`` under ``scripts/ops/gpu_lock.sh``):
 a REAL trainee and five of its pool snapshots (``ai_v14_06_lbat_ctrl_fix``), T2 ``graph`` on CUDA vs the
 Python worker's COMPILED CPU forward (``--compile-opponents``' path), bar 1e-3.
 """
@@ -61,6 +74,69 @@ def test_commit_the_same_seed_set_plays_the_same_games_on_both_paths(commit_run)
     assert commit_run["rust_stats"]["lifecycle"] and not any(commit_run["rust_stats"]["lifecycle"].values())
 
 
+def test_commit_greedy_sentinels_never_draw_off_the_argmax(commit_run):
+    s = commit_run["sampled"]
+    assert s["sentinel_decisions"] > 0 and s["drawn_not_argmax"] == 0, s
+    assert commit_run["games"]["opp_games"] == 4, "each greedy sentinel game's decisions compared on both paths"
+
+
+@pytest.fixture(scope="module")
+def fixed_run(built, tmp_path_factory):
+    wd = tmp_path_factory.mktemp("laneH_fixed")
+    return PAR.run({"games": 3, "shard_games": 2, "sentinels": 0, "bots": [], "n_envs": 4, "device": "cpu",
+                    "backend": "eager", "bar": PAR.BAR_CPU, "seed": 20261003,
+                    "fixed": [{"pins": 2, "reused": True}, {"pins": 0}]}, str(wd))
+
+
+def test_commit_fixed_opponents_play_the_same_games_on_both_paths(fixed_run):
+    """F-LH-10 (1). The declared layout as `rust_env_setup` builds it: ext_fixed0 REUSES slot 0 (the
+    training plan's stable slot), ext_fixed1 has its own eval slot, LOADED at startup — without that
+    load it plays the group template's weights and its games are FATAL (found by this row)."""
+    _assert_pass(fixed_run)
+    g = fixed_run["games"]
+    assert g["equal"] == g["games"] == g["opp_games"] == 6, "and every fixed opponent decision compared"
+    assert fixed_run["rust_fixed_slots"] == [["ext_fixed0", 0], ["ext_fixed1", 2]]
+    ids = fixed_run["rust_slot_model_ids"]
+    assert ids[0] == "stable:ext_fixed0" and ids[2] == "eval:fixed:ext_fixed1", ids
+    assert fixed_run["rust_opp_teams"]["ext_fixed0"] == 2, "the 2-team pin must be SAMPLED, not its first team"
+    assert fixed_run["rust_stats"]["p2_policy_decisions"] > 0
+    assert not any(fixed_run["rust_stats"]["lifecycle"].values())
+
+
+@pytest.fixture(scope="module")
+def sampled_run(built, tmp_path_factory):
+    wd = tmp_path_factory.mktemp("laneH_sampled")
+    return PAR.run({"games": 2, "shard_games": 1, "sentinels": 2, "bots": [], "n_envs": 4, "device": "cpu",
+                    "backend": "eager", "bar": PAR.BAR_CPU, "seed": 20261004, "sentinel_greedy": False}, str(wd))
+
+
+def test_commit_the_sampled_sentinel_regime_plays_the_same_draws_on_both_paths(sampled_run):
+    """F-LH-10 (2). Both paths draw the KEYED draw keyed by the game, so the sampled regime is compared
+    game for game: every trainee action and every sentinel draw equal."""
+    _assert_pass(sampled_run)
+    g, s = sampled_run["games"], sampled_run["sampled"]
+    assert g["equal"] == g["games"] == 4 and not g["ties"]
+    assert g["opp_games"] == 4, "every sentinel game's draw stream must be compared"
+    assert g["opp_decisions"] == s["sentinel_decisions"] > 0
+    assert s["drawn_not_argmax"] >= 0.1 * s["sentinel_decisions"], s   # it SAMPLES (greedy reads 0)
+
+
+def test_teeth_a_fixed_opponent_playing_the_trainees_weights_is_fatal(fixed_run):
+    """The Python path's ext_fixed1 plays the TRAINEE's zip — what the Rust slot played before
+    ``build_eval_core`` loaded it: its games must be FATAL (the Rust games are the fixed row's own)."""
+    g = PAR.rerun_python(fixed_run["workdir"], keep=["ext_fixed1"], python_fixed_paths={"ext_fixed1": "trainee"},
+                         shards=[1], tag="trainee_swap")
+    assert g["games"] == 1 and g["fatal"] and not g["missing"], g
+
+
+def test_teeth_a_sentinel_sampling_at_another_temperature_is_fatal(sampled_run):
+    """The Python sentinel draws its keyed draw at T = 0.5 against the Rust path's 1.0: a DRAW differs."""
+    g = PAR.rerun_python(sampled_run["workdir"], keep=["sentinel_0"], python_self_play_temp=0.5, shards=[0],
+                         tag="temp")
+    assert g["games"] == 1 and g["fatal"] and not g["missing"], g
+    assert any("opp_first_diff" in r for r in g["fatal"]), g["fatal"]
+
+
 def test_teeth_another_seed_set_on_the_python_side_is_fatal(built, tmp_path):
     """The gate compares GAMES: a Python path on a different seed set must fail it."""
     rep = PAR.run({"games": 2, "shard_games": 2, "sentinels": 0, "n_envs": 4, "bots": ["heuristic", "staller"],
@@ -80,6 +156,36 @@ def test_teeth_the_judge_excuses_only_a_flip_under_the_tie_margin():
     assert len(r["ties"]) == 1 and not r["fatal"]
     assert len(PAR.compare_games([base], [fatal], 1e-5)["fatal"]) == 1
     assert len(PAR.compare_games([base], [outcome], 1e-5)["fatal"]) == 1, "equal actions, different end = FATAL"
+    # the sentinel's keyed draws ([dec, action, argmax, CDF margin]), compared only where both logged them
+    ob = dict(base, opp=[[0, 3, 3, 0.2], [1, 4, 2, 0.3]])
+    assert PAR.compare_games([ob], [dict(ob)], 1e-5)["equal"] == 1
+    assert PAR.compare_games([ob], [dict(base, opp=None)], 1e-5)["equal"] == 1, "one side unlogged = not compared"
+    near = dict(ob, opp=[[0, 3, 3, 0.2], [1, 5, 2, 1e-6]], winner=2)
+    r = PAR.compare_games([dict(ob, opp=[[0, 3, 3, 0.2], [1, 4, 2, 1e-6]])], [near], 1e-5)
+    assert len(r["ties"]) == 1 and r["ties"][0]["opp_first_diff"] == 1
+    far = dict(ob, opp=[[0, 3, 3, 0.2], [1, 5, 2, 0.3]])
+    assert len(PAR.compare_games([ob], [far], 1e-5)["fatal"]) == 1, "a draw flip above the margin = FATAL"
+    short = dict(ob, opp=[[0, 3, 3, 0.2]])
+    assert len(PAR.compare_games([ob], [short], 1e-5)["fatal"]) == 1, "a missing draw = FATAL"
+    both = dict(near, actions=[6, 9, 8])
+    r = PAR.compare_games([dict(ob, opp=[[0, 3, 3, 0.2], [1, 4, 2, 1e-6]])], [both], 1e-5)
+    assert len(r["fatal"]) == 1, "with no clock, a near-tie draw never excuses a trainee flip above the margin"
+    # on the Rust path's clock (turn, index within the turn): the EARLIEST first difference is judged
+    def clocked(trainee_turns, opp_turn):
+        rr = dict(ob, turns=trainee_turns, opp=[[0, 3, 3, 0.2, 1], [1, 4, 2, 1e-6, opp_turn]])
+        return PAR.compare_games([rr], [dict(both, opp=[[0, 3, 3, 0.2], [1, 5, 2, 1e-6]])], 1e-5)
+    assert len(clocked([1, 6, 7], 5)["ties"]) == 1, "an opponent tie at turn 5 excuses the trainee's turn-6 flip"
+    assert len(clocked([1, 5, 5], 5)["fatal"]) == 1, "a flip SIMULTANEOUS with the tie is judged on its own"
+    assert len(clocked([1, 4, 7], 5)["fatal"]) == 1, "a flip BEFORE the tie is judged on its own"
+    assert len(clocked([5, 5, 7], 5)["ties"]) == 1, "a forced switch after the tied move (same turn) is later"
+    # |Δ log p(chosen)| stops at the first divergence on EITHER stream: after the opponent's tied flip the
+    # trainee sees another state, so a later log-prob difference is no measurement of the two forwards
+    ra = dict(ob, turns=[1, 6, 7], opp=[[0, 3, 3, 0.2, 1], [1, 4, 2, 1e-6, 5]])
+    pb = dict(ob, logp=[-0.1, -0.9, -0.3], opp=[[0, 3, 3, 0.2], [1, 5, 2, 1e-6]])
+    r = PAR.compare_games([ra], [pb], 1e-5)
+    assert len(r["ties"]) == 1 and r["max_dlogp"] == 0.0
+    r = PAR.compare_games([ra], [dict(pb, logp=[-0.3, -0.9, -0.3])], 1e-5)
+    assert abs(r["max_dlogp"] - 0.2) < 1e-12, "a difference BEFORE the flip is measured"
 
 
 def test_teeth_a_tampered_shard_record_is_a_metric_difference(commit_run, tmp_path):
@@ -97,6 +203,18 @@ def test_teeth_a_tampered_shard_record_is_a_metric_difference(commit_run, tmp_pa
     d["sum_ep_len"] += 1.0
     shard.write_text(json.dumps(d))
     assert PAR.compare_metrics(r, p)["diffs"]
+
+
+@pytest.mark.slow
+def test_milestone_fixed_opponents_and_the_sampled_regime_on_cpu(built, tmp_path):
+    rep = PAR.run({"games": 6, "shard_games": 3, "sentinels": 3, "bots": [], "n_envs": 12, "device": "cpu",
+                   "backend": "eager", "bar": PAR.BAR_CPU, "seed": 20261006, "sentinel_greedy": False,
+                   "self_play_temp": 0.8, "fixed": [{"pins": 3, "reused": True}, {"pins": 0}]}, str(tmp_path))
+    _assert_pass(rep)
+    g = rep["games"]
+    assert g["games"] == 30 and g["equal"] + len(g["ties"]) == 30
+    assert g["opp_games"] + len(g["ties"]) == 30, "every policy opponent's decisions compared, both regimes"
+    assert rep["sampled"]["drawn_not_argmax"] > 0
 
 
 @pytest.mark.slow

@@ -330,6 +330,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/training/rust_eval/parity_test.py::test_milestone_fixed_opponents_and_the_sampled_regime_on_cpu": {
+   "status": "pass",
+   "commit": "c4ed9dc7697dbceb12f6572dcd99c196d375e0b4",
+   "at": "2026-09-30T18:50:15Z",
+   "duration_s": 275.04,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/training/rust_eval/parity_test.py::test_milestone_gpu_graph_backend_vs_the_compiled_python_worker_on_a_real_pool": {
    "status": "pass",
    "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
@@ -340,9 +348,9 @@
   },
   "src/agents/training/rust_eval/parity_test.py::test_milestone_the_production_eval_shape_on_cpu": {
    "status": "pass",
-   "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
-   "at": "2026-09-30T15:09:40Z",
-   "duration_s": 927.26,
+   "commit": "088582d179917a5eab0e93157fb6c5cde6ecfe3b",
+   "at": "2026-09-30T19:18:15Z",
+   "duration_s": 1319.58,
    "contention": 1.0,
    "detail": ""
   },
@@ -1083,5 +1091,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-09-30T16:22:38Z"
+ "last_written": "2026-09-30T19:18:15Z"
 }

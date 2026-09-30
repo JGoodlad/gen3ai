@@ -72,8 +72,10 @@ Four self-describing records, all metadata-only + additive (old readers unaffect
   PARENT's matchup and is expected to differ (every exploiter fork of a self-play parent does).
   Launcher restarts forward flags verbatim → never fire it.
 - **`eval_manifest.json` records the eval REGIME**: `matchup_hash`, `trainee_team_sha` (the pin
-  the trainee piloted; None = pool), `opponent_pins` ({ext label: sha} for fold-back-pinned
-  opponents) — a trace dir is self-describing about HOW its numbers were measured.
+  the trainee piloted; None = pool), `opponent_pins` ({ext label: sha} for a fold-back-pinned
+  opponent; a LIST of per-team shas for a MULTI-team one, every pin it is measured on —
+  `eval_callback.opponent_pins_of`; before 2026-09-30 only the first pin was recorded AND measured,
+  F-LH-13) — a trace dir is self-describing about HOW its numbers were measured.
 - **Checkpoint sidecars + `snapshot_history` entries carry `matchup_hash`** (via
   `record_checkpoint` → `_build_snapshot_entry`, like the `latest_eval` stamp) — each checkpoint
   is self-describing about what it was training against as of its save, robust to later eras.

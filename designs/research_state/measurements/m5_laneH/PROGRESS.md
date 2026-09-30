@@ -16,12 +16,15 @@ the core's three seams below (Lanes 0 / A / B / E files), `rust_rollout/build.py
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
-python3 -m pytest src/agents/training/rust_eval/ src/agents/training/eval_callback_rust_test.py \
-    src/main/prober/core_trace_test.py src/main/prober/core_trace_integration_test.py -q -m "not slow"   # ~80 s
-python3 -m pytest src/agents/training/rust_eval/parity_test.py -q -m slow -k cpu                      # CPU milestone, ~15 min
+python3 -m pytest src/agents/training/rust_eval/ src/agents/training/eval_callback_rust_test.py src/main/eval_worker_test.py \
+    src/main/prober/core_trace_test.py src/main/prober/core_trace_integration_test.py -q -m "not slow"   # ~4 min
+python3 -m pytest src/agents/training/rust_eval/parity_test.py -q -m slow -k production_eval_shape    # CPU milestone, ~15 min
+python3 -m pytest src/agents/training/rust_eval/parity_test.py -q -m slow -k fixed_opponents_and      # fixed + sampled milestone, ~5 min
 GEN3AI_TEST_ALLOW_GPU=1 scripts/ops/gpu_lock.sh python3 -m pytest \
     src/agents/training/rust_eval/parity_test.py -q -m slow -k gpu                                    # GPU milestone
 python -m agents.training.rust_eval.parity --games 25 --sentinels 5 --n-envs 64 --out gate.json      # the gate as a script
+python -m agents.training.rust_eval.parity --games 3 --sentinels 0 --bots heuristic --fixed 2r,0     # + fixed opponents
+python -m agents.training.rust_eval.parity --games 3 --sentinels 2 --bots heuristic --sampled        # the sampled regime
 ```
 
 ## Units
@@ -42,15 +45,28 @@ python -m agents.training.rust_eval.parity --games 25 --sentinels 5 --n-envs 64 
 |---|---|---|---|---|---|---|---|---|---|
 | COMMIT (routine) — 9 bots + 2 sentinels × 2 games, shard 1, 8 envs | perturbed fresh | eager CPU vs eager CPU | 22 / 22 | 0 | 0 | 1,038 | 8.4e-7 (1e-5) | EQUAL | 22 / 0 |
 | MILESTONE CPU (`gate_milestone_cpu.json`) — 9 bots + 5 sentinels × 25, shard 25, 64 envs (the production eval shape at 25 games) | perturbed fresh | eager CPU vs eager CPU | **350 / 350** | 0 | 0 | 17,508 | 1.28e-6 (1e-5) | **EQUAL** | 40 / 0 |
+| COMMIT FIXED (routine, F-LH-10 ①) — 2 fixed opponents × 3, shard 2, 4 envs, no bots: `ext_fixed0` REUSES the training plan's stable slot and pilots 2 pinned sample teams; `ext_fixed1` has its own eval slot, on the pool | perturbed fresh (+ 2 perturbed-fresh fixed) | eager CPU vs eager CPU | 6 / 6 | 0 | 0 | 324 (+ 345 fixed-opponent decisions) | 6.4e-7 (1e-5) | EQUAL | 6 / 0 |
+| COMMIT SAMPLED (routine, F-LH-10 ②) — 2 sentinels × 2, shard 1, 4 envs, no bots, `--no-eval-sentinel-greedy` at T = 1.0 | perturbed fresh | eager CPU vs eager CPU; the Python sentinel draws the SAME keyed draw | 4 / 4 | 0 | 0 | 349 (+ 348 sentinel draws equal; 287 off the argmax) | 6.6e-7 (1e-5) | EQUAL | 4 / 0 |
+| MILESTONE FIXED + SAMPLED (`slow`, ~4.6 min) — 3 sampled sentinels at T = 0.8 + 2 fixed (one reused, pinned to 3 teams) × 6, shard 3, 12 envs, no bots | perturbed fresh | eager CPU vs eager CPU | **29 / 30** | 1 (a FIXED opponent's greedy flip: top-2 log-probs exactly equal on the Rust path, 2.4e-7 apart on the Python one; judged at its own decision) | 0 | 3,910 (+ 3,898 opponent decisions; 1,157 / 1,402 sentinel draws off the argmax) | 9.9e-7 (1e-5) | tie ⇒ not compared | 27 / 0 (the tied unit's traces left out) |
 | MILESTONE GPU (`gate_milestone_gpu.json`) — 9 bots + 5 sentinels × 20, shard 25, 64 envs | `ai_v14_06_lbat_ctrl_fix` final + 5 of its pool snapshots (32M … 82M) | T2 `graph` CUDA (lanes 6, buckets 8/48) vs the Python worker's COMPILED CPU extractor | **279 / 280** | 1 (margins 4.8e-7 / 9.5e-7, the game still ended equal) | 0 | 9,242 | 1.48e-5 (1e-3) | **EQUAL** | 40 / 0 |
 
-Every game's winner, end turn and every trainee action; the pooled metrics (win rates, reward means,
+Every game's winner, end turn and every trainee action; since the fixed / sampled rows, every POLICY
+opponent's decision `[decision index, action]` too (the Python worker logs its sentinel / fixed opponent
+in per-game mode — the COMMIT row's 2 greedy sentinels add 254 compared decisions; the CPU MILESTONE,
+re-run under the new judge on 2026-09-30, 350 / 350 again with 8,817 sentinel decisions compared, 22 min); the pooled metrics (win rates, reward means,
 episode lengths, exact W/L counts, draws, trace-selection tuples; TD tails within 1e-4); the same trace
 FILES kept on both sides (same games, same names), and each Rust core trace expanding in the prober to
 the Python trace's decisions (turn, phase, chosen, both actives). Lifecycle: every core and T2
 `*_after_freeze` counter 0 after every cycle. Teeth: a Python path on another seed set is FATAL; one
-tampered shard record is a metric difference; the tie rule excuses only a flip under its margin; the
-default `"env"` bot-stream rule demonstrably depends on history (`core_seams_integration_test`).
+tampered shard record is a metric difference; the tie rule excuses only a flip under its margin, on
+either stream, judged at the EARLIEST first difference on the Rust path's clock (turn, index within the
+turn) — a later difference on the other stream is its consequence, a simultaneous or earlier one is
+judged on its own; the default `"env"` bot-stream rule demonstrably depends on history
+(`core_seams_integration_test`). The fixed / sampled rows' teeth re-run the Python path on one item with
+one input mutated, on one shard unit (`parity.rerun_python`, ~10 s each): a fixed opponent playing the
+TRAINEE's weights (what the unloaded slot played, F-LH-12) is FATAL at the opponent's own second
+decision; a sentinel sampling at T = 0.5 against the Rust path's 1.0 is FATAL at its fourth draw. Reverting the fixed-slot load fails the fixed row (checked by hand:
+3 FATAL `ext_fixed1` games, max |Δ logp| 4.3e-2) and `rust_eval/build_test.py`.
 
 **The M5 registry** (`python -m main.rust_core_m5 gates --tier milestone --lanes H --gpu`, 2026-09-30,
 `m5_laneJ/results/gates_milestone_lanes_H.json`): **H PASS 29/0/0/0, GPU part PASS**; with E (30/0, GPU PASS)
@@ -135,11 +151,54 @@ was live.
   core's terminal from the COLLECTOR's resolved `RewardConfig.from_args` — the same config on every run
   whose argv and `model_config.json` agree (the gate derives both from `model_config.json`).
 - **F-LH-9:** the expansion replays each core trace once per prober process (0.03–0.7 s; cached in memory).
-- **F-LH-10 (not exercised):** fixed / stable opponents on the Rust eval path (their slots are declared and
-  reused from the training plan; no gate game used one); the sampled-sentinel regime
-  (`--no-eval-sentinel-greedy`: keyed draw keyed by the game — distribution-equal only, no gate); a p2
-  forfeit in a trace expansion. (The launcher's restart loop around a Rust-eval run is CLOSED with
-  F-LG-6, 2026-09-30: the eval core re-declares on every interval and crash restart.)
+- **F-LH-10 (unexercised paths) — two of four now GATED (2026-09-30):**
+  - **① fixed / stable opponents: GATED** (the COMMIT FIXED row + the `slow` row above; it found
+    F-LH-12). A reused slot and an eval slot, a pinned multi-team opponent and a pool one, both paths
+    game for game and decision for decision. **Not proven:** the fixed opponents are perturbed-fresh
+    policies of the TRAINEE's architecture (one slot group — the harness refuses another; a fixed
+    opponent of a different architecture, which gets its own group, is unexercised); the "reused" slot is
+    loaded by the harness the way the training host's `admit` loads it, not by a real
+    `build_collector` + `RustEnvOpponents`; `rust_env_setup`'s own call (`fixed_policies=sources.stable`)
+    and the callbacks' `--stable-opponents` / `--exploiter` wiring ran in no gate game (no launch smoke:
+    it would put the trainer on this box); CPU eager only.
+  - **② the sampled-sentinel regime: GATED GAME FOR GAME** (the COMMIT SAMPLED row + the `slow` row at
+    T = 0.8). The per-game Python worker's sampled sentinel now draws the Rust core's KEYED draw
+    (`eval_worker.install_opponent_log`, gate-only, through RLPlayer's `_action_sampler` hook), so both
+    paths draw at the same key — (the game's sample seed, the opponent stream, env 0, episode 0, the
+    decision index) — and every draw is compared; 82–85 % of draws land off the argmax, so the regime
+    SAMPLES (the greedy row reads 0). **Not proven:** that the LIVE Python eval's sampled regime (torch's
+    global generator) is the same DISTRIBUTION — the keyed draw's inverse-CDF construction is pinned by
+    `keyed_draw_test`, not measured against torch here; the keyed Python sampler exists only in per-game
+    mode, so the regime's equality is between the Rust executor and an independent implementation of the
+    SAME rule (it catches a wrong key, temperature, decision index, team builder or weights, not a wrong
+    rule); CPU eager only.
+  - **Still unexercised:** a p2 forfeit in a trace expansion. (The launcher's restart loop around a
+    Rust-eval run is CLOSED with F-LG-6, 2026-09-30: the eval core re-declares on every interval and
+    crash restart.)
+- **F-LH-12 (MAJOR, FIXED 2026-09-30 — found by the fixed row):** a fixed opponent's EVAL slot was never
+  loaded. T2 starts every slot with its GROUP TEMPLATE's weights, a same-architecture fixed slot joins the
+  trainee's group, and neither `build_eval_core` nor `run_cycle` loaded the non-reused fixed slots — so
+  under `--env-core rust`, `--stable-opponents` WITHOUT `--self-play` (no stable training route, nothing
+  to reuse) measured every `ext_` opponent against the TRAINEE's startup weights. An `--exploiter` target
+  was right only by accident (its training route is the group's first slot, so the template IS the target).
+  No run was affected: no run has used `--env-core rust` for eval. Fix: `rust_eval.build.load_fixed_slots`
+  (called by `build_eval_core`, which now takes `fixed_policies`; `rust_env_setup` passes
+  `sources.stable`); pinned by `rust_eval/build_test.py` and the fixed row.
+- **F-LH-13 (FIXED — the Python path, pre-existing):** both eval callbacks built a FIXED item with only
+  `team_str`, dropping `FixedOpponentEntry.to_cfg()`'s `team_strs`, so the Python worker measured a
+  MULTI-team specialist on its FIRST team alone while the Rust eval core (and training) sampled all of
+  them. Both now call `EvalItem.fixed_from_cfg`; pinned by `eval_worker_test`. A live run with a
+  multi-team `--stable-opponents` / `--exploiter` target measures that opponent differently from here on
+  (its `ext_` / vs-target win rate is not comparable across this commit). `eval_manifest.json`'s
+  `opponent_pins` now records EVERY pinned team (a list of per-team shas, `opponent_pins_of`; pinned by
+  `eval_callback_test`). Past exposure: 20 of 272 runs in `models/` evaluated a multi-team fixed
+  opponent on its first team (ledger 2026-09-30 BOUNDARY entry; a read-only verdict audit is dispatched).
+- **F-LH-14 (gate defects, FIXED):** (a) an OPPONENT's near-tie flip was invisible — it surfaced turns
+  later as a trainee difference above the margin, FATAL (the `slow` row's first run failed exactly so);
+  the opponent stream is now logged and judged. (b) With a declared tie, `compare_traces` still compared
+  the tied unit's traces (a tied game diverges; the unit's later quota decisions follow its outcome), so
+  any tie that fell in the trace sample failed the gate; now left out per (item, shard) unit. (c) max
+  |Δ logp| ran past an opponent's flip; it now stops at the first divergence on either stream.
 
 - **F-LH-11 (harness hazard, Lane J's):** `python -m main.rust_core_m5 gates … --gpu` takes
   `/home/goodlad/.claude/jobs/gpu.lock` ITSELF around its GPU pytest. Wrapping the whole command in
@@ -153,5 +212,7 @@ Units 1–7 built; the registry row BUILT. What remains before a CUTOVER (none o
 
 1. ~~F-LH-5: the non-prober trace readers onto `load_summary` (or a loud refusal).~~ DONE 2026-09-30.
 2. F-LH-2: background (filler) eval, if the SIZING study's N makes the blocking cycle expensive.
-3. F-LH-10's unexercised paths: a gate row with a fixed opponent and one with the sampled regime.
+3. F-LH-10: fixed opponents and the sampled regime are GATED (F-LH-12 fixed on the way); left: a p2
+   forfeit in a trace expansion, a different-architecture fixed opponent, and a launch smoke of
+   `--env-core rust --stable-opponents` without `--self-play` (the path F-LH-12 broke).
 4. ~~The launcher restart / pin path on a Rust-core run~~ — CLOSED with Lane G's F-LG-6 (2026-09-30).

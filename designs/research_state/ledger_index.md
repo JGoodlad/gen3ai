@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,582-line file. **The ledger itself is append-only and is never edited by this**;
+21,607-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**732 headings · 677 dated · 2026-08-01 → 2026-09-30 · ledger 21,582 lines.**
+**733 headings · 678 dated · 2026-08-01 → 2026-09-30 · ledger 21,607 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -752,3 +752,4 @@ rename.
   - `L21509` · `2026-09-30` · BOUNDARY · **DOSE COUNT (K10(c), commit `55a7846f`): `main.dose` now counts a SHORT final gradient-accumulation group as a FULL optimizer step, so every run with a RAGGED shape reads a HIGHER dose than the figures this ledger quotes — 4/3 higher at 98,304 rows / 2,048 × 32. Every dose figure in an entry dated before this one is on the OLD count. Ratios between runs of the SAME shape are unchanged (the `best_response_gap` era-2 / era-1 refusal still reads 4.55×); ratios ACROSS shapes move.**
   - `L21515` · `2026-09-30` · MEASUREMENT · **X4 PRE-READ — THE CRITIC IS BLIND TO THE MOVES THE POLICY STARVES: one-ply counterfactual Q̂ from each checkpoint's own win-prob critic puts the policy's STARVED near-best moves in its top-2 at CHANCE (0.20–0.25 vs ~0.27), where it puts the near-best moves the policy FEEDS at 0.44–0.48. Its ARGMAX still beats the policy's argmax by +0.04 to +0.06 truth value on decisive turns (3/3). One-ply labels can teach an argmax. They cannot rescue starved moves.**
   - `L21552` · `2026-09-30` · MILESTONE · **M5 GATE MET — every lane of the Rust env core passes its own parity gate at the milestone tier (E, T2 and H with their GPU parts), slice N and the depth-3 successor slice pass, and the throughput A/B is measured: on the production 95 / 5 self-play mix at 48 envs the Rust core runs 5.11× [4.72, 5.63] the trainee decisions/s of today's path (3,780 vs 743) at 0.038× [0.037, 0.039] the CPU per decision, and an eval cycle takes ≈ 16.5 s vs ≈ 117 s. PYTHON IS STILL THE DEFAULT env core (`--env-core python`); nothing a run reads has moved.**
+  - `L21583` · `2026-09-30` · BOUNDARY · **LIVE PYTHON EVAL MEASURED A MULTI-TEAM FIXED OPPONENT ON ITS FIRST TEAM ONLY (F-LH-13). From this commit a `--stable-opponents` / `--exploiter` opponent that is a multi-team specialist is evaluated sampling among ALL its pinned teams, as it trains, so its `ext_` / vs-target eval win rate is NOT comparable across this commit. 20 of 272 runs in `models/` evaluated such an opponent. Bots, sentinels and single-team opponents are unchanged. Also a pre-data fix: under `--env-core rust`, a non-reused fixed opponent's eval slot was never loaded (F-LH-12).**

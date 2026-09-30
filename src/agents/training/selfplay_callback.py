@@ -65,13 +65,14 @@ from agents.training.eval_callback import (
     replay_last_eval_to_tui,
     spawn_eval_workers,
     launch_rust_eval_cycle,
+    opponent_pins_of,
     write_eval_manifest,
 )
 from agents.training.artifact_retention import (
     prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
     KEEP_EVAL_TRACE_STEPS_DEFAULT,
 )
-from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT, SENTINEL, FIXED
+from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT, SENTINEL
 from agents.training.snapshot_pool import (
     SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
@@ -427,9 +428,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         items = [EvalItem(name, BOT, n_games) for name in bot_names]
         items += [EvalItem(s["label"], SENTINEL, n_games, path=s["path"], step=s["step"])
                   for s in sentinels]
-        items += [EvalItem(f["label"], FIXED, n_games, path=f["path"],
-                           config_path=f.get("config_path"), team_str=f.get("team_str"))
-                  for f in fixed_cfgs]
+        items += [EvalItem.fixed_from_cfg(f, n_games) for f in fixed_cfgs]
         pool = ShardedEvalPool(items, self._eval_shard_games, step=step)
         pool.write_plan(run_dir)
 
@@ -437,7 +436,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         write_eval_manifest(self._model_dir, step,
                             opponents=bot_names + sentinel_labels + fixed_labels, n_games=n_games,
                             trainee_team_str=self._trainee_team_str,
-                            opponent_pins={e.label: e.team_str for e in self._fixed_opponents},
+                            opponent_pins=opponent_pins_of(self._fixed_opponents),
                             quota=self._forensic_quota)
         # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
         # the resume re-eval fires at the same step every restart, so a step tag collided

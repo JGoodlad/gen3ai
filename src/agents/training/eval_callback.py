@@ -93,6 +93,20 @@ def _read_run_identity(model_dir: str) -> tuple:
     return git_hash, arch_signature, config_version
 
 
+def opponent_pins_of(fixed_opponents) -> dict:
+    """``{ext label: the opponent's pinned team(s)}`` for :func:`write_eval_manifest` — EVERY pinned team.
+
+    A multi-team specialist is measured sampling among ALL its pins (``EvalItem.fixed_from_cfg``,
+    F-LH-13), so the manifest records all of them (a LIST, fingerprinted per team by ``_sha``); a
+    single-team opponent keeps the one-sha shape. Until 2026-09-30 both callbacks passed ``team_str``
+    (the FIRST pin) and the manifest misdescribed a multi-team opponent as single-team."""
+    out = {}
+    for e in fixed_opponents:
+        strs = [t for t in (getattr(e, "team_strs", None) or ()) if t]
+        out[e.label] = strs if len(strs) > 1 else (strs[0] if strs else getattr(e, "team_str", None))
+    return out
+
+
 def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
                         snapshot: "str | None" = None,
                         trainee_team_str: "str | list[str] | None" = None,
@@ -110,8 +124,9 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
     numbers were measured (the OOD-eval era was invisible precisely because this was missing):
     ``matchup_hash`` (the run's declared-matchup tag, read from the run metadata),
     ``trainee_team_sha`` (the pin the trainee piloted — None = the default pool builder), and
-    ``opponent_pins`` ({ext label: sha} for stable/exploiter opponents measured on their OWN
-    pinned team — the fold-back contract).
+    ``opponent_pins`` ({ext label: sha, or a LIST of per-team shas for a multi-team opponent} for
+    stable/exploiter opponents measured on their OWN pinned team(s) — the fold-back contract;
+    :func:`opponent_pins_of`).
 
     It ALSO records the trace SELECTION (`gen3_trace_selection_manifest_v1`): `selection_rule`
     names the outcome quota in words, and `selection` is filled in at COLLECT time by
@@ -1567,9 +1582,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # single source of truth for the items + shard split — workers and collect read it.
         fixed_cfgs = [e.to_cfg() for e in self._fixed_opponents]
         items = [EvalItem(name, BOT, n_games) for name in eval_opponent_names()]
-        items += [EvalItem(f["label"], FIXED, n_games, path=f["path"],
-                           config_path=f.get("config_path"), team_str=f.get("team_str"))
-                  for f in fixed_cfgs]
+        items += [EvalItem.fixed_from_cfg(f, n_games) for f in fixed_cfgs]
         names = [it.key for it in items]
         pool = ShardedEvalPool(items, self._eval_shard_games, step=step)
         pool.write_plan(run_dir)
@@ -1578,7 +1591,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # it to the retained filename on success when --keep-eval-snapshots is set.
         write_eval_manifest(self._model_dir, step, opponents=names, n_games=n_games,
                             trainee_team_str=self._trainee_team_str,
-                            opponent_pins={e.label: e.team_str for e in self._fixed_opponents},
+                            opponent_pins=opponent_pins_of(self._fixed_opponents),
                             quota=self._forensic_quota)
         # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
         # the resume re-eval fires at the same step every restart, so a step tag collided

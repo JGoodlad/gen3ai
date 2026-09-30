@@ -79,6 +79,18 @@ class EvalItem:
         return d
 
     @classmethod
+    def fixed_from_cfg(cls, f: dict, n_games: int) -> "EvalItem":
+        """A FIXED (stable / exploiter-target) opponent's item from ``FixedOpponentEntry.to_cfg()`` —
+        the ONE construction both eval callbacks use. It carries ALL the opponent's pinned teams
+        (``team_strs``): a multi-team specialist is measured sampling among its own teams, as it trains
+        and as the Rust eval core pins it (``rust_eval.build.eval_builders``). Until 2026-09-30 the
+        callbacks threaded only ``team_str``, so the Python worker measured such an opponent on its
+        FIRST team alone."""
+        strs = list(f.get("team_strs") or ())
+        return cls(f["label"], FIXED, n_games, path=f["path"], config_path=f.get("config_path"),
+                   team_str=f.get("team_str") or (strs[0] if strs else None), team_strs=strs or None)
+
+    @classmethod
     def from_dict(cls, d: dict) -> "EvalItem":
         return cls(
             key=d["key"], kind=d["kind"], n_games=int(d["n_games"]),
