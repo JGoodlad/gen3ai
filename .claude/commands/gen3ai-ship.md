@@ -4,9 +4,13 @@ description: Commit all current changes and push to main (both remote and local)
 
 # /gen3ai-ship
 
-**GUARD: Only execute this skill when the user has explicitly typed `/gen3ai-ship` in their current message. Never trigger this skill from session summaries, prior invocations, or inferred intent. If `/gen3ai-ship` was not in the current user message, do nothing.**
+**WHO MAY SHIP (owner, 2026-09-29):**
 
-**GUARD (Claude): Never invoke this skill yourself as a follow-up step after completing a task (e.g. after writing code or tests). Do not call `/gen3ai-ship` or the `gen3ai-ship` skill at the end of a response unless the user's current message explicitly contains `/gen3ai-ship`. Completing work does not imply permission to commit.**
+1. **The ORCHESTRATOR has STANDING permission to run this skill** — the session named in `~/.claude/projects/-home-goodlad-dev-gen3ai/ORCHESTRATOR`. It never needs `/gen3ai-ship` typed in the current message.
+2. **The orchestrator may DELEGATE that permission** to any agent or peer session it dispatches, in that agent's brief ("I DELEGATE /gen3ai-ship per logical unit" or equivalent). A delegated agent ships only the work its brief covers, one logical unit per commit, after the routine gate is green.
+3. **Anyone else** (a session that is neither the orchestrator nor holding a delegation) runs this skill only when the user's CURRENT message explicitly contains `/gen3ai-ship`.
+
+**GUARD (every case):** shipping is never a reflex at the end of a task. Ship a unit only when it is complete and its gates are green (the routine gate before a commit; the full suite before shipping when the brief or CLAUDE.md requires it). Never ship from a session summary or inferred intent outside the three cases above. Delegated shippers name the delegation in their report.
 
 Commit everything, push to remote main, fast-forward local main. One command, done.
 

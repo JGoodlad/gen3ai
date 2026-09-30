@@ -102,7 +102,7 @@ git push origin <worktree-branch>:main
 
 Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
-🚨 **NEVER run `git add`, `git commit`, or `git push` unless the user's current message explicitly contains `/gen3ai-ship`.** Completing a task, writing tests, or any other finishing signal is NOT permission to commit. This applies even when the task feels "done".
+🚨 **Who may commit and push (owner, 2026-09-29):** the ORCHESTRATOR session (named in `~/.claude/projects/-home-goodlad-dev-gen3ai/ORCHESTRATOR`) holds STANDING `/gen3ai-ship` permission and may DELEGATE it to agents it dispatches (in the brief, per logical unit); everyone else runs `git add` / `git commit` / `git push` only when the user's current message explicitly contains `/gen3ai-ship`. In every case, finishing a task is NOT by itself a reason to commit — ship a complete unit with green gates. Detail: `.claude/commands/gen3ai-ship.md`.
 
 ---
 
