@@ -99,8 +99,10 @@ def check_opponent_parity(model: Any, original: Callable[[Any], Any],
     ``fe.forward`` exactly as it found it and the weights bit-identical."""
     from agents.model.compile_gate_probe import has_policy_heads
     from agents.model.compile_parity_fixture import ParityFixtureError, load_parity_rows
-    from agents.model.compile_trainer import (_FP32_TOL, CompileTrainerError, decision_verdicts)
-    from agents.model.parity_probe import fresh_reason, perturbed_parameters
+    from agents.model.compile_trainer import (_FP32_TOL, CompileTrainerError,
+                                              VacuousCompileParityError, decision_verdicts)
+    from agents.model.parity_probe import (PERTURB_LADDER, fresh_reason, perturbed_parameters,
+                                           rung_seed)
 
     policy = getattr(model, "policy", None)
     fe = getattr(policy, "features_extractor", None)
@@ -127,11 +129,24 @@ def check_opponent_parity(model: Any, original: Callable[[Any], Any],
         lines: List[str] = []
         try:
             if fresh is not None:
-                with perturbed_parameters(policy):
-                    p_eager = _arm(model, fe, original, x, m)
-                    p_comp = _arm(model, fe, compiled, x, m)
-                lines += ["[fresh weights, seeded perturbation] " + r for r in decision_verdicts(
-                    eager=p_eager, compiled=p_comp, precision="highest")]
+                # gen3_parity_perturb_ladder_v1: the first INFORMATIVE rung of the declared ladder
+                # judges (a collapsed critic can stay vacuous on V at the fresh-weights scale); a
+                # rung that is still vacuous moves on, a real divergence raises at once, and no
+                # informative rung re-raises the last vacuity refusal.
+                for n_rung, (scale, k) in enumerate(PERTURB_LADDER):
+                    with perturbed_parameters(policy, seed=rung_seed(k), scale=scale):
+                        p_eager = _arm(model, fe, original, x, m)
+                        p_comp = _arm(model, fe, compiled, x, m)
+                    try:
+                        rules = decision_verdicts(eager=p_eager, compiled=p_comp,
+                                                  precision="highest")
+                    except VacuousCompileParityError:
+                        if n_rung == len(PERTURB_LADDER) - 1:
+                            raise
+                        continue
+                    lines += [f"[fresh weights, seeded perturbation scale={scale:g} seed+{k}] " + r
+                              for r in rules]
+                    break
             lines += decision_verdicts(eager=eager, compiled=comp, precision="highest",
                                        allow_vacuous=fresh is not None)
         except CompileTrainerError as exc:

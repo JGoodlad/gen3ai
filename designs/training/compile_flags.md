@@ -812,8 +812,27 @@ train-graph coverage fix below closes that). **Measured** (M5 T2,
   (seed `20260929`, scale 0.05), with the SAME installed compiled graph. Parameters are graph
   inputs, so the change neither recompiles nor escapes the graph. The noise comes from a private CPU
   generator, so training's RNG stream is untouched. The parameters are restored bit-exactly and
-  re-checked; a mismatch raises. Its verdicts are prefixed `[fresh weights, seeded perturbation]` in
-  the PASS line, and a `[CompileTrainer] FRESH weights (…)` line says it ran.
+  re-checked; a mismatch raises. Its verdicts are prefixed `[fresh weights, seeded perturbation
+  scale=X]` in the PASS line, and a `[CompileTrainer] FRESH weights (…)` line says it ran and at
+  which scale.
+- **The LADDER (`gen3_parity_perturb_ladder_v1`, 2026-09-30).** The scale is not fixed. The gate
+  walks the DECLARED ladder `parity_probe.PERTURB_LADDER` — (scale, seed offset) rungs, 0.05 then
+  0.1, 8 seeds each, the scale capped at `PERTURB_MAX_SCALE` = 0.1 — and judges at the FIRST rung
+  whose EAGER arm is informative on every rule. It tests that by running
+  the rules on the eager arm against itself, where every delta is 0, so only a vacuity guard can
+  fire. No informative rung ⇒ `VacuousCompileParityError` (`FATAL_CONFIG`) naming each rung.
+  - Why: a COLLAPSED win-prob critic stays vacuous on V at the fresh-weights rung. The pre-fix gate
+    would have refused a resume onto such a checkpoint (`VacuousCompileParityError`, `FATAL_CONFIG`).
+  - Why capped, with seeds instead of larger scales: the bars are absolute, and the perturbed
+    network's compiled-vs-eager noise grows steeply with the scale. Measured on the inference
+    decision (RTX 3080 Ti, fp32): |Δ log π| ≤ 4.5e-6 at 0.1, up to 1.7e-3 at 0.2, 0.66 at 0.5. A
+    critic saturated beyond what 0.1 moves (win logit ≈ −12) is refused.
+  - A fresh policy's rung is 0.05, so every fresh launch is unchanged.
+  - ⚠️ **UNVERIFIED on CUDA at the 0.1 rungs:** whether this gate's per-parameter GRADIENT bar
+    (1e-3, measured at 0.05 on fresh weights) holds at 0.1 with a real `torch.compile`. The forward
+    decision's noise at 0.1 is measured (above); the backward's is not.
+  - The `--compile-opponents` gate (`opponent_parity.py`) and the T2 inference service walk the
+    same ladder.
 - **Fail-closed.** `decision_verdicts` / `train_verdict` refuse a vacuous comparison
   (`VacuousCompileParityError`, a `CompileTrainerError`, so it is `FATAL_CONFIG`). Only the gate's
   own real-weights pass waives the check with `allow_vacuous=True`, and only after the perturbed
@@ -830,8 +849,10 @@ weights, and PASSES the pre-fix gate.
 
 The inference service's parity gate (`agents.inference.service`) does the same per slot. A
 `VacuousParity` (a `ParityFailure`) triggers a re-run of the slot on the perturbed weights, in place
-in the group's stacked storage, which the CUDA graphs read. The real weights then run with the check
-waived.
+in the group's stacked storage, which the CUDA graphs read, up the same ladder
+(`ServiceSpec.perturb_ladder`). The real weights then run with the check waived. Each verdict
+records its path (`ParityReport.path`). A refusal exits the trainer `FATAL_CONFIG`
+(`main.exit_codes`), because a restart would replay it.
 
 **The train graph's COVERAGE (`gen3_gate_grad_coverage_v1`, 2026-09-29).** Until this change the
 train-graph check backpropagated `mean pi² + mean vf²`, a loss over the extractor's two feature

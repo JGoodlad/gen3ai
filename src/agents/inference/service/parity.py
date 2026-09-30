@@ -39,10 +39,15 @@ class ParityReport:
     value_max: float
     near_ties: int
     lines: Tuple[str, ...]
+    #: WHICH PATH produced this verdict (gen3_parity_perturb_ladder_v1): ``"real"`` (the real
+    #: weights, vacuity guard ON — informative on their own), ``"perturbed seed=S scale=X"`` (the
+    #: informative rung of the ladder, guard ON), or ``"real (vacuity waived)"`` (the real weights
+    #: judged after that rung passed on the same slot and graph).
+    path: str = "real"
 
     def line(self) -> str:
         return (f"{self.where}: {self.rows} rows, max|dlogp| {self.legal_logprob_max:.2e}, "
-                f"max|dV| {self.value_max:.2e}, near-ties {self.near_ties}")
+                f"max|dV| {self.value_max:.2e}, near-ties {self.near_ties} [{self.path}]")
 
 
 class _precision:
@@ -68,14 +73,14 @@ def fixture_rows(obs_dim: int, n: int) -> Tuple[np.ndarray, np.ndarray]:
 
 def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
           served: Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-          allow_vacuous: bool = False) -> ParityReport:
+          allow_vacuous: bool = False, path: str = "real") -> ParityReport:
     """Compare ``served = (logp, value, greedy)`` for ``obs``/``mask`` against the eager reference.
     Raises `ParityFailure` naming ``where`` and the quantity; returns the report on a pass.
 
     A comparison that cannot bite — the eager legal log-probs constant within every row (a FRESH
     policy) or V constant across rows — raises `VacuousParity` (a `ParityFailure`) unless
     ``allow_vacuous``, which only a caller that has judged the SAME slot on a seeded perturbation of
-    its weights may pass (`InferenceService._gate`)."""
+    its weights may pass (`InferenceService._gate`). ``path`` is recorded on the report."""
     from agents.model.compile_trainer import (CompileTrainerError, VacuousCompileParityError,
                                               decision_verdicts)
 
@@ -120,7 +125,8 @@ def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
     d_lp = float((comp["legal_logprob"] - eager["legal_logprob"]).abs().max())
     d_v = float((comp["value"] - eager["value"]).abs().max())
     return ParityReport(where=where, rows=int(obs.shape[0]), legal_logprob_max=d_lp,
-                        value_max=d_v, near_ties=int((~decisive).sum()), lines=tuple(lines))
+                        value_max=d_v, near_ties=int((~decisive).sum()), lines=tuple(lines),
+                        path=path)
 
 
 def _legal(logp: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -129,10 +135,10 @@ def _legal(logp: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
 
 def gate_slot(*, where: str, policy: object, obs_dim: int, bucket: int, device: torch.device,
               serve: Callable[[np.ndarray, np.ndarray], Tuple[torch.Tensor, ...]],
-              allow_vacuous: bool = False) -> Tuple[ParityReport, ...]:
+              allow_vacuous: bool = False, path: str = "real") -> Tuple[ParityReport, ...]:
     """Run ``serve`` (the backend under test, one slot) on the fixture at ``bucket`` rows AND at a
     partially-filled ``bucket - 1`` rows (pad rows), and judge both. Returns both reports.
-    ``allow_vacuous`` is `judge`'s."""
+    ``allow_vacuous`` and ``path`` are `judge`'s."""
     reports = []
     for n in sorted({int(bucket), max(1, int(bucket) - 1)}, reverse=True):
         obs, mask = fixture_rows(obs_dim, n)
@@ -141,5 +147,5 @@ def gate_slot(*, where: str, policy: object, obs_dim: int, bucket: int, device: 
         m = torch.as_tensor(mask, device=device)
         reports.append(judge(where=f"{where} rows={n}", policy=policy, obs=o, mask=m,
                              served=(served[0], served[1], served[2]),
-                             allow_vacuous=allow_vacuous))
+                             allow_vacuous=allow_vacuous, path=path))
     return tuple(reports)

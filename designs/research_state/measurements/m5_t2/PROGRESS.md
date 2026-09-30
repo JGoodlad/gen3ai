@@ -130,3 +130,99 @@ all three `*_after_freeze` counters 0.
 - **A fresh production-arch policy is a vacuous log-prob probe** (zero-init pointer head ⇒ constant
   logits): the AOT miscompile read 0.0 on it and 0.68 on a real checkpoint. Any parity test on
   fresh weights must perturb them (`fixtures.perturbed_fresh_policy`).
+
+## Flat weights — the perturbation LADDER (gen3_parity_perturb_ladder_v1, 2026-09-30)
+
+**The refusal.** The cutover-prep CPU launcher runs (`~/gen3ai_archive/cutover_prep/fresh2`,
+`fresh3`: `--arch production --critic winprob --env-core rust`, 4 envs, 64-step rollouts) died at
+step ~14–16k in `collector.after_update` → `svc.load(trainee)` with `VacuousParity`. Every restart
+then refused the SAME weights at T2 STARTUP (the resume loads `final_model_exception.zip`), three
+crashes in a row until the circuit breaker stopped it. The trainee had lost ~97 % of its games, so
+its win-prob critic COLLAPSED: the head saturated at logit −8…−10, V spread 6e-6 across the fixture.
+The gate's single perturbation (0.05) only lifted V's spread to **9.58e-5**, under the 1e-4 bar.
+It is a collapsed critic, NOT fresh weights.
+
+**Does a FRESH production run hit it? No, at startup.** Measured on CPU, on the 8/7-row fixture that
+the smallest bucket judges. Fresh production policies (seeds 0/1/2) have V spread **0.06–0.68**
+with only the log-probs vacuous (0.0), and the 0.05 rung makes both informative (log-prob spread
+≥ 0.41, V ≥ 0.19). The existing fallback passes them, so a fresh `--arch production` launch starts.
+The exposure was a run whose critic collapses, at its next trainee load, at a pool / eval load of
+such a snapshot, and at every restart onto it. The eval core loads through the same `svc.load`.
+
+**Spreads, CPU, min over the 8/7/48/47/128/127-row fixtures (V spread; bar 1e-4):**
+
+| weights | real | 0.05 | 0.1 | 0.2 | 0.5 | 1.0 |
+|---|---|---|---|---|---|---|
+| fresh3 `final_model_exception` | 5.9e-6 | **9.6e-5** | 2.4e-3 | 2.9e-3 | 1.2e-2 | 1.0 |
+| fresh3 `checkpoint_1024_steps` | 5.0e-6 | 3.7e-3 | 0.19 | 0.25 | 1.0 | 1.0 |
+| fresh seed 3, win head bias −12, weight ×0.01 | 8.7e-8 | 5.0e-6 | 1.1e-5 | 2.0e-3 | 1.0 | 1.0 |
+| the same, bias +9 | 1.7e-6 | 1.5e-5 | 1.1e-5 | 2.4e-6 | 1.6e-5 | 1.0 |
+| fresh seed 1 (unmodified) | 6.0e-2 | 0.21 | 0.13 | 0.94 | 0.68 | **0.0** |
+
+Informativeness is NOT monotone in the scale: at 1.0 a fresh policy saturates V the other way.
+
+**Why the scale is CAPPED at 0.1 (the first design walked 0.05 → 1.0; it was refused on the GPU).**
+Compiled `decide` (the graph backend's callable) vs the eager reference. Setup: RTX 3080 Ti,
+torch 2.5.1, 48 fixture rows, seeds `PERTURB_SEED + 1000·k` for k = 0, 1, 2, max over five weight
+sets (fresh, collapsed −12 / +9, fresh3's `final_model_exception`, `ai_v14_06_lbat_ctrl_fix`
+final). Raw rows: `~/gen3ai_archive/vacuous_parity/gpu_rungs.jsonl` (2026-09-30).
+
+| scale | fp32 max \|Δ log π\| | fp32 max \|ΔV\| |
+|---|---|---|
+| 0 (real weights) | 1.0e-5 (trained) | 6.0e-7 |
+| 0.05 | 9.5e-7 (fresh-based); 1.9e-5 (trained) | 3.9e-7 |
+| 0.1 | 4.5e-6 (fresh-based); 3.1e-5 (trained) | 1.6e-6 |
+| 0.2 | 9e-5 … **1.7e-3** | 6.9e-5 |
+| 0.3 | up to 2.8e-2 | 2.0e-4 |
+| 0.5 | up to **0.66** | 6.8e-4 |
+
+The bars are absolute (log π 1e-3, V 1e-4). At 0.2 a CORRECT graph already crosses the log-prob
+bar (fresh base, seed +1). The end-to-end T2 run refused the collapsed critic on its concurrent
+gate at the 0.5 rung (8.6e-2). So the ladder is now `PERTURB_LADDER` = (scale, seed offset) rungs:
+scales 0.05 then 0.1, eight seeds each, and `PERTURB_MAX_SCALE` = 0.1 is enforced by the spec.
+
+**First informative rung of the capped ladder** (CPU, the gate's 8/7/2/1-row fills):
+
+| weights | first rung |
+|---|---|
+| fresh seeds 1 / 3 | (0.05, +0) |
+| fresh3 `final_model_exception` | (0.05, +2) |
+| collapsed +9 (seed 0) | (0.05, +2) |
+| collapsed −9 (seed 0) | (0.1, +3) |
+| collapsed −12 (seed 3), collapsed +9 (seed 3) | **none — REFUSED** (`FATAL_CONFIG`) |
+
+That last row is the declared limit. A critic saturated beyond what scale 0.1 moves is refused,
+never passed and never judged on an ill-conditioned rung. The real collapse that started this
+(fresh3) resolves at the third rung.
+
+**TF32 (`--matmul-precision high`) — a SEPARATE, pre-existing defect, unit 2.** With the same
+setup, a FRESH production policy is refused at T2 startup under TF32. The concurrent gate at rung
+(0.05, +0) reports "greedy action differs on 1 decisive row". The greedy rule's tie band is the fp32
+log-prob bar (1e-3) at every precision. But at TF32 the healthy |Δ log π| is already 6.5e-4 …
+7.8e-3 at 0.05, and eager's own TF32 error is the same size. So a row with a margin of a few 1e-3
+can flip legitimately. The default `--matmul-precision highest` passes. The precision-keyed tie
+band is the next unit.
+
+**The fix** (program doc T2 section, "FLAT weights"; Decision record 2026-09-30):
+- The DECLARED ladder `ServiceSpec.perturb_ladder` (default `parity_probe.PERTURB_LADDER`). The
+  service judges at the first informative rung, then the real weights with the guard waived. No
+  rung, or an empty ladder, ⇒ `VacuousParity`.
+- Every verdict records `ParityReport.path` (seed and scale), and `stats()["parity_paths"]` counts
+  them.
+- `NonFiniteWeights` refuses NaN / Inf before any slot is touched. Before this, a NaN load came out
+  as a `VacuousParity`, and then as a `RuntimeError` from the bit-exact restore check (NaN ≠ NaN).
+  That is not a `ServiceError`, so the service was NOT poisoned, and the slot held the NaN weights.
+- `main.exit_codes` maps `ParityFailure` → `FATAL_CONFIG` and `NonFiniteWeights` →
+  `FATAL_NONFINITE`, so the launcher stops.
+- The learner compile gate and the opponent compile gate walk the same ladder.
+
+**Teeth.** A served path that DOUBLES each row's win-logit deviation from the batch mean (a
+batch-coupled value miscompile) leaves the collapsed −9 critic's real V unmoved, so the waived
+real-weights check passes it (asserted). The ladder's informative rung REFUSES it as a real
+`ParityFailure`, not a vacuity refusal. That holds on T2 (CPU eager), and the learner gate refuses
+a doubled win logit. The fresh-weights pointer teeth (`_temperature_bug`,
+`_pointer_cell_miscompile`) are unchanged. Every new test fails on revert of the part it names:
+- ladder → its first rung alone: 6 tests;
+- the guard waived on the real pass: 7;
+- the finite check: 2;
+- the exit mapping: 3.

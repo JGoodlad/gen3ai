@@ -50,8 +50,8 @@ import torch
 from agents.model.compile_gate_probe import (GradCoverageError, coverage_verdict, gate_loss,
                                              grad_parameters, per_param_grad_errors)
 from agents.model.compile_parity_fixture import ParityFixtureError, load_parity_rows
-from agents.model.parity_probe import (PERTURB_SCALE, PERTURB_SEED, VacuousParityError, fresh_reason,
-                                       perturbed_parameters, require_informative)
+from agents.model.parity_probe import (PERTURB_LADDER, PERTURB_SEED, VacuousParityError, fresh_reason,
+                                       perturbed_parameters, require_informative, rung_seed)
 
 
 class CompileTrainerError(RuntimeError):
@@ -576,6 +576,17 @@ def _gate_arm(model: Any, fe: Any, obs: Any, legal_mask: Any, precision: str) ->
     return read, train, read32, train32
 
 
+def _arm_vacuity(arm: _Arm, precision: str, param_names: Optional[List[str]]) -> Optional[str]:
+    """``None`` when ``arm`` (an EAGER arm) is informative on every rule `_arm_verdicts` applies, else
+    the vacuity refusal's text. Judged by running the rules on the arm against ITSELF: every numeric
+    delta is exactly 0, so the only thing that can raise is a vacuity guard."""
+    try:
+        _arm_verdicts(arm, arm, precision, param_names=param_names, param_bar=_MAX_PARAM_GRAD_REL)
+    except VacuousCompileParityError as exc:
+        return str(exc).split(". A quantity")[0]
+    return None
+
+
 def _arm_verdicts(eager: _Arm, comp: _Arm, precision: str, *,
                   allow_vacuous: bool = False,
                   param_names: Optional[List[str]] = None,
@@ -723,9 +734,28 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             fresh = fresh_reason({k: v for k, v in eager_arm[0].items() if k in _FP32_TOL},
                                  _FP32_TOL)
             p_eager_arm = None
+            p_scale: Optional[float] = None
+            p_seed, p_k = PERTURB_SEED, 0
             if fresh is not None:
-                with perturbed_parameters(probe_module):
-                    p_eager_arm = _gate_arm(model, fe, obs, legal_mask, precision)
+                # gen3_parity_perturb_ladder_v1: climb the DECLARED ladder of (scale, seed) rungs
+                # to the first whose EAGER arm is informative on every rule; a COLLAPSED critic (a
+                # saturated win-prob head) can stay vacuous on V at the first, fresh-weights rung.
+                # None ⇒ refuse: the ladder never licenses a vacuous pass.
+                tried = []
+                for scale, k in PERTURB_LADDER:
+                    with perturbed_parameters(probe_module, seed=rung_seed(k), scale=scale):
+                        arm = _gate_arm(model, fe, obs, legal_mask, precision)
+                    why = _arm_vacuity(arm, precision, param_names)
+                    if why is None:
+                        p_eager_arm, p_scale, p_seed, p_k = arm, float(scale), rung_seed(k), int(k)
+                        break
+                    tried.append(f"scale {scale:g} seed+{k}: {why}")
+                if p_eager_arm is None:
+                    raise VacuousCompileParityError(
+                        f"--compile-trainer parity: VACUOUS on the real weights ({fresh}) and on "
+                        f"every rung of the perturbation ladder {PERTURB_LADDER} ((scale, seed "
+                        f"offset); seed {PERTURB_SEED}) — {'; '.join(tried)}. Refusing: a comparison that does "
+                        f"not vary cannot tell a miscompile from a match.")
 
             compiled = torch.compile(original)
             # `wrap_compiled` records a lock rejection raised through the learner forward before it
@@ -742,8 +772,8 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             # full resolution.
             comp_arm = _gate_arm(model, fe, obs, legal_mask, precision)
             p_comp_arm = None
-            if fresh is not None:
-                with perturbed_parameters(probe_module):   # same seed -> the same perturbed weights
+            if p_scale is not None:                         # same seed + scale -> same weights
+                with perturbed_parameters(probe_module, seed=p_seed, scale=p_scale):
                     p_comp_arm = _gate_arm(model, fe, obs, legal_mask, precision)
         except (CompileTrainerError, ParityFixtureError) as exc:
             fe.forward = original
@@ -776,7 +806,7 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
         if p_eager_arm is not None and p_comp_arm is not None:
             # The informative verdict FIRST, with the vacuity guard ON: a perturbation that still
             # left a quantity constant refuses the launch rather than passing it.
-            rules = ["[fresh weights, seeded perturbation] " + r
+            rules = [f"[fresh weights, seeded perturbation scale={p_scale:g} seed+{p_k}] " + r
                      for r in _arm_verdicts(p_eager_arm, p_comp_arm, precision,
                                             param_names=param_names,
                                             param_bar=_MAX_PARAM_GRAD_REL)]
@@ -791,7 +821,8 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
     if fresh is not None:
         _say(f"[CompileTrainer] FRESH weights ({fresh} on the fixture — vacuous on their own): the "
              f"parity gate ALSO ran on a seeded perturbation of every policy parameter (seed "
-             f"{PERTURB_SEED}, scale {PERTURB_SCALE}; restored bit-exactly, private RNG)")
+             f"{p_seed}, scale {p_scale:g} — the first informative (scale, seed offset) rung of "
+             f"{PERTURB_LADDER}; restored bit-exactly, private RNG)")
     # Said on EVERY passing launch (a failure says it in the raised message): which rules ran, at
     # which precision, and the numbers — so a TF32 run records how close to its bar it sat.
     _say(f"[CompileTrainer] parity PASS on {batch} REAL obs rows — " + " | ".join(rules))

@@ -35,9 +35,40 @@ from typing import Dict, Iterator, Mapping, Optional
 import torch
 
 #: The perturbation's seed and scale. Fixed so a gate's verdict is reproducible run to run; the
-#: scale is T2's (``agents.inference.service.fixtures``), measured to make every head informative.
+#: scale is T2's (``agents.inference.service.fixtures``), measured to make every head informative
+#: on FRESH weights.
 PERTURB_SEED = 20260929
 PERTURB_SCALE = 0.05
+#: The DECLARED perturbation LADDER (gen3_parity_perturb_ladder_v1): a gate whose comparison is
+#: vacuous on the real weights tries these RUNGS in order — ``(scale, seed offset)``, the seed being
+#: ``PERTURB_SEED + offset`` — and judges at the FIRST one whose comparison is informative (every
+#: quantity's spread above its bar); none ⇒ it refuses. The first rung is ``(PERTURB_SCALE, 0)``, so
+#: a fresh policy's verdict is unchanged.
+#:
+#: Why rungs above the first: a COLLAPSED critic — a win-prob head saturated at logit ≈ −8…−10 (a
+#: trainee losing ~97%; ``~/gen3ai_archive/cutover_prep/fresh3``, 2026-09-30) — has real V spread
+#: 6e-6, and the first rung only reaches 9.6e-5 < the 1e-4 bar; another seed at the same scale
+#: (rung (0.05, 2)) reads 2.4e-4 on the gate's smallest fills.
+#:
+#: Why the scale is CAPPED at 0.1 and more SEEDS are tried instead: the compare bars are absolute
+#: (legal log-prob 1e-3, V 1e-4), calibrated near the fresh / trained operating point, and the
+#: compiled-vs-eager noise grows steeply with the scale. Measured on the GPU (RTX 3080 Ti, fp32, the
+#: graph backend's compiled ``decide`` vs eager, 48 fixture rows, fresh / collapsed / trained
+#: weights, 3 seeds, 2026-09-30): max |Δ log π| 9.5e-7 at 0.05, 4.5e-6 at 0.1, but 9e-5…**1.7e-3**
+#: at 0.2 (over the bar: a FALSE refusal), 2.8e-2 at 0.3 and 0.66 at 0.5. So no rung goes above 0.1,
+#: where the noise sits 200x under the bar. A deeply SATURATED critic (win logit ≈ −12 on every
+#: row, or +9 on some bases) stays vacuous on V at every rung and is REFUSED — never passed. Table:
+#: ``designs/research_state/measurements/m5_t2/PROGRESS.md`` "Flat weights".
+PERTURB_MAX_SCALE = 0.1
+PERTURB_LADDER = tuple((scale, k) for scale in (0.05, 0.1) for k in range(8))
+#: A rung's seed offset k moves the seed by k x this, so the inference service's CONCURRENT gate
+#: (per-slot seeds ``rung_seed(k) + slot``) never reuses a seed across rungs.
+PERTURB_SEED_STRIDE = 1000
+
+
+def rung_seed(k: int) -> int:
+    """The perturbation seed of a ladder rung with seed offset ``k``."""
+    return PERTURB_SEED + PERTURB_SEED_STRIDE * int(k)
 
 
 class VacuousParityError(RuntimeError):

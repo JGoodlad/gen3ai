@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 
 from agents.inference.service.decision import DecisionModule
-from agents.inference.service.spec import SlotArchMismatch, SlotGroupSpec
+from agents.inference.service.spec import NonFiniteWeights, SlotArchMismatch, SlotGroupSpec
 
 #: Constructor parameters that do not change the forward (the optimizer and the schedule).
 _NOT_FORWARD = frozenset({"lr_schedule", "optimizer_class", "optimizer_kwargs"})
@@ -48,6 +48,17 @@ def forward_fingerprint(policy: Any) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
+def require_finite(sd: Dict[str, torch.Tensor], where: str) -> None:
+    """`NonFiniteWeights` naming the keys if any floating tensor of ``sd`` holds a NaN / Inf.
+    Broken weights are REFUSED up front: the parity gate would also fail them (a NaN breaks the
+    mask contract), but only after they were in a slot, and with a message that names the symptom
+    instead of the cause."""
+    bad = [k for k, v in sd.items() if v.is_floating_point() and not bool(torch.isfinite(v).all())]
+    if bad:
+        raise NonFiniteWeights(f"{where}: {len(bad)} weight tensor(s) hold NaN / Inf (e.g. {bad[:3]}) "
+                               "— refused before any slot was touched")
+
+
 def _tensor_at(module: torch.nn.Module, key: str) -> torch.Tensor:
     prefix, _, name = key.rpartition(".")
     owner = module.get_submodule(prefix) if prefix else module
@@ -68,6 +79,7 @@ class SlotGroup:
         self.n_slots = int(spec.n_slots)
         self.device = device
         tsd = template.state_dict()
+        require_finite(tsd, f"slot group {spec.name!r} template")
         self.signature = state_signature(tsd)
         self.fingerprint = forward_fingerprint(template)
         replicas: List[Any] = []
@@ -117,6 +129,7 @@ class SlotGroup:
                 f"({fp[:12]} vs the group's {self.fingerprint[:12]}) — a constructor kwarg or critic "
                 "mode that changes the function differs; serving it would run the group's forward "
                 "with foreign weights")
+        require_finite(sd, f"slot group {self.name!r} load")
         return sd
 
     def copy_in(self, slot: int, sd: Dict[str, torch.Tensor]) -> None:

@@ -18,6 +18,8 @@ real compile is CUDA-only; this is the control flow + verdicts on the REAL produ
 """
 from __future__ import annotations
 
+import contextlib
+
 import numpy as np
 import pytest
 import torch
@@ -197,7 +199,7 @@ def test_the_GATE_passes_a_correct_compile_on_FRESH_weights_and_says_so(monkeypa
     lines: list = []
     assert _drive_gate(monkeypatch, model, lambda fe, f: f, lines) == 2.0
     assert any("FRESH weights" in ln and "legal_logprob" in ln for ln in lines), lines
-    assert any("parity PASS" in ln and "[fresh weights, seeded perturbation]" in ln
+    assert any("parity PASS" in ln and "[fresh weights, seeded perturbation scale=0.05 seed+0]" in ln
                for ln in lines), lines
     assert all(torch.equal(before[k], v) for k, v in model.policy.state_dict().items())
 
@@ -223,3 +225,66 @@ def test_a_single_row_is_judged_on_its_logprobs_only():
     assert pp.vacuous_keys(one, {"legal_logprob": 1e-3, "value": 1e-4}) == {"legal_logprob": 0.0}
     one["legal_logprob"] = _logp(1, vary=True)
     assert pp.vacuous_keys(one, {"legal_logprob": 1e-3, "value": 1e-4}) == {}
+
+
+# --------------------------------------------------------------------------- a COLLAPSED critic
+# gen3_parity_perturb_ladder_v1 — a win-prob critic saturated at logit ≈ −9 (the fresh3 shape,
+# `agents.inference.service.flat_weights_test` has the story) stays VACUOUS on V at the fresh-weights
+# scale even over the gate's 16 rows; the gate climbs the declared ladder instead of refusing.
+
+@contextlib.contextmanager
+def _collapsed(model, bias: float = -9.0, gain: float = 0.01):
+    head = model.policy.features_extractor.win_head.net[3]
+    saved = {k: v.clone() for k, v in head.state_dict().items()}
+    with torch.no_grad():
+        head.bias.fill_(bias)
+        head.weight.mul_(gain)
+    try:
+        yield model
+    finally:
+        head.load_state_dict(saved)
+
+
+def _win_logit_miscompile(fe, original):
+    """A 'compiled' forward whose win-prob logit is DOUBLED: V' = sigmoid(2·logit). On the collapsed
+    critic (V ≈ 6e-6) it moves V by < 1e-4 — invisible on the real weights — and by ~1e-3 on any
+    informative perturbation."""
+    def fwd(obs):
+        out = original(obs)
+        fe.stash.win_prob_logits = fe.stash.win_prob_logits * 2.0
+        return out
+    return fwd
+
+
+def test_PREMISE_the_collapsed_critic_is_vacuous_on_V_at_the_first_rung(fresh):
+    model, obs, mask = fresh
+    with _collapsed(model), pp.perturbed_parameters(model.policy, scale=pp.PERTURB_SCALE):
+        assert "value" in pp.vacuous_keys(_decision(model, obs, mask), _FP32_TOL)
+
+
+def test_the_GATE_passes_a_correct_compile_on_a_COLLAPSED_critic_above_the_first_rung(
+        monkeypatch, fresh):
+    """Revert the ladder to the single fresh-weights rung ⇒ `VacuousCompileParityError` (a
+    FATAL_CONFIG refusal of a checkpoint whose critic collapsed)."""
+    model, _obs, _mask = fresh
+    with _collapsed(model):
+        before = {k: v.clone() for k, v in model.policy.state_dict().items()}
+        lines: list = []
+        assert _drive_gate(monkeypatch, model, lambda fe, f: f, lines) == 2.0
+        assert all(torch.equal(before[k], v) for k, v in model.policy.state_dict().items())
+    passed = [ln for ln in lines if "parity PASS" in ln]
+    assert passed and "seeded perturbation scale=" in passed[0], lines
+    assert f"seeded perturbation scale={pp.PERTURB_SCALE:g} seed+0]" not in passed[0], \
+        f"the collapsed critic must be judged above the first rung: {passed[0][:200]}"
+
+
+def test_the_GATE_refuses_a_win_logit_miscompile_on_a_COLLAPSED_critic_and_not_as_vacuous(
+        monkeypatch, fresh):
+    """TEETH on flat weights: the doubled win logit is caught on the informative rung as a real
+    divergence. Revert the ladder ⇒ a VACUITY refusal instead (the defect is never judged)."""
+    model, _obs, _mask = fresh
+    with _collapsed(model):
+        with pytest.raises(CompileTrainerError) as ei:
+            _drive_gate(monkeypatch, model, _win_logit_miscompile, [])
+    assert not isinstance(ei.value, VacuousCompileParityError), f"judged vacuous: {ei.value}"
+    assert "DISAGREES" in str(ei.value), ei.value

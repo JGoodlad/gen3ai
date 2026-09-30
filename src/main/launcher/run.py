@@ -93,11 +93,13 @@ def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
     out as a generic exit 1)."""
     lines = list(log_lines or [])
     if rc == int(TrainExitCode.FATAL_NONFINITE):
-        # K9's fail-closed learner guard (`NonFiniteLearnerError`): the restart would resume the
-        # checkpoint that produced the NaN / Inf and replay the same update — STOP, never loop.
-        found = [s for s in (l.strip() for l in lines) if "NonFiniteLearnerError" in s][-3:]
-        return (["non-finite learner (NaN / Inf loss or gradient) — a restart would replay it; "
-                 "see the crash log"] + found)
+        # K9's fail-closed learner guard (`NonFiniteLearnerError`), or T2 refusing NaN / Inf
+        # weights (`NonFiniteWeights`): the restart would resume the checkpoint that produced them
+        # and replay the same failure — STOP, never loop.
+        found = [s for s in (l.strip() for l in lines)
+                 if "NonFiniteLearnerError" in s or "NonFiniteWeights" in s][-3:]
+        return (["non-finite learner or weights (NaN / Inf loss, gradient or parameter) — a restart "
+                 "would replay it; see the crash log"] + found)
     if rc == int(TrainExitCode.FATAL_SUPPLY):
         # gen3_supply_guard_v1: a LIVE coefficient's external supply (the cf label producer) died
         # or starved in flight. A restart would train on the same missing supply — STOP.
@@ -111,7 +113,11 @@ def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
             # ModelVersionError message spans 2-3 lines: what mismatched + the fix).
             return [s for s in (l.strip() for l in lines[i : i + 3]) if s]
     if rc == int(TrainExitCode.FATAL_CONFIG):
-        return ["non-recoverable configuration error (see crash log)"]
+        # The T2 inference service's parity refusal (`ParityFailure` / `VacuousParity`,
+        # `exit_codes._FATAL_BY_NAME`) prints no FATAL signature: surface its exception line.
+        parity = [s for s in (l.strip() for l in lines)
+                  if s.startswith("agents.inference.service.spec.") and "Parity" in s][-1:]
+        return ["non-recoverable configuration error (see crash log)"] + [s[:300] for s in parity]
     return None
 
 

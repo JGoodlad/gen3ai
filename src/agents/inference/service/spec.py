@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any, Optional, Tuple
 
+from agents.model.parity_probe import PERTURB_LADDER, PERTURB_MAX_SCALE
+
 #: The backends. ``eager`` is the reference (CPU or CUDA); ``graph`` is the Inductor-compiled
 #: decision forward captured as one CUDA graph per slot x bucket (CUDA only; the default); ``aot``
 #: is one AOTInductor package per slot group x bucket with the weights as inputs (CUDA, torch
@@ -45,9 +47,17 @@ class ParityFailure(ServiceError):
 
 class VacuousParity(ParityFailure):
     """The parity comparison cannot bite: the eager reference's legal log-probs are constant per row
-    (a FRESH policy — zero-init pointer head) or its V is constant across rows. Fail-closed: a
-    caller that does not re-run the gate on a seeded perturbation of the weights gets a
-    `ParityFailure` (gen3_fresh_parity_probe_v1)."""
+    (a FRESH policy — zero-init pointer head) or its V is constant across rows (a COLLAPSED win-prob
+    critic, saturated). Fail-closed: the service re-runs the gate on seeded perturbations of the
+    weights up the declared ladder (``ServiceSpec.perturb_ladder``) and raises this only when NO
+    rung is informative (gen3_fresh_parity_probe_v1, gen3_parity_perturb_ladder_v1). Deterministic
+    in (code, weights, fixture), so a restart replays it: the trainer exits ``FATAL_CONFIG``."""
+
+
+class NonFiniteWeights(ServiceError):
+    """A weight set (a group template at startup, or a ``load``) carries a NaN / Inf parameter or
+    buffer. Refused BEFORE anything is copied into a slot — never judged, never perturbed (noise on
+    a NaN is a NaN). The trainer exits ``FATAL_NONFINITE``: a restart resumes the same weights."""
 
 
 class CallerError(ServiceError):
@@ -97,6 +107,10 @@ class ServiceSpec:
     lanes: int = 1
     #: Where backend 'aot' writes its packages (default: a fresh temp dir — never shared).
     artifact_dir: Optional[str] = None
+    #: The seeded-perturbation LADDER a vacuous parity comparison climbs (`parity_probe`, module
+    #: docs): the first informative rung judges the slot, none ⇒ `VacuousParity`. EMPTY disables
+    #: the perturbed path, so a flat slot is REFUSED — never passed.
+    perturb_ladder: Tuple[Tuple[float, int], ...] = PERTURB_LADDER
 
     def validate(self) -> None:
         if not self.groups:
@@ -124,6 +138,16 @@ class ServiceSpec:
             raise ValueError("ServiceSpec: max_rows_per_flush must hold at least the largest bucket")
         if int(self.filler_batches_per_flush) < 0:
             raise ValueError("ServiceSpec: filler_batches_per_flush must be >= 0")
+        try:
+            lad = [(float(sc), int(k)) for sc, k in self.perturb_ladder]
+        except (TypeError, ValueError):
+            raise ValueError(f"ServiceSpec: perturb_ladder rungs are (scale, seed offset) pairs, got "
+                             f"{self.perturb_ladder}") from None
+        if (any(not (0.0 < sc <= PERTURB_MAX_SCALE) or k < 0 for sc, k in lad)
+                or len(set(lad)) != len(lad) or lad != sorted(lad)):
+            raise ValueError(f"ServiceSpec: perturb_ladder must be distinct (scale, seed offset) rungs "
+                             f"in ascending order, 0 < scale <= {PERTURB_MAX_SCALE} (the bars' "
+                             f"calibrated range), offset >= 0 — or empty; got {self.perturb_ladder}")
         if self.verify_bucket is not None and int(self.verify_bucket) not in b:
             raise ValueError(f"ServiceSpec: verify_bucket {self.verify_bucket} is not a declared bucket")
 

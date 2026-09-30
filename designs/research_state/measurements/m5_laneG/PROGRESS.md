@@ -239,6 +239,12 @@ holds more). The arms met 17.5 / 8.0 / 4.0 / 1.0 distinct opponent slots per flu
   the seeded perturbation). It killed the tiny CPU runs on a trainee load after a few minutes, and
   it crash-loops a resume of that checkpoint. Whether a production-scale fresh run can hit it is
   UNVERIFIED. Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the launcher".
+  **RESOLVED 2026-09-30 (`gen3_parity_perturb_ladder_v1`):** the critic had COLLAPSED (a saturated
+  win head, not fresh weights). A fresh production model passes T2 startup on the first rung. The
+  gate now walks a declared perturbation ladder of (scale ≤ 0.1, seed) rungs, so fresh3's collapsed
+  critic is judged at rung (0.05, +2). A refusal that remains (a critic saturated beyond scale 0.1)
+  exits `FATAL_CONFIG`, so no crash loop. Detail:
+  `research_state/measurements/m5_t2/PROGRESS.md` "Flat weights".
 - **F-LG-8 (the learner check's scope, declared):** "one update on each buffer lands on the same weights" holds
   for ONE optimizer step (Δ 6e-8); over several steps PPO's clip gates and Adam amplify the paths' ≤ 7e-7
   log-prob / value rounding (the two paths forward different batch compositions, and CPU matmul rounds

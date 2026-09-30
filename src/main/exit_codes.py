@@ -55,10 +55,23 @@ class SupplyStarvedError(RuntimeError):
 
 
 #: Exception class NAMES mapped to a fatal exit code — matched along each exception's MRO and its
-#: ``__cause__`` / ``__context__`` chain, so the mapping holds however the error was wrapped.
+#: ``__cause__`` / ``__context__`` chain, so the mapping holds however the error was wrapped. Matched
+#: by NAME so this module imports nothing from ``agents``.
+#:
+#: * ``NonFiniteLearnerError`` — K9's learner guard (a restart replays the update).
+#: * ``NonFiniteWeights`` — the T2 inference service refused a NaN / Inf weight set (the trainee after
+#:   an update, a snapshot, a checkpoint template). A restart resumes the same weights.
+#: * ``ParityFailure`` (and its ``VacuousParity``) — the T2 inference service's parity gate refused a
+#:   slot. The verdict is a deterministic function of (code, weights, the committed fixture), and a
+#:   restart resumes the SAME weights (a crash saves ``final_model_exception.zip``; the next startup
+#:   gates it as the slot template), so it replays at every restart. Observed 2026-09-30:
+#:   ``~/gen3ai_archive/cutover_prep/fresh3`` crash-looped three times on one `VacuousParity`
+#:   before the circuit breaker stopped it.
 _FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
+                  "NonFiniteWeights": TrainExitCode.FATAL_NONFINITE,
                   "SupplyStarvedError": TrainExitCode.FATAL_SUPPLY,
-                  "FatalConfigError": TrainExitCode.FATAL_CONFIG}
+                  "FatalConfigError": TrainExitCode.FATAL_CONFIG,
+                  "ParityFailure": TrainExitCode.FATAL_CONFIG}
 
 
 def fatal_exit_code_for(exc: Optional[BaseException]) -> Optional[int]:

@@ -5,12 +5,13 @@ lifecycle, every slot x bucket parity-gated). Design: ``designs/endstate/program
 from agents.inference.service.decision import DecisionModule, UnservableArchitecture, policy_reference
 from agents.inference.service.service import Decision, InferenceService, Ticket
 from agents.inference.service.spec import (
-    BACKENDS, CallerError, LifecycleViolation, ParityFailure, Priority, ServiceError, ServiceSpec,
-    SlotArchMismatch, SlotGroupSpec,
+    BACKENDS, CallerError, LifecycleViolation, NonFiniteWeights, ParityFailure, Priority, ServiceError,
+    ServiceSpec, SlotArchMismatch, SlotGroupSpec, VacuousParity,
 )
 
 __all__ = [
     "BACKENDS", "CallerError", "Decision", "DecisionModule", "InferenceService",
-    "LifecycleViolation", "ParityFailure", "Priority", "ServiceError", "ServiceSpec",
-    "SlotArchMismatch", "SlotGroupSpec", "Ticket", "UnservableArchitecture", "policy_reference",
+    "LifecycleViolation", "NonFiniteWeights", "ParityFailure", "Priority", "ServiceError",
+    "ServiceSpec", "SlotArchMismatch", "SlotGroupSpec", "Ticket", "UnservableArchitecture",
+    "VacuousParity", "policy_reference",
 ]

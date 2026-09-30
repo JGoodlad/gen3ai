@@ -17,7 +17,8 @@ from __future__ import annotations
 import contextlib
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+import re
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -25,11 +26,21 @@ import torch
 from agents.inference.service.engine import Engine, PlanItem
 from agents.inference.service.parity import ParityReport, fixture_rows, gate_slot, judge
 from agents.inference.service.slots import SlotGroup
-from agents.model.parity_probe import PERTURB_SEED, perturbed_parameters
+from agents.model.parity_probe import PERTURB_SEED, perturbed_parameters, rung_seed
 from agents.inference.service.spec import (
     CallerError, LifecycleViolation, ParityFailure, Priority, ServiceError, ServiceSpec,
     VacuousParity,
 )
+
+#: The path label of a real-weights verdict taken with the vacuity guard waived — only ever after a
+#: perturbed rung passed on the same slot and graph (`ParityReport.path`).
+_WAIVED = "real (vacuity waived)"
+
+
+def _vacuous_detail(exc: BaseException) -> str:
+    """The ``<quantity> spread <x> <= bar <y>`` clause of a vacuity refusal (or the whole message)."""
+    m = re.search(r"VACUOUS — (.*?)\. A quantity", str(exc))
+    return m.group(1) if m else str(exc)
 
 
 
@@ -108,6 +119,9 @@ class InferenceService:
             "loads": 0, "flushes": 0}
         self.batches_by_bucket: Dict[int, int] = {b: 0 for b in self.buckets}
         self.startup_reports: List[ParityReport] = []
+        #: How many parity verdicts each PATH produced (``ParityReport.path``: the perturbed rung's
+        #: seed and scale kept) — startup, loads, canaries. In ``stats()``.
+        self.parity_paths: Dict[str, int] = {}
         self.startup_seconds: Dict[str, float] = {}
         self._pending: List[Ticket] = []
         self._seq = 0
@@ -260,24 +274,50 @@ class InferenceService:
         per-slot gate runs one slot per flush and can never see two lanes interfere (the shared
         cuBLAS-workspace defect read 0.048 on log-probs only under concurrency).
 
-        FRESH weights (gen3_fresh_parity_probe_v1): if any slot's comparison is vacuous, the flush
-        is re-run with EVERY slot perturbed in place (a different seed per slot, so concurrent
-        slots compute different functions), then once more on the real weights with the vacuity
-        guard waived; the real reports come first."""
+        FLAT weights (gen3_fresh_parity_probe_v1, gen3_parity_perturb_ladder_v1): if any slot's
+        comparison is vacuous, the flush is re-run with EVERY slot perturbed in place (a different
+        seed per slot, so concurrent slots compute different functions) up the declared ladder until
+        one rung is informative, then once more on the real weights with the vacuity guard waived;
+        the real reports come first."""
         if self.engine.n_lanes < 2 or len(self._slots) < 2:
             return []
         try:
-            return self._concurrent_once(b, tag="", allow_vacuous=False)
-        except VacuousParity:
-            with contextlib.ExitStack() as stack:
-                for s, (gi, i) in enumerate(self._slots):
-                    stack.enter_context(perturbed_parameters(self.groups[gi].policies[i],
-                                                             seed=PERTURB_SEED + s))
-                probe = self._concurrent_once(b, tag=" [fresh weights, seeded perturbation]",
-                                              allow_vacuous=False)
-            return self._concurrent_once(b, tag="", allow_vacuous=True) + probe
+            return self._concurrent_once(b, tag="", allow_vacuous=False, path="real")
+        except VacuousParity as exc:
+            def at(scale: float, k: int) -> List[ParityReport]:
+                base = rung_seed(k)
+                path = f"perturbed seed={base}+slot scale={scale:g}"
+                with contextlib.ExitStack() as stack:
+                    for s, (gi, i) in enumerate(self._slots):
+                        stack.enter_context(perturbed_parameters(
+                            self.groups[gi].policies[i], seed=base + s, scale=scale))
+                    return self._concurrent_once(b, tag=f" [{path}]", allow_vacuous=False, path=path)
+            probe = self._climb(at, exc, where=f"{self.spec.backend} CONCURRENT bucket={b}")
+            return self._concurrent_once(b, tag="", allow_vacuous=True,
+                                         path=_WAIVED) + probe
 
-    def _concurrent_once(self, b: int, *, tag: str, allow_vacuous: bool) -> List[ParityReport]:
+    def _climb(self, judge_at: Callable[[float, int], List[ParityReport]], vacuous: VacuousParity,
+               *, where: str) -> List[ParityReport]:
+        """gen3_parity_perturb_ladder_v1: judge at each rung of ``spec.perturb_ladder`` IN ORDER and
+        return the FIRST informative rung's reports. A rung that is still vacuous moves on; any other
+        `ParityFailure` (a real divergence) raises at once. No informative rung ⇒ `VacuousParity`
+        naming every rung's spreads — fail-closed, never a pass."""
+        tried = [f"real weights: {_vacuous_detail(vacuous)}"]
+        for scale, k in self.spec.perturb_ladder:
+            try:
+                return judge_at(float(scale), int(k))
+            except VacuousParity as exc:
+                tried.append(f"scale {float(scale):g} seed+{int(k)}: {_vacuous_detail(exc)}")
+        ladder = tuple((float(sc), int(k)) for sc, k in self.spec.perturb_ladder)
+        raise VacuousParity(
+            f"{where}: VACUOUS on the real weights and on every rung of the declared perturbation "
+            f"ladder {ladder or '(EMPTY — the perturbed path is disabled)'} (seed {PERTURB_SEED}) — "
+            f"{'; '.join(tried)}. A comparison that does not vary cannot tell a miscompile from a "
+            f"match, so the slot is REFUSED (not passed). A NaN-free policy whose V / log-probs no "
+            f"rung moves is degenerate — inspect its heads before serving it.") from vacuous
+
+    def _concurrent_once(self, b: int, *, tag: str, allow_vacuous: bool,
+                         path: str) -> List[ParityReport]:
         guard = self._frozen_guard if self.state == "FROZEN" else self._startup_guard
         obs, mask = fixture_rows(self.obs_dim, b)
         plan: List[PlanItem] = [(s, gi, i, obs, mask) for s, (gi, i) in enumerate(self._slots)]
@@ -296,7 +336,8 @@ class InferenceService:
                 where=f"{self.spec.backend} CONCURRENT lanes={e.n_lanes} slot={s} bucket={b}{tag}",
                 policy=self.groups[gi].policies[i], obs=o, mask=m,
                 served=(e.out_logp[sl].clone(), e.out_value[sl].clone(), e.out_greedy[sl].clone()),
-                allow_vacuous=allow_vacuous))
+                allow_vacuous=allow_vacuous, path=path))
+        self._count(reports)
         return reports
 
     def _gate(self, gi: int, i: int, b: int) -> Tuple[ParityReport, ...]:
@@ -318,22 +359,34 @@ class InferenceService:
                 torch.cuda.current_stream(self.device).synchronize()
             return (e.out_logp[:n].clone(), e.out_value[:n].clone(), e.out_greedy[:n].clone())
 
+        def run(path: str, *, tag: str = "", allow_vacuous: bool = False) -> Tuple[ParityReport, ...]:
+            reports = gate_slot(where=f"{where}{tag}", policy=g.policies[i], obs_dim=self.obs_dim,
+                                bucket=b, device=self.device, serve=serve,
+                                allow_vacuous=allow_vacuous, path=path)
+            self._count(reports)
+            return reports
+
         try:
-            return gate_slot(where=where, policy=g.policies[i], obs_dim=self.obs_dim, bucket=b,
-                             device=self.device, serve=serve)
-        except VacuousParity:
-            # gen3_fresh_parity_probe_v1: FRESH weights (a zero-init pointer head) cannot judge the
-            # slot. Judge the SAME slot and graph on a seeded perturbation of its weights — in place
-            # (the slot's parameters are views into the group's stacked storage, which the graphs
-            # read), restored bit-exactly, private RNG — then the real weights with the vacuity
-            # guard waived. The real report stays first (`load` returns reports[0]).
-            with perturbed_parameters(g.policies[i]):
-                probe = gate_slot(where=f"{where} [fresh weights, seeded perturbation]",
-                                  policy=g.policies[i], obs_dim=self.obs_dim, bucket=b,
-                                  device=self.device, serve=serve)
-            real = gate_slot(where=where, policy=g.policies[i], obs_dim=self.obs_dim, bucket=b,
-                             device=self.device, serve=serve, allow_vacuous=True)
-            return real + probe
+            return run("real")
+        except VacuousParity as exc:
+            # FLAT weights cannot judge the slot: a FRESH policy (zero-init pointer head ⇒ constant
+            # log-probs, gen3_fresh_parity_probe_v1) or a COLLAPSED critic (a saturated win-prob
+            # head ⇒ constant V, gen3_parity_perturb_ladder_v1). Judge the SAME slot and graph on a
+            # seeded perturbation of its weights — in place (the slot's parameters are views into
+            # the group's stacked storage, which the graphs read), restored bit-exactly, private RNG
+            # — at the first INFORMATIVE rung of the declared ladder, then the real weights with the
+            # vacuity guard waived. The real report stays first (`load` returns reports[0]).
+            def at(scale: float, k: int) -> List[ParityReport]:
+                seed = rung_seed(k)
+                path = f"perturbed seed={seed} scale={scale:g}"
+                with perturbed_parameters(g.policies[i], seed=seed, scale=scale):
+                    return list(run(path, tag=f" [{path}]"))
+            probe = self._climb(at, exc, where=where)
+            return run(_WAIVED, allow_vacuous=True) + tuple(probe)
+
+    def _count(self, reports: Any) -> None:
+        for r in reports:
+            self.parity_paths[r.path] = self.parity_paths.get(r.path, 0) + 1
 
     @contextlib.contextmanager
     def _startup_guard(self, where: str) -> Iterator[None]:
@@ -451,4 +504,5 @@ class InferenceService:
         out["packages"] = len(eng.packages) if eng is not None else 0
         out["lanes"] = eng.n_lanes if eng is not None else 0
         out["startup_seconds"] = dict(self.startup_seconds)
+        out["parity_paths"] = dict(self.parity_paths)
         return out

@@ -306,19 +306,20 @@ def test_a_FRESH_slot_is_gated_on_a_perturbation_and_its_weights_come_back_bit_e
     before = {k: v.clone() for k, v in fresh_policy.state_dict().items()}
     svc = _service(fresh_policy, n_slots=1, buckets=(2, 8))
     wheres = [r.where for r in svc.startup_reports]
-    assert any("[fresh weights, seeded perturbation]" in w for w in wheres), wheres
+    assert any("[perturbed seed=20260929 scale=0.05]" in w for w in wheres), wheres
     slot_sd = svc.groups[0].policies[0].state_dict()
     assert all(torch.equal(before[k], slot_sd[k].cpu()) for k in before), \
         "the perturbed gate must leave the slot's weights bit-identical"
     rep = svc.load(0, fresh_policy, "fresh-again")
-    assert "[fresh weights" not in rep.where, "load() must return the REAL weights' report first"
+    assert "[perturbed" not in rep.where and rep.path == "real (vacuity waived)", \
+        "load() must return the REAL weights' report first"
 
 
 def test_a_miscompile_invisible_on_fresh_weights_is_CAUGHT_by_the_perturbed_gate(
         monkeypatch, fresh_policy):
     import agents.inference.service.engine as engine_mod
     monkeypatch.setattr(engine_mod, "decide", _temperature_bug(engine_mod.decide))
-    with pytest.raises(ParityFailure, match="seeded perturbation"):
+    with pytest.raises(ParityFailure, match=r"perturbed seed=\d+ scale="):
         _service(fresh_policy, n_slots=1, buckets=(2, 8))
 
 # ---------------------------------------------------------------- staging (unit 4)

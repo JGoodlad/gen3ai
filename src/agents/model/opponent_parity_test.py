@@ -67,7 +67,7 @@ def test_a_correct_compile_PASSES_parity_on_fresh_weights_and_says_so(monkeypatc
         _uninstall(fe)
     out = capsys.readouterr().out
     assert "parity PASS on 16 REAL obs rows at B=1" in out, out
-    assert "[fresh weights, seeded perturbation]" in out and "legal_logprob" in out, out
+    assert "[fresh weights, seeded perturbation scale=0.05 seed+0]" in out and "legal_logprob" in out, out
     assert all(torch.equal(before[k], v) for k, v in fresh.policy.state_dict().items())
 
 
@@ -141,3 +141,24 @@ def test_a_PASS_is_cached_per_distinct_weights_and_a_weight_change_is_rechecked(
         with pytest.raises(CompileTrainerError, match="legal_logprob"):
             op.check_opponent_parity(fresh, orig, bad, label="c3")
     assert calls["n"] > n1
+
+
+def test_a_COLLAPSED_critic_opponent_passes_parity_above_the_first_rung(monkeypatch, fresh, capsys):
+    """gen3_parity_perturb_ladder_v1: a pool snapshot whose win-prob critic collapsed (saturated at
+    logit −9) is vacuous on V at the fresh-weights scale; the gate climbs the declared ladder. Revert
+    the ladder ⇒ `VacuousCompileParityError` on a legitimate opponent."""
+    fe = fresh.policy.features_extractor
+    head = fe.win_head.net[3]
+    saved = {k: v.clone() for k, v in head.state_dict().items()}
+    with torch.no_grad():
+        head.bias.fill_(-9.0)
+        head.weight.mul_(0.01)
+    monkeypatch.setattr(torch, "compile", lambda fn, **k: fn)
+    try:
+        assert S.maybe_compile_extractor(fresh, True, label="t-collapsed") is True
+    finally:
+        _uninstall(fe)
+        head.load_state_dict(saved)
+    out = capsys.readouterr().out
+    assert "parity PASS" in out and "seeded perturbation scale=" in out, out
+    assert f"seeded perturbation scale={pp.PERTURB_SCALE:g} seed+0]" not in out, out
