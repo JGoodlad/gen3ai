@@ -70,7 +70,9 @@ def test_the_flagless_namespace_is_unchanged():
 
 def test_an_explicit_shaped_is_the_same_namespace_as_no_flag():
     a, b = _ns([]), _ns(["--critic", "shaped"])
-    ignore = {"_explicit_flags"}
+    # Both are records of WHAT WAS TYPED (K10(a)'s `_recipe_typed` beside `_explicit_flags`), which
+    # is exactly what differs here; the claim is that the resolved VALUES are the same.
+    ignore = {"_explicit_flags", "_recipe_typed"}
     assert {k: v for k, v in vars(a).items() if k not in ignore} == \
            {k: v for k, v in vars(b).items() if k not in ignore | {"critic"}} | {"critic": "shaped"}
 

@@ -96,7 +96,7 @@ and `new_lineage_2026-09-26/`):
 | 21 | self-play opponent temperature | 1.0 | OpenAI Five/AlphaStar sample stochastic policies; our model is +23 pp stronger greedy (L21447) | Arm X23(b): opponent T 0.5. This is exploration in the DATA | ARM |
 | 22 | opponent pool | 20 snapshots, newest weighted 1.3×; stable share 0.2; bots ≥ 10 %; PFSP off | OpenAI Five 80/20 with quality scores; AlphaStar PFSP | Keep. PFSP only over a diverse, anchored pool (L01151); the arm-C read was never done (L15610) | KEEP; ARM later |
 | 23 | eval regime | greedy vs greedy sentinels | — | Keep (L13654, L21447) | KEEP |
-| 24 | recipe defaults vs the argv | 5 parser defaults ≠ live | — | **Mirror the recipe in `production_config.json`** and have `checkargs` diff it, like the ARCH SURFACE | SAFE |
+| 24 | recipe defaults vs the argv | mirrored: `recipe.fresh` (N0) + `recipe.fork` (E5) (§3.22) | — | **BUILT** (K10(a)): `--arch production` applies `recipe.fresh`, `checkargs` diffs and refuses untyped drift | SAFE (BUILT) |
 
 **Headline.**
 - **Changes that land as safe defaults:** a divisible rollout shape and a correct step count (4, 10);
@@ -343,7 +343,7 @@ matches its control at the SAME dose is its secondary read.
   - OpenAI Five targets a sample reuse of about 1 and saw that reusing data 2–3 times "can cause a
     factor of two slowdown".
   - Rudin uses 5 epochs.
-- **Recommendation.** Keep 5. **ARM A3:** E2 at the matched dose (LR 1.4e-4). The literature favours
+- **Recommendation.** Keep 5 for generalist FORKS (`recipe.fork`, at the frozen 5.6e-5). A FRESH launch keeps N0's measured 10 at a KL-controlled 3e-4 (`recipe.fresh`, §3.22): 5 epochs at a fresh LR was never measured, and the SIZING study re-reads it. **ARM A3:** E2 at the matched dose (LR 1.4e-4). The literature favours
   it, and it saves more GPU time. The risk the ledger names is Adam overshoot at a higher per-step LR
   (L05595, L07591), so the arm reads KL and clip fraction as well as the meters. Decoupled policy and
   value epochs (PPG) WAIT for the Q head, which splits the value side anyway.
@@ -663,19 +663,104 @@ matches its control at the SAME dose is its secondary read.
   +8.9 pp to the trainee.
 - **Recommendation.** KEEP. `designs/training/eval_and_rating.md` owns it.
 
-### 3.22 The recipe surface is invisible to `--arch production`
+### 3.22 The recipe surface — BUILT (K10(a), 2026-09-30)
 
-- **FINDING.** Five parser defaults differ from the live recipe: `n_envs` 32 vs 48, `batch_size` 4096
-  vs 2048, `n_epochs` 5 vs 10/5, `ent_coef` 0.02 vs 0.05, and `clip_range_vf` 0.5 vs none. The same
-  holds for every aux weight.
-  - `--arch production` does not apply them.
-  - `production_config.json` holds none of them.
-  - `model_config.json` records no optimisation block (L18192).
-  - So a fresh argv typed without them silently gets a different recipe. That is the recipe-side twin
-    of the 2026-09-06 stripped-architecture incident.
-- **Recommendation (SAFE).** Add a RECIPE block to `production_config.json`. `checkargs` should print a
-  RECIPE SURFACE diff beside the ARCH SURFACE diff and refuse a fresh argv that differs unless the
-  argv says so. This is a build task.
+- **The finding that ordered it.** Parser defaults differed from the live recipe on `n_envs`
+  (32 vs 48), `batch_size` (4096 vs 2048), `n_epochs` (5 vs 10), `ent_coef` (0.02 vs 0.05) and
+  `clip_range_vf` (0.5 vs none). The build's survey found more: `grad_accum_steps` (1 vs 32, an
+  effective batch of 4,096 instead of 65,536), `self_play` (off vs on), `beta_setvalued_coef`
+  (0 vs 0.05), the critic (`shaped` vs `winprob`) with its three required reward values, and the
+  supervision doses. `--arch production` applied none of them, so a fresh argv typed without them
+  trained a different recipe: the recipe-side twin of the 2026-09-06 stripped-architecture
+  incident. The old parser's 5-epoch default was one of those silent divergences, not evidence for
+  5 epochs.
+- **What is built** (`src/main/train/recipe_surface.py`; per-flag mechanics in
+  `src/agents/training/CLAUDE.md` "The recipe surface"):
+  - a `recipe` block in `designs/production_config.json` with two parts. `recipe.fresh` is N0's
+    MEASURED fresh recipe: every training knob `models/ai_v14_01_base` launched with, including
+    the critic, its reward values, the doses and the KL controller's constants. `recipe.fork` is
+    what a generalist fork changes: E5. A `recipe.fresh` key that is also a recorded mirror field
+    must equal it.
+  - `--arch production` writes every `recipe.fresh` knob the argv did not TYPE, as if typed. A
+    typed token still wins; the parser records which tokens were typed. `recipe.fork` is never
+    applied: `--fork-lr` is refused on a fresh run.
+  - `checkargs`, `--dry-run` and the launcher print a RECIPE SURFACE block beside the ARCH SURFACE.
+    A fresh argv that differs on an UNTYPED knob is REFUSED; a TYPED difference is the arm's lever
+    (INFO); `--allow-nonproduction-recipe` consents. A fork is compared with `recipe.fork`, as INFO.
+  - **Restarts.** A launcher restart strips `--arch`. On a same-run restart of an
+    `--arch production` run, each untyped knob comes from exactly one place, announced:
+    - `--lr`, `--batch-size`, `--n-steps` and `--gamma` are INERT on a resume (SB3 restores
+      them) and are never re-applied;
+    - a recorded tri-state field (critic, doses incl. `opp_intent_coef`, `policy_gae_lambda`) is inherited by the resume's
+      own `_resolve`;
+    - a recorded value-checked field (the reward values, `vf_coef`) comes from the checkpoint's
+      `model_config.json`;
+    - a knob recorded nowhere else (`n_envs`, `n_epochs`, `ent_coef`, …) comes from the run's
+      `metadata.json` `cli_args`.
+
+    A value missing from its source REFUSES by name (`FATAL_CONFIG`), never a default. This follows
+    the general restart rule (`68850f27`: the surface is inherited from `model_config.json`,
+    `opp_intent_coef` a recorded field from config v125) and covers only what it cannot supply.
+  - `src/recipe_doc_gate_test.py` holds the table below and §1's live-value column to the block.
+  - **OPEN, owned by the cutover:** `rust_core_cutover.envs.production_args()` builds its
+    "production" namespace from the ARCH surface and the mirror's fields only, so it does not carry
+    the recipe (`n_envs` 32, `ent_coef` 0.02, self-play off, …).
+
+**The production recipe, and where each value comes from.** "N0" is `models/ai_v14_01_base`, the
+lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; `model_config.json`).
+"E5" is `models/ai_v14_03_lbat_e5`. Every file was read, never written.
+
+| knob | production | block | source |
+|---|---|---|---|
+| `n_envs` | 48 | `recipe.fresh` | N0 `--n-envs 48`, `cli_args.n_envs`. The SIZING study's to change (§3.1) |
+| `n_steps` | 2048 | `recipe.fresh` | N0 `--n-steps 2048`, metadata `n_steps`. The SIZING study's / Lane G's to change (§3.2) |
+| `batch_size` | 2048 | `recipe.fresh` | N0 `--batch-size 2048`, `dose.batch_size` |
+| `grad_accum_steps` | 32 | `recipe.fresh` | N0 `--grad-accum-steps 32`, `dose.grad_accum_steps` (effective 65,536) |
+| `n_epochs` | 10 | `recipe.fresh` | N0 `--n-epochs 10`, `dose.n_epochs` |
+| `lr` | 0.0003 | `recipe.fresh` | N0 `--lr 0.0003`, `dose.lr_flag`: the KL controller's seed |
+| `min_lr` | 1e-05 | `recipe.fresh` | N0 `--min-lr 1e-05`, `dose.kl_controller.min_lr` |
+| `max_lr` | none | `recipe.fresh` | N0 `cli_args.max_lr` null, so 2 × lr = `dose.kl_controller.max_lr` 0.0006 |
+| `anneal_lr_start_steps` | none | `recipe.fresh` | N0 `cli_args.anneal_lr_start_steps` null: no cosine phase (`dose.kl_controller.phase` adaptive) |
+| `target_kl` | 0.01 | `recipe.fresh.kl_controller` | N0 `dose.kl_controller.target_kl`; the callback's constructor default |
+| `kl_factor` | 2.0 | `recipe.fresh.kl_controller` | N0 `dose.kl_controller.kl_factor`; the callback's constructor default |
+| `lr_factor` | 1.2 | `recipe.fresh.kl_controller` | N0 `dose.kl_controller.lr_factor`; the callback's constructor default |
+| `weight_decay` | 1e-05 | `recipe.fresh` | N0 `--weight-decay 1e-05`, metadata `weight_decay` |
+| `clip_range` | 0.15 | `recipe.fresh` | N0 `--clip-range 0.15`, metadata `clip_range` |
+| `clip_range_vf` | none | `recipe.fresh` | N0 `--clip-range-vf none`, metadata `clip_range_vf` −1.0 (disabled). INERT under `--critic winprob` |
+| `ent_coef` | 0.05 | `recipe.fresh` | N0 `--ent-coef 0.05`, metadata `ent_coef` |
+| `gamma` | 1.0 | `recipe.fresh` | N0 `cli_args.gamma`, metadata `gamma` (implied by `--critic winprob`) |
+| `policy_gae_lambda` | 0.8 | `recipe.fresh` | N0 metadata `gae_lambda` 0.8 (N0 predates the flag; the value was hardcoded) |
+| `self_play` | true | `recipe.fresh` | N0 `--self-play`, `cli_args.self_play` |
+| `critic` | winprob | `recipe.fresh` | N0 `--critic winprob`, `model_config.json` `critic` |
+| `terminal_indicator` | true | `recipe.fresh` | N0 `--terminal-indicator`, `model_config.json` |
+| `victory_value` | 1.0 | `recipe.fresh` | N0 `--victory-value 1.0`, `model_config.json` |
+| `draw_penalty` | 0.0 | `recipe.fresh` | N0 `--draw-penalty 0`, `model_config.json` |
+| `vf_coef` | 0.5 | `recipe.fresh` | N0 `--vf-coef 0.5`, `model_config.json` |
+| `opp_belief_aux_coef` | 0.05 | `recipe.fresh` | N0 `--opp-belief-aux-coef 0.05`, `model_config.json` |
+| `opp_intent_coef` | 0.05 | `recipe.fresh` | N0 `--opp-intent-coef 0.05`, `cli_args.opp_intent_coef` |
+| `move_belief_coef` | 0.05 | `recipe.fresh` | N0 `--move-belief-coef 0.05`, `model_config.json` |
+| `move_belief_latent_coef` | 0.05 | `recipe.fresh` | N0 `--move-belief-latent-coef 0.05`, `model_config.json` |
+| `spread_belief_coef` | 0.05 | `recipe.fresh` | N0 `--spread-belief-coef 0.05`, `model_config.json` |
+| `hp_type_belief_coef` | 0.05 | `recipe.fresh` | N0 `--hp-type-belief-coef 0.05`, `model_config.json` |
+| `item_belief_coef` | 0.05 | `recipe.fresh` | N0 `cli_args.item_belief_coef`, `model_config.json` |
+| `beta_setvalued_coef` | 0.05 | `recipe.fresh` | N0 `--beta-setvalued-coef 0.05`, `cli_args` |
+| `intent_label_bot_weight` | 0.25 | `recipe.fresh` | N0 `--intent-label-bot-weight 0.25`, `model_config.json` |
+| `n_epochs` | 5 | `recipe.fork` | E5 `--n-epochs 5`, `dose.n_epochs` (adopted L21451 for generalist forks) |
+| `fork_lr` | 5.6e-05 | `recipe.fork` | E5 `--fork-lr 5.6e-05`, `dose.lr_now` (2 × K2's 2.8e-05: the same dose at half the epochs) |
+| `fork_lr_freeze` | true | `recipe.fork` | E5 `--fork-lr-freeze`, `dose.lr_frozen` |
+
+- **Left out, and why.**
+  - `seed`: an arm's identity, not a recipe choice.
+  - `matmul_precision`: a runtime knob, and the TF32 decision (K5) is not made.
+  - `adaptive_batch`: off, which is the default, and arm A1's lever.
+  - The eval regime, opponent-pool shares and temperatures, `obs_source` and `value_true_team`:
+    their resolved defaults already equal N0's.
+  - The critic readouts `--critic winprob` implies (`win_prob_mode`, `value_dist_*`, PopArt):
+    implied, and `--win-prob-coef` is refused under that critic.
+- 🚨 **5 epochs at a FRESH learning rate: never measured.** E5 was a FORK at a frozen 5.6e-5.
+  `recipe.fresh` keeps N0's measured 10 epochs at a KL-controlled 3e-4, and E5 lives only in
+  `recipe.fork`. The first fresh run on the M5 infrastructure re-reads the epoch count inside the
+  SIZING study.
 
 ---
 
@@ -713,7 +798,7 @@ matches its control at the SAME dose is its secondary read.
 | 0.3 | **Per-rollout advantage normalization** | learner-benchmark equivalence (gradient cosine, one-rollout loss trajectory) |
 | 0.4 | **KL controller guard-only** (may lower the LR, never above the declared rate) | never fires on the K2 recipe (KL 0.0039); a unit test of the down-only rule |
 | 0.5 | **Telemetry:** the split-half-by-game ‖G‖² and design effect c; multi-point noise folding; the grad-clip binding share; the critic masked-row share | read-only, bit-identical learning (the K2 diagnostics-cadence test pattern) |
-| 0.6 | **The RECIPE mirror** in `production_config.json` + `checkargs` RECIPE SURFACE | a fresh argv missing a recipe token is refused with its name |
+| 0.6 | **The RECIPE mirror** in `production_config.json` + `checkargs` RECIPE SURFACE — **BUILT** (K10(a), §3.22) | a fresh argv missing a recipe token is refused with its name (`recipe_surface_test`) |
 
 ### Stage 1 — the SIZING study (`program_rust_core.md` order constraint 5, unchanged)
 
@@ -831,5 +916,7 @@ Owner decisions are marked **(owner)**. `L…` is the ledger line as `ledger_ind
 | 2026-09-29 | KL controller | **PROPOSED:** guard-only (down only, capped at the declared rate) | Bidirectional (would raise LR at KL 0.0039, against L21165) or none | §3.7 |
 | 2026-09-29 | Advantage normalization | **PROPOSED:** once per rollout | Per micro-batch (K-dependent) | §3.13 |
 | 2026-09-29 | Entropy replacement | **PROPOSED:** a trailing magnet (R-NaD/MMD) or a Smogon-prior magnet as X23's arms | A uniform magnet (today's bonus) as the end state | §3.9 |
-| 2026-09-29 | Recipe mirror | **PROPOSED:** a RECIPE block in `production_config.json` plus a `checkargs` RECIPE SURFACE diff | Recipe values living only in argvs | §3.22; L18192 |
+| 2026-09-29 | Recipe mirror | **BUILT 2026-09-30 (next row); was PROPOSED:** a RECIPE block in `production_config.json` plus a `checkargs` RECIPE SURFACE diff | Recipe values living only in argvs | §3.22; L18192 |
+| 2026-09-30 | Recipe mirror — **BUILT** (K10(a)) | A `recipe` block in `production_config.json`: `recipe.fresh` = N0's measured fresh recipe (every training knob `models/ai_v14_01_base` launched with, including the critic, reward values, doses and the KL controller's constants; a key that is also a recorded mirror field must equal it), and `recipe.fork` = E5. `--arch production` applies `recipe.fresh`; `checkargs` / `--dry-run` / the launcher REFUSE untyped drift on a fresh argv (a TYPED difference is the arm's lever; `--allow-nonproduction-recipe` consents); a fork is compared with `recipe.fork` as INFO. A same-run restart of an `--arch production` run takes each untyped knob from exactly one source, announced (INERT `--lr` / `--batch-size` / `--n-steps` / `--gamma` never re-applied; recorded fields from the checkpoint; the rest from `metadata.json:cli_args`), and a MISSING value REFUSES by name. **Value sources:** N0 `metadata.json` (`original_command`, `cli_args`, `dose`) and `model_config.json`; E5 `models/ai_v14_03_lbat_e5`; the §3.22 table cites each key | Five knobs only (misses `grad_accum_steps`, `self_play`, the critic and the doses, each a silent change); pairing E5's 5 epochs with a fresh LR (next row); refusing every typed deviation (every one-lever arm would need a consent flag); falling back to a default when a restart cannot find a value | §3.22; `recipe_surface_test`, `recipe_doc_gate_test` |
+| 2026-09-30 | Fresh-run epochs **(orchestrator)** | `recipe.fresh.n_epochs` = N0's measured **10** at a KL-controlled 3e-4; E5's 5 epochs (at a frozen 5.6e-5) live ONLY in `recipe.fork`. **Pairing 5 epochs with a fresh LR was never measured.** The first fresh run on the M5 infrastructure re-reads the epoch count inside the SIZING study. The old parser's 5-epoch default is NOT evidence for 5: it was one of the five silent divergences §3.22 closes | 5 epochs at 3e-4 on a fresh launch (half N0's initial dose, never run) | L21451 (E5 measured on a fork); N0 `dose.n_epochs` 10 |
 | 2026-09-29 | Migration order | **PROPOSED:** Stage 0 safe defaults → SIZING → A1 adaptive K → A2 dynamic n_steps → A3 E2, A4 λ sweep, A5 opponent T → magnet / EWMA / PFSP → PPG / state-dependent λ / search targets | Adopting several levers in one arm | §5 |

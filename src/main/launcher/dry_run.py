@@ -375,6 +375,22 @@ def dry_run(
         for line in arch_surface.report_lines(arch):
             out(f"  {line}")
 
+    # 7c. K10(a) THE RECIPE SURFACE — the same report `main.checkargs` and the launcher's gate
+    #     read, on the same namespace; a FRESH argv's untyped drift refuses here as it does there.
+    recipe = None
+    if ns is not None:
+        from main.train import recipe_surface
+        recipe = recipe_surface.report(
+            ns, fresh=not bool(model_path),
+            restart=bool(resolution.get("same_run")),
+            allowed=bool(getattr(ns, "allow_nonproduction_recipe", False)),
+            umbrella=getattr(ns, "arch", None), advisory=pinned is not None,
+            inherited=frozenset(inherited))
+        for line in recipe_surface.report_lines(recipe):
+            out(f"  {line}")
+    if res.get("recipe_refusal"):
+        out(f"  ✗ REFUSED (same-run restart): {res['recipe_refusal']}")
+
     # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
     #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
     #    ask that commit's parser (3b), these are ADVISORY: they describe rules the child will not
@@ -407,6 +423,8 @@ def dry_run(
     # A fresh, un-pinned drift refuses here exactly as it refuses in `_prepare_session`; a PINNED
     # one is advisory (see the `advisory=` argument above) and `refuses` is already False.
     if arch is not None and arch.refuses:
+        failed = True
+    if (recipe is not None and recipe.refuses) or res.get("recipe_refusal"):
         failed = True
 
     if failed:

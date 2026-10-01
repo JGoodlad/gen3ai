@@ -83,6 +83,12 @@ independent questions**, and passing the first says nothing about the second:
    launcher). Its key set is DERIVED from `flag_registry.arch_surface_flags()`, never hand-listed.
    On a FRESH argv a non-empty diff **REFUSES** unless `--allow-nonproduction-arch`; a FORK/RESTART
    is exempt but still printed (it inherits its parent's surface); a PINNED launch is ADVISORY.
+3. **Is this the RECIPE you meant?** — the **RECIPE SURFACE** diff (`main.train.recipe_surface.report`,
+   the same three readers) against the mirror's `recipe` block (`recipe.fresh` = N0's measured
+   recipe; `recipe.fork` = E5, the comparison for a fork). On a FRESH
+   argv a differing knob the argv did NOT type **REFUSES** unless `--allow-nonproduction-recipe`; a
+   TYPED difference is INFO (it is the arm's lever); a FORK is INFO — its recipe is its argv.
+   Values and sources: `designs/endstate/design_learner_recipe.md` §3.22.
 
 🚨 **The two failures are not interchangeable.** A refused flag combination is LOUD and pre-launch —
 nothing starts, it costs a minute. **Arch drift is SILENT and post-launch**: everything parses, the
@@ -92,9 +98,14 @@ trained a near-bare network for 24.4M steps after three gates passed, all three 
 builds the wrong architecture"*.
 
 **`--arch production`** is the remedy: it applies every ARCH-surface key from
-`designs/production_config.json` as if typed, and records `arch_source` in `model_config.json`. It
-deliberately does NOT set the CRITIC readouts, `--belief-grad-mode`, or the six SUPERVISION DOSES —
-the block lists all of them every time, so its silence is never read as coverage.
+`designs/production_config.json` as if typed, and records `arch_source` in `model_config.json`; its
+RECIPE half applies the training recipe (incl. `--critic winprob`, its three reward values and the
+supervision doses) and records `recipe_source` in `metadata.json`'s `cli_args`. It deliberately does
+NOT set the critic READOUTS `--critic winprob` implies, or `--belief-grad-mode` — the block lists
+them every time, so its silence is never read as coverage. A same-run restart (which strips `--arch`)
+resolves each recipe knob by one route (INERT `--lr` / `--batch-size` / `--n-steps` / `--gamma`
+untouched; recorded fields from `model_config.json`; the rest from the run's `metadata.json:cli_args`),
+announced, and REFUSES by name when a value is missing — never a default.
 
 Three resolution rules the tool applies, each of which has burned a launch:
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`) —
@@ -116,18 +127,16 @@ mechanics — is in `src/main/launcher/CLAUDE.md` (§ *Validating a launch witho
 ARCH-SURFACE guard*, § *An argv is validated by the parser of the tree that will RUN it*) and
 `designs/research_state/claude_md_archive/checkargs_incidents.md`.
 ### Starting a fresh run via launcher
+`--arch production` supplies the architecture AND the production training recipe (the mirror's
+`recipe` block, K10(a)). A recipe token typed here OVERRIDES the recipe, so type one only when it is
+the arm's lever.
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
   --restart-interval-hours 3 \
   --steps 15000000 \
-  --n-envs 64 \
-  --batch-size 16384 \
-  --n-epochs 10 \
-  --ent-coef 0.02 \
-  --n-steps 2048 \
-  --lr 0.0003 \
   --device cuda \
-  --log-level periodic
+  --log-level periodic \
+  --arch production
 ```
 
 ### Resuming from a checkpoint

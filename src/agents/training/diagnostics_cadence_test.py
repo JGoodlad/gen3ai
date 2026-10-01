@@ -134,14 +134,15 @@ def test_it_is_a_RECORDED_field_and_a_pre_v124_config_migrates_to_every_update()
 def test_checkargs_reports_the_inherited_cadence(tmp_path):
     """`main.checkargs` resolves an argv the way the launch does: a flagless resume of a pre-v124
     parent (the production mirror, a real recorded config) INHERITS 1; a typed value wins."""
-    import shutil
+    import json
 
     from agents.model.model_version import ModelVersion
     from main.checkargs import resolve_against_parent
-    from utils.paths import repo_path
     run = tmp_path / "run"
     (run / "checkpoints").mkdir(parents=True)
-    shutil.copy(repo_path("designs", "production_config.json"), run / "model_config.json")
+    # The mirror's config FIELDS (K10(a): its `recipe` block is not a model_config.json field).
+    from agents.training.baselines import production_config
+    (run / "model_config.json").write_text(json.dumps(production_config(), indent=2))
     assert ModelVersion.from_json_file(str(run / "model_config.json")).diagnostics_every == 1
     ckpt = run / "checkpoints" / "ckpt.zip"
     ckpt.write_bytes(b"")

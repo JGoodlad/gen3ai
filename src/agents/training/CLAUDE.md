@@ -1070,6 +1070,46 @@ Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appende
   *faster*); use `src/agents/training/value_sidecar_benchmark.py`, which measures the numerator
   directly and warns on contention rather than rescaling.
 
+## The recipe surface — `--arch production`'s TRAINING-RECIPE half (`main.train.recipe_surface`, K10(a))
+
+The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s `recipe` block:
+- **`recipe.fresh`** is N0's MEASURED fresh recipe (`models/ai_v14_01_base`): every training knob it
+  launched with — the rollout/update shape, `n_epochs` 10, `lr` 3e-4 with the KL controller as it ran
+  (`max_lr` unset, no cosine, and `kl_controller`'s `target_kl` / `kl_factor` / `lr_factor`, which
+  are constructor constants pinned against the callbacks), clip, entropy, `gamma`, self-play, the
+  critic with its reward values, `vf_coef` and every supervision dose. A key that is also a
+  recorded top-level mirror field must EQUAL it.
+- **`recipe.fork`** is what a generalist fork changes: E5 (`n_epochs` 5 at a FROZEN `fork_lr`
+  5.6e-5). Never applied by `--arch` (`--fork-lr` is refused on a fresh run); a fork's argv is
+  compared with it as INFO. 🚨 5 epochs at a FRESH LR was never measured — never pair them.
+- `baselines.production_config()` STRIPS the block (every arch consumer sees config fields only);
+  `baselines.production_recipe_block()` reads it; `compare_production` exempts it; `--sync-config`
+  carries it over.
+- **`--arch production`** writes every `recipe.fresh` knob the argv did not TYPE, as if typed (after
+  the ARCH surface, before `resolve_critic_mode`). "Typed" is recorded by the parser
+  (`_recipe_typed`). `recipe_source` lands in `metadata.json`'s `cli_args`.
+- **Refusal.** `checkargs`, `--dry-run` and the launcher REFUSE a FRESH argv that differs on an
+  UNTYPED knob; a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-recipe`
+  consents.
+- 🚨 **A same-run RESTART strips `--arch`.** For a run whose immutable `original_command` carried
+  `--arch production`, `inherit_on_restart` resolves each untyped knob by exactly one route
+  (`restart_route`), announced as `[Recipe] … from <source>`:
+  - `--lr` / `--batch-size` / `--n-steps` / `--gamma` are INERT on a resume (SB3 restores them) —
+    never re-applied;
+  - a recorded tri-state field (critic, doses incl. `opp_intent_coef`, `policy_gae_lambda`) is `_resolve`'s to inherit;
+  - a recorded value-checked field (`terminal_indicator`, `victory_value`, `draw_penalty`,
+    `vf_coef`) comes from the checkpoint's `model_config.json`;
+  - a knob recorded nowhere else comes from the run's `metadata.json:cli_args`.
+
+  A value MISSING from its route REFUSES by name (`RecipeRestartError` → `FATAL_CONFIG`; `checkargs`
+  and `--dry-run` report it) — never a parser or registry default. It sits ON TOP of the general
+  rule (`68850f27`: a restart inherits the surface from `model_config.json`, `opp_intent_coef`
+  recorded from config v125, a pre-v125 dose migrated from `cli_args` or refused) and covers only
+  what that cannot supply.
+- **OPEN (the cutover's):** `rust_core_cutover.envs.production_args()` does not apply the recipe.
+- Values, sources, what was left out: `designs/endstate/design_learner_recipe.md` §3.22;
+  `src/recipe_doc_gate_test.py` holds the doc and the block together.
+
 ## Step size, batch size and THE DOSE (`--grad-accum-steps` · `--fork-lr` · `--adaptive-batch`)
 
 **`--grad-accum-steps K`** runs K `batch_size` micro-batches per optimizer step, so the accumulated

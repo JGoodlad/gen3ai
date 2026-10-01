@@ -82,4 +82,10 @@ def build_parser() -> argparse.ArgumentParser:
     add_eval_subprocess_flags(parser)
     add_env_core_flags(parser)
 
+    # K10(a): the RECIPE rows record whether they were TYPED (`_recipe_typed`), because a concrete
+    # default (`--ent-coef` 0.02) is otherwise indistinguishable from a typed one — and "an explicit
+    # token wins over `--arch production`" needs exactly that fact. Changes no value, no `--help`.
+    from main.train.recipe_surface import record_typed_recipe_flags
+    record_typed_recipe_flags(parser)
+
     return parser

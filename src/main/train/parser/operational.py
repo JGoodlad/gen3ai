@@ -120,11 +120,15 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "typed. 'production' reads designs/production_config.json — the same "
                              "mirror the generated ARCHITECTURE.md tables and the compile gate key "
                              "on — and sets every structural toggle in it that this argv leaves "
-                             "unset, so an explicitly-typed flag still wins. It does NOT set the "
-                             "training coefficients (the belief-supervision doses) or the CRITIC "
-                             "readouts: those are what an experiment varies, and the startup block "
-                             "lists them so their absence is visible. Refused on a resume, which "
-                             "INHERITS its parent's surface instead. Records "
+                             "unset, so an explicitly-typed flag still wins. It ALSO applies the "
+                             "production TRAINING RECIPE (main.train.recipe_surface: the mirror's "
+                             "`recipe` block — n_envs, batch/accumulation, epochs, LR, clip, "
+                             "entropy, self-play — plus the critic mode, its reward values and the "
+                             "belief-supervision doses), every untyped knob as if typed. The "
+                             "remaining critic READOUTS are not applied (--critic winprob implies "
+                             "them). Refused on a resume, which INHERITS its parent's surface "
+                             "instead (a same-run restart of such a run restores the recipe from "
+                             "its own metadata.json). Records "
                              "arch_source=production_config@<content hash> in model_config.json.")
     parser.add_argument("--allow-nonproduction-arch", action="store_true",
                         help="Consent to a FRESH run whose architecture differs from "
@@ -134,3 +138,12 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
                              "identically). Use it for a deliberate ablation; the choice is "
                              "recorded in model_config.json's arch_source and in metadata's "
                              "cli_args. A fork/restart never needs it.")
+    # --- K10(a) THE RECIPE SURFACE (main.train.recipe_surface) -------------------------------
+    parser.add_argument("--allow-nonproduction-recipe", action="store_true",
+                        help="Consent to a FRESH run whose TRAINING RECIPE differs from the "
+                             "production mirror's `recipe` block on a knob this argv did NOT type "
+                             "(the value is the parser's default, not a choice). Without it such "
+                             "a launch is REFUSED by --dry-run, `python -m main.checkargs` and the "
+                             "launcher, naming every untyped knob. A TYPED differing value never "
+                             "needs it — typing is how an arm states its lever. Recorded in "
+                             "metadata's cli_args. A fork/restart never needs it.")

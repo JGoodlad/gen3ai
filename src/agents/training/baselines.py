@@ -635,12 +635,16 @@ def production_config_path(path: Optional[str] = None) -> str:
     return rel if os.path.isabs(rel) else str(repo_path(*rel.split("/")))
 
 
-def production_config(path: Optional[str] = None) -> Dict[str, Any]:
-    """The mirror itself, as a dict. Raises :class:`BaselineError` naming the path when unreadable.
+#: The ONE nested block `designs/production_config.json` carries that is NOT a `model_config.json`
+#: field: the production TRAINING RECIPE (K10(a), `main.train.recipe_surface`). Every other key is
+#: a recorded config field, so the block is stripped from :func:`production_config` — its many
+#: consumers (the ARCH SURFACE, the generated architecture docs, the compile gate, the mode-flag doc
+#: gate) iterate or look up config fields and must never see a dict-valued non-field — and exempted
+#: from the mirror-vs-run comparison. Read it through :func:`production_recipe_block`.
+RECIPE_BLOCK_KEY = "recipe"
 
-    A mirror that silently is not there would let the ARCH-SURFACE guard report "0 keys differ",
-    which is precisely the false clean the guard exists to prevent.
-    """
+
+def _read_production_mirror(path: Optional[str] = None) -> Dict[str, Any]:
     p = production_config_path(path)
     doc = _read_json(p)
     if doc is None:
@@ -649,6 +653,36 @@ def production_config(path: Optional[str] = None) -> Dict[str, Any]:
             f"cannot be read. Every derived architecture artifact keys on it — regenerate it, or "
             f"fix the entry's `config_mirror` in {path or REGISTRY_PATH}.")
     return dict(doc)
+
+
+def production_config(path: Optional[str] = None) -> Dict[str, Any]:
+    """The mirror itself, as a dict. Raises :class:`BaselineError` naming the path when unreadable.
+
+    A mirror that silently is not there would let the ARCH-SURFACE guard report "0 keys differ",
+    which is precisely the false clean the guard exists to prevent. The ``recipe`` block is NOT in
+    the returned dict (:data:`RECIPE_BLOCK_KEY`): what comes back is exactly the recorded-config
+    surface every consumer of this accessor has always read.
+    """
+    doc = _read_production_mirror(path)
+    doc.pop(RECIPE_BLOCK_KEY, None)
+    return doc
+
+
+def production_recipe_block(path: Optional[str] = None) -> Dict[str, Any]:
+    """The mirror's ``recipe`` block, raw. Raises :class:`BaselineError` when it is absent.
+
+    Absent is an ERROR, not ``{}``, for the ARCH mirror's reason: a RECIPE guard that compared
+    against an empty block would report "0 knobs differ" — the false clean it exists to prevent.
+    `main.train.recipe_surface` is the reader that knows what the keys mean.
+    """
+    doc = _read_production_mirror(path)
+    block = doc.get(RECIPE_BLOCK_KEY)
+    if not isinstance(block, dict):
+        raise BaselineError(
+            f"{production_config_path(path)} carries no `{RECIPE_BLOCK_KEY}` block, so there is no "
+            "production TRAINING RECIPE to apply or diff against (designs/production_config."
+            "README.md, 'The recipe block'). A `--sync-config` that dropped it is the likely cause.")
+    return dict(block)
 
 
 # --------------------------------------------------------------------------------------------
@@ -939,6 +973,10 @@ def _validate_production_mirror(path: Optional[str],
 #: Never compared: the schema version is what the declared migration MOVES, and the signature is
 #: checked on its own (against the run) by :func:`_validate_entry`.
 _MIRROR_EXEMPT_KEYS = frozenset({"config_version"})
+#: Never compared, and never a key-set delta: the ``recipe`` block is the mirror's own training
+#: recipe, not a `model_config.json` field (:data:`RECIPE_BLOCK_KEY`). Without this exemption it
+#: would read as a mirror-only key, which passes today only because the entry declares a migration.
+_MIRROR_NON_CONFIG_KEYS = frozenset({RECIPE_BLOCK_KEY})
 
 
 def compare_production(run_cfg: Dict[str, Any], mirror: Dict[str, Any],
@@ -961,7 +999,7 @@ def compare_production(run_cfg: Dict[str, Any], mirror: Dict[str, Any],
     """
     msgs: List[str] = []
     overrides = dict(b.config_overrides)
-    exempt = set(overrides) | _MIRROR_EXEMPT_KEYS
+    exempt = set(overrides) | _MIRROR_EXEMPT_KEYS | _MIRROR_NON_CONFIG_KEYS
 
     shared = (set(run_cfg) & set(mirror)) - exempt
     diffs = {k: {"run": run_cfg[k], "mirror": mirror[k]}

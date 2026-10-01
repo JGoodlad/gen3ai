@@ -1169,6 +1169,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         for required in ("arch_signature", "config_version", "total_dim"):
             if required not in cfg:
                 raise SystemExit(f"--sync-config source lacks {required!r} — not a model_config.json")
+        # K10(a): the mirror's `recipe` block is NOT a model_config.json field, so no run config
+        # carries it — CARRY IT OVER from the mirror being replaced, or a re-sync would silently
+        # delete the production training recipe (`main.train.recipe_surface`).
+        from agents.training.baselines import RECIPE_BLOCK_KEY
+        try:
+            with open(_DEFAULT_CONFIG) as fh:
+                _old = json.load(fh)
+        except (OSError, ValueError):
+            _old = {}
+        if isinstance(_old.get(RECIPE_BLOCK_KEY), dict) and RECIPE_BLOCK_KEY not in cfg:
+            cfg[RECIPE_BLOCK_KEY] = _old[RECIPE_BLOCK_KEY]
         with open(_DEFAULT_CONFIG, "w") as fh:
             json.dump(cfg, fh, indent=2, sort_keys=True)
             fh.write("\n")

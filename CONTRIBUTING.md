@@ -134,7 +134,7 @@ as an order of magnitude, not a budget. The counts are current: 10,186 tests col
 the six-battle obs-golden test rode `main` red three separate times. `-n 2` is `pytest-xdist` and
 is ~1.8× faster; use plain serial when you need `-s` or a debugger.
 
-**Nine static gates run inside the suite** (there is no CI on this box, so a check outside the
+**Eleven static gates run inside the suite** (there is no CI on this box, so a check outside the
 suite is a check that rots). All are unmarked, so they run in every tier, and all are ~free:
 
 | Gate | Checks | Opt-out |
@@ -146,6 +146,8 @@ suite is a check that rots). All are unmarked, so they run in every tier, and al
 | `src/test_stub_vacuity_gate_test.py` | every `monkeypatch.setattr` / `patch` target is a symbol the code under test actually reads — a stub that stubs nothing fails | `GEN3AI_SKIP_STUB_GATE=1` |
 | `src/slow_tier_status_gate_test.py` | the last recorded verdict of every `slow` test — a recorded failure fails the routine gate that deselected it | `GEN3AI_SKIP_SLOW_STATUS_GATE=1` |
 | `src/mode_flag_doc_gate_test.py` | every mode-flag value `designs/ARCHITECTURE.md` states in prose equals `designs/production_config.json` | `GEN3AI_SKIP_MODE_FLAG_DOC_GATE=1` |
+| `src/recipe_doc_gate_test.py` | every training-recipe value `designs/endstate/design_learner_recipe.md` states equals the `recipe.fresh` / `recipe.fork` blocks of `designs/production_config.json` | `GEN3AI_SKIP_RECIPE_DOC_GATE=1` |
+| `src/trace_summary_reader_gate_test.py` | no module but `main/prober/core_trace.py` opens an eval-trace `*_summary.json` — every reader goes through its loaders | `GEN3AI_SKIP_SUMMARY_READER_GATE=1` |
 | `src/ledger_index_gate_test.py` | `designs/research_state/ledger_index.md` matches what `python -m main.ledger_index` renders | `GEN3AI_SKIP_LEDGER_INDEX_GATE=1` |
 | `src/poke_env_enum_str_compare_gate_test.py` | no poke-env enum is compared to a string (mypy `--strict-equality`, typed) — the bug that kept four bots from ever setting up | `GEN3AI_SKIP_ENUM_STR_GATE=1` |
 

@@ -175,19 +175,26 @@ def test_what_the_umbrella_leaves_open_is_EXACTLY_critic_readouts_and_doses():
             f"training/resume-immutable value — it would be a silent architecture hole")
 
 
-def test_the_umbrella_NAMES_the_supervision_doses_it_does_not_set():
-    """The 2026-09-06 failure, one layer down: `--arch production` builds the production network
-    with `move_belief_coef` / `spread_belief_coef` at their 0.0 fresh defaults where production
-    trains them at 0.05. The umbrella may leave them alone — a dose is training, not architecture —
-    but it must never leave them UNSAID, or its own block reads as coverage."""
+def test_the_umbrella_SETS_or_NAMES_every_supervision_dose():
+    """The 2026-09-06 failure, one layer down: `--arch production` used to build the production
+    network with `move_belief_coef` / `spread_belief_coef` at their 0.0 fresh defaults where
+    production trains them at 0.05, and could only NAME them. Since K10(a) the RECIPE surface
+    (`main.train.recipe_surface`) APPLIES them; the ARCH block names only what neither surface sets.
+    Either way a dose is never left UNSAID — and one the recipe applies is no longer listed as
+    "type it yourself", which would be false."""
+    from main.train.recipe_surface import ROWS
+    recipe = {r.flag for r in ROWS}
     named = {flag for flag, _ in arch_surface.unapplied_production_keys()}
-    for flag in ("--move-belief-coef", "--spread-belief-coef", "--item-belief-coef",
-                 "--hp-type-belief-coef", "--move-belief-latent-coef"):
-        assert flag in named, f"{flag} is a production dose the umbrella neither sets nor names"
+    doses = ("--move-belief-coef", "--spread-belief-coef", "--item-belief-coef",
+             "--hp-type-belief-coef", "--move-belief-latent-coef")
+    for flag in doses:
+        assert flag in recipe and flag not in named, flag
 
-    rep = _report(_incident_argv() + ["--arch", "production"])[1]
-    text = "\n".join(arch_surface.report_lines(rep))
-    assert "--move-belief-coef 0.05" in text, text
+    ns = _namespace(_incident_argv() + ["--arch", "production"])
+    prod = arch_surface.load_production_config()
+    for flag in doses:
+        dest = flag.lstrip("-").replace("-", "_")
+        assert getattr(ns, dest) == prod[dest], dest
 
 
 def test_the_umbrella_does_not_fight_the_winprob_critic():
@@ -650,6 +657,9 @@ def test_every_key_the_incident_lost_is_either_REFUSED_or_NAMED():
     refused = {d.name for d in arch_surface.diff_against_production(types.SimpleNamespace(**cfg))}
     named = {f.lstrip("-").replace("-", "_")
              for f, _ in arch_surface.unapplied_production_keys(prod)}
+    # K10(a): what the RECIPE surface compares (and refuses when untyped) is not silent either.
+    from main.train.recipe_surface import ROWS as _RECIPE_ROWS
+    named |= {r.dest for r in _RECIPE_ROWS}
     enable_args = {f.arg for f in arch_surface_flags() if f.derived and f.name in refused}
     unmentioned = differing - refused - named - enable_args
     assert not unmentioned, (

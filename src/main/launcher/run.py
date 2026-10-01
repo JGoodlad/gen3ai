@@ -285,6 +285,28 @@ def _prepare_session(
     #: tree's HEAD, which makes the arch-surface comparison informational (see the gate's docstring).
     pinned_differs = False
 
+    def _recipe_surface_gate() -> None:
+        """K10(a) THE RECIPE SURFACE — the ARCH gate's twin, at the same last stop (it runs first
+        inside `_arch_surface_gate`), from the same `main.checkargs.check`. A FRESH argv whose
+        recipe differs from the mirror on a knob it did not TYPE is refused before anything exists.
+        """
+        from main.train import recipe_surface
+        rep = recipe_surface.report_for_child_argv(child_args, advisory=pinned_differs)
+        if rep is None:
+            return
+        if rep.fresh or rep.diffs:
+            for line in recipe_surface.report_lines(rep):
+                state.add_event(line)
+        if not rep.refuses:
+            return
+        print("[launcher] ERROR: this FRESH run's TRAINING RECIPE differs from "
+              "designs/production_config.json on untyped knob(s): "
+              f"{', '.join(d.flag for d in rep.silent)}. Pass --arch production, type the value "
+              f"you mean, or {recipe_surface.ALLOW_FLAG}.", file=sys.stderr)
+        for line in recipe_surface.report_lines(rep):
+            print(f"[launcher]   {line}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+
     def _arch_surface_gate() -> None:
         """THE ARCH SURFACE (gen3_arch_surface_guard_v1, 2026-09-06) — "is this the architecture
         you meant?", asked at launch instead of at the next `pytest` run.
@@ -298,6 +320,7 @@ def _prepare_session(
         ONE function serves this, `--dry-run` and `python -m main.checkargs`
         (`arch_surface.report`); three copies of a guard is three things to keep in step.
         """
+        _recipe_surface_gate()
         rep = arch_surface.report_for_child_argv(child_args, advisory=pinned_differs)
         if rep is None:
             return                       # an argv that does not parse — reported by its own path

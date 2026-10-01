@@ -131,7 +131,9 @@ def _snapshot_tree(path):
 #: architecture. These tests are about the PIN, the run dir and the child-only gaps, so they carry
 #: the consent flag rather than becoming arch tests by accident. That the guard fires on this exact
 #: shape is `main/train/arch_surface_test.py`'s subject; §(g) below pins the interaction here.
-_ARCH_OK = ["--allow-nonproduction-arch"]
+#: The RECIPE surface (K10(a)) refuses the same bare argv for its own reason (untyped parser
+#: defaults); its consent rides along for the same reason — `recipe_surface_test` owns that subject.
+_ARCH_OK = ["--allow-nonproduction-arch", "--allow-nonproduction-recipe"]
 
 
 def _dry_run(argv, monkeypatch, expect=0):
@@ -356,7 +358,18 @@ def test_g_the_consent_flag_turns_it_into_a_note(isolated, monkeypatch, capsys):
     _dry_run(["--steps", "1000", *_ARCH_OK], monkeypatch)
     out = capsys.readouterr().out
     assert "ARCH SURFACE" in out and "EXPLICIT choice" in out
+    assert "RECIPE SURFACE" in out and "--allow-nonproduction-recipe" in out
     assert "would launch" in out
+
+
+def test_g_untyped_recipe_drift_alone_refuses_the_dry_run(isolated, monkeypatch, capsys):
+    """K10(a): with the ARCH consent but no RECIPE consent, a bare fresh argv's untyped parser
+    defaults (`--ent-coef` 0.02 …) refuse the dry run exactly as `checkargs` and the launcher do."""
+    _root, (_first, second), _work = isolated
+    monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
+    _dry_run(["--steps", "1000", "--allow-nonproduction-arch"], monkeypatch, expect=3)
+    out = capsys.readouterr().out
+    assert "RECIPE SURFACE" in out and "--ent-coef" in out and "would NOT launch" in out
 
 
 def test_g_a_RESTART_is_informed_not_gated(isolated, monkeypatch, capsys):

@@ -438,6 +438,14 @@ def desugar_umbrella_flags(args) -> None:
         print(f"[Arch] --arch production: applied {len(applied)} ARCH-surface flag(s) from "
               f"designs/production_config.json ({args.arch_source}). An explicitly-typed flag "
               f"still wins.")
+        # K10(a) THE RECIPE SURFACE, right after the architecture and before every other desugar
+        # (and before `resolve_critic_mode`, which then implies the rest of an applied
+        # `--critic winprob`). Typed tokens win: `recipe_surface.typed_dests` is the parser's record.
+        from main.train.recipe_surface import apply_production_recipe
+        recipe = apply_production_recipe(args)
+        print(f"[Recipe] --arch production: applied {len(recipe)} RECIPE knob(s) from "
+              f"designs/production_config.json's recipe.fresh ({args.recipe_source}). An "
+              f"explicitly-typed flag still wins.")
     # --unified-moves is the umbrella over the WHOLE move system: it sets --unified-damage to the same
     # level (so the op/belief/outgoing desugar below runs) AND turns on the move latent + its grading.
     # Applied BEFORE the --unified-damage desugar so the level flows through. v24.
@@ -667,6 +675,21 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _coef_explicit = args.opp_belief_aux_coef is not None
 
     desugar_umbrella_flags(args)
+    # K10(a): a launcher RESTART strips `--arch` (fresh-only). On a same-run restart of an
+    # `--arch production` run, every untyped recipe knob is resolved by exactly one route
+    # (`recipe_surface.restart_route`: INERT / the resume's own inheritance / the checkpoint's
+    # model_config.json / the run's metadata.json:cli_args), announced; a MISSING value REFUSES by
+    # name — never a parser default. A fork into a new run dir is untouched.
+    from main.train.recipe_surface import RecipeRestartError, inherit_on_restart
+    try:
+        _restored = inherit_on_restart(args, getattr(args, "run_dir", None), _saved_ver)
+    except RecipeRestartError as e:
+        from main.exit_codes import TrainExitCode
+        print(f"\n[Recipe] FATAL: {e}", file=sys.stderr, flush=True)
+        emit(f"[Recipe] FATAL: {e}")
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+    for _d, _v, _src in _restored:
+        emit(f"[Recipe] same-run restart of an --arch production run: {_d}={_v!r} from {_src}")
 
     # --- gen3_winprob_critic_mode_v1: THE CRITIC MODE, and the composition it implies ------------
     # Resolved BEFORE `_resolve` so the implications below land on the same tri-state sentinels
@@ -1320,6 +1343,22 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if _arch_report.fresh and not getattr(args, "debug", False):
         for _line in arch_surface.report_lines(_arch_report):
             emit(_line)
+    # K10(a) THE RECIPE SURFACE — reported and recorded here, refused (like the ARCH surface) only
+    # by the surfaces that answer before anything exists: checkargs, --dry-run, the launcher gate.
+    from main.train import recipe_surface
+    try:
+        _recipe_report = recipe_surface.report(
+            args, fresh=not bool(args.model),
+            restart=bool(getattr(args, "_recipe_restart_inherited", ())),
+            allowed=bool(getattr(args, "allow_nonproduction_recipe", False)),
+            umbrella=getattr(args, "arch", None))
+    except recipe_surface.RecipeError as _e:    # reported, never a crash in the child
+        emit(f"⚠️  RECIPE SURFACE unavailable: {_e}")
+    else:
+        if ((_recipe_report.fresh or _recipe_report.restart_inherited)
+                and not getattr(args, "debug", False)):
+            for _line in recipe_surface.report_lines(_recipe_report):
+                emit(_line)
 
     # One server config, built from --showdown-port and threaded to every Showdown client
     # (training-env players in spawn workers, eval, and self-play). Default port: 8000.

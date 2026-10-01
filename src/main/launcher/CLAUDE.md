@@ -130,7 +130,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   (`main.train.combination_checks.fresh_only_flags()` — the trainer's OWN list, declared per check as
   `fresh_only=`; today `--arch`), then `--model <latest checkpoint>` + `--run-dir`. The stripped
   flags are announced (`✂️  Resume argv: dropped FRESH-only --arch`); nothing is lost, the run's
-  `model_config.json` holds what `--arch production` expanded to. Before 2026-09-26 the loop
+  `model_config.json` holds what `--arch production` expanded to (see the v125 note below). Before 2026-09-26 the loop
   re-passed the original argv, so a fresh `--arch production` run (`ai_v14_01_base`) died at its
   first 3 h restart: exit 2 ×3, circuit-breaker, ~40 GPU-min. `--dry-run` prints the restart argv as
   an `on restart :` line. That refusal now also exits `FATAL_CONFIG` (not argparse's 2), so if a new
@@ -145,8 +145,18 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   core is identical). `opp_intent_coef` is now a `ModelVersion` field. A pre-v125 checkpoint migrates
   the dose from its run's `metadata.json:cli_args`, announced as `[Resume] MIGRATION`. With neither
   source the resume is REFUSED (`FATAL_CONFIG`, naming the flag); the dose is never guessed. Tests:
-  `main/train/derived_toggle_resume_test.py`. (a) Every key the umbrella writes is a recorded field.
-  (b) Fresh → save → this function's argv → resolve returns every surface value unchanged.
+  `main/train/derived_toggle_resume_test.py`. (a) Every key the umbrella's ARCH half writes is a
+  recorded field. (b) Fresh → save → this function's argv → resolve returns every surface value unchanged.
+  🚨 **The umbrella's RECIPE half (K10(a)) writes knobs `model_config.json` does NOT record**
+  (`n_envs`, `n_epochs`, `ent_coef`, `self_play`, …) plus value-CHECKED recorded fields with concrete
+  parser defaults (the reward values, `vf_coef`) that `_resolve` cannot inherit. For a run whose
+  `original_command` carried `--arch production`, the CHILD resolves each untyped one on a same-run
+  restart (`main.train.recipe_surface.inherit_on_restart`): `--lr` / `--batch-size` / `--n-steps` /
+  `--gamma` untouched (INERT — SB3 restores them); recorded tri-state fields left to `_resolve` (the
+  mechanism above — `opp_intent_coef` included); value-checked fields from `model_config.json`; the rest
+  from `metadata.json:cli_args` — each announced `[Recipe] … from <source>`, and a MISSING value
+  REFUSED (`FATAL_CONFIG`, naming the flag). This file's restart argv is unchanged. Test:
+  `recipe_surface_test.py::test_a_launcher_restart_of_a_fresh_arch_production_run_keeps_the_whole_recipe`.
 - **Crash auto-restart** — when the child *self-crashes* (unhandled exception → any
   non-`INTERRUPTED` exit), the launcher snapshots its output to a per-crash
   `<run_dir>/crashes/restart_err_<token>.txt` (a timestamp + random hex so back-to-back crashes
@@ -371,8 +381,9 @@ What that established:
 | `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
 | `--pin-commit COMMIT` | unset | **Pin the isolated worktree to a NAMED commit** (full sha or unambiguous prefix — resolved with `git rev-parse --verify <spec>^{commit}` and announced at startup as the full sha plus its subject line). Spelled `--pin-to-hash` before 2026-09-05; both spellings still parse, `--pin-commit` is the name. Beats the checkpoint's recorded `git_hash` on a genuine FORK and HEAD on a fresh run; **refused** beside `--sync-to-main` (argparse — they name two different sources of truth) and beside `--no-pin`; **refused** on a same-run RESTART whose checkpoint records a different hash (see the resume contract). An unresolvable commit exits `FATAL_CONFIG` naming it — never a silent fall-back to HEAD, which is the whole failure it exists to prevent. |
 
-| `--arch production` | unset | *(forwarded)* Apply the whole ARCH surface from `designs/production_config.json` as if typed — see **Is this the ARCHITECTURE you meant?** below. Refused on a resume (`FATAL_CONFIG`); the launcher's own restarts STRIP it (resume role). |
+| `--arch production` | unset | *(forwarded)* Apply the whole ARCH surface AND the TRAINING RECIPE from `designs/production_config.json` as if typed — see **Is this the ARCHITECTURE you meant?** and **Is this the RECIPE you meant?** below. Refused on a resume (`FATAL_CONFIG`); the launcher's own restarts STRIP it (resume role). |
 | `--allow-nonproduction-arch` | off | *(forwarded)* Consent to a FRESH run whose architecture differs from the production mirror; without it that launch is REFUSED. |
+| `--allow-nonproduction-recipe` | off | *(forwarded)* Consent to a FRESH run whose training recipe differs from the mirror's `recipe` block on a knob the argv did NOT type; without it that launch is REFUSED. A TYPED differing value never needs it. |
 | `--dry-run` | off | **Resolve this launch and PRINT it, then exit — creating nothing.** Role (FRESH / FORK of <parent> / RESTART of <run>), the run dir the argv would write into, the pin (sha + subject + source), `--steps` beside the checkpoint's recorded `num_timesteps` so `+X steps` is visible, the effective config a `--model` inherits (per-flag `INHERITED` vs `from the argv`), the pool as recorded, and a `(child-only: …)` line for everything that needs torch. Exits `0`, or `FATAL_CONFIG` (3) on any refusal the real path makes. See **Validating a launch without launching** below. |
 
 All other flags are forwarded verbatim to `train_rl_agent.py` (the launcher strips only
@@ -503,11 +514,36 @@ to tell an excluded row from a forgotten one. `family=critic` is excluded becaus
 IMPLIES one of those readouts and REFUSES two others, so gating them would refuse every critic arm.
 
 **`--arch production` is the remedy**, and what it does NOT set it NAMES on every run: the critic
-readouts, `--belief-grad-mode`, and the six SUPERVISION DOSES (`--move-belief-coef` and siblings,
-declared by `ModelFlag.coef_arg`). Silence that reads as coverage is the same failure one layer
-down. Measured against the incident's own config: of its 31 differing keys, 26 are refused on the
-surface, 4 are named as doses, and the last is the enable coefficient of a refused surface row —
-none can pass unmentioned.
+readouts `--critic winprob` implies, and `--belief-grad-mode`. The critic MODE, its three reward
+values and the SUPERVISION DOSES (`--move-belief-coef` and siblings) it used to only name are now
+APPLIED by its recipe half (next section). Silence that reads as coverage is the same failure one
+layer down. Measured against the incident's own config: of its 31 differing keys, 26 are refused on
+the surface, the doses are applied and compared by the RECIPE surface, and the last is the enable
+coefficient of a refused surface row — none can pass unmentioned.
+
+## Is this the RECIPE you meant? — the RECIPE-SURFACE guard (K10(a))
+
+The ARCH guard's twin, for the TRAINING RECIPE: five parser defaults (`--n-envs`, `--batch-size`,
+`--n-epochs`, `--ent-coef`, `--clip-range-vf`) and more (`--grad-accum-steps` 1 vs 32, `--self-play`,
+`--critic`, the reward values, the doses) differed from the live recipe, and `--arch production`
+applied none of them. `main.train.recipe_surface` holds the declared rows; the values live in
+`designs/production_config.json`'s `recipe` block: `recipe.fresh` (N0's measured fresh recipe) and
+`recipe.fork` (E5). Spec, values and their sources:
+`designs/endstate/design_learner_recipe.md` §3.22.
+
+| the argv | what the guard does |
+|---|---|
+| **FRESH**, a differing knob the argv did NOT type | prints the RECIPE SURFACE block and **REFUSES** (`FATAL_CONFIG`), naming every untyped knob |
+| FRESH, every differing knob TYPED | INFO — a typed value is the arm's lever |
+| FRESH + `--allow-nonproduction-recipe` | prints the block and launches |
+| FRESH + `--arch production` | applies every untyped `recipe.fresh` knob first (N0's measured recipe) |
+| **FORK** | INFO, compared with `recipe.fork` (E5: 5 epochs at a frozen 5.6e-5) — a fork's recipe is its ARGV plus what it inherits from its parent's config |
+| **same-run RESTART** of an `--arch production` run | the child resolves each untyped knob by ONE route (INERT / `model_config.json` / `metadata.json:cli_args`), announced; a MISSING value REFUSES by name (`checkargs` / `--dry-run` report it) |
+| **PINNED to a non-HEAD commit** | ADVISORY, for the ARCH guard's reason |
+
+The gate runs inside `_arch_surface_gate` (first, same last stop), and in `--dry-run` and
+`python -m main.checkargs`, all from `main.checkargs.check`'s one `recipe_surface.report`. The doc
+and the block are held together by `src/recipe_doc_gate_test.py`.
 
 ## An argv is validated by the parser of the tree that will RUN it — `pinned_argv.py`
 

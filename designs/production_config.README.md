@@ -14,6 +14,30 @@ lives here.
 | **Before the window** | 109 / `gen3_critic_route_wave_v1` (the run's own schema) |
 | **Previously** | gen-17's config verbatim (v97), from 2026-08-22 |
 
+## The `recipe` block — the production TRAINING RECIPE (K10(a), 2026-09-30)
+
+One key of this file is NOT a `model_config.json` field: the nested `recipe` block
+(`main.train.recipe_surface`).
+
+- **`recipe.fresh`** is N0's measured fresh recipe (`models/ai_v14_01_base`): every training knob it
+  launched with, including the critic, its reward values, the supervision doses and
+  `kl_controller` (the KL controller's constructor constants). `--arch production` applies it. A key
+  that is also a recorded field of this file must EQUAL that field (the reader refuses otherwise).
+- **`recipe.fork`** is what a generalist fork changes: E5's 5 epochs at a frozen `fork_lr` 5.6e-5
+  (`models/ai_v14_03_lbat_e5`). Never applied on a fresh run.
+- **It is HAND-EDITED**, unlike the rest of the file: no run config carries it. Change it only
+  together with `designs/endstate/design_learner_recipe.md` §3.22 (the value, its SOURCE, and a
+  Decision-record row) — `src/recipe_doc_gate_test.py` fails when either moves alone. `n_envs` 48 and
+  `n_steps` 2048 are the SIZING study's to change; so is the fresh epoch count.
+- **Invisible to every architecture consumer:** `agents.training.baselines.production_config()`
+  strips it, `compare_production` exempts it (never a mirror-vs-run key delta), and the ARCH surface
+  never reads it.
+- **`--sync-config` CARRIES IT OVER** from the mirror it replaces (`delivery_graph.py`). After a
+  re-sync, a `recipe.fresh` value that disagrees with the newly synced field makes the reader REFUSE
+  — reconcile the two in the same commit.
+- It changes the file's blob hash, so a recipe edit changes the `production_config@<hash>` tag that
+  `arch_source` / `recipe_source` record — the tag names the file's CONTENT, recipe included.
+
 ## Why it was CONSTRUCTED rather than copied from a run
 
 The first arm of this era, `ai_v12_01_winprob_critic`, launched with a 38-flag argv that carried

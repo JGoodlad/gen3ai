@@ -341,6 +341,16 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     ns._saved_config_present = saved is not None
     inherited: Dict[str, Any] = {}
     derived_refusal = None
+    # K10(a): the launch's own same-run-restart resolution of the RECIPE knobs, in the launch's
+    # order (after the desugars, before the inheritance sweep) — so a restart argv is judged as the
+    # child resolves it, and one the child would REFUSE is reported as refused.
+    from main.train.recipe_surface import RecipeRestartError, inherit_on_restart
+    recipe_refusal = None
+    try:
+        with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(buf):
+            inherit_on_restart(ns, run_dir, saved, model=model)
+    except RecipeRestartError as e:
+        recipe_refusal = str(e)
     # THE EVAL OPPONENT REGIME, run BEFORE the blanket inheritance sweep and for
     # `resolve_critic_mode`'s reason. `--promote-threshold` is not a plain inherited flag: when the
     # argv TYPES the regime, the launch RE-DERIVES the gate from the new regime instead of
@@ -360,7 +370,8 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
             if inherit_saved_flag(ns, saved, dest, getattr(ns, dest)):
                 inherited[dest] = getattr(ns, dest)
     return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
-            "inherited": inherited, "same_run": same_run, "derived_refusal": derived_refusal}
+            "inherited": inherited, "same_run": same_run, "derived_refusal": derived_refusal,
+            "recipe_refusal": recipe_refusal}
 
 
 def unsatisfiable_from_namespace(ns) -> List[Tuple[str, str, str]]:
@@ -511,7 +522,8 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "accepted": ok, "launcher_only": launcher, "unknown": unknown,
            "unsatisfiable": unsatisfiable_pairs(argv),
            "resolution": None, "combinations": [], "teacher_spec": [], "ns": None,
-           "arch": None, "shaped_reward": shaped_reward_finding(argv)}
+           "arch": None, "recipe": None, "recipe_refusal": None,
+           "shaped_reward": shaped_reward_finding(argv)}
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
         # more to the point, the reader has to fix that first. Report it alone.
@@ -539,6 +551,18 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
         umbrella=getattr(ns, "arch", None),
         advisory=advisory,
     )
+    # K10(a) THE RECIPE SURFACE — the same effective namespace, its own report and its own verdict.
+    from main.train import recipe_surface
+    res["recipe"] = recipe_surface.report(
+        ns,
+        fresh=not bool(resolution.get("model")),
+        restart=bool(resolution.get("same_run")),
+        allowed=bool(getattr(ns, "allow_nonproduction_recipe", False)),
+        umbrella=getattr(ns, "arch", None),
+        advisory=advisory,
+        inherited=frozenset(inherited),
+    )
+    res["recipe_refusal"] = resolution.get("recipe_refusal")
     res["ns"] = ns
     return res
 
@@ -910,11 +934,23 @@ def main(raw: List[str] | None = None) -> int:
         for line in arch_surface.report_lines(arch):
             print(f"  {line}")
 
+    # K10(a) THE RECIPE SURFACE — beside the ARCH block, with its own closing line below.
+    recipe = res.get("recipe")
+    if recipe is not None:
+        from main.train import recipe_surface
+        print()
+        for line in recipe_surface.report_lines(recipe):
+            print(f"  {line}")
     derived_refusal = (res.get("resolution") or {}).get("derived_refusal")
     if derived_refusal:
         # Same verdict class as the shaped parent: resolve_config exits FATAL_CONFIG on it.
         print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {derived_refusal}")
         return int(TrainExitCode.FATAL_CONFIG)
+    if res.get("recipe_refusal"):
+        # The child's own same-run-restart refusal (a recipe value missing from its route).
+        print(f"\n  ✗ this RESTART would be REFUSED at launch (FATAL_CONFIG): {res['recipe_refusal']}")
+        return int(TrainExitCode.FATAL_CONFIG)
+
     if shaped_fatal:
         # A separate verdict: the parent's REWARD, not a flag. resolve_config exits FATAL_CONFIG on
         # it in any tree that no longer has the shaped path, whatever the parser says.
@@ -954,6 +990,7 @@ def main(raw: List[str] | None = None) -> int:
             return 0
         print("  ⚠️  the pinned static scan questioned it — see above; not a refusal")
         return 0
+    recipe_refuses = recipe is not None and recipe.refuses
     arch_only = (arch is not None and arch.refuses and not res["unknown"]
                  and not res["unsatisfiable"] and not res["combinations"]
                  and not res["teacher_spec"])
@@ -968,6 +1005,12 @@ def main(raw: List[str] | None = None) -> int:
         print("    That is not a flag error: every flag parses and every combination is legal.")
         print("    'it launches' and 'it is the experiment' are INDEPENDENT checks, and only the")
         print("    resolved-config diff above tests the second.")
+        return 1
+    if (recipe_refuses and not res["unknown"] and not res["unsatisfiable"]
+            and not res["combinations"] and not res["teacher_spec"]):
+        # The recipe twin of the verdict above — its own closing line, never the arch one.
+        print("  ✗ this command LAUNCHES — and trains a recipe nobody chose (untyped parser "
+              "defaults; RECIPE SURFACE above).")
         return 1
     if (not res["unknown"] and not res["unsatisfiable"] and not res["combinations"]
             and not res["teacher_spec"]):

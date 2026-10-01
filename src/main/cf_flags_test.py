@@ -259,14 +259,16 @@ def test_checkargs_accepts_the_whole_family():
     `--allow-nonproduction-arch` is there for the same reason one layer on:
     `gen3_arch_surface_guard_v1` (2026-09-06) makes checkargs refuse a FRESH argv whose
     architecture is not `designs/production_config.json`'s, and this argv is a flag-recognition
-    fixture, not a production launch."""
+    fixture, not a production launch. `--allow-nonproduction-recipe` likewise for the RECIPE surface
+    (K10(a))."""
     proc = subprocess.run(
         [sys.executable, "-m", "main.checkargs", "--argv",
          "--steps 1 --cf-records --cf-records-keep 8 --cf-winprob-coef 0.5 "
          "--no-cf-head-only --cf-label-lag-steps 400000 --cf-label-likelihood binomial "
          "--cf-evidential --cf-evidential-coef 0.1 --cf-evidential-reg 0.001 "
          "--win-prob-mode read_only --cf-twin-heads --cf-twin-coef 0.1 "
-         "--cf-shadow-critic --cf-shadow-coef 0.5 --allow-nonproduction-arch"],
+         "--cf-shadow-critic --cf-shadow-coef 0.5 --allow-nonproduction-arch "
+         "--allow-nonproduction-recipe"],
         capture_output=True, text=True, timeout=300, cwd=str(_REPO),
         env={**os.environ, "PYTHONPATH": str(_REPO / "src")},
     )

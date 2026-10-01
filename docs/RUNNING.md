@@ -66,17 +66,20 @@ isolation (the run is pinned to its launch commit, so pushes to `main` never dis
 ```bash
 python -m main.launcher \
   --restart-interval-hours 3 \
-  --steps 15000000 --n-envs 64 --batch-size 16384 \
-  --n-epochs 10 --ent-coef 0.02 --n-steps 2048 --lr 0.0003 \
+  --steps 15000000 \
   --device cuda --log-level periodic --arch production
 ```
 
 🚨 **`--arch production` is not optional on a fresh run.** Every architecture toggle defaults to
 OFF, so an argv that omits it trains a near-bare network that launches cleanly and looks healthy.
-It applies the whole surface in `designs/production_config.json` as if each flag had been typed,
-and an explicitly-typed flag still wins. Validate any argv offline first with
-`python -m main.checkargs --argv "…"`, which prints an architecture-surface diff and refuses a
-fresh argv that differs from production. Resolve what a launch would actually do, changing nothing,
+It applies the whole surface in `designs/production_config.json` as if each flag had been typed —
+the architecture AND the production training recipe (the file's `recipe.fresh` block — the
+lineage's measured fresh launch: env count, batch, epochs, learning rate, clip, entropy, self-play,
+the critic and its reward values) — and an
+explicitly-typed flag still wins. Validate any argv offline first with
+`python -m main.checkargs --argv "…"`, which prints an architecture-surface and a recipe-surface
+diff and refuses a fresh argv that differs from production (a recipe knob only when it was not
+typed). Resolve what a launch would actually do, changing nothing,
 with `python -m main.launcher --dry-run …` — never by launching the real command and killing it,
 which is destructive on a restart.
 
@@ -114,9 +117,10 @@ Two orthogonal marker axes: capability (*what a test needs* — `integration`, `
 | **The routine gate** (before any commit) | `pytest src/ -m "not slow and not e2e" -q -n 2` | ~4 min |
 | Everything (before a release/ship) | `pytest src/ -q` | ~47 min |
 
-Eight static gates run inside the suite, unmarked so they run in every tier: mypy, ruff, file size,
-`CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md` mode-flag mirror and
-the ledger index. Two of them also run standalone, and two more guard the import path
+Eleven static gates run inside the suite, unmarked so they run in every tier: mypy, ruff, file size,
+`CLAUDE.md` freshness, stub vacuity, slow-tier status, the `ARCHITECTURE.md` mode-flag mirror, the
+training-recipe mirror, the ledger index, the eval-trace summary readers and the poke-env enum
+comparison. Two of them also run standalone, and two more guard the import path
 (`src/packaging_gate_test.py`, `src/poke_env_fork_gate_test.py`). The full table with each gate's
 opt-out is in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 

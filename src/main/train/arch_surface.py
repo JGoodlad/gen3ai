@@ -153,7 +153,9 @@ def load_production_config(path: Optional[str] = None) -> Dict[str, Any]:
     if path is None:
         return baselines.production_config()
     with open(path) as fh:
-        return dict(json.load(fh))
+        doc = dict(json.load(fh))
+    doc.pop(baselines.RECIPE_BLOCK_KEY, None)      # the recipe is not a config field (K10(a))
+    return doc
 
 
 def production_blob_sha(path: str = PRODUCTION_CONFIG_PATH) -> str:
@@ -276,12 +278,17 @@ def unapplied_production_keys(production: Optional[Dict[str, Any]] = None) -> Li
     """
     prod = load_production_config() if production is None else production
     surface = {f.name for f in arch_surface_flags()}
+    # K10(a): a key the RECIPE surface applies (`main.train.recipe_surface.ROWS` — the critic mode,
+    # the supervision doses) is not "unapplied" by `--arch production` any more; listing it here
+    # would tell the operator to type what the umbrella already wrote.
+    from main.train.recipe_surface import ROWS as _RECIPE_ROWS
+    recipe = {r.dest for r in _RECIPE_ROWS}
     out = [(f.cli_flag, prod[f.name]) for f in REGISTRY
-           if f.name in prod and f.name not in surface
+           if f.name in prod and f.name not in surface and f.name not in recipe
            and f.tier is Tier.CLI and f.klass is not Klass.RUNTIME]
     out += [(f"--{f.coef_arg.replace('_', '-')}", prod[f.coef_arg])
             for f in arch_surface_flags()
-            if f.coef_arg and f.coef_arg in prod]
+            if f.coef_arg and f.coef_arg in prod and f.coef_arg not in recipe]
     return out
 
 
@@ -378,10 +385,10 @@ def report_lines(rep: ArchReport) -> List[str]:
                    f"(explicit flags still win)")
         skipped = unapplied_production_keys()
         if skipped:
-            out.append("  ⚠️  NOT applied — `--arch` writes the ARCHITECTURE only. The mirror's "
-                       "CRITIC readouts and its SUPERVISION DOSES are outside that surface by "
-                       "class (an experiment varies the first; the second is a training dose, not "
-                       "a network). Type them yourself if you want production's values:")
+            out.append("  ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface "
+                       "(the RECIPE block below applies the critic mode and the supervision "
+                       "doses). These critic READOUTS are implied by --critic winprob or sit at "
+                       "their defaults; type them yourself if you want them pinned:")
             out.append("      " + "  ".join(f"{f} {v!r}" for f, v in skipped))
     part = surface_partition()
     scope = (f"{part['arch']} of {part['total']} registry toggles are the ARCH surface; "

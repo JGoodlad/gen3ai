@@ -167,7 +167,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 
 **Two axes, and keeping them apart is the point.** A marker says what a test NEEDS (*(unmarked)* · `integration` · `sim` · `browser` · `e2e`); a separate marker says what it COSTS (`slow`). **A tier is DECLARED, never inferred** — cost arrives transitively, so no filename or import graph can classify a test. `conftest.py` reports an unmarked test that overruns 30 s, and **enforces only on a quiet box** (factor < 1.05 over the SESSION *and* that test's own window); on a busy one it is advisory, because a duration measured under starvation is not a measurement.
 
-**Ten static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
+**Eleven static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|
@@ -178,6 +178,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 | `src/test_stub_vacuity_gate_test.py` | every `monkeypatch.setattr` / `patch` / `mod.x = stub` target under `src/**/*_test.py` is a symbol the code under test actually READS — **a stub that stubs nothing FAILS**. **The allowlist is EMPTY**; fix at the source | `GEN3AI_SKIP_STUB_GATE=1` |
 | `src/slow_tier_status_gate_test.py` | the last recorded verdict of every `slow` test (`designs/ops/slow_tier_status.json`, written by the slow tier itself). **A recorded FAIL fails the ROUTINE gate**, naming the test and the commit it failed at; inconclusive (a timeout, or a test killed in flight), unrecorded and stale are REPORTED, never fatal | `GEN3AI_SKIP_SLOW_STATUS_GATE=1` |
 | `src/mode_flag_doc_gate_test.py` | every MODE-flag value `designs/ARCHITECTURE.md`'s PROSE states equals `designs/production_config.json` (read via `agents.training.baselines.production_config()`), and every key the mirror marks INERT is called INERT. The (doc pattern → key) table is DECLARED, so a renamed key FAILS instead of going quiet | `GEN3AI_SKIP_MODE_FLAG_DOC_GATE=1` |
+| `src/recipe_doc_gate_test.py` | every TRAINING-RECIPE value `designs/endstate/design_learner_recipe.md` states (§3.22's source table, §1's live-value column) equals the mirror's `recipe.fresh` / `recipe.fork` (read through `main.train.recipe_surface.recipe_blocks()`, which also refuses a block value that contradicts a recorded field); DECLARED (doc pattern → key) table, every recipe row covered, and a change to the doc OR the block alone FAILS | `GEN3AI_SKIP_RECIPE_DOC_GATE=1` |
 | `src/ledger_index_gate_test.py` | `designs/research_state/ledger_index.md` (the generated date · line · title index over the 13.8k-line ledger) matches what `python -m main.ledger_index` renders — an entry appended without a regeneration FAILS here. **On a rebase conflict take either side and re-run the generator; never hand-merge it, and never edit the ledger** | `GEN3AI_SKIP_LEDGER_INDEX_GATE=1` |
 | `src/trace_summary_reader_gate_test.py` | no module but `main/prober/core_trace.py` opens an eval-trace `*_summary.json` — every reader goes through `load_summary` / `load_summary_meta` / `refuse_core_trace`. F-LH-5: a Rust-eval core trace stores `meta` only, so a direct reader read ZERO decisions, silently. **The allowlist is EMPTY** | `GEN3AI_SKIP_SUMMARY_READER_GATE=1` |
 | `src/poke_env_enum_str_compare_gate_test.py` | no poke-env ENUM (`Target`, `Status`, `MoveCategory`, `Weather`, … derived) is compared to a value it can never equal — mypy strict-equality mode over `agents`/`main`/`utils`/`poke_env`, typed, so `live_mon.status == "slp"` (a str) is not flagged. F-LF-1: `move.target == "self"` killed four bots' setup step for their whole life. Cold ~24 s once, warm ~0.3 s | `GEN3AI_SKIP_ENUM_STR_GATE=1` |
@@ -235,9 +236,9 @@ export PYTHONPATH=$PYTHONPATH:src
 python -m main.checkargs models/<run>          # or --argv "…"
 # resolve the ACTUAL launch on this box without creating anything (SAFE on a restart)
 python -m main.launcher --dry-run …
-# fresh run
-python -m main.launcher --restart-interval-hours 3 --steps 15000000 --n-envs 64 \
-  --batch-size 16384 --n-epochs 10 --ent-coef 0.02 --n-steps 2048 --lr 0.0003 \
+# fresh run — `--arch production` supplies the architecture AND the training recipe; type a
+# recipe knob (e.g. `--n-epochs 2`) only when it IS the experiment's lever
+python -m main.launcher --restart-interval-hours 3 --steps 15000000 \
   --device cuda --log-level periodic --arch production
 # resume / fork (all non-launcher flags forwarded verbatim)
 python -m main.launcher --restart-interval-hours 3 --model models/<run>/checkpoints/<ckpt>.zip \
@@ -246,7 +247,7 @@ python -m main.launcher --restart-interval-hours 3 --model models/<run>/checkpoi
 
 **The hazards that have actually cost runs — none of these are theoretical:**
 
-- 🚨 **"It launches" and "it is the experiment" are INDEPENDENT checks.** On 2026-09-06 an arm launched from a design-doc command block with every architecture flag at its OFF default and trained a near-bare network for 24.4M steps; three gates passed and all three were right. **`--arch production`** applies the production surface as if typed. `checkargs` prints an ARCH SURFACE diff and refuses a fresh argv that differs.
+- 🚨 **"It launches" and "it is the experiment" are INDEPENDENT checks.** On 2026-09-06 an arm launched from a design-doc command block with every architecture flag at its OFF default and trained a near-bare network for 24.4M steps; three gates passed and all three were right. **`--arch production`** applies the production surface as if typed — the ARCH surface AND the TRAINING RECIPE (the mirror's `recipe.fresh`: N0's measured `n_envs`, batch × accumulation, epochs, LR + KL controller, clip, entropy, self-play, the critic, its reward values and the doses; `recipe.fork` = E5, for forks; K10(a)). `checkargs` prints an ARCH SURFACE and a RECIPE SURFACE diff and refuses a fresh argv that differs — a recipe knob only when it was NOT typed (a typed value is the arm's lever; `--allow-nonproduction-recipe` consents). Detail: `designs/endstate/design_learner_recipe.md` §3.22.
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`resolve_model_ref`) — for `--distill-teacher`, `--stable-opponents`, `--exploiter`, `--win-prob-pbrs-source` and friends. Name the `.zip` or `@step` to pin a file.
 - 🚨 **AN ARGV IS NOT A CONFIG.** With `--model`, every flag you do not name is INHERITED from the checkpoint's `model_config.json`.
 - 🚨 **`--lr`, `--batch-size`, `--n-steps` and `--gamma` are INERT on a resume** — SB3 restores the checkpoint's own values, so a FORK inherits whatever the parent's KL controller had annealed to. **`--fork-lr`** pins it; the quantity that predicts a fold's collateral is the **DOSE** (`lr × n_epochs × optimizer steps per epoch / rollout rows` — `lr × n_epochs / (batch_size × grad_accum_steps)` when the rollout divides evenly; a ragged last group is a FULL step, K10(c)), read with `python -m main.dose <run>`.
