@@ -10152,3 +10152,41 @@ which is TF32 rounding. Chasing that turned up the real defect.
   near-best moves from other unplayed moves (+0.001 [−0.037, +0.040]).
 - **Overhead MEASURED:** `ridealong_step_benchmark.py` puts the shipped one-pass heads at +0.59 s on
   arm C's 67.05 s GPU update (0.88 %). That is 12.3 ms a step × 48 minibatches, at load 8.5.
+
+## v127 — the RND VARIANT ENSEMBLE beside the ride-along RND head, and the heads' optimizers acquired at startup (`gen3_ridealong_rnd_variants_v1`; config bump, no ARCH_SIGNATURE bump, learning bit-identical)
+
+Owner, 2026-09-30: *"Can we just ensemble RND, toss one a different learning rate or something, so we
+knock them out all at once? If they're fully detached it's a free win at small cost, and we can
+compare RND strategies."*
+
+- **`--ridealong-rnd-variants`** (a canonical comma list of `fast,decay,small,feat`, `all`, or `off`, the
+  default; it requires `--ridealong-rnd`). Each variant is its own detached predictor with its own Adam,
+  clip, error z-score, fail-closed switch and `ridealong/rndv_<name>_*` series. `--ridealong-rnd` is
+  unchanged and is the reference, `base`. The hyperparameters are declared in `RND_VARIANT_DECLS`:
+  `fast` runs at 10× base's predictor rate (3e-3). `decay` is pulled toward its own init once per PPO
+  update, with a half-life of 10 updates (about half an eval cycle). `small` is an obs→32→64 predictor,
+  11.5 % of base's parameters, deliberately less expressive than the target. `feat` reads the detached
+  `value_pooled` and has its own target and normalisation. The observation variants share base's
+  target and normalisation (PAIRED), and `fast`/`decay` start from base's exact weights. The
+  window-replay variant was not built (see the X26 amendment).
+- **New series:** raw-error median / IQR / IQR ÷ median per RND key (saturation), and `*_ident_ratio`
+  (the error on deterministic block chimeras of the minibatch over the error on its real rows: the
+  identification monitor, no RNG).
+- **Proofs:** `ridealong_heads_test`: no variant loss reaches the trunk, policy or V; each trains only
+  its own predictor; `feat` detaches its own input too. `ridealong_update_test`: the ON arm carries
+  every variant (bit-identical PPO); a third arm without the variants shows every other ride-along
+  tensor, base included, is bit-identical with them. Mutation-checked: sharing base's predictor, an RNG
+  draw in the chimera, building the variants outside `fork_rng`, and removing both of `feat`'s
+  stop-grads each fail the proofs.
+- **Lifecycle (the K8 inventory's finding):** every ride-along optimizer is now built at
+  `_setup_model` (`_ridealong_acquire`), with its Adam state pre-allocated bit-identically to torch's
+  lazy init. A later build is counted (`ridealong/acquisitions_after_freeze`), never fatal. The heads' step is
+  K8's candidate compile region R-ride, and it stays eager.
+- **Overhead MEASURED** (`ridealong_step_benchmark.py`, GPU, load ~10): the four heads add 0.65 s to
+  arm C's 67.05 s update (0.97 %). The four heads plus all four variants add 0.97 s (1.45 %). Each
+  variant's marginal cost inside that set is 0.11–0.16 s.
+- **Reader:** `python -m main.ridealong_read` reads every variant and computes the amended X26
+  comparisons (a)–(e) with Holm across variants; `--run-checkpoints` reads a run's retained checkpoints
+  as a series.
+- **Config v127:** `ridealong_rnd_variants` is recorded, `_resolve`-inherited and compared in
+  `check_compatible`. A pre-v127 config migrates to `"off"`. The production mirror records it `"off"`.

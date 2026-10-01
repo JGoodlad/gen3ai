@@ -360,6 +360,11 @@ def _migrate_config(data: dict) -> dict:
         data.setdefault("ridealong_adv", 0)
         data.setdefault("ridealong_opp", 0)
         data["config_version"] = 126
+    # v127 (gen3_ridealong_rnd_variants_v1) — the RND VARIANT list, defaulted rather than refused:
+    # "off" is the only possible past (the variants did not exist).
+    if version < 127:
+        data.setdefault("ridealong_rnd_variants", "off")
+        data["config_version"] = 127
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

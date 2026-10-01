@@ -277,6 +277,9 @@ class ModelVersionConstruction(ModelVersionFields):
                 policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_adv", 0)),
             ridealong_opp=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_opp", 0)),
+            ridealong_rnd_variants=str(
+                policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_rnd_variants",
+                                                                       "off")),
             value_dist_vmin=float(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
             ),

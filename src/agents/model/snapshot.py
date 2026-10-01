@@ -1255,6 +1255,7 @@ def current_model_version(
     ridealong_rnd: bool = False,
     ridealong_adv: int = 0,
     ridealong_opp: int = 0,
+    ridealong_rnd_variants: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
     value_tail_weight: float = 0.0,
@@ -1329,6 +1330,7 @@ def current_model_version(
     ext_kwargs["ridealong_rnd"] = bool(ridealong_rnd)
     ext_kwargs["ridealong_adv"] = int(ridealong_adv)
     ext_kwargs["ridealong_opp"] = int(ridealong_opp)
+    ext_kwargs["ridealong_rnd_variants"] = str(ridealong_rnd_variants)
     ext_kwargs["value_dist_mode"] = value_dist_mode
     ext_kwargs["value_dist_bins"] = value_dist_bins
     ext_kwargs["value_dist_vmin"] = value_dist_vmin
@@ -1434,6 +1436,7 @@ def arch_toggles_from_model(model: Any) -> dict:
         "ridealong_rnd": bool(getattr(fe, "ridealong_rnd", False)),
         "ridealong_adv": int(getattr(fe, "ridealong_adv", 0) or 0),
         "ridealong_opp": int(getattr(fe, "ridealong_opp", 0) or 0),
+        "ridealong_rnd_variants": str(getattr(fe, "ridealong_rnd_variants", "off") or "off"),
         # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
         # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
         "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),

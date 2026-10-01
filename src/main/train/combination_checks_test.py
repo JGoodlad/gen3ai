@@ -256,6 +256,7 @@ ARGVS: dict[str, list[str]] = {
     # gen3_dense_aux_v1 — the same shape a third time: dense targets on the win-prob head only
     # move the value function when that head IS the value function.
     "dense_aux_needs_the_winprob_critic": ["--win-prob-dense-aux", "1.0"],
+    "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
     "winprob_critic_refuses_self_phi_pbrs": _WP + ["--win-prob-pbrs-coef", "0.5"],
     "winprob_critic_refuses_self_phi_source": _WP + ["--win-prob-pbrs-source", "models/p.zip"],
     "winprob_critic_refuses_draw_penalty": ["--critic", "winprob",

@@ -953,7 +953,7 @@ announcement and every value-side flag below — is in
 | `--td-aux-coef` | `0.0` | the Bellman identity as an explicit loss over CONTIGUOUS pairs the PPO permutation destroys. 🚨 **Pre-registered band 1.0–3.0; `λ ≤ 0.1` measured significantly WORSE than control** — the small-coef regime is to be avoided, not treated as "a bit of the effect". Episode boundaries DROP the pair, never zero it |
 | `--value-dist-mode` / `--value-dist-coef` | `none` / `0.0` | HL-Gauss categorical readout off `value_pooled`, **interpretability only** — ledger K1 killed it as a win-rate lever. Validate PIT ≈ uniform, never win rate. REFUSED under `winprob` |
 
-## The DETACHED RIDE-ALONG heads (`--ridealong-ensemble` · `--ridealong-rnd` · `--ridealong-adv` · `--ridealong-opp`)
+## The DETACHED RIDE-ALONG heads (`--ridealong-ensemble` · `--ridealong-rnd` · `--ridealong-adv` · `--ridealong-opp` · `--ridealong-rnd-variants`)
 
 `gen3_ridealong_heads_v1` (v126; `instrumented_ppo/ridealong_terms.py`, heads in
 `agents/model/ridealong_heads.py`). Baselines that OBSERVE: a V ensemble (epistemic uncertainty),
@@ -966,13 +966,28 @@ state, PPO scalars, RNG). Two things to know when reading `ridealong/*`. **The h
 on epoch 0 only** (`RIDEALONG_EPOCHS` = 1: each rollout row seen once, scored before the heads train
 on it). All 10 epochs cost +13 % of a GPU update on the learner benchmark; one pass MEASURED +0.59 s = 0.88 % of a 67 s update (`ridealong_step_benchmark.py`; X26's
 `PREREGISTRATION.md` "Overhead").
-And **the heads' Adam state is not checkpointed** (a restart resumes their weights with a fresh Adam). B trains
+And **the heads' Adam state is not checkpointed** (a restart resumes their weights with a fresh Adam).
+**Every ride-along optimizer is ACQUIRED AT STARTUP** (`RideAlongTerms._setup_model` →
+`_ridealong_acquire`, Adam state pre-allocated, bit-identical to lazy init). A step that has to build
+one is a LATE ACQUISITION: counted in `ridealong/acquisitions_after_freeze`, announced once, never fatal. Tooling
+that swaps `policy.ridealong` must call `_ridealong_acquire()` again (both benchmarks do). The step is
+K8's candidate compile region R-ride; it stays eager. **The RND variants**
+(`--ridealong-rnd-variants all`, v127: `fast` / `decay` / `small` / `feat`, beside the unchanged base
+RND) each step on their own Adam after the four heads. A non-finite variant disables ITSELF
+(`ridealong/rndv_<name>_disabled`). `decay`'s pull toward init runs once per update, at the first step
+(the accumulator marks the boundary). Their series are `ridealong/rndv_<name>_*`: loss, error mean /
+median / IQR / `rel_spread` (saturation), z by class, the V-error meters, and `*_ident_ratio` (block
+chimera ÷ real-row error, the identification monitor). Base logs the same `rnd_err_median` /
+`rnd_err_rel_spread` / `rnd_ident_ratio`. With every variant on, the heads add 0.97 s
+(1.45 %) to a 67 s update (`designs/research_state/measurements/ridealong_baseline/overhead_variants_2026-09-30.json`). B trains
 only where `--opp-intent-coef > 0`, because that is what aligns the one-ahead opponent labels. The
 meters are disagreement / novelty vs |V − z| (`*_auroc_err`, `*_spearman_err`, top vs bottom decile),
 `rnd_z_<class>`, `adv_corr_logit`, `adv_std_starved` vs `adv_std_fed`, `q_out_of_range`. These are
 MONITORING (rows the heads just trained on). The verdicts are the offline reader's,
 `python -m main.ridealong_read` (`src/main/ridealong_read/`: CPU forwards on the Lane S bank and the
-X4 pre-read truth turns; `--fresh-heads` reads the same checkpoint's untrained floor), plus
+X4 pre-read truth turns; `--fresh-heads` reads the same checkpoint's untrained floor; every RND variant
+and the amended comparisons (a)–(e); `--run-checkpoints <run>` reads a run's retained checkpoints as a
+series), plus
 `python -m main.ridealong_read.rnd_states` for the state-level RND reads. The pre-registered run is
 EXPERIMENT_BACKLOG X26.
 

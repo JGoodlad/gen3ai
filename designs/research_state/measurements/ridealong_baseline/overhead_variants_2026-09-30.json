@@ -1,0 +1,264 @@
+{
+ "device": "cuda",
+ "batch": 2048,
+ "k": 30,
+ "warmup": 5,
+ "passes": 5,
+ "ridealong_epochs": 1,
+ "minibatches_per_epoch": 48,
+ "baseline_update_s": 67.05,
+ "configs": {
+  "core": {
+   "step_ms": {
+    "median": 12.314301973674446,
+    "min": 11.60176401026547,
+    "max": 14.860030030831695
+   },
+   "pass_s": {
+    "median": 0.652847587945871,
+    "all": [
+     0.9861788920825347,
+     0.7357368870871142,
+     0.6213711419841275,
+     0.6182378008961678,
+     0.652847587945871
+    ]
+   },
+   "added_s_per_update": 0.652847587945871,
+   "added_pct_of_update": 0.9736727635285176,
+   "late_acquisitions": 0
+  },
+  "+fast": {
+   "step_ms": {
+    "median": 15.500050503760576,
+    "min": 14.06925602350384,
+    "max": 18.027503974735737
+   },
+   "pass_s": {
+    "median": 0.7767646779539064,
+    "all": [
+     0.7698920690454543,
+     0.7492108140140772,
+     0.7767646779539064,
+     0.7945002750493586,
+     0.783071345067583
+    ]
+   },
+   "added_s_per_update": 0.7767646779539064,
+   "added_pct_of_update": 1.1584857240177575,
+   "late_acquisitions": 0
+  },
+  "+decay": {
+   "step_ms": {
+    "median": 15.70022600935772,
+    "min": 14.586887089535594,
+    "max": 19.359173951670527
+   },
+   "pass_s": {
+    "median": 0.7745732150506228,
+    "all": [
+     0.8247754650656134,
+     0.728072862024419,
+     0.7851167040644214,
+     0.7480612469371408,
+     0.7745732150506228
+    ]
+   },
+   "added_s_per_update": 0.7745732150506228,
+   "added_pct_of_update": 1.1552173229688634,
+   "late_acquisitions": 0
+  },
+  "+small": {
+   "step_ms": {
+    "median": 14.673639554530382,
+    "min": 13.080819975584745,
+    "max": 17.92998204473406
+   },
+   "pass_s": {
+    "median": 0.761304893065244,
+    "all": [
+     0.761304893065244,
+     0.8170620689634234,
+     0.7412708530901,
+     0.7518871879437938,
+     0.7680921209976077
+    ]
+   },
+   "added_s_per_update": 0.761304893065244,
+   "added_pct_of_update": 1.1354286250040924,
+   "late_acquisitions": 0
+  },
+  "+feat": {
+   "step_ms": {
+    "median": 16.336465487256646,
+    "min": 14.456322067417204,
+    "max": 19.59457597695291
+   },
+   "pass_s": {
+    "median": 0.7363752550445497,
+    "all": [
+     0.7601135870208964,
+     0.7363752550445497,
+     0.7118997389916331,
+     0.7567194970324636,
+     0.710932663991116
+    ]
+   },
+   "added_s_per_update": 0.7363752550445497,
+   "added_pct_of_update": 1.0982479568151375,
+   "late_acquisitions": 0
+  },
+  "+all": {
+   "step_ms": {
+    "median": 17.814153979998082,
+    "min": 17.26933103054762,
+    "max": 18.869645078666508
+   },
+   "pass_s": {
+    "median": 0.9735712989931926,
+    "all": [
+     0.9643333210842684,
+     0.977236298029311,
+     0.9802551040193066,
+     0.9735712989931926,
+     0.962468030047603
+    ]
+   },
+   "added_s_per_update": 0.9735712989931926,
+   "added_pct_of_update": 1.4520079030472672,
+   "late_acquisitions": 0
+  },
+  "-fast": {
+   "step_ms": {
+    "median": 16.944912960752845,
+    "min": 15.923775965347886,
+    "max": 19.907804089598358
+   },
+   "pass_s": {
+    "median": 0.8333369540050626,
+    "all": [
+     0.8640156619949266,
+     0.8528706260258332,
+     0.8297517449827865,
+     0.8333369540050626,
+     0.8051882340805605
+    ]
+   },
+   "added_s_per_update": 0.8333369540050626,
+   "added_pct_of_update": 1.2428589918047168,
+   "late_acquisitions": 0
+  },
+  "-decay": {
+   "step_ms": {
+    "median": 15.741579001769423,
+    "min": 15.263085952028632,
+    "max": 17.743130098097026
+   },
+   "pass_s": {
+    "median": 0.8121104659512639,
+    "all": [
+     0.8206959300441667,
+     0.8121104659512639,
+     0.7988836319418624,
+     0.7728820709744468,
+     0.8672787070972845
+    ]
+   },
+   "added_s_per_update": 0.8121104659512639,
+   "added_pct_of_update": 1.2112012915007666,
+   "late_acquisitions": 0
+  },
+  "-small": {
+   "step_ms": {
+    "median": 18.36186199216172,
+    "min": 18.087337026372552,
+    "max": 34.53080798499286
+   },
+   "pass_s": {
+    "median": 0.8652702979743481,
+    "all": [
+     1.0249552769819275,
+     0.9683444489492103,
+     0.8652702979743481,
+     0.8049879480386153,
+     0.7960272610653192
+    ]
+   },
+   "added_s_per_update": 0.8652702979743481,
+   "added_pct_of_update": 1.2904851573070069,
+   "late_acquisitions": 0
+  },
+  "-feat": {
+   "step_ms": {
+    "median": 15.782881469931453,
+    "min": 15.597813995555043,
+    "max": 16.083145048469305
+   },
+   "pass_s": {
+    "median": 0.8309694109484553,
+    "all": [
+     0.809764793026261,
+     0.82539482798893,
+     0.8309694109484553,
+     0.8729504420189187,
+     0.8638892859453335
+    ]
+   },
+   "added_s_per_update": 0.8309694109484553,
+   "added_pct_of_update": 1.2393279805346091,
+   "late_acquisitions": 0
+  }
+ },
+ "per_variant_minus_core": {
+  "+fast": {
+   "step_ms": 3.18574853008613,
+   "added_s_per_update": 0.1239170900080353,
+   "added_pct_of_update": 0.1848129604892399
+  },
+  "+decay": {
+   "step_ms": 3.3859240356832743,
+   "added_s_per_update": 0.12172562710475177,
+   "added_pct_of_update": 0.18154455944034575
+  },
+  "+small": {
+   "step_ms": 2.359337580855936,
+   "added_s_per_update": 0.1084573051193729,
+   "added_pct_of_update": 0.16175586147557475
+  },
+  "+feat": {
+   "step_ms": 4.0221635135822,
+   "added_s_per_update": 0.08352766709867865,
+   "added_pct_of_update": 0.12457519328661992
+  },
+  "+all": {
+   "step_ms": 5.499852006323636,
+   "added_s_per_update": 0.32072371104732156,
+   "added_pct_of_update": 0.4783351395187496
+  }
+ },
+ "marginal_in_all": {
+  "fast": {
+   "step_ms": 0.8692410192452371,
+   "added_s_per_update": 0.14023434498813003,
+   "added_pct_of_update": 0.20914891124255042
+  },
+  "decay": {
+   "step_ms": 2.0725749782286584,
+   "added_s_per_update": 0.1614608330419287,
+   "added_pct_of_update": 0.24080661154650063
+  },
+  "small": {
+   "step_ms": -0.5477080121636391,
+   "added_s_per_update": 0.10830100101884454,
+   "added_pct_of_update": 0.16152274574026038
+  },
+  "feat": {
+   "step_ms": 2.0312725100666285,
+   "added_s_per_update": 0.14260188804473728,
+   "added_pct_of_update": 0.2126799225126581
+  }
+ },
+ "contention_at_start": "contention: load average 9.82/11.33/10.47 on 16 cpus (box looks idle). If this is a timeout and a training run is live, it is probably starvation, not a bug \u2014 confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head",
+ "contention_at_end": "contention: load average 8.38/10.72/10.30 on 16 cpus (box looks idle). If this is a timeout and a training run is live, it is probably starvation, not a bug \u2014 confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head",
+ "loadavg_end": "8.38 10.72 10.30 8/1132 930713"
+}

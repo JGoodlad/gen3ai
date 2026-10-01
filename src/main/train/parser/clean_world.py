@@ -14,6 +14,17 @@ from main.train.constants import CLIP_RANGE_DEFAULT
 from main.train.parser.base import BoolFlag, optional_float
 
 
+def _rnd_variants_arg(value: str) -> str:
+    """argparse ``type`` for --ridealong-rnd-variants: the CANONICAL recorded string (so the order
+    a human types never reaches the version gate), or an argparse error naming the declared set."""
+    from agents.model.ridealong_heads import canonical_rnd_variants
+
+    try:
+        return canonical_rnd_variants(value)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from e
+
+
 def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
     # --- gen3_winprob_critic_mode_v1 (ai_v12, designs/ai_v12/design_winprob_only_critic.md): WHICH
@@ -492,6 +503,17 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "same advantage where their actual action is named. Q = V + A + B is "
                              "logged as a derived readout. 0 (default) = off; the baseline uses 5. "
                              "Requires --opp-intent-coef > 0." + _ra_common)
+    parser.add_argument("--ridealong-rnd-variants", "--ridealong_rnd_variants",
+                        dest="ridealong_rnd_variants", type=_rnd_variants_arg, default=None,
+                        help="gen3_ridealong_rnd_variants_v1 (v127): the RND VARIANT ENSEMBLE beside "
+                             "--ridealong-rnd (base, the reference). A comma list of fast (10x the "
+                             "predictor rate: forgetting by fast tracking), decay (pulled toward its "
+                             "init, half-life 10 PPO updates: forgetting by shrinkage), small (a "
+                             "32-unit predictor that cannot fingerprint battles), feat (over the "
+                             "detached trunk features: live representation drift); 'all' = every "
+                             "one; 'off' (default) = none. Each is its own predictor, optimizer and "
+                             "statistics; the observation variants share base's target (paired). "
+                             "The X26 baseline uses 'all'. Requires --ridealong-rnd." + _ra_common)
     # --- gen3_winprob_rollout_target_v1 (2026-09-10, the critic ladder's arm 10): R-ROLLOUT
     #     MONTE-CARLO targets for the win-prob BCE. The fourth knob on the SAME loss — one scales
     #     it, `--win-prob-strata-weight` re-prices its MIX, `--win-prob-lambda` re-aims it at the

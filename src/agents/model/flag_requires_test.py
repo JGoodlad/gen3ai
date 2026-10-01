@@ -50,6 +50,8 @@ _ON_OVERRIDE: Dict[str, object] = {
     "entity_topk_seats": 2,
     "damage_topk_k": 2,
     "damage_candidate_k": 2,
+    # gen3_ridealong_rnd_variants_v1: a comma-list string; `True` is not a legal value.
+    "ridealong_rnd_variants": "all",
 }
 
 

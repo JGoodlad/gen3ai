@@ -112,6 +112,7 @@ class ExtractorBuild(torch.nn.Module):
                  ridealong_rnd: bool = False,
                  ridealong_adv: int = 0,
                  ridealong_opp: int = 0,
+                 ridealong_rnd_variants: str = "off",
                  ):
         super().__init__()
         # gen3_extractor_stashes_v1 (4b): `layout` is Optional in the SIGNATURE only because SB3
@@ -1032,6 +1033,15 @@ class ExtractorBuild(torch.nn.Module):
         self.ridealong_rnd = bool(ridealong_rnd)
         self.ridealong_adv = int(ridealong_adv or 0)
         self.ridealong_opp = int(ridealong_opp or 0)
+        # gen3_ridealong_rnd_variants_v1 (v127): recorded in CANONICAL form (a typed order never
+        # reaches the version gate); an unknown name raises here (`parse_rnd_variants`).
+        from agents.model.ridealong_heads import canonical_rnd_variants
+        self.ridealong_rnd_variants = canonical_rnd_variants(ridealong_rnd_variants)
+        if self.ridealong_rnd_variants != "off" and not self.ridealong_rnd:
+            raise ValueError(
+                "ridealong_rnd_variants requires ridealong_rnd: the observation variants share "
+                "base's frozen target and normalisation, and base is the reference every variant "
+                "is compared with.")
         if self.ridealong_ensemble and self.win_head is None:
             raise ValueError(
                 "ridealong_ensemble requires win_prob_mode != 'none': the ensemble members predict "

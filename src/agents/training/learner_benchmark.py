@@ -499,23 +499,26 @@ def _config(model: Any, name: str, base_epochs: int):
         if name == "profile":
             model.n_epochs = PROFILE_EPOCHS
         if name == "ridealong":
-            # gen3_ridealong_heads_v1: the X26 baseline's four DETACHED heads at the baseline spec,
-            # attached to the loaded policy exactly as a v126 build makes them (fresh, private RNG,
-            # on the model's device) — rebuilt per call, so every repeat does the same work. The
-            # checkpoint predates v126, so the heads cannot come from the zip itself.
-            from agents.model.ridealong_heads import RideAlongSpec, build_ridealong
+            # gen3_ridealong_heads_v1: the X26 baseline's DETACHED heads at the baseline spec (the
+            # four heads + every RND variant, v127), attached to the loaded policy exactly as a
+            # build makes them (fresh, private RNG, on the model's device) — rebuilt per call, so
+            # every repeat does the same work, and ACQUIRED explicitly (`_ridealong_acquire`, the
+            # startup acquisition site), so the timed update builds nothing lazily. The checkpoint
+            # predates v126, so the heads cannot come from the zip itself.
+            from agents.model.ridealong_heads import RND_VARIANTS, RideAlongSpec, build_ridealong
             fe = model.policy.features_extractor
             obs_dim = int(model.policy.observation_space["observation"].shape[0])
             model.policy.ridealong = build_ridealong(
-                fe, obs_dim=obs_dim, spec=RideAlongSpec(ensemble=5, rnd=True, adv=5, opp=5)
+                fe, obs_dim=obs_dim, spec=RideAlongSpec(ensemble=5, rnd=True, adv=5, opp=5,
+                                                        rnd_variants=RND_VARIANTS)
             ).to(model.device)
-            model._ridealong_opt = None
             model._ridealong_disabled = False
+            model._ridealong_acquire()
         yield
     finally:
         if name == "ridealong":
             model.policy.ridealong = None
-            model._ridealong_opt = None
+            model._ridealong_acquire()
         for k, v in saved_attrs.items():
             if v is _missing:
                 if k in vars(model):
@@ -1089,7 +1092,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--no-ablations", action="store_true")
     r.add_argument("--ridealong", action="store_true",
                    help="also time the update with the X26 ride-along heads attached "
-                        "(ensemble 5, rnd, adv 5, opp 5; gen3_ridealong_heads_v1)")
+                        "(ensemble 5, rnd, adv 5, opp 5 + every RND variant; "
+                        "gen3_ridealong_heads_v1 + gen3_ridealong_rnd_variants_v1)")
     r.add_argument("--skip-tf32", action="store_true")
     r.add_argument("--no-profile", action="store_true")
     r.add_argument("--out-root", default=str(DEFAULT_OUT_ROOT))

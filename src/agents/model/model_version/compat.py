@@ -623,7 +623,9 @@ class ModelVersionCompatibility(ModelVersionFields):
             ("ridealong_ensemble", self.ridealong_ensemble != saved.ridealong_ensemble),
             ("ridealong_rnd", self.ridealong_rnd != saved.ridealong_rnd),
             ("ridealong_adv", self.ridealong_adv != saved.ridealong_adv),
-            ("ridealong_opp", self.ridealong_opp != saved.ridealong_opp)) if differs]
+            ("ridealong_opp", self.ridealong_opp != saved.ridealong_opp),
+            ("ridealong_rnd_variants",
+             self.ridealong_rnd_variants != saved.ridealong_rnd_variants)) if differs]
         if _ra_diff:
             _ra = _ra_diff[0]
             raise ModelVersionError(

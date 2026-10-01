@@ -599,6 +599,13 @@ REGISTRY: Tuple[ModelFlag, ...] = (
                    "The simple pre-X5 parameterisation, to be re-based onto X5's flat pointer.",
               requires=("opp_intent",),
               family=Family.CRITIC),
+    ModelFlag("ridealong_rnd_variants", "off", Tier.CLI, Klass.STRUCTURAL, 127,
+              "the DETACHED RND VARIANT ENSEMBLE beside --ridealong-rnd (base): a canonical comma "
+              "list of fast,decay,small,feat ('all' = every one; 'off' = none), each its own "
+              "predictor + optimizer + statistics, compared PAIRED against base",
+              note="The X26 RND strategy comparison (owner, 2026-09-30: \"ensemble RND, toss one a different learning rate or something, so we knock them out all at once\"). `fast` = base's predictor at 10x the rate; `decay` = base's predictor pulled toward its init with a 10-update half-life; `small` = a 32-unit one-hidden-layer predictor; `feat` = base's shapes over the detached value_pooled. Declarations: `agents.model.ridealong_heads.RND_VARIANT_DECLS`. The observation variants share base's target and normalisation (paired). DETACHED exactly like the four heads (pinned bit-for-bit by `ridealong_update_test`, base itself included). STRUCTURAL: the variants' parameters are the state_dict delta. family=CRITIC: never on the production ARCH surface. It REQUIRES ridealong_rnd: base is the shared target and the reference.",
+              requires=("ridealong_rnd",),
+              family=Family.CRITIC),
 )
 
 BY_NAME: Dict[str, ModelFlag] = {f.name: f for f in REGISTRY}

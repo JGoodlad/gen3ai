@@ -200,6 +200,14 @@ RIDEALONG_PRIOR_SCALE_Q = 0.05
 RIDEALONG_OPP_MOVE_EMB = 32
 RIDEALONG_RND_HIDDEN = 256
 RIDEALONG_RND_OUT = 64
+# gen3_ridealong_rnd_variants_v1 (v127, `--ridealong-rnd-variants`): the `small` variant's predictor,
+# obs → RND_SMALL_HIDDEN → RND_OUT, one hidden layer. It has 90,496 parameters, against the base
+# predictor's 789,312 (11.5 %). Every observation is squeezed through 32 linear features before the
+# one nonlinearity, so it cannot hold a per-battle fingerprint of the 2761-dim observation. The
+# target it must match is 256 hidden units wide, so it cannot identify the target exactly either: its
+# novelty should track coarse density. The other variants reuse the widths above (`fast` / `decay`
+# are base's predictor; `feat` is base's shapes over the D_MODEL-dim value_pooled).
+RIDEALONG_RND_SMALL_HIDDEN = 32
 #: The PRIVATE init seed. Every ride-along module is built inside `torch.random.fork_rng` from this
 #: seed, so building the heads draws nothing from the global stream (heads ON and OFF leave the
 #: policy's own init, and every later draw, bit-identical).

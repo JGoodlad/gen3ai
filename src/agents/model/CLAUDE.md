@@ -141,7 +141,11 @@ later draw (init, rollout sampling, minibatch shuffles); **(2)** never put them 
 or fold their loss into PPO's `loss` — PPO's global `clip_grad_norm_` would include their gradient
 and rescale the trunk's; **(3)** every input goes through `RideAlongBatch.detached`. A frozen random
 network (RND target, randomized prior) is a BUFFER (`freeze_to_buffers`), never a
-`requires_grad=False` parameter. Detail: [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
+`requires_grad=False` parameter. **The RND VARIANTS** (`ridealong_rnd_variants`, v127,
+`RND_VARIANT_DECLS`) are built LAST in `RideAlongHeads`, each from its own private seed or a deep copy
+of base's predictor, so adding one never changes another head's init. They are excluded from
+`trainable_parameters()`: each has its own optimizer (`variant_parameters(name)`). The observation
+variants share base's target and normaliser, so they must never own copies of them. Detail: [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
 
 ### Phase-by-phase data flow
 The per-phase walkthrough and the static-width arithmetic:

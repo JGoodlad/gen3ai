@@ -9,31 +9,39 @@
    ``RideAlongBatch.detached`` exactly as the learner builds it.
 3. HEADS PROVENANCE: a checkpoint that CARRIES trained heads (``policy.ridealong`` is not None, loaded
    from its state_dict) is read through them (``heads: "trained"``). Otherwise FRESH heads are attached
-   with the baseline spec (ensemble 5, RND, A 5, B 5; ``build_ridealong`` on a private RNG) and the read
-   says ``heads: "fresh-untrained"``: the ensemble's disagreement and A are their randomized PRIORS
-   only, and the RND observation statistics (and its error z-score) are FITTED ON THE BANK — every such
-   number is a plumbing check, not a measurement.
-4. The meters (:mod:`main.ridealong_read.meters`) and the per-checkpoint half of the RND input-choice
+   with the baseline spec (ensemble 5, RND + every declared RND VARIANT, A 5, B 5; ``build_ridealong``
+   on a private RNG) and the read says ``heads: "fresh-untrained"``: the ensemble's disagreement and A
+   are their randomized PRIORS only, and the RND observation statistics, the ``feat`` variant's
+   feature statistics (fitted on the TRAIN rows' ``value_pooled`` after the forward) and every error
+   z-score are FITTED ON THE BANK's TRAIN split — every such number is a plumbing check, not a
+   measurement. A pre-v127 checkpoint carries no variants, so only fresh heads read them there.
+4. The meters (:mod:`main.ridealong_read.meters`, which score every RND variant's z too), the RND
+   variants' pre-registered comparisons (:mod:`main.ridealong_read.variants` /
+   :mod:`main.ridealong_read.variants_probe`) and the per-checkpoint half of the RND input-choice
    measurement (:mod:`main.ridealong_read.rnd_choice`) → one JSON per checkpoint; the per-row arrays
-   go to the archive directory as ``<label>.rows.npz`` (never committed).
+   (each variant flattened as ``rndv_<name>_err`` / ``rndv_<name>_z``) go to the archive directory
+   as ``<label>.rows.npz`` (never committed).
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 
+from agents.model.ridealong_heads import RND_VARIANTS
 from main.ridealong_read.boot import METHOD as BOOT_METHOD
 
 READ_SCHEMA = "gen3_ridealong_read_v1"
 BATCH = 512
-#: The heads attached to a checkpoint trained without them — the baseline GPU run's spec.
-BASELINE_SPEC_KW: Dict[str, Any] = {"ensemble": 5, "rnd": True, "adv": 5, "opp": 5}
+#: The heads attached to a checkpoint trained without them — the baseline GPU run's spec, with every
+#: declared RND variant beside base (`agents.model.ridealong_heads.RND_VARIANTS`, canonical order).
+BASELINE_SPEC_KW: Dict[str, Any] = {"ensemble": 5, "rnd": True, "adv": 5, "opp": 5,
+                                    "rnd_variants": RND_VARIANTS}
 #: The Lane S ground truth (truth_v2): continuation label -> (rows file, the checkpoint that IS that
 #: continuation's greedy policy, relative to ``models/``).
 TRUTH_CONTINUATIONS: Dict[str, Tuple[str, str]] = {
@@ -111,6 +119,31 @@ class Columns:
     adv_std: np.ndarray      # [N, 11] member spread of A CENTRED under π (the heads' readout)
     adv_raw_std: np.ndarray  # [N, 11] member spread of the UNCENTRED A (no π-dependent term)
     opp_mean: np.ndarray     # [N, S+1]
+    #: Per RND VARIANT present: ``rndv_<name>_err`` / ``rndv_<name>_z`` [N] (empty: no variants).
+    rndv: Dict[str, np.ndarray] = field(default_factory=dict)
+
+    def variant_names(self) -> List[str]:
+        return [k[len("rndv_"):-len("_err")] for k in self.rndv if k.endswith("_err")]
+
+    def novelty_keys(self) -> List[str]:
+        """``rnd`` (base, when the heads carry it) then ``rndv_<name>`` per variant."""
+        base = ["rnd"] if np.isfinite(self.rnd_err).any() else []
+        return base + [f"rndv_{n}" for n in self.variant_names()]
+
+    def err(self, key: str) -> np.ndarray:
+        return self.rnd_err if key == "rnd" else self.rndv[f"{key}_err"]
+
+    def z(self, key: str) -> np.ndarray:
+        return self.rnd_z if key == "rnd" else self.rndv[f"{key}_z"]
+
+    def arrays(self) -> Dict[str, np.ndarray]:
+        """Every column FLAT (the npz archive's names): the array fields plus ``rndv_<name>_err`` /
+        ``rndv_<name>_z`` per variant."""
+        return {**{k: getattr(self, k) for k in ARRAY_FIELDS}, **self.rndv}
+
+
+#: The Columns fields that are one per-row array each (``rndv`` is the per-variant mapping).
+ARRAY_FIELDS: Tuple[str, ...] = tuple(k for k in Columns.__dataclass_fields__ if k != "rndv")
 
 
 def attach_heads(policy: Any, obs_dim: int, rows: np.ndarray,
@@ -129,7 +162,9 @@ def attach_heads(policy: Any, obs_dim: int, rows: np.ndarray,
         spec = own.spec
         rnd = getattr(own, "rnd", None)
         prov = {"heads": "trained", "spec": dict(ensemble=spec.ensemble, rnd=spec.rnd, adv=spec.adv,
-                                                 opp=spec.opp),
+                                                 opp=spec.opp,
+                                                 rnd_variants=list(getattr(spec, "rnd_variants", ()))),
+                "rnd_variant_decls": _variant_decls(getattr(spec, "rnd_variants", ())),
                 "rnd_obs_count": float(rnd.obs_count.item()) if rnd is not None else None,
                 "rnd_stats": "the checkpoint's own running statistics"}
         own.eval()
@@ -143,15 +178,34 @@ def attach_heads(policy: Any, obs_dim: int, rows: np.ndarray,
     fit_rows = rows[fit_mask] if use_mask else rows
     if heads.rnd is not None:
         heads.rnd.update_obs_stats(torch.from_numpy(np.ascontiguousarray(fit_rows, dtype=np.float32)))
-    return heads, {"heads": "fresh-untrained", "spec": dict(BASELINE_SPEC_KW),
+    return heads, {"heads": "fresh-untrained",
+                   "spec": {**BASELINE_SPEC_KW, "rnd_variants": list(spec.rnd_variants)},
+                   "rnd_variant_decls": _variant_decls(spec.rnd_variants),
                    "rnd_obs_count": float(len(fit_rows)),
                    "rnd_stats": ("observation statistics and the error z-score FITTED ON THE TRAIN "
-                                 "SPLIT's rows (rnd_choice.TRAIN_SOURCES), then every row scored"
+                                 "SPLIT's rows (rnd_choice.TRAIN_SOURCES), then every row scored; "
+                                 "the feat variant's FEATURE statistics fitted on the TRAIN rows' "
+                                 "value_pooled after the forward (feat re-scored), and every "
+                                 "variant's error z-score on the TRAIN rows"
                                  if use_mask else
-                                 "observation statistics and error z-score fitted on ALL read rows "
-                                 "(the read has no TRAIN-split rows)"),
+                                 "observation statistics, feat's feature statistics and every "
+                                 "error z-score fitted on ALL read rows (the read has no "
+                                 "TRAIN-split rows)"),
                    "caveat": "untrained heads: ensemble disagreement and A are randomized priors "
                              "only; RND novelty is an untrained predictor's error"}
+
+
+def _variant_decls(names: Sequence[str]) -> Dict[str, dict]:
+    """Each present variant's declaration (lr_mult, half-life, predictor_vs_target, why)."""
+    from agents.model.ridealong_heads import RND_VARIANT_BY_NAME
+
+    out = {}
+    for n in names:
+        d = RND_VARIANT_BY_NAME[n]
+        out[n] = {"input": d.input, "lr_mult": d.lr_mult,
+                  "decay_half_life_updates": d.decay_half_life_updates,
+                  "predictor_vs_target": d.predictor_vs_target, "why": d.why}
+    return out
 
 
 def forward_columns(model: Any, heads: Any, rows: np.ndarray, masks: np.ndarray, fit_err_stats: bool,
@@ -164,7 +218,8 @@ def forward_columns(model: Any, heads: Any, rows: np.ndarray, masks: np.ndarray,
 
     pol = model.policy
     fe = pol.features_extractor
-    cols: Dict[str, List[np.ndarray]] = {k: [] for k in Columns.__dataclass_fields__}
+    cols: Dict[str, List[np.ndarray]] = {k: [] for k in ARRAY_FIELDS}
+    rndv: Dict[str, List[np.ndarray]] = {}
     for i in range(0, len(rows), batch):
         mk = masks[i:i + batch]
         mb = torch.tensor(mk.astype(np.float32))
@@ -205,13 +260,20 @@ def forward_columns(model: Any, heads: Any, rows: np.ndarray, masks: np.ndarray,
         cols["adv_raw_std"].append(raw_sd.numpy() if raw_sd is not None else nan11)
         cols["opp_mean"].append(out["opp_mean"].numpy() if "opp_mean" in out
                                 else np.full((n, 1), np.nan, dtype=np.float32))
-    c = Columns(**{k: np.concatenate(v, 0) for k, v in cols.items()})
+        for k, t in out.items():
+            if k.startswith("rndv_"):
+                rndv.setdefault(k, []).append(t.numpy())
+    c = Columns(**{k: np.concatenate(v, 0) for k, v in cols.items()},
+                rndv={k: np.concatenate(v, 0) for k, v in rndv.items()})
     rnd = getattr(heads, "rnd", None)
     if fit_err_stats and rnd is not None:
+        from main.ridealong_read.variants_probe import fit_fresh_stats
+
         fm = fit_mask if fit_mask is not None and bool(np.asarray(fit_mask).any()) else \
             np.ones(len(c.rnd_err), bool)
         rnd.update_err_stats(torch.from_numpy(c.rnd_err[fm]))
         c.rnd_z = rnd.zscore(torch.from_numpy(c.rnd_err)).numpy()
+        fit_fresh_stats(heads, c, fm)
     return c
 
 
@@ -249,7 +311,9 @@ def uncertainty_scores(c: Columns) -> Dict[str, np.ndarray]:
 
     return {"ens_std": c.ens_std.astype(np.float64),
             "ens_logit_std": c.ens_logit_std.astype(np.float64),
-            "rnd_z": c.rnd_z.astype(np.float64), "ref_v_entropy": binary_entropy(c.v)}
+            "rnd_z": c.rnd_z.astype(np.float64),
+            **{f"rndv_{n}_z": c.rndv[f"rndv_{n}_z"].astype(np.float64) for n in c.variant_names()},
+            "ref_v_entropy": binary_entropy(c.v)}
 
 
 def bank_meters(bank: Any, c: Columns, masks: np.ndarray) -> dict:
@@ -336,11 +400,13 @@ def read_checkpoint(bank: Any, rows: np.ndarray, masks: np.ndarray, gate: dict, 
                     label: str, *, threads: int, commit: str, truth: Mapping[str, List[dict]],
                     models_root: Optional[Path], rnd_obs: Optional[dict],
                     epochs_read: Sequence[int], archive: Optional[Path],
-                    fresh_heads: bool = False) -> Tuple[dict, Columns]:
-    """One checkpoint → its JSON body (and its columns, for the cross-checkpoint drift read)."""
+                    fresh_heads: bool = False) -> Tuple[dict, Columns, Any]:
+    """One checkpoint → its JSON body, its columns, and the RND variants' ``variants.Carry`` (what
+    the cross-checkpoint reads — saturation ratios, feat's drift, the identification series — need)."""
     from main.policy_spectrum.qhat import check_winprob
     from main.policy_spectrum.reader import inference_globals, load_checkpoint
     from main.ridealong_read import rnd_choice as R
+    from main.ridealong_read import variants_probe as VP
 
     with inference_globals(threads):
         model = load_checkpoint(zip_path)
@@ -361,6 +427,12 @@ def read_checkpoint(bank: Any, rows: np.ndarray, masks: np.ndarray, gate: dict, 
                                    epochs_read=epochs_read)
             res.pop("_rnd")
             feat = res
+        def pooled_fn(r: np.ndarray, m: np.ndarray, _mdl: Any = model) -> np.ndarray:
+            return pooled_from_model(_mdl, r, m)
+
+        rv, carry = VP.read_variants(
+            heads, model.policy.features_extractor, bank.decisions, cols, rows, masks, label,
+            str(zip_path), prov["heads"], pooled_fn)
     del model
     result = {
         "schema": READ_SCHEMA,
@@ -378,6 +450,7 @@ def read_checkpoint(bank: Any, rows: np.ndarray, masks: np.ndarray, gate: dict, 
         "bootstrap": BOOT_METHOD,
         "draw_policy": "draws EXCLUDED from |V - z| (win 1, loss 0); draws_as_loss is the sensitivity row",
         **body,
+        "rnd_variants": rv,
         "v_rnd_input_choice": {"obs_rnd": rnd_obs, "feature_rnd_self": feat,
                                "note": "the drift half (feature-RND trained on checkpoint A, scored "
                                        "through a later B) is in rnd_input_choice.json"},
@@ -385,9 +458,12 @@ def read_checkpoint(bank: Any, rows: np.ndarray, masks: np.ndarray, gate: dict, 
     if archive is not None:
         archive.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(archive / f"{safe_label(label)}.rows.npz",
-                            ids_sha256=np.array(ids_sha(bank)),
-                            **{k: getattr(cols, k) for k in Columns.__dataclass_fields__})
-    return result, cols
+                            ids_sha256=np.array(ids_sha(bank)), **_npz_arrays(cols))
+    return result, cols, carry
+
+
+def _npz_arrays(cols: Columns) -> Dict[str, Any]:
+    return dict(cols.arrays())
 
 
 def safe_label(label: str) -> str:
@@ -401,25 +477,33 @@ def ids_sha(bank: Any) -> str:
 def pooled_only(zip_path: Path, rows: np.ndarray, masks: np.ndarray, threads: int,
                 batch: int = BATCH) -> np.ndarray:
     """``value_pooled`` [N, D_MODEL] of a checkpoint (the drift read's B side)."""
+    from main.policy_spectrum.reader import inference_globals, load_checkpoint
+
+    with inference_globals(threads):
+        model = load_checkpoint(zip_path)
+        out = pooled_from_model(model, rows, masks, batch)
+    del model
+    return out
+
+
+def pooled_from_model(model: Any, rows: np.ndarray, masks: np.ndarray,
+                      batch: int = BATCH) -> np.ndarray:
+    """``value_pooled`` [N, D_MODEL] of a LOADED model (run inside ``inference_globals``)."""
     import torch
 
     from agents.model.extra_obs_keys import zero_extra_obs
-    from main.policy_spectrum.reader import inference_globals, load_checkpoint
 
+    pol = model.policy
+    fe = pol.features_extractor
     out = []
-    with inference_globals(threads):
-        model = load_checkpoint(zip_path)
-        pol = model.policy
-        fe = pol.features_extractor
-        for i in range(0, len(rows), batch):
-            mb = torch.tensor(masks[i:i + batch].astype(np.float32))
-            ob = {"observation": torch.from_numpy(np.ascontiguousarray(rows[i:i + batch])),
-                  "action_mask": mb}
-            ob.update(zero_extra_obs(fe, batch=len(mb), device="cpu"))
-            with torch.no_grad():
-                pol.extract_features(ob)
-                out.append(fe.last_value_pooled.numpy().copy())
-    del model
+    for i in range(0, len(rows), batch):
+        mb = torch.tensor(np.asarray(masks[i:i + batch]).astype(np.float32))
+        ob = {"observation": torch.from_numpy(np.ascontiguousarray(rows[i:i + batch], dtype=np.float32)),
+              "action_mask": mb}
+        ob.update(zero_extra_obs(fe, batch=len(mb), device="cpu"))
+        with torch.no_grad():
+            pol.extract_features(ob)
+            out.append(fe.last_value_pooled.numpy().copy())
     return np.concatenate(out, 0)
 
 

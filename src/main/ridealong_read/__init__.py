@@ -16,6 +16,11 @@ CPU, no games:
 - :mod:`.rnd_choice` (v) the RND INPUT-CHOICE measurement: obs-RND vs feature-RND trained offline on a
                      battle-level split — unseen-team and exploiter novelty, and the representation-
                      drift confound (feature-RND trained on checkpoint A, scored through a later B).
+- :mod:`.variants`   the RND VARIANTS' pre-registered comparisons (X26 amendment; NumPy) — (a) V-error
+                     beyond V's own uncertainty, (b) coverage, (c) saturation, (d) feat's drift, (e)
+                     identification on fixed real and ``chimera_v1`` probes vs a predictor-reset
+                     floor; :mod:`.variants_probe` is their torch half. Cross-checkpoint parts →
+                     ``rnd_variants_series.json``.
 - :mod:`.rnd_states` the STATE-level RND reads (``python -m main.ridealong_read.rnd_states``): a
                      within-cell 70 / 30 battle split, visitation counts of a state key decoded from
                      the observation, off-distribution classes, and the one-ply successors of the

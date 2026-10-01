@@ -4,7 +4,9 @@ re-encodes the bank, a real checkpoint is loaded from the MAIN checkout's ``mode
 Skips cleanly when there is no ``models/`` archive or the checkpoint is absent (a CI box, a fresh
 clone). Teeth: the heads' provenance is stated, the forward's V equals the policy-spectrum path's
 critic read on the same rows, feature-RND's drift of a checkpoint against ITSELF is exactly zero,
-and a bare run directory / an output under ``models/`` are refused.
+fresh ``fast`` / ``decay`` RND variants score bit-identically to base (they ARE base at init) and
+fresh heads are their own identification floor, and a bare run directory / an output under
+``models/`` are refused.
 """
 
 from __future__ import annotations
@@ -49,13 +51,37 @@ def test_reader_smoke_end_to_end(ckpt, tmp_path):
     assert r["own_truth_continuation"] == "K2final"
     assert r["bank"]["battles"] == N_BATTLES
     u = r["i_uncertainty_vs_v_error"]["all"]
-    assert set(u) == {"ens_std", "ens_logit_std", "rnd_z", "ref_v_entropy"}
+    assert {"ens_std", "ens_logit_std", "rnd_z", "ref_v_entropy"} <= set(u)
     assert r["i_uncertainty_vs_v_error"]["rows"]["used"] > 0
+    rv = r["rnd_variants"]
+    if r["heads"] == "fresh-untrained":                  # a pre-v127 checkpoint: every variant
+        assert rv["keys"] == ["rnd", "rndv_fast", "rndv_decay", "rndv_small", "rndv_feat"]
+        assert {f"{k}_z" for k in rv["keys"]} <= set(u)
+        # fresh fast / decay ARE base (deep copies of its predictor): (a) and (b) read exactly 0
+        aw = rv["a_v_error_beyond_v_uncertainty"]["auroc_within_ref_quintiles"]
+        late = rv["b_coverage"]["contrasts"]["b2_late_game_vs_rest"]
+        assert late["n_pos"] > 0
+        for k in ("rndv_fast", "rndv_decay"):
+            assert aw[k] == aw["rnd"]                    # None on a read with no |V - z| > 0.5 row
+            assert late["vs_base"][k]["diff"] == 0.0 and late["vs_base"][k]["diff_ci"] == [0.0, 0.0]
+            assert rv["b_coverage"]["verdicts"][k] == "NOT_DETECTED"
+        # fresh heads ARE their own predictor-reset floor: f_i = f_ii = 1, nothing to judge
+        for k, row in rv["e_identification"]["keys"].items():
+            assert row["f_i"] == 1.0 and row["f_ii"] == 1.0 and row["verdict"] == "INDETERMINATE"
+        assert rv["e_identification"]["floor"]["decay_anchor_matches_rebuilt_init"] is True
+        assert rv["e_identification"]["probe"]["heads_block_edges_match"] is True
+    series = json.loads((out / "rnd_variants_series.json").read_text())
+    assert series["checkpoints"][0]["label"] == "K2final"
+    assert "skipped" in series["c_saturation"]
     rc_ = json.loads((out / "rnd_input_choice.json").read_text())
     through = rc_["feature_rnd_drift"]["1"]["through_B"][str(ckpt)]["drift"]["heldout"]
     assert through["inflation_mean"] == 1.0            # a checkpoint against itself: no drift
     z = np.load(tmp_path / "arch" / "K2final.rows.npz")
     assert z["v"].shape[0] == r["bank"]["decisions"] and np.isfinite(z["adv_std"]).any()
+    if r["heads"] == "fresh-untrained":
+        np.testing.assert_array_equal(z["rndv_fast_err"], z["rnd_err"])
+        np.testing.assert_array_equal(z["rndv_decay_err"], z["rnd_err"])
+        assert np.isfinite(z["rndv_feat_err"]).all() and np.isfinite(z["rndv_small_z"]).all()
 
 
 def test_v_matches_the_policy_spectrum_critic_read(ckpt):

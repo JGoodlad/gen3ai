@@ -498,6 +498,18 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "the value function is the scalar net, so the dense targets would enrich a diagnostic "
         "and change nothing about V. Pass --critic winprob, or drop the flag."),
     CombinationCheck(
+        # gen3_ridealong_rnd_variants_v1 (v127): the observation variants share base's frozen
+        # target and normalisation, and base is the reference every variant is compared with —
+        # the extractor raises the same thing (`flag_requires_test` pins it); this is the
+        # launch-time copy `main.checkargs` can see.
+        "rnd_variants_need_the_base_rnd_head",
+        ("ridealong_rnd_variants", "ridealong_rnd"),
+        lambda a: (str(_val(a, "ridealong_rnd_variants", "off") or "off") not in ("off", "none", "")
+                   and not bool(_val(a, "ridealong_rnd", False))),
+        "--ridealong-rnd-variants requires --ridealong-rnd: the observation variants share base's "
+        "frozen target and normalisation, and base is the reference every variant is compared "
+        "with. Pass --ridealong-rnd, or drop the variants."),
+    CombinationCheck(
         # λ's twin, and refused for λ's reason: under `--critic shaped` the win-prob BCE is an
         # AUXILIARY readout, so a measured MC target there would re-aim a diagnostic and leave the
         # value function untouched — while still paying for every continuation.

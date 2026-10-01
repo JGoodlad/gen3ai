@@ -60,6 +60,7 @@ CTOR_KWARGS_V96 = frozenset({
     "value_entity_pool", "value_entity_pool_full", "value_threat_inject",
     "win_prob_mode", "q_winprob_mode", "value_true_team", "dense_aux",
     "ridealong_ensemble", "ridealong_rnd", "ridealong_adv", "ridealong_opp",
+    "ridealong_rnd_variants",
 })
 
 # The five names MEASURED as uncovered on 2026-08-17, with the run counts that made the case. Pinned

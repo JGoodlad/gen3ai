@@ -17,6 +17,18 @@ It fails on revert: drop the `.detach()` in `RideAlongBatch.detached`, fold a ri
 PPO's `loss`, put the heads in `policy.optimizer`, or build them from the global RNG — each breaks
 3 or 1 (the heads' gradient would reach the trunk, ride PPO's global grad-norm clip, or move the
 stream every later draw reads).
+
+THE RND VARIANTS (`gen3_ridealong_rnd_variants_v1`) ride in the ON arm (`all`), so 1–4 cover them,
+and a THIRD arm — the four heads WITHOUT the variants — pins that adding the variants leaves every
+other ride-along tensor, base RND included, BIT-IDENTICAL after the update: the reference the
+variants are compared with is untouched by them. An identification probe that drew a random number
+(say a `randperm` chimera instead of the deterministic roll) breaks the RNG assertion in 3.
+
+THE DECLARED LIFECYCLE (K8; owner 2026-09-28): every ride-along optimizer — the four heads' and each
+variant's — exists, with its Adam state allocated, BEFORE the first update (`_setup_model` →
+`_ridealong_acquire`), and the update creates no optimizer, no optimizer state and no buffer
+(`late_acquisitions` 0; the object identities are unchanged). Pre-allocation is also pinned to step
+bit-identically to torch's lazy init.
 """
 from __future__ import annotations
 
@@ -26,8 +38,10 @@ import numpy as np
 import pytest
 import torch as th
 
-RIDEALONG_ON = {"ridealong_ensemble": 3, "ridealong_rnd": True, "ridealong_adv": 2,
-                "ridealong_opp": 2}
+RIDEALONG_CORE = {"ridealong_ensemble": 3, "ridealong_rnd": True, "ridealong_adv": 2,
+                  "ridealong_opp": 2}
+RIDEALONG_ON = {**RIDEALONG_CORE, "ridealong_rnd_variants": "all"}
+VARIANTS = ("fast", "decay", "small", "feat")
 
 
 def _env_cls(rows, masks):
@@ -110,6 +124,8 @@ def _build(ridealong: dict):
         Gen3DualHeadMaskablePolicy, DummyVecEnv([(lambda s=s: env_cls(s)) for s in range(2)]),
         n_steps=8, batch_size=4, n_epochs=2, device="cpu", seed=0, policy_kwargs=pk)
     built_rng = _rng_state()
+    # The startup acquisition, observed BEFORE any update: every optimizer and its Adam state exist.
+    acquired = _acquired(model)
     model.opp_intent_coef = 0.05        # production's dose: the α/β losses AND B's aligned labels
     perturb_(model.policy)              # private RNG; opens the zero-init paths (see diagnostics test)
     model.grad_accum_steps = 2
@@ -131,12 +147,37 @@ def _build(ridealong: dict):
              for k, v in st.items() if th.is_tensor(v)}
     names = [n for n, _ in model.policy.named_parameters()]
     return dict(model=model, built_rng=built_rng, pre=pre, post=post, buf=buf, opt=opt_t,
-                logged=dict(model.logger.name_to_value), rng=_rng_state(), names=names)
+                logged=dict(model.logger.name_to_value), rng=_rng_state(), names=names,
+                acquired=acquired, after=_acquired(model))
+
+
+def _acquired(model) -> dict:
+    """The ride-along resources by object identity: each optimizer, each Adam state tensor, each
+    head buffer."""
+    heads = model.policy.ridealong
+    if heads is None:
+        return {}
+    opts = {"core": model._ridealong_opt, **{f"v_{k}": v for k, v in model._ridealong_vopts.items()}}
+    state = {(name, id(p), k): id(t) for name, o in opts.items() if o is not None
+             for p, st in o.state.items() for k, t in st.items() if th.is_tensor(t)}
+    n_params = {name: sum(len(g["params"]) for g in o.param_groups) for name, o in opts.items()
+                if o is not None}
+    n_state = {name: len(o.state) for name, o in opts.items() if o is not None}
+    return {"opt_ids": {k: id(v) for k, v in opts.items()}, "state": state,
+            "n_params": n_params, "n_state": n_state,
+            "buffers": {n: id(b) for n, b in heads.named_buffers()},
+            "late": int(getattr(model, "_ridealong_late_acquisitions", 0))}
 
 
 @pytest.fixture(scope="module")
 def arms():
     return _build({}), _build(RIDEALONG_ON)
+
+
+@pytest.fixture(scope="module")
+def core_arm():
+    """The four heads WITHOUT the RND variants — the base reference's own run."""
+    return _build(RIDEALONG_CORE)
 
 
 def _core(sd):
@@ -195,13 +236,103 @@ def test_the_ON_arm_is_not_vacuous(arms):
     names = [n for n in off["names"]]
     unmoved = [k for k in names if th.equal(off["post"][k], off["pre"][k])]
     assert len(unmoved) <= 0.15 * len(names), f"{len(unmoved)}/{len(names)} policy params unmoved"
-    for head in ("ensemble", "rnd", "adv", "opp"):
+    for head in ("ensemble", "rnd", "adv", "opp", *(f"rnd_variants.{v}" for v in VARIANTS)):
         keys = [n for n in on["names"] if n.startswith(f"ridealong.{head}.")]
         assert keys, head
         moved = [k for k in keys if not th.equal(on["post"][k], on["pre"][k])]
         assert moved, f"no {head} parameter moved: the head trained nothing"
     for tag in ("ridealong/ens_loss", "ridealong/rnd_loss", "ridealong/adv_loss",
                 "ridealong/opp_loss", "ridealong/ens_disagreement_mean", "ridealong/rnd_z_mean",
-                "ridealong/adv_std_fed", "ridealong/opp_label_rate"):
+                "ridealong/adv_std_fed", "ridealong/opp_label_rate",
+                "ridealong/rnd_err_median", "ridealong/rnd_err_rel_spread",
+                "ridealong/rnd_ident_ratio", "ridealong/acquisitions_after_freeze"):
         assert tag in on["logged"], tag
+    for v in VARIANTS:
+        for stat in ("loss", "err_mean", "z_mean", "err_median", "err_iqr", "grad_norm",
+                     "disabled"):
+            assert f"ridealong/rndv_{v}_{stat}" in on["logged"], (v, stat)
+        assert on["logged"][f"ridealong/rndv_{v}_disabled"] == 0.0
+        # the identification monitor runs for the OBSERVATION variants (feat needs a trunk forward)
+        assert (f"ridealong/rndv_{v}_ident_ratio" in on["logged"]) == (v != "feat"), v
     assert not any(t.startswith("ridealong/") for t in off["logged"])
+
+
+def test_the_variants_leave_the_four_heads_and_BASE_bit_identical(arms, core_arm):
+    """The paired reference is intact: every ride-along tensor that is not a variant's — base RND's
+    predictor, normaliser and error statistics included — is BIT-IDENTICAL after one update with
+    and without the variants. (So is everything PPO owns, by the test above.)"""
+    _, on = arms
+    core = core_arm
+    keys = [k for k in core["post"] if k.startswith("ridealong.")]
+    assert any(k.startswith("ridealong.rnd.predictor.") for k in keys)
+    for k in keys:
+        assert th.equal(core["post"][k], on["post"][k]), f"the variants changed {k}"
+    # every ride-along scalar the four heads log (base's included) reads the same with the variants
+    rtags = [t for t in core["logged"] if t.startswith("ridealong/")]
+    assert "ridealong/rnd_loss" in rtags and "ridealong/grad_norm" in rtags
+    for tag in rtags:
+        v, w = core["logged"][tag], on["logged"][tag]
+        assert v == w or (v != v and w != w), f"the variants perturbed {tag}: {v} vs {w}"
+
+
+def test_LIFECYCLE_every_ride_along_optimizer_is_acquired_at_startup_and_nothing_after(arms):
+    """K8 / the declared lifecycle: before the first update every optimizer exists with its Adam
+    state allocated for EVERY parameter; the update creates no optimizer, no state, no buffer."""
+    _, on = arms
+    pre, post = on["acquired"], on["after"]
+    assert set(pre["opt_ids"]) == {"core", *(f"v_{v}" for v in VARIANTS)}
+    for name, n in pre["n_params"].items():
+        assert pre["n_state"][name] == n, f"{name}: Adam state not pre-allocated for every param"
+    assert pre["late"] == 0 and post["late"] == 0, "a ride-along optimizer was built LATE"
+    assert post["opt_ids"] == pre["opt_ids"], "an optimizer object was replaced during the update"
+    assert post["state"] == pre["state"], "Adam state tensors were (re)created during the update"
+    assert post["buffers"] == pre["buffers"], "a ride-along buffer was created or replaced"
+    assert on["logged"]["ridealong/acquisitions_after_freeze"] == 0.0
+
+
+def test_the_LATE_ACQUISITION_guard_counts(arms):
+    """The guard has teeth: drop the startup acquisition and the step builds late — and counts it."""
+    from agents.training.instrumented_ppo.ridealong_terms import RideAlongTerms
+
+    _, on = arms
+
+    class _L(RideAlongTerms):
+        def __init__(self, policy):
+            self.policy = policy
+
+    lr = _L(on["model"].policy)
+    heads = lr.policy.ridealong
+    lr._ridealong_optimizer(heads)
+    lr._ridealong_variant_optimizer(heads, "fast")
+    assert lr._ridealong_late_acquisitions == 2
+    lr2 = _L(on["model"].policy)
+    lr2._ridealong_acquire()
+    lr2._ridealong_optimizer(heads)
+    lr2._ridealong_variant_optimizer(heads, "fast")
+    assert int(getattr(lr2, "_ridealong_late_acquisitions", 0)) == 0
+
+
+@pytest.mark.parametrize("fused", [False, True])
+def test_PREALLOCATED_adam_steps_bit_identically_to_lazy_init(fused):
+    from agents.training.instrumented_ppo.ridealong_terms import preallocate_adam_state
+
+    dev = "cuda" if fused else "cpu"
+    if fused and not th.cuda.is_available():
+        pytest.skip("fused Adam needs CUDA")
+    g = th.Generator().manual_seed(3)
+    w0 = th.randn(7, 5, generator=g)
+    grads = [th.randn(7, 5, generator=g) for _ in range(4)]
+    a = th.nn.Parameter(w0.clone().to(dev))
+    b = th.nn.Parameter(w0.clone().to(dev))
+    oa = th.optim.Adam([a], lr=3e-3, eps=1e-5, fused=fused or None)
+    ob = th.optim.Adam([b], lr=3e-3, eps=1e-5, fused=fused or None)
+    preallocate_adam_state(ob)
+    assert th.equal(b, a) and b.grad is None and len(ob.state[b]) >= 3
+    for gr in grads:
+        a.grad = gr.clone().to(dev)
+        b.grad = gr.clone().to(dev)
+        oa.step()
+        ob.step()
+    assert th.equal(a, b)
+    for k, v in oa.state[a].items():
+        assert th.equal(th.as_tensor(v), th.as_tensor(ob.state[b][k])), k

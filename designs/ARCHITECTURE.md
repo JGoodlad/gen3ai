@@ -1077,8 +1077,40 @@ shows no ride-along loss reaches any trunk, policy or V parameter; `ridealong_up
 real update with the heads ON vs OFF leaves the policy, trunk, V, PPO optimizer state and RNG
 BIT-IDENTICAL. The compile gate's coverage count excludes `ridealong.*` (never in a compiled graph).
 Their Adam state is the LEARNER's and is not checkpointed (a restart resumes the weights with a fresh
-Adam). `family=CRITIC`, so they are off the ARCH surface; §6's table carries them OFF. The pre-registered
-baseline that turns them on is EXPERIMENT_BACKLOG's X26.
+Adam). It is ACQUIRED AT STARTUP (the declared lifecycle): `_setup_model` ends in `_ridealong_acquire`,
+which builds every ride-along optimizer and pre-allocates its Adam state, bit-identically to torch's
+lazy init. A later build is counted as a late acquisition (`ridealong/acquisitions_after_freeze`), and
+`ridealong_update_test` pins zero late acquisitions and unchanged optimizer, state and buffer
+identities across a real update. The heads' step is the K8 inventory's candidate compile region
+R-ride; it stays EAGER. `family=CRITIC`, so they are off the ARCH surface; §6's table carries them
+OFF. The pre-registered baseline that turns them on is EXPERIMENT_BACKLOG's X26.
+
+**The RND VARIANT ENSEMBLE rides beside the RND head and is OFF here** (`gen3_ridealong_rnd_variants_v1`,
+config v127; owner 2026-09-30; `--ridealong-rnd-variants`, a canonical comma list or `all`; it requires
+`--ridealong-rnd`). Each variant is its own detached predictor with its own Adam, gradient clip,
+error z-score, fail-closed switch and `ridealong/rndv_<name>_*` series. The `--ridealong-rnd` head
+(`base`) is unchanged and is the reference. The declarations are `RND_VARIANT_DECLS`:
+
+| variant | input | how it forgets | predictor vs target |
+|---|---|---|---|
+| `fast` | base's normalised observation | 10× base's predictor rate (3e-3) | base's predictor, started from base's exact weights; the same ReLU-MLP family as the target, one layer deeper |
+| `decay` | base's normalised observation | pulled toward its own init once per PPO update, half-life 10 updates (≈ half an eval cycle) | as `fast` |
+| `small` | base's normalised observation | cannot memorise: obs→32→64, 90,496 parameters (11.5 % of base's) | deliberately LESS expressive than the 256-wide target, so it cannot identify the target exactly |
+| `feat` | the detached `value_pooled` (D_MODEL), with its own feature normalisation | — (it measures representation drift live) | base's shapes over the features, with its own frozen target |
+
+The three observation variants share base's frozen target and observation normalisation. The same
+stream gives identical statistics, so every comparison with base is PAIRED. Adding the variants
+leaves every other ride-along tensor, base included, BIT-IDENTICAL after an update, and
+`ridealong_update_test` pins that with a third arm. Every variant is inside the same detachment proofs
+(`ridealong_heads_test`: no variant loss reaches the trunk, policy or V, and each trains only its own
+predictor; `feat` additionally detaches its own input). Each logs its raw-error median, IQR and IQR ÷
+median (the saturation series). Base and the observation variants also log `*_ident_ratio`: the error
+on the minibatch's deterministic block chimeras (`block_chimera`, no RNG) over the error on its real
+rows. That is the identification monitor, and it stays high while a predictor learns only the states
+it visits. MEASURED overhead, 2026-09-30, `ridealong_step_benchmark.py` on the GPU at load ~10 (box
+idle): the four heads add 0.65 s to arm C's 67.05 s update (0.97 %). The four heads plus all four
+variants add 0.97 s (1.45 %). Inside that configuration each variant's marginal cost is 0.11–0.16 s
+(`measurements/ridealong_baseline/overhead_variants_2026-09-30.json`).
 
 Belief heads run under `belief_grad_mode` **`shaping`** (production mirror `belief_grad_mode:
 "shaping"`; §6's table carries it ACTIVE): all four routes are live — the label loss trains the
@@ -1365,6 +1397,7 @@ does nothing given another setting.
 | `ridealong_ensemble` | `0` | OFF |
 | `ridealong_opp` | `0` | OFF |
 | `ridealong_rnd` | `false` | OFF |
+| `ridealong_rnd_variants` | `"off"` | OFF |
 | `species_prior_fusion` | `true` | ACTIVE |
 | `spread_belief` | `true` | ACTIVE |
 | `spread_belief_nature` | `true` | ACTIVE |

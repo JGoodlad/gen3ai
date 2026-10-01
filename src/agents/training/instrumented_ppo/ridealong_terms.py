@@ -15,10 +15,28 @@
     the whole rollout. The heads train and are read on epoch 0 only (`RIDEALONG_EPOCHS`): one
     policy, every row once, each scored before the step that trains on it.
 
-The optimizer is the LEARNER's, not the model's (`self._ridealong_opt`, built lazily): it is not in
-the checkpoint, so a restart resumes the heads' weights with a fresh Adam state (bias-corrected, so
-the first steps are ~lr-sized). Declared, not hidden: the heads observe, and a restart every few
-hours costs them a few noisy steps and PPO nothing.
+THE RND VARIANTS (`gen3_ridealong_rnd_variants_v1`, v127) step right after the four heads, each on
+its OWN Adam (rate RIDEALONG_LR × its declared `lr_mult`), its OWN gradient clip and its OWN
+fail-closed switch (a non-finite variant stops alone; the four heads and PPO carry on). The `decay`
+variant's pull toward init runs once per PPO update, before that update's first step
+(`RideAlongHeads.begin_update_`; the per-`train()` accumulator marks the boundary). Each variant
+logs `ridealong/rndv_<name>_*`: loss, error mean / median / IQR / relative spread (IQR ÷ median, the
+SATURATION series), z by opponent class, the V-error meters, and — for base and the observation
+variants — `*_ident_ratio`, the error on the batch's block chimeras ÷ the error on its real rows
+(the IDENTIFICATION monitor: it stays high while a predictor learns only what it visits).
+
+The optimizers are the LEARNER's, not the model's, and they are ACQUIRED AT STARTUP (the declared
+lifecycle, owner 2026-09-28; the K8 inventory flagged the old lazy build): `_setup_model` ends with
+`_ridealong_acquire`, which builds the four heads' Adam and every variant's Adam with their state
+PRE-ALLOCATED (`preallocate_adam_state`: identical to torch's lazy first-step init, so the steps are
+bit-identical). A steady-state step only reads them. Anything built later is a LATE ACQUISITION:
+counted (`ridealong/acquisitions_after_freeze`), announced once, and still built so the heads keep observing.
+`ridealong_update_test`'s lifecycle tests pin zero late acquisitions and stable optimizer/state/buffer identities
+over real updates. The optimizers are not in the checkpoint, so a restart resumes the heads'
+weights with a fresh Adam state (bias-corrected, so the first steps are ~lr-sized). Declared, not
+hidden: the heads observe, and a restart every few hours costs them a few noisy steps and PPO
+nothing. The heads' step is K8's candidate compile region R-ride (`ridealong_step`, train/grad ×
+micro-batch, epoch 0, with its own optimizer region); it stays EAGER for now.
 """
 from __future__ import annotations
 
@@ -89,12 +107,25 @@ def uncertainty_meters(prefix: str, score: np.ndarray, err: np.ndarray) -> Dict[
     return out
 
 
+def rnd_prefixes(out: Dict[str, Any]) -> List[str]:
+    """The RND keys a readout carries: ``rnd`` (base) and ``rndv_<name>`` per variant, each with
+    both ``<key>_err`` and ``<key>_z``."""
+    keys = ["rnd"] + sorted(k[: -len("_err")] for k in out
+                            if k.startswith("rndv_") and k.endswith("_err"))
+    return [k for k in keys if f"{k}_err" in out and f"{k}_z" in out]
+
+
 class RideAlongAccumulator:
     """Per-train() sink for the `ridealong/*` family."""
 
     def __init__(self) -> None:
         self.scalars: Dict[str, List[float]] = {}
         self.cols: Dict[str, List[np.ndarray]] = {}
+        #: Set by the learner's first ride-along step of this `train()` call: the PPO-update boundary
+        #: the `decay` variant's pull keys on (one accumulator per update).
+        self.update_begun = False
+        #: [sum of real-row error, sum of chimera-row error] per RND key (`rnd` / `rndv_<name>`).
+        self.ident: Dict[str, List[float]] = {}
 
     def add(self, key: str, v: float) -> None:
         if v == v:                                    # a NaN is REPORTED by omission, never logged
@@ -124,9 +155,12 @@ class RideAlongAccumulator:
                         (out["ens_p"][zm] - z[zm]).pow(2).mean()))
                     if v_ is not None:
                         self.add("ens_brier_v", float((v_[zm] - z[zm]).pow(2).mean()))
-            if "rnd_z" in out:
-                self.add("rnd_err_mean", float(out["rnd_err"].mean()))
-                self.add("rnd_z_mean", float(out["rnd_z"].mean()))
+            # base (`rnd`) and every RND variant (`rndv_<name>`): the same per-row statistics.
+            for pre in rnd_prefixes(out):
+                self.add(f"{pre}_err_mean", float(out[f"{pre}_err"].mean()))
+                self.add(f"{pre}_z_mean", float(out[f"{pre}_z"].mean()))
+                # every row's RAW error: the update's median / IQR (the saturation series)
+                self.col(f"{pre}_err_raw", out[f"{pre}_err"])
                 if opp_class is not None:
                     oc = opp_class.long().reshape(-1)
                     names = OPP_CLASS_NAMES.items() if isinstance(OPP_CLASS_NAMES, dict) else \
@@ -134,7 +168,7 @@ class RideAlongAccumulator:
                     for code, name in names:
                         sel = oc == int(code)
                         if bool(sel.any()):
-                            self.add(f"rnd_z_{name}", float(out["rnd_z"][sel].mean()))
+                            self.add(f"{pre}_z_{name}", float(out[f"{pre}_z"][sel].mean()))
             if "adv" in out and b.actions is not None and b.advantages is not None:
                 a = b.actions.long().reshape(-1)
                 y = b.advantages.float().reshape(-1)
@@ -172,7 +206,7 @@ class RideAlongAccumulator:
                 self.add("opp_label_rate", float((idx != INTENT_IGNORE).float().mean()))
             if v_ is not None and z is not None and zm is not None:
                 err = (v_ - z).abs()
-                for key in ("ens_logit_std", "rnd_z"):
+                for key in ("ens_logit_std", *(f"{p}_z" for p in rnd_prefixes(out))):
                     if key in out:
                         self.col(key, out[key][zm])
                 # V's own binary entropy, so the reader of `ens_*_err` can tell whether the
@@ -190,10 +224,76 @@ class RideAlongAccumulator:
                 out.update(uncertainty_meters("ens", cols["ens_logit_std"], err))
             if "v_entropy" in cols:
                 out.update(uncertainty_meters("ref_v_entropy", cols["v_entropy"], err))
-            if "rnd_z" in cols:
-                out.update(uncertainty_meters("rnd", cols["rnd_z"], err))
-                out["rnd_z_p90"] = float(np.quantile(cols["rnd_z"], 0.9))
+            for key in [k for k in cols if k.endswith("_z") and k.startswith("rnd")]:
+                pre = key[:-2]
+                out.update(uncertainty_meters(pre, cols[key], err))
+                out[f"{pre}_z_p90"] = float(np.quantile(cols[key], 0.9))
+        for key in [k for k in cols if k.endswith("_err_raw")]:
+            # SATURATION (X26 amendment (c)): the RAW error's median and spread over every row this
+            # update scored BEFORE training on it. A predictor that has saturated reads every fresh
+            # row as familiar: the spread collapses. `rel_spread` (IQR ÷ median) is scale-free.
+            pre = key[: -len("_err_raw")]
+            e = cols[key]
+            if len(e):
+                q25, q50, q75 = (float(x) for x in np.quantile(e, [0.25, 0.5, 0.75]))
+                out[f"{pre}_err_median"] = q50
+                out[f"{pre}_err_iqr"] = q75 - q25
+                if q50 > 0:
+                    out[f"{pre}_err_rel_spread"] = (q75 - q25) / q50
+        for pre, (real, chim) in self.ident.items():
+            if real > 0:
+                out[f"{pre}_ident_ratio"] = chim / real
         return out
+
+    def observe_identification(self, out: Dict[str, th.Tensor],
+                               chim: Dict[str, th.Tensor]) -> None:
+        """Fold one minibatch's identification probe: the real rows' error (``out``) and the same
+        predictors' error on the rows' block chimeras (``chim``), summed per RND key."""
+        for pre, ec in chim.items():
+            er = out.get(f"{pre}_err")
+            if er is None:
+                continue
+            acc = self.ident.setdefault(pre, [0.0, 0.0])
+            acc[0] += float(er.detach().float().sum())
+            acc[1] += float(ec.detach().float().sum())
+
+
+def preallocate_adam_state(opt: th.optim.Optimizer) -> None:
+    """Allocate every parameter's Adam state NOW, exactly as torch's lazy first-step init would.
+
+    One step on ZERO gradients does torch's own `_init_group` (whatever the torch version, fused
+    or not): the moments are created as zeros and stay zeros (β·0 + (1 − β)·0), the parameter
+    update is exactly 0 (a zero first moment over a positive denominator), and the step counter is
+    then reset to 0. So the state afterwards is exactly what the first real step would have created
+    at entry, and every later step is bit-identical to a lazily-initialised optimizer's
+    (`ridealong_update_test` pins it). The gradients go back to None."""
+    params = [p for g in opt.param_groups for p in g["params"]]
+    with th.no_grad():
+        for p in params:
+            p.grad = th.zeros_like(p)
+        opt.step()
+        for p in params:
+            p.grad = None
+            st = opt.state.get(p)
+            if st and "step" in st:
+                step = st["step"]
+                if th.is_tensor(step):
+                    step.zero_()
+                else:
+                    st["step"] = 0
+
+
+def _adam(params: List[th.nn.Parameter], lr: float, *, prealloc: bool = True) -> th.optim.Optimizer:
+    """The heads' Adam. ``prealloc`` (the startup path) allocates its state now. A LATE build runs
+    mid-step, with the heads' forward graph alive, where the pre-allocation's in-place no-op step
+    would invalidate that graph (autograd version counters), so it is left to torch's lazy init."""
+    # fused on CUDA: one kernel for the whole step instead of several per parameter tensor (the heads
+    # are many small tensors, so the per-tensor launches were the cost).
+    fused = bool(params) and all(p.is_cuda for p in params)
+    opt = th.optim.Adam(params, lr=lr, eps=RIDEALONG_EPS, fused=fused or None)
+    if prealloc:
+        preallocate_adam_state(opt)
+    return opt
 
 
 class RideAlongTerms:
@@ -202,14 +302,53 @@ class RideAlongTerms:
     def _ridealong_heads(self) -> Any:
         return getattr(self.policy, "ridealong", None)   # type: ignore[attr-defined]
 
+    def _setup_model(self) -> None:
+        """SB3's model setup (the policy is built and on its device), then the ride-along heads'
+        STARTUP ACQUISITION. Runs on a fresh build and on `load` (whose `set_parameters` copies into
+        the same parameter objects afterwards, so the optimizers stay bound)."""
+        super()._setup_model()   # type: ignore[misc]
+        self._ridealong_acquire()
+
+    def _ridealong_acquire(self) -> None:
+        """THE acquisition site: the four heads' optimizer and every RND variant's, with their Adam
+        state pre-allocated, for the heads the policy carries NOW. Tooling that swaps the heads (the
+        benchmarks) calls it again explicitly; the training step never builds anything."""
+        heads = self._ridealong_heads()
+        self._ridealong_opt = None
+        self._ridealong_opt_owner = None
+        self._ridealong_vopts: Dict[str, th.optim.Optimizer] = {}
+        self._ridealong_vopts_owner = None
+        self._ridealong_variant_disabled: set = set()
+        if heads is None:
+            return
+        self._ridealong_opt = _adam(heads.trainable_parameters(), RIDEALONG_LR)
+        self._ridealong_opt_owner = heads
+        self._ridealong_vopts = {n: self._variant_adam(heads, n) for n in heads.variant_names()}
+        self._ridealong_vopts_owner = heads
+
+    @staticmethod
+    def _variant_adam(heads: Any, name: str, *, prealloc: bool = True) -> th.optim.Optimizer:
+        from agents.model.ridealong_heads import RND_VARIANT_BY_NAME
+
+        return _adam(heads.variant_parameters(name),
+                     RIDEALONG_LR * RND_VARIANT_BY_NAME[name].lr_mult, prealloc=prealloc)
+
+    def _ridealong_late_acquisition(self, what: str) -> None:
+        """The AFTER-FREEZE guard: a ride-along optimizer built anywhere but `_ridealong_acquire`.
+        Counted and announced (once); never fatal — the heads observe, and must not kill a run."""
+        n = int(getattr(self, "_ridealong_late_acquisitions", 0)) + 1
+        self._ridealong_late_acquisitions = n
+        if n == 1:
+            print(f"⚠️  [RIDE-ALONG] LATE ACQUISITION: {what} was built after startup — the declared "
+                  "lifecycle acquires every ride-along optimizer in `_ridealong_acquire` "
+                  "(_setup_model). Built now so the heads keep observing; counted in "
+                  "ridealong/acquisitions_after_freeze.", flush=True)
+
     def _ridealong_optimizer(self, heads: Any) -> th.optim.Optimizer:
         opt = getattr(self, "_ridealong_opt", None)
         if opt is None or getattr(self, "_ridealong_opt_owner", None) is not heads:
-            params = heads.trainable_parameters()
-            # fused on CUDA: one kernel for the whole step instead of several per parameter tensor
-            # (the heads are many small tensors, so the per-tensor launches were the cost).
-            fused = bool(params) and all(p.is_cuda for p in params)
-            opt = th.optim.Adam(params, lr=RIDEALONG_LR, eps=RIDEALONG_EPS, fused=fused or None)
+            self._ridealong_late_acquisition("the four heads' optimizer")
+            opt = _adam(heads.trainable_parameters(), RIDEALONG_LR, prealloc=False)
             self._ridealong_opt = opt
             self._ridealong_opt_owner = heads
         return opt
@@ -245,22 +384,45 @@ class RideAlongTerms:
         if b.pooled is None:
             return
         rnd = getattr(heads, "rnd", None)
+        variants = getattr(heads, "rnd_variants", None)
+        dead = getattr(self, "_ridealong_variant_disabled", None) or set()
+        if not acc.update_begun:
+            # The PPO-update boundary: the `decay` variant's once-per-update pull toward its init.
+            acc.update_begun = True
+            if hasattr(heads, "begin_update_"):
+                heads.begin_update_(skip=tuple(dead))
         if rnd is not None and epoch == 0:
             # Burda et al.: normalise with statistics that include this batch, then score it
             # BEFORE the predictor sees it — epoch 0 is each row's first (and only) RND visit.
             rnd.update_obs_stats(b.obs)
-        out = heads.readout(b)
+            if variants is not None and "feat" in variants and "feat" not in dead:
+                variants["feat"].update_obs_stats(b.pooled)      # its OWN feature normalisation
+        out = heads.readout(b, skip_variants=tuple(dead)) if variants is not None \
+            else heads.readout(b)
         losses = heads.losses(b, out, train_rnd=(epoch == 0))
+        vlosses = heads.variant_losses(out) if variants is not None else {}
         if rnd is not None and epoch == 0 and "rnd_err" in out:
             rnd.update_err_stats(out["rnd_err"])
             # z against statistics that INCLUDE this batch (the first batch of a run would
             # otherwise be scored against the placeholder mean 0 / variance 1).
             out["rnd_z"] = rnd.zscore(out["rnd_err"])
+            for n, vmod in (variants.items() if variants is not None else ()):
+                if f"rndv_{n}_err" in out:
+                    vmod.update_err_stats(out[f"rndv_{n}_err"])
+                    out[f"rndv_{n}_z"] = vmod.zscore(out[f"rndv_{n}_err"])
         # The READ is epoch 0's: one policy over every rollout row once, and — for the losses —
         # each row scored BEFORE the heads trained on it this call. Later epochs only train, so the
         # meters cost host syncs once per row, not n_epochs times.
         if epoch == 0:
-            acc.observe(out, b, losses, obs.get("opp_class"), epoch)
+            acc.observe(out, b, {**losses, **vlosses}, obs.get("opp_class"), epoch)
+            if variants is not None:
+                # The identification probe (no grad, no RNG): the same predictors on the batch's
+                # block chimeras, scored BEFORE this step trains on the real rows.
+                chim = heads.identification_errors(b.obs)
+                acc.observe_identification(out, {k: v for k, v in chim.items()
+                                                 if k[len("rndv_"):] not in dead})
+        if vlosses:
+            self._ridealong_variant_step(heads, vlosses, epoch, acc)
         if losses:
             opt = self._ridealong_optimizer(heads)
             params = heads.trainable_parameters()
@@ -286,6 +448,50 @@ class RideAlongTerms:
             # clip, the noise probes, the distill projector — can see a ride-along gradient.
             opt.zero_grad(set_to_none=True)
 
+    def _ridealong_variant_optimizer(self, heads: Any, name: str) -> th.optim.Optimizer:
+        """The variant's OWN Adam (rate RIDEALONG_LR × its declared `lr_mult`), acquired at startup;
+        a miss here is a LATE ACQUISITION (counted, then built)."""
+        opts: Optional[Dict[str, th.optim.Optimizer]] = getattr(self, "_ridealong_vopts", None)
+        if opts is None or getattr(self, "_ridealong_vopts_owner", None) is not heads:
+            opts = {}
+            self._ridealong_vopts = opts
+            self._ridealong_vopts_owner = heads
+        if name not in opts:
+            self._ridealong_late_acquisition(f"RND variant {name!r}'s optimizer")
+            opts[name] = self._variant_adam(heads, name, prealloc=False)
+        return opts[name]
+
+    def _ridealong_variant_step(self, heads: Any, vlosses: Dict[str, th.Tensor], epoch: int,
+                                acc: RideAlongAccumulator) -> None:
+        """Every RND variant's own step. One backward over the SUM of the variants' losses (their
+        parameter sets are disjoint and every input is detached, so each predictor receives exactly
+        its own loss's gradient), then per variant: its own clip, its own finiteness check, its own
+        Adam step, its gradients back to None."""
+        names = [k[len("rndv_"):] for k in vlosses]
+        opts = {n: self._ridealong_variant_optimizer(heads, n) for n in names}
+        for o in opts.values():
+            o.zero_grad(set_to_none=True)
+        th.stack(list(vlosses.values())).sum().backward()
+        dead = getattr(self, "_ridealong_variant_disabled", None)
+        if dead is None:
+            dead = set()
+            self._ridealong_variant_disabled = dead
+        for n in names:
+            gn = th.nn.utils.clip_grad_norm_(heads.variant_parameters(n), RIDEALONG_MAX_GRAD_NORM)
+            if not bool(th.isfinite(gn)):
+                # FAIL-CLOSED FOR THIS VARIANT ONLY: never stepped, stopped for the rest of the
+                # process, loudly; the four heads, the other variants and PPO carry on.
+                opts[n].zero_grad(set_to_none=True)
+                dead.add(n)
+                print(f"🛑 [RIDE-ALONG] RND variant {n!r}: non-finite loss/gradient (grad norm "
+                      f"{float(gn)}, loss {float(vlosses['rndv_' + n].detach())}) — DISABLED for "
+                      "the rest of this process; the other heads and PPO are unaffected.", flush=True)
+                continue
+            if epoch == 0:
+                acc.add(f"rndv_{n}_grad_norm", float(gn))
+            opts[n].step()
+            opts[n].zero_grad(set_to_none=True)
+
     def _record_ridealong_metrics(self, acc: RideAlongAccumulator) -> None:
         if self._ridealong_heads() is None:
             return
@@ -293,5 +499,11 @@ class RideAlongTerms:
         # `ridealong/*` series then has its cause on the dashboard.
         self.logger.record("ridealong/disabled",   # type: ignore[attr-defined]
                            float(bool(getattr(self, "_ridealong_disabled", False))))
+        self.logger.record("ridealong/acquisitions_after_freeze",   # type: ignore[attr-defined]
+                           float(getattr(self, "_ridealong_late_acquisitions", 0)))
+        dead = getattr(self, "_ridealong_variant_disabled", None) or set()
+        for n in getattr(self._ridealong_heads(), "variant_names", lambda: ())():
+            self.logger.record(f"ridealong/rndv_{n}_disabled",   # type: ignore[attr-defined]
+                               float(n in dead))
         for k, v in acc.metrics().items():
             self.logger.record(f"ridealong/{k}", v)   # type: ignore[attr-defined]

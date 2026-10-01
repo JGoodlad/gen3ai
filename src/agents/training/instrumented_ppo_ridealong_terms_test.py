@@ -75,9 +75,16 @@ def test_a_step_trains_the_heads_and_a_NONFINITE_step_disables_them_without_touc
     rd.observations["observation"] = bad
     lr._ridealong_update(rd, values, actions, epoch=0, acc=RideAlongAccumulator())
     assert lr._ridealong_disabled
+    # the observation variants share base's poisoned normaliser: each stopped ALONE; feat did not
+    assert lr._ridealong_variant_disabled == {"fast", "decay", "small"}
     for k, v in pol.ridealong.state_dict().items():
-        if k.startswith("rnd.obs_") or k.startswith("rnd.err_"):
+        if (k.startswith("rnd.obs_") or k.startswith("rnd.err_")
+                or (k.startswith("rnd_variants.") and (".obs_" in k or ".err_" in k))):
             continue        # the running statistics saw the batch; the WEIGHTS must not move
+        if k.startswith("rnd_variants.decay.predictor."):
+            continue        # the per-UPDATE pull toward init ran at this update's start (no step)
+        if k.startswith("rnd_variants.feat."):
+            continue        # feat reads value_pooled, which is FINITE here: it legitimately stepped
         assert th.equal(v, ra1[k]), f"a non-finite step moved {k}"
     for k, v in pol.state_dict().items():
         if not k.startswith("ridealong."):
@@ -89,3 +96,52 @@ def test_a_step_trains_the_heads_and_a_NONFINITE_step_disables_them_without_touc
     lr._ridealong_update(*_forward(pol, rows, masks), epoch=0, acc=RideAlongAccumulator())
     assert all(th.allclose(v.double(), ra2[k].double(), rtol=0, atol=0, equal_nan=True)
                for k, v in pol.ridealong.state_dict().items())
+
+
+def test_a_NONFINITE_VARIANT_disables_ONLY_that_variant():
+    """gen3_ridealong_rnd_variants_v1: each variant fails closed ALONE — the four heads and the other
+    variants keep stepping, and the dead one is logged."""
+    from agents.model.compile_parity_fixture import load_parity_rows
+    from agents.model.ridealong_heads_test import _policy
+
+    pol, layout = _policy()
+    rows, masks = load_parity_rows(layout["total_dim"])
+    rows, masks = rows[:8].copy(), masks[:8]
+    lr = _Learner(pol)
+    lr._ridealong_acquire()
+    with th.no_grad():
+        pol.ridealong.rnd_variants["small"].predictor[0].bias[0] = float("inf")
+    before = {k: v.clone() for k, v in pol.ridealong.state_dict().items()}
+    acc = RideAlongAccumulator()
+    lr._ridealong_update(*_forward(pol, rows, masks), epoch=0, acc=acc)
+    assert lr._ridealong_variant_disabled == {"small"}
+    assert not getattr(lr, "_ridealong_disabled", False)
+    after = pol.ridealong.state_dict()
+    for pre in ("rnd.predictor.", "ensemble.members.", "rnd_variants.fast.predictor.",
+                "rnd_variants.decay.predictor.", "rnd_variants.feat.predictor."):
+        assert any(not th.equal(after[k], before[k]) for k in after if k.startswith(pre)), pre
+    small_w = [k for k in after if k.startswith("rnd_variants.small.predictor.")]
+    assert all(th.equal(after[k], before[k]) for k in small_w), "a non-finite variant was stepped"
+    lr._record_ridealong_metrics(acc)
+    assert lr.logged["ridealong/rndv_small_disabled"] == 1.0
+    assert lr.logged["ridealong/rndv_fast_disabled"] == 0.0
+    assert lr.logged["ridealong/disabled"] == 0.0
+    assert lr.logged["ridealong/acquisitions_after_freeze"] == 0.0
+    # the dead variant is no longer read: no later series of it
+    acc2 = RideAlongAccumulator()
+    lr._ridealong_update(*_forward(pol, rows, masks), epoch=0, acc=acc2)
+    m = acc2.metrics()
+    assert "rndv_small_err_mean" not in m and "rndv_fast_err_mean" in m
+
+
+def test_the_SATURATION_and_IDENTIFICATION_series():
+    acc = RideAlongAccumulator()
+    acc.col("rndv_fast_err_raw", th.tensor([1.0, 2.0, 3.0, 4.0, 5.0]))
+    acc.col("rnd_err_raw", th.full((5,), 2.0))
+    acc.observe_identification({"rnd_err": th.ones(4), "rndv_fast_err": th.ones(4)},
+                               {"rnd": th.full((4,), 3.0), "rndv_fast": th.ones(4)})
+    m = acc.metrics()
+    assert m["rndv_fast_err_median"] == 3.0
+    assert m["rndv_fast_err_iqr"] == 2.0 and abs(m["rndv_fast_err_rel_spread"] - 2.0 / 3.0) < 1e-12
+    assert m["rnd_err_iqr"] == 0.0 and m["rnd_err_rel_spread"] == 0.0     # a collapsed spread
+    assert m["rnd_ident_ratio"] == 3.0 and m["rndv_fast_ident_ratio"] == 1.0

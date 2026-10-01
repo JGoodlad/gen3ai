@@ -62,12 +62,38 @@ THE FOUR HEADS (each its own STRUCTURAL flag, all OFF by default):
 
 Q = V + A(a) + B(b) is a DERIVED readout (no I term); losses are MSE, linear in the labels
 (`design_q_head.md` §5.1's M = 1 rule).
+
+THE RND VARIANT ENSEMBLE (`--ridealong-rnd-variants`, `gen3_ridealong_rnd_variants_v1`, config
+v127; owner 2026-09-30: *"ensemble RND, toss one a different learning rate or something, so we knock
+them out all at once … and we can compare RND strategies"*). Plain RND counts CUMULATIVE visitation,
+so it can saturate. "Recently seen" needs FORGETTING, and the lever for forgetting is the PREDICTOR's
+memory, not the target. Each variant is its own detached predictor with its own optimizer state,
+its own error z-score and its own logged statistics, beside the unchanged `--ridealong-rnd` head
+(`base`, the reference). `RND_VARIANT_DECLS` holds every hyperparameter and the reason for it:
+
+  * ``fast``  — base's predictor (same init) at RND_FAST_LR_MULT × base's rate: forgetting by fast
+    tracking.
+  * ``decay`` — base's predictor (same init), pulled toward its OWN INIT once per PPO update with a
+    half-life of RND_DECAY_HALF_LIFE_UPDATES updates: forgetting by shrinkage ("shrink toward init",
+    L2-Init — Ash & Adams 2020, Kumar et al. 2023). A state not revisited drifts back to the
+    untrained error, i.e. back to "novel".
+  * ``small`` — a one-hidden-layer predictor of RIDEALONG_RND_SMALL_HIDDEN units (11.5 % of base's
+    parameters): too little capacity to fingerprint battles, so it should track coarse density.
+  * ``feat``  — base's shapes over the detached trunk features (`value_pooled`), its own frozen
+    target and its own feature normalisation: measures LIVE the representation drift the offline
+    read predicted (2.5–8×).
+
+The three OBSERVATION variants share base's frozen target AND base's observation normalisation
+(the same stream gives identical running statistics, so sharing is exact and makes every comparison
+PAIRED: one target output per row, several predictors). `fast` and `decay` also start from base's
+exact predictor weights, so at step 0 they ARE base and every later difference is the strategy.
 """
 from __future__ import annotations
 
+import copy
 import math
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -83,12 +109,13 @@ from agents.model.arch_constants import (
     RIDEALONG_PRIOR_SCALE_V,
     RIDEALONG_RND_HIDDEN,
     RIDEALONG_RND_OUT,
+    RIDEALONG_RND_SMALL_HIDDEN,
 )
 from agents.model.q_winprob_head import QWinProbHead
 
 #: The four extractor kwargs (flag_registry rows) that declare the heads, in build order.
 RIDEALONG_FLAGS: Tuple[str, ...] = ("ridealong_ensemble", "ridealong_rnd", "ridealong_adv",
-                                    "ridealong_opp")
+                                    "ridealong_opp", "ridealong_rnd_variants")
 
 #: Bit offsets into the per-state hash, one block per ensemble so the V, A and B members' bootstrap
 #: masks are independent of one another.
@@ -100,25 +127,154 @@ RND_OBS_CLIP = 5.0
 #: predictor as it learns rather than averaging over the whole run).
 RND_ERR_EMA = 0.01
 
+# ── the RND variant ensemble's DECLARATIONS (gen3_ridealong_rnd_variants_v1, v127) ───────────────
+#: `fast`'s predictor learning rate as a multiple of base's (`RIDEALONG_LR`, 3e-4 → 3e-3). WHY 10:
+#: Adam's per-step move is ~lr whatever the gradient's scale, so a predictor's tracking timescale in
+#: steps scales ~1/lr, and 10× puts `fast`'s memory roughly an order of magnitude shorter than base's.
+#: That is the top of the 5–10× range, chosen so that the contrast with base is large enough to be
+#: detectable on one run. 3e-3 is still an ordinary Adam rate for an MLP regression on inputs clipped
+#: to ±5 with the gradient clipped to 1.0; a non-finite step disables `fast` alone, never the run.
+RND_FAST_LR_MULT = 10.0
+#: `decay`'s half-life toward its own init, in PPO UPDATES. WHY 10: one eval cycle is 2,000,000 env
+#: steps (`EVAL_FREQ_STEPS`) ≈ 20 updates of the production 98,304-row rollout, so 10 updates is half
+#: an eval cycle. Learning that is not renewed is 25 % left after one cycle and 6 % after two, and at
+#: equilibrium the predictor holds about 1 / (1 − γ) ≈ 15 updates of learning. So `decay`'s
+#: "familiar" means "visited during roughly the current eval cycle", which is the cadence the
+#: saturation read (X26 amendment (c)) is aggregated at.
+RND_DECAY_HALF_LIFE_UPDATES = 10.0
+
+
+@dataclass(frozen=True)
+class RndVariantDecl:
+    """One declared RND variant: what it reads, how it forgets, and the predictor-vs-target design."""
+    name: str
+    input: str                         # "obs" (base's normalised observation) | "feat" (value_pooled)
+    lr_mult: float                     # × RIDEALONG_LR, the variant's own Adam rate
+    decay_half_life_updates: Optional[float]   # pull toward init per PPO update; None = no pull
+    predictor_vs_target: str           # the architecture relation, recorded (owner's question)
+    why: str
+
+
+#: The declared variants, in CANONICAL order (the recorded flag value is this order's comma join).
+#: `base` is NOT one of them: it is the unchanged `--ridealong-rnd` head, the reference every variant
+#: is compared with, and it is REQUIRED (the observation variants share its target).
+RND_VARIANT_DECLS: Tuple[RndVariantDecl, ...] = (
+    RndVariantDecl(
+        "fast", "obs", RND_FAST_LR_MULT, None,
+        "SAME family as base: base's own predictor (obs→256→256→64 ReLU MLP, one layer deeper "
+        "than the obs→256→64 target), started from base's exact weights",
+        "forgetting by fast tracking: a 10x rate overwrites old fits faster"),
+    RndVariantDecl(
+        "decay", "obs", 1.0, RND_DECAY_HALF_LIFE_UPDATES,
+        "SAME family as base: base's own predictor, started from base's exact weights, pulled back "
+        "toward them",
+        "forgetting by shrinkage: unrenewed learning decays back to the untrained (novel) error"),
+    RndVariantDecl(
+        "small", "obs", 1.0, None,
+        "DELIBERATELY LESS EXPRESSIVE than the target: obs→32→64 (one hidden layer of 32) against "
+        "the target's 256 hidden units, so it cannot represent the target exactly",
+        "no fingerprinting: too little capacity to memorise battles; novelty tracks coarse density"),
+    RndVariantDecl(
+        "feat", "feat", 1.0, None,
+        "SAME family as base, over value_pooled: target D→256→64, predictor D→256→256→64 (D = "
+        "D_MODEL), its own frozen target and its own feature normalisation",
+        "the trunk-feature input, live: measures the representation drift the offline read predicted"),
+)
+RND_VARIANTS: Tuple[str, ...] = tuple(d.name for d in RND_VARIANT_DECLS)
+RND_VARIANT_BY_NAME: Dict[str, RndVariantDecl] = {d.name: d for d in RND_VARIANT_DECLS}
+#: The OFF value of the recorded string (the registry's OFF convention, `flag_registry.is_enabled`).
+RND_VARIANTS_OFF = "off"
+
+
+def parse_rnd_variants(value: Any) -> Tuple[str, ...]:
+    """The declared variant names in CANONICAL order. Accepts None / '' / 'off' / 'none' (no
+    variants), 'all', a comma list, or an iterable of names. An unknown or repeated name RAISES —
+    a typo must never quietly drop a variant from a pre-registered comparison."""
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in ("", "off", "none"):
+            return ()
+        if v == "all":
+            return RND_VARIANTS
+        names = [x.strip() for x in v.split(",") if x.strip()]
+    else:
+        names = [str(x).strip().lower() for x in value]
+    bad = sorted(set(names) - set(RND_VARIANTS))
+    if bad:
+        raise ValueError(f"unknown RND variant(s) {bad}: the declared set is {list(RND_VARIANTS)} "
+                         "('all' = every one; 'base' is --ridealong-rnd itself, not a variant)")
+    if len(set(names)) != len(names):
+        raise ValueError(f"an RND variant is repeated in {names}")
+    return tuple(n for n in RND_VARIANTS if n in names)
+
+
+def canonical_rnd_variants(value: Any) -> str:
+    """The RECORDED form: 'off', or the canonical comma join (so 'decay,fast' and 'fast,decay'
+    record — and version-gate — identically)."""
+    names = parse_rnd_variants(value)
+    return ",".join(names) if names else RND_VARIANTS_OFF
+
+
+def obs_block_edges(layout: Optional[Mapping[str, Any]], obs_dim: int) -> Tuple[int, ...]:
+    """The observation's BLOCK boundaries, read from the encoder's layout (never hardcoded): every
+    `parts` block start plus the event window, in [0, obs_dim]. Fallback (no layout, e.g. a toy test
+    policy): 7 equal blocks. The identification probes build their off-manifold rows from these."""
+    edges = {0, int(obs_dim)}
+    parts = (layout or {}).get("parts") if isinstance(layout, Mapping) else None
+    if isinstance(parts, Mapping):
+        for p in parts.values():
+            st = int(p.get("start", -1)) if isinstance(p, Mapping) else -1
+            if 0 < st < obs_dim:
+                edges.add(st)
+        ew = (layout or {}).get("event_window_offset")
+        if isinstance(ew, int) and 0 < ew < obs_dim:
+            edges.add(int(ew))
+    if len(edges) < 3:
+        edges |= {int(round(obs_dim * k / 7)) for k in range(1, 7)}
+    return tuple(sorted(edges))
+
+
+def block_chimera(x: torch.Tensor, edges: Sequence[int]) -> torch.Tensor:
+    """The OFF-MANIFOLD probe generator (`chimera_v1`, frozen). Row j's block k is copied from row
+    ``(j + k · stride) mod B`` (stride = max(1, B // n_blocks); block 0 stays row j's own), so every
+    block is a REAL block of a real observation while the combination is one no battle produced:
+    our team from one battle, the opponent's from another, the field and history from others. It is
+    DETERMINISTIC and draws no random number. Over a SHUFFLED batch (a PPO minibatch, or the
+    reader's seeded probe order) the donors are other battles. Per-dimension normalisation commutes
+    with it, so it can be applied to normalised rows."""
+    n = int(x.shape[0])
+    nb = len(edges) - 1
+    stride = max(1, n // max(1, nb))
+    out = x.clone()
+    for k in range(1, nb):
+        lo, hi = int(edges[k]), int(edges[k + 1])
+        out[:, lo:hi] = torch.roll(x[:, lo:hi], shifts=-(k * stride) % max(1, n), dims=0)
+    return out
+
 
 @dataclass(frozen=True)
 class RideAlongSpec:
-    """Which heads exist. Read off the extractor's four ride-along kwargs."""
+    """Which heads exist. Read off the extractor's five ride-along kwargs."""
     ensemble: int = 0
     rnd: bool = False
     adv: int = 0
     opp: int = 0
+    #: The RND VARIANTS beside base (`RND_VARIANTS` names, canonical order; () = none).
+    rnd_variants: Tuple[str, ...] = ()
 
     @property
     def any(self) -> bool:
-        return bool(self.ensemble or self.rnd or self.adv or self.opp)
+        return bool(self.ensemble or self.rnd or self.adv or self.opp or self.rnd_variants)
 
     @classmethod
     def from_extractor(cls, fe: object) -> "RideAlongSpec":
         return cls(ensemble=int(getattr(fe, "ridealong_ensemble", 0) or 0),
                    rnd=bool(getattr(fe, "ridealong_rnd", False)),
                    adv=int(getattr(fe, "ridealong_adv", 0) or 0),
-                   opp=int(getattr(fe, "ridealong_opp", 0) or 0))
+                   opp=int(getattr(fe, "ridealong_opp", 0) or 0),
+                   rnd_variants=parse_rnd_variants(getattr(fe, "ridealong_rnd_variants", None)))
 
 
 def validate_spec(spec: RideAlongSpec) -> None:
@@ -126,6 +282,13 @@ def validate_spec(spec: RideAlongSpec) -> None:
                     ("ridealong_opp", spec.opp)):
         if not 0 <= int(k) <= _MAX_MEMBERS:
             raise ValueError(f"{name} must be in [0, {_MAX_MEMBERS}] members, got {k}")
+    if tuple(spec.rnd_variants) != parse_rnd_variants(spec.rnd_variants):
+        raise ValueError(f"rnd_variants must be declared names in canonical order "
+                         f"{list(RND_VARIANTS)}, got {spec.rnd_variants!r}")
+    if spec.rnd_variants and not spec.rnd:
+        raise ValueError("ridealong_rnd_variants requires ridealong_rnd: the observation variants "
+                         "share base's frozen target and normalisation, and base is the reference "
+                         "every variant is compared with.")
 
 
 def freeze_to_buffers(module: torch.nn.Module) -> torch.nn.Module:
@@ -208,14 +371,45 @@ class ValueEnsemble(torch.nn.Module):
                           for m, p in zip(self.members, self.priors)], dim=-1)   # [B, K]
 
 
-class RndNovelty(torch.nn.Module):
-    """Random Network Distillation over the raw observation (see the module docstring for why the
-    observation and not the trunk features)."""
+class _RndErrStats(torch.nn.Module):
+    """The error z-score's running statistics (an EMA of the batch mean and variance). Each RND
+    head — base and every variant — owns ONE, because their error scales differ by construction."""
 
-    def __init__(self, obs_dim: int) -> None:
+    def _register_err_stats(self) -> None:
+        self.register_buffer("err_mean", torch.zeros(()))
+        self.register_buffer("err_var", torch.ones(()))
+        self.register_buffer("err_seen", torch.zeros((), dtype=torch.bool))
+
+    @torch.no_grad()
+    def update_err_stats(self, err: torch.Tensor) -> None:
+        e = err.detach().float()
+        if e.numel() == 0:
+            return
+        m, v = e.mean(), e.var(unbiased=False)
+        if not bool(self.err_seen.item()):
+            self.err_mean.copy_(m)
+            self.err_var.copy_(torch.clamp(v, min=1e-12))
+            self.err_seen.fill_(True)
+            return
+        self.err_mean.mul_(1 - RND_ERR_EMA).add_(RND_ERR_EMA * m)
+        self.err_var.mul_(1 - RND_ERR_EMA).add_(RND_ERR_EMA * v)
+
+    def zscore(self, err: torch.Tensor) -> torch.Tensor:
+        z: torch.Tensor = (err.detach() - self.err_mean) / torch.sqrt(self.err_var + 1e-12)
+        return z
+
+
+class RndNovelty(_RndErrStats):
+    """Random Network Distillation over the raw observation (see the module docstring for why the
+    observation and not the trunk features). ``seed`` defaults to base's; the `feat` variant is this
+    class over `value_pooled` with its own seed."""
+
+    def __init__(self, obs_dim: int, seed: Optional[int] = None) -> None:
         super().__init__()
         self.obs_dim = int(obs_dim)
-        torch.manual_seed(RIDEALONG_INIT_SEED + 7)
+        #: Set when this module is the `feat` VARIANT (its declaration); None for base.
+        self.decl: Optional[RndVariantDecl] = None
+        torch.manual_seed(RIDEALONG_INIT_SEED + 7 if seed is None else int(seed))
         target = _mlp([self.obs_dim, RIDEALONG_RND_HIDDEN, RIDEALONG_RND_OUT])
         self.target = freeze_to_buffers(target)
         self.predictor = _mlp([self.obs_dim, RIDEALONG_RND_HIDDEN, RIDEALONG_RND_HIDDEN,
@@ -223,9 +417,7 @@ class RndNovelty(torch.nn.Module):
         self.register_buffer("obs_mean", torch.zeros(self.obs_dim))
         self.register_buffer("obs_var", torch.ones(self.obs_dim))
         self.register_buffer("obs_count", torch.zeros((), dtype=torch.float64))
-        self.register_buffer("err_mean", torch.zeros(()))
-        self.register_buffer("err_var", torch.ones(()))
-        self.register_buffer("err_seen", torch.zeros((), dtype=torch.bool))
+        self._register_err_stats()
 
     @torch.no_grad()
     def update_obs_stats(self, obs: torch.Tensor) -> None:
@@ -250,31 +442,75 @@ class RndNovelty(torch.nn.Module):
             x = (obs.float() - self.obs_mean) / torch.sqrt(self.obs_var + 1e-8)
         return x.clamp(-RND_OBS_CLIP, RND_OBS_CLIP)
 
-    def error(self, obs: torch.Tensor) -> torch.Tensor:
-        """[B] mean squared prediction error — the raw novelty (graph through the predictor only)."""
+    def inputs(self, obs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """``(x, target(x))``: the normalised input and the frozen target's output. Computed ONCE
+        per batch and shared with the observation variants (paired comparisons)."""
         x = self.normalise(obs.detach())
         with torch.no_grad():
             tgt = self.target(x)
+        return x, tgt
+
+    def error_from(self, x: torch.Tensor, tgt: torch.Tensor) -> torch.Tensor:
+        err: torch.Tensor = (self.predictor(x) - tgt).pow(2).mean(dim=-1)
+        return err
+
+    def error(self, obs: torch.Tensor) -> torch.Tensor:
+        """[B] mean squared prediction error — the raw novelty (graph through the predictor only)."""
+        return self.error_from(*self.inputs(obs))
+
+
+class RndObsVariant(_RndErrStats):
+    """An OBSERVATION RND variant: its own predictor and error statistics over BASE's normalised
+    observation against BASE's frozen target (both shared, so the comparison is paired). With a
+    declared half-life it keeps a frozen copy of its init (``anchor``, buffers) and is pulled back
+    toward it once per PPO update (`shrink_toward_init_`)."""
+
+    def __init__(self, decl: RndVariantDecl, predictor: torch.nn.Module) -> None:
+        super().__init__()
+        self.decl = decl
+        self.predictor = predictor
+        self.anchor: Optional[torch.nn.Module] = (
+            freeze_to_buffers(copy.deepcopy(predictor))
+            if decl.decay_half_life_updates is not None else None)
+        self._register_err_stats()
+
+    def error_from(self, x: torch.Tensor, tgt: torch.Tensor) -> torch.Tensor:
         err: torch.Tensor = (self.predictor(x) - tgt).pow(2).mean(dim=-1)
         return err
 
     @torch.no_grad()
-    def update_err_stats(self, err: torch.Tensor) -> None:
-        e = err.detach().float()
-        if e.numel() == 0:
+    def shrink_toward_init_(self) -> None:
+        """θ ← θ0 + γ (θ − θ0), γ = 2^(−1 / half-life): one PPO update's worth of the pull."""
+        if self.anchor is None or self.decl.decay_half_life_updates is None:
             return
-        m, v = e.mean(), e.var(unbiased=False)
-        if not bool(self.err_seen.item()):
-            self.err_mean.copy_(m)
-            self.err_var.copy_(torch.clamp(v, min=1e-12))
-            self.err_seen.fill_(True)
-            return
-        self.err_mean.mul_(1 - RND_ERR_EMA).add_(RND_ERR_EMA * m)
-        self.err_var.mul_(1 - RND_ERR_EMA).add_(RND_ERR_EMA * v)
+        gamma = 2.0 ** (-1.0 / float(self.decl.decay_half_life_updates))
+        anchor = dict(self.anchor.named_buffers())
+        for name, p in self.predictor.named_parameters():
+            p.mul_(gamma).add_(anchor[name], alpha=1.0 - gamma)
 
-    def zscore(self, err: torch.Tensor) -> torch.Tensor:
-        z: torch.Tensor = (err.detach() - self.err_mean) / torch.sqrt(self.err_var + 1e-12)
-        return z
+
+def build_rnd_variants(names: Sequence[str], base: RndNovelty,
+                       feat_dim: int = D_MODEL) -> torch.nn.ModuleDict:
+    """The declared variants beside ``base`` (call inside the heads' private RNG). `fast` and `decay`
+    are DEEP COPIES of base's predictor (no draw); `small` and `feat` seed themselves privately, so
+    adding or removing a variant never changes another's init."""
+    out = torch.nn.ModuleDict()
+    obs_dim = int(base.obs_dim)
+    for name in names:
+        decl = RND_VARIANT_BY_NAME[name]
+        if name in ("fast", "decay"):
+            out[name] = RndObsVariant(decl, copy.deepcopy(base.predictor))
+        elif name == "small":
+            torch.manual_seed(RIDEALONG_INIT_SEED + 7 + 31)
+            out[name] = RndObsVariant(decl, _mlp([obs_dim, RIDEALONG_RND_SMALL_HIDDEN,
+                                                  RIDEALONG_RND_OUT]))
+        elif name == "feat":
+            fv = RndNovelty(int(feat_dim), seed=RIDEALONG_INIT_SEED + 7 + 53)
+            fv.decl = decl
+            out[name] = fv
+        else:                                    # pragma: no cover - parse_rnd_variants refuses
+            raise ValueError(name)
+    return out
 
 
 class AdvantageEnsemble(torch.nn.Module):
@@ -391,10 +627,12 @@ def _flat(t: torch.Tensor) -> torch.Tensor:
 
 
 class RideAlongHeads(torch.nn.Module):
-    """The container: whichever of the four heads the spec builds, plus the bootstrap hash."""
+    """The container: whichever of the four heads the spec builds, the RND variants beside base,
+    plus the bootstrap hash."""
 
     def __init__(self, spec: RideAlongSpec, *, obs_dim: int, move_token_dim: int,
-                 move_cell_dim: int, switch_cell_dim: int, n_moves: int) -> None:
+                 move_cell_dim: int, switch_cell_dim: int, n_moves: int,
+                 block_edges: Optional[Sequence[int]] = None) -> None:
         super().__init__()
         validate_spec(spec)
         self.spec = spec
@@ -408,16 +646,71 @@ class RideAlongHeads(torch.nn.Module):
                                       move_cell_dim=move_cell_dim,
                                       switch_cell_dim=switch_cell_dim) if spec.adv else None)
         self.opp = OppEffectEnsemble(spec.opp, n_moves) if spec.opp else None
+        # gen3_ridealong_rnd_variants_v1 (v127): built LAST, each from its own private seed (or a
+        # deep copy of base's predictor), so every head above is bit-identical with or without them.
+        self.rnd_variants: Optional[torch.nn.ModuleDict] = (
+            build_rnd_variants(spec.rnd_variants, self.rnd)
+            if spec.rnd_variants and self.rnd is not None else None)
+        #: The observation's block boundaries, for the identification probes (not state: derived
+        #: from the encoder's layout at every build).
+        self.block_edges: Tuple[int, ...] = (tuple(int(e) for e in block_edges) if block_edges
+                                             else obs_block_edges(None, self.obs_dim))
 
     def trainable_parameters(self) -> List[torch.nn.Parameter]:
-        return [p for p in self.parameters() if p.requires_grad]
+        """The FOUR heads' trainable parameters (base RND included) — the learner's shared optimizer.
+        The RND variants are EXCLUDED: each has its own optimizer (`variant_parameters`)."""
+        return [p for n, p in self.named_parameters()
+                if p.requires_grad and not n.startswith("rnd_variants.")]
 
-    def readout(self, b: RideAlongBatch) -> Dict[str, torch.Tensor]:
+    def variant_names(self) -> Tuple[str, ...]:
+        return tuple(self.rnd_variants.keys()) if self.rnd_variants is not None else ()
+
+    def variant_parameters(self, name: str) -> List[torch.nn.Parameter]:
+        assert self.rnd_variants is not None
+        return [p for p in self.rnd_variants[name].parameters() if p.requires_grad]
+
+    @torch.no_grad()
+    def begin_update_(self, skip: Sequence[str] = ()) -> None:
+        """Once per PPO update, before its first ride-along step: the `decay` variant's pull (not
+        for a variant in ``skip`` — a disabled variant is frozen)."""
+        for n, v in (self.rnd_variants.items() if self.rnd_variants is not None else ()):
+            if isinstance(v, RndObsVariant) and n not in skip:
+                v.shrink_toward_init_()
+
+    def variant_losses(self, out: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """``{"rndv_<name>": mean error}`` for every variant the readout scored — each is its own
+        predictor's loss alone, stepped by its own optimizer."""
+        return {f"rndv_{n}": out[f"rndv_{n}_err"].mean() for n in self.variant_names()
+                if f"rndv_{n}_err" in out}
+
+    @torch.no_grad()
+    def identification_errors(self, obs: torch.Tensor) -> Dict[str, torch.Tensor]:
+        """The IN-RUN identification probe: base's and every OBSERVATION variant's error on the
+        batch's `block_chimera` rows (off-manifold but plausible), against base's target. Compared
+        with the same predictors' error on the real rows it says whether a predictor is learning the
+        target EVERYWHERE (identification: the chimera error falls with the real-row error) rather
+        than on the states it visits. `feat` is skipped (its chimera input would need a trunk
+        forward); the offline reader scores it on fixed probes. Keys ``rnd`` / ``rndv_<name>``."""
+        out: Dict[str, torch.Tensor] = {}
+        if self.rnd is None:
+            return out
+        x = block_chimera(self.rnd.normalise(obs.detach()), self.block_edges)
+        tgt = self.rnd.target(x)
+        out["rnd"] = self.rnd.error_from(x, tgt)
+        for n, v in (self.rnd_variants.items() if self.rnd_variants is not None else ()):
+            if isinstance(v, RndObsVariant):
+                out[f"rndv_{n}"] = v.error_from(x, tgt)
+        return out
+
+    def readout(self, b: RideAlongBatch,
+                skip_variants: Sequence[str] = ()) -> Dict[str, torch.Tensor]:
         """Every head's output on one batch (graph through the HEADS' OWN parameters only).
 
         Keys: ``ens_logits`` [B,K] · ``ens_p`` [B] (member mean) · ``ens_std`` [B] (disagreement) ·
-        ``rnd_err`` [B] · ``rnd_z`` [B] · ``adv`` [B,K,11] centred under π · ``adv_mean`` /
-        ``adv_std`` [B,11] · ``opp`` [B,K,S+1] centred under α · ``opp_mean`` [B,S+1]."""
+        ``rnd_err`` [B] · ``rnd_z`` [B] · ``rndv_<name>_err`` / ``rndv_<name>_z`` [B] per RND
+        variant (not for a name in ``skip_variants``) · ``adv`` [B,K,11] centred under π ·
+        ``adv_mean`` / ``adv_std`` [B,11] · ``opp`` [B,K,S+1] centred under α · ``opp_mean``
+        [B,S+1]."""
         out: Dict[str, torch.Tensor] = {}
         if self.ensemble is not None:
             lg = self.ensemble(b.pooled)
@@ -430,9 +723,19 @@ class RideAlongHeads(torch.nn.Module):
             # is the disagreement the uncertainty meters score.
             out["ens_logit_std"] = lg.std(-1, unbiased=False)
         if self.rnd is not None:
-            err = self.rnd.error(b.obs)
+            x, tgt = self.rnd.inputs(b.obs)
+            err = self.rnd.error_from(x, tgt)
             out["rnd_err"] = err
             out["rnd_z"] = self.rnd.zscore(err)
+            for n, v in (self.rnd_variants.items() if self.rnd_variants is not None else ()):
+                if n in skip_variants:
+                    continue
+                # Observation variants: base's normalised rows and target output, shared (paired).
+                # `feat`: its own normalisation and target over the detached value_pooled.
+                e = (v.error_from(x, tgt) if isinstance(v, RndObsVariant)
+                     else v.error(b.pooled))
+                out[f"rndv_{n}_err"] = e
+                out[f"rndv_{n}_z"] = v.zscore(e)
         if self.adv is not None and b.pointer is not None and b.pi is not None:
             raw = self.adv(b.pooled, b.pointer)                                  # [B,K,11]
             centred = raw - (raw * b.pi[:, None, :]).sum(-1, keepdim=True)
@@ -524,9 +827,14 @@ def build_ridealong(fe: object, *, obs_dim: int,
             move_token_dim=int(getattr(fe, "pointer_move_token_dim", D_MODEL)),
             move_cell_dim=int(getattr(fe, "pointer_move_cell_dim", 0)),
             switch_cell_dim=int(getattr(fe, "pointer_switch_cell_dim", 0)),
-            n_moves=n_moves)
+            n_moves=n_moves,
+            block_edges=obs_block_edges(layout if isinstance(layout, dict) else None,
+                                        int(obs_dim)))
 
 
 __all__ = ["RIDEALONG_FLAGS", "RideAlongSpec", "RideAlongHeads", "RideAlongBatch",
            "build_ridealong", "freeze_to_buffers", "state_hash", "bootstrap_mask",
-           "ACTION_SPACE_SIZE"]
+           "ACTION_SPACE_SIZE", "RND_VARIANTS", "RND_VARIANT_DECLS", "RND_VARIANT_BY_NAME",
+           "RND_FAST_LR_MULT", "RND_DECAY_HALF_LIFE_UPDATES", "RndVariantDecl", "RndObsVariant",
+           "parse_rnd_variants", "canonical_rnd_variants", "obs_block_edges", "block_chimera",
+           "build_rnd_variants"]

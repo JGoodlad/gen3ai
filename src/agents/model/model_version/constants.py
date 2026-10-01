@@ -350,7 +350,12 @@ from typing import Any, Dict
 #   called by the forward. A pre-v126 config defaults every toggle OFF (the only possible past).
 #   No ARCH_SIGNATURE bump (the observation vector and every existing module are unchanged), no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 126
+# v127 (gen3_ridealong_rnd_variants_v1): `ridealong_rnd_variants` — the RND VARIANT ENSEMBLE beside
+#   the base `ridealong_rnd` head (fast / decay / small / feat; owner 2026-09-30, X26). A canonical
+#   comma-list STRING, STRUCTURAL (the variants' predictors are the state_dict delta, gated in
+#   check_compatible), INERT to training exactly like the four v126 toggles. A pre-v127 config
+#   migrates to "off" (the only possible past). No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 127
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

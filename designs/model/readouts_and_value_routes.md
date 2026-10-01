@@ -282,3 +282,24 @@ side's policy (π for A, α for B, both stop-grad), so E[adv | s, a] = A(s, a) a
 B's declared limit: a move outside the believed seats is not a label, so B is conditional on the
 opponent choosing a listed option (α's mask rate). There is no I term. Q = V + A + B is a readout
 (`ridealong/q_out_of_range`).
+
+**The RND VARIANT ENSEMBLE (`gen3_ridealong_rnd_variants_v1`, v127, `--ridealong-rnd-variants`).**
+Plain RND counts cumulative visitation and can saturate. "Recently seen" needs forgetting, and the
+lever for forgetting is the PREDICTOR's memory, not the target. So four declared variants ride beside
+the unchanged RND head (`base`), each with its own predictor, Adam, clip, error z-score and
+fail-closed switch (`RND_VARIANT_DECLS`; the table is in `designs/ARCHITECTURE.md` §3.4):
+`fast` (10× the rate), `decay` (pulled toward its own init, half-life 10 PPO updates), `small`
+(obs→32→64, deliberately less expressive than the target) and `feat` (over the detached
+`value_pooled`, with its own target and normalisation; it measures the drift above LIVE). The
+observation variants share base's target and normaliser, so each comparison with base is paired, and
+`fast` / `decay` start from base's exact weights. Two monitors exist for the questions the variants
+pose. Saturation is the raw-error IQR ÷ median of every fresh row in an update. Identification is
+`*_ident_ratio`: the error on the minibatch's block chimeras (each observation block copied from a
+different row, deterministic, no RNG) over the error on the real rows. A predictor that learns the
+target everywhere, rather than on the states it visits, drives that ratio down. The verdicts are the
+reader's, on fixed probes, per the X26 amendment.
+
+**Lifecycle.** Every ride-along optimizer, the four heads' and each variant's, is built at the
+trainer's `_setup_model` with its Adam state pre-allocated. A later build is a counted late
+acquisition. The heads' step is the K8 inventory's candidate compile region R-ride; it stays eager
+for now.

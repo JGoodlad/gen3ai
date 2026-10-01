@@ -137,6 +137,7 @@
   "ridealong_ensemble": 0,
   "ridealong_opp": 0,
   "ridealong_rnd": false,
+  "ridealong_rnd_variants": "off",
   "role_encoder_hidden": [
     256,
     128

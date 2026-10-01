@@ -519,6 +519,11 @@ class ModelVersionFields:
     ridealong_rnd: bool = False
     ridealong_adv: int = 0
     ridealong_opp: int = 0
+    # gen3_ridealong_rnd_variants_v1 (config v127): the RND VARIANT ENSEMBLE beside `ridealong_rnd`
+    # — a canonical comma list of `fast,decay,small,feat` or "off". STRUCTURAL for the same reason
+    # as the four toggles above: the variants' predictors are the state_dict delta, and nothing
+    # downstream would catch a flip.
+    ridealong_rnd_variants: str = "off"
     # ---- gen3_cf_coef_provenance_v1 (config v100) — THE COUNTERFACTUAL COEFFICIENT FAMILY -------
     # Ten TRAINING-only knobs, ONE family. Each shapes a LOSS computed in the PPO step; none is
     # read by the extractor forward, none changes a weight shape ⇒ the td_aux_coef class exactly:
