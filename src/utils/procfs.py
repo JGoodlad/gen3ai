@@ -167,6 +167,55 @@ def readlink(pid: int, name: str, proc: str = _PROC) -> str:
         return ""
 
 
+PAGE_SIZE = os.sysconf("SC_PAGE_SIZE") if hasattr(os, "sysconf") else 4096
+
+
+def rss_bytes(pid: int, proc: str = _PROC) -> int:
+    """Resident set size in bytes from ``statm`` (anon + file + shmem; 0 when gone or a kernel thread)."""
+    try:
+        return int(read_text(pid, "statm", proc).split()[1]) * PAGE_SIZE
+    except (IndexError, ValueError):
+        return 0
+
+
+def status_kb(pid: int, field: str, proc: str = _PROC) -> Optional[int]:
+    """One ``kB`` field of ``/proc/<pid>/status`` (``RssAnon``, ``VmHWM``, ...) in BYTES, or ``None``."""
+    for line in read_text(pid, "status", proc).splitlines():
+        if line.startswith(field + ":"):
+            try:
+                return int(line.split()[1]) * 1024
+            except (IndexError, ValueError):
+                return None
+    return None
+
+
+def cgroup_of(pid: int, proc: str = _PROC) -> str:
+    """The process's cgroup-v2 path (``/user.slice/...``), '' when unknown."""
+    for line in read_text(pid, "cgroup", proc).splitlines():
+        if line.startswith("0::"):
+            return line[3:]
+    return ""
+
+
+def cgroup_memory_limit(cg: str, root: str = "/sys/fs/cgroup") -> Optional[Tuple[str, int]]:
+    """The nearest ``memory.max`` below ``max`` at or above the cgroup ``cg`` (a ``cgroup_of`` path),
+    as ``(cgroup path, bytes)``; ``None`` when every level up to the root is unlimited (or unreadable)."""
+    cur = cg.rstrip("/")
+    while cur:
+        try:
+            with open(f"{root}{cur}/memory.max") as f:
+                raw = f.read().strip()
+        except OSError:
+            raw = "max"
+        if raw != "max":
+            try:
+                return cur, int(raw)
+            except ValueError:
+                pass
+        cur = cur.rsplit("/", 1)[0]
+    return None
+
+
 def uptime_s() -> float:
     with open(f"{_PROC}/uptime") as f:
         return float(f.read().split()[0])

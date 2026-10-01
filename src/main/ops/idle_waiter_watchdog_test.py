@@ -340,3 +340,123 @@ def test_normalise_cmd_erases_only_the_per_call_cwd_file():
     b = W.normalise_cmd("bash -c until x; do sleep 1; done && pwd -P >| /tmp/claude-0f1e-cwd ")
     assert a == b
     assert W.normalise_cmd("sleep 1") != W.normalise_cmd("sleep 2")
+
+
+# ------------------------------------------------------------------------------------------- BIG-RSS
+_HOG = """
+import os, sys, time
+def grab(mb):
+    b = bytearray(mb << 20)
+    for i in range(0, len(b), 4096):
+        b[i] = 1
+    return b
+held = [grab(int(sys.argv[1]))]
+trigger = sys.argv[2] if len(sys.argv) > 2 else ""
+while trigger and not os.path.exists(trigger):
+    time.sleep(0.05)
+if trigger:
+    held.append(grab(int(sys.argv[3])))
+time.sleep(600)
+"""
+
+
+def _rss_at_least(pid: int, mb: int) -> Callable[[], bool]:
+    return lambda: P.rss_bytes(pid) >= (mb << 20)
+
+
+def test_big_rss_flags_a_session_process_over_the_bar_with_pid_rss_cmd_and_session(session, tmp_path):
+    hog = tmp_path / "hog.py"
+    hog.write_text(_HOG)
+    root = session(f"{sys.executable} {hog} 300 &\nsleep 600 &")
+    big = _pid_of(root.pid, str(hog))
+    small = _pid_of(root.pid, "sleep 600", exact=True)
+    _wait_for(_rss_at_least(big, 300), "the hog to touch its 300 MB", timeout=scale_timeout(30))
+
+    findings = [f for f in W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, **KW).run() if f.kind == "BIG-RSS"]
+    assert [f.pid for f in findings] == [big], findings          # the small sibling is not flagged
+    f = findings[0]
+    assert f.session == root.pid and str(hog) in f.cmd
+    assert "rss=0.3GB" in f.reason and ">= the 0.25 GB bar" in f.reason and "UNCAPPED" in f.reason, f.reason
+    assert f"pid={big}" in f.line() and f"session={root.pid}" in f.line()
+    # the default 24 GB bar does not fire on it
+    assert not [f for f in W.Scan(None, scope_pid=os.getpid(), **KW).run() if f.kind == "BIG-RSS"]
+    # the CLI prints it on the FIRST run and exits 1; it never kills
+    r = subprocess.run([sys.executable, str(_SCRIPT), "--state", str(tmp_path / "s.json"), "--scope-pid",
+                        str(os.getpid()), "--rss-gb", "0.25"], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 1 and f"BIG-RSS pid={big}" in r.stdout, r
+    assert P.read_stat(big) is not None and P.read_stat(small) is not None
+
+
+def test_big_rss_flags_growth_since_the_last_run_below_the_absolute_bar(session, tmp_path):
+    hog, go = tmp_path / "hog.py", tmp_path / "go"
+    hog.write_text(_HOG)
+    root = session(f"{sys.executable} {hog} 20 {go} 300")
+    pid = _pid_of(root.pid, str(hog))
+    _wait_for(_rss_at_least(pid, 20), "the hog's first 20 MB", timeout=scale_timeout(30))
+    first = W.Scan(None, scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
+    assert not [f for f in first.run() if f.kind == "BIG-RSS"]
+    go.write_text("1")
+    _wait_for(_rss_at_least(pid, 300), "the hog to grow by 300 MB", timeout=scale_timeout(30))
+    time.sleep(GAP_S)       # past --min-interval-s, so each scan becomes the next one's baseline
+    second = W.Scan(first.next_state(), scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
+    grown = [f for f in second.run() if f.kind == "BIG-RSS"]
+    assert [f.pid for f in grown] == [pid], grown
+    assert "grew +0.3 GB since the last run" in grown[0].reason, grown[0].reason
+    # and with no growth since THAT run, nothing
+    time.sleep(GAP_S)
+    third = W.Scan(second.next_state(), scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
+    assert not [f for f in third.run() if f.kind == "BIG-RSS"]
+
+
+def test_the_cap_note_reads_the_NEAREST_limit_and_calls_only_max_uncapped(tmp_path):
+    """A raw ``systemd-run -p MemoryMax=`` scope is capped exactly as a mem_cap.sh one is; a scope at
+    ``max`` under a limited slice inherits the slice's limit; every level at ``max`` is UNCAPPED."""
+    root = tmp_path / "cg"
+    for rel, val in [("u", "max"), ("u/app.slice", "max"), ("u/app.slice/run-p1.scope", str(16 << 30)),
+                     ("u/heavy.slice", str(64 << 30)), ("u/heavy.slice/job.scope", "max"),
+                     ("u/tmux.scope", "max")]:
+        (root / rel).mkdir(parents=True, exist_ok=True)
+        (root / rel / "memory.max").write_text(val + "\n")
+    assert P.cgroup_memory_limit("/u/app.slice/run-p1.scope", str(root)) == ("/u/app.slice/run-p1.scope", 16 << 30)
+    assert P.cgroup_memory_limit("/u/heavy.slice/job.scope", str(root)) == ("/u/heavy.slice", 64 << 30)
+    assert P.cgroup_memory_limit("/u/tmux.scope", str(root)) is None
+
+
+@pytest.mark.skipif(shutil.which("systemd-run") is None, reason="needs systemd-run")
+def test_big_rss_in_a_raw_systemd_run_scope_reads_capped_at_its_limit(session, tmp_path):
+    hog = tmp_path / "hog.py"
+    hog.write_text(_HOG)
+    unit = f"gen3ai-watchdogtest-{os.getpid()}.scope"
+    root = session(f"systemd-run --user --scope --quiet -p MemoryMax=1G -p MemorySwapMax=0 --unit {unit} "
+                   f"-- {sys.executable} {hog} 300")
+    pid = _pid_of(root.pid, str(hog))
+    _wait_for(_rss_at_least(pid, 300), "the scoped hog to touch its 300 MB", timeout=scale_timeout(30))
+    if not P.cgroup_of(pid).endswith(unit):
+        pytest.skip(f"systemd-run did not place the hog in {unit} (no user manager?): {P.cgroup_of(pid)!r}")
+    f = [f for f in W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, **KW).run() if f.kind == "BIG-RSS"]
+    assert [x.pid for x in f] == [pid], f
+    assert f"capped at 1 GB ({P.cgroup_of(pid)})" in f[0].reason and "UNCAPPED" not in f[0].reason, f[0].reason
+
+
+def test_big_rss_flags_a_DETACHED_job_too_and_says_so(tmp_path):
+    """A ``setsid``-detached job's ppid chain reaches the user manager, not ``claude`` — the usual form
+    of an agent's heavy job — and it must still be flagged, marked DETACHED."""
+    hog = tmp_path / "hog.py"
+    hog.write_text(_HOG)
+    pidfile = tmp_path / "pid"
+    subprocess.run(["setsid", "-f", "bash", "-c", f"echo $$ > {pidfile}; exec {sys.executable} {hog} 300"],
+                   check=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    _wait_for(lambda: pidfile.exists() and pidfile.read_text().strip().isdigit(), "the detached hog's pid")
+    pid = int(pidfile.read_text())
+    try:
+        _wait_for(_rss_at_least(pid, 300), "the detached hog to touch its 300 MB", timeout=scale_timeout(30))
+        assert os.getpid() not in P.ancestors(pid), "the hog is not detached from this test"
+        scan = W.Scan(None, rss_gb=0.25, **KW)          # unscoped: a detached job is nobody's descendant
+        mine = [f for f in scan.big_rss() if f.pid == pid]
+        assert len(mine) == 1, "a detached job over the bar was not flagged"
+        assert "DETACHED" in mine[0].reason and mine[0].session is None, mine[0].reason
+    finally:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass

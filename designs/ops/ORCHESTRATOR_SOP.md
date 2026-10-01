@@ -488,7 +488,9 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
    whose subtree CPU and wait targets have not moved since the last run), and a DUPLICATE-WAITER
    on the first run (two or more identical waiters, older than 2 min, in one Claude session — a
    Bash-tool timeout backgrounds a wait instead of ending it, so every retry adds a loop; Lane K
-   held five on 2026-09-30, none idle). A detector only — it never kills. A flagged line is a prompt for step 2 of the hourly check below, not a verdict.
+   held five on 2026-09-30, none idle), and a BIG-RSS — any process of this user (session descendant or DETACHED job) at ≥ 24 GB RSS
+   (every run) or grown ≥ 8 GB since the last run, with its nearest cgroup limit (`capped at N GB
+   (<cgroup>)`, or `UNCAPPED` only when every level reads `max`). A detector only — it never kills. A flagged line is a prompt for step 2 of the hourly check below, not a verdict.
 3. **The hourly agent health check at :07** — a cron whose prompt asks every live dispatched agent
    (SendMessage) for four points: **(1) PIDs** — every background process or waiter it owns, with
    elapsed time and command; **(2) waiter safety** — each waiter uses `kill -0 <pid>` or a

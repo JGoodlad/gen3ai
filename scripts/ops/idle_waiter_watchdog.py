@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""idle_waiter_watchdog — flag agent WAITERS that are making no progress, and lock SELF-DEADLOCKS.
+"""idle_waiter_watchdog — flag agent WAITERS that are making no progress, lock SELF-DEADLOCKS, and
+agent processes whose MEMORY threatens the box.
 
 USAGE
     python3 scripts/ops/idle_waiter_watchdog.py            # the cron form: silent when all is well
@@ -49,9 +50,21 @@ WHAT IS FLAGGED
    the Bash tool backgrounded at its 600 s timeout kept looping and every retry added one — and none
    was idle, because the target (a job queued on the GPU lock behind a live holder) was legitimately
    waiting. Never kills: which one to keep is the session's call.
+4. **BIG-RSS** — ANY process of this user whose RSS is at least ``--rss-gb``
+   (24 GB) — reported on EVERY run while it stays there — or grew by at least ``--rss-growth-gb``
+   (8 GB) since the previous run's baseline. Not only Claude-session descendants: an agent's heavy
+   job is usually ``setsid``/``systemd-run`` DETACHED, so its ppid chain reaches the user manager,
+   not ``claude`` — and the box runs out of memory whoever launched it. The line names the pid, RSS
+   (and its anonymous part), the command, the session ancestor (or DETACHED) and the NEAREST memory limit over it: ``capped at N GB (<cgroup>)``
+   for the first cgroup at or above it whose ``memory.max`` is not ``max`` (a ``mem_cap.sh`` scope,
+   the heavy slice, a raw ``systemd-run -p MemoryMax=`` scope), UNCAPPED only when none is. On 2026-09-30 three global OOM kills each took a python3
+   that had grown to 74-82 GB anonymous RSS on this 89 GB box — and, because the session's scope had
+   ``OOMPolicy=stop`` then, the whole session with it (the user manager now defaults to ``continue``,
+   so the session survives, but a global OOM still kills whatever the kernel picks). The fix is
+   ``scripts/ops/mem_cap.sh``; this is the detector for a job run without it. Never kills.
 
 STATE: ``~/.claude/jobs/idle_waiter_watchdog.json`` (``--state``), keyed by ``pid:starttime`` so a
-reused PID is a new process. The first run only records a baseline (and reports self-deadlocks);
+reused PID is a new process (CPU ticks, sleep children, and the RSS baseline). The first run only records a baseline (and reports self-deadlocks);
 a run less than ``--min-interval-s`` after the baseline judges nothing and keeps the old baseline.
 """
 from __future__ import annotations
@@ -76,6 +89,9 @@ MIN_AGE_S = 600.0
 DUP_MIN_AGE_S = 120.0
 MIN_INTERVAL_S = 300.0
 IDLE_FRAC = 0.01
+RSS_GB = 24.0
+RSS_GROWTH_GB = 8.0
+GiB = 1 << 30
 STATE_PATH = Path.home() / ".claude" / "jobs" / "idle_waiter_watchdog.json"
 CMD_WIDTH = 160
 
@@ -104,7 +120,7 @@ def normalise_cmd(cmd: str) -> str:
 
 @dataclass
 class Finding:
-    kind: str           # SELF-DEADLOCK / IDLE-WAITER / DUPLICATE-WAITER
+    kind: str           # SELF-DEADLOCK / IDLE-WAITER / DUPLICATE-WAITER / BIG-RSS
     pid: int
     age_s: float
     session: Optional[int]
@@ -130,7 +146,8 @@ class Scan:
     def __init__(self, state: Optional[dict], *, now: Optional[float] = None, min_age_s: float = MIN_AGE_S,
                  min_interval_s: float = MIN_INTERVAL_S, idle_frac: float = IDLE_FRAC,
                  scope_pid: Optional[int] = None, self_pid: Optional[int] = None,
-                 dup_min_age_s: float = DUP_MIN_AGE_S) -> None:
+                 dup_min_age_s: float = DUP_MIN_AGE_S, rss_gb: float = RSS_GB,
+                 rss_growth_gb: float = RSS_GROWTH_GB) -> None:
         self.now = time.time() if now is None else now
         self.uptime = P.uptime_s()
         self.procs = P.snapshot()
@@ -139,6 +156,8 @@ class Scan:
         self.locks = P.read_locks()
         self.min_age_s, self.min_interval_s, self.idle_frac = min_age_s, min_interval_s, idle_frac
         self.dup_min_age_s = dup_min_age_s
+        self.rss_bytes, self.rss_growth_bytes = int(rss_gb * GiB), int(rss_growth_gb * GiB)
+        self.rss: Dict[str, int] = {}          # key -> RSS bytes, for every process of this uid read
         me = os.getpid() if self_pid is None else self_pid
         self.self_chain: Set[int] = {me, *P.ancestors(me, self.procs)}   # the watchdog and its cron chain
         self.claude = {pid for pid, p in self.procs.items() if _is_claude(p, P.readlink(pid, "exe"))}
@@ -387,6 +406,53 @@ class Scan:
                 f"keep ONE and kill the rest by explicit PID")))
         return out
 
+    # ------------------------------------------------------------------------------- 4. big RSS
+    def big_rss(self) -> List[Finding]:
+        out = []
+        prev_rss = (self.prev or {}).get("rss", {})
+        uid = os.getuid()
+        for pid in self.procs:
+            if pid in self.self_chain or not self.in_scope(pid):
+                continue
+            try:
+                if os.stat(f"/proc/{pid}").st_uid != uid:
+                    continue
+            except OSError:
+                continue
+            rss = P.rss_bytes(pid)
+            key = self.procs[pid].key
+            self.rss[key] = rss
+            why = []
+            if rss >= self.rss_bytes:
+                why.append(f"RSS {rss / GiB:.1f} GB >= the {self.rss_bytes / GiB:g} GB bar")
+            before = prev_rss.get(key)
+            if isinstance(before, int) and rss - before >= self.rss_growth_bytes:
+                why.append(f"RSS grew +{(rss - before) / GiB:.1f} GB since the last run "
+                           f"({before / GiB:.1f} -> {rss / GiB:.1f} GB)")
+            if not why:
+                continue
+            anon = P.status_kb(pid, "RssAnon")
+            anon_s = f" (anon {anon / GiB:.1f} GB)" if anon is not None else ""
+            detached = "" if self.session_of(pid) is not None else "DETACHED (no Claude session in its ppid chain); "
+            out.append(self._finding("BIG-RSS", pid, (
+                f"rss={rss / GiB:.1f}GB{anon_s}; {'; '.join(why)}; {detached}{self._cap_note(pid)}; "
+                f"a global-OOM risk: run heavy jobs under scripts/ops/mem_cap.sh")))
+        return out
+
+    @staticmethod
+    def _cap_note(pid: int) -> str:
+        """The NEAREST memory limit over ``pid``: its own cgroup's ``memory.max``, else the first
+        ancestor cgroup's below ``max``. Any limit counts — a ``mem_cap.sh`` scope, the heavy slice, a
+        raw ``systemd-run -p MemoryMax=`` scope — and UNCAPPED means every level reads ``max``."""
+        cg = P.cgroup_of(pid)
+        if not cg:
+            return "cgroup unknown"
+        lim = P.cgroup_memory_limit(cg)
+        if lim is None:
+            return f"UNCAPPED (cgroup {cg})"
+        where, cap = lim
+        return f"capped at {cap / GiB:g} GB ({where})"
+
     def _finding(self, kind: str, pid: int, reason: str) -> Finding:
         s = self.session_of(pid)
         return Finding(kind=kind, pid=pid, age_s=self.age(pid), session=s,
@@ -394,7 +460,7 @@ class Scan:
 
     def run(self) -> List[Finding]:
         dead = self.self_deadlocks()
-        return dead + self.idle_waiters({f.pid for f in dead}) + self.duplicate_waiters()
+        return dead + self.idle_waiters({f.pid for f in dead}) + self.duplicate_waiters() + self.big_rss()
 
     def next_state(self) -> dict:
         cpu = {self.procs[pid].key: self.cpu[pid] for pid in self.procs}
@@ -402,8 +468,9 @@ class Scan:
             # Too soon to judge: keep the old baseline (and its time) for every process it knew.
             cpu.update({k: v for k, v in self.prev["cpu"].items() if k in cpu})
             sleep = {**self.sleep_child, **{k: v for k, v in self.prev.get("sleep", {}).items() if k in cpu}}
-            return {"version": 1, "t": self.prev["t"], "cpu": cpu, "sleep": sleep}
-        return {"version": 1, "t": self.now, "cpu": cpu, "sleep": dict(self.sleep_child)}
+            rss = {**self.rss, **{k: v for k, v in self.prev.get("rss", {}).items() if k in self.rss}}
+            return {"version": 1, "t": self.prev["t"], "cpu": cpu, "sleep": sleep, "rss": rss}
+        return {"version": 1, "t": self.now, "cpu": cpu, "sleep": dict(self.sleep_child), "rss": dict(self.rss)}
 
 
 def _valid_state(s: object) -> bool:
@@ -437,6 +504,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="judge idleness only against a baseline at least this old")
     ap.add_argument("--idle-frac", type=float, default=IDLE_FRAC,
                     help="subtree CPU below this fraction of one core over the interval is idle")
+    ap.add_argument("--rss-gb", type=float, default=RSS_GB,
+                    help="flag a session descendant whose RSS is at least this many GB (every run)")
+    ap.add_argument("--rss-growth-gb", type=float, default=RSS_GROWTH_GB,
+                    help="flag a session descendant whose RSS grew at least this many GB since the last run")
     ap.add_argument("--scope-pid", type=int, default=None, help="consider only this pid's subtree (tests)")
     ap.add_argument("--timing", action="store_true", help="print the run's wall time to stderr")
     return ap
@@ -447,7 +518,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     t0 = time.perf_counter()
     try:
         scan = Scan(load_state(a.state), min_age_s=a.min_age_s, min_interval_s=a.min_interval_s,
-                    idle_frac=a.idle_frac, scope_pid=a.scope_pid, dup_min_age_s=a.dup_min_age_s)
+                    idle_frac=a.idle_frac, scope_pid=a.scope_pid, dup_min_age_s=a.dup_min_age_s,
+                    rss_gb=a.rss_gb, rss_growth_gb=a.rss_growth_gb)
         findings = scan.run()
         save_state(a.state, scan.next_state())
     except Exception as e:  # a watchdog that dies quietly is the failure it exists to catch
