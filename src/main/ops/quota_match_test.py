@@ -24,6 +24,7 @@ Pure unit, unmarked (runs in every tier): no ``models/``, no subprocess, no mode
 """
 from __future__ import annotations
 
+import copy
 import json
 from typing import Dict, Optional
 
@@ -227,7 +228,23 @@ def artefact(tmp_path_factory):
             "rich": _block(rich_root, rich_td), "poor": _block(poor_root, poor_td)}
 
 
+_QM_MEMO: Dict[tuple, tuple] = {}
+
+
 def _qm(artefact, *, enabled=True, seeds=9, boot=400):
+    """The match over the module's artefact, computed ONCE per (artefact, args) and deep-copied out.
+
+    ``QM.match`` is the expensive step (~4.5 s; six tests ask for the same one) and is deterministic
+    (``block_seed=0``); ``compute_deltas`` does not mutate it (both checked 2026-09-30). The deep copy
+    keeps each test's result its own, so no test can see another's edits."""
+    key = (id(artefact), enabled, seeds, boot)
+    hit = _QM_MEMO.get(key)
+    if hit is None or hit[0] is not artefact:       # identity, not just id(): ids are reused
+        hit = _QM_MEMO[key] = (artefact, _qm_uncached(artefact, enabled=enabled, seeds=seeds, boot=boot))
+    return copy.deepcopy(hit[1])
+
+
+def _qm_uncached(artefact, *, enabled=True, seeds=9, boot=400):
     a = QM.realized_profile("rich", STEP, artefact["rich_td"])
     c = QM.realized_profile("poor", STEP, artefact["poor_td"])
     if not enabled:
