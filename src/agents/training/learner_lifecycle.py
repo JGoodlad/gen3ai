@@ -519,7 +519,16 @@ class CudaMemoryWatch:
         if phase == "post_update":
             self.updates += 1
         sampler = self.sampler or cmt.sample_cuda
-        v = self.trend.observe(sampler(self.device, update=self.updates, phase=phase))
+        sample = sampler(self.device, update=self.updates, phase=phase)
+        v = self.trend.observe(sample)
+        # gen3_cuda_ledger_v1: the PEAK of the step that just ended — the update's (post_update) or
+        # the rollout's (post_rollout) — every update, not only at a window close.
+        logger = getattr(self.model, "_logger", None)
+        if logger is not None and getattr(sample, "peak_allocated", -1) >= 0:
+            what = "update" if phase == "post_update" else "rollout"
+            logger.record(f"lifecycle/cuda_{what}_peak_alloc_mib", sample.peak_allocated / (1 << 20))
+            logger.record(f"lifecycle/cuda_{what}_peak_reserved_mib", sample.peak_reserved / (1 << 20))
+            logger.record(f"lifecycle/cuda_{what}_end_alloc_mib", sample.allocated / (1 << 20))
         if v.window_closed:
             logger = getattr(self.model, "_logger", None)
             if logger is not None:
@@ -536,9 +545,8 @@ class CudaMemoryWatch:
 
 def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None,
            memory: Optional[CudaMemoryWatch] = None) -> LearnerFreeze:
-    """Wire the freeze guard onto ``model``'s loop — the `learner_freeze` owner of the DECLARED hook
-    table (`agents/training/loop_hooks.py`, OUTERMOST by the table's order; on a duck-typed model
-    with no table, instance-attribute wrappers — attach AFTER `compile_control` there):
+    """Wire the freeze guard onto ``model`` (INSTANCE attributes over the bound methods SB3's
+    `learn()` calls, like `compile_control.attach` — apply AFTER it, so this wrapper is outermost):
 
       * the FIRST `collect_rollouts` entry FREEZES (startup is over: the compile gate, the prewarm
         and `learn()`'s own `_on_training_start` have all run);
@@ -549,39 +557,36 @@ def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None,
         rollout and update — a projected OOM is `CudaMemoryLeakError` (exit FATAL_CUDA_LEAK after
         the trainer's handler saved `final_model_exception.zip`; the launcher restarts it, capped).
 
-    `_learner_freeze` and the table are in `_excluded_save_params` (see the hub)."""
+    The three wrappers are in `_excluded_save_params` via `_learner_freeze` (see the hub)."""
     freeze = LearnerFreeze(model, emit=emit)
     memory = memory if memory is not None else CudaMemoryWatch(model, emit=emit)   # says to stdout
-    import contextlib
+    orig_collect, orig_train, orig_learn = model.collect_rollouts, model.train, model.learn
 
-    from agents.training.loop_hooks import install
-
-    @contextlib.contextmanager
-    def collect() -> Any:
+    def collect_rollouts(*a: Any, **k: Any) -> Any:
         if freeze.frozen is None and not getattr(freeze, "_released", False):
             freeze.freeze("the first rollout of learn()")
             memory.start()
-        yield
+        out = orig_collect(*a, **k)
         freeze.check("rollout end")
         memory.observe("post_rollout")
+        return out
 
-    @contextlib.contextmanager
-    def update() -> Any:
-        yield
+    def train(*a: Any, **k: Any) -> Any:
+        out = orig_train(*a, **k)
         freeze.check("update end")
         memory.observe("post_update")
+        return out
 
-    @contextlib.contextmanager
-    def learn() -> Any:
+    def learn(*a: Any, **k: Any) -> Any:
         try:
-            yield
+            return orig_learn(*a, **k)
         finally:
             freeze._released = True                     # type: ignore[attr-defined]
             freeze.release("learn() returned")
 
-    # gen3_declared_loop_hooks_v1: the loop's DECLARED hook table (outermost owner), or — for a
-    # duck-typed model with no table — the same bodies as instance-attribute wrappers.
-    install(model, "learner_freeze", {"collect": collect, "update": update, "learn": learn})
+    model.collect_rollouts = collect_rollouts
+    model.train = train
+    model.learn = learn
     model._learner_freeze = freeze
     freeze.memory = memory
     return freeze

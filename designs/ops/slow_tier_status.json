@@ -335,7 +335,10 @@
    "at": "2026-10-01T11:10:45Z",
    "duration_s": 0.59,
    "contention": 1.0,
-   "detail": ""
+   "detail": "",
+   "last_skipped_at": "2026-10-01T16:57:17Z",
+   "last_skipped_commit": "de5ef7a90dbf5da745066a9ed4a69f2a7ceed6f2",
+   "last_skip_detail": ""
   },
   "src/agents/training/lever_supply_integration_test.py::test_a_search_teacher_with_no_loss_traces_exits_FATAL_SUPPLY": {
    "status": "pass",
@@ -1243,5 +1246,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-01T14:27:34Z"
+ "last_written": "2026-10-01T16:57:17Z"
 }

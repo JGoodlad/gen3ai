@@ -17,6 +17,7 @@ from agents.model.features_extractor import Gen3FeaturesExtractor, NET_ARCH
 from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.policy import Gen3DualHeadMaskablePolicy, POLICY_ACTIVATION_FN
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
+import agents.training.cuda_ledger as _cuda_ledger
 from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.training.adaptive_lr_callback import TwoPhaseLRCallback
@@ -260,8 +261,7 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     # stock buffer has nowhere to put — `get()` iterates exactly `buffer_size * n_envs`. Installed
     # HERE because this function is the one place both build paths meet and it runs AFTER
     # `_setup_model` built the buffer being replaced. OFF ⇒ not even imported.
-    if (float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0
-            and getattr(args, "env_core", "python") != "rust"):   # rust: branch rows ride the FIFO (forks.md §14)
+    if float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0:
         from agents.training.fork_buffer import install_fork_buffer
         install_fork_buffer(model)
 
@@ -728,12 +728,18 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                       f"(arg --gamma={float(reward_config.gamma):g} ignored on resume, like --lr); "
                       f"the reward config's copy follows it.")
                 reward_config.gamma = float(model.gamma)
+            _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
             _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer compile patches the extractor
+            _ledger.mark("rust env core (T2 slots, staging, arena; python core: none)")
             _maybe_compile_trainer(model, args)
+            _ledger.mark("extractor-only compile gate (torch 2.5.1)")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
             _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock
+            _ledger.mark("compiled regions: gate + prewarm + lock")
             _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
+            _ledger.mark("optimizer state declared (Adam m, v) + lifecycle")
+            _ledger.report(model_dir)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
             # gen3_run_lineage_v1 — written ONCE at fork creation and preserved by every later save.
             # `None` on a same-run restart, which is what keeps the recorded parent immutable.
@@ -945,12 +951,18 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         )
         # (A `PBRS_GAMMA == model.gamma` assert lived here while the reward folded hand potentials;
         # it went with them in the shaped-reward deletion, 2026-09-26.)
+        _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
         _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer compile patches the extractor
+        _ledger.mark("rust env core (T2 slots, staging, arena; python core: none)")
         _maybe_compile_trainer(model, args)
+        _ledger.mark("extractor-only compile gate (torch 2.5.1)")
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock
+        _ledger.mark("compiled regions: gate + prewarm + lock")
         _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
+        _ledger.mark("optimizer state declared (Adam m, v) + lifecycle")
+        _ledger.report(model_dir)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
         # gen3_run_lineage_v1 — a FRESH run states the explicit null form (`fork_parent: null,
         # role: "fresh"`), because "no block" and "no parent" are different facts.

@@ -23,7 +23,7 @@ from agents.training.signal_callback import SignalMetricsCallback
 from agents.training.selfplay_callback import SelfPlayCallback
 from agents.training.lever_supply import starve_cycles_for
 from main.train.constants import (
-    DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS, checkpoint_interval_env_steps,
+    DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS, checkpoint_save_freq_vec_calls,
 )
 from main.train.run_io import DoseLogCallback, _HparamLogCallback, _TrackingCheckpointCallback
 
@@ -102,17 +102,22 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # Periodic checkpoints land in <run>/checkpoints/ (SB3 makedirs it); the callback
     # keeps latest.txt + metadata.json at the run root (derived from save_path).
     #
-    # 🚨 THE CADENCE IS A TOTAL-ENV-STEP BOUNDARY, never a call count: a save lands at the first
-    # callback call whose `num_timesteps` reaches the next multiple of the interval (`run_io.
-    # _TrackingCheckpointCallback`, `constants.checkpoint_due`), so it means the same thing at any
-    # `--n-envs` and under every collector — sync, Rust, `--async-rollout` waves. Counting calls
-    # cost twice: 50 000 calls read as "50k steps" starved the cf label producer (2.4M env steps at
-    # N = 48), and was ~102M env steps at N = 2048 (F-SZ-3). The interval lives in
-    # `main.train.constants` because `config`'s duty-cycle refusal must agree with it, and phase 1
-    # cannot import phase 4. Unset `--checkpoint-every-steps` = DEFAULT_CHECKPOINT_EVERY_ENV_STEPS.
+    # 🚨 `save_freq` IS IN VEC-ENV CALLS, NOT ENV STEPS — one `_on_step` per `vec_env.step()`, which
+    # advances `n_envs` envs at once, so the real interval is `save_freq * n_envs`. This was a bare
+    # hardcoded `50000` and was read as "50k steps" by everyone including the counterfactual R1
+    # design; at `--n-envs 48` it is 2,400,000 env steps, which starved the label producer by 16x
+    # its own staleness bound (`constants.checkpoint_save_freq_vec_calls` carries the measurement).
+    # The conversion lives in `main.train.constants` because `config`'s duty-cycle refusal must
+    # agree with it to the step, and phase 1 cannot import phase 4.
+    #
+    # A run that passes no `--checkpoint-every-steps` gets DEFAULT_CHECKPOINT_EVERY_ENV_STEPS
+    # (2.4M TOTAL env steps) converted at THIS run's N — the interval does not move with
+    # `--n-envs` (F-SZ-3); at N = 48 that is the historical 50 000 vec calls exactly.
+    _n_envs = 1 if args.debug else int(args.n_envs)      # --debug is DummyVecEnv: one env, always
+    _save_freq = checkpoint_save_freq_vec_calls(
+        getattr(args, "checkpoint_every_steps", None), _n_envs)
     checkpoint_callback = _TrackingCheckpointCallback(
-        interval_env_steps=checkpoint_interval_env_steps(
-            getattr(args, "checkpoint_every_steps", None)),
+        save_freq=_save_freq,
         save_path=os.path.join(model_dir, "checkpoints"),
         name_prefix="checkpoint",
     )
@@ -447,10 +452,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # every rollout, in silence. It is after the value sidecar too, though nothing depends on that:
     # the arm APPENDS rows and never writes the collected [n_steps, n_envs] planes the sidecar
     # reads, so the sidecar's file describes the rollout the trainee actually played either way.
-    # Under `--env-core rust` the arm is the COLLECTOR's fork phase (`rust_rollout/fork.py`,
-    # gen3_fork_rust_v1, forks.md §14) — this callback is the Python core's (LEGACY until the deletion pass).
-    if (float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0
-            and getattr(args, "env_core", "python") != "rust"):
+    if float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0:
         from agents.training.fork_callback import ForkArmCallback
         callbacks.append(ForkArmCallback(
             records_dir=(os.path.join(model_dir, "cf_records")

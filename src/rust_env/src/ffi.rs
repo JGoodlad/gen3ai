@@ -304,9 +304,9 @@ mod imp {
 // Each wrapper runs `imp::<name>` (hand-written, the SAME arguments) inside `guard`.
 
 /// `ffi.sig_id()` — FNV-1a-64 of the table's canonical text; compared by the loader.
-pub const FFI_SIG_ID: &str = "c594d2746017264c";
+pub const FFI_SIG_ID: &str = "47643f4cc5417c6e";
 /// The same, NUL-terminated, for `rust_env_ffi_sig`.
-const FFI_SIG_ID_C: &str = "c594d2746017264c\0";
+const FFI_SIG_ID_C: &str = "47643f4cc5417c6e\0";
 
 /// the build stamp (`stamp.py`'s format); static
 ///
@@ -546,16 +546,6 @@ pub unsafe extern "C" fn rust_env_playout_step(h: *mut crate::search::SearchHand
 #[no_mangle]
 pub unsafe extern "C" fn rust_env_playout_results(h: *mut crate::search::SearchHandle) -> *const c_char {
     guard(AssertUnwindSafe(|| imp::playout_results(h)))
-}
-
-/// the frame index n (the core's dec_n) of each pending decision of the last step, in its order, into out (cap slots); returns their count, usize::MAX on failure
-///
-/// # Safety
-/// The caller passes what the table's row says (a handle from `rust_env_new`, a
-/// NUL-terminated string, an array of `N_COLUMNS` live, aligned column addresses).
-#[no_mangle]
-pub unsafe extern "C" fn rust_env_playout_pending_n(h: *mut crate::search::SearchHandle, out: *mut u32, cap: usize) -> usize {
-    guard(AssertUnwindSafe(|| imp::playout_pending_n(h, out, cap)))
 }
 
 // ---- @generated-end

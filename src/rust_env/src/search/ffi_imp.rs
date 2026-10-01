@@ -176,20 +176,6 @@ pub unsafe fn playout_step(
     })
 }
 
-pub unsafe fn playout_pending_n(h: *mut SearchHandle, out: *mut u32, cap: usize) -> usize {
-    in_search(h, |c| {
-        if cap > 0 && out.is_null() {
-            return Err(search_err("playout_pending_n: a null buffer"));
-        }
-        let o: &mut [u32] = if cap == 0 { &mut [] } else { std::slice::from_raw_parts_mut(out, cap) };
-        c.playouts.pending_n(o).map_err(search_err)
-    })
-    .unwrap_or_else(|e| {
-        set_err(&e);
-        usize::MAX
-    })
-}
-
 pub unsafe fn playout_results(h: *mut SearchHandle) -> *const c_char {
     to_cstr(in_search(h, |c| Ok(c.playouts.results())))
 }

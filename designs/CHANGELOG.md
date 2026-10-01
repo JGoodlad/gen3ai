@@ -10441,3 +10441,13 @@ if a lazy build is reintroduced.
 - `compiled_perf_guard_test` (slow, GPU) is the milestone check: the acceptance's time stage within
   15% of the banked 36.32 s and a compiled share >= 0.80.
 
+## 2026-10-01 — K6: a pool refresh is a declared load; the CUDA memory ledger (`gen3_declared_slot_load_v1`, `gen3_cuda_ledger_v1`; no model change)
+
+- The rust core's `SnapshotPool` loads on the CPU: on the card each promotion's snapshot stayed in
+  the pool's LRU beside its T2 slot (+~33 MiB of floor per promotion on sizing arm A, cap 3). A pool
+  source on the card, or a slot load that leaves memory allocated, is a typed refusal.
+- Every run logs `[CudaLedger]` (the card by startup step; `cuda_ledger.json`) and per-update peaks
+  and floors (`lifecycle/cuda_*`), and `train()` the device-resident batch (`lifecycle/device_batch_mib`).
+- Measured at N = 48, fp32, rust core: an update peaks at 8.75 GiB allocated / 9.49 GiB reserved; the
+  device batch is 1.14 GiB of it; T2 holds 712 MiB allocated; the regions' gate leaves 4.1 GiB reserved.
+

@@ -489,22 +489,6 @@ split and the other does not would be worse than either answer alone (a source-r
 the two predicates cannot drift apart). `_CalibrationAccumulator.metrics()` already returned `{}`
 for an unobserved accumulator, so the whole family now disappears rather than duplicating.
 
-🚨 **`eval/duration_sec` is SUMMED UNIT TIME, not wall time; the wall is `eval/wall_sec`**
-(`gen3_eval_wall_sec_v1`, 2026-10-01).
-- **`duration_sec`** adds up every shard's own duration. On the Rust eval core the units play
-  CONCURRENTLY, so it read ~350–390 s for a cycle whose wall was ~14 s; read as wall clock, it put eval
-  at ~27 % of training time when the truth was ~1.5–2 %.
-- **`eval/wall_sec`** is the cycle's real wall clock: from the top of `_launch_eval` (the snapshot save
-  included) to the end of its collection (records, best-model save, trace manifest, snapshot persist,
-  pruning). Both eval callbacks record it at the eval step, in its own dump, and the `[EVAL]` /
-  `[SELFPLAY EVAL]` collection line prints both numbers.
-- **Which cost it is.** On the RUST core the cycle is blocking and in-process, so `wall_sec` is its
-  cost to training. On the PYTHON core the workers play beside training, so it is the cycle's LATENCY,
-  not its cost.
-- **Readers.** The launcher's "took" shows `wall_sec`, falling back to `duration_sec / n_workers`
-  (marked `~`) on a run that predates it. `duration_sec` stays for any other reader, as summed unit
-  time.
-
 **REDUNDANT (19) — kept, deliberately, and named so nobody measures them twice:**
 
 * **`eval/mean_reward_*` ≡ `eval/win_rate_*`, all 13 of them.** At `--victory-value 1.0

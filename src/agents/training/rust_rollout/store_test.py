@@ -193,16 +193,9 @@ def test_the_arena_refuses_past_its_declared_capacity_and_a_game_past_max_rows()
 
 def test_unfillable_keys_are_refused_by_name():
     sp = spaces.Dict({"observation": spaces.Box(0, 1, (3,), np.float32),
-                      "aux_target": spaces.Box(0, 1, (25,), np.float32)})
-    with pytest.raises(S.UnfillableKey, match="aux_target"):
-        S.obs_key_sources(sp, ())
-
-
-def test_the_fork_mask_key_is_a_host_constant():
-    """`fork_pg_m` (declared only with --fork-fraction > 0) is the host's: 1.0 on every collected row."""
-    sp = spaces.Dict({"observation": spaces.Box(0, 1, (3,), np.float32),
                       "fork_pg_m": spaces.Box(0, 1, (1,), np.float32)})
-    assert S.obs_key_sources(sp, ())["fork_pg_m"] == "host_const"
+    with pytest.raises(S.UnfillableKey, match="fork_pg_m"):
+        S.obs_key_sources(sp, ())
 
 
 def test_a_row_ahead_of_the_learner_is_refused():

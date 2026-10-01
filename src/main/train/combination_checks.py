@@ -252,16 +252,19 @@ def _cf_duty_cycle_starved(args) -> bool:
         return False
     from main.train.constants import (CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle,
                                       checkpoint_interval_env_steps)
-    interval = checkpoint_interval_env_steps(getattr(args, "checkpoint_every_steps", None))
+    interval = checkpoint_interval_env_steps(getattr(args, "checkpoint_every_steps", None),
+                                             int(args.n_envs))
     return cf_label_duty_cycle(args.cf_label_lag_steps, interval) < CF_DUTY_CYCLE_FLOOR
 
 
 def _cf_duty_cycle_message(args) -> str:
     from main.train.constants import (CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle,
-                                      checkpoint_interval_env_steps)
+                                      checkpoint_interval_env_steps,
+                                      checkpoint_save_freq_vec_calls)
     n_envs = int(args.n_envs)
     every = getattr(args, "checkpoint_every_steps", None)
-    interval = checkpoint_interval_env_steps(every)
+    vec_calls = checkpoint_save_freq_vec_calls(every, n_envs)
+    interval = checkpoint_interval_env_steps(every, n_envs)
     duty = cf_label_duty_cycle(args.cf_label_lag_steps, interval)
     shown = ("unbounded (--cf-label-lag-steps 0 = labels never expire)" if duty == float("inf")
              else f"{duty:.1%}")
@@ -269,7 +272,7 @@ def _cf_duty_cycle_message(args) -> str:
         f"\n[CF] FATAL: the counterfactual label path is STARVED BY CONSTRUCTION.\n"
         f"  --cf-label-lag-steps         : {args.cf_label_lag_steps:,} env steps\n"
         f"  checkpoint interval          : {interval:,} env steps "
-        f"(TOTAL env steps over all {n_envs} envs)\n"
+        f"({vec_calls:,} vec-calls x {n_envs} envs)\n"
         f"  --checkpoint-every-steps     : "
         f"{'(unset — the 2,400,000-env-step default)' if every is None else format(every, ',')}\n"
         f"  => DUTY CYCLE                : {shown}  (floor {CF_DUTY_CYCLE_FLOOR:.0%})\n"
@@ -302,6 +305,7 @@ _ENV_CORE_UNPORTED: Tuple[Tuple[str, Callable[[Any], bool], str], ...] = (
      "--win-prob-lambda < 1 (the λ-return recursion is WinProbLabelCallback's)"),
     ("win_prob_rollout_target", lambda a: _positive(_val(a, "win_prob_rollout_target", 0.0)),
      "--win-prob-rollout-target (R-rollout MC targets replay cf_records)"),
+    ("fork_fraction", lambda a: _positive(_val(a, "fork_fraction", 0.0)), "--fork-fraction (the fork arm)"),
     ("win_prob_dense_aux", lambda a: _positive(_val(a, "win_prob_dense_aux", 0.0)),
      "--win-prob-dense-aux (end-of-battle facts from battle1)"),
     ("value_true_team", lambda a: bool(_val(a, "value_true_team", False)),
@@ -548,10 +552,8 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "winprob, or drop the flag."),
     CombinationCheck(
         # THE EXPENSIVE SILENT NO-OP, in the shape `winprob_rollout_needs_cf_records` already has.
-        # PYTHON CORE ONLY: on --env-core rust a fork replays the core's own finished input log
-        # (`rust_rollout/fork.py`, forks.md §14), and --cf-records is refused there.
         "fork_needs_cf_records", ("fork_fraction", "cf_records"),
-        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0 and not _rust_core(a)
+        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
                    and not bool(_val(a, "cf_records", False))),
         "--fork-fraction > 0 requires --cf-records. A fork REPLAYS its episode to the forked turn "
         "and diverges there, and the replayable record lives in the `<run>/cf_records/` ring that "
@@ -1341,25 +1343,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: ("--env-core rust does not serve these paths yet: " + "; ".join(_env_core_unported(a))
                    + ". Turn them off, or run --env-core python (designs/training/rust_collector.md, "
                    "'What --env-core rust refuses')"),
-        exit_style="fatal_config"),
-    CombinationCheck(
-        # gen3_fork_rust_v1 (forks.md §14.3): a branch replays the parent's draws BY KEY; a per-env
-        # torch.Generator stream cannot be replayed per branch.
-        "fork_rust_needs_keyed_opponent_sampling", ("fork_fraction", "env_core", "opponent_sampling"),
-        lambda a: (_rust_core(a) and float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
-                   and _val(a, "opponent_sampling", "keyed") != "keyed"),
-        "--fork-fraction > 0 under --env-core rust requires --opponent-sampling keyed: a branch is the "
-        "parent's game under the PARENT's draw keys (common random numbers, designs/training/forks.md "
-        "§14.3), and the generator mode's per-env stream cannot be replayed per branch",
-        exit_style="fatal_config"),
-    CombinationCheck(
-        # gen3_fork_rust_v1 (forks.md §14.2): branch games join the completed-game FIFO.
-        "fork_rust_needs_complete_game_trigger", ("fork_fraction", "env_core", "rollout_trigger"),
-        lambda a: (_rust_core(a) and float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
-                   and _val(a, "rollout_trigger", "complete_game") != "complete_game"),
-        "--fork-fraction > 0 under --env-core rust requires --rollout-trigger complete_game: a branch is "
-        "a complete game that joins the completed-game FIFO beside its parent (designs/training/forks.md "
-        "§14.2); the window fill is the parity schedule",
         exit_style="fatal_config"),
     CombinationCheck(
         "env_core_flags_need_the_rust_core", _ENV_CORE_ONLY_DESTS,

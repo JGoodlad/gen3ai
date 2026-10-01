@@ -70,9 +70,6 @@ class RustEnvDecl:
     op_timeout: Optional[float] = None
     opponent_sampling: str = "keyed"
     policy_seed: int = 0
-    #: the fork arm's declaration (``fork.ForkDecl``; ``designs/training/forks.md`` §14). None = OFF —
-    #: nothing of the arm is built, and the arena, the obs keys and the FIFO are exactly as without it.
-    fork: Any = None
 
     def __post_init__(self) -> None:
         if self.front not in FRONTS:
@@ -83,14 +80,6 @@ class RustEnvDecl:
             raise ValueError("version pinning needs >= 2 trainee slots")
         if self.opponent_sampling not in ("keyed", "generator"):
             raise ValueError(f"opponent_sampling {self.opponent_sampling!r}")
-        if self.fork is not None:
-            # §14.3 / §14.7: the branches replay the parent's draws by KEY, and join the complete-game FIFO
-            if self.opponent_sampling != "keyed":
-                raise ValueError("the fork arm needs --opponent-sampling keyed (a per-env generator stream "
-                                 "cannot be replayed per branch)")
-            if self.trigger != "complete_game":
-                raise ValueError("the fork arm needs --rollout-trigger complete_game (branch games join the "
-                                 "completed-game FIFO; the window fill is the parity schedule)")
 
     @property
     def resolved_buckets(self) -> Tuple[int, ...]:
@@ -107,8 +96,7 @@ class RustEnvDecl:
         per_env = 2 * self.resolved_max_game_rows
         if trigger.mode == "window":
             return n * (int(self.n_steps) + 1) + n * per_env
-        fork_rows = self.fork.row_budget(int(trigger.hi)) if self.fork is not None else 0
-        return int(trigger.hi) + n * per_env + fork_rows
+        return int(trigger.hi) + n * per_env
 
 
 def core_label_families(obs_space: Any) -> Tuple[str, ...]:
@@ -200,12 +188,48 @@ class OpponentSources:
         if kind == "pool":
             step = int(rest)
             entry = next(e for e in self.pool._entries if e.step == step)
-            return self.pool.load_model(entry).policy.eval()
+            pol = self.pool.load_model(entry).policy.eval()
+            on_card = sorted({str(p.device) for p in pol.parameters() if p.device.type != "cpu"})
+            if on_card:
+                from agents.training.learner_lifecycle import FATAL_TAG, LazyAcquisitionError
+                raise LazyAcquisitionError(
+                    f"{FATAL_TAG} — pool snapshot {model_id} was loaded onto {on_card}: a pool refresh is "
+                    f"a DECLARED LOAD into its T2 slot, so the snapshot itself must stay on the CPU — a "
+                    f"device copy is a new allocation at every promotion (gen3_declared_slot_load_v1)")
+            return pol
         if kind == "stable":
             return self.stable[rest]
         if kind == "exploiter":
             return self.exploiter
         raise KeyError(model_id)
+
+
+#: A route's weight refresh may leave at most this much NEW memory allocated on the card (the
+#: allocator's granularity): it is a DECLARED LOAD into an existing T2 slot (gen3_declared_slot_load_v1).
+SLOT_LOAD_ALLOC_TOLERANCE = 1 << 20
+
+
+def _allocated(device: Any) -> int:
+    import torch
+    dev = torch.device(device)
+    return int(torch.cuda.memory_allocated(dev)) if dev.type == "cuda" and torch.cuda.is_available() else 0
+
+
+def checked_slot_load(svc: Any, slot: int, policy_fn: Callable[[], Any], model_id: str, device: Any,
+                      allocated: Callable[[Any], int] = _allocated) -> int:
+    """``svc.load(slot, policy_fn(), model_id)``, refusing a load that leaves memory allocated on the
+    card (a typed `LazyAcquisitionError`, FATAL_CONFIG): a pool refresh is a declared load into an
+    existing slot, never a new allocation. Returns the bytes it left allocated (<= the tolerance)."""
+    before = allocated(device)
+    svc.load(int(slot), policy_fn(), model_id)
+    grew = allocated(device) - before
+    if grew > SLOT_LOAD_ALLOC_TOLERANCE:
+        from agents.training.learner_lifecycle import FATAL_TAG, LazyAcquisitionError
+        raise LazyAcquisitionError(
+            f"{FATAL_TAG} — loading {model_id} into T2 slot {slot} left {grew / (1 << 20):.1f} MiB NEWLY "
+            f"allocated on {device}: a slot refresh is a DECLARED LOAD, never an acquisition "
+            f"(gen3_declared_slot_load_v1)")
+    return grew
 
 
 def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, plan: Any, sources: OpponentSources,
@@ -271,7 +295,8 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     routes = plan.routes()
 
     def load(route: int, model_id: str) -> None:
-        svc.load(int(routes[route].slot), sources.policy_for(model_id), model_id)
+        checked_slot_load(svc, int(routes[route].slot), lambda: sources.policy_for(model_id), model_id,
+                          decl.device)
 
     stable_ids = [f"stable:{s.label}" for s in plan.stable]
     ex_id = "exploiter:target" if plan.exploiter is not None else None
@@ -305,19 +330,9 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
                           capacity=decl.capacity(trig), max_game_rows=decl.resolved_max_game_rows,
                           label_keys=label_keys, version_pinning=bool(decl.version_pinning),
                           respawn_budget=int(decl.respawn_budget),
-                          victory_value=float(terminal["victory_value"]), fork=decl.fork is not None)
+                          victory_value=float(terminal["victory_value"]))
     col = RustCollector(cfg, core=core, obs_space=obs_space, svc=svc, trainee_slots=trainee_slots,
                         opponents=host, server=server, stager=stager, external_p2=external_p2)
-    if decl.fork is not None:
-        from agents.training.rust_rollout import fork as FK
-        from utils.rust_env import ffi as F
-
-        FK.check_terminal(terminal)
-        FK.check_obs_keys(list(obs_space.spaces))
-        col.fork = FK.RustForkPass(decl.fork, lib_path=F.default_path(decl.profile), nan_poison=decl.profile == "selfcheck",
-                                   turn_limit=int(decl.turn_limit), victory_value=float(terminal["victory_value"]),
-                                   target_hi=int(trig.hi), max_rows_per_flush=int(svc.spec.max_rows_per_flush),
-                                   obs_dim=int(obs_space.spaces[S.KEY_OBSERVATION].shape[0]), emit=emit)
     col.decl = decl
     col.extra_slots = extra_ids      # M5 Lane H: the declared eval slots (``extra_slots``' order)
     emit(f"🦀 [RUST ENV] collector: {trig.describe()}; arena {cfg.capacity:,} rows; version pinning "

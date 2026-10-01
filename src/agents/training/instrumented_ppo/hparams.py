@@ -568,8 +568,6 @@ class PpoHyperparameters:
         # `_ppo_loop_mode` (gen3_owned_ppo_loop_v1) is which loop THIS process's `learn()` ran — the
         # owned one or the `GEN3AI_PPO_LOOP=sb3_reference` test seam — resolved per call; a checkpoint
         # must not carry it, so the `.zip`'s `data` stays exactly what it was before the loop moved.
-        # `_loop_hooks` (gen3_declared_loop_hooks_v1) is the loop's hook TABLE — closures over this
-        # process's freeze guard and compile sentinel; built fresh by every `_setup_model`.
         return super()._excluded_save_params() + ["_rust_collector", "_rust_fill", "_rust_row_versions",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
                                                   "_correction_buffer", "_distill_teacher",
@@ -581,4 +579,4 @@ class PpoHyperparameters:
                                                   "collect_rollouts",
                                                   "train", "learn", "_compile_control",
                                                   "_learner_freeze", "_compiled_micro_step",
-                                                  "_ppo_loop_mode", "_loop_hooks"]
+                                                  "_ppo_loop_mode"]

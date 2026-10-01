@@ -255,22 +255,16 @@ beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / 
 **The periodic checkpoint is every 2,400,000 TOTAL env steps at every `--n-envs`**
 (`main.train.constants.DEFAULT_CHECKPOINT_EVERY_ENV_STEPS`; `--checkpoint-every-steps` overrides, in
 the same unit). It used to be a hardcoded 50,000 VEC-ENV CALLS — 2.4M at N = 48 but ~102M at
-N = 2048, a run that never checkpoints — and under `--async-rollout` (one callback call per WAVE of
-ready envs, < N) it fired early by the mean wave fraction. **The save now lands at the first callback
-call whose `num_timesteps` reaches the next multiple of the interval** (`run_io._TrackingCheckpoint
-Callback`, `constants.checkpoint_due` — the rule the eval callbacks use), so it is the same under
-every collector: sync, Rust (ragged host steps), async waves. Each save is at most one call's advance
-past its boundary. **A fresh sync run is unchanged** wherever the interval is a multiple of N (N = 48:
-the same k × 2.4M steps). **A RESTART changed**: the boundaries are GLOBAL multiples of the interval,
-so a run resumed at step S saves next at the first multiple above S, not at S + interval (SB3's call
-counter restarted every process), and never re-saves the step it resumed on. Pinned by
-`src/main/train/cadence_n_independence_test.py` (N = 48 vs N = 2048 through `build_callbacks`; the real
-checkpointer through the real Rust-collector loop) and `src/main/train_rl_agent_test.py` (sync,
-async-wave and restart streams).
+N = 2048, a run that never checkpoints. SB3 still counts vec calls, so the interval is converted by
+ceil at the run's N (N = 48: 50,000 calls, byte-identical; N = 2048: 1,172 calls = 2,400,256 steps).
+One vec call = N env steps on BOTH env cores (the Rust collector fires the callbacks once per N
+trainee decisions). ⚠️ **Not under `--async-rollout`**: its collector fires once per WAVE (≤ N envs),
+so the checkpointer fires early by the mean wave fraction. Pinned by
+`src/main/train/cadence_n_independence_test.py` (N = 48 vs N = 2048 through `build_callbacks`).
 
 | cadence | unit | N-independent? |
 |---|---|---|
-| periodic checkpoint (`--checkpoint-every-steps`) | `num_timesteps` boundary | yes — and under async waves |
+| periodic checkpoint (`--checkpoint-every-steps`) | total env steps (→ vec calls at N) | yes |
 | eval cycle (`--eval-freq`, `EVAL_FREQ_STEPS` 2M) — and the snapshot-pool add and opponent-pool refresh it drives | `num_timesteps` | yes |
 | search teacher (`--teacher-search-freq`, `--teacher-refresh-steps`), plasticity canary (`--canary-reset-steps`) | `num_timesteps` | yes |
 | `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team PFSP / team win-rate pulls (3 rollouts), exploiter-ladder persist (20), `--distill-anchor-refresh-every`, `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |

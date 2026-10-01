@@ -145,7 +145,6 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
     def build(model: Any) -> Any:
         from agents.model.snapshot import load_foreign_opponent
         from agents.training.reward_config import RewardConfig
-        from agents.training.rust_rollout.fork import fork_decl_from_args
         from agents.training.snapshot_pool import SnapshotPool
 
         run_seed = segment_seed(getattr(args, "seed", 0), int(model.num_timesteps))
@@ -160,10 +159,13 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             refusal_budget=int(args.rust_env_refusal_budget), respawn_budget=int(args.rust_env_respawn_budget),
             device=device, backend=backend, buckets=buckets, lanes=int(args.t2_lanes or 0),
             version_pinning=args.version_pinning == "per_game", trainee_slots=int(args.trainee_slots),
-            opponent_sampling=args.opponent_sampling, policy_seed=run_seed, fork=fork_decl_from_args(args))
+            opponent_sampling=args.opponent_sampling, policy_seed=run_seed)
         sources = OpponentSources(self_play_fraction=float(self_play_fraction))
         if plan.pool_slots and snapshot_dir is not None:
-            sources.pool = SnapshotPool(pool_dir=snapshot_dir, current_version=opponent_version, device=device,
+            # device="cpu" (gen3_declared_slot_load_v1): a pool snapshot is only a WEIGHT SOURCE that T2 copies
+            # into its declared slot; loaded on the card, each promotion's snapshot stayed there in the pool's
+            # LRU (+~33 MiB of quiescent floor per promotion, measured on sizing arm A, 2026-10-01).
+            sources.pool = SnapshotPool(pool_dir=snapshot_dir, current_version=opponent_version, device="cpu",
                                         pfsp_scale=getattr(args, "pfsp_scale", 0.0),
                                         pool_spread=getattr(args, "pool_spread", False))
         route_builders: Dict[int, Any] = {}

@@ -760,9 +760,8 @@ class CompileControl:
 
     # -- trainer wiring ------------------------------------------------------------------------
     def attach(self, model: Any) -> None:
-        """Hook the loop's `collect` and `update` points (the `compile_sentinel` owner of the DECLARED
-        hook table, `agents/training/loop_hooks.py`; instance-attribute wrappers on a duck-typed model)
-        and its `learn` point (to RELEASE the lock when training ends —
+        """Wrap `model.collect_rollouts` and `model.train` (INSTANCE attributes over the bound
+        methods SB3's `learn()` calls) and `model.learn` (to RELEASE the lock when training ends —
         the final evaluation runs in-process on the compiled forward): guard both, record the
         `compile/*` scalars and the train_ms backstop at the update cadence, and turn any violation
         into `os._exit(FATAL_CONFIG)` — an exception inside `learn()` would be a restartable CRASH
@@ -775,29 +774,27 @@ class CompileControl:
         absorbed by a warm-up iteration any more (`8fc297a2`'s interim design did exactly that: the
         rank probe's forward hooks were a second train/no-grad signature it compiled on iteration 1,
         found 2026-09-30 and removed — `rank_metrics.rank_probe` is hook-free)."""
-        import contextlib
-
-        from agents.training.loop_hooks import install
+        orig_collect = model.collect_rollouts
+        orig_train = model.train
+        orig_learn = model.learn
         ctl = self
         seen = {"updates": 0}
 
-        @contextlib.contextmanager
-        def collect() -> Any:
+        def collect_rollouts(*a: Any, **k: Any) -> Any:
             try:
                 if not ctl.locked and ctl.phase != "released":
                     ctl.lock("the first rollout's entry (startup did not lock)")
                 with ctl.guard("rollout end"):
-                    yield
+                    return orig_collect(*a, **k)
             except CompileSentinelError as exc:
                 fatal_exit(str(exc))
 
-        @contextlib.contextmanager
-        def update() -> Any:
+        def train(*a: Any, **k: Any) -> Any:
             first = seen["updates"] == 0
             seen["updates"] += 1
             try:
                 with ctl.guard("update end"):
-                    yield
+                    out = orig_train(*a, **k)
                     # K6's IN-RUN PARITY CANARY (between updates, on its cadence; declared
                     # signatures only, so it runs inside the guard like any other compiled call).
                     if ctl.canary is not None:
@@ -805,26 +802,23 @@ class CompileControl:
             except CompileTrainerError as exc:          # the sentinel's FATAL and the canary's
                 fatal_exit(str(exc))
             # the first update of a process runs every diagnostic probe (K2's cadence), so it is not
-            # steady state: the train_ms baseline starts at the NEXT update. `record` also TAKES the
-            # per-update region-call window (gen3_no_silent_eager_v1) — once per update, after the
-            # canary, before the next update.
+            # steady state: the train_ms baseline starts at the NEXT update
             ctl.record(model, observe_train_ms=not first)
+            return out
 
-        @contextlib.contextmanager
-        def learn() -> Any:
+        def learn(*a: Any, **k: Any) -> Any:
             # The lock's scope is TRAINING. After `learn()` the trainer runs its FINAL EVALUATION
             # in-process on the same compiled forward (batch 1, no-grad — new signatures by
             # design); measured 2026-09-28: the locked sentinel broke it with RecompileError. So
             # release on the way out, however `learn()` ends.
             try:
-                yield
+                return orig_learn(*a, **k)
             finally:
                 ctl.release("learn() returned")
 
-        # gen3_declared_loop_hooks_v1: the `compile_sentinel` owner of the loop's DECLARED hook table
-        # (inner to the freeze guard by the table's order), or instance-attribute wrappers on a
-        # duck-typed model with no table.
-        install(model, "compile_sentinel", {"collect": collect, "update": update, "learn": learn})
+        model.collect_rollouts = collect_rollouts
+        model.train = train
+        model.learn = learn
         model._compile_control = self
 
     def release(self, why: str) -> None:

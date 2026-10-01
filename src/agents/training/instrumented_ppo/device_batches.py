@@ -52,6 +52,7 @@ class _DeviceGather:
         self.obs: Optional[Dict[str, torch.Tensor]] = None
         self.flat: Dict[str, torch.Tensor] = {}
         self.copies = 0
+        self.nbytes = 0                                   # the device copy's size (gen3_cuda_ledger_v1)
 
     def _materialise(self) -> None:
         b = self.buffer
@@ -61,6 +62,8 @@ class _DeviceGather:
         self.flat = {t: torch.as_tensor(np.ascontiguousarray(b.__dict__[t])).to(self.device)
                      for t in _FLAT}
         self.copies += 1
+        self.nbytes = (sum(int(v.numel()) * v.element_size() for v in self.obs.values())
+                       + sum(int(v.numel()) * v.element_size() for v in self.flat.values()))
 
     def __call__(self, batch_inds: np.ndarray, env: Any = None) -> Any:
         from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBufferSamples

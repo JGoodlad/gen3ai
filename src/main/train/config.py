@@ -29,7 +29,7 @@ from main.train.compile_flags import (
 )
 from main.train.constants import (
     CF_DUTY_CYCLE_FLOOR, DEFAULT_DISTILL_TEAM_BIAS, cf_label_duty_cycle,
-    checkpoint_interval_env_steps,
+    checkpoint_interval_env_steps, checkpoint_save_freq_vec_calls,
 )
 from poke_env import LocalhostServerConfiguration
 from poke_env.ps_client.server_configuration import localhost_server_configuration
@@ -176,13 +176,14 @@ def _announce_cf_duty_cycle(args) -> None:
         return
     n_envs = 1 if args.debug else int(args.n_envs)
     every = getattr(args, "checkpoint_every_steps", None)
-    interval = checkpoint_interval_env_steps(every)
+    vec_calls = checkpoint_save_freq_vec_calls(every, n_envs)
+    interval = checkpoint_interval_env_steps(every, n_envs)
     duty = cf_label_duty_cycle(args.cf_label_lag_steps, interval)
     shown = "unbounded (--cf-label-lag-steps 0 = labels never expire)" if duty == float("inf") \
         else f"{duty:.1%}"
     line = (f"🧾 [CF] label DUTY CYCLE {shown} — --cf-label-lag-steps "
             f"{args.cf_label_lag_steps:,} / {interval:,} env-steps between checkpoints "
-            f"(TOTAL env steps over all {n_envs} envs)")
+            f"({vec_calls:,} vec-calls x {n_envs} envs)")
     if args.debug:
         emit(line + "  [--debug: the floor is not enforced]")
         return

@@ -371,11 +371,6 @@ ARGVS: dict[str, list[str]] = {
     "env_core_rust_needs_the_winprob_critic": ["--env-core", "rust", "--critic", "shaped"],
     "env_core_rust_unported_paths": ["--env-core", "rust", *_WP, "--team-pfsp", "var"],
     "env_core_flags_need_the_rust_core": ["--rollout-trigger", "window"],
-    # gen3_fork_rust_v1 — the fork arm on the Rust core (forks.md §14.7)
-    "fork_rust_needs_keyed_opponent_sampling": ["--env-core", "rust", *_WP, "--fork-fraction", "0.02",
-                                                "--opponent-sampling", "generator"],
-    "fork_rust_needs_complete_game_trigger": ["--env-core", "rust", *_WP, "--fork-fraction", "0.02",
-                                              "--rollout-trigger", "window"],
     "rollout_target_on_the_quantum": ["--env-core", "rust", *_WP, "--n-envs", "48", "--batch-size", "2048",
                                       "--rollout-target-samples", "100000"],
 }

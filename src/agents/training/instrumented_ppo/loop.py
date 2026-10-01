@@ -65,8 +65,6 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.utils import obs_as_tensor
 
-from agents.training.loop_hooks import LoopHooks
-
 #: The loop, in order. `learn()` below is this table written out; `own_ppo_loop_test` pins both.
 LOOP_PHASES: Tuple[str, ...] = (
     "setup",            # _setup_learn: counters, ep-info buffers, env reset if needed, callback init
@@ -158,95 +156,54 @@ class OwnedLoop:
         progress_bar: bool = False,
     ) -> Any:
         """`LOOP_PHASES`, written out. Vendored from `MaskablePPO.learn` — the local names are
-        unchanged (`on_training_start` hands `locals()` to every callback, so this body binds NO new
-        local: the hook table is reached through `self`). The three DECLARED HOOK POINTS
-        (`loop_hooks.HOOK_POINTS`: learn > collect | update) are opened here, in that nesting, with
-        the owners in `loop_hooks.HOOK_OWNERS` order (gen3_declared_loop_hooks_v1)."""
+        unchanged (`on_training_start` hands `locals()` to every callback)."""
         self._ppo_loop_mode = loop_mode()
-        # the hook table is complete at training start: a later registration is a typed FATAL
-        self._loop_hooks.freeze("learn() — training start")
-        with self._loop_hooks.around("learn"):
-            if self._ppo_loop_mode == LOOP_REFERENCE:
-                return self._reference_learn(total_timesteps, callback, log_interval, tb_log_name,
-                                             reset_num_timesteps, use_masking, progress_bar)
-            iteration = 0
-
-            # setup
-            total_timesteps, callback = self._setup_learn(
-                total_timesteps,
-                callback,
-                reset_num_timesteps,
-                tb_log_name,
-                progress_bar,
-            )
-
-            # training_start
-            callback.on_training_start(locals(), globals())
-
-            assert self.env is not None
-
-            while self.num_timesteps < total_timesteps:
-                # collect (the hook point, then the method through the attribute)
-                with self._loop_hooks.around("collect"):
-                    continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer,
-                                                              self.n_steps, use_masking)
-
-                if not continue_training:
-                    break
-
-                # progress
-                iteration += 1
-                self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
-
-                # dump — BEFORE the update (module docstring)
-                if log_interval is not None and iteration % log_interval == 0:
-                    self.dump_logs(iteration)
-
-                # update (the hook point, then the method through the attribute)
-                with self._loop_hooks.around("update"):
-                    self.train()
-
-            # training_end
-            callback.on_training_end()
-
-            return self
-
-    def _reference_learn(self, total_timesteps: int, callback: Any, log_interval: int, tb_log_name: str,
-                         reset_num_timesteps: bool, use_masking: bool, progress_bar: bool) -> Any:
-        """The `sb3_reference` seam: upstream's `learn`, with the loop's collect / update hooks applied
-        the only way upstream can see them — as instance wrappers, for this call only."""
-        print(f"[PPO LOOP] ${LOOP_ENV}={LOOP_REFERENCE}: running the UPSTREAM sb3 loop (test seam)", flush=True)
-        hooks = self._loop_hooks
-        saved = {n: vars(self).get(n) for n in ("collect_rollouts", "train")}
-        orig_collect, orig_train = self.collect_rollouts, self.train
-
-        def collect_rollouts(*a: Any, **k: Any) -> Any:
-            with hooks.around("collect"):
-                return orig_collect(*a, **k)
-
-        def train(*a: Any, **k: Any) -> Any:
-            with hooks.around("update"):
-                return orig_train(*a, **k)
-
-        self.collect_rollouts, self.train = collect_rollouts, train  # type: ignore[method-assign]
-        try:
+        if self._ppo_loop_mode == LOOP_REFERENCE:
+            print(f"[PPO LOOP] ${LOOP_ENV}={LOOP_REFERENCE}: running the UPSTREAM sb3 loop (test seam)",
+                  flush=True)
             return MaskablePPO.learn(self, total_timesteps, callback=callback,  # type: ignore[arg-type]
                                      log_interval=log_interval, tb_log_name=tb_log_name,
                                      reset_num_timesteps=reset_num_timesteps, use_masking=use_masking,
                                      progress_bar=progress_bar)
-        finally:
-            for n, v in saved.items():
-                if v is None:
-                    vars(self).pop(n, None)
-                else:
-                    setattr(self, n, v)
+        iteration = 0
 
-    # ------------------------------------------------------------------ the hook table
-    def _setup_model(self) -> None:
-        """sb3's model setup, then the loop's HOOK TABLE (startup; `loop_hooks`). Runs on a fresh build
-        and on `load`, so every learner object has exactly one, empty until its owners register."""
-        super()._setup_model()   # type: ignore[misc]
-        self._loop_hooks = LoopHooks()
+        # setup
+        total_timesteps, callback = self._setup_learn(
+            total_timesteps,
+            callback,
+            reset_num_timesteps,
+            tb_log_name,
+            progress_bar,
+        )
+
+        # training_start
+        callback.on_training_start(locals(), globals())
+
+        assert self.env is not None
+
+        while self.num_timesteps < total_timesteps:
+            # collect (through the attribute: K6 / the compile sentinel wrap it)
+            continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, self.n_steps,
+                                                      use_masking)
+
+            if not continue_training:
+                break
+
+            # progress
+            iteration += 1
+            self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
+
+            # dump — BEFORE the update (module docstring)
+            if log_interval is not None and iteration % log_interval == 0:
+                self.dump_logs(iteration)
+
+            # update (through the attribute)
+            self.train()
+
+        # training_end
+        callback.on_training_end()
+
+        return self
 
     # ------------------------------------------------------------------ setup
     def _setup_learn(

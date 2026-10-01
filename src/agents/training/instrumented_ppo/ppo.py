@@ -418,7 +418,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # +K8 (gen3_device_batches_v1): every micro-batch gathered from ONE device copy of the
         # flattened buffer (made at the first micro-batch) instead of a host gather + H2D copy each
         # — the same permutation draw, bit-identical batches; removed after the epoch loop.
-        _devb_install(self.rollout_buffer)
+        _devb = _devb_install(self.rollout_buffer)
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             _epoch_cf_start = len(clip_fractions)   # +PER-EPOCH: this epoch's slice of the running list
@@ -1190,6 +1190,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             if _ph is not None: _ph("epoch_end")
             if not continue_training:
                 break
+        if _devb is not None and _devb.nbytes:   # gen3_cuda_ledger_v1: the update's device copy
+            self.logger.record("lifecycle/device_batch_mib", _devb.nbytes / (1 << 20))
         _devb_uninstall(self.rollout_buffer)   # +K8: the device copy is the update's, not the run's
 
         # +CAPACITY TELEMETRY: the once-per-train() half — fold the per-minibatch canary/cosine

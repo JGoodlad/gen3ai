@@ -1,0 +1,55 @@
+{
+ "schema": "gen3_cuda_ledger_v1",
+ "rows": [
+  {
+   "step": "weights on the card (policy + ride-along heads)",
+   "allocated_mib": 15.455078125,
+   "reserved_mib": 34.0,
+   "d_allocated_mib": 15.455078125,
+   "d_reserved_mib": 34.0,
+   "peak_allocated_mib": 15.455078125,
+   "device_free_mib": 11083.5,
+   "device_total_mib": 11909.625
+  },
+  {
+   "step": "rust env core (T2 slots, staging, arena; python core: none)",
+   "allocated_mib": 727.6748046875,
+   "reserved_mib": 1714.0,
+   "d_allocated_mib": 712.2197265625,
+   "d_reserved_mib": 1680.0,
+   "peak_allocated_mib": 1110.5947265625,
+   "device_free_mib": 9057.5,
+   "device_total_mib": 11909.625
+  },
+  {
+   "step": "extractor-only compile gate (torch 2.5.1)",
+   "allocated_mib": 741.87255859375,
+   "reserved_mib": 1774.0,
+   "d_allocated_mib": 14.19775390625,
+   "d_reserved_mib": 60.0,
+   "peak_allocated_mib": 900.484375,
+   "device_free_mib": 8975.5,
+   "device_total_mib": 11909.625
+  },
+  {
+   "step": "compiled regions: gate + prewarm + lock",
+   "allocated_mib": 926.47216796875,
+   "reserved_mib": 5894.0,
+   "d_allocated_mib": 184.599609375,
+   "d_reserved_mib": 4120.0,
+   "peak_allocated_mib": 5034.14013671875,
+   "device_free_mib": 4833.5,
+   "device_total_mib": 11909.625
+  },
+  {
+   "step": "optimizer state declared (Adam m, v) + lifecycle",
+   "allocated_mib": 949.93505859375,
+   "reserved_mib": 5894.0,
+   "d_allocated_mib": 23.462890625,
+   "d_reserved_mib": 0.0,
+   "peak_allocated_mib": 985.12939453125,
+   "device_free_mib": 4833.5,
+   "device_total_mib": 11909.625
+  }
+ ]
+}

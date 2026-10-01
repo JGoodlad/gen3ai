@@ -394,3 +394,21 @@ def test_attach_wires_the_memory_half_around_rollout_and_update_and_is_inert_off
     cpu.start()
     cpu.observe("post_update")
     assert cpu.trend is None and orig() is True
+
+
+def test_every_update_records_the_updates_and_the_rollouts_peak():
+    """gen3_cuda_ledger_v1: the step's PEAK, every update (not only at a window close)."""
+    from agents.training import cuda_memory_trend as cmt
+    m, lines = _MemModel(), []
+
+    def sampler(device, *, update, phase):
+        s = _mem_sample(update, phase, 3000)
+        return cmt.MemorySample(**{**s.as_row(), "peak_allocated": 5000 * cmt.MiB,
+                                   "peak_reserved": 6000 * cmt.MiB})
+    w = LL.CudaMemoryWatch(m, emit=lines.append, say=lines.append, device="cuda:0", sampler=sampler)
+    w.start()
+    w.observe("post_rollout")
+    assert m.rec["lifecycle/cuda_rollout_peak_alloc_mib"] == 5000.0
+    w.observe("post_update")
+    assert m.rec["lifecycle/cuda_update_peak_alloc_mib"] == 5000.0
+    assert m.rec["lifecycle/cuda_update_peak_reserved_mib"] == 6000.0

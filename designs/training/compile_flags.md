@@ -1068,13 +1068,9 @@ Two failures were silent before it:
 | — `release(why)` | when `learn()` returns or raises | the lock's scope is TRAINING: the trainer's FINAL EVALUATION runs in-process on the same model (batch 1 / no-grad — routed EAGER since `gen3_batch1_eager_v1`; a smaller obs key set elsewhere) — new signatures by design. MEASURED on the real trainer (the end-to-end smoke below): a still-locked sentinel broke it with `RecompileError`. Prints `🧊 [COMPILE LOCK] released …` with the post-lock compile count (must be 0) |
 | 5 `stats()` | every update | TB `compile/graphs_total`, `compile/recompiles_after_lock` (**must stay 0**), `compile/cache_limit_hits`, `compile/max_cache_entries_per_code`, `compile/locked`, `compile/regression_flag`, `compile/train_ms_vs_lock_baseline` |
 
-The checks run at every rollout end and every update end. `CompileControl.attach` registers the
-`compile_sentinel` owner on the loop's DECLARED HOOK TABLE (`agents/training/loop_hooks.py`,
-`gen3_declared_loop_hooks_v1`), at the `collect`, `update` and `learn` points, inner to the freeze
-guard. The update hook runs the canary inside its guard and then `record` (which TAKES the per-update
-region-call window). A duck-typed model with no table gets the same bodies as instance-attribute
-wrappers. `_compile_control` and the table are in `_excluded_save_params`, so no checkpoint carries a
-live sentinel. A `RecompileError` raised at a call site, a cache-limit hit, or any
+The checks run at every rollout end and every update end (`CompileControl.attach` wraps the model's
+`collect_rollouts`, `train` and `learn` as INSTANCE attributes — all three, plus `_compile_control`,
+are in `_excluded_save_params`, so no checkpoint carries a live sentinel). A `RecompileError` raised at a call site, a cache-limit hit, or any
 compile that STARTS after the lock is `CompileSentinelError` → **`[CompileSentinel] FATAL …` and
 `os._exit(FATAL_CONFIG)`** — an exception inside `learn()` would reach `model_build`'s generic
 `except` and become a restartable CRASH, and a restart would replay it. The launcher also matches

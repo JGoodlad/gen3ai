@@ -106,3 +106,13 @@ def test_on_cuda_the_device_batches_equal_the_host_batches():
         dev, _ = _batches(buf, 16, 2, seed=3)
     for eh, ed in zip(host, dev):
         _same(eh, ed)
+
+
+def test_the_gather_knows_its_device_copys_size():
+    """gen3_cuda_ledger_v1: `train()` records it as `lifecycle/device_batch_mib`."""
+    model = _golden_buffer()
+    buf = model.rollout_buffer
+    with DB.device_samples(buf, force=True) as g:
+        list(buf.get(16))
+        want = sum(int(v.reshape(-1, *v.shape[2:]).nbytes) for v in buf.observations.values())
+        assert g.nbytes >= want > 0
