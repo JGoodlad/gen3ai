@@ -239,7 +239,8 @@ def test_smoke_both_arms_tiny(tmp_path):
     assert res["regime"]["inference"]["name"] == "random_legal"
     assert res["regime"]["opponent"]["name"] == "uniform_random"
     assert res["regime"]["collector"]["name"] == "fixed_window_steps"
-    assert [(b["pair"], b["arm"]) for b in res["blocks"]] == [(0, "python"), (0, "rust")]
+    # a busy box re-runs a block (the superseded row stays in `blocks`, uncounted)
+    assert [(b["pair"], b["arm"]) for b in res["blocks"] if not b.get("superseded")] == [(0, "python"), (0, "rust")]
     for b in res["blocks"]:
         assert b["decisions"] > 0 and b["cpu_s_tree"] > 0 and b["cpu_us_per_decision"] > 0, b
     assert res["arm_info"]["rust"]["labels"] and res["arm_info"]["rust"]["after_freeze"]
@@ -274,3 +275,51 @@ def test_the_production_arm_names_parse_and_a_bad_one_is_refused():
     assert parse_rust_arm("rust_overlap_generator_p4") == ("overlap", "generator", 4)
     for bad in ("rust", "rust_serial", "rust_serial_keyed_p0", "rust_serial_keyed_4", "rust_async_keyed"):
         assert parse_rust_arm(bad) is None, bad
+
+
+def test_a_thread_count_suffix_parses_beside_the_snapshot_suffix():
+    from main.rust_core_m5.throughput import parse_arm_threads, parse_rust_arm
+
+    assert parse_rust_arm("rust_serial_keyed_t12") == ("serial", "keyed", None)
+    assert parse_rust_arm("rust_serial_keyed_p8_t16") == ("serial", "keyed", 8)
+    assert parse_arm_threads("rust_serial_keyed_t12") == 12
+    assert parse_arm_threads("rust_serial_keyed_p8") is None and parse_arm_threads("rust_serial_keyed") is None
+    assert parse_rust_arm("rust_serial_keyed_t0") is None
+
+
+def test_a_busy_block_is_flagged_and_a_superseded_one_is_never_counted():
+    assert T.block_busy(1.5) and not T.block_busy(0.4) and not T.block_busy(None)
+
+    def blk(arm, pair, dps, **kw):
+        return {"arm": arm, "pair": pair, "decisions": 100, "decisions_per_s": dps, "ms_per_vec_step": 1.0,
+                "vec_steps_per_s": 1.0, "cpu_us_per_decision": 10.0, "inference_share": 0.0, **kw}
+
+    blocks = [blk("rust_serial_keyed", 0, 1000.0), blk("rust_overlap_keyed", 0, 100.0, busy=True, superseded=True),
+              blk("rust_overlap_keyed", 0, 1500.0, busy=False), blk("rust_serial_keyed", 1, 1000.0),
+              blk("rust_overlap_keyed", 1, 1500.0, busy=True)]
+    per, ratios = T.summarize(blocks, ("rust_serial_keyed", "rust_overlap_keyed"), seed=0)
+    assert per["rust_overlap_keyed"]["blocks"] == 2 and per["rust_overlap_keyed"]["decisions_per_s_mean"] == 1500.0
+    assert per["rust_overlap_keyed"]["busy_blocks_counted"] == 1                # still busy after re-runs: flagged
+    r = ratios["decisions_per_s_rust_overlap_keyed_over_rust_serial_keyed"]
+    assert r["per_pair"] == pytest.approx([1.5, 1.5])
+
+
+def test_a_block_reads_the_box_and_the_per_phase_cpu():
+    class Arm:
+        name = "rust_serial_keyed"
+
+        def step(self):
+            t = time.process_time()
+            while time.process_time() - t < 0.005:
+                pass
+            return 4, 0.0, 0.004, 0
+
+        def roots(self):
+            return []
+
+    b = T.run_block(Arm(), seconds=0.3, min_steps=1)
+    for k in ("load1_start", "system_busy_cpus", "self_cpus", "bystander_cpus", "busy", "core_s",
+              "host_main_thread_cpu_share", "host_process_cpus"):
+        assert k in b, k
+    assert 0.5 < b["host_main_thread_cpu_share"] <= 1.2           # the main thread burned the block
+    assert b["core_s"] > 0 and b["env_core_cpus_during_step"] == 0.0   # no core process in this arm

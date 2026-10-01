@@ -455,9 +455,39 @@ class RustArm:
 # the timed block
 # ---------------------------------------------------------------------------------------------
 
+#: A block is BUSY when processes OUTSIDE this measurement's tree kept more than this many logical CPUs
+#: busy on average over the block (``utils.cpu_meter``'s window: /proc/stat occupancy minus our own
+#: tree). At large N the env core is CPU-bound, so a bystander's load lands in the number (2026-10-01:
+#: a peer's xdist gate halved N = 1024's late blocks while the start-of-run check read load1 2.4).
+BYSTANDER_CPUS_BAR = 1.0
+#: A BUSY block is re-run (same arm, same pair index; the busy row is kept, marked superseded) up to
+#: this many times; a block still busy after that stays in, flagged, and the run carries a warning.
+MAX_BUSY_RERUNS = 2
+
+
+def _thread_cpu_s(pid: int, tid: int) -> Optional[float]:
+    """utime + stime of one task (``/proc/<pid>/task/<tid>/stat``), seconds; None when gone."""
+    try:
+        with open(f"/proc/{pid}/task/{tid}/stat") as fh:
+            rest = fh.read().rsplit(")", 1)[1].split()
+        return (int(rest[11]) + int(rest[12])) / _TICK
+    except (OSError, IndexError, ValueError):
+        return None
+
+
+def block_busy(bystander_cpus: Optional[float], bar: float = BYSTANDER_CPUS_BAR) -> bool:
+    return bystander_cpus is not None and bystander_cpus > bar
+
+
 def run_block(arm: Any, *, seconds: float, min_steps: int, root: Optional[int] = None) -> Dict[str, Any]:
-    """Step ``arm`` for at least ``seconds`` and ``min_steps``; the metrics of that window."""
+    """Step ``arm`` for at least ``seconds`` and ``min_steps``; the metrics of that window, including the
+    box's load OVER THE BLOCK (``busy`` when a bystander held > ``BYSTANDER_CPUS_BAR`` CPUs) and the
+    per-phase CPU reads: the env core's CPUs while its step ran, and the host MAIN thread's share."""
+    from utils import cpu_meter
+
     root = os.getpid() if root is None else root
+    s0 = cpu_meter.take_sample(roots=[root])
+    main0 = _thread_cpu_s(root, root)
     before = tree_snapshot(root)
     steps = decisions = dones = 0
     inf_s = env_s = 0.0
@@ -480,11 +510,25 @@ def run_block(arm: Any, *, seconds: float, min_steps: int, root: Optional[int] =
         c1 = arm.components()
         comp = {k: 1e3 * (c1[k] - comp0.get(k, 0.0)) / steps for k in c1}
     after = tree_snapshot(root)
+    main1 = _thread_cpu_s(root, root)
+    s1 = cpu_meter.take_sample(roots=[root])
+    rd = cpu_meter.reading_between(s0, s1, self_root=root)
     own = _subtree(after, arm.roots())
     cpu = cpu_delta(before, after)
     host = cpu_delta(before, after, only={k for k in after if k[0] == root})
     own_cpu = cpu_delta(before, after, only=own)
-    return {"arm": arm.name, "wall_s": wall, "vec_steps": steps, "decisions": decisions, "episodes_ended": dones,
+    core_s = (comp or {}).get("core", 0.0) * steps / 1e3 if comp else env_s
+    bystander = (None if rd.busy_cpus is None or rd.self_cpus is None
+                 else max(0.0, float(rd.busy_cpus) - float(rd.self_cpus)))
+    return {"arm": arm.name, "wall_s": wall,
+            "load1_start": s0.load1, "load1_end": s1.load1, "system_busy_cpus": rd.busy_cpus,
+            "self_cpus": rd.self_cpus, "bystander_cpus": bystander, "busy": block_busy(bystander),
+            "contention_factor": rd.factor,
+            "core_s": core_s,
+            "env_core_cpus_during_step": (own_cpu / core_s) if core_s > 0 else None,
+            "host_main_thread_cpu_share": ((main1 - main0) / wall) if main0 is not None and main1 is not None
+                                          and wall > 0 else None,
+            "host_process_cpus": host / wall if wall > 0 else None, "vec_steps": steps, "decisions": decisions, "episodes_ended": dones,
             "ms_per_vec_step": 1e3 * wall / steps, "vec_steps_per_s": steps / wall,
             "decisions_per_s": decisions / wall if wall > 0 else 0.0,
             "inference_s": inf_s, "env_s": env_s, "inference_share": inf_s / wall if wall > 0 else 0.0,
@@ -542,7 +586,11 @@ def schedule(pairs: int, arms: Sequence[str]) -> List[Tuple[int, str]]:
 
 
 def summarize(blocks: Sequence[Mapping[str, Any]], arms: Sequence[str], seed: int) -> Tuple[Dict, Dict]:
+    """Per-arm means + CIs and the ratios, over the blocks that COUNT: a busy block superseded by its
+    re-run (``superseded``) is reported in ``blocks`` but never summarised."""
     import numpy as np
+
+    blocks = [b for b in blocks if not b.get("superseded")]
 
     per: Dict[str, Dict[str, Any]] = {}
     for a in arms:
@@ -568,6 +616,11 @@ def summarize(blocks: Sequence[Mapping[str, Any]], arms: Sequence[str], seed: in
         stamps = [b.get("stamp") for b in bs if b.get("stamp")]
         if stamps:
             per[a]["stamp"] = stamps[0]
+        for key in ("env_core_cpus_during_step", "host_main_thread_cpu_share", "host_process_cpus",
+                    "bystander_cpus"):
+            xs = [b[key] for b in bs if b.get(key) is not None]
+            per[a][f"{key}_mean"] = float(np.mean(xs)) if xs else None
+        per[a]["busy_blocks_counted"] = sum(1 for b in bs if b.get("busy"))
     ratios: Dict[str, Any] = {}
     pairs = sorted({b["pair"] for b in blocks})
     by = {(b["pair"], b["arm"]): b for b in blocks}
@@ -700,8 +753,17 @@ def parse_rust_arm(name: str) -> Optional[Tuple[str, str, Optional[int]]]:
     routed to (so at most K distinct opponent slots in any flush)."""
     import re
 
-    m = re.fullmatch(r"rust_(serial|overlap)_(keyed|generator)(?:_p([1-9][0-9]*))?", name)
+    m = re.fullmatch(r"rust_(serial|overlap)_(keyed|generator)(?:_p([1-9][0-9]*))?(?:_t[1-9][0-9]*)?", name)
     return (m.group(1), m.group(2), int(m.group(3)) if m.group(3) else None) if m else None
+
+
+def parse_arm_threads(name: str) -> Optional[int]:
+    """A trailing ``_t<T>`` on a rust arm name: that arm's core runs T worker threads (the SIZING
+    study's threads read); None = the run's ``--threads``."""
+    import re
+
+    m = re.fullmatch(r"rust_.*_t([1-9][0-9]*)", name)
+    return int(m.group(1)) if m else None
 
 
 def make_arm(name: str, a: argparse.Namespace, inference: Any, opponent: Any, collector: Any) -> Any:
@@ -721,7 +783,8 @@ def make_arm(name: str, a: argparse.Namespace, inference: Any, opponent: Any, co
                 raise SystemExit(f"unknown production arm {name!r}")
             shape, sampling, active = parsed
             cls = OverlappedRustArm if shape == "overlap" else CollectorRustArm
-            arm = cls(a.n_envs, a.threads, a.front, a.profile, inference, opponent, collector, a.seed,
+            arm = cls(a.n_envs, parse_arm_threads(name) or a.threads, a.front, a.profile, inference, opponent,
+                      collector, a.seed,
                       sampling=sampling, device=a.device, name=name, active_snapshots=active,
                       backend=(a.t2_backend if a.t2_backend != "eager" or not str(a.device).startswith("cuda")
                                else "graph"),
@@ -810,12 +873,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         regime["waited_for_busy_flag"] = {"path": a.wait_while_exists, "seconds": round(waited, 1)}
         regime["load_before_blocks"] = _load()
         for k, name in schedule(a.pairs, arms):
-            b = run_block(built[name], seconds=a.block_seconds, min_steps=a.min_steps)
-            b.update(pair=k, load1_after=os.getloadavg()[0])
-            blocks.append(b)
-            print(f"[throughput] pair {k} {name}: {b['decisions_per_s']:.0f} decisions/s, "
-                  f"{b['ms_per_vec_step']:.2f} ms/step, {b['cpu_us_per_decision'] or 0:.0f} CPU-us/decision",
-                  file=sys.stderr, flush=True)
+            for attempt in range(MAX_BUSY_RERUNS + 1):
+                b = run_block(built[name], seconds=a.block_seconds, min_steps=a.min_steps)
+                b.update(pair=k, load1_after=os.getloadavg()[0], attempt=attempt)
+                blocks.append(b)
+                print(f"[throughput] pair {k} {name}: {b['decisions_per_s']:.0f} decisions/s, "
+                      f"{b['ms_per_vec_step']:.2f} ms/step, {b['cpu_us_per_decision'] or 0:.0f} CPU-us/decision"
+                      + (f", BUSY (bystander {b['bystander_cpus']:.1f} CPUs)" if b["busy"] else ""),
+                      file=sys.stderr, flush=True)
+                if not b["busy"]:
+                    break
+                if attempt < MAX_BUSY_RERUNS:
+                    b["superseded"] = True          # re-run now; this row stays in `blocks`, uncounted
+        n_busy = sum(1 for b in blocks if b.get("busy"))
+        still = sum(1 for b in blocks if b.get("busy") and not b.get("superseded"))
+        if n_busy:
+            warnings.append(f"{n_busy} BUSY block(s) (a bystander held > {BYSTANDER_CPUS_BAR} CPUs); "
+                            f"{n_busy - still} re-run, {still} still busy after {MAX_BUSY_RERUNS} re-runs and COUNTED")
     finally:
         for arm in built.values():
             try:
