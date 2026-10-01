@@ -10463,3 +10463,13 @@ if a lazy build is reintroduced.
 - The in-run canary runs FIRST at update 10 (`CANARY_FIRST`), then every 100: sizing arm A's 82
   updates never reached update 100, so it never ran a canary.
 
+## 2026-10-01 — the PUSH GUARD (`gen3_push_guard_v1`; no model change)
+
+- `aebae9a1` (a 17-file unit) was squashed with `git reset --soft origin/main` after origin/main had
+  moved, so its tree carried its worktree's stale copies of 43 files and the push reverted other
+  agents' work for ~6 minutes (restored by `277f318f`). `utils.push_guard` refuses a push whose
+  `diff(origin/main, HEAD)` touches a file outside `diff(the branch's creation point, HEAD)` —
+  a file the branch never changed. Replayed on the real accident it refuses 41 files; on an honest
+  rebase it passes. `scripts/land.sh` runs it before the push; a hand push runs
+  `python -m utils.push_guard` first.
+

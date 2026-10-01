@@ -9,7 +9,10 @@
 # Four steps, in this order, and it stops at the first failure:
 #
 #   1. GATES, run INSIDE the worktree — ruff (F,E9) · mypy · the `src/*_gate_test.py` statics.
-#   2. `git push origin <branch>:main` from the MAIN checkout.
+#   2. `git push origin <branch>:main` from the MAIN checkout — after the PUSH GUARD
+#      (`python -m utils.push_guard`) finds no file the push would change on main that the branch
+#      never changed (2026-10-01: a soft reset onto a moved origin/main pushed 43 stale files).
+#      Anyone pushing by hand runs it first too: `python -m utils.push_guard` in the worktree.
 #   3. `git pull --ff-only origin main` — so the main checkout is not left behind its own remote.
 #   4. `git worktree remove --force <worktree>` + prune + delete the local branch — but only
 #      after the RUN-DATA GUARD (`python -m utils.worktree_guard`) finds nothing to lose.
@@ -149,6 +152,14 @@ if [ -n "$WORKTREE" ]; then
 fi
 
 # --- 2-4. land -------------------------------------------------------------------------------
+# THE PUSH GUARD (gen3_push_guard_v1): refuse a push whose tree would change, on main, a file this
+# branch never changed — a stale copy (2026-10-01: a soft reset onto a moved origin/main reverted 43
+# files of other commits for ~6 minutes). Exit 1, nothing pushed.
+git fetch -q origin main
+if ! PYTHONPATH="$MAIN_CHECKOUT/src" "$PY" -m utils.push_guard --repo "${WORKTREE:-$MAIN_CHECKOUT}" \
+        --branch "$BRANCH" --remote origin/main; then
+    echo "PUSH GUARD REFUSED — not pushing"; exit 1
+fi
 git push -q origin "$BRANCH":main
 git pull -q --ff-only origin main
 if [ -n "$WORKTREE" ]; then

@@ -70,6 +70,8 @@ def repos(tmp_path):
     (main / "src" / "utils" / "__init__.py").write_text("")
     shutil.copy(repo_path("src", "utils", "worktree_guard.py"),
                 main / "src" / "utils" / "worktree_guard.py")
+    shutil.copy(repo_path("src", "utils", "push_guard.py"),       # land.sh runs it before the push
+                main / "src" / "utils" / "push_guard.py")
     (main / ".gitignore").write_text("models/\n*.bin\n__pycache__/\nsrc/rust_sim/target/\n")
     _git(main, "add", "-A")
     _git(main, "commit", "-q", "-m", "base")
