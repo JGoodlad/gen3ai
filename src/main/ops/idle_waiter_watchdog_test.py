@@ -360,6 +360,13 @@ time.sleep(600)
 """
 
 
+def _rss_of(findings, *pids: int):
+    """The BIG-RSS findings about THIS test's own processes only. HERMETIC: the scan also sees the
+    test process itself (``scope_pid`` is in scope) and, unscoped, the whole box — an xdist worker or
+    a sibling gate over the test's low bar is a real finding, but not one this test may assert on."""
+    return [f for f in findings if f.kind == "BIG-RSS" and f.pid in pids]
+
+
 def _rss_at_least(pid: int, mb: int) -> Callable[[], bool]:
     return lambda: P.rss_bytes(pid) >= (mb << 20)
 
@@ -372,7 +379,7 @@ def test_big_rss_flags_a_session_process_over_the_bar_with_pid_rss_cmd_and_sessi
     small = _pid_of(root.pid, "sleep 600", exact=True)
     _wait_for(_rss_at_least(big, 300), "the hog to touch its 300 MB", timeout=scale_timeout(30))
 
-    findings = [f for f in W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, **KW).run() if f.kind == "BIG-RSS"]
+    findings = _rss_of(W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, **KW).run(), big, small)
     assert [f.pid for f in findings] == [big], findings          # the small sibling is not flagged
     f = findings[0]
     assert f.session == root.pid and str(hog) in f.cmd
@@ -384,7 +391,7 @@ def test_big_rss_flags_a_session_process_over_the_bar_with_pid_rss_cmd_and_sessi
     assert want in f.reason, (want, f.reason)
     assert f"pid={big}" in f.line() and f"session={root.pid}" in f.line()
     # the default 24 GB bar does not fire on it
-    assert not [f for f in W.Scan(None, scope_pid=os.getpid(), **KW).run() if f.kind == "BIG-RSS"]
+    assert not _rss_of(W.Scan(None, scope_pid=os.getpid(), **KW).run(), big)
     # the CLI prints it on the FIRST run and exits 1; it never kills
     r = subprocess.run([sys.executable, str(_SCRIPT), "--state", str(tmp_path / "s.json"), "--scope-pid",
                         str(os.getpid()), "--rss-gb", "0.25"], capture_output=True, text=True, timeout=60)
@@ -399,18 +406,18 @@ def test_big_rss_flags_growth_since_the_last_run_below_the_absolute_bar(session,
     pid = _pid_of(root.pid, str(hog))
     _wait_for(_rss_at_least(pid, 20), "the hog's first 20 MB", timeout=scale_timeout(30))
     first = W.Scan(None, scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
-    assert not [f for f in first.run() if f.kind == "BIG-RSS"]
+    assert not _rss_of(first.run(), pid)
     go.write_text("1")
     _wait_for(_rss_at_least(pid, 300), "the hog to grow by 300 MB", timeout=scale_timeout(30))
     time.sleep(GAP_S)       # past --min-interval-s, so each scan becomes the next one's baseline
     second = W.Scan(first.next_state(), scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
-    grown = [f for f in second.run() if f.kind == "BIG-RSS"]
+    grown = _rss_of(second.run(), pid)
     assert [f.pid for f in grown] == [pid], grown
     assert "grew +0.3 GB since the last run" in grown[0].reason, grown[0].reason
     # and with no growth since THAT run, nothing
     time.sleep(GAP_S)
     third = W.Scan(second.next_state(), scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
-    assert not [f for f in third.run() if f.kind == "BIG-RSS"]
+    assert not _rss_of(third.run(), pid)
 
 
 def test_the_cap_note_reads_the_NEAREST_limit_and_calls_only_max_uncapped(tmp_path):
@@ -438,7 +445,7 @@ def test_big_rss_in_a_raw_systemd_run_scope_reads_capped_at_its_limit(session, t
     _wait_for(_rss_at_least(pid, 300), "the scoped hog to touch its 300 MB", timeout=scale_timeout(30))
     if not P.cgroup_of(pid).endswith(unit):
         pytest.skip(f"systemd-run did not place the hog in {unit} (no user manager?): {P.cgroup_of(pid)!r}")
-    f = [f for f in W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, **KW).run() if f.kind == "BIG-RSS"]
+    f = _rss_of(W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, **KW).run(), pid)
     assert [x.pid for x in f] == [pid], f
     assert f"capped at 1 GB ({P.cgroup_of(pid)})" in f[0].reason and "UNCAPPED" not in f[0].reason, f[0].reason
 
@@ -457,7 +464,7 @@ def test_big_rss_flags_a_DETACHED_job_too_and_says_so(tmp_path):
         _wait_for(_rss_at_least(pid, 300), "the detached hog to touch its 300 MB", timeout=scale_timeout(30))
         assert os.getpid() not in P.ancestors(pid), "the hog is not detached from this test"
         scan = W.Scan(None, rss_gb=0.25, **KW)          # unscoped: a detached job is nobody's descendant
-        mine = [f for f in scan.big_rss() if f.pid == pid]
+        mine = _rss_of(scan.big_rss(), pid)
         assert len(mine) == 1, "a detached job over the bar was not flagged"
         assert "DETACHED" in mine[0].reason and mine[0].session is None, mine[0].reason
     finally:
