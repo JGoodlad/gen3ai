@@ -50,18 +50,19 @@ WHAT IS FLAGGED
    the Bash tool backgrounded at its 600 s timeout kept looping and every retry added one — and none
    was idle, because the target (a job queued on the GPU lock behind a live holder) was legitimately
    waiting. Never kills: which one to keep is the session's call.
-4. **BIG-RSS** — ANY process of this user whose RSS is at least ``--rss-gb``
-   (24 GB) — reported on EVERY run while it stays there — or grew by at least ``--rss-growth-gb``
-   (8 GB) since the previous run's baseline. Not only Claude-session descendants: an agent's heavy
-   job is usually ``setsid``/``systemd-run`` DETACHED, so its ppid chain reaches the user manager,
-   not ``claude`` — and the box runs out of memory whoever launched it. The line names the pid, RSS
-   (and its anonymous part), the command, the session ancestor (or DETACHED) and the NEAREST memory limit over it: ``capped at N GB (<cgroup>)``
-   for the first cgroup at or above it whose ``memory.max`` is not ``max`` (a ``mem_cap.sh`` scope,
-   the heavy slice, a raw ``systemd-run -p MemoryMax=`` scope), UNCAPPED only when none is. On 2026-09-30 three global OOM kills each took a python3
-   that had grown to 74-82 GB anonymous RSS on this 89 GB box — and, because the session's scope had
-   ``OOMPolicy=stop`` then, the whole session with it (the user manager now defaults to ``continue``,
-   so the session survives, but a global OOM still kills whatever the kernel picks). The fix is
-   ``scripts/ops/mem_cap.sh``; this is the detector for a job run without it. Never kills.
+4. **BIG-RSS** — an UNCAPPED process of this user (no ``memory.max`` below ``max`` anywhere in its
+   cgroup chain) whose RSS is at least ``--rss-gb`` (24 GB) — reported on EVERY run while it stays
+   there — or that grew by at least ``--rss-growth-gb`` (8 GB) since the previous run's baseline AND
+   sits above half the box's RAM. Not only Claude-session descendants: an agent's heavy job is usually
+   ``setsid``/``systemd-run`` DETACHED, so its ppid chain reaches the user manager, not ``claude``.
+   The line names the pid, RSS (and its anonymous part), the command and the session ancestor (or
+   DETACHED). A CAPPED process (a ``mem_cap.sh`` scope, the heavy slice, a raw ``systemd-run -p
+   MemoryMax=`` scope) is already contained, and growth alone is ordinary (compile warm-up,
+   checkpoint loads, eval), so both are **BIG-RSS-INFO**: printed by ``--status`` only, never by the
+   cron run. On 2026-09-30 three global OOM kills each took a python3 at 74-82 GB anonymous RSS on
+   this 89 GB box, and with the session's scope at ``OOMPolicy=stop`` then, the whole session with it
+   (the user manager now defaults to ``continue``). The fix is ``scripts/ops/mem_cap.sh``; this is
+   the detector for a job run without it. Never kills.
 
 STATE: ``~/.claude/jobs/idle_waiter_watchdog.json`` (``--state``), keyed by ``pid:starttime`` so a
 reused PID is a new process (CPU ticks, sleep children, and the RSS baseline). The first run only records a baseline (and reports self-deadlocks);
@@ -77,7 +78,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 # This checkout's src/ ships beside the script (scripts/ops/ -> ../../src); utils.procfs is stdlib-only.
 _SRC = Path(__file__).resolve().parent.parent.parent / "src"
@@ -91,6 +92,7 @@ MIN_INTERVAL_S = 300.0
 IDLE_FRAC = 0.01
 RSS_GB = 24.0
 RSS_GROWTH_GB = 8.0
+GROWTH_FLAG_BOX_FRAC = 0.5
 GiB = 1 << 30
 STATE_PATH = Path.home() / ".claude" / "jobs" / "idle_waiter_watchdog.json"
 CMD_WIDTH = 160
@@ -147,7 +149,9 @@ class Scan:
                  min_interval_s: float = MIN_INTERVAL_S, idle_frac: float = IDLE_FRAC,
                  scope_pid: Optional[int] = None, self_pid: Optional[int] = None,
                  dup_min_age_s: float = DUP_MIN_AGE_S, rss_gb: float = RSS_GB,
-                 rss_growth_gb: float = RSS_GROWTH_GB) -> None:
+                 rss_growth_gb: float = RSS_GROWTH_GB,
+                 limit_of: Optional[Callable[[int], Optional[Tuple[str, int]]]] = None,
+                 box_bytes: Optional[int] = None) -> None:
         self.now = time.time() if now is None else now
         self.uptime = P.uptime_s()
         self.procs = P.snapshot()
@@ -157,6 +161,9 @@ class Scan:
         self.min_age_s, self.min_interval_s, self.idle_frac = min_age_s, min_interval_s, idle_frac
         self.dup_min_age_s = dup_min_age_s
         self.rss_bytes, self.rss_growth_bytes = int(rss_gb * GiB), int(rss_growth_gb * GiB)
+        self.limit_of = limit_of or self.default_limit_of      # injectable: tests must not see the gate's cgroup
+        self.box_bytes = box_bytes if box_bytes is not None else P.mem_total_bytes()
+        self.rss_info: List[Finding] = []      # BIG-RSS-INFO: capped, or growth alone — for --status only
         self.rss: Dict[str, int] = {}          # key -> RSS bytes, for every process of this uid read
         me = os.getpid() if self_pid is None else self_pid
         self.self_chain: Set[int] = {me, *P.ancestors(me, self.procs)}   # the watchdog and its cron chain
@@ -408,7 +415,13 @@ class Scan:
 
     # ------------------------------------------------------------------------------- 4. big RSS
     def big_rss(self) -> List[Finding]:
+        """FLAG only an UNCAPPED process (no ``memory.max`` below ``max`` at any level of its cgroup
+        chain) at >= ``--rss-gb``, or one that grew >= ``--rss-growth-gb`` since the last run AND sits
+        above ``GROWTH_FLAG_BOX_FRAC`` of the box's RAM. A CAPPED process is already contained (an
+        overrun kills only its own scope), and growth alone is ordinary (compile warm-up, checkpoint
+        loads, eval) — both go to ``self.rss_info``, printed by ``--status`` only, never paged."""
         out = []
+        self.rss_info = []
         prev_rss = (self.prev or {}).get("rss", {})
         uid = os.getuid()
         for pid in self.procs:
@@ -422,36 +435,42 @@ class Scan:
             rss = P.rss_bytes(pid)
             key = self.procs[pid].key
             self.rss[key] = rss
-            why = []
-            if rss >= self.rss_bytes:
-                why.append(f"RSS {rss / GiB:.1f} GB >= the {self.rss_bytes / GiB:g} GB bar")
+            over = rss >= self.rss_bytes
             before = prev_rss.get(key)
-            if isinstance(before, int) and rss - before >= self.rss_growth_bytes:
+            grew = isinstance(before, int) and rss - before >= self.rss_growth_bytes
+            if not (over or grew):
+                continue
+            lim = self.limit_of(pid)
+            capped = lim is not None
+            why = []
+            if over:
+                why.append(f"RSS {rss / GiB:.1f} GB >= the {self.rss_bytes / GiB:g} GB bar")
+            if grew:
+                assert isinstance(before, int)
                 why.append(f"RSS grew +{(rss - before) / GiB:.1f} GB since the last run "
                            f"({before / GiB:.1f} -> {rss / GiB:.1f} GB)")
-            if not why:
-                continue
             anon = P.status_kb(pid, "RssAnon")
             anon_s = f" (anon {anon / GiB:.1f} GB)" if anon is not None else ""
             detached = "" if self.session_of(pid) is not None else "DETACHED (no Claude session in its ppid chain); "
-            out.append(self._finding("BIG-RSS", pid, (
-                f"rss={rss / GiB:.1f}GB{anon_s}; {'; '.join(why)}; {detached}{self._cap_note(pid)}; "
-                f"a global-OOM risk: run heavy jobs under scripts/ops/mem_cap.sh")))
+            cap_s = f"capped at {lim[1] / GiB:g} GB ({lim[0]})" if lim is not None else "UNCAPPED"
+            big_box = rss > GROWTH_FLAG_BOX_FRAC * self.box_bytes
+            flag = not capped and (over or (grew and big_box))
+            tail = ("a global-OOM risk: run heavy jobs under scripts/ops/mem_cap.sh" if flag else
+                    "contained by its cap" if capped else
+                    f"growth below {GROWTH_FLAG_BOX_FRAC:.0%} of box RAM ({self.box_bytes / GiB:.0f} GB) — informational")
+            f = self._finding("BIG-RSS" if flag else "BIG-RSS-INFO", pid, (
+                f"rss={rss / GiB:.1f}GB{anon_s}; {'; '.join(why)}; {detached}{cap_s}; {tail}"))
+            (out if flag else self.rss_info).append(f)
         return out
 
     @staticmethod
-    def _cap_note(pid: int) -> str:
-        """The NEAREST memory limit over ``pid``: its own cgroup's ``memory.max``, else the first
-        ancestor cgroup's below ``max``. Any limit counts — a ``mem_cap.sh`` scope, the heavy slice, a
-        raw ``systemd-run -p MemoryMax=`` scope — and UNCAPPED means every level reads ``max``."""
+    def default_limit_of(pid: int) -> Optional[Tuple[str, int]]:
+        """The NEAREST memory limit over ``pid``: ``(cgroup, bytes)`` for the first level of its cgroup
+        chain whose ``memory.max`` is not ``max`` (a ``mem_cap.sh`` scope, the heavy slice, a raw
+        ``systemd-run -p MemoryMax=`` scope), else ``None`` — UNCAPPED. An unreadable cgroup is
+        UNCAPPED too: an unknown limit must not silence a flag."""
         cg = P.cgroup_of(pid)
-        if not cg:
-            return "cgroup unknown"
-        lim = P.cgroup_memory_limit(cg)
-        if lim is None:
-            return f"UNCAPPED (cgroup {cg})"
-        where, cap = lim
-        return f"capped at {cap / GiB:g} GB ({where})"
+        return P.cgroup_memory_limit(cg) if cg else None
 
     def _finding(self, kind: str, pid: int, reason: str) -> Finding:
         s = self.session_of(pid)
@@ -510,6 +529,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="flag a session descendant whose RSS grew at least this many GB since the last run")
     ap.add_argument("--scope-pid", type=int, default=None, help="consider only this pid's subtree (tests)")
     ap.add_argument("--timing", action="store_true", help="print the run's wall time to stderr")
+    ap.add_argument("--status", action="store_true",
+                    help="READ-ONLY: print every finding PLUS the informational BIG-RSS-INFO lines (capped "
+                         "or growth-only big processes); exit 0, and never write the state file")
     return ap
 
 
@@ -521,16 +543,20 @@ def main(argv: Optional[List[str]] = None) -> int:
                     idle_frac=a.idle_frac, scope_pid=a.scope_pid, dup_min_age_s=a.dup_min_age_s,
                     rss_gb=a.rss_gb, rss_growth_gb=a.rss_growth_gb)
         findings = scan.run()
-        save_state(a.state, scan.next_state())
+        if not a.status:
+            save_state(a.state, scan.next_state())
     except Exception as e:  # a watchdog that dies quietly is the failure it exists to catch
         print(f"[idle-waiter-watchdog] ERROR: {type(e).__name__}: {e}", file=sys.stdout)
         return 2
     for f in findings:
         print(f.line())
+    if a.status:
+        for f in scan.rss_info:
+            print(f.line())
     if a.timing:
         print(f"[idle-waiter-watchdog] {len(scan.procs)} processes in {time.perf_counter() - t0:.3f} s",
               file=sys.stderr)
-    return 1 if findings else 0
+    return 0 if a.status else (1 if findings else 0)
 
 
 if __name__ == "__main__":

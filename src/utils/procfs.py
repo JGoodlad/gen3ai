@@ -216,6 +216,18 @@ def cgroup_memory_limit(cg: str, root: str = "/sys/fs/cgroup") -> Optional[Tuple
     return None
 
 
+def mem_total_bytes(path: str = f"{_PROC}/meminfo") -> int:
+    """``MemTotal`` in bytes (0 if unreadable)."""
+    try:
+        with open(path) as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    return int(line.split()[1]) * 1024
+    except (OSError, ValueError, IndexError):
+        pass
+    return 0
+
+
 def uptime_s() -> float:
     with open(f"{_PROC}/uptime") as f:
         return float(f.read().split()[0])

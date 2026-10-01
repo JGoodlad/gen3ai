@@ -360,18 +360,25 @@ time.sleep(600)
 """
 
 
-def _rss_of(findings, *pids: int):
-    """The BIG-RSS findings about THIS test's own processes only. HERMETIC: the scan also sees the
-    test process itself (``scope_pid`` is in scope) and, unscoped, the whole box — an xdist worker or
-    a sibling gate over the test's low bar is a real finding, but not one this test may assert on."""
-    return [f for f in findings if f.kind == "BIG-RSS" and f.pid in pids]
+def _rss_of(findings, *pids: int, kind: str = "BIG-RSS"):
+    """The BIG-RSS findings about THIS test's own processes only. HERMETIC: a scan scoped to the test
+    process also sees every other descendant of it, and an unscoped one the whole box — an xdist
+    worker or a sibling gate over the test's low bar is a real finding, but not one to assert on."""
+    return [f for f in findings if f.kind == kind and f.pid in pids]
 
 
 def _rss_at_least(pid: int, mb: int) -> Callable[[], bool]:
     return lambda: P.rss_bytes(pid) >= (mb << 20)
 
 
-def test_big_rss_flags_a_session_process_over_the_bar_with_pid_rss_cmd_and_session(session, tmp_path):
+# Cgroup-AGNOSTIC: the gate itself may run under mem_cap.sh or a systemd-run MemoryMax scope, which
+# every hog inherits — so the tests that need a verdict for one cap state INJECT the cap reader.
+_UNCAPPED = lambda _pid: None                                       # noqa: E731
+_CAPPED_1G = lambda _pid: ("/test.slice/job.scope", 1 << 30)        # noqa: E731
+_BOX = 64 << 30                                                     # growth stays under half of it
+
+
+def test_big_rss_flags_an_UNCAPPED_session_process_over_the_bar_and_only_reports_a_capped_one(session, tmp_path):
     hog = tmp_path / "hog.py"
     hog.write_text(_HOG)
     root = session(f"{sys.executable} {hog} 300 &\nsleep 600 &")
@@ -379,45 +386,57 @@ def test_big_rss_flags_a_session_process_over_the_bar_with_pid_rss_cmd_and_sessi
     small = _pid_of(root.pid, "sleep 600", exact=True)
     _wait_for(_rss_at_least(big, 300), "the hog to touch its 300 MB", timeout=scale_timeout(30))
 
-    findings = _rss_of(W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, **KW).run(), big, small)
-    assert [f.pid for f in findings] == [big], findings          # the small sibling is not flagged
-    f = findings[0]
+    scan = W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, limit_of=_UNCAPPED, box_bytes=_BOX, **KW)
+    flagged = _rss_of(scan.run(), big, small)
+    assert [f.pid for f in flagged] == [big], flagged             # the small sibling is not flagged
+    f = flagged[0]
     assert f.session == root.pid and str(hog) in f.cmd
-    assert "rss=0.3GB" in f.reason and ">= the 0.25 GB bar" in f.reason, f.reason
-    # cgroup-AGNOSTIC: the gate itself may run under mem_cap.sh / a systemd-run MemoryMax scope, and the
-    # hog inherits it — so the expected note is derived from the hog's REAL cgroup chain
-    lim = P.cgroup_memory_limit(P.cgroup_of(big))
-    want = "UNCAPPED" if lim is None else f"capped at {lim[1] / (1 << 30):g} GB ({lim[0]})"
-    assert want in f.reason, (want, f.reason)
+    assert "rss=0.3GB" in f.reason and ">= the 0.25 GB bar" in f.reason and "UNCAPPED" in f.reason, f.reason
     assert f"pid={big}" in f.line() and f"session={root.pid}" in f.line()
+    # CAPPED: contained already — never flagged, reported as BIG-RSS-INFO for --status
+    capped = W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, limit_of=_CAPPED_1G, box_bytes=_BOX, **KW)
+    assert not _rss_of(capped.run(), big), "a CAPPED process was flagged"
+    info = _rss_of(capped.rss_info, big, kind="BIG-RSS-INFO")
+    assert len(info) == 1 and "capped at 1 GB (/test.slice/job.scope)" in info[0].reason, capped.rss_info
     # the default 24 GB bar does not fire on it
-    assert not _rss_of(W.Scan(None, scope_pid=os.getpid(), **KW).run(), big)
-    # the CLI prints it on the FIRST run and exits 1; it never kills
-    r = subprocess.run([sys.executable, str(_SCRIPT), "--state", str(tmp_path / "s.json"), "--scope-pid",
-                        str(os.getpid()), "--rss-gb", "0.25"], capture_output=True, text=True, timeout=60)
-    assert r.returncode == 1 and f"BIG-RSS pid={big}" in r.stdout, r
+    assert not _rss_of(W.Scan(None, scope_pid=os.getpid(), limit_of=_UNCAPPED, **KW).run(), big)
+    # the CLI (real cgroup reader): --status prints it whatever its cap, exits 0 and writes no state
+    state = tmp_path / "s.json"
+    r = subprocess.run([sys.executable, str(_SCRIPT), "--state", str(state), "--scope-pid", str(os.getpid()),
+                        "--rss-gb", "0.25", "--status"], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0 and f"pid={big}" in r.stdout and "BIG-RSS" in r.stdout, r
+    assert not state.exists(), "--status wrote the state file"
     assert P.read_stat(big) is not None and P.read_stat(small) is not None
 
 
-def test_big_rss_flags_growth_since_the_last_run_below_the_absolute_bar(session, tmp_path):
+def test_big_rss_growth_alone_is_INFO_unless_uncapped_and_above_half_the_box(session, tmp_path):
     hog, go = tmp_path / "hog.py", tmp_path / "go"
     hog.write_text(_HOG)
     root = session(f"{sys.executable} {hog} 20 {go} 300")
     pid = _pid_of(root.pid, str(hog))
     _wait_for(_rss_at_least(pid, 20), "the hog's first 20 MB", timeout=scale_timeout(30))
-    first = W.Scan(None, scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
+    kw = dict(scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
+    first = W.Scan(None, limit_of=_UNCAPPED, box_bytes=_BOX, **kw)
     assert not _rss_of(first.run(), pid)
     go.write_text("1")
     _wait_for(_rss_at_least(pid, 300), "the hog to grow by 300 MB", timeout=scale_timeout(30))
     time.sleep(GAP_S)       # past --min-interval-s, so each scan becomes the next one's baseline
-    second = W.Scan(first.next_state(), scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
-    grown = _rss_of(second.run(), pid)
-    assert [f.pid for f in grown] == [pid], grown
-    assert "grew +0.3 GB since the last run" in grown[0].reason, grown[0].reason
+    base = first.next_state()
+    # growth on a box where the process is far below half the RAM: INFORMATIONAL only
+    small_share = W.Scan(base, limit_of=_UNCAPPED, box_bytes=_BOX, **kw)
+    assert not _rss_of(small_share.run(), pid), "growth alone paged"
+    info = _rss_of(small_share.rss_info, pid, kind="BIG-RSS-INFO")
+    assert len(info) == 1 and "grew +0.3 GB since the last run" in info[0].reason, small_share.rss_info
+    # uncapped AND above half of a (declared) 0.4 GB box: FLAGGED
+    big_share = W.Scan(base, limit_of=_UNCAPPED, box_bytes=400 << 20, **kw)
+    grown = _rss_of(big_share.run(), pid)
+    assert [f.pid for f in grown] == [pid] and "grew +0.3 GB" in grown[0].reason, grown
+    # the same growth while CAPPED: never flagged
+    assert not _rss_of(W.Scan(base, limit_of=_CAPPED_1G, box_bytes=400 << 20, **kw).run(), pid)
     # and with no growth since THAT run, nothing
     time.sleep(GAP_S)
-    third = W.Scan(second.next_state(), scope_pid=os.getpid(), rss_gb=100.0, rss_growth_gb=0.25, **KW)
-    assert not _rss_of(third.run(), pid)
+    third = W.Scan(big_share.next_state(), limit_of=_UNCAPPED, box_bytes=400 << 20, **kw)
+    assert not _rss_of(third.run(), pid) and not _rss_of(third.rss_info, pid, kind="BIG-RSS-INFO")
 
 
 def test_the_cap_note_reads_the_NEAREST_limit_and_calls_only_max_uncapped(tmp_path):
@@ -435,7 +454,9 @@ def test_the_cap_note_reads_the_NEAREST_limit_and_calls_only_max_uncapped(tmp_pa
 
 
 @pytest.mark.skipif(shutil.which("systemd-run") is None, reason="needs systemd-run")
-def test_big_rss_in_a_raw_systemd_run_scope_reads_capped_at_its_limit(session, tmp_path):
+def test_a_big_process_in_a_raw_systemd_run_scope_is_INFO_capped_at_its_limit(session, tmp_path):
+    """The REAL cgroup reader: a hog in its own ``systemd-run -p MemoryMax=1G`` scope (whatever cgroup
+    the gate runs in, the nested scope is the hog's nearest limit) is never flagged, only reported."""
     hog = tmp_path / "hog.py"
     hog.write_text(_HOG)
     unit = f"gen3ai-watchdogtest-{os.getpid()}.scope"
@@ -445,12 +466,13 @@ def test_big_rss_in_a_raw_systemd_run_scope_reads_capped_at_its_limit(session, t
     _wait_for(_rss_at_least(pid, 300), "the scoped hog to touch its 300 MB", timeout=scale_timeout(30))
     if not P.cgroup_of(pid).endswith(unit):
         pytest.skip(f"systemd-run did not place the hog in {unit} (no user manager?): {P.cgroup_of(pid)!r}")
-    f = _rss_of(W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, **KW).run(), pid)
-    assert [x.pid for x in f] == [pid], f
-    assert f"capped at 1 GB ({P.cgroup_of(pid)})" in f[0].reason and "UNCAPPED" not in f[0].reason, f[0].reason
+    scan = W.Scan(None, scope_pid=os.getpid(), rss_gb=0.25, box_bytes=_BOX, **KW)
+    assert not _rss_of(scan.run(), pid), "a CAPPED process was flagged"
+    info = _rss_of(scan.rss_info, pid, kind="BIG-RSS-INFO")
+    assert len(info) == 1 and f"capped at 1 GB ({P.cgroup_of(pid)})" in info[0].reason, scan.rss_info
 
 
-def test_big_rss_flags_a_DETACHED_job_too_and_says_so(tmp_path):
+def test_big_rss_flags_a_DETACHED_uncapped_job_too_and_says_so(tmp_path):
     """A ``setsid``-detached job's ppid chain reaches the user manager, not ``claude`` — the usual form
     of an agent's heavy job — and it must still be flagged, marked DETACHED."""
     hog = tmp_path / "hog.py"
@@ -463,8 +485,8 @@ def test_big_rss_flags_a_DETACHED_job_too_and_says_so(tmp_path):
     try:
         _wait_for(_rss_at_least(pid, 300), "the detached hog to touch its 300 MB", timeout=scale_timeout(30))
         assert os.getpid() not in P.ancestors(pid), "the hog is not detached from this test"
-        scan = W.Scan(None, rss_gb=0.25, **KW)          # unscoped: a detached job is nobody's descendant
-        mine = _rss_of(scan.big_rss(), pid)
+        scan = W.Scan(None, rss_gb=0.25, limit_of=_UNCAPPED, box_bytes=_BOX, **KW)   # unscoped: nobody's descendant
+        mine = _rss_of(scan.run(), pid)
         assert len(mine) == 1, "a detached job over the bar was not flagged"
         assert "DETACHED" in mine[0].reason and mine[0].session is None, mine[0].reason
     finally:
