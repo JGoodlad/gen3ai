@@ -833,6 +833,11 @@ train-graph coverage fix below closes that). **Measured** (M5 T2,
     decision's noise at 0.1 is measured (above); the backward's is not.
   - The `--compile-opponents` gate (`opponent_parity.py`) and the T2 inference service walk the
     same ladder.
+  - **Precision-keyed (`gen3_precision_keyed_parity_v1`).** The ladder's scale cap is read from
+    `parity_probe.PRECISION_BARS` at the gate's matmul precision: 0.1 at fp32, 0.05 at TF32, where
+    the 0.1 rungs drift past the TF32 log-prob rule on a correct graph (5 of 138 groups, measured on
+    T2's decision). The same table holds T2's greedy near-tie band (2x the precision's log-prob bar)
+    and is where `_FP32_TOL`'s legal log-prob bar is read from.
 - **Fail-closed.** `decision_verdicts` / `train_verdict` refuse a vacuous comparison
   (`VacuousCompileParityError`, a `CompileTrainerError`, so it is `FATAL_CONFIG`). Only the gate's
   own real-weights pass waives the check with `allow_vacuous=True`, and only after the perturbed

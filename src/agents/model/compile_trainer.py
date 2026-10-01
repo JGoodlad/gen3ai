@@ -50,8 +50,9 @@ import torch
 from agents.model.compile_gate_probe import (GradCoverageError, coverage_verdict, gate_loss,
                                              grad_parameters, per_param_grad_errors)
 from agents.model.compile_parity_fixture import ParityFixtureError, load_parity_rows
-from agents.model.parity_probe import (PERTURB_LADDER, PERTURB_SEED, VacuousParityError, fresh_reason,
-                                       perturbed_parameters, require_informative, rung_seed)
+from agents.model.parity_probe import (PERTURB_SEED, PRECISION_BARS, VacuousParityError,
+                                       fresh_reason, ladder_at, perturbed_parameters,
+                                       require_informative, rung_seed)
 
 
 class CompileTrainerError(RuntimeError):
@@ -275,7 +276,8 @@ def parity_verdict(*, eager: Tuple["torch.Tensor", "torch.Tensor"],
 # final): legal log-prob max|d| 2.7e-05, win-prob |dV| max 1.0e-06, pi_features max 6.9e-05; the
 # broken single graph read 7.39 / 0.33 / 11.8. Each bar sits >= 10x over the healthy maximum and
 # >= 1000x under the defect.
-_FP32_TOL = {"features": _MAX_NUMERIC_DRIFT, "legal_logprob": 1e-3, "value": 1e-4}
+_FP32_TOL = {"features": _MAX_NUMERIC_DRIFT, "legal_logprob": PRECISION_BARS["highest"][0],
+             "value": 1e-4}
 # The train graph: cosine between the compiled and eager gradients of the gate's own loss over the
 # extractor's parameters. Healthy after the split: 1.000000 (rel err 4.7e-07); the defect: 0.778.
 _MIN_GRAD_COSINE = 0.9999
@@ -742,7 +744,11 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
                 # saturated win-prob head) can stay vacuous on V at the first, fresh-weights rung.
                 # None ⇒ refuse: the ladder never licenses a vacuous pass.
                 tried = []
-                for scale, k in PERTURB_LADDER:
+                try:
+                    ladder = ladder_at(precision)
+                except KeyError as exc:
+                    raise CompileTrainerError(f"--compile-trainer: {exc}") from exc
+                for scale, k in ladder:
                     with perturbed_parameters(probe_module, seed=rung_seed(k), scale=scale):
                         arm = _gate_arm(model, fe, obs, legal_mask, precision)
                     why = _arm_vacuity(arm, precision, param_names)
@@ -753,8 +759,9 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
                 if p_eager_arm is None:
                     raise VacuousCompileParityError(
                         f"--compile-trainer parity: VACUOUS on the real weights ({fresh}) and on "
-                        f"every rung of the perturbation ladder {PERTURB_LADDER} ((scale, seed "
-                        f"offset); seed {PERTURB_SEED}) — {'; '.join(tried)}. Refusing: a comparison that does "
+                        f"every rung of the perturbation ladder {ladder} ((scale, seed offset) "
+                        f"at or under matmul precision {precision!r}'s scale cap; seed "
+                        f"{PERTURB_SEED}) — {'; '.join(tried)}. Refusing: a comparison that does "
                         f"not vary cannot tell a miscompile from a match.")
 
             compiled = torch.compile(original)
@@ -822,7 +829,7 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
         _say(f"[CompileTrainer] FRESH weights ({fresh} on the fixture — vacuous on their own): the "
              f"parity gate ALSO ran on a seeded perturbation of every policy parameter (seed "
              f"{p_seed}, scale {p_scale:g} — the first informative (scale, seed offset) rung of "
-             f"{PERTURB_LADDER}; restored bit-exactly, private RNG)")
+             f"{ladder_at(precision)}; restored bit-exactly, private RNG)")
     # Said on EVERY passing launch (a failure says it in the raised message): which rules ran, at
     # which precision, and the numbers — so a TF32 run records how close to its bar it sat.
     _say(f"[CompileTrainer] parity PASS on {batch} REAL obs rows — " + " | ".join(rules))

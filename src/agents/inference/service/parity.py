@@ -11,9 +11,12 @@ Three further checks the compile gate does not need:
 
 * the MASK CONTRACT: every illegal entry is exactly ``-inf`` and every legal one finite;
 * GREEDY: the served argmax equals eager's on every row whose eager top-2 legal margin exceeds the
-  log-prob bar. Rows inside the bar are NEAR-TIES (real and fresh policies both have EXACT ties,
-  measured) — they are counted and reported, and the served action must still be one of eager's
-  near-top actions, so a tie can never hide a wrong choice;
+  NEAR-TIE BAND — 2x the legal log-prob bar AT THE PRECISION THE GATE RUNS AT
+  (``parity_probe.tie_band``, gen3_precision_keyed_parity_v1: one fp32 / TF32 table). Rows inside
+  the band are NEAR-TIES (real and fresh policies both have EXACT ties, measured; under TF32 a
+  margin of a few 1e-3 flips legitimately) — they are counted and reported, and the served action
+  must still be one of eager's near-top actions, so a tie can never hide a wrong choice. An
+  unmeasured precision is REFUSED;
 * PADDING: callers run every bucket full AND partially filled (pad rows are discarded).
 """
 from __future__ import annotations
@@ -26,9 +29,8 @@ import torch
 
 from agents.inference.service.decision import policy_reference
 from agents.inference.service.spec import ParityFailure, VacuousParity
+from agents.model.parity_probe import tie_band
 
-#: The greedy rule's near-tie band = the legal log-prob bar at fp32.
-_TIE_BAND = 1e-3
 
 
 @dataclass
@@ -86,6 +88,10 @@ def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
 
     s_logp, s_value, s_greedy = (t.detach() for t in served)
     precision = torch.get_float32_matmul_precision()
+    try:
+        band = tie_band(precision)
+    except KeyError as exc:
+        raise ParityFailure(f"{where}: {exc}") from exc
     e_logp, e_value = policy_reference(policy, obs, mask)
     reference: Optional[Dict[str, torch.Tensor]] = None
     if precision != "highest":
@@ -111,14 +117,15 @@ def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
     top2 = e_logp.topk(min(2, e_logp.shape[-1]), dim=-1).values
     margin = torch.where(torch.isfinite(top2[:, 1]), top2[:, 0] - top2[:, 1],
                          torch.full_like(top2[:, 0], float("inf")))
-    decisive = margin > _TIE_BAND
+    decisive = margin > band
     e_greedy = e_logp.argmax(-1)
     bad = decisive & (s_greedy != e_greedy)
     if bool(bad.any()):
         raise ParityFailure(f"{where}: greedy action differs from eager on {int(bad.sum())} "
-                            f"decisive rows (top-2 margin > {_TIE_BAND})")
+                            f"decisive rows (top-2 margin > the {precision!r} near-tie band "
+                            f"{band:g})")
     chosen = e_logp.gather(1, s_greedy.view(-1, 1)).squeeze(1)
-    off_top = (~decisive) & (chosen < top2[:, 0] - _TIE_BAND)
+    off_top = (~decisive) & (chosen < top2[:, 0] - band)
     if bool(off_top.any()):
         raise ParityFailure(f"{where}: on {int(off_top.sum())} near-tie rows the served action is "
                             "not one of eager's near-top actions")

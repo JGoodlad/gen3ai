@@ -195,13 +195,50 @@ That last row is the declared limit. A critic saturated beyond what scale 0.1 mo
 never passed and never judged on an ill-conditioned rung. The real collapse that started this
 (fresh3) resolves at the third rung.
 
-**TF32 (`--matmul-precision high`) — a SEPARATE, pre-existing defect, unit 2.** With the same
-setup, a FRESH production policy is refused at T2 startup under TF32. The concurrent gate at rung
-(0.05, +0) reports "greedy action differs on 1 decisive row". The greedy rule's tie band is the fp32
-log-prob bar (1e-3) at every precision. But at TF32 the healthy |Δ log π| is already 6.5e-4 …
-7.8e-3 at 0.05, and eager's own TF32 error is the same size. So a row with a margin of a few 1e-3
-can flip legitimately. The default `--matmul-precision highest` passes. The precision-keyed tie
-band is the next unit.
+**TF32 (`--matmul-precision high`): the precision-keyed tie band and ladder cap
+(gen3_precision_keyed_parity_v1, 2026-09-30).** With the same setup, a FRESH production policy was
+REFUSED at T2 startup under TF32. The concurrent gate reported "greedy action differs on 1 decisive
+row" at margin 3.5e-3. The greedy rule's band was the fp32 log-prob bar (1e-3) at every precision,
+and was the bar itself, not 2x it (the TECH_DEBT row). The default `highest` always passed.
+
+Calibration: T2's served decision, compiled `decide` at TF32 vs eager at TF32, per row, on the
+gate's own fixture rows. Setup: RTX 3080 Ti, buckets 8 / 48; raw rows in
+`~/gen3ai_archive/vacuous_parity/gpu_tf32.jsonl`.
+
+| weights | rows | max \|Δ log π\| | p99 |
+|---|---|---|---|
+| 4 trained checkpoints (`ai_v14_01/05/06/07` finals), real weights | 224 | **1.4e-2** | 1.3e-2 |
+| every 0.05 rung (fresh 0 / 3, collapsed −9, fresh3's checkpoint) | 1,792 | 9.5e-4 | 6.4e-4 |
+| every 0.1 rung | 1,792 | **0.11** | 7.5e-3 |
+| Lane K, K9: the learner forward at TF32, 147,456 rollout rows | — | **0.040** | p99.9 1.17e-3 |
+
+- **The 0.1 rungs are a second TF32 defect.** In 5 of 138 groups the compiled graph's error against
+  fp32 is 6–24x eager's own TF32 error. The TF32 log-prob rule (≤ 4x) refuses that, so a CORRECT
+  graph is refused there.
+- **The fix is ONE table, `parity_probe.PRECISION_BARS`, keyed by
+  `torch.get_float32_matmul_precision()`.** The tie band is 2x the bar.
+
+| precision | log-prob bar | tie band | ladder scale cap |
+|---|---|---|---|
+| `highest` (fp32) | 1e-3 (the compile gate's, read from the table) | 2e-3 | 0.1 |
+| `high` (TF32) | 0.071 = 1.75 x 0.040 (the larger healthy max; K9's multiple) | 0.142 | 0.05 |
+
+- An unmeasured precision (`medium`) is REFUSED.
+- The service, the learner compile gate and the judge all read this table.
+- At TF32, a collapsed critic that needs a 0.1 rung is REFUSED, naming the skipped rungs. Example:
+  the −9 fixture, which fp32 judges at (0.1, +3).
+- The greedy check stays secondary at TF32. The TF32 log-prob rule (≤ 4x eager's own error) is
+  unchanged and still judges every row.
+
+**Confirmed end to end (2026-09-30, GPU).** A fresh `--arch production --env-core rust
+--matmul-precision high` launcher run (`~/gen3ai_archive/vacuous_parity/gpu_smoke_tf32`, 16 envs,
+throwaway):
+- T2 came up in 271.8 s: 28 slots × buckets (8, 16), graph backend, every slot × bucket and the
+  concurrent gate judged under TF32.
+- The eval core came up.
+- The learner compile gate PASSED under TF32 (features e_comp 6.1e-3 ≤ 4 x 2.3e-2 + 1e-4).
+Before this change, the same TF32 startup was refused by the greedy check. The run was bounded at
+1150 s inside the GPU lock, so no update was reached.
 
 **The fix** (program doc T2 section, "FLAT weights"; Decision record 2026-09-30):
 - The DECLARED ladder `ServiceSpec.perturb_ladder` (default `parity_probe.PERTURB_LADDER`). The
