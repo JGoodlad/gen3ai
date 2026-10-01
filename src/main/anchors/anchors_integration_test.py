@@ -1,4 +1,5 @@
-"""THE ONE END-TO-END TEST: two real gen3ou games against `metamon:SmallRL` — on BOTH transports.
+"""THE END-TO-END TESTS: real gen3ou games against `metamon:SmallRL` — a capped one-game SMOKE in the
+routine gate, and the full two-game read on BOTH transports in the `slow` tier.
 
 Everything else in this package is exercised in isolation — the plan, the schema, the watchdog, the
 refusals. None of that proves the pieces FIT: that the server — the RUST websocket front end by
@@ -6,12 +7,19 @@ default, the Node server under `--server node` — starts on a 9XXX port and sto
 our vendored fork both accept the same team files, that a regime set in one process is verified in
 the other, and that a row lands carrying its regime. Two games is the smallest thing that does.
 
-**Tier.** Marked ``integration``, not ``slow``, as a deliberate choice: it is ~30-60 s on this box
-(``SmallRL`` is 14 ms/move and 2.3-3.0 s/game, plus one model load), and the failure it catches —
-the pieces not fitting — is exactly the kind that a routine gate should see. It is NOT ``sim`` (no
-in-process bridge) and NOT ``e2e`` (no server on :8000; it starts and stops its own on 9500-9599).
+**Tiers — the split (2026-09-30).** The failure these catch — the pieces not fitting — is exactly the
+kind a routine gate should see, so the ROUTINE gate keeps one: ``test_one_capped_real_game_...``, ONE
+game on the default ``rust`` transport with our client's forfeit turn LOWERED to
+:data:`SMOKE_FORFEIT_TURN` (``--forfeit-turn-limit``, a deliberately shorter series — never a strength
+read). It still starts the server and stops it by PID, brings the peer online before the challenger,
+plays a real game to a result row carrying its regime and its limit, and verifies the regime on both
+sides. The full two-game read (one game per challenge ROLE, played to its natural end) is ``slow`` on
+both transports, its verdict banked in ``designs/ops/slow_tier_status.json``: it measured 29.9-46.2 s
+in the routine gate and an ENFORCED quiet-box budget failure at 36.5 s (2026-09-30), where ~24 s of it
+is waiting on the games and the process startups. Neither is ``sim`` (no in-process bridge) nor
+``e2e`` (no server on :8000; each starts and stops its own on 9500-9599).
 
-**Both transports, one test, parametrized.** (`node` is tiered `slow` — see the parametrize.) The default (`rust`) is the one the owner's
+**Both transports for the full read, parametrized.** The default (`rust`) is the one the owner's
 direction put in the hot path and the one every read now takes unless it opts out; `node` is kept
 green because it is the reference a transport differential is taken against, and a reference
 nobody runs rots. The Node case additionally needs `node` on PATH and the submodule's build
@@ -45,6 +53,10 @@ pytestmark = pytest.mark.integration
 
 #: Two games: one per challenge role, so the role balancing is exercised rather than asserted.
 N_GAMES = 2
+
+#: The routine smoke's forfeit turn: our client forfeits at turn 10, so the one game is bounded
+#: whatever the untrained policy does (an observed natural game ran 26 turns; the trainer's limit is 250).
+SMOKE_FORFEIT_TURN = 10
 
 #: The step the freshly built checkpoint DECLARES in its zip — non-zero and distinctive, so the
 #: row's `model_step` is checked against a value the tool could only have read from our file.
@@ -121,26 +133,19 @@ def _skip_reason(server: str = "rust") -> "str | None":
 
 
 
-#: `node` is `slow` (tier declared 2026-09-30): 26.9-27.9 s alone and 30.3 / 31.5 s inside the routine
-#: gate at `-n 2` on a quiet box, against the 30 s default-tier budget — it tipped the routine gate red
-#: at random. The slow tier still runs it and banks its verdict. `rust` (~26 s) stays routine.
-@pytest.mark.parametrize("server", ["rust", pytest.param("node", marks=pytest.mark.slow)])
-def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str) -> None:
-    """The whole tool, end to end, on the smallest sample that still exercises every seam — once
-    per transport, because "it works" on one of them says nothing about the other."""
+def _read(tmp_path: Path, server: str, n_games: int, *extra: str):
+    """One anchor read through the real CLI; returns (rc, summary, rows, out)."""
     reason = _skip_reason(server)
     if reason:
         pytest.skip(reason)
-
     model = _save_current_generation_checkpoint(tmp_path / "current_gen_run")
     out = tmp_path / "out"
-
     rc = anchors_main([
         "--model", model,
         "--opponent", "metamon:SmallRL",
         "--regime", "greedy",
         "--teamset", "away",
-        "--games", str(N_GAMES),
+        "--games", str(n_games),
         "--device", "cpu",
         "--out", str(out),
         # Generous, because the box normally carries a live training arm; a TIMEOUT is never a
@@ -153,26 +158,24 @@ def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str) -> 
         "--username", f"Gen3AIit{server}",
         "--peer-username", f"MetaIt{server}",
         "--server", server,
+        *extra,
     ])
-
     summary = json.loads((out / "summary.json").read_text())
     rows = [json.loads(line) for line in (out / "games.jsonl").read_text().splitlines()]
-
     # A named failure is a legitimate outcome of a contended box — but it must be NAMED, and the
     # games that did finish must still be here. Silence is the one thing this tool may not produce.
     if rc != 0:
         pytest.fail(
             f"anchor read returned {rc}; failure={summary.get('failure')}; "
-            f"{len(rows)} of {N_GAMES} games completed. "
+            f"{len(rows)} of {n_games} games completed. "
             f"peer log: {sorted(p.name for p in out.rglob('peer_*.log'))}")
+    return rc, summary, rows, out
 
+
+def _assert_the_pieces_fit(summary: dict, rows: list, out: Path, server: str, n_games: int) -> None:
     assert summary["status"] == "OK"
-    assert summary["n"] == N_GAMES == len(rows)
-    assert summary["wins"] + summary["losses"] + summary["ties"] == N_GAMES
-
-    # ROLE BALANCE: one game each way, which is what makes two the smallest useful n.
-    assert summary["by_half"]["ours_challenge"]["n"] == 1
-    assert summary["by_half"]["peer_challenge"]["n"] == 1
+    assert summary["n"] == n_games == len(rows)
+    assert summary["wins"] + summary["losses"] + summary["ties"] == n_games
 
     # THE REGIME, VERIFIED ON BOTH SIDES rather than assumed.
     assert summary["cell"]["our_regime"] == "greedy"
@@ -214,6 +217,45 @@ def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str) -> 
         "the other transport's log is here — this read started a server it was not asked for")
     port = summary["cell"]["server_uri"].split(":")[2].split("/")[0]
     assert 9500 <= int(port) <= 9599
+
+
+def test_one_capped_real_game_against_metamon_smallrl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """THE ROUTINE SMOKE: the whole tool end to end on the default transport, one game, our forfeit
+    turn lowered so the game is bounded. It proves the path works, it measures nothing.
+
+    The lowered turn makes OUR side forfeit, which is hazard H5's trigger (EXTERNAL_ANCHORS_SOP.md:
+    Metamon's long-tail handler can recurse to a RecursionError after the battle ended). Measured
+    2026-09-30: 1 of 3 capped reads ended with `peer_clean` False and every row intact. So this smoke
+    asserts the ROWS, the regime and the server lifecycle — never `peer_clean`, which H16 split out
+    precisely so a peer that dies after its games does not void them."""
+    # HERMETIC: the Metamon peer otherwise asks the Hugging Face Hub about its (already cached) weights
+    # on every start — a network dependency in the routine gate, and seconds of its wall. The peer
+    # inherits this environment; the skip guard above has already required the weight cache.
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    _rc, summary, rows, out = _read(tmp_path, "rust", 1,
+                                    "--forfeit-turn-limit", str(SMOKE_FORFEIT_TURN))
+    _assert_the_pieces_fit(summary, rows, out, "rust", 1)
+    [row] = rows
+    # the lowered limit is STAMPED on the row (a capped series is a different measurement) and held
+    assert row["forfeit_turn_limit"] == SMOKE_FORFEIT_TURN, row["forfeit_turn_limit"]
+    assert row["turns"] <= SMOKE_FORFEIT_TURN + 1, row["turns"]
+    assert sum(h["n"] for h in summary["by_half"].values()) == 1
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("server", ["rust", "node"])
+def test_two_real_games_against_metamon_smallrl(tmp_path: Path, server: str) -> None:
+    """The whole tool, end to end, on the smallest sample that exercises every seam — one game per
+    challenge role, played to its natural end at the trainer's own forfeit limit — once per
+    transport, because "it works" on one of them says nothing about the other. ``slow`` on both
+    (29.9-46.2 s each, 2026-09-30); the routine gate runs the capped one-game smoke above."""
+    _rc, summary, rows, out = _read(tmp_path, server, N_GAMES)
+    _assert_the_pieces_fit(summary, rows, out, server, N_GAMES)
+    # ROLE BALANCE: one game each way, which is what makes two the smallest useful n.
+    assert summary["by_half"]["ours_challenge"]["n"] == 1
+    assert summary["by_half"]["peer_challenge"]["n"] == 1
+    from main.play import DEFAULT_FORFEIT_TURN_LIMIT
+    assert all(row["forfeit_turn_limit"] == DEFAULT_FORFEIT_TURN_LIMIT for row in rows)
 
 
 def test_the_skip_reason_names_a_specific_missing_thing_when_it_fires() -> None:

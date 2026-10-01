@@ -690,3 +690,30 @@ def test_each_side_of_a_pair_cell_is_read_by_its_OWN_adapter(cfg) -> None:
                             "--dry-run"), cfg)
     theirs, ours = runner_mod.pair_adapters(plan)
     assert theirs is peers_mod.PEERS["foulplay"] and ours is peers_mod.PEERS["metamon"]
+
+
+# -------------------------------------------------------------------------------- --forfeit-turn-limit
+def test_the_forfeit_turn_defaults_to_the_trainers_and_may_only_be_LOWERED(cfg) -> None:
+    """A websocket game ends where a training episode ends (root CLAUDE.md, LADDER); a deliberately
+    shorter series — the routine smoke — may lower it, and the lowered limit reaches main.play and
+    the plan (every row stamps `forfeit_turn_limit` from it)."""
+    from main.play import DEFAULT_FORFEIT_TURN_LIMIT
+
+    default = build_plan(_args("--dry-run"), cfg)
+    assert default.forfeit_turn_limit == DEFAULT_FORFEIT_TURN_LIMIT
+    assert "the TRAINER's number" in render_plan(default, cfg)
+    low = build_plan(_args("--forfeit-turn-limit", "10", "--dry-run"), cfg)
+    assert low.forfeit_turn_limit == 10 and "LOWERED" in render_plan(low, cfg)
+    ours = runner_mod.our_argv(low, "accept", 2)
+    assert ours[ours.index("--forfeit-turn-limit") + 1] == "10"
+    for bad in (str(DEFAULT_FORFEIT_TURN_LIMIT + 1), "0", "-3"):
+        with pytest.raises(SystemExit):
+            build_plan(_args("--forfeit-turn-limit", bad, "--dry-run"), cfg)
+
+
+def test_a_lowered_forfeit_turn_is_refused_for_a_peer_our_side(cfg) -> None:
+    """A PEER our-side runs no client of ours, so nothing of ours forfeits: the flag would be stamped
+    and never applied — refused instead."""
+    with pytest.raises(SystemExit):
+        build_plan(_args("--our-side", "metamon:SmallRL", "--opponent", "metamon:Kakuna",
+                         "--forfeit-turn-limit", "10", "--dry-run"), cfg)

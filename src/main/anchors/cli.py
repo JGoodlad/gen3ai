@@ -168,6 +168,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "away = Metamon's own 20-team `competitive` gen3ou set. Report BOTH.")
     p.add_argument("--games", type=int, default=100,
                    help="total games, split evenly across the two challenge roles")
+    p.add_argument("--forfeit-turn-limit", dest="forfeit_turn_limit", type=int, default=None,
+                   help="LOWER our client's forfeit turn (default: the trainer's own, "
+                        "main.play.DEFAULT_FORFEIT_TURN_LIMIT) for a deliberately SHORTER series — a "
+                        "smoke, never a strength read. Raising it is refused (a game must end where a "
+                        "training episode ends); every row stamps the limit it ran under")
     p.add_argument("--out", default=None,
                    help="directory for games.jsonl + summary.json + logs. 🚨 There is NO relative "
                         "default: with --out omitted the read goes to a run-scoped directory "
@@ -450,6 +455,16 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
 
     from main.play import DEFAULT_FORFEIT_TURN_LIMIT
 
+    forfeit_limit = DEFAULT_FORFEIT_TURN_LIMIT
+    if args.forfeit_turn_limit is not None:
+        if our_side.startswith("metamon:"):
+            raise SystemExit("--forfeit-turn-limit: a PEER our-side runs no client of ours, so nothing "
+                             "of ours forfeits — the flag would be stamped and never applied")
+        if not 1 <= args.forfeit_turn_limit <= DEFAULT_FORFEIT_TURN_LIMIT:
+            raise SystemExit(f"--forfeit-turn-limit {args.forfeit_turn_limit}: only LOWERING the "
+                             f"trainer's {DEFAULT_FORFEIT_TURN_LIMIT} is allowed (1..{DEFAULT_FORFEIT_TURN_LIMIT})")
+        forfeit_limit = args.forfeit_turn_limit
+
     # 🚨 NEVER the calling directory. See `default_out_root`.
     out_dir = Path(args.out).expanduser() if args.out else default_out_dir(args)
     return runner_mod.SeriesPlan(
@@ -486,7 +501,7 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         search_parallelism=args.search_parallelism if kind == "foulplay" else None,
         # 🚨 A PEER our-side forfeits NOTHING: the 250-turn rule lives in `main.play`, which a
         # pair cell never runs. 0 = no forfeit limit; the sim's 1000-turn TIE is the only cap.
-        forfeit_turn_limit=(0 if our_side.startswith("metamon:") else DEFAULT_FORFEIT_TURN_LIMIT),
+        forfeit_turn_limit=(0 if our_side.startswith("metamon:") else forfeit_limit),
         connect_timeout_s=args.connect_timeout,
         peer_ready_timeout_s=args.peer_ready_timeout,
         first_game_timeout_s=args.first_game_timeout,
@@ -526,7 +541,9 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
         f"  showdown pin      {plan.showdown_pin}",
         f"  usernames         ours={plan.our_username}<N> peer={plan.peer_username}<N>  "
         "(a per-half suffix; a name still held by the previous half logs in as a GUEST)",
-        (f"  forfeit limit     {plan.forfeit_turn_limit} turns (the TRAINER's number)"
+        (f"  forfeit limit     {plan.forfeit_turn_limit} turns "
+         + ("(the TRAINER's number)" if plan.forfeit_turn_limit == _trainer_forfeit_limit() else
+            "(LOWERED by --forfeit-turn-limit: a SHORTER series — a smoke, not a strength read)")
          if plan.forfeit_turn_limit else
          "  forfeit limit     NONE — no client of ours plays, so nothing forfeits at 250; the "
          "sim's 1000-turn TIE is the only cap (set --progress-timeout for a long stall)"),
@@ -574,6 +591,11 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
             f"    peer teams: {teams}",
         ]
     return "\n".join(lines)
+
+
+def _trainer_forfeit_limit() -> int:
+    from main.play import DEFAULT_FORFEIT_TURN_LIMIT
+    return DEFAULT_FORFEIT_TURN_LIMIT
 
 
 def main(argv: Optional[List[str]] = None) -> int:
