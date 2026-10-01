@@ -287,8 +287,11 @@ alone — the exact position v8's original +5.42 occupied for months. [ledger 20
 
 **G5** (`ai_v9_195/196/197_G5PLAIN{A,B,C}_0906`) is the same cell on R2ACTION: **−1.92pp
 [−3.98, +0.46]**, own replicate floor **1.00pp** ⇒ **NOT DETECTED**, point estimate NEGATIVE.
-Beside it sit M9's two draws on rev-1 (−0.37 and −4.56). Three draws, two gen-era parents, two
-depths — **no gen-era parent has been observed to gain from ordinary continued training.**
+Beside it sit M9's two draws on rev-1 (−0.37 `R2PLAIN`; −4.56 `R2CTRL`, which started POOLLESS —
+~31% of its leg bot-only, then a 1–2-snapshot own pool vs the siblings' inherited 11 — so it is not
+"ordinary" continuation [ledger 2026-09-30 · *AUDIT · BOTS-ONLY CONTROLS + POOLLESS FORKS*]; the
+sentence below rests on the two pool-matched draws, −0.37 and −1.92). Three draws, two gen-era
+parents, two depths — **no gen-era parent has been observed to gain from ordinary continued training.**
 [ledger 2026-09-06 · *G5 RESULT*]
 
 🚨 **ERA QUALIFIER (2026-09-20, `wcont_control_read_2026-09-20/`): the 75M WIN-PROB parent (arm W) DOES gain from ordinary
@@ -673,7 +676,7 @@ Floors currently in evidence — always quoted with the regime they were measure
 
 | floor | regime | source |
 |---|---|---|
-| 4.19pp | no-fold, one pair | the original bar |
+| 4.19pp | no-fold, one pair — 🚨 NOT pool-matched (`R2CTRL` started poolless, `R2PLAIN` seeded) | the original bar; likely OVERSTATES same-recipe variance, so verdicts within it were conservative; superseded by the pool-matched floors below [ledger 2026-09-30 · *AUDIT · BOTS-ONLY CONTROLS + POOLLESS FORKS*] |
 | 4.27pp [+1.23, +6.92] | **controller-live** folds, pooled over 3 depths of ONE pair | N1/N2 |
 | 1.66pp | **frozen-dose** folds, six draws | 2×2 |
 | 2.46pp | K=6 cell's own three draws | K=6 |
@@ -1065,7 +1068,11 @@ draws, five of six within floor — the lever is non-monotone, flat from 0.25 to
 control's 0.5 sits on a plateau and the confirmed effect is one-sided damage above it [ledger 2026-09-13 ·
 *VERDICT · vf025 NOT DETECTED*]. Nothing here moves strength at 10M. A sixteenth arm, `ctrl10M_shaped` (scalar-MSE critic on the same terminal-only signal), never crossed into
 self-play (0.77 vs bots at 10M; ~102-turn early episodes) and is VOID for the conditioning row, and its dense sibling
-`ctrl10M_shaped_dense` never crossed either (0.53 vs bots at 10M) and breached G7. **Neither is a verdict on the
+`ctrl10M_shaped_dense` never crossed either (0.53 vs bots at 10M) and breached G7. (Never crossing
+means it trained against the 8 bots for all 10M — the 0.55 gate is endogenous, so that regime is a
+consequence of slow learning, and the dynamics gap is already present at 2M where every arm was
+bot-only: 0.148 vs 0.37–0.61. Since `gen3_supply_guard_v2` such a run stops `FATAL_SUPPLY` at its
+third eval cycle [ledger 2026-09-30 · *AUDIT · BOTS-ONLY CONTROLS + POOLLESS FORKS*].) **Neither is a verdict on the
 shaped head: the era's own shaped fresh run `ai_v9_29_rev1` crossed at 2,000,016.** The failure belongs to the
 ladder's argv with the critic mode flipped — SIX resolved settings differ from the era's shaped critic (PopArt OFF,
 no distributional readout, a 20× heavier auxiliary head, gamma 0.9999, the head's role, the critic itself), and an

@@ -21680,3 +21680,70 @@ Record: `designs/research_state/measurements/ext_first_team_audit/` (README, PRE
 - **Class fix, not built here.** A STOP/FATAL row when a cf coefficient is live and `labels_ingested_total` is still 0 after N cycles, or have the launcher own the producer.
 
 Tag: **BOUNDARY (`a7627744`) · PRE-DATA (0 rows dropped, 3 consuming runs, all claims UNAFFECTED) · FINDING: `cflabels` arm's lever never engaged — its reads re-labelled "lever UNTESTED"**. Evidence: `designs/research_state/measurements/cf_label_inode_audit/` (`README.md`, `audit.py`, `audit.json`).
+
+### 2026-09-30 · AUDIT · **BOTS-ONLY CONTROLS + POOLLESS FORKS. `ai_v12_27_ladder_ctrl10M_shaped_dense` trained against the 8 bots for all 10,027,008 steps, as banked on 2026-09-12. The cause was the 0.55 self-play GATE never opening, not a supply defect, and no claim or decision moves. SEPARATE FINDING: `ai_v9_58_R2CTRL_0827` started POOLLESS while every R2 sibling inherited rev-1's pool. It was never a pool-matched replicate of `R2PLAIN`, so the 4.19pp / 3.70pp "replicate floor" and the R2-CTRL −5.8pp anomaly carry an unnamed opponent-regime confound. From `gen3_supply_guard_v2` a `--self-play` run whose pool is still empty after 3 eval cycles exits FATAL_SUPPLY.**
+
+**The arm.** Read-only, from its own artifacts.
+- `eval/pool_snapshot_count`, `train/selfplay_fraction`, `train/nonbot_fraction` and `train/stable_fraction` are 0 at all five cycles.
+- `snapshots/` holds no zip, and `summary.json` has `seeded:false`.
+- Every cycle prints `Pool 0.0% … SelfPlay 0%` (e.g. `step 2,000,016: Bots 14.8%`).
+- The training pool was the 8 bots.
+
+**Mechanism.** The pool seeds only when `win_rate_vs_bots` ≥ `SELF_PLAY_START` 0.55 (`selfplay_callback.py`, `heuristic_fraction`, at pin `f3502568`).
+- Bots read 0.148 / 0.253 / 0.364 / 0.478 / **0.531**, so the gate never opened.
+- The bots-only regime was therefore ENDOGENOUS (the arm learned slowly), and it was printed at every cycle. "Silent" overstates it: it was unthresholded, not unprinted.
+- `ai_v12_26_ladder_ctrl10M_shaped` is effectively the same: bots 0.004 → 0.774, seeded only at its final cycle (10,000,032), about 0.02M self-play steps.
+- All 19 win-prob ladder arms crossed between 2.0M and 4.13M, then ran at about 0.9 pool share (my computation from the per-cycle fractions: about 3.8–5.7M self-play steps each).
+
+**Claims (10 audited).**
+
+UNAFFECTED, because each claim already IS the bots-only state:
+- the three VOID-control entries (2026-09-12);
+- UNDERSTANDING's shaped-control paragraph;
+- the flywheel registration §1.1;
+- the 15-arm strength table (it never held either shaped arm);
+- the G7 measurement on `_dense` (its own first two cycles, also bots-only);
+- the entropy record;
+- the pivot memory.
+
+The dynamics contrast (0.531 vs 0.84–0.91 vs bots at 10M) is **AFFECTED-BOUNDED**.
+- After about 4M the control trained on the very distribution it is scored on, while the win-prob arms spent about 90% of their games against themselves. That favours the control, so the 10M gap if anything UNDERSTATES its deficit.
+- The deficit is already present in the window where every arm was bot-only: **0.148 vs 0.37–0.61 at 2M**.
+- Its size stays confounded by the three resolved-flag differences banked on 09-12.
+
+AFFECTED-UNKNOWN, for attribution only:
+- "The G7 breach is not explained by the composition alone" (2026-09-14) gains a second unnamed difference: opponent mix. `_dense` was 100% bots, a quarter of them stallers; arm S was about 90% self-play. The sentence's conclusion stands.
+
+**Decisions.** None rests on the bots-only state except the one it supports: arm S = the era's shaped configuration, which arm S's own crossing at 4,128,768 confirmed.
+- The 09-08 win-prob direction predates `_dense`.
+- The 09-12 pivot rests on the 15-arm ladder, which excludes both shaped controls.
+- `production_config.json`, `baselines.json`, `EXPERIMENT_BACKLOG.md` and `designs/endstate/` cite neither.
+
+**Poolless forks.** Scan: lineage `fork_step`, plus snapshot steps, plus the post-fork `pool_snapshot_count`.
+- 19 self-play forks before `f95137cd` (the 09-02 fork auto-seed) started with an empty pool, plus `v8_15` and the nine `v8rep_*`.
+- They played bots until their first eval cycle, then against a pool of 1–2 of their own snapshots.
+- Already banked: TD-aux (2026-08-18) and v8_14 / v8rep (era fidelity).
+
+Not banked until now:
+- **`ai_v9_58_R2CTRL_0827`.** First snapshot `snapshot_000026000016`, 2 zips. `R2PLAIN` and `R2ACTION` both start at `snapshot_000002000016` (rev-1's inherited 11; 14 zips today). Its 26M cycle prints `9 bots + 0 sentinels … Pool 0.0%`, so about 0.93M of its roughly 3.0M leg (31%) was bot-only, then a pool of 1–2.
+  - "R2CTRL is a REPLICATE of R2PLAIN" is false at the opponent level.
+  - The untaught floor 4.19pp, the taught floor 3.70pp, and "a no-distillation arm presents as a fold that robbed" (−4.56pp) are **AFFECTED-UNKNOWN in size**.
+  - Their likely direction, if a poolless start costs strength as R2CTRL's broad −5.8pp decline suggests, is to OVERSTATE same-recipe variance. Verdicts graded WITHIN FLOOR against 4.19 were then conservative. Fold verdicts were later re-graded against the pool-matched N1/N2 floor.
+  - The R2-CTRL −5.8pp anomaly (2026-08-27) gains a concrete candidate account: the poolless start. Inference, NOT measured.
+- **`ai_v9_34_tick1_0824`** (about 0.93M bots-only, then a pool growing 1 → 4 vs the parent's 11) and **`ai_v9_37_tick1_dosext_0825`**: the tick-1 INFERIOR verdict's −97.8 Elo and +11.8pp self-exploitability carry the thin self-pool as an unnamed confound beside the fold. Direction safe; size AFFECTED-UNKNOWN.
+- **`ai_v9_82_REFOLD1_0830`**: about 1.89M of 3.9M (about 47%) bots-only, then a pool of 1. Its taught-side null is AFFECTED-UNKNOWN.
+- The bots-only durations for tick-1 and REFOLD1 are INFERRED from the pinned code plus the first-cycle pool count; their child logs are truncated. Only R2CTRL's is seen directly.
+
+**Consequence.**
+- No decision reverses. Rev-3's bar was already made control-free (2026-08-27).
+- "No gen-era parent gains from continuation" stands on the two pool-matched draws (R2PLAIN −0.37, G5 −1.92).
+- UNDERSTANDING §2.2 and §3.3's floor table are qualified.
+
+**The class fix (`gen3_supply_guard_v2`, `designs/training/supply_guards.md`).** ANY `--self-play` run whose pool is still EMPTY after 3 consecutive eval cycles (failed cycles included) now exits `FATAL_SUPPLY` (5).
+- The streak is persisted per run in the pool's `summary.json`.
+- The FATAL names the seeding gate and the remedies.
+- `--supply-starve-cycles self_play_pool=0` turns it off, announced.
+
+Under it, `_dense` and `ctrl10M_shaped` would have stopped at their 6M cycle instead of finishing as bot runs under a self-play argv. A slow control whose bots-only regime IS the experiment must now say so.
+
+Tag: **AUDIT · ai_v12_27 bots-only = the 0.55 GATE (endogenous), banked 09-12, 0 claims move · FINDING: R2CTRL poolless, so the 4.19pp floor is not pool-matched and the R2-CTRL anomaly has a candidate account · tick-1 / REFOLD1 carry a thin-pool confound · BOUNDARY: `gen3_supply_guard_v2` makes an empty pool after 3 cycles FATAL**. Evidence: read-only TB, child logs and `snapshots/` under `models/`; no measurement dir written.
