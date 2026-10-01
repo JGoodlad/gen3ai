@@ -222,6 +222,13 @@ def _stop_knob_typed(args) -> bool:
                 or _typed(args, "distill_stop_anneal_factor"))
 
 
+#: The cf-buffer consumers — the SAME tuple `agents.training.cf_supply` guards (pinned by
+#: `cf_supply_test`); a literal here keeps this module import-light for `checkargs`.
+_CF_CONSUMER_COEFS: Tuple[str, ...] = (
+    "cf_winprob_coef", "cf_evidential_coef", "cf_twin_coef", "cf_shadow_coef",
+    "q_winprob_coef", "q_winprob_onpolicy_coef")
+
+
 def _cf_duty_cycle_starved(args) -> bool:
     """The counterfactual label path is starved BY CONSTRUCTION — see `_announce_cf_duty_cycle`."""
     on = (_positive(getattr(args, "cf_twin_coef", None))
@@ -880,6 +887,25 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         lambda a: bool(a.cf_records) and _val(a, "use_bridge", "rust") == "off",
         "--cf-records requires the in-process bridge (--use-bridge node|rust) — the "
         "reconstruction record is a bridge frame; a websocket run emits none"),
+    CombinationCheck(
+        # gen3_supply_guard_v1 — THE CLASS `ai_v12_12_ladder_cflabels` fell into (10M steps at
+        # --cf-winprob-coef 0.5, ZERO labels): a live cf-buffer coefficient whose supplier cannot
+        # exist. The trainer-spawned producer labels the `cf_records/` ring; without the tap it has
+        # nothing to label, so the coefficient would fold nothing for the whole run.
+        "cf_consumer_needs_label_supply",
+        ("cf_winprob_coef", "cf_evidential_coef", "cf_twin_coef", "cf_shadow_coef",
+         "q_winprob_coef", "q_winprob_onpolicy_coef", "cf_records", "cf_label_supply"),
+        lambda a: (any(_positive(_val(a, c, 0.0)) for c in _CF_CONSUMER_COEFS)
+                   and (_val(a, "cf_label_supply", "producer") or "producer") == "producer"
+                   and not bool(_val(a, "cf_records", False))),
+        lambda a: (
+            f"\n[SUPPLY] FATAL: {', '.join(c for c in _CF_CONSUMER_COEFS if _positive(_val(a, c, 0.0)))}"
+            f" is live, but its label SUPPLY cannot exist: the cf label producer (which "
+            f"--cf-label-supply producer starts at launch) labels the reconstruction records "
+            f"--cf-records rings into <run>/cf_records/, and --cf-records is off. The coefficient "
+            f"would fold NOTHING for the whole run (ai_v12_12_ladder_cflabels: 10M steps, 0 labels). "
+            f"Pass --cf-records, or set the coefficient(s) to 0."),
+        exit_style="fatal_config"),
     CombinationCheck(
         # gen3_cf_label_duty_cycle_v1 — a quantity nobody was computing. FATAL_CONFIG, not
         # parser.error: a restart would hit the identical config, so the launcher must give up.

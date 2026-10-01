@@ -76,8 +76,12 @@ def _arg_or(args, name, default):
 def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
                     _fixed_opponents, _bot_weight_vec, OPPONENT_CLASSES,
                     _specialist_team_str, _promote_threshold,
-                    _heuristic_floor, _sp_start_wr, _sp_full_wr) -> CallbackBundle:
-    """Build every `learn()`-time callback this run's flags ask for."""
+                    _heuristic_floor, _sp_start_wr, _sp_full_wr,
+                    _cf_supply=None) -> CallbackBundle:
+    """Build every `learn()`-time callback this run's flags ask for.
+
+    ``_cf_supply`` is the cf label supply `main()` acquired at startup
+    (`agents.training.cf_supply.start_cf_label_supply`), or None."""
     # --- Callback Setup (Shared) ---
     # Periodic checkpoints land in <run>/checkpoints/ (SB3 makedirs it); the callback
     # keeps latest.txt + metadata.json at the run root (derived from save_path).
@@ -448,6 +452,23 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     if getattr(args, "team_wr_tracking", True):
         from agents.training.team_winrate_callback import TeamWinRateCallback
         callbacks.append(TeamWinRateCallback(run_dir=model_dir))
+    # CF SUPPLY GUARD (gen3_supply_guard_v1): a live cf-buffer coefficient whose label stream
+    # accepts nothing for --cf-supply-starve-cycles train() cycles AND --cf-supply-starve-minutes
+    # (once a checkpoint exists) is FATAL_SUPPLY (5); a spawned producer that exits is FATAL at
+    # once. No live consumer → no callback (byte-identical).
+    from agents.training.cf_supply import live_cf_consumers
+    _cf_consumers = live_cf_consumers(args)
+    if _cf_consumers:
+        from agents.training.cf_supply import (DEFAULT_STARVE_CYCLES, DEFAULT_STARVE_MINUTES,
+                                               CfSupplyGuard)
+        from agents.training.cf_supply_callback import CfSupplyCallback
+        callbacks.append(CfSupplyCallback(
+            CfSupplyGuard(
+                _cf_consumers,
+                starve_cycles=_arg_or(args, "cf_supply_starve_cycles", DEFAULT_STARVE_CYCLES),
+                starve_minutes=_arg_or(args, "cf_supply_starve_minutes", DEFAULT_STARVE_MINUTES),
+                supply=_cf_supply),
+            run_dir=model_dir, supply=_cf_supply))
     # SEARCH-TEACHER: each cycle, search + confirm the worst loss craters and distil verified-better
     # corrections into model._correction_buffer (the AWR aux loss samples it). Off by default (the
     # buffer fills nothing → coef-0 loss is byte-identical regardless). BOTH halves of a cycle are

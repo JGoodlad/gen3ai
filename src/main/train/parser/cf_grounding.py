@@ -66,3 +66,35 @@ def add_cf_grounding_flags(parser: argparse.ArgumentParser) -> None:
                              "emphasis choice. 'bce' is the flat per-row BCE on the scalar label "
                              "(the pre-2026-08-22 form, kept as the A/B arm). The two are EXACTLY "
                              "equal when every n_rollouts == 1. Training-only.")
+    # --- THE LABEL SUPPLY (gen3_supply_guard_v1) — a DECLARED startup resource, guarded in flight.
+    # Operational, not recorded as a ModelVersion field: the launcher's own restarts forward the argv
+    # verbatim, and a bare flagless resume lands on the fail-closed defaults.
+    parser.add_argument("--cf-label-supply", "--cf_label_supply", dest="cf_label_supply",
+                        choices=["producer", "external"], default="producer",
+                        help="WHO supplies <run_dir>/cf_labels/ when any cf-buffer coefficient "
+                             "(--cf-winprob-coef / --cf-evidential-coef / --cf-twin-coef / "
+                             "--cf-shadow-coef / --q-winprob-coef / --q-winprob-onpolicy-coef) is "
+                             "live. 'producer' (default): the trainer STARTS cf_producer itself at "
+                             "startup, as its child (log <run>/cf_producer.log; it dies with the "
+                             "trainer) — requires --cf-records. 'external': an operator-run "
+                             "producer, verified at startup by its lock <run>/cf_producer.lock; "
+                             "none held → FATAL_CONFIG naming the command. Either way a supply "
+                             "that delivers nothing in flight is FATAL_SUPPLY (exit 5).")
+    parser.add_argument("--cf-producer-args", "--cf_producer_args", dest="cf_producer_args",
+                        type=str, default=None,
+                        help="Extra cf_producer flags for the SPAWNED producer, one shell-quoted "
+                             "string (e.g. \"--rollouts 16 --top-n 4\"). The trainer already adds "
+                             "--q-labels when a Q coefficient is live, and --parent-pid.")
+    parser.add_argument("--cf-supply-starve-cycles", "--cf_supply_starve_cycles",
+                        dest="cf_supply_starve_cycles", type=int, default=5,
+                        help="IN-FLIGHT supply floor: once a checkpoint exists, a live cf "
+                             "coefficient's label stream must accept at least one row within this "
+                             "many consecutive train() cycles (AND --cf-supply-starve-minutes), "
+                             "else the run exits FATAL_SUPPLY (5) and the launcher does not "
+                             "restart it. Default 5. 0 DISABLES the guard (announced at start).")
+    parser.add_argument("--cf-supply-starve-minutes", "--cf_supply_starve_minutes",
+                        dest="cf_supply_starve_minutes", type=float, default=30.0,
+                        help="The wall-clock half of the in-flight floor (default 30): both it and "
+                             "--cf-supply-starve-cycles must be exceeded, so a fast-iterating run "
+                             "does not trip before a healthy producer's first labels (~1-2 min of "
+                             "compile + anchor) and a slow one is not held hostage by the count.")

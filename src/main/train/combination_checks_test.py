@@ -237,6 +237,9 @@ ARGVS: dict[str, list[str]] = {
     # without the record ring); the last three are obs keys a branch row cannot honestly fill.
     "fork_needs_the_winprob_critic": ["--fork-fraction", "0.02"],
     "fork_needs_cf_records": _WP + ["--fork-fraction", "0.02"],
+    # gen3_supply_guard_v1 — a live cf-buffer coefficient whose (trainer-spawned) producer would
+    # have no ring to label: `_WP` does not carry --cf-records.
+    "cf_consumer_needs_label_supply": _WP + ["--cf-winprob-coef", "0.5"],
     "fork_refuses_value_true_team":
         _WP + ["--cf-records", "--fork-fraction", "0.02", "--value-true-team"],
     "fork_refuses_dense_aux":

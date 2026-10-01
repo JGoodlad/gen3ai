@@ -221,6 +221,8 @@ from agents.training.cf_producer_snapshot import (Snapshot,  # noqa: F401 (re-ex
 from agents.training.cf_q_labels import (
     Q_SWEEP_VERSION, assert_paired_dice, q_arm_seeds, q_labels_block, q_provenance,
     recorded_arm_is_reusable, select_q_actions)
+from agents.training.cf_supply import (PRODUCER_EXIT_LOCK_HELD, acquire_producer_lock,
+                                       bind_to_parent, live_producer_pid)
 from agents.training.obs_materializer import RecordDecision, scan_record
 from utils.bridge.counterfactual import replay_counterfactual as _run_one
 from utils.bridge.reconstruction import RECON_SUFFIX, ReconstructionRecord, replay_battle
@@ -1416,6 +1418,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "the on-policy starvation this stream exists to escape) and never by "
                         "action index (a prefix of [switch x6, move x4, struggle] is a systematic "
                         "preference for switching). Declared as `cf_q_sweep_v1` on every row")
+    p.add_argument("--parent-pid", "--parent_pid", dest="parent_pid", type=int, default=None,
+                   help="DIE WITH this process (gen3_supply_guard_v1): the trainer passes its own "
+                        "pid when it SPAWNS the producer as a declared startup resource. Sets "
+                        "PR_SET_PDEATHSIG(SIGTERM) and exits between cycles once the parent is "
+                        "gone, so a trainer that dies by any path takes its producer with it and "
+                        "the next segment starts a fresh one (state resumes from "
+                        "cf_producer_state.json). Omit it for an operator-run producer.")
     p.add_argument("--cycles", type=int, default=0,
                    help="stop after N cycles (default 0 = run forever). --cycles 1 is the smoke")
     return p
@@ -1440,11 +1449,26 @@ def main(argv: "Optional[Sequence[str]]" = None, *, snapshot_loader=None) -> int
     except ImportError:                                                 # pragma: no cover
         pass
 
+    if args.parent_pid is not None and not bind_to_parent(args.parent_pid):
+        print(f"cf_producer: parent pid {args.parent_pid} is already gone — exiting.",
+              file=sys.stderr)
+        return 0
+    # ONE producer per run (gen3_supply_guard_v1): two would share one `cf_producer_state.json`
+    # and one `seq`. The kernel drops the flock when this process dies by ANY path; the fd is held
+    # (never closed) for the life of the process.
+    lock_fd = acquire_producer_lock(args.run_dir)
+    if lock_fd is None:
+        print(f"cf_producer: another cf_producer (pid {live_producer_pid(args.run_dir)}) already "
+              f"serves {args.run_dir} — refusing to run a second one on the same state file.",
+              file=sys.stderr)
+        return PRODUCER_EXIT_LOCK_HELD
     prod = CfProducer(args, snapshot_loader=snapshot_loader)
+    prod._lock_fd = lock_fd
     records_dir = prod.records_dir
     if not os.path.isdir(records_dir):
         print(f"cf_producer: no {records_dir} — the run was not launched with --cf-records, so "
               f"there is nothing to label.", file=sys.stderr)
+        os.close(lock_fd)
         return 2
     prod._log(f"watching {records_dir} → {prod.labels_dir}  "
               f"(R={args.rollouts}, top-{args.top_n}, impl={args.impl}, "
@@ -1468,6 +1492,15 @@ def main(argv: "Optional[Sequence[str]]" = None, *, snapshot_loader=None) -> int
                   "--q-winprob-coef > 0 would train that head on nothing "
                   "(cf/q_label_coverage 0.0). --q-labels turns the stream on.")
 
+    try:
+        return _run_loop(prod, args)
+    finally:
+        # Released explicitly as well as by the kernel at exit: an IN-PROCESS caller (the
+        # integration tests drive `main` twice in one process) must not find its own lock held.
+        os.close(lock_fd)
+
+
+def _run_loop(prod: "CfProducer", args) -> int:
     n = 0
     try:
         while True:
@@ -1479,6 +1512,10 @@ def main(argv: "Optional[Sequence[str]]" = None, *, snapshot_loader=None) -> int
                 return rc
             n += 1
             if args.cycles and n >= args.cycles:
+                return 0
+            if args.parent_pid is not None and os.getppid() != args.parent_pid:
+                prod._log(f"parent (trainer pid {args.parent_pid}) is gone — exiting; state saved")
+                prod.state.save()
                 return 0
             time.sleep(max(0.0, args.cycle_seconds))
     except KeyboardInterrupt:

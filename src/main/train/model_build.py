@@ -24,7 +24,7 @@ from agents.training.dose import kl_controller_snapshot
 from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 from agents.training.reward_manager import reward_config_digest
 from agents.training.watchdog import start_subprocess_watchdog
-from main.exit_codes import TrainExitCode
+from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit, send_event
 from main.train.constants import _ABORT_EVAL_DRAIN_SEC
 from main.train.checkpoint_state import _validate_or_reset_optimizer_state
@@ -979,7 +979,11 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             print(f"🛑 TRAINING CRASHED: {e}")
             print("🛑" * 30)
             traceback.print_exc()
-            os._exit(1) # Stop immediately, do not proceed to evaluation
+            # Stop immediately, do not proceed to evaluation. CRASH (1) unless the error is one a
+            # restart would REPLAY (`exit_codes.exit_code_for`: a non-finite learner → 4, a starved
+            # external supply → 5), exactly as the entry point's fail-fast handlers map it — a
+            # literal 1 here turned every FATAL raised inside a FRESH run's learn() into a restart.
+            os._exit(exit_code_for(e))
 
         # Training is over: stand the worker watchdog down (see the resume path's note).
         _shutdown_event.set()

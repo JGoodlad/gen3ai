@@ -98,6 +98,13 @@ def _fatal_config_reason(rc: int, log_lines: "list | None") -> "list | None":
         found = [s for s in (l.strip() for l in lines) if "NonFiniteLearnerError" in s][-3:]
         return (["non-finite learner (NaN / Inf loss or gradient) — a restart would replay it; "
                  "see the crash log"] + found)
+    if rc == int(TrainExitCode.FATAL_SUPPLY):
+        # gen3_supply_guard_v1: a LIVE coefficient's external supply (the cf label producer) died
+        # or starved in flight. A restart would train on the same missing supply — STOP.
+        found = [s for s in (l.strip() for l in lines)
+                 if "SupplyStarvedError" in s or "[SUPPLY]" in s][-4:]
+        return (["a live coefficient's external supply delivered nothing (supply guard) — a "
+                 "restart would train on the same missing supply; see the crash log"] + found)
     for i, line in enumerate(lines):
         if any(sig in line for sig in _FATAL_CONFIG_SIGNATURES):
             # The FATAL line + a couple of following explanatory lines (the
@@ -591,6 +598,7 @@ def _supervise(
                 else ""
             )
             kind = ("Non-finite learner" if rc == int(TrainExitCode.FATAL_NONFINITE)
+                    else "Starved supply" if rc == int(TrainExitCode.FATAL_SUPPLY)
                     else "Fatal config error")
             state.add_event(f"🛑 {kind} — will NOT restart{saved}")
             for line in fatal_reason:

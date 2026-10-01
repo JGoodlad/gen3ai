@@ -16,6 +16,11 @@ class TrainExitCode(IntEnum):
                                  # class as FATAL_CONFIG: a restart resumes the checkpoint that
                                  # produced it and replays the same update, so a persistent NaN
                                  # would crash-loop until the budget runs out. The launcher STOPS.
+    FATAL_SUPPLY = 5             # a LIVE coefficient's EXTERNAL SUPPLY is dead or starved in flight
+                                 # (`SupplyStarvedError` — e.g. `--cf-winprob-coef` > 0 and no cf
+                                 # label accepted for N cycles, or the label producer exited). A
+                                 # restart would train the same run on the same missing supply, so
+                                 # the launcher STOPS and names the supplier.
 
 
 class NonFiniteLearnerError(FloatingPointError):
@@ -27,9 +32,20 @@ class NonFiniteLearnerError(FloatingPointError):
     this one (the name is also matched along the MRO, so a same-named class maps too)."""
 
 
+class SupplyStarvedError(RuntimeError):
+    """A live coefficient's EXTERNAL SUPPLY delivered nothing — fail CLOSED (`gen3_supply_guard_v1`).
+
+    The class this closes: `ai_v12_12_ladder_cflabels` trained 10M steps at `--cf-winprob-coef 0.5`
+    and received ZERO labels, because the producer is a separate program nobody started and every
+    counter that could have said so was a scalar nobody thresholded. The in-flight guard raises this
+    (or a subclass); the trainer's handlers map it to ``TrainExitCode.FATAL_SUPPLY`` and the
+    launcher gives up instead of restarting into the same starvation."""
+
+
 #: Exception class NAMES mapped to a fatal exit code — matched along each exception's MRO and its
 #: ``__cause__`` / ``__context__`` chain, so the mapping holds however the error was wrapped.
-_FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE}
+_FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
+                  "SupplyStarvedError": TrainExitCode.FATAL_SUPPLY}
 
 
 def fatal_exit_code_for(exc: Optional[BaseException]) -> Optional[int]:

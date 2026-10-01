@@ -76,7 +76,9 @@ from agents.training.pool_seed import prepare_pool
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
 from agents.training.async_vec_env import AsyncSubprocVecEnv
-from main.exit_codes import exit_code_for
+from agents.training.cf_supply import (CfSupplyConfigError, live_cf_consumers,
+                                       preflight_cf_label_supply, start_cf_label_supply)
+from main.exit_codes import TrainExitCode, exit_code_for
 from main.launcher.ipc import emit
 
 # ── THE PHASES ────────────────────────────────────────────────────────────────────────────────
@@ -188,6 +190,13 @@ async def main():
     # — the first moment `model_dir` is known — and BEFORE the directory is created, so a refusal
     # leaves nothing behind. `--allow-inherited-fork-lr` is the deliberate opt-in.
     enforce_inherited_fork_lr(args, model_dir)
+    # gen3_supply_guard_v1: an EXTERNAL cf label supply that is not running is refused HERE, before
+    # the directory exists, for the same leave-nothing-behind reason.
+    try:
+        preflight_cf_label_supply(args, model_dir)
+    except CfSupplyConfigError as _e:
+        print(str(_e), file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
     os.makedirs(model_dir, exist_ok=True)
     # K3: the run's OWN compile cache, declared before anything compiles or spawns (lifecycle.py).
@@ -212,15 +221,22 @@ async def main():
     # the directory on the scalar coefficient alone would silently starve an evidential-only run —
     # and, since v105, a Q-head-only one. A term whose coefficient is live but whose buffer was
     # never created folds nothing, forever, with no error and no counter to say so.
+    # The consumer list is `cf_supply.CF_CONSUMER_COEFS` — ONE list for the buffer gate, the
+    # startup supply check and the in-flight guard.
     _cf_labels_dir = (os.path.join(model_dir, "cf_labels")
-                      if (args.cf_winprob_coef > 0 or args.cf_evidential_coef > 0
-                          or args.cf_twin_coef > 0 or args.cf_shadow_coef > 0
-                          or (args.q_winprob_coef or 0) > 0
-                          or (args.q_winprob_onpolicy_coef or 0) > 0) else None)
+                      if live_cf_consumers(args) else None)
     if _cf_records_dir:
         os.makedirs(_cf_records_dir, exist_ok=True)
         emit(f"🧾 [CF] reconstruction-record tap ON → {_cf_records_dir} "
              f"(newest {args.cf_records_keep})")
+    # gen3_supply_guard_v1 — the LABEL SUPPLY is a DECLARED startup resource: a live consumer
+    # either gets a producer this process STARTS (and owns — it dies with us), or a verified
+    # external one, or the launch is REFUSED here. Never a run whose lever quietly folds nothing.
+    try:
+        _cf_supply = start_cf_label_supply(args, model_dir, emit=emit)
+    except CfSupplyConfigError as _e:
+        print(str(_e), file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
     stall_cfg = StallConfig(output_dir=os.path.join(model_dir, "stalls"))
     # Per-run reward config (design §1). gamma MUST == the PPO gamma (asserted post-build below); the
@@ -428,7 +444,8 @@ async def main():
         annealing_mode=annealing_mode, _pool=_pool, _fixed_opponents=_fixed_opponents,
         _bot_weight_vec=_bot_weight_vec, OPPONENT_CLASSES=OPPONENT_CLASSES,
         _specialist_team_str=_specialist_team_str, _promote_threshold=_promote_threshold,
-        _heuristic_floor=_heuristic_floor, _sp_start_wr=_sp_start_wr, _sp_full_wr=_sp_full_wr)
+        _heuristic_floor=_heuristic_floor, _sp_start_wr=_sp_start_wr, _sp_full_wr=_sp_full_wr,
+        _cf_supply=_cf_supply)
 
     # --- Phase 5: the model, and the training job itself ---
     await build_and_train(

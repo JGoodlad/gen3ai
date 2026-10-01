@@ -1208,7 +1208,10 @@ class TestQSchemaRoundTrip:
 #     python -c "import hashlib; from agents.training import cf_producer_test as t; \
 #                print(hashlib.sha256(t._parity_blob().encode()).hexdigest())"
 
-_PARITY_SHA256 = "121fe20156da385aad915bb0fb2943c402057e553d4b47fb3c6a134e66b7ea67"
+# 2026-09-30 (gen3_supply_guard_v1): regenerated for ONE additive CLI default, `parent_pid=None`
+# (`--parent-pid`, the trainer-spawned producer's parent binding). Verified before regenerating:
+# the blob with that key popped hashes to the previous digest 121fe201…ea67 exactly.
+_PARITY_SHA256 = "621e8b51f547c259bbd4dc47b6beceebd79125fee74ff4fe26638013ed2d8038"
 
 #: `created_unix` is `time.time()` at construction, so it is dropped rather than pinned — the row
 #: is otherwise byte-stable and this is the only field of it that is not.
@@ -1487,6 +1490,8 @@ def test_the_named_golden_values_are_what_the_digest_stands_for():
     assert r["_outcome_scalar"] == [1.0, 0.0, 0.5, 1.0]
     assert r["rollout_outcome_score"] == [1.0, 0.0, 0.5, 0.5, 0.5]
     assert r["anchorable"] == [True, False]
+    # gen3_supply_guard_v1: an operator-run producer is bound to NO parent by default.
+    assert r["cli_defaults"]["parent_pid"] is None
     assert r["anchor_refusal"]["mismatch"].startswith("cf_producer: ANCHOR MISMATCH")
     assert "RAN OUT of recorded commands" in r["anchor_refusal"]["mismatch_exhausted"]
     assert r["anchor_refusal"]["error"].startswith("cf_producer: ANCHOR COULD NOT RUN")

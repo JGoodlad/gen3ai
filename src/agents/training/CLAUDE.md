@@ -1247,6 +1247,19 @@ only: tight Monte-Carlo P(win) labels, delivered to the **win-prob head**. The l
 separate, out-of-process program (`cf_producer.py`, § *The label PRODUCER DRIVER* below);
 **nothing in this section produces a label**, and the two halves share only a file format.
 
+🚨 **THE LABEL SUPPLY IS A DECLARED STARTUP RESOURCE** (`gen3_supply_guard_v1`, `cf_supply.py` +
+`cf_supply_callback.py`, 2026-09-30). `ai_v12_12_ladder_cflabels` trained 10M steps at
+`--cf-winprob-coef 0.5` with ZERO labels because nobody started the producer. Now any live
+cf-buffer coefficient (`cf_supply.CF_CONSUMER_COEFS`: cf_winprob / cf_evidential / cf_twin /
+cf_shadow / q_winprob / q_winprob_onpolicy) makes the supply mandatory: under
+`--cf-label-supply producer` (default) **the trainer spawns `cf_producer` itself** (bound to it by
+`--parent-pid`, one per run by `<run>/cf_producer.lock`, `--q-labels` added when a Q coefficient
+is live, `--cf-producer-args` for the rest) and REFUSES without `--cf-records`; under `external` it
+REFUSES unless a producer holds the lock, printing the command. In flight, a stream that accepts
+nothing for `--cf-supply-starve-cycles` (5) cycles AND `--cf-supply-starve-minutes` (30) once a
+checkpoint exists — or a spawned producer that exits — raises `CfLabelSupplyError` → exit
+**`FATAL_SUPPLY` (5)**, which the launcher does not restart; the end-of-run summary is LOUD at zero.
+
 **Full detail — every flag, gate, measurement and hazard — is in [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md).**
 
 ## The STALL-TAIL HARVEST + head-repair pipeline (`main.harvest` → `winprob_finetune` → `main.harvest_meter`)

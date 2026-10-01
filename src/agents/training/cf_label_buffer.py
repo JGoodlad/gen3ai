@@ -98,6 +98,8 @@ buffer publishes seven counters every log cycle:
 ``cf/buffer_fill``               rows currently resident (0 = starving RIGHT NOW)
 ``cf/label_age_steps_p50``       median staleness of the resident rows, in policy steps
 ``cf/labels_ingested_total``     rows accepted since process start (flat = producer is DEAD)
+``cf/q_rows_ingested_total``     of those, rows carrying ``q_labels`` (the Q head's stream)
+``cf/onpolicy_rows_ingested_total`` of those, rows carrying ``taken_action`` + ``outcome_label``
 ``cf/labels_expired_total``      rows dropped for |age| > ``lag_bound`` (past AND future)
 ``cf/labels_future_total``       of those, the ones dated AHEAD of this process (restart rollback)
 ``cf/labels_replaced_total``     rows superseded by a newer label of the SAME state
@@ -238,6 +240,13 @@ class CfLabelBuffer:
         # Counters — monotonic for the whole process lifetime, so a TB curve of
         # `labels_ingested_total` going FLAT is unambiguous evidence the producer stopped.
         self.ingested_total = 0
+        # gen3_supply_guard_v1: the two PER-STREAM subsets of `ingested_total` the Q terms read —
+        # rows carrying a non-empty `q_labels` (q_winprob_coef) and rows carrying both a
+        # `taken_action` and an `outcome_label` (q_winprob_onpolicy_coef). A producer shipping rows
+        # without the stream starves those terms exactly as a dead producer starves the rest, so
+        # `agents.training.cf_supply.CfSupplyGuard` watches each coefficient's OWN stream.
+        self.q_ingested_total = 0
+        self.onpolicy_ingested_total = 0
         self.expired_total = 0
         # A SUBSET of `expired_total`: rows dated AHEAD of this process. Broken out because it has
         # exactly one cause worth naming (a resume from an older checkpoint) and a completely
@@ -387,6 +396,10 @@ class CfLabelBuffer:
         q_labels = self._parse_q_labels(obj)
         taken_action = self._parse_taken_action(obj)
         self.ingested_total += 1
+        if q_labels:
+            self.q_ingested_total += 1
+        if taken_action is not None and outcome is not None:
+            self.onpolicy_ingested_total += 1
         return CfLabel(
             obs=obs, label=label, policy_step=policy_step,
             battle=str(obj.get("battle", "")), decision_idx=int(obj.get("decision_idx", -1)),
@@ -664,6 +677,8 @@ class CfLabelBuffer:
             "cf/buffer_fill": float(len(self._rows)),
             "cf/label_age_steps_p50": float(np.median(ages)) if ages else 0.0,
             "cf/labels_ingested_total": float(self.ingested_total),
+            "cf/q_rows_ingested_total": float(self.q_ingested_total),
+            "cf/onpolicy_rows_ingested_total": float(self.onpolicy_ingested_total),
             "cf/labels_expired_total": float(self.expired_total),
             "cf/labels_future_total": float(self.future_total),
             "cf/labels_replaced_total": float(self.replaced_total),

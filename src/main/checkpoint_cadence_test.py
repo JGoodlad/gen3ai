@@ -175,11 +175,21 @@ class TestDutyCycleGuard:
         assert "DUTY CYCLE" not in capsys.readouterr().out
 
     def test_records_off_is_untouched_even_with_a_live_coefficient(self, capsys):
-        """Without `--cf-records` this run produces nothing to label; the duty cycle is somebody
-        else's run's problem and this one has no opinion."""
+        """Without `--cf-records` this run rings nothing to label, so the duty cycle has no opinion.
+        Since gen3_supply_guard_v1 that combination is only LEGAL with an EXTERNAL supply declared
+        (the trainer-spawned producer would have nothing to label — refused, see below)."""
         _resolve("--use-bridge", "node", "--win-prob-mode", "read_only",
-                 "--cf-winprob-coef", "0.5", "--n-envs", "48")
+                 "--cf-winprob-coef", "0.5", "--n-envs", "48", "--cf-label-supply", "external")
         assert "DUTY CYCLE" not in capsys.readouterr().out
+
+    def test_records_off_with_the_default_supply_is_refused_as_no_supply(self, capsys):
+        """`ai_v12_12_ladder_cflabels`' class: a live coefficient whose producer cannot exist."""
+        with pytest.raises(SystemExit) as exc:
+            _resolve("--use-bridge", "node", "--win-prob-mode", "read_only",
+                     "--cf-winprob-coef", "0.5", "--n-envs", "48")
+        assert exc.value.code == int(TrainExitCode.FATAL_CONFIG)
+        out = capsys.readouterr()
+        assert "[SUPPLY] FATAL" in out.out + out.err and "DUTY CYCLE" not in out.out + out.err
 
     def test_the_winprob_consumer_is_guarded_too(self):
         with pytest.raises(SystemExit) as exc:

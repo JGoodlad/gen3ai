@@ -263,7 +263,10 @@ def test_stats_publishes_every_scalar_even_when_starving(tmp_path):
                       # gen3_q_winprob_head_v1 — the PER-ACTION stream's liveness. `per_row` is the
                       # one that separates a live counterfactual factory from an on-policy trickle,
                       # which is the difference between a trained Q head and a starved one.
-                      "cf/q_label_coverage", "cf/q_labels_per_row"}
+                      "cf/q_label_coverage", "cf/q_labels_per_row",
+                      # gen3_supply_guard_v1 — the per-stream ingest totals the in-flight supply
+                      # guard thresholds (each Q coefficient is guarded on its OWN stream).
+                      "cf/q_rows_ingested_total", "cf/onpolicy_rows_ingested_total"}
     assert s["cf/buffer_fill"] == 0.0 and s["cf/labels_ingested_total"] == 0.0
 
 

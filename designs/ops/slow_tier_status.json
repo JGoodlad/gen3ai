@@ -249,6 +249,14 @@
    "contention": 1.76,
    "detail": ""
   },
+  "src/agents/training/cf_supply_integration_test.py::test_a_producer_that_dies_mid_run_stops_the_trainer_with_fatal_supply": {
+   "status": "pass",
+   "commit": "b42315e85f3906a4ea661533674bd55d81f0d153",
+   "at": "2026-10-01T00:13:16Z",
+   "duration_s": 44.3,
+   "contention": 3.55,
+   "detail": ""
+  },
   "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cpu": {
    "status": "pass",
    "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
@@ -1107,5 +1115,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-01T00:06:49Z"
+ "last_written": "2026-10-01T00:13:16Z"
 }

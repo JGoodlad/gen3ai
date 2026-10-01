@@ -253,7 +253,9 @@ the term trains the head's own params and provably cannot perturb the trunk.
   The **evidential term (below) shares that ONE sample and that ONE forward** — two samples would pay
   twice for the block's whole cost and would make the two terms disagree about which states they scored.
 - **The scalars.** `cf/*` is **producer liveness and is published whenever a buffer exists**, even if not
-  one label ever arrived — `cf/buffer_fill`, `cf/label_age_steps_p50`, `cf/labels_ingested_total`,
+  one label ever arrived — `cf/buffer_fill`, `cf/label_age_steps_p50`, `cf/labels_ingested_total`
+  (+ its per-stream subsets `cf/q_rows_ingested_total` / `cf/onpolicy_rows_ingested_total`, which
+  the supply guard thresholds — § *THE SUPPLY IS A DECLARED RESOURCE*),
   `cf/labels_expired_total`, `cf/labels_future_total`, `cf/labels_replaced_total`,
   `cf/labels_skipped_total`, plus `cf/rows_sampled` (rows the fold actually CONSUMED this `train()`,
   summed over minibatches — residency and throughput are different questions, and only the second
@@ -727,10 +729,92 @@ nohup nice -n 10 python -m agents.training.cf_producer \
 ```
 
 The tap rings records; the buffer consumes label rows; **this walks one to the other.** It is a
-long-lived **standalone sidecar run beside a live trainer** — the `snapshot_ladder` /
-`bot_matchup_matrix` pattern — and deliberately NOT auto-spawned by the trainer: producer and
-consumer share only a file format (that is `cf_label_buffer`'s whole premise), and a producer the
-trainer owned would make a label-path failure a *training* failure.
+long-lived process beside the trainer, and producer and consumer still share only a file format
+(that is `cf_label_buffer`'s whole premise). **Since 2026-09-30 the TRAINER STARTS IT** whenever a
+cf-buffer coefficient is live (§ *THE SUPPLY IS A DECLARED RESOURCE* below) — the command above is
+now the `--cf-label-supply external` form, for an operator who runs it by hand.
+
+#### 🚨 THE SUPPLY IS A DECLARED RESOURCE (`gen3_supply_guard_v1`, `agents/training/cf_supply.py`)
+
+**Why.** `ai_v12_12_ladder_cflabels` trained 10M steps at `--cf-winprob-coef 0.5` and received
+**ZERO labels**: the producer was a separate program nobody started, and every signal that could
+have said so — an empty `cf_labels/`, `cf/labels_ingested_total` flat at 0, `train/cf_loss` never
+written — was a scalar nothing thresholded (ledger 2026-09-30 · *CfLabelBuffer INODE REUSE*,
+`research_state/measurements/cf_label_inode_audit/`). The duty-cycle refusal below checks checkpoint
+CADENCE, not whether a producer EXISTS, and an ops check of "no expired/starved line" is vacuous
+when nothing arrives. The old rule here — "deliberately NOT auto-spawned: a producer the trainer
+owned would make a label-path failure a *training* failure" — was exactly backwards for a LIVE
+coefficient: with the coefficient on, a dead label path IS a training failure; the only question is
+whether it is a loud one.
+
+**The consumers.** ONE list, `cf_supply.CF_CONSUMER_COEFS`: `--cf-winprob-coef`,
+`--cf-evidential-coef`, `--cf-twin-coef`, `--cf-shadow-coef`, `--q-winprob-coef`,
+`--q-winprob-onpolicy-coef`. Any of them > 0 makes the supply mandatory (the buffer gate in the
+trainer entry point, the startup check and the in-flight guard all read that tuple;
+`combination_checks._CF_CONSUMER_COEFS` is a pinned literal copy so `checkargs` stays import-light).
+
+**STARTUP — `--cf-label-supply {producer,external}` (default `producer`).**
+
+| mode | who supplies | startup check | refusal (`FATAL_CONFIG`, 3) |
+|---|---|---|---|
+| `producer` | the TRAINER spawns `python -m agents.training.cf_producer <run> [--q-labels] [--cf-producer-args …] --parent-pid <trainer>` right after the run dir exists; log `<run>/cf_producer.log` | `--cf-records` on (a `combination_checks` row, so `checkargs` sees it); no other producer holds the lock (waits ≤ 30 s for a previous segment's to exit) | no `--cf-records` → nothing to label; a live foreign producer on the lock |
+| `external` | an operator-run producer | a producer HOLDS `<run>/cf_producer.lock` — checked BEFORE the run dir is created | no holder → the message prints the exact `mkdir` + producer command |
+
+* **Why the trainer, not the launcher, owns the child.** The launcher is optional (a bare trainer
+  run, `--debug`, a test harness); a guard that exists under one entry point only is the hole this
+  closes. The launcher already restarts the trainer, and the producer rides that lifecycle: it is
+  bound by `--parent-pid` (`PR_SET_PDEATHSIG(SIGTERM)` plus a ppid check between cycles), so a
+  trainer that dies by ANY path — `os._exit` from the fail-fast handlers included — takes its
+  producer with it, and the next segment starts a fresh one that resumes from the crash-safe
+  `cf_producer_state.json` (the ~40 s compile is paid once per segment).
+* **ONE producer per run.** `cf_producer` takes an exclusive `flock` on `<run>/cf_producer.lock` for
+  its lifetime (the kernel drops it on any death) and exits **4** if another holds it — two
+  producers would share one state file and one `seq`.
+* **The trainer asks for the streams it reads.** A live Q coefficient adds `--q-labels`: without it
+  the producer ships rows with no `q_labels` and no `taken_action`, and both Q terms fold nothing.
+  `--cf-producer-args "<flags>"` appends the operator's own knobs (shell-quoted).
+* **CPU only.** The producer's `--device` defaults to `cpu` and the trainer does not change it; it
+  inherits the trainer's niceness (the launcher's `--nice 10`).
+
+**IN FLIGHT — `CfSupplyGuard` → `FATAL_SUPPLY` (exit 5, not restarted).** Once per completed
+`train()` (`CfSupplyCallback._on_rollout_start`, which reads the counters that train()'s one disk
+poll moved), for each STREAM a live coefficient reads:
+
+| stream (buffer counter) | serves |
+|---|---|
+| `ingested_total` (`cf/labels_ingested_total`) | cf_winprob, cf_evidential, cf_twin, cf_shadow |
+| `q_ingested_total` (`cf/q_rows_ingested_total`) — rows with a non-empty `q_labels` | q_winprob |
+| `onpolicy_ingested_total` (`cf/onpolicy_rows_ingested_total`) — `taken_action` + `outcome_label` | q_winprob_onpolicy |
+
+* **Disarmed until a checkpoint exists** — the producer stamps each row with the newest checkpoint's
+  step, so before one there is nothing it CAN deliver.
+* **The floor is BOTH `--cf-supply-starve-cycles` (5) consecutive dry cycles AND
+  `--cf-supply-starve-minutes` (30) of wall** since arming or the last arrival. Cycles alone would
+  trip a fast-iterating run before a healthy producer's first labels (~1–2 min of snapshot load +
+  anchor); minutes alone would let a slow run's starvation hide behind one long update.
+  `--cf-supply-starve-cycles 0` disables it — ANNOUNCED at training start, never silent.
+* **The FATAL names the cause**: nothing arrived (dead / absent / wrong dir), rows arrived but every
+  one EXPIRED at ingest (lag — read the duty cycle), or base rows arrive without the coefficient's
+  own stream (the producer is not shipping `q_labels`).
+* **A spawned producer that EXITS is FATAL at the next cycle**, with the tail of its log — no
+  starvation window needed.
+* `main.exit_codes.SupplyStarvedError` (the class; `CfLabelSupplyError` subclasses it) maps to
+  `TrainExitCode.FATAL_SUPPLY` (5) through `exit_code_for`, from BOTH fail-fast handlers and from
+  `build_and_train`'s FRESH-path `learn()` handler (which used to `os._exit(1)` — every FATAL raised
+  inside a fresh run's first segment then read as a restartable CRASH). The launcher gives up on 5
+  (`🛑 Starved supply — will NOT restart`).
+* **TB:** `cf/supply_starved_cycles` (the longest current dry run), `cf/supply_guard_armed`.
+* **END OF RUN:** the callback prints each stream's accepted total; a stream that delivered ZERO is
+  `🚨🚨 [SUPPLY] ZERO cf labels ARRIVED … This segment is NOT evidence about that lever.`, then the
+  spawned producer is stopped by its PID.
+
+**Honest limits.** The guard is per trainer PROCESS (a segment): the launcher's periodic restart
+resets its counters, so the bound on a dead supply is one segment's floor, not zero. It checks
+arrival, not label QUALITY (the skip counters and `cf/*_coverage` still own that). Under
+`--env-core rust` the `cf_records` tap is unported, so a live cf coefficient there is refused at
+startup outright — the cf lever cannot run on the Rust env until the ring is ported. Pinned by
+`agents/training/cf_supply_test.py` (real producer processes: spawn + lock, a second producer
+refused, death with an `os._exit`ing parent; a real writer process for the healthy case).
 
 **Four modules, one factory.** `cf_producer.py` owns the LOOP and everything with state in it —
 the cycle, the record ring's consumer side, the crash-safe `ProducerState`, the anchor, the rollout
