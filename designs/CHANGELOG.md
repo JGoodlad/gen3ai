@@ -10414,3 +10414,15 @@ if a lazy build is reintroduced.
   masking already read every form that way, so no number changes. `compile_regions_test` sends
   int8 / bool / float masks after the lock.
 
+## 2026-10-01 — K6: the in-run parity canary every 100 updates, confirmed before it FATALs (`gen3_compile_canary_v2`; no model change)
+
+- Owner: "implement the consecutive check, up it to 100". `CANARY_EVERY` 100 (was 25); the
+  gradient check now runs at every canary (`GRAD_EVERY` 1, was 4) — measured 0.65-0.71 s at the
+  production shape on CUDA.
+- A disagreement is warned, dumped (`canary_disagreements.jsonl`) and confirmed in the same update:
+  compiled and eager recomputed on the same rows and on an independent fixture slice. Confirmed on
+  both ⇒ checkpoint (`final_model_canary_fatal.zip`) and the typed FATAL; otherwise it is counted
+  (`compile/canary_unconfirmed_disagreements`) and two consecutive scheduled disagreements are FATAL.
+- Every verdict is appended to `canary_verdicts.jsonl`; the FATAL names the newest checkpoint at or
+  before the last passing canary as the safe rollback point.
+

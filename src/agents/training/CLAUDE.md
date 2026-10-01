@@ -656,9 +656,11 @@ FATAL.** `src/agents/model/compile_control.py` is the ONLY runtime module that t
 iteration (K6; `🧊 [COMPILE LOCK]`) → RELEASE when `learn()` returns (the final eval runs in-process).
 While locked, any recompile, late first compile or cache-limit hit exits `[CompileSentinel] FATAL` /
 `FATAL_CONFIG` (not restarted), and the message NAMES the failing guard (`UNDECLARED SIGNATURE — the
-failing guard(s): …`). Every 25 updates the IN-RUN PARITY CANARY (`agents/model/compile_canary.py`) holds
-the compiled learner to eager on the real-obs fixture at the startup gate's bars (the train graph's
-gradient every 100) — a disagreement is `[CompileCanary] FATAL`. The rank probe is HOOK-FREE (a forward
+failing guard(s): …`). Every 100 updates the IN-RUN PARITY CANARY (`agents/model/compile_canary.py`) holds
+the compiled learner to eager on the real-obs fixture at the startup gate's bars (decision readout AND
+the train graph's gradient). A disagreement is CONFIRMED in the same update (the same rows + an
+independent slice, eager recomputed): confirmed ⇒ checkpoint + `[CompileCanary] FATAL` naming the safe
+rollback point (`<run_dir>/canary_verdicts.jsonl`); unconfirmed ⇒ counted, and two consecutive ⇒ FATAL. The rank probe is HOOK-FREE (a forward
 hook on a compiled module is a guard — the iteration-1 signature `8fc297a2` used to absorb). 🚨 **On torch 2.8 the learner compiles as DECLARED REGIONS** (K8, `agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"): R0 the rollout core and R1 the micro-step, each `fullgraph=True` at ONE declared signature (a ragged micro-batch and batch 1 take the declared eager route); the rank probe reads R1's stashes (no second forward, the spectra on the device); on a CUDA buffer every micro-batch is gathered from ONE device copy of the flattened buffer per update (`instrumented_ppo/device_batches.py`, bit-identical batches, the same permutation). R1's startup gate and the canary judge its per-parameter gradient by WEIGHT REGIME (`compile_regions.weights_regime`: fresh vs trained, measured bars — `designs/training/compile_flags.md`). Code inside R1 must stay a static-shape program (the fold contract above); a new obs key in the buffer after startup is an undeclared R1 signature (FATAL). 2.5.1 keeps the extractor-only compile. A learner-process
 forward with a NEW signature (a different obs key set, an undeclared batch size) must run under
 `compile_trainer.eager_extractor(fe)` or be added to `production_prewarm_calls`; batch 1 is ALWAYS

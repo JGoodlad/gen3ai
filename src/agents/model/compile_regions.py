@@ -209,7 +209,7 @@ def _golden_rows(model: Any) -> Optional[Dict[str, np.ndarray]]:
     return data
 
 
-def r1_batch(model: Any, batch: int) -> R1Batch:
+def r1_batch(model: Any, batch: int, slice_: int = 0) -> R1Batch:
     """A micro-batch shaped EXACTLY like `rollout_buffer.get(batch_size)`'s (every key of the
     observation space, the buffer's dtypes): the golden's real labelled rows tiled to ``batch`` when
     they fit this run, else the real-obs fixture with zero labels and seeded PPO quantities."""
@@ -221,10 +221,11 @@ def r1_batch(model: Any, batch: int) -> R1Batch:
     data = _golden_rows(model)
     if data is not None:
         n = int(data["actions"].reshape(-1).shape[0])
-        idx = np.arange(int(batch)) % n
+        idx = ct.fixture_index(int(batch), n, slice_)
 
         def flat(a: np.ndarray) -> np.ndarray:
-            return a.reshape(-1, *a.shape[2:])[idx]
+            rows: np.ndarray = a.reshape(-1, *a.shape[2:])[idx]
+            return rows
         obs = {k: torch.as_tensor(flat(data["obs:" + k]).astype(space[k].dtype), device=dev)
                for k in space}
         f = {k: torch.as_tensor(flat(data[k]), device=dev)
@@ -233,8 +234,8 @@ def r1_batch(model: Any, batch: int) -> R1Batch:
                        f["log_probs"].float().reshape(-1), f["values"].float().reshape(-1),
                        f["advantages"].float().reshape(-1), f["returns"].float().reshape(-1),
                        "the K9 learner golden's real labelled buffer")
-    obs = ct._prewarm_obs(model, int(batch))
-    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), int(batch), dev)
+    obs = ct._prewarm_obs(model, int(batch), slice_)
+    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), int(batch), dev, slice_)
     m = torch.as_tensor(mask, device=dev)
     g = torch.Generator(device="cpu").manual_seed(20260930)
     acts = torch.argmax(m.float() + 0.01 * torch.rand(m.shape, generator=g).to(dev), dim=-1)

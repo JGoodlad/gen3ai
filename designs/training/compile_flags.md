@@ -1224,7 +1224,7 @@ on the K9 golden's labelled buffer when the run's observation keys match it — 
 — else the committed real-obs fixture with zero labels: the loss, the gradient over every policy
 parameter at the cosine and per-parameter bars; R0's decision readout, on a seeded perturbation when
 the weights are fresh; the TF32 rule against an fp32 eager reference under `--matmul-precision high`)
-→ prewarm exactly the declared signatures → LOCK (K6) → the canary every 25 updates
+→ prewarm exactly the declared signatures → LOCK (K6) → the canary every 100 updates (confirmed in the same update before it FATALs — `designs/training/learner_lifecycle.md`)
 (`compile_canary._regions`). On torch 2.5.1 (legacy: `forward_guard`'s weakref lookup breaks
 `fullgraph=True` there) the extractor-only compile above is kept — `regions_supported()`.
 

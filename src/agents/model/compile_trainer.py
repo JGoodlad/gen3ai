@@ -45,6 +45,7 @@ import contextlib
 import time
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
+import numpy as np
 import torch
 
 from agents.model.compile_gate_probe import (GradCoverageError, coverage_verdict, gate_loss,
@@ -299,16 +300,27 @@ _MAX_PARAM_GRAD_REL_TRAINED = 0.2
 _PARAM_GRAD_FLOOR = 1e-3
 
 
-def _parity_obs(obs_dim: int, batch: int, device: Any) -> Tuple[Dict[str, "torch.Tensor"], Any]:
+def fixture_index(batch: int, n_rows: int, slice_: int = 0) -> "np.ndarray":
+    """Which committed fixture rows a batch of ``batch`` takes: slice 0 = every row in order, tiled;
+    slice 1 = the SECOND HALF of the rows, tiled — an independent batch of the same shape (the
+    canary's confirmation re-run, `compile_canary`)."""
+    import numpy as np
+
+    if int(slice_) == 0 or n_rows < 2:
+        return np.arange(int(batch)) % n_rows
+    half = n_rows // 2
+    return half + np.arange(int(batch)) % (n_rows - half)
+
+
+def _parity_obs(obs_dim: int, batch: int, device: Any,
+                slice_: int = 0) -> Tuple[Dict[str, "torch.Tensor"], Any]:
     """The committed REAL rows as the gate's obs dict + their legal-action masks (numpy bool).
 
     Rows are repeated when ``batch`` exceeds the fixture. Raises `ParityFixtureError` (turned into
     a `CompileTrainerError` by the caller) when the fixture is missing or stale — never zeros.
     """
-    import numpy as np
-
     rows, mask = load_parity_rows(obs_dim)
-    idx = np.arange(int(batch)) % len(rows)
+    idx = fixture_index(int(batch), len(rows), slice_)
     return ({"observation": torch.as_tensor(rows[idx], device=device)}, mask[idx])
 
 
@@ -884,7 +896,7 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
 # gen3_compile_sentinel_v1 — phases 2-4 of `compile_control`: reset, prewarm, attach (lock later)
 # ------------------------------------------------------------------------------------------------
 
-def _prewarm_obs(model: Any, batch: int) -> Dict[str, "torch.Tensor"]:
+def _prewarm_obs(model: Any, batch: int, slice_: int = 0) -> Dict[str, "torch.Tensor"]:
     """A batch shaped EXACTLY like the rollout's `obs_as_tensor(self._last_obs)`: every key of the
     policy's observation space (dynamo guards the dict), `observation` from the committed REAL rows,
     `action_mask` from their masks, every other key zeros of its space's shape and dtype."""
@@ -894,7 +906,7 @@ def _prewarm_obs(model: Any, batch: int) -> Dict[str, "torch.Tensor"]:
     device = resolve_device(policy.features_extractor)
     space = policy.observation_space
     rows, mask = load_parity_rows(int(space.spaces["observation"].shape[0]))
-    idx = np.arange(int(batch)) % len(rows)
+    idx = fixture_index(int(batch), len(rows), slice_)
     out: Dict[str, "torch.Tensor"] = {}
     for key, sub in space.spaces.items():
         if key == "observation":

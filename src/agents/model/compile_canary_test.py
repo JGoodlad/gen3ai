@@ -97,3 +97,104 @@ def test_the_canary_changes_nothing_about_training(model):
     assert model.policy.training                              # mode restored
     assert all(p.grad is None for p in model.policy.parameters())
     assert all(torch.equal(a, b) for a, b in zip(before, model.policy.parameters()))
+
+
+# ------------------------------------------------------- persistence (owner, 2026-10-01) on K8
+_28 = pytest.mark.skipif(not torch.__version__.startswith("2.8"), reason="K8 regions are torch 2.8")
+
+
+@pytest.fixture
+def regions_learner(tmp_path):
+    """The production-surface learner with K8's regions installed (CPU, dynamo `eager` backend, so
+    compiled == eager unless a test plants a fault), its run dir a tmp dir."""
+    from agents.model import compile_control as cc
+    from agents.model import compile_regions as cr
+    from agents.training import learner_golden as LG
+    cc._reset_control_for_tests()
+    torch._dynamo.reset()
+    m = LG.build_learner()
+    LG.load_buffer_into(m)
+    m.behaviour_dump_dir = str(tmp_path)
+    cc.control().install()
+    cr.install(m, backend="eager")
+    try:
+        yield m
+    finally:
+        cr.uninstall(m)
+        cc._reset_control_for_tests()
+        torch._dynamo.config.error_on_recompile = False
+        torch._dynamo.reset()
+
+
+def _plant_r0(model, armed):
+    """Replace the installed R0 with one that is off by +0.05 log-prob while ``armed['on']`` (and,
+    with ``armed['once']``, only on its next call): a planted compiled-graph fault."""
+    from agents.model.policy import _ROLLOUT_REGIONS
+    real = _ROLLOUT_REGIONS[model.policy]
+
+    def faulty(pol, obs, masks):
+        values, logp = real(pol, obs, masks)
+        if armed["on"]:
+            if armed.get("once"):
+                armed["on"] = False
+            return values, logp + 0.05
+        return values, logp
+    _ROLLOUT_REGIONS[model.policy] = faulty
+
+
+def _verdicts(tmp):
+    import json
+    from agents.model.compile_canary import VERDICTS_FILE
+    p = tmp / VERDICTS_FILE
+    return [json.loads(x)["verdict"] for x in p.read_text().splitlines()] if p.exists() else []
+
+
+@_28
+def test_a_PERSISTENT_fault_is_CONFIRMED_and_FATAL_in_the_SAME_update_with_a_checkpoint(regions_learner, tmp_path):
+    saved = []
+    _plant_r0(regions_learner, {"on": True})
+    can = CompileCanary(regions_learner, n_envs=4, batch_size=16, every=1, saver=saved.append)
+    with pytest.raises(CompileCanaryError, match="CONFIRMED") as ei:
+        can.after_update()
+    assert saved and saved[0].endswith("final_model_canary_fatal")
+    assert "SAFE ROLLBACK POINT" in str(ei.value)
+    assert _verdicts(tmp_path) == ["fatal"]
+
+
+@_28
+def test_a_one_shot_BLIP_warns_counts_and_training_continues(regions_learner, tmp_path):
+    _plant_r0(regions_learner, {"on": True, "once": True})
+    can = CompileCanary(regions_learner, n_envs=4, batch_size=16, every=1, saver=lambda p: None)
+    out = can.after_update()                                   # no raise: it did not reproduce
+    assert out["compile/canary_ok"] == 0.0
+    assert out["compile/canary_unconfirmed_disagreements"] == 1.0
+    out = can.after_update()                                   # healthy again: a pass resets the streak
+    assert out["compile/canary_ok"] == 1.0 and out["compile/canary_unconfirmed_disagreements"] == 1.0
+    assert _verdicts(tmp_path) == ["unconfirmed", "pass"]
+
+
+@_28
+def test_TWO_CONSECUTIVE_unconfirmed_disagreements_are_FATAL(regions_learner, tmp_path):
+    armed = {"on": True, "once": True}
+    _plant_r0(regions_learner, armed)
+    can = CompileCanary(regions_learner, n_envs=4, batch_size=16, every=1, saver=lambda p: None)
+    can.after_update()                                         # unconfirmed #1
+    armed["on"] = True                                         # the next scheduled canary blips again
+    with pytest.raises(CompileCanaryError, match="two CONSECUTIVE"):
+        can.after_update()
+    assert _verdicts(tmp_path) == ["unconfirmed", "fatal"]
+
+
+def test_the_rollback_point_is_the_newest_checkpoint_at_or_before_the_last_PASSING_canary(tmp_path):
+    import json
+    from agents.model.compile_canary import VERDICTS_FILE, rollback_point
+    assert rollback_point(str(tmp_path)).startswith("none: no canary of this run has PASSED")
+    rows = [{"verdict": "pass", "num_timesteps": 1000}, {"verdict": "pass", "num_timesteps": 3000},
+            {"verdict": "unconfirmed", "num_timesteps": 4000}]
+    (tmp_path / VERDICTS_FILE).write_text("".join(json.dumps(r) + "\n" for r in rows))
+    ck = tmp_path / "checkpoints"
+    ck.mkdir()
+    for n in (500, 2500, 3500):
+        (ck / f"checkpoint_{n}_steps.zip").write_text("x")
+    got = rollback_point(str(tmp_path))
+    assert got.startswith(str(ck / "checkpoint_2500_steps.zip")) and "3,000" in got

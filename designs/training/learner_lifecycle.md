@@ -124,19 +124,51 @@ submodule of an already-compiled frame — so `rank/trunk_*` and `rank/value_cls
 MISSING on every compiled 2.8 run. `rank_metrics_test` fails on a revert to hooks on both torches.
 
 **The in-run parity canary (`gen3_compile_canary_v1`, `agents/model/compile_canary.py`).** The startup
-gate proves the compiled graph at t = 0; the canary proves it at t = N. Every `CANARY_EVERY` (25)
-updates, between updates, on the committed real-obs fixture and through DECLARED signatures only: the
-decision readout (features, masked legal log-probs, V) at the rollout signature (eval / no-grad /
-`n_envs`), compiled vs eager; every `GRAD_EVERY` (4) canaries — every 100 updates — also the train
-graph's gradient (the gate's probe loss, train / grad / `batch_size`: cosine + per-parameter error).
-The bars are the startup gate's (`decision_verdicts`, `train_verdict`; under TF32 the TF32 rule against
-an EAGER fp32 reference — the gate's compiled-at-fp32 arm would be a separate graph, i.e. an
-undeclared signature after the lock). Live weights are trained, so vacuity is not a refusal here. A
-disagreement is `CompileCanaryError` (`[CompileCanary] FATAL`, FATAL_CONFIG, not restarted). It runs
-under `fork_rng`, restores the training mode and leaves every `.grad` None — training is untouched
-(pinned). TB: `compile/canary_ok`, `compile/canary_grad_checked`, `compile/canary_max_abs_<q>`,
-`compile/canary_grad_cosine` on canary updates only. `compile_canary_test` fails on a forward that
-drifted (×1.01) and on a BACKWARD-only drift (the gradient check alone sees it).
+gate proves the compiled graph at t = 0; the canary proves it at t = N. It runs every `CANARY_EVERY`
+(100) updates, between updates (owner, 2026-10-01: "up it to 100"), on the committed real-obs fixture
+and through DECLARED signatures only. Each run compares compiled against eager on two things:
+- the decision readout (masked legal log-probs, V) at the rollout signature (eval / no-grad / `n_envs`);
+- the train graph: on K8, region R1's loss and every policy gradient, with the per-parameter bar
+  chosen by `compile_regions.weights_regime`; on the legacy compile, the gate's probe loss.
+
+The train-graph check now runs at EVERY canary (`GRAD_EVERY` 1). It used to run every 4th. It costs
+0.65–0.71 s at the production shape: arm C's weights, CUDA, `n_envs` 48, B = 2048, R1 through the compiled region and eager. The decision readout alone costs 0.06–0.09 s. Against a 36 s update every 100 updates that is under 0.02% (`~/gen3ai_archive/k6_k8/r1bar/canary_cost.log`, 2026-10-01).
+
+The bars are the startup gate's. Under TF32 that is the TF32 rule against an EAGER fp32 reference; the
+gate's compiled-at-fp32 arm would be a separate graph, i.e. an undeclared signature after the lock.
+Live weights are trained, so vacuity is not a refusal here.
+
+**Persistence, not a single shot** (owner, 2026-10-01: "implement the consecutive check"). A real
+miscompile is deterministic and disagrees every time. A healthy graph's rare exceedance belongs to one
+batch on one weight state. Waiting for the next scheduled canary would mean ~1 h of training on a bad
+graph, so a disagreement is confirmed IN THE SAME UPDATE:
+- **Warn and dump** to `<run_dir>/canary_disagreements.jsonl`.
+- **Re-run the whole comparison**, compiled AND eager recomputed, on the same rows and on an
+  INDEPENDENT fixture slice (`compile_trainer.fixture_index` slice 1: the second half of the rows,
+  tiled, the same declared shape).
+- **Confirmed** (it disagrees again on both): checkpoint to `<run_dir>/final_model_canary_fatal.zip`
+  (forensics only; `latest.txt` is not moved), then `CompileCanaryError` (FATAL_CONFIG, not restarted).
+- **Not confirmed:** `compile/canary_unconfirmed_disagreements` counts it and training continues.
+- **Two consecutive scheduled canaries that disagree are FATAL**, even when neither confirmed.
+
+Every verdict (update, step, pass / unconfirmed / fatal) is appended to
+`<run_dir>/canary_verdicts.jsonl`; the run dir is `model.behaviour_dump_dir`, which K9(b) also uses.
+The FATAL names the SAFE ROLLBACK POINT: the newest `checkpoints/*_<N>_steps.zip` at or before the last
+PASSING canary's step (`rollback_point`; the file is the run's, so it spans restarts).
+
+The canary runs under `fork_rng`, restores the training mode and leaves every `.grad` None, so training
+is untouched (pinned). TB scalars, written on canary updates only:
+- `compile/canary_ok` (1 pass, 0 unconfirmed);
+- `compile/canary_grad_checked`;
+- `compile/canary_unconfirmed_disagreements`;
+- `compile/canary_seconds`;
+- `compile/canary_max_abs_<q>`;
+- `compile/canary_grad_cosine`.
+
+`compile_canary_test` fails on each of these: a forward that drifted (×1.01); a BACKWARD-only drift; a
+planted persistent R0 fault (FATAL in the same update, with the checkpoint and the rollback point); a
+one-shot blip that FATALs instead of counting; two consecutive unconfirmed disagreements that do not
+FATAL; and a wrong rollback-point choice.
 ## The memory half — the CUDA memory TREND, wired (`gen3_cuda_memory_trend_v1`)
 
 The detector itself (what it reads, the floor / demand / ceiling, SUSTAINED / STOP / WARN, the
