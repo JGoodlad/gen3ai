@@ -1,18 +1,18 @@
 # =====================================================================================
-# LANE K1 (2026-09-28): the torch 2.8 environment — `gen3ai_torch28`. A SIBLING of
-# environment.yml (`gen3ai_stable`, torch 2.5.1+cu121), NOT a replacement, and deliberately a
-# SEPARATE FILE: scripts/bootstrap.sh runs `conda env update -n gen3ai_stable -f environment.yml
-# --prune` whenever environment.yml's hash changes, so editing THAT file's pins would rewrite the
-# interpreter under every live and pinned run on the next worktree bootstrap.
+# THE ENV (owner, 2026-09-30: "go ahead with moving to 2.8") — `gen3ai_torch28`, torch 2.8. The
+# DEFAULT interpreter for every new run, gate and tool, and the env scripts/bootstrap.sh manages
+# (keyed by THIS file's hash). environment.yml (`gen3ai_stable`, torch 2.5.1+cu121) is LEGACY and
+# FROZEN: kept byte-for-byte so a run trained on it resumes on it (the launcher selects it from the
+# run's recorded torch — src/main/launcher/torch_runtime.py); never edit it, never update that env.
 #
-# Built on this box as `conda create --clone gen3ai_stable -n gen3ai_torch28` + `pip install
-# --index-url https://download.pytorch.org/whl/cu126 torch==2.8.0+cu126 torchvision==0.23.0+cu126
-# torchaudio==2.8.0+cu126` (which pulled triton 3.4.0, sympy 1.14.0 and the cu126 nvidia wheels
-# below; `pip check` clean). Every other pin is identical to environment.yml — keep them in sync.
-# The code runs on BOTH envs (the version-keyed trunk split in team_transformer.py and the
-# per-version rows in compile_control.py). Which interpreter a NEW run uses is `$GEN3AI_PYTHON`,
-# switched at a run boundary; see designs/training/compile_flags.md "Lane K1".
-# To build it elsewhere: `conda env create -f environment_torch28.yml`.
+# History (Lane K1, 2026-09-28): built on this box as `conda create --clone gen3ai_stable -n
+# gen3ai_torch28` + `pip install --index-url https://download.pytorch.org/whl/cu126
+# torch==2.8.0+cu126 torchvision==0.23.0+cu126 torchaudio==2.8.0+cu126` (which pulled triton
+# 3.4.0, sympy 1.14.0 and the cu126 nvidia wheels below; `pip check` clean). It was a SEPARATE
+# file because bootstrap then re-applied environment.yml to gen3ai_stable on any hash change.
+# The 2.5.1-keyed branches still in the code (the trunk split in team_transformer.py, the 2.5.1
+# rows in compile_control.py) serve legacy resumes only; see designs/training/compile_flags.md
+# "Lane K1". To build it elsewhere: `conda env create -f environment_torch28.yml`.
 # =====================================================================================
 name: gen3ai_torch28
 channels:

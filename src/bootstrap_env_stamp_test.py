@@ -1,7 +1,7 @@
 """`scripts/bootstrap.sh` step 2 — a WORKTREE bootstrap never mutates the SHARED conda env silently.
 
 **The hazard (2026-09-29).** The "env is current" stamp lived in each worktree's own gitdir, so
-EVERY fresh worktree saw no stamp and ran `conda env update --prune` against `gen3ai_stable` — the
+EVERY fresh worktree saw no stamp and ran `conda env update --prune` against the shared env — the
 one env every live run, pinned launch and agent on the box shares. One started under a live
 measurement job that day (killed at the pip step; nothing changed that time). Five m5 worktrees had
 each run a full prune-update in the two days before.
@@ -10,11 +10,13 @@ each run a full prune-update in the two days before.
 with a fake `conda` first on `PATH` that logs every argv (no monkeypatch — the script is bash, so
 the stub is the executable it actually runs, and each test asserts on the log it writes):
 
-* the stamp lives in the git COMMON dir, keyed by environment.yml's sha256 → a worktree whose env
-  is current invokes no `conda env` command at all;
-* a worktree whose environment.yml differs PRINTS the diff and REFUSES (exit 3), naming
+* the stamp lives in the git COMMON dir, keyed by the env file's sha256
+  (`environment_torch28.yml` since 2026-09-30) → a worktree whose env is current invokes no
+  `conda env` command at all;
+* a worktree whose env file differs PRINTS the diff and REFUSES (exit 3), naming
   `--update-shared-env` (the explicit opt-in) and `--skip-env` (leave the env alone);
 * the main checkout keeps the old behaviour (it updates);
+* the LEGACY `gen3ai_stable` / `environment.yml` is never named by any conda call;
 * the newest legacy per-worktree stamp is adopted when it matches, so the migration refuses nothing.
 
 Reverting the stamp location to `--git-dir` makes the first test fail: the worktree sees no stamp
@@ -33,7 +35,11 @@ import pytest
 
 from utils.paths import repo_path
 
-_ENV_YML = "name: gen3ai_stable\ndependencies:\n  - python=3.11\n"
+#: THE env file (owner 2026-09-30: torch 2.8 is the default). `environment.yml` is the frozen
+#: LEGACY spec of `gen3ai_stable`, which bootstrap must never read or touch.
+_ENV_FILE = "environment_torch28.yml"
+_ENV_NAME = "gen3ai_torch28"
+_ENV_YML = "name: gen3ai_torch28\ndependencies:\n  - python=3.11\n"
 _ENV_YML_CHANGED = _ENV_YML + "  - newpkg=1.0\n"
 
 _FAKE_CONDA = """#!/bin/sh
@@ -67,14 +73,16 @@ def _git(cwd: Path, *args: str) -> str:
 @pytest.fixture
 def clone(tmp_path):
     """A throwaway MAIN checkout carrying the real bootstrap.sh, one linked WORKTREE, a fake conda
-    whose base holds an existing `gen3ai_stable`, and every Showdown artifact pre-planted so steps
-    4-5 are no-ops."""
+    whose base holds an existing `gen3ai_torch28` (and the legacy `gen3ai_stable`), and every
+    Showdown artifact pre-planted so steps 4-5 are no-ops."""
     if shutil.which("git") is None or shutil.which("sha256sum") is None:
         pytest.fail("git and sha256sum are required to execute bootstrap.sh")
     main = tmp_path / "main"
     (main / "scripts").mkdir(parents=True)
     shutil.copy(repo_path("scripts", "bootstrap.sh"), main / "scripts" / "bootstrap.sh")
-    (main / "environment.yml").write_text(_ENV_YML)
+    (main / _ENV_FILE).write_text(_ENV_YML)
+    # the LEGACY file is present, as in the repo, and must be ignored
+    (main / "environment.yml").write_text("name: gen3ai_stable\ndependencies:\n  - python=3.11\n")
     _git(main, "init", "-q", "-b", "main")
     _git(main, "-c", "user.name=t", "-c", "user.email=t@t", "add", "-A")
     _git(main, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "init")
@@ -88,8 +96,9 @@ def clone(tmp_path):
         (sd / "dist" / "sim" / "index.js").write_text("")
 
     base = tmp_path / "conda"
-    (base / "envs" / "gen3ai_stable" / "bin").mkdir(parents=True)
-    _exe(base / "envs" / "gen3ai_stable" / "bin" / "python3", "#!/bin/sh\nexit 0\n")
+    for name in (_ENV_NAME, "gen3ai_stable"):
+        (base / "envs" / name / "bin").mkdir(parents=True)
+        _exe(base / "envs" / name / "bin" / "python3", "#!/bin/sh\nexit 0\n")
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
     _exe(fake_bin / "conda", _FAKE_CONDA)
@@ -132,12 +141,12 @@ def test_a_worktree_with_a_current_COMMON_DIR_stamp_never_invokes_conda_env(clon
     rc, out, calls = clone["run"](clone["wt"])
     assert rc == 0, out
     assert _env_calls(calls) == [], f"a current worktree touched the shared env: {calls}\n{out}"
-    assert "is current for this environment.yml" in out, out
+    assert f"is current for this {_ENV_FILE}" in out, out
 
 
 def test_a_worktree_whose_environment_yml_changed_REFUSES_and_prints_the_diff(clone):
     _plant_stamp(clone["stamp_dir"], _ENV_YML)
-    (clone["wt"] / "environment.yml").write_text(_ENV_YML_CHANGED)
+    (clone["wt"] / _ENV_FILE).write_text(_ENV_YML_CHANGED)
     rc, out, calls = clone["run"](clone["wt"])
     assert rc == 3, out
     assert _env_calls(calls) == [], calls
@@ -159,10 +168,10 @@ def test_a_worktree_with_NO_stamp_at_all_refuses(clone):
 
 def test_the_explicit_opt_in_updates_and_moves_the_one_stamp(clone):
     old = _plant_stamp(clone["stamp_dir"], _ENV_YML)
-    (clone["wt"] / "environment.yml").write_text(_ENV_YML_CHANGED)
+    (clone["wt"] / _ENV_FILE).write_text(_ENV_YML_CHANGED)
     rc, out, calls = clone["run"](clone["wt"], "--update-shared-env")
     assert rc == 0, out
-    assert _env_calls(calls) == ["env update -n gen3ai_stable -f environment.yml --prune"], calls
+    assert _env_calls(calls) == [f"env update -n {_ENV_NAME} -f {_ENV_FILE} --prune"], calls
     assert sorted(p.name for p in clone["stamp_dir"].iterdir()) == [f"env-{_sha(_ENV_YML_CHANGED)}"]
     assert not old.exists(), "a stale stamp left behind would call a REVERTED file current"
     # ...and now every worktree with that file is current, with no conda call.
@@ -171,7 +180,7 @@ def test_the_explicit_opt_in_updates_and_moves_the_one_stamp(clone):
 
 
 def test_skip_env_leaves_the_env_alone_and_finishes(clone):
-    (clone["wt"] / "environment.yml").write_text(_ENV_YML_CHANGED)
+    (clone["wt"] / _ENV_FILE).write_text(_ENV_YML_CHANGED)
     rc, out, calls = clone["run"](clone["wt"], "--skip-env")
     assert rc == 0 and _env_calls(calls) == [], out
     assert "--skip-env" in out and "Bootstrap complete" in out, out
@@ -179,16 +188,16 @@ def test_skip_env_leaves_the_env_alone_and_finishes(clone):
 
 def test_the_MAIN_checkout_still_updates_a_changed_env(clone):
     _plant_stamp(clone["stamp_dir"], _ENV_YML)
-    (clone["main"] / "environment.yml").write_text(_ENV_YML_CHANGED)
+    (clone["main"] / _ENV_FILE).write_text(_ENV_YML_CHANGED)
     rc, out, calls = clone["run"](clone["main"])
     assert rc == 0, out
-    assert _env_calls(calls) == ["env update -n gen3ai_stable -f environment.yml --prune"], calls
+    assert _env_calls(calls) == [f"env update -n {_ENV_NAME} -f {_ENV_FILE} --prune"], calls
     assert (clone["stamp_dir"] / f"env-{_sha(_ENV_YML_CHANGED)}").exists()
 
 
 def test_the_newest_legacy_per_worktree_stamp_is_adopted_when_it_matches(clone):
     """Migration: the old stamps lived in `<common>/worktrees/<wt>/gen3ai-bootstrap/`. The NEWEST
-    one records the last successful update; if it is for this exact environment.yml, adopt it."""
+    one records the last successful update; if it is for this exact env file, adopt it."""
     legacy = clone["common"] / "worktrees" / "wt" / "gen3ai-bootstrap"
     legacy.mkdir(parents=True)
     (legacy / f"env-{_sha(_ENV_YML)}").touch()
@@ -196,3 +205,14 @@ def test_the_newest_legacy_per_worktree_stamp_is_adopted_when_it_matches(clone):
     assert rc == 0 and _env_calls(calls) == [], out
     assert "adopting the newest per-worktree stamp" in out, out
     assert (clone["stamp_dir"] / f"env-{_sha(_ENV_YML)}").read_text() == _ENV_YML
+
+
+def test_the_LEGACY_env_is_never_touched_even_when_its_file_changes(clone):
+    """`gen3ai_stable` (torch 2.5.1, `environment.yml`) is FROZEN for legacy resumes: a changed
+    `environment.yml` in the MAIN checkout, even with `--force`, issues no conda call naming it."""
+    _plant_stamp(clone["stamp_dir"], _ENV_YML)
+    (clone["main"] / "environment.yml").write_text("name: gen3ai_stable\n  - changed=1\n")
+    for flags in ((), ("--force",)):
+        rc, out, calls = clone["run"](clone["main"], *flags)
+        assert rc == 0, out
+        assert not any("gen3ai_stable" in c or "environment.yml" in c.split() for c in calls), calls

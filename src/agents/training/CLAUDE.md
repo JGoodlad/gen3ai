@@ -622,8 +622,9 @@ at fp32 held to the strict bars. **On torch 2.5.1 the GPU learner compile needs 
 affected every default cuda run from `28eaef29` (2026-08-17) to 2026-09-28: argmax agreement 70.9%,
 gradient cosine 0.778. The CPU compile (eval, opponents, traces) is clean. **On torch 2.8.0+cu126
 (`gen3ai_torch28`, Lane K1) the split is OFF** — keyed on the torch version, after the unsplit graph
-passed the real-obs gate at fp32 and TF32 on the eval and train graphs; which env a run uses is its
-interpreter (`designs/training/compile_flags.md` "Lane K1").
+passed the real-obs gate at fp32 and TF32 on the eval and train graphs. torch 2.8 is the DEFAULT
+interpreter since 2026-09-30 (owner); a resume runs on the torch its run recorded, so a 2.5.1 run
+keeps the split (`designs/training/compile_flags.md` "Lane K1").
 🚨 **THE COMPILE SENTINEL (`gen3_compile_sentinel_v1`) makes a silent recompile / eager fallback
 FATAL.** `src/agents/model/compile_control.py` is the ONLY runtime module that touches
 `torch._dynamo` — add nothing that does elsewhere. Phases: the gate compiles freely →

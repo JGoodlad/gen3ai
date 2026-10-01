@@ -108,22 +108,22 @@ Never `git add` or `git commit` from `/home/goodlad/dev/gen3ai` directly.
 
 ## Python Environment
 
-`./scripts/bootstrap.sh` does all setup idempotently — conda env, submodule, Showdown build, worktree symlinks, the optional cargo build — and verifies with the ruff/mypy gates, the two import-precedence gates and a ~10 s smoke. `--dry-run` prints the plan. `CONTRIBUTING.md` is the human version. 🚨 **The conda env is SHARED, so a WORKTREE bootstrap never updates it silently:** its "current" stamp lives in the git COMMON dir (keyed by `environment.yml`'s hash), a worktree whose env is current does nothing, and one whose `environment.yml` differs prints the diff and REFUSES (exit 3) — `--update-shared-env` opts in, `--skip-env` finishes the setup without touching the env. The main checkout still updates.
+`./scripts/bootstrap.sh` does all setup idempotently — conda env, submodule, Showdown build, worktree symlinks, the optional cargo build — and verifies with the ruff/mypy gates, the two import-precedence gates and a ~10 s smoke. `--dry-run` prints the plan. `CONTRIBUTING.md` is the human version. 🚨 **The conda env is SHARED, so a WORKTREE bootstrap never updates it silently:** its "current" stamp lives in the git COMMON dir (keyed by `environment_torch28.yml`'s hash), a worktree whose env is current does nothing, and one whose env file differs prints the diff and REFUSES (exit 3) — `--update-shared-env` opts in, `--skip-env` finishes the setup without touching the env. The main checkout still updates.
 
-The env is **`gen3ai_stable`** (not `deps/venv`, which is outdated — ignore it). **`gen3ai_torch28`** (torch 2.8, `environment_torch28.yml`) is its sibling for Lane K1: the code runs on both, so a change to anything under `torch._dynamo`/compile runs its compile tests under BOTH interpreters (`designs/training/compile_flags.md` "Lane K1"); never edit `environment.yml`'s torch pins — a main-checkout `bootstrap.sh` (or `--update-shared-env`) re-applies it to `gen3ai_stable`, under whatever runs are live:
+The env is **`gen3ai_torch28`** (torch 2.8, `environment_torch28.yml` — the DEFAULT for every new run, gate and tool, owner 2026-09-30; not `deps/venv`, which is outdated — ignore it). New code targets torch 2.8 only. 🚨 **`gen3ai_stable` (torch 2.5.1, `environment.yml`) is LEGACY and FROZEN** — kept byte-for-byte only so an old run resumes on the torch it trained on: never edit `environment.yml`, never update that env (bootstrap no longer touches either). 🚨 **A resume or fork runs under the torch its RUN RECORDED** (`metadata.json` `torch_version`; none = 2.5.1): the launcher SELECTS `gen3ai_stable` for a legacy run and refuses a mismatch `FATAL_CONFIG` unless `--allow-torch-switch` — a bare `train_rl_agent.py --model` is NOT checked, so resume through the launcher (`src/main/launcher/CLAUDE.md` "Which interpreter the child runs"):
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 <script>
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 <script>
 ```
 
 🚨 **IN A GIT WORKTREE THE `export` IS MANDATORY.** `pip install -e .` names ONE absolute path — the main checkout's `src/` — so a worktree that runs `pytest` with no `PYTHONPATH` collects *its own* test files and imports *main's* code. Every result is then about a tree you did not edit. `src/packaging_gate_test.py` catches it, but the fix is to export, every time. Optional means optional **in the main checkout**.
 
 **The ORDER between the two mechanisms is load-bearing.** `PYTHONPATH` lands in `sys.path` *before* site-packages; an editable install's `.pth` lands *after*. That is what lets the launcher pin a resumed run to its checkpoint's commit. Install from the **main checkout only** — a `.pth` made in a worktree points at a directory that later gets deleted, and Python skips it in silence.
 
-🚨 **`poke-env` is deliberately ABSENT from `environment.yml`.** We vendor the fork at `src/poke_env/`. A second installed copy makes `import poke_env` depend on `sys.path` ORDER — and the failure is **silent**: upstream imports cleanly and behaves subtly differently. `src/poke_env_fork_gate_test.py` guards it. (`environment.yml`'s `--extra-index-url .../cu121` is load-bearing too: the torch pins are local-version builds not published on PyPI.)
+🚨 **`poke-env` is deliberately ABSENT from both env files.** We vendor the fork at `src/poke_env/`. A second installed copy makes `import poke_env` depend on `sys.path` ORDER — and the failure is **silent**: upstream imports cleanly and behaves subtly differently. `src/poke_env_fork_gate_test.py` guards it. (The env file's `--extra-index-url .../cu126` is load-bearing too: the torch pins are local-version builds not published on PyPI.)
 
-**That absolute path is THIS box's env, not a requirement.** Every process the project spawns runs under `sys.executable`, so elsewhere `conda activate gen3ai_stable && python <script>` is enough. The launcher takes **`$GEN3AI_PYTHON`** to pin its child's interpreter.
+**That absolute path is THIS box's env, not a requirement.** Every process the project spawns runs under `sys.executable`, so elsewhere `conda activate gen3ai_torch28 && python <script>` is enough. The launcher takes **`$GEN3AI_PYTHON`** to pin its child's interpreter (checked against the run's recorded torch on a resume).
 
 Detail: `designs/research_state/claude_md_archive/pythonpath_archaeology.md`.
 
@@ -152,7 +152,7 @@ Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`
 
 **Full chapter — tiers, the four gates, contention, fuzz, benchmarks: [`designs/ops/testing.md`](designs/ops/testing.md).** The card:
 
-| When | Command (prefix each with `export PYTHONPATH=$PYTHONPATH:src PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3} &&` — a bare `python3` outside an activated env is BASE miniconda, not `gen3ai_stable`) |
+| When | Command (prefix each with `export PYTHONPATH=$PYTHONPATH:src PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3} &&` — a bare `python3` outside an activated env is BASE miniconda, not `gen3ai_torch28`) |
 |---|---|
 | **inner loop** — fastest true/false | `"$PY" -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` |
 | **THE ROUTINE GATE — before a commit** | `scripts/ops/gate_lock.sh "$PY" -m pytest src/ -m "not slow and not e2e" -q -n 6` — ONE gate at a time (`utils.gate_lock`): **~4.3 min** on a quiet box (2026-10-01; two at once at `-n 4` took 11.5 min EACH). A live training run gets a one-line warning: use `-n 4` then. With HIGH confidence the blast radius is contained, an agent may instead run a targeted set it chooses + the static gates, naming scope and reason in the commit body; shared infrastructure or any doubt ⇒ the full gate. No automated test-selection framework (owner, 2026-09-30) |
@@ -216,7 +216,7 @@ python3 src/agents/training/live_view_build_benchmark.py      # the only one tha
 Verify the core pipeline before a full run (~1 min). `--debug` defaults to **CPU**, skips all eval, and is **serverless** (`--use-bridge` defaults to `rust`); add `--debug-eval` to exercise the eval path.
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py --debug --steps 10000
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/main/train_rl_agent.py --debug --steps 10000
 ```
 
 Look for `[ModelVersion] Round-trip smoke test PASSED`, `🏁 Episode Finished` throughout, and `Training complete`. A hang after `[STALL LOGGED]` or a crash before completion is a regression in the env/stall/forfeit pipeline; `[ModelVersion] FATAL` means the checkpoint's architecture ≠ current code.

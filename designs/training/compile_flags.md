@@ -456,14 +456,17 @@ kernels live in process memory). n = 1 round per part: a difference below ~10% i
   (it leaked two `mkdtemp`s per gate run, ~2 GB by 2026-09-30). Pinned by
   `compile_cache_test::test_a_pytest_session_removes_its_cache_even_when_it_fails` (a real child
   session, passing and failing) and `::test_a_SIGKILLED_owner_s_cache_is_swept_by_the_next_declaration`.
-- 🚨 **A COMPILE-PATH CHANGE RUNS THE COMPILE FILES' `slow` TIER UNDER BOTH TORCHES BEFORE SHIPPING**
-  (orchestrator, 2026-09-30). K3 made the first CPU codegen of the production extractor in each pytest
+- 🚨 **A COMPILE-PATH CHANGE RUNS THE COMPILE FILES' `slow` TIER UNDER TORCH 2.8 BEFORE SHIPPING**
+  (orchestrator, 2026-09-30; **the BOTH-torches half RETIRED the same day** — owner: torch 2.8 is the
+  default, new code targets 2.8 only, 2.5.1 is a legacy-resume env whose version-keyed branches wait
+  for the deletion pass — so `gen3ai_stable` is no longer a required run; the text below records the
+  rule as it was set). K3 made the first CPU codegen of the production extractor in each pytest
   process COLD (70–90 s), so the codegen-numerics tests of `extractor_compiles_test`
   (`…_without_suppression`, `test_cpu_backward_still_does_not_compile`) are `slow`; the one-graph
   `explain` tests stay routine. So: `python3 -m pytest src/agents/model/extractor_compiles_test.py
   src/agents/model/compile_control_test.py src/agents/model/compile_prewarm_test.py
-  src/agents/inference/service/service_cuda_test.py -m slow` under `gen3ai_stable` AND
-  `gen3ai_torch28` (the CUDA file under `scripts/ops/gpu_lock.sh`); the rows land in
+  src/agents/inference/service/service_cuda_test.py -m slow` under `gen3ai_torch28` (until
+  2026-09-30 also `gen3ai_stable`; the CUDA file under `scripts/ops/gpu_lock.sh`); the rows land in
   `designs/ops/slow_tier_status.json`, which the routine gate reads. Production's guard is unchanged:
   the real-obs parity gate runs at every start. **First finding of that rule (2026-09-30): on torch
   2.8.0+cu126 the CPU forward+BACKWARD of the production extractor now LOWERS** (the 2.5.1
@@ -647,16 +650,36 @@ minimum-of-15 at batch 1024: 46.3/46.6 ms with the split vs 45.7/45.8 ms without
 48.4-50.5 vs 46.4-47.9 ms (≤ +4%). Batch 512 is noise-dominated. Batch 2048 could not be measured
 beside the live run's VRAM. The split also lowers peak memory: 1.7 vs 2.2 GiB at batch 1024.
 
-### Lane K1 — torch 2.8 (`gen3ai_torch28`), the split OFF there (2026-09-28)
+### Lane K1 — torch 2.8 (`gen3ai_torch28`), THE DEFAULT; the split OFF there (2026-09-28; default 2026-09-30)
 
-**Two envs, one code base.** `gen3ai_stable` stays torch 2.5.1+cu121 (NEVER mutated — live and pinned
-runs use it); `gen3ai_torch28` is its clone with torch **2.8.0+cu126**, torchvision 0.23.0+cu126,
-torchaudio 2.8.0+cu126, triton 3.4.0, sympy 1.14.0 and the cu126 `nvidia-*` wheels
-(`environment_torch28.yml` — a SEPARATE file because `scripts/bootstrap.sh` re-applies
-`environment.yml` to `gen3ai_stable` whenever its hash changes). The split is keyed on the torch
+🚨 **torch 2.8 is the DEFAULT interpreter for every new run, gate and tool (owner, 2026-09-30: "go
+ahead with moving to 2.8"); torch 2.5.1 is LEGACY.** `gen3ai_torch28` (torch **2.8.0+cu126**,
+torchvision 0.23.0+cu126, torchaudio 2.8.0+cu126, triton 3.4.0, sympy 1.14.0, the cu126 `nvidia-*`
+wheels and the CUDA 12.6 headers; `environment_torch28.yml`) is the env `scripts/bootstrap.sh`
+manages, and every gate command, `scripts/land.sh`, `scripts/ops/_common.sh` and the docs name it.
+`gen3ai_stable` (torch 2.5.1+cu121, `environment.yml`) is kept FROZEN — bootstrap no longer reads
+`environment.yml` or touches the env — only so an old run resumes on the torch it trained on.
+**New code targets 2.8 only**; the rule that a compile change also runs its tests under 2.5.1 is
+RETIRED. The 2.5.1-keyed branches that remain (this split, `compile_control`'s 2.5.1 row, the 2.5.1
+learner-golden entry, …) stay until the deletion pass (`designs/endstate/program_rust_core.md` §4).
+
+**Which torch a run uses is RECORDED and ENFORCED.** Every save writes `metadata.json`'s
+`torch_version` (and a `torch` key per `pin_history` span); a run without one predates the record
+and trained on 2.5.1. The launcher (`src/main/launcher/torch_runtime.py`) resumes or forks a run
+under its recorded torch — it SELECTS `gen3ai_stable` for a 2.5.1 run and refuses a mismatch
+`FATAL_CONFIG` unless `--allow-torch-switch`; `--dry-run` prints the interpreter, its torch and the
+run's record. A bare `train_rl_agent.py --model` is not checked. The split is keyed on the torch
 version: `team_transformer._SPLIT_NOT_NEEDED_ON = {"2.8.0+cu126"}` ⇒ `_CUDA_TRUNK_SPLIT` is OFF on
-2.8 and ON on every other torch. A new run moves to 2.8 by its interpreter (`$GEN3AI_PYTHON=
-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3`), switched at a run boundary.
+2.8 and ON on every other torch, so a legacy resume keeps the split it trained with.
+
+**The 2.8 sweep before the flip (2026-09-30 / 10-01, `gen3ai_torch28`):** routine gate 12,690 passed —
+its only 2.8-specific red was the mypy gate (torch 2.8's stub types `nn.Module.__getattr__` as
+`Tensor | Module`; 111 errors fixed by annotations / casts, clean on both torches); slow tier (CPU)
+67 passed / 0 failed; the GPU compile files (`extractor_compiles`, `compile_control`, `compile_trainer`,
+`compiled_train_probes`, `compile_defaults`) pass under the GPU lock. Four GPU-only gate tests had driven
+`compile_trainer_extractor` with a heads-less stand-in policy, which the grad-COVERAGE guard refuses on
+BOTH torches (15–17 of 232 zero; the real fresh production policy on the perturbed rung: 1 of 254,
+`c5_map`) — they now build the real policy (`build_fresh_model`).
 
 **Measured, split OFF on 2.8** (RTX 3080 Ti beside a live training run, `ai_v14_06_lbat_ctrl_fix`
 `final_model.zip`):

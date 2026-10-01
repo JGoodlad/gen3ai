@@ -21,7 +21,7 @@ anything (`warn_if_contended`), and pinning BLAS threads matters: an unpinned ru
 measures the scheduler.
 
 Run: OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
-     /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
+     /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 \
        src/agents/training/capacity_overhead_benchmark.py
 (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 

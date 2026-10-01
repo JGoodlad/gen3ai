@@ -48,12 +48,14 @@ Report which one will be used.
 
 Print the exact command the user should run. Use `training_args` from metadata if present; otherwise use the defaults from CLAUDE.md. Always ask the user how many `--steps` they want for this continuation run — do not guess.
 
+**The interpreter is the RUN'S torch, never just the default** (owner 2026-09-30: torch 2.8 is the default, 2.5.1 legacy). Read `metadata.json`'s `torch_version`: `2.8.*` → `gen3ai_torch28`; ABSENT or `2.5.*` → `gen3ai_stable` (every run before 2026-09-30 trained on 2.5.1). Prefer `python -m main.launcher … --model <ckpt>`, which selects and checks it for you (`src/main/launcher/torch_runtime.py`); a bare `train_rl_agent.py --model` below is NOT checked.
+
 ```bash
 cd /home/goodlad/dev/gen3ai
 git checkout <branch_name>
 
 export PYTHONPATH=$PYTHONPATH:src
-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
+/home/goodlad/miniconda3/envs/<the run's env — see above>/bin/python3 src/main/train_rl_agent.py \
   --model <checkpoint_path> \
   --steps <ASK_USER> \
   --n-envs <from metadata or default 96> \

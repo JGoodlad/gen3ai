@@ -1070,7 +1070,7 @@ node src/rust_sim/harness/dump_gen3_mechanics.js --check    # DRIFT GATE: commit
                                                             # gen3_items/abilities.json
                                                             # vs the resolved dist
 # in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 \
     tools/pokemon_data_extractor/sync.py --datasets items abilities
 ```
 
@@ -1125,7 +1125,7 @@ source of truth). Regenerate after any data or category-derivation change:
 
 ```bash
 # in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 \
     src/rust_sim/harness/gen_dex_golden.py
 ```
 

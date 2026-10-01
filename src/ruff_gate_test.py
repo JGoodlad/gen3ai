@@ -81,7 +81,7 @@ def test_tree_passes_pyflakes():
     if "No module named ruff" in proc.stderr:
         raise AssertionError(
             "ruff is NOT INSTALLED, so the tree went UNCHECKED — a gap in coverage, not a "
-            "pass. It is pinned in environment.yml; install it with\n"
+            "pass. It is pinned in environment_torch28.yml; install it with\n"
             "    pip install ruff==0.16.3\n"
             "or opt out explicitly:\n"
             "    GEN3AI_SKIP_RUFF_GATE=1 pytest ..."

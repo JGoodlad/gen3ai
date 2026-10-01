@@ -1472,7 +1472,9 @@ the attention trunk** (`gen3_inductor_trunk_split_v1`, `TeamTransformer.forward`
 2.8.0+cu126 (`gen3ai_torch28`, Lane K1) the split is OFF** — keyed on the torch version
 (`team_transformer._SPLIT_NOT_NEEDED_ON`) after the unsplit graph passed the real-obs gate at fp32
 and TF32 on the eval and train graphs (2026-09-28, `designs/training/compile_flags.md` "Lane K1").
-Which env a run uses is its interpreter (`$GEN3AI_PYTHON`). Eager, the CPU compile and the weights
+**torch 2.8 (`gen3ai_torch28`) is the default interpreter for every new run** (owner 2026-09-30); a
+run resumes on the torch its `metadata.json` recorded (none = 2.5.1, resumed on `gen3ai_stable` —
+`src/main/launcher/torch_runtime.py`). Eager, the CPU compile and the weights
 are unchanged either way. As one CUDA graph it miscompiled on real observations: argmax agreement 70.9%,
 gradient cosine 0.778 vs eager, measured 2026-09-28 on `ai_v14_01_base`. That affected every
 default cuda run from 2026-08-17 (`28eaef29`) to 2026-09-28. `--compile-trainer`'s startup gate now

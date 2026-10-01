@@ -32,7 +32,7 @@ _OPS_DIR = repo_path("scripts", "ops")
 _ENTRY_POINTS = sorted(p for p in _OPS_DIR.glob("*.sh") if not p.name.startswith("_"))
 _ALL_SCRIPTS = sorted(_OPS_DIR.glob("*.sh"))
 
-#: `_common.sh` carries the `gen3ai_stable` interpreter fall-back, exactly as `scripts/land.sh`
+#: `_common.sh` carries the `gen3ai_torch28` interpreter fall-back, exactly as `scripts/land.sh`
 #: does — the one place a box-specific path is the right answer, because it is a FALL-BACK that
 #: is tested for executability before use and superseded by `$GEN3AI_PYTHON`.
 _HOME_LITERAL_EXEMPT = {"_common.sh"}

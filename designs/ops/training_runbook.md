@@ -134,7 +134,7 @@ ARCH-SURFACE guard*, § *An argv is validated by the parser of the tree that wil
 `recipe` block, K10(a)). A recipe token typed here OVERRIDES the recipe, so type one only when it is
 the arm's lever.
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.launcher \
   --restart-interval-hours 3 \
   --steps 15000000 \
   --device cuda \
@@ -144,7 +144,7 @@ export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable
 
 ### Resuming from a checkpoint
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.launcher \
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.launcher \
   --restart-interval-hours 3 \
   --model models/<run>/checkpoints/checkpoint_NNNN_steps.zip \
   --steps 15000000 \
@@ -210,7 +210,7 @@ Read a run's dose — including every run already on disk — with **`python -m 
 Run directly (no restart loop, no worktree isolation):
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/main/train_rl_agent.py \
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/main/train_rl_agent.py \
   --model <path/to/checkpoint.zip> \
   --steps 15000000 \
   --n-envs 64 \
@@ -551,7 +551,9 @@ precision-aware TF32 rule. 🚨 **Every cuda run with the default `--compile-tra
 single CUDA graph** (argmax agreement 70.9%, gradient cosine 0.778 vs eager). Its eval, opponents
 and traces ran the CPU compile and are clean. The split is torch-2.5.1-only: under the
 `gen3ai_torch28` interpreter (torch 2.8, Lane K1) the unsplit graph passed the gate and the split is
-OFF — an interpreter switch for a new run is set with `$GEN3AI_PYTHON`, at a run boundary.
+OFF. torch 2.8 is the DEFAULT interpreter since 2026-09-30 (owner); a resume or fork runs on the torch
+its run recorded — the launcher selects `gen3ai_stable` for a 2.5.1 (or unrecorded) run and refuses a
+mismatch `FATAL_CONFIG` unless `--allow-torch-switch` (`src/main/launcher/CLAUDE.md`).
 Detail: `designs/training/compile_flags.md` → "The single-graph CUDA miscompile". And
 `--device cpu` is refused up front, because the CPU backward provably does not lower (Inductor's C++
 backend refuses the damage op's `atomic_add` scatter).

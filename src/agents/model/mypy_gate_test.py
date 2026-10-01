@@ -29,7 +29,7 @@ paid once; the `observation` widening added 21 source files to a 47-file scope a
 either figure out of its tier. Both sit under the root `conftest.py`'s 30 s unmarked-tier budget,
 so this test takes NO cost marker and stays in the fast inner loop.
 
-**A missing mypy FAILS rather than skips.** `mypy` is declared in `environment.yml` precisely so
+**A missing mypy FAILS rather than skips.** `mypy` is declared in `environment_torch28.yml` precisely so
 that it is present; if it is not, the honest report is "this gate did not run", not a green tick.
 That is the project's own lesson about default branches nothing tests — a linter that silently
 opts out reads exactly like a linter that found nothing. The one intentional opt-out is explicit:
@@ -102,7 +102,7 @@ def test_checked_packages_type_check_clean():
     if "No module named mypy" in proc.stderr:
         raise AssertionError(
             "mypy is NOT INSTALLED, so the checked packages went UNCHECKED — this is a gap in "
-            "coverage, not a pass. It is pinned in environment.yml; install it with\n"
+            "coverage, not a pass. It is pinned in environment_torch28.yml; install it with\n"
             "    pip install mypy==2.3.1\n"
             "or, if you genuinely mean to run without it, opt out explicitly:\n"
             "    GEN3AI_SKIP_MYPY_GATE=1 pytest ..."

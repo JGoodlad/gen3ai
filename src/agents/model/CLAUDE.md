@@ -518,7 +518,7 @@ The model package is **type-checked, and the gate is ZERO errors**. New code in
 `src/agents/model/` must pass it before it lands:
 
 ```bash
-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m mypy src/agents/model   # must be clean
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m mypy src/agents/model   # must be clean
 ```
 
 The mypy scope, the strictness set, and the annotation rules (shape comments stay; buffers declared

@@ -78,7 +78,7 @@ investigation starts from a richer baseline.
   is in the main checkout — reference it by absolute path. (See
   [[feedback_edit_in_worktree_path]].)
 - **Test before claiming done:**
-  `export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/main/prober src/main/tui -q`
+  `export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/main/prober src/main/tui -q`
   TUI changes: also drive a real battle via `App.run_test()` (see existing CUJ
   patterns) — assertions, not just imports.
 - **Keep docs current** (`src/main/prober/CLAUDE.md`, root `CLAUDE.md` if a flag/

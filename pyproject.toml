@@ -11,13 +11,14 @@
 # It replaces `export PYTHONPATH=$PYTHONPATH:src` as the thing a contributor has to remember,
 # and nothing else. In particular:
 #
-#   * IT DECLARES NO RUNTIME DEPENDENCIES, ON PURPOSE. `environment.yml` owns dependencies —
-#     73 pins including a CUDA-local-version torch that is not on PyPI at all. If this file
+#   * IT DECLARES NO RUNTIME DEPENDENCIES, ON PURPOSE. The env file owns dependencies
+#     (`environment_torch28.yml`; `environment.yml` is the frozen legacy torch-2.5.1 env's) —
+#     ~77 pins including a CUDA-local-version torch that is not on PyPI at all. If this file
 #     also declared them, the two would be free to disagree, and the way that disagreement
 #     surfaces is `pip install -e .` silently RESOLVING and REPLACING a pinned wheel in a
 #     working conda env. An empty `dependencies` cannot do that: `pip install -e .` here
 #     installs a `.pth` file and a `dist-info` directory, and touches nothing else.
-#     One owner per question. `environment.yml` owns "what is installed"; this owns "where
+#     One owner per question. The env file owns "what is installed"; this owns "where
 #     does `import agents` look".
 #
 #   * IT IS ADDITIVE. `PYTHONPATH` keeps working exactly as before, everywhere, and the
@@ -64,7 +65,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 
-# DELIBERATELY EMPTY — see the header. `environment.yml` is the single owner of dependencies;
+# DELIBERATELY EMPTY — see the header. The env file is the single owner of dependencies;
 # declaring them twice invites the two to drift, and the drift is repaired by pip mutating a
 # working environment. Listed explicitly rather than omitted so that "no dependencies" reads
 # as a decision instead of an oversight.

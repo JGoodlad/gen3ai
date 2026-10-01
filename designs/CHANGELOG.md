@@ -10313,3 +10313,19 @@ if a lazy build is reintroduced.
   `cuda_segments_after_freeze` counter (T2's guard included); no update-time difference claimable
   under the box's load.
 
+## 2026-09-30 — torch 2.8 is the DEFAULT interpreter; 2.5.1 is legacy-resume only (Lane K1; no model version bump, weights unchanged)
+
+- **Owner decision (2026-09-30):** "go ahead with moving to 2.8". `gen3ai_torch28` (torch 2.8.0+cu126,
+  `environment_torch28.yml`) becomes the env for new runs, gates and tooling; `scripts/bootstrap.sh`
+  manages it and no longer reads `environment.yml` or touches `gen3ai_stable`, which is kept FROZEN so an
+  old run (A′, paused at 92.1M) resumes on its own torch.
+- **Numerics:** on 2.8 the CUDA learner's `6521f420` trunk split is OFF (keyed on the torch version since
+  Lane K1, 2026-09-28) — a NEW run's learner compiles as one graph. A 2.5.1 resume keeps the split.
+- **Run ↔ interpreter safety:** `metadata.json` records `torch_version` (and `pin_history` spans a
+  `torch` key); the launcher resumes or forks under the recorded torch (unrecorded = 2.5.1), selecting
+  `gen3ai_stable` or refusing `FATAL_CONFIG` unless `--allow-torch-switch`
+  (`src/main/launcher/torch_runtime.py`).
+- **Retired:** the rule that a compile change also runs its tests under 2.5.1. The 2.5.1-keyed branches are
+  listed for the deletion pass (`designs/endstate/program_rust_core.md` §4).
+- **mypy under 2.8:** the newer stubs type `nn.Module.__getattr__` as `Tensor | Module`; 111 errors in 17
+  files fixed by annotations / casts only (no runtime change), clean on both torches.

@@ -10,7 +10,7 @@ pinned, not just the raw JSON.
 
 Run (needs the project conda env):
 
-    /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \\
+    /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 \\
         src/rust_sim/harness/gen_dex_golden.py
     (in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src)
 

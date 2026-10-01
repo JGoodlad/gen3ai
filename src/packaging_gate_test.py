@@ -117,8 +117,8 @@ def test_pyproject_ships_exactly_the_four_top_level_packages() -> None:
 
 
 def test_pyproject_declares_no_runtime_dependencies() -> None:
-    """ONE OWNER PER QUESTION. `environment.yml` owns what is installed; pyproject owns where
-    imports look.
+    """ONE OWNER PER QUESTION. The env file (`environment_torch28.yml`; `environment.yml` is the
+    frozen legacy 2.5.1 env's) owns what is installed; pyproject owns where imports look.
 
     If this file also declared dependencies, `pip install -e .` would be free to RESOLVE them —
     i.e. to replace a pinned wheel inside a working conda env, including the CUDA-local-version
@@ -127,8 +127,8 @@ def test_pyproject_declares_no_runtime_dependencies() -> None:
     """
     deps = _pyproject()["project"].get("dependencies", None)
     assert deps == [], (
-        f"pyproject.toml must declare NO runtime dependencies, got {deps!r}. environment.yml "
-        "is the single owner — see the header comment in pyproject.toml for why splitting that "
+        f"pyproject.toml must declare NO runtime dependencies, got {deps!r}. The env file "
+        "(environment_torch28.yml) is the single owner — see the header comment in pyproject.toml for why splitting that "
         "ownership is how a working environment gets mutated by an install."
     )
 

@@ -28,7 +28,7 @@ StartLimitIntervalSec=0
 WorkingDirectory=/home/goodlad/dev/gen3ai
 Environment=HOME=/home/goodlad
 Environment=PYTHONPATH=/home/goodlad/dev/gen3ai/src
-ExecStart=/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m agents.model.build_arch_viewer --serve --port 6007
+ExecStart=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m agents.model.build_arch_viewer --serve --port 6007
 
 # Exponential backoff: 2s on the first crash, doubling over 6 steps to a 5 min
 # ceiling. A transient fault (a half-written file, a momentary disk error) is

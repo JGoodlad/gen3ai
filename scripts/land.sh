@@ -39,7 +39,8 @@
 # step that lands code, so the script copies itself to a temp file and re-execs when it is about
 # to remove its own tree.
 #
-# The python interpreter is `$GEN3AI_PYTHON` if set, else the box's `gen3ai_stable` env, else
+# The python interpreter is `$GEN3AI_PYTHON` if set, else the box's `gen3ai_torch28` env (torch 2.8,
+# the default since 2026-09-30; `gen3ai_stable` is legacy, for old-run resumes only), else
 # whatever `python3` is on PATH.
 set -Eeuo pipefail
 
@@ -71,7 +72,7 @@ WHAT IT DOES
     main, resolve, and run this again.
 
 ENVIRONMENT
-    GEN3AI_PYTHON     interpreter to run the gates with (default: the gen3ai_stable env)
+    GEN3AI_PYTHON     interpreter to run the gates with (default: the gen3ai_torch28 env)
 
 EXIT
     0  landed        1  a gate failed, or the push was rejected        2  bad usage
@@ -109,7 +110,7 @@ else
         && cd "$(git rev-parse --git-common-dir)" && cd .. && pwd)"
 fi
 
-PY="${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3}"
+PY="${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}"
 [ -x "$PY" ] || PY="$(command -v python3)"
 
 # --- re-exec out of the tree we are about to delete ------------------------------------------

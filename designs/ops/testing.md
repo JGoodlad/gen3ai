@@ -279,7 +279,7 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 # THE ROUTINE GATE — everything cheap, whatever it needs; -n 6 (-n 4 beside a live training run),
 # under THE gate slot (one gate at a time).
 export PYTHONPATH=$PYTHONPATH:src && scripts/ops/gate_lock.sh \
-  /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 6
+  /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 6
 ```
 
 **The gate SEMAPHORE** (`scripts/ops/gate_lock.sh`, `src/utils/gate_lock.py`, 2026-09-30): at most
@@ -389,7 +389,7 @@ with no path argument precisely so the config is the only scope declaration, and
 pyflakes + syntax errors only — findings that mean the code is **wrong**, never a style opinion, so
 the gate cannot degrade into a formatting argument.
 
-**A missing tool FAILS, it does not skip** (both are pinned in `environment.yml`) — a linter that
+**A missing tool FAILS, it does not skip** (both are pinned in `environment_torch28.yml`) — a linter that
 silently opts out reads exactly like a linter that found nothing. Opt out explicitly with
 `GEN3AI_SKIP_MYPY_GATE=1` / `GEN3AI_SKIP_RUFF_GATE=1`.
 
@@ -515,7 +515,7 @@ recorded run still reads `pass` here.** Nothing short of running the tier closes
 report is what says how much a green is worth, and the full refresh is one command:
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && "${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3}" -m pytest src/ -m slow -q -n 2
+export PYTHONPATH=$PYTHONPATH:src && "${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}" -m pytest src/ -m slow -q -n 2
 ```
 
 **WHY THE ARTIFACT IS COMMITTED and not gitignored.** The worktree workflow decides it: a gitignored
@@ -557,7 +557,8 @@ start, export the variables yourself. Every such dir carries its creator's PID a
 declaration once that PID is dead (a SIGKILLed session leaks only until then — `/tmp` is tmpfs, and
 on 2026-09-30 it ran out of INODES). Consequence: a session's first compile of each graph is COLD, so
 the production extractor's CPU codegen tests are `slow`, and a compile-path change runs the compile
-files' `slow` tier under both torches before shipping (`designs/training/compile_flags.md`).
+files' `slow` tier under torch 2.8 (`gen3ai_torch28`, the default) before shipping — the
+both-torches rule was RETIRED 2026-09-30 (`designs/training/compile_flags.md`).
 `compile_cache_test.py` pins all of it; the full rule is `designs/training/compile_flags.md`
 "The HERMETIC per-run compile cache".
 
@@ -708,14 +709,14 @@ Detail — what is pinned, why exact bytes, the scope limits: `designs/training/
 
 ### Unit tests only (the fast inner loop)
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q
 ```
 
 **Add `-n 2` — it is ~1.8x faster** and costs the box only two cores, which matters because a
-training run normally shares this machine. `pytest-xdist` is in `environment.yml`.
+training run normally shares this machine. `pytest-xdist` is in `environment_torch28.yml`.
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not integration and not e2e" -q -n 2
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -m "not integration and not e2e" -q -n 2
 ```
 
 Measured 2026-08-14, 16-core box, whole unit suite, same 4527 passed. **The two columns are not
@@ -745,7 +746,7 @@ serial when you need `-s`, a debugger, or a readable single failure.
 ### Everything, including the slow tiers (requires symlinked deps/pokemon-showdown + chrome)
 **Run this before a `/gen3ai-ship`, and in CI.** ~47 minutes serial (2026-09-29); the browser suite is ~19 s of it.
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -q
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m pytest src/ -q
 ```
 
 ⚠️ **A FRESH WORKTREE pays for a cargo build on its first rust-backed test**, which
@@ -768,9 +769,9 @@ what training pays.
 Run battles **in-process via the local BattleStream bridge — no `npm run showdown`
 needed** (`utils/bridge/local_battle_runner.py`):
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/fuzz_test.py [n_battles]
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/action/fuzz_test.py [n_battles]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/training/poke_env_gaps/transition_fuzz_test.py [n_battles]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/battle/event_log_fuzz_test.py [n_battles]
 # also bridge-backed (no server): poke_env_gaps/{abilities,item_consumption,move_outcome,snatch,incoming_damage}_fuzz_test.py
 #                                  poke_env_gaps/move_alignment_fuzz_test.py (per-move obs features ↔ legal.move_slots[k] ↔ action 6+k, forces Choice-lock/Disable)
 #                                  poke_env_gaps/belief_labels_fuzz_test.py (hidden-opp belief labels == actual opp team + no-leak)
@@ -852,8 +853,8 @@ CUTOVER / READING / VIEW-ROAD class (`main/rust_core_cutover/verdict.py`).
 ### E2E tests (`*_e2e_test.py` / `*_fuzz_e2e_test.py`, require a live server)
 ```bash
 # Start server first: npm run showdown
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/action/telemetry_e2e_test.py
-export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 src/agents/training/poke_env_gaps/effectiveness_fuzz_e2e_test.py [n_battles]
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/action/telemetry_e2e_test.py
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 src/agents/training/poke_env_gaps/effectiveness_fuzz_e2e_test.py [n_battles]
 ```
 
 ### Benchmarks (`*_benchmark.py`, run directly as scripts)

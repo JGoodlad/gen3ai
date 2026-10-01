@@ -70,13 +70,13 @@ Benchmarks section).
 
 # 1. BEFORE you edit: capture a baseline on the CURRENT code (stash/commit your change away,
 #    or run on a clean checkout), saving the full output.
-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 \
     src/agents/training/obs_build_benchmark.py --turn 25 --reps 400 --top 22 | tee /tmp/obs_before.txt
 
 # 2. Apply your change.
 
 # 3. AFTER: re-run with the SAME flags and the SAME machine load, and diff.
-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 \
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 \
     src/agents/training/obs_build_benchmark.py --turn 25 --reps 400 --top 22 | tee /tmp/obs_after.txt
 
 diff /tmp/obs_before.txt /tmp/obs_after.txt
@@ -520,7 +520,7 @@ pass before it lands:
 
 ```bash
 # in a linked worktree, first: export PYTHONPATH=$PYTHONPATH:src
-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m mypy   # scope from mypy.ini; must be clean
+/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m mypy   # scope from mypy.ini; must be clean
 ```
 
 The gate is `src/agents/model/mypy_gate_test.py`, which runs bare `python -m mypy` (no path) so the

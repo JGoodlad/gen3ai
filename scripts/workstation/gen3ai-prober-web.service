@@ -37,7 +37,7 @@ Environment=GEN3AI_PROBER_PASSWORD_FILE=/home/goodlad/.config/gen3ai/prober-pass
 # --job-workers 1: each job spawns Node re-rolls beside a live trainer, and the
 # job endpoints are the one thing an authenticated visitor can use to spend real
 # CPU. One at a time is the bound.
-ExecStart=/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m main.prober.web \
+ExecStart=/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m main.prober.web \
     /home/goodlad/dev/gen3ai/models --host 127.0.0.1 --port 6008 --job-workers 1
 
 Restart=always

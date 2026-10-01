@@ -86,9 +86,9 @@ ops_resolve_run() {
 }
 
 # The interpreter, same precedence as scripts/land.sh: $GEN3AI_PYTHON, else this box's
-# gen3ai_stable env, else whatever python3 is on PATH.
+# gen3ai_torch28 env (the default since 2026-09-30), else whatever python3 is on PATH.
 ops_python() {
-    local py="${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3}"
+    local py="${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3}"
     [ -x "$py" ] || py="$(command -v python3)"
     printf '%s\n' "$py"
 }

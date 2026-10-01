@@ -11,12 +11,17 @@
 #   * IDEMPOTENT. Every step tests for its own result first and says "already done" rather
 #     than redoing it. Re-running after a failure resumes; re-running after success is cheap
 #     and safe. `--force` re-does the conda step specifically.
-#   * THE CONDA ENV IS SHARED, SO A WORKTREE NEVER MUTATES IT SILENTLY. Every run, every pinned
-#     launch and every agent on the box runs `gen3ai_stable`; a `conda env update --prune` under
-#     one of them can swap a package out from under a live process. The "env is current" stamp
-#     therefore lives in the git COMMON dir (one per clone, keyed by environment.yml's hash), so
-#     a worktree whose env is current does nothing — and a worktree whose environment.yml does NOT
-#     match REFUSES (exit 3) unless given `--update-shared-env`; see step 2.
+#   * THE CONDA ENV IS SHARED, SO A WORKTREE NEVER MUTATES IT SILENTLY. Every new run, gate and
+#     agent on the box runs `gen3ai_torch28` (torch 2.8, `environment_torch28.yml` — the DEFAULT
+#     since 2026-09-30, owner); a `conda env update --prune` under one of them can swap a package
+#     out from under a live process. The "env is current" stamp therefore lives in the git COMMON
+#     dir (one per clone, keyed by the env file's hash), so a worktree whose env is current does
+#     nothing — and a worktree whose env file does NOT match REFUSES (exit 3) unless given
+#     `--update-shared-env`; see step 2.
+#   * IT NEVER TOUCHES `gen3ai_stable`. That env (torch 2.5.1, `environment.yml`) is LEGACY and
+#     FROZEN: kept byte-for-byte so a run trained on it resumes on it (the launcher selects it from
+#     the run's recorded torch — src/main/launcher/torch_runtime.py). Nothing here reads
+#     `environment.yml` any more, and nothing may edit it.
 #   * FAIL-LOUD. `set -euo pipefail` plus a trap that names the step that died and what to try.
 #     A half-built environment that reports success is worse than no script.
 #   * IT ANNOUNCES COST. Every step prints what it is about to do and roughly what it costs,
@@ -34,7 +39,10 @@
 # injecting a failure; without -E the trap produced no output at all.
 set -Eeuo pipefail
 
-ENV_NAME="gen3ai_stable"
+ENV_NAME="gen3ai_torch28"
+#: THE env file. `environment.yml` (gen3ai_stable, torch 2.5.1) is the frozen LEGACY spec — never
+#: read here, never updated (see the header).
+ENV_FILE="environment_torch28.yml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 SHOWDOWN_DIR="$REPO_ROOT/deps/pokemon-showdown"
@@ -178,7 +186,7 @@ did "git $(git --version | awk '{print $3}') · conda $(conda --version | awk '{
 #
 # THE ENV IS SHARED; THE CHECKOUT IS NOT. What decides whether to touch it:
 #
-#   stamp env-<sha256 of environment.yml> in the COMMON dir   → current: do nothing, anywhere.
+#   stamp env-<sha256 of $ENV_FILE> in the COMMON dir   → current: do nothing, anywhere.
 #   no such stamp, run from the MAIN checkout                 → update in place (as always).
 #   no such stamp, run from a linked WORKTREE                 → print what would change and
 #                                                               REFUSE (exit 3), unless
@@ -186,55 +194,55 @@ did "git $(git --version | awk '{print $3}') · conda $(conda --version | awk '{
 #
 # WHY REFUSE rather than warn-and-update or silently skip: an update that happens because someone
 # made a worktree is exactly the unasked mutation the standing rule forbids ("never mutate
-# gen3ai_stable under live or pinned runs"), and a worktree bootstrap cannot see which runs are
+# the shared env under live or pinned runs"), and a worktree bootstrap cannot see which runs are
 # queued or pinned. Silently skipping is no better — the worktree would then test against an env
-# that does not match its environment.yml and report green or red for the wrong reason. Refusing
+# that does not match its $ENV_FILE and report green or red for the wrong reason. Refusing
 # puts a human (or the orchestrator) in the loop at the one moment a decision is needed, and names
 # both ways forward. `--skip-env` exists so that the refusal is never a dead end: without a
 # non-mutating way past it, the opt-in flag would become the reflex.
 #
-# The stamp FILE holds a copy of the environment.yml it was written for, so a refusal can print a
+# The stamp FILE holds a copy of the $ENV_FILE it was written for, so a refusal can print a
 # real diff. One stamp at a time — writing a new one removes the rest, so reverting
-# environment.yml to an older version is (correctly) NOT mistaken for current.
+# $ENV_FILE to an older version is (correctly) NOT mistaken for current.
 step "Conda environment '$ENV_NAME'" 2
 cost "~5-15 min on a fresh machine (≈2 GB of wheels, most of it CUDA); seconds when current"
 CONDA_BASE="$(conda info --base)"
 ENV_PREFIX="$CONDA_BASE/envs/$ENV_NAME"
-ENV_HASH="$(hash_of environment.yml)"
+ENV_HASH="$(hash_of "$ENV_FILE")"
 ENV_STAMP="$STATE_DIR/env-$ENV_HASH"
 ENV_CURRENT=0
 [ -f "$ENV_STAMP" ] && ENV_CURRENT=1
 
 # MIGRATION from the per-worktree stamps (which lived in $GIT_COMMON_DIR/worktrees/<wt>/…): if
 # there is no common-dir stamp yet, and the NEWEST legacy stamp anywhere was written for THIS
-# environment.yml, the last successful update was for exactly this file — adopt it rather than
+# $ENV_FILE, the last successful update was for exactly this file — adopt it rather than
 # refuse. The newest, not any: an older matching stamp may predate an update to something else.
 if [ ! -d "$STATE_DIR" ] || [ -z "$(ls -A "$STATE_DIR" 2>/dev/null | grep '^env-' || true)" ]; then
     # shellcheck disable=SC2012  # names are env-<hex>; ls -t is the portable newest-first
     newest_legacy="$(ls -t "$GIT_COMMON_DIR"/worktrees/*/gen3ai-bootstrap/env-* 2>/dev/null | head -1 || true)"
     if [ -n "$newest_legacy" ] && [ "$(basename "$newest_legacy")" = "env-$ENV_HASH" ] && [ -d "$ENV_PREFIX" ]; then
         info "adopting the newest per-worktree stamp ($newest_legacy) — it records the last"
-        info "successful update, and it was for this exact environment.yml"
+        info "successful update, and it was for this exact $ENV_FILE"
         run mkdir -p "$STATE_DIR"
-        run cp environment.yml "$ENV_STAMP"
+        run cp "$ENV_FILE" "$ENV_STAMP"
         ENV_CURRENT=1
     fi
 fi
 
-# What would change: a diff against the environment.yml the current stamp was written for.
+# What would change: a diff against the $ENV_FILE the current stamp was written for.
 show_env_change() {
     local prev
     prev="$(ls "$STATE_DIR"/env-* 2>/dev/null | head -1 || true)"
     if [ -n "$prev" ] && [ -s "$prev" ]; then
-        info "environment.yml vs the one $ENV_NAME was last built from ($(basename "$prev" | cut -c1-16)…):"
-        diff -u --label "stamped (env is built from this)" --label "this checkout's environment.yml" \
-            "$prev" environment.yml | sed 's/^/          /' || true
+        info "$ENV_FILE vs the one $ENV_NAME was last built from ($(basename "$prev" | cut -c1-16)…):"
+        diff -u --label "stamped (env is built from this)" --label "this checkout's $ENV_FILE" \
+            "$prev" "$ENV_FILE" | sed 's/^/          /' || true
     elif [ -n "$prev" ]; then
-        info "the env was last built from environment.yml with hash $(basename "$prev" | cut -c5-20)…,"
+        info "the env was last built from $ENV_FILE with hash $(basename "$prev" | cut -c5-20)…,"
         info "whose contents were not recorded (an older stamp) — no diff available."
     else
-        info "NO stamp records which environment.yml $ENV_NAME was built from, so what an update"
-        info "would change is unknown. This checkout's environment.yml hashes to ${ENV_HASH:0:16}…"
+        info "NO stamp records which $ENV_FILE $ENV_NAME was built from, so what an update"
+        info "would change is unknown. This checkout's $ENV_FILE hashes to ${ENV_HASH:0:16}…"
     fi
 }
 
@@ -245,21 +253,21 @@ write_env_stamp() {
         return 0
     fi
     find "$STATE_DIR" -maxdepth 1 -name 'env-*' ! -name "env-$ENV_HASH" -delete
-    cp environment.yml "$ENV_STAMP"
+    cp "$ENV_FILE" "$ENV_STAMP"
 }
 
 if [ "$SKIP_ENV" -eq 1 ]; then
     warn "SKIPPED (--skip-env) — $ENV_NAME is left exactly as it is, current or not."
     if [ "$ENV_CURRENT" -eq 0 ]; then
-        warn "NOTE: no stamp says it matches this environment.yml; tests may fail for env reasons."
+        warn "NOTE: no stamp says it matches this $ENV_FILE; tests may fail for env reasons."
     fi
 elif [ -d "$ENV_PREFIX" ] && [ "$ENV_CURRENT" -eq 1 ] && [ "$FORCE" -eq 0 ]; then
-    skip "$ENV_PREFIX is current for this environment.yml (stamp in $STATE_DIR; --force to redo)"
+    skip "$ENV_PREFIX is current for this $ENV_FILE (stamp in $STATE_DIR; --force to redo)"
 elif [ -d "$ENV_PREFIX" ] && [ "$IS_WORKTREE" -eq 1 ] && [ "$UPDATE_SHARED_ENV" -eq 0 ]; then
     if [ "$FORCE" -eq 1 ]; then
         warn "--force asks to update the SHARED env from a linked worktree."
     else
-        warn "environment.yml differs from what the SHARED env $ENV_NAME was built from."
+        warn "$ENV_FILE differs from what the SHARED env $ENV_NAME was built from."
     fi
     show_env_change
     printf '\n%s╔══════════════════════════════════════════════════════════════════════╗%s\n' "$YEL" "$RST"
@@ -288,17 +296,17 @@ elif [ -d "$ENV_PREFIX" ]; then
     fi
     warn "$ENV_NAME is SHARED by every run, pin and agent on this box — this update must not"
     warn "run under a live or pinned run (nothing here can check that for you)."
-    info "env exists but environment.yml changed (or --force) — updating in place"
+    info "env exists but $ENV_FILE changed (or --force) — updating in place"
     show_env_change
-    run conda env update -n "$ENV_NAME" -f environment.yml --prune
+    run conda env update -n "$ENV_NAME" -f "$ENV_FILE" --prune
     write_env_stamp
     did "updated"
 else
     # No env at all: creating one cannot disturb a process that uses it, so no refusal here.
-    info "creating from environment.yml"
-    info "the pip block carries --extra-index-url for the pytorch cu121 wheels; the"
-    info "torch download alone is ~780 MB, so this looks idle for a while. It is not."
-    run conda env create -f environment.yml
+    info "creating from $ENV_FILE"
+    info "the pip block carries --extra-index-url for the pytorch cu126 wheels; the"
+    info "torch download alone is several hundred MB, so this looks idle for a while. It is not."
+    run conda env create -f "$ENV_FILE"
     write_env_stamp
     did "created"
 fi

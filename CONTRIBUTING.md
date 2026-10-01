@@ -25,7 +25,7 @@ skipped), fail-loud, and it announces what each step costs before spending it:
 | Step | What | Cost |
 |---|---|---|
 | 1 | prerequisite check — `git`, `conda`, `node`, `npm` | instant |
-| 2 | create/update the `gen3ai_stable` conda env from `environment.yml` — **a worktree never updates it silently** (see below) | ~5-15 min fresh (≈2 GB of wheels) |
+| 2 | create/update the `gen3ai_torch28` conda env (torch 2.8) from `environment_torch28.yml` — **a worktree never updates it silently** (see below) | ~5-15 min fresh (≈2 GB of wheels) |
 | 3 | `pip install -e .` — puts `src/` on the import path for good | ~2 s |
 | 4 | `git submodule update --init` — the Pokémon Showdown reference engine | ~30 s |
 | 5 | the Showdown build artifacts (`npm ci` + `node build`) — **or** worktree symlinks | ~3-6 min fresh |
@@ -35,12 +35,12 @@ skipped), fail-loud, and it announces what each step costs before spending it:
 Useful flags: `--dry-run` (print the plan, change nothing), `--with-rust` / `--no-rust`,
 `--force` (redo the conda step), `--update-shared-env`, `--skip-env`, `--no-check`, `--help`.
 
-**The conda env is SHARED; a checkout is not.** Every run, pinned launch and agent on the box uses
-the one `gen3ai_stable`, and a `conda env update --prune` under a live process can swap a package
+**The conda env is SHARED; a checkout is not.** Every new run, gate and agent on the box uses
+the one `gen3ai_torch28`, and a `conda env update --prune` under a live process can swap a package
 out from under it. So step 2's "env is current" stamp lives in the git **common** dir (one per
-clone, keyed by the sha256 of `environment.yml`, holding a copy of the file it was written for):
+clone, keyed by the sha256 of `environment_torch28.yml`, holding a copy of the file it was written for):
 
-| run from | `environment.yml` matches the stamp | it differs (or `--force`) |
+| run from | `environment_torch28.yml` matches the stamp | it differs (or `--force`) |
 |---|---|---|
 | the main checkout | nothing to do | updates the env in place, and warns that it is shared |
 | a linked worktree | nothing to do | prints the diff and **REFUSES (exit 3)** |
@@ -51,6 +51,12 @@ worktree's setup). A missing env is simply created, from anywhere — nothing ca
 The refusal exists because a worktree bootstrap cannot see which runs are live, queued or pinned;
 before it (2026-09-29) the stamp was per-worktree, so every fresh worktree ran a prune-update.
 
+**The LEGACY env.** `gen3ai_stable` (torch 2.5.1, `environment.yml`) was the env until 2026-09-30
+(owner: "go ahead with moving to 2.8"). It is kept, FROZEN, only so a run trained on it resumes on
+it — the launcher reads the run's recorded torch (`metadata.json` `torch_version`; none = 2.5.1) and
+selects that env, or refuses (`src/main/launcher/torch_runtime.py`). Bootstrap never touches it;
+never edit `environment.yml`. On a fresh machine you do not need it unless you resume such a run.
+
 **Say yes to the Rust build if you have ten minutes.** Training defaults to `--use-bridge rust`,
 and the first Rust-backed test builds those binaries *anyway* — mid-test, saturating every core, a
 documented cause of spurious timeout failures on a fresh checkout.
@@ -58,7 +64,7 @@ documented cause of spurious timeout failures on a fresh checkout.
 ### After bootstrap: activate, and that is it
 
 ```bash
-conda activate gen3ai_stable
+conda activate gen3ai_torch28
 python -c "import agents, poke_env; print('ok')"
 ```
 
@@ -77,18 +83,18 @@ against *main's* code. See [Git workflow](#git-workflow--never-commit-on-main).
 > missing entry *in silence* — imports start failing for a reason the install never reports.
 > `src/packaging_gate_test.py` catches a stale one and prints the fix.
 
-**`pyproject.toml` declares no dependencies, on purpose.** `environment.yml` is the single owner
+**`pyproject.toml` declares no dependencies, on purpose.** The env file (`environment_torch28.yml`) is the single owner
 of what is installed — including a CUDA-local-version torch that PyPI does not carry — so
 `pip install -e .` writes a `.pth` and a `dist-info` and cannot resolve, upgrade or replace anything
 in your environment. One owner per question.
 
 ### CPU-only machines
 
-`environment.yml` installs CUDA builds of torch, but nothing is CUDA-gated at import time — a
+`environment_torch28.yml` installs CUDA builds of torch, but nothing is CUDA-gated at import time — a
 CPU-only box runs the entire test suite, the prober, and `--device cpu` training; it just downloads
-~2 GB of wheels it will never use. The `environment.yml` comment block explains how to derive a CPU
-variant (extra index at `.../whl/cpu`, drop the `+cu121` suffixes and the `nvidia-*-cu12` / `triton`
-pins). We ship no such file because nobody here runs one; a good one is a welcome PR.
+~2 GB of wheels it will never use. A CPU variant is derived the usual way (extra index at
+`.../whl/cpu`, drop the `+cu126` suffixes, the `nvidia-*-cu12` / `triton` pins and the `cuda-*`
+header packages). We ship no such file because nobody here runs one; a good one is a welcome PR.
 
 ### Do not install `poke-env` from PyPI
 

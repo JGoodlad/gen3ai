@@ -63,7 +63,7 @@ append-only, claims carry their measurements, and retractions are recorded as re
 git clone git@github.com:JGoodlad/gen3ai.git && cd gen3ai
 ./scripts/bootstrap.sh              # conda env, submodule, sim build — then verifies itself
 
-conda activate gen3ai_stable
+conda activate gen3ai_torch28        # torch 2.8 (gen3ai_stable / torch 2.5.1 is legacy, resumes only)
 # a 1-minute training smoke, no server and no GPU needed:
 python src/main/train_rl_agent.py --debug --steps 10000
 ```

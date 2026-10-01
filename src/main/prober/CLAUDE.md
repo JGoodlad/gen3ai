@@ -709,7 +709,7 @@ and `ArchDriftError` tests, and the `web/` suite — is `designs/prober/tests.md
 python3 -m pytest src/main/prober -q
 ```
 
-`textual`, `fastapi`, `uvicorn`, `jinja2` and `httpx` are pinned in `environment.yml`
+`textual`, `fastapi`, `uvicorn`, `jinja2` and `httpx` are pinned in `environment_torch28.yml`
 (`httpx` is what starlette's `TestClient` runs on, so the web unit tests need it). The shared
 Textual base lives in `src/main/tui/` — still used by the LAUNCHER's UI, which is why it
 survived the prober's TUI. See its CLAUDE.md.

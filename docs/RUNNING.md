@@ -12,7 +12,7 @@ every flag, benchmark, and failure mode — lives in the `CLAUDE.md` files besid
 
 ```bash
 ./scripts/bootstrap.sh          # --dry-run to see the plan; --with-rust to skip the prompt
-conda activate gen3ai_stable
+conda activate gen3ai_torch28   # torch 2.8 — the default (gen3ai_stable = legacy 2.5.1, old resumes only)
 export PYTHONPATH=$PYTHONPATH:src          # OPTIONAL here; MANDATORY in a git worktree
 ```
 
@@ -28,8 +28,9 @@ Setup mechanics for contributors — flags, the CPU-only variant, the worktree c
 step by hand:
 
 ```bash
-conda env create -f environment.yml        # creates gen3ai_stable
-conda env update -f environment.yml        # after environment.yml changes
+conda env create -f environment_torch28.yml   # creates gen3ai_torch28
+conda env update -f environment_torch28.yml   # after environment_torch28.yml changes
+# environment.yml (gen3ai_stable, torch 2.5.1) is LEGACY and frozen: only to resume an old run
 
 git submodule update --init                             # deps/pokemon-showdown source
 cd deps/pokemon-showdown && npm ci && npm run build     # node_modules + dist/
@@ -41,8 +42,8 @@ Build the Rust binaries before your first test run — a fresh checkout otherwis
 `cargo build` inside the first Rust-backed test, which can saturate the box and cascade into
 spurious timeouts.
 
-Two `environment.yml` details that are load-bearing: the pip block opens with
-`--extra-index-url https://download.pytorch.org/whl/cu121` (the `torch==2.5.1+cu121` pins are
+Two `environment_torch28.yml` details that are load-bearing: the pip block opens with
+`--extra-index-url https://download.pytorch.org/whl/cu126` (the `torch==2.8.0+cu126` pins are
 local-version builds that PyPI does not carry, so without it `conda env create` fails on a fresh
 machine), and `poke-env` is **deliberately not installed** — this repo vendors the fork at
 `src/poke_env/`, and a second installed copy would silently shadow it depending on `sys.path`
