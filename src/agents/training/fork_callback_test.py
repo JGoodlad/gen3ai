@@ -2,8 +2,9 @@
 
 `ForkArmCallback._on_rollout_end` is the one place the selector, the fan-out, the row assembly and
 the buffer surgery meet, and the properties worth pinning are the ones that make it SAFE to leave
-on: it never raises into the training loop, it disables itself loudly rather than quietly, and at
-`--fork-fraction 0` it does not even ASK the driver.
+on: it never FABRICATES a row, a mis-wired arm is FATAL_CONFIG rather than a print-and-continue,
+an arm that injects nothing for its declared floor of rollouts is FATAL_SUPPLY
+(`gen3_supply_guard_v2`), and at `--fork-fraction 0` it does not even ASK the driver.
 
 The branch continuations are stubbed — playing real ones is the smoke's job, and `fork_crn_sim_test`
 is what puts the bridge under test. What is real here is every array the callback touches.
@@ -20,6 +21,8 @@ from agents.action.constants import MOVE_START
 from agents.training.fork_arm import PG_MASK_KEY
 from agents.training.fork_buffer import fork_buffer_class
 from agents.training.fork_callback import ForkArmCallback
+from agents.training.lever_supply import LeverConfigError, LeverStarvedError
+from main.exit_codes import exit_code_for
 
 D, A = 5, 11
 N_STEPS, N_ENVS = 6, 2
@@ -159,38 +162,37 @@ def test_a_non_winprob_critic_is_inert_even_with_the_flag_on(monkeypatch, tmp_pa
     assert calls["n"] == 0 and m.rollout_buffer.n_fork_rows == 0
 
 
-def test_no_records_ring_announces_itself_once_and_forks_nothing(monkeypatch, tmp_path, capsys):
+def test_no_records_ring_is_FATAL_CONFIG_not_a_print(monkeypatch, tmp_path):
+    """gen3_supply_guard_v2: it used to print once and fork nothing for the rest of the run."""
     Fork = fork_buffer_class(MaskableDictRolloutBuffer)
     m = _Model(_buffer(Fork))
     cb = _cb(m, tmp_path, records=False)
-    cb._on_rollout_end()
-    cb._on_rollout_end()
-    out = capsys.readouterr().out
-    assert out.count("no cf_records ring") == 1
-    assert "--cf-records" in out
+    with pytest.raises(LeverConfigError) as ei:
+        cb._on_rollout_end()
+    assert "--cf-records" in str(ei.value) and exit_code_for(ei.value) == 3
 
 
-# ── the refusals that DISABLE ────────────────────────────────────────────────────────────────
-def test_a_plain_buffer_DISABLES_the_arm_loudly(monkeypatch, tmp_path, capsys):
+# ── the mis-wirings are FATAL_CONFIG (they used to DISABLE the arm and keep training) ──────────
+def test_a_plain_buffer_is_FATAL_CONFIG(monkeypatch, tmp_path):
     m = _Model(_buffer(MaskableDictRolloutBuffer))
     _stub_branches(monkeypatch, tmp_path)
     cb = _cb(m, tmp_path)
-    cb._on_rollout_end()
-    assert "DISABLED" in capsys.readouterr().out
-    assert cb._disabled
+    with pytest.raises(LeverConfigError) as ei:
+        cb._on_rollout_end()
+    assert "ForkRolloutBuffer" in str(ei.value) and exit_code_for(ei.value) == 3
 
 
-def test_an_unfillable_obs_key_REFUSES_by_name_and_the_run_continues(monkeypatch, tmp_path,
-                                                                     capsys):
+def test_an_unfillable_obs_key_is_FATAL_CONFIG_by_name_and_the_buffer_is_untouched(monkeypatch,
+                                                                                   tmp_path):
     Fork = fork_buffer_class(MaskableDictRolloutBuffer)
     buf = _buffer(Fork)
     buf.observations["defensive_opportunity"] = np.zeros((N_STEPS, N_ENVS, 1), np.float32)
     m = _Model(buf)
     _stub_branches(monkeypatch, tmp_path)
     cb = _cb(m, tmp_path)
-    cb._on_rollout_end()
-    out = capsys.readouterr().out
-    assert "REFUSED" in out and "defensive_opportunity" in out and "DISABLED" in out
+    with pytest.raises(LeverConfigError) as ei:
+        cb._on_rollout_end()
+    assert "REFUSED" in str(ei.value) and "defensive_opportunity" in str(ei.value)
     assert buf.n_fork_rows == 0
 
 
@@ -208,6 +210,41 @@ def test_a_failing_pass_leaves_the_buffer_exactly_as_collection_made_it(monkeypa
     cb._on_rollout_end()
     assert "pass failed" in capsys.readouterr().out
     assert m.rollout_buffer.n_fork_rows == 0
+
+
+def test_an_arm_that_injects_NOTHING_for_its_floor_of_rollouts_is_FATAL_SUPPLY(monkeypatch,
+                                                                              tmp_path):
+    """One failed pass is "no forks this rollout"; every pass failing is a run that never forked."""
+    Fork = fork_buffer_class(MaskableDictRolloutBuffer)
+    m = _Model(_buffer(Fork))
+    _stub_branches(monkeypatch, tmp_path)
+
+    def boom(**kw):
+        raise RuntimeError("the bridge wedged")
+
+    monkeypatch.setattr("agents.training.fork_driver.play_forks", boom)
+    cb = ForkArmCallback(records_dir=str(tmp_path), impl="rust", starve_cycles=3,
+                         emit=lambda _m: None)
+    cb.model = m
+    cb._on_rollout_end()
+    cb._on_rollout_end()
+    with pytest.raises(LeverStarvedError) as ei:
+        cb._on_rollout_end()
+    assert exit_code_for(ei.value) == 5 and "the bridge wedged" in str(ei.value)
+    assert m.rollout_buffer.n_fork_rows == 0
+
+
+def test_a_pass_that_injects_rows_resets_the_streak(monkeypatch, tmp_path):
+    Fork = fork_buffer_class(MaskableDictRolloutBuffer)
+    m = _Model(_buffer(Fork))
+    _stub_branches(monkeypatch, tmp_path, n_rows=2)
+    cb = ForkArmCallback(records_dir=str(tmp_path), impl="rust", starve_cycles=2,
+                         emit=lambda _m: None)
+    cb.model = m
+    cb._guard.streak = 1
+    cb._on_rollout_start()
+    cb._on_rollout_end()
+    assert cb._guard.streak == 0 and cb._guard.total == m.rollout_buffer.n_fork_rows > 0
 
 
 # ── a full pass ──────────────────────────────────────────────────────────────────────────────

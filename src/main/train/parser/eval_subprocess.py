@@ -160,6 +160,22 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "run promotes its own first snapshot. Without it such a launch exits "
                              "FATAL_CONFIG. A FRESH run (no --model) never needs this: it starts "
                              "poolless by design.")
+    # ── gen3_supply_guard_v2: every OTHER live lever's supply is a declared resource ──────────
+    parser.add_argument("--supply-starve-cycles", "--supply_starve_cycles",
+                        dest="supply_starve_cycles", type=str, default=None,
+                        help="Override the DECLARED in-flight supply floors of "
+                             "agents.training.lever_supply.LEVERS, as 'key=N[,key=N]'. A LIVE lever "
+                             "that delivers nothing for N consecutive cycles exits FATAL_SUPPLY (5), "
+                             "which the launcher does not restart. Keys (default N, cycle unit): "
+                             "self_play_pool (3 eval cycles: --self-play with the pool still EMPTY — "
+                             "failed eval cycles count), pfsp (3 eval cycles: --pfsp-scale with no "
+                             "sentinel win-rate measured while the pool has sentinels), team_pfsp (5 "
+                             "updates: --team-pfsp with no self-play/exploiter team game while self-play "
+                             "is live), win_prob_rollout (5 rollouts: --win-prob-rollout-target "
+                             "labelling nothing), fork (5 rollouts: --fork-fraction injecting nothing), "
+                             "search_teacher (3 teacher cycles: --search-teacher selecting no candidate). "
+                             "key=0 disables that lever's FATAL — ANNOUNCED at training start, and the "
+                             "end-of-run summary is still LOUD at zero.")
     parser.add_argument("--promote-threshold", type=float, default=None,
                         help=f"Win rate vs. pool to trigger snapshot promotion. Regime-aware default: "
                              f"{PROMOTE_THRESHOLD_GREEDY:g} under greedy sentinels (the default) and "

@@ -110,6 +110,16 @@ def _typed(args, dest: str) -> bool:
     return dest in marker
 
 
+def _starve_spec_error(args) -> "ValueError | None":
+    """The parse error of `--supply-starve-cycles`, or None (`agents.training.lever_supply`)."""
+    from agents.training.lever_supply import parse_starve_overrides
+    try:
+        parse_starve_overrides(getattr(args, "supply_starve_cycles", None))
+    except ValueError as e:
+        return e
+    return None
+
+
 def _val(args, dest: str, default: Any) -> Any:
     """The value a launch would RESOLVE for `dest` — the default when the flag is still unset.
 
@@ -682,6 +692,36 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "normalizes the value targets so value clipping is unnecessary — and an active clip "
         "would clip in un-normalized units and cripple the critic. Pass --clip-range-vf none.",
         needs=("saved_config",)),
+
+    # ---- gen3_supply_guard_v2: a PFSP lever with no possible supply ---------------------------
+    CombinationCheck(
+        # `--pfsp-scale` weights the self-play POOL by measured sentinel win-rates. Without
+        # --self-play there is no pool and no sentinel, so the weighting is uniform forever while
+        # the argv and the recorded config both say PFSP. FATAL_CONFIG: identical on every restart.
+        "pfsp_scale_needs_self_play", ("pfsp_scale", "self_play"),
+        lambda a: _positive(_val(a, "pfsp_scale", 0.0)) and not bool(_val(a, "self_play", False)),
+        lambda a: (f"\n[SUPPLY] FATAL: --pfsp-scale {_val(a, 'pfsp_scale', 0.0):g} weights the "
+                   f"self-play POOL by measured sentinel win-rates, but --self-play is off — there "
+                   f"is no pool to weight, so sampling would stay uniform for the whole run. Pass "
+                   f"--self-play, or drop --pfsp-scale."),
+        exit_style="fatal_config"),
+    CombinationCheck(
+        # `--team-pfsp` measures per-team win-rates ONLY on self-play POOL battles or EXPLOITER
+        # target battles (wrappers._maybe_record_team_pfsp — bots are excluded by design). With
+        # neither on, not one game is ever counted and team sampling stays uniform.
+        "team_pfsp_needs_self_play_or_exploiter", ("team_pfsp", "self_play", "exploiter"),
+        lambda a: (_val(a, "team_pfsp", "off") != "off"
+                   and not bool(_val(a, "self_play", False)) and not getattr(a, "exploiter", None)),
+        lambda a: (f"\n[SUPPLY] FATAL: --team-pfsp {_val(a, 'team_pfsp', 'off')} counts per-team "
+                   f"games ONLY on self-play pool battles or exploiter-target battles (bots are "
+                   f"excluded), and this run has neither --self-play nor --exploiter — no team "
+                   f"win-rate would ever be measured and sampling would stay uniform. Pass "
+                   f"--self-play, or drop --team-pfsp."),
+        exit_style="fatal_config"),
+    CombinationCheck(
+        "supply_starve_cycles_parses", ("supply_starve_cycles",),
+        lambda a: _starve_spec_error(a) is not None,
+        lambda a: str(_starve_spec_error(a))),
 
     # ---- exploiter mode ------------------------------------------------------------------
     CombinationCheck(

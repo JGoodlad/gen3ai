@@ -22,9 +22,16 @@ of zeros until the win-prob callback back-fills it — so a fork callback that r
 nothing eligible, every rollout, in silence. `build_callbacks` appends in that order and
 :meth:`_on_rollout_end` says so out loud the first time it finds an empty mask.
 
-**Nothing here raises into the training loop.** Every failure path leaves the buffer exactly as
-collection made it. A fabricated transition in the PPO objective is the one outcome this subsystem
-must never produce, and "no forks this rollout" is always available as the answer.
+**A failure never FABRICATES, and a dead arm is never QUIET** (`gen3_supply_guard_v2`). Every
+failure path leaves the buffer exactly as collection made it — a fabricated transition in the PPO
+objective is the one outcome this subsystem must never produce, and "no forks this rollout" is
+always available as the answer FOR ONE ROLLOUT. It is not available for a run: the arm used to
+DISABLE itself with a print (no fork buffer, a missing obs key, no reconstruction handle, no
+`cf_records` ring), and a run that asked for `--fork-fraction` then trained unforked while its argv
+and its recorded config said otherwise. Now a mis-wiring that a restart would hit identically raises
+`LeverConfigError` → ``FATAL_CONFIG`` (3) at once, and a rollout that injects nothing (a failed
+pass included) is a DRY cycle: `--supply-starve-cycles fork=N` (declared 5) of them in a row raise
+`LeverStarvedError` → ``FATAL_SUPPLY`` (5). The end-of-run summary is LOUD at zero.
 """
 
 from __future__ import annotations
@@ -35,6 +42,8 @@ import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
 from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+from agents.training.lever_supply import (LEVERS, DryStreakGuard, LeverConfigError, loud,
+                                          record_scalar)
 from agents.training.fork_arm import (
     DEFAULT_BRANCHES, DEFAULT_CONTESTED_ABSV, DEFAULT_CONTESTED_GAP,
     DEFAULT_CRN, DEFAULT_MAX_PER_BATTLE, FORK_OFF, MAX_FORKS_PER_ROLLOUT, branch_actions,
@@ -54,7 +63,8 @@ ROW_BUDGET_MULTIPLE = 1.0
 class ForkArmCallback(BaseCallback):
     """Fork contested decisions and inject the branches' transitions into this rollout's buffer."""
 
-    def __init__(self, records_dir=None, impl: str = "rust") -> None:
+    def __init__(self, records_dir=None, impl: str = "rust",
+                 starve_cycles: int = LEVERS["fork"].default_cycles, emit=loud) -> None:
         """``records_dir`` is the `cf_records` ring (``<run>/cf_records``) a fork's replayable
         episode is resolved out of; ``None`` (every run without ``--cf-records``) disables the arm
         with a message rather than silently forking nothing. ``impl`` is the sim transport the
@@ -64,14 +74,13 @@ class ForkArmCallback(BaseCallback):
         self._records_dir = records_dir
         self._impl = str(impl or "rust")
         self._calls = 0
-        self._said_no_records = False
         self._said_no_mask = False
-        self._said_unfillable = False
-        self._disabled = False
         # gen3_fork_v1 — the MEASURED mean rows a fork contributes, carried across rollouts so the
         # NEXT one can stop asking for branches the row budget would drop. None until a pass has
         # measured one; see `_budgeted_forks`.
         self._rows_per_fork = None
+        self._guard = DryStreakGuard("fork", starve_cycles, emit=emit)
+        self._emit = emit
 
     # ── configuration ────────────────────────────────────────────────────────────────────────
     def _fraction(self) -> float:
@@ -80,7 +89,7 @@ class ForkArmCallback(BaseCallback):
     def _on(self) -> bool:
         """True when the arm is live. Checked before ANY allocation, so an unflagged run pays
         exactly nothing — the discipline every OFF-is-bit-identical flag in this tree keeps."""
-        if self._disabled or self._fraction() <= FORK_OFF:
+        if self._fraction() <= FORK_OFF:
             return False
         if not is_winprob(getattr(getattr(self.model, "policy", None), "_critic_mode",
                                   CRITIC_DEFAULT)):
@@ -89,12 +98,12 @@ class ForkArmCallback(BaseCallback):
             # reward stream is not reconstructible without the env that computed it.
             return False
         if not self._records_dir:
-            if not self._said_no_records:
-                self._said_no_records = True
-                print("⚠️  [fork_arm] --fork-fraction is set but this run has no cf_records ring — "
-                      "a fork's replayable episode lives there, so NO decision can be forked. "
-                      "Pass --cf-records. Said once.", flush=True)
-            return False
+            # `combination_checks` refuses this argv at launch; reaching it here is a mis-wiring
+            # that every restart would repeat, so it is FATAL_CONFIG rather than a print.
+            raise LeverConfigError(
+                "\n[SUPPLY] FATAL: --fork-fraction is set but this run has no cf_records ring — a "
+                "fork's replayable episode lives there, so NO decision can be forked. Pass "
+                "--cf-records.")
         return True
 
     def _on_rollout_start(self) -> None:
@@ -111,43 +120,54 @@ class ForkArmCallback(BaseCallback):
             self._disable("this run's rollout buffer is not a ForkRolloutBuffer, so there is "
                           "nowhere to inject a branch row. `model_build.install_fork_buffer` is "
                           "what installs it")
-            return
         obs = buf.observations
         if not isinstance(obs, dict) or "win_mask" not in obs or "action_mask" not in obs:
             self._disable("the rollout buffer's obs Dict is missing `win_mask`/`action_mask` — "
                           "the arm reads both to decide what may be forked")
-            return
-        bad = self._unfillable(list(obs))
-        if bad:
-            return
+        self._unfillable(list(obs))
         self._calls += 1
         try:
-            self._pass(buf, obs)
+            injected, why = self._pass(buf, obs)
+        except LeverConfigError:
+            raise
         except Exception as exc:                                        # noqa: BLE001
-            # The training loop must survive anything this path can do.
+            # ONE failed pass leaves the buffer exactly as collection made it and is a DRY cycle;
+            # the guard below is what stops a run whose every pass fails.
             print(f"⚠️  [fork_arm] pass failed ({type(exc).__name__}: {str(exc)[:200]}) — this "
                   f"rollout's buffer is exactly what collection made it", flush=True)
             try:
                 buf.add_fork_rows(None)
             except Exception:                                           # noqa: BLE001
                 pass
+            injected, why = 0, f"the pass FAILED: {type(exc).__name__}: {str(exc)[:200]}"
+        # OUTSIDE the try: the guard's FATAL must reach the training loop.
+        self._guard.observe(int(injected), why=why)
+        record_scalar(self, "supply/fork_dry_streak", self._guard.streak)
 
-    def _unfillable(self, keys) -> List[str]:
+    def _on_training_start(self) -> None:
+        if self._fraction() > FORK_OFF:
+            self._emit(self._guard.announce())
+
+    def _on_training_end(self) -> None:
+        if self._fraction() > FORK_OFF:
+            for line in self._guard.summary_lines():
+                self._emit(line)
+
+    def _unfillable(self, keys) -> None:
         from agents.training.fork_buffer import refusal_text, unfillable_keys
         bad = unfillable_keys(keys)
-        if bad and not self._said_unfillable:
-            self._said_unfillable = True
-            self._disabled = True
-            print(refusal_text(bad), flush=True)
-            print("   The arm is DISABLED for this process; the run continues unforked.",
-                  flush=True)
-        return bad
+        if bad:
+            raise LeverConfigError("\n[SUPPLY] FATAL: " + refusal_text(bad)
+                                   + "\n  The fork arm cannot run on this buffer; a restart "
+                                     "would hit the same keys. Not restarting.")
 
     def _disable(self, why: str) -> None:
-        self._disabled = True
-        print(f"⚠️  [fork_arm] DISABLED: {why}. The run continues unforked.", flush=True)
+        raise LeverConfigError(f"\n[SUPPLY] FATAL: --fork-fraction is set but the arm cannot run: "
+                               f"{why}. A restart would hit the same mis-wiring. Not restarting.")
 
-    def _pass(self, buf, obs) -> None:
+    def _pass(self, buf, obs) -> Tuple[int, str]:
+        """One rollout's fork pass. Returns ``(injected_rows, why)`` — ``why`` is the cause carried
+        into the supply guard's FATAL when nothing was injected."""
         from agents.training.fork_buffer import concat_blocks  # noqa: F401  (contract pin)
         from agents.training.fork_driver import assemble, play_forks
         from agents.training.win_prob_rollout import index_records
@@ -159,7 +179,6 @@ class ForkArmCallback(BaseCallback):
             self._disable("no per-decision reconstruction HANDLE was captured. "
                           "`WinProbLabelCallback` allocates it, and `env_factory` must set "
                           "`env._emit_wp_rollout_handle`")
-            return
 
         wm = np.asarray(obs["win_mask"])[:, :, 0]
         el = eligible_mask(wm, turns, obs["action_mask"])
@@ -239,6 +258,11 @@ class ForkArmCallback(BaseCallback):
                                      / float(stats.get("branches", 0.0))
                                      if float(stats.get("branches", 0.0)) > 0 else 0.0)
         self.model._fork_metrics = m
+        why = (f"{int(el.sum())} eligible row(s), pool {len(pool)}, {len(chosen)} contested, "
+               f"{missing} with no cf_records entry, {len(forks)} played, "
+               f"{int(stats.get('worker_failures', 0) or 0)} worker failure(s), {dropped} dropped "
+               f"at the row budget")
+        return int(injected), why
 
     def _budgeted_forks(self, want: int, row_budget: int) -> int:
         """Cap the ASK at what the row budget can actually take.

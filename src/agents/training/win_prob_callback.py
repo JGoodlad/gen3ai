@@ -54,6 +54,8 @@ import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
 from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+from agents.training.lever_supply import (LEVERS, DryStreakGuard, LeverConfigError, loud,
+                                          record_scalar)
 from agents.training.win_prob_rollout import (BANKED_CONTINUATION_DECISIONS, DEFAULT_ROLLOUT_R,
                                               ROLLOUT_MODES, ROLLOUT_OFF, ROLLOUT_WEIGHT_KEY,
                                               ROLLOUT_WEIGHT_OFF, anchor_row_weights,
@@ -92,7 +94,9 @@ class WinProbLabelCallback(BaseCallback):
     """Captures per-episode win/loss outcomes during rollout collection and back-fills the rollout
     buffer's ``win_target`` / ``win_mask`` obs keys with the Monte-Carlo label before ``train()``."""
 
-    def __init__(self, records_dir=None, impl: str = "rust") -> None:
+    def __init__(self, records_dir=None, impl: str = "rust",
+                 starve_cycles: int = LEVERS["win_prob_rollout"].default_cycles,
+                 emit=loud) -> None:
         """``records_dir`` is the `cf_records` ring (``<run>/cf_records``) the rollout labeller
         resolves a sampled state's reconstruction record out of; ``None`` (the default, and every
         run without ``--cf-records``) disables the rollout-target path with a message rather than
@@ -103,8 +107,12 @@ class WinProbLabelCallback(BaseCallback):
         self._records_dir = records_dir
         self._impl = str(impl or "rust")
         self._rollout_calls = 0
-        self._said_no_records = False
         self._said_ring_too_small = False
+        # gen3_supply_guard_v2: `--win-prob-rollout-target` labels are a DECLARED supply. A
+        # rollout that applied no label (workers failed, no record resolved, nothing eligible) is
+        # a dry cycle; N in a row is FATAL_SUPPLY. A mis-wiring is FATAL_CONFIG at once.
+        self._guard = DryStreakGuard("win_prob_rollout", starve_cycles, emit=emit)
+        self._emit = emit
 
     def _scratch(self) -> np.ndarray:
         n_steps = self.model.n_steps
@@ -201,10 +209,30 @@ class WinProbLabelCallback(BaseCallback):
                 turns[t, env_i] = int(info.get("wp_turn", -1))
         return True
 
+    def _rollout_live(self) -> bool:
+        """`--win-prob-rollout-target` is on AND under the critic it re-aims (`winprob`)."""
+        return (float(getattr(self.model, "win_prob_rollout_target", 0.0) or 0.0) > ROLLOUT_OFF
+                and is_winprob(getattr(getattr(self.model, "policy", None), "_critic_mode",
+                                       CRITIC_DEFAULT)))
+
+    def _on_training_start(self) -> None:
+        if self._rollout_live():
+            self._emit(self._guard.announce())
+
+    def _on_training_end(self) -> None:
+        if self._rollout_live():
+            for line in self._guard.summary_lines():
+                self._emit(line)
+
     def _on_rollout_end(self) -> None:
         buf = self.model.rollout_buffer
         obs = buf.observations
         if not isinstance(obs, dict) or "win_target" not in obs or "win_mask" not in obs:
+            if self._rollout_live():
+                raise LeverConfigError(
+                    "\n[SUPPLY] FATAL: --win-prob-rollout-target is set but the rollout buffer "
+                    "carries no `win_target`/`win_mask` — the env is not emitting the win-prob "
+                    "keys, so NO state can be labelled. A restart would hit the same mis-wiring.")
             return  # win-prob head on but env not emitting the keys (config mismatch) — skip, don't crash
         scratch = getattr(self.model, "_win_terminal_scratch", None)
         if scratch is None:
@@ -244,12 +272,12 @@ class WinProbLabelCallback(BaseCallback):
                                   CRITIC_DEFAULT)):
             return None
         if not self._records_dir:
-            if not self._said_no_records:
-                self._said_no_records = True
-                print("⚠️  [win_prob_rollout] --win-prob-rollout-target is set but this run has no "
-                      "cf_records ring — a sampled state's replayable episode lives there, so NO "
-                      "state can be labelled. Pass --cf-records. Said once.", flush=True)
-            return None
+            # `combination_checks` refuses this argv at launch; reaching it is a mis-wiring every
+            # restart would repeat — FATAL_CONFIG, never a print-once and a run that labels nothing.
+            raise LeverConfigError(
+                "\n[SUPPLY] FATAL: --win-prob-rollout-target is set but this run has no "
+                "cf_records ring — a sampled state's replayable episode lives there, so NO state "
+                "can be labelled. Pass --cf-records.")
         mode = str(getattr(self.model, "win_prob_rollout_mode", "replace") or "replace")
         if mode not in ROLLOUT_MODES:
             mode = "replace"
@@ -278,8 +306,11 @@ class WinProbLabelCallback(BaseCallback):
         if "action_mask" not in obs:
             # The MOVE-ROUND filter reads the buffer's own mask; without it every row would look
             # labelable, including mid-turn forced switches a counterfactual replay cannot anchor
-            # at. Skip rather than label the wrong states.
-            return None, None
+            # at. Never label the wrong states — and never skip in silence for a whole run.
+            raise LeverConfigError(
+                "\n[SUPPLY] FATAL: --win-prob-rollout-target is set but the rollout buffer has no "
+                "`action_mask` — the move-round filter reads it, so no state can be safely "
+                "labelled. A restart would hit the same mis-wiring.")
         self._rollout_calls += 1
         keys, turns = self._handle_scratch()
         n_steps, n_envs = wt.shape[0], wt.shape[1]
@@ -329,6 +360,13 @@ class WinProbLabelCallback(BaseCallback):
                                          impl=self._impl)
         anchor_mask, anchor_value, applied = apply_rollout_labels(
             wt, wm, kept, labels, mode, terminal_y)
+        self._guard.observe(
+            len(applied),
+            why=(f"{int(el.sum())} eligible state(s), {len(picks)} sampled, {missing} with no "
+                 f"cf_records entry, {len(states)} sent to the labeller, "
+                 f"{int(stats.get('worker_failures', 0) or 0)} labeller worker failure(s), "
+                 f"{int(stats.get('arms', 0) or 0)} continuation(s) finished"))
+        record_scalar(self, "supply/win_prob_rollout_dry_streak", self._guard.streak)
         opp = obs.get("opp_class")
         opp_cls = (np.asarray(opp)[:, :, 0] if opp is not None
                    else np.zeros((n_steps, n_envs), dtype=np.int64))

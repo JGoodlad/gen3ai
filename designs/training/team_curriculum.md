@@ -11,6 +11,13 @@ training package). Each section below is unchanged, including its dated measurem
 
 ## Team-side PFSP (`--team-pfsp`, `team_pfsp_callback.py`)
 
+🚨 **A DECLARED SUPPLY (`gen3_supply_guard_v2`).** `--team-pfsp` counts games only on self-play
+POOL battles or EXPLOITER-target battles, so with neither `--self-play` nor `--exploiter` the launch
+is REFUSED (`team_pfsp_needs_self_play_or_exploiter`, `FATAL_CONFIG`). In flight, an update in which
+team games SHOULD arrive (exploiter: always; self-play: the pool is seeded and the persisted
+`self_play_fraction` > 0) and none did is a dry update; **5 in a row exit `FATAL_SUPPLY` (5)**
+(`--supply-starve-cycles team_pfsp=N`). Detail: [`supply_guards.md`](supply_guards.md).
+
 The TEAM-axis complement to the opponent-side `--pfsp-scale`: bias the TRAINEE's team sampling toward
 the pool teams it is weakest on, so training spends gradient where the win-rate says there's headroom
 instead of uniformly over ~700 pool teams (the documented "uniform team sampling = headroom" gap).

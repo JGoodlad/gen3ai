@@ -808,6 +808,10 @@ poll moved), for each STREAM a live coefficient reads:
   `🚨🚨 [SUPPLY] ZERO cf labels ARRIVED … This segment is NOT evidence about that lever.`, then the
   spawned producer is stopped by its PID.
 
+**The rest of the inventory** — the self-play pool, PFSP, team-PFSP, the rollout target, the fork
+arm, the search teacher, and the startup refusals that used to exit CRASH — is
+`gen3_supply_guard_v2`, [`supply_guards.md`](supply_guards.md).
+
 **Honest limits.** The guard is per trainer PROCESS (a segment): the launcher's periodic restart
 resets its counters, so the bound on a dead supply is one segment's floor, not zero. It checks
 arrival, not label QUALITY (the skip counters and `cf/*_coverage` still own that). Under

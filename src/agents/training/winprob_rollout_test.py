@@ -454,20 +454,58 @@ def test_it_is_INERT_under_a_critic_that_is_not_winprob(monkeypatch, tmp_path):
     assert called == [] and model._win_prob_rollout_metrics is None
 
 
-def test_it_REFUSES_with_no_cf_records_ring_and_SAYS_SO_ONCE(monkeypatch, tmp_path, capsys):
+def test_it_REFUSES_with_no_cf_records_ring_as_FATAL_CONFIG(monkeypatch, tmp_path):
+    """gen3_supply_guard_v2: it used to print once and label nothing for the rest of the run."""
     import agents.training.win_prob_rollout_labeller as lab
+    from agents.training.lever_supply import LeverConfigError
+    from main.exit_codes import exit_code_for
     called = []
     monkeypatch.setattr(lab, "label_states", lambda **kw: called.append(kw) or ([], {}))
     model = _Model(6, 2, win_prob_rollout_target=1.0)
     cb = WinProbLabelCallback(records_dir=None)
     cb.model = model
-    for _ in range(3):
-        cb._on_rollout_start()
-        model._win_terminal_scratch[5, :] = 1.0
+    cb._on_rollout_start()
+    model._win_terminal_scratch[5, :] = 1.0
+    with pytest.raises(LeverConfigError) as ei:
         cb._on_rollout_end()
-    out = capsys.readouterr().out
-    assert called == []
-    assert out.count("no cf_records ring") == 1, "said once, not once per rollout"
+    assert called == [] and exit_code_for(ei.value) == 3 and "--cf-records" in str(ei.value)
+
+
+def test_a_labeller_that_labels_NOTHING_for_its_floor_of_rollouts_is_FATAL_SUPPLY(monkeypatch,
+                                                                                 tmp_path):
+    """Every worker failing (every label None) used to be a print per rollout and a run whose
+    targets never moved."""
+    from utils.bridge.reconstruction import RECON_SUFFIX
+    import agents.training.win_prob_rollout_labeller as lab
+    from agents.training.lever_supply import LeverStarvedError
+    from main.exit_codes import exit_code_for
+    monkeypatch.setattr(lab, "label_states", lambda *, states, **kw: (
+        [None] * len(states), {"seconds": 0.1, "arms": 0, "worker_failures": 2}))
+    for e in range(2):
+        (tmp_path / f"000000000000000000{e}_77_battle-{e}{RECON_SUFFIX}").write_text("{}")
+    model = _Model(6, 2, win_prob_rollout_target=1.0)
+    cb = WinProbLabelCallback(records_dir=str(tmp_path), starve_cycles=2, emit=lambda _m: None)
+    cb.model = model
+
+    def _rollout():
+        cb._on_rollout_start()
+        model._win_terminal_scratch[5, 0] = 1.0
+        model._win_terminal_scratch[5, 1] = 0.0
+        keys, turns = cb._handle_scratch()
+        for t in range(6):
+            for e in range(2):
+                keys[t, e], turns[t, e] = f"77_battle-{e}", 3 + t
+        cb._on_rollout_end()
+
+    _rollout()
+    with pytest.raises(LeverStarvedError) as ei:
+        _rollout()
+    assert exit_code_for(ei.value) == 5 and "2 labeller worker failure(s)" in str(ei.value)
+
+
+def test_a_healthy_labeller_never_trips_the_guard(monkeypatch, tmp_path):
+    model, _wt, _wm, _c = _run(monkeypatch, tmp_path, win_prob_rollout_target=1.0)
+    assert model._win_prob_rollout_metrics["rollout_states"] > 0.0
 
 
 def test_the_handle_scratch_is_NOT_allocated_on_an_unflagged_run(monkeypatch, tmp_path):

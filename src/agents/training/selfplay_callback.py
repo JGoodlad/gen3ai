@@ -77,6 +77,8 @@ from agents.training.snapshot_pool import (
     SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
 from agents.training.wrappers import STABLE_CHALLENGE_SHARE  # default for the reporting-only share
+from agents.training.lever_supply import LEVERS, loud
+from agents.training.selfplay_supply import SelfPlaySupplyMixin
 from main.launcher.ipc import emit, send_event, send_metrics
 
 # Consecutive eval cycles a stable opponent's win_rate must stay ≥ the mastery threshold before the
@@ -113,7 +115,7 @@ def _monotonicity_score(win_rates: list[float]) -> float:
     return 2.0 * concordant / total - 1.0
 
 
-class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
+class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
     """Non-blocking bot + pool eval callback with snapshot promotion.
 
     Args:
@@ -180,6 +182,8 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         trainee_team_str: "str | list[str] | None" = None,
         snapshot_ladder_games: int = 100,
         env_core: str = "python",
+        pool_starve_cycles: int = LEVERS["self_play_pool"].default_cycles,
+        pfsp_starve_cycles: int = LEVERS["pfsp"].default_cycles,
         verbose: int = 1,
     ):
         super().__init__(verbose)
@@ -302,6 +306,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             # The trainer-side pool reports honest PFSP-weighted sentinel weights in metadata.
             self._pool.set_win_rates(self._pfsp_winrate_ema)
 
+        # gen3_supply_guard_v2: the self-play POOL and the PFSP weights are DECLARED supplies.
+        self._init_supply_guards(pool_starve_cycles, pfsp_starve_cycles)
+
     # ── SB3 lifecycle ──────────────────────────────────────────────────────
 
     def _init_callback(self) -> None:
@@ -315,6 +322,7 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         # _collect_pending seeds the moment the model first crosses the threshold mid-run. So a
         # weak model never seeds a near-random opponent into the pool.
         self._warn_if_fork_pool_empty()
+        self._announce_supply_guards()
         # Resumed run: re-publish the last eval so the TUI panel isn't blank until the
         # next cycle (which can be millions of steps away).
         replay_last_eval_to_tui(self._model_dir, self._resume_eval_metadata)
@@ -360,10 +368,9 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
                "{summary.json,win_rate_vs_bots.txt,model_config.json} <this_run>/snapshots/ . A "
                "short fork can finish before it ever seeds one (measured: 3M-step forks ended with "
                "1-2 snapshots vs the base's 12).")
-        try:
-            emit(msg)          # prints when standalone, goes to the launcher event stream otherwise
-        except Exception:      # noqa: BLE001 — a warning must never break a run
-            print(msg, flush=True)
+        # `loud`, not `emit`: under the launcher `emit` reaches only the event stream, so this
+        # warning never appeared in the run's own log (supply audit 2026-09-30, F5).
+        loud(msg)
 
     def _schedule(self) -> tuple[int, int]:
         if self._debug:
@@ -549,6 +556,10 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
             print(f"⚠️ [SELFPLAY EVAL] step {step:,}: no results (all workers failed); skipping record")
             send_event(f"⚠️ Self-play eval @ {step:,}: failed (no results)")
             self._cleanup(pending, keep_logs=True)
+            # A FAILED cycle is a supply cycle too: it cannot seed the pool or measure a sentinel,
+            # and a run whose every eval fails is exactly a run that never leaves the bot fallback.
+            self._observe_supply(step, failed=True, n_sentinels=len(sentinels), n_measured=0)
+            self._judge_supply()
             return
 
         # Sentinel results in pool order (skip any whose worker died): (entry, label, win, reward, ep_len).
@@ -829,8 +840,13 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         self._prune_and_push_pfsp()
         # (Stable-opponent mastery — the challenge→floor "becomes another bot" flip — was recomputed
         #  + pushed to every training env earlier, with the training-mix telemetry.)
+        # gen3_supply_guard_v2: COUNT this cycle's supply first, so the counters ride the same
+        # summary.json write; the JUDGE (which may raise) is the last line of this method.
+        self._observe_supply(step, failed=False, n_sentinels=len(sentinels),
+                             n_measured=len(kept_sentinels), persist=False)
         if self._model_dir or self._pool:
             self._pool.persist_summary(
+                **self._supply_summary_fields(),
                 win_rate_vs_bots=self.win_rate_vs_bots,
                 self_play_fraction=sf,
                 last_eval_step=step,
@@ -850,6 +866,8 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
         prune_run_artifacts(self._model_dir, self._keep_stalls, self._keep_crashes)  # bound stalls/ + crashes/
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
+        # LAST, so a FATAL here leaves this cycle fully recorded (metrics, summary.json, traces).
+        self._judge_supply()
 
     def _sentinel_regime(self) -> dict:
         """The OPPONENT REGIME this cycle's sentinel edges were measured under, stamped onto the
@@ -1086,7 +1104,12 @@ class SelfPlayCallback(_ForcedEvalMixin, BaseCallback):
     # ── Graceful shutdown ──────────────────────────────────────────────────────
 
     def _on_training_end(self) -> None:
+        # A drain collects a cycle AFTER training finished: record its supply verdict, but never
+        # turn a completed run into a FATAL from inside the shutdown path.
+        self._draining = True
         self.drain()
+        for line in self.supply_summary_lines():
+            loud(line)
 
     def drain(self, timeout: float | None = None) -> None:
         """Block (up to `timeout` TOTAL seconds) for the in-flight eval cycle, then record it.

@@ -20,6 +20,8 @@ import time
 
 from stable_baselines3.common.callbacks import BaseCallback
 
+from agents.training.lever_supply import LEVERS, DryStreakGuard, loud, record_scalar
+
 
 def compute_team_pfsp_weights(emas, floor, cap, onesided=False):
     """Pure weight math (unit-tested): ``raw_i = floor + w(p_i)``; then cap each at
@@ -59,8 +61,17 @@ class TeamPFSPCallback(BaseCallback):
     """
 
     def __init__(self, cap: float, floor: float, ema_beta: float = 0.7,
-                 update_every: int = 3, mode: str = "var", persist_dir=None, verbose: int = 0):
+                 update_every: int = 3, mode: str = "var", persist_dir=None,
+                 live_probe=None, starve_cycles: int = LEVERS["team_pfsp"].default_cycles,
+                 emit=loud, verbose: int = 0):
         super().__init__(verbose)
+        # gen3_supply_guard_v2: the per-team self-play win-rates are a DECLARED supply. An update
+        # in which self-play (or the exploiter target) is LIVE — `live_probe()` — and not one team
+        # game was counted is a dry update; `starve_cycles` of them in a row is FATAL_SUPPLY.
+        # `live_probe=None` means always live (the exploiter case).
+        self._live_probe = live_probe
+        self._guard = DryStreakGuard("team_pfsp", starve_cycles, emit=emit)
+        self._emit = emit
         self._cap = float(cap)
         self._floor = float(floor)
         self._ema_beta = float(ema_beta)
@@ -108,6 +119,8 @@ class TeamPFSPCallback(BaseCallback):
         results = [r for r in self.training_env.env_method("drain_team_pfsp_counts")
                    if r is not None]
         if not results:
+            self._observe_supply(0, "no env worker reported team counts (no Gen3Teambuilder with "
+                                    "--team-pfsp on the trainee side?)")
             return True
 
         # 2) GIGO-guard: every worker must report the SAME pool size (a cheap per-cycle belt; the
@@ -139,6 +152,10 @@ class TeamPFSPCallback(BaseCallback):
                 self._ema[i] = self._ema_beta * self._ema[i] + (1.0 - self._ema_beta) * p
                 self._measured.add(i)
 
+        self._observe_supply(int(sum(G)), "self-play is live (pool seeded, self_play_fraction "
+                                          "> 0) but not one pool/exploiter battle was counted on a "
+                                          "POOL team — bias/distill-pinned draws are excluded")
+
         # 5) Compute the weights (capped) — 6) PUSH them ONLY in the biasing modes ("measure" tracks
         #    + persists the win-rate but never biases sampling, so the team distribution stays uniform).
         #    "onesided" = the losing side held at max weight (see compute_team_pfsp_weights).
@@ -166,6 +183,26 @@ class TeamPFSPCallback(BaseCallback):
         # 8) Persist the per-team self-play win-rate snapshot (offline "which exploiter next" artifact).
         self._persist_snapshot(n_pool)
         return True
+
+    def _live(self) -> bool:
+        if self._live_probe is None:
+            return True
+        try:
+            return bool(self._live_probe())
+        except Exception:  # noqa: BLE001 — an unreadable probe is "not known live", never a crash
+            return False
+
+    def _observe_supply(self, games: int, why: str) -> None:
+        live = self._live()
+        self._guard.observe(games, live=live, why=why)
+        record_scalar(self, "supply/team_pfsp_dry_streak", self._guard.streak)
+
+    def _on_training_start(self) -> None:
+        self._emit(self._guard.announce())
+
+    def _on_training_end(self) -> None:
+        for line in self._guard.summary_lines():
+            self._emit(line)
 
     def _load_archetypes(self):
         """Best-effort {team_sha: archetype-label} to annotate the snapshot (so the offline view reads

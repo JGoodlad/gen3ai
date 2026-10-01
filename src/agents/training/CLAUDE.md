@@ -29,6 +29,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | the MatchupSpec, run-spec resolution provenance, LINEAGE, TB inheritance | [`designs/training/matchup_and_lineage.md`](../../../designs/training/matchup_and_lineage.md) |
 | the TB census detail, capacity telemetry, grad balance, `signal/`, the scaffolding gauge | [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md) |
 | the counterfactual audit, the cf label plumbing, the prefix-sharing materializer | [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md) |
+| a SUPPLY GUARD — any live lever that must deliver (self-play pool, PFSP, team-PFSP, rollout target, fork arm, search teacher), `--supply-starve-cycles`, `FatalConfigError` | [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md) |
 | search-as-teacher, OPD, the win-prob one-ply teacher | [`designs/training/search_teacher.md`](../../../designs/training/search_teacher.md) |
 | the FORK ARM — contested-state forks, the branch rows, the CRN, the `fork/` family | [`designs/training/forks.md`](../../../designs/training/forks.md) |
 | the stall-tail harvest / head-repair pipeline | [`designs/training/stall_tail_harvest.md`](../../../designs/training/stall_tail_harvest.md) |
@@ -273,6 +274,24 @@ bucket** — a trace tree is a loss-enriched sample by design, each cycle's mani
 in words, and a tree that records none is SELECTION UNKNOWN, never uniform.
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md).**
 
+## 🚨 Every live lever's SUPPLY is a declared resource (`gen3_supply_guard_v2`, `lever_supply.py`)
+
+A flag that is ON while the mechanism behind it delivers nothing used to train a whole run that then
+read as a result about the lever. Now each such lever is judged once per cycle by a
+`lever_supply.DryStreakGuard`: LIVE and delivering ZERO for its declared floor of consecutive cycles
+→ `LeverStarvedError` → exit **`FATAL_SUPPLY` (5)**; a mis-wiring a restart would repeat →
+`LeverConfigError` → **`FATAL_CONFIG` (3)**. Neither is restarted. Floors (`lever_supply.LEVERS`,
+override `--supply-starve-cycles key=N`, `key=0` = off and ANNOUNCED): `self_play_pool` 3 eval
+cycles (`--self-play` with the pool still EMPTY — failed cycles count; `ai_v12_27` trained 10M
+against bots), `pfsp` 3, `team_pfsp` 5 updates, `win_prob_rollout` 5 rollouts, `fork` 5 rollouts
+(its four DISABLE-with-a-print paths are now FATAL_CONFIG), `search_teacher` 3 cycles with no
+candidate. The eval/teacher-cycle streaks persist per RUN (`snapshots/summary.json`
+`supply_guard`, `teacher_cycle/supply_state.json`), not per launcher segment. Every supply line goes
+through `lever_supply.loud` (the run's own log AND the launcher event stream — `emit` alone never
+reaches the child log). End of every segment: LOUD at zero. Also `FATAL_CONFIG`, never CRASH: a
+`--bot-weights` typo, a failed `--warmstart-consensus`, and a `--distill-teacher` team that fails
+gen3ou validation (the teambuilder used to DROP it silently). **Detail: [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md).**
+
 ## Self-play opponents (`--self-play`, gated behind pathology hunting)
 
 `SelfPlayCallback` replaces `PerOpponentEvalCallback` and the training opponents become frozen
@@ -280,7 +299,8 @@ snapshots of the agent itself, drawn from a directory-backed `SnapshotPool` (`sn
 state reconstructed from `<run_dir>/snapshots/` on every restart — no manifest). Design:
 `designs/ai_v5/`. 🚨 **A FORK starts with an EMPTY pool, and an empty pool does not disable
 `--self-play` — it falls back to the BOT pool**; a genuine fork auto-seeds its parent's and exits
-`FATAL_CONFIG` if it still has none (`pool_seed.py`). 🚨 **`max_snapshots` holds on EVERY path that
+`FATAL_CONFIG` if it still has none (`pool_seed.py`), and ANY run whose pool is still empty after 3
+eval cycles exits `FATAL_SUPPLY` (§ above). 🚨 **`max_snapshots` holds on EVERY path that
 populates the pool, a directory SCAN included** (`gen3_pool_cap_every_path_v1`): a scan applies the add
 path's eviction order, only the trainer's `owns_dir` pool deletes what it evicts, and a pool still over
 its cap raises `PoolOverCapError`.

@@ -33,6 +33,7 @@ from typing import List, Optional
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
+from agents.training.lever_supply import LEVERS, DryStreakGuard, loud, record_scalar
 from agents.training.teacher.buffer import Correction
 from agents.training.teacher.selection import Candidate
 from utils.contention import describe_contention, scale_timeout
@@ -96,7 +97,9 @@ class SearchTeacherCallback(BaseCallback):
                  persistent: bool = False, refresh_steps: int = 500_000, n_battles: int = 12,
                  opd_build_pi_target: bool = False, opd_beta: float = 1.0,
                  mode: str = "crater", wp_band: float = 0.15, wp_margin: float = 0.02,
-                 impl: str = "node", verbose: int = 0):
+                 impl: str = "node",
+                 starve_cycles: int = LEVERS["search_teacher"].default_cycles,
+                 emit=loud, verbose: int = 0):
         super().__init__(verbose)
         self.run_dir = run_dir
         self.freq_steps = int(freq_steps)
@@ -143,6 +146,54 @@ class SearchTeacherCallback(BaseCallback):
         # that claim that cannot rot.
         self._step_block_ms_total = 0.0
         self._selection_failures = 0
+        # gen3_supply_guard_v2: the teacher's CANDIDATES are a declared supply. A cycle whose
+        # selection returns none (no loss traces — eval off, traces pruned, a core trace with no
+        # decisions) or FAILS is a dry cycle; N in a row is FATAL_SUPPLY. A teacher cycle is as
+        # long as an eval cycle, so the streak is persisted per RUN, not per launcher segment.
+        # Persistent mode has no selection: its cycle is a refresh window, judged on ingestion.
+        self._emit = emit
+        self._supply_path = os.path.join(run_dir, "teacher_cycle", "supply_state.json")
+        self._guard = DryStreakGuard("search_teacher", starve_cycles,
+                                     state=self._load_supply_state(), emit=emit)
+        self._ingested_at_refreeze = 0
+
+    # -- the supply guard (gen3_supply_guard_v2) -----------------------------
+
+    def _load_supply_state(self) -> dict:
+        try:
+            with open(self._supply_path) as f:
+                st = json.load(f)
+        except (OSError, ValueError):
+            return {}
+        return st if st.get("run") == os.path.abspath(self.run_dir) else {}
+
+    def _observe_supply(self, delivered: int, why: str) -> None:
+        """One cycle's verdict. Persisted BEFORE the guard may raise, so the count survives a
+        launcher restart and the FATAL's numbers are on disk."""
+        try:
+            self._guard.observe(delivered, why=why, may_raise=False)
+        finally:
+            try:
+                os.makedirs(os.path.dirname(self._supply_path), exist_ok=True)
+                with open(self._supply_path, "w") as f:
+                    json.dump({"run": os.path.abspath(self.run_dir), **self._guard.state()}, f)
+            except OSError as e:
+                print(f"⚠️  [SearchTeacher] could not persist the supply counters: {e}", flush=True)
+        record_scalar(self, "supply/search_teacher_dry_streak", self._guard.streak)
+        g = self._guard
+        if g.enabled and g.streak >= g.starve_cycles:
+            from agents.training.lever_supply import LeverStarvedError
+            raise LeverStarvedError(g.fatal_message())
+
+    def _trace_inventory(self) -> str:
+        import glob
+        steps = glob.glob(os.path.join(self.run_dir, "eval_traces", "step_*"))
+        return (f"eval_traces/ holds {len(steps)} step dir(s)" if steps else
+                "eval_traces/ is EMPTY or absent — crater selection reads the run's own eval loss "
+                "traces (is eval running? --debug needs --debug-eval)")
+
+    def _on_training_start(self) -> None:
+        self._emit(self._guard.announce())
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -306,6 +357,12 @@ class SearchTeacherCallback(BaseCallback):
         self.logger.record("teacher/worker_respawns_total", float(self._respawns_total))
 
     def _refreeze(self) -> None:
+        # gen3_supply_guard_v2: a refresh window is the persistent mode's supply cycle.
+        got = self._ingested_total - self._ingested_at_refreeze
+        self._ingested_at_refreeze = self._ingested_total
+        self._observe_supply(got, f"the persistent workers delivered no correction this refresh "
+                                  f"window ({len(self._workers)} worker(s), "
+                                  f"{self._respawns_total} respawn(s) so far)")
         # Re-freeze so the long-lived workers track the moving policy; bump the version → workers reload.
         snap = self._freeze_snapshot()
         self._write_control(snap)
@@ -361,6 +418,8 @@ class SearchTeacherCallback(BaseCallback):
             self.logger.record("teacher/buffer_size", float(len(buf)))
 
     def _on_training_end(self) -> None:
+        for line in self._guard.summary_lines():
+            self._emit(line)
         if self.persistent and self._workers:
             try:
                 self._write_control(getattr(self, "_latest_snap", ""), shutdown=True)
@@ -485,12 +544,15 @@ class SearchTeacherCallback(BaseCallback):
         cands = [Candidate(**c) for c in (payload.get("candidates") or [])]
         if not cands:
             # NOT a marker matching `cycle @ N: M candidates` — the composition gate asserts every
-            # such marker carries M > 0, and "the newest eval cycle had no falsify-gated crater" is
-            # a fact about the policy, not a defect.
-            if self.verbose:
-                print(f"[SearchTeacher] selection @ {pending['step']:,}: no candidates")
+            # such marker carries M > 0. ONE such cycle is a fact about the policy ("the newest eval
+            # cycle had no falsify-gated crater"); a STREAK of them is a teacher that never engages
+            # (gen3_supply_guard_v2) — printed unconditionally and counted.
+            print(f"[SearchTeacher] selection @ {pending['step']:,}: no candidates "
+                  f"({self._trace_inventory()})", flush=True)
             self._pending = None
+            self._observe_supply(0, f"selection returned NO candidate; {self._trace_inventory()}")
             return
+        self._observe_supply(len(cands), "")
         self._spawn_search_workers(cands)
         self._record_step_block("worker-spawn", t0)
 
@@ -503,10 +565,10 @@ class SearchTeacherCallback(BaseCallback):
         point so the TB series and the collect markers stay one-to-one.
         """
         self._selection_failures += 1
-        if self.verbose:
-            print(f"[SearchTeacher] selection failed: {detail}")
+        print(f"[SearchTeacher] selection failed: {detail}", flush=True)
         self.logger.record("teacher/selection_failures_total", float(self._selection_failures))
         self._publish_cycle([], {"error:selection": 1})
+        self._observe_supply(0, f"selection FAILED: {str(detail)[:300]}")
 
     # -- launch: phase 2, SEARCH (the workers) -------------------------------
 

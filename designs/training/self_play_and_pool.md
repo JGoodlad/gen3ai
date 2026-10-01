@@ -175,6 +175,17 @@ step — the parent has no pool, or `--no-fork-pool-seed` was passed — the lau
 rather than quietly training against bots. `FATAL_CONFIG` and not `parser.error` because a restart
 would hit the identical config, so the launcher must give up instead of looping.
 
+**THE IN-FLIGHT FLOOR (`gen3_supply_guard_v2`).** The refusal above covers a FORK at startup. ANY
+`--self-play` run — fresh ones included — whose pool is still EMPTY after **3 consecutive eval
+cycles** (failed cycles count: a cycle with no results cannot seed) exits **`FATAL_SUPPLY` (5)**,
+naming the seeding gate (`win_rate_vs_bots` vs `--self-play-start-wr`) and the remedies;
+`--pfsp-scale` with sentinels launched but no win-rate measured for 3 cycles is the same FATAL.
+`ai_v12_27_ladder_ctrl10M_shaped_dense` is the case: bots win rate 0.148 → 0.531 over five cycles,
+never the 0.55 gate, so its whole 10M was bot games under a `--self-play` argv. The streak is
+persisted in this pool's `summary.json` (`supply_guard`, keyed to the run dir) so it survives a
+launcher restart; `--supply-starve-cycles self_play_pool=0` turns it off (announced). Detail:
+[`supply_guards.md`](supply_guards.md).
+
 | flag | default | |
 |---|---|---|
 | `--fork-pool-seed` / **`--no-fork-pool-seed`** | ON | opt out of the auto-seed. Declared POSITIVELY so `BoolFlag` generates the `--no-` form — declaring `--no-fork-pool-seed` would have generated `--no-no-fork-pool-seed` |
@@ -240,7 +251,8 @@ parent's pool hidden exited **3** with the three-way message. Gates:
   `Training complete` (exit 0). **What that smoke does NOT show, and why it can't:** pool seeding is
   gated on `win_rate_vs_bots >= SELF_PLAY_START` (0.55) and a fresh debug model sits at ~4%, so the
   pool stays empty and PFSP never weights anything — the smoke proves the flags launch and thread,
-  not that they skew.
+  not that they skew. (Since `gen3_supply_guard_v2` that smoke exits `FATAL_SUPPLY` after its third
+  eval cycle with the pool still empty — repeat it with `--supply-starve-cycles self_play_pool=0`.)
   **The gap the revival actually closed was in the TESTS, not the code.** Every pre-existing test
   exercised ONE link with the other side mocked (pool math / callback EMA / wrapper forwarding), so
   a green suite said nothing about the composition — the thing a revival has to prove. Two

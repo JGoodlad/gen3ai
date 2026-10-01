@@ -21,6 +21,7 @@ from agents.training.graceful_restart_callback import GracefulRestartCallback
 from agents.training.metrics_exporter_callback import MetricsExporterCallback
 from agents.training.signal_callback import SignalMetricsCallback
 from agents.training.selfplay_callback import SelfPlayCallback
+from agents.training.lever_supply import starve_cycles_for
 from main.train.constants import (
     DEFAULT_EVAL_BATTLES, SMOKE_EVAL_BATTLES, SMOKE_STEPS, checkpoint_save_freq_vec_calls,
 )
@@ -71,6 +72,21 @@ def _arg_or(args, name, default):
     """
     got = getattr(args, name, None)
     return default if got is None else got
+
+
+def team_pfsp_live_probe(args, pool):
+    """gen3_supply_guard_v2 — when must `--team-pfsp` be receiving team games? Always under
+    `--exploiter` (every target battle counts), so ``None`` (= always live); under `--self-play`
+    only once the pool is seeded AND the curriculum's persisted self_play_fraction is > 0 — a fresh
+    run below the seeding gate legitimately plays no pool battle."""
+    if getattr(args, "exploiter", None):
+        return None
+
+    def _probe() -> bool:
+        if pool is None or pool.is_empty():
+            return False
+        return float(pool.load_summary().get("self_play_fraction") or 0.0) > 0.0
+    return _probe
 
 
 def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
@@ -405,7 +421,8 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         callbacks.append(WinProbLabelCallback(
             records_dir=(os.path.join(model_dir, "cf_records")
                          if getattr(args, "cf_records", False) else None),
-            impl=str(getattr(args, "bridge_impl", "rust") or "rust")))
+            impl=str(getattr(args, "bridge_impl", "rust") or "rust"),
+            starve_cycles=starve_cycles_for(args, "win_prob_rollout")))
     # DENSE AUXILIARY labels (gen3_dense_aux_v1): the same three-step bridge for the 25
     # end-of-battle per-slot targets. Registered AFTER WinProbLabelCallback — order is not
     # load-bearing between them (the key sets are disjoint, and the λ recursion touches only
@@ -439,13 +456,16 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
         callbacks.append(ForkArmCallback(
             records_dir=(os.path.join(model_dir, "cf_records")
                          if getattr(args, "cf_records", False) else None),
-            impl=str(getattr(args, "bridge_impl", "rust") or "rust")))
+            impl=str(getattr(args, "bridge_impl", "rust") or "rust"),
+            starve_cycles=starve_cycles_for(args, "fork")))
     # Team-side PFSP: variance-weighted TEAM sampling by self-play win-rate. Registered ONLY when on
     # → an off run adds no callback and makes no env_method calls (byte-identical). Training-only.
     if args.team_pfsp != "off":
         from agents.training.team_pfsp_callback import TeamPFSPCallback
         callbacks.append(TeamPFSPCallback(cap=args.team_pfsp_cap, floor=args.team_pfsp_floor,
-                                          mode=args.team_pfsp, persist_dir=model_dir))
+                                          mode=args.team_pfsp, persist_dir=model_dir,
+                                          live_probe=team_pfsp_live_probe(args, _pool),
+                                          starve_cycles=starve_cycles_for(args, "team_pfsp")))
     # PER-TEAM WIN-RATE TRACKING (default ON): instrumentation only — sparse TB summaries + a
     # restart-safe <run>/team_win_rates.json full table. Independent of --team-pfsp (different key,
     # different opponent scope, separate counter table); the two only share the builder's draw index.
@@ -497,6 +517,8 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             # The workers' sim engine follows the run's --use-bridge impl (no separate flag);
             # "node" when the bridge is off, which is the historical behaviour.
             impl=args.bridge_impl,
+            # gen3_supply_guard_v2: N consecutive cycles with no candidate → FATAL_SUPPLY (5).
+            starve_cycles=starve_cycles_for(args, "search_teacher"),
             verbose=1))
     eval_callback = None
     # A --debug smoke run skips ALL eval by default — the periodic eval callback below AND the
@@ -593,6 +615,9 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
             trainee_team_str=_specialist_team_str,
             env_core=getattr(args, "env_core", "python"),
+            # gen3_supply_guard_v2: the pool and PFSP supply floors (lever_supply.LEVERS).
+            pool_starve_cycles=starve_cycles_for(args, "self_play_pool"),
+            pfsp_starve_cycles=starve_cycles_for(args, "pfsp"),
         )
         callbacks.append(eval_callback)
     elif _run_eval:
