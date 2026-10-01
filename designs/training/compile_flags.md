@@ -1165,6 +1165,19 @@ caught; the healthy two-shape alternation locks and runs clean; **the sentinel c
 and `test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32` (CUDA, `slow`; skips while
 a trainer holds the card).
 
+### FUNCTIONAL MASKING — the K8 prerequisite (`gen3_functional_masking_v1`, 2026-09-30)
+
+sb3's `MaskableCategorical.apply_masking` pops its cached `probs` out of `__dict__` and re-runs
+`Categorical.__init__` — an object mutation dynamo cannot trace (17–19 graph breaks per update in the K8
+inventory) — and every `torch.distributions` object validates its logits and samples with host reads.
+`agents/model/masked_categorical.py` is the same arithmetic as plain tensor ops, op for op (the
+unmasked path's double normalisation, masking from the single-normalised `_original_logits`, the
+`-1e8` floor, the masked entropy's `where`, the same `multinomial` call for a sample), and the
+policy's two hot paths use it: `forward` (the rollout) and `evaluate_actions` (the learner; the
+distill / anchor / ride-along readers get a `MaskedPi` answering `.distribution.logits` / `.probs`).
+`get_distribution` keeps sb3's object for its callers (`predict`, the teachers). Pinned BIT-IDENTICAL
+to sb3 (`masked_categorical_test`, both torches); the K9 learner golden is unchanged.
+
 ### Every non-training model can use it
 
 `maybe_compile_extractor` is safe to apply to ANY frozen model, because the wrapper routes

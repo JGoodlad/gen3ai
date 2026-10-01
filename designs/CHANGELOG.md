@@ -10241,3 +10241,16 @@ if a lazy build is reintroduced.
   `build_ridealong`, `_adam`) are now marked `@startup_builder`; the root `CLAUDE.md` lists it as the
   twelfth static gate.
 
+## 2026-09-30 — K8: FUNCTIONAL MASKING (`gen3_functional_masking_v1`; no model version bump, numerics bit-identical)
+
+- **`agents/model/masked_categorical.py`**: sb3 `MaskableCategorical`'s masked, normalised logits,
+  log-prob, entropy, probs, sample and mode as plain tensor ops — the exact op sequence (including the
+  double normalisation of an unmasked distribution and masking from the single-normalised logits),
+  without the `__dict__.pop` + `Categorical.__init__` re-run dynamo cannot trace and without
+  `validate_args`' host reads. `Gen3DualHeadMaskablePolicy.forward` (the rollout) and
+  `evaluate_actions` (the learner) use it; `_last_pi_distribution` is a `MaskedPi` answering
+  `.distribution.logits` / `.probs`; `get_distribution` keeps sb3's object for its callers.
+- **Pinned bit-identical** to sb3's own objects (`masked_categorical_test`, both torches: logits,
+  log-prob, entropy, probs for every mask spelling; the unmasked path; the sampled actions and the RNG
+  draws consumed; the production policy's two hot paths), and the K9 learner golden is unchanged.
+

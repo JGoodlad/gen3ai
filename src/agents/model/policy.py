@@ -24,6 +24,7 @@ from stable_baselines3.common.type_aliases import PyTorchObs
 from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
+from agents.model import masked_categorical as _mc
 from agents.model.arch_constants import D_MODEL
 from agents.model.critic_mode import CRITIC_DEFAULT, CRITIC_MODES, is_winprob
 from agents.model.popart import PopArtNormalizer
@@ -262,7 +263,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             return self._denorm(head.mean(logits))
         return self._denorm(self.value_net(latent_vf))
 
-    def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> MaskableDistribution:
+    def _pointer_logits(self, latent_pi: th.Tensor) -> th.Tensor:
         """gen3_pointer_native_v1: the action logits ARE the pointer head's scores.
 
         All three logit sites (`forward`, `evaluate_actions`, `get_distribution`) funnel through this
@@ -274,8 +275,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
 
         `latent_pi` is the head's decision CONTEXT — the same policy-tower output the deleted flat
         head consumed, so the op block / beliefs / FiLM all condition every pointer score. Masking is
-        applied by the callers on the returned distribution, downstream of these logits, exactly as
-        before."""
+        applied by the callers, downstream of these logits, exactly as before."""
         inputs = self.features_extractor.last_pointer_inputs
         if inputs is None:
             raise RuntimeError(
@@ -289,9 +289,24 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
                 f"stale pointer stash: batch {tok_req.shape[0]} vs latent_pi {latent_pi.shape[0]} — "
                 "the extractor forward and this latent are from different batches."
             )
-        logits = self.pointer_head(latent_pi, tok_req, valid, team_tokens, move_cells, switch_cells)
+        logits: th.Tensor = self.pointer_head(latent_pi, tok_req, valid, team_tokens, move_cells,
+                                              switch_cells)
+        return logits
+
+    def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> MaskableDistribution:
+        """sb3's distribution object over `_pointer_logits` — for `get_distribution`'s callers
+        (`predict`, the distill teachers, search-teacher / OPD), which use the object API. The two
+        hot paths (`forward`, `evaluate_actions`) use the FUNCTIONAL masking below instead."""
         # Build through the public API so masking / log_prob / entropy all see these logits.
-        return self.action_dist.proba_distribution(action_logits=logits)
+        return self.action_dist.proba_distribution(action_logits=self._pointer_logits(latent_pi))
+
+    def masked_logp(self, latent_pi: th.Tensor, action_masks: Any) -> th.Tensor:
+        """gen3_functional_masking_v1 (M5 Lane K8): the masked, normalised log-probabilities sb3's
+        `MaskableCategorical` would end with — as plain tensor ops (`agents.model.masked_categorical`,
+        bit-identical, no `__dict__.pop`, no `torch.distributions` object, no validation host read),
+        so the learner's micro-step can trace as ONE region."""
+        n_actions = int(self.action_dist.action_dim)  # type: ignore[attr-defined]  # the categorical's
+        return _mc.masked_logits(self._pointer_logits(latent_pi), action_masks, n_actions)
 
     def forward(
         self,
@@ -303,11 +318,11 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
         values = self._critic_value(latent_vf)
-        distribution = self._get_action_dist_from_latent(latent_pi)
-        if action_masks is not None:
-            distribution.apply_masking(action_masks)
-        actions = distribution.get_actions(deterministic=deterministic)
-        log_prob = distribution.log_prob(actions)
+        # gen3_functional_masking_v1: the same masked logits, the same `multinomial` draw (so the same
+        # RNG stream) and the same log-prob as sb3's distribution object — pinned bit-for-bit.
+        logp = self.masked_logp(latent_pi, action_masks)
+        actions = _mc.mode(logp) if deterministic else _mc.sample(logp)
+        log_prob = _mc.log_prob(logp, actions)
         actions = actions.reshape((-1, *self.action_space.shape))  # type: ignore[misc]
         return actions, values, log_prob
 
@@ -320,17 +335,18 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        distribution = self._get_action_dist_from_latent(latent_pi)
-        if action_masks is not None:
-            distribution.apply_masking(action_masks)
-        # gen3_exploiter_distill_v1: stash the (masked) pi distribution so the exploiter-distillation KL in
-        # InstrumentedMaskablePPO.train() can REUSE this forward instead of a redundant second
-        # get_distribution. The masked logits give a BIT-IDENTICAL KL (over LEGAL actions the logits are
-        # unchanged; illegal actions contribute exactly 0 either way). A no-op for any non-distill run.
-        self._last_pi_distribution = distribution
-        log_prob = distribution.log_prob(actions)
+        # gen3_functional_masking_v1: functional masked logits (bit-identical to sb3's object).
+        logp = self.masked_logp(latent_pi, action_masks)
+        masks_bool = _mc.mask_bool(action_masks, logp)
+        # gen3_exploiter_distill_v1: stash the (masked) pi so the exploiter-distillation KL, the
+        # off-slice anchor and the ride-along heads REUSE this forward instead of a redundant second
+        # one. `MaskedPi` answers `.distribution.logits` / `.distribution.probs` exactly as the sb3
+        # object did (the masked logits give a BIT-IDENTICAL KL: over LEGAL actions the logits are
+        # unchanged; illegal actions contribute exactly 0 either way).
+        self._last_pi_distribution = _mc.MaskedPi(logp, masks_bool)
+        log_prob = _mc.log_prob(logp, actions)
         values = self._critic_value(latent_vf)
-        return values, log_prob, distribution.entropy()
+        return values, log_prob, _mc.entropy(logp, masks_bool)
 
     def get_distribution(
         self, obs: PyTorchObs, action_masks: Optional[np.ndarray] = None
