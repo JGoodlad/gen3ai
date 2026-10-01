@@ -51,6 +51,7 @@ _EVAL_SUMMARY = frozenset({
     "eval/mean_reward_vs_bots",
     "eval/mean_reward_vs_pool",
     "eval/duration_sec",
+    "eval/wall_sec",
     "eval/n_workers",
 })
 
@@ -537,12 +538,17 @@ class LauncherApp(Gen3App):
             v = metrics.get(f"eval/elo_vs_{opp}")
             return Text(f"{v:.0f}", style="cyan") if v is not None else ""
 
-        # duration_sec is the SUM of per-opponent battle time; the work runs across
-        # eval/n_workers subprocesses, so divide to get the (approx) per-worker wall-clock
-        # and show it as seconds (XmYs once past 600s) — the summed MM:SS clock was inflated.
+        # eval/wall_sec (gen3_eval_wall_sec_v1) is the cycle's real wall clock, launch -> collected.
+        # eval/duration_sec is the SUMMED UNIT TIME (every shard's duration added up — concurrent on
+        # the Rust eval core, ~25x the wall there), so it is only the fallback for a run that predates
+        # wall_sec, divided by the worker count as before.
+        wall = eval_summary.get("eval/wall_sec")
         dur = eval_summary.get("eval/duration_sec")
         n_workers = eval_summary.get("eval/n_workers") or 1
-        dur_str = f" · took {_secs_str(dur / n_workers)}" if dur is not None else ""
+        if wall is not None:
+            dur_str = f" · took {_secs_str(wall)}"
+        else:
+            dur_str = f" · took ~{_secs_str(dur / n_workers)}" if dur is not None else ""
         table.add_row(Text(f"eval{dur_str}{stale_badge}", style="dim italic"), "", "", "")
 
         if eval_summary:

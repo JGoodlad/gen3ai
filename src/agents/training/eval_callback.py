@@ -9,7 +9,7 @@ import json
 import shutil
 import threading
 import subprocess
-from typing import NamedTuple
+from typing import Any, NamedTuple
 from datetime import datetime, timezone
 
 from stable_baselines3.common.callbacks import BaseCallback
@@ -1397,6 +1397,27 @@ class _ForcedEvalMixin:
         self._launch_eval()
 
 
+def record_cycle_wall(cb: Any, pending: dict, merged: dict, *, tag: str) -> float:
+    """`eval/wall_sec` (gen3_eval_wall_sec_v1): the eval cycle's WALL time — from the top of
+    `_launch_eval` (the snapshot save included) to the end of its collection (records, best-model
+    save, trace manifest, snapshot persist, pruning) — recorded at the eval step beside
+    `eval/duration_sec`, which is the SUMMED UNIT TIME (every shard's own duration, added up: on the
+    Rust eval core the units play CONCURRENTLY, so it read ~350-390 s for a ~14 s cycle).
+    🚨 On the RUST core the cycle is blocking and in-process, so `wall_sec` IS its cost to training;
+    on the PYTHON core the workers play beside training, so it is the cycle's LATENCY. Called from
+    inside `_collect_pending`'s `isolated_dump` scope, so its own dump carries only these scalars."""
+    t0 = pending.get("t_launch", pending.get("launched_at"))
+    wall = max(0.0, time.monotonic() - float(t0)) if t0 is not None else float("nan")
+    summed = float(sum(merged.get("durations_sec", {}).values()))
+    step = int(pending["step"])
+    cb.logger.record("eval/wall_sec", wall)
+    cb.logger.dump(step)
+    send_metrics({"eval/wall_sec": wall, "_step": step})
+    print(f"[{tag}] step {step:,}: cycle wall {wall:.1f}s (launch -> collected) · "
+          f"summed unit time {summed:.0f}s (eval/duration_sec)", flush=True)
+    return wall
+
+
 class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
     """
     Evaluates the trained agent against the full bot roster on a flat schedule
@@ -1565,6 +1586,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
     def _launch_eval(self) -> None:
         if self._eval_root is None:
             return  # no model_dir → nowhere to snapshot/collect; eval disabled
+        t_launch = time.monotonic()   # gen3_eval_wall_sec_v1: the cycle's wall clock starts HERE
         _, n_games = self._schedule()
         step = self.num_timesteps
         run_dir = os.path.join(self._eval_root, f"step_{step}")
@@ -1636,7 +1658,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
 
         self._pending = {"step": step, "names": names, "procs": procs,
                          "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
-                         "launched_at": time.monotonic()}
+                         "launched_at": time.monotonic(), "t_launch": t_launch}
         if self._env_core == "rust":
             self._collect_pending()      # the cycle already played (blocking, in process)
             return
@@ -1702,6 +1724,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         self._prune_eval_traces()   # trainer grooms the traces it writes
         self._prune_run_artifacts()  # …and bounds its stalls/ + crashes/ dirs
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
+        record_cycle_wall(self, pending, merged, tag="EVAL")
 
     def _record(self, step: int, merged: dict, n_games: int = EVAL_GAMES,
                 n_workers: int = 1) -> None:
@@ -1772,8 +1795,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             "eval/win_rate_mean": aggregate, "eval/win_rate_vs_bots": wr_bots,
             "eval/mean_reward_mean": aggregate_reward, "eval/mean_reward_vs_bots": rew_bots,
             "eval/mean_ep_len_vs_bots": eplen_bots, "eval/duration_sec": total_dur,
-            # Worker count so the TUI can show per-worker wall-clock (duration_sec is the
-            # SUM of per-opponent durations; the pool runs them across n_workers subprocesses).
+            # Worker count for the TUI. duration_sec is the SUMMED UNIT TIME, never wall time:
+            # that is eval/wall_sec (record_cycle_wall at the end of the collection).
             "eval/n_workers": float(max(1, n_workers)),
             "_step": step,
         })

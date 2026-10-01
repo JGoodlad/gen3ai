@@ -78,11 +78,11 @@ def _cb(tmp_path: Any, env_core: str, logger: Logger) -> PerOpponentEvalCallback
 
 
 def _assert_isolated(rec: _Rec, logger: Logger) -> None:
+    # the cycle's dumps: its scalars, then its wall clock (gen3_eval_wall_sec_v1) — both at the eval step
     eval_dumps = [(s, d) for s, d in rec.dumps if any(k.startswith("eval/") for k in d)]
-    assert len(eval_dumps) == 1, [s for s, _ in rec.dumps]
-    step, d = eval_dumps[0]
-    assert step == 2_000_000
-    assert "train/approx_kl" not in d, "the eval dump took the last update's train/* (the §2.1 defect)"
+    assert eval_dumps and all(s == 2_000_000 for s, _ in eval_dumps), [s for s, _ in rec.dumps]
+    for _s, d in eval_dumps:
+        assert "train/approx_kl" not in d, "the eval dump took the last update's train/* (the §2.1 defect)"
     assert logger.name_to_value.get("train/approx_kl") == KL, \
         "the last update's approx_kl did not survive the eval cycle for the KL controller"
 

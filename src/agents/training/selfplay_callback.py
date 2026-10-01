@@ -39,6 +39,7 @@ from agents.model.snapshot import record_eval_results, arch_toggles_from_model
 from agents.training.logger_scope import isolated_dump
 from agents.training.eval_callback import (
     eval_cycle_timeout,
+    record_cycle_wall,
     _EVAL_SUBPROCESS_CONCURRENCY,
     _ForcedEvalMixin,
     EVAL_FREQ_STEPS,
@@ -407,6 +408,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
     def _launch_eval(self) -> None:
         if self._eval_root is None:
             return  # no model_dir → nowhere to snapshot/collect; eval disabled
+        t_launch = time.monotonic()   # gen3_eval_wall_sec_v1: the cycle's wall clock starts HERE
         _, n_games = self._schedule()
         step = self.num_timesteps
         run_dir = os.path.join(self._eval_root, f"step_{step}")
@@ -493,7 +495,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
             "fixed_labels": fixed_labels,
             "sentinel_entries": sentinel_entries, "procs": procs,
             "snapshot": snapshot_zip, "run_dir": run_dir, "n_games": n_games,
-            "launched_at": time.monotonic(),
+            "launched_at": time.monotonic(), "t_launch": t_launch,
         }
         if self._env_core == "rust":
             self._collect_pending()      # the cycle already played (blocking, in process)
@@ -730,8 +732,9 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         total_dur = sum(merged["durations_sec"].values())
         self.logger.record("eval/duration_sec", total_dur)
         tui["eval/duration_sec"] = total_dur
-        # Worker count so the TUI can show per-worker wall-clock (duration_sec is the SUM of
-        # per-opponent durations; the pool runs them across n_workers subprocesses).
+        # Worker count for the TUI. duration_sec is the SUMMED UNIT TIME (every shard's own
+        # duration, added up — concurrent on the Rust core), never wall time: that is eval/wall_sec,
+        # recorded at the end of this collection (record_cycle_wall, gen3_eval_wall_sec_v1).
         tui["eval/n_workers"] = float(max(1, len(pending["procs"])))
 
         # Opponent default-rate telemetry — queried on THIS (training) thread; safe because
@@ -774,7 +777,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
                           if ext_wr else "")
         print(f"[SELFPLAY EVAL] step {step:,}: Bots {self.win_rate_vs_bots * 100:.1f}%  "
               f"Pool {win_rate_vs_pool * 100:.1f}%{_stable_suffix}  Monotonicity {monotonicity:.2f}  "
-              f"SelfPlay {sf * 100:.0f}%  [{total_dur:.0f}s]")
+              f"SelfPlay {sf * 100:.0f}%  [summed unit time {total_dur:.0f}s; wall at collection end]")
         send_event(f"🧪 Self-play eval @ {step:,}: bots {self.win_rate_vs_bots * 100:.1f}%, "
                    f"pool {win_rate_vs_pool * 100:.1f}%"
                    + (f", stable {sum(ext_wr.values()) / len(ext_wr) * 100:.1f}%" if ext_wr else ""))
@@ -868,6 +871,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         prune_eval_traces(self._model_dir, self._keep_eval_trace_steps)
         prune_run_artifacts(self._model_dir, self._keep_stalls, self._keep_crashes)  # bound stalls/ + crashes/
         self._cleanup(pending, keep_logs=bool(missing or bad_exits))
+        record_cycle_wall(self, pending, merged, tag="SELFPLAY EVAL")
         # LAST, so a FATAL here leaves this cycle fully recorded (metrics, summary.json, traces).
         self._judge_supply()
 
