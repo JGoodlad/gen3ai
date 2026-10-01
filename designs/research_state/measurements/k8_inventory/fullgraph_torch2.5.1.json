@@ -1,0 +1,17 @@
+{
+ "torch": "2.5.1+cu121",
+ "batch": 16,
+ "backend": "eager",
+ "results": {
+  "extractor.forward | train_grad": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "extractor.forward | train_nograd": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "extractor.forward | eval_nograd": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "extractor via Module.__call__ | train_grad": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "extractor via Module.__call__ | train_nograd": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "extractor via Module.__call__ | eval_nograd": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "policy.extract_features | train_grad": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "policy.extract_features | train_nograd": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "policy.extract_features | eval_nograd": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for",
+  "policy(obs, action_masks) [rollout] | eval_nograd": "REFUSED: 'inline in skipfiles: WeakKeyDictionary.get | get /home/goodlad/miniconda3/envs/gen3ai_stable/lib/python3.11/weakref.py, skipped according trace_rules.lookup SKIP_DIRS' @ agents/model/forward_guard.py:57 forward_guard_for"
+ }
+}

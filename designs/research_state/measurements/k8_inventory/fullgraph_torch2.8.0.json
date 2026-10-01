@@ -1,0 +1,17 @@
+{
+ "torch": "2.8.0+cu126",
+ "batch": 16,
+ "backend": "eager",
+ "results": {
+  "extractor.forward | train_grad": "OK",
+  "extractor.forward | train_nograd": "OK",
+  "extractor.forward | eval_nograd": "OK",
+  "extractor via Module.__call__ | train_grad": "OK",
+  "extractor via Module.__call__ | train_nograd": "OK",
+  "extractor via Module.__call__ | eval_nograd": "OK",
+  "policy.extract_features | train_grad": "OK",
+  "policy.extract_features | train_nograd": "OK",
+  "policy.extract_features | eval_nograd": "OK",
+  "policy(obs, action_masks) [rollout] | eval_nograd": "REFUSED: Unsupported method call @ sb3_contrib/common/maskable/distributions.py:69 apply_masking"
+ }
+}

@@ -679,7 +679,27 @@ now asserts, per torch: 2.5.1 ⇒ split ON and unsplit FAILS; 2.8 ⇒ split OFF 
 0 breaks on both torches, at every `--log-level`** (2026-09-30: 7,062 ops on 2.5.1, 6,870 on 2.8,
 production config). The ObservationDebugger that used to attach at `--log-level periodic` — and
 whose rate-limited logger's `time.time()` (`utils/logging/rate_limiter.py:14`) was the source of
-BOTH of the 3-graphs / 2-breaks the periodic build read — was removed that day. On CUDA the 2.5.1 split adds one; on 2.8 the CUDA explain is also **1 graph / 0 breaks** (6,870 ops) — the unsplit graph — so the extractor already meets K8's per-region rule on both torches on CPU and on 2.8 CUDA (the extractor as ONE declared `fullgraph=True` region; K8 is DECLARED COMPILE REGIONS, owner 2026-09-30, `designs/endstate/program_rust_core.md` Lane K).
+BOTH of the 3-graphs / 2-breaks the periodic build read — was removed that day. On CUDA the 2.5.1 split adds one; on 2.8 the CUDA explain is also **1 graph / 0 breaks** (6,870 ops) — the unsplit graph.
+
+🚨 **`explain`'s "0 breaks" is NOT the `fullgraph=True` verdict on 2.5.1** (measured 2026-09-30, the K8
+inventory, `designs/research_state/measurements/k8_inventory/`). The test is `torch.compile(fe.forward,
+fullgraph=True)` on the production surface with the committed real-obs rows, CPU:
+- **2.5.1 REFUSES in every mode** (train/grad, train/no-grad, eval/no-grad, and through
+  `Module.__call__`, `extract_features` and the rollout's `policy(obs, action_masks=…)` alike) at
+  `forward_guard.py:57`, `forward_guard_for`'s `WeakKeyDictionary.get` ["inline in skipfiles"]. The
+  break sits at the frame's FIRST instruction, so it ends no graph, and `explain`, which counts breaks
+  through the graphs they end, reports none. The inventory's capture sees it (4 events in a first
+  update).
+- **2.8 traces the lookup and compiles `fullgraph=True` in all three modes.**
+
+So the extractor meets K8's per-region rule (ONE declared `fullgraph=True` region; K8 is DECLARED
+COMPILE REGIONS, owner 2026-09-30, `designs/endstate/program_rust_core.md` Lane K) on **2.8 only**; on
+2.5.1 the guard lookup must leave the traced region first (the inventory's fix 5a). One more extractor
+break is reproducible in the trainer process: the rollout-shaped eval/no-grad forward broke at
+`encoders.py:287` (`move_self_attn`, the native `nn.MultiheadAttention` fast path) on both torches with
+C's checkpoint and real rows. A standalone production-surface eval compile does NOT reproduce it —
+**UNVERIFIED** why; the inventory's fix 5b (fast path off in the compiled eval region) removes it
+either way.
 
 **Speed A/B (2026-09-29, idle RTX 3080 Ti, the same saved rollout buffer, `learner_benchmark`,
 K=5):** 2.8-unsplit is 1–2% FASTER than 2.5.1-split — baseline 57.21 s vs 58.45 s per update,

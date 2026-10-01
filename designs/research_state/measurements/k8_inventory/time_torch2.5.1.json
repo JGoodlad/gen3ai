@@ -1,0 +1,325 @@
+{
+ "source": "/home/goodlad/gen3ai_archive/k8_inventory/20260930_180918_time_cuda_torch2.5.1/time_result.json",
+ "torch": "2.5.1+cu121",
+ "matmul_precision": "high",
+ "geometry": {
+  "rows": 98304,
+  "micro_batch": 2048,
+  "micro_per_epoch": 48,
+  "grad_accum_steps": 32,
+  "n_epochs": 10,
+  "diagnostics_every": 1
+ },
+ "bracketed": {
+  "train_ms": 53800.916263018735,
+  "wall_s": 53.80184796091635,
+  "phases_s": {
+   "setup": 0.006368161994032562,
+   "batch": 2.881954794516787,
+   "forward": 11.20789321535267,
+   "ridealong": 0.005733659374527633,
+   "loss": 7.882405798649415,
+   "probes": 4.9189017217140645,
+   "kl": 0.03148187859915197,
+   "noise_probe": 0.002304496360011399,
+   "backward": 26.630568045540713,
+   "noise_base": 0.006520077469758689,
+   "optim": 0.043629429186694324,
+   "capacity": 0.002027986221946776,
+   "epoch_end": 0.0548215740127489,
+   "logging": 0.1262915979605168
+  },
+  "phase_counts": {
+   "setup": 1,
+   "batch": 480,
+   "forward": 480,
+   "ridealong": 480,
+   "loss": 480,
+   "probes": 960,
+   "kl": 480,
+   "noise_probe": 480,
+   "backward": 480,
+   "noise_base": 480,
+   "optim": 480,
+   "capacity": 480,
+   "epoch_end": 10,
+   "logging": 1
+  },
+  "scalar_read_s": 0.6360893296077847,
+  "scalar_reads": 66784,
+  "n_epochs": 10,
+  "work": {
+   "train/loss": 0.38426101207733154,
+   "train/approx_kl": 0.008734211325645447,
+   "train/clip_fraction": 0.084271240234375,
+   "train/value_loss": 0.012494168562504153,
+   "train/policy_gradient_loss": -0.0018011342668614815,
+   "train/grad_norm": 0.524562431871891,
+   "train/entropy_loss": -0.9039520589013894,
+   "param_abs_sum": 198474.26516850665
+  }
+ },
+ "unbracketed": null,
+ "rss_peak_mb_by_stage": {
+  "time:warmup": 6241,
+  "time:bracketed": 6719,
+  "time:profile_skipped": 8035
+ },
+ "profiles": [
+  {
+   "tag": "skipped",
+   "config": "diag_skipped",
+   "epochs": 1,
+   "wall_s": 10.04506707098335,
+   "totals": {
+    "trace_span_ms": 10045.2854609375,
+    "train_span_ms": 10045.048235351562,
+    "gpu_busy_ms": 3991.629966796875,
+    "gpu_idle_ms": 6053.418268554687,
+    "compiled_kernel_ms": 3227.4519569999816,
+    "eager_kernel_ms": 632.0368529999834,
+    "compiled_memop_ms": 1.1312490000000004,
+    "eager_memop_ms": 131.00744100000142,
+    "compiled_kernel_share": 0.8362381952339463,
+    "compiled_share_of_train_wall": 0.32129780578271416,
+    "compiled_host_ops": 17232.0,
+    "eager_host_ops": 140758.0,
+    "compiled_host_op_share": 0.10907019431609595,
+    "unmatched_device_events": 0,
+    "device_events": 239422
+   },
+   "phases": {
+    "backward": {
+     "host_wall_ms": 1234.518202148437,
+     "eager_ops": 34900.0,
+     "eager_host_ms": 406.91920499999765,
+     "compiled_ops": 10848.0,
+     "compiled_host_ms": 130.21599000000026,
+     "eager_kernel_ms": 292.6500010000019,
+     "eager_kernels": 44340.0,
+     "eager_memop_ms": 46.57668999999973,
+     "eager_memops": 3264.0,
+     "compiled_kernel_ms": 2212.572091999995,
+     "compiled_kernels": 43584.0,
+     "compiled_memop_ms": 0.6118680000000004,
+     "compiled_memops": 480.0
+    },
+    "batch": {
+     "host_wall_ms": 1916.7636347656253,
+     "eager_ops": 4176.0,
+     "eager_host_ms": 1600.5384700000104,
+     "eager_memop_ms": 64.92527900000049,
+     "eager_memops": 1392.0
+    },
+    "capacity": {
+     "host_wall_ms": 0.3043642578125
+    },
+    "epoch_end": {
+     "host_wall_ms": 38.4697041015625,
+     "eager_ops": 1015.0,
+     "eager_host_ms": 35.475580000000036,
+     "eager_kernel_ms": 1.0330520000000003,
+     "eager_kernels": 295.0,
+     "eager_memop_ms": 0.0009599999999999999,
+     "eager_memops": 1.0
+    },
+    "forward": {
+     "host_wall_ms": 1158.3300009765624,
+     "eager_ops": 7728.0,
+     "eager_host_ms": 502.7717930000016,
+     "compiled_ops": 6384.0,
+     "compiled_host_ms": 85.53593800000014,
+     "eager_kernel_ms": 23.879954999999878,
+     "eager_kernels": 3696.0,
+     "compiled_kernel_ms": 1005.5662579999866,
+     "compiled_kernels": 28272.0,
+     "compiled_memop_ms": 0.5193810000000001,
+     "compiled_memops": 384.0,
+     "eager_memop_ms": 0.07721800000000001,
+     "eager_memops": 144.0
+    },
+    "kl": {
+     "host_wall_ms": 5.7486591796875,
+     "eager_ops": 480.0,
+     "eager_host_ms": 4.061087,
+     "eager_kernel_ms": 0.37353400000000014,
+     "eager_kernels": 240.0,
+     "eager_memop_ms": 0.048061999999999994,
+     "eager_memops": 48.0
+    },
+    "logging": {
+     "host_wall_ms": 140.89801171875,
+     "eager_ops": 11822.0,
+     "eager_host_ms": 52.25758300000016,
+     "eager_memop_ms": 0.5583320000000022,
+     "eager_memops": 93.0,
+     "eager_kernel_ms": 26.906568999999955,
+     "eager_kernels": 6028.0
+    },
+    "loss": {
+     "host_wall_ms": 1231.435419921875,
+     "eager_ops": 78654.0,
+     "eager_host_ms": 1033.4798320000102,
+     "eager_kernel_ms": 268.98672699998167,
+     "eager_kernels": 84924.0,
+     "eager_memop_ms": 17.537609000001208,
+     "eager_memops": 20802.0
+    },
+    "noise_base": {
+     "host_wall_ms": 39.22385058593748,
+     "eager_ops": 992.0,
+     "eager_host_ms": 37.43410800000003,
+     "eager_kernel_ms": 1.3863750000000068,
+     "eager_kernels": 743.0,
+     "eager_memop_ms": 0.00317,
+     "eager_memops": 4.0
+    },
+    "noise_probe": {
+     "host_wall_ms": 0.36187011718749995
+    },
+    "optim": {
+     "host_wall_ms": 38.2230654296875,
+     "eager_ops": 767.0,
+     "eager_host_ms": 34.99501899999994,
+     "eager_kernel_ms": 0.703228,
+     "eager_kernels": 47.0,
+     "eager_memop_ms": 0.000928,
+     "eager_memops": 1.0
+    },
+    "probes": {
+     "host_wall_ms": 4228.809594726564,
+     "eager_ops": 224.0,
+     "eager_host_ms": 20.50143,
+     "compiled_kernel_ms": 9.313607000000006,
+     "compiled_kernels": 369.0,
+     "eager_kernel_ms": 16.117411999999995,
+     "eager_kernels": 253.0,
+     "eager_memop_ms": 1.2791930000000005,
+     "eager_memops": 18.0
+    },
+    "ridealong": {
+     "host_wall_ms": 1.1143818359375
+    },
+    "setup": {
+     "host_wall_ms": 6.4000419921875
+    },
+    "tail": {
+     "host_wall_ms": 0.52776953125
+    }
+   },
+   "eager_by_component": {
+    "(no python stack)": {
+     "eager_ops": 105954.0,
+     "eager_host_ms": 3322.7881740000535
+    },
+    "backward (eager autograd)": {
+     "eager_ops": 34804.0,
+     "eager_host_ms": 405.64593299999734
+    }
+   },
+   "backward_eager_nodes_top": [
+    [
+     "torch::autograd::AccumulateGrad",
+     11908.0
+    ],
+    [
+     "IndexBackward0",
+     3552.0
+    ],
+    [
+     "AddmmBackward0",
+     2688.0
+    ],
+    [
+     "SliceBackward0",
+     1920.0
+    ],
+    [
+     "BinaryCrossEntropyWithLogitsBackward0",
+     1776.0
+    ],
+    [
+     "MeanBackward1",
+     1584.0
+    ],
+    [
+     "ViewBackward0",
+     1536.0
+    ],
+    [
+     "MulBackward0",
+     1248.0
+    ],
+    [
+     "CatBackward0",
+     1104.0
+    ],
+    [
+     "MeanBackward0",
+     768.0
+    ],
+    [
+     "DivBackward0",
+     624.0
+    ],
+    [
+     "LogSoftmaxBackward0",
+     480.0
+    ],
+    [
+     "MinimumBackward0",
+     480.0
+    ],
+    [
+     "NegBackward0",
+     432.0
+    ],
+    [
+     "SqueezeBackward1",
+     384.0
+    ],
+    [
+     "LogsumexpBackward0",
+     384.0
+    ],
+    [
+     "TBackward0",
+     384.0
+    ],
+    [
+     "GatherBackward0",
+     336.0
+    ],
+    [
+     "SumBackward1",
+     288.0
+    ],
+    [
+     "NllLossBackward0",
+     240.0
+    ],
+    [
+     "VarBackward0",
+     240.0
+    ],
+    [
+     "LinalgVectorNormBackward0",
+     240.0
+    ],
+    [
+     "ClampBackward1",
+     240.0
+    ],
+    [
+     "TanhBackward0",
+     240.0
+    ],
+    [
+     "MmBackward0",
+     192.0
+    ]
+   ]
+  }
+ ],
+ "analyze_peak_rss_mb": 1553
+}
