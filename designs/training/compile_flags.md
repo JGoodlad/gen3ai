@@ -1203,6 +1203,49 @@ distill / anchor / ride-along readers get a `MaskedPi` answering `.distribution.
 `get_distribution` keeps sb3's object for its callers (`predict`, the teachers). Pinned BIT-IDENTICAL
 to sb3 (`masked_categorical_test`, both torches); the K9 learner golden is unchanged.
 
+### K8 — DECLARED COMPILE REGIONS (`gen3_declared_regions_v1`, torch 2.8, 2026-10-01)
+
+On torch 2.8 `--compile-trainer` no longer compiles the extractor alone: `arm_compile_sentinel`
+installs the learner's DECLARED REGIONS (`agents/model/compile_regions.py`, the table `REGIONS`),
+each compiled `fullgraph=True, dynamic=False`, so a graph break INSIDE a region is a startup
+`CompileTrainerError` naming dynamo's reason (FATAL_CONFIG), never a silent split:
+
+| region | callable | declared signature | why the boundary is here |
+|---|---|---|---|
+| R0 `rollout_forward` | `policy.rollout_core` — extractor + towers + pointer head + critic read + functional masking -> (V, masked log-probs) | eval / no-grad / `n_envs` (batch 1 runs the eager core) | the env step; the action draw stays eager (the same `multinomial`, the same RNG stream) |
+| R1 `learner_micro_step` | `instrumented_ppo.micro_step.micro_step` — `evaluate_actions` + fold steps 1-3a; its backward is AOTAutograd's from the same graph | train / grad / `batch_size` (a RAGGED micro-batch runs the same function eager) | the accumulation group and the optimizer step are per GROUP; the host read follows it |
+| R2 rank probe | its own no-grad forward, EAGER (outside R0/R1 the extractor is not compiled at all) | — | a diagnostic, once per update |
+| R3 optimizer step | `clip_grad_norm_` + AdamW + `zero_grad`, EAGER by decision | — | 0.04 s per update; the KL->LR controller moves lr every update, so a compiled step keyed on it is a new signature per update |
+| *eager, declared* | the batch build, label alignment, the per-micro host read, the fold's eager tail, every cadence diagnostic, logging | — | host-side or data-dependent by nature |
+
+The sequence: reset → `install` (removes any instance-level compiled extractor forward, so every
+other caller of the extractor runs eager) → `gate_regions` holds R1 and R0 to eager on REAL rows (R1
+on the K9 golden's labelled buffer when the run's observation keys match it — the production surface
+— else the committed real-obs fixture with zero labels: the loss, the gradient over every policy
+parameter at the cosine and per-parameter bars; R0's decision readout, on a seeded perturbation when
+the weights are fresh; the TF32 rule against an fp32 eager reference under `--matmul-precision high`)
+→ prewarm exactly the declared signatures → LOCK (K6) → the canary every 25 updates
+(`compile_canary._regions`). On torch 2.5.1 (legacy: `forward_guard`'s weakref lookup breaks
+`fullgraph=True` there) the extractor-only compile above is kept — `regions_supported()`.
+
+**Measured** (2026-09-30/10-01): R1 on the production surface traces as ONE graph on 2.8 (CPU,
+`aot_eager`, compiled loss bit-equal to eager); `compile_regions_test` (routine, CPU, dynamo `eager`
+backend): graphs == regions x signatures (2), one cache entry per region code object, 0 compiles and
+0 rejections after the lock across two real updates, a rollout forward, a batch-1 call and a ragged
+micro-batch; a host read planted inside R1 is the typed startup FATAL. On CUDA (Inductor, fp32, the
+golden learner): the gate passes, 2 graphs, 0 compiles after the lock; NON-VACUOUS by an element-wise
+read (`~/gen3ai_archive/k6_k8/r1_nonvacuous.log`): dynamo captured one graph in the compiled arm and
+none in the eager arm; compiled vs eager loss |Δ| 6.0e-8 (B=16) / 1.2e-7 (B=2048), gradients differ
+in 2.06M of 3.07M elements by at most 3.6e-7, against an eager-vs-eager floor of 7.5e-9 — the gate's
+printed "loss rel 0.00e+00" on one earlier run was a one-scalar coincidence, not a comparison of a
+function with itself.
+
+**Hazard (a FINDING, not a fix):** a configuration whose rollout buffer gains observation keys after
+startup (`win_row_w` under `--win-prob-rollout-weight`, `fork_pg_m` on a fork) or that turns on the
+strata / rollout weighting reaches R1 with an undeclared signature, and the sentinel stops it with a
+FATAL naming the guard — correct (never a silent recompile), but such an arm must declare its keys
+at startup before it can run with `--compile-trainer` on 2.8.
+
 ### Every non-training model can use it
 
 `maybe_compile_extractor` is safe to apply to ANY frozen model, because the wrapper routes

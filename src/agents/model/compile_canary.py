@@ -100,7 +100,11 @@ class CompileCanary:
         rules = []
         try:
             with torch.random.fork_rng(devices=devices):
-                rules += self._extractor(model, precision, grad, out)
+                from agents.model import compile_regions as cr
+                if cr.installed(model):
+                    rules += self._regions(model, precision, grad, out)
+                else:
+                    rules += self._extractor(model, precision, grad, out)
         except ct.CompileTrainerError as exc:
             raise CompileCanaryError(
                 f"{CANARY_TAG} after update {self.updates}: the COMPILED learner no longer equals "
@@ -124,9 +128,48 @@ class CompileCanary:
                 self._emit(line[:500])
         return out
 
-    # ------------------------------------------------------------------ the compiled learner
+    # ------------------------------------------------------------------ the two compiled shapes
+    def _regions(self, model: Any, precision: str, grad: bool, out: Dict[str, float]) -> list:
+        """K8's declared regions: R0 (compiled rollout core vs eager) on the fixture at n_envs; on a
+        gradient canary also R1 (compiled micro-step vs eager: loss + every policy gradient) on the
+        same real labelled batch the startup gate uses."""
+        from agents.model import compile_regions as cr
+        from agents.model.policy import _ROLLOUT_REGIONS
+        from agents.training.instrumented_ppo.micro_step import micro_step
+        policy = model.policy
+        rules = []
+        if self.n_envs not in ct.EAGER_BATCHES:
+            policy.set_training_mode(False)
+            obs = ct._prewarm_obs(model, self.n_envs)
+            _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), self.n_envs,
+                                     ct.resolve_device(policy.features_extractor))
+            c = cr._r0_readout(model, _ROLLOUT_REGIONS[policy], obs, mask)
+            e = cr._r0_readout(model, cr._rollout_core, obs, mask)
+            r = None
+            if precision != "highest":
+                with ct._matmul_precision("highest"):
+                    r = cr._r0_readout(model, cr._rollout_core, obs, mask)
+            rules += ["R0 " + x for x in ct.decision_verdicts(eager=e, compiled=c, reference=r,
+                                                              precision=precision,
+                                                              allow_vacuous=True)]
+            for key in ("legal_logprob", "value"):
+                out[f"compile/canary_max_abs_{key}"] = float((c[key] - e[key]).abs().max())
+        if grad:
+            policy.set_training_mode(True)
+            args = cr._r1_args(model, cr.r1_batch(model, self.batch_size))
+            comp = cr._r1_arm(model, model._compiled_micro_step, args)
+            eager = cr._r1_arm(model, micro_step, args)
+            ref = None
+            if precision != "highest":
+                with ct._matmul_precision("highest"):
+                    ref = cr._r1_arm(model, micro_step, args)
+            names = [n for n, _ in ct.grad_parameters(model, policy.features_extractor)]
+            rules.append("R1 " + cr._r1_verdict(eager, comp, ref, precision, names))
+            out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
+        return rules
+
     def _extractor(self, model: Any, precision: str, grad: bool, out: Dict[str, float]) -> list:
-        """The compiled extractor (`--compile-trainer`): the startup gate's own readout and train step."""
+        """The legacy extractor-only compile (torch 2.5.1): the gate's own readout and train step."""
         policy = model.policy
         fe = policy.features_extractor
         rules = []

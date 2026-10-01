@@ -990,7 +990,19 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
 
     t0 = time.perf_counter()
     _say(ctl.reset())
-    calls = production_prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
+    from agents.model import compile_regions as _cr
+    if _cr.regions_supported() and hasattr(model, "_micro_static"):
+        # K8 (gen3_declared_regions_v1): the learner compiles as its DECLARED REGIONS — R0 (the
+        # rollout core) and R1 (the micro-step), each `fullgraph=True` — gated against eager on real
+        # rows, then prewarmed at exactly the declared signatures.
+        _say(f"[CompileRegions] installing {_cr.install(model, emit=emit)} (fullgraph=True, static "
+             f"shapes; R2 rank probe and R3 optimizer step EAGER by declaration)")
+        _cr.gate_regions(model, n_envs=int(n_envs), batch_size=int(batch_size), say=_say)
+        calls = _cr.prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
+    else:
+        # torch 2.5.1 (legacy, pinned resumes) or a policy without the micro-step: the extractor-only
+        # compile and its declared signatures.
+        calls = production_prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
     line = ctl.prewarm(calls)
     if torch.cuda.is_available():
         torch.cuda.synchronize()

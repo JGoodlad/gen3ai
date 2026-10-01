@@ -10329,3 +10329,20 @@ if a lazy build is reintroduced.
   listed for the deletion pass (`designs/endstate/program_rust_core.md` §4).
 - **mypy under 2.8:** the newer stubs type `nn.Module.__getattr__` as `Tensor | Module`; 111 errors in 17
   files fixed by annotations / casts only (no runtime change), clean on both torches.
+
+## 2026-10-01 — K8: DECLARED COMPILE REGIONS on torch 2.8 (`gen3_declared_regions_v1`; no model change)
+
+- **`agents/model/compile_regions.py`**: on torch 2.8 `--compile-trainer` installs R0
+  (`policy.rollout_core` — extractor, towers, pointer head, critic read, functional masking; eval /
+  no-grad / n_envs) and R1 (`instrumented_ppo.micro_step.micro_step`; train / grad / batch_size),
+  each `fullgraph=True, dynamic=False`, instead of the extractor alone. `gate_regions` holds both to
+  eager on real rows at startup; the prewarm is exactly the two declared signatures; the sentinel
+  locks; the canary checks R1 and R0. A ragged micro-batch and batch 1 run the same function eager.
+  R3 (the optimizer step) stays eager by decision; 2.5.1 keeps the extractor-only compile.
+- `policy.forward` dispatches to the installed R0 (held off the module in a weak registry, so a
+  deepcopy or a state_dict never carries a compiled frame); the action draw stays eager.
+- **Measured**: the routine inventory test — graphs == regions × signatures (2), 0 compiles after the
+  lock over two real updates, a rollout forward, a batch-1 call and a ragged micro-batch; on CUDA
+  (Inductor, fp32) the gate passes and is non-vacuous (compiled vs eager gradients differ in 2.06M of
+  3.07M elements by <= 3.6e-7, against an eager-vs-eager floor of 7.5e-9).
+

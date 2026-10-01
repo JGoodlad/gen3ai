@@ -558,6 +558,8 @@ class PpoHyperparameters:
         # (`learner_lifecycle.attach`): it holds identity snapshots, torch's global registration
         # hooks and an optimizer step hook — process-local, re-attached by every process; it also
         # owns the `collect_rollouts` / `train` / `learn` wrappers above when it is the outermost.
+        # `_compiled_micro_step` (K8 region R1, `compile_regions.install`) is a process-local compiled
+        # callable — re-installed by every process that compiles, never pickled.
         # `_rust_collector` (M5 Lane G, `--env-core rust`) is the live env core + inference service
         # + row arena (locks, a child process, GPU slot storage): process-local by construction and
         # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
@@ -573,4 +575,4 @@ class PpoHyperparameters:
                                                   "_vf_scale_announced", "_diagnostics_ran_in_process",
                                                   "collect_rollouts",
                                                   "train", "learn", "_compile_control",
-                                                  "_learner_freeze"]
+                                                  "_learner_freeze", "_compiled_micro_step"]
