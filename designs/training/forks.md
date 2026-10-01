@@ -416,3 +416,135 @@ allows, i.e. the injection is doubling the buffer, which is the arm's designed m
 10k steps old. It is the METER that is being smoked, not the quantity. 🚨 `--debug` exercises a STRICTLY SMALLER surface than a real launch
 (no forkserver, no compile preload, no warm start), so the smoke proves the arm FIRES and costs what
 the model says — it does not prove the launch layer.
+
+---
+
+## 14. THE RUST CORE PORT (`gen3_fork_rust_v1`) — DECLARED, OFF, DEFERRED
+
+> **STATUS 2026-10-01 — SCOPED, GO, BEING BUILT (the file names below are the plan until the build
+> commit lands); readiness only.** The owner: *"build in the infrastructure so that we can use
+> the existing template … and then defer it. We're only on one ply with things that can be
+> subsampled."* Playouts to a terminal are DEFERRED by the one-ply scope rule, so `--fork-fraction`
+> stays **0 = OFF** on both env cores; no recipe, baseline or arm turns it on. The port exists so the
+> tested rules above survive the M5 DELETION PASS, which removes the Python env core (§1–§13 are its
+> implementation — **LEGACY until that pass**).
+
+### 14.1 Reused vs new
+
+| piece | Rust core | from |
+|---|---|---|
+| the battle at the fork, branched with its dice | `search::playout` (`Game::replay` → `Game::branch`), one SearchCore handle per concurrent fork | Lane I, unchanged |
+| the episode's input log | `core.finished()` — every ended episode's `InputLog` script, read in the op it ended | Lane H, unchanged |
+| branch policy forwards | T2 (`svc.submit` / `flush`), the trainee's CURRENT slot and the parent's opponent slot | T2, unchanged |
+| the draws | `keyed_draw` (stream 0 trainee, stream 1 opponent), keyed by the PARENT's (run seed, env, episode) and the decision's frame index | Lane G, unchanged |
+| GAE, the arena, the complete-game FIFO | `store.game_gae`, `RowStore`, `GameLog.completed` | Lane G, unchanged |
+| selector, branch actions, meters, FILL table, branch reward rule | `fork_arm.*`, `fork_buffer.FILL` | the Python arm, verbatim |
+| the PG mask + renormalisation in the learner | `fork_pg_m` → `MicroStatic.fork_pg_mask` (R1 declares it) | the Python arm, unchanged |
+| **new: the fork PASS** | `agents/training/rust_rollout/fork.py` | — |
+| **new: one additive FFI row** | `rust_env_playout_pending_n` — each pending decision's frame index `n` (the core's `dec_n`) | — |
+
+### 14.2 Where the pass runs, and why not a post-collect hook
+
+`RustCollector.collect` is `play (until the trigger fires) → FORK → fill`. The pass is a declared
+step of the collector's own phase table (`COLLECT_PHASES`), present only when the flag is on.
+
+The Python arm injects into a buffer it then GROWS. The Rust learner's buffer is a fixed
+`[D / N, N]` (every micro-batch full, one compiled graph, nothing allocated after the freeze), so
+branch rows cannot be added to it; they COMPETE for the same `D`. A branch is a complete game from the
+fork step, so it enters the completed-game FIFO like any other game, inserted RIGHT AFTER ITS PARENT:
+a branch is trained in the same update as its parent whenever the parent is (the Python arm's
+semantics), and the split/carry rules are the FIFO's. A post-collect hook in `loop.py` would see an
+already-filled buffer, so it could only push branches into the NEXT update. The owned loop's own
+table is therefore unchanged; its post-collect order (labels → fork → PBRS → frozen-φ) is the Python
+core's.
+
+**Dose.** At `branch_share` s an update's `D` rows are `(1−s)·D` own rows and `s·D` branch rows. The
+Python arm DOUBLED the update instead. Per row the dose is the same, but the update cadence per own
+decision rises by 1/(1−s). `fork/branch_share` reads it.
+
+### 14.3 CRN on the Rust core
+
+| setting | dice | draws |
+|---|---|---|
+| `dice` | the battle's own PRNG from the branch point (`seeds = [null]`: `Game::branch(None)` clones the engine with its stream) — the SAME for every branch | each branch keyed on its own stream (`FORK_STREAM_BASE + 2·branch + side`), so the draws are NOT paired: the control |
+| **`dice_and_draws`** (default) | the same | **the PARENT'S keys**: trainee = (parent's segment run seed, stream 0, env, episode, `n`); opponent = (…, stream 1, …, `n`), where `n` is the decision's frame index in ITS branch |
+
+🚨 **The identity this buys, and the gate that holds it.** The keyed draw is a pure function of
+(key, log-probs). So a branch that takes the parent's own action, against the parent's own opponent
+at the same weights, IS the parent: the same commands, rows, protocol and outcome. The sides keep
+streams 0 and 1, so they never share a uniform. The k-th post-fork decision of every branch carries
+the same key, so it consumes the same uniform. The prefix consumes nothing: the replay feeds the
+log's commands by token. `n` is read from the playout (`rust_env_playout_pending_n`), never counted
+host-side, because a decision a later feed REPLACES within one write moves `n` without the host
+answering it. **Requires `--opponent-sampling keyed`**: the `generator` mode's per-env
+`torch.Generator` cannot be replayed per branch, so it is refused.
+
+### 14.4 The branch's opponent
+
+| parent's route | branch's p2 | `opp_class` | counted as |
+|---|---|---|---|
+| policy (pool / stable / exploiter), the slot still serving the model it served when the parent's episode started | **that slot**, at the route's sampling (greedy, or the route's temperature) | the parent's class | `fork/opp_real` |
+| policy, but the slot was reloaded since; or a BOT; or an external route | the CURRENT TRAINEE on stream 1 at T = 1 — §9's self-like approximation | POOL (`fork_buffer.FILL`) | `fork/opp_substituted`, `fork/bot_share` |
+
+On the Rust core the §9 caveat therefore shrinks to the bot share (plus rare pool reloads). On the
+Python core it covered every fork.
+
+### 14.5 Rows
+
+- **Row 0, the fork step:** the parent's arena row (observation, mask), RE-SERVED by the current
+  trainee slot, so `V(s)` and `log π(a_branch|s)` are the current version's and the PPO ratio is 1 at
+  the first epoch.
+- **Rows 1+:** the playout's own rows (the TRAINING observation path, program §6c), served in the
+  same flushes as the opponents'.
+- **Every row:** labels per `fork_buffer.FILL` (NOT SCORED); `fork_pg_m` 0 on row 0 and 1 after
+  (collected rows carry 1.0); `episode_start` 1 on row 0; the policy `version` that served it; the
+  parent's env and episode. The reward is the core's indicator rule (`victory_value` on a win, else 0;
+  a non-indicator terminal is refused). Advantages and returns come from `store.game_gae` over the
+  branch, with no bootstrap, and `win_target` is the branch's outcome bit.
+- **A branch is DROPPED** when it is CAPPED: p1's stall forfeit (decided by seat), `max_turns`, or
+  more rows than `max_game_rows`. **A fork is DROPPED WHOLE** when it leaves fewer than two scorable
+  branches, or when its rows would pass the fork row budget.
+
+### 14.6 Declared sizes (acquired at startup, never grown)
+
+| size | value | why |
+|---|---|---|
+| playout handles | `FORK_CONCURRENCY` = 32, each `max_branches = --fork-branches`, `max_nodes = 1` | forks played in lockstep waves, one T2 flush per wave step |
+| rows per wave step | `2 × branches × handles` = 192 at 3 branches | checked against T2's `max_rows_per_flush` at startup (refused, not split) |
+| fork rows live in the arena | `ROW_BUDGET_MULTIPLE (1.0) × target` | added to the arena capacity; the measured `rows_per_fork` caps the next ask, and the drop is the backstop (§10) |
+| forks per pass | `MAX_FORKS_PER_ROLLOUT` | §10 |
+
+The selection pool, threshold and random branch are §3's, over the games completed since the last
+pass. The pool rows are scored by the CURRENT trainee slot in one batched T2 forward, as the Python
+arm scores them with the live policy.
+
+### 14.7 Refusals (combination checks)
+
+`--fork-fraction` leaves the `--env-core rust` unported list. Under `--env-core rust` it requires:
+- `--opponent-sampling keyed` (§14.3);
+- `--rollout-trigger complete_game` (the window fill is the parity schedule).
+
+`--cf-records` is a Python-core requirement only; the core's finished logs replace the ring. Every
+other fork refusal holds on both cores: `winprob`, `--value-true-team`, dense aux, strata weight, and
+the opportunity / distill keys.
+
+### 14.8 Gates (each FAILS on revert)
+
+| gate | holds |
+|---|---|
+| (a) `rust_rollout/fork_crn_integration_test.py` | a branch taking the parent's action reproduces the parent byte for byte (commands, every row, mask, outcome). Same dice with other draw streams DIVERGES; a reseeded dice stream DIVERGES |
+| (b) `rust_rollout/fork_test.py` | the prefix appears once (branch rows begin at the fork step; the FIFO holds the parent's rows once); every branch's row 0 has `fork_pg_m` 0 and the learner's PG term is renormalised by `m.sum()`; the advantages and returns equal a hand-built GAE over the branch's outcome; the refusals under a non-winprob critic, generator sampling and the window trigger |
+| (c) OFF is a no-op | flag off ⇒ no fork object, no `fork_pg_m` key, no extra arena rows: the K9 learner golden and the stage-1 differential are unchanged; a collector-level pin asserts the off path never touches the pass |
+| (d) lifecycle | a short real run with the flag ON: core + T2 `*_after_freeze` all 0 after every update, the `fork/*` family present, rows injected; R1's declared signature carries `fork_pg_mask` |
+
+### 14.9 Estimate (scoping, 2026-10-01)
+
+**1.8 agent-days (1.4–2.4): GO.** The build is
+- the pass: ~0.7;
+- the collector / store / build / checks wiring: ~0.3;
+- the FFI row: ~0.1;
+- gates (a)–(d): ~0.5;
+- docs and the gate runs: ~0.2.
+
+The largest risk is (a)'s byte identity, because every component of the key must line up. The test
+exists to find exactly that.
