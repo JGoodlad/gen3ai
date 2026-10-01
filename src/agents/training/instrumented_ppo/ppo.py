@@ -72,6 +72,8 @@ from agents.training.instrumented_ppo.rollout_probes import RolloutProbes
 from agents.training.instrumented_ppo.train_setup import TrainSetup
 from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.rank_metrics import rank_probe_from_stash
+from agents.training.instrumented_ppo.device_batches import install as _devb_install
+from agents.training.instrumented_ppo.device_batches import uninstall as _devb_uninstall
 from agents.model.compile_trainer import eager_extractor as _eager_fe  # gen3_compile_sentinel_v1
 
 
@@ -402,6 +404,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                       "baitent_ent_flagged": baitent_ent_flagged,
                       "baitent_ent_unflagged": baitent_ent_unflagged}
         if _ph is not None: _ph("setup")
+        # +K8 (gen3_device_batches_v1): every micro-batch gathered from ONE device copy of the
+        # flattened buffer (made at the first micro-batch) instead of a host gather + H2D copy each
+        # — the same permutation draw, bit-identical batches; removed after the epoch loop.
+        _devb_install(self.rollout_buffer)
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             _epoch_cf_start = len(clip_fractions)   # +PER-EPOCH: this epoch's slice of the running list
@@ -1173,6 +1179,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             if _ph is not None: _ph("epoch_end")
             if not continue_training:
                 break
+        _devb_uninstall(self.rollout_buffer)   # +K8: the device copy is the update's, not the run's
 
         # +CAPACITY TELEMETRY: the once-per-train() half — fold the per-minibatch canary/cosine
         # samples and (on cadence) run the frozen probe batch through the extractor for the

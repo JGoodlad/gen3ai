@@ -9,6 +9,8 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
     train_setup.py    the PRE-LOOP half of `train()` — the opponent-intent label alignment, the
                       FOLD FLAGS (`FoldFlags`) and the once-per-call probes (`ProbeSetup`), both
                       unpacked back into the locals the loop was written against
+    micro_step.py     K8: the LEARNER MICRO-STEP — `evaluate_actions` + fold steps 1-3a as ONE static
+                      function (region R1 under --compile-trainer); `pack`/`unpack` = its one host read
     metrics_export.py the ~400-line `self.logger.record` tail — diagnostics, no gradient, one
                       method per TB prefix group
     rollout_probes.py `collect_rollouts`, the entropy-boost schedule, the episode-start read —
@@ -21,8 +23,10 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
     capacity_terms.py the `--capacity-telemetry` delegates — the ONE `*_terms` module that folds
                       NOTHING into `loss` (see its docstring)
     constants.py      the four module-level tuning constants
+    device_batches.py K8: the DEVICE-RESIDENT micro-batch — one device copy of the flattened buffer
+                      per update, micro-batches gathered from it (bit-identical, same permutation)
     intent_fold.py    K8: the opponent-intent fold as ONE static, fullgraph-traceable function
-                      (not yet called by `train()`; its oracle is a verbatim copy of the inline block)
+                      (called by `micro_step`, region R1; its oracle is a verbatim copy of the old block)
     phase_hook.py     BENCHMARK-ONLY segment marks inside `train()` (None in production; the one
                       consumer is `agents.training.learner_benchmark`)
 

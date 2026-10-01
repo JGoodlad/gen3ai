@@ -10357,3 +10357,16 @@ if a lazy build is reintroduced.
 - The forward-based `rank_probe` stays for callers outside the learner; `effective_rank` (NumPy)
   stays the reference and the capacity battery's.
 
+## 2026-10-01 — K8: the DEVICE-RESIDENT MICRO-BATCH (`gen3_device_batches_v1`; no model change)
+
+- `instrumented_ppo/device_batches.py`: on a CUDA rollout buffer `train()` installs an instance
+  `_get_samples` that gathers every micro-batch (`index_select`) from ONE device copy of the
+  flattened arrays, made at the first micro-batch of the update (after the buffer's own `get()`
+  flattened them and a fork buffer appended its rows) and dropped after the epoch loop — instead of
+  a NumPy fancy-index gather and an H2D copy of every field for every micro-batch of every epoch
+  (~11 GB of H2D per update at production shape). The buffer's own `get()` still draws the
+  permutation: the batches and the global NumPy RNG stream are bit-identical to the host path, and a
+  whole update through it equals the host path's parameters bit for bit. The update's peak grows by
+  the copy (~1.1 GB at production shape); the quiescent floor between updates does not. A CPU
+  buffer keeps the host path.
+

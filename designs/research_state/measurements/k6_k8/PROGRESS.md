@@ -20,23 +20,32 @@ Orchestrator course corrections (2026-09-30, binding):
 
 | # | unit | status | commit |
 |---|---|---|---|
-| K6.1 | freeze guard: learner object-graph snapshot (params/modules/optimizers/param groups) + registration-site recording; `LazyAcquisitionError` (FATAL_CONFIG); optimizer state declared at startup | built, gate pending | — |
-| K6.2 | CUDA memory LEAK detector (warn + projected-OOM clean stop) + calibration + expandable_segments read | dispatched (subagent, branch `k6-mem`) | — |
-| K6.3 | AST static gate, EMPTY allowlist: no optimizer / Parameter / Module construction in training-step paths outside declared startup builders | built on branch `k6-astgate` (`37f19456`); RED on main by design (5 ride-along sites) — lands after the RND lane's ride-along move + `@startup_builder` on `ridealong_heads._mlp` / `build_ridealong` | — |
-| K6.4 | declared compiled-signature table, compiled at startup, LOCK before the first real iteration; the `8fc297a2` iteration-1 signature found and declared | planned | — |
-| K6.5 | in-run parity canary (every N updates; fixture; startup gate's bars) | planned | — |
-| K8.1 | functional masking (no sb3 `__dict__.pop`), bitwise vs sb3 | planned | — |
-| K8.2 | `forward_guard` hoisted (2.5.1 `fullgraph=True`); MHA fast path off in eval region | planned | — |
-| K8.3 | fold rewrite: steps 1–4 as a functional micro-step returning tensors; one hoisted host read; static bincount | planned | — |
-| K8.4 | R1 compiled `fullgraph=True` + the region declaration table | planned | — |
-| K8.5 | rank probe: reps from R1's own forward, spectrum on the device | planned | — |
-| K8.6 | device-resident micro-batch build | planned | — |
-| K8.7 | `compile_inventory` routine test (graphs == regions × signatures, 0 undeclared breaks, both torches) | planned | — |
-| K8.8 | acceptance read (idle-box baseline first) | planned | — |
+| K6.1 | freeze guard + optimizer state declared at startup | SHIPPED | `01183e39` |
+| — | batch 1 never reaches the compiled learner forward (`gen3_batch1_eager_v1`) | SHIPPED | `ddc8017a` |
+| — | the learner golden's recipe read from K10(a)'s production block | SHIPPED | `055f636d` |
+| K6.2 | CUDA memory LEAK detector, wired (`CudaMemoryWatch`), calibrated; expandable_segments not recommended | SHIPPED | `32bc32ec` |
+| K6.3 | AST static gate, EMPTY allowlist | SHIPPED | `6985afc9` |
+| K6.4 + K6.5 | lock at the END OF STARTUP; FATAL names the guard; the `8fc297a2` signature found (rank-probe hooks); the in-run canary; CUDA optimizer-state test | SHIPPED | `990851de` |
+| K8.1 | functional masking, bitwise vs sb3 | SHIPPED | `65ee90c9` |
+| K8.2 | `forward_guard` on 2.5.1 / MHA fast path | DROPPED (orchestrator: 2.5.1 is legacy; R0 traces on 2.8) | — |
+| K8.3 | fold rewrite: the micro-step (R1), static belief bank + intent fold, one host read; golden re-recorded as a pure refactor | SHIPPED | `6f10b877` |
+| K8.4 | declared regions R0 + R1 (`fullgraph=True`), ragged/batch-1 eager routes, the inventory test | built, branch `k8s`, gate pending | — |
+| K8.5 | rank probe from R1's stashes, spectra on the device | built, branch `k8s`, gate pending | — |
+| K8.6 | device-resident micro-batch | built, branch `k8s`, gate pending | — |
+| K8.7 | `compile_regions_test` IS the routine inventory test (graphs == regions × signatures, 0 compiles after the lock; 2.5.1 a declared exception) | inside K8.4 | — |
+| K8.8 | acceptance read (`accept/run.sh`: the compile inventory's time stage, TF32, interleaved A = main pre-regions / B = K8) | RUNNING (`~/gen3ai_archive/k6_k8/accept/`) | — |
 
 ## Resume point
 
 (updated at every unit boundary)
+
+- 2026-10-01 01:55 PT — shipped: K6.1–K6.5, K8.1, K8.3 (+ the batch-1 fix, the golden recipe).
+  Branch `k8s` (worktree `/home/goodlad/dev/gen3ai-wt/k8s`, on main `32bc32ec`) holds K8.4 / K8.5 /
+  K8.6 as three commits, docs per commit; `k84` is the SAME code, the tree the acceptance read's B
+  units run from (do not rebase it while `accept/run.sh` runs). Next: the acceptance verdict (A1 B1
+  A2 B2, `accept/status` is the resumable row file; rerun `accept/run.sh` to finish missing units),
+  then the routine gate on `k8s` and ship the three, then the final report. FINDINGS so far are in
+  the K6/K8 commit bodies and `compile_flags.md` "K8 — DECLARED COMPILE REGIONS".
 
 - 2026-09-30 22:05 PT — branches: `k6-k8` (K6.1 committed, gate green modulo 2 env-flaky BIG-RSS
   watchdog tests that pass on rerun; WAITING for the RND lane's ride-along startup-optimizer change, then
