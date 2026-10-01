@@ -117,7 +117,8 @@ LANES: Tuple[LaneGate, ...] = (
         built=True,
         tests=("src/agents/training/rust_eval/seeds_test.py", "src/agents/training/rust_eval/build_test.py",
                "src/agents/training/rust_eval/core_seams_integration_test.py",
-               "src/agents/training/rust_eval/parity_test.py", "src/agents/training/eval_callback_rust_test.py",
+               "src/agents/training/rust_eval/parity_test.py", "src/agents/training/rust_eval/parity_fixed_test.py",
+               "src/agents/training/rust_eval/parity_sampled_test.py", "src/agents/training/eval_callback_rust_test.py",
                "src/main/eval_worker_test.py",
                "src/main/prober/core_trace_test.py", "src/main/prober/core_trace_integration_test.py"),
         gpu_tests=("src/agents/training/rust_eval/parity_test.py::"

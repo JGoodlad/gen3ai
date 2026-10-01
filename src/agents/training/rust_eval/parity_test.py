@@ -7,7 +7,9 @@ CPU forward — every game equal, metrics equal, the kept traces the same files 
 Teeth: a Python path on another cycle seed is caught as FATAL game differences; one tampered shard
 record is caught as a metric difference; the tie rule excuses only a flip under its margin.
 
-COMMIT, F-LH-10's two paths (routine, CPU):
+COMMIT, F-LH-10's two paths (routine, CPU) — in ``parity_fixed_test.py`` and ``parity_sampled_test.py`` since
+2026-09-30, one file per ~40-70 s module fixture, so the routine gate's file-unit xdist schedule runs them on
+separate workers (this file was its 185 s long pole); ``parity_gate_kit.py`` holds the shared pieces:
 * FIXED opponents — two perturbed-fresh ``ext_`` opponents, one REUSING the training plan's stable slot
   and pinned to two sample teams, one on its own eval slot (which starts with ANOTHER policy's weights
   until ``build_eval_core`` loads it) on the pool; every game equal on both paths.
@@ -34,30 +36,9 @@ from pathlib import Path
 import pytest
 
 from agents.training.rust_eval import parity as PAR
+from agents.training.rust_eval.parity_gate_kit import assert_pass as _assert_pass
 
 pytestmark = [pytest.mark.sim, pytest.mark.integration]
-
-
-@pytest.fixture(scope="module")
-def built():
-    from agents.training.rust_rollout.testkit import build_selfcheck
-
-    build_selfcheck()
-    return True
-
-
-def _assert_pass(rep):
-    g = rep["games"]
-    assert not g["missing"], g["missing"]
-    assert not g["fatal"], g["fatal"][:3]
-    assert g["max_dlogp"] <= rep["cfg"]["bar"], g["max_dlogp"]
-    if not g["ties"]:
-        assert rep["metrics_equal"], rep["metrics_diffs"][:5]
-    t = rep["traces"]
-    assert "error" not in t, t.get("error")
-    assert not t["only_rust"] and not t["only_python"], (t["only_rust"][:3], t["only_python"][:3])
-    assert t["checked"] > 0 and not t["decision_diffs"], t["decision_diffs"][:3]
-    assert rep["pass"]
 
 
 @pytest.fixture(scope="module")
@@ -78,70 +59,6 @@ def test_commit_greedy_sentinels_never_draw_off_the_argmax(commit_run):
     s = commit_run["sampled"]
     assert s["sentinel_decisions"] > 0 and s["drawn_not_argmax"] == 0, s
     assert commit_run["games"]["opp_games"] == 4, "each greedy sentinel game's decisions compared on both paths"
-
-
-@pytest.fixture(scope="module")
-def fixed_run(built, tmp_path_factory):
-    wd = tmp_path_factory.mktemp("laneH_fixed")
-    return PAR.run({"games": 3, "shard_games": 2, "sentinels": 0, "bots": [], "n_envs": 4, "device": "cpu",
-                    "backend": "eager", "bar": PAR.BAR_CPU, "seed": 20261003,
-                    "fixed": [{"pins": 2, "reused": True}, {"pins": 0}]}, str(wd))
-
-
-def test_commit_fixed_opponents_play_the_same_games_on_both_paths(fixed_run):
-    """F-LH-10 (1). The declared layout as `rust_env_setup` builds it: ext_fixed0 REUSES slot 0 (the
-    training plan's stable slot), ext_fixed1 has its own eval slot, LOADED at startup — without that
-    load it plays the group template's weights and its games are FATAL (found by this row)."""
-    _assert_pass(fixed_run)
-    g = fixed_run["games"]
-    assert g["equal"] == g["games"] == g["opp_games"] == 6, "and every fixed opponent decision compared"
-    assert fixed_run["rust_fixed_slots"] == [["ext_fixed0", 0], ["ext_fixed1", 2]]
-    ids = fixed_run["rust_slot_model_ids"]
-    assert ids[0] == "stable:ext_fixed0" and ids[2] == "eval:fixed:ext_fixed1", ids
-    assert fixed_run["rust_opp_teams"]["ext_fixed0"] == 2, "the 2-team pin must be SAMPLED, not its first team"
-    assert fixed_run["rust_stats"]["p2_policy_decisions"] > 0
-    assert not any(fixed_run["rust_stats"]["lifecycle"].values())
-
-
-@pytest.fixture(scope="module")
-def sampled_run(built, tmp_path_factory):
-    wd = tmp_path_factory.mktemp("laneH_sampled")
-    return PAR.run({"games": 2, "shard_games": 1, "sentinels": 2, "bots": [], "n_envs": 4, "device": "cpu",
-                    "backend": "eager", "bar": PAR.BAR_CPU, "seed": 20261004, "sentinel_greedy": False}, str(wd))
-
-
-def test_commit_the_sampled_sentinel_regime_plays_the_same_draws_on_both_paths(sampled_run):
-    """F-LH-10 (2). Both paths draw the KEYED draw keyed by the game, so the sampled regime is compared
-    game for game: every trainee action and every sentinel draw equal."""
-    _assert_pass(sampled_run)
-    g, s = sampled_run["games"], sampled_run["sampled"]
-    assert g["equal"] == g["games"] == 4 and not g["ties"]
-    assert g["opp_games"] == 4, "every sentinel game's draw stream must be compared"
-    assert g["opp_decisions"] == s["sentinel_decisions"] > 0
-    assert s["drawn_not_argmax"] >= 0.1 * s["sentinel_decisions"], s   # it SAMPLES (greedy reads 0)
-
-
-def test_teeth_a_fixed_opponent_playing_the_trainees_weights_is_fatal(fixed_run):
-    """The Python path's ext_fixed1 plays the TRAINEE's zip — what the Rust slot played before
-    ``build_eval_core`` loaded it: its games must be FATAL (the Rust games are the fixed row's own)."""
-    g = PAR.rerun_python(fixed_run["workdir"], keep=["ext_fixed1"], python_fixed_paths={"ext_fixed1": "trainee"},
-                         shards=[1], tag="trainee_swap")
-    assert g["games"] == 1 and g["fatal"] and not g["missing"], g
-
-
-def test_teeth_a_sentinel_sampling_at_another_temperature_is_fatal(sampled_run):
-    """The Python sentinel draws its keyed draw at T = 0.5 against the Rust path's 1.0: a DRAW differs."""
-    g = PAR.rerun_python(sampled_run["workdir"], keep=["sentinel_0"], python_self_play_temp=0.5, shards=[0],
-                         tag="temp")
-    assert g["games"] == 1 and g["fatal"] and not g["missing"], g
-    assert any("opp_first_diff" in r for r in g["fatal"]), g["fatal"]
-
-
-def test_teeth_another_seed_set_on_the_python_side_is_fatal(built, tmp_path):
-    """The gate compares GAMES: a Python path on a different seed set must fail it."""
-    rep = PAR.run({"games": 2, "shard_games": 2, "sentinels": 0, "n_envs": 4, "bots": ["heuristic", "staller"],
-                   "device": "cpu", "backend": "eager", "bar": PAR.BAR_CPU, "seed": 7, "python_seed": 8}, str(tmp_path))
-    assert rep["games"]["fatal"] and not rep["pass"]
 
 
 def test_teeth_the_judge_excuses_only_a_flip_under_the_tie_margin():
