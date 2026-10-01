@@ -29,15 +29,24 @@ Orchestrator course corrections (2026-09-30, binding):
 | K8.1 | functional masking, bitwise vs sb3 | SHIPPED | `65ee90c9` |
 | K8.2 | `forward_guard` on 2.5.1 / MHA fast path | DROPPED (orchestrator: 2.5.1 is legacy; R0 traces on 2.8) | — |
 | K8.3 | fold rewrite: the micro-step (R1), static belief bank + intent fold, one host read; golden re-recorded as a pure refactor | SHIPPED | `6f10b877` |
-| K8.4 | declared regions R0 + R1 (`fullgraph=True`), ragged/batch-1 eager routes, the inventory test | built, branch `k8s`, gate pending | — |
-| K8.5 | rank probe from R1's stashes, spectra on the device | built, branch `k8s`, gate pending | — |
-| K8.6 | device-resident micro-batch | built, branch `k8s`, gate pending | — |
+| K8.4 | declared regions R0 + R1 (`fullgraph=True`), ragged/batch-1 eager routes, the inventory test | SHIPPED | `f3878594` |
+| K8.5 | rank probe from R1's stashes, spectra on the device | SHIPPED | `e99b7a39` |
+| K8.6 | device-resident micro-batch | SHIPPED | `fce2955a` |
 | K8.7 | `compile_regions_test` IS the routine inventory test (graphs == regions × signatures, 0 compiles after the lock; 2.5.1 a declared exception) | inside K8.4 | — |
-| K8.8 | acceptance read (the compile inventory's time stage, TF32, interleaved A = main pre-regions / B = K8, n = 2) | ACCEPTED: 46.7 → 36.3 s (0.778x), compiled share 63.4% → 90.0% (`acceptance/`) | branch `k8s` |
+| — | the tools: K9(b) at warn on the pinned buffer (tool-local), the time stage accepts the regions | SHIPPED | `bd1805e3` |
+| — | the 2.8 compile slow tier banked (16 passes) | SHIPPED | `fe6fd9f3` |
+| — | `FATAL_CUDA_LEAK` (6): a leak STOP restarted by the launcher, capped at 2 per session | SHIPPED | `fc360ecf` |
+| K8.8 | acceptance read (the compile inventory's time stage, TF32, interleaved A = main pre-regions / B = K8, n = 2) | ACCEPTED: 46.7 → 36.3 s (0.778x), compiled share 63.4% → 90.0% (`acceptance/`) | `dcb2d3ca` |
 
 ## Resume point
 
 (updated at every unit boundary)
+
+- 2026-10-01 04:30 PT — **LANE COMPLETE.** Every K6 and K8 unit is on main (table above); all of
+  this lane's worktrees are removed. Open items are FINDINGS for the orchestrator (the final report):
+  the legacy extractor gate still compiles at 2.8 startup before the regions replace it (a
+  deletion-pass candidate); a configuration whose buffer gains obs keys after startup hits an
+  undeclared R1 signature (a FATAL naming the guard).
 
 - 2026-10-01 03:40 PT — K8 ACCEPTED (`acceptance/README.md`). Branch `k8s` (on main `ab207bf6`):
   K8.4 regions, K8.5 rank probe, K8.6 device batch, the bench fix, the acceptance read — gate and the
