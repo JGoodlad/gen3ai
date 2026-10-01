@@ -579,7 +579,7 @@ a separate decision. Hazards an agent must know before touching it:
   patched `forward` bound to the LEARNER's extractor.
 - 🚨 **Every flag whose path the Rust core does not serve is REFUSED at startup, by name**
   (`combination_checks`' `env_core_rust_*`): a non-winprob critic (no terminal observation), λ < 1,
-  rollout targets, the fork arm, dense aux, `--value-true-team`, the entropy boosts, distillation, PBRS,
+  rollout targets, dense aux, `--value-true-team`, the entropy boosts, distillation, PBRS,
   `--cf-records`, the search teacher, `--team-pfsp`, `--exploiter-ladder`, `--async-rollout`. The
   collector flags typed on the python core are refused too (they would be silently inert).
 - **`WinProbLabelCallback` is not registered** under `rust`: the collector fills `win_target` /
@@ -825,9 +825,21 @@ one re-aims them) and with the cf labels (disjoint state sets — the cf term ne
 
 **Default `0.0` = OFF and BIT-identical** — no module imported, no obs key declared, no callback
 attached, no buffer installed, no row injected. **`--critic winprob` AND `--cf-records` are BOTH
-REQUIRED**, and three more flags are REFUSED alongside it (`--value-true-team`,
-`--win-prob-dense-aux`, `--win-prob-strata-weight`). Detail:
+REQUIRED** (the second on the Python core only), and three more flags are REFUSED alongside it
+(`--value-true-team`, `--win-prob-dense-aux`, `--win-prob-strata-weight`). Detail:
 [`designs/training/forks.md`](../../../designs/training/forks.md).
+
+🚨 **TWO IMPLEMENTATIONS, and the Python one is LEGACY until the deletion pass.** Under
+`--env-core rust` the arm is the COLLECTOR's fork phase (`rust_rollout/fork.py`,
+`gen3_fork_rust_v1`, forks.md §14) — DECLARED and OFF, deferred by the owner's one-ply scope
+(2026-10-01). It replays the core's finished input log on Lane I playout handles, keys every branch
+draw on the PARENT's keyed-draw key (a parent-action branch IS the parent — gate
+`rust_rollout/fork_crn_integration_test.py`) and puts each branch game into the complete-game FIFO
+after its parent, so **branch rows COMPETE for the update's D** rather than doubling the buffer, and
+a branch plays the parent's REAL policy opponent where its slot still serves it
+(`fork/opp_substituted` is the rest). Both are DEPARTURES from the arm that read NOT DETECTED on
+2026-09-16 — that read does not transfer unchanged. Requires `--opponent-sampling keyed` and
+`--rollout-trigger complete_game` (refused by name otherwise).
 
 🚨 **WHY — the head ranks siblings at CHANCE.** `paired_refit_discrimination_2026-09-14` measured
 the promoted win-prob critic's pairwise accuracy on successors ONE MOVE APART at **0.5169

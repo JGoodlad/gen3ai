@@ -260,7 +260,8 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     # stock buffer has nowhere to put — `get()` iterates exactly `buffer_size * n_envs`. Installed
     # HERE because this function is the one place both build paths meet and it runs AFTER
     # `_setup_model` built the buffer being replaced. OFF ⇒ not even imported.
-    if float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0:
+    if (float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0
+            and getattr(args, "env_core", "python") != "rust"):   # rust: branch rows ride the FIFO (forks.md §14)
         from agents.training.fork_buffer import install_fork_buffer
         install_fork_buffer(model)
 

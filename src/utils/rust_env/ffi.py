@@ -121,6 +121,12 @@ FUNCTIONS: Tuple[Fn, ...] = (
        "FEED the last pending list's n actions, advance every branch, write the next pending rows / masks / "
        "who (2*branch+side); returns its length (0 = every branch ended), usize::MAX on failure"),
     Fn("rust_env_playout_results", (("h", "shandle"),), "cstr", "every branch's end as JSON"),
+    # gen3_fork_rust_v1 (the fork arm's Rust core port, `designs/training/forks.md` §14.3): the frame
+    # index `n` (the core's `dec_n`) of each decision the LAST step handed out, so a caller keying a draw
+    # on it never counts decisions host-side (a decision a later feed of one write REPLACES moves `n`).
+    Fn("rust_env_playout_pending_n", (("h", "shandle"), ("out", "u32_out"), ("cap", "usize")), "usize",
+       "the frame index n (the core's dec_n) of each pending decision of the last step, in its order, into out "
+       "(cap slots); returns their count, usize::MAX on failure"),
 )
 
 MARK_BEGIN = "// ---- @generated-begin by `python -m utils.rust_env.ffi --write` — DO NOT EDIT this region."

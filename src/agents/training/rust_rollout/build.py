@@ -70,6 +70,9 @@ class RustEnvDecl:
     op_timeout: Optional[float] = None
     opponent_sampling: str = "keyed"
     policy_seed: int = 0
+    #: the fork arm's declaration (``fork.ForkDecl``; ``designs/training/forks.md`` §14). None = OFF —
+    #: nothing of the arm is built, and the arena, the obs keys and the FIFO are exactly as without it.
+    fork: Any = None
 
     def __post_init__(self) -> None:
         if self.front not in FRONTS:
@@ -80,6 +83,14 @@ class RustEnvDecl:
             raise ValueError("version pinning needs >= 2 trainee slots")
         if self.opponent_sampling not in ("keyed", "generator"):
             raise ValueError(f"opponent_sampling {self.opponent_sampling!r}")
+        if self.fork is not None:
+            # §14.3 / §14.7: the branches replay the parent's draws by KEY, and join the complete-game FIFO
+            if self.opponent_sampling != "keyed":
+                raise ValueError("the fork arm needs --opponent-sampling keyed (a per-env generator stream "
+                                 "cannot be replayed per branch)")
+            if self.trigger != "complete_game":
+                raise ValueError("the fork arm needs --rollout-trigger complete_game (branch games join the "
+                                 "completed-game FIFO; the window fill is the parity schedule)")
 
     @property
     def resolved_buckets(self) -> Tuple[int, ...]:
@@ -96,7 +107,8 @@ class RustEnvDecl:
         per_env = 2 * self.resolved_max_game_rows
         if trigger.mode == "window":
             return n * (int(self.n_steps) + 1) + n * per_env
-        return int(trigger.hi) + n * per_env
+        fork_rows = self.fork.row_budget(int(trigger.hi)) if self.fork is not None else 0
+        return int(trigger.hi) + n * per_env + fork_rows
 
 
 def core_label_families(obs_space: Any) -> Tuple[str, ...]:
@@ -293,9 +305,19 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
                           capacity=decl.capacity(trig), max_game_rows=decl.resolved_max_game_rows,
                           label_keys=label_keys, version_pinning=bool(decl.version_pinning),
                           respawn_budget=int(decl.respawn_budget),
-                          victory_value=float(terminal["victory_value"]))
+                          victory_value=float(terminal["victory_value"]), fork=decl.fork is not None)
     col = RustCollector(cfg, core=core, obs_space=obs_space, svc=svc, trainee_slots=trainee_slots,
                         opponents=host, server=server, stager=stager, external_p2=external_p2)
+    if decl.fork is not None:
+        from agents.training.rust_rollout import fork as FK
+        from utils.rust_env import ffi as F
+
+        FK.check_terminal(terminal)
+        FK.check_obs_keys(list(obs_space.spaces))
+        col.fork = FK.RustForkPass(decl.fork, lib_path=F.default_path(decl.profile), nan_poison=decl.profile == "selfcheck",
+                                   turn_limit=int(decl.turn_limit), victory_value=float(terminal["victory_value"]),
+                                   target_hi=int(trig.hi), max_rows_per_flush=int(svc.spec.max_rows_per_flush),
+                                   obs_dim=int(obs_space.spaces[S.KEY_OBSERVATION].shape[0]), emit=emit)
     col.decl = decl
     col.extra_slots = extra_ids      # M5 Lane H: the declared eval slots (``extra_slots``' order)
     emit(f"🦀 [RUST ENV] collector: {trig.describe()}; arena {cfg.capacity:,} rows; version pinning "

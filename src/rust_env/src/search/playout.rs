@@ -77,6 +77,8 @@ pub struct Playouts {
     branches: Vec<Branch>,
     /// The pending list the caller holds (`(branch, side)`), answered by the next `step`.
     pending: Vec<(usize, usize)>,
+    /// Each pending decision's frame index `n` (the env core's `dec_n`), parallel to `pending`.
+    pending_n: Vec<u32>,
     opened: bool,
     /// Decisions answered by a policy, over the handle's life.
     pub answered: u64,
@@ -132,6 +134,7 @@ impl Playouts {
             seeds: Vec::new(),
             branches: Vec::with_capacity(max_branches),
             pending: Vec::with_capacity(2 * max_branches),
+            pending_n: Vec::with_capacity(2 * max_branches),
             opened: false,
             answered: 0,
             finished: 0,
@@ -213,8 +216,12 @@ impl Playouts {
         let turn = root.turn(side);
         let other_open = root.open(1 - side).is_some();
         let tokens = pokesim::present::tokens_json(&open.tokens);
+        // The root decision's frame index (the env core's `dec_n`): a caller keying draws on the
+        // parent's decisions checks it (`designs/training/forks.md` §14.3).
+        let root_n = open.n;
         self.branches.clear();
         self.pending.clear();
+        self.pending_n.clear();
         for &a in &actions {
             for (r, sd) in seeds.iter().enumerate() {
                 let mut game = root.branch(sd.as_deref());
@@ -231,7 +238,7 @@ impl Playouts {
         self.seeds = seeds;
         self.opened = true;
         Ok(format!(
-            "{{\"side\":\"p{}\",\"turn\":{turn},\"other_open\":{other_open},\"tokens\":{tokens},\"actions\":{actions:?},\"n_seeds\":{},\"branches\":{n}}}",
+            "{{\"side\":\"p{}\",\"turn\":{turn},\"n\":{root_n},\"other_open\":{other_open},\"tokens\":{tokens},\"actions\":{actions:?},\"n_seeds\":{},\"branches\":{n}}}",
             side + 1,
             self.seeds.len()
         ))
@@ -259,6 +266,7 @@ impl Playouts {
         let answered_before = !self.pending.is_empty();
         self.answered += self.pending.len() as u64;
         self.pending.clear();
+        self.pending_n.clear();
         loop {
             // 1. feed every branch that holds its answers (or only its forced first action).
             for (b, br) in self.branches.iter_mut().enumerate() {
@@ -343,7 +351,19 @@ impl Playouts {
             let m: &mut [u8; ACT] = (&mut masks[i * ACT..(i + 1) * ACT]).try_into().expect("mask");
             self.branches[b].game.encode(s, row, m).map_err(|e| format!("branch {b}: {e}"))?;
             who[i] = (2 * b + s) as u32;
+            self.pending_n.push(self.branches[b].game.open(s).map_or(0, |o| o.n));
         }
+        Ok(k)
+    }
+
+    /// The frame index `n` of each decision the last `step` handed out (the env core's `dec_n`), in
+    /// its order — what a caller keys a decision's draw on (`designs/training/forks.md` §14.3).
+    pub fn pending_n(&self, out: &mut [u32]) -> Result<usize, String> {
+        let k = self.pending_n.len();
+        if out.len() < k {
+            return Err(format!("playout: pending_n's buffer holds {} slots, {k} decisions are pending", out.len()));
+        }
+        out[..k].copy_from_slice(&self.pending_n);
         Ok(k)
     }
 

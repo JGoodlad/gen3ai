@@ -211,6 +211,10 @@ points at every coefficient tested.
 
 ## 8. WHERE THE ROWS COME FROM, and what the parent does
 
+> ⚠️ **§8–§13 describe the PYTHON-core implementation — LEGACY until the M5 deletion pass**, which
+> deletes it now that the capability is ported (§14; the program doc's deletion manifest names the
+> files). The RULES in §2–§7 are shared by both.
+
 | piece | file |
 |---|---|
 | selector, meters, cost model, the flag constants | `agents/training/fork_arm.py` |
@@ -421,8 +425,7 @@ the model says — it does not prove the launch layer.
 
 ## 14. THE RUST CORE PORT (`gen3_fork_rust_v1`) — DECLARED, OFF, DEFERRED
 
-> **STATUS 2026-10-01 — SCOPED, GO, BEING BUILT (the file names below are the plan until the build
-> commit lands); readiness only.** The owner: *"build in the infrastructure so that we can use
+> **STATUS 2026-10-01 — BUILT, DECLARED, OFF; readiness only.** The owner: *"build in the infrastructure so that we can use
 > the existing template … and then defer it. We're only on one ply with things that can be
 > subsampled."* Playouts to a terminal are DEFERRED by the one-ply scope rule, so `--fork-fraction`
 > stays **0 = OFF** on both env cores; no recipe, baseline or arm turns it on. The port exists so the
@@ -461,6 +464,21 @@ core's.
 **Dose.** At `branch_share` s an update's `D` rows are `(1−s)·D` own rows and `s·D` branch rows. The
 Python arm DOUBLED the update instead. Per row the dose is the same, but the update cadence per own
 decision rises by 1/(1−s). `fork/branch_share` reads it.
+
+### 14.2b 🚨 DEPARTURES FROM THE PYTHON ARM — the 2026-09-16 read does NOT transfer unchanged
+
+The NOT DETECTED read (`ai_v13_03_fork`, the status box above) was taken on the PYTHON arm. Two
+choices make this port a different treatment, and a reader must not carry that verdict over to it:
+
+1. **Branch rows COMPETE for the update's `D` instead of being added on top.** With forks ON, an
+   update sees `(1 − branch_share)·D` own-policy decisions, not `D`. The Python arm doubled the
+   buffer, so its updates kept every own decision. The dose per row and the data mix both differ.
+   `fork/branch_share` and `fork/own_rows` say by how much.
+2. **The branch opponent is the parent's REAL policy opponent where it can be (§14.4).** The Python
+   arm substituted a self-like opponent for EVERY fork. Here the substitution covers only the
+   remainder: bot parents, external routes and pool slots reloaded since the parent's episode.
+   `fork/opp_substituted` publishes that share each pass, so the ecology of a Rust-core read is
+   measurable rather than assumed.
 
 ### 14.3 CRN on the Rust core
 
@@ -518,6 +536,22 @@ The selection pool, threshold and random branch are §3's, over the games comple
 pass. The pool rows are scored by the CURRENT trainee slot in one batched T2 forward, as the Python
 arm scores them with the live policy.
 
+### 14.6b Telemetry on the Rust core — the §11 family, per PASS, plus four
+
+The pass publishes §11's `fork/*` family with these readings:
+- `rate` is forks per game that ENDED since the last pass;
+- `branch_share` is the pass's injected rows over its own rows plus injected rows;
+- `records_missing` counts ended games with no input log read;
+- `requested` is the forks SELECTED and played; `failed` is the forks dropped whole.
+
+Four tags are new:
+
+| scalar | what it says |
+|---|---|
+| `asked` | what the fraction asked for, after the measured `rows_per_fork` cap. A gap to `requested` means the candidate POOL held fewer games than the ask (`--fork-max-per-battle` per game) |
+| `own_rows` | the trainee's own rows in the games the pass drew from |
+| `opp_real` / `opp_substituted` | forks played against the parent's REAL policy opponent, and the share played against the self-like substitute (§14.2b, §14.4) |
+
 ### 14.7 Refusals (combination checks)
 
 `--fork-fraction` leaves the `--env-core rust` unported list. Under `--env-core rust` it requires:
@@ -532,14 +566,14 @@ the opportunity / distill keys.
 
 | gate | holds |
 |---|---|
-| (a) `rust_rollout/fork_crn_integration_test.py` | a branch taking the parent's action reproduces the parent byte for byte (commands, every row, mask, outcome). Same dice with other draw streams DIVERGES; a reseeded dice stream DIVERGES |
+| (a) `rust_rollout/fork_crn_integration_test.py` | a branch taking the parent's action reproduces the parent byte for byte (commands, every row, mask, action, frame index, outcome). Same dice with other draw streams DIVERGES; a reseeded dice stream DIVERGES. Mutation-checked: swapping the trainee/opponent streams, keying on `n + 1`, or moving the run seed each FAILS it |
 | (b) `rust_rollout/fork_test.py` | the prefix appears once (branch rows begin at the fork step; the FIFO holds the parent's rows once); every branch's row 0 has `fork_pg_m` 0 and the learner's PG term is renormalised by `m.sum()`; the advantages and returns equal a hand-built GAE over the branch's outcome; the refusals under a non-winprob critic, generator sampling and the window trigger |
 | (c) OFF is a no-op | flag off ⇒ no fork object, no `fork_pg_m` key, no extra arena rows: the K9 learner golden and the stage-1 differential are unchanged; a collector-level pin asserts the off path never touches the pass |
-| (d) lifecycle | a short real run with the flag ON: core + T2 `*_after_freeze` all 0 after every update, the `fork/*` family present, rows injected; R1's declared signature carries `fork_pg_mask` |
+| (d) lifecycle | `fork_crn_integration_test::…lifecycle_stays_clean` (collect = play → fork → fill over four updates: rows injected, `fork_pg_m` 0 on fork steps, the `fork/*` family, every core + T2 `*_after_freeze` 0); `r1_declared_levers_test`'s `fork_rust` row (R1's declared signature carries `fork_pg_mask` and its key; 0 compiles after the lock); a CPU `--debug` real run (§14.10) |
 
 ### 14.9 Estimate (scoping, 2026-10-01)
 
-**1.8 agent-days (1.4–2.4): GO.** The build is
+**1.8 agent-days (1.4–2.4): GO** (the scoping estimate; the build landed inside it). The build is
 - the pass: ~0.7;
 - the collector / store / build / checks wiring: ~0.3;
 - the FFI row: ~0.1;
@@ -548,3 +582,39 @@ the opportunity / distill keys.
 
 The largest risk is (a)'s byte identity, because every component of the key must line up. The test
 exists to find exactly that.
+
+### 14.10 The CPU smoke (2026-10-01), and what it does NOT cover
+
+`--debug --steps 8192 --env-core rust --arch production --fork-fraction 0.05 --device cpu
+--rust-env-profile selfcheck` on the build commit, one env, a 2,048-row update. **Training
+complete**: 8 passes, every update's core and T2 lifecycle check clean, 0 `records_missing`.
+
+| pass | `own_rows` | `asked` → `requested` → `forks` | `dropped_forks` | `injected_rows` | `branch_share` | `tie_rate` | `pairwise_acc` (pairs) | `sim_steps_share` | `rows_per_fork` | `seconds` |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 2,070 | 103 → 61 → 24 | **37** | 1,980 | 0.489 | 0.625 | 0.444 (18) | 1.88 | 82.6 | 24.1 |
+| 2 | 57 | 2 → 1 → 1 | 0 | 162 | 0.740 | 1.000 | — (0) | 5.53 | 162 | 1.8 |
+| 3 | 1,890 | 12 → 12 → 12 | 0 | 1,640 | 0.464 | 0.750 | 0.400 (5) | 1.99 | 136 | 23.2 |
+| 4 | 409 | 15 → 3 → 3 | 0 | 708 | 0.634 | 0.333 | 0.500 (4) | 3.47 | 236 | 9.2 |
+| 5 | 1,330 | 8 → 8 → 8 | 0 | 752 | 0.362 | 0.875 | 0.000 (2) | 1.13 | 94 | 7.3 |
+| 6 | 1,310 | 21 → 16 → 16 | 0 | 1,530 | 0.537 | 0.562 | 0.714 (14) | 2.29 | 95.4 | 10.0 |
+| 7 | 517 | 21 → 8 → 8 | 0 | 888 | 0.632 | 0.375 | 0.600 (10) | 3.38 | 111 | 7.4 |
+| 8 | 1,180 | 18 → 15 → 14 | 1 | 1,120 | 0.486 | 0.714 | 0.625 (8) | 1.88 | 79.6 | 13.3 |
+
+**What the smoke shows:**
+- **The first pass pays the row-budget drop once.** It dropped 37 of 61 played forks. After that the
+  measured `rows_per_fork` caps the ask, as in §10.
+- **Updates come faster.** Branch rows fill the FIFO, so an update can fire after only 57 new own
+  rows (pass 2), and `branch_share` exceeds 0.5 on such a pass. That is the §14.2b dose departure,
+  measured.
+- **`pairwise_acc` is noise here**, as in §13.
+
+**What it does NOT cover:**
+- **The real-opponent path.** `--debug` plays bots, so `opp_substituted` = 1 throughout. The choice
+  between the real slot and the substitute is pinned by `fork_test`. A branch played on a pool slot
+  has not run end to end.
+- **GPU R1.** `--debug` bypasses `--compile-trainer`, and no GPU run was made. R1's declaration with
+  `fork_pg_mask` is held by `r1_declared_levers_test`'s `fork_rust` row (dynamo's eager backend on
+  CPU, 0 compiles after the lock). Its compiled signature is the Python arm's `fork` row minus the
+  ragged tail.
+- **Production scale.** Waves at N = 48 or more, and the stall as a share of a production update,
+  are unmeasured.
