@@ -242,6 +242,11 @@ Per update:
 - A pool weight source found on the card is a typed `LazyAcquisitionError`.
 - Every route's slot load goes through `rust_rollout.build.checked_slot_load`, which refuses a load
   that leaves more than 1 MiB newly allocated (`declared_slot_load_test`).
+- `SnapshotPool`'s default device is the CPU, and `snapshot_pool_device_test` pins EVERY construction
+  in `src/` and `tools/` (tests included) to it with one AST scan. The sizing harness's own pool was
+  missed by the first fix and died on the runtime refusal (fixed in `95af710e`). The one declared
+  exception is the python env core's worker pool, which infers on the snapshot itself on the device
+  `--self-play-use-cpu` chose.
 
 ## Smoke
 

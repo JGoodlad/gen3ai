@@ -180,7 +180,11 @@ class SnapshotPool:
         self,
         pool_dir: Path,
         current_version: ModelVersion,
-        device: str = "auto",
+        # "cpu" BY DEFAULT (gen3_declared_slot_load_v1): a snapshot is a weight SOURCE — T2 copies it
+        # into a declared slot; loaded onto the card it stays in the LRU beside that slot (sizing arm
+        # A: +~33 MiB of floor per promotion). Only the python env core's own worker pool, which
+        # infers on the snapshot itself, passes another device (`snapshot_pool_device_test`).
+        device: str = "cpu",
         max_snapshots: int = DEFAULT_MAX_SNAPSHOTS,
         recency_weight: float = 0.3,
         lru_cache_size: int = 3,

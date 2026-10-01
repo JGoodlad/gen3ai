@@ -362,7 +362,8 @@ async def main():
         # owns_dir=True: THIS is the pool that writes the directory (seed / promote), so it is the one
         # whose startup scan may DELETE snapshots outside the declared window (gen3_pool_cap_every_path_v1)
         # — before any env worker scans it. Every other pool over this dir is a reader.
-        _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device=args.device,
+        # device="cpu": the trainer's own pool writes / scans / seeds and never infers on a snapshot
+        _pool = SnapshotPool(pool_dir=_snapshot_dir, current_version=_cv, device="cpu",
                              pfsp_scale=args.pfsp_scale, pool_spread=args.pool_spread, owns_dir=True)
         _persisted_wr = _pool.load_persisted_win_rate()
         _initial_self_play_fraction = 1.0 - heuristic_fraction(

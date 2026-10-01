@@ -10473,3 +10473,11 @@ if a lazy build is reintroduced.
   rebase it passes. `scripts/land.sh` runs it before the push; a hand push runs
   `python -m utils.push_guard` first.
 
+## 2026-10-01 — every SnapshotPool keeps its snapshots on the CPU, pinned repo-wide (`gen3_declared_slot_load_v1`; no model change)
+
+- `SnapshotPool`'s default device is now "cpu" (was "auto"); the trainer's own pool passes "cpu"
+  (it writes, scans and seeds, never infers). `snapshot_pool_device_test` scans every
+  `SnapshotPool(...)` in src/ and tools/ and refuses any device but the literal "cpu", with one
+  declared exception (the python env core's worker pool, which infers on the snapshot). The first
+  fix (`277f318f`) missed the sizing harness's pool, which then died on the runtime refusal.
+
