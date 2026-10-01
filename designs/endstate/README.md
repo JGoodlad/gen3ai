@@ -19,6 +19,7 @@ and why each fork was taken.
 | 5 | [`obs_enrichment_backlog.md`](obs_enrichment_backlog.md) | What the observation carries, what it should carry next, and on what terms |
 | 6 | [`design_ladder_campaign.md`](design_ladder_campaign.md) | The research stages toward the ladder: artifacts, meters, plateau tests, the training ecology |
 | 7 | [`design_learner_recipe.md`](design_learner_recipe.md) | The TRAINING RECIPE re-grounded knob by knob (rollout, batch, epochs, step size, entropy, λ, critic, opponents): live value, provenance, literature, recommendation, and the migration order for the first M5 era |
+| 8 | [`design_own_ppo_loop.md`](design_own_ppo_loop.md) | Owning the PPO loop: every SB3 / sb3-contrib touchpoint on the production path, the staged plan to take SB3's loop off it (identity first, then declared hooks), the equivalence plan, the estimate, and the eval-dump KL-skip finding |
 
 Ranked work lives outside this directory: experiments in
 [`../research_state/EXPERIMENT_BACKLOG.md`](../research_state/EXPERIMENT_BACKLOG.md), build tasks in
