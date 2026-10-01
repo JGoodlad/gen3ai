@@ -283,3 +283,113 @@ def test_a_production_surface_update_acquires_nothing_and_leaves_the_golden_unch
     if rec is None:
         pytest.fail(f"no learner golden recorded for torch {LG.torch_key()}")
     assert LG.diff(rec, got) == []
+
+
+# ------------------------------------------------------------------------------ the memory half
+def _mem_sample(update, phase, allocated_mib, reserved_mib=6000, free_mib=6000):
+    from agents.training import cuda_memory_trend as cmt
+    MiB = cmt.MiB
+    stats = {"allocated_bytes.all.current": allocated_mib * MiB,
+             "reserved_bytes.all.current": reserved_mib * MiB,
+             "reserved_bytes.all.peak": reserved_mib * MiB,
+             "allocated_bytes.all.peak": allocated_mib * MiB,
+             "active_bytes.all.current": allocated_mib * MiB,
+             "inactive_split_bytes.all.current": 0, "segment.all.current": 10,
+             "num_alloc_retries": 0, "num_ooms": 0}
+    return cmt.sample_from_stats(stats, free_mib * MiB, 12000 * MiB, update=update, phase=phase)
+
+
+class _MemModel:
+    """The three methods `attach` wraps, plus a TB logger — no torch model needed for the memory half."""
+    device = "cpu"
+
+    def __init__(self):
+        self.rec = {}
+        self._logger = self
+        self.policy = None
+
+    def record(self, k, v):
+        self.rec[k] = v
+
+    def collect_rollouts(self, *a, **k):
+        return True
+
+    def train(self):
+        return None
+
+    def learn(self):
+        while self.collect_rollouts():
+            self.train()
+
+
+def _watch(model, leak_mib_per_update, lines):
+    """A CudaMemoryWatch on a fake CUDA device whose quiescent allocated floor grows by
+    ``leak_mib_per_update`` (0 = healthy) against a card with ~1 GiB headroom."""
+    state = {"n": 0}
+
+    def sampler(device, *, update, phase):
+        state["n"] += 1
+        return _mem_sample(update, phase, 3000 + leak_mib_per_update * update, free_mib=1000)
+    return LL.CudaMemoryWatch(model, emit=lines.append, say=lines.append, device="cuda:0",
+                              sampler=sampler)
+
+
+def _drive(model, watch, updates):
+    watch.start()
+    for _ in range(updates):
+        watch.observe("post_rollout")
+        model.train()
+        watch.observe("post_update")
+
+
+def test_the_memory_half_STOPS_a_sustained_leak_with_a_typed_FATAL_and_logs_every_window():
+    from main.exit_codes import TrainExitCode, exit_code_for
+    m, lines = _MemModel(), []
+    w = _watch(m, 40, lines)
+    with pytest.raises(LL.CudaMemoryLeakError) as ei:
+        _drive(m, w, 200)
+    assert exit_code_for(ei.value) == int(TrainExitCode.FATAL_CONFIG)
+    assert "CUDA MEMORY LEAK" in str(ei.value) and LL.FATAL_TAG in str(ei.value)
+    assert sum("[CudaMemTrend]" in x for x in lines) >= 5          # the projection, every window
+    assert "lifecycle/cuda_floor_mib" in m.rec and "lifecycle/cuda_updates_to_ceiling" in m.rec
+
+
+def test_a_healthy_or_a_one_off_step_never_stops():
+    m, lines = _MemModel(), []
+    _drive(m, _watch(m, 0, lines), 120)                               # healthy: flat floor
+    assert not any("STOP" in x for x in lines)
+    m2, lines2 = _MemModel(), []
+
+    def step(device, *, update, phase):                               # one +200 MiB step, then flat
+        return _mem_sample(update, phase, 3000 + (200 if update > 30 else 0), free_mib=1000)
+    _drive(m2, LL.CudaMemoryWatch(m2, emit=lines2.append, say=lines2.append, device="cuda:0",
+                                  sampler=step), 120)
+    assert not any("STOP" in x for x in lines2)
+
+
+def test_attach_wires_the_memory_half_around_rollout_and_update_and_is_inert_off_cuda():
+    m, lines = _MemModel(), []
+    calls = []
+
+    def sampler(device, *, update, phase):
+        calls.append((update, phase))
+        return _mem_sample(update, phase, 3000)
+    watch = LL.CudaMemoryWatch(m, emit=lines.append, say=lines.append, device="cuda:0",
+                               sampler=sampler)
+    orig = m.collect_rollouts
+    n = {"i": 0}
+
+    def three(*a, **k):
+        n["i"] += 1
+        return n["i"] <= 3
+    m.collect_rollouts = three
+    freeze = LL.attach(m, emit=lines.append, memory=watch)
+    freeze.freeze = lambda where: None                              # the object-graph half is tested above
+    freeze.check = lambda where: None
+    m.learn()
+    assert calls[:4] == [(0, "post_rollout"), (1, "post_update"), (1, "post_rollout"), (2, "post_update")]
+    assert freeze.memory is watch
+    cpu = LL.CudaMemoryWatch(_MemModel())                            # device "cpu": no trend, no sample
+    cpu.start()
+    cpu.observe("post_update")
+    assert cpu.trend is None and orig() is True

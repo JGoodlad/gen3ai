@@ -67,6 +67,14 @@ class LazyAcquisitionError(FatalConfigError):
     AFTER the freeze. Deterministic, so single-shot: exit `FATAL_CONFIG` (3), not restarted."""
 
 
+class CudaMemoryLeakError(FatalConfigError):
+    """The memory half (`gen3_cuda_memory_trend_v1`): a SUSTAINED growth of the learner process's
+    live CUDA memory projects an out-of-memory inside the declared horizon (`cuda_memory_trend`'s
+    STOP). Raised at an update's end, so the trainer's exception handler saves
+    `final_model_exception.zip` (the checkpoint) before the process exits `FATAL_CONFIG` (3) — the
+    launcher does not restart, because a restart would replay the same leak into the same OOM."""
+
+
 # ------------------------------------------------------------------------------------------- sites
 def _site(skip: int = 2) -> str:
     """A compact construction site: the innermost repo frames of the current stack, innermost
@@ -342,6 +350,7 @@ class LearnerFreeze:
         self.violations: List[str] = []           # sticky (the step pre-hook's)
         self._step_hook: Any = None
         self.checks = 0
+        self.memory: Optional[CudaMemoryWatch] = None   # the memory half, set by `attach`
 
     # -- lifecycle ------------------------------------------------------------------------------
     def freeze(self, where: str) -> str:
@@ -473,7 +482,57 @@ def declare_learner_startup(model: Any, *, emit: Optional[Callable[[str], None]]
     return line
 
 
-def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None) -> LearnerFreeze:
+# ------------------------------------------------------------------------------ the memory half
+class CudaMemoryWatch:
+    """The call site of K6's CUDA memory TREND (`agents.training.cuda_memory_trend`, a leak detector
+    for a clean early stop — never a gate): one `MemoryTrend` per process, started at the freeze;
+    a sample at the two quiescent points of every update (after the rollout, after `train()`); at
+    every window close the projection is LOGGED (one line) and recorded to TB (`lifecycle/cuda_*`);
+    a STOP verdict raises `CudaMemoryLeakError`. Inert off CUDA. The window line goes to the run's
+    log (``say``, stdout); a WARN that changes and the STOP also go to ``emit`` (the launcher's event
+    channel). ``sampler`` is the test seam (default `cuda_memory_trend.sample_cuda`)."""
+
+    def __init__(self, model: Any, *, emit: Optional[Callable[[str], None]] = None,
+                 device: Any = None, sampler: Optional[Callable[..., Any]] = None,
+                 say: Optional[Callable[[str], None]] = None) -> None:
+        dev = device if device is not None else getattr(model, "device", None)
+        self.device = dev if dev is not None and torch.device(dev).type == "cuda" else None
+        self.model = model
+        self.emit = emit
+        self.say: Callable[[str], None] = say or (lambda m: print(m, flush=True))
+        self.sampler = sampler
+        self.trend: Any = None
+        self.updates = 0
+
+    def start(self) -> None:
+        if self.device is not None and self.trend is None:
+            from agents.training.cuda_memory_trend import MemoryTrend
+            self.trend = MemoryTrend()
+
+    def observe(self, phase: str) -> None:
+        if self.trend is None:
+            return
+        from agents.training import cuda_memory_trend as cmt
+        if phase == "post_update":
+            self.updates += 1
+        sampler = self.sampler or cmt.sample_cuda
+        v = self.trend.observe(sampler(self.device, update=self.updates, phase=phase))
+        if v.window_closed:
+            logger = getattr(self.model, "_logger", None)
+            if logger is not None:
+                for k, x in self.trend.tb_scalars().items():
+                    logger.record(k, x)
+            self.say(v.message)                        # the projection, every window, in the run log
+        elif v.level == "WARN" and v.changed:
+            self.say(v.message)
+        if v.level in ("WARN", "STOP") and v.changed and self.emit is not None:
+            self.emit(v.message)
+        if v.level == "STOP":
+            raise CudaMemoryLeakError(f"{FATAL_TAG} — CUDA MEMORY LEAK: {v.message}")
+
+
+def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None,
+           memory: Optional[CudaMemoryWatch] = None) -> LearnerFreeze:
     """Wire the freeze guard onto ``model`` (INSTANCE attributes over the bound methods SB3's
     `learn()` calls, like `compile_control.attach` — apply AFTER it, so this wrapper is outermost):
 
@@ -481,22 +540,29 @@ def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None) -> Learn
         and `learn()`'s own `_on_training_start` have all run);
       * every `collect_rollouts` and `train` exit CHECKS (`LazyAcquisitionError`, a
         `FatalConfigError`: the trainer's fail-fast handler exits FATAL_CONFIG, not restarted);
-      * `learn()`'s exit RELEASES (the in-process final evaluation is not the steady state).
+      * `learn()`'s exit RELEASES (the in-process final evaluation is not the steady state);
+      * on CUDA, the MEMORY half (`CudaMemoryWatch`) starts at the freeze and samples after every
+        rollout and update — a projected OOM is `CudaMemoryLeakError` (FATAL_CONFIG, after the
+        trainer's handler saved `final_model_exception.zip`).
 
     The three wrappers are in `_excluded_save_params` via `_learner_freeze` (see the hub)."""
     freeze = LearnerFreeze(model, emit=emit)
+    memory = memory if memory is not None else CudaMemoryWatch(model, emit=emit)   # says to stdout
     orig_collect, orig_train, orig_learn = model.collect_rollouts, model.train, model.learn
 
     def collect_rollouts(*a: Any, **k: Any) -> Any:
         if freeze.frozen is None and not getattr(freeze, "_released", False):
             freeze.freeze("the first rollout of learn()")
+            memory.start()
         out = orig_collect(*a, **k)
         freeze.check("rollout end")
+        memory.observe("post_rollout")
         return out
 
     def train(*a: Any, **k: Any) -> Any:
         out = orig_train(*a, **k)
         freeze.check("update end")
+        memory.observe("post_update")
         return out
 
     def learn(*a: Any, **k: Any) -> Any:
@@ -510,4 +576,5 @@ def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None) -> Learn
     model.train = train
     model.learn = learn
     model._learner_freeze = freeze
+    freeze.memory = memory
     return freeze

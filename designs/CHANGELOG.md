@@ -10292,3 +10292,24 @@ if a lazy build is reintroduced.
 - **Traceable**: R1 on the production surface traces as ONE `fullgraph=True` graph on torch 2.8 (CPU,
   `aot_eager`, compiled loss == eager bit-for-bit).
 
+## 2026-10-01 — K6: the CUDA MEMORY TREND — a leak detector for a clean early stop, wired (`gen3_cuda_memory_trend_v1`; no model change)
+
+- **`agents/training/cuda_memory_trend.py`**: the learner process's quiescent ALLOCATED floor per
+  2-update window is the leak signal (fragmentation never moves it); reserved bytes are only the
+  demand and, with the device's free bytes, the ceiling. WARN by default (a step-up, a reserved
+  fragmentation step, alloc retries, low headroom); STOP only when 3 odd groups of window floors each
+  rise > 8 MiB with a Theil-Sen slope >= 1 MiB/update AND the projection reaches the ceiling inside
+  25 updates (the periodic-checkpoint cadence), on 3 consecutive window closes.
+- **Wired** in `learner_lifecycle.attach` (`CudaMemoryWatch`, with the freeze guard): a sample after
+  every rollout and every update, the projection logged (`[CudaMemTrend]`) and recorded
+  (`lifecycle/cuda_*`) at every window close; a STOP raises `CudaMemoryLeakError` at the update's end
+  — the trainer saves `final_model_exception.zip`, exit FATAL_CONFIG (3), not restarted.
+- **Calibrated** on a production-shape torch 2.8 learner on arm C's real buffer (5 processes, 15–57
+  updates, one at 10 epochs): healthy floor band 2.0 MiB, reserved flat after the first diagnostics
+  update, peak demand 5.6 GiB of 12; a false STOP is impossible while the band stays under the 8 MiB
+  bar; simulated ×64 noise never STOPs (`research_state/measurements/k6_k8/memory/`).
+- **`expandable_segments:True` NOT recommended** (torch 2.8): −1 % reserved, more growth after the
+  freeze (+156 vs +16 MiB), and `memory_stats` then reports 0 segments, blinding every
+  `cuda_segments_after_freeze` counter (T2's guard included); no update-time difference claimable
+  under the box's load.
+

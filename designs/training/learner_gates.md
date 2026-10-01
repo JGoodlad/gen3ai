@@ -274,3 +274,82 @@ one); `keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed,
 `[Learner] FATAL`. The trainer's fail-fast handlers map it through `exit_code_for` to
 `TrainExitCode.FATAL_NONFINITE` (4) and the launcher STOPS on 4 instead of resuming the checkpoint that
 produced it — a restart would replay the same update. K9 defines no class of its own.
+
+## K6 — the CUDA memory TREND: a leak detector for a clean early stop, NOT a gate (`cuda_memory_trend.py`)
+
+The declared lifecycle's MEMORY half (`designs/endstate/program_rust_core.md`, the M5 DESIGN PRINCIPLE
+and its Decision record), as the orchestrator redefined it: a slow leak of live CUDA tensors must end
+in a deliberate stop WITH a checkpoint, not in an out-of-memory mid-update and a restart that replays
+the leak. Fragmentation and one-off step-ups are expected and never stop a run. **Status: BUILT and
+WIRED** (`learner_lifecycle.CudaMemoryWatch`, attached with the freeze guard — see
+[`learner_lifecycle.md`](learner_lifecycle.md) "The memory half": a sample after every rollout and
+every update, the projection logged + recorded at every window close, a STOP raising
+`CudaMemoryLeakError` — `final_model_exception.zip` saved, exit FATAL_CONFIG, not restarted).
+
+**What it reads.** Once per update `sample_cuda(device, update=, phase=)` takes
+`torch.cuda.memory_stats` (allocated, reserved, active, inactive-split, segments, `num_alloc_retries`,
+`num_ooms`, peaks since the last sample) and `mem_get_info` (device free/total; other processes share
+the card).
+
+**What it fits, and why.** `MemoryTrend` is pure, with no torch.
+
+- The leak signal is the window FLOOR: the min of the QUIESCENT allocated bytes over
+  `WINDOW_UPDATES = 2` updates. Fragmentation never moves it; a leak moves it every update.
+- Reserved moves in permanent steps, so reserved is never fit. It is the DEMAND (peak reserved) and,
+  with the device's free bytes, the CEILING (reserved + free − 512 MiB).
+
+**The verdicts.**
+
+- **SUSTAINED:** over the last 9 windows split into 3 odd groups, each group median exceeds the last
+  by more than `NOISE_BAR_BYTES` = 8 MiB, AND the Theil-Sen slope is ≥ 1 MiB/update. A single step
+  can raise only one median.
+- **STOP:** SUSTAINED and the projected OOM is inside `HORIZON_UPDATES = 25` (the default periodic
+  checkpoint cadence, or the integrator's own) on `PERSIST_WINDOWS = 3` consecutive closes.
+- **WARN, never STOP:** a SUSTAINED read beyond the horizon (carries its projection); a floor step
+  > 64 MiB; a reserved step > 256 MiB; a new `num_alloc_retries` / `num_ooms`; headroom under the
+  margin.
+- The first 2 updates of a process are never windowed (Adam's lazily created state).
+- TB: `lifecycle/cuda_*` (level, floor, demand, ceiling, slope, updates-to-ceiling, segments after
+  freeze, retries).
+
+**Calibration (measured 2026-09-30, torch 2.8, RTX 3080 Ti, production-shape learner on a real
+98,304-row buffer, 5 processes x 15–57 updates, one at the production 10 epochs; `designs/research_state/measurements/k6_k8/memory/`):**
+
+- The healthy allocated floor holds within **2.0 MiB**, so the 8 MiB bar has 4x headroom.
+- Reserved settles by the first diagnostics update: +16 MiB after the warm-up under the default
+  allocator, then flat for 47 updates.
+- Peak demand is 5.6 GiB against a 12 GiB card (diagnostics updates +1.2 GiB over plain ones).
+- 0 alloc retries, 0 OOMs, every replayed window OK.
+
+**False trips:**
+
+- **Impossible by construction** while the healthy floor band stays under the 8 MiB bar, because
+  every group-median rise is bounded by the band.
+- In 60-window simulated processes on a card with 1 GiB headroom (2,000 per magnification), the
+  measured residuals magnified ×8 produce no SUSTAINED read (×16: 0.05%), and even ×64 produces no
+  STOP.
+
+**Lead:**
+
+- A slow leak reads SUSTAINED about 12 updates after it starts.
+- It STOPs `25 + 512 MiB / slope` updates before the OOM: 29 updates at 60 MiB/update, 83 at
+  8 MiB/update.
+- ⚠️ A FAST leak (≳ 300 MiB/update here, an OOM within about 12–20 updates of onset) crashes before
+  the span fills. That case is the launcher's restart policy, not this detector's.
+- A leak under about 1.3 MiB/update reads OK but is visible in `lifecycle/cuda_floor_mib`.
+
+**`expandable_segments:True` is not recommended** (same README):
+
+- **Reserved:** −60 MiB (1%), but +156 MiB of growth after the warm-up.
+- **Segment counters:** `memory_stats` then reports ZERO segments, which blinds every
+  `cuda_segments_after_freeze` counter, T2's guard included. T2's graph backend still starts and
+  passes its parity gate under it, so the setting is compatible but blind.
+- **Update time:** not separable from box contention (load1 7–19; one unit's plain update ranged
+  9.9–20.9 s).
+- **Fragmentation** under the default allocator is already a plateau.
+
+**ASSUMED, UNVERIFIED:**
+
+- a live run's floor wobble and callbacks behave like this harness, which ran no callbacks and no T2;
+- under `--env-core rust`, T2's declared slots and the in-process eval cycle share the trainer's card
+  and are seen only through the ceiling.

@@ -18,7 +18,7 @@ wired by `main/train/lifecycle._arm_learner_lifecycle` (both the fresh and the r
 | class | what | verdict |
 |---|---|---|
 | deterministic | a new optimizer, `nn.Parameter`, module, buffer or optimizer-STATE entry in the learner after the freeze; an undeclared compile signature (K6's compile half) | a typed, single-shot FATAL — a healthy run never trips it, so there is no tolerance and no warn tier |
-| stochastic | CUDA memory | a LEAK DETECTOR, warn by default; stops (checkpoint, then a typed FATAL) only when a sustained trend projects an OOM inside a declared horizon (orchestrator, 2026-09-30: the caching allocator legitimately steps up from fragmentation, larger shapes and eval cycles, so a one-off crossing would eventually kill a healthy multi-day run) |
+| stochastic | CUDA memory | a LEAK DETECTOR (`CudaMemoryWatch`, "The memory half" below), warn by default; stops (checkpoint, then a typed FATAL) only when a sustained trend projects an OOM inside a declared horizon (orchestrator, 2026-09-30: the caching allocator legitimately steps up from fragmentation, larger shapes and eval cycles, so a one-off crossing would eventually kill a healthy multi-day run) |
 
 ## The freeze guard (`gen3_learner_freeze_v1`)
 
@@ -132,6 +132,31 @@ under `fork_rng`, restores the training mode and leaves every `.grad` None — t
 (pinned). TB: `compile/canary_ok`, `compile/canary_grad_checked`, `compile/canary_max_abs_<q>`,
 `compile/canary_grad_cosine` on canary updates only. `compile_canary_test` fails on a forward that
 drifted (×1.01) and on a BACKWARD-only drift (the gradient check alone sees it).
+## The memory half — the CUDA memory TREND, wired (`gen3_cuda_memory_trend_v1`)
+
+The detector itself (what it reads, the floor / demand / ceiling, SUSTAINED / STOP / WARN, the
+calibration and the false-trip estimate) is [`learner_gates.md`](learner_gates.md) "K6 — the CUDA
+memory TREND". Its call site is `learner_lifecycle.CudaMemoryWatch`, attached by `attach` with the
+freeze guard (so every launch that arms the lifecycle has it; inert off CUDA):
+
+- one `MemoryTrend` per process, STARTED at the freeze (the first rollout of `learn()`);
+- a sample at the two quiescent points of every update — after `collect_rollouts` (`post_rollout`,
+  the updates completed so far) and after `train()` (`post_update`);
+- at every window close (2 updates) the projection is LOGGED to the run's log (stdout) as one
+  `[CudaMemTrend] <level> @ update N: floor …, slope …/update, demand …, ceiling …[, projected OOM in
+  K updates (horizon 25)]` line and recorded to TB (`lifecycle/cuda_*` — level, floor, demand,
+  ceiling, slope, updates to the ceiling, reserved, device free, segments, retries, OOMs); a WARN
+  that changes between closes is printed when it happens, and a changed WARN or the STOP also goes
+  to the launcher's event channel;
+- a STOP raises `CudaMemoryLeakError` (a `FatalConfigError`, `[LearnerLifecycle] FATAL — CUDA
+  MEMORY LEAK: …`) at the update's end; the trainer's exception handler saves
+  `final_model_exception.zip` (the checkpoint) and the process exits FATAL_CONFIG (3), which the
+  launcher does not restart (a restart would replay the leak).
+
+`learner_lifecycle_test` drives it with a synthetic sampler: a 40 MiB/update leak against 1 GiB of
+headroom STOPS with the typed FATAL after logging the projection at every window; a flat floor and a
+single +200 MiB step never stop; `attach` samples in the order rollout → update. Each fails on a
+revert of the wiring.
 
 ## Smoke
 
