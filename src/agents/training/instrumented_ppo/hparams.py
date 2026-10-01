@@ -554,6 +554,10 @@ class PpoHyperparameters:
         # CompileControl holding a logging handler and dynamo callbacks. Pickled, every save after
         # the first update would carry (or fail on) them, and a loaded model would re-install a
         # dead process's sentinel. Re-attached fresh by every process that compiles.
+        # `_learner_freeze` (gen3_learner_freeze_v1, K6) is the declared-lifecycle FREEZE GUARD
+        # (`learner_lifecycle.attach`): it holds identity snapshots, torch's global registration
+        # hooks and an optimizer step hook — process-local, re-attached by every process; it also
+        # owns the `collect_rollouts` / `train` / `learn` wrappers above when it is the outermost.
         # `_rust_collector` (M5 Lane G, `--env-core rust`) is the live env core + inference service
         # + row arena (locks, a child process, GPU slot storage): process-local by construction and
         # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
@@ -568,4 +572,5 @@ class PpoHyperparameters:
                                                   "_distill_anchor_ref_writer",
                                                   "_vf_scale_announced", "_diagnostics_ran_in_process",
                                                   "collect_rollouts",
-                                                  "train", "learn", "_compile_control"]
+                                                  "train", "learn", "_compile_control",
+                                                  "_learner_freeze"]

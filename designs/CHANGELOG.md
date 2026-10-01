@@ -10213,3 +10213,20 @@ if a lazy build is reintroduced.
 - **Pinned:** `compile_trainer_test` (the routing); `compile_batch1_cuda_test` (CUDA, `slow`, 2.8 —
   the final evaluation's batch-1 call through the real gate, and the contract that the reverted
   routing raises the `CompilationError`).
+
+## 2026-09-30 — K6: the learner FREEZE GUARD and optimizer state declared at startup (`gen3_learner_freeze_v1`; no model version bump, training numerics unchanged)
+
+- **The declared lifecycle, enforced in the learner** (`agents/training/learner_lifecycle.py`, doc
+  `designs/training/learner_lifecycle.md`): `_arm_learner_lifecycle` (both startup paths, after the
+  compile sentinel) declares what the steady state would otherwise build lazily, then attaches the
+  guard. At the first rollout of `learn()` the learner's object graph is frozen; a new optimizer,
+  parameter, module, buffer or optimizer-state entry after it is `LazyAcquisitionError`
+  (`[LearnerLifecycle] FATAL`, FATAL_CONFIG, not restarted) naming the object and its construction
+  site. An optimizer outside the frozen set is refused at its first `step()`, before it moves a weight.
+- **Declared at startup:** every Adam/AdamW state, through torch's own init (zero-gradient step,
+  parameters restored bit-exactly, moments zeroed, step 0) — the K9 learner golden is unchanged with
+  the declaration and the guard on; the capacity telemetry's canary head + Adam (was: first minibatch).
+- **Not judged here:** CUDA memory (a separate warn-by-default leak detector, orchestrator 2026-09-30).
+- **The ride-along heads pass under the guard** (their optimizers acquired at startup since
+  `8812c565`): a `--ridealong-*` + `--ridealong-rnd-variants all` run freezes 6 optimizers and passes
+  every check.

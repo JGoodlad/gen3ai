@@ -125,6 +125,28 @@ def _arm_compile_sentinel(model, args) -> None:
         sys.exit(TrainExitCode.FATAL_CONFIG)
 
 
+def _arm_learner_lifecycle(model, args) -> None:
+    """K6 (gen3_learner_freeze_v1) — the learner's DECLARED LIFECYCLE: the last startup step.
+
+    Declares what the steady state would otherwise acquire lazily (every Adam/AdamW optimizer's
+    state; the capacity canary under `--capacity-telemetry`), then attaches the FREEZE GUARD
+    (`agents.training.learner_lifecycle`): it freezes the learner's object graph on entry to the
+    first rollout and fails any new optimizer / parameter / module / buffer / optimizer-state entry
+    after it with a typed `LazyAcquisitionError` (FATAL_CONFIG, not restarted). Always on — compiled
+    or not, CPU or CUDA: it costs one identity walk per update. Placed AFTER `_arm_compile_sentinel`
+    so its wrappers are the outermost (the freeze precedes the compile sentinel's own first-rollout
+    work, and its check follows the sentinel's)."""
+    from agents.training.learner_lifecycle import (LazyAcquisitionError, attach,
+                                                   declare_learner_startup)
+    try:
+        declare_learner_startup(model, emit=send_event)
+    except LazyAcquisitionError as exc:
+        print(f"\n{exc}", file=sys.stderr, flush=True)
+        send_event(str(exc).splitlines()[0][:500])
+        sys.exit(TrainExitCode.FATAL_CONFIG)
+    attach(model, emit=send_event)
+
+
 def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = False) -> None:
     """Startup smoke test: save → reload → zero forward pass → assert output shape.
 

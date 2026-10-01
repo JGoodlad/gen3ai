@@ -18,6 +18,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | the reward registry, PBRS, the no-progress clock, the two entropy boosts | [`designs/training/reward.md`](../../../designs/training/reward.md) |
 | the PPO package's module map or a source-level pin on `train()` | [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md) |
 | the learner's GIGO gates (K9): the LEARNER GOLDEN, behaviour-policy consistency, fail-closed non-finite, and the non-finite AUDIT | [`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md) |
+| the learner's DECLARED LIFECYCLE (K6): the FREEZE GUARD, optimizer state declared at startup, `@startup_builder` | [`designs/training/learner_lifecycle.md`](../../../designs/training/learner_lifecycle.md) |
 | bot eval, the untaught meter, the critic gate, ELO / the ladder / Hodge, the baseline registry | [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md) |
 | self-play, the snapshot pool, stable opponents | [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md) |
 | exploiter mode, the warm start, distillation + the off-slice anchor | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
@@ -135,6 +136,8 @@ FATAL`; exit 4, the launcher does NOT restart) BEFORE the optimizer moves anythi
 (`instrumented_ppo/learner_gates.py`) — never a `nan_to_num`, a NaN-mask on a trained
 quantity or a skipped step; a new term must reach the assembled loss (or carry its own check), and a
 `where(isfinite)` on a label is a NaN hide unless it means `-inf` (use `isneginf`).
+
+🚨 **K6 — THE LEARNER FREEZES at the first rollout of `learn()`** (`learner_lifecycle.py`, [`designs/training/learner_lifecycle.md`](../../../designs/training/learner_lifecycle.md)): after it, a NEW optimizer, `nn.Parameter`, module, buffer or optimizer-state entry anywhere in the learner's graph is `LazyAcquisitionError` (`[LearnerLifecycle] FATAL`, exit 3, not restarted) naming the object and its construction site. Build anything the steady state uses at STARTUP — in `_build` / `_setup_model` / an `__init__`, or a function marked `@lifecycle_decl.startup_builder` that the startup path runs — never on the first update. Adam/AdamW state is declared at startup (`declare_optimizer_state`, bit-identical to torch's lazy init).
 
 **`train()` carries BENCHMARK-ONLY phase marks** (`gen3_learner_phase_hook_v1`): ~14 lines of
 `if _ph is not None: _ph("<phase>")`, `_ph` read ONCE per call from `instrumented_ppo/phase_hook.py`

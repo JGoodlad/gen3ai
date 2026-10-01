@@ -30,7 +30,8 @@ from main.train.constants import _ABORT_EVAL_DRAIN_SEC
 from main.train.checkpoint_state import _validate_or_reset_optimizer_state
 from main.train.fork_lr import apply_fork_lr_pin, read_recorded_pin, resolve_fork_lr
 from main.train.lifecycle import (
-    _apply_grad_checkpointing, _arm_compile_sentinel, _maybe_compile_trainer, _run_roundtrip_test,
+    _apply_grad_checkpointing, _arm_compile_sentinel, _arm_learner_lifecycle, _maybe_compile_trainer,
+    _run_roundtrip_test,
     _setup_signal_handlers,
 )
 from main.train.run_io import (
@@ -731,6 +732,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
             _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock
+            _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
             # gen3_run_lineage_v1 — written ONCE at fork creation and preserved by every later save.
             # `None` on a same-run restart, which is what keeps the recorded parent immutable.
@@ -947,6 +949,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock
+        _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
         # gen3_run_lineage_v1 — a FRESH run states the explicit null form (`fork_parent: null,
         # role: "fresh"`), because "no block" and "no parent" are different facts.

@@ -67,6 +67,8 @@ from typing import Any, Dict, Optional
 import torch as th
 from torch import nn
 
+from agents.training.lifecycle_decl import startup_builder
+
 # ----------------------------------------------------------------- the target family's constants
 CANARY_SEED_BASE = 20260823
 CANARY_RESEED_STRIDE = 1_000_000
@@ -376,6 +378,16 @@ class CapacityTelemetry:
         self.cosine_samples: list[Dict[str, float]] = []
         self.canary_steps_this_train = 0
 
+    @startup_builder
+    def declare(self, feature_dim: int, obs_dim: int, device: Any) -> PlasticityCanary:
+        """Build the canary head + its optimizer NOW (K6, `gen3_learner_freeze_v1`): the trainer
+        calls this at startup (`CapacityTerms._capacity_declare`), so the steady state builds
+        nothing. Idempotent."""
+        if self.canary is None:
+            self.canary = PlasticityCanary(int(feature_dim), int(obs_dim), k=self.canary_k,
+                                           reset_steps=self.reset_steps, device=device)
+        return self.canary
+
     # ------------------------------------------------------------------ per-minibatch
     def observe(self, model, rollout_data, actions, advantages, trunk_params,
                 clip_range: float, features: Optional[th.Tensor], num_timesteps: int) -> None:
@@ -390,9 +402,10 @@ class CapacityTelemetry:
         obs = rollout_data.observations.get("observation")
         if features is not None and obs is not None and features.shape[0] == obs.shape[0]:
             if self.canary is None:
-                self.canary = PlasticityCanary(
-                    int(features.shape[-1]), int(obs.shape[-1]), k=self.canary_k,
-                    reset_steps=self.reset_steps, device=features.device)
+                # The trainer DECLARES the canary at startup (`declare`, K6's declared lifecycle);
+                # this path serves a direct caller (a test) only — after the learner froze, a canary
+                # built here is a `LazyAcquisitionError`.
+                self.declare(int(features.shape[-1]), int(obs.shape[-1]), features.device)
             self.canary.maybe_reset(num_timesteps)
             self.canary.step(features, obs)
             self.canary_steps_this_train += 1
