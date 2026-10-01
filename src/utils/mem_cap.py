@@ -30,7 +30,13 @@ THE THREE LAYERS, all put in force and VERIFIED before the command starts:
    cache; ``--slice-gb`` / ``$GEN3AI_HEAVY_SLICE_GB``). Set with ``systemctl --user set-property
    --runtime`` — a RUNTIME drop-in under ``/run/user/<uid>/systemd/user.control/``, gone at reboot and
    re-declared by the next launch. Two jobs that fit their own caps but not the slice's: the kernel
-   kills the LARGER, and only its scope stops.
+   kills the LARGER first. ⚠️ That is NOT a guarantee that a sibling survives: a sibling that
+   ALLOCATES in the few milliseconds while the victim's memory is still being released finds the
+   slice still at its limit and no eligible victim left but itself, and the kernel OOM-kills it too
+   (kernel 7.0 log, 2026-10-01: 2 of 85 slice-level OOMs on this box; both times the SECOND OOM was
+   invoked by the sibling's own allocation, 1-5 ms after the first kill). Its report is truthful
+   (its own scope's ``Result=oom-kill``, exit 86). A per-job cap has no such cross-job effect —
+   treat the slice cap as the box's backstop, not as a scheduler.
 3. **A victim preference.** Inside the scope the job's ``oom_score_adj`` is raised to ``+500``
    (``OOM_SCORE_ADJ``; raising needs no privilege), so if the KERNEL ever has to choose box-wide it
    picks a heavy job over the Claude processes (which sit at 0, and could only be lowered with

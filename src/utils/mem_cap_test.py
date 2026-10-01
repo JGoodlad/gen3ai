@@ -8,7 +8,9 @@ drop-ins ``set-property --runtime`` wrote). The load-bearing pins, each FAILS on
   AND a sibling process in the CALLER's own cgroup — the stand-in for the Claude session — survive;
 * a well-behaved child passes, exits with its own status and reports a peak >= what it touched;
 * two jobs that each fit their own cap but not the SLICE's: the larger is killed (its line names the
-  SLICE), the sibling job finishes, the parent survives;
+  SLICE) and a QUIESCENT sibling (asserted blocked in ``read``) finishes and is reported spared although
+  its slice holds the kill; a sibling ALLOCATING through the victim's teardown may die too (a kernel
+  memcg race, 2026-10-01) — either way its report is truthful;
 * inside the scope ``oom_score_adj`` is +500, the cgroup is the capped scope, the environment passes
   through, and the GPU lock composes with the wrapper in BOTH orders.
 
@@ -18,6 +20,7 @@ reason) where there is none. ~15 s.
 from __future__ import annotations
 
 import os
+import selectors
 import shutil
 import subprocess
 import sys
@@ -114,32 +117,99 @@ def test_a_well_behaved_child_passes_with_its_own_exit_and_reports_its_peak(env)
     assert 0.09 <= peak_gb < 0.5, f"peak {peak_gb} GB does not cover the 100 MB the child touched"
 
 
-def test_two_jobs_past_the_slice_cap_kill_the_larger_and_spare_the_sibling(env, tmp_path):
+def _slice_dir(env) -> Path:
+    return Path(f"/sys/fs/cgroup/user.slice/user-{os.getuid()}.slice/user@{os.getuid()}.service/"
+                f"gen3ai.slice/{env[M.SLICE_ENV]}")
+
+
+def _events(d: Path) -> dict:
+    return {k: int(v) for k, v in (ln.split() for ln in (d / "memory.events").read_text().splitlines())}
+
+
+def _start_sibling(env, wait_code: str) -> tuple:
+    """Start a 120 MB sibling job and return ``(Popen, job pid)`` once it has TOUCHED its memory —
+    never on a timer: a sibling still allocating when the big job starts is a second race."""
+    code = textwrap.dedent("""
+        import os, sys, time
+        b = bytearray(120 << 20)
+        for i in range(0, len(b), 4096):
+            b[i] = 1
+        print("allocated", os.getpid(), flush=True)
+    """) + textwrap.dedent(wait_code) + '\nprint("sibling done", flush=True)\n'
+    sib = subprocess.Popen([_SH, "--name", "sibling", "1", sys.executable, "-c", code], env=env,
+                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    sel = selectors.DefaultSelector()
+    sel.register(sib.stdout, selectors.EVENT_READ)
+    assert sel.select(timeout=scale_timeout(60)), "the sibling never reported its allocation"
+    line = sib.stdout.readline().split()
+    assert line[:1] == ["allocated"], (line, sib.poll())
+    return sib, int(line[1])
+
+
+def _finish(sib) -> tuple:
+    """Release a sibling blocked on stdin (one byte; communicate() closes the pipe) and collect it."""
+    try:
+        out, err = sib.communicate(input="x", timeout=scale_timeout(60))
+    except BrokenPipeError:          # it died before reading — communicate() still collects it
+        out, err = sib.communicate(timeout=scale_timeout(60))
+    return out, err
+
+
+def test_two_jobs_past_the_slice_cap_kill_the_larger_and_spare_a_QUIESCENT_sibling(env):
+    """The guarantee the kernel DOES give: the larger job is the slice OOM's victim, and a sibling
+    that is not allocating is never chosen. Its PRECONDITION is asserted, not assumed: the sibling is
+    blocked in ``read(0, ...)`` (``/proc/<pid>/syscall``) when the big job runs. The old version of
+    this test polled a file every 50 ms — an allocation per wake-up — and on 2026-10-01 two gates saw
+    the kernel kill it in the victim's teardown window (see the race test below)."""
     env = {**env, M.SLICE_GB_ENV: "0.4"}
-    go = tmp_path / "go"
-    sibling_code = _ALLOC.replace("time.sleep(hold)", textwrap.dedent(f"""
-        import os
-        while not os.path.exists({str(go)!r}):
-            time.sleep(0.05)
-        print("sibling done", flush=True)
-    """))
-    sib = subprocess.Popen([_SH, "--name", "sibling", "1", sys.executable, "-c", sibling_code, "120"],
-                           env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    sib, pid = _start_sibling(env, "sys.stdin.read(1)")
     try:
         t0 = time.monotonic()
-        while sib.poll() is None and not list(Path("/sys/fs/cgroup").glob(
-                f"user.slice/user-{os.getuid()}.slice/user@{os.getuid()}.service/gen3ai.slice/"
-                f"{env[M.SLICE_ENV]}/gen3ai-capped-sibling-*.scope")):
-            assert time.monotonic() - t0 < scale_timeout(30), "the sibling job never started"
-            time.sleep(0.05)
-        time.sleep(1.0)                                          # let it touch its 120 MB
+        while not Path(f"/proc/{pid}/syscall").read_text().startswith("0 0x0 "):   # read(fd 0, ...)
+            assert time.monotonic() - t0 < scale_timeout(30), (
+                "the sibling is not quiescent (blocked in read on stdin): "
+                + Path(f"/proc/{pid}/syscall").read_text())
+            time.sleep(0.02)
         big = _run(["--name", "big", "1", sys.executable, "-c", _ALLOC, "800"], env)
         assert big.returncode == M.EXIT_OOM, (big.returncode, big.stderr)
         assert "SLICE's aggregate cap" in big.stderr, big.stderr
-        go.write_text("1")
-        out, err = sib.communicate(timeout=scale_timeout(60))
+        assert _events(_slice_dir(env))["oom_kill"] >= 1, "the slice recorded no OOM kill"
+        out, err = _finish(sib)
+        # spared, and REPORTED spared although its slice holds an oom_kill: the verdict is read from
+        # the job's OWN scope, never from the slice where every kill under it is counted
         assert sib.returncode == 0, (sib.returncode, err)
-        assert "sibling done" in out and "not OOM-killed" in err
+        assert "sibling done" in out and "not OOM-killed" in err, (out, err)
+    finally:
+        if sib.poll() is None:
+            sib.kill()
+            sib.wait()
+
+
+def test_a_sibling_ALLOCATING_through_the_victims_teardown_can_die_too_and_is_reported_truthfully(env, tmp_path):
+    """The guarantee the kernel does NOT give, pinned as the contract: after the slice OOM kills the
+    larger job its memory is released over a few ms, and a sibling that allocates in that window
+    finds the slice still full with no eligible victim but itself — it is killed by its OWN
+    allocation (kernel log 2026-10-01: both gate failures were exactly this; a 1 MB/ms allocator here
+    died in 13 of 20 trials). Either outcome is legal. What must hold is that mem_cap REPORTS it
+    truthfully: exit 86 + OOM-KILLED iff the job really died before finishing."""
+    env = {**env, M.SLICE_GB_ENV: "0.4"}
+    go = tmp_path / "go"
+    sib, _ = _start_sibling(env, f"""
+        while not os.path.exists({str(go)!r}):
+            x = bytearray(1 << 20)
+            x[::4096] = b"1" * 256
+            del x
+            time.sleep(0.001)
+    """)
+    try:
+        big = _run(["--name", "big", "1", sys.executable, "-c", _ALLOC, "800"], env)
+        assert big.returncode == M.EXIT_OOM and "SLICE's aggregate cap" in big.stderr, (big.returncode, big.stderr)
+        go.write_text("1")
+        out, err = _finish(sib)
+        if sib.returncode == M.EXIT_OOM:
+            assert "OOM-KILLED" in err and "sibling done" not in out, (out, err)
+        else:
+            assert sib.returncode == 0 and "sibling done" in out and "not OOM-killed" in err, (sib.returncode, out, err)
     finally:
         if sib.poll() is None:
             sib.kill()
