@@ -21,6 +21,8 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
     capacity_terms.py the `--capacity-telemetry` delegates — the ONE `*_terms` module that folds
                       NOTHING into `loss` (see its docstring)
     constants.py      the four module-level tuning constants
+    intent_fold.py    K8: the opponent-intent fold as ONE static, fullgraph-traceable function
+                      (not yet called by `train()`; its oracle is a verbatim copy of the inline block)
     phase_hook.py     BENCHMARK-ONLY segment marks inside `train()` (None in production; the one
                       consumer is `agents.training.learner_benchmark`)
 

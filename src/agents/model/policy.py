@@ -326,27 +326,38 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         actions = actions.reshape((-1, *self.action_space.shape))  # type: ignore[misc]
         return actions, values, log_prob
 
-    def evaluate_actions(
-        self,
-        obs: th.Tensor,
-        actions: th.Tensor,
-        action_masks: Optional[th.Tensor] = None,
-    ) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
+    def evaluate_actions_functional(
+        self, obs: th.Tensor, actions: th.Tensor, action_masks: Optional[th.Tensor] = None,
+    ) -> Tuple[th.Tensor, th.Tensor, th.Tensor, th.Tensor, Optional[th.Tensor]]:
+        """`evaluate_actions` as TENSORS only — ``(values, log_prob, entropy, masked_logp,
+        masks_bool)`` — for the learner micro-step (K8's region R1), which must not build the
+        distribution stash object inside a compiled region; the caller sets
+        `_last_pi_distribution` from the returned tensors."""
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)
         # gen3_functional_masking_v1: functional masked logits (bit-identical to sb3's object).
         logp = self.masked_logp(latent_pi, action_masks)
         masks_bool = _mc.mask_bool(action_masks, logp)
+        log_prob = _mc.log_prob(logp, actions)
+        values = self._critic_value(latent_vf)
+        return values, log_prob, _mc.entropy(logp, masks_bool), logp, masks_bool
+
+    def evaluate_actions(
+        self,
+        obs: th.Tensor,
+        actions: th.Tensor,
+        action_masks: Optional[th.Tensor] = None,
+    ) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
+        values, log_prob, entropy, logp, masks_bool = self.evaluate_actions_functional(
+            obs, actions, action_masks)
         # gen3_exploiter_distill_v1: stash the (masked) pi so the exploiter-distillation KL, the
         # off-slice anchor and the ride-along heads REUSE this forward instead of a redundant second
         # one. `MaskedPi` answers `.distribution.logits` / `.distribution.probs` exactly as the sb3
         # object did (the masked logits give a BIT-IDENTICAL KL: over LEGAL actions the logits are
         # unchanged; illegal actions contribute exactly 0 either way).
         self._last_pi_distribution = _mc.MaskedPi(logp, masks_bool)
-        log_prob = _mc.log_prob(logp, actions)
-        values = self._critic_value(latent_vf)
-        return values, log_prob, _mc.entropy(logp, masks_bool)
+        return values, log_prob, entropy
 
     def get_distribution(
         self, obs: PyTorchObs, action_masks: Optional[np.ndarray] = None

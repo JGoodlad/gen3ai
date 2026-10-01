@@ -31,7 +31,6 @@ import time
 
 import numpy as np
 import torch as th
-from gymnasium import spaces
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.utils import explained_variance
 
@@ -40,7 +39,6 @@ from agents.training.grad_balance import (
     edge_family_metrics,
     grad_balance_metrics,
 )
-from agents.training import belief_bank as _belief_bank
 from agents.training.instrumented_ppo.aux_terms import AuxTerms
 from agents.training.instrumented_ppo.capacity_terms import CapacityTerms
 from agents.training.instrumented_ppo.calibration import (   # the MODULE path, never the hub:
@@ -49,7 +47,6 @@ from agents.training.instrumented_ppo.calibration import (   # the MODULE path, 
     contested_mask as _calib_contested_mask,                  # cycle `ppo` sits at the end of
     sigmoid as _calib_sigmoid,                                # (pinned by the hub-contract test).
 )
-from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
 from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
@@ -63,6 +60,9 @@ from agents.training.instrumented_ppo.learner_gates import (   # K9(b) python pa
     clip_grad_norm_checked,
 )
 from agents.training.instrumented_ppo.metrics_export import TrainMetricsExport
+from agents.training.instrumented_ppo.micro_step import pack as _pack_micro
+from agents.training.instrumented_ppo.micro_step import unpack as _unpack_micro
+from agents.model.masked_categorical import MaskedPi as _MaskedPi
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
 from agents.training.instrumented_ppo.noise_scale_terms import NULL_TAGGER
 from agents.training.instrumented_ppo.phase_hook import current as _current_phase_hook
@@ -86,8 +86,15 @@ def train_step_source() -> str:
     ended up in, so they read this. The fold's own ORDERING pins stay on `train()` itself, where
     straight-line source order is the thing being checked.
     """
+    import agents.training.instrumented_ppo.micro_step as _ms
     return "\n".join(inspect.getsource(fn) for fn in (
         InstrumentedMaskablePPO.train,
+        _ms.micro_step,                       # K8 region R1: fold steps 1-3a (gen3_learner_micro_step_v1)
+        _ms.win_prob_terms,
+        _ms.value_loss_from_se,
+        _ms._flag_entropy,
+        TrainSetup._micro_static,
+        TrainSetup._micro_var,
         TrainSetup._align_opp_intent_labels,
         TrainSetup._resolve_fold_flags,
         TrainSetup._train_probe_setup,
@@ -131,16 +138,18 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         marked with `# +INSTRUMENTATION` comments.
 
         ------------------------------------------------------------------------------------
-        THE FOLD ORDER IS A CONTRACT, and it is STRAIGHT-LINE SOURCE ORDER
+        THE FOLD ORDER IS A CONTRACT, and it is STRAIGHT-LINE SOURCE ORDER — in TWO parts
         ------------------------------------------------------------------------------------
-        Every `loss = loss + <term>` below runs in the order it is written, unconditionally —
-        **no flag combination reorders them.** Each term is guarded by its own `if <x>_on:`,
-        and a term that is off contributes nothing rather than moving anyone else. That is why
-        this method is NOT split across modules even though it is ~1,250 lines: the ordering is
-        checkable by reading only while it is one straight line, and the numbered contract below
-        would otherwise have to be reassembled from six files.
+        Every `loss = loss + <term>` runs in the order it is written, unconditionally — **no flag
+        combination reorders them.** Each term is guarded by its own flag, and a term that is off
+        contributes nothing rather than moving anyone else. Since K8 (`gen3_learner_micro_step_v1`)
+        the sequence is TWO straight lines read in order: steps 1 to 3a (the PPO loss, the belief
+        bank, opponent intent, the win-prob BCE) are the body of `micro_step.micro_step` — ONE
+        function, compiled as the declared region R1 under --compile-trainer — and the steps after
+        3a are folded below, onto R1's loss, as the DECLARED EAGER TAIL. Each part is checkable by
+        reading; `instrumented_ppo_hub_contract_test` pins both orders.
 
-        The sequence, per minibatch:
+        The sequence, per minibatch (1 to 3a inside R1, `micro_step.micro_step`):
 
           1. `loss = pg_term + ent_coef * ent_loss_used + vf_term`   (the upstream PPO loss;
              `pg_term` is the UNSCALED `policy_loss` tensor at `policy_grad_coef == 1.0` — the default,
@@ -150,7 +159,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
              delta, and at `value_tail_weight == 0` it is `F.mse_loss` byte-for-byte)
           2. the BELIEF bank — species/moves aux, opponent-intent (+ the set-valued beta term),
              move belief, spread belief, nature/EV, HP-type, item belief, move-latent
-          3. the WIN-PROB BCE, then the CF-TWIN on-policy mirror
+          3. (3a) the WIN-PROB BCE — the last R1 term — then (3b, the tail's first) the dense aux
+             head and the CF-TWIN on-policy mirror
           4. the VALUE-DIST HL-Gauss CE
           5. the DISTILL family — the policy term (full KL, or the top-K/action-CE form with the
              optional advantage gate under `--distill-target action` — gen3_distill_target_gate_v1),
@@ -250,19 +260,20 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # Compute once: WHICH terms this call folds — and, for the counterfactual family, the one
         # per-rollout buffer poll. Every flag is read by exactly the guard of the term it names,
         # and the reasoning for each sits beside its computation in `train_setup._resolve_fold_flags`.
-        # Unpacked back into locals so the fold below reads exactly as it was written.
+        # Unpacked back into locals so the EAGER TAIL below reads as it was written; the R1 terms'
+        # flags (the belief rows, the fork mask, the policy-gradient coefficient) are read by
+        # `_micro_static` instead — the region's static flags.
         _f = self._resolve_fold_flags()
         belief_aux_on, move_belief_on = _f.belief_aux_on, _f.move_belief_on
-        move_latent_on, spread_belief_on = _f.move_latent_on, _f.spread_belief_on
-        hp_type_belief_on, item_belief_on = _f.hp_type_belief_on, _f.item_belief_on
+        move_latent_on = _f.move_latent_on
         critic_winprob, win_prob_on = _f.critic_winprob, _f.win_prob_on
         scaffolding_on, value_from_dist = _f.scaffolding_on, _f.value_from_dist
         value_dist_on, search_teacher_on = _f.value_dist_on, _f.search_teacher_on
         opd_on, distill_on = _f.opd_on, _f.distill_on
-        distill_rows_in_buffer, policy_grad_coef = _f.distill_rows_in_buffer, _f.policy_grad_coef
+        distill_rows_in_buffer = _f.distill_rows_in_buffer
         td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
         cf_evid_on, cf_twin_on, cf_shadow_on = _f.cf_evid_on, _f.cf_twin_on, _f.cf_shadow_on
-        dense_aux_on, fork_pg_mask_on = _f.dense_aux_on, _f.fork_pg_mask_on
+        dense_aux_on = _f.dense_aux_on
         q_winprob_on, q_onpolicy_on, cf_any_on = _f.q_winprob_on, _f.q_onpolicy_on, _f.cf_any_on
         # +WIN-PROB STRATA (gen3_winprob_strata_weight_v1) — the per-opponent-CLASS weights for the
         # win-prob BCE, computed ONCE here over the WHOLE rollout buffer and held constant for
@@ -377,6 +388,19 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # — no extra forward, no extra device sync. An early KL stop leaves fewer than n_epochs rows.
         epoch_approx_kl: list[float] = []
         epoch_clip_fraction: list[float] = []
+        # +R1 (gen3_learner_micro_step_v1): the region's static flags + per-update tensors, resolved
+        # ONCE, and the per-update lists its diagnostics are routed into (by name).
+        _micro_st = self._micro_static(_f, popart, strata_w, rollout_weight_on)
+        _micro_var = self._micro_var(_micro_st, strata_w)
+        _ppo_lists = {"pg_losses": pg_losses, "clip_fractions": clip_fractions,
+                      "value_losses": value_losses, "entropy_losses": entropy_losses,
+                      "vf_clip_fractions": vf_clip_fractions,
+                      "defent_flag_fracs": defent_flag_fracs, "defent_boost_eff": defent_boost_eff,
+                      "defent_ent_flagged": defent_ent_flagged,
+                      "defent_ent_unflagged": defent_ent_unflagged,
+                      "baitent_flag_fracs": baitent_flag_fracs, "baitent_boost_eff": baitent_boost_eff,
+                      "baitent_ent_flagged": baitent_ent_flagged,
+                      "baitent_ent_unflagged": baitent_ent_unflagged}
         if _ph is not None: _ph("setup")
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
@@ -392,16 +416,44 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # same data and a disagreement can only be the gradient. NULL elsewhere ⇒ the
                 # `_ntg.add(...)` calls threaded through the fold below are pure passthroughs.
                 _ntg = _ns_terms if (epoch == 0 and _ns_terms.micros < accum) else NULL_TAGGER
-                actions = rollout_data.actions
-                if isinstance(self.action_space, spaces.Discrete):
-                    # Convert discrete action from float to long
-                    actions = rollout_data.actions.long().flatten()
-
-                values, log_prob, entropy = self.policy.evaluate_actions(
-                    rollout_data.observations,
-                    actions,
-                    action_masks=rollout_data.action_masks,
-                )
+                # +R1 (gen3_learner_micro_step_v1, M5 Lane K8): `evaluate_actions` AND fold steps 1-3a —
+                # the upstream PPO loss, the belief bank's hidden_move site, the opponent-intent fold,
+                # the latent and revealed sites, the win-prob BCE — as ONE function
+                # (`micro_step.micro_step`), in exactly this source order inside it. Compiled as one
+                # `fullgraph=True` region under --compile-trainer (`self._micro_region`), eager
+                # otherwise; the steps after 3a below are the DECLARED EAGER TAIL, in contract order.
+                _mo = self._micro_region()(self.policy, popart, rollout_data.observations,
+                                         rollout_data.actions, rollout_data.action_masks,
+                                         rollout_data.old_log_prob, rollout_data.old_values,
+                                         rollout_data.advantages, rollout_data.returns,
+                                         _micro_var, _micro_st)
+                actions = (rollout_data.actions.long().flatten() if _micro_st.discrete
+                           else rollout_data.actions)
+                values, log_prob = _mo.values, _mo.log_prob
+                advantages = _mo.advantages
+                loss = _mo.loss
+                # The distill / anchor / ride-along readers' stash, built OUTSIDE the region.
+                if _mo.logp is not None:
+                    self.policy._last_pi_distribution = _MaskedPi(_mo.logp, _mo.masks_bool)
+                # THE ONE host read of this micro-batch's diagnostics (every metric + presence + the
+                # loss's finiteness + the approx-KL), routed into the per-update lists below.
+                _mvals, _mpres, _mfinite = _unpack_micro(*_pack_micro(_mo))
+                _approx_kl = _mvals.pop("approx_kl/")
+                for _mk, _mv in _mvals.items():
+                    _grp, _, _key = _mk.partition("/")
+                    if _grp == "belief":
+                        belief_metrics.setdefault(_key, []).append(_mv)
+                    elif _grp == "aux":
+                        aux_metrics.setdefault(_key, []).append(_mv)
+                    elif _grp == "win_prob":
+                        win_prob_metrics.setdefault(_key, []).append(_mv)
+                    else:
+                        _ppo_lists[_grp].append(_mv)
+                for _tn, _tt in _mo.terms.items():          # the noise-scale per-term tagger
+                    if _mpres.get(_tn, True):
+                        _ntg.add(_mo.term_groups[_tn], _tt)
+                _policy_grad_term, _ent_term = _mo.terms["policy"], _mo.terms["entropy"]
+                _vf_term = _mo.terms.get("value", 0.0)
 
                 # +CAPACITY: snapshot THIS forward's `value_pooled` before the TD-aux / CF folds
                 # replace the stash. Detached in the snapshot itself, so nothing downstream can
@@ -412,10 +464,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     if capacity is not None else None)
                 if _ph is not None: _ph("forward")
                 # +RIDE-ALONG (gen3_ridealong_heads_v1): the DETACHED heads' own step, on THIS
-                # forward's stashes, BEFORE PPO's loss is assembled. Every input is stop-grad and the
-                # heads have their own optimizer; their grads are back to None when it returns, so
-                # nothing below — the loss, the clip, the probes — can see them. A no-op (one
-                # attribute read) when the policy has no heads.
+                # forward's stashes. Every input is stop-grad and the heads have their own optimizer;
+                # their grads are back to None when it returns, so nothing below — the tail, the clip,
+                # the probes — can see them. A no-op (one attribute read) when the policy has no heads.
                 self._ridealong_update(rollout_data, values, actions, epoch, ridealong_acc)
                 if _ph is not None: _ph("ridealong")
 
@@ -426,403 +477,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     check_behaviour_first_micro(self, log_prob, rollout_data.old_log_prob,
                                                 actions, rollout_data.action_masks)
                     _bgate_pending = False
-
-                values = values.flatten()
-                # Normalize advantage
-                advantages = rollout_data.advantages
-                # K9(c): `len > 1` is stock SB3 PPO's guard (sb3_contrib's MaskablePPO lacks it): a
-                # ONE-row final micro-batch — possible on the python core whenever n_steps·n_envs ≡ 1
-                # mod the micro-batch (the Rust collector's target is a multiple of it) — has std() =
-                # NaN, which silently poisoned every parameter before K9(c) and would now be a FATAL.
-                if self.normalize_advantage and advantages.numel() > 1:
-                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-
-                # ratio between old and new policy, should be one at the first iteration
-                ratio = th.exp(log_prob - rollout_data.old_log_prob)
-
-                # clipped surrogate loss
-                policy_loss_1 = advantages * ratio
-                policy_loss_2 = advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
-                policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
-
-                # +FORK-MASK (gen3_fork_v1): drop the FORK STEP of every injected branch from the
-                # clipped policy term. A fork step's action is the ARM's choice, not the policy's —
-                # for the random branch it is an action the policy actively down-ranked — so a
-                # policy gradient through it would be training on a decision the agent did not
-                # make. The rule is UNIFORM across branches (the top-2 fork steps are masked too);
-                # `agents.training.fork_buffer`'s THE MASK RULE owns the reasoning, and the short
-                # version is that an exclusion depending on WHICH branch a row came from would
-                # re-weight the policy gradient by the branch mix.
-                #
-                # 🚨 RENORMALISED, never just zeroed. A masked `.mean()` over the full row count
-                # would shrink the policy term by the masked fraction — i.e. silently lower the
-                # effective policy learning rate by a number that moves with the fork rate. This
-                # divides by the KEPT rows, so the term's scale is what it would be with the fork
-                # steps simply absent. `fork_pg_m` is 1.0 on every COLLECTED row and on every
-                # post-fork branch row, so a rollout that injected nothing is arithmetically the
-                # `.mean()` above (and pays nothing: the key is not even declared).
-                if fork_pg_mask_on:
-                    _fk_m = rollout_data.observations.get(FORK_PG_MASK_KEY)
-                    if _fk_m is not None:
-                        _fk_m = _fk_m.reshape(-1)
-                        policy_loss = -((th.min(policy_loss_1, policy_loss_2) * _fk_m).sum()
-                                        / _fk_m.sum().clamp(min=1.0))
-
-                # Logging
-                pg_losses.append(policy_loss.item())
-                clip_fraction = th.mean((th.abs(ratio - 1) > clip_range).float()).item()
-                clip_fractions.append(clip_fraction)
-
-                if popart is not None:
-                    # +PopArt: value loss in NORMALIZED space (both target and prediction scaled by
-                    # the running mu/sigma) → O(1) gradient, no longer swamping the shared trunk.
-                    # Mutually exclusive with vf-clipping (enforced at startup).
-                    # +TAIL: per-sample SE in normalized space → _value_loss_from_se (w=0 ⇒ MSE).
-                    value_loss = self._value_loss_from_se(
-                        (popart.normalize(rollout_data.returns) - popart.normalize(values)) ** 2
-                    )
-                elif critic_winprob or self.clip_range_vf is None:
-                    # No clipping. Under `winprob` the scalar MSE is a DIAGNOSTIC (its term is
-                    # dropped below), so clipping would only make `train/value_loss` read as a
-                    # clipped quantity in probability units. `critic_winprob` is False on the
-                    # `shaped` path, so this reads `self.clip_range_vf is None` there.
-                    value_loss = self._value_loss_from_se((rollout_data.returns - values) ** 2)
-                else:
-                    # Clip the different between old and new value
-                    # NOTE: this depends on the reward scaling
-                    values_pred = rollout_data.old_values + th.clamp(
-                        values - rollout_data.old_values, -clip_range_vf, clip_range_vf
-                    )
-                    # +INSTRUMENTATION: fraction of value updates that hit the clip bound
-                    vf_clip_fraction = th.mean(
-                        (th.abs(values - rollout_data.old_values) > clip_range_vf).float()
-                    ).item()
-                    vf_clip_fractions.append(vf_clip_fraction)
-                    # +TAIL: per-sample SE on the clipped prediction → _value_loss_from_se.
-                    value_loss = self._value_loss_from_se((rollout_data.returns - values_pred) ** 2)
-                value_losses.append(value_loss.item())
-
-                # Entropy loss favors exploration. gen3_defensive_entropy_v1: when defensive_entropy_boost > 1,
-                # multiply the per-decision entropy bonus by the (annealed) boost on decisions the env flagged
-                # `defensive_opportunity` — keeping the policy exploratory on recovery/cure choices instead of
-                # collapsing to attacking, WITHOUT touching the reward. OFF (boost == 1) byte-identical.
-                # gen3_bait_entropy_v1 adds the SECOND such flag (`bait_opportunity`) on the same mechanism.
-                # The two weights MULTIPLY: each is 1 off its own flag, so one boost alone is byte-identical
-                # to running it alone, and a decision flagged by both gets the product (they are near-disjoint
-                # in practice — "a heal is legal" vs "our attack is dead into their bench").
-                ent_per = -log_prob if entropy is None else entropy          # [B] per-decision entropy (nats)
-                entropy_loss = -th.mean(ent_per)                             # standard (unweighted) metric
-                entropy_losses.append(entropy_loss.item())
-                ent_weight = None                                            # None ⇒ nothing on ⇒ unweighted
-                do_flag = rollout_data.observations.get("defensive_opportunity")
-                if self.defensive_entropy_boost != 1.0 and do_flag is not None:
-                    b_eff = self._defensive_entropy_boost_eff()
-                    flag = do_flag.to(ent_per.device).reshape(-1).float()    # [B] 1.0 on defensive decisions
-                    ent_weight = 1.0 + (b_eff - 1.0) * flag
-                    with th.no_grad():
-                        fm = flag > 0.5
-                        defent_flag_fracs.append(float(fm.float().mean().item()))
-                        defent_boost_eff.append(b_eff)
-                        if bool(fm.any()):    defent_ent_flagged.append(float(ent_per[fm].mean().item()))
-                        if bool((~fm).any()): defent_ent_unflagged.append(float(ent_per[~fm].mean().item()))
-                bait_flag = rollout_data.observations.get("bait_opportunity")
-                if self.bait_entropy_boost != 1.0 and bait_flag is not None:
-                    bb_eff = self._bait_entropy_boost_eff()
-                    bflag = bait_flag.to(ent_per.device).reshape(-1).float()  # [B] 1.0 on bait-opportunity rows
-                    bw = 1.0 + (bb_eff - 1.0) * bflag
-                    ent_weight = bw if ent_weight is None else ent_weight * bw
-                    with th.no_grad():
-                        bm = bflag > 0.5
-                        baitent_flag_fracs.append(float(bm.float().mean().item()))
-                        baitent_boost_eff.append(bb_eff)
-                        if bool(bm.any()):    baitent_ent_flagged.append(float(ent_per[bm].mean().item()))
-                        if bool((~bm).any()): baitent_ent_unflagged.append(float(ent_per[~bm].mean().item()))
-                ent_loss_used = entropy_loss if ent_weight is None else -th.mean(ent_weight * ent_per)
-
-                # Phase B (value_from_dist): the scalar MSE value term is DROPPED (value_net frozen —
-                # the CE below at vf_coef is the critic). value_loss is still logged as the
-                # E[Z]-mean-vs-return diagnostic. Off → the standard vf_coef·MSE term.
-                # gen3_winprob_critic_mode_v1 adds the SECOND such case, for the same reason: the
-                # critic is the win-prob head and `value_net` is in no loss graph, so the scalar
-                # term would train a readout nothing reads. Its BCE joins the SAME "value" group.
-                _vf_term = 0.0 if (value_from_dist or critic_winprob) else self.vf_coef * value_loss
-                # +PG-COEF: at 1.0 (the default) `_policy_grad_term` IS the `policy_loss` tensor, so the
-                # line below is literally the old `loss = policy_loss + …` expression —
-                # byte-identical. Any other value scales ONLY the policy-gradient term.
-                _policy_grad_term = policy_loss if policy_grad_coef == 1.0 else policy_grad_coef * policy_loss
-                # +NOISE-SCALE PER-TERM: `_ent_term` names the sub-expression that was already
-                # there — `a + b * c + d` and `a + (b*c) + d` are the same operations in the same
-                # order — so the fold is byte-identical while the three RL groups become taggable.
-                _ent_term = self.ent_coef * ent_loss_used
-                loss = (_ntg.add("policy", _policy_grad_term) + _ntg.add("entropy", _ent_term)
-                        + _ntg.add("value", _vf_term))
-
-                # +BELIEF: hidden-opponent belief aux loss. evaluate_actions(rollout_data.observations,
-                # …) ran the extractor forward just above, stashing per-slot logits for THIS minibatch;
-                # the privileged labels ride the same obs dict (training-only keys). Masked to the
-                # believed slots, folded in at opp_belief_aux_coef. OFF → skipped (loss byte-identical).
-                # +BELIEF BANK site "hidden_move": the hidden-team Hungarian aux
-                # (masked to the BELIEVED slots, folded at opp_belief_aux_coef — metrics
-                # UNPREFIXED with the historic `aux_loss` key) and the move-belief BCE
-                # (revealed direct + unrevealed order-invariant, folded at move_belief_coef,
-                # `move_` prefix). Same two blocks, one loop — rows in belief_bank.ROWS.
-                belief_aux_term = None  # the WEIGHTED aux contribution, for the grad-balance probe
-                move_belief_term = None
-                for _brow, _bterm, _bm in _belief_bank.compute(
-                        self.policy.features_extractor, rollout_data.observations,
-                        coefs={"opp_belief_aux_coef": self.opp_belief_aux_coef,
-                               "move_belief_coef": self.move_belief_coef},
-                        gates={"hidden_team": belief_aux_on, "move_belief": move_belief_on},
-                        site="hidden_move",
-                        params={"moves_weight": self.opp_belief_moves_weight}):
-                    loss = loss + _ntg.add("aux", _bterm)
-                    if _brow.name == "hidden_team":
-                        belief_aux_term = _bterm
-                    elif _brow.name == "move_belief":
-                        move_belief_term = _bterm
-                    for _bk, _bv in _bm.items():
-                        belief_metrics.setdefault(_brow.prefix + _bk, []).append(float(_bv))
-
-                # +OPPONENT INTENT (gen3_opp_intent_v1): supervise ALPHA/BETA against what the
-                # opponent actually did. The label lives in the obs, one row AHEAD of the prediction
-                # (the env can only see their turn-t action while building the obs for t+1), so the
-                # buffer's label block was shifted back by one — and pairs spanning an episode
-                # boundary DROPPED — before `get()` shuffled it. See `align_labels_to_predictions`.
-                # Initialised HERE, not beside the other `*_term` locals ~370 lines below:
-                # the intent block runs FIRST in this minibatch, so a later `= None` would wipe it
-                # and the gradient probe would silently see no intent term.
-                opp_intent_term = None
-                if self.opp_intent_coef > 0.0:
-                    # gen3_belief_label_only_v1: alpha's LIVE logits — `last_alpha_logits` is the
-                    # stop-grad publication under label_only (it feeds the critic under
-                    # --intent-value-reduce), so the intent loss must read the supervision view.
-                    _al = self.policy.features_extractor.belief_supervision("alpha_logits")
-                    # beta is published since gen3_intent_conditional_v1 (the boom cell reads
-                    # it forward-side), so its CE must read the supervision view too — the
-                    # attribute is the stop-grad publication under label_only.
-                    _bl = self.policy.features_extractor.belief_supervision("beta_logits")
-                    _sn = self.policy.features_extractor.last_alpha_seat_nums
-                    _obs = rollout_data.observations
-                    if _al is not None and _sn is not None and "opp_action_kind" in _obs:
-                        from agents.model.opp_intent import (INTENT_IGNORE, OPP_CLASS_NAMES,
-                                                             intent_losses,
-                                                             match_seats_to_move_num,
-                                                             switch_coverage_metrics)
-                        _kind = _obs["opp_action_kind"].long().flatten()
-                        _num = _obs["opp_action_num"].long().flatten()
-                        _atgt = match_seats_to_move_num(_sn, _num, _kind, _sn.shape[-1])
-                        _btgt = _obs["opp_switch_slot"].long().flatten()
-                        # beta learns ONLY from genuine voluntary switches; every other row is masked
-                        # at the label builder, and a switch we cannot address is masked here.
-                        _btgt = th.where(_kind == 1, _btgt,
-                                         th.full_like(_btgt, INTENT_IGNORE))
-                        # CONTENT-ADDRESSED believed-slot resolution. A switch-in that was still
-                        # HIDDEN at the decision has no valid slot INDEX: the believed slots are
-                        # anonymous DETR queries the species loss re-matches by Hungarian
-                        # assignment, so the label's Pokedex-sorted canonicalisation names a slot
-                        # whose learned content is a different mon. Ask the model's OWN species
-                        # posterior instead — "which believed slot do you think holds this mon" —
-                        # so beta and the species head refer to the same object. Masked on belief
-                        # miss, exactly as alpha masks on seat miss.
-                        _sp = _obs.get("opp_switch_species")
-                        _bel = getattr(self.policy.features_extractor,
-                                       "last_opp_believed_mask", None)
-                        _blog = getattr(self.policy.features_extractor,
-                                        "last_belief_logits", None)
-                        if _sp is not None and _bel is not None and _blog is not None \
-                                and "species" in _blog:
-                            from agents.model.opp_intent import (resolve_believed_slot_by_content,
-                                                                set_valued_switch_loss)
-                            _content = resolve_believed_slot_by_content(
-                                _blog["species"].detach(), _bel.float(),
-                                _sp.long().flatten())
-                            # Prefer the EXACT revealed slot; fall back to the content-addressed
-                            # believed slot only where the label had none.
-                            _need = (_kind == 1) & (_btgt < 0)
-                            _btgt = th.where(_need, _content, _btgt)
-                            oi_extra_believed = float(
-                                ((_need) & (_content >= 0)).float().sum())
-                            # SEPARATE the two failure modes. `wanted` counts rows that ASKED for
-                            # content-addressing (a switch to a mon with no revealed slot);
-                            # `believed_targets` counts rows it RESOLVED. wanted=0 => the label
-                            # never emits SWITCH_SLOT_NONE (plumbing); wanted>0 with resolved=0 =>
-                            # the belief is too cold to clear the floor (expected early, and the
-                            # reason a cold smoke cannot validate this path).
-                            oi_wanted_content = float(_need.float().sum())
-                        else:
-                            oi_extra_believed = 0.0
-                            oi_wanted_content = 0.0
-                            # Defined on BOTH paths: the set-valued term below reads them, and a
-                            # name that exists on only one branch is a NameError waiting for the
-                            # first run whose belief head is off.
-                            _content = None
-                            _need = None
-                        # beta v1 supervises only switch-ins the head could actually POINT AT.
-                        # The label's slot is resolved on the board at t+1; the logits come from the
-                        # board at t. A mon UNREVEALED at t has no addressable slot there, so its
-                        # target lands on a -inf logit => +inf loss (measured: beta_loss=inf).
-                        # Dropping those rows IS design_opponent_intent.md §4.3's stated v1 scope
-                        # (revealed slots only; ~46% of switches masked, rate logged). B1 is the
-                        # named upgrade that turns the mask into a posterior soft-target.
-                        if _bl is not None:
-                            _safe = _btgt.clamp(min=0, max=_bl.shape[-1] - 1)
-                            # K9(c): ONLY the deliberate -inf (a slot the head cannot point at) is
-                            # unreachable. `isfinite` also dropped a NaN logit's row — a NaN absorbed
-                            # before the total loss; `isneginf` keeps it supervised so the per-micro
-                            # loss check sees it. Identical on every finite / -inf logit.
-                            _reach = ~th.isneginf(_bl.detach().gather(1, _safe[:, None]).squeeze(1))
-                            _btgt = th.where(_reach, _btgt, th.full_like(_btgt, INTENT_IGNORE))
-                        # SET-VALUED partial credit for a switch to a mon we did not believe.
-                        # These rows are the ones `_content` could not name, so today they are
-                        # dropped entirely — yet they carry a true fact (`they brought someone
-                        # UNSEEN`) that beta should be graded on. Off (coef 0.0) leaves the loss
-                        # byte-identical.
-                        _sv, oi_m_extra_rows = None, 0.0
-                        if self.beta_setvalued_coef > 0.0 and _bl is not None \
-                                and _bel is not None and _need is not None \
-                                and _content is not None:
-                            _miss = _need & (_content < 0)
-                            _sv = set_valued_switch_loss(_bl, _bel.float(), _miss)
-                            oi_m_extra_rows = float(_miss.float().sum())
-                        _ocls = _obs.get("opp_class")
-                        # gen3_intent_label_bot_weight_v1: `--intent-label-bot-weight` discounts the
-                        # α/β labels produced against a heuristic BOT (bots play strategies that are
-                        # not the meta, and the self-play ramp makes early supervision bot-dominated).
-                        # It lands HERE and NOWHERE ELSE. The BeliefBank rows below — species, move,
-                        # item, spread, nature/EV, HP-type — are TEAM truth: what their team IS holds
-                        # regardless of who pilots it, so weighting those by opponent class would
-                        # discard valid labels. Only INTENT is behaviour. Default 1.0 takes the
-                        # original unweighted `cross_entropy` call, bit-identical.
-                        oi_loss, oi_m = intent_losses(
-                            _al, _atgt, _bl, _btgt,
-                            opp_class=(_ocls.long() if _ocls is not None else None),
-                            bot_label_weight=float(
-                                getattr(self, "intent_label_bot_weight", 1.0)))
-                        # THE number that says whether content-addressing recovered anything.
-                        # Without it, a no-op looks identical to a working feature (the same
-                        # blindness that let a zero-supervision alpha pass a green smoke).
-                        oi_m["opp_intent/beta_believed_targets"] = oi_extra_believed
-                        oi_m["opp_intent/beta_wanted_content"] = oi_wanted_content
-                        # SPLIT `beta_mask_rate`, which conflates two failures with opposite
-                        # meanings. Its denominator is every row, so it is dominated by "this
-                        # decision was not a switch at all" — expected, uninteresting, and roughly
-                        # constant. Buried inside it is the one a reader actually wants: of the
-                        # switches that NEEDED the belief, how often was the belief too cold to
-                        # name the mon? That is the BELIEF's failure, not beta's, and it must stay
-                        # attributable to the belief. (Measured on gen-9: 356 resolved of 390
-                        # wanted => 0.087. Recoverable from the two counters above, but nobody
-                        # computes a ratio off a dashboard, so a rate nobody reports is a rate
-                        # nobody reads.) EMITTED BY `_switch_coverage` below, which owns the
-                        # want/got counters for the pooled read and every opponent slice alike.
-                        # THE SWITCH-COVERAGE MATRIX. Every voluntary switch falls in exactly one of
-                        # three buckets, and only the third is a failure — but with just a mask rate
-                        # and a miss rate a reader cannot tell their SIZES, and "beta is masked 73%
-                        # of the time" reads as a crisis when ~62 of those points are simply "they
-                        # attacked". These are fractions of VOLUNTARY SWITCHES, so they sum to 1.
-                        #
-                        #   revealed      the mon was already on the board -> exact slot, no belief
-                        #                 needed. The easiest label, and previously invisible.
-                        #   hidden_found  still hidden, and the species posterior placed it -> the
-                        #                 content-addressed target. This is what that path BUYS.
-                        #   hidden_missed the belief could not name it -> masked. The BELIEF's
-                        #                 failure, and the only bucket that is lost supervision.
-                        oi_m.update(switch_coverage_metrics(_kind, _need, _content))
-                        if _ocls is not None:
-                            _ocf = _ocls.long().reshape(-1)
-                            for _code, _name in OPP_CLASS_NAMES.items():
-                                _rows = _ocf == _code
-                                if int(_rows.sum()) < 2:
-                                    continue
-                                oi_m.update(switch_coverage_metrics(
-                                    _kind, _need, _content, _rows, f"_{_name}"))
-                        if _sv is not None:
-                            loss = loss + _ntg.add(
-                                "aux", self.opp_intent_coef * self.beta_setvalued_coef * _sv)
-                            oi_m["opp_intent/beta_setvalued_loss"] = float(_sv.detach())
-                            oi_m["opp_intent/beta_setvalued_rows"] = oi_m_extra_rows
-                        opp_intent_term = self.opp_intent_coef * oi_loss
-                        loss = loss + _ntg.add("aux", opp_intent_term)
-                        for _ok, _ov in oi_m.items():
-                            aux_metrics.setdefault(_ok, []).append(_ov)
-
-                # +MOVE-LATENT (gen3_unified_move_system_v1): grade the move belief in latent space so
-                # near-moves (Rock Slide ≈ HP Rock) grade as near — the soft complement to the per-ID BCE.
-                # Reads the extractor's context-free move-latent table (stashed this minibatch) + the same
-                # known_moves labels. Its gradient flows into the move-belief head AND the MoveLatentEncoder
-                # (the table) → it joins the aux pull on the trunk. OFF → skipped (byte-identical).
-                # +BELIEF BANK site "latent": the move-latent grading (soft complement to the
-                # per-ID BCE — near-moves grade as near; `movelatent_` prefix).
-                move_latent_term = None
-                for _brow, _bterm, _bm in _belief_bank.compute(
-                        self.policy.features_extractor, rollout_data.observations,
-                        coefs={"move_belief_latent_coef": self.move_belief_latent_coef},
-                        gates={"move_latent": move_latent_on}, site="latent"):
-                    loss = loss + _ntg.add("aux", _bterm)
-                    move_latent_term = _bterm
-                    for _bk, _bv in _bm.items():
-                        belief_metrics.setdefault(_brow.prefix + _bk, []).append(float(_bv))
-
-                # +BELIEF BANK (design_unified_belief.md §4, the code-shape fold): the three
-                # revealed-slot supervised heads — SPREAD (gen3_unified_spread_belief_v1),
-                # NATURE/EV (gen3_nature_ev_belief_v1, folded at the SAME spread coef — one knob
-                # supervises the whole spread belief), HP-TYPE (gen3_opp_hp_type_belief_v1) —
-                # folded by ONE loop over `belief_bank.ROWS`. Registry order == the old inline
-                # block order, so `loss = loss + term` accumulates bit-identically; each head's
-                # per-row docstring (stash keys, labels, leak-safety) lives in belief_bank.
-                # A sixth supervised belief is now a ROW there, not another inline vertical.
-                spread_belief_term = None
-                nature_ev_term = None
-                hp_type_term = None
-                item_belief_term = None
-                for _brow, _bterm, _bm in _belief_bank.compute(
-                        self.policy.features_extractor, rollout_data.observations,
-                        coefs={"spread_belief_coef": self.spread_belief_coef,
-                               "hp_type_belief_coef": self.hp_type_belief_coef,
-                               "item_belief_coef": self.item_belief_coef},
-                        gates={"spread": spread_belief_on, "hp_type": hp_type_belief_on,
-                               "item": item_belief_on},
-                        site="revealed"):
-                    loss = loss + _ntg.add("aux", _bterm)
-                    if _brow.name == "spread":
-                        spread_belief_term = _bterm
-                    elif _brow.name == "nature_ev":
-                        nature_ev_term = _bterm
-                    elif _brow.name == "hp_type":
-                        hp_type_term = _bterm
-                    elif _brow.name == "item":
-                        item_belief_term = _bterm
-                    for _bk, _bv in _bm.items():
-                        belief_metrics.setdefault(_brow.prefix + _bk, []).append(float(_bv))
-
-                # +WIN-PROB: auxiliary win-probability BCE. evaluate_actions ran the extractor forward
-                # above, stashing last_win_prob_logits for THIS minibatch; the MC outcome label + its
-                # known-mask ride the same obs dict (the WinProbLabelCallback overwrote the placeholders
-                # post-collection). Folded at win_prob_coef. Under read_only the head's input was
-                # stop-grad'd in the extractor, so this term trains only the head's own params (no trunk
-                # gradient); under shaping it also pulls the trunk. OFF → skipped (loss byte-identical).
-                win_prob_term = None
-                if win_prob_on:
-                    wp_out = self._win_prob_loss(
-                        self.policy.features_extractor.last_win_prob_logits,
-                        rollout_data.observations.get("win_target"),
-                        rollout_data.observations.get("win_mask"),
-                        rollout_data.observations.get("win_margin"),
-                        strata_w,
-                        rollout_data.observations.get("opp_class") if strata_w is not None else None,
-                        rollout_data.observations.get("win_row_w") if rollout_weight_on else None,
-                    )
-                    if wp_out is not None:
-                        wp_loss, wp_m = wp_out
-                        if critic_winprob:
-                            # THE VALUE LOSS. One critic, one coefficient: `vf_coef`, never
-                            # `win_prob_coef` (the `_ce_w` conditional the design retires).
-                            win_prob_term = self.vf_coef * wp_loss
-                            loss = loss + _ntg.add("value", win_prob_term)
-                        else:
-                            win_prob_term = self.win_prob_coef * wp_loss
-                            loss = loss + _ntg.add("aux", win_prob_term)
-                        for _wk, _wv in wp_m.items():
-                            win_prob_metrics.setdefault(_wk, []).append(float(_wv))
 
                 # +DENSE-AUX (gen3_dense_aux_v1, v117): the DENSE AUXILIARY loss — per-slot
                 # survival, per-slot final HP and turns-left, all END-OF-BATTLE facts back-filled
@@ -1263,14 +917,16 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # the terms set this minibatch are included (a belief term is None on a zero-believed
                 # minibatch; win_prob/value_dist None when their head is off).
                 aux_probe_terms: dict[str, th.Tensor] = {}
-                if belief_aux_term is not None:    aux_probe_terms["species_belief"] = belief_aux_term
-                if move_belief_term is not None:   aux_probe_terms["move_belief"] = move_belief_term
-                if move_latent_term is not None:   aux_probe_terms["move_latent"] = move_latent_term
-                if spread_belief_term is not None: aux_probe_terms["spread_belief"] = spread_belief_term
-                if nature_ev_term is not None:     aux_probe_terms["nature_ev"] = nature_ev_term
-                if hp_type_term is not None:       aux_probe_terms["hp_type"] = hp_type_term
-                if item_belief_term is not None:   aux_probe_terms["item_belief"] = item_belief_term
-                if win_prob_term is not None:      aux_probe_terms["win_prob"] = win_prob_term
+                # R1's terms (gen3_learner_micro_step_v1), in the inline fold's registration order;
+                # a term is registered exactly when the inline fold had one (`present`).
+                for _pn in ("species_belief", "move_belief", "move_latent", "spread_belief",
+                            "nature_ev", "hp_type", "item_belief", "win_prob"):
+                    if _pn in _mo.terms and _mpres.get(_pn, False):
+                        aux_probe_terms[_pn] = _mo.terms[_pn]
+                win_prob_term = aux_probe_terms.get("win_prob")
+                opp_intent_term = (_mo.terms["opp_intent"]
+                                   if "opp_intent" in _mo.terms and _mpres.get("opp_intent", False)
+                                   else None)
                 # gen3_dense_aux_v1: `grad/dense_aux_share` is the VERIFICATION that the dense
                 # targets actually pull the shared trunk — the one number that separates "the arm
                 # ran" from "the arm did what it was built to do". It is a live (un-detached)
@@ -1348,9 +1004,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # +K9(c) FAIL-CLOSED: the assembled loss must be finite before anything reads its graph
                 # (the grad-balance / noise probes below, the backward). A NaN/Inf is a typed FATAL
                 # naming the term(s), never a skipped step (`learner_gates.check_loss_finite`).
-                check_loss_finite(loss, {"policy": _policy_grad_term, "entropy": _ent_term,
-                                         "value": _vf_term, **aux_probe_terms},
-                                  epoch=epoch, micro=len(pg_losses) - 1)
+                # R1's finiteness rode the micro-batch's one host read; the full check (its own read)
+                # runs only when the eager tail folded something onto the region's loss, or to NAME
+                # the non-finite term(s) on a failure.
+                if loss is not _mo.loss or not _mfinite:
+                    check_loss_finite(loss, {"policy": _policy_grad_term, "entropy": _ent_term,
+                                             "value": _vf_term, **aux_probe_terms},
+                                      epoch=epoch, micro=len(pg_losses) - 1)
                 if _ph is not None: _ph("loss")
 
                 # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
@@ -1378,12 +1038,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     grad_balance = grad_balance_metrics(
                         # +PG-COEF: the probe measures the terms AS FOLDED — `_policy_grad_term`, not the
                         # raw `policy_loss` (at the 1.0 default they are the same tensor).
-                        _policy_grad_term + self.ent_coef * entropy_loss,
+                        _policy_grad_term + self.ent_coef * _mo.entropy_loss,
                         # Phase B: the REAL critic term is the CE (value_dist_term); the scalar
                         # vf_coef·value_loss is dropped from the loss, so measure the CE instead.
                         (win_prob_term if (critic_winprob and win_prob_term is not None)
                          else value_dist_term if (value_from_dist and value_dist_term is not None)
-                         else self.vf_coef * value_loss),
+                         else self.vf_coef * _mo.value_loss),
                         shared_trunk,
                         # Each ACTIVE scaffold broken out on the trunk: species/move/move-latent
                         # belief + win-prob (≈0 under read_only) + value-dist. Empty → RL-heads-only.
@@ -1405,13 +1065,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
                 # and discussion in PR #419: https://github.com/DLR-RM/stable-baselines3/pull/419
                 # and Schulman blog: http://joschu.net/blog/kl-approx.html
-                with th.no_grad():
-                    log_ratio = log_prob - rollout_data.old_log_prob
-                    approx_kl_div = th.mean((th.exp(log_ratio) - 1) - log_ratio).cpu().numpy()
-                    approx_kl_divs.append(approx_kl_div)
+                # (computed inside R1; read with the micro-batch's one host read — a float32 scalar,
+                # as sb3's `.cpu().numpy()` produced, so `np.mean` folds it in float32 exactly as before)
+                approx_kl_div = np.float32(_approx_kl)
+                approx_kl_divs.append(approx_kl_div)
                 # +K9(c): a NaN/Inf KL can ride a FINITE loss (an overflowed ratio on a positive-
                 # advantage row takes the clipped branch) and would pin the KL->LR controller's EMA
-                # forever; the host read above is sb3's own, so the check is free.
+                # forever; the host read above is the micro-batch's own, so the check is free.
                 check_kl_finite(float(approx_kl_div), epoch=epoch)
 
                 if self.target_kl is not None and approx_kl_div > 1.5 * self.target_kl:

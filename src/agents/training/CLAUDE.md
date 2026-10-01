@@ -117,14 +117,21 @@ monkeypatch follows the SYMBOL) are in
 [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md). **The contract below stays
 here, because it is the thing a fold edit must not get wrong.**
 
-**THE FOLD SEQUENCE is deliberately NOT split**, and the reason is the contract below. `train()` is
-~1,220 lines in one module — of which the epoch loop is ~1,020 — because the ORDER the terms are
-folded in is straight-line source order, and that is only checkable by reading while it stays one
-straight line. What DID move out is everything AROUND the sequence: the pre-loop setup
-(`train_setup`) and the metrics export (`metrics_export`), neither of which folds a term, plus the
-per-rollout probes (`rollout_probes`), which `train()` does not call at all. `ppo.py` is **1,573
-lines** — its floor with the loop intact is ~1,200, so the file-size ratchet's 1,000-line TARGET is
-unreachable here without splitting the sequence, which is the thing that must not happen.
+**THE FOLD SEQUENCE is TWO straight lines** (K8, `gen3_learner_micro_step_v1`): steps 1 to 3a below
+are the body of ONE function, `instrumented_ppo/micro_step.micro_step` — the compile REGION R1 under
+`--compile-trainer` (`fullgraph=True`), eager otherwise — and `train()` folds the steps after 3a onto
+R1's loss as the DECLARED EAGER TAIL, in order. Each part is straight-line source and
+`instrumented_ppo_hub_contract_test.py` pins both orders. 🚨 **R1 is a static-shape program**: no
+host read (`.item()`, `float(t)`, `bool(t)`), no boolean-mask indexing / `nonzero` / `bincount`, no
+Python branch on a tensor value, no numpy — a diagnostic is a `(value, weight)` pair of 0-d tensors
+(weight 1.0 exactly where the old fold appended to its list), and `train()` reads ALL of a micro-batch's
+diagnostics in ONE host read (`micro_step.pack`). The belief losses' static twins are
+`belief_bank_static.py`; the opponent-intent block's is `instrumented_ppo/intent_fold.py` — the legacy
+`belief_bank` / `opp_intent` functions stay as the REFERENCE they are pinned equal to (float64 to
+1e-12). A new term on the production surface belongs in R1, written to these rules; anything else
+joins the tail in contract order. What moved out of `train()` before K8 is everything AROUND the
+sequence: the pre-loop setup (`train_setup`, incl. R1's static flags `_micro_static`), the metrics
+export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
 
 **K9 — the learner's GIGO gates** ([`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md)).
 🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and
@@ -148,7 +155,7 @@ fails the gate before it can fail a run.
 hook changes no parameter. The one consumer is `learner_benchmark.py` (where an update's wall time
 goes — `designs/ops/testing.md` → Benchmarks).
 
-Per minibatch:
+Per minibatch (1 to 3a inside R1):
 
 1. the upstream PPO loss (`policy_grad_coef·policy_loss + ent_coef·entropy + vf_term` — `--policy-grad-coef`
    scales ONLY the clipped surrogate, never entropy/value/aux; at the 1.0 default the UNSCALED
@@ -157,7 +164,8 @@ Per minibatch:
    class: recorded, `_resolve`-inherited on a flagless resume, never gated)
 2. the belief bank — species/moves aux, opponent intent (+ set-valued β), move / spread /
    nature-EV / HP-type / item belief, move-latent
-3. the win-prob BCE, then the CF-twin on-policy mirror
+3. (3a) the win-prob BCE — the last R1 term; then (3b, the tail's first) the dense aux head and the
+   CF-twin on-policy mirror
 4. the value-dist HL-Gauss CE
 5. the distill family — the policy term (full KL, or the top-K/action-CE form with the optional
    advantage gate under `--distill-target action` — gen3_distill_target_gate_v1), value MSE, the

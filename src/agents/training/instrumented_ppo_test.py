@@ -1959,8 +1959,9 @@ def test_policy_grad_coef_one_short_circuits_to_the_unscaled_policy_loss():
     graph, identical backward."""
     import inspect
 
-    src = inspect.getsource(InstrumentedMaskablePPO.train)
-    assert "_policy_grad_term = policy_loss if policy_grad_coef == 1.0 else policy_grad_coef * policy_loss" in src, (
+    from agents.training.instrumented_ppo.micro_step import micro_step  # K8: fold steps 1-3a (R1)
+    src = inspect.getsource(micro_step)
+    assert "pg_term = policy_loss if st.policy_grad_coef == 1.0 else st.policy_grad_coef * policy_loss" in src, (
         "the 1.0 short-circuit is gone — --policy-grad-coef's default is no longer structurally "
         "byte-identical to upstream")
 

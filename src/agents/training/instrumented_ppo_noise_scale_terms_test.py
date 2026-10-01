@@ -245,11 +245,19 @@ def test_env_var_wins_over_the_class_default(monkeypatch):
 
 
 def test_the_group_names_are_the_ones_the_fold_tags():
-    """The tags in `ppo.train()` and this tuple must agree, or a group is silently never reported."""
+    """The tags the fold uses and this tuple must agree, or a group is silently never reported. Since
+    K8 the fold is two parts: `train()`'s eager tail tags with `_ntg.add("<group>", ...)`, region R1
+    (`micro_step`) assigns `groups[...] = "<group>"` (and `wterm, grp = ..., "<group>"`), which
+    `train()` hands to the tagger."""
+    from agents.training.instrumented_ppo import micro_step as _ms
     from agents.training.instrumented_ppo import ppo as _ppo_mod
     import inspect
     src = inspect.getsource(_ppo_mod.InstrumentedMaskablePPO.train)
+    r1 = inspect.getsource(_ms.micro_step)
     tagged = set(re.findall(r'_ntg\.add\(\s*"([a-z_]+)"', src))
+    tagged |= set(re.findall(r'groups\["[a-z_]+"\]\s*=\s*[^\n]*"([a-z_]+)"', r1))
+    tagged |= set(re.findall(r'grp\s*=[^\n]*"([a-z_]+)"', r1))
+    tagged |= set(re.findall(r'\[t\.row\.probe\][^\n]*= t\.term, "([a-z_]+)"', r1))
     assert tagged == set(NOISE_TERM_GROUPS), (
         f"train() tags {sorted(tagged)} but NOISE_TERM_GROUPS is {sorted(NOISE_TERM_GROUPS)} — a "
         f"group tagged but not listed is never measured; one listed but not tagged never appears.")

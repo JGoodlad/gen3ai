@@ -122,24 +122,27 @@ def test_the_win_prob_term_is_tagged_value_under_the_winprob_critic():
     zero-weighted term. The promoted BCE must be tagged "value"."""
     src = _train_source()
     assert 'if critic_winprob:' in src
-    assert '_ntg.add("value", win_prob_term)' in src, (
+    # (K8: the fold's steps 1-3a are region R1, `micro_step`, which tags each term with its group;
+    # `train()` hands the tag to the noise-scale tagger unchanged.)
+    assert 'wterm, grp = st.vf_coef * wl, "value"' in src, (
         "the promoted BCE must join the `value` noise-scale group — an `aux` tag here reproduces "
         "the defect the design's §1.4 records")
-    assert '_ntg.add("aux", win_prob_term)' in src, "the shaped path must keep its `aux` tag"
+    assert 'wterm, grp = st.win_prob_coef * wl, "aux"' in src, "the shaped path must keep its `aux` tag"
+    assert "_ntg.add(_mo.term_groups[_tn], _tt)" in src
 
 
 def test_the_promoted_bce_is_weighted_by_vf_coef_not_win_prob_coef():
     """One critic, one coefficient. Two on one loss is the ambiguity `_ce_w` existed to resolve."""
     src = _train_source()
-    assert 'win_prob_term = self.vf_coef * wp_loss' in src
-    assert 'win_prob_term = self.win_prob_coef * wp_loss' in src, "the aux path keeps its own coef"
+    assert 'wterm, grp = st.vf_coef * wl, "value"' in src
+    assert 'wterm, grp = st.win_prob_coef * wl, "aux"' in src, "the aux path keeps its own coef"
 
 
 def test_the_scalar_value_term_is_dropped_under_the_winprob_critic():
     """`value_net` is in no loss graph here, so a `vf_coef * value_loss` term would train a readout
     nothing reads — the Phase-B treatment, for the same reason."""
-    assert '_vf_term = 0.0 if (value_from_dist or critic_winprob) else self.vf_coef * value_loss' \
-        in _train_source()
+    assert ('vf_term: Any = 0.0 if (st.value_from_dist or st.critic_winprob) else st.vf_coef * '
+            'value_loss') in _train_source()
 
 
 def test_the_bce_is_forced_on_even_at_win_prob_coef_zero():

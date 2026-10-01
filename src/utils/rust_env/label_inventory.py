@@ -71,6 +71,8 @@ _INTENT = (("emit_opp_intent_labels", True),)
 _BANK = "agents/training/belief_bank.py"
 _PPO = "agents/training/instrumented_ppo/ppo.py"
 _SETUP = "agents/training/instrumented_ppo/train_setup.py"
+_INTENT_FOLD = "agents/training/instrumented_ppo/intent_fold.py"   # K8: the intent block, inside region R1
+_MICRO = "agents/training/instrumented_ppo/micro_step.py"         # K8: fold steps 1-3a (region R1)
 
 _REVEALED = ("the side's REVEALED opponent slots (`species_known` read from the side's own row, the "
              "leading-contiguous block; the reading's `opp` list in encoder order)")
@@ -141,19 +143,19 @@ LABELS: Tuple[LabelKey, ...] = (
              alt_gates=(_INTENT,)),
     # ---------------------------------------------------------------- opponent intent (α/β)
     LabelKey("opp_action_kind", "i64", (1,), "intent", _INTENT, True, "Gen3Env._opp_intent_labels",
-             (_PPO, _SETUP), "core",
+             (_INTENT_FOLD, _SETUP), "core",
              "what the opponent DID at the PREVIOUS decision (move / switch / unknown) — the α/β label the "
              "port's trackers already fold (`trackers::IntentLabel`, slice T)"),
     LabelKey("opp_action_num", "i64", (1,), "intent", _INTENT, True, "Gen3Env._opp_intent_labels",
-             (_PPO, _SETUP), "core",
+             (_INTENT_FOLD, _SETUP), "core",
              "that move's NUM, Hidden Power resolved to the attacker's TRUE typed num from the other side's "
              "own team"),
     LabelKey("opp_switch_slot", "i64", (1,), "intent", _INTENT, True, "Gen3Env._opp_intent_labels",
-             (_PPO, _SETUP), "core",
+             (_INTENT_FOLD, _SETUP), "core",
              "the switch-in's REVEALED slot as of the previous decision (`_opp_slot_map_prev`), "
              "SWITCH_SLOT_NONE otherwise"),
     LabelKey("opp_switch_species", "i64", (1,), "intent", _INTENT, True, "Gen3Env._opp_intent_labels",
-             (_PPO, _SETUP), "core", "the switch-in's species NUM (content-addressed β)"),
+             (_INTENT_FOLD, _SETUP), "core", "the switch-in's species NUM (content-addressed β)"),
     # ---------------------------------------------------------------- OFF the production surface
     LabelKey("win_row_w", "f32", (1,), "winprob_weight",
              (("emit_win_target", True), ("emit_win_row_weight", True)), False, "Gen3Env._merge_training_keys",
@@ -178,10 +180,10 @@ LABELS: Tuple[LabelKey, ...] = (
              "Gen3Env._merge_training_keys", ("agents/training/dense_aux.py",), "refused",
              "the battle turn", symbol="AUX_TURN_KEY"),
     LabelKey("defensive_opportunity", "f32", (1,), "defensive", (("emit_defensive_opportunity", True),), False,
-             "Gen3Env._defensive_opportunity", (_PPO,), "refused",
+             "Gen3Env._defensive_opportunity", (_MICRO,), "refused",
              "1 iff a legal recovery / cure move is productive for the active mon"),
     LabelKey("bait_opportunity", "f32", (1,), "bait", (("emit_bait_opportunity", True),), False,
-             "Gen3Env._bait_opportunity", (_PPO,), "refused",
+             "Gen3Env._bait_opportunity", (_MICRO,), "refused",
              "1 iff the likeliest attack is zero-damage into a revealed alive opp BENCH mon"),
     LabelKey("distill_mask", "f32", (1,), "distill",
              (("distill_team_species", (frozenset({"__inventory_probe__"}),)),), False,

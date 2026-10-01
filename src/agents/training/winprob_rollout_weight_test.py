@@ -309,7 +309,13 @@ def test_the_env_declares_the_key_under_EXACTLY_the_predicate_the_loss_reads_it_
     assert 'win_prob_rollout_target", 0.0) or 0.0) > 0.0' in fac
     tr = inspect.getsource(ppo_mod.InstrumentedMaskablePPO.train)
     assert "rollout_weight_on = (" in tr
-    assert 'rollout_data.observations.get("win_row_w") if rollout_weight_on else None' in tr
+    # K8: the BCE is folded inside region R1 (`micro_step`), which reads the key under the static
+    # flag `train()` resolves from that same predicate (`_micro_static(..., rollout_weight_on)`).
+    from agents.training.instrumented_ppo import micro_step as ms
+    from agents.training.instrumented_ppo.train_setup import TrainSetup
+    assert "self._micro_static(_f, popart, strata_w, rollout_weight_on)" in tr
+    assert "rollout_weight=bool(rollout_weight_on)" in inspect.getsource(TrainSetup._micro_static)
+    assert 'obs.get("win_row_w") if st.rollout_weight else None' in inspect.getsource(ms.micro_step)
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────

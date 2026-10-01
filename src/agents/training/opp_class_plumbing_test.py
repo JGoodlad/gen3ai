@@ -212,12 +212,14 @@ def test_the_train_loop_passes_the_configured_weight_to_intent_losses():
     hardcoded. A silently-dropped kwarg is a flag that does nothing while looking wired."""
     import inspect
 
-    from agents.training.instrumented_ppo import InstrumentedMaskablePPO
+    # K8: the intent block is the static `intent_fold` inside region R1 (`micro_step`); its weight is a
+    # static of the region, read off the model once per call by `TrainSetup._micro_static`.
+    from agents.training.instrumented_ppo import micro_step as ms
+    from agents.training.instrumented_ppo.train_setup import TrainSetup
 
-    src = inspect.getsource(InstrumentedMaskablePPO.train)
-    assert "intent_losses(" in src
-    assert 'bot_label_weight=float(\n' in src or "bot_label_weight=" in src
-    assert 'getattr(self, "intent_label_bot_weight", 1.0)' in src
+    r1 = inspect.getsource(ms.micro_step)
+    assert "intent_fold(fe, obs" in r1 and "bot_label_weight=st.bot_label_weight" in r1
+    assert 'getattr(self, "intent_label_bot_weight", 1.0)' in inspect.getsource(TrainSetup._micro_static)
 
 
 def test_only_the_intent_loss_takes_the_weight():
@@ -231,7 +233,14 @@ def test_only_the_intent_loss_takes_the_weight():
 
     assert "bot_label_weight" not in inspect.getsource(belief_bank)
     assert "opp_class" not in inspect.getsource(belief_bank)
-    assert inspect.getsource(InstrumentedMaskablePPO.train).count("bot_label_weight") == 1
+    from agents.training import belief_bank_static
+    from agents.training.instrumented_ppo import micro_step as ms
+    assert "bot_label_weight" not in inspect.getsource(belief_bank_static)
+    assert "opp_class" not in inspect.getsource(belief_bank_static)
+    assert "bot_label_weight" not in inspect.getsource(InstrumentedMaskablePPO.train)
+    r1 = inspect.getsource(ms.micro_step)
+    assert r1.count("bot_label_weight=st.bot_label_weight") == 1          # the intent fold's call
+    assert r1.count("bot_label_weight") == 2                              # ... and nowhere else
 
 
 # ── hop 0: WHICH RUNS emit the key at all ──────────────────────────────────────────────────

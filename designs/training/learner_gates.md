@@ -208,7 +208,7 @@ can move anything (so a crash-save holds the last finite weights):
 | gate | where | catches |
 |---|---|---|
 | `check_buffer_finite` | once per update, right after the intent-label alignment — BEFORE PopArt's advance (which rewrites `value_net` outside the optimizer) and before any forward | a NaN/Inf reward, value, behaviour log-prob, advantage, return, or FLOAT label key (the flat `observation` is not scanned: an input whose NaN reaches the loss, and a full scan is ~0.3 s at production size) |
-| `check_loss_finite` | once per micro-batch, on the assembled loss, before the grad-balance / noise probes and the backward | any term; NAMES the non-finite term(s) (policy, entropy, value, and every `aux_probe_terms` entry) |
+| `check_loss_finite` | once per micro-batch, on the assembled loss, before the grad-balance / noise probes and the backward. Since K8 the region R1's `isfinite(loss)` rides the micro-batch's ONE host read (`micro_step.pack`); the full check (its own read) runs when the eager tail folded a term onto R1's loss, or to NAME the term(s) on a failure — same timing, same message | any term; NAMES the non-finite term(s) (policy, entropy, value, and every `aux_probe_terms` entry) |
 | `check_kl_finite` | per micro-batch, on sb3's own approx-KL host read | an Inf KL under a FINITE loss (an overflowed ratio on a positive-advantage row takes the clipped branch) |
 | `clip_grad_norm_checked` | every optimizer step (the in-loop step and the accumulation flush) | a NaN/Inf gradient from a finite loss; `error_if_nonfinite=True` raises BEFORE the in-place scaling, so the named parameters are the ones the backward poisoned |
 

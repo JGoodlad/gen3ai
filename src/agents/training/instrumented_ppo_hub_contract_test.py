@@ -21,10 +21,11 @@ can lose an entry without any import failing: the class would still construct an
 just without one family of loss terms. `MaskablePPO` must also stay LAST, or `super()` calls
 inside a mixin stop reaching upstream.
 
-**3. `train()`'s FOLD SEQUENCE stays in ONE module.** The order in which the terms are added
-to `loss` is a contract (see `ppo.py`), and the property that matters about it — no flag
-combination reorders these — is only visible while it is straight-line source. This test pins
-that `train()` is defined in `ppo.py` and still carries every `+` instrumentation marker.
+**3. The FOLD SEQUENCE is two straight lines** (K8): steps 1-3a in `micro_step.micro_step` (the
+compile region R1), the eager tail in `train()` after the R1 call. The order in which the terms are
+added to `loss` is a contract (see `ppo.py`), and the property that matters about it — no flag
+combination reorders these — is only visible while each part is straight-line source. This test
+pins both orders and that `train()` still carries every `+` instrumentation marker of its tail.
 What `train()` delegates is everything AROUND the sequence: the pre-loop setup (`train_setup`)
 and the metrics export (`metrics_export`). A source-level pin on a line that sits in one of those
 should read `ppo.train_step_source()`, which concatenates the three — the fold's own ORDERING
@@ -126,23 +127,34 @@ def test_maskable_ppo_stays_last_in_the_mro():
             f"upstream, so its absence means the `super()` chain no longer reaches MaskablePPO.")
 
 
-def test_the_fold_sequence_stays_in_one_module():
-    """`train()` is not split, on purpose. This pins that it is still whole and still in `ppo.py`.
+def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
+    """The fold order is a contract (`ppo.py`; the training leaf's FOLD ORDER section). Since K8
+    (`gen3_learner_micro_step_v1`) it is TWO straight lines, read in sequence: steps 1-3a are the body
+    of `micro_step.micro_step` (the compile region R1), and `train()` folds the eager tail (3b onward)
+    onto R1's loss, after calling it. Each line is checkable by reading, and this pins both orders:
 
-    The ordering of the `loss = loss + <term>` lines is a contract — in particular every term that
-    READS an extractor stash must be folded before the counterfactual block, which CLOBBERS the
-    minibatch's stashes. That property is checkable by reading only while the sequence is
-    straight-line source in one file.
+    * inside R1: PPO loss -> belief bank `hidden_move` -> opponent intent -> `latent` -> `revealed`
+      -> win-prob BCE;
+    * inside `train()`: the R1 call precedes every tail fold, and every stash-reading fold
+      precedes the counterfactual block, which CLOBBERS the minibatch's stashes (`_td_aux_term` is
+      the documented last one before it).
     """
+    from agents.training.instrumented_ppo import micro_step as ms
+    r1 = inspect.getsource(ms.micro_step)
+    order = ["policy_loss = -th.min(", '_bank("hidden_move"', "intent_fold(fe, obs",
+             '_bank("latent"', '_bank("revealed"', "win_prob_terms("]
+    at = [r1.index(m) for m in order]
+    assert at == sorted(at), f"R1's fold order moved: {list(zip(order, at))}"
     src = inspect.getsource(hub.InstrumentedMaskablePPO.train)
     assert inspect.getfile(hub.InstrumentedMaskablePPO.train) == str(_DIR / "ppo.py")
-    assert len(src.splitlines()) > 1000, "train() has been carved up — see this test's docstring"
-    for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+PopArt", "+TD-AUX", "+CF-WINPROB",
-                   "+DISTILL", "+SEARCH-TEACHER", "+OPD", "+NOISE-SCALE", "+WIN-PROB",
-                   "+VALUE-DIST", "+BELIEF", "+CAPACITY"):
+    for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1", "+TD-AUX", "+CF-WINPROB",
+                   "+DISTILL", "+SEARCH-TEACHER", "+OPD", "+NOISE-SCALE", "+DENSE-AUX",
+                   "+VALUE-DIST", "+CAPACITY"):
         assert marker in src, f"the `{marker}` block left `train()`"
-    # The stash-clobber ordering, read off the source: every stash-reading fold precedes the
-    # counterfactual block. `_td_aux_term` is the documented last one before it.
+    r1_call = src.index("self._micro_region()(")
+    for tail in ("self._dense_aux_loss(", "self._value_dist_loss(", "distill_anchor_step(",
+                 "self._td_aux_term(popart)", "self._cf_winprob_term("):
+        assert r1_call < src.index(tail), f"the tail fold `{tail}` now runs BEFORE region R1"
     assert src.index("self._td_aux_term(popart)") < src.index("self._cf_winprob_term("), (
         "the counterfactual fold now runs BEFORE the TD-aux fold. The CF forward CLOBBERS the "
         "minibatch's extractor stashes, so every term that reads one must be folded first.")

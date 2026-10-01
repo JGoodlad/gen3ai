@@ -10271,3 +10271,24 @@ if a lazy build is reintroduced.
 - **Optimizer state on CUDA:** `optimizer_state_cuda_test` (GPU tier) pins the K6 declaration and the
   ride-along pre-allocation bit-identical to torch's lazy init for foreach / fused Adam and AdamW.
 
+## 2026-09-30 — K8: the LEARNER MICRO-STEP — fold steps 1–3a as ONE static-shape function (`gen3_learner_micro_step_v1`; no model change; the learner golden re-recorded as a pure refactor)
+
+- **`instrumented_ppo/micro_step.py`**: `evaluate_actions` + the upstream PPO loss + the belief bank's
+  three sites + the opponent-intent fold + the win-prob BCE, in contract order, as ONE function with
+  static shapes, no host read, no value-dependent Python branch, every diagnostic a `(value, weight)`
+  pair — the K8 region R1. `train()` calls it, reads a micro-batch's diagnostics in ONE host read
+  (`pack`; was ~139 per micro-batch), and folds the DECLARED EAGER TAIL (dense aux, CF-twin, value-dist,
+  distill + anchor, search-teacher, OPD, TD-aux, the counterfactual block) onto its loss. The fold
+  order contract is now two straight lines, both pinned.
+- **The static twins**: `belief_bank_static.py` (the seven belief losses: masked reductions, the
+  Hungarian groups computed for every k with a `counts == k` mask, the vocab check moved to the
+  buffer) and `instrumented_ppo/intent_fold.py` (the opponent-intent block; one-hot sums for
+  `bincount`). The legacy `belief_bank` / `opp_intent` functions stay as the reference they are pinned
+  equal to (float64 1e-12).
+- **Equivalence** (`research_state/measurements/k6_k8/fold_equivalence/`): one golden update, new vs
+  legacy, post-update params max |Δ| 1.19e-7 on both torches, inside the legacy fold's own
+  thread-count noise (5.4e-6 – 3.3e-5); losses ≤ 1.2e-7 relative; identical TB tags. The K9 learner
+  golden is re-recorded under both interpreters with that reason.
+- **Traceable**: R1 on the production surface traces as ONE `fullgraph=True` graph on torch 2.8 (CPU,
+  `aot_eager`, compiled loss == eager bit-for-bit).
+

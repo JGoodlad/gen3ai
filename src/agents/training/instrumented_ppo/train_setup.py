@@ -381,3 +381,68 @@ class TrainSetup:
             signal_metrics=signal_metrics, accum=accum, noise_g_small_sq=noise_g_small_sq,
             noise_g_big_sq=noise_g_big_sq, ns_terms=_ns_terms, dgp=_dgp, diag=diag,
         )
+
+    # ------------------------------------------------------------------ K8 region R1's setup
+    def _micro_static(self, f: FoldFlags, popart: Any, strata_w: Any, rollout_weight_on: bool) -> Any:
+        """The learner micro-step's STATIC flags and coefficients (`micro_step.MicroStatic`) for this
+        `train()` call — every value R1 branches on or multiplies by that does not change within a
+        run (`gen3_learner_micro_step_v1`). Read from the same attributes and buffer keys the inline
+        fold read, at the same moment (once per call)."""
+        from gymnasium import spaces
+
+        from agents.training.instrumented_ppo.micro_step import MicroStatic
+        obs = self.rollout_buffer.observations if isinstance(
+            self.rollout_buffer.observations, dict) else {}
+        progress = self._current_progress_remaining
+        clip_range = float(self.clip_range(progress))
+        clip_vf = (float(self.clip_range_vf(progress)) if self.clip_range_vf is not None else None)
+        value_mode = ("popart" if popart is not None
+                      else "plain" if (f.critic_winprob or self.clip_range_vf is None) else "clipped")
+        return MicroStatic(
+            discrete=isinstance(self.action_space, spaces.Discrete),
+            normalize_advantage=bool(self.normalize_advantage),
+            clip_range=clip_range, clip_range_vf=clip_vf, value_mode=value_mode,
+            critic_winprob=bool(f.critic_winprob), value_from_dist=bool(f.value_from_dist),
+            value_tail_weight=float(getattr(self, "value_tail_weight", 0.0) or 0.0),
+            vf_coef=float(self.vf_coef), ent_coef=float(self.ent_coef),
+            policy_grad_coef=float(f.policy_grad_coef),
+            fork_pg_mask=bool(f.fork_pg_mask_on),
+            defensive=(float(self.defensive_entropy_boost) != 1.0
+                       and "defensive_opportunity" in obs),
+            bait=float(self.bait_entropy_boost) != 1.0 and "bait_opportunity" in obs,
+            belief_aux_on=bool(f.belief_aux_on), move_belief_on=bool(f.move_belief_on),
+            move_latent_on=bool(f.move_latent_on), spread_belief_on=bool(f.spread_belief_on),
+            hp_type_belief_on=bool(f.hp_type_belief_on), item_belief_on=bool(f.item_belief_on),
+            belief_coefs=tuple((k, float(getattr(self, k))) for k in (
+                "opp_belief_aux_coef", "move_belief_coef", "move_belief_latent_coef",
+                "spread_belief_coef", "hp_type_belief_coef", "item_belief_coef")),
+            moves_weight=float(self.opp_belief_moves_weight),
+            intent_on=float(getattr(self, "opp_intent_coef", 0.0)) > 0.0,
+            intent_coef=float(getattr(self, "opp_intent_coef", 0.0)),
+            setvalued_on=float(getattr(self, "beta_setvalued_coef", 0.0)) > 0.0,
+            setvalued_coef=float(getattr(self, "beta_setvalued_coef", 0.0)),
+            bot_label_weight=float(getattr(self, "intent_label_bot_weight", 1.0)),
+            win_prob_on=bool(f.win_prob_on), win_prob_coef=float(self.win_prob_coef),
+            strata=strata_w is not None, rollout_weight=bool(rollout_weight_on),
+        )
+
+    def _micro_var(self, st: Any, strata_w: Any) -> dict:
+        """R1's PER-UPDATE tensors: the entropy boosts' annealed factors (they move with progress, so
+        they are tensors — a Python float would be a new compiled signature every update) and the
+        strata weights."""
+        out: dict = {}
+        if st.defensive:
+            out["def_eff"] = th.tensor(float(self._defensive_entropy_boost_eff()), device=self.device)
+        if st.bait:
+            out["bait_eff"] = th.tensor(float(self._bait_entropy_boost_eff()), device=self.device)
+        if strata_w is not None:
+            out["strata_w"] = strata_w
+        return out
+
+    def _micro_region(self) -> Any:
+        """R1 as installed: the compiled region under --compile-trainer (K8), else the function."""
+        compiled = getattr(self, "_compiled_micro_step", None)
+        if compiled is not None:
+            return compiled
+        from agents.training.instrumented_ppo.micro_step import micro_step
+        return micro_step
