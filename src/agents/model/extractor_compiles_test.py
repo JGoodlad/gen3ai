@@ -565,6 +565,7 @@ def test_cpu_backward_still_does_not_compile(restore_torch_globals):
         "possible. Re-check all three, then delete this test.")
 
 
+@pytest.mark.slow   # COLD CUDA compile per process (K3): 43-66 s on a quiet box (2026-09-30, torch 2.8)
 @_skip_compile
 @_skip_cuda
 def test_production_arch_compiles_on_cuda():
@@ -601,6 +602,7 @@ def test_production_arch_compiles_to_one_graph_on_cuda():
     assert explained.graph_count == 1
 
 
+@pytest.mark.slow   # COLD CUDA compile per process (K3): 43-66 s on a quiet box (2026-09-30, torch 2.8)
 @_skip_compile
 @_skip_cuda
 def test_production_arch_compiles_forward_and_backward_on_cuda():

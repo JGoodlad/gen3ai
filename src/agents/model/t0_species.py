@@ -93,6 +93,9 @@ class T0SpeciesPrior(torch.nn.Module):
     this flag on adds nothing to the `state_dict` and cannot shift an optimizer parameter position.
     """
 
+    species_prior_log_marginal: torch.Tensor
+    species_prior_log_lift: torch.Tensor
+
     def __init__(self, n_species: int):
         super().__init__()
         from agents.model.damage_tables import build_species_cooccur_prior

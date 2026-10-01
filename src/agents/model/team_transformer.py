@@ -153,6 +153,25 @@ class EdgeBias(torch.nn.Module):
     The op head-concat is NOT deleted here: per the deprecation playbook (and the K9/K10 trunk-null
     history) the edge home is built first; deletion waits on the per-family bias-ablation audit."""
 
+    # One per _EDGE_FAMILIES key, assigned by setattr in __init__ (None when the family is off).
+    d1_map: Optional[torch.nn.Linear]
+    d2_map: Optional[torch.nn.Linear]
+    d3_map: Optional[torch.nn.Linear]
+    d4_map: Optional[torch.nn.Linear]
+    s1_map: Optional[torch.nn.Linear]
+    s3_map: Optional[torch.nn.Linear]
+    v_map: Optional[torch.nn.Linear]
+    t_map: Optional[torch.nn.Linear]
+    x_map: Optional[torch.nn.Linear]
+    g_map: Optional[torch.nn.Linear]
+    c4_map: Optional[torch.nn.Linear]
+    c1_map: Optional[torch.nn.Linear]
+    c3_map: Optional[torch.nn.Linear]
+    c2_map: Optional[torch.nn.Linear]
+    c5_map: Optional[torch.nn.Linear]
+    h_map: Optional[torch.nn.Linear]
+    r_map: Optional[torch.nn.Linear]
+
     def __init__(self, families: str):
         super().__init__()
         fams = set() if families in ("", "off") else set(families.split(","))

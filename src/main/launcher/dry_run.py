@@ -51,7 +51,6 @@ from main.launcher.checkpoint import (
     resume_child_args,
     run_dir_for_checkpoint,
 )
-from main.launcher.child import PYTHON_ENV_VAR, resolve_child_python
 from main.launcher.pinned_argv import (
     ParseReport,
     differs_from_head,
@@ -179,6 +178,7 @@ def dry_run(
     max_crash_restarts: int,
     nice: int,
     out: Callable[[str], None] = print,
+    allow_torch_switch: bool = False,
 ) -> int:
     """Resolve this launch, print the block, return the exit code the launch would leave with.
 
@@ -290,10 +290,13 @@ def dry_run(
         out(f"  steps       : --steps {_fmt_int(steps)} (fresh run, from 0)")
 
     # 5. The operational lines the launcher itself announces at startup.
-    py = resolve_child_python()
-    py_pinned = (f" (pinned by ${PYTHON_ENV_VAR})"
-                 if os.environ.get(PYTHON_ENV_VAR, "").strip() else "")
-    out(f"  interpreter : {py}{py_pinned}")
+    #    The interpreter AND its torch — the real launch's own `torch_runtime.resolve_for_launch`,
+    #    so a resume/fork whose recorded torch no interpreter carries is refused here exactly as
+    #    there (FATAL_CONFIG), and a selected legacy env is visible before anything runs.
+    from main.launcher.torch_runtime import resolve_for_launch
+    torch_res = resolve_for_launch(model_path, allow_switch=allow_torch_switch)
+    for line in torch_res.lines():
+        out(f"  {line}")
     if child_uses_bridge(child_args):
         impl = _peek_arg(child_args, "--use-bridge") or "rust"
         out(f"  transport   : in-process bridge [{impl}] (no Showdown server)")
@@ -425,6 +428,8 @@ def dry_run(
     if arch is not None and arch.refuses:
         failed = True
     if (recipe is not None and recipe.refuses) or res.get("recipe_refusal"):
+        failed = True
+    if torch_res.refusal:                 # printed with the interpreter line above
         failed = True
 
     if failed:

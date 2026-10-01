@@ -388,7 +388,7 @@ def _strip_launcher_args(argv: list) -> list:
             i += 1
         elif argv[i] == "--dry-run":
             i += 1
-        elif argv[i] == "--sync-to-main":
+        elif argv[i] in ("--sync-to-main", "--allow-torch-switch"):
             i += 1
         elif argv[i] in ("--pin-commit", "--pin-to-hash"):
             i += 2

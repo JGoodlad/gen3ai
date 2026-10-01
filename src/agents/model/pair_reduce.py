@@ -33,7 +33,7 @@ work, so the production forward stays byte-identical at any `how` until then.
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, cast
 
 import torch
 
@@ -77,8 +77,8 @@ class AlphaLearned(torch.nn.Module):
             torch.nn.Linear(1 + n_channels, hidden), torch.nn.ReLU(),
             torch.nn.Linear(hidden, 1),
         )
-        torch.nn.init.zeros_(self.net[-1].weight)
-        torch.nn.init.zeros_(self.net[-1].bias)
+        torch.nn.init.zeros_(cast(torch.Tensor, self.net[-1].weight))
+        torch.nn.init.zeros_(cast(torch.Tensor, self.net[-1].bias))
 
     def forward(self, w: torch.Tensor, cells: torch.Tensor) -> torch.Tensor:
         board_stats = cells.mean(dim=1)                                   # [B,C,F] (mean over J)

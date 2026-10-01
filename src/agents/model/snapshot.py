@@ -78,8 +78,13 @@ def _update_pin_history(
     step: int,
     legacy_git_hash: Optional[str] = None,
     legacy_pin_source: Optional[str] = None,
+    torch_version: Optional[str] = None,
 ) -> list:
-    """APPEND-ONLY spans of "which commit ran which steps".
+    """APPEND-ONLY spans of "which commit ran which steps" — and, since 2026-09-30, under WHICH
+    torch (``torch_version``): a span is one (commit, torch) pair, so a run that changed
+    interpreter at a restart shows the boundary. An entry written before the torch record has no
+    ``torch`` key, which the launcher's interpreter guard reads as the legacy 2.5.1
+    (``main.launcher.torch_runtime``).
 
     The scalar ``git_hash`` is rewritten on every save, so on a run that restarts every 3 h it
     records the LAST code to touch the run, not the code that ran most of it (observed on
@@ -100,18 +105,22 @@ def _update_pin_history(
             "last_step": int(step),
             "derived": True,   # first_step is when we NOTICED, not when that commit started
         })
-    if hist and hist[-1].get("git_hash") == git_hash:
+    if hist and hist[-1].get("git_hash") == git_hash and (
+            torch_version is None or hist[-1].get("torch") == torch_version):
         last = hist[-1]
         last["last_step"] = max(int(last.get("last_step") or 0), int(step))
         if pin_source and not last.get("pin_source"):
             last["pin_source"] = pin_source
         return hist
-    hist.append({
+    entry: Dict[str, Any] = {
         "git_hash": git_hash,
         "pin_source": pin_source,
         "first_step": int(step),
         "last_step": int(step),
-    })
+    }
+    if torch_version is not None:
+        entry["torch"] = torch_version
+    hist.append(entry)
     return hist
 
 
@@ -235,10 +244,16 @@ def save_model_snapshot(
             existing_pin_source = existing.get("pin_source")
             existing_num_timesteps = existing.get("num_timesteps")
 
+    # WHICH TORCH ran this process (owner 2026-09-30: torch 2.8 is the default, 2.5.1 legacy).
+    # Overwritten every save, like `python_version`; `pin_history` keeps the per-span story. The
+    # launcher reads it to resume/fork a run under the torch it was trained on
+    # (`main.launcher.torch_runtime`) — an ABSENT key means a pre-record run, i.e. torch 2.5.1.
+    import torch
     metadata: Dict[str, Any] = {
         "saved_at": datetime.now(timezone.utc).isoformat(),
         "git_hash": git_hash,
         "python_version": sys.version,
+        "torch_version": str(torch.__version__),
         "sb3_version": stable_baselines3.__version__,
     }
     if pin_source:
@@ -258,6 +273,7 @@ def save_model_snapshot(
         step=int(_step or 0),
         legacy_git_hash=existing_git_hash,
         legacy_pin_source=existing_pin_source,
+        torch_version=metadata["torch_version"],
     )
     if hparams:
         metadata.update(hparams)

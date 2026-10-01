@@ -141,6 +141,8 @@ class IntentThresholdMoveCell(torch.nn.Module):
 
     Zero-init projection ⇒ ON-at-init contributes exactly zero to every action logit."""
 
+    mech_nums: torch.Tensor
+
     def __init__(self, out_dim: int):
         super().__init__()
         self.out_dim = int(out_dim)

@@ -417,6 +417,8 @@ class PairOutcomeSwitchCell(torch.nn.Module):
 
     n_switch: int = 6
 
+    spin_num: torch.Tensor
+
     def __init__(self, out_dim: int, in_dim: int = _PAIR_OUTCOME_SWITCH_RAW):
         super().__init__()
         self.out_dim = int(out_dim)

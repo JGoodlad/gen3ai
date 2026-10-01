@@ -742,28 +742,24 @@ def test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32(precision
     production prewarm (rollout batch 48, train batch 256 as the dynamic-train proxy) LOCKS with
     every code object under `cache_size_limit`, and then runs a steady iteration clean."""
     from agents.model.compile_trainer import compile_trainer_extractor, production_prewarm_calls
-    from agents.model.extractor_compiles_test import _build_production_extractor
+    from main.fresh_checkpoint import build_fresh_model
     cc._reset_control_for_tests()
     torch._dynamo.reset()
     prev = torch.get_float32_matmul_precision()
     torch.set_float32_matmul_precision(precision)
     try:
-        fe, layout = _build_production_extractor()
-        fe = fe.cuda()
-        fe.obs_dim = layout["total_dim"]
-        pol = torch.nn.Module()
-        pol.features_extractor = fe
-        m = torch.nn.Module()
-        m.policy = pol
+        # The REAL production policy, as a fresh launch builds it — NOT a heads-less stand-in. The
+        # gate's grad-COVERAGE guard (gen3_gate_grad_coverage_v1) reaches the per-action move /
+        # switch cell projections only through the POINTER HEAD; a stand-in policy with no heads
+        # left 15-16 of 232 extractor parameters at an exactly zero gradient (6.9% > the 2% bar) on
+        # torch 2.5.1 AND 2.8 alike, so this test raised VacuousCompileParityError for a reason
+        # that is the stand-in's, not production's (the real policy: 1 of 254, c5_map — measured
+        # 2026-09-30, CPU, both torches).
+        m, _, _ = build_fresh_model(0)
+        m.policy.to("cuda")
         compile_trainer_extractor(m, True, batch=16)
         ctl = cc.control()
         ctl.reset()
-        import gymnasium as gym
-        import numpy as np
-        pol.observation_space = gym.spaces.Dict({"observation": gym.spaces.Box(
-            0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)})
-        pol.set_training_mode = lambda mode: pol.train(mode)
-        pol.extract_features = lambda obs: fe(obs)
         ctl.prewarm(production_prewarm_calls(m, n_envs=48, batch_size=256))
         ctl.lock("prewarm")
         ent = cc.cache_entries_by_code()

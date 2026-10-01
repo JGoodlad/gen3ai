@@ -15,7 +15,7 @@ make SB3 instantiate a second full body (Option A, ~2× compute) — not what Op
 
 from __future__ import annotations
 
-from typing import Any, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Tuple, cast
 
 import numpy as np
 import torch as th
@@ -28,6 +28,12 @@ from agents.model import masked_categorical as _mc
 from agents.model.arch_constants import D_MODEL
 from agents.model.critic_mode import CRITIC_DEFAULT, CRITIC_MODES, is_winprob
 from agents.model.popart import PopArtNormalizer
+
+if TYPE_CHECKING:
+    # SB3 types `features_extractor` as `BaseFeaturesExtractor` (ours is duck-typed, not a subclass);
+    # the read sites cast to the real class so torch >= 2.8's `Module.__getattr__` (`Tensor | Module`)
+    # does not type its attributes. Typing only.
+    from agents.model.features_extractor import Gen3FeaturesExtractor
 
 
 # gen3_policy_activation_pin_v1: the nonlinearity of the SB3 `mlp_extractor` tower
@@ -117,7 +123,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         the cold-start policy is uniform-over-legal (the correct fresh-run init)."""
         super()._build(lr_schedule)
         from agents.model.features_extractor import PointerNativeActionHead  # local: avoid import cycle
-        fe = self.features_extractor
+        fe = cast("Gen3FeaturesExtractor", self.features_extractor)
         self.action_net = _NoFlatActionNet()
         self.pointer_head = PointerNativeActionHead(
             # gen3_entity_move_seats_v1: move tokens are the REFINED E3 trunk seats (d_model-wide),
@@ -222,7 +228,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         # from a pre-v109 checkpoint whose saved `policy_kwargs` never carried the key. An
         # absent field means the historical critic — the same read every other consumer does.
         if is_winprob(getattr(self, "_critic_mode", CRITIC_DEFAULT)):
-            fe = self.features_extractor
+            fe = cast("Gen3FeaturesExtractor", self.features_extractor)
             logits = getattr(fe, "last_win_prob_logits", None)
             if getattr(fe, "win_head", None) is None or logits is None:
                 raise RuntimeError(
@@ -243,7 +249,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
             # is unchanged. NO `_denorm`: probability units are the only currency here.
             return th.sigmoid(logits.reshape(-1, 1))
         if self._value_from_dist:
-            fe = self.features_extractor
+            fe = cast("Gen3FeaturesExtractor", self.features_extractor)
             head = fe.value_dist_head
             logits = fe.last_value_dist_logits
             if head is None or logits is None:
@@ -276,7 +282,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         `latent_pi` is the head's decision CONTEXT — the same policy-tower output the deleted flat
         head consumed, so the op block / beliefs / FiLM all condition every pointer score. Masking is
         applied by the callers, downstream of these logits, exactly as before."""
-        inputs = self.features_extractor.last_pointer_inputs
+        inputs = cast("Gen3FeaturesExtractor", self.features_extractor).last_pointer_inputs
         if inputs is None:
             raise RuntimeError(
                 "last_pointer_inputs is None — _get_action_dist_from_latent was called without a "

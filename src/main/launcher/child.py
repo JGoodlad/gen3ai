@@ -416,7 +416,10 @@ def _launch_child(
     # installs its own SIGHUP/SIGTERM handler (app.py) so it tears down cleanly rather
     # than dying abruptly — the two are complementary backstops.
     proc = subprocess.Popen(
-        [resolve_child_python(), train_script] + child_args,
+        # The session's interpreter, decided once by `torch_runtime.resolve_for_launch` and held
+        # in child_env so every restart runs the same torch; a bare call (a test) resolves here.
+        [child_env.get(PYTHON_ENV_VAR, "").strip() or resolve_child_python(), train_script]
+        + child_args,
         env={**child_env, "LAUNCHER_METRICS_FD": str(metrics_w), "PYTHONPATH": pythonpath},
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

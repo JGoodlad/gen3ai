@@ -599,7 +599,7 @@ class CompileControl:
 
     def _unset_stance(self) -> None:
         if getattr(self, "_stance_set", False):
-            torch.compiler.set_stance("default")  # type: ignore[attr-defined]
+            torch.compiler.set_stance("default")  # type: ignore[attr-defined, unused-ignore]
             self._stance_set = False
 
     def _on_limit_hit(self, limit_type: str, msg: str) -> None:
@@ -655,7 +655,7 @@ class CompileControl:
             torch._dynamo.config.error_on_recompile = True
         else:                                # "stance" (torch >= 2.8, Lane K1): any cache MISS on a
             # compiled callable raises at the call site — a recompile AND a never-seen frame
-            torch.compiler.set_stance("fail_on_recompile")  # type: ignore[attr-defined]
+            torch.compiler.set_stance("fail_on_recompile")  # type: ignore[attr-defined, unused-ignore]
             self._stance_set = True
         self.locked = True
         self.lock_where = where

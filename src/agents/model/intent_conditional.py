@@ -110,6 +110,12 @@ class IntentConditionalMoveCell(torch.nn.Module):
 
     Zero-init projection ⇒ ON-at-init contributes exactly zero to every action logit."""
 
+    gate_nums: torch.Tensor
+    protect_nums: torch.Tensor
+    protect_only_nums: torch.Tensor
+    status_num: torch.Tensor
+    reflectable_num: torch.Tensor
+
     def __init__(self, out_dim: int):
         super().__init__()
         self.out_dim = int(out_dim)

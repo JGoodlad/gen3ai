@@ -27,6 +27,8 @@ import subprocess
 
 import pytest
 
+import torch
+
 from agents.model import snapshot as sn
 from agents.model.snapshot import (
     GitHashMismatchError, LAUNCHER_GIT_HASH_ENV, resolve_git_hash,
@@ -159,6 +161,9 @@ def _save(model_dir, *, git_hash, step, pin_source=None, monkeypatch=None):
     sn.save_model_snapshot(str(model_dir), version, git_hash=git_hash, num_timesteps=step)
 
 
+_TORCH = str(torch.__version__)
+
+
 class _FakeVersion:
     """`save_model_snapshot` only ever calls `.to_json()` on the version it is handed."""
     def to_json(self) -> str:
@@ -173,7 +178,7 @@ def test_pin_history_a_two_saves_under_one_hash_make_ONE_entry(tmp_path, monkeyp
     hist = json.load(open(str(tmp_path / "metadata.json")))["pin_history"]
     assert len(hist) == 1, f"same commit ⇒ one span, got {hist}"
     assert hist[0] == {"git_hash": "aaaa1111", "pin_source": "checkpoint",
-                       "first_step": 1000, "last_step": 5000}
+                       "first_step": 1000, "last_step": 5000, "torch": _TORCH}
 
 
 def test_pin_history_b_a_new_hash_appends_and_leaves_the_first_untouched(tmp_path, monkeypatch):
@@ -184,9 +189,10 @@ def test_pin_history_b_a_new_hash_appends_and_leaves_the_first_untouched(tmp_pat
     hist = json.load(open(str(tmp_path / "metadata.json")))["pin_history"]
     assert len(hist) == 2
     assert hist[0] == {"git_hash": "aaaa1111", "pin_source": "head",
-                       "first_step": 1000, "last_step": 9000}, "the first span was rewritten"
+                       "first_step": 1000, "last_step": 9000, "torch": _TORCH}, \
+        "the first span was rewritten"
     assert hist[1] == {"git_hash": "bbbb2222", "pin_source": "pin_commit",
-                       "first_step": 9500, "last_step": 9500}
+                       "first_step": 9500, "last_step": 9500, "torch": _TORCH}
     # ...and the SCALAR still says "current", which is precisely why the list has to exist.
     assert json.load(open(str(tmp_path / "metadata.json")))["git_hash"] == "bbbb2222"
 
@@ -213,7 +219,25 @@ def test_pin_history_rides_into_the_checkpoint_sidecar(tmp_path, monkeypatch):
     sn.record_checkpoint(str(tmp_path), str(ckpt), 3e-4, 5, git_hash="aaaa1111")
     side = json.load(open(str(tmp_path / "checkpoint_1000_steps.json")))
     assert side["pin_history"] == [{"git_hash": "aaaa1111", "pin_source": None,
-                                    "first_step": 1000, "last_step": 1000}]
+                                    "first_step": 1000, "last_step": 1000, "torch": _TORCH}]
+
+
+def test_pin_history_d_a_TORCH_change_under_one_commit_opens_a_new_span(tmp_path, monkeypatch):
+    """A span is one (commit, torch) pair (owner 2026-09-30: torch 2.8 default, 2.5.1 legacy), so
+    an interpreter switch at a restart is VISIBLE in the history, and the run-level
+    `torch_version` says which torch saved last — the key the launcher's interpreter guard reads
+    (`main.launcher.torch_runtime`)."""
+    (tmp_path / "metadata.json").write_text(json.dumps({"git_hash": "aaaa1111", "pin_history": [
+        {"git_hash": "aaaa1111", "pin_source": "head", "first_step": 0, "last_step": 500,
+         "torch": "2.5.1+cu121"}]}))
+    _save(tmp_path, git_hash="aaaa1111", step=1000, pin_source="head", monkeypatch=monkeypatch)
+    meta = _meta(tmp_path)
+    assert meta["torch_version"] == _TORCH
+    if _TORCH == "2.5.1+cu121":
+        assert len(meta["pin_history"]) == 1          # same (commit, torch): the span advances
+    else:
+        assert [e.get("torch") for e in meta["pin_history"]] == ["2.5.1+cu121", _TORCH]
+        assert meta["pin_history"][0]["last_step"] == 500, "the earlier span was rewritten"
 
 
 # ---------------------------------------------------------------------------------------

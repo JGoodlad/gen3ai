@@ -35,12 +35,14 @@ collected, and a hook that never fires raises too. Use `--site op`. Gate:
 """
 import argparse
 import json
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, cast
 
 import torch
 
 if TYPE_CHECKING:
     import numpy as np
+
+    from agents.model.features_extractor import Gen3FeaturesExtractor
 
 from agents.model import damage_op as D
 from agents.observation.constants import TEAM_SIZE
@@ -179,7 +181,7 @@ def main() -> None:
                                      current_version=current_model_version(load_mappings()),
                                      device="cpu")
     policy = model.policy
-    fe = policy.features_extractor
+    fe = cast("Gen3FeaturesExtractor", policy.features_extractor)
     op = fe.damage_op
     assert op is not None, "checkpoint has no damage op"
     if a.site == "assembler":       # refuse BEFORE the state collection, not after it
@@ -235,7 +237,7 @@ def main() -> None:
                 # was built for. A positional bind here re-points at whatever occupies the slot.
                 if kwargs.get(block_arg) is None:
                     return args, kwargs
-                flat = _perturb(fe.last_damage_block.clone())
+                flat = _perturb(cast(torch.Tensor, fe.last_damage_block).clone())
                 rows = flat[:, :TEAM_SIZE * op.per_mon].reshape(
                     flat.shape[0], TEAM_SIZE, op.per_mon)
                 fired["v"] = True
@@ -268,7 +270,7 @@ def main() -> None:
                     ps.append(torch.softmax(lg, -1))
                     vs.append(policy.predict_values(ob).squeeze(-1))
                     if cols is None:
-                        raws.append(op.last_raw_block.clone())
+                        raws.append(cast(torch.Tensor, op.last_raw_block).clone())
                         ctx = stash["ctx"]
                         acts.append(ctx.hp_and_active[:, :, -1].clone())
                         hps.append(ctx.hp_and_active[:, :, 0].clone())

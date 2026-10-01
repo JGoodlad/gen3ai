@@ -19,6 +19,7 @@ Run: python -m pytest src/main/launcher/dry_run_test.py -q
 
 import hashlib
 import importlib
+import importlib.metadata
 import json
 import os
 import subprocess
@@ -102,7 +103,10 @@ def _make_run(root_dir, git_hash, name="ai_v9_171", steps=28_115_184, pool=0):
     ckpt.write_text("not-a-real-zip")
     (run_dir / "checkpoints" / f"checkpoint_{steps}_steps.json").write_text(
         json.dumps({"git_hash": git_hash, "num_timesteps": steps, "lr": 1e-4}))
-    (run_dir / "metadata.json").write_text(json.dumps({"git_hash": git_hash}))
+    # The run trained under THIS interpreter's torch, so the interpreter guard
+    # (`torch_runtime`, its own test file) is satisfied on any box, with or without a legacy env.
+    (run_dir / "metadata.json").write_text(json.dumps(
+        {"git_hash": git_hash, "torch_version": importlib.metadata.version("torch")}))
     (run_dir / "model_config.json").write_text(json.dumps({"obs_dim": 2501}))
     (run_dir / "latest.txt").write_text(f"checkpoints/checkpoint_{steps}_steps.zip")
     if pool:

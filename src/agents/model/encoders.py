@@ -33,6 +33,9 @@ class MoveLatentEncoder(torch.nn.Module):
         stop-grad similarity-grading TARGET for the move-belief latent aux (Stage 3).
     MOVE_ATTR + canonical MOVE_TYPE_IDX are non-persistent buffers (pure data-derived, recomputable)."""
 
+    MOVE_ATTR: torch.Tensor
+    MOVE_TYPE_IDX: torch.Tensor
+
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
         from agents.model.damage_tables import build_move_attr, build_move_type_idx

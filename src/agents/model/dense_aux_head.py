@@ -50,7 +50,7 @@ and the test proves the automatic coverage actually reached it.
 """
 from __future__ import annotations
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, cast
 
 import torch
 
@@ -112,8 +112,8 @@ class DenseAuxHead(torch.nn.Module):
         # Zero-init the OUTPUT layer only: every logit is exactly 0 at a cold start, so the head
         # predicts p = 0.5 everywhere — the honest state of knowledge for a head that has seen no
         # label — and the trunk receives no gradient from it until `W_out` has moved off zero.
-        torch.nn.init.zeros_(self.net[2].weight)
-        torch.nn.init.zeros_(self.net[2].bias)
+        torch.nn.init.zeros_(cast(torch.Tensor, self.net[2].weight))
+        torch.nn.init.zeros_(cast(torch.Tensor, self.net[2].bias))
 
     def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:
         if value_pooled.dim() != 2:

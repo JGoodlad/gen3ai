@@ -57,6 +57,10 @@ def _compiled_first_update(device: str):
     cc._reset_control_for_tests()
     torch._dynamo.reset()
     prev = fcfg.donated_buffer
+    # SB3's seeding (`set_random_seed(using_cuda=True)` inside `_real_gen3_ppo`) sets the process
+    # global `cudnn.deterministic` on CUDA — handed back below (the root conftest's torch
+    # global-state guard failed the CUDA cell's teardown on it, 2026-10-01; torch-independent).
+    prev_det = torch.backends.cudnn.deterministic
     fcfg.donated_buffer = True          # the torch >= 2.6 default; hostile on 2.5.1 too
     try:
         model = _real_gen3_ppo(device=device)
@@ -108,6 +112,7 @@ def _compiled_first_update(device: str):
         torch._dynamo.config.error_on_recompile = False
         torch._dynamo.reset()
         fcfg.donated_buffer = prev
+        torch.backends.cudnn.deterministic = prev_det
 
 
 def _assert_retain_graph_backward_repeats(model) -> None:

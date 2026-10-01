@@ -93,6 +93,9 @@ class BeliefHead(torch.nn.Module):
     no host round-trip, no numpy). The delta head is ZERO-INIT, so the cold-start posterior EQUALS the
     prior exactly; OFF reproduces the from-scratch head byte-for-byte."""
 
+    species_prior_log_marginal: torch.Tensor
+    species_prior_log_lift: torch.Tensor
+
     def __init__(self, n_species: int, n_moves: int,
                  species_prior_fusion: bool = False):
         super().__init__()
@@ -285,6 +288,9 @@ class MoveBelief(torch.nn.Module):
     prediction + the damage calc). The prior buffer is a NON-persistent, data-derived lookup; OFF
     reproduces the from-scratch head byte-for-byte. See `designs/ai_v6/design_differentiable_damage_op.md`."""
 
+    move_prior_logits: torch.Tensor
+    move_prior_probs: torch.Tensor
+
     def __init__(self, n_moves: int, move_emb_dim: int,
                  prior_fusion: bool = False, n_species: int = 0,
                  move_candidate_floor: float = _PRIOR_FLOOR):
@@ -436,6 +442,12 @@ class SpreadBelief(torch.nn.Module):
     skipped (the op uses the obs HP fraction × a neutral maxhp). Zero-init heads → cold-start == the prior; the
     prior buffers are non-persistent (data-derived) → OFF builds no module (reproduces nothing)."""
 
+    spread_prior: torch.Tensor
+    nature_logprior: torch.Tensor
+    ev_prior: torch.Tensor
+    nature_mult: torch.Tensor
+    base_nonhp: torch.Tensor
+
     def __init__(self, n_species: int, nature: bool = False):
         super().__init__()
         from agents.model.damage_tables import build_opp_spread_prior, N_SPREAD_STATS
@@ -516,6 +528,8 @@ class ItemBelief(torch.nn.Module):
     is a model output; the label is training-only. The op consumes only P(item == Choice Band)
     at the active slot, gated by the SAME exactness logic it already had (revealed → 0/1)."""
 
+    item_prior: torch.Tensor
+
     def __init__(self, n_species: int, n_items: int):
         super().__init__()
         self.n_items = n_items
@@ -560,6 +574,9 @@ class HPTypeBelief(torch.nn.Module):
     P(HP present), ≈1 once `hiddenpower` is revealed — the "presence bit") zeroes the signal when HP is
     unlikely. The posterior stays a full 16-way distribution (it does NOT argmax-collapse), so multiple
     un-ruled-out types remain live candidates the op's top-K simulates distinctly + weights by confidence."""
+
+    HP_TYPED_NUMS: torch.Tensor
+    hp_prior: torch.Tensor
 
     def __init__(self, n_species: int, type_emb_dim: int, n_hp: int = 16):
         super().__init__()

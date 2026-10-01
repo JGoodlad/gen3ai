@@ -43,7 +43,6 @@ from main.launcher.child import (
     _launch_child,
     child_full_log_path,
     child_log_path,
-    resolve_child_python,
     _TRAIN_SCRIPT,
     _SRC_DIR,
 )
@@ -237,6 +236,7 @@ def _prepare_session(
     pin_commit: "str | None",
     grace_minutes: float,
     max_crash_restarts: int,
+    allow_torch_switch: bool = False,
 ) -> _SessionCtx:
     """Worktree pin + run-dir resolution + initial events + at-exit handlers.
 
@@ -280,6 +280,17 @@ def _prepare_session(
         state.add_event(
             f"♻️  Fork {os.path.basename(run_dir)} already has progress — resuming in place from "
             f"{os.path.basename(_fork_resume)} (idempotent)")
+
+    # INTERPRETER ↔ RUN SAFETY (owner 2026-09-30: torch 2.8 default, 2.5.1 legacy): a resume or
+    # fork runs under the torch its run RECORDED — selected, or refused FATAL_CONFIG — decided ONCE
+    # here, after the fork swap (the model is final) and before anything exists on disk, and held
+    # for every restart of this session through child_env. `torch_runtime` has the rule.
+    from main.launcher.torch_runtime import resolve_for_launch
+    _torch = resolve_for_launch(_find_model_arg(child_args), allow_switch=allow_torch_switch)
+    if _torch.refusal:
+        print(f"[launcher] ERROR: {_torch.refusal}", file=sys.stderr)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+    child_env[PYTHON_ENV_VAR] = _torch.python
 
     #: Set below once the pin is resolved: True when the child will run a commit that is NOT this
     #: tree's HEAD, which makes the arch-surface comparison informational (see the gate's docstring).
@@ -409,12 +420,12 @@ def _prepare_session(
     else:
         state.add_event("🚀 Starting — single run (no restart)")
 
-    # Which interpreter the child will run under. Announced because the default follows the
-    # launcher's own process (sys.executable): if the launcher was started from the wrong
-    # environment, every child inherits that, and this line is where it shows.
-    _py = resolve_child_python()
-    _pinned = f" (pinned by ${PYTHON_ENV_VAR})" if os.environ.get(PYTHON_ENV_VAR, "").strip() else ""
-    state.add_event(f"🐍 Interpreter: {_py}{_pinned}")
+    # Which interpreter the child will run under, and WHY (`torch_runtime`). Announced because
+    # the default follows the launcher's own process (sys.executable): if the launcher was started
+    # from the wrong environment, every child inherits that, and this line is where it shows.
+    state.add_event(f"🐍 Interpreter: {_torch.python} (torch {_torch.torch}) — {_torch.how}")
+    if _torch.required is not None:
+        state.add_event(f"   ↳ run torch {_torch.required} ({_torch.required_source})")
 
     if child_uses_bridge(child_args):
         # In-process BattleStream transport for training AND eval — no server, the port is unused.
@@ -820,6 +831,7 @@ def run(
     pin_commit: "str | None" = None,
     grace_minutes: float = 20.0,
     max_crash_restarts: int = 3,
+    allow_torch_switch: bool = False,
 ) -> None:
     """Set up the session, run the app, reap, exit.
 
@@ -864,6 +876,7 @@ def run(
         pin_commit=pin_commit,
         grace_minutes=grace_minutes,
         max_crash_restarts=max_crash_restarts,
+        allow_torch_switch=allow_torch_switch,
     )
 
     cmd_q: queue.Queue = queue.Queue()
@@ -1001,6 +1014,17 @@ def build_launcher_parser():
             "two commits when one lands mid-batch. (--pin-to-hash is the legacy spelling.)"
         ),
     )
+    parser.add_argument(
+        "--allow-torch-switch",
+        action="store_true",
+        default=False,
+        help=(
+            "Consent to resuming/forking a run under a torch OTHER than the one its run recorded "
+            "(metadata.json torch_version; unrecorded = the legacy 2.5.1). Without it the launcher "
+            "selects the env that carries the recorded torch, or refuses FATAL_CONFIG. "
+            "See main/launcher/torch_runtime.py."
+        ),
+    )
     parser.add_argument("-h", "--help", action="store_true")
     return parser
 
@@ -1042,6 +1066,7 @@ def main() -> None:
             grace_minutes=known.restart_grace_minutes,
             max_crash_restarts=known.max_crash_restarts,
             nice=known.nice,
+            allow_torch_switch=known.allow_torch_switch,
         ))
 
     # Deprioritise the whole run before anything is spawned, so the training child and
@@ -1057,6 +1082,7 @@ def main() -> None:
             pin_commit=known.pin_commit,
             grace_minutes=known.restart_grace_minutes,
             max_crash_restarts=known.max_crash_restarts,
+            allow_torch_switch=known.allow_torch_switch,
         )
     except KeyboardInterrupt:
         sys.exit(0)

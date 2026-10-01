@@ -380,6 +380,7 @@ What that established:
 | `--no-pin` | off | Skip worktree creation; run from the current source tree |
 | `--sync-to-main` | off | When resuming from a checkpoint, pin the isolated worktree to the current HEAD instead of the checkpoint's original git hash. Use this to pick up UI or tooling fixes on `main` without discarding the checkpoint. |
 | `--pin-commit COMMIT` | unset | **Pin the isolated worktree to a NAMED commit** (full sha or unambiguous prefix — resolved with `git rev-parse --verify <spec>^{commit}` and announced at startup as the full sha plus its subject line). Spelled `--pin-to-hash` before 2026-09-05; both spellings still parse, `--pin-commit` is the name. Beats the checkpoint's recorded `git_hash` on a genuine FORK and HEAD on a fresh run; **refused** beside `--sync-to-main` (argparse — they name two different sources of truth) and beside `--no-pin`; **refused** on a same-run RESTART whose checkpoint records a different hash (see the resume contract). An unresolvable commit exits `FATAL_CONFIG` naming it — never a silent fall-back to HEAD, which is the whole failure it exists to prevent. |
+| `--allow-torch-switch` | off | **Consent** to resume/fork a run under a torch OTHER than the one its run recorded (`metadata.json` `torch_version`; unrecorded = 2.5.1). Without it the launcher selects the env carrying the recorded torch, or refuses `FATAL_CONFIG` — see **Which interpreter the child runs**. Launcher-owned (stripped). |
 
 | `--arch production` | unset | *(forwarded)* Apply the whole ARCH surface AND the TRAINING RECIPE from `designs/production_config.json` as if typed — see **Is this the ARCHITECTURE you meant?** and **Is this the RECIPE you meant?** below. Refused on a resume (`FATAL_CONFIG`); the launcher's own restarts STRIP it (resume role). |
 | `--allow-nonproduction-arch` | off | *(forwarded)* Consent to a FRESH run whose architecture differs from the production mirror; without it that launch is REFUSED. |
@@ -696,7 +697,27 @@ flag missing from both trees, or an unambiguous abbreviation.
 
 ## Which interpreter the child runs
 
-`child.resolve_child_python()`, in precedence order:
+🚨 **A resume or fork runs under the TORCH its run RECORDED** (`torch_runtime.py`, owner 2026-09-30:
+torch 2.8 / `gen3ai_torch28` is the default, torch 2.5.1 / `gen3ai_stable` is LEGACY, kept so old
+pinned runs resume on their own torch). Every save writes `metadata.json`'s `torch_version` (and a
+`torch` key on each `pin_history` span); a run with NO record predates it and **reads as 2.5.1**.
+`resolve_for_launch` decides ONCE per launcher session, after the fork swap and before anything is
+created, and the choice rides in `child_env[$GEN3AI_PYTHON]` so every restart spawns the same one:
+
+| launch | child interpreter |
+|---|---|
+| FRESH | `resolve_child_python()` (below) — its torch becomes the run's record at the first save |
+| RESUME / FORK, the default interpreter carries the recorded torch | that interpreter |
+| … it does not, no `$GEN3AI_PYTHON` | the sibling conda env `KNOWN_ENVS` names for that torch (`2.5.1` → `gen3ai_stable`, `2.8.0` → `gen3ai_torch28`; found beside the launcher's own env, never a machine path), **SELECTED and announced** |
+| … nothing carries it, or `$GEN3AI_PYTHON` names the wrong torch | **`FATAL_CONFIG` refusal**, unless `--allow-torch-switch` (launcher-owned consent; the new torch is then recorded at the child's first save) |
+
+Versions compare by RELEASE (`2.5.1+cu121` ≡ `2.5.1`). The startup event and `--dry-run` print the
+interpreter, its torch and the run's recorded torch with its source. The probe reads the env's torch
+METADATA in a subprocess (~50 ms; torch is not imported). Gate: `torch_runtime_test.py` (fake
+interpreters, so it reads the same on any box; reverting the refusal or the `child_env` hold fails
+it). ⚠️ The guard is the LAUNCHER's: a bare `train_rl_agent.py --model …` is not checked.
+
+Underneath, `child.resolve_child_python()` — the FRESH default — in precedence order:
 
 | # | Source | Notes |
 |---|---|---|
@@ -710,8 +731,9 @@ The resolved value is announced in the events panel at startup (`🐍 Interprete
 `(pinned by $GEN3AI_PYTHON)` when the override is live), because if the launcher was started from
 the wrong environment then *every* child inherits that, and this line is where it shows.
 
-It is resolved at **spawn** time, not import time: a launcher process outlives a dozen children
-across periodic and crash restarts, so an import-time constant would pin the first value.
+`_launch_child` takes argv[0] from the session's `child_env[$GEN3AI_PYTHON]` (set by
+`resolve_for_launch` above), falling back to `resolve_child_python()` at spawn time for a caller that
+set none (tests), so a launcher that outlives a dozen children across restarts spawns one torch.
 
 > **History.** This was a hardcoded `/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3` with
 > no flag and no override until 2026-08-22 — a fresh clone died with `FileNotFoundError` on its

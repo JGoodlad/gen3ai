@@ -75,6 +75,8 @@ def pokemon_id_columns(layout: Dict[str, Any]) -> Tuple[int, ...]:
 class TrueTeamValueReadout(torch.nn.Module):
     """`[B, 6, POKEMON_FULL_DIM]` privileged block → `[B, D_MODEL]` added into `value_pooled`."""
 
+    id_cols: torch.Tensor
+
     def __init__(self, layout: Dict[str, Any]):
         super().__init__()
         self.layout = layout

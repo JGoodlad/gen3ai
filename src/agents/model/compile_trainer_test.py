@@ -77,6 +77,22 @@ def _model(device="cpu", obs_dim=32):
     return m
 
 
+def _production_model_cuda():
+    """The REAL production policy as a fresh launch builds it (`build_fresh_model`, seed 0), on CUDA.
+
+    The GPU gate tests drive `compile_trainer_extractor` with THIS, never with a heads-less stand-in
+    policy: the gate's grad-COVERAGE guard (gen3_gate_grad_coverage_v1) reaches the per-action move /
+    switch cell projections only through the POINTER HEAD, so a stand-in left 15-17 of 232 extractor
+    parameters at an exactly zero gradient (> the 2% bar) and the gate refused with
+    VacuousCompileParityError — on torch 2.5.1 AND 2.8, for a reason that is the stand-in's (the
+    real policy on the gate's perturbed rung: 1 of 254, c5_map; measured 2026-09-30, both torches).
+    Same seed ⇒ same weights, so two calls give two identical learners."""
+    from main.fresh_checkpoint import build_fresh_model
+    model, _, _ = build_fresh_model(0)
+    model.policy.to("cuda")
+    return model
+
+
 # --------------------------------------------------------------------------- the no-op
 
 
@@ -436,6 +452,7 @@ def test_a_zero_batch_size_does_not_divide_by_zero():
 # --------------------------------------------------------------------------- the CUDA property
 
 
+@pytest.mark.slow   # the REAL production policy through the full CUDA gate: ~2-7 min (2026-10-01)
 @_skip_cuda
 def test_compiled_learner_leaves_the_state_dict_and_a_save_reload_intact():
     """The one failure that would corrupt a RUN rather than slow it.
@@ -447,15 +464,9 @@ def test_compiled_learner_leaves_the_state_dict_and_a_save_reload_intact():
     """
     import io
 
-    from agents.model.extractor_compiles_test import _build_production_extractor
-    fe, layout = _build_production_extractor()
-    fe = fe.cuda()
-    fe.obs_dim = layout["total_dim"]
+    m = _production_model_cuda()
+    fe = m.policy.features_extractor
     before = set(fe.state_dict().keys())
-
-    m = torch.nn.Module()
-    m.policy = torch.nn.Module()
-    m.policy.features_extractor = fe
 
     speedup = compile_trainer_extractor(m, True, batch=8)
     assert speedup is not None and speedup > 1.0
@@ -471,6 +482,7 @@ def test_compiled_learner_leaves_the_state_dict_and_a_save_reload_intact():
     buf.seek(0)
     assert set(torch.load(buf, map_location="cuda", weights_only=True).keys()) == before
 
+@pytest.mark.slow   # compiles the production extractor at 2 CUDA shapes: ~50 s (2026-09-30)
 @_skip_cuda
 def test_every_production_shape_agrees_with_eager():
     """THE correctness gate, and the gap that made it necessary.
@@ -501,7 +513,11 @@ def test_every_production_shape_agrees_with_eager():
     from agents.model.compile_parity_fixture import load_parity_rows
     rows, _ = load_parity_rows(layout["total_dim"])       # REAL rows — zeros hid a 7.65 miscompile
     worst = {}
-    for batch in (1, 48, 512):          # inference, rollout, and a train-shaped minibatch
+    # Rollout and a train-shaped minibatch. NOT batch 1: production never compiles it
+    # (gen3_batch1_eager_v1, `EAGER_BATCHES` → the eager forward; torch 2.8's Triton cannot lower
+    # the batch-1 CUDA graph), so a raw `torch.compile` at batch 1 tests a graph that never ships.
+    from agents.model.compile_trainer import EAGER_BATCHES
+    for batch in [b for b in (1, 48, 512) if b not in EAGER_BATCHES]:
         idx = np.arange(batch) % len(rows)
         obs = {"observation": torch.as_tensor(rows[idx], device="cuda")}
         with torch.no_grad():
@@ -516,6 +532,7 @@ def test_every_production_shape_agrees_with_eager():
         "wrong model is not a win — this is the silent-corruption case, not a performance nit.")
 
 
+@pytest.mark.slow   # the REAL production policy through the full CUDA gate: ~2-7 min (2026-10-01)
 @_skip_cuda
 def test_tf32_gate_passes_the_real_extractor_and_refuses_a_broken_graph(monkeypatch,
                                                                         _restore_matmul_precision):
@@ -527,24 +544,14 @@ def test_tf32_gate_passes_the_real_extractor_and_refuses_a_broken_graph(monkeypa
     compiled graph — the same extractor with one term dropped — must still FAIL at TF32. SKIPS
     (naming why) when the GPU is hidden or another process holds it; a skip is NOT a pass.
     """
-    import copy
-
-    from agents.model.extractor_compiles_test import _build_production_extractor
-    fe, layout = _build_production_extractor()
-    fe = fe.cuda()
-    fe.obs_dim = layout["total_dim"]
-    fe_again = copy.deepcopy(fe)                 # an identical learner for the broken-graph arm
+    m = _production_model_cuda()
+    m_again = _production_model_cuda()           # an identical learner for the broken-graph arm
+    fe_again = m_again.policy.features_extractor
     torch.set_float32_matmul_precision("high")
-
-    def _as_model(extractor):
-        m = torch.nn.Module()
-        m.policy = torch.nn.Module()
-        m.policy.features_extractor = extractor
-        return m
 
     torch._dynamo.reset()
     lines = []
-    assert compile_trainer_extractor(_as_model(fe), True, batch=8, emit=lines.append) is not None
+    assert compile_trainer_extractor(m, True, batch=8, emit=lines.append) is not None
     assert any("parity PASS" in ln and "'high'" in ln for ln in lines), lines
     assert torch.get_float32_matmul_precision() == "high", "the fp32 reference must restore it"
 
@@ -563,7 +570,7 @@ def test_tf32_gate_passes_the_real_extractor_and_refuses_a_broken_graph(monkeypa
     monkeypatch.setattr("agents.model.compile_trainer.torch.compile",
                         lambda f, **k: real_compile(_dropped_bias_forward))
     with pytest.raises(CompileTrainerError, match="DISAGREES") as e:
-        compile_trainer_extractor(_as_model(fe_again), True, batch=8)
+        compile_trainer_extractor(m_again, True, batch=8)
     assert "features" in str(e.value), "caught at the forward, not only by the gradient"
 
 
@@ -643,6 +650,7 @@ def test_train_graph_gradient_cosine_is_gated():
                                     precision="high")
 
 
+@pytest.mark.slow   # the REAL production policy through the full CUDA gate: ~2-7 min (2026-10-01)
 @_skip_cuda
 def test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate(monkeypatch):
     """gen3_inductor_trunk_split_v1 — THE revert-must-fail pin. The single CUDA Inductor graph of
@@ -653,18 +661,11 @@ def test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate(monkeypatch):
     must PASS. SKIPS (naming why) when the
     GPU is hidden or busy — a skip is NOT a pass."""
     import agents.model.team_transformer as tt
-    from agents.model.extractor_compiles_test import _build_production_extractor
 
     def _run(split: bool):
         monkeypatch.setattr(tt, "_CUDA_TRUNK_SPLIT", split)
         torch._dynamo.reset()
-        fe, layout = _build_production_extractor()
-        fe = fe.cuda()
-        fe.obs_dim = layout["total_dim"]
-        m = torch.nn.Module()
-        m.policy = torch.nn.Module()
-        m.policy.features_extractor = fe
-        return compile_trainer_extractor(m, True)
+        return compile_trainer_extractor(_production_model_cuda(), True)
 
     if torch.__version__ in tt._SPLIT_NOT_NEEDED_ON:
         # Lane K1: on this torch the UNSPLIT graph is correct — the split defaults OFF, and the

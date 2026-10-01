@@ -17,7 +17,7 @@ Splitting validation from construction would also break `flag_requires_test._gua
 which walks THIS function's body for the flag-coupling raises (it resolves the file from
 `Gen3FeaturesExtractor.__init__`, so it follows the constructor wherever it lives).
 """
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, cast
 
 import torch
 from gymnasium import spaces
@@ -55,6 +55,12 @@ from agents.model.value_readouts import UnifiedValueReadout
 from agents.model.value_threat_inject import (
     VALUE_THREAT_INJECT_REDUCE_HOW, value_threat_inject_dim)
 from utils.logging.levels import LogLevel
+
+if TYPE_CHECKING:
+    # The read-side API (properties + `_stamp_belief_grad_flags`) lives on the subclass; __init__
+    # reaches it through `cast("ExtractorApi", self)` so torch >= 2.8's `Module.__getattr__`
+    # (`Tensor | Module`) does not type it. Typing only.
+    from agents.model.extractor_api import ExtractorApi
 
 
 class ExtractorBuild(torch.nn.Module):
@@ -854,7 +860,7 @@ class ExtractorBuild(torch.nn.Module):
         # gen3_belief_grad_mode_v1: stamp the per-head trunk-read detach flag now that every belief head
         # exists. 'shaping' ⇒ all False ⇒ byte-identical. BeliefSlots has no predictive read (it only
         # swaps in learned tokens pre-transformer), so it is intentionally NOT in this list.
-        self._stamp_belief_grad_flags()
+        cast("ExtractorApi", self)._stamp_belief_grad_flags()
 
         # gen3_static_widths_v1: the projection-input widths are STATIC ARITHMETIC — see
         # `compute_projection_widths`. The old mechanism (a construction-time dummy
@@ -983,10 +989,10 @@ class ExtractorBuild(torch.nn.Module):
                 f"exposure is a separate decision that owes its own gate.")
         self.q_winprob_mode = str(q_winprob_mode)
         self.q_winprob_head = (
-            QWinProbHead(move_token_dim=self.pointer_move_token_dim, d_model=D_MODEL,
+            QWinProbHead(move_token_dim=cast("ExtractorApi", self).pointer_move_token_dim, d_model=D_MODEL,
                          ctx_dim=D_MODEL,
-                         move_cell_dim=self.pointer_move_cell_dim,
-                         switch_cell_dim=self.pointer_switch_cell_dim)
+                         move_cell_dim=cast("ExtractorApi", self).pointer_move_cell_dim,
+                         switch_cell_dim=cast("ExtractorApi", self).pointer_switch_cell_dim)
             if self.q_winprob_mode != "none" else None)
 
         # gen3_value_true_team_v1 (v114) — the PRIVILEGED true-opponent-team VALUE route, arm 5 of

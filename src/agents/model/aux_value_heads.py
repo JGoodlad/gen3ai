@@ -70,6 +70,8 @@ class ValueDistHead(torch.nn.Module):
     (deterministic from `bins`/`vmin`/`vmax`) so it stays out of the state_dict — only the head's
     params (whose final Linear is `bins`-wide) define the loadable shape."""
 
+    atoms: torch.Tensor
+
     def __init__(self, bins: int, vmin: float, vmax: float):
         super().__init__()
         if bins <= 0:
@@ -97,7 +99,7 @@ class ValueDistHead(torch.nn.Module):
     def mean(self, logits: torch.Tensor) -> torch.Tensor:
         """E[Z] = Σ atomsᵢ·softmax(logits)ᵢ — the scalar the distribution implies, [B, 1]. (Used by
         the prober / diagnostics; the Phase-A side head does NOT feed this into the scalar critic.)"""
-        return (torch.softmax(logits, dim=-1) * self.atoms).sum(-1, keepdim=True)  # type: ignore[no-any-return]
+        return (torch.softmax(logits, dim=-1) * self.atoms).sum(-1, keepdim=True)
 
 
 class CfEvidentialHead(torch.nn.Module):

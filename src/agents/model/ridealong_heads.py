@@ -93,7 +93,7 @@ from __future__ import annotations
 import copy
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 import torch
 import torch.nn.functional as F
@@ -377,6 +377,12 @@ class _RndErrStats(torch.nn.Module):
     """The error z-score's running statistics (an EMA of the batch mean and variance). Each RND
     head — base and every variant — owns ONE, because their error scales differ by construction."""
 
+    # Registered buffers, declared for the type checker only (torch >= 2.8 types an undeclared
+    # Module attribute as `Tensor | Module`); a bare annotation creates no class attribute.
+    err_mean: torch.Tensor
+    err_var: torch.Tensor
+    err_seen: torch.Tensor
+
     def _register_err_stats(self) -> None:
         self.register_buffer("err_mean", torch.zeros(()))
         self.register_buffer("err_var", torch.ones(()))
@@ -405,6 +411,10 @@ class RndNovelty(_RndErrStats):
     """Random Network Distillation over the raw observation (see the module docstring for why the
     observation and not the trunk features). ``seed`` defaults to base's; the `feat` variant is this
     class over `value_pooled` with its own seed."""
+
+    obs_mean: torch.Tensor      # registered buffers — typing only (see _RndErrStats)
+    obs_var: torch.Tensor
+    obs_count: torch.Tensor
 
     def __init__(self, obs_dim: int, seed: Optional[int] = None) -> None:
         super().__init__()
@@ -633,6 +643,8 @@ class RideAlongHeads(torch.nn.Module):
     """The container: whichever of the four heads the spec builds, the RND variants beside base,
     plus the bootstrap hash."""
 
+    hash_mult: torch.Tensor     # registered buffer — typing only (see _RndErrStats)
+
     def __init__(self, spec: RideAlongSpec, *, obs_dim: int, move_token_dim: int,
                  move_cell_dim: int, switch_cell_dim: int, n_moves: int,
                  block_edges: Optional[Sequence[int]] = None) -> None:
@@ -736,9 +748,9 @@ class RideAlongHeads(torch.nn.Module):
                 # Observation variants: base's normalised rows and target output, shared (paired).
                 # `feat`: its own normalisation and target over the detached value_pooled.
                 e = (v.error_from(x, tgt) if isinstance(v, RndObsVariant)
-                     else v.error(b.pooled))
+                     else cast(RndNovelty, v).error(b.pooled))
                 out[f"rndv_{n}_err"] = e
-                out[f"rndv_{n}_z"] = v.zscore(e)
+                out[f"rndv_{n}_z"] = cast(_RndErrStats, v).zscore(e)
         if self.adv is not None and b.pointer is not None and b.pi is not None:
             raw = self.adv(b.pooled, b.pointer)                                  # [B,K,11]
             centred = raw - (raw * b.pi[:, None, :]).sum(-1, keepdim=True)

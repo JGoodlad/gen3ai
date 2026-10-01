@@ -187,6 +187,10 @@ class SwitchBranchMoveCell(torch.nn.Module):
 
     n_moves: int = 4
 
+    spin_num: torch.Tensor
+    protect_nums: torch.Tensor
+    damaging_num: torch.Tensor
+
     def __init__(self, out_dim: int):
         super().__init__()
         self.out_dim = int(out_dim)
