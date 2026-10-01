@@ -150,6 +150,15 @@ def install(model: Any, *, backend: Optional[str] = None,
 
     def r0(pol: Any, obs: Any, action_masks: Any) -> Tuple[torch.Tensor, torch.Tensor]:
         out: Tuple[torch.Tensor, torch.Tensor]
+        # ONE declared mask input: a bool tensor on the learner's device (`gen3_r0_mask_dtype_v1`).
+        # The rollout hands the policy the env's numpy masks — int8 from the env workers — while the
+        # gate and the prewarm passed numpy bool, and dynamo guards a numpy input's dtype: the first
+        # real rollout was an UNDECLARED signature, the sentinel's FATAL at rollout end (found by the
+        # launcher restart proof, 2026-10-01). `masked_categorical` reads any of them as
+        # `as_tensor(m, dtype=bool)`, so normalising here changes no number.
+        if action_masks is not None:
+            action_masks = torch.as_tensor(action_masks, dtype=torch.bool,
+                                           device=ct.resolve_device(pol.features_extractor))
         if ct._rows(obs) in ct.EAGER_BATCHES:            # gen3_batch1_eager_v1
             out = pol.rollout_core(obs, action_masks)
         else:

@@ -1248,6 +1248,17 @@ kernel time 85.2% → 98.1%; host scalar reads 66,784 → 9,942 per update; GPU 
 epochs 2.4 → 0.57 s; 0 compiles after the lock. A's spread (45.3 / 48.0 s) is wider than the margin
 under the bar, so the verdict is "met" at n = 2, not "met with room".
 
+**R0's mask input is ONE declared dtype** (`gen3_r0_mask_dtype_v1`, 2026-10-01). The R0 dispatcher
+turns the action masks into a bool tensor on the learner's device before the compiled core. The env
+workers hand the rollout int8 numpy masks; the gate and the prewarm passed numpy bool, and dynamo
+guards a numpy input's dtype. So from K8's regions landing (`f3878594`) until this fix, the first
+rollout of every real torch-2.8 `--compile-trainer` launch on the python env core was an UNDECLARED
+signature, and the sentinel FATAL'd at rollout end (`___from_numpy(action_masks) dtype mismatch.
+expected Bool, actual Char`). The launcher restart proof found it. The acceptance read never
+rolled out (it times `train()` on a pinned buffer), so it missed it. `masked_categorical` already
+read every mask form as `as_tensor(m, dtype=bool)`, so no number changes.
+`compile_regions_test`'s inventory test sends int8, bool and float masks after the lock.
+
 **R1's per-parameter gradient bar is chosen by WEIGHT REGIME** (`gen3_r1_param_bar_by_regime_v1`,
 2026-10-01; `compile_regions.R1_PARAM_BAR`, `weights_regime`). The gate first had the extractor
 gate's FRESH bar, 1e-3, which was measured on that gate's 64-row probe loss. On R1 (the real PPO

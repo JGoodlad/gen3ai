@@ -85,6 +85,12 @@ def test_the_compiled_inventory_EQUALS_the_declaration_table(learner):
     model.policy.set_training_mode(False)
     with ctl.guard("rollout"), torch.no_grad():
         model.policy(obs, action_masks=mask)               # the rollout forward through R0
+        # the env workers' masks are int8 numpy (`gen3_r0_mask_dtype_v1`): the REAL rollout's input,
+        # never an undeclared signature; a torch bool / float mask is the same declared input
+        import numpy as np
+        model.policy(obs, action_masks=np.asarray(mask).astype(np.int8))
+        model.policy(obs, action_masks=torch.as_tensor(np.asarray(mask)))
+        model.policy(obs, action_masks=torch.as_tensor(np.asarray(mask)).float())
         model.policy(ct._prewarm_obs(model, 1), action_masks=mask[:1])   # batch 1: eager, compiles nothing
     ctl.check("end")
     assert ctl.compiles_after_lock == 0 and ctl.rejected_after_lock == 0, ctl.after_lock_frames

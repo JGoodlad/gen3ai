@@ -233,6 +233,14 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/model/compile_regions_trained_cuda_test.py::test_arm_Cs_trained_weights_pass_the_R1_gate_at_fp32_on_cuda": {
+   "status": "pass",
+   "commit": "ee6a9e6b65672469cc86fe76d9583eacf694e030",
+   "at": "2026-10-01T14:27:34Z",
+   "duration_s": 43.98,
+   "contention": 1.0,
+   "detail": ""
+  },
   "src/agents/model/compile_trainer_test.py::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate": {
    "status": "pass",
    "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
@@ -1235,5 +1243,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-01T11:10:45Z"
+ "last_written": "2026-10-01T14:27:34Z"
 }

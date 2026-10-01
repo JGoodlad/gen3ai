@@ -10402,3 +10402,15 @@ if a lazy build is reintroduced.
   launch also judges R1 on a seeded perturbation at the trained bar. The fp64-referenced form is
   deferred (`designs/ops/TASK_BACKLOG.md` T16).
 
+## 2026-10-01 — K8: region R0's mask input is one declared dtype (`gen3_r0_mask_dtype_v1`; no model change)
+
+- From `f3878594` (K8's regions) the first rollout of every real torch-2.8 `--compile-trainer`
+  launch on the python env core FATAL'd at rollout end: the env workers' masks are int8 numpy, the
+  gate and the prewarm had passed numpy bool, and dynamo guards a numpy input's dtype — an
+  UNDECLARED signature (`___from_numpy(action_masks) dtype mismatch. expected Bool, actual Char`).
+  Found by the launcher restart proof; the K8 acceptance read times `train()` on a pinned buffer
+  and never rolls out.
+- The R0 dispatcher now hands the compiled core `as_tensor(masks, dtype=bool, device=learner)`;
+  masking already read every form that way, so no number changes. `compile_regions_test` sends
+  int8 / bool / float masks after the lock.
+
