@@ -50,7 +50,7 @@ def test_normal_python_path_passes_the_behaviour_gate_on_the_first_micro_batch()
     _train(model)
     worst = model.logger.name_to_value["behaviour/max_abs_dlogp_current"]
     assert worst < 1e-5, worst          # measured ~1e-6 (batch-composition rounding), 100x under the bar
-    assert model.logger.name_to_value["behaviour/rows_current"] == L.RECIPE["batch_size"]
+    assert model.logger.name_to_value["behaviour/rows_current"] == L.GOLDEN_OVERRIDES["batch_size"]
 
 
 @pytest.mark.parametrize("precision", ["highest", "high"])
@@ -66,7 +66,7 @@ def test_rollout_weights_one_optimizer_step_stale_are_fatal_before_any_step(prec
         model.n_epochs, model.batch_size, model.grad_accum_steps = 1, L.N_STEPS * L.N_ENVS, 1
         _train(model)                                     # exactly ONE optimizer step on the rows
         L.load_buffer_into(model)                         # the rollout's (now stale) behaviour log-probs
-        model.n_epochs, model.batch_size, model.grad_accum_steps = L.RECIPE["n_epochs"], L.RECIPE["batch_size"], 1
+        model.n_epochs, model.batch_size, model.grad_accum_steps = L.GOLDEN_OVERRIDES["n_epochs"], L.GOLDEN_OVERRIDES["batch_size"], 1
         model.behaviour_check = "fatal"
         before = _params(model)
         with pytest.raises(BehaviourMismatch, match=f"first micro-batch.*{precision}"):

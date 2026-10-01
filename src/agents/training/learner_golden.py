@@ -38,9 +38,14 @@ labels, the behaviour log-probs of the seeded learner — sliced to ``N_STEPS`` 
 
 SCOPE LIMITS (what it does NOT pin): the rollout / GAE (the buffer's advantages and returns are
 inputs), the KL→LR controller and every other callback (outside ``train()``), CUDA / compiled / TF32
-numerics (the compile parity gate and K6's canary own those), and the SB3 recipe knobs that the
-production mirror does not carry yet (``RECIPE`` below, from ``design_learner_recipe.md`` §2's live
-column — when K10(a)'s recipe block lands, read it from there and re-record).
+numerics (the compile parity gate and K6's canary own those).
+
+THE RECIPE IS READ, NOT COPIED (`golden_recipe`): the loss knobs the production recipe carries come
+from K10(a)'s block (`main.train.recipe_surface.production_recipe()` — ``recipe.fresh`` of
+``designs/production_config.json``), the SB3 knobs no launch sets come from sb3's own constructor
+defaults (what a launch therefore trains with), and only the golden's TEST-SPECIFIC overrides are
+written here (`GOLDEN_OVERRIDES`: the scaled-down shape and the documented LR). A recipe change moves
+the golden — `learner_golden_test` names the drifted knob before the hashes do.
 """
 from __future__ import annotations
 
@@ -68,17 +73,35 @@ MODEL_SEED, PERTURB_SEED, UPDATE_SEED = 0, 1234, 123
 #: The rollout the buffer is sliced from (``rebuild-buffer``).
 RECORD_N_STEPS, RECORD_RUN_SEED, RECORD_P2_SEED = 32, 17, 5
 
-#: The SB3 recipe knobs the production mirror does not carry (``design_learner_recipe.md`` §2, the
-#: "live value" column): clip 0.15, entropy 0.05, lr 2.8e-5, grad clip 0.5, per-micro-batch advantage
-#: normalisation. The SHAPE is scaled down but keeps the live shape's structure: micro 16 x K 3 over
-#: 64 rows = one full accumulation group plus a RAGGED short group every epoch (the live 98,304 /
-#: 65,536 shape's half step), two epochs.
-RECIPE: Dict[str, Any] = {
-    "n_epochs": 2, "batch_size": 16, "grad_accum_steps": 3, "clip_range": 0.15, "ent_coef": 0.05,
-    # The LR is a DOCUMENTED TEST CONSTANT, deliberately neither `recipe.fresh` (3e-4) nor `recipe.fork`
-    # (5.6e-5): the golden pins what the update COMPUTES; K10(a)'s doc gate pins the recipe.
-    "learning_rate": 2.8e-5, "max_grad_norm": 0.5, "normalize_advantage": True, "target_kl": None,
-}
+#: The golden's TEST-SPECIFIC overrides — the only recipe values written here. The SHAPE is scaled
+#: down but keeps the live shape's structure: micro 16 x K 3 over 64 rows = one full accumulation group
+#: plus a RAGGED short group every epoch (the live 98,304 / 65,536 shape's half step), two epochs. The
+#: LR is a DOCUMENTED TEST CONSTANT, deliberately neither `recipe.fresh` (3e-4) nor `recipe.fork`
+#: (5.6e-5): the golden pins what the update COMPUTES; K10(a)'s doc gate pins the recipe.
+GOLDEN_OVERRIDES: Dict[str, Any] = {"n_epochs": 2, "batch_size": 16, "grad_accum_steps": 3,
+                                    "learning_rate": 2.8e-5}
+#: Read from the PRODUCTION recipe block (`recipe.fresh`).
+_FROM_RECIPE = ("clip_range", "ent_coef")
+#: SB3 constructor knobs no launch sets (the trainer passes none of them), so a launch trains with
+#: sb3's own defaults — read from its signature, never copied.
+_FROM_SB3_DEFAULTS = ("max_grad_norm", "normalize_advantage", "target_kl")
+
+
+def golden_recipe() -> Dict[str, Any]:
+    """The golden update's SB3 recipe: production values (`_FROM_RECIPE`), sb3 defaults
+    (`_FROM_SB3_DEFAULTS`), then `GOLDEN_OVERRIDES`."""
+    import inspect
+
+    from sb3_contrib import MaskablePPO
+
+    from main.train.recipe_surface import production_recipe
+    prod = production_recipe()
+    sig = inspect.signature(MaskablePPO.__init__).parameters
+    out: Dict[str, Any] = {k: prod[k] for k in _FROM_RECIPE}
+    out.update({k: sig[k].default for k in _FROM_SB3_DEFAULTS})
+    out.update(GOLDEN_OVERRIDES)
+    return out
+
 
 #: Logged keys never pinned: wall clocks.
 _CLOCK_SUFFIXES = ("_ms", "_s")
@@ -109,7 +132,7 @@ def _spaces() -> Tuple[Any, Any, Any]:
 
 def build_learner(env: Any = None) -> Any:
     """The seeded production-surface learner (on a dummy env over the production spaces), the
-    production training hparams applied exactly as a launch applies them, then ``RECIPE``."""
+    production training hparams applied exactly as a launch applies them, then `golden_recipe()`."""
     import torch as th
     from stable_baselines3.common.logger import configure
 
@@ -120,6 +143,7 @@ def build_learner(env: Any = None) -> Any:
     from main.train.model_build import apply_training_hparams
 
     args, obs, act = _spaces()
+    RECIPE = golden_recipe()
     if env is None:
         env = RustVecEnv(n_envs=N_ENVS, observation_space=obs, action_space=act, build=lambda m: None)
     model = TK.fresh_model(env, n_steps=N_STEPS, batch_size=RECIPE["batch_size"], n_epochs=RECIPE["n_epochs"],
@@ -305,7 +329,7 @@ def record(reason: str) -> Dict[str, Any]:
         g["entries"] = {}
     g["buffer_sha256"] = bsha
     g["buffer"] = {"file": BUFFER_PATH.name, "n_steps": N_STEPS, "n_envs": N_ENVS}
-    g["recipe"] = dict(RECIPE)
+    g["recipe"] = golden_recipe()
     g["seeds"] = {"model": MODEL_SEED, "perturb": PERTURB_SEED, "update": UPDATE_SEED}
     fp = compute()
     import torch as th

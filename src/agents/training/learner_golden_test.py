@@ -57,3 +57,26 @@ def test_record_requires_a_reason():
         L.main(["record"])
     with pytest.raises(SystemExit):
         L.record("   ")
+
+
+def test_the_golden_recipe_is_READ_from_the_production_recipe_and_matches_the_recorded_one():
+    """The golden's recipe knobs come from K10(a)'s block (and sb3's defaults for the knobs no launch
+    sets), never a hand copy; only the shape + the documented LR are overrides. A drift — the
+    production recipe moved, or someone hand-edited a value back in — fails HERE, naming the knob,
+    before the parameter hashes do."""
+    import inspect
+
+    from sb3_contrib import MaskablePPO
+
+    from main.train.recipe_surface import production_recipe
+    r = L.golden_recipe()
+    prod = production_recipe()
+    for k in L._FROM_RECIPE:
+        assert r[k] == prod[k], (k, r[k], prod[k])
+    sig = inspect.signature(MaskablePPO.__init__).parameters
+    for k in L._FROM_SB3_DEFAULTS:
+        assert r[k] == sig[k].default, k
+    assert set(L.GOLDEN_OVERRIDES) == {"n_epochs", "batch_size", "grad_accum_steps", "learning_rate"}
+    recorded = L.load_golden().get("recipe")
+    assert recorded == r, ("the recorded golden was computed under a different recipe — re-record "
+                           f"deliberately: {recorded} vs {r}")
