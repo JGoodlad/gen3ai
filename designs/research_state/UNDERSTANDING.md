@@ -1265,6 +1265,15 @@ out on seeds the Q̂ did not use.
   opponent held at its recorded action).
 - S = 1 dice seed reads like 32: V's error, not the dice, is the limit.
 
+**Novelty does not see them either (RND state-level read, 2026-09-30).** An RND novelty predictor on
+the raw observation (the X26 ride-along head's shapes) was trained offline on bank states. It
+tracks visitation (Spearman −0.34 vs a coarse state key's count) and flags off-distribution classes
+(AUROC ~0.75). But the successors of the starved near-best moves are no more novel than the successors
+of the policy's other unplayed moves: starved near-best minus starved far is +0.001 [−0.037, +0.040],
+on 95 held-out-battle turns of N0 final. Novelty can steer effort across STATES, not toward the right
+unplayed ACTION. [MEASURED · NOT DETECTED at the action level · one checkpoint, S = 1;
+`measurements/ridealong_baseline/rnd_states_2026-09-30/`]
+
 | claim | tag |
 |---|---|
 | One-ply labels from this V cannot fix starvation: as a target, softmax(Q̂/τ) feeds the starved moves no more than a plain entropy floor does, and V is blind to them. Their one measured positive is the ARGMAX, as a one-ply lookahead. **Implication (owner ruling, 2026-09-30, `design_q_head.md` §5.0, `006156b7`): a V-bootstrapped one-ply Q̂ is used ONLY as an inference-time one-ply lookahead and as a diagnostic. It is never a distillation target, an anti-starvation target or a Q-head training label.** The pre-read's finding that sharp softmax targets (τ ≤ 0.03 on the ±1 scale) would copy the argmax does not license them as a use. The cheap starvation lever is X23 (zero ply). Anything that needs playouts to terminal (MC-outcome labels, depth, a better V through X6) is DEFERRED | MEASURED · 3/3 checkpoints · the truth is a greedy continuation (not Nash); the use rule is an owner DECISION, not a measurement |

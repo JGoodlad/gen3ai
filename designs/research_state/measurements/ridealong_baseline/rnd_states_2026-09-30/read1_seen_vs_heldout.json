@@ -1,0 +1,164 @@
+{
+ "bank": {
+  "battles": 580,
+  "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+  "decisions": 20712
+ },
+ "bootstrap": {
+  "B": 1000,
+  "interval": "95 % (2.5th, 97.5th percentiles)",
+  "method": "percentile bootstrap resampling BATTLES (clusters)",
+  "seed": 20260930
+ },
+ "epochs_read": [
+  3,
+  10,
+  30
+ ],
+ "feat": {
+  "10": {
+   "auroc": 0.6161,
+   "ci": [
+    0.563,
+    0.6684
+   ],
+   "mean_err_neg": 0.001962,
+   "mean_err_pos": 0.002838,
+   "n_neg": 14024,
+   "n_pos": 6688
+  },
+  "3": {
+   "auroc": 0.5537,
+   "ci": [
+    0.4989,
+    0.611
+   ],
+   "mean_err_neg": 0.00411,
+   "mean_err_pos": 0.005071,
+   "n_neg": 14024,
+   "n_pos": 6688
+  },
+  "30": {
+   "auroc": 0.6682,
+   "ci": [
+    0.6181,
+    0.7201
+   ],
+   "mean_err_neg": 0.00111,
+   "mean_err_pos": 0.001906,
+   "n_neg": 14024,
+   "n_pos": 6688
+  }
+ },
+ "feature_checkpoint": {
+  "path": "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/final_model.zip",
+  "sha256": "50dbdb96cdcdd46e4f1c90217c7cf5cfb155f2c0039856db6a384d555e468bf3"
+ },
+ "headline_epochs": 10,
+ "obs": {
+  "10": {
+   "auroc": 0.8531,
+   "ci": [
+    0.831,
+    0.8717
+   ],
+   "mean_err_neg": 0.003886,
+   "mean_err_pos": 0.008953,
+   "n_neg": 14024,
+   "n_pos": 6688
+  },
+  "3": {
+   "auroc": 0.7365,
+   "ci": [
+    0.7099,
+    0.7615
+   ],
+   "mean_err_neg": 0.007857,
+   "mean_err_pos": 0.011846,
+   "n_neg": 14024,
+   "n_pos": 6688
+  },
+  "30": {
+   "auroc": 0.8963,
+   "ci": [
+    0.8785,
+    0.9112
+   ],
+   "mean_err_neg": 0.002343,
+   "mean_err_pos": 0.008638,
+   "n_neg": 14024,
+   "n_pos": 6688
+  }
+ },
+ "predictor": "agents.model.ridealong_heads.RndNovelty shapes; Adam 3e-4, minibatch 256, seed 20260930; normalisation fitted on the predictor's own training rows",
+ "reader_commit": "80146b744f45223262ac670108a73f6f62cfe62a",
+ "reencode": {
+  "byte_equal": 19964,
+  "encoder_sha256": "232f84562ab6869f5f3ddcd917055bd97d825b5b60c535237deb0df2205ab2b5",
+  "first_drifted": [],
+  "obs_as_recorded": true,
+  "recorded_rows_checked": 19964
+ },
+ "schema": "gen3_ridealong_rnd_states_v1",
+ "split": {
+  "heldout_battles": 174,
+  "heldout_rows": 6688,
+  "rule": "battles 70% / 30% WITHIN each (source, opp_class) cell, seed 20260930",
+  "train_battles": 406,
+  "train_rows": 14024
+ },
+ "training": {
+  "feat": {
+   "all": {
+    "n_train": 14024,
+    "train_loss": {
+     "10": 0.002036,
+     "3": 0.004727,
+     "30": 0.001124
+    }
+   },
+   "bot": {
+    "n_train": 7388,
+    "train_loss": {
+     "10": 0.002721,
+     "3": 0.006741,
+     "30": 0.001366
+    }
+   },
+   "pool": {
+    "n_train": 6084,
+    "train_loss": {
+     "10": 0.003022,
+     "3": 0.008038,
+     "30": 0.001472
+    }
+   }
+  },
+  "obs": {
+   "all": {
+    "n_train": 14024,
+    "train_loss": {
+     "10": 0.004226,
+     "3": 0.009164,
+     "30": 0.002527
+    }
+   },
+   "bot": {
+    "n_train": 7388,
+    "train_loss": {
+     "10": 0.004771,
+     "3": 0.011062,
+     "30": 0.002154
+    }
+   },
+   "pool": {
+    "n_train": 6084,
+    "train_loss": {
+     "10": 0.00525,
+     "3": 0.011528,
+     "30": 0.002198
+    }
+   }
+  }
+ }
+}

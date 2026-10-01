@@ -1,0 +1,2341 @@
+{
+ "bank": {
+  "battles": 580,
+  "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+  "decisions": 20712
+ },
+ "bootstrap": {
+  "B": 1000,
+  "interval": "95 % (2.5th, 97.5th percentiles)",
+  "method": "percentile bootstrap resampling BATTLES (clusters)",
+  "seed": 20260930
+ },
+ "caveat": "untrained heads: ensemble disagreement and A are randomized priors only; RND novelty is an untrained predictor's error",
+ "checkpoint": {
+  "path": "/home/goodlad/dev/gen3ai/models/ai_v14_07_g0p_k2/final_model.zip",
+  "sha256": "cc5d5502ca23b0879c531b515993073d83b42613b5a63f19f63e48bbf58207c4"
+ },
+ "critic": "winprob",
+ "draw_policy": "draws EXCLUDED from |V - z| (win 1, loss 0); draws_as_loss is the sensitivity row",
+ "encoder_sha256": "232f84562ab6869f5f3ddcd917055bd97d825b5b60c535237deb0df2205ab2b5",
+ "ensemble_summary": {
+  "brier_member_mean": 0.2308,
+  "mean_disagreement": 0.094099
+ },
+ "heads": "fresh-untrained",
+ "i_uncertainty_vs_v_error": {
+  "all": {
+   "ens_logit_std": {
+    "auroc": 0.6536,
+    "auroc_ci": [
+     0.6122,
+     0.6882
+    ],
+    "auroc_within_ref_quintiles": 0.5517,
+    "auroc_within_ref_quintiles_ci": [
+     0.4889,
+     0.6571
+    ],
+    "decile_ratio_ci": [
+     1.8911,
+     9.5757
+    ],
+    "decile_ratio_top_over_bottom": 3.8365,
+    "err_by_decile": [
+     0.1172,
+     0.1555,
+     0.2411,
+     0.3212,
+     0.3875,
+     0.397,
+     0.4021,
+     0.4174,
+     0.4083,
+     0.4495
+    ],
+    "mean_err": 0.3297,
+    "n": 18847,
+    "n_err": 5680,
+    "spearman": 0.4409,
+    "spearman_ci": [
+     0.3566,
+     0.5119
+    ],
+    "threshold": 0.5
+   },
+   "ens_std": {
+    "auroc": 0.6556,
+    "auroc_ci": [
+     0.6146,
+     0.691
+    ],
+    "auroc_within_ref_quintiles": 0.5567,
+    "auroc_within_ref_quintiles_ci": [
+     0.494,
+     0.6628
+    ],
+    "decile_ratio_ci": [
+     1.8929,
+     9.6375
+    ],
+    "decile_ratio_top_over_bottom": 3.8602,
+    "err_by_decile": [
+     0.1179,
+     0.1575,
+     0.2431,
+     0.3182,
+     0.3869,
+     0.3951,
+     0.3989,
+     0.4212,
+     0.4027,
+     0.4551
+    ],
+    "mean_err": 0.3297,
+    "n": 18847,
+    "n_err": 5680,
+    "spearman": 0.4391,
+    "spearman_ci": [
+     0.3561,
+     0.5089
+    ],
+    "threshold": 0.5
+   },
+   "ref_v_entropy": {
+    "auroc": 0.74,
+    "auroc_ci": [
+     0.7037,
+     0.7722
+    ],
+    "auroc_within_ref_quintiles": 0.5728,
+    "auroc_within_ref_quintiles_ci": [
+     0.5521,
+     0.6094
+    ],
+    "decile_ratio_ci": [
+     5.5185,
+     61.7254
+    ],
+    "decile_ratio_top_over_bottom": 15.7934,
+    "err_by_decile": [
+     0.0316,
+     0.1147,
+     0.1704,
+     0.2533,
+     0.3127,
+     0.4325,
+     0.4788,
+     0.4994,
+     0.5047,
+     0.4987
+    ],
+    "mean_err": 0.3297,
+    "n": 18847,
+    "n_err": 5680,
+    "spearman": 0.7096,
+    "spearman_ci": [
+     0.6212,
+     0.7762
+    ],
+    "threshold": 0.5
+   },
+   "rnd_z": {
+    "auroc": 0.5179,
+    "auroc_ci": [
+     0.4816,
+     0.5511
+    ],
+    "auroc_within_ref_quintiles": 0.5236,
+    "auroc_within_ref_quintiles_ci": [
+     0.4886,
+     0.5628
+    ],
+    "decile_ratio_ci": [
+     1.135,
+     2.0567
+    ],
+    "decile_ratio_top_over_bottom": 1.5331,
+    "err_by_decile": [
+     0.199,
+     0.3366,
+     0.3584,
+     0.3699,
+     0.3664,
+     0.3595,
+     0.3536,
+     0.3301,
+     0.3179,
+     0.3051
+    ],
+    "mean_err": 0.3297,
+    "n": 18847,
+    "n_err": 5680,
+    "spearman": 0.0147,
+    "spearman_ci": [
+     -0.0493,
+     0.072
+    ],
+    "threshold": 0.5
+   }
+  },
+  "draws_as_loss": {
+   "ens_logit_std": {
+    "auroc": 0.6237,
+    "auroc_ci": null,
+    "decile_ratio_ci": null,
+    "decile_ratio_top_over_bottom": 2.8052,
+    "err_by_decile": [
+     0.1638,
+     0.2205,
+     0.2747,
+     0.346,
+     0.4121,
+     0.4183,
+     0.4208,
+     0.4344,
+     0.4207,
+     0.4595
+    ],
+    "mean_err": 0.3571,
+    "n": 20712,
+    "n_err": 7000,
+    "spearman": 0.3748,
+    "spearman_ci": null,
+    "threshold": 0.5
+   },
+   "ens_std": {
+    "auroc": 0.6264,
+    "auroc_ci": null,
+    "decile_ratio_ci": null,
+    "decile_ratio_top_over_bottom": 2.8897,
+    "err_by_decile": [
+     0.1612,
+     0.2199,
+     0.2815,
+     0.3431,
+     0.41,
+     0.4142,
+     0.4232,
+     0.4385,
+     0.4135,
+     0.4657
+    ],
+    "mean_err": 0.3571,
+    "n": 20712,
+    "n_err": 7000,
+    "spearman": 0.3751,
+    "spearman_ci": null,
+    "threshold": 0.5
+   },
+   "ref_v_entropy": {
+    "auroc": 0.7071,
+    "auroc_ci": null,
+    "decile_ratio_ci": null,
+    "decile_ratio_top_over_bottom": 12.6031,
+    "err_by_decile": [
+     0.0397,
+     0.1604,
+     0.2473,
+     0.3173,
+     0.3507,
+     0.4534,
+     0.4907,
+     0.5039,
+     0.5075,
+     0.4999
+    ],
+    "mean_err": 0.3571,
+    "n": 20712,
+    "n_err": 7000,
+    "spearman": 0.6185,
+    "spearman_ci": null,
+    "threshold": 0.5
+   },
+   "rnd_z": {
+    "auroc": 0.524,
+    "auroc_ci": null,
+    "decile_ratio_ci": null,
+    "decile_ratio_top_over_bottom": 1.5727,
+    "err_by_decile": [
+     0.2146,
+     0.3618,
+     0.381,
+     0.3952,
+     0.3922,
+     0.3888,
+     0.3793,
+     0.3634,
+     0.357,
+     0.3375
+    ],
+    "mean_err": 0.3571,
+    "n": 20712,
+    "n_err": 7000,
+    "spearman": 0.0304,
+    "spearman_ci": null,
+    "threshold": 0.5
+   }
+  },
+  "opp_class": {
+   "bot": {
+    "ens_logit_std": {
+     "auroc": 0.6757,
+     "auroc_ci": [
+      0.6109,
+      0.7303
+     ],
+     "auroc_within_ref_quintiles": 0.5147,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      1.312,
+      27.7165
+     ],
+     "decile_ratio_top_over_bottom": 3.6083,
+     "err_by_decile": [
+      0.1318,
+      0.0761,
+      0.211,
+      0.3244,
+      0.3831,
+      0.3909,
+      0.4205,
+      0.4539,
+      0.4252,
+      0.4756
+     ],
+     "mean_err": 0.3292,
+     "n": 9773,
+     "n_err": 3107,
+     "spearman": 0.5102,
+     "spearman_ci": [
+      0.3642,
+      0.6194
+     ],
+     "threshold": 0.5
+    },
+    "ens_std": {
+     "auroc": 0.6775,
+     "auroc_ci": [
+      0.6128,
+      0.7321
+     ],
+     "auroc_within_ref_quintiles": 0.5194,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      1.3219,
+      28.0293
+     ],
+     "decile_ratio_top_over_bottom": 3.6576,
+     "err_by_decile": [
+      0.1313,
+      0.0754,
+      0.2154,
+      0.3236,
+      0.3784,
+      0.3959,
+      0.4104,
+      0.4552,
+      0.4265,
+      0.4803
+     ],
+     "mean_err": 0.3292,
+     "n": 9773,
+     "n_err": 3107,
+     "spearman": 0.5099,
+     "spearman_ci": [
+      0.3634,
+      0.6189
+     ],
+     "threshold": 0.5
+    },
+    "ref_v_entropy": {
+     "auroc": 0.7465,
+     "auroc_ci": [
+      0.6912,
+      0.7908
+     ],
+     "auroc_within_ref_quintiles": 0.5794,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      6.1275,
+      88.1494
+     ],
+     "decile_ratio_top_over_bottom": 16.7322,
+     "err_by_decile": [
+      0.03,
+      0.1075,
+      0.1448,
+      0.2373,
+      0.3413,
+      0.4192,
+      0.4907,
+      0.5039,
+      0.5167,
+      0.5011
+     ],
+     "mean_err": 0.3292,
+     "n": 9773,
+     "n_err": 3107,
+     "spearman": 0.6961,
+     "spearman_ci": [
+      0.5578,
+      0.7936
+     ],
+     "threshold": 0.5
+    },
+    "rnd_z": {
+     "auroc": 0.5325,
+     "auroc_ci": [
+      0.4963,
+      0.5702
+     ],
+     "auroc_within_ref_quintiles": 0.5425,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      1.0815,
+      2.6178
+     ],
+     "decile_ratio_top_over_bottom": 1.6879,
+     "err_by_decile": [
+      0.1729,
+      0.3273,
+      0.3542,
+      0.3539,
+      0.3692,
+      0.3648,
+      0.3886,
+      0.3444,
+      0.3248,
+      0.2919
+     ],
+     "mean_err": 0.3292,
+     "n": 9773,
+     "n_err": 3107,
+     "spearman": 0.0299,
+     "spearman_ci": [
+      -0.0384,
+      0.0986
+     ],
+     "threshold": 0.5
+    }
+   },
+   "exploiter": {
+    "ens_logit_std": {
+     "auroc": 0.5755,
+     "auroc_ci": [
+      0.4289,
+      0.7227
+     ],
+     "auroc_within_ref_quintiles": 0.586,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.7066,
+      3.9274
+     ],
+     "decile_ratio_top_over_bottom": 1.1994,
+     "err_by_decile": [
+      0.2336,
+      0.2768,
+      0.3088,
+      0.3352,
+      0.3135,
+      0.2999,
+      0.3173,
+      0.3821,
+      0.319,
+      0.2802
+     ],
+     "mean_err": 0.3067,
+     "n": 748,
+     "n_err": 155,
+     "spearman": 0.0744,
+     "spearman_ci": [
+      -0.1954,
+      0.3427
+     ],
+     "threshold": 0.5
+    },
+    "ens_std": {
+     "auroc": 0.5739,
+     "auroc_ci": [
+      0.4309,
+      0.7167
+     ],
+     "auroc_within_ref_quintiles": 0.5873,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.7277,
+      3.8499
+     ],
+     "decile_ratio_top_over_bottom": 1.2543,
+     "err_by_decile": [
+      0.234,
+      0.2991,
+      0.3011,
+      0.323,
+      0.3134,
+      0.3092,
+      0.3096,
+      0.3929,
+      0.2905,
+      0.2934
+     ],
+     "mean_err": 0.3067,
+     "n": 748,
+     "n_err": 155,
+     "spearman": 0.0634,
+     "spearman_ci": [
+      -0.2043,
+      0.3362
+     ],
+     "threshold": 0.5
+    },
+    "ref_v_entropy": {
+     "auroc": 0.7598,
+     "auroc_ci": [
+      0.6655,
+      0.8527
+     ],
+     "auroc_within_ref_quintiles": 0.6219,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      4.6085,
+      58.8758
+     ],
+     "decile_ratio_top_over_bottom": 15.5968,
+     "err_by_decile": [
+      0.032,
+      0.1051,
+      0.2067,
+      0.2421,
+      0.2581,
+      0.4078,
+      0.3949,
+      0.4438,
+      0.4822,
+      0.4988
+     ],
+     "mean_err": 0.3067,
+     "n": 748,
+     "n_err": 155,
+     "spearman": 0.8298,
+     "spearman_ci": [
+      0.5938,
+      0.9602
+     ],
+     "threshold": 0.5
+    },
+    "rnd_z": {
+     "auroc": 0.443,
+     "auroc_ci": [
+      0.3014,
+      0.5735
+     ],
+     "auroc_within_ref_quintiles": 0.5711,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.3568,
+      1.0565
+     ],
+     "decile_ratio_top_over_bottom": 0.6557,
+     "err_by_decile": [
+      0.383,
+      0.3616,
+      0.3546,
+      0.3554,
+      0.3003,
+      0.279,
+      0.2705,
+      0.2523,
+      0.2574,
+      0.2511
+     ],
+     "mean_err": 0.3067,
+     "n": 748,
+     "n_err": 155,
+     "spearman": -0.2735,
+     "spearman_ci": [
+      -0.4611,
+      -0.0667
+     ],
+     "threshold": 0.5
+    }
+   },
+   "pool_snapshot": {
+    "ens_logit_std": {
+     "auroc": 0.6321,
+     "auroc_ci": [
+      0.5865,
+      0.6728
+     ],
+     "auroc_within_ref_quintiles": 0.6057,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      1.9068,
+      3.2677
+     ],
+     "decile_ratio_top_over_bottom": 2.5478,
+     "err_by_decile": [
+      0.1638,
+      0.1898,
+      0.2427,
+      0.3163,
+      0.3947,
+      0.4148,
+      0.3935,
+      0.398,
+      0.3922,
+      0.4173
+     ],
+     "mean_err": 0.3323,
+     "n": 8326,
+     "n_err": 2418,
+     "spearman": 0.3623,
+     "spearman_ci": [
+      0.2777,
+      0.4356
+     ],
+     "threshold": 0.5
+    },
+    "ens_std": {
+     "auroc": 0.6346,
+     "auroc_ci": [
+      0.5884,
+      0.6753
+     ],
+     "auroc_within_ref_quintiles": 0.6139,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      1.9071,
+      3.3168
+     ],
+     "decile_ratio_top_over_bottom": 2.5796,
+     "err_by_decile": [
+      0.1646,
+      0.1946,
+      0.2443,
+      0.3088,
+      0.3925,
+      0.4135,
+      0.3963,
+      0.4034,
+      0.3804,
+      0.4246
+     ],
+     "mean_err": 0.3323,
+     "n": 8326,
+     "n_err": 2418,
+     "spearman": 0.3591,
+     "spearman_ci": [
+      0.2739,
+      0.4348
+     ],
+     "threshold": 0.5
+    },
+    "ref_v_entropy": {
+     "auroc": 0.7613,
+     "auroc_ci": [
+      0.7217,
+      0.7998
+     ],
+     "auroc_within_ref_quintiles": 0.5649,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      11.3185,
+      30.5379
+     ],
+     "decile_ratio_top_over_bottom": 18.9666,
+     "err_by_decile": [
+      0.0262,
+      0.1008,
+      0.1695,
+      0.2205,
+      0.3661,
+      0.4518,
+      0.4919,
+      0.4918,
+      0.5071,
+      0.4977
+     ],
+     "mean_err": 0.3323,
+     "n": 8326,
+     "n_err": 2418,
+     "spearman": 0.7565,
+     "spearman_ci": [
+      0.6584,
+      0.8433
+     ],
+     "threshold": 0.5
+    },
+    "rnd_z": {
+     "auroc": 0.5186,
+     "auroc_ci": [
+      0.4492,
+      0.5768
+     ],
+     "auroc_within_ref_quintiles": 0.5813,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.9934,
+      2.2345
+     ],
+     "decile_ratio_top_over_bottom": 1.6061,
+     "err_by_decile": [
+      0.2187,
+      0.3362,
+      0.364,
+      0.3894,
+      0.3628,
+      0.3404,
+      0.334,
+      0.3303,
+      0.2954,
+      0.3513
+     ],
+     "mean_err": 0.3323,
+     "n": 8326,
+     "n_err": 2418,
+     "spearman": 0.0013,
+     "spearman_ci": [
+      -0.1198,
+      0.1008
+     ],
+     "threshold": 0.5
+    }
+   }
+  },
+  "phase": {
+   "endgame": {
+    "ens_logit_std": {
+     "auroc": 0.7091,
+     "auroc_ci": [
+      0.5724,
+      0.8096
+     ],
+     "auroc_within_ref_quintiles": 0.4376,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.8914,
+      45.799
+     ],
+     "decile_ratio_top_over_bottom": 2.3815,
+     "err_by_decile": [
+      0.1896,
+      0.0405,
+      0.0241,
+      0.0955,
+      0.1659,
+      0.2999,
+      0.3474,
+      0.3355,
+      0.3987,
+      0.4514
+     ],
+     "mean_err": 0.2348,
+     "n": 5217,
+     "n_err": 1036,
+     "spearman": 0.6431,
+     "spearman_ci": [
+      0.4372,
+      0.7666
+     ],
+     "threshold": 0.5
+    },
+    "ens_std": {
+     "auroc": 0.7143,
+     "auroc_ci": [
+      0.5767,
+      0.8154
+     ],
+     "auroc_within_ref_quintiles": 0.4462,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.8973,
+      47.1685
+     ],
+     "decile_ratio_top_over_bottom": 2.4345,
+     "err_by_decile": [
+      0.1896,
+      0.0385,
+      0.0245,
+      0.0926,
+      0.1681,
+      0.2942,
+      0.3475,
+      0.3362,
+      0.396,
+      0.4615
+     ],
+     "mean_err": 0.2348,
+     "n": 5217,
+     "n_err": 1036,
+     "spearman": 0.6434,
+     "spearman_ci": [
+      0.4378,
+      0.7671
+     ],
+     "threshold": 0.5
+    },
+    "ref_v_entropy": {
+     "auroc": 0.7644,
+     "auroc_ci": [
+      0.6785,
+      0.8338
+     ],
+     "auroc_within_ref_quintiles": 0.5919,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      42.4793,
+      138.2032
+     ],
+     "decile_ratio_top_over_bottom": 128.427,
+     "err_by_decile": [
+      0.0038,
+      0.0427,
+      0.0819,
+      0.1325,
+      0.1915,
+      0.2167,
+      0.3058,
+      0.4191,
+      0.4606,
+      0.4941
+     ],
+     "mean_err": 0.2348,
+     "n": 5217,
+     "n_err": 1036,
+     "spearman": 0.8462,
+     "spearman_ci": [
+      0.7171,
+      0.9287
+     ],
+     "threshold": 0.5
+    },
+    "rnd_z": {
+     "auroc": 0.4915,
+     "auroc_ci": [
+      0.4296,
+      0.5619
+     ],
+     "auroc_within_ref_quintiles": 0.4416,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.7534,
+      2.1569
+     ],
+     "decile_ratio_top_over_bottom": 1.1775,
+     "err_by_decile": [
+      0.1816,
+      0.2309,
+      0.2239,
+      0.2802,
+      0.248,
+      0.2416,
+      0.2421,
+      0.2424,
+      0.2431,
+      0.2138
+     ],
+     "mean_err": 0.2348,
+     "n": 5217,
+     "n_err": 1036,
+     "spearman": 0.083,
+     "spearman_ci": [
+      -0.0275,
+      0.1897
+     ],
+     "threshold": 0.5
+    }
+   },
+   "midgame": {
+    "ens_logit_std": {
+     "auroc": 0.6638,
+     "auroc_ci": [
+      0.6322,
+      0.6958
+     ],
+     "auroc_within_ref_quintiles": 0.6333,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      2.708,
+      4.9948
+     ],
+     "decile_ratio_top_over_bottom": 3.5617,
+     "err_by_decile": [
+      0.1333,
+      0.1875,
+      0.2716,
+      0.3428,
+      0.4049,
+      0.4314,
+      0.4119,
+      0.413,
+      0.4317,
+      0.4748
+     ],
+     "mean_err": 0.3503,
+     "n": 11822,
+     "n_err": 3747,
+     "spearman": 0.4146,
+     "spearman_ci": [
+      0.3528,
+      0.4752
+     ],
+     "threshold": 0.5
+    },
+    "ens_std": {
+     "auroc": 0.6648,
+     "auroc_ci": [
+      0.6335,
+      0.6969
+     ],
+     "auroc_within_ref_quintiles": 0.6376,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      2.6909,
+      4.9758
+     ],
+     "decile_ratio_top_over_bottom": 3.5499,
+     "err_by_decile": [
+      0.1338,
+      0.1938,
+      0.2682,
+      0.346,
+      0.3989,
+      0.4308,
+      0.4086,
+      0.4178,
+      0.4301,
+      0.4749
+     ],
+     "mean_err": 0.3503,
+     "n": 11822,
+     "n_err": 3747,
+     "spearman": 0.4092,
+     "spearman_ci": [
+      0.3472,
+      0.4704
+     ],
+     "threshold": 0.5
+    },
+    "ref_v_entropy": {
+     "auroc": 0.721,
+     "auroc_ci": [
+      0.6897,
+      0.7517
+     ],
+     "auroc_within_ref_quintiles": 0.5588,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      5.0445,
+      15.0603
+     ],
+     "decile_ratio_top_over_bottom": 8.195,
+     "err_by_decile": [
+      0.061,
+      0.1387,
+      0.2052,
+      0.2946,
+      0.3658,
+      0.449,
+      0.4918,
+      0.4984,
+      0.4988,
+      0.4997
+     ],
+     "mean_err": 0.3503,
+     "n": 11822,
+     "n_err": 3747,
+     "spearman": 0.6682,
+     "spearman_ci": [
+      0.5816,
+      0.7384
+     ],
+     "threshold": 0.5
+    },
+    "rnd_z": {
+     "auroc": 0.586,
+     "auroc_ci": [
+      0.5436,
+      0.6243
+     ],
+     "auroc_within_ref_quintiles": 0.5708,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      1.5429,
+      2.9729
+     ],
+     "decile_ratio_top_over_bottom": 2.1856,
+     "err_by_decile": [
+      0.1832,
+      0.292,
+      0.3361,
+      0.3709,
+      0.3652,
+      0.3878,
+      0.3971,
+      0.3879,
+      0.3823,
+      0.4004
+     ],
+     "mean_err": 0.3503,
+     "n": 11822,
+     "n_err": 3747,
+     "spearman": 0.1942,
+     "spearman_ci": [
+      0.1189,
+      0.262
+     ],
+     "threshold": 0.5
+    }
+   },
+   "opening": {
+    "ens_logit_std": {
+     "auroc": 0.449,
+     "auroc_ci": [
+      0.4035,
+      0.4974
+     ],
+     "auroc_within_ref_quintiles": 0.4911,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.6138,
+      0.9149
+     ],
+     "decile_ratio_top_over_bottom": 0.7649,
+     "err_by_decile": [
+      0.5424,
+      0.4834,
+      0.4916,
+      0.4493,
+      0.5008,
+      0.5257,
+      0.4399,
+      0.453,
+      0.3853,
+      0.4149
+     ],
+     "mean_err": 0.4687,
+     "n": 1808,
+     "n_err": 897,
+     "spearman": -0.1647,
+     "spearman_ci": [
+      -0.2388,
+      -0.0797
+     ],
+     "threshold": 0.5
+    },
+    "ens_std": {
+     "auroc": 0.458,
+     "auroc_ci": [
+      0.4111,
+      0.507
+     ],
+     "auroc_within_ref_quintiles": 0.4923,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      0.7257,
+      1.0054
+     ],
+     "decile_ratio_top_over_bottom": 0.8491,
+     "err_by_decile": [
+      0.5432,
+      0.4858,
+      0.4922,
+      0.4301,
+      0.5069,
+      0.5389,
+      0.436,
+      0.4318,
+      0.3605,
+      0.4612
+     ],
+     "mean_err": 0.4687,
+     "n": 1808,
+     "n_err": 897,
+     "spearman": -0.146,
+     "spearman_ci": [
+      -0.2204,
+      -0.0619
+     ],
+     "threshold": 0.5
+    },
+    "ref_v_entropy": {
+     "auroc": 0.6858,
+     "auroc_ci": [
+      0.6451,
+      0.7256
+     ],
+     "auroc_within_ref_quintiles": 0.5448,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      1.7828,
+      2.7164
+     ],
+     "decile_ratio_top_over_bottom": 2.1797,
+     "err_by_decile": [
+      0.2352,
+      0.2883,
+      0.4441,
+      0.5384,
+      0.4884,
+      0.5556,
+      0.5204,
+      0.559,
+      0.5458,
+      0.5126
+     ],
+     "mean_err": 0.4687,
+     "n": 1808,
+     "n_err": 897,
+     "spearman": 0.319,
+     "spearman_ci": [
+      0.2056,
+      0.4169
+     ],
+     "threshold": 0.5
+    },
+    "rnd_z": {
+     "auroc": 0.6129,
+     "auroc_ci": [
+      0.5707,
+      0.6561
+     ],
+     "auroc_within_ref_quintiles": 0.5434,
+     "auroc_within_ref_quintiles_ci": null,
+     "decile_ratio_ci": [
+      1.8718,
+      2.9165
+     ],
+     "decile_ratio_top_over_bottom": 2.2508,
+     "err_by_decile": [
+      0.2289,
+      0.3648,
+      0.516,
+      0.5459,
+      0.4346,
+      0.4961,
+      0.5319,
+      0.5502,
+      0.5041,
+      0.5151
+     ],
+     "mean_err": 0.4687,
+     "n": 1808,
+     "n_err": 897,
+     "spearman": 0.2891,
+     "spearman_ci": [
+      0.2105,
+      0.3665
+     ],
+     "threshold": 0.5
+    }
+   }
+  },
+  "rows": {
+   "draws_excluded": 1865,
+   "total": 20712,
+   "used": 18847
+  }
+ },
+ "iii_bank_adv_raw_std_starved_vs_fed": {
+  "auroc_starved_vs_fed": 0.6032,
+  "fed_mean": 0.0325,
+  "n_fed": 94286,
+  "n_starved": 49368,
+  "starved_mean": 0.0362
+ },
+ "iii_bank_adv_std_starved_vs_fed": {
+  "auroc_starved_vs_fed": 0.5119,
+  "fed_mean": 0.008,
+  "n_fed": 94286,
+  "n_starved": 49368,
+  "starved_mean": 0.0081
+ },
+ "label": "K2final",
+ "opp_plumbing": {
+  "mean_abs_opp_mean": 0.006606,
+  "rows": 20712
+ },
+ "own_truth_continuation": "K2final",
+ "reader_commit": "80146b744f45223262ac670108a73f6f62cfe62a+dirty",
+ "reencode": {
+  "byte_equal": 19964,
+  "first_drifted": [],
+  "obs_as_recorded": true,
+  "recorded_rows_checked": 19964
+ },
+ "rnd_obs_count": 10147.0,
+ "rnd_stats": "observation statistics and the error z-score FITTED ON THE TRAIN SPLIT's rows (rnd_choice.TRAIN_SOURCES), then every row scored",
+ "schema": "gen3_ridealong_read_v1",
+ "spec": {
+  "adv": 5,
+  "ensemble": 5,
+  "opp": 5,
+  "rnd": true
+ },
+ "threads": 4,
+ "truth": {
+  "C_fixfinal": {
+   "ii_A_mean": {
+    "argmax_near": {
+     "ci": [
+      0.468,
+      0.526
+     ],
+     "mean": 0.4975,
+     "n": 1600
+    },
+    "argmax_regret_all": {
+     "ci": [
+      0.2319,
+      0.2725
+     ],
+     "mean": 0.2511,
+     "n": 1600
+    },
+    "argmax_regret_decisive": {
+     "ci": [
+      0.3653,
+      0.4177
+     ],
+     "mean": 0.3906,
+     "n": 949
+    },
+    "decisive": 949,
+    "fed_top2": {
+     "chance": 0.2756,
+     "ci": [
+      0.2395,
+      0.2797
+     ],
+     "mean": 0.259,
+     "n": 1332
+    },
+    "spearman": {
+     "ci": [
+      -0.0288,
+      0.0244
+     ],
+     "mean": -0.0014,
+     "n": 1367
+    },
+    "starved_top2": {
+     "chance": 0.2646,
+     "ci": [
+      0.2375,
+      0.3081
+     ],
+     "mean": 0.2726,
+     "n": 631
+    },
+    "turns": 1600
+   },
+   "ii_policy_logits_reference": {
+    "argmax_near": {
+     "ci": [
+      0.5548,
+      0.6111
+     ],
+     "mean": 0.5831,
+     "n": 1600
+    },
+    "argmax_regret_all": {
+     "ci": [
+      0.1743,
+      0.2072
+     ],
+     "mean": 0.1908,
+     "n": 1600
+    },
+    "argmax_regret_decisive": {
+     "ci": [
+      0.2702,
+      0.3172
+     ],
+     "mean": 0.2924,
+     "n": 949
+    },
+    "decisive": 949,
+    "fed_top2": {
+     "chance": 0.2756,
+     "ci": [
+      0.4776,
+      0.5351
+     ],
+     "mean": 0.5053,
+     "n": 1332
+    },
+    "spearman": {
+     "ci": [
+      0.1535,
+      0.2061
+     ],
+     "mean": 0.1812,
+     "n": 1367
+    },
+    "starved_top2": {
+     "chance": 0.2646,
+     "ci": [
+      0.0203,
+      0.0478
+     ],
+     "mean": 0.0333,
+     "n": 631
+    },
+    "turns": 1600
+   },
+   "ii_spearman_A_minus_logits": {
+    "ci": [
+     -0.2186,
+     -0.1461
+    ],
+    "delta": -0.1825,
+    "n": 1367
+   },
+   "iii_adv_raw_std_on_starved_near_best": {
+    "auroc_starved_near_vs_other_legal": {
+     "auroc": 0.4875,
+     "ci": [
+      0.4593,
+      0.5137
+     ],
+     "n_neg": 6447,
+     "n_pos": 631
+    },
+    "auroc_starved_near_vs_starved_other": {
+     "auroc": 0.474,
+     "ci": [
+      0.443,
+      0.5027
+     ],
+     "n_neg": 2552,
+     "n_pos": 631
+    },
+    "fed_near": {
+     "ci": [
+      0.0339,
+      0.0359
+     ],
+     "mean": 0.0349,
+     "n": 1332
+    },
+    "fed_other": {
+     "ci": [
+      0.0366,
+      0.0382
+     ],
+     "mean": 0.0375,
+     "n": 2563
+    },
+    "starved_near": {
+     "ci": [
+      0.0353,
+      0.0374
+     ],
+     "mean": 0.0364,
+     "n": 631
+    },
+    "starved_other": {
+     "ci": [
+      0.0366,
+      0.0378
+     ],
+     "mean": 0.0372,
+     "n": 2552
+    }
+   },
+   "iii_adv_std_on_starved_near_best": {
+    "auroc_starved_near_vs_other_legal": {
+     "auroc": 0.5144,
+     "ci": [
+      0.4896,
+      0.5392
+     ],
+     "n_neg": 6447,
+     "n_pos": 631
+    },
+    "auroc_starved_near_vs_starved_other": {
+     "auroc": 0.5068,
+     "ci": [
+      0.4817,
+      0.5328
+     ],
+     "n_neg": 2552,
+     "n_pos": 631
+    },
+    "fed_near": {
+     "ci": [
+      0.0078,
+      0.0082
+     ],
+     "mean": 0.008,
+     "n": 1332
+    },
+    "fed_other": {
+     "ci": [
+      0.0079,
+      0.0083
+     ],
+     "mean": 0.0081,
+     "n": 2563
+    },
+    "starved_near": {
+     "ci": [
+      0.0081,
+      0.0086
+     ],
+     "mean": 0.0083,
+     "n": 631
+    },
+    "starved_other": {
+     "ci": [
+      0.0081,
+      0.0084
+     ],
+     "mean": 0.0083,
+     "n": 2552
+    }
+   },
+   "own_continuation": false
+  },
+  "K2final": {
+   "ii_A_mean": {
+    "argmax_near": {
+     "ci": [
+      0.4577,
+      0.5119
+     ],
+     "mean": 0.4869,
+     "n": 1600
+    },
+    "argmax_regret_all": {
+     "ci": [
+      0.2394,
+      0.2798
+     ],
+     "mean": 0.2587,
+     "n": 1600
+    },
+    "argmax_regret_decisive": {
+     "ci": [
+      0.3747,
+      0.4269
+     ],
+     "mean": 0.4,
+     "n": 949
+    },
+    "decisive": 949,
+    "fed_top2": {
+     "chance": 0.2741,
+     "ci": [
+      0.2468,
+      0.2893
+     ],
+     "mean": 0.2665,
+     "n": 1332
+    },
+    "spearman": {
+     "ci": [
+      -0.0323,
+      0.0195
+     ],
+     "mean": -0.0069,
+     "n": 1377
+    },
+    "starved_top2": {
+     "chance": 0.2649,
+     "ci": [
+      0.2073,
+      0.2727
+     ],
+     "mean": 0.2397,
+     "n": 705
+    },
+    "turns": 1600
+   },
+   "ii_policy_logits_reference": {
+    "argmax_near": {
+     "ci": [
+      0.5512,
+      0.6054
+     ],
+     "mean": 0.5787,
+     "n": 1600
+    },
+    "argmax_regret_all": {
+     "ci": [
+      0.1789,
+      0.2147
+     ],
+     "mean": 0.1966,
+     "n": 1600
+    },
+    "argmax_regret_decisive": {
+     "ci": [
+      0.2779,
+      0.3288
+     ],
+     "mean": 0.3034,
+     "n": 949
+    },
+    "decisive": 949,
+    "fed_top2": {
+     "chance": 0.2741,
+     "ci": [
+      0.479,
+      0.5341
+     ],
+     "mean": 0.5053,
+     "n": 1332
+    },
+    "spearman": {
+     "ci": [
+      0.1519,
+      0.2056
+     ],
+     "mean": 0.1796,
+     "n": 1377
+    },
+    "starved_top2": {
+     "chance": 0.2649,
+     "ci": [
+      0.0249,
+      0.0521
+     ],
+     "mean": 0.0383,
+     "n": 705
+    },
+    "turns": 1600
+   },
+   "ii_spearman_A_minus_logits": {
+    "ci": [
+     -0.2198,
+     -0.1506
+    ],
+    "delta": -0.1865,
+    "n": 1377
+   },
+   "iii_adv_raw_std_on_starved_near_best": {
+    "auroc_starved_near_vs_other_legal": {
+     "auroc": 0.4646,
+     "ci": [
+      0.4354,
+      0.4929
+     ],
+     "n_neg": 6380,
+     "n_pos": 705
+    },
+    "auroc_starved_near_vs_starved_other": {
+     "auroc": 0.4447,
+     "ci": [
+      0.4169,
+      0.4724
+     ],
+     "n_neg": 2478,
+     "n_pos": 705
+    },
+    "fed_near": {
+     "ci": [
+      0.0339,
+      0.0358
+     ],
+     "mean": 0.0348,
+     "n": 1332
+    },
+    "fed_other": {
+     "ci": [
+      0.0366,
+      0.0382
+     ],
+     "mean": 0.0373,
+     "n": 2570
+    },
+    "starved_near": {
+     "ci": [
+      0.0347,
+      0.0367
+     ],
+     "mean": 0.0357,
+     "n": 705
+    },
+    "starved_other": {
+     "ci": [
+      0.0368,
+      0.0381
+     ],
+     "mean": 0.0375,
+     "n": 2478
+    }
+   },
+   "iii_adv_std_on_starved_near_best": {
+    "auroc_starved_near_vs_other_legal": {
+     "auroc": 0.5085,
+     "ci": [
+      0.4845,
+      0.5321
+     ],
+     "n_neg": 6380,
+     "n_pos": 705
+    },
+    "auroc_starved_near_vs_starved_other": {
+     "auroc": 0.4956,
+     "ci": [
+      0.4714,
+      0.5212
+     ],
+     "n_neg": 2478,
+     "n_pos": 705
+    },
+    "fed_near": {
+     "ci": [
+      0.0077,
+      0.0081
+     ],
+     "mean": 0.0079,
+     "n": 1332
+    },
+    "fed_other": {
+     "ci": [
+      0.0079,
+      0.0083
+     ],
+     "mean": 0.0081,
+     "n": 2570
+    },
+    "starved_near": {
+     "ci": [
+      0.008,
+      0.0086
+     ],
+     "mean": 0.0083,
+     "n": 705
+    },
+    "starved_other": {
+     "ci": [
+      0.0081,
+      0.0084
+     ],
+     "mean": 0.0082,
+     "n": 2478
+    }
+   },
+   "iv_uncertainty_vs_truth_v_error": {
+    "ens_logit_std": {
+     "auroc": 0.6162,
+     "auroc_ci": [
+      0.578,
+      0.6504
+     ],
+     "auroc_within_ref_quintiles": 0.5965,
+     "auroc_within_ref_quintiles_ci": [
+      0.5429,
+      0.6394
+     ],
+     "decile_ratio_ci": [
+      2.1268,
+      6.4726
+     ],
+     "decile_ratio_top_over_bottom": 3.5065,
+     "err_by_decile": [
+      0.0656,
+      0.1299,
+      0.1322,
+      0.1782,
+      0.1661,
+      0.1962,
+      0.1884,
+      0.205,
+      0.2131,
+      0.2299
+     ],
+     "mean_err": 0.1705,
+     "n": 1600,
+     "n_err": 437,
+     "spearman": 0.3316,
+     "spearman_ci": [
+      0.2654,
+      0.393
+     ],
+     "threshold": 0.25
+    },
+    "ens_std": {
+     "auroc": 0.6151,
+     "auroc_ci": [
+      0.5769,
+      0.6497
+     ],
+     "auroc_within_ref_quintiles": 0.5989,
+     "auroc_within_ref_quintiles_ci": [
+      0.5465,
+      0.641
+     ],
+     "decile_ratio_ci": [
+      2.1405,
+      6.3932
+     ],
+     "decile_ratio_top_over_bottom": 3.5303,
+     "err_by_decile": [
+      0.066,
+      0.1295,
+      0.1368,
+      0.1758,
+      0.1641,
+      0.2007,
+      0.183,
+      0.2077,
+      0.208,
+      0.2329
+     ],
+     "mean_err": 0.1705,
+     "n": 1600,
+     "n_err": 437,
+     "spearman": 0.3279,
+     "spearman_ci": [
+      0.2621,
+      0.3889
+     ],
+     "threshold": 0.25
+    },
+    "mean_signed_v_minus_truth": 0.1073,
+    "ref_v_entropy": {
+     "auroc": 0.7727,
+     "auroc_ci": [
+      0.7431,
+      0.7982
+     ],
+     "decile_ratio_ci": [
+      8.026,
+      33.8473
+     ],
+     "decile_ratio_top_over_bottom": 18.1564,
+     "err_by_decile": [
+      0.0146,
+      0.0545,
+      0.0929,
+      0.1628,
+      0.1751,
+      0.2062,
+      0.2235,
+      0.2426,
+      0.2674,
+      0.265
+     ],
+     "mean_err": 0.1705,
+     "n": 1600,
+     "n_err": 437,
+     "spearman": 0.6004,
+     "spearman_ci": [
+      0.5478,
+      0.6461
+     ],
+     "threshold": 0.25
+    },
+    "rnd_z": {
+     "auroc": 0.5298,
+     "auroc_ci": [
+      0.4937,
+      0.5642
+     ],
+     "auroc_within_ref_quintiles": 0.5438,
+     "auroc_within_ref_quintiles_ci": [
+      0.5033,
+      0.5881
+     ],
+     "decile_ratio_ci": [
+      1.2479,
+      2.3842
+     ],
+     "decile_ratio_top_over_bottom": 1.7166,
+     "err_by_decile": [
+      0.0941,
+      0.1757,
+      0.1662,
+      0.177,
+      0.1889,
+      0.2053,
+      0.1716,
+      0.1784,
+      0.1859,
+      0.1616
+     ],
+     "mean_err": 0.1705,
+     "n": 1600,
+     "n_err": 437,
+     "spearman": 0.0788,
+     "spearman_ci": [
+      0.0125,
+      0.1395
+     ],
+     "threshold": 0.25
+    },
+    "turns": 1600,
+    "v_truth_definition": "greedy continuation's root action value"
+   },
+   "own_continuation": true
+  },
+  "N0final75M": {
+   "ii_A_mean": {
+    "argmax_near": {
+     "ci": [
+      0.4593,
+      0.5158
+     ],
+     "mean": 0.4875,
+     "n": 1600
+    },
+    "argmax_regret_all": {
+     "ci": [
+      0.2443,
+      0.2862
+     ],
+     "mean": 0.2653,
+     "n": 1600
+    },
+    "argmax_regret_decisive": {
+     "ci": [
+      0.3897,
+      0.4404
+     ],
+     "mean": 0.416,
+     "n": 951
+    },
+    "decisive": 951,
+    "fed_top2": {
+     "chance": 0.2764,
+     "ci": [
+      0.2324,
+      0.276
+     ],
+     "mean": 0.2544,
+     "n": 1258
+    },
+    "spearman": {
+     "ci": [
+      -0.0381,
+      0.0113
+     ],
+     "mean": -0.0142,
+     "n": 1367
+    },
+    "starved_top2": {
+     "chance": 0.2715,
+     "ci": [
+      0.2035,
+      0.2698
+     ],
+     "mean": 0.2351,
+     "n": 655
+    },
+    "turns": 1600
+   },
+   "ii_policy_logits_reference": {
+    "argmax_near": {
+     "ci": [
+      0.526,
+      0.5819
+     ],
+     "mean": 0.5537,
+     "n": 1600
+    },
+    "argmax_regret_all": {
+     "ci": [
+      0.2012,
+      0.2372
+     ],
+     "mean": 0.2187,
+     "n": 1600
+    },
+    "argmax_regret_decisive": {
+     "ci": [
+      0.3155,
+      0.3659
+     ],
+     "mean": 0.3394,
+     "n": 951
+    },
+    "decisive": 951,
+    "fed_top2": {
+     "chance": 0.2764,
+     "ci": [
+      0.4775,
+      0.5363
+     ],
+     "mean": 0.5056,
+     "n": 1258
+    },
+    "spearman": {
+     "ci": [
+      0.1377,
+      0.1897
+     ],
+     "mean": 0.1645,
+     "n": 1367
+    },
+    "starved_top2": {
+     "chance": 0.2715,
+     "ci": [
+      0.0258,
+      0.0543
+     ],
+     "mean": 0.0397,
+     "n": 655
+    },
+    "turns": 1600
+   },
+   "ii_spearman_A_minus_logits": {
+    "ci": [
+     -0.2151,
+     -0.1428
+    ],
+    "delta": -0.1788,
+    "n": 1367
+   },
+   "iii_adv_raw_std_on_starved_near_best": {
+    "auroc_starved_near_vs_other_legal": {
+     "auroc": 0.4764,
+     "ci": [
+      0.4525,
+      0.4996
+     ],
+     "n_neg": 6387,
+     "n_pos": 655
+    },
+    "auroc_starved_near_vs_starved_other": {
+     "auroc": 0.4591,
+     "ci": [
+      0.4324,
+      0.4854
+     ],
+     "n_neg": 2535,
+     "n_pos": 655
+    },
+    "fed_near": {
+     "ci": [
+      0.0337,
+      0.0358
+     ],
+     "mean": 0.0347,
+     "n": 1258
+    },
+    "fed_other": {
+     "ci": [
+      0.0366,
+      0.0381
+     ],
+     "mean": 0.0374,
+     "n": 2594
+    },
+    "starved_near": {
+     "ci": [
+      0.0353,
+      0.0372
+     ],
+     "mean": 0.0362,
+     "n": 655
+    },
+    "starved_other": {
+     "ci": [
+      0.0367,
+      0.038
+     ],
+     "mean": 0.0374,
+     "n": 2535
+    }
+   },
+   "iii_adv_std_on_starved_near_best": {
+    "auroc_starved_near_vs_other_legal": {
+     "auroc": 0.5172,
+     "ci": [
+      0.493,
+      0.5414
+     ],
+     "n_neg": 6387,
+     "n_pos": 655
+    },
+    "auroc_starved_near_vs_starved_other": {
+     "auroc": 0.5083,
+     "ci": [
+      0.4807,
+      0.5354
+     ],
+     "n_neg": 2535,
+     "n_pos": 655
+    },
+    "fed_near": {
+     "ci": [
+      0.0079,
+      0.0084
+     ],
+     "mean": 0.0082,
+     "n": 1258
+    },
+    "fed_other": {
+     "ci": [
+      0.0079,
+      0.0082
+     ],
+     "mean": 0.008,
+     "n": 2594
+    },
+    "starved_near": {
+     "ci": [
+      0.0081,
+      0.0086
+     ],
+     "mean": 0.0084,
+     "n": 655
+    },
+    "starved_other": {
+     "ci": [
+      0.0081,
+      0.0084
+     ],
+     "mean": 0.0083,
+     "n": 2535
+    }
+   },
+   "own_continuation": false
+  }
+ },
+ "v_rnd_input_choice": {
+  "feature_rnd_self": {
+   "10": {
+    "exploiter_vs_other": {
+     "auroc": 0.6165,
+     "ci": [
+      0.5332,
+      0.7016
+     ],
+     "n_neg": 9817,
+     "n_pos": 748
+    },
+    "exploiter_vs_other_seen_teams": {
+     "auroc": 0.6274,
+     "ci": [
+      0.5232,
+      0.7325
+     ],
+     "n_neg": 8065,
+     "n_pos": 188
+    },
+    "heldout_seen_vs_train": {
+     "auroc": 0.6011,
+     "ci": [
+      0.5525,
+      0.649
+     ],
+     "n_neg": 10147,
+     "n_pos": 8253
+    },
+    "mean_err": {
+     "exploiter": 0.003804,
+     "heldout_seen_team": 0.002873,
+     "heldout_unseen_team": 0.004308,
+     "train": 0.002139
+    },
+    "unseen_team_vs_seen": {
+     "auroc": 0.7188,
+     "ci": [
+      0.6576,
+      0.7764
+     ],
+     "n_neg": 8253,
+     "n_pos": 2312
+    },
+    "unseen_team_vs_seen_no_exploiter": {
+     "auroc": 0.7349,
+     "ci": [
+      0.6696,
+      0.7919
+     ],
+     "n_neg": 8065,
+     "n_pos": 1752
+    }
+   },
+   "3": {
+    "exploiter_vs_other": {
+     "auroc": 0.5904,
+     "ci": [
+      0.4972,
+      0.69
+     ],
+     "n_neg": 9817,
+     "n_pos": 748
+    },
+    "exploiter_vs_other_seen_teams": {
+     "auroc": 0.585,
+     "ci": [
+      0.4427,
+      0.693
+     ],
+     "n_neg": 8065,
+     "n_pos": 188
+    },
+    "heldout_seen_vs_train": {
+     "auroc": 0.545,
+     "ci": [
+      0.496,
+      0.5924
+     ],
+     "n_neg": 10147,
+     "n_pos": 8253
+    },
+    "mean_err": {
+     "exploiter": 0.006986,
+     "heldout_seen_team": 0.00533,
+     "heldout_unseen_team": 0.007421,
+     "train": 0.004595
+    },
+    "unseen_team_vs_seen": {
+     "auroc": 0.687,
+     "ci": [
+      0.6208,
+      0.7475
+     ],
+     "n_neg": 8253,
+     "n_pos": 2312
+    },
+    "unseen_team_vs_seen_no_exploiter": {
+     "auroc": 0.7026,
+     "ci": [
+      0.6332,
+      0.764
+     ],
+     "n_neg": 8065,
+     "n_pos": 1752
+    }
+   },
+   "30": {
+    "exploiter_vs_other": {
+     "auroc": 0.6332,
+     "ci": [
+      0.5569,
+      0.707
+     ],
+     "n_neg": 9817,
+     "n_pos": 748
+    },
+    "exploiter_vs_other_seen_teams": {
+     "auroc": 0.6479,
+     "ci": [
+      0.5649,
+      0.7355
+     ],
+     "n_neg": 8065,
+     "n_pos": 188
+    },
+    "heldout_seen_vs_train": {
+     "auroc": 0.6579,
+     "ci": [
+      0.6137,
+      0.7012
+     ],
+     "n_neg": 10147,
+     "n_pos": 8253
+    },
+    "mean_err": {
+     "exploiter": 0.002445,
+     "heldout_seen_team": 0.001803,
+     "heldout_unseen_team": 0.002846,
+     "train": 0.001133
+    },
+    "unseen_team_vs_seen": {
+     "auroc": 0.7325,
+     "ci": [
+      0.6774,
+      0.7848
+     ],
+     "n_neg": 8253,
+     "n_pos": 2312
+    },
+    "unseen_team_vs_seen_no_exploiter": {
+     "auroc": 0.7468,
+     "ci": [
+      0.6874,
+      0.7992
+     ],
+     "n_neg": 8065,
+     "n_pos": 1752
+    }
+   },
+   "train_loss": {
+    "10": 0.002223,
+    "3": 0.00526,
+    "30": 0.001152
+   }
+  },
+  "note": "the drift half (feature-RND trained on checkpoint A, scored through a later B) is in rnd_input_choice.json",
+  "obs_rnd": {
+   "10": {
+    "exploiter_vs_other": {
+     "auroc": 0.7326,
+     "ci": [
+      0.6586,
+      0.7972
+     ],
+     "n_neg": 9817,
+     "n_pos": 748
+    },
+    "exploiter_vs_other_seen_teams": {
+     "auroc": 0.6823,
+     "ci": [
+      0.578,
+      0.7573
+     ],
+     "n_neg": 8065,
+     "n_pos": 188
+    },
+    "heldout_seen_vs_train": {
+     "auroc": 0.8615,
+     "ci": [
+      0.8477,
+      0.875
+     ],
+     "n_neg": 10147,
+     "n_pos": 8253
+    },
+    "mean_err": {
+     "exploiter": 0.016334,
+     "heldout_seen_team": 0.009948,
+     "heldout_unseen_team": 0.015194,
+     "train": 0.00408
+    },
+    "unseen_team_vs_seen": {
+     "auroc": 0.7406,
+     "ci": [
+      0.6842,
+      0.7971
+     ],
+     "n_neg": 8253,
+     "n_pos": 2312
+    },
+    "unseen_team_vs_seen_no_exploiter": {
+     "auroc": 0.7278,
+     "ci": [
+      0.655,
+      0.7974
+     ],
+     "n_neg": 8065,
+     "n_pos": 1752
+    }
+   },
+   "3": {
+    "exploiter_vs_other": {
+     "auroc": 0.7122,
+     "ci": [
+      0.6416,
+      0.7741
+     ],
+     "n_neg": 9817,
+     "n_pos": 748
+    },
+    "exploiter_vs_other_seen_teams": {
+     "auroc": 0.6752,
+     "ci": [
+      0.5828,
+      0.7634
+     ],
+     "n_neg": 8065,
+     "n_pos": 188
+    },
+    "heldout_seen_vs_train": {
+     "auroc": 0.7413,
+     "ci": [
+      0.7186,
+      0.7622
+     ],
+     "n_neg": 10147,
+     "n_pos": 8253
+    },
+    "mean_err": {
+     "exploiter": 0.020025,
+     "heldout_seen_team": 0.013519,
+     "heldout_unseen_team": 0.018176,
+     "train": 0.008749
+    },
+    "unseen_team_vs_seen": {
+     "auroc": 0.6805,
+     "ci": [
+      0.6177,
+      0.743
+     ],
+     "n_neg": 8253,
+     "n_pos": 2312
+    },
+    "unseen_team_vs_seen_no_exploiter": {
+     "auroc": 0.661,
+     "ci": [
+      0.5821,
+      0.7389
+     ],
+     "n_neg": 8065,
+     "n_pos": 1752
+    }
+   },
+   "30": {
+    "exploiter_vs_other": {
+     "auroc": 0.7311,
+     "ci": [
+      0.6567,
+      0.7934
+     ],
+     "n_neg": 9817,
+     "n_pos": 748
+    },
+    "exploiter_vs_other_seen_teams": {
+     "auroc": 0.6812,
+     "ci": [
+      0.5628,
+      0.7617
+     ],
+     "n_neg": 8065,
+     "n_pos": 188
+    },
+    "heldout_seen_vs_train": {
+     "auroc": 0.9131,
+     "ci": [
+      0.9033,
+      0.9218
+     ],
+     "n_neg": 10147,
+     "n_pos": 8253
+    },
+    "mean_err": {
+     "exploiter": 0.015749,
+     "heldout_seen_team": 0.009472,
+     "heldout_unseen_team": 0.015191,
+     "train": 0.002126
+    },
+    "unseen_team_vs_seen": {
+     "auroc": 0.7554,
+     "ci": [
+      0.7005,
+      0.8108
+     ],
+     "n_neg": 8253,
+     "n_pos": 2312
+    },
+    "unseen_team_vs_seen_no_exploiter": {
+     "auroc": 0.7457,
+     "ci": [
+      0.6753,
+      0.8132
+     ],
+     "n_neg": 8065,
+     "n_pos": 1752
+    }
+   },
+   "train_loss": {
+    "10": 0.004432,
+    "3": 0.010046,
+    "30": 0.002298
+   }
+  }
+ },
+ "v_summary": {
+  "brier": 0.193,
+  "mean_v": 0.6916,
+  "win_rate": 0.5147
+ }
+}

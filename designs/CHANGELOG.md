@@ -10137,3 +10137,18 @@ which is TF32 rounding. Chasing that turned up the real defect.
   a pre-v126 config migrates to OFF. `designs/production_config.json` records them OFF.
 - **Side fix:** `designs/ARCHITECTURE.md` §3.4 carried the `--win-prob-dense-aux` paragraph twice;
   the duplicate is gone.
+
+## 2026-09-30 — the ride-along READER, the state-level RND reads, and the measured overhead (no model version bump, training unchanged)
+
+- **`python -m main.ridealong_read`** (`src/main/ridealong_read/`): the X26 baseline's offline reader.
+  CPU forwards on the Lane S bank and the X4 pre-read's truth turns. It reads a checkpoint's trained
+  heads, or fresh ones (`--fresh-heads`, the pre-registered floor). Meters (i)–(v) carry 95 %
+  battle-clustered intervals; the within-V-entropy-quintile AUROC (R1's meter) has its own interval.
+  The plumbing smoke on three pre-v126 checkpoints is in
+  `research_state/measurements/ridealong_baseline/smoke_2026-09-30/`.
+- **`python -m main.ridealong_read.rnd_states`**: STATE-level RND reads. obs-RND tracks visitation
+  (ρ −0.34) and flags off-distribution classes (~0.75), at least as well as feature-RND (−0.31, ~0.64–0.69).
+  It memorises whole battles (0.85), and neither variant separates the successors of starved
+  near-best moves from other unplayed moves (+0.001 [−0.037, +0.040]).
+- **Overhead MEASURED:** `ridealong_step_benchmark.py` puts the shipped one-pass heads at +0.59 s on
+  arm C's 67.05 s GPU update (0.88 %). That is 12.3 ms a step × 48 minibatches, at load 8.5.

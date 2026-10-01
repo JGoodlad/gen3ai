@@ -34,8 +34,8 @@ RIDEALONG_EPS = 1e-5
 #: How many of PPO's epochs the heads TRAIN on. ONE: each rollout row is seen once, like any
 #: streaming learner on an on-policy stream. Measured on the GPU learner benchmark (2026-09-30, arm C's
 #: real 98,304-row buffer): training on all 10 epochs cost +8.9 s on a 67.0 s update (+13 %), far
-#: past the design's ~2 % budget for an instrument (`design_q_head.md` §8). One pass is ESTIMATED at a
-#: tenth of that; the re-measure is recorded in X26's PREREGISTRATION.md ("Overhead"). Every meter was already epoch 0's.
+#: past the design's ~2 % budget for an instrument (`design_q_head.md` §8). One pass MEASURED +0.59 s =
+#: 0.88 % (`ridealong_step_benchmark.py`; X26's PREREGISTRATION.md "Overhead"). Every meter was already epoch 0's.
 RIDEALONG_EPOCHS = 1
 #: The heads' own gradient clip (their norm only).
 RIDEALONG_MAX_GRAD_NORM = 1.0

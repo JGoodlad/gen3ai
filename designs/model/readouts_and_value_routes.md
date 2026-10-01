@@ -261,8 +261,19 @@ which is the per-action "starved move" uncertainty.
 **RND reads the observation, not the features.** Trunk features drift as the trunk trains, so
 feature-space novelty confounds "rarely seen" with "the representation moved". The raw observation
 carries embedding IDs as scalars. After standardisation a random net is still a fixed function of them, so
-a rare id stays novel; what is lost is id-to-id semantics. The offline reader measures the choice
-(`designs/research_state/measurements/ridealong_baseline/`).
+a rare id stays novel; what is lost is id-to-id semantics. MEASURED offline (fixed bank, the heads' own
+shapes, 95 % battle-clustered CIs; `designs/research_state/measurements/ridealong_baseline/`):
+- obs-RND is at least as good as feature-RND on every read. Novelty falls with a coarse state key's
+  training count (Spearman −0.34 vs −0.31). It flags off-distribution states: a bot-trained predictor
+  scores self-play states at AUROC 0.75 vs 0.64, and late game at 0.83.
+- Feature-RND is dominated by representation drift: 2.5–8× novelty inflation on the same states across
+  30M steps of one lineage.
+- Two limits:
+  - obs-RND memorises whole battles (held-out battle vs train rows 0.85 in a 10-epoch offline fit).
+  - Neither variant tells the successors of the moves the policy STARVES from its other unplayed moves
+    (starved near-best minus starved far +0.001 [−0.037, +0.040]). 87 % of RND variance lies between
+    turns, not between one turn's actions. RND is a state- and trajectory-level allocator, not an
+    action-level one.
 
 **B is the simple pre-X5 parameterisation.** Its columns are α's support, and it is to be re-based onto X5's flat
 opponent pointer (seats + switch targets + OTHER). A and B are identified by two MARGINAL regressions

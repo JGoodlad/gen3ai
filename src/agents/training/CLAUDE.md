@@ -925,13 +925,17 @@ back to None. So it sits OUTSIDE the fold order above, and nothing in the fold c
 `ridealong_update_test` pins one real update ON vs OFF as bit-identical (params, PPO optimizer
 state, PPO scalars, RNG). Two things to know when reading `ridealong/*`. **The heads TRAIN and READ
 on epoch 0 only** (`RIDEALONG_EPOCHS` = 1: each rollout row seen once, scored before the heads train
-on it). All 10 epochs cost +13 % of a GPU update on the learner benchmark; one pass is ESTIMATED at a tenth of that (the re-measure is X26's `PREREGISTRATION.md` "Overhead").
+on it). All 10 epochs cost +13 % of a GPU update on the learner benchmark; one pass MEASURED +0.59 s = 0.88 % of a 67 s update (`ridealong_step_benchmark.py`; X26's
+`PREREGISTRATION.md` "Overhead").
 And **the heads' Adam state is not checkpointed** (a restart resumes their weights with a fresh Adam). B trains
 only where `--opp-intent-coef > 0`, because that is what aligns the one-ahead opponent labels. The
 meters are disagreement / novelty vs |V − z| (`*_auroc_err`, `*_spearman_err`, top vs bottom decile),
 `rnd_z_<class>`, `adv_corr_logit`, `adv_std_starved` vs `adv_std_fed`, `q_out_of_range`. These are
-MONITORING (rows the heads just trained on); the verdicts are the offline reader's. The
-pre-registered run is EXPERIMENT_BACKLOG X26.
+MONITORING (rows the heads just trained on). The verdicts are the offline reader's,
+`python -m main.ridealong_read` (`src/main/ridealong_read/`: CPU forwards on the Lane S bank and the
+X4 pre-read truth turns; `--fresh-heads` reads the same checkpoint's untrained floor), plus
+`python -m main.ridealong_read.rnd_states` for the state-level RND reads. The pre-registered run is
+EXPERIMENT_BACKLOG X26.
 
 ## The PRIVILEGED true-team value channel (`--value-true-team`)
 

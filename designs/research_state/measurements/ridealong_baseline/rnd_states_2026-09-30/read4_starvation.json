@@ -1,0 +1,2090 @@
+{
+ "bank": {
+  "battles": 580,
+  "content_sha256": "8ca1bfa544bffcf6750bbfb226d44ef90bfdcf5c0eb70701fde6e492a93c10a4",
+  "decisions": 20712
+ },
+ "bootstrap": {
+  "B": 1000,
+  "interval": "95 % (2.5th, 97.5th percentiles)",
+  "method": "percentile bootstrap resampling BATTLES (clusters)",
+  "seed": 20260930
+ },
+ "epochs_read": [
+  3,
+  10,
+  30
+ ],
+ "feat": {
+  "10": {
+   "all_turns": {
+    "ended_branches": {
+     "argmax": 1,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4694,
+      "ci": [
+       0.4474,
+       0.4928
+      ],
+      "mean_err_neg": 0.002216,
+      "mean_err_pos": 0.002108,
+      "n_neg": 291,
+      "n_pos": 978
+     },
+     "paired_diff": {
+      "ci": [
+       -0.0607,
+       0.0489
+      ],
+      "mean": -0.0056,
+      "n": 291
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0081,
+       0.0394
+      ],
+      "mean": 0.0154,
+      "n": 291
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4768,
+       0.6029
+      ],
+      "mean": 0.5395,
+      "n": 291
+     },
+     "turns": 291
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5292,
+      "ci": [
+       0.5027,
+       0.555
+      ],
+      "mean_err_neg": 0.002313,
+      "mean_err_pos": 0.002431,
+      "n_neg": 276,
+      "n_pos": 766
+     },
+     "paired_diff": {
+      "ci": [
+       0.0439,
+       0.1896
+      ],
+      "mean": 0.1136,
+      "n": 276
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0268,
+       0.0906
+      ],
+      "mean": 0.0593,
+      "n": 276
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.5368,
+       0.6534
+      ],
+      "mean": 0.5942,
+      "n": 276
+     },
+     "turns": 276
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.0933,
+       0.0451
+      ],
+      "mean": -0.0227,
+      "n": 275
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0492,
+       0.0071
+      ],
+      "mean": -0.0205,
+      "n": 275
+     },
+     "turns": 275
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5034,
+      "ci": [
+       0.4789,
+       0.5279
+      ],
+      "mean_err_neg": 0.002235,
+      "mean_err_pos": 0.002279,
+      "n_neg": 329,
+      "n_pos": 438
+     },
+     "paired_diff": {
+      "ci": [
+       0.0072,
+       0.1458
+      ],
+      "mean": 0.0768,
+      "n": 329
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0101,
+       0.0624
+      ],
+      "mean": 0.0374,
+      "n": 329
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.479,
+       0.578
+      ],
+      "mean": 0.5289,
+      "n": 329
+     },
+     "turns": 329
+    },
+    "starved_turns": 331
+   },
+   "heldout_battle_turns": {
+    "ended_branches": {
+     "argmax": 0,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4686,
+      "ci": [
+       0.4279,
+       0.5156
+      ],
+      "mean_err_neg": 0.002365,
+      "mean_err_pos": 0.002241,
+      "n_neg": 97,
+      "n_pos": 316
+     },
+     "paired_diff": {
+      "ci": [
+       -0.103,
+       0.0647
+      ],
+      "mean": -0.0237,
+      "n": 97
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0207,
+       0.0525
+      ],
+      "mean": 0.0134,
+      "n": 97
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4651,
+       0.6667
+      ],
+      "mean": 0.567,
+      "n": 97
+     },
+     "turns": 97
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5354,
+      "ci": [
+       0.4931,
+       0.5761
+      ],
+      "mean_err_neg": 0.002524,
+      "mean_err_pos": 0.002637,
+      "n_neg": 96,
+      "n_pos": 276
+     },
+     "paired_diff": {
+      "ci": [
+       -0.0684,
+       0.1533
+      ],
+      "mean": 0.034,
+      "n": 96
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0189,
+       0.0636
+      ],
+      "mean": 0.0205,
+      "n": 96
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4302,
+       0.6162
+      ],
+      "mean": 0.5208,
+      "n": 96
+     },
+     "turns": 96
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.2007,
+       0.0238
+      ],
+      "mean": -0.0882,
+      "n": 95
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0798,
+       0.0064
+      ],
+      "mean": -0.0365,
+      "n": 95
+     },
+     "turns": 95
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4465,
+      "ci": [
+       0.4022,
+       0.492
+      ],
+      "mean_err_neg": 0.002419,
+      "mean_err_pos": 0.002265,
+      "n_neg": 110,
+      "n_pos": 149
+     },
+     "paired_diff": {
+      "ci": [
+       -0.1423,
+       0.1097
+      ],
+      "mean": -0.0199,
+      "n": 110
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0496,
+       0.0481
+      ],
+      "mean": -0.0009,
+      "n": 110
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.3714,
+       0.5545
+      ],
+      "mean": 0.4636,
+      "n": 110
+     },
+     "turns": 110
+    },
+    "starved_turns": 111
+   },
+   "reference_mean_err": {
+    "bank_heldout_rows": 0.002838,
+    "bank_train_rows": 0.001962,
+    "successors_all": 0.002287
+   },
+   "within_turn_variance_share": 0.1327
+  },
+  "3": {
+   "all_turns": {
+    "ended_branches": {
+     "argmax": 1,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4578,
+      "ci": [
+       0.4375,
+       0.4792
+      ],
+      "mean_err_neg": 0.004191,
+      "mean_err_pos": 0.003938,
+      "n_neg": 291,
+      "n_pos": 978
+     },
+     "paired_diff": {
+      "ci": [
+       -0.0855,
+       0.0968
+      ],
+      "mean": 0.0084,
+      "n": 291
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0111,
+       0.03
+      ],
+      "mean": 0.0096,
+      "n": 291
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4417,
+       0.5651
+      ],
+      "mean": 0.5052,
+      "n": 291
+     },
+     "turns": 291
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5363,
+      "ci": [
+       0.5072,
+       0.5622
+      ],
+      "mean_err_neg": 0.004353,
+      "mean_err_pos": 0.004603,
+      "n_neg": 276,
+      "n_pos": 766
+     },
+     "paired_diff": {
+      "ci": [
+       0.0499,
+       0.3265
+      ],
+      "mean": 0.1919,
+      "n": 276
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0172,
+       0.0739
+      ],
+      "mean": 0.045,
+      "n": 276
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.5236,
+       0.6451
+      ],
+      "mean": 0.5833,
+      "n": 276
+     },
+     "turns": 276
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.0725,
+       0.2249
+      ],
+      "mean": 0.0691,
+      "n": 275
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0228,
+       0.0315
+      ],
+      "mean": 0.0035,
+      "n": 275
+     },
+     "turns": 275
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5076,
+      "ci": [
+       0.4821,
+       0.5315
+      ],
+      "mean_err_neg": 0.004215,
+      "mean_err_pos": 0.004367,
+      "n_neg": 329,
+      "n_pos": 438
+     },
+     "paired_diff": {
+      "ci": [
+       0.0835,
+       0.3417
+      ],
+      "mean": 0.2164,
+      "n": 329
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0138,
+       0.0657
+      ],
+      "mean": 0.0413,
+      "n": 329
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.503,
+       0.6065
+      ],
+      "mean": 0.5562,
+      "n": 329
+     },
+     "turns": 329
+    },
+    "starved_turns": 331
+   },
+   "heldout_battle_turns": {
+    "ended_branches": {
+     "argmax": 0,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4672,
+      "ci": [
+       0.4312,
+       0.5081
+      ],
+      "mean_err_neg": 0.004308,
+      "mean_err_pos": 0.004059,
+      "n_neg": 97,
+      "n_pos": 316
+     },
+     "paired_diff": {
+      "ci": [
+       -0.114,
+       0.2047
+      ],
+      "mean": 0.0232,
+      "n": 97
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0154,
+       0.0574
+      ],
+      "mean": 0.0168,
+      "n": 97
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4583,
+       0.6505
+      ],
+      "mean": 0.5464,
+      "n": 97
+     },
+     "turns": 97
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5545,
+      "ci": [
+       0.511,
+       0.599
+      ],
+      "mean_err_neg": 0.004574,
+      "mean_err_pos": 0.004906,
+      "n_neg": 96,
+      "n_pos": 276
+     },
+     "paired_diff": {
+      "ci": [
+       -0.0993,
+       0.4044
+      ],
+      "mean": 0.1543,
+      "n": 96
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0036,
+       0.0879
+      ],
+      "mean": 0.0409,
+      "n": 96
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4898,
+       0.6739
+      ],
+      "mean": 0.5833,
+      "n": 96
+     },
+     "turns": 96
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.3935,
+       0.1107
+      ],
+      "mean": -0.1331,
+      "n": 95
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0837,
+       0.0173
+      ],
+      "mean": -0.032,
+      "n": 95
+     },
+     "turns": 95
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4667,
+      "ci": [
+       0.4218,
+       0.5157
+      ],
+      "mean_err_neg": 0.004379,
+      "mean_err_pos": 0.004186,
+      "n_neg": 110,
+      "n_pos": 149
+     },
+     "paired_diff": {
+      "ci": [
+       -0.1833,
+       0.3222
+      ],
+      "mean": 0.0552,
+      "n": 110
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0317,
+       0.0718
+      ],
+      "mean": 0.0193,
+      "n": 110
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.3945,
+       0.5983
+      ],
+      "mean": 0.5,
+      "n": 110
+     },
+     "turns": 110
+    },
+    "starved_turns": 111
+   },
+   "reference_mean_err": {
+    "bank_heldout_rows": 0.005071,
+    "bank_train_rows": 0.00411,
+    "successors_all": 0.004326
+   },
+   "within_turn_variance_share": 0.1297
+  },
+  "30": {
+   "all_turns": {
+    "ended_branches": {
+     "argmax": 1,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4738,
+      "ci": [
+       0.4513,
+       0.4963
+      ],
+      "mean_err_neg": 0.001406,
+      "mean_err_pos": 0.001336,
+      "n_neg": 291,
+      "n_pos": 978
+     },
+     "paired_diff": {
+      "ci": [
+       -0.0343,
+       0.0361
+      ],
+      "mean": -0.0008,
+      "n": 291
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0013,
+       0.0521
+      ],
+      "mean": 0.026,
+      "n": 291
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4536,
+       0.5729
+      ],
+      "mean": 0.512,
+      "n": 291
+     },
+     "turns": 291
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5276,
+      "ci": [
+       0.5005,
+       0.5553
+      ],
+      "mean_err_neg": 0.001468,
+      "mean_err_pos": 0.001529,
+      "n_neg": 276,
+      "n_pos": 766
+     },
+     "paired_diff": {
+      "ci": [
+       0.0115,
+       0.1144
+      ],
+      "mean": 0.061,
+      "n": 276
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0303,
+       0.109
+      ],
+      "mean": 0.068,
+      "n": 276
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.5222,
+       0.6434
+      ],
+      "mean": 0.5797,
+      "n": 276
+     },
+     "turns": 276
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.0664,
+       0.0279
+      ],
+      "mean": -0.0178,
+      "n": 275
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0654,
+       0.0008
+      ],
+      "mean": -0.0299,
+      "n": 275
+     },
+     "turns": 275
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5049,
+      "ci": [
+       0.479,
+       0.5326
+      ],
+      "mean_err_neg": 0.001414,
+      "mean_err_pos": 0.001433,
+      "n_neg": 329,
+      "n_pos": 438
+     },
+     "paired_diff": {
+      "ci": [
+       -0.0048,
+       0.0924
+      ],
+      "mean": 0.0433,
+      "n": 329
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0116,
+       0.0743
+      ],
+      "mean": 0.0426,
+      "n": 329
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4852,
+       0.5872
+      ],
+      "mean": 0.535,
+      "n": 329
+     },
+     "turns": 329
+    },
+    "starved_turns": 331
+   },
+   "heldout_battle_turns": {
+    "ended_branches": {
+     "argmax": 0,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4699,
+      "ci": [
+       0.4305,
+       0.5128
+      ],
+      "mean_err_neg": 0.001557,
+      "mean_err_pos": 0.00146,
+      "n_neg": 97,
+      "n_pos": 316
+     },
+     "paired_diff": {
+      "ci": [
+       -0.0764,
+       0.0452
+      ],
+      "mean": -0.0182,
+      "n": 97
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0166,
+       0.0585
+      ],
+      "mean": 0.0185,
+      "n": 97
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.3962,
+       0.6019
+      ],
+      "mean": 0.4948,
+      "n": 97
+     },
+     "turns": 97
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5207,
+      "ci": [
+       0.4779,
+       0.5642
+      ],
+      "mean_err_neg": 0.001679,
+      "mean_err_pos": 0.00171,
+      "n_neg": 96,
+      "n_pos": 276
+     },
+     "paired_diff": {
+      "ci": [
+       -0.1006,
+       0.0536
+      ],
+      "mean": -0.0232,
+      "n": 96
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0409,
+       0.0454
+      ],
+      "mean": 0.002,
+      "n": 96
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.3918,
+       0.587
+      ],
+      "mean": 0.4896,
+      "n": 96
+     },
+     "turns": 96
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.1095,
+       0.0333
+      ],
+      "mean": -0.0396,
+      "n": 95
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0713,
+       0.0119
+      ],
+      "mean": -0.0292,
+      "n": 95
+     },
+     "turns": 95
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4411,
+      "ci": [
+       0.3932,
+       0.4909
+      ],
+      "mean_err_neg": 0.0016,
+      "mean_err_pos": 0.001478,
+      "n_neg": 110,
+      "n_pos": 149
+     },
+     "paired_diff": {
+      "ci": [
+       -0.1263,
+       0.0601
+      ],
+      "mean": -0.0338,
+      "n": 110
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0647,
+       0.0449
+      ],
+      "mean": -0.0101,
+      "n": 110
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.3879,
+       0.5763
+      ],
+      "mean": 0.4818,
+      "n": 110
+     },
+     "turns": 110
+    },
+    "starved_turns": 111
+   },
+   "reference_mean_err": {
+    "bank_heldout_rows": 0.001906,
+    "bank_train_rows": 0.00111,
+    "successors_all": 0.001451
+   },
+   "within_turn_variance_share": 0.1484
+  }
+ },
+ "feature_checkpoint": {
+  "path": "/home/goodlad/dev/gen3ai/models/ai_v14_01_base/final_model.zip",
+  "sha256": "50dbdb96cdcdd46e4f1c90217c7cf5cfb155f2c0039856db6a384d555e468bf3"
+ },
+ "headline_epochs": 10,
+ "key_count_reference": {
+  "all_turns": {
+   "ended_branches": {
+    "argmax": 1,
+    "starved_near": 1
+   },
+   "fed_vs_argmax": {
+    "auroc": {
+     "auroc": 0.5744,
+     "ci": [
+      0.5477,
+      0.6052
+     ],
+     "mean_err_neg": -0.778931,
+     "mean_err_pos": -0.560766,
+     "n_neg": 291,
+     "n_pos": 978
+    },
+    "paired_diff": {
+     "ci": [
+      0.1385,
+      0.3071
+     ],
+     "mean": 0.2207,
+     "n": 291
+    },
+    "share_turns_diff_positive": {
+     "ci": [
+      0.3671,
+      0.481
+     ],
+     "mean": 0.4227,
+     "n": 291
+    },
+    "turns": 291
+   },
+   "paired_diff_scale": 1.0,
+   "starved_far_vs_argmax": {
+    "auroc": {
+     "auroc": 0.6243,
+     "ci": [
+      0.5945,
+      0.6571
+     ],
+     "mean_err_neg": -0.792967,
+     "mean_err_pos": -0.436379,
+     "n_neg": 276,
+     "n_pos": 766
+    },
+    "paired_diff": {
+     "ci": [
+      0.2667,
+      0.4894
+     ],
+     "mean": 0.3661,
+     "n": 276
+    },
+    "share_turns_diff_positive": {
+     "ci": [
+      0.4163,
+      0.5326
+     ],
+     "mean": 0.471,
+     "n": 276
+    },
+    "turns": 276
+   },
+   "starved_near_minus_starved_far": {
+    "paired_diff": {
+     "ci": [
+      -0.1537,
+      0.024
+     ],
+     "mean": -0.0596,
+     "n": 275
+    },
+    "turns": 275
+   },
+   "starved_near_vs_argmax": {
+    "auroc": {
+     "auroc": 0.5829,
+     "ci": [
+      0.5491,
+      0.615
+     ],
+     "mean_err_neg": -0.79025,
+     "mean_err_pos": -0.540939,
+     "n_neg": 329,
+     "n_pos": 438
+    },
+    "paired_diff": {
+     "ci": [
+      0.1671,
+      0.3729
+     ],
+     "mean": 0.2704,
+     "n": 329
+    },
+    "share_turns_diff_positive": {
+     "ci": [
+      0.3622,
+      0.4725
+     ],
+     "mean": 0.4164,
+     "n": 329
+    },
+    "turns": 329
+   },
+   "starved_turns": 331
+  },
+  "count0_share_by_class": {
+   "argmax": 0.428,
+   "fed": 0.6006,
+   "starved_far": 0.6752,
+   "starved_near": 0.5718
+  },
+  "heldout_battle_turns": {
+   "ended_branches": {
+    "argmax": 0,
+    "starved_near": 1
+   },
+   "fed_vs_argmax": {
+    "auroc": {
+     "auroc": 0.5372,
+     "ci": [
+      0.4846,
+      0.5866
+     ],
+     "mean_err_neg": -0.561609,
+     "mean_err_pos": -0.407809,
+     "n_neg": 97,
+     "n_pos": 316
+    },
+    "paired_diff": {
+     "ci": [
+      0.0125,
+      0.2894
+     ],
+     "mean": 0.1447,
+     "n": 97
+    },
+    "share_turns_diff_positive": {
+     "ci": [
+      0.2211,
+      0.4063
+     ],
+     "mean": 0.3093,
+     "n": 97
+    },
+    "turns": 97
+   },
+   "paired_diff_scale": 1.0,
+   "starved_far_vs_argmax": {
+    "auroc": {
+     "auroc": 0.5525,
+     "ci": [
+      0.502,
+      0.6033
+     ],
+     "mean_err_neg": -0.580563,
+     "mean_err_pos": -0.404663,
+     "n_neg": 96,
+     "n_pos": 276
+    },
+    "paired_diff": {
+     "ci": [
+      0.0347,
+      0.3768
+     ],
+     "mean": 0.1982,
+     "n": 96
+    },
+    "share_turns_diff_positive": {
+     "ci": [
+      0.2396,
+      0.4362
+     ],
+     "mean": 0.3333,
+     "n": 96
+    },
+    "turns": 96
+   },
+   "starved_near_minus_starved_far": {
+    "paired_diff": {
+     "ci": [
+      -0.219,
+      0.0463
+     ],
+     "mean": -0.0846,
+     "n": 95
+    },
+    "turns": 95
+   },
+   "starved_near_vs_argmax": {
+    "auroc": {
+     "auroc": 0.5103,
+     "ci": [
+      0.4573,
+      0.5606
+     ],
+     "mean_err_neg": -0.55554,
+     "mean_err_pos": -0.501022,
+     "n_neg": 110,
+     "n_pos": 149
+    },
+    "paired_diff": {
+     "ci": [
+      -0.0679,
+      0.2404
+     ],
+     "mean": 0.092,
+     "n": 110
+    },
+    "share_turns_diff_positive": {
+     "ci": [
+      0.1568,
+      0.3246
+     ],
+     "mean": 0.2455,
+     "n": 110
+    },
+    "turns": 110
+   },
+   "starved_turns": 111
+  },
+  "median_count_by_class": {
+   "argmax": 1.0,
+   "fed": 0.0,
+   "starved_far": 0.0,
+   "starved_near": 0.0
+  },
+  "rule": "the read-(2) STATE KEY of each successor, counted among the TRAIN rows; score = -log(1 + count) (higher = rarer); paired_diff in log(1 + count) units, negated"
+ },
+ "obs": {
+  "10": {
+   "all_turns": {
+    "ended_branches": {
+     "argmax": 1,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5258,
+      "ci": [
+       0.503,
+       0.5496
+      ],
+      "mean_err_neg": 0.005924,
+      "mean_err_pos": 0.006073,
+      "n_neg": 291,
+      "n_pos": 978
+     },
+     "paired_diff": {
+      "ci": [
+       0.2068,
+       0.5802
+      ],
+      "mean": 0.3953,
+      "n": 291
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.059,
+       0.1242
+      ],
+      "mean": 0.0915,
+      "n": 291
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.5559,
+       0.6654
+      ],
+      "mean": 0.6117,
+      "n": 291
+     },
+     "turns": 291
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5536,
+      "ci": [
+       0.5291,
+       0.5798
+      ],
+      "mean_err_neg": 0.005968,
+      "mean_err_pos": 0.006438,
+      "n_neg": 276,
+      "n_pos": 766
+     },
+     "paired_diff": {
+      "ci": [
+       0.4292,
+       0.8805
+      ],
+      "mean": 0.6576,
+      "n": 276
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.112,
+       0.1904
+      ],
+      "mean": 0.1519,
+      "n": 276
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.6199,
+       0.7306
+      ],
+      "mean": 0.6775,
+      "n": 276
+     },
+     "turns": 276
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.1992,
+       0.162
+      ],
+      "mean": -0.0168,
+      "n": 275
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.049,
+       0.0036
+      ],
+      "mean": -0.023,
+      "n": 275
+     },
+     "turns": 275
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5611,
+      "ci": [
+       0.539,
+       0.587
+      ],
+      "mean_err_neg": 0.005987,
+      "mean_err_pos": 0.006623,
+      "n_neg": 329,
+      "n_pos": 438
+     },
+     "paired_diff": {
+      "ci": [
+       0.4492,
+       0.8737
+      ],
+      "mean": 0.6527,
+      "n": 329
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0958,
+       0.1627
+      ],
+      "mean": 0.1288,
+      "n": 329
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.6012,
+       0.7009
+      ],
+      "mean": 0.6535,
+      "n": 329
+     },
+     "turns": 329
+    },
+    "starved_turns": 331
+   },
+   "heldout_battle_turns": {
+    "ended_branches": {
+     "argmax": 0,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4976,
+      "ci": [
+       0.463,
+       0.5325
+      ],
+      "mean_err_neg": 0.007476,
+      "mean_err_pos": 0.007343,
+      "n_neg": 97,
+      "n_pos": 316
+     },
+     "paired_diff": {
+      "ci": [
+       -0.1709,
+       0.4437
+      ],
+      "mean": 0.1417,
+      "n": 97
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0052,
+       0.0928
+      ],
+      "mean": 0.0455,
+      "n": 97
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4333,
+       0.6311
+      ],
+      "mean": 0.5361,
+      "n": 97
+     },
+     "turns": 97
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5042,
+      "ci": [
+       0.47,
+       0.5434
+      ],
+      "mean_err_neg": 0.007651,
+      "mean_err_pos": 0.007639,
+      "n_neg": 96,
+      "n_pos": 276
+     },
+     "paired_diff": {
+      "ci": [
+       -0.1915,
+       0.5773
+      ],
+      "mean": 0.1956,
+      "n": 96
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0057,
+       0.1042
+      ],
+      "mean": 0.0544,
+      "n": 96
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4896,
+       0.6923
+      ],
+      "mean": 0.5938,
+      "n": 96
+     },
+     "turns": 96
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.2025,
+       0.4248
+      ],
+      "mean": 0.1055,
+      "n": 95
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0365,
+       0.0403
+      ],
+      "mean": 0.0011,
+      "n": 95
+     },
+     "turns": 95
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5187,
+      "ci": [
+       0.4817,
+       0.5594
+      ],
+      "mean_err_neg": 0.007618,
+      "mean_err_pos": 0.007974,
+      "n_neg": 110,
+      "n_pos": 149
+     },
+     "paired_diff": {
+      "ci": [
+       0.0148,
+       0.7421
+      ],
+      "mean": 0.3957,
+      "n": 110
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0178,
+       0.118
+      ],
+      "mean": 0.0681,
+      "n": 110
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4766,
+       0.6636
+      ],
+      "mean": 0.5727,
+      "n": 110
+     },
+     "turns": 110
+    },
+    "starved_turns": 111
+   },
+   "reference_mean_err": {
+    "bank_heldout_rows": 0.008953,
+    "bank_train_rows": 0.003886,
+    "successors_all": 0.006425
+   },
+   "within_turn_variance_share": 0.1297
+  },
+  "3": {
+   "all_turns": {
+    "ended_branches": {
+     "argmax": 1,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5023,
+      "ci": [
+       0.4825,
+       0.5255
+      ],
+      "mean_err_neg": 0.009177,
+      "mean_err_pos": 0.009193,
+      "n_neg": 291,
+      "n_pos": 978
+     },
+     "paired_diff": {
+      "ci": [
+       0.0767,
+       0.5112
+      ],
+      "mean": 0.2958,
+      "n": 291
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.022,
+       0.0714
+      ],
+      "mean": 0.0463,
+      "n": 291
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.5068,
+       0.6179
+      ],
+      "mean": 0.5636,
+      "n": 291
+     },
+     "turns": 291
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5127,
+      "ci": [
+       0.4896,
+       0.5371
+      ],
+      "mean_err_neg": 0.009229,
+      "mean_err_pos": 0.00934,
+      "n_neg": 276,
+      "n_pos": 766
+     },
+     "paired_diff": {
+      "ci": [
+       0.1329,
+       0.6818
+      ],
+      "mean": 0.4133,
+      "n": 276
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0406,
+       0.098
+      ],
+      "mean": 0.0694,
+      "n": 276
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.5527,
+       0.6702
+      ],
+      "mean": 0.6123,
+      "n": 276
+     },
+     "turns": 276
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.2196,
+       0.2442
+      ],
+      "mean": 0.0143,
+      "n": 275
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0353,
+       0.0105
+      ],
+      "mean": -0.0116,
+      "n": 275
+     },
+     "turns": 275
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5342,
+      "ci": [
+       0.5113,
+       0.5578
+      ],
+      "mean_err_neg": 0.009277,
+      "mean_err_pos": 0.009769,
+      "n_neg": 329,
+      "n_pos": 438
+     },
+     "paired_diff": {
+      "ci": [
+       0.2096,
+       0.7134
+      ],
+      "mean": 0.4761,
+      "n": 329
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0345,
+       0.0859
+      ],
+      "mean": 0.0616,
+      "n": 329
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.5552,
+       0.6571
+      ],
+      "mean": 0.6079,
+      "n": 329
+     },
+     "turns": 329
+    },
+    "starved_turns": 331
+   },
+   "heldout_battle_turns": {
+    "ended_branches": {
+     "argmax": 0,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4916,
+      "ci": [
+       0.4555,
+       0.53
+      ],
+      "mean_err_neg": 0.010256,
+      "mean_err_pos": 0.010108,
+      "n_neg": 97,
+      "n_pos": 316
+     },
+     "paired_diff": {
+      "ci": [
+       -0.2451,
+       0.617
+      ],
+      "mean": 0.1836,
+      "n": 97
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0137,
+       0.0677
+      ],
+      "mean": 0.0243,
+      "n": 97
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4536,
+       0.6383
+      ],
+      "mean": 0.5464,
+      "n": 97
+     },
+     "turns": 97
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4982,
+      "ci": [
+       0.4586,
+       0.541
+      ],
+      "mean_err_neg": 0.010397,
+      "mean_err_pos": 0.010244,
+      "n_neg": 96,
+      "n_pos": 276
+     },
+     "paired_diff": {
+      "ci": [
+       -0.4003,
+       0.6068
+      ],
+      "mean": 0.1353,
+      "n": 96
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0113,
+       0.0698
+      ],
+      "mean": 0.0307,
+      "n": 96
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4782,
+       0.6667
+      ],
+      "mean": 0.5729,
+      "n": 96
+     },
+     "turns": 96
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.3017,
+       0.5593
+      ],
+      "mean": 0.1154,
+      "n": 95
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0388,
+       0.0337
+      ],
+      "mean": -0.0046,
+      "n": 95
+     },
+     "turns": 95
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5162,
+      "ci": [
+       0.4787,
+       0.5549
+      ],
+      "mean_err_neg": 0.010422,
+      "mean_err_pos": 0.010754,
+      "n_neg": 110,
+      "n_pos": 149
+     },
+     "paired_diff": {
+      "ci": [
+       -0.1323,
+       0.7587
+      ],
+      "mean": 0.327,
+      "n": 110
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.01,
+       0.0746
+      ],
+      "mean": 0.0345,
+      "n": 110
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4672,
+       0.6415
+      ],
+      "mean": 0.5545,
+      "n": 110
+     },
+     "turns": 110
+    },
+    "starved_turns": 111
+   },
+   "reference_mean_err": {
+    "bank_heldout_rows": 0.011846,
+    "bank_train_rows": 0.007857,
+    "successors_all": 0.009502
+   },
+   "within_turn_variance_share": 0.1339
+  },
+  "30": {
+   "all_turns": {
+    "ended_branches": {
+     "argmax": 1,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5568,
+      "ci": [
+       0.5324,
+       0.5846
+      ],
+      "mean_err_neg": 0.005121,
+      "mean_err_pos": 0.005475,
+      "n_neg": 291,
+      "n_pos": 978
+     },
+     "paired_diff": {
+      "ci": [
+       0.3386,
+       0.7657
+      ],
+      "mean": 0.556,
+      "n": 291
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.1251,
+       0.2132
+      ],
+      "mean": 0.1675,
+      "n": 291
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.6039,
+       0.7148
+      ],
+      "mean": 0.6598,
+      "n": 291
+     },
+     "turns": 291
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5824,
+      "ci": [
+       0.5557,
+       0.6103
+      ],
+      "mean_err_neg": 0.005181,
+      "mean_err_pos": 0.0059,
+      "n_neg": 276,
+      "n_pos": 766
+     },
+     "paired_diff": {
+      "ci": [
+       0.6485,
+       1.1868
+      ],
+      "mean": 0.9252,
+      "n": 276
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.2083,
+       0.3223
+      ],
+      "mean": 0.2629,
+      "n": 276
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.6228,
+       0.7395
+      ],
+      "mean": 0.6848,
+      "n": 276
+     },
+     "turns": 276
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.2579,
+       0.1509
+      ],
+      "mean": -0.0509,
+      "n": 275
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0709,
+       -0.0039
+      ],
+      "mean": -0.0374,
+      "n": 275
+     },
+     "turns": 275
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5938,
+      "ci": [
+       0.5699,
+       0.6231
+      ],
+      "mean_err_neg": 0.005197,
+      "mean_err_pos": 0.006074,
+      "n_neg": 329,
+      "n_pos": 438
+     },
+     "paired_diff": {
+      "ci": [
+       0.6432,
+       1.13
+      ],
+      "mean": 0.88,
+      "n": 329
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.1805,
+       0.2714
+      ],
+      "mean": 0.2238,
+      "n": 329
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.6065,
+       0.7121
+      ],
+      "mean": 0.6596,
+      "n": 329
+     },
+     "turns": 329
+    },
+    "starved_turns": 331
+   },
+   "heldout_battle_turns": {
+    "ended_branches": {
+     "argmax": 0,
+     "starved_near": 1
+    },
+    "fed_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5008,
+      "ci": [
+       0.4649,
+       0.5394
+      ],
+      "mean_err_neg": 0.007134,
+      "mean_err_pos": 0.006977,
+      "n_neg": 97,
+      "n_pos": 316
+     },
+     "paired_diff": {
+      "ci": [
+       -0.2539,
+       0.4072
+      ],
+      "mean": 0.0955,
+      "n": 97
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0113,
+       0.1194
+      ],
+      "mean": 0.0647,
+      "n": 97
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4851,
+       0.6848
+      ],
+      "mean": 0.5876,
+      "n": 97
+     },
+     "turns": 97
+    },
+    "paired_diff_scale": 1000.0,
+    "starved_far_vs_argmax": {
+     "auroc": {
+      "auroc": 0.4957,
+      "ci": [
+       0.4635,
+       0.5302
+      ],
+      "mean_err_neg": 0.007389,
+      "mean_err_pos": 0.007295,
+      "n_neg": 96,
+      "n_pos": 276
+     },
+     "paired_diff": {
+      "ci": [
+       -0.251,
+       0.4855
+      ],
+      "mean": 0.1227,
+      "n": 96
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0045,
+       0.149
+      ],
+      "mean": 0.071,
+      "n": 96
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4639,
+       0.6809
+      ],
+      "mean": 0.5729,
+      "n": 96
+     },
+     "turns": 96
+    },
+    "starved_near_minus_starved_far": {
+     "paired_diff": {
+      "ci": [
+       -0.1787,
+       0.4095
+      ],
+      "mean": 0.1095,
+      "n": 95
+     },
+     "paired_log_ratio": {
+      "ci": [
+       -0.0405,
+       0.0468
+      ],
+      "mean": 0.002,
+      "n": 95
+     },
+     "turns": 95
+    },
+    "starved_near_vs_argmax": {
+     "auroc": {
+      "auroc": 0.5235,
+      "ci": [
+       0.4867,
+       0.5604
+      ],
+      "mean_err_neg": 0.007312,
+      "mean_err_pos": 0.007672,
+      "n_neg": 110,
+      "n_pos": 149
+     },
+     "paired_diff": {
+      "ci": [
+       -0.0042,
+       0.708
+      ],
+      "mean": 0.3606,
+      "n": 110
+     },
+     "paired_log_ratio": {
+      "ci": [
+       0.0325,
+       0.1529
+      ],
+      "mean": 0.0901,
+      "n": 110
+     },
+     "share_turns_diff_positive": {
+      "ci": [
+       0.4595,
+       0.6608
+      ],
+      "mean": 0.5636,
+      "n": 110
+     },
+     "turns": 110
+    },
+    "starved_turns": 111
+   },
+   "reference_mean_err": {
+    "bank_heldout_rows": 0.008638,
+    "bank_train_rows": 0.002343,
+    "successors_all": 0.005827
+   },
+   "within_turn_variance_share": 0.1497
+  }
+ },
+ "predictor": "agents.model.ridealong_heads.RndNovelty shapes; Adam 3e-4, minibatch 256, seed 20260930; normalisation fitted on the predictor's own training rows",
+ "reader_commit": "80146b744f45223262ac670108a73f6f62cfe62a",
+ "reencode": {
+  "byte_equal": 19964,
+  "encoder_sha256": "232f84562ab6869f5f3ddcd917055bd97d825b5b60c535237deb0df2205ab2b5",
+  "first_drifted": [],
+  "obs_as_recorded": true,
+  "recorded_rows_checked": 19964
+ },
+ "schema": "gen3_ridealong_rnd_states_v1",
+ "split": {
+  "heldout_battles": 174,
+  "heldout_rows": 6688,
+  "rule": "battles 70% / 30% WITHIN each (source, opp_class) cell, seed 20260930",
+  "train_battles": 406,
+  "train_rows": 14024
+ },
+ "successors": {
+  "branches": 7042,
+  "ended": 21,
+  "refused_turns": [],
+  "root_opponent_open": 863,
+  "rule": "one_ply per decisive turn, every legal action, S = 1 (truth seed 0), the opponent's open root + later opponent-only decisions answered by N0 final's greedy (variant M); scored by the predictors trained on every TRAIN row"
+ },
+ "training": {
+  "feat": {
+   "all": {
+    "n_train": 14024,
+    "train_loss": {
+     "10": 0.002036,
+     "3": 0.004727,
+     "30": 0.001124
+    }
+   },
+   "bot": {
+    "n_train": 7388,
+    "train_loss": {
+     "10": 0.002721,
+     "3": 0.006741,
+     "30": 0.001366
+    }
+   },
+   "pool": {
+    "n_train": 6084,
+    "train_loss": {
+     "10": 0.003022,
+     "3": 0.008038,
+     "30": 0.001472
+    }
+   }
+  },
+  "obs": {
+   "all": {
+    "n_train": 14024,
+    "train_loss": {
+     "10": 0.004226,
+     "3": 0.009164,
+     "30": 0.002527
+    }
+   },
+   "bot": {
+    "n_train": 7388,
+    "train_loss": {
+     "10": 0.004771,
+     "3": 0.011062,
+     "30": 0.002154
+    }
+   },
+   "pool": {
+    "n_train": 6084,
+    "train_loss": {
+     "10": 0.00525,
+     "3": 0.011528,
+     "30": 0.002198
+    }
+   }
+  }
+ },
+ "truth": {
+  "actions_by_class": {
+   "argmax": 951,
+   "fed": 4011,
+   "starved_far": 1640,
+   "starved_near": 440
+  },
+  "continuation": "N0final75M",
+  "decisive_turns": 951,
+  "file": "rows_N0final75M_S64.compact.jsonl.gz",
+  "turns_with_starved_near": 331
+ }
+}

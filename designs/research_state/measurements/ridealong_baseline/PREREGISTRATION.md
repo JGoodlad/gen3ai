@@ -47,8 +47,14 @@ load 30–50 on 16 cores (contended: warned, not stretched). The ride-along conf
 - **Heads trained on all 10 PPO epochs:** update 75.97 s vs 67.05 s baseline (median of 3), **+8.9 s =
   +13 %**. The bracketed `ridealong` phase is 6.44 s per update. That is far past the ~2 % instrument
   budget, so the heads now train on PPO's FIRST epoch only (`RIDEALONG_EPOCHS` = 1) with fused Adam.
-- **Heads on epoch 0 only:** ESTIMATED at about a tenth of the above (~0.9 s, ~1.3 %). The re-measure
-  is PENDING and will be recorded here.
+- **Heads on epoch 0 only (the shipped config): +0.59 s per update = 0.88 % of arm C's 67.05 s
+  update.** MEASURED, 2026-09-30, `src/agents/training/ridealong_step_benchmark.py` on the GPU (the
+  heads are separable by construction, so what they add is one step × the minibatches of one epoch).
+  One ride-along step at batch 2048 is 12.3 ms (median of 30; 11.6–14.5) × 48 minibatches. Load was 8.5 at
+  start and end ("box looks idle"). It cross-checks with the end-to-end run's bracketed `ridealong`
+  phase above: 6.44 s / 480 steps = 13.4 ms a step. Row: `overhead_step_2026-09-30.json`.
+- **Why the end-to-end tool could not re-measure it.** Two 35-min GPU-lock units at load 16–80 never
+  reached a timed call: the trainer's compile startup alone filled them.
 
 ## The read
 
@@ -70,7 +76,7 @@ just trained on, and are never a verdict.
 | # | question | meter | decision rule (FINAL checkpoint) |
 |---|---|---|---|
 | R1 | Does ENSEMBLE disagreement predict V's actual error BEYOND V's own uncertainty? | the members' spread in LOGIT space (`ens_logit_std`). PRIMARY: its AUROC for \|V − z\| > 0.5 on the bank read WITHIN quintiles of V's own binary entropy (`auroc_within_ref_quintiles`). A spread of member PROBABILITIES is mechanically largest where V is near 0.5, so the raw AUROC partly re-reads V's own uncertainty: the smoke's UNTRAINED priors score raw 0.63–0.66 but within-quintile 0.54–0.56. Secondary: the raw AUROC, and the top/bottom-decile error ratio | **USABLE** for allocation iff the within-quintile AUROC's lower bound > 0.56, i.e. above the untrained-prior floor of 0.54–0.56, **and** the top/bottom-decile ratio's lower bound > 1.25. **NOT DETECTED** iff the within-quintile interval contains the untrained floor, re-read by the same reader on the SAME checkpoint with fresh heads. Anything else is **WEAK** |
-| R2 | Does RND novelty predict V's error, and flag unfamiliar states? | the same AUROC for `rnd_z`. Coverage: the AUROC of `rnd_z` for held-out rows whose TEAM is absent from the reader's train split vs present | error: the R1 rule. **COVERAGE METER** iff the unseen-team AUROC's lower bound > 0.55 |
+| R2 | Does RND novelty predict V's error, and flag unfamiliar STATES? (State-level floors and method: `rnd_states_2026-09-30/`) | the same AUROC for `rnd_z`. Coverage: the AUROC of `rnd_z` for held-out rows whose TEAM is absent from the reader's train split vs present | error: the R1 rule. **COVERAGE METER** iff the unseen-team AUROC's lower bound > 0.55 |
 | R1×R2 | Which is the better allocator? | the paired AUROC difference (ensemble − RND), same resamples | the winner is the one whose paired interval excludes 0. Otherwise **TIED** (use both) |
 | R3 | Does A rank actions consistently with the ground truth? | within-turn Spearman of A (the member mean) vs truth, over legal actions, on the 1,600 turns. Reference rows: the policy's own logits on the same turns, and the pre-read's one-ply Q̂ (ρ 0.226–0.243) | **CONSISTENT** iff ρ_A's lower bound > 0. **ADDS BEYOND THE POLICY** iff the paired ρ_A − ρ_logit has lower bound > 0. **A IS A POLICY ECHO** iff that paired interval contains 0 while `corr(policy logit, A)` > 0.5. Argmax-A regret on decisive turns is reported beside the policy argmax's |
 | R4 | Are the starved near-best moves flagged as uncertain? | AUROC of the per-action A member spread (`adv_std`: each member centred on its OWN legal-action mean, uniform weights, NOT under π; π-centring pulls the members together on the actions π plays, so a π-centred spread flags starved moves even untrained, AUROC 0.73–0.75 at init). It compares STARVED near-best actions (π < 1 %, truth within 0.1 of the best) with (a) every other legal action and (b) the starved actions that are NOT near-best, on the truth turns | **FLAGGED** iff (b)'s lower bound > 0.55, i.e. the spread singles out the GOOD starved moves, not starvation as such, **and** (a) also clears the fresh-heads floor on the same checkpoint. This decides whether A's spread can steer where counterfactual labels or search effort go (X25 USE), when those come back in scope |
@@ -81,6 +87,13 @@ the run's strength reads (ladder, anchors, untaught meter) are the PRODUCTION RE
 They are recorded as the strength baseline for later arms, not as a result about the heads.
 
 **Declared limits.**
+- RND is a STATE- and TRAJECTORY-level signal, MEASURED offline (`rnd_states_2026-09-30/`). It
+  falls with visitation (ρ −0.34) and flags off-distribution classes (0.75). It does NOT separate the
+  successors of starved near-best moves from other unplayed moves. So R2 is read against V's error
+  and state coverage, never as an action-level starvation flag; R4's A-spread is the action-level
+  read. The offline obs-RND memorised whole battles (0.85 held-out-battle vs train). R2's coverage
+  AUROC therefore carries the same check on the run's own checkpoints: held-out rows from
+  the same distribution vs the predictor's training rows, reported beside it.
 - A and B learn from GAE advantages (λ = the run's `policy_gae_lambda`, V-bootstrapped). Their
   ceiling is therefore bounded by V's within-turn blindness, which the pre-read measured. R3 against
   Q̂ is a like-for-like floor, not a target.

@@ -1,0 +1,19 @@
+{
+ "device": "cuda",
+ "batch": 2048,
+ "k": 30,
+ "warmup": 5,
+ "ridealong_epochs": 1,
+ "step_ms_epoch0": {
+  "median": 12.320599518716335,
+  "min": 11.578981997445226,
+  "max": 14.46052105166018
+ },
+ "minibatches_per_epoch": 48,
+ "added_s_per_update": 0.5913887768983841,
+ "baseline_update_s": 67.05,
+ "added_pct_of_update": 0.8820115986553082,
+ "contention_at_start": "contention: load average 8.50/12.08/24.91 on 16 cpus (box looks idle). If this is a timeout and a training run is live, it is probably starvation, not a bug \u2014 confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head",
+ "contention_at_end": "contention: load average 8.54/12.03/24.82 on 16 cpus (box looks idle). If this is a timeout and a training run is live, it is probably starvation, not a bug \u2014 confirm with: ps -eo pcpu,pid,args --sort=-pcpu | head",
+ "loadavg_end": "8.54 12.03 24.82 9/1186 529954"
+}
