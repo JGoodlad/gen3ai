@@ -1106,7 +1106,10 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
   - a knob recorded nowhere else comes from the run's `metadata.json:cli_args`.
 
   A value MISSING from its route REFUSES by name (`RecipeRestartError` → `FATAL_CONFIG`; `checkargs`
-  and `--dry-run` report it) — never a parser or registry default. It sits ON TOP of the general
+  and `--dry-run` report it) — never a parser or registry default. The restart also KEEPS the
+  provenance tags the stripped `--arch` would have stamped — `recipe_source` from `cli_args`, and (any
+  same-run restart, `arch_surface.inherit_arch_source_on_restart`) `arch_source` from the
+  checkpoint's `model_config.json` — which the first restart used to null. It sits ON TOP of the general
   rule (`68850f27`: a restart inherits the surface from `model_config.json`, `opp_intent_coef`
   recorded from config v125, a pre-v125 dose migrated from `cli_args` or refused) and covers only
   what that cannot supply.

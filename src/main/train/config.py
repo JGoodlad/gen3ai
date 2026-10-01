@@ -695,6 +695,13 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
     for _d, _v, _src in _restored:
         emit(f"[Recipe] same-run restart of an --arch production run: {_d}={_v!r} from {_src}")
+    # ...and the run's PROVENANCE tags with it: `arch_source` (model_config.json) and `recipe_source`
+    # (metadata.json:cli_args) are stamped only by the `--arch` branch the restart stripped, and every
+    # later save records the namespace's — so a first restart used to null them.
+    from main.train.arch_surface import inherit_arch_source_on_restart
+    _arch_tag = inherit_arch_source_on_restart(args, getattr(args, "run_dir", None), _saved_ver)
+    if _arch_tag:
+        emit(f"[Arch] same-run restart: arch_source={_arch_tag!r} kept from model_config.json")
 
     # --- gen3_winprob_critic_mode_v1: THE CRITIC MODE, and the composition it implies ------------
     # Resolved BEFORE `_resolve` so the implications below land on the same tri-state sentinels

@@ -491,7 +491,7 @@ command cannot launch at all" must reach the reader before a question about its 
 | **FRESH**, un-pinned or pinned to HEAD | prints the diff and **REFUSES** (`FATAL_CONFIG`), naming every differing key with both values |
 | FRESH + `--allow-nonproduction-arch` | prints the diff, launches, and stamps `arch_source` in `model_config.json` |
 | FRESH + `--arch production` | applies the whole surface first, so there is usually nothing to print |
-| **FORK / RESTART** | prints the diff as **INFO** — a resume INHERITS its parent's surface through `config.inherit_saved_flag`, so its silence is the parent's architecture |
+| **FORK / RESTART** | prints the diff as **INFO** — a resume INHERITS its parent's surface through `config.inherit_saved_flag`, so its silence is the parent's architecture. A same-run RESTART also keeps the run's `arch_source` / `recipe_source` (`arch_surface.inherit_arch_source_on_restart`, `recipe_surface.inherit_on_restart`) — the stripped `--arch` no longer nulls them at the first restart |
 | **PINNED to a non-HEAD commit** | prints the diff as **ADVISORY** — see below |
 
 **The ADVISORY rung is `gen3_pinned_argv_parser_v1`'s lesson applied a second time.**

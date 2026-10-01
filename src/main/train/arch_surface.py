@@ -176,6 +176,32 @@ def arch_source_tag(path: str = PRODUCTION_CONFIG_PATH) -> str:
     return f"production_config@{production_blob_sha(path)[:12]}"
 
 
+def inherit_arch_source_on_restart(ns: Any, run_dir: Optional[str], saved_ver: Any,
+                                   *, model: Optional[str] = None) -> Optional[str]:
+    """A SAME-RUN restart keeps the run's `arch_source` (cutover loose end 3, 2026-09-30).
+
+    The launcher's restart strips the fresh-only `--arch`, so the restarted child never reaches the
+    branch of `desugar_umbrella_flags` that stamps the tag — and `model_build` records
+    `args.arch_source` into every later `model_config.json`, so the run's FIRST restart overwrote
+    `production_config@…` with None: the provenance the field exists for, lost. When `--model` is a
+    checkpoint INSIDE `run_dir` (`fork_lr.is_same_run_checkpoint`) and the namespace carries no tag
+    of its own, the checkpoint's recorded tag is restored and returned (else None). A FORK into a
+    new run dir is untouched — its surface is its parent's, recorded through `lineage`, and its own
+    tag says how ITS argv chose it. `model` overrides `ns.model` (checkargs' resolved path)."""
+    from main.train.fork_lr import is_same_run_checkpoint
+
+    model = model or getattr(ns, "model", None)
+    if getattr(ns, "arch_source", None) or not model or not run_dir:
+        return None
+    if not is_same_run_checkpoint(model, run_dir):
+        return None
+    tag = getattr(saved_ver, "arch_source", None) if saved_ver is not None else None
+    if not tag:
+        return None
+    ns.arch_source = tag
+    return str(tag)
+
+
 # ------------------------------------------------------------------------------- the comparison
 _MISSING = object()
 

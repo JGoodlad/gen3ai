@@ -692,6 +692,8 @@ class ModelVersionFields:
     #   "production_config@<12 hex>"  — `--arch production` applied the mirror, content-hashed
     #   "nonproduction (--allow-nonproduction-arch, N key(s) vs …)" — a deliberate ablation
     #   None                          — neither flag was used (every run before 2026-09-06)
+    # A same-run launcher RESTART keeps the checkpoint's tag (`arch_surface.inherit_arch_source_on_restart`,
+    # 2026-09-30); before that the first restart recorded None (`ai_v14_01_base`'s config reads None).
     # It exists because the 2026-09-06 incident's run recorded a bare architecture with nothing on
     # disk saying whether that was a decision or an accident, and "we meant it" belongs beside the
     # config rather than in a memory. Reading `ai_v12_01_winprob_critic`'s config afterwards told

@@ -698,7 +698,9 @@ matches its control at the SAME dose is its secondary read.
     - a knob recorded nowhere else (`n_envs`, `n_epochs`, `ent_coef`, …) comes from the run's
       `metadata.json` `cli_args`.
 
-    A value missing from its source REFUSES by name (`FATAL_CONFIG`), never a default. This follows
+    A value missing from its source REFUSES by name (`FATAL_CONFIG`), never a default. The
+    provenance tags survive too: `recipe_source` from `cli_args`, `arch_source` from the
+    checkpoint's `model_config.json` (the first restart used to record `arch_source: null`). This follows
     the general restart rule (`68850f27`: the surface is inherited from `model_config.json`,
     `opp_intent_coef` a recorded field from config v125) and covers only what it cannot supply.
   - `src/recipe_doc_gate_test.py` holds the table below and §1's live-value column to the block.

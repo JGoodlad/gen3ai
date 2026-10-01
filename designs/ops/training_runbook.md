@@ -105,7 +105,10 @@ NOT set the critic READOUTS `--critic winprob` implies, or `--belief-grad-mode` 
 them every time, so its silence is never read as coverage. A same-run restart (which strips `--arch`)
 resolves each recipe knob by one route (INERT `--lr` / `--batch-size` / `--n-steps` / `--gamma`
 untouched; recorded fields from `model_config.json`; the rest from the run's `metadata.json:cli_args`),
-announced, and REFUSES by name when a value is missing — never a default.
+announced, and REFUSES by name when a value is missing — never a default. It also KEEPS the run's
+provenance tags — `arch_source` from the checkpoint's `model_config.json`, `recipe_source` from
+`cli_args` (`[Arch] same-run restart: arch_source=… kept`); before 2026-09-30 the first restart
+recorded `arch_source: null`. A fork into a new run dir keeps neither (its parent is in `lineage`).
 
 Three resolution rules the tool applies, each of which has burned a launch:
 - 🚨 **A BARE RUN DIRECTORY MEANS THE RUN'S LAST SNAPSHOT** (`gen3_last_snapshot_resolution_v1`) —

@@ -359,6 +359,12 @@ def inherit_on_restart(ns: Any, run_dir: Optional[str], saved_ver: Any = None,
             + ". Pass each flag with the value the run trained with — a training recipe value is "
               "never guessed, and a parser default would silently change the run mid-flight.")
     ns._recipe_restart_inherited = tuple(out)
+    # The PROVENANCE tag rides with the knobs: `recipe_source` is stamped only by the `--arch` branch
+    # the restart stripped, and `cli_args` is re-recorded from the namespace at every save, so the
+    # first restart used to drop it. Kept from the run's own record; absent there (a run launched
+    # before K10(a)) it stays unset — a provenance string gates nothing, so nothing is refused.
+    if not getattr(ns, "recipe_source", None) and isinstance(cli, dict) and cli.get("recipe_source"):
+        ns.recipe_source = cli["recipe_source"]
     return out
 
 
