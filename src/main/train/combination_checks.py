@@ -274,7 +274,7 @@ def _cf_duty_cycle_message(args) -> str:
         f"  checkpoint interval          : {interval:,} env steps "
         f"({vec_calls:,} vec-calls x {n_envs} envs)\n"
         f"  --checkpoint-every-steps     : "
-        f"{'(unset — the 50000-vec-call default)' if every is None else format(every, ',')}\n"
+        f"{'(unset — the 2,400,000-env-step default)' if every is None else format(every, ',')}\n"
         f"  => DUTY CYCLE                : {shown}  (floor {CF_DUTY_CYCLE_FLOOR:.0%})\n"
         f"  The producer stamps every label with the newest checkpoint's step, so outside that\n"
         f"  window EVERY label it writes is expired by the buffer on arrival. Two remedies, and\n"

@@ -178,7 +178,7 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                         dest="teacher_search_workers", type=int, default=3,
                         help="Search-teacher worker subprocesses per cycle (default 3).")
     parser.add_argument("--teacher-search-freq", "--teacher_search_freq", dest="teacher_search_freq",
-                        type=int, default=0, help="Steps between search-teacher cycles (0 = use the eval freq).")
+                        type=int, default=0, help="TOTAL env steps between search-teacher cycles (0 = 2,000,000).")
     parser.add_argument("--teacher-persistent", "--teacher_persistent", dest="teacher_persistent",
                         action="store_true",
                         help="PERSISTENT-pool mode (the supply lever): long-lived workers GENERATE their "

@@ -250,6 +250,26 @@ Checkpoints are saved automatically into `models/run_<timestamp>/checkpoints/` (
 beside its per-checkpoint `.json` sidecar); the run-level `model_config.json` / `metadata.json`
 / `latest.txt` and the `final_model*.zip` / `best_model/` stay at the run root.
 
+#### Cadences and N — which interval is TOTAL env steps, which is per UPDATE (F-SZ-3, 2026-10-01)
+
+**The periodic checkpoint is every 2,400,000 TOTAL env steps at every `--n-envs`**
+(`main.train.constants.DEFAULT_CHECKPOINT_EVERY_ENV_STEPS`; `--checkpoint-every-steps` overrides, in
+the same unit). It used to be a hardcoded 50,000 VEC-ENV CALLS — 2.4M at N = 48 but ~102M at
+N = 2048, a run that never checkpoints. SB3 still counts vec calls, so the interval is converted by
+ceil at the run's N (N = 48: 50,000 calls, byte-identical; N = 2048: 1,172 calls = 2,400,256 steps).
+One vec call = N env steps on BOTH env cores (the Rust collector fires the callbacks once per N
+trainee decisions). ⚠️ **Not under `--async-rollout`**: its collector fires once per WAVE (≤ N envs),
+so the checkpointer fires early by the mean wave fraction. Pinned by
+`src/main/train/cadence_n_independence_test.py` (N = 48 vs N = 2048 through `build_callbacks`).
+
+| cadence | unit | N-independent? |
+|---|---|---|
+| periodic checkpoint (`--checkpoint-every-steps`) | total env steps (→ vec calls at N) | yes |
+| eval cycle (`--eval-freq`, `EVAL_FREQ_STEPS` 2M) — and the snapshot-pool add and opponent-pool refresh it drives | `num_timesteps` | yes |
+| search teacher (`--teacher-search-freq`, `--teacher-refresh-steps`), plasticity canary (`--canary-reset-steps`) | `num_timesteps` | yes |
+| `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team PFSP / team win-rate pulls (3 rollouts), exploiter-ladder persist (20), `--distill-anchor-refresh-every`, `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |
+| launcher restart, graceful restart, `--log-level periodic` lines | wall clock / episodes | n/a |
+
 ### WHICH readout is the critic — `--critic {shaped,winprob}` (default `shaped`)
 
 `policy._critic_value` has a MODE. **`shaped` is the default and every generation to date** — the

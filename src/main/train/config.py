@@ -155,8 +155,9 @@ def _announce_cf_duty_cycle(args) -> None:
     THE DEFECT THIS MAKES UNREPRESENTABLE (`ai_v9_29_rev1_0823`, 2026-08-23). The label producer
     can only stamp labels with the step of the newest `checkpoints/` zip, and `cf_label_buffer`
     expires a row more than `--cf-label-lag-steps` behind the live policy. So the two flags define
-    a fraction — and NOBODY WAS COMPUTING IT. At the hardcoded 50 000 VEC-CALL cadence and
-    `--n-envs 48` the checkpoint interval is 2 400 000 env steps against a 150 000-step bound: a
+    a fraction — and NOBODY WAS COMPUTING IT. At the then-hardcoded 50 000 VEC-CALL cadence and
+    `--n-envs 48` the checkpoint interval was 2 400 000 env steps (today's default, now a TOTAL-env-
+    step quantity at every N) against a 150 000-step bound: a
     6.25% duty cycle, observed as **6 labels ingested against 255 expired in two hours**, with
     every counter on both sides reading healthy (the producer was producing; the buffer was
     expiring; neither knew about the other's number).
@@ -1179,7 +1180,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--q-winprob-onpolicy-coef must be >= 0 (0 = off)")
     if getattr(args, "checkpoint_every_steps", None) is not None and args.checkpoint_every_steps < 1:
         parser.error("--checkpoint-every-steps must be >= 1 (it is an ENV-STEP interval; there is "
-                     "no 'off' value — omit the flag for the historical 50000-vec-call cadence)")
+                     "no 'off' value — omit the flag for the 2,400,000-env-step default)")
     _announce_cf_duty_cycle(args)
     if args.distill_coef is not None and args.distill_coef < 0.0:
         parser.error("--distill-coef must be >= 0 (0 = off)")

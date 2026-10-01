@@ -116,8 +116,10 @@ STEP_WARN_BYTES = 64 * MiB
 #: (`expandable_segments:True`), each on a diagnostics update; 256 MiB is 2.1x the largest.
 RESERVED_STEP_WARN_BYTES = 256 * MiB
 #: Projected OOM inside this many updates => STOP. 25 = the default periodic-checkpoint cadence at
-#: production shape (50,000 vec calls x 48 envs = 2.4M env steps = 24.4 rollouts of 98,304): a
-#: crossing projected before the NEXT checkpoint is the one a clean stop must pre-empt.
+#: production shape (2.4M total env steps = 24.4 rollouts of 98,304 = 48 envs x 2048): a crossing
+#: projected before the NEXT checkpoint is the one a clean stop must pre-empt. ⚠️ Counted in
+#: UPDATES, so it tracks the checkpoint cadence only while the rollout stays 98,304 rows — a sizing
+#: change of N x n_steps moves the two apart (F-SZ-3 audit).
 HORIZON_UPDATES = 25
 #: Kept free below the device ceiling (the CUDA context, cuBLAS workspaces, a late large block).
 CEILING_MARGIN_BYTES = 512 * MiB

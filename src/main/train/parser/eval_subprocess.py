@@ -61,7 +61,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "arm cannot pass by memorising this one. Ignored unless "
                              "--bait-bot-share > 0.")
     parser.add_argument("--eval-freq", "--eval_freq", dest="eval_freq", type=int, default=None,
-                        help="Steps between eval cycles (default None = EVAL_FREQ_STEPS, 2,000,000 — "
+                        help="TOTAL env steps (num_timesteps, independent of --n-envs) between eval cycles (default None = EVAL_FREQ_STEPS, 2,000,000 — "
                              "byte-identical to every pre-existing command). Lower it for SHORT arms: a "
                              "3M exploiter-gate fork at the 2M default gets 1-2 cycles, which cannot meet a "
                              ">=4-cycle reading discipline; --eval-freq 750000 gives 4. Applies to BOTH the "

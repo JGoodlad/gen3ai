@@ -9,8 +9,9 @@ hours, with every counter on both sides reading healthy.
 
 Two things are pinned here, and the first matters more than the second:
 
-* **DEFAULT PRESERVATION.** A run that names no new flag must construct a checkpointer whose
-  `save_freq` is byte-identical to the pre-flag one. A live production run restarts onto this code.
+* **DEFAULT PRESERVATION AT THE PRODUCTION N.** A flagless `--n-envs 48` run must construct a
+  checkpointer whose `save_freq` is byte-identical to the pre-flag one (50000 vec calls); since
+  F-SZ-3 the default is 2.4M TOTAL env steps at every N, which is that value at N = 48.
 * **The guard**: with both halves of the cf label path on, the duty cycle is COMPUTED, PRINTED, and
   refused below the floor — because a number nobody computes is exactly how this shipped.
 
@@ -23,7 +24,7 @@ import pytest
 
 from main.exit_codes import TrainExitCode
 from main.train.constants import (
-    CF_DUTY_CYCLE_FLOOR, DEFAULT_CHECKPOINT_SAVE_FREQ_VEC_CALLS, cf_label_duty_cycle,
+    CF_DUTY_CYCLE_FLOOR, DEFAULT_CHECKPOINT_EVERY_ENV_STEPS, cf_label_duty_cycle,
     checkpoint_interval_env_steps, checkpoint_save_freq_vec_calls,
 )
 from main.train_rl_agent import build_parser
@@ -34,13 +35,18 @@ from main.train_rl_agent import build_parser
 # ---------------------------------------------------------------------------
 
 class TestCadenceConversion:
-    def test_none_preserves_the_historical_hardcoded_value_exactly(self):
-        """THE compatibility assertion: no flag ⇒ the literal 50000 that was hardcoded, for every
-        n_envs. A resume of the live run must not change its checkpoint cadence by accident."""
-        for n_envs in (1, 16, 48, 64):
-            assert checkpoint_save_freq_vec_calls(None, n_envs) == 50_000
+    def test_none_preserves_the_historical_value_at_the_production_n(self):
+        """THE compatibility assertion: no flag at the production `--n-envs 48` ⇒ the literal 50000
+        vec calls that were hardcoded. A resume of a 48-env run must not change its cadence."""
+        assert checkpoint_save_freq_vec_calls(None, 48) == 50_000
+        assert DEFAULT_CHECKPOINT_EVERY_ENV_STEPS == 2_400_000
+
+    def test_none_is_a_TOTAL_env_step_interval_at_every_n(self):
+        """F-SZ-3: the default is 2.4M TOTAL env steps, not 50000 x N (~102M at N=2048)."""
+        for n_envs in (1, 16, 48, 64, 2048):
             assert checkpoint_save_freq_vec_calls(None, n_envs) == \
-                DEFAULT_CHECKPOINT_SAVE_FREQ_VEC_CALLS
+                -(-DEFAULT_CHECKPOINT_EVERY_ENV_STEPS // n_envs)
+            assert 0 <= checkpoint_interval_env_steps(None, n_envs) - 2_400_000 < n_envs
 
     def test_env_steps_are_divided_by_n_envs_because_save_freq_counts_vec_calls(self):
         assert checkpoint_save_freq_vec_calls(150_000, 48) == 3125      # 150000 / 48 = 3125 exactly
@@ -61,7 +67,7 @@ class TestCadenceConversion:
 
     def test_the_default_interval_is_the_starving_one_this_flag_exists_for(self):
         assert checkpoint_interval_env_steps(None, 48) == 2_400_000
-        assert checkpoint_interval_env_steps(None, 1) == 50_000
+        assert checkpoint_interval_env_steps(None, 1) == 2_400_000
 
 
 class TestDutyCycle:
@@ -107,14 +113,14 @@ def _checkpoint_callback_save_freq(model_dir, *flags) -> int:
 
 class TestDefaultPreservation:
     """⚠️ These call `build_callbacks` with `args.debug` forced True purely to skip the eval
-    callback, so `n_envs` is 1 here and the ARITHMETIC is covered by `TestCadenceConversion`. What
-    these pin is that the constructed callback reads the flag at all, and that the flagless value
-    is the literal historical one."""
+    callback, so `n_envs` is 1 here and the ARITHMETIC is covered by `TestCadenceConversion`; the
+    non-debug N=48 / N=2048 build is `main/train/cadence_n_independence_test.py`. What these pin is
+    that the constructed callback reads the flag at all."""
 
     def test_a_flagless_run_builds_the_byte_identical_checkpointer(self, tmp_path):
-        """The proof the production restart needs: with no `--checkpoint-every-steps`, the
-        constructed callback's `save_freq` is the literal 50000 it was before the flag existed."""
-        assert _checkpoint_callback_save_freq(tmp_path, "--n-envs", "48") == 50_000
+        """With no `--checkpoint-every-steps` the constructed callback's `save_freq` is the 2.4M-env-
+        step default at the callback's N — 1 here (`args.debug` is forced, see the class note)."""
+        assert _checkpoint_callback_save_freq(tmp_path, "--n-envs", "48") == 2_400_000
 
     def test_the_flag_changes_it_and_nothing_else_does(self, tmp_path):
         assert _checkpoint_callback_save_freq(

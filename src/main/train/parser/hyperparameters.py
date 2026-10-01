@@ -78,12 +78,14 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "slower-moving. This cadence is the second-order guard on top of that.")
     parser.add_argument("--checkpoint-every-steps", "--checkpoint_every_steps",
                         dest="checkpoint_every_steps", type=int, default=None,
-                        help="ENV-STEP interval between periodic checkpoints. Default None = the "
-                             "historical hardcoded cadence, which is 50000 VEC-ENV CALLS and "
-                             "therefore 50000 x --n-envs ENV STEPS (2,400,000 at --n-envs 48) — a "
-                             "multiplier that was invisible until it starved the counterfactual "
-                             "label path. A value here is converted back to vec-calls by "
-                             "ceil-division, so it is honoured to within one rollout. Lower it "
+                        help="TOTAL-ENV-STEP interval between periodic checkpoints (summed over every env, "
+                             "so independent of --n-envs). Default None = 2,400,000 env steps "
+                             "(DEFAULT_CHECKPOINT_EVERY_ENV_STEPS; the old hardcoded 50000 VEC-ENV "
+                             "CALLS at --n-envs 48, which at N=2048 had become ~102M). SB3 counts "
+                             "vec-env calls, so the value is converted by ceil-division at the run's "
+                             "N and honoured to within one vec step (N env steps). Under "
+                             "--async-rollout a callback call is a WAVE (<= N envs), so there the "
+                             "real interval is shorter than asked. Lower it "
                              "when an out-of-process consumer reloads the newest checkpoint (the "
                              "cf label producer): --cf-label-lag-steps divided by this is the "
                              "label DUTY CYCLE the launch announces, and a value under 25%% is "

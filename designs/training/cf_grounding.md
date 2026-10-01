@@ -863,8 +863,9 @@ buffer was expiring, and neither knew the other's number.
 Two things close the class:
 
 * **`--checkpoint-every-steps <env_steps>`** (trainer) sets the cadence in the unit a reader means.
-  Default `None` = the historical `50000` vec-calls, byte for byte, so a flagless resume is
-  unchanged; a value is converted back by ceil-division (`main.train.constants`).
+  Default `None` = 2,400,000 TOTAL env steps at every `--n-envs` (F-SZ-3, 2026-10-01; it was
+  50000 vec-calls, which is that value at `--n-envs 48`, so a flagless 48-env resume is unchanged);
+  either is converted to vec-calls by ceil-division at the run's N (`main.train.constants`).
 * **The launch REFUSES a duty cycle under 25%** and PRINTS it when healthy. With `--cf-records` on
   and a live `--cf-twin-coef` / `--cf-winprob-coef`, `main/train/config.py` computes it, names all
   three numbers plus both remedies, and exits `FATAL_CONFIG` (not `parser.error` — a restart would

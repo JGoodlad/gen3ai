@@ -110,8 +110,9 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # The conversion lives in `main.train.constants` because `config`'s duty-cycle refusal must
     # agree with it to the step, and phase 1 cannot import phase 4.
     #
-    # A run that passes no `--checkpoint-every-steps` gets DEFAULT_CHECKPOINT_SAVE_FREQ_VEC_CALLS
-    # back verbatim, so its checkpointer is byte-identical to the pre-flag one.
+    # A run that passes no `--checkpoint-every-steps` gets DEFAULT_CHECKPOINT_EVERY_ENV_STEPS
+    # (2.4M TOTAL env steps) converted at THIS run's N — the interval does not move with
+    # `--n-envs` (F-SZ-3); at N = 48 that is the historical 50 000 vec calls exactly.
     _n_envs = 1 if args.debug else int(args.n_envs)      # --debug is DummyVecEnv: one env, always
     _save_freq = checkpoint_save_freq_vec_calls(
         getattr(args, "checkpoint_every_steps", None), _n_envs)

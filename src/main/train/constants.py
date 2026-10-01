@@ -34,9 +34,12 @@ DEFAULT_DISTILL_TEAM_BIAS = 0.4
 # `--cf-label-lag-steps` (150 000), so the labels were fresh for 6.25% of each interval — measured
 # on `ai_v9_29_rev1_0823` as 6 labels ingested against 255 expired in two hours.
 #
-#: The historical hardcoded `save_freq`, in VEC-ENV CALLS. It is the value a run with no
-#: `--checkpoint-every-steps` still gets, byte for byte, so today's behaviour is preserved exactly.
-DEFAULT_CHECKPOINT_SAVE_FREQ_VEC_CALLS = 50_000
+#: The DEFAULT checkpoint interval, in TOTAL ENV STEPS (summed over every env) — independent of
+#: `--n-envs`. It was a hardcoded 50 000 VEC-ENV CALLS, i.e. `50 000 x N` env steps: 2 400 000 at the
+#: production N = 48, but ~102M at N = 2048 — a checkpointer that effectively never fires at the
+#: sizes the M5 SIZING study sweeps (F-SZ-3, 2026-10-01). The N = 48 value is kept, so a run at the
+#: production N still constructs the byte-identical checkpointer (`ceil(2 400 000 / 48)` = 50 000).
+DEFAULT_CHECKPOINT_EVERY_ENV_STEPS = 2_400_000
 
 #: Below this fraction the counterfactual label path is starved by construction (see
 #: `cf_label_duty_cycle`). 0.25 = a label stays fresh for at least a quarter of the interval
@@ -45,17 +48,22 @@ CF_DUTY_CYCLE_FLOOR = 0.25
 
 
 def checkpoint_save_freq_vec_calls(checkpoint_every_steps: Optional[int], n_envs: int) -> int:
-    """`--checkpoint-every-steps` (ENV steps) → SB3's `save_freq` (VEC-ENV CALLS).
+    """`--checkpoint-every-steps` (TOTAL env steps) → SB3's `save_freq` (VEC-ENV CALLS) at this N.
 
-    `None` — the flagless default — returns the historical hardcoded constant UNCHANGED, so a run
-    that names no new flag constructs a byte-identical checkpointer. A value is converted by
-    CEIL-division: rounding down would checkpoint more often than asked and rounding to zero would
-    make `n_calls % save_freq` a ZeroDivisionError, so the floor is 1 vec-call.
+    `None` — the flagless default — is `DEFAULT_CHECKPOINT_EVERY_ENV_STEPS` total env steps, so the
+    interval does not move with `--n-envs` (at N = 48 it is the historical 50 000 vec calls exactly).
+    Both are converted by CEIL-division: rounding down would checkpoint more often than asked and
+    rounding to zero would make `n_calls % save_freq` a ZeroDivisionError, so the floor is 1 vec-call.
+
+    ONE VEC CALL = N ENV STEPS on both env cores: the Python core's `vec_env.step()` advances all N
+    envs, and the Rust core (`agents.training.rust_rollout.collector`) fires the callbacks once per N
+    trainee decisions. ⚠️ NOT under `--async-rollout`, whose collector fires once per WAVE (≤ N envs),
+    so there the interval is SHORTER than requested by the mean wave fraction.
     """
-    if checkpoint_every_steps is None:
-        return DEFAULT_CHECKPOINT_SAVE_FREQ_VEC_CALLS
+    steps = DEFAULT_CHECKPOINT_EVERY_ENV_STEPS if checkpoint_every_steps is None \
+        else int(checkpoint_every_steps)
     n = max(1, int(n_envs))
-    return max(1, math.ceil(int(checkpoint_every_steps) / n))
+    return max(1, math.ceil(steps / n))
 
 
 def checkpoint_interval_env_steps(checkpoint_every_steps: Optional[int], n_envs: int) -> int:
