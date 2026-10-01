@@ -4,7 +4,7 @@ Split out of `features_extractor.py` 2026-08-23 (one responsibility per file); t
 re-exports it, so `from agents.model.features_extractor import ExtractorStashes` still resolves.
 """
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import torch
 
@@ -57,6 +57,14 @@ class ExtractorStashes:
     # every other field here: the aux loss, the offline probe and the prober read it; the forward
     # never feeds it anywhere.
     q_winprob_logits: Optional[torch.Tensor] = None    # [B,ACTION_SPACE_SIZE]
+    # --- representation readouts for the effective-rank probe (`agents.training.rank_metrics`) -
+    # K6 (gen3_rank_probe_stash_v1): the probe used to capture these with FORWARD HOOKS on the
+    # TeamTransformer and the CLS pool — and a hook on a compiled module is a dynamo guard
+    # (`len(_forward_hooks) != 0`), so the probe's first call recompiled the learner graph after the
+    # prewarm (the `8fc297a2` lock absorbed it on iteration 1). References to tensors the forward
+    # makes anyway; no copy, no op.
+    trunk_tokens: Optional[Tuple[torch.Tensor, torch.Tensor]] = None  # TeamTransformer (our, their) [B,6,D] each
+    value_cls: Optional[torch.Tensor] = None           # [B,D] the CLS pool's value readout BEFORE the value routes
     # --- same-forward hand-offs (T0 producer → T1/T2 consumer; internal, no `last_*` name) ----
     t0_species_probs: Optional[torch.Tensor] = None    # T0 species resolve → every T1 pricing site
     entity_latent_table: Optional[torch.Tensor] = None  # LIVE latent table → the E4 seat builder

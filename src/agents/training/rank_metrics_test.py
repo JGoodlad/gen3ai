@@ -52,3 +52,81 @@ def test_rank_probe_non_gen3_returns_empty():
 def test_effective_rank_keys_present():
     r = effective_rank(np.random.default_rng(3).standard_normal((100, 8)))
     assert set(r) == {"pr", "effrank", "n90", "n95", "n99"}
+
+
+# ------------------------------------------------------------- gen3_rank_probe_stash_v1 (K6)
+def _hooked_reference(fe, obs):
+    """The pre-K6 probe's capture (forward hooks), kept here as the equivalence reference."""
+    import torch as th
+    cap = {}
+    h1 = fe.team_transformer.register_forward_hook(
+        lambda _m, _i, o: cap.__setitem__("trunk", th.cat([o[0], o[1]], 1).reshape(-1, o[0].shape[-1])))
+    h2 = fe.cls_pool.register_forward_hook(lambda _m, _i, o: cap.__setitem__("value_cls", o[3]))
+    try:
+        with th.no_grad():
+            pi, vf = fe(obs)
+    finally:
+        h1.remove()
+        h2.remove()
+    cap["policy"], cap["vf_feat"] = pi, vf
+    return cap
+
+
+def _production_fe_and_obs(b=16):
+    import torch as th
+    from agents.model.compile_trainer import _parity_obs
+    from agents.model.extra_obs_keys import zero_extra_obs
+    from agents.model.extractor_compiles_test import _build_production_extractor
+    fe, layout = _build_production_extractor()
+    obs, _ = _parity_obs(layout["total_dim"], b, th.device("cpu"))
+    obs.update(zero_extra_obs(fe, batch=b, device=th.device("cpu")))
+    return fe.train(), obs
+
+
+def test_the_hook_free_probe_reads_the_same_tensors_the_hooks_did():
+    import torch as th
+    fe, obs = _production_fe_and_obs()
+    ref = _hooked_reference(fe, obs)
+    got = rank_probe(fe, obs, fe)
+    for name in ("trunk", "value_cls", "policy", "vf_feat"):
+        r = effective_rank(ref[name].float().numpy())
+        for k, v in r.items():
+            if f"rank/{name}_{k}" in got:
+                assert got[f"rank/{name}_{k}"] == float(v), (name, k)
+    assert any(k.startswith("rank/trunk_") for k in got) and any(k.startswith("rank/value_cls_") for k in got)
+    assert not fe.team_transformer._forward_hooks and not fe.cls_pool._forward_hooks
+    del th
+
+
+def test_the_probe_reaches_no_new_compiled_signature_after_the_lock():
+    """THE iteration-1 signature `8fc297a2` absorbed: the hooked probe recompiled the learner's
+    train/no-grad graph on torch 2.5.1 (`len(_forward_hooks) != 0`, on the resume frame after the
+    `forward_guard` break). With the prewarm's declared train/no-grad signature compiled and the
+    sentinel LOCKED, the probe must run clean AND measure every readout. Fails on a revert to hooks on
+    BOTH torches: 2.5.1 rejects the recompile (the probe swallows it and returns {}); 2.8 silently
+    skips the hooks inside the compiled frame, so the trunk / value_cls readings are missing."""
+    import torch as th
+    from agents.model import compile_control as cc
+    fe, obs = _production_fe_and_obs()
+    cc._reset_control_for_tests()
+    th._dynamo.reset()
+    try:
+        ctl = cc.control()
+        ctl.install()
+        fe.forward = ctl.wrap_compiled(th.compile(fe.forward, backend="eager"))
+        with th.no_grad():
+            fe(obs)                                  # the declared rank-probe train/no-grad signature
+        ctl.lock("prewarm (test)")
+        got = rank_probe(fe, obs, fe)
+        assert got, "the probe returned nothing — it hit a rejected recompile"
+        assert ctl.compiles_after_lock == 0 and ctl.rejected_after_lock == 0, ctl.after_lock_frames
+        # ...and it MEASURED the trunk and the value CLS through the compiled forward. On torch 2.8
+        # the hooked probe did not recompile — dynamo does not guard (or run) a hook registered on a
+        # submodule of an already-compiled frame (`skip_nnmodule_hook_guards`) — so its trunk /
+        # value_cls readings silently VANISHED on every compiled run.
+        assert any(k.startswith("rank/trunk_") for k in got), sorted(got)
+        assert any(k.startswith("rank/value_cls_") for k in got), sorted(got)
+    finally:
+        cc._reset_control_for_tests()
+        th._dynamo.config.error_on_recompile = False
+        th._dynamo.reset()

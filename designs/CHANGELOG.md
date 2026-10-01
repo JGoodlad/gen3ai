@@ -10254,3 +10254,20 @@ if a lazy build is reintroduced.
   log-prob, entropy, probs for every mask spelling; the unmasked path; the sampled actions and the RNG
   draws consumed; the production policy's two hot paths), and the K9 learner golden is unchanged.
 
+## 2026-09-30 — K6: the compile half — the lock BEFORE the first iteration, a guard-naming FATAL, the in-run parity canary (`gen3_compile_canary_v1`; no model change)
+
+- **The compile sentinel locks at the end of startup** (`arm_compile_sentinel`, after the prewarm of
+  the declared signatures), not after the first update: nothing is absorbed by a warm-up iteration.
+  An undeclared signature's FATAL now NAMES the failing guard(s).
+- **The iteration-1 signature `8fc297a2` absorbed, FOUND:** the rank probe's forward hooks (a hook on
+  a compiled module is a dynamo guard). The probe now reads the extractor's `trunk_tokens` /
+  `value_cls` stashes (references, no copy). ⚠️ On torch 2.8 the hooked probe never recompiled — the
+  hooks were silently skipped inside the compiled frame, so `rank/trunk_*` and `rank/value_cls_*` were
+  missing on every compiled 2.8 run before this change.
+- **The in-run parity canary** (`agents/model/compile_canary.py`): every 25 updates the compiled
+  learner is held to eager on the committed real-obs fixture at the startup gate's bars through the
+  declared signatures, the train graph's gradient every 100; a disagreement is `[CompileCanary]
+  FATAL` (FATAL_CONFIG). TB `compile/canary_*` on canary updates only.
+- **Optimizer state on CUDA:** `optimizer_state_cuda_test` (GPU tier) pins the K6 declaration and the
+  ride-along pre-allocation bit-identical to torch's lazy init for foreach / fused Adam and AdamW.
+

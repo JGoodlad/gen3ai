@@ -93,6 +93,46 @@ optimizer is still caught by the step hook, and memory by the leak detector. Ten
 A startup builder is marked `@lifecycle_decl.startup_builder`; the static gate reads the decorator by
 name, the freeze guard proves at runtime that it ran before the freeze.
 
+## The compile half — declared signatures, the lock BEFORE the first iteration, the canary
+
+**The declared table.** `compile_trainer.production_prewarm_calls` IS the declaration: every
+compiled-learner signature (callable × batch × train/eval × grad) the steady state may reach, prewarmed
+at startup (`arm_compile_sentinel`). Batch 1 is never in it: it always runs eager
+(`gen3_batch1_eager_v1`, `compile_flags.md`). The compile sentinel then LOCKS right after the prewarm —
+before the first real iteration (was: after the first `train()`, `8fc297a2`'s interim, which absorbed
+whatever iteration 1 compiled). A signature outside the table is a typed FATAL (`[CompileSentinel]
+FATAL`, exit FATAL_CONFIG) that NAMES the failing guard(s): 2.5.1's `RecompileError` lists them; on
+2.8 the `fail_on_recompile` stance's rejection says nothing, so the sentinel replays the call once
+under `error_on_recompile` to read them (`compile_control._diagnose_rejection`).
+
+**The iteration-1 signature `8fc297a2` absorbed — FOUND (2026-09-30).** The real trainer at the
+production surface (`--debug --arch production`, CPU, dynamo `eager` backend — guards are
+backend-independent; `~/gen3ai_archive/k6_k8/sigprobe/`) with the lock moved before iteration 1 was
+rejected four times at the first update, on `torch_dynamo_resume_in_forward_at_281` (2.5.1's frame after
+the `forward_guard` break) with guard failure `len(L['self']._modules['team_transformer']._forward_hooks)
+!= 0`: the RANK PROBE (`rank_metrics.rank_probe`, first micro-batch of every update) captured the trunk
+and the value CLS with forward hooks, and a hook on a compiled module is a guard. The probe is now
+hook-free (`gen3_rank_probe_stash_v1`: the extractor stashes `trunk_tokens` and `value_cls` — references,
+no copy), so its forward is exactly the declared `rank-probe train/no-grad` signature. ⚠️ On torch 2.8
+the hooked probe did NOT recompile — dynamo skips (neither guards nor runs) a hook registered on a
+submodule of an already-compiled frame — so `rank/trunk_*` and `rank/value_cls_*` were silently
+MISSING on every compiled 2.8 run. `rank_metrics_test` fails on a revert to hooks on both torches.
+
+**The in-run parity canary (`gen3_compile_canary_v1`, `agents/model/compile_canary.py`).** The startup
+gate proves the compiled graph at t = 0; the canary proves it at t = N. Every `CANARY_EVERY` (25)
+updates, between updates, on the committed real-obs fixture and through DECLARED signatures only: the
+decision readout (features, masked legal log-probs, V) at the rollout signature (eval / no-grad /
+`n_envs`), compiled vs eager; every `GRAD_EVERY` (4) canaries — every 100 updates — also the train
+graph's gradient (the gate's probe loss, train / grad / `batch_size`: cosine + per-parameter error).
+The bars are the startup gate's (`decision_verdicts`, `train_verdict`; under TF32 the TF32 rule against
+an EAGER fp32 reference — the gate's compiled-at-fp32 arm would be a separate graph, i.e. an
+undeclared signature after the lock). Live weights are trained, so vacuity is not a refusal here. A
+disagreement is `CompileCanaryError` (`[CompileCanary] FATAL`, FATAL_CONFIG, not restarted). It runs
+under `fork_rng`, restores the training mode and leaves every `.grad` None — training is untouched
+(pinned). TB: `compile/canary_ok`, `compile/canary_grad_checked`, `compile/canary_max_abs_<q>`,
+`compile/canary_grad_cosine` on canary updates only. `compile_canary_test` fails on a forward that
+drifted (×1.01) and on a BACKWARD-only drift (the gradient check alone sees it).
+
 ## Smoke
 
 `python src/main/train_rl_agent.py --debug --steps 3000` (2026-09-30, CPU): `🧊 [LEARNER STARTUP]

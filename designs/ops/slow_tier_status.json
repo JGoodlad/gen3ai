@@ -195,18 +195,18 @@
   },
   "src/agents/model/compile_batch1_cuda_test.py::test_batch_1_through_the_compiled_learner_forward_runs_eager_on_cuda": {
    "status": "pass",
-   "commit": "2bd2aeee32bcf69ac1f9c7206ddd011543dd16e0",
-   "at": "2026-10-01T04:40:28Z",
-   "duration_s": 176.22,
-   "contention": 1.13,
+   "commit": "44c0dc1c2c57539ab3dcb1c8149b33bfc42c95cf",
+   "at": "2026-10-01T07:12:46Z",
+   "duration_s": 65.81,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_batch1_cuda_test.py::test_contract_torch_2_8_cannot_lower_the_batch_1_cuda_graph": {
    "status": "pass",
-   "commit": "2bd2aeee32bcf69ac1f9c7206ddd011543dd16e0",
-   "at": "2026-10-01T04:40:28Z",
-   "duration_s": 77.69,
-   "contention": 1.33,
+   "commit": "44c0dc1c2c57539ab3dcb1c8149b33bfc42c95cf",
+   "at": "2026-10-01T07:13:44Z",
+   "duration_s": 58.78,
+   "contention": 1.0,
    "detail": ""
   },
   "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[high]": {
@@ -275,10 +275,10 @@
   },
   "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cpu": {
    "status": "pass",
-   "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
-   "at": "2026-09-30T09:55:35Z",
-   "duration_s": 207.71,
-   "contention": 1.0,
+   "commit": "44c0dc1c2c57539ab3dcb1c8149b33bfc42c95cf",
+   "at": "2026-10-01T07:23:49Z",
+   "duration_s": 604.16,
+   "contention": 1.01,
    "detail": ""
   },
   "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cuda": {
@@ -1151,6 +1151,46 @@
    "commit": "c256dd9504eabb00ead8de24b41ce45f7f3d4c0a",
    "at": "2026-09-30T09:55:35Z",
    "duration_s": 11.06,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/optimizer_state_cuda_test.py::test_the_K6_declaration_is_bit_identical_to_lazy_init_on_cuda[adam_foreach]": {
+   "status": "pass",
+   "commit": "44c0dc1c2c57539ab3dcb1c8149b33bfc42c95cf",
+   "at": "2026-10-01T07:13:44Z",
+   "duration_s": 0.0,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/optimizer_state_cuda_test.py::test_the_K6_declaration_is_bit_identical_to_lazy_init_on_cuda[adam_fused]": {
+   "status": "pass",
+   "commit": "44c0dc1c2c57539ab3dcb1c8149b33bfc42c95cf",
+   "at": "2026-10-01T07:13:44Z",
+   "duration_s": 0.0,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/optimizer_state_cuda_test.py::test_the_K6_declaration_is_bit_identical_to_lazy_init_on_cuda[adamw_foreach]": {
+   "status": "pass",
+   "commit": "44c0dc1c2c57539ab3dcb1c8149b33bfc42c95cf",
+   "at": "2026-10-01T07:13:44Z",
+   "duration_s": 0.02,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/optimizer_state_cuda_test.py::test_the_K6_declaration_is_bit_identical_to_lazy_init_on_cuda[adamw_fused]": {
+   "status": "pass",
+   "commit": "44c0dc1c2c57539ab3dcb1c8149b33bfc42c95cf",
+   "at": "2026-10-01T07:13:44Z",
+   "duration_s": 0.0,
+   "contention": 1.0,
+   "detail": ""
+  },
+  "src/agents/training/optimizer_state_cuda_test.py::test_the_ridealong_preallocation_is_bit_identical_to_lazy_init_on_cuda_fused": {
+   "status": "pass",
+   "commit": "44c0dc1c2c57539ab3dcb1c8149b33bfc42c95cf",
+   "at": "2026-10-01T07:13:45Z",
+   "duration_s": 0.0,
    "contention": 1.0,
    "detail": ""
   }

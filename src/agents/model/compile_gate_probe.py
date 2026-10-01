@@ -86,17 +86,26 @@ def _walk(name: str, obj: Any) -> Iterator[Tuple[str, torch.Tensor]]:
             yield from _walk(f"{name}.{f.name}", getattr(obj, f.name))
 
 
+#: Stash fields the sweep skips. ``pointer_inputs`` is reached by the REAL pointer head (below). The
+#: rank probe's READOUT references (K6 ``trunk_tokens`` / ``value_cls``; K8 ``features_out``) are no
+#: aux loss's input — the trunk feeds every path already, value_cls is the CLS pool's own output, the
+#: features are the loss's own first term — and sweeping them DILUTES the per-parameter rule: their
+#: large gradient on every upstream parameter shrank a backward-only pointer defect below the trained
+#: bar (`compile_gate_probe_test`'s informative-weights refusal stopped raising, 2026-10-01).
+_NOT_SWEPT = frozenset({"pointer_inputs", "trunk_tokens", "value_cls", "features_out"})
+
+
 def _stash_tensors(fe: Any) -> List[Tuple[str, torch.Tensor]]:
     """Every graph-carrying float tensor in ``fe.stash`` (the per-forward side readouts the aux
     losses, the critic and the pointer head read), in a fixed order. ``pointer_inputs`` is left to
     the REAL pointer head (`gate_loss` reaches it through the masked legal log-probs, the path
-    production trains), not swept here."""
+    production trains), and the rank probe's readout references are not swept (`_NOT_SWEPT`)."""
     stash = getattr(fe, "stash", None)
     if stash is None or not dataclasses.is_dataclass(stash):
         return []
     out: List[Tuple[str, torch.Tensor]] = []
     for f in dataclasses.fields(stash):
-        if f.name == "pointer_inputs":
+        if f.name in _NOT_SWEPT:
             continue
         out.extend(_walk(f.name, getattr(stash, f.name)))
     return out

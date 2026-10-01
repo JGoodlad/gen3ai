@@ -318,23 +318,18 @@ def test_prewarm_is_rng_neutral_and_its_signatures_survive_the_lock(sentinel):
             net(_obs(6))
 
 
-def test_attach_locks_after_the_first_update_and_a_late_recompile_exits_FATAL_CONFIG(sentinel,
-                                                                                      monkeypatch):
-    """The trainer wiring: the lock lands after the first `train()`, the compile/* scalars are
-    recorded, and a violation inside `train()` leaves by `os._exit(FATAL_CONFIG)` — an exception
-    would reach `model_build`'s generic `except` and become a RESTARTABLE crash."""
-    from main.exit_codes import TrainExitCode
-    net = _compile_bound(_Net())
-    rec = {}
+class _Logger:
+    def __init__(self, rec):
+        self.rec = rec
+        self.name_to_value = {"train/train_ms": 100.0}
 
-    class _Logger:
-        name_to_value = {"train/train_ms": 100.0}
+    def record(self, k, v):
+        self.rec[k] = v
 
-        def record(self, k, v):
-            rec[k] = v
 
+def _attachable(net, rec):
     class _Model:
-        logger = _Logger()
+        logger = _Logger(rec)
 
         def collect_rollouts(self):
             net.eval()
@@ -348,31 +343,94 @@ def test_attach_locks_after_the_first_update_and_a_late_recompile_exits_FATAL_CO
 
         def learn(self):
             return None
+    return _Model()
 
+
+def _declared(net):
+    """The two signatures `_attachable`'s iteration reaches, as a prewarm table."""
+    def _rollout():
+        net.eval()
+        with torch.no_grad():
+            net(_obs(6))
+
+    def _update():
+        net.train()
+        net(_obs(24))[0].sum().backward()
+        net.zero_grad(set_to_none=True)
+    return [("rollout eval/no-grad B=6", _rollout), ("update train/grad B=24", _update)]
+
+
+def _fake_exit(monkeypatch):
     exits = []
 
-    def _fake_exit(code):
+    def _exit(code):
         exits.append(code)
         raise SystemExit(code)
+    monkeypatch.setattr(cc.os, "_exit", _exit)
+    return exits
 
-    monkeypatch.setattr(cc.os, "_exit", _fake_exit)
-    m = _Model()
+
+def test_attach_locks_BEFORE_the_first_iteration_and_a_declared_iteration_runs_clean(sentinel,
+                                                                                     monkeypatch):
+    """K6: the lock is taken before the first real iteration (`arm_compile_sentinel` locks after the
+    prewarm; a bare attach locks at the first rollout's ENTRY). The declared signatures then run
+    clean; the compile/* scalars are recorded."""
+    net = _compile_bound(_Net(), sentinel)
+    rec = {}
+    exits = _fake_exit(monkeypatch)
+    sentinel.prewarm(_declared(net))
+    m = _attachable(net, rec)
     sentinel.attach(m)
     assert m.collect_rollouts() is True
+    assert sentinel.locked and "first rollout" in str(sentinel.lock_where)
     m.train()
-    assert sentinel.locked and rec["compile/locked"] == 1.0
-    assert rec["compile/recompiles_after_lock"] == 0.0
     m.collect_rollouts()
     m.train()
-    assert not exits
+    assert not exits and rec["compile/locked"] == 1.0 and rec["compile/recompiles_after_lock"] == 0.0
 
-    def _bad_train():
-        net({"observation": torch.rand(2, 3, 16)})   # a new guard signature after the lock
-    m.train = _bad_train
-    sentinel.attach(m)                           # re-wrap the replaced train
+
+def test_an_UNDECLARED_signature_on_the_FIRST_iteration_is_FATAL_not_absorbed(sentinel,
+                                                                              monkeypatch):
+    """The `8fc297a2` interim locked AFTER iteration 1 and so absorbed whatever iteration 1 compiled.
+    Under K6 a first-iteration signature the prewarm did not declare is the typed FATAL (exit
+    FATAL_CONFIG, never a restartable crash). Fails if the lock moves back after the first update."""
+    from main.exit_codes import TrainExitCode
+    net = _compile_bound(_Net(), sentinel)
+    exits = _fake_exit(monkeypatch)
+    sentinel.prewarm(_declared(net)[:1])              # the update's train/grad signature UNDECLARED
+    m = _attachable(net, {})
+    sentinel.attach(m)
+    m.collect_rollouts()
     with pytest.raises(SystemExit):
         m.train()
     assert exits == [int(TrainExitCode.FATAL_CONFIG)]
+
+
+def test_the_typed_fatal_NAMES_the_failing_guard(sentinel, monkeypatch, capsys):
+    """K6: "an undeclared signature is a typed FATAL that names the failing guard". On 2.5.1 the
+    `RecompileError` lists it; on 2.8 the stance's rejection says nothing, so the sentinel REPLAYS the
+    call under `error_on_recompile` to read it. Here: a batch the prewarm did not declare, in a
+    rank the graph cannot generalise to (dim 0 stays specialised across one prewarmed size)."""
+    net = _compile_bound(_Net(), sentinel)
+    exits = _fake_exit(monkeypatch)
+    sentinel.prewarm(_declared(net))
+    m = _attachable(net, {})
+    sentinel.attach(m)
+    m.collect_rollouts()
+
+    def _undeclared():
+        net.train()
+        net({"observation": torch.rand(2, 3, 16)})[0].sum().backward()   # a new RANK: a guard fails
+    m.train = _undeclared
+    sentinel.attach(m)                                # re-wrap the replaced train
+    with pytest.raises(SystemExit):
+        m.train()
+    out = capsys.readouterr()
+    text = out.out + out.err
+    assert "UNDECLARED SIGNATURE" in text and "failing guard" in text, text[-3000:]
+    assert sentinel.rejection_reasons and any("- " in r for r in sentinel.rejection_reasons), \
+        sentinel.rejection_reasons
+    assert exits
 
 
 def test_eager_extractor_routes_around_the_compiled_forward_and_restores_it(sentinel):
@@ -791,6 +849,7 @@ def test_the_lock_is_RELEASED_when_learn_returns_so_the_in_process_final_eval_ca
                 self.train()
 
     m = _Model()
+    sentinel.prewarm(_declared(net))             # K6: the declared signatures, before the lock
     sentinel.attach(m)
     m.learn()
     assert not sentinel.locked and torch._dynamo.config.error_on_recompile is False

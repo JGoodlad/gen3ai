@@ -1041,7 +1041,7 @@ Two failures were silent before it:
 | 1 `gate()` | `compile_trainer_extractor` | the startup parity gate compiles FREELY; the cache-limit detector already listens (a hit here is fatal too) |
 | 2 `reset()` | `_arm_compile_sentinel`, after `_apply_grad_checkpointing` | `torch._dynamo.reset()` — drops every graph the gate compiled |
 | 3 `prewarm(calls)` | same | runs every production signature NOW (`compile_trainer.production_prewarm_calls`), RNG-neutral (`fork_rng`), gradients zeroed |
-| 4 `lock(where)` | the end of the first `train()` (after one real rollout + update) | `error_on_recompile = True` + a compile-START callback counting every frame compile. `🧊 [COMPILE LOCK] …` states the per-code-object entry count and the headroom to the limit |
+| 4 `lock(where)` | **the end of startup** — `arm_compile_sentinel`, right after the prewarm, BEFORE the first real iteration (K6, 2026-09-30; was: the end of the first `train()`, which absorbed whatever iteration 1 compiled — see below) | `error_on_recompile = True` (2.5.1) / the `fail_on_recompile` stance (2.8) + a compile-START callback counting every frame compile. `🧊 [COMPILE LOCK] …` states the per-code-object entry count and the headroom to the limit. A rejection is a typed FATAL that NAMES the failing guard(s) (`UNDECLARED SIGNATURE — the failing guard(s): …`): 2.5.1's `RecompileError` lists them; on 2.8 the stance's rejection says nothing, so the sentinel replays the call ONCE under `error_on_recompile` to read them |
 | — `release(why)` | when `learn()` returns or raises | the lock's scope is TRAINING: the trainer's FINAL EVALUATION runs in-process on the same model (batch 1 / no-grad — routed EAGER since `gen3_batch1_eager_v1`; a smaller obs key set elsewhere) — new signatures by design. MEASURED on the real trainer (the end-to-end smoke below): a still-locked sentinel broke it with `RecompileError`. Prints `🧊 [COMPILE LOCK] released …` with the post-lock compile count (must be 0) |
 | 5 `stats()` | every update | TB `compile/graphs_total`, `compile/recompiles_after_lock` (**must stay 0**), `compile/cache_limit_hits`, `compile/max_cache_entries_per_code`, `compile/locked`, `compile/regression_flag`, `compile/train_ms_vs_lock_baseline` |
 
@@ -1091,7 +1091,7 @@ flag and read attributes (`grad_checkpointing`):
 |---|---|---|
 | rollout `policy(obs)`, end-of-rollout `predict_values`, `WinProbLabelCallback` bootstrap, frozen-φ / PBRS | eval · no-grad · `n_envs` (PBRS: 2048-chunks) | prewarm (rollout) + iteration 1 (PBRS runs every rollout) |
 | `evaluate_actions` | train · grad · `batch_size` | prewarm |
-| `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm |
+| `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm — HOOK-FREE since K6 (`gen3_rank_probe_stash_v1`): it reads `last_trunk_tokens` / `last_value_cls`. Its old forward hooks were a guard (`len(_forward_hooks) != 0`) — THE iteration-1 signature the `8fc297a2` lock absorbed (found 2026-09-30 on the real trainer with the lock moved before iteration 1); on 2.8 the hooks were instead silently SKIPPED inside the compiled frame, so `rank/trunk_*` and `rank/value_cls_*` vanished on every compiled 2.8 run |
 | capacity half-batch cosine (every 50 minibatches), td-aux, distill-anchor fallback | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
 | truncated-episode `predict_values` under `--critic shaped` | eval · no-grad · **1** | EAGER (`EAGER_BATCHES`, `gen3_batch1_eager_v1`) — batch 1 never reaches the compiled graph |
 | search-teacher / OPD (`ppo.py`), fork-arm `_score_pool`, `fork_driver._score`, distill grad-projection | a different KEY SET and/or a variable batch that may be 1 | `compile_trainer.eager_extractor(fe)` — the EAGER forward for the block (same params, same autograd) |
@@ -1107,15 +1107,17 @@ Inductor/Triton cache is the run's own and is reused only under a matching stamp
 of `ai_v14_01_base` into `~/gen3ai_archive/compile_sentinel_smoke/`, 3 iterations): gate PASS →
 `reset` dropped the gate's 36 entries → prewarm (4 signatures, max 3 entries per code object, 229 s
 incl. the reset) → `🧊 [COMPILE LOCK] after the first rollout + update: max 4 cache entries per code
-object (limit 8, headroom 4)` — iteration 1 added one signature the prewarm did not (UNVERIFIED
-which; the lock-after-iteration-1 design exists for exactly that) → iterations 2-3 clean (`train_ms`
+object (limit 8, headroom 4)` — iteration 1 added one signature the prewarm did not (identified
+2026-09-30, K6: the rank probe's forward hooks — now hook-free, and the lock moved before iteration 1)
+→ iterations 2-3 clean (`train_ms`
 12.8 s → 2.8 s), checkpoint saves after the lock fine, `Training complete`. It then exposed the
 final-eval defect `release()` fixes; **the fix is unit-tested, not re-run on the card** (the card
 was handed back to a live benchmark). Nothing toggles TF32 /
 matmul precision / autocast after startup.
 
 **THE BEHAVIOURAL BACKSTOP, independent of dynamo:** the baseline is the median `train/train_ms` of
-the first 5 updates AFTER the lock update (which may carry iteration 1's compiles), then FROZEN; `train_ms > 1.4x` it for 3 consecutive updates prints
+the first 5 updates AFTER the first update of the process (which runs every diagnostic probe —
+K2's cadence), then FROZEN; `train_ms > 1.4x` it for 3 consecutive updates prints
 `⚠️ [COMPILE REGRESSION?] …` once and sets `compile/regression_flag` = 1. WARN, never fatal —
 contention (an eval burst, a peer job) has the same signature.
 

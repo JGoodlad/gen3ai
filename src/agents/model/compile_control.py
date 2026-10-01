@@ -440,6 +440,13 @@ def find_recompile_error(exc: BaseException) -> Optional[BaseException]:
     return None
 
 
+def guard_failures(text: str) -> str:
+    """The failing-guard lines of a dynamo recompile message ("- 0/0: tensor 'L['obs']…' size
+    mismatch …"), joined; ``""`` when it lists none."""
+    lines = [ln.strip() for ln in str(text).splitlines() if ln.strip().startswith("- ")]
+    return "\n".join(lines[:12])
+
+
 class _CacheLimitHandler(logging.Handler):
     """Recognises dynamo's cache-limit warning. Never raises (logging would swallow it anyway)."""
 
@@ -478,6 +485,9 @@ class CompileControl:
         self.compiles_after_lock = 0
         self.rejected_after_lock = 0
         self.after_lock_frames: List[str] = []
+        self.rejection_reasons: List[str] = []   # K6: the failing guard(s) of each rejection
+        self.canary: Any = None                   # K6: `compile_canary.CompileCanary` (armed by the trainer)
+        self.canary_scalars: Dict[str, float] = {}
         self.limit_hits: List[Tuple[str, str]] = []
         self.watch = TrainMsWatch()
         self._handler: Optional[_CacheLimitHandler] = None
@@ -537,13 +547,39 @@ class CompileControl:
                 name = _compiling_code_name()
                 self.after_lock_frames.append(f"{name} [{trig}]" if trig else name)
 
-    def _on_rejected(self, exc: BaseException) -> None:
+    def _on_rejected(self, exc: BaseException, diagnosis: str = "") -> None:
         """The lock REJECTED a compile at a watched call site. Sticky, so a caller's
         `except Exception` cannot hide it (on torch 2.8 the start callback never sees a rejected
-        recompile: it runs after the recompile check)."""
+        recompile: it runs after the recompile check). Records the FAILING GUARD(S) (K6): on
+        `error_on_recompile` the `RecompileError` lists them; on the 2.8 stance the rejection says
+        nothing, so ``diagnosis`` (`_diagnose_rejection`'s replay) carries them."""
         self.rejected_after_lock += 1
         if len(self.after_lock_frames) < 8:
             self.after_lock_frames.append(f"rejected: {str(exc).splitlines()[0][:200]}")
+        reasons = diagnosis or guard_failures(str(exc))
+        if reasons and len(self.rejection_reasons) < 8:
+            self.rejection_reasons.append(reasons)
+
+    def _diagnose_rejection(self, compiled: Callable[..., Any], a: Any, k: Any) -> str:
+        """NAME the guard a stance rejection hit (torch >= 2.8, K6): replay the same call ONCE with
+        the stance at "default" and `error_on_recompile` on — dynamo then raises a `RecompileError`
+        listing the failing guards at the recompile check, before compiling anything. A never-seen
+        frame has no guard to fail: the replay compiles it (the compile START callback counts it — the
+        run is FATAL either way) and that is what the diagnosis says. Never raises."""
+        if self.mode != "stance":
+            return ""
+        try:
+            set_stance = getattr(torch.compiler, "set_stance")   # torch >= 2.6 only ("stance" mode)
+            patch = getattr(torch._dynamo.config, "patch")        # the config module's own patcher
+            with set_stance("default"), patch(error_on_recompile=True):
+                compiled(*a, **k)
+        except BaseException as exc:             # noqa: BLE001 — a diagnosis must never raise
+            rec = find_recompile_error(exc)
+            if rec is not None and _STANCE_REJECT_TEXT not in str(rec):
+                return guard_failures(str(rec)) or str(rec)[:1500]
+            return f"(diagnosis replay raised {type(exc).__name__}: {str(exc)[:300]})"
+        return ("no guard failed — a FIRST compile of a frame never compiled before the lock "
+                f"(the replay compiled it: {self.after_lock_frames[-1:] or '<frame unknown>'})")
 
     def wrap_compiled(self, compiled: Callable[..., Any]) -> Callable[..., Any]:
         """Wrap a compiled callable so a lock rejection raised through it is RECORDED (sticky)
@@ -556,7 +592,7 @@ class CompileControl:
                 return compiled(*a, **k)
             except BaseException as exc:
                 if ctl.locked and find_recompile_error(exc) is not None:
-                    ctl._on_rejected(exc)
+                    ctl._on_rejected(exc, ctl._diagnose_rejection(compiled, a, k))
                 raise
         watched._compile_control_inner = compiled  # type: ignore[attr-defined]
         return watched
@@ -653,10 +689,12 @@ class CompileControl:
             return (f"dynamo hit config.{kind} ({len(self.limit_hits)} hit(s)) during phase "
                     f"'{self.phase}' — that frame now runs EAGER, silently. First warning:\n{msg}")
         if self.compiles_after_lock or self.rejected_after_lock:
+            why = ("\nUNDECLARED SIGNATURE — the failing guard(s):\n" + "\n".join(self.rejection_reasons)
+                   if self.rejection_reasons else "")
             return (f"{self.compiles_after_lock} dynamo compile(s) started and "
                     f"{self.rejected_after_lock} rejected AFTER the compile lock "
                     f"({self.lock_where}); graphs at lock {self.graphs_at_lock}, now "
-                    f"{dynamo_graphs_total()}. Frames: {self.after_lock_frames}")
+                    f"{dynamo_graphs_total()}. Frames: {self.after_lock_frames}{why}")
         return None
 
     def check(self, where: str) -> None:
@@ -673,9 +711,11 @@ class CompileControl:
         except BaseException as exc:
             rec = find_recompile_error(exc)
             if rec is not None:
+                why = ("\nUNDECLARED SIGNATURE — the failing guard(s):\n"
+                       + "\n".join(self.rejection_reasons) if self.rejection_reasons else "")
                 raise CompileSentinelError(fatal_text(
                     where, f"dynamo RECOMPILED after the compile lock ({self.lock_where}):\n"
-                           f"{rec}")) from exc
+                           f"{rec}{why}")) from exc
             raise
         self.check(where)
 
@@ -697,34 +737,47 @@ class CompileControl:
     def attach(self, model: Any) -> None:
         """Wrap `model.collect_rollouts` and `model.train` (INSTANCE attributes over the bound
         methods SB3's `learn()` calls) and `model.learn` (to RELEASE the lock when training ends —
-        the final evaluation runs in-process on the compiled forward): guard both, lock after the
-        first `train()`, record the
+        the final evaluation runs in-process on the compiled forward): guard both, record the
         `compile/*` scalars and the train_ms backstop at the update cadence, and turn any violation
         into `os._exit(FATAL_CONFIG)` — an exception inside `learn()` would be a restartable CRASH
-        (`model_build`'s generic `except`), and a restart would replay the same failure."""
+        (`model_build`'s generic `except`), and a restart would replay the same failure.
+
+        THE LOCK IS TAKEN BEFORE THE FIRST REAL ITERATION (K6, owner 2026-09-28: "pre-validate,
+        reset, explicitly compile every model we want, freeze; any other compile request is wrong").
+        `arm_compile_sentinel` locks right after the prewarm of the declared signatures; a caller
+        that attached without locking is locked here at the first rollout's entry. Nothing is
+        absorbed by a warm-up iteration any more (`8fc297a2`'s interim design did exactly that: the
+        rank probe's forward hooks were a second train/no-grad signature it compiled on iteration 1,
+        found 2026-09-30 and removed — `rank_metrics.rank_probe` is hook-free)."""
         orig_collect = model.collect_rollouts
         orig_train = model.train
         orig_learn = model.learn
         ctl = self
+        seen = {"updates": 0}
 
         def collect_rollouts(*a: Any, **k: Any) -> Any:
             try:
+                if not ctl.locked and ctl.phase != "released":
+                    ctl.lock("the first rollout's entry (startup did not lock)")
                 with ctl.guard("rollout end"):
                     return orig_collect(*a, **k)
             except CompileSentinelError as exc:
                 fatal_exit(str(exc))
 
         def train(*a: Any, **k: Any) -> Any:
-            first = not ctl.locked
+            first = seen["updates"] == 0
+            seen["updates"] += 1
             try:
                 with ctl.guard("update end"):
                     out = orig_train(*a, **k)
-                if first:
-                    ctl.lock("the first rollout + update")
-            except CompileSentinelError as exc:
+                    # K6's IN-RUN PARITY CANARY (between updates, on its cadence; declared
+                    # signatures only, so it runs inside the guard like any other compiled call).
+                    if ctl.canary is not None:
+                        ctl.canary_scalars = ctl.canary.after_update()
+            except CompileTrainerError as exc:          # the sentinel's FATAL and the canary's
                 fatal_exit(str(exc))
-            # the lock update itself is not steady state (it may carry iteration 1's compiles), so
-            # the train_ms baseline starts at the NEXT update
+            # the first update of a process runs every diagnostic probe (K2's cadence), so it is not
+            # steady state: the train_ms baseline starts at the NEXT update
             ctl.record(model, observe_train_ms=not first)
             return out
 
@@ -767,6 +820,9 @@ class CompileControl:
                     self._say(line)
             for k, v in self.stats().items():
                 logger.record(k, v)
+            for k, v in self.canary_scalars.items():    # a canary update only; {} otherwise
+                logger.record(k, v)
+            self.canary_scalars = {}
         except Exception:
             pass
 
@@ -779,8 +835,10 @@ class CompileControl:
 
 def fatal_text(where: str, detail: str) -> str:
     return (f"{FATAL_TAG} at {where}: {detail}\n"
-            "--compile-trainer's contract is ONE fixed set of compiled graphs after the first "
-            "iteration. A late recompile or a cache-limit hit means the learner is recompiling (a "
+            "--compile-trainer's contract is ONE fixed set of compiled graphs, every one DECLARED and "
+            "compiled at startup (`compile_trainer.production_prewarm_calls`, K6); the lock is taken "
+            "before the first real iteration. A late recompile or a cache-limit hit means the learner "
+            "met an UNDECLARED signature: it is recompiling (a "
             "stall per event) or running EAGER (~1.75x slower), silently. Fatal by design; the "
             "launcher does NOT restart it (EXIT_FATAL_CONFIG). Diagnose with TORCH_LOGS=recompiles "
             "on a short fork; see designs/training/compile_flags.md ('The compile sentinel').")

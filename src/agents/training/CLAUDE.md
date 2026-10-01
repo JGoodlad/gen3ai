@@ -620,10 +620,15 @@ interpreter (`designs/training/compile_flags.md` "Lane K1").
 FATAL.** `src/agents/model/compile_control.py` is the ONLY runtime module that touches
 `torch._dynamo` — add nothing that does elsewhere. Phases: the gate compiles freely →
 `torch._dynamo.reset()` (the gate's graphs share production's per-code-object `cache_size_limit`
-(2.8: `recompile_limit`) slots: at TF32 they left headroom 1 of 8) → prewarm every production signature → LOCK after the
-first rollout + update (`🧊 [COMPILE LOCK]`) → RELEASE when `learn()` returns (the final eval runs
-in-process on the compiled forward). While locked, any recompile, late first compile or
-cache-limit hit exits `[CompileSentinel] FATAL` / `FATAL_CONFIG` (not restarted). A learner-process
+(2.8: `recompile_limit`) slots: at TF32 they left headroom 1 of 8) → prewarm every DECLARED signature
+(`production_prewarm_calls` is the declaration) → LOCK at the END OF STARTUP, before the first real
+iteration (K6; `🧊 [COMPILE LOCK]`) → RELEASE when `learn()` returns (the final eval runs in-process).
+While locked, any recompile, late first compile or cache-limit hit exits `[CompileSentinel] FATAL` /
+`FATAL_CONFIG` (not restarted), and the message NAMES the failing guard (`UNDECLARED SIGNATURE — the
+failing guard(s): …`). Every 25 updates the IN-RUN PARITY CANARY (`agents/model/compile_canary.py`) holds
+the compiled learner to eager on the real-obs fixture at the startup gate's bars (the train graph's
+gradient every 100) — a disagreement is `[CompileCanary] FATAL`. The rank probe is HOOK-FREE (a forward
+hook on a compiled module is a guard — the iteration-1 signature `8fc297a2` used to absorb). A learner-process
 forward with a NEW signature (a different obs key set, an undeclared batch size) must run under
 `compile_trainer.eager_extractor(fe)` or be added to `production_prewarm_calls`; batch 1 is ALWAYS
 eager (`compile_trainer.EAGER_BATCHES`, `gen3_batch1_eager_v1` — torch 2.8 cannot lower a batch-1 CUDA graph) — the late-shape

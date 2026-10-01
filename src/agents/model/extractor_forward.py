@@ -410,6 +410,8 @@ class ExtractorForward(ExtractorApi):
             role_tokens, ctx, self.embeddings,
             extra=(_seat_tokens, _seat_types, _seat_pad),
             edge_bias_fn=_edge_fn)
+        # gen3_rank_probe_stash_v1 (K6): the rank probe's trunk readout, by reference (no copy).
+        self.stash.trunk_tokens = (our_team_out, their_team_out)
         # Aux belief logits over the refined opp tokens — stashed for the PPO aux loss, NOT fed back
         # into the policy/value path (labels would leak). None when belief is off.
         self.stash.belief_logits = (
@@ -448,6 +450,9 @@ class ExtractorForward(ExtractorApi):
                          if self.value_threat_inject else None),
             pair_rows=_pv_rows,
         )
+        # gen3_rank_probe_stash_v1 (K6): the CLS pool's value readout BEFORE the value routes inject
+        # below — what the rank probe's `rank/value_cls_*` has always measured.
+        self.stash.value_cls = value_pooled
         # gen3_pointer_native_v1 / gen3_entity_move_seats_v1: stash the pointer action head's
         # PER-ENTITY inputs for `Gen3DualHeadMaskablePolicy._get_action_dist_from_latent` — the head
         # itself lives on the policy (its ctx is latent_pi, which doesn't exist here). Move logit k

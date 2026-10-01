@@ -7,7 +7,7 @@ widths the policy sizes its head from, the SB3 ortho-init repair, and the belief
 stamping. A base class rather than free functions so every body keeps its `self.` spelling and
 mypy still resolves each attribute against the constructor that assigns it.
 """
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import torch
 
@@ -160,6 +160,12 @@ class ExtractorApi(ExtractorBuild):
     def last_damage_block(self) -> Optional[torch.Tensor]: return self.stash.damage_block
     @property
     def last_value_pooled(self) -> Optional[torch.Tensor]: return self.stash.value_pooled
+
+    @property
+    def last_trunk_tokens(self) -> Optional[Tuple[torch.Tensor, torch.Tensor]]: return self.stash.trunk_tokens
+
+    @property
+    def last_value_cls(self) -> Optional[torch.Tensor]: return self.stash.value_cls
     @property
     def last_win_prob_logits(self) -> Optional[torch.Tensor]: return self.stash.win_prob_logits
     @property

@@ -967,9 +967,9 @@ def production_prewarm_calls(model: Any, *, n_envs: int,
 
 def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
                          emit: Optional[Callable[[str], None]] = None) -> Optional[str]:
-    """Phases 2-4 for a compiled learner: reset the gate's graphs, prewarm every production
-    signature, and attach the lock (after the first rollout + update) and the per-rollout /
-    per-update checks. A no-op (returns None) when the learner is not compiled.
+    """Phases 2-4 for a compiled learner: reset the gate's graphs, prewarm every DECLARED production
+    signature, LOCK (K6: before the first real iteration), and attach the per-rollout / per-update
+    checks. A no-op (returns None) when the learner is not compiled.
 
     MUST run after `_apply_grad_checkpointing` (the forward reads `grad_checkpointing`, so a graph
     compiled before it is a stale entry) and before `learn()`. Raises `CompileSentinelError`.
@@ -995,6 +995,17 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     _say(f"{line} — reset + prewarm took {time.perf_counter() - t0:.1f}s")
+    # K6: LOCK NOW — before the first real iteration. Every signature the steady state may reach is
+    # in the declared table just prewarmed; anything else is an undeclared signature, a typed FATAL
+    # naming its failing guard, never a warm-up iteration's silent absorption.
+    ctl.lock("the end of startup (the parity gate, the reset and the prewarm of every declared "
+             "signature)")
+    # K6's IN-RUN PARITY CANARY: the startup gate proves the graph at t=0, the canary at t=N.
+    from agents.model.compile_canary import CANARY_EVERY, GRAD_EVERY, CompileCanary
+    ctl.canary = CompileCanary(model, n_envs=int(n_envs), batch_size=int(batch_size), emit=emit)
+    _say(f"🐤 [CompileCanary] armed: compiled vs eager on the real-obs fixture every {CANARY_EVERY} "
+         f"updates (decision readout at the rollout signature B={int(n_envs)}), the train graph's "
+         f"gradient every {CANARY_EVERY * GRAD_EVERY} (B={int(batch_size)}), at the startup gate's bars")
     ctl.attach(model)
     return line
 
