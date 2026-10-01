@@ -152,11 +152,11 @@ Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`
 
 **Full chapter — tiers, the four gates, contention, fuzz, benchmarks: [`designs/ops/testing.md`](designs/ops/testing.md).** The card:
 
-| When | Command (prefix each with `export PYTHONPATH=$PYTHONPATH:src &&`) |
+| When | Command (prefix each with `export PYTHONPATH=$PYTHONPATH:src PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3} &&` — a bare `python3` outside an activated env is BASE miniconda, not `gen3ai_stable`) |
 |---|---|
-| **inner loop** — fastest true/false | `python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` |
-| **THE ROUTINE GATE — before a commit** | `scripts/ops/gate_lock.sh python3 -m pytest src/ -m "not slow and not e2e" -q -n 2` — at most 2 gates run at once (`utils.gate_lock`; 7 at once put load ~36 on 16 threads, 2026-09-30) |
-| **before `/gen3ai-ship`, and in CI** | `python3 -m pytest src/ -q` *(~47 min serial, 2026-09-29 — browser is ~19 s of it)* |
+| **inner loop** — fastest true/false | `"$PY" -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` |
+| **THE ROUTINE GATE — before a commit** | `scripts/ops/gate_lock.sh "$PY" -m pytest src/ -m "not slow and not e2e" -q -n 2` — at most 2 gates run at once (`utils.gate_lock`; 7 at once put load ~36 on 16 threads, 2026-09-30) |
+| **before `/gen3ai-ship`, and in CI** | `"$PY" -m pytest src/ -q` *(~47 min serial, 2026-09-29 — browser is ~19 s of it)* |
 | just the bridge / just the browser | `-m sim` *(~100 s)* / `-m browser` *(~19 s)* |
 | anything on the GPU | `scripts/ops/gpu_lock.sh <cmd>` (Python: `utils.gpu_lock.gpu_lock()`) — **never a bare `flock …/gpu.lock`**: the helper is re-entrant for children and raises `GpuLockSelfDeadlock` on an ancestor holder |
 | any one-off HEAVY job (trace, benchmark, measurement driver, many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`) — own scope + hard cap inside `gen3ai-heavy.slice` (64 GB aggregate), timeout INSIDE; an overrun kills only that job, not the session (2026-09-30: three OOMs took the whole tmux scope) |
@@ -184,7 +184,7 @@ Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4
 
 A path or flag named deliberately as HISTORY goes in `designs/deleted_flags.md` with its citation.
 
-🚨 **A `slow` TEST IS DESELECTED BY THE ROUTINE GATE, AND A DESELECTED TEST CANNOT FAIL.** That is how `tb_relevance_test`'s winprob smoke rode main RED for a day (2026-09-07) — the same shape as the obs-golden linchpin, one marker further out. So the slow tier now WRITES its verdict and the routine gate READS it: any run in which a `slow` test executes merges that test's row into **`designs/ops/slow_tier_status.json`** (a SKIP never replaces a banked pass/fail — it only annotates it) (a COMMITTED artifact — a gitignored one would be per-worktree, i.e. absent exactly where the work happens), and the gate above turns a recorded FAIL into a routine-gate failure. Refresh the whole file with `python3 -m pytest src/ -m slow -q -n 2`. ⚠️ **The honest limit: a slow test that broke SINCE the last recorded run still reads green** — nothing but running the tier closes that, which is what the staleness report is for. Detail: `src/utils/slow_tier_status.py`.
+🚨 **A `slow` TEST IS DESELECTED BY THE ROUTINE GATE, AND A DESELECTED TEST CANNOT FAIL.** That is how `tb_relevance_test`'s winprob smoke rode main RED for a day (2026-09-07) — the same shape as the obs-golden linchpin, one marker further out. So the slow tier now WRITES its verdict and the routine gate READS it: any run in which a `slow` test executes merges that test's row into **`designs/ops/slow_tier_status.json`** (a SKIP never replaces a banked pass/fail — it only annotates it) (a COMMITTED artifact — a gitignored one would be per-worktree, i.e. absent exactly where the work happens), and the gate above turns a recorded FAIL into a routine-gate failure. Refresh the whole file with `"$PY" -m pytest src/ -m slow -q -n 2` (`PY` as in the card above). ⚠️ **The honest limit: a slow test that broke SINCE the last recorded run still reads green** — nothing but running the tier closes that, which is what the staleness report is for. Detail: `src/utils/slow_tier_status.py`.
 
 🚨 **A DECOMPOSITION MOVES SYMBOLS OUT FROM UNDER THE STUBS THAT NAME THEM.** A patch on `mod.func` reaches the code under test only if `mod` still READS `func` at call time — a consumer that wrote `from mod import func` holds its own copy and the stub reaches nothing, so the test asserts about the real path and passes for the wrong reason. `ccd08003` created four such sites in one commit; two were `mod.name = stub` assignments, which raise NOTHING at runtime. The stub gate above is standing for exactly this, and it is blind to a target named through a LOOP VARIABLE — spell the module and attribute out.
 

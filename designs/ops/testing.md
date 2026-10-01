@@ -442,7 +442,7 @@ recorded run still reads `pass` here.** Nothing short of running the tier closes
 report is what says how much a green is worth, and the full refresh is one command:
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:src && python3 -m pytest src/ -m slow -q -n 2
+export PYTHONPATH=$PYTHONPATH:src && "${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3}" -m pytest src/ -m slow -q -n 2
 ```
 
 **WHY THE ARTIFACT IS COMMITTED and not gitignored.** The worktree workflow decides it: a gitignored
