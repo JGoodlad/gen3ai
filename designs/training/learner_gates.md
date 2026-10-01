@@ -93,6 +93,30 @@ statistic); a clean update resets a condition's streak; an update with no curren
 leaves every streak standing; a NaN |Δ| is FATAL at once (never rounding); `--behaviour-check warn`
 only ever warns. `behaviour/streak_<statistic>` is on the dashboard every update.
 
+**On the Rust path a violation's dump is enough to root-cause the row offline**
+(`gen3_behaviour_provenance_v1`, after sizing arm A2's single-row FATAL, 2026-10-01: one row of 1,024 at
+|Δ| 0.0389 and no log-probs in the dump to tell numerics from a fault). Each dumped row carries:
+- the stored log μ and the recomputed log π;
+- BOTH full masked distributions (the stored one is the row the keyed draw used, carried from the arena
+  by `store.row_provenance`; the recomputed one is the probe forward's own `_last_pi_distribution`),
+  each with its entropy, top-1 minus top-2 margin, argmax and p(action);
+- the row's collection provenance: env, episode, decision index, policy version, the T2 slot that
+  served it (`ROW_SOURCE_FORK` for a fork-arm branch row) and the keyed draw (`u`, `draw_margin`).
+
+The record also carries:
+- the `route`: T2's backend, buckets, lanes and current slot, plus the keyed run seed (with
+  env / episode / dec_n the row is replayable on the deterministic core);
+- a FULL-BUFFER `scan` (`consistency.scan_current`): every current row through the same forward, so one
+  row is told apart from many, with the worst 32 in full.
+
+Two artifacts are written beside it:
+- `behaviour_violation_u<n>_rows.npz`: the violating rows' observations;
+- `behaviour_violation_u<n>_policy.pt`: the weights that played them, for the first 3 violations of a
+  process.
+
+A clean update pays nothing. The Python-core in-loop gate dumps what it has (index, |Δ|, action,
+mask); its buffer carries no collection provenance.
+
 **Why the TF32 max is PERSISTENT, and why k = 4 (orchestrator 2026-09-30; k from data).** Its 1.8x
 headroom over the first pass's healthy max (0.040) came from a small sample, and the max of a noise
 statistic grows with the number of draws. A real localized fault is systematic and recurs every update

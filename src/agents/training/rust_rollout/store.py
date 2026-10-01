@@ -96,6 +96,9 @@ class FillReport:
     in_progress_rows: int = 0     # rows of games still being played
     labelled_rows: int = 0        # win_mask == 1
     cut_rows_total: int = 0       # rows released by a cut game (run total)
+    #: Each buffer row's COLLECTION PROVENANCE, ``[n_steps, n_envs]``-aligned (``row_provenance``): the
+    #: K9(b) violation dump reads it so a mismatched row names where it came from and is replayable.
+    provenance: Dict[str, np.ndarray] = field(default_factory=dict, repr=False, compare=False)
 
     @property
     def mean_age(self) -> float:
@@ -137,6 +140,25 @@ def obs_key_sources(obs_space: Any, core_label_keys: Sequence[str]) -> Dict[str,
     return out
 
 
+#: ``RowStore.slot`` for a row whose serving slot was not recorded / a fork-arm branch row.
+ROW_SOURCE_UNKNOWN = -1
+ROW_SOURCE_FORK = -2
+#: The per-row columns `row_provenance` hands the learner (with ``logp_all`` and, when present, ``turn``).
+PROVENANCE_COLUMNS = ("env", "episode", "dec_n", "version", "slot", "u", "margin")
+
+
+def row_provenance(store: "RowStore", idx: np.ndarray) -> Dict[str, np.ndarray]:
+    """Each buffer row's collection provenance (``idx`` is the fill's ``[n_steps, n_envs]`` arena index):
+    the env, episode and decision index that make the row REPLAYABLE on the deterministic core, the policy
+    version and T2 slot that served it, the keyed draw (``u``, ``margin``) and the full masked log-prob
+    row it was drawn from. Copied BEFORE the fill releases the rows (~45 bytes x 11 per row)."""
+    out = {k: getattr(store, k)[idx].copy() for k in PROVENANCE_COLUMNS}
+    out["logp_all"] = store.logp_all[idx].copy()
+    if store.turn is not None:
+        out["turn"] = store.turn[idx].copy()
+    return out
+
+
 class RowStore:
     """The preallocated arena (``capacity`` rows). ``alloc`` / ``release`` manage a free-slot stack;
     nothing is allocated after construction."""
@@ -167,6 +189,11 @@ class RowStore:
         self.dec_n = np.zeros(c, dtype=np.int32)
         self.u = np.zeros(c, dtype=np.float64)
         self.margin = np.zeros(c, dtype=np.float64)
+        # K9(b) provenance (gen3_behaviour_provenance_v1): the FULL masked log-prob row the stored
+        # behaviour log-prob was drawn from (illegal = -inf; NaN = unknown), and the T2 slot that served it
+        # (`ROW_SOURCE_FORK` for a fork-arm branch row).
+        self.logp_all = np.full((c, self.n_actions), np.nan, dtype=np.float32)
+        self.slot = np.full(c, ROW_SOURCE_UNKNOWN, dtype=np.int32)
         self._free = np.arange(c - 1, -1, -1, dtype=np.int64)   # a stack: pop from the end
         self._top = c
         # The fork arm (`fork.py`, declared only when it is on): each row's battle TURN (the selector's
@@ -197,6 +224,8 @@ class RowStore:
         self.reward[out] = 0.0
         self.adv[out] = 0.0
         self.ret[out] = 0.0
+        self.logp_all[out] = np.nan
+        self.slot[out] = ROW_SOURCE_UNKNOWN
         return out
 
     def release(self, slots: np.ndarray) -> None:
@@ -442,6 +471,7 @@ def fill_window(buf: Any, log: GameLog, n_steps: int, *, current_version: int) -
                      in_progress_rows=log.in_progress_rows(), cut_rows_total=log.rows_cut)
     if KEY_WIN_MASK in buf.observations:
         rep.labelled_rows = int((buf.observations[KEY_WIN_MASK] >= 0.5).sum())
+    rep.provenance = row_provenance(st, idx)
     versions = st.version[idx].copy()
     st.release(idx.reshape(-1))
     return rep, versions
@@ -473,6 +503,7 @@ def fill_complete(buf: Any, log: GameLog, d: int, *, current_version: int) -> Tu
                      games_split=split, carry_rows=log.completed_rows,
                      in_progress_rows=log.in_progress_rows(), labelled_rows=int(d),
                      cut_rows_total=log.rows_cut)
+    rep.provenance = row_provenance(st, idx)
     versions = st.version[idx].copy()
     st.release(flat)
     return rep, versions
@@ -481,8 +512,11 @@ def fill_complete(buf: Any, log: GameLog, d: int, *, current_version: int) -> Tu
 def write_rows(store: RowStore, slots: np.ndarray, cols: Mapping[str, np.ndarray], envs: np.ndarray, *,
                label_keys: Sequence[str], opp_class: np.ndarray, actions: np.ndarray, logp: np.ndarray,
                values: np.ndarray, version: np.ndarray, u: np.ndarray, margin: np.ndarray,
-               starts: np.ndarray) -> None:
-    """Write one host step's trainee rows (``envs`` with need[:, 0] = 1) from the core's columns."""
+               starts: np.ndarray, logp_all: Optional[np.ndarray] = None,
+               served_by: Optional[np.ndarray] = None) -> None:
+    """Write one host step's trainee rows (``envs`` with need[:, 0] = 1) from the core's columns.
+    ``logp_all`` (the full masked log-prob rows the draw used) and ``served_by`` (the T2 slot per row)
+    are the K9(b) provenance (`row_provenance`)."""
     o = store.obs
     if KEY_OBSERVATION in o:
         o[KEY_OBSERVATION][slots] = cols["obs"][envs, 0]
@@ -507,3 +541,7 @@ def write_rows(store: RowStore, slots: np.ndarray, cols: Mapping[str, np.ndarray
     store.u[slots] = u
     store.margin[slots] = margin
     store.start[slots] = starts
+    if logp_all is not None:
+        store.logp_all[slots] = logp_all
+    if served_by is not None:
+        store.slot[slots] = served_by

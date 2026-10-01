@@ -570,7 +570,9 @@ class PpoHyperparameters:
         # must not carry it, so the `.zip`'s `data` stays exactly what it was before the loop moved.
         # `_loop_hooks` (gen3_declared_loop_hooks_v1) is the loop's hook TABLE — closures over this
         # process's freeze guard and compile sentinel; built fresh by every `_setup_model`.
+        # `_rust_row_provenance` is the last fill's per-row provenance (K9(b)'s dump) — transient too.
         return super()._excluded_save_params() + ["_rust_collector", "_rust_fill", "_rust_row_versions",
+                                                  "_rust_row_provenance",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
                                                   "_correction_buffer", "_distill_teacher",
                                                   "_distill_teachers", "_cf_buffer",

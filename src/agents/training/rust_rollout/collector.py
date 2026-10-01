@@ -257,7 +257,8 @@ class RustCollector:
             S.write_rows(self.store, slots_, c, envs1, label_keys=self.cfg.label_keys,
                          opp_class=self.cur_class[envs1], actions=act, logp=blogp, values=value,
                          version=version, u=u, margin=margin,
-                         starts=(c["dec_n"][envs1, 0] == 0).astype(np.float32))
+                         starts=(c["dec_n"][envs1, 0] == 0).astype(np.float32),
+                         logp_all=logp, served_by=self.env_slot[envs1])
             self.log.add(envs1, slots_)
             self.last_turn[envs1] = c["turn"][envs1]
             c["action"][envs1, 0] = act
@@ -407,6 +408,7 @@ class RustCollector:
         self.last_fill, self.last_versions = rep, versions
         model._rust_fill = rep
         model._rust_row_versions = versions
+        model._rust_row_provenance = rep.provenance       # K9(b)'s violation dump (consistency._dump)
         model._rust_version = self.version
         model._win_prob_terminal_outcome = None
         self._record(model, snap)

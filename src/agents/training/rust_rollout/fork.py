@@ -435,7 +435,7 @@ class RustForkPass:
                     break
                 self._write(col, f, b, int(s[0]), obs_from=int(prow[j]), mask_from=None, action=b.action,
                             logp=float(lp0[j, b.action]), value=float(v0[j]), dec=int(st.dec_n[prow[j]]),
-                            u=0.0, margin=1.0, start=1.0, pg=0.0)
+                            u=0.0, margin=1.0, start=1.0, pg=0.0, logp_row=lp0[j])
         active = [(h, f) for h, f in zip(self.handles, wave) if not f.dropped]
         while active:
             pend: List[Tuple[PlayoutHandle, Fork, int]] = []
@@ -487,7 +487,7 @@ class RustForkPass:
                         continue
                     self._write(col, f, br, int(s[0]), obs_from=None, mask_from=(h, i), action=int(a[0]),
                                 logp=float(lp[j, int(a[0])]), value=float(v[j]), dec=n, u=u,
-                                margin=float(margin[0]), start=0.0, pg=1.0)
+                                margin=float(margin[0]), start=0.0, pg=1.0, logp_row=lp[j])
             active = [(h, f) for h, f in active if not f.dropped]
         for f in wave:
             if not f.dropped and any(b.end is None for b in f.branches):
@@ -495,7 +495,7 @@ class RustForkPass:
 
     def _write(self, col: Any, f: Fork, b: Branch, slot: int, *, obs_from: Optional[int], mask_from: Any,
                action: int, logp: float, value: float, dec: int, u: float, margin: float, start: float,
-               pg: float) -> None:
+               pg: float, logp_row: Optional[np.ndarray] = None) -> None:
         st = col.store
         o = st.obs
         if obs_from is not None:
@@ -526,6 +526,9 @@ class RustForkPass:
         st.u[slot] = float(u)
         st.margin[slot] = float(margin)
         st.start[slot] = np.float32(start)
+        st.slot[slot] = S.ROW_SOURCE_FORK                 # K9(b) provenance: a fork-arm branch row
+        if logp_row is not None:
+            st.logp_all[slot] = logp_row
         b.slots.append(int(slot))
         b.values.append(float(value))
 

@@ -148,3 +148,70 @@ def test_the_probe_reads_the_precision_keyed_gate():
                 assert K.behaviour_probe(m)["behaviour/bar_p99"] == p99_bar
     finally:
         th.set_float32_matmul_precision(prev)
+
+
+def _with_provenance(m):
+    """The rust fill's per-row provenance for `_model`'s buffer: the stored distribution is the
+    policy's own (so stored == recomputed on every untouched row)."""
+    buf = m.rollout_buffer
+    n_steps, n_envs = buf.log_probs.shape
+    n = n_steps * n_envs
+    obs = {k: th.as_tensor(v.reshape(n, *v.shape[2:])) for k, v in buf.observations.items()}
+    m.policy.set_training_mode(False)
+    with th.no_grad():
+        m.policy.evaluate_actions(obs, th.as_tensor(buf.actions.reshape(-1)).long(),
+                                  action_masks=th.as_tensor(buf.action_masks.reshape(n, -1)))
+    full = K._stashed_logp(m.policy).astype(np.float32).reshape(n_steps, n_envs, -1)
+    grid = np.arange(n).reshape(n_steps, n_envs)
+    m._rust_row_provenance = {"env": grid % n_envs, "episode": 100 + grid // 7, "dec_n": grid % 7,
+                              "version": np.zeros_like(grid), "slot": np.full_like(grid, 2),
+                              "u": np.full(grid.shape, 0.25), "margin": np.full(grid.shape, 0.5),
+                              "logp_all": full}
+    return m
+
+
+def test_a_single_row_violation_dumps_both_distributions_its_provenance_the_scan_and_the_artifacts(tmp_path, capsys):
+    """The A2 shape (2026-10-01): ONE row of the probe off by 0.0389, every other row exact. The dump must
+    let it be root-caused offline: both log-probs and both full distributions (entropy, margin, p), the
+    row's env / episode / decision index / slot, the full-buffer scan (one row or many?), the row's obs
+    and the weights that played it."""
+    import json
+
+    m = _with_provenance(_model())
+    m.behaviour_check = "warn"
+    m.behaviour_dump_dir = str(tmp_path)
+    buf = m.rollout_buffer
+    rng = np.random.default_rng([int(m.seed or 0), int(m.num_timesteps)])
+    f = int(K.choose_rows(np.zeros(buf.log_probs.shape, np.int64), m.batch_size, rng)[0])
+    t, e = divmod(f, buf.n_envs)
+    buf.log_probs[t, e] += 0.0389
+    out = K.behaviour_probe(m)
+    assert out["behaviour/scan_rows_over_bar"] == 1.0
+    rec = json.loads((tmp_path / K.VIOLATION_DUMP).read_text().splitlines()[-1])
+    r = rec["rows"][0]
+    assert (r["buffer_t"], r["buffer_e"]) == (t, e) and r["abs_dlogp"] == pytest.approx(0.0389, rel=1e-3)
+    assert r["logp_stored"] - r["logp_recomputed"] == pytest.approx(0.0389, rel=1e-3)
+    assert len(r["dist_stored"]) == 11 and len(r["dist_recomputed"]) == 11
+    legal = [c == "1" for c in r["mask"]]                 # illegal entries are null on BOTH sides
+    assert [v is not None for v in r["dist_recomputed"]] == legal == [v is not None for v in r["dist_stored"]]
+    for side in ("stored", "recomputed"):
+        assert r[f"entropy_{side}"] >= 0 and r[f"margin_{side}"] >= 0 and 0 < r[f"p_action_{side}"] <= 1
+    assert (r["env"], r["episode"], r["dec_n"], r["slot"]) == (f % buf.n_envs, 100 + f // 7, f % 7, 2)
+    assert rec["scan"]["over_bar"] == 1 and rec["scan"]["rows"] == buf.log_probs.size
+    assert rec["scan"]["worst"][0]["abs_dlogp"] == pytest.approx(0.0389, rel=1e-3)
+    z = np.load(tmp_path / rec["artifacts"]["rows_npz"])
+    assert z["obs__observation"].shape[0] == 1
+    assert np.array_equal(z["obs__observation"][0], buf.observations["observation"][t, e])
+    pol = th.load(tmp_path / rec["artifacts"]["policy_pt"])
+    assert set(pol) == set(m.policy.state_dict())
+    assert "env" in capsys.readouterr().out
+
+
+def test_a_clean_update_builds_no_details_unless_the_driver_asks_for_the_scan():
+    m = _with_provenance(_model())
+    m.behaviour_check = "fatal"
+    out = K.behaviour_probe(m)
+    assert "behaviour/scan_rows_over_bar" not in out
+    m.behaviour_scan_all = True
+    out = K.behaviour_probe(m)
+    assert out["behaviour/scan_rows_over_bar"] == 0.0 and out["behaviour/scan_max_abs_dlogp"] < 5e-6

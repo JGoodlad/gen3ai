@@ -10481,3 +10481,15 @@ if a lazy build is reintroduced.
   declared exception (the python env core's worker pool, which infers on the snapshot). The first
   fix (`277f318f`) missed the sizing harness's pool, which then died on the runtime refusal.
 
+## 2026-10-01 — K9(b): a violation's dump carries both distributions, the row's provenance, a full-buffer scan, its obs and the weights (`gen3_behaviour_provenance_v1`; no model change)
+
+- Sizing arm A2 died on ONE row of 1,024 (|Δ log π| 0.0389, p99 2.6e-6) and its dump held no
+  log-probs, so numerics could not be told from a fault. The row arena now records each row's full
+  masked log-prob row and serving T2 slot (`RowStore.logp_all` / `.slot`; fork-arm rows
+  `ROW_SOURCE_FORK`); both fills hand the learner `FillReport.provenance` (env, episode, dec_n,
+  version, slot, u, margin, logp_all; `model._rust_row_provenance`, never pickled).
+- On a violation the Rust probe's dump adds, per row: both log-probs, both full distributions with
+  entropy / margin / argmax / p(action), and the provenance. Per record: the T2 route, a full-buffer
+  scan of every current row (`scan_current`), the violating rows' obs (`.npz`) and the policy
+  weights (`.pt`, first 3 per process). No rule changed.
+

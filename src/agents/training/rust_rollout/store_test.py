@@ -208,3 +208,52 @@ def test_the_fork_mask_key_is_a_host_constant():
 def test_a_row_ahead_of_the_learner_is_refused():
     with pytest.raises(S.CollectorError, match="AHEAD"):
         S._age_hist(np.array([3]), 2)
+
+
+def test_both_fills_hand_the_learner_each_row_s_collection_provenance():
+    """K9(b) provenance (gen3_behaviour_provenance_v1): `write_rows`' full masked log-prob row and serving
+    slot, and the arena's env / episode / dec_n / version / draw, reach the learner [n_steps, n_envs]-aligned
+    with the buffer — the stored behaviour log-prob is the provenance row's entry at the stored action."""
+    rng = np.random.default_rng(5)
+    st = _store()
+    n = 2
+    log = S.GameLog(st, n, mode="complete_game", gamma=GAMMA, gae_lambda=LAM, max_game_rows=100)
+    for e, L in ((0, 6), (1, 5), (0, 9)):
+        s = _play(log, e, L, rng, version=3)
+        full = np.log(rng.dirichlet(np.ones(11), L)).astype(np.float32)
+        st.logp_all[s] = full
+        st.logp[s] = full[np.arange(L), st.action[s]]
+        st.slot[s] = 7 + e
+        st.env[s] = e
+        st.episode[s] = 40 + e
+        st.dec_n[s] = np.arange(L)
+        log.end(e, reward=1.0, outcome=1.0, draw=False, forfeit=False, terminated=True, truncated=False,
+                episode=0, opp_class=0)
+    buf = _buf(8, n)
+    rep, _v = S.fill_complete(buf, log, 16, current_version=3)
+    p = rep.provenance
+    assert set(S.PROVENANCE_COLUMNS) | {"logp_all"} <= set(p) and p["logp_all"].shape == (8, n, 11)
+    for k in S.PROVENANCE_COLUMNS:
+        assert p[k].shape == (8, n), k
+    acts = buf.actions.astype(np.int64).reshape(8, n, 1)
+    stored = np.take_along_axis(p["logp_all"], acts, axis=2)[..., 0]
+    assert np.array_equal(stored, buf.log_probs)
+    assert set(np.unique(p["slot"])) <= {7, 8} and (p["version"] == 3).all()
+    assert np.array_equal(p["slot"] - 7, p["env"]) and np.array_equal(p["episode"] - 40, p["env"])
+    # a released-then-reallocated row carries no stale provenance
+    s2 = st.alloc(3)
+    assert np.isnan(st.logp_all[s2]).all() and (st.slot[s2] == S.ROW_SOURCE_UNKNOWN).all()
+
+
+def test_write_rows_records_the_full_distribution_and_the_serving_slot():
+    st = _store()
+    slots = st.alloc(2)
+    cols = {"obs": np.zeros((3, 2, 3), np.float32), "mask": np.ones((3, 2, 11), np.int8),
+            "episode": np.array([5, 6, 7]), "dec_n": np.zeros((3, 2), np.int32)}
+    full = np.log(np.full((2, 11), 1 / 11, np.float32))
+    S.write_rows(st, slots, cols, np.array([0, 2]), label_keys=(), opp_class=np.zeros(2),
+                 actions=np.array([1, 4]), logp=full[:, 1], values=np.zeros(2, np.float32),
+                 version=np.array([9, 9]), u=np.zeros(2), margin=np.ones(2), starts=np.zeros(2, np.float32),
+                 logp_all=full, served_by=np.array([3, 4]))
+    assert np.array_equal(st.logp_all[slots], full) and st.slot[slots].tolist() == [3, 4]
+    assert st.episode[slots].tolist() == [5, 7]
