@@ -71,7 +71,15 @@ DEFAULT_OUT_ROOT = Path.home() / "gen3ai_archive" / "learner_bench"
 #: Flags stripped from the recorded command before it is re-pointed: the launcher's own, the run
 #: identity, and the three this script re-supplies. `--device` appears twice in C's command.
 _STRIP_ALWAYS = {"--model", "--run-name", "--run-dir", "--steps", "--eval-freq", "--eval_freq",
-                 "--tb-inherit", "--no-tb-inherit", "--matmul-precision", "--matmul_precision"}
+                 "--tb-inherit", "--no-tb-inherit", "--matmul-precision", "--matmul_precision",
+                 "--behaviour-check", "--behaviour_check"}
+#: K9(b)'s behaviour check WARNS here, never FATALs: the PINNED buffer's stored behaviour log-probs
+#: were written by the rollout that collected it (an older code, torch and matmul precision), so the
+#: check compares the learner with a different program BY CONSTRUCTION (measured 2026-10-01: torch
+#: 2.8 + TF32 vs the 2026-09-28 buffer, p99 |d| 0.0058 > the 0.0036 bar — every CUDA TF32 read died at
+#: its first update). A timing tool measures the update, not the buffer's provenance; the violation
+#: rows are still logged.
+_BEHAVIOUR_CHECK = "warn"
 #: An eval cycle must never start inside the measurement (it spawns CPU workers). 1e12 steps.
 _NO_EVAL_FREQ = "1000000000000"
 
@@ -139,7 +147,8 @@ def build_trainer_argv(original_command: str, *, model_zip: str, run_dir: str, s
     if tiny:
         argv += ["--n-envs", str(TINY["n_envs"])]
     argv += ["--model", model_zip, "--run-dir", run_dir, "--steps", str(int(steps)),
-             "--eval-freq", _NO_EVAL_FREQ, "--no-tb-inherit", "--matmul-precision", matmul_precision]
+             "--eval-freq", _NO_EVAL_FREQ, "--no-tb-inherit", "--matmul-precision", matmul_precision,
+             "--behaviour-check", _BEHAVIOUR_CHECK]
     bad = [t for t in argv if _TRAINER_LITERAL in t]
     if bad:
         raise ValueError(f"trainer argv would carry the trainer's module name: {bad}")
@@ -722,6 +731,7 @@ def _bench_train(self) -> None:
                            "matmul_precision": torch.get_float32_matmul_precision(),
                            # `--compile-trainer` patches the BOUND forward on the instance.
                            "compiled_extractor": "forward" in vars(self.policy.features_extractor),
+                           "compiled_regions": getattr(self, "_compiled_micro_step", None) is not None,
                            "noise_scale_per_term": bool(getattr(self, "noise_scale_per_term", True)),
                            "capacity_telemetry": bool(getattr(self, "capacity_telemetry", False))}
         state0 = capture_model_state(self)

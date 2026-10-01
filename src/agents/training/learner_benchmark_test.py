@@ -188,8 +188,10 @@ def test_trainer_argv_repoints_the_recorded_command_as_a_fork():
     assert "--restart-interval-hours" not in f and "--pin-commit" not in f
     assert "--run-name" not in f and "--tb-inherit" not in f
     for flag in ("--model", "--run-dir", "--steps", "--device", "--matmul-precision",
-                 "--eval-freq"):
+                 "--eval-freq", "--behaviour-check"):
         assert f.count(flag) == 1, flag
+    # the pinned buffer's behaviour log-probs are another program's: K9(b) warns, never FATALs
+    assert a[a.index("--behaviour-check") + 1] == "warn"
     assert a[a.index("--model") + 1] == "/m/final_model.zip"
     assert a[a.index("--run-dir") + 1] == "/arch/run"
     assert a[a.index("--steps") + 1] == "99"

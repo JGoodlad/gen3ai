@@ -389,12 +389,15 @@ def _stage_time(model: Any, cfg: Dict[str, Any], out: Path) -> Dict[str, Any]:
     from agents.training.instrumented_ppo import phase_hook
     orig_train = _W["orig_train"]
     fe = model.policy.features_extractor
+    from agents.model import compile_regions as _cr
     res: Dict[str, Any] = {"compiled_extractor": "forward" in vars(fe),
+                           "compiled_regions": _cr.installed(model),     # K8: R0 + R1 on torch 2.8
                            "torch": torch.__version__,
                            "matmul_precision": torch.get_float32_matmul_precision()}
-    if not res["compiled_extractor"]:
+    if not (res["compiled_extractor"] or res["compiled_regions"]):
         raise RuntimeError("the time stage measures the PRODUCTION compiled learner, and this "
-                           "worker's extractor is not compiled (was --compile-trainer stripped?)")
+                           "worker's learner is not compiled — neither the extractor nor the K8 "
+                           "regions (was --compile-trainer stripped?)")
     buf = model.rollout_buffer
     pristine = lb.capture_buffer_state(buf)
     state0 = lb.capture_model_state(model)
