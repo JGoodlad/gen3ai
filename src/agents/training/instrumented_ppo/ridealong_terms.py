@@ -45,6 +45,8 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import torch as th
 
+from agents.training.lifecycle_decl import startup_builder
+
 #: The heads' own Adam. Upstream Adam defaults except eps (SB3's 1e-5); the rate is PPO's order of
 #: magnitude, fixed — the heads' learning speed is not an experimental lever of the baseline.
 RIDEALONG_LR = 3e-4
@@ -289,6 +291,7 @@ class RideAlongLifecycleViolation(RuntimeError):
     `_ridealong_acquire()` — `_setup_model` does, and so must any tool that swaps `policy.ridealong`."""
 
 
+@startup_builder
 def _adam(params: List[th.nn.Parameter], lr: float) -> th.optim.Optimizer:
     """The heads' Adam, its state allocated NOW (startup only — `_ridealong_acquire`)."""
     # fused on CUDA: one kernel for the whole step instead of several per parameter tensor (the heads

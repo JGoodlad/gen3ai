@@ -10230,3 +10230,14 @@ if a lazy build is reintroduced.
 - **The ride-along heads pass under the guard** (their optimizers acquired at startup since
   `8812c565`): a `--ridealong-*` + `--ridealong-rnd-variants all` run freezes 6 optimizers and passes
   every check.
+
+## 2026-09-30 — K6: the learner lifecycle's STATIC twin (`src/learner_lifecycle_gate_test.py`; no model change)
+
+- **A routine-tier AST gate, EMPTY allowlist**: no optimizer / `nn.Parameter` / `nn.Module`
+  construction in a training-step code path (the `instrumented_ppo` package, the declared loss-term /
+  probe modules, every SB3 callback's per-step hooks) outside a `@startup_builder` or a class's
+  `__init__` / `_build` / `_setup_model`. The runtime freeze guard (`gen3_learner_freeze_v1`) covers
+  what it cannot see. The ride-along heads' builders (`_mlp`, `build_rnd_variants`,
+  `build_ridealong`, `_adam`) are now marked `@startup_builder`; the root `CLAUDE.md` lists it as the
+  twelfth static gate.
+

@@ -112,6 +112,7 @@ from agents.model.arch_constants import (
     RIDEALONG_RND_SMALL_HIDDEN,
 )
 from agents.model.q_winprob_head import QWinProbHead
+from agents.training.lifecycle_decl import startup_builder
 
 #: The four extractor kwargs (flag_registry rows) that declare the heads, in build order.
 RIDEALONG_FLAGS: Tuple[str, ...] = ("ridealong_ensemble", "ridealong_rnd", "ridealong_adv",
@@ -307,6 +308,7 @@ def freeze_to_buffers(module: torch.nn.Module) -> torch.nn.Module:
     return module
 
 
+@startup_builder
 def _mlp(dims: List[int]) -> torch.nn.Sequential:
     layers: List[torch.nn.Module] = []
     for i in range(len(dims) - 1):
@@ -489,6 +491,7 @@ class RndObsVariant(_RndErrStats):
             p.mul_(gamma).add_(anchor[name], alpha=1.0 - gamma)
 
 
+@startup_builder
 def build_rnd_variants(names: Sequence[str], base: RndNovelty,
                        feat_dim: int = D_MODEL) -> torch.nn.ModuleDict:
     """The declared variants beside ``base`` (call inside the heads' private RNG). `fast` and `decay`
@@ -803,6 +806,7 @@ class RideAlongHeads(torch.nn.Module):
         return losses
 
 
+@startup_builder
 def build_ridealong(fe: object, *, obs_dim: int,
                     spec: Optional[RideAlongSpec] = None) -> Optional[RideAlongHeads]:
     """Build the heads the extractor's kwargs declare (or an explicit ``spec`` — the offline readers

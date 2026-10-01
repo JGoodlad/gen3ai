@@ -100,6 +100,22 @@ declared optimizer state: policy.optimizer +120` → `🧊 [LEARNER FREEZE] the 
 modules, 120 parameters, 180 buffers, 1 optimizer(s) [policy.optimizer] with 120 state entries` →
 `released — learn() returned; 4 checks passed` → `Training complete`.
 
+## The static twin — `src/learner_lifecycle_gate_test.py` (routine tier, EMPTY allowlist)
+
+An AST gate that fails any optimizer / `nn.Parameter` / `nn.Module` construction (torch or a repo
+`nn.Module` subclass, resolved by name; every import spelling, `self.optimizer_class(...)`) inside a
+TRAINING-STEP code path, unless the enclosing function is a `@startup_builder` or a class's
+`__init__` / `_build` / `_setup_model`. The scope is DECLARED, not a call-graph walk: every function
+in `agents/training/instrumented_ppo/`, the loss-term / probe modules the fold imports
+(`STEP_MODULES`, each with its reason; a test fails when the fold starts importing an `agents`
+module in neither `STEP_MODULES` nor `NOT_STEP_MODULES`, so the scope grows with the fold), and the
+PER-STEP hooks of every SB3 callback under `agents/training` and `main/train` (`_on_training_start` /
+`_init_callback` are startup). Blind spots, stated in the test: a helper outside the lists, a
+`@startup_builder` called from a step path, a dynamically built class — the runtime freeze guard
+covers each. Teeth: 24 violating snippets fail, 8 exemptions pass, and each scanner rule's removal
+fails a teeth test. Landed with the ride-along builders marked `@startup_builder` (`_mlp`,
+`build_rnd_variants`, `build_ridealong`, `_adam` — every caller is startup since `8812c565`).
+
 ## The ride-along heads under the guard
 
 The ride-along heads (`--ridealong-*`) used to build their Adam LAZILY on the first update — the

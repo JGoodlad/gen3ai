@@ -137,7 +137,9 @@ FATAL`; exit 4, the launcher does NOT restart) BEFORE the optimizer moves anythi
 quantity or a skipped step; a new term must reach the assembled loss (or carry its own check), and a
 `where(isfinite)` on a label is a NaN hide unless it means `-inf` (use `isneginf`).
 
-🚨 **K6 — THE LEARNER FREEZES at the first rollout of `learn()`** (`learner_lifecycle.py`, [`designs/training/learner_lifecycle.md`](../../../designs/training/learner_lifecycle.md)): after it, a NEW optimizer, `nn.Parameter`, module, buffer or optimizer-state entry anywhere in the learner's graph is `LazyAcquisitionError` (`[LearnerLifecycle] FATAL`, exit 3, not restarted) naming the object and its construction site. Build anything the steady state uses at STARTUP — in `_build` / `_setup_model` / an `__init__`, or a function marked `@lifecycle_decl.startup_builder` that the startup path runs — never on the first update. Adam/AdamW state is declared at startup (`declare_optimizer_state`, bit-identical to torch's lazy init).
+🚨 **K6 — THE LEARNER FREEZES at the first rollout of `learn()`** (`learner_lifecycle.py`, [`designs/training/learner_lifecycle.md`](../../../designs/training/learner_lifecycle.md)): after it, a NEW optimizer, `nn.Parameter`, module, buffer or optimizer-state entry anywhere in the learner's graph is `LazyAcquisitionError` (`[LearnerLifecycle] FATAL`, exit 3, not restarted) naming the object and its construction site. Build anything the steady state uses at STARTUP — in `_build` / `_setup_model` / an `__init__`, or a function marked `@lifecycle_decl.startup_builder` that the startup path runs — never on the first update. Adam/AdamW state is declared at startup (`declare_optimizer_state`, bit-identical to torch's lazy init). The STATIC twin is `src/learner_lifecycle_gate_test.py` (routine, EMPTY allowlist): a
+construction in a training-step path outside a `@startup_builder` / `__init__` / `_build` / `_setup_model`
+fails the gate before it can fail a run.
 
 **`train()` carries BENCHMARK-ONLY phase marks** (`gen3_learner_phase_hook_v1`): ~14 lines of
 `if _ph is not None: _ph("<phase>")`, `_ph` read ONCE per call from `instrumented_ppo/phase_hook.py`
