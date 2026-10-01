@@ -91,10 +91,12 @@ def main() -> int:
     PinnedTeam, PairedPool = engine._teambuilders()
     maps = load_mappings()
     cv = current_model_version(maps)
-    opp_model = engine._strip_debugger(load_foreign_opponent(
-        opponent.zip_path, current_version=cv, device="cpu", config_path=opponent.config_path)[0])
-    model = engine._strip_debugger(load_foreign_opponent(
-        ref.zip_path, current_version=cv, device="cpu", config_path=ref.config_path)[0])
+    # (2026-10-01) ecd2be00 deleted the ObservationDebugger and with it `untaught_meter._strip_debugger`:
+    # the models are used as loaded, exactly as `untaught_meter.play_cells` now does.
+    opp_model = load_foreign_opponent(
+        opponent.zip_path, current_version=cv, device="cpu", config_path=opponent.config_path)[0]
+    model = load_foreign_opponent(
+        ref.zip_path, current_version=cv, device="cpu", config_path=ref.config_path)[0]
     pool = PairedPool(TeamLoader().get_all_teams())
     seq = engine.pool_sequence(SEED, team.index, GAMES_PER_TEAM, len(pool.packed_teams))
     commit = os.environ.get("N0Q_TREE_COMMIT", "?")
