@@ -9,11 +9,16 @@ the slow tier runs at major points (after the cutover, at a new era or lineage s
 judges it warranted (owner, 2026-10-01: no nightly slow tier) — its banked verdict then fails
 everyone's routine gate until fixed.
 
-It runs `python -m main.compile_inventory run --stage time` (torch 2.8, CUDA, TF32, the prewarm and
-the lock kept, one un-bracketed update) on arm C's final checkpoint and the learner benchmark's pinned
-buffer, and holds it to `designs/research_state/measurements/k6_k8/acceptance/perf_baseline.json`:
-the regions installed, the update wall within the declared tolerance of the banked 36.32 s, and the
-compiled share of the update wall >= 0.80. SKIPS where the box lacks the checkpoint or the buffer."""
+It runs `python -m main.compile_inventory run --stage time` (torch 2.8, CUDA, the prewarm and the
+lock kept, one un-bracketed update) on arm C's final checkpoint and the learner benchmark's pinned
+buffer — the SAME tool, checkpoint, buffer and shape the baseline was banked on — once per matmul
+precision `perf_baseline.json` holds a baseline for (today only 'high', TF32: the K8 acceptance's
+36.32 s; a live fp32 'highest' run reads ~40-42 s, so the precisions are never compared with each
+other). It asserts the run's recorded precision, rows, micro-batch and epochs equal the baseline's,
+the regions installed, the update wall within the precision's tolerance (+15% for 'high': 2.5x the
+largest run-to-run spread the acceptance read measured at matched code and precision — 6.1% on the
+pre-regions arm under bystander load, 0.3% on the K8 arm), and the compiled share of the update wall
+>= 0.80. SKIPS where the box lacks the checkpoint or the buffer."""
 from __future__ import annotations
 
 import glob
@@ -44,30 +49,49 @@ def _checkpoint() -> Optional[Path]:
     return p if p is not None and p.is_file() else None
 
 
+_BANKED = sorted(json.loads(BASELINE.read_text())["by_precision"])
+#: The shape the baselines were banked at (the pinned buffer under arm C's own flags).
+_SHAPE = {"rows": 98304, "micro_batch": 2048, "grad_accum_steps": 32, "n_epochs": 10}
+
+
 @_skip_cuda
 @pytest.mark.skipif(not torch.__version__.startswith("2.8"), reason="the K8 regions are torch 2.8")
 @pytest.mark.skipif(_checkpoint() is None or not BUFFER.is_file(),
                     reason="arm C's checkpoint or the pinned learner buffer is not on this box")
 @pytest.mark.slow
-def test_a_production_update_keeps_the_acceptance_speed_and_compiled_share():
-    base = json.loads(BASELINE.read_text())
+@pytest.mark.parametrize("precision", _BANKED)
+def test_a_production_update_keeps_the_acceptance_speed_and_compiled_share(precision):
+    root = json.loads(BASELINE.read_text())
+    base = root["by_precision"][precision]
     with tempfile.TemporaryDirectory(prefix="perf_guard_") as out:
         cmd = [sys.executable, "-m", "main.compile_inventory", "run", "--stage", "time",
-               "--device", "cuda", "--matmul-precision", "high", "--buffer", str(BUFFER),
+               "--device", "cuda", "--matmul-precision", precision, "--buffer", str(BUFFER),
                "--model", str(_checkpoint()), "--keep-prewarm", "--unbracketed",
                "--worker-timeout-min", "25", "--out-root", out]
         env = {**os.environ, "PYTHONPATH": str(src_path())}
         proc = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=40 * 60)
+        if proc.returncode != 0 and "REFUSED: the GPU is not idle" in proc.stdout + proc.stderr:
+            # the time stage is a MEASUREMENT and refuses a box running another trainer: a precondition,
+            # never a verdict on the code (benchmarks warn, never stretch)
+            msg = "the time stage refused: another trainer process is running on this box"
+            print(f"\n⚠️  [PerfGuard] SKIPPED — {msg}. NO measurement was taken; the slow-tier status "
+                  f"keeps reporting this guard as unmeasured until a run on an idle box.",
+                  file=sys.stderr, flush=True)
+            pytest.skip(msg)
         assert proc.returncode == 0, proc.stdout[-3000:] + proc.stderr[-3000:]
         res = json.loads(Path(glob.glob(os.path.join(out, "*", "time_result.json"))[-1]).read_text())
         ana = json.loads(Path(glob.glob(os.path.join(out, "*", "time_analysis.json"))[-1]).read_text())
+    # the run must be the baseline's own configuration — else the comparison is meaningless
+    assert res["matmul_precision"] == precision, (res["matmul_precision"], precision)
+    geo = res["geometry"]
+    assert {k: geo[k] for k in _SHAPE} == _SHAPE, geo
     assert res.get("compiled_regions") is True, "the K8 regions were not installed"
     wall = float(res["unbracketed"]["train_ms"]) / 1000.0
     bar = float(base["update_wall_s"]) * (1.0 + float(base["wall_tolerance"]))
-    assert wall <= bar, (f"one production update took {wall:.2f} s, over {bar:.2f} s (the banked "
-                         f"{base['update_wall_s']} s + {base['wall_tolerance']:.0%}) — a silent "
-                         f"performance regression (load? check the run's lifecycle/eager_share)")
+    assert wall <= bar, (f"one production update took {wall:.2f} s at {precision!r}, over {bar:.2f} s "
+                         f"(the banked {base['update_wall_s']} s + {base['wall_tolerance']:.0%}) — a "
+                         f"silent performance regression (load? check the run's lifecycle/eager_share)")
     share = float(ana["profiles"][0]["totals"]["compiled_share_of_train_wall"])
-    assert share >= float(base["min_compiled_share"]), (
-        f"compiled share of the update wall {share:.3f} < {base['min_compiled_share']}: part of the "
-        f"learner is no longer compiled")
+    assert share >= float(root["min_compiled_share"]), (
+        f"compiled share of the update wall {share:.3f} < {root['min_compiled_share']} at "
+        f"{precision!r}: part of the learner is no longer compiled")

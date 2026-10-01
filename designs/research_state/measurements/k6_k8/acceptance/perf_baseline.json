@@ -1,11 +1,15 @@
 {
- "schema": "gen3_compiled_perf_baseline_v1",
- "what": "one production PPO update through the compile inventory's time stage: torch 2.8, CUDA, matmul precision 'high' (TF32), --keep-prewarm --unbracketed, arm C's final checkpoint (ai_v14_02_lbat_ctrl) on the learner benchmark's pinned buffer (learner_bench/20260928_135948_cuda/rollout_buffer.pkl), the K8 regions installed",
- "source": "designs/research_state/measurements/k6_k8/acceptance/README.md (units B1, B2; 2026-10-01; commit aa693925, the code of f3878594..fce2955a)",
- "update_wall_s": 36.32,
- "compiled_share_of_train_wall": 0.90,
- "wall_tolerance": 0.15,
- "wall_tolerance_why": "2.5x the largest run-to-run spread the acceptance read measured on this box at matched code (arm A: 45.28 vs 48.03 s, 6.1% under bystander load; arm B: 0.3%)",
- "min_compiled_share": 0.80,
- "min_compiled_share_why": "K8's acceptance criterion (designs/research_state/measurements/k8_inventory/README.md, criterion 3)"
+ "schema": "gen3_compiled_perf_baseline_v2",
+ "what": "one production PPO update through the compile inventory's time stage (torch 2.8, CUDA, --keep-prewarm --unbracketed) on arm C's final checkpoint (ai_v14_02_lbat_ctrl) and the learner benchmark's pinned buffer (learner_bench/20260928_135948_cuda/rollout_buffer.pkl; 98,304 rows, micro-batch 2048 x accumulation 32, 10 epochs), the K8 regions installed. KEYED BY MATMUL PRECISION: a run is judged only against the baseline banked at ITS precision",
+ "min_compiled_share": 0.8,
+ "min_compiled_share_why": "K8's acceptance criterion (designs/research_state/measurements/k8_inventory/README.md, criterion 3)",
+ "by_precision": {
+  "high": {
+   "update_wall_s": 36.32,
+   "compiled_share_of_train_wall": 0.9,
+   "wall_tolerance": 0.15,
+   "source": "designs/research_state/measurements/k6_k8/acceptance/README.md (units B1 36.37 s and B2 36.27 s; 2026-10-01; code of f3878594..fce2955a)",
+   "wall_tolerance_why": "2.5x the largest run-to-run spread the acceptance read measured on this box at matched code and precision: arm A 45.28 vs 48.03 s (6.1%, under bystander load); arm B 36.37 vs 36.27 s (0.3%)"
+  }
+ }
 }

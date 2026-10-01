@@ -403,3 +403,43 @@ def test_each_update_records_its_compiled_and_eager_region_calls(learner):
     assert abs(log.rec["lifecycle/eager_share"] - 1 / 3) < 1e-9
     assert log.rec["lifecycle/update_wall_s"] == 36.3
     assert RC.peek() == {}                                    # the window was reset
+
+
+# ------------------------------------------------ one startup gate per region (gen3_one_gate_per_region_v1)
+@_28
+def test_on_2_8_the_extractor_only_gate_is_skipped_and_the_sentinel_installs_the_regions(learner, monkeypatch, capsys):
+    """The trainer passes `regions_follow` / `regions_requested` (`main.train.lifecycle._regions_follow`):
+    the extractor-only gate compiles NOTHING (its graph would be uninstalled by the regions — it judged a
+    graph production never runs), and the sentinel proceeds to the regions though no extractor forward
+    is installed. Fails on revert of either half."""
+    from main.train.lifecycle import _regions_follow
+    assert _regions_follow(learner) is True
+    monkeypatch.setattr(ct, "resolve_device", lambda fe: torch.device("cuda"))   # the CPU refusal's seam
+    assert ct.compile_trainer_extractor(learner, True, regions_follow=True) is None
+    assert "forward" not in vars(learner.policy.features_extractor)
+    assert "DECLARED REGIONS" in capsys.readouterr().out
+    reached = []
+
+    class _Stop(Exception):
+        pass
+
+    def stop(model, **_k):
+        # the sentinel INSTALLED the control before the regions (the gate that used to do it is not
+        # run): the compile config is pinned — K1b's donated_buffer=False — and the detectors are on
+        assert cc.control().installed
+        assert torch._functorch.config.donated_buffer is False
+        reached.append(model)
+        raise _Stop
+    monkeypatch.setattr(cr, "install", stop)
+    assert ct.arm_compile_sentinel(learner, n_envs=N_ENVS, batch_size=BATCH) is None   # not requested
+    with pytest.raises(_Stop):
+        ct.arm_compile_sentinel(learner, n_envs=N_ENVS, batch_size=BATCH, regions_requested=True)
+    assert reached == [learner]
+
+
+def test_the_trainer_wires_regions_follow_into_both_compile_steps():
+    import inspect
+    from main.train import lifecycle
+    src = inspect.getsource(lifecycle)
+    assert "regions_follow=_regions_follow(model)" in src
+    assert "regions_requested=_regions_follow(model)" in src

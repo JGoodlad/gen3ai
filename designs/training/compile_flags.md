@@ -1232,6 +1232,25 @@ the weights are fresh; the TF32 rule against an fp32 eager reference under `--ma
 (`compile_canary._regions`). On torch 2.5.1 (legacy: `forward_guard`'s weakref lookup breaks
 `fullgraph=True` there) the extractor-only compile above is kept — `regions_supported()`.
 
+**One startup gate per region** (`gen3_one_gate_per_region_v1`, 2026-10-01). On 2.8 the trainer no
+longer runs the extractor-only gate (`compile_trainer_extractor(..., regions_follow=True)`; the
+sentinel then installs the regions with `regions_requested=True`). That gate compiled the extractor
+alone and judged it, but the regions uninstall that compile, so it was judging a graph production
+never runs. It cost about 2 of the ~5 startup minutes (the R1 bar fix's restart proof, 2026-10-01).
+
+The checks that remain on 2.8, each with its measured bar and the fault it catches:
+
+| check | bar | catches |
+|---|---|---|
+| the regions' startup gate | R1: loss rel ≤ 1e-4, gradient cosine ≥ 0.9999, the regime-selected per-parameter bar. R0: the decision bars. Fresh weights also get a perturbed pass | a miscompile at t = 0 |
+| the in-run canary | every 100 updates, confirmed before it FATALs | a graph that changed by t = N |
+| K9(b), the behaviour check | the learner's log π against the rollout's stored log-prob | stale weights, an eval/train-mode difference, a rollout/learner obs mismatch |
+| the no-silent-eager guards | see above | a partly uncompiled learner |
+| the learner golden (test time) | — | a change in what the update computes |
+
+The extractor gate's speed refusal (`check_speedup`, measured at batch 64) has no 2.8 counterpart at
+startup. The update-wall drift warning and the milestone `compiled_perf_guard_test` cover speed.
+
 **Measured** (2026-09-30/10-01): R1 on the production surface traces as ONE graph on 2.8 (CPU,
 `aot_eager`, compiled loss bit-equal to eager); `compile_regions_test` (routine, CPU, dynamo `eager`
 backend): graphs == regions x signatures (2), one cache entry per region code object, 0 compiles and

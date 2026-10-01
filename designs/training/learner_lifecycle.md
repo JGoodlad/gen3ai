@@ -127,8 +127,10 @@ submodule of an already-compiled frame — so `rank/trunk_*` and `rank/value_cls
 MISSING on every compiled 2.8 run. `rank_metrics_test` fails on a revert to hooks on both torches.
 
 **The in-run parity canary (`gen3_compile_canary_v1`, `agents/model/compile_canary.py`).** The startup
-gate proves the compiled graph at t = 0; the canary proves it at t = N. It runs every `CANARY_EVERY`
-(100) updates, between updates (owner, 2026-10-01: "up it to 100"), on the committed real-obs fixture
+gate proves the compiled graph at t = 0; the canary proves it at t = N. It runs first at update
+`CANARY_FIRST` (10), then every `CANARY_EVERY` (100) updates, between updates (owner, 2026-10-01: "up
+it to 100"; the first run at 10 so no run of any length goes unchecked — sizing arm A's 82 updates
+never reached 100), on the committed real-obs fixture
 and through DECLARED signatures only. Each run compares compiled against eager on two things:
 - the decision readout (masked legal log-probs, V) at the rollout signature (eval / no-grad / `n_envs`);
 - the train graph: on K8, region R1's loss and every policy gradient, with the per-parameter bar

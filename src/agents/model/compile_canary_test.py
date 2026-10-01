@@ -198,3 +198,16 @@ def test_the_rollback_point_is_the_newest_checkpoint_at_or_before_the_last_PASSI
         (ck / f"checkpoint_{n}_steps.zip").write_text("x")
     got = rollback_point(str(tmp_path))
     assert got.startswith(str(ck / "checkpoint_2500_steps.zip")) and "3,000" in got
+
+
+def test_the_production_cadence_runs_FIRST_at_update_10_then_every_100(model):
+    """No run of any length goes unchecked: an 82-update run (sizing arm A) never reached 100."""
+    from agents.model.compile_canary import CANARY_EVERY, CANARY_FIRST
+    assert (CANARY_FIRST, CANARY_EVERY) == (10, 100)
+    _compile(model.policy.features_extractor)
+    can = CompileCanary(model, n_envs=2, batch_size=4)
+    ran = []
+    can.run = lambda *, grad: ran.append(can.updates) or {"compile/canary_ok": 1.0}
+    for _ in range(205):
+        can.after_update()
+    assert ran == [10, 100, 200]

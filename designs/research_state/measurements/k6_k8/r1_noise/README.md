@@ -102,7 +102,11 @@ CUDA eager reads ~1.5e-6 on them and CPU eager ~1.3e-6.
 
 - aot_eager is exact, so the deviation is Inductor's.
 - The magnitude is 18× under the trained bar. It is deterministic (compiled repeat 0).
-- The attention-kernel probe (`sdpa_probe.py`) result is below.
+- **The attention-kernel probe** (`sdpa_probe.py`) attributes it to Inductor's attention lowering.
+  Traced under `sdpa_kernel(MATH)`, the compiled decoder gradients read 1.6e-6 against float64, the
+  eager level; eager is unchanged under MATH or EFFICIENT.
+- **Forcing MATH inside R1 costs +5.2%** of R1's forward + backward (80 → 84 ms at B = 2048,
+  `sdpa_cost.py`). It is NOT adopted (Decision record).
 
 ## The fp64-REFERENCED gate — weighed, deferred (`designs/ops/TASK_BACKLOG.md` T16)
 

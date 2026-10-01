@@ -393,6 +393,9 @@ def _fatal_compile_errors() -> Iterator[None]:
     except ct.CompileTrainerError:
         raise
     except Exception as exc:
+        from agents.model.compile_parity_fixture import ParityFixtureError
+        if isinstance(exc, ParityFixtureError):             # a missing / stale fixture REFUSES
+            raise ct.CompileTrainerError(f"--compile-trainer: {exc}") from exc
         try:
             from torch._dynamo.exc import TorchDynamoException
         except Exception:                                   # pragma: no cover

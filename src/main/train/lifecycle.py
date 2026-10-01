@@ -86,11 +86,18 @@ def _maybe_compile_trainer(model, args) -> None:
         # standalone run. send_event is event-only, so the launcher panel still gets it and a
         # standalone run says it once.
         compile_trainer_extractor(model, getattr(args, "compile_trainer", False),
-                                  emit=send_event)
+                                  emit=send_event, regions_follow=_regions_follow(model))
     except CompileTrainerError as exc:
         print(f"\n[CompileTrainer] FATAL: {exc}", file=sys.stderr, flush=True)
         send_event(f"[CompileTrainer] FATAL: {exc}")   # stderr above; this is the launcher panel
         sys.exit(TrainExitCode.FATAL_CONFIG)
+
+
+def _regions_follow(model) -> bool:
+    """torch 2.8 + a learner with the micro-step: the learner compiles as its declared REGIONS at
+    the sentinel, so the extractor-only gate is not run (gen3_one_gate_per_region_v1)."""
+    from agents.model import compile_regions as cr
+    return bool(cr.regions_supported() and hasattr(model, "_micro_static"))
 
 
 def _arm_compile_sentinel(model, args) -> None:
@@ -118,7 +125,8 @@ def _arm_compile_sentinel(model, args) -> None:
         sys.exit(TrainExitCode.FATAL_CONFIG)
     try:
         arm_compile_sentinel(model, n_envs=int(getattr(model, "n_envs", 0) or args.n_envs),
-                             batch_size=int(model.batch_size), emit=send_event)
+                             batch_size=int(model.batch_size), emit=send_event,
+                             regions_requested=_regions_follow(model))
     except CompileTrainerError as exc:
         print(f"\n[CompileSentinel] FATAL: {exc}", file=sys.stderr, flush=True)
         send_event(f"[CompileSentinel] FATAL: {exc}")

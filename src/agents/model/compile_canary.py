@@ -65,6 +65,10 @@ from agents.model import compile_trainer as ct
 
 #: Updates between canaries (owner, 2026-10-01: 100; a production update is ~36 s on K8, so ~1 h).
 CANARY_EVERY = 100
+#: The FIRST canary runs at this update, then every `CANARY_EVERY` (orchestrator, 2026-10-01): the
+#: earliest point where training has moved the weights off the startup gate's state, so no run of
+#: any length goes unchecked (sizing arm A — 82 updates — never reached update 100).
+CANARY_FIRST = 10
 #: Every this-many canaries the train graph's gradient is checked too: EVERY canary since the cadence
 #: became 100. MEASURED (CUDA, arm C's weights, n_envs 48, B = 2048, 2026-10-01): a canary costs
 #: 0.06-0.09 s without the gradient check and 0.65-0.71 s with it, against ~3,600 s of training
@@ -145,11 +149,16 @@ class CompileCanary:
     def __init__(self, model: Any, *, n_envs: int, batch_size: int,
                  emit: Optional[Callable[[str], None]] = None,
                  every: int = CANARY_EVERY, grad_every: int = GRAD_EVERY,
-                 saver: Optional[Callable[[str], None]] = None) -> None:
+                 saver: Optional[Callable[[str], None]] = None,
+                 first: Optional[int] = None) -> None:
         self.model = model
         self.n_envs = int(n_envs)
         self.batch_size = int(batch_size)
         self.every = max(1, int(every))
+        # the first canary: `CANARY_FIRST` at the production cadence; a custom cadence (tests) starts
+        # at its own period unless told otherwise
+        self.first = int(first) if first is not None else (CANARY_FIRST if self.every == CANARY_EVERY
+                                                            else self.every)
         self.grad_every = max(1, int(grad_every))
         self._emit = emit
         self._saver = saver
@@ -163,7 +172,7 @@ class CompileCanary:
         """Count one update; run the canary when due. Returns the TB scalars it produced (``{}`` on
         a skipped update — the cadence writes nothing, never a stale value)."""
         self.updates += 1
-        if self.updates % self.every:
+        if self.updates != self.first and self.updates % self.every:
             return {}
         return self.run(grad=(self.runs % self.grad_every) == self.grad_every - 1)
 

@@ -188,6 +188,14 @@ def test_a_collected_slow_test_with_no_row_is_reported_and_NOT_fatal():
     assert v.unrecorded == ["src/new_test.py::test_new"]
 
 
+def test_a_row_that_only_ever_SKIPPED_is_reported_as_unmeasured_and_NOT_fatal():
+    """A guard that keeps skipping (a GPU test on a busy box) must never read as one that passes."""
+    v = evaluate({"tests": {"src/a_test.py::test_x": _row("pass"),
+                            "src/g_test.py::test_guard": _row("skip")}},
+                 collected={"src/a_test.py::test_x", "src/g_test.py::test_guard"})
+    assert v.ok and v.unrecorded == ["src/g_test.py::test_guard"] and v.n_pass == 1
+
+
 def test_staleness_is_reported_and_NOT_fatal():
     v = evaluate({"tests": {"src/a_test.py::test_x": _row("pass")}},
                  commit_distance=lambda sha: STALE_COMMITS + 1)

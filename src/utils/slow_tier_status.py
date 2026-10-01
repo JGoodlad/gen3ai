@@ -32,7 +32,7 @@ where nothing measured is on file. (`merge_row`; 2026-09-29, seven GPU PASS rows
 |---|---|---|
 | `fail` | the slow tier RAN this test and it failed | **FAILS the routine gate**, naming the test and the commit it failed at |
 | `inconclusive` | it failed with a TIMEOUT signature, **or it never finished a CALL phase** (killed or interrupted in flight) | reported, never fatal — *a timeout is never a semantic outcome* |
-| unrecorded | collected as `slow` this session, no row here | reported — a new slow test is not a regression |
+| unrecorded | collected as `slow` this session, no row here — or a row that has only ever SKIPPED (no measurement) | reported — a new slow test is not a regression |
 | stale | the row's commit is far behind HEAD, or not an ancestor of it | reported |
 
 **WHY STALENESS IS REPORTED AND NOT FATAL.** A stale row is a statement about the *schedule*, not
@@ -337,4 +337,7 @@ def evaluate(doc: Dict[str, Any], collected: Optional[set] = None,
                 v.stale.append((nodeid, f"{d} commits behind HEAD"))
     if collected:
         v.unrecorded = sorted(n for n in collected if n not in tests)
+    # A row that has only ever SKIPPED holds no measurement: it is reported with the unrecorded, so a
+    # guard that keeps skipping can never read as a guard that passes (2026-10-01).
+    v.unrecorded = sorted(set(v.unrecorded) | {n for n, r in tests.items() if r.get("status") == "skip"})
     return v

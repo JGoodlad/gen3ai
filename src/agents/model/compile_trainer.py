@@ -661,7 +661,8 @@ def route_small_batches_eager(fe: Any, compiled: Callable[..., Any]) -> Callable
 
 
 def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int] = None,
-                              emit: Optional[Callable[[str], None]] = None) -> Optional[float]:
+                              emit: Optional[Callable[[str], None]] = None,
+                              regions_follow: bool = False) -> Optional[float]:
     """Compile `model.policy.features_extractor.forward` in place. Returns the measured speedup.
 
     Returns None when `enabled` is False (a true no-op — nothing is touched, so an off run is
@@ -729,6 +730,16 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             "Pass --device cuda, or drop --compile-trainer. (--compile-opponents is the CPU-side "
             "flag and is unaffected.)")
 
+    if regions_follow:
+        # gen3_one_gate_per_region_v1 (2026-10-01; owner: "adjust the conformance tests as you see
+        # fit"): on torch 2.8 the learner compiles as its DECLARED REGIONS at `arm_compile_sentinel`,
+        # which uninstalls this function's extractor compile — so its gate judged a graph production
+        # never runs, for ~2 of the ~5 startup minutes. The regions' own gate (R1 on the real loss,
+        # R0's decision readout, a perturbed pass for fresh weights) is the one startup check.
+        _say("⚡ [CompileTrainer] ON — the learner compiles as its DECLARED REGIONS (R0, R1; torch "
+             "2.8) at the compile sentinel, gated there; the extractor-only gate is not run "
+             "(gen3_one_gate_per_region_v1)")
+        return None
     obs_dim = None
     for attr in ("obs_dim", "observation_dim"):
         obs_dim = getattr(fe, attr, None)
@@ -978,7 +989,8 @@ def production_prewarm_calls(model: Any, *, n_envs: int,
 
 
 def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
-                         emit: Optional[Callable[[str], None]] = None) -> Optional[str]:
+                         emit: Optional[Callable[[str], None]] = None,
+                         regions_requested: bool = False) -> Optional[str]:
     """Phases 2-4 for a compiled learner: reset the gate's graphs, prewarm every DECLARED production
     signature, LOCK (K6: before the first real iteration), and attach the per-rollout / per-update
     checks. A no-op (returns None) when the learner is not compiled.
@@ -987,10 +999,16 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
     compiled before it is a stale entry) and before `learn()`. Raises `CompileSentinelError`.
     """
     fe = getattr(getattr(model, "policy", None), "features_extractor", None)
-    if fe is None or "forward" not in vars(fe):
+    if fe is None or ("forward" not in vars(fe) and not regions_requested):
         return None
-    from agents.model.compile_control import control
-    ctl = control(emit)
+    from agents.model.compile_control import control, set_strict_errors
+    # INSTALL here, not only in the extractor gate: on 2.8 that gate no longer runs
+    # (gen3_one_gate_per_region_v1), and `install` is what pins the compile config (K1b's
+    # `donated_buffer=False` — without it the first retain_graph probe crashes: measured on the
+    # consolidation's launch proof, 2026-10-01) and registers the cache-limit detector and the
+    # after-lock compile counter. Idempotent.
+    ctl = control(emit).install()
+    set_strict_errors()
 
     def _say(msg: str) -> None:
         print(msg, flush=True)
@@ -1034,11 +1052,12 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
     ctl.lock("the end of startup (the parity gate, the reset and the prewarm of every declared "
              "signature)")
     # K6's IN-RUN PARITY CANARY: the startup gate proves the graph at t=0, the canary at t=N.
-    from agents.model.compile_canary import CANARY_EVERY, GRAD_EVERY, CompileCanary
+    from agents.model.compile_canary import CANARY_EVERY, CANARY_FIRST, GRAD_EVERY, CompileCanary
     ctl.canary = CompileCanary(model, n_envs=int(n_envs), batch_size=int(batch_size), emit=emit)
-    _say(f"🐤 [CompileCanary] armed: compiled vs eager on the real-obs fixture every {CANARY_EVERY} "
-         f"updates (decision readout at the rollout signature B={int(n_envs)}), the train graph's "
-         f"gradient every {CANARY_EVERY * GRAD_EVERY} (B={int(batch_size)}), at the startup gate's bars")
+    _say(f"🐤 [CompileCanary] armed: compiled vs eager on the real-obs fixture at update {CANARY_FIRST}, "
+         f"then every {CANARY_EVERY} updates (decision readout at the rollout signature "
+         f"B={int(n_envs)}; the train graph's gradient every {CANARY_EVERY * GRAD_EVERY}, "
+         f"B={int(batch_size)}), at the startup gate's bars; a disagreement is confirmed before it FATALs")
     ctl.attach(model)
     return line
 

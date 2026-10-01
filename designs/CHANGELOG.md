@@ -10451,3 +10451,15 @@ if a lazy build is reintroduced.
 - Measured at N = 48, fp32, rust core: an update peaks at 8.75 GiB allocated / 9.49 GiB reserved; the
   device batch is 1.14 GiB of it; T2 holds 712 MiB allocated; the regions' gate leaves 4.1 GiB reserved.
 
+## 2026-10-01 — K8: one startup parity check per region; the extractor-only gate retired on 2.8 (`gen3_one_gate_per_region_v1`; no model change)
+
+- On torch 2.8 `compile_trainer_extractor(..., regions_follow=True)` no longer compiles and gates the
+  extractor alone; `arm_compile_sentinel(..., regions_requested=True)` installs and gates the regions.
+  The retired gate judged a graph the regions uninstall (~2 of ~5 startup minutes). 2.5.1 unchanged.
+- `compiled_perf_guard_test`'s baseline is keyed by matmul precision (`perf_baseline.json` v2): a
+  run is judged only against the baseline banked at its own precision, and must match its shape.
+- A missing / stale parity fixture at the regions gate is a typed refusal (FATAL_CONFIG), as it was
+  at the extractor gate.
+- The in-run canary runs FIRST at update 10 (`CANARY_FIRST`), then every 100: sizing arm A's 82
+  updates never reached update 100, so it never ran a canary.
+
