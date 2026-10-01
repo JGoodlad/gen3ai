@@ -177,30 +177,61 @@ def test_describe_carries_the_source_and_the_old_reading():
 # --- the real machine ----------------------------------------------------------------------------
 
 
+def _proc_cpu_s(pids):
+    """utime + stime of ``pids``, straight from /proc/<pid>/stat — an INDEPENDENT reading of what
+    the meter's subtree walk should attribute to self."""
+    total = 0
+    for pid in pids:
+        with open(f"/proc/{pid}/stat", "rb") as f:
+            raw = f.read()
+        rest = raw[raw.rfind(b")") + 2:].split()
+        total += int(rest[11]) + int(rest[12])
+    return total / os.sysconf("SC_CLK_TCK")
+
+
 @pytest.mark.integration
 @pytest.mark.skipif(not os.path.exists("/proc/stat"), reason="Linux /proc counters only")
 def test_REAL_busy_workers_read_contended_and_self_attribution_subtracts_them():
-    """Spawn 12 CPU-bound processes for ~3 s — the incident shape: 12 busy threads cannot raise
-    load1 past 16 in 3 s (it moves ~0.8), so the old meter reads this window as quiet unless the box
-    was already loaded. The new meter must read it contended when the workers are NOT ours, and must
-    attribute them to us when they are."""
+    """Spawn 12 CPU-bound processes for ~3 s and read the REAL kernel counters.
+
+    CONTENTION-PROOF BY CONSTRUCTION (Lane K, 2026-09-30: the first version failed ~1 in 2 at load
+    ~36). Every assertion is a relation that holds at ANY background load, because a test of the
+    contention meter must not itself depend on contention:
+      * the box is >= 12 cpus busy: 12 spinning processes either get 12 cpus, or are starved because
+        the box is FULL (16) — either way the SMT term must fire;
+      * self-attribution equals an INDEPENDENT reading of the workers' own /proc/<pid>/stat CPU (at
+        load 36 they get ~4 cpus, not 12 — so the old `>= 0.5 * k` was a claim about the box);
+      * subtracting self can only shrink the SMT term (`g(U) / g(mine) <= g(U)`).
+    The old `ours.factor < external.factor` is gone: the two readings take their run-queue term from
+    DIFFERENT sources (our own tasks vs the box-wide counter), so it was never an invariant."""
     k = 12
     workers = [subprocess.Popen([sys.executable, "-c", "while 1: pass"]) for _ in range(k)]
+    pids = [w.pid for w in workers]
     try:
         time.sleep(0.5)                                  # let them start burning
+        c0 = _proc_cpu_s(pids)
         a = take_sample([os.getpid()])
         time.sleep(3.0)
         b = take_sample([os.getpid()])
+        c1 = _proc_cpu_s(pids)
     finally:
         for w in workers:
             w.kill()
         for w in workers:
             w.wait()
+    dt = b.mono - a.mono
+    workers_cpus = (c1 - c0) / dt
     external = reading_between(a, b)                     # nothing attributed to self
     ours = reading_between(a, b, self_root=os.getpid())
-    assert external.busy_cpus is not None and external.busy_cpus >= 0.5 * k, external.describe()
-    assert external.factor >= 1.3, (
+    assert external.busy_cpus is not None and external.busy_cpus >= 0.9 * k, external.describe()
+    assert external.smt == pytest.approx(smt_slowdown(external.busy_cpus, cpu_meter.topology()))
+    assert external.factor >= external.smt >= 1.3, (
         f"{k} busy workers did not read as contention: {external.describe()}")
-    assert ours.self_cpus is not None and ours.self_cpus >= 0.5 * k, ours.describe()
-    assert ours.factor < external.factor, (
-        f"our own workers were not subtracted: ours {ours.describe()} vs {external.describe()}")
+    assert ours.self_cpus is not None
+    # the subtree walk vs the workers' own counters: same number, up to the test process itself
+    # (asleep) and one clock tick per worker at each end
+    slack = 0.5 + 2 * k / (os.sysconf("SC_CLK_TCK") * dt)
+    assert abs(ours.self_cpus - workers_cpus) <= 0.1 * workers_cpus + slack, (
+        f"self-attribution {ours.self_cpus:.2f} cpus vs the workers' own {workers_cpus:.2f}: "
+        f"{ours.describe()}")
+    assert ours.smt <= external.smt + 1e-9, (ours.describe(), external.describe())
