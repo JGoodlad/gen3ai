@@ -536,8 +536,9 @@ class CudaMemoryWatch:
 
 def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None,
            memory: Optional[CudaMemoryWatch] = None) -> LearnerFreeze:
-    """Wire the freeze guard onto ``model`` (INSTANCE attributes over the bound methods SB3's
-    `learn()` calls, like `compile_control.attach` — apply AFTER it, so this wrapper is outermost):
+    """Wire the freeze guard onto ``model``'s loop — the `learner_freeze` owner of the DECLARED hook
+    table (`agents/training/loop_hooks.py`, OUTERMOST by the table's order; on a duck-typed model
+    with no table, instance-attribute wrappers — attach AFTER `compile_control` there):
 
       * the FIRST `collect_rollouts` entry FREEZES (startup is over: the compile gate, the prewarm
         and `learn()`'s own `_on_training_start` have all run);
@@ -548,36 +549,39 @@ def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None,
         rollout and update — a projected OOM is `CudaMemoryLeakError` (exit FATAL_CUDA_LEAK after
         the trainer's handler saved `final_model_exception.zip`; the launcher restarts it, capped).
 
-    The three wrappers are in `_excluded_save_params` via `_learner_freeze` (see the hub)."""
+    `_learner_freeze` and the table are in `_excluded_save_params` (see the hub)."""
     freeze = LearnerFreeze(model, emit=emit)
     memory = memory if memory is not None else CudaMemoryWatch(model, emit=emit)   # says to stdout
-    orig_collect, orig_train, orig_learn = model.collect_rollouts, model.train, model.learn
+    import contextlib
 
-    def collect_rollouts(*a: Any, **k: Any) -> Any:
+    from agents.training.loop_hooks import install
+
+    @contextlib.contextmanager
+    def collect() -> Any:
         if freeze.frozen is None and not getattr(freeze, "_released", False):
             freeze.freeze("the first rollout of learn()")
             memory.start()
-        out = orig_collect(*a, **k)
+        yield
         freeze.check("rollout end")
         memory.observe("post_rollout")
-        return out
 
-    def train(*a: Any, **k: Any) -> Any:
-        out = orig_train(*a, **k)
+    @contextlib.contextmanager
+    def update() -> Any:
+        yield
         freeze.check("update end")
         memory.observe("post_update")
-        return out
 
-    def learn(*a: Any, **k: Any) -> Any:
+    @contextlib.contextmanager
+    def learn() -> Any:
         try:
-            return orig_learn(*a, **k)
+            yield
         finally:
             freeze._released = True                     # type: ignore[attr-defined]
             freeze.release("learn() returned")
 
-    model.collect_rollouts = collect_rollouts
-    model.train = train
-    model.learn = learn
+    # gen3_declared_loop_hooks_v1: the loop's DECLARED hook table (outermost owner), or — for a
+    # duck-typed model with no table — the same bodies as instance-attribute wrappers.
+    install(model, "learner_freeze", {"collect": collect, "update": update, "learn": learn})
     model._learner_freeze = freeze
     freeze.memory = memory
     return freeze

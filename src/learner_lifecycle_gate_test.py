@@ -74,6 +74,8 @@ STEP_PACKAGES: Tuple[str, ...] = ("agents/training/instrumented_ppo",)
 
 #: The loss-term / probe modules the fold calls every update, with the reason each is in scope.
 STEP_MODULES: Dict[str, str] = {
+    "agents/training/loop_hooks.py": "the loop's DECLARED hook table (gen3_declared_loop_hooks_v1): "
+                                     "`around` runs at every collect and update; it builds no learner object",
     "agents/training/belief_bank.py": "the belief-bank loss terms, computed inside the PPO minibatch loop",
     "agents/training/belief_bank_static.py": "the belief bank's static twins, called by the micro-step (R1) per minibatch",
     "agents/model/masked_categorical.py": "the functional masked distribution the micro-step evaluates per minibatch",

@@ -138,8 +138,11 @@ export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
 is the declared `LOOP_PHASES` table, and `_setup_learn` / `dump_logs` / the Python core's collect are
 vendored from sb3 operation for operation (hash-pinned). Three things an edit must not break: the
 **dump stays BEFORE the update** (update k's `train/*` is stamped after rollout k+1 — the archive's TB
-convention and the KL controller's logger read); **`collect_rollouts` / `train` are called through the
-attribute** (K6 and the compile sentinel wrap them); the **Python collect keeps sb3's local names and
+convention and the KL controller's logger read); **`learn` > `collect` | `update` are the DECLARED
+HOOK POINTS** (`agents/training/loop_hooks.py`, `gen3_declared_loop_hooks_v1`: K6's freeze guard and
+the compile sentinel REGISTER there, outermost first by `HOOK_OWNERS`; the table freezes at training
+start and a late, duplicate or undeclared hook is FATAL_CONFIG — never reassign a learner's bound
+method to hook it); the **Python collect keeps sb3's local names and
 fires `on_step` before `rollout_buffer.add`** (`self.locals`, `buf.pos`). `own_ppo_loop_test.py` holds
 it EXACT against upstream; `GEN3AI_PPO_LOOP=sb3_reference` is the A/B test seam. 🚨 **REGIME BOUNDARY
 (`gen3_eval_dump_isolation_v1`, 2026-10-01):** an eval cycle's mid-rollout `logger.dump(step)` used to
