@@ -10190,3 +10190,14 @@ compare RND strategies."*
   as a series.
 - **Config v127:** `ridealong_rnd_variants` is recorded, `_resolve`-inherited and compared in
   `check_compatible`. A pre-v127 config migrates to `"off"`. The production mirror records it `"off"`.
+
+## 2026-09-30 — the ride-along heads' late-build path is DELETED (no model version bump; learning unchanged)
+
+The v127 entry above kept a counted fallback: a step that found a ride-along optimizer missing built
+it lazily and counted it in `ridealong/acquisitions_after_freeze`. K6.1's freeze guard makes ANY
+optimizer, parameter or module created after startup a typed FATAL at the first update, so that
+fallback would have killed every `--ridealong-*` run. It is gone. `_ridealong_optimizer` and
+`_ridealong_variant_optimizer` only READ what `_ridealong_acquire` built at `_setup_model`, and a
+missing one (or one bound to other heads) raises `RideAlongLifecycleViolation`. The counter and its
+TB key are removed. `ridealong_update_test::test_an_UNACQUIRED_step_RAISES_and_builds_nothing` fails
+if a lazy build is reintroduced.

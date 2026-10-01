@@ -1079,9 +1079,9 @@ BIT-IDENTICAL. The compile gate's coverage count excludes `ridealong.*` (never i
 Their Adam state is the LEARNER's and is not checkpointed (a restart resumes the weights with a fresh
 Adam). It is ACQUIRED AT STARTUP (the declared lifecycle): `_setup_model` ends in `_ridealong_acquire`,
 which builds every ride-along optimizer and pre-allocates its Adam state, bit-identically to torch's
-lazy init. A later build is counted as a late acquisition (`ridealong/acquisitions_after_freeze`), and
-`ridealong_update_test` pins zero late acquisitions and unchanged optimizer, state and buffer
-identities across a real update. The heads' step is the K8 inventory's candidate compile region
+lazy init. There is NO lazy build path: a step that finds an optimizer missing raises
+`RideAlongLifecycleViolation`. `ridealong_update_test` pins that raise, and unchanged optimizer,
+state and buffer identities across a real update. The heads' step is the K8 inventory's candidate compile region
 R-ride; it stays EAGER. `family=CRITIC`, so they are off the ARCH surface; §6's table carries them
 OFF. The pre-registered baseline that turns them on is EXPERIMENT_BACKLOG's X26.
 

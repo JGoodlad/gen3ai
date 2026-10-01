@@ -27,7 +27,9 @@ variants are compared with is untouched by them. An identification probe that dr
 THE DECLARED LIFECYCLE (K8; owner 2026-09-28): every ride-along optimizer — the four heads' and each
 variant's — exists, with its Adam state allocated, BEFORE the first update (`_setup_model` →
 `_ridealong_acquire`), and the update creates no optimizer, no optimizer state and no buffer
-(`late_acquisitions` 0; the object identities are unchanged). Pre-allocation is also pinned to step
+(the object identities are unchanged). There is NO lazy build path: a step whose optimizers were
+not acquired RAISES `RideAlongLifecycleViolation` and builds nothing, so reintroducing a lazy build
+fails `test_an_UNACQUIRED_step_RAISES_and_builds_nothing`. Pre-allocation is also pinned to step
 bit-identically to torch's lazy init.
 """
 from __future__ import annotations
@@ -165,8 +167,7 @@ def _acquired(model) -> dict:
     n_state = {name: len(o.state) for name, o in opts.items() if o is not None}
     return {"opt_ids": {k: id(v) for k, v in opts.items()}, "state": state,
             "n_params": n_params, "n_state": n_state,
-            "buffers": {n: id(b) for n, b in heads.named_buffers()},
-            "late": int(getattr(model, "_ridealong_late_acquisitions", 0))}
+            "buffers": {n: id(b) for n, b in heads.named_buffers()}}
 
 
 @pytest.fixture(scope="module")
@@ -245,7 +246,7 @@ def test_the_ON_arm_is_not_vacuous(arms):
                 "ridealong/opp_loss", "ridealong/ens_disagreement_mean", "ridealong/rnd_z_mean",
                 "ridealong/adv_std_fed", "ridealong/opp_label_rate",
                 "ridealong/rnd_err_median", "ridealong/rnd_err_rel_spread",
-                "ridealong/rnd_ident_ratio", "ridealong/acquisitions_after_freeze"):
+                "ridealong/rnd_ident_ratio"):
         assert tag in on["logged"], tag
     for v in VARIANTS:
         for stat in ("loss", "err_mean", "z_mean", "err_median", "err_iqr", "grad_norm",
@@ -283,16 +284,18 @@ def test_LIFECYCLE_every_ride_along_optimizer_is_acquired_at_startup_and_nothing
     assert set(pre["opt_ids"]) == {"core", *(f"v_{v}" for v in VARIANTS)}
     for name, n in pre["n_params"].items():
         assert pre["n_state"][name] == n, f"{name}: Adam state not pre-allocated for every param"
-    assert pre["late"] == 0 and post["late"] == 0, "a ride-along optimizer was built LATE"
     assert post["opt_ids"] == pre["opt_ids"], "an optimizer object was replaced during the update"
     assert post["state"] == pre["state"], "Adam state tensors were (re)created during the update"
     assert post["buffers"] == pre["buffers"], "a ride-along buffer was created or replaced"
-    assert on["logged"]["ridealong/acquisitions_after_freeze"] == 0.0
 
 
-def test_the_LATE_ACQUISITION_guard_counts(arms):
-    """The guard has teeth: drop the startup acquisition and the step builds late — and counts it."""
-    from agents.training.instrumented_ppo.ridealong_terms import RideAlongTerms
+def test_an_UNACQUIRED_step_RAISES_and_builds_nothing(arms):
+    """The declared lifecycle has no lazy fallback (K6.1's freeze guard makes a post-startup
+    acquisition FATAL). A learner that skipped `_ridealong_acquire` must REFUSE the step — for the
+    four heads' optimizer and for every variant's — and leave no optimizer behind. Reintroducing a
+    lazy build (build-on-miss) fails here."""
+    from agents.training.instrumented_ppo.ridealong_terms import (RideAlongLifecycleViolation,
+                                                                  RideAlongTerms)
 
     _, on = arms
 
@@ -300,16 +303,26 @@ def test_the_LATE_ACQUISITION_guard_counts(arms):
         def __init__(self, policy):
             self.policy = policy
 
+    heads = on["model"].policy.ridealong
     lr = _L(on["model"].policy)
-    heads = lr.policy.ridealong
-    lr._ridealong_optimizer(heads)
-    lr._ridealong_variant_optimizer(heads, "fast")
-    assert lr._ridealong_late_acquisitions == 2
-    lr2 = _L(on["model"].policy)
-    lr2._ridealong_acquire()
-    lr2._ridealong_optimizer(heads)
-    lr2._ridealong_variant_optimizer(heads, "fast")
-    assert int(getattr(lr2, "_ridealong_late_acquisitions", 0)) == 0
+    with pytest.raises(RideAlongLifecycleViolation):
+        lr._ridealong_optimizer(heads)
+    for v in VARIANTS:
+        with pytest.raises(RideAlongLifecycleViolation):
+            lr._ridealong_variant_optimizer(heads, v)
+    assert getattr(lr, "_ridealong_opt", None) is None
+    assert not getattr(lr, "_ridealong_vopts", None)
+    # acquired for OTHER heads (a swap without re-acquiring) is refused too
+    lr._ridealong_acquire()
+    import copy
+    other = copy.deepcopy(heads)
+    with pytest.raises(RideAlongLifecycleViolation):
+        lr._ridealong_optimizer(other)
+    with pytest.raises(RideAlongLifecycleViolation):
+        lr._ridealong_variant_optimizer(other, "fast")
+    # ... and the acquired ones are returned as-is, every time (read, never rebuilt)
+    assert lr._ridealong_optimizer(heads) is lr._ridealong_optimizer(heads)
+    assert all(lr._ridealong_variant_optimizer(heads, v) is lr._ridealong_vopts[v] for v in VARIANTS)
 
 
 @pytest.mark.parametrize("fused", [False, True])

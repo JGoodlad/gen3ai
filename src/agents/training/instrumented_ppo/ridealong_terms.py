@@ -29,10 +29,10 @@ The optimizers are the LEARNER's, not the model's, and they are ACQUIRED AT STAR
 lifecycle, owner 2026-09-28; the K8 inventory flagged the old lazy build): `_setup_model` ends with
 `_ridealong_acquire`, which builds the four heads' Adam and every variant's Adam with their state
 PRE-ALLOCATED (`preallocate_adam_state`: identical to torch's lazy first-step init, so the steps are
-bit-identical). A steady-state step only reads them. Anything built later is a LATE ACQUISITION:
-counted (`ridealong/acquisitions_after_freeze`), announced once, and still built so the heads keep observing.
-`ridealong_update_test`'s lifecycle tests pin zero late acquisitions and stable optimizer/state/buffer identities
-over real updates. The optimizers are not in the checkpoint, so a restart resumes the heads'
+bit-identical). A steady-state step only READS them: there is NO lazy build path. A step that
+finds an optimizer missing (or bound to other heads) raises `RideAlongLifecycleViolation`, the same
+typed refusal K6.1's freeze guard gives any post-startup acquisition. `ridealong_update_test`'s
+lifecycle tests pin this: the raise, and stable optimizer, state and buffer identities over real updates. The optimizers are not in the checkpoint, so a restart resumes the heads'
 weights with a fresh Adam state (bias-corrected, so the first steps are ~lr-sized). Declared, not
 hidden: the heads observe, and a restart every few hours costs them a few noisy steps and PPO
 nothing. The heads' step is K8's candidate compile region R-ride (`ridealong_step`, train/grad ×
@@ -283,16 +283,19 @@ def preallocate_adam_state(opt: th.optim.Optimizer) -> None:
                     st["step"] = 0
 
 
-def _adam(params: List[th.nn.Parameter], lr: float, *, prealloc: bool = True) -> th.optim.Optimizer:
-    """The heads' Adam. ``prealloc`` (the startup path) allocates its state now. A LATE build runs
-    mid-step, with the heads' forward graph alive, where the pre-allocation's in-place no-op step
-    would invalidate that graph (autograd version counters), so it is left to torch's lazy init."""
+class RideAlongLifecycleViolation(RuntimeError):
+    """A ride-along step found no optimizer acquired at startup for the heads it is stepping. The
+    declared lifecycle has no lazy fallback (owner 2026-09-28; K6.1's freeze guard): acquire with
+    `_ridealong_acquire()` — `_setup_model` does, and so must any tool that swaps `policy.ridealong`."""
+
+
+def _adam(params: List[th.nn.Parameter], lr: float) -> th.optim.Optimizer:
+    """The heads' Adam, its state allocated NOW (startup only — `_ridealong_acquire`)."""
     # fused on CUDA: one kernel for the whole step instead of several per parameter tensor (the heads
     # are many small tensors, so the per-tensor launches were the cost).
     fused = bool(params) and all(p.is_cuda for p in params)
     opt = th.optim.Adam(params, lr=lr, eps=RIDEALONG_EPS, fused=fused or None)
-    if prealloc:
-        preallocate_adam_state(opt)
+    preallocate_adam_state(opt)
     return opt
 
 
@@ -327,30 +330,19 @@ class RideAlongTerms:
         self._ridealong_vopts_owner = heads
 
     @staticmethod
-    def _variant_adam(heads: Any, name: str, *, prealloc: bool = True) -> th.optim.Optimizer:
+    def _variant_adam(heads: Any, name: str) -> th.optim.Optimizer:
         from agents.model.ridealong_heads import RND_VARIANT_BY_NAME
 
         return _adam(heads.variant_parameters(name),
-                     RIDEALONG_LR * RND_VARIANT_BY_NAME[name].lr_mult, prealloc=prealloc)
-
-    def _ridealong_late_acquisition(self, what: str) -> None:
-        """The AFTER-FREEZE guard: a ride-along optimizer built anywhere but `_ridealong_acquire`.
-        Counted and announced (once); never fatal — the heads observe, and must not kill a run."""
-        n = int(getattr(self, "_ridealong_late_acquisitions", 0)) + 1
-        self._ridealong_late_acquisitions = n
-        if n == 1:
-            print(f"⚠️  [RIDE-ALONG] LATE ACQUISITION: {what} was built after startup — the declared "
-                  "lifecycle acquires every ride-along optimizer in `_ridealong_acquire` "
-                  "(_setup_model). Built now so the heads keep observing; counted in "
-                  "ridealong/acquisitions_after_freeze.", flush=True)
+                     RIDEALONG_LR * RND_VARIANT_BY_NAME[name].lr_mult)
 
     def _ridealong_optimizer(self, heads: Any) -> th.optim.Optimizer:
+        """The four heads' optimizer, acquired at startup. READ ONLY: nothing is built here."""
         opt = getattr(self, "_ridealong_opt", None)
         if opt is None or getattr(self, "_ridealong_opt_owner", None) is not heads:
-            self._ridealong_late_acquisition("the four heads' optimizer")
-            opt = _adam(heads.trainable_parameters(), RIDEALONG_LR, prealloc=False)
-            self._ridealong_opt = opt
-            self._ridealong_opt_owner = heads
+            raise RideAlongLifecycleViolation(
+                "the ride-along heads' optimizer was not acquired at startup for these heads — call "
+                "_ridealong_acquire() after building or swapping policy.ridealong")
         return opt
 
     def _ridealong_update(self, rollout_data: Any, values: th.Tensor, actions: th.Tensor,
@@ -449,16 +441,14 @@ class RideAlongTerms:
             opt.zero_grad(set_to_none=True)
 
     def _ridealong_variant_optimizer(self, heads: Any, name: str) -> th.optim.Optimizer:
-        """The variant's OWN Adam (rate RIDEALONG_LR × its declared `lr_mult`), acquired at startup;
-        a miss here is a LATE ACQUISITION (counted, then built)."""
+        """The variant's OWN Adam (rate RIDEALONG_LR × its declared `lr_mult`), acquired at startup.
+        READ ONLY: nothing is built here."""
         opts: Optional[Dict[str, th.optim.Optimizer]] = getattr(self, "_ridealong_vopts", None)
-        if opts is None or getattr(self, "_ridealong_vopts_owner", None) is not heads:
-            opts = {}
-            self._ridealong_vopts = opts
-            self._ridealong_vopts_owner = heads
-        if name not in opts:
-            self._ridealong_late_acquisition(f"RND variant {name!r}'s optimizer")
-            opts[name] = self._variant_adam(heads, name, prealloc=False)
+        if (opts is None or getattr(self, "_ridealong_vopts_owner", None) is not heads
+                or name not in opts):
+            raise RideAlongLifecycleViolation(
+                f"RND variant {name!r}'s optimizer was not acquired at startup for these heads — "
+                "call _ridealong_acquire() after building or swapping policy.ridealong")
         return opts[name]
 
     def _ridealong_variant_step(self, heads: Any, vlosses: Dict[str, th.Tensor], epoch: int,
@@ -499,8 +489,6 @@ class RideAlongTerms:
         # `ridealong/*` series then has its cause on the dashboard.
         self.logger.record("ridealong/disabled",   # type: ignore[attr-defined]
                            float(bool(getattr(self, "_ridealong_disabled", False))))
-        self.logger.record("ridealong/acquisitions_after_freeze",   # type: ignore[attr-defined]
-                           float(getattr(self, "_ridealong_late_acquisitions", 0)))
         dead = getattr(self, "_ridealong_variant_disabled", None) or set()
         for n in getattr(self._ridealong_heads(), "variant_names", lambda: ())():
             self.logger.record(f"ridealong/rndv_{n}_disabled",   # type: ignore[attr-defined]

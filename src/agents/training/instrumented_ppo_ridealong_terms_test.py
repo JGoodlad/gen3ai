@@ -58,6 +58,7 @@ def test_a_step_trains_the_heads_and_a_NONFINITE_step_disables_them_without_touc
     rows, masks = load_parity_rows(layout["total_dim"])
     rows, masks = rows[:8].copy(), masks[:8]
     lr = _Learner(pol)
+    lr._ridealong_acquire()            # the startup acquisition (there is no lazy build)
     core0 = {k: v.clone() for k, v in pol.state_dict().items() if not k.startswith("ridealong.")}
     ra0 = {k: v.clone() for k, v in pol.ridealong.state_dict().items()}
     acc = RideAlongAccumulator()
@@ -126,7 +127,6 @@ def test_a_NONFINITE_VARIANT_disables_ONLY_that_variant():
     assert lr.logged["ridealong/rndv_small_disabled"] == 1.0
     assert lr.logged["ridealong/rndv_fast_disabled"] == 0.0
     assert lr.logged["ridealong/disabled"] == 0.0
-    assert lr.logged["ridealong/acquisitions_after_freeze"] == 0.0
     # the dead variant is no longer read: no later series of it
     acc2 = RideAlongAccumulator()
     lr._ridealong_update(*_forward(pol, rows, masks), epoch=0, acc=acc2)

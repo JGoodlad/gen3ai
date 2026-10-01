@@ -300,6 +300,6 @@ target everywhere, rather than on the states it visits, drives that ratio down. 
 reader's, on fixed probes, per the X26 amendment.
 
 **Lifecycle.** Every ride-along optimizer, the four heads' and each variant's, is built at the
-trainer's `_setup_model` with its Adam state pre-allocated. A later build is a counted late
-acquisition. The heads' step is the K8 inventory's candidate compile region R-ride; it stays eager
+trainer's `_setup_model` with its Adam state pre-allocated. There is no lazy build: a step that
+finds one missing raises `RideAlongLifecycleViolation`. The heads' step is the K8 inventory's candidate compile region R-ride; it stays eager
 for now.

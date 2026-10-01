@@ -968,9 +968,10 @@ on it). All 10 epochs cost +13 % of a GPU update on the learner benchmark; one p
 `PREREGISTRATION.md` "Overhead").
 And **the heads' Adam state is not checkpointed** (a restart resumes their weights with a fresh Adam).
 **Every ride-along optimizer is ACQUIRED AT STARTUP** (`RideAlongTerms._setup_model` →
-`_ridealong_acquire`, Adam state pre-allocated, bit-identical to lazy init). A step that has to build
-one is a LATE ACQUISITION: counted in `ridealong/acquisitions_after_freeze`, announced once, never fatal. Tooling
-that swaps `policy.ridealong` must call `_ridealong_acquire()` again (both benchmarks do). The step is
+`_ridealong_acquire`, Adam state pre-allocated, bit-identical to lazy init). There is NO lazy build:
+a step that finds an optimizer missing, or bound to other heads, raises
+`RideAlongLifecycleViolation`, as K6.1's freeze guard would. Tooling that swaps `policy.ridealong`
+must call `_ridealong_acquire()` again (both benchmarks do). The step is
 K8's candidate compile region R-ride; it stays eager. **The RND variants**
 (`--ridealong-rnd-variants all`, v127: `fast` / `decay` / `small` / `feat`, beside the unchanged base
 RND) each step on their own Adam after the four heads. A non-finite variant disables ITSELF

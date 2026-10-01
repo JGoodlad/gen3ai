@@ -162,8 +162,7 @@ def run(device: str, batch: int, k: int, warmup: int,
                                 "max": 1000.0 * max(times)},
                     "pass_s": {"median": statistics.median(pass_s), "all": pass_s},
                     "added_s_per_update": added_s,
-                    "added_pct_of_update": 100.0 * added_s / BASELINE_UPDATE_S,
-                    "late_acquisitions": int(getattr(learner, "_ridealong_late_acquisitions", 0))}
+                    "added_pct_of_update": 100.0 * added_s / BASELINE_UPDATE_S}
         pol.ridealong = None
         del learner
         if cuda:

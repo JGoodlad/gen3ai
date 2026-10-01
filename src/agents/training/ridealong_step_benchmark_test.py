@@ -12,6 +12,5 @@ def test_the_step_benchmark_times_every_config_and_scales_a_pass_to_one_epoch(mo
     for cfg in ("core", "+fast", "+all"):
         c = res["configs"][cfg]
         assert c["step_ms"]["median"] > 0 and c["added_s_per_update"] > 0
-        assert c["late_acquisitions"] == 0, cfg
     assert set(res["per_variant_minus_core"]) == {"+fast", "+all"}
     assert "contention_at_start" in res

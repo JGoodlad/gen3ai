@@ -167,9 +167,9 @@ drifts 2.5–8× as the representation moves.
   the four heads WITHOUT the variants, shows every other ride-along tensor, **base included**, is
   bit-identical with them: the reference is untouched.
 - **Lifecycle (K8):** every ride-along optimizer is acquired at `_setup_model` with its Adam state
-  pre-allocated, and the update creates no optimizer, state or buffer. **Launch gate, added:**
-  `ridealong/acquisitions_after_freeze` = 0 and every `ridealong/rndv_<name>_disabled` = 0 at every
-  read. A disabled variant's read points after its disable are VOID for that variant only.
+  pre-allocated, and the update creates no optimizer, state or buffer. There is no lazy fallback:
+  a missing optimizer raises `RideAlongLifecycleViolation` at the first update. **Launch gate,
+  added:** every `ridealong/rndv_<name>_disabled` = 0 at every read. A disabled variant's read points after its disable are VOID for that variant only.
 - **Overhead, MEASURED** 2026-09-30 (`ridealong_step_benchmark.py`, RTX 3080 Ti, load ~10 on 16 cpus,
   "box looks idle"; one epoch-0 pass = 48 steps of 2048 + the per-update `decay` pull + the per-update
   CPU meters, median of 5; `overhead_variants_2026-09-30.json`):
