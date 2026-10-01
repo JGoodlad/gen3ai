@@ -22,18 +22,21 @@ wired by `main/train/lifecycle._arm_learner_lifecycle` (both the fresh and the r
 
 ## The freeze guard (`gen3_learner_freeze_v1`)
 
-**When.** `learner_lifecycle.attach(model)` wraps `collect_rollouts` / `train` / `learn` as instance
-attributes (outermost, over the compile sentinel's). The FIRST `collect_rollouts` entry FREEZES —
-startup is then over: the trainer compile and its parity gate, the prewarm, `declare_learner_startup`
-and `learn()`'s own `_setup_learn` / every callback's `_on_training_start` have run. Every
-`collect_rollouts` and `train` exit CHECKS. `learn()`'s exit RELEASES (the in-process final evaluation
-after training is not the steady state). The wrappers and `_learner_freeze` are in
-`_excluded_save_params`, so no checkpoint carries them. 🚨 **These wrappers intercept only because the loop calls through
-the attribute**: `learn()` is ours since `gen3_owned_ppo_loop_v1` (`instrumented_ppo/loop.py`), and it
-calls `self.collect_rollouts` / `self.train` by name — a direct call to a vendored method would bypass
-the guard silently (`own_ppo_loop_test` asserts both wrappers see every call). Stage 2 of
-[`design_own_ppo_loop.md`](../endstate/design_own_ppo_loop.md) turns these wrappers into declared
-loop hooks.
+**When.** `learner_lifecycle.attach(model)` registers the `learner_freeze` owner on the loop's DECLARED
+HOOK TABLE (`agents/training/loop_hooks.py`, `gen3_declared_loop_hooks_v1`): around-hooks on the
+`learn`, `collect` and `update` points that `OwnedLoop.learn` opens. It is OUTERMOST by the table's
+`HOOK_OWNERS` order, over the compile sentinel's, whatever order the two attached in. The FIRST
+`collect` entry FREEZES — startup is then over: the trainer compile and its parity gate, the prewarm,
+`declare_learner_startup` and `learn()`'s own `_setup_learn` / every callback's `_on_training_start`
+have run. Every `collect` and `update` exit CHECKS. `learn()`'s exit RELEASES (the in-process final
+evaluation after training is not the steady state).
+
+The table itself FREEZES at `learn()`'s training start: a hook registered later is `LoopHookError`
+(FATAL_CONFIG), and so are an undeclared owner and a duplicate. `_learner_freeze` and the table
+(`_loop_hooks`) are in `_excluded_save_params`, so no checkpoint carries them. A duck-typed model with
+no table (a test stub, a tool driving `collect_rollouts` / `train` itself) gets the SAME hook bodies as
+instance-attribute wrappers (`loop_hooks.install`). The `sb3_reference` seam applies the table too, so
+both arms of the loop's equivalence A/B run under the same guards (`loop_hooks_test.py`).
 
 **What is frozen — the learner's object graph** (`learner_objects`): `model.policy`'s whole module
 tree (extractor, pointer head, aux heads, the ride-along heads) plus every `nn.Module` / `Optimizer`

@@ -146,6 +146,20 @@ async def test_dashboard_renders_topline_and_badges():
         assert "ent_coef" not in badges          # ent_coef badge removed from the topline
 
 
+async def test_eval_took_is_the_cycle_wall_when_it_is_recorded():
+    """gen3_eval_wall_sec_v1: with `eval/wall_sec` present the TUI shows THAT (the real wall clock), not
+    the summed-unit-time estimate — which on the Rust core is ~25x the wall."""
+    state = _populated_state()
+    state.update_metrics({"eval/wall_sec": 14.0})
+    app = LauncherApp(state, queue.Queue())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._refresh()
+        await pilot.pause()
+        ev = _table_text(app.query_one("#metrics-eval", DataTable))
+        assert "took 14s" in ev and "~" not in ev.split("took", 1)[1][:3], ev[:80]
+
+
 async def test_dashboard_metrics_tables_populated():
     app = LauncherApp(_populated_state(), queue.Queue())
     async with app.run_test() as pilot:
@@ -165,7 +179,9 @@ async def test_dashboard_metrics_tables_populated():
         assert "vs random" in ev                  # snake_case opponent name
         assert "96.0%" in ev                      # win rate as percent
         assert "25.3" in ev                       # reward, fixed 1-decimal
-        assert "took 46s" in ev                   # raw per-worker seconds: int(233.0 / 5)
+        # no eval/wall_sec in this state (a pre-gen3_eval_wall_sec_v1 run): the per-worker ESTIMATE
+        # int(233.0 / 5), marked "~" — duration_sec is summed unit time, never a wall clock
+        assert "took ~46s" in ev
         # vs Pool now shows BOTH win rate and reward (mirrors ui.py)
         assert "vs Pool" in ev and "52.0%" in ev and "3.1" in ev
         # pool sentinels labeled with their snapshot step (seed for step 0)

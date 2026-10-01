@@ -145,6 +145,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
     def build(model: Any) -> Any:
         from agents.model.snapshot import load_foreign_opponent
         from agents.training.reward_config import RewardConfig
+        from agents.training.rust_rollout.fork import fork_decl_from_args
         from agents.training.snapshot_pool import SnapshotPool
 
         run_seed = segment_seed(getattr(args, "seed", 0), int(model.num_timesteps))
@@ -159,7 +160,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             refusal_budget=int(args.rust_env_refusal_budget), respawn_budget=int(args.rust_env_respawn_budget),
             device=device, backend=backend, buckets=buckets, lanes=int(args.t2_lanes or 0),
             version_pinning=args.version_pinning == "per_game", trainee_slots=int(args.trainee_slots),
-            opponent_sampling=args.opponent_sampling, policy_seed=run_seed)
+            opponent_sampling=args.opponent_sampling, policy_seed=run_seed, fork=fork_decl_from_args(args))
         sources = OpponentSources(self_play_fraction=float(self_play_fraction))
         if plan.pool_slots and snapshot_dir is not None:
             # device="cpu" (gen3_declared_slot_load_v1): a pool snapshot is only a WEIGHT SOURCE that T2 copies

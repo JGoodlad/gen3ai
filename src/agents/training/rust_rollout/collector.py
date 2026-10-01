@@ -16,9 +16,16 @@ One host STEP:
    outcome, a tie vs the stall forfeit — F-LD-4), and every env whose ``episode`` MOVED is re-staged:
    its next route (Lane E's ``after_op``, F-LE-4), teams and seed (``teams.TeamStager``).
 
+THE FORK PHASE (``COLLECT_PHASES``; declared only with ``--fork-fraction > 0``, ``fork.py``): after the
+trigger fires and BEFORE the fill, the fork arm branches contested decisions of the games that ended since
+its last pass and inserts each branch game into the completed-game FIFO right after its parent. It is the
+Rust core's equivalent of the Python core's post-collect window (the win-prob labels → the fork arm's
+callback → PBRS → frozen-φ, in callbacks and ``RolloutProbes``): on this core the labels and GAE are
+already per game, and the fork must precede the fill because the update's buffer has a fixed shape.
+
 ``collect`` repeats host steps until the trigger fires, firing the SB3 callbacks once per ``n_envs``
-trainee decisions (a "vec step", so every step-counted cadence — the checkpoint's ``save_freq`` — keeps
-its meaning), then fills the learner's buffer. ``after_update`` LOADS the new weights into T2 (a
+trainee decisions (a "vec step"; every step-counted cadence compares ``num_timesteps`` against a
+boundary, so a ragged host step does not move it), then fills the learner's buffer. ``after_update`` LOADS the new weights into T2 (a
 declared in-place load, parity-verified) and bumps the version; with PER-GAME VERSION PINNING
 (declared, OFF by default) the new weights go to a FREE trainee slot and every game in progress
 keeps the slot — the version — it started with.
@@ -41,6 +48,12 @@ from agents.training import keyed_draw as KD
 from agents.training.rust_rollout import store as S
 from agents.training.rust_rollout.teams import TeamStager
 from agents.training.rust_rollout.trigger import TriggerError, WindowTrigger
+
+
+#: The collector's phases, in order (``collect``). ``fork`` exists only when the fork arm is declared
+#: (``--fork-fraction > 0``, ``rust_rollout/fork.py``; ``designs/training/forks.md`` §14.2): it runs AFTER the
+#: trigger fires and BEFORE the fill, because a branch game joins the completed-game FIFO beside its parent.
+COLLECT_PHASES = ("play", "fork", "fill")
 
 
 class LifecycleViolation(S.CollectorError):
@@ -66,6 +79,7 @@ class CollectorConfig:
     version_pinning: bool = False
     respawn_budget: int = 0
     victory_value: float = 1.0
+    fork: bool = False                    # the fork arm is declared (the arena tracks turns + branch rows)
 
 
 @dataclass
@@ -115,7 +129,7 @@ class RustCollector:
         self._load_trainee = load_trainee
         self.obs_space = obs_space
         self.sources = S.obs_key_sources(obs_space, cfg.label_keys)
-        self.store = S.RowStore(obs_space, cfg.capacity)
+        self.store = S.RowStore(obs_space, cfg.capacity, fork=bool(cfg.fork))
         self.log = S.GameLog(self.store, self.n, mode=cfg.trigger.mode, gamma=cfg.gamma,
                              gae_lambda=cfg.gae_lambda, max_game_rows=cfg.max_game_rows)
         self.version = 0
@@ -140,6 +154,10 @@ class RustCollector:
         self.reward_terms = RewardTermAccumulator(("win_loss",))
         self._t_start = time.time()
         self._started = False
+        #: the fork arm (``fork.RustForkPass``), attached by ``build_collector`` when declared; None = OFF
+        self.fork: Any = None
+        self.cur_route = np.zeros(self.n, dtype=np.int64)
+        self.cur_model_id: List[Optional[str]] = [None] * self.n
 
     # ------------------------------------------------------------------ startup
     def start(self) -> None:
@@ -157,6 +175,8 @@ class RustCollector:
         c = self.cols
         self.stager.started(moved)
         self.cur_class[moved] = self._klass[c["opp_route"][moved].astype(np.int64)]
+        if self.fork is not None:
+            self._fork_episode_started(moved)
         self.cur_episode[moved] = c["episode"][moved]
         self.ep_start_time[moved] = time.time()
         self.env_slot[moved] = self.current_slot
@@ -270,9 +290,24 @@ class RustCollector:
         self.stats.trainee_decisions += int(getattr(self, "_prepared", 0))
         self._prepared = 0
 
+    def _fork_episode_started(self, moved: np.ndarray) -> None:
+        """The fork arm: which route and which MODEL each new episode plays (a branch is played against
+        that model only while its slot still serves it — ``fork.py`` §14.4)."""
+        c = self.cols
+        routes = self.opponents.routes
+        for e in moved.tolist():
+            r = int(c["opp_route"][e])
+            self.cur_route[e] = r
+            rt = routes[r] if 0 <= r < len(routes) else None
+            self.cur_model_id[e] = (self.svc.model_id(int(rt.slot)) if rt is not None and rt.kind == "policy"
+                                    else None)
+
     def _after_step(self) -> None:
         c = self.cols
         done = np.flatnonzero(c["done"] == 1)
+        if self.fork is not None:
+            self._finished = {(int(f["env"]), int(f["episode"])): f.get("script") for f in self.core.finished()} \
+                if done.size else {}
         for e in done.tolist():
             term, trunc = bool(c["terminated"][e]), bool(c["truncated"][e])
             if not (term or trunc):                          # quarantined IN PROGRESS (refused = 1)
@@ -294,6 +329,13 @@ class RustCollector:
                          truncated=trunc, episode=int(self.cur_episode[e]), opp_class=klass)
         if g is None:
             return
+        if self.fork is not None:
+            from agents.training.rust_rollout.fork import GameRecord
+
+            self.fork.capture(GameRecord(
+                env=int(e), episode=g.episode, slots=g.slots, run_seed=int(self.cfg.run_seed),
+                route=int(self.cur_route[e]), model_id=self.cur_model_id[e], opp_class=klass,
+                script=getattr(self, "_finished", {}).get((int(e), g.episode))))
         self.stats.games_ended += 1
         self._observe_rows(g.length, reward)
         self.stager.record_outcome(e, won, klass)
@@ -350,6 +392,8 @@ class RustCollector:
                 if not callback.on_step():
                     return False
                 model._update_info_buffer(infos, dones)
+        if self.fork is not None:                       # COLLECT_PHASES: play -> FORK -> fill
+            self.fork.run(self, model)
         t0 = time.perf_counter()
         self._ensure_buffer(model)
         trig = self.cfg.trigger
@@ -508,6 +552,8 @@ class RustCollector:
         return cut
 
     def close(self) -> None:
+        if self.fork is not None:
+            self.fork.close()
         try:
             self.core.close()
         except Exception:

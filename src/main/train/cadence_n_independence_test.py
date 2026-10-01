@@ -4,8 +4,7 @@ The M5 SIZING study sweeps N (48 → 2048). A cadence counted in VEC-ENV CALLS s
 the checkpointer's hardcoded 50 000 vec calls was 2.4M env steps at N = 48 and ~102M at N = 2048 —
 a run that never checkpoints. So this resolves each cadence through the REAL resolution code
 (`resolve_config` + `build_callbacks`, NOT `--debug`, which forces N = 1) at N = 48 and N = 2048 and
-asserts the same total env-step interval (to within one vec step, the ceil the vec-call conversion
-cannot avoid).
+asserts the same total env-step interval.
 
 The audit behind the list (which cadence is total-step, which is per-UPDATE and why those are not
 here) is `designs/ops/training_runbook.md` → "Cadences and N". Per-update cadences (diagnostics,
@@ -13,17 +12,21 @@ compile canary, adaptive batch, KL controller, team PFSP / win-rate pulls, disti
 are N-independent in steps only while the rollout (`n_steps x n_envs`) is fixed — a sizing decision,
 not something a resolver can make equal.
 
-The second half pins the conversion's premise on the RUST env core: its collector fires the SB3
-callbacks once per N trainee decisions, so one callback call is N env steps there too.
+The second half drives the REAL checkpointer through the REAL Rust-collector loop (a scripted,
+RAGGED host step: only the envs whose p1 must act return a decision) and asserts it saves at the
+total-step boundaries. The async-wave and sync streams are `main/train_rl_agent_test.py`.
 
 Fast and unmarked: argv resolution and callback construction only (no env, no model, no server).
 """
 from __future__ import annotations
 
+import os
 from typing import Any, Dict, List
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList
 
 from main.train_rl_agent import build_parser
 
@@ -52,8 +55,8 @@ def _resolved(tmp_path, n_envs: int) -> Dict[str, Any]:
     assert bundle.eval_callback is not None, "a non-debug run always builds the eval callback"
     eval_freq, _ = bundle.eval_callback._schedule()
     return {
-        # SB3's `CheckpointCallback` fires on `n_calls % save_freq`, and one call is N env steps.
-        "checkpoint": int(ckpt.save_freq) * n_envs,
+        # A `num_timesteps` boundary (`constants.checkpoint_due`), not a call count.
+        "checkpoint": int(ckpt.interval_env_steps),
         # Eval (and with it the snapshot-pool add and the opponent-pool refresh, both driven by the
         # eval cycle) compares `num_timesteps` — already total.
         "eval": int(eval_freq),
@@ -66,24 +69,18 @@ def _resolved(tmp_path, n_envs: int) -> Dict[str, Any]:
 def test_every_step_counted_cadence_is_the_same_total_env_steps_at_N48_and_N2048(tmp_path):
     a = _resolved(tmp_path, N_PRODUCTION)
     b = _resolved(tmp_path, N_SWEEP)
-    assert a["checkpoint"] == DEFAULT_CHECKPOINT_ENV_STEPS, (
-        "the production-N default must stay byte-identical: 50 000 vec calls x 48")
-    assert 0 <= b["checkpoint"] - DEFAULT_CHECKPOINT_ENV_STEPS < N_SWEEP, (
-        f"at N={N_SWEEP} the default checkpoint interval is {b['checkpoint']:,} env steps — a "
-        f"vec-call cadence that scaled with N (F-SZ-3)")
-    for key in ("eval", "canary_reset", "teacher_refresh"):
+    assert a["checkpoint"] == DEFAULT_CHECKPOINT_ENV_STEPS, "the N = 48 value is the default"
+    for key in ("checkpoint", "eval", "canary_reset", "teacher_refresh"):
         assert a[key] == b[key], f"{key}: {a[key]:,} env steps at N=48 but {b[key]:,} at N=2048"
 
 
-def test_an_explicit_interval_is_total_env_steps_too(tmp_path):
+def test_an_explicit_interval_is_total_env_steps_too():
     from main.train.constants import checkpoint_interval_env_steps
-    for n in (N_PRODUCTION, N_SWEEP):
-        got = checkpoint_interval_env_steps(150_000, n)
-        assert 0 <= got - 150_000 < n
+    assert checkpoint_interval_env_steps(150_000) == 150_000
 
 
 # ---------------------------------------------------------------------------------------------
-# The RUST env core: one callback call == N trainee decisions (the premise of the conversion)
+# The RUST env core: the real checkpointer through the real collector loop
 # ---------------------------------------------------------------------------------------------
 
 def _counting_collector(n_envs: int, decisions_per_host_step: List[int]):
@@ -109,44 +106,38 @@ def _counting_collector(n_envs: int, decisions_per_host_step: List[int]):
     return _Scripted()
 
 
-class _CountingCallback:
-    def __init__(self, model: Any, stop_at: int) -> None:
-        self.model, self.stop_at, self.n_calls = model, stop_at, 0
-        self.timesteps_at_call: List[int] = []
+class _StopAfter(BaseCallback):
+    """Ends collection (`on_step` False) once `num_timesteps` reaches `stop_at`."""
 
-    def on_rollout_start(self) -> None:
-        pass
+    def __init__(self, stop_at: int) -> None:
+        super().__init__()
+        self.stop_at = stop_at
 
-    def update_locals(self, locals_: Dict[str, Any]) -> None:
-        pass
-
-    def on_step(self) -> bool:
-        self.n_calls += 1
-        self.timesteps_at_call.append(int(self.model.num_timesteps))
-        return self.n_calls < self.stop_at
-
-
-class _Model:
-    num_timesteps = 0
-    env = None
-
-    def _update_info_buffer(self, infos, dones) -> None:
-        pass
+    def _on_step(self) -> bool:
+        return int(self.model.num_timesteps) < self.stop_at
 
 
 @pytest.mark.parametrize("n_envs", [N_PRODUCTION, N_SWEEP])
-def test_the_rust_collector_fires_one_callback_per_N_trainee_decisions(n_envs):
-    """A host step returns a VARIABLE number of trainee decisions (only envs whose p1 must act);
-    the callbacks must still fire once per N of them, so `save_freq` vec calls = `save_freq x N`
-    env steps on the Rust core exactly as on the Python one."""
+def test_the_rust_collector_checkpoints_at_total_step_boundaries(tmp_path, n_envs):
+    """A ragged host step (0..N trainee decisions) and the callbacks fired once per N decisions:
+    the checkpointer must save once per interval of TOTAL env steps, at the first call at or past
+    each boundary (the collector may batch up to ~2N decisions into one call's advance)."""
+    from main.train.run_io import _TrackingCheckpointCallback
+
+    interval = 50 * n_envs + 7                     # deliberately NOT a multiple of N
     rng = np.random.default_rng(n_envs)
-    script = [int(k) for k in rng.integers(0, n_envs + 1, size=4000)]
-    model = _Model()
+    script = [int(k) for k in rng.integers(0, n_envs + 1, size=200_000)]
+    model = MagicMock()
+    model.num_timesteps = 0
+    model.env = None
+    ckpt = _TrackingCheckpointCallback(interval_env_steps=interval, save_path=str(tmp_path),
+                                       name_prefix="checkpoint")
+    cbs = CallbackList([ckpt, _StopAfter(stop_at=10 * interval)])
+    cbs.init_callback(model)
+    cbs.on_training_start({}, {})
     col = _counting_collector(n_envs, script)
-    cb = _CountingCallback(model, stop_at=50)
-    assert col.collect(model, cb, rollout_buffer=None) is False
-    assert cb.n_calls == 50
-    for i, t in enumerate(cb.timesteps_at_call, start=1):
-        # at the i-th call at least i*N decisions have been counted, and fewer than one host step
-        # (≤ N decisions) beyond the call's boundary
-        assert i * n_envs <= t < i * n_envs + 2 * n_envs
+    assert col.collect(model, cbs, rollout_buffer=None) is False
+    saved = [int(os.path.basename(c.args[0]).split("_")[1]) for c in model.save.call_args_list]
+    assert len(saved) == 10, saved
+    for k, step in enumerate(saved, start=1):
+        assert k * interval <= step < k * interval + 2 * n_envs, (k, step)

@@ -47,6 +47,9 @@ KEY_OPP_CLASS = "opp_class"
 KEY_WIN_TARGET = "win_target"
 KEY_WIN_MASK = "win_mask"
 FILL_TIME_KEYS = (KEY_WIN_TARGET, KEY_WIN_MASK)
+#: The fork arm's per-row POLICY-TERM mask (`fork_arm.PG_MASK_KEY`; declared only with
+#: `--fork-fraction > 0`): 1.0 on every collected row, 0.0 on a branch's fork step (`fork.py`).
+KEY_FORK_PG = "fork_pg_m"
 
 
 class CollectorError(RuntimeError):
@@ -121,6 +124,8 @@ def obs_key_sources(obs_space: Any, core_label_keys: Sequence[str]) -> Dict[str,
             out[key] = "host_episode"
         elif key in FILL_TIME_KEYS:
             out[key] = "fill"
+        elif key == KEY_FORK_PG:
+            out[key] = "host_const"
         else:
             bad.append(key)
     if bad:
@@ -136,7 +141,7 @@ class RowStore:
     """The preallocated arena (``capacity`` rows). ``alloc`` / ``release`` manage a free-slot stack;
     nothing is allocated after construction."""
 
-    def __init__(self, obs_space: Any, capacity: int, *, n_actions: int = 11):
+    def __init__(self, obs_space: Any, capacity: int, *, n_actions: int = 11, fork: bool = False):
         if capacity < 1:
             raise ValueError("RowStore: capacity must be >= 1")
         self.capacity = int(capacity)
@@ -164,6 +169,11 @@ class RowStore:
         self.margin = np.zeros(c, dtype=np.float64)
         self._free = np.arange(c - 1, -1, -1, dtype=np.int64)   # a stack: pop from the end
         self._top = c
+        # The fork arm (`fork.py`, declared only when it is on): each row's battle TURN (the selector's
+        # band) and which live rows are BRANCH rows (the fork row budget counts them).
+        self.turn: Optional[np.ndarray] = np.zeros(c, dtype=np.int32) if fork else None
+        self.is_fork: Optional[np.ndarray] = np.zeros(c, dtype=bool) if fork else None
+        self.fork_live = 0
 
     @property
     def free_count(self) -> int:
@@ -195,8 +205,20 @@ class RowStore:
             return
         if self._top + s.size > self.capacity:
             raise CollectorError("RowStore.release: more slots released than allocated")
+        if self.is_fork is not None:
+            self.fork_live -= int(self.is_fork[s].sum())
+            self.is_fork[s] = False
         self._free[self._top:self._top + s.size] = s[::-1]
         self._top += s.size
+
+
+    def mark_fork(self, slots: np.ndarray) -> None:
+        """Mark freshly allocated rows as BRANCH rows (the fork row budget's count)."""
+        if self.is_fork is None:
+            raise CollectorError("RowStore.mark_fork on a store built without the fork arm")
+        s = np.asarray(slots, dtype=np.int64).reshape(-1)
+        self.is_fork[s] = True
+        self.fork_live += int(s.size)
 
 
 def game_gae(rewards: np.ndarray, values: np.ndarray, gamma: float, gae_lambda: float
@@ -326,6 +348,23 @@ class GameLog:
         return idx, nxt
 
     # ---- complete-game mode
+    def insert_after(self, parent: np.ndarray, games: Sequence[np.ndarray]) -> None:
+        """The fork arm (`fork.py`): complete BRANCH games join the FIFO right after their PARENT game
+        (so a branch is trained in its parent's update whenever the parent is). A parent no longer in
+        the FIFO (cannot happen: the pass runs before the fill over games no fill has taken) is a
+        refusal, never a silent append."""
+        if self.mode != "complete_game":
+            raise CollectorError("insert_after: branch games need the complete-game FIFO")
+        if not games:
+            return
+        p0 = int(np.asarray(parent).reshape(-1)[0])
+        at = next((i for i, g in enumerate(self.completed) if g.size and int(g[0]) == p0), None)
+        if at is None:
+            raise CollectorError(f"insert_after: the parent game (first row {p0}) is not in the completed FIFO")
+        for k, g in enumerate(games):
+            self.completed.insert(at + 1 + k, np.asarray(g, dtype=np.int64))
+            self.completed_rows += int(np.asarray(g).size)
+
     def take_complete(self, d: int) -> Tuple[np.ndarray, int, int]:
         """The first ``d`` completed rows, FIFO by game completion: ``(slots [d], whole games, split
         games)``. A game straddling row ``d`` leaves its tail at the FIFO head."""
@@ -461,6 +500,10 @@ def write_rows(store: RowStore, slots: np.ndarray, cols: Mapping[str, np.ndarray
     store.env[slots] = envs
     store.episode[slots] = cols["episode"][envs]
     store.dec_n[slots] = cols["dec_n"][envs, 0]
+    if KEY_FORK_PG in o:
+        o[KEY_FORK_PG][slots] = 1.0
+    if store.turn is not None:
+        store.turn[slots] = cols["turn"][envs]
     store.u[slots] = u
     store.margin[slots] = margin
     store.start[slots] = starts

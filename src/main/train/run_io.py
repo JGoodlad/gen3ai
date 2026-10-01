@@ -7,6 +7,7 @@
 import os
 import sys
 from datetime import datetime
+from typing import Optional
 
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 
@@ -14,6 +15,7 @@ from agents.model.snapshot import record_checkpoint
 from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.training.dose import dose_block
 from agents.training.lineage import build_lineage
+from main.train.constants import checkpoint_due
 
 
 def _resolve_fresh_model_dir(run_name, exploiter_label, model_arg):
@@ -283,10 +285,27 @@ class DoseLogCallback(BaseCallback):
 
 
 class _TrackingCheckpointCallback(CheckpointCallback):
-    """CheckpointCallback that keeps latest.txt up to date and writes per-checkpoint metadata."""
+    """The periodic checkpointer: saves at TOTAL-ENV-STEP boundaries, keeps latest.txt up to date
+    and writes per-checkpoint metadata.
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    🚨 IT DOES NOT USE SB3's `n_calls % save_freq`. A callback call is N env steps on the sync Python
+    core, N trainee decisions on the Rust collector, and a WAVE of however many envs were ready
+    (< N) under `--async-rollout` — so a call count is a different interval on each. The save lands
+    at the first call whose `num_timesteps` reaches the next multiple of `interval_env_steps`
+    (`constants.checkpoint_due`), the rule the eval callbacks use; `save_freq` is left at 0 and never
+    read. A fresh sync run saves at exactly the same steps as the old call count (k x 2.4M at N = 48).
+
+    ON A RESTART the boundaries are GLOBAL multiples of the interval: the anchor is the step the
+    process resumed at (`_on_training_start`), so the next save is the next multiple above it, not
+    `resume step + interval` as SB3's per-process call counter gave.
+    """
+
+    def __init__(self, *, interval_env_steps: int, save_path: str, name_prefix: str = "checkpoint",
+                 verbose: int = 0):
+        super().__init__(save_freq=0, save_path=save_path, name_prefix=name_prefix, verbose=verbose)
+        self.interval_env_steps = max(1, int(interval_env_steps))
+        # The `num_timesteps` the last boundary test saw; set at `learn()` start (a resume's step).
+        self._last_step: Optional[int] = None
         self._current_lr_fn = None
         self._current_epochs_fn = None
         # Optional: returns the current TwoPhaseLR handoff_lr (or None).
@@ -300,14 +319,29 @@ class _TrackingCheckpointCallback(CheckpointCallback):
             else self.save_path
         )
 
+    def _on_training_start(self) -> None:
+        self._last_step = int(self.model.num_timesteps)
+
+    def _due(self, now: int) -> bool:
+        """Advance the anchor on EVERY call, so one boundary saves exactly once. With no anchor (a
+        caller that never ran `learn()`'s training start) the first call only sets it."""
+        last = now if self._last_step is None else self._last_step
+        self._last_step = now
+        return checkpoint_due(last, now, self.interval_env_steps)
+
     def _on_step(self) -> bool:
-        result = super()._on_step()
-        if self.n_calls % self.save_freq == 0:
-            # SB3 just wrote the .zip into self.save_path (<run>/checkpoints/). latest.txt
+        # The MODEL's counter, not the callback's `num_timesteps` mirror (that one is refreshed only
+        # by the public `on_step`); the file is named by the same number the boundary was tested on.
+        now = int(self.model.num_timesteps)
+        if self._due(now):
+            ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{now}_steps.zip")
+            self.model.save(ckpt_path)
+            if self.verbose >= 2:
+                print(f"Saving model checkpoint to {ckpt_path}")
+            # The .zip is in self.save_path (<run>/checkpoints/). latest.txt
             # records the run-RELATIVE path (checkpoints/checkpoint_<N>_steps.zip) and the
             # per-checkpoint sidecar lands next to the .zip; metadata.json (snapshot_history)
             # stays at the run root (self._run_dir).
-            ckpt_path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps.zip")
             _write_latest_txt(self._run_dir, os.path.relpath(ckpt_path, self._run_dir))
             if self._current_lr_fn is not None and self._current_epochs_fn is not None:
                 handoff_lr = self._handoff_lr_fn() if self._handoff_lr_fn is not None else None
@@ -324,4 +358,4 @@ class _TrackingCheckpointCallback(CheckpointCallback):
             # belongs to (`<ckpt>_anchor_ref.pt`) and is restored from that sibling on the next
             # launch. A no-op — and a single `getattr` — in every other run.
             save_anchor_ref_beside(self.model, ckpt_path)
-        return result
+        return True

@@ -69,6 +69,17 @@ and the win labels by `WinProbLabelCallback`'s own back-fill (`backfill_terminal
 both call). It exists to prove the collector against today's path before the schedule changes (the
 rollout-level slice N). Rows beyond a column carry to the next window.
 
+## The FORK phase (declared, OFF — `gen3_fork_rust_v1`)
+
+With `--fork-fraction > 0` the collector's `collect` is `COLLECT_PHASES` = play → **fork** → fill: after
+the trigger fires, `rust_rollout/fork.py` branches contested decisions of the games that ended since its
+last pass (their core input logs come from `core.finished()`), plays the branches to the end on declared
+Lane I playout handles with T2 serving every decision, and inserts each branch game into the completed-game
+FIFO right after its parent. The arena then also tracks each row's TURN and which live rows are branch
+rows (the fork row budget, `ROW_BUDGET_MULTIPLE × target`, added to the declared capacity). OFF builds
+none of it. Requires `--opponent-sampling keyed` and the complete-game trigger. Detail:
+[`forks.md`](forks.md) §14.
+
 ## Staleness — measured, not pre-empted
 
 Envs keep playing across an update, so a game in progress when the learner steps has rows of two

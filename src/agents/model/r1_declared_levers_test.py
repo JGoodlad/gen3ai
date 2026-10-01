@@ -49,6 +49,9 @@ LEVERS: Dict[str, Any] = {
     "rollout_weight": (["--cf-records", "--win-prob-rollout-target", "0.002",
                         "--win-prob-rollout-weight", "2.0"], {"rollout_weight": True, "key": "win_row_w"}),
     "fork": (["--cf-records", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
+    # gen3_fork_rust_v1 (forks.md §14): on the Rust core the branch rows ride the complete-game FIFO
+    # inside the FIXED update (no ragged tail, no ForkRolloutBuffer) — the mask key is still a lever
+    "fork_rust": (["--env-core", "rust", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
     "defensive": (["--defensive-entropy-boost", "2.0"],
                   {"defensive": True, "key": "defensive_opportunity"}),
     "bait": (["--bait-entropy-boost", "2.0"], {"bait": True, "key": "bait_opportunity"}),

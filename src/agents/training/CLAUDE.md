@@ -138,8 +138,11 @@ export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
 is the declared `LOOP_PHASES` table, and `_setup_learn` / `dump_logs` / the Python core's collect are
 vendored from sb3 operation for operation (hash-pinned). Three things an edit must not break: the
 **dump stays BEFORE the update** (update k's `train/*` is stamped after rollout k+1 — the archive's TB
-convention and the KL controller's logger read); **`collect_rollouts` / `train` are called through the
-attribute** (K6 and the compile sentinel wrap them); the **Python collect keeps sb3's local names and
+convention and the KL controller's logger read); **`learn` > `collect` | `update` are the DECLARED
+HOOK POINTS** (`agents/training/loop_hooks.py`, `gen3_declared_loop_hooks_v1`: K6's freeze guard and
+the compile sentinel REGISTER there, outermost first by `HOOK_OWNERS`; the table freezes at training
+start and a late, duplicate or undeclared hook is FATAL_CONFIG — never reassign a learner's bound
+method to hook it); the **Python collect keeps sb3's local names and
 fires `on_step` before `rollout_buffer.add`** (`self.locals`, `buf.pos`). `own_ppo_loop_test.py` holds
 it EXACT against upstream; `GEN3AI_PPO_LOOP=sb3_reference` is the A/B test seam. 🚨 **REGIME BOUNDARY
 (`gen3_eval_dump_isolation_v1`, 2026-10-01):** an eval cycle's mid-rollout `logger.dump(step)` used to
@@ -517,14 +520,15 @@ recover which buffer ROW a step landed on. A capture that needs the row is INLIN
 `collect_rollouts_async` instead (`WinProbLabelCallback`'s terminal capture).
 
 🚨 **A STEP-COUNTED CADENCE IS TOTAL ENV STEPS, never vec calls or rollouts** (F-SZ-3, 2026-10-01).
-The periodic checkpoint was 50,000 VEC CALLS — 2.4M env steps at N = 48, ~102M at N = 2048; it is now
-2.4M TOTAL env steps at every N (`main.train.constants`), converted to SB3's `save_freq` at the run's
-N. Eval, the pool add/refresh it drives, the search teacher and the plasticity canary already compare
-`num_timesteps`. Everything counted in UPDATES or rollouts (`--diagnostics-every`, the compile canary,
-the team pulls, the CUDA memory-trend horizon, …) moves with `n_steps × n_envs` — a new cadence must
-compare `num_timesteps`, and a callback call is NOT N env steps under `--async-rollout` (one call per
-wave). The table and its test: `designs/ops/training_runbook.md` → "Cadences and N",
-`src/main/train/cadence_n_independence_test.py`.
+The periodic checkpoint was SB3's `n_calls % save_freq` at 50,000 calls — 2.4M env steps at N = 48,
+~102M at N = 2048, early under `--async-rollout` waves; it now saves when `num_timesteps` crosses each
+multiple of 2.4M (`main.train.constants.checkpoint_due`), like eval, the pool add/refresh it drives,
+the search teacher and the plasticity canary. A callback CALL is not a fixed number of env steps (N
+sync, N decisions on the Rust collector, one WAVE < N under async), so a new cadence compares
+`num_timesteps` against a boundary — never `n_calls`. Everything counted in UPDATES or rollouts
+(`--diagnostics-every`, the compile canary, the team pulls, the CUDA memory-trend horizon, …) moves
+with `n_steps × n_envs`. The table and its tests: `designs/ops/training_runbook.md` → "Cadences and
+N", `src/main/train/cadence_n_independence_test.py`.
 
 **`--policy-gae-lambda` (default 0.80) is the POLICY's GAE λ; `--win-prob-lambda` is the
 CRITIC's λ-return BCE target — two independent knobs** (`gen3_policy_gae_lambda_v1`, config v123).
@@ -575,7 +579,7 @@ a separate decision. Hazards an agent must know before touching it:
   patched `forward` bound to the LEARNER's extractor.
 - 🚨 **Every flag whose path the Rust core does not serve is REFUSED at startup, by name**
   (`combination_checks`' `env_core_rust_*`): a non-winprob critic (no terminal observation), λ < 1,
-  rollout targets, the fork arm, dense aux, `--value-true-team`, the entropy boosts, distillation, PBRS,
+  rollout targets, dense aux, `--value-true-team`, the entropy boosts, distillation, PBRS,
   `--cf-records`, the search teacher, `--team-pfsp`, `--exploiter-ladder`, `--async-rollout`. The
   collector flags typed on the python core are refused too (they would be silently inert).
 - **`WinProbLabelCallback` is not registered** under `rust`: the collector fills `win_target` /
@@ -821,9 +825,21 @@ one re-aims them) and with the cf labels (disjoint state sets — the cf term ne
 
 **Default `0.0` = OFF and BIT-identical** — no module imported, no obs key declared, no callback
 attached, no buffer installed, no row injected. **`--critic winprob` AND `--cf-records` are BOTH
-REQUIRED**, and three more flags are REFUSED alongside it (`--value-true-team`,
-`--win-prob-dense-aux`, `--win-prob-strata-weight`). Detail:
+REQUIRED** (the second on the Python core only), and three more flags are REFUSED alongside it
+(`--value-true-team`, `--win-prob-dense-aux`, `--win-prob-strata-weight`). Detail:
 [`designs/training/forks.md`](../../../designs/training/forks.md).
+
+🚨 **TWO IMPLEMENTATIONS, and the Python one is LEGACY until the deletion pass.** Under
+`--env-core rust` the arm is the COLLECTOR's fork phase (`rust_rollout/fork.py`,
+`gen3_fork_rust_v1`, forks.md §14) — DECLARED and OFF, deferred by the owner's one-ply scope
+(2026-10-01). It replays the core's finished input log on Lane I playout handles, keys every branch
+draw on the PARENT's keyed-draw key (a parent-action branch IS the parent — gate
+`rust_rollout/fork_crn_integration_test.py`) and puts each branch game into the complete-game FIFO
+after its parent, so **branch rows COMPETE for the update's D** rather than doubling the buffer, and
+a branch plays the parent's REAL policy opponent where its slot still serves it
+(`fork/opp_substituted` is the rest). Both are DEPARTURES from the arm that read NOT DETECTED on
+2026-09-16 — that read does not transfer unchanged. Requires `--opponent-sampling keyed` and
+`--rollout-trigger complete_game` (refused by name otherwise).
 
 🚨 **WHY — the head ranks siblings at CHANCE.** `paired_refit_discrimination_2026-09-14` measured
 the promoted win-prob critic's pairwise accuracy on successors ONE MOVE APART at **0.5169
