@@ -97,6 +97,7 @@ Keep docs in sync **automatically, as part of the same change** — no need to b
 Personal project — no pull requests. Work is pushed directly to `main`, but **all edits and commits must happen in a worktree or branch, never on the main checkout itself.** Main must never be dirty. The `/gen3ai-ship` skill is the only mechanism that lands code on main:
 
 ```bash
+python -m utils.push_guard        # REQUIRED first: exit 1 = a stale file would revert others' work — do NOT push
 git push origin <worktree-branch>:main
 ```
 

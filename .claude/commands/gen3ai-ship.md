@@ -178,6 +178,18 @@ Whenever the rebase replayed your work on top of new commits, before pushing:
 
 ### 5. Push to remote main
 
+**First run the push guard** (from the worktree, after `git fetch origin`). It refuses a push whose
+diff against `origin/main` touches a file this branch never changed — a stale copy that would
+silently revert someone else's commit (2026-10-01, `aebae9a1` reverted ~10 commits that way):
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_torch28/bin/python3 -m utils.push_guard
+```
+
+Exit 0 = push. **Exit 1 = do NOT push** — it names the files; rebuild the branch from its own
+commits on the current `origin/main` (never `git reset --soft` onto a moved ref). Exit 2 = it could
+not decide: find out why before pushing.
+
 ```bash
 git push origin HEAD:main
 ```
