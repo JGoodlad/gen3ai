@@ -3,6 +3,8 @@
 #   part_t.sh update            (T-c) the update cost at fp32 highest, 2 units
 #   part_t.sh n <N>             (T-b) then (T-a) at N; (T-b) re-run when the rule's buckets differ
 #   part_t.sh nstar <N>         (T-a') serial vs _p8 vs _p1 at N*
+#   part_t.sh abq <N>           (T-a) re-run on a QUIET box (load1 < 3 before the unit), *_quiet.json
+#   part_t.sh threads <N>       addendum: serial at 8 / 12 / 16 core threads (quiet, gate slot held)
 # Every GPU unit: scripts/ops/gpu_lock.sh timeout <=1200 inside, under scripts/ops/mem_cap.sh.
 set -u
 WT=/home/goodlad/dev/gen3ai-wt/m5-sizing
@@ -22,6 +24,12 @@ gpu() {  # gpu <name> <timeout_s> <cmd...>
     local name=$1 t=$2; shift 2
     scripts/ops/mem_cap.sh --name "sz_$name" 48 scripts/ops/gpu_lock.sh timeout "$t" nice -n 5 "$@" \
         > "$STATE/$name.log" 2>&1
+}
+gpuq() {  # gpuq <name> <timeout_s> <cmd...>: as gpu(), HOLDING the gate_lock slot for the unit (orchestrator
+          # 2026-10-01: routine gates queue behind a quiet-box unit instead of colliding with it)
+    local name=$1 t=$2; shift 2
+    scripts/ops/gate_lock.sh scripts/ops/mem_cap.sh --name "sz_$name" 48 scripts/ops/gpu_lock.sh timeout "$t" \
+        nice -n 5 "$@" > "$STATE/$name.log" 2>&1
 }
 COMMON=(--inference learner --ckpt "$R/final_model.zip" --device cuda --opponent production
         --collector complete_game --pool "$R/snapshots" --pool-size 20 --self-play-fraction 0.95 --target 98304)
@@ -72,6 +80,37 @@ nstar)
             --n-envs "$N" --threads 8 --arms rust_serial_keyed,rust_serial_keyed_p8,rust_serial_keyed_p1 \
             --pairs 6 --block-seconds 20 --warmup-steps 120 "${COMMON[@]}" --t2-buckets "$BK"
         rc=$?; [ $rc -eq 0 ] && mark "nstar_n$N" ok $rc || { mark "nstar_n$N" fail $rc; exit $rc; }
+    fi ;;
+threads)
+    # PROGRESS addendum (owner's question, not a registered arm): serial at N on 8 / 12 / 16 core threads
+    N=$2
+    BK=$("$PY" -c 'import json,sys; print(",".join(str(b) for b in json.load(open(sys.argv[1]))["buckets"]))' "$RES/buckets_n$N.json")
+    if ! done_unit "threads_n$N"; then
+        end=$((SECONDS + 3600))
+        until awk '{exit !($1 < 3.0)}' /proc/loadavg; do
+            [ $SECONDS -ge $end ] && { mark "threads_n$N" noquiet 9; exit 9; }
+            sleep 30
+        done
+        gpuq "threads_n$N" 1200 "$PY" -m main.rust_core_m5 throughput --out "$RES/throughput_threads_n$N.json" \
+            --n-envs "$N" --threads 8 --arms rust_serial_keyed,rust_serial_keyed_t12,rust_serial_keyed_t16 \
+            --pairs 6 --block-seconds 20 --warmup-steps 120 "${COMMON[@]}" --t2-buckets "$BK"
+        rc=$?; [ $rc -eq 0 ] && mark "threads_n$N" ok $rc || { mark "threads_n$N" fail $rc; exit $rc; }
+    fi ;;
+abq)
+    # QUIET re-run of (T-a) at N (PROGRESS D-5): wait, bounded (60 min), for load1 < 3 before the unit
+    N=$2
+    BK=$("$PY" -c 'import json,sys; print(",".join(str(b) for b in json.load(open(sys.argv[1]))["buckets"]))' "$RES/buckets_n$N.json")
+    if ! done_unit "abq_n$N"; then
+        end=$((SECONDS + 3600))
+        until awk '{exit !($1 < 3.0)}' /proc/loadavg; do
+            [ $SECONDS -ge $end ] && { mark "abq_n$N" noquiet 9; exit 9; }
+            sleep 30
+        done
+        echo "abq_n$N quiet at $(date -Is) load=$(cut -d' ' -f1-3 /proc/loadavg)" >> "$STATE/status"
+        gpuq "abq_n$N" 1200 "$PY" -m main.rust_core_m5 throughput --out "$RES/throughput_n${N}_quiet.json" \
+            --n-envs "$N" --threads 8 --arms "${ARMS:-rust_serial_keyed,rust_overlap_keyed}" --pairs 6 \
+            --block-seconds 20 --warmup-steps 120 "${COMMON[@]}" --t2-buckets "$BK"
+        rc=$?; [ $rc -eq 0 ] && mark "abq_n$N" ok $rc || { mark "abq_n$N" fail $rc; exit $rc; }
     fi ;;
 *) sed -n 2,6p "$0"; exit 2 ;;
 esac

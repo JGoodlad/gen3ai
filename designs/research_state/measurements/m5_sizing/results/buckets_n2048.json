@@ -1,0 +1,1 @@
+{"n": 2048, "p95_rows_per_slot": 111, "buckets": [8, 112, 128, 512], "opponent_padding_waste": 0.11189642347639125, "measured_with": [8, 144, 512], "notes": ["waste 0.176 > 0.15: added 128 (the waste-minimising multiple of 16)"]}

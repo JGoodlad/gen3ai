@@ -1,0 +1,130 @@
+{
+ "schema": "m5_laneG_t2_fanout_v1",
+ "regime": {
+  "pool": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots",
+  "ckpt": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+  "pool_size": 20,
+  "self_play_fraction": 0.95,
+  "n_envs": 256,
+  "threads": 8,
+  "opp_rows": 40,
+  "slots": "",
+  "lanes": "0",
+  "warmup_steps": 300,
+  "rounds": 6,
+  "reps": 50,
+  "device": "cuda",
+  "seed": 20260930,
+  "t2_buckets": "8,16,32,256",
+  "real_flushes": 24,
+  "real_reps": 5,
+  "load_start": {
+   "load1": 2.31494140625,
+   "load5": 2.87109375,
+   "load15": 2.7314453125,
+   "contention_factor": 1.0
+  },
+  "load_end": {
+   "load1": 1.44091796875,
+   "load5": 2.05810546875,
+   "load15": 2.4208984375,
+   "contention_factor": 1.0
+  }
+ },
+ "per_lanes": {
+  "0": {
+   "lanes_requested": 0,
+   "lanes": 8,
+   "buckets": [
+    8,
+    16,
+    32,
+    256
+   ],
+   "slots_declared": 25,
+   "startup_s": 314.80411656200886,
+   "trainee_slot": 24,
+   "distinct_pool_models": 21,
+   "slots_per_step": {
+    "n_steps": 300,
+    "mean": 20.0,
+    "p10_p50_p90": [
+     20.0,
+     20.0,
+     20.0
+    ]
+   },
+   "rows_per_slot_hist": {
+    "2": 1,
+    "3": 18,
+    "4": 88,
+    "5": 268,
+    "6": 151,
+    "7": 269,
+    "8": 427,
+    "9": 681,
+    "10": 719,
+    "11": 773,
+    "12": 563,
+    "13": 332,
+    "14": 273,
+    "15": 341,
+    "16": 395,
+    "17": 338,
+    "18": 189,
+    "19": 88,
+    "20": 64,
+    "21": 22
+   },
+   "ms_per_flush": {
+    "trainee48": {
+     "mean": 4.474380783503875,
+     "lo": 4.468279749465485,
+     "hi": 4.481261683395132,
+     "n": 6
+    }
+   },
+   "ms_split_submit_flush_wait": {
+    "trainee48": [
+     0.04645470956650873,
+     0.220336828691264,
+     4.207589245246102
+    ]
+   },
+   "after_freeze": {
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+   },
+   "real_split": {
+    "n_flushes": 24,
+    "full_ms": {
+     "mean": 13.120395073201507,
+     "lo": 13.050055416941984,
+     "hi": 13.191871070913397,
+     "n": 24
+    },
+    "trainee_only_ms": {
+     "mean": 4.47632335756983,
+     "lo": 4.473089008161979,
+     "hi": 4.479657804311298,
+     "n": 24
+    },
+    "opponent_ms": {
+     "mean": 8.644071715631677,
+     "lo": 8.573932728536926,
+     "hi": 8.71483415050736,
+     "n": 24
+    },
+    "opponent_share_of_flush": 0.6588270907548547,
+    "trainee_rows_mean": 233.41666666666666,
+    "opponent_rows_mean": 231.875,
+    "opponent_slots_mean": 20.0
+   },
+   "derived": {
+    "trainee_forward_ms": 4.474380783503875
+   }
+  }
+ },
+ "warnings": []
+}

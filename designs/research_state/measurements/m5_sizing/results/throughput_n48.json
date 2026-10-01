@@ -1,0 +1,1082 @@
+{
+ "schema": "m5_laneJ_throughput_v1",
+ "verdict": "DESCRIPTOR \u2014 no throughput bar is registered for M5 (program doc \u00a72 M5)",
+ "regime": {
+  "n_envs": 48,
+  "threads": 8,
+  "front": "proc",
+  "profile": "release",
+  "arms": [
+   "rust_serial_keyed",
+   "rust_overlap_keyed"
+  ],
+  "pairs": 6,
+  "block_seconds": 20.0,
+  "min_steps": 1,
+  "warmup_steps": 120,
+  "inference": {
+   "name": "learner_sampling",
+   "ckpt": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+   "device": "cuda",
+   "compiled": false,
+   "load_s": 2.34
+  },
+  "opponent": {
+   "name": "production_mix",
+   "pool": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots",
+   "snapshots": [
+    "snapshot_000032000016.zip",
+    "snapshot_000034000032.zip",
+    "snapshot_000036000000.zip",
+    "snapshot_000038000016.zip",
+    "snapshot_000040000032.zip",
+    "snapshot_000042000000.zip",
+    "snapshot_000044000016.zip",
+    "snapshot_000046000032.zip",
+    "snapshot_000048000000.zip",
+    "snapshot_000052000032.zip",
+    "snapshot_000054000000.zip",
+    "snapshot_000058000032.zip",
+    "snapshot_000062000016.zip",
+    "snapshot_000068000016.zip",
+    "snapshot_000070000032.zip",
+    "snapshot_000072000000.zip",
+    "snapshot_000076000032.zip",
+    "snapshot_000078000000.zip",
+    "snapshot_000080000016.zip",
+    "snapshot_000082000032.zip"
+   ],
+   "self_play_fraction": 0.95,
+   "bots": "the 8-bot training floor roster",
+   "compile_opponents_python": true
+  },
+  "collector": {
+   "name": "complete_game",
+   "n_steps": 2048,
+   "per_arm": {
+    "rust_serial_keyed": "complete_game",
+    "rust_overlap_keyed": "complete_game"
+   }
+  },
+  "target": 98304,
+  "seed": 20260929,
+  "cpu_count": 16,
+  "affinity": 16,
+  "nice": 10,
+  "git": {
+   "commit": "e6d69d5cdb069ddc8865377b793f683dd3bb7f31",
+   "branch": "m5-sizing",
+   "dirty_files": 4
+  },
+  "python": "3.11.15",
+  "device": "cuda",
+  "gpu_processes": [
+   "116736, 308 MiB"
+  ],
+  "gpu_lock": {
+   "path": "/home/goodlad/.claude/jobs/gpu.lock",
+   "holder_pid": 116729
+  },
+  "load_start": {
+   "load1": 3.11083984375,
+   "load5": 2.17919921875,
+   "load15": 1.9638671875,
+   "contention_factor": 1.0
+  },
+  "schedule": "each arm built ONCE, then interleaved timed blocks (A B, B A, ...)",
+  "waited_for_busy_flag": {
+   "path": null,
+   "seconds": 0.0
+  },
+  "load_before_blocks": {
+   "load1": 1.48681640625,
+   "load5": 2.01513671875,
+   "load15": 1.9580078125,
+   "contention_factor": 1.0
+  },
+  "load_end": {
+   "load1": 4.52099609375,
+   "load5": 2.5458984375,
+   "load15": 2.12841796875,
+   "contention_factor": 1.0
+  }
+ },
+ "startup_s": {
+  "rust_serial_keyed": 159.33804202603642,
+  "rust_overlap_keyed": 39.050449785077944
+ },
+ "arm_info": {
+  "rust_serial_keyed": {
+   "collector": "complete-game buffer, update at >= 98,304 completed-game rows (band [98,304, 98,304], quantum 6,144)",
+   "mix": {
+    "self_play_fraction": 0.95,
+    "bot_share": 0.05,
+    "pool_size": 20,
+    "pool_slots": 24,
+    "active_snapshots": 20
+   },
+   "t2": {
+    "backend": "graph",
+    "device": "cuda",
+    "buckets": [
+     8,
+     48
+    ],
+    "slots": 25,
+    "lanes": 8
+   },
+   "opponent_sampling": "keyed",
+   "front": "proc",
+   "threads": 8,
+   "routes": 32,
+   "overlap": false,
+   "proc_pid": [
+    131945
+   ],
+   "after_freeze": {
+    "THREADS_SPAWNED_AFTER_FREEZE": 0,
+    "ENVS_ADDED_AFTER_FREEZE": 0,
+    "COLUMN_REBINDS_AFTER_FREEZE": 0,
+    "BANK_GROWTH_AFTER_FREEZE": 0,
+    "PROC_SPAWNS_AFTER_FREEZE": 0,
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+   },
+   "stats": {
+    "host_steps": 10716,
+    "trainee_decisions": 470984,
+    "p2_policy_decisions": 461265,
+    "p2_external_decisions": 0,
+    "games_ended": 10298,
+    "games_cut": 0,
+    "quarantines": 0,
+    "respawns": 0,
+    "updates": 0,
+    "near_boundary": 127
+   },
+   "seconds": {
+    "submit": 2.1106761735863984,
+    "flush": 13.326411945163272,
+    "gpu_wait": 78.34638517070562,
+    "opp_draw": 1.6284416428534314,
+    "draw": 0.9550100866472349,
+    "write": 1.2082179023418576,
+    "core": 21.08063825231511,
+    "post": 1.4041523684281856,
+    "fill": 0.9592429088661447
+   },
+   "fills": 4,
+   "opponent_slots_per_flush_mean": 17.509051885031727
+  },
+  "rust_overlap_keyed": {
+   "collector": "2 halves x complete-game buffer, update at >= 49,152 completed-game rows (band [49,152, 49,152], quantum 6,144)",
+   "mix": {
+    "self_play_fraction": 0.95,
+    "bot_share": 0.05,
+    "pool_size": 20,
+    "pool_slots": 24,
+    "active_snapshots": 20
+   },
+   "t2": {
+    "backend": "graph",
+    "device": "cuda",
+    "buckets": [
+     8,
+     48
+    ],
+    "slots": 25,
+    "lanes": 8
+   },
+   "opponent_sampling": "keyed",
+   "front": "proc",
+   "threads": 8,
+   "overlap": true,
+   "halves": 2,
+   "proc_pid": [
+    132014,
+    132069
+   ],
+   "half0_after_freeze": {
+    "THREADS_SPAWNED_AFTER_FREEZE": 0,
+    "ENVS_ADDED_AFTER_FREEZE": 0,
+    "COLUMN_REBINDS_AFTER_FREEZE": 0,
+    "BANK_GROWTH_AFTER_FREEZE": 0,
+    "PROC_SPAWNS_AFTER_FREEZE": 0,
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+   },
+   "half0_seconds": {
+    "submit": 1.2270344286225736,
+    "flush": 7.932887344155461,
+    "gpu_wait": 44.36298996966798,
+    "opp_draw": 0.9337080223485827,
+    "draw": 0.5705383054446429,
+    "write": 0.5602662293240428,
+    "core": 9.553452464519069,
+    "post": 0.4099494079127908,
+    "fill": 0.35936639993451536
+   },
+   "half0_opponent_slots_per_flush_mean": 13.330128205128204,
+   "half1_after_freeze": {
+    "THREADS_SPAWNED_AFTER_FREEZE": 0,
+    "ENVS_ADDED_AFTER_FREEZE": 0,
+    "COLUMN_REBINDS_AFTER_FREEZE": 0,
+    "BANK_GROWTH_AFTER_FREEZE": 0,
+    "PROC_SPAWNS_AFTER_FREEZE": 0,
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+   },
+   "half1_seconds": {
+    "submit": 1.2780740272719413,
+    "flush": 8.273749176645651,
+    "gpu_wait": 52.70414477749728,
+    "opp_draw": 0.9435790012357756,
+    "draw": 0.573522632708773,
+    "write": 0.5591522282920778,
+    "core": 9.512978025362827,
+    "post": 0.4089120435528457,
+    "fill": 0.35904750891495496
+   },
+   "half1_opponent_slots_per_flush_mean": 13.921015514809591
+  }
+ },
+ "collectors": {
+  "rust_serial_keyed": {
+   "name": "complete_game",
+   "target": 98304,
+   "host_steps": 10716,
+   "fills": 4,
+   "episodes_ended": 10298
+  },
+  "rust_overlap_keyed": {
+   "name": "complete_game",
+   "target": 98304,
+   "host_steps": 7799,
+   "fills": 6,
+   "episodes_ended": 7586
+  }
+ },
+ "blocks": [
+  {
+   "arm": "rust_serial_keyed",
+   "wall_s": 20.00677598407492,
+   "vec_steps": 1879,
+   "decisions": 82444,
+   "episodes_ended": 1819,
+   "ms_per_vec_step": 10.647565717974944,
+   "vec_steps_per_s": 93.91818059519707,
+   "decisions_per_s": 4120.8038749283805,
+   "inference_s": 16.547634170157835,
+   "env_s": 3.012712120776996,
+   "inference_share": 0.8271014871826171,
+   "cpu_s_tree": 37.06,
+   "cpu_s_host": 17.04,
+   "cpu_s_arm_subtree": 20.02,
+   "cpu_s_bystander": 3.552713678800501e-15,
+   "cpu_us_per_decision": 449.5172480714182,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.1739762836081898,
+    "flush": 1.0894438745146653,
+    "gpu_wait": 7.332956423661303,
+    "opp_draw": 0.13048631129682287,
+    "draw": 0.07975454713074671,
+    "write": 0.09719024713687943,
+    "core": 1.6033592979121851,
+    "post": 0.11566683506031043,
+    "fill": 0.0
+   },
+   "gpu_util_mean": 75.9,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 0,
+   "load1_after": 1.34765625
+  },
+  {
+   "arm": "rust_overlap_keyed",
+   "wall_s": 20.004841552930884,
+   "vec_steps": 1283,
+   "decisions": 56347,
+   "episodes_ended": 1266,
+   "ms_per_vec_step": 15.592238155051351,
+   "vec_steps_per_s": 64.13447447735618,
+   "decisions_per_s": 2816.668147603732,
+   "inference_s": 19.6160298344912,
+   "env_s": 0.004669524496421218,
+   "inference_share": 0.9805641190703298,
+   "cpu_s_tree": 39.53,
+   "cpu_s_host": 20.11,
+   "cpu_s_arm_subtree": 19.42,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 701.5457788347205,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.3156048255346117,
+    "flush": 2.0487139341570235,
+    "gpu_wait": 12.54562634810666,
+    "opp_draw": 0.2356189692723953,
+    "draw": 0.14362519377202307,
+    "write": 0.14308418600224046,
+    "core": 2.3963972177561184,
+    "post": 0.10266142392085338,
+    "fill": 0.0,
+    "core_wait_unhidden": 0.0036395358506790473
+   },
+   "gpu_util_mean": 89.2,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 0,
+   "load1_after": 1.24755859375
+  },
+  {
+   "arm": "rust_overlap_keyed",
+   "wall_s": 20.01637399289757,
+   "vec_steps": 1266,
+   "decisions": 55666,
+   "episodes_ended": 1237,
+   "ms_per_vec_step": 15.810721953315616,
+   "vec_steps_per_s": 63.24821870580636,
+   "decisions_per_s": 2781.0231773123355,
+   "inference_s": 19.395509729511105,
+   "env_s": 0.004720319644547999,
+   "inference_share": 0.9689821811079885,
+   "cpu_s_tree": 39.23,
+   "cpu_s_host": 20.12,
+   "cpu_s_arm_subtree": 19.11,
+   "cpu_s_bystander": -3.552713678800501e-15,
+   "cpu_us_per_decision": 704.738978909927,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.3278230775425749,
+    "flush": 2.148718525979986,
+    "gpu_wait": 12.458314060374777,
+    "opp_draw": 0.24062622179266943,
+    "draw": 0.14482595752571573,
+    "write": 0.14126489402749834,
+    "core": 2.3883968651644873,
+    "post": 0.10175560426340684,
+    "fill": 0.18941950154863005,
+    "core_wait_unhidden": 0.0037285305249194303
+   },
+   "gpu_util_mean": 87.875,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 1,
+   "load1_after": 1.17626953125
+  },
+  {
+   "arm": "rust_serial_keyed",
+   "wall_s": 20.006787633989006,
+   "vec_steps": 1779,
+   "decisions": 78263,
+   "episodes_ended": 1727,
+   "ms_per_vec_step": 11.24608635974649,
+   "vec_steps_per_s": 88.9198222396135,
+   "decisions_per_s": 3911.8223990662573,
+   "inference_s": 15.799613646580838,
+   "env_s": 3.5095269849989563,
+   "inference_share": 0.7897126683015963,
+   "cpu_s_tree": 36.39,
+   "cpu_s_host": 16.53,
+   "cpu_s_arm_subtree": 19.85,
+   "cpu_s_bystander": 0.00999999999999801,
+   "cpu_us_per_decision": 464.97067579826995,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.1890557333083636,
+    "flush": 1.1916256742290168,
+    "gpu_wait": 7.271160406873003,
+    "opp_draw": 0.14391806127923368,
+    "draw": 0.08541699141596913,
+    "write": 0.10561986138992861,
+    "core": 1.972752661607058,
+    "post": 0.12552283005134535,
+    "fill": 0.13386758011381
+   },
+   "gpu_util_mean": 73.025,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 1,
+   "load1_after": 1.8291015625
+  },
+  {
+   "arm": "rust_serial_keyed",
+   "wall_s": 20.002583296969533,
+   "vec_steps": 1826,
+   "decisions": 80454,
+   "episodes_ended": 1719,
+   "ms_per_vec_step": 10.954317249161846,
+   "vec_steps_per_s": 91.28820877234621,
+   "decisions_per_s": 4022.1804756683146,
+   "inference_s": 16.24410290294327,
+   "env_s": 3.07271157274954,
+   "inference_share": 0.8121002503413802,
+   "cpu_s_tree": 36.78,
+   "cpu_s_host": 16.98,
+   "cpu_s_arm_subtree": 19.8,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 457.1556417331643,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.1805631132354717,
+    "flush": 1.124313481275486,
+    "gpu_wait": 7.373932278016327,
+    "opp_draw": 0.1350629880671417,
+    "draw": 0.08213191976880926,
+    "write": 0.10150760331375755,
+    "core": 1.6827555162921908,
+    "post": 0.11870975982038731,
+    "fill": 0.12961769932248554
+   },
+   "gpu_util_mean": 75.225,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 2,
+   "load1_after": 1.74072265625
+  },
+  {
+   "arm": "rust_overlap_keyed",
+   "wall_s": 20.00051110703498,
+   "vec_steps": 1283,
+   "decisions": 56413,
+   "episodes_ended": 1234,
+   "ms_per_vec_step": 15.588862904937631,
+   "vec_steps_per_s": 64.14836066607906,
+   "decisions_per_s": 2820.5779191391407,
+   "inference_s": 19.611928242491558,
+   "env_s": 0.004743192112073302,
+   "inference_share": 0.9805713532787298,
+   "cpu_s_tree": 39.74,
+   "cpu_s_host": 20.1,
+   "cpu_s_arm_subtree": 19.63,
+   "cpu_s_bystander": 0.010000000000001563,
+   "cpu_us_per_decision": 704.4475564143016,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.3278734769842015,
+    "flush": 2.1206249064814506,
+    "gpu_wait": 12.448528977071058,
+    "opp_draw": 0.24248153834719144,
+    "draw": 0.14648349588738344,
+    "write": 0.13948362641869838,
+    "core": 2.4637866185271036,
+    "post": 0.10437822707624568,
+    "fill": 0.0,
+    "core_wait_unhidden": 0.003696954101382153
+   },
+   "gpu_util_mean": 88.775,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 2,
+   "load1_after": 1.52978515625
+  },
+  {
+   "arm": "rust_overlap_keyed",
+   "wall_s": 20.002313627977856,
+   "vec_steps": 1271,
+   "decisions": 55765,
+   "episodes_ended": 1237,
+   "ms_per_vec_step": 15.737461548369675,
+   "vec_steps_per_s": 63.54264929743992,
+   "decisions_per_s": 2787.9274886481016,
+   "inference_s": 19.38021928339731,
+   "env_s": 0.004615280427969992,
+   "inference_share": 0.9688988805919729,
+   "cpu_s_tree": 39.57,
+   "cpu_s_host": 20.11,
+   "cpu_s_arm_subtree": 19.46,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 709.5848650587286,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.31514506522173324,
+    "flush": 2.0064795691114035,
+    "gpu_wait": 12.546909085667622,
+    "opp_draw": 0.23530881260583994,
+    "draw": 0.14416634496799682,
+    "write": 0.1402210268718839,
+    "core": 2.443598466558949,
+    "post": 0.10312467785647401,
+    "fill": 0.1879454374036376,
+    "core_wait_unhidden": 0.0036312198489142347
+   },
+   "gpu_util_mean": 87.225,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 3,
+   "load1_after": 1.45947265625
+  },
+  {
+   "arm": "rust_serial_keyed",
+   "wall_s": 20.00182558398228,
+   "vec_steps": 1796,
+   "decisions": 79117,
+   "episodes_ended": 1705,
+   "ms_per_vec_step": 11.13687393317499,
+   "vec_steps_per_s": 89.79180387605518,
+   "decisions_per_s": 3955.488946136892,
+   "inference_s": 16.1075940891169,
+   "env_s": 3.188223306904547,
+   "inference_share": 0.805306196751164,
+   "cpu_s_tree": 36.63,
+   "cpu_s_host": 16.87,
+   "cpu_s_arm_subtree": 19.76,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 462.9851991354576,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.18649157069266706,
+    "flush": 1.1704004494647573,
+    "gpu_wait": 7.385665952836792,
+    "opp_draw": 0.141072474544005,
+    "draw": 0.08496314328410694,
+    "write": 0.10668026328238271,
+    "core": 1.77518001498026,
+    "post": 0.12465610421928505,
+    "fill": 0.13500073659420428
+   },
+   "gpu_util_mean": 74.325,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 3,
+   "load1_after": 1.61328125
+  },
+  {
+   "arm": "rust_serial_keyed",
+   "wall_s": 20.005124234012328,
+   "vec_steps": 1810,
+   "decisions": 79465,
+   "episodes_ended": 1767,
+   "ms_per_vec_step": 11.052554825421176,
+   "vec_steps_per_s": 90.47681878039391,
+   "decisions_per_s": 3972.232267615471,
+   "inference_s": 16.189162655267864,
+   "env_s": 3.1106334174983203,
+   "inference_share": 0.8092507932414317,
+   "cpu_s_tree": 36.85,
+   "cpu_s_host": 16.94,
+   "cpu_s_arm_subtree": 19.91,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 463.7261687535393,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.18337477044876438,
+    "flush": 1.1494396547066532,
+    "gpu_wait": 7.387787711006482,
+    "opp_draw": 0.1390542871658356,
+    "draw": 0.0846323364887654,
+    "write": 0.10467711327988552,
+    "core": 1.7185819986178565,
+    "post": 0.12521877317581306,
+    "fill": 0.1336736143412305
+   },
+   "gpu_util_mean": 74.55,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 4,
+   "load1_after": 1.72412109375
+  },
+  {
+   "arm": "rust_overlap_keyed",
+   "wall_s": 20.01241832098458,
+   "vec_steps": 1282,
+   "decisions": 56315,
+   "episodes_ended": 1246,
+   "ms_per_vec_step": 15.610310702796085,
+   "vec_steps_per_s": 64.06022397881435,
+   "decisions_per_s": 2814.002740535827,
+   "inference_s": 19.602047908236273,
+   "env_s": 0.005087100551463664,
+   "inference_share": 0.9794942117356201,
+   "cpu_s_tree": 39.58,
+   "cpu_s_host": 20.11,
+   "cpu_s_arm_subtree": 19.47,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 702.8322826955518,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.32961936870970515,
+    "flush": 2.14108606846204,
+    "gpu_wait": 12.419529741937977,
+    "opp_draw": 0.24859588758514353,
+    "draw": 0.15137791008849782,
+    "write": 0.14833718238256047,
+    "core": 2.5167521655954737,
+    "post": 0.11019996019057035,
+    "fill": 0.0,
+    "core_wait_unhidden": 0.003968097154027819
+   },
+   "gpu_util_mean": 88.775,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 4,
+   "load1_after": 2.392578125
+  },
+  {
+   "arm": "rust_overlap_keyed",
+   "wall_s": 20.011154318926856,
+   "vec_steps": 1294,
+   "decisions": 56930,
+   "episodes_ended": 1262,
+   "ms_per_vec_step": 15.464570571040847,
+   "vec_steps_per_s": 64.66393589179985,
+   "decisions_per_s": 2844.9133464607153,
+   "inference_s": 19.358604575740173,
+   "env_s": 0.005058977869339287,
+   "inference_share": 0.9673906995675161,
+   "cpu_s_tree": 39.36,
+   "cpu_s_host": 20.12,
+   "cpu_s_arm_subtree": 19.24,
+   "cpu_s_bystander": 0.0,
+   "cpu_us_per_decision": 691.3753732654137,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.3101973576864179,
+    "flush": 1.9951435180245631,
+    "gpu_wait": 12.26441407705034,
+    "opp_draw": 0.24093883829997417,
+    "draw": 0.1495879521691334,
+    "write": 0.14868664495514525,
+    "core": 2.4666057153240746,
+    "post": 0.10942890279288685,
+    "fill": 0.185262881722474,
+    "core_wait_unhidden": 0.0039095655868155235
+   },
+   "gpu_util_mean": 86.675,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 5,
+   "load1_after": 2.2802734375
+  },
+  {
+   "arm": "rust_serial_keyed",
+   "wall_s": 20.00008078000974,
+   "vec_steps": 1506,
+   "decisions": 65972,
+   "episodes_ended": 1464,
+   "ms_per_vec_step": 13.280266122184422,
+   "vec_steps_per_s": 75.29969586449174,
+   "decisions_per_s": 3298.5866770068055,
+   "inference_s": 14.388660343363881,
+   "env_s": 4.991829737555236,
+   "inference_share": 0.7194301113896239,
+   "cpu_s_tree": 36.22,
+   "cpu_s_host": 14.74,
+   "cpu_s_arm_subtree": 21.46,
+   "cpu_s_bystander": 0.01999999999999602,
+   "cpu_us_per_decision": 549.020796701631,
+   "tree_processes": 21,
+   "components_ms_per_step": {
+    "submit": 0.28507755848221666,
+    "flush": 1.8528368154597552,
+    "gpu_wait": 7.052689956304473,
+    "opp_draw": 0.2388550277958917,
+    "draw": 0.12476397752465004,
+    "write": 0.1721768142936249,
+    "core": 3.314627979784353,
+    "post": 0.18913010102826583,
+    "fill": 0.0
+   },
+   "gpu_util_mean": 62.1625,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   },
+   "pair": 5,
+   "load1_after": 4.52099609375
+  }
+ ],
+ "arms": {
+  "rust_serial_keyed": {
+   "blocks": 6,
+   "decisions": 465715,
+   "decisions_per_s_mean": 3880.185773403686,
+   "ms_per_vec_step_mean": 11.386277367943977,
+   "vec_steps_per_s_mean": 88.28242168801627,
+   "cpu_us_per_decision_mean": 474.56262169891335,
+   "inference_share_mean": 0.7938169178679688,
+   "decisions_per_s_ci95": {
+    "mean": 3880.185773403686,
+    "lo": 3635.409472311139,
+    "hi": 4038.405539404055,
+    "n": 6,
+    "method": "percentile bootstrap of the block mean"
+   },
+   "ms_per_vec_step_ci95": {
+    "mean": 11.386277367943977,
+    "lo": 10.882492852768403,
+    "hi": 12.178143913677516,
+    "n": 6,
+    "method": "percentile bootstrap of the block mean"
+   },
+   "components_ms_per_step_mean": {
+    "submit": 0.1997565049626122,
+    "flush": 1.2630099916083892,
+    "gpu_wait": 7.300698788116397,
+    "opp_draw": 0.15474152502482177,
+    "draw": 0.09027715260217457,
+    "write": 0.11464198378274311,
+    "core": 2.0112095781989843,
+    "post": 0.13315073389256785,
+    "fill": 0.08869327172862172
+   },
+   "owner_breakdown_ms_per_step": {
+    "core_step": 2.0112095781989843,
+    "forward_launch_and_flush": 1.4627664965710014,
+    "gpu_wait": 7.300698788116397,
+    "sampling": 0.24501867762699636,
+    "host_glue": 0.36658382743059903
+   },
+   "gpu_util_mean": 72.53125000000001,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   }
+  },
+  "rust_overlap_keyed": {
+   "blocks": 6,
+   "decisions": 337436,
+   "decisions_per_s_mean": 2810.8521366166424,
+   "ms_per_vec_step_mean": 15.634027639251867,
+   "vec_steps_per_s_mean": 63.966310502882614,
+   "cpu_us_per_decision_mean": 702.4208058631071,
+   "inference_share_mean": 0.9743169075586929,
+   "decisions_per_s_ci95": {
+    "mean": 2810.8521366166424,
+    "lo": 2794.262946710013,
+    "hi": 2827.3038943847546,
+    "n": 6,
+    "method": "percentile bootstrap of the block mean"
+   },
+   "ms_per_vec_step_ci95": {
+    "mean": 15.634027639251867,
+    "lo": 15.551006759948445,
+    "hi": 15.72512141138425,
+    "n": 6,
+    "method": "percentile bootstrap of the block mean"
+   },
+   "components_ms_per_step_mean": {
+    "submit": 0.3210438619465407,
+    "flush": 2.0767944203694113,
+    "gpu_wait": 12.447220381701406,
+    "opp_draw": 0.24059504465053563,
+    "draw": 0.1466778090684584,
+    "write": 0.14351292677633778,
+    "core": 2.4459228414877012,
+    "post": 0.10525813268340618,
+    "fill": 0.09377130344579027,
+    "core_wait_unhidden": 0.003762317177789701
+   },
+   "owner_breakdown_ms_per_step": {
+    "core_step": 0.003762317177789701,
+    "forward_launch_and_flush": 2.397838282315952,
+    "gpu_wait": 12.447220381701406,
+    "sampling": 0.387272853718994,
+    "host_glue": 0.3979338043377248,
+    "core_step_total_both_halves": 2.4459228414877012
+   },
+   "gpu_util_mean": 88.08749999999999,
+   "stamp": {
+    "mix": {
+     "self_play_fraction": 0.95,
+     "bot_share": 0.05,
+     "pool_size": 20,
+     "pool_slots": 24,
+     "active_snapshots": 20
+    },
+    "t2": {
+     "backend": "graph",
+     "device": "cuda",
+     "buckets": [
+      8,
+      48
+     ],
+     "slots": 25,
+     "lanes": 8
+    },
+    "opponent_sampling": "keyed",
+    "front": "proc",
+    "threads": 8
+   }
+  }
+ },
+ "ratios": {
+  "decisions_per_s_rust_overlap_keyed_over_rust_serial_keyed": {
+   "point": 0.7262642740276642,
+   "per_pair": [
+    0.6835239514165633,
+    0.7109277706411619,
+    0.7012559322491567,
+    0.7048249980248122,
+    0.7084184788179749,
+    0.862464329432822
+   ],
+   "n_pairs": 6,
+   "method": "geometric mean of per-pair ratios; percentile bootstrap",
+   "lo": 0.6956802035965143,
+   "hi": 0.7801314604894248,
+   "level": 0.95,
+   "n_boot": 10000
+  }
+ },
+ "warnings": []
+}

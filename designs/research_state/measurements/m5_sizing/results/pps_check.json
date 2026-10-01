@@ -1,0 +1,38 @@
+{
+ "uniform20": {
+  "K": 8,
+  "n_capped": 0,
+  "sum_pi": 8.0,
+  "exact_max_abs_err": 1.8041124150158794e-16,
+  "sim_draws": 1000000,
+  "sim_max_abs_err": 0.0004009999999999986,
+  "sim_max_z": 1.8399141856418988,
+  "naive": null
+ },
+ "pfsp_skew_capped": {
+  "K": 8,
+  "n_capped": 4,
+  "sum_pi": 7.999999999999999,
+  "exact_max_abs_err": 1.1102230246251565e-16,
+  "sim_draws": 1000000,
+  "sim_max_abs_err": 0.00030395819037415395,
+  "sim_max_z": 2.624926640271383,
+  "naive": {
+   "sum_pi": 4.440016620438036,
+   "note": "naive min(1, K p) does not sum to K: no fixed-size design realises it"
+  }
+ },
+ "recency": {
+  "K": 8,
+  "n_capped": 3,
+  "sum_pi": 8.0,
+  "exact_max_abs_err": 4.163336342344337e-17,
+  "sim_draws": 1000000,
+  "sim_max_abs_err": 0.0004638439531638311,
+  "sim_max_z": 2.4310344751999655,
+  "naive": {
+   "sum_pi": 7.3133527066385104,
+   "note": "naive min(1, K p) does not sum to K: no fixed-size design realises it"
+  }
+ }
+}

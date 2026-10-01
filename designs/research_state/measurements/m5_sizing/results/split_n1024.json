@@ -1,0 +1,153 @@
+{
+ "schema": "m5_laneG_t2_fanout_v1",
+ "regime": {
+  "pool": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/snapshots",
+  "ckpt": "/home/goodlad/dev/gen3ai/models/ai_v14_06_lbat_ctrl_fix/final_model.zip",
+  "pool_size": 20,
+  "self_play_fraction": 0.95,
+  "n_envs": 1024,
+  "threads": 8,
+  "opp_rows": 40,
+  "slots": "",
+  "lanes": "0",
+  "warmup_steps": 300,
+  "rounds": 6,
+  "reps": 50,
+  "device": "cuda",
+  "seed": 20260930,
+  "t2_buckets": "8,64,512",
+  "real_flushes": 24,
+  "real_reps": 5,
+  "load_start": {
+   "load1": 4.56494140625,
+   "load5": 6.599609375,
+   "load15": 5.5869140625,
+   "contention_factor": 1.0
+  },
+  "load_end": {
+   "load1": 1.67919921875,
+   "load5": 3.544921875,
+   "load15": 4.5400390625,
+   "contention_factor": 1.0
+  }
+ },
+ "per_lanes": {
+  "0": {
+   "lanes_requested": 0,
+   "lanes": 8,
+   "buckets": [
+    8,
+    64,
+    512
+   ],
+   "slots_declared": 25,
+   "startup_s": 242.63232245191466,
+   "trainee_slot": 24,
+   "distinct_pool_models": 21,
+   "slots_per_step": {
+    "n_steps": 300,
+    "mean": 20.0,
+    "p10_p50_p90": [
+     20.0,
+     20.0,
+     20.0
+    ]
+   },
+   "rows_per_slot_hist": {
+    "23": 3,
+    "24": 14,
+    "25": 26,
+    "26": 46,
+    "27": 53,
+    "28": 63,
+    "29": 53,
+    "30": 35,
+    "31": 15,
+    "32": 16,
+    "33": 30,
+    "34": 50,
+    "35": 105,
+    "36": 163,
+    "37": 173,
+    "38": 195,
+    "39": 173,
+    "40": 195,
+    "41": 252,
+    "42": 303,
+    "43": 289,
+    "44": 369,
+    "45": 358,
+    "46": 349,
+    "47": 308,
+    "48": 320,
+    "49": 248,
+    "50": 188,
+    "51": 195,
+    "52": 153,
+    "53": 152,
+    "54": 174,
+    "55": 131,
+    "56": 174,
+    "57": 146,
+    "58": 129,
+    "59": 86,
+    "60": 74,
+    "61": 49,
+    "62": 56,
+    "63": 43,
+    "64": 26,
+    "65": 16,
+    "66": 4
+   },
+   "ms_per_flush": {
+    "trainee48": {
+     "mean": 15.269012376278019,
+     "lo": 15.256902043862889,
+     "hi": 15.278954779496416,
+     "n": 6
+    }
+   },
+   "ms_split_submit_flush_wait": {
+    "trainee48": [
+     0.16785610971661905,
+     0.42931257630698383,
+     14.671843690254414
+    ]
+   },
+   "after_freeze": {
+    "compiles_after_freeze": 0,
+    "captures_after_freeze": 0,
+    "cuda_segments_after_freeze": 0
+   },
+   "real_split": {
+    "n_flushes": 24,
+    "full_ms": {
+     "mean": 36.16456927573179,
+     "lo": 35.91603798220604,
+     "hi": 36.6362460842356,
+     "n": 24
+    },
+    "trainee_only_ms": {
+     "mean": 15.428382348586132,
+     "lo": 15.412640534874907,
+     "hi": 15.445210610652994,
+     "n": 24
+    },
+    "opponent_ms": {
+     "mean": 20.736186927145656,
+     "lo": 20.487279593031015,
+     "hi": 21.206792467467796,
+     "n": 24
+    },
+    "opponent_share_of_flush": 0.5733840425153538,
+    "trainee_rows_mean": 937.75,
+    "opponent_rows_mean": 919.5416666666666,
+    "opponent_slots_mean": 20.0
+   },
+   "derived": {
+    "trainee_forward_ms": 15.269012376278019
+   }
+  }
+ },
+ "warnings": []
+}
