@@ -59,6 +59,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--reps", type=int, default=50, help="flushes per config per round")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--seed", type=int, default=20260930)
+    ap.add_argument("--t2-buckets", default=None, help="T2 buckets (default the collector's (8, N))")
+    ap.add_argument("--real-flushes", type=int, default=0,
+                    help="SIZING split: harvest this many REAL host-step flushes after the warm-up and time each "
+                         "as recorded (trainee + opponent rows on their own slots) and as its trainee part alone")
+    ap.add_argument("--real-reps", type=int, default=5, help="replays per real flush per round")
     return ap
 
 
@@ -100,7 +105,8 @@ def measure_service(a: argparse.Namespace, lanes: int) -> Dict[str, Any]:
     mix = H.ProductionMix(a.pool, a.pool_size, a.self_play_fraction, compile_opponents=False)
     arm = CollectorRustArm(a.n_envs, a.threads, "proc", "release", inference, mix,
                            H.CompleteGameCollector(98_304), a.seed, sampling="keyed", device=a.device,
-                           backend="graph", name=f"fanout_l{lanes}")
+                           backend="graph", name=f"fanout_l{lanes}",
+                           buckets=tuple(int(x) for x in a.t2_buckets.split(",")) if a.t2_buckets else ())
     arm.lanes = int(lanes)
     t0 = time.perf_counter()
     arm.build()
@@ -116,6 +122,7 @@ def measure_service(a: argparse.Namespace, lanes: int) -> Dict[str, Any]:
             per_step.append(int(u.size))
             rows_per_slot.extend(int(x) for x in k)
         arm.step()
+    real = harvest_real_flushes(arm, int(getattr(a, "real_flushes", 0) or 0))
     c = col.cols
     ok = np.flatnonzero((c["need"][:, 0] == 1) & (c["mask"][:, 0].sum(1) > 0))
     if ok.size == 0:
@@ -130,8 +137,8 @@ def measure_service(a: argparse.Namespace, lanes: int) -> Dict[str, Any]:
         if s != trainee and mid and mid not in ids.values():
             ids[s] = mid
     pool_slots = sorted(ids)
-    wanted = [int(x) for x in a.slots.split(",")]
-    if max(wanted) > len(pool_slots):
+    wanted = [int(x) for x in a.slots.split(",") if x.strip()]
+    if wanted and max(wanted) > len(pool_slots):
         raise RuntimeError(f"asked for {max(wanted)} distinct slots; the service holds {len(pool_slots)} distinct "
                            f"non-trainee models ({len(svc._slots)} slots)")
     configs: Dict[str, List[Any]] = {"trainee48": [(trainee, obs[:a.n_envs], mask[:a.n_envs])]}
@@ -150,6 +157,8 @@ def measure_service(a: argparse.Namespace, lanes: int) -> Dict[str, Any]:
             ts = np.array([_flush(svc, configs[name]) for _ in range(int(a.reps))])
             per_round[name].append(float(1e3 * ts[:, 3].mean()))
             split[name].append(1e3 * ts[:, :3].mean(0))
+    real_out = time_real_flushes(svc, real, int(a.rounds), int(getattr(a, "real_reps", 5) or 5),
+                                 np.random.default_rng(a.seed + 7 + lanes)) if real else None
     stats = svc.stats()
     after = {k: v for k, v in stats.items() if "after_freeze" in k}
     out = {"lanes_requested": int(lanes), "lanes": getattr(svc.engine, "n_lanes", None),
@@ -163,13 +172,80 @@ def measure_service(a: argparse.Namespace, lanes: int) -> Dict[str, Any]:
            "ms_per_flush": {k: _mean_ci(v, a.seed) for k, v in per_round.items()},
            "ms_split_submit_flush_wait": {k: [float(x) for x in np.mean(v, 0)] for k, v in split.items()},
            "after_freeze": after}
+    if real_out is not None:
+        out["real_split"] = real_out
     arm.close()
     return out
+
+
+def flush_parts(cols: Dict[str, np.ndarray], env_slot: np.ndarray) -> Dict[str, List[Any]]:
+    """One host step's flush as the collector would submit it, COPIED: the trainee's rows per trainee slot
+    (``need[:, 0]``, side 0, ``env_slot``) and p2's policy rows per opponent slot (``need[:, 1]`` with
+    ``opp_slot >= 0``, side 1). Returns ``{"trainee": [(slot, obs, mask)…], "opponent": […]}``."""
+    out: Dict[str, List[Any]] = {"trainee": [], "opponent": []}
+    t = np.flatnonzero(cols["need"][:, 0] == 1)
+    for s in np.unique(env_slot[t]):
+        rows = t[env_slot[t] == s]
+        out["trainee"].append((int(s), cols["obs"][rows, 0].copy(), cols["mask"][rows, 0].copy()))
+    o = np.flatnonzero((cols["need"][:, 1] == 1) & (cols["opp_slot"] >= 0))
+    for s in np.unique(cols["opp_slot"][o]):
+        rows = o[cols["opp_slot"][o] == s]
+        out["opponent"].append((int(s), cols["obs"][rows, 1].copy(), cols["mask"][rows, 1].copy()))
+    return out
+
+
+def harvest_real_flushes(arm: Any, k: int) -> List[Dict[str, List[Any]]]:
+    """``k`` consecutive REAL flushes (copied before each host step), then the step itself."""
+    out = []
+    for _ in range(int(k)):
+        col = arm.col
+        parts = flush_parts(col.cols, col.env_slot)
+        if parts["trainee"] or parts["opponent"]:
+            out.append(parts)
+        arm.step()
+    return out
+
+
+def split_summary(full_ms: Sequence[float], trainee_ms: Sequence[float], opp_rows: Sequence[int],
+                  opp_slots: Sequence[int], trainee_rows: Sequence[int], seed: int) -> Dict[str, Any]:
+    """The SIZING split over real flushes: opponent inference = (the flush as recorded) − (its trainee part
+    alone), per flush; its share of the flush; 95 % bootstrap CIs over flushes."""
+    f, t = np.asarray(full_ms, float), np.asarray(trainee_ms, float)
+    return {"n_flushes": int(f.size), "full_ms": _mean_ci(f, seed), "trainee_only_ms": _mean_ci(t, seed),
+            "opponent_ms": _mean_ci(f - t, seed),
+            "opponent_share_of_flush": float((f - t).sum() / f.sum()) if f.sum() > 0 else None,
+            "trainee_rows_mean": float(np.mean(trainee_rows)), "opponent_rows_mean": float(np.mean(opp_rows)),
+            "opponent_slots_mean": float(np.mean(opp_slots))}
+
+
+def time_real_flushes(svc: Any, real: List[Dict[str, List[Any]]], rounds: int, reps: int,
+                      rng: np.random.Generator) -> Dict[str, Any]:
+    """Each harvested flush replayed whole and as its trainee part alone, in a seeded random interleave
+    every round (``reps`` flushes each); the per-flush mean over rounds feeds :func:`split_summary`."""
+    for parts in real:                                   # untimed: first touch of every slot x bucket met
+        _flush(svc, parts["trainee"] + parts["opponent"])
+        if parts["trainee"]:
+            _flush(svc, parts["trainee"])
+    full = np.zeros((len(real), rounds))
+    tro = np.zeros((len(real), rounds))
+    jobs = [(i, w) for i in range(len(real)) for w in (0, 1)]
+    for r in range(rounds):
+        for j in rng.permutation(len(jobs)):
+            i, w = jobs[int(j)]
+            parts = real[i]["trainee"] + real[i]["opponent"] if w == 0 else real[i]["trainee"]
+            ms = 1e3 * np.mean([_flush(svc, parts)[3] for _ in range(reps)]) if parts else 0.0
+            (full if w == 0 else tro)[i, r] = ms
+    return split_summary(full.mean(1), tro.mean(1),
+                         [sum(len(p[1]) for p in x["opponent"]) for x in real],
+                         [len(x["opponent"]) for x in real],
+                         [sum(len(p[1]) for p in x["trainee"]) for x in real], int(rng.integers(1 << 30)))
 
 
 def derive(res: Dict[str, Any], slots: Sequence[int]) -> Dict[str, Any]:
     """The reads the decision needs, from one service's table."""
     t = {k: v["mean"] for k, v in res["ms_per_flush"].items()}
+    if not slots:
+        return {"trainee_forward_ms": t["trainee48"]}
     top = max(slots)
     return {"trainee_forward_ms": t["trainee48"],
             f"opponent_fanout_ms_at_S{top}": t[f"both_S{top}"] - t["trainee48"],
@@ -193,7 +269,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     load0 = _load()
     if warn_if_contended("m5 T2 fan-out read"):
         warnings.append(f"BUSY BOX at start: contention factor {load0['contention_factor']:.2f}")
-    slots = [int(x) for x in a.slots.split(",")]
+    slots = [int(x) for x in a.slots.split(",") if x.strip()]
     per_lanes = {}
     for lanes in (int(x) for x in a.lanes.split(",")):
         res = measure_service(a, lanes)
