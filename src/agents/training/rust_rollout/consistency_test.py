@@ -129,8 +129,10 @@ def test_the_probe_reads_the_precision_keyed_gate():
     between the fp32 bar and the TF32 p99 bar FAILS at fp32 and PASSES under TF32; above the p99 bar it
     fails under both. (The localized half — p99 clean, max fires — is `learner_gates_test`'s, on a
     production-size micro-batch; this probe's 32 rows make its p99 ~ its max.)"""
-    assert K.BEHAVIOUR_GATES["highest"] == (K.GateCondition("max", 1e-4, 1),)
-    (p99_name, p99_bar, p99_k), (max_name, max_bar, max_k) = K.BEHAVIOUR_GATES["high"]
+    assert K.BEHAVIOUR_GATES["highest"] == (K.GateCondition("max", 1e-4, 4, K.FP32_ROW_RATE_UPPER, K.FP32_TIE_EPS),)
+    c99, cmax = K.BEHAVIOUR_GATES["high"]
+    (p99_name, p99_bar, p99_k), (max_name, max_bar, max_k) = c99[:3], cmax[:3]
+    assert c99.row_rate == cmax.row_rate == c99.tie_eps == cmax.tie_eps == 0.0     # the tie rule is fp32's
     assert (p99_name, max_name, p99_k, max_k) == ("p99", "max", 1, K.TF32_MAX_PERSISTENCE)
     assert 1e-4 < p99_bar < max_bar
     prev = th.get_float32_matmul_precision()
@@ -215,3 +217,81 @@ def test_a_clean_update_builds_no_details_unless_the_driver_asks_for_the_scan():
     m.behaviour_scan_all = True
     out = K.behaviour_probe(m)
     assert out["behaviour/scan_rows_over_bar"] == 0.0 and out["behaviour/scan_max_abs_dlogp"] < 5e-6
+
+
+# ------------------------------------------------------------- the fp32 TIE RULE (gen3_behaviour_tie_rule_v1)
+def _probe_rows_with_gaps(m):
+    from agents.training.rust_rollout.tie_margins import selection_gaps
+
+    b = m.rollout_buffer
+    rng = np.random.default_rng([int(m.seed or 0), int(m.num_timesteps)])
+    f = K.choose_rows(np.zeros(b.log_probs.shape, np.int64), m.batch_size, rng)
+    t, e = f // b.n_envs, f % b.n_envs
+    g, _s = selection_gaps(m.policy, {k: v[t, e] for k, v in b.observations.items()}, b.actions[t, e],
+                           b.action_masks[t, e], m.device)
+    return t, e, g
+
+
+def test_the_fp32_rule_numbers_are_derived_from_the_banked_measurement():
+    """k, the row rate and epsilon are re-derived from `TAIL_MEASUREMENT` by the declared criteria — a
+    changed constant or a changed measurement FAILS here."""
+    import json
+
+    from utils.paths import repo_path
+
+    r = json.loads(open(repo_path(*K.TAIL_MEASUREMENT.split("/"))).read())
+    n_events, n_rows = r["rate"]["events"], r["rate"]["rows"]
+    assert (n_events, n_rows) == (4, 3_670_016)
+    upper = r["rate"]["poisson_upper95_events"] / n_rows                 # 9.154 / 3,670,016
+    assert upper <= K.FP32_ROW_RATE_UPPER < 1.01 * upper + 1e-7
+    p = K.per_update_rate(K.FP32_ROW_RATE_UPPER, 2048)
+    k = next(k for k in range(1, 10) if K.UPDATES_HORIZON * p ** k <= K.FALSE_FATAL_TARGET)
+    assert k == K.FP32_MAX_PERSISTENCE == 4
+    flipped = max(v["fp64_gap"] for v in r["violators"])
+    assert K.FP32_TIE_EPS >= 50 * flipped and all(v["fp32_gap"] <= K.FP32_TIE_EPS for v in r["violators"])
+    assert r["tie_rate"]["frac_at_or_below"]["1e-05"] < 0.2               # (iii) keeps its teeth
+    assert K.count_limit(K.FP32_ROW_RATE_UPPER, 98_304, 1024) == 7       # production N = 48 x 2,048
+
+
+def test_a_single_violating_row_AT_a_tie_warns_and_FATALs_only_on_its_4th_consecutive_update(capsys):
+    m = _with_provenance(_model())
+    m.behaviour_check = "fatal"
+    t, e, g = _probe_rows_with_gaps(m)
+    tied = np.flatnonzero((g > 0) & (g <= K.FP32_TIE_EPS))
+    assert tied.size, "the fixture's probe must hold a row at a (non-exact) selection tie"
+    i = int(tied[0])
+    m.rollout_buffer.log_probs[t[i], e[i]] += 0.0389          # A2's jump, on a row that sits at a tie
+    for n in range(1, 4):
+        out = K.behaviour_probe(m)
+        assert out["behaviour/streak_max"] == float(n) and out["behaviour/violations_total_max"] == float(n)
+    assert "NOT fatal YET" in capsys.readouterr().out
+    with pytest.raises(K.BehaviourMismatch, match=r"\(i\) max violated on 4 consecutive"):
+        K.behaviour_probe(m)
+
+
+def test_a_single_violating_row_at_NO_tie_is_a_FAULT_and_FATAL_at_once():
+    m = _with_provenance(_model())
+    m.behaviour_check = "fatal"
+    t, e, g = _probe_rows_with_gaps(m)
+    i = int(np.argmax(g))
+    assert g[i] > 100 * K.FP32_TIE_EPS
+    m.rollout_buffer.log_probs[t[i], e[i]] += 0.0389
+    with pytest.raises(K.BehaviourMismatch, match=r"\(iii\) 1 violating row\(s\) sit at NO selection tie"):
+        K.behaviour_probe(m)
+
+
+def test_many_rows_over_the_bar_in_the_full_buffer_scan_are_a_FAULT_and_FATAL_at_once():
+    m = _with_provenance(_model())
+    m.behaviour_check = "fatal"
+    t, e, g = _probe_rows_with_gaps(m)
+    tied = np.flatnonzero((g > 0) & (g <= K.FP32_TIE_EPS))
+    assert tied.size
+    lp = m.rollout_buffer.log_probs
+    lp[t[tied[0]], e[tied[0]]] += 0.0389                      # the probe's one row sits at a tie ...
+    chosen = set(zip(t.tolist(), e.tolist()))
+    others = [(a, b) for a in range(lp.shape[0]) for b in range(lp.shape[1]) if (a, b) not in chosen][:8]
+    for a, b in others:                                       # ... but 8 rows the probe did not pick moved too
+        lp[a, b] += 1e-3
+    assert K.count_limit(K.FP32_ROW_RATE_UPPER, lp.size, m.batch_size) <= 9
+    with pytest.raises(K.BehaviourMismatch, match=r"\(ii\) 9 of 64 current rows over the bar"):
+        K.behaviour_probe(m)

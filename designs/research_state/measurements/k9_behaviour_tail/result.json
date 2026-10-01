@@ -1,0 +1,144 @@
+{
+ "what": "K9(b) fp32 tail: sizing arm A2's single-row FATAL (|d log pi| 0.0389) root-caused; the tie rule's numbers",
+ "checkpoint": "models/sizing_A2_n48_e10_s1001/checkpoints/checkpoint_4000032_steps.zip (pool: its 2 snapshots); copies in ~/gen3ai_archive/k6_k8/k9tail/a2",
+ "path": "rust core, T2 graph backend (buckets [8, 48], 7 lanes), N = 48, fills of 98,304 rows, matmul precision 'highest'; learner probe forward eager, train mode, batch_size chunks",
+ "sweep": {
+  "fills": 36,
+  "rows": 3538944,
+  "over_bar": 3,
+  "per_fill_max_median": 1.4543533325195312e-05,
+  "sub_bar_max": 2.98917293548584e-05,
+  "p99": 2.6226043701171875e-06
+ },
+ "rate": {
+  "events": 4,
+  "rows": 3670016,
+  "breakdown": {
+   "sweep": [
+    3,
+    3538944
+   ],
+   "arm_A_probe": [
+    0,
+    83968
+   ],
+   "arm_A2_probe": [
+    1,
+    47104
+   ]
+  },
+  "poisson_upper95_events": 9.1535,
+  "note": "one-sided 95 % Poisson upper = chi2(0.95, 2(n+1)) / 2"
+ },
+ "violators": [
+  {
+   "fill": 4,
+   "abs_dlogp": 0.00047785043716430664,
+   "action": 8,
+   "mask": "00000011110",
+   "p_action": 0.40207561544860154,
+   "mu_stored": -0.911592960357666,
+   "pi_learner": -0.9111151099205017,
+   "t2_alone_bucket8": -0.9110692143440247,
+   "t2_in_48": -0.911592960357666,
+   "eager_b1": -0.9110692739486694,
+   "jitter_distinct": [
+    -0.91159,
+    -0.91112,
+    -0.91111,
+    -0.91107
+   ],
+   "jitter_changed_sites": {
+    "ge@agents/model/pointer_head.py:148": 15,
+    "gt@agents/model/damage_op_pairwise.py:387": 15,
+    "gt@agents/model/damage_op_pairwise.py:388": 15,
+    "gt@agents/model/damage_op_pairwise.py:394": 15,
+    "gt@agents/model/damage_op_pairwise.py:578": 15,
+    "gt@agents/model/damage_op_pairwise.py:657": 15,
+    "gt@agents/model/damage_op_pairwise.py:836": 15,
+    "topk@agents/model/damage_op_pairwise.py:275": 15,
+    "topk@agents/model/damage_op_pairwise.py:789": 15,
+    "topk@agents/model/pointer_head.py:147": 15
+   },
+   "fp64": -0.9110696235337172,
+   "fp64_nearer": "learner pi",
+   "fp64_gap": 1.649684684690289e-07,
+   "fp32_gap": 9.685754776000977e-08,
+   "fp32_site": "topk@agents/model/pointer_head.py:147"
+  },
+  {
+   "fill": 12,
+   "abs_dlogp": 0.0007793903350830078,
+   "action": 9,
+   "mask": "10100011110",
+   "p_action": 0.09914853043822457,
+   "mu_stored": -2.311915636062622,
+   "pi_learner": -2.311136245727539,
+   "t2_alone_bucket8": -2.3119149208068848,
+   "t2_in_48": -2.311915636062622,
+   "eager_b1": -2.3119149208068848,
+   "jitter_distinct": [
+    -2.31192,
+    -2.31191,
+    -2.31114,
+    -2.31113
+   ],
+   "jitter_changed_sites": {
+    "argmax@agents/model/damage_op.py:858": 17,
+    "argmax@agents/model/damage_op.py:864": 17
+   },
+   "fp64": -2.3119125321542606,
+   "fp64_nearer": "stored mu",
+   "fp64_gap": 5.182589474239663e-08,
+   "fp32_gap": 1.1920928955078125e-07,
+   "fp32_site": "argmax@agents/model/damage_op.py:858"
+  },
+  {
+   "fill": 31,
+   "abs_dlogp": 0.0002422332763671875,
+   "action": 7,
+   "mask": "10000011110",
+   "p_action": 0.1307507484285165,
+   "mu_stored": -2.0342202186584473,
+   "pi_learner": -2.0344624519348145,
+   "t2_alone_bucket8": -2.0342211723327637,
+   "t2_in_48": -2.0342202186584473,
+   "eager_b1": -2.0342202186584473,
+   "jitter_distinct": [
+    -2.03446,
+    -2.03422
+   ],
+   "jitter_changed_sites": {
+    "ge@agents/model/pointer_head.py:148": 9,
+    "topk@agents/model/damage_op_pairwise.py:275": 4,
+    "topk@agents/model/damage_op_pairwise.py:789": 4,
+    "topk@agents/model/pointer_head.py:147": 4
+   },
+   "fp64": -2.0342214803578296,
+   "fp64_nearer": "stored mu",
+   "fp64_gap": 9.28632192115364e-08,
+   "fp32_gap": 1.4901161193847656e-08,
+   "fp32_site": "topk@agents/model/pointer_head.py:147"
+  }
+ ],
+ "tie_rate": {
+  "rows": 8192,
+  "frac_at_or_below": {
+   "0": 0.139404296875,
+   "1e-07": 0.1402587890625,
+   "1e-06": 0.1431884765625,
+   "1e-05": 0.153076171875,
+   "3e-05": 0.1650390625,
+   "0.0001": 0.219970703125,
+   "0.0003": 0.3516845703125,
+   "0.001": 0.6182861328125
+  },
+  "argmin_sites": {
+   "agents/model/damage_op.py:858": 3736,
+   "agents/model/pointer_head.py:147": 3023,
+   "agents/model/pointer_head.py:39": 1032,
+   "agents/model/damage_op_blocks.py:875": 262,
+   "agents/model/damage_op.py:864": 139
+  }
+ }
+}

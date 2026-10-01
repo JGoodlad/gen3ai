@@ -1,0 +1,293 @@
+[
+ {
+  "i": 0,
+  "fill": 4,
+  "abs_dlogp": 0.00047785043716430664,
+  "action": 8,
+  "mask": "00000011110",
+  "p_action": 0.40207561544860154,
+  "mu_stored": -0.911592960357666,
+  "pi_learner": -0.9111151099205017,
+  "t2_alone": -0.9110692143440247,
+  "t2_in_48": -0.911592960357666,
+  "eager_b1": -0.9110692739486694,
+  "fp64": -0.9110696235337172,
+  "fp64_nearer": "learner pi",
+  "jitter_spread": 0.0005273818969726562,
+  "jitter_values": [
+   -0.91159,
+   -0.91112,
+   -0.91111,
+   -0.91107
+  ],
+  "changed_sites": {
+   "ge@agents/model/pointer_head.py:148": 15,
+   "gt@agents/model/damage_op_pairwise.py:387": 15,
+   "gt@agents/model/damage_op_pairwise.py:388": 15,
+   "gt@agents/model/damage_op_pairwise.py:394": 15,
+   "gt@agents/model/damage_op_pairwise.py:578": 15,
+   "gt@agents/model/damage_op_pairwise.py:657": 15,
+   "gt@agents/model/damage_op_pairwise.py:836": 15,
+   "topk@agents/model/damage_op_pairwise.py:275": 15,
+   "topk@agents/model/damage_op_pairwise.py:789": 15,
+   "topk@agents/model/pointer_head.py:147": 15
+  },
+  "fp64_margins_at_changed_sites": [
+   {
+    "op": "topk",
+    "site": "agents/model/pointer_head.py:147",
+    "min_margin": 1.649684684690289e-07
+   },
+   {
+    "op": "ge",
+    "site": "agents/model/pointer_head.py:148",
+    "min_margin": 0.0
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 1.649684684690289e-07
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_pairwise.py:578",
+    "min_margin": 0.0
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 1.649684684690289e-07
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_pairwise.py:657",
+    "min_margin": 0.0
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 1.649684684690289e-07
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_pairwise.py:387",
+    "min_margin": 0.0
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_pairwise.py:388",
+    "min_margin": 0.0
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_pairwise.py:394",
+    "min_margin": 0.0
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_pairwise.py:394",
+    "min_margin": 0.0
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_pairwise.py:394",
+    "min_margin": 0.0
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:789",
+    "min_margin": 1.649684684690289e-07
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_pairwise.py:836",
+    "min_margin": 0.0
+   }
+  ],
+  "fp64_exact_ties": 210,
+  "fp64_smallest_margins": [
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_blocks.py:786",
+    "min_margin": 1e-08
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/pointer_head.py:147",
+    "min_margin": 1.649684684690289e-07
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 1.649684684690289e-07
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 1.649684684690289e-07
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 1.649684684690289e-07
+   }
+  ]
+ },
+ {
+  "i": 1,
+  "fill": 12,
+  "abs_dlogp": 0.0007793903350830078,
+  "action": 9,
+  "mask": "10100011110",
+  "p_action": 0.09914853043822457,
+  "mu_stored": -2.311915636062622,
+  "pi_learner": -2.311136245727539,
+  "t2_alone": -2.3119149208068848,
+  "t2_in_48": -2.311915636062622,
+  "eager_b1": -2.3119149208068848,
+  "fp64": -2.3119125321542606,
+  "fp64_nearer": "stored mu",
+  "jitter_spread": 0.00078582763671875,
+  "jitter_values": [
+   -2.31192,
+   -2.31191,
+   -2.31114,
+   -2.31113
+  ],
+  "changed_sites": {
+   "argmax@agents/model/damage_op.py:858": 17,
+   "argmax@agents/model/damage_op.py:864": 17
+  },
+  "fp64_margins_at_changed_sites": [
+   {
+    "op": "argmax",
+    "site": "agents/model/damage_op.py:858",
+    "min_margin": 5.182589474239663e-08
+   },
+   {
+    "op": "argmax",
+    "site": "agents/model/damage_op.py:858",
+    "min_margin": 0.00019828929421806233
+   },
+   {
+    "op": "argmax",
+    "site": "agents/model/damage_op.py:864",
+    "min_margin": 5.182589474239663e-08
+   }
+  ],
+  "fp64_exact_ties": 210,
+  "fp64_smallest_margins": [
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_blocks.py:786",
+    "min_margin": 1e-08
+   },
+   {
+    "op": "argmax",
+    "site": "agents/model/damage_op.py:858",
+    "min_margin": 5.182589474239663e-08
+   },
+   {
+    "op": "argmax",
+    "site": "agents/model/damage_op.py:864",
+    "min_margin": 5.182589474239663e-08
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/belief_heads.py:660",
+    "min_margin": 1e-06
+   },
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_blocks.py:696",
+    "min_margin": 1e-06
+   }
+  ]
+ },
+ {
+  "i": 2,
+  "fill": 31,
+  "abs_dlogp": 0.0002422332763671875,
+  "action": 7,
+  "mask": "10000011110",
+  "p_action": 0.1307507484285165,
+  "mu_stored": -2.0342202186584473,
+  "pi_learner": -2.0344624519348145,
+  "t2_alone": -2.0342211723327637,
+  "t2_in_48": -2.0342202186584473,
+  "eager_b1": -2.0342202186584473,
+  "fp64": -2.0342214803578296,
+  "fp64_nearer": "stored mu",
+  "jitter_spread": 0.0002455711364746094,
+  "jitter_values": [
+   -2.03446,
+   -2.03422
+  ],
+  "changed_sites": {
+   "ge@agents/model/pointer_head.py:148": 9,
+   "topk@agents/model/damage_op_pairwise.py:275": 4,
+   "topk@agents/model/damage_op_pairwise.py:789": 4,
+   "topk@agents/model/pointer_head.py:147": 4
+  },
+  "fp64_margins_at_changed_sites": [
+   {
+    "op": "topk",
+    "site": "agents/model/pointer_head.py:147",
+    "min_margin": 9.28632192115364e-08
+   },
+   {
+    "op": "ge",
+    "site": "agents/model/pointer_head.py:148",
+    "min_margin": 0.0
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 9.28632192115364e-08
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 9.28632192115364e-08
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 9.28632192115364e-08
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:789",
+    "min_margin": 9.28632192115364e-08
+   }
+  ],
+  "fp64_exact_ties": 213,
+  "fp64_smallest_margins": [
+   {
+    "op": "gt",
+    "site": "agents/model/damage_op_blocks.py:786",
+    "min_margin": 1e-08
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/pointer_head.py:147",
+    "min_margin": 9.28632192115364e-08
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 9.28632192115364e-08
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 9.28632192115364e-08
+   },
+   {
+    "op": "topk",
+    "site": "agents/model/damage_op_pairwise.py:275",
+    "min_margin": 9.28632192115364e-08
+   }
+  ]
+ }
+]

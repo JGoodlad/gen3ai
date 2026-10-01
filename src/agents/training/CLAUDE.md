@@ -588,7 +588,7 @@ a separate decision. Hazards an agent must know before touching it:
   `win_mask` (the window fill calls the callback's own `backfill_terminal_labels`).
 - **K9(b) `--behaviour-check`** (default `fatal` on BOTH cores): before any optimizer step of every
   update, the learner's log π on rows played at the CURRENT version must equal the stored behaviour
-  log-prob (the precision-keyed gate: max |Δ| < 1e-4 at fp32; p99 < 3.6e-3 AND max < 0.071 at TF32, the TF32 max FATAL only on 4 consecutive updates). Under `rust` Lane G's pre-loop probe runs its own forward and logs
+  log-prob (the precision-keyed gate: max |Δ| < 1e-4 at fp32 under the TIE RULE — a violation warns; FATAL on 4 consecutive updates, too many rows over the bar, or a violating row at NO discrete-selection tie; p99 < 3.6e-3 AND max < 0.071 at TF32, the TF32 max FATAL only on 4 consecutive updates). Under `rust` Lane G's pre-loop probe runs its own forward and logs
   `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*`; under `python` (no per-row
   versions) the first micro-batch's own forward is compared in-loop instead (`learner_gates.md`). Per-game version pinning (`--version-pinning per_game`) is the first
   staleness remedy, OFF unless those measurements call for it.
@@ -630,7 +630,10 @@ orthogonal; a run can take either, both or neither.
 code then calls nothing) sets the TRAINER process's fp32 matmul precision; `high` enables TF32. It
 is stamped at launch as `🧮 [MATMUL PRECISION]` and recorded in `metadata.json`
 (`gen3_matmul_precision_v1`); a runtime knob, never inherited. K9(b)'s behaviour gate is KEYED BY it
-(one table, `rust_rollout/consistency.BEHAVIOUR_GATES`): `max` |Δ log π| < 1e-4 at `highest`; at `high`
+(one table, `rust_rollout/consistency.BEHAVIOUR_GATES`): `max` |Δ log π| < 1e-4 at `highest`, judged by
+the fp32 TIE RULE (the policy forward selects with topk / argmax, and a selection at a near-tie can resolve
+differently in T2 and in the learner — ~1 row per 1.2M; a violation warns, FATAL on 4 consecutive updates,
+too many rows, or a row at no tie); at `high`
 BOTH the micro-batch's `p99` < 3.6e-3 (global faults — TF32's healthy tail reaches 0.04 on a few rows,
 so no max bar alone separates a one-step-stale rollout) AND its `max` < 0.071 (localized gross faults
 on < 1 % of rows) — the max PERSISTENT: one violation warns and dumps the rows to

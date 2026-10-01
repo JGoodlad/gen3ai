@@ -9,8 +9,10 @@ reuses the training graph rather than declaring a new signature) and compares th
 ``log π(a|s)`` with the buffer's stored BEHAVIOUR log-prob ``μ(a|s)``:
 
 * **K9(b)** — on the rows played at the CURRENT policy version (the weights the learner holds now),
-  ``max |log π − log μ| < 1e-4`` or a typed `BehaviourMismatch` (``--behaviour-check fatal``, the
-  default under ``--env-core rust``). It catches stale served weights (T2 not reloaded), an
+  ``max |log π − log μ| < 1e-4`` at fp32 under the TIE RULE (a violation warns; FATAL on 4 consecutive
+  updates, on too many rows in the full-buffer scan, or on a violating row at no selection tie —
+  `FP32_ROW_RATE_UPPER` and below), else a typed `BehaviourMismatch` (``--behaviour-check fatal``, the
+  default). It catches stale served weights (T2 not reloaded), an
   eval-vs-train-mode difference, and a rollout/learner observation mismatch. It would NOT catch a
   miscompile shared by both sides — K6's eager canary exists for that.
 * **STALENESS** (owner, 2026-09-29: MEASURE it, never drop or down-weight a row for age) — on the rows
@@ -39,8 +41,9 @@ import numpy as np
 #: 2,048-row micro-batches, eager and compiled — n = 147,456 rows / 72 micro-batches per precision;
 #: the localized faults in ``BAR_MEASUREMENT_LOCALIZED``):
 #:
-#: * ``highest`` (fp32) — ``max`` < 1e-4: healthy per-row max 1.9e-6 (52x headroom); the smallest
-#:   one-step-stale fault micro-batch max 0.020 (200x over).
+#: * ``highest`` (fp32) — ``max`` < 1e-4: healthy per-row max 1.9e-6 over 147k rows (52x headroom); the
+#:   smallest one-step-stale fault micro-batch max 0.020 (200x over). A violation is judged by the TIE RULE
+#:   (`FP32_ROW_RATE_UPPER` and below): the full-buffer tail is ~1 row per 1.2M at discrete-selection ties.
 #: * ``high`` (TF32) — TWO conditions (orchestrator, 2026-09-30):
 #:   - ``p99`` < ``TF32_P99_MULTIPLE`` x the healthy per-row p99.9 (1.17e-3), rounded up = 3.6e-3 — the
 #:     GLOBAL faults (stale weights, a mode or sampling mismatch move EVERY row): healthy micro-batch
@@ -72,10 +75,68 @@ class GateCondition(NamedTuple):
     statistic: str      # "max" | "p99" of |log π − log μ| over the current rows
     bar: float          # the condition holds iff statistic < bar
     persistence: int    # FATAL once violated on this many CONSECUTIVE updates (1 = single-shot)
+    # The fp32 TIE RULE's two extra FATALs (0 = off; `gen3_behaviour_tie_rule_v1`, Rust probe only — they
+    # read the violation's full-buffer scan and its rows' observations):
+    row_rate: float = 0.0   # (ii) the healthy per-row rate over the bar (95 % upper); FATAL when the
+    #                         scan's count exceeds what that rate allows (`count_limit`)
+    tie_eps: float = 0.0    # (iii) FATAL when a violating row sits at NO selection tie within this
+    #                         (`tie_margins.selection_gaps`) — a jump without a tie flip is a fault
+
+
+#: THE fp32 TIE RULE (orchestrator, 2026-10-01; every number from `TAIL_MEASUREMENT`). Sizing arm A2 died
+#: on ONE row at |Δ| 0.0389 under the old single-shot max < 1e-4. The tail sweep found the mechanism: a
+#: discrete SELECTION in the forward (topk / argmax) at a near-tie that the rollout's T2 forward and the
+#: learner's eager forward resolve differently (T2 reproduced its own stored value exactly; a few-ulp
+#: weight jitter of the eager forward landed on it; fp64 gaps 5e-8 .. 1.7e-7; p(a) 0.10 .. 0.40 — no tiny
+#: probabilities). Healthy rate: 4 rows over 1e-4 in 3,670,016 judged (the sweep's 3 in 3,538,944 full-
+#: buffer rows + A's 0 in 83,968 + A2's 1 in 47,104 probe rows) — 95 % Poisson upper 9.154 / 3,670,016:
+FP32_ROW_RATE_UPPER = 2.5e-6
+#: The declared false-FATAL budget both derived rules are held to: <= 1e-4 over 10,000 updates.
+FALSE_FATAL_TARGET, UPDATES_HORIZON = 1e-4, 10_000
+#: (i) k: the smallest whose HORIZON x p^k <= TARGET, p = the per-update violation rate of a probe of up to
+#: 2,048 rows at `FP32_ROW_RATE_UPPER` (5.1e-3): k = 3 gives 1.3e-3, k = 4 gives 6.8e-6.
+FP32_MAX_PERSISTENCE = 4
+#: (iii) epsilon: >= 50x the largest flipped gap measured (1.7e-7 fp64); 15.3 % of healthy rows sit at a
+#: tie within it (13.9 % at an EXACT tie, counted as a tie: a flip there cannot be ruled out), so a fault on
+#: a random single row is FATAL at once with P ~0.85 (`TAIL_MEASUREMENT`'s tie_rate).
+FP32_TIE_EPS = 1e-5
+TAIL_MEASUREMENT = "designs/research_state/measurements/k9_behaviour_tail/result.json"
+
+
+def _poisson_sf(m: int, mu: float) -> float:
+    """P(Poisson(mu) >= m)."""
+    import math
+
+    if m <= 0:
+        return 1.0
+    term, cdf = math.exp(-mu), 0.0
+    for i in range(m):
+        cdf += term
+        term *= mu / (i + 1)
+    return max(0.0, 1.0 - cdf)
+
+
+def per_update_rate(row_rate: float, probe_rows: int) -> float:
+    """P(a healthy probe of ``probe_rows`` rows has >= 1 row over the bar) at ``row_rate``."""
+    import math
+
+    return 1.0 - math.exp(-float(row_rate) * int(probe_rows))
+
+
+def count_limit(row_rate: float, scan_rows: int, probe_rows: int) -> int:
+    """Rule (ii): the smallest scan count that is FATAL. Given a violation (the probe saw >= 1 row over the
+    bar), the OTHER healthy rows over it in a full-buffer scan of ``scan_rows`` are ~Poisson(rate x rows);
+    the limit is 1 + the smallest m with P(>= m) <= TARGET / (HORIZON x the per-update violation rate)."""
+    q = FALSE_FATAL_TARGET / (UPDATES_HORIZON * max(per_update_rate(row_rate, probe_rows), 1e-300))
+    mu = float(row_rate) * int(scan_rows)
+    m = 0
+    while _poisson_sf(m, mu) > q:
+        m += 1
+    return m + 1
 
 
 BEHAVIOUR_GATES: Dict[str, Tuple[GateCondition, ...]] = {
-    "highest": (GateCondition("max", 1e-4, 1),),
+    "highest": (GateCondition("max", 1e-4, FP32_MAX_PERSISTENCE, FP32_ROW_RATE_UPPER, FP32_TIE_EPS),),
     "high": (GateCondition("p99", 3.6e-3, 1), GateCondition("max", 0.071, TF32_MAX_PERSISTENCE)),
 }
 BEHAVIOUR_BAR = BEHAVIOUR_GATES["highest"][0].bar
@@ -158,6 +219,8 @@ def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], precision: 
             record["route"] = details["route"]
         if "scan" in details:              # the scan's arrays (underscored) go to the .npz, not the JSON
             record["scan"] = {k: v for k, v in details["scan"].items() if not k.startswith("_")}
+        if "ties" in details:
+            record["ties"] = details["ties"]
     dump_dir = getattr(model, "behaviour_dump_dir", None)
     if details is not None and dump_dir:
         record["artifacts"] = _dump_artifacts(model, str(dump_dir), details, a, record["n_updates"])
@@ -291,15 +354,24 @@ def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any
     nonfinite = not np.isfinite(np.asarray(abs_d, dtype=np.float64)).all()
     metrics: Dict[str, float] = {}
     failed, fatal = [], []
+    why: List[str] = []
+    totals: Dict[str, int] = model.__dict__.setdefault("_behaviour_violation_totals", {})
     for j in judged:
         key = f"{precision}:{j.condition.statistic}"
         streaks[key] = streaks.get(key, 0) + 1 if not j.ok else 0
         metrics[f"behaviour/bar_{j.condition.statistic}"] = j.condition.bar
         metrics[f"behaviour/streak_{j.condition.statistic}"] = float(streaks[key])
         if not j.ok:
+            totals[key] = totals.get(key, 0) + 1
             failed.append(j)
             if nonfinite or streaks[key] >= j.condition.persistence:
                 fatal.append(j)
+                why.append(f"(i) {j.condition.statistic} violated on {streaks[key]} consecutive update(s)"
+                           if not nonfinite else "a NON-FINITE |d log pi|")
+            why += _tie_rule_fatal(j, details, abs_d)
+            if why and j not in fatal:
+                fatal.append(j)
+        metrics[f"behaviour/violations_total_{j.condition.statistic}"] = float(totals.get(key, 0))
     if not failed:
         return metrics
     worst = float(np.nanmax(np.asarray(abs_d, dtype=np.float64))) if np.size(abs_d) else 0.0
@@ -309,6 +381,8 @@ def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any
            "mismatch, or (a localized fault) misaligned rows, a wrong action index or a mask mismatch")
     rule = "; ".join(f"{j.condition.statistic}: violated {streaks[f'{precision}:{j.condition.statistic}']} "
                      f"consecutive update(s), FATAL at {j.condition.persistence}" for j in failed)
+    if why:
+        rule += " — FATAL: " + "; ".join(why)
     mode = str(getattr(model, "behaviour_check", "off") or "off")
     head = ("🛑 " if (fatal and mode == "fatal") else "🚨 ")
     print(f"{head}{msg} [{rule}]", flush=True)
@@ -317,8 +391,36 @@ def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any
         raise BehaviourMismatch(f"{msg} [{rule}]")
     if mode == "fatal":
         print("🚨 [K9(b)] NOT fatal YET: a single violation of a persistence>1 condition is a warning; "
-              "the SAME condition violated on the next update(s) is FATAL (BEHAVIOUR_GATES).", flush=True)
+              "the SAME condition violated on the next update(s) is FATAL (BEHAVIOUR_GATES)"
+              + (" — and every violating row sat at a selection TIE, with the full-buffer count inside "
+                 "the healthy rate (the fp32 tie rule)" if details is not None else ""), flush=True)
     return metrics
+
+
+def _tie_rule_fatal(j: Judged, details: Optional[Dict[str, Any]], abs_d: np.ndarray) -> List[str]:
+    """The fp32 tie rule's rules (ii) and (iii) for one violated condition (empty = not FATAL by them).
+    (ii) counts the Rust probe's FULL-BUFFER scan when there is one, else the judged rows themselves (the
+    Python path's first micro-batch); (iii) needs the violating rows' observations — Rust path only."""
+    c = j.condition
+    out: List[str] = []
+    a = np.asarray(abs_d, dtype=np.float64).reshape(-1)
+    sc = (details or {}).get("scan")
+    if c.row_rate > 0:
+        rows, over, what = ((int(sc["rows"]), int(sc["over_bar"]), "in the full-buffer scan") if sc is not None
+                            else (int(a.size), int((~(a < c.bar)).sum()), "in the judged micro-batch"))
+        lim = count_limit(c.row_rate, rows, int(a.size))
+        if over >= lim:
+            out.append(f"(ii) {over} of {rows} current rows over the bar {what} (the healthy rate allows < {lim}) "
+                       "— a fault moves MANY rows")
+    if details is None:
+        return out
+    ties = details.get("ties")
+    if c.tie_eps > 0 and ties is not None:
+        loose = [r for r in ties if not r["tie_gap"] <= c.tie_eps]
+        if loose:
+            out.append(f"(iii) {len(loose)} violating row(s) sit at NO selection tie within {c.tie_eps:g} "
+                       f"(smallest gap {min(r['tie_gap'] for r in loose):.3g}) — a jump without a tie flip is a fault")
+    return out
 
 
 def _stashed_logp(policy: Any) -> Optional[np.ndarray]:
@@ -356,6 +458,40 @@ def _violation_details(model: Any, buf: Any, t: np.ndarray, e: np.ndarray, old: 
     return {"t": t, "e": e, "action": np.asarray(actions).astype(np.int64), "logp_stored": old,
             "logp_recomputed": new, "dist_recomputed": full_new, "dist_stored": prov.get("logp_all"),
             "provenance": prov, "obs": obs, "route": _route(model)}
+
+
+#: At most this many violating rows (probe first, then the scan's) are put through the tie trace.
+_TIE_ROWS = 32
+
+
+def violating_row_ties(model: Any, details: Dict[str, Any], abs_d: np.ndarray) -> List[Dict[str, Any]]:
+    """Rule (iii)'s evidence: every row over the precision's smallest bar — the probe's, then the full-buffer
+    scan's — through the learner forward under `tie_margins.selection_gaps`: its smallest selection gap and
+    that selection's site."""
+    from agents.training.rust_rollout.tie_margins import selection_gaps
+
+    bar = min(c.bar for c in behaviour_gate())
+    buf = model.rollout_buffer
+    rows: List[Tuple[str, int, int, float, Dict[str, np.ndarray]]] = []
+    for i in np.flatnonzero(~(np.asarray(abs_d) < bar)):
+        rows.append(("probe", int(details["t"][i]), int(details["e"][i]), float(abs_d[i]),
+                     {k: v[i] for k, v in details["obs"].items()}))
+    sc = details.get("scan", {})
+    seen = {(t, e) for _w, t, e, _a, _o in rows}
+    for j, r in enumerate(sc.get("worst", [])):
+        if not r["abs_dlogp"] < bar and (r["buffer_t"], r["buffer_e"]) not in seen:
+            rows.append(("scan", int(r["buffer_t"]), int(r["buffer_e"]), float(r["abs_dlogp"]),
+                         {k: v[j] for k, v in sc.get("_obs", {}).items()}))
+    rows = rows[:_TIE_ROWS]
+    if not rows:
+        return []
+    obs = {k: np.stack([o[k] for *_x, o in rows]) for k in rows[0][4]}
+    t = np.asarray([r[1] for r in rows])
+    e = np.asarray([r[2] for r in rows])
+    gap, site = selection_gaps(model.policy, obs, buf.actions[t, e].reshape(-1), buf.action_masks[t, e],
+                               model.device)
+    return [{"where": w, "buffer_t": ti, "buffer_e": ei, "abs_dlogp": a, "tie_gap": float(g), "tie_site": s}
+            for (w, ti, ei, a, _o), g, s in zip(rows, gap, site)]
 
 
 #: The worst rows of the full-buffer scan the dump keeps (JSON fields + their observations in the .npz).
@@ -546,6 +682,8 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
                 details["scan"] = scan_current(model, ages)
                 out["behaviour/scan_rows_over_bar"] = float(details["scan"]["over_bar"])
                 out["behaviour/scan_max_abs_dlogp"] = float(details["scan"]["max"])
+                if violated:
+                    details["ties"] = violating_row_ties(model, details, np.abs(d[cur]))
             out.update(enforce_behaviour(
                 model, np.abs(d[cur]), where=f"{int(cur.sum())} rows played at the CURRENT policy version",
                 actions=acts[ci], masks=masks[ci], details=details))

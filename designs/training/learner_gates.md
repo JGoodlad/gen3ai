@@ -81,7 +81,7 @@ is a typed `UndeclaredPrecision`). Every condition must hold on the micro-batch'
 
 | precision | condition | catches | bar | FATAL when |
 |---|---|---|---|---|
-| `highest` (fp32, the default) | max \|Δ\| | every fault class | 1e-4 | the first violation |
+| `highest` (fp32, the default) | max \|Δ\| | every fault class | 1e-4 | the **TIE RULE** (below): (i) 4 CONSECUTIVE updates, (ii) too many rows over the bar in one update, (iii) a violating row at NO selection tie; a single tied row is a loud warning |
 | `high` (TF32) | p99 \|Δ\| | GLOBAL faults (every row moves: stale weights, a mode / sampling / temperature mismatch) | 3.6e-3 = 3 x the healthy per-row p99.9, rounded up | the first violation |
 | `high` (TF32) | max \|Δ\| | LOCALIZED gross faults (< 1 % of rows: misaligned rows, a wrong action index, a mask mismatch) | 0.071 = 1.75 x the healthy per-row max, rounded up | **4 CONSECUTIVE updates** (`TF32_MAX_PERSISTENCE`); a single violation is a loud warning |
 
@@ -116,6 +116,44 @@ Two artifacts are written beside it:
 
 A clean update pays nothing. The Python-core in-loop gate dumps what it has (index, |Δ|, action,
 mask); its buffer carries no collection provenance.
+
+**The fp32 TIE RULE (`gen3_behaviour_tie_rule_v1`, orchestrator 2026-10-01; every number from
+[`measurements/k9_behaviour_tail/result.json`](../research_state/measurements/k9_behaviour_tail/result.json)).**
+
+*Why it changed.* Sizing arm A2 died under the old single-shot fp32 max. One row of 1,024 was at
+|Δ| 0.0389; the p99 was 2.6e-6 and the next-worst row 4.5e-6.
+
+*The tail sweep.* It used A2's 4.0M checkpoint and pool on the production rust path (T2 graph, buckets
+8 / 48, 7 lanes, N = 48). Nothing trained, so all 3,538,944 rows of 36 fills were current, and every row
+went through the probe forward. It found 3 rows over 1e-4: |Δ| 2.4e-4, 4.8e-4 and 7.8e-4. All three
+have the same mechanism:
+- T2 recomputing the row in the SAME bucket reproduced its stored value bit-for-bit (no race, no
+  misalignment, no stale weights).
+- A few-ulp weight jitter of the eager forward landed on the stored value too: the value is two- or
+  four-valued, a jump apart.
+- The discrete-op trace named the selections that flipped: the threat-seat `topk` and its `>=`
+  threshold (`pointer_head.py`), the damage op's candidate `topk` (`damage_op_pairwise.py`), and the
+  dominant-move `argmax` (`damage_op.py`).
+- Their fp64 gaps were 5e-8 to 1.7e-7, and fp64 sides with the stored value twice and the learner once.
+- p(a) was 0.40, 0.10 and 0.13, so a near-zero probability is not the cause.
+
+So the forward is PIECEWISE-DISCONTINUOUS, and T2 (compiled, at its bucket) and the learner (eager, at
+its batch) resolve a near-tie differently (`TECH_DEBT_BACKLOG.md` §2(b)). TF32's healthy tail is the
+same mechanism at a higher rate.
+
+*The healthy rate.* 4 rows over the bar in 3,670,016 judged: the sweep, plus A's probes with 0 and A2's
+with 1. The one-sided 95 % Poisson upper bound is `FP32_ROW_RATE_UPPER` = 2.5e-6 per row. Both derived
+rules are held to a false FATAL of ≤ 1e-4 over 10,000 updates:
+
+| rule | FATAL when | derivation |
+|---|---|---|
+| (i) persistence | the max violated on `FP32_MAX_PERSISTENCE` = **4** consecutive updates | the per-update violation rate of a probe of up to 2,048 rows at the upper rate is 5.1e-3; k = 3 gives 1.3e-3 over 10k updates, k = 4 gives 6.8e-6 |
+| (ii) count | too many rows over the bar in one update: the Rust probe counts its FULL-BUFFER scan, the Python path its judged micro-batch | `count_limit`: 1 + the smallest m with P(Poisson(rate × rows) ≥ m) ≤ 1e-4 / (10k × the per-update rate). It is **7** at 98,304 rows (N = 48 × 2,048) and at 131,072, and 11 at 524,288. Stale weights or an obs / mask mismatch move many rows |
+| (iii) no tie | a violating row (the probe's, then the scan's; up to 32) sits at NO selection tie within `FP32_TIE_EPS` = **1e-5** (`rust_rollout/tie_margins.py`: every topk / sort / argmax / max-with-dim's gap between the selected candidate and the next, in the run's precision) | the bar is ≥ 50 × the largest flipped gap (1.7e-7). 15.3 % of healthy rows sit at a tie within it, 13.9 % at an EXACT tie. So a fault on a random single row is FATAL at once with P ≈ 0.85. **Exact ties COUNT as ties (orchestrator, 2026-10-01):** excluding them would raise the teeth to 98.6 %, but a gap-0 selection CAN resolve differently in two kernels, and that false FATAL would kill a long run. The single-row miss is backed by (i) and (ii), and a real fault moves many rows. Rust path only: it needs the row's observation |
+
+**Anything less is a LOUD warning.** That covers one tied row, or a few rows within the healthy count.
+The warning dumps everything above, and `behaviour/violations_total_max` counts violations over the run.
+The Python path has no obs for the tie trace, so a single-row fault there is caught by persistence alone.
 
 **Why the TF32 max is PERSISTENT, and why k = 4 (orchestrator 2026-09-30; k from data).** Its 1.8x
 headroom over the first pass's healthy max (0.040) came from a small sample, and the max of a noise

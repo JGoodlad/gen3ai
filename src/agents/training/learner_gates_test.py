@@ -180,12 +180,14 @@ def test_check_loss_finite_names_every_non_finite_term():
 
 def test_the_gate_is_keyed_by_the_matmul_precision_the_run_uses():
     """ONE table (`consistency.BEHAVIOUR_GATES`), ONE enforcement (`enforce_behaviour`), read by BOTH
-    implementations: fp32 = max < 1e-4 single-shot; TF32 = p99 < 3.6e-3 single-shot AND max < 0.071,
+    implementations: fp32 = max < 1e-4 under the TIE RULE (4 consecutive, or too many rows, or a row at no
+    tie); TF32 = p99 < 3.6e-3 single-shot AND max < 0.071,
     FATAL only on `TF32_MAX_PERSISTENCE` (4) consecutive updates; an undeclared precision is refused."""
     from agents.training.rust_rollout import consistency as K
 
     C = K.GateCondition
-    assert K.behaviour_gate("highest") == (C("max", 1e-4, 1),) and K.BEHAVIOUR_BAR == 1e-4
+    assert K.behaviour_gate("highest") == (C("max", 1e-4, K.FP32_MAX_PERSISTENCE, K.FP32_ROW_RATE_UPPER,
+                                              K.FP32_TIE_EPS),) and K.BEHAVIOUR_BAR == 1e-4
     assert K.TF32_MAX_PERSISTENCE == 4
     assert K.behaviour_gate("high") == (C("p99", 3.6e-3, 1), C("max", 0.071, K.TF32_MAX_PERSISTENCE))
     with pytest.raises(K.UndeclaredPrecision, match="medium"):
@@ -219,6 +221,14 @@ def _localized(seed: int, bad_rows: int = 10, value: float = 0.3):
     d = th.rand(2048, generator=g, dtype=th.float64) * 1e-3
     if bad_rows:
         d[th.randperm(2048, generator=g)[:bad_rows]] = value
+    return d
+
+
+def _fp32(bad_rows: int, value: float = 1e-3):
+    """A 2,048-row |Δ| micro-batch at fp32's healthy noise (~1e-6) plus ``bad_rows`` rows over its bar."""
+    g = th.Generator().manual_seed(3)
+    d = th.rand(2048, generator=g, dtype=th.float64) * 2e-6
+    d[th.randperm(2048, generator=g)[:bad_rows]] = value
     return d
 
 
@@ -274,7 +284,12 @@ def test_a_clean_update_resets_the_streak_so_interleaved_violations_never_fatal(
         assert model.logger.name_to_value["behaviour/streak_max"] == 1.0
 
 
-def test_the_tf32_p99_and_the_fp32_max_stay_single_shot_and_a_nan_is_always_fatal():
+def test_the_tf32_p99_is_single_shot_the_fp32_max_follows_the_tie_rule_and_a_nan_is_always_fatal():
+    """fp32 on the Python path (no full-buffer scan, no obs for the tie trace): ONE row over 1e-4 warns,
+    the 4th consecutive update is FATAL, and enough rows in the one micro-batch are FATAL at once (rule
+    (ii) on the judged rows; a stale-weights fault moves every row)."""
+    from agents.training.rust_rollout import consistency as K
+
     model = _learner("fatal")
     with _precision("high"):
         with pytest.raises(BehaviourMismatch, match="p99: violated 1 consecutive"):
@@ -285,8 +300,16 @@ def test_the_tf32_p99_and_the_fp32_max_stay_single_shot_and_a_nan_is_always_fata
         with pytest.raises(BehaviourMismatch):
             _step(model, nan)                                          # never rounding: no persistence
     model._behaviour_streaks = {}
-    with pytest.raises(BehaviourMismatch, match="'highest'"):
-        _step(model, _localized(1, bad_rows=1, value=1e-3))            # fp32: one row over 1e-4
+    for _ in range(K.FP32_MAX_PERSISTENCE - 1):
+        _step(model, _fp32(bad_rows=1))                                # fp32: one row over 1e-4 WARNS
+    with pytest.raises(BehaviourMismatch, match=r"\(i\) max violated on 4 consecutive"):
+        _step(model, _fp32(bad_rows=1))                                # ... and FATALs on the 4th in a row
+    model._behaviour_streaks = {}
+    lim = K.count_limit(K.FP32_ROW_RATE_UPPER, 2048, 2048)
+    with pytest.raises(BehaviourMismatch, match=r"\(ii\) .* in the judged micro-batch"):
+        _step(model, _fp32(bad_rows=lim))                              # ... and MANY rows FATAL at once
+    model._behaviour_streaks = {}
+    _step(model, _fp32(bad_rows=lim - 1))                              # one fewer: a warning
 
 
 def _wide_learner(n_steps: int = 64):

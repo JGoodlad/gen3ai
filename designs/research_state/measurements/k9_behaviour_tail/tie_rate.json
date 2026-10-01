@@ -1,0 +1,43 @@
+{
+ "rows": 8192,
+ "frac_at_or_below": {
+  "0": 0.139404296875,
+  "1e-07": 0.1402587890625,
+  "1e-06": 0.1431884765625,
+  "1e-05": 0.153076171875,
+  "3e-05": 0.1650390625,
+  "0.0001": 0.219970703125,
+  "0.0003": 0.3516845703125,
+  "0.001": 0.6182861328125
+ },
+ "quantiles": {
+  "0.001": 0.0,
+  "0.01": 0.0,
+  "0.05": 0.0,
+  "0.5": 0.0005863047699676827
+ },
+ "argmin_sites": {
+  "agents/model/damage_op.py:858": 3736,
+  "agents/model/pointer_head.py:147": 3023,
+  "agents/model/pointer_head.py:39": 1032,
+  "agents/model/damage_op_blocks.py:875": 262,
+  "agents/model/damage_op.py:864": 139
+ },
+ "violators": [
+  {
+   "fill": 4,
+   "min_gap": 9.685754776000977e-08,
+   "site": "topk@agents/model/pointer_head.py:147"
+  },
+  {
+   "fill": 12,
+   "min_gap": 1.1920928955078125e-07,
+   "site": "argmax@agents/model/damage_op.py:858"
+  },
+  {
+   "fill": 31,
+   "min_gap": 1.4901161193847656e-08,
+   "site": "topk@agents/model/pointer_head.py:147"
+  }
+ ]
+}

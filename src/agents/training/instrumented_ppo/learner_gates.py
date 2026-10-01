@@ -9,7 +9,9 @@ the check needs no forward of its own: it reads the FIRST micro-batch's ``evalua
 (epoch 0, before any optimizer step can have run) against the rollout's stored ``old_log_prob`` — one
 host read per update — and a failure is a typed `BehaviourMismatch`. The STATISTIC and its bar are
 keyed by the run's float32 matmul precision (``consistency.BEHAVIOUR_GATES``, measured —
-``designs/training/learner_gates.md``): ``max`` < 1e-4 at fp32; under TF32 BOTH the micro-batch's
+``designs/training/learner_gates.md``): ``max`` < 1e-4 at fp32 under the TIE RULE (one violation warns;
+FATAL on 4 consecutive updates or when too many of the micro-batch's rows exceed it — this path has no
+obs for the tie trace, so a single-row fault is caught by persistence alone); under TF32 BOTH the micro-batch's
 ``p99`` < 3.6e-3 (global faults) and its ``max`` < 0.071 (localized gross faults) — the TF32 max is
 PERSISTENT: one violation warns loudly and dumps the offending rows (``<run_dir>/behaviour_violations.jsonl``);
 FATAL when it recurs on 4 consecutive updates (``TF32_MAX_PERSISTENCE``, from the measured tail). One table and one enforcement

@@ -10493,3 +10493,15 @@ if a lazy build is reintroduced.
   scan of every current row (`scan_current`), the violating rows' obs (`.npz`) and the policy
   weights (`.pt`, first 3 per process). No rule changed.
 
+## 2026-10-01 — K9(b): the fp32 behaviour gate is the TIE RULE (`gen3_behaviour_tie_rule_v1`; no model change)
+
+- Root cause of sizing arm A2's single-row FATAL: the tail sweep
+  (`measurements/k9_behaviour_tail/`) caught 3 rows over 1e-4 in 3.54M. In each, a discrete
+  selection (threat-seat / damage-op candidate topk, dominant-move argmax) sat at a near-tie (fp64
+  gap 5e-8 .. 1.7e-7) that T2's compiled forward and the learner's eager forward resolved
+  differently. T2 reproduced its own value; no fault.
+- The fp32 max (< 1e-4) now warns on a violation. It FATALs on (i) 4 consecutive updates, (ii) more
+  rows over the bar in one update than the healthy rate (2.5e-6 per row, 95 % upper) allows, or (iii) a
+  violating row at no selection tie within 1e-5 (`rust_rollout/tie_margins.py`). Each rule is derived
+  for a false FATAL ≤ 1e-4 over 10k updates. TF32 is unchanged. The discontinuity is a P3 debt row.
+
