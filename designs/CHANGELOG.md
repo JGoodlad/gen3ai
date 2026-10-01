@@ -10370,3 +10370,11 @@ if a lazy build is reintroduced.
   the copy (~1.1 GB at production shape); the quiescent floor between updates does not. A CPU
   buffer keeps the host path.
 
+## 2026-10-01 — K8 ACCEPTED: the regions read (no model change)
+
+- The compile inventory's time stage (torch 2.8 + TF32, arm C on the learner benchmark's pinned
+  buffer, interleaved A pre-regions / B K8, n = 2 each): one production update 46.7 s → 36.3 s
+  (0.778x; bar <= 0.80); the compiled share of the update wall 63.4% → 90.0% (bar >= 80%); host
+  scalar reads 66,784 → 9,942 per update; 0 compiles after the lock
+  (`research_state/measurements/k6_k8/acceptance/`).
+

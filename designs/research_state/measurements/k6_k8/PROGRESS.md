@@ -33,11 +33,17 @@ Orchestrator course corrections (2026-09-30, binding):
 | K8.5 | rank probe from R1's stashes, spectra on the device | built, branch `k8s`, gate pending | — |
 | K8.6 | device-resident micro-batch | built, branch `k8s`, gate pending | — |
 | K8.7 | `compile_regions_test` IS the routine inventory test (graphs == regions × signatures, 0 compiles after the lock; 2.5.1 a declared exception) | inside K8.4 | — |
-| K8.8 | acceptance read (`accept/run.sh`: the compile inventory's time stage, TF32, interleaved A = main pre-regions / B = K8) | RUNNING (`~/gen3ai_archive/k6_k8/accept/`) | — |
+| K8.8 | acceptance read (the compile inventory's time stage, TF32, interleaved A = main pre-regions / B = K8, n = 2) | ACCEPTED: 46.7 → 36.3 s (0.778x), compiled share 63.4% → 90.0% (`acceptance/`) | branch `k8s` |
 
 ## Resume point
 
 (updated at every unit boundary)
+
+- 2026-10-01 03:40 PT — K8 ACCEPTED (`acceptance/README.md`). Branch `k8s` (on main `ab207bf6`):
+  K8.4 regions, K8.5 rank probe, K8.6 device batch, the bench fix, the acceptance read — gate and the
+  2.8 compile slow tier (`~/gen3ai_archive/k6_k8/gpu_queue5.status`) pending, then ship. Branch
+  `k6leak` (worktree `/home/goodlad/dev/gen3ai-wt/k6leak`): the orchestrator's FATAL_CUDA_LEAK (6)
+  follow-up, built and tested, ships after K8.
 
 - 2026-10-01 01:55 PT — shipped: K6.1–K6.5, K8.1, K8.3 (+ the batch-1 fix, the golden recipe).
   Branch `k8s` (worktree `/home/goodlad/dev/gen3ai-wt/k8s`, on main `32bc32ec`) holds K8.4 / K8.5 /

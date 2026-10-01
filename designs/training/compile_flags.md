@@ -1240,6 +1240,14 @@ in 2.06M of 3.07M elements by at most 3.6e-7, against an eager-vs-eager floor of
 printed "loss rel 0.00e+00" on one earlier run was a one-scalar coincidence, not a comparison of a
 function with itself.
 
+**ACCEPTED (2026-10-01; `designs/research_state/measurements/k6_k8/acceptance/`):** the compile
+inventory's time stage, torch 2.8 + TF32, arm C on the learner benchmark's pinned buffer, interleaved
+A (pre-regions) / B (K8), n = 2 each — one production update **46.7 s → 36.3 s (0.778x, bar <= 0.80)**;
+the compiled share of the update's wall (profiled, diag-skipped) **63.4% → 90.0% (bar >= 80%)**, of
+kernel time 85.2% → 98.1%; host scalar reads 66,784 → 9,942 per update; GPU idle in the profiled
+epochs 2.4 → 0.57 s; 0 compiles after the lock. A's spread (45.3 / 48.0 s) is wider than the margin
+under the bar, so the verdict is "met" at n = 2, not "met with room".
+
 **Hazard (a FINDING, not a fix):** a configuration whose rollout buffer gains observation keys after
 startup (`win_row_w` under `--win-prob-rollout-weight`, `fork_pg_m` on a fork) or that turns on the
 strata / rollout weighting reaches R1 with an undeclared signature, and the sentinel stops it with a
