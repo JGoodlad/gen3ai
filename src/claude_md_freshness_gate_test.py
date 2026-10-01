@@ -282,6 +282,7 @@ def cli_flag_surface() -> frozenset:
 _EXTERNAL_TOOL_FLAGS: Dict[str, str] = {
     "--collect-only": "pytest",
     "--durations": "pytest",
+    "--dist": "pytest-xdist",
     "--select": "ruff",
     "--exclude": "ruff",
     "--extra-index-url": "pip",

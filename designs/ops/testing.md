@@ -291,6 +291,35 @@ lock (`GEN3AI_GATE_LOCK_HELD=<pid>:<slot>`, verified against `/proc/locks`); all
 ancestors is `GateLockSelfDeadlock` (exit 3); the timeout is inside (`--timeout-s`, exit 4). Wait and
 acquisition time go to stderr; `--status` names the holders.
 
+**The xdist SCHEDULE — whole FILES, the most expensive first** (`gen3_cost_ordered_loadfile_v1`,
+`src/utils/xdist_schedule.py`, 2026-09-30). `-n N` with no `--dist` of your own now means `--dist
+loadfile` (the root conftest's `pytest_cmdline_main`, before xdist would make it `load` — NOT an
+`addopts`, which is a usage error under `-p no:xdist`), and its `pytest_xdist_make_scheduler` hands
+xdist a `LoadFileScheduling` whose work queue is ordered, once,
+by each file's summed per-test durations, so the long poles start first and every worker pulls the
+next file when it runs dry (LPT). Why: under xdist's default `--dist load` the routine gate at `-n 8`
+took **437 s wall for 1,782 s of test time** — `load` hands each worker a CONTIGUOUS quarter-share
+of the collection up front (~390 tests at `-n 8`) and never takes it back, and the `agents/training/rust_*`
+parity gates (~400 s) sat in one worker's block: that worker was busy 426 s, the other seven idled after
+~200 s. A FILE is the unit so module- and class-scoped fixtures (the Lane H gate's three ~40-70 s eval
+runs) are built once — a file runs on one worker, back to back, exactly as it does serially.
+
+The durations live in a per-USER table, `~/.cache/gen3ai/test_costs.json` (`$GEN3AI_TEST_COSTS`),
+keyed by repo-relative node id so every worktree shares it; every session of THIS repo merges what it
+measured at session end (flock + atomic replace; 60-day prune; a conftest copied into a test's temp
+dir records nothing). 🚨 **The table ORDERS work and does nothing else**: the collection is untouched,
+so a missing, stale or corrupt table runs the identical set of tests and costs only wall time — an
+unreadable one is IGNORED and named in the session summary. `xdist_schedule_test.py` runs a real
+`-n 2` child session per table state (good / missing / corrupt / stale) and asserts all seven planted
+tests ran, and that the costly file starts first with the schedule on and cannot with it off.
+`GEN3AI_COST_SCHEDULE=0` is plain `loadfile`; an explicit `--dist <mode>` always wins (a test whose
+child session needs each test on its own worker passes `--dist load`, as `pytest_tmp_on_disk_test`
+does). ⚠️ **Upstream `loadfile`/`loadscope` RE-RUN the test that crashed its worker** (the crashed unit is
+re-queued with that test still pending, so a restarted worker runs it again until the restart budget
+is spent — found when `slow_tier_status_interrupt_test`'s SIGTERM'd worker re-ran a 600 s sleeper);
+the schedule overrides `remove_node` to report it once, as `load` does, and re-queue only the rest of
+its file. Pinned by `xdist_schedule_test`'s planted SIGKILL, which fails on the upstream method.
+
 **Do not use the old `-m "not integration and not e2e"`.** It is what let the obs-golden linchpin
 rot on main three times: `integration` now spans a ~100x cost range, so excluding it throws away
 cheap, high-value coverage (bridge battles, data parity, mechanics) to avoid the browser suite. Cut

@@ -161,7 +161,7 @@ Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`
 | anything on the GPU | `scripts/ops/gpu_lock.sh <cmd>` (Python: `utils.gpu_lock.gpu_lock()`) — **never a bare `flock …/gpu.lock`**: the helper is re-entrant for children and raises `GpuLockSelfDeadlock` on an ancestor holder |
 | any one-off HEAVY job (trace, benchmark, measurement driver, many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`) — own scope + hard cap inside `gen3ai-heavy.slice` (64 GB aggregate), timeout INSIDE; an overrun kills only that job, not the session (2026-09-30: three OOMs took the whole tmux scope) |
 
-Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4` when the box is yours. Serial when you need `-s` or a debugger.
+Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4` when the box is yours. Serial when you need `-s` or a debugger. Under `-n` with no `--dist` of yours, the conftest schedules whole FILES, the most expensive first, from a per-user duration table (`src/utils/xdist_schedule.py`) — it orders work only, never selects it.
 
 🚨 **Do NOT use the old `-m "not integration and not e2e"`.** `integration` now spans a ~100x cost range, so excluding it throws away cheap high-value coverage — that is how the obs-golden linchpin rode main RED three separate times. **Cut on `slow`**, the marker that means "expensive".
 

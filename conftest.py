@@ -440,8 +440,11 @@ def _session_reading():
 
 
 def pytest_runtest_logreport(report):
-    """Two jobs: the tier-budget overrun above, and the slow-tier status recording below."""
+    """Three jobs: the tier-budget overrun above, the slow-tier status recording below, and the
+    per-test duration the xdist schedule orders by (`_costs_measured`, further down)."""
     _record_slow_result(report)         # every phase, so a setup/teardown error is not lost
+    if not _meter["worker"]:
+        _costs_measured[report.nodeid] = _costs_measured.get(report.nodeid, 0.0) + float(report.duration)
     if (os.environ.get("GEN3AI_SKIP_TIER_BUDGET") or report.when != "call" or report.skipped
             or _meter["worker"]):
         return                          # an xdist worker's copy: the CONTROLLER judges budgets
@@ -508,6 +511,9 @@ def _enforceable(entry):
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     for note in _slow_write_note:
         terminalreporter.write_line(note)
+    sched = sys.modules.get("utils.xdist_schedule")
+    for note in (getattr(sched, "NOTES", None) or []):
+        terminalreporter.write_line(note)
     if _within_scaled:
         top = sorted(_within_scaled, key=lambda x: -x[1])[:3]
         terminalreporter.write_line(
@@ -567,12 +573,59 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception:
             pass
     _write_slow_results()
+    _record_test_costs(session)
     # Fail ONLY on a trustworthy measurement. Scaling the budget is not enough on its own — a
     # core-hungry test slows by multiples of any average factor — so contended ⇒ advisory, and
     # quiet (the session AND the test's own window) ⇒ a real verdict.
     if (_over_budget and exitstatus == 0 and _box_is_idle()
             and any(_enforceable(e) for e in _over_budget)):
         session.exitstatus = 1
+
+
+# --- The xdist SCHEDULE: whole files, most expensive first (gen3_cost_ordered_loadfile_v1) ---------
+#
+# `-n N` with NO `--dist` of your own means `--dist loadfile` here (set in `pytest_cmdline_main`, before
+# xdist turns an unset `--dist` into `load`), and under `loadfile` this hook hands xdist
+# `utils.xdist_schedule`'s scheduler, which orders the files by their tests' last recorded durations
+# (a per-USER table shared by every worktree) so the long poles start first and no worker is left
+# holding a contiguous block of them. Measured 2026-09-30 at -n 8 under the default `--dist load`:
+# 437 s wall for 1,782 s of test time, one worker busy 426 s while seven idled after ~200 s. The table
+# only ORDERS work — the collection is untouched. The controller (or a serial session) records every
+# test's duration at session end. NOT an `addopts = --dist loadfile`: that is a usage error under
+# `-p no:xdist`, which several tests' child sessions use. Escape hatches: GEN3AI_COST_SCHEDULE=0 (plain
+# loadfile), an explicit `--dist <mode>` (always wins).
+_costs_measured: "dict[str, float]" = {}
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_cmdline_main(config):
+    """`-n N` without an explicit `--dist`: make it `loadfile` (xdist would make it `load`)."""
+    opt = config.option
+    if (getattr(opt, "dist", None) == "no" and not getattr(opt, "distload", False)
+            and getattr(opt, "numprocesses", None) not in (None, 0)):
+        opt.dist = "loadfile"
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_xdist_make_scheduler(config, log):
+    if config.getvalue("dist") != "loadfile" or os.environ.get("GEN3AI_COST_SCHEDULE") == "0":
+        return None                     # xdist's own scheduler for that mode
+    from utils.xdist_schedule import make_scheduler
+    return make_scheduler(config, log)
+
+
+def _record_test_costs(session):
+    """Merge this session's per-test durations into the cost table — only from THIS repo's own
+    sessions (a conftest copied into a test's temp dir runs planted tests that must not be learned)."""
+    if not _costs_measured or _meter["worker"] or os.environ.get("GEN3AI_COST_SCHEDULE") == "0":
+        return
+    if not os.path.exists(os.path.join(str(session.config.rootpath), "src", "utils", "xdist_schedule.py")):
+        return
+    try:
+        from utils.xdist_schedule import record_costs
+        record_costs(_costs_measured)
+    except Exception as exc:            # the table only orders work; never fail a run over it
+        _slow_write_note.append(f"test-cost table NOT updated: {exc!r}")
 
 
 # --- Fresh-worktree guard: an unfinished checkout must say so ONCE, not 15 times ------------------

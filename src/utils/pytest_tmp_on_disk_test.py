@@ -61,7 +61,9 @@ def _on_disk_dir(tmp_path_factory, name: str) -> Path:
 def test_child_session_temp_is_on_disk_and_a_pass_leaves_nothing(tmp_path_factory):
     scratch = _on_disk_dir(tmp_path_factory, "scratch")
     out = _on_disk_dir(tmp_path_factory, "out")
-    r = _child(scratch, out, "-n", "2")
+    # `--dist load`: the probe file's two tests must land on TWO workers (each reports its own temp
+    # root); the repo default `loadfile` would run the whole file on one (utils/xdist_schedule.py)
+    r = _child(scratch, out, "-n", "2", "--dist", "load")
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
 
     reports = {p.stem: json.loads(p.read_text()) for p in out.glob("*.json")}
