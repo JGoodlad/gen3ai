@@ -267,7 +267,7 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | When | Command | Count (2026-08-23) · duration (2026-08-14) |
 |---|---|---|
 | **inner loop** — you want the fastest true/false | `-m "not slow and not e2e and not sim and not integration"` | 6570 tests, **127 s** (~56 s at `-n 4`) |
-| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 6676 tests, **4 m 36 s** |
+| **THE ROUTINE GATE** — before a commit | `-m "not slow and not e2e"` | 12,782 tests, **4 m 19 s at `-n 6`** on a quiet box (2026-10-01; table below) |
 | **before a `/gen3ai-ship`, and in CI** | `pytest src/` (everything) | 11,578 tests, **~47 m** serial (2026-09-29, nice 19, load ~3; the browser tier is ~19 s of it — the rest is corpus growth since 2026-08) |
 | just the bridge | `-m sim` | ~100 s |
 | just the browser views | `-m browser` | **~19 s** (2026-09-29) |
@@ -276,20 +276,64 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
 | **any exploratory or one-off HEAVY job** (a trace, a benchmark, a measurement driver, anything that loads many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`), a timeout INSIDE (`mem_cap.sh 24 timeout 2h python …`), composes with `gpu_lock.sh` in either order. The job gets its OWN scope (`MemoryMax=<GB>G`, swap 0, `OOMPolicy=stop`) inside `gen3ai-heavy.slice` (aggregate cap, default 64 GB of 89) at `oom_score_adj` +500, so an overrun kills only that job (exit 86). 2026-09-30: three global OOM kills of a 74-82 GB python3 each tore down the whole tmux scope (Claude + every agent) | — |
 
 ```bash
-# THE ROUTINE GATE — everything cheap, whatever it needs; -n 2 (~1.8x, two cores), under a GATE SLOT.
+# THE ROUTINE GATE — everything cheap, whatever it needs; -n 6 (-n 4 beside a live training run),
+# under THE gate slot (one gate at a time).
 export PYTHONPATH=$PYTHONPATH:src && scripts/ops/gate_lock.sh \
-  /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 2
+  /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e" -q -n 6
 ```
 
 **The gate SEMAPHORE** (`scripts/ops/gate_lock.sh`, `src/utils/gate_lock.py`, 2026-09-30): at most
-`GATE_SLOTS` = 2 routine gates at once (`$GEN3AI_GATE_SLOTS` overrides). Seven concurrent `-n 2` gates
+`GATE_SLOTS` = **1** routine gate at a time since 2026-10-01 (was 2; `$GEN3AI_GATE_SLOTS` overrides) —
+the measurement is in "Routine-gate wall time" below. Seven concurrent `-n 2` gates
 plus a compile inventory and a GPU benchmark put load ~36 on 8 cores / 16 threads; every gate crawled
 (one COMMIT test ran 160.8 s against ~21 s quiet), budgets tripped, benchmarks were contaminated. N
 `flock` slot files under `~/.claude/jobs/gate_slots/`: try each non-blocking, else block on one in the
 kernel while re-trying the rest; a crashed holder's slot frees when it dies. Re-entrant like the GPU
 lock (`GEN3AI_GATE_LOCK_HELD=<pid>:<slot>`, verified against `/proc/locks`); all slots held by
 ancestors is `GateLockSelfDeadlock` (exit 3); the timeout is inside (`--timeout-s`, exit 4). Wait and
-acquisition time go to stderr; `--status` names the holders.
+acquisition time go to stderr; `--status` names the holders. When a `train_rl_agent.py --run-dir`
+process is live, every take prints ONE line naming the run and recommending `-n 4`
+(`gate_lock.live_run_warning`, from `utils.procfs.live_training_runs` — the rule
+`rust_core_cutover.governor.live_runs` reads); it never changes the command.
+
+### Routine-gate wall time and the `-n` × gate_lock policy (measured 2026-09-30 / 10-01)
+
+Every row is the FULL routine gate (`-m "not slow and not e2e"`) under `gate_lock.sh` + `mem_cap.sh`,
+started only when the windowed meter read the box quiet (factor ≤ 1.05, ≤ 5 of 16 logical cpus busy
+for 30 s, both gate slots free); the "session" column is that run's own window, its own process tree
+subtracted from "others" but not from the SMT term (8 workers + their children on 8 cores read high by
+themselves). Raw rows: `~/.cache/gen3ai/test_speed/runs/` (scratch, not committed).
+
+| tree | `-n` | schedule | tests | wall | Σ test time | CPU user | session meter |
+|---|---|---|---|---|---|---|---|
+| `68a2f85b` (before) | 2 | xdist `load` | 12,580 | **626 s** | 1,211 s | — | 1.02 |
+| `68a2f85b` (before) | 8 | xdist `load` | 12,580 | **438 s** (one worker busy 428 s, seven ~175 s) | 1,643 s | 1,918 s | 1.08 |
+| `aff426f0` (scheduler only) | 8 | `load` / cost-ordered `loadfile` | 12,699 | 362 s / 320 s | 1,796 / 2,100 s | — | 1.30 / 1.61 |
+| `940ce487` (after) | 2 | cost-ordered `loadfile` | 12,782 | 660 s | 1,284 s | — | 1.02 |
+| `940ce487` | 4 | 〃 | 12,782 | 352 s | 1,355 s | 1,643 s | 1.01 |
+| `940ce487` | **6** | 〃 | 12,782 | **259 s** | 1,477 s | 1,842 s | 1.15 |
+| `940ce487` | 8 | 〃 | 12,782 | 241 s (all 8 workers end at +234 s) | 1,819 s | 2,208 s | 1.20 |
+| `940ce487`, TWO gates at once | 4 + 4 | 〃 | 12,782 each | **691 s and 694 s each** | — | 3,613 / 3,653 s each | 1.74 |
+
+**Policy: one gate at a time (`GATE_SLOTS` = 1) at `-n 6`.** Concurrency LOSES here: two `-n 4` gates
+at once took 11.5 min each and burned 2.2× their solo CPU, so the second of two queued gates finishes
+at ~8.6 min under one-at-a-time against 11.5 min side by side. `-n 6` is 93 % of `-n 8`'s speed for
+83 % of its CPU and leaves ~2 cores for everything else; past it the gate is SMT-bound (Σ test time
+rises 1,355 → 1,819 s from `-n 4` to `-n 8`). ⚠️ The numbers are for a box with NO training run;
+with one live, use `-n 4` (gate_lock prints the warning) and re-measure.
+
+**Where the time goes** (the `-n 2` profile, 2026-09-30): the top 1 % of tests (125) hold 68 % of
+the test time, the top 5 % hold 93 %, the top 20 % hold 99 %; collection is ~4.5 s per worker and
+session teardown ~5-10 s, so the gate is test bodies. An attribution run over the 45 heaviest files
+put **45 %** of their time in waits on CHILD processes (rust binaries, node bridges, python
+eval/replay children), 6 % in production-size policy construction and 4 % in fixed sleeps; the
+heavy hitters are the M5 parity gates (`rust_eval/parity*`, `rust_env_opponents_parity`,
+`rust_core_parity`, `bots_gate`), the `cf_producer`/`cf_audit` integration paths, the anchors smoke,
+`extractor_compiles` (compile) and the two mypy-backed static gates on a COLD cache (~45 s on a fresh
+worktree's first gate). The fixes that shipped with this table: `3e766294` (a VACUOUS 30 s watchdog
+test), `8dcc32ce` (quota_match −20 s), `aff426f0` (the schedule), `2dcf59c3` (the compile pool),
+`a49ddee7` (the anchors smoke), `940ce487` (the Lane H file split). What was profiled and NOT fixed is
+in `TECH_DEBT_BACKLOG.md` §2(b).
 
 **The xdist SCHEDULE — whole FILES, the most expensive first** (`gen3_cost_ordered_loadfile_v1`,
 `src/utils/xdist_schedule.py`, 2026-09-30). `-n N` with no `--dist` of your own now means `--dist

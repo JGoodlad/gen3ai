@@ -313,3 +313,25 @@ def fd_path_for(pid: int, key: str, proc: str = _PROC) -> str:
             except OSError:
                 return ""
     return ""
+
+
+def live_training_runs(proc: str = _PROC) -> Dict[str, int]:
+    """``{run_dir (absolute): pid}`` of every live ``train_rl_agent.py`` process that names a
+    ``--run-dir`` — the live-run rule the ops layer reads (``rust_core_cutover.governor.live_runs``
+    delegates here; ``utils.gate_lock`` warns from it)."""
+    out: Dict[str, int] = {}
+    for pid in all_pids(proc):
+        try:
+            with open(f"{proc}/{pid}/cmdline", "rb") as f:
+                args = [a.decode(errors="replace") for a in f.read().split(b"\0") if a]
+            cwd = os.path.realpath(f"{proc}/{pid}/cwd")
+        except OSError:
+            continue
+        if not any(a.endswith("train_rl_agent.py") for a in args[:3]) or "--run-dir" not in args:
+            continue
+        i = args.index("--run-dir")
+        if i + 1 >= len(args):
+            continue
+        rd = args[i + 1]
+        out[rd if os.path.isabs(rd) else os.path.join(cwd, rd)] = pid
+    return out

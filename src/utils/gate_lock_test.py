@@ -145,7 +145,31 @@ def test_the_timeout_is_inside(tmp_path):
 
 def test_slot_count_is_declared_and_refuses_nonsense(monkeypatch):
     monkeypatch.delenv(GL.SLOTS_ENV, raising=False)
-    assert GL.slot_count() == GL.GATE_SLOTS == 2
+    assert GL.slot_count() == GL.GATE_SLOTS == 1
     monkeypatch.setenv(GL.SLOTS_ENV, "0")
     with pytest.raises(ValueError):
         GL.slot_count()
+
+
+def test_a_live_training_run_is_WARNED_about_never_acted_on():
+    """The live-run caveat is mechanical: a gate taken while a `train_rl_agent.py --run-dir` lives
+    prints one line naming the run and recommending -n 4; with no live run it prints nothing."""
+    assert GL.live_run_warning({}) is None
+    line = GL.live_run_warning({"/x/models/ai_v15_arm": 4242})
+    assert line is not None and "ai_v15_arm (pid 4242)" in line and "-n 4" in line
+
+
+def test_live_training_runs_reads_a_planted_proc(tmp_path):
+    """`utils.procfs.live_training_runs` keeps only train_rl_agent.py processes that name a --run-dir,
+    and resolves a relative run dir against that process's cwd."""
+    from utils import procfs
+
+    def plant(pid, argv, cwd):
+        d = tmp_path / str(pid)
+        d.mkdir()
+        (d / "cmdline").write_bytes(b"\0".join(a.encode() for a in argv) + b"\0")
+        (d / "cwd").symlink_to(cwd)
+    plant(11, ["python3", "src/main/train_rl_agent.py", "--run-dir", "models/arm"], tmp_path)
+    plant(12, ["python3", "src/main/train_rl_agent.py", "--debug"], tmp_path)
+    plant(13, ["python3", "-m", "pytest", "--run-dir", "x"], tmp_path)
+    assert procfs.live_training_runs(str(tmp_path)) == {str(tmp_path / "models/arm"): 11}

@@ -1,7 +1,7 @@
 """The box's TEST-GATE SEMAPHORE — at most N routine gates run at once; RE-ENTRANT across processes.
 
 USAGE
-    scripts/ops/gate_lock.sh python3 -m pytest src/ -m "not slow and not e2e" -q -n 2
+    scripts/ops/gate_lock.sh python3 -m pytest src/ -m "not slow and not e2e" -q -n 6
     python -m utils.gate_lock [--timeout-s S] -- <cmd> [args...]    # the same, without the wrapper
     python -m utils.gate_lock --status                               # who holds each slot now
 
@@ -11,8 +11,13 @@ USAGE
 
 WHY. On 2026-09-30 seven agents each ran a routine gate (``pytest -n 2``) at once, beside a compile
 inventory and a GPU benchmark: load ~36 on 8 cores / 16 threads. Every gate crawled, tier budgets
-tripped and benchmarks were contaminated — and none of it was a property of the code. Two gates at a
-time keep the box usable; the rest wait their turn instead of all running at a quarter speed.
+tripped and benchmarks were contaminated — and none of it was a property of the code. ONE gate at a
+time, at ``-n 6``, is the measured policy (2026-10-01, quiet box, full routine gate): two gates at
+``-n 4`` at once took 691 s and 694 s EACH and burned 2.2x their solo CPU, while one at ``-n 6`` takes
+259 s — so a queued second gate is done in ~8.6 min instead of 11.5. ``designs/ops/testing.md`` has the
+table. When a training run is LIVE its env workers share the 8 cores: every take prints a one-line
+warning naming the run and recommending ``-n 4`` (:func:`live_run_warning`) — a warning only, it
+never changes the command.
 
 HOW. ``N`` slot files (``slot0.lock`` … ``slot{N-1}.lock`` under ``~/.claude/jobs/gate_slots/``;
 ``$GEN3AI_GATE_LOCK_DIR`` overrides, and tests point it at a temp dir — never at the real one). A taker
@@ -20,7 +25,7 @@ tries every slot NON-BLOCKING; when all are taken it BLOCKS on one (``pid % N``)
 listed in ``/proc/locks`` as a waiter exactly as a bare ``flock`` is, while re-trying the others every
 ``poll_s``. A slot is an ``flock``, so a crashed holder's slot frees the instant it dies.
 
-``N`` is DECLARED: :data:`GATE_SLOTS` (2); ``$GEN3AI_GATE_SLOTS`` overrides for a box that is yours.
+``N`` is DECLARED: :data:`GATE_SLOTS` (1); ``$GEN3AI_GATE_SLOTS`` overrides for a box that is yours.
 
 RE-ENTRANT, the ``utils.gpu_lock`` way: holding a slot exports ``GEN3AI_GATE_LOCK_HELD=<pid>:<slot>``;
 a taker that sees it does NOT take a second slot — after VERIFYING that the pid is itself or an
@@ -49,7 +54,7 @@ from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
 from utils import procfs
 
-GATE_SLOTS = 2
+GATE_SLOTS = 1
 SLOTS_ENV = "GEN3AI_GATE_SLOTS"
 DIR_ENV = "GEN3AI_GATE_LOCK_DIR"
 HELD_ENV = "GEN3AI_GATE_LOCK_HELD"
@@ -235,9 +240,27 @@ def gate_slot(*, report_every_s: float = REPORT_EVERY_S, poll_s: float = POLL_S,
             os.close(fd)
 
 
+def live_run_warning(runs: Optional[dict] = None) -> Optional[str]:
+    """One line naming the live training run(s), recommending ``-n 4`` — or None when none is live.
+    A WARNING only: the gate's command is never changed."""
+    if runs is None:
+        try:
+            runs = procfs.live_training_runs()
+        except Exception:                    # noqa: BLE001 — a warning must never stop a gate
+            return None
+    if not runs:
+        return None
+    named = ", ".join(f"{os.path.basename(rd.rstrip('/'))} (pid {pid})" for rd, pid in sorted(runs.items()))
+    return (f"[gate_lock] ⚠️  a TRAINING RUN is live: {named}. Its env workers share this box's 8 cores — "
+            "run the routine gate at -n 4, not -n 6 (designs/ops/testing.md, the -n x gate_lock policy).")
+
+
 def run_under_slot(cmd: Sequence[str], **kw) -> int:
     """Run ``cmd`` as a CHILD while this process holds a slot; SIGINT/SIGTERM/SIGHUP are forwarded.
     Returns the child's exit code, or 128+N when signal N killed it."""
+    warning = live_run_warning()
+    if warning:
+        _stderr(warning)
     with gate_slot(what=" ".join(cmd)[:80], **kw):
         child = subprocess.Popen(list(cmd))
         fwd = {s: signal.signal(s, lambda n, _f: child.send_signal(n))

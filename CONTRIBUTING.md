@@ -112,7 +112,7 @@ Two **orthogonal** marker axes. A *capability* marker says what a test **needs**
 | When | Command | ~Time |
 |---|---|---|
 | Inner loop — fastest true/false | `pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` | ~1.5 min |
-| **The routine gate — before any commit** | `pytest src/ -m "not slow and not e2e" -q -n 2` | ~4 min |
+| **The routine gate — before any commit** | `pytest src/ -m "not slow and not e2e" -q -n 6` | ~4.5 min (one at a time; `-n 4` beside a training run) |
 | Everything — before a release | `pytest src/ -q` | ~47 min |
 
 Those durations were measured on an idle box on 2026-08-14 and the tree has grown since; treat them
@@ -282,7 +282,7 @@ to the launch commit — so pushing to `main` never disturbs a run in flight.
 ## Before you push
 
 ```bash
-pytest src/ -m "not slow and not e2e" -q -n 2     # the routine gate
+pytest src/ -m "not slow and not e2e" -q -n 6     # the routine gate
 ```
 
 If something unrelated is red, `git stash` and re-run before blaming your change — this box

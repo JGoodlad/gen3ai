@@ -97,22 +97,10 @@ def marginals(its: Sequence[Iteration]) -> List[Tuple[int, int, int, float]]:
 
 
 def live_runs() -> Dict[str, int]:
-    """``{run_dir (absolute): pid}`` of every live ``train_rl_agent.py`` process."""
-    out = {}
-    for p in Path("/proc").iterdir():
-        if not p.name.isdigit():
-            continue
-        try:
-            argv = (p / "cmdline").read_bytes().split(b"\0")
-            cwd = (p / "cwd").resolve()
-        except OSError:
-            continue
-        args = [a.decode(errors="replace") for a in argv if a]
-        if not any(a.endswith("train_rl_agent.py") for a in args[:3]) or "--run-dir" not in args:
-            continue
-        rd = Path(args[args.index("--run-dir") + 1])
-        out[str(rd if rd.is_absolute() else cwd / rd)] = int(p.name)
-    return out
+    """``{run_dir (absolute): pid}`` of every live ``train_rl_agent.py`` process (the rule lives in
+    ``utils.procfs.live_training_runs``, shared with ``utils.gate_lock``'s live-run warning)."""
+    from utils.procfs import live_training_runs
+    return live_training_runs()
 
 
 def classify(t0: float, t1: float, timeline: Sequence[Tuple[float, int]]) -> str:

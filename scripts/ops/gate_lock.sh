@@ -2,7 +2,9 @@
 #
 # gate_lock.sh — run ONE command holding one of the box's N TEST-GATE slots (utils.gate_lock).
 #
-# At most N (declared: 2; $GEN3AI_GATE_SLOTS overrides) routine gates run at once; the rest wait.
+# At most N (declared: 1; $GEN3AI_GATE_SLOTS overrides) routine gates run at once; the rest wait.
+# One at a time at -n 6 is the measured policy (2026-10-01; designs/ops/testing.md). A live training run
+# gets a one-line warning recommending -n 4 (utils.gate_lock.live_run_warning) — never an action.
 # 2026-09-30: seven concurrent `pytest -n 2` gates put load ~36 on 8 cores / 16 threads and every
 # gate crawled. The command runs as a CHILD of the slot holder with GEN3AI_GATE_LOCK_HELD exported,
 # so a gate_lock take inside it is a verified no-op (never a second slot, never a self-deadlock).

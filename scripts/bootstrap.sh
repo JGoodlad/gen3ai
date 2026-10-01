@@ -513,8 +513,8 @@ without the install, the old incantation is the equivalent fallback:
 
 Then, in rough order of usefulness:
 
-    # the routine gate — everything cheap, run this before any commit (~4 min)
-    pytest src/ -m "not slow and not e2e" -q -n 2
+    # the routine gate — everything cheap, run this before any commit (~4.5 min)
+    pytest src/ -m "not slow and not e2e" -q -n 6
 
     # a 1-minute training smoke: no server, no GPU needed
     python src/main/train_rl_agent.py --debug --steps 10000
