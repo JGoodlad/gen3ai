@@ -517,6 +517,21 @@ files' `slow` tier under both torches before shipping (`designs/training/compile
 `compile_cache_test.py` pins all of it; the full rule is `designs/training/compile_flags.md`
 "The HERMETIC per-run compile cache".
 
+### Inductor's COMPILE-WORKER POOL is shut down after each module (root `conftest.py`, `gen3_test_compile_pool_teardown_v1`)
+
+One CPU Inductor compile starts `torch._inductor.async_compile`'s pool — a `compile_worker
+--workers=16` child plus 16 forked workers (17 processes, **0.34 GB PSS**, 4.46 GB summed RSS; measured
+2026-09-30, torch 2.5.1, `compile_threads` = this box's 16 logical cpus) — and it lived for the rest of
+the process. Under xdist every worker that ever compiled kept one for the whole session; it was the
+root cause of the BIG-RSS gate failures (`ed5945a9` made those tests immune, not the pool gone). The
+root conftest's `pytest_runtest_teardown` now calls `shutdown_compile_workers()` after the LAST test of
+each module in the process (0.37 s; the next compiling module restarts the pool, it does not
+recompile). `compile_threads` itself is untouched — the compile path tested is production's.
+`src/utils/compile_pool_teardown_test.py` runs the real conftest over a compiling module and a
+checking one, and the check FAILS with `GEN3AI_KEEP_COMPILE_POOL=1` (the escape hatch). ⚠️ Read child
+command lines from `/proc/<pid>/cmdline`, not `ps -o args`: off a tty ps cuts `args` at 80 columns,
+which drops `compile_worker` — the first version of that check read no pool where there was one.
+
 ### The TORCH GLOBAL-STATE guard (root `conftest.py` + `src/utils/torch_state_guard.py`)
 
 `gen3_torch_state_guard_v1`. **A test that leaves process-global torch/numeric state changed FAILS**,

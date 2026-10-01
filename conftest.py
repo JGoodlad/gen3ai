@@ -790,11 +790,36 @@ def pytest_runtest_setup(item):
     return (yield)
 
 
+# --- Inductor's COMPILE-WORKER POOL dies with the module that made it (gen3_test_compile_pool_teardown_v1)
+#
+# One CPU Inductor compile leaves `torch._inductor.async_compile`'s pool alive for the rest of the
+# process: a `compile_worker --workers=16` child (~0.47 GB RSS) plus its 16 forked workers (4.46 GB
+# summed RSS, mostly shared COW pages) — measured 2026-09-30, torch 2.5.1, compile_threads=16 (this box's
+# 16 logical cpus). Under xdist every worker that ever compiled kept one for the whole session; it was
+# the root cause of the BIG-RSS gate failures (`ed5945a9` made those tests immune, not the pool gone).
+# Shut it down after the LAST test of each module in this process (a pool is per-process; the next
+# compiling module pays the pool's restart, ~1 s, not the compile). It is not a torch-state-guard
+# global: `compile_threads` stays as configured, only the idle processes go. Pinned by
+# `src/utils/compile_pool_teardown_test.py`. Escape hatch: GEN3AI_KEEP_COMPILE_POOL=1.
+def _shutdown_inductor_compile_pool():
+    if os.environ.get("GEN3AI_KEEP_COMPILE_POOL"):
+        return
+    ac = sys.modules.get("torch._inductor.async_compile")
+    if ac is None or not getattr(ac, "_pool_set", None):
+        return
+    try:
+        ac.shutdown_compile_workers()
+    except Exception as exc:                # never fail a run over an idle pool
+        _slow_write_note.append(f"Inductor compile pool NOT shut down: {exc!r}")
+
+
 @pytest.hookimpl(wrapper=True)
 def pytest_runtest_teardown(item, nextitem):
     result = yield
-    tsg = _tsg_mod()
     module = getattr(item, "module", None)
+    if nextitem is None or getattr(nextitem, "module", None) is not module:
+        _shutdown_inductor_compile_pool()       # the module's last test in this process
+    tsg = _tsg_mod()
     if tsg is None or _tsg["baseline"] is None:
         return result
     if nextitem is not None and getattr(nextitem, "module", None) is module:
