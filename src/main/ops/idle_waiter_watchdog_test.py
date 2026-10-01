@@ -376,7 +376,12 @@ def test_big_rss_flags_a_session_process_over_the_bar_with_pid_rss_cmd_and_sessi
     assert [f.pid for f in findings] == [big], findings          # the small sibling is not flagged
     f = findings[0]
     assert f.session == root.pid and str(hog) in f.cmd
-    assert "rss=0.3GB" in f.reason and ">= the 0.25 GB bar" in f.reason and "UNCAPPED" in f.reason, f.reason
+    assert "rss=0.3GB" in f.reason and ">= the 0.25 GB bar" in f.reason, f.reason
+    # cgroup-AGNOSTIC: the gate itself may run under mem_cap.sh / a systemd-run MemoryMax scope, and the
+    # hog inherits it — so the expected note is derived from the hog's REAL cgroup chain
+    lim = P.cgroup_memory_limit(P.cgroup_of(big))
+    want = "UNCAPPED" if lim is None else f"capped at {lim[1] / (1 << 30):g} GB ({lim[0]})"
+    assert want in f.reason, (want, f.reason)
     assert f"pid={big}" in f.line() and f"session={root.pid}" in f.line()
     # the default 24 GB bar does not fire on it
     assert not [f for f in W.Scan(None, scope_pid=os.getpid(), **KW).run() if f.kind == "BIG-RSS"]
