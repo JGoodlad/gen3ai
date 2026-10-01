@@ -39,6 +39,7 @@ import numpy as np
 import torch as th
 
 from agents.model.extra_obs_keys import zero_extra_obs
+from main.exit_codes import FatalConfigError
 
 _JS_EPS = 1e-12
 _CHUNK = 512
@@ -284,6 +285,25 @@ def main(argv=None):
         bc_steps=a.bc_steps, lr=a.lr, tmax=a.tmax, anchor_coef=a.anchor_coef,
         kl_stop=a.kl_stop, batch=a.batch, device=a.device, cache=a.cache,
         smoke_battles=a.smoke_battles))
+
+
+# -- gen3_supply_guard_v2: a failed warm-start is FATAL_CONFIG, never a restartable CRASH --------
+
+class WarmstartFailed(FatalConfigError):
+    """The consensus warm-start could not be built → ``FATAL_CONFIG`` (3)."""
+
+
+def warmstart_failed(exc: BaseException, ckpt_path: str) -> WarmstartFailed:
+    """The typed FATAL for a failed `--warmstart-consensus`, with any partial artifact removed."""
+    try:
+        if os.path.exists(ckpt_path):
+            os.remove(ckpt_path)
+    except OSError:
+        pass
+    return WarmstartFailed(
+        f"\n[WARMSTART] FATAL: the consensus warm-start failed ({type(exc).__name__}: "
+        f"{str(exc)[:400]}). It is rebuilt from scratch on every restart, so a restart would replay "
+        f"this — check --warmstart-consensus's teacher paths and the base --model. Not restarting.")
 
 
 if __name__ == "__main__":

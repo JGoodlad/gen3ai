@@ -23,7 +23,7 @@ from agents.observation.state_encoder import load_mappings
 from agents.training.eval_callback import opponent_name
 from agents.training.matchup_spec import MatchupSpec
 from agents.training.snapshot_pool import HEURISTIC_FLOOR, SELF_PLAY_FULL, SELF_PLAY_START
-from main.exit_codes import TrainExitCode
+from main.exit_codes import FatalConfigError, TrainExitCode
 from main.launcher.ipc import emit
 from main.train.run_io import _run_arch_toggles
 from poke_env.player import SimpleHeuristicsPlayer
@@ -50,6 +50,81 @@ class MatchupSetup:
     promote_threshold: float
 
 
+class BotWeightsRejected(FatalConfigError):
+    """A malformed `--bot-weights` → ``FATAL_CONFIG`` (3), never CRASH (1)."""
+
+
+def resolve_bot_weights(spec: str, roster: "List[str]") -> "List[float]":
+    """`--bot-weights 'name=w,...'` → a roster-aligned weight vector (unlisted → 1.0).
+
+    gen3_supply_guard_v2: every refusal here is a CONFIG error a restart would hit identically, so
+    it raises :class:`BotWeightsRejected` (→ FATAL_CONFIG through `exit_codes.exit_code_for`). It
+    used to `sys.exit(1)` (an unknown name, a token with no `=`) or let `float()` raise a bare
+    ValueError — both read as CRASH, so the launcher restarted the run into the same typo until its
+    rapid-crash breaker gave up. A NEGATIVE, non-finite or all-zero vector is refused too: the rust
+    env core refused it with a ValueError (CRASH again), and the python env would sample from it."""
+    import math
+    overrides = {}
+    for tok in spec.split(","):
+        if not tok.strip():
+            continue
+        name, sep, val = tok.partition("=")
+        if not sep:
+            raise BotWeightsRejected(f"[Opponents] FATAL: --bot-weights token {tok!r} is not "
+                                     f"name=weight")
+        try:
+            w = float(val)
+        except ValueError:
+            raise BotWeightsRejected(f"[Opponents] FATAL: --bot-weights token {tok!r}: the weight "
+                                     f"is not a number") from None
+        if not math.isfinite(w) or w < 0.0:
+            raise BotWeightsRejected(f"[Opponents] FATAL: --bot-weights token {tok!r}: a weight "
+                                     f"must be finite and >= 0")
+        overrides[name.strip()] = w
+    bad = set(overrides) - set(roster)
+    if bad:
+        raise BotWeightsRejected(f"[Opponents] FATAL: unknown --bot-weights names {sorted(bad)} "
+                                 f"(valid: {sorted(set(roster))})")
+    vec = [overrides.get(n, 1.0) for n in roster]
+    if not sum(vec) > 0.0:
+        raise BotWeightsRejected("[Opponents] FATAL: --bot-weights gives every training bot weight "
+                                 "0 — there is no bot to draw")
+    return vec
+
+
+class DistillTeamRejected(FatalConfigError):
+    """A `--distill-teacher` team that Showdown's validator rejects → ``FATAL_CONFIG`` (3)."""
+
+
+def refuse_invalid_teacher_teams(team_strs, owners, *, validate=None) -> None:
+    """gen3_supply_guard_v2 — every TEACHER TEAM must be a legal gen3ou team, or the run REFUSES.
+
+    `Gen3Teambuilder` validates its bias teams and DROPS an invalid one in silence (it is the right
+    behaviour for the 719-team pool, where one bad paste must not kill a run). For a distill teacher
+    it is the wrong one: the dropped team is never drawn, so the teacher's per-state `distill_mask`
+    never fires on it and its `distill/*` scalars simply never appear — a fold that reads as running
+    and teaches nothing on that team. ``validate`` is the batch validator (the real Node one by
+    default); ``owners`` is ``[(teacher, team_file)]`` parallel to ``team_strs``."""
+    if not team_strs:
+        return
+    if validate is None:
+        from utils.bridge.team_validator import validate_teams_locally
+        validate = validate_teams_locally
+    results = validate("gen3ou", list(team_strs))
+    bad = [(owners[i], (r or {}).get("errors")) for i, r in enumerate(results)
+           if not (r or {}).get("valid")]
+    if not bad:
+        return
+    lines = "\n".join(f"  - {tf} (teacher {tp}): {'; '.join(map(str, errs or ['no reason given']))[:400]}"
+                      for (tp, tf), errs in bad)
+    raise DistillTeamRejected(
+        f"\n[SUPPLY] FATAL: {len(bad)} --distill-teacher team(s) FAIL gen3ou validation:\n{lines}\n"
+        f"  The teambuilder would DROP each one silently: it is never drawn, its distill_mask never "
+        f"fires, and its distill/* scalars never appear — a fold that teaches nothing on that team "
+        f"while reading as running. Fix the team file (or drop that TEACHER:TEAM pair). A restart "
+        f"would hit the same validator. Not restarting.")
+
+
 def apply_distill_team_bias(args, all_teams, trainee_teambuilder):
     """gen3_exploiter_distill_v1: point `--distill-team-bias` of the trainee's episodes at the
     TEACHER TEAMS (rest = pool rehearsal), and precompute those teams' species id-sets for the
@@ -73,17 +148,19 @@ def apply_distill_team_bias(args, all_teams, trainee_teambuilder):
     from poke_env.teambuilder.teambuilder import Teambuilder as _TB
     from poke_env.data.normalize import to_id_str as _to_id
     _loss_on = bool(args.distill_coef and args.distill_coef > 0)
-    _species_sets, _team_strs = [], []
+    _species_sets, _team_strs, _team_owner = [], [], []
     for _tp, _tfs in _pairs:
         _sets = []
         for _tf in _tfs:
             with open(_tf, encoding="utf-8") as _df:
                 _s = _df.read()
             _team_strs.append(_s)
+            _team_owner.append((_tp, _tf))
             if _loss_on:
                 # poke-env parks the species in `nickname` when the export has no nickname → fall back to it.
                 _sets.append(frozenset(_to_id(m.species or m.nickname) for m in _TB.parse_showdown_team(_s)))
         _species_sets.append(_sets)
+    refuse_invalid_teacher_teams(_team_strs, _team_owner)
     if _loss_on:
         # list (per TEACHER, teacher-id = index+1) of LISTS of species-frozensets (that teacher's teams) —
         # a multi-team teacher's KL fires on ANY of its teams (the env matches `cur in sp_list`).
@@ -277,22 +354,8 @@ def build_matchup_and_opponents(args) -> MatchupSetup:
     # uniform (current behavior, byte-for-byte). Validated here so a typo fails fast at startup.
     _bot_weight_vec = None
     if args.bot_weights:
-        _overrides = {}
-        for tok in args.bot_weights.split(","):
-            if not tok.strip():
-                continue
-            name, sep, val = tok.partition("=")
-            if not sep:
-                print(f"[Opponents] ERROR: --bot-weights token '{tok}' is not name=weight")
-                sys.exit(1)
-            _overrides[name.strip()] = float(val)
-        _valid = {opponent_name(c) for c in OPPONENT_CLASSES}
-        _bad = set(_overrides) - _valid
-        if _bad:
-            print(f"[Opponents] ERROR: unknown --bot-weights names {sorted(_bad)} "
-                  f"(valid: {sorted(_valid)})")
-            sys.exit(1)
-        _bot_weight_vec = [_overrides.get(opponent_name(c), 1.0) for c in OPPONENT_CLASSES]
+        _bot_weight_vec = resolve_bot_weights(args.bot_weights,
+                                              [opponent_name(c) for c in OPPONENT_CLASSES])
         print(f"[Opponents] heuristic weights = "
               f"{ {opponent_name(c): w for c, w in zip(OPPONENT_CLASSES, _bot_weight_vec)} }")
 

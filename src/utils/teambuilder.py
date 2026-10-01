@@ -152,15 +152,27 @@ class Gen3Teambuilder(Teambuilder):
 
         self.bias_prob = bias_prob
         self.bias_packed_teams = []
+        self.bias_dropped: "list[tuple[int, object]]" = []
         if bias_teams and bias_prob > 0.0:
             if isinstance(bias_teams, str):
                 bias_teams = [bias_teams]
             bias_validations = validate_teams_locally("gen3ou", bias_teams)
+            # The DROPPED bias teams, by index, with the validator's reason. Kept non-fatal here
+            # (a sample-team bias of 0.1 must not die on one bad paste) but never SILENT: a caller
+            # whose bias teams are load-bearing (a distill teacher's — `matchup_setup`
+            # refuses those up front) reads this, and the drop is printed either way.
             for i, res in enumerate(bias_validations):
                 if res.get("valid"):
                     parsed = self.parse_showdown_team(bias_teams[i])
                     fixed = fix_gen3_hp_ivs(parsed)
                     self.bias_packed_teams.append(self.join_team(fixed))
+                else:
+                    self.bias_dropped.append((i, res.get("errors")))
+            if self.bias_dropped:
+                print(f"⚠️  [Teambuilder] DROPPED {len(self.bias_dropped)} of {len(bias_teams)} "
+                      f"bias team(s) that fail gen3ou validation (index: first error): "
+                      + "; ".join(f"{i}: {str((e or ['?'])[0])[:120]}"
+                                  for i, e in self.bias_dropped[:5]), flush=True)
 
         # ── Team-side PFSP state (all inert while team_pfsp == "off") ──
         self._team_pfsp = str(team_pfsp)

@@ -32,6 +32,18 @@ class NonFiniteLearnerError(FloatingPointError):
     this one (the name is also matched along the MRO, so a same-named class maps too)."""
 
 
+class FatalConfigError(RuntimeError):
+    """A deterministic CONFIGURATION defect found after argument parsing — fail CLOSED.
+
+    Maps to ``TrainExitCode.FATAL_CONFIG`` through :func:`exit_code_for`, so it can be RAISED from
+    anywhere on the startup path (or from a callback that discovers a mis-wired lever at its first
+    use) and the trainer's fail-fast handlers still exit 3, which the launcher does not restart. The
+    class it closes (`gen3_supply_guard_v2`, 2026-09-30): `--bot-weights` typos and consensus
+    warm-start failures exited 1 (CRASH), so the launcher restarted them into the identical error —
+    bounded by the rapid-crash breaker for a fast failure, and UNBOUNDED for a warm-start that ran
+    longer than the breaker's 10-minute window before failing."""
+
+
 class SupplyStarvedError(RuntimeError):
     """A live coefficient's EXTERNAL SUPPLY delivered nothing — fail CLOSED (`gen3_supply_guard_v1`).
 
@@ -45,7 +57,8 @@ class SupplyStarvedError(RuntimeError):
 #: Exception class NAMES mapped to a fatal exit code — matched along each exception's MRO and its
 #: ``__cause__`` / ``__context__`` chain, so the mapping holds however the error was wrapped.
 _FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
-                  "SupplyStarvedError": TrainExitCode.FATAL_SUPPLY}
+                  "SupplyStarvedError": TrainExitCode.FATAL_SUPPLY,
+                  "FatalConfigError": TrainExitCode.FATAL_CONFIG}
 
 
 def fatal_exit_code_for(exc: Optional[BaseException]) -> Optional[int]:

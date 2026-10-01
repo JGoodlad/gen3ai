@@ -425,7 +425,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             print("🌱 [WARMSTART] training checkpoint already present → skipping consensus warm-start "
                   "(resuming trained state).", flush=True)
         else:
-            from agents.training.warmstart import run_consensus_warmstart
+            from agents.training.warmstart import run_consensus_warmstart, warmstart_failed
             from agents.training.fixed_opponent_pool import _resolve_zip_and_config as _ws_resolve
             # Imported HERE. In the monolith this name reached the warm-start block only because
             # the `--exploiter` branch (which the flag requires) happened to have imported it
@@ -434,18 +434,27 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _ws_dir = os.path.join(model_dir, "warmstart")
             _ws_ckpt = os.path.join(_ws_dir, "warmstart_consensus.zip")
             if not os.path.exists(_ws_ckpt):
-                _ws_s_zip, _ws_s_cfg, _ = _ws_resolve(args.model, None)
-                _ws_teachers = {}
-                for _wi, _wt in enumerate([x.strip() for x in args.warmstart_consensus.split(",") if x.strip()]):
-                    _wz, _wcfg, _ = _ws_resolve(_wt, None)
-                    _ws_teachers[f"t{_wi + 1}"] = (_wz, _wcfg)
-                _ws_cv = _current_model_version(mappings, **_run_arch_toggles(args))
-                print(f"🌱 [WARMSTART] disagreement-gated consensus of {len(_ws_teachers)} teacher(s) "
-                      f"→ exploiter init ({args.warmstart_battles} battles, {args.warmstart_bc_steps} BC "
-                      f"steps)", flush=True)
-                await run_consensus_warmstart(_ws_s_zip, _ws_s_cfg, _ws_teachers, _ws_dir, _ws_cv, mappings,
-                                              battles=args.warmstart_battles, bc_steps=args.warmstart_bc_steps,
-                                              device=str(args.device))
+                # gen3_supply_guard_v2: a warm-start failure is FATAL_CONFIG, never CRASH. The
+                # warm-start is rebuilt FROM SCRATCH on every restart (no checkpoint exists yet), so a
+                # restart replays the identical failure — and one that fails after the launcher's
+                # 10-minute rapid-crash window (battles + BC run longer than that) reset the breaker
+                # every time and crash-looped without bound. A partial artifact is removed so it can
+                # never be mistaken for a built init.
+                try:
+                    _ws_s_zip, _ws_s_cfg, _ = _ws_resolve(args.model, None)
+                    _ws_teachers = {}
+                    for _wi, _wt in enumerate([x.strip() for x in args.warmstart_consensus.split(",") if x.strip()]):
+                        _wz, _wcfg, _ = _ws_resolve(_wt, None)
+                        _ws_teachers[f"t{_wi + 1}"] = (_wz, _wcfg)
+                    _ws_cv = _current_model_version(mappings, **_run_arch_toggles(args))
+                    print(f"🌱 [WARMSTART] disagreement-gated consensus of {len(_ws_teachers)} teacher(s) "
+                          f"→ exploiter init ({args.warmstart_battles} battles, {args.warmstart_bc_steps} BC "
+                          f"steps)", flush=True)
+                    await run_consensus_warmstart(_ws_s_zip, _ws_s_cfg, _ws_teachers, _ws_dir, _ws_cv, mappings,
+                                                  battles=args.warmstart_battles, bc_steps=args.warmstart_bc_steps,
+                                                  device=str(args.device))
+                except Exception as _ws_e:  # noqa: BLE001 — re-raised as the typed FATAL below
+                    raise warmstart_failed(_ws_e, _ws_ckpt) from _ws_e
             args.model = _ws_ckpt        # init training from the warm start
 
     if args.model:
