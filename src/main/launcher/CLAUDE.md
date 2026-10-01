@@ -333,10 +333,12 @@ What that established:
   on a restart, printed as `🦀 [ENV CORE BUILD]`. The stamp check still refuses a foreign build. ⚠️ A
   checkpoint recorded at a commit BEFORE this fix still cannot be resumed through the launcher on the
   Rust core: its pin has no build step. Use `--sync-to-main`.
-- **`--env-core` is not inherited. The launcher keeps it by re-sending the argv**, so every restart
+- **A restart keeps the run's env core** (`gen3_env_core_switch_v1`): a typed `--env-core` rides the
+  re-sent argv; an untyped one (`--arch production`'s `recipe.sizing`) is restored from the run's
+  `cli_args` / recorded `env_core` (`rust_env_setup.resolve_env_core_default`), so every restart
   re-declares the same core, T2 slots and eval core. The events to look for are
   `🦀 [RUST ENV] T2 up …`, `🦀 [RUST EVAL] eval core up …` and `🦀 [ENV CORE] rust — …`. A
-  HAND-TYPED resume that omits `--env-core` runs `python` on a `rust` checkpoint. `--dry-run` prints
+  HAND-TYPED resume or fork inherits the checkpoint's recorded core. `--dry-run` prints
   `env core : …` beside what the checkpoint recorded, and the trainer emits `⚠️ [ENV CORE] …`
   (`rust_env_setup.env_core_switch_line`). The switch is not refused, because switching on purpose
   is an A/B.

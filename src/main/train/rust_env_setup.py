@@ -13,7 +13,7 @@ checkpoint's n_steps / batch_size / gamma / gae_lambda, so they are read off the
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from main.launcher.ipc import emit as _emit
 
@@ -69,20 +69,53 @@ def recorded_env_core(model_path: Optional[str]) -> Optional[str]:
     return None
 
 
+def resolve_env_core_default(args: Any, *, run_dir: Optional[str] = None,
+                             model: Optional[str] = None) -> Optional[Tuple[str, str]]:
+    """THE M5 SWITCH (`gen3_env_core_switch_v1`): what an UNTYPED ``--env-core`` resolves to on a
+    ``--model`` launch, set on ``args`` and returned as ``(core, source)``; None when nothing was
+    resolved here.
+
+    * TYPED — always wins (``--env-core python`` keeps the Python core reachable until the deletion
+      pass; ``--env-core rust`` moves a python-era checkpoint onto the Rust core, announced).
+    * FRESH ``--arch production`` — ``recipe.sizing.env_core`` (rust), applied by the recipe surface.
+    * ``--model`` (a same-run restart OR a fork) — INHERITED: the core the checkpoint was PRODUCED on
+      (``recorded_env_core``; a checkpoint recorded before ``--env-core`` existed ran ``python``), the
+      rule every unnamed flag of a resume follows ("an argv is not a config"). So a run never changes
+      core because the default moved, a fork of a Rust-era run stays on the Rust core, and a fork of a
+      python-era checkpoint stays on python unless the argv TYPES ``--env-core rust``. A restart of an
+      ``--arch production`` run already resolved it from ``metadata.json:cli_args`` (``recipe_surface``).
+    * A bare non-production FRESH argv — the parser default, ``python``: such an argv defaults to
+      ``--critic shaped``, which the Rust core refuses (F-LD-2), so the production default lives on the
+      production surface (`--arch production`), not on the bare parser (decided in the deletion pass)."""
+    from main.train.recipe_surface import typed_dests
+    if "env_core" in typed_dests(args):
+        return None
+    if any(d == "env_core" for d, *_ in (getattr(args, "_recipe_restart_inherited", ()) or ())):
+        return None
+    model = model or getattr(args, "model", None)
+    if not model:
+        return None
+    rec = recorded_env_core(model)
+    core = rec or "python"
+    src = ("inherited from the checkpoint's record" if rec
+           else "a checkpoint recorded before --env-core existed (python)")
+    args.env_core = core
+    return core, src
+
+
 def env_core_switch_line(args: Any) -> Optional[str]:
     """A LOUD line when a resume runs on another env core than its checkpoint was produced on, else None.
 
-    ``--env-core`` is runtime-only and NOT inherited (``parser/env_core.py``): the launcher's own restart
-    re-sends the argv, so a run keeps its core across restarts, but a hand-typed resume that omits the
-    flag runs ``python`` (the default) on a ``rust`` checkpoint — a change of data stream (F-LG-2's keyed
-    draws, the complete-game trigger) under the same run name. Not a refusal: switching cores on purpose
-    is legitimate (an A/B); it must never be silent."""
+    An UNTYPED ``--env-core`` on a ``--model`` launch inherits the checkpoint's own core
+    (`resolve_env_core_default`), so this fires on a TYPED switch — a change of data stream (F-LG-2's
+    keyed draws, the complete-game trigger). Not a refusal: switching cores on purpose is legitimate
+    (an A/B, the M5 switch itself); it must never be silent."""
     rec = recorded_env_core(getattr(args, "model", None))
     cur = getattr(args, "env_core", "python")
     if rec is None or rec == cur:
         return None
     return (f"⚠️  [ENV CORE] this resume runs --env-core {cur}, but its checkpoint was produced on {rec} — "
-            f"--env-core is NOT inherited; pass --env-core {rec} to stay on it (a switch changes the data stream)")
+            f"pass --env-core {rec} to stay on it (a switch changes the data stream)")
 
 
 def _bot_names(opponent_classes: Sequence[Any]) -> List[str]:

@@ -671,3 +671,24 @@ def test_argv_from_run_and_the_argv_flag_agree(tmp_path) -> None:
     (run / "metadata.json").write_text(json.dumps({"original_command": _RECORDED}))
     assert checkargs.argv_from_run(str(run)) == checkargs.strip_program_token(
         shlex.split(_RECORDED))
+
+
+def test_a_resume_of_a_winprob_rust_run_inherits_its_critic_and_is_not_refused(tmp_path):
+    """THE M5 SWITCH made an untyped `--env-core` on `--model` inherit the checkpoint's core; a
+    checker that filled `--critic`'s parser default (`shaped`) BEFORE reading the parent then refused
+    every same-run resume of a production (winprob, rust) run — "--env-core rust requires --critic
+    winprob" — in `checkargs` and `--dry-run`, while the launch inherited `winprob` and ran (the M5
+    switch pre-flight at N = 256, 2026-10-01). The critic resolves against the parent, as the launch
+    resolves it."""
+    ckpt, run = _parent_run(tmp_path, critic="winprob", terminal_indicator=True, victory_value=1.0,
+                            draw_penalty=0.0)
+    (tmp_path / "parent" / "metadata.json").write_text(json.dumps(
+        {"original_command": "x.py --steps 1", "env_core": {"env_core": "rust"}}))
+    for argv in (["--model", ckpt, "--run-dir", run, "--steps", "1000"],      # same-run restart
+                 ["--model", ckpt, "--run-name", "child_run", "--steps", "1000"]):   # fork
+        res = check(argv)
+        ns = res["resolution"]["ns"]
+        assert (ns.env_core, ns.critic) == ("rust", "winprob"), argv
+        assert res["resolution"]["inherited"]["critic"] == "winprob"
+        names = [c.name for c, _ in res["combinations"]]
+        assert "env_core_rust_needs_the_winprob_critic" not in names, names

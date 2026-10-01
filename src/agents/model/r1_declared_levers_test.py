@@ -61,12 +61,22 @@ LEVERS: Dict[str, Any] = {
 }
 
 
+#: The levers the production env core (rust, `recipe.sizing` — the M5 switch) does not serve yet: their
+#: rows run the learner on the PYTHON env core (`combination_checks._ENV_CORE_UNPORTED`). R1 is the same
+#: region on both cores, so the declaration is what is tested either way.
+PYTHON_CORE_ONLY = frozenset({"rollout_weight", "fork", "defensive", "bait", "dense_aux",
+                              "value_true_team", "distill"})
+
+
 def _lever_args(name: str) -> Any:
     from main.rust_core_cutover.envs import PRODUCTION_ARGV
     from main.train.config import resolve_config
     from main.train.parser import build_parser
     parser = build_parser()
-    a = parser.parse_args(list(PRODUCTION_ARGV) + list(LEVERS[name][0]))
+    extra = list(LEVERS[name][0])
+    if name in PYTHON_CORE_ONLY:
+        extra += ["--env-core", "python"]       # the Rust env core refuses these paths by name (M5 switch)
+    a = parser.parse_args(list(PRODUCTION_ARGV) + extra)
     with contextlib.redirect_stdout(io.StringIO()):
         resolve_config(a, parser)
     a.use_bridge, a.bridge_impl, a.use_showdown_bridge = "rust", "rust", True

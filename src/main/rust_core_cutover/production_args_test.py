@@ -54,8 +54,10 @@ def _mirror() -> Dict[str, Any]:
     from agents.training.baselines import production_config
     from main.train.recipe_surface import production_recipe
 
+    from main.train.recipe_surface import COLLECTOR_ROWS
     out = dict(production_config())
-    out.update(production_recipe())
+    # a null collector-only sizing row (`recipe.sizing`) is "the collector derives it" — no value to hold
+    out.update({k: v for k, v in production_recipe().items() if not (k in COLLECTOR_ROWS and v is None)})
     return out
 
 

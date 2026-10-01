@@ -695,6 +695,13 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
     for _d, _v, _src in _restored:
         emit(f"[Recipe] same-run restart of an --arch production run: {_d}={_v!r} from {_src}")
+    # THE M5 SWITCH (gen3_env_core_switch_v1): an UNTYPED --env-core on a resume — the run's own core
+    # on a same-run restart, the production core (recipe.sizing.env_core) on a fork. Before the
+    # combination sweep, which judges the core's refusals.
+    from main.train.rust_env_setup import resolve_env_core_default
+    _core = resolve_env_core_default(args)
+    if _core:
+        emit(f"🦀 [ENV CORE] --env-core {_core[0]} (untyped) — {_core[1]}")
     # ...and the run's PROVENANCE tags with it: `arch_source` (model_config.json) and `recipe_source`
     # (metadata.json:cli_args) are stamped only by the `--arch` branch the restart stripped, and every
     # later save records the namespace's — so a first restart used to null them.

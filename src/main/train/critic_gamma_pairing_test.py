@@ -38,7 +38,8 @@ def test_the_pairing_is_declared_once():
 
 
 def test_a_typed_shaped_critic_under_arch_production_gets_its_own_gamma(capsys):
-    ns = _resolve(["--arch", "production", "--critic", "shaped"])
+    # `--env-core python`: the production core (rust, the M5 switch) refuses a shaped critic (F-LD-2)
+    ns = _resolve(["--arch", "production", "--critic", "shaped", "--env-core", "python"])
     assert ns.critic == "shaped" and ns.gamma == 0.9999          # was 1.0: recipe.fresh's winprob value
     assert "[Critic] gamma=0.9999 — the --critic shaped pairing" in capsys.readouterr().out
 
@@ -50,7 +51,7 @@ def test_the_untyped_production_critic_keeps_recipe_fresh_gamma(capsys):
 
 
 def test_a_typed_gamma_is_announced_as_typed(capsys):
-    ns = _resolve(["--arch", "production", "--critic", "shaped", "--gamma", "0.999"])
+    ns = _resolve(["--arch", "production", "--critic", "shaped", "--gamma", "0.999", "--env-core", "python"])
     assert ns.gamma == 0.999
     assert "[Critic] gamma=0.999 — TYPED (the --critic shaped pairing is 0.9999)" in capsys.readouterr().out
 

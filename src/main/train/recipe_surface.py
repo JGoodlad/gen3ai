@@ -18,6 +18,11 @@ report, read by every surface that launches.
     ``kl_controller``: the controller constants it ran with (not flags — pinned against the
     callbacks' own defaults by `recipe_surface_test`). A key that is ALSO a recorded top-level
     mirror field must EQUAL it (`production_recipe` refuses otherwise): one truth, two readers.
+  * ``recipe.sizing`` — THE ONE PLACE the M5 SIZING study's verdict fills (`SIZING_ROWS`): the env core
+    (`rust` — THE M5 SWITCH, `gen3_env_core_switch_v1`), N, the n_steps maximum, the collector's update
+    size and T2's slots / buckets / lanes, plus ``verdict`` (null = N* PENDING). `recipe_blocks` merges it
+    into the fresh recipe, so every reader treats a sizing row like any other row; a collector-only row
+    (`COLLECTOR_ROWS`) whose value is null is left untyped, and none is applied on the python core.
   * ``recipe.fork`` — what a generalist FORK changes: the E5 verdict (5 epochs at a FROZEN 5.6e-5,
     the same dose as 10 at 2.8e-5). `--fork-lr` is refused on a fresh run, so `--arch production`
     never applies this; a fork's argv is compared with it as INFO. 🚨 E5's 5 epochs are NEVER paired
@@ -70,6 +75,15 @@ ALLOW_FLAG = "--allow-nonproduction-recipe"
 
 FRESH_KEY = "fresh"
 FORK_KEY = "fork"
+#: ``recipe.sizing`` — THE ONE PLACE the M5 SIZING study's verdict fills (order constraint 5 of
+#: `program_rust_core.md`): the env core and every SIZE the run declares at startup (N, the n_steps
+#: maximum, the collector's update size, the inference service's slots / buckets / lanes). Merged into
+#: the fresh recipe by `recipe_blocks`, so every reader (the applier, the diff, the restart, the doc
+#: gate) treats a sizing row exactly like any other recipe row.
+SIZING_KEY = "sizing"
+#: ``recipe.sizing.verdict`` — the Decision-record pointer of the sizing verdict that set the block;
+#: ``null`` = PENDING (the values are the pre-sizing N = 48 shape). Not a flag.
+VERDICT_KEY = "verdict"
 KL_KEY = "kl_controller"
 #: The controller constants `recipe.fresh.kl_controller` records (constructor values, not flags).
 KL_CONSTANTS = ("target_kl", "kl_factor", "lr_factor")
@@ -104,10 +118,26 @@ class RecipeRow(NamedTuple):
     note: str
 
 
-#: ``recipe.fresh`` — N0's launch. Order is the report's order.
-ROWS: Tuple[RecipeRow, ...] = (
+#: ``recipe.sizing`` — the env core and the run's declared SIZES (`SIZING_KEY`). Order is the report's.
+SIZING_ROWS: Tuple[RecipeRow, ...] = (
+    RecipeRow("env_core", "--env-core", PARSER_DEFAULT, "THE M5 SWITCH — the Rust env core (§1 row 1a)"),
     RecipeRow("n_envs", "--n-envs", PARSER_DEFAULT, "§1 row 1 — the SIZING study's to change"),
-    RecipeRow("n_steps", "--n-steps", PARSER_DEFAULT, "§1 row 2 — the SIZING study's / Lane G's"),
+    RecipeRow("n_steps", "--n-steps", PARSER_DEFAULT, "§1 row 2 — the SIZING study's / Lane G's (the "
+              "rust core's n_steps MAXIMUM: the buffer is preallocated at it)"),
+    RecipeRow("rollout_target_samples", "--rollout-target-samples", 0,
+              "the collector's update size; null / 0 = n_envs x n_steps"),
+    RecipeRow("trainee_slots", "--trainee-slots", 1, "T2's trainee slots; null = the collector's (1, or 3 "
+              "under per-game pinning)"),
+    RecipeRow("t2_buckets", "--t2-buckets", None, "T2's opponent buckets; null = derived at startup"),
+    RecipeRow("t2_lanes", "--t2-lanes", 0, "T2's lanes; null / 0 = derived (min(slots, 8))"),
+)
+#: The sizing rows that act ONLY under `--env-core rust` (`combination_checks._ENV_CORE_ONLY_DESTS`):
+#: a ``null`` value means "the collector derives it" and the row is left UNTYPED; a value is applied
+#: and compared only when the resolved env core is ``rust`` (on python it would be silently inert).
+COLLECTOR_ROWS = frozenset({"rollout_target_samples", "trainee_slots", "t2_buckets", "t2_lanes"})
+
+#: ``recipe.fresh`` — N0's launch (the sizing rows above come from ``recipe.sizing``).
+FRESH_ROWS: Tuple[RecipeRow, ...] = (
     RecipeRow("batch_size", "--batch-size", PARSER_DEFAULT, "§1 row 3 — the micro-batch"),
     RecipeRow("grad_accum_steps", "--grad-accum-steps", PARSER_DEFAULT, "§1 row 4 — K"),
     RecipeRow("n_epochs", "--n-epochs", PARSER_DEFAULT, "§1 row 6 — N0's measured 10"),
@@ -138,6 +168,8 @@ ROWS: Tuple[RecipeRow, ...] = (
     RecipeRow("beta_setvalued_coef", "--beta-setvalued-coef", 0.0, "§1 row 16"),
     RecipeRow("intent_label_bot_weight", "--intent-label-bot-weight", 1.0, "§1 row 16"),
 )
+#: Every row the fresh recipe declares — ``recipe.sizing`` first, then ``recipe.fresh``.
+ROWS: Tuple[RecipeRow, ...] = SIZING_ROWS + FRESH_ROWS
 
 #: ``recipe.fork`` — the FORK-only rows; a fork's other knobs are the fresh values it inherits
 #: from the recipe unless ``recipe.fork`` overrides them (today: `n_epochs`).
@@ -197,10 +229,21 @@ def recipe_blocks(mirror: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, An
     from agents.training.baselines import RECIPE_BLOCK_KEY
     doc = _raw_mirror() if mirror is None else dict(mirror)
     block = doc.get(RECIPE_BLOCK_KEY)
-    if not isinstance(block, dict) or set(block) != {FRESH_KEY, FORK_KEY}:
+    if not isinstance(block, dict) or set(block) != {FRESH_KEY, FORK_KEY, SIZING_KEY}:
         raise RecipeError("the production mirror's `recipe` block must hold exactly "
-                          f"`{FRESH_KEY}` and `{FORK_KEY}` (got {sorted(block) if isinstance(block, dict) else block!r})")
-    fresh, fork = dict(block[FRESH_KEY]), dict(block[FORK_KEY])
+                          f"`{FRESH_KEY}`, `{FORK_KEY}` and `{SIZING_KEY}` "
+                          f"(got {sorted(block) if isinstance(block, dict) else block!r})")
+    fresh, fork, sizing = dict(block[FRESH_KEY]), dict(block[FORK_KEY]), dict(block[SIZING_KEY])
+    s_declared = {r.dest for r in SIZING_ROWS}
+    if set(sizing) != s_declared | {VERDICT_KEY}:
+        raise RecipeError(f"`recipe.{SIZING_KEY}` must hold exactly {sorted(s_declared | {VERDICT_KEY})} "
+                          f"(got {sorted(sizing)}) — the sizing verdict fills ONE declared block")
+    both = sorted(s_declared & set(fresh))
+    if both:
+        raise RecipeError(f"{both} are in both `recipe.{FRESH_KEY}` and `recipe.{SIZING_KEY}` — one place")
+    if sizing["env_core"] not in ("python", "rust"):
+        raise RecipeError(f"`recipe.{SIZING_KEY}.env_core` must be 'python' or 'rust' (got {sizing['env_core']!r})")
+    fresh.update({k: v for k, v in sizing.items() if k != VERDICT_KEY})
     declared = {r.dest for r in ROWS}
     missing = sorted(declared - set(fresh))
     stray = sorted(set(fresh) - declared - {KL_KEY})
@@ -241,6 +284,20 @@ def production_recipe(mirror: Optional[Dict[str, Any]] = None, *, kind: str = FR
     return out
 
 
+def sizing_block(mirror: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """``recipe.sizing`` raw, the ``verdict`` included (validated through `recipe_blocks`)."""
+    from agents.training.baselines import RECIPE_BLOCK_KEY
+    recipe_blocks(mirror)
+    doc = _raw_mirror() if mirror is None else dict(mirror)
+    return dict(doc[RECIPE_BLOCK_KEY][SIZING_KEY])
+
+
+def production_env_core(mirror: Optional[Dict[str, Any]] = None) -> str:
+    """The PRODUCTION env core (``recipe.sizing.env_core``) — what an untyped `--env-core` resolves to
+    on a fresh `--arch production` launch (a `--model` launch inherits its checkpoint's core instead)."""
+    return str(production_recipe(mirror)["env_core"])
+
+
 def kl_controller(mirror: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     return dict(recipe_blocks(mirror)[0][KL_KEY])
 
@@ -263,10 +320,13 @@ def apply_production_recipe(ns: Any, mirror: Optional[Dict[str, Any]] = None) ->
     # winprob 1.0 (a pairing no run trained). With the critic untyped this IS recipe.fresh's gamma
     # (`recipe_blocks` refuses a block whose gamma is not its critic's).
     critic = ns.critic if "critic" in typed else want["critic"]
+    core = ns.env_core if "env_core" in typed else want["env_core"]
     applied: List[Tuple[str, Any]] = []
     for r in ROWS:
         if r.dest in typed:
             continue
+        if r.dest in COLLECTOR_ROWS and (want[r.dest] is None or core != "rust"):
+            continue                       # derived by the collector / inert on the python core
         value = critic_gamma(critic) if r.dest == "gamma" else want[r.dest]
         setattr(ns, r.dest, value)
         applied.append((r.dest, value))
@@ -347,6 +407,13 @@ def inherit_on_restart(ns: Any, run_dir: Optional[str], saved_ver: Any = None,
             value, source = getattr(saved_ver, r.dest), "model_config.json"
         else:
             if not isinstance(cli, dict) or r.dest not in cli:
+                if r.dest in COLLECTOR_ROWS:
+                    continue               # untyped there too (a run from before the flag): derived
+                if r.dest == "env_core":
+                    # a run recorded before `--env-core` existed ran the only core there was
+                    setattr(ns, r.dest, "python")
+                    out.append((r.dest, "python", "predates --env-core"))
+                    continue
                 missing.append(f"{r.flag} ({meta_path}:cli_args)")
                 continue
             value, source = cli[r.dest], "metadata.json:cli_args"
@@ -450,7 +517,10 @@ def diff_against_production(ns: Any, mirror: Optional[Dict[str, Any]] = None,
     typed_critic_gamma = (critic_gamma(_resolved(_ROW["critic"], ns, defaults))
                           if "critic" in typed else None)
     out: List[RecipeDiff] = []
+    core = _resolved(_ROW["env_core"], ns, defaults)
     for r in rows:
+        if r.dest in COLLECTOR_ROWS and (want[r.dest] is None or core != "rust"):
+            continue                       # derived by the collector / inert on the python core
         have = _resolved(r, ns, defaults)
         if _agree(have, want[r.dest]):
             continue
@@ -490,8 +560,16 @@ def report_lines(rep: RecipeReport) -> List[str]:
     """The printed block, identical on every surface."""
     out = [f"RECIPE SURFACE vs designs/production_config.json recipe.{rep.kind}  [{rep.source_tag}]"]
     if rep.umbrella:
-        out.append(f"  --arch {rep.umbrella} applied recipe.fresh (every knob this argv did not "
-                   "type; explicit flags still win)")
+        out.append(f"  --arch {rep.umbrella} applied recipe.fresh + recipe.{SIZING_KEY} (every knob this "
+                   "argv did not type; explicit flags still win)")
+    try:
+        sz = sizing_block()
+        verdict = sz.get(VERDICT_KEY)
+        out.append(f"  sizing      : env core {sz['env_core']}, N {sz['n_envs']}, n_steps max {sz['n_steps']} — "
+                   + (f"verdict {verdict}" if verdict else
+                      "verdict PENDING (N* not set: the pre-sizing N = 48 shape)"))
+    except Exception:                                # noqa: BLE001 — a report line never breaks a launch
+        pass
     if rep.restart_inherited:
         out.append("  ♻️  same-run RESTART of an --arch production run (--arch stripped): "
                    "resolved from the run's own record — "

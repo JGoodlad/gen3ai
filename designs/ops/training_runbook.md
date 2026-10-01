@@ -613,23 +613,46 @@ production `--n-envs 64` (1489→1695); `--async-rollout --n-envs 32` matches pr
 with half the envs** (≈half the RAM). Off by default (= stock `SubprocVecEnv`), ignored under
 `--debug`. Full design: `designs/ai_v5/design_async_rollout.md`.
 
-### The Rust env core (`--env-core rust`, opt-in; M5 Lane G — python stays the default)
+### The Rust env core (`--env-core rust`) — THE PRODUCTION ENV CORE (the M5 switch)
 
 `--env-core rust` replaces the `SubprocVecEnv` of `Gen3Env` workers with the M5 Rust env core (N envs
 in one core process), the trainee and the policy opponents forwarded through the inference service in
 one flush, bots in the core, and the COMPLETE-GAME collector (an update fires at
 `--rollout-target-samples` completed-game rows; no row dropped for age; `staleness/*` measures the
 rest; `--rollout-target-samples` must be a multiple of lcm(`--batch-size`, `--n-envs`) — every
-micro-batch is full). Measured at the production mix (N = 48, 95 % self-play): 5.1× today's trainee
-decisions/s at 0.04× the CPU per decision, the step 74 % T2 forward. It needs `--critic winprob` and refuses, by name at startup, every flag whose path it does not
-serve yet (`src/agents/training/CLAUDE.md` → "The env core"). Validate an argv with `checkargs` first.
-**Under the launcher** (F-LG-6, exercised 2026-09-30): the trainer builds its own checkout's env core
-at startup (`🦀 [ENV CORE BUILD]`, about 7 s cold in the launcher's fresh pin worktree). The interval
-and crash restarts re-send `--env-core rust` and re-declare the core, T2 and the eval core. A pin
-before `--env-core` existed is refused by name. ⚠️ `--env-core` is NOT inherited, so a hand-typed
-resume must re-pass it. The dry run and the trainer both flag a core switch. Detail:
-`src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the launcher". It is a CUTOVER candidate, not the production path: design, gates and measurements in
-`designs/training/rust_collector.md` and `designs/research_state/measurements/m5_laneG/PROGRESS.md`.
+micro-batch is full). Measured at the production mix (N = 48, 95 % self-play): 5.1× the Python
+path's trainee decisions/s at 0.04× the CPU per decision, the step 74 % T2 forward. It needs
+`--critic winprob` and refuses, by name at startup, every flag whose path it does not serve yet
+(`src/agents/training/CLAUDE.md` → "The env core"). Validate an argv with `checkargs` first.
+
+**THE SWITCH (`gen3_env_core_switch_v1`, 2026-10-02, ledger *THE M5 SWITCH*; N = 48 until the SIZING verdict sets N\*).** The production core and
+every SIZE a run declares at startup live in ONE block, `designs/production_config.json`'s
+`recipe.sizing` (the env core, N, the n_steps maximum, the collector's update size, T2's slots /
+buckets / lanes; `verdict` names the sizing Decision record). An UNTYPED `--env-core` resolves
+(`main.train.rust_env_setup.resolve_env_core_default`):
+
+| launch | `--env-core` |
+|---|---|
+| fresh `--arch production` | `recipe.sizing.env_core` = **rust** |
+| `--model` — a same-run RESTART or a FORK | INHERITED: the core the checkpoint was PRODUCED on (`metadata.json` / the sidecar's `env_core`; `cli_args` for a restart of an `--arch production` run); recorded before `--env-core` existed → python. A run never changes core because the default moved; a fork of a python-era checkpoint moves to the Rust core only when the argv TYPES `--env-core rust` |
+| a bare non-production fresh argv | **python** (the parser default) — it defaults to `--critic shaped`, which the Rust core refuses; decided in the deletion pass |
+
+`--env-core python` (TYPED) keeps the Python env reachable until the deletion pass; the recipe
+surface reports it as a TYPED deviation. `--dry-run` and `checkargs` print the resolved core with its
+source and a `sizing: … verdict` line. **Era boundary:** a run across the switch changes its DATA
+stream (the keyed trainee draw, per-game eval seeds, complete-game updates), so throughput and every
+core-dependent reading compare only within one core (ledger *THE M5 SWITCH*).
+
+**Under the launcher** (F-LG-6; pre-flight at N = 48 2026-10-01,
+`designs/research_state/measurements/m5_switch/`): the trainer builds its own checkout's env core at
+startup (`🦀 [ENV CORE BUILD]`, about 7 s cold in the launcher's fresh pin worktree); T2 comes up in
+~160 s and the learner's compile gate + prewarm in ~5 min, so startup to the compile LOCK is ~8 min
+(N = 256 with the X26 heads, 2026-10-01: T2 ~240 s, LOCK 7.8 min; a same-run resume reuses the compile
+cache, T2 ~40 s, LOCK 1.8 min).
+The interval and crash restarts re-declare the core, T2 and the eval core. A pin before
+`--env-core` existed is refused by name. Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core
+rust` run under the launcher"; design, gates and measurements in `designs/training/rust_collector.md`
+and `designs/research_state/measurements/m5_laneG/PROGRESS.md`.
 
 ### Bot evaluation
 

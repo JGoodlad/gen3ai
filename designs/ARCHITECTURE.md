@@ -1467,7 +1467,7 @@ because a frozen forward never reads the reward.
 
 ### 6.4 Runtime knobs (never versioned, must be re-passed on every resume)
 
-`--use-bridge rust` (serverless) · `--compile-opponents` + `--compile-opponents-preload` +
+`--use-bridge rust` (serverless) · `--env-core` (**rust** for a fresh `--arch production` launch — `designs/production_config.json` `recipe.sizing`, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch the core the checkpoint RECORDED, so unlike the knobs below it IS inherited; `python` for a bare non-production argv until the deletion pass) · `--compile-opponents` + `--compile-opponents-preload` +
 `--compile-trainer` (all ON by default) · `--grad-accum-steps` at whatever `--batch-size` the run
 uses · `--grad-checkpointing` · `--async-rollout` · `--matmul-precision` (default `highest`: full FP32,
 no TF32 — PyTorch's default; `high` enables TF32 in the trainer process, stamped as
@@ -1569,6 +1569,12 @@ above is computed by the Python env from both battles and the engine side it hol
 leak-safety property is unchanged — the forward reads `obs["observation"]` alone. The env-level
 parity gate (slice N, `main/rust_core_cutover/slice_n_test.py`) requires every key, the row, the
 mask, the reward and the episode end EQUAL between the two sources, per decision.
+
+**Which env runs the rollout** is likewise a transport choice: since the M5 switch (2026-10-02, `gen3_env_core_switch_v1`; ledger *THE M5 SWITCH*)
+the production rollout runs on the Rust env core (`--env-core rust`, `designs/production_config.json`
+`recipe.sizing`), whose label keys come from the core, the host or a refusal (the inventory of record:
+`src/utils/rust_env/label_inventory.py`, `designs/rust_sim/env_labels.md`). The network and the keys its
+forward reads are the same on both cores.
 
 Two side-channel stashes are also never fed forward: `last_belief_target_latent` (computed only
 under `torch.is_grad_enabled()`) and `last_move_latent_table`. The pinned no-leak tests are

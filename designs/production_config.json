@@ -119,9 +119,7 @@
       "min_lr": 1e-05,
       "move_belief_coef": 0.05,
       "move_belief_latent_coef": 0.05,
-      "n_envs": 48,
       "n_epochs": 10,
-      "n_steps": 2048,
       "opp_belief_aux_coef": 0.05,
       "opp_intent_coef": 0.05,
       "policy_gae_lambda": 0.8,
@@ -131,6 +129,16 @@
       "vf_coef": 0.5,
       "victory_value": 1.0,
       "weight_decay": 1e-05
+    },
+    "sizing": {
+      "env_core": "rust",
+      "n_envs": 48,
+      "n_steps": 2048,
+      "rollout_target_samples": null,
+      "t2_buckets": null,
+      "t2_lanes": null,
+      "trainee_slots": null,
+      "verdict": null
     }
   },
   "ridealong_adv": 0,

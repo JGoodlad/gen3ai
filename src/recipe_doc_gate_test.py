@@ -33,8 +33,8 @@ from typing import Any, Dict, List, NamedTuple, Tuple
 
 import pytest
 
-from main.train.recipe_surface import (ALL_ROWS, FORK_OVERRIDES, FORK_ROWS, KL_CONSTANTS, KL_KEY,
-                                        ROWS, _raw_mirror, recipe_blocks)
+from main.train.recipe_surface import (ALL_ROWS, FORK_OVERRIDES, FORK_ROWS, FRESH_ROWS, KL_CONSTANTS,
+                                        KL_KEY, ROWS, SIZING_ROWS, _raw_mirror, recipe_blocks)
 from utils.paths import repo_path
 
 _SKIP = pytest.mark.skipif(
@@ -47,12 +47,13 @@ _DOC = ("designs", "endstate", "design_learner_recipe.md")
 
 class Claim(NamedTuple):
     key: str
-    block: str          # "fresh" | "fork" | "kl" — which part of the `recipe` block
+    block: str          # "fresh" | "sizing" | "fork" | "kl" — which part of the `recipe` block
     pattern: str        # must capture the stated value in a group named `value`
     where: str
 
 
-_HOME = {"fresh": "recipe.fresh", "fork": "recipe.fork", "kl": "recipe.fresh.kl_controller"}
+_HOME = {"fresh": "recipe.fresh", "sizing": "recipe.sizing", "fork": "recipe.fork",
+         "kl": "recipe.fresh.kl_controller"}
 
 
 def _t(key: str, block: str = "fresh") -> Claim:
@@ -63,12 +64,13 @@ def _t(key: str, block: str = "fresh") -> Claim:
 
 
 # NOTE ON WRITING A ROW: anchor on the words around the value, not on the value itself.
-_CLAIMS: Tuple[Claim, ...] = tuple(_t(r.dest) for r in ROWS) + tuple(
+_CLAIMS: Tuple[Claim, ...] = tuple(_t(r.dest) for r in FRESH_ROWS) + tuple(
+    _t(r.dest, "sizing") for r in SIZING_ROWS) + tuple(
     _t(k, "kl") for k in KL_CONSTANTS) + (
     _t("n_epochs", "fork"), _t("fork_lr", "fork"), _t("fork_lr_freeze", "fork"),
     # ---- §1's one-page table: its live-value column states the recipe too ------------------
-    Claim("n_envs", "fresh", r"\|\s*1\s*\|\s*`n_envs` \(N\)\s*\|\s*(?P<value>\d+)\s*\|", "§1 row 1"),
-    Claim("n_steps", "fresh",
+    Claim("n_envs", "sizing", r"\|\s*1\s*\|\s*`n_envs` \(N\)\s*\|\s*(?P<value>\d+)\s*\|", "§1 row 1"),
+    Claim("n_steps", "sizing",
           r"\|\s*2\s*\|\s*rollout size N × `n_steps`\s*\|\s*\d+ × (?P<value>\d+) =", "§1 row 2"),
     Claim("batch_size", "fresh", r"\|\s*3\s*\|\s*micro-batch\s*\|\s*(?P<value>\d+)\s*\|", "§1 row 3"),
     Claim("grad_accum_steps", "fresh",
@@ -158,7 +160,9 @@ def _recipe(mirror: Any = None) -> Dict[Tuple[str, str], Any]:
     """`{(block, key): value}` through the READER (`recipe_blocks`), so a block the surface would
     refuse is refused here too."""
     fresh, fork = recipe_blocks(mirror)
-    out: Dict[Tuple[str, str], Any] = {("fresh", k): v for k, v in fresh.items() if k != KL_KEY}
+    sizing = {r.dest for r in SIZING_ROWS}
+    out: Dict[Tuple[str, str], Any] = {("sizing" if k in sizing else "fresh", k): v
+                                       for k, v in fresh.items() if k != KL_KEY}
     out.update({("kl", k): v for k, v in fresh[KL_KEY].items()})
     out.update({("fork", k): v for k, v in fork.items()})
     return out
@@ -178,7 +182,8 @@ def test_the_recipe_prose_agrees_with_the_production_mirror():
 
 @_SKIP
 def test_every_recipe_row_is_covered_by_a_claim():
-    want = ({("fresh", r.dest) for r in ROWS} | {("kl", k) for k in KL_CONSTANTS}
+    want = ({("fresh", r.dest) for r in FRESH_ROWS} | {("sizing", r.dest) for r in SIZING_ROWS}
+            | {("kl", k) for k in KL_CONSTANTS}
             | {("fork", r.dest) for r in FORK_ROWS} | {("fork", d) for d in FORK_OVERRIDES})
     missing = sorted(want - {(c.block, c.key) for c in _CLAIMS})
     assert not missing, (

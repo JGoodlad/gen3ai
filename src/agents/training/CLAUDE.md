@@ -577,7 +577,15 @@ asks the trainee to move** (`gen3_no_phantom_decision_v1`, a TRAINING-INPUT chan
 trackers used to take a decision there (5.0% of steps); a `wait` request reaching the record RAISES. 🚨 **The OPPONENT is polled only when its order will be SENT** (`gen3_no_phantom_opponent_poll_v1`, M5 Lane E, the opponent twin): `SingleAgentWrapper.step` asked `choose_move` on steps whose p2 order was dropped, so a self-play `RLPlayer` recorded a phantom decision (progress clock one step high) and drew a sample, and a bot drew from its RNG.
 Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` §3.
 
-## The env core — `--env-core {python,rust}` (DEFAULT `python`; M5 Lane G)
+## The env core — `--env-core {python,rust}` (PRODUCTION `rust` — the M5 switch; M5 Lane G)
+
+🚨 **THE M5 SWITCH (`gen3_env_core_switch_v1`): `rust` is the PRODUCTION env core**, declared with every
+run SIZE in ONE block, `designs/production_config.json` `recipe.sizing` (the sizing verdict fills it).
+An UNTYPED `--env-core`: fresh `--arch production` → rust; `--model` (a restart or a fork) → INHERITED,
+the core the checkpoint was produced on (python before `--env-core` existed); a bare non-production fresh argv → python (it defaults to `--critic shaped`, which the
+Rust core refuses — decided in the deletion pass). `--env-core python` (typed) opts out until then.
+One resolver: `main.train.rust_env_setup.resolve_env_core_default`, called by `resolve_config` and
+`checkargs`; pinned by `main/train/env_core_switch_test.py`. Runbook: `designs/ops/training_runbook.md`.
 
 `--env-core rust` runs the rollout on the M5 Rust env core: N envs in ONE core (process front end by
 default, `--rust-env-front`), the trainee and every policy opponent forwarded through the inference
@@ -618,9 +626,9 @@ a separate decision. Hazards an agent must know before touching it:
   `rust_env/*` is the collector's per-phase read. `metadata.json` records `env_core` on every save.
 - ⚠️ A launcher RESUME pins to the checkpoint's commit. A commit before Lane G has no `--env-core`
   and is refused by name. The trainer builds its checkout's env core at startup
-  (`utils.rust_env.build`), because a pin worktree has no `target/`. `--env-core` is NOT inherited:
-  the launcher re-sends it, a hand-typed resume must too, and a switch is announced
-  (`⚠️ [ENV CORE]`). Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the
+  (`utils.rust_env.build`), because a pin worktree has no `target/`. An untyped `--env-core` on a
+  `--model` launch INHERITS the checkpoint's recorded core (an `--arch production` restart's from
+  `cli_args`); a TYPED switch is announced (`⚠️ [ENV CORE]`). Detail: `src/main/launcher/CLAUDE.md` → "A `--env-core rust` run under the
   launcher".
 - **EVAL runs on the core too** (M5 Lane H, `rust_eval/`): both eval callbacks write the same plan and
   manifest, then play the cycle IN PROCESS and BLOCKING on a declared eval core (`--rust-eval-envs`) and

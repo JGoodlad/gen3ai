@@ -226,7 +226,7 @@ def test_arch_production_is_still_refused_beside_model():
 # ------------------------------------------------------------------------ the mirror and rows
 def test_the_mirror_accessor_strips_the_block_and_the_validator_exempts_it():
     assert baselines.RECIPE_BLOCK_KEY not in baselines.production_config()
-    assert set(baselines.production_recipe_block()) == {"fresh", "fork"}
+    assert set(baselines.production_recipe_block()) == {"fresh", "fork", "sizing"}
     b = baselines.get("production")
     raw = rs._raw_mirror()
     run_cfg = {k: v for k, v in raw.items() if k != baselines.RECIPE_BLOCK_KEY}

@@ -6,7 +6,7 @@
 
 One line per heading in [`ledger.md`](ledger.md) — its line number, its date when it
 carries one, and its title — so a registration can be found without a regex over a
-21,774-line file. **The ledger itself is append-only and is never edited by this**;
+21,805-line file. **The ledger itself is append-only and is never edited by this**;
 this file is regenerated from scratch, so a difference between the two means the index is
 stale, never that the ledger is wrong.
 
@@ -18,7 +18,7 @@ lost to a convention guess that turns out wrong.
 Entries are still CITED by their landing sha (`README.md`) — this indexes, it does not
 rename.
 
-**737 headings · 682 dated · 2026-08-01 → 2026-10-01 · ledger 21,774 lines.**
+**738 headings · 683 dated · 2026-08-01 → 2026-10-02 · ledger 21,805 lines.**
 
 - `L00006` · The method (how a hypothesis earns a verdict)
 - `L00023` · Status
@@ -757,3 +757,4 @@ rename.
   - `L21651` · `2026-09-30` · BOUNDARY · **CfLabelBuffer INODE REUSE (`a7627744`) — PRE-DATA: no row was ever dropped, no claim moves. Only 3 runs ever ingested a cf label, and their producer could not reach the defective path. SEPARATE FINDING: `ai_v12_12_ladder_cflabels` never received a single label, so its reads say nothing about the cf-label lever**
   - `L21684` · `2026-09-30` · AUDIT · **BOTS-ONLY CONTROLS + POOLLESS FORKS. `ai_v12_27_ladder_ctrl10M_shaped_dense` trained against the 8 bots for all 10,027,008 steps, as banked on 2026-09-12. The cause was the 0.55 self-play GATE never opening, not a supply defect, and no claim or decision moves. SEPARATE FINDING: `ai_v9_58_R2CTRL_0827` started POOLLESS while every R2 sibling inherited rev-1's pool. It was never a pool-matched replicate of `R2PLAIN`, so the 4.19pp / 3.70pp "replicate floor" and the R2-CTRL −5.8pp anomaly carry an unnamed opponent-regime confound. From `gen3_supply_guard_v2` a `--self-play` run whose pool is still empty after 3 eval cycles exits FATAL_SUPPLY.**
   - `L21751` · `2026-10-01` · FINDING + FIX · THE EVAL DUMP DROPPED A KL READING — one KL→LR controller reading lost per eval cycle on every live-controller run (5 %); FIXED by `gen3_eval_dump_isolation_v1`, a REGIME BOUNDARY
+  - `L21775` · `2026-10-02` · ERA BOUNDARY · **THE M5 SWITCH — `--env-core rust` is the PRODUCTION env core (`gen3_env_core_switch_v1`, the commit that adds this entry), at the pre-sizing N = 48 shape; the SIZING verdict sets N\* in its own commit. Every run before it trained on the Python env path; throughput and every core-dependent reading do NOT compare across it.**

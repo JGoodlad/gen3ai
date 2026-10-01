@@ -114,9 +114,9 @@ def test_startup_builds_this_checkouts_env_core_before_anything_else(monkeypatch
 
 
 def test_a_resume_that_switches_env_core_is_announced_never_silent(tmp_path):
-    """`--env-core` is NOT inherited: the launcher's restart re-sends the argv, but a hand-typed resume
-    that omits it runs `python` on a `rust` checkpoint. `env_core_switch_line` names the switch (the
-    trainer emits it at startup; `--dry-run` prints it)."""
+    """An UNTYPED `--env-core` on a `--model` launch INHERITS the checkpoint's core (the M5 switch,
+    `resolve_env_core_default`); a TYPED other core is a switch of data stream, and
+    `env_core_switch_line` names it (the trainer emits it at startup; `--dry-run` prints it)."""
     import json
 
     from main.train.rust_env_setup import env_core_switch_line, recorded_env_core
@@ -128,8 +128,12 @@ def test_a_resume_that_switches_env_core_is_announced_never_silent(tmp_path):
     (run / "checkpoints" / "checkpoint_512_steps.json").write_text(json.dumps({"env_core": {"env_core": "rust"}}))
     (run / "metadata.json").write_text(json.dumps({"env_core": {"env_core": "python"}}))
     assert recorded_env_core(str(ckpt)) == "rust"             # the sidecar is the checkpoint's own record
-    line = env_core_switch_line(_args("--model", str(ckpt)))
-    assert line and "--env-core rust" in line and "NOT inherited" in line
+    from main.train.rust_env_setup import resolve_env_core_default
+    untyped = _args("--model", str(ckpt))
+    assert resolve_env_core_default(untyped) is not None and untyped.env_core == "rust"
+    assert env_core_switch_line(untyped) is None              # inherited: no switch
+    line = env_core_switch_line(_args("--model", str(ckpt), "--env-core", "python"))
+    assert line and "--env-core rust" in line and "produced on rust" in line
     assert env_core_switch_line(_args("--model", str(ckpt), "--env-core", "rust")) is None
     assert env_core_switch_line(_args()) is None              # a fresh run has nothing to switch from
     (run / "checkpoints" / "checkpoint_512_steps.json").unlink()

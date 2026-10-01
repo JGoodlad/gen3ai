@@ -21771,3 +21771,34 @@ Tag: **AUDIT · ai_v12_27 bots-only = the 0.55 GATE (endogenous), banked 09-12, 
 **REGIME BOUNDARY.** A run with a live controller trained from that commit onward is not comparable with an earlier one on its LR / dose trajectory. Frozen-LR runs change only their tripwire / distill readings. The M5 sizing study's arms run pinned before the boundary, so they share the defect equally and stay mutually fair.
 
 Tag: **FINDING + FIX · eval-time logger dump dropped 1 KL reading per eval cycle (37 / 739 N0 updates), 0 claims move (matched cadence) · `gen3_eval_dump_isolation_v1` · REGIME BOUNDARY for live-controller runs**
+
+### 2026-10-02 · ERA BOUNDARY · **THE M5 SWITCH — `--env-core rust` is the PRODUCTION env core (`gen3_env_core_switch_v1`, the commit that adds this entry), at the pre-sizing N = 48 shape; the SIZING verdict sets N\* in its own commit. Every run before it trained on the Python env path; throughput and every core-dependent reading do NOT compare across it.**
+
+**What changed.**
+- `designs/production_config.json` `recipe.sizing` holds the env core and every run SIZE: `env_core` rust, `n_envs` 48, `n_steps` 2048 (the maximum), `rollout_target_samples`, and T2's `trainee_slots` / `t2_buckets` / `t2_lanes`. The last four stay null, meaning DERIVED by the collector: the update size N × n_steps; T2 buckets (8, N) plus the opponent cap 64 above 64 envs (`gen3_slot_bucket_caps_v1`); 1 trainee slot; min(slots, 8) lanes. `verdict` is null (PENDING). `--arch production` applies the block.
+- An UNTYPED `--env-core` resolves three ways:
+  - a fresh production launch → rust;
+  - a `--model` launch (a restart or a fork) → the core its checkpoint RECORDED (python when it predates the record);
+  - a bare non-production argv → python until the deletion pass, because it defaults to `--critic shaped`, which the Rust core refuses.
+- `--env-core python` (typed) opts out. `--arch production` plus a lever the Rust core does not serve yet is refused by name until `--env-core python` is typed.
+- The orchestrator released the switch BEFORE the sizing verdict. The verdict-dependent values (`n_envs`, `n_steps`, `rollout_target_samples`; `n_epochs` in `recipe.fresh`) follow in the sizing commit.
+
+**Why it is an ERA BOUNDARY.** The core changes the DATA stream, not the network: the keyed trainee draw (F-LG-2), per-game eval seeds, complete-game updates (every row's outcome known; no window-edge truncation), the in-core bots and T2's batched opponents.
+- Throughput (fps, decisions/s, update wall) compares only within a core.
+- Core-dependent readings (eval regime streams, `staleness/*`, `rust_env/*`, rollout composition) compare only within a core.
+- The network, the obs row and the label keys are held equal across cores by the parity gates (slice N, Lane C's inventory). So a CHECKPOINT carries across: a fork onto the Rust core is legitimate, and is stated as a core switch in its launch line.
+
+**Evidence.** M5 GATE MET (2026-09-30). The launcher pre-flights (`measurements/m5_switch/`, run dirs in `~/gen3ai_archive/m5_switch/`):
+- **N = 48, fresh + resume** (2026-10-01; pins `df8a42ea` / `e6b9cc2f`):
+  - startup to the compile LOCK 7.8–7.9 min fresh, 1.8 min resume;
+  - 0 compiles after the lock;
+  - the resume restored `env_core` rust from `cli_args`.
+- **N = 256, production + the X26 ride-along heads** (pin `55f601ff`, after `7ef99979`'s memory fix):
+  - fresh: LOCK 7.8 min (T2 241.9 s), `update_fit` headroom 2,684 MiB; the real first update reached 7,912 MiB reserved vs the dry update's 7,846 MiB; 3 updates, exit 0;
+  - resume: compile cache reused, LOCK 1.8 min, headroom 2,826 MiB, 2 updates, exit 0.
+  - **Not a claim that N = 256 fits production.** Reserved memory then climbs +66 MiB per update, the slope sizing arm B followed to a steady-state D-6 failure (341.5 MiB of headroom, heads OFF). That belongs to a separate memory unit, and production stays at N = 48 until it and the verdict land.
+- **FOUND by the N = 256 resume and FIXED in this commit:** `checkargs` / `launcher --dry-run` refused a same-run resume of a winprob rust run ("--env-core rust requires --critic winprob") that the launch itself ran. The checker resolved `--critic` before reading the parent config.
+
+**Next (owner sequence, 2026-10-01):** the SIZING verdict's commit (N\*), then the DELETION PASS + bounded tech-debt paydown (manifest `program_rust_core.md` §4, including the bare-argv default), then the slow tier, then T15, then the X26 baseline.
+
+Tag: **ERA BOUNDARY · M5 SWITCH · env core python → rust (fresh production launches), N = 48 until N\* · `gen3_env_core_switch_v1` · FIX: checkargs critic resolution on a resume**

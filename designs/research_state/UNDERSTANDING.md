@@ -211,13 +211,16 @@ level the new lineage can be compared against; each is a DIRECTION to re-test, n
   CALIBRATION OFF THE POOL*; *BELIEF WIN-RATE A/B READ*]
 - **The Rust core reproduces training's observation byte-for-byte** and is now its source. [MEASURED · ledger
   2026-09-24 *RUST CORE M4 CLOSED*; 2026-09-25 *THE RUST CORE CUTOVER*]
-- **The Rust ENV core (M5) passes every lane's parity gate and is ~5× faster; it is NOT yet what runs train on.**
-  Every lane passes at the milestone tier, with E, T2 and H's GPU parts too. On the production 95 / 5 self-play
-  mix at 48 envs it runs 5.11× [4.72, 5.63] the trainee decisions/s of today's path (3,780 vs 743) at 0.038×
-  the CPU per decision. An eval cycle takes ≈ 16.5 s vs ≈ 117 s, but it blocks the trainer. `--env-core python`
-  is still the default, so every run to date is on the Python env path. The switch is a separate decision,
-  and it changes two declared streams (the keyed trainee draw and per-game eval seeds).
-  [MEASURED · ledger 2026-09-30 *M5 GATE MET*; `measurements/m5_laneJ/results/verdict.json`]
+- **The Rust ENV core (M5) is the PRODUCTION env core from the M5 switch (2026-10-02, `gen3_env_core_switch_v1`), at N = 48 until the SIZING verdict sets N\*.**
+  Every lane passes its parity gate at the milestone tier, with E, T2 and H's GPU parts too. On the production
+  95 / 5 self-play mix at 48 envs it runs 5.11× [4.72, 5.63] the trainee decisions/s of the Python path
+  (3,780 vs 743) at 0.038× the CPU per decision. An eval cycle takes ≈ 16.5 s vs ≈ 117 s, but it blocks the
+  trainer. Fresh `--arch production` launches run on it (`recipe.sizing.env_core`); a `--model` launch inherits
+  its checkpoint's core, and `--env-core python` opts out until the deletion pass. **ERA BOUNDARY:** the switch
+  changes the data stream (the keyed trainee draw, per-game eval seeds, complete-game updates), so every run
+  BEFORE it is on the Python env path and throughput or any core-dependent reading never compares across it.
+  [MEASURED · ledger 2026-09-30 *M5 GATE MET*; `measurements/m5_laneJ/results/verdict.json`; ledger 2026-10-02
+  *THE M5 SWITCH*; `measurements/m5_switch/`]
 
 **Not established.**
 - **Whether the loop lowers exploitability.** A fresh best responder found a smaller gap on the loop than on the
