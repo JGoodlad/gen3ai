@@ -35,6 +35,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 import torch as th
 import torch.nn.functional as F
 
+from agents.model.region_calls import note_eager_body
 from agents.training import belief_bank_static as _bbs
 from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 from agents.training.instrumented_ppo.constants import _VALUE_TAIL_FRAC, _WIN_CONTESTED_TAU
@@ -208,6 +209,7 @@ def micro_step(policy: Any, popart: Any, obs: Dict[str, th.Tensor], actions: th.
                st: MicroStatic) -> MicroOut:
     """R1 — see the module docstring. ``var`` carries the per-update tensors (the entropy boosts'
     annealed factors, the strata weights); ``st`` every static flag and coefficient."""
+    note_eager_body("R1")      # a no-op under a dynamo trace; counts an EAGER run (gen3_no_silent_eager_v1)
     fe = policy.features_extractor
     mets: Dict[str, Metric] = {}
     terms: Dict[str, th.Tensor] = {}

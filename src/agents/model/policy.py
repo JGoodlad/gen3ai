@@ -26,6 +26,7 @@ from sb3_contrib.common.maskable.distributions import MaskableDistribution
 from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPolicy
 
 from agents.model import masked_categorical as _mc
+from agents.model import region_calls as _rc
 from agents.model.arch_constants import D_MODEL
 from agents.model.critic_mode import CRITIC_DEFAULT, CRITIC_MODES, is_winprob
 from agents.model.popart import PopArtNormalizer
@@ -326,6 +327,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         """The rollout forward as TENSORS — ``(values, masked_logp)`` — region R0 of K8
         (`agents.model.compile_regions`): everything `forward` computes before the action draw.
         Traceable as one `fullgraph=True` graph (functional masking, no distribution object)."""
+        _rc.note_eager_body("R0")   # a no-op under a dynamo trace; counts an EAGER run (gen3_no_silent_eager_v1)
         pi_features, vf_features = self.extract_features(obs)
         latent_pi = self.mlp_extractor.forward_actor(pi_features)
         latent_vf = self.mlp_extractor.forward_critic(vf_features)

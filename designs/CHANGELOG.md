@@ -10426,3 +10426,18 @@ if a lazy build is reintroduced.
 - Every verdict is appended to `canary_verdicts.jsonl`; the FATAL names the newest checkpoint at or
   before the last passing canary as the safe rollback point.
 
+## 2026-10-01 — K8: no silent fall-back to eager (`gen3_no_silent_eager_v1`; no model change)
+
+- Owner: no silent performance regression from a partly uncompiled learner. Each region body calls
+  `region_calls.note_eager_body` (a no-op under a dynamo trace); a dispatcher whose COMPILED route saw
+  the body run raises a typed FATAL (dynamo disabled, a swallowed error, a skipped frame,
+  `force_eager`). The declared eager routes (R1's ragged micro-batch, at most one per epoch; R0's
+  batch 1) are counted.
+- Under the compile lock `torch._dynamo.config.disable`, `suppress_errors` and a stance other than
+  `fail_on_recompile` are sentinel violations; the run asserts its compiled inventory after the
+  prewarm; a 2.8 policy without the micro-step says the regions are NOT installed.
+- Per update: `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`,
+  `lifecycle/eager_share`, `lifecycle/update_wall_s`.
+- `compiled_perf_guard_test` (slow, GPU) is the milestone check: the acceptance's time stage within
+  15% of the banked 36.32 s and a compiled share >= 0.80.
+

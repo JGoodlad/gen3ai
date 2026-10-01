@@ -77,6 +77,7 @@ STEP_MODULES: Dict[str, str] = {
     "agents/training/belief_bank.py": "the belief-bank loss terms, computed inside the PPO minibatch loop",
     "agents/training/belief_bank_static.py": "the belief bank's static twins, called by the micro-step (R1) per minibatch",
     "agents/model/masked_categorical.py": "the functional masked distribution the micro-step evaluates per minibatch",
+    "agents/model/region_calls.py": "the no-silent-eager route counters every region body and dispatcher touches per call",
     "agents/training/capacity_telemetry.py": "capacity telemetry the fold computes per update",
     "agents/training/cf_terms.py": "counterfactual-grounding loss terms, per minibatch",
     "agents/training/frozen_phi.py": "the frozen-phi actor-only seams, hit on every gradient step",

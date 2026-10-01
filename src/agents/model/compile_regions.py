@@ -57,6 +57,7 @@ import numpy as np
 import torch
 
 from agents.model import compile_trainer as ct
+from agents.model import region_calls as RC
 
 
 class Signature(NamedTuple):
@@ -142,9 +143,23 @@ def install(model: Any, *, backend: Optional[str] = None,
         # R1's ONE declared signature is `batch_size` rows. A RAGGED micro-batch (the last one of an
         # epoch when the rollout does not divide evenly — fork rows, an uneven sizing) takes the
         # DECLARED EAGER route, the same function: never a new compiled signature after the lock.
+        # Its declared size is ONE per epoch (`rollout_buffer.get` yields full batches, then the
+        # rest); more in one update is not a ragged tail any more (gen3_no_silent_eager_v1).
         if int(actions.shape[0]) != rows:
+            n = RC.count("R1_eager_ragged")
+            cap = max(1, int(getattr(model, "n_epochs", 1) or 1))
+            if ctl.locked and n > cap:
+                raise ct.CompileTrainerError(
+                    f"--compile-trainer region R1: {n} RAGGED micro-batches in one update (declared: "
+                    f"at most one per epoch, {cap}) — R1 is running EAGER on the hot path "
+                    f"({int(actions.shape[0])} rows vs the declared {rows}); a silent ~2x slowdown, "
+                    f"stopped (gen3_no_silent_eager_v1)")
             return micro_step(policy, popart, obs, actions, *rest)
-        return r1c(policy, popart, obs, actions, *rest)
+        before = RC.EAGER_BODY["R1"]
+        out = r1c(policy, popart, obs, actions, *rest)
+        _ran_compiled("R1", before)
+        RC.count("R1_compiled")
+        return out
     r1._gen3_compiled = r1c                              # type: ignore[attr-defined]
     r0c = ctl.wrap_compiled(torch.compile(_rollout_core, **kw))
 
@@ -160,14 +175,48 @@ def install(model: Any, *, backend: Optional[str] = None,
             action_masks = torch.as_tensor(action_masks, dtype=torch.bool,
                                            device=ct.resolve_device(pol.features_extractor))
         if ct._rows(obs) in ct.EAGER_BATCHES:            # gen3_batch1_eager_v1
+            RC.count("R0_eager_batch1")                  # declared, counted, logged per update
             out = pol.rollout_core(obs, action_masks)
         else:
+            before = RC.EAGER_BODY["R0"]
             out = r0c(pol, obs, action_masks)
+            _ran_compiled("R0", before)
+            RC.count("R0_compiled")
         return out
 
     model._compiled_micro_step = r1
     _ROLLOUT_REGIONS[policy] = r0
     return ["R0_rollout_forward", "R1_learner_micro_step"]
+
+
+def _ran_compiled(region: str, before: int) -> None:
+    """The compiled route of ``region`` must not have executed the region's Python body: if it did,
+    dynamo ran it EAGER (disabled, a swallowed error, a skipped frame) — a typed FATAL, never a
+    silent slowdown (`agents.model.region_calls`)."""
+    if RC.EAGER_BODY[region] != before:
+        raise ct.CompileTrainerError(
+            f"--compile-trainer: the declared region {region} ran EAGER on its COMPILED route — "
+            f"dynamo did not execute the compiled graph (torch._dynamo.config.disable "
+            f"{getattr(torch._dynamo.config, 'disable', None)}, suppress_errors "
+            f"{torch._dynamo.config.suppress_errors}). A partly uncompiled learner is a silent ~2x "
+            f"slowdown: stopped (gen3_no_silent_eager_v1)")
+
+
+def assert_inventory(model: Any, n_envs: int) -> str:
+    """The compiled-region INVENTORY equals the declaration, in the run (startup, after the
+    prewarm): one cache entry on R1's code object, one on R0's (none when `n_envs` is a declared
+    eager batch). Other code objects are not judged (they belong to other components). Raises
+    `CompileTrainerError`; returns the log line."""
+    from agents.model.compile_control import cache_entries_by_code
+    ent = cache_entries_by_code()
+    want = {"micro_step": 1, "_rollout_core": 0 if int(n_envs) in ct.EAGER_BATCHES else 1}
+    got = {name: sum(v for k, v in ent.items() if k.split(" ")[0] == name) for name in want}
+    if got != want:
+        raise ct.CompileTrainerError(
+            f"--compile-trainer: the compiled-region INVENTORY differs from the declaration — "
+            f"cache entries {got}, declared {want} (gen3_no_silent_eager_v1)")
+    return (f"[CompileRegions] inventory == declaration: R1 1 graph, R0 {want['_rollout_core']} "
+            f"graph(s) (fullgraph=True)")
 
 
 def uninstall(model: Any) -> None:

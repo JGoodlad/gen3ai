@@ -375,6 +375,16 @@ def set_strict_errors() -> None:
     torch._dynamo.config.suppress_errors = False
 
 
+def current_stance() -> str:
+    """The dynamo stance in force ("default" on a torch without stances)."""
+    try:
+        from torch._dynamo import eval_frame
+        st = getattr(eval_frame, "_stance", None)
+        return str(getattr(st, "stance", "default"))
+    except Exception:                                     # pragma: no cover — introspection only
+        return "unknown"
+
+
 def dynamo_graphs_total() -> int:
     """Process-wide FX graphs dynamo compiled (`counters['stats']['unique_graphs']`; not reset)."""
     try:
@@ -660,6 +670,9 @@ class CompileControl:
         self.locked = True
         self.lock_where = where
         self.phase = "locked"
+        from agents.model import region_calls
+        region_calls.take()                  # the per-update route window starts at the lock
+        self.check(f"lock ({where}) — the lock's own switches")
         line = self.lock_line()
         self._say(line)
         return line
@@ -684,6 +697,18 @@ class CompileControl:
     # -- the check -----------------------------------------------------------------------------
     def violation(self) -> Optional[str]:
         """None when healthy, else the FATAL's text."""
+        if self.locked:
+            # gen3_no_silent_eager_v1: the three process-wide switches that make dynamo run a
+            # compiled callable EAGER without an error — each a FATAL while the lock is held.
+            if getattr(torch._dynamo.config, "disable", False):
+                return ("torch._dynamo.config.disable is set (TORCHDYNAMO_DISABLE?) — every "
+                        "compiled region runs EAGER, silently")
+            if torch._dynamo.config.suppress_errors:
+                return ("torch._dynamo.config.suppress_errors is set — a compile error would be "
+                        "swallowed into an EAGER run, silently")
+            if self.mode != "error_on_recompile" and current_stance() != "fail_on_recompile":
+                return (f"the dynamo stance is '{current_stance()}', not 'fail_on_recompile' — a "
+                        f"recompile or a never-seen frame would no longer be refused")
         if self.limit_hits:
             kind, msg = self.limit_hits[0]
             return (f"dynamo hit config.{kind} ({len(self.limit_hits)} hit(s)) during phase "
@@ -814,6 +839,16 @@ class CompileControl:
         try:
             logger = model.logger
             tm = getattr(logger, "name_to_value", {}).get("train/train_ms")
+            # gen3_no_silent_eager_v1: this update's region routes (cheap counters, not the profiler)
+            from agents.model import region_calls
+            routes = region_calls.take()
+            comp = sum(v for k, v in routes.items() if k.endswith("_compiled"))
+            eager = sum(v for k, v in routes.items() if "_eager_" in k)
+            logger.record("lifecycle/compiled_region_calls", float(comp))
+            logger.record("lifecycle/eager_fallback_calls", float(eager))
+            logger.record("lifecycle/eager_share", float(eager) / float(comp + eager) if comp + eager else 0.0)
+            if tm is not None:
+                logger.record("lifecycle/update_wall_s", float(tm) / 1000.0)
             if self.locked and observe_train_ms and tm is not None:
                 line = self.watch.observe(float(tm))
                 if line is not None:

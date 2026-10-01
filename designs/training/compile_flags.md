@@ -1248,6 +1248,56 @@ kernel time 85.2% → 98.1%; host scalar reads 66,784 → 9,942 per update; GPU 
 epochs 2.4 → 0.57 s; 0 compiles after the lock. A's spread (45.3 / 48.0 s) is wider than the margin
 under the bar, so the verdict is "met" at n = 2, not "met with room".
 
+**No silent fall-back to eager** (`gen3_no_silent_eager_v1`, 2026-10-01; owner: "I just most care
+that we don't have silent performance regressions from it not being fully compiled").
+
+The defences that run in every run are the PRIMARY ones.
+- **Every region call goes through its dispatcher** (`compile_regions.install`), which takes the
+  COMPILED route or a DECLARED EAGER route. The declared eager routes are R1's ragged micro-batch and
+  R0's batch 1. Every route is counted (`agents/model/region_calls.py`).
+- **A compiled route that silently ran eager is a typed FATAL.** Each region's body calls
+  `note_eager_body`, which is a no-op inside a dynamo trace, and a compiled graph never re-enters the
+  Python body. So if the body runs during a compiled-route call, the region ran EAGER. That covers
+  dynamo disabled, a swallowed compile error, a skipped frame, and the `force_eager` stance.
+- **A ragged tail has a declared size: one per epoch.** More ragged micro-batches in one update is a
+  typed FATAL.
+- **The lock refuses the three switches** that make dynamo run eager without an error. With the lock
+  held, each of these is a sentinel violation (`CompileControl.violation`):
+  - `torch._dynamo.config.disable`;
+  - `suppress_errors`;
+  - a stance other than `fail_on_recompile`.
+- **The run asserts its compiled inventory** after the prewarm: one cache entry on R1's code object,
+  one on R0's (`assert_inventory`). On 2.8 a policy without the micro-step says
+  `⚠️ [CompileRegions] NOT installed` instead of compiling less silently.
+- **Every update records** `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`,
+  `lifecycle/eager_share` and `lifecycle/update_wall_s`.
+- **The update-wall drift warning** (`TrainMsWatch`) WARNs when `train_ms` exceeds 1.4x the run's own
+  median of its first 5 post-lock updates for 3 consecutive updates. It is never fatal, because box
+  contention looks the same.
+
+The routes the audit closed or declared:
+
+| route | where it leads now |
+|---|---|
+| cache-size-limit fallback | a typed FATAL (existing) |
+| guard failure after the lock | a typed FATAL (existing) |
+| `torch.compiler.disable` or a graph break inside a region | refused at startup, because the regions compile `fullgraph=True` |
+| a region skipped by a flag | the loud line above |
+| a ragged tail past its size | a typed FATAL |
+| batch 1 | declared, counted |
+| dynamo disabled, swallowed errors, `force_eager` | a typed FATAL |
+
+The CPU opponents' eager fallback is in the env workers, not the learner, and it already says so.
+
+The MILESTONE check is `compiled_perf_guard_test` (GPU tier, `slow`). It reruns the K8 acceptance's
+time stage and holds it to `designs/research_state/measurements/k6_k8/acceptance/perf_baseline.json`:
+- the update wall within 15% of the banked 36.32 s;
+- the compiled share of the update wall at least 0.80.
+
+The slow tier runs at major points (after the cutover, at a new era or lineage start) or when an agent
+judges it warranted; there is no nightly run (owner, 2026-10-01). So this guard bites only
+occasionally, and the run-time defences are primary.
+
 **R0's mask input is ONE declared dtype** (`gen3_r0_mask_dtype_v1`, 2026-10-01). The R0 dispatcher
 turns the action masks into a bool tensor on the learner's device before the compiled core. The env
 workers hand the rollout int8 numpy masks; the gate and the prewarm passed numpy bool, and dynamo

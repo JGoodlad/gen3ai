@@ -276,3 +276,130 @@ def test_a_FRESH_launch_is_ALSO_judged_on_a_perturbation_at_the_TRAINED_bar(monk
         cc._reset_control_for_tests()
         torch._dynamo.config.error_on_recompile = False
         torch._dynamo.reset()
+
+
+# --------------------------------------------- no silent fall-back to eager (gen3_no_silent_eager_v1)
+def _locked(learner):
+    ctl = cc.control()
+    ctl.install()
+    cr.install(learner, backend="eager")
+    ctl.prewarm(cr.prewarm_calls(learner, n_envs=N_ENVS, batch_size=BATCH))
+    ctl.lock("test")
+    return ctl
+
+
+@_28
+def test_a_region_that_runs_EAGER_on_its_COMPILED_route_is_FATAL(learner):
+    """Owner, 2026-10-01: no silent performance regression from a partly uncompiled learner. Under
+    the `force_eager` stance the compiled callable silently runs its Python body; the dispatcher sees
+    the body execute and refuses, for R1 and R0. Fails if the dispatchers stop watching."""
+    from agents.model import region_calls as RC
+    _locked(learner)
+    args = cr._r1_args(learner, cr.r1_batch(learner, BATCH))
+    obs = ct._prewarm_obs(learner, N_ENVS)
+    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), N_ENVS, torch.device("cpu"))
+    learner._compiled_micro_step(*args)                       # healthy: compiled, counted
+    assert RC.peek().get("R1_compiled") == 1
+    torch.compiler.set_stance("force_eager")
+    try:
+        with pytest.raises(ct.CompileTrainerError, match="region R1 ran EAGER on its COMPILED route"):
+            learner._compiled_micro_step(*args)
+        learner.policy.set_training_mode(False)
+        with pytest.raises(ct.CompileTrainerError, match="region R0 ran EAGER on its COMPILED route"):
+            with torch.no_grad():
+                learner.policy(obs, action_masks=mask)
+    finally:
+        torch.compiler.set_stance("fail_on_recompile")
+        RC.take()
+
+
+@_28
+def test_dynamo_DISABLED_at_startup_is_the_gates_FATAL_not_an_eager_run(learner):
+    """TORCHDYNAMO_DISABLE (config.disable) makes `torch.compile` hand back the plain function: the
+    regions would 'compile' into eager. The gate's first compiled-route call sees the body run."""
+    cc.control().install()
+    prev = torch._dynamo.config.disable
+    torch._dynamo.config.disable = True
+    try:
+        cr.install(learner, backend="eager")
+        with pytest.raises(ct.CompileTrainerError, match="ran EAGER on its COMPILED route"):
+            cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+    finally:
+        torch._dynamo.config.disable = prev
+
+
+@_28
+def test_the_lock_refuses_every_switch_that_makes_dynamo_run_eager_silently(learner):
+    ctl = _locked(learner)
+    ctl.check("healthy")
+    for name, bad in (("suppress_errors", True), ("disable", True)):
+        prev = getattr(torch._dynamo.config, name)
+        setattr(torch._dynamo.config, name, bad)
+        try:
+            with pytest.raises(cc.CompileSentinelError, match=name):
+                ctl.check("after the switch")
+        finally:
+            setattr(torch._dynamo.config, name, prev)
+    torch.compiler.set_stance("default")
+    try:
+        with pytest.raises(cc.CompileSentinelError, match="not 'fail_on_recompile'"):
+            ctl.check("after the stance moved")
+    finally:
+        torch.compiler.set_stance("fail_on_recompile")
+    ctl.check("restored")
+
+
+@_28
+def test_a_RAGGED_tail_beyond_one_per_epoch_is_FATAL_and_the_window_is_per_update(learner):
+    from agents.model import region_calls as RC
+    ctl = _locked(learner)
+    learner.n_epochs = 2
+    args = cr._r1_args(learner, cr.r1_batch(learner, BATCH - 5))
+    for _ in range(2):                                        # one per epoch: declared
+        learner._compiled_micro_step(*args)
+    with pytest.raises(ct.CompileTrainerError, match="RAGGED micro-batches in one update"):
+        learner._compiled_micro_step(*args)
+    RC.take()                                                 # the next update's window
+    learner._compiled_micro_step(*args)
+    RC.take()
+    del ctl
+
+
+@_28
+def test_the_run_asserts_the_compiled_inventory_equals_the_declaration(learner):
+    _locked(learner)
+    assert "inventory == declaration" in cr.assert_inventory(learner, N_ENVS)
+    torch.compiler.set_stance("default")
+    try:
+        args = cr._r1_args(learner, cr.r1_batch(learner, BATCH * 2))
+        learner._compiled_micro_step._gen3_compiled(*args)    # an undeclared second R1 graph
+    finally:
+        torch.compiler.set_stance("fail_on_recompile")
+    with pytest.raises(ct.CompileTrainerError, match="INVENTORY differs"):
+        cr.assert_inventory(learner, N_ENVS)
+
+
+@_28
+def test_each_update_records_its_compiled_and_eager_region_calls(learner):
+    from agents.model import region_calls as RC
+    ctl = _locked(learner)
+    full = cr._r1_args(learner, cr.r1_batch(learner, BATCH))
+    ragged = cr._r1_args(learner, cr.r1_batch(learner, BATCH - 5))
+    learner._compiled_micro_step(*full)
+    learner._compiled_micro_step(*full)
+    learner._compiled_micro_step(*ragged)
+
+    class _Log:
+        name_to_value = {"train/train_ms": 36300.0}
+        rec: dict = {}
+
+        def record(self, k, v):
+            self.rec[k] = v
+    log = _Log()
+    learner._logger = log
+    ctl.record(learner)
+    assert log.rec["lifecycle/compiled_region_calls"] == 2.0
+    assert log.rec["lifecycle/eager_fallback_calls"] == 1.0
+    assert abs(log.rec["lifecycle/eager_share"] - 1 / 3) < 1e-9
+    assert log.rec["lifecycle/update_wall_s"] == 36.3
+    assert RC.peek() == {}                                    # the window was reset

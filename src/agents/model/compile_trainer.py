@@ -1011,11 +1011,20 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
              f"shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)")
         _cr.gate_regions(model, n_envs=int(n_envs), batch_size=int(batch_size), say=_say)
         calls = _cr.prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
+        regions = True
     else:
         # torch 2.5.1 (legacy, pinned resumes) or a policy without the micro-step: the extractor-only
-        # compile and its declared signatures.
+        # compile and its declared signatures. On 2.8 that is a SMALLER compiled surface than
+        # production's — said loudly, never silently (gen3_no_silent_eager_v1).
+        if _cr.regions_supported():
+            _say("⚠️ [CompileRegions] NOT installed on torch 2.8: this policy has no micro-step "
+                 "(`_micro_static`), so only the extractor is compiled — the loss fold and the heads "
+                 "run EAGER (not the production learner)")
         calls = production_prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
+        regions = False
     line = ctl.prewarm(calls)
+    if regions:
+        _say(_cr.assert_inventory(model, int(n_envs)))
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     _say(f"{line} — reset + prewarm took {time.perf_counter() - t0:.1f}s")
