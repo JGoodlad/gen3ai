@@ -159,6 +159,7 @@ Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`
 | **before `/gen3ai-ship`, and in CI** | `python3 -m pytest src/ -q` *(~47 min serial, 2026-09-29 — browser is ~19 s of it)* |
 | just the bridge / just the browser | `-m sim` *(~100 s)* / `-m browser` *(~19 s)* |
 | anything on the GPU | `scripts/ops/gpu_lock.sh <cmd>` (Python: `utils.gpu_lock.gpu_lock()`) — **never a bare `flock …/gpu.lock`**: the helper is re-entrant for children and raises `GpuLockSelfDeadlock` on an ancestor holder |
+| any one-off HEAVY job (trace, benchmark, measurement driver, many checkpoints) | `scripts/ops/mem_cap.sh <GB> <cmd>` (Python: `utils.mem_cap`) — own scope + hard cap inside `gen3ai-heavy.slice` (64 GB aggregate), timeout INSIDE; an overrun kills only that job, not the session (2026-09-30: three OOMs took the whole tmux scope) |
 
 Use `-n 2` (~1.8x, two cores) — a training run normally shares this box; `-n 4` when the box is yours. Serial when you need `-s` or a debugger.
 

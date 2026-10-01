@@ -472,7 +472,15 @@ hourly LLM check caught them. Three layers now stand, cheapest first:
    <pid>`, `[x]`-bracketed patterns. Escape hatch: a `# self-match-ok` comment saying why. The GPU
    half of the class is fixed in code: every lock taker goes through `utils.gpu_lock` /
    `scripts/ops/gpu_lock.sh`, which is re-entrant for children and raises `GpuLockSelfDeadlock`
-   on an ancestor holder.
+   on an ancestor holder. The MEMORY half (2026-09-30: three global OOM kills of a 74-82 GB python3,
+   each tearing down the whole tmux scope — claude, every agent, every `setsid` job — because the
+   scope had `OOMPolicy=stop`): **any exploratory or one-off heavy job (traces, benchmarks,
+   measurement drivers, anything that loads many checkpoints) runs under
+   `scripts/ops/mem_cap.sh <GB> <cmd>`** — its own scope with a hard cap, inside the shared
+   `gen3ai-heavy.slice` (aggregate cap 64 GB by default), at `oom_score_adj` +500; an overrun kills
+   only that job (exit 86). Say so in every brief that runs one. The owner set the user manager's
+   `DefaultOOMPolicy=continue` the same day (`~/.config/systemd/user.conf.d/oom.conf`), so a scope
+   now survives an OOM kill of one child — but a global OOM still kills whatever the kernel picks.
 2. **The 15-minute mechanical watchdog** — `python3 /home/goodlad/dev/gen3ai/scripts/ops/idle_waiter_watchdog.py`
    on this session's cron (`*/15`). Silent + exit 0 when all is well; one line per flag (pid, age,
    Claude session pid + cwd, command, reason) + exit 1 otherwise. It flags a lock SELF-DEADLOCK on
