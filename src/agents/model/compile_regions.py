@@ -21,8 +21,10 @@ THE TABLE (`REGIONS`):
                            backward is AOTAutograd's, from the same graph. A RAGGED micro-batch (any
                            other row count: the last of an epoch over an uneven rollout) runs the
                            same function EAGER — a declared route, never a new signature.
-  R2  rank_probe_forward   — NOT compiled: the effective-rank probe's no-grad forward runs eager
-                           (outside R0/R1 the extractor is not compiled at all).
+  R2  rank_probe         — NO forward at all (K8, `gen3_rank_device_v1`): the effective-rank probe
+                           reads R1's OWN forward's stashes on the first micro-batch (trunk tokens,
+                           value CLS, the projected pi / vf features) and computes the four spectra
+                           on the device (`rank_metrics.effective_rank_t`), one host read.
   R3  optimizer_step       — NOT compiled, by decision: `clip_grad_norm_` + AdamW + `zero_grad`
                            measured 0.04 s per update (accumulation 32 — K8 inventory), and the
                            KL→LR controller moves the learning rate every update, so a compiled step
@@ -78,8 +80,8 @@ REGIONS: Tuple[Region, ...] = (
     Region("R1_learner_micro_step", "instrumented_ppo.micro_step.micro_step",
            (Signature("batch_size", "train", True),), True,
            "the accumulation group + optimizer step are per GROUP; the host read follows it"),
-    Region("R2_rank_probe_forward", "rank_metrics.rank_probe (eager forward)", (), False,
-           "a diagnostic forward, once per update; eager (the extractor is compiled only inside R0/R1)"),
+    Region("R2_rank_probe", "rank_metrics.rank_probe_from_stash (no forward)", (), False,
+           "reads R1's own forward's stashes; the spectra are device tensors, one host read"),
     Region("R3_optimizer_step", "clip_grad_norm_ + AdamW.step + zero_grad", (), False,
            "0.04 s/update measured; the KL->LR controller moves lr every update"),
 )

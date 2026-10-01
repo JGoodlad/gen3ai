@@ -71,7 +71,7 @@ from agents.training.instrumented_ppo.ridealong_terms import (RideAlongAccumulat
 from agents.training.instrumented_ppo.rollout_probes import RolloutProbes
 from agents.training.instrumented_ppo.train_setup import TrainSetup
 from agents.training.instrumented_ppo.value_terms import ValueTerms
-from agents.training.rank_metrics import rank_probe
+from agents.training.rank_metrics import rank_probe_from_stash
 from agents.model.compile_trainer import eager_extractor as _eager_fe  # gen3_compile_sentinel_v1
 
 
@@ -435,6 +435,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # The distill / anchor / ride-along readers' stash, built OUTSIDE the region.
                 if _mo.logp is not None:
                     self.policy._last_pi_distribution = _MaskedPi(_mo.logp, _mo.masks_bool)
+                # +INSTRUMENTATION: effective rank of the trunk / value_cls / policy / vf reps, ONCE per
+                # train() (first minibatch) — read from R1's OWN forward's stashes (K8,
+                # gen3_rank_device_v1: no second forward; the spectra on the device, one host read).
+                # HERE, before the tail: TD-aux and the cf block re-forward and overwrite the stashes.
+                if shared_trunk and diag.rank and not rank_metrics:
+                    rank_metrics = rank_probe_from_stash(self.policy.features_extractor)
                 # THE ONE host read of this micro-batch's diagnostics (every metric + presence + the
                 # loss's finiteness + the approx-KL), routed into the per-update lists below.
                 _mvals, _mpres, _mfinite = _unpack_micro(*_pack_micro(_mo))
@@ -828,8 +834,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # AFTER every loss that reads an extractor stash from THIS minibatch's
                 # evaluate_actions forward: the forward below replaces those stashes. Placed here,
                 # beside the other own-forward folds (search-teacher / OPD), for exactly that reason.
-                # `rank_probe` further below re-forwards `rollout_data.observations` itself, so it is
-                # unaffected. OFF → skipped (loss byte-identical).
+                # The rank probe reads R1's stashes right after R1 (above), so it is unaffected.
+                # OFF → skipped (loss byte-identical).
                 td_aux_term = None
                 if td_aux_on:
                     td_aux_term, _tdm = self._td_aux_term(popart)
@@ -1050,15 +1056,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         aux_terms=aux_probe_terms or None,
                     )
 
-                # +INSTRUMENTATION: effective-rank of the trunk / value_cls / policy reps, sampled
-                # ONCE per train() (first minibatch) via one no_grad forward — how many dims each
-                # readout actually uses (rank_metrics.py). {} for a non-Gen3 extractor.
-                if shared_trunk and diag.rank and not rank_metrics:
-                    rank_metrics = rank_probe(
-                        self.policy.features_extractor,
-                        rollout_data.observations,
-                        self.policy.extract_features,
-                    )
                 if _ph is not None: _ph("probes")
 
                 # Calculate approximate form of reverse KL Divergence for early stopping

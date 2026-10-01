@@ -291,4 +291,7 @@ class Gen3FeaturesExtractor(ExtractorForward):
         vf_pre = self.value_projection(self.value_pre_norm(vf_combined))
         pi_features = self.activation(pi_pre)
         vf_features = self.activation(vf_pre)
+        # K8 (gen3_rank_device_v1): the forward's own return, by reference — the learner's rank probe
+        # reads the micro-step's forward instead of running a second one.
+        self.stash.features_out = (pi_features, vf_features)
         return pi_features, vf_features

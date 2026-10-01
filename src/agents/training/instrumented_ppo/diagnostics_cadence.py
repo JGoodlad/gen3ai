@@ -17,7 +17,7 @@ THE GATED SET — the exact set the benchmark's "all optional telemetry OFF" con
   |                                         | `train/noise_per_term_ms`             |                  |
   | shared-trunk gradient balance           | `grad/*` (+ `train/cf_grad_share`,    | per-term         |
   |   (`grad_balance.grad_balance_metrics`) | `train/cf_evidential_grad_share`)     | `autograd.grad`  |
-  | effective rank (`rank_metrics.rank_probe`) | `rank/{trunk,value_cls,policy,vf_feat}_*` | 1 no-grad fwd + SVD |
+  | effective rank (`rank_metrics.rank_probe_from_stash`) | `rank/{trunk,value_cls,policy,vf_feat}_*` | 0 forwards (R1's stashes) + 4 device spectra, 1 host read |
   | per-family liveness (`edge_family_metrics`) | `edge/*`                          | param norms      |
   | pointer-cell liveness (`cell_family_metrics`) | `cell/*`                        | param norms      |
 

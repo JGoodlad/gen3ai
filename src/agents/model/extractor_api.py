@@ -166,6 +166,9 @@ class ExtractorApi(ExtractorBuild):
 
     @property
     def last_value_cls(self) -> Optional[torch.Tensor]: return self.stash.value_cls
+
+    @property
+    def last_features_out(self) -> Optional[Tuple[torch.Tensor, torch.Tensor]]: return self.stash.features_out
     @property
     def last_win_prob_logits(self) -> Optional[torch.Tensor]: return self.stash.win_prob_logits
     @property

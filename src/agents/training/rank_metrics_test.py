@@ -55,6 +55,15 @@ def test_effective_rank_keys_present():
 
 
 # ------------------------------------------------------------- gen3_rank_probe_stash_v1 (K6)
+def _same_descriptor(k, got, ref, what):
+    """The device spectrum (float64 eigvalsh of the Gram) vs the NumPy SVD reference: the counts
+    exactly, the ratios to float64 rounding (the two factorisations sum in different orders)."""
+    if k.startswith("n"):
+        assert got == float(ref), what
+    else:
+        assert abs(got - float(ref)) <= 1e-9 * max(1.0, abs(float(ref))), (what, got, ref)
+
+
 def _hooked_reference(fe, obs):
     """The pre-K6 probe's capture (forward hooks), kept here as the equivalence reference."""
     import torch as th
@@ -92,7 +101,7 @@ def test_the_hook_free_probe_reads_the_same_tensors_the_hooks_did():
         r = effective_rank(ref[name].float().numpy())
         for k, v in r.items():
             if f"rank/{name}_{k}" in got:
-                assert got[f"rank/{name}_{k}"] == float(v), (name, k)
+                _same_descriptor(k, got[f"rank/{name}_{k}"], v, (name, k))
     assert any(k.startswith("rank/trunk_") for k in got) and any(k.startswith("rank/value_cls_") for k in got)
     assert not fe.team_transformer._forward_hooks and not fe.cls_pool._forward_hooks
     del th
@@ -130,3 +139,59 @@ def test_the_probe_reaches_no_new_compiled_signature_after_the_lock():
         cc._reset_control_for_tests()
         th._dynamo.config.error_on_recompile = False
         th._dynamo.reset()
+
+
+# ------------------------------------------------------------- gen3_rank_device_v1 (K8)
+def test_the_device_spectrum_equals_the_numpy_reference():
+    import torch as th
+    from agents.training.rank_metrics import effective_rank_t
+    g = np.random.default_rng(11)
+    cases = [g.standard_normal((300, 32)),                        # full rank
+             g.standard_normal((300, 4)) @ g.standard_normal((4, 32)),   # rank 4 in 32 dims
+             np.outer(g.standard_normal(200), g.standard_normal(16)),    # rank 1
+             g.standard_normal((5, 64)),                          # fewer rows than dims
+             np.zeros((10, 8)), np.ones((1, 8))]                  # the degenerate cases
+    for Z in cases:
+        ref = effective_rank(Z)
+        got = effective_rank_t(th.as_tensor(Z, dtype=th.float32)).tolist()
+        for (k, gv) in zip(("pr", "effrank", "n90", "n95", "n99"), got):
+            _same_descriptor(k, gv, effective_rank(np.asarray(Z, dtype=np.float32))[k], (Z.shape, k))
+        assert ref["pr"] == 0.0 or got[0] > 0
+
+
+def test_the_learner_reads_the_micro_steps_own_forward_no_second_forward():
+    """K8: the rank probe used to run its OWN no-grad extractor forward every update (the
+    `--rank-tripwire` default keeps it every update) — a second forward of a 2,048-row micro-batch and
+    a host SVD. It now reads region R1's stashes: an update with the probe ON runs exactly as many
+    extractor forwards as one with it OFF, and still logs every `rank/*` descriptor. Fails on a revert
+    to the forward-based probe (one extra forward per update)."""
+    import torch as th
+    from agents.training import learner_golden as LG
+
+    def forwards_and_rank(rank_on):
+        model = LG.build_learner()
+        LG.load_buffer_into(model)
+        model.diagnostics_every = 2 ** 31 - 1                     # no cadence-due update...
+        model._diagnostics_ran_in_process = True
+        model.num_timesteps = int(model.n_steps) * int(model.n_envs)   # rollout index 1, not 0
+        model.rank_probe_every_update = rank_on                   # ...only the tripwire's exemption
+        fe = model.policy.features_extractor
+        n = {"fwd": 0}
+        h = fe.register_forward_pre_hook(lambda *_a: n.__setitem__("fwd", n["fwd"] + 1))
+        try:
+            model.train()
+        finally:
+            h.remove()
+        return n["fwd"], {k: v for k, v in model.logger.name_to_value.items() if k.startswith("rank/")}
+
+    with th.random.fork_rng():
+        th.manual_seed(0)
+        n_off, r_off = forwards_and_rank(False)
+    with th.random.fork_rng():
+        th.manual_seed(0)
+        n_on, r_on = forwards_and_rank(True)
+    assert n_on == n_off, f"the rank probe ran {n_on - n_off} extra extractor forward(s)"
+    assert not r_off
+    for rep in ("trunk", "value_cls", "policy", "vf_feat"):
+        assert f"rank/{rep}_pr" in r_on and r_on[f"rank/{rep}_pr"] > 0, sorted(r_on)
+    assert "rank/policy_n99" in r_on

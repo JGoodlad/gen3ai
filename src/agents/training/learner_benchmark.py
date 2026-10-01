@@ -475,7 +475,7 @@ def _config(model: Any, name: str, base_epochs: int):
     saved_attrs = {k: getattr(model, k, _missing)
                    for k in ("noise_scale_per_term", "n_epochs", "diagnostics_every",
                              "_diagnostics_ran_in_process")}
-    saved_mod = {k: getattr(ppo_mod, k) for k in ("grad_balance_metrics", "rank_probe",
+    saved_mod = {k: getattr(ppo_mod, k) for k in ("grad_balance_metrics", "rank_probe_from_stash",
                                                   "edge_family_metrics", "cell_family_metrics")}
     try:
         if name in ("noise_probe_off", "telemetry_off"):

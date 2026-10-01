@@ -996,7 +996,7 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
         # rollout core) and R1 (the micro-step), each `fullgraph=True` — gated against eager on real
         # rows, then prewarmed at exactly the declared signatures.
         _say(f"[CompileRegions] installing {_cr.install(model, emit=emit)} (fullgraph=True, static "
-             f"shapes; R2 rank probe and R3 optimizer step EAGER by declaration)")
+             f"shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)")
         _cr.gate_regions(model, n_envs=int(n_envs), batch_size=int(batch_size), say=_say)
         calls = _cr.prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
     else:

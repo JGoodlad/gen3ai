@@ -65,6 +65,7 @@ class ExtractorStashes:
     # makes anyway; no copy, no op.
     trunk_tokens: Optional[Tuple[torch.Tensor, torch.Tensor]] = None  # TeamTransformer (our, their) [B,6,D] each
     value_cls: Optional[torch.Tensor] = None           # [B,D] the CLS pool's value readout BEFORE the value routes
+    features_out: Optional[Tuple[torch.Tensor, torch.Tensor]] = None  # the forward's own (pi, vf) return, by reference (K8)
     # --- same-forward hand-offs (T0 producer → T1/T2 consumer; internal, no `last_*` name) ----
     t0_species_probs: Optional[torch.Tensor] = None    # T0 species resolve → every T1 pricing site
     entity_latent_table: Optional[torch.Tensor] = None  # LIVE latent table → the E4 seat builder

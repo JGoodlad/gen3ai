@@ -10346,3 +10346,14 @@ if a lazy build is reintroduced.
   (Inductor, fp32) the gate passes and is non-vacuous (compiled vs eager gradients differ in 2.06M of
   3.07M elements by <= 3.6e-7, against an eager-vs-eager floor of 7.5e-9).
 
+## 2026-10-01 — K8: the RANK PROBE reads the micro-step's own forward, spectra on the device (`gen3_rank_device_v1`; no model change)
+
+- `rank_metrics.rank_probe_from_stash`, called right after region R1 on the first micro-batch:
+  the trunk tokens, the value CLS and the projected (pi, vf) features (`stash.features_out`, new)
+  come from R1's own forward — the probe's separate no-grad extractor forward is gone — and each
+  effective-rank spectrum is the float64 `eigvalsh` of the centred Gram on the representation's
+  device (`effective_rank_t`, equal to the NumPy SVD reference to 1e-9, the counts exact), all
+  twenty scalars in ONE host read. The `rank/*` tags are unchanged.
+- The forward-based `rank_probe` stays for callers outside the learner; `effective_rank` (NumPy)
+  stays the reference and the capacity battery's.
+
