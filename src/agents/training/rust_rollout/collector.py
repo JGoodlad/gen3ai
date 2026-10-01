@@ -17,8 +17,8 @@ One host STEP:
    its next route (Lane E's ``after_op``, F-LE-4), teams and seed (``teams.TeamStager``).
 
 ``collect`` repeats host steps until the trigger fires, firing the SB3 callbacks once per ``n_envs``
-trainee decisions (a "vec step", so every step-counted cadence — the checkpoint's ``save_freq`` — keeps
-its meaning), then fills the learner's buffer. ``after_update`` LOADS the new weights into T2 (a
+trainee decisions (a "vec step"; every step-counted cadence compares ``num_timesteps`` against a
+boundary, so a ragged host step does not move it), then fills the learner's buffer. ``after_update`` LOADS the new weights into T2 (a
 declared in-place load, parity-verified) and bumps the version; with PER-GAME VERSION PINNING
 (declared, OFF by default) the new weights go to a FREE trainee slot and every game in progress
 keeps the slot — the version — it started with.

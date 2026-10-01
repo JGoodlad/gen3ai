@@ -252,19 +252,16 @@ def _cf_duty_cycle_starved(args) -> bool:
         return False
     from main.train.constants import (CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle,
                                       checkpoint_interval_env_steps)
-    interval = checkpoint_interval_env_steps(getattr(args, "checkpoint_every_steps", None),
-                                             int(args.n_envs))
+    interval = checkpoint_interval_env_steps(getattr(args, "checkpoint_every_steps", None))
     return cf_label_duty_cycle(args.cf_label_lag_steps, interval) < CF_DUTY_CYCLE_FLOOR
 
 
 def _cf_duty_cycle_message(args) -> str:
     from main.train.constants import (CF_DUTY_CYCLE_FLOOR, cf_label_duty_cycle,
-                                      checkpoint_interval_env_steps,
-                                      checkpoint_save_freq_vec_calls)
+                                      checkpoint_interval_env_steps)
     n_envs = int(args.n_envs)
     every = getattr(args, "checkpoint_every_steps", None)
-    vec_calls = checkpoint_save_freq_vec_calls(every, n_envs)
-    interval = checkpoint_interval_env_steps(every, n_envs)
+    interval = checkpoint_interval_env_steps(every)
     duty = cf_label_duty_cycle(args.cf_label_lag_steps, interval)
     shown = ("unbounded (--cf-label-lag-steps 0 = labels never expire)" if duty == float("inf")
              else f"{duty:.1%}")
@@ -272,7 +269,7 @@ def _cf_duty_cycle_message(args) -> str:
         f"\n[CF] FATAL: the counterfactual label path is STARVED BY CONSTRUCTION.\n"
         f"  --cf-label-lag-steps         : {args.cf_label_lag_steps:,} env steps\n"
         f"  checkpoint interval          : {interval:,} env steps "
-        f"({vec_calls:,} vec-calls x {n_envs} envs)\n"
+        f"(TOTAL env steps over all {n_envs} envs)\n"
         f"  --checkpoint-every-steps     : "
         f"{'(unset — the 2,400,000-env-step default)' if every is None else format(every, ',')}\n"
         f"  => DUTY CYCLE                : {shown}  (floor {CF_DUTY_CYCLE_FLOOR:.0%})\n"

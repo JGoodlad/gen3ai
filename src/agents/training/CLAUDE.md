@@ -520,14 +520,15 @@ recover which buffer ROW a step landed on. A capture that needs the row is INLIN
 `collect_rollouts_async` instead (`WinProbLabelCallback`'s terminal capture).
 
 🚨 **A STEP-COUNTED CADENCE IS TOTAL ENV STEPS, never vec calls or rollouts** (F-SZ-3, 2026-10-01).
-The periodic checkpoint was 50,000 VEC CALLS — 2.4M env steps at N = 48, ~102M at N = 2048; it is now
-2.4M TOTAL env steps at every N (`main.train.constants`), converted to SB3's `save_freq` at the run's
-N. Eval, the pool add/refresh it drives, the search teacher and the plasticity canary already compare
-`num_timesteps`. Everything counted in UPDATES or rollouts (`--diagnostics-every`, the compile canary,
-the team pulls, the CUDA memory-trend horizon, …) moves with `n_steps × n_envs` — a new cadence must
-compare `num_timesteps`, and a callback call is NOT N env steps under `--async-rollout` (one call per
-wave). The table and its test: `designs/ops/training_runbook.md` → "Cadences and N",
-`src/main/train/cadence_n_independence_test.py`.
+The periodic checkpoint was SB3's `n_calls % save_freq` at 50,000 calls — 2.4M env steps at N = 48,
+~102M at N = 2048, early under `--async-rollout` waves; it now saves when `num_timesteps` crosses each
+multiple of 2.4M (`main.train.constants.checkpoint_due`), like eval, the pool add/refresh it drives,
+the search teacher and the plasticity canary. A callback CALL is not a fixed number of env steps (N
+sync, N decisions on the Rust collector, one WAVE < N under async), so a new cadence compares
+`num_timesteps` against a boundary — never `n_calls`. Everything counted in UPDATES or rollouts
+(`--diagnostics-every`, the compile canary, the team pulls, the CUDA memory-trend horizon, …) moves
+with `n_steps × n_envs`. The table and its tests: `designs/ops/training_runbook.md` → "Cadences and
+N", `src/main/train/cadence_n_independence_test.py`.
 
 **`--policy-gae-lambda` (default 0.80) is the POLICY's GAE λ; `--win-prob-lambda` is the
 CRITIC's λ-return BCE target — two independent knobs** (`gen3_policy_gae_lambda_v1`, config v123).

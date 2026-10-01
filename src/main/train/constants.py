@@ -9,7 +9,6 @@ It also holds the two pure CHECKPOINT-CADENCE conversions, for exactly that reas
 builds the checkpointer) must agree on the arithmetic to the step, and phase 1 importing phase 4
 would make the phase order load-bearing.
 """
-import math
 from typing import Optional
 
 BATTLE_FORMAT = "gen3ou"
@@ -25,20 +24,21 @@ DEFAULT_DISTILL_TEAM_BIAS = 0.4
 
 # --- CHECKPOINT CADENCE ---------------------------------------------------------------------
 #
-# 🚨 SB3's `CheckpointCallback.save_freq` COUNTS VEC-ENV CALLS, NOT ENV STEPS. One `_on_step` fires
-# per `vec_env.step()`, which advances `n_envs` environments at once — so the ENV-step interval is
-# `save_freq * n_envs`, and the multiplier is invisible at the call site. That is not a hypothetical
-# readability point: this value was hardcoded at 50 000 and read as "50k steps" for the whole of the
-# R1 counterfactual work, while at `--n-envs 48` it was **2 400 000** env steps. The label producer
-# can only reload the newest `checkpoints/` zip and the consumer expires a label older than
-# `--cf-label-lag-steps` (150 000), so the labels were fresh for 6.25% of each interval — measured
-# on `ai_v9_29_rev1_0823` as 6 labels ingested against 255 expired in two hours.
+# 🚨 THE PERIODIC CHECKPOINT FIRES ON A TOTAL-ENV-STEP BOUNDARY, NOT ON A CALL COUNT. SB3's stock
+# `CheckpointCallback` saves on `n_calls % save_freq`, and a call is NOT a fixed number of env steps:
+# a sync `vec_env.step()` advances N envs, the Rust collector fires once per N trainee decisions, and
+# the `--async-rollout` collector fires once per WAVE of however many envs were ready (< N). Two
+# defects came from counting calls. (1) A hardcoded 50 000 calls was read as "50k steps" for the
+# whole R1 counterfactual work while at `--n-envs 48` it was **2 400 000** env steps, and the cf
+# label path was fresh for 6.25% of each interval (`ai_v9_29_rev1_0823`: 6 labels ingested against
+# 255 expired in two hours). (2) The same 50 000 calls was ~102M env steps at N = 2048 — a
+# checkpointer that never fires at the sizes the M5 SIZING study sweeps — and checkpointed EARLY
+# under async waves (F-SZ-3, 2026-10-01). So `_TrackingCheckpointCallback` (`main.train.run_io`)
+# saves at the first call whose `num_timesteps` reaches the next multiple of the interval
+# (`checkpoint_due`), the rule the eval callbacks already use.
 #
 #: The DEFAULT checkpoint interval, in TOTAL ENV STEPS (summed over every env) — independent of
-#: `--n-envs`. It was a hardcoded 50 000 VEC-ENV CALLS, i.e. `50 000 x N` env steps: 2 400 000 at the
-#: production N = 48, but ~102M at N = 2048 — a checkpointer that effectively never fires at the
-#: sizes the M5 SIZING study sweeps (F-SZ-3, 2026-10-01). The N = 48 value is kept, so a run at the
-#: production N still constructs the byte-identical checkpointer (`ceil(2 400 000 / 48)` = 50 000).
+#: `--n-envs` and of the collector's call shape. 2 400 000 = the historical N = 48 value.
 DEFAULT_CHECKPOINT_EVERY_ENV_STEPS = 2_400_000
 
 #: Below this fraction the counterfactual label path is starved by construction (see
@@ -47,34 +47,24 @@ DEFAULT_CHECKPOINT_EVERY_ENV_STEPS = 2_400_000
 CF_DUTY_CYCLE_FLOOR = 0.25
 
 
-def checkpoint_save_freq_vec_calls(checkpoint_every_steps: Optional[int], n_envs: int) -> int:
-    """`--checkpoint-every-steps` (TOTAL env steps) → SB3's `save_freq` (VEC-ENV CALLS) at this N.
+def checkpoint_interval_env_steps(checkpoint_every_steps: Optional[int]) -> int:
+    """The env-step spacing of the periodic checkpoint BOUNDARIES: `--checkpoint-every-steps`, or
+    `DEFAULT_CHECKPOINT_EVERY_ENV_STEPS` when unset. Floored at 1 (`checkpoint_due` divides by it).
 
-    `None` — the flagless default — is `DEFAULT_CHECKPOINT_EVERY_ENV_STEPS` total env steps, so the
-    interval does not move with `--n-envs` (at N = 48 it is the historical 50 000 vec calls exactly).
-    Both are converted by CEIL-division: rounding down would checkpoint more often than asked and
-    rounding to zero would make `n_calls % save_freq` a ZeroDivisionError, so the floor is 1 vec-call.
-
-    ONE VEC CALL = N ENV STEPS on both env cores: the Python core's `vec_env.step()` advances all N
-    envs, and the Rust core (`agents.training.rust_rollout.collector`) fires the callbacks once per N
-    trainee decisions. ⚠️ NOT under `--async-rollout`, whose collector fires once per WAVE (≤ N envs),
-    so there the interval is SHORTER than requested by the mean wave fraction.
+    A save lands at the first callback call at or past each boundary, so one gap between saves is
+    this ± less than one call's advance (≤ N env steps); the mean is exactly this.
     """
-    steps = DEFAULT_CHECKPOINT_EVERY_ENV_STEPS if checkpoint_every_steps is None \
-        else int(checkpoint_every_steps)
-    n = max(1, int(n_envs))
-    return max(1, math.ceil(steps / n))
+    if checkpoint_every_steps is None:
+        return DEFAULT_CHECKPOINT_EVERY_ENV_STEPS
+    return max(1, int(checkpoint_every_steps))
 
 
-def checkpoint_interval_env_steps(checkpoint_every_steps: Optional[int], n_envs: int) -> int:
-    """The EFFECTIVE env-step interval between periodic checkpoints — post-rounding.
-
-    Reported rather than the requested value, because the ceil above can only make the real
-    interval LONGER than asked, and a duty cycle computed on the request would flatter the config
-    it is meant to refuse.
-    """
-    n = max(1, int(n_envs))
-    return checkpoint_save_freq_vec_calls(checkpoint_every_steps, n) * n
+def checkpoint_due(last_step: int, now_step: int, interval_env_steps: int) -> bool:
+    """Has `num_timesteps` crossed a checkpoint boundary since `last_step`? Boundaries are the
+    multiples of the interval in TOTAL env steps, so the answer does not depend on how many env steps
+    one callback call advanced (N, a wave, a ragged Rust host step) or on where this process started."""
+    interval = max(1, int(interval_env_steps))
+    return int(now_step) // interval > int(last_step) // interval
 
 
 def cf_label_duty_cycle(cf_label_lag_steps: Optional[int], interval_env_steps: int) -> float:
