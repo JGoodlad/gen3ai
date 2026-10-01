@@ -193,6 +193,22 @@
    "contention": 1.0,
    "detail": ""
   },
+  "src/agents/model/compile_batch1_cuda_test.py::test_batch_1_through_the_compiled_learner_forward_runs_eager_on_cuda": {
+   "status": "pass",
+   "commit": "2bd2aeee32bcf69ac1f9c7206ddd011543dd16e0",
+   "at": "2026-10-01T04:40:28Z",
+   "duration_s": 176.22,
+   "contention": 1.13,
+   "detail": ""
+  },
+  "src/agents/model/compile_batch1_cuda_test.py::test_contract_torch_2_8_cannot_lower_the_batch_1_cuda_graph": {
+   "status": "pass",
+   "commit": "2bd2aeee32bcf69ac1f9c7206ddd011543dd16e0",
+   "at": "2026-10-01T04:40:28Z",
+   "duration_s": 77.69,
+   "contention": 1.33,
+   "detail": ""
+  },
   "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[high]": {
    "status": "skip",
    "commit": "bf09c246b37b0e3e1911e43db1abe7ff7ec8f177",
@@ -1131,5 +1147,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-01T03:17:39Z"
+ "last_written": "2026-10-01T04:40:28Z"
 }

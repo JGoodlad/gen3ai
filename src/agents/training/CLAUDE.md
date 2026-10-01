@@ -619,8 +619,9 @@ FATAL.** `src/agents/model/compile_control.py` is the ONLY runtime module that t
 first rollout + update (`🧊 [COMPILE LOCK]`) → RELEASE when `learn()` returns (the final eval runs
 in-process on the compiled forward). While locked, any recompile, late first compile or
 cache-limit hit exits `[CompileSentinel] FATAL` / `FATAL_CONFIG` (not restarted). A learner-process
-forward with a NEW signature (a different obs key set, a batch that may be 1) must run under
-`compile_trainer.eager_extractor(fe)` or be added to `production_prewarm_calls` — the late-shape
+forward with a NEW signature (a different obs key set, an undeclared batch size) must run under
+`compile_trainer.eager_extractor(fe)` or be added to `production_prewarm_calls`; batch 1 is ALWAYS
+eager (`compile_trainer.EAGER_BATCHES`, `gen3_batch1_eager_v1` — torch 2.8 cannot lower a batch-1 CUDA graph) — the late-shape
 table in the doc lists every caller. An unknown torch or a drifted torch internal
 (`_SOURCE_HASHES`) REFUSES. TB: `compile/recompiles_after_lock` must stay 0.
 🚨 **THE COMPILE CACHE IS THE RUN'S OWN (K3, `gen3_hermetic_compile_cache_v1`).** Every process of a

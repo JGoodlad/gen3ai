@@ -67,7 +67,7 @@ def _compiled_first_update(device: str):
         # does and does not reproduce of it).
         fe.forward = torch.compile(fe.forward)
         for _label, fn in production_prewarm_calls(model, n_envs=model.n_envs,
-                                                   batch_size=model.batch_size, batch1=False):
+                                                   batch_size=model.batch_size):
             fn()
         del fe.forward
         torch._dynamo.reset()
@@ -82,12 +82,9 @@ def _compiled_first_update(device: str):
             "compile_control did not pin torch._functorch.config.donated_buffer=False at install — "
             "a compiled backward will then donate its saved activations and every retain_graph "
             "probe on it raises (torch >= 2.6)")
-        # PRODUCTION's prewarm set (`--critic winprob` -> no batch-1 eval signature). The toy
-        # trains the shaped critic, but only `collect_rollouts` reaches the batch-1 truncation
-        # value, and this test runs `train()` alone. (On torch 2.8.0+cu126 the batch-1 CUDA eval
-        # graph itself fails to lower in Triton — a separate K1 finding, not this test's subject.)
-        arm_compile_sentinel(model, n_envs=model.n_envs, batch_size=model.batch_size,
-                             critic="winprob")
+        # PRODUCTION's prewarm set. No batch-1 signature exists on any critic: batch 1 always runs
+        # the eager forward (`compile_trainer.EAGER_BATCHES`, gen3_batch1_eager_v1).
+        arm_compile_sentinel(model, n_envs=model.n_envs, batch_size=model.batch_size)
         # The first update of a process: every gated probe runs (K2). Prime the noise EMAs past
         # warm-up so the per-term probe's EMIT gate passes and its tags prove it ran.
         model.diagnostics_every = 1

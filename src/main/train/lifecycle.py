@@ -118,8 +118,7 @@ def _arm_compile_sentinel(model, args) -> None:
         sys.exit(TrainExitCode.FATAL_CONFIG)
     try:
         arm_compile_sentinel(model, n_envs=int(getattr(model, "n_envs", 0) or args.n_envs),
-                             batch_size=int(model.batch_size),
-                             critic=getattr(args, "critic", None), emit=send_event)
+                             batch_size=int(model.batch_size), emit=send_event)
     except CompileTrainerError as exc:
         print(f"\n[CompileSentinel] FATAL: {exc}", file=sys.stderr, flush=True)
         send_event(f"[CompileSentinel] FATAL: {exc}")

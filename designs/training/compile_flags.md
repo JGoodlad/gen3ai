@@ -765,13 +765,32 @@ atomics give 2.1e-7). Revert `donated_buffer` ⇒ the probe raises (CPU and CUDA
 ONLY the tag passes this toy (2.2e-7, measured) — that half is proven by the real-graph A/B and pinned
 by the cache-key contract test, not by this test.
 
-**Open (K1 finding, not fixed here):** on torch 2.8.0+cu126 a **batch-1 CUDA eval/no-grad** graph of
-the production extractor fails to LOWER — Triton `CompilationError` (`'constexpr_type' object has no
-attribute 'is_block'` on a fully-constant `tl.broadcast_to` index); batch 2 and 4 compile, and 2.5.1
-compiles batch 1. It is reached by `--critic shaped`'s batch-1 prewarm signature and by the trainer's
-in-process FINAL EVALUATION (batch 1 on the compiled forward, after the lock is released, per the
-sentinel table above) — **UNVERIFIED:** that a 2.8 `--compile-trainer` run dies at its end (inferred
-from the batch-1 repro, not observed on a real run).
+**Batch 1 never reaches the compiled learner forward (`gen3_batch1_eager_v1`, 2026-09-30, Lane K).**
+The K1 finding: on torch 2.8.0+cu126 a **batch-1 CUDA eval/no-grad** graph of the production extractor
+fails to LOWER — Triton `CompilationError` (`'constexpr_type' object has no attribute 'is_block'` on a
+fully-constant `tl.broadcast_to` index); batch 2 and 4 compile, and 2.5.1 compiles batch 1. Two
+learner-process paths reach batch 1, both off the hot path: `--critic shaped`'s truncated-episode
+`predict_values`, and the trainer's in-process FINAL EVALUATION (after `learn()` returns). The fix:
+`compile_trainer_extractor` installs `route_small_batches_eager(fe, compiled)` as `fe.forward` — a
+batch in `compile_trainer.EAGER_BATCHES` (= {1}) runs the extractor's own EAGER forward, every other
+batch the compiled one; the batch test is Python, outside the graph. One rule on both torches,
+nothing version-keyed; the declared prewarm (`production_prewarm_calls`) therefore holds NO batch-1
+signature (the old `--critic shaped` batch-1 prewarm row is gone, and a `--debug` single-env rollout
+is not prewarmed either). Rejected: padding batch 1 to 2 (every per-forward extractor stash would
+have to be sliced back to one row). Cost: ~18 ms per batch-1 forward, eager. Pinned by
+`compile_trainer_test` (the routing, CPU) and `compile_batch1_cuda_test` (CUDA, `slow`, GPU tier, run
+on `gen3ai_torch28` under `gpu_lock.sh`): the real production-surface policy through the REAL gate,
+then the final evaluation's call — `policy(obs)` at batch 1, deterministic — succeeds and equals the
+eager forward bit-for-bit, batch 2 still runs compiled; its CONTRACT twin reverts the routing
+(`EAGER_BATCHES = ∅`) and asserts the Triton `CompilationError` (if a torch upgrade fixes the
+lowering, that test fails and the routing can retire). MEASURED 2026-09-30 (RTX 3080 Ti, torch
+2.8.0+cu126): both pass; the reverted arm raises the `CompilationError`. SMOKE (2026-09-30, the same
+GPU, torch 2.8.0+cu126, `--device cuda --compile-trainer --arch production --steps 256 --n-envs 2
+--n-steps 64 --batch-size 64 --n-epochs 2 --eval-battles 2`): parity gate PASS → prewarm → lock →
+two iterations with 0 compiles after the lock → `Training complete` → the in-process FINAL
+EVALUATION at batch 1 ran all 18 games (`Final aggregate win rate: 11.1%`), exit 0
+(`~/gen3ai_archive/k6_k8/smoke28_b1.log`). Before the fix that call was the batch-1 CUDA compile the
+reverted-routing test shows raising.
 
 ### The startup parity gate (`gen3_compile_parity_real_obs_v1` + `gen3_tf32_parity_gate_v1`)
 
@@ -1023,7 +1042,7 @@ Two failures were silent before it:
 | 2 `reset()` | `_arm_compile_sentinel`, after `_apply_grad_checkpointing` | `torch._dynamo.reset()` — drops every graph the gate compiled |
 | 3 `prewarm(calls)` | same | runs every production signature NOW (`compile_trainer.production_prewarm_calls`), RNG-neutral (`fork_rng`), gradients zeroed |
 | 4 `lock(where)` | the end of the first `train()` (after one real rollout + update) | `error_on_recompile = True` + a compile-START callback counting every frame compile. `🧊 [COMPILE LOCK] …` states the per-code-object entry count and the headroom to the limit |
-| — `release(why)` | when `learn()` returns or raises | the lock's scope is TRAINING: the trainer's FINAL EVALUATION runs in-process on the same compiled forward at batch 1 / no-grad — new signatures by design. MEASURED on the real trainer (the end-to-end smoke below): a still-locked sentinel broke it with `RecompileError`. Prints `🧊 [COMPILE LOCK] released …` with the post-lock compile count (must be 0) |
+| — `release(why)` | when `learn()` returns or raises | the lock's scope is TRAINING: the trainer's FINAL EVALUATION runs in-process on the same model (batch 1 / no-grad — routed EAGER since `gen3_batch1_eager_v1`; a smaller obs key set elsewhere) — new signatures by design. MEASURED on the real trainer (the end-to-end smoke below): a still-locked sentinel broke it with `RecompileError`. Prints `🧊 [COMPILE LOCK] released …` with the post-lock compile count (must be 0) |
 | 5 `stats()` | every update | TB `compile/graphs_total`, `compile/recompiles_after_lock` (**must stay 0**), `compile/cache_limit_hits`, `compile/max_cache_entries_per_code`, `compile/locked`, `compile/regression_flag`, `compile/train_ms_vs_lock_baseline` |
 
 The checks run at every rollout end and every update end (`CompileControl.attach` wraps the model's
@@ -1074,12 +1093,12 @@ flag and read attributes (`grad_checkpointing`):
 | `evaluate_actions` | train · grad · `batch_size` | prewarm |
 | `rank_probe` (first minibatch of every update) | train · no-grad · `batch_size` | prewarm |
 | capacity half-batch cosine (every 50 minibatches), td-aux, distill-anchor fallback | train · grad · other sizes ≥ 2 | prewarm at `batch_size // 2` makes the train graph dynamic |
-| truncated-episode `predict_values` under `--critic shaped` | eval · no-grad · **1** | prewarm (only when the critic is not `winprob`, which relabels those ends as terminal) |
+| truncated-episode `predict_values` under `--critic shaped` | eval · no-grad · **1** | EAGER (`EAGER_BATCHES`, `gen3_batch1_eager_v1`) — batch 1 never reaches the compiled graph |
 | search-teacher / OPD (`ppo.py`), fork-arm `_score_pool`, `fork_driver._score`, distill grad-projection | a different KEY SET and/or a variable batch that may be 1 | `compile_trainer.eager_extractor(fe)` — the EAGER forward for the block (same params, same autograd) |
 | cf terms, capacity velocity, win-prob episode-start read | — | already eager (`type(fe).forward(fe, …)`) |
 | eval, snapshot ladder, search-teacher workers, the opponents | — | other processes (fresh dynamo per process) |
 | `--debug` (DummyVecEnv) + `--compile-opponents` | opponents compile IN the learner process, on the learner's code objects, after the lock | **refused at startup** (`FATAL_CONFIG`): pass `--no-compile-opponents` |
-| the FINAL evaluation after `learn()` (in-process, the live compiled model) | eval · no-grad · 1, a smaller obs key set | runs AFTER `release()` — recompiles freely, as before |
+| the FINAL evaluation after `learn()` (in-process, the live compiled model) | eval · no-grad · 1, a smaller obs key set | batch 1 runs EAGER (`gen3_batch1_eager_v1`: torch 2.8 cannot lower the batch-1 CUDA graph); after `release()` anyway |
 
 A launcher restart is a fresh process (a fresh dynamo cache, a new gate, a new lock; the ON-DISK
 Inductor/Triton cache is the run's own and is reused only under a matching stamp — K3 below).

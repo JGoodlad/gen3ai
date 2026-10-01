@@ -57,7 +57,7 @@ def _worker(part: str, root: str, device: str) -> Dict[str, Any]:
         compile_trainer_extractor(model, True, emit=None)
         out["gate_s"] = time.perf_counter() - t0
         t1 = time.perf_counter()
-        arm_compile_sentinel(model, n_envs=48, batch_size=2048, critic="winprob", emit=None)
+        arm_compile_sentinel(model, n_envs=48, batch_size=2048, emit=None)
         out["prewarm_s"] = time.perf_counter() - t1
         out["startup_s"] = out["gate_s"] + out["prewarm_s"]
     elif part == "t2":

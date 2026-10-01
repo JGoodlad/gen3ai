@@ -611,6 +611,43 @@ def _arm_verdicts(eager: _Arm, comp: _Arm, precision: str, *,
     return rules
 
 
+#: Batch sizes the COMPILED learner forward never serves (`gen3_batch1_eager_v1`, Lane K): a call at
+#: one of these batch sizes runs the extractor's EAGER forward (same parameters, same autograd).
+#:
+#: WHY batch 1. On torch 2.8.0+cu126 a batch-1 CUDA eval/no-grad graph of the production extractor
+#: does not LOWER (Triton `CompilationError`, "'constexpr_type' object has no attribute 'is_block'" on
+#: a fully-constant `tl.broadcast_to` index — the K1 finding; batch 2 and 4 compile, and 2.5.1
+#: compiles batch 1). Batch 1 reaches the learner process twice, both OFF the hot path: the
+#: truncated-episode `predict_values` under `--critic shaped` (rare) and the trainer's in-process
+#: FINAL EVALUATION (after `learn()` returns). Eager costs ~18 ms per batch-1 forward and nothing
+#: else; padding to batch 2 would have to slice every per-forward extractor stash back to one row.
+#: So batch 1 is never a compiled signature — on either torch, one rule, nothing version-keyed — and
+#: the declared signature table (the prewarm) contains none. `compile_trainer_test` pins the routing;
+#: the CUDA test `compile_batch1_cuda_test` (2.8, `slow`, GPU tier) fails on its revert.
+EAGER_BATCHES = frozenset({1})
+
+
+def _rows(obs: Any) -> int:
+    x: Any = obs.get("observation") if isinstance(obs, dict) else obs
+    if x is None and isinstance(obs, dict):
+        x = next(iter(obs.values()))
+    return int(x.shape[0])
+
+
+def route_small_batches_eager(fe: Any, compiled: Callable[..., Any]) -> Callable[..., Any]:
+    """The callable `compile_trainer_extractor` installs as ``fe.forward``: ``compiled`` for every
+    batch except `EAGER_BATCHES`, which run the class's own (eager) forward. Pure dispatch — no
+    numerics, no extra dynamo frame (the batch-size test runs in Python, outside the graph)."""
+    cls_forward = type(fe).forward
+
+    def forward(obs: Any) -> Any:
+        if _rows(obs) in EAGER_BATCHES:
+            return cls_forward(fe, obs)
+        return compiled(obs)
+    forward._gen3_compiled = compiled                                   # type: ignore[attr-defined]
+    return forward
+
+
 def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int] = None,
                               emit: Optional[Callable[[str], None]] = None) -> Optional[float]:
     """Compile `model.policy.features_extractor.forward` in place. Returns the measured speedup.
@@ -768,7 +805,7 @@ def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int]
             # `wrap_compiled` records a lock rejection raised through the learner forward before it
             # propagates (sticky: a caller's `except Exception` cannot hide it — torch >= 2.8's
             # start callback no longer sees a rejected recompile). Pass-through otherwise.
-            fe.forward = control(emit).wrap_compiled(compiled)
+            fe.forward = route_small_batches_eager(fe, control(emit).wrap_compiled(compiled))
             comp_ms = _time_steps(fe, obs, _VALIDATE_REPS)
             # gen3_tf32_parity_gate_v1: under reduced precision the TF32 rule above can only resolve
             # a defect larger than ~K x TF32's own rounding (measured: a DROPPED projection bias passes
@@ -870,8 +907,8 @@ def _prewarm_obs(model: Any, batch: int) -> Dict[str, "torch.Tensor"]:
     return out
 
 
-def production_prewarm_calls(model: Any, *, n_envs: int, batch_size: int,
-                             batch1: bool) -> List[Tuple[str, Callable[[], None]]]:
+def production_prewarm_calls(model: Any, *, n_envs: int,
+                             batch_size: int) -> List[Tuple[str, Callable[[], None]]]:
     """Every compiled-extractor signature the learner process reaches in production, in the order
     production first reaches them (rollout first, so its graph specializes on n_envs as it would).
 
@@ -883,9 +920,9 @@ def production_prewarm_calls(model: Any, *, n_envs: int, batch_size: int,
       * a second TRAIN/grad size (batch_size // 2 — the capacity half-batch cosine) so the train
         graph is dynamic in batch before the lock: variable-size train callers (td-aux, the
         distill-anchor fallback) then reuse it;
-      * ``batch1``: EVAL, no-grad, batch 1 — the truncated-episode `predict_values` under
-        `--critic shaped` (dynamo always specializes size 1; `winprob` relabels those ends as
-        terminal, so production never reaches it).
+    A batch in `EAGER_BATCHES` (batch 1: the `--critic shaped` truncation value, the final
+    evaluation, a `--debug` single-env rollout) never reaches the compiled graph, so it is never
+    prewarmed — `gen3_batch1_eager_v1`.
     """
     policy = model.policy
 
@@ -924,17 +961,11 @@ def production_prewarm_calls(model: Any, *, n_envs: int, batch_size: int,
     half = max(2, int(batch_size) // 2)
     if half != int(batch_size):
         calls.append((f"capacity train/grad B={half}", _train(half, True)))
-    if batch1:
-        calls.append(("shaped truncation value eval/no-grad B=1", _eval_nograd(1)))
-    return calls
+    return [c for c, b in zip(calls, (int(n_envs), int(batch_size), int(batch_size), half))
+            if b not in EAGER_BATCHES]
 
 
-def _is_winprob(critic: Any) -> bool:
-    from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
-    return bool(is_winprob(critic or CRITIC_DEFAULT))
-
-
-def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int, critic: Any,
+def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
                          emit: Optional[Callable[[str], None]] = None) -> Optional[str]:
     """Phases 2-4 for a compiled learner: reset the gate's graphs, prewarm every production
     signature, and attach the lock (after the first rollout + update) and the per-rollout /
@@ -959,8 +990,7 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int, critic: An
 
     t0 = time.perf_counter()
     _say(ctl.reset())
-    calls = production_prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size),
-                                     batch1=not _is_winprob(critic))
+    calls = production_prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
     line = ctl.prewarm(calls)
     if torch.cuda.is_available():
         torch.cuda.synchronize()

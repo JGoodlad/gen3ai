@@ -10201,3 +10201,15 @@ fallback would have killed every `--ridealong-*` run. It is gone. `_ridealong_op
 missing one (or one bound to other heads) raises `RideAlongLifecycleViolation`. The counter and its
 TB key are removed. `ridealong_update_test::test_an_UNACQUIRED_step_RAISES_and_builds_nothing` fails
 if a lazy build is reintroduced.
+
+## 2026-09-30 — Batch 1 never reaches the compiled learner forward (`gen3_batch1_eager_v1`; no model version bump, numerics unchanged)
+
+- **The K1 finding, closed:** torch 2.8.0+cu126 cannot lower a batch-1 CUDA graph of the production
+  extractor (Triton `CompilationError`), and two learner-process paths reach batch 1 — the
+  `--critic shaped` truncation value and the in-process final evaluation. `compile_trainer_extractor`
+  now installs a dispatcher: a batch in `EAGER_BATCHES` (= {1}) runs the extractor's eager forward,
+  every other batch the compiled one, on both torches. The declared prewarm holds no batch-1 signature
+  (the `--critic shaped` batch-1 row and `arm_compile_sentinel`'s `critic` argument are gone).
+- **Pinned:** `compile_trainer_test` (the routing); `compile_batch1_cuda_test` (CUDA, `slow`, 2.8 —
+  the final evaluation's batch-1 call through the real gate, and the contract that the reverted
+  routing raises the `CompilationError`).

@@ -706,12 +706,12 @@ def test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32(precision
             0.0, 1.0, shape=(layout["total_dim"],), dtype=np.float32)})
         pol.set_training_mode = lambda mode: pol.train(mode)
         pol.extract_features = lambda obs: fe(obs)
-        ctl.prewarm(production_prewarm_calls(m, n_envs=48, batch_size=256, batch1=False))
+        ctl.prewarm(production_prewarm_calls(m, n_envs=48, batch_size=256))
         ctl.lock("prewarm")
         ent = cc.cache_entries_by_code()
         assert ent and max(ent.values()) < cc.cache_size_limit(), ent
         with ctl.guard("steady iteration"):
-            for label, fn in production_prewarm_calls(m, n_envs=48, batch_size=256, batch1=False):
+            for label, fn in production_prewarm_calls(m, n_envs=48, batch_size=256):
                 fn()
         assert ctl.compiles_after_lock == 0
     finally:

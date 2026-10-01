@@ -677,3 +677,49 @@ def test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate(monkeypatch):
     with pytest.raises(CompileTrainerError, match="DISAGREES"):
         _run(False)
 
+
+
+# --------------------------------------------------------------------------- gen3_batch1_eager_v1
+class _CountingNet(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.lin = torch.nn.Linear(4, 3)
+        self.eager_calls = 0
+
+    def forward(self, obs):
+        self.eager_calls += 1
+        return self.lin(obs["observation"])
+
+
+def test_batch_1_runs_the_EAGER_forward_and_every_other_batch_the_compiled_one():
+    """Batch 1 never reaches the compiled learner graph (torch 2.8 cannot lower the batch-1 CUDA
+    graph: the K1 finding). Fails if `EAGER_BATCHES` loses 1 or the dispatcher stops routing."""
+    from agents.model.compile_trainer import EAGER_BATCHES, route_small_batches_eager
+    assert 1 in EAGER_BATCHES
+    net = _CountingNet()
+    compiled_calls = []
+
+    def compiled(obs):
+        compiled_calls.append(int(obs["observation"].shape[0]))
+        return net.lin(obs["observation"])
+    net.forward = route_small_batches_eager(net, compiled)
+    x1 = {"observation": torch.rand(1, 4)}
+    out = net(x1)
+    assert compiled_calls == [] and net.eager_calls == 1
+    assert torch.equal(out, net.lin(x1["observation"]))
+    net({"observation": torch.rand(2, 4)})
+    net({"observation": torch.rand(48, 4)})
+    assert compiled_calls == [2, 48] and net.eager_calls == 1
+
+
+def test_the_declared_prewarm_holds_no_batch_1_signature():
+    """The declared signature table (`production_prewarm_calls`) never prewarms a batch-1 graph —
+    neither the old `--critic shaped` truncation value nor a single-env rollout."""
+    from agents.model.compile_trainer import production_prewarm_calls
+    pol = torch.nn.Module()
+    m = torch.nn.Module()
+    m.policy = pol
+    for n_envs, bs in ((48, 2048), (1, 64), (2, 2)):
+        labels = [lab for lab, _ in production_prewarm_calls(m, n_envs=n_envs, batch_size=bs)]
+        assert not any(lab.endswith("B=1") for lab in labels), labels
+    assert len(production_prewarm_calls(m, n_envs=1, batch_size=64)) == 3   # rollout B=1 dropped
