@@ -53,7 +53,8 @@ def production_spaces() -> Tuple[Any, Any, Any]:
 
 
 def fresh_model(env: Any, *, n_steps: int, batch_size: int, n_epochs: int = 1, seed: int = 0,
-                perturb_seed: int = 1234, gamma: float = 1.0, gae_lambda: float = 0.8, **kw: Any) -> Any:
+                perturb_seed: int = 1234, gamma: float = 1.0, gae_lambda: float = 0.8,
+                policy_args: Any = None, **kw: Any) -> Any:
     import torch
 
     from agents.model.parity_probe import PERTURB_SCALE, perturb_
@@ -61,7 +62,7 @@ def fresh_model(env: Any, *, n_steps: int, batch_size: int, n_epochs: int = 1, s
     from agents.training.instrumented_ppo import InstrumentedMaskablePPO
     from main.fresh_checkpoint import _production_policy_kwargs
 
-    _args, _layout, pk = _production_policy_kwargs()
+    _args, _layout, pk = _production_policy_kwargs(policy_args)
     torch.manual_seed(seed)
     model = InstrumentedMaskablePPO(Gen3DualHeadMaskablePolicy, env, n_steps=n_steps, batch_size=batch_size,
                                     n_epochs=n_epochs, gamma=gamma, gae_lambda=gae_lambda, device="cpu", seed=seed,

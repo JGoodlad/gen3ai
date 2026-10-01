@@ -96,6 +96,7 @@ def train_step_source() -> str:
         _ms.win_prob_terms,
         _ms.value_loss_from_se,
         _ms._flag_entropy,
+        TrainSetup._r1_levers,
         TrainSetup._micro_static,
         TrainSetup._micro_var,
         TrainSetup._align_opp_intent_labels,
@@ -309,11 +310,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # and the rollout fraction that produces the anchors it weighs — a weight with no anchors
         # would be a vector of ones, and reading it would cost a gather per minibatch to change
         # nothing. Under `--critic winprob` only, exactly like the strata weight.
-        rollout_weight_on = (
-            win_prob_on and critic_winprob
-            and float(getattr(self, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
-            and float(getattr(self, "win_prob_rollout_target", 0.0) or 0.0) > 0.0
-            and "win_row_w" in self.rollout_buffer.observations)
+        # K8 (gen3_r1_declared_levers_v1): BOTH weightings are R1 levers, resolved by ONE predicate
+        # (`TrainSetup._r1_levers`) from the config and the buffer's KEY SET — the same call the
+        # startup declaration makes, so the compiled region's signature is fixed at startup. The
+        # strata lever is declared from its flag, NEVER from whether this rollout's data produced
+        # weights: `strata_w` is None on a one-class rollout (any run before the pool seeds), and
+        # R1 then gets the NEUTRAL weights (ones — `_micro_var`), bit-identical to the unweighted
+        # expression, instead of a second signature.
+        strata_declared, rollout_weight_on = self._r1_levers(_f)
         # +WIN-PROB λ-RETURN (gen3_winprob_lambda_v1) — the family is COMPUTED in
         # `WinProbLabelCallback._on_rollout_end` (it needs the buffer's [n_steps, n_envs] shape,
         # before `get()` shuffles it flat, and the same `model._last_obs` forward SB3's own GAE
@@ -394,8 +398,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         epoch_clip_fraction: list[float] = []
         # +R1 (gen3_learner_micro_step_v1): the region's static flags + per-update tensors, resolved
         # ONCE, and the per-update lists its diagnostics are routed into (by name).
-        _micro_st = self._micro_static(_f, popart, strata_w, rollout_weight_on)
+        _micro_st = self._micro_static(_f, popart, strata_declared, rollout_weight_on)
         _micro_var = self._micro_var(_micro_st, strata_w)
+        if getattr(self, "_compiled_micro_step", None) is not None:
+            # K8: the compiled R1 runs ONLY at its startup declaration; a lever that moved since is
+            # a typed FATAL naming the field (the sentinel's guard dump is the backstop).
+            from agents.model.compile_regions import check_r1_declared
+            check_r1_declared(self, _micro_st, _micro_var)
         _ppo_lists = {"pg_losses": pg_losses, "clip_fractions": clip_fractions,
                       "value_losses": value_losses, "entropy_losses": entropy_losses,
                       "vf_clip_fractions": vf_clip_fractions,

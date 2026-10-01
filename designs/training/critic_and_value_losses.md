@@ -179,6 +179,12 @@ ladder**. Default **0.0 = OFF and the loss is BIT-identical**; **`--critic winpr
 `instrumented_ppo/value_terms.py::_win_prob_strata_weights` + `_win_prob_loss`, called once per
 rollout from `ppo.train()`. Gate: `src/agents/training/winprob_strata_weight_test.py`.
 
+**Compiled (`--compile-trainer`, torch 2.8): DECLARED** (`gen3_r1_declared_levers_v1`). The lever is
+part of the compile region R1's signature from the FLAG; a rollout whose labelled rows hold one
+opponent class (any run before the pool seeds) feeds R1 neutral weights (ones) — bit-identical to
+the unweighted BCE. Before 2026-10-01 such an arm died at its first post-seed update.
+`designs/training/compile_flags.md` "R1's DECLARED LEVERS".
+
 ### The defect it targets, and why the treatment is on the LOSS rather than the head
 
 [`winprob_head_refit_2026-09-09`](../research_state/measurements/winprob_head_refit_2026-09-09/README.md)
@@ -847,6 +853,10 @@ reward manager computes and an injected row cannot supply.
 `gen3_winprob_rollout_weight_v1` (config **v119**). Default **`1.0` = OFF and BIT-identical**;
 REQUIRES `--win-prob-rollout-target > 0` (refused otherwise — with no anchors the weight vector is a
 vector of ones and the run is the unflagged one under a flagged name).
+
+**Compiled (`--compile-trainer`, torch 2.8): DECLARED** (`gen3_r1_declared_levers_v1`) — the startup
+declaration resolves it by the same predicate `train()` uses (`TrainSetup._r1_levers`); before
+2026-10-01 such an arm died at its first update. `designs/training/compile_flags.md` "R1's DECLARED LEVERS".
 
 ### The problem is ARITHMETIC, not optimisation
 

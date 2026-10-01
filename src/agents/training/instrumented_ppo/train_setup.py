@@ -10,7 +10,7 @@ property `instrumented_ppo_hub_contract_test` reads. The two result containers a
 carrying the SAME names the fold uses, so `train()` unpacks them back into the locals the loop was
 written against and the loop body is unchanged.
 """
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Tuple
 
 import numpy as np
 import torch as th
@@ -383,11 +383,40 @@ class TrainSetup:
         )
 
     # ------------------------------------------------------------------ K8 region R1's setup
-    def _micro_static(self, f: FoldFlags, popart: Any, strata_w: Any, rollout_weight_on: bool) -> Any:
+    def _r1_levers(self, f: FoldFlags) -> Tuple[bool, bool]:
+        """``(strata, rollout_weight)`` — R1's two win-prob ROW-WEIGHT levers, DECLARED
+        (`gen3_r1_declared_levers_v1`): pure functions of the run's config and its rollout
+        buffer's KEY SET, both fixed at startup, and NEVER of a rollout's data. ONE predicate for
+        `train()` and for the compile lifecycle's startup declaration (`compile_regions._r1_static`),
+        so the compiled region's signature is known before the lock.
+
+        * ``strata`` — `--win-prob-strata-weight > 0` under `--critic winprob` with the
+          `opp_class` / `win_mask` keys the weights are computed from. Declared from the FLAG:
+          whether a given rollout yields weights (two or more opponent classes among its labelled
+          rows) is data, and R1 gets the neutral ones when it does not (`_micro_var`).
+        * ``rollout_weight`` — `--win-prob-rollout-weight > 1` with `--win-prob-rollout-target > 0`
+          under `--critic winprob`, and the `win_row_w` key the weights ride.
+
+        Before this was declared the startup gate built R1 with both OFF while `train()` turned them
+        on: an undeclared signature at the first update (the K6+K8 FINDING, 2026-10-01)."""
+        obs = self.rollout_buffer.observations if isinstance(
+            self.rollout_buffer.observations, dict) else {}
+        winprob_value = bool(f.win_prob_on and f.critic_winprob)
+        strata = (winprob_value
+                  and float(getattr(self, "win_prob_strata_weight", 0.0) or 0.0) > 0.0
+                  and "opp_class" in obs and "win_mask" in obs)
+        rollout_weight = (winprob_value
+                          and float(getattr(self, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
+                          and float(getattr(self, "win_prob_rollout_target", 0.0) or 0.0) > 0.0
+                          and "win_row_w" in obs)
+        return bool(strata), bool(rollout_weight)
+
+    def _micro_static(self, f: FoldFlags, popart: Any, strata: bool, rollout_weight_on: bool) -> Any:
         """The learner micro-step's STATIC flags and coefficients (`micro_step.MicroStatic`) for this
         `train()` call — every value R1 branches on or multiplies by that does not change within a
         run (`gen3_learner_micro_step_v1`). Read from the same attributes and buffer keys the inline
-        fold read, at the same moment (once per call)."""
+        fold read, at the same moment (once per call). ``strata`` / ``rollout_weight_on`` are the
+        DECLARED levers (`_r1_levers`)."""
         from gymnasium import spaces
 
         from agents.training.instrumented_ppo.micro_step import MicroStatic
@@ -423,20 +452,39 @@ class TrainSetup:
             setvalued_coef=float(getattr(self, "beta_setvalued_coef", 0.0)),
             bot_label_weight=float(getattr(self, "intent_label_bot_weight", 1.0)),
             win_prob_on=bool(f.win_prob_on), win_prob_coef=float(self.win_prob_coef),
-            strata=strata_w is not None, rollout_weight=bool(rollout_weight_on),
+            strata=bool(strata), rollout_weight=bool(rollout_weight_on),
         )
 
     def _micro_var(self, st: Any, strata_w: Any) -> dict:
         """R1's PER-UPDATE tensors: the entropy boosts' annealed factors (they move with progress, so
-        they are tensors — a Python float would be a new compiled signature every update) and the
-        strata weights."""
+        they are tensors — a Python float would be a new compiled signature every update) and, when
+        the strata lever is DECLARED (`st.strata`), the per-class weights and whether they APPLY.
+
+        THE NEUTRAL DEFAULT (`gen3_r1_declared_levers_v1`). A rollout whose labelled rows hold fewer
+        than two opponent classes yields no weights (`strata_w` None); R1 then gets ones and
+        `strata_active` False — the SAME signature as an active update. Exact, not approximate: the
+        row weight multiplies the BCE as ``per * mask * w`` and ``x * 1.0 == x`` in IEEE arithmetic
+        (forward, and the backward's ``g * 1.0``), so the loss and every gradient are bit-identical
+        to the unweighted expression (`r1_declared_levers_test`); `strata_active` keeps the
+        row-weight diagnostics ABSENT on such an update, as before. Always ``float32`` on the
+        learner's device, ``[len(OPP_CLASS_NAMES)]``."""
         out: dict = {}
         if st.defensive:
             out["def_eff"] = th.tensor(float(self._defensive_entropy_boost_eff()), device=self.device)
         if st.bait:
             out["bait_eff"] = th.tensor(float(self._bait_entropy_boost_eff()), device=self.device)
-        if strata_w is not None:
-            out["strata_w"] = strata_w
+        if st.strata:
+            from agents.model.opp_intent import OPP_CLASS_NAMES
+            active = strata_w is not None
+            w = th.as_tensor(strata_w) if active else th.ones(len(OPP_CLASS_NAMES))
+            if tuple(w.shape) != (len(OPP_CLASS_NAMES),):
+                raise ValueError(f"strata weights of shape {tuple(w.shape)}; R1 declares "
+                                 f"[{len(OPP_CLASS_NAMES)}] (one per opponent class)")
+            out["strata_w"] = w.to(device=self.device, dtype=th.float32)
+            out["strata_active"] = th.tensor(active, device=self.device)
+        elif strata_w is not None:
+            raise ValueError("strata weights for a run whose strata lever is not declared "
+                             "(`_r1_levers`) — they would be silently dropped")
         return out
 
     def _micro_region(self) -> Any:

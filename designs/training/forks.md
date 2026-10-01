@@ -160,6 +160,10 @@ whole point of playing the branch.
 **Carrier:** the `fork_pg_m` obs Dict key, a per-row multiplier that survives
 `RolloutBuffer.get()`'s shuffle aligned to its own row (the mechanism `win_row_w` uses). Declared
 ONLY when the flag is on. The env emits a 1.0 placeholder on every COLLECTED row.
+Under `--compile-trainer` (torch 2.8) the key is part of the compile region R1's DECLARED signature
+from startup (it is in the env's obs space; the injected rows make a ragged last micro-batch, which
+runs eager by declaration) — verified 2026-10-01 by `r1_declared_levers_test`'s `fork` row
+(`compile_flags.md` "R1's DECLARED LEVERS").
 
 🚨 **The masked term is RENORMALISED, never just zeroed:**
 

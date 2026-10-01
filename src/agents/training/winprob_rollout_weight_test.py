@@ -308,12 +308,19 @@ def test_the_env_declares_the_key_under_EXACTLY_the_predicate_the_loss_reads_it_
     assert 'win_prob_rollout_weight", 1.0) or 1.0) > 1.0' in fac
     assert 'win_prob_rollout_target", 0.0) or 0.0) > 0.0' in fac
     tr = inspect.getsource(ppo_mod.InstrumentedMaskablePPO.train)
-    assert "rollout_weight_on = (" in tr
-    # K8: the BCE is folded inside region R1 (`micro_step`), which reads the key under the static
-    # flag `train()` resolves from that same predicate (`_micro_static(..., rollout_weight_on)`).
+    # K8 (gen3_r1_declared_levers_v1): the predicate is R1's DECLARED lever, resolved by ONE method
+    # for `train()` and for the compile lifecycle's startup declaration (`compile_regions._r1_static`).
+    from agents.model import compile_regions as cr
     from agents.training.instrumented_ppo import micro_step as ms
     from agents.training.instrumented_ppo.train_setup import TrainSetup
-    assert "self._micro_static(_f, popart, strata_w, rollout_weight_on)" in tr
+    lev = inspect.getsource(TrainSetup._r1_levers)
+    assert 'win_prob_rollout_weight", 1.0) or 1.0) > 1.0' in lev
+    assert 'win_prob_rollout_target", 0.0) or 0.0) > 0.0' in lev
+    assert '"win_row_w" in obs' in lev
+    assert "strata_declared, rollout_weight_on = self._r1_levers(_f)" in tr
+    assert "model._r1_levers(f)" in inspect.getsource(cr._r1_static)
+    # the BCE is folded inside region R1 (`micro_step`), which reads the key under that static flag
+    assert "self._micro_static(_f, popart, strata_declared, rollout_weight_on)" in tr
     assert "rollout_weight=bool(rollout_weight_on)" in inspect.getsource(TrainSetup._micro_static)
     assert 'obs.get("win_row_w") if st.rollout_weight else None' in inspect.getsource(ms.micro_step)
 

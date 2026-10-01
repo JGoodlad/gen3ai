@@ -139,9 +139,15 @@ def _flag_entropy(prefix: str, ent_per: th.Tensor, flag_raw: th.Tensor, b_eff: t
 def win_prob_terms(logits: Optional[th.Tensor], target: Optional[th.Tensor],
                    mask: Optional[th.Tensor], margin: Optional[th.Tensor],
                    strata_w: Optional[th.Tensor], opp_class: Optional[th.Tensor],
-                   rollout_w: Optional[th.Tensor]) -> Tuple[th.Tensor, th.Tensor, Dict[str, Metric]]:
+                   rollout_w: Optional[th.Tensor], strata_active: Optional[th.Tensor] = None
+                   ) -> Tuple[th.Tensor, th.Tensor, Dict[str, Metric]]:
     """`ValueTerms._win_prob_loss`, static: (loss, present, metrics). Absent inputs (a static fact)
-    -> present False and no metrics; nothing scored (a data fact) -> present False, loss 0.0."""
+    -> present False and no metrics; nothing scored (a data fact) -> present False, loss 0.0.
+
+    ``strata_active`` (0-d bool, given whenever the strata lever is DECLARED) says whether
+    ``strata_w`` is this update's real weights or the NEUTRAL ones (`TrainSetup._micro_var`): the
+    loss is the same expression either way (``x * 1.0 == x``), and the row-weight diagnostics are
+    PRESENT only where a weighting applies — exactly the tags the undeclared path published."""
     if logits is None or target is None or mask is None:
         z = th.zeros(())
         return z, th.zeros((), dtype=th.bool), {}
@@ -178,10 +184,13 @@ def win_prob_terms(logits: Optional[th.Tensor], target: Optional[th.Tensor],
         mets["label_mean"] = _m((target * mask).sum() / nk, wp)
         mets["coverage"] = _m(n_known / mask.numel(), wp)
         if row_w is not None:
-            mets["loss_unweighted"] = _m((per.detach() * mask).sum() / nk, wp)
-            mets["row_w_mean"] = _m((row_w * mask).sum() / nk, wp)
+            # a weighting APPLIES unless the only one in play is the declared-but-idle strata lever
+            s_on = wp if strata_active is None else wp & strata_active.to(wp.device)
+            w_on = wp if rollout_w is not None else s_on
+            mets["loss_unweighted"] = _m((per.detach() * mask).sum() / nk, w_on)
+            mets["row_w_mean"] = _m((row_w * mask).sum() / nk, w_on)
             if strata_w is not None and opp_class is not None:
-                mets["strata_row_w_mean"] = mets["row_w_mean"]
+                mets["strata_row_w_mean"] = _m(mets["row_w_mean"][0], s_on)
         if margin is not None:
             mg = margin.to(logits.device).reshape(-1)
             spread = (mg.max() - mg.min()) > 0.0
@@ -315,7 +324,8 @@ def micro_step(policy: Any, popart: Any, obs: Dict[str, th.Tensor], actions: th.
             fe.last_win_prob_logits, obs.get("win_target"), obs.get("win_mask"),
             obs.get("win_margin"), var.get("strata_w") if st.strata else None,
             obs.get("opp_class") if st.strata else None,
-            obs.get("win_row_w") if st.rollout_weight else None)
+            obs.get("win_row_w") if st.rollout_weight else None,
+            var.get("strata_active") if st.strata else None)
         if wm:
             if st.critic_winprob:
                 wterm, grp = st.vf_coef * wl, "value"

@@ -130,9 +130,13 @@ def _spaces() -> Tuple[Any, Any, Any]:
     return TK.production_spaces()
 
 
-def build_learner(env: Any = None) -> Any:
+def build_learner(env: Any = None, args: Any = None) -> Any:
     """The seeded production-surface learner (on a dummy env over the production spaces), the
-    production training hparams applied exactly as a launch applies them, then `golden_recipe()`."""
+    production training hparams applied exactly as a launch applies them, then `golden_recipe()`.
+
+    ``args`` (a resolved training namespace, e.g. production + one lever) builds THAT surface
+    instead — its spaces (`trainee_spaces`), its policy kwargs and its training hparams — with the
+    same seeds and recipe overrides (the lever tests' learner; the golden itself passes None)."""
     import torch as th
     from stable_baselines3.common.logger import configure
 
@@ -142,7 +146,13 @@ def build_learner(env: Any = None) -> Any:
     from main.rust_core_cutover.envs import production_args
     from main.train.model_build import apply_training_hparams
 
-    args, obs, act = _spaces()
+    if args is None:
+        args, obs, act = _spaces()
+        policy_args = None
+    else:
+        from agents.training.rust_rollout.build import trainee_spaces
+        obs, act = trainee_spaces(args)
+        policy_args = args
     RECIPE = golden_recipe()
     if env is None:
         env = RustVecEnv(n_envs=N_ENVS, observation_space=obs, action_space=act, build=lambda m: None)
@@ -150,8 +160,10 @@ def build_learner(env: Any = None) -> Any:
                            seed=MODEL_SEED, perturb_seed=PERTURB_SEED, gamma=1.0, gae_lambda=0.8,
                            learning_rate=RECIPE["learning_rate"], ent_coef=RECIPE["ent_coef"],
                            clip_range=RECIPE["clip_range"], max_grad_norm=RECIPE["max_grad_norm"],
-                           normalize_advantage=RECIPE["normalize_advantage"], target_kl=RECIPE["target_kl"])
-    apply_training_hparams(model, production_args(), mappings=None, attach_cf_labels=lambda _m: None)
+                           normalize_advantage=RECIPE["normalize_advantage"], target_kl=RECIPE["target_kl"],
+                           policy_args=policy_args)
+    apply_training_hparams(model, production_args() if policy_args is None else policy_args,
+                           mappings=None, attach_cf_labels=lambda _m: None)
     _unset_to_class_defaults(model)
     model.grad_accum_steps = int(RECIPE["grad_accum_steps"])
     # K9(b) is its own gate (`learner_gates_test`); the golden pins the update's arithmetic.

@@ -185,6 +185,9 @@ def install(model: Any, *, backend: Optional[str] = None,
         return out
 
     model._compiled_micro_step = r1
+    # the R1 signature this run DECLARES (its levers from the resolved config) — every update is
+    # held to it (`check_r1_declared`)
+    model._r1_declared = r1_declaration(model)
     _ROLLOUT_REGIONS[policy] = r0
     return ["R0_rollout_forward", "R1_learner_micro_step"]
 
@@ -222,6 +225,7 @@ def assert_inventory(model: Any, n_envs: int) -> str:
 def uninstall(model: Any) -> None:
     from agents.model.policy import _ROLLOUT_REGIONS
     model._compiled_micro_step = None
+    model._r1_declared = None
     _ROLLOUT_REGIONS.pop(model.policy, None)
 
 
@@ -239,6 +243,14 @@ class R1Batch(NamedTuple):
     advantages: torch.Tensor
     returns: torch.Tensor
     source: str
+
+
+def _neutral_one_keys() -> Tuple[str, ...]:
+    """Observation keys that MULTIPLY a loss term (the fork arm's policy-term mask, the rollout-anchor
+    row weight): the fixture fills them with the env's own placeholder, 1.0."""
+    from agents.training.fork_arm import PG_MASK_KEY
+    from agents.training.win_prob_rollout import ROLLOUT_WEIGHT_KEY
+    return (PG_MASK_KEY, ROLLOUT_WEIGHT_KEY)
 
 
 def _golden_rows(model: Any) -> Optional[Dict[str, np.ndarray]]:
@@ -284,6 +296,9 @@ def r1_batch(model: Any, batch: int, slice_: int = 0) -> R1Batch:
                        f["advantages"].float().reshape(-1), f["returns"].float().reshape(-1),
                        "the K9 learner golden's real labelled buffer")
     obs = ct._prewarm_obs(model, int(batch), slice_)
+    for k in _neutral_one_keys():            # a MULTIPLIER key holds its env placeholder (1.0), not 0:
+        if k in obs:                         # a zero would blank the term the gate compares
+            obs[k] = torch.ones_like(obs[k])
     _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), int(batch), dev, slice_)
     m = torch.as_tensor(mask, device=dev)
     g = torch.Generator(device="cpu").manual_seed(20260930)
@@ -295,10 +310,59 @@ def r1_batch(model: Any, batch: int, slice_: int = 0) -> R1Batch:
                    "the committed real-obs fixture (zero labels)")
 
 
-def _r1_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
+class R1Declaration(NamedTuple):
+    """R1's DECLARED signature beyond the batch's shapes (`gen3_r1_declared_levers_v1`): the static
+    flags (`MicroStatic`), the observation KEY set and the per-update tensor KEY set. Resolved from
+    the run's config and its buffer's key set at startup (`r1_declaration`) — the same calls
+    `train()` makes — and recorded on the model by `install`; `check_r1_declared` holds every
+    update to it."""
+    static: Any
+    obs_keys: Tuple[str, ...]
+    var_keys: Tuple[str, ...]
+
+
+def _r1_static(model: Any) -> Tuple[Any, Dict[str, torch.Tensor]]:
+    """``(MicroStatic, var)`` exactly as `train()` resolves them, with every DECLARED lever at its
+    run-long value (`TrainSetup._r1_levers`) and the strata weights at their neutral default."""
     f = model._resolve_fold_flags()
-    st = model._micro_static(f, getattr(model.policy, "popart", None), None, False)
-    var = model._micro_var(st, None)
+    strata, rollout_weight = model._r1_levers(f)
+    st = model._micro_static(f, getattr(model.policy, "popart", None), strata, rollout_weight)
+    return st, model._micro_var(st, None)
+
+
+def r1_declaration(model: Any) -> R1Declaration:
+    st, var = _r1_static(model)
+    return R1Declaration(st, tuple(sorted(model.policy.observation_space.spaces)), tuple(var))
+
+
+def check_r1_declared(model: Any, st: Any, var: Dict[str, Any]) -> None:
+    """Raise `CompileSentinelError` (a typed FATAL; `compile_control.attach` turns it into
+    FATAL_CONFIG) when THIS update's R1 inputs are not the startup declaration — a lever, a coefficient,
+    an observation key or a per-update tensor that moved. Never relaxed into a recompile: the fix is
+    to DECLARE the lever (`TrainSetup._r1_levers`, a neutral default in `_micro_var`)."""
+    decl: Optional[R1Declaration] = getattr(model, "_r1_declared", None)
+    if decl is None:
+        return
+    diffs = [f"{k}: declared {a!r}, this update {b!r}"
+             for k, a, b in zip(st._fields, decl.static, st) if a != b]
+    obs_keys = tuple(sorted(model.rollout_buffer.observations)) if isinstance(
+        model.rollout_buffer.observations, dict) else decl.obs_keys
+    if obs_keys != decl.obs_keys:
+        diffs.append(f"observation keys: undeclared {sorted(set(obs_keys) - set(decl.obs_keys))}, "
+                     f"missing {sorted(set(decl.obs_keys) - set(obs_keys))}")
+    if tuple(var) != decl.var_keys:
+        diffs.append(f"per-update tensors: declared {list(decl.var_keys)}, this update {list(var)}")
+    if diffs:
+        from agents.model.compile_control import CompileSentinelError
+        raise CompileSentinelError(
+            "R1 learner_micro_step: this update's signature is NOT the one declared at startup "
+            "(gen3_r1_declared_levers_v1) — " + "; ".join(diffs) + ". Every lever a run will ever "
+            "turn on is declared from its resolved config before the compile lock: declare it "
+            "(`TrainSetup._r1_levers`, a neutral default in `_micro_var`), never relax the lock.")
+
+
+def _r1_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
+    st, var = _r1_static(model)
     return (model.policy, getattr(model.policy, "popart", None), b.obs, b.actions, b.action_masks,
             b.old_log_prob, b.old_values, b.advantages, b.returns, var, st)
 

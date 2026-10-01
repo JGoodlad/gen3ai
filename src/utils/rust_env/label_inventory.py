@@ -159,7 +159,7 @@ LABELS: Tuple[LabelKey, ...] = (
     # ---------------------------------------------------------------- OFF the production surface
     LabelKey("win_row_w", "f32", (1,), "winprob_weight",
              (("emit_win_target", True), ("emit_win_row_weight", True)), False, "Gen3Env._merge_training_keys",
-             ("agents/training/win_prob_rollout.py", _PPO), "host_const",
+             ("agents/training/win_prob_rollout.py", _SETUP), "host_const",
              "PLACEHOLDER 1.0 (a multiplier); overwritten post-collection", const=1.0),
     LabelKey("fork_pg_m", "f32", (1,), "fork", (("emit_fork_pg_mask", True),), False,
              "Gen3Env._merge_training_keys", ("agents/training/fork_arm.py",), "host_const",

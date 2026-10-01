@@ -25,9 +25,10 @@ from typing import Any, Dict, Optional, Tuple
 NET_ARCH = [512, 512]
 
 
-def _production_policy_kwargs() -> Tuple[Any, Dict[str, Any], Dict[str, Any]]:
+def _production_policy_kwargs(args: Any = None) -> Tuple[Any, Dict[str, Any], Dict[str, Any]]:
     """``(args, layout, policy_kwargs)`` for a fresh run at the production surface — the same
-    fields ``main.train.model_build`` puts in a fresh run's ``policy_kwargs``."""
+    fields ``main.train.model_build`` puts in a fresh run's ``policy_kwargs``. ``args`` (a resolved
+    training namespace) builds them for that surface instead."""
     import torch
 
     from agents.model.extractor_arch import build_extractor_arch_kwargs
@@ -36,7 +37,8 @@ def _production_policy_kwargs() -> Tuple[Any, Dict[str, Any], Dict[str, Any]]:
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     from main.rust_core_cutover.envs import production_args
 
-    args = production_args()
+    if args is None:
+        args = production_args()
     enc = Gen3ObservationEncoder(load_mappings())
     fek = build_extractor_arch_kwargs(args, base=enc.get_features_extractor_kwargs())
     pk = {"features_extractor_class": Gen3FeaturesExtractor,

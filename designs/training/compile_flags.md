@@ -1341,11 +1341,31 @@ B = 2048 costs ~11 s on the CPU, so time is not the obstacle. Two other things a
   vs fp64 where CUDA eager's is 1.0e-5 but CPU eager's is also 1.3e-3. Those are two correct fp32
   implementations 100x apart, so the rule needs CPU eager in its envelope as well.
 
-**Hazard (a FINDING, not a fix):** a configuration whose rollout buffer gains observation keys after
-startup (`win_row_w` under `--win-prob-rollout-weight`, `fork_pg_m` on a fork) or that turns on the
-strata / rollout weighting reaches R1 with an undeclared signature, and the sentinel stops it with a
-FATAL naming the guard — correct (never a silent recompile), but such an arm must declare its keys
-at startup before it can run with `--compile-trainer` on 2.8.
+**R1's DECLARED LEVERS (`gen3_r1_declared_levers_v1`, 2026-10-01).** R1's signature is more than the
+batch's shapes: dynamo specialises on its static flags (`MicroStatic`) and guards the observation
+dict's KEYS and the per-update tensor dict (`var`). All three are DECLARED at startup from the
+resolved config and held to that declaration every update:
+
+| lever | flag | in the batch | how it is declared |
+|---|---|---|---|
+| strata | `--win-prob-strata-weight > 0` (`--critic winprob`) | `var["strata_w"]` `[4]` + `var["strata_active"]` | from the FLAG (`TrainSetup._r1_levers`); a rollout with fewer than two opponent classes among its labelled rows gets the NEUTRAL weights (ones, `strata_active` False) — bit-identical to the unweighted BCE (`x * 1.0 == x`, forward and backward; `r1_declared_levers_test`), its row-weight diagnostics absent as before |
+| rollout weight | `--win-prob-rollout-weight > 1` + `--win-prob-rollout-target > 0` | `win_row_w` (obs key) | from the config + the key (`_r1_levers`, ONE predicate for `train()` and the declaration) |
+| fork mask | `--fork-fraction > 0` | `fork_pg_m` (obs key) | the key is in the env's obs space at startup; injected rows make a RAGGED last micro-batch, which runs eager by declaration |
+| entropy boosts | `--defensive-entropy-boost` / `--bait-entropy-boost` `> 1` | `defensive_opportunity` / `bait_opportunity` + their annealed factors as `var` tensors | static flag + key at startup |
+| label / privileged keys | `--win-prob-dense-aux`, `--value-true-team`, `--distill-*` (`distill_mask`), `--move-belief-mode` | `aux_*`, `opp_true_team`, `distill_mask`, `known_moves` | in the obs space at startup (only `opp_true_team` is read by the forward; the others ride the dict) |
+
+`compile_regions.install` records the declaration (`R1Declaration`: static flags, obs keys, `var`
+keys); `check_r1_declared` runs at every compiled `train()` and raises a typed `CompileSentinelError`
+(FATAL_CONFIG via `compile_control.attach`) naming the field or key that moved — the dynamo
+sentinel's guard dump stays the backstop. The gate, the prewarm and the canary build R1's arguments
+through the same `_r1_static`. **Before this, the gate built R1 with both row-weight levers OFF**:
+a `--win-prob-rollout-weight` arm died at its first update, and a `--win-prob-strata-weight` arm at
+the first update after its self-play pool seeded (the strata weights are None on a one-class rollout,
+so the signature flipped on DATA). No recipe (`recipe.fresh`, `recipe.fork`) or registered baseline
+uses either lever. `r1_declared_levers_test` (routine, CPU, dynamo `eager`): per inventory row, the
+learner built from that config, the real startup lifecycle, two real updates (one opponent class,
+then two) — 0 compiles after the lock; reverting the declaration fails the strata and rollout-weight
+rows with the sentinel's UNDECLARED SIGNATURE FATAL.
 
 ### Every non-training model can use it
 

@@ -72,7 +72,7 @@ The `rust` column says where the Rust env gets each key:
 | `opp_action_num` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
 | `opp_switch_slot` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
 | `opp_switch_species` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
-| `win_row_w` | f32 `[1]` | winprob_weight | no | `Gen3Env._merge_training_keys` (1.0) | `win_prob_rollout.py`, `instrumented_ppo/ppo.py` | `host_const` |
+| `win_row_w` | f32 `[1]` | winprob_weight | no | `Gen3Env._merge_training_keys` (1.0) | `win_prob_rollout.py`, `instrumented_ppo/train_setup.py` | `host_const` |
 | `fork_pg_m` | f32 `[1]` | fork | no | `Gen3Env._merge_training_keys` (1.0) | `fork_arm.py` | `host_const` |
 | `opp_true_team` | f32 `[6,122]` | true_team | no | `Gen3Env._true_team_block` | `model/extractor_forward.py` | `refused` |
 | `aux_target` | f32 `[25]` | dense_aux | no | `Gen3Env._merge_training_keys` (0.0) | `dense_aux.py`, `instrumented_ppo/ppo.py` | `refused` |

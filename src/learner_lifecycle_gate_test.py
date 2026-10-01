@@ -105,6 +105,9 @@ NOT_STEP_MODULES: Dict[str, str] = {
     "agents/observation/constants.py": "layout constants only",
     "agents/model/arch_constants.py": "architecture constants only",
     "agents/training/lifecycle_decl.py": "the `@startup_builder` marker itself; builds nothing",
+    "agents/model/compile_regions.py": "the compile regions' install / gate / prewarm run once at startup; "
+                                       "the per-update `check_r1_declared` compares R1's inputs to the "
+                                       "startup declaration and builds nothing",
 }
 
 #: The PER-STEP SB3 callback hooks. ``_on_training_start`` / ``_init_callback`` are startup.
