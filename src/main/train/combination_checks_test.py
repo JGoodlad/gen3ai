@@ -196,6 +196,7 @@ ARGVS: dict[str, list[str]] = {
     "win_prob_pbrs_source_needs_coef": ["--win-prob-pbrs-source", "models/p.zip",
                                         "--win-prob-pbrs-coef", "0"],
     "opd_coef_needs_search_teacher": ["--opd-coef", "0.1"],
+    "search_teacher_coef_needs_search_teacher": ["--search-teacher-coef", "0.1"],
     "search_teacher_mode_needs_teacher": ["--search-teacher-mode", "winprob_oneply"],
     "search_teacher_mode_needs_win_prob": ["--search-teacher", "--search-teacher-mode",
                                            "winprob_oneply", "--win-prob-mode", "none"],

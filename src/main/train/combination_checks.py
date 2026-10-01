@@ -825,6 +825,22 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--opd-coef > 0 requires --search-teacher (OPD distils the search-teacher's "
         "correction buffer; its workers build the π' targets)"),
     CombinationCheck(
+        # gen3_supply_guard_v1 — the cf class, one supplier over: the AWR coefficient is RECORDED
+        # and inherited on a flagless resume (`_resolve("search_teacher_coef")`), but
+        # `--search-teacher` (the workers that FILL the correction buffer) is operational and is
+        # not. A manual resume / fork that does not re-type it trained with a live coefficient, no
+        # callback, no buffer and not one `teacher/*` scalar — silent for the whole run (inventory
+        # 2026-09-30; no archive run hit it). FATAL_CONFIG: a restart would hit it identically.
+        "search_teacher_coef_needs_search_teacher", ("search_teacher_coef", "search_teacher"),
+        lambda a: _positive(_val(a, "search_teacher_coef", 0.0))
+                  and not bool(_val(a, "search_teacher", False)),
+        lambda a: (f"\n[SUPPLY] FATAL: --search-teacher-coef {_val(a, 'search_teacher_coef', 0.0):g} "
+                   f"is live but --search-teacher is off, so nothing fills the correction buffer "
+                   f"and the AWR term folds NOTHING for the whole run, with no teacher/* scalar to "
+                   f"say so. The coefficient is inherited on a flagless resume; --search-teacher is "
+                   f"not. Pass --search-teacher (and its knobs), or --search-teacher-coef 0."),
+        exit_style="fatal_config"),
+    CombinationCheck(
         "search_teacher_mode_needs_teacher", ("search_teacher_mode", "search_teacher"),
         lambda a: a.search_teacher_mode != "crater" and not a.search_teacher,
         lambda a: (f"--search-teacher-mode {a.search_teacher_mode} requires "
