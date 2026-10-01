@@ -618,3 +618,38 @@ complete**: 8 passes, every update's core and T2 lifecycle check clean, 0 `recor
   ragged tail.
 - **Production scale.** Waves at N = 48 or more, and the stall as a share of a production update,
   are unmeasured.
+
+### 14.11 🚨 BEFORE ENABLING — the checklist that lifts the owner's deferral
+
+The port is readiness, not a validated treatment. **No argv sets `--fork-fraction > 0` on
+`--env-core rust` until every item below is done and recorded here**, each with a link to its
+evidence. Whoever lifts the owner's deferral (2026-10-01, the one-ply scope rule) works from this
+list; an item may not be waived silently.
+
+1. **A compiled CUDA R1 proof with fork rows.** Run a real GPU launch under `--compile-trainer`,
+   outside `--debug` (which bypasses it), with branch rows in the update and `fork_pg_m` 0 on
+   their fork steps. The pass bar is 0 compiles and 0 rejections after the lock
+   (`compile/recompiles_after_lock` 0) and a clean canary. Today R1's declaration is held only by
+   `r1_declared_levers_test`'s `fork_rust` row, on dynamo's eager backend on CPU (§14.10).
+2. **An end-to-end run of the REAL-OPPONENT path, outside `--debug`.** A branch must play the
+   parent's POOL slot (`fork/opp_real` > 0), and the identity gate (a) must be repeated with a
+   policy-route parent. Today the real-versus-substitute choice is pinned only by `fork_test`.
+   Every end-to-end run so far played bots or a self-like external p2.
+3. **A DECLARED cap on `branch_share` per update.** §14.10 measured `branch_share` above 0.5 on a
+   pass and an update firing on 57 own-policy rows. That makes the dose and the update cadence
+   functions of the fork rate, not of the flag.
+   - **Proposed default:** cap a pass's injected rows at its own rows
+     (`injected_rows ≤ own_rows`, i.e. `branch_share ≤ 0.5` per pass). This is the Python arm's
+     designed maximum, which doubled the buffer and never exceeded half.
+   - **Mechanism:** forks over the cap are dropped WHOLE, counted as `fork/dropped_forks`.
+   - **Startup refusal:** a fractional `ROW_BUDGET_MULTIPLE` above it is refused at startup.
+   - **Required gate:** an update must never hold more branch rows than own rows. It must fail on
+     revert.
+4. **Production-scale COST at the adopted N.** Measure the wave stall (`fork/seconds`) as a share of
+   an update's wall, plus `fork/sim_steps_share`, at the sizing study's adopted N and production
+   update size. Read them beside `rust_env/*` so the host loop's own cost is the denominator. Neither
+   was measured beyond one CPU env.
+5. **A REGISTERED arm, compared against X26.** Pre-register the endpoint (held-out pairwise accuracy
+   on fresh forks, §12) and the comparator. The comparator is the X26 ride-along baseline (the first
+   GPU run after the M5 switch) by registry name, at matched budget and dose (`main.dose`). Record the
+   §14.2b departures in the registration. The 2026-09-16 NOT DETECTED read is not the comparator.
