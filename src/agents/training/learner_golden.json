@@ -3,12 +3,12 @@
  "entries": {
   "2.5.1+cu121": {
    "init_params_sha256": "f476942cc413c815d3c48b7cd65744db34de582e920d9e3e7c1437368ede93df",
-   "post_params_sha256": "23e33e28e0f53a4d8b1d9ef81d71519f3d07b4e4fa8862f6f7aceefb6bc51481",
+   "post_params_sha256": "d8ea4e81444ec23dcf7d6f675a22e5b88da23e5d088a686d5152381d9a047b4a",
    "group_sha256": {
     "features_extractor.alpha_head": "4935ca645e589731",
     "features_extractor.belief_head": "e2916bb3fa1ca4d6",
     "features_extractor.belief_slots": "22c91ce8187c64ed",
-    "features_extractor.beta_head": "eecec1ef2e828c52",
+    "features_extractor.beta_head": "43364d5a1ed762c8",
     "features_extractor.cls_pool": "2131fc413002a4ca",
     "features_extractor.conditional_threat": "b52a4eaf15c7e603",
     "features_extractor.damage_op": "305663a758ce3805",
@@ -57,6 +57,7 @@
     "belief/spread_loss": 0.04433111473917961,
     "opp_intent/alpha_loss": 0.766714058816433,
     "opp_intent/beta_loss": 0.3191570155322552,
+    "opp_intent/beta_setvalued_loss": 5.960465188081798e-08,
     "train/approx_kl": 0.0012108683586120605,
     "train/clip_fraction": 0.015625,
     "train/entropy_loss": -1.958057478070259,
@@ -67,21 +68,21 @@
     "train/value_loss": 0.009064503479748964,
     "win_prob/loss": 0.657662957906723
    },
-   "recorded_at_commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
+   "recorded_at_commit": "dc4232d4dcb65f47c929e80a248386b7a6d96bed",
    "recorded_on": "2026-09-30",
-   "reason": "K9(a) first record",
+   "reason": "production_args() now resolves a real fresh --arch production launch (resolve_config), so the golden's learner carries recipe.fresh's beta_setvalued_coef 0.05 \u2014 the set-valued intent loss the old hasattr builder dropped with the nested recipe block",
    "torch": "2.5.1+cu121",
    "numpy": "2.4.3",
    "python": "3.11.15"
   },
   "2.8.0+cu126": {
    "init_params_sha256": "f476942cc413c815d3c48b7cd65744db34de582e920d9e3e7c1437368ede93df",
-   "post_params_sha256": "b2a22d0c69f9edd1b5432a1638ac8cdbb177b0a7408140ebc3dbcbec99733e01",
+   "post_params_sha256": "4c755b122ce413fc4504c49902cbd1027bc6b6667d156030f414ea2460120a4c",
    "group_sha256": {
     "features_extractor.alpha_head": "c4697409cfbadb75",
     "features_extractor.belief_head": "55c2319171a6510d",
     "features_extractor.belief_slots": "7d6669ca3e14b1c0",
-    "features_extractor.beta_head": "d9ec970990ddddce",
+    "features_extractor.beta_head": "28094db22bc9042d",
     "features_extractor.cls_pool": "9f288b55b111aa9f",
     "features_extractor.conditional_threat": "dbf51a4138a97f60",
     "features_extractor.damage_op": "305663a758ce3805",
@@ -112,7 +113,7 @@
     "mlp_extractor.policy_net": "202bebb12066f379",
     "mlp_extractor.value_net": "5ce653d899a98cf5",
     "pointer_head.ctx_proj": "7da475be8f339446",
-    "pointer_head.move_proj": "bca49304d08b72a1",
+    "pointer_head.move_proj": "4689c527f4d8ab2d",
     "pointer_head.move_score": "7b8644b6ef24b66b",
     "pointer_head.struggle_score": "40c3793abfa26a94",
     "pointer_head.switch_proj": "4bb37fe82c0604e4",
@@ -130,6 +131,7 @@
     "belief/spread_loss": 0.044331115670502186,
     "opp_intent/alpha_loss": 0.7667141109704971,
     "opp_intent/beta_loss": 0.31915699131786823,
+    "opp_intent/beta_setvalued_loss": 5.960465188081798e-08,
     "train/approx_kl": 0.0012108683586120605,
     "train/clip_fraction": 0.015625,
     "train/entropy_loss": -1.9580574929714203,
@@ -140,9 +142,9 @@
     "train/value_loss": 0.009064499463420361,
     "win_prob/loss": 0.6576629765331745
    },
-   "recorded_at_commit": "6b5df359e6d9fdbd0c257f5ba3c4cd67099eb026",
+   "recorded_at_commit": "dc4232d4dcb65f47c929e80a248386b7a6d96bed",
    "recorded_on": "2026-09-30",
-   "reason": "K9(a) first record (gen3ai_torch28; the init is byte-identical to 2.5.1, the update differs at float rounding, max loss delta 1.2e-7)",
+   "reason": "production_args() now resolves a real fresh --arch production launch (resolve_config), so the golden's learner carries recipe.fresh's beta_setvalued_coef 0.05 \u2014 the set-valued intent loss the old hasattr builder dropped with the nested recipe block",
    "torch": "2.8.0+cu126",
    "numpy": "2.4.3",
    "python": "3.11.15"
@@ -171,6 +173,34 @@
    "post_params_sha256": "b2a22d0c69f9edd1b5432a1638ac8cdbb177b0a7408140ebc3dbcbec99733e01",
    "changed": [
     "(first entry)"
+   ]
+  },
+  {
+   "recorded_at_commit": "dc4232d4dcb65f47c929e80a248386b7a6d96bed",
+   "recorded_on": "2026-09-30",
+   "reason": "production_args() now resolves a real fresh --arch production launch (resolve_config), so the golden's learner carries recipe.fresh's beta_setvalued_coef 0.05 \u2014 the set-valued intent loss the old hasattr builder dropped with the nested recipe block",
+   "torch": "2.5.1+cu121",
+   "numpy": "2.4.3",
+   "python": "3.11.15",
+   "post_params_sha256": "d8ea4e81444ec23dcf7d6f675a22e5b88da23e5d088a686d5152381d9a047b4a",
+   "changed": [
+    "loss key NEW: opp_intent/beta_setvalued_loss = 5.960465188081798e-08",
+    "parameter groups whose post-update bytes moved: ['features_extractor.beta_head']",
+    "post_params_sha256 23e33e28e0f53a4d -> d8ea4e81444ec23d"
+   ]
+  },
+  {
+   "recorded_at_commit": "dc4232d4dcb65f47c929e80a248386b7a6d96bed",
+   "recorded_on": "2026-09-30",
+   "reason": "production_args() now resolves a real fresh --arch production launch (resolve_config), so the golden's learner carries recipe.fresh's beta_setvalued_coef 0.05 \u2014 the set-valued intent loss the old hasattr builder dropped with the nested recipe block",
+   "torch": "2.8.0+cu126",
+   "numpy": "2.4.3",
+   "python": "3.11.15",
+   "post_params_sha256": "4c755b122ce413fc4504c49902cbd1027bc6b6667d156030f414ea2460120a4c",
+   "changed": [
+    "loss key NEW: opp_intent/beta_setvalued_loss = 5.960465188081798e-08",
+    "parameter groups whose post-update bytes moved: ['features_extractor.beta_head', 'pointer_head.move_proj']",
+    "post_params_sha256 b2a22d0c69f9edd1 -> 4c755b122ce413fc"
    ]
   }
  ],

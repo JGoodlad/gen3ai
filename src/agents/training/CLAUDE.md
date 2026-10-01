@@ -1106,7 +1106,10 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
   rule (`68850f27`: a restart inherits the surface from `model_config.json`, `opp_intent_coef`
   recorded from config v125, a pre-v125 dose migrated from `cli_args` or refused) and covers only
   what that cannot supply.
-- **OPEN (the cutover's):** `rust_core_cutover.envs.production_args()` does not apply the recipe.
+- **The cutover harness's "production" IS a launch:** `rust_core_cutover.envs.production_args()`
+  runs `resolve_config` on a fresh `--arch production` argv (the trainer's own resolver), so the
+  recipe arrives with the arch; `production_args_test.py` holds it to a real fresh launch on every
+  mirror key, the recipe included (it used to `hasattr`-copy the top-level keys and skip `recipe`).
 - Values, sources, what was left out: `designs/endstate/design_learner_recipe.md` §3.22;
   `src/recipe_doc_gate_test.py` holds the doc and the block together.
 

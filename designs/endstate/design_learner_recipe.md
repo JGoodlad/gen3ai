@@ -702,9 +702,14 @@ matches its control at the SAME dose is its secondary read.
     the general restart rule (`68850f27`: the surface is inherited from `model_config.json`,
     `opp_intent_coef` a recorded field from config v125) and covers only what it cannot supply.
   - `src/recipe_doc_gate_test.py` holds the table below and §1's live-value column to the block.
-  - **OPEN, owned by the cutover:** `rust_core_cutover.envs.production_args()` builds its
-    "production" namespace from the ARCH surface and the mirror's fields only, so it does not carry
-    the recipe (`n_envs` 32, `ent_coef` 0.02, self-play off, …).
+  - **The cutover harness carries the recipe (closed 2026-09-30):** `rust_core_cutover.envs.
+    production_args()` is the resolved namespace of a real fresh `--arch production` launch — the
+    trainer's own `resolve_config`, not a second copy of the surface. It used to build its namespace
+    from the ARCH surface plus a `hasattr` copy of the mirror's top-level fields, which skipped the
+    nested `recipe` block (`n_envs` 32, `ent_coef` 0.02, self-play off, …).
+    `src/main/rust_core_cutover/production_args_test.py` compares it with a real resolved fresh
+    launch on every mirror key, the recipe included, and fails if either side drops a key. The K9
+    learner golden was re-recorded for it (its learner now carries `beta_setvalued_coef` 0.05).
 
 **The production recipe, and where each value comes from.** "N0" is `models/ai_v14_01_base`, the
 lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; `model_config.json`).
