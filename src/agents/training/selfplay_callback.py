@@ -36,6 +36,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from poke_env.ps_client import LocalhostServerConfiguration
 
 from agents.model.snapshot import record_eval_results, arch_toggles_from_model
+from agents.training.logger_scope import isolated_dump
 from agents.training.eval_callback import (
     eval_cycle_timeout,
     _EVAL_SUBPROCESS_CONCURRENCY,
@@ -521,6 +522,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
 
     # ── Collect ────────────────────────────────────────────────────────────────
 
+    @isolated_dump   # gen3_eval_dump_isolation_v1: this cycle's dump must not take the last update's train/*
     def _collect_pending(self) -> None:
         pending = self._pending
         self._pending = None

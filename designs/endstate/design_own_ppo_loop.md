@@ -211,7 +211,13 @@ In N0, the LR was unchanged after **37 / 37** skipped updates, and after **695 /
 - **The sizing study.** Its arms share the cadence, so they share the defect equally; the comparisons
   stay fair.
 
-**Disposition:**
+**Disposition: FIXED 2026-10-01** (`gen3_eval_dump_isolation_v1`, stage 2's first unit). Both eval
+callbacks' `_collect_pending` run under `agents/training/logger_scope.isolated_dump`: the values pending
+when the cycle starts are held aside, the cycle dumps only its own scalars, and the held values are put
+back. One test per core fails on revert (`eval_dump_isolation_test.py`), and E1's pin is flipped. This
+is a **REGIME BOUNDARY**: a run with a live controller from that commit onward is not comparable with
+an earlier one on its LR / dose trajectory. Ledger 2026-10-01 *THE EVAL DUMP DROPPED A KL READING*.
+The original plan, kept for the record:
 - **Stage 1 PRESERVES it bit-for-bit**, so that equivalence is identity.
 - **Stage 2 FIXES it by construction.** `train()`'s statistics are handed to the post-update hooks as
   a value, and the bus is not cleared mid-rollout. This is a **labelled behaviour change**: it lands
@@ -411,4 +417,5 @@ separately (orchestrator's rule: tell, don't trim).
 | 2026-10-01 | Equivalence for stage 1 | E0 golden + E1 lockstep differential + E2 same-games buffer identity; E3 real-run A/B read against a stock-vs-stock control | Treating a matched-seed real run as identity on the Python core: measured NOT reproducible there; the Rust core IS (342/342 series, same `policy.pth`), so on it the A/B is identity | §2.3 controls, 2026-10-01 |
 | 2026-10-01 | Stage 2 **(owner: "stage 2 FULL is approved")** | Declared hooks, the KL-skip fix on both cores and owned seeding, each fix a labelled regime boundary; before X26 | Stopping at stage 1 (under the 2-day bar) | the §5 estimate |
 | 2026-10-01 | Stage 1 built | `OwnedLoop` (`instrumented_ppo/loop.py`) after `RolloutProbes` and before `MaskablePPO`; the reference seam defers every vendored method to upstream; `_ppo_loop_mode` is excluded from the `.zip` | A reference seam over `learn` / collect only (upstream `learn` would reach our vendored methods through the MRO, and the A/B would compare ours with ours) | E0 golden unchanged; E1 / E2 exact; E3 Rust identical (same `policy.pth` as the pre-stage-1 control) |
+| 2026-10-01 | The eval-dump KL skip, FIXED (stage 2, unit 1) — a REGIME BOUNDARY | `logger_scope.isolated_dump` on both eval callbacks' `_collect_pending`: the cycle dumps only its own scalars, and the update's `train/*` survive for their dump and every bus reader. Live-controller runs from this commit onward are not comparable on LR / dose with earlier ones | Moving the dump after the update (it shifts every `train/*` series in the archive); routing only the KL controller around the bus (it leaves RankTripwire / DistillStop / the anchor dual and the TB stamping broken) | `eval_dump_isolation_test.py` (one test per core, fails on revert); ledger 2026-10-01 |
 | 2026-10-01 | The eval-dump KL skip | Preserved bit-for-bit in stage 1; fixed in stage 2 with per-core fail-on-revert tests, before X26 **(orchestrator)** | Fixing it inside stage 1 (that would make stage 1 non-identity and its verdict un-transferable) | §2.1: 37/739 N0 updates (5.0%), 1 per eval cycle in every run scanned |

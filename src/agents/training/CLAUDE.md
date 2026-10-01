@@ -141,9 +141,14 @@ vendored from sb3 operation for operation (hash-pinned). Three things an edit mu
 convention and the KL controller's logger read); **`collect_rollouts` / `train` are called through the
 attribute** (K6 and the compile sentinel wrap them); the **Python collect keeps sb3's local names and
 fires `on_step` before `rollout_buffer.add`** (`self.locals`, `buf.pos`). `own_ppo_loop_test.py` holds
-it EXACT against upstream; `GEN3AI_PPO_LOOP=sb3_reference` is the A/B test seam. ⚠️ **Preserved defect
-(design §2.1):** an eval cycle's mid-rollout `logger.dump(step)` clears the previous update's `train/*`,
-so the KL→LR controller skips one reading per eval cycle (5% of N0's updates) — stage 2 fixes it.
+it EXACT against upstream; `GEN3AI_PPO_LOOP=sb3_reference` is the A/B test seam. 🚨 **REGIME BOUNDARY
+(`gen3_eval_dump_isolation_v1`, 2026-10-01):** an eval cycle's mid-rollout `logger.dump(step)` used to
+CLEAR the previous update's `train/*`, so the KL→LR controller (and RankTripwire, DistillStop, the
+DistillAnchor dual) skipped one reading per eval cycle — 5% of N0's updates. Both eval callbacks'
+`_collect_pending` now run under `logger_scope.isolated_dump`, so the cycle dumps only its own scalars.
+A live-controller run from that commit onward is not comparable with an earlier one on its LR / dose
+trajectory (`designs/training/step_size_and_batch.md`). A new callback that dumps the logger
+mid-rollout MUST use the same decorator.
 
 **K9 — the learner's GIGO gates** ([`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md)).
 🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and

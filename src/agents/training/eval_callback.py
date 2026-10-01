@@ -18,6 +18,7 @@ from poke_env.ps_client import LocalhostServerConfiguration, AccountConfiguratio
 
 from agents.inference.player import RLPlayer
 from agents.model.snapshot import record_eval_results, arch_toggles_from_model
+from agents.training.logger_scope import isolated_dump
 from agents.training.fixed_opponent_pool import is_external
 from utils.contention import describe_contention, scale_timeout
 from agents.training.artifact_retention import (
@@ -1663,6 +1664,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
     def _all_done(pending: dict) -> bool:
         return all(w["proc"].poll() is not None for w in pending["procs"])
 
+    @isolated_dump   # gen3_eval_dump_isolation_v1: this cycle's dump must not take the last update's train/*
     def _collect_pending(self) -> None:
         pending = self._pending
         self._pending = None

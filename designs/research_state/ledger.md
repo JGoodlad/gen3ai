@@ -21747,3 +21747,27 @@ Not banked until now:
 Under it, `_dense` and `ctrl10M_shaped` would have stopped at their 6M cycle instead of finishing as bot runs under a self-play argv. A slow control whose bots-only regime IS the experiment must now say so.
 
 Tag: **AUDIT · ai_v12_27 bots-only = the 0.55 GATE (endogenous), banked 09-12, 0 claims move · FINDING: R2CTRL poolless, so the 4.19pp floor is not pool-matched and the R2-CTRL anomaly has a candidate account · tick-1 / REFOLD1 carry a thin-pool confound · BOUNDARY: `gen3_supply_guard_v2` makes an empty pool after 3 cycles FATAL**. Evidence: read-only TB, child logs and `snapshots/` under `models/`; no measurement dir written.
+
+### 2026-10-01 · FINDING + FIX · THE EVAL DUMP DROPPED A KL READING — one KL→LR controller reading lost per eval cycle on every live-controller run (5 %); FIXED by `gen3_eval_dump_isolation_v1`, a REGIME BOUNDARY
+
+**FINDING (2026-10-01).** Every eval cycle silently dropped one KL→LR controller reading.
+- **Mechanism.** The eval callbacks call `logger.dump(step)` inside `_on_step`, in the middle of a rollout (`eval_callback.py`, `selfplay_callback.py`). That clears the previous update's `train/*` before `AdaptivePPOCallback` reads `train/approx_kl` from `logger.name_to_value` at `on_rollout_end` (`adaptive_lr_callback.py`). The controller then returns without updating its EMA.
+- **Who else lost it.** RankTripwire, DistillStop, the DistillAnchor dual and the launcher pipe missed the same reading. Those `train/*` points were written at the eval snapshot step.
+- **Evidence** (runs' own TensorBoard; `designs/research_state/measurements/own_ppo_loop/`):
+  - N0 `ai_v14_01_base`: 37 / 739 updates.
+  - `ai_v12_02_winprob_critic`: 37 / 741.
+  - 10M-ladder arms (`ai_v12_11` / `_19` / `_23`): 5 in 100 each.
+  - Battery forks: 4 in 80 each. Their LR is frozen (`--fork-lr-freeze`), so only the reading is lost.
+  - In N0 the LR was unchanged after 37 / 37 skipped updates, against 695 / 701 after normal ones.
+- **Scope.**
+  - A 5 % reading loss on runs with a live controller.
+  - Identical across arms at matched eval cadence, so no arm comparison in the scanned eras is biased.
+  - Both env cores: the Rust core's in-process eval by code, the Python core's observed.
+
+**FIX** (orchestrator-approved; `designs/endstate/design_own_ppo_loop.md` stage 2, unit 1; landed in the commit that adds this entry): `agents/training/logger_scope.isolated_dump` on both eval callbacks' `_collect_pending`.
+- The cycle dumps only its own scalars. The update's `train/*` reach their own dump and every reader of the bus.
+- `eval_dump_isolation_test.py` has one test per core, and each FAILS on revert.
+
+**REGIME BOUNDARY.** A run with a live controller trained from that commit onward is not comparable with an earlier one on its LR / dose trajectory. Frozen-LR runs change only their tripwire / distill readings. The M5 sizing study's arms run pinned before the boundary, so they share the defect equally and stay mutually fair.
+
+Tag: **FINDING + FIX · eval-time logger dump dropped 1 KL reading per eval cycle (37 / 739 N0 updates), 0 claims move (matched cadence) · `gen3_eval_dump_isolation_v1` · REGIME BOUNDARY for live-controller runs**

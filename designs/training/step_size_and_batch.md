@@ -253,6 +253,28 @@ reproducible from a restored `state_dict` — three consecutive restores drift ~
 absent — so the arms are fresh, and a third OFF arm is the control); and the advisor's disagreement
 family. A source scan asserts the tags in `train()` and `NOISE_TERM_GROUPS` are the same set.
 
+## 🚨 REGIME BOUNDARY — the KL→LR controller reads EVERY update since `gen3_eval_dump_isolation_v1` (2026-10-01)
+
+**Before the boundary,** every eval cycle silently dropped one controller reading. The cause: the eval
+callbacks publish with `logger.dump(step)` in the middle of a rollout, and sb3's `dump` CLEARS the
+logger. That took away the previous update's `train/*` before `AdaptivePPOCallback` /
+`TwoPhaseLRCallback` read `train/approx_kl` at `on_rollout_end`. The size of it: 1 reading in 20 on
+every run with a live controller (N0: 37 of 739 updates). RankTripwire, DistillStop and the
+DistillAnchor dual lost the same readings. Each lost update's `train/*` points were also written at
+the eval SNAPSHOT step, which lies behind the current step.
+
+**The fix** is `agents/training/logger_scope.isolated_dump` on both eval callbacks' `_collect_pending`:
+- the cycle dumps only its own scalars;
+- the update's scalars reach their own dump and every reader;
+- the `eval/*` series is unchanged.
+
+**What the boundary means.** A run with a LIVE controller (not `--fork-lr-freeze`) trained from this
+commit onward is not comparable, on its LR / dose trajectory, with one trained before it. Frozen-LR
+forks are unaffected on that axis; only their tripwire and distill readings change. Arms on the same
+side of the boundary that share an eval cadence stay comparable. Evidence and scope: ledger
+2026-10-01 *THE EVAL DUMP DROPPED A KL READING*,
+[`design_own_ppo_loop.md`](../endstate/design_own_ppo_loop.md) §2.1.
+
 ## THE DOSE, and pinning a fork's step size (`--fork-lr` / `--fork-lr-freeze`, `dose.py`)
 
 **`--lr` is INERT on a resume.** `main/train/model_build.py`'s resume path restores the checkpoint's

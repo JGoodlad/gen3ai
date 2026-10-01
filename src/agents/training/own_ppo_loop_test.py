@@ -38,6 +38,7 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
 from agents.training import learner_golden as LG
 from agents.training.instrumented_ppo import loop as L
+from agents.training.logger_scope import isolated_dump
 
 ITERATIONS = 3
 RESUME_ITERATIONS = 1
@@ -176,7 +177,8 @@ class _Recorder(BaseCallback):
 
 
 class _EvalDumpStandIn(BaseCallback):
-    """The eval callbacks' `logger.dump(step)` from inside `_on_step`, mid-rollout, at an EARLIER step."""
+    """The eval callbacks' publish: from inside `_on_step`, mid-rollout, at an EARLIER step, through the
+    SAME `@isolated_dump` both eval callbacks' `_collect_pending` carry (gen3_eval_dump_isolation_v1)."""
 
     def __init__(self, at_call: int) -> None:
         super().__init__()
@@ -184,9 +186,13 @@ class _EvalDumpStandIn(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.n_calls == self.at_call:
-            self.logger.record("eval/stand_in", 1.0)
-            self.logger.dump(max(0, int(self.num_timesteps) - 5))
+            self._publish()
         return True
+
+    @isolated_dump
+    def _publish(self) -> None:
+        self.logger.record("eval/stand_in", 1.0)
+        self.logger.dump(max(0, int(self.num_timesteps) - 5))
 
 
 def _params_sha(model: Any) -> str:
@@ -311,18 +317,18 @@ def test_logger_dumps_are_identical(both: Any) -> None:
                        f"{sorted(set(b) - set(a))}, differing {sorted(k for k in a if k in b and a[k] != b[k])}"
 
 
-def test_the_eval_dump_defect_is_preserved(both: Any) -> None:
-    """Design §2.1: the mid-rollout dump writes update 1's train/* at the EARLIER eval step and clears
-    it, so the KL controller skips — PRESERVED by stage 1 (identity). Stage 2 flips this test."""
+def test_an_eval_dump_no_longer_takes_the_update(both: Any) -> None:
+    """Design §2.1, FIXED in stage 2 (gen3_eval_dump_isolation_v1): the mid-rollout eval dump carries
+    only its own scalars, and the update's `train/*` reach their own dump — so the KL controller reads
+    every update. (Stage 1 pinned the defect here; this is that pin, flipped.)"""
     _, own = both
     stand_in = [(s, d) for s, d in own["dumps"] if "eval/stand_in" in d]
     assert len(stand_in) == 1
     step, d = stand_in[0]
-    assert "train/approx_kl" in d, "the stand-in dump no longer carries the previous update's train/*"
-    after = [dd for s, dd in own["dumps"] if s > step]
-    assert after and "train/approx_kl" not in after[0], (
-        "the next dump carries train/approx_kl again — the defect was fixed; that is stage 2's "
-        "labelled change, not stage 1's")
+    assert not any(k.startswith("train/") for k in d), sorted(d)
+    with_kl = [dd for _s, dd in own["dumps"] if "train/approx_kl" in dd]
+    # every update but the last (whose scalars wait for a dump that never comes) is dumped with its KL
+    assert len(with_kl) == ITERATIONS - 1, [s for s, _ in own["dumps"]]
 
 
 def test_params_and_counters_are_identical(both: Any) -> None:
