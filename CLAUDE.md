@@ -155,7 +155,7 @@ Without step 2, training fails with `Cannot find module '.../dist/sim/index.js'`
 | When | Command (prefix each with `export PYTHONPATH=$PYTHONPATH:src PY=${GEN3AI_PYTHON:-/home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3} &&` — a bare `python3` outside an activated env is BASE miniconda, not `gen3ai_stable`) |
 |---|---|
 | **inner loop** — fastest true/false | `"$PY" -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q -n 2` |
-| **THE ROUTINE GATE — before a commit** | `scripts/ops/gate_lock.sh "$PY" -m pytest src/ -m "not slow and not e2e" -q -n 2` — at most 2 gates run at once (`utils.gate_lock`; 7 at once put load ~36 on 16 threads, 2026-09-30) |
+| **THE ROUTINE GATE — before a commit** | `scripts/ops/gate_lock.sh "$PY" -m pytest src/ -m "not slow and not e2e" -q -n 2` — at most 2 gates run at once (`utils.gate_lock`; 7 at once put load ~36 on 16 threads, 2026-09-30). With HIGH confidence the blast radius is contained, an agent may instead run a targeted set it chooses + the static gates, naming scope and reason in the commit body; shared infrastructure or any doubt ⇒ the full gate. No automated test-selection framework (owner, 2026-09-30) |
 | **before `/gen3ai-ship`, and in CI** | `"$PY" -m pytest src/ -q` *(~47 min serial, 2026-09-29 — browser is ~19 s of it)* |
 | just the bridge / just the browser | `-m sim` *(~100 s)* / `-m browser` *(~19 s)* |
 | anything on the GPU | `scripts/ops/gpu_lock.sh <cmd>` (Python: `utils.gpu_lock.gpu_lock()`) — **never a bare `flock …/gpu.lock`**: the helper is re-entrant for children and raises `GpuLockSelfDeadlock` on an ancestor holder |
