@@ -10505,3 +10505,12 @@ if a lazy build is reintroduced.
   violating row at no selection tie within 1e-5 (`rust_rollout/tie_margins.py`). Each rule is derived
   for a false FATAL ≤ 1e-4 over 10k updates. TF32 is unchanged. The discontinuity is a P3 debt row.
 
+## 2026-10-01 — K6: a device batch that cannot fit is refused at STARTUP (`gen3_cuda_ledger_v1`; no model change)
+
+- `cuda_ledger.check_device_batch_fits` (both startup paths, after the ledger): the declared K8.6
+  device batch (`device_batches.planned_bytes`) against the card's free + cached-unused bytes minus
+  one measured learner step and 512 MiB; `DeviceBatchWontFit` (FATAL_CONFIG) names the levers.
+  Production N = 48: 1,167 MiB vs 4,973 MiB of room; N = 256 x 2,048 steps (~5.9 GiB) is refused.
+  A LOWER bound only: N = 256 with the X26 heads ON passed it (1,135 vs 4,009 MiB) and ran out of memory
+  in its first update (10.19 GiB allocated on an 11.63 GiB card).
+

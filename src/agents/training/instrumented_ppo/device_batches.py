@@ -83,6 +83,17 @@ class _DeviceGather:
         )
 
 
+def planned_bytes(buffer: Any) -> int:
+    """The device copy `install` WOULD make for this buffer's declared shape (every flattened obs key
+    + the flat arrays), or 0 when the host path is kept. Readable at startup: the buffer's arrays
+    exist at their full declared shape from `_setup_model` on."""
+    dev = torch.device(getattr(buffer, "device", "cpu"))
+    if not (_servable(buffer) and dev.type == "cuda"):
+        return 0
+    return (sum(int(np.asarray(v).nbytes) for v in buffer.observations.values())
+            + sum(int(np.asarray(buffer.__dict__[t]).nbytes) for t in _FLAT))
+
+
 def install(buffer: Any, *, force: bool = False) -> Optional[_DeviceGather]:
     """Serve ``buffer``'s micro-batches from a copy on the BUFFER's own device (where sb3's
     `to_torch` puts them) until `uninstall`. Always replaces any previous gather first, so a stale

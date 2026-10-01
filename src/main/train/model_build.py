@@ -18,6 +18,7 @@ from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.policy import Gen3DualHeadMaskablePolicy, POLICY_ACTIVATION_FN
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
 import agents.training.cuda_ledger as _cuda_ledger
+from agents.training.instrumented_ppo.device_batches import planned_bytes as _devb_planned_bytes
 from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.training.adaptive_lr_callback import TwoPhaseLRCallback
@@ -741,6 +742,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
             _ledger.mark("optimizer state declared (Adam m, v) + lifecycle")
             _ledger.report(model_dir)
+            _fit = _cuda_ledger.check_device_batch_fits(   # refuse at startup, never OOM at update 1
+                _ledger, _devb_planned_bytes(model.rollout_buffer))
+            if _fit:
+                print(_fit, flush=True)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
             # gen3_run_lineage_v1 — written ONCE at fork creation and preserved by every later save.
             # `None` on a same-run restart, which is what keeps the recorded parent immutable.
@@ -964,6 +969,10 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
         _ledger.mark("optimizer state declared (Adam m, v) + lifecycle")
         _ledger.report(model_dir)
+        _fit = _cuda_ledger.check_device_batch_fits(   # refuse at startup, never OOM at update 1
+            _ledger, _devb_planned_bytes(model.rollout_buffer))
+        if _fit:
+            print(_fit, flush=True)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
         # gen3_run_lineage_v1 — a FRESH run states the explicit null form (`fork_parent: null,
         # role: "fresh"`), because "no block" and "no parent" are different facts.

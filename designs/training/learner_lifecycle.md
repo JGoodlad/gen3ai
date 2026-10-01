@@ -235,6 +235,22 @@ Per update:
 - **1.14 GiB** of that peak is the device-resident batch (K8.6).
 - The quiescent floor is 851–855 MiB.
 
+**The device batch must FIT, checked at startup** (`cuda_ledger.check_device_batch_fits`). After the
+ledger, the K8.6 device-resident batch the buffer DECLARES (`device_batches.planned_bytes`: n_steps ×
+n_envs rows × the obs width) must fit in room = the card's free bytes + the allocator's cached-but-
+unused bytes − one learner step (the peak the regions' gate measured) − 512 MiB. Otherwise it is
+`DeviceBatchWontFit` (FATAL_CONFIG), naming the levers: shrink the rollout (n_steps = D / n_envs), or
+keep the batch on the host. N = 256 at 2,048 steps per env (~5.9 GiB) is refused there, not at the
+first update's OOM. At production N = 48 the measured numbers give 1,167 MiB against a room of
+4,973 MiB. The check is a LOWER bound: a real update peaks above the gate's step (8.75 GiB against a
+4.3 GiB step), so a pass is not a promise; the K6 memory trend watches the run itself.
+
+**NECESSARY, NOT SUFFICIENT.** A pass does not mean the run fits. **A known false pass (2026-10-01).** N = 256 with the X26 ride-along heads ON passed the check
+(1,135 MiB against a room of 4,009 MiB), then ran OUT OF MEMORY in its first update's R1 micro-step:
+10.19 GiB allocated (1.77 GiB of it T2's CUDA-graph pools) on an 11.63 GiB card. The real update needs
+about 6.7 GiB above the floor plus the batch, against the gate's 4.3 GiB step. Making the check predict
+the update peak is open work.
+
 **Declared slot loads.** A rust-core pool refresh is a DECLARED LOAD into its T2 slot.
 - The pool loads snapshots on the CPU. On the card, each promotion's snapshot stayed in the pool's
   LRU (cap 3) beside the slot T2 had copied it into: +~33 MiB of quiescent floor per promotion on

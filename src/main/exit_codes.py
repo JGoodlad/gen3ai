@@ -83,6 +83,7 @@ class SupplyStarvedError(RuntimeError):
 #:   ``~/gen3ai_archive/cutover_prep/fresh3`` crash-looped three times on one `VacuousParity`
 #:   before the circuit breaker stopped it.
 _FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
+                  "DeviceBatchWontFit": TrainExitCode.FATAL_CONFIG,
                   "CudaMemoryLeakError": TrainExitCode.FATAL_CUDA_LEAK,
                   "NonFiniteWeights": TrainExitCode.FATAL_NONFINITE,
                   "SupplyStarvedError": TrainExitCode.FATAL_SUPPLY,
