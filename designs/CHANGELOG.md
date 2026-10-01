@@ -10388,3 +10388,17 @@ if a lazy build is reintroduced.
   `exit_codes.CUDA_LEAK_RESTART_CAP` (2) times per session (independent of
   `--max-crash-restarts`), and stops for good on the next one (`cuda_leak_exit_test.py`).
 
+## 2026-10-01 — K8: region R1's per-parameter gradient bar by WEIGHT REGIME (`gen3_r1_param_bar_by_regime_v1`; no model change)
+
+- R1's startup gate (and the canary's R1 check) judged the compiled micro-step's per-parameter
+  gradient at the extractor gate's FRESH bar, 1e-3 — measured on that gate's 64-row probe loss. At
+  fp32 'highest' and the production micro-batch every healthy start exceeded it: a resume of arm C
+  read 2.47e-3 (the sizing study's FATAL) and a fresh launch at B = 2048 read 1.0e-2 to 2.5e-2.
+- A matched-noise control against a float64 eager reference (torch 2.8 CUDA, the gate's own rows,
+  4 fresh seeds, 3 perturbed-fresh, 18 trained checkpoints): the readings are fp32 noise from either
+  side — on C's final weights CUDA EAGER is the inaccurate one (2.47e-3 vs float64; compiled 1.7e-5).
+- `compile_regions.weights_regime` (fresh = constant within-row legal log-probs) selects
+  `R1_PARAM_BAR` = 4x the regime's largest healthy reading: fresh 0.100, trained 9.9e-3. A fresh
+  launch also judges R1 on a seeded perturbation at the trained bar. The fp64-referenced form is
+  deferred (`designs/ops/TASK_BACKLOG.md` T16).
+

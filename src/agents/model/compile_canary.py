@@ -164,7 +164,8 @@ class CompileCanary:
                 with ct._matmul_precision("highest"):
                     ref = cr._r1_arm(model, micro_step, args)
             names = [n for n, _ in ct.grad_parameters(model, policy.features_extractor)]
-            rules.append("R1 " + cr._r1_verdict(eager, comp, ref, precision, names))
+            rules.append("R1 " + cr._r1_verdict(eager, comp, ref, precision, names,
+                                                cr.weights_regime(model)))
             out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
         return rules
 

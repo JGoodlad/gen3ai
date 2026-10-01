@@ -149,3 +149,124 @@ def test_torch_2_5_1_keeps_the_legacy_extractor_compile():
     `fullgraph=True` there) the region path is not taken."""
     assert cr.regions_supported("2.8.0+cu126")
     assert not cr.regions_supported("2.5.1+cu121")
+
+
+# ------------------------------------------------- R1's per-parameter bar, by weight regime (K8)
+#: The healthy readings the bars were derived from (`R1_PARAM_BAR`'s comment): arm C's final weights
+#: at the gate's batch read 2.47e-3 (the sizing study's FATAL under the old 1e-3 bar — CUDA EAGER's own
+#: fp32 error on `history_events.itemtr_emb`; the compiled gradient was within 1.7e-5 of float64).
+C_FINAL_HEALTHY_READING = 2.47e-3
+
+
+def _arms(eps, k=3, n_params=20):
+    """Two gradient arms over ``n_params`` parameters; the compiled one carries a relative error of
+    exactly ``eps`` on parameter ``k`` (||c_k - e_k|| / ||e_k|| == eps), the loss identical. Parameter
+    ``k`` is a SMALL path (1% of a typical norm, above the gate's floor), so the global cosine cannot
+    see the error and the per-parameter rule is what is judged."""
+    g = torch.Generator().manual_seed(0)
+    sizes = [100] * n_params
+    parts = [torch.randn(s, generator=g) * (0.01 if i == k else 1.0) for i, s in enumerate(sizes)]
+    eager = torch.cat(parts)
+    comp = torch.cat([p * (1.0 + eps) if i == k else p for i, p in enumerate(parts)])
+    mk = lambda gr: {"loss": torch.tensor([0.5]), "grad": gr, "grad_sizes": torch.tensor(sizes)}  # noqa: E731
+    return mk(eager), mk(comp), [f"p{i}" for i in range(n_params)]
+
+
+@pytest.mark.parametrize("regime", ["fresh", "trained"])
+def test_R1s_per_parameter_bar_is_the_REGIMES_measured_bar(regime):
+    """C's measured healthy reading passes the TRAINED regime (it FATAL'd every fp32 resume under the
+    extractor gate's fresh bar, 1e-3 — fails on revert); twice the regime's bar is refused in both."""
+    bar = cr.R1_PARAM_BAR[regime]
+    assert bar > ct._MAX_PARAM_GRAD_REL                     # the old bar, which the healthy noise exceeds
+    e, c, names = _arms(C_FINAL_HEALTHY_READING)
+    line = cr._r1_verdict(e, c, None, "highest", names, regime)
+    assert f"[{regime} weights]" in line and f"<= {bar:g}" in line
+    e, c, names = _arms(2.0 * bar)
+    with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager on 1 parameter"):
+        cr._r1_verdict(e, c, None, "highest", names, regime)
+
+
+def _fresh_learner(monkeypatch):
+    """The production-surface learner as a FRESH launch builds it: the golden's construction without
+    its seeded perturbation (the zero-init pointer head left uniform)."""
+    import agents.model.parity_probe as pp
+    from agents.training import learner_golden as LG
+    monkeypatch.setattr(pp, "perturb_", lambda *a, **k: None)
+    model = LG.build_learner()
+    monkeypatch.undo()
+    LG.load_buffer_into(model)
+    return model
+
+
+def test_weights_regime_reads_a_fresh_launch_as_fresh_and_moved_weights_as_trained(learner, monkeypatch):
+    assert cr.weights_regime(learner) == "trained"          # the golden's perturbed weights
+    assert cr.weights_regime(_fresh_learner(monkeypatch)) == "fresh"
+
+
+@_28
+def test_the_GATE_judges_trained_weights_at_the_trained_bar(learner, monkeypatch):
+    """Through `gate_regions` (CPU, dynamo `eager` backend, so compiled == eager and the only error is
+    the planted one): C's healthy reading planted on one parameter of R1's compiled arm PASSES on
+    trained weights (the resume / restart / fork case the sizing study FATAL'd on); an error past the
+    trained bar is still the typed startup FATAL."""
+    real = cr._r1_arm
+
+    def planted(eps):
+        def arm(model, fn, args):
+            out = real(model, fn, args)
+            if fn is model._compiled_micro_step:
+                g = out["grad"].clone()
+                sizes = [int(x) for x in out["grad_sizes"].tolist()]
+                big = max(range(len(sizes)), key=lambda i: float(torch.split(g, sizes)[i].norm()))
+                start = sum(sizes[:big])
+                g[start:start + sizes[big]] *= (1.0 + eps)
+                out = {**out, "grad": g}
+            return out
+        return arm
+    cc.control().install()
+    cr.install(learner, backend="eager")
+    monkeypatch.setattr(cr, "_r1_arm", planted(C_FINAL_HEALTHY_READING))
+    rules = cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+    assert any("[trained weights]" in r for r in rules), rules
+    monkeypatch.setattr(cr, "_r1_arm", planted(3.0 * cr.R1_PARAM_BAR["trained"]))
+    with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager"):
+        cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+
+
+@_28
+def test_a_FRESH_launch_is_ALSO_judged_on_a_perturbation_at_the_TRAINED_bar(monkeypatch):
+    """On fresh weights R1 runs twice: on the weights at the fresh bar, and on the declared ladder's
+    first perturbation rung at the trained bar — so an error the fresh bar would absorb (between the
+    two bars) is still refused at a fresh launch. Fails if the perturbed pass is dropped."""
+    model = _fresh_learner(monkeypatch)
+    real = cr._r1_arm
+    eps = 0.5 * (cr.R1_PARAM_BAR["trained"] + cr.R1_PARAM_BAR["fresh"])   # between the two bars
+
+    def planted(m, fn, args):
+        out = real(m, fn, args)
+        if fn is m._compiled_micro_step:
+            g = out["grad"].clone()
+            sizes = [int(x) for x in out["grad_sizes"].tolist()]
+            big = max(range(len(sizes)), key=lambda i: float(torch.split(g, sizes)[i].norm()))
+            start = sum(sizes[:big])
+            g[start:start + sizes[big]] *= (1.0 + eps)
+            out = {**out, "grad": g}
+        return out
+    cc._reset_control_for_tests()
+    torch._dynamo.reset()
+    try:
+        cc.control().install()
+        cr.install(model, backend="eager")
+        assert cr.weights_regime(model) == "fresh"
+        monkeypatch.setattr(cr, "_r1_arm", planted)
+        with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager"):
+            cr.gate_regions(model, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+        monkeypatch.setattr(cr, "_r1_arm", real)
+        rules = cr.gate_regions(model, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+        assert any("[fresh weights]" in r for r in rules), rules
+        assert any("[fresh weights, seeded perturbation" in r for r in rules), rules
+    finally:
+        cr.uninstall(model)
+        cc._reset_control_for_tests()
+        torch._dynamo.config.error_on_recompile = False
+        torch._dynamo.reset()

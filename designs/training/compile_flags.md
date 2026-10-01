@@ -1248,6 +1248,38 @@ kernel time 85.2% → 98.1%; host scalar reads 66,784 → 9,942 per update; GPU 
 epochs 2.4 → 0.57 s; 0 compiles after the lock. A's spread (45.3 / 48.0 s) is wider than the margin
 under the bar, so the verdict is "met" at n = 2, not "met with room".
 
+**R1's per-parameter gradient bar is chosen by WEIGHT REGIME** (`gen3_r1_param_bar_by_regime_v1`,
+2026-10-01; `compile_regions.R1_PARAM_BAR`, `weights_regime`). The gate first had the extractor
+gate's FRESH bar, 1e-3, which was measured on that gate's 64-row probe loss. On R1 (the real PPO
+micro-step at the production micro-batch, fp32 'highest') that bar failed every healthy start: an
+fp32 resume of arm C read 2.47e-3, and a fresh launch at B = 2048 read 1.0e-2 to 2.5e-2.
+**The sizing study's resume FATAL was noise, not a miscompile.** A matched-noise control
+(`designs/research_state/measurements/k6_k8/r1_noise/`) compared each gradient with a float64
+eager reference. On C's weights, CUDA EAGER is the inaccurate side (2.47e-3 vs fp64 on
+`history_events.itemtr_emb`); the compiled gradient is within 1.7e-5. On fresh weights the
+compiled error (2.5e-2 on `belief_head.species_head`) sits inside CPU eager's own (3.1e-2).
+
+How the bars are set:
+- `weights_regime` reads "fresh" when the legal log-probs on the fixture are constant within every
+  row (the zero-init pointer head). Every resume, fork, restart and canary reads "trained".
+- Each bar = 4x the largest healthy gate reading in its regime: fresh 0.100, trained 9.9e-3.
+- A 10% backward error on a path reads about 0.1. The trained bar refuses it with 10x margin.
+- The fresh bar would not refuse it, so a fresh launch ALSO runs R1 on the declared ladder's first
+  seeded perturbation, judged at the trained bar. Perturbed-fresh weights read at most 2.3e-5.
+- The in-run canary's R1 check uses the same selection. It had the same 1e-3 bar and would have
+  FATAL'd every fp32 run at update 100.
+
+`compile_regions_trained_cuda_test` (GPU tier) runs C's real weights through the real gate. The
+fp64-REFERENCED form of the gate (compiled no worse than k x eager's own error vs float64,
+self-calibrating) was weighed and deferred to `designs/ops/TASK_BACKLOG.md` T16. One fp64 R1 pass at
+B = 2048 costs ~11 s on the CPU, so time is not the obstacle. Two other things are:
+- **The model is an fp32 program.** It casts with `.float()` in ~300 places and hard-codes float32
+  in others. The measurement's fp64 arm needed two process-global monkeypatches (sb3's
+  `preprocess_obs`, `torch.Tensor.float`), which a production gate cannot carry.
+- **CUDA eager alone is no envelope.** On `ai_v14_05_lbat_l95`'s final the compiled error is 1.3e-3
+  vs fp64 where CUDA eager's is 1.0e-5 but CPU eager's is also 1.3e-3. Those are two correct fp32
+  implementations 100x apart, so the rule needs CPU eager in its envelope as well.
+
 **Hazard (a FINDING, not a fix):** a configuration whose rollout buffer gains observation keys after
 startup (`win_row_w` under `--win-prob-rollout-weight`, `fork_pg_m` on a fork) or that turns on the
 strata / rollout weighting reaches R1 with an undeclared signature, and the sentinel stops it with a

@@ -297,6 +297,7 @@ def gate_regions(model: Any, *, n_envs: int, batch_size: int,
     try:
         with _fatal_compile_errors(), torch.random.fork_rng(devices=devices):
             # ---- R1: train / grad / batch_size, on real labelled rows
+            regime = weights_regime(model)
             b = r1_batch(model, int(batch_size))
             policy.set_training_mode(True)
             args = _r1_args(model, b)
@@ -307,7 +308,10 @@ def gate_regions(model: Any, *, n_envs: int, batch_size: int,
             if precision != "highest":
                 with ct._matmul_precision("highest"):
                     ref = _r1_arm(model, micro_step, args)
-            rules.append("R1 " + _r1_verdict(eager, comp, ref, precision, names) + f" [{b.source}]")
+            rules.append("R1 " + _r1_verdict(eager, comp, ref, precision, names, regime)
+                         + f" [{b.source}]")
+            if regime == "fresh":
+                rules.append("R1 " + _r1_perturbed(model, args, precision, names))
             # ---- R0: eval / no-grad / n_envs, the decision readout
             if int(n_envs) not in ct.EAGER_BATCHES:
                 rules += ["R0 " + r for r in _r0_verdicts(model, int(n_envs), precision)]
@@ -320,8 +324,69 @@ def gate_regions(model: Any, *, n_envs: int, batch_size: int,
     return rules
 
 
+# ------------------------------------------------------------------ R1's gradient bar, by regime
+#: R1's PER-PARAMETER gradient bar, BY WEIGHT REGIME (`gen3_r1_param_bar_by_regime_v1`, 2026-10-01).
+#: The extractor gate's 1e-3 / 0.2 (`compile_trainer._MAX_PARAM_GRAD_REL[_TRAINED]`) were measured on
+#: its PROBE loss over 64 fixture rows; R1 is the real PPO micro-step over the production micro-batch,
+#: and its healthy compiled-vs-eager disagreement is far larger and comes from EITHER side. Under the
+#: 1e-3 bar every fp32 resume of arm C (2.47e-3) and every fresh fp32 launch at B = 2048 (1.0e-2 to
+#: 2.5e-2) FATAL'd at startup. MEASURED by a matched-noise control
+#: (`designs/research_state/measurements/k6_k8/r1_noise/`; torch 2.8, CUDA, fp32 'highest', B = 2048
+#: of the gate's own rows, 4 fresh seeds + 3 perturbed-fresh + 18 trained checkpoints): against a
+#: float64 eager reference, the compiled gradient was never more than 2x the worse of CUDA eager's and
+#: CPU eager's own fp32 error, except the 17 hidden-opp-belief decoder parameters of one state, at
+#: <= 5.5e-4 (README); the largest gate reading per regime is `R1_HEALTHY_MAX`, and on arm C's final
+#: weights it is CUDA EAGER's own error (2.47e-3 vs float64; the compiled gradient 1.7e-5).
+#: Bar = `R1_BAR_K` x that maximum. A 10% backward error on a path reads ~0.1, so the TRAINED bar
+#: refuses it with 10x margin; the FRESH bar does not, which is why a fresh launch ALSO runs R1 on a
+#: seeded perturbation at the trained bar (`_r1_perturbed`; perturbed-fresh weights read <= 2.3e-5).
+R1_HEALTHY_MAX = {"fresh": 2.51e-2, "trained": 2.47e-3}
+R1_BAR_K = 4.0
+R1_PARAM_BAR = {k: R1_BAR_K * v for k, v in R1_HEALTHY_MAX.items()}
+
+
+def weights_regime(model: Any, rows: int = 8) -> str:
+    """``"fresh"`` when the policy's legal log-probs on the committed real-obs fixture are constant
+    within every row — the zero-init pointer head of a fresh launch — else ``"trained"`` (a resume,
+    a fork, a crash-restart, the canary at update N). One eager no-grad forward; no compile."""
+    from agents.model.parity_probe import vacuous_keys
+    policy = model.policy
+    was = policy.training
+    obs = ct._prewarm_obs(model, int(rows))
+    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), int(rows),
+                             ct.resolve_device(policy.features_extractor))
+    policy.set_training_mode(False)
+    try:
+        e = _r0_readout(model, _rollout_core, obs, mask)
+    finally:
+        policy.set_training_mode(was)
+    bar = {"legal_logprob": ct._FP32_TOL["legal_logprob"]}
+    return "fresh" if vacuous_keys({"legal_logprob": e["legal_logprob"]}, bar) else "trained"
+
+
+def _r1_perturbed(model: Any, args: Tuple[Any, ...], precision: str, names: List[str]) -> str:
+    """FRESH weights only: R1 again on the declared ladder's first rung — a seeded perturbation of
+    every policy parameter, in place and restored bit-exactly (`parity_probe.perturbed_parameters`)
+    — judged at the TRAINED bar. On fresh weights a few ill-conditioned gradients (the uniform belief
+    heads) need the looser fresh bar, under which a backward defect could hide; the perturbed weights
+    are trained-like and get the tight one (the extractor gate's and R0's own fresh-weights rule)."""
+    from agents.model.parity_probe import ladder_at, perturbed_parameters, rung_seed
+    from agents.training.instrumented_ppo.micro_step import micro_step
+    scale, k = ladder_at(precision)[0]
+    with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale):
+        comp = _r1_arm(model, model._compiled_micro_step, args)
+        eager = _r1_arm(model, micro_step, args)
+        ref = None
+        if precision != "highest":
+            with ct._matmul_precision("highest"):
+                ref = _r1_arm(model, micro_step, args)
+    return _r1_verdict(eager, comp, ref, precision, names, "trained",
+                       label=f"fresh weights, seeded perturbation scale={scale:g} seed+{k}")
+
+
 def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor],
-                ref: Optional[Dict[str, torch.Tensor]], precision: str, names: List[str]) -> str:
+                ref: Optional[Dict[str, torch.Tensor]], precision: str, names: List[str],
+                regime: str, label: Optional[str] = None) -> str:
     e_loss, c_loss = float(eager["loss"]), float(comp["loss"])
     if not (np.isfinite(e_loss) and np.isfinite(c_loss)):
         raise ct.CompileTrainerError(f"--compile-trainer region R1: non-finite loss (eager {e_loss}, "
@@ -344,8 +409,8 @@ def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor],
              {"features": ref["loss"], "grad": ref["grad"], "grad_sizes": ref["grad_sizes"]})
     grad_rule = ct.train_verdict(eager=eager_t, compiled=comp_t, reference=ref_t,
                                  precision=precision, allow_vacuous=True, param_names=names,
-                                 param_bar=ct._MAX_PARAM_GRAD_REL)
-    return f"{loss_rule}; {grad_rule}"
+                                 param_bar=R1_PARAM_BAR[regime])
+    return f"[{label or regime + ' weights'}] {loss_rule}; {grad_rule}"
 
 
 def _r0_readout(model: Any, fn: Callable[..., Any], obs: Any, mask: Any) -> Dict[str, torch.Tensor]:
