@@ -189,12 +189,22 @@ def test_blend_is_the_MEAN_of_the_rollout_fraction_and_the_terminal_bit():
 
 
 def test_a_state_with_NO_finished_continuation_keeps_its_terminal_bit():
-    """The one thing this subsystem must never do is put a fabricated number in the objective."""
+    """The one thing this subsystem must never do is put a fabricated number in the objective.
+    `None` is the labeller's "no finished continuation" (`label_states`); the row keeps its bit."""
     wt, wm, y = _targets()
-    am, _av, applied = apply_rollout_labels(wt, wm, [(1, 0), (2, 1)], [None, float("nan")],
-                                            "replace", y)
+    am, _av, applied = apply_rollout_labels(wt, wm, [(1, 0), (2, 1)], [None, None], "replace", y)
     assert wt[1, 0, 0] == pytest.approx(1.0) and wt[2, 1, 0] == pytest.approx(0.0)
     assert applied == [] and not am.any()
+
+
+def test_a_NON_FINITE_label_is_a_typed_fatal_never_a_skip():
+    """K9(c): a NaN / Inf NUMBER is a broken continuation, not "no result" — skipping it would hide
+    the defect behind the terminal bit, so it fails closed."""
+    from agents.training.instrumented_ppo.learner_gates import NonFiniteLearnerError
+
+    wt, wm, y = _targets()
+    with pytest.raises(NonFiniteLearnerError, match="NON-FINITE win-prob rollout label"):
+        apply_rollout_labels(wt, wm, [(1, 0), (2, 1)], [None, float("nan")], "replace", y)
 
 
 def test_a_labelled_row_is_UNMASKED_into_the_loss():

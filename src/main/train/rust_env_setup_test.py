@@ -24,7 +24,7 @@ def test_python_is_the_default_and_every_collector_flag_is_untyped():
               "opponent_sampling", "behaviour_check", "trainee_slots"):
         assert getattr(a, d) is None, d
     resolve_env_core_args(a)
-    assert a.behaviour_check == "off"          # no default flips on the production path
+    assert a.behaviour_check == "fatal"        # K9(b) on both cores (the python gate costs one read)
 
 
 def test_the_rust_core_resolves_to_the_stated_defaults():

@@ -121,3 +121,30 @@ def test_the_row_choice_takes_current_rows_first_and_every_present_age():
     got = ages[pick]
     assert (got == 0).sum() == 10 and {1, 4, 20} <= set(got.tolist())
     assert K.choose_rows(np.zeros(5, int), 32, rng).tolist() == [0, 1, 2, 3, 4]
+
+
+def test_the_probe_reads_the_precision_keyed_gate():
+    """Lane G's probe and the python-core in-loop gate share ONE table (K9, M5 Lane K): fp32 = max < 1e-4;
+    TF32 (`--matmul-precision high`) = the current rows' p99 < 3.6e-3 AND max < 0.071. A uniform shift
+    between the fp32 bar and the TF32 p99 bar FAILS at fp32 and PASSES under TF32; above the p99 bar it
+    fails under both. (The localized half — p99 clean, max fires — is `learner_gates_test`'s, on a
+    production-size micro-batch; this probe's 32 rows make its p99 ~ its max.)"""
+    assert K.BEHAVIOUR_GATES["highest"] == (K.GateCondition("max", 1e-4, 1),)
+    (p99_name, p99_bar, p99_k), (max_name, max_bar, max_k) = K.BEHAVIOUR_GATES["high"]
+    assert (p99_name, max_name, p99_k, max_k) == ("p99", "max", 1, K.TF32_MAX_PERSISTENCE)
+    assert 1e-4 < p99_bar < max_bar
+    prev = th.get_float32_matmul_precision()
+    try:
+        for shift, precision, fails in ((0.5 * p99_bar, "highest", True), (0.5 * p99_bar, "high", False),
+                                        (2.0 * p99_bar, "high", True)):
+            th.set_float32_matmul_precision(precision)
+            m = _model()
+            m.behaviour_check = "fatal"
+            m.rollout_buffer.log_probs += shift
+            if fails:
+                with pytest.raises(K.BehaviourMismatch, match=precision):
+                    K.behaviour_probe(m)
+            else:
+                assert K.behaviour_probe(m)["behaviour/bar_p99"] == p99_bar
+    finally:
+        th.set_float32_matmul_precision(prev)

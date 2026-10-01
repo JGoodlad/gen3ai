@@ -54,6 +54,14 @@ from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
 from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
+from agents.training.instrumented_ppo.learner_gates import (   # K9(b) python path + K9(c)
+    behaviour_gate_mode,
+    check_behaviour_first_micro,
+    check_buffer_finite,
+    check_kl_finite,
+    check_loss_finite,
+    clip_grad_norm_checked,
+)
 from agents.training.instrumented_ppo.metrics_export import TrainMetricsExport
 from agents.training.instrumented_ppo.noise_scale import NoiseScaleDiagnostics
 from agents.training.instrumented_ppo.noise_scale_terms import NULL_TAGGER
@@ -190,8 +198,19 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # predictions ONCE, here, while the [n_steps, n_envs] structure and `episode_starts` still
         # exist — after `get()` shuffles, the adjacency is gone. See `train_setup.py`.
         self._align_opp_intent_labels()
+        # +K9(c) FAIL-CLOSED: the buffer's trained quantities (rewards, values, log-probs, advantages,
+        # returns, every float label key) are finite, ONCE per update and BEFORE PopArt's advance —
+        # which rewrites `value_net` outside the optimizer — or any forward (`learner_gates`).
+        check_buffer_finite(self.rollout_buffer)
         # +K9(b) / STALENESS (M5 Lane G): before any optimizer step; a no-op unless --behaviour-check.
-        self._behaviour_probe()
+        # A buffer that carries per-row policy versions (the Rust collector) gets Lane G's pre-loop
+        # probe (its own forward, age-bucketed); one that does not (python env core: every row is
+        # current) gets the in-loop gate on the FIRST micro-batch's own forward — never both
+        # (`learner_gates.behaviour_gate_mode`).
+        _bgate_mode = behaviour_gate_mode(self)
+        if _bgate_mode == "probe":
+            self._behaviour_probe()
+        _bgate_pending = _bgate_mode == "in_loop"
 
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress_remaining)  # type: ignore[operator]
@@ -400,10 +419,22 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 self._ridealong_update(rollout_data, values, actions, epoch, ridealong_acc)
                 if _ph is not None: _ph("ridealong")
 
+                # +K9(b), python path: the first micro-batch of epoch 0 runs before any optimizer step,
+                # so its recomputed log π must equal the rollout's stored behaviour log-prob (one host
+                # read per update, no forward of its own; `learner_gates` module docs).
+                if _bgate_pending:
+                    check_behaviour_first_micro(self, log_prob, rollout_data.old_log_prob,
+                                                actions, rollout_data.action_masks)
+                    _bgate_pending = False
+
                 values = values.flatten()
                 # Normalize advantage
                 advantages = rollout_data.advantages
-                if self.normalize_advantage:
+                # K9(c): `len > 1` is stock SB3 PPO's guard (sb3_contrib's MaskablePPO lacks it): a
+                # ONE-row final micro-batch — possible on the python core whenever n_steps·n_envs ≡ 1
+                # mod the micro-batch (the Rust collector's target is a multiple of it) — has std() =
+                # NaN, which silently poisoned every parameter before K9(c) and would now be a FATAL.
+                if self.normalize_advantage and advantages.numel() > 1:
                     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
                 # ratio between old and new policy, should be one at the first iteration
@@ -635,7 +666,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         # named upgrade that turns the mask into a posterior soft-target.
                         if _bl is not None:
                             _safe = _btgt.clamp(min=0, max=_bl.shape[-1] - 1)
-                            _reach = th.isfinite(_bl.detach().gather(1, _safe[:, None]).squeeze(1))
+                            # K9(c): ONLY the deliberate -inf (a slot the head cannot point at) is
+                            # unreachable. `isfinite` also dropped a NaN logit's row — a NaN absorbed
+                            # before the total loss; `isneginf` keeps it supervised so the per-micro
+                            # loss check sees it. Identical on every finite / -inf logit.
+                            _reach = ~th.isneginf(_bl.detach().gather(1, _safe[:, None]).squeeze(1))
                             _btgt = th.where(_reach, _btgt, th.full_like(_btgt, INTENT_IGNORE))
                         # SET-VALUED partial credit for a switch to a mon we did not believe.
                         # These rows are the ones `_content` could not name, so today they are
@@ -1310,6 +1345,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 belief_present = any(
                     k in aux_probe_terms for k in ("species_belief", "move_belief", "move_latent")
                 )
+                # +K9(c) FAIL-CLOSED: the assembled loss must be finite before anything reads its graph
+                # (the grad-balance / noise probes below, the backward). A NaN/Inf is a typed FATAL
+                # naming the term(s), never a skipped step (`learner_gates.check_loss_finite`).
+                check_loss_finite(loss, {"policy": _policy_grad_term, "entropy": _ent_term,
+                                         "value": _vf_term, **aux_probe_terms},
+                                  epoch=epoch, micro=len(pg_losses) - 1)
                 if _ph is not None: _ph("loss")
 
                 # +INSTRUMENTATION: sample the shared-trunk gradient balance on the first
@@ -1368,6 +1409,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     log_ratio = log_prob - rollout_data.old_log_prob
                     approx_kl_div = th.mean((th.exp(log_ratio) - 1) - log_ratio).cpu().numpy()
                     approx_kl_divs.append(approx_kl_div)
+                # +K9(c): a NaN/Inf KL can ride a FINITE loss (an overflowed ratio on a positive-
+                # advantage row takes the clipped branch) and would pin the KL->LR controller's EMA
+                # forever; the host read above is sb3's own, so the check is free.
+                check_kl_finite(float(approx_kl_div), epoch=epoch)
 
                 if self.target_kl is not None and approx_kl_div > 1.5 * self.target_kl:
                     continue_training = False
@@ -1417,9 +1462,9 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     noise_g_small_sq = (accum ** 2) * self._global_grad_sq(self.policy.parameters())
                 if _ph is not None: _ph("noise_base")
                 if micro_in_group == accum:
-                    grad_norm = float(  # +INSTRUMENTATION: pre-clip total grad norm (per step)
-                        th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
-                    )
+                    # +INSTRUMENTATION: pre-clip total grad norm (per step). +K9(c): a NaN/Inf norm is a
+                    # typed FATAL BEFORE the in-place clip and the optimizer step (`learner_gates`).
+                    grad_norm = clip_grad_norm_checked(self.policy, self.max_grad_norm, epoch=epoch)
                     grad_norms.append(grad_norm)
                     # +NOISE-SCALE: the accumulated group gradient (B=batch_size·accum) — pre-clip norm
                     # from clip_grad_norm_. Captured on group 0 (same data as the micro-batch above).
@@ -1455,9 +1500,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     for _p in self.policy.parameters():
                         if _p.grad is not None:
                             _p.grad.mul_(_rescale)
-                grad_norms.append(float(
-                    th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
-                ))
+                grad_norms.append(clip_grad_norm_checked(self.policy, self.max_grad_norm, epoch=epoch))
                 self.policy.optimizer.step()
                 self.policy.optimizer.zero_grad()
                 micro_in_group = 0

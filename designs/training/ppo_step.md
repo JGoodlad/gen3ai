@@ -27,6 +27,7 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 | `value_terms.py` | the win-prob BCE · the value-dist HL-Gauss CE · `_value_loss_from_se` |
 | `aux_terms.py` | the `belief_bank` / `td_aux` / `cf_terms` delegates |
 | `constants.py` | `_VALUE_TAIL_FRAC` · `_WIN_CONTESTED_TAU` · `_NOISE_SCALE_EMA_DECAY` |
+| `learner_gates.py` | **K9 — the learner's in-loop GIGO gates** (`designs/training/learner_gates.md`): the python-core behaviour gate on the first micro-batch's own forward (`behaviour_gate_mode` picks it or Lane G's pre-loop probe, never both) and the fail-closed non-finite checks — the buffer (before PopArt), the assembled loss per micro-batch (naming the term), the approx-KL, and `clip_grad_norm_checked` at every optimizer step. All raise before the optimizer moves anything |
 | `phase_hook.py` | **BENCHMARK-ONLY** segment marks inside `train()` (`gen3_learner_phase_hook_v1`): `PHASE_HOOK` is None in production, read ONCE per call via `current()`, every site a guarded one-liner; the names and what each books are in its docstring. The one consumer is `agents/training/learner_benchmark.py`, which installs a `cuda.synchronize`-bracketed segment timer (or drives `torch.profiler` windows off the `epoch_end` mark). Pinned by `learner_benchmark_test.py` (guarded, named, and byte-identical parameters with a hook installed) |
 
 

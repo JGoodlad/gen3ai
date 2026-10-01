@@ -112,11 +112,14 @@ projector trains as a plain unprojected fold, which is why it prints.
 """
 from __future__ import annotations
 
+import math
 import time
 from typing import Dict, List, Optional, Sequence
 
 import torch as th
 
+from agents.training.instrumented_ppo.learner_gates import nonfinite
+from main.exit_codes import NonFiniteLearnerError
 from agents.training.instrumented_ppo.noise_scale_terms import term_gradient
 
 #: `--distill-anchor-mode grad_project`. Kept here rather than in `distill_anchor.py` so the mode
@@ -317,11 +320,19 @@ class DistillGradProjector:
                 removed_sq = float(removal.pow(2).sum())
                 if removed_sq > 0.0:
                     self._removal = removal
+            # K9(c): a NaN/Inf here made `removed_sq > 0.0` False and SKIPPED the projection in silence
+            # (the fold trained unprojected with a finite loss and `.grad`). Fail closed instead.
+            if not (math.isfinite(g_sq) and math.isfinite(removed_sq)):
+                raise nonfinite(
+                    f"[K9(c)] NON-FINITE distill-projection gradient (|g|^2 {g_sq}, removed {removed_sq}) "
+                    "under --distill-anchor-mode grad_project")
             self._metrics.setdefault("proj_rank", []).append(float(len(basis)))
             self._metrics.setdefault("proj_removed_frac", []).append(
                 removed_sq / g_sq if g_sq > 0.0 else 0.0)
             self._metrics.setdefault("proj_constraint_rows", []).append(
                 0.0 if rows is None else float(rows.numel()))
+        except NonFiniteLearnerError:
+            raise
         except Exception as exc:                              # pragma: no cover - defensive
             self._fail(exc)
         finally:

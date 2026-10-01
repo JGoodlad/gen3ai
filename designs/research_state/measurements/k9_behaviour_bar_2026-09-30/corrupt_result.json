@@ -1,0 +1,125 @@
+{
+ "setup": {
+  "rate": 0.005,
+  "kinds": [
+   "action_index",
+   "obs_swap",
+   "mask_mismatch"
+  ],
+  "seeds": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "micro": 2048,
+  "rows_per_seed": 6144,
+  "states": "update 0 and after 2 real updates",
+  "arm": "eager",
+  "sources": {
+   "cuda_high": "TF32 on the RTX 3080 Ti, one gpu_lock acquisition per seed",
+   "cpu_fp32": "CPU fp32 (the fault SIGNAL; CUDA fp32 units not run \u2014 stopped to free the GPU queue)"
+  },
+  "commit": "d8c90fb39e557f3bb732cab8ba602308538a144b",
+  "raw": "parts/corrupt_*.json (per unit)"
+ },
+ "derived": {
+  "cuda_high": {
+   "seeds": 4,
+   "healthy": {
+    "n_micro": 24,
+    "max_max": 0.03262066841125488,
+    "p99_max": 0.0007851123809814453
+   },
+   "action_index": {
+    "n_micro": 24,
+    "micro_max_min": 0.23943662643432617,
+    "micro_max_median": 0.42999786138534546,
+    "micro_p99_max": 0.0009924864768981925,
+    "caught_by_p99": 0.0,
+    "caught_by_max": 1.0,
+    "caught_by_gate": 1.0,
+    "rows_n": 256,
+    "rows_min": 0.0,
+    "rows_median": 0.09387272596359253,
+    "rows_share_under_tf32_max": 0.41796875,
+    "rows_illegal": 0
+   },
+   "obs_swap": {
+    "n_micro": 24,
+    "micro_max_min": 0.548731803894043,
+    "micro_max_median": 99999998.0902468,
+    "micro_p99_max": 0.001047867536544797,
+    "caught_by_p99": 0.0,
+    "caught_by_max": 1.0,
+    "caught_by_gate": 1.0,
+    "rows_n": 256,
+    "rows_min": 0.0026412010192871094,
+    "rows_median": 0.5053372383117676,
+    "rows_share_under_tf32_max": 0.125,
+    "rows_illegal": 82
+   },
+   "mask_mismatch": {
+    "n_micro": 24,
+    "micro_max_min": 0.4567300081253052,
+    "micro_max_median": 1.0856608748435974,
+    "micro_p99_max": 0.0025269603729247683,
+    "caught_by_p99": 0.0,
+    "caught_by_max": 1.0,
+    "caught_by_gate": 1.0,
+    "rows_n": 256,
+    "rows_min": 0.11550843715667725,
+    "rows_median": 0.41661059856414795,
+    "rows_share_under_tf32_max": 0.0,
+    "rows_illegal": 0
+   }
+  },
+  "cpu_fp32": {
+   "seeds": 4,
+   "healthy": {
+    "n_micro": 24,
+    "max_max": 1.430511474609375e-06,
+    "p99_max": 6.592273712158171e-07
+   },
+   "action_index": {
+    "n_micro": 24,
+    "micro_max_min": 0.24390888214111328,
+    "micro_max_median": 0.43008023500442505,
+    "micro_p99_max": 7.152557373046875e-07,
+    "caught_by_max": 1.0,
+    "caught_by_gate": 1.0,
+    "rows_n": 256,
+    "rows_min": 0.0,
+    "rows_median": 0.09378659725189209,
+    "rows_share_under_tf32_max": 0.4140625,
+    "rows_illegal": 0
+   },
+   "obs_swap": {
+    "n_micro": 24,
+    "micro_max_min": 0.5489487648010254,
+    "micro_max_median": 99999998.0903132,
+    "micro_p99_max": 7.152557373046875e-07,
+    "caught_by_max": 1.0,
+    "caught_by_gate": 1.0,
+    "rows_n": 256,
+    "rows_min": 0.0020682811737060547,
+    "rows_median": 0.5058435797691345,
+    "rows_share_under_tf32_max": 0.12109375,
+    "rows_illegal": 82
+   },
+   "mask_mismatch": {
+    "n_micro": 24,
+    "micro_max_min": 0.456884503364563,
+    "micro_max_median": 1.0838341116905212,
+    "micro_p99_max": 7.152557373046875e-07,
+    "caught_by_max": 1.0,
+    "caught_by_gate": 1.0,
+    "rows_n": 256,
+    "rows_min": 0.11600792407989502,
+    "rows_median": 0.41637587547302246,
+    "rows_share_under_tf32_max": 0.0,
+    "rows_illegal": 0
+   }
+  }
+ }
+}

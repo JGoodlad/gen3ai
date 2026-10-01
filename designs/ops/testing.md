@@ -602,6 +602,22 @@ change, and record it in the ledger:
 export PYTHONPATH=$PYTHONPATH:src && python3 src/agents/training/reward_golden_test.py --write
 ```
 
+### The LEARNER GOLDEN (`src/agents/training/learner_golden_test.py`) — unmarked, ~3 s
+
+What ONE PPO update computes (K9(a), M5 Lane K): a production-surface learner rebuilt from a fixed seed
+runs one eager fp32 `train()` on a committed 64-row real buffer (`learner_golden_buffer.npz`, 65 KB);
+the post-update parameter BYTES and every logged loss are compared EXACTLY against
+`learner_golden.json`, KEYED BY `torch.__version__` (the init is identical across torch builds, the
+update is not — each interpreter has its own entry and a missing one FAILS). A mismatch names the losses
+and parameter groups that moved. It never records; an INTENDED change is re-recorded under every
+interpreter with an entry, with a reason that lands in the file's history:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:src && python3 -m agents.training.learner_golden record --reason "..."
+```
+
+Detail — what is pinned, why exact bytes, the scope limits: `designs/training/learner_gates.md`.
+
 ### Unit tests only (the fast inner loop)
 ```bash
 export PYTHONPATH=$PYTHONPATH:src && /home/goodlad/miniconda3/envs/gen3ai_stable/bin/python3 -m pytest src/ -m "not slow and not e2e and not sim and not integration" -q

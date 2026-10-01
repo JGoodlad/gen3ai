@@ -348,8 +348,12 @@ def apply_rollout_labels(wt: np.ndarray, wm: np.ndarray, picks: Sequence[Tuple[i
     applied: List[Tuple[int, int, float]] = []
     y = np.asarray(terminal_y, dtype=np.float64)
     for (t, e), lab in zip(picks, labels):
-        if lab is None or not np.isfinite(float(lab)):
+        if lab is None:                  # no continuation result: the row keeps its terminal label
             continue
+        if not np.isfinite(float(lab)):  # K9(c): a NaN/Inf TARGET is a broken continuation — fail closed
+            from agents.training.instrumented_ppo.learner_gates import nonfinite
+            raise nonfinite(
+                f"[K9(c)] NON-FINITE win-prob rollout label {lab!r} at (t={t}, env={e}) — refusing to train on it")
         val = float(lab) if mode == "replace" else 0.5 * (float(lab) + float(y[t, e]))
         wt[t, e, 0] = np.asarray(val, dtype=wt.dtype)
         wm[t, e, 0] = np.asarray(1.0, dtype=wm.dtype)

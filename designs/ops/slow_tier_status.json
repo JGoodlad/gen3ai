@@ -396,17 +396,17 @@
   },
   "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[ladder]": {
    "status": "pass",
-   "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
-   "at": "2026-09-30T14:33:13Z",
-   "duration_s": 47.65,
+   "commit": "f67b176540e7da43808c92fd7baf2343487b3afd",
+   "at": "2026-10-01T03:17:39Z",
+   "duration_s": 51.02,
    "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/rust_rollout/parity_test.py::test_milestone_the_learners_buffer_equals_todays_python_path[pool]": {
    "status": "pass",
-   "commit": "55a7846fd49d234c1598c27bb35f02eaa9775a33",
-   "at": "2026-09-30T14:33:13Z",
-   "duration_s": 48.35,
+   "commit": "f67b176540e7da43808c92fd7baf2343487b3afd",
+   "at": "2026-10-01T03:17:39Z",
+   "duration_s": 53.16,
    "contention": 1.0,
    "detail": ""
   },
@@ -1131,5 +1131,5 @@
    "detail": ""
   }
  },
- "last_written": "2026-10-01T01:45:13Z"
+ "last_written": "2026-10-01T03:17:39Z"
 }

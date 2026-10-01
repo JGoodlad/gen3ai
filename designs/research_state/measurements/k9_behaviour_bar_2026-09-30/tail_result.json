@@ -1,0 +1,77 @@
+{
+ "setup": {
+  "bar": 0.071,
+  "micro": 2048,
+  "n_updates": 10000,
+  "pot_threshold_quantile": 0.999,
+  "seeds": 96,
+  "rows": 589824,
+  "micro_batches": 288,
+  "assumptions": [
+   "rows i.i.d. within a micro-batch",
+   "updates independent (fresh rows each)",
+   "a fresh perturbed production learner stands in for a trained one",
+   "TF32 eager on the RTX 3080 Ti, torch 2.5.1"
+  ]
+ },
+ "empirical": {
+  "micro_max": {
+   "n": 288,
+   "median": 0.0072400569915771484,
+   "q90": 0.020945370197296143,
+   "q99": 0.04268320083618163,
+   "max": 0.06259298324584961,
+   "n_over_bar": 0
+  },
+  "rows": {
+   "n": 589824,
+   "p99_9": 0.0011989669799805647,
+   "p99_99": 0.016768493628496584,
+   "max": 0.06259298324584961,
+   "n_over_bar": 0
+  }
+ },
+ "pot_rows": {
+  "u": 0.0011989669799805647,
+  "xi": 0.39500870617505623,
+  "sigma": 0.004064401992065429,
+  "n_exceed": 590,
+  "q_row": 5.546262856767528e-06,
+  "p_update": 0.011294510476180242,
+  "return_level_10k": 0.5102522739310941,
+  "P_at_least_one_crossing_10k": 1.0,
+  "P_2_consecutive_10k": 0.7207404009314018,
+  "P_3_consecutive_10k": 0.014301823515274648,
+  "P_4_consecutive_10k": 0.0001626687089746337,
+  "p_update_95ci_seed_bootstrap": [
+   0.002755263424688617,
+   0.02246955351137712
+  ],
+  "rates_at_ci_high": {
+   "p_update": 0.02246955351137712,
+   "P_at_least_one_crossing_10k": 1.0,
+   "P_2_consecutive_10k": 0.9935879631301251,
+   "P_3_consecutive_10k": 0.10722654835169187,
+   "P_4_consecutive_10k": 0.0025450380720239973
+  }
+ },
+ "p99_single_shot": {
+  "n_micro": 288,
+  "median": 0.0006063359975814818,
+  "max": 0.0007754373550415038,
+  "headroom": 4.642541369195861,
+  "gev_p_update": 0.0,
+  "P_at_least_one_crossing_10k": 0.0
+ },
+ "gev_micro_max": {
+  "shape_scipy_c": -0.8035833030374271,
+  "loc": 0.0036432687767796283,
+  "scale": 0.0038316554619802976,
+  "return_level_10k": 7.809239665942851,
+  "p_update": 0.03346138348995134,
+  "P_at_least_one_crossing_10k": 1.0,
+  "P_2_consecutive_10k": 0.9999863503200213,
+  "P_3_consecutive_10k": 0.3124269584519781,
+  "P_4_consecutive_10k": 0.012454518235992973
+ }
+}

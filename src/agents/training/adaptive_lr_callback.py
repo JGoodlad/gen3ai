@@ -285,6 +285,11 @@ class TwoPhaseLRCallback(BaseCallback):
         kl = self.model.logger.name_to_value.get("train/approx_kl")
         if kl is None:
             return
+        if not math.isfinite(float(kl)):
+            # K9(c): a NaN/Inf reading would pin `_kl_ema` for the rest of the run (NaN freezes the rate,
+            # Inf walks it to min_lr) — fail closed. `train()` already refuses one at its source.
+            from agents.training.instrumented_ppo.learner_gates import nonfinite
+            raise nonfinite(f"[K9(c)] NON-FINITE train/approx_kl {kl} reached the KL->LR controller")
 
         # Always update EMA so it tracks during cooldown.
         if self._kl_ema is None:
@@ -408,6 +413,11 @@ class AdaptivePPOCallback(BaseCallback):
         kl = self.model.logger.name_to_value.get("train/approx_kl")
         if kl is None:
             return
+        if not math.isfinite(float(kl)):
+            # K9(c): a NaN/Inf reading would pin `_kl_ema` for the rest of the run (NaN freezes the rate,
+            # Inf walks it to min_lr) — fail closed. `train()` already refuses one at its source.
+            from agents.training.instrumented_ppo.learner_gates import nonfinite
+            raise nonfinite(f"[K9(c)] NON-FINITE train/approx_kl {kl} reached the KL->LR controller")
 
         # Always update EMA so it tracks during cooldown.
         if self._kl_ema is None:

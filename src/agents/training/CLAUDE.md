@@ -17,6 +17,7 @@ always-current obligation as this file — update the topic doc in the same pass
 |---|---|
 | the reward registry, PBRS, the no-progress clock, the two entropy boosts | [`designs/training/reward.md`](../../../designs/training/reward.md) |
 | the PPO package's module map or a source-level pin on `train()` | [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md) |
+| the learner's GIGO gates (K9): the LEARNER GOLDEN, behaviour-policy consistency, fail-closed non-finite, and the non-finite AUDIT | [`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md) |
 | bot eval, the untaught meter, the critic gate, ELO / the ladder / Hodge, the baseline registry | [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md) |
 | self-play, the snapshot pool, stable opponents | [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md) |
 | exploiter mode, the warm start, distillation + the off-slice anchor | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
@@ -120,9 +121,20 @@ here, because it is the thing a fold edit must not get wrong.**
 folded in is straight-line source order, and that is only checkable by reading while it stays one
 straight line. What DID move out is everything AROUND the sequence: the pre-loop setup
 (`train_setup`) and the metrics export (`metrics_export`), neither of which folds a term, plus the
-per-rollout probes (`rollout_probes`), which `train()` does not call at all. `ppo.py` is **1,522
+per-rollout probes (`rollout_probes`), which `train()` does not call at all. `ppo.py` is **1,573
 lines** — its floor with the loop intact is ~1,200, so the file-size ratchet's 1,000-line TARGET is
 unreachable here without splitting the sequence, which is the thing that must not happen.
+
+**K9 — the learner's GIGO gates** ([`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md)).
+🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and
+every loss, per torch build — so ANY change to the fold, a term, a coefficient default or the step
+fails the routine gate until someone re-records deliberately: `python -m agents.training.learner_golden
+record --reason "..."` under EVERY interpreter with an entry (never a routine step). Every non-finite
+loss / gradient / buffer value / KL is `main.exit_codes.NonFiniteLearnerError` (tagged `[Learner]
+FATAL`; exit 4, the launcher does NOT restart) BEFORE the optimizer moves anything
+(`instrumented_ppo/learner_gates.py`) — never a `nan_to_num`, a NaN-mask on a trained
+quantity or a skipped step; a new term must reach the assembled loss (or carry its own check), and a
+`where(isfinite)` on a label is a NaN hide unless it means `-inf` (use `isneginf`).
 
 **`train()` carries BENCHMARK-ONLY phase marks** (`gen3_learner_phase_hook_v1`): ~14 lines of
 `if _ph is not None: _ph("<phase>")`, `_ph` read ONCE per call from `instrumented_ppo/phase_hook.py`
@@ -528,10 +540,11 @@ a separate decision. Hazards an agent must know before touching it:
   collector flags typed on the python core are refused too (they would be silently inert).
 - **`WinProbLabelCallback` is not registered** under `rust`: the collector fills `win_target` /
   `win_mask` (the window fill calls the callback's own `backfill_terminal_labels`).
-- **K9(b) `--behaviour-check`** (fatal under `rust`, off under `python`): before any optimizer step of
-  every update, the learner's log π on rows played at the CURRENT version must equal the stored
-  behaviour log-prob (max |Δ| < 1e-4); the same forward logs `staleness/*` (ratio, clip fraction, KL by
-  row AGE) and `behaviour/*`. Per-game version pinning (`--version-pinning per_game`) is the first
+- **K9(b) `--behaviour-check`** (default `fatal` on BOTH cores): before any optimizer step of every
+  update, the learner's log π on rows played at the CURRENT version must equal the stored behaviour
+  log-prob (the precision-keyed gate: max |Δ| < 1e-4 at fp32; p99 < 3.6e-3 AND max < 0.071 at TF32, the TF32 max FATAL only on 4 consecutive updates). Under `rust` Lane G's pre-loop probe runs its own forward and logs
+  `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*`; under `python` (no per-row
+  versions) the first micro-batch's own forward is compared in-loop instead (`learner_gates.md`). Per-game version pinning (`--version-pinning per_game`) is the first
   staleness remedy, OFF unless those measurements call for it.
 - **Every micro-batch is FULL — no padding, no drop.** `--rollout-target-samples` must be a multiple of
   lcm(`--batch-size`, `--n-envs`) (refused at parse, at the trigger, at every adaptive move, and by the
@@ -570,7 +583,13 @@ orthogonal; a run can take either, both or neither.
 **`--matmul-precision {highest,high}`** (default `highest` = PyTorch's default, no TF32, and the
 code then calls nothing) sets the TRAINER process's fp32 matmul precision; `high` enables TF32. It
 is stamped at launch as `🧮 [MATMUL PRECISION]` and recorded in `metadata.json`
-(`gen3_matmul_precision_v1`); a runtime knob, never inherited.
+(`gen3_matmul_precision_v1`); a runtime knob, never inherited. K9(b)'s behaviour gate is KEYED BY it
+(one table, `rust_rollout/consistency.BEHAVIOUR_GATES`): `max` |Δ log π| < 1e-4 at `highest`; at `high`
+BOTH the micro-batch's `p99` < 3.6e-3 (global faults — TF32's healthy tail reaches 0.04 on a few rows,
+so no max bar alone separates a one-step-stale rollout) AND its `max` < 0.071 (localized gross faults
+on < 1 % of rows) — the max PERSISTENT: one violation warns and dumps the rows to
+`<run_dir>/behaviour_violations.jsonl`, FATAL only on 4 consecutive updates, k from the measured
+heavy tail (`designs/training/learner_gates.md`).
 🚨 **`--compile-trainer`'s startup parity gate runs on REAL obs rows**, never zeros. The rows are the
 committed fixture `src/agents/model/compile_parity_obs.npz`; regenerate it with
 `python -m agents.model.compile_parity_fixture --write` after an obs-layout change, and a stale

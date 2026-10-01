@@ -86,9 +86,11 @@ is a typed `SlotCapacityExceeded`.
 ## K9(b) — behaviour-policy consistency
 
 The same probe's first job: on the rows played at the CURRENT version, the learner's recomputed
-log π(a|s) must equal the stored μ(a|s), max |Δ| < 1e-4, before any optimizer step — else a typed
-`BehaviourMismatch` (`--behaviour-check fatal`, the default under `--env-core rust`; opt-in on the
-python core). It catches stale served weights, an eval-vs-train-mode difference and a rollout/learner
+log π(a|s) must equal the stored μ(a|s) — max |Δ| < 1e-4 at fp32, the current rows' p99 < 3.6e-3 AND
+max < 0.071 under TF32 — the max PERSISTENT: FATAL only on 4 consecutive updates — (one precision-keyed table, `consistency.BEHAVIOUR_GATES`, measured — `learner_gates.md`) — before any optimizer step — else a typed
+`BehaviourMismatch` (`--behaviour-check fatal`, the default on both env cores; on the python core, whose
+buffer carries no versions, the check reads the first micro-batch's own forward instead of running this
+probe — `learner_gates.md`). It catches stale served weights, an eval-vs-train-mode difference and a rollout/learner
 observation mismatch; it does not catch a miscompile shared by both sides (K6's eager canary does).
 
 ## The keyed draw (`gen3_keyed_draw_v1`)

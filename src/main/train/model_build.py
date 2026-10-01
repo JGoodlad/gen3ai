@@ -239,7 +239,7 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     # (A namespace without the dest — a hand-built test namespace — keeps the class default 1.)
     model.diagnostics_every = int(getattr(args, "diagnostics_every", None) or 1)
     # M5 Lane G — K9(b) behaviour-policy consistency (`--behaviour-check`): resolved per env core
-    # (`rust_env_setup.resolve_env_core_args`: fatal under rust, off under python). A namespace
+    # (`rust_env_setup.resolve_env_core_args`: fatal on both env cores — M5 Lane K9). A namespace
     # without the dest keeps it off.
     model.behaviour_check = str(getattr(args, "behaviour_check", None) or "off")
     model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
@@ -601,6 +601,8 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # `value_tail_weight` here == the saved value (enforced above); re-set for the loop.
         apply_training_hparams(model, args, mappings=mappings,
                                attach_cf_labels=_attach_cf_labels)
+        # K9(b): where a behaviour violation's row dump is appended (`consistency.VIOLATION_DUMP`).
+        model.behaviour_dump_dir = model_dir
         model.vf_coef = args.vf_coef  # == the saved value (enforced above); set explicitly for parity
         # gen3_policy_gae_lambda_v1: `--policy-gae-lambda`, resolved by `_resolve` (a flagless resume
         # INHERITS the parent's recorded value; a pre-v123 parent migrates to the old hardcoded 0.80).
@@ -870,6 +872,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # Every training-only hparam, from the one table shared with the resume path above.
         apply_training_hparams(model, args, mappings=mappings,
                                attach_cf_labels=_attach_cf_labels)
+        model.behaviour_dump_dir = model_dir   # K9(b) row dumps (as on the resume path above)
         model._dose_kl = kl_controller_snapshot(lr_callback)   # plain data, never the callback
         model._fork_lr_pin = None          # a FRESH run cannot be pinned — `--fork-lr` is refused there
         version = ModelVersion.from_layout_and_policy_kwargs(

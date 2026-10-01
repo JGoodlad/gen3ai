@@ -97,5 +97,8 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
                         choices=("off", "warn", "fatal"), default=None,
                         help="K9(b) BEHAVIOUR-POLICY CONSISTENCY: before any optimizer step of every update, "
                              "the learner's recomputed log pi(a|s) for rows at the CURRENT policy version must "
-                             "equal the stored behaviour log-prob (max |d| < 1e-4). Default: 'fatal' under "
-                             "--env-core rust, 'off' under python (opt-in there; no default flips on today's path).")
+                             "equal the stored behaviour log-prob (fp32: max |d| < 1e-4; --matmul-precision high: the micro-batch's "
+                             "p99 |d| < 3.6e-3 AND its max < 0.071, the max FATAL only on 4 consecutive updates — one measured table, "
+                             "rust_rollout/consistency.BEHAVIOUR_GATES). Default 'fatal' on both env "
+                             "cores: under rust Lane G's pre-loop probe (per-row policy versions), under python the "
+                             "first micro-batch's own forward (K9, M5 Lane K — no extra forward).")

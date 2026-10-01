@@ -20,7 +20,6 @@ from main.launcher.ipc import emit as _emit
 
 def resolve_env_core_args(args: Any) -> None:
     """Fill every collector flag left ``None`` (untyped) with the default its help states. Idempotent."""
-    rust = getattr(args, "env_core", "python") == "rust"
     defaults = {
         "rollout_trigger": "complete_game", "rollout_target_samples": 0, "rust_env_front": "proc",
         "rust_env_threads": 8, "rust_env_profile": "release", "rust_env_refusal_budget": 64,
@@ -33,7 +32,9 @@ def resolve_env_core_args(args: Any) -> None:
     if getattr(args, "trainee_slots", None) is None:
         args.trainee_slots = 3 if args.version_pinning == "per_game" else 1
     if getattr(args, "behaviour_check", None) is None:
-        args.behaviour_check = "fatal" if rust else "off"
+        # K9(b) is FATAL on both env cores (M5 Lane K): under python it reads the first micro-batch's
+        # own forward (`instrumented_ppo/learner_gates.py`) — one host read per update, no forward.
+        args.behaviour_check = "fatal"
 
 
 def recorded_env_core(model_path: Optional[str]) -> Optional[str]:

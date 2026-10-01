@@ -290,7 +290,10 @@ def set_valued_switch_loss(beta_logits: torch.Tensor, believed_mask: torch.Tenso
     Returns None when no row qualifies (the caller must not add a zero — see the NaN note in
     `BetaSwitchHead`).
     """
-    finite = torch.isfinite(beta_logits)
+    # K9(c): legal = NOT the deliberate -inf. `isfinite` also counted a NaN slot as illegal, so a row
+    # whose only believed slots were NaN was dropped (absorbed before the total loss); now it is scored
+    # and the NaN reaches the learner's loss check. Identical on every finite / -inf logit.
+    finite = ~torch.isneginf(beta_logits)
     avail = (believed_mask > 0.5) & finite                       # [B,6] believed AND legal
     rows = rows & (avail.sum(dim=-1) > 0)
     if not bool(rows.any()):
