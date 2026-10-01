@@ -28,7 +28,12 @@ startup is then over: the trainer compile and its parity gate, the prewarm, `dec
 and `learn()`'s own `_setup_learn` / every callback's `_on_training_start` have run. Every
 `collect_rollouts` and `train` exit CHECKS. `learn()`'s exit RELEASES (the in-process final evaluation
 after training is not the steady state). The wrappers and `_learner_freeze` are in
-`_excluded_save_params`, so no checkpoint carries them.
+`_excluded_save_params`, so no checkpoint carries them. 🚨 **These wrappers intercept only because the loop calls through
+the attribute**: `learn()` is ours since `gen3_owned_ppo_loop_v1` (`instrumented_ppo/loop.py`), and it
+calls `self.collect_rollouts` / `self.train` by name — a direct call to a vendored method would bypass
+the guard silently (`own_ppo_loop_test` asserts both wrappers see every call). Stage 2 of
+[`design_own_ppo_loop.md`](../endstate/design_own_ppo_loop.md) turns these wrappers into declared
+loop hooks.
 
 **What is frozen — the learner's object graph** (`learner_objects`): `model.policy`'s whole module
 tree (extractor, pointer head, aux heads, the ride-along heads) plus every `nn.Module` / `Optimizer`

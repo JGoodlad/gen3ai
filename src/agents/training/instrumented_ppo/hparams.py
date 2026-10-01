@@ -565,6 +565,9 @@ class PpoHyperparameters:
         # rebuilt by every process's startup. `_rust_fill` / `_rust_row_versions` / `_rust_version` /
         # `_behaviour_probe_metrics` are the last update's staleness record — transient like the buffer.
         # `_env_core_stamp` is written to metadata.json by `_model_hparams` on every save instead.
+        # `_ppo_loop_mode` (gen3_owned_ppo_loop_v1) is which loop THIS process's `learn()` ran — the
+        # owned one or the `GEN3AI_PPO_LOOP=sb3_reference` test seam — resolved per call; a checkpoint
+        # must not carry it, so the `.zip`'s `data` stays exactly what it was before the loop moved.
         return super()._excluded_save_params() + ["_rust_collector", "_rust_fill", "_rust_row_versions",
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
                                                   "_correction_buffer", "_distill_teacher",
@@ -575,4 +578,5 @@ class PpoHyperparameters:
                                                   "_vf_scale_announced", "_diagnostics_ran_in_process",
                                                   "collect_rollouts",
                                                   "train", "learn", "_compile_control",
-                                                  "_learner_freeze", "_compiled_micro_step"]
+                                                  "_learner_freeze", "_compiled_micro_step",
+                                                  "_ppo_loop_mode"]

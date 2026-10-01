@@ -133,6 +133,18 @@ joins the tail in contract order. What moved out of `train()` before K8 is every
 sequence: the pre-loop setup (`train_setup`, incl. R1's static flags `_micro_static`), the metrics
 export (`metrics_export`) and the per-rollout probes (`rollout_probes`).
 
+🚨 **THE LOOP AROUND `train()` IS OURS TOO** (`gen3_owned_ppo_loop_v1`, `src/agents/training/instrumented_ppo/loop.py`;
+[`designs/endstate/design_own_ppo_loop.md`](../../../designs/endstate/design_own_ppo_loop.md)): `learn()`
+is the declared `LOOP_PHASES` table, and `_setup_learn` / `dump_logs` / the Python core's collect are
+vendored from sb3 operation for operation (hash-pinned). Three things an edit must not break: the
+**dump stays BEFORE the update** (update k's `train/*` is stamped after rollout k+1 — the archive's TB
+convention and the KL controller's logger read); **`collect_rollouts` / `train` are called through the
+attribute** (K6 and the compile sentinel wrap them); the **Python collect keeps sb3's local names and
+fires `on_step` before `rollout_buffer.add`** (`self.locals`, `buf.pos`). `own_ppo_loop_test.py` holds
+it EXACT against upstream; `GEN3AI_PPO_LOOP=sb3_reference` is the A/B test seam. ⚠️ **Preserved defect
+(design §2.1):** an eval cycle's mid-rollout `logger.dump(step)` clears the previous update's `train/*`,
+so the KL→LR controller skips one reading per eval cycle (5% of N0's updates) — stage 2 fixes it.
+
 **K9 — the learner's GIGO gates** ([`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md)).
 🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and
 every loss, per torch build — so ANY change to the fold, a term, a coefficient default or the step

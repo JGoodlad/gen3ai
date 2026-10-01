@@ -5,9 +5,14 @@ commit, saying what changed and why. Scoped 2026-10-01 at the owner's request: *
 and do that before the cutover if it isn't too hard"*, then *"Do the PPO pay down, as long as it is
 less than 2 agent days"*.
 
-**Status:** SCOPED 2026-10-01. Stage 1 is estimated at **1.6 agent-days** (range 1.3–1.9), equivalence
-and docs included, which is under the 2-day bar. **GO** on stage 1, then stage 2. Stages 3 and 4 run
-after the switch.
+**Status:** **STAGE 1 BUILT 2026-10-01** (`gen3_owned_ppo_loop_v1`, `instrumented_ppo/loop.py`):
+SB3's loop is off the production path, and equivalence is held as identity (§4: E0, E1, E2, and E3
+on the Rust core; the readout is
+[`research_state/measurements/own_ppo_loop/`](../research_state/measurements/own_ppo_loop/README.md)).
+Stage 1 was scoped at 1.6 agent-days (range 1.3–1.9), under the 2-day bar, and was GO.
+**Stage 2 is APPROVED and in build** (owner, 2026-10-01: stage 2 in full, about 2.85 agent-days for
+stages 1 + 2 together). Both of its fixes are labelled behaviour changes and regime boundaries, and it
+lands before the X26 ride-along baseline. Stages 3 and 4 run after the switch.
 
 ---
 
@@ -257,6 +262,14 @@ This matters for stage 4 only. Stages 1–3 leave the format alone.
 
 ### 3.1 Stage 1 — the loop is ours (bit-identical; `gen3_owned_ppo_loop_v1`)
 
+**BUILT 2026-10-01**, as designed below. Two details were settled during the build:
+- **The reference seam is upstream end to end.** Under `sb3_reference`, every vendored method
+  (`_setup_learn`, `dump_logs`, progress, `_update_info_buffer`, the Python collect) defers to its
+  upstream original. Without that, upstream's `learn` would reach OUR vendored methods through the MRO,
+  and the A/B would compare ours with ours.
+- **`_ppo_loop_mode` is in `_excluded_save_params`**, so the `.zip`'s `data` is exactly what it was
+  before.
+
 There is one new module, `agents/training/instrumented_ppo/loop.py`. It is a mixin `OwnedLoop`, placed
 before `MaskablePPO` in `InstrumentedMaskablePPO`'s bases. It owns:
 - **`learn()`**: SB3's sequence written out as a **declared phase table** (`LOOP_PHASES`):
@@ -335,9 +348,9 @@ costs nothing per update, while the `.zip` is the most widely read contract in t
 | check | what | bar | tier |
 |---|---|---|---|
 | **E0** | The K9 LEARNER GOLDEN (`agents.training.learner_golden`) | bit-identical. **Necessary, not sufficient:** it calls `train()` directly and does not exercise `learn()` | routine (exists) |
-| **E1** | **Lockstep differential** (new, CPU, seconds): a seeded scripted VecEnv over the production spaces, serving rows of the golden's buffer, with dones on a fixed schedule, one `TimeLimit.truncated` + `terminal_observation` (the bootstrap branch) and `info["episode"]` dicts. Real callbacks that need no live env are registered — `WinProbLabelCallback`, `AdaptivePPOCallback`, `SignalMetricsCallback`, a mid-rollout `dump(step)` stand-in for eval (pinning §2.1's preserved quirk) — plus a RECORDING callback. Three iterations of upstream `MaskablePPO.learn(model, …)` (still callable unbound while sb3 is installed) vs `OwnedLoop.learn`, from the same seeded learner | EXACT: the hook trace (name, `num_timesteps`, `n_calls`, locals keys, `buf.pos`), every buffer array at each rollout end, `name_to_value` before every dump and each dump's step, params sha after each update, `_n_updates`, `_current_progress_remaining`, `ep_info_buffer` | routine |
-| **E2** | **Rollout level on REAL games**: `rust_rollout.parity`'s record/replay machinery (the same games, keyed trainee draws). The Python-core side is filled by the stock collect and by the owned collect, in one process with the same weights | buffers byte-EXACT on every field (tighter than parity's 1e-5 bars, which compare different batch compositions) | integration (`sim`) |
-| **E3** | **Short real-run A/B** at matched seed: `train_rl_agent --debug` (CPU) for ≥ 3 updates, under each loop, on BOTH env cores. The stock loop is selected through a TEST SEAM env var (`GEN3AI_PPO_LOOP=sb3_reference`), deleted in stage 3. **The control is run FIRST:** stock vs stock | If stock-vs-stock is identical (§2.3's Rust half): every non-wall TB series identical (tag set, step grid, values) and `policy.pth` bytes equal. Otherwise: the same tag set and step grid, and divergence onset and magnitude no earlier or larger than stock-vs-stock, declared before reading | one-off, recorded in `measurements/own_ppo_loop/`; the control is MEASURED (§2.3): **Rust core identical, so identity is the bar there**; Python core not reproducible, so it gets the bound |
+| **E1** (`own_ppo_loop_test.py`, PASS; mutation-checked) | **Lockstep differential** (new, CPU, seconds): a seeded scripted VecEnv over the production spaces, serving rows of the golden's buffer, with dones on a fixed schedule, one `TimeLimit.truncated` + `terminal_observation` (the bootstrap branch) and `info["episode"]` dicts. Real callbacks that need no live env are registered — `WinProbLabelCallback`, `AdaptivePPOCallback`, `SignalMetricsCallback`, a mid-rollout `dump(step)` stand-in for eval (pinning §2.1's preserved quirk) — plus a RECORDING callback. Three iterations of upstream `MaskablePPO.learn(model, …)` (still callable unbound while sb3 is installed) vs `OwnedLoop.learn`, from the same seeded learner | EXACT: the hook trace (name, `num_timesteps`, `n_calls`, locals keys, `buf.pos`), every buffer array at each rollout end, `name_to_value` before every dump and each dump's step, params sha after each update, `_n_updates`, `_current_progress_remaining`, `ep_info_buffer` | routine |
+| **E2** (`own_ppo_loop_parity_test.py`, PASS; mutation-checked) | **Rollout level on REAL games**: `rust_rollout.parity`'s record/replay machinery (the same games, keyed trainee draws). The Python-core side is filled by the stock collect and by the owned collect, in one process with the same weights | buffers byte-EXACT on every field (tighter than parity's 1e-5 bars, which compare different batch compositions) | integration (`sim`) |
+| **E3** | **Short real-run A/B** at matched seed: `train_rl_agent --debug` (CPU) for ≥ 3 updates, under each loop, on BOTH env cores. The stock loop is selected through a TEST SEAM env var (`GEN3AI_PPO_LOOP=sb3_reference`), deleted in stage 3. **The control is run FIRST:** stock vs stock | If stock-vs-stock is identical (§2.3's Rust half): every non-wall TB series identical (tag set, step grid, values) and `policy.pth` bytes equal. Otherwise: the same tag set and step grid, and divergence onset and magnitude no earlier or larger than stock-vs-stock, declared before reading | one-off, recorded in `measurements/own_ppo_loop/`; the control is MEASURED (§2.3): **Rust core identical, so identity is the bar there**; Python core not reproducible, so it gets the bound. **RESULT (2026-10-01):** Rust — 342 / 342 non-wall series identical, and `policy.pth` equal in both arms AND to the pre-stage-1 control; Python — the same tag set and step grid, with values diverging from the first dump exactly as stock-vs-stock does |
 | **E4** | The sizing study's carry-over | nothing extra: E0–E2 make stage 1 identity at the update and rollout level, so the arms' verdicts (run pinned on today's loop) transfer by construction | — |
 
 Stage 2 is **not** identity on purpose (§2.1 and the seeding fix). It is gated by its fail-on-revert
@@ -396,4 +409,6 @@ separately (orchestrator's rule: tell, don't trim).
 |---|---|---|---|---|
 | 2026-10-01 | Own the PPO loop **(owner: "before the cutover if it isn't too hard"; then "as long as it is less than 2 agent days")** | Staged. Stage 1 (identity: `learn` / `_setup_learn` / `dump_logs` / the Python collect vendored as a declared phase table; `.zip`, policy, callbacks, logger and buffer kept) at 1.6 agent-days is GO. Stage 2 (declared hooks, the KL-skip fix, seeding) follows as labelled behaviour changes. Stages 3–4 come with or after the deletion pass | Everything at once (callbacks, buffer, logger, checkpoint; ~8–12 days); making the switch wait for stage 1 (it buys nothing; the arms run pinned); changing the `.zip` in stage 1 (about 30 readers) | §1 inventory; §2.3 control |
 | 2026-10-01 | Equivalence for stage 1 | E0 golden + E1 lockstep differential + E2 same-games buffer identity; E3 real-run A/B read against a stock-vs-stock control | Treating a matched-seed real run as identity on the Python core: measured NOT reproducible there; the Rust core IS (342/342 series, same `policy.pth`), so on it the A/B is identity | §2.3 controls, 2026-10-01 |
+| 2026-10-01 | Stage 2 **(owner: "stage 2 FULL is approved")** | Declared hooks, the KL-skip fix on both cores and owned seeding, each fix a labelled regime boundary; before X26 | Stopping at stage 1 (under the 2-day bar) | the §5 estimate |
+| 2026-10-01 | Stage 1 built | `OwnedLoop` (`instrumented_ppo/loop.py`) after `RolloutProbes` and before `MaskablePPO`; the reference seam defers every vendored method to upstream; `_ppo_loop_mode` is excluded from the `.zip` | A reference seam over `learn` / collect only (upstream `learn` would reach our vendored methods through the MRO, and the A/B would compare ours with ours) | E0 golden unchanged; E1 / E2 exact; E3 Rust identical (same `policy.pth` as the pre-stage-1 control) |
 | 2026-10-01 | The eval-dump KL skip | Preserved bit-for-bit in stage 1; fixed in stage 2 with per-core fail-on-revert tests, before X26 **(orchestrator)** | Fixing it inside stage 1 (that would make stage 1 non-identity and its verdict un-transferable) | §2.1: 37/739 N0 updates (5.0%), 1 per eval cycle in every run scanned |

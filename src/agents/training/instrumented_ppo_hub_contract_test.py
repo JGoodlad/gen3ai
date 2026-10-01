@@ -61,7 +61,7 @@ _PRE_SPLIT = (
 )
 
 _BASES = ("PpoHyperparameters", "NoiseScaleDiagnostics", "DistillTerms", "ValueTerms", "AuxTerms",
-          "CapacityTerms", "TrainSetup", "TrainMetricsExport", "RolloutProbes")
+          "CapacityTerms", "TrainSetup", "TrainMetricsExport", "RolloutProbes", "OwnedLoop")
 
 
 @pytest.mark.parametrize("name", _PRE_SPLIT)

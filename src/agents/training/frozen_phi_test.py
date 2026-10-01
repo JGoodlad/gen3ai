@@ -354,9 +354,10 @@ def test_the_dose_is_OMITTED_rather_than_divided_by_a_fictitious_terminal_scale(
 # ──────────────────────────────────────────────────────────────────────────────────────────────
 
 def test_the_hook_is_in_collect_rollouts_which_BOTH_collectors_pass_through():
-    """`InstrumentedMaskablePPO.collect_rollouts` wraps `collect_rollouts_async` AND
-    `super().collect_rollouts`, so the async path is covered by construction rather than by a
-    parallel implementation. Read off the source, because the property is structural.
+    """`InstrumentedMaskablePPO.collect_rollouts` wraps `collect_rollouts_async` AND the Python
+    core's own collect (`OwnedLoop._collect_python` since `gen3_owned_ppo_loop_v1`; `super()` into
+    upstream before it), so the async path is covered by construction rather than by a parallel
+    implementation. Read off the source, because the property is structural.
 
     BOTH SEAMS LIVE IN `frozen_phi.py` and `ppo.py` carries one call each — the `distill_anchor.py`
     shape, taken because `ppo.py` sits AT the file-size ratchet's 2,000-line hard bound."""
@@ -365,7 +366,7 @@ def test_the_hook_is_in_collect_rollouts_which_BOTH_collectors_pass_through():
     from agents.training.instrumented_ppo import InstrumentedMaskablePPO
 
     src = inspect.getsource(InstrumentedMaskablePPO.collect_rollouts)
-    assert "collect_rollouts_async" in src and "super().collect_rollouts" in src
+    assert "collect_rollouts_async" in src and "self._collect_python(" in src
     assert "frozen_phi.shape_after_rollout(self, rollout_buffer, ok)" in src
 
 

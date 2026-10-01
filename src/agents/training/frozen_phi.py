@@ -264,7 +264,8 @@ def shape_after_rollout(model, rollout_buffer, collected: bool) -> None:
     """THE `collect_rollouts` SEAM — the ONE point both rollout loops pass through.
 
     `InstrumentedMaskablePPO.collect_rollouts` wraps `collect_rollouts_async` AND
-    `super().collect_rollouts`, and `learn()` calls `train()` next, so this window is after every
+    the Python core's own collect (`OwnedLoop._collect_python`), and `learn()` calls `train()` next,
+    so this window is after every
     collector's GAE and before every update — which is why the async path is covered by
     construction rather than by a parallel implementation, and why env workers (which hold no
     model, and so cannot read a potential where the rewards are produced) need no changes.

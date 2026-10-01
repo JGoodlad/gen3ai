@@ -26,8 +26,8 @@ from agents.training.instrumented_ppo.signal_metrics import (
 
 
 class RolloutProbes:
-    """Mixin: `collect_rollouts` + the per-rollout probes. Mixed in BEFORE `MaskablePPO`, so the
-    `super().collect_rollouts(...)` below reaches upstream."""
+    """Mixin: `collect_rollouts` (the env-core DISPATCH) + the per-rollout probes. Mixed in BEFORE
+    `OwnedLoop`, whose `_collect_python` is the Python env core's collection."""
 
     def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps, use_masking=True):
         # `rollout/collect_ms` + `rollout/collect_decisions` (M5 Lane G): the wall clock of this
@@ -45,7 +45,9 @@ class RolloutProbes:
             ok = collect_rollouts_async(
                 self, env, callback, rollout_buffer, n_rollout_steps, use_masking)
         else:
-            ok = super().collect_rollouts(env, callback, rollout_buffer, n_rollout_steps, use_masking)
+            # gen3_owned_ppo_loop_v1: the Python core's collection is OURS (`loop.OwnedLoop`), vendored
+            # from sb3-contrib operation for operation — no longer `super()` into upstream.
+            ok = self._collect_python(env, callback, rollout_buffer, n_rollout_steps, use_masking)
         # +WIN-PROB PBRS (ai_v12 route 1, gen3_winprob_pbrs_v1): coef·(γ·φ(s′) − φ(s)) onto this
         # rollout's rewards, then RE-RUN GAE, φ = the DETACHED win-prob head. HERE — after collection,
         # before train() — is the one window between GAE and PopArt's read of `returns` (both

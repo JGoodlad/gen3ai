@@ -51,6 +51,7 @@ from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
 from agents.training.instrumented_ppo.distill_anchor import distill_anchor_step
 from agents.training.instrumented_ppo.distill_terms import DistillTerms
 from agents.training.instrumented_ppo.hparams import PpoHyperparameters
+from agents.training.instrumented_ppo.loop import OwnedLoop   # gen3_owned_ppo_loop_v1: the loop is ours
 from agents.training.instrumented_ppo.learner_gates import (   # K9(b) python path + K9(c)
     behaviour_gate_mode,
     check_behaviour_first_micro,
@@ -120,6 +121,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                               TrainSetup,
                               TrainMetricsExport,
                               RolloutProbes,
+                              OwnedLoop,
                               MaskablePPO):
     """MaskablePPO with `train/clip_fraction_vf` instrumentation added.
 
