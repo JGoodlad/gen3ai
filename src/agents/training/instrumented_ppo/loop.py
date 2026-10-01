@@ -49,6 +49,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import os
+import random
 import sys
 import time
 from collections import deque
@@ -93,6 +94,8 @@ UPSTREAM_SOURCE_SHA256: Dict[str, str] = {
     "BaseAlgorithm._update_current_progress_remaining":
         "3ffbde55601336c514e501cbfe93702adbd629109faccb5dc62e68f277bf17b2",
     "BaseAlgorithm._update_info_buffer": "f3aeefb5ce5b17e139f8e907af6a60d26f68035a790c7b126e3df0177beb80f9",
+    "BaseAlgorithm.set_random_seed": "0e7d5cb60fca15ab4919fab79381a7455f783bfd2977890dcf063d4bf57d63c7",
+    "utils.set_random_seed": "72309e17cff74c17ec9184d90a6661364724c169b612904b36e63614b4f3f23b",
 }
 
 
@@ -104,6 +107,8 @@ def _upstream_sources() -> Dict[str, Any]:
         "OnPolicyAlgorithm.dump_logs": OnPolicyAlgorithm.dump_logs,
         "BaseAlgorithm._update_current_progress_remaining": BaseAlgorithm._update_current_progress_remaining,
         "BaseAlgorithm._update_info_buffer": BaseAlgorithm._update_info_buffer,
+        "BaseAlgorithm.set_random_seed": BaseAlgorithm.set_random_seed,
+        "utils.set_random_seed": _sb3_utils.set_random_seed,
     }
 
 
@@ -326,6 +331,27 @@ class OwnedLoop:
                 self.ep_info_buffer.extend([maybe_ep_info])
             if maybe_is_success is not None and dones[idx]:
                 self.ep_success_buffer.append(maybe_is_success)
+
+    # ------------------------------------------------------------------ seeding
+    def set_random_seed(self, seed: Any = None) -> None:
+        """OWNED SEEDING (`gen3_owned_seeding_v1`; `design_own_ppo_loop.md` stage 2). sb3's
+        `BaseAlgorithm.set_random_seed` + `utils.set_random_seed`, the SAME draws in the same order
+        (python, numpy, torch, the action space, the env), MINUS one side effect: on a CUDA device
+        sb3 also set the PROCESS-WIDE `torch.backends.cudnn.deterministic = True` /
+        `benchmark = False` — from `_setup_model`, i.e. on every construction AND every `load`, and
+        nothing restored it, so every CUDA trainer, the inference service in its process and every
+        tool that loaded a checkpoint on CUDA ran under it. A seed is not a numerics policy: this
+        seeds and touches no backend flag. A REGIME BOUNDARY on CUDA (CPU is unchanged — the K9
+        golden's init hash with it)."""
+        if seed is None:
+            return
+        random.seed(seed)
+        np.random.seed(seed)
+        th.manual_seed(seed)
+        self.action_space.seed(seed)
+        # self.env is always a VecEnv
+        if self.env is not None:
+            self.env.seed(seed)
 
     # ------------------------------------------------------------------ dump
     def dump_logs(self, iteration: int = 0) -> None:

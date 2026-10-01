@@ -151,7 +151,9 @@ DistillAnchor dual) skipped one reading per eval cycle — 5% of N0's updates. B
 `_collect_pending` now run under `logger_scope.isolated_dump`, so the cycle dumps only its own scalars.
 A live-controller run from that commit onward is not comparable with an earlier one on its LR / dose
 trajectory (`designs/training/step_size_and_batch.md`). A new callback that dumps the logger
-mid-rollout MUST use the same decorator.
+mid-rollout MUST use the same decorator. **Seeding is OURS too** (`gen3_owned_seeding_v1`, `OwnedLoop.set_random_seed`):
+sb3's draws in sb3's order and NO cuDNN flag — sb3 set the process-wide `cudnn.deterministic=True` on
+every CUDA construction and load (a nominal regime boundary: 0 cuDNN kernels run in a production update).
 
 **K9 — the learner's GIGO gates** ([`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md)).
 🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and

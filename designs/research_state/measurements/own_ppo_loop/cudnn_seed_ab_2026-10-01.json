@@ -1,0 +1,58 @@
+{
+ "torch": "2.8.0+cu126",
+ "gpu": "NVIDIA GeForce RTX 3080 Ti",
+ "epochs": 2,
+ "missing_keys_from_C": [],
+ "setup_s": null,
+ "rows": [
+  {
+   "deterministic": true,
+   "update_s": 44.61721191194374,
+   "loss": 0.42425376176834106,
+   "approx_kl": 0.0019871981348842382,
+   "params": "8fe4d106d6b6075a"
+  },
+  {
+   "deterministic": false,
+   "update_s": 45.76802826800849,
+   "loss": 0.424253910779953,
+   "approx_kl": 0.001987244701012969,
+   "params": "9c55bb69c3826232"
+  },
+  {
+   "deterministic": true,
+   "update_s": 44.68551323201973,
+   "loss": 0.4242537021636963,
+   "approx_kl": 0.0019871972035616636,
+   "params": "4135bfaeb5e77908"
+  },
+  {
+   "deterministic": false,
+   "update_s": 45.84440430696122,
+   "loss": 0.4242541491985321,
+   "approx_kl": 0.0019872565753757954,
+   "params": "28400e234810053f"
+  },
+  {
+   "deterministic": true,
+   "cuda_kernels": 2028371,
+   "cudnn_kernels": 0,
+   "cudnn_kernel_us": 0.0,
+   "cudnn_names": [],
+   "loss": 0.4242537021636963,
+   "approx_kl": 0.0019871939439326525,
+   "params": "794a39671124796d"
+  },
+  {
+   "deterministic": false,
+   "cuda_kernels": 2028347,
+   "cudnn_kernels": 0,
+   "cudnn_kernel_us": 0.0,
+   "cudnn_names": [],
+   "loss": 0.42425405979156494,
+   "approx_kl": 0.00198723585344851,
+   "params": "043c597e7967fb77"
+  }
+ ],
+ "wall_s": 636.1456614159979
+}

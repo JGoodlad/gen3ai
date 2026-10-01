@@ -46,3 +46,26 @@ run did not.
 | `ai_v14_02_lbat_ctrl` / `_03_lbat_e5` / `_05_lbat_l95` / `_06_lbat_ctrl_fix` / `_08_g0p_k3`, `ai_v13_12_plateau`, `ai_v13_22/23_popr1_*` | frozen (`--fork-lr-freeze`) | 80–81 | 4 each | 4 each |
 
 N0: LR unchanged after 37 / 37 skipped updates, and after 695 / 701 normal ones.
+
+## 5. Owned seeding — what sb3's `cudnn.deterministic = True` did (stage 2, `gen3_owned_seeding_v1`)
+
+`cudnn_seed_ab.py`; result `cudnn_seed_ab_2026-10-01.json`. The setup: one process, arm C's weights,
+the learner benchmark's pinned 98,304-row buffer, C's shape (micro 2,048 × 32), eager fp32, 2 epochs,
+RTX 3080 Ti, torch 2.8.0, one gpu_lock hold of 636 s.
+
+**Primary evidence — the mechanism.** In one profiled update under each setting, **0 cuDNN kernels ran
+out of 2.03M CUDA kernels.** `train/loss` 0.4243 and `approx_kl` 0.0020 were equal in every repeat.
+Parameter hashes differ on EVERY repeat, same-setting repeats included, because CUDA updates are not
+bitwise reproducible here, so a hash cannot carry this comparison. A flag cannot change kernels that
+never run.
+
+**The timing read — CONFOUNDED, no claim drawn.** deterministic=True gave 44.62 / 44.69 s; the flag
+left at torch's default gave 45.77 / 45.84 s. Two confounds:
+1. the order was always T then F;
+2. the run's first version did not restore `_n_updates`, so the `--diagnostics-every` cadence ran
+   different optional probes on different repeats (the kernel counts differ by 24).
+
+The script now restores counters (`learner_benchmark.restore_model_state`) and counterbalances the
+order (`--order TFFT`). It was not re-run: the orchestrator ruled the zero-kernel count decisive and
+the GPU queue the bottleneck. The sizing study and the K8 perf guard would surface a real update-time
+regression.

@@ -10,9 +10,12 @@ SB3's loop is off the production path, and equivalence is held as identity (§4:
 on the Rust core; the readout is
 [`research_state/measurements/own_ppo_loop/`](../research_state/measurements/own_ppo_loop/README.md)).
 Stage 1 was scoped at 1.6 agent-days (range 1.3–1.9), under the 2-day bar, and was GO.
-**Stage 2 is APPROVED and in build** (owner, 2026-10-01: stage 2 in full, about 2.85 agent-days for
-stages 1 + 2 together). Both of its fixes are labelled behaviour changes and regime boundaries, and it
-lands before the X26 ride-along baseline. Stages 3 and 4 run after the switch.
+**STAGE 2 BUILT 2026-10-01** (owner-approved in full). It shipped as three units:
+- the eval-dump KL-skip fix (a regime boundary for runs with a live controller);
+- the declared hook table (identity);
+- owned seeding (a nominal regime boundary on CUDA).
+
+It lands before the X26 ride-along baseline. Stages 3 and 4 run after the switch.
 
 ---
 
@@ -324,8 +327,17 @@ before `MaskablePPO` in `InstrumentedMaskablePPO`'s bases. It owns:
   hook registered after `training_start` is a typed FATAL. The orders that today hang on list order
   become declared and checked: WinProb before ValueSidecar and Fork, and the post-collect window
   labels → fork → PBRS → frozen-φ.
-- **Seeding is ours.** `set_random_seed` without the cudnn mutation, or the global restored straight
-  after `_setup_model`. This is labelled, and measured on the GPU learner benchmark before and after.
+- **Seeding is ours — BUILT 2026-10-01** (`gen3_owned_seeding_v1`, `OwnedLoop.set_random_seed`).
+  It makes sb3's draws in sb3's order (python, numpy, torch, the action space, the env) and touches no
+  backend flag. sb3's version set the process-wide `cudnn.deterministic = True` / `benchmark = False`
+  on every CUDA construction and load.
+  - **Evidence:** 0 cuDNN kernels in a production update under either setting (2.03M CUDA kernels);
+    losses equal.
+  - **Timing:** CONFOUNDED (a fixed T→F order, and un-restored update counters moving the diagnostics
+    cadence); no claim is drawn from it.
+  - **Regime boundary:** CUDA runs from this commit onward run with torch's default cuDNN flags. This
+    is NOMINAL, because no cuDNN kernel runs in the update. CPU, and so the K9 golden, is unchanged.
+  - Readout: `research_state/measurements/own_ppo_loop/` §5.
 - **Not in stage 2:** replacing `self.locals` with a typed per-step event. It lands with the Python
   core's deletion, because only the Python-core callbacks read it.
 
@@ -422,6 +434,7 @@ separately (orchestrator's rule: tell, don't trim).
 | 2026-10-01 | Own the PPO loop **(owner: "before the cutover if it isn't too hard"; then "as long as it is less than 2 agent days")** | Staged. Stage 1 (identity: `learn` / `_setup_learn` / `dump_logs` / the Python collect vendored as a declared phase table; `.zip`, policy, callbacks, logger and buffer kept) at 1.6 agent-days is GO. Stage 2 (declared hooks, the KL-skip fix, seeding) follows as labelled behaviour changes. Stages 3–4 come with or after the deletion pass | Everything at once (callbacks, buffer, logger, checkpoint; ~8–12 days); making the switch wait for stage 1 (it buys nothing; the arms run pinned); changing the `.zip` in stage 1 (about 30 readers) | §1 inventory; §2.3 control |
 | 2026-10-01 | Equivalence for stage 1 | E0 golden + E1 lockstep differential + E2 same-games buffer identity; E3 real-run A/B read against a stock-vs-stock control | Treating a matched-seed real run as identity on the Python core: measured NOT reproducible there; the Rust core IS (342/342 series, same `policy.pth`), so on it the A/B is identity | §2.3 controls, 2026-10-01 |
 | 2026-10-01 | Stage 2 **(owner: "stage 2 FULL is approved")** | Declared hooks, the KL-skip fix on both cores and owned seeding, each fix a labelled regime boundary; before X26 | Stopping at stage 1 (under the 2-day bar) | the §5 estimate |
+| 2026-10-01 | Stage 2 unit: owned seeding — a NOMINAL regime boundary (CUDA) | sb3's draws, no cuDNN flag touched (`OwnedLoop.set_random_seed`); `owned_seeding_test` fails on revert | Restoring the flags after `_setup_model` (two writes to undo one); a second GPU hold to de-confound the timing (orchestrator: the zero-kernel count is decisive and the GPU queue is the bottleneck) | 0 cuDNN kernels of 2.03M per update, losses equal; the timing CONFOUNDED (fixed order, un-restored counters), no claim |
 | 2026-10-01 | Stage 2 unit: the declared hook table | `LoopHooks`: around-hooks at learn / collect / update, owners ordered by a table (freeze guard outermost), frozen at training start, late / duplicate / undeclared = FATAL_CONFIG; the compile sentinel's `record` stays once per update after the canary (the no-silent-eager window's contract) | Keeping instance-attribute reassignment (nesting order = attach order, and nothing refuses a late hook); a callback-style before/after pair (the sentinel needs its guard AROUND the body) | `loop_hooks_test.py`; E1 unchanged; `compile_control_test`, `learner_lifecycle_test` unchanged (adapter path) |
 | 2026-10-01 | Stage 1 built | `OwnedLoop` (`instrumented_ppo/loop.py`) after `RolloutProbes` and before `MaskablePPO`; the reference seam defers every vendored method to upstream; `_ppo_loop_mode` is excluded from the `.zip` | A reference seam over `learn` / collect only (upstream `learn` would reach our vendored methods through the MRO, and the A/B would compare ours with ours) | E0 golden unchanged; E1 / E2 exact; E3 Rust identical (same `policy.pth` as the pre-stage-1 control) |
 | 2026-10-01 | The eval-dump KL skip, FIXED (stage 2, unit 1) — a REGIME BOUNDARY | `logger_scope.isolated_dump` on both eval callbacks' `_collect_pending`: the cycle dumps only its own scalars, and the update's `train/*` survive for their dump and every bus reader. Live-controller runs from this commit onward are not comparable on LR / dose with earlier ones | Moving the dump after the update (it shifts every `train/*` series in the archive); routing only the KL controller around the bus (it leaves RankTripwire / DistillStop / the anchor dual and the TB stamping broken) | `eval_dump_isolation_test.py` (one test per core, fails on revert); ledger 2026-10-01 |

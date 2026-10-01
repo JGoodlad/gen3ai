@@ -863,6 +863,13 @@ Six profilers, each answering a different question. All print a loud **"THE BOX 
 via `warn_if_contended()` when the box is not idle — a benchmark's output IS the measurement, so
 its bounds are never scaled, only warned about.
 
+🚨 **An A/B over repeated updates must RESTORE every update counter per repeat and COUNTERBALANCE
+the arm order** (T F F T, never T F T F). `_n_updates` drives `--diagnostics-every`, so un-restored
+repeats run different optional probes, and a fixed order confounds the arm with its position. The
+2026-10-01 cuDNN-flag read had both confounds; its 2.6 % gap was not attributable to the flag, which
+ran zero kernels (`research_state/measurements/own_ppo_loop/`). `learner_benchmark.capture_model_state`
+/ `restore_model_state` do the restore.
+
 ```bash
 export PYTHONPATH=$PYTHONPATH:src
 # WHERE the obs pipeline's time goes (component breakdown + cProfile ranking)
