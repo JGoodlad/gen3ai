@@ -198,7 +198,9 @@ def _build_rust_collector(arm: Any, n: int) -> Any:
     # SCAN too since gen3_pool_cap_every_path_v1 — before it, a scan held the whole dir), so every
     # env routes to one of <= K slots and a flush meets at most K distinct pool slots
     pool_dir = mix.pool_dir if active == len(mix.snapshots) else pool_dir_from(str(mix.pool_dir), active)[0]
-    pool = SnapshotPool(pool_dir, current_version=ver, device=arm.device, max_snapshots=len(mix.snapshots),
+    # the pool stays on the CPU: a pool refresh is a DECLARED LOAD into its T2 slot (gen3_declared_slot_load_v1;
+    # the trainer's rust_env_setup does the same) — a device copy is a LazyAcquisitionError since 277f318f
+    pool = SnapshotPool(pool_dir, current_version=ver, device="cpu", max_snapshots=len(mix.snapshots),
                         lru_cache_size=active + 4)
     if len(pool.steps()) != active:
         raise RuntimeError(f"{arm.name}: the pool holds {len(pool.steps())} snapshots, declared {active} active")

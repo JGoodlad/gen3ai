@@ -323,3 +323,20 @@ def test_a_block_reads_the_box_and_the_per_phase_cpu():
         assert k in b, k
     assert 0.5 < b["host_main_thread_cpu_share"] <= 1.2           # the main thread burned the block
     assert b["core_s"] > 0 and b["env_core_cpus_during_step"] == 0.0   # no core process in this arm
+
+
+def test_the_production_arms_keep_the_pool_on_the_cpu():
+    """gen3_declared_slot_load_v1: a pool refresh is a DECLARED LOAD into its T2 slot, so the snapshot pool
+    lives on the CPU (a device copy is a LazyAcquisitionError since 277f318f — it killed the sizing study's
+    quiet N = 512 re-run at build). The harness builds its pool exactly as the trainer does."""
+    import ast
+    import inspect
+
+    from main.rust_core_m5 import production
+
+    calls = [n for n in ast.walk(ast.parse(inspect.getsource(production)))
+             if isinstance(n, ast.Call) and getattr(n.func, "id", None) == "SnapshotPool"]
+    assert calls, "production.py no longer builds a SnapshotPool — re-point this pin"
+    for c in calls:
+        dev = {k.arg: k.value for k in c.keywords}.get("device")
+        assert isinstance(dev, ast.Constant) and dev.value == "cpu", ast.dump(c)
