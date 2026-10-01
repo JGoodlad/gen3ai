@@ -178,8 +178,11 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "EXACTLY P(win|s). At 0.9999 over 250 turns the discount is 0.975, so "
                              "the identity would be off by ~2.5%% at the start of a long game -- the "
                              "same order as the calibration error the win-prob critic exists to "
-                             "improve. INERT ON A RESUME (SB3 restores the checkpoint's own gamma), "
-                             "like --lr; a differing value is reported at startup, never applied.")
+                             "improve, so under --critic winprob any other value is REFUSED. The "
+                             "pairing is declared once (agents.model.critic_mode.critic_gamma); "
+                             "--arch production under a TYPED --critic shaped takes 0.9999, never "
+                             "recipe.fresh's 1.0. INERT ON A RESUME (SB3 restores the checkpoint's own "
+                             "gamma), like --lr; a differing value is reported at startup, never applied.")
     parser.add_argument("--policy-gae-lambda", "--policy_gae_lambda", dest="policy_gae_lambda",
                         type=float, default=None,
                         help="The PPO POLICY's GAE lambda (gen3_policy_gae_lambda_v1): the bias/variance "

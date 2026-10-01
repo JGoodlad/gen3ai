@@ -882,7 +882,11 @@ every timeout's TD error identically zero, so the critic could not see them at a
 
 Three flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`,
 `--no-use-popart`) because their argparse default is the `None` sentinel, so "unset" is
-representable and an implication can never overwrite a typed value. Three are REQUIRED and named by
+representable and an implication can never overwrite a typed value. The discount is PAIRED with the
+critic, declared once (`critic_mode.critic_gamma`: winprob 1.0, shaped 0.9999): a typed `--gamma`
+other than 1.0 under winprob is REFUSED, `--arch production` under a typed `--critic shaped` takes
+0.9999 (never `recipe.fresh`'s 1.0), and an untyped gamma that is not its critic's is a
+`FATAL_CONFIG` at launch. Three are REQUIRED and named by
 their own refusal (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because theirs are concrete, so an implication could not be told apart from an
 overwrite. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so a fork of a `shaped`
 parent cannot inherit that parent's `use_popart` / `win_prob_mode` and break the mode with a value

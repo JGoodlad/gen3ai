@@ -76,6 +76,9 @@ KL_CONSTANTS = ("target_kl", "kl_factor", "lr_factor")
 
 #: ``RecipeRow.unset`` for a row whose parser default is CONCRETE: read the default off the parser.
 PARSER_DEFAULT = "<parser default>"
+#: ``RecipeRow.unset`` for `--gamma`: an unset one resolves to its CRITIC's declared discount
+#: (`agents.model.critic_mode.critic_gamma`), so it is read off the resolved critic, never a constant.
+CRITIC_PAIRED = "<the --critic pairing>"
 
 #: INERT on a resume — SB3 restores the checkpoint's own values (root CLAUDE.md). Never re-applied
 #: on a restart, so nothing here fights that restoration.
@@ -116,8 +119,8 @@ ROWS: Tuple[RecipeRow, ...] = (
     RecipeRow("clip_range", "--clip-range", PARSER_DEFAULT, "§1 row 7"),
     RecipeRow("clip_range_vf", "--clip-range-vf", PARSER_DEFAULT, "§1 row 14 — none (INERT under winprob)"),
     RecipeRow("ent_coef", "--ent-coef", PARSER_DEFAULT, "§1 row 11"),
-    RecipeRow("gamma", "--gamma", 0.9999, "§1 row 12 — implied by --critic winprob; an unset gamma "
-              "under the shaped critic resolves to reward_weights.PBRS_GAMMA"),
+    RecipeRow("gamma", "--gamma", CRITIC_PAIRED, "§1 row 12 — the critic's declared discount "
+              "(critic_mode.critic_gamma): 1.0 under winprob; a TYPED --critic shaped gets 0.9999"),
     RecipeRow("policy_gae_lambda", "--policy-gae-lambda", 0.80, "§1 row 13"),
     RecipeRow("self_play", "--self-play", PARSER_DEFAULT, "§1 row 22"),
     RecipeRow("critic", "--critic", "shaped", "§1 row 14 — the win-prob critic"),
@@ -146,6 +149,7 @@ FORK_ROWS: Tuple[RecipeRow, ...] = (
 FORK_OVERRIDES = frozenset({"n_epochs"})
 
 ALL_ROWS: Tuple[RecipeRow, ...] = ROWS + FORK_ROWS
+_ROW: Dict[str, RecipeRow] = {r.dest: r for r in ALL_ROWS}
 
 
 # ------------------------------------------------------------------------ "was it TYPED?"
@@ -211,6 +215,11 @@ def recipe_blocks(mirror: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, An
     if not {r.dest for r in FORK_ROWS} <= set(fork) or set(fork) - fork_allowed:
         raise RecipeError(f"`recipe.fork` must hold {sorted(r.dest for r in FORK_ROWS)} and may "
                           f"override only {sorted(FORK_OVERRIDES)} (got {sorted(fork)})")
+    from agents.model.critic_mode import critic_gamma
+    if not _agree(fresh["gamma"], critic_gamma(fresh["critic"])):
+        raise RecipeError(f"`recipe.fresh.gamma` {fresh['gamma']!r} is not its critic's declared discount "
+                          f"(critic_mode.critic_gamma({fresh['critic']!r}) = {critic_gamma(fresh['critic'])!r})"
+                          " — the discount is PAIRED with the critic; change the pairing, not one side")
     top = {k: v for k, v in doc.items() if k != RECIPE_BLOCK_KEY}
     clash = sorted(k for k in declared if k in top and not _agree(fresh[k], top[k]))
     if clash:
@@ -246,14 +255,21 @@ def source_tag() -> str:
 def apply_production_recipe(ns: Any, mirror: Optional[Dict[str, Any]] = None) -> List[Tuple[str, Any]]:
     """`--arch production`'s recipe half: every UNTYPED ``recipe.fresh`` row set as if typed.
     Stamps `ns.recipe_source` (recorded in `metadata.json`'s `cli_args`)."""
+    from agents.model.critic_mode import critic_gamma
     want = production_recipe(mirror)
     typed = typed_dests(ns)
+    # `--gamma` is PAIRED with the critic: an untyped one takes the discount of the critic this launch
+    # will train — a TYPED `--critic shaped` gets the shaped critic's 0.9999, never recipe.fresh's
+    # winprob 1.0 (a pairing no run trained). With the critic untyped this IS recipe.fresh's gamma
+    # (`recipe_blocks` refuses a block whose gamma is not its critic's).
+    critic = ns.critic if "critic" in typed else want["critic"]
     applied: List[Tuple[str, Any]] = []
     for r in ROWS:
         if r.dest in typed:
             continue
-        setattr(ns, r.dest, want[r.dest])
-        applied.append((r.dest, want[r.dest]))
+        value = critic_gamma(critic) if r.dest == "gamma" else want[r.dest]
+        setattr(ns, r.dest, value)
+        applied.append((r.dest, value))
     ns.recipe_source = source_tag()
     return applied
 
@@ -353,12 +369,14 @@ class RecipeDiff(NamedTuple):
     resolved: Any
     production: Any
     #: "argv" (TYPED — a deliberate deviation), "default" (the silent kind), "restart" (resolved
-    #: by `inherit_on_restart`) or "inherited" (a fork's value from its parent's config).
+    #: by `inherit_on_restart`), "inherited" (a fork's value from its parent's config) or "paired"
+    #: (`--gamma` following a TYPED `--critic` — the deviation is the critic's, already typed).
     source: str
 
     def line(self) -> str:
         how = {"argv": "TYPED", "default": "untyped default", "restart": "restored at restart",
-               "inherited": "inherited"}.get(self.source, self.source)
+               "inherited": "inherited", "paired": "paired with the TYPED --critic"
+               }.get(self.source, self.source)
         return f"{self.dest:<24} {self.resolved!r:<10} ({how})   production: {self.production!r}"
 
 
@@ -397,6 +415,9 @@ def _resolved(r: RecipeRow, ns: Any, defaults: Dict[str, Any]) -> Any:
     if r.unset == PARSER_DEFAULT:
         return getattr(ns, r.dest, defaults.get(r.dest))
     v = getattr(ns, r.dest, None)
+    if v is None and r.unset == CRITIC_PAIRED:
+        from agents.model.critic_mode import critic_gamma
+        return critic_gamma(_resolved(_ROW["critic"], ns, defaults))
     return r.unset if v is None else v
 
 
@@ -418,12 +439,18 @@ def diff_against_production(ns: Any, mirror: Optional[Dict[str, Any]] = None,
     defaults = _parser_defaults()
     typed = typed_dests(ns)
     restored = {d for d, *_ in getattr(ns, "_recipe_restart_inherited", ()) or ()}
+    from agents.model.critic_mode import critic_gamma
+    #: the discount a TYPED `--critic` pairs with (None when the critic was not typed)
+    typed_critic_gamma = (critic_gamma(_resolved(_ROW["critic"], ns, defaults))
+                          if "critic" in typed else None)
     out: List[RecipeDiff] = []
     for r in rows:
         have = _resolved(r, ns, defaults)
         if _agree(have, want[r.dest]):
             continue
         src = ("argv" if r.dest in typed else "restart" if r.dest in restored
+               else "paired" if (r.dest == "gamma" and typed_critic_gamma is not None
+                                 and _agree(have, typed_critic_gamma))
                else "inherited" if r.dest in inherited else "default")
         out.append(RecipeDiff(r.dest, r.flag, have, want[r.dest], src))
     return out

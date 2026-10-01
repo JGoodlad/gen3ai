@@ -298,11 +298,14 @@ def test_the_reward_defaults_track_the_dataclass():
 
 
 def test_the_gamma_default_is_the_pbrs_constant_not_a_retyped_number():
-    """A second copy of 0.9999 is a second place for the PBRS invariance premise to break."""
+    """A second copy of 0.9999 is a second place for the PBRS invariance premise to break. The
+    default is the critic's declared discount (`critic_mode.critic_gamma`), which READS PBRS_GAMMA."""
+    import agents.model.critic_mode as cm
     import main.train.config as cfg
     from agents.training.reward_weights import PBRS_GAMMA
-    assert '_resolve("gamma", _PBRS_GAMMA_DEFAULT)' in open(cfg.__file__).read()
-    assert PBRS_GAMMA == 0.9999
+    assert '_resolve("gamma", _critic_gamma(args.critic))' in open(cfg.__file__).read()
+    assert "return float(PBRS_GAMMA)" in open(cm.__file__).read()      # read, never retyped
+    assert cm.critic_gamma(cm.CRITIC_SHAPED) == PBRS_GAMMA == 0.9999
 
 
 # --------------------------------------------------------------------------------------------

@@ -272,7 +272,9 @@ def test_every_tri_state_unset_equals_what_resolve_config_fills():
         elif r.dest == "critic":
             assert r.unset == CRITIC_DEFAULT
         elif r.dest == "gamma":
-            assert r.unset == PBRS_GAMMA
+            # paired with the critic (critic_mode.critic_gamma), whose shaped value IS PBRS_GAMMA
+            from agents.model.critic_mode import critic_gamma
+            assert r.unset == rs.CRITIC_PAIRED and critic_gamma(CRITIC_DEFAULT) == PBRS_GAMMA
         elif r.dest in literals:
             assert r.unset == literals[r.dest], r.dest
 

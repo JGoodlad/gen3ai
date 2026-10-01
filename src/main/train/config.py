@@ -525,6 +525,10 @@ def desugar_umbrella_flags(args) -> None:
             args.damage_matrices_incoming = None
 
 
+def _agree_float(a, b) -> bool:
+    return a is not None and b is not None and float(a) == float(b)
+
+
 def resolve_critic_mode(args, saved_ver=None) -> None:
     """Resolve `--critic` and imply the three tri-state flags the `winprob` value settles, in place.
 
@@ -559,12 +563,13 @@ def resolve_critic_mode(args, saved_ver=None) -> None:
     exactly the thing the v8→v9 drift proved must be stated. (`--no-hand-shaping` was the fourth
     until the shaped reward path was deleted, 2026-09-26.)
     """
-    from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+    from agents.model.critic_mode import CRITIC_DEFAULT, critic_gamma, is_winprob
 
     inherit_saved_flag(args, saved_ver, "critic", CRITIC_DEFAULT)
     if not is_winprob(args.critic):
         return
-    for name, value in (("win_prob_mode", "shaping"), ("gamma", 1.0), ("use_popart", False)):
+    for name, value in (("win_prob_mode", "shaping"), ("gamma", critic_gamma(args.critic)),
+                        ("use_popart", False)):
         if getattr(args, name, None) is None:
             setattr(args, name, value)
 
@@ -709,14 +714,32 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
 
     def _resolve(name, default):
         inherit_saved_flag(args, _saved_ver, name, default)
-    # gen3_winprob_critic_mode_v1: `--gamma` is now a FLAG. Its shaped-critic default is the
-    # historical hardcoded 0.9999, read from `reward_weights.PBRS_GAMMA` rather than retyped —
-    # PBRS is policy-invariant only when the two agree, so a second copy of the number is a second
-    # place for them to disagree. (`reward_weights` is pure constants + one stall import, so this
-    # costs `main.checkargs` no torch.) Under `--critic winprob` `resolve_critic_mode` already
-    # implied 1.0 above, so this line does not fire there.
-    from agents.training.reward_weights import PBRS_GAMMA as _PBRS_GAMMA_DEFAULT
-    _resolve("gamma", _PBRS_GAMMA_DEFAULT)
+    # gen3_winprob_critic_mode_v1: `--gamma` is now a FLAG. An unset one resolves to its CRITIC's
+    # declared discount (`critic_mode.critic_gamma`: shaped -> `reward_weights.PBRS_GAMMA` 0.9999,
+    # the historical hardcoded value; winprob -> 1.0, already implied by `resolve_critic_mode` above,
+    # so this line does not fire there).
+    from agents.model.critic_mode import critic_gamma as _critic_gamma
+    _gamma_typed = "gamma" in args._explicit_flags
+    _resolve("gamma", _critic_gamma(args.critic))
+    # THE PAIRING GUARD (cutover loose end 2, 2026-09-30): an UNTYPED discount that is not its
+    # critic's is a value some surface filled from the OTHER critic — `--arch production --critic
+    # shaped` used to take recipe.fresh's winprob 1.0, a pairing no run ever trained (every shaped
+    # and pre-critic run in models/ is at 0.9999). `recipe_surface.apply_production_recipe` now
+    # pairs it; this refuses any regression rather than training it. A TYPED gamma is the
+    # operator's lever (judged by `combination_checks`: winprob refuses anything but 1.0).
+    if not _gamma_typed and not _agree_float(args.gamma, _critic_gamma(args.critic)):
+        from main.exit_codes import TrainExitCode
+        _msg = (f"[Critic] FATAL: --gamma resolved to {args.gamma!r} under --critic {args.critic}, "
+                f"but nobody typed it and that critic's declared discount is "
+                f"{_critic_gamma(args.critic)!r} (agents.model.critic_mode.critic_gamma). A surface "
+                "filled the OTHER critic's discount. Type --gamma to make a deviation deliberate.")
+        print(f"\n{_msg}", file=sys.stderr, flush=True)
+        emit(_msg)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
+    if not args.model:     # on a resume --gamma is INERT (SB3 restores the checkpoint's own value)
+        emit(f"[Critic] gamma={float(args.gamma):g} — "
+             + (f"TYPED (the --critic {args.critic} pairing is {_critic_gamma(args.critic):g})"
+                if _gamma_typed else f"the --critic {args.critic} pairing (critic_mode.critic_gamma)"))
     # gen3_policy_gae_lambda_v1: the PPO POLICY's GAE λ. 0.80 is the value both model_build sites
     # hardcoded for every run to date, so an unset flag on a fresh run is byte-identical; a flagless
     # resume inherits the parent's recorded value (a pre-v123 config migrates to 0.80 — the only

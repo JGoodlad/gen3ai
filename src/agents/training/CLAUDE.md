@@ -1088,6 +1088,10 @@ The production TRAINING RECIPE is mirrored in `designs/production_config.json`'s
 - **`--arch production`** writes every `recipe.fresh` knob the argv did not TYPE, as if typed (after
   the ARCH surface, before `resolve_critic_mode`). "Typed" is recorded by the parser
   (`_recipe_typed`). `recipe_source` lands in `metadata.json`'s `cli_args`.
+- 🚨 **`--gamma` is PAIRED with the critic, not a free recipe row** (`critic_mode.critic_gamma`:
+  winprob 1.0, shaped 0.9999 — no run ever trained a shaped critic at 1.0). Under a TYPED `--critic
+  shaped` the umbrella applies 0.9999 (reported `paired`); `--critic winprob` refuses a typed gamma
+  other than 1.0; an untyped gamma that is not its critic's is a launch `FATAL_CONFIG`.
 - **Refusal.** `checkargs`, `--dry-run` and the launcher REFUSE a FRESH argv that differs on an
   UNTYPED knob; a TYPED difference is the arm's lever (INFO); `--allow-nonproduction-recipe`
   consents.

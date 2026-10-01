@@ -267,7 +267,9 @@ anti-stall pressure comes from the obs deadline clock (the reward has no anti-st
 and mean episode length are PRIMARY endpoints on any `winprob` arm, not monitored ones.**
 
 Three flags are IMPLIED (`--win-prob-mode shaping`, `--gamma 1.0`, `--no-use-popart`) because their
-argparse default is a `None` sentinel; three are REQUIRED and named by their own refusal
+argparse default is a `None` sentinel (the discount is PAIRED with the critic — `critic_mode.critic_gamma`,
+winprob 1.0 / shaped 0.9999; a typed non-1.0 gamma under winprob is REFUSED, and the launch prints
+`[Critic] gamma=… — <source>`); three are REQUIRED and named by their own refusal
 (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because
 theirs are concrete and an implication could not be told apart from an overwrite. Everything the
 mode SUBSUMES is refused rather than ignored. `python -m main.checkargs` reports every one offline.

@@ -132,6 +132,11 @@ def _val(args, dest: str, default: Any) -> Any:
     return default if value is None else value
 
 
+def _winprob_gamma() -> float:
+    from agents.model.critic_mode import CRITIC_WINPROB, critic_gamma
+    return critic_gamma(CRITIC_WINPROB)
+
+
 def _winprob(args) -> bool:
     """Is this the WIN-PROB critic? Read through the ONE predicate, never a string compare here."""
     from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
@@ -625,6 +630,21 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    "sigmoid(logit) in [0,1], so the two agree at exactly one scale. At 1.0 the "
                    "return IS the win indicator and V(s) == P(win|s) with no approximation term "
                    "-- the identity the whole mode rests on.")),
+    CombinationCheck(
+        # Cutover loose end 2 (2026-09-30): the critic -> discount PAIRING (`critic_mode.critic_gamma`).
+        # `resolve_critic_mode` IMPLIES 1.0 and its docstring hands a TYPED value to this module to
+        # judge — which had no gamma row, so `--critic winprob --gamma 0.99` launched with the
+        # identity broken. Every winprob run in models/ trained at 1.0; the shaped critic's gamma is
+        # its own tunable (no row here). An UNTYPED mismatch is `resolve_config`'s pairing guard.
+        "winprob_critic_needs_unit_gamma", ("critic", "gamma"),
+        lambda a: _winprob(a) and getattr(a, "gamma", None) is not None
+        and float(a.gamma) != _winprob_gamma(),
+        lambda a: (f"--critic winprob requires --gamma {_winprob_gamma():g} (got {float(a.gamma):g}). "
+                   "The discount is PAIRED with the critic (agents.model.critic_mode.critic_gamma): "
+                   "with the terminal-only indicator reward and the 250-turn hard cap, V(s) == "
+                   "P(win|s) holds exactly only at gamma 1 -- at 0.9999 over 250 turns the return is "
+                   "discounted by 0.975, the same order as the calibration error this critic exists "
+                   "to remove. Drop --gamma (it is implied) or pass --gamma 1.0.")),
     CombinationCheck(
         # Owner amendment, 2026-09-06 (design_winprob_only_critic.md §3.7). The SELF-phi shape,
         # refused for a REASON rather than deferred: with V == phi the shaping term IS the

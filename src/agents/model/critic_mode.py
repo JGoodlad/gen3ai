@@ -44,3 +44,24 @@ def is_winprob(mode: object) -> bool:
     """Is `mode` the win-prob critic? Accepts anything stringable, so a namespace / config / policy
     attribute read with a `getattr(..., 'critic', 'shaped')` default answers without a cast."""
     return str(mode) == CRITIC_WINPROB
+
+
+#: The win-prob critic's discount — an IDENTITY, not a tuning: with a terminal-only indicator reward
+#: and a 250-turn hard cap, V(s) == P(win | s) exactly at gamma = 1 (see `--gamma`'s help).
+WINPROB_GAMMA = 1.0
+
+
+def critic_gamma(mode: object) -> float:
+    """THE CRITIC -> DISCOUNT PAIRING, declared once: the `--gamma` an UNTYPED flag resolves to
+    under `mode`. ``winprob`` -> `WINPROB_GAMMA` (1.0); ``shaped`` -> `reward_weights.PBRS_GAMMA`
+    (0.9999, the historical PPO gamma — every shaped and pre-critic run in `models/` trained at it,
+    incl. the shaped ladder controls that otherwise took the win-prob reward values).
+
+    Read by `resolve_critic_mode` / `resolve_config` (the launch), `recipe_surface` (a TYPED
+    `--critic` under `--arch production` gets ITS critic's discount, never `recipe.fresh`'s) and
+    `combination_checks` (`--critic winprob` refuses any other gamma). Lazy import: this module stays
+    torch-free, and `reward_weights` is pure constants."""
+    if is_winprob(mode):
+        return WINPROB_GAMMA
+    from agents.training.reward_weights import PBRS_GAMMA
+    return float(PBRS_GAMMA)

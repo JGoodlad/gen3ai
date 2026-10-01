@@ -148,6 +148,7 @@ _WP = ["--critic", "winprob", "--terminal-indicator",
        "--victory-value", "1.0", "--draw-penalty", "0"]
 
 ARGVS: dict[str, list[str]] = {
+    "winprob_critic_needs_unit_gamma": _WP + ["--gamma", "0.99"],
     "arch_umbrella_is_fresh_only": ["--arch", "production", "--model", "models/p/final_model.zip"],
     "adaptive_batch_target_positive": ["--adaptive-batch", "total", "--adaptive-batch-target", "0"],
     "adaptive_batch_band_above_one": ["--adaptive-batch", "total", "--adaptive-batch-band", "1.0"],
