@@ -55,6 +55,8 @@ import torch
 from main.exit_codes import FatalConfigError
 
 FATAL_TAG = "[LearnerLifecycle] FATAL"
+#: The memory half's tag: a STOP the launcher restarts (capped), not a FATAL configuration error.
+STOP_TAG = "[LearnerLifecycle] STOP"
 
 #: Frames kept per recorded construction site (innermost first after the filter below).
 _SITE_FRAMES = 6
@@ -67,12 +69,13 @@ class LazyAcquisitionError(FatalConfigError):
     AFTER the freeze. Deterministic, so single-shot: exit `FATAL_CONFIG` (3), not restarted."""
 
 
-class CudaMemoryLeakError(FatalConfigError):
+class CudaMemoryLeakError(RuntimeError):
     """The memory half (`gen3_cuda_memory_trend_v1`): a SUSTAINED growth of the learner process's
     live CUDA memory projects an out-of-memory inside the declared horizon (`cuda_memory_trend`'s
     STOP). Raised at an update's end, so the trainer's exception handler saves
-    `final_model_exception.zip` (the checkpoint) before the process exits `FATAL_CONFIG` (3) — the
-    launcher does not restart, because a restart would replay the same leak into the same OOM."""
+    `final_model_exception.zip` (the checkpoint) before the process exits `FATAL_CUDA_LEAK` (6) —
+    NOT a configuration error: a fresh process clears a leak, so the launcher RESTARTS from that
+    checkpoint, at most `exit_codes.CUDA_LEAK_RESTART_CAP` times per session, then stops for good."""
 
 
 # ------------------------------------------------------------------------------------------- sites
@@ -528,7 +531,7 @@ class CudaMemoryWatch:
         if v.level in ("WARN", "STOP") and v.changed and self.emit is not None:
             self.emit(v.message)
         if v.level == "STOP":
-            raise CudaMemoryLeakError(f"{FATAL_TAG} — CUDA MEMORY LEAK: {v.message}")
+            raise CudaMemoryLeakError(f"{STOP_TAG} — CUDA MEMORY LEAK: {v.message}")
 
 
 def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None,
@@ -542,8 +545,8 @@ def attach(model: Any, *, emit: Optional[Callable[[str], None]] = None,
         `FatalConfigError`: the trainer's fail-fast handler exits FATAL_CONFIG, not restarted);
       * `learn()`'s exit RELEASES (the in-process final evaluation is not the steady state);
       * on CUDA, the MEMORY half (`CudaMemoryWatch`) starts at the freeze and samples after every
-        rollout and update — a projected OOM is `CudaMemoryLeakError` (FATAL_CONFIG, after the
-        trainer's handler saved `final_model_exception.zip`).
+        rollout and update — a projected OOM is `CudaMemoryLeakError` (exit FATAL_CUDA_LEAK after
+        the trainer's handler saved `final_model_exception.zip`; the launcher restarts it, capped).
 
     The three wrappers are in `_excluded_save_params` via `_learner_freeze` (see the hub)."""
     freeze = LearnerFreeze(model, emit=emit)

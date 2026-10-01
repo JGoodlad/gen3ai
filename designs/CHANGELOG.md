@@ -10378,3 +10378,13 @@ if a lazy build is reintroduced.
   scalar reads 66,784 → 9,942 per update; 0 compiles after the lock
   (`research_state/measurements/k6_k8/acceptance/`).
 
+## 2026-10-01 — K6: a CUDA-leak STOP has its own exit code, and the launcher restarts it (capped) (`FATAL_CUDA_LEAK` = 6; no model change)
+
+- `CudaMemoryLeakError` is no longer a `FatalConfigError`: it maps to the new
+  `TrainExitCode.FATAL_CUDA_LEAK` (6) (`[LearnerLifecycle] STOP — CUDA MEMORY LEAK: …`). Exit 3 sent
+  triage to the argv and made the launcher stop for good, though the trainer had just checkpointed
+  and a fresh process clears a leak.
+- The launcher RESTARTS a code-6 exit from that checkpoint with a loud event, at most
+  `exit_codes.CUDA_LEAK_RESTART_CAP` (2) times per session (independent of
+  `--max-crash-restarts`), and stops for good on the next one (`cuda_leak_exit_test.py`).
+

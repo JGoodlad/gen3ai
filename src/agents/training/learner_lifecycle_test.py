@@ -348,8 +348,9 @@ def test_the_memory_half_STOPS_a_sustained_leak_with_a_typed_FATAL_and_logs_ever
     w = _watch(m, 40, lines)
     with pytest.raises(LL.CudaMemoryLeakError) as ei:
         _drive(m, w, 200)
-    assert exit_code_for(ei.value) == int(TrainExitCode.FATAL_CONFIG)
-    assert "CUDA MEMORY LEAK" in str(ei.value) and LL.FATAL_TAG in str(ei.value)
+    # its OWN code — not FATAL_CONFIG: a leak is no configuration error, and the launcher restarts it
+    assert exit_code_for(ei.value) == int(TrainExitCode.FATAL_CUDA_LEAK)
+    assert "CUDA MEMORY LEAK" in str(ei.value) and LL.STOP_TAG in str(ei.value)
     assert sum("[CudaMemTrend]" in x for x in lines) >= 5          # the projection, every window
     assert "lifecycle/cuda_floor_mib" in m.rec and "lifecycle/cuda_updates_to_ceiling" in m.rec
 

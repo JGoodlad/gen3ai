@@ -21,6 +21,19 @@ class TrainExitCode(IntEnum):
                                  # label accepted for N cycles, or the label producer exited). A
                                  # restart would train the same run on the same missing supply, so
                                  # the launcher STOPS and names the supplier.
+    FATAL_CUDA_LEAK = 6          # the learner's CUDA memory TREND stopped the run (`CudaMemoryLeakError`,
+                                 # K6's memory half): a SUSTAINED growth of live CUDA memory projected
+                                 # an OOM inside the declared horizon, and the trainer checkpointed
+                                 # (`final_model_exception.zip`) before exiting. A fresh process clears
+                                 # a leak by definition, so the launcher RESTARTS from that checkpoint —
+                                 # at most `CUDA_LEAK_RESTART_CAP` times per launcher session, each one
+                                 # logged loudly; the next one STOPS for good (a reproducible leak that
+                                 # wants a human).
+
+
+#: How many CUDA-leak stops the launcher restarts per session before it gives up (orchestrator,
+#: 2026-10-01: "a small cap per run").
+CUDA_LEAK_RESTART_CAP = 2
 
 
 class NonFiniteLearnerError(FloatingPointError):
@@ -59,6 +72,8 @@ class SupplyStarvedError(RuntimeError):
 #: by NAME so this module imports nothing from ``agents``.
 #:
 #: * ``NonFiniteLearnerError`` — K9's learner guard (a restart replays the update).
+#: * ``CudaMemoryLeakError`` — K6's memory trend STOP (`agents.training.learner_lifecycle`): NOT a
+#:   configuration error, and RESTARTED (capped) by the launcher — see ``FATAL_CUDA_LEAK``.
 #: * ``NonFiniteWeights`` — the T2 inference service refused a NaN / Inf weight set (the trainee after
 #:   an update, a snapshot, a checkpoint template). A restart resumes the same weights.
 #: * ``ParityFailure`` (and its ``VacuousParity``) — the T2 inference service's parity gate refused a
@@ -68,6 +83,7 @@ class SupplyStarvedError(RuntimeError):
 #:   ``~/gen3ai_archive/cutover_prep/fresh3`` crash-looped three times on one `VacuousParity`
 #:   before the circuit breaker stopped it.
 _FATAL_BY_NAME = {"NonFiniteLearnerError": TrainExitCode.FATAL_NONFINITE,
+                  "CudaMemoryLeakError": TrainExitCode.FATAL_CUDA_LEAK,
                   "NonFiniteWeights": TrainExitCode.FATAL_NONFINITE,
                   "SupplyStarvedError": TrainExitCode.FATAL_SUPPLY,
                   "FatalConfigError": TrainExitCode.FATAL_CONFIG,

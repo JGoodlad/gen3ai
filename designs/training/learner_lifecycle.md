@@ -148,10 +148,12 @@ freeze guard (so every launch that arms the lifecycle has it; inert off CUDA):
   ceiling, slope, updates to the ceiling, reserved, device free, segments, retries, OOMs); a WARN
   that changes between closes is printed when it happens, and a changed WARN or the STOP also goes
   to the launcher's event channel;
-- a STOP raises `CudaMemoryLeakError` (a `FatalConfigError`, `[LearnerLifecycle] FATAL — CUDA
-  MEMORY LEAK: …`) at the update's end; the trainer's exception handler saves
-  `final_model_exception.zip` (the checkpoint) and the process exits FATAL_CONFIG (3), which the
-  launcher does not restart (a restart would replay the leak).
+- a STOP raises `CudaMemoryLeakError` (`[LearnerLifecycle] STOP — CUDA MEMORY LEAK: …`; NOT a
+  configuration error) at the update's end; the trainer's exception handler saves
+  `final_model_exception.zip` (the checkpoint) and the process exits `FATAL_CUDA_LEAK` (6). A fresh
+  process clears a leak, so the launcher RESTARTS from that checkpoint, loudly, at most
+  `exit_codes.CUDA_LEAK_RESTART_CAP` (2) times per session, and stops for good on the next one
+  (orchestrator, 2026-10-01; `src/main/launcher/cuda_leak_exit_test.py`).
 
 `learner_lifecycle_test` drives it with a synthetic sampler: a 40 MiB/update leak against 1 GiB of
 headroom STOPS with the typed FATAL after logging the projection at every window; a flat floor and a

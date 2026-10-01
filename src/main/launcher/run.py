@@ -22,7 +22,7 @@ import threading
 import time
 from dataclasses import dataclass
 
-from main.exit_codes import TrainExitCode
+from main.exit_codes import CUDA_LEAK_RESTART_CAP, TrainExitCode
 from main.launcher.checkpoint import (
     find_latest_checkpoint,
     run_dir_for_checkpoint,
@@ -505,6 +505,7 @@ def _supervise(
             on_tick(state.snapshot())
 
     consecutive_fast_crashes = 0
+    cuda_leak_stops = 0   # FATAL_CUDA_LEAK exits this session (restarted up to CUDA_LEAK_RESTART_CAP)
 
     while True:
         if shutdown is not None and shutdown.is_set():
@@ -625,11 +626,41 @@ def _supervise(
             time.sleep(1)
             return 0
 
+        # K6's CUDA memory trend STOPPED the child (`CudaMemoryLeakError`): it checkpointed
+        # (`final_model_exception.zip`) before exiting, and a fresh process clears a leak, so RESTART
+        # from that checkpoint — loudly, at most CUDA_LEAK_RESTART_CAP times this session; the next
+        # one is a reproducible leak that wants a human, and the launcher stops for good.
+        leak_restart = False
+        if rc == int(TrainExitCode.FATAL_CUDA_LEAK):
+            cuda_leak_stops += 1
+            state.crash_count += 1
+            err_path = _save_crash_log(run_dir, state, rc)
+            saved = (f" — saved {os.path.join('crashes', os.path.basename(err_path))}"
+                     if err_path else "")
+            found = [s for s in (l.strip() for l in state.snapshot().log_lines)
+                     if "CUDA MEMORY LEAK" in s][-1:]
+            if cuda_leak_stops > CUDA_LEAK_RESTART_CAP:
+                state.add_event(f"🛑 CUDA memory leak STOP #{cuda_leak_stops} — over the cap of "
+                                f"{CUDA_LEAK_RESTART_CAP} restarts this session: a reproducible leak, "
+                                f"will NOT restart{saved}")
+                for line in found:
+                    state.add_event(f"   {line[:300]}")
+                _tick()
+                time.sleep(2)
+                atexit.register(_print_crash_log, state.snapshot().log_lines)
+                return rc
+            state.add_event(f"⚠️  CUDA memory leak STOP #{cuda_leak_stops} of "
+                            f"{CUDA_LEAK_RESTART_CAP} restartable — RESTARTING from the checkpoint "
+                            f"the trainer saved{saved}")
+            for line in found:
+                state.add_event(f"   {line[:300]}")
+            leak_restart = True
+
         # A non-recoverable config/architecture error (checkpoint arch-family mismatch,
         # vf_coef / reward-config drift): restarting would deterministically hit the SAME
         # error, so give up immediately with the reason on-screen rather than burning the
         # crash circuit-breaker and forcing the user to open the logs to find out why.
-        fatal_reason = _fatal_config_reason(rc, state.snapshot().log_lines)
+        fatal_reason = None if leak_restart else _fatal_config_reason(rc, state.snapshot().log_lines)
         if fatal_reason:
             state.crash_count += 1
             err_path = _save_crash_log(run_dir, state, rc)
@@ -651,7 +682,7 @@ def _supervise(
         # An INTENDED restart (user 'r' or launcher force-kill) recovers regardless of the
         # exit code; a self-crash (unintended non-INTERRUPTED exit) auto-restarts from the
         # last checkpoint, guarded by the consecutive-rapid-crash circuit-breaker.
-        intended_restart = flags.forced_restart or flags.restart_requested
+        intended_restart = flags.forced_restart or flags.restart_requested or leak_restart
         crashed = not intended_restart and rc != TrainExitCode.INTERRUPTED
 
         if crashed:

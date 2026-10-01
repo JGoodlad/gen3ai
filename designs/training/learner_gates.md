@@ -284,7 +284,7 @@ the leak. Fragmentation and one-off step-ups are expected and never stop a run. 
 WIRED** (`learner_lifecycle.CudaMemoryWatch`, attached with the freeze guard — see
 [`learner_lifecycle.md`](learner_lifecycle.md) "The memory half": a sample after every rollout and
 every update, the projection logged + recorded at every window close, a STOP raising
-`CudaMemoryLeakError` — `final_model_exception.zip` saved, exit FATAL_CONFIG, not restarted).
+`CudaMemoryLeakError` — `final_model_exception.zip` saved, exit `FATAL_CUDA_LEAK` (6), restarted by the launcher from that checkpoint at most twice per session).
 
 **What it reads.** Once per update `sample_cuda(device, update=, phase=)` takes
 `torch.cuda.memory_stats` (allocated, reserved, active, inactive-split, segments, `num_alloc_retries`,
