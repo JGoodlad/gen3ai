@@ -133,7 +133,8 @@ quotable until the quiet re-runs.**
 | arm | run | pin | launched | status |
 |---|---|---|---|---|
 | pre-flight N = 48 | `~/gen3ai_archive/m5_sizing_preflight/n48` | worktree at `f609e956` | 08:35 | PASSED: one update, `train_ms` 47 s (first update), peak RSS 13.7 GB, T2 up 164 s (31 slots: 24 pool + trainee + 6 eval) |
-| A | `sizing_A_n48_e10_s1001` | `f9349f95` | 08:51 (GPU 08:56) | DONE 10:24, 8,062,355 steps / 82 updates; descriptors `results/arm_A_descriptors.json`; meters PENDING |
+| A (DESCRIPTOR only, D-9) | `sizing_A_n48_e10_s1001` | `f9349f95` | 08:51 (GPU 08:56) | DONE 10:24, 8,062,355 steps / 82 updates; `results/arm_A_descriptors.json`; meters last in the queue |
+| A2 (the control) | `sizing_A2_n48_e10_s1001` | `277f318f` | 13:13 (GPU ~13:15) | DONE 15:03, 8,130,046 steps (one K9(b) crash-restart from 4,000,032; the complete-game trigger overshot the target by 0.85 %); `results/arm_A2_descriptors.json`; meters RUNNING |
 
 ## D-6 — the MEMORY constraint on N\* (declared 2026-10-01 ~09:20, before any N\* > 48 is launched)
 
@@ -228,11 +229,11 @@ floor 851 MiB. `cuda_ooms` 0, alloc retries 0. The compositor holds ~0.5 GB of t
 | unit | start | end (projected) | GPU lock released after |
 |---|---|---|---|
 | quiet re-runs 256 / 512 / 1024 / 2048 (relaunched after `95af710e`) + threads 1024 | 12:18 | ~13:20 | each unit |
-| A2 (N = 48, E10, `277f318f`) | ~13:25 | ~15:10 | yes (2 min gap) |
-| memory pre-flight at N\* = 256 (≤ 20 min hold) | ~15:15 | ~15:35 | yes |
-| B (N\*, E10) | ~15:40 | ~17:10 | yes (2 min gap): **the switch-prep holds fit here (~17:10–17:50)** |
-| C (N\*, E5) | ~17:55 | ~19:10 | yes |
-| A′ (N = 48, E10, seed 1002) | ~19:15 | ~21:00 | yes |
+| A2 (N = 48, E10, `277f318f`) | 13:13 (GPU ~13:15) | ~15:00 | yes, then a bounded drain (≤ 45 min): **K8's two memory launches (N = 48 and N = 256 with X26 heads) go here** |
+| memory pre-flight at N\* = 256 (≤ 20 min hold) | ~15:40 | ~16:00 | yes, then drain |
+| B (256, E10) | ~16:05 | ~17:35 | yes, then drain: **the switch-prep holds go here (~17:35–18:15)** |
+| C (256, E5) | ~18:20 | ~19:35 | yes, then drain |
+| A′ (N = 48, E10, seed 1002) | ~19:40 | ~21:25 | yes |
 - **Orphan unit (benign):** killing the first chain_q instance at 11:50 left its child `part_t.sh abq 512`
   waiting for the quiet precondition, and it ran at 12:06 on the rebased `277f318f` tree. The gate slot
   serialises it with the new chain's units, and the new chain skips 512 on its ok row. Lesson: kill a
@@ -313,3 +314,99 @@ UNVERIFIED). The host thread is far from saturated (0.5–0.6 core). So at large
 by the env core's per-step work on 8 physical cores plus the serial GPU wait. It is neither a single
 host thread nor the whole box. More core threads are not a lever worth taking (+4 %). Overlapping the
 core step with inference (O5) and a cheaper core step are.
+- **D-11 (orchestrator 2026-10-01 ~14:30):** after every arm, the chain drains the GPU lock before
+  re-taking it: ≤ 45 min, ending once the lock reads free on 3 checks 60 s apart (`chain_l.sh`
+  `drain()`). Projected times are in the table above.
+- **F-SZ-8 (MAJOR, reported 2026-10-01 14:20): a K9(b) FATAL in A2.** At 4,523,248 steps (update 46),
+  fp32: 1 of 1,024 current-version rows had |Δ log π| = 0.0389 (row 660, action 9, mask 00000001110:
+  only 3 legal actions). Everything else agreed: p99 2.6e-6, next row 4.5e-6. The fp32 rule (max <
+  1e-4, FATAL on 1 update) killed the update.
+  - The launcher crash-restarted from `checkpoint_4000032` at 14:02. The R1 gate passed on trained
+    weights, the first real-restart evidence for `c0664251`. A2 continues; REGISTRATION §5.5 allows a
+    resume from the checkpoint.
+  - Arm A had no such event in 82 updates. The dump
+    (`models/sizing_A2_n48_e10_s1001/behaviour_violations.jsonl`) carries no log π values, so a
+    numerically sensitive row and a localized fault cannot be told apart (UNVERIFIED).
+  - Production risk: at roughly one per 50–100 updates, a 75M run would exceed the launcher's 3 crash
+    restarts. Routed to the K9 owner.
+- **D-12 (orchestrator 2026-10-01 ~14:25):** B, C and A′ stay pinned at `277f318f`. A K9(b) recurrence
+  costs one crash-restart (3 allowed), which §5.5 accepts. An arm that exhausts its restarts is
+  INCONCLUSIVE and goes to the orchestrator. The check is never loosened for the study.
+
+### K9(b) events per arm (for a measured rate)
+
+| arm | step | update | row | \|Δ log π\| | action / mask | outcome |
+|---|---|---|---|---|---|---|
+| A (f9349f95) | — | — (82 updates) | — | — | — | none |
+| A2 (277f318f) | 4,523,248 | 46 | 660 | 0.0389 | 9 / 00000001110 | crash-restart from 4,000,032 |
+- **D-13 (orchestrator 2026-10-01 ~14:35):** the drain after A2 is raised to ≤ 60 min (still ending
+  early). It lets three K8 holds go first: the K9(b) root-cause sweep (≤ 14 min, which decides whether
+  the arms' K9(b) restarts are noise or a fault), then the N = 48 and N = 256 memory launches. The
+  256 pre-flight moves to ~16:00 and B to ~16:25; the later boundaries shift by ~+20 min.
+
+### Arm A2 descriptors (N = 48, E10, `277f318f`)
+
+- `train_ms` median 40.2 s [IQR 40.1–42.5]; update cycle median 56.0 s. This agrees with A's 41.0 s,
+  so U_E10 ≈ 40–41 s.
+- KL controller: 3e-4 → 4.32e-4 (as A). approx-KL mean 0.012, clip fraction mean 0.15.
+- Stale share 1.07 %. Age-1: |r − 1| 0.10, 22 % outside the clip band (as A).
+- Noise scale (policy): 2.2k–13.6k over 1–8M.
+- **Memory: the floor stays 828–851 MiB with the pool filling.** F-SZ-6's per-snapshot step is GONE
+  on `277f318f` (the declared slot load keeps snapshots on the CPU). Demand 9,398 MiB; device free
+  1,298 MiB; ceiling − demand 785 MiB. 0 OOM / retries / segments after freeze.
+- The canary never ran in this window (cadence 100 > 87 updates).
+- **F-SZ-9 (BLOCKER, 2026-10-01 ~15:55, reported 16:25): the N = 256 memory pre-flight OOMs at its FIRST
+  UPDATE with the ride-along heads OFF** (fresh `--arch production`, fp32, `277f318f`, buckets
+  (8, 16, 32, 256)). It died in the learner's compiled micro-step at batch 2,048, in SDPA efficient
+  attention: "Tried to allocate 62 MiB … 37.5 MiB free … process 11.06 GiB in use, 9.91 GiB
+  allocated" (`~/.cache/gen3ai/tmp/sizing/preflight_n256.log`).
+  - The K8 owner measured the heads-ON configuration OOMing at N = 256 too, with T2's graph pools
+    +2.2 GiB reserved over N = 48.
+  - Per the orchestrator, NO silent fallback to a smaller N: B and C wait for the memory fix (device
+    batch off/chunked, the T2 pool reserve; learning-neutral), being built by another agent.
+  - **N\\* = 256, subject to the memory fix for the production configuration.**
+  - ~30 min were lost to an expired monitor between the failure and its notice.
+- **D-14 (proposed default, 16:25):** run A′ (N = 48) now, while the fix is built, then B and C at
+  the fix's commit. The meter queue is reordered: A′, A, B, C.
+- **D-15 (orchestrator 2026-10-01 ~16:35): A′ APPROVED and launched now** (N = 48, seed 1002, pin
+  `277f318f`). B and C wait for the memory fix and are pinned at its commit. That pin difference
+  from A2 counts as learning-neutral ONLY if the fix commit shows (i) the K9 learner golden
+  UNCHANGED and (ii) T2 parity holding. Both are checked and recorded here before B launches. A fix
+  that needs a smaller micro-batch is a recipe change, and the orchestrator decides it.
+- **D-16 (orchestrator 2026-10-01 ~16:36):** the switch-prep agent takes the GPU for its N = 48
+  pre-flight #2 (≤ 40 min). A′ had already taken the lock at 16:32 (3 min into startup). It was stopped
+  by PID (SIGTERM to its `timeout`; the launcher stopped the child), and its partial run dir was moved
+  aside to `models/sizing_Ap_n48_e10_s1002.aborted_1632` (no checkpoint, never trained). A′ relaunches
+  under `chain_ap.sh` after a ≤ 60 min drain.
+
+| unit (revised 16:40) | start | end (projected) |
+|---|---|---|
+| switch-prep pre-flight #2 (other lane) | 16:37 | ~17:15 |
+| A′ (N = 48, E10, seed 1002, `277f318f`) | ~17:20 | ~19:05 |
+| B, C (256) | after the memory fix lands and its two proofs (K9 golden unchanged, T2 parity) are recorded | — |
+| meters | old A now; A′ ~19:10; B / C after their arms | — |
+- **Memory-fix status (from the memfit agent, ~17:15):** ETA ~2.5–3.5 h. Measured at N = 256: each T2
+  lane's private graph pool is 232 MiB (~1.81 GiB over 8 lanes); the ride-along heads are stacked in
+  every slot (18.2 MiB × 31 ≈ 565 MiB unread).
+  - Levers, all numerically identical: (a) a staged device batch instead of the 1.1 GiB resident
+    one; (b) T2 slots without the ride-along heads; (c) per-slot bucket caps (only the trainee lane
+    captures the N bucket), expected ~1.3 GiB.
+  - A new startup gate, `update_fit`, refuses at the first update unless (reserved + free) − peak
+    ≥ 1,024 MiB.
+  - Asked of the fix commit: the two proofs (K9 golden unchanged, T2 parity per slot × bucket at 256);
+    the N = 256 heads-OFF numbers; `update_fit` ON by default; and opponent slots must SERVE the
+    small-pool regime (1–3 snapshots ⇒ ~80–240 rows per slot) by chunking, not refuse it.
+- **D-17 (orchestrator 2026-10-01 ~17:25): critical-path GPU work goes BEFORE A′.** B and C cannot
+  run until the memory fix lands, so A′'s place in the order costs the study nothing. Lock order: the
+  ride-along fix's proof → the switch resume → the memory agent's ≤ 3 holds → the K9(b) determinism
+  sweep (~20 min) → A′ → B and C at the memory-fix commit. A′'s drain is bounded at 120 min (was 60)
+  and waits until nothing is waiting on `gpu_lock`.
+
+| unit (revised 17:25) | start | end (projected) |
+|---|---|---|
+| other lanes' critical-path holds | now | ~19:15 |
+| A′ (N = 48, E10, seed 1002) | ~19:20 | ~21:05 |
+| B (256, E10), memory-fix commit; fix ETA ~20:00–21:00 | ~21:10 | ~22:40 |
+| C (256, E5) | ~22:45 | ~23:55 |
+| meters: A′ ~21:10–22:00; B ~22:45–23:35; C ~00:00–00:50 | | |
+| **verdict** | | **~01:30 (2026-10-02)** |
