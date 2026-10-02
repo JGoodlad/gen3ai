@@ -83,6 +83,13 @@ entries naming what they supersede) → **dispatch** the next probe or build to 
   brief instead. The reason is the split the owner wants explicit rather than left to defaults:
   Fable is the expensive tier and the orchestrator's judgement is what needs it, not the agents'
   execution.
+- **Agent TIERS (owner, 2026-10-02): the types are `opus-{medium,high,xhigh}` and `sonnet-{medium,high,xhigh}`**
+  (`~/.claude/agents/*.md`, each pinning model + effort; no agent spawns above its own level or across to
+  Opus). Relative capability, Artificial Analysis Coding Agent Index v1.5 (2026-10): Opus 5.5 max 66 ·
+  Sonnet 5.5 xhigh 63 · high 55 · medium 46 · low 42. Pick the CHEAPEST tier that fits the risk:
+  `sonnet-medium` for fully specified routine edits, runs and inventories; `sonnet-high` for manifest-driven
+  deletions, test additions and judgement-light docs; `sonnet-xhigh` where depth is needed at lower cost;
+  `opus-*` for GIGO risk, parity-gated Rust crossings, pre-registrations and anything steering an era.
 - **Dispatch is standing permission, not a question** (owner, 2026-08-22, reaffirmed 2026-08-28):
   follow-ups may be CHAINED autonomously as results land, including build agents that add live
   TensorBoard instrumentation so future runs surface what a post-hoc probe would otherwise have to
