@@ -1,5 +1,5 @@
-"""Aux value readouts off value_pooled: WinProbHead, the distributional ValueDistHead, the
-EVIDENTIAL CfEvidentialHead, and the passive ShadowValueHead.
+"""Aux value readouts off value_pooled: WinProbHead, the EVIDENTIAL CfEvidentialHead, and the
+passive ShadowValueHead.
 
 Split out of `features_extractor.py` 2026-08-16 (one responsibility per file); that module
 re-exports every name here, so historical import paths still resolve.
@@ -16,8 +16,8 @@ from agents.model.arch_constants import (D_MODEL,
 class WinProbHead(torch.nn.Module):
     """Auxiliary WIN-PROBABILITY readout — a calibrated P(win | state) the shaped critic can't give.
 
-    The dual-head value (`value_pooled`) estimates expected *shaped* return (material Φ + PBRS terms +
-    terminal, PopArt-normalised) — NOT a probability and not interpretable as win odds. This head reads
+    The dual-head value (`value_pooled`) estimates expected return in the run's reward units under the
+    shaped critic — NOT a probability and not interpretable as win odds. This head reads
     the same whole-board `value_pooled` summary and emits ONE logit; sigmoid(logit) = P(win). It is
     supervised (in `instrumented_ppo`) by the Monte-Carlo episode OUTCOME (win=1 / loss=0) propagated to
     every step of the episode, so it learns the actual probability the current state leads to a win — and
@@ -47,61 +47,6 @@ class WinProbHead(torch.nn.Module):
         return self.net(value_pooled)  # type: ignore[no-any-return]
 
 
-class ValueDistHead(torch.nn.Module):
-    """Distributional VALUE readout — an INTERPRETABILITY side head over the return distribution.
-
-    The scalar critic emits one number, E[Z] (expected shaped return). This head reads the same
-    whole-board `value_pooled` summary and emits `bins` logits over a FIXED atom support
-    `linspace(vmin, vmax, bins)`: `softmax(logits)` is the critic's predicted return DISTRIBUTION,
-    not just its mean. That distribution is what makes "how is the model predicting" legible — a
-    sharp spike = confident, a wide spread = uncertain, a bimodal shape = the critic sees a coinflip
-    (e.g. "I win if this move hits, else I lose") — all invisible in the scalar V that collapses
-    every shape to one mean. The categorical HL-Gauss parameterization (Phase A side head) is the
-    `WinProbHead` pattern applied to the value target. Design:
-    `designs/ai_v6/design_distributional_value_critic.md`.
-
-    SIDE readout, leak-safe: the logits are stashed at `features_extractor.last_value_dist_logits`
-    and read ONLY by the (future) aux loss + the offline prober/eval — NEVER concatenated into pi/vf,
-    so the projection dims are unchanged either way (off byte-for-byte). The tri-state
-    `value_dist_mode` controls the GRADIENT at the call site (`read_only` feeds a STOP-GRAD
-    `value_pooled` — a pure, risk-free diagnostic that can't perturb the policy; `shaping` feeds it
-    live so the distributional objective also shapes the shared trunk). `none` = this module is not
-    built (the chain is byte-for-byte the baseline). The `atoms` buffer is non-persistent
-    (deterministic from `bins`/`vmin`/`vmax`) so it stays out of the state_dict — only the head's
-    params (whose final Linear is `bins`-wide) define the loadable shape."""
-
-    atoms: torch.Tensor
-
-    def __init__(self, bins: int, vmin: float, vmax: float):
-        super().__init__()
-        if bins <= 0:
-            raise ValueError(f"ValueDistHead bins must be > 0, got {bins}")
-        if not vmax > vmin:
-            raise ValueError(f"ValueDistHead requires vmax > vmin, got vmin={vmin}, vmax={vmax}")
-        self.bins = bins
-        # Small MLP off the value pool: LayerNorm → Linear → ReLU → Linear(→bins) — the WinProbHead
-        # bottleneck, widened from 1 logit to `bins` (a categorical head over the return support).
-        self.net = torch.nn.Sequential(
-            torch.nn.LayerNorm(D_MODEL),
-            torch.nn.Linear(D_MODEL, D_MODEL),
-            torch.nn.ReLU(),
-            torch.nn.Linear(D_MODEL, bins),
-        )
-        # Fixed atom support, non-persistent (deterministic from bins+range → out of the state_dict,
-        # like the damage_tables buffers). Read by the loss (target projection) + the prober (atoms →
-        # return units) + `mean()` below; the head's forward only needs the net.
-        self.register_buffer("atoms", torch.linspace(vmin, vmax, bins), persistent=False)
-
-    def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:
-        """value_pooled [B, D_MODEL] → per-atom logits [B, bins] (softmax ⇒ return distribution)."""
-        return self.net(value_pooled)  # type: ignore[no-any-return]
-
-    def mean(self, logits: torch.Tensor) -> torch.Tensor:
-        """E[Z] = Σ atomsᵢ·softmax(logits)ᵢ — the scalar the distribution implies, [B, 1]. (Used by
-        the prober / diagnostics; the Phase-A side head does NOT feed this into the scalar critic.)"""
-        return (torch.softmax(logits, dim=-1) * self.atoms).sum(-1, keepdim=True)
-
-
 class CfEvidentialHead(torch.nn.Module):
     """EVIDENTIAL readout — a **Beta posterior** over P(win|state), not a point estimate.
 
@@ -127,7 +72,7 @@ class CfEvidentialHead(torch.nn.Module):
     SIDE readout, and ALWAYS-DETACHED at the call site. It feeds nothing forward — no pi, no vf, no
     other head — and its input is `value_pooled.detach()` unconditionally, so it is a pure
     supervised READOUT that cannot shape the trunk at any coefficient. That is a stronger contract
-    than `WinProbHead`/`ValueDistHead`, whose tri-state modes allow a shaping variant; here there is
+    than `WinProbHead`, whose tri-state mode allows a shaping variant; here there is
     deliberately no such mode. The module is not called from the extractor forward at all — the
     training-side loss applies it to the stashed `value_pooled` — so building it changes the
     state_dict and NOTHING else, and it is built LAST in `__init__` so no earlier module's
@@ -227,13 +172,8 @@ class ShadowValueHead(torch.nn.Module):
     evidence — how far the live critic's V drifts from a tight-MC return on the same states — as a
     published number rather than an argument.
 
-    THE FRAME (read this before quoting the head's output). Under PopArt the live critic trains in
-    NORMALIZED space, so this head does too: its raw output is the **normalized** value, its loss is
-    MSE against ``popart.normalize(mc_return)``, and a real-unit read is
-    ``popart.denormalize(out)``. With PopArt off both maps are the identity and the head's output is
-    already real-unit shaped return. That mirrors ``_value_distill_mse``'s frame handling for the
-    same reason: the coefficient must be scale-comparable with the value loss, and a raw-unit MSE
-    against a normalizer that moves is a moving target.
+    THE FRAME. PopArt is deleted, so the head's output is in real return units and its loss is a raw
+    MSE against ``mc_return``.
 
     THE UNITS OF THE LABEL are the run's own **shaped** return — Σ γᵏ r, with r produced by the
     run's `RewardConfig`. A shaped return is a fact about a board *under a reward composition*, so
@@ -259,7 +199,5 @@ class ShadowValueHead(torch.nn.Module):
         )
 
     def forward(self, value_pooled: torch.Tensor) -> torch.Tensor:
-        """value_pooled [B, D_MODEL] → the predicted value [B, 1], in the PopArt-NORMALIZED frame
-        when the run uses PopArt (see the class docstring) and in real shaped-return units when it
-        does not."""
+        """value_pooled [B, D_MODEL] → the predicted value [B, 1], in real return units."""
         return self.net(value_pooled)  # type: ignore[no-any-return]

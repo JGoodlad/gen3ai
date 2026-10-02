@@ -28,7 +28,7 @@ Grouped into the four tiers the contract asserts:
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `t0_species_prior`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` (opt-in) |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `history_events` (H-B event seats, opt-in), `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool` (which also owns the two token-content critic injections), `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat` (opt-in) |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head` |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head` |
 
 **The ordering is an ASSERTED INVARIANT, not a convention** — `tier_contract.py` declares a tier per
 module and `tier_contract_test.py` runs a real forward under instrumentation, checking (a) tier
@@ -129,8 +129,7 @@ narrow. Both projection input dims are STATIC ARITHMETIC (`gen3_static_widths_v1
 `ProjectionAssembler.forward`'s concat exactly. **`vf` is a CONSTANT `D_MODEL`** — the
 critic-route deletion wave retired the whole post-assembler vf tail (the seed window; the
 hidden-opp belief's vf half; the `non_matchup_rest` vf concat), so `vf_combined IS value_pooled`,
-the same tensor every critic parameterization reads — the dist head under `--value-from-dist`, and
-the win head under `--critic winprob`. That is the structural cure for the v89/M2
+the same tensor the critic reads — the win head under `--critic winprob`. That is the structural cure for the v89/M2
 orphaned-branch class rather than another instance of it: there is no second vf path left for a
 critic parameterization to bypass. Only TWO inputs still move `pi`: the layout's
 `non_matchup_rest` tail, and the hidden-opp belief pool (`k·D_MODEL`, **policy side only** — its

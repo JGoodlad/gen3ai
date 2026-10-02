@@ -177,7 +177,12 @@ def load_policy(path: str, device: str):
     """
     from sb3_contrib import MaskablePPO
 
-    return MaskablePPO.load(path, env=None, device=device)
+    from agents.model.snapshot import historical_load_kwargs
+
+    # `historical_load_kwargs` strips the policy / extractor kwargs deleted since the checkpoint was
+    # written (an ON one is REFUSED), so a current-lineage checkpoint written before a deletion
+    # still plays — a ladder session plays the model it was handed or refuses it for a stated reason.
+    return MaskablePPO.load(path, env=None, device=device, **historical_load_kwargs(path))
 
 
 def build_model_player(args, teambuilder, server_config, account):

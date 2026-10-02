@@ -40,7 +40,9 @@ _NON_FLAG_PARAMS = frozenset({"observation_space", "layout", "mappings", "log_le
 # THE SNAPSHOT — every parameter of `Gen3FeaturesExtractor.__init__` except `self`, as of v96
 # (gen3_critic_route_wave_v1: `intent_value_reduce`, `value_clock` and `value_intent` LEFT the
 # constructor with the critic routes they built, and each is now a `_DEAD_FEK_JUDGED` entry —
-# refused when a checkpoint recorded it ON, popped when OFF).
+# refused when a checkpoint recorded it ON, popped when OFF). The four `value_dist_*` kwargs LEFT it at
+# v131 (deletion pass L1, the distributional value head): `value_dist_mode` is `_DEAD_FEK_JUDGED`
+# (refused ON, popped `"none"`), the other three `_DEAD_FEK_INERT`.
 # Sorted, so a diff reads as one line added or one line removed.
 CTOR_KWARGS_V96 = frozenset({
     "attend_unrevealed_opponents", "belief_grad_mode", "cf_evidential", "cf_shadow_critic",
@@ -56,7 +58,6 @@ CTOR_KWARGS_V96 = frozenset({
     "conditional_threat_cell", "pair_value_route",
     "opp_belief_slots", "opp_intent", "opp_intent_grad_mode", "species_prior_fusion",
     "spread_belief", "spread_belief_nature", "t0_species_prior",
-    "value_dist_bins", "value_dist_mode", "value_dist_vmax", "value_dist_vmin",
     "value_entity_pool", "value_entity_pool_full", "value_threat_inject",
     "win_prob_mode", "q_winprob_mode", "value_true_team", "dense_aux",
     "ridealong_ensemble", "ridealong_rnd", "ridealong_adv", "ridealong_opp",

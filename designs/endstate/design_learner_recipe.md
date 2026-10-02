@@ -547,7 +547,7 @@ matches its control at the SAME dose is its secondary read.
   - `win_prob_lambda` = 1.0 comes from `28ece02a`, 2026-09-09.
   - Under winprob the value loss is `vf_coef` × the masked-mean BCE on the win logit (`ppo.py:767-769`).
   - `clip_range_vf` is inert under winprob.
-  - The win-prob critic refuses PopArt.
+  - PopArt, the distributional value head, `value_from_dist`, the value-tail weight and `--win-prob-coef` were DELETED (deletion pass L1, config v131; `designs/deleted_flags.md`) — there is nothing left to refuse.
 - **Ledger.**
   - λ 0.9 targets failed their replicate (L17453).
   - λ 0.95 failed its directional claim (L17578).
@@ -802,8 +802,8 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
   - `adaptive_batch`: off, which is the default, and arm A1's lever.
   - The eval regime, opponent-pool shares and temperatures, `obs_source` and `value_true_team`:
     their resolved defaults already equal N0's.
-  - The critic readouts `--critic winprob` implies (`win_prob_mode`, `value_dist_*`, PopArt):
-    implied, and `--win-prob-coef` is refused under that critic.
+  - The critic readout `--critic winprob` implies (`win_prob_mode`): implied. (`value_dist_*`, PopArt and
+    `--win-prob-coef` were deleted, L1, config v131 — they no longer exist to imply or refuse.)
 - 🚨 **5 epochs at a FRESH learning rate: MEASURED, and it LOSES (the SIZING study, 2026-10-02).** E5
   was adopted as a FORK at a frozen 5.6e-5. On a fresh launch at a KL-controlled 3e-4 it lost
   10.56 pp [−13.12, −7.94] of untaught at matched samples (arm C against arm B, §3.5). `recipe.fresh`

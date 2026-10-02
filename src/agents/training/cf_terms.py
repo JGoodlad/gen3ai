@@ -141,9 +141,9 @@ def cf_sample_and_forward(model):
     # gen3_cf_twin_heads_v1: keep the forward's `vf_features` so the SHADOW critic's divergence
     # meter can read the LIVE critic on these exact states WITHOUT paying for a second extractor
     # forward (the whole cost of this block). It is routed through the policy's own
-    # `_critic_value`, never a hand-rolled value path — that method is what handles PopArt
-    # de-normalization and the --value-from-dist route, and reading `value_net` directly would
-    # compare the shadow against a critic the run does not use.
+    # `_critic_value`, never a hand-rolled value path — that method is what routes to the run's
+    # critic, and reading `value_net` directly would compare the shadow against a critic the run
+    # does not use.
     vf_features = feats[1] if isinstance(feats, tuple) and len(feats) == 2 else None
     return CfForward(batch=batch, value_pooled=value_pooled, n_rows=len(rows),
                      vf_features=vf_features)
@@ -281,7 +281,7 @@ def cf_twin_onpolicy_terms(model, rollout_data):
     that decision. **Both twins detach unconditionally** (head-only ALWAYS in v1), which is what
     makes this a measurement of the LABEL effect on a trunk frozen with respect to them.
 
-    The weight is `win_prob_coef` — head A's own — deliberately NOT `cf_twin_coef`. The block
+    The weight is 1.0 — head A's own (the win-prob aux weight) — deliberately NOT `cf_twin_coef`. The block
     as a whole is gated on `cf_twin_coef != 0` by the caller, so at coefficient zero the twins
     take no gradient at all and every parameter update is byte-identical to not building them.
     """
@@ -302,8 +302,7 @@ def cf_twin_onpolicy_terms(model, rollout_data):
         if out is None:
             continue
         loss, m = out
-        weighted = model.win_prob_coef * loss
-        term = weighted if term is None else term + weighted
+        term = loss if term is None else term + loss
         tag = name[-1]                                   # 'b' | 'c'
         for k in ("loss", "brier", "acc"):
             if k in m:
@@ -400,23 +399,18 @@ def cf_twin_terms(model, ctx):
     metrics["loss"] = combined
     return term, metrics
 
-def cf_shadow_term(model, ctx, popart):
+def cf_shadow_term(model, ctx):
     """The SHADOW CRITIC's masked MSE against tight-MC ``mc_return`` labels.
 
     Returns ``(weighted_term, metrics)`` — ``(None, {})`` when there is no sample, no head, or
     no row in the sample carries an ``mc_return``.
 
-    THE FRAME. Under PopArt the live critic trains in normalized space, so the shadow does too:
-    the head's raw output IS the normalized value and the target is
-    ``popart.normalize(mc_return)``. That mirrors `_value_distill_mse` exactly, and for the
-    same reason — the coefficient stays scale-comparable with the value loss, and a raw-unit
-    MSE against a normalizer that moves is a moving target. With PopArt off both maps are the
-    identity.
+    THE FRAME. Real return units: the head's raw output is the value and the target is
+    ``mc_return`` (PopArt, which once normalized both, is deleted).
 
     THE METER, which is the point of the head. `shadow_vs_live_v` is the SIGNED mean of
     (shadow − live V) in REAL units on the same minibatch states, read through the policy's own
-    `_critic_value` (the method that handles PopArt de-normalization and the --value-from-dist
-    route). That divergence, accumulated over a run, is the staged-promotion evidence: a shadow
+    `_critic_value` (the method that routes to the run's critic). That divergence, accumulated over a run, is the staged-promotion evidence: a shadow
     that sits systematically BELOW the live critic is a live critic that is optimistic about
     the states the factory sampled, measured against ground truth rather than argued from a
     calibration curve. It is a MEASUREMENT and nothing else — the head never computes an
@@ -436,14 +430,14 @@ def cf_shadow_term(model, ctx, popart):
         # producer that ships no mc_return is the starvation case, and it must not look like a
         # healthy head with nothing to say.
         return None, {"coverage": 0.0, "n": float(ctx.n_rows)}
-    pred = head(ctx.value_pooled.detach()).flatten()          # NORMALIZED frame (see docstring)
-    target = popart.normalize(b.mc_return) if popart is not None else b.mc_return
+    pred = head(ctx.value_pooled.detach()).flatten()          # real return units (see docstring)
+    target = b.mc_return
     se = (pred - target) ** 2
     loss = (se * m).sum() / n_on.clamp(min=1e-6)
     metrics = {"loss": float(loss), "n": float(ctx.n_rows),
                "coverage": float(n_on) / max(1.0, float(ctx.n_rows))}
     with th.no_grad():
-        real = popart.denormalize(pred) if popart is not None else pred
+        real = pred
         real_target = b.mc_return
         metrics["pred_mean"] = float((real * m).sum() / n_on)
         metrics["label_mean"] = float((real_target * m).sum() / n_on)
@@ -461,7 +455,7 @@ def cf_live_values(model, ctx):
     """The LIVE critic's real-unit V on the cf rows, or None when it cannot be read.
 
     Routed through `policy._critic_value` on the cf forward's own `vf_features` — never a
-    hand-rolled `value_net` call, which under `--value-from-dist` would read a frozen head the
+    hand-rolled `value_net` call, which can read a head the
     run does not use, and never a second `predict_values` forward, which would double the cf
     block's cost for a diagnostic.
     """

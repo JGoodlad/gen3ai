@@ -1,7 +1,7 @@
 """`QWinProbHead` — the per-ACTION win-probability readout (`gen3_q_winprob_head_v1`, E5 step 1).
 
 WHY IT EXISTS, precisely. This network has a **V architecture, not a Q architecture**: every value
-readout in the tree (`value_net`, `WinProbHead`, `ValueDistHead`, `ShadowValueHead`) evaluates a
+readout in the tree (`value_net`, `WinProbHead`, `ShadowValueHead`) evaluates a
 STATE. So "what is my win probability if I click Rock Slide?" is not a read — it is a
 *manufacturing* job: eleven successor states, eleven re-rolls through the simulator, and then
 eleven forwards. A search teacher gets its per-action distribution for free; we pay the sim.

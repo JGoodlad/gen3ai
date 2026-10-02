@@ -75,7 +75,7 @@ the tier that works on every run, forever.
   before a cap loss). Aggregate: `blind_loss_fraction`, `aware_ge_bar_fraction`,
   **`cap_aware_ge_bar_fraction`** (the runbook's deadline-clock regression readout: fraction of
   cap losses tail-aware ≥ `lead_bar` turns early), `median_lead_time`,
-  `stall_signature_fraction`. The atom support is read model-free from the run root's
+  `stall_signature_fraction`. (This whole awareness vertical now reads OLD traces only — the dist head was deleted in L1 and no new trace carries `value_dist`; it is a census candidate.) The atom support is read model-free from the run root's
   `model_config.json` (`value_dist_vmin/vmax/bins`), and the PopArt denorm is FIT per battle
   from the trace's own `(dist mean, recorded scalar V)` pairs (`fit_denorm` — exact under
   `value_from_dist`, an adequate approximation under `shaping`; identity without PopArt), so it

@@ -56,9 +56,6 @@ class _SumModel:
     def win_prob_at(self, obs, mask):
         return None
 
-    def value_dist_at(self, obs, mask):
-        return None
-
 
 def _record_one_battle(out_dir: str, record_impl: str = "node"):
     """The SAME real battle every run — see `record_fixture_battle`'s wall-clock-seed note.

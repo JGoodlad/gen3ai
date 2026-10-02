@@ -52,19 +52,13 @@ full surface plus the critic block.
 built the other way round — gen-17's surface, migrated forward, with an explicit override list —
 and then VERIFIED against the relaunched arm.
 
-## The override set (the only 13 rows that differ from gen-17)
+## The override set (13 rows differed from gen-17 when this file was written; the table shows what is LEFT)
+
+⚠️ **Deletion pass L1 (config v131, 2026-10-02) removed the seven critic-implied KEYS from the mirror** — `use_popart`, `win_prob_coef`, `value_dist_mode`/`_bins`/`_vmin`/`_vmax`, `value_from_dist` and `value_tail_weight` (and the three `win_prob_pbrs_*` fields) no longer exist in `ModelVersion`, so there is nothing for the mirror to override; `designs/deleted_flags.md` has each with its citation. The rows below that name them are struck.
 
 | key | gen-17 | production | why |
 |---|---|---|---|
 | `critic` | `shaped` | `winprob` | the mode itself |
-| `use_popart` | true | **false** | IMPLIED — a bounded Bernoulli payoff has no scale to track |
-| `win_prob_coef` | 0.05 | **1.0** | the flag is REFUSED under this mode; 1.0 is its `_resolve` default |
-| `value_dist_mode` | `shaping` | **`none`** | REFUSED (the A2 census: ~15 sites gate on the string, not on the module) |
-| `value_dist_bins` | 51 | **0** | " |
-| `value_dist_vmin` | −12.0 | **0.0** | " |
-| `value_dist_vmax` | 12.0 | **0.0** | " |
-| `value_from_dist` | true | **false** | REFUSED |
-| `value_tail_weight` | 0.3 | **0.0** | REFUSED → its concrete argparse default |
 | `hand_shaping` | true | *(deleted)* | the override LEFT the mirror with the field (config v122, `gen3_shaped_reward_deletion_v1`, 2026-09-26): the reward is terminal-only by construction, and the 14 shaped fields are gone from the mirror |
 | `terminal_indicator` | false | **true** | REQUIRED |
 | `victory_value` | 30.0 | **1.0** | REQUIRED — at 1.0 the undiscounted return IS `1{win}` |

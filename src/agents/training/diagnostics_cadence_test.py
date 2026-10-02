@@ -231,13 +231,16 @@ def _real_gen3_ppo(device: str = "cpu"):
         Gen3DualHeadMaskablePolicy,
         DummyVecEnv([(lambda s=s: _Env(layout["total_dim"], s)) for s in range(2)]),
         n_steps=8, batch_size=4, n_epochs=2, device=device, seed=0, policy_kwargs=pk)
-    model.win_prob_coef = 0.0           # …and no win-prob BCE term at all, for the same reason
     # gen3_fresh_parity_probe_v1: and off the fresh zero-init weights — the shared seeded
     # perturbation (private RNG, so the seeded stream below is unchanged) opens the zero-init
     # projections' paths from the first minibatch on. `test_learning_is_BIT_IDENTICAL…` asserts
     # the coverage both buy.
     from agents.model.parity_probe import perturb_
     perturb_(model.policy)
+    # …and no win-prob BCE term at all, for the same reason. (A `--win-prob-coef 0` once switched
+    # the term off here; that flag is deleted, so the head's MODE is set to "none" AFTER the build —
+    # the head keeps its modules, the fold simply does not score it.)
+    model.policy.features_extractor.win_prob_mode = "none"
     model.grad_accum_steps = 2          # the accumulation branch: the noise probes need it
     orig = InstrumentedMaskablePPO.train
     InstrumentedMaskablePPO.train = lambda self: None    # stop at the first update's buffer

@@ -366,11 +366,11 @@ def test_no_stale_declaration_survives_a_deleted_module(extractor, graph):
     assert not module_coverage(extractor, graph), "preconditions: the live declarations are clean"
 
     # A declared module may legitimately be ABSENT from the production build — flag-gated OFF is
-    # not deleted. `value_dist_head` is the live case: the 2026-09-06 win-prob production config
-    # runs `--critic winprob`, which REFUSES `--value-dist-mode`, so the head is not built while
-    # `--critic shaped` still builds it. Asserting child-membership here would demand deleting an
-    # entry the other mode needs, silently excusing the module if a later generation re-enabled it.
-    # The real invariant is that the BUILDER still assigns the attribute.
+    # not deleted. (`value_dist_head` was the live case until the distributional head was deleted:
+    # the win-prob production config did not build it while `--critic shaped` did.) Asserting
+    # child-membership here would demand deleting an entry another flag setting needs, silently
+    # excusing the module if a later generation re-enabled it. The real invariant is that the
+    # BUILDER still assigns the attribute.
     buildable = buildable_child_names()
     children = {name for name, _ in extractor.named_children()}
     for name in sorted(set(MODULE_GRAPH_TOKENS) | set(NON_DELIVERY_MODULES)):
@@ -415,9 +415,9 @@ def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
     """
     live = parametered_children(extractor)
     assert len(live) > 25, live
-    # BUILT by this config. `value_dist_head` is deliberately NOT in this list: it is a property of
-    # the CONFIG, not of the enumeration, and the win-prob production run does not build it (see
-    # the buildable-declaration check below, which is where its survival is asserted).
+    # BUILT by this config. A module the production run does not build is a property of the CONFIG,
+    # not of the enumeration (see the buildable-declaration check below, where such a module's
+    # survival is asserted).
     for expect in ("damage_op", "team_transformer", "alpha_head",
                    "intent_conditional", "history_events"):
         assert expect in live, f"{expect} vanished from the extractor — update the declarations"
@@ -425,7 +425,7 @@ def test_the_gate_covers_the_parametered_modules_not_a_hand_list(extractor):
     # enumeration is not quietly excluding the modules it would be most embarrassing to miss,
     # keyed on the builder so it survives a generation that gates one off.
     buildable = buildable_child_names()
-    for expect in ("damage_op", "team_transformer", "value_dist_head", "alpha_head",
+    for expect in ("damage_op", "team_transformer", "alpha_head",
                    "intent_conditional", "history_events"):
         assert expect in buildable, f"{expect} vanished from extractor_build"
         assert expect in MODULE_GRAPH_TOKENS or expect in NON_DELIVERY_MODULES, (
@@ -444,7 +444,7 @@ def test_the_flag_gated_off_discriminator_is_not_inert():
     module, and demands the deletion of live entries the moment one turns them off. That is exactly
     what shipped — the probe was `hasattr(features_extractor, <graph token>)`, and the tokens are
     graph NODE IDS, so it resolved for **no entry at all**. It went unnoticed for as long as the
-    gen-17 config built every declared module, then reported `value_dist_head` as STALE on the
+    gen-17 config built every declared module, then reported a gated-off head as STALE on the
     first config that did not (the 2026-09-06 win-prob production run).
 
     So this pins the discriminator itself, in both directions, and would fail on that revert.
@@ -452,7 +452,7 @@ def test_the_flag_gated_off_discriminator_is_not_inert():
     buildable = buildable_child_names()
 
     # POSITIVE: modules the OTHER critic mode / other flag settings build, that this config does not.
-    for name in ("value_dist_head", "belief_slots", "spread_belief", "hidden_opp_belief",
+    for name in ("belief_slots", "spread_belief", "hidden_opp_belief",
                  "item_belief_head", "alpha_head", "beta_head", "belief_head"):
         assert name in buildable, (
             f"{name!r} is assigned by extractor_build but the discriminator does not see it — "

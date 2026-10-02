@@ -221,30 +221,6 @@ def test_migrate_pre_v41_adds_belief_grad_mode_default(version):
         _migrate_config(data)
 
 
-def test_check_value_tail_weight_match_and_mismatch(version):
-    """② value_tail_weight is resume-immutable (like vf_coef): a matching resume passes, a drift FATALs."""
-    saved = dataclasses.replace(version, value_tail_weight=0.3)
-    saved.check_value_tail_weight(0.3)               # must not raise
-    with pytest.raises(ModelVersionError) as exc_info:
-        saved.check_value_tail_weight(0.0)
-    assert "value_tail_weight" in str(exc_info.value)
-
-
-def test_check_compatible_ignores_value_tail_weight(version):
-    """value_tail_weight is a value-loss hparam, not weight-shape → check_compatible (which gates frozen
-    eval/pool/distill opponents) must IGNORE it, exactly like vf_coef."""
-    differing = dataclasses.replace(version, value_tail_weight=version.value_tail_weight + 0.5)
-    version.check_compatible(differing)  # must NOT raise
-
-
-def test_value_tail_weight_recorded_and_config_version(layout):
-    pk = {"net_arch": [512, 512]}
-    v = ModelVersion.from_layout_and_policy_kwargs(layout, pk, value_tail_weight=0.4)
-    assert v.value_tail_weight == 0.4 and v.config_version == MODEL_CONFIG_VERSION
-    v0 = ModelVersion.from_layout_and_policy_kwargs(layout, pk)
-    assert v0.value_tail_weight == 0.0   # default = plain MSE
-
-
 # ---------------------------------------------------------------------------
 # check_reward_config — resume-only value-meaning check (NOT part of check_compatible)
 # ---------------------------------------------------------------------------
@@ -307,19 +283,9 @@ def test_check_opponent_compatible_arch_mismatch_raises(version):
     assert "observation layout" in msg
 
 
-def test_check_opponent_compatible_ignores_popart(version):
-    """use_popart only affects the value head, which an opponent never reads — must NOT gate.
-    (This is the key difference from check_compatible, which DOES reject a use_popart mismatch.)"""
-    popart_on = dataclasses.replace(version, use_popart=not version.use_popart)
-    version.check_opponent_compatible(popart_on)  # must not raise
-    # Sanity: check_compatible (the trainee/pool gate) WOULD reject the same mismatch.
-    with pytest.raises(ModelVersionError):
-        version.check_compatible(popart_on)
-
-
 def test_check_compatible_rejects_attend_unrevealed_mismatch(version):
     """attend_unrevealed_opponents changes the forward mask the policy trained under, so
-    check_compatible (resume + pool/sentinel/distill gate) must reject a mismatch — like use_popart."""
+    check_compatible (resume + pool/sentinel/distill gate) must reject a mismatch."""
     flipped = dataclasses.replace(
         version, attend_unrevealed_opponents=not version.attend_unrevealed_opponents)
     with pytest.raises(ModelVersionError) as exc_info:
@@ -341,7 +307,7 @@ def test_attend_unrevealed_read_from_features_extractor_kwargs(layout):
 
 def test_check_compatible_rejects_opp_belief_cls_k_on_off_mismatch(version):
     """k=0↔k>0 adds/removes the belief module + widens both projections — a weight-shape change, so
-    check_compatible must reject it (one unconditional compare, like use_popart)."""
+    check_compatible must reject it (one unconditional compare)."""
     on = dataclasses.replace(version, opp_belief_cls_k=2)
     with pytest.raises(ModelVersionError) as exc_info:
         version.check_compatible(on)   # version has k=0 (default)
@@ -1668,10 +1634,10 @@ def test_arch_toggles_from_model_extracts_flags():
                                win_prob_mode="read_only",
                                damage_topk_k=5, damage_matrices_outgoing=True,
                                damage_matrices_incoming=True)
-    model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe, popart=object()))
+    model = types.SimpleNamespace(policy=types.SimpleNamespace(features_extractor=fe))
     t = arch_toggles_from_model(model)
     assert t["opp_belief_slots"] is True and t["attend_unrevealed_opponents"] is True
-    assert t["use_popart"] is True
+    assert "use_popart" not in t and "value_dist_mode" not in t   # deleted with PopArt / the dist head
     assert t["move_belief_mode"] == "revealed"
     # v23/v24 keys (these were the threading gaps): every one must round-trip.
     assert t["damage_op"] is True and t["damage_outgoing"] is True

@@ -293,7 +293,7 @@ def vf_coef_scale_line(vf_coef: float, bce: float,
     """One human line: what `--vf-coef` is actually doing to the SHARED TRUNK on this run.
 
     🚨 **`--vf-coef` MEANS SOMETHING DIFFERENT UNDER `--critic winprob`, AND NOTHING IN A METRIC
-    NAME SAYS SO.** Under `shaped` it weights an MSE on a PopArt-normalised shaped return; under
+    NAME SAYS SO.** Under `shaped` it weights an MSE on a shaped return; under
     `winprob` it weights the win-prob head's **BCE against a Bernoulli outcome**, which is bounded
     near `ln 2 ~ 0.693` at initialisation and falls from there. The historical default 0.5 was
     tuned against the first quantity and carries no information about the second — so the first arm

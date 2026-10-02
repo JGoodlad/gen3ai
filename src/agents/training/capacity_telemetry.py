@@ -254,9 +254,7 @@ def _ppo_surrogate(model, obs, actions, masks, advantages, old_log_prob, returns
 
     Deliberately the PLAIN form rather than the run's full fold: the cosine asks whether the two
     halves of a batch agree about the RL objective, and folding in a dozen auxiliaries would make
-    the answer a statement about the auxiliaries' agreement instead. PopArt/tail-weighting are
-    likewise skipped — both are monotone rescalings of the same per-sample residual, so they move
-    the gradient's LENGTH and not the angle this probe reads.
+    the answer a statement about the auxiliaries' agreement instead. (PopArt and the tail weight, once skipped here for being monotone rescalings, are deleted.)
     """
     values, log_prob, _entropy = model.policy.evaluate_actions(obs, actions, action_masks=masks)
     values = values.flatten()

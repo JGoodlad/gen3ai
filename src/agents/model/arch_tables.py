@@ -45,7 +45,6 @@ _ABSENT_CANDIDATES: Tuple[Tuple[str, str], ...] = (
     ("spread_belief", "spread_belief"),
     ("hidden_opp_belief", "hidden_opp_belief"),
     ("win_head", "win_head"),
-    ("value_dist_head", "value_dist_head"),
     ("alpha_head", "alpha_head"),
     ("beta_head", "beta_head"),
     ("value_entity_pool", "value_entity_pool"),
@@ -72,10 +71,6 @@ _TOGGLE_MODULE: Dict[str, str] = {
     "spread_belief": "spread_belief",
     "spread_belief_nature": "spread_belief",
     "win_prob_mode": "win_head",
-    "value_dist_mode": "value_dist_head",
-    "value_dist_bins": "value_dist_head",
-    "value_dist_vmin": "value_dist_head",
-    "value_dist_vmax": "value_dist_head",
     "value_threat_inject": "cls_pool.value_threat_proj",
     "value_entity_pool": "value_entity_pool",
     "value_entity_pool_full": "value_entity_pool",
@@ -84,18 +79,15 @@ _TOGGLE_MODULE: Dict[str, str] = {
 # Training-loss coefficient -> the module that consumes it. THE INERT LOGIC LIVES HERE, in one
 # reviewable dict: a nonzero coef whose module is None is INERT (head not built); a zero coef
 # whose module exists is INERT (the loss is off, the module trains through other paths).
-# `None` marks a core train-loop term with no gating module (vf_coef, value_tail_weight).
+# `None` marks a core train-loop term with no gating module (vf_coef).
 _COEF_MODULE: Dict[str, Optional[str]] = {
     "move_belief_coef": "move_belief",
     "move_belief_latent_coef": "move_belief",
     "hp_type_belief_coef": "hp_type_belief_head",
     "opp_belief_aux_coef": "belief_head",
     "spread_belief_coef": "spread_belief",
-    "win_prob_coef": "win_head",
-    "value_dist_coef": "value_dist_head",
     "item_belief_coef": "item_belief_head",     # v83
     "vf_coef": None,
-    "value_tail_weight": None,
     # v102 gen3_policy_grad_coef_v1 — the weight on PPO's own clipped surrogate
     # (`policy_grad_coef * policy_loss`). A core train-loop term like `vf_coef`: no extractor
     # module gates it, so it can never be INERT. It was recorded from v102 but stayed invisible
@@ -166,11 +158,6 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # likely to set on a run whose mode is still 'none'.
     "q_winprob_coef": "q_winprob_head",
     "q_winprob_onpolicy_coef": "q_winprob_head",
-    # v108 gen3_winprob_pbrs_v1 — the win-prob PBRS reward-shaping weight. φ(s) IS the win head's
-    # sigmoid, and the flag requires `--win-prob-mode read_only|shaping`, so the head is what gates
-    # it: a live coefficient with no `win_head` shapes nothing. (Refused outright under `--critic
-    # winprob`, where φ ≡ V and the term would re-add the advantage to the reward.)
-    "win_prob_pbrs_coef": "win_head",
 }
 
 _FALSY_STRINGS = {"none", "off", ""}

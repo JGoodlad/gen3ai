@@ -493,9 +493,10 @@ a stable opponent rides the *existing* pool-vs-heuristic split in `MaskableAgent
   the obs-family proxy); a mismatch is a **startup FATAL** (`[StableOpponent] FATAL` →
   `TrainExitCode.FATAL_CONFIG`, surfaced to the TUI, no restart). Loaded inference-only via
   `snapshot.load_foreign_opponent` (`env=None`), which **skips `check_compatible`** — so
-  `use_popart`/`vf_coef`/reward differences (irrelevant to an opponent's forward, which never reads
-  the value head) don't block it. The example `models/ai_v5_5_popart_N_0607` shares HEAD's arch, so
-  it loads despite being PopArt-on.
+  `vf_coef`/reward differences (irrelevant to an opponent's forward, which never reads
+  the value head) don't block it. ⚠️ A checkpoint that recorded PopArt / the value-dist head /
+  `value_from_dist` ON (the `ai_v5_5_popart_*` runs, say) is now REFUSED by `_migrate_config` — those levers
+  were deleted (L1, config v131; `model_version/retired_levers.py`) and their parameters cannot be rebuilt.
 - **Label namespace `ext_<run>`** — underscore separator (NOT `ext:`) so the emitted metric tags are
   **uniform** with the rest (`eval/win_rate_vs_ext_<run>`, like `eval/win_rate_vs_sentinel_0`), no
   colons in TensorBoard. `is_external` (`startswith("ext_")`) keeps them out of the bot aggregates.

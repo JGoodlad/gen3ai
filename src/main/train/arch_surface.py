@@ -20,10 +20,9 @@ that arrives before the GPU-hours do.
 
 🚨 **THIS IS NOT THE SAME FAILURE AS A REFUSED FLAG COMBINATION, AND THE TWO MUST NEVER SHARE A
 MESSAGE OR A CLOSING LINE.** Rebuilding that same arm from an older generation's recorded
-`original_command` also fails — on nine flags the win-prob critic SUBSUMES and therefore refuses
-(`--use-popart`, `--value-from-dist`, the four `--value-dist-*`, `--value-dist-coef`,
-`--win-prob-coef`, `--value-tail-weight`). That failure is **LOUD and PRE-launch**: `checkargs`
-names it, nothing starts, the operator fixes it in a minute. Architecture drift is **SILENT and
+`original_command` also fails — on flags the win-prob critic subsumed and the deletion pass has since
+removed (`designs/deleted_flags.md`: the PopArt / distributional-critic / aux-BCE-coefficient family).
+That failure is **LOUD and PRE-launch**: `checkargs` names it (an unrecognised flag), nothing starts, the operator fixes it in a minute. Architecture drift is **SILENT and
 POST-launch**: everything parses, the run starts, and seven GPU-hours later the config diff is the
 only thing that would have told you. A guard that catches the first is no protection against the
 second — so `combination_checks` and this module keep separate blocks, separate summary lines and

@@ -47,7 +47,7 @@ any later date.
 | `--value-sidecar-seed` | `0` | Sampler seed. The sample is a function of **(seed, rollout index)**, never of a running stream. |
 
 **`auto` is off under `--critic shaped` because `v` is not a probability there** — it is a
-PopArt-normalised shaped return whose scale moves over the run, so a Brier decomposition of it is a
+shaped return (reward units, not [0,1]), so a Brier decomposition of it is a
 category error rather than a loose reading.
 
 **None of these reaches `model_config.json`.** That file is an explicit whitelist of

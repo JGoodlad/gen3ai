@@ -273,16 +273,13 @@ async def main():
         emit(f"🎯 [CRITIC] winprob — V(s) = sigmoid(win-prob logit) in [0,1]; the value loss IS "
              f"that head's BCE against the terminal outcome, weighted by --vf-coef "
              f"{args.vf_coef:g} (a BCE, NOT the shaped-return MSE 0.5 was tuned for). Reward = the "
-             f"TERMINAL WIN INDICATOR alone; gamma={args.gamma:g}; PopArt OFF; win_prob_mode="
+             f"TERMINAL WIN INDICATOR alone; gamma={args.gamma:g}; win_prob_mode="
              f"{args.win_prob_mode!r}. At victory_value 1.0 and gamma 1.0, V(s) == P(win|s) "
              f"exactly. ⚠️ A [0,1] critic cannot express 'a timeout is worse than a loss' — stall "
              f"rate and mean episode length are PRIMARY endpoints on this arm.")
     else:
-        emit(f"🎯 [CRITIC] shaped — V(s) = "
-             f"{'the distributional E[Z]' if args.value_from_dist else 'value_net'} in raw "
-             f"shaped-return units (PopArt {'ON' if args.use_popart else 'off'}), gamma="
-             f"{args.gamma:g}; the win-prob head is an auxiliary at --win-prob-coef "
-             f"{args.win_prob_coef:g}.")
+        emit(f"🎯 [CRITIC] shaped — V(s) = value_net in raw return units, gamma="
+             f"{args.gamma:g}; the win-prob head is an auxiliary BCE.")
     # Bound to the run's reward config here rather than in `model_build`, because the SHADOW
     # critic's `mc_return` labels are only this run's labels if the producer used this run's
     # reward — the digest is what the label buffer checks them against.

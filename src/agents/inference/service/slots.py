@@ -35,7 +35,7 @@ from agents.inference.service.spec import NonFiniteWeights, SlotArchMismatch, Sl
 #: Constructor parameters that do not change the forward (the optimizer and the schedule).
 _NOT_FORWARD = frozenset({"lr_schedule", "optimizer_class", "optimizer_kwargs"})
 #: Policy attributes set outside the constructor that DO change the forward's value read.
-_RUNTIME_ATTRS = ("_critic_mode", "_value_from_dist")
+_RUNTIME_ATTRS = ("_critic_mode",)
 _ADDR = re.compile(r" at 0x[0-9a-fA-F]+")
 
 
@@ -63,7 +63,7 @@ def state_signature(sd: Dict[str, torch.Tensor]) -> Tuple[Tuple[str, Tuple[int, 
 
 def forward_fingerprint(policy: Any) -> str:
     """sha256 over what fixes the forward: constructor parameters (minus the optimizer, the schedule
-    and the ride-along declarations) + the critic runtime attributes + whether PopArt is present."""
+    and the ride-along declarations) + the critic runtime attributes."""
     from agents.model.ridealong_heads import RIDEALONG_FLAGS
 
     params = {k: v for k, v in policy._get_constructor_parameters().items() if k not in _NOT_FORWARD}
@@ -72,7 +72,6 @@ def forward_fingerprint(policy: Any) -> str:
         params["features_extractor_kwargs"] = {k: v for k, v in fek.items() if k not in RIDEALONG_FLAGS}
     for a in _RUNTIME_ATTRS:
         params[a] = getattr(policy, a, None)
-    params["popart"] = getattr(policy, "popart", None) is not None
     text = json.dumps(params, sort_keys=True, default=lambda o: _ADDR.sub("", repr(o)))
     return hashlib.sha256(text.encode()).hexdigest()
 

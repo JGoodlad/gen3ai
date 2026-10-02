@@ -219,8 +219,8 @@ def extract_cycle(trace_dir: str, *, v_column: str = DEFAULT_V_COLUMN
     🚨 ``v_column`` exists because ON A SHAPED-CRITIC RUN ``values`` AND ``win_probs`` ARE DIFFERENT
     READOUTS. On every win-prob arm they are the same tensor and
     ``max_abs_values_minus_winprobs`` reads ~0; under ``--critic shaped`` the critic is the
-    distributional E[Z] in raw shaped-return units (``values``) while ``win_probs`` is the
-    AUXILIARY head at ``--win-prob-coef``, and that QC scalar is large BY CONSTRUCTION. The
+    scalar value net in raw return units (``values``) while ``win_probs`` is the
+    AUXILIARY head, and that QC scalar is large BY CONSTRUCTION. The
     default is ``win_probs``, which keeps every banked read byte-identical; pass ``values`` to read
     a shaped arm's ACTUAL critic.
 

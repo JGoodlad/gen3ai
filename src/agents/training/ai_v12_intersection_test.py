@@ -5,24 +5,14 @@ no single wave could see: the compositions a launch actually types. It exists be
 lesson (`value_from_dist`) — every flag in a tail had its own test, the INTERSECTION had none, and
 an entire critic chain was orphaned for four generations while every suite stayed green.
 
-Five groups, each naming the pair it crosses:
-
-1. **CLEAN WORLD × the DISTRIBUTIONAL CRITIC.** `--victory-value` (wave A, v105) made the return
-   SCALE a flag for the first time. `--value-dist-*`'s support is a *separate* flag, fixed at
-   launch, and under `--no-use-popart` — which is what the registered clean/sparse arms run
-   (ledger 2d38a4a) — the two live in the SAME raw units and nothing compared them. Production
-   carries `value_from_dist=True` with a support of [−12, +12], so the clean arm's ±1 returns land
-   inside ~4 of 51 atoms: a critic quantized to ~0.5 on a ±1 scale, feeding GAE, silently.
+Groups 1 and 3 of the original five (the value-dist atom support against the terminal, and the
+`train/pbrs_reward_share` absent-never-zero rule) left with the distributional head and the
+win-prob PBRS (deletion pass L1). Three remain, each naming the pair it crosses:
 
 2. **CLEAN WORLD × the TIMEOUT terminal.** The wave-A guard warns on ONE side of the ordering
    (draw better than a loss). A launch that types `--victory-value 1.0` and forgets
    `--draw-penalty` keeps the −35 default, i.e. a timeout 35× a clean loss — the "1 TERMINAL"
    claim is then false and no metric names it.
-
-3. **CLEAN WORLD × `train/pbrs_reward_share`.** With every hand term off, the unshaped stream is
-   terminal-only, and `raw_absmean == 0` on a rollout that ends no episode. The metric then
-   published `0.0` — a perfect-looking score for the case where the shaping is 100% of the reward.
-   The project's own rule (wave C's `train/q_winprob_loss`) is ABSENT-never-zero.
 
 4. **v105 × v106 × v107 STACKED.** The three migrations landed as three commits an hour apart.
    This runs the whole chain on a fabricated v104 config AND on every REAL archived config in the
@@ -45,7 +35,6 @@ import inspect
 import json
 import os
 
-import numpy as np
 import pytest
 
 from agents.model.model_version import ModelVersion
@@ -55,14 +44,9 @@ from main.train_rl_agent import build_parser
 
 #: The registered clean-world reward set (kept spelled the same as `clean_world_config_test`).
 CLEAN_REWARD = ["--victory-value", "1.0", "--draw-penalty", "-1.0"]
-#: The production distributional critic, verbatim off `ai_v9_72_R3SELF_0828/model_config.json`.
-PROD_DIST = ["--value-dist-mode", "shaping", "--value-dist-bins", "51",
-             "--value-dist-vmin", "-12", "--value-dist-vmax", "12", "--value-from-dist"]
-
-#: The two warning BANNERS, quoted from the guards so a rename breaks the test rather than
-#: silently making it vacuous. Deliberately distinctive: the launch prints hundreds of lines of
-#: flag help, several of which contain the bare words "SUPPORT" and "SCALE".
-_SUPPORT = "VALUE-DIST SUPPORT"
+#: The warning BANNER, quoted from the guard so a rename breaks the test rather than silently making
+#: it vacuous. Deliberately distinctive: the launch prints hundreds of lines of flag help, several of
+#: which contain the bare word "SCALE".
 _SCALE = "TERMINAL SCALE"
 
 
@@ -77,58 +61,6 @@ def _resolve(argv):
     from main.train.config import resolve_config
     parser = build_parser()
     return resolve_config(parser.parse_args(["--steps", "1", "--debug", *HISTORICAL, *argv]), parser)
-
-
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-# 1. CLEAN WORLD × value_from_dist — the atom support and the return scale are ONE question
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-
-def test_a_pm1_terminal_under_a_pm30_atom_support_with_no_popart_WARNS(capsys):
-    """THE M2 INTERSECTION. `--victory-value 1.0` puts every raw return in [−1, +1]; the support
-    the production critic carries is [−12, +12] over 51 atoms (Δ = 0.48). With PopArt OFF the
-    target is the RAW return (`ppo._vd_target`), so the whole return range collapses into ~4 atoms
-    and, under `--value-from-dist`, that quantized E[Z] IS the critic feeding GAE.
-
-    A warning, not a refusal: the operator may be deliberately sizing a wide support for a later
-    reward change. But it must be SAID at launch, because nothing downstream distinguishes a
-    resolution-starved critic from a well-fitted one — `value_dist/mean_abs_err` looks BETTER as
-    the support widens."""
-    _resolve([*CLEAN_REWARD, *PROD_DIST, "--no-use-popart"])
-    out = capsys.readouterr().out
-    assert _SUPPORT in out, out
-    assert "--value-dist-vmax" in out and "atom" in out
-
-
-def test_the_same_support_with_POPART_ON_does_not_warn(capsys):
-    """ANTI-VACUITY, and the reason the guard is conditioned on PopArt at all: under PopArt the CE
-    target is `popart.normalize(returns)`, so the support lives in units of standard deviations and
-    the raw terminal magnitude says nothing about whether it fits. Every historical run is here."""
-    _resolve([*CLEAN_REWARD, *PROD_DIST, "--use-popart", "--clip-range-vf", "none"])
-    assert _SUPPORT not in capsys.readouterr().out
-
-
-def test_the_HISTORICAL_pm30_terminal_in_a_pm40_support_does_not_warn(capsys):
-    """The guard must not fire on a correctly-sized pairing — otherwise it is noise and gets
-    ignored, which is worse than not shipping it."""
-    _resolve(["--value-dist-mode", "shaping", "--value-dist-bins", "51",
-              "--value-dist-vmin", "-40", "--value-dist-vmax", "40", "--no-use-popart"])
-    assert _SUPPORT not in capsys.readouterr().out
-
-
-def test_a_terminal_LARGER_than_the_support_warns_too(capsys):
-    """The other direction of the same defect, and the more destructive one: HL-Gauss absorbs
-    out-of-support mass into the EDGE atoms, so a ±35 draw penalty against a ±12 support means the
-    critic literally cannot represent that outcome — it saturates, and `pit_mean` is the only
-    tell."""
-    _resolve(["--value-dist-mode", "shaping", "--value-dist-bins", "51",
-              "--value-dist-vmin", "-12", "--value-dist-vmax", "12", "--no-use-popart"])
-    out = capsys.readouterr().out
-    assert _SUPPORT in out, out
-
-
-def test_no_value_dist_head_means_no_opinion(capsys):
-    _resolve([*CLEAN_REWARD, "--no-use-popart"])
-    assert _SUPPORT not in capsys.readouterr().out
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -163,50 +95,6 @@ def test_the_HISTORICAL_pairing_is_silent(capsys):
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────
-# 3. CLEAN WORLD × `train/pbrs_reward_share` — ABSENT, never a flattering zero
-# ──────────────────────────────────────────────────────────────────────────────────────────────
-
-def _pbrs_model_and_buffer(raw_reward: float):
-    """The REAL `apply_winprob_pbrs` over `winprob_pbrs_test`'s fakes (a genuine SB3
-    `DictRolloutBuffer`), with the UNSHAPED reward stream set by hand."""
-    import torch as th
-
-    from agents.training import winprob_pbrs_test as W
-    n_steps, n_envs = 4, 2
-    buf = W._make_buffer(n_steps, n_envs)
-    buf.rewards[:] = raw_reward
-    policy = W._FakePolicy()
-    model = W._FakeModel(buf, policy, coef=1.0)
-    model._last_obs = {"observation": np.zeros((n_envs, 1), dtype=np.float32)}
-    model._last_episode_starts = np.zeros(n_envs, dtype=np.float32)
-    th.manual_seed(0)
-    return model, buf
-
-
-def test_an_all_zero_unshaped_stream_publishes_a_NaN_share_not_a_zero():
-    """The clean arm's unshaped stream is TERMINAL-ONLY, so a rollout that ends no episode has
-    `mean|r| == 0` exactly — and the shaping is then 100% of the reward. Publishing `0.0` there
-    reads as "the shaping is negligible": the single most misleading number this metric could
-    produce, in precisely the arm it was built to watch.
-
-    The project's own rule, applied one wave later to `train/q_winprob_loss`: *"a defaulted 0.0
-    would be a perfect score for a head that trained on nothing"* — ABSENT, never zero."""
-    from agents.training.winprob_pbrs import apply_winprob_pbrs
-    model, buf = _pbrs_model_and_buffer(0.0)
-    m = apply_winprob_pbrs(model, buf)
-    assert "reward_share" in m
-    assert np.isnan(m["reward_share"]), m["reward_share"]
-
-
-def test_a_real_unshaped_stream_still_reports_a_finite_share():
-    """ANTI-VACUITY: the ordinary path must be untouched."""
-    from agents.training.winprob_pbrs import apply_winprob_pbrs
-    model, buf = _pbrs_model_and_buffer(2.0)
-    m = apply_winprob_pbrs(model, buf)
-    assert np.isfinite(m["reward_share"])
-
-
-# ──────────────────────────────────────────────────────────────────────────────────────────────
 # 4. v105 × v106 × v107 STACKED — three migrations, one chain, on configs that really exist
 # ──────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -214,7 +102,6 @@ _WAVE_KEYS = {
     # wave A (v105) — its three shaped keys (hand_shaping / pbrs_material / pbrs_belief) left the
     # config at v122 (gen3_shaped_reward_deletion_v1)
     "victory_value": 30.0,
-    "win_prob_pbrs_source": None,
     # wave D (v106)
     "progress_decision_tense": False, "progress_switch_freeze": False,
     # wave C (v107)
@@ -223,7 +110,7 @@ _WAVE_KEYS = {
 
 
 def _fabricated_v104() -> dict:
-    """A v104 config: every `ModelVersion` field at its default, MINUS this wave's ten keys,
+    """A v104 config: every `ModelVersion` field at its default, MINUS this wave's keys,
     stamped one version back. The last config shape that existed before the wave, so it is the
     exact input the chain must handle.
 

@@ -98,13 +98,14 @@ def test_a_graph_break_INSIDE_a_region_is_the_typed_startup_FATAL(learner, monke
     dynamo's reason — never a silent split into two graphs. Fails if the region is compiled without
     `fullgraph=True` (the break would be absorbed) or the error escapes untyped (a restartable crash)."""
     from agents.training.instrumented_ppo import micro_step as ms
-    real = ms.value_loss_from_se
+    real = ms.win_prob_terms
 
-    def with_a_host_read(se, w):
-        if float(se.mean()) > 1e30:                        # a data-dependent Python branch
-            return se.sum()
-        return real(se, w)
-    monkeypatch.setattr(ms, "value_loss_from_se", with_a_host_read)
+    def with_a_host_read(*a, **k):
+        out = real(*a, **k)
+        if float(out[0]) > 1e30:                           # a data-dependent Python branch
+            return (out[0] * 0.0,) + tuple(out[1:])
+        return out
+    monkeypatch.setattr(ms, "win_prob_terms", with_a_host_read)
     cc.control().install()
     cr.install(learner, backend="eager")
     with pytest.raises(ct.CompileTrainerError, match="DECLARED REGION does not compile as one graph"):

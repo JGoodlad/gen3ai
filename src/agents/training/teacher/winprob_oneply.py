@@ -20,7 +20,7 @@ The pipeline, which is the design doc's "3 filters → 2 transplants" as code:
   2. **ONE-PLY read** (filter 2) — `ProbeSession.lookahead` re-rolls the turn under each legal action
      (the opponent plays its RECORDED move), materializes the successor through the real encoder, and
      reads the loaded model's heads. We take the WIN-PROB read, not V: the critic estimates SHAPED
-     return in PopArt-normalized units, and probe G measured the win-prob head beating the played
+     return in reward units, and probe G measured the win-prob head beating the played
      action on exactly this job.
   3. **MARGIN gate** (filter 3) — the preferred action must beat the played one by at least
      ``margin_min`` in win probability.

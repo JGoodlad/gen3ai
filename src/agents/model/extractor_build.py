@@ -28,7 +28,7 @@ from agents.model.arch_constants import (
     PAIR_VALUE_ROUTE_DIM, PROJECTION_DIM, ROLE_TOKEN_SIZE, SWITCH_BRANCH_MOVE_DIM,
 )
 from agents.model.aux_value_heads import (
-    CfEvidentialHead, ShadowValueHead, ValueDistHead, WinProbHead)
+    CfEvidentialHead, ShadowValueHead, WinProbHead)
 from agents.model.belief_heads import (
     BELIEF_GRAD_MODES, BeliefHead, BeliefSlots, HPTypeBelief, ItemBelief, MoveBelief, SpreadBelief)
 from agents.model.conditional_threat import ConditionalThreatCell
@@ -81,8 +81,6 @@ class ExtractorBuild(torch.nn.Module):
                  win_prob_mode: str = "none",
                  damage_outgoing: bool = False, move_candidate_floor: float = _PRIOR_FLOOR,
                  move_latent: bool = False, spread_belief: bool = False, spread_belief_nature: bool = False,
-                 value_dist_mode: str = "none", value_dist_bins: int = 0,
-                 value_dist_vmin: float = 0.0, value_dist_vmax: float = 0.0,
                  value_threat_inject: bool = False,
                  opp_intent: bool = False, species_prior_fusion: bool = False,
                  t0_species_prior: bool = False,
@@ -145,7 +143,7 @@ class ExtractorBuild(torch.nn.Module):
         # Hidden-opponent belief: opp_belief_cls_k = number of learned belief query tokens.
         # 0 = OFF (no module, baseline arch — reproduces it byte-for-byte, so no ARCH_SIGNATURE bump);
         # k>0 builds HiddenOppBeliefPool(k) and widens both projection inputs by k*D_MODEL (a
-        # WEIGHT-SHAPE change, version-checked like use_popart). k>0 hard-requires the unmask flag:
+        # WEIGHT-SHAPE change, version-checked). k>0 hard-requires the unmask flag:
         # with the hidden slots masked the belief queries would read a board with them deleted.
         if opp_belief_cls_k < 0:
             raise ValueError(f"opp_belief_cls_k must be >= 0 (0 = off), got {opp_belief_cls_k}")
@@ -803,36 +801,6 @@ class ExtractorBuild(torch.nn.Module):
         # (`stash.win_prob_logits` [B,1] — the aux BCE + prober readout — and `stash.value_pooled`
         # — the FitNets HINT layer `instrumented_ppo._value_feat_distill` reads — are written each
         # forward; NEVER fed into pi/vf, so no label can leak.)
-
-        # Distributional VALUE head (tri-state `value_dist_mode`, v29): an interpretability readout off
-        # `value_pooled` emitting `value_dist_bins` logits over the support [vmin, vmax]. 'none' = no
-        # module (baseline byte-for-byte, NOT in pi/vf so projection dims are unchanged). 'read_only' =
-        # trains its OWN params on a STOP-GRAD value_pooled (a risk-free diagnostic — zero trunk
-        # gradient). 'shaping' = its gradient also shapes the shared trunk. SIDE readout (stashed for the
-        # aux loss + prober, never in pi/vf — and the value target can't leak). The state_dict-changing
-        # toggles are 'none'↔head (the head params) AND the atom count `bins` (the head's output width);
-        # both + the mode are resume-immutable (version-checked). See ValueDistHead.
-        if value_dist_mode not in ("none", "read_only", "shaping"):
-            raise ValueError(f"value_dist_mode must be none|read_only|shaping, got {value_dist_mode!r}")
-        if value_dist_mode != "none" and value_dist_bins <= 0:
-            raise ValueError(
-                f"value_dist_mode={value_dist_mode!r} requires value_dist_bins > 0 (the atom count), "
-                f"got {value_dist_bins}"
-            )
-        if value_dist_mode == "none" and value_dist_bins != 0:
-            raise ValueError(
-                f"value_dist_bins must be 0 when value_dist_mode == 'none', got {value_dist_bins}"
-            )
-        self.value_dist_mode = value_dist_mode
-        self.value_dist_bins = value_dist_bins
-        self.value_dist_vmin = value_dist_vmin
-        self.value_dist_vmax = value_dist_vmax
-        self.value_dist_head = (
-            ValueDistHead(value_dist_bins, value_dist_vmin, value_dist_vmax)
-            if value_dist_mode != "none" else None
-        )
-        # (`stash.value_dist_logits` [B,bins] — the dist-critic/aux/prober readout — is written
-        # each forward; NEVER fed into pi/vf.)
 
         # gen3_unified_value_readout_v1 (v80): the Stage-3 critic entity pool — see the class
         # docstring. With the flag OFF nothing is constructed and every existing parameter keeps

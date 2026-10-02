@@ -10719,3 +10719,41 @@ if a lazy build is reintroduced.
   `PythonEraShapedCheckpoint` → `FATAL_CONFIG`, typed core or not. `checkargs` reports it; `--dry-run` reports it
   advisory when the launch is pinned (the way out the refusal names).
 - D3: the Python-env oracle goldens are retired without a banked run (owner) — nothing banked here.
+
+## v131 — 2026-10-02 — the shaped-critic-only levers are DELETED: PopArt, the distributional value head, `value_from_dist`, the CVaR value-tail weight, the win-prob aux-BCE coefficient, self-PBRS and frozen-φ PBRS (`gen3_retired_levers_l1_v1`; deletion pass L1 / manifest R2's first slice; config bump 130 → 131, no ARCH_SIGNATURE bump, the production win-prob + Rust path numerically unchanged — the K9 learner golden is the gate)
+
+- **What left.** `--use-popart` / `--no-use-popart`, `--value-dist-mode` / `-bins` / `-vmin` / `-vmax` / `-coef`,
+  `--value-from-dist` / `--no-value-from-dist` / `--allow-value-from-dist-change`, `--value-tail-weight`,
+  `--win-prob-coef`, `--win-prob-pbrs-coef` / `-source` / `-frozen` (each row, with its ledger citation and
+  tests, in `designs/deleted_flags.md`). Code: `model/popart.py`, `ValueDistHead` and its extractor kwargs, the
+  `value_from_dist` critic route in `policy._critic_value`, `winprob_pbrs.py`, `frozen_phi.py`, the HL-Gauss CE
+  and CVaR terms in `value_terms`, the R1 `popart` argument (the region signature is now
+  `(policy, obs, actions, action_masks, old_log_prob, old_values, advantages, returns, var, st)`;
+  `MicroStatic` lost `value_from_dist` / `value_tail_weight` / `win_prob_coef`, `value_mode` is `plain|clipped`),
+  the 16 `combination_checks` rows and the `_resolve` / clip-auto-clear rows that only these levers needed, and
+  the prober's dist-head views (`ValueDistView`, `build_value_dist`, `ProbeModel.popart_stats` /
+  `value_dist_at` / `value_dist_support`, `RLPlayer._value_dist`, the trace's `value_dist` array).
+- **Config.** `MODEL_CONFIG_VERSION` 131 is stamp-only. The 12 `ModelVersion` fields are gone from
+  `fields.py` / `construct.py` / `compat.py`; `_migrate_config` POPS them from a config of ANY vintage
+  (`cls(**data)` TypeErrors on a stale key) and the production mirror `designs/production_config.json` lost
+  its 11 keys. `critic_mode.CRITIC_UNRECORDED` is still `shaped`.
+- **The retired-lever machinery** (`model_version/retired_levers.py`, the `shaped_reward.py` precedent): a
+  STRUCTURAL lever recorded ON (PopArt, the dist head, `value_from_dist`) is refused on EVERY load — its weights
+  name parameters or a critic route the surviving code cannot rebuild; a TRAINING-ONLY lever (tail weight, the
+  aux coefficient, the three PBRS flags) pops silently on a frozen load but REFUSES a resume or fork
+  (`check_no_retired_levers`, from `resolve_config` and `main.checkargs`), naming the pin
+  (`LAST_COMMIT_L1 = 3bc3e77e`) that still has it. Belt-and-braces today (`MIGRATION_FLOOR` 121 already refuses
+  pre-v121; every one of the 15 v121+ runs recorded every lever OFF), explicit for the day the floor moves.
+  Later deletion units APPEND to `RETIRED`.
+- **Pickled kwargs.** SB3 splats a zip's pickled `policy_kwargs` / `features_extractor_kwargs` into live
+  constructors, so a removed kwarg TypeErrors on a BARE `MaskablePPO.load` of any pre-L1 zip. The sanitizing
+  loaders (`snapshot.sanitize_dead_policy_kwargs` / `historical_load_kwargs`, `play.load_policy`, the prober's
+  loader) drop the dead keys; `ctor_kwarg_snapshot_test` is the tripwire and
+  `retired_levers_test::…real pre-deletion zip…` proves a real pre-L1 checkpoint still loads through them (with a
+  non-vacuity control: the bare load fails).
+- **Tests.** Deleted with their levers: `winprob_pbrs_test`, `frozen_phi_test`, `popart_test`,
+  `value_dist_head_test`, `dist_critic_test`, `value_dist_loss_test` and the lever cases of ~45 files; new
+  `retired_levers_test.py` (27). The `_PY` / `_SH` / `_SHAPED_PY` / `HISTORICAL` helpers went with the cases that
+  used them.
+- **Docs.** ARCHITECTURE prose + generated §2/§6, `flag_registry.md`, `designs/model/*`, `designs/training/*`,
+  the training / model / prober / launcher leaf `CLAUDE.md`s; `designs/model/popart.md` deleted.

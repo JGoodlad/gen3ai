@@ -3,7 +3,7 @@
 Three halves, and each test names the failure it guards against rather than restating the code:
 
 1. **the ROUTE** — `Gen3DualHeadMaskablePolicy._critic_value` reads the win-prob head, in [0,1],
-   with NO fallback and no PopArt, on a REAL `MaskablePPO`-built policy. Built that way for
+   with NO fallback, on a REAL `MaskablePPO`-built policy. Built that way for
    `gen3_identity_init_guard_v1`'s reason: an invariant asserted only on a directly-constructed
    module is an invariant about a construction path training does not use.
 2. **the VERSION GATE** — `critic` is recorded, string-compared on resume, and a pre-v109 config
@@ -163,11 +163,13 @@ def test_winprob_has_NO_fallback_when_the_head_is_absent():
         p.predict_values(obs)
 
 
-def test_winprob_refuses_popart_at_construction():
-    """The launch path refuses it (`combination_checks`); this is the last line of defence for a
-    policy built directly, where `_denorm` would take V straight out of [0,1]."""
-    with pytest.raises(ValueError, match="use_popart"):
-        _real_policy(critic="winprob", use_popart=True)
+def test_the_policy_no_longer_takes_PopArt_or_value_from_dist():
+    """Both left the constructor with the shaped critic's levers (deletion pass L1); a pickled
+    `use_popart` / `value_from_dist` is stripped (or refused) by `snapshot.sanitize_dead_policy_kwargs`
+    before SB3 splats it here, so a direct construction with one is the TypeError it should be."""
+    for dead in ("use_popart", "value_from_dist"):
+        with pytest.raises(TypeError):
+            _real_policy(critic="winprob", **{dead: False})
 
 
 def test_an_unknown_critic_raises_rather_than_defaulting():
@@ -322,7 +324,7 @@ def test_the_gamma_default_is_the_pbrs_constant_not_a_retyped_number():
 
 
 # --------------------------------------------------------------------------------------------
-# the DRAW BRANCH (design §3.2 / gap B9) and the `popart is None` paths (gap B2)
+# the DRAW BRANCH (design §3.2 / gap B9)
 # --------------------------------------------------------------------------------------------
 
 class _Battle:
@@ -386,37 +388,3 @@ def test_the_draw_rate_is_published_from_the_terminal_scan():
     assert 'info.get("win_draw", 0.0)' in src, (
         "the rate must read the wrapper's published flag, not re-derive a draw from win_outcome — "
         "a loss and a draw are the SAME win_outcome by construction")
-
-
-@pytest.mark.parametrize("site,needle", [
-    # gap B2: every place that divides by / normalizes through PopArt must already have a
-    # `popart is None` branch, because `--critic winprob` REFUSES PopArt — so on that arm all
-    # three run their None path on every call, permanently, rather than as an edge case.
-    ("agents.training.instrumented_ppo.aux_terms",
-     'float(popart.sigma) if popart is not None else 1.0'),
-    ("agents.training.cf_terms",
-     'popart.normalize(b.mc_return) if popart is not None else b.mc_return'),
-    ("agents.training.cf_terms",
-     'popart.denormalize(pred) if popart is not None else pred'),
-])
-def test_every_popart_path_has_a_None_branch(site, needle):
-    """The AUDIT half of gap B2, as an executable pin rather than a note.
-
-    `td_aux`'s `/ popart.sigma`, `cf_shadow`'s normalize and its de-normalized readback are the
-    three sites the design names. All three already branch — sigma = 1.0 and the identity map,
-    which is exactly right when the target is already a probability — and the point of pinning it
-    is that under `--critic winprob` these stop being the rare path and become the ONLY path."""
-    import importlib
-    mod = importlib.import_module(site)
-    assert needle in open(mod.__file__).read(), f"{site} lost its `popart is None` branch"
-
-
-def test_the_value_loss_from_se_needs_no_popart_branch():
-    """The third site the design lists, and the honest answer is that it never had one to lose:
-    `_value_loss_from_se` takes the per-sample squared errors ALREADY in whatever space the
-    caller chose, so PopArt is the CALLER's business (`ppo.py`'s three-way branch). Recorded so
-    the B2 audit reads as complete rather than as two-of-three."""
-    import inspect
-    from agents.training.instrumented_ppo.value_terms import ValueTerms
-    src = inspect.getsource(ValueTerms._value_loss_from_se)
-    assert "popart" not in src

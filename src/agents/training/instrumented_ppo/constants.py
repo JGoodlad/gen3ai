@@ -4,11 +4,6 @@ Kept together, and in the leaf of the package's import graph, because `ppo.py`, 
 and `noise_scale.py` all read them and none of them may import each other.
 """
 
-# Fraction of each minibatch that forms the "tail" for the tail-weighted value loss — the worst
-# _VALUE_TAIL_FRAC by squared value error (the V-tail craters the critic under-prices). 0.1 = worst
-# 10%; loosely tracks the eval/td_resid_tail CVaR@5% diagnostic the loss is meant to pull down.
-_VALUE_TAIL_FRAC = 0.1
-
 # Win-prob closeness threshold: a decision is "contested" (the band where the head's value lives — a
 # blowout's P(win) is trivially recoverable from material) when |normalized material margin| < this.
 # margin ∈ [−1,1] = Φ_mat/bound; bound ≈ 19.5, so 0.25 ≈ a material lead of up to ~1.5 mons.

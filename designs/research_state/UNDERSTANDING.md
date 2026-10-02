@@ -153,7 +153,7 @@ we are working on running a model further and validating the win-prob head."* **
 search and teacher distillation, to see if we can repro v8's gift."* Consequences that are now
 standing (owner rulings, same day): **the recipe of record is SPARSE** — the owner's strong bias, because
 it has fewer moving parts and an A/B needs no parent. The FROZEN-φ bootstrap (actor-only potential,
-`--win-prob-pbrs-frozen`) is a CHECK on that bias, and its potential is **the SPARSE arm's OWN mature
+`--win-prob-pbrs-frozen`) is a CHECK on that bias (**the frozen-φ route was DELETED, deletion pass L1 2026-10-02 — owner-approved, ledger L18659**), and its potential is **the SPARSE arm's OWN mature
 win-prob head**, not the gen-era fold parent the design §5.4 command names — the registered gen-era
 source survives only on the famine-KILL branch, where no mature self head exists. Its read is
 **wall time to roughly equivalent strength** at matched snapshot count, read early: unless the
@@ -765,7 +765,7 @@ No arm has isolated it. [UNVERIFIED as the cause]
   loss, a tie AND a 250-turn timeout alike. At `--victory-value 1.0` and `--gamma 1.0` the
   undiscounted return is exactly `1{win}`, so **`V(s) = P(win | s)` with no approximation term** —
   the identity the mode rests on.
-- **PopArt is REFUSED** (a bounded stationary Bernoulli payoff has no scale to track), the
+- **PopArt is REFUSED** (a bounded stationary Bernoulli payoff has no scale to track; since L1 it is DELETED outright), the
   distributional head leaves, and the shaped-return currency is deleted. The BCE joins the `value`
   noise-scale group.
 - **The critic's target stops being bootstrapped** — an MC outcome label, not `returns = advantages
@@ -777,8 +777,7 @@ Corrections that landed with it, and are what is true now rather than what the d
 1. **The label is the WIN INDICATOR, not ±1.** A draw is a not-win (`y = 0`) by explicit decision.
 2. **Timeouts, forfeits and ties are TERMINAL** under this mode (§3.6) — the fix that lets the
    critic SEE a timeout at all. Registered expectation: timeouts FALL.
-3. **Frozen-φ is declared but HELD.** `--win-prob-pbrs-frozen` exists in the mode's shape (a path,
-   no coefficient) and is refused-as-deferred; it is the SELF-φ / FROZEN-φ ladder's later rung.
+3. **Frozen-φ was declared but HELD, and is now DELETED** (L1, 2026-10-02; `--win-prob-pbrs-frozen` and every `--win-prob-pbrs-*` flag are gone, `designs/deleted_flags.md`); it is the SELF-φ / FROZEN-φ ladder's later rung.
 
 🚨 **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** The −35 < −30
 ordering is *unrepresentable*, so `--draw-penalty` is REFUSED. Anti-stall pressure comes from the obs

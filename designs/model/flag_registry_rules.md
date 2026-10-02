@@ -114,9 +114,9 @@ a comment and a check nothing declares is invisible:
 | forward, negative | build with the closure minus **one** declared dep | a dependency that stopped being enforced |
 | reverse | AST-scan `__init__` for every `raise` guarded on ≥2 registry flags | a hand-written coupling the registry never learned |
 
-The positive control found a real omission on its first run (`value_dist_mode` also needs
-`value_dist_vmax > value_dist_vmin`, enforced inside `ValueDistHead`), which is why the test carries
-an explicit `_VALUE_RELATIONS` table rather than a silent fixup.
+The positive control found a real omission on its first run (`value_dist_mode` also needed
+`value_dist_vmax > value_dist_vmin`, enforced inside the since-deleted `ValueDistHead`), which is why the test
+carries an explicit `_VALUE_RELATIONS` table (empty since that head left) rather than a silent fixup.
 
 **What stays bespoke, and how narrow the carve-out is.** `requires` says only "must be enabled", so
 a per-VALUE dependency has no flag-level form. Only `edge_bias_families` is exempt

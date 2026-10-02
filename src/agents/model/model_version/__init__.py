@@ -17,6 +17,8 @@ gate's hard bound, one line from tripping it — and is now one module per conce
                       `from_json_file`
     shaped_reward.py  a checkpoint TRAINED WITH THE DELETED SHAPED REWARD, recognised from its
                       raw config, so a resume / fork refuses (`ShapedRewardCheckpointError`)
+    retired_levers.py the DELETED Python-core levers, recognised the same way (`RETIRED`,
+                      `RetiredLeverCheckpointError`) — each deletion unit appends its levers
 
 **The import graph is a DAG rooted at `constants`**, which imports nothing from the package. No
 submodule imports this hub back — that would close a cycle whose symptom is an `AttributeError`
@@ -43,6 +45,10 @@ from agents.model.model_version.shaped_reward import (
     DELETED_SHAPED_REWARD_FIELDS,
     ShapedRewardCheckpointError,
 )
+from agents.model.model_version.retired_levers import (
+    RETIRED_FIELDS,
+    RetiredLeverCheckpointError,
+)
 from agents.model.model_version.spec import ModelVersion
 
 __all__ = [
@@ -53,6 +59,8 @@ __all__ = [
     "ModelVersionError",
     "ModelVersionFields",
     "DELETED_SHAPED_REWARD_FIELDS",
+    "RETIRED_FIELDS",
+    "RetiredLeverCheckpointError",
     "ShapedRewardCheckpointError",
     "SIGNATURE_FIRST_VERSION",
     "_BELIEF_GRAD_MODE_EFFECT",

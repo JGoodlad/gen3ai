@@ -47,8 +47,6 @@ def _production_policy_kwargs(args: Any = None) -> Tuple[Any, Dict[str, Any], Di
           "activation_fn": POLICY_ACTIVATION_FN,
           "optimizer_class": torch.optim.AdamW,
           "optimizer_kwargs": {"weight_decay": args.weight_decay, "eps": 1e-5},
-          "use_popart": args.use_popart,
-          "value_from_dist": args.value_from_dist,
           "critic": args.critic}
     return args, fek["layout"], pk
 
@@ -103,7 +101,6 @@ def save_fresh_checkpoint(run_dir: Path, seed: int, *, name: str = "final_model"
     version = ModelVersion.from_layout_and_policy_kwargs(
         pk["features_extractor_kwargs"]["layout"], pk, vf_coef=args.vf_coef,
         move_belief_coef=args.move_belief_coef, spread_belief_coef=args.spread_belief_coef,
-        win_prob_coef=args.win_prob_coef, value_dist_coef=args.value_dist_coef,
         opp_belief_aux_coef=args.opp_belief_aux_coef,
         hp_type_belief_coef=args.hp_type_belief_coef, item_belief_coef=args.item_belief_coef)
     save_model_snapshot(str(run_dir), version, git_hash="test")

@@ -24,7 +24,6 @@ THE BLOCK. `metadata.json` grows one top-level `lineage` key::
       },
       "teachers": [ {…same shape…} ],  # every --distill-teacher
       "exploiter_target": {…} | null,  # --exploiter
-      "winprob_phi_source": {…} | null, # --win-prob-pbrs-frozen / --win-prob-pbrs-source
       "ancestry": [ {run_name, run_dir, git_hash, arch_signature, fork_step, role, source}, … ],
       "ancestry_stop": {"at": "<run>", "reason": "…"}
     }
@@ -402,8 +401,7 @@ def role_for(*, model_path: Optional[str], exploiter: Optional[str],
 def build_lineage(*, model_path: Optional[str], model_dir: str,
                   exploiter: Optional[str] = None, distill_teacher: Optional[str] = None,
                   fork_step: Optional[int] = None, hash_parent: bool = True,
-                  derived: bool = False,
-                  winprob_phi_source: Optional[str] = None) -> Optional[Dict[str, Any]]:
+                  derived: bool = False) -> Optional[Dict[str, Any]]:
     """The `lineage` block for THIS process, or None when there is nothing new to write.
 
     None means SAME-RUN RESTART: the run already stated its lineage at fork time and that statement
@@ -414,27 +412,17 @@ def build_lineage(*, model_path: Optional[str], model_dir: str,
     ancestry: []` — because "the block is absent" and "this run has no parent" are different facts
     and only one of them is a measurement.
 
-    `winprob_phi_source` (gen3_frozen_phi_actor_only_v1) is the FROZEN-φ potential's checkpoint —
-    `--win-prob-pbrs-frozen`, or the shaped ladder's `--win-prob-pbrs-source`. It is recorded HERE,
-    beside the teachers, because it is the same kind of fact and carries the same hazard: it is a
-    model REFERENCE, usually a bare run directory, and a directory is not a file. `describe_model`
-    therefore resolves it through the one resolver and records `resolved_file` / `resolution_rung`,
-    so a FROZEN-φ arm can state which weights supplied its potential rather than leaving a reader
-    to re-resolve a path under a rule that may since have changed. It is recorded on a FRESH run
-    too — the ai_v12 FROZEN-φ arm is fresh by construction (the critic promotion forbids a warm
-    start), which is exactly the case a teachers-only block would have missed."""
+    A block written before the frozen-φ PBRS flags were deleted may carry a `winprob_phi_source` key;
+    it is immutable history and nothing reads it."""
     from main.train.fork_lr import is_same_run_checkpoint
 
     now = datetime.now(timezone.utc).isoformat()
-    phi_ref = (describe_model(winprob_phi_source, hash_file=False,
-                              resolve_ref=not derived).to_dict()
-               if winprob_phi_source else None)
     if not model_path:
         block: Dict[str, Any] = {
             "schema": LINEAGE_SCHEMA, "role": "fresh", "fork_parent": None,
             "fork_step": int(fork_step or 0), "recorded_at": now,
             "teachers": [], "exploiter_target": None,
-            "winprob_phi_source": phi_ref, "ancestry": [],
+            "ancestry": [],
         }
         if derived:
             block["derived"] = True
@@ -460,7 +448,6 @@ def build_lineage(*, model_path: Optional[str], model_dir: str,
                      for t in teacher_paths(distill_teacher)],
         "exploiter_target": (describe_model(exploiter, hash_file=False, resolve_ref=_res).to_dict()
                              if exploiter else None),
-        "winprob_phi_source": phi_ref,
         "ancestry": chain,
     }
     if stop:

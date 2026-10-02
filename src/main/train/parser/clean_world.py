@@ -29,21 +29,20 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     """Add this family's flags to `parser`, in their original order."""
     # --- gen3_winprob_critic_mode_v1 (ai_v12, designs/ai_v12/design_winprob_only_critic.md): WHICH
     #     readout is the value function. Declared FIRST in this family because it governs the
-    #     reward composition, the PopArt switch and the win-prob head below it. ---
+    #     reward composition and the win-prob head below it. ---
     parser.add_argument("--critic", dest="critic", choices=CRITIC_MODES, default=None,
                         help="WHICH readout is the critic. 'winprob' is the DEFAULT (the "
                              "deletion pass's bare-argv flip, 2026-10-02 -- the production critic). "
-                             "'shaped' (every generation through gen-16) = the scalar value_net (or the "
-                             "distributional E[Z] under --value-from-dist), de-normalized through "
-                             "PopArt into raw SHAPED-RETURN units, with the win-prob head an "
-                             "auxiliary BCE at --win-prob-coef. 'winprob' = THE WIN-PROB HEAD IS "
+                             "'shaped' (every generation through gen-16; PopArt, the distributional "
+                             "E[Z] critic and the aux-BCE coefficient were deleted with it) = the "
+                             "scalar value_net in raw return units, with the win-prob head an "
+                             "auxiliary BCE. 'winprob' = THE WIN-PROB HEAD IS "
                              "THE CRITIC: V(s) = sigmoid(logit) in [0,1], the value loss IS that "
-                             "head's BCE against the terminal outcome (weighted by --vf-coef, NOT "
-                             "--win-prob-coef -- one critic, one coefficient), the reward stream is "
+                             "head's BCE against the terminal outcome (weighted by --vf-coef), "
+                             "the reward stream is "
                              "the TERMINAL WIN INDICATOR (--terminal-indicator and "
                              "--victory-value 1.0 required -- both the bare-argv defaults -- so "
-                             "V(s) == E[return] exactly), PopArt "
-                             "is OFF (a bounded stationary Bernoulli payoff has no scale to track) "
+                             "V(s) == E[return] exactly) "
                              "and --gamma defaults to 1.0 (a win on turn 200 is worth a win on turn "
                              "20), which makes V(s) EXACTLY P(win|s) with no approximation term. "
                              "It requires --win-prob-mode read_only|shaping (unset defaults to "
@@ -130,12 +129,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                         "behaviour. Retrain-class. Resume-immutable, value-checked.")
     parser.add_argument("--clip-range", type=float, default=CLIP_RANGE_DEFAULT, help="PPO policy clip range (default 0.15)")
     parser.add_argument("--clip-range-vf", type=optional_float, default=0.5, help="Value function clip range; pass 'none' to disable clipping (thesis used 0.0184)")
-    parser.add_argument("--use-popart", "--use_popart", dest="use_popart", action=BoolFlag, default=None,
-                        help="Enable PopArt value-target normalization (adaptive (mu,sigma) on the "
-                             "value head; keeps the value gradient O(1) so it stops swamping the "
-                             "shared trunk). Requires an explicit --clip-range-vf none (value "
-                             "clipping is unnecessary with normalization). Version-checked: cannot "
-                             "be toggled on a resumed model.")
     parser.add_argument("--opp-belief-cls-k", "--opp_belief_cls_k", dest="opp_belief_cls_k",
                         type=int, default=None,
                         help="Hidden-opponent belief: number of distinct learned query tokens (DETR "
@@ -660,9 +653,3 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "that factory paired the dice and left both sides sampling at "
                              "temperature 1.0, so it may have been teaching the head noise. "
                              "INERT at --fork-fraction 0.")
-    parser.add_argument("--win-prob-coef", "--win_prob_coef", dest="win_prob_coef",
-                        type=float, default=None,
-                        help="Loss weight for the win-prob head's BCE (win_prob_coef * BCE), like "
-                             "--opp-belief-aux-coef. Default 1.0. TRAINING-only (not version-locked; "
-                             "inherited on a flagless resume). Ignored when --win-prob-mode none. Lower it "
-                             "if 'shaping' fights the policy (watch grad/win_prob_share).")

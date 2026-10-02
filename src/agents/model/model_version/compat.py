@@ -64,18 +64,6 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "Fix: restore matching constants, or start a fresh training run."
             )
 
-        # Feature toggle — value-checked (not weight-shape) but STRUCTURAL: PopArt adds value-head
-        # buffers + normalized output, so loading a use_popart mismatch breaks the state_dict on
-        # EVERY load. Unlike vf_coef / reward-config (value-meaning, resume-only) it lives here in
-        # check_compatible (gates eval / pool / distill loads too), with a dedicated message.
-        if self.use_popart != saved.use_popart:
-            raise ModelVersionError(
-                f"PopArt mismatch: saved={saved.use_popart}, current={self.use_popart}.\n"
-                "PopArt changes the value head's parameterization (normalized output + running "
-                "mu/sigma buffers), so it cannot be toggled on a resumed model.\n"
-                "Resume with the matching --use-popart setting, or start a fresh training run."
-            )
-
         # Behavioral toggle — value-checked (not weight-shape): unmasking the opponent's hidden
         # party changes the transformer's key_padding_mask (policy AND value forward). The state_dict
         # is identical either way, but a resume that flips it would feed the policy a different mask
@@ -90,7 +78,7 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "Resume with the matching --attend-unrevealed-opponents setting, or start a fresh run."
             )
 
-        # Structural toggle — like use_popart it changes the state_dict (k>0 adds HiddenOppBeliefPool +
+        # Structural toggle — it changes the state_dict (k>0 adds HiddenOppBeliefPool +
         # widens both projection Linears by k*D_MODEL), so a mismatch breaks the load. As a plain int,
         # EVERY distinct value is a weight-shape change (incl. 0↔N = adding/removing the module), so one
         # unconditional comparison gates it — no separate on/off field.
@@ -103,10 +91,10 @@ class ModelVersionCompatibility(ModelVersionFields):
             )
 
         # Structural toggle — adds our_active_refined to the value projection (widens it by D_MODEL), so
-        # a mismatch breaks the value head's state_dict. Like use_popart it gates EVERY load.
+        # a mismatch breaks the value head's state_dict. It gates EVERY load.
 
         # Structural toggle — ON adds the BeliefHead + per-slot unknown-mon embeddings to the
-        # state_dict (the in-place hidden-opponent belief). Like use_popart it gates EVERY load; the
+        # state_dict (the in-place hidden-opponent belief). It gates EVERY load; the
         # training-only opp_belief_aux_coef is deliberately NOT checked (it touches no forward pass).
         if self.opp_belief_slots != saved.opp_belief_slots:
             raise ModelVersionError(
@@ -289,7 +277,7 @@ class ModelVersionCompatibility(ModelVersionFields):
         # change: the WinProbHead params) AND read_only↔shaping (same params, but flipping the trunk
         # gradient flow mid-run is a silent training change the user chose to forbid) FATAL on a
         # mismatch. Like move_belief_mode it gates EVERY load; same-run pool/sentinel snapshots carry the
-        # identical mode so they pass trivially. The training-only win_prob_coef is NOT checked.
+        # identical mode so they pass trivially.
         # gen3_hp_belief_ablation_v1 (v53, like win_prob_mode): 'composed' builds HPTypeBelief and
         # 'flat' does not (a state_dict change), and the two produce different typed-HP posteriors (a
         # forward change). A STRING compare gates both. The training-only hp_type_belief_coef is NOT
@@ -319,7 +307,7 @@ class ModelVersionCompatibility(ModelVersionFields):
             raise ModelVersionError(
                 f"critic mismatch: saved={saved.critic!r}, current={self.critic!r}.\n"
                 "Which readout is the CRITIC is fixed for a run's lifetime: 'shaped' values the "
-                "PopArt-normalized shaped RETURN through value_net (or the distributional E[Z]), "
+                "RETURN through value_net, "
                 "'winprob' values sigmoid(win-prob logit) in [0,1] trained by BCE against the "
                 "terminal outcome. Flipping mid-run swaps the quantity GAE bootstraps from, "
                 "leaves value_net in no loss graph (or untrained), and changes what the reward "
@@ -328,10 +316,6 @@ class ModelVersionCompatibility(ModelVersionFields):
             )
 
 
-        # v29 distributional VALUE head (like win_prob_mode): the MODE gates none↔head (the
-        # ValueDistHead params) AND read_only↔shaping (grad-flow); the BIN COUNT is the head's output
-        # Linear width. Both are weight-shape/forward changes → FATAL on a resume mismatch. The support
-        # (vmin/vmax) is value-meaning → resume-only check_value_dist, not here.
         # (gen3_seed_quantile_v1's `seed_quantile` gate is DELETED at v78 with the head itself.)
         # gen3_value_threat_inject_v1 (v64): the injection projection is a state_dict-changing
         # module, AND the flag switches the op's reducer on, so a flip is doubly incompatible.
@@ -521,14 +505,6 @@ class ModelVersionCompatibility(ModelVersionFields):
                 "nothing in the weights would catch it.\n"
                 "Resume with the matching --species-prior-fusion setting, or start a fresh training run."
             )
-        if self.value_dist_mode != saved.value_dist_mode:
-            raise ModelVersionError(
-                f"value_dist_mode mismatch: saved={saved.value_dist_mode!r}, current={self.value_dist_mode!r}.\n"
-                "The distributional value head is fixed for a run's lifetime: adding/removing it changes "
-                "the state_dict, and switching read_only↔shaping flips whether its loss shapes the shared "
-                "trunk (a silent mid-run training change).\n"
-                "Resume with the matching --value-dist-mode setting, or start a fresh training run."
-            )
         # gen3_cf_evidential_head_v1 (v98): the evidential Beta readout's params are the state_dict
         # delta — a resume that flips this has either no weights for the head or weights with no
         # home. The head is never called by the forward, so NOTHING else would catch it: a mismatch
@@ -636,17 +612,10 @@ class ModelVersionCompatibility(ModelVersionFields):
                 f"Resume with the matching --{_ra.replace('_', '-')} setting (a flagless resume "
                 "inherits it), or start a fresh training run."
             )
-        if self.value_dist_bins != saved.value_dist_bins:
-            raise ModelVersionError(
-                f"value_dist_bins mismatch: saved={saved.value_dist_bins}, current={self.value_dist_bins}.\n"
-                "The atom count is the value-dist head's output width — a different N is a weight-shape "
-                "change.\n"
-                "Resume with the matching --value-dist-bins setting, or start a fresh training run."
-            )
         # gen3_unified_topk_incoming_v1 (v30): the discrete incoming move-space K scales the
         # DamageOperator out_dim → both projection in_features. Every distinct K (incl. 0↔N = adding/
         # removing the block) is a weight-shape change → a single unconditional int compare gates it
-        # (like opp_belief_cls_k / value_dist_bins).
+        # (like opp_belief_cls_k).
         if self.damage_topk_k != saved.damage_topk_k:
             raise ModelVersionError(
                 f"damage_topk_k mismatch: saved={saved.damage_topk_k}, current={self.damage_topk_k}.\n"

@@ -83,14 +83,14 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   | `spread.py` | believed vs TRUE derived spreads (the DamageOperator's stat input) |
   | `switch_in.py` | forced-switch OUTGOING damage per bench candidate |
   | `decode.py` | `_faithfulness` / `_matchups` / `_intervention_sweep` / `_saliency` / `_threats` / `decode_incoming_belief` |
-  | `analyze.py` | `analyze_invocation` — the top-level entry — plus `build_meta` / `build_value_dist` |
+  | `analyze.py` | `analyze_invocation` — the top-level entry — plus `build_meta` (`build_value_dist` was deleted with the value-dist head, L1) |
   | `taxonomy.py` | loss attribution: the turning-point category table |
   | `probes.py` | representation probing (`fit_probe`) |
 - **`model.py`** — `ProbeModel`: the torch boundary, and the ONLY place a forward or backward runs.
   `load(ckpt)` does a raw `MaskablePPO.load` (no env, no `ModelVersion` check), resolves `ObsOffsets`
   once from `enc.get_layout()`, and raises
   `ArchDriftError` on a stale checkpoint. `action_dist` / `logit_grad` are the forward/backward pair;
-  `belief`, `damage_op_view`, `move_belief`, `value_dist_at` / `win_prob_at` and `architecture()` each
+  `belief`, `damage_op_view`, `move_belief`, `win_prob_at` and `architecture()` each
   read a head's stash after one clean forward. The three non-torch decode helpers (`describe_global`,
   `describe_team`, `describe_turn_outcome`) live here because they need the encoder. 🚨 **A turn's
   events land in the NEXT decision's obs**, so `describe_turn_outcome` is read from decision *T+1*.
@@ -113,7 +113,7 @@ retiring the TUI cost no analysis: the deleted 4,400 lines were rendering, not r
   the stored meta without expanding (so `run_summary` stays instant). Cached in memory only;
   nothing is written into the run dir. ABSENT on a core trace: `*_replay.html` (its stand-in is the
   expansion's own protocol log, `core_trace.protocol_log`), and every auxiliary head — `win_probs`
-  is NaN, `belief` / `opp_intent` / `value_dist` / `move_logits` / `spread_belief` are not stored
+  is NaN, `belief` / `opp_intent` / `move_logits` / `spread_belief` are not stored (and `value_dist` no longer exists in ANY new trace — the head was deleted, L1; old traces keep the array and `awareness.py` still reads it)
   (`analyze` re-runs the model on the stored obs). 🚨 **`core_trace` IS THE ONE `*_summary.json`
   READER under `src/`** — `load_summary` (expanded), `load_summary_meta` (stored meta, never
   expands), `refuse_core_trace` (a reader that needs a head a core trace lacks raises
@@ -388,7 +388,7 @@ Four rules from that reference are binding wherever a number of theirs is read, 
   `model_config.json` `critic` key, cached exactly like `_dist_support`). `{mode, units, low, high,
   even, span, is_probability, default_overvalue_tau, note}` — `shaped` (V is a shaped, discounted
   return of roughly ±30, and its zero is NOT "even": a self-mirror 50/50 reads V≈−6.5) or
-  `winprob` (V = sigmoid(win-prob logit) ∈ [0,1], `values` EQUALS `win_probs`, PopArt absent,
+  `winprob` (V = sigmoid(win-prob logit) ∈ [0,1], `values` EQUALS `win_probs`,
   G(s) the terminal win indicator at γ=1, and **0.5 really is even**).
   **An ABSENT `critic` key means `shaped`** — a fact about the archive rather than a chosen
   default: the flag landed at config version 109, so every run recorded before it has no key and
@@ -550,9 +550,9 @@ per-DECISION probes, so they launch from the bottom of that page as password-gat
   `n_rollouts == 1` it is a single realized-dice line and **not** a probability, which the payload's
   own `caveats` say and every surface must repeat.
 
-`model.py` carries `value_dist_at` / `win_prob_at` for these — the counterfactual analog of the
-trace's recorded distributional/win-prob arrays, since a re-rolled successor has no saved row, so
-they re-read the head stash after a forward on s' (mirroring `belief` / `damage_op_view`).
+`model.py` carries `win_prob_at` for these — the counterfactual analog of the
+trace's recorded win-prob array, since a re-rolled successor has no saved row, so
+it re-reads the head stash after a forward on s' (mirroring `belief` / `damage_op_view`). (`value_dist_at` was deleted with the dist head, L1.)
 
 ## `--compile` (search-shaped commands)
 

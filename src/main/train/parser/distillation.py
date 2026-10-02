@@ -436,38 +436,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "pair reduction to the R1 belief_mean rung (hard_max builds no reducer "
                              "and would leave nothing to inject). Zero-init => ON starts identical "
                              "to OFF. STRUCTURAL + version-checked: fixed for a run's lifetime.")
-    parser.add_argument("--value-dist-mode", "--value_dist_mode", dest="value_dist_mode",
-                        choices=("none", "read_only", "shaping"), default=None,
-                        help="Distributional VALUE head (v29): an interpretability readout off the value "
-                             "pool emitting --value-dist-bins logits over [--value-dist-vmin, "
-                             "--value-dist-vmax] — softmax = the critic's predicted RETURN DISTRIBUTION "
-                             "(sharp=confident, wide=uncertain, bimodal=coinflip), reviewable per-decision "
-                             "in the prober. 'none' (default) = no module (baseline byte-for-byte). "
-                             "'read_only' = the head trains on a STOP-GRAD value pool (a risk-free "
-                             "diagnostic that CANNOT perturb the policy). 'shaping' = its gradient also "
-                             "shapes the shared trunk. STRUCTURAL + resume-IMMUTABLE (version-checked). A "
-                             "SIDE readout (never in pi/vf — leak-safe). "
-                             "Design: designs/ai_v6/design_distributional_value_critic.md.")
-    parser.add_argument("--value-dist-bins", "--value_dist_bins", dest="value_dist_bins",
-                        type=int, default=None,
-                        help="Atom count for --value-dist-mode (the head's output width; weight-shape, "
-                             "version-checked). Recommended 32 (readable). Required > 0 when the mode is "
-                             "on; ignored (must be 0) when none.")
-    parser.add_argument("--value-dist-vmin", "--value_dist_vmin", dest="value_dist_vmin",
-                        type=float, default=None,
-                        help="Lower edge of the value-dist atom support (the return range the atoms span). "
-                             "Resume-immutable (version-checked). Required when --value-dist-mode is on.")
-    parser.add_argument("--value-dist-vmax", "--value_dist_vmax", dest="value_dist_vmax",
-                        type=float, default=None,
-                        help="Upper edge of the value-dist atom support. Resume-immutable "
-                             "(version-checked). Required when --value-dist-mode is on (must be > vmin).")
-    parser.add_argument("--value-dist-coef", "--value_dist_coef", dest="value_dist_coef",
-                        type=float, default=None,
-                        help="Loss weight for the value-dist head's HL-Gauss CE (value_dist_coef * CE), "
-                             "like --win-prob-coef. Default 1.0. TRAINING-only (not version-locked; "
-                             "inherited on a flagless resume). Ignored when --value-dist-mode none. Lower "
-                             "it if 'shaping' fights the policy (watch grad/value_dist_share / "
-                             "grad/value_dist_policy_cosine — this head's own shared-trunk pull).")
     parser.add_argument("--td-aux-coef", "--td_aux_coef", dest="td_aux_coef",
                         type=float, default=None,
                         help="TD-CONSISTENCY auxiliary weight (gen3_td_consistency_aux_v1): add "
@@ -481,85 +449,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "(not version-locked; inherited on a flagless resume). Costs one extra "
                              "512-state critic forward per minibatch. Watch td_aux/resid_rms fall and "
                              "td_aux/resid_mean stay near 0.")
-    parser.add_argument("--win-prob-pbrs-coef", "--win_prob_pbrs_coef", dest="win_prob_pbrs_coef",
-                        type=float, default=None,
-                        help="WIN-PROB PBRS reward shaping (gen3_winprob_pbrs_v1; ai_v12 route 1, "
-                             "designs/ai_v12/design_winprob_behavior_coupling.md). Adds "
-                             "coef * (gamma*phi(s') - phi(s)) to every transition's reward, with "
-                             "phi(s) = sigmoid of the win-prob head's logit, DETACHED. --win-prob-mode "
-                             "'shaping' is REPRESENTATION shaping and carries NO behavioral force (the "
-                             "head is a side readout with no gradient path to the acting head); this is "
-                             "the reward-level route that gives it force, so a whiff that drops the "
-                             "model's own P(win) costs literal reward. Protected by the "
-                             "potential-based-shaping invariance theorem -- a miscalibrated phi costs "
-                             "learning SPEED, not correctness -- but our phi is a LEARNED, DRIFTING "
-                             "head, so that holds exactly per rollout and only approximately across "
-                             "them (prefer a MATURE base; see the doc's SS2.4). 0.0 = OFF, "
-                             "byte-identical (the module is not even imported). REQUIRES "
-                             "--win-prob-mode read_only|shaping. Applied trainer-side to the rollout "
-                             "buffer before GAE (env workers hold no model); covers --async-rollout. "
-                             "TRAINING-only (not version-locked; recorded for provenance and inherited "
-                             "on a flagless resume, the td_aux_coef class). Watch "
-                             "train/pbrs_reward_share -- the shaping's share of the reward stream.")
-    parser.add_argument("--win-prob-pbrs-source", "--win_prob_pbrs_source",
-                        dest="win_prob_pbrs_source", type=str, default=None,
-                        help="FROZEN phi for --win-prob-pbrs-coef (gen3_winprob_pbrs_source_v1): a "
-                             "checkpoint .zip or run dir whose win-prob head supplies the potential, "
-                             "instead of the LIVE (training, drifting) head. This is what makes the "
-                             "PBRS invariance theorem hold EXACTLY rather than approximately -- the "
-                             "theorem assumes phi is a FIXED function of state, and our live head is "
-                             "a module inside the network being trained, so the per-start-state "
-                             "constant moves across rollouts. A frozen mature phi removes that "
-                             "caveat entirely. Costs one extra frozen extractor on the training "
-                             "device (the --distill-teacher class) and one no_grad forward per "
-                             "rollout, which REPLACES the live-phi forward rather than adding to it. "
-                             "Requires --win-prob-pbrs-coef > 0; the source must share our "
-                             "arch_signature (an obs FAMILY check, so a prior-generation phi is "
-                             "viable). Loaded eagerly -- never torch.compile'd, and never pickled "
-                             "into our checkpoint. A bad path is a FATAL_CONFIG exit at startup, "
-                             "never a crash-restart loop. TRAINING-only, recorded for provenance and "
-                             "inherited on a flagless resume (a resume that silently reverted to "
-                             "live-phi would change the objective mid-run with nothing saying so).")
-    # gen3_frozen_phi_actor_only_v1 (2026-09-06), lifting the hold that gen3_winprob_critic_mode_v1
-    # declared this flag under. The FROZEN-phi rung of the registered SPARSE / SELF-phi / FROZEN-phi
-    # ladder, in the SHAPE the win-prob critic wants it: a single path flag, on/off by presence, no
-    # coefficient -- under that critic the potential's currency is FIXED, so the only justified
-    # coefficient is the currency-matched one and it is set internally. What made it buildable is
-    # that the shaping is ACTOR-ONLY: adding the potential to the REWARD would make the critic's
-    # target `P(win) - phi`, which a sigmoid cannot represent below 0.
-    parser.add_argument("--win-prob-pbrs-frozen", "--win_prob_pbrs_frozen",
-                        dest="win_prob_pbrs_frozen", type=str, default=None,
-                        help="THE FROZEN-phi ACTOR-ONLY POTENTIAL (gen3_frozen_phi_actor_only_v1; "
-                             "requires --critic winprob): a checkpoint .zip or run dir whose FROZEN "
-                             "win-prob head supplies a potential. A bare run dir means that run's "
-                             "LAST SNAPSHOT (gen3_last_snapshot_resolution_v1); name a .zip or use "
-                             "<run>@<step> to pin a file. ACTOR-ONLY is the whole construction: "
-                             "gamma*phi(s') - phi(s) is added to the stream that feeds the POLICY's "
-                             "advantages and to nothing else, so the critic keeps training on the "
-                             "UNSHAPED terminal indicator and V(s) = P(win|s) is preserved exactly. "
-                             "A potential added to the REWARD would make the critic's target "
-                             "`P(win) - phi`, negative wherever the frozen head was optimistic about "
-                             "a lost game -- unrepresentable by a sigmoid, and it would break the "
-                             "search leaf's and every calibration meter's contract. NO coefficient: "
-                             "the terminal is the win INDICATOR at --victory-value 1.0 and V is "
-                             "P(win), so phi = sigmoid(logit) in [0,1] is already one unit of V per "
-                             "unit of V -- the coefficient is exactly 1.0, set internally and "
-                             "PRINTED at startup. Exact Ng invariance holds (phi is a FIXED function "
-                             "of state), and at lambda=1 the shaped advantage is the unshaped one "
-                             "minus -phi(s), a state-dependent BASELINE, which is zero-bias for a "
-                             "policy gradient. COSTS one frozen extractor of memory (the "
-                             "--distill-teacher class) and one no_grad forward per rollout, and it "
-                             "puts the frozen head's own biases -- notably the resolution starvation "
-                             "the committed baseline measured -- into every advantage. Under "
-                             "--critic shaped it is REFUSED: use --win-prob-pbrs-coef / "
-                             "--win-prob-pbrs-source there, where phi and V are in different units "
-                             "and the dose is a real question. TRAINING-only (not version-locked for "
-                             "a forward; recorded and inherited on a flagless resume, because the "
-                             "flag is boolean by PRESENCE and a launcher restart would otherwise "
-                             "turn a FROZEN-phi arm into the SPARSE arm mid-run). Watch "
-                             "pbrs/frozen_phi_mean (FLAT -- phi is fixed), pbrs/frozen_phi_episode_"
-                             "dose (the shaping's budget as a fraction of a win) and "
-                             "signal/adv_shaped_minus_unshaped_mean (the telescoping term).")
     parser.add_argument("--policy-grad-coef", "--policy_grad_coef", dest="policy_grad_coef",
                         type=float, default=None,
                         help="POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1): multiplies ONLY the "
@@ -703,18 +592,6 @@ def add_distillation_flags(parser: argparse.ArgumentParser) -> None:
                              "has no direct CE, so it stays near the Smogon prior. Requires "
                              "--item-belief (auto-zeroed with a warning otherwise). TRAINING-only "
                              "(not version-locked); metrics ride belief/item_* (acc, n_slots).")
-    parser.add_argument("--value-from-dist", "--value_from_dist", dest="value_from_dist",
-                        action=BoolFlag, default=None,
-                        help="Phase B (gen3_dist_critic_v1): make the DISTRIBUTIONAL value head the critic "
-                             "— GAE/bootstrap/deployment read E[Z] and the HL-Gauss CE is the primary value "
-                             "loss (vf_coef weight); the scalar value_net freezes as a fallback. Requires "
-                             "--value-dist-mode shaping. Resume-immutable (the belief-grad-mode class); flip "
-                             "on a warm-started run with --allow-value-from-dist-change.")
-    parser.add_argument("--allow-value-from-dist-change", "--allow_value_from_dist_change",
-                        dest="allow_value_from_dist_change", action="store_true", default=False,
-                        help="Permit the INTENTIONAL Phase-B critic-source migration on resume (the v45 gate "
-                             "otherwise FATALs a drift). The offline probe confirmed E[Z]≈V, so the swap is "
-                             "near-seamless. Loud notice; next save records the new mode. Needed once.")
     parser.add_argument("--allow-belief-grad-mode-change", "--allow_belief_grad_mode_change",
                         dest="allow_belief_grad_mode_change", action="store_true", default=False,
                         help="Permit an INTENTIONAL belief-grad-mode migration on resume (the v41 gate "

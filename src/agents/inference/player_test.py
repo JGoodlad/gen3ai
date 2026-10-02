@@ -616,30 +616,8 @@ class TestStaleDecisionRedecide:
         p._tracker.restore.assert_called_once()
 
 
-# ── RLPlayer._value_dist (v29 distributional value head capture) ──────────────
-# _value_dist only reads self.model.policy.features_extractor.last_value_dist_logits, so a mock
-# `self` exercises it directly (no model/battle needed). The same trace-capture path as _win_prob.
-
-def test_value_dist_reads_stash_into_distribution():
-    import torch
-    from types import SimpleNamespace
-    logits = torch.tensor([[0.0, 10.0, 0.0]])   # peaked on atom 1
-    fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(
-        features_extractor=SimpleNamespace(last_value_dist_logits=logits))))
-    out = RLPlayer._value_dist(fake)
-    assert len(out) == 3 and out[1] > 0.99 and abs(sum(out) - 1.0) < 1e-6
-
-
-def test_value_dist_none_when_head_off():
-    from types import SimpleNamespace
-    fake = SimpleNamespace(model=SimpleNamespace(policy=SimpleNamespace(
-        features_extractor=SimpleNamespace(last_value_dist_logits=None))))
-    assert RLPlayer._value_dist(fake) is None
-
-
 # ── RLPlayer._opp_intent (v67 α/β capture — the interpretability payload) ─────
-# Same shape as the two above: the method only reads the extractor stash, so a mock `self`
-# exercises it. What it produces is what lands in the trace and therefore in the prober.
+# The method only reads the extractor stash, so a mock `self` exercises it. What it produces is what lands in the trace and therefore in the prober.
 
 def _intent_self(*, alpha=None, seat_nums=None, beta=None, species=None):
     from types import SimpleNamespace

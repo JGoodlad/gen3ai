@@ -574,7 +574,7 @@ and announces it; an explicit flag refuses.** Pinned by `src/main/compile_defaul
 `test_an_explicit_flag_never_reaches_the_auto_path`, which holds the refusal in place).
 
 **Measured** (2026-08-14, v76 `gen3_ctx_dedup_v1`, RTX 3080 Ti, the real
-`MaskablePPO -> ActorCriticPolicy._build()` path, gen-9's own `cli_args`: batch 4096, PopArt on;
+`MaskablePPO -> ActorCriticPolicy._build()` path, gen-9's own `cli_args`: batch 4096, PopArt on (PopArt has since been deleted);
 `policy.evaluate_actions` fwd+bwd, arms interleaved, 3 pairs, idle box):
 
 | scope | eager | compiled | speedup |

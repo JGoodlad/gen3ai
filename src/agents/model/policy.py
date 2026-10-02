@@ -29,7 +29,6 @@ from agents.model import masked_categorical as _mc
 from agents.model import region_calls as _rc
 from agents.model.arch_constants import D_MODEL
 from agents.model.critic_mode import CRITIC_UNRECORDED, CRITIC_MODES, is_winprob
-from agents.model.popart import PopArtNormalizer
 
 if TYPE_CHECKING:
     # SB3 types `features_extractor` as `BaseFeaturesExtractor` (ours is duck-typed, not a subclass);
@@ -107,14 +106,11 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
     row ever learns "slot j" positionally, and the sorted-vs-request ordering bug class is
     unrepresentable at the logits.
 
-    **PopArt (opt-in via ``use_popart=True`` in ``policy_kwargs``).** When enabled, the value head
-    (``value_net``) outputs *normalized* values and a :class:`~agents.model.popart.PopArtNormalizer`
-    de-normalizes every value site below, so callers (GAE / advantages / bootstrapping) always see
-    real-unit values while the PPO loss trains in normalized space (see
-    ``agents/training/instrumented_ppo.py``). The normalizer is built **after** ``super().__init__``
-    (which builds ``value_net``); its ``(mu, sigma)`` buffers ride the policy state_dict, so they
-    save/restore across checkpoints. ``use_popart`` is version-checked (``ModelVersion``) — it cannot
-    be toggled on a resumed model.
+    **The critic** is ``critic`` in ``policy_kwargs`` (`critic_mode`): ``winprob`` reads
+    ``sigmoid(win_head logit)``, ``shaped`` (what an absent record means) reads the scalar
+    ``value_net``. PopArt and the distributional value head were DELETED (deletion pass L1; a
+    checkpoint's pickled ``use_popart`` / ``value_from_dist`` are stripped by
+    ``snapshot._DEAD_POLICY_KWARGS_JUDGED``).
     """
 
     def _build(self, lr_schedule: Any) -> None:
@@ -146,9 +142,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),  # type: ignore[call-arg]
                                               **self.optimizer_kwargs)
 
-    def __init__(self, *args: Any, use_popart: bool = False, value_from_dist: bool = False,
-                 critic: str = CRITIC_UNRECORDED, **kwargs: Any) -> None:
-        # super().__init__ builds value_net (SB3 _build); the normalizer wraps it afterwards.
+    def __init__(self, *args: Any, critic: str = CRITIC_UNRECORDED, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # gen3_winprob_critic_mode_v1: WHICH readout is the value function. 'shaped' is every
         # generation through gen-16 — `value_net` / E[Z] in raw shaped-return units — and what an
@@ -158,23 +152,6 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         if str(critic) not in CRITIC_MODES:
             raise ValueError(f"unknown critic {critic!r} (want one of {CRITIC_MODES})")
         self._critic_mode = str(critic)
-        if is_winprob(self._critic_mode) and use_popart:
-            # Not a preference — PopArt's JOB does not exist here (the payoff set is fixed at
-            # {win, not-win}, so mu/sigma cannot drift), and its POP surgery only ever corrected
-            # `value_net`, which this mode does not read. A normalizer on a probability critic
-            # would rescale V out of [0,1] with nothing downstream noticing. The launch path
-            # refuses this combination (`combination_checks`); this is the last line of defence
-            # for a policy constructed directly.
-            raise ValueError(
-                "critic='winprob' is incompatible with use_popart=True: the win-prob critic's "
-                "target is a bounded, stationary Bernoulli outcome, so there is no return scale "
-                "to normalize, and `_denorm` would take V out of [0,1]. Pass --no-use-popart.")
-        self.popart = PopArtNormalizer() if use_popart else None
-        # gen3_dist_critic_v1 (Phase B): when True the GAE/bootstrap/deployed value is E[Z] from the
-        # distributional head instead of the scalar value_net (which freezes as a fallback + monitor).
-        # A resume-immutable training-behavior toggle (the belief_grad_mode class) — see set_ / the
-        # ModelVersion gate. Requires value_dist_mode == "shaping" (the head must be a live critic).
-        self._value_from_dist = bool(value_from_dist)
 
         # gen3_identity_init_guard_v1: SB3's `_build()` just ran
         # `features_extractor.apply(init_weights, gain=sqrt(2))`, which orthogonally re-initialises
@@ -199,43 +176,16 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         _obs_dim = int(_obs_space.shape[0]) if _obs_space is not None else 0
         self.ridealong = build_ridealong(self.features_extractor, obs_dim=_obs_dim)
 
-    def set_value_from_dist(self, on: bool) -> None:
-        """Apply value_from_dist at RUNTIME (the --value-from-dist migration path). SB3's load
-        reconstructs the policy from the ZIP's SAVED policy_kwargs, so a first Phase-B resume (from a
-        pre-v45 checkpoint whose kwargs lack the key) would otherwise be a SILENT NO-OP — the migration
-        notice prints but the loaded policy keeps _value_from_dist=False (the 2026-07-22 catch:
-        grad/value_dist_share stayed ~0.05 instead of ~0.5). Call this post-load on resume; no-op when
-        unchanged. Same fix as features_extractor.set_belief_grad_mode."""
-        changed = bool(on) != bool(getattr(self, "_value_from_dist", False))
-        self._value_from_dist = bool(on)
-        if changed:
-            print(f"[Gen3DualHeadMaskablePolicy] value_from_dist APPLIED at runtime -> {bool(on)} "
-                  f"(critic = {'distributional E[Z]' if on else 'scalar value_net'})")
-
-    def _denorm(self, values: th.Tensor) -> th.Tensor:
-        """Map the value head's (possibly normalized) output to a real-unit value. Identity when
-        PopArt is disabled, so the real-unit GAE / advantage path is unchanged."""
-        return self.popart.denormalize(values) if self.popart is not None else values
-
     def _critic_value(self, latent_vf: th.Tensor) -> th.Tensor:
-        """The real-unit critic value used by GAE / bootstrap / deployment. Phase B: E[Z] from the
-        distributional head (normalized) → _denorm (same PopArt peg as the scalar) → real units, so
-        the plumbing is byte-for-byte the scalar path except the source.
-
-        ⚠️ With ``_value_from_dist`` ON there is NO fallback (gen3_extractor_stashes_v1, task 3):
-        under Phase B the scalar ``value_net`` is FROZEN, so silently falling back to it would be a
-        silently-wrong critic — the exact shape of the v89 bug (a value source the training loop
-        believes in but that nothing updates). A missing head or un-stashed logits here means the
-        extractor forward and this critic read are mis-wired, and that must crash, not degrade.
-        With the flag OFF the scalar path is the correct critic, unchanged.
+        """The critic value used by GAE / bootstrap / deployment.
 
         gen3_winprob_critic_mode_v1: under ``critic='winprob'`` the value IS the win-prob head's
-        probability — ``sigmoid(logit) ∈ [0,1]`` — and there is no PopArt to de-normalize through
-        (refused at construction). The same NO-FALLBACK rule applies for the same reason: under
-        this mode ``value_net`` is in no loss graph, so quietly returning it would be a critic the
-        training loop believes in and nothing updates."""
+        probability — ``sigmoid(logit) ∈ [0,1]``. There is NO fallback: under this mode
+        ``value_net`` is in no loss graph, so quietly returning it would be a critic the training
+        loop believes in and nothing updates (the v89 orphaned-route class). Under ``shaped`` the
+        value is the scalar ``value_net``."""
         # `getattr` with the default rather than `self._critic_mode`: this method is called on
-        # policy-shaped STUBS (`dist_critic_test`) and could be reached on a policy restored
+        # policy-shaped STUBS and could be reached on a policy restored
         # from a pre-v109 checkpoint whose saved `policy_kwargs` never carried the key. An
         # absent field means the historical critic — the same read every other consumer does.
         if is_winprob(getattr(self, "_critic_mode", CRITIC_UNRECORDED)):
@@ -257,28 +207,9 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
                     f"{latent_vf.shape[0]} — the extractor forward and this critic read are "
                     "from different batches.")
             # [B,1] like `value_net(latent_vf)`, so every caller's `.flatten()` / `.squeeze(-1)`
-            # is unchanged. NO `_denorm`: probability units are the only currency here.
+            # is unchanged. Probability units are the only currency here.
             return th.sigmoid(logits.reshape(-1, 1))
-        if self._value_from_dist:
-            fe = cast("Gen3FeaturesExtractor", self.features_extractor)
-            head = fe.value_dist_head
-            logits = fe.last_value_dist_logits
-            if head is None or logits is None:
-                raise RuntimeError(
-                    "_value_from_dist is ON but "
-                    + ("the extractor has no value_dist_head" if head is None
-                       else "last_value_dist_logits was not stashed by the preceding forward")
-                    + " — the scalar value_net is FROZEN under value_from_dist, so falling back "
-                    "to it would be a silently-wrong critic (the v89 orphaned-route class). "
-                    "Check that extract_features ran on THIS policy's extractor before the "
-                    "critic read, and that value_dist_mode != 'none'.")
-            if logits.shape[0] != latent_vf.shape[0]:
-                raise RuntimeError(
-                    f"stale value-dist stash: logits batch {logits.shape[0]} vs latent_vf "
-                    f"{latent_vf.shape[0]} — the extractor forward and this critic read are "
-                    "from different batches.")
-            return self._denorm(head.mean(logits))
-        return self._denorm(self.value_net(latent_vf))
+        return cast(th.Tensor, self.value_net(latent_vf))
 
     def _pointer_logits(self, latent_pi: th.Tensor) -> th.Tensor:
         """gen3_pointer_native_v1: the action logits ARE the pointer head's scores.

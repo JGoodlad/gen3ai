@@ -127,27 +127,31 @@ def test_the_win_prob_term_is_tagged_value_under_the_winprob_critic():
     assert 'wterm, grp = st.vf_coef * wl, "value"' in src, (
         "the promoted BCE must join the `value` noise-scale group — an `aux` tag here reproduces "
         "the defect the design's §1.4 records")
-    assert 'wterm, grp = st.win_prob_coef * wl, "aux"' in src, "the shaped path must keep its `aux` tag"
+    assert 'wterm, grp = wl, "aux"' in src, "the shaped path must keep its `aux` tag"
     assert "_ntg.add(_mo.term_groups[_tn], _tt)" in src
 
 
-def test_the_promoted_bce_is_weighted_by_vf_coef_not_win_prob_coef():
-    """One critic, one coefficient. Two on one loss is the ambiguity `_ce_w` existed to resolve."""
+def test_the_promoted_bce_is_weighted_by_vf_coef_and_the_shaped_aux_is_unit_weight():
+    """One critic, one coefficient: the promoted BCE rides `vf_coef`; under `shaped` the aux BCE is
+    a fixed weight of 1.0 (the `--win-prob-coef` flag that once set it was deleted)."""
     src = _train_source()
     assert 'wterm, grp = st.vf_coef * wl, "value"' in src
-    assert 'wterm, grp = st.win_prob_coef * wl, "aux"' in src, "the aux path keeps its own coef"
+    assert 'wterm, grp = wl, "aux"' in src
 
 
 def test_the_scalar_value_term_is_dropped_under_the_winprob_critic():
     """`value_net` is in no loss graph here, so a `vf_coef * value_loss` term would train a readout
     nothing reads — the Phase-B treatment, for the same reason."""
-    assert ('vf_term: Any = 0.0 if (st.value_from_dist or st.critic_winprob) else st.vf_coef * '
+    assert ('vf_term: Any = 0.0 if st.critic_winprob else st.vf_coef * '
             'value_loss') in _train_source()
 
 
-def test_the_bce_is_forced_on_even_at_win_prob_coef_zero():
-    """`--win-prob-coef 0` must not be able to switch the critic's own loss off."""
-    assert '(self.win_prob_coef != 0.0 or critic_winprob)' in _train_source()
+def test_the_bce_follows_the_head_alone():
+    """The win-prob BCE is folded whenever the head exists: no coefficient can switch the critic's
+    own loss off (the `--win-prob-coef` that once could was deleted)."""
+    src = _train_source()
+    assert 'win_prob_on = getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"' in src
+    assert "win_prob_coef" not in src
 
 
 def test_the_grad_balance_value_term_follows_the_critic():
@@ -208,7 +212,7 @@ def test_an_unmeasurable_rollout_publishes_NOTHING(case):
 
 def test_the_read_lives_in_calibration_and_is_gated_on_the_critic_mode():
     """It reads `rollout_buffer.values` AS probabilities. Under `shaped` those are shaped returns
-    in PopArt units, so publishing it there would be a calibration curve of the wrong quantity."""
+    in reward units, so publishing it there would be a calibration curve of the wrong quantity."""
     src = _train_source()
     assert 'if critic_winprob:' in src
     assert 'win_prob/critic_' in src

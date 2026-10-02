@@ -1198,8 +1198,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--v-column", choices=("win_probs", "values"), default="win_probs",
                     help="which npz column the CONDITIONING rows read as V. 🚨 On a `--critic "
                          "shaped` run the two are DIFFERENT READOUTS: `values` is the actual "
-                         "critic (the distributional E[Z] in raw shaped-return units) and "
-                         "`win_probs` is the AUXILIARY head at --win-prob-coef. On a `--critic "
+                         "critic (the scalar value net in raw return units) and "
+                         "`win_probs` is the AUXILIARY head. On a `--critic "
                          "winprob` run they are the same tensor. The default is `win_probs`, "
                          "which keeps every banked read byte-identical. Only the RANK-based rows "
                          "(the AUCs) are valid under `values`; the calibration family is not "

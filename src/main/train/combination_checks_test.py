@@ -162,8 +162,6 @@ ARGVS: dict[str, list[str]] = {
     "adaptive_batch_max_ge_min": ["--adaptive-batch", "total", "--adaptive-batch-min-accum", "4",
                                   "--adaptive-batch-max-accum", "2"],
     "adaptive_batch_every_min": ["--adaptive-batch", "total", "--adaptive-batch-every", "0"],
-    "value_from_dist_needs_shaping": ["--value-from-dist"],
-    "popart_needs_explicit_clip_off": ["--use-popart"],
     "exploiter_excludes_self_play": ["--exploiter", "models/t", "--self-play"],
     "pfsp_scale_needs_self_play": ["--pfsp-scale", "1.0"],
     "team_pfsp_needs_self_play_or_exploiter": ["--team-pfsp", "var"],
@@ -198,13 +196,6 @@ ARGVS: dict[str, list[str]] = {
                                            "--exploiter-temp-mode", "ratchet"],
     "fork_lr_is_resume_only": ["--fork-lr", "1e-5"],
     "fork_lr_freeze_needs_fork_lr": ["--fork-lr-freeze"],
-    "value_dist_mode_needs_bins": ["--value-dist-mode", "shaping", "--value-dist-bins", "0"],
-    "value_dist_mode_needs_support": ["--value-dist-mode", "shaping", "--value-dist-bins", "32",
-                                      "--value-dist-vmin", "5", "--value-dist-vmax", "1"],
-    "value_dist_bins_without_mode": ["--value-dist-mode", "none", "--value-dist-bins", "32"],
-    "win_prob_pbrs_coef_needs_mode": ["--win-prob-pbrs-coef", "0.1", "--win-prob-mode", "none"],
-    "win_prob_pbrs_source_needs_coef": ["--win-prob-pbrs-source", "models/p.zip",
-                                        "--win-prob-pbrs-coef", "0"],
     "opd_coef_needs_search_teacher": ["--opd-coef", "0.1"],
     "search_teacher_coef_needs_search_teacher": ["--search-teacher-coef", "0.1"],
     "search_teacher_mode_needs_teacher": ["--search-teacher-mode", "winprob_oneply"],
@@ -220,14 +211,6 @@ ARGVS: dict[str, list[str]] = {
     # row below trips its own rule rather than the three "you did not pass the reward flags" ones.
     # The three requirement rows themselves each OMIT exactly one member of `_WP`.
     "winprob_critic_needs_a_head": _WP + ["--win-prob-mode", "none"],
-    "winprob_critic_refuses_popart": _WP + ["--use-popart"],
-    "winprob_critic_refuses_value_dist": _WP + ["--value-dist-mode", "read_only",
-                                                "--value-dist-bins", "51",
-                                                "--value-dist-vmin", "-12",
-                                                "--value-dist-vmax", "12"],
-    "winprob_critic_refuses_value_from_dist": _WP + ["--value-from-dist"],
-    "winprob_critic_refuses_win_prob_coef": _WP + ["--win-prob-coef", "1.0"],
-    "winprob_critic_refuses_value_tail_weight": _WP + ["--value-tail-weight", "0.3"],
     # gen3_winprob_strata_weight_v1 — the one row in this family pointing the OTHER way ("X
     # REQUIRES winprob"), so it deliberately does NOT carry `_WP`: the default `shaped` critic is
     # exactly the configuration it refuses.
@@ -263,8 +246,6 @@ ARGVS: dict[str, list[str]] = {
     # move the value function when that head IS the value function.
     "dense_aux_needs_the_winprob_critic": [*_SH, "--win-prob-dense-aux", "1.0"],
     "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
-    "winprob_critic_refuses_self_phi_pbrs": _WP + ["--win-prob-pbrs-coef", "0.5"],
-    "winprob_critic_refuses_self_phi_source": _WP + ["--win-prob-pbrs-source", "models/p.zip"],
     "winprob_critic_refuses_draw_penalty": ["--critic", "winprob",
                                             "--terminal-indicator", "--victory-value", "1.0",
                                             "--draw-penalty", "-1.0"],
@@ -274,11 +255,6 @@ ARGVS: dict[str, list[str]] = {
     "winprob_critic_needs_unit_victory_value": ["--critic", "winprob",
                                                 "--terminal-indicator", "--victory-value", "7.5",
                                                 "--draw-penalty", "0"],
-    # gen3_frozen_phi_actor_only_v1: BUILDABLE under winprob, refused under shaped, so a typed
-    # `--critic shaped` (on the python core, the only one serving it) fires the routing refusal.
-    "win_prob_pbrs_frozen_needs_the_winprob_critic": [*_SH, "--win-prob-pbrs-frozen", "models/p.zip"],
-    "win_prob_pbrs_frozen_needs_a_head": ["--win-prob-pbrs-frozen", "models/p.zip",
-                                          "--win-prob-mode", "none"],
     "cf_records_needs_bridge": ["--cf-records", "--use-bridge", "off"],
     "obs_source_core_needs_rust_bridge": ["--obs-source", "core", "--use-bridge", "node"],
     "cf_label_duty_cycle_floor": ["--cf-records", "--cf-winprob-coef", "0.1",
@@ -430,7 +406,7 @@ def _namespace(argv: list[str]):
     desugared — in that order, which is the order `resolve_config` and `checkargs` use.
 
     `resolve_critic_mode` belongs here for `desugar_umbrella_flags`' exact reason: it IMPLIES
-    `--win-prob-mode shaping` / `--gamma 1.0` / `--no-use-popart` under `--critic winprob`, so a
+    `--win-prob-mode shaping` / `--gamma 1.0` under `--critic winprob`, so a
     table row judged without it would report a command as broken on the very flags the mode fills
     in."""
     from main.train.config import desugar_umbrella_flags, resolve_critic_mode

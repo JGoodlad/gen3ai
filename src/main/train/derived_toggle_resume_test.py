@@ -64,7 +64,7 @@ def _saved_version(args) -> ModelVersion:
     # (a `dict(...)` call, not a literal: `policy_activation_pin_test` counts the entry point's
     # policy_kwargs LITERALS, and this is a test double of the recorded fields, not a policy build)
     pk = dict(features_extractor_class=Gen3FeaturesExtractor, features_extractor_kwargs=ek, net_arch=NET_ARCH,
-              use_popart=args.use_popart, value_from_dist=args.value_from_dist, critic=args.critic)
+              critic=args.critic)
     # Every recorded training value `model_build` passes as `<name>=args.<name>` (the same-named dest);
     # the save-site test above pins that `opp_intent_coef` is among them at both sites.
     ctor = inspect.signature(ModelVersion.from_layout_and_policy_kwargs).parameters

@@ -2,7 +2,7 @@
 
 Three methods, each returning what the fold then reads: the opponent-intent label alignment (a
 buffer edit with no result), the FOLD FLAGS (which terms are live this call), and the PROBE SETUP
-(the once-per-`train()` diagnostics, PopArt's advance, and the two gradient samplers).
+(the once-per-`train()` diagnostics and the two gradient samplers).
 
 None of this is the fold. Each flag is computed once and read by the `if <x>_on:` guard of the term
 it owns, so the sequence in `ppo.train()` stays straight-line source with its guards inline — the
@@ -40,8 +40,6 @@ class FoldFlags(NamedTuple):
     critic_winprob: Any
     win_prob_on: Any
     scaffolding_on: Any
-    value_from_dist: Any
-    value_dist_on: Any
     search_teacher_on: Any
     opd_on: Any
     distill_on: Any
@@ -72,7 +70,6 @@ class ProbeSetup(NamedTuple):
     grad_norms: Any
     capacity: Any
     capacity_metrics: Any
-    popart: Any
     signal_metrics: Any
     accum: Any
     noise_g_small_sq: Any
@@ -138,35 +135,19 @@ class TrainSetup:
         hp_type_belief_on = self.hp_type_belief_coef > 0.0  # +HP-TYPE belief CE (gen3_opp_hp_type_belief_v1)
         item_belief_on = self.item_belief_coef > 0.0  # +ITEM belief CE (gen3_item_belief_v1)
         # +WIN-PROB: the head's MODE (none/read_only/shaping) lives on the extractor; the loss is added
-        # whenever the mode is on AND the coef is non-zero. read_only vs shaping differ only in whether the
+        # whenever the mode is on. read_only vs shaping differ only in whether the
         # extractor stop-grads the head's input (the trunk gradient) — the loss term itself is identical.
         # +CRITIC MODE (gen3_winprob_critic_mode_v1): under `--critic winprob` the win-prob head IS
         # the value function, so the BCE below stops being an auxiliary and becomes THE value loss
         # — at `vf_coef`, tagged "value" (never "aux": §1.4 of the design records that
         # `train/noise_scale_value` spent the distributional-critic era describing a zero-weighted
-        # term). The scalar `value_loss` survives as a diagnostic; its TERM is dropped, as under
-        # Phase B. `shaped` (the default) is unchanged.
+        # term). The scalar `value_loss` survives as a diagnostic; its TERM is dropped.
         critic_winprob = is_winprob(getattr(self.policy, "_critic_mode", "shaped"))
-        win_prob_on = (
-            getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
-            and (self.win_prob_coef != 0.0 or critic_winprob)   # winprob forces the BCE on
-        )
-        # +SCAFFOLDING GAUGE: gated on the HEAD's existence alone, NOT on `win_prob_coef` — the
-        # gauge is an observability read of whatever the head currently says, and a `read_only`
-        # head at coef 0 still says something worth curving. ALWAYS ON when the head exists;
-        # there is no flag, matching the `signal/` group.
+        win_prob_on = getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
+        # +SCAFFOLDING GAUGE: gated on the HEAD's existence alone — the
+        # gauge is an observability read of whatever the head currently says. ALWAYS ON when the
+        # head exists; there is no flag, matching the `signal/` group.
         scaffolding_on = getattr(self.policy.features_extractor, "win_prob_mode", "none") != "none"
-        # +VALUE-DIST: the distributional value head's HL-Gauss CE aux loss. On when the mode is set AND
-        # the coef is non-zero. read_only vs shaping differ only in the extractor's stop-grad of the head's
-        # input — the loss term is identical. OFF → skipped (loss byte-identical to upstream).
-        # gen3_dist_critic_v1 (Phase B): the distributional head IS the critic — GAE reads E[Z]
-        # (policy._critic_value), the HL-Gauss CE is the PRIMARY value loss (weighted by vf_coef,
-        # not value_dist_coef), and the scalar MSE term is dropped (value_net freezes as a fallback).
-        value_from_dist = bool(getattr(self.policy, "_value_from_dist", False))
-        value_dist_on = (
-            getattr(self.policy.features_extractor, "value_dist_mode", "none") != "none"
-            and (self.value_dist_coef != 0.0 or value_from_dist)   # Phase B forces the CE on
-        )
         # +SEARCH-TEACHER: AWR policy distillation. On when enabled, the coef is non-zero, AND the
         # standalone correction buffer has been populated (the callback fills it from worker shards).
         # Each minibatch samples its OWN correction batch + does its OWN policy forward (off-policy
@@ -293,7 +274,7 @@ class TrainSetup:
             belief_aux_on=belief_aux_on, move_belief_on=move_belief_on, move_latent_on=move_latent_on,
             spread_belief_on=spread_belief_on, hp_type_belief_on=hp_type_belief_on, item_belief_on=item_belief_on,
             critic_winprob=critic_winprob, win_prob_on=win_prob_on, scaffolding_on=scaffolding_on,
-            value_from_dist=value_from_dist, value_dist_on=value_dist_on, search_teacher_on=search_teacher_on,
+            search_teacher_on=search_teacher_on,
             opd_on=opd_on, distill_on=distill_on, distill_rows_in_buffer=distill_rows_in_buffer,
             policy_grad_coef=policy_grad_coef, td_aux_on=td_aux_on, cf_buffer=cf_buffer,
             cf_winprob_on=cf_winprob_on, cf_evid_on=cf_evid_on, cf_twin_on=cf_twin_on,
@@ -302,12 +283,12 @@ class TrainSetup:
         )
 
     def _train_probe_setup(self, distill_metrics: dict) -> ProbeSetup:
-        """The once-per-`train()` probes, PopArt's advance, and the two gradient samplers. Takes
+        """The once-per-`train()` probes and the two gradient samplers. Takes
         `distill_metrics` because the grad-projector writes its diagnostics straight into it."""
         # +INSTRUMENTATION: gradient-balance + value-scale diagnostics (grad_balance.py).
         # The dual-head extractor shares one trunk; both losses' gradients compete there. We
-        # sample that pull ONCE per train() call (first minibatch) so vf_coef / return
-        # normalization (PopArt) can be tuned to a number rather than inferred from KL.
+        # sample that pull ONCE per train() call (first minibatch) so vf_coef can be tuned to a
+        # number rather than inferred from KL.
         # +DIAGNOSTICS CADENCE (gen3_diagnostics_cadence_v1): which OPTIONAL probes run on this call
         # — every `--diagnostics-every`-th update, the first update of the process, and any probe a
         # consumer declared load-bearing. A skipped probe leaves its dict EMPTY, so its TB tags are
@@ -329,24 +310,14 @@ class TrainSetup:
         capacity = self._capacity()
         capacity_metrics: dict[str, float] = {}
 
-        # +PopArt: advance the value-target normalizer once per train() (before the epochs) from
-        # this rollout's returns; update() also POP-rescales value_net so its de-normalized outputs
-        # are preserved. The value loss below then trains in normalized space. No-op when disabled.
-        popart = getattr(self.policy, "popart", None)
-        if popart is not None:
-            popart.update(
-                th.as_tensor(self.rollout_buffer.returns, device=self.device), self.policy.value_net
-            )
-
         # +SIGNAL (gen3_signal_rate_metrics_v1): ADVANTAGE DENSITY — how much action-attributable
         # learning signal this rollout carries. Read ONCE per train() off the buffer's RAW GAE
         # advantages, HERE, because this is the last point at which they still exist unmodified:
         # the minibatch loop below applies `normalize_advantage`, which forces std→1 per minibatch
         # and so erases the very quantity being measured. Read-only numpy over the buffer — no
         # torch, no RNG, no gradient path, and the advantages PPO fits are untouched.
-        # ⚠️ UNITS: these ride the run's PopArt-normalized returns, whose σ moves over training, so
-        # `adv_raw_std`/`adv_raw_abs_mean` compare WITHIN a run and only cautiously across runs
-        # (`adv_kurtosis` is scale-free and does compare). Must be read WITH `signal/outcome_entropy`
+        # ⚠️ UNITS: these ride the run's own return units (`adv_kurtosis` is scale-free and compares
+        # across runs). Must be read WITH `signal/outcome_entropy`
         # — see signal_metrics.py's module docstring for the mirror paradox and the 2x2 reading.
         signal_metrics = advantage_density_metrics(self.rollout_buffer.advantages)
 
@@ -377,7 +348,7 @@ class TrainSetup:
         return ProbeSetup(
             shared_trunk=shared_trunk, grad_balance=grad_balance, rank_metrics=rank_metrics,
             edge_metrics=edge_metrics, cell_metrics=cell_metrics, grad_norms=grad_norms,
-            capacity=capacity, capacity_metrics=capacity_metrics, popart=popart,
+            capacity=capacity, capacity_metrics=capacity_metrics,
             signal_metrics=signal_metrics, accum=accum, noise_g_small_sq=noise_g_small_sq,
             noise_g_big_sq=noise_g_big_sq, ns_terms=_ns_terms, dgp=_dgp, diag=diag,
         )
@@ -411,7 +382,7 @@ class TrainSetup:
                           and "win_row_w" in obs)
         return bool(strata), bool(rollout_weight)
 
-    def _micro_static(self, f: FoldFlags, popart: Any, strata: bool, rollout_weight_on: bool) -> Any:
+    def _micro_static(self, f: FoldFlags, strata: bool, rollout_weight_on: bool) -> Any:
         """The learner micro-step's STATIC flags and coefficients (`micro_step.MicroStatic`) for this
         `train()` call — every value R1 branches on or multiplies by that does not change within a
         run (`gen3_learner_micro_step_v1`). Read from the same attributes and buffer keys the inline
@@ -425,14 +396,12 @@ class TrainSetup:
         progress = self._current_progress_remaining
         clip_range = float(self.clip_range(progress))
         clip_vf = (float(self.clip_range_vf(progress)) if self.clip_range_vf is not None else None)
-        value_mode = ("popart" if popart is not None
-                      else "plain" if (f.critic_winprob or self.clip_range_vf is None) else "clipped")
+        value_mode = "plain" if (f.critic_winprob or self.clip_range_vf is None) else "clipped"
         return MicroStatic(
             discrete=isinstance(self.action_space, spaces.Discrete),
             normalize_advantage=bool(self.normalize_advantage),
             clip_range=clip_range, clip_range_vf=clip_vf, value_mode=value_mode,
-            critic_winprob=bool(f.critic_winprob), value_from_dist=bool(f.value_from_dist),
-            value_tail_weight=float(getattr(self, "value_tail_weight", 0.0) or 0.0),
+            critic_winprob=bool(f.critic_winprob),
             vf_coef=float(self.vf_coef), ent_coef=float(self.ent_coef),
             policy_grad_coef=float(f.policy_grad_coef),
             fork_pg_mask=bool(f.fork_pg_mask_on),
@@ -451,7 +420,7 @@ class TrainSetup:
             setvalued_on=float(getattr(self, "beta_setvalued_coef", 0.0)) > 0.0,
             setvalued_coef=float(getattr(self, "beta_setvalued_coef", 0.0)),
             bot_label_weight=float(getattr(self, "intent_label_bot_weight", 1.0)),
-            win_prob_on=bool(f.win_prob_on), win_prob_coef=float(self.win_prob_coef),
+            win_prob_on=bool(f.win_prob_on),
             strata=bool(strata), rollout_weight=bool(rollout_weight_on),
         )
 

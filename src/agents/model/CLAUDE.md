@@ -24,7 +24,6 @@ update the topic doc in the same pass as the code.**
 | adding, demoting or deleting a model flag | [`designs/model/flag_registry_rules.md`](../../../designs/model/flag_registry_rules.md) + the GENERATED [`designs/flag_registry.md`](../../../designs/flag_registry.md) |
 | `model_version/`, a config bump, a deleted kwarg, a resume-immutable hparam, `--critic`'s gate | [`designs/model/versioning.md`](../../../designs/model/versioning.md) |
 | the α/β heads, their metrics, or a new α consumer | [`designs/model/opponent_intent.md`](../../../designs/model/opponent_intent.md) |
-| PopArt | [`designs/model/popart.md`](../../../designs/model/popart.md) |
 | the delivery graph, the architecture viewer, where the canonical architecture lives | [`designs/model/architecture_artifacts.md`](../../../designs/model/architecture_artifacts.md) |
 | a type annotation, or the mypy gate's scope | [`designs/model/typing.md`](../../../designs/model/typing.md) |
 
@@ -181,7 +180,7 @@ Rules to preserve:
 | the lookup tables, in LAYER order | `damage_tables.py` → `belief_tables.py` → `dex_ids.py` |
 | the readouts and the critic routes | `aux_value_heads.py` · `q_winprob_head.py` · `value_readouts.py` · `value_threat_inject.py` · `pair_value_route.py` |
 | the pointer head and the per-action cells | `pointer_head.py` · `pair_outcome.py` · `switch_branch.py` · `conditional_threat.py` |
-| versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` · `popart.py` |
+| versioning, snapshots, the compile path, the critic modes | `model_version/` · `snapshot.py` · `compile_opponents.py` · `critic_mode.py` |
 | the DICT obs keys the forward reads beyond `observation` | `extra_obs_keys.py` |
 
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
@@ -411,10 +410,10 @@ readouts, and `agents/model/critic_mode.py` is the ONE declaration of the legal 
 deliberately **torch-free and import-light**: `main.checkargs` promises not to import torch and
 needs the legal set to validate an argv offline.
 
-| `--critic` | `_critic_value` returns | `value_net` | PopArt |
-|---|---|---|---|
-| **`shaped`** (default) | `_denorm(value_net(latent_vf))`, or `_denorm(head.mean(logits))` under `value_from_dist` | trained | allowed |
-| `winprob` | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]`, no `_denorm` | in NO loss graph | **refused at the constructor** |
+| `--critic` | `_critic_value` returns | `value_net` |
+|---|---|---|
+| `shaped` (what an ABSENT record means; selectable on `--env-core python` only) | `value_net(latent_vf)` | trained |
+| **`winprob`** (the bare-argv default) | `sigmoid(fe.last_win_prob_logits)` in **[0,1]**, `[B,1]` | in NO loss graph |
 
 **Read the mode through `is_winprob`, never a bare `== "winprob"`** — one spelling, one answer, and
 a `getattr(obj, "critic", "shaped")` read answers correctly through it.
@@ -428,14 +427,18 @@ nothing; the bump belongs to the DEFAULT FLIP, where it is forced.
 [`designs/model/versioning.md`](../../../designs/model/versioning.md) has both in full, and how the
 kwarg is threaded.
 
-## PopArt value-target normalization (`popart.py`, `--use-popart`)
+## DELETED: PopArt, the distributional value head, `value_from_dist` (deletion pass L1, v131)
 
-Opt-in (default off, **refused outright under `--critic winprob`** — a bounded stationary Bernoulli
-payoff has no scale to track). It tracks running `(mu, sigma)` of the value targets so the value
-gradient on the SHARED trunk stays O(1), and the **POP** half rescales `value_net` on every stats
-update so the de-normalized prediction is unchanged. `--use-popart` **requires an explicit
-`--clip-range-vf none`**, and `use_popart` is version-checked — it cannot be flipped mid-run. Detail:
-[`designs/model/popart.md`](../../../designs/model/popart.md).
+`popart.py`, `ValueDistHead` (`--value-dist-*`), the `value_from_dist` critic route, the CVaR value-tail
+weight and the win-prob aux-BCE coefficient were levers of the shaped critic and of the Python env core, and
+every v121+ checkpoint recorded them OFF. They are DELETED (`designs/deleted_flags.md`). The recorded fields
+are popped by `_migrate_config`; a checkpoint that recorded PopArt / the dist head / `value_from_dist` ON is
+refused on every load, and a resume or fork of a run that recorded ANY retired lever ON is refused
+(`model_version/retired_levers.py` — each later deletion unit appends its levers to that one table). A
+checkpoint's PICKLED `use_popart` / `value_from_dist` (policy kwargs) and `value_dist_*` (extractor kwargs) are
+stripped on load by `snapshot._DEAD_POLICY_KWARGS_JUDGED` / `_DEAD_FEK_*` — a BARE `MaskablePPO.load` of a
+pre-deletion zip TypeErrors (`play.py` and the prober's loaders sanitize; `snapshot.historical_load_kwargs`
+is the helper). Detail: [`designs/model/versioning.md`](../../../designs/model/versioning.md).
 
 ## Opponent intent — `α` / `β` (`opp_intent.py`, v67)
 

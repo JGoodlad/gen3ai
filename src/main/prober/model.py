@@ -89,6 +89,8 @@ def peek_checkpoint(ckpt_path: str) -> dict:
             pk = json.loads(pk)
         except Exception:  # noqa: BLE001
             pk = None
+    if isinstance(pk, dict):
+        out["policy_kwarg_names"] = tuple(sorted(pk))
     fek = (pk or {}).get("features_extractor_kwargs")
     if isinstance(fek, dict):
         out["extractor_kwargs"] = fek
@@ -160,8 +162,16 @@ def sanitized_load_custom_objects(ckpt_path: str, device: str = "cpu") -> "tuple
     Returns `(custom_objects, dropped_keys)` — `custom_objects` is `None` (nothing to drop, and no
     full deserialize is paid) or `{"policy_kwargs": <sanitized copy>}`; the saved dict is never mutated.
     """
-    dropped = _dropped_extractor_kwargs(peek_checkpoint(ckpt_path).get("extractor_kwargs"))
-    if not dropped:
+    peek = peek_checkpoint(ckpt_path)
+    dropped = _dropped_extractor_kwargs(peek.get("extractor_kwargs"))
+    # POLICY kwargs deleted since the checkpoint was written (PopArt / value_from_dist, deletion pass
+    # L1) are not extractor kwargs, so the set math above cannot see them — the curated list in
+    # `snapshot` names them. Dropped here without a refusal, like everything else this reader drops;
+    # a checkpoint that trained with one ON then fails the weight load and is reported as drift.
+    from agents.model.snapshot import _DEAD_POLICY_KWARGS_JUDGED
+    dropped_policy = tuple(k for k, _ in _DEAD_POLICY_KWARGS_JUDGED
+                           if k in peek.get("policy_kwarg_names", ()))
+    if not dropped and not dropped_policy:
         return None, ()
     from stable_baselines3.common.save_util import load_from_zip_file
     data, _, _ = load_from_zip_file(ckpt_path, device=device)
@@ -169,7 +179,9 @@ def sanitized_load_custom_objects(ckpt_path: str, device: str = "cpu") -> "tuple
     fek = dict(pk.get("features_extractor_kwargs") or {})
     drop = set(dropped)
     pk["features_extractor_kwargs"] = {k: v for k, v in fek.items() if k not in drop}
-    return {"policy_kwargs": pk}, dropped
+    for k in dropped_policy:
+        pk.pop(k, None)
+    return {"policy_kwargs": pk}, tuple(dropped) + dropped_policy
 
 
 def _sidecar(ckpt_path: str, name: str) -> dict:
@@ -595,42 +607,6 @@ class ProbeModel:
             v = self._policy.predict_values(self._pin(ot, mt))
         return float(v.reshape(-1)[0])
 
-    def popart_stats(self) -> "tuple[float, float] | None":
-        """The PopArt running ``(mu, sigma)`` of the value targets, or ``None`` when the run
-        trains without PopArt. ``value()`` returns the DE-normalized real-return value; the
-        PopArt-normalized value ``(V - mu) / sigma`` is the critic's OWN learning scale (the
-        ~[-1, 1] space the value loss optimizes, comparable across the run's return-scale drift).
-        ``sigma`` is floored well above 0 by the normalizer, so callers can divide safely."""
-        pa = getattr(self._policy, "popart", None)
-        if pa is None:
-            return None
-        try:
-            return float(pa.mu), float(pa.sigma)
-        except (AttributeError, TypeError, ValueError):
-            return None
-
-    def value_dist_at(self, obs: np.ndarray, mask: np.ndarray) -> "np.ndarray | None":
-        """The distributional value head's per-atom return distribution for an ARBITRARY obs — one
-        clean forward, then ``softmax(last_value_dist_logits)``. ``None`` when the checkpoint trained no
-        value-dist head (``--value-dist-mode none``). This is the COUNTERFACTUAL analog of the trace's
-        recorded ``value_dist`` array: a re-rolled one-ply successor state has no saved row, so the
-        lookahead reads the resulting state's distribution HERE. Mirrors ``belief`` / ``damage_op_view``
-        (the sweep/saliency passes clobber the stash, so a fresh forward is required)."""
-        import torch
-
-        extractor = getattr(self._policy, "features_extractor", None)
-        if extractor is None or getattr(extractor, "value_dist_mode", "none") == "none":
-            return None
-        self._check_obs_dim(obs)
-        ot = torch.as_tensor(obs).unsqueeze(0)
-        mt = torch.as_tensor(mask).unsqueeze(0)
-        with torch.no_grad():
-            self._policy.extract_features(self._pin(ot, mt))
-        logits = extractor.last_value_dist_logits
-        if logits is None:
-            return None
-        return torch.softmax(logits[0], dim=-1).detach().cpu().numpy()
-
     def win_prob_at(self, obs: np.ndarray, mask: np.ndarray) -> "float | None":
         """The win-probability head's calibrated P(win|s) for an ARBITRARY obs — one clean forward, then
         ``sigmoid(last_win_prob_logits)``. ``None`` when the checkpoint trained no win-prob head
@@ -782,30 +758,12 @@ class ProbeModel:
                 out["twin_b_pred"] = torch.sigmoid(head_b(pooled).reshape(-1)).cpu().numpy()
                 out["twin_c_pred"] = torch.sigmoid(head_c(pooled).reshape(-1)).cpu().numpy()
             if shadow is not None:
-                raw = shadow(pooled).reshape(-1)
-                popart = getattr(self._policy, "popart", None)
-                # The head predicts in the PopArt-NORMALIZED frame (its training frame), so a
-                # real-unit read must de-normalize — the same map `_cf_shadow_term`'s metrics use.
-                out["shadow_value"] = (
-                    popart.denormalize(raw) if popart is not None else raw).cpu().numpy()
+                # The head predicts in real return units (PopArt, which once normalized it, is deleted).
+                out["shadow_value"] = shadow(pooled).reshape(-1).cpu().numpy()
                 if vf is not None and hasattr(self._policy, "_critic_value"):
                     latent_vf = self._policy.mlp_extractor.forward_critic(vf)
                     out["live_v"] = self._policy._critic_value(latent_vf).reshape(-1).cpu().numpy()
         return out
-
-    def value_dist_support(self) -> "tuple[float, float, int] | None":
-        """The distributional value head's atom support ``(vmin, vmax, bins)``, or ``None`` when the run
-        trained no value-dist head (``--value-dist-mode none``). The trace stores the per-atom probs; the
-        prober maps atoms → return units via ``linspace(vmin, vmax, bins)`` to render the histogram + the
-        E[Z]/std/percentile reads. On a ``--use-popart`` run the support is in the critic's normalized
-        space (the loss normalizes the return target), so ``ValueDistView`` denormalizes E[Z] for display."""
-        ex = getattr(self._policy, "features_extractor", None)
-        if ex is None or getattr(ex, "value_dist_mode", "none") == "none":
-            return None
-        try:
-            return float(ex.value_dist_vmin), float(ex.value_dist_vmax), int(ex.value_dist_bins)
-        except (AttributeError, TypeError, ValueError):
-            return None
 
     def architecture(self) -> "list[dict]":
         """Describe the loaded extractor's FORWARD PIPELINE as ordered plain-dict phases — so the
@@ -833,7 +791,6 @@ class ProbeModel:
         vin = getattr(ex, "value_projection_input_dim", "?")
         mb = getattr(ex, "move_belief_mode", "off")
         wp = getattr(ex, "win_prob_mode", "none")
-        vd = getattr(ex, "value_dist_mode", "none")     # v29 distributional value head (side readout)
         # move_latent_encoder is ABSENT (not None) when off → its own getattr guard, not on().
         has_latent = getattr(getattr(ex, "pokemon_encoder", None), "move_latent_encoder", None) is not None
         prior_fusion = bool(getattr(ex, "move_prior_fusion", False))    # MoveBelief Smogon-prior posterior
@@ -871,8 +828,6 @@ class ProbeModel:
             ("CLSPool", True, False, "fork",
              "CLS queries CROSS-ATTEND the team tokens → our/their/value pools — FORKS → π · V", True),
             ("WinProbHead", wp != "none", True, "side", f"P(win) readout off value_pooled ({wp})", False),
-            ("ValueDistHead", on("value_dist_head"), True, "side",
-             f"return-distribution readout off value_pooled ({vd})", False),
             ("HiddenOppBeliefPool", on("hidden_opp_belief"), True, "shared",
              "k belief queries CROSS-ATTEND the 12 tokens → both heads", True),
             ("ProjectionAssembler", True, False, "shared",

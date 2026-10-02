@@ -725,7 +725,7 @@ def _play_pair(run_dir, step_a, step_b, n_games, mappings, cv, all_teams, sample
     from utils.teambuilder import Gen3Teambuilder
     from utils.bridge.local_battle_runner import run_local_battles
 
-    # Our own snapshots, but this-run's config (PopArt + every arch toggle) differs from a bare
+    # Our own snapshots, but this-run's config (every arch toggle) differs from a bare
     # current_model_version → load them as FOREIGN opponents: reads each zip's own saved config
     # and skips check_compatible (the eval FIXED-opponent path). config lives beside the snapshots.
     cfg = os.path.join(run_dir, "snapshots", "model_config.json")

@@ -64,7 +64,7 @@ def add_value_head_flags(parser: argparse.ArgumentParser) -> None:
                              "outcome_label at n=1, C eats its tight-MC label at n=R, through the "
                              "SAME per-rollout-normalized binomial NLL, so the two pull equally "
                              "hard and C−B reads label PRECISION rather than learning rate. Their "
-                             "share of head A's own on-policy BCE rides --win-prob-coef, not this. "
+                             "share of head A's own on-policy BCE is a fixed weight of 1.0, not this. "
                              "Default 0.0 = OFF (whole block skipped, byte-identical). Requires "
                              "--cf-twin-heads. Read cf/twin_b_coverage FIRST.")
     parser.add_argument("--cf-shadow-critic", "--cf_shadow_critic", dest="cf_shadow_critic",
@@ -79,8 +79,8 @@ def add_value_head_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--cf-shadow-coef", "--cf_shadow_coef", dest="cf_shadow_coef",
                         type=float, default=None,
                         help="Weight on the shadow critic's masked MSE against mc_return, computed "
-                             "in the PopArt-normalized frame (the value loss's frame, so the "
-                             "coefficient is scale-comparable with it). Default 0.0 = OFF. "
+                             "in real return units. "
+                             "Default 0.0 = OFF. "
                              "Requires --cf-shadow-critic. THE METER is cf/shadow_shadow_vs_live_v "
                              "— the signed real-unit gap between the MC-grounded twin and the live "
                              "critic on the same states.")

@@ -105,9 +105,9 @@ class Family(str, Enum):
     `Klass` already separates the reward / training-coefficient / runtime families from the
     architecture: they are `training_coef` and `runtime`, and the guard drops them by class. The one
     split `Klass` cannot express is inside `structural`: the CRITIC READOUTS (`win_prob_mode`, the
-    `value_dist_*` block, the four counterfactual heads, `q_winprob_mode`) build modules exactly the
+    four counterfactual heads, `q_winprob_mode`) build modules exactly the
     way an entity seat does, but they are the quantity an experiment is deliberately CHANGING —
-    `--critic winprob` implies one of them and REFUSES two others — so a guard that demanded they
+    `--critic winprob` implies one of them — so a guard that demanded they
     match the production mirror would refuse every critic arm it exists to protect.
 
     So the guard's key set is `structural` AND `ARCH`, and the exclusion is DECLARED here rather
@@ -221,20 +221,6 @@ REGISTRY: Tuple[ModelFlag, ...] = (
     ModelFlag("spread_belief", False, Tier.CLI, Klass.STRUCTURAL, 25,
               "predict + reinject the opponent's hidden spread (5 derived stats per slot)",
               coef_arg="spread_belief_coef"),
-    ModelFlag("value_dist_mode", "none", Tier.CLI, Klass.STRUCTURAL, 29,
-              "distributional VALUE side head off value_pooled (none|read_only|shaping)",
-              requires=("value_dist_bins",), family=Family.CRITIC),
-    ModelFlag("value_dist_bins", 0, Tier.CLI, Klass.STRUCTURAL, 29,
-              "atom count = the value-dist head's output Linear width",
-              family=Family.CRITIC),
-    ModelFlag("value_dist_vmin", 0.0, Tier.CLI, Klass.RESUME_IMMUTABLE, 29,
-              "low end of the return range the value-dist atoms span",
-              note="value-MEANING, so check_value_dist on the resume path only.",
-              family=Family.CRITIC),
-    ModelFlag("value_dist_vmax", 0.0, Tier.CLI, Klass.RESUME_IMMUTABLE, 29,
-              "high end of the return range the value-dist atoms span",
-              note="value-MEANING, so check_value_dist on the resume path only.",
-              family=Family.CRITIC),
     ModelFlag("damage_topk_k", 0, Tier.CLI, Klass.STRUCTURAL, 30,
               "K = how many of the opp active's believed moves the incoming matrix surfaces",
               cli_name="--damage-topk",
@@ -456,7 +442,7 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               "softplus+1, trained by the Beta-Binomial marginal likelihood of the counterfactual "
               "factory's rollout COUNTS",
               note="IN the registry because it is a `Gen3FeaturesExtractor` constructor kwarg that "
-                   "builds a MODULE — the win_prob_mode / value_dist_mode precedent exactly, and "
+                   "builds a MODULE — the win_prob_mode precedent exactly, and "
                    "the registry's declared scope is 'the things that pass through "
                    "build_extractor_arch_kwargs'. Its two coefficients (--cf-evidential-coef / "
                    "--cf-evidential-reg) are NOT: they are training-only loss weights in the "
@@ -495,7 +481,7 @@ REGISTRY: Tuple[ModelFlag, ...] = (
               family=Family.CRITIC),
     ModelFlag("cf_shadow_critic", False, Tier.CLI, Klass.STRUCTURAL, 99,
               "the passive SHADOW CRITIC off value_pooled — a value twin trained on tight-MC "
-              "`mc_return` labels (the run's own shaped return, PopArt frame), which never "
+              "`mc_return` labels (the run's own return), which never "
               "computes an advantage and never enters GAE",
               note="The staged PROMOTION PATH for critic surgery, not the surgery: swapping the "
                    "live critic for an MC-grounded one is a critic ROUTE change and owes the C4 "
@@ -624,7 +610,7 @@ for _f in REGISTRY:                                  # a self-requirement can ne
 
 
 # The OFF values, one convention for every type the registry carries. `False` for a bool, `0` for a
-# width/count (`entity_topk_seats`, `value_dist_bins`), and the two mode-string spellings the CLI
+# width/count (`entity_topk_seats`), and the two mode-string spellings the CLI
 # already uses. It is a MODULE-level rule rather than per-flag data because the CLI enforces it too:
 # every mode flag in `train_rl_agent` spells its disabled state exactly one of these ways.
 OFF_VALUES = (False, 0, "off", "none")
@@ -636,8 +622,8 @@ def is_enabled(value: Any) -> bool:
     Note this is NOT ``bool(value)``: a mode string's OFF state is the truthy ``'off'`` / ``'none'``,
     and reading it as enabled is a real bug this project has shipped before (the dead-kwarg
     sanitizer refused every OFF-mode checkpoint until it stopped testing truthiness). Floats are
-    excluded on purpose — ``move_candidate_floor`` and the ``value_dist_v*`` bounds are magnitudes,
-    not switches, and nothing depends on them.
+    excluded on purpose — ``move_candidate_floor`` is a magnitude,
+    not a switch, and nothing depends on it.
     """
     if isinstance(value, str):
         return value not in ("off", "none")

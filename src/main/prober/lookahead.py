@@ -171,7 +171,6 @@ def lookahead_decision(
         by_seed = by_arm.get(int(a), {})
         vals: List[float] = []
         crn_v: Optional[float] = None
-        crn_dist: Optional[list] = None
         crn_wp: Optional[float] = None
         terminal = 0
         terminal_winner: Optional[str] = None
@@ -192,8 +191,6 @@ def lookahead_decision(
             vals.append(v)
             if s == "original":
                 crn_v = v
-                vd = getattr(model, "value_dist_at", lambda *_: None)(succ.obs, succ.mask)
-                crn_dist = vd.tolist() if vd is not None else None
                 crn_wp = getattr(model, "win_prob_at", lambda *_: None)(succ.obs, succ.mask)
         v_mean, v_std = _stats(vals)
         rows.append({
@@ -206,7 +203,6 @@ def lookahead_decision(
             "terminal_frac": round(terminal / max(1, len(seed_list)), 3),
             "terminal": terminal_winner,
             "win_prob_crn": round(crn_wp, 4) if crn_wp is not None else None,
-            "value_dist_crn": crn_dist,
         })
 
     # ΔV vs the chosen action's CRN successor value (the cleanest "how much better/worse" read). Falls

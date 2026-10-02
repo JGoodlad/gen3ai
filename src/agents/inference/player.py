@@ -544,9 +544,6 @@ class RLPlayer(Gen3Player):
                 # `battle` is passed so a β slot that is ALREADY REVEALED can be named from the
                 # board rather than from the species posterior — see `_opp_intent`.
                 "opp_intent": self._opp_intent(battle),
-                # The distributional value head's predicted RETURN DISTRIBUTION (per-atom probs; None
-                # unless --value-dist-mode != none) — the prober renders the histogram + spread/PIT.
-                "value_dist": self._value_dist(),
                 # The opp-ACTIVE move-belief posterior (sigmoid; None unless --move-belief-mode != off) +
                 # the believed opp DERIVED stats [6,5] (None unless --spread-belief) — so the prober's
                 # across-battle (axis B) belief trajectory decodes WITHOUT re-running the model on old runs.
@@ -559,7 +556,7 @@ class RLPlayer(Gen3Player):
         """The opp-ACTIVE slot's move-belief posterior (forensic trace only) — `sigmoid` over the
         extractor's stashed `last_move_belief_logits` at `last_opp_active_local` (the active opp mon, whose
         believed moveset the across-battle trajectory tracks). None when the move-belief head is off
-        (`--move-belief-mode none`). A lean per-decision row (n_moves floats), parallel to `value_dist`."""
+        (`--move-belief-mode none`). A lean per-decision row (n_moves floats), parallel to `values`."""
         extractor = getattr(self.model.policy, "features_extractor", None)
         logits = extractor.last_move_belief_logits if extractor is not None else None
         if logits is None:
@@ -703,17 +700,6 @@ class RLPlayer(Gen3Player):
         from agents.inference.belief_decode import top_species_per_slot
         rows = top_species_per_slot(logits["species"][0].detach().cpu().numpy())
         return {int(r["slot"]): r["species"] for r in rows}
-
-    def _value_dist(self) -> Optional[list]:
-        """The distributional value head's predicted return distribution (forensic trace only) — the
-        per-atom softmax over ``last_value_dist_logits`` stashed on this same forward; None when the head
-        is off (``--value-dist-mode none``). The prober reconstructs the atom support from
-        model_config.json's value_dist_vmin/vmax/bins to render the histogram + mean/std/entropy/PIT."""
-        extractor = getattr(self.model.policy, "features_extractor", None)
-        logits = extractor.last_value_dist_logits if extractor is not None else None
-        if logits is None:
-            return None
-        return torch.softmax(logits[0], dim=-1).cpu().numpy().tolist()
 
     def _decode_belief(self) -> Optional[list]:
         """Decode the belief head's per-slot species prediction for the still-hidden opponent slots

@@ -128,7 +128,7 @@ stored obs row for row.
 | absent | what reads it | how it degrades |
 |---|---|---|
 | `*_replay.html` | `_protocol_lines` / `_protocol_for` (`turns`' timeline, `loops`, `analyze`'s raw protocol) | `core_trace.protocol_log` stands in — `battle._build_replay_events()` of the expansion's battle, exactly what `save_replay` would have rendered |
-| `win_probs` (NaN), `value_dist`, `move_logits`, `spread_belief` | the win-prob / value-dist / belief-trajectory views | read "unavailable" exactly as on a head-off run; `analyze` re-runs the model on the stored obs |
+| `win_probs` (NaN), `move_logits`, `spread_belief` (and `value_dist`, which no new trace carries) | the win-prob / belief-trajectory views | read "unavailable" exactly as on a head-off run; `analyze` re-runs the model on the stored obs |
 | `belief` / `opp_intent` per invocation | `opp_intent` text, belief panels on the summary | absent, as on a head-off run |
 
 **Cost:** one rust replay subprocess + one poke-env feed per battle, measured 0.03–0.7 s on the

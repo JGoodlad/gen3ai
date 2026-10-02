@@ -334,8 +334,6 @@ item_belief_head · damage_op · prefuse_proj · assembler · win_head · value_
 history_events · pre_proj_norm · projection · value_pre_norm · value_projection · activation ·
 alpha_head · beta_head
 ```
-
-Notably **absent** (`None` on the instance): `value_dist_head`.
 <!-- END GENERATED: modules -->
 
 ### 2.1 Order of operations — the TIER ORDER, and the only order
@@ -350,7 +348,7 @@ happens to be written.
 | **T0 RESOLVE** | what is on the board? | `pokemon_encoder`, `belief_slots`, `move_belief`, `hp_type_belief_head`, `spread_belief`, `item_belief_head` |
 | **T1 REASON** | what follows from it? | `damage_op`, `entity_seats`, `edge_bias`, `team_transformer` |
 | **T2 DECIDE** | what will they do, what are my moves worth? | `belief_head`, `cls_pool`, `alpha_head`, `beta_head`, `intent_threshold_move` / `intent_conditional` / `pair_outcome_move` / `pair_outcome_switch` / `switch_branch` / `conditional_threat`; `cls_pool` additionally owns the two token-content critic injections (`value_threat_proj`, and `pair_value_proj` opt-in/off) |
-| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head`, `value_dist_head` |
+| **T3 DELIVER** | one contract, two pools | `hidden_opp_belief`, `assembler`, `win_head` |
 
 The contract asserts two things per forward: tier-declared entry points are entered in
 **non-decreasing** tier order, and no entry point receives a tensor whose storage was produced by a
@@ -499,13 +497,13 @@ HEAD, are generated below — never hand-edit inside the markers.
 <!-- END GENERATED: head-inputs -->
 
 **Every value route INJECTS into `value_pooled`** (v89 `gen3_value_pooled_routes_v1`): the
-routes below add a zero-init `D_MODEL` contribution to the tensor the dist-head critic actually
+routes below add a zero-init `D_MODEL` contribution to the tensor the win-prob critic actually
 reads (and `vf_parts[0]`, so the scalar critic sees the same wiring). The old post-assembler
-vf-concat delivery was structurally bypassed by `--value-from-dist` — gen-12 proof:
-`value_entity_pool.out_proj` and the then-live α-reduce projection bit-exact ZERO after 25M
-steps, while `value_threat_proj` (the one `value_pooled` route) trained to 0.117. The
+vf-concat delivery was structurally bypassed by the (since deleted) distributional-critic route —
+gen-12 proof: `value_entity_pool.out_proj` and the then-live α-reduce projection bit-exact ZERO
+after 25M steps, while `value_threat_proj` (the one `value_pooled` route) trained to 0.117. The
 gradient-connectivity guard (`value_route_gradient_test.py`) backprops the critic through every
-registered route each suite run, under BOTH critic parameterizations.
+registered route each suite run.
 
 **The seam has TWO members** — `value_entity_pool` (production, below) and, since v114,
 `value_true_team`, the PRIVILEGED route (`gen3_value_true_team_v1`, `--value-true-team`, **OFF in
@@ -676,10 +674,9 @@ tensor and nothing else: not `our_active_refined` (the `value_active_readout` to
 at v88), not either team pool, not the `non_matchup_rest` scalar tail, not the hidden-opp belief.
 The whole post-assembler vf tail was retired on measurement — its three members read dV **0.0000**
 on gen-14 at n=12,391 (`nmr` and `hidden_opp_vf`) and **0.0000 bit-exact on two consecutive
-audits** (the seed window). Since `--value-from-dist`'s critic reads `value_pooled` directly, this
-also makes the v89/M2 orphaned-vf-branch class **unrepresentable** rather than merely fixed: both
-critic parameterizations now read the same tensor, and there is no second path for either to
-bypass. Every critic enrichment is an additive injection into `value_pooled` (the v89 seam) or a
+audits** (the seed window). Since the win-prob critic reads `value_pooled` directly, this
+also makes the v89/M2 orphaned-vf-branch class **unrepresentable** rather than merely fixed: there
+is no second path for a critic to bypass. Every critic enrichment is an additive injection into `value_pooled` (the v89 seam) or a
 token-content injection on the value pool's local copy inside `CLSPool`.
 
 **The v61 multi-seed window is DELETED with the rest of that tail.** It was k=4 learned queries
@@ -831,7 +828,7 @@ the critic:**
 
 | head | flag | grad flow |
 |---|---|---|
-| `win_head` | `win_prob_mode` **`shaping`**, `win_prob_coef` **1.0** | live `value_pooled` — the win objective also shapes the trunk (`read_only` would stop-grad it) |
+| `win_head` | `win_prob_mode` **`shaping`** | live `value_pooled` — the win objective also shapes the trunk (`read_only` would stop-grad it) |
 
 #### WHICH readout is the critic — `--critic {shaped,winprob}`
 
@@ -839,37 +836,34 @@ the critic:**
 the ONLY axis on which this generation differs from gen-17** — the trunk, the seats, the edge
 families, the pointer cells and the belief stack are that run's, unchanged.
 
-| `--critic` | `V(s)` is | trained by | reward stream | PopArt | `gamma` |
-|---|---|---|---|---|---|
-| `shaped` (the argparse default) | `value_net`, or the distributional `E[Z]` under `value_from_dist` | the MSE / HL-Gauss CE at `vf_coef`, in PopArt-normalized units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | on | 0.9999 |
-| **`winprob`** (**this config**) | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal WIN INDICATOR**, at `vf_coef` **0.5** | the TERMINAL **WIN INDICATOR** alone — `+victory_value` (**1.0**) on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **absent** (`use_popart` false, refused here) | **1.0** |
+| `--critic` | `V(s)` is | trained by | reward stream | `gamma` |
+|---|---|---|---|---|
+| `shaped` (the historical critic; selectable on `--env-core python` only) | `value_net` | the MSE at `vf_coef`, in raw return units | the SIGNED terminal alone, ±30 with a −35 timeout (the shaping it once carried is deleted, §6.3) | 0.9999 |
+| **`winprob`** (**this config**) | `sigmoid(win_head logit)` ∈ **[0, 1]** | the win-prob head's **BCE against the terminal WIN INDICATOR**, at `vf_coef` **0.5** | the TERMINAL **WIN INDICATOR** alone — `+victory_value` (**1.0**) on a win, `0.0` on a loss, a tie and a 250-turn timeout alike | **1.0** |
+
+**PopArt, the distributional value head (`value_dist_head`) and the `value_from_dist` critic route
+were DELETED** (deletion pass L1, config v131 — `designs/ops/deletion_pass_manifest.md` §2): the
+three of them, the CVaR value-tail weight, the win-prob aux-BCE coefficient and both win-prob PBRS
+rungs (self-φ, frozen-φ) were levers of the shaped critic or the Python env core, and every
+v121+ checkpoint recorded them OFF. A checkpoint that recorded one ON is refused
+(`model_version.retired_levers`). Under `--critic shaped` the win-prob BCE is an auxiliary readout
+at a fixed weight of 1.0.
 
 The critic and the return are the same quantity by construction: at `--victory-value 1.0` the
 undiscounted return from any state is exactly `1{win}`, so **`V(s) = P(win | s)` with no
-approximation term**. `value_net` is in no loss graph (its scalar term is dropped exactly as it is
-under `value_from_dist`), the BCE joins the **`value`** noise-scale group rather than `aux`, and
-`--win-prob-coef` is refused as a separate weight — one critic, one coefficient, so the 1.0 in the
-table above is the `_resolve` default of a flag this mode does not let you type.
+approximation term**. `value_net` is in no loss graph (its scalar term is dropped), the BCE joins
+the **`value`** noise-scale group rather than `aux`, and there is one critic and one coefficient
+(`--vf-coef`).
 
-**`value_dist_head` is not built here** (`value_dist_mode` `none`, `value_dist_bins` 0), and
-`--value-dist-mode` is refused under this critic — the A2 consumer census found ~15 sites gating on
-the mode STRING rather than on `value_dist_head is None`, so a config that left the string set while
-skipping the build would report a distributional loss that was never computed. `value_dist_coef`
-stays recorded at 1.0 and §6 marks it `INERT — no value_dist_head`. **Both critic-side enrichment
-routes SURVIVE the swap** (`value_entity_pool` / `value_entity_pool_full` / `value_threat_inject`,
-all still true): they inject additively into `value_pooled`, which is exactly what the win head
-reads, so they enrich a probability critic the same way they enriched a scalar one.
+**Both critic-side enrichment routes SURVIVE** (`value_entity_pool` / `value_entity_pool_full` /
+`value_threat_inject`, all still true): they inject additively into `value_pooled`, which is
+exactly what the win head reads, so they enrich a probability critic the same way they enriched a
+scalar one.
 
-Under `--critic shaped` the mode builds the other route instead: `value_dist_head` (a categorical
-head over `value_dist_bins` atoms spanning `[value_dist_vmin, value_dist_vmax]`, trained by an
-HL-Gauss cross-entropy at `vf_coef`), which becomes the critic itself whenever `value_from_dist` is
-true, with `value_net` frozen as its fallback; PopArt normalizes the value targets (and forces
-`--clip-range-vf none`); the reward is the SIGNED terminal (±`victory_value`, `--draw-penalty` at the 250-turn cap) at γ 0.9999;
-and `win_head` demotes to an auxiliary readout weighted by `--win-prob-coef`. That mode is
-STRUCTURAL — it selects a different set of heads to carry the value — so `critic` is recorded in
-`model_config.json` and string-compared by `check_compatible`. It carries **no `ARCH_SIGNATURE`
-bump**: a flipped mode produces no shape error anywhere (both routes return `[B,1]`), which is
-exactly why the recorded-and-compared field is the whole safety.
+The critic mode is STRUCTURAL — it selects a different set of heads to carry the value — so
+`critic` is recorded in `model_config.json` and string-compared by `check_compatible`. It carries
+**no `ARCH_SIGNATURE` bump**: a flipped mode produces no shape error anywhere (both routes return
+`[B,1]`), which is exactly why the recorded-and-compared field is the whole safety.
 
 ⚠️ **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** The `−35 < −30`
 ordering `--draw-penalty` exists to set is not merely unused here, it is unrepresentable — so
@@ -880,8 +874,8 @@ are PRIMARY endpoints, not monitored ones.** The 250-turn cap, forfeits and ties
 this mode rather than SB3 truncations — as truncations at γ = 1 the bootstrapped `γ·V(s_last)` made
 every timeout's TD error identically zero, so the critic could not see them at all.
 
-Three flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`,
-`--no-use-popart`) because their argparse default is the `None` sentinel, so "unset" is
+Two flags are IMPLIED by `--critic winprob` (`--win-prob-mode shaping`, `--gamma 1.0`) because
+their argparse default is the `None` sentinel, so "unset" is
 representable and an implication can never overwrite a typed value. The discount is PAIRED with the
 critic, declared once (`critic_mode.critic_gamma`: winprob 1.0, shaped 0.9999): a typed `--gamma`
 other than 1.0 under winprob is REFUSED, `--arch production` under a typed `--critic shaped` takes
@@ -889,8 +883,7 @@ other than 1.0 under winprob is REFUSED, `--arch production` under a typed `--cr
 `FATAL_CONFIG` at launch. Three are REQUIRED and named by
 their own refusal (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because theirs are concrete, so an implication could not be told apart from an
 overwrite. `resolve_critic_mode` runs BEFORE the resume-inheritance sweep, so a fork of a `shaped`
-parent cannot inherit that parent's `use_popart` / `win_prob_mode` and break the mode with a value
-nobody typed. Design of record:
+parent cannot inherit that parent's `win_prob_mode` and break the mode with a value nobody typed. Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](ai_v12/design_winprob_only_critic.md).
 
 **`--win-prob-strata-weight` re-prices this BCE's opponent MIX** (`gen3_winprob_strata_weight_v1`,
@@ -1035,12 +1028,11 @@ forward pass, no weight shape, no `check_compatible` compare, **not** `flag_regi
 they do not appear in §6's flag table until a production config adopts them. Mechanics:
 `designs/training/forks.md`.
 
-The `--win-prob-pbrs-*` family is **refused under this critic, not deleted**: with `V ≡ φ`,
-`coef·(γφ(s′) − φ(s))` IS the TD residual GAE already turns into the advantage, so the SELF-φ route
-would add the advantage to the reward and take the advantage of that. The FROZEN-φ route
-(`--win-prob-pbrs-frozen <run|zip>`, a boolean by presence — φ is already in the value currency, so
-the coefficient is exactly 1.0 and never a knob) is DEFERRED rather than judged wrong, and
-`agents/training/winprob_pbrs.py` is intact.
+The `--win-prob-pbrs-*` family (self-φ and frozen-φ potential-based shaping from the win-prob head) was
+**DELETED** with the shaped critic's levers (deletion pass L1, config v131): with `V ≡ φ` the self-φ
+form is the TD residual GAE already turns into the advantage, and the frozen-φ actor-only rung was
+registered but never read. `designs/deleted_flags.md` carries the citations; UNDERSTANDING keeps the
+open question "do we need PBRS?".
 
 **One more readout EXISTS in the code and is OFF here — `q_winprob_mode` (`QWinProbHead`).** It is
 the only member of this family that does not hang off `value_pooled` alone: it scores each of the
@@ -1408,10 +1400,6 @@ does nothing given another setting.
 | `spread_belief_nature` | `true` | ACTIVE |
 | `switch_branch_cell` | `true` | ACTIVE |
 | `t0_species_prior` | `true` | ACTIVE |
-| `value_dist_bins` | `0` | OFF |
-| `value_dist_mode` | `"none"` | OFF |
-| `value_dist_vmax` | `0.0` | OFF |
-| `value_dist_vmin` | `0.0` | OFF |
 | `value_entity_pool` | `true` | ACTIVE |
 | `value_entity_pool_full` | `true` | ACTIVE |
 | `value_threat_inject` | `true` | ACTIVE |
@@ -1432,11 +1420,7 @@ does nothing given another setting.
 | `q_winprob_onpolicy_coef` | `0.0` | OFF |
 | `spread_belief_coef` | `0.05` | ACTIVE |
 | `td_aux_coef` | `0.0` | OFF |
-| `value_dist_coef` | `1.0` | INERT — no `value_dist_head` |
-| `value_tail_weight` | `0.0` | OFF |
 | `vf_coef` | `0.5` | ACTIVE |
-| `win_prob_coef` | `1.0` | ACTIVE |
-| `win_prob_pbrs_coef` | `0.0` | INERT — coef 0, `win_head` built |
 <!-- END GENERATED: flag-table -->
 
 ### 6.3 Reward config (resume-immutable, `check_reward_config`)

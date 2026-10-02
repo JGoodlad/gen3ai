@@ -15,43 +15,10 @@ from agents.training import instrumented_ppo
 from agents.training.instrumented_ppo import (
     InstrumentedMaskablePPO,
     _EXPECTED_UPSTREAM_TRAIN_HASH,
-    _VALUE_TAIL_FRAC,
     _verify_upstream_unchanged,
 )
 import torch as th
 import torch.nn.functional as F
-
-
-class _TailStub:
-    """Minimal stand-in to exercise the pure _value_loss_from_se without building a full PPO."""
-    def __init__(self, w):
-        self.value_tail_weight = w
-
-
-def test_value_loss_w0_is_byte_identical_to_mse():
-    """β=0 → plain MSE, byte-identical to upstream F.mse_loss (the default-off no-op)."""
-    th.manual_seed(0)
-    target, pred = th.randn(256), th.randn(256)
-    se = (target - pred) ** 2
-    out = InstrumentedMaskablePPO._value_loss_from_se(_TailStub(0.0), se)
-    assert th.allclose(out, F.mse_loss(target, pred))
-
-
-def test_value_loss_w_positive_blends_in_cvar():
-    """β>0 → (1-β)·MSE + β·CVaR(worst _VALUE_TAIL_FRAC). Strictly ≥ MSE (CVaR ≥ mean), and exact."""
-    th.manual_seed(1)
-    se = th.rand(500)
-    w = 0.5
-    out = InstrumentedMaskablePPO._value_loss_from_se(_TailStub(w), se)
-    k = max(1, int(_VALUE_TAIL_FRAC * se.numel()))
-    expected = (1 - w) * se.mean() + w * th.topk(se, k).values.mean()
-    assert th.allclose(out, expected)
-    assert out.item() >= se.mean().item()   # the tail is the worst errors → blend lifts the loss
-
-
-def test_value_loss_default_attr_is_zero():
-    """An unconfigured InstrumentedMaskablePPO defaults to β=0 (the class attribute) → MSE."""
-    assert InstrumentedMaskablePPO.value_tail_weight == 0.0
 
 
 def test_subclass_inherits_from_maskable_ppo():
@@ -212,16 +179,6 @@ def test_value_distill_masks_non_teacher_rows():
 def test_value_distill_none_no_rows():
     """No teacher-team rows ⇒ None (no NaN-poisoning an empty subset)."""
     assert InstrumentedMaskablePPO._value_distill_mse(th.randn(3), th.randn(3), th.zeros(3, 1)) is None
-
-
-def test_value_distill_popart_frame_scales_by_sigma():
-    """Under PopArt both sides are normalized first, so the SE is in the student's normalized frame."""
-    class _FakePopart:
-        def normalize(self, x):
-            return (x - 5.0) / 2.0                                    # sigma = 2
-    s, t = th.tensor([3., 3.]), th.tensor([5., 5.])                   # real diff 2 → normalized diff 1
-    out = InstrumentedMaskablePPO._value_distill_mse(s, t, th.ones(2, 1), popart=_FakePopart())
-    assert float(out) == pytest.approx(1.0, rel=1e-5)                 # (2/2)² = 1
 
 
 def test_value_distill_grad_student_only():
@@ -1782,8 +1739,8 @@ def test_the_twin_block_publishes_a_COMBINED_headline_loss(tmp_path):
     assert m["loss"] != pytest.approx(model.cf_twin_coef * 0.0), "degenerate: loss is zero"
 
 
-def test_the_onpolicy_mirror_uses_head_As_coefficient_and_detaches(tmp_path):
-    """B and C must carry a BIT-IDENTICAL copy of head A's own loss, at `win_prob_coef`.
+def test_the_onpolicy_mirror_uses_head_As_own_weight_and_detaches(tmp_path):
+    """B and C must carry a BIT-IDENTICAL copy of head A's own loss, at head A's own weight (1.0).
 
     If the mirror rode `cf_twin_coef` instead, B−A would confound "extra states" with "a different
     base objective" and the factorial would decompose nothing. Checked as a unit on the term, since
@@ -1798,10 +1755,9 @@ def test_the_onpolicy_mirror_uses_head_As_coefficient_and_detaches(tmp_path):
     class _RD:
         observations = {"win_target": th.tensor([[1.0], [0.0], [1.0], [1.0], [0.0], [1.0]]),
                         "win_mask": th.ones(6, 1)}
-    model.win_prob_coef = 0.25
     term, m = model._cf_twin_onpolicy_terms(_RD())
     assert term is not None and "b_onpolicy_loss" in m and "c_onpolicy_loss" in m
-    want = 0.25 * sum(
+    want = sum(
         float(InstrumentedMaskablePPO._win_prob_loss(
             h(pooled.detach()), _RD.observations["win_target"],
             _RD.observations["win_mask"])[0])
@@ -1840,10 +1796,10 @@ def test_a_live_shadow_coefficient_reaches_ONLY_the_shadow_head(tmp_path):
             assert th.equal(base[k], on[k]), f"the shadow critic leaked a gradient into {k}"
 
 
-def test_shadow_term_is_masked_and_reads_the_popart_frame(tmp_path):
+def test_shadow_term_is_masked_and_reads_real_units(tmp_path):
     """Two facts in one: rows with no `mc_return` are EXCLUDED (not supervised toward zero, which
     is the middle of this reward's range and the most plausible-looking wrong target available),
-    and the loss is computed in the PopArt-NORMALIZED frame the value loss trains in."""
+    and the loss is computed in real return units (PopArt, which once normalized it, is deleted)."""
     model = _build_cf_ppo()
     head = _attach_cf_shadow_head(model)
     model.learn(total_timesteps=8 * 4)
@@ -1852,18 +1808,12 @@ def test_shadow_term_is_masked_and_reads_the_popart_frame(tmp_path):
     model.cf_shadow_coef = 1.0
     ctx = model._cf_sample_and_forward()
 
-    class _PopArt:
-        sigma, mu = 2.0, 1.0
-        def normalize(self, x): return (x - self.mu) / self.sigma
-        def denormalize(self, x): return x * self.sigma + self.mu
-
-    _term, m = model._cf_shadow_term(ctx, _PopArt())
+    _term, m = model._cf_shadow_term(ctx)
     pred = head(ctx.value_pooled.detach()).flatten()
-    want = float(((pred - _PopArt().normalize(ctx.batch.mc_return)) ** 2).mean())
+    want = float(((pred - ctx.batch.mc_return) ** 2).mean())
     assert m["loss"] == pytest.approx(want, rel=1e-6)
     assert m["coverage"] == pytest.approx(1.0)
-    # `pred_mean` is the DE-normalized read — the only frame a human can interpret.
-    assert m["pred_mean"] == pytest.approx(float((pred * 2.0 + 1.0).mean()), rel=1e-6)
+    assert m["pred_mean"] == pytest.approx(float(pred.mean()), rel=1e-6)
     assert m["label_mean"] == pytest.approx(2.0, rel=1e-6)
 
     # And with no mc_return anywhere: no term, and a coverage of 0 that SAYS so. A FRESH directory
@@ -1871,7 +1821,7 @@ def test_shadow_term_is_masked_and_reads_the_popart_frame(tmp_path):
     _attach_cf_buffer(model, tmp_path / "bare")
     model._cf_buffer.poll(0)
     ctx2 = model._cf_sample_and_forward()
-    term2, m2 = model._cf_shadow_term(ctx2, _PopArt())
+    term2, m2 = model._cf_shadow_term(ctx2)
     assert term2 is None and m2["coverage"] == 0.0
 
 

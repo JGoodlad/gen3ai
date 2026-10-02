@@ -318,7 +318,7 @@ can move anything (so a crash-save holds the last finite weights):
 
 | gate | where | catches |
 |---|---|---|
-| `check_buffer_finite` | once per update, right after the intent-label alignment — BEFORE PopArt's advance (which rewrites `value_net` outside the optimizer) and before any forward | a NaN/Inf reward, value, behaviour log-prob, advantage, return, or FLOAT label key (the flat `observation` is not scanned: an input whose NaN reaches the loss, and a full scan is ~0.3 s at production size) |
+| `check_buffer_finite` | once per update, right after the intent-label alignment — before any forward (it once also ran BEFORE PopArt's advance, which rewrote `value_net` outside the optimizer; PopArt is deleted) | a NaN/Inf reward, value, behaviour log-prob, advantage, return, or FLOAT label key (the flat `observation` is not scanned: an input whose NaN reaches the loss, and a full scan is ~0.3 s at production size) |
 | `check_loss_finite` | once per micro-batch, on the assembled loss, before the grad-balance / noise probes and the backward. Since K8 the region R1's `isfinite(loss)` rides the micro-batch's ONE host read (`micro_step.pack`); the full check (its own read) runs when the eager tail folded a term onto R1's loss, or to NAME the term(s) on a failure — same timing, same message | any term; NAMES the non-finite term(s) (policy, entropy, value, and every `aux_probe_terms` entry) |
 | `check_kl_finite` | per micro-batch, on sb3's own approx-KL host read | an Inf KL under a FINITE loss (an overflowed ratio on a positive-advantage row takes the clipped branch) |
 | `clip_grad_norm_checked` | every optimizer step (the in-loop step and the accumulation flush) | a NaN/Inf gradient from a finite loss; `error_if_nonfinite=True` raises BEFORE the in-place scaling, so the named parameters are the ones the backward poisoned |
@@ -332,14 +332,13 @@ can move anything (so a crash-save holds the last finite weights):
 | `ppo.py` β reachability `_reach = isfinite(target logit)` | dropped a NaN target logit's row like a deliberate −inf one (weighted path: the row left the graph) | `~isneginf(...)`: only −inf is unreachable; a NaN stays supervised and reaches the loss check. Byte-identical otherwise (golden) |
 | `opp_intent.set_valued_switch_loss` `avail = believed & isfinite` | a row whose only believed slots were NaN was dropped | `~isneginf`, same reasoning |
 | `ppo.py` advantage normalisation | a ONE-row final micro-batch (python core, n_steps·n_envs ≡ 1 mod the micro-batch; the Rust collector's target is a multiple of it) had std() = NaN → NaN into every weight, silently | stock SB3 PPO's `numel() > 1` guard (sb3_contrib's MaskablePPO lacks it) |
-| `model/popart.py` update (in `_train_probe_setup`) | NaN returns poisoned μ/σ and rewrote `value_net` before any loss ran | `check_buffer_finite` runs before it |
 | `rust_rollout/collector.py` `won = reward > 0` | a NaN reward became a finite LOSS label | the NaN reward is refused at the buffer check |
 | `distill_grad_project.py` (`grad_project` mode) | a NaN constraint gradient made `removed_sq > 0` False: the projection was SKIPPED silently, loss and `.grad` finite | typed FATAL on a non-finite `g_sq` / `removed_sq`, re-raised past the projector's broad `except` |
 | `adaptive_lr_callback.py` (both controllers) | a NaN KL froze `_kl_ema` (and the LR) for the rest of the run; an Inf walked the LR to `min_lr` | typed FATAL (the train-side `check_kl_finite` is the first line) |
 | `win_prob_rollout.py` rollout labels | a non-finite continuation label was skipped (the row kept its terminal label) | `None` still skips; a non-finite NUMBER is a typed FATAL |
 
-**Reach the total — covered by the loss / gradient checks:** the clipped surrogate, the value MSE (tail /
-PopArt / clipped), entropy; the win-prob BCE and dense aux (multiplicative masks: NaN x 0 = NaN); the
+**Reach the total — covered by the loss / gradient checks:** the clipped surrogate, the value MSE (plain /
+clipped), entropy; the win-prob BCE and dense aux (multiplicative masks: NaN x 0 = NaN); the
 distill family, the anchor, TD-aux, the cf binomial / beta-binomial / shadow losses; the belief bank
 (index selection: a selected NaN propagates); the switch-branch / intent-conditional weights
 (`clamp` keeps NaN); SB3's and the Rust collector's GAE (no checks of their own — the buffer check
@@ -376,8 +375,7 @@ external labels at ingest and COUNTS them (`cf/labels_skipped_total`) — whethe
 bad row is fatal is a policy call; `teacher/produce.py` + `teacher/callback.py` encode a NaN π′ target
 as the "no target" sentinel; `teacher/winprob_oneply.py` treats a NaN win-prob read as "not contested";
 `distill_terms.py` search-teacher AWR weight `exp(adv/β).clamp(max)` clamps a +Inf confirmed advantage;
-`value_terms._value_dist_loss` absorbs a ±Inf return into its edge bin (the buffer check now refuses
-one); `keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message);
+`keyed_draw.py` reports a NaN logit row as "no legal action" (fail-closed, misleading message);
 `--target-kl nan` parses (no finiteness validation in the parser).
 
 **The exit side (cutover-prep, `743008c1`).** Every K9(c) raise is `main.exit_codes.NonFiniteLearnerError`

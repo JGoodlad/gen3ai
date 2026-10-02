@@ -70,12 +70,12 @@ Owned by this tree. The facade contract and the CLI invocations stay in
   THROW — CRITIC CAPACITY / a missing obs feature); already behind = `positional_grind`
   (upstream/material — never ahead to throw). **The winning signal is the CALIBRATED win-prob head
   `P(win) ≥ wp_even` (default 0.5)**, NOT the sign of V — V is a shaped/discounted RETURN with a
-  structural **negative offset** (a measured self-mirror 50/50 reads V≈−6.5; PopArt μ≈−3.6), so the
+  structural **negative offset** (a measured self-mirror 50/50 reads V≈−6.5), so the
   old `V>0` test systematically OVER-counted grinds (mislabeled even/favored positions as "already
   behind"). It falls back to `V > v_even` only when no win-prob was recorded, and **`v_even`
   defaults from the run's CRITIC CURRENCY** (`None` ⇒ 0.0 shaped, **0.5** under `--critic winprob`,
   where V *is* P(win) and 0.0 is a certain loss rather than "even"); pass `--v-even` =
-  the checkpoint's self-mirror V / PopArt μ to re-center a head-less shaped run. The result
+  the checkpoint's self-mirror V to re-center a head-less shaped run. The result
   carries a `winning_split` block (`wp_even`/`v_even`/`wp_coverage`/`critic_mode`/`v_units`) + a
   caveat naming the signal.
   Reads the

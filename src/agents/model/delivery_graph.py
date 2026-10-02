@@ -62,7 +62,7 @@ def buildable_child_names() -> frozenset:
     It is read from `extractor_build.py`'s SOURCE by AST rather than from a namespace, because the
     fact in question is "does the builder still assign this attribute". The previous version asked
     `hasattr(features_extractor, <graph token>)` — but the tokens are graph NODE IDS
-    (`"value_dist_head"`, `"alpha_head"`, …), not class names, so **none of them ever resolved**;
+    (`"win_head"`, `"alpha_head"`, …), not class names, so **none of them ever resolved**;
     the check returned False for every entry and only stayed quiet because the gen-17 production
     config happened to build all of them. The 2026-09-06 win-prob production config turns eight off
     at once and the gate reported all eight as STALE — modules `--critic shaped` still builds.
@@ -117,7 +117,6 @@ MODULE_GRAPH_TOKENS: Dict[str, Tuple[str, ...]] = {
     "alpha_head": ("alpha_head",),
     "beta_head": ("beta_head",),
     "win_head": ("win_head",),
-    "value_dist_head": ("value_dist_head",),
     "projection": ("pi_projection",),
     "value_projection": ("vf_projection",),
     "pokemon_encoder": ("pokemon_encoder.role_encoder", "pokemon_encoder.move_network"),
@@ -358,11 +357,6 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     if getattr(fe, "win_head", None) is not None:
         nodes.append(_node("win_head", "head", in_features=D, out_features=1,
                            note="sigmoid(logit) = P(win); supervised by the MC episode outcome"))
-    if getattr(fe, "value_dist_head", None) is not None:
-        nodes.append(_node("value_dist_head", "head", in_features=D,
-                           out_features=fe.value_dist_head.bins,
-                           note="categorical over a fixed atom support; under --value-from-dist "
-                                "the critic's V IS this head's mean, not value_net's scalar"))
 
     nodes.append(_node("pi_projection", "head",
                        in_features=fe.projection.in_features,
@@ -793,11 +787,10 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     # pi or vf), which is exactly why a graph derived from the head-input tables never saw them.
     # They read the SAME pooled tensor the vf concat's first part is, so they draw with the vf pool's
     # per-mon edge shape.
-    for _sink, _via in (("win_head", "CLSPool.value_cls -> WinProbHead"),
-                        ("value_dist_head", "CLSPool.value_cls -> ValueDistHead")):
+    for _sink, _via in (("win_head", "CLSPool.value_cls -> WinProbHead"),):
         if getattr(fe, _sink, None) is None:
             continue
-        _mode = fe.win_prob_mode if _sink == "win_head" else fe.value_dist_mode
+        _mode = fe.win_prob_mode
         _note = ("`shaping` — the head's objective also shapes the shared trunk"
                  if _mode == "shaping" else
                  "`read_only` — STOP-GRAD input, a risk-free diagnostic that cannot perturb "
@@ -827,12 +820,8 @@ def build_graph(config_path: str = _DEFAULT_CONFIG) -> Dict[str, Any]:
     if (getattr(fe, "item_belief_head", None) is not None
             and float(cfg.get("item_belief_coef", 0.0)) > 0):
         aux_specs.append(("item_belief", "loss.item_belief_ce", "belief_items", _OBS_KEY))
-    if getattr(fe, "win_head", None) is not None and float(cfg.get("win_prob_coef", 0.0)) > 0:
+    if getattr(fe, "win_head", None) is not None:
         aux_specs.append(("win_head", "loss.win_prob_bce", "MC episode outcome (win=1/loss=0)",
-                          _ROLLOUT))
-    if (getattr(fe, "value_dist_head", None) is not None
-            and float(cfg.get("value_dist_coef", 0.0)) > 0):
-        aux_specs.append(("value_dist_head", "loss.value_dist_hl_gauss", "realized return G(s)",
                           _ROLLOUT))
     if getattr(fe, "alpha_head", None) is not None:
         # `opp_intent_coef` is a TRAIN-LOOP dose, not a weight-shape param: recorded in

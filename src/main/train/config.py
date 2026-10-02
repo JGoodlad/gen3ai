@@ -49,45 +49,28 @@ class ResolvedRunConfig:
 #: The validated composition is 35/30 = 1.17x; the clean-world ruling is 1/1 = 1.0x. 3.0 is loose
 #: enough that no composition anyone has actually launched trips it.
 _DRAW_SCALE_RATIO = 3.0
-#: How many value-dist ATOMS the achievable raw-return range must span before the critic can be
-#: said to resolve it. HL-Gauss smooths each target with sigma = 0.75*delta, so one target already
-#: occupies ~3 atoms; below ~8 the whole return range holds fewer than three distinguishable
-#: levels, and under `--value-from-dist` that quantized E[Z] IS the critic feeding GAE.
-_MIN_SUPPORT_ATOMS = 8.0
 
 
 def _terminal_scale_guards(args) -> None:
-    """The two SCALE questions `gen3_clean_world_config_v1` opened by making the terminal a flag.
+    """The SCALE question `gen3_clean_world_config_v1` opened by making the terminal a flag.
 
-    `--victory-value` (v105) is the first flag that can change the RETURN SCALE, and two other,
-    older flags are quietly denominated in that same scale. Neither pairing had a check, because
-    each half was validated on its own — the `value_from_dist` (M2) shape exactly.
+    `--victory-value` (v105) is the first flag that can change the RETURN SCALE, and `--draw-penalty`
+    is quietly denominated in that same scale. The v105 guard above tests the ORDERING (a draw must
+    not beat a loss) and passes the far more likely mistake: typing `--victory-value 1.0` and
+    inheriting the -35.0 default, i.e. a timeout 35x a clean loss. The composition is then not "1
+    TERMINAL" at all — it is a stall-avoidance objective with a win bonus, and no metric downstream
+    distinguishes the two. (The second scale question this guard once asked, the value-dist atom
+    support against the terminal, left with the distributional value head.)
 
-    1. **`--draw-penalty` vs `--victory-value`.** The v105 guard above tests the ORDERING (a draw
-       must not beat a loss) and passes the far more likely mistake: typing `--victory-value 1.0`
-       and inheriting the -35.0 default, i.e. a timeout 35x a clean loss. The composition is then
-       not "1 TERMINAL" at all — it is a stall-avoidance objective with a win bonus, and no metric
-       downstream distinguishes the two.
-
-    2. **`--value-dist-{vmin,vmax,bins}` vs the terminal.** With PopArt ON the HL-Gauss target is
-       `popart.normalize(returns)`, so the support is in units of standard deviations and the raw
-       terminal says nothing about it — the guard is skipped, which is every run ever launched.
-       With PopArt OFF (the registered clean/sparse arms, ledger 2d38a4a) the target is the RAW
-       return and the two ARE in the same units, so the support either brackets the reachable
-       returns with resolution to spare or it silently destroys the critic: too WIDE quantizes the
-       whole range into a handful of atoms, too NARROW saturates the edge atoms that absorb the
-       out-of-support tails.
-
-    Warnings, never refusals: a wide support may be a deliberate choice ahead of a reward change,
-    and a launch that works today must not become a `FATAL_CONFIG`. But they are stated at launch,
-    because both defects train correctly toward the wrong thing.
+    A warning, never a refusal: a launch that works today must not become a `FATAL_CONFIG`. But it
+    is stated at launch, because the defect trains correctly toward the wrong thing.
     """
     victory = getattr(args, "victory_value", None)
     if victory is None or float(victory) <= 0.0:
         return                                   # refused above; nothing to say about a bad scale
     if bool(getattr(args, "terminal_indicator", False)):
         # gen3_winprob_critic_mode_v1: under the WIN INDICATOR every non-win pays exactly 0.0, so
-        # `draw_penalty` is not merely unused — it is inapplicable, and both guards below are
+        # `draw_penalty` is not merely unused — it is inapplicable, and the guards are
         # statements ABOUT it. The ORDERING one would fire on every such run and say the opposite
         # of the truth ("running the clock out is the best non-winning outcome") when a timeout and
         # a loss are the SAME payoff by construction; the SCALE one would divide by a magnitude
@@ -103,30 +86,6 @@ def _terminal_scale_guards(args) -> None:
               f"advertised as '1 TERMINAL' is really a stall-avoidance objective. The validated "
               f"pairing is 30/-35 (1.2x) and the clean-world ruling is draw = loss: pass "
               f"--draw-penalty {-victory:g} with --victory-value {victory:g}.")
-    if str(getattr(args, "value_dist_mode", "none")) == "none" or getattr(args, "use_popart", False):
-        return
-    bins = int(getattr(args, "value_dist_bins", 0) or 0)
-    vmin, vmax = float(args.value_dist_vmin), float(args.value_dist_vmax)
-    if bins < 2 or not (vmax > vmin):
-        return                                   # already a parser.error above
-    reach = max(victory, abs(draw))              # the largest |return| the terminal can produce
-    delta = (vmax - vmin) / (bins - 1)
-    atoms = (2.0 * reach) / delta
-    outside = (reach > vmax) or (-reach < vmin)
-    if not outside and atoms >= _MIN_SUPPORT_ATOMS:
-        return
-    why = ("the support does NOT BRACKET them — HL-Gauss absorbs the out-of-support mass into the "
-           "EDGE atoms, so the critic cannot represent that outcome at all"
-           if outside else
-           f"they span only {atoms:.1f} of {bins} atoms (bin width {delta:.3g}), so the critic is "
-           f"quantized to ~{delta:.3g} on a +-{reach:g} scale")
-    print(f"[Reward] ⚠️ VALUE-DIST SUPPORT vs TERMINAL SCALE: PopArt is OFF, so the HL-Gauss target "
-          f"is the RAW return and the atom support is in the SAME units. Returns reach +-{reach:g} "
-          f"(--victory-value {victory:g}, --draw-penalty {draw:g}) and {why}. Size "
-          f"--value-dist-vmin/--value-dist-vmax to the terminal (a few times +-{reach:g}), or turn "
-          f"PopArt on. This matters most under --value-from-dist, where E[Z] IS the critic feeding "
-          f"GAE and nothing downstream distinguishes a resolution-starved critic from a fitted one "
-          f"(value_dist/mean_abs_err looks BETTER as the support widens).")
 
 
 def _adaptive_batch_guards(args, parser) -> None:
@@ -192,15 +151,19 @@ def _announce_cf_duty_cycle(args) -> None:
 
 
 def enforce_not_shaped_parent(model_path: str) -> None:
-    """The LAUNCH-path wrapper over `model_version.shaped_reward.check_not_shaped`: print the typed
-    refusal and exit `FATAL_CONFIG` (restarting would hit the identical checkpoint every time, so
-    the launcher must give up rather than loop). `main.checkargs` reads the same predicate."""
+    """The LAUNCH-path wrapper over `model_version.shaped_reward.check_not_shaped` AND
+    `model_version.retired_levers.check_no_retired_levers`: print the typed refusal and exit
+    `FATAL_CONFIG` (restarting would hit the identical checkpoint every time, so the launcher must
+    give up rather than loop). `main.checkargs` reads the same predicates."""
+    from agents.model.model_version.retired_levers import (
+        RetiredLeverCheckpointError, check_no_retired_levers)
     from agents.model.model_version.shaped_reward import (
         ShapedRewardCheckpointError, check_not_shaped, saved_config_path)
     from main.exit_codes import TrainExitCode
     try:
         check_not_shaped(saved_config_path(model_path))
-    except ShapedRewardCheckpointError as e:
+        check_no_retired_levers(saved_config_path(model_path))
+    except (ShapedRewardCheckpointError, RetiredLeverCheckpointError) as e:
         print(f"\n[ModelVersion] FATAL: {e}", flush=True)
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
@@ -530,7 +493,7 @@ def _agree_float(a, b) -> bool:
 
 
 def resolve_critic_mode(args, saved_ver=None) -> None:
-    """Resolve `--critic` and imply the three tri-state flags the `winprob` value settles, in place.
+    """Resolve `--critic` and imply the two tri-state flags the `winprob` value settles, in place.
 
     Module-level, and called before the `_resolve` sweep, for `desugar_umbrella_flags`' exact
     reason: `main.checkargs` has to build the SAME effective namespace a launch builds before it
@@ -547,13 +510,12 @@ def resolve_critic_mode(args, saved_ver=None) -> None:
 
     ``win_prob_mode``  'shaping'  the head must EXIST to be the critic ('none' is refused)
     ``gamma``          1.0        V(s) is then EXACTLY P(win|s) (see the flag's help)
-    ``use_popart``     False      a bounded stationary Bernoulli payoff has no scale to track
 
-    All three carry an argparse default of `None`, so an unset flag is distinguishable from a
+    Both carry an argparse default of `None`, so an unset flag is distinguishable from a
     typed one and the implication can never overwrite an operator's choice — it is then judged by
     `combination_checks`. Running BEFORE the inheritance sweep is load-bearing: a fork of a
-    `shaped` parent would otherwise inherit that parent's `use_popart=True` / `win_prob_mode='none'`
-    from its recorded config, and the mode would be broken by a value nobody typed.
+    `shaped` parent would otherwise inherit that parent's `win_prob_mode='none'` from its recorded
+    config, and the mode would be broken by a value nobody typed.
 
     🚨 **NOT IMPLIED, and that is a decision rather than an omission:** `--terminal-indicator`,
     `--victory-value 1.0` and `--draw-penalty 0`. Those three are resume-immutable REWARD fields
@@ -572,8 +534,7 @@ def resolve_critic_mode(args, saved_ver=None) -> None:
     inherit_saved_flag(args, saved_ver, "critic", CRITIC_DEFAULT)
     if not is_winprob(args.critic):
         return
-    for name, value in (("win_prob_mode", "shaping"), ("gamma", critic_gamma(args.critic)),
-                        ("use_popart", False)):
+    for name, value in (("win_prob_mode", "shaping"), ("gamma", critic_gamma(args.critic))):
         if getattr(args, name, None) is None:
             setattr(args, name, value)
 
@@ -675,12 +636,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if args.model and _saved_ver is None:
         print("[Resume] WARNING: saved model_config.json unreadable — structural toggles fall back to "
               "their OFF defaults and may FATAL at the version check; pass them explicitly if needed.")
-    # Whether a recorded parent config was READ. `combination_checks` needs it for the one check
-    # whose launch-path behaviour depends on it (an inherited PopArt has its clip auto-cleared just
-    # below, so the refusal must not fire there); `main.checkargs` reports that check as ADVISORY
-    # when it could not read the parent.
+    # Whether a recorded parent config was READ. `combination_checks`' `needs=("saved_config",)`
+    # mechanism reads it (no check declares that need today); `main.checkargs` reports such a check
+    # as ADVISORY when it could not read the parent.
     args._saved_config_present = _saved_ver is not None
-    _popart_explicit = args.use_popart is not None
     _coef_explicit = args.opp_belief_aux_coef is not None
 
     desugar_umbrella_flags(args)
@@ -794,7 +753,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     emit(f"⚖️  [EVAL REGIME] in-loop eval pairing: "
          f"{'MIRRORED TEAM PAIRS (each pairing from both sides, one seed; the pair is the unit)' if args.eval_mirrored_pairs else 'unpaired games'} "
          f"(--{'' if args.eval_mirrored_pairs else 'no-'}eval-mirrored-pairs, source={args.eval_mirrored_pairs_source})")
-    _resolve("use_popart", False)
     _resolve("opp_belief_cls_k", 0)
     _resolve("opp_belief_aux_coef", 0.0)
     _resolve("move_belief_mode", "off")        # v17 structural (version-checked, fresh-only)
@@ -814,30 +772,12 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("edge_bias_families", "off")      # v56 structural str (version-checked, fresh-only)
     _resolve("entity_tail_seats", False)       # v57 structural bool (version-checked, fresh-only)
     _resolve("win_prob_mode", "none")          # v22 structural + resume-immutable (version-checked)
-    _resolve("win_prob_coef", 1.0)             # training-only (inherited like opp_belief_aux_coef)
-    _resolve("value_dist_mode", "none")        # v29 structural + resume-immutable (version-checked)
-    _resolve("value_dist_bins", 0)             # v29 structural (atom count; version-checked)
-    _resolve("value_dist_vmin", 0.0)           # v29 resume-immutable support (version-checked)
-    _resolve("value_dist_vmax", 0.0)           # v29 resume-immutable support (version-checked)
-    _resolve("value_dist_coef", 1.0)           # training-only (inherited like win_prob_coef)
-    _resolve("td_aux_coef", 0.0)               # v90 training-only (inherited like win_prob_coef)
-    _resolve("win_prob_pbrs_coef", 0.0)        # v104 training-only (inherited like td_aux_coef)
-    # v105 training-only PATH, inherited WITH the coefficient above: a flagless resume that dropped
-    # it would silently swap the FROZEN potential back to the live, drifting head — a change of
-    # objective mid-run with nothing in any metric saying so.
-    _resolve("win_prob_pbrs_source", None)
-    # gen3_frozen_phi_actor_only_v1: the ACTOR-ONLY frozen potential, inherited for exactly the
-    # reason above and one more. It is BOOLEAN BY PRESENCE, so "the flag was not typed" and "the
-    # shaping is off" are the same argv — which makes a flagless launcher RESTART (every 3 h, the
-    # original argv re-invoked) the one that would silently turn the arm into the SPARSE arm
-    # mid-run, with the same run name and the same TB series. Inheriting the path is what keeps a
-    # restart the same experiment.
-    _resolve("win_prob_pbrs_frozen", None)
+    _resolve("td_aux_coef", 0.0)               # v90 training-only (inherited like opp_belief_aux_coef)
     _resolve("policy_grad_coef", 1.0)               # v102 training-only (inherited like td_aux_coef; 1.0 = upstream)
     _resolve("value_threat_inject", False)     # v64 structural bool (version-checked, fresh-only)
     _resolve("opp_intent_coef", 0.0)           # v67 training-only coef; the HEADS are structural
     _resolve("beta_setvalued_coef", 0.0)       # training-only coef; no module, no version gate
-    _resolve("intent_label_bot_weight", 1.0)   # v97 training-only (inherited like win_prob_coef)
+    _resolve("intent_label_bot_weight", 1.0)   # v97 training-only (inherited like opp_belief_aux_coef)
     # gen3_winprob_strata_weight_v1 (v115) training-only, inherited for the reason every loss
     # coefficient here is: a launcher RESTART re-invokes the original argv, and a flagless resume
     # that dropped this would silently return the arm to the un-stratified objective it exists to
@@ -1014,15 +954,9 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # `main.checkargs` has to reach the same resolved values a launch reaches.
     resolve_eval_sentinel_regime(args, _saved_ver)
     _resolve("belief_grad_mode", "shaping")    # v41 resume-immutable training hparam (vf_coef class; flagless resume inherits)
-    _resolve("value_from_dist", False)         # v45 Phase B: dist head is the critic (resume-immutable; flagless resume inherits)
     _resolve("hp_belief_mode", "composed")     # v53 STRUCTURAL (version-checked, fresh-only)
     _resolve("hp_type_belief_coef", 0.05)      # training-only (inherited like spread_belief_coef)
     _resolve("item_belief_coef", 0.05)         # training-only (inherited like hp_type_belief_coef)
-    # Phase B (v45): the dist head can only BE the critic if it's a live, trunk-shaping head.
-    # PopArt INHERITED on a flagless resume → adopt its required `--clip-range-vf none` (the saved
-    # popart run necessarily used it), so the explicit-config check below doesn't block the resume.
-    if args.use_popart and not _popart_explicit and _saved_ver is not None and args.clip_range_vf is not None:
-        args.clip_range_vf = None
     # Friendly belief-resume notes (inheriting vs an explicit flip).
     if args.model and _saved_ver is not None:
         _sc = getattr(_saved_ver, "opp_belief_aux_coef", 0.0) or 0.0
@@ -1050,23 +984,10 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         parser.error("--opp-belief-aux-coef must be >= 0 (0 = off)")
     if args.move_belief_coef is not None and args.move_belief_coef < 0.0:
         parser.error("--move-belief-coef must be >= 0 (0 = off)")
-    if args.win_prob_coef is not None and args.win_prob_coef < 0.0:
-        # A negative coef would INVERT the BCE gradient (train the head/trunk to MAXIMISE error).
-        # win_prob_coef is training-only (not version-locked), so guard it here — the only gate.
-        parser.error("--win-prob-coef must be >= 0 (0 = off; the mode controls on/off)")
-    if args.value_dist_coef is not None and args.value_dist_coef < 0.0:
-        # A negative coef would INVERT the CE gradient. value_dist_coef is training-only (not
-        # version-locked), so guard it here — the only gate.
-        parser.error("--value-dist-coef must be >= 0 (0 = off; the mode controls on/off)")
     if args.td_aux_coef is not None and args.td_aux_coef < 0.0:
         # A negative coef would INVERT the consistency gradient (train the critic to MAXIMISE its own
         # Bellman residual). td_aux_coef is training-only (not version-locked), so guard it here.
         parser.error("--td-aux-coef must be >= 0 (0 = off)")
-    if args.win_prob_pbrs_coef is not None and args.win_prob_pbrs_coef < 0.0:
-        # A negative coef INVERTS the potential — the policy would be rewarded for driving its own
-        # P(win) DOWN. The invariance theorem still holds (φ' = −φ is a valid potential), which is
-        # exactly why this cannot be caught downstream: it would train, converge, and be wrong.
-        parser.error("--win-prob-pbrs-coef must be >= 0 (0 = off)")
     # --- gen3_clean_world_config_v1: the TERMINAL magnitude + the outcome ORDERING it implies ---
     if getattr(args, "victory_value", 30.0) is not None and args.victory_value <= 0.0:
         # A non-positive victory value inverts win/loss (or flattens them), which trains correctly

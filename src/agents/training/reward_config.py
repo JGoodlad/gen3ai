@@ -87,7 +87,7 @@ class RewardConfig:
     def from_dict(cls, d: "dict | None") -> "RewardConfig":
         """Reconstruct from a ``model_config.json`` dict — the helper EVERY snapshot-loading consumer
         (eval workers, resume) uses so the reward the policy was TRAINED with is the reward used to
-        MEASURE it. Unknown keys (arch fields / use_popart / the DELETED shaped-reward fields of a
+        MEASURE it. Unknown keys (arch fields / the DELETED shaped-reward and retired-lever fields of a
         pre-deletion config / …) are ignored; any reward field absent from an older config falls
         back to its dataclass default. ⚠️ Ignoring a deleted shaped field is right for an eval or a
         frozen opponent and WRONG for a resume or fork — those refuse first

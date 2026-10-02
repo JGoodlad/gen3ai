@@ -16,7 +16,7 @@ one bit about the game.
 distinction from the counterfactual label factory: ``cf_winprob_term`` applies the head to FOREIGN
 recorded states from ``<run>/cf_labels/`` with their own labels and never touches ``win_target`` —
 and that arm read NULL. Here the labelled row is a row of THIS rollout buffer, inside the ordinary
-PPO objective, at the ordinary ``win_prob_coef``.
+PPO objective, at the ordinary win-prob BCE weight.
 
 WHAT IT COSTS, AND WHY THE FRACTION IS SMALL
 --------------------------------------------

@@ -269,7 +269,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   single-cycle estimate — `python -m main.elo … --source tb` is the well-anchored canonical fit.)*
   **Metrics layout** — the dashboard's metrics row is **three side-by-side tables** so a metric-rich
   run stays readable instead of one over-long column: a **left misc column** (rollout / time, then the
-  `grad/*` / `popart/*` diagnostics), a **dedicated `train/*` column** (by far the
+  `grad/*` diagnostics), a **dedicated `train/*` column** (by far the
   biggest section — all the PPO losses, `return_*`, `value_pred_std`, `grad_norm`, the opponent-mix
   `*_fraction` telemetry, then the `belief/*` aux diagnostics rendered directly **below** train when a
   belief aux is on), and the **eval column**. Non-eval metrics are split across the first two
@@ -280,16 +280,14 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   (`policy share` + `value share` — the two RL heads' slices of ONE common-denominator pie; `aux share (all)`
   = the total non-RL draw; `log val/pol grad` = the aux-independent non-saturating `log10(‖g_v‖/‖g_p‖)`
   ratio; `policy-value cos`, policy/value grad-norms; plus, when an aux is on, its OWN share broken out —
-  `species blf` / `move blf` / `latent` / `move-lat` / `winprob` / `valdist` — so any single scaffold
+  `species blf` / `move blf` / `latent` / `move-lat` / `winprob` — so any single scaffold
   crowding out the rest is visible) sits in the left column, while
   `train/return_*`, `train/value_pred_std`, and `train/grad_norm` join the train column — together the
-  direct shared-trunk pressure gauge for tuning `vf_coef` / preparing PopArt (computed
+  direct shared-trunk pressure gauge for tuning `vf_coef` (computed
   in `agents/training/grad_balance.py`; see `src/agents/training/CLAUDE.md`). They need no new launcher
   wiring: they ride the same generic `MetricsExporterCallback` scalar path and auto-route by their
   `grad/` / `train/` section prefix; only their display order + short labels are declared in
-  `format.py`. Under **`--use-popart`** a `popart/*` block also appears (`value mu`, `value sigma`,
-  `value head |W|` — the value-target normalizer state; same generic path), and `grad/value_policy_logratio`
-  should be seen falling toward ~0.
+  `format.py`. `grad/value_policy_logratio` should be seen falling toward ~0. (The `popart/*` block that once appeared under `--use-popart` left with PopArt, L1.)
 - **Crash reporting** — child stdout/stderr is streamed live to `<run_dir>/launcher_child.log`
   (complete even if the child hard-`os._exit`s, bypassing Python cleanup) and held in a
   5000-line in-memory scrollback. The on-disk log is a **disk ring buffer**

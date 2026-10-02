@@ -270,7 +270,7 @@ that is not there — the same units confusion `overvalue_tau` encoded as a numb
 return" nowhere.
 
 **DEAD under this era — listed for the era-boundary purge, deliberately NOT deleted here.** The
-dist head is not built (`value_dist_mode == "none"`), so every awareness surface degrades to empty.
+dist head is not built (`value_dist_mode == "none"`; since L1 the head cannot be built at all, and no new trace carries `value_dist`), so every awareness surface degrades to empty.
 Nothing 500s; the cost is real estate and a reader wondering what is broken:
 
 | surface | state |
@@ -279,10 +279,9 @@ Nothing 500s; the cost is real estate and a reader wondering what is broken:
 | `scan_table.html` `knew @` / `lead` columns | headers always render, every cell `—` |
 | `triage_table.html` `blind` / `median lead` columns | same |
 | `battle.html` `P(win) · dist` legend entry | static `<dl>`, so it explains a strip that never appears |
-| `app.py::_value_dist_spec` + `/api/awareness`'s `lead_bar`/`cap_turn`/`stall_bar` | never called / inert |
+| `/api/awareness`'s `lead_bar`/`cap_turn`/`stall_bar` | inert (`app.py::_value_dist_spec`, their `/battle` chart, was DELETED in L1) |
 
-Purging them is an A4-shaped change (the mode has to go with the head — see the design's A2 census),
-so it belongs to that pass, not this one.
+Purging them is the remaining awareness-vertical deletion (the head and its model-side views are gone, L1; the owner has permitted deleting prober pieces — a census candidate, not done here).
 
 **The era's offline instruments are LINKED from `/`, not re-implemented here.** Each owns statistics
 this app does not — a Bradley-Terry ladder, a cluster bootstrap over teams, a selection reweighting

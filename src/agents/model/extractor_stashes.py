@@ -51,7 +51,6 @@ class ExtractorStashes:
     # --- value-side readouts ------------------------------------------------------------------
     value_pooled: Optional[torch.Tensor] = None        # [B,D_MODEL] the FitNets HINT layer
     win_prob_logits: Optional[torch.Tensor] = None     # [B,1] P(win) logit (aux BCE + prober)
-    value_dist_logits: Optional[torch.Tensor] = None   # [B,bins] dist-critic atoms (E[Z] source)
     # gen3_q_winprob_head_v1: PER-ACTION P(win|s,a) logits, indexed by the ACTION SPACE
     # ([switch x6, move x4, struggle]) — the amortized one-ply search leaf. A side readout like
     # every other field here: the aux loss, the offline probe and the prober read it; the forward

@@ -34,7 +34,7 @@ class AuxTerms:
 
     _belief_aux_loss = staticmethod(_belief_bank.belief_aux_loss)
 
-    def _td_aux_term(self, popart):
+    def _td_aux_term(self):
         """The TD-consistency auxiliary for ONE minibatch: sample contiguous pairs, forward them,
         return `(weighted_term, metrics)` — or `(None, {})` when nothing is pairable.
 
@@ -54,9 +54,8 @@ class AuxTerms:
           ~10% of the train step at production shapes instead of doubling it.
 
         It goes through `policy.predict_values`, never a hand-rolled value path: that method is what
-        routes to the DISTRIBUTIONAL head's mean under `--value-from-dist` (where the scalar
-        `value_net` is frozen) and applies PopArt's de-normalization. Reading `value_net` directly
-        would train a critic the run does not use.
+        routes to the run's critic (`critic_mode`). Reading `value_net` directly would train a
+        critic the run does not use.
         """
         from agents.training import td_aux as _td
 
@@ -79,19 +78,16 @@ class AuxTerms:
             return None, {}
 
         obs = {k: buf.to_torch(v[rows]) for k, v in buf.observations.items()}
-        values = self.policy.predict_values(obs).flatten()          # [S] REAL-unit (see td_aux docs)
+        values = self.policy.predict_values(obs).flatten()          # [S] (see td_aux docs)
         # `rewards` is NOT in get()'s flatten list, so it is still [n_steps, n_envs]; swap to the same
         # env-major flat order the rows index.
         rew_flat = np.asarray(buf.rewards).swapaxes(0, 1).reshape(-1)
         rewards = buf.to_torch(rew_flat[rows]).flatten()            # [S] REAL-unit
         pair_a = th.as_tensor(pa_np, dtype=th.long, device=values.device)
         pair_b = th.as_tensor(pb_np, dtype=th.long, device=values.device)
-        # UNITS: the raw residual is real-unit (de-normalized V, raw reward). Under PopArt the value
-        # loss trains in NORMALIZED space, and dividing by sigma is exactly that space's residual
-        # (the mu cancels), so lambda keeps rung-1's meaning. sigma=1 with PopArt off.
-        scale = float(popart.sigma) if popart is not None else 1.0
+        # UNITS: the residual is real-unit (V, raw reward) — the value loss trains in the same space.
         out = _td.td_aux_loss(values, rewards, pair_a, pair_b,
-                              float(self.gamma), scale=scale, n_candidate=n_cand)
+                              float(self.gamma), n_candidate=n_cand)
         if out is None:
             return None, {}
         td_loss, metrics = out
@@ -121,8 +117,8 @@ class AuxTerms:
     def _cf_twin_terms(self, ctx):
         return _cf.cf_twin_terms(self, ctx)
 
-    def _cf_shadow_term(self, ctx, popart):
-        return _cf.cf_shadow_term(self, ctx, popart)
+    def _cf_shadow_term(self, ctx):
+        return _cf.cf_shadow_term(self, ctx)
 
     def _cf_live_values(self, ctx):
         return _cf.cf_live_values(self, ctx)

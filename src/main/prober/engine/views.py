@@ -138,13 +138,6 @@ class ValueView:
     rerun: "float | None"
     next_recorded: "float | None"
     delta: "float | None"
-    # PopArt: the V's above are DE-normalized (real return units). On a `--use-popart` run these
-    # carry the running (mu, sigma) and the normalized V = (V - mu)/sigma — the critic's own
-    # learning scale (~[-1,1], comparable across return-scale drift). All None on a no-PopArt run.
-    popart_mu: "float | None" = None
-    popart_sigma: "float | None" = None
-    normalized_recorded: "float | None" = None
-    normalized_rerun: "float | None" = None
 
 
 @dataclass(frozen=True)
@@ -156,26 +149,6 @@ class WinProbView:
     recorded: float
     next_recorded: "float | None"
     delta: "float | None"
-
-
-@dataclass(frozen=True)
-class ValueDistView:
-    """The distributional value head's predicted RETURN DISTRIBUTION at this state (v29) — the per-atom
-    softmax + its shape stats. The interpretability read the scalar V collapses: a sharp spike =
-    confident, a wide spread = uncertain, a bimodal shape = the critic sees a coinflip (e.g. "I win if
-    this move hits, else I lose"). Stats are in the head's SUPPORT space (PopArt-normalized on a
-    ``--use-popart`` run — the critic's own learning scale); ``mean_real`` de-normalizes E[Z] to real
-    return units when PopArt stats are available. None unless the run trained ``--value-dist-mode``."""
-    probs: "tuple[float, ...]"             # the per-atom distribution (the histogram bars)
-    support: "tuple[float, ...]"           # atom centers (the x-axis), in support space
-    mean: float                            # E[Z] = Σ atomsᵢ·probsᵢ (support space)
-    std: float                             # spread = the critic's own uncertainty
-    p10: float
-    p50: float
-    p90: float
-    entropy: float                         # nats — sharpening over training = the critic committing
-    bimodality: float                      # mass OUTSIDE the dominant peak's ±2-bin neighborhood (coinflip ⇒ high)
-    mean_real: "float | None" = None       # de-normalized E[Z] (real return) when PopArt present
 
 
 @dataclass(frozen=True)
@@ -531,7 +504,6 @@ class InvocationAnalysis:
     outcome: dict = field(default_factory=dict)   # raw {our, opp, reward, events}
     value: "ValueView | None" = None
     win_prob: "WinProbView | None" = None          # P(win|s) + ΔP(win) (None unless --win-prob-mode != none)
-    value_dist: "ValueDistView | None" = None       # predicted return DISTRIBUTION (None unless --value-dist-mode)
     rerun_argmax: "str | None" = None              # the loaded model's top valid action
     agrees: bool = True                            # rerun_argmax == chosen
     flags: "tuple[str, ...]" = ()                  # switch/uncertain/faint/disagree/cure-skipped

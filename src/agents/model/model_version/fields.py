@@ -67,11 +67,6 @@ class ModelVersionFields:
     # v109 (gen3_winprob_critic_mode_v1): the TERMINAL as a WIN INDICATOR.
     terminal_indicator: bool = False
 
-    # v6 feature toggle (value-checked, not weight-shape): PopArt value-target normalization. The
-    # value head's parameterization + buffers differ when on, so it cannot be toggled on a resume.
-    # Defaulted (must follow the defaulted fields above) so weight-shape-only callers need not supply it.
-    use_popart: bool = False
-
     # v8 behavioral toggle (value-checked, not weight-shape): keep the opponent's still-hidden party
     # ATTENDABLE in the transformer instead of key-masking unrevealed slots like fainted mons. Changes
     # the forward-pass mask (policy AND value), not any weight shape or the obs layout, so it lives in
@@ -82,7 +77,7 @@ class ModelVersionFields:
     # v9 structural toggle (weight-shape): hidden-opponent belief — `opp_belief_cls_k` distinct learned
     # query tokens (HiddenOppBeliefPool) that summarise the unrevealed opp party and feed both heads.
     # 0 = OFF (no module; reproduces the baseline arch byte-for-byte). k>0 ADDS the module + grows both
-    # projection inputs by k*D_MODEL, so like use_popart it is gated in check_compatible — but as a plain
+    # projection inputs by k*D_MODEL, so it is gated in check_compatible — but as a plain
     # int every distinct value (incl. 0↔N) is a weight-shape mismatch, so NO conditional and NO
     # ARCH_SIGNATURE bump. k>0 requires attend_unrevealed_opponents (enforced at extractor-build time).
     opp_belief_cls_k: int = 0
@@ -91,16 +86,8 @@ class ModelVersionFields:
     # into the VALUE projection. The dual-head value readout (value_pooled) drops the active-mon view
     # the policy keeps; a probe found the critic predicts an incoming self-KO at AUC 0.79 vs the
     # policy's 0.90, which under-prices the V-tail. ON widens the value projection by D_MODEL; OFF
-    # reproduces the baseline value head byte-for-byte, so like use_popart it lives in check_compatible
+    # reproduces the baseline value head byte-for-byte, so it lives in check_compatible
     # WITHOUT an ARCH_SIGNATURE bump.
-
-    # v11 resume-immutable VALUE-meaning hparam (like vf_coef — NOT weight-shape): tail-weighted value
-    # loss β. 0.0 = plain MSE; >0 blends the CVaR of the worst value misses into the loss. Changing it
-    # mid-run silently shifts the value objective, so it is enforced ONLY on the training-resume path
-    # via check_value_tail_weight (excluded from check_compatible, which gates frozen eval/pool/distill
-    # opponents whose forward never touches it). Defaulted so weight-shape-only callers need not supply it.
-    value_tail_weight: float = 0.0
-
 
     # v16 STRUCTURAL toggle (weight-shape via the BeliefHead + unknown-slot params): the in-place
     # hidden-opponent BELIEF AUX. ON fills un-revealed opp slots with distinct learned unknown-mon
@@ -176,10 +163,6 @@ class ModelVersionFields:
     # (flipping grad-flow mid-run is a silent training change), so ANY mismatch is FATAL. OFF reproduces
     # baseline byte-for-byte (NO ARCH_SIGNATURE bump).
     win_prob_mode: str = "none"
-    # v22 TRAINING-ONLY loss coefficient for the win-prob head (like opp_belief_aux_coef). Scales the BCE
-    # aux loss, affects no forward pass → recorded for provenance but NOT version-locked (resume-mutable,
-    # inherited on a flagless resume). Default 1.0 (full weight when the mode is on; ignored when none).
-    win_prob_coef: float = 1.0
     # v23 STRUCTURAL toggle (weight-shape, like damage_op): the OUTGOING per-move damage direction. ON makes
     # the DamageOperator ALSO emit the our-active→opp-active per-move block (request-slot aligned), widening
     # both projection Linears. Gated in check_compatible (bool); OFF = baseline byte-for-byte (NO
@@ -222,17 +205,6 @@ class ModelVersionFields:
     # v25 TRAINING-ONLY coefficient (NOT version-locked): the speed-supervision weight (masked BCE of the
     # believed P(outspeed) toward observed move order). Recorded for provenance + flagless-resume read-back.
     spread_belief_coef: float = 0.0
-    # v29 STRUCTURAL toggle (weight-shape via the ValueDistHead params, like win_prob_mode): the
-    # distributional VALUE readout — an interpretability side head off value_pooled emitting per-atom
-    # return-distribution logits. 'none' = no module (baseline byte-for-byte, NOT in pi/vf so projection
-    # dims are unchanged). Gated in check_compatible with a STRING compare (none↔head AND
-    # read_only↔shaping — flipping grad-flow mid-run is a silent training change). OFF reproduces baseline
-    # byte-for-byte (NO ARCH_SIGNATURE bump).
-    value_dist_mode: str = "none"
-    # v29 STRUCTURAL: the atom count — the head's output Linear width, so a mismatch is a weight-shape
-    # change (gated in check_compatible with an unconditional int compare, like opp_belief_cls_k). 0 = off
-    # (forced when mode == none).
-    value_dist_bins: int = 0
     # v64 STRUCTURAL (gen3_value_threat_inject_v1): the critic-side magnitude route — one shared
     # zero-init Linear(reducer.extra_dim, D_MODEL) adding the op's alpha-weighted incoming row to
     # each of OUR mons' tokens on the VALUE POOL's copy only. Adding/removing changes the
@@ -334,21 +306,11 @@ class ModelVersionFields:
     # event window. Builds EventSeats (kind/status embeddings + a projection + the marker) —
     # a state_dict change, so a mismatch would be shape-caught; the check names the cause.
     history_events: bool = False
-    # v29 VALUE-MEANING support [vmin, vmax] (the return range the atoms span) — NOT weight-shape (the
-    # atoms buffer is non-persistent), but the head's target/interpretation, so resume-IMMUTABLE and
-    # enforced ONLY on the training-resume path via check_value_dist (like value_tail_weight), EXCLUDED
-    # from check_compatible (a frozen opponent never reads the value-dist head).
-    value_dist_vmin: float = 0.0
-    value_dist_vmax: float = 0.0
-    # v29 TRAINING-ONLY coefficient for the value-dist head's HL-Gauss CE (like win_prob_coef). Scales the
-    # aux loss, affects no forward pass → recorded for provenance + flagless-resume read-back, NOT
-    # version-locked. Default 1.0 (full weight when the mode is on; ignored when none).
-    value_dist_coef: float = 1.0
     # v30 STRUCTURAL (gen3_unified_topk_incoming_v1): the DamageOperator's DISCRETE top-K incoming block —
     # K = the number of the opp active's most-believed candidate moves surfaced individually (each with its
     # move LATENT + per-pivot damage/status). 0 = off. out_dim (hence both projection in_features) scales
     # with K, so EVERY distinct value (incl. 0↔N) is a weight-shape change → gated in check_compatible with
-    # an unconditional int compare (like opp_belief_cls_k / value_dist_bins). OFF (0) reproduces baseline
+    # an unconditional int compare (like opp_belief_cls_k). OFF (0) reproduces baseline
     # byte-for-byte (NO ARCH_SIGNATURE bump). Requires damage_op + move_latent (enforced at the extractor).
     damage_topk_k: int = 0
     # v32 STRUCTURAL (gen3_per_move_matrices_v1): the OUTGOING per-move DAMAGE MATRIX (our 4 moves × opp
@@ -393,28 +355,6 @@ class ModelVersionFields:
     # opp_belief_aux_coef class: recorded here for PROVENANCE and for flagless-resume read-back
     # (`_resolve` reads this field), never compared by check_compatible or any check_*.
     td_aux_coef: float = 0.0
-    # v104 TRAINING-ONLY coefficient (gen3_winprob_pbrs_v1, NOT version-locked; ai_v12 route 1):
-    # the weight on POTENTIAL-BASED REWARD SHAPING from the win-prob head — every transition's
-    # reward gains `coef * (gamma*phi(s') - phi(s))` with phi = the DETACHED sigmoid of the
-    # win-prob logit. 0.0 = OFF (byte-identical; the module is not even imported). It edits the
-    # REWARD STREAM rather than the loss, but the provenance class is td_aux_coef's exactly: it
-    # touches no forward pass and no weight shape, so it is recorded here for PROVENANCE and for
-    # flagless-resume read-back (`_resolve` reads this field), never compared by check_compatible.
-    win_prob_pbrs_coef: float = 0.0
-    # v105 TRAINING-ONLY provenance (gen3_winprob_pbrs_source_v1, NOT version-locked): the path of
-    # the FROZEN checkpoint whose win-prob head supplies φ for the PBRS above. None = read φ from
-    # the LIVE (training, drifting) head, which is the shipped v104 behaviour. Recorded because a
-    # clean-world run is UNINTERPRETABLE if the identity of its frozen potential is not pinned, and
-    # read back on a flagless resume (`_resolve`) — a resume that silently reverted to live-φ would
-    # change the objective mid-run with nothing saying so.
-    win_prob_pbrs_source: Optional[str] = None
-    # v110 TRAINING-ONLY provenance (gen3_frozen_phi_actor_only_v1, NOT version-locked): the path of
-    # the FROZEN checkpoint whose win-prob head supplies the ACTOR-ONLY potential under
-    # `--critic winprob`. None = no frozen-φ shaping (the SPARSE arm). Recorded for the v105 field's
-    # reason and one more: the flag is BOOLEAN BY PRESENCE, so "absent" and "off" are the same argv,
-    # and a launcher restart re-invoking a flagless resume would silently convert a FROZEN-φ arm
-    # into the SPARSE arm mid-run under the same run name. `_resolve` reads this field back.
-    win_prob_pbrs_frozen: Optional[str] = None
     # v102 TRAINING-ONLY coefficient (gen3_policy_grad_coef_v1, NOT version-locked): the weight on the PPO
     # policy-gradient term itself — `policy_grad_coef * policy_loss` in the loss fold, scaling ONLY the
     # clipped surrogate (never entropy, never the value term, never an aux). 1.0 = the upstream
@@ -613,21 +553,13 @@ class ModelVersionFields:
     # EXCLUDED from check_compatible / _WEIGHT_FIELDS (a frozen eval/pool/distill opponent's forward is
     # identical, so gating it would be a false rejection that breaks league play). NO ARCH_SIGNATURE bump.
     belief_grad_mode: str = "shaping"
-    # gen3_dist_critic_v1 (config v45, Phase B): the distributional value head IS the critic — GAE /
-    # bootstrap / deployment read E[Z] (policy._critic_value) and the HL-Gauss CE is the primary value
-    # loss (vf_coef weight); the scalar value_net freezes as a fallback. No state_dict change (both heads
-    # exist regardless) and the FORWARD's ACTION selection is unchanged (only the value output differs), so
-    # a frozen eval/pool/distill opponent plays identically → RESUME-IMMUTABLE (the belief_grad_mode class):
-    # recorded here, enforced ONLY on the training-resume path via check_value_from_dist, EXCLUDED from
-    # check_compatible / _WEIGHT_FIELDS. NO ARCH_SIGNATURE bump. Requires value_dist_mode == 'shaping'.
-    value_from_dist: bool = False
     # v43 STRUCTURAL + resume-IMMUTABLE tri-state (gen3_pubval_aux_v1, the win_prob_mode pattern): the
     # PUBLIC-information value aux head. 'none' = no module (baseline byte-for-byte). 'read_only'/'shaping'
     # build a PubValHead (side readout off value_pooled — NOT in pi/vf; the only state_dict delta is the
     # head's params) regressed toward the frozen human-replay-calibrated V_pub. Gated in check_compatible
     # with a STRING compare ('none'↔head = state_dict change; read_only↔shaping = the resume-immutable
     # grad-flow choice). OFF byte-for-byte (NO ARCH_SIGNATURE bump).
-    # v43 TRAINING-ONLY loss coefficient for the pubval head (like win_prob_coef). Scales the soft-target
+    # v43 TRAINING-ONLY loss coefficient for the pubval head. Scales the soft-target
     # BCE aux loss, affects no forward pass → recorded for provenance but NOT version-locked
     # (resume-mutable, inherited on a flagless resume).
     # v98 STRUCTURAL bool (gen3_cf_evidential_head_v1, the win_prob_mode pattern): the EVIDENTIAL Beta
@@ -675,12 +607,11 @@ class ModelVersionFields:
     # on this code is bit-identical to the same run on v113.
     value_true_team: bool = False
     # ---- gen3_winprob_critic_mode_v1 (config v109) — WHICH READOUT IS THE CRITIC ---------------
-    # v109 STRUCTURAL string (the win_prob_mode pattern): 'shaped' (the default, and every
-    # generation through gen-16) routes `policy._critic_value` to the scalar `value_net` — or to
-    # the distributional head's E[Z] under `value_from_dist` — de-normalized through PopArt into
-    # raw shaped-return units. 'winprob' routes it to `sigmoid(win_head logit)` ∈ [0,1]: a
+    # v109 STRUCTURAL string (the win_prob_mode pattern): 'shaped' (what an ABSENT record means,
+    # `critic_mode.CRITIC_UNRECORDED`) routes `policy._critic_value` to the scalar `value_net`.
+    # 'winprob' routes it to `sigmoid(win_head logit)` ∈ [0,1]: a
     # DIFFERENT SET OF HEADS carries the value, the win-prob BCE becomes the value loss at
-    # `vf_coef`, `value_net` leaves every loss graph, and PopArt is refused. A resume that flipped
+    # `vf_coef`, and `value_net` leaves every loss graph. A resume that flipped
     # it would keep training and simply predict a different quantity with nothing saying so, so a
     # STRING compare in check_compatible is the gate — exactly `win_prob_mode`'s reason.
     # NO ARCH_SIGNATURE bump at v109 and that is deliberate: 'shaped' is the DEFAULT here, so the
@@ -689,7 +620,7 @@ class ModelVersionFields:
     # the fresh weights a probability critic cannot be warm-started into.
     critic: str = "shaped"
     # ---- gen3_arch_surface_guard_v1 (config v111) — WHERE THIS RUN'S ARCHITECTURE CAME FROM ----
-    # v111 PROVENANCE-only string, the `win_prob_pbrs_source` class exactly: recorded, never
+    # v111 PROVENANCE-only string: recorded, never
     # gated, absent from `_WEIGHT_FIELDS` and from every `check_*`. It changes no forward, no
     # weight shape and no `state_dict` key — a resume may set it, clear it or change it freely,
     # because it describes how the OPERATOR chose the surface rather than what the surface IS

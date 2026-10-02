@@ -17,7 +17,7 @@ internals** by reusing the proven obs-dict-label storage path:
    backward to every step of its episode and the buffer's ``observations["win_target"]`` /
    ``["win_mask"]`` placeholders are OVERWRITTEN with the MC label + a known-mask. `train()` then reads
    ``rollout_data.observations["win_target"]`` / ``["win_mask"]`` (shuffle-aligned for free) and folds
-   the BCE at ``win_prob_coef``.
+   the BCE (at ``vf_coef`` under the win-prob critic, weight 1.0 as an aux otherwise).
 
 Transitions in the trailing IN-PROGRESS episode (no terminal yet within the buffer) get ``win_mask=0``
 and are excluded from the loss — never trained toward a fabricated label. The win label is **undiscounted**
@@ -433,8 +433,8 @@ class WinProbLabelCallback(BaseCallback):
           is what the back-fill above already wrote. Skipping rather than computing it is what
           also keeps the TRUNCATION convention unchanged, which `bootstrap` would otherwise move
           even at λ = 1.
-        * **a critic that is not `winprob`** — the buffer's `values` are then a shaped return in
-          PopArt units, not a probability, so blending them into a BCE target is a category error.
+        * **a critic that is not `winprob`** — the buffer's `values` are then a shaped return,
+          not a probability, so blending them into a BCE target is a category error.
           `combination_checks` refuses that argv, so this is belt-and-braces for a hand-built model.
         """
         lam = float(getattr(self.model, "win_prob_lambda", LAMBDA_OFF) or LAMBDA_OFF)
@@ -447,7 +447,7 @@ class WinProbLabelCallback(BaseCallback):
 
     def _bootstrap_values(self, n_envs):
         """`V(s_T)` per env — one no-grad forward on `model._last_obs`, the SAME post-rollout
-        observation SB3's own GAE bootstrap and `winprob_pbrs` use, so the λ-return's boundary and
+        observation SB3's own GAE bootstrap uses, so the λ-return's boundary and
         the advantage's boundary cannot drift apart. `None` when the forward is unavailable (no
         `_last_obs` yet, or a policy without a critic), which the caller turns into `V(s[last])`."""
         import torch as th
@@ -574,7 +574,7 @@ def lambda_return_targets(values, y, mask, episode_starts, last_values, last_don
 
     **THE BUFFER BOUNDARY.** The last row of a TRUNCATED episode has no terminal inside the buffer.
     Its successor is `s_T`, whose value is `last_values` (the same bootstrap SB3's own GAE uses, and
-    the same `model._last_obs` forward `winprob_pbrs` takes), so the branch above needs no special
+    the `model._last_obs` forward the GAE bootstrap takes), so the branch above needs no special
     case: `G = (1−λ)·V(s_T) + λ·V(s_T) = V(s_T)`. Those rows are `mask = 0` TODAY — they have no
     outcome — so `truncated` decides whether they now carry that bootstrap target (`bootstrap`,
     which UNMASKS them and returns the count) or stay excluded (`mask`, byte-identical to today).

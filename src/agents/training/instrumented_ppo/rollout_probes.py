@@ -11,7 +11,6 @@ import time
 import numpy as np
 import torch as th
 
-from agents.training import frozen_phi          # gen3_frozen_phi_actor_only_v1 (both seams live there)
 from agents.training.instrumented_ppo.calibration import (   # the MODULE path, never the hub:
     as_numpy as _calib_as_numpy,                              # a submodule importing the package
     episode_start_rows as _calib_episode_start_rows,          # __init__ back closes the import
@@ -50,22 +49,13 @@ class RolloutProbes:
             # gen3_owned_ppo_loop_v1: the Python core's collection is OURS (`loop.OwnedLoop`), vendored
             # from sb3-contrib operation for operation — no longer `super()` into upstream.
             ok = self._collect_python(env, callback, rollout_buffer, n_rollout_steps, use_masking)
-        # +WIN-PROB PBRS (ai_v12 route 1, gen3_winprob_pbrs_v1): coef·(γ·φ(s′) − φ(s)) onto this
-        # rollout's rewards, then RE-RUN GAE, φ = the DETACHED win-prob head. HERE — after collection,
-        # before train() — is the one window between GAE and PopArt's read of `returns` (both
-        # collectors; see winprob_pbrs.py). At coef 0 (default) not even the import runs.
-        if ok and float(getattr(self, "win_prob_pbrs_coef", 0.0) or 0.0) != 0.0:
-            from agents.training.winprob_pbrs import apply_winprob_pbrs
-            self._pbrs_metrics = apply_winprob_pbrs(self, rollout_buffer)
-        frozen_phi.shape_after_rollout(self, rollout_buffer, ok)   # --win-prob-pbrs-frozen
         self._record_collect(_t0, _n0)
         return ok
 
     def _collect_rust(self, rc, callback, rollout_buffer):
         """M5 Lane G: the learner's weights are LOADED into the inference service after every update
         (`after_update`, detected by the update counter moving), then the complete-game (or window)
-        fill replaces the model's buffer contents. PBRS / frozen-φ are refused under `--env-core rust`
-        (`combination_checks`), so neither post-rollout seam applies. `rust_rollout/collector.py`."""
+        fill replaces the model's buffer contents. `rust_rollout/collector.py`."""
         if getattr(rc, "seen_updates", None) is None:
             rc.seen_updates = self._n_updates
         elif self._n_updates != rc.seen_updates:

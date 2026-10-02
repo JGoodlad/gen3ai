@@ -34,7 +34,7 @@ The training half of the in-place belief feature (model side in `src/agents/mode
   BCE skipped when `moves_weight==0`; accuracy/P-R diagnostics under `no_grad`. **Fail-loud:** an
   out-of-vocab label id (impossible on real Gen-3 nums) RAISES — corrupt num pipeline, not a silent
   drop. Returns `None` on an empty (zero-believed) minibatch to avoid NaN-poisoning.
-- **Metrics (`belief/*` — its OWN TB prefix, not `train/`, matching the `grad/`/`popart/`/`win_prob/`
+- **Metrics (`belief/*` — its OWN TB prefix, not `train/`, matching the `grad/`/`win_prob/`
   groups; rendered in the launcher TUI directly BELOW the `train/` block in the train column).** Headline
   `species_acc` + `species_acc_above_chance` (anchored to
   `1/n_species`); `moves_precision`/`moves_recall` (the opaque BCE alone can't tell if the ~4 true

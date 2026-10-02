@@ -372,7 +372,17 @@ from typing import Any, Dict
 #   historical value (`critic_mode.CRITIC_UNRECORDED`, `_REWARD_IMMUTABLE_FIELDS`), so no checkpoint
 #   loads differently. No ARCH_SIGNATURE bump (designs/model/versioning.md says why), no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 130
+# v131 (deletion pass L1, owner-approved 2026-10-02 — designs/ops/deletion_pass_manifest.md §2): the
+#   levers that ran only on the Python core or only under the shaped critic LEAVE the config, with the
+#   code behind them: use_popart, value_dist_mode (+ value_dist_bins / vmin / vmax / coef),
+#   value_from_dist, value_tail_weight, win_prob_coef, win_prob_pbrs_coef, win_prob_pbrs_source,
+#   win_prob_pbrs_frozen. `_migrate_config` POPs them version-independently; a recorded ON value that
+#   named parameters or a critic route (PopArt, the distributional head, value_from_dist) is refused on
+#   EVERY load, and a RESUME or FORK of a run that recorded any lever ON is refused by
+#   `model_version.retired_levers` (never silently continued without it). Every v121+ run on record
+#   recorded them all OFF, so no checkpoint loads differently: no ARCH_SIGNATURE bump, no
+#   MIGRATION_FLOOR change. Later deletion units APPEND their levers to that module's table.
+MODEL_CONFIG_VERSION = 131
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

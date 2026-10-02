@@ -123,15 +123,13 @@ def attach_cf_labels(model, *, args, _cf_labels_dir, reward_config):
 # that class unrepresentable rather than merely unlikely.
 #
 # Everything here is TRAINING-ONLY and resume-MUTABLE: not version-locked, never consulted by
-# `check_compatible`. The resume-IMMUTABLE ones (`vf_coef`, `value_tail_weight`'s saved-value
-# check) are enforced separately, before this runs.
+# `check_compatible`. The resume-IMMUTABLE one (`vf_coef`) is enforced separately, before this runs.
 
 _PLAIN = None          # model.<x> = args.<x>
 _F0 = "f0"             # model.<x> = float(args.<x> or 0.0)  — None/"" coerce to 0.0
 _F0_OPT = "f0?"        # ...and tolerate a namespace that has no such dest at all
 
 _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
-    ("value_tail_weight",             _PLAIN),   # tail-weighted value loss (0.0 = plain MSE)
     ("grad_accum_steps",              _PLAIN),   # 1 = off; effective batch = batch_size·K
     ("opp_belief_aux_coef",           _PLAIN),   # hidden-opp belief aux loss (0.0 = off)
     ("opp_belief_moves_weight",       _PLAIN),   # species_CE + w·moves_BCE
@@ -144,10 +142,7 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("bait_entropy_anneal_frac",      _PLAIN),
     ("hp_type_belief_coef",           _PLAIN),   # HP-type CE (0.0 = no direct CE)
     ("item_belief_coef",              _PLAIN),   # item CE (0.0 = no direct CE)
-    ("win_prob_coef",                 _PLAIN),   # win-prob head BCE (mode none = off)
-    ("value_dist_coef",               _PLAIN),   # value-dist HL-Gauss (mode none = off)
     ("td_aux_coef",                   _PLAIN),   # TD-consistency aux (0.0 = byte-identical)
-    ("win_prob_pbrs_coef",            _PLAIN),   # gen3_winprob_pbrs_v1 (0.0 = byte-identical)
     ("policy_grad_coef",                       _PLAIN),   # policy-gradient term weight (1.0 = upstream)
     ("intent_label_bot_weight",       _PLAIN),   # gen3_intent_label_bot_weight_v1 (1.0 = off)
     ("win_prob_strata_weight",        _PLAIN),   # gen3_winprob_strata_weight_v1 (0.0 = bit-identical)
@@ -251,12 +246,6 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     model.device_batch_mode = str(getattr(args, "device_batch", None) or _devb_default_mode)
     model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
     model.noise_terms_every_update = getattr(args, "adaptive_batch", "off") not in ("off", "total")
-    # DERIVED likewise — the PBRS sizing meter's denominator is the TERMINAL magnitude, not a knob
-    # of its own. `train/pbrs_reward_share` prices the shaping against the unshaped reward stream,
-    # which the clean-world composition makes terminal-only (so: 0 on a rollout with no episode end,
-    # and episode-length-driven otherwise — probe N §7.5). `train/pbrs_episode_dose` prices it
-    # against THIS constant instead and reads "X% of a win" on any stream.
-    model.win_prob_pbrs_terminal_scale = abs(float(getattr(args, "victory_value", 0.0) or 0.0))
     model._opd_on = bool(args.opd_coef and args.opd_coef > 0)
 
     # gen3_cf_label_plumbing_v1: counterfactual win-prob grounding (coef 0 = byte-identical).
@@ -307,90 +296,6 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
              f"(order = teacher-id 1..{len(model._distill_teachers)})")
         for _i_d, _line_d in enumerate(_teacher_prov, start=1):
             emit(f"   teacher {_i_d}: {_line_d}")
-
-    # gen3_winprob_pbrs_source_v1: the FROZEN φ for the win-prob PBRS. Absent → the attribute stays
-    # None and `winprob_pbrs` reads the LIVE head exactly as it did at v104 (byte-identical).
-    #
-    # WHY A WHOLE FROZEN MODEL AND NOT JUST THE HEAD: `WinProbHead.forward` consumes `value_pooled`
-    # — the whole-board value pool produced by that network's OWN trunk with its OWN weights. Running
-    # the frozen head over the LIVE trunk's pooled features computes a function of a representation
-    # the head never saw, and it would DRIFT with the live trunk, destroying the one property a
-    # frozen source exists to buy. So the frozen model gets a full `no_grad` extractor forward, and
-    # that forward REPLACES the live-φ one rather than adding to it.
-    #
-    # Loaded EAGER, deliberately: `--compile-trainer` patches the LIVE policy's extractor forward
-    # for the per-minibatch train step, whereas this runs once per ROLLOUT, so a second Inductor
-    # graph would cost a warm-up to save nothing. A bad path FATALs config, never a crash-restart.
-    model._winprob_phi_source = None
-    if getattr(args, "win_prob_pbrs_source", None):
-        from agents.model.snapshot import (
-            current_model_version as _cmv_w, load_foreign_opponent as _lfo_w)
-        from agents.training.fixed_opponent_pool import resolve_model_ref as _rmr_w
-        _src = str(args.win_prob_pbrs_source)
-        try:
-            _ref_w = _rmr_w(_src, None)                     # run-dir OR zip → the resolved file
-            _zip_w, _cfg_w = _ref_w.zip_path, _ref_w.config_path
-            _pm_w, _fv_w = _lfo_w(_zip_w, current_version=_cmv_w(mappings, **_run_arch_toggles(args)),
-                                  device=str(model.device), config_path=_cfg_w)
-            _pm_w.policy.set_training_mode(False)
-            model._winprob_phi_source = _pm_w
-        except Exception as _e_w:  # noqa: BLE001 — bad path / incompatible obs family
-            print(f"\n[WinProbPBRS] FATAL: could not load --win-prob-pbrs-source {_src}: {_e_w}")
-            sys.stdout.flush()
-            os._exit(int(TrainExitCode.FATAL_CONFIG))
-        # Provenance, printed rather than merely recorded: a clean-world run is uninterpretable if
-        # the identity of its frozen potential is not pinned (probe N §7.8).
-        emit(f"🧊 [WinProbPBRS] frozen φ from {_ref_w.describe()} on {model.device} "
-             f"(arch_signature={getattr(_fv_w, 'arch_signature', '?')}, "
-             f"config_version={getattr(_fv_w, 'config_version', '?')}) — the LIVE win-prob head is "
-             f"now a diagnostic only")
-
-    # gen3_frozen_phi_actor_only_v1: the ACTOR-ONLY frozen potential (`--win-prob-pbrs-frozen`).
-    # SAME loader shape as the block above — `resolve_model_ref` (a bare run dir means the run's
-    # LAST SNAPSHOT, gen3_last_snapshot_resolution_v1) then `load_foreign_opponent`, eager, never
-    # compiled, never pickled into our checkpoint, a bad path a FATAL_CONFIG rather than a
-    # crash-restart loop — and the SAME attribute, `_winprob_phi_source`, so there is exactly one
-    # frozen-φ network per run whichever flag attached it and `winprob_pbrs.phi_model` /
-    # `_excluded_save_params` need no second name. The two flags are mutually exclusive by refusal
-    # (`combination_checks`: --win-prob-pbrs-source is refused under `winprob`, and
-    # --win-prob-pbrs-frozen is refused under `shaped`), so they can never both fire.
-    #
-    # WHAT DIFFERS is the GATE and the COEFFICIENT, and both are deliberate: `_frozen_phi_on` is a
-    # boolean because the flag is, and the coefficient is `FROZEN_PHI_COEF` — PRINTED here rather
-    # than chosen, because under this critic the potential is already in the value currency.
-    model._frozen_phi_on = False
-    model.frozen_phi_coef = 0.0
-    if getattr(args, "win_prob_pbrs_frozen", None):
-        from agents.model.snapshot import (
-            current_model_version as _cmv_f, load_foreign_opponent as _lfo_f)
-        from agents.training.fixed_opponent_pool import resolve_model_ref as _rmr_f
-        from agents.training.frozen_phi import FROZEN_PHI_COEF as _FPC
-        _srcf = str(args.win_prob_pbrs_frozen)
-        try:
-            _ref_f = _rmr_f(_srcf, None)                 # run-dir (LAST SNAPSHOT) OR zip → the file
-            _pm_f, _fv_f = _lfo_f(_ref_f.zip_path,
-                                  current_version=_cmv_f(mappings, **_run_arch_toggles(args)),
-                                  device=str(model.device), config_path=_ref_f.config_path)
-            _pm_f.policy.set_training_mode(False)
-            model._winprob_phi_source = _pm_f
-            model._frozen_phi_on = True
-            model.frozen_phi_coef = float(_FPC)
-        except Exception as _e_f:  # noqa: BLE001 — bad path / incompatible obs family
-            print(f"\n[FrozenPhi] FATAL: could not load --win-prob-pbrs-frozen {_srcf}: {_e_f}")
-            sys.stdout.flush()
-            os._exit(int(TrainExitCode.FATAL_CONFIG))
-        emit(f"🧊 [FrozenPhi] ACTOR-ONLY potential from {_ref_f.describe()} on {model.device} "
-             f"(arch_signature={getattr(_fv_f, 'arch_signature', '?')}, "
-             f"config_version={getattr(_fv_f, 'config_version', '?')})")
-        emit(f"   coefficient {model.frozen_phi_coef:g} — CURRENCY-MATCHED, not a knob: the "
-             f"terminal is the win indicator at --victory-value "
-             f"{float(getattr(args, 'victory_value', 1.0) or 0.0):g} and V(s) = P(win|s), so "
-             f"φ = σ(win-prob logit) ∈ [0,1] is already one unit of V per unit of V.")
-        emit("   ACTOR-ONLY: γφ(s′) − φ(s) is added to the advantages ONLY. The critic keeps "
-             "training on the UNSHAPED terminal indicator, so V ≡ P(win) is preserved exactly; "
-             "φ(terminal) := 0, so the per-episode shaping telescopes to −φ(s₀) and leaks no "
-             "outcome. Watch pbrs/frozen_phi_mean (must be FLAT — φ is fixed) and "
-             "signal/adv_shaped_minus_unshaped_mean.")
 
     if args.search_teacher:
         from agents.training.teacher.buffer import CorrectionBuffer
@@ -496,25 +401,18 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # ModelVersion records no activation field, and SB3 rebuilds the loaded policy from the
             # ZIP's OWN saved policy_kwargs, not from this dict.
             "activation_fn": POLICY_ACTIVATION_FN,
-            "use_popart": args.use_popart,  # version-checked vs the saved model_config.json
-            "value_from_dist": args.value_from_dist,  # Phase B: dist head is the critic (resume-immutable)
             "critic": args.critic,  # gen3_winprob_critic_mode_v1: WHICH readout is the critic
         }
         current_version = ModelVersion.from_layout_and_policy_kwargs(
             _load_extractor_kwargs["layout"], _load_policy_kwargs, vf_coef=args.vf_coef,
-            reward_config=reward_config, value_tail_weight=args.value_tail_weight,
+            reward_config=reward_config,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
             move_belief_coef=args.move_belief_coef,
-            win_prob_coef=args.win_prob_coef,
             move_belief_latent_coef=args.move_belief_latent_coef,
             spread_belief_coef=args.spread_belief_coef,
-            value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
-            win_prob_pbrs_coef=args.win_prob_pbrs_coef,
-            win_prob_pbrs_source=getattr(args, "win_prob_pbrs_source", None),
-            win_prob_pbrs_frozen=getattr(args, "win_prob_pbrs_frozen", None),
             arch_source=getattr(args, "arch_source", None),
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
@@ -577,22 +475,14 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                 device=args.device,
                 enforce_vf_coef=args.vf_coef,  # FATAL if the run was started with a different vf_coef
                 enforce_reward_config=reward_config,  # FATAL if victory_value/terminal_indicator/draw_penalty drift
-                enforce_value_tail_weight=args.value_tail_weight,  # FATAL if the value-loss tail weight drifts
-                enforce_value_dist=(args.value_dist_vmin, args.value_dist_vmax),  # FATAL if the dist support drifts
                 enforce_belief_grad_mode=args.belief_grad_mode,  # FATAL if the belief-trunk-grad mode drifts (v41)
                 allow_belief_grad_mode_change=args.allow_belief_grad_mode_change,  # intentional migration
-                enforce_value_from_dist=args.value_from_dist,  # FATAL if the Phase-B critic source drifts (v45)
-                allow_value_from_dist_change=args.allow_value_from_dist_change,
             )
             # gen3_belief_grad_mode_v1 MIGRATION FIX: SB3 reconstructs the extractor from the ZIP's
             # saved policy_kwargs, so the requested mode must be APPLIED to the live extractor
             # post-load (else --allow-belief-grad-mode-change is a silent no-op — the 2026-07-21
             # incident, visible as grad/*_norm_shared == 0 under 'shaping'). No-op when unchanged.
             model.policy.features_extractor.set_belief_grad_mode(args.belief_grad_mode)
-            # gen3_dist_critic_v1 (Phase B) MIGRATION FIX: same silent-no-op class — the loaded policy
-            # is rebuilt from the ZIP's saved policy_kwargs (a pre-v45 checkpoint lacks value_from_dist),
-            # so apply the requested source to the live policy post-load (no-op when unchanged).
-            model.policy.set_value_from_dist(args.value_from_dist)
         except ModelVersionError as e:
             print(f"\n[ModelVersion] FATAL: {e}")
             sys.stdout.flush()  # os._exit() skips buffer flushing — make sure the reason reaches the log
@@ -608,7 +498,6 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _validate_or_reset_optimizer_state(model, model_path)
         model.ent_coef = args.ent_coef          # resume-only: the fresh path passes it to the ctor
         # Every training-only hparam, from the one table shared with the fresh path below.
-        # `value_tail_weight` here == the saved value (enforced above); re-set for the loop.
         apply_training_hparams(model, args, mappings=mappings,
                                attach_cf_labels=_attach_cf_labels)
         # K9(b): where a behaviour violation's row dump is appended (`consistency.VIOLATION_DUMP`).
@@ -858,8 +747,6 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             "activation_fn": POLICY_ACTIVATION_FN,
             "optimizer_class": torch.optim.AdamW,
             "optimizer_kwargs": {"weight_decay": args.weight_decay, "eps": 1e-5},
-            "use_popart": args.use_popart,  # builds the PopArtNormalizer in the policy; recorded in model_config.json
-            "value_from_dist": args.value_from_dist,  # Phase B: GAE reads E[Z]; recorded in model_config.json
             # gen3_winprob_critic_mode_v1: 'shaped' (the default) is byte-identical to every
             # generation to date; 'winprob' routes _critic_value to sigmoid(win_head logit).
             "critic": args.critic,
@@ -898,19 +785,14 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         model._fork_lr_pin = None          # a FRESH run cannot be pinned — `--fork-lr` is refused there
         version = ModelVersion.from_layout_and_policy_kwargs(
             extractor_kwargs["layout"], policy_kwargs, vf_coef=args.vf_coef,
-            reward_config=reward_config, value_tail_weight=args.value_tail_weight,
+            reward_config=reward_config,
             opp_belief_aux_coef=args.opp_belief_aux_coef,
             move_belief_coef=args.move_belief_coef,
-            win_prob_coef=args.win_prob_coef,
             move_belief_latent_coef=args.move_belief_latent_coef,
             spread_belief_coef=args.spread_belief_coef,
-            value_dist_coef=args.value_dist_coef,
             hp_type_belief_coef=args.hp_type_belief_coef,
             item_belief_coef=args.item_belief_coef,
             td_aux_coef=args.td_aux_coef,
-            win_prob_pbrs_coef=args.win_prob_pbrs_coef,
-            win_prob_pbrs_source=getattr(args, "win_prob_pbrs_source", None),
-            win_prob_pbrs_frozen=getattr(args, "win_prob_pbrs_frozen", None),
             arch_source=getattr(args, "arch_source", None),
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,

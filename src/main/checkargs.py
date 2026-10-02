@@ -324,7 +324,7 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     # THE CRITIC MODE (gen3_winprob_critic_mode_v1) is resolved where the launch resolves it: with
     # NO parent right here, and on a `--model` launch AFTER the parent config is read (below), so an
     # untyped `--critic` INHERITS the checkpoint's recorded mode. `--critic winprob` IMPLIES
-    # `--win-prob-mode shaping`, `--gamma 1.0` and `--no-use-popart`; a checker that skipped them
+    # `--win-prob-mode shaping` and `--gamma 1.0`; a checker that skipped them
     # would report a launching command as broken on the very flags the mode fills in. The three
     # reward flags it does NOT imply (--terminal-indicator, --victory-value 1.0, --draw-penalty 0)
     # are REQUIRED, and the checks below are what report a command missing one.
@@ -525,16 +525,41 @@ def shaped_reward_finding(argv: List[str]) -> dict | None:
     return None
 
 
+def retired_levers_finding(argv: List[str]) -> dict | None:
+    """Does this argv resume or fork a checkpoint that recorded a DELETED lever ON (self-PBRS,
+    frozen-phi PBRS, PopArt, the distributional value head, ... — `model_version.retired_levers`)?
+    ``None`` when there is no `--model`, no readable parent config, or no lever was on; else
+    ``{"config_path", "evidence", "message", "last_commit"}``. The SAME predicate `resolve_config`
+    refuses on, read from the RAW parent config. Pure JSON: no torch."""
+    model = model_arg(argv)
+    if not model:
+        return None
+    from agents.model.model_version.retired_levers import (
+        RetiredLeverCheckpointError, check_no_retired_levers)
+    config_path, _tried = parent_config_path(model)
+    try:
+        check_no_retired_levers(config_path)
+    except RetiredLeverCheckpointError as e:
+        return {"config_path": config_path, "evidence": e.evidence, "message": str(e),
+                "last_commit": e.last_commit}
+    return None
+
+
 def pin_predates_shaped_deletion(sha: str | None) -> bool | None:
     """Is `sha` at or before the last commit with the shaped reward path? ``None`` when git cannot
     say (no sha, unknown object) — the caller then reports rather than refuses."""
+    from agents.model.model_version.shaped_reward import LAST_SHAPED_COMMIT
+    return pin_predates_commit(sha, LAST_SHAPED_COMMIT)
+
+
+def pin_predates_commit(sha: str | None, last_commit: str) -> bool | None:
+    """Is `sha` at or before `last_commit`? ``None`` when git cannot say."""
     if not sha:
         return None
     import subprocess
-    from agents.model.model_version.shaped_reward import LAST_SHAPED_COMMIT
     from utils.paths import repo_root
     try:
-        r = subprocess.run(["git", "merge-base", "--is-ancestor", sha, LAST_SHAPED_COMMIT],
+        r = subprocess.run(["git", "merge-base", "--is-ancestor", sha, last_commit],
                            cwd=str(repo_root()), capture_output=True, timeout=30)
     except Exception:                                 # noqa: BLE001 — no git: unknown
         return None
@@ -567,7 +592,8 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "unsatisfiable": unsatisfiable_pairs(argv),
            "resolution": None, "combinations": [], "teacher_spec": [], "ns": None,
            "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
-           "shaped_reward": shaped_reward_finding(argv)}
+           "shaped_reward": shaped_reward_finding(argv),
+           "retired_levers": retired_levers_finding(argv)}
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
         # more to the point, the reader has to fix that first. Report it alone.
@@ -932,6 +958,7 @@ def main(raw: List[str] | None = None) -> int:
     _print_resolution(res["resolution"])
     _print_fork_lr_inheritance(res["resolution"])
     shaped_fatal = _print_shaped_reward(res.get("shaped_reward"), argv, a.pin)
+    shaped_fatal = _print_retired_levers(res.get("retired_levers"), argv, a.pin) or shaped_fatal
 
     if res["unsatisfiable"]:
         print(f"  unsatisfiable combinations     : {len(res['unsatisfiable'])}  "
@@ -1096,6 +1123,31 @@ def _print_shaped_reward(finding: dict | None, argv: List[str], explicit_pin: st
     if before:
         print(f"      ℹ️  ADVISORY — the child runs PINNED commit {sha[:8]} ({why}), which still "
               "has the shaped reward path, so its own resolve_config accepts it.")
+        return False
+    for line in finding["message"].splitlines():
+        print(f"      {line}")
+    print("      ✗ WOULD FAIL IN resolve_config (main.train.config.enforce_not_shaped_parent exits "
+          "FATAL_CONFIG)" + (f"; the pin {sha[:8]} is AFTER the deletion" if before is False and sha
+                             else ""))
+    return True
+
+
+def _print_retired_levers(finding: dict | None, argv: List[str], explicit_pin: str | None) -> bool:
+    """Print the RETIRED-LEVER PARENT verdict (`model_version.retired_levers`); True ⇔ it refuses.
+    Printed even when clean. It REFUSES unless the child will run a PINNED commit at or before the
+    last one that still has the lever — the fix the refusal names."""
+    if finding is None:
+        print("  retired-lever parent             : none (no --model, or no deleted lever was ON)")
+        return False
+    sha, why = resolve_pin_for(argv, explicit_pin)
+    from main.launcher.pinned_argv import differs_from_head
+    if sha and not differs_from_head(sha):
+        sha = None                      # the pin IS this tree, which has no such lever
+    before = pin_predates_commit(sha, finding["last_commit"])
+    print("  retired-lever parent             : YES — " + "; ".join(finding["evidence"]))
+    if before:
+        print(f"      ℹ️  ADVISORY — the child runs PINNED commit {sha[:8]} ({why}), which still "
+              "has the lever, so its own resolve_config accepts it.")
         return False
     for line in finding["message"].splitlines():
         print(f"      {line}")

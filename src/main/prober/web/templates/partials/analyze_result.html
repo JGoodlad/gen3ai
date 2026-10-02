@@ -279,7 +279,7 @@
 
 {# ── the critic ───────────────────────────────────────────────────────────────────────── #}
 
-{% if a.value or a.win_prob or a.value_dist %}
+{% if a.value or a.win_prob %}
 <section class="card">
   <h2>the critic</h2>
 
@@ -310,14 +310,6 @@
      plain-language gloss, and the gloss comes from the engine so both surfaces say it the same way. #}
   <p class="sentence">TD δ {{ m.signed(a.value.td_residual) }} — <strong>{{ a.value.td_phrase }}</strong></p>
   {% endif %}
-  {% if a.value.normalized_recorded is not none %}
-  <p class="muted small">
-    PopArt: normalized V(s) {{ m.num(a.value.normalized_recorded) }} · re-run
-    {{ m.num(a.value.normalized_rerun) }} (μ {{ m.num(a.value.popart_mu) }}, σ
-    {{ m.num(a.value.popart_sigma) }}) — the critic's OWN learning scale; the numbers above are
-    de-normalized real return.
-  </p>
-  {% endif %}
   {% endif %}
 
   {% if a.win_prob %}
@@ -334,18 +326,6 @@
   </div>
   {% endif %}
 
-  {% if a.value_dist %}
-  {{ m.chart("valuedist", spec) }}
-  <p class="muted small">
-    E[Z] {{ m.num(a.value_dist.mean) }}{% if a.value_dist.mean_real is not none %}
-    (real return {{ m.num(a.value_dist.mean_real) }}){% endif %} ·
-    σ {{ m.num(a.value_dist.std) }} · p10 {{ m.num(a.value_dist.p10) }} ·
-    p50 {{ m.num(a.value_dist.p50) }} · p90 {{ m.num(a.value_dist.p90) }} ·
-    entropy {{ m.num(a.value_dist.entropy) }} ·
-    <span title="mass outside the dominant peak's ±2-bin neighbourhood — high means the critic sees a coinflip">bimodality
-    {{ m.num(a.value_dist.bimodality) }}</span>
-  </p>
-  {% endif %}
 </section>
 {% endif %}
 

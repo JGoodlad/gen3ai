@@ -351,7 +351,7 @@ wrong is not.
   rides INSIDE the coefficient, so coefficient zero kills the regularizer too. Nothing in the
   likelihood bounds `α+β` on locally-consistent data, and an inflated precision makes the width —
   the entire product — meaningless.
-- **ALWAYS DETACHED, with no mode to change that.** Unlike `win_prob_mode` / `value_dist_mode` there
+- **ALWAYS DETACHED, with no mode to change that.** Unlike `win_prob_mode` there
   is no read_only/shaping split: the head feeds nothing forward, so letting it shape the trunk would
   be a training change with no consumer to justify it. `train/cf_evidential_grad_share` reads
   **exactly 0.0 by construction** — published so the contract is a live measurement, not a docstring.
@@ -380,10 +380,10 @@ wrong is not.
 **Flag class — the split, and why.** `--cf-evidential` is **STRUCTURAL** and IS in
 `agents/model/flag_registry.py` (v98, `cli`/`structural`): it is a `Gen3FeaturesExtractor`
 constructor kwarg that builds a MODULE, which is exactly the registry's declared scope, and the
-`win_prob_mode` / `value_dist_mode` precedent. It gets a `ModelVersion` field, a `check_compatible`
+`win_prob_mode` precedent. It gets a `ModelVersion` field, a `check_compatible`
 bool compare, a `MODEL_CONFIG_VERSION` bump to **98** with a migration defaulting pre-v98 configs
 OFF, and a `snapshot.current_model_version` keyword (so a frozen eval/pool opponent's gate sees it).
-**No `ARCH_SIGNATURE` bump** — optional side head, obs family unchanged, the value_dist precedent.
+**No `ARCH_SIGNATURE` bump** — optional side head, obs family unchanged, the win-prob-head precedent.
 The gate matters more here than usual: because the head is never called by the forward, a mismatched
 resume produces **no shape error anywhere**, so `check_compatible` is the only thing standing between
 a flipped flag and a run that silently supervises a freshly-random head for good. The two
@@ -438,7 +438,7 @@ difference has to clear noise the design cannot control, and a null would be uni
 
 | head | module | trained by | isolates |
 |---|---|---|---|
-| **A** (control) | `win_head` — the EXISTING head, untouched | the on-policy single-outcome BCE, at `win_prob_coef` | — |
+| **A** (control) | `win_head` — the EXISTING head, untouched | the on-policy single-outcome BCE, at its own weight 1.0 | — |
 | **B** (coverage) | `cf_twin_head_b` | A's loss **+** the cf-labelled states with **SINGLE-OUTCOME** labels (n≡1) | **B−A = coverage/prioritization** |
 | **C** (treatment) | `cf_twin_head_c` | A's loss **+** the same states with **TIGHT-MC** labels (n=R) | **C−B = pure variance reduction** |
 
@@ -454,7 +454,7 @@ construction**, not matched by design.
   respect to them**; trunk exposure and policy transfer stay CROSS-RUN questions (runbook §0a,
   unamended). `train/cf_twin_grad_share` reads exactly 0.0 — published so the contract is a live
   measurement.
-- **The mirror rides `win_prob_coef`, not `cf_twin_coef`.** All three heads must carry a
+- **The mirror rides head A's own weight (1.0), not `cf_twin_coef`.** All three heads must carry a
   bit-identical copy of the control objective, or B−A would confound "extra states" with "a
   different base objective".
 - **B and C pull EQUALLY HARD.** `_cf_binomial_nll` normalizes by `Σn`, so a row's gradient is
@@ -473,13 +473,11 @@ precedent). Swapping the live critic for an MC-grounded one is critic SURGERY an
 offline gate; this head is the **staged promotion path** that earns or refuses that gate without
 risking a run.
 
-- **The frame.** Under PopArt the head's raw output IS the normalized value and the target is
-  `popart.normalize(mc_return)` — `_value_distill_mse`'s handling, for its reason (the coefficient
-  stays scale-comparable with the value loss). Every reported metric is DE-normalized to real
-  shaped-return units, which is the only frame a reader can interpret.
+- **The frame.** Real return units: the head's raw output is the value and the target is `mc_return`
+  (PopArt, which once normalized both, is deleted).
 - 🔒 **THE METER is `cf/shadow_shadow_vs_live_v`** — the SIGNED real-unit mean of (shadow − live V)
   on the same states, with the live V taken off the *same* forward through `policy._critic_value`
-  (never a hand-rolled `value_net` call, which under `--value-from-dist` reads a head the run does
+  (never a hand-rolled `value_net` call, which can read a head the run does
   not use). A shadow sitting systematically BELOW the live critic is a live critic that is
   optimistic about the states the factory samples, **measured against ground truth rather than
   argued from a calibration curve**. `cf/shadow_live_v_vs_label` is its direct half; read them
@@ -607,8 +605,8 @@ never calls any of them; the v99 gate on both flags and both migration legs; the
 coefficient-zero byte-identity for each half, a live coefficient reaching ONLY its own heads (with
 the clip raised — see above), **the ROUTING pin** (B's loss equals the binomial NLL of the OUTCOME
 and demonstrably NOT of the tight-MC label, with the two set to opposite extremes), B's n≡1
-weighting, B's skip-and-count when no row carries an outcome, the mirror's coefficient and its
-detach, the shadow's PopArt frame and masking, and that all FOUR cf terms share ONE sample and ONE
+weighting, B's skip-and-count when no row carries an outcome, the mirror's weight and its
+detach, the shadow's masking, and that all FOUR cf terms share ONE sample and ONE
 forward. `cf_label_buffer_test.py` covers both schema directions (an old row still ingests; a new
 row carries both streams), the out-of-range field skip that keeps the row, the reward-digest
 refusal and its counter, the coverage scalars, and the masks in `batch_tensors`.

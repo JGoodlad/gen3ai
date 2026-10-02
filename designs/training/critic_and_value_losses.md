@@ -11,25 +11,27 @@ training package). Each section below is unchanged, including its dated measurem
 
 ## THE VALUE LOSS has a MODE — `--critic {shaped,winprob}` (`gen3_winprob_critic_mode_v1`)
 
-**Default `shaped`; a flagless run is byte-identical.** Design of record:
+**Default `winprob` (the bare-argv flip, deletion pass D2); `shaped` is the historical critic, selectable on
+`--env-core python` only.** PopArt, the distributional value head, `value_from_dist`, the value-tail weight and
+the aux-BCE coefficient were DELETED with the shaped critic's levers (deletion pass L1, config v131 —
+`designs/deleted_flags.md`); the sections below that describe them are gone. Design of record:
 `designs/ai_v12/design_winprob_only_critic.md`. The model-side half (the route, the version gate)
 is `src/agents/model/CLAUDE.md` → *The CRITIC MODE*; this is what `train()` does about it.
 
 | | `shaped` | `winprob` |
 |---|---|---|
-| the value TERM | `vf_coef · _value_loss_from_se(...)`, or the HL-Gauss CE at `vf_coef` under `value_from_dist` | `vf_coef · _win_prob_loss(...)` — the head's **BCE against the terminal outcome** |
+| the value TERM | `vf_coef · mean((returns − values)²)` (clipped when `--clip-range-vf` is set) | `vf_coef · _win_prob_loss(...)` — the head's **BCE against the terminal outcome** |
 | noise-scale group | `value` | **`value`** |
 | the scalar `value_loss` | the loss | a DIAGNOSTIC only (its term is dropped, `_vf_term = 0.0`), and computed UNCLIPPED |
-| `--win-prob-coef` | weights the auxiliary BCE, tagged `aux` | refused — the BCE is the value loss now |
-| gate | `win_prob_coef != 0` | `win_prob_coef != 0` **or** the critic — the head's own loss cannot be switched off by a coefficient |
+| the win-prob BCE | an auxiliary at a fixed weight 1.0, tagged `aux` | the value loss itself (weight `vf_coef`) |
+| gate | the win head exists | the win head exists — no coefficient can switch the head's own loss off |
 
 **The `"value"` tag is the point of `gen3_value_diagnostics_v1`'s sibling finding, applied one
-critic over.** §1.4 of the design records that under `--value-from-dist` the REAL critic loss was
-folded as `_ntg.add("aux", …)` while `_vf_term` was 0.0 — so `train/noise_scale_value` spent that
-entire era describing a term with weight zero, and the grad-balance probe had to compensate
-separately. The promoted BCE joins `value`, and `grad/value_share`'s term follows the critic
-(`win_prob_term if critic_winprob …`) for the same reason: a `grad/value_share` measuring the
-FROZEN scalar head's pull is the 2026-07-22 catch (`grad/value_dist_share` stuck at ~0.05).
+critic over.** §1.4 of the design records that under the (since deleted) distributional-critic route the
+REAL critic loss was folded as `_ntg.add("aux", …)` while `_vf_term` was 0.0 — so
+`train/noise_scale_value` spent that entire era describing a term with weight zero, and the grad-balance
+probe had to compensate separately. The promoted BCE joins `value`, and `grad/value_share`'s term follows
+the critic (`win_prob_term if critic_winprob …`) for the same reason.
 
 **`win_prob/critic_*` — the P(win)-currency reliability read, once per rollout.** Under `winprob`
 only, from `agents.training.scaffolding.reliability_table` — **imported, never re-implemented**, so
@@ -139,10 +141,10 @@ condition.
 ### `--vf-coef` multiplies a BCE now, and the first NON-DEGENERATE update SAYS what that is worth
 
 `--vf-coef` means a different quantity under each critic while keeping its name: under `shaped` an
-MSE on a PopArt-normalised shaped return (O(100) unnormalised, on a ±30 scale); under `winprob` the
+MSE on a shaped return (O(100) on a ±30 scale); under `winprob` the
 win-prob head's **BCE against a Bernoulli outcome**, which is `ln 2 ≈ 0.693` per sample at
 initialisation and falls. The 0.5 default was tuned against the first and carries no information
-about the second, and the normalisation that made the two comparable is refused here.
+about the second (and the PopArt normalisation that once made the two comparable is deleted).
 
 So `calibration.announce_vf_coef_scale` prints, ONCE, two numbers that answer different questions:
 the **raw BCE** (a statement about the HEAD — `ln 2` is chance, well below it means the head
@@ -376,7 +378,7 @@ soft target is exactly the right generalisation and nothing about the head, the 
 
 A rollout ends mid-episode in every env column. Those states have **no outcome**, so today they
 carry `win_mask = 0` and are excluded. Under λ < 1 their successor is `s_T`, whose value is the same
-`model._last_obs` bootstrap SB3's own GAE uses (and `winprob_pbrs` takes), so the recursion needs no
+`model._last_obs` bootstrap SB3's own GAE uses, so the recursion needs no
 special case at all: `G = (1−λ)·V(s_T) + λ·V(s_T) = V(s_T)`.
 
 * **`bootstrap`** (the default) gives them that target and **UNMASKS** them — states that carry no
@@ -597,7 +599,7 @@ the ARCH surface, so `--arch production --win-prob-dense-aux 1.0` is the documen
 the per-decision handle capture, so an unflagged run does not even allocate the scratch.
 **`--critic winprob` AND `--cf-records` are both REQUIRED** (refused in `combination_checks`).
 
-Four flags now act on ONE loss. `--win-prob-coef` scales it, `--win-prob-strata-weight` re-prices
+Three flags act on ONE loss (a fourth, `--win-prob-coef`, was deleted). `--win-prob-strata-weight` re-prices
 its MIX, `--win-prob-lambda` re-aims it at the network's own later estimates, and this one **buys
 NEW BITS**.
 
@@ -621,7 +623,7 @@ probability.**
 factory.** `cf_winprob_term` applies the head to FOREIGN recorded states out of `<run>/cf_labels/`
 with their own tight-MC labels and never touches `win_target` — an auxiliary loss on someone else's
 states, and that arm read NULL. Here the labelled row is a row of **this** rollout buffer, inside
-the ordinary PPO objective, at the ordinary `win_prob_coef`.
+the ordinary PPO objective, at the ordinary win-prob BCE weight.
 
 ### 🚨 THE COST IDENTITY — read this before choosing a fraction
 
@@ -945,46 +947,6 @@ fraction's reason: a weight above 1.0 with no win-prob head re-prices rows of a 
 being computed.
 
 
-## PopArt value-target normalization (`--use-popart`)
-
-The fix for the swamping the diagnostics above reveal. `train()` reads `self.popart =
-getattr(self.policy, "popart", None)` (built by the policy when `--use-popart`; see
-`src/agents/model/CLAUDE.md` → PopArt for the math + version-checking). When present: once per
-`train()` (before the epochs) `popart.update(self.rollout_buffer.returns, self.policy.value_net)`
-advances the running `(mu, sigma)` **and** POP-rescales `value_net`; the value loss then becomes
-`MSE(popart.normalize(returns), popart.normalize(values))` — the **normalized**-space loss, so the
-value gradient into the shared trunk drops by ≈`sigma²` and stops swamping the policy. The policy's
-value sites de-normalize, so `rollout_buffer.values` / GAE / advantages stay real-unit — the policy
-path is untouched. **`--use-popart` requires an explicit `--clip-range-vf none`** (errors otherwise —
-self-documenting config; clipping is unnecessary with value normalization, and would clip in
-un-normalized units). New diagnostics ride the same generic metrics path:
-`popart/mu`, `popart/sigma` (watch them track `train/return_mean`/`return_std`),
-`popart/value_weight_norm` (POP keeps it bounded). Under PopArt `train/value_loss` is the normalized
-loss (≈O(1)) and `grad/value_policy_logratio` should fall from a large positive value toward ~0 (the
-aux-independent value/policy balance — `grad/value_share` also drops but moves with the aux count, so the
-log-ratio is the cleaner confirmation it worked).
-
-## Tail-weighted value loss (`--value-tail-weight`)
-
-A probe-driven critic-tail lever (off by default). A representation probe found the critic's TD-residual
-tail is fat and barely anticipated (the V-tail crater the `eval/td_resid_tail` CVaR@5% already tracks),
-so `InstrumentedMaskablePPO._value_loss_from_se` replaces the plain `F.mse_loss` at all **three** value
-sites (PopArt-normalized / unclipped / clipped) with a **CVaR blend**:
-`value_loss = (1−β)·MSE + β·mean(worst _VALUE_TAIL_FRAC=10% squared errors)`, computed in whichever
-space the branch uses (NORMALIZED under PopArt, so the tail selection matches the loss scale). At **β=0
-it is `se.mean()`, byte-identical to `F.mse_loss`** (the default no-op). β>0 makes the critic prioritise
-the big over-claim misses it under-prices; it is **symmetric in error sign**, so V stays an unbiased
-mean estimate and the GAE advantages the policy reads are unaffected — a weighting change, not a new
-target. The hparam is set on the model after construction (like `_async_rollout`), **resume-immutable**
-(recorded in `model_config.json`, FATAL to change on resume via `ModelVersion.check_value_tail_weight`,
-`MODEL_CONFIG_VERSION` v11; excluded from `check_compatible` since a frozen opponent never runs the value
-loss), and **not weight-shape** (no `ARCH_SIGNATURE` bump). The v10
-`value_active_readout` value-head fix that used to pair with it is **deleted** (v88
-`gen3_dead_flag_purge_v1` — it was never enabled in a gen-8+ run and the multi-seed readout /
-`--value-threat-inject` superseded it; a checkpoint recording it ON is refused by the migration). Validate by watching
-`eval/td_resid_tail` fall.
-Tests: `instrumented_ppo_test.py` (β=0 == MSE, β>0 == the exact blend).
-
 ## TD-consistency auxiliary (`--td-aux-coef`, `td_aux.py`)
 
 **What it fixes.** The critic's only signal is a PER-STATE regression, `MSE(V(s_t), G_t)`. That
@@ -1036,22 +998,17 @@ band to mean the same thing. Cost is bounded by `TD_AUX_STATES`, not by `batch_s
 512-state critic forward per minibatch, ≈10% of the train step at production shapes.
 
 **The value path is `policy.predict_values`, never a hand-rolled one.** That method is what routes
-to the DISTRIBUTIONAL head's mean under `--value-from-dist` (where the scalar `value_net` is FROZEN)
-and applies PopArt's de-normalization — reading `value_net` directly would train a critic the run
-does not use.
+to the run's critic (`critic_mode`) — reading `value_net` directly would train a critic the run does not use.
 
 **Units.** `predict_values` returns REAL-unit values and the buffer's rewards are real-unit, so the
-raw residual is real-unit. But under PopArt the value loss trains in NORMALIZED space, so the
-residual is divided by σ — which *is* the normalized-space residual, since
-`normalize(V) − normalize(r + γV′) = (V − r − γV′)/σ` (the μ cancels). λ therefore keeps the meaning
-rung 1 calibrated in both regimes; σ = 1.0 with PopArt off.
+residual is real-unit — the same space the value loss trains in (the PopArt σ division this term once
+carried is deleted with PopArt).
 
 **Metrics (`td_aux/` prefix).** `resid_rms` is the headline — the quantity being minimised, the live
 counterpart of the offline ΔV-dispersion instrument, and it should FALL. `resid_mean` (SIGNED) is
 the no-harm watch: rung 1's decomposition says this is dispersion suppression, so a bias drifting
 away from ~0 means the residual-gradient term is shifting the LEVEL rather than tightening it — read
-it beside `train/explained_variance`. Also `loss`, `n_pairs`, `scale` (the σ the residual is
-expressed in) and `pair_drop_frac` (share of candidate pairs lost to episode boundaries). The
+it beside `train/explained_variance`. Also `loss`, `n_pairs` and `pair_drop_frac` (share of candidate pairs lost to episode boundaries). The
 shared-trunk pull rides `grad/td_aux_share` + `grad/td_aux_policy_cosine`; the term reaches the trunk
 through the CRITIC path only, so `td_aux_share` against `value_share` is the read for "is the
 consistency term crowding out the level regression it is meant to complement".
@@ -1064,48 +1021,8 @@ scope is extractor architecture toggles, and this reaches the extractor not at a
 
 Tests: `td_aux_test.py` — the sampler (env-major row convention, (t, t+1) adjacency, boundary pairs
 DROPPED not zeroed, the all-boundary degenerate → `None` not 0.0, the segment economy, fail-loud on a
-flattened `episode_starts`), the residual math on a hand-built case, the PopArt scale identity, both
+flattened `episode_starts`), the residual math on a hand-built case, both
 ends carrying gradient, and on a REAL `train()`: coef-0 byte-identity (asserted twice — identical
 parameters AND the sampler monkeypatched to raise, so a future sampler change cannot perturb an off
 run), coef>0 moving the update and logging every metric, gradient landing on `value_net`, and the
 un-flattened-buffer refusal.
-
-## Distributional value head (`--value-dist-mode` / `--value-dist-coef`)
-
-The training half of the v29 interpretability side head (model side: `src/agents/model/CLAUDE.md` →
-distributional value head). A categorical readout off `value_pooled` whose softmax is the critic's
-predicted **return DISTRIBUTION** — the shape the scalar V collapses (sharp = confident, wide =
-uncertain, bimodal = coinflip). **Phase A** (interpretability-only): it does NOT replace the scalar
-critic, so the GAE/advantage/value-loss path is untouched — this loss is an ADD-ON, like the win-prob
-aux. Design + the K1 honesty frame: `designs/ai_v6/design_distributional_value_critic.md`.
-
-- **Loss (`instrumented_ppo._value_dist_loss`).** **HL-Gauss** (Farebrother et al. 2024): build a
-  Gaussian-smoothed soft target by integrating `N(target, σ_g²)` (σ_g = 0.75·Δ) over each atom's bin,
-  with the two EDGE bins absorbing the outer tails (graceful out-of-support handling), then cross-entropy
-  against the head's `log_softmax`. `train()` reads the stashed `last_value_dist_logits` + the rollout
-  return as the target, **PopArt-normalized when the scalar critic is** (so the target lands in the head's
-  support space — set `--value-dist-vmin/vmax` to a normalized range like ±5 under `--use-popart`). Folded
-  at `value_dist_coef`. Pure + static → unit-tested in `value_dist_loss_test.py`.
-- **Metrics (`value_dist/*`).** Aggregate interpretability health under its own TB prefix (the
-  `grad/`/`popart/`/`win_prob/` group convention): `ce`, `entropy` + `std` (fall as the critic sharpens),
-  `pit_mean` (≈ 0.5 ⟺ **calibrated** — the PIT anchor), `mean_abs_err` (`|E[Z] − return|` in support
-  units). Ride the generic logger → TensorBoard + launcher TUI (`value_dist/*` labels in `format.py`).
-- **Versioning.** `value_dist_mode` (str) + `value_dist_bins` (int) are version-checked structural toggles
-  (fresh-only); the support `vmin`/`vmax` is resume-immutable (`check_value_dist`); `value_dist_coef` is
-  **training-only**, read back on a flagless resume (like `win_prob_coef`). Threaded into
-  `current_model_version` / `arch_toggles_from_model` / `_run_arch_toggles`.
-- **Forensic trace + prober.** `RLPlayer._value_dist` reads the stashed logits at capture (softmax ⇒ the
-  per-atom distribution) → `BattleRecorder.states_arrays` writes a `value_dist [T, bins]` npz array (key
-  OMITTED when the head is off → the prober's KeyError "unavailable" path; NaN rows = uncaptured). The
-  prober renders the per-decision **histogram** + mean/std/P10–P90/entropy/bimodality
-  (`engine.build_value_dist` → `ValueDistView`, model-free; in the Summary panel + the `analyze` CLI). See
-  `src/main/prober/CLAUDE.md`.
-- **Honesty gate.** Ledger **K1 already killed the distributional critic as a WIN-RATE lever** (sub-Gaussian
-  residuals — no tail). This is justified on INTERPRETABILITY only; its strongest use is upgrading the
-  prober calibration/`falsify-scan` luck-vs-mistake split (predicted spread vs realized return = a
-  within-model PIT). "Learns ≠ helps" — validate calibration (PIT ≈ uniform), not win-rate.
-- **Tests.** Unit: `value_dist_loss_test.py` (HL-Gauss math + diagnostics), `agents/model/
-  value_dist_head_test.py` (module build, off byte-identical, grad gating, the v29 version gate),
-  `main/prober/engine_test.py` (`build_value_dist`). End-to-end `--debug --debug-eval --use-bridge=node
-  --value-dist-mode read_only` smoke captures a trace whose npz carries `value_dist`.
-

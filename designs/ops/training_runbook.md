@@ -283,26 +283,23 @@ async-wave and restart streams).
 `policy._critic_value` has a MODE. **`winprob` is the default** for a fresh argv (the deletion pass's
 bare-argv flip, D2 2026-10-02 — `critic_mode.CRITIC_DEFAULT`), with its three reward values as the
 parser defaults (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`). **`shaped`** —
-every generation through gen-16 — is the scalar `value_net` (or distributional `E[Z]`) de-normalized
-through PopArt into raw shaped-return units, with the win-prob head an auxiliary BCE; it is now TYPED
+every generation through gen-16 — is the scalar `value_net` in raw shaped-return units, with the win-prob head an auxiliary BCE (PopArt and the distributional `E[Z]` critic were DELETED, L1, config v131); it is now TYPED
 (python core only; it leaves with the deletion pass). An ABSENT record (a pre-v109 config / saved
 `policy_kwargs`) still means `shaped` (`critic_mode.CRITIC_UNRECORDED`), so a flagless RESUME reads the
 checkpoint's own critic, never the new default.
 
 **`winprob` promotes the head to BE the critic**: `V(s) = sigmoid(win_head logit)` in [0,1], the
-value loss IS that head's BCE against the terminal outcome (weighted by `--vf-coef`, **not**
-`--win-prob-coef` — one critic, one coefficient), and the reward stream is the TERMINAL **WIN
+value loss IS that head's BCE against the terminal outcome (weighted by `--vf-coef` — one critic, one coefficient; the old `--win-prob-coef` was deleted), and the reward stream is the TERMINAL **WIN
 INDICATOR** alone. At `--victory-value 1.0` and `--gamma 1.0` the undiscounted return from any state
 is exactly `1{win}`, so **`V(s) = P(win | s)` with no approximation term** — which is why
-`--terminal-indicator` and `--victory-value 1.0` are requirements, not suggestions. PopArt is
-refused (a bounded Bernoulli payoff has no scale to track).
+`--terminal-indicator` and `--victory-value 1.0` are requirements, not suggestions. (A bounded Bernoulli payoff has no scale to track — PopArt is deleted.)
 
 🚨 **A critic bounded in [0,1] cannot represent "a timeout is worse than a loss."** That ordering is
 not merely unused under `winprob` — it is *unrepresentable*, so `--draw-penalty` is REFUSED. The
 anti-stall pressure comes from the obs deadline clock (the reward has no anti-stall term). **Stall rate
 and mean episode length are PRIMARY endpoints on any `winprob` arm, not monitored ones.**
 
-Three flags are IMPLIED (`--win-prob-mode shaping`, `--gamma 1.0`, `--no-use-popart`) because their
+Two flags are IMPLIED (`--win-prob-mode shaping`, `--gamma 1.0`) because their
 argparse default is a `None` sentinel (the discount is PAIRED with the critic — `critic_mode.critic_gamma`,
 winprob 1.0 / shaped 0.9999; a typed non-1.0 gamma under winprob is REFUSED, and the launch prints
 `[Critic] gamma=… — <source>`); three are REQUIRED and named by their own refusal
@@ -311,11 +308,7 @@ theirs are concrete and an implication could not be told apart from an overwrite
 flip those ARE the parser defaults, so the requirement bites only on a typed signed-terminal value. Everything the
 mode SUBSUMES is refused rather than ignored. `python -m main.checkargs` reports every one offline.
 
-**`--win-prob-pbrs-frozen <run|zip>` is the exception and is BUILDABLE here**
-(`gen3_frozen_phi_actor_only_v1`): a frozen checkpoint's win-prob head supplies an ACTOR-ONLY
-potential — `γφ(s′) − φ(s)` reaches the POLICY's advantages and nothing else, so the critic keeps
-regressing the unshaped terminal indicator and `V ≡ P(win)` survives bit-for-bit. No coefficient
-(φ is already in the value currency). **`--critic` is STRUCTURAL and resume-immutable.**
+**`--win-prob-pbrs-frozen`, `--win-prob-pbrs-coef` and `--win-prob-pbrs-source` were DELETED** (L1, config v131; the actor-only frozen potential was the one PBRS route buildable under `winprob`). **`--critic` is STRUCTURAL and resume-immutable.**
 
 **`--win-prob-strata-weight <0..1>`** (default `0.0` = OFF, bit-identical; **requires
 `--critic winprob`**) re-prices WHICH OPPONENTS the value loss is bought from: each state's BCE term
@@ -570,7 +563,7 @@ is in `src/agents/training/CLAUDE.md` → Compiled CPU opponents.
 ### Compiled GPU trainer (`--compile-trainer`, **default ON for cuda**)
 
 The other half, and the bigger one. **Measured on v76 at the production shape** (batch 4096, PopArt
-on, the real `MaskablePPO` path, arms interleaved on an idle box): `policy.evaluate_actions`
+on (since deleted), the real `MaskablePPO` path, arms interleaved on an idle box): `policy.evaluate_actions`
 forward+backward **155.1 → 88.5 ms = 1.75×**, i.e. **~+62% end-to-end FPS** at the ~89% train share.
 Compiling the whole policy instead of just the extractor measured the same to within 0.004×, so the
 extractor is what ships — same win, less graph.

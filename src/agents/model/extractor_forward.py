@@ -736,19 +736,11 @@ class ExtractorForward(ExtractorApi):
         if self.win_head is not None:
             wp_in = value_pooled if self.win_prob_mode == "shaping" else value_pooled.detach()
             self.stash.win_prob_logits = self.win_head(wp_in)
-        # Distributional VALUE readout (flag-guarded; None when off). Same value_pooled the win head
-        # reads → per-atom return-distribution logits, stashed for the aux loss + prober/eval. NOT fed
-        # into the assembler (a side readout — the value target can't leak into pi/vf). `read_only`
-        # feeds a STOP-GRAD value_pooled (head-only training); `shaping` feeds it live. Computed on
-        # every forward (one small MLP) so eval/inference can read the distribution too.
-        if self.value_dist_head is not None:
-            vd_in = value_pooled if self.value_dist_mode == "shaping" else value_pooled.detach()
-            self.stash.value_dist_logits = self.value_dist_head(vd_in)
         # gen3_q_winprob_head_v1: the PER-ACTION win-probability readout — the amortized one-ply
         # search leaf (E5 step 1). It scores the SAME per-action tokens the pointer head scores, so
         # it is computed here, AFTER `stash.pointer_inputs` is written and after every value route
         # has landed in `value_pooled` (the head's context is the FINAL summary, the same tensor
-        # the win head and the dist critic read).
+        # the win head reads).
         #
         # EVERY input is detached — the tokens, the cells and the context alike. `read_only` is the
         # only live mode and there is no `shaping` counterpart, so this head trains its own

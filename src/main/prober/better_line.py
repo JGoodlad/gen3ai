@@ -78,7 +78,6 @@ class _Node:
     terminal: Optional[str] = None   # "win" / "loss" / "tie"
     value: Optional[float] = None    # critic V(s) on OUR materialized obs at this node
     win_prob: Optional[float] = None
-    value_dist: Optional[list] = None
     backup: float = 0.0
     children: List["_Node"] = field(default_factory=list)
 
@@ -399,8 +398,6 @@ def _score_frontier(model, nodes: Sequence[_Node], our_view) -> None:
         n.value = float(v)
         wp = getattr(model, "win_prob_at", lambda *_: None)(o, m)
         n.win_prob = float(wp) if wp is not None else None
-        vd = getattr(model, "value_dist_at", lambda *_: None)(o, m)
-        n.value_dist = vd.tolist() if vd is not None else None
 
 
 def _keep_beam(nodes: List[_Node], beam: int) -> List[_Node]:

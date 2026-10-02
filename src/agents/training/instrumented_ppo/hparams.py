@@ -53,11 +53,6 @@ class PpoHyperparameters:
     # a consumer that reads the probe every update keeps it every update.
     rank_probe_every_update: bool = False     # `--rank-tripwire warn|abort`
     noise_terms_every_update: bool = False    # `--adaptive-batch policy`
-    # Set by train_rl_agent after construction (like _async_rollout); resume-immutable (recorded +
-    # version-checked). 0.0 = plain MSE value loss (byte-identical to upstream). >0 blends in the CVaR
-    # of the worst value misses — see _value_loss_from_se.
-    value_tail_weight: float = 0.0
-
     # POLICY-GRADIENT term weight (gen3_policy_grad_coef_v1, `--policy-grad-coef`). Multiplies ONLY `policy_loss`
     # (the clipped PPO surrogate) in the loss fold — never entropy, never the value term, never
     # any aux. 1.0 (default) takes the UNSCALED `policy_loss` tensor itself, so the loss
@@ -68,7 +63,7 @@ class PpoHyperparameters:
     # like td_aux_coef.
     policy_grad_coef: float = 1.0
 
-    # Set by train_rl_agent after construction (like value_tail_weight). The hidden-opponent belief
+    # Set by train_rl_agent after construction. The hidden-opponent belief
     # aux-loss coefficient: opp_belief_aux_coef * (species_CE + moves_weight·moves_BCE) over the
     # believed opp slots is added to each minibatch loss. 0.0 = OFF (no aux term, byte-identical loss).
     # A TRAINING hparam (affects the loss only, never a forward pass) → NOT version-locked / NOT in
@@ -138,22 +133,7 @@ class PpoHyperparameters:
     bait_entropy_boost: float = 1.0
     bait_entropy_anneal_frac: float = 0.0
 
-    # Set by train_rl_agent (like opp_belief_aux_coef). The WIN-PROBABILITY head's BCE loss weight:
-    # win_prob_coef * BCE(win_logit, MC outcome) over the transitions whose episode finished in-buffer.
-    # Training-only (scales the loss, never a forward pass) → NOT version-locked. The MODE (none /
-    # read_only / shaping — which also controls whether the grad reaches the trunk) lives on the
-    # extractor (win_prob_mode); the loss is added whenever the mode is on AND this coef != 0.
-    win_prob_coef: float = 1.0
-
-
-    # Set by train_rl_agent (like win_prob_coef). The DISTRIBUTIONAL value head's HL-Gauss cross-entropy
-    # loss weight: value_dist_coef * CE(value_dist_logits, return) over the rollout. Training-only (scales
-    # the loss, never a forward pass) → NOT version-locked (recorded for provenance + flagless-resume
-    # read-back). The MODE (none/read_only/shaping — which controls whether the grad reaches the trunk)
-    # lives on the extractor (value_dist_mode); the loss is added whenever the mode is on AND coef != 0.
-    value_dist_coef: float = 1.0
-
-    # Set by train_rl_agent (like win_prob_coef). The SEARCH-TEACHER AWR policy-distillation weight:
+    # Set by train_rl_agent. The SEARCH-TEACHER AWR policy-distillation weight:
     # search_teacher_coef * advantage-weighted CE toward the verified-better action A*, over a minibatch
     # sampled from the standalone `_correction_buffer` (NOT the rollout buffer — searched states are
     # off-policy). 0.0 = OFF (loss byte-identical even if the buffer fills). Training-only (scales the
@@ -198,56 +178,6 @@ class PpoHyperparameters:
     # Process-local RNG for the contiguous-pair sampler, seeded from the global numpy stream at first
     # use so a seeded run stays reproducible. Not saved (like _noise_ema_*).
     _td_aux_rng = None
-
-    # WIN-PROB PBRS (gen3_winprob_pbrs_v1; ai_v12 route 1 —
-    # designs/ai_v12/design_winprob_behavior_coupling.md). Potential-based reward shaping with
-    # phi(s) = sigmoid(win-prob logit), DETACHED:
-    #     r'(s, a, s') = r(s, a, s') + win_prob_pbrs_coef * ( gamma*phi(s') - phi(s) )
-    # applied to the rollout buffer AFTER collection and BEFORE GAE (`collect_rollouts`), because env
-    # workers hold no model and so cannot shape the reward where it is produced.
-    #
-    # THE POINT: `--win-prob-mode shaping` is REPRESENTATION shaping and carries no behavioral force —
-    # the head's logit is a side readout with no gradient path to the acting head. This is the
-    # reward-level route that gives it force, and it is protected by the potential-based-shaping
-    # invariance theorem (a miscalibrated phi costs SPEED, not correctness). Caveat: our phi is a
-    # LEARNED, DRIFTING head, so exact invariance holds per rollout and degrades to approximate
-    # invariance across them — see winprob_pbrs.py's docstring and the design doc's SS2.4.
-    #
-    # 0.0 = OFF, and not even the module is imported (byte-identical). Requires
-    # --win-prob-mode read_only|shaping (there is no head to read under `none`); a missing head is a
-    # LOUD refusal, never a silent skip. TRAINING-only (it edits the reward stream, never a forward
-    # pass) -> NOT version-locked / NOT in check_compatible; recorded on ModelVersion for provenance +
-    # flagless-resume read-back, like td_aux_coef.
-    win_prob_pbrs_coef: float = 0.0
-    # DIAGNOSTIC DENOMINATOR, not a knob: the run's TERMINAL magnitude (`--victory-value`), set
-    # alongside the coefficient by `main.train.model_build`. It is what makes the PBRS sizing meter
-    # survive a sparse reward stream — `train/pbrs_reward_share` divides by the unshaped stream's
-    # own mean |reward|, which in the clean-world composition is terminal-only and therefore ZERO
-    # on a rollout with no episode end (probe N §7.5). `train/pbrs_episode_dose` divides the
-    # per-episode discounted shaping sum by THIS constant instead, giving "the shaping is worth X%
-    # of a win" on any stream. Never enters the loss; changing it cannot change a gradient.
-    win_prob_pbrs_terminal_scale: float = 0.0
-    # Set by `collect_rollouts` when the shaping ran; drained into `train/pbrs_*` by train()'s
-    # logging block. Not a knob — and NOT a mutable class default (one dict shared by every
-    # instance is the classic version of this bug); `collect_rollouts` always rebinds a fresh dict.
-    _pbrs_metrics = None
-
-    # FROZEN-φ ACTOR-ONLY SHAPING (gen3_frozen_phi_actor_only_v1; `--win-prob-pbrs-frozen`, the
-    # FROZEN-φ rung of the ai_v12 ladder). The gate is a BOOLEAN because the flag is: under
-    # `--critic winprob` the potential is currency-matched, so the only justified coefficient is
-    # 1.0 and it is `frozen_phi.FROZEN_PHI_COEF`, printed at startup rather than chosen. The frozen
-    # NETWORK itself rides `_winprob_phi_source` — the same attribute the shaped ladder's
-    # `--win-prob-pbrs-source` uses, deliberately: `winprob_pbrs.phi_model` and
-    # `_excluded_save_params` already know that name, and the two flags are mutually exclusive by
-    # refusal (`combination_checks`), so there is one frozen-φ network per run whichever flag
-    # attached it. False ⇒ the module is not even imported (byte-identical).
-    _frozen_phi_on: bool = False
-    frozen_phi_coef: float = 0.0
-    # Set by `collect_rollouts` when the actor-only shaping ran; drained into `pbrs/frozen_phi_*` +
-    # `signal/adv_shaped_minus_unshaped_*` by train()'s logging block. Keys arrive ALREADY
-    # PREFIXED, unlike `_pbrs_metrics`, because they land under two different TB groups. Not a
-    # mutable class default for the reason above it.
-    _frozen_phi_metrics = None
 
     opp_intent_coef: float = 0.0
     # SET-VALUED partial credit on beta's belief-miss rows (see `set_valued_switch_loss`). Scales
@@ -327,7 +257,7 @@ class PpoHyperparameters:
     # the student piloting the teacher's team with its OWN amortized (~4-dim) critic, so it mimics the
     # teacher's MOVES but never gets its per-team VALUE understanding (confirmed: value_cls rank flat
     # _14→_18→_19). This adds distill_value_coef * MSE(V_teacher, V_student) on the SAME teacher-team
-    # states, in the student's PopArt-normalized frame (same frame as the value loss). It is COHERENT
+    # states (a raw-unit MSE). It is COHERENT
     # despite V^π being policy-relative because the policy KL simultaneously drives π_student→π_teacher
     # there, so V_teacher becomes the right value. Requires distill_coef > 0 (the policy-match validates
     # the value-match). 0.0 = OFF (byte-identical); training-only, NOT version-locked. The A/B lever:
@@ -464,7 +394,7 @@ class PpoHyperparameters:
     #
     # B−A isolates COVERAGE (the same loss form on extra states); C−B isolates pure VARIANCE
     # REDUCTION (the same states, the same form, a tighter target). The twins' half of "A's loss" is
-    # folded at `win_prob_coef`, not at this coefficient, so all three heads carry a bit-identical
+    # folded at head A's own weight (1.0), not at this coefficient, so all three heads carry a bit-identical
     # A-term. 0.0 = OFF and the WHOLE twin block is skipped (including the on-policy mirror), so a
     # built-but-unused pair of heads leaves every parameter update byte-identical.
     # TRAINING-only (a loss weight) → the `--opd-coef` class; the STRUCTURAL half is the extractor's
@@ -523,10 +453,6 @@ class PpoHyperparameters:
         # the projection matrix and the frozen probe batch, so a resume re-inits the canary and its
         # loss/recovery curves restart. Persisting a diagnostic's optimizer into every checkpoint
         # is a worse trade than reading recoveries WITHIN a restart window.
-        # `_winprob_phi_source` (gen3_winprob_pbrs_source_v1) is the `_distill_teacher` genre
-        # exactly: a full frozen FOREIGN model attached at setup and re-loaded from its own path on
-        # resume (`--win-prob-pbrs-source` is inherited on a flagless resume for precisely that
-        # reason). Pickling it would embed another run's weights in every checkpoint of this one.
         # `_distill_anchor_parent` (gen3_distill_offslice_anchor_v1) is the `_distill_teacher` genre
         # with one EXTRA reason: it must be re-loaded from the FORK-PARENT path on every restart, so
         # persisting it would be worse than useless — a pickled parent would be silently carried
@@ -576,7 +502,7 @@ class PpoHyperparameters:
                                                   "_rust_version", "_behaviour_probe_metrics", "_env_core_stamp",
                                                   "_correction_buffer", "_distill_teacher",
                                                   "_distill_teachers", "_cf_buffer",
-                                                  "_capacity_state", "_winprob_phi_source",
+                                                  "_capacity_state",
                                                   "_distill_anchor_parent", "_distill_anchor_ref",
                                                   "_distill_anchor_ref_writer",
                                                   "_vf_scale_announced", "_diagnostics_ran_in_process",

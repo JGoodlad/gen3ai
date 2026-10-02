@@ -21,5 +21,5 @@ _TIMEOUT_TURN_CAP = _StallConfig().threshold
 
 #: The shaped-critic DEFAULT discount (`--gamma` unset, `--critic shaped`) — the historical PPO gamma.
 #: The name survives from when the hand potentials required it to equal the PPO gamma; the one PBRS
-#: that remains is the win-prob head's (`winprob_pbrs.py`), which reads `model.gamma` directly.
+#: that remained was the win-prob head's PBRS (deleted in deletion pass L1).
 PBRS_GAMMA = 0.9999

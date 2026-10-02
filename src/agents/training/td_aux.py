@@ -38,13 +38,9 @@ FOUR THINGS THAT ARE EASY TO GET WRONG, and how they are handled here:
    control by 12%, so the correlation inside a segment is a feature here, not a compromise.
 
 4. **Units.** The residual mixes a reward with two values, so both must be in the SAME space.
-   `policy._critic_value` returns DE-normalized (real-unit) values under `--use-popart` and the
-   buffer's rewards are real-unit, so the raw residual is real-unit. But the main value loss
-   trains in NORMALIZED space under PopArt, so a real-unit residual squared would arrive ~σ²
-   larger and λ would lose the meaning rung 1 calibrated. Dividing the residual by σ puts it in
-   the value loss's space — and that is exactly the normalized-space residual, since
-   `normalize(V) − normalize(r + γV′) = (V − r − γV′)/σ` (the μ cancels). `scale` is that σ; it
-   is 1.0 with PopArt off, where the value loss is already real-unit.
+   `policy._critic_value` returns real-unit values and the buffer's rewards are real-unit, so the
+   raw residual is real-unit — the same space the value loss trains in (PopArt, which once
+   normalized it, is deleted).
 """
 from __future__ import annotations
 
@@ -120,16 +116,14 @@ def td_residual(
     pair_a: th.Tensor,
     pair_b: th.Tensor,
     gamma: float,
-    scale: float = 1.0,
 ) -> th.Tensor:
-    """δ = ( V(s_t) − r_t − γ·V(s_{t+1}) ) / scale, over the sampled pairs.
+    """δ = V(s_t) − r_t − γ·V(s_{t+1}), over the sampled pairs.
 
     ``values`` / ``rewards`` are aligned to the forwarded window (index space of ``pair_a``/``_b``,
     not of the buffer). Both residual ends carry gradient — the residual-gradient form the
-    pre-registration specifies. ``scale`` is PopArt's σ (1.0 when PopArt is off); see the module
-    docstring on units.
+    pre-registration specifies. See the module docstring on units.
     """
-    return (values[pair_a] - rewards[pair_a] - gamma * values[pair_b]) / scale
+    return values[pair_a] - rewards[pair_a] - gamma * values[pair_b]
 
 
 def td_aux_loss(
@@ -138,7 +132,6 @@ def td_aux_loss(
     pair_a: th.Tensor,
     pair_b: th.Tensor,
     gamma: float,
-    scale: float = 1.0,
     n_candidate: int = 0,
 ) -> Optional[Tuple[th.Tensor, Dict[str, float]]]:
     """Mean squared Bellman residual + its diagnostics, or ``None`` when nothing is pairable.
@@ -148,7 +141,7 @@ def td_aux_loss(
     """
     if pair_a.numel() == 0:
         return None
-    resid = td_residual(values, rewards, pair_a, pair_b, gamma, scale)
+    resid = td_residual(values, rewards, pair_a, pair_b, gamma)
     loss = (resid ** 2).mean()
     with th.no_grad():
         metrics = {
@@ -158,7 +151,6 @@ def td_aux_loss(
             "resid_mean": float(resid.mean().item()),
             "resid_rms": float(resid.pow(2).mean().sqrt().item()),
             "n_pairs": float(pair_a.numel()),
-            "scale": float(scale),
         }
         if n_candidate > 0:
             # Episode-boundary loss rate. High here means the segments keep landing on battle ends

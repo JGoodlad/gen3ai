@@ -16,7 +16,7 @@ same device (pinned by ``decision_test.py``):
     logp = lm - logsumexp(lm)                # ... and re-initialises, normalising again
 
 The value is the policy's own ``_critic_value`` (win-prob sigmoid under ``critic='winprob'``,
-PopArt de-normalised otherwise), so every critic mode the policy supports is served unchanged.
+the scalar value net otherwise), so every critic mode the policy supports is served unchanged.
 
 OUTPUT CONTRACT. ``logp`` is ``[B, A]`` float32 with every ILLEGAL entry set to ``-inf`` (the policy
 itself carries ~-1e8 there; ``-inf`` makes an illegal action impossible to sample or argmax rather
@@ -82,7 +82,6 @@ class DecisionModule(nn.Module):
         self.mlp = policy.mlp_extractor
         self.ptr = policy.pointer_head
         self.value_net = getattr(policy, "value_net", None)
-        self.popart = getattr(policy, "popart", None)
 
     @property
     def policy(self) -> Any:
@@ -93,7 +92,7 @@ class DecisionModule(nn.Module):
         pi, vf = fe({"observation": obs})
         latent_pi = self.mlp.forward_actor(pi)
         latent_vf = self.mlp.forward_critic(vf)
-        # The policy's OWN critic read (win-prob / value-dist / PopArt branches), never a copy.
+        # The policy's OWN critic read (win-prob / scalar branches), never a copy.
         value = self._policy._critic_value(latent_vf).reshape(-1).float()
         tok_req, valid, team_tokens, move_cells, switch_cells = fe.last_pointer_inputs
         raw = self.ptr(latent_pi, tok_req, valid, team_tokens, move_cells, switch_cells)

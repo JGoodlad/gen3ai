@@ -134,7 +134,7 @@ def install(model: Any, *, backend: Optional[str] = None,
     r1c = ctl.wrap_compiled(torch.compile(micro_step, **kw))
     rows = int(getattr(model, "batch_size", 0) or 0)
 
-    def r1(policy: Any, popart: Any, obs: Any, actions: Any, *rest: Any) -> Any:
+    def r1(policy: Any, obs: Any, actions: Any, *rest: Any) -> Any:
         # R1's ONE declared signature is `batch_size` rows. A RAGGED micro-batch (the last one of an
         # epoch when the rollout does not divide evenly — fork rows, an uneven sizing) takes the
         # DECLARED EAGER route, the same function: never a new compiled signature after the lock.
@@ -149,9 +149,9 @@ def install(model: Any, *, backend: Optional[str] = None,
                     f"at most one per epoch, {cap}) — R1 is running EAGER on the hot path "
                     f"({int(actions.shape[0])} rows vs the declared {rows}); a silent ~2x slowdown, "
                     f"stopped (gen3_no_silent_eager_v1)")
-            return micro_step(policy, popart, obs, actions, *rest)
+            return micro_step(policy, obs, actions, *rest)
         before = RC.EAGER_BODY["R1"]
-        out = r1c(policy, popart, obs, actions, *rest)
+        out = r1c(policy, obs, actions, *rest)
         _ran_compiled("R1", before)
         RC.count("R1_compiled")
         return out
@@ -344,7 +344,7 @@ def _r1_static(model: Any) -> Tuple[Any, Dict[str, torch.Tensor]]:
     run-long value (`TrainSetup._r1_levers`) and the strata weights at their neutral default."""
     f = model._resolve_fold_flags()
     strata, rollout_weight = model._r1_levers(f)
-    st = model._micro_static(f, getattr(model.policy, "popart", None), strata, rollout_weight)
+    st = model._micro_static(f, strata, rollout_weight)
     return st, model._micro_var(st, None)
 
 
@@ -381,7 +381,7 @@ def check_r1_declared(model: Any, st: Any, var: Dict[str, Any]) -> None:
 
 def _r1_args(model: Any, b: R1Batch) -> Tuple[Any, ...]:
     st, var = _r1_static(model)
-    return (model.policy, getattr(model.policy, "popart", None), b.obs, b.actions, b.action_masks,
+    return (model.policy, b.obs, b.actions, b.action_masks,
             b.old_log_prob, b.old_values, b.advantages, b.returns, var, st)
 
 

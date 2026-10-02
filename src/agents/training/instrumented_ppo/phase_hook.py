@@ -12,7 +12,7 @@ mark and books its wall time to the mark's name. So a name means "the work betwe
 mark and this one":
 
     start        opens the call (resets the timer; books nothing)
-    setup        label alignment, fold flags, probe setup, PopArt, advantage-density read
+    setup        label alignment, fold flags, probe setup, advantage-density read
     batch        `rollout_buffer.get()` — the shuffle/index + host->device copy of one minibatch
     forward      `policy.evaluate_actions` (the extractor + every head it stashes) + capacity snapshot
     ridealong    the DETACHED ride-along heads' own step (`gen3_ridealong_heads_v1`; ~0 when off)

@@ -231,9 +231,6 @@ EXACT: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "INT": ("ctx.our_active_req_move_ids.long()", "req_ids[:, :, None] > 0",
                 "sorted_ids[:, None, :] == req_ids[:, :, None]"),
     },
-    "policy": {
-        "PYTHON": ("bool(on) != bool(getattr(self, '_value_from_dist', False))",),
-    },
     "switch_branch": {
         "INT": ("req_move_ids[..., None] == self.protect_nums", "req_move_ids[..., None] == self.spin_num"),
     },

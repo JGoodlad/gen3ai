@@ -463,20 +463,21 @@ def test_a_PINNED_argv_is_advisory_and_a_FRESH_one_REFUSES(capsys):
 
 def test_the_arch_verdict_never_shares_a_line_with_a_combination_refusal(capsys):
     """A refused flag COMBINATION is loud and PRE-launch; arch drift is silent and POST-launch. The
-    2026-09-06 relaunch hit both at once (nine flags the win-prob critic subsumes, on top of the
+    2026-09-06 relaunch hit both at once (nine flags the win-prob critic subsumed, on top of the
     stripped surface), so the two must read as two findings — separate blocks, separate closing
     lines — or a reader who fixes the loud one believes they have fixed the silent one."""
     from main.checkargs import main as checkargs_main
     argv = ("--steps 100 --critic winprob --terminal-indicator "
-            "--victory-value 1.0 --draw-penalty 0 --use-popart --value-from-dist")
+            "--victory-value 1.0 --draw-penalty 0 --gamma 0.99")
     rc = checkargs_main(["--argv", argv])
     out = capsys.readouterr().out
     assert rc != 0
     assert "refused combinations" in out and "ARCH SURFACE" in out
-    # neither subsumed flag may appear as arch drift...
-    arch_block = out.split("ARCH SURFACE", 1)[1]
-    for subsumed in ("use_popart", "value_from_dist", "win_prob_coef", "value_tail_weight"):
-        assert subsumed not in arch_block, f"{subsumed} reported as arch drift"
+    # the refused flag is `--gamma` (paired with the critic): its refusal is a COMBINATION finding,
+    # printed in the combinations block — not a line of the arch block above it.
+    combos_block = out.split("ARCH SURFACE", 1)[0]
+    assert "--critic winprob requires --gamma 1" in combos_block
+    assert "--critic winprob requires --gamma" not in out.split("ARCH SURFACE", 1)[1]
     # ...and the arch-only closing line must NOT fire when a combination also failed, or the two
     # verdicts would blur into one.
     assert "builds the wrong architecture" not in out

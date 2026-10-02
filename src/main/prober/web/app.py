@@ -823,9 +823,7 @@ def create_app(root: "str | None" = None, *, max_job_workers: int = 2,
         # `git checkout` to re-probe from. `guarded` hands it over verbatim and `.err` is
         # `white-space: pre-wrap`, so the page renders the whole thing rather than collapsing it
         # to "analysis failed" — which would throw away the only part that says what to do next.
-        dist = (data or {}).get("value_dist")
         return fragment(request, "partials/analyze_result.html", a=data, error=err,
-                        spec=_value_dist_spec(dist) if dist else None,
                         run=run, battle=row["short_id"], battle_path=row["id"], inv=i)
 
     @app.get("/partials/awareness", response_class=HTMLResponse, tags=["partials"],
@@ -1114,38 +1112,6 @@ def _load(pick, session, guarded, run, store, fn):
     name = run or store().default_run()
     data, err = guarded(lambda: fn(session(path)))
     return name, data, err
-
-
-def _value_dist_spec(dist: dict) -> dict:
-    """The distributional critic's predicted RETURN DISTRIBUTION as a real chart.
-
-    This is the single biggest thing a browser buys over the terminal on this view: the TUI can
-    only draw the histogram as a one-line eighth-block sparkline, where "sharp vs wide vs BIMODAL"
-    — the whole interpretability point of the head — is a judgement call about eight characters.
-    Plotted, the shape IS the reading.
-
-    The spec is built from `charts`' own base so it carries the same transparent background and
-    fit-autosize as every other chart on the site (`charts.py` is the one place chart encoding
-    lives and it is not editable in this change; duplicating its constants here would be the drift
-    that module exists to prevent). Pure: dict in, dict out.
-    """
-    values = [{"z": z, "p": p} for z, p in zip(dist.get("support") or [], dist.get("probs") or [])]
-    return charts._spec(
-        title=charts._title(
-            "Critic's predicted return distribution",
-            "sharp = confident · wide = uncertain · two humps = the critic sees a coinflip"),
-        data={"values": values},
-        width="container", height=150,
-        mark={"type": "area", "interpolate": "step-after", "tooltip": True,
-              "color": "#2a6f97", "opacity": 0.85},
-        encoding={
-            "x": {"field": "z", "type": "quantitative",
-                  "axis": {"title": "return (head support space)"}},
-            "y": {"field": "p", "type": "quantitative", "axis": {"title": "probability"}},
-            "tooltip": [{"field": "z", "type": "quantitative", "title": "return"},
-                        {"field": "p", "type": "quantitative", "title": "P", "format": ".3f"}],
-        },
-    )
 
 
 def _safe_next(target: str) -> str:

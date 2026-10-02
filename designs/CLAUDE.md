@@ -175,10 +175,10 @@ gate per commit); the flip waits on the live arm.
 
 ## `model/` — the model leaf's topic docs, always-current
 [`model/`](model/) holds the detail lifted out of `src/agents/model/CLAUDE.md` on 2026-09-08 and OWNS
-it — update the topic doc in the same pass as the code, exactly like a leaf. Ten docs:
-`phase_pipeline.md`, `readouts_and_value_routes.md`, `file_layout.md`, `op_contracts.md`,
-`flag_registry_rules.md`, `versioning.md`, `opponent_intent.md`, `architecture_artifacts.md`,
-`popart.md`, `typing.md`. **[`ARCHITECTURE.md`](ARCHITECTURE.md) stays the doc of record for what the
+it — update the topic doc in the same pass as the code, exactly like a leaf. Nine docs
+(`popart.md` was deleted with PopArt, deletion pass L1): `phase_pipeline.md`,
+`readouts_and_value_routes.md`, `file_layout.md`, `op_contracts.md`, `flag_registry_rules.md`,
+`versioning.md`, `opponent_intent.md`, `architecture_artifacts.md`, `typing.md`. **[`ARCHITECTURE.md`](ARCHITECTURE.md) stays the doc of record for what the
 model IS** — a topic doc points at it rather than restating it, and loses any disagreement with it.
 
 ## `ops/` — operational procedure (SOP) documents, era-independent

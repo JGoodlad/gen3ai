@@ -75,8 +75,7 @@ def test_model_version_carries_every_gate_family():
             f"removes its gates without breaking a single import.")
     for method in ("from_layout_and_policy_kwargs", "to_json", "from_json_file",
                    "check_compatible", "check_opponent_compatible", "check_vf_coef",
-                   "check_belief_grad_mode", "check_value_from_dist", "check_value_tail_weight",
-                   "check_value_dist", "check_reward_config"):
+                   "check_belief_grad_mode", "check_reward_config"):
         assert callable(getattr(hub.ModelVersion, method, None)), (
             f"`ModelVersion.{method}` is gone — a mixin dropped out of the base list in "
             f"`model_version/spec.py`, and nothing else in the tree would fail at import time.")

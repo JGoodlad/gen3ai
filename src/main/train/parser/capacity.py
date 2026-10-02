@@ -75,7 +75,7 @@ def add_capacity_flags(parser: argparse.ArgumentParser) -> None:
                         type=float, default=None,
                         help="VALUE-distillation weight (gen3_exploiter_value_distill_v1): also pour the "
                              "teacher's per-team VALUE into the student — MSE(V_teacher, V_student) on the "
-                             "teacher-team states, in the PopArt-normalized frame. Default 0.0 = OFF "
+                             "teacher-team states (raw units). Default 0.0 = OFF "
                              "(byte-identical; no teacher predict_values forward). Requires --distill-coef > 0 "
                              "(the policy KL validates the value target). Training-only, inherited on resume. "
                              "The A/B lever for 'does distilling the value enrich it' — watch distill/value_mse ↓ "

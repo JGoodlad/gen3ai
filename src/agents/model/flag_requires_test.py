@@ -40,12 +40,10 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 # `'none'`), and a bool/width's is `False`/`0`. ON needs help only where "on" is not `True`.
 _ON_OVERRIDE: Dict[str, object] = {
     "move_belief_mode": "revealed",     # the value damage_op's stronger check also accepts
-    "value_dist_mode": "read_only",
     # gen3_cf_twin_heads_v1: `win_prob_mode` is a tri-state, so the generic `True` is not a legal
     # value for it. `read_only` is the weakest ENABLED setting — it builds head A (which is all
     # `cf_twin_heads` needs) without letting the win objective shape the trunk.
     "win_prob_mode": "read_only",
-    "value_dist_bins": 4,
     "opp_belief_cls_k": 2,
     "entity_topk_seats": 2,
     "damage_topk_k": 2,
@@ -82,13 +80,9 @@ def base_kwargs():
 
 # Scalars a flag needs at a legal MAGNITUDE, which `requires` cannot express and deliberately does
 # not try to: "enabled" is a switch predicate, and these are value RELATIONS between two numbers.
-# This one was found by the positive control below on its first run — `value_dist_mode != 'none'`
-# also needs `value_dist_vmax > value_dist_vmin`, enforced inside `ValueDistHead` rather than in the
-# constructor, so neither `requires` nor the reverse scan (which reads only `__init__`) can see it.
-# Listed here so the positive control tests the flag rather than tripping over its bounds.
-_VALUE_RELATIONS: Dict[str, Dict[str, object]] = {
-    "value_dist_mode": {"value_dist_vmin": 0.0, "value_dist_vmax": 1.0},
-}
+# (The one relation that once lived here — `value_dist_mode != 'none'` also needing
+# `value_dist_vmax > value_dist_vmin` — left with the distributional value head.)
+_VALUE_RELATIONS: Dict[str, Dict[str, object]] = {}
 
 
 def _config_for(flag: str) -> Dict[str, object]:

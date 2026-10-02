@@ -79,7 +79,6 @@ checkpoint shows one "belief heads not enabled" note):
   runs), it ALSO draws the opp-active **move-belief entropy** (`Hmv`, should decay) + believed opp-active
   **Atk** (`bAtk`) sparklines — the move/spread analog, decoded WITHOUT re-running. The "watch the belief
   sharpen as reveals accumulate" view.
-- **value-dist × belief cross-read** — does critic bimodality co-occur with low belief confidence?
 
 The **Threats** section (`6`, was *Matchups*) is reordered **GPU-first** (`_render_matchups`, still the
 method name): the `🔷` DamageOperator physics (outgoing per-move · incoming worst-hit per defender · opp

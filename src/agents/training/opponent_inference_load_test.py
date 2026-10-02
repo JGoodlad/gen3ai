@@ -175,11 +175,11 @@ def test_a_NON_ride_along_mismatch_is_still_refused_on_the_opponent_path(world: 
     from agents.model.model_version import ModelVersionError
     from agents.model.snapshot import load_opponent_snapshot
 
-    bad = dataclasses.replace(world["v_on"], use_popart=not world["v_on"].use_popart)
-    with pytest.raises(ModelVersionError, match="PopArt"):
+    bad = dataclasses.replace(world["v_on"], opp_belief_cls_k=world["v_on"].opp_belief_cls_k + 2)
+    with pytest.raises(ModelVersionError, match="opp_belief_cls_k"):
         load_opponent_snapshot(str(world["zip_off"]), current_version=bad)
-    bad2 = dataclasses.replace(world["v_off"], value_dist_bins=world["v_off"].value_dist_bins + 7)
-    with pytest.raises(ModelVersionError, match="value_dist_bins"):
+    bad2 = dataclasses.replace(world["v_off"], damage_topk_k=world["v_off"].damage_topk_k + 7)
+    with pytest.raises(ModelVersionError, match="damage_topk_k"):
         world["v_on"].check_opponent_snapshot_compatible(bad2)
 
 

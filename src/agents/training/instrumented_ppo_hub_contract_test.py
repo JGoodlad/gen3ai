@@ -53,7 +53,7 @@ _DIR = pathlib.Path(hub.__file__).parent
 # under an explicit `# noqa: F401 (re-exports)` for older call sites.
 _PRE_SPLIT = (
     "CfForward", "InstrumentedMaskablePPO", "_EXPECTED_UPSTREAM_TRAIN_HASH",
-    "_NOISE_SCALE_EMA_DECAY", "_VALUE_TAIL_FRAC", "_WIN_CONTESTED_TAU",
+    "_NOISE_SCALE_EMA_DECAY", "_WIN_CONTESTED_TAU",
     "_verify_upstream_unchanged",
     # the declared re-exports
     "_EV_LOSS_SCALE", "_EV_LOSS_WEIGHT", "_LATENT_STD_TARGET", "_LATENT_VICREG_WEIGHT",
@@ -81,8 +81,8 @@ def test_the_ppo_class_carries_every_term_family():
             f"`{base}` is gone from `InstrumentedMaskablePPO`'s bases (MRO is {mro}). The class "
             f"would still construct and still train — just without that family of loss terms.")
     for method in ("_searchteacher_loss", "_opd_loss", "_distill_loss", "_value_distill_mse",
-                   "_value_feat_distill", "_win_prob_loss", "_value_dist_loss",
-                   "_value_loss_from_se", "_td_aux_term", "_belief_aux_loss",
+                   "_value_feat_distill", "_win_prob_loss",
+                   "_td_aux_term", "_belief_aux_loss",
                    "_move_belief_loss", "_spread_belief_loss", "_nature_ev_belief_loss",
                    "_hp_type_belief_loss", "_move_belief_latent_loss", "_cf_winprob_term",
                    "_cf_evidential_term", "_cf_twin_terms", "_cf_shadow_term",
@@ -92,7 +92,7 @@ def test_the_ppo_class_carries_every_term_family():
                    "_align_opp_intent_labels", "_resolve_fold_flags", "_train_probe_setup",
                    "_record_grad_balance_metrics", "_record_signal_metrics",
                    "_record_noise_scale_metrics", "_record_head_metrics", "_record_term_metrics",
-                   "_record_cf_metrics", "_record_capacity_and_popart_metrics",
+                   "_record_cf_metrics", "_record_capacity_metrics",
                    "_annealed_entropy_boost", "_winprob_start_metrics",
                    "_excluded_save_params", "collect_rollouts", "train"):
         assert callable(getattr(hub.InstrumentedMaskablePPO, method, None)), (
@@ -149,13 +149,13 @@ def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
     assert inspect.getfile(hub.InstrumentedMaskablePPO.train) == str(_DIR / "ppo.py")
     for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1", "+TD-AUX", "+CF-WINPROB",
                    "+DISTILL", "+SEARCH-TEACHER", "+OPD", "+NOISE-SCALE", "+DENSE-AUX",
-                   "+VALUE-DIST", "+CAPACITY"):
+                   "+CAPACITY"):
         assert marker in src, f"the `{marker}` block left `train()`"
     r1_call = src.index("self._micro_region()(")
-    for tail in ("self._dense_aux_loss(", "self._value_dist_loss(", "distill_anchor_step(",
-                 "self._td_aux_term(popart)", "self._cf_winprob_term("):
+    for tail in ("self._dense_aux_loss(", "distill_anchor_step(",
+                 "self._td_aux_term()", "self._cf_winprob_term("):
         assert r1_call < src.index(tail), f"the tail fold `{tail}` now runs BEFORE region R1"
-    assert src.index("self._td_aux_term(popart)") < src.index("self._cf_winprob_term("), (
+    assert src.index("self._td_aux_term()") < src.index("self._cf_winprob_term("), (
         "the counterfactual fold now runs BEFORE the TD-aux fold. The CF forward CLOBBERS the "
         "minibatch's extractor stashes, so every term that reads one must be folded first.")
 

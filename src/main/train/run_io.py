@@ -99,11 +99,6 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
     block = build_lineage(model_path=model_path, model_dir=model_dir,
                           exploiter=getattr(args, "exploiter", None),
                           distill_teacher=getattr(args, "distill_teacher", None),
-                          # gen3_frozen_phi_actor_only_v1: whichever flag attached the frozen phi.
-                          # The two are mutually exclusive by refusal, so the `or` can never pick
-                          # between them -- it only spares this seam knowing which critic is on.
-                          winprob_phi_source=(getattr(args, "win_prob_pbrs_frozen", None)
-                                              or getattr(args, "win_prob_pbrs_source", None)),
                           fork_step=fork_step)
     if block is not None:
         from agents.training.pool_seed import pool_dir_for, read_seed_record
@@ -116,16 +111,15 @@ def _run_lineage(args, model_dir: str, *, model_path, fork_step) -> "dict | None
 def _run_arch_toggles(args) -> dict:
     """The architecture TOGGLES of THIS run, for current_model_version so the version gate compares
     like-for-like against the run's own (toggle-ON) pool/stable-opponent snapshots. Without these, a
-    belief-ON / popart / attend-unrevealed run would FATAL on every snapshot it is meant to protect.
+    belief-ON / attend-unrevealed run would FATAL on every snapshot it is meant to protect.
 
     Sourced from `agents.model.flag_registry` via `arch_toggles_from_args`, NOT hand-listed: this
     dict and `build_extractor_arch_kwargs` used to be two independently maintained lists of the same
     toggles, and a toggle added to one and not the other means the gate compares an architecture the
-    run does not build. `use_popart` is appended by hand because it is a policy_kwarg rather than an
+    run does not build. `critic` is appended by hand because it is a policy_kwarg rather than an
     extractor kwarg, so it is out of the registry's scope."""
     from agents.model.extractor_arch import arch_toggles_from_args
-    return {**arch_toggles_from_args(args), "use_popart": args.use_popart,
-            "critic": args.critic}
+    return {**arch_toggles_from_args(args), "critic": args.critic}
 
 
 def _matmul_precision() -> str:
@@ -174,8 +168,6 @@ def _model_hparams(model) -> dict:
         "fork_max_per_battle": int(getattr(model, "fork_max_per_battle", 1)),
         "fork_crn": str(getattr(model, "fork_crn", 'dice_and_draws')),
         "win_prob_dense_aux": float(getattr(model, "win_prob_dense_aux", 0.0)),
-        "win_prob_coef": float(getattr(model, "win_prob_coef", 1.0)),
-        "value_dist_coef": float(getattr(model, "value_dist_coef", 1.0)),
         "search_teacher_coef": float(getattr(model, "search_teacher_coef", 0.0)),
         "search_teacher_value_coef": float(getattr(model, "search_teacher_value_coef", 0.0)),
         "search_teacher_beta": float(getattr(model, "search_teacher_beta", 1.0)),

@@ -254,7 +254,7 @@ The pipeline, which is the design doc's "3 filters → 2 transplants" as code:
 2. **ONE-PLY read** — `ProbeSession.lookahead` re-rolls the turn under each legal action (opponent
    plays its RECORDED move), materializes the successor through the real encoder, reads the heads.
    We take the **win-prob** read, not V: under `--critic shaped` the critic estimates shaped return
-   in PopArt units (under `winprob` the two are the same readout, so the choice is free), and
+   in reward units (under `winprob` the two are the same readout, so the choice is free), and
    probe G measured the win-prob head beating the played action on exactly this job. A candidate with
    no win-prob read is **dropped, never scored from the critic** — a fall-back would silently run a
    different teacher under the same flag (the confusion `defensive.check_leaf` exists to prevent).

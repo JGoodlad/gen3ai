@@ -328,6 +328,19 @@ def _migrate_config(data: dict) -> dict:
     from agents.model.model_version.shaped_reward import DELETED_SHAPED_REWARD_FIELDS
     for _dead in DELETED_SHAPED_REWARD_FIELDS:
         data.pop(_dead, None)
+    # v131 (deletion pass L1): the RETIRED LEVERS (self-PBRS, frozen-phi PBRS, PopArt, the
+    # distributional value head, value_from_dist, the CVaR value-tail weight, the win-prob aux-BCE
+    # coefficient) left the config. A recorded ON value of one that named PARAMETERS or a critic route
+    # (use_popart, value_dist_mode, value_from_dist) is REFUSED on EVERY load — popping it would hand
+    # SB3 an unplaceable state_dict or run a checkpoint under a critic it was not trained with. The
+    # TRAINING-only ones pop silently (a frozen forward never reads them); a RESUME or FORK that would
+    # keep training without one is refused BEFORE this runs, from the raw file
+    # (`model_version.retired_levers.check_no_retired_levers`). Version-INDEPENDENT, like the
+    # sanitizers above: `cls(**data)` TypeErrors on a stale key whatever vintage wrote it.
+    from agents.model.model_version.retired_levers import RETIRED_FIELDS, refuse_structural
+    refuse_structural(data)
+    for _dead in RETIRED_FIELDS:
+        data.pop(_dead, None)
     # ---- POST-FLOOR MIGRATION BRANCHES (N > MIGRATION_FLOOR) --------------------------------
     # v122 (gen3_shaped_reward_deletion_v1) — THE STAMP ONLY: the deletion removes fields rather
     # than introducing one, and their POP is version-independent (above). v108's shape.
@@ -382,6 +395,10 @@ def _migrate_config(data: dict) -> dict:
     # a v130+ config was written by a parser whose untyped critic + terminal were the winprob ones.
     if version < 130:
         data["config_version"] = 130
+    # v131 (deletion pass L1) — THE STAMP ONLY: the retired levers left as FIELDS, and their POP is
+    # version-independent (above). v122's shape.
+    if version < 131:
+        data["config_version"] = 131
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

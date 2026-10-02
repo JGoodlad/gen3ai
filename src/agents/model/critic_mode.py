@@ -9,15 +9,13 @@ written in — is a 0.05-weighted side readout that no gradient reaches from the
 critic that actually assigns credit predicts a shaped, discounted, PopArt-normalized return that is
 commensurable with nothing.*
 
-``shaped`` is that state of affairs, unchanged and byte-identical: ``_critic_value`` is
-``value_net`` (or the distributional head's ``E[Z]`` under ``--value-from-dist``), de-normalized
-through PopArt into raw shaped-return units, and the win-prob head is an auxiliary BCE folded at
-``--win-prob-coef``.
+``shaped`` is that state of affairs: ``_critic_value`` is ``value_net`` in raw return units, and the
+win-prob head is an auxiliary BCE. (PopArt, the distributional ``E[Z]`` critic and the aux-BCE
+coefficient were DELETED with the shaped critic's levers, deletion pass L1.)
 
 ``winprob`` promotes the head: ``V(s) = sigmoid(win_head logit) in [0, 1]``, the value loss IS that
 head's BCE against the terminal outcome, and the reward stream is the TERMINAL indicator alone —
-so ``V(s)`` is literally ``P(win | s)`` at ``gamma = 1`` with no approximation term. PopArt has no
-job (the payoff set is fixed at {win, not-win}, so there is no scale to track) and is refused.
+so ``V(s)`` is literally ``P(win | s)`` at ``gamma = 1`` with no approximation term.
 
 This module is deliberately **torch-free and import-light**: ``main.checkargs`` promises not to
 import torch, and it needs the legal set to validate an argv offline. Everything that knows *which*
@@ -25,11 +23,11 @@ modules a mode builds lives at the sites that build them.
 """
 from __future__ import annotations
 
-#: Today's critic: the scalar `value_net` (or `E[Z]`) in raw shaped-return units, PopArt-pegged.
+#: The scalar `value_net` in raw return units.
 CRITIC_SHAPED = "shaped"
 
 #: The win-prob head IS the critic: `V(s) = sigmoid(logit) in [0, 1]`, trained by BCE against the
-#: terminal outcome, with a TERMINAL-indicator reward stream and no PopArt.
+#: terminal outcome, with a TERMINAL-indicator reward stream.
 CRITIC_WINPROB = "winprob"
 
 #: The legal set, in `--help` order.

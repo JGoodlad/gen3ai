@@ -9,14 +9,13 @@ which this change extends rather than duplicates.
 
 What is specific to the critic mode, and therefore lives here:
 
-* the **asymmetry between implied and required**. Three flags are implied because their argparse
+* the **asymmetry between implied and required**. Two flags are implied because their argparse
   default is `None`, so "unset" is representable; three reward flags are REQUIRED because theirs is
   concrete, so an implication would silently overwrite a typed value and the refusal meant to
   catch a conflicting one could never fire. That asymmetry is a property of the flag surface and
   will read as an inconsistency to anyone who does not know why — pin it with the reason.
 * the **inheritance ORDER**. `resolve_critic_mode` runs before the `_resolve` sweep, so a fork of
-  a `shaped` parent cannot inherit that parent's `use_popart=True` / `win_prob_mode='none'` into a
-  `winprob` run. Off by one call and the mode is broken by a value nobody typed.
+  a `shaped` parent cannot inherit that parent's `win_prob_mode='none'` into a `winprob` run. Off by one call and the mode is broken by a value nobody typed.
 * **OFF is byte-identical at the namespace**, which is the cheapest place to catch an implication
   that leaked into the default path.
 """
@@ -64,7 +63,6 @@ def test_the_flagless_namespace_is_the_WINPROB_critic():
     assert a.victory_value == 1.0
     assert a.draw_penalty == 0.0
     assert a.win_prob_mode == "shaping"
-    assert a.use_popart is False
     assert a.gamma == 1.0
     assert a.env_core == "rust"
 
@@ -79,10 +77,10 @@ def test_an_explicit_winprob_is_the_same_namespace_as_no_flag():
 
 
 def test_a_typed_shaped_critic_implies_nothing():
-    """`shaped` assigns nothing beyond the mode: its three tri-states stay the sentinel."""
+    """`shaped` assigns nothing beyond the mode: its tri-states stay the sentinel."""
     a = _ns(["--critic", "shaped"])
     assert a.critic == "shaped"
-    assert a.win_prob_mode is None and a.use_popart is None and a.gamma is None
+    assert a.win_prob_mode is None and a.gamma is None
 
 
 def test_a_flagless_run_trips_no_critic_check():
@@ -90,14 +88,13 @@ def test_a_flagless_run_trips_no_critic_check():
 
 
 # --------------------------------------------------------------------------------------------
-# the IMPLIED three
+# the IMPLIED two
 # --------------------------------------------------------------------------------------------
 
-def test_winprob_implies_the_three_tristate_flags():
+def test_winprob_implies_the_two_tristate_flags():
     a = _ns(["--critic", "winprob"])
     assert a.win_prob_mode == "shaping", "the head must EXIST to be the critic"
     assert a.gamma == 1.0, "V(s) == P(win|s) holds exactly only at gamma 1"
-    assert a.use_popart is False
 
 
 @pytest.mark.parametrize("argv,dest,value", [
@@ -112,18 +109,16 @@ def test_an_explicit_value_survives_the_implication(argv, dest, value):
 
 
 def test_the_implication_runs_BEFORE_inheritance():
-    """A fork of a `shaped` parent must not inherit `use_popart=True` into a `winprob` run.
+    """A fork of a `shaped` parent must not inherit `win_prob_mode='none'` into a `winprob` run.
 
     `resolve_critic_mode` sets the value while it is still the `None` sentinel, so the later
     `_resolve` sweep finds it filled and inherits nothing. One call later in the order and the
     mode would be broken by a value nobody typed, on the very command shape (a fork) the mode is
     most likely to be launched as."""
     class _Saved:
-        use_popart = True
         win_prob_mode = "none"
         critic = "shaped"
     a = _ns(["--critic", "winprob", "--model", "x.zip"], saved=_Saved())
-    assert a.use_popart is False
     assert a.win_prob_mode == "shaping"
 
 
@@ -207,76 +202,10 @@ def test_none_of_the_three_is_silently_overwritten():
 
 
 # --------------------------------------------------------------------------------------------
-# the refusals that are about a SECOND critic, or a subsumed knob
+# the refusals that are about a missing head
 # --------------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("argv,check", [
-    (["--win-prob-mode", "none"], "winprob_critic_needs_a_head"),
-    (["--use-popart"], "winprob_critic_refuses_popart"),
-    (["--value-from-dist"], "winprob_critic_refuses_value_from_dist"),
-    (["--win-prob-coef", "1.0"], "winprob_critic_refuses_win_prob_coef"),
-    (["--value-tail-weight", "0.3"], "winprob_critic_refuses_value_tail_weight"),
-    (["--win-prob-pbrs-coef", "0.5"], "winprob_critic_refuses_self_phi_pbrs"),
-    (["--win-prob-pbrs-source", "models/p.zip"], "winprob_critic_refuses_self_phi_source"),
-    (["--value-dist-mode", "read_only", "--value-dist-bins", "51",
-      "--value-dist-vmin", "-12", "--value-dist-vmax", "12"],
-     "winprob_critic_refuses_value_dist"),
-])
-def test_each_incompatible_flag_is_refused(argv, check):
+def test_winprob_refuses_a_missing_head():
     base = ["--critic", "winprob", "--terminal-indicator",
             "--victory-value", "1.0", "--draw-penalty", "0"]
-    assert check in _hits(base + argv)
-
-
-def test_the_value_dist_refusal_is_on_the_RESOLVED_mode_not_a_typed_flag():
-    """A fork whose PARENT recorded `value_dist_mode='shaping'` inherits it, and the PPO CE gate /
-    the grad-balance value term / the prober's awareness stack all read that MODE STRING rather
-    than the head — so a run that merely never typed the flag would still mis-state its config to
-    all three. The check therefore reads the resolved value, not `_typed`."""
-    class _Saved:
-        value_dist_mode = "shaping"
-        critic = "winprob"
-    a = _ns(["--critic", "winprob", "--model", "x.zip"], saved=_Saved())
-    # `resolve_config`'s `_resolve` sweep is what inherits it; emulate that one line here.
-    a.value_dist_mode = "shaping"
-    assert "winprob_critic_refuses_value_dist" in [c.name for c in failing_checks(a)]
-
-
-def test_win_prob_pbrs_frozen_is_BUILDABLE_under_the_winprob_critic():
-    """gen3_frozen_phi_actor_only_v1 lifted the hold. The rung the owner amendment kept ONE EDIT
-    away is now that edit: under `winprob` the flag must raise no refusal of its own, so a
-    FROZEN-phi arm is a launch rather than a message."""
-    hits = _hits(["--critic", "winprob", "--terminal-indicator",
-                  "--victory-value", "1.0", "--draw-penalty", "0",
-                  "--win-prob-pbrs-frozen", "models/p.zip"])
-    assert "win_prob_pbrs_frozen_needs_the_winprob_critic" not in hits
-    assert "win_prob_pbrs_frozen_needs_a_head" not in hits
-
-
-def test_win_prob_pbrs_frozen_is_REFUSED_under_the_shaped_critic():
-    """The surviving refusal is a ROUTING answer, not a deferral: under `shaped` the critic
-    predicts a PopArt-normalized shaped return, so phi is in different units and the dose is a real
-    question the shaped ladder's own coefficient exists to ask."""
-    hits = _hits(["--critic", "shaped", "--env-core", "python", "--win-prob-pbrs-frozen", "models/p.zip"])
-    assert "win_prob_pbrs_frozen_needs_the_winprob_critic" in hits
-
-
-def test_the_shaped_refusal_ROUTES_rather_than_deferring():
-    from main.train.combination_checks import BY_NAME
-    text = BY_NAME["win_prob_pbrs_frozen_needs_the_winprob_critic"].text(_ns([]))
-    assert "--win-prob-pbrs-coef" in text and "--win-prob-pbrs-source" in text, (
-        "the refusal must name the flags that DO work under `shaped`")
-    assert "ACTOR-ONLY" in text
-    assert "1.0" in text, "the currency-matched coefficient must be stated, not left to be derived"
-
-
-def test_the_frozen_flag_still_needs_a_win_prob_head():
-    hits = _hits(["--win-prob-pbrs-frozen", "models/p.zip", "--win-prob-mode", "none"])
-    assert "win_prob_pbrs_frozen_needs_a_head" in hits
-
-
-def test_the_self_phi_refusal_states_the_double_counting():
-    from main.train.combination_checks import BY_NAME
-    text = BY_NAME["winprob_critic_refuses_self_phi_pbrs"].text(_ns([]))
-    assert "no coefficient" in text and "currency-matched" in text
-    assert "DOUBLE COUNTING" in text
+    assert "winprob_critic_needs_a_head" in _hits(base + ["--win-prob-mode", "none"])

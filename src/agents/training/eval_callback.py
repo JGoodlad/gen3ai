@@ -423,7 +423,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             # enforces the run's quota rather than the module default.
             "forensic_quota": self._forensic_quota._asdict(),
             # This run's arch toggles → the worker's current_model_version gates sentinel/foreign
-            # snapshots against the RUN's real arch (belief-ON / popart / …), not a toggle-OFF default
+            # snapshots against the RUN's real arch (belief-ON / …), not a toggle-OFF default
             # that would FATAL on the run's own belief-ON sentinels.
             "arch_toggles": arch_toggles_from_model(self.model),
             # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.

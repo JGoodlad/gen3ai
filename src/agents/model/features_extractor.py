@@ -118,7 +118,7 @@ from agents.model.belief_heads import (  # noqa: F401
     _REVEAL_LOGIT, mask_typeless_hp,
 )
 from agents.model.aux_value_heads import (  # noqa: F401
-    CfEvidentialHead, ShadowValueHead, ValueDistHead, WinProbHead,
+    CfEvidentialHead, ShadowValueHead, WinProbHead,
 )
 from agents.model.pointer_head import (  # noqa: F401
     EntityMoveSeats, PointerNativeActionHead, _request_order_move_tokens,

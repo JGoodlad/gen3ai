@@ -21,7 +21,7 @@ and `feature_coverage/` (its probes are all `*_test.py`, and `_support.py` is th
 - **The `[B, 6, K]` shape comments are the shape documentation and mypy does not replace them** —
   a tensor is `torch.Tensor` to the checker and its shape lives in the comment. Keep both.
 - **Registered buffers and mixin surfaces are DECLARED under `if TYPE_CHECKING:`, not ignored.**
-  `register_buffer` in a loop (the whole `damage_tables` set, PopArt's `mu`/`sigma`, `Embeddings`'
+  `register_buffer` in a loop (the whole `damage_tables` set, `Embeddings`'
   index maps) exists only dynamically, so `Module.__getattr__` types every read `Any` and the `Any`
   then leaks into every expression downstream. A TYPE_CHECKING block of `NAME: torch.Tensor`
   declarations is the fix — no runtime effect, and it keeps arithmetic typed.

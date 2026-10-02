@@ -24,7 +24,7 @@ class DistillTerms:
         CORRECTION obs (its own forward); ``better_action`` [B] = A*; ``advantage`` [B] = the CONFIRMED
         win-rate improvement of A* vs the EXACT opponent (> 0, already CI-gated) — NOT a critic
         advantage. Weight ``w = clamp(exp(adv/β), max=w_clip)`` up-weights high-margin corrections. The
-        policy CE is in logit space (no PopArt). Returns ``(loss, metrics)`` or ``None`` on empty.
+        policy CE is in logit space. Returns ``(loss, metrics)`` or ``None`` on empty.
         """
         if logits is None or better_action is None or better_action.numel() == 0:
             return None
@@ -163,13 +163,12 @@ class DistillTerms:
         return loss, metrics
 
     @staticmethod
-    def _value_distill_mse(student_values, teacher_values, distill_mask, popart=None):
+    def _value_distill_mse(student_values, teacher_values, distill_mask):
         """VALUE DISTILLATION — masked MSE(V_teacher ‖ V_student) over the teacher-team rows.
 
         ``student_values`` [B] carries grad; ``teacher_values`` [B] is the frozen teacher's (real-unit,
-        already under no_grad). ``distill_mask`` [B]/[B,1] = 1 on teacher-team states. When a PopArt
-        normalizer is given, both are mapped to the student's normalized frame first (so the coef is
-        scale-comparable with the value loss); else a raw-unit MSE. Returns the masked-mean SE, or None
+        already under no_grad). ``distill_mask`` [B]/[B,1] = 1 on teacher-team states. A raw-unit
+        MSE. Returns the masked-mean SE, or None
         when no teacher-team rows (the None guard, like _distill_loss). Pure + static → unit-testable."""
         if student_values is None or teacher_values is None or distill_mask is None:
             return None
@@ -178,10 +177,7 @@ class DistillTerms:
         if float(n_on) < 1.0:
             return None
         sv, tv = student_values.reshape(-1), teacher_values.reshape(-1)
-        if popart is not None:
-            se = (popart.normalize(sv) - popart.normalize(tv)) ** 2
-        else:
-            se = (sv - tv) ** 2
+        se = (sv - tv) ** 2
         return (se * m).sum() / n_on.clamp(min=1e-6)
 
     @staticmethod

@@ -78,7 +78,7 @@ _METRIC_LABELS = {
     "train/noise_scale_share_policy": "|G|² share policy",
     "train/noise_scale_share_aux": "|G|² share aux",
     # Gradient balance (shared-trunk pull, ONE common denominator → all shares comparable + sum to ~1).
-    # The two RL heads are ALWAYS present; tune vf_coef / PopArt to value_policy_logratio.
+    # The two RL heads are ALWAYS present; tune vf_coef to value_policy_logratio.
     "grad/policy_share": "policy share",
     "grad/value_share": "value share",
     "grad/aux_share": "aux share (all)",
@@ -104,19 +104,12 @@ _METRIC_LABELS = {
     "grad/win_prob_share": "winprob share",
     "grad/win_prob_norm_shared": "winprob grad-norm",
     "grad/win_prob_policy_cosine": "winprob-pol cos",
-    "grad/value_dist_share": "valdist share",
-    "grad/value_dist_norm_shared": "valdist grad-norm",
-    "grad/value_dist_policy_cosine": "valdist-pol cos",
     "grad/opd_share": "opd share",
     "grad/opd_norm_shared": "opd grad-norm",
     "grad/opd_policy_cosine": "opd-policy cos",
     "grad/spread_belief_share": "spread blf share",
     "grad/spread_belief_norm_shared": "spread blf norm",
     "grad/spread_belief_policy_cosine": "spread blf-pol cos",
-    # PopArt value-target normalizer (--use-popart).
-    "popart/mu": "value mu",
-    "popart/sigma": "value sigma",
-    "popart/value_weight_norm": "value head |W|",
     # Effective-rank probe (rank_metrics.py) — how many dims each readout uses.
     "rank/trunk_pr": "trunk rank (PR)",
     "rank/trunk_effrank": "trunk effrank",
@@ -164,11 +157,6 @@ _METRIC_LABELS = {
     "belief/spread_loss": "spread loss",
     # Distributional value head (--value-dist-mode, v29): the interpretability critic's aggregate
     # health. entropy/std fall as it sharpens; PIT → 0.5 ⟺ calibrated; |E[Z]−G| in support units.
-    "value_dist/ce": "dist CE",
-    "value_dist/entropy": "dist entropy",
-    "value_dist/std": "dist std",
-    "value_dist/pit_mean": "dist PIT>.5",
-    "value_dist/mean_abs_err": "dist E[Z]-G",
     # On-policy self-distillation (--opd-coef): KL(π' ‖ π_student) toward the beam's improved
     # distribution. kl falls as the student matches π'; agree_rate (student↔π' mode) rises;
     # pi_target_entropy = π' sharpness; n = sampled corrections.
@@ -246,8 +234,7 @@ _METRIC_ORDER = [
     "train/noise_scale_ratio_aux",
     "train/noise_scale_share_policy",
     "train/noise_scale_share_aux",
-    # Value-scale (PopArt prep): the (μ, σ) + tail an adaptive return normalizer would track,
-    # and the value head's actual output spread. Watch for non-stationary scale drift.
+    # Value-scale: the return (μ, σ) + tail, and the value head's actual output spread. Watch for non-stationary scale drift.
     "train/return_mean",
     "train/return_std",
     "train/return_abs_max",
@@ -292,7 +279,7 @@ _METRIC_ORDER = [
     # Gradient balance: every head's pull on the SHARED trunk, on ONE common denominator so the
     # shares are comparable + sum to ~1 (policy_share + value_share + aux_share). policy/value are
     # always present; value_policy_logratio = log10(‖g_v‖/‖g_p‖) is the AUX-INDEPENDENT value-vs-policy
-    # imbalance (0 = balanced, >0 = value dominates) — the legible PopArt / vf_coef gauge;
+    # imbalance (0 = balanced, >0 = value dominates) — the legible vf_coef gauge;
     # policy_value_cosine <0 = the two RL heads conflict. (See grad_balance.py.)
     "grad/policy_share",
     "grad/value_share",
@@ -319,9 +306,6 @@ _METRIC_ORDER = [
     "grad/win_prob_share",
     "grad/win_prob_norm_shared",
     "grad/win_prob_policy_cosine",
-    "grad/value_dist_share",
-    "grad/value_dist_norm_shared",
-    "grad/value_dist_policy_cosine",
     "grad/opd_share",
     "grad/opd_norm_shared",
     "grad/opd_policy_cosine",
@@ -331,11 +315,6 @@ _METRIC_ORDER = [
     "opd/agree_rate",
     "opd/pi_target_entropy",
     "opd/n",
-    # PopArt (only present under --use-popart): running value-target (mu, sigma) — should track
-    # train/return_mean & return_std — and the POP-rescaled value-head weight norm (stays bounded).
-    "popart/mu",
-    "popart/sigma",
-    "popart/value_weight_norm",
     # Effective-rank probe (always on): how many dims each readout actually uses (rank_metrics.py).
     # trunk = shared body (the capacity-utilization signal); value_cls = critic readout (runs low);
     # policy = actor rep (runs higher → the n90/n95/n99 percentile counts are the view).

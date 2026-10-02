@@ -16,7 +16,7 @@ def _load_saved_version(model_path: str):
     Returns the ModelVersion, or **None** when the config is missing/unreadable — so a caller can
     distinguish "could not determine" from a real value (rather than silently fail-safe to a default
     and then FATAL at the version check). Used to let a flagless resume INHERIT every version-checked
-    structural toggle (use_popart / opp_belief_cls_k / move_belief_mode / damage_op)
+    structural toggle (opp_belief_cls_k / move_belief_mode / damage_op)
     + the belief coef, so the documented `--model … --steps …` resume works uniformly."""
     try:
         from agents.model.snapshot import _resolve_paths

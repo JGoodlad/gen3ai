@@ -33,8 +33,7 @@ the optimizer can move anything:
   parameters whose gradient is non-finite. This one also covers a finite loss whose BACKWARD produced
   a NaN (and the grad-accumulation flush's rescale).
 
-plus `check_buffer_finite` (once per update, BEFORE PopArt's advance — which rewrites ``value_net``
-outside the optimizer — and before any forward: rewards, values, log-probs, advantages, returns and
+plus `check_buffer_finite` (once per update, before any forward: rewards, values, log-probs, advantages, returns and
 every float label key) and `check_kl_finite` (the approx-KL can be Inf under a finite loss). The rest of
 the audit — the sites that absorbed a NaN BEFORE the total — is ``designs/training/learner_gates.md``.
 
@@ -185,7 +184,7 @@ _BUFFER_ARRAYS = ("rewards", "values", "log_probs", "advantages", "returns")
 
 
 def check_buffer_finite(buf: Any) -> None:
-    """K9(c): once per update, before PopArt's advance and before any forward — every trained array of
+    """K9(c): once per update and before any forward — every trained array of
     the rollout buffer and every FLOAT label key of its observation dict is finite. The flat
     ``observation`` row is excluded (it is a policy INPUT: a NaN there reaches the loss through the
     forward, and a full scan is ~0.3 s per update at production size) — as are integer keys (a NaN
@@ -207,4 +206,4 @@ def check_buffer_finite(buf: Any) -> None:
         raise nonfinite(
             f"[K9(c)] NON-FINITE ROLLOUT BUFFER before the update: {', '.join(bad)}. A NaN reward / value / "
             "label is garbage in (the collector, GAE or a label callback produced it) — refusing to train "
-            "on it (PopArt would also rewrite value_net from it before any loss ran).")
+            "on it.")

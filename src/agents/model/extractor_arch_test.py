@@ -60,14 +60,13 @@ def test_builder_output_constructs_an_extractor(monkeypatch):
     args.move_belief_mode = "off"
     args.belief_grad_mode = "shaping"
     args.win_prob_mode = "none"
-    args.value_dist_mode = "none"
     args.opp_intent_grad_mode = "detached"
     args.hp_belief_mode = "composed"
     args.edge_bias_families = "off"
-    for attr in ("opp_belief_cls_k", "value_dist_bins", "damage_topk_k",
+    for attr in ("opp_belief_cls_k", "damage_topk_k",
                  "damage_candidate_k", "consequence_topk", "entity_topk_seats"):
         setattr(args, attr, 0)
-    for attr in ("move_candidate_floor", "value_dist_vmin", "value_dist_vmax"):
+    for attr in ("move_candidate_floor",):
         setattr(args, attr, 0.0)
     args.opp_belief_aux_coef = 0.0
     args.opp_intent_coef = 0.0

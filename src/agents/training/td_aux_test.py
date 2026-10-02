@@ -121,26 +121,6 @@ def test_residual_math_on_a_hand_built_case():
     assert m["n_pairs"] == 2 and m["pair_drop_frac"] == pytest.approx(0.0)
 
 
-def test_scale_expresses_the_residual_in_the_value_losss_space():
-    """UNITS. Under PopArt the value loss trains in normalized space, and
-    `normalize(V) − normalize(r + γV′)` is exactly `(V − r − γV′)/σ` (the μ cancels) — so `scale=σ`
-    is the normalized-space residual, and λ keeps rung-1's meaning. σ=1 with PopArt off."""
-    from agents.model.popart import PopArtNormalizer
-    pop = PopArtNormalizer()
-    with th.no_grad():                      # plant a non-trivial (mu, sigma)
-        pop.mu.fill_(7.0)
-        pop.sigma.fill_(4.0)
-    values = th.tensor([10.0, 4.0])
-    rewards = th.tensor([3.0, 0.0])
-    gamma = 0.5
-    pa, pb = th.tensor([0]), th.tensor([1])
-    raw = td_residual(values, rewards, pa, pb, gamma, scale=1.0)
-    scaled = td_residual(values, rewards, pa, pb, gamma, scale=float(pop.sigma))
-    target = rewards[pa] + gamma * values[pb]
-    assert th.allclose(scaled, pop.normalize(values[pa]) - pop.normalize(target))
-    assert th.allclose(scaled, raw / 4.0)
-
-
 def test_both_residual_ends_carry_gradient():
     """The residual-gradient (Baird) form the pre-registration specifies: V(s_t) AND V(s_{t+1}) are
     both live. A detached successor would make this a semi-gradient TD and change what it measures."""
@@ -211,10 +191,9 @@ def test_coef_positive_changes_the_update_and_logs_its_metrics():
 
     logged = model.logger.name_to_value
     for key in ("td_aux/loss", "td_aux/resid_rms", "td_aux/resid_mean",
-                "td_aux/n_pairs", "td_aux/pair_drop_frac", "td_aux/scale"):
+                "td_aux/n_pairs", "td_aux/pair_drop_frac"):
         assert key in logged, f"missing {key}"
     assert logged["td_aux/n_pairs"] > 0
-    assert logged["td_aux/scale"] == 1.0          # PopArt off in the tiny harness
 
 
 def test_the_term_deposits_gradient_on_the_critic():
@@ -225,7 +204,7 @@ def test_the_term_deposits_gradient_on_the_critic():
     model._td_aux_rng = None
     # get() flattens the buffer on the first next(); _td_aux_term requires that (and says so).
     next(iter(model.rollout_buffer.get(4)))
-    term, metrics = model._td_aux_term(None)
+    term, metrics = model._td_aux_term()
     assert term is not None and metrics["n_pairs"] > 0
     critic = list(model.policy.value_net.parameters())
     grads = th.autograd.grad(term, critic, allow_unused=True)
@@ -279,4 +258,4 @@ def test_it_refuses_to_run_before_the_buffer_is_flattened():
     model.rollout_buffer.generator_ready = False
     model.td_aux_coef = 1.0
     with pytest.raises(RuntimeError, match="swap_and_flatten"):
-        model._td_aux_term(None)
+        model._td_aux_term()

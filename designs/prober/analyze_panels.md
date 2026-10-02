@@ -181,10 +181,7 @@ caveat. `None`-head / model-free / no-state → a graceful hint line, never a cr
 call it too); the per-head attribution composes existing
 `InvocationAnalysis.saliency`/`value_saliency` only — no new engine work, and
 it inherits the Saliency obs-mismatch guard, and
-**Outcome** — the last surfaces the critic's `V(s)` (recorded — with its **PopArt-normalized**
-companion `(norm …)` when the run used `--use-popart`: the critic's own [-1,1]-ish learning
-scale, `(V − μ)/σ` from the loaded model's `PopArtNormalizer`, vs the de-normalized real-return
-V — · re-run · ΔV → next ·
+**Outcome** — the last surfaces the critic's `V(s)` (recorded · re-run · ΔV → next ·
 **TD δ** = `r + γV(s′) − V(s)`, the critic-surprise residual, in parity with the CLI's
 overview/analyze `td_residual`; γ from the run's `metadata.json`) + the win-prob head's
 **P(win)** + ΔP (when present),

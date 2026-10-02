@@ -10,7 +10,6 @@ line of the call and its comment says so, which only stays true where it is.
 """
 import numpy as np
 
-from agents.training import frozen_phi          # gen3_frozen_phi_actor_only_v1 (both seams live there)
 from agents.training.grad_balance import value_scale_metrics
 from agents.training.instrumented_ppo.calibration import (
     announce_vf_coef_scale,
@@ -29,7 +28,7 @@ class TrainMetricsExport:
                                      grad_norms: list) -> None:
         """The shared-trunk gradient-balance / rank / per-family liveness probes."""
         # +INSTRUMENTATION: gradient-balance + value-scale diagnostics. These prepare for
-        # reducing vf_coef and adding return normalization (PopArt) — see grad_balance.py and
+        # reducing vf_coef — see grad_balance.py and
         # src/agents/training/CLAUDE.md. All ride the standard logger → TensorBoard + launcher TUI.
         for _key, _val in grad_balance.items():
             self.logger.record(_key, _val)
@@ -134,7 +133,7 @@ class TrainMetricsExport:
                              scaffolding_on: bool, grad_balance: dict) -> None:
         """The supervised heads' own prefixes: `belief/`, `win_prob/`, and the critic's Murphy split."""
         # +BELIEF: hidden-opponent belief-aux diagnostics under their OWN `belief/` TB prefix (NOT
-        # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`win_prob/`/`eval/`
+        # `train/`, which is crowded — matches the dedicated `grad/`/`win_prob/`/`eval/`
         # groups). Only when the aux is on AND some minibatch had believed slots. `species_acc` is the
         # headline: top-1 accuracy of predicting a hidden mon's species — rises as the model learns to
         # anticipate the un-revealed party.
@@ -143,7 +142,7 @@ class TrainMetricsExport:
                 self.logger.record(f"belief/{_bk}", float(np.mean(_bvals)))
 
         # +WIN-PROB: auxiliary win-probability diagnostics under their OWN `win_prob/` TB prefix (NOT
-        # `train/`, which is crowded — matches the dedicated `grad/`/`popart/`/`eval/` groups). Only when
+        # `train/`, which is crowded — matches the dedicated `grad/`/`eval/` groups). Only when
         # the head is on AND some minibatch had a known label. Calibration: `acc` (top-1 win/loss) +
         # `brier` (lower = P(win) tracks the win rate); `pred_mean` vs `label_mean` watches a base-rate
         # collapse; `coverage` = fraction with a known label. INFORMATION VALUE (the aggregate hides it —
@@ -159,7 +158,7 @@ class TrainMetricsExport:
         # reliability histogram, pooled and CONTESTED-restricted. These measure the RELIABILITY
         # term Brier only carries in a decomposition — the quantity that has to be right when the
         # head becomes the critic's only signal. Gated on the head's EXISTENCE (like the
-        # scaffolding gauge), not on `win_prob_coef`: a `read_only` head at coefficient 0 is still
+        # scaffolding gauge): a `read_only` head is still
         # making claims worth checking. An under-populated bin publishes NaN, so a thin tail bin
         # renders as a HOLE rather than as a confident calibration error.
         for _ck2, _cv2 in calib_all.metrics().items():
@@ -189,29 +188,9 @@ class TrainMetricsExport:
         for _sk2, _sv2 in self._winprob_start_metrics(scaffolding_on).items():
             self.logger.record(f"win_prob/{_sk2}", _sv2)
 
-    def _record_term_metrics(self, value_dist_metrics: dict, teacher_metrics: dict,
-                             opd_metrics: dict, distill_metrics: dict,
-                             td_aux_metrics: dict) -> None:
-        """The PBRS shaping magnitude and the five per-term prefixes that carry no counterfactual."""
-        # +WIN-PROB PBRS (gen3_winprob_pbrs_v1, ai_v12 route 1): the shaping term's magnitude for THIS
-        # rollout, computed in `collect_rollouts` (not here — the term edits rewards, not the loss, so
-        # it has no per-minibatch existence). Under `train/` deliberately: it is a property of the
-        # reward stream PPO is fitting, not of the win-prob head, and it belongs beside the other
-        # train-loop quantities a reader checks when the loss moves. `pbrs_reward_share` is the one to
-        # watch — the shaping's mean |magnitude| as a fraction of the UNSHAPED reward's, i.e. how much
-        # of the return signal this coefficient has replaced.
-        if self._pbrs_metrics:
-            for _pk, _pv in self._pbrs_metrics.items():
-                self.logger.record(f"train/pbrs_{_pk}", float(_pv))
-
-        frozen_phi.record_metrics(self, self.logger)  # pbrs/frozen_phi_*, signal/adv_shaped_*
-        # +VALUE-DIST: distributional value head diagnostics under their OWN `value_dist/` TB prefix (the
-        # interpretability head's aggregate health, complementing the prober's per-decision histogram).
-        # `entropy`/`std` fall as the critic sharpens; `pit_mean` ≈ 0.5 ⟺ calibrated; `mean_abs_err` =
-        # |E[Z] − return| in support units. Ride the generic logger → TensorBoard + launcher TUI.
-        if value_dist_metrics:
-            for _vk, _vvals in value_dist_metrics.items():
-                self.logger.record(f"value_dist/{_vk}", float(np.mean(_vvals)))
+    def _record_term_metrics(self, teacher_metrics: dict, opd_metrics: dict,
+                             distill_metrics: dict, td_aux_metrics: dict) -> None:
+        """The four per-term prefixes that carry no counterfactual."""
 
         # +SEARCH-TEACHER: AWR diagnostics under their OWN `teacher/` TB prefix. `agree_rate` (policy ↔
         # A* — should RISE as the distillation lands), `mean_adv` (the confirmed win-rate improvement of
@@ -253,8 +232,7 @@ class TrainMetricsExport:
         # ΔV-dispersion instrument the rung-1 gate used; it should FALL. `resid_mean` (SIGNED) is the
         # no-harm watch: rung 1's decomposition says this is dispersion suppression, so a bias that
         # drifts away from ~0 means the residual-gradient (Baird) term is shifting the level rather
-        # than tightening it — read it beside `train/explained_variance`. `scale` is the unit the
-        # residual is expressed in (PopArt's sigma; 1.0 with PopArt off), and `pair_drop_frac` is the
+        # than tightening it — read it beside `train/explained_variance`. `pair_drop_frac` is the
         # fraction of candidate pairs lost to episode boundaries. Empty (off) → not logged.
         if td_aux_metrics:
             for _tdk, _tdvals in td_aux_metrics.items():
@@ -354,9 +332,8 @@ class TrainMetricsExport:
                                float(grad_balance.get("grad/cf_twin_share", 0.0)))
         # +CF-SHADOW (gen3_cf_twin_heads_v1) — `cf/shadow_*`.
         #
-        #  * `loss` is the MSE against `mc_return` in the PopArt-normalized frame; `abs_err`,
-        #    `pred_mean` and `label_mean` are the same quantities de-normalized to real shaped-return
-        #    units, which is the only frame a reader can interpret.
+        #  * `loss` is the MSE against `mc_return`; `abs_err`, `pred_mean` and `label_mean` are in
+        #    real return units.
         #  * **`shadow_vs_live_v` is THE METER** — the SIGNED mean of (shadow − live V) in real
         #    units on the same states. It is the staged-promotion evidence: a shadow sitting
         #    systematically BELOW the live critic is a live critic that is optimistic about the
@@ -408,9 +385,8 @@ class TrainMetricsExport:
             self.logger.record("train/q_winprob_grad_share",
                                float(grad_balance.get("grad/q_winprob_share", 0.0)))
 
-    def _record_capacity_and_popart_metrics(self, capacity_metrics: dict, popart,
-                                            aux_metrics: dict) -> None:
-        """The capacity battery, PopArt's currency readout, and the pre-keyed `aux_metrics` sink."""
+    def _record_capacity_metrics(self, capacity_metrics: dict, aux_metrics: dict) -> None:
+        """The capacity battery and the pre-keyed `aux_metrics` sink."""
         # +CAPACITY TELEMETRY (gen3_capacity_telemetry_v1). Read them as TRENDS, never as levels —
         # every one of these is a saturation EARLY WARNING and none has a meaningful absolute value:
         #   canary_loss / canary_recovery / canary_age  the plasticity canary. `canary_recovery` is
@@ -427,32 +403,6 @@ class TrainMetricsExport:
         for _capk, _capv in capacity_metrics.items():
             self.logger.record(f"capacity/{_capk}", float(_capv))
 
-        # +PopArt diagnostics: mu/sigma should TRACK train/return_mean/return_std (the running
-        # normalizer estimate); value_weight_norm watches the POP rescale stay bounded (an explosion
-        # signals a degenerate sigma / broken preservation). With PopArt on, train/value_loss is the
-        # NORMALIZED loss (≈O(1)) and grad/value_policy_logratio should fall toward ~0 (the
-        # aux-independent value/policy balance; grad/value_share also drops but moves with the aux count).
-        if popart is not None:
-            self.logger.record("popart/mu", float(self.policy.popart.mu))
-            self.logger.record("popart/sigma", float(self.policy.popart.sigma))
-            self.logger.record("popart/value_weight_norm", float(self.policy.value_net.weight.norm()))
-            # +THE CURRENCY CONVERSION, MADE READABLE (gen3_popart_currency_readout_v1). μ and σ
-            # alone say what the normalizer BELIEVES; these two say whether that belief is CURRENT.
-            # `train/return_*` is RAW shaped-return currency and the value loss trains in
-            # NORMALIZED currency, so the conversion in force this rollout is
-            # `normalized = (raw − μ)/σ` — and applying it to THIS rollout's own returns is the
-            # one-line audit of it: a tracking normalizer reads ≈0 and ≈1. A `norm_return_std`
-            # drifting from 1 is PopArt LAGGING the return scale (the value gradient is then
-            # mis-scaled against the trunk by exactly that factor), and a `norm_return_mean` far
-            # from 0 is an offset the value head has to carry itself. Free — a mean and a std over
-            # an array `value_scale_metrics` has already read.
-            _pa_r = np.asarray(self.rollout_buffer.returns, dtype=np.float64).reshape(-1)
-            if _pa_r.size:
-                _pa_sigma = float(self.policy.popart.sigma)
-                if _pa_sigma > 0.0:
-                    _pa_z = (_pa_r - float(self.policy.popart.mu)) / _pa_sigma
-                    self.logger.record("popart/norm_return_mean", float(_pa_z.mean()))
-                    self.logger.record("popart/norm_return_std", float(_pa_z.std()))
         # (v61's `value_seeds/*` seed-collapse contract was logged here. The multi-seed critic
         # readout it monitored is DELETED — dV 0.0000 bit-exact on two consecutive end-of-run
         # audits — so the monitor went with it. Its finding survives in designs/CHANGELOG.md.)

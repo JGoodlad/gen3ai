@@ -4,7 +4,7 @@ learner's batch, or turns on a term R1 branches on, is DECLARED at startup.
 THE HAZARD (the K6+K8 lane's final FINDING, 2026-10-01). The compiled learner micro-step (region R1)
 is compiled `fullgraph=True` at its startup signature and LOCKED; anything new after the lock is a
 FATAL. The startup gate and prewarm built R1's static flags with the two win-prob ROW-WEIGHT levers
-OFF (`_micro_static(f, popart, None, False)`), while `train()` turned them on from the config — and
+OFF (`_micro_static(f, None, False)`), while `train()` turned them on from the config — and
 the strata lever only on a rollout whose labelled rows hold two or more opponent classes, i.e. a
 DATA-dependent signature that flips the first time the self-play pool seeds. Every such run reached
 its first (or its first post-seed) update and died.
@@ -208,17 +208,16 @@ def test_the_NEUTRAL_strata_weights_are_BIT_IDENTICAL_to_the_unweighted_expressi
     LG.load_buffer_into(model)
     b = cr.r1_batch(model, BATCH)
     f = model._resolve_fold_flags()
-    popart = getattr(model.policy, "popart", None)
 
     def run(strata: bool) -> Dict[str, Any]:
-        st = model._micro_static(f, popart, strata, False)
+        st = model._micro_static(f, strata, False)
         var = model._micro_var(st, None)
         assert ("strata_w" in var) is strata
         model.policy.set_training_mode(True)
         for p in model.policy.parameters():
             p.grad = None
         torch.manual_seed(0)
-        out = micro_step(model.policy, popart, b.obs, b.actions, b.action_masks, b.old_log_prob,
+        out = micro_step(model.policy, b.obs, b.actions, b.action_masks, b.old_log_prob,
                          b.old_values, b.advantages, b.returns, var, st)
         out.loss.backward()
         grads = [p.grad.detach().clone() if p.grad is not None else None

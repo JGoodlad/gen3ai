@@ -138,8 +138,11 @@ def test_production_declares_a_constructed_mirror():
         assert b.config_overrides.get(k) == want, (k, b.config_overrides.get(k), want)
     critic_block = {k: v for k, v in b.config_overrides.items() if k not in generation_stamp}
     # 13 keys on 2026-09-06; `hand_shaping` left it with the shaped-reward deletion (v122,
-    # 2026-09-26) — the field no longer exists, so there is nothing to override.
-    assert len(critic_block) == 12, "the critic block (CHANGELOG 2026-09-06, less hand_shaping)"
+    # 2026-09-26), and eight more (PopArt, the value-dist head's four, value_from_dist, the tail
+    # weight, the aux-BCE coefficient) with deletion pass L1 (v131) — those fields no longer exist,
+    # so there is nothing to override. What is left is the critic and the terminal's three values.
+    assert set(critic_block) == {"critic", "terminal_indicator", "victory_value", "draw_penalty"}, (
+        "the critic block (CHANGELOG 2026-09-06, less the fields deleted since)")
     assert "hand_shaping" not in b.config_overrides
     assert b.config_overrides["critic"] == "winprob"
     assert b.pending.get("candidate") == "ai_v12_02_winprob_critic"

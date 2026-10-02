@@ -108,7 +108,7 @@ last snapshot is what the metrics already measure.
 
 `agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
 (`zip_path`, `config_path`, `run_base`, `run_dir`, `rung`, `rule`, `num_timesteps`). The flags it
-serves: **`--distill-teacher`** and **`--win-prob-pbrs-source`** (`main/train/model_build.py`),
+serves: **`--distill-teacher`** (`main/train/model_build.py`; `--win-prob-pbrs-source` was the second until it was deleted),
 **`--stable-opponents`** and **`--exploiter`** (via `resolve_stable_opponents`),
 **`--exploiter-ladder`** (`exploiter_ladder.py`), **`--warmstart-consensus`** (`warmstart.py`) and
 **`--distill-anchor-parent`** (`main/train/callbacks.py`). `run_spec_test.py` holds the census that

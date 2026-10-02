@@ -238,11 +238,3 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "different value is a FATAL error (it silently rescales the value head's "
                              "gradient on the shared trunk — tune it on a fresh run). Watch "
                              "grad/value_policy_logratio (the aux-independent value-vs-policy balance).")
-    parser.add_argument("--value-tail-weight", "--value_tail_weight", dest="value_tail_weight",
-                        type=float, default=0.0,
-                        help="Tail-weighted value loss β∈[0,1] (default 0.0 = plain MSE, byte-identical). "
-                             ">0 blends in the CVaR of the worst ~10%% value misses: (1-β)·MSE + β·CVaR, "
-                             "so the critic prioritises the big over-claim craters it under-prices (a "
-                             "probe found VF→incoming-KO AUC 0.79 vs the policy's 0.90). Symmetric in "
-                             "error sign → V stays unbiased (GAE advantages unaffected). Watch "
-                             "eval/td_resid_tail fall. Resume-immutable (recorded + FATAL to change).")

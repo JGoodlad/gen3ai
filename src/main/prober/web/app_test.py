@@ -1395,13 +1395,9 @@ _FULL_ANALYSIS = {
                 "reward": {"total": -1.5, "hp": -1.0, "faint": -0.5},
                 "events": ["our:zapdos:fainted"], "timeline": _TIMELINE},
     "value": {"recorded": 3.5, "rerun": 3.2, "next_recorded": -4.0, "delta": -7.5,
-              "popart_mu": -3.6, "popart_sigma": 4.0, "normalized_recorded": 1.77,
-              "normalized_rerun": 1.7, "td_residual": -9.0,
+              "td_residual": -9.0,
               "td_phrase": "much worse than the critic expected"},
     "win_prob": {"recorded": 0.61, "next_recorded": 0.2, "delta": -0.41},
-    "value_dist": {"probs": [0.1, 0.4, 0.5], "support": [-10.0, 0.0, 10.0], "mean": 2.0,
-                   "std": 3.0, "p10": -10.0, "p50": 0.0, "p90": 10.0, "entropy": 0.94,
-                   "bimodality": 0.35, "mean_real": 4.4},
     "rerun_argmax": "switch:blissey", "agrees": False,
     "flags": ["switch", "faint"], "cure_options": ["refresh"],
     "board": {"ours": {"active_species": "zapdos", "active_hp": "78%", "status": "PAR",
@@ -1506,7 +1502,7 @@ _FULL_ANALYSIS = {
 _BARE_ANALYSIS = dict(
     _FULL_ANALYSIS,
     matchups=None, sweep=None, saliency=None, value_saliency=None, threats=None, incoming=None,
-    value_dist=None, win_prob=None, opp_intent=None, belief=None, belief_truth=None,
+    win_prob=None, opp_intent=None, belief=None, belief_truth=None,
     damage_op=None, move_belief=None, spread_belief=None, switch_in_outgoing=None,
     obs_mismatch=None, opp_switched_to=None, cure_options=[], protocol=[],
     model_resolution={"path": None, "tier": "exact", "detail": "eval snapshot",
@@ -1654,12 +1650,12 @@ def test_the_arch_drift_message_renders_whole_including_its_git_checkout_line(cl
 
 def test_analyze_panels_self_hide_when_their_head_was_off(client):
     """Most of this view is flag-gated (`--damage-op`, `--move-belief-mode`, `--spread-belief`,
-    `--value-dist-mode`, `--win-prob-mode`, `--opp-intent-coef`). An absent panel must mean "that
+    `--win-prob-mode`, `--opp-intent-coef`). An absent panel must mean "that
     head was off", never an empty box that reads as a broken probe."""
     _stub_analyze(client, _BARE_ANALYSIS)
     bare = _fragment(client)
     for gone in ("beliefs", "threats", "saliency", "intervention", "P(win)",
-                 "predicted return distribution", "OBS MISMATCH", "DROPPED FLAGS",
+                 "OBS MISMATCH", "DROPPED FLAGS",
                  "opp pivoted", "raw Showdown protocol"):
         assert gone not in bare, f"{gone!r} rendered on a run whose head was off"
     # ...while the always-present parts still do.
@@ -1667,8 +1663,7 @@ def test_analyze_panels_self_hide_when_their_head_was_off(client):
 
     _stub_analyze(client, _FULL_ANALYSIS)
     full = _fragment(client)
-    for shown in ("beliefs", "threats", "saliency", "intervention", "P(win)",
-                  "predicted return distribution"):
+    for shown in ("beliefs", "threats", "saliency", "intervention", "P(win)"):
         assert shown in full, f"{shown!r} missing on a run that trained it"
 
 
@@ -1880,15 +1875,15 @@ _FAKE_LOOKAHEAD = {
     "candidates": [
         {"action": 1, "label": "switch:swampert", "choice": "switch 2", "is_chosen": False,
          "value_crn": 1.25, "value_mean": None, "value_std": None, "n_evaluated": 1,
-         "terminal_frac": 0.0, "terminal": None, "win_prob_crn": 0.55, "value_dist_crn": None,
+         "terminal_frac": 0.0, "terminal": None, "win_prob_crn": 0.55,
          "delta_v": 5.25},
         {"action": 7, "label": "thunderbolt", "choice": "move 2", "is_chosen": True,
          "value_crn": -4.0, "value_mean": None, "value_std": None, "n_evaluated": 1,
-         "terminal_frac": 0.0, "terminal": None, "win_prob_crn": 0.2, "value_dist_crn": None,
+         "terminal_frac": 0.0, "terminal": None, "win_prob_crn": 0.2,
          "delta_v": 0.0},
         {"action": 8, "label": "explosion", "choice": "move 3", "is_chosen": False,
          "value_crn": None, "value_mean": None, "value_std": None, "n_evaluated": 0,
-         "terminal_frac": 1.0, "terminal": "loss", "win_prob_crn": None, "value_dist_crn": None,
+         "terminal_frac": 1.0, "terminal": "loss", "win_prob_crn": None,
          "delta_v": None},
     ],
     "best_alternative": "switch:swampert", "best_delta_v": 5.25,

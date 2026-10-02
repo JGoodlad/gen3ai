@@ -84,7 +84,7 @@ def _ver(mode="none"):
 
 def test_version_records_mode():
     assert _ver("shaping").win_prob_mode == "shaping"
-    assert _ver().win_prob_mode == "none" and _ver().win_prob_coef == 1.0
+    assert _ver().win_prob_mode == "none"
 
 
 @pytest.mark.parametrize("saved,current", [
@@ -103,13 +103,6 @@ def test_mode_mismatch_fatals(saved, current):
 @pytest.mark.parametrize("mode", ["none", "read_only", "shaping"])
 def test_matching_mode_loads(mode):
     _ver(mode).check_compatible(_ver(mode))  # no raise
-
-
-def test_coef_not_version_locked():
-    """win_prob_coef is training-only — a mismatch must NOT block a load (it touches no forward)."""
-    a, b = _ver("shaping"), _ver("shaping")
-    a.win_prob_coef, b.win_prob_coef = 0.3, 2.0
-    a.check_compatible(b)  # no raise
 
 
 def test_migration_v21_to_v22():

@@ -4,11 +4,11 @@ Registered as an instrument by the value-function foundations ruling (ledger 202
 value readouts this tree carries answer two DIFFERENT questions and neither is a repair of the
 other:
 
-* ``V`` — the critic. Estimates the **shaped** return, in PopArt-normalized units, discounted at
+* ``V`` — the critic. Estimates the **shaped** return, in reward units, discounted at
   ``gamma``. Definitionally correct for its job: GAE advantages must be estimated in the units of
   the reward stream actually being optimized.
 * ``P(win)`` — the win-prob head. Estimates the **game** value: outcome units, no discount
-  distortion, no PopArt drift.
+  distortion.
 
 The GAP between them is the reward scaffolding — the part of ``V`` that is shaping rather than
 game. As a generation matures the two should order states more and more alike, and the gauge's
@@ -18,7 +18,7 @@ pure game.
 ═══ 🚨 UNITS HONESTY — read before quoting any number from this module ════════════════════════
 
 **A direct unit conversion between ``V`` and ``P(win)`` is not generally possible.** ``V`` is a
-PopArt-normalized *shaped* return: its scale is set by a normalizer that moves over training, its
+*shaped* return: its scale is the reward's, its
 composition by whichever reward terms are enabled, and its horizon by ``gamma``. ``P(win)`` is a
 probability. There is no fixed affine map between them, and under PBRS with a good potential there
 is not even a monotone one to recover — the classic φ=V* result drives ``V_shaped`` toward a
@@ -26,7 +26,7 @@ CONSTANT, all evaluative content having migrated into the reward stream (ledger 
 module ships **two** gauges and labels each with exactly what it can and cannot claim:
 
 ┌─ ``rank_gauge`` — Spearman ρ between V and P(win) over a slice of states ─────────────────────┐
-│ CAN claim: whether the two readouts ORDER states alike. Unit-free, PopArt-proof, always valid, │
+│ CAN claim: whether the two readouts ORDER states alike. Unit-free, always valid, │
 │   invariant to any monotone reparameterization of either axis.                                │
 │ CANNOT claim: anything about magnitude, calibration, or "how many win-percent" the gap is. A   │
 │   ρ of 1.0 is compatible with the two heads disagreeing wildly about every absolute level.     │
@@ -241,7 +241,7 @@ def constancy_row(values, groups: Optional[Sequence] = None) -> Dict[str, float]
       lookup, which is the FAILURE mode that a raw ``v_std`` alone cannot tell from the theory's
       prediction.
 
-    🚨 UNITS: ``v_std`` rides PopArt, whose σ moves over training, so the RAW value compares within
+    🚨 UNITS: ``v_std`` rides the run's return units, so the RAW value compares within
     a run and only cautiously across runs. ``dispersion`` (= v_std / E|V|) is the scale-free
     companion for a cross-run read; the STRONG form of the check is arm-vs-control at matched step.
     """

@@ -25,10 +25,10 @@ actions. The joint reading is what means something:
 | low | low | the opponent is a wall or a pushover — no gradient to be had |
 
 **UNITS — read within a run, only cautiously across runs.** Advantages are built from returns that
-ride the run's own PopArt normalizer (`--use-popart`, default on), whose σ moves over training. So
-`adv_raw_std` is in *this run's current normalized-return units*, not a fixed scale. Within a run
-the trend is meaningful; between two runs (different reward composition, different PopArt state,
-different `gamma`/`gae_lambda`) only the SHAPE metric `adv_kurtosis` — which is scale-free by
+ride the run's own return units, which depend on its reward composition and critic. So
+`adv_raw_std` is in *this run's return units*, not a fixed scale. Within a run
+the trend is meaningful; between two runs (different reward composition, critic,
+`gamma`/`gae_lambda`) only the SHAPE metric `adv_kurtosis` — which is scale-free by
 construction — compares directly.
 
 **This is not the attributable-share measurement.** For the real decomposition of how much of an
@@ -111,7 +111,7 @@ def advantage_density_metrics(advantages) -> Dict[str, float]:
     # `adv_raw_std` is a systematically MIS-CENTRED critic — every action in the rollout looking
     # better (or worse) than the critic expected — which `normalize_advantage` then erases per
     # minibatch, so nothing downstream can report it. Read as the ratio to `adv_raw_std`, never
-    # alone: like the two below it rides the run's own PopArt units.
+    # alone: like the two below it rides the run's own return units.
     out = {"adv_raw_mean": float(mean),
            "adv_raw_std": std,
            "adv_raw_abs_mean": float(np.mean(np.abs(a)))}

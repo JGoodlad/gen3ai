@@ -5,14 +5,14 @@ the policy forward (`evaluate_actions`, functional masking — `masked_categoric
 of the FOLD ORDER contract (`ppo.train`'s docstring; `src/agents/training/CLAUDE.md`):
 
   1. the upstream PPO loss: `policy_grad_coef · policy_loss + ent_coef · entropy + vf_term` (the fork
-     mask, PopArt / plain / clipped value loss, the value-tail weight, both entropy boosts);
+     mask, plain / clipped value loss, both entropy boosts);
   2. the BELIEF bank's `hidden_move` site (hidden-team aux, move belief) → the OPPONENT-INTENT fold
      (set-valued β, then α/β) → the `latent` site (move latent) → the `revealed` site (spread,
      nature/EV, HP type, item);
   3a. the WIN-PROB BCE (the value loss under `--critic winprob`, else an aux term).
 
 in that order, as ONE straight line — the float-addition order of the inline fold is preserved term
-by term. Everything after 3a (dense aux, the CF-twin mirror, value-dist, distill + anchor,
+by term. Everything after 3a (dense aux, the CF-twin mirror, distill + anchor,
 search-teacher, OPD, TD-aux, the counterfactual block) is the DECLARED EAGER TAIL, folded in contract
 order by `train()` onto this region's loss; none of it is on the production surface.
 
@@ -38,7 +38,7 @@ import torch.nn.functional as F
 from agents.model.region_calls import note_eager_body
 from agents.training import belief_bank_static as _bbs
 from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
-from agents.training.instrumented_ppo.constants import _VALUE_TAIL_FRAC, _WIN_CONTESTED_TAU
+from agents.training.instrumented_ppo.constants import _WIN_CONTESTED_TAU
 from agents.training.instrumented_ppo.intent_fold import intent_fold
 
 Metric = Tuple[th.Tensor, th.Tensor]
@@ -57,10 +57,8 @@ class MicroStatic(NamedTuple):
     normalize_advantage: bool
     clip_range: float
     clip_range_vf: Optional[float]
-    value_mode: str                  # "popart" | "plain" | "clipped"
+    value_mode: str                  # "plain" | "clipped"
     critic_winprob: bool
-    value_from_dist: bool
-    value_tail_weight: float
     vf_coef: float
     ent_coef: float
     policy_grad_coef: float
@@ -81,7 +79,6 @@ class MicroStatic(NamedTuple):
     setvalued_coef: float
     bot_label_weight: float
     win_prob_on: bool
-    win_prob_coef: float
     strata: bool
     rollout_weight: bool
 
@@ -105,16 +102,6 @@ class MicroOut(NamedTuple):
 def _m(v: th.Tensor, w: Optional[th.Tensor] = None) -> Metric:
     v = v.detach().to(th.float32).reshape(())
     return v, (th.ones((), device=v.device) if w is None else w.to(th.float32).reshape(()))
-
-
-def value_loss_from_se(se: th.Tensor, w: float) -> th.Tensor:
-    """`ValueTerms._value_loss_from_se` (w == 0 -> `se.mean()`; else MSE/CVaR blend), static k."""
-    mse = se.mean()
-    if w <= 0.0:
-        return mse
-    flat = se.reshape(-1)
-    k = max(1, int(_VALUE_TAIL_FRAC * flat.numel()))
-    return (1.0 - w) * mse + w * th.topk(flat, k).values.mean()
 
 
 def _flag_entropy(prefix: str, ent_per: th.Tensor, flag_raw: th.Tensor, b_eff: th.Tensor,
@@ -212,7 +199,7 @@ def win_prob_terms(logits: Optional[th.Tensor], target: Optional[th.Tensor],
     return loss, present, mets
 
 
-def micro_step(policy: Any, popart: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
+def micro_step(policy: Any, obs: Dict[str, th.Tensor], actions: th.Tensor,
                action_masks: Optional[th.Tensor], old_log_prob: th.Tensor, old_values: th.Tensor,
                advantages: th.Tensor, returns: th.Tensor, var: Dict[str, th.Tensor],
                st: MicroStatic) -> MicroOut:
@@ -249,17 +236,14 @@ def micro_step(policy: Any, popart: Any, obs: Dict[str, th.Tensor], actions: th.
                         / _fk_m.sum().clamp(min=1.0))
     mets["pg_losses/"] = _m(policy_loss)
     mets["clip_fractions/"] = _m(th.mean((th.abs(ratio - 1) > st.clip_range).float()))
-    if st.value_mode == "popart":
-        value_loss = value_loss_from_se(
-            (popart.normalize(returns) - popart.normalize(values)) ** 2, st.value_tail_weight)
-    elif st.value_mode == "plain":
-        value_loss = value_loss_from_se((returns - values) ** 2, st.value_tail_weight)
+    if st.value_mode == "plain":
+        value_loss = ((returns - values) ** 2).mean()
     else:
         assert st.clip_range_vf is not None
         values_pred = old_values + th.clamp(values - old_values, -st.clip_range_vf, st.clip_range_vf)
         mets["vf_clip_fractions/"] = _m(th.mean(
             (th.abs(values - old_values) > st.clip_range_vf).float()))
-        value_loss = value_loss_from_se((returns - values_pred) ** 2, st.value_tail_weight)
+        value_loss = ((returns - values_pred) ** 2).mean()
     mets["value_losses/"] = _m(value_loss)
     ent_per = -log_prob if entropy is None else entropy
     entropy_loss = -th.mean(ent_per)
@@ -272,7 +256,7 @@ def micro_step(policy: Any, popart: Any, obs: Dict[str, th.Tensor], actions: th.
         bw = _flag_entropy("baitent", ent_per, obs["bait_opportunity"], var["bait_eff"], mets)
         ent_weight = bw if ent_weight is None else ent_weight * bw
     ent_loss_used = entropy_loss if ent_weight is None else -th.mean(ent_weight * ent_per)
-    vf_term: Any = 0.0 if (st.value_from_dist or st.critic_winprob) else st.vf_coef * value_loss
+    vf_term: Any = 0.0 if st.critic_winprob else st.vf_coef * value_loss
     pg_term = policy_loss if st.policy_grad_coef == 1.0 else st.policy_grad_coef * policy_loss
     ent_term = st.ent_coef * ent_loss_used
     loss = pg_term + ent_term + vf_term
@@ -330,7 +314,7 @@ def micro_step(policy: Any, popart: Any, obs: Dict[str, th.Tensor], actions: th.
             if st.critic_winprob:
                 wterm, grp = st.vf_coef * wl, "value"
             else:
-                wterm, grp = st.win_prob_coef * wl, "aux"
+                wterm, grp = wl, "aux"
             loss = loss + wterm
             terms["win_prob"], groups["win_prob"], present["win_prob"] = wterm, grp, wpres
             for k, v in wm.items():

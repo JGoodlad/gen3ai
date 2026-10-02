@@ -2,7 +2,7 @@
 
 The other half (advantage density, `signal/adv_*`) is read inside `train()` off the rollout
 buffer; see `instrumented_ppo/signal_metrics.py` for the module docstring that explains why the
-two must be read TOGETHER (the mirror paradox), and the PopArt units caveat.
+two must be read TOGETHER (the mirror paradox), and the units caveat.
 
 **Where the outcomes come from.** `MaskableAgentWrapper.step` already publishes
 ``info["win_outcome"]`` (1.0 win / 0.0 loss-or-tie) and ``info["opponent_class"]`` at every episode

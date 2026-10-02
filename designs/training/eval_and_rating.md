@@ -856,7 +856,7 @@ declared:**
   input log), the reconstruction record, the states npz (the core's obs rows, T2's legal log-probs as
   `logits`, V, the actions and masks) and a meta-only `_summary.json`. The prober EXPANDS the full
   summary on read (`main.prober.core_trace`, cross-checked against the record); no `_replay.html`, and
-  the auxiliary heads (`win_probs` NaN, belief / intent / value-dist absent) — `analyze` re-runs the
+  the auxiliary heads (`win_probs` NaN, belief / intent absent) — `analyze` re-runs the
   model on the stored obs.
 - `rust_eval/*` TensorBoard tags: the cycle's wall-clock, games, trainee decisions/s, traces, near-ties.
 
@@ -1056,7 +1056,7 @@ see the eval-sentinel exclusion below) → an anchored BT fit
 (`fit_pairwise`, bots pinned) written to `<run>/snapshot_ladder/ladder.json` (the sidecar metric);
 `_record_ladder_elo` surfaces the latest promoted node's rating as `eval/ladder_elo` (+`_ci`) on
 TB/TUI — the high-resolution counterpart to the saturated `eval/elo`. Snapshots load via
-`load_foreign_opponent` (their own saved config → PopArt/toggles honored, `check_compatible`
+`load_foreign_opponent` (their own saved config → toggles honored, `check_compatible`
 skipped). `--backfill` pays the one-time back tax over the whole current pool (idempotent — skips
 measured pairs); `--fit-only` refits without playing. `ladder.json.fit_quality.mean_abs_err`
 QUANTIFIES non-transitivity (a scalar Elo is lossy if the pool is rock-paper-scissors — the dense

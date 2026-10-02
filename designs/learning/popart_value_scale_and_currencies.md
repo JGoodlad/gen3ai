@@ -1,5 +1,7 @@
 # PopArt, value scale, and the two-currency boundary
 
+> **STATUS (2026-10-02): the lever this note teaches — PopArt, `--use-popart` — was DELETED with the Python core (deletion pass L1, config v131; `designs/deleted_flags.md`).** The concept (a normalizer splits value into two currencies with one conversion boundary) stays worth knowing; the code is at commit `3bc3e77e` and earlier.
+
 **TL;DR:** PopArt splits the value system into two currencies — normalized z-space (what the
 network predicts, what losses see; O(1) forever) and raw return space (what rewards/GAE mean) —
 with one conversion boundary `denorm(v) = μ + σ·v`. It exists because raw-scale value gradients

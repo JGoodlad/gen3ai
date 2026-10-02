@@ -72,7 +72,6 @@ from sb3_contrib import MaskablePPO
 from agents.training import cf_terms as _cf
 from agents.training.instrumented_ppo.constants import (
     _NOISE_SCALE_EMA_DECAY,
-    _VALUE_TAIL_FRAC,
     _WIN_CONTESTED_TAU,
 )
 
@@ -139,7 +138,6 @@ __all__ = [
     "_NATURE_CE_WEIGHT",
     "_NOISE_SCALE_EMA_DECAY",
     "_SPREAD_LOSS_SCALE",
-    "_VALUE_TAIL_FRAC",
     "_WIN_CONTESTED_TAU",
     "_verify_upstream_unchanged",
 ]

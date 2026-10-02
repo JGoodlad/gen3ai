@@ -9,8 +9,8 @@ and the currency rule for `overvalue_tau`. This file is the per-method reference
   (the opponent plays its RECORDED move), materialize the resulting one-sided successor obs through the
   real encoder, and read the loaded model's **V(s′)** — per-action ΔV, "what would the critic have
   valued each alternative at" (the model-scored variant the model-free `falsify` deliberately defers,
-  + the distributional / win-prob heads on the successor via `ProbeModel.value_dist_at`/`win_prob_at`
-  when the run trained them). Two faithful modes share one call: the **CRN** headline (the `"original"`
+  + the win-prob head on the successor via `ProbeModel.win_prob_at` when the run trained it; the
+  distributional `value_dist_at` was deleted with the head, L1). Two faithful modes share one call: the **CRN** headline (the `"original"`
   seed — hold the realized dice, vary only OUR action, so ΔV isolates the action's effect; the CHOSEN
   action's CRN successor reproduces the REAL next state so its `value_crn` ≈ the trace's
   `recorded_next_value`, a built-in consistency anchor) and a **dice-averaged** `value_mean`±`value_std`

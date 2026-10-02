@@ -28,9 +28,6 @@ class _SumValueModel:
     def value(self, obs, mask):
         return float(np.asarray(obs, dtype=np.float64).sum())
 
-    def value_dist_at(self, obs, mask):
-        return None
-
     def win_prob_at(self, obs, mask):
         return None
 

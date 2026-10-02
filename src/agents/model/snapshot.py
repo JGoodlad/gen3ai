@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
-from typing import Any, cast, Dict, Optional, Tuple
+from typing import Any, cast, Dict, Optional
 
 import stable_baselines3
 from sb3_contrib import MaskablePPO
@@ -863,12 +863,8 @@ def load_model_snapshot(
     tensorboard_log: Optional[str] = None,
     enforce_vf_coef: Optional[float] = None,
     enforce_reward_config: Any = None,   # duck-typed, like ModelVersion.build
-    enforce_value_tail_weight: Optional[float] = None,
-    enforce_value_dist: Optional[Tuple[float, float]] = None,
     enforce_belief_grad_mode: Optional[str] = None,
     allow_belief_grad_mode_change: bool = False,
-    enforce_value_from_dist: Optional[bool] = None,
-    allow_value_from_dist_change: bool = False,
 ) -> MaskablePPO:
     """Load a model with a compatibility check against the current architecture.
 
@@ -907,16 +903,9 @@ def load_model_snapshot(
             saved_version.check_vf_coef(enforce_vf_coef)
         if enforce_reward_config is not None:
             saved_version.check_reward_config(enforce_reward_config)
-        if enforce_value_tail_weight is not None:
-            saved_version.check_value_tail_weight(enforce_value_tail_weight)
-        if enforce_value_dist is not None:
-            saved_version.check_value_dist(*enforce_value_dist)
         if enforce_belief_grad_mode is not None:
             saved_version.check_belief_grad_mode(enforce_belief_grad_mode,
                                                  allow_change=allow_belief_grad_mode_change)
-        if enforce_value_from_dist is not None:
-            saved_version.check_value_from_dist(enforce_value_from_dist,
-                                                allow_change=allow_value_from_dist_change)
         arch_validated = True
     else:
         print(
@@ -1038,6 +1027,10 @@ _DEAD_FEK_INERT = (
     "zarch_dim", "zarch_lut_init_std", "zarch_lut_rosters",
     # v88: pubval's training coefficient — scaled a loss for a head that no longer exists.
     "pubval_coef",
+    # v131 (deletion pass L1): the distributional value head's atom count and support. They only
+    # SIZED or INITIALISED the deleted head (`value_dist_mode`, JUDGED below, carries the decision),
+    # so none of them can be ON on its own.
+    "value_dist_bins", "value_dist_vmin", "value_dist_vmax",
 )
 _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     ("damage_reattend", False),
@@ -1107,7 +1100,21 @@ _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     # than TypeError-ing inside SB3's rebuild.
                     ("intent_value_reduce", False),
                     ("value_clock", False),
-                    ("value_intent", False))
+                    ("value_intent", False),
+                    # v131 (deletion pass L1): the distributional VALUE head is deleted. 'read_only' /
+                    # 'shaping' built a head whose Linear is in the state_dict — PARAMETERS the surviving
+                    # extractor has no home for — so ON is refused (the v75 rule); 'none' built nothing
+                    # and pops. The reachable half: every v121+ checkpoint pickles `value_dist_mode`.
+                    ("value_dist_mode", "none"))
+
+# POLICY kwargs (`policy_kwargs[...]`, NOT the extractor's) that left `Gen3DualHeadMaskablePolicy.__init__`
+# at v131 (deletion pass L1). SB3 splats the zip's pickled `policy_kwargs` into the policy constructor, so a
+# deleted name TypeErrors every load of a checkpoint that recorded it — and every v121+ checkpoint did
+# (`use_popart=False`, `value_from_dist=False`). Same JUDGED rule as the extractor list: the ON value built
+# PopArt buffers / routed the critic through the deleted distributional head, a forward this code cannot
+# reproduce, so ON is REFUSED and OFF pops. `_migrate_config`'s `retired_levers.refuse_structural` is the
+# CONFIG-side twin; the two must agree (pinned by `dead_kwargs_sanitize_test`).
+_DEAD_POLICY_KWARGS_JUDGED = (("use_popart", False), ("value_from_dist", False))
 
 
 def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
@@ -1146,14 +1153,35 @@ def sanitize_dead_extractor_kwargs(fek: dict) -> bool:
     return changed
 
 
+def sanitize_dead_policy_kwargs(pk: dict) -> bool:
+    """Drop DELETED keys from a saved ``policy_kwargs`` (the policy's own, not the extractor's).
+    True if it changed. Raises ``ModelVersionError`` when a recorded value is one the surviving
+    policy cannot reproduce — the ZIP-side twin of `retired_levers.refuse_structural`."""
+    changed = False
+    for dead, supported in _DEAD_POLICY_KWARGS_JUDGED:
+        if dead in pk:
+            if bool(pk[dead]) is not supported:
+                raise ModelVersionError(
+                    f"policy kwarg {dead}={pk[dead]!r} is no longer supported: the only supported "
+                    f"value is {supported!r}.\nThis checkpoint trained under a critic that no longer "
+                    "exists in the codebase (PopArt / the distributional value head were deleted, "
+                    "deletion pass L1) and cannot be reproduced from HEAD.\n"
+                    "To re-read it, use the git_hash recorded in its own metadata.json.")
+            pk.pop(dead)
+            changed = True
+    return changed
+
+
 def _patch_historical_floor(zip_path: str, kwargs: dict) -> None:
     """Sanitize a saved `policy_kwargs` so an older checkpoint can be RECONSTRUCTED.
 
-    Two independent fixes share this hook because both are "the zip records something the live
-    constructor no longer accepts", and both are read from the same one zip read:
+    Three independent fixes share this hook because all are "the zip records something the live
+    constructor no longer accepts", and all are read from the same one zip read:
 
     1. `move_candidate_floor` (below).
     2. Extractor kwargs deleted from the constructor (`sanitize_dead_extractor_kwargs`).
+    3. POLICY kwargs deleted from `Gen3DualHeadMaskablePolicy.__init__`
+       (`sanitize_dead_policy_kwargs`: `use_popart`, `value_from_dist`).
 
     --- 1. Let a PRE-v65 checkpoint be RECONSTRUCTED, without loosening the resume gate.
 
@@ -1176,19 +1204,32 @@ def _patch_historical_floor(zip_path: str, kwargs: dict) -> None:
     except Exception:
         return                                  # unreadable here → let SB3's own load report it
     pk = (data or {}).get("policy_kwargs") or {}
+    changed = sanitize_dead_policy_kwargs(pk)
     fek = pk.get("features_extractor_kwargs")
     if not isinstance(fek, dict):
+        if changed:
+            kwargs.setdefault("custom_objects", {})["policy_kwargs"] = pk
         return
-    changed = False
     if "move_candidate_floor" in fek:
         before = fek["move_candidate_floor"]
         sanitize_historical_move_floor(fek)
-        changed = fek["move_candidate_floor"] != before
+        changed |= fek["move_candidate_floor"] != before
     # `|=` not `or`: short-circuiting would skip the dead-kwarg strip whenever the floor already
     # needed patching, which is precisely the pre-v65 checkpoints that ALSO carry the dead keys.
     changed |= sanitize_dead_extractor_kwargs(fek)
     if changed:
         kwargs.setdefault("custom_objects", {})["policy_kwargs"] = pk
+
+
+def historical_load_kwargs(zip_path: str) -> dict:
+    """The extra ``MaskablePPO.load`` kwargs (a sanitized ``custom_objects``) a BARE load of
+    `zip_path` needs: SB3 splats the zip's pickled ``policy_kwargs`` into the live constructors, so a
+    kwarg deleted since the checkpoint was written (PopArt, the value-dist head — deletion pass L1) is
+    stripped, or REFUSED when it was ON. ``{}`` when nothing needs changing. For the callers that
+    cannot use ``load_foreign_opponent`` (`play.py`'s ladder session)."""
+    kwargs: dict = {}
+    _patch_historical_floor(zip_path, kwargs)
+    return kwargs
 
 
 def load_foreign_opponent(
@@ -1207,10 +1248,10 @@ def load_foreign_opponent(
     fits the loaded model itself (the consensus warm-start's student); it builds the full learner.
 
     Unlike ``load_model_snapshot`` — which checks the saved config against the LIVE trainee via
-    ``check_compatible`` (a hard FATAL on any ``_WEIGHT_FIELD`` / ``use_popart`` mismatch) — a stable
+    ``check_compatible`` (a hard FATAL on any ``_WEIGHT_FIELD`` mismatch) — a stable
     cross-run opponent is validated for OBSERVATION-FAMILY compatibility ONLY
     (``ModelVersion.check_opponent_compatible`` = same ``arch_signature``): it never shares weights
-    with the trainee and never reads its value head, so ``use_popart`` / ``vf_coef`` / reward-config
+    with the trainee and never reads its value head, so ``vf_coef`` / reward-config
     are irrelevant to its forward. Loaded with ``env=None`` (no optimizer, and SB3 skips
     ``check_for_correct_spaces``) for inference only — the opponent builds its own obs via the live
     ``Gen3ObservationEncoder`` and calls ``model.policy.get_distribution``.
@@ -1266,7 +1307,6 @@ def current_model_version(
     attend_unrevealed_opponents: bool = False,
     opp_belief_cls_k: int = 0,
     opp_belief_slots: bool = False,
-    use_popart: bool = False,
     critic: str = "shaped",
     opp_belief_aux_coef: float = 0.0,
     move_belief_mode: str = "off",
@@ -1286,12 +1326,6 @@ def current_model_version(
     edge_bias_families: str = "off",
     entity_tail_seats: bool = False,
     win_prob_mode: str = "none",
-    win_prob_coef: float = 1.0,
-    value_dist_mode: str = "none",
-    value_dist_bins: int = 0,
-    value_dist_vmin: float = 0.0,
-    value_dist_vmax: float = 0.0,
-    value_dist_coef: float = 1.0,
     value_threat_inject: bool = False,
     opp_intent: bool = False,
     species_prior_fusion: bool = False,
@@ -1335,7 +1369,6 @@ def current_model_version(
     ridealong_rnd_variants: str = "off",
     vf_coef: float = 0.5,
     reward_config: Any = None,               # duck-typed, like ModelVersion.build
-    value_tail_weight: float = 0.0,
 ) -> ModelVersion:
     """Build a ``ModelVersion`` reflecting the CURRENT RUN's architecture for ``mappings``.
 
@@ -1347,7 +1380,7 @@ def current_model_version(
 
     **The architecture TOGGLES must be passed in.** They default off (the encoder's
     ``get_features_extractor_kwargs`` carries no CLI toggles), but a run that enables any of them
-    (e.g. ``--opp-belief-aux-coef>0`` → ``opp_belief_slots``, ``--use-popart``,
+    (e.g. ``--opp-belief-aux-coef>0`` → ``opp_belief_slots``,
     ``--attend-unrevealed-opponents``) MUST thread its real values here — otherwise the gate compares
     a toggle-OFF "current" version against the run's own toggle-ON snapshots and FATALs on every
     pool/eval/distill load it is meant to protect.
@@ -1408,10 +1441,6 @@ def current_model_version(
     ext_kwargs["ridealong_adv"] = int(ridealong_adv)
     ext_kwargs["ridealong_opp"] = int(ridealong_opp)
     ext_kwargs["ridealong_rnd_variants"] = str(ridealong_rnd_variants)
-    ext_kwargs["value_dist_mode"] = value_dist_mode
-    ext_kwargs["value_dist_bins"] = value_dist_bins
-    ext_kwargs["value_dist_vmin"] = value_dist_vmin
-    ext_kwargs["value_dist_vmax"] = value_dist_vmax
     ext_kwargs["value_threat_inject"] = value_threat_inject
     ext_kwargs["opp_intent"] = opp_intent
     ext_kwargs["species_prior_fusion"] = species_prior_fusion
@@ -1443,17 +1472,16 @@ def current_model_version(
         "features_extractor_class": Gen3FeaturesExtractor,
         "features_extractor_kwargs": ext_kwargs,
         "net_arch": NET_ARCH,
-        "use_popart": use_popart,
         # gen3_winprob_critic_mode_v1: the critic ROUTE, so a frozen eval/pool/sentinel opponent's
-        # load gate sees it — the same threading `use_popart` gets.
+        # load gate sees it.
         "critic": critic,
     }
     return ModelVersion.from_layout_and_policy_kwargs(
         ext_kwargs["layout"], policy_kwargs, vf_coef=vf_coef, reward_config=reward_config,
-        value_tail_weight=value_tail_weight, opp_belief_aux_coef=opp_belief_aux_coef,
+        opp_belief_aux_coef=opp_belief_aux_coef,
         move_belief_coef=move_belief_coef,
-        win_prob_coef=win_prob_coef, move_belief_latent_coef=move_belief_latent_coef,
-        spread_belief_coef=spread_belief_coef, value_dist_coef=value_dist_coef,
+        move_belief_latent_coef=move_belief_latent_coef,
+        spread_belief_coef=spread_belief_coef,
         hp_type_belief_coef=hp_type_belief_coef, item_belief_coef=item_belief_coef,
         td_aux_coef=td_aux_coef,
     )
@@ -1463,7 +1491,7 @@ def arch_toggles_from_model(model: Any) -> dict:
     """Extract THIS run's architecture TOGGLES from a live model, JSON-serializable for a worker
     subprocess's cfg. The eval/self-play workers run in separate processes and rebuild a
     ``current_model_version`` to gate sentinel/foreign snapshot loads; without the run's real toggles
-    that gate is toggle-OFF and FATALs on the run's own belief-ON / popart / attend-unrevealed
+    that gate is toggle-OFF and FATALs on the run's own belief-ON / attend-unrevealed
     snapshots. Pass this dict through the worker cfg and splat it into ``current_model_version``."""
     fe = model.policy.features_extractor
     return {
@@ -1514,10 +1542,6 @@ def arch_toggles_from_model(model: Any) -> dict:
         "ridealong_adv": int(getattr(fe, "ridealong_adv", 0) or 0),
         "ridealong_opp": int(getattr(fe, "ridealong_opp", 0) or 0),
         "ridealong_rnd_variants": str(getattr(fe, "ridealong_rnd_variants", "off") or "off"),
-        # v29 value-dist head: only the check_compatible-gated structural toggles (mode + atom count) —
-        # the support (vmin/vmax) is resume-only-checked on the trainer, never by a worker's load gate.
-        "value_dist_mode": str(getattr(fe, "value_dist_mode", "none")),
-        "value_dist_bins": int(getattr(fe, "value_dist_bins", 0)),
         # gen3_value_threat_inject_v1 (v64): the critic threat-injection projection is a
         # state_dict-changing module AND it flips the op's reducer on, so a frozen opponent's
         # gate must see it (else an inject-on run FATALs loading its own sentinels).
@@ -1586,8 +1610,7 @@ def arch_toggles_from_model(model: Any) -> dict:
         # frozen opponent's forward is identical regardless — it is NOT check_compatible-gated (resume-only).
         # Threaded for the trainee's recorded config + so a worker rebuilds the SAME forward (no-op either way).
         "belief_grad_mode": str(getattr(fe, "belief_grad_mode", "shaping")),
-        "use_popart": getattr(model.policy, "popart", None) is not None,
-        # gen3_winprob_critic_mode_v1: a policy attribute, like `use_popart` above.
+        # gen3_winprob_critic_mode_v1: a policy attribute.
         "critic": str(getattr(model.policy, "_critic_mode", "shaped")),
     }
 

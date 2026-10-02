@@ -500,7 +500,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
             # enforces the run's quota rather than the module default.
             "forensic_quota": self._forensic_quota._asdict(),
             # This run's arch toggles → the worker's current_model_version gates SENTINEL snapshots
-            # (loaded via check_compatible) against the RUN's real arch; without it a belief-ON / popart
+            # (loaded via check_compatible) against the RUN's real arch; without it a belief-ON
             # self-play run FATALs on its own sentinels (current_version would default toggle-OFF).
             "arch_toggles": arch_toggles_from_model(self.model),
             # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.

@@ -96,7 +96,6 @@ def train_step_source() -> str:
         InstrumentedMaskablePPO.train,
         _ms.micro_step,                       # K8 region R1: fold steps 1-3a (gen3_learner_micro_step_v1)
         _ms.win_prob_terms,
-        _ms.value_loss_from_se,
         _ms._flag_entropy,
         TrainSetup._r1_levers,
         TrainSetup._micro_static,
@@ -110,7 +109,7 @@ def train_step_source() -> str:
         TrainMetricsExport._record_head_metrics,
         TrainMetricsExport._record_term_metrics,
         TrainMetricsExport._record_cf_metrics,
-        TrainMetricsExport._record_capacity_and_popart_metrics,
+        TrainMetricsExport._record_capacity_metrics,
     ))
 
 
@@ -162,13 +161,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
              `pg_term` is the UNSCALED `policy_loss` tensor at `policy_grad_coef == 1.0` — the default,
              byte-identical to upstream — else `policy_grad_coef * policy_loss` (`--policy-grad-coef`; 0.0 removes
              the policy-gradient term alone, the arm-F pure-distill/aux phase — entropy and the
-             value term keep their own coefficients). `_value_loss_from_se` is the only other
-             delta, and at `value_tail_weight == 0` it is `F.mse_loss` byte-for-byte)
+             value term keep their own coefficients))
           2. the BELIEF bank — species/moves aux, opponent-intent (+ the set-valued beta term),
              move belief, spread belief, nature/EV, HP-type, item belief, move-latent
           3. (3a) the WIN-PROB BCE — the last R1 term — then (3b, the tail's first) the dense aux
              head and the CF-TWIN on-policy mirror
-          4. the VALUE-DIST HL-Gauss CE
           5. the DISTILL family — the policy term (full KL, or the top-K/action-CE form with the
              optional advantage gate under `--distill-target action` — gen3_distill_target_gate_v1),
              value MSE, the FitNets value-feature hint
@@ -216,8 +213,8 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         # exist — after `get()` shuffles, the adjacency is gone. See `train_setup.py`.
         self._align_opp_intent_labels()
         # +K9(c) FAIL-CLOSED: the buffer's trained quantities (rewards, values, log-probs, advantages,
-        # returns, every float label key) are finite, ONCE per update and BEFORE PopArt's advance —
-        # which rewrites `value_net` outside the optimizer — or any forward (`learner_gates`).
+        # returns, every float label key) are finite, ONCE per update and BEFORE any forward
+        # (`learner_gates`).
         check_buffer_finite(self.rollout_buffer)
         # +K9(b) / STALENESS (M5 Lane G): before any optimizer step; a no-op unless --behaviour-check.
         # A buffer that carries per-row policy versions (the Rust collector) gets Lane G's pre-loop
@@ -263,7 +260,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         aux_metrics: dict[str, list[float]] = {}
         distill_metrics: dict[str, list[float]] = {}     # +DISTILL: exploiter-distillation KL diagnostics
         td_aux_metrics: dict[str, list[float]] = {}      # +TD-AUX: Bellman-residual diagnostics
-        value_dist_metrics: dict[str, list[float]] = {}  # +VALUE-DIST: per-minibatch HL-Gauss diagnostics
         # Compute once: WHICH terms this call folds — and, for the counterfactual family, the one
         # per-rollout buffer poll. Every flag is read by exactly the guard of the term it names,
         # and the reasoning for each sits beside its computation in `train_setup._resolve_fold_flags`.
@@ -274,8 +270,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         belief_aux_on, move_belief_on = _f.belief_aux_on, _f.move_belief_on
         move_latent_on = _f.move_latent_on
         critic_winprob, win_prob_on = _f.critic_winprob, _f.win_prob_on
-        scaffolding_on, value_from_dist = _f.scaffolding_on, _f.value_from_dist
-        value_dist_on, search_teacher_on = _f.value_dist_on, _f.search_teacher_on
+        scaffolding_on, search_teacher_on = _f.scaffolding_on, _f.search_teacher_on
         opd_on, distill_on = _f.opd_on, _f.distill_on
         distill_rows_in_buffer = _f.distill_rows_in_buffer
         td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
@@ -382,14 +377,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         continue_training = True
 
-        # The once-per-train() probes, PopArt's advance and the two gradient samplers —
+        # The once-per-train() probes and the two gradient samplers —
         # `train_setup._train_probe_setup`, which takes `distill_metrics` because the grad-projector
         # writes straight into it. Unpacked into the names the fold's `_ntg`/`_dgp` seams use.
         _p = self._train_probe_setup(distill_metrics)
         shared_trunk, grad_balance = _p.shared_trunk, _p.grad_balance
         rank_metrics, edge_metrics = _p.rank_metrics, _p.edge_metrics
         cell_metrics, grad_norms, capacity = _p.cell_metrics, _p.grad_norms, _p.capacity
-        capacity_metrics, popart = _p.capacity_metrics, _p.popart
+        capacity_metrics = _p.capacity_metrics
         signal_metrics, accum, noise_g_small_sq = _p.signal_metrics, _p.accum, _p.noise_g_small_sq
         noise_g_big_sq, _ns_terms, _dgp = _p.noise_g_big_sq, _p.ns_terms, _p.dgp
         diag = _p.diag   # gen3_diagnostics_cadence_v1: which optional probes run on THIS call
@@ -400,7 +395,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         epoch_clip_fraction: list[float] = []
         # +R1 (gen3_learner_micro_step_v1): the region's static flags + per-update tensors, resolved
         # ONCE, and the per-update lists its diagnostics are routed into (by name).
-        _micro_st = self._micro_static(_f, popart, strata_declared, rollout_weight_on)
+        _micro_st = self._micro_static(_f, strata_declared, rollout_weight_on)
         _micro_var = self._micro_var(_micro_st, strata_w)
         if getattr(self, "_compiled_micro_step", None) is not None:
             # K8: the compiled R1 runs ONLY at its startup declaration; a lever that moved since is
@@ -447,7 +442,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 _bgate_margins = (behaviour_margins_first_micro(self, rollout_data.observations,
                                                                 rollout_data.actions, rollout_data.action_masks)
                                   if _bgate_pending else None)
-                _mo = self._micro_region()(self.policy, popart, rollout_data.observations,
+                _mo = self._micro_region()(self.policy, rollout_data.observations,
                                          rollout_data.actions, rollout_data.action_masks,
                                          rollout_data.old_log_prob, rollout_data.old_values,
                                          rollout_data.advantages, rollout_data.returns,
@@ -543,13 +538,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
                 # +SCAFFOLDING GAUGE (registered 2026-08-29): the two value readouts this tree
                 # carries answer DIFFERENT questions — the critic estimates the SHAPED return (in
-                # PopArt units, discounted), the win-prob head estimates the GAME. Their divergence
+                # reward units, discounted), the win-prob head estimates the GAME. Their divergence
                 # is the reward scaffolding still doing work, and its trajectory is the registered
                 # signal for when shaping coefficients can begin annealing toward the pure game.
                 # Read here because this is the one place both readouts exist for the SAME states
                 # from the SAME forward: `evaluate_actions` above produced `values` and stashed
                 # `last_win_prob_logits`.
-                # 🚨 RANK FORM ONLY. V is a PopArt-normalized shaped return, so there is no unit
+                # 🚨 RANK FORM ONLY. V is a shaped return, so there is no unit
                 # conversion to a probability; the live path additionally has no realized outcome
                 # labels for these states, so the calibrated-affine gauge is OFFLINE by
                 # construction (`python -m main.scaffolding_gauge`). The logit is NOT sigmoided —
@@ -587,7 +582,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # onto twins B and C on THIS minibatch. It must run HERE, beside A's fold and
                 # BEFORE the cf block below clobbers the extractor stashes with its own forward —
                 # the twins read the same `value_pooled` A read, which is the entire premise of
-                # "identical trunk, identical states". Weighted at `win_prob_coef` (A's own), so
+                # "identical trunk, identical states". Weighted at head A's own weight (1.0), so
                 # all three heads carry a bit-identical control objective; gated on `cf_twin_coef`
                 # so coefficient zero is byte-identical.
                 cf_twin_op_term = None
@@ -597,31 +592,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         loss = loss + _ntg.add("aux", cf_twin_op_term)
                         for _ck, _cv in _ctm.items():
                             cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
-
-                # +VALUE-DIST: distributional value head HL-Gauss CE. evaluate_actions ran the extractor
-                # forward above, stashing last_value_dist_logits for THIS minibatch; the target is the
-                # rollout return, PopArt-normalized when the scalar critic is (so it lands in the head's
-                # support space). Folded at value_dist_coef. Under read_only the head's input was
-                # stop-grad'd in the extractor (head-only training, no trunk gradient); under shaping it
-                # also pulls the trunk. OFF → skipped (loss byte-identical).
-                value_dist_term = None
-                if value_dist_on:
-                    _vd_head = self.policy.features_extractor.value_dist_head
-                    _vd_logits = self.policy.features_extractor.last_value_dist_logits
-                    if _vd_head is not None and _vd_logits is not None:
-                        _vd_target = (
-                            popart.normalize(rollout_data.returns) if popart is not None
-                            else rollout_data.returns
-                        )
-                        vd_out = self._value_dist_loss(_vd_logits, _vd_target, _vd_head.atoms)
-                        if vd_out is not None:
-                            vd_loss, vd_m = vd_out
-                            # Phase B: the CE is the PRIMARY critic loss (vf_coef weight); else the aux coef.
-                            _ce_w = self.vf_coef if value_from_dist else self.value_dist_coef
-                            value_dist_term = _ce_w * vd_loss
-                            loss = loss + _ntg.add("aux", value_dist_term)
-                            for _vk, _vv in vd_m.items():
-                                value_dist_metrics.setdefault(_vk, []).append(float(_vv))
 
                 # +DISTILL (gen3_exploiter_distill_v1): ON-POLICY KL toward a frozen per-team SPECIALIST,
                 # masked to the rollout states where the trainee pilots the teacher's team (`distill_mask`).
@@ -729,10 +699,10 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                                     for _vfd_key in (f"t{_k}_value_feat_dist", f"t{_k}_value_feat_cos"):
                                         distill_metrics.setdefault(_vfd_key, []).append(float(_vfd_k))
                             if _vd_on:
-                                # Teacher V (real-unit, frozen); masked MSE vs student V in the PopArt frame.
+                                # Teacher V (real-unit, frozen); masked MSE vs student V.
                                 with th.no_grad():
                                     _t_val = _teacher.policy.predict_values(_t_obs).flatten()
-                                _vd_k = self._value_distill_mse(_s_val, _t_val, _sel, popart)
+                                _vd_k = self._value_distill_mse(_s_val, _t_val, _sel)
                                 if _vd_k is not None:
                                     _per_teacher_vd.append(_vd_k)
                                     distill_metrics.setdefault(f"t{_k}_value_mse", []).append(float(_vd_k))
@@ -821,8 +791,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             if self.search_teacher_value_coef != 0.0:   # OFF by default (soundness)
                                 with _eager_fe(getattr(self.policy, "features_extractor", None)):
                                     _vt = self.policy.predict_values(_td["obs_dict"]).flatten()
-                                _vtgt = (popart.normalize(_td["confirmed_value"]) if popart is not None
-                                         else _td["confirmed_value"])
+                                _vtgt = _td["confirmed_value"]
                                 searchteacher_term = searchteacher_term + \
                                     self.search_teacher_value_coef * ((_vt - _vtgt) ** 2).mean()
                             loss = loss + _ntg.add("aux", searchteacher_term)
@@ -863,7 +832,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # OFF → skipped (loss byte-identical).
                 td_aux_term = None
                 if td_aux_on:
-                    td_aux_term, _tdm = self._td_aux_term(popart)
+                    td_aux_term, _tdm = self._td_aux_term()
                     if td_aux_term is not None:
                         loss = loss + _ntg.add("aux", td_aux_term)
                         for _tdk, _tdv in _tdm.items():
@@ -919,7 +888,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                             cf_twin_metrics.setdefault(_ck, []).append(float(_cv))
                     # +CF-SHADOW: the passive value twin on `mc_return`. Same sample, same forward.
                     if cf_shadow_on:
-                        cf_shadow_term, _cfsm = self._cf_shadow_term(_cf_ctx, popart)
+                        cf_shadow_term, _cfsm = self._cf_shadow_term(_cf_ctx)
                         if cf_shadow_term is not None:
                             loss = loss + _ntg.add("aux", cf_shadow_term)
                         for _sk, _sv in _cfsm.items():
@@ -946,7 +915,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # (not lumped into one "belief" norm) and the probe puts them on one common denominator
                 # so policy/value/each-aux are mutually comparable + sum to ~1 (grad_balance.py). Only
                 # the terms set this minibatch are included (a belief term is None on a zero-believed
-                # minibatch; win_prob/value_dist None when their head is off).
+                # minibatch; win_prob None when its head is off).
                 aux_probe_terms: dict[str, th.Tensor] = {}
                 # R1's terms (gen3_learner_micro_step_v1), in the inline fold's registration order;
                 # a term is registered exactly when the inline fold had one (`present`).
@@ -963,7 +932,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 # ran" from "the arm did what it was built to do". It is a live (un-detached)
                 # readout, so unlike `grad/cf_evidential_share` it must NOT read 0.
                 if dense_aux_term is not None:     aux_probe_terms["dense_aux"] = dense_aux_term
-                if value_dist_term is not None:    aux_probe_terms["value_dist"] = value_dist_term
                 if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
                 # +DISTILL-SHARE (gen3_grad_distill_share_v1): the exploiter-distillation KL's own
                 # shared-trunk pull — `grad/distill_share`, on the SAME policy+value+Σaux
@@ -1070,14 +1038,13 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                         # +PG-COEF: the probe measures the terms AS FOLDED — `_policy_grad_term`, not the
                         # raw `policy_loss` (at the 1.0 default they are the same tensor).
                         _policy_grad_term + self.ent_coef * _mo.entropy_loss,
-                        # Phase B: the REAL critic term is the CE (value_dist_term); the scalar
-                        # vf_coef·value_loss is dropped from the loss, so measure the CE instead.
+                        # Under the win-prob critic the REAL critic term is the head's BCE; the scalar
+                        # vf_coef·value_loss is dropped from the loss, so measure the BCE instead.
                         (win_prob_term if (critic_winprob and win_prob_term is not None)
-                         else value_dist_term if (value_from_dist and value_dist_term is not None)
                          else self.vf_coef * _mo.value_loss),
                         shared_trunk,
                         # Each ACTIVE scaffold broken out on the trunk: species/move/move-latent
-                        # belief + win-prob (≈0 under read_only) + value-dist. Empty → RL-heads-only.
+                        # belief + win-prob (≈0 under read_only). Empty → RL-heads-only.
                         aux_terms=aux_probe_terms or None,
                     )
 
@@ -1258,13 +1225,12 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         self._record_noise_scale_metrics(accum, noise_g_small_sq, noise_g_big_sq, _ns_terms)
         self._record_head_metrics(belief_metrics, win_prob_metrics, calib_all, calib_contested,
                                   critic_winprob, scaffolding_on, grad_balance)
-        self._record_term_metrics(value_dist_metrics, teacher_metrics, opd_metrics,
-                                  distill_metrics, td_aux_metrics)
+        self._record_term_metrics(teacher_metrics, opd_metrics, distill_metrics, td_aux_metrics)
         self._record_cf_metrics(cf_buffer, cf_any_on, cf_rows_sampled, cf_metrics, cf_winprob_on,
                                 cf_evid_metrics, cf_evid_on, cf_twin_metrics, cf_twin_on,
                                 cf_shadow_metrics, cf_shadow_on, q_metrics, q_winprob_on,
                                 q_onpolicy_on, grad_balance)
-        self._record_capacity_and_popart_metrics(capacity_metrics, popart, aux_metrics)
+        self._record_capacity_metrics(capacity_metrics, aux_metrics)
         self._record_ridealong_metrics(ridealong_acc)
         # +INSTRUMENTATION: LAST line of train(), so it bounds the whole call — the honest
         # denominator for `train/noise_per_term_ms` and for every other probe's cost claim.

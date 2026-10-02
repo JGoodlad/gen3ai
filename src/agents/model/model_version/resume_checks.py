@@ -5,8 +5,7 @@ Two families, and the distinction is the whole reason they are not in `compat.py
 * `check_opponent_compatible` is DELIBERATELY WEAKER -- a frozen stable opponent is a pure
   `observation -> action` function, so only the observation family has to match.
 * the `check_*` hparam gates are resume-IMMUTABLE value-meaning checks (`vf_coef`,
-  `belief_grad_mode`, `value_from_dist`, `value_tail_weight`, the value-dist support,
-  `reward_config`). Their forward is bit-identical, so gating them in `check_compatible` would
+  `belief_grad_mode`, `reward_config`). Their forward is bit-identical, so gating them in `check_compatible` would
   falsely reject the run's own snapshots. `flag_registry_test` asserts exactly that separation.
 """
 from __future__ import annotations
@@ -44,9 +43,9 @@ class ModelVersionResumeChecks(ModelVersionFields):
         dedicated ``obs_signature`` out of ``arch_signature`` and gate on that instead.)
 
         Deliberately DISTINCT from ``check_compatible`` (which gates the trainee's own resume + the
-        self-play pool/sentinels, where every ``_WEIGHT_FIELD`` AND ``use_popart`` must match): an
+        self-play pool/sentinels, where every ``_WEIGHT_FIELD`` must match): an
         opponent never shares weights with the trainee and never reads its value head, so
-        ``use_popart`` / ``vf_coef`` / the reward-config hparams are all irrelevant to its forward
+        ``vf_coef`` / the reward-config hparams are all irrelevant to its forward
         and are deliberately NOT checked here.
         """
         if self.arch_signature != foreign.arch_signature:
@@ -122,72 +121,6 @@ class ModelVersionResumeChecks(ModelVersionFields):
                 "it on resume silently changes the training signal.\n"
                 f"Fix: resume with --belief-grad-mode {self.belief_grad_mode}, pass "
                 "--allow-belief-grad-mode-change for an intentional migration, or start a fresh run."
-            )
-
-    def check_value_from_dist(self, requested: bool, allow_change: bool = False) -> None:
-        """Raise ModelVersionError if `requested` (the resume `--value-from-dist`) differs from this
-        saved config's value_from_dist. gen3_dist_critic_v1 (Phase B): swapping the GAE/bootstrap value
-        source between the scalar value_net and the distributional E[Z] silently changes the training
-        objective, so — like belief_grad_mode/vf_coef — a mid-run drift is a hard error, enforced ONLY on
-        the training-resume path (a frozen opponent's ACTION selection is unchanged, so it's EXCLUDED from
-        check_compatible). ``allow_change=True`` (--allow-value-from-dist-change) is the intentional
-        warm-start-migration hatch (the offline probe confirmed E[Z]≈V, so the swap is near-seamless);
-        it prints a loud notice and the next save records the new mode."""
-        if bool(self.value_from_dist) != bool(requested):
-            if allow_change:
-                print(
-                    f"[ModelVersion] NOTICE: value_from_dist MIGRATION {self.value_from_dist} -> {requested} "
-                    "(--allow-value-from-dist-change). The GAE/bootstrap critic is now "
-                    + ("the distributional E[Z] (scalar value_net frozen as fallback)." if requested
-                       else "the scalar value_net.")
-                    + " The next checkpoint save records the new mode."
-                )
-                return
-            raise ModelVersionError(
-                f"value_from_dist mismatch: saved={self.value_from_dist}, requested={requested}.\n"
-                "Whether the critic is the scalar value_net or the distributional E[Z] is fixed for a run's "
-                "lifetime — flipping it on resume silently changes the value objective + GAE source.\n"
-                f"Fix: resume with --value-from-dist={self.value_from_dist}, pass "
-                "--allow-value-from-dist-change for the intentional Phase-B migration, or start a fresh run."
-            )
-
-    def check_value_tail_weight(self, requested: float) -> None:
-        """Raise ModelVersionError if `requested` (the resume `--value-tail-weight`) differs from this
-        saved config's value_tail_weight. Call as: saved_version.check_value_tail_weight(args...).
-
-        Same treatment as check_vf_coef: a value-loss hparam (the CVaR-blend weight), not weight-shape,
-        so it is EXCLUDED from check_compatible (frozen eval/pool/distill opponents never run the value
-        loss) and enforced ONLY on the training-resume path. Changing it mid-run silently reshapes the
-        value objective (how hard the critic chases its tail), so a drift is a hard error."""
-        if not math.isclose(self.value_tail_weight, requested, rel_tol=1e-9, abs_tol=1e-12):
-            raise ModelVersionError(
-                f"value_tail_weight mismatch: saved={self.value_tail_weight!r}, requested={requested!r}.\n"
-                "The tail-weighted value-loss β is fixed for a run's lifetime — changing it on resume "
-                "silently reshapes the value objective.\n"
-                f"Fix: resume with --value-tail-weight {self.value_tail_weight!r}, or start a fresh run."
-            )
-
-    def check_value_dist(self, vmin: float, vmax: float) -> None:
-        """Raise ModelVersionError if the resume `--value-dist-vmin/--value-dist-vmax` differ from this
-        saved config's support. Call as: saved_version.check_value_dist(args.value_dist_vmin, ...).
-
-        Same treatment as check_value_tail_weight: the atom support is VALUE-meaning (it is what the
-        head's logits are read against — the loss target and the prober's atoms→return mapping), not
-        weight-shape (the atoms buffer is non-persistent), so it is EXCLUDED from check_compatible
-        (frozen eval/pool/distill opponents never read the value-dist head) and enforced ONLY on the
-        training-resume path. Shifting the support mid-run silently re-targets the head."""
-        problems = []
-        if not math.isclose(self.value_dist_vmin, vmin, rel_tol=1e-9, abs_tol=1e-12):
-            problems.append(f"vmin saved={self.value_dist_vmin!r} requested={vmin!r}")
-        if not math.isclose(self.value_dist_vmax, vmax, rel_tol=1e-9, abs_tol=1e-12):
-            problems.append(f"vmax saved={self.value_dist_vmax!r} requested={vmax!r}")
-        if problems:
-            raise ModelVersionError(
-                "value_dist support mismatch: " + "; ".join(problems) + ".\n"
-                "The distributional value head's atom support is fixed for a run's lifetime — changing "
-                "it on resume silently re-targets the head.\n"
-                f"Fix: resume with --value-dist-vmin {self.value_dist_vmin!r} --value-dist-vmax "
-                f"{self.value_dist_vmax!r}, or start a fresh run."
             )
 
     def check_reward_config(self, reward_config: Any) -> None:

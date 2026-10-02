@@ -158,13 +158,10 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
 
     version = ModelVersion.from_layout_and_policy_kwargs(
         layout, policy_kwargs, vf_coef=float(model.vf_coef),
-        value_tail_weight=float(getattr(model, "value_tail_weight", 0.0)),
         opp_belief_aux_coef=float(getattr(model, "opp_belief_aux_coef", 0.0)),
         move_belief_coef=float(getattr(model, "move_belief_coef", 0.0)),
-        win_prob_coef=float(getattr(model, "win_prob_coef", 1.0)),
         move_belief_latent_coef=float(getattr(model, "move_belief_latent_coef", 0.0)),
         spread_belief_coef=float(getattr(model, "spread_belief_coef", 0.0)),
-        value_dist_coef=float(getattr(model, "value_dist_coef", 1.0)),
         td_aux_coef=float(getattr(model, "td_aux_coef", 0.0)),
         policy_grad_coef=float(getattr(model, "policy_grad_coef", 1.0)),
         intent_label_bot_weight=float(getattr(model, "intent_label_bot_weight", 1.0)),

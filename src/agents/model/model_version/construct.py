@@ -21,19 +21,13 @@ class ModelVersionConstruction(ModelVersionFields):
         policy_kwargs: Dict[str, Any],
         vf_coef: float = 0.5,
         reward_config: Any = None,               # duck-typed: read only via getattr(_, default)
-        value_tail_weight: float = 0.0,
         opp_belief_aux_coef: float = 0.0,
         move_belief_coef: float = 0.0,
-        win_prob_coef: float = 1.0,
         move_belief_latent_coef: float = 0.0,
         spread_belief_coef: float = 0.0,
-        value_dist_coef: float = 1.0,
         hp_type_belief_coef: float = 0.0,
         item_belief_coef: float = 0.0,
         td_aux_coef: float = 0.0,
-        win_prob_pbrs_coef: float = 0.0,
-        win_prob_pbrs_source: "str | None" = None,
-        win_prob_pbrs_frozen: "str | None" = None,
         arch_source: "str | None" = None,
         policy_grad_coef: float = 1.0,
         intent_label_bot_weight: float = 1.0,
@@ -118,7 +112,6 @@ class ModelVersionConstruction(ModelVersionFields):
             progress_decision_tense=bool(getattr(reward_config, "progress_decision_tense", False)),
             progress_switch_freeze=bool(getattr(reward_config, "progress_switch_freeze", False)),
             terminal_indicator=bool(getattr(reward_config, "terminal_indicator", False)),
-            use_popart=bool(policy_kwargs.get("use_popart", False)),
             attend_unrevealed_opponents=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get(
                     "attend_unrevealed_opponents", False)
@@ -170,12 +163,6 @@ class ModelVersionConstruction(ModelVersionFields):
             ),
             win_prob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("win_prob_mode", "none")
-            ),
-            value_dist_mode=str(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_mode", "none")
-            ),
-            value_dist_bins=int(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_bins", 0)
             ),
             value_threat_inject=bool(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("value_threat_inject", False)
@@ -282,12 +269,6 @@ class ModelVersionConstruction(ModelVersionFields):
             ridealong_rnd_variants=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("ridealong_rnd_variants",
                                                                        "off")),
-            value_dist_vmin=float(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmin", 0.0)
-            ),
-            value_dist_vmax=float(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("value_dist_vmax", 0.0)
-            ),
             damage_topk_k=int(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("damage_topk_k", 0)
             ),
@@ -303,17 +284,12 @@ class ModelVersionConstruction(ModelVersionFields):
             belief_grad_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("belief_grad_mode", "shaping")
             ),
-            value_from_dist=bool(policy_kwargs.get("value_from_dist", False)),
-            # gen3_winprob_critic_mode_v1: a POLICY kwarg like use_popart / value_from_dist, not
-            # an extractor one — the critic ROUTE lives in Gen3DualHeadMaskablePolicy, and the
-            # heads it selects between were already built by their own flags.
+            # gen3_winprob_critic_mode_v1: a POLICY kwarg, not an extractor one — the critic ROUTE
+            # lives in Gen3DualHeadMaskablePolicy.
             critic=str(policy_kwargs.get("critic", "shaped")),
             hp_type_belief_coef=float(hp_type_belief_coef),
             item_belief_coef=float(item_belief_coef),
             td_aux_coef=float(td_aux_coef),
-            win_prob_pbrs_coef=float(win_prob_pbrs_coef),
-            win_prob_pbrs_source=(str(win_prob_pbrs_source) if win_prob_pbrs_source else None),
-            win_prob_pbrs_frozen=(str(win_prob_pbrs_frozen) if win_prob_pbrs_frozen else None),
             arch_source=(str(arch_source) if arch_source else None),
             policy_grad_coef=float(policy_grad_coef),
             intent_label_bot_weight=float(intent_label_bot_weight),
@@ -362,11 +338,8 @@ class ModelVersionConstruction(ModelVersionFields):
             opp_intent_coef=float(opp_intent_coef),
             eval_mirrored_pairs=bool(eval_mirrored_pairs),
             promotion_sprt=bool(promotion_sprt),
-            value_tail_weight=float(value_tail_weight),
             opp_belief_aux_coef=float(opp_belief_aux_coef),
             move_belief_coef=float(move_belief_coef),
-            win_prob_coef=float(win_prob_coef),
             move_belief_latent_coef=float(move_belief_latent_coef),
             spread_belief_coef=float(spread_belief_coef),
-            value_dist_coef=float(value_dist_coef),
         )

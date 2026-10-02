@@ -8,20 +8,10 @@ is the block-by-block reference for what `analyze` returns.
   `ArchDriftError` on any run not at the current architecture, which today is every archived run;
   see the drift section above**). `model_resolution` carries `dropped_kwargs`: non-empty ⇒ flags the
   current code no longer accepts were dropped to make the load possible, so faithfulness is
-  approximate and a surface must say so. The value block gains a γ-discounted `td_residual` and, on a `--use-popart` model,
-  the PopArt `popart_mu`/`popart_sigma` + `normalized_recorded`/`normalized_rerun`
-  (`(V − μ)/σ`, the critic's normalized learning scale; all `None` without PopArt). Also carries a `win_prob`
+  approximate and a surface must say so. The value block gains a γ-discounted `td_residual` (the PopArt `popart_mu`/`popart_sigma`/`normalized_*` fields left with PopArt, L1). Also carries a `win_prob`
   block (`WinProbView`: recorded `P(win|s)` + `delta` ΔP to the next decision) — model-free, read
   from the trace's `win_probs` npz array (NaN/absent → `None` on a non-`--win-prob-mode` run; recorded
-  at trace-capture by `RLPlayer._win_prob` → `BattleRecorder.states_arrays`). Also a **`value_dist`**
-  block (`ValueDistView`, v29 — `None` unless the run trained `--value-dist-mode`): the distributional
-  value head's predicted **return DISTRIBUTION** — `probs`/`support` (the histogram) + `mean` (E[Z]) /
-  `std` / `p10`/`p50`/`p90` / `entropy` / `bimodality` (+ `mean_real` = de-normalized E[Z] under PopArt).
-  Model-free from the trace's `value_dist` npz array (key absent / NaN → `None`); the atom support comes
-  from the loaded model (`ProbeModel.value_dist_support` → `value_dist_vmin`/`vmax`/`bins`). The Summary
-  panel renders it as a one-line **eighth-block histogram** + the shape stats (`_append_dist_hist`;
-  sharp = confident, wide = uncertain, `⑂ bimodal` = the critic sees a coinflip) below the CRITIC /
-  WIN-PROB lines — the interpretability read the scalar V collapses. Engine: `engine.build_value_dist`.
+  at trace-capture by `RLPlayer._win_prob` → `BattleRecorder.states_arrays`). The **`value_dist`** block (`ValueDistView`, `engine.build_value_dist`) was DELETED with the distributional value head (L1): no model can be loaded that has one, and no new trace carries the array.
   Also an **`opp_intent`** block (`OppIntentView`, v67 — `None` unless the run trained
   `--opp-intent-coef>0`): what the model expected the OPPONENT to do — `alpha` (ranked NAMED believed
   moves + `SWITCH`, each carrying `is_switch` so no surface compares a magic string itself), `beta`

@@ -130,8 +130,8 @@ v99 adds THREE more there (`gen3_cf_twin_heads_v1`): the two `WinProbHead` TWINS
 `ShadowValueHead` (`--cf-shadow-critic`, an MC-grounded value twin that never computes an
 advantage). All four share the evidential head's three properties — built LAST, never called by
 the forward, input detached unconditionally — so the count off `value_pooled` is now SIX heads
-and only `win_head` / `value_dist_head` are in the forward at all (`value_dist_head` when it is
-built — `--critic winprob` refuses it, leaving `win_head` alone, as the critic). It is
+and only `win_head` is in the forward at all (the distributional `value_dist_head` was deleted,
+deletion pass L1, leaving `win_head` alone, as the critic). It is
 the one that breaks the pattern in two ways worth knowing about. It emits a **Beta posterior** (α, β)
 over P(win|state) rather than a point estimate — the counterfactual factory's uncertainty confession,
 since G0 convicted the scalar head of RESOLUTION, not of an optimism offset. And it is **not called by
@@ -146,7 +146,7 @@ read: `designs/training/cf_grounding.md` → *The EVIDENTIAL Beta head*.
 `gen3_dense_aux_v1`, the critic ladder's **arm 9**. `Linear(D_MODEL, 64) → ReLU → Linear(64, 25)`
 over the same `value_pooled` the win head reads, zero-init output, built LAST, **not called by the
 forward** — so the count off `value_pooled` is now SEVEN heads and the forward still calls only
-`win_head` / `value_dist_head` / (per-action) `QWinProbHead`. What it predicts, for every state, is
+`win_head` / (per-action) `QWinProbHead`. What it predicts, for every state, is
 the episode's **END-OF-BATTLE** facts, back-filled the way the win bit is: survival of each of the
 12 slots (our 6 then theirs, in the observation's own team order), each slot's final HP fraction,
 and the scaled turns-left. 25 sigmoid outputs, three masked-mean BCE terms averaged.

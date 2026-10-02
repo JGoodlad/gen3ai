@@ -214,25 +214,18 @@ def test_pi_is_bit_identical_at_an_ARBITRARY_weight_not_merely_at_init():
     assert not torch.equal(vf0, vf1), "PV at a large random weight did not move vf"
 
 
-def test_the_critic_gradient_reaches_the_projection_under_both_parameterizations():
+def test_the_critic_gradient_reaches_the_projection():
     """The v89 dead-tail bug class. This route is deliberately NOT in the `_value_pooled_routes`
     seam (a post-pool additive route would have to collapse the J axis), so it does not inherit
-    that seam's gradient guard and gets its own — under the scalar critic AND under the dist head,
-    which is the parameterization that made the vf-tail concat structurally dead."""
-    for dist in (False, True):
-        kw = dict(_ON_KWARGS)
-        if dist:
-            kw.update(value_dist_mode="shaping", value_dist_bins=51,
-                      value_dist_vmin=-12.0, value_dist_vmax=12.0)
-        fe, layout = _build(**kw)
-        fe.train()
-        pi, vf = fe(_obs(layout))
-        loss = fe.last_value_dist_logits.sum() if dist else vf.sum()
-        loss.backward()
-        g = fe.cls_pool.pair_value_proj.proj.weight.grad
-        assert g is not None and float(g.abs().max()) > 0.0, (
-            f"PV received NO gradient from the {'dist-head' if dist else 'scalar'} critic — it is "
-            "structurally disconnected")
+    that seam's gradient guard and gets its own. (It once ran under the distributional head too — the
+    parameterization that made the vf-tail concat structurally dead; that head is deleted.)"""
+    fe, layout = _build(**dict(_ON_KWARGS))
+    fe.train()
+    pi, vf = fe(_obs(layout))
+    vf.sum().backward()
+    g = fe.cls_pool.pair_value_proj.proj.weight.grad
+    assert g is not None and float(g.abs().max()) > 0.0, (
+        "PV received NO gradient from the critic — it is structurally disconnected")
 
 
 def test_it_stacks_with_value_threat_inject_without_either_becoming_the_other():

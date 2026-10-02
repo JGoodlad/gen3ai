@@ -25,9 +25,8 @@ because that is the mechanism by which the next route is auditable the day it is
 
 Each arm reports masked KL / argmax flips (policy) and |dV| (critic) against the unablated
 forward, the same instrument family as `edge_ablation_audit` (whose state sampling and KL
-helpers this reuses). The DIST head is deliberately NOT an arm: with `value_from_dist` the
-distribution IS the critic's output parameterization, not a removable input route — its
-verdict comes from quantile-coverage calibration, not ablation.
+helpers this reuses). (The distributional value head, deleted with the shaped critic's levers, was
+never an arm: it was the critic's output parameterization, not a removable input route.)
 
 ⚠️ Run this from the RUN'S OWN pinned worktree (`git worktree add <dir> <metadata git_hash>`),
 copying this file in if the run predates it — a checkpoint is only loadable under the code
@@ -58,7 +57,7 @@ if TYPE_CHECKING:
 def _forward_all(policy: Any, obs_np: "np.ndarray", masks_np: "np.ndarray",
                  batch: int = 512) -> tuple[torch.Tensor, torch.Tensor]:
     """The edge_ablation_audit forward contract verbatim: `policy.get_distribution` +
-    `policy.predict_values` (which internally respect PopArt and value_from_dist — the exact
+    `policy.predict_values` (which internally respects the critic route — the exact
     reason not to hand-roll the value path here)."""
     device = next(policy.parameters()).device
     has_mask_key = "action_mask" in getattr(policy.observation_space, "spaces", {})

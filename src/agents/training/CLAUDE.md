@@ -23,8 +23,8 @@ always-current obligation as this file — update the topic doc in the same pass
 | self-play, the snapshot pool, stable opponents | [`designs/training/self_play_and_pool.md`](../../../designs/training/self_play_and_pool.md) |
 | exploiter mode, the warm start, distillation + the off-slice anchor | [`designs/training/exploiter_and_distillation.md`](../../../designs/training/exploiter_and_distillation.md) |
 | team-side PFSP, per-team win-rate tracking | [`designs/training/team_curriculum.md`](../../../designs/training/team_curriculum.md) |
-| `--critic`, PopArt, the value-tail weight, TD-aux, the value-dist head, the 250-turn cap | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
-| the win-prob head, win-prob PBRS, either frozen-φ route | [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md) |
+| `--critic`, TD-aux, the 250-turn cap (PopArt, the value-tail weight and the value-dist head are DELETED, config v131) | [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md) |
+| the win-prob head (its PBRS routes were DELETED, config v131) | [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md) |
 | the training-side value sidecar, its two flags, its cost, `main.ops.value_sidecar_read` | [`designs/training/value_sidecar.md`](../../../designs/training/value_sidecar.md) |
 | any supervised belief loss, or the opponent-class label weight | [`designs/training/belief_losses.md`](../../../designs/training/belief_losses.md) |
 | gradient accumulation, the noise scale, the DOSE, `--fork-lr`, `--adaptive-batch` | [`designs/training/step_size_and_batch.md`](../../../designs/training/step_size_and_batch.md) |
@@ -53,30 +53,25 @@ Closed history — **do not update it, and do not re-derive a plan from it**:
 > [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md).
 
 **THE FIRST QUESTION ABOUT ANY SCALAR HERE IS WHAT UNIT IT IS IN**, because this trainer runs
-value quantities in **four different currencies at once** and three of them look like floats:
+value quantities in **three different currencies at once** (a fourth, PopArt-normalized, left with PopArt) and two of them look like floats:
 
 | currency | is | who is in it |
 |---|---|---|
-| **RAW REWARD** | the units `--victory-value` is in, undiscounted, pre-PopArt | every `reward/*` term, `--draw-penalty` |
+| **RAW REWARD** | the units `--victory-value` is in, undiscounted | every `reward/*` term, `--draw-penalty` |
 | **RAW SHAPED RETURN** | `Σγᵏr` in raw-reward units | `train/return_*`, `rollout_buffer.{values,returns}`, `train/explained_variance` |
-| **POPART-NORMALIZED RETURN** | `(raw − μ)/σ`, σ moving over the run | `train/value_loss`, `signal/adv_*`, the value-dist support, every `distill/*_value_mse` |
 | **PROBABILITY** | `[0, 1]`, outcome units, undiscounted | every `win_prob/*`, `cf/*` labels, `eval/win_rate_*` |
-| ⚠️ **PROBABILITY, under `--critic winprob`** | the same `[0,1]`, but it is now ALSO what `rollout_buffer.values` / `returns` / `train/explained_variance` are in | the row above **plus** `train/return_*`, `train/explained_variance`, `train/value_loss` (unnormalized — PopArt is refused) |
+| ⚠️ **PROBABILITY, under `--critic winprob`** | the same `[0,1]`, but it is now ALSO what `rollout_buffer.values` / `returns` / `train/explained_variance` are in | the row above **plus** `train/return_*`, `train/explained_variance`, `train/value_loss` (raw) |
 
-⚠️ **A number is only comparable to another number in the SAME currency**, and the two most
-frequently confused pairs are `train/return_std` (raw) against `popart/sigma` (the estimate OF it,
-also raw — these two SHOULD track), and `train/value_loss` (normalized, ≈O(1)) against
-`train/return_abs_max` (raw, ~30). WHEN POPART IS ON the conversion in force is `popart/mu` and
-`popart/sigma`, and whether it is CURRENT is `popart/norm_return_*` (below); with PopArt off — which
-`--critic winprob` REFUSES it into — there is no conversion and `train/value_loss` is already raw. Full background:
-`designs/learning/popart_value_scale_and_currencies.md`.
+⚠️ **A number is only comparable to another number in the SAME currency.** PopArt (and with it the
+`popart/*` tags and the normalized-return currency) was DELETED (deletion pass L1, config v131), so
+`train/value_loss` is raw in every run; `designs/learning/popart_value_scale_and_currencies.md` is the
+historical background for old traces.
 
-🚨 **`--critic winprob` COLLAPSES the four currencies into one, which changes what several tags
+🚨 **`--critic winprob` COLLAPSES the currencies into one, which changes what several tags
 MEAN without changing their names** (`gen3_winprob_critic_mode_v1`). The reward is the terminal WIN
-INDICATOR, `V(s) = sigmoid(win_head logit)` and PopArt is refused — so `train/return_mean` reads a
-win RATE, `train/value_loss` is an unnormalized MSE in probability units (a diagnostic; its term is
-dropped from the loss), `train/explained_variance` is EV in the P(win) currency, and the
-POPART-NORMALIZED row of the table above is empty because there is no normalizer. **A `winprob`
+INDICATOR and `V(s) = sigmoid(win_head logit)` — so `train/return_mean` reads a
+win RATE, `train/value_loss` is an MSE in probability units (a diagnostic; its term is
+dropped from the loss) and `train/explained_variance` is EV in the P(win) currency. **A `winprob`
 run's `train/*` value tags are not comparable with a `shaped` run's**, and nothing in the tag names
 says so — read the run's `🎯 [CRITIC]` startup line first. The one tag that IS comparable across
 the two is the `win_prob/` family, which was in probability units all along.
@@ -198,7 +193,7 @@ Per minibatch (1 to 3a inside R1):
    nature-EV / HP-type / item belief, move-latent
 3. (3a) the win-prob BCE — the last R1 term; then (3b, the tail's first) the dense aux head and the
    CF-twin on-policy mirror
-4. the value-dist HL-Gauss CE
+4. (retired — the value-dist HL-Gauss CE was deleted with the dist head; the numbering below is unchanged)
 5. the distill family — the policy term (full KL, or the top-K/action-CE form with the optional
    advantage gate under `--distill-target action` — gen3_distill_target_gate_v1), value MSE, the
    value-feature hint
@@ -421,7 +416,7 @@ other rung even when it trained further.
 **Every consumer goes through ONE choke point** —
 `agents.training.fixed_opponent_pool.resolve_model_ref(path, step=None)` → a `ResolvedModel`
 carrying the rung, the rule and `num_timesteps`. It serves `--distill-teacher`,
-`--win-prob-pbrs-source`, `--stable-opponents`, `--exploiter`, `--exploiter-ladder`,
+`--stable-opponents`, `--exploiter`, `--exploiter-ladder`,
 `--warmstart-consensus` and `--distill-anchor-parent`; `run_spec_test.py` holds the census that
 fails, naming the file and its flags, when one of them stops. 🚨 **EVERY TEACHER LOADED BEFORE
 2026-09-06 WENT THROUGH THE OLD RULE and recorded nothing about it** — `main.lineage` says so
@@ -749,16 +744,15 @@ and saturation is a trend.
 
 ## THE VALUE LOSS has a MODE — `--critic {shaped,winprob}` (`gen3_winprob_critic_mode_v1`)
 
-**Default `shaped`; a flagless run is byte-identical.** Design of record:
+**Default `winprob` (the bare-argv flip, deletion pass D2); `shaped` is the historical critic, `--env-core python` only.** Design of record:
 `designs/ai_v12/design_winprob_only_critic.md`; the model-side half is `src/agents/model/CLAUDE.md`
 → *The CRITIC MODE*.
 
 | | `shaped` | `winprob` |
 |---|---|---|
-| the value TERM | `vf_coef · _value_loss_from_se(...)`, or the HL-Gauss CE under `value_from_dist` | `vf_coef · _win_prob_loss(...)` — the head's **BCE against the terminal outcome** |
+| the value TERM | `vf_coef · mean((returns − values)²)` (clipped under `--clip-range-vf`) | `vf_coef · _win_prob_loss(...)` — the head's **BCE against the terminal outcome** |
 | the scalar `value_loss` | the loss | a DIAGNOSTIC only (its term is dropped), computed UNCLIPPED |
-| `--win-prob-coef` | weights the auxiliary BCE, tagged `aux` | refused — the BCE is the value loss now |
-| PopArt · `--value-dist-*` · every `--win-prob-pbrs-*` | available | **REFUSED** |
+| PopArt · `--value-dist-*` · `--value-from-dist` · `--value-tail-weight` · `--win-prob-coef` · every `--win-prob-pbrs-*` | **DELETED** (L1, config v131: `designs/deleted_flags.md`; a checkpoint that recorded one ON is refused, `model_version/retired_levers.py`) | **DELETED** |
 
 🚨 **`winprob` REQUIRES all three of `--terminal-indicator --victory-value 1.0 --draw-penalty 0`**,
 each named by its own `combination_checks` refusal, so the undiscounted return
@@ -814,7 +808,7 @@ family is published whenever the flag is on, so 0 means "on, but one class prese
 ### `--win-prob-lambda` — the BCE's TARGET (`gen3_winprob_lambda_v1`, v116)
 
 **Default `1.0` = OFF and BIT-identical; `--critic winprob` is REQUIRED** (refused otherwise — under
-`shaped` the buffer's `values` are a PopArt-normalised shaped return, not a probability, so blending
+`shaped` the buffer's `values` are a shaped return, not a probability, so blending
 them into a BCE target is a category error). Below 1.0 each state's target stops being its episode's
 terminal bit and becomes a **λ-return over the collector's RECORDED values**:
 
@@ -1045,11 +1039,8 @@ announcement and every value-side flag below — is in
 
 | flag | default | what it does, and the one thing to know |
 |---|---|---|
-| `--vf-coef` | `0.5` | multiplies a BCE under `winprob`, an MSE on a PopArt-normalised shaped return under `shaped` — **the 0.5 default carries no information about the first**. The startup announcement prints the raw BCE and the value/policy shared-trunk gradient RATIO (`10 ** grad/value_policy_logratio`); it never divides by `|policy loss|`, which is ≈0 by construction on epoch 1. Fixed for a run's lifetime |
-| `--use-popart` | off | normalizes the value target so the value gradient stops swamping the trunk. **Requires an explicit `--clip-range-vf none`**; watch `grad/value_policy_logratio` fall toward 0. Refused under `winprob` |
-| `--value-tail-weight` | `0.0` | CVaR blend over the worst 10% squared errors at all three value sites. β=0 is byte-identical to `F.mse_loss`. **Resume-IMMUTABLE** (`check_value_tail_weight`) |
+| `--vf-coef` | `0.5` | multiplies a BCE under `winprob`, an MSE on a shaped return under `shaped` — **the 0.5 default carries no information about the first**. The startup announcement prints the raw BCE and the value/policy shared-trunk gradient RATIO (`10 ** grad/value_policy_logratio`); it never divides by `|policy loss|`, which is ≈0 by construction on epoch 1. Fixed for a run's lifetime |
 | `--td-aux-coef` | `0.0` | the Bellman identity as an explicit loss over CONTIGUOUS pairs the PPO permutation destroys. 🚨 **Pre-registered band 1.0–3.0; `λ ≤ 0.1` measured significantly WORSE than control** — the small-coef regime is to be avoided, not treated as "a bit of the effect". Episode boundaries DROP the pair, never zero it |
-| `--value-dist-mode` / `--value-dist-coef` | `none` / `0.0` | HL-Gauss categorical readout off `value_pooled`, **interpretability only** — ledger K1 killed it as a win-rate lever. Validate PIT ≈ uniform, never win rate. REFUSED under `winprob` |
 
 ## The DETACHED RIDE-ALONG heads (`--ridealong-ensemble` · `--ridealong-rnd` · `--ridealong-adv` · `--ridealong-opp` · `--ridealong-rnd-variants`)
 
@@ -1120,7 +1111,7 @@ ladder play there is no runner and the all-zero "unknown" block goes instead.
 Model half + the four contracts (vf-only, augment-not-replace, presence-follows-the-local-sim,
 raise-not-skip): [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
 
-## The win-probability head (`--win-prob-mode` / `--win-prob-coef`) and its two PBRS routes
+## The win-probability head (`--win-prob-mode`); its PBRS routes were DELETED
 
 A calibrated **P(win|state)** supervised by the Monte-Carlo episode OUTCOME, back-filled onto every
 step of an episode by `WinProbLabelCallback`; the trailing in-progress episode gets `win_mask=0` and
@@ -1134,17 +1125,7 @@ never concatenated into pi/vf. **The head is a BAROMETER, not a coach.** It is a
 self-referential: its labels are outcomes under the CURRENT policy, so a habitual whiff that still
 wins 55% teaches it "55%", never "the whiff was the mistake".
 
-**The routes that ARE pointed at behaviour**, all OFF by default and byte-identical when off:
-`--win-prob-pbrs-coef` (route 1 — `γφ(s′) − φ(s)` folded into the REWARD, `shaped`-critic only),
-`--win-prob-pbrs-source <ckpt>` (a FROZEN foreign φ, so Ng's invariance holds **exactly** rather
-than approximately), and `--win-prob-pbrs-frozen` (the ACTOR-ONLY variant for `--critic winprob`:
-it writes **only** `rollout_buffer.advantages`, so `V ≡ P(win|s)` is preserved bit-for-bit).
-⚠️ **Read `pbrs/frozen_phi_mean` FIRST and it must be FLAT** — φ is a fixed function of state, so a
-mean that wanders means the frozen source is not the thing being read.
-⚠️ **`train/pbrs_reward_share` is the WRONG meter for sizing a coefficient** (its denominator moves
-with EPISODE LENGTH — measured 2.1–3.1× off — and it reads `NaN`, never `0.0`, on an empty unshaped
-stream); **`train/pbrs_episode_dose` is the meter the ladder is sized in**, the shaping's whole
-per-episode budget priced against one win.
+**The routes that were pointed at behaviour — `--win-prob-pbrs-coef` (self-φ), `--win-prob-pbrs-source` (a frozen foreign φ) and `--win-prob-pbrs-frozen` (the actor-only frozen potential) — were DELETED** (deletion pass L1, config v131; `designs/deleted_flags.md`, ledger L18659: shaped vs winprob NOT DETECTED).
 **Full detail — in [`designs/training/winprob_head_and_pbrs.md`](../../../designs/training/winprob_head_and_pbrs.md).**
 
 ## The training-side VALUE SIDECAR (`--value-sidecar`, `gen3_value_sidecar_v1`)

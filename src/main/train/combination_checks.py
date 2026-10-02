@@ -143,10 +143,6 @@ def _winprob(args) -> bool:
     return is_winprob(_val(args, "critic", CRITIC_DEFAULT))
 
 
-def _dist_mode(args) -> str:
-    return _val(args, "value_dist_mode", "none")
-
-
 def _belief_mode(args) -> str:
     return _val(args, "move_belief_mode", "off")
 
@@ -312,10 +308,6 @@ _ENV_CORE_UNPORTED: Tuple[Tuple[str, Callable[[Any], bool], str], ...] = (
      "--bait-entropy-boost (its opportunity key is Python-built)"),
     ("distill_coef", lambda a: _positive(_val(a, "distill_coef", 0.0)),
      "--distill-coef > 0 (the distill_mask key and the per-team teachers)"),
-    ("win_prob_pbrs_coef", lambda a: float(_val(a, "win_prob_pbrs_coef", 0.0) or 0.0) != 0.0,
-     "--win-prob-pbrs-coef (a rollout-level reshaping)"),
-    ("win_prob_pbrs_frozen", lambda a: getattr(a, "win_prob_pbrs_frozen", None) is not None,
-     "--win-prob-pbrs-frozen"),
     ("cf_records", lambda a: bool(_val(a, "cf_records", False)), "--cf-records (a bridge reconstruction tap)"),
     ("search_teacher", lambda a: bool(_val(a, "search_teacher", False)), "--search-teacher"),
     ("team_pfsp", lambda a: _val(a, "team_pfsp", "off") != "off", "--team-pfsp (per-worker PFSP pulls)"),
@@ -412,42 +404,10 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "(An unset --win-prob-mode is implied to 'shaping' — this fires only on an explicit "
         "'none'.) 'read_only' is the arm where the critic's gradient does not reach the trunk."),
     CombinationCheck(
-        "winprob_critic_refuses_popart", ("critic", "use_popart"),
-        lambda a: _winprob(a) and bool(_val(a, "use_popart", False)),
-        "--critic winprob is incompatible with --use-popart. PopArt's JOB does not exist here: "
-        "the payoff set is fixed at {win, not-win}, so the return is bounded and stationary for "
-        "the life of the run and there is no scale to track; the BCE's gradient w.r.t. the logit "
-        "is already O(1). Worse, `_denorm` would take V out of [0,1], and PopArt's POP surgery "
-        "only ever corrected `value_net`, which this critic does not read. Pass --no-use-popart."),
-    CombinationCheck(
-        "winprob_critic_refuses_value_dist", ("critic", "value_dist_mode"),
-        lambda a: _winprob(a) and _dist_mode(a) != "none",
-        lambda a: ("--critic winprob is incompatible with --value-dist-mode "
-                   f"{_dist_mode(a)!r}: that is a SECOND critic. Under a terminal-only objective "
-                   "the return takes two values, so a categorical over that support IS a "
-                   "Bernoulli and the 51-atom head is the same parameterization with 50 redundant "
-                   "degrees of freedom. It also mis-states the run's config to every consumer "
-                   "that gates on the MODE string rather than on the head (the PPO CE gate, the "
-                   "grad-balance value term, the prober's awareness/PIT stack). Pass "
-                   "--value-dist-mode none.")),
-    CombinationCheck(
-        "winprob_critic_refuses_value_from_dist", ("critic", "value_from_dist"),
-        lambda a: _winprob(a) and bool(getattr(a, "value_from_dist", False)),
-        "--critic winprob is incompatible with --value-from-dist: both name WHICH readout is the "
-        "critic, and they name different ones. `_critic_value` cannot route to two places."),
-    CombinationCheck(
-        "winprob_critic_refuses_win_prob_coef", ("critic", "win_prob_coef"),
-        lambda a: _winprob(a) and _typed(a, "win_prob_coef"),
-        "--critic winprob is incompatible with an explicit --win-prob-coef: the head's BCE is now "
-        "THE VALUE LOSS and is weighted by --vf-coef. One critic, one coefficient — two on one "
-        "loss is the ambiguity the distributional critic's `_ce_w` conditional existed to resolve. "
-        "NOTE --vf-coef now multiplies a BCE rather than an MSE over a shaped return, so 0.5 does "
-        "not transfer between the two loss families; re-tune it on this arm."),
-    CombinationCheck(
         # The one check in this family pointing the OTHER way: not "winprob refuses X" but
         # "X requires winprob". Refused rather than ignored because the flag's whole premise is
         # that the BCE it reweights IS the value loss. Under `--critic shaped` that BCE is an
-        # auxiliary readout at `--win-prob-coef`, so a stratified weight there would re-price a
+        # auxiliary readout, so a stratified weight there would re-price a
         # DIAGNOSTIC and leave the actual critic untouched — a silent no-op wearing the name of
         # the experiment, which is exactly what this module exists to end.
         "winprob_strata_needs_the_winprob_critic",
@@ -462,10 +422,10 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "under the win-prob label gate. Pass --critic winprob, or drop the flag."),
     CombinationCheck(
         # The strata check's twin, and refused for the same reason: under `--critic shaped` the
-        # win-prob BCE is an AUXILIARY readout at `--win-prob-coef`, so a λ-return target there
+        # win-prob BCE is an AUXILIARY readout, so a λ-return target there
         # would re-aim a diagnostic and leave the value function untouched. Worse than for strata,
         # in fact — the quantity the recursion blends is `rollout_buffer.values`, which under
-        # `shaped` is a PopArt-normalised shaped return, not a probability, so the blend would be
+        # `shaped` is a shaped return, not a probability, so the blend would be
         # a category error fed into a BCE.
         "winprob_lambda_needs_the_winprob_critic",
         ("win_prob_lambda", "critic"),
@@ -474,14 +434,14 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "with a λ-return that blends the critic's own recorded later values backward through the "
         "episode (the head refit's §6 mechanism: one terminal bit copied to ~30 states is a noisy "
         "objective whose between-(cycle, opponent) share is only ~10-14%). Under --critic shaped "
-        "that BCE is an auxiliary readout AND `rollout_buffer.values` holds a PopArt-normalised "
-        "shaped return rather than a probability, so the blend would be a category error. Pass "
+        "that BCE is an auxiliary readout AND `rollout_buffer.values` holds a shaped "
+        "return rather than a probability, so the blend would be a category error. Pass "
         "--critic winprob, or drop the flag."),
     CombinationCheck(
         # The strata/lambda check's third sibling, refused for a reason of its own on top of
         # theirs. Under `--critic shaped` the win-prob BCE is an AUXILIARY readout, so dense
         # targets bolted to it would improve a diagnostic's features and leave the value function
-        # — the scalar `value_net`, reading its own PopArt-normalised shaped return — untouched.
+        # — the scalar `value_net`, reading its own shaped return — untouched.
         # The arm's whole claim is about what the CRITIC's trunk conditions on, and under `shaped`
         # this term cannot reach that claim at all.
         "dense_aux_needs_the_winprob_critic",
@@ -605,14 +565,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "would be the unflagged one under a flagged name. Pass --win-prob-rollout-target (the "
         "fraction that costs 1x the run's simulation budget is ~1/(R*104)), or drop the weight."),
     CombinationCheck(
-        "winprob_critic_refuses_value_tail_weight", ("critic", "value_tail_weight"),
-        lambda a: _winprob(a) and float(_val(a, "value_tail_weight", 0.0) or 0.0) != 0.0,
-        "--critic winprob is incompatible with --value-tail-weight > 0. It weights the SCALAR "
-        "MSE, whose term is dropped under this critic, so it would be silently INERT — and its "
-        "shape is the banned one anyway: at the decision boundary relevance and label NOISE "
-        "arrive together, so 'care more' must be MORE SAMPLES, never a larger per-sample weight "
-        "on a Bernoulli likelihood."),
-    CombinationCheck(
         # See `--terminal-indicator`. A [0,1] critic cannot represent "worse than a loss", so the
         # ordering `--draw-penalty` exists to set is not merely unused here — it is unrepresentable.
         "winprob_critic_refuses_draw_penalty", ("critic", "draw_penalty", "terminal_indicator"),
@@ -656,73 +608,8 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    "P(win|s) holds exactly only at gamma 1 -- at 0.9999 over 250 turns the return is "
                    "discounted by 0.975, the same order as the calibration error this critic exists "
                    "to remove. Drop --gamma (it is implied) or pass --gamma 1.0.")),
-    CombinationCheck(
-        # Owner amendment, 2026-09-06 (design_winprob_only_critic.md §3.7). The SELF-phi shape,
-        # refused for a REASON rather than deferred: with V == phi the shaping term IS the
-        # advantage, so route 1 adds the advantage to the reward and takes the advantage of that.
-        "winprob_critic_refuses_self_phi_pbrs", ("critic", "win_prob_pbrs_coef"),
-        lambda a: _winprob(a) and _typed(a, "win_prob_pbrs_coef"),
-        "--critic winprob is incompatible with --win-prob-pbrs-coef: no coefficient -- the "
-        "potential is currency-matched; the dose ladder belonged to the shaped critic. And the "
-        "SELF-phi form is DOUBLE COUNTING: phi is the win-prob head, which under this critic IS "
-        "V, so `gamma*phi(s') - phi(s)` is precisely the TD residual GAE already turns into the "
-        "advantage. Its Ng shield is also at its structurally weakest here (the theorem assumes a "
-        "FIXED phi; ours is the head being trained). The FROZEN-phi rung is a separate flag, "
-        "--win-prob-pbrs-frozen."),
-    CombinationCheck(
-        "winprob_critic_refuses_self_phi_source", ("critic", "win_prob_pbrs_source"),
-        lambda a: _winprob(a) and getattr(a, "win_prob_pbrs_source", None) is not None,
-        "--critic winprob is incompatible with --win-prob-pbrs-source: that flag is the SHAPED "
-        "critic's frozen-phi path and is driven by --win-prob-pbrs-coef, which this mode refuses "
-        "(the potential is currency-matched, coefficient exactly 1.0). Under this critic the "
-        "frozen rung is --win-prob-pbrs-frozen, which takes no coefficient."),
-    CombinationCheck(
-        # gen3_frozen_phi_actor_only_v1 (2026-09-06). The rung this check used to HOLD is now
-        # BUILDABLE under `winprob` -- as ACTOR-ONLY shaping, which is what unblocked it: adding
-        # the potential to the REWARD would make the critic's target `P(win) - phi`, a quantity a
-        # sigmoid cannot represent below 0, so the deferral was never about the invariance (which
-        # holds exactly for a frozen phi) but about the critic identity. `agents/training/
-        # frozen_phi.py` shapes only `rollout_buffer.advantages`, so V stays P(win) bit-for-bit.
-        # What survives is the refusal under `shaped`, which is a ROUTING answer, not a deferral.
-        "win_prob_pbrs_frozen_needs_the_winprob_critic",
-        ("critic", "win_prob_pbrs_frozen"),
-        lambda a: getattr(a, "win_prob_pbrs_frozen", None) is not None and not _winprob(a),
-        "--win-prob-pbrs-frozen requires --critic winprob. It is the ACTOR-ONLY form: the "
-        "potential shapes the POLICY's advantages while the critic keeps training on the unshaped "
-        "terminal indicator, and its coefficient is fixed at the currency-matched 1.0 -- both of "
-        "which are statements about a critic whose value IS P(win) in [0,1]. Under --critic "
-        "shaped the value function predicts a shaped, discounted, PopArt-normalized return, so "
-        "phi is in different units and the dose is a real question: use the shaped ladder's "
-        "--win-prob-pbrs-coef / --win-prob-pbrs-source there, whose meaning is unchanged."),
-    CombinationCheck(
-        # The head is what phi IS, on both sides. `winprob_critic_needs_a_head` already refuses
-        # 'none' under this critic, so this fires only on the combination that slips past it --
-        # and it is stated separately because the REASON differs: there the head is the critic,
-        # here it is the potential, and a reader who fixed one has not necessarily fixed the other.
-        "win_prob_pbrs_frozen_needs_a_head", ("win_prob_pbrs_frozen", "win_prob_mode"),
-        lambda a: (getattr(a, "win_prob_pbrs_frozen", None) is not None
-                   and _val(a, "win_prob_mode", "none") == "none"),
-        "--win-prob-pbrs-frozen requires --win-prob-mode read_only|shaping: the potential IS the "
-        "win-prob head, read off the FROZEN source, and 'none' builds no head for this run's "
-        "obs family to be checked against."),
 
     # ---- the distributional critic --------------------------------------------------------
-    CombinationCheck(
-        "value_from_dist_needs_shaping", ("value_from_dist", "value_dist_mode"),
-        lambda a: a.value_from_dist and _val(a, "value_dist_mode", "none") != "shaping",
-        lambda a: ("--value-from-dist requires --value-dist-mode shaping (the distributional head "
-                   "must be a live critic that shapes the trunk; got value_dist_mode="
-                   f"{_dist_mode(a)!r}).")),
-    CombinationCheck(
-        # The launch path AUTO-CLEARS an inherited PopArt's clip on a resume, so the refusal only
-        # reaches a run that TYPED --use-popart (or has no parent to have inherited it from).
-        "popart_needs_explicit_clip_off", ("use_popart", "clip_range_vf"),
-        lambda a: bool(a.use_popart) and a.clip_range_vf is not None
-        and (_typed(a, "use_popart") or not getattr(a, "_saved_config_present", False)),
-        "--use-popart requires an explicit '--clip-range-vf none' (it defaults to 0.5). PopArt "
-        "normalizes the value targets so value clipping is unnecessary — and an active clip "
-        "would clip in un-normalized units and cripple the critic. Pass --clip-range-vf none.",
-        needs=("saved_config",)),
 
     # ---- gen3_supply_guard_v2: a PFSP lever with no possible supply ---------------------------
     CombinationCheck(
@@ -857,37 +744,8 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "rate, and without a pin there is no rate to freeze at (pass --fork-lr <value>)."),
 
     # ---- the value-distribution head's support ---------------------------------------------
-    CombinationCheck(
-        "value_dist_mode_needs_bins", ("value_dist_mode", "value_dist_bins"),
-        lambda a: _val(a, "value_dist_mode", "none") != "none"
-        and not (a.value_dist_bins and a.value_dist_bins > 0),
-        "--value-dist-mode requires --value-dist-bins > 0 (the atom count; recommended 32)"),
-    CombinationCheck(
-        "value_dist_mode_needs_support",
-        ("value_dist_mode", "value_dist_vmax", "value_dist_vmin"),
-        lambda a: _val(a, "value_dist_mode", "none") != "none"
-        and not (a.value_dist_vmax > a.value_dist_vmin),
-        "--value-dist-mode requires --value-dist-vmax > --value-dist-vmin (the atom support)"),
-    CombinationCheck(
-        "value_dist_bins_without_mode", ("value_dist_mode", "value_dist_bins"),
-        lambda a: _val(a, "value_dist_mode", "none") == "none" and bool(a.value_dist_bins),
-        "--value-dist-bins is set but --value-dist-mode is none — pass a mode, or drop the bins"),
 
     # ---- the win-prob head and its PBRS ------------------------------------------------------
-    CombinationCheck(
-        "win_prob_pbrs_coef_needs_mode", ("win_prob_pbrs_coef", "win_prob_mode"),
-        lambda a: _positive(a.win_prob_pbrs_coef)
-        and _val(a, "win_prob_mode", "none") == "none",
-        "--win-prob-pbrs-coef > 0 requires --win-prob-mode read_only|shaping — the PBRS "
-        "potential φ(s) IS the win-prob head's output, and --win-prob-mode none builds "
-        "no head. Pass a mode, or drop the shaping coefficient."),
-    CombinationCheck(
-        "win_prob_pbrs_source_needs_coef", ("win_prob_pbrs_source", "win_prob_pbrs_coef"),
-        lambda a: bool(getattr(a, "win_prob_pbrs_source", None))
-        and not _positive(a.win_prob_pbrs_coef),
-        "--win-prob-pbrs-source names the FROZEN potential for the win-prob PBRS, so it "
-        "requires --win-prob-pbrs-coef > 0. With no coefficient the source would be a "
-        "frozen network loaded, forwarded once per rollout, and multiplied by zero."),
 
     # ---- the search teacher and OPD ----------------------------------------------------------
     CombinationCheck(

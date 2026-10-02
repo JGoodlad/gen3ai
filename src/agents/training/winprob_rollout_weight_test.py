@@ -320,7 +320,7 @@ def test_the_env_declares_the_key_under_EXACTLY_the_predicate_the_loss_reads_it_
     assert "strata_declared, rollout_weight_on = self._r1_levers(_f)" in tr
     assert "model._r1_levers(f)" in inspect.getsource(cr._r1_static)
     # the BCE is folded inside region R1 (`micro_step`), which reads the key under that static flag
-    assert "self._micro_static(_f, popart, strata_declared, rollout_weight_on)" in tr
+    assert "self._micro_static(_f, strata_declared, rollout_weight_on)" in tr
     assert "rollout_weight=bool(rollout_weight_on)" in inspect.getsource(TrainSetup._micro_static)
     assert 'obs.get("win_row_w") if st.rollout_weight else None' in inspect.getsource(ms.micro_step)
 

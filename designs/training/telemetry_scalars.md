@@ -87,9 +87,8 @@ of improving on both.
   and the `grad/*_share` family are talking about the same weights.
 * **The surrogate is the PLAIN PPO objective** (clipped policy loss + `vf_coef`·MSE), not the run's
   full fold. The question is whether the two halves agree about the RL objective; folding in a dozen
-  auxiliaries would make the answer a statement about the auxiliaries instead. PopArt and
-  tail-weighting are skipped for the same reason — both are monotone rescalings of the same
-  per-sample residual, so they move the gradient's LENGTH, not this angle.
+  auxiliaries would make the answer a statement about the auxiliaries instead. (PopArt and
+  tail-weighting, skipped here for being monotone rescalings, are deleted.)
 * **Advantages are sliced from the caller's already-normalized tensor.** Re-normalizing each half
   against its own mean/std would inject a difference the batch does not have and bias the cosine down.
 * **Orientation, not a threshold**: on a fresh `--debug` run at ~6k steps the cosine reads **0.99**
@@ -207,11 +206,10 @@ evenly across decisions, i.e. nothing is being localized even though the std may
 
 ### ⚠️ UNITS — within a run freely, across runs only cautiously
 
-The advantages ride the run's own returns — **PopArt-normalized when `--use-popart` is on** (it is
-OFF by default and REFUSED under `--critic winprob`, where they are raw `[0,1]` probability returns),
-in which case σ moves over training. `adv_raw_std` / `adv_raw_abs_mean` are therefore in *this run's current
-normalized-return units*, not a fixed scale: their TREND is meaningful, their absolute level is not
-portable. Across two runs with different reward composition, `gamma`/`gae_lambda`, or PopArt state,
+The advantages ride the run's own returns (raw `[0,1]` probability returns under `--critic winprob`;
+PopArt, which once normalized them, is deleted). `adv_raw_std` / `adv_raw_abs_mean` are therefore in *this run's
+own return units*, not a fixed scale: their TREND is meaningful, their absolute level is not
+portable. Across two runs with different reward composition, critic or `gamma`/`gae_lambda`,
 only **`adv_kurtosis`** — scale-free by construction — compares directly.
 
 ### ⚠️ This is a TRIPWIRE, not the attributable-share measurement
@@ -272,8 +270,8 @@ construction. Read it on a shaped run, or on an archived one; do not read it as 
 measurement of a terminal-only run, which has no scaffolding to measure.
 
 **How far apart are the two value readouts, and is the gap closing?** Under `shaped`, the critic
-estimates the **shaped** return (PopArt units, `gamma`-discounted) while the win-prob head estimates
-the **game** (outcome units, no discount distortion, no PopArt drift). Neither is a repair of the
+estimates the **shaped** return (reward units, `gamma`-discounted) while the win-prob head estimates
+the **game** (outcome units, no discount distortion). Neither is a repair of the
 other — the two-head structure is the automatic consequence of choosing shaped rewards. What their DIVERGENCE
 measures is the reward scaffolding still doing work, and its trajectory is the registered signal
 for when shaping coefficients can begin annealing toward the pure game.
@@ -288,7 +286,7 @@ the live scalar and the offline CLI so the two can never drift apart.
 | `train/scaffolding_n` | same | rows the ρ was computed from |
 
 **ALWAYS ON when the win-prob head exists** (`--win-prob-mode != none`), flagless, gated on the
-head's EXISTENCE and not on `win_prob_coef` — a `read_only` head at coefficient 0 still says
+head's EXISTENCE — a `read_only` head still says
 something worth curving. A run with no head publishes **no key at all**, so the curve is absent
 rather than flat at zero.
 
@@ -301,7 +299,7 @@ is identical and float32 ranks never saturate.
 
 ### ⚠️ UNITS — the rank form is the ONLY one that is live-legal
 
-Under `--critic shaped` `V` is a PopArt-normalized SHAPED return and there is no general unit
+Under `--critic shaped` `V` is a SHAPED return and there is no general unit
 conversion to a probability. (Under `--critic winprob` the question dissolves: `V` IS the
 probability, which is the same fact that makes this gauge degenerate there.) The
 live scalar is therefore **rank-based and claims ORDERING only** — nothing about magnitude or
@@ -411,7 +409,7 @@ and takes reliability from 0.32 to 0.
 
 **Counts, measured 2026-09-06** — 153 static `logger.record(` sites across `src/agents/training`,
 `src/main/train`, `src/main/eval_worker.py` and `src/main/elo.py`; 185 distinct tags observed
-across three CPU smokes (a plain run, a `--win-prob-mode read_only` run, and a `--use-popart` run).
+across three CPU smokes (a plain run, a `--win-prob-mode read_only` run, and a `--use-popart` run — PopArt has since been deleted).
 The two do not match and should not: one site can emit a whole dict (`f"reward/{k}"`), and many
 sites are flag-gated off in any one run. **Recount before quoting** — `tmp_census.py`'s recipe is
 `grep -rn "logger.record(" src/agents/training src/main/train src/main/eval_worker.py` for the
@@ -425,14 +423,13 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 | `eval/` | 35 | — | **per EVAL CYCLE** | win rate / ELO / reward | LIVE — except **13 `mean_reward_*` REDUNDANT** (byte-identical to their `win_rate_*` twin under the indicator) | `eval_callback`, `selfplay_callback` |
 | `eval_final/` | 2 | 10 | once, at run end | win rate | LIVE | `main/train/final_eval.py` |
 | `signal/` | 4 | 12 | per rollout | NORMALIZED (adv) / probability (outcome) / rate (draw) | LIVE — `draw_rate` is **promoted to a PRIMARY endpoint** (the G7 kill condition) | `signal_metrics`, `signal_callback` |
-| `popart/` | 5 | 5 | per rollout | raw (μ,σ) + unitless (norm) | CONDITIONAL — **structurally silent**: PopArt is REFUSED under `winprob` | `ppo.py` |
 | `grad/` | (dynamic) | 16 | **every `--diagnostics-every` update** (fresh default 10; a skipped update is a GAP) | unitless shares | LIVE — `win_prob_*` **NOISE (gated)**: it IS the value term, and counting it twice deflated every share | `grad_balance` |
 | `rank/` | 6 | 18 | per rollout under `--rank-tripwire` (production), else every `--diagnostics-every` update | unitless | CONDITIONAL (needs the rank probe); `tripwire_no_reading` correctly reports its own blindness | `rank_tripwire`, `rank_metrics` |
 | `belief/` | 1 | 8 | per rollout | accuracy / CE | LIVE (unchanged by the critic mode) | `belief_bank` |
 | `distill/` | 7 | — | per rollout | KL / MSE / rate | CONDITIONAL — silent, no teacher | `distill_terms`, `distill_anchor*`, `distill_stop_callback` |
 | `cf/` | 5 | — | per rollout | probability + counts | CONDITIONAL — silent, no `--cf-records` | `cf_terms`, `cf_label_buffer` |
 | `teacher/` · `opd/` | 11 | — | per cycle / rollout | CE / KL | CONDITIONAL — silent | `teacher/callback`, `ppo.py` |
-| `team_pfsp/` · `hparams/` · `capacity/` · `defent/` · `baitent/` · `value_dist/` · `td_aux/` · `q_winprob/` | 20 | — | per rollout | see each section | CONDITIONAL — all silent; `value_dist/` is **REFUSED** by the mode, the rest are flag-off | their own callbacks |
+| `team_pfsp/` · `hparams/` · `capacity/` · `defent/` · `baitent/` · `td_aux/` · `q_winprob/` | 19 | — | per rollout | see each section | CONDITIONAL — all silent (flag-off); `popart/` and `value_dist/` were deleted with PopArt / the dist head | their own callbacks |
 
 **The diagnostics cadence (`gen3_diagnostics_cadence_v1`, config v124):** `grad/*` (with
 `train/cf_grad_share` / `train/cf_evidential_grad_share`), `edge/*`, `cell/*`, the per-term
@@ -616,19 +613,6 @@ non-obvious but not misleading, it is the subject of a documented section and an
 | `outcome_entropy[_<kind>]` · `outcome_n[_<kind>]` | `p(1−p)` over a rolling 200-episode window | probability |
 | **`outcome_win_rate_<kind>`** | **the REALIZED per-class win rate.** `p(1−p)` is SYMMETRIC about 0.5, so `outcome_entropy_pool = 0.16` means p = 0.2 **or** 0.8 and nothing in the export said which — for two generations only the entropy shipped per kind. Free: the same deque, one more mean | probability ✅ 2026-09-06 |
 
-#### `popart/` — and whether the currency conversion is CURRENT
-
-| tag | is |
-|---|---|
-| `mu` · `sigma` | what the normalizer BELIEVES the return mean and scale are. **Should TRACK `train/return_mean` / `train/return_std`** |
-| `value_weight_norm` | the POP rescale staying bounded |
-| **`norm_return_mean`** | `mean((returns − μ)/σ)` — **≈0 when the conversion is current.** Far from 0 is an offset the value head has to carry itself | ✅ 2026-09-06 |
-| **`norm_return_std`** | `std((returns − μ)/σ)` — **≈1 when the conversion is current.** Drifting from 1 is PopArt LAGGING the return scale, and the value gradient is then mis-scaled against the shared trunk by exactly that factor | ✅ 2026-09-06 |
-
-μ and σ alone say what the normalizer believes; these two apply the conversion to THIS rollout's own
-returns and say whether the belief is current. Free — a mean and a std over an array
-`value_scale_metrics` has already read. Emitted only under `--use-popart`.
-
 #### `train/` — value-function health, and the EXPLAINED-VARIANCE currency question
 
 | tag | is | currency |
@@ -636,20 +620,15 @@ returns and say whether the belief is current. Free — a mean and a std over an
 | `explained_variance` | `1 − Var(returns − values)/Var(returns)`, over the whole rollout pooled | **see the note below** |
 | `return_mean` · `return_std` · `return_abs_max` | the value TARGETS' scale. **`return_std` IS the value-target std** | RAW SHAPED RETURN |
 | `value_pred_std` | the critic's own output spread | RAW SHAPED RETURN |
-| `value_loss` | the fitted loss | NORMALIZED under PopArt, raw otherwise |
+| `value_loss` | the fitted loss | raw |
 | `policy_gradient_loss` · `entropy_loss` · `loss` · `approx_kl` · `clip_fraction` · `clip_range[_vf]` · `grad_norm` · `n_updates` | the stock PPO step | unitless / loss units |
 | `approx_kl_epoch_<k>` · `clip_fraction_epoch_<k>` | one pair per epoch the update ran, `k = 0…n_epochs−1` (fewer after a `target_kl` stop) — each epoch's mean of the SAME per-minibatch numbers the stock pair folds (`gen3_ppo_per_epoch_diag_v1`). ⚠️ stock `approx_kl` is the LAST epoch's mean; stock `clip_fraction` pools every epoch. Detail: [`ppo_step.md`](ppo_step.md) | unitless |
 | `scaffolding_gauge` · `scaffolding_rho` · `scaffolding_n` | the shaped critic vs the win-prob head — **DEGENERATE under `--critic winprob`**, where the two readouts are one head | unitless (rank) |
 | `noise_scale[_ratio][_<term>]` · `dose_rate` · `effective_batch` · `grad_accum_steps` · `train_ms` | the step-size controllers | see their sections |
 
-🚨 **`train/explained_variance` IS THE SAME NUMBER IN BOTH CURRENCIES, and a second "normalized"
-tag would be a duplicate curve rather than a second measurement.** EV is
-`1 − Var(y − ŷ)/Var(y)`, and PopArt applies the SAME affine map `(·−μ)/σ` to both `y` and `ŷ`
-(`policy._critic_value` de-normalizes, so `rollout_buffer.values` and `returns` are both RAW). A
-shared affine map cancels: `Var(a(y−ŷ))/Var(a·y)` is unchanged for any `a ≠ 0`, and the `−μ` cancels
-inside both variances. **So SB3's default is computed on the RAW shaped-return arrays, and the
-PopArt-normalized EV is numerically identical to it.** That is worth stating rather than shipping,
-because "which currency is this EV in?" is a question a reader will otherwise ask on every run.
+🚨 **`train/explained_variance` is computed on the RAW return arrays** (`rollout_buffer.values` and `returns`).
+(Under the deleted PopArt the normalized EV was numerically identical to it — a shared affine map cancels —
+so there was never a second "normalized" curve to publish.)
 
 ⚠️ **`train/value_target_std` does not exist and is not needed: it is `train/return_std`.** The
 value targets ARE `rollout_buffer.returns`. Not renamed — `return_std` is accurate, sits beside its
@@ -691,7 +670,7 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   `SHARED_TRUNK_PHASES = {embeddings, pokemon_encoder, team_transformer, assembler}` (the allow-list
   is the single source of truth), which **excludes** `cls_pool` (head-private `our_cls`/`their_cls`/
   `value_cls` queries) and both projection heads — only *truly contested* params count. With the
-  belief / move / latent / move-latent / win-prob / value-dist auxiliaries there are now **many**
+  belief / move / latent / move-latent / win-prob auxiliaries there are now **many**
   competitors, not just value-vs-policy, so **every `grad/*_share` is on the SAME total**
   `T = ‖g_pi‖ + ‖g_vf‖ + Σ‖g_aux‖` — the shares are mutually comparable, **sum to ~1**, and any one
   term crowding out the rest is read off directly. (L1-of-norms — an upper-bound proxy, not a variance
@@ -705,7 +684,7 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   - `grad/value_policy_logratio` = `log10(‖g_value‖/‖g_policy‖)` — the **AUX-INDEPENDENT** value-vs-policy
     imbalance (a pure ratio of the two RL norms, unchanged by how many auxiliaries are on), *linear &
     non-saturating* (0 = balanced, >0 = value dominates, <0 = policy dominates, e.g. ≈+1.8 at a 66:1
-    swamp). The legible gauge for **watching a PopArt / `vf_coef` fix land** — it moves linearly toward 0
+    swamp). The legible gauge for **watching a `vf_coef` fix land** — it moves linearly toward 0
     where `value_share` would crawl. `vf_coef` is **fixed per run** (recorded in `model_config.json`,
     FATAL to change on resume — it rescales this very gradient; tune on a fresh run; see
     `src/agents/model/CLAUDE.md` → resume-immutable training hparams).
@@ -713,12 +692,12 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
     signal: <0 ⟹ the two RL heads pull the trunk in opposing directions.
   - `grad/policy_norm_shared` / `grad/value_norm_shared` — the weighted norms, for absolute context.
   - **Per-aux breakout** (each present only when ITS head is active this minibatch — passed as the
-    `aux_terms` dict): `grad/{species_belief, move_belief, move_latent, win_prob, value_dist}_*`,
+    `aux_terms` dict): `grad/{species_belief, move_belief, move_latent, win_prob}_*`,
     each with `_share` (on the common `T`), `_norm_shared`, and `_policy_cosine` (<0 = that aux fights
-    the policy). So the species CE, move BCE, SimSiam latent, move-latent grading, win-prob and value-dist
+    the policy). So the species CE, move BCE, SimSiam latent, move-latent grading and win-prob
     pulls are **attributable individually** (the old combined `belief_share` lump is gone) — watch each
-    sit small (~a few %); a spike with a degrading policy → lower THAT term's coef. `win_prob`/`value_dist`
-    are ≈0 under `read_only` (stop-grad), real under `shaping`.
+    sit small (~a few %); a spike with a degrading policy → lower THAT term's coef. `win_prob`
+    is ≈0 under `read_only` (stop-grad), real under `shaping`.
   - **`grad/distill_share`** (`gen3_grad_distill_share_v1`): the exploiter-distillation **policy KL**'s
     own entry in the same dict — the dose meter `design_advantage_gated_distillation.md` §6.2
     dose-matches the G1/G2 arms on (gradient share, not coefficient). Policy KL ONLY, deliberately:
@@ -760,20 +739,19 @@ while `train/explained_variance` races ahead. `InstrumentedMaskablePPO.train()` 
   an effect size. `CELL_FAMILIES` is DECLARED, not duck-typed, so a renamed cell breaks the test
   rather than going quietly unmonitored. Nothing is emitted for a cell that is off — it is absent
   from the extractor, and a zero would read as "enabled but dead", a different claim.
-- **Value scale — PopArt prep.** From the full rollout buffer: `train/return_mean` / `train/return_std`
-  / `train/return_abs_max` (exactly the `(μ, σ)` + tail an adaptive return normalizer / PopArt's ART
-  half tracks) and `train/value_pred_std` (the value head's actual output spread). Watch these to SEE
+- **Value scale.** From the full rollout buffer: `train/return_mean` / `train/return_std`
+  / `train/return_abs_max` (the return `(μ, σ)` + tail) and `train/value_pred_std` (the value head's actual output spread). Watch these to SEE
   the non-stationary value-scale drift (reward annealing / policy improvement) that a static `vf_coef`
   cannot follow. Plus `train/grad_norm` (pre-clip total grad norm, mean over minibatches → grad-clip
   activity).
 
 Cost: **2 partial backward passes on ONE minibatch per `train()` call**, plus **one more per ACTIVE
-auxiliary** (species/move/latent/move-latent belief + win-prob + value-dist → up to ~8 total when every
+auxiliary** (species/move/latent/move-latent belief + win-prob → up to ~7 total when every
 head is on; each is the `aux_terms` dict's per-term `autograd.grad`) — all on the single sampled
 minibatch, negligible vs the `n_epochs × n_minibatches` the loop already runs + trivial NumPy stats. The
 probe is a **no-op**
 (records nothing) when `shared_trunk_parameters` finds no matching modules (a non-Gen3 policy). **Why
-it exists:** to prepare for **reducing `vf_coef`** and **adding return normalization (PopArt)** — both
+it exists:** to prepare for **reducing `vf_coef`** (and the since-deleted return normalization) — both
 target the value→trunk pressure, which can now be tuned to a number instead of inferred. (The
 `+INSTRUMENTATION` markers in `instrumented_ppo.py` flag the added lines; the upstream-drift hash check
 is unaffected since it hashes only `sb3_contrib.MaskablePPO.train`.)

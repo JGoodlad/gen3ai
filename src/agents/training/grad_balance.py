@@ -3,12 +3,11 @@
 The dual-head feature extractor shares ONE transformer trunk between the policy and value
 heads (see ``src/agents/model/CLAUDE.md``). Both losses' gradients flow into that shared
 trunk and *compete* — and so does EVERY auxiliary head whose gradient reaches the trunk
-(species/move/latent/move-latent belief, the win-prob head under ``shaping``, the
-distributional value head under ``shaping``). With more than two competitors the question is
+(species/move/latent/move-latent belief, the win-prob head under ``shaping``). With more than two competitors the question is
 no longer "value vs policy" but "is ANY term crowding out the rest", so the probe measures
 each term's pull on **one common denominator** — a pie that sums to ~1 and is directly
 comparable across terms. These pure helpers measure that competition **directly**, so
-reducing ``vf_coef`` / an aux coef or adding return normalization (PopArt) can be tuned to a
+reducing ``vf_coef`` / an aux coef can be tuned to a
 number instead of inferred indirectly from ``approx_kl`` / ``clip_fraction``.
 
 Two probes, both cheap and both run once per ``train()`` call:
@@ -18,11 +17,11 @@ Two probes, both cheap and both run once per ``train()`` call:
   (``policy + value + Σ aux``), so ``grad/policy_share`` + ``grad/value_share`` +
   ``grad/aux_share`` ≈ 1 and a term swamping the trunk is visible as its share climbing.
   ``grad/value_policy_logratio`` is the *aux-independent* value-vs-policy imbalance (a pure
-  ratio of the two RL norms — the PopArt / ``vf_coef`` tuning gauge); ``grad/<term>_policy_cosine``
+  ratio of the two RL norms — the ``vf_coef`` tuning gauge); ``grad/<term>_policy_cosine``
   <0 = that term drags the trunk against the policy (structural conflict, coef-free).
-* :func:`value_scale_metrics` — the return / value-prediction *scale* (PopArt prep). These are
-  exactly the ``(μ, σ)`` an adaptive return normalizer tracks; watch them to SEE the value scale
-  drift (reward annealing / policy improvement) that a static ``vf_coef`` can't follow.
+* :func:`value_scale_metrics` — the return / value-prediction *scale*: the ``(μ, σ)`` of the
+  returns; watch them to SEE the value scale drift (reward annealing / policy improvement) that a
+  static ``vf_coef`` can't follow.
 
 All functions are pure (no SB3, no logging) so they unit-test without a training loop;
 ``InstrumentedMaskablePPO.train()`` calls them and records the results via the standard logger
@@ -98,8 +97,7 @@ def grad_balance_metrics(
     enter the combined loss — ``policy_term = policy_loss + ent_coef*entropy_loss`` and
     ``value_term = vf_coef*value_loss``. ``aux_terms`` maps a short name → that auxiliary's
     **weighted** contribution (``coef * aux_loss``) exactly as it entered the loss, e.g.
-    ``{"species_belief": …, "move_belief": …, "move_latent": …, "win_prob": …,
-    "value_dist": …}`` — pass only the terms that are ACTIVE this minibatch (an empty / ``None``
+    ``{"species_belief": …, "move_belief": …, "move_latent": …, "win_prob": …}`` — pass only the terms that are ACTIVE this minibatch (an empty / ``None``
     dict means "RL heads only", the upstream-identical 2-way case). **An aux term that is the SAME
     tensor object as ``value_term`` is skipped** (`gen3_tb_relevance_v1`): under
     ``--critic winprob`` the critic loss IS the win-prob BCE, and reporting it as both would
@@ -117,7 +115,7 @@ def grad_balance_metrics(
     ``{grad/policy_share, grad/value_share, grad/policy_norm_shared, grad/value_norm_shared,
     grad/value_policy_logratio, grad/policy_value_cosine}`` — where ``value_policy_logratio`` =
     ``log10(‖g_value‖/‖g_policy‖)`` is the **aux-independent** value-vs-policy imbalance (0 =
-    balanced, >0 = value dominates, <0 = policy dominates: the legible PopArt / ``vf_coef`` knob,
+    balanced, >0 = value dominates, <0 = policy dominates: the legible ``vf_coef`` knob,
     unaffected by how many auxiliaries are on) and ``policy_value_cosine`` <0 = the two RL heads
     drag the trunk in opposing directions. For each ``aux_terms`` entry it adds
     ``grad/<name>_share``, ``grad/<name>_norm_shared`` and ``grad/<name>_policy_cosine`` (<0 = that
@@ -167,7 +165,7 @@ def grad_balance_metrics(
         "grad/value_share": _share(n_vf),
         # log10 of the value/policy pull RATIO — AUX-INDEPENDENT (a pure ratio of the two RL norms,
         # unchanged by how many auxiliaries are reported), linear & non-saturating (0 = balanced,
-        # >0 = value dominates, <0 = policy dominates). The legible gauge for watching PopArt / a
+        # >0 = value dominates, <0 = policy dominates). The legible gauge for watching a
         # vf_coef change pull the value/policy balance back — `value_share` now moves with the aux
         # count (it is value's slice of the WHOLE pie), so the ratio is the cleaner balance signal.
         "grad/value_policy_logratio": (
@@ -192,13 +190,13 @@ def grad_balance_metrics(
 
 
 def value_scale_metrics(returns, values) -> Dict[str, float]:
-    """Return- and value-prediction scale stats — the inputs PopArt's ART half would track.
+    """Return- and value-prediction scale stats.
 
-    ``return_mean`` / ``return_std`` are exactly the ``(μ, σ)`` an adaptive return normalizer
-    estimates; ``return_abs_max`` shows the tail magnitude; ``value_pred_std`` is the value
+    ``return_mean`` / ``return_std`` are the ``(μ, σ)`` of the rollout's returns;
+    ``return_abs_max`` shows the tail magnitude; ``value_pred_std`` is the value
     head's actual output spread (does it really span ±tens?). Watch these to SEE the non-
     stationary value scale drift as the reward is annealed / the policy improves — the signal a
-    static ``vf_coef`` can't track and PopArt would.
+    static ``vf_coef`` can't track.
 
     Pure NumPy; ``returns`` / ``values`` are the full rollout buffer's arrays (any shape — they
     are flattened). Returns an empty dict for empty input rather than emitting NaNs.

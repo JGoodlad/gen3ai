@@ -529,7 +529,7 @@ def _run(cfg: dict) -> None:
     forensic_quota = ForensicQuota.coerce(cfg.get("forensic_quota"))
     pool = ShardedEvalPool.from_plan(result_dir)
     needs_version = any(it.kind in (SENTINEL, FIXED) for it in pool.items)
-    # Gate snapshot loads against THIS run's arch (belief-ON / popart / …), threaded from the parent
+    # Gate snapshot loads against THIS run's arch (belief-ON / …), threaded from the parent
     # via the cfg — else a belief-ON self-play run FATALs on its own sentinels (check_compatible).
     current_version = (
         current_model_version(mappings, **cfg.get("arch_toggles", {})) if needs_version else None

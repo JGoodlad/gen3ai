@@ -114,7 +114,7 @@ updated + scalar emitted at accum=2).
 
 **`train/noise_scale` is measured on the TOTAL gradient, and on this tree the total gradient is
 mostly not PPO.** The loss is the clipped surrogate + the value term + the entropy bonus + a dozen
-DENSE supervised auxiliaries (belief heads, win-prob, spread/nature/HP-type, value-dist, TD-aux,
+DENSE supervised auxiliaries (belief heads, win-prob, spread/nature/HP-type, TD-aux,
 the counterfactual family) + a distillation KL on a fold. A supervised head's per-example gradients
 **agree** — its target is a label, not an advantage — so its `tr(Σ)` is small and its `|G|²` is not.
 Mixing it into the total therefore **DEFLATES** `B_simple = tr(Σ)/|G|²`, and the run reads
@@ -134,9 +134,9 @@ comparison is that a disagreement can only be the *gradient*, never the estimato
 | group | is |
 |---|---|
 | `policy` | the clipped surrogate AS FOLDED (`_policy_grad_term`; at the 1.0 default that is `policy_loss` itself) |
-| `value` | `vf_coef · value_loss` (0.0 and therefore absent under `value_from_dist`) |
+| `value` | `vf_coef · value_loss` (0.0 and therefore absent under `--critic winprob`, where the win-prob BCE carries the `value` tag instead) |
 | `entropy` | `ent_coef · ent_loss_used` — **degenerate at `--ent-coef 0`** (a 0.0-scaled tensor still folds, so the group is present but its norms are 0 and both EMAs stay non-positive ⇒ nothing is emitted, which is the right answer, not a gap) |
-| `aux` | every belief / win-prob / value-dist / TD-aux / search-teacher / OPD / counterfactual term, as ONE bucket (`grad/<term>_share` already breaks the heads out individually) |
+| `aux` | every belief / win-prob / TD-aux / search-teacher / OPD / counterfactual term, as ONE bucket (`grad/<term>_share` already breaks the heads out individually) |
 | `distill` | the `--distill-coef` family — separated because it comes and goes with a fold and its dose is the thing being tuned |
 
 Three scalars per group, beside the existing pair:

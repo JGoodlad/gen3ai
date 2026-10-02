@@ -162,21 +162,10 @@
   "terminal_indicator": true,
   "total_dim": 2761,
   "type_embedding_dim": 16,
-  "use_popart": false,
-  "value_dist_bins": 0,
-  "value_dist_coef": 1.0,
-  "value_dist_mode": "none",
-  "value_dist_vmax": 0.0,
-  "value_dist_vmin": 0.0,
   "value_entity_pool": true,
   "value_entity_pool_full": true,
-  "value_from_dist": false,
-  "value_tail_weight": 0.0,
   "value_threat_inject": true,
   "vf_coef": 0.5,
   "victory_value": 1.0,
-  "win_prob_coef": 1.0,
-  "win_prob_mode": "shaping",
-  "win_prob_pbrs_coef": 0.0,
-  "win_prob_pbrs_source": null
+  "win_prob_mode": "shaping"
 }

@@ -95,6 +95,29 @@ enforced in `main.train.config.resolve_config` and `main.checkargs`), never sile
 the terminal alone. The fix it names is a pin to ≤ `029cee83`. Detail:
 `designs/training/reward.md`.
 
+🚨 **The RETIRED LEVERS left the config at v131** (deletion pass L1, `gen3_retired_levers_l1_v1`, owner-approved
+2026-10-02): `use_popart`, `value_dist_mode` (+ `value_dist_bins` / `vmin` / `vmax` / `coef`), `value_from_dist`,
+`value_tail_weight`, `win_prob_coef`, `win_prob_pbrs_coef`, `win_prob_pbrs_source`, `win_prob_pbrs_frozen`.
+`_migrate_config` POPs them version-independently (`cls(**data)` TypeErrors on a stale key). They are judged in
+ONE table, `model_version/retired_levers.py` (`RETIRED`; **each later deletion unit APPENDS its levers**), in the
+shape `shaped_reward.py` set:
+
+* a **STRUCTURAL** lever (`use_popart`, `value_dist_mode != 'none'`, `value_from_dist` — an ON value named
+  PARAMETERS or a critic route the surviving code cannot rebuild) recorded ON is REFUSED on EVERY load
+  (`refuse_structural`, called from `_migrate_config`): popping it would hand SB3 an unplaceable state_dict;
+* a **TRAINING-ONLY** lever (the tail weight, the aux-BCE coefficient, both PBRS rungs) pops silently on a frozen
+  load (a forward never reads it), and a RESUME or FORK of a run that recorded one ON is refused from the RAW
+  file (`check_no_retired_levers`, called by `main.train.config.enforce_not_shaped_parent` and by
+  `main.checkargs.retired_levers_finding`), naming the flag and the pin (`RetiredLever.last_commit`);
+* the PICKLED half — a zip's `policy_kwargs` `use_popart` / `value_from_dist` and `features_extractor_kwargs`
+  `value_dist_*` — is `snapshot._DEAD_POLICY_KWARGS_JUDGED` / `_DEAD_FEK_JUDGED` / `_DEAD_FEK_INERT`, applied by
+  every sanitizing loader (`_patch_historical_floor`; `snapshot.historical_load_kwargs` for `play.py`; the prober's
+  `sanitized_load_custom_objects`). A BARE `MaskablePPO.load` of a pre-deletion zip TypeErrors — that is the
+  failure the lists exist for, pinned by `agents/model/retired_levers_test.py`.
+
+Today this is belt-and-braces: every v121+ run on record recorded every lever OFF. No `ARCH_SIGNATURE` bump, no
+`MIGRATION_FLOOR` change.
+
 ## Where the per-version entries went
 
 **The per-version entries that used to live here have moved to `designs/CHANGELOG.md` §4**
@@ -113,7 +136,7 @@ other and with the code.
 
 ## The `--critic` route has no fallback, its version gate, and how the mode is threaded
 
-**The `winprob` route has NO FALLBACK, for `value_from_dist`'s exact reason** (the v89
+**The `winprob` route has NO FALLBACK, for the deleted `value_from_dist` route's exact reason** (the v89
 orphaned-route class): `value_net` is in no loss graph under this critic, so quietly returning it
 would be a critic the training loop believes in and nothing updates. A missing head, an un-stashed
 `last_win_prob_logits`, or a batch-size disagreement with `latent_vf` all RAISE.
@@ -134,7 +157,7 @@ flagless resume inherits its recorded critic, and `check_compatible`'s string co
 critic mismatch — the warm-start hazard the old plan bumped the signature for cannot arise. (The earlier
 plan here — "the signature bump belongs to the DEFAULT FLIP" — assumed the two meanings were one constant.)
 
-`critic` is threaded as a POLICY kwarg (the `use_popart` / `value_from_dist` class), which is why
+`critic` is threaded as a POLICY kwarg (the class `use_popart` / `value_from_dist` were), which is why
 it is absent from `agents/model/flag_registry.py`: that registry's declared scope is EXTRACTOR
 architecture toggles, and this one reaches no extractor — the heads it selects between were already
 built by their own flags. It rides `snapshot.current_model_version(critic=…)` and

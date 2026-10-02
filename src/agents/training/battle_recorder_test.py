@@ -366,34 +366,9 @@ def test_states_arrays_carries_the_action_mask():
     assert not am.all(), "a real mask always forbids something — all-legal is the bug's signature"
 
 
-def test_states_arrays_captures_value_dist():
-    """states_arrays() carries the value-dist head's per-atom distribution [T, bins] parallel to
-    `values`; a row with no distribution stays all-NaN, and the key is OMITTED entirely when no
-    decision carried one (so the prober's KeyError 'unavailable' path fires on a headless run)."""
-    bins = 8
-    rec = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
-    dists = [list(np.full(bins, 1.0 / bins)), None, list(np.eye(bins)[3])]  # uniform, absent, one-hot@3
-    for t in range(3):
-        st = {"value": 1.0, "obs": np.zeros(4, np.float32), "logits": np.zeros(11, np.float32)}
-        if dists[t] is not None:
-            st["value_dist"] = dists[t]
-        rec.record(_move_battle(t + 1), 6, _probs(), _mask(6), state=st)
-    out = rec.states_arrays()
-    vd = out["value_dist"]
-    assert vd.shape == (3, bins)
-    assert vd[0] == pytest.approx(1.0 / bins) and np.isnan(vd[1]).all() and vd[2][3] == pytest.approx(1.0)
-
-    # Headless run: no state carries a distribution → the key is absent entirely.
-    rec2 = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
-    for t in range(2):
-        rec2.record(_move_battle(t + 1), 6, _probs(), _mask(6),
-                    state={"value": 1.0, "obs": np.zeros(4, np.float32), "logits": np.zeros(11, np.float32)})
-    assert "value_dist" not in rec2.states_arrays()
-
-
 def test_states_arrays_captures_move_logits_and_spread():
     """states_arrays() carries the captured move-belief posterior [T, n_moves] + the opp-active believed
-    spread [T, 5] (the prober's axis-B trajectory inputs), parallel to value_dist: NaN for an uncaptured
+    spread [T, 5] (the prober's axis-B trajectory inputs), parallel to `values`: NaN for an uncaptured
     row, key OMITTED entirely when the head was off the whole run."""
     rec = BattleRecorder("battle-gen3ou-test", reward_fn_factory=_ZeroReward, gamma=0.9)
     mls = [[0.9, 0.1, 0.5, 0.2], None, [0.3, 0.7, 0.4, 0.6]]

@@ -134,7 +134,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **U0** | owner signs D1–D6 | — | — | — | — |
 | **U1** ✅ **SHIPPED 2026-10-02** (`gen3_bare_argv_winprob_v1`, config v130) | bare-argv default (§2.1) | 0.75 | A | parser `clean_world` / `reward` / `env_core`, `critic_mode`, `recipe_surface` | U0, sizing verdict |
 | **U2** ✅ **SHIPPED 2026-10-02** (D3: no banked run) | extractions: standalone spaces builder (off `Gen3Env`), `OPP_CLASS_*` / `STABLE_CHALLENGE_SHARE` / `resolved_obs_source` / `_build_trainee_tb` re-homed; D4's python-era resume rule; D3's banked last-green run of every env-level gate | 1.0 | A | `rust_rollout/build.py`, `rust_env_setup.py`, `rust_env_opponents.py` | U1 |
-| **L1** | shaped-only levers + self-PBRS + frozen-φ (R2) | 1.0 | B | `combination_checks`, `config`, parser `clean_world` / `distillation` / `value_heads` | U1 |
+| **L1** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l1_v1`, config v131, stamp-only; **lines removed: non-test code −2,663 / +677 (net −1,986), tests −2,497 / +405 (net −2,092)**, docs + data −718 / +330; 15 flags, 12 `ModelVersion` fields, 16 `combination_checks` rows; K9 golden files untouched and green) | shaped-only levers + self-PBRS + frozen-φ (R2): PopArt, the value-dist head, `value_from_dist`, the CVaR value-tail weight, `--win-prob-coef`, `--win-prob-pbrs-{coef,source,frozen}` | 1.0 | B | `combination_checks`, `config`, parser `clean_world` / `distillation` / `value_heads` | U1 |
 | **L2** | λ, rollout target, dense aux, true team, entropy boosts, `choice_band_tracker` (R2) | 1.0 | B | same + `hyperparameters`; `label_inventory` | L1 |
 | **L3** | distillation + search teacher (R2) | 1.0 | B | + parser `capacity` / `distillation` / `teacher`, `matchup_setup` | L2 |
 | **L4** | cf training half + team-PFSP + exploiter ladder + `REFUSED_WITH_FLAG` (R2) | 0.75 | B | + parser `cf_grounding` / `eval_subprocess`, `rust_vec_env` | L3 |
@@ -150,6 +150,21 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **P8** | **OUT OF THE BOX (orchestrator default 2026-10-02, owner may override): stays in TECH_DEBT_BACKLOG** — test-speed rows (re-measured first) | 3.0 | C | test files, `utils/bridge/team_validator.py` | U3 |
 | **P11** | FLAG CENSUS | 2.0 | A | everything | every unit above |
 | **GATE** | slow tier as the MILESTONE run (`-m slow -n 2`, refreshes `slow_tier_status.json`) | ~1 wall-hour, 0.25 | — | — | P11 |
+
+**L1 hand-off (read before L2).** (1) `agents/model/model_version/retired_levers.py` is where a deleted lever is
+JUDGED and where L2..L5 APPEND theirs to `RETIRED` (structural vs training-only, flag names stored WITHOUT `--`
+because the freshness gate treats a bare `"--flag"` constant as live CLI surface; a training-only lever refuses a
+resume/fork, a structural one refuses every load); bump `MODEL_CONFIG_VERSION` once per unit that removes a recorded
+field and extend `_migrate_config`'s pop. (2) SB3 splats a zip's pickled `policy_kwargs` / `features_extractor_kwargs`
+into live constructors, so removing a kwarg TypeErrors a BARE `MaskablePPO.load` of every older zip: extend
+`snapshot._DEAD_*` / `sanitize_dead_policy_kwargs` for any kwarg a lever unit removes (`ctor_kwarg_snapshot_test` is the
+tripwire). Bare-load sites NOT covered by a sanitizer: `rust_eval/parity.py`, `eval_benchmark.py`, `winprob_finetune.py`,
+`main.anchors` bare mode, `harvest` — census material. (3) The R1 region signature changed (`popart` argument gone;
+`MicroStatic` lost `value_from_dist` / `value_tail_weight` / `win_prob_coef`, `value_mode` is `plain|clipped`) — lane C
+owns `compile_regions.py` (the L1 report to the orchestrator names it). (4) `hparams.py` and the `combination_checks` rows for L2's levers are
+still in place. (5) `--critic shaped` (python core only), `--terminal-indicator`, `--victory-value`, `--draw-penalty`
+remain for the census. (6) The prober's awareness vertical (`awareness.py`, `scaffolding_gauge`, `value_sidecar_read`)
+now reads OLD traces only — census candidates under the owner's prober-deletion permission.
 
 **Totals.** Lane A (spine) 6.25 · lane B (levers) 4.25 · lane C (compile / precision / paydown) 8.0 · census +
 milestone 2.25 → **≈ 21 agent-days (range 17–26)**. Program §2 M6 budgeted "~2 agent-days" for this pass; the

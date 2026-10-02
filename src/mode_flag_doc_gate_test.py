@@ -117,24 +117,9 @@ _CLAIMS: Tuple[Claim, ...] = (
           "§3.2 the MoveBelief step"),
 
     # ---- the critic family: what the mode implies and refuses ------------------------------
-    Claim("use_popart",
-          r"\(`use_popart`\s*(?P<value>true|false),\s*refused here\)",
-          "§3.4 the --critic table's PopArt column"),
-    Claim("value_dist_mode",
-          r"`value_dist_head` is not built here\*\*\s*\(`value_dist_mode`\s*`(?P<value>\w+)`",
-          "§3.4 'value_dist_head is not built here'"),
-    Claim("value_dist_bins",
-          r"`value_dist_head` is not built here\*\*[^)]*`value_dist_bins`\s*(?P<value>\d+)\)",
-          "§3.4 'value_dist_head is not built here'"),
-    Claim("value_dist_coef",
-          r"`value_dist_coef`\s*stays recorded at\s*(?P<value>[\d.]+)",
-          "§3.4 'value_dist_coef stays recorded at ...'"),
     Claim("vf_coef",
           r"BCE against the terminal WIN INDICATOR\*\*, at `vf_coef`\s*\*\*(?P<value>[\d.]+)\*\*",
           "§3.4 the --critic table's winprob row"),
-    Claim("win_prob_coef",
-          r"`win_prob_mode`\s*\*\*`\w+`\*\*,\s*`win_prob_coef`\s*\*\*(?P<value>[\d.]+)\*\*",
-          "§3.4 the side-readout table"),
     Claim("victory_value",
           r"`\+victory_value`\s*\(\*\*(?P<value>[\d.]+)\*\*\)\s*on a win",
           "§3.4 the --critic table's reward-stream column"),
@@ -216,10 +201,10 @@ _CLAIMS: Tuple[Claim, ...] = (
 _REQUIRED_COVERAGE = frozenset({
     "belief_grad_mode", "opp_intent_grad_mode", "critic", "hp_belief_mode",
     "terminal_indicator", "win_prob_mode", "move_belief_mode",
-    "value_dist_mode", "q_winprob_mode",
+    "q_winprob_mode",
     # each head's on/off coefficient
-    "win_prob_coef", "vf_coef", "opp_belief_aux_coef", "move_belief_coef",
-    "item_belief_coef", "value_dist_coef",
+    "vf_coef", "opp_belief_aux_coef", "move_belief_coef",
+    "item_belief_coef",
 })
 
 
@@ -398,7 +383,7 @@ def test_the_mirror_declares_inert_keys_and_the_prose_agrees():
         "`python -m agents.model.arch_tables`."
     )
 
-    # PARAGRAPH granularity, not line: this prose hard-wraps, so "`value_dist_coef`\nstays
+    # PARAGRAPH granularity, not line: this prose hard-wraps, so "`some_key`\nstays
     # recorded at 1.0 and §6 marks it `INERT`" is one claim across two lines and a line-wise check
     # would report it as a violation. A paragraph is the smallest unit that is always a whole
     # claim.
