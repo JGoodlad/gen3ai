@@ -362,6 +362,16 @@ else
     did "checked out"
 fi
 
+# The `keep-ours` merge driver `.gitattributes` names for the GENERATED ledger index (the shared
+# .git config, so every worktree gets it). The ship skill regenerates the index after a rebase.
+if [ "$(git config --get merge.keep-ours.driver || true)" = "true" ]; then
+    skip "merge driver keep-ours already configured"
+else
+    run git config merge.keep-ours.driver true
+    run git config merge.keep-ours.name "keep our side (the file is regenerated after the merge)"
+    did "merge driver keep-ours configured"
+fi
+
 # ══════════════════════════════════════════════════════════════ 5. showdown build artifacts
 #
 # TWO PATHS, and picking the right one matters. A linked git worktree gets its own (empty)

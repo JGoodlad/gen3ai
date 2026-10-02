@@ -132,6 +132,11 @@ If there are commits, rebase:
 git rebase origin/main
 ```
 
+**Append-only files merge themselves** (`.gitattributes`): `designs/CHANGELOG.md` and the ledger keep BOTH sides' lines, and `ledger_index.md` keeps ours. So after ANY rebase that touched the ledger, regenerate the index and commit it if it changed:
+```bash
+python -m main.ledger_index --write && git diff --quiet designs/research_state/ledger_index.md || git commit -m "docs(ledger): regenerate ledger_index after rebase" designs/research_state/ledger_index.md
+```
+
 **If the rebase hits a conflict**, do NOT blindly take one side. For each conflicted file:
 
 1. Read both versions (`git diff` / inspect the conflict markers).

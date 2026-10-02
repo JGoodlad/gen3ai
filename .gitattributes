@@ -1,0 +1,7 @@
+# APPEND-ONLY files merge by keeping BOTH sides' lines, so concurrent appends never conflict on rebase
+# (owner 2026-10-02). Safe ONLY because these files are append-only by rule: never edit an existing entry.
+designs/CHANGELOG.md merge=union
+designs/research_state/ledger.md merge=union
+# GENERATED from ledger.md: keep our side on a merge, then the ship skill (step 4) regenerates it.
+# The "keep-ours" driver is defined in git config by scripts/bootstrap.sh; without it, git falls back to a normal merge.
+designs/research_state/ledger_index.md merge=keep-ours
