@@ -72,7 +72,7 @@ Risk is the risk of replacing a touchpoint without changing behaviour.
 | `MaskablePPO.learn` | sb3_contrib `ppo_mask.py:428`. Called at `main/train/model_build.py:786` (resume) and `:991` (fresh) | The outer loop: `_setup_learn` → `on_training_start(locals(), globals())`, then repeat (collect → `iteration += 1` → progress → `dump_logs` → `train()`) → `on_training_end` | **low**. 35 lines, and its ORDER is load-bearing (§2.2) |
 | `BaseAlgorithm._setup_learn` | sb3 `base_class.py:383` | `start_time`; `ep_info_buffer` (deque 100); `total_timesteps += num_timesteps` on a resume (the 2026 budget-doubling incident, `model_build.py:779`); env reset when `_last_obs` is None; callback init | **low**. Vendor it |
 | `OnPolicyAlgorithm.dump_logs` | sb3 `on_policy_algorithm.py:277` | `time/fps`, `rollout/ep_rew_mean`, `rollout/ep_len_mean`, `time/*`, then `logger.dump(step=num_timesteps)` | **low**. The tag names are read by `killbar`, `tb_read`, `restart_startup`, `stall_exhibit`, the launcher's `format.py` and `plot_tb` |
-| `MaskablePPO.collect_rollouts` (Python core) | `ppo_mask.py:181`, reached via `RolloutProbes.collect_rollouts` (`instrumented_ppo/rollout_probes.py:32`) | Step the VecEnv, `update_locals(locals())` **before** `rollout_buffer.add`, the truncation bootstrap, then GAE | **med**. `WinProbLabelCallback` and `DenseAuxLabelCallback` read `buf.pos` in `on_step` as the row about to be written. Vendor it with its LOCAL NAMES unchanged |
+| `MaskablePPO.collect_rollouts` (Python core) | `ppo_mask.py:181`, reached via `RolloutProbes.collect_rollouts` (`instrumented_ppo/rollout_probes.py:32`) | Step the VecEnv, `update_locals(locals())` **before** `rollout_buffer.add`, the truncation bootstrap, then GAE | **med**. `WinProbLabelCallback` reads `buf.pos` in `on_step` as the row about to be written. Vendor it with its LOCAL NAMES unchanged |
 | async collector | `agents/training/async_vec_env.py:226` | `--async-rollout`'s own loop, already ours. It still calls SB3's GAE | low. Deleted with the Python core |
 | Rust collector | `rust_rollout/collector.py:327` | Already ours: host steps, `on_step` with a fixed locals dict, `_update_info_buffer`, filling SB3's buffer in place | low |
 | `train()` | `instrumented_ppo/ppo.py:134` | Already ours (vendored, upstream hash pinned) | — |
@@ -85,7 +85,7 @@ Risk is the risk of replacing a touchpoint without changing behaviour.
 | `MaskableDictRolloutBuffer` | built by `_setup_model`; rebuilt at a new size by the Rust collector (`collector.py:395`) | The container: `[n_steps, n_envs]` arrays, `reset` / `add`, and `get(batch_size)` (one `np.random.permutation` per epoch, flatten-swap) | **med**. It is the contract between ~10 writers and `train()`; the K9 golden and `device_batches` are keyed on it |
 | `compute_returns_and_advantage` | SB3's stock collect; async `:284`; `rust_rollout/store.py:393` (window mode); PBRS and frozen-φ re-run it | Window GAE | low. The complete-game path already uses our `store.game_gae`, which repeats SB3's arithmetic operation for operation |
 | advantage normalisation | `micro_step.py:227` (ours) | Per micro-batch | — |
-| the post-collect window | `rollout_probes.py` (PBRS, frozen-φ), WinProb `on_rollout_end` (labels, λ-returns), Fork `on_rollout_end` (appends rows), ValueSidecar | Everything that rewrites the buffer between collection and `train()`. **The order is a contract:** WinProb before ValueSidecar and before Fork, both enforced only by list order in `main/train/callbacks.py` | **med** |
+| the post-collect window | `rollout_probes.py` (PBRS, frozen-φ), WinProb `on_rollout_end` (terminal-outcome labels), Fork `on_rollout_end` (appends rows), ValueSidecar | Everything that rewrites the buffer between collection and `train()`. **The order is a contract:** WinProb before ValueSidecar and before Fork, both enforced only by list order in `main/train/callbacks.py` | **med** |
 
 ### 1.3 Policy, init and optimizer
 
@@ -114,14 +114,14 @@ About 11 are on by default:
 The rest are flag-gated:
 - Adaptive batch, the distill anchor and distill stop.
 - The exploiter temperature and ladder.
-- `WinProbLabelCallback` and `DenseAuxLabelCallback` (Python core only).
+- `WinProbLabelCallback` (Python core only; the dense-aux callback it once sat beside is deleted, deletion pass L2).
 - The value sidecar, the fork arm and team PFSP.
 - cf supply and the search teacher.
 
 **What couples a callback to SB3:**
-- **`self.locals`:** 10 reads in 3 files, all `.get()` — `signal_callback.py` (with an async fallback to `wave_infos`), `win_prob_callback.py` and `dense_aux_callback.py`.
+- **`self.locals`:** reads in `signal_callback.py` (with an async fallback to `wave_infos`) and `win_prob_callback.py`, all `.get()` (the third file, `dense_aux_callback.py`, is deleted).
 - **The logger as a bus:** 6 readers of `logger.name_to_value` — the two LR controllers, RankTripwire, DistillAnchor, DistillStop and MetricsExporter — plus `compile_control.py:816`.
-- **Model attributes written by callbacks:** `lr_schedule`, `grad_accum_steps`, `distill_coef`, about 10 `distill_anchor_*` fields, and the `_win_*` / `_dense_aux_*` / `_fork_metrics` stashes.
+- **Model attributes written by callbacks:** `lr_schedule`, `grad_accum_steps`, `distill_coef`, about 10 `distill_anchor_*` fields, and the `_win_*` / `_fork_metrics` stashes.
 - **`env_method` / `get_attr`:** in selfplay, the exploiter callbacks, team PFSP, team win rate and reward terms.
 - **`model.save`:** in checkpoint, selfplay, eval and the teacher.
 

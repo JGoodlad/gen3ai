@@ -23,9 +23,9 @@ on the size ratchet's grandfathered list). `__init__.py` is a pure re-export hub
 | `loop.py` | **THE LOOP IS OURS** (`gen3_owned_ppo_loop_v1`, [`design_own_ppo_loop.md`](../endstate/design_own_ppo_loop.md) stage 1): `OwnedLoop` — `learn()` written out as the declared `LOOP_PHASES` table (`setup → training_start → [collect → progress → dump → update]* → training_end`), plus `_setup_learn`, `dump_logs`, `_update_current_progress_remaining`, `_update_info_buffer` and the Python env core's `_collect_python`, each vendored from sb3 / sb3-contrib operation for operation and hash-pinned at import (`UPSTREAM_SOURCE_SHA256`). Three CONTRACTS: the dump comes BEFORE the update (update k's `train/*` is stamped after rollout k+1 — every TB series in the archive, and the KL controller's logger read, rest on it); `learn` > `collect` | `update` are the DECLARED HOOK POINTS (`agents/training/loop_hooks.py`, `gen3_declared_loop_hooks_v1`: K6's freeze guard and the compile sentinel register there, outermost first by `HOOK_OWNERS`, and the table freezes at training start), and the methods are still called through the attribute; the Python collect keeps sb3's LOCAL NAMES and fires `on_step` before `rollout_buffer.add` (callbacks read `self.locals`, the win-prob labeller reads `buf.pos`). `GEN3AI_PPO_LOOP=sb3_reference` is a TEST SEAM (the equivalence A/B) that defers every vendored method to upstream; it goes with the Python core (stage 3). Pinned EXACT against upstream by `own_ppo_loop_test.py` (hook trace, buffers, dumps, params, resume) and, on real games, `own_ppo_loop_parity_test.py` (`sim`); the hook table by `loop_hooks_test.py` |
 | `hparams.py` | every after-construction knob `train_rl_agent` sets (the belief/intent/cf coefficients, `grad_accum_steps`, …) with the rationale comment each carries, plus `_excluded_save_params` |
 | `noise_scale.py` | the McCandlish gradient-noise-scale estimator + the rate-limited NSR advisor + `noise_ratio_sample`, the read seam `--adaptive-batch` steers by |
-| `noise_scale_terms.py` | the PER-LOSS-TERM half of it — is the total reading the POLICY gradient's, or the dense aux heads'? |
+| `noise_scale_terms.py` | the PER-LOSS-TERM half of it — is the total reading the POLICY gradient's, or the auxiliary heads'? |
 | `distill_terms.py` | search-teacher AWR · OPD · the exploiter-distillation family (policy KL — or the top-K/action-CE form with the advantage gate, `_gated_action_distill_loss` — value MSE, the FitNets hint) |
-| `value_terms.py` | the win-prob BCE · the dense-aux head's three BCE terms |
+| `value_terms.py` | the win-prob BCE |
 | `aux_terms.py` | the `belief_bank` / `td_aux` / `cf_terms` delegates |
 | `constants.py` | `_WIN_CONTESTED_TAU` · `_NOISE_SCALE_EMA_DECAY` |
 | `learner_gates.py` | **K9 — the learner's in-loop GIGO gates** (`designs/training/learner_gates.md`): the python-core behaviour gate on the first micro-batch's own forward (`behaviour_gate_mode` picks it or Lane G's pre-loop probe, never both) and the fail-closed non-finite checks — the buffer (before PopArt), the assembled loss per micro-batch (naming the term), the approx-KL, and `clip_grad_norm_checked` at every optimizer step. All raise before the optimizer moves anything |
@@ -64,10 +64,9 @@ uses to turn rewards and recorded values into the ADVANTAGES the clipped surroga
 and the resume path's `model.gae_lambda = …`); both now read `args.policy_gae_lambda`, so the
 default is byte-identical. Range `[0, 1]` (a parser error outside it).
 
-- **It is NOT `--win-prob-lambda`.** That is the CRITIC's λ-RETURN target for the win-prob BCE,
-  computed in a separate post-collection pass over the recorded values
-  ([`critic_and_value_losses.md`](critic_and_value_losses.md)). This one never touches the BCE
-  target; the two can be set independently.
+- **It never touches the BCE target.** The critic's win-prob BCE target is the terminal outcome
+  ([`critic_and_value_losses.md`](critic_and_value_losses.md)); a critic λ-return (`--win-prob-lambda`)
+  existed until deletion pass L2 and is gone, so this is the only λ in the loop.
 - **Recorded and inherited** — the `td_aux_coef` provenance class: a `ModelVersion` field
   (`policy_gae_lambda`, so `model_config.json`), `_resolve`-inherited on a flagless resume, never
   compared by `check_compatible`. A pre-v123 config migrates to 0.80 (the only possible past).

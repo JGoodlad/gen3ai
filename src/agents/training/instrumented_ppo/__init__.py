@@ -13,12 +13,12 @@ name it ever exported still resolves from `agents.training.instrumented_ppo`.
                       function (region R1 under --compile-trainer); `pack`/`unpack` = its one host read
     metrics_export.py the ~400-line `self.logger.record` tail — diagnostics, no gradient, one
                       method per TB prefix group
-    rollout_probes.py `collect_rollouts`, the entropy-boost schedule, the episode-start read —
-                      per-ROLLOUT work that is not part of the fold at all
+    rollout_probes.py `collect_rollouts` and the episode-start read — per-ROLLOUT work that is
+                      not part of the fold at all
     hparams.py        every after-construction knob `train_rl_agent` sets, with its rationale
     noise_scale.py    the McCandlish gradient-noise-scale estimator + the NSR advisor
     distill_terms.py  search-teacher AWR · OPD · the exploiter-distillation family
-    value_terms.py    the win-prob BCE · the value-dist HL-Gauss CE · the tail-weighted value loss
+    value_terms.py    the win-prob BCE and its opponent-stratified weights
     aux_terms.py      the `belief_bank` / `td_aux` / `cf_terms` delegates
     capacity_terms.py the `--capacity-telemetry` delegates — the ONE `*_terms` module that folds
                       NOTHING into `loss` (see its docstring)

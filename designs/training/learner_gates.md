@@ -335,7 +335,6 @@ can move anything (so a crash-save holds the last finite weights):
 | `rust_rollout/collector.py` `won = reward > 0` | a NaN reward became a finite LOSS label | the NaN reward is refused at the buffer check |
 | `distill_grad_project.py` (`grad_project` mode) | a NaN constraint gradient made `removed_sq > 0` False: the projection was SKIPPED silently, loss and `.grad` finite | typed FATAL on a non-finite `g_sq` / `removed_sq`, re-raised past the projector's broad `except` |
 | `adaptive_lr_callback.py` (both controllers) | a NaN KL froze `_kl_ema` (and the LR) for the rest of the run; an Inf walked the LR to `min_lr` | typed FATAL (the train-side `check_kl_finite` is the first line) |
-| `win_prob_rollout.py` rollout labels | a non-finite continuation label was skipped (the row kept its terminal label) | `None` still skips; a non-finite NUMBER is a typed FATAL |
 
 **Reach the total — covered by the loss / gradient checks:** the clipped surrogate, the value MSE (plain /
 clipped), entropy; the win-prob BCE and dense aux (multiplicative masks: NaN x 0 = NaN); the
@@ -349,7 +348,7 @@ validation raises before any loss — untyped, pinned by `learner_gates_test`).
 **LEGIT masks:** `damage_op_blocks.py` `where(isfinite(cheapest))` (every candidate is a constant or
 the +inf "no cure path" sentinel, no learned value); sb3_contrib's `where(mask, logits, -1e8)` (illegal
 slots, zero gradient); `fork_arm.py` gap `isfinite` (selection of which states fork); the NaN
-"not terminal" sentinels of `win_prob_callback` / `dense_aux_callback`; integer label keys (int64 —
+"not terminal" sentinels of `win_prob_callback`; integer label keys (int64 —
 a NaN cannot be stored).
 
 **DETACHED METERS that may fail open by design — the ride-along heads** (`instrumented_ppo/ridealong_terms.py`,
@@ -366,7 +365,7 @@ a NaN in the stashes they read is also in PPO's loss, where `check_loss_finite` 
 
 **TELEMETRY only (never a gradient / weight / LR):** `calibration.py`, `signal_metrics.py`,
 `scaffolding.py`, `value_terms._masked_auc`, the NaN-omitting metric folds in `ppo.py`, the fork-arm
-rate functions, `win_prob_rollout`'s rate metrics, the `try/except` telemetry blocks in
+rate functions, the `try/except` telemetry blocks in
 `noise_scale*`, `rollout_probes`, `capacity_terms`, `cf_terms`; `consistency.py`'s own bar (`not worst
 < BAR` also fails on NaN).
 

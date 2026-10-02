@@ -2,12 +2,6 @@ import os
 import random
 
 from agents.model.critic_mode import CRITIC_UNRECORDED, is_winprob
-from agents.training.dense_aux import terminal_facts as dense_aux_terminal_facts
-from agents.training.dense_aux_callback import (
-    INFO_MASK as DENSE_AUX_INFO_MASK,
-    INFO_TARGET as DENSE_AUX_INFO_TARGET,
-    INFO_TURN as DENSE_AUX_INFO_TURN,
-)
 from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
 
 # The opponent-mix constants (STABLE_CHALLENGE_SHARE, the OPP_CLASS_* codes) are declared in
@@ -547,17 +541,17 @@ class MaskableAgentWrapper(SingleAgentWrapper):
         return super().reset(seed=seed, options=options)
 
     def step(self, action):
-        # gen3_winprob_rollout_target_v1 — the per-decision RECONSTRUCTION HANDLE, captured BEFORE
-        # the step. The rollout buffer's row t holds the observation this decision was made FROM,
-        # so the handle must name the turn we were ASKED at; reading it after the step would name
-        # the turn the step landed on and label a state one turn downstream of the row. Two cheap
-        # attribute reads, and only when the flag threaded `_emit_wp_rollout_handle` on — a run
-        # without `--win-prob-rollout-target` does not even build the tuple.
+        # The per-decision RECONSTRUCTION HANDLE (the fork arm's), captured BEFORE the step. The
+        # rollout buffer's row t holds the observation this decision was made FROM, so the handle
+        # must name the turn we were ASKED at; reading it after the step would name the turn the
+        # step landed on, one turn downstream of the row. Two cheap attribute reads, and only when
+        # the flag threaded `_emit_wp_rollout_handle` on — a run without `--fork-fraction` does not
+        # even build the tuple.
         _wp_handle = _wp_turn = None
         if getattr(self.env, "_emit_wp_rollout_handle", False):
             _b0 = getattr(self.env, "battle1", None)
             if _b0 is not None:
-                from agents.training.win_prob_rollout import record_key
+                from agents.training.cf_records import record_key
                 _wp_handle = record_key(os.getpid(), getattr(_b0, "battle_tag", None))
                 _wp_turn = int(getattr(_b0, "turn", 0) or 0)
         obs, reward, term, trunc, info = super().step(action)
@@ -615,19 +609,6 @@ class MaskableAgentWrapper(SingleAgentWrapper):
             # the info dict (SB3 reads only `episode`/`terminal_observation`/`TimeLimit.truncated`),
             # so nothing downstream changes; the class is the one selected for THIS episode at reset.
             info["opponent_class"] = int(getattr(self, "_opponent_class", self.OPP_CLASS_BOT))
-            # gen3_dense_aux_v1: the END-OF-BATTLE per-slot facts the DENSE AUXILIARY head is
-            # trained on — survival and final HP of all twelve slots, plus the terminal turn — from
-            # the SAME `battle1` and the SAME seam `win_outcome` is published from, for the same
-            # reason: the trainee's battle is finished here, before the VecEnv auto-resets.
-            # Published only when the env is emitting the keys, so a run without the head pays
-            # nothing. The opponent's UNREVEALED slots carry no fact and the mask says so — this
-            # side never fabricates one (`agents.training.dense_aux`).
-            if getattr(self.env, "_emit_dense_aux", False):
-                _daux = dense_aux_terminal_facts(b)
-                if _daux is not None:
-                    info[DENSE_AUX_INFO_TARGET] = _daux[0]
-                    info[DENSE_AUX_INFO_MASK] = _daux[1]
-                    info[DENSE_AUX_INFO_TURN] = _daux[2]
             self._record_exploiter_outcome(won)   # ratchet-mode WR signal (no-op off / vs bots)
             self._maybe_record_team_pfsp(won)     # team-side PFSP per-team WR (pool + exploiter-target)
             self._maybe_record_team_wr(won)       # per-team win-rate tracking (all classes, default ON)

@@ -135,7 +135,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **U1** ✅ **SHIPPED 2026-10-02** (`gen3_bare_argv_winprob_v1`, config v130) | bare-argv default (§2.1) | 0.75 | A | parser `clean_world` / `reward` / `env_core`, `critic_mode`, `recipe_surface` | U0, sizing verdict |
 | **U2** ✅ **SHIPPED 2026-10-02** (D3: no banked run) | extractions: standalone spaces builder (off `Gen3Env`), `OPP_CLASS_*` / `STABLE_CHALLENGE_SHARE` / `resolved_obs_source` / `_build_trainee_tb` re-homed; D4's python-era resume rule; D3's banked last-green run of every env-level gate | 1.0 | A | `rust_rollout/build.py`, `rust_env_setup.py`, `rust_env_opponents.py` | U1 |
 | **L1** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l1_v1`, config v131, stamp-only; **lines removed: non-test code −2,663 / +677 (net −1,986), tests −2,497 / +405 (net −2,092)**, docs + data −718 / +330; 15 flags, 12 `ModelVersion` fields, 16 `combination_checks` rows; K9 golden files untouched and green) | shaped-only levers + self-PBRS + frozen-φ (R2): PopArt, the value-dist head, `value_from_dist`, the CVaR value-tail weight, `--win-prob-coef`, `--win-prob-pbrs-{coef,source,frozen}` | 1.0 | B | `combination_checks`, `config`, parser `clean_world` / `distillation` / `value_heads` | U1 |
-| **L2** | λ, rollout target, dense aux, true team, entropy boosts, `choice_band_tracker` (R2) | 1.0 | B | same + `hyperparameters`; `label_inventory` | L1 |
+| **L2** ✅ **SHIPPED 2026-10-02** (`gen3_retired_levers_l2_v1`, config v132, stamp-only; **lines removed: non-test code −4,229 / +341 (net −3,888), tests −5,070 / +323 (net −4,747)**, docs + data −1,377 / +218; 12 flags, 9 `ModelVersion` fields, 7 `combination_checks` rows + 6 `_ENV_CORE_UNPORTED` rows, 7 label-inventory rows; K9 golden files untouched and green) | λ, rollout target, dense aux, true team, entropy boosts, `choice_band_tracker` (R2) | 1.0 | B | same + `hyperparameters`; `label_inventory` | L1 |
 | **L3** | distillation + search teacher (R2) | 1.0 | B | + parser `capacity` / `distillation` / `teacher`, `matchup_setup` | L2 |
 | **L4** | cf training half + team-PFSP + exploiter ladder + `REFUSED_WITH_FLAG` (R2) | 0.75 | B | + parser `cf_grounding` / `eval_subprocess`, `rust_vec_env` | L3 |
 | **L5** | the Python fork arm (R3) | 0.5 | B | `combination_checks`, `fork_*` | L4 |
@@ -165,6 +165,35 @@ owns `compile_regions.py` (the L1 report to the orchestrator names it). (4) `hpa
 still in place. (5) `--critic shaped` (python core only), `--terminal-indicator`, `--victory-value`, `--draw-penalty`
 remain for the census. (6) The prober's awareness vertical (`awareness.py`, `scaffolding_gauge`, `value_sidecar_read`)
 now reads OLD traces only — census candidates under the owner's prober-deletion permission.
+
+**L2 hand-off (read before L3).** (1) `utils/rust_env/label_inventory.py`: `distill_mask` (family `distill`,
+`rust="refused"`) is now the ONLY refused row; L3 deleting it leaves no `refused` family, so also drop the `refused` kind
+(`RUST_KINDS`, the `"refused"` arm of the Rust `labels::declare` and its test `a_declaration_is_refused_by_kind`, which
+asserts the kind through `distill` today). Any change to the inventory changes the SCHEMA ID that three GENERATED Rust files
+embed: run `python -m utils.rust_env.columns --write`, `… ffi --write` and `… proc --write` (their `--check` forms are the
+gates; `ffi_test` / `proc` fail STALE otherwise), then REBUILD the env crate
+(`cd src/rust_env && CARGO_TARGET_DIR=$PWD/target cargo build --profile selfcheck --features emission-selfcheck --lib
+--bin rust_env_proc`) BEFORE the gate — otherwise the xdist workers race the auto-build into spurious FFI-table / stamp
+errors (~70 of them at L2's first gate run). (2) `RetiredLever` now carries `unit` / `version` (defaults L1 / 131): append
+L3's levers with `"L3", 133`, add `LAST_COMMIT_L3` (the commit that ships L2) and a `if version < 133` stamp in
+`_migrate_config`. A lever that was never a RECORDED field (the entropy boosts) cannot be tabled — its resume refusal does
+not exist; say so in `deleted_flags.md` (the retired_levers docstring explains). (3) `snapshot._DEAD_FEK_JUDGED` took
+`value_true_team` / `dense_aux` (every v121+ zip pickles both); distillation / the search teacher add no extractor kwargs
+today — re-check `ctor_kwarg_snapshot_test` and the pre-deletion-zip test in `retired_levers_test` for any kwarg L3 removes.
+(4) `_ENV_CORE_UNPORTED` now holds distill_coef, cf_records, search_teacher, team_pfsp, exploiter_ladder, async_rollout (L3
+removes the first and third); `lever_supply.LEVERS` is {self_play_pool, pfsp, team_pfsp, fork, search_teacher} (L3:
+`search_teacher`; L4: `team_pfsp`; L5: `fork`). (5) `fork_buffer.REFUSE_KEYS` holds only `distill_mask` (L5 deletes the file's
+python half anyway). (6) `WinProbLabelCallback()` takes no arguments and is the terminal back-fill + the fork arm's
+reconstruction-handle capture (`_handle_needed`); `record_key` / `index_records` now live in `cf_records.py`. (7) R1:
+`MicroStatic` has no `defensive` / `bait` / `rollout_weight`; `TrainSetup._r1_levers` returns the strata bool alone and
+`_micro_static(f, strata)`; the distill terms are in the eager tail (`distill_terms.py`, `distill_anchor.py`,
+`distill_grad_project.py`; `learner_lifecycle_gate_test`'s STEP_MODULES lists them). (8) `agents.model.extra_obs_keys` is an
+EMPTY registry (mechanism + AST drift gate kept, `extra_obs_keys_test` holds them with a stand-in row) — nothing for L3.
+(9) The value sidecar READER (`main.ops.value_sidecar_read`) still parses the λ / rollout header fields of OLD files — census
+material, not L3's. (10) Hygiene that cost time: export `PYTHONPATH=<worktree>/src` as an ABSOLUTE path in EVERY shell call
+(none, or main's, imports MAIN's code through the editable install and the results are about a tree you did not edit); a local
+run that executes a `slow` test rewrites `designs/ops/slow_tier_status.json` — `git checkout` it before committing; and a
+rerun of a failed subset needs `-m "not slow and not e2e"` or it pulls in the milestone parity tests (minutes each).
 
 **Totals.** Lane A (spine) 6.25 · lane B (levers) 4.25 · lane C (compile / precision / paydown) 8.0 · census +
 milestone 2.25 → **≈ 21 agent-days (range 17–26)**. Program §2 M6 budgeted "~2 agent-days" for this pass; the

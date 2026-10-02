@@ -328,10 +328,11 @@ def _migrate_config(data: dict) -> dict:
     from agents.model.model_version.shaped_reward import DELETED_SHAPED_REWARD_FIELDS
     for _dead in DELETED_SHAPED_REWARD_FIELDS:
         data.pop(_dead, None)
-    # v131 (deletion pass L1): the RETIRED LEVERS (self-PBRS, frozen-phi PBRS, PopArt, the
+    # v131 (deletion pass L1) + v132 (L2): the RETIRED LEVERS (self-PBRS, frozen-phi PBRS, PopArt, the
     # distributional value head, value_from_dist, the CVaR value-tail weight, the win-prob aux-BCE
-    # coefficient) left the config. A recorded ON value of one that named PARAMETERS or a critic route
-    # (use_popart, value_dist_mode, value_from_dist) is REFUSED on EVERY load — popping it would hand
+    # coefficient; then the lambda-return / R-rollout targets, the dense auxiliary head and the
+    # privileged true-team route) left the config. A recorded ON value of one that named PARAMETERS or a critic route
+    # (use_popart, value_dist_mode, value_from_dist, dense_aux, value_true_team) is REFUSED on EVERY load — popping it would hand
     # SB3 an unplaceable state_dict or run a checkpoint under a critic it was not trained with. The
     # TRAINING-only ones pop silently (a frozen forward never reads them); a RESUME or FORK that would
     # keep training without one is refused BEFORE this runs, from the raw file
@@ -399,6 +400,11 @@ def _migrate_config(data: dict) -> dict:
     # version-independent (above). v122's shape.
     if version < 131:
         data["config_version"] = 131
+    # v132 (deletion pass L2) — THE STAMP ONLY, v131's shape: the lambda / rollout-target / dense-aux /
+    # true-team levers left as FIELDS; their POP (and the structural refusal) is the
+    # version-independent `retired_levers` block above.
+    if version < 132:
+        data["config_version"] = 132
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

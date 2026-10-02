@@ -237,7 +237,7 @@ forward it on every resume like `--batch-size`. With `K>=2` it also emits a **`t
 diagnostic (McCandlish critical batch size) that tells you, as a number, whether your effective batch
 is too small / about right / bigger than needed. 🚨 **Read it beside the PER-TERM scalars, never
 alone** (`train/noise_scale{,_ratio,_share}_{policy,value,entropy,aux,distill}`, default ON): the
-total is measured on the SUM of every loss term, and this tree's dozen dense supervised aux heads
+total is measured on the SUM of every loss term, and this tree's dense supervised aux heads
 have far lower gradient noise than the clipped surrogate — so a total reading "over-batched" can be
 aux DEFLATION rather than a batch that is too big, and the advisor says so explicitly when the two
 disagree. **`--adaptive-batch {off,total,policy}`** (OFF by default, byte-identical off) closes that
@@ -321,64 +321,11 @@ at the production ~10/90 mix: `1.0` gives a 44/56 split, not 50/50.** Read `win_
 `strata_active 0` means "on but idle" (one opponent class present) and an ABSENT family means off. Mechanics:
 [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
-**`--win-prob-lambda <0..1>`** (default `1.0` = OFF, bit-identical; **requires `--critic winprob`**)
-re-aims WHAT the value loss regresses toward: below 1.0 a state's target is no longer its episode's
-terminal 0/1 bit but the λ-return `(1−λ)·V(s[t+1]) + λ·G[t+1]` over the collector's RECORDED values,
-anchored at the outcome on the state that ends the episode — so a state `d` steps out keeps weight
-`λ^d` on the outcome. It exists because one bit copied to ~30 states is a noisy objective (only
-~10–14 % of its variance lies between (cycle, opponent) cells), while mid- and late-game values
-already separate opponents (~0.5–0.8) where turn-1 values do not (~0.1). **`--win-prob-lambda-truncated
-{bootstrap,mask}`** (default `bootstrap`) decides whether an episode still running at the rollout
-boundary is targeted at `V(s_T)` — which UNMASKS rows that carry no target today — or left excluded;
-INERT at λ = 1.0. Read `win_prob/lambda_target_shift`, `lambda_bootstrap_frac`, **`lambda_unmasked`**
-(read this BEFORE attributing an effect to λ) and `lambda_loss` vs `lambda_loss_terminal`. 🚨 An
-ABSENT `win_prob/lambda_*` family means the flag is off. ⚠️ Under λ < 1 the value sidecar's `target`
-column is the λ-return, not the raw outcome. Mechanics:
-[`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
-
-**`--win-prob-rollout-target <0..1>`** (default `0.0` = OFF, bit-identical; **requires `--critic
-winprob` AND `--cf-records`**) replaces the terminal bit on a seeded subsample of the buffer's own
-states with a **measured** `wins / R` win fraction: each sampled state is replayed out of the
-`cf_records` ring to its own turn and played forward **`--win-prob-rollout-r`** times (default 8) by
-the current policy on both sides at temperature 1.0. It exists because one outcome bit copied to ~30
-states carries 1 bit about the GAME and none about the STATE, while R continuations carry R bits
-about that state. **`--win-prob-rollout-mode {replace,blend}`** (default `replace`) picks whether the
-target becomes the win fraction or is averaged with the terminal bit.
-
-🚨 **THIS FLAG COSTS REAL WALL, AND IT BLOCKS THE TRAINING LOOP.** The labelling runs between
-collection and `train()` (the buffer is a ring — a late label has no row to land on), on a fan-out of
-short-lived child processes. The budget identity is
-**`fraction × R × ~104 decisions per continuation`** against the trainee's own `n_steps × n_envs`:
-**`1/32` at R = 8 is ~26×** a production rollout's whole simulation budget, and **the fraction that
-costs `1×` is `1/(R × 104) ≈ 1/832`**. Read **`win_prob/rollout_budget_multiple`** (what it is
-costing), **`rollout_seconds`** (the stall it is adding), **`rollout_mass`** (~0.12 % at the 1×
-fraction — the honest reach of the treatment) and **`rollout_shift`** (the dose: 0 means the new
-target agreed with the bit it replaced and the arm is buying nothing). `rollout_bot_share` prices the
-one declared approximation — a training record carries no opponent identity, so continuations play a
-self-like opponent and a bot episode's label is biased LOW. ⚠️ **Raise `--cf-records-keep` with it.** The ring keeps the newest 512 records GLOBALLY while a
-production rollout finishes ~2,400 episodes, so at the default the only states that resolve are the
-rollout's LATE ones — a selection bias, not just a shortfall. The registered argv uses
-`--cf-records-keep 4096`; the trainer says so once when more than a quarter of the sample fails to
-resolve. 🚨 An ABSENT `win_prob/rollout_*` family
-means the flag is off. ⚠️ The value sidecar moves to schema 3; its `target` column is then the outcome
-on most rows and a measured win fraction on the sampled ones. Mechanics:
-[`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
-
-**`--win-prob-rollout-weight <k>`** (default `1.0` = OFF, bit-identical; **requires
-`--win-prob-rollout-target > 0`**) multiplies the per-row BCE of the rows the rollout target
-ANCHORED, renormalised to mean 1 over the scored rows so the loss scale does not move. 🚨 **Pass it
-whenever you pass the fraction.** At the 1× fraction the anchored rows are ~0.12 % of the BCE's
-mass, and **a treatment on 0.12 % of an objective cannot move the head by arithmetic** — the null
-would be a fact about the dose. The anchored share is `f·k / (1 + f·(k−1))`: at `f = 0.0012`,
-**`k = 64` ⇒ 7.1 %**. Read **`win_prob/rollout_mass_weighted`** (the delivered dose — quote THIS,
-not the flag) and **`win_prob/rollout_influence_lambda`** (anchors plus their λ^k reach, the honest
-total under `--win-prob-lambda < 1`). It MULTIPLIES with `--win-prob-strata-weight` rather than
-replacing it, and it weights **only the anchors**, never the rows that bootstrap toward them.
-⚠️ It does NOT change the value sidecar — no schema bump, because it changes no row's target.
+**The critic-ladder target levers are DELETED (deletion pass L2).** `--win-prob-lambda` / `--win-prob-lambda-truncated` (a λ-return BCE target), `--win-prob-rollout-target` / `-r` / `-mode` / `-weight` (R-rollout Monte-Carlo targets and their anchor weight) and `--win-prob-dense-aux` (25 dense end-of-battle targets) no longer exist: the win-prob BCE's target is always the episode's terminal outcome, and a checkpoint recorded with `dense_aux` ON is refused on every load (a training-only lever refuses a resume/fork naming the pin 475bd817). Why and where recoverable: [`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
 **`--fork-fraction <0..1>`** (default `0.0` = OFF and bit-identical — no module, no obs key, no
-callback, no row; **requires `--critic winprob` AND `--cf-records`**, and REFUSES
-`--value-true-team`, `--win-prob-dense-aux` and `--win-prob-strata-weight`) is **THE FORK ARM**: the
+callback, no row; **requires `--critic winprob` AND `--cf-records`** (the second on the python core only), and REFUSES
+`--win-prob-strata-weight`) is **THE FORK ARM**: the
 fraction of the buffer's decisions that are FORKED. At a contested decision the episode is replayed
 out of the `cf_records` ring to that turn and `--fork-branches` continuations — the policy's top-2
 plus ONE uniformly random legal action — are played to a terminal by the current policy; their
@@ -402,33 +349,6 @@ with `fork/pairwise_pairs` beside it (IN-SAMPLE; the registered endpoint is a HE
 forks whose bar is a CI clearing 0.60). `--fork-crn` defaults to `dice_and_draws` and should stay
 there; `dice` is the `cf_q_labels` control. Full chapter:
 [`designs/training/forks.md`](../training/forks.md).
-
-**`--win-prob-dense-aux <coef>`** (default `0.0` = OFF and bit-identical — the head is not BUILT;
-**requires `--critic winprob`** and a win head) adds **25 DENSE TARGETS BESIDE** the win-prob BCE
-rather than changing it: for every state, the episode's END-OF-BATTLE facts back-filled the way the
-win bit is — **survival of all 12 slots** (our 6 then theirs, in the observation's own team order),
-**each slot's final HP fraction**, and the **scaled turns-left**. 25 sigmoid outputs off the same
-`value_pooled`, three masked-mean BCE terms averaged, folded at this coefficient. The per-side KO
-counts are DERIVED from survival and published as meters.
-
-🚨 **WHY.** The other three knobs on this loss all re-price, re-weight or re-aim the SAME one bit,
-and four 10M levers moved nothing at ±0.01 on bot resolution (ledger *THE ARMS AT 400 GAMES*). Only
-~10 % of that bit's variance lies BETWEEN opponents. KataGo's answer (Wu 2019 §3) is not to fix the
-bit but to add auxiliary targets that share its CAUSE — ownership of every point, and the final
-score. Per-Pokémon end-of-battle outcomes are our analogue, and each is a fact about a NAMED ENTITY,
-so the gradient runs along the axes the pooled bit cannot separate.
-
-🚨 **An opponent slot that was never revealed is MASKED, not fabricated** — and so is any slot the
-state's own observation does not carry (opponent order is REVEAL order, so an early state simply has
-fewer). Read `win_prob/aux_masked_frac` before reading any aux loss. `--win-prob-lambda` does NOT
-reach these targets: they are terminal FACTS, not returns. Watch **`aux_auc_own` vs `aux_auc_opp`**
-(the per-side survival AUC — a pooled one would hide the asymmetry the arm is built to move),
-`aux_hp_mae`, `aux_turns_mae` and **`grad/dense_aux_share`**, which must NOT read 0 (the head's input
-is deliberately not detached — that pull is the arm). ⚠️ **STRUCTURAL**: the head is fixed for a
-run's lifetime, so a resume may re-dose the coefficient but not add or drop it; a mismatch is a hard
-`[ModelVersion] FATAL`. `family=CRITIC`, so `--arch production --win-prob-dense-aux 1.0` is the
-documented launch and `checkargs` still reports ARCH SURFACE = production mirror. Mechanics:
-[`designs/training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
 
 Design of record:
 [`designs/ai_v12/design_winprob_only_critic.md`](designs/ai_v12/design_winprob_only_critic.md);
@@ -528,7 +448,7 @@ bottleneck and further compiler work on this path is spent effort.
 
 🚨 **The preload traces on a SYNTHETIC obs, and it must carry every Dict key the extractor reads.**
 `ai_v12_14_ladder_truevalue` (377a5aa1) died two minutes in at env init, exit 1, because the trace
-input was a hand-built one-key dict and `--value-true-team`'s value route RAISES on a missing
+input was a hand-built one-key dict and the (since deleted) `--value-true-team` value route RAISED on a missing
 `opp_true_team` — inside the forkserver that raise kills the bootstrap and fails `SubprocVecEnv`
 construction. The trace input is now built from the declared registry
 (`agents.model.extra_obs_keys`), as are `--compile-trainer`'s and `--compile-opponents`' warmups and

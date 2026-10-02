@@ -1105,7 +1105,14 @@ _DEAD_FEK_JUDGED = (("move_belief_prefuse", True), ("damage_op_prefuse", True),
                     # 'shaping' built a head whose Linear is in the state_dict — PARAMETERS the surviving
                     # extractor has no home for — so ON is refused (the v75 rule); 'none' built nothing
                     # and pops. The reachable half: every v121+ checkpoint pickles `value_dist_mode`.
-                    ("value_dist_mode", "none"))
+                    ("value_dist_mode", "none"),
+                    # v132 (deletion pass L2): the privileged TRUE-TEAM value route and the DENSE
+                    # AUXILIARY head are deleted. Each ON value built a module whose parameters are in
+                    # the state_dict (`TrueTeamValueReadout`, `DenseAuxHead`) and the surviving
+                    # extractor has no home for them, so ON is refused (the v75 rule); OFF built
+                    # nothing and pops. The reachable half: every v121+ checkpoint pickles both bools
+                    # (`snapshot.snapshot_extractor_kwargs` always wrote them).
+                    ("value_true_team", False), ("dense_aux", False))
 
 # POLICY kwargs (`policy_kwargs[...]`, NOT the extractor's) that left `Gen3DualHeadMaskablePolicy.__init__`
 # at v131 (deletion pass L1). SB3 splats the zip's pickled `policy_kwargs` into the policy constructor, so a
@@ -1360,8 +1367,6 @@ def current_model_version(
     cf_twin_heads: bool = False,
     cf_shadow_critic: bool = False,
     q_winprob_mode: str = "none",
-    value_true_team: bool = False,
-    dense_aux: bool = False,
     ridealong_ensemble: int = 0,
     ridealong_rnd: bool = False,
     ridealong_adv: int = 0,
@@ -1422,16 +1427,6 @@ def current_model_version(
     # ONLY output is a stash, so nothing downstream would fail on a mismatch — a frozen eval/pool
     # opponent's gate must see the toggle or a Q-head run FATALs loading its OWN sentinels.
     ext_kwargs["q_winprob_mode"] = q_winprob_mode
-    # gen3_value_true_team_v1 (v114): the privileged true-team route's params are a state_dict
-    # delta injected ADDITIVELY into value_pooled, so no width change downstream would catch a
-    # mismatch — a frozen eval/pool opponent's gate must see the toggle or a privileged run FATALs
-    # loading its OWN sentinels.
-    ext_kwargs["value_true_team"] = value_true_team
-    # gen3_dense_aux_v1 (v117): same category — the head's params are in the state_dict and its
-    # only output is a training-side loss, so the recorded toggle is all a load gate can compare,
-    # and a frozen eval/pool opponent's gate must see it or a dense-aux run FATALs loading its OWN
-    # sentinels.
-    ext_kwargs["dense_aux"] = dense_aux
     # gen3_ridealong_heads_v1 (v126): same category — the heads' params are in the (policy's)
     # state_dict and nothing consumes their output, so the recorded toggles are all a load gate can
     # compare; a frozen eval/pool opponent's gate must see them or a baseline run FATALs loading its
@@ -1530,12 +1525,6 @@ def arch_toggles_from_model(model: Any) -> dict:
         # gen3_q_winprob_head_v1 (v107): same category — params in the state_dict whose only
         # output is a side stash, so the recorded toggle is all a load gate can compare.
         "q_winprob_mode": str(getattr(fe, "q_winprob_mode", "none")),
-        # gen3_value_true_team_v1 (v114): same category — params in the state_dict, additive into
-        # value_pooled, so the recorded toggle is all a load gate can compare.
-        "value_true_team": bool(getattr(fe, "value_true_team", False)),
-        # gen3_dense_aux_v1 (v117): same category again — params in the state_dict whose only
-        # output is a training-side loss, so the recorded toggle is all a load gate can compare.
-        "dense_aux": bool(getattr(fe, "dense_aux", False)),
         # gen3_ridealong_heads_v1 (v126): same category — the declarations the policy built from.
         "ridealong_ensemble": int(getattr(fe, "ridealong_ensemble", 0) or 0),
         "ridealong_rnd": bool(getattr(fe, "ridealong_rnd", False)),

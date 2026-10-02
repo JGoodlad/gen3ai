@@ -76,8 +76,8 @@ THE ECOLOGY APPROXIMATION — this arm's largest declared caveat
 A training ``__RECON__`` record carries the resolved seed, both packed teams and the committed
 choices, and **nothing that says which policy sat on the other side**. So a branch is played
 against a SELF-LIKE opponent (the current snapshot), not the episode's real one — right for the
-~90 % self-play share of the training mixture and biased for the rest, in the same direction
-`win_prob_rollout` documents. ``fork/branch_share`` prices how much of the buffer that population
+~90 % self-play share of the training mixture and biased for the rest (a self-like opponent
+reads LOW against the bot classes). ``fork/branch_share`` prices how much of the buffer that population
 substitution now occupies, and ``fork/bot_share`` names how much of it replaced a BOT.
 
 Pure numpy and pure arithmetic — no torch, no subprocess, no bridge. The child that plays the
@@ -97,8 +97,7 @@ from agents.action.constants import MOVE_START
 from agents.training.cf_producer_sampler import MIN_LABELABLE_TURN
 
 #: ``--fork-fraction 0.0`` is OFF, and OFF is bit-identical by SKIPPING the whole path rather than
-#: by computing an identity — the discipline `--win-prob-rollout-target 0.0` and
-#: `--win-prob-lambda 1.0` keep. At 0.0 no module below is imported, no obs key is declared, no
+#: by computing an identity. At 0.0 no module below is imported, no obs key is declared, no
 #: callback is attached and no row is injected.
 FORK_OFF = 0.0
 
@@ -174,7 +173,7 @@ MIN_LEGAL_ACTIONS = 3
 SELECTOR_VERSION = "gen3_fork_select_v1"
 
 #: The obs Dict key carrying the per-row POLICY-TERM mask (`gen3_fork_v1`). A LABEL key on the
-#: same plumbing as `win_target` / `win_row_w`: the env emits a placeholder every step and the
+#: same plumbing as `win_target` / `win_mask`: the env emits a placeholder every step and the
 #: injected rows carry their own value, which is the only carrier that survives
 #: `RolloutBuffer.get()`'s shuffle aligned to its own row. Declared ONLY when the flag is on, so an
 #: unflagged run's observation space is untouched.
@@ -202,8 +201,7 @@ def _sha(*parts) -> int:
 def is_move_round_mask(mask: Sequence[float]) -> bool:
     """A start-of-turn MOVE round, read off the buffer's own ``action_mask``.
 
-    The same predicate `win_prob_rollout.is_move_round_mask` and `cf_producer_sampler.is_move_round`
-    spell, and for the same reason: a mid-turn FORCED SWITCH cannot be the divergence point of a
+    The same predicate `cf_producer_sampler.is_move_round` spells, and for the same reason: a mid-turn FORCED SWITCH cannot be the divergence point of a
     counterfactual replay, which cuts at a TURN boundary.
     """
     return bool(np.asarray(mask)[MOVE_START:].sum() > 0)
@@ -216,7 +214,7 @@ def eligible_mask(win_mask, turns, action_mask) -> np.ndarray:
 
     * ``win_mask == 1`` — the episode TERMINATED inside this buffer. That is also what makes the
       state replayable: the ``__RECON__`` record is written at episode END, so a trailing
-      in-progress episode has no record on disk yet (`win_prob_rollout.eligible_mask`).
+      in-progress episode has no record on disk yet.
     * a reconstruction HANDLE was captured for the row (``turns >= 0``).
     * ``MIN_LABELABLE_TURN <= turn <= MAX_FORKABLE_TURN`` — `cf_producer`'s lower bound and
       `forks.py`'s upper one.
@@ -234,8 +232,7 @@ def eligible_mask(win_mask, turns, action_mask) -> np.ndarray:
 def slice_ids(episode_starts) -> np.ndarray:
     """``[n_steps, n_envs]`` int: which EPISODE SLICE of its env each row belongs to.
 
-    Identical to `win_prob_rollout.slice_ids`; two rows of the same env with the same id came from
-    the same game, which is exactly the correlation ``--fork-max-per-battle`` bounds.
+    Two rows of the same env with the same id came from the same game, which is exactly the correlation ``--fork-max-per-battle`` bounds.
     """
     es = np.asarray(episode_starts, dtype=np.float64)
     return np.cumsum(es >= 0.5, axis=0).astype(np.int64)
@@ -245,8 +242,7 @@ def n_forks_for(fraction: float, n_steps: int, n_envs: int,
                 cap: int = MAX_FORKS_PER_ROLLOUT) -> int:
     """How many forks the fraction asks for, capped.
 
-    Of the WHOLE buffer and not of the eligible subset, for `win_prob_rollout.n_states_for`'s
-    reason: the flag's value is the number a cost calculation uses, and a denominator that moved
+    Of the WHOLE buffer and not of the eligible subset: the flag's value is the number a cost calculation uses, and a denominator that moved
     with the episode mix would make the same flag value cost different amounts on different days.
     """
     if float(fraction) <= FORK_OFF:
@@ -261,8 +257,7 @@ def candidate_pool(eligible, episode_starts, n_pool: int, max_per_battle: int,
 
     The rows whose policy top-2 gap the caller will score in order to place this rollout's
     contested threshold. Uniform over SLICES first and then within a slice, so a long game does not
-    dominate the pool — the same shape `win_prob_rollout.select_rows` uses, generalised from "one
-    per slice" to ``--fork-max-per-battle`` per slice.
+    dominate the pool: ``--fork-max-per-battle`` per slice.
 
     Deterministic given ``rng``: the caller seeds it from the run seed and ``num_timesteps``, so a
     rerun of the same argv on the same collected buffer forks the same decisions.

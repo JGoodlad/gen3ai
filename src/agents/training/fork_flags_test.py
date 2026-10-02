@@ -177,13 +177,10 @@ def test_the_fraction_is_in_the_arch_table_so_a_headless_run_reads_INERT():
 @pytest.mark.parametrize("extra,needle", [
     (["--critic", "shaped", "--steps", "1000", "--fork-fraction", "0.02"], "requires --critic winprob"),
     (_WP + ["--fork-fraction", "0.02"], "requires --cf-records"),
-    (_WP + ["--cf-records", "--fork-fraction", "0.02", "--value-true-team"], "value-true-team"),
-    (_WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-dense-aux", "0.1"],
-     "dense-aux"),
     (_WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
      "strata-weight"),
 ])
-def test_the_five_refusals_fire_with_their_own_text(extra, needle, capsys):
+def test_the_three_refusals_fire_with_their_own_text(extra, needle, capsys):
     argv = extra if extra[0].startswith("--critic") else ["--steps", "1000"] + extra
     with pytest.raises(SystemExit):
         _resolved(argv)
@@ -229,8 +226,9 @@ def test_env_factory_arms_the_obs_key_and_the_handle_from_the_fraction():
     # the obs-key switch moved with `trainee_env_kwargs` to its env-free home (deletion pass U2)
     assert ("emit_fork_pg_mask=(float(getattr(args, \"fork_fraction\", 0.0) or 0.0) > 0.0)"
             in inspect.getsource(ts))
-    assert "or float(getattr(args, \"fork_fraction\", 0.0) or 0.0) > 0.0)" in src, \
-        "the reconstruction HANDLE must be armed by --fork-fraction too"
+    assert ("env._emit_wp_rollout_handle = bool(\n"
+            "                float(getattr(args, \"fork_fraction\", 0.0) or 0.0) > 0.0)") in src, \
+        "the reconstruction HANDLE must be armed by --fork-fraction"
 
 
 def test_the_callback_is_registered_AFTER_the_win_prob_one():
@@ -244,11 +242,11 @@ def test_the_callback_is_registered_AFTER_the_win_prob_one():
     assert 'getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0' in src
 
 
-def test_the_handle_scratch_is_shared_with_the_win_prob_rollout_arm():
-    """Two flags need the same per-decision handle and the ASYNC collector writes exactly one such
-    array inline; a second scratch would be a second thing that could silently go unfilled there."""
+def test_the_handle_scratch_is_gated_on_the_fork_flag():
+    """The ASYNC collector writes exactly one per-decision handle array inline; the fork arm is its
+    only reader now (the rollout-target arm that shared it was deleted, deletion pass L2)."""
     from agents.training.win_prob_callback import WinProbLabelCallback
-    src = inspect.getsource(WinProbLabelCallback._rollout_on)
+    src = inspect.getsource(WinProbLabelCallback._handle_needed)
     assert "fork_fraction" in src
 
 

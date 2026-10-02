@@ -451,8 +451,8 @@ def _compile_warmup_obs(fe: Any) -> Dict[str, Any]:
     obs = {"observation": torch.zeros(1, dim, dtype=torch.float32),
            "action_mask": torch.ones(1, _n_actions(fe), dtype=torch.float32)}
     # Same KEY-SET argument, one step further: a flag-gated Dict key the extractor READS belongs in
-    # the warmup too. `RLPlayer` supplies `opp_true_team` on every local-sim decision, so an
-    # opponent warmed without it re-traces at best and hits the route's RAISE at worst.
+    # the warmup too: an opponent warmed without a key its forward reads re-traces at best and hits
+    # the route's RAISE at worst (the registry is empty today).
     obs.update(zero_extra_obs(fe))
     return obs
 

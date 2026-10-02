@@ -97,8 +97,8 @@ def from_clause_move_source(tokens: Sequence[str]) -> Optional[str]:
     line ``[from] Pursuit``) or be a non-move continuation marker (``[from] lockedmove`` for
     Outrage / two-turn releases). This primitive does NOT interpret those — it only parses the wire
     clause; each caller decides what a same-move / marker source means (see ``Gen3Battle.
-    _delegated_from`` for the delegator reading and ``ChoiceBandTracker._is_delegated`` for the
-    free-selection reading). Keeping the parse in one place stops the two readers from drifting.
+    _delegated_from`` for the delegator reading; the free-selection reader, ``ChoiceBandTracker``, was
+    deleted). Keeping the parse in one place stops readers from drifting.
 
     ``tokens`` is the move line's fields (``split_message`` or an event's ``raw``); only ``[from]``
     tokens are inspected, so passing the whole line is fine.

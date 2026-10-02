@@ -264,11 +264,10 @@ class R1Batch(NamedTuple):
 
 
 def _neutral_one_keys() -> Tuple[str, ...]:
-    """Observation keys that MULTIPLY a loss term (the fork arm's policy-term mask, the rollout-anchor
-    row weight): the fixture fills them with the env's own placeholder, 1.0."""
+    """Observation keys that MULTIPLY a loss term (the fork arm's policy-term mask): the fixture fills
+    them with the env's own placeholder, 1.0."""
     from agents.training.fork_arm import PG_MASK_KEY
-    from agents.training.win_prob_rollout import ROLLOUT_WEIGHT_KEY
-    return (PG_MASK_KEY, ROLLOUT_WEIGHT_KEY)
+    return (PG_MASK_KEY,)
 
 
 def _golden_rows(model: Any) -> Optional[Dict[str, np.ndarray]]:
@@ -343,8 +342,8 @@ def _r1_static(model: Any) -> Tuple[Any, Dict[str, torch.Tensor]]:
     """``(MicroStatic, var)`` exactly as `train()` resolves them, with every DECLARED lever at its
     run-long value (`TrainSetup._r1_levers`) and the strata weights at their neutral default."""
     f = model._resolve_fold_flags()
-    strata, rollout_weight = model._r1_levers(f)
-    st = model._micro_static(f, strata, rollout_weight)
+    strata = model._r1_levers(f)
+    st = model._micro_static(f, strata)
     return st, model._micro_var(st, None)
 
 

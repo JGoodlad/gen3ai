@@ -130,7 +130,7 @@ preference:**
 
 > 🚨 **A second public surface of the forward: the obs DICT's key set.** `forward` is normally a
 > pure function of `obs["observation"]`, but a route may read a flag-gated Dict key of its own
-> (`--value-true-team`'s `opp_true_team` is the first) and RAISE when it is absent. That mapping is
+> (the deleted privileged true-team route's `opp_true_team` was the first; the registry is now empty) and RAISE when it is absent. That mapping is
 > DECLARED in **`extra_obs_keys.py`** — `(extractor attribute -> key, shape, canonical zero block)`
 > — and every synthetic-obs caller on a training path builds from it (`compile_preload`,
 > `lifecycle._run_roundtrip_test`, `compile_trainer`, `compile_opponents`, `warmstart`). The enable

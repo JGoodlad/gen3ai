@@ -364,17 +364,6 @@ class ProbeModel:
                  pokemon_encoder=None, our_team_off: int = 0, opp_team_off: int = 0,
                  turn_delta_encoder=None, dropped_kwargs=()) -> None:
         self._policy = policy
-        # gen3_value_true_team_v1: a checkpoint trained with `--value-true-team` has a PRIVILEGED
-        # value route whose input — the opponent's true party — is NOT in the recorded observation
-        # vector. Every forward on this class rebuilds its obs from that vector alone, so a V
-        # computed here would be V WITHOUT the privilege: a different quantity from the one the
-        # run trained and the one the eval traces recorded, and one that would compare silently
-        # against the un-privileged arms. REFUSE, and name where the real number lives — the
-        # trace's own `value` / `win_probs`, which `cf_audit` and `main.critic_gate` already read
-        # (they take V from the npz, never from a re-forward, so BOTH critic meters read this arm
-        # unaffected). Model-FREE prober commands are unaffected.
-        self._privileged_value = bool(getattr(
-            getattr(policy, "features_extractor", None), "value_true_team", False))
         self.offsets = offsets
         # Extractor kwargs the CURRENT code no longer accepts, dropped so the load could proceed
         # (see the module docstring). NON-EMPTY means the rebuilt extractor is not bit-identical to
@@ -393,28 +382,11 @@ class ProbeModel:
         self._turn_delta_encoder = turn_delta_encoder
 
     def _pin(self, ot, mt):
-        """THE policy-input dict for every offline forward on this class — one seam, so the
-        privileged-channel refusal below cannot be reached from fifteen places and missed at one.
-
-        `gen3_value_true_team_v1`: a `--value-true-team` checkpoint's value path reads the
-        opponent's TRUE party off an obs key that the recorded observation vector does not carry
-        and cannot reconstruct. Feeding it the all-zero 'unknown' block would return a number that
-        LOOKS like V and is a different quantity — V stripped of exactly the privilege the arm
-        exists to measure — and it would then be charted against the un-privileged arms. So this
-        refuses, and names where the arm's real V lives.
-        """
-        if self._privileged_value:
-            raise ArchDriftError(
-                "this checkpoint was trained with --value-true-team (gen3_value_true_team_v1): its "
-                "value path reads the opponent's TRUE team off the `opp_true_team` obs key, which "
-                "the recorded observation vector does not contain and cannot reconstruct. A "
-                "forward here would return V WITHOUT the privilege — a different quantity from the "
-                "one this run trained.\n"
-                "The arm's V is the one the EVAL TRACES recorded (computed with the key, at eval, "
-                "on the bridge): read it with `python -m agents.training.cf_audit` and "
-                "`python -m main.critic_gate`, both of which take V and P(win) from the npz rather "
-                "than re-forwarding. Model-FREE prober commands (scan, triage, turns, falsify, "
-                "calibration) work on this run unchanged.")
+        """THE policy-input dict for every offline forward on this class — one seam, so a future
+        privileged input (a Dict key the recorded observation vector cannot reconstruct) is refused
+        in ONE place rather than fifteen. None exists today: the privileged true-team value route
+        that this seam once guarded was deleted (deletion pass L2), and such a checkpoint no longer
+        loads at all."""
         return {"observation": ot, "action_mask": mt}
 
     @classmethod

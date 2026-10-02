@@ -17,13 +17,6 @@ from agents.observation.belief_labels import (
     zero_belief_labels, zero_known_moves, build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, build_known_nature_ev_labels, zero_nature_ev_labels,
     build_hp_type_labels, zero_hp_type_labels, hp_type_idx_from_move_id, build_item_labels, zero_item_labels,
 )
-from agents.observation.true_team import (
-    TRUE_TEAM_KEY, build_true_team_block, empty_true_team_block,
-)
-from agents.model.dense_aux_head import DENSE_AUX_DIM_OUT
-from agents.training.dense_aux import (
-    AUX_MASK_KEY, AUX_TARGET_KEY, AUX_TURN_KEY, state_visibility,
-)
 from agents.model.damage_tables import _hp_typed_nums, HIDDEN_POWER_NUM
 from agents.model.belief_tables import true_nature_ev_label
 from agents import gen3_data
@@ -41,37 +34,7 @@ from agents.battle.gen3_battle import Gen3Battle
 # built in the rust `sim_bridge` child from the trainee's own per-side stream (parse → reading →
 # view → trackers → encode) and shipped as an `__OBS__` frame before the request it answers.
 from agents.battle.core_obs import OBS_SOURCES  # re-exported: the flag's choices
-# gen3_bait_entropy_v1: ONE zero-damage predicate, shared with the scripted BaitBot opponent, so the
-# training flag fires on exactly the boards BaitBot exploits (and both resolve the type chart + the
-# gen-3 ability immunities from `data/` via `effective_multiplier` — never a hand-copied table).
-from agents.baitbot import blocks as _blocks_zero_damage
 from utils.logging.levels import LogLevel
-
-
-# gen3_defensive_entropy_v1: the active mon counts as having a productive HP-recovery opportunity (for the
-# defensive-exploration entropy boost) only when it has taken at least this much chip — below the threshold a
-# heal restores too little to be worth exploring (a Wish cast at full HP for a teammate is the accepted miss).
-_DEFENSIVE_HEAL_HP = 0.85
-
-
-def _bait_candidate_attack(active, moves):
-    """gen3_bait_entropy_v1: the damaging move this decision is most likely to spend, or None.
-
-    The RE-CLICK is the sharpest form of the pathology (32% of gen-15 whiffs re-took a decision the
-    board had already answered), so a still-legal `last_move` that deals damage wins; otherwise the
-    highest-base-power legal attack stands in for "the attack we would click". A proxy for the argmax
-    on purpose — the env has no policy to ask (see `Gen3Env._bait_opportunity`). Status moves are never
-    candidates: firing one into an immune arrival is a different, much cheaper error (the BaitBot
-    predicate makes the same cut)."""
-    attacks = [m for m in moves if m.base_power and m.base_power > 0]
-    if not attacks:
-        return None
-    last = getattr(active, "last_move", None)
-    if last is not None and getattr(last, "base_power", None):
-        for m in attacks:
-            if m.id == last.id:
-                return m
-    return max(attacks, key=lambda m: m.base_power)
 
 
 # gen3_frame_deletion_v1: the deepest context read left is `build_delta`'s `_history[-2]`.
@@ -84,15 +47,11 @@ class Gen3Env(SinglesEnv):
                  log_level=LogLevel.QUIET, stall_config: Optional[StallConfig] = None,
                  *args, battle_class=Gen3Battle, emit_belief_labels: bool = False,
                  move_belief_mode: str = "off",
-                 emit_win_target: bool = False, emit_win_row_weight: bool = False,
+                 emit_win_target: bool = False,
                  emit_fork_pg_mask: bool = False,
                  emit_spread_labels: bool = False,
-                 emit_opp_true_team: bool = False,
-                 emit_dense_aux: bool = False,
                  emit_opp_intent_labels: bool = False,
                  emit_hp_type_labels: bool = False, emit_item_labels: bool = False,
-                 emit_defensive_opportunity: bool = False,
-                 emit_bait_opportunity: bool = False,
                  distill_team_species=None,
                  opponent_team=None, obs_source: str = "python", **kwargs):
         if obs_source not in OBS_SOURCES:
@@ -182,51 +141,13 @@ class Gen3Env(SinglesEnv):
         # labels). Read ONLY by the win-prob aux loss; the model forward reads only obs["observation"].
         # Enabled by --win-prob-mode != none (threaded as emit_win_target from train_rl_agent).
         self._emit_win_target = emit_win_target
-        # gen3_winprob_rollout_weight_v1: the per-row BCE WEIGHT key (`win_row_w`), a third
-        # PLACEHOLDER label key on the same plumbing as `win_target` / `win_mask`. Declared ONLY
-        # when `--win-prob-rollout-weight > 1`, so an unflagged run's observation space, its
-        # rollout buffer and its loss are all untouched.
-        self._emit_win_row_weight = bool(emit_win_row_weight and emit_win_target)
         # gen3_fork_v1: the per-row POLICY-TERM mask key (`fork_pg_m`), a PLACEHOLDER label
-        # key on the same plumbing as `win_row_w`. Declared ONLY when `--fork-fraction > 0`,
+        # key on the same plumbing as `win_target` / `win_mask`. Declared ONLY when `--fork-fraction > 0`,
         # so an unflagged run's observation space, its rollout buffer and its policy loss are
-        # all untouched. Unlike `win_row_w` it is never overwritten by a callback: a
+        # all untouched. Unlike `win_target` it is never overwritten by a callback: a
         # COLLECTED row is always fully in the policy term, and only the rows the fork arm
         # INJECTS carry anything else.
         self._emit_fork_pg_mask = bool(emit_fork_pg_mask)
-        # PRIVILEGED TRUE-TEAM key (TRAINING+EVAL-only, gen3_value_true_team_v1): when on, the obs
-        # Dict carries `opp_true_team` [6, POKEMON_FULL_DIM] — the opponent's ACTUAL six mons in the
-        # obs's OWN per-mon layout, built from `battle2.team` (agent2's own view, where every
-        # Gen-3-hidden fact is known) through the SAME `PokemonEncoder.encode`. Read ONLY by the
-        # `TrueTeamValueReadout` value route, which injects into `value_pooled` — the tensor the
-        # assembler hands the VALUE head alone — so it provably cannot reach the policy. Enabled by
-        # --value-true-team (threaded as emit_opp_true_team from train_rl_agent). It is the critic
-        # ladder's arm-5 CEILING PROBE, not a shippable channel.
-        self._emit_opp_true_team = emit_opp_true_team
-        # DENSE-AUXILIARY label keys (TRAINING-ONLY, gen3_dense_aux_v1): when on, the obs Dict
-        # carries `aux_target` [25] (PLACEHOLDER zeros; the DenseAuxLabelCallback overwrites them
-        # post-collection with the episode's END-OF-BATTLE per-slot facts), `aux_mask` [25] (a REAL
-        # present-state value — which of the 25 outputs names an entity THIS state's observation
-        # carries; the callback ANDs it with terminal availability) and `aux_turn` [1] (this
-        # state's turn number, the half of `turns_left` only the env knows). Read ONLY by the
-        # dense-aux loss; the model forward reads only obs["observation"]. Enabled by
-        # --win-prob-dense-aux > 0 (threaded as emit_dense_aux from train_rl_agent).
-        self._emit_dense_aux = emit_dense_aux
-        # DEFENSIVE-EXPLORATION flag (TRAINING-ONLY, gen3_defensive_entropy_v1): when on, the obs Dict carries
-        # `defensive_opportunity` [1] = 1.0 on decisions where the active mon has a PRODUCTIVE defensive option
-        # (a legal HP-recovery move with HP to restore, OR a legal self/team status-cure with a status to
-        # clear), else 0.0. Read ONLY by the state-conditioned entropy boost (the PPO loss weights the entropy
-        # bonus up on these decisions so the policy keeps exploring defensive moves instead of collapsing to
-        # attacking) — never enters the policy/value forward. Enabled by --defensive-entropy-boost > 1.0.
-        self._emit_defensive_opportunity = emit_defensive_opportunity
-        # BAIT-EXPLORATION flag (TRAINING-ONLY, gen3_bait_entropy_v1): when on, the obs Dict carries
-        # `bait_opportunity` [1] = 1.0 on decisions where the attack we are most likely to click is
-        # ZERO-damage against an alive, revealed opponent BENCH mon — i.e. the board the bait loop is
-        # fired from (they pivot that mon in, our attack does nothing, and gen-15 measured us
-        # re-clicking it at p≈0.96). Read ONLY by the state-conditioned entropy boost in the PPO loss
-        # (the sampling-side test of the "exploration starvation at a saturated action" mechanism);
-        # never enters the policy/value forward. Enabled by --bait-entropy-boost > 1.0.
-        self._emit_bait_opportunity = emit_bait_opportunity
         # gen3_exploiter_distill_v1: `distill_mask` [1] = 1.0 iff the trainee's CURRENT team IS the frozen
         # distillation teacher's team (the exploiter's pinned team). Read ONLY by the exploiter-distillation
         # KL in the PPO loss, which masks the teacher's advice to these states (elsewhere the specialist is
@@ -273,11 +194,8 @@ class Gen3Env(SinglesEnv):
             belief_labels=self._emit_belief_labels, known_moves=self._emit_known_moves,
             opp_intent_labels=bool(self._emit_opp_intent_labels), win_target=bool(self._emit_win_target),
             spread_labels=bool(self._emit_spread_labels), hp_type_labels=bool(self._emit_hp_type_labels),
-            item_labels=bool(self._emit_item_labels), win_row_weight=self._emit_win_row_weight,
-            fork_pg_mask=self._emit_fork_pg_mask, opp_true_team=bool(self._emit_opp_true_team),
-            dense_aux=bool(self._emit_dense_aux),
-            defensive_opportunity=bool(self._emit_defensive_opportunity),
-            bait_opportunity=bool(self._emit_bait_opportunity), distill_mask=self._emit_distill_mask)
+            item_labels=bool(self._emit_item_labels),
+            fork_pg_mask=self._emit_fork_pg_mask, distill_mask=self._emit_distill_mask)
         base_obs = dict(trainee_observation_space(
             self.observation_encoder.get_layout(), self.vector_space, _gates,
             distill_species=self._distill_team_species).spaces)
@@ -780,11 +698,6 @@ class Gen3Env(SinglesEnv):
             # calc_reward runs before this in step(); 0.0 at reset). A REAL value (present-state), unlike the back-filled win_target.
             agent_obs["win_margin"] = np.array(
                 [float(getattr(self.reward_manager, "_last_material_margin", 0.0))], dtype=np.float32)
-        if self._emit_win_row_weight:
-            # gen3_winprob_rollout_weight_v1. ONES, not zeros: this key is a MULTIPLIER on the
-            # per-row BCE, so "not yet written" must mean "weigh this row normally". The callback
-            # overwrites the whole plane post-collection.
-            agent_obs["win_row_w"] = np.ones(1, dtype=np.float32)
         if self._emit_fork_pg_mask:
             # gen3_fork_v1. ONES: a COLLECTED row is the trainee's own on-policy decision and
             # is always fully in the policy term. A zero here would delete the policy gradient
@@ -796,44 +709,8 @@ class Gen3Env(SinglesEnv):
         if (self._emit_opp_intent_labels or self._emit_win_target) and "opp_class" not in agent_obs:
             agent_obs["opp_class"] = np.array(
                 [getattr(self, "_opponent_class", 0)], dtype=np.int64)
-        if self._emit_opp_true_team:
-            agent_obs[TRUE_TEAM_KEY] = self._true_team_block()
-        if self._emit_dense_aux:
-            # gen3_dense_aux_v1. The TARGET is a placeholder; the MASK is this state's own
-            # visibility (our occupied slots + the opponent slots revealed SO FAR), which the
-            # callback ANDs with the terminal facts' availability; the TURN is a real value.
-            b1 = getattr(self, "battle1", None)
-            agent_obs[AUX_TARGET_KEY] = np.zeros(DENSE_AUX_DIM_OUT, dtype=np.float32)
-            agent_obs[AUX_MASK_KEY] = state_visibility(b1)
-            agent_obs[AUX_TURN_KEY] = np.array(
-                [float(getattr(b1, "turn", 0) or 0)], dtype=np.float32)
-        if self._emit_defensive_opportunity:
-            agent_obs["defensive_opportunity"] = np.array([self._defensive_opportunity()], dtype=np.float32)
-        if self._emit_bait_opportunity:
-            agent_obs["bait_opportunity"] = np.array([self._bait_opportunity()], dtype=np.float32)
         if self._emit_distill_mask:
             agent_obs["distill_mask"] = np.array([self._distill_mask()], dtype=np.float32)
-
-    def _true_team_block(self) -> np.ndarray:
-        """gen3_value_true_team_v1: the opponent's TRUE party, in the obs's own per-mon layout.
-
-        Same privileged source as every belief label — `battle2.team`, agent2's OWN battle view, so
-        item / ability / EV spread / the fourth move / the Hidden Power type are all populated. The
-        block is built by the SAME `PokemonEncoder.encode` the flat vector's opp slice uses, called
-        with `is_own=True` against agent2's own battle: from that side every one of its mons IS a
-        fully-known own mon, so this is not a second encoding of the same facts.
-
-        All-zero (`species_known == 0` on every row — the encoder's own ABSENT-slot spelling) until
-        both battles exist, which is also what a consumer sees when no privileged view is available
-        at all (ladder play). Read ONLY by the value route.
-        """
-        b2 = getattr(self, "battle2", None)
-        if b2 is None:
-            return empty_true_team_block()
-        return build_true_team_block(
-            list(b2.team.values()), b2, self.observation_encoder.pokemon_encoder,
-            species_to_num=self._species_num,
-        )
 
     def _distill_mask(self) -> float:
         """gen3_exploiter_distill_v1 (N teachers): the INTEGER team-id of the trainee's CURRENT team among
@@ -855,86 +732,6 @@ class Gen3Env(SinglesEnv):
                 break
         return float(self._distill_team_id)
 
-    def _defensive_opportunity(self) -> float:
-        """gen3_defensive_entropy_v1: 1.0 if the trainee's ACTIVE mon has a PRODUCTIVE defensive option this
-        decision — a legal HP-recovery move (`is_heal`) with the active below `_DEFENSIVE_HEAL_HP`, OR a legal
-        self-cure (Refresh) while statused, OR a legal team-cure (Heal Bell/Aromatherapy) while any team member
-        is statused — else 0.0. Cheap (a few move lookups); never raises (it rides the per-decision emit path).
-        Read ONLY by the entropy boost; never enters the forward. On a forced switch `available_moves` is empty
-        → 0.0 (you can't heal when forced to replace)."""
-        b1 = getattr(self, "battle1", None)
-        if b1 is None:
-            return 0.0
-        try:
-            active = b1.active_pokemon
-            moves = b1.available_moves or []
-            if active is None or not moves:
-                return 0.0
-            hp = active.current_hp_fraction
-            self_statused = active.status is not None
-            team_statused = any(getattr(m, "status", None) is not None for m in b1.team.values())
-            for mv in moves:
-                md = gen3_data.moves.get(mv.id)
-                if md is None:
-                    continue
-                if md.is_heal and hp is not None and hp < _DEFENSIVE_HEAL_HP:
-                    return 1.0
-                if md.cures_self_status and self_statused:
-                    return 1.0
-                if md.cures_team_status and team_statused:
-                    return 1.0
-        except Exception:
-            return 0.0
-        return 0.0
-
-    def _bait_opportunity(self) -> float:
-        """gen3_bait_entropy_v1: 1.0 if the attack this decision is most likely to spend does ZERO damage
-        to an alive, REVEALED opponent BENCH mon — the board a bait loop is fired FROM.
-
-        The pathology (ledger 2026-08-19 / `designs/research_state/bait_loop_hunt.md`): the opponent
-        voluntarily pivots a mon our attack cannot touch and we fire anyway at p≈0.96. In gen 3 the switch
-        resolves first, so the decision that whiffs is taken while the immune mon is still on their BENCH —
-        which is why this is a bench predicate, not an active one, and why it lines up with the offline
-        detector's whiff states (`main.prober.loops.bait_events`).
-
-        SCOPE, deliberately (see `training/CLAUDE.md` → bait-exploration entropy):
-          * REVEALED bench only. `opponent_team` holds the mons we have seen; an unrevealed arrival is a
-            real bait the flag cannot call. Using agent2's true team was available (this key is privileged
-            and never enters the forward) and REFUSED: boosting entropy on a distinction the policy cannot
-            make adds sampling noise with no learnable signal, and gen-15 settled that perception is not
-            the gap.
-          * ABILITY immunities count once the ability is revealed (`effective_multiplier` reads `mon.ability`
-            and poke-env leaves it unset until then) — the same information the policy holds. TYPE immunity
-            (Earthquake into a bench Salamence, the canonical loop) always counts.
-          * The α half of the proposed predicate is NOT here: α is published by the extractor inside the
-            LEARNER's forward, and this runs in the env worker before any forward exists (the eval-time
-            capture reads it off an in-process `RLPlayer`, a seam training does not have). Documented as
-            v1 rather than approximated.
-
-        Cheap (one effectiveness lookup per revealed bench mon, memoized in `gen3_mechanics`); never
-        raises (it rides the per-decision emit path). Forced switch (`available_moves` empty) → 0.0.
-        Read ONLY by the entropy boost; never enters the forward."""
-        b1 = getattr(self, "battle1", None)
-        if b1 is None:
-            return 0.0
-        try:
-            active = b1.active_pokemon
-            moves = b1.available_moves or []
-            if active is None or not moves:
-                return 0.0
-            candidate = _bait_candidate_attack(active, moves)
-            if candidate is None:
-                return 0.0
-            opp_active = b1.opponent_active_pokemon
-            for mon in (b1.opponent_team or {}).values():
-                if mon is opp_active or mon.active or mon.fainted:
-                    continue
-                if _blocks_zero_damage(candidate, mon):
-                    return 1.0
-        except Exception:
-            return 0.0
-        return 0.0
-
     def step(self, action):
         try:
             battle = getattr(self, "_battle", None) or self.battle1
@@ -949,11 +746,7 @@ class Gen3Env(SinglesEnv):
             out = super().step(action)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
                     or self._emit_hp_type_labels or self._emit_item_labels
-                    or self._emit_defensive_opportunity
-                    or self._emit_bait_opportunity
                     or self._emit_distill_mask
-                    or self._emit_opp_true_team
-                    or self._emit_dense_aux
                     or self._emit_opp_intent_labels):
                 agent_obs = out[0].get(self.agent1.username)
                 if agent_obs is not None:
@@ -978,11 +771,7 @@ class Gen3Env(SinglesEnv):
             out = super().reset(*args, **kwargs)
             if (self._emit_belief_labels or self._emit_win_target or self._emit_spread_labels
                     or self._emit_hp_type_labels or self._emit_item_labels
-                    or self._emit_defensive_opportunity
-                    or self._emit_bait_opportunity
                     or self._emit_distill_mask
-                    or self._emit_opp_true_team
-                    or self._emit_dense_aux
                     or self._emit_opp_intent_labels):
                 obs, info = out
                 agent_obs = obs.get(self.agent1.username)

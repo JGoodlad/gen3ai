@@ -3,7 +3,7 @@ learner's batch, or turns on a term R1 branches on, is DECLARED at startup.
 
 THE HAZARD (the K6+K8 lane's final FINDING, 2026-10-01). The compiled learner micro-step (region R1)
 is compiled `fullgraph=True` at its startup signature and LOCKED; anything new after the lock is a
-FATAL. The startup gate and prewarm built R1's static flags with the two win-prob ROW-WEIGHT levers
+FATAL. The startup gate and prewarm built R1's static flags with the win-prob ROW-WEIGHT levers
 OFF (`_micro_static(f, None, False)`), while `train()` turned them on from the config — and
 the strata lever only on a rollout whose labelled rows hold two or more opponent classes, i.e. a
 DATA-dependent signature that flips the first time the self-play pool seeds. Every such run reached
@@ -19,8 +19,9 @@ THE TEST, per inventory row: build the learner FROM THAT CONFIG (the real parser
 its spaces, policy kwargs and training hparams), fill a CPU rollout (the K9 golden's real rows plus
 the lever's keys), run the real startup lifecycle (install, gate, prewarm, LOCK — dynamo's `eager`
 backend, CPU) and two REAL updates; 0 compiles / rejections after the lock, and the declared
-signature carries the lever. Reverting the declaration (the gate's levers back to OFF) fails the
-`strata` and `rollout_weight` rows with the sentinel's FATAL.
+signature carries the lever. Reverting the declaration (the gate's lever back to OFF) fails the
+`strata` row with the sentinel's FATAL. (The rollout-weight lever, the entropy boosts and the
+dense-aux / true-team keys were rows here until deletion pass L2.)
 """
 from __future__ import annotations
 
@@ -45,17 +46,10 @@ N_ENVS, BATCH = 4, 16
 LEVERS: Dict[str, Any] = {
     "production": ([], {}),
     "strata": (["--win-prob-strata-weight", "0.5"], {"strata": True}),
-    "rollout_weight": (["--cf-records", "--win-prob-rollout-target", "0.002",
-                        "--win-prob-rollout-weight", "2.0"], {"rollout_weight": True, "key": "win_row_w"}),
     "fork": (["--cf-records", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
     # gen3_fork_rust_v1 (forks.md §14): on the Rust core the branch rows ride the complete-game FIFO
     # inside the FIXED update (no ragged tail, no ForkRolloutBuffer) — the mask key is still a lever
     "fork_rust": (["--env-core", "rust", "--fork-fraction", "0.01"], {"fork_pg_mask": True, "key": "fork_pg_m"}),
-    "defensive": (["--defensive-entropy-boost", "2.0"],
-                  {"defensive": True, "key": "defensive_opportunity"}),
-    "bait": (["--bait-entropy-boost", "2.0"], {"bait": True, "key": "bait_opportunity"}),
-    "dense_aux": (["--win-prob-dense-aux", "0.1"], {"key": "aux_target"}),
-    "value_true_team": (["--value-true-team"], {"key": "opp_true_team"}),
     "distill": ([], {"key": "distill_mask"}),
 }
 
@@ -63,8 +57,7 @@ LEVERS: Dict[str, Any] = {
 #: The levers the production env core (rust, `recipe.sizing` — the M5 switch) does not serve yet: their
 #: rows run the learner on the PYTHON env core (`combination_checks._ENV_CORE_UNPORTED`). R1 is the same
 #: region on both cores, so the declaration is what is tested either way.
-PYTHON_CORE_ONLY = frozenset({"rollout_weight", "fork", "defensive", "bait", "dense_aux",
-                              "value_true_team", "distill"})
+PYTHON_CORE_ONLY = frozenset({"fork", "distill"})
 
 
 def _lever_args(name: str) -> Any:
@@ -89,7 +82,6 @@ def _fill(model: Any, *, mixed_classes: bool, seed: int) -> None:
     (multipliers in [1, 2] or {0, 1}, flags {0, 1}); `opp_class` ONE class or two."""
     from agents.training import learner_golden as LG
     from agents.training.fork_arm import PG_MASK_KEY
-    from agents.training.win_prob_rollout import ROLLOUT_WEIGHT_KEY
     rb = model.rollout_buffer
     rb.reset()
     rng = np.random.default_rng(seed)
@@ -99,12 +91,9 @@ def _fill(model: Any, *, mixed_classes: bool, seed: int) -> None:
         g = data.get("obs:" + k)
         if g is not None and g.shape == arr.shape:
             arr[...] = g
-        elif k == ROLLOUT_WEIGHT_KEY:
-            arr[...] = 1.0 + rng.random(arr.shape)
-        elif k in (PG_MASK_KEY, "defensive_opportunity", "bait_opportunity", "distill_mask"):
+        elif k in (PG_MASK_KEY, "distill_mask"):
             arr[...] = rng.integers(0, 2, arr.shape)
-        # anything else stays at zeros: the env's own "unavailable" block (`opp_true_team`) or an
-        # unsupervised label (`aux_*`, mask 0)
+        # anything else stays at zeros: an unsupervised label (mask 0)
     oc = rb.observations["opp_class"]
     oc[...] = 0
     if mixed_classes:
@@ -173,7 +162,7 @@ def test_the_startup_declaration_COVERS_every_update_the_lever_reaches(name, lif
     assert ctl.compiles_after_lock == 0 and ctl.rejected_after_lock == 0, ctl.after_lock_frames
     # non-vacuous: the declaration CARRIES the lever (and its key is in the batch R1 compiled for)
     want, decl = LEVERS[name][1], model._r1_declared
-    for field in ("strata", "rollout_weight", "fork_pg_mask", "defensive", "bait"):
+    for field in ("strata", "fork_pg_mask"):
         assert getattr(decl.static, field) is bool(want.get(field, False)), (name, field, decl.static)
     if "key" in want:
         assert want["key"] in decl.obs_keys, (name, decl.obs_keys)
@@ -210,7 +199,7 @@ def test_the_NEUTRAL_strata_weights_are_BIT_IDENTICAL_to_the_unweighted_expressi
     f = model._resolve_fold_flags()
 
     def run(strata: bool) -> Dict[str, Any]:
-        st = model._micro_static(f, strata, False)
+        st = model._micro_static(f, strata)
         var = model._micro_var(st, None)
         assert ("strata_w" in var) is strata
         model.policy.set_training_mode(True)

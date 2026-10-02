@@ -88,8 +88,7 @@ TINY = {"n_envs": 2, "n_steps": 64, "batch_size": 32, "grad_accum_steps": 2, "n_
         "k": 2, "warmup": 1}
 
 #: The model-side stashes `train()` reads that a rollout callback fills (all cleared per rollout).
-_MODEL_STASHES = ("_win_prob_lambda_metrics", "_dense_aux_metrics", "_win_prob_rollout_metrics",
-                  "_fork_metrics")
+_MODEL_STASHES = ("_fork_metrics",)
 
 #: Tags read back after each call to show the repeats did the same work.
 _WORK_TAGS = ("train/loss", "train/approx_kl", "train/clip_fraction", "train/value_loss",

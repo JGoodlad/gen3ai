@@ -410,23 +410,7 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
     # and this callback's per-step scratch has no vec-step rows to read — so it is not registered.
     if args.win_prob_mode != "none" and getattr(args, "env_core", "python") != "rust":
         from agents.training.win_prob_callback import WinProbLabelCallback
-        # gen3_winprob_rollout_target_v1: the callback needs the `cf_records` RING (a sampled
-        # state's replayable episode) and the sim TRANSPORT the continuations play on — the same
-        # `--use-bridge` the training battles use, so a label is measured on the engine the run is
-        # trained on. Both are None/inert unless `--win-prob-rollout-target` is set.
-        callbacks.append(WinProbLabelCallback(
-            records_dir=(os.path.join(model_dir, "cf_records")
-                         if getattr(args, "cf_records", False) else None),
-            impl=str(getattr(args, "bridge_impl", "rust") or "rust"),
-            starve_cycles=starve_cycles_for(args, "win_prob_rollout")))
-    # DENSE AUXILIARY labels (gen3_dense_aux_v1): the same three-step bridge for the 25
-    # end-of-battle per-slot targets. Registered AFTER WinProbLabelCallback — order is not
-    # load-bearing between them (the key sets are disjoint, and the λ recursion touches only
-    # win_target/win_mask), but keeping the win callback first keeps the value sidecar's own
-    # ordering contract, which is stated against it, unambiguous.
-    if float(getattr(args, "win_prob_dense_aux", 0.0) or 0.0) > 0.0:
-        from agents.training.dense_aux_callback import DenseAuxLabelCallback
-        callbacks.append(DenseAuxLabelCallback())
+        callbacks.append(WinProbLabelCallback())
     # THE TRAINING-SIDE VALUE SIDECAR (gen3_value_sidecar_v1). Appended IMMEDIATELY AFTER
     # WinProbLabelCallback and the order is LOAD-BEARING: that callback's _on_rollout_end is what
     # overwrites the win_target/win_mask placeholders with the MC label, and SB3 runs

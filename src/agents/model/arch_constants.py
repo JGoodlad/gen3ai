@@ -47,14 +47,6 @@ TRANSFORMER_FFN_DIM = 256
 UVR_K = 4
 UVR_DIM = 64
 _UVR_N_SOURCES = 3
-# gen3_value_true_team_v1 (v112, `--value-true-team`): the PRIVILEGED true-opponent-team value
-# route — the critic ladder's arm 5 CEILING PROBE. Six rows (the opponent's actual party, encoded
-# in the obs's own per-mon layout) projected to TTV_DIM and pooled by TTV_K learned queries, with a
-# zero-init projection to D_MODEL. Deliberately the SAME shape family as the entity pool above: the
-# arm asks what the critic could do with perfect team knowledge, and a differently-sized readout
-# would confound "more information" with "more capacity".
-TTV_K = 4
-TTV_DIM = 64
 # gen3_unified_value_readout_v2 (v82, `value_entity_pool_full`): +source 3 = the refined
 # GLOBAL token, +source 4 = the hidden-opp belief queries — the pool's COMPLETE row set (the
 # one successor for every condemnable vf route). A separate flag/shape so v80-table
@@ -168,14 +160,6 @@ PAIR_VALUE_ROUTE_DIM = _PAIR_OUTCOME_RAW
 # WHAT WE EXPECT THEM TO DO directly rather than only through the α-weighted physics cells.
 
 
-# gen3_dense_aux_v1 (v117, `--win-prob-dense-aux`): the DENSE AUXILIARY head, arm 9 of the critic
-# ladder. KataGo's (Wu 2019) answer to a one-bit terminal signal — auxiliary targets that share the
-# win's CAUSE, dense along the axes the win bit cannot carry. One hidden layer over `value_pooled`
-# (the SAME tensor the win head reads) into `DENSE_AUX_DIM_OUT` sigmoid logits. The hidden width is
-# TTV_DIM's, deliberately: the ladder's arms are meant to differ in what they SEE, not in how much
-# capacity they were handed.
-DENSE_AUX_HIDDEN = 64
-
 # gen3_hidden_slot_move_mixture_v1 (E10, the parameter-free hidden-slot move prior). An opponent
 # slot whose MON is unrevealed used to fuse its move delta with `move_prior_logits[0]` — the flat
 # floor row of the UNKNOWN-species sentinel — so its move posterior was a state-INDEPENDENT constant
@@ -188,7 +172,7 @@ HIDDEN_SLOT_MIX_EPS = 1e-6
 # gen3_ridealong_heads_v1 (v126, `--ridealong-ensemble` / `--ridealong-rnd` / `--ridealong-adv` /
 # `--ridealong-opp`): the DETACHED RIDE-ALONG heads (`agents.model.ridealong_heads`). Every one
 # reads the trunk through `.detach()` and trains on its own optimizer, so none of these widths can
-# move what the policy or V learn. RIDEALONG_HIDDEN is the V-ensemble member width (DENSE_AUX_HIDDEN's,
+# move what the policy or V learn. RIDEALONG_HIDDEN is the V-ensemble member width (64, the width the retired dense-aux head used,
 # for the same "differ in what they see, not in capacity" reason). The PRIOR scales are the
 # randomized-prior functions' (Osband et al. 2018) output scales: V members add β·p(x) in LOGIT
 # units, A/B members in PROBABILITY units (an advantage under the win-prob critic is a probability

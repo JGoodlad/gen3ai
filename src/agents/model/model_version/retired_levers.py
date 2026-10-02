@@ -7,7 +7,7 @@ the deletion is JUDGED, in the shape `shaped_reward.py` set for the deleted shap
 
 * **STRUCTURAL levers** — their ON value named PARAMETERS or a critic route the surviving code cannot
   rebuild (a PopArt normalizer's buffers, the distributional value head's Linear, the `value_from_dist`
-  critic route). A config recording one ON is REFUSED on EVERY load (`_migrate_config` calls
+  critic route, the privileged true-team readout, the dense auxiliary head). A config recording one ON is REFUSED on EVERY load (`_migrate_config` calls
   :func:`refuse_structural`): popping it would hand SB3 an unplaceable state_dict, or run a checkpoint
   under a critic it was not trained with, with every shape check green.
 * **TRAINING-ONLY levers** — they scaled a loss or edited the reward stream and touched no forward pass,
@@ -27,6 +27,14 @@ would catch.
 Flag names are stored WITHOUT their `--` and prefixed below: a bare `"--flag"` string constant in a
 production module counts as LIVE CLI surface to `src/claude_md_freshness_gate_test.py`, and these are
 exactly the flags that no longer are. **Later deletion units APPEND their levers to :data:`RETIRED`.**
+
+**Levers with NO recorded field are not in the table, and cannot be.** `--defensive-entropy-boost` /
+`--bait-entropy-boost` (deletion pass L2) were never written to `model_config.json` (they were
+training-only, never inherited on a flagless resume, and so never `_resolve`d), so there is no raw
+config to read an "ON" from; their only trace is `metadata.json`'s `cli_args` / `original_command`,
+and an unpinned resume of such a run fails argparse on the inherited argv instead
+(`designs/ops/deletion_pass_manifest.md` §6 finding 8 — the flag census decides whether that is
+softened). `designs/deleted_flags.md` names the pin for each.
 """
 from __future__ import annotations
 
@@ -45,6 +53,15 @@ LAST_COMMIT_L1 = "3bc3e77ed2a6883324262a6844cb97f1e8c59377"
 #: The first config version written WITHOUT the L1 fields.
 L1_DELETION_VERSION = 131
 
+#: The last commit whose tree still has the L2 levers (the win-prob λ-return target, the R-rollout
+#: Monte-Carlo target and its anchor weight, the dense auxiliary head, the privileged true-team value
+#: route, both entropy boosts) — the tip when deletion unit L2 branched, which is the commit that
+#: shipped L1 (`475bd817`). Any commit at or before it can resume a run that recorded one.
+LAST_COMMIT_L2 = "475bd817bdf1da3d055036641a29fe7540ec090d"
+
+#: The first config version written WITHOUT the L2 fields.
+L2_DELETION_VERSION = 132
+
 
 class RetiredLever(NamedTuple):
     field: str                                   # the recorded ModelVersion field that left the config
@@ -53,6 +70,8 @@ class RetiredLever(NamedTuple):
     structural: bool                             # ON named parameters / a route: refuse on EVERY load
     what: str                                    # what ON meant (the refusal's evidence line)
     last_commit: str                             # the last commit whose tree still has the lever
+    unit: str = "L1"                             # the deletion unit that removed it (for the refusal's text)
+    version: int = L1_DELETION_VERSION           # the config version that first wrote without it
 
 
 def _truthy(field: str) -> Callable[[Dict[str, Any]], bool]:
@@ -61,6 +80,14 @@ def _truthy(field: str) -> Callable[[Dict[str, Any]], bool]:
 
 def _nonzero(field: str) -> Callable[[Dict[str, Any]], bool]:
     return lambda raw: float(raw.get(field, 0.0) or 0.0) != 0.0
+
+
+def _below_one(field: str) -> Callable[[Dict[str, Any]], bool]:
+    return lambda raw: float(raw.get(field, 1.0) if raw.get(field) is not None else 1.0) < 1.0
+
+
+def _above_one(field: str) -> Callable[[Dict[str, Any]], bool]:
+    return lambda raw: float(raw.get(field, 1.0) if raw.get(field) is not None else 1.0) > 1.0
 
 
 def _winprob_aux_coef_moved(raw: Dict[str, Any]) -> bool:
@@ -103,12 +130,39 @@ RETIRED: tuple = (
                  lambda raw: bool(raw.get("win_prob_pbrs_frozen")), False,
                  "win_prob_pbrs_frozen set (frozen-phi PBRS: a frozen win-prob head reshaping the "
                  "policy's advantages)", LAST_COMMIT_L1),
+    # ---- deletion pass L2 (config v132) -----------------------------------------------------
+    RetiredLever("value_true_team", "value-true-team", _truthy("value_true_team"), True,
+                 "value_true_team=True (the privileged true-opponent-team value route: a "
+                 "TrueTeamValueReadout in the state_dict, reading the `opp_true_team` obs key)",
+                 LAST_COMMIT_L2, "L2", L2_DELETION_VERSION),
+    RetiredLever("dense_aux", "win-prob-dense-aux", _truthy("dense_aux"), True,
+                 "dense_aux=True (the dense auxiliary head: a DenseAuxHead in the state_dict)",
+                 LAST_COMMIT_L2, "L2", L2_DELETION_VERSION),
+    RetiredLever("win_prob_dense_aux", "win-prob-dense-aux", _nonzero("win_prob_dense_aux"), False,
+                 "win_prob_dense_aux != 0 (the dense auxiliary loss's weight)",
+                 LAST_COMMIT_L2, "L2", L2_DELETION_VERSION),
+    RetiredLever("win_prob_lambda", "win-prob-lambda", _below_one("win_prob_lambda"), False,
+                 "win_prob_lambda < 1.0 (the win-prob BCE trained against a lambda-return target "
+                 "instead of the terminal bit)", LAST_COMMIT_L2, "L2", L2_DELETION_VERSION),
+    RetiredLever("win_prob_rollout_target", "win-prob-rollout-target",
+                 _nonzero("win_prob_rollout_target"), False,
+                 "win_prob_rollout_target != 0 (a fraction of the rollout buffer's states labelled "
+                 "by an R-rollout Monte-Carlo win fraction)", LAST_COMMIT_L2, "L2",
+                 L2_DELETION_VERSION),
+    RetiredLever("win_prob_rollout_weight", "win-prob-rollout-weight",
+                 _above_one("win_prob_rollout_weight"), False,
+                 "win_prob_rollout_weight > 1.0 (a per-row loss weight on the rollout-anchored rows)",
+                 LAST_COMMIT_L2, "L2", L2_DELETION_VERSION),
 )
 
 #: Recorded fields that left the config but are INERT without one of the levers above (an atom count,
 #: a support, a loss weight for a head that no longer exists): popped silently, any value.
 INERT_RETIRED_FIELDS: tuple = ("value_dist_bins", "value_dist_vmin", "value_dist_vmax",
-                               "value_dist_coef")
+                               "value_dist_coef",
+                               # L2: the lambda truncation convention and the rollout count / mode are
+                               # inert without their (retired) lever above.
+                               "win_prob_lambda_truncated", "win_prob_rollout_r",
+                               "win_prob_rollout_mode")
 
 #: Every field `_migrate_config` pops, however its value reads.
 RETIRED_FIELDS: tuple = tuple(r.field for r in RETIRED) + INERT_RETIRED_FIELDS
@@ -141,8 +195,8 @@ def refuse_structural(raw: Dict[str, Any]) -> None:
     parameters or a critic route this code cannot rebuild."""
     for r in retired_lever_evidence(raw, structural_only=True):
         raise ModelVersionError(
-            f"{r.what} is no longer supported: the lever was DELETED (deletion pass L1, config v"
-            f"{L1_DELETION_VERSION}; --{r.flag}), and its ON value named parameters or a critic route "
+            f"{r.what} is no longer supported: the lever was DELETED (deletion pass {r.unit}, config v"
+            f"{r.version}; --{r.flag}), and its ON value named parameters or a critic route "
             "the surviving code cannot rebuild, so this checkpoint's weights cannot be loaded as "
             "they were trained.\n"
             f"To re-read it, use the git_hash in its own metadata.json (any commit at or before "

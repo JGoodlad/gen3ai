@@ -170,7 +170,7 @@ class ForkArmCallback(BaseCallback):
         into the supply guard's FATAL when nothing was injected."""
         from agents.training.fork_buffer import concat_blocks  # noqa: F401  (contract pin)
         from agents.training.fork_driver import assemble, play_forks
-        from agents.training.win_prob_rollout import index_records
+        from agents.training.cf_records import index_records
 
         n_steps, n_envs = int(self.model.n_steps), int(self.model.n_envs)
         keys = getattr(self.model, "_win_handle_keys", None)
@@ -198,9 +198,9 @@ class ForkArmCallback(BaseCallback):
         per_battle = int(getattr(self.model, "fork_max_per_battle", DEFAULT_MAX_PER_BATTLE))
         crn = str(getattr(self.model, "fork_crn", DEFAULT_CRN))
 
-        # Seeded from the RUN's seed and `num_timesteps` — `win_prob_rollout`'s rule and its
-        # reason: `num_timesteps` is MONOTONIC ACROSS A LAUNCHER RESTART, so the first rollouts
-        # after every restart do not redraw the first rollouts of the run.
+        # Seeded from the RUN's seed and `num_timesteps`: `num_timesteps` is MONOTONIC ACROSS A
+        # LAUNCHER RESTART, so the first rollouts after every restart do not redraw the first
+        # rollouts of the run.
         rng = np.random.default_rng(
             [int(getattr(self.model, "seed", 0) or 0),
              int(getattr(self.model, "num_timesteps", 0) or 0), int(self._calls)])

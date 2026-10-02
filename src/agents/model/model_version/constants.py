@@ -382,7 +382,16 @@ from typing import Any, Dict
 #   `model_version.retired_levers` (never silently continued without it). Every v121+ run on record
 #   recorded them all OFF, so no checkpoint loads differently: no ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change. Later deletion units APPEND their levers to that module's table.
-MODEL_CONFIG_VERSION = 131
+# v132 (deletion pass L2, owner-approved 2026-10-02): the next slice of Python-core-only levers leaves the
+#   config: win_prob_lambda (+ win_prob_lambda_truncated), win_prob_rollout_target (+ _r / _mode /
+#   _weight), win_prob_dense_aux and the STRUCTURAL dense_aux bool, and the STRUCTURAL value_true_team
+#   bool. (The two entropy boosts were never recorded fields.) Same machinery as v131: `_migrate_config`
+#   POPs them from any vintage; a recorded dense_aux / value_true_team ON is refused on EVERY load (a
+#   `DenseAuxHead` / `TrueTeamValueReadout` in the state_dict has no home), and a RESUME or FORK of a
+#   run that recorded any lever ON is refused by `model_version.retired_levers`. Every v121+ run on
+#   record recorded them all OFF, so no checkpoint loads differently: no ARCH_SIGNATURE bump, no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 132
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

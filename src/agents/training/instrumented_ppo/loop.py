@@ -29,7 +29,7 @@ Three properties are CONTRACTS, each load-bearing for something outside this fil
   wrap them as instance attributes; a direct call would bypass both, silently.
 * **The Python collect keeps sb3's LOCAL NAMES** (`infos`, `dones`, `rollout_buffer`, …), because
   callbacks read them through `self.locals` after `callback.update_locals(locals())`, and it fires
-  `on_step` BEFORE `rollout_buffer.add` (`WinProbLabelCallback` / `DenseAuxLabelCallback` read
+  `on_step` BEFORE `rollout_buffer.add` (`WinProbLabelCallback` reads
   `buf.pos` as the row about to be written).
 
 **What is still sb3 after stage 1** (design §3.1): the constructor / `_setup_model`, the policy base
@@ -388,7 +388,7 @@ class OwnedLoop:
     ) -> bool:
         """Vendored from `MaskablePPO.collect_rollouts` — the Python env core's collection. 🚨 THE
         LOCAL NAMES ARE A CONTRACT (`callback.update_locals(locals())`; `signal_callback` /
-        `win_prob_callback` / `dense_aux_callback` read them), and `on_step` fires BEFORE
+        `win_prob_callback` read them), and `on_step` fires BEFORE
         `rollout_buffer.add`. Under the reference seam it is upstream's own method."""
         if self._reference_loop():
             return MaskablePPO.collect_rollouts(self, env, callback, rollout_buffer,  # type: ignore[arg-type]

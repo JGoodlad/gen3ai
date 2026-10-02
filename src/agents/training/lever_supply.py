@@ -16,8 +16,6 @@ lever (``key``)        what silently happened instead               measured vic
                        the pool sample stays uniform / stale
 ``team_pfsp``          `--team-pfsp` with no self-play team games:   (inventory)
                        team sampling stays uniform
-``win_prob_rollout``   `--win-prob-rollout-target` whose workers     (inventory)
-                       label nothing: every state keeps its bit
 ``fork``               `--fork-fraction` whose arm disables itself   (inventory)
                        or forks nothing, with a print
 ``search_teacher``     `--search-teacher` selecting no candidates    (inventory)
@@ -27,7 +25,7 @@ lever (``key``)        what silently happened instead               measured vic
 **One mechanism, two failure classes.**
 
 * A **deterministic mis-wiring** (the fork arm's buffer is not a `ForkRolloutBuffer`, an obs key the
-  arm reads is missing, the rollout labeller has no `action_mask`) is the same on every restart, so
+  arm reads is missing) is the same on every restart, so
   it raises :class:`LeverConfigError` → ``FATAL_CONFIG`` (3) the first time it is seen.
 * A **dry streak** — the lever is LIVE (it is supposed to be delivering) and delivered ZERO units
   for ``N`` consecutive cycles — raises :class:`LeverStarvedError` → ``FATAL_SUPPLY`` (5). ``N`` is
@@ -107,8 +105,6 @@ LEVERS: Dict[str, Lever] = {lv.key: lv for lv in (
           3),
     Lever("team_pfsp", "--team-pfsp", "team-PFSP update", "a self-play/exploiter team game",
           "team sampling stays uniform — no per-team win-rate is ever measured", 5),
-    Lever("win_prob_rollout", "--win-prob-rollout-target", "rollout", "a rollout-labelled state",
-          "every state keeps its terminal bit — the arm labels nothing", 5),
     Lever("fork", "--fork-fraction", "rollout", "an injected fork row",
           "the buffer is exactly what collection made it — the arm forks nothing", 5),
     Lever("search_teacher", "--search-teacher", "teacher cycle", "a selected candidate",

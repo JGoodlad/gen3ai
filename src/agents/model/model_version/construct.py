@@ -32,19 +32,12 @@ class ModelVersionConstruction(ModelVersionFields):
         policy_grad_coef: float = 1.0,
         intent_label_bot_weight: float = 1.0,
         win_prob_strata_weight: float = 0.0,
-        win_prob_lambda: float = 1.0,
-        win_prob_lambda_truncated: str = "bootstrap",
-        win_prob_rollout_target: float = 0.0,
-        win_prob_rollout_r: int = 8,
-        win_prob_rollout_mode: str = "replace",
-        win_prob_rollout_weight: float = 1.0,
         fork_fraction: float = 0.0,
         fork_branches: int = 3,
         fork_contested_gap: float = 0.40,
         fork_contested_absv: float = 0.0,
         fork_max_per_battle: int = 1,
         fork_crn: str = "dice_and_draws",
-        win_prob_dense_aux: float = 0.0,
         cf_records: bool = False,
         cf_records_keep: int = 512,
         cf_winprob_coef: float = 0.0,
@@ -248,14 +241,6 @@ class ModelVersionConstruction(ModelVersionFields):
             q_winprob_mode=str(
                 policy_kwargs.get("features_extractor_kwargs", {}).get("q_winprob_mode", "none")
             ),
-            value_true_team=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("value_true_team", False)
-            ),
-            # gen3_dense_aux_v1 (v117): the STRUCTURAL half of `--win-prob-dense-aux`, read from
-            # the extractor kwargs the same way — it is a DERIVED toggle, so the CLI coefficient
-            # has already been turned into this bool by `extractor_arch._DERIVED`.
-            dense_aux=bool(
-                policy_kwargs.get("features_extractor_kwargs", {}).get("dense_aux", False)),
             # gen3_ridealong_heads_v1 (v126): the four ride-along declarations ride the extractor
             # kwargs (the policy builds the heads from them).
             ridealong_ensemble=int(
@@ -294,19 +279,12 @@ class ModelVersionConstruction(ModelVersionFields):
             policy_grad_coef=float(policy_grad_coef),
             intent_label_bot_weight=float(intent_label_bot_weight),
             win_prob_strata_weight=float(win_prob_strata_weight),
-            win_prob_lambda=float(win_prob_lambda),
-            win_prob_lambda_truncated=str(win_prob_lambda_truncated or "bootstrap"),
-            win_prob_rollout_target=float(win_prob_rollout_target or 0.0),
-            win_prob_rollout_r=int(win_prob_rollout_r or 8),
-            win_prob_rollout_mode=str(win_prob_rollout_mode or "replace"),
-            win_prob_rollout_weight=float(win_prob_rollout_weight or 1.0),
             fork_fraction=float(fork_fraction or 0.0),
             fork_branches=int(fork_branches or 3),
             fork_contested_gap=float(fork_contested_gap or 0.40),
             fork_contested_absv=float(fork_contested_absv or 0.0),
             fork_max_per_battle=int(fork_max_per_battle or 1),
             fork_crn=str(fork_crn or "dice_and_draws"),
-            win_prob_dense_aux=float(win_prob_dense_aux),
             cf_records=bool(cf_records),
             cf_records_keep=int(cf_records_keep),
             cf_winprob_coef=float(cf_winprob_coef),

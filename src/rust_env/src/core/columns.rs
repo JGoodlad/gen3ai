@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// FNV-1a-64 of `columns.schema_text()`; a front end compares it with its own table at load.
-pub const SCHEMA_ID: &str = "759d479521053cd4";
+pub const SCHEMA_ID: &str = "8fcde52e4c39a435";
 
 // ---- dims
 pub const SIDES: usize = 2;
@@ -84,7 +84,7 @@ pub mod labels {
         ("intent", &[super::col::OPP_ACTION_KIND, super::col::OPP_ACTION_NUM, super::col::OPP_SWITCH_SLOT, super::col::OPP_SWITCH_SPECIES]),
     ];
     /// Every other family, with where it comes from instead (`host_const`, `host_episode`, `refused`).
-    pub const NOT_CORE: [(&str, &str); 9] = [("winprob", "host_const"), ("opp_class", "host_episode"), ("winprob_weight", "host_const"), ("fork", "host_const"), ("true_team", "refused"), ("dense_aux", "refused"), ("defensive", "refused"), ("bait", "refused"), ("distill", "refused")];
+    pub const NOT_CORE: [(&str, &str); 4] = [("winprob", "host_const"), ("opp_class", "host_episode"), ("fork", "host_const"), ("distill", "refused")];
 }
 
 // ---- the columns

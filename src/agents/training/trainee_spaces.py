@@ -23,11 +23,8 @@ from typing import Any, NamedTuple, Optional, Sequence, Tuple
 import numpy as np
 from gymnasium import spaces
 
-from agents.model.dense_aux_head import DENSE_AUX_DIM_OUT
 from agents.observation.belief_labels import BELIEF_MOVE_SLOTS, N_HP_TYPES_LABEL, N_SPREAD_STATS
 from agents.observation.constants import TEAM_SIZE
-from agents.observation.true_team import TRUE_TEAM_KEY, TRUE_TEAM_SHAPE
-from agents.training.dense_aux import AUX_MASK_KEY, AUX_TARGET_KEY, AUX_TURN_KEY
 from agents.training.fork_arm import PG_MASK_KEY as FORK_PG_MASK_KEY
 
 #: The trainee's action space: 4 moves + 5 switches + 2 reserved slots (``Gen3ActionMapper``).
@@ -56,30 +53,12 @@ def trainee_env_kwargs(args: Any) -> dict:
         emit_belief_labels=(args.opp_belief_aux_coef > 0.0),
         move_belief_mode=args.move_belief_mode,
         emit_win_target=(args.win_prob_mode != "none"),
-        # gen3_winprob_rollout_weight_v1: the per-row BCE WEIGHT key, declared only when
-        # there is something to weigh — the weight above 1.0 AND a rollout fraction above
-        # 0.0 (the two are already bound to each other by `combination_checks`, and this
-        # is the same predicate spelled where the obs space is decided rather than
-        # inferred from one half of it).
-        emit_win_row_weight=(
-            float(getattr(args, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
-            and float(getattr(args, "win_prob_rollout_target", 0.0) or 0.0) > 0.0),
         # gen3_fork_v1: the per-row POLICY-TERM mask key (`fork_pg_m`), declared only when
         # the arm is on. It is the carrier for THE MASK RULE — the fork step is out of the
         # policy term for every branch — and an injected row is the only row that ever
         # holds anything but the 1.0 placeholder, so an unflagged run's observation space,
         # its rollout buffer and its policy loss are all untouched.
         emit_fork_pg_mask=(float(getattr(args, "fork_fraction", 0.0) or 0.0) > 0.0),
-        # PRIVILEGED TRUE-TEAM channel (gen3_value_true_team_v1): emit the opponent's
-        # actual party only when the value route that reads it was built. Emitting it
-        # unconditionally would put a key in the observation_space that no consumer reads
-        # and that every non-local path would then have to fabricate.
-        emit_opp_true_team=bool(getattr(args, "value_true_team", False)),
-        # DENSE AUXILIARY labels (gen3_dense_aux_v1): emit the 25 end-of-battle targets
-        # and their two-part mask only when the head that consumes them was built — the
-        # same coef>0 signal `extractor_arch._DERIVED` turns into the `dense_aux` toggle,
-        # so the key set and the module cannot disagree.
-        emit_dense_aux=(float(getattr(args, "win_prob_dense_aux", 0.0) or 0.0) > 0.0),
         # SPREAD-belief supervision (gen3_unified_spread_belief_v1): emit the privileged
         # true-spread label only when the loss will consume it (coef>0; the CLI guards that
         # --spread-belief-coef requires --spread-belief, so the head is present to supervise).
@@ -93,12 +72,6 @@ def trainee_env_kwargs(args: Any) -> dict:
         # ITEM-belief supervision (gen3_item_belief_v1): emit the privileged true-item
         # label only when the head exists AND the CE will consume it.
         emit_item_labels=(args.item_belief and args.item_belief_coef > 0.0),
-        # DEFENSIVE-exploration flag (gen3_defensive_entropy_v1): emit only when the boost is on, so
-        # the state-conditioned entropy term in the PPO loss can read it. Off = no key, no cost.
-        emit_defensive_opportunity=(args.defensive_entropy_boost > 1.0),
-        # BAIT-exploration flag (gen3_bait_entropy_v1): same gate, same reason — emit only when the
-        # boost is on, so the flag costs nothing on every run that is not taking the probe.
-        emit_bait_opportunity=(args.bait_entropy_boost > 1.0),
         # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1): the teacher team's species id-set
         # (None unless --distill-coef>0). The env emits `distill_mask`=1 on states where the
         # trainee pilots this team — the only states the distillation KL folds. None → no key.
@@ -119,25 +92,18 @@ class LabelGates(NamedTuple):
     spread_labels: bool
     hp_type_labels: bool
     item_labels: bool
-    win_row_weight: bool
     fork_pg_mask: bool
-    opp_true_team: bool
-    dense_aux: bool
-    defensive_opportunity: bool
-    bait_opportunity: bool
     distill_mask: bool
 
 
 def label_gates(*, emit_belief_labels: bool = False, move_belief_mode: str = "off",
-                emit_win_target: bool = False, emit_win_row_weight: bool = False,
-                emit_fork_pg_mask: bool = False, emit_opp_true_team: bool = False,
-                emit_dense_aux: bool = False, emit_spread_labels: bool = False,
+                emit_win_target: bool = False,
+                emit_fork_pg_mask: bool = False, emit_spread_labels: bool = False,
                 emit_opp_intent_labels: bool = False, emit_hp_type_labels: bool = False,
-                emit_item_labels: bool = False, emit_defensive_opportunity: bool = False,
-                emit_bait_opportunity: bool = False,
+                emit_item_labels: bool = False,
                 distill_team_species: Optional[Sequence[Any]] = None) -> LabelGates:
-    """The per-key gates. Two are DERIVED: the move belief needs the belief labels whatever
-    ``--opp-belief-aux-coef`` says, and the row weight exists only beside a win target."""
+    """The per-key gates. One is DERIVED: the move belief needs the belief labels whatever
+    ``--opp-belief-aux-coef`` says."""
     return LabelGates(
         belief_labels=bool(emit_belief_labels or move_belief_mode != "off"),
         known_moves=move_belief_mode in ("revealed", "both"),
@@ -146,12 +112,7 @@ def label_gates(*, emit_belief_labels: bool = False, move_belief_mode: str = "of
         spread_labels=bool(emit_spread_labels),
         hp_type_labels=bool(emit_hp_type_labels),
         item_labels=bool(emit_item_labels),
-        win_row_weight=bool(emit_win_row_weight and emit_win_target),
         fork_pg_mask=bool(emit_fork_pg_mask),
-        opp_true_team=bool(emit_opp_true_team),
-        dense_aux=bool(emit_dense_aux),
-        defensive_opportunity=bool(emit_defensive_opportunity),
-        bait_opportunity=bool(emit_bait_opportunity),
         distill_mask=bool(distill_team_species),
     )
 
@@ -250,15 +211,6 @@ def trainee_observation_space(layout: dict, vector_space: Any, g: LabelGates,
         # placeholder), used by the win-prob loss to stratify P(win) skill by how decided the game
         # is (value lives in close games, |margin|≈0) + a material-baseline skill score.
         base_obs["win_margin"] = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
-    if g.win_row_weight:
-        # gen3_winprob_rollout_weight_v1: the per-row BCE weight. A PLACEHOLDER of 1.0 (not 0.0
-        # like the two above) because it is a MULTIPLIER, not a label — a path that somehow
-        # reached the loss before `WinProbLabelCallback._on_rollout_end` overwrote it would
-        # zero the entire win-prob term on a zero placeholder, and read as a dead head rather
-        # than as a plumbing break. `high` is unbounded because the ceiling is the flag's own
-        # value divided by a normaliser, and coupling the space to the flag would make an obs
-        # space that a resume at a different weight could not reload.
-        base_obs["win_row_w"] = spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
     if g.fork_pg_mask:
         # gen3_fork_v1: 1.0 = this row is in the clipped policy term, 0.0 = it is not.
         # Bounded in [0, 1] because it is a MASK and not a dose — the fork arm does not
@@ -266,33 +218,6 @@ def trainee_observation_space(layout: dict, vector_space: Any, g: LabelGates,
         # `agents.training.fork_buffer`, THE MASK RULE).
         base_obs[FORK_PG_MASK_KEY] = spaces.Box(
             low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-    if g.opp_true_team:
-        # gen3_value_true_team_v1: the opponent's TRUE party in the obs's own per-mon layout.
-        # The bounds are the per-mon block's own: it carries embedding NUMS (up to the species
-        # axis) alongside normalised scalars, exactly like the opp-team slice of the flat
-        # vector, so the Box is bounded by the widest of those axes rather than by 1.0.
-        base_obs[TRUE_TEAM_KEY] = spaces.Box(
-            low=0.0, high=float(max(layout["max_species"],
-                                    layout["max_moves"])),
-            shape=TRUE_TEAM_SHAPE, dtype=np.float32)
-    if g.dense_aux:
-        # gen3_dense_aux_v1: the DENSE AUXILIARY targets + their two-part mask. `aux_target` is
-        # a placeholder (back-filled post-collection); `aux_mask` and `aux_turn` are REAL
-        # present-state values. All three are LABEL keys — the network never reads them.
-        base_obs[AUX_TARGET_KEY] = spaces.Box(
-            low=0.0, high=1.0, shape=(DENSE_AUX_DIM_OUT,), dtype=np.float32)
-        base_obs[AUX_MASK_KEY] = spaces.Box(
-            low=0.0, high=1.0, shape=(DENSE_AUX_DIM_OUT,), dtype=np.float32)
-        base_obs[AUX_TURN_KEY] = spaces.Box(
-            low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
-    if g.defensive_opportunity:
-        # gen3_defensive_entropy_v1: 1.0 = a productive defensive move (recovery/cure) is legal this
-        # decision. A REAL per-step value; read ONLY by the state-conditioned entropy boost in the PPO loss.
-        base_obs["defensive_opportunity"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-    if g.bait_opportunity:
-        # gen3_bait_entropy_v1: 1.0 = a revealed, alive opponent BENCH mon is immune to the attack we
-        # are most likely to click. A REAL per-step value; read ONLY by the bait entropy boost.
-        base_obs["bait_opportunity"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
     if g.distill_mask:
         # gen3_exploiter_distill_v1: INTEGER team-id (0=none, k=teacher k) of the trainee's current team
         # among the N distillation-teacher teams. Read ONLY by the exploiter-distillation KL in the PPO

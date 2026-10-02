@@ -63,12 +63,19 @@ def test_decision_module_is_bit_identical_to_the_policys_own_masked_distribution
     assert float((logp - uniform)[m].abs().max()) > 1e-2
 
 
-def test_an_extra_obs_key_architecture_is_refused():
-    from agents.model.extra_obs_keys import EXTRA_OBS_KEYS
+def test_an_extra_obs_key_architecture_is_refused(monkeypatch):
+    """The registry is EMPTY today (the privileged true-team route was deleted), so the refusal is
+    exercised against a stand-in row: an extractor whose forward would read a Dict key beyond
+    `observation` is refused at slot declaration."""
+    from agents.model import extra_obs_keys as EOK
 
-    fe = types.SimpleNamespace(**{EXTRA_OBS_KEYS[0].attr: object()})
-    with pytest.raises(UnservableArchitecture, match=EXTRA_OBS_KEYS[0].key):
+    row = EOK.ExtraObsKey(key="x_probe_key", attr="x_probe_attr", shape=(2,), flag="x_probe")
+    monkeypatch.setattr(EOK, "EXTRA_OBS_KEYS", (row,))
+    fe = types.SimpleNamespace(x_probe_attr=object())
+    with pytest.raises(UnservableArchitecture, match="x_probe_key"):
         _refuse_extra_obs_keys(types.SimpleNamespace(features_extractor=fe))
+    # and the ordinary (observation-only) extractor passes
+    _refuse_extra_obs_keys(types.SimpleNamespace(features_extractor=types.SimpleNamespace(x_probe_attr=None)))
 
 
 # ---------------------------------------------------------------- the declaration

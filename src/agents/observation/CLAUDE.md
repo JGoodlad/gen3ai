@@ -26,27 +26,6 @@ have **different** gates:
 > `src/agents/training/CLAUDE.md`). So it adds **zero** cost to the default obs build (benchmark
 > confirmed: `state_encoder.encode` unchanged, `belief_labels` absent from the profile). Changes to
 > `encode` itself still trip the gate below.
->
-> **Second off-hot-path module — `true_team.py`** (`gen3_value_true_team_v1`). The pure builder of
-> the PRIVILEGED true-opponent-team block, `opp_true_team` `[6, POKEMON_FULL_DIM]` — the opponent's
-> ACTUAL party in **this directory's own per-mon layout**, produced by the SAME
-> `PokemonEncoder.encode` called with `is_own=True` against the opponent's own battle view (from
-> that side every one of its mons IS a fully-known own mon, so there is no second encoding to keep
-> in step). Emitted only under `--value-true-team`, by `Gen3Env` (from `battle2.team`) and by
-> `RLPlayer` (from the `_opp_player` back-reference `LocalBattleRunner` sets); ABSENT at ladder
-> play, where the all-zero block is the encoder's own ABSENT-slot spelling. Read ONLY by the
-> `TrueTeamValueReadout` value route — never by `encode`, never by the policy — so it too adds
-> **zero** cost to the obs build (benchmark confirmed: no file on the `encode` path changed).
-> The consumer slices it with the SAME `slice_pokemon_categoricals` `ObsUnpack` uses, which is what
-> makes "one layout, one encoder" checkable rather than asserted.
->
-> 🚨 **A SYNTHETIC obs owes this key too.** The value route RAISES on a missing `opp_true_team`
-> rather than skipping, so every caller that builds its own obs dict — a compile trace, a warmup, a
-> round-trip smoke — must supply the block. `empty_true_team_block()` is what they supply, and it is
-> the RIGHT input rather than a stand-in: it is exactly what a real emitter writes when no
-> privileged view exists. The (flag -> key, shape) mapping is declared in
-> `src/agents/model/extra_obs_keys.py` and those callers build from it; hand-building a one-key
-> dict is what killed `ai_v12_14_ladder_truevalue` two minutes into its launch.
 
 ---
 

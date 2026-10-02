@@ -4,7 +4,7 @@ the Rust env (M5 Lane C, ``designs/endstate/program_rust_core.md`` §2 M5).
 ``Gen3Env`` (``agents/training/gen3_env.py``) puts two kinds of keys in the trainee's Dict obs: the
 ``observation`` row + ``action_mask`` (Lane 0's ``obs`` / ``mask`` columns), and the TRAINING-ONLY
 LABEL keys below — read by a loss, a callback or a diagnostic, never by the policy forward
-(``designs/ARCHITECTURE.md`` §7; the one exception is ``opp_true_team``, read by the value route).
+(``designs/ARCHITECTURE.md`` §7).
 This table is the ONE list of them. ``src/agents/training/rust_env_label_inventory_test.py``
 (routine) fails the day ``Gen3Env`` declares a key this table does not list, a row's dtype / shape /
 emit gate drifts, the PRODUCTION surface (``--arch production`` + ``designs/production_config.json``)
@@ -37,8 +37,6 @@ from typing import Dict, Mapping, Optional, Tuple
 TEAM = 6          # agents.observation.constants.TEAM_SIZE
 MOVE_SLOTS = 4    # agents.observation.belief_labels.BELIEF_MOVE_SLOTS
 SPREAD = 5        # agents.observation.belief_labels.N_SPREAD_STATS
-POKEMON_FULL = 122  # agents.observation.constants.POKEMON_FULL_DIM
-DENSE_AUX = 25    # agents.model.dense_aux_head.DENSE_AUX_DIM_OUT
 
 RUST_KINDS = ("core", "host_const", "host_episode", "refused")
 
@@ -72,7 +70,6 @@ _BANK = "agents/training/belief_bank.py"
 _PPO = "agents/training/instrumented_ppo/ppo.py"
 _SETUP = "agents/training/instrumented_ppo/train_setup.py"
 _INTENT_FOLD = "agents/training/instrumented_ppo/intent_fold.py"   # K8: the intent block, inside region R1
-_MICRO = "agents/training/instrumented_ppo/micro_step.py"         # K8: fold steps 1-3a (region R1)
 
 _REVEALED = ("the side's REVEALED opponent slots (`species_known` read from the side's own row, the "
              "leading-contiguous block; the reading's `opp` list in encoder order)")
@@ -157,34 +154,10 @@ LABELS: Tuple[LabelKey, ...] = (
     LabelKey("opp_switch_species", "i64", (1,), "intent", _INTENT, True, "Gen3Env._opp_intent_labels",
              (_INTENT_FOLD, _SETUP), "core", "the switch-in's species NUM (content-addressed β)"),
     # ---------------------------------------------------------------- OFF the production surface
-    LabelKey("win_row_w", "f32", (1,), "winprob_weight",
-             (("emit_win_target", True), ("emit_win_row_weight", True)), False, "Gen3Env._merge_training_keys",
-             ("agents/training/win_prob_rollout.py", _SETUP), "host_const",
-             "PLACEHOLDER 1.0 (a multiplier); overwritten post-collection", const=1.0),
     LabelKey("fork_pg_m", "f32", (1,), "fork", (("emit_fork_pg_mask", True),), False,
              "Gen3Env._merge_training_keys", ("agents/training/fork_arm.py",), "host_const",
              "PLACEHOLDER 1.0; only a row the fork arm INJECTS holds anything else", const=1.0,
              symbol="PG_MASK_KEY"),
-    LabelKey("opp_true_team", "f32", (TEAM, POKEMON_FULL), "true_team", (("emit_opp_true_team", True),), False,
-             "Gen3Env._true_team_block", ("agents/model/extractor_forward.py",), "refused",
-             "the other side's six mons through `PokemonEncoder.encode(is_own=True)` — the value route's "
-             "ceiling probe", symbol="TRUE_TEAM_KEY"),
-    LabelKey("aux_target", "f32", (DENSE_AUX,), "dense_aux", (("emit_dense_aux", True),), False,
-             "Gen3Env._merge_training_keys", ("agents/training/dense_aux.py", _PPO), "refused",
-             "PLACEHOLDER 0 (back-filled by `DenseAuxLabelCallback`)", symbol="AUX_TARGET_KEY"),
-    LabelKey("aux_mask", "f32", (DENSE_AUX,), "dense_aux", (("emit_dense_aux", True),), False,
-             "dense_aux.state_visibility", ("agents/training/dense_aux.py", _PPO), "refused",
-             "this state's visibility (our occupied slots + the opp slots revealed so far)",
-             symbol="AUX_MASK_KEY"),
-    LabelKey("aux_turn", "f32", (1,), "dense_aux", (("emit_dense_aux", True),), False,
-             "Gen3Env._merge_training_keys", ("agents/training/dense_aux.py",), "refused",
-             "the battle turn", symbol="AUX_TURN_KEY"),
-    LabelKey("defensive_opportunity", "f32", (1,), "defensive", (("emit_defensive_opportunity", True),), False,
-             "Gen3Env._defensive_opportunity", (_MICRO,), "refused",
-             "1 iff a legal recovery / cure move is productive for the active mon"),
-    LabelKey("bait_opportunity", "f32", (1,), "bait", (("emit_bait_opportunity", True),), False,
-             "Gen3Env._bait_opportunity", (_MICRO,), "refused",
-             "1 iff the likeliest attack is zero-damage into a revealed alive opp BENCH mon"),
     LabelKey("distill_mask", "f32", (1,), "distill",
              (("distill_team_species", (frozenset({"__inventory_probe__"}),)),), False,
              "Gen3Env._distill_mask", (_PPO, "agents/training/instrumented_ppo/distill_anchor.py"), "refused",

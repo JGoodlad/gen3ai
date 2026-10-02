@@ -43,9 +43,8 @@ def test_the_argparse_default_is_None_so_the_resolve_line_is_reachable():
     assert p.parse_args(["--policy_gae_lambda", "1"]).policy_gae_lambda == 1.0
 
 
-def test_the_help_distinguishes_it_from_the_critics_win_prob_lambda():
+def test_the_help_states_the_default():
     helps = {a.dest: a.help for a in build_parser()._actions}
-    assert "--win-prob-lambda" in helps["policy_gae_lambda"]
     assert "0.80" in helps["policy_gae_lambda"]
 
 

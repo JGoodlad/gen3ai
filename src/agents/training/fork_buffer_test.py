@@ -131,15 +131,13 @@ def test_concat_of_nothing_is_none():
 def test_every_key_the_production_obs_dict_can_carry_is_either_filled_or_refused_by_name():
     """A key that is neither is the failure mode this table exists to make impossible: an injected
     row would silently carry whatever a heuristic guessed."""
-    from agents.observation.true_team import TRUE_TEAM_KEY
-    for key in ("win_target", "win_mask", "win_margin", "win_row_w", "opp_class", PG_MASK_KEY,
+    for key in ("win_target", "win_mask", "win_margin", "opp_class", PG_MASK_KEY,
                 "belief_species", "belief_moves", "known_moves", "belief_spread",
                 "belief_spread_mask", "belief_nature", "belief_nature_mask", "belief_ev",
                 "belief_ev_mask", "hp_type_label", "hp_type_mask", "item_label", "item_mask",
                 "opp_action_kind", "opp_action_num", "opp_switch_slot", "opp_switch_species"):
         assert key in FILL, key
-    for key in (TRUE_TEAM_KEY, "defensive_opportunity", "bait_opportunity", "distill_mask",
-                "aux_target"):
+    for key in ("distill_mask",):
         assert key not in FILL and key in REFUSE_KEYS, key
 
 
@@ -151,8 +149,7 @@ def test_an_unknown_key_refuses_with_its_own_name_and_a_generic_reason():
 
 
 def test_a_declared_refusal_names_the_flag_rather_than_only_the_key():
-    assert "value-true-team" in refusal_text(["opp_true_team"])
-    assert "dense-aux" in refusal_text(["aux_target"])
+    assert "distillation" in refusal_text(["distill_mask"])
 
 
 def test_every_label_key_a_branch_cannot_supply_is_filled_NOT_SCORED():

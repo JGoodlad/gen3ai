@@ -45,12 +45,10 @@ from agents.model.pair_outcome import PairOutcomeMoveCell, PairOutcomeSwitchCell
 from agents.model.pointer_head import EntityMoveSeats
 from agents.model.pools import CLSPool, HiddenOppBeliefPool
 from agents.model.projection import ProjectionAssembler, compute_projection_widths
-from agents.model.dense_aux_head import DenseAuxHead
 from agents.model.q_winprob_head import Q_WINPROB_MODES, QWinProbHead
 from agents.model.switch_branch import SwitchBranchMoveCell
 from agents.model.t0_species import T0SpeciesPrior
 from agents.model.team_transformer import EdgeBias, EventSeats, TeamTransformer
-from agents.model.true_team_value import TrueTeamValueReadout
 from agents.model.value_readouts import UnifiedValueReadout
 from agents.model.value_threat_inject import (
     VALUE_THREAT_INJECT_REDUCE_HOW, value_threat_inject_dim)
@@ -110,8 +108,6 @@ class ExtractorBuild(torch.nn.Module):
                  cf_evidential: bool = False,
                  cf_twin_heads: bool = False, cf_shadow_critic: bool = False,
                  q_winprob_mode: str = "none",
-                 value_true_team: bool = False,
-                 dense_aux: bool = False,
                  ridealong_ensemble: int = 0,
                  ridealong_rnd: bool = False,
                  ridealong_adv: int = 0,
@@ -962,39 +958,6 @@ class ExtractorBuild(torch.nn.Module):
                          move_cell_dim=cast("ExtractorApi", self).pointer_move_cell_dim,
                          switch_cell_dim=cast("ExtractorApi", self).pointer_switch_cell_dim)
             if self.q_winprob_mode != "none" else None)
-
-        # gen3_value_true_team_v1 (v114) — the PRIVILEGED true-opponent-team VALUE route, arm 5 of
-        # the critic ladder. Built after the Q head for the same append-never-insert reason, and
-        # it has no ordering constraint of its own: its only input is an obs key, so it depends on
-        # no other module's width.
-        self.value_true_team = bool(value_true_team)
-        self.true_team_value = (
-            TrueTeamValueReadout(layout) if self.value_true_team else None)
-
-        # gen3_dense_aux_v1 (v117) — the DENSE AUXILIARY readout off `value_pooled`, arm 9 of the
-        # critic ladder. Built LAST (the append-never-insert rule: SB3 restores optimizer state
-        # positionally, and appending also leaves every earlier module's init RNG draw untouched,
-        # which is what makes OFF byte-identical rather than merely equal in shape). It is NOT
-        # CALLED by the forward — the training term applies it to the stashed `value_pooled` — so
-        # pi/vf are bit-identical at an ARBITRARY weight in this module, and a rollout, an eval and
-        # the prober all pay exactly nothing for it. Its input is deliberately NOT detached in that
-        # term; see `dense_aux_head`'s docstring for why that IS the arm.
-        self.dense_aux = bool(dense_aux)
-        if self.dense_aux and self.win_head is None:
-            # DECLARED in flag_registry (`requires=("win_prob_mode",)`) and enforced here, the
-            # registry's contract: a dependency only the CLI knows is invisible to `checkargs`, so
-            # an operator validating a recorded launcher_command would get exit 0 on a command the
-            # child then refuses. The arm is defined against the WIN-PROB critic's trunk — it exists
-            # to give `value_pooled` gradient along the axes that critic's one-bit target cannot
-            # carry — and `win_prob_mode='none'` builds no `win_head`, so there would be no critic
-            # for the dense targets to be auxiliary TO. (`--critic winprob` is the stronger form and
-            # is a `combination_checks` refusal; this is the part the constructor can see.)
-            raise ValueError(
-                "dense_aux requires win_prob_mode != 'none': the DENSE AUXILIARY targets exist to "
-                "shape the trunk the WIN-PROB critic reads, and win_prob_mode='none' builds no "
-                "win head at all. Set --win-prob-mode read_only|shaping (--critic winprob implies "
-                "shaping), or drop --win-prob-dense-aux.")
-        self.dense_aux_head = DenseAuxHead() if self.dense_aux else None
 
         # gen3_ridealong_heads_v1 (v126) — the DETACHED RIDE-ALONG heads' DECLARATION. The extractor
         # builds NOTHING for them: it records the four kwargs (so the flag registry's five surfaces,

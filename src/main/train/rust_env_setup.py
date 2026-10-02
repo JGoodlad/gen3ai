@@ -199,7 +199,7 @@ def _bot_names(opponent_classes: Sequence[Any]) -> List[str]:
 def segment_seed(seed: int, num_timesteps: int) -> int:
     """The collector's run seed for THIS process: a hash of the run's ``--seed`` and ``num_timesteps`` at
     startup — monotonic across a launcher restart, so a restart never replays the first segment's teams,
-    battle seeds and keyed draws (the `win_prob_rollout` precedent)."""
+    battle seeds and keyed draws."""
     from agents.training import keyed_draw as KD
 
     return int(KD.draw_keys(int(seed or 0) & 0x7FFFFFFFFFFFFFFF, 9, 0, int(num_timesteps), 0)) & 0x7FFFFFFFFFFF

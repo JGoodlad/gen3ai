@@ -381,47 +381,10 @@ class ModelVersionFields:
     # v100 reason: an arm resumed without re-typing it would keep training and silently stop
     # applying the only thing it was launched to measure.
     win_prob_strata_weight: float = 0.0
-    # gen3_winprob_lambda_v1 (config v116): λ-RETURN targets for the WIN-PROB BCE. `win_prob_lambda`
-    # 1.0 = OFF (every state is trained against its episode's terminal 0/1 outcome, the pre-flag
-    # behaviour, bit-identical); below 1.0 each non-terminal state's target becomes
-    # `(1-λ)·V(s[t+1]) + λ·G[t+1]` over the collector's RECORDED values, so the outcome keeps
-    # weight `λ**d` at distance `d` from the terminal. `win_prob_lambda_truncated` picks the
-    # buffer-boundary convention for an episode with no terminal inside the rollout — "bootstrap"
-    # (target `V(s_T)`, which UNMASKS those rows) or "mask" (excluded, as today); it is INERT at
-    # λ = 1.0 because the whole recursion is skipped. The td_aux_coef class exactly: they change a
-    # LOSS TARGET computed post-collection, touch no forward pass and no weight shape, so they are
-    # recorded for PROVENANCE and for flagless-resume read-back (`_resolve` reads these fields) and
-    # are never compared by check_compatible or any check_*.
-    win_prob_lambda: float = 1.0
-    win_prob_lambda_truncated: str = "bootstrap"
-    # gen3_winprob_rollout_target_v1 (config v118): R-ROLLOUT MONTE-CARLO targets for the WIN-PROB
-    # BCE. `win_prob_rollout_target` 0.0 = OFF (every state keeps its episode's terminal 0/1 bit,
-    # the pre-flag behaviour, bit-identical); above 0.0 it is the FRACTION of the rollout buffer
-    # whose states are replayed from the `cf_records` ring and played forward `win_prob_rollout_r`
-    # times by the current policy, their target becoming `wins / R`. `win_prob_rollout_mode` picks
-    # `replace` (the rollout fraction) or `blend` (its mean with the terminal bit); both are INERT
-    # at fraction 0. The td_aux_coef class exactly: a LOSS TARGET computed post-collection, no
-    # forward pass and no weight shape, so recorded for PROVENANCE and flagless-resume read-back
-    # and never compared by check_compatible or any check_*.
-    win_prob_rollout_target: float = 0.0
-    win_prob_rollout_r: int = 8
-    win_prob_rollout_mode: str = "replace"
-    # gen3_winprob_rollout_weight_v1 (config v119): the per-row LOSS WEIGHT on the rows the flag
-    # above ANCHORED. 1.0 = OFF (every scored row weighs the same, the pre-flag behaviour,
-    # bit-identical); above 1.0 the anchored rows' per-row BCE is multiplied by it and the whole
-    # vector renormalised to mean 1 over the scored rows, so the loss SCALE does not move. It
-    # exists because at the fraction that costs 1x the run's simulation budget the anchored rows
-    # are ~0.12%% of the BCE's mass and no head can respond to that by arithmetic. INERT at
-    # `win_prob_rollout_target` 0.0. Same class as the three above: a LOSS WEIGHT applied
-    # post-collection, no forward pass and no weight shape, so recorded for PROVENANCE and
-    # flagless-resume read-back and never compared by check_compatible or any check_*.
-    win_prob_rollout_weight: float = 1.0
-
     # gen3_fork_v1 (config v120): the FORK ARM — contested-state EXPLORING STARTS whose branch
     # continuations enter the SAME PPO buffer. `fork_fraction` 0.0 = OFF and a default build is
     # BIT-identical (no module imported, no obs key declared, no callback attached, no row
-    # injected); the five below it are INERT at 0.0. Same class as the four above — the
-    # `td_aux_coef` class: they steer a post-collection callback and a buffer injection, touch no
+    # injected); the five below it are INERT at 0.0. The `td_aux_coef` class: they steer a post-collection callback and a buffer injection, touch no
     # forward pass and no weight shape, so they are recorded for PROVENANCE and flagless-resume
     # read-back and never compared by check_compatible or any check_*.
     #
@@ -435,19 +398,6 @@ class ModelVersionFields:
     fork_contested_absv: float = 0.0
     fork_max_per_battle: int = 1
     fork_crn: str = "dice_and_draws"
-    # ---- gen3_dense_aux_v1 (config v117) — THE DENSE AUXILIARY HEAD ---------------------------
-    # ONE CLI flag, TWO recorded fields, because they are gated differently.
-    # `dense_aux` is STRUCTURAL (the value_true_team pattern): ON builds a `DenseAuxHead` whose
-    # params ARE the state_dict delta; OFF builds nothing and is byte-for-byte the baseline. Its
-    # only output is a training-side loss, so no width changes anywhere and a bool compare in
-    # check_compatible is the ONLY thing that could reject a flipped flag.
-    # `win_prob_dense_aux` is the td_aux_coef class: it doses that loss, is recorded for provenance
-    # and for flagless-resume read-back (`_resolve` reads it), and is never compared — so a resume
-    # may change the DOSE freely while the head's existence stays fixed for the run's lifetime.
-    # NO ARCH_SIGNATURE bump: the observation vector is unchanged (the labels ride separate Dict
-    # keys), no existing module moves, the head is built LAST and the forward never calls it.
-    dense_aux: bool = False
-    win_prob_dense_aux: float = 0.0
     # ---- gen3_ridealong_heads_v1 (config v126) — THE DETACHED RIDE-ALONG HEADS ------------------
     # Four STRUCTURAL toggles (member counts; 0 / False = not built). The heads live on the POLICY
     # (`policy.ridealong`), so their params are the state_dict delta; nothing reads their output but
@@ -595,17 +545,6 @@ class ModelVersionFields:
     # choices, which is the starvation trap this head exists to avoid.
     q_winprob_coef: float = 0.0
     q_winprob_onpolicy_coef: float = 0.0
-    # ---- gen3_value_true_team_v1 (config v114) — THE PRIVILEGED (TRUE-TEAM) VALUE CHANNEL ------
-    # v114 STRUCTURAL bool (the value_entity_pool pattern): the ONLY value route that adds
-    # INFORMATION rather than re-reading the shared 2501-dim obs. ON builds a
-    # `TrueTeamValueReadout` whose params ARE the state_dict delta and injects its zero-init
-    # output into `value_pooled`; OFF builds nothing and is byte-for-byte the baseline. A bool
-    # compare in check_compatible is the gate — the route writes into a tensor whose WIDTH never
-    # changes (additive injection), so a flipped flag would produce no shape error anywhere.
-    # NO ARCH_SIGNATURE bump: the observation VECTOR is unchanged (the privileged block rides a
-    # separate Dict key), no existing module moves, and the readout is built LAST, so an OFF run
-    # on this code is bit-identical to the same run on v113.
-    value_true_team: bool = False
     # ---- gen3_winprob_critic_mode_v1 (config v109) — WHICH READOUT IS THE CRITIC ---------------
     # v109 STRUCTURAL string (the win_prob_mode pattern): 'shaped' (what an ABSENT record means,
     # `critic_mode.CRITIC_UNRECORDED`) routes `policy._critic_value` to the scalar `value_net`.
@@ -641,8 +580,7 @@ class ModelVersionFields:
     # and no weight shape, so it is recorded for PROVENANCE and for flagless-resume read-back
     # (`_resolve` reads this field) and is never compared by check_compatible or any check_*. 0.80
     # is the value both model_build sites HARDCODED before the flag existed, so a pre-v123 config
-    # migrates to it — not a guess but the only possible past. NOT `win_prob_lambda` (the critic's
-    # λ-return BCE target, a separate post-collection pass).
+    # migrates to it — not a guess but the only possible past.
     policy_gae_lambda: float = 0.80
     # ---- gen3_diagnostics_cadence_v1 (config v124) — the OPTIONAL-TELEMETRY CADENCE -------------
     # `--diagnostics-every N`: the per-term noise, grad-balance, rank and edge/cell probes run on

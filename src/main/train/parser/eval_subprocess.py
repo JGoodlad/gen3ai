@@ -171,8 +171,7 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              "failed eval cycles count), pfsp (3 eval cycles: --pfsp-scale with no "
                              "sentinel win-rate measured while the pool has sentinels), team_pfsp (5 "
                              "updates: --team-pfsp with no self-play/exploiter team game while self-play "
-                             "is live), win_prob_rollout (5 rollouts: --win-prob-rollout-target "
-                             "labelling nothing), fork (5 rollouts: --fork-fraction injecting nothing), "
+                             "is live), fork (5 rollouts: --fork-fraction injecting nothing), "
                              "search_teacher (3 teacher cycles: --search-teacher selecting no candidate). "
                              "key=0 disables that lever's FATAL — ANNOUNCED at training start, and the "
                              "end-of-run summary is still LOUD at zero.")

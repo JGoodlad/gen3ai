@@ -65,8 +65,8 @@ climbs is buying less, whatever its fork count says.
 
 | condition | source |
 |---|---|
-| `win_mask == 1` — the episode TERMINATED in this buffer (which is also what makes the state replayable: the `__RECON__` record is written at episode END) | `win_prob_rollout.eligible_mask` |
-| a per-decision reconstruction HANDLE was captured (`turns >= 0`) | `gen3_winprob_rollout_target_v1`, shared |
+| `win_mask == 1` — the episode TERMINATED in this buffer (which is also what makes the state replayable: the `__RECON__` record is written at episode END) | `fork_arm.eligible_mask` |
+| a per-decision reconstruction HANDLE was captured (`turns >= 0`) | the per-decision handle capture `WinProbLabelCallback` performs for the fork arm |
 | `MIN_LABELABLE_TURN <= turn <= 40` | `cf_producer` / the offline builder's `--max-turn` |
 | a MOVE ROUND with `>= 3` legal actions | `cf_producer_sampler.is_move_round`, `--min-legal 3` |
 
@@ -158,7 +158,7 @@ The fork step stays **fully in the value terms** — its return is its own branc
 whole point of playing the branch.
 
 **Carrier:** the `fork_pg_m` obs Dict key, a per-row multiplier that survives
-`RolloutBuffer.get()`'s shuffle aligned to its own row (the mechanism `win_row_w` uses). Declared
+`RolloutBuffer.get()`'s shuffle aligned to its own row (the mechanism the deleted `win_row_w` anchor weight used). Declared
 ONLY when the flag is on. The env emits a 1.0 placeholder on every COLLECTED row.
 Under `--compile-trainer` (torch 2.8) the key is part of the compile region R1's DECLARED signature
 from startup (it is in the env's obs space; the injected rows make a ragged last micro-batch, which
@@ -261,13 +261,10 @@ belief label is a fact about the opponent's team read from `battle2` inside the 
 env, so those rows are masked out of their losses. The cost is supervision on those rows; the
 alternative cost is a belief head trained on fiction.
 
-Four flags are **REFUSED alongside the arm** rather than filled, each by a `combination_checks` row:
-`--value-true-team` (the extractor's value route RAISES on a missing `opp_true_team`, and a zero
-block would be a fabricated privileged input), `--win-prob-dense-aux` (its targets are the
-episode's end-of-battle facts, which for a branch this process never held), `--win-prob-strata-weight`
+The arm's refusals are THREE `combination_checks` rows: it needs the winprob critic, it needs `--cf-records` on the python core, and it refuses `--win-prob-strata-weight`
 (it prices rows by `win_margin`, which the env's reward manager computes — every injected row would
 carry the 0.0 fill and land in one stratum, making the delivered strata dose a function of the fork
-rate), and anything declaring `defensive_opportunity` / `bait_opportunity` / `distill_mask`.
+rate). `fork_buffer.REFUSE_KEYS` holds only `distill_mask` (a key a branch cannot supply is refused at setup, never guessed). The privileged true-team and dense-aux flags the arm once also refused are deleted (deletion pass L2).
 
 ### The buffer
 
@@ -287,7 +284,7 @@ A training `__RECON__` record carries the resolved seed, both packed teams and t
 choices, and **nothing that says which policy sat on the other side**. So a branch is played against
 a **self-like** opponent (the current snapshot), not the episode's real one — right for the ~90 %
 self-play share of the training mixture and biased for the rest, the same direction
-`win_prob_rollout` documents. `fork/branch_share` prices how much of the buffer that population
+the (deleted) R-rollout target's ecology note documented. `fork/branch_share` prices how much of the buffer that population
 substitution occupies and `fork/bot_share` names how much of it replaced a BOT. An injected row's
 `opp_class` is labelled **POOL** for that reason: the class tag says who the row was played against,
 and it was not the parent's opponent.
@@ -559,8 +556,7 @@ Four tags are new:
 - `--rollout-trigger complete_game` (the window fill is the parity schedule).
 
 `--cf-records` is a Python-core requirement only; the core's finished logs replace the ring. Every
-other fork refusal holds on both cores: `winprob`, `--value-true-team`, dense aux, strata weight, and
-the opportunity / distill keys.
+other fork refusal holds on both cores: `winprob`, strata weight, and the `distill_mask` key.
 
 ### 14.8 Gates (each FAILS on revert)
 

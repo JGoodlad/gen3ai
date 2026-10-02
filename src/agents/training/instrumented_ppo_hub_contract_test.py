@@ -93,7 +93,7 @@ def test_the_ppo_class_carries_every_term_family():
                    "_record_grad_balance_metrics", "_record_signal_metrics",
                    "_record_noise_scale_metrics", "_record_head_metrics", "_record_term_metrics",
                    "_record_cf_metrics", "_record_capacity_metrics",
-                   "_annealed_entropy_boost", "_winprob_start_metrics",
+                   "_winprob_start_metrics",
                    "_excluded_save_params", "collect_rollouts", "train"):
         assert callable(getattr(hub.InstrumentedMaskablePPO, method, None)), (
             f"`InstrumentedMaskablePPO.{method}` is gone — a mixin dropped out of the base list "
@@ -148,11 +148,11 @@ def test_the_fold_sequence_is_two_straight_lines_R1_then_the_eager_tail():
     src = inspect.getsource(hub.InstrumentedMaskablePPO.train)
     assert inspect.getfile(hub.InstrumentedMaskablePPO.train) == str(_DIR / "ppo.py")
     for marker in ("+INSTRUMENTATION", "+GRAD-ACCUM", "+R1", "+TD-AUX", "+CF-WINPROB",
-                   "+DISTILL", "+SEARCH-TEACHER", "+OPD", "+NOISE-SCALE", "+DENSE-AUX",
+                   "+DISTILL", "+SEARCH-TEACHER", "+OPD", "+NOISE-SCALE",
                    "+CAPACITY"):
         assert marker in src, f"the `{marker}` block left `train()`"
     r1_call = src.index("self._micro_region()(")
-    for tail in ("self._dense_aux_loss(", "distill_anchor_step(",
+    for tail in ("distill_anchor_step(",
                  "self._td_aux_term()", "self._cf_winprob_term("):
         assert r1_call < src.index(tail), f"the tail fold `{tail}` now runs BEFORE region R1"
     assert src.index("self._td_aux_term()") < src.index("self._cf_winprob_term("), (

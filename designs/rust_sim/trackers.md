@@ -38,8 +38,7 @@ line, over the side's READINGS (the `BattleEvent`s slice E holds equal to `Gen3B
 
 **Not ported, by decision — and since 2026-09-26 DELETED on the Python side too:** the SHAPED
 reward terms (program M3 row, `gen3_shaped_reward_deletion_v1`), and with them the progress clock's
-CHARGE (`last_penalty`, `switch_legal`); the choice-band belief (`ChoiceBandTracker` has no production reader — it has been
-a no-op since it landed, `9a37b712`). **Not a first-class structure:** `TurnDelta`. Its layout is
+CHARGE (`last_penalty`, `switch_legal`); the choice-band belief (the Python `ChoiceBandTracker` had no production reader — a no-op since it landed, `9a37b712` — and was deleted, deletion pass L2). **Not a first-class structure:** `TurnDelta`. Its layout is
 frozen and its obs frames were deleted (`gen3_frame_deletion_v1`); the core keeps only
 `delta::DeltaProjection` — the fields the clock and the label read — and slice T gates those
 CONSUMERS, never the layout.

@@ -47,72 +47,21 @@ instead of v64's 13-wide damage summary, so the critic gets the six status ident
 the `s3` edge family's softmax-normalised RATIO). The two stack additively and independently.
 ⚠️ Its ENABLING owes the C4-style offline gate first (ledger C6); BUILDING it is free.
 
-## The PRIVILEGED route — `--value-true-team` (v114, `gen3_value_true_team_v1`)
+## The PRIVILEGED route — DELETED (deletion pass L2)
 
-Every route above re-reads, re-pools or re-weights the SAME 2761-dim observation both heads
-consume; none of them adds information. **This one does.** `TrueTeamValueReadout`
-(`src/agents/model/true_team_value.py`) reads the opponent's ACTUAL party off a
-training-and-eval-only Dict key `opp_true_team` — `[6, POKEMON_FULL_DIM]`, the obs's OWN per-mon
-layout, built by `agents.observation.true_team.build_true_team_block` through the SAME
-`PokemonEncoder.encode` called with `is_own=True` against the OPPONENT's own battle view, because
-from that side every one of its mons IS a fully-known own mon. Six rows go through a shared per-mon
-MLP (permutation-equivariant; the block's order is `species num ascending` and means nothing), then
-`TTV_K`=4 learned queries over `TTV_DIM`=64 and a zero-init projection into `value_pooled`.
-
-**It is a CEILING PROBE, arm 5 of the critic ladder** (`designs/research_state/winprob_critic_ladder_2026-09-08.md`
-§L1): how much of the win-prob critic's residual error is irreducible uncertainty about the
-opponent's team? A critic that needs privileged inputs is not the critic that ships, so it is
-`family=CRITIC`, OFF by default, and never in `designs/production_config.json`.
-
-**Four properties, each a constraint rather than a style choice.**
-
-1. **vf-ONLY is structural.** The route injects into `value_pooled`, and `ProjectionAssembler`
-   gives `value_pooled` to the value head ALONE (`vf_combined IS value_pooled`); `pi_combined` is a
-   concat that does not contain it. So `pi` is bit-identical for an ARBITRARY weight in this
-   module, not merely at init — `true_team_value_test.py` asserts it by perturbing the key at a
-   large random weight, and asserts the backward direction too (a policy-only loss leaves the
-   route's projection with no gradient).
-2. **It AUGMENTS rather than REPLACES the belief-keyed opp view on the value side.** Replacing
-   would be the cleaner ceiling in the abstract and would confound two changes in practice: a null
-   could then mean "privilege does not help" OR "the belief route was carrying the signal".
-   Additive injection leaves every existing value route bit-identical at init, and it is the only
-   form the seam admits — additive injection changes no width, so route availability can never
-   mis-size `value_pre_norm`.
-3. **Presence follows the LOCAL sim, and nothing else.** `LocalBattleRunner` sets an `_opp_player`
-   back-reference on both sides at attach time — one place that knows both sides, so "the sim is
-   local" and "the privileged key is available" are the same fact. That covers bridge TRAINING,
-   bridge EVAL (`eval_callback`: workers play in-process via `run_local_battles`) and the
-   counterfactual replay driver. `Gen3Env` does not need it: it reads `battle2.team` directly. At
-   ladder play (`src/main/play.py`, a real server) there is no runner, `RLPlayer` supplies the
-   all-zero "unknown" block, and the policy — which never reads the key — runs unchanged.
-4. **The route RAISES on a missing key rather than skipping.** A silent skip reads exactly like a
-   route that learned nothing, which is the gen-12 dead-tail bug the seam exists to prevent. Every
-   caller that builds its own obs dict therefore owes the key, and `ProbeModel._pin` — the
-   prober's one offline-forward seam — REFUSES on such a checkpoint instead, because a V computed
-   from the recorded observation vector alone is V stripped of the privilege, a different
-   quantity. The arm's V is the one the eval traces RECORDED (computed with the key, on the
-   bridge), which is what `cf_audit` and `main.critic_gate` already read — both take V and P(win)
-   from the npz, never from a re-forward.
-
-🚨 **SYNTHETIC-OBS COMPATIBILITY, and the launch it cost.** "Every caller owes the key" was
-enforced by nobody, at four sites that each hand-built `{"observation": zeros(1, D)}`. The first
-launch to combine `--value-true-team` with them — `ai_v12_14_ladder_truevalue` at 377a5aa1 — died
-two minutes in at env init, exit 1: the forkserver compile preload traced on its one-key dict, the
-route raised, and the raise killed the forkserver bootstrap so `SubprocVecEnv` construction failed
-in the parent. The same argv's `--compile-trainer`, `--compile-opponents` and `--warmstart-battles`
-carried the identical dict, so the crash would simply have moved.
-
-The mapping is now DECLARED once — `agents.model.extra_obs_keys` — as
-`(extractor attribute -> obs key, shape, canonical zero block)`, and the five training-run
-synthetic-obs sites build from it (`compile_preload`, `lifecycle._run_roundtrip_test`,
-`compile_trainer`, `compile_opponents`, `warmstart`). The enable condition is the ATTRIBUTE
-(`true_team_value is not None`), the same expression the seam tests, so the two cannot drift; an
-AST gate over `extractor_forward` fails on any obs key the table does not declare. **A new route
-that reads a new Dict key needs a row there and nothing else.** The all-zero block those callers
-supply is the same "no privileged view" encoding a real emitter uses at ladder play, so the traced
-graph is the workers' graph. Adoption is partial by design: the offline audit / probe CLIs still
-hand-build, and fail in the first second at a terminal rather than costing a GPU-hour
-(`designs/ops/TECH_DEBT_BACKLOG.md`).
+`--value-true-team` (v114, `gen3_value_true_team_v1`) was the critic ladder's arm-5 CEILING PROBE: a
+`TrueTeamValueReadout` over the opponent's ACTUAL party read off the training-and-eval-only Dict key
+`opp_true_team`, injected zero-init into `value_pooled`. It was the only route that added information
+rather than re-reading the shared observation; the probe was never promoted and the route was deleted
+with the rest of the critic-ladder levers (ledger arms-ladder verdicts; recoverable at pin
+<= 475bd817). The seam (`_value_pooled_routes`) now has ONE member, `value_entity_pool`, and takes no
+`obs` argument; `agents/model/extra_obs_keys.py`'s registry is EMPTY, but the mechanism (declare an
+`(extractor attribute -> obs key, shape, zero block)` row; every training-path synthetic-obs site
+builds from `zero_extra_obs` / `synthetic_obs`; an AST drift gate fails on an undeclared key) stays,
+because the failure it prevents (`ai_v12_14_ladder_truevalue`: a forkserver preload traced on a
+one-key dict, killed at env init) is re-armed by any future obs-key-adding route. **A new route that
+reads a new Dict key needs a row there and nothing else.** Adoption is partial by design: the offline
+audit / probe CLIs still hand-build (`designs/ops/TECH_DEBT_BACKLOG.md`).
 
 ## `WinProbHead`, `CfEvidentialHead` and the three v99 additions
 
@@ -141,40 +90,15 @@ rollout pays nothing. Built LAST in `__init__`, so ON-at-coefficient-0 is BIT-id
 — not merely equal in shape, which is all the two heads above claim. Training half + the pre-registered
 read: `designs/training/cf_grounding.md` → *The EVIDENTIAL Beta head*.
 
-## `DenseAuxHead` — the one readout with a LIVE input (`--win-prob-dense-aux`, v117)
+## `DenseAuxHead` — DELETED (deletion pass L2)
 
-`gen3_dense_aux_v1`, the critic ladder's **arm 9**. `Linear(D_MODEL, 64) → ReLU → Linear(64, 25)`
-over the same `value_pooled` the win head reads, zero-init output, built LAST, **not called by the
-forward** — so the count off `value_pooled` is now SEVEN heads and the forward still calls only
-`win_head` / (per-action) `QWinProbHead`. What it predicts, for every state, is
-the episode's **END-OF-BATTLE** facts, back-filled the way the win bit is: survival of each of the
-12 slots (our 6 then theirs, in the observation's own team order), each slot's final HP fraction,
-and the scaled turns-left. 25 sigmoid outputs, three masked-mean BCE terms averaged.
-
-**It exists because four 10M levers on the win bit itself moved nothing** at ±0.01 on bot resolution
-(ledger *THE ARMS AT 400 GAMES*), while only ~10 % of that bit's variance lies BETWEEN opponents.
-KataGo's (Wu 2019 §3) answer to a one-bit terminal signal is not to fix the bit but to add auxiliary
-targets that share its CAUSE — ownership of every point, the final score — for a large reported gain
-in learning efficiency. Per-Pokémon end-of-battle outcomes are our analogue, and each is a fact
-about a NAMED ENTITY, so the gradient runs along the axes a pooled bit cannot separate.
-
-**It breaks the cf readouts' pattern in exactly one place, and that place is the arm.** Every other
-head here that is absent from the forward (`CfEvidentialHead`, the twins, the shadow critic) takes
-an UNCONDITIONALLY DETACHED input and reads `grad/*_share` 0.0 by construction. This one takes the
-live stashed `value_pooled`, so its gradient reaches the shared trunk exactly as the win-prob loss
-does under `shaping` — and `grad/dense_aux_share` must NOT read 0. "Never touches `pi`" still holds
-in the sense that matters for a readout: the head's OUTPUT never enters the pi path, at any weight,
-because the forward does not call it — a strictly stronger statement than `WinProbHead`'s, which is
-in the forward and relies on the assembler.
-
-`dense_aux` is a STRUCTURAL `flag_registry` row, `derived=True` off the coefficient
-`win_prob_dense_aux` (the `opp_belief_slots` pattern: coef > 0 builds the head, the coefficient
-doses the loss), `family=CRITIC`, `requires=("win_prob_mode",)`, gated by a bool compare in
-`check_compatible` — so a resume may re-dose the arm but may not add or drop its parameters. No
-`ARCH_SIGNATURE` bump: the observation vector is unchanged (the three LABEL keys ride separate Dict
-keys and are deliberately NOT `extra_obs_keys` rows, because the extractor never reads them), no
-module moves, the head is built last. Targets, the two masks, the λ precedence and every TB tag:
-[`../training/critic_and_value_losses.md`](../training/critic_and_value_losses.md).
+`--win-prob-dense-aux` (v117, `gen3_dense_aux_v1`, the critic ladder's arm 9) was a 25-output head on
+`value_pooled` (survival and final HP of the twelve slots plus turns-left) with a LIVE, un-detached
+input, so its gradient reached the shared trunk; it was the SEVENTH readout off `value_pooled` and
+the one exception to the cf readouts' detached-input pattern. It was deleted with the critic-ladder
+levers (the arm read no gain on the one-bit terminal target, ledger *THE ARMS AT 400 GAMES*);
+recoverable at pin <= 475bd817. Its structural `dense_aux` / `value_true_team` flags recorded ON are
+refused on every load (`model_version/retired_levers.py`). Six readouts off `value_pooled` remain.
 
 ## `QWinProbHead` — the one readout that is NOT off `value_pooled`
 

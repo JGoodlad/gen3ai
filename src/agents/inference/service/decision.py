@@ -24,7 +24,7 @@ than merely improbable, and makes "legal" readable off the output). ``value`` is
 Greedy is ``logp.argmax(-1)`` (the caller's, or the service's ``greedy``).
 
 The forward reads ``observation`` only. An architecture whose extractor reads a further Dict key
-(``extra_obs_keys`` — today ``opp_true_team``, the privileged value route) is REFUSED at slot
+(``extra_obs_keys`` — empty today; the privileged ``opp_true_team`` value route was deleted) is REFUSED at slot
 declaration (``DecisionModule.__init__``): serving it without the key would raise mid-run, and
 serving it with a synthetic key would be a V stripped of its privilege — a different quantity.
 """

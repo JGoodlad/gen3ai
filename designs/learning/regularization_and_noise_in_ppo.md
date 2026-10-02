@@ -48,7 +48,7 @@ mechanisms placed where PPO's accounting allows:
 
 - **The clip range** (`--clip-range`) — the RL analog of overfitting is over-updating on the
   latest rollouts (policy collapse); clipping is that regularizer, built into the core objective.
-- **The entropy bonus** (`--ent-coef`, the state-conditioned `--defensive-entropy-boost`) —
+- **The entropy bonus** (`--ent-coef`; the state-conditioned entropy boosts were deleted) —
   regularizes the *policy distribution* (keeps modeled randomness from collapsing to premature
   determinism). The closest spiritual sibling of dropout, living in the objective where it is
   differentiable and accounted.

@@ -25,7 +25,7 @@ and FAILS when:
 - a named consumer stops naming its key;
 - ARCHITECTURE.md §7's ✅/❌, or this doc's table, disagrees with the table.
 
-**Headline (2026-09-29): `Gen3Env` can emit 30 label keys. Production emits 21.** They fall into
+**Headline (deletion pass L2): `Gen3Env` can emit 23 label keys. Production emits 21.** (Seven keys — `win_row_w`, `opp_true_team`, `aux_target` / `aux_mask` / `aux_turn`, `defensive_opportunity`, `bait_opportunity` — went with their deleted levers.) The production keys fall into
 eight families:
 
 - belief: 3 keys
@@ -38,7 +38,7 @@ eight families:
 - opponent intent (α/β): 4
 
 **18 of the 21 are per-decision values the core must compute. 2 are host constants. 1 is a
-per-episode host value.** The remaining 9 keys are off the production surface.
+per-episode host value.** The remaining 2 keys (`fork_pg_m`, `distill_mask`) are off the production surface.
 
 The `rust` column says where the Rust env gets each key:
 
@@ -72,14 +72,7 @@ The `rust` column says where the Rust env gets each key:
 | `opp_action_num` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
 | `opp_switch_slot` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
 | `opp_switch_species` | i64 `[1]` | intent | yes | `Gen3Env._opp_intent_labels` | `instrumented_ppo/ppo.py`, `train_setup.py` | `core` |
-| `win_row_w` | f32 `[1]` | winprob_weight | no | `Gen3Env._merge_training_keys` (1.0) | `win_prob_rollout.py`, `instrumented_ppo/train_setup.py` | `host_const` |
 | `fork_pg_m` | f32 `[1]` | fork | no | `Gen3Env._merge_training_keys` (1.0) | `fork_arm.py` | `host_const` |
-| `opp_true_team` | f32 `[6,122]` | true_team | no | `Gen3Env._true_team_block` | `model/extractor_forward.py` | `refused` |
-| `aux_target` | f32 `[25]` | dense_aux | no | `Gen3Env._merge_training_keys` (0.0) | `dense_aux.py`, `instrumented_ppo/ppo.py` | `refused` |
-| `aux_mask` | f32 `[25]` | dense_aux | no | `dense_aux.state_visibility` | `dense_aux.py`, `instrumented_ppo/ppo.py` | `refused` |
-| `aux_turn` | f32 `[1]` | dense_aux | no | `Gen3Env._merge_training_keys` | `dense_aux.py` | `refused` |
-| `defensive_opportunity` | f32 `[1]` | defensive | no | `Gen3Env._defensive_opportunity` | `instrumented_ppo/ppo.py` | `refused` |
-| `bait_opportunity` | f32 `[1]` | bait | no | `Gen3Env._bait_opportunity` | `instrumented_ppo/ppo.py` | `refused` |
 | `distill_mask` | f32 `[1]` | distill | no | `Gen3Env._distill_mask` | `instrumented_ppo/ppo.py`, `distill_anchor.py` | `refused` |
 
 `fork_buffer.py` and SB3's rollout buffer CARRY every key, but neither is a consumer.

@@ -109,26 +109,10 @@ deletes the flat `action_net` and the action logits come from the `PointerNative
 the extractor's `last_pointer_inputs` stash (per-logit inputs: `designs/ARCHITECTURE.md` § Heads). The startup `_run_roundtrip_test` and the snapshot/feature tests all
 unpack the tuple — keep that in mind when touching the extractor's return shape.
 
-**The one channel the policy path cannot see** (`--value-true-team`, v114,
-`gen3_value_true_team_v1`). Because `vf_combined` IS `value_pooled` and `pi_combined` is a concat
-that never contains it, anything injected into `value_pooled` is vf-only at ANY weight — which is
-what makes the PRIVILEGED true-opponent-team route (the critic ladder's arm-5 ceiling probe) safe
-to build at all. It reads the opponent's real party off a training-and-eval-only obs key
-`opp_true_team` and is the only route in the tree that adds INFORMATION rather than re-reading the
-shared observation. Detail — including why it AUGMENTS rather than replaces the belief-keyed opp
-view, why it RAISES on a missing key, and why the prober's offline forwards REFUSE on such a
-checkpoint — is in [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
-
-**The SEVENTH readout off `value_pooled`** (`--win-prob-dense-aux`, v117, `gen3_dense_aux_v1`) — the
-DENSE AUXILIARY head, the critic ladder's arm 9. `Linear(D_MODEL, 64) → ReLU → Linear(64, 25)`,
-zero-init output, built LAST and **not called by the forward at all** (the `CfEvidentialHead`
-contract), predicting the episode's END-OF-BATTLE facts: survival and final HP of all twelve slots,
-plus the scaled turns-left. It breaks the cf readouts' pattern in exactly one place — its input is
-**NOT detached** in the training term, because the whole point is gradient into the shared trunk
-along the per-entity axes one terminal bit cannot carry. `pi`/`vf` are still bit-identical at any
-weight in it (the forward never calls it), and `grad/dense_aux_share` is the read that separates
-"the arm ran" from "the arm did what it was built to do". Targets, masks and the λ precedence:
-[`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).
+**`value_pooled` is vf-only by construction.** `vf_combined` IS `value_pooled` and `pi_combined`
+is a concat that never contains it, so anything injected into `value_pooled` leaves `pi` bit-identical
+at ANY weight; the extractor's `_value_pooled_routes` seam has ONE member (`value_entity_pool`). The
+privileged true-team route and the dense auxiliary head that once read off it are deleted.
 
 **The DETACHED RIDE-ALONG heads live on the POLICY, not the extractor** (`gen3_ridealong_heads_v1`,
 v126, `ridealong_heads.py`). The extractor only RECORDS `ridealong_{ensemble,rnd,adv,opp}` (so the
@@ -186,7 +170,8 @@ Rules to preserve:
 🚨 **THE FORWARD HAS TWO PUBLIC SURFACES: the constructor signature, and the obs DICT's KEY SET.**
 `forward` is normally a pure function of `obs["observation"]` — but a route may read a flag-gated
 Dict key of its own and **RAISE** when it is absent (a silent skip reads exactly like a route that
-learned nothing). `--value-true-team`'s `opp_true_team` is the first. That mapping is DECLARED once
+learned nothing). The privileged true-team route's `opp_true_team` was the first (deleted; the registry is now EMPTY and
+the mechanism + its drift gate stay). That mapping is DECLARED once
 in `extra_obs_keys.py` as `(extractor attribute -> key, shape, canonical zero block)`, keyed on the
 ATTRIBUTE the forward itself tests, and every synthetic-obs caller on a TRAINING path builds from it
 via `zero_extra_obs` / `synthetic_obs`: `compile_preload`, `main/train/lifecycle.py`'s round-trip

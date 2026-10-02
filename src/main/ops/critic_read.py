@@ -274,10 +274,9 @@ def draw_share(manifest: dict) -> Optional[float]:
 def winprob_coverage(trace_dir: str) -> Dict[str, int]:
     """How many of the cycle's state npz files actually carry a ``win_probs`` column.
 
-    This is the check the privileged-critic arm needs: ``--value-true-team`` rides a separate
-    obs key that must be present AT EVAL, and both critic meters take V and P(win) from these
-    npz. A tree missing the column would otherwise read as "no data" rather than as the arm
-    having been measured on a V it never trained.
+    Both critic meters take V and P(win) from these npz rather than re-forwarding, so a tree
+    missing the column would otherwise read as "no data" rather than as an arm that was never
+    measured on the V it trained.
     """
     import numpy as np
 

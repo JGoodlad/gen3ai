@@ -132,7 +132,7 @@ def _stub_branches(monkeypatch, tmp_path, n_rows=3):
                         lambda model, obs, masks, actions: (
                             np.linspace(0.1, 0.9, len(obs)).astype(np.float32),
                             np.full(len(obs), -1.0, np.float32)))
-    monkeypatch.setattr("agents.training.win_prob_rollout.index_records",
+    monkeypatch.setattr("agents.training.cf_records.index_records",
                         lambda d: {f"{t}_{e}": str(tmp_path / "rec.json")
                                    for t in range(N_STEPS) for e in range(N_ENVS)})
     return calls
@@ -186,13 +186,13 @@ def test_an_unfillable_obs_key_is_FATAL_CONFIG_by_name_and_the_buffer_is_untouch
                                                                                    tmp_path):
     Fork = fork_buffer_class(MaskableDictRolloutBuffer)
     buf = _buffer(Fork)
-    buf.observations["defensive_opportunity"] = np.zeros((N_STEPS, N_ENVS, 1), np.float32)
+    buf.observations["some_new_key"] = np.zeros((N_STEPS, N_ENVS, 1), np.float32)
     m = _Model(buf)
     _stub_branches(monkeypatch, tmp_path)
     cb = _cb(m, tmp_path)
     with pytest.raises(LeverConfigError) as ei:
         cb._on_rollout_end()
-    assert "REFUSED" in str(ei.value) and "defensive_opportunity" in str(ei.value)
+    assert "REFUSED" in str(ei.value) and "some_new_key" in str(ei.value)
     assert buf.n_fork_rows == 0
 
 

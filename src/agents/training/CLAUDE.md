@@ -15,7 +15,7 @@ always-current obligation as this file — update the topic doc in the same pass
 
 | I am about to touch… | Read |
 |---|---|
-| the reward registry, PBRS, the no-progress clock, the two entropy boosts | [`designs/training/reward.md`](../../../designs/training/reward.md) |
+| the reward registry, PBRS (deleted), the no-progress clock | [`designs/training/reward.md`](../../../designs/training/reward.md) |
 | the PPO package's module map or a source-level pin on `train()` | [`designs/training/ppo_step.md`](../../../designs/training/ppo_step.md) |
 | the learner's GIGO gates (K9): the LEARNER GOLDEN, behaviour-policy consistency, fail-closed non-finite, and the non-finite AUDIT; K6's CUDA memory TREND (`cuda_memory_trend.py`, a leak detector for a clean early stop, never a gate) | [`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md) |
 | the learner's DECLARED LIFECYCLE (K6): the FREEZE GUARD, optimizer state declared at startup, `@startup_builder` | [`designs/training/learner_lifecycle.md`](../../../designs/training/learner_lifecycle.md) |
@@ -31,7 +31,7 @@ always-current obligation as this file — update the topic doc in the same pass
 | the MatchupSpec, run-spec resolution provenance, LINEAGE, TB inheritance | [`designs/training/matchup_and_lineage.md`](../../../designs/training/matchup_and_lineage.md) |
 | the TB census detail, capacity telemetry, grad balance, `signal/`, the scaffolding gauge | [`designs/training/telemetry_scalars.md`](../../../designs/training/telemetry_scalars.md) |
 | the counterfactual audit, the cf label plumbing, the prefix-sharing materializer | [`designs/training/cf_grounding.md`](../../../designs/training/cf_grounding.md) |
-| a SUPPLY GUARD — any live lever that must deliver (self-play pool, PFSP, team-PFSP, rollout target, fork arm, search teacher), `--supply-starve-cycles`, `FatalConfigError` | [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md) |
+| a SUPPLY GUARD — any live lever that must deliver (self-play pool, PFSP, team-PFSP, fork arm, search teacher), `--supply-starve-cycles`, `FatalConfigError` | [`designs/training/supply_guards.md`](../../../designs/training/supply_guards.md) |
 | search-as-teacher, OPD, the win-prob one-ply teacher | [`designs/training/search_teacher.md`](../../../designs/training/search_teacher.md) |
 | the FORK ARM — contested-state forks, the branch rows, the CRN, the `fork/` family | [`designs/training/forks.md`](../../../designs/training/forks.md) |
 | the stall-tail harvest / head-repair pipeline | [`designs/training/stall_tail_harvest.md`](../../../designs/training/stall_tail_harvest.md) |
@@ -191,7 +191,7 @@ Per minibatch (1 to 3a inside R1):
    class: recorded, `_resolve`-inherited on a flagless resume, never gated)
 2. the belief bank — species/moves aux, opponent intent (+ set-valued β), move / spread /
    nature-EV / HP-type / item belief, move-latent
-3. (3a) the win-prob BCE — the last R1 term; then (3b, the tail's first) the dense aux head and the
+3. (3a) the win-prob BCE — the last R1 term; then (3b, the tail's first) the
    CF-twin on-policy mirror
 4. (retired — the value-dist HL-Gauss CE was deleted with the dist head; the numbering below is unchanged)
 5. the distill family — the policy term (full KL, or the top-K/action-CE form with the optional
@@ -227,27 +227,6 @@ alone. `material_margin.py` is the `win_margin` training-only OBS key, not a rew
 `ProgressClock` is now an OBS-only counter (no `last_penalty`).
 
 **Full detail — the terminal table, the parity proof, the refusal, the clock — is in [`designs/training/reward.md`](../../../designs/training/reward.md).**
-
-## State-conditioned defensive-exploration entropy (`--defensive-entropy-boost`)
-
-`gen3_defensive_entropy_v1` — multiply the per-decision entropy bonus on decisions where the env
-flags a *productive* defensive option (`defensive_opportunity`), so the model EXPLORES heals more
-without any reward change. **The mechanism is ORTHOGONAL to the reward**: it surfaces the option and
-changes nothing about its value, so the existing anti-stall pressure stays the guardrail.
-`--defensive-entropy-boost 1.0` (the default) is OFF and byte-identical;
-`--defensive-entropy-anneal-frac` fades it. Training-only, NOT version-locked, settable on resume.
-⚠️ Watch the stall-rate canary.
-**Full detail — in [`designs/training/reward.md`](../../../designs/training/reward.md).**
-
-## State-conditioned BAIT-exploration entropy (`--bait-entropy-boost`)
-
-`gen3_bait_entropy_v1` — the same mechanism on a different flag, and it exists to answer ONE
-question. The bait verdict (ledger *E4 VERDICT*, 2026-08-23) closed the hunt with a stated
-mechanism — **exploration starvation at a saturated action**: the whiff sits at p≈0.97, so the
-alternatives at p≈0.01–0.03 are never sampled and their advantage is never realized. Everything
-upstream of the action was already cleared. This flag tests the mechanism's own claim — that the
-policy would fix this if it merely SAMPLED the alternatives.
-**Full detail — in [`designs/training/reward.md`](../../../designs/training/reward.md).**
 
 ## MatchupSpec — the declared matchup (`matchup_spec.py`)
 
@@ -347,7 +326,7 @@ read as a result about the lever. Now each such lever is judged once per cycle b
 `LeverConfigError` → **`FATAL_CONFIG` (3)**. Neither is restarted. Floors (`lever_supply.LEVERS`,
 override `--supply-starve-cycles key=N`, `key=0` = off and ANNOUNCED): `self_play_pool` 3 eval
 cycles (`--self-play` with the pool still EMPTY — failed cycles count; `ai_v12_27` trained 10M
-against bots), `pfsp` 3, `team_pfsp` 5 updates, `win_prob_rollout` 5 rollouts, `fork` 5 rollouts
+against bots), `pfsp` 3, `team_pfsp` 5 updates, `fork` 5 rollouts
 (its four DISABLE-with-a-print paths are now FATAL_CONFIG), `search_teacher` 3 cycles with no
 candidate. The eval/teacher-cycle streaks persist per RUN (`snapshots/summary.json`
 `supply_guard`, `teacher_cycle/supply_state.json`), not per launcher segment. Every supply line goes
@@ -549,8 +528,7 @@ sync, N decisions on the Rust collector, one WAVE < N under async), so a new cad
 with `n_steps × n_envs`. The table and its tests: `designs/ops/training_runbook.md` → "Cadences and
 N", `src/main/train/cadence_n_independence_test.py`.
 
-**`--policy-gae-lambda` (default 0.80) is the POLICY's GAE λ; `--win-prob-lambda` is the
-CRITIC's λ-return BCE target — two independent knobs** (`gen3_policy_gae_lambda_v1`, config v123).
+**`--policy-gae-lambda` (default 0.80) is the POLICY's GAE λ** (`gen3_policy_gae_lambda_v1`, config v123; the critic's BCE target is the terminal outcome, with no λ-return).
 The former was a literal 0.80 at both `model_build` sites until 2026-09-26; it is now recorded on
 `ModelVersion` and INHERITED on a flagless resume (name it to change it). **`train()` logs one
 `train/approx_kl_epoch_<k>` / `train/clip_fraction_epoch_<k>` pair per epoch that ran**, folded
@@ -608,9 +586,8 @@ a separate decision. Hazards an agent must know before touching it:
   deep-copies the policy as its slot templates, and a copy taken after the compile would carry the
   patched `forward` bound to the LEARNER's extractor.
 - 🚨 **Every flag whose path the Rust core does not serve is REFUSED at startup, by name**
-  (`combination_checks`' `env_core_rust_*`): a non-winprob critic (no terminal observation), λ < 1,
-  rollout targets, dense aux, `--value-true-team`, the entropy boosts, distillation, PBRS,
-  `--cf-records`, the search teacher, `--team-pfsp`, `--exploiter-ladder`, `--async-rollout`. The
+  (`combination_checks`' `env_core_rust_*`): distillation, `--cf-records`, the search teacher,
+  `--team-pfsp`, `--exploiter-ladder`, `--async-rollout`. The
   collector flags typed on the python core are refused too (they would be silently inert).
 - **`WinProbLabelCallback` is not registered** under `rust`: the collector fills `win_target` /
   `win_mask` (the window fill calls the callback's own `backfill_terminal_labels`).
@@ -805,55 +782,11 @@ bounded per-row weight. Read `win_prob/strata_share_*`, `strata_w_entropy` (1.0 
 family is published whenever the flag is on, so 0 means "on, but one class present / no labels yet"
 (every `--debug` run and any run before the pool seeds) and ABSENT means the flag is off.
 
-### `--win-prob-lambda` — the BCE's TARGET (`gen3_winprob_lambda_v1`, v116)
-
-**Default `1.0` = OFF and BIT-identical; `--critic winprob` is REQUIRED** (refused otherwise — under
-`shaped` the buffer's `values` are a shaped return, not a probability, so blending
-them into a BCE target is a category error). Below 1.0 each state's target stops being its episode's
-terminal bit and becomes a **λ-return over the collector's RECORDED values**:
-
-```
-row t ENDS its episode   ⇒  G[t] = y                       (the outcome, exactly)
-otherwise                ⇒  G[t] = (1−λ)·V(s[t+1]) + λ·G[t+1]
-```
-
-γ = 1 and the clean-world stream is terminal-only, so an n-step return **is** `V(s[t+n])` and the
-λ-average collapses to that one backward pass. A state `d` steps from its terminal keeps weight
-**λ^d** on the outcome. The loss is unchanged — the same masked-mean BCE, now against a SOFT target,
-which is exactly what a proper scoring rule generalises to.
-
-🚨 **WHY.** The strata flag's mechanism from the other side. One terminal bit copied to ~30 states is
-a very noisy objective, only **10.2 % / 14.4 %** of whose variance lies BETWEEN (cycle, opponent)
-cells, so the weak axes shrink toward the marginal — the critic barely separates opponents at turn 1
-(spread ratio **~0.1**) although **mid- and late-game values already separate them at ~0.5–0.8**. The
-information exists inside the episode; λ moves it backward along a far less noisy channel than the
-terminal draw ([`winprob_head_refit_2026-09-09`](../../../designs/research_state/measurements/winprob_head_refit_2026-09-09/README.md) §6/§11).
-
-🚨 **`V` IS THE RECORDED, PRE-UPDATE VALUE** (`rollout_buffer.values`, which under this critic *is*
-`sigmoid(win logit)`), not a re-forward inside `train()`: a target recomputed from the current
-weights would move under its own gradient across the 10 epochs. **`--win-prob-lambda-truncated
-{bootstrap,mask}`** picks the buffer-boundary convention for an episode with no terminal inside the
-rollout — `bootstrap` (the default) targets `V(s_T)` from the same `model._last_obs` forward SB3's
-GAE bootstrap uses and **UNMASKS** rows that carry no target today, `mask` leaves them excluded. It
-is a flag so a read can separate "the targets moved" from "there are more rows"
-(`win_prob/lambda_unmasked` counts them), and it is INERT at λ = 1.0 because the recursion is
-skipped whole. An episode that ended with **no recorded outcome** is never unmasked — it would train
-the head against a fabricated label.
-
-Read `win_prob/lambda_target_shift`, `lambda_bootstrap_frac` and **`lambda_loss` vs
-`lambda_loss_terminal`** (both scored on the SAME recorded predictions, so their difference is the
-target change and not a step of learning). 🚨 **An ABSENT `win_prob/lambda_*` family means λ = 1.0**,
-and nothing else. ⚠️ The value SIDECAR's `target` column follows the flag: under λ < 1 it holds the
-λ-return, not the raw outcome. Composes with `--win-prob-strata-weight` (that one weights ROWS, this
-one re-aims them) and with the cf labels (disjoint state sets — the cf term never touches
-`win_target`).
-
 ### `--fork-fraction` — THE FORK ARM, contested-state EXPLORING STARTS (`gen3_fork_v1`, v120)
 
 **Default `0.0` = OFF and BIT-identical** — no module imported, no obs key declared, no callback
 attached, no buffer installed, no row injected. **`--critic winprob` AND `--cf-records` are BOTH
-REQUIRED** (the second on the Python core only), and three more flags are REFUSED alongside it
-(`--value-true-team`, `--win-prob-dense-aux`, `--win-prob-strata-weight`). Detail:
+REQUIRED** (the second on the Python core only), and `--win-prob-strata-weight` is REFUSED alongside it. Detail:
 [`designs/training/forks.md`](../../../designs/training/forks.md).
 
 🚨 **TWO IMPLEMENTATIONS, and the Python one is LEGACY until the deletion pass.** Under
@@ -902,134 +835,6 @@ finishes ~2,400 episodes, so at 512 the forks that resolve are the LATE ones —
 previous rollout's MEASURED `fork/rows_per_fork`. Read **`fork/rate`**, **`fork/branch_share`**,
 **`fork/tie_rate`**, **`fork/random_wins`**, **`fork/pairwise_acc`** (IN-SAMPLE; the endpoint is a
 held-out read) and **`fork/sim_steps_share`** (the cost).
-
-### `--win-prob-rollout-weight` — the ANCHOR loss weight (`gen3_winprob_rollout_weight_v1`, v119)
-
-**Default `1.0` = OFF and BIT-identical** (the `win_row_w` obs key is not even declared); **requires
-`--win-prob-rollout-target > 0`**. It multiplies the per-row BCE of the rows the rollout target
-ANCHORED and renormalises the vector to **mean 1 over the scored rows**, so the loss SCALE does not
-move. 🚨 **WHY: the treatment could not otherwise carry mass.** At the fraction that costs 1× the
-run's simulation budget (~0.0012) the anchored rows are **~0.12 % of the BCE's mass** — the head
-cannot move BY ARITHMETIC whatever the labels say. At weight 64 they are **~7.1 %**. It is the only
-lever that raises the treatment's share of the objective at FIXED simulation cost. Composes with
-`--win-prob-strata-weight` by **MULTIPLYING** (that one prices the opponent CLASS, this one the
-anchored ROWS). 🚨 **Only the ANCHORS are weighted, never the rows that bootstrap toward them under
-λ < 1** — their target is a MIXTURE of the anchor and the network's own later values, so weighting
-them would dose arm 8's channel under arm 10's flag. That reach is MEASURED instead: read
-**`win_prob/rollout_mass_weighted`** (the anchors' share of the weighted mass — the delivered dose)
-and **`win_prob/rollout_influence_lambda`** (anchors + their λ^k reach). Detail:
-[`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).
-
-### `--win-prob-rollout-target` — R-ROLLOUT MC targets (`gen3_winprob_rollout_target_v1`, v118)
-
-**Default `0.0` = OFF and BIT-identical** (the whole path is skipped, including the per-decision
-handle capture); **`--critic winprob` AND `--cf-records` are BOTH REQUIRED** — the second because a
-sampled state is labelled by REPLAYING its episode, and the replayable record only exists in the
-ring that flag switches on. Detail: [`designs/training/critic_and_value_losses.md`](../../../designs/training/critic_and_value_losses.md).
-
-🚨 **WHY — bits per state.** The terminal label is **one outcome bit copied to ~30 states**: at most
-1 bit about the GAME and none about the individual STATE, which is the arithmetic behind the
-10.2 % / 14.4 % between-cell variance share. λ moves information that is already inside the episode
-backward (a self-referential channel); this one **buys NEW BITS** — it plays `R` continuations
-forward from a sampled state and makes `wins / R` that state's target. It **replaces the buffer's OWN
-target**, which is the whole distinction from `cf_winprob_coef` (that one is an auxiliary loss on
-FOREIGN recorded states and read null).
-
-🚨 **THE COST IS LINEAR, LARGE, AND PAID AS A STALL.**
-`budget / collection = fraction × R × ~104 decisions per continuation`, against the trainee's own
-`n_steps × n_envs`. So **`1/32` at R = 8 is ~26×** a production rollout's entire simulation budget,
-and **the fraction that costs `1×` is `1/(R × 104) ≈ 1/832`** — which is the number an arm registers.
-At that fraction the rollout-derived share of the objective is ~0.12 % (`rollout_mass`): a
-HIGH-QUALITY, LOW-MASS treatment, and a null must be priced against the dose before it is attributed
-to the idea. `MAX_STATES_PER_ROLLOUT = 256` caps the bill whatever the fraction asks for.
-
-The labelling is **SYNCHRONOUS** and it BLOCKS between `_on_rollout_end` and `train()`: the buffer is
-a ring refilled every iteration, so a label that landed one rollout late would have no row to write
-into and could only become the foreign-state aux loss that already failed. One `model.save` snapshot
-per rollout (into `TMPDIR`, never the run dir), a fan-out of short-lived child processes
-(poke-env's single `POKE_LOOP`, a mutating trunk, and crash isolation — eval's three reasons), a
-contention-scaled wall bound whose overrun KILLS by pid and leaves those states their terminal bit,
-and `torch.compile` decided by arithmetic (~40 s vs 6.4×/decision ⇒ break-even at 18 continuations).
-
-**Selection `winprob_rollout_select_v1`:** UNIFORM over eligible rows, **≤ 1 per EPISODE SLICE**,
-seeded from the run seed and the rollout index. Uniform rather than priority-ranked because a
-priority sampler re-weights which states carry the new target — a distribution-shift confound for
-the read itself. Eligible = `win_mask == 1` (so the `__RECON__` record exists) **and** a captured
-`<pid>_<battle_tag>` handle **and** `turn >= 2` **and** a MOVE ROUND read off the buffer's own
-`action_mask`. The handle is published by the wrapper **BEFORE** the step, because the buffer row
-holds the observation the decision was made FROM.
-
-🚨 **ECOLOGY — the arm's largest caveat.** Continuations play the CURRENT policy on BOTH sides at
-temperature 1.0. The trainee side is exact and the opponent's TEAM is exact, but a training
-`__RECON__` record **carries no opponent identity**, so the opponent's POLICY is self-like: right for
-the ~90 % self-play share, **biased LOW** on the rest. Priced by `rollout_bot_share` and the
-per-class win rates, never hidden.
-
-**λ PRECEDENCE:** a labelled row is an **ANCHOR** — the recursion terminates on it at outcome-weight
-1.0, because a Monte-Carlo win fraction is a MEASUREMENT of that state, not a bootstrap. Earlier rows
-then blend toward a measured probability instead of a copied bit, so the two levers are additive.
-Orthogonal to `--win-prob-strata-weight`, disjoint from `--win-prob-dense-aux` and the cf family.
-`--win-prob-rollout-mode blend` averages the rollout fraction with the terminal bit (half the shift,
-keeps some of the RECORDED ecology).
-
-Read **`rollout_budget_multiple`** (the cost), **`rollout_mass`** (the dose's reach) and
-**`rollout_shift`** (the dose itself — 0 means the new target agreed with the bit it replaced and the
-arm is buying nothing), plus `rollout_seconds` for the stall. 🚨 **An ABSENT `win_prob/rollout_*`
-family means the fraction is 0.0** (or there is no ring, which announces itself once) and nothing
-else. ⚠️ The value SIDECAR moves to schema **3** and its `target` column is now the outcome on most
-rows and a measured win fraction on the sampled ones.
-
-### `--win-prob-dense-aux` — 25 DENSE TARGETS BESIDE the BCE (`gen3_dense_aux_v1`, v117)
-
-**Default `0.0` = OFF and BIT-identical** — bit-identical by not BUILDING the head, so there is no
-module, no obs key, no callback and no term. **`--critic winprob` is REQUIRED**, and
-`--win-prob-mode != none` is a `flag_registry` `requires` the extractor constructor enforces.
-
-The three flags above all act on ONE loss. This one does not touch it: it adds a small MLP on
-`value_pooled` — the same tensor the win head reads — predicting for every state the episode's
-END-OF-BATTLE facts, back-filled the way the win bit is.
-
-| outputs | target | scored by |
-|---|---|---|
-| `0..11` | SURVIVAL of slot k (our 6, then theirs 6, in the OBSERVATION's own team order) | BCE |
-| `12..23` | slot k's FINAL HP FRACTION at termination | BCE against the soft target |
-| `24` | TURNS LEFT, `log1p(terminal_turn − this_turn) / log1p(250)` | BCE against the soft target |
-
-`aux_loss = coef × mean(the three masked-mean terms)` — a mean of TERMS, so twelve survival outputs
-cannot outvote the one turns output. The per-side KO counts are **DERIVED** from survival
-(`6 − Σ survived`) and published as meters, never predicted: a count is a sum over slots some of
-which are masked, so it is the one target that could not honour the mask.
-
-🚨 **WHY.** Four 10M levers on the same one bit moved nothing at ±0.01 on bot resolution (ledger
-*THE ARMS AT 400 GAMES*), and only ~10 % of that bit's variance lies BETWEEN opponents. KataGo (Wu
-2019 §3) answers a one-bit terminal signal by ADDING targets that share its cause — ownership of
-every point, and the final score — for a large reported gain in learning efficiency. Per-Pokémon
-end-of-battle outcomes are our analogue, and each is a fact about a NAMED ENTITY the state's own
-observation carries, so the gradient runs along exactly the axes a pooled bit cannot separate.
-
-🚨 **TWO MASKS, ANDed with the episode-known bit.** A slot is scored only where it HAS an
-end-of-battle fact (an opponent mon never revealed has none — MASKED, never fabricated as "alive at
-full HP", a label that would be wrong in a DIRECTION) **and** where it names an entity THIS state's
-observation carries (opponent slot order is REVEAL order, so an early state simply has fewer;
-scoring an unrevealed slot would anchor a label to a feature block encoding nothing — this arm's own
-defect, one level down). Read `win_prob/aux_masked_frac` before reading any aux loss.
-
-🚨 **THE HEAD'S INPUT IS NOT DETACHED, and that IS the arm.** It is not called by the forward at all
-(the `CfEvidentialHead` contract), so pi/vf are bit-identical at an ARBITRARY weight in it; the
-training term applies it to the stashed, LIVE `value_pooled`, so its gradient reaches the shared
-trunk exactly as the win-prob loss does under `shaping`. **`grad/dense_aux_share` must NOT read 0**
-— unlike `grad/cf_evidential_share`, whose 0 is the verification.
-
-🚨 **λ DOES NOT REACH THESE TARGETS.** They are terminal FACTS, not returns, and there is no recorded
-per-state estimate of "slot 4's final HP" to blend. Structural, not conventional: the λ recursion
-overwrites `win_target`/`win_mask` and names no `aux_*` key. Under λ < 1 the two coexist.
-
-Read **`aux_auc_own` vs `aux_auc_opp`** (survival AUC per SIDE — a pooled one would hide the
-asymmetry the arm is built to move; a side with one class absent is OMITTED, never logged),
-`aux_hp_mae` / `aux_turns_mae` (⚠️ the interpretable reads — a BCE against a SOFT target has a
-non-zero entropy floor, so the loss numbers alone cannot say whether the head is good),
-`aux_coverage` and `aux_ko_mae_*`. ⚠️ **STRUCTURAL**: `dense_aux` is gated by a bool compare in
-`check_compatible`, so a resume may RE-DOSE the coefficient but may not add or drop the head.
 
 **Full detail — the currency argument, the cap-terminal measurement, the `--vf-coef` BCE
 announcement and every value-side flag below — is in
@@ -1089,28 +894,6 @@ series), plus
 `python -m main.ridealong_read.rnd_states` for the state-level RND reads. The pre-registered run is
 EXPERIMENT_BACKLOG X26.
 
-## The PRIVILEGED true-team value channel (`--value-true-team`)
-
-`gen3_value_true_team_v1` (v114), the critic ladder's **arm-5 CEILING PROBE**
-(`designs/research_state/winprob_critic_ladder_2026-09-08.md` §L1): how much of the win-prob
-critic's residual error is irreducible uncertainty about the opponent's team? It is the only
-channel in the tree that gives the network information the observation does not already carry.
-
-The plumbing is the belief labels' exactly. `Gen3Env` declares ONE more training-only obs key,
-`opp_true_team` `[6, POKEMON_FULL_DIM]`, and fills it from **`battle2.team`** — agent2's own battle
-view, the same privileged source `belief_species` / `belief_spread` / `item_label` / `hp_type_label`
-already read — through `agents.observation.true_team.build_true_team_block`, which calls the SAME
-`PokemonEncoder.encode` the flat vector's opp slice uses. Unlike those, this key is **not a label**:
-it enters the FORWARD, on the value side only, via `TrueTeamValueReadout`'s zero-init injection into
-`value_pooled` (`pi_combined` never contains `value_pooled`, so `pi` is bit-identical at any
-weight). It must therefore also be present at EVAL, or the arm's own meters would read a V the run
-never trained — `RLPlayer` emits it from the `_opp_player` back-reference `LocalBattleRunner` sets,
-which is the transport for bridge training, bridge eval and the counterfactual replay driver. At
-ladder play there is no runner and the all-zero "unknown" block goes instead.
-
-Model half + the four contracts (vf-only, augment-not-replace, presence-follows-the-local-sim,
-raise-not-skip): [`designs/model/readouts_and_value_routes.md`](../../../designs/model/readouts_and_value_routes.md).
-
 ## The win-probability head (`--win-prob-mode`); its PBRS routes were DELETED
 
 A calibrated **P(win|state)** supervised by the Monte-Carlo episode OUTCOME, back-filled onto every
@@ -1148,14 +931,11 @@ Once per rollout at `_on_rollout_end`, a seeded 1/64 of buffer states is appende
   a whole rollout is REPORTED (`labels_unfilled`) rather than written as data.
 - 🚨 **It cannot be reconstructed after the fact.** It reads the rollout buffer, which is gone the
   moment `train()` returns. A run launched without it has no training-side read, ever.
-- 🚨 **`target` HAS ONE NAME AND TWO MEANINGS, and only the header says which** — the terminal 0/1
-  OUTCOME at `--win-prob-lambda 1.0` (every arm before arm 8), a soft **λ-RETURN** below it
-  (`SIDECAR_SCHEMA` 2). Three arms landed on exactly 155,137 rows each; **matching row counts are
-  not evidence of a matching quantity.** The outcome is written as its OWN `outcome` /
-  `outcome_known` column — the λ recursion overwrites `win_target` in place, and the bit is
-  otherwise gone (the λ-return holds it at weight λ^d for an unrecorded `d`, and **`win_margin` is
-  a per-turn MATERIAL margin, not an outcome**). `ep_complete` follows the terminal mask, never
-  `target_known`, which `bootstrap` truncation widens.
+- 🚨 **`target` is the terminal 0/1 OUTCOME, and the `outcome` column always equals it.** An OLD
+  file (written while the λ-return / rollout targets existed) can carry a soft `target` and the
+  `win_prob_lambda` / `win_prob_rollout_*` header fields; `value_sidecar_read` still reads them, and
+  the header says which quantity a file holds. **Matching row counts are not evidence of a matching
+  quantity**, and **`win_margin` is a per-turn MATERIAL margin, not an outcome**.
 - 🚨 **ONE HEADER PER WRITER SESSION, not per file** — a resume used to append its rows under the
   first process's header, hiding a mid-file change of meaning. `value_sidecar_read` reads the
   header FIRST, labels every table with the quantity it scored, and REFUSES a mid-file change by

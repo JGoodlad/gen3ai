@@ -544,7 +544,7 @@ matches its control at the SAME dose is its secondary read.
 
 - **Provenance.**
   - `vf_coef` 0.5 is SB3's default, made a flag in `5afc9a73` (2026-06-06).
-  - `win_prob_lambda` = 1.0 comes from `28ece02a`, 2026-09-09.
+  - `win_prob_lambda` no longer exists (the λ-return target was deleted, deletion pass L2; the BCE target is always the terminal outcome).
   - Under winprob the value loss is `vf_coef` × the masked-mean BCE on the win logit (`ppo.py:767-769`).
   - `clip_range_vf` is inert under winprob.
   - PopArt, the distributional value head, `value_from_dist`, the value-tail weight and `--win-prob-coef` were DELETED (deletion pass L1, config v131; `designs/deleted_flags.md`) — there is nothing left to refuse.
@@ -800,8 +800,8 @@ lineage's FRESH launch (`metadata.json` `original_command`, `cli_args`, `dose`; 
   - `seed`: an arm's identity, not a recipe choice.
   - `matmul_precision`: fp32 (`highest`) is the only precision. TF32 was RETIRED by the owner on 2026-10-01 (Decision record), and `high` is deleted in the post-switch deletion pass.
   - `adaptive_batch`: off, which is the default, and arm A1's lever.
-  - The eval regime, opponent-pool shares and temperatures, `obs_source` and `value_true_team`:
-    their resolved defaults already equal N0's.
+  - The eval regime, opponent-pool shares and temperatures, and `obs_source`:
+    their resolved defaults already equal N0's (`value_true_team` was a recorded field here until deletion pass L2 removed it).
   - The critic readout `--critic winprob` implies (`win_prob_mode`): implied. (`value_dist_*`, PopArt and
     `--win-prob-coef` were deleted, L1, config v131 — they no longer exist to imply or refuse.)
 - 🚨 **5 epochs at a FRESH learning rate: MEASURED, and it LOSES (the SIZING study, 2026-10-02).** E5

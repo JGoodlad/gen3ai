@@ -10757,3 +10757,48 @@ if a lazy build is reintroduced.
   used them.
 - **Docs.** ARCHITECTURE prose + generated §2/§6, `flag_registry.md`, `designs/model/*`, `designs/training/*`,
   the training / model / prober / launcher leaf `CLAUDE.md`s; `designs/model/popart.md` deleted.
+
+## v132 — 2026-10-02 — the Python-core-only critic-ladder levers are DELETED: the λ-return target, the R-rollout Monte-Carlo target and its anchor weight, the dense auxiliary head, the privileged true-team value route, both entropy boosts, and `choice_band_tracker` (`gen3_retired_levers_l2_v1`; deletion pass L2 / manifest R2's second slice; config bump 131 → 132, no ARCH_SIGNATURE bump, the production win-prob + Rust path numerically unchanged — the K9 learner golden is the gate)
+
+- **What left.** 12 flags, each row (with its ledger citation) in `designs/deleted_flags.md`:
+  `--win-prob-lambda` / `-truncated`, `--win-prob-rollout-target` / `-r` / `-mode` / `-weight`,
+  `--win-prob-dense-aux`, `--value-true-team` / `--no-value-true-team`, `--defensive-entropy-boost` /
+  `-anneal-frac`, `--bait-entropy-boost` / `-anneal-frac`. Code: `win_prob_rollout{,_labeller,_worker}.py`, the
+  λ recursion / rollout labelling / anchor-weight halves of `win_prob_callback.py` (it is now the terminal
+  back-fill + the fork arm's handle capture, constructor argument-free), `DenseAuxHead` + `dense_aux{,_callback}.py`,
+  `TrueTeamValueReadout` + `observation/true_team.py` (and `RLPlayer`'s true-team block, `LocalBattleRunner`'s
+  `_opp_player` back-reference), `choice_band_tracker.py` (no non-test importer), R1's `defensive` / `bait` /
+  `rollout_weight` statics (`TrainSetup._r1_levers` now returns the strata bool alone; `_micro_static(f, strata)`),
+  `Gen3Env._defensive_opportunity` / `_bait_opportunity` / `_true_team_block`, the obs keys `win_row_w`,
+  `aux_target` / `aux_mask` / `aux_turn`, `opp_true_team`, `defensive_opportunity`, `bait_opportunity`, the
+  `win_prob_rollout` supply lever, 7 `combination_checks` rows + 6 `_ENV_CORE_UNPORTED` rows, and the value
+  sidecar's pre-λ outcome stash. `agents.model.extra_obs_keys.EXTRA_OBS_KEYS` is now EMPTY (the mechanism and its
+  drift gate stay; `extractor_forward` reads `obs["observation"]` alone and the value-route seam has one member).
+- **Config.** `MODEL_CONFIG_VERSION` 132 is stamp-only. 9 `ModelVersion` fields are gone from `fields.py` /
+  `construct.py` / `compat.py` (`win_prob_lambda`, `win_prob_lambda_truncated`, `win_prob_rollout_{target,r,mode,weight}`,
+  `win_prob_dense_aux`, and the STRUCTURAL bools `dense_aux`, `value_true_team`); `_migrate_config` POPs them from a
+  config of ANY vintage. The two entropy boosts were never recorded fields.
+- **Retired-lever machinery** (`model_version/retired_levers.py`, L1's table APPENDED, `RetiredLever` gained `unit` /
+  `version`): `dense_aux` / `value_true_team` recorded ON are refused on EVERY load (a `DenseAuxHead` /
+  `TrueTeamValueReadout` in the state_dict has no home); the training-only five (λ < 1, rollout target ≠ 0, rollout
+  weight > 1, `win_prob_dense_aux` ≠ 0) pop on a frozen load and REFUSE a resume or fork, naming
+  `LAST_COMMIT_L2 = 475bd817`. The extractor kwargs `value_true_team` / `dense_aux` are new `snapshot._DEAD_FEK_JUDGED`
+  entries (every v121+ zip pickles both bools), proven by a real pre-deletion zip in `retired_levers_test`.
+- **The Rust env core's label inventory** lost its 7 deleted rows, so `LABEL_NOT_CORE` is {winprob, opp_class, fork,
+  distill}; the generated `columns.rs` / `ffi.rs` / `shm.rs` were regenerated (new schema id) and the Rust
+  `labels::declare` test now exercises the `refused` kind through `distill` (the last refused family, L3's).
+- **Moved, not deleted.** `record_key` / `index_records` (the join between a buffer row and its `cf_records` record)
+  now live in `agents/training/cf_records.py`; the fork arm and the wrapper's handle capture import them from
+  there; `cf_records_join_test.py` carries the three join tests and the two decision-time capture-order pins.
+- **Value sidecar.** The writer no longer emits the λ / rollout header fields and its `outcome` column equals
+  `target`; the READER still understands those fields in an OLD file (`main.ops.value_sidecar_read`), so a pre-L2
+  run's sidecar reads exactly as before.
+- **Tests.** Deleted with their levers: `winprob_lambda_test`, `winprob_rollout_test`, `winprob_rollout_weight_test`,
+  `dense_aux_test`, `dense_aux_head_test`, `true_team_test`, `true_team_value_test`, `true_team_channel_integration_test`,
+  `defensive_entropy_test`, `bait_entropy_test`, `bait_opportunity_integration_test`, `choice_band_tracker_test`,
+  `choice_band_tracker_fuzz_test` and the lever cases of ~20 files; `extra_obs_keys_test` was rewritten for an empty
+  registry (with a non-vacuity control for its AST scanner and a stand-in row); `retired_levers_test` gained the L2
+  cases; the paused-battery argv test strips the deleted flags those recorded argvs carry.
+- **Docs.** ARCHITECTURE prose, `flag_registry.md` (generated), `designs/model/*`, `designs/training/*`,
+  `designs/ops/training_runbook.md`, `designs/rust_sim/env_labels.md`, the endstate notes, the training / model /
+  observation / prober / launcher leaf `CLAUDE.md`s, the manifest.

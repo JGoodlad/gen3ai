@@ -6,8 +6,7 @@ rollout buffer is a RING refilled from scratch every iteration, so a row that ar
 late has no buffer left to enter — and everything here is about making the block SHORT, BOUNDED and
 VISIBLE.
 
-The shape is `win_prob_rollout_labeller`'s, and deliberately so; the two differences are the two
-places the arms differ:
+The two places this block differs from a plain label-and-return labeller:
 
 * **the children return TRANSITIONS, not a scalar.** Rows ride an ``.npz`` beside the result JSON
   rather than through the JSON, because 2,501 float32 per row through a text encoding is minutes of
@@ -39,8 +38,7 @@ import numpy as np
 
 from utils.contention import scale_timeout
 
-#: Fan-out. A quarter of the cores, at most 8 — `win_prob_rollout_labeller.DEFAULT_WORKERS`'
-#: reasoning verbatim: the trainer's own env workers are idle at this point in the iteration, but a
+#: Fan-out. A quarter of the cores, at most 8: the trainer's own env workers are idle at this point in the iteration, but a
 #: production box also carries a second run and the arm must not turn a fork budget into a
 #: starvation event.
 DEFAULT_WORKERS = max(1, min(8, (os.cpu_count() or 4) // 4))

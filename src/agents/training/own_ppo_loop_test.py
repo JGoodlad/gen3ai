@@ -222,7 +222,7 @@ def _callbacks(trace: List[Any], buffers: List[Any], lr: float) -> List[BaseCall
     from agents.training.signal_callback import SignalMetricsCallback
     from agents.training.win_prob_callback import WinProbLabelCallback
 
-    return [WinProbLabelCallback(emit=lambda _m: None),
+    return [WinProbLabelCallback(),
             AdaptivePPOCallback(initial_lr=lr, target_kl=1e-6, cooldown_rollouts=0, verbose=0),
             SignalMetricsCallback(),
             _EvalDumpStandIn(at_call=LG.N_STEPS + 5),          # mid-rollout, iteration 2

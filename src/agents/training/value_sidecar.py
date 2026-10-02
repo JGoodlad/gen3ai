@@ -40,7 +40,7 @@ mistaken for a measurement it is not:
 | `v` | READ — `rollout_buffer.values`, the value PPO actually used |
 | `win_logit` | DERIVED — the exact inverse link of `v` under `--critic winprob`, `null` otherwise |
 | `target` / `target_known` | READ — the back-filled `win_target` / `win_mask` obs keys |
-| `outcome` / `outcome_known` | READ — the PRE-λ terminal bit and its mask; identical to `target` at λ = 1.0, `null` when λ < 1 and the writer's stash is missing |
+| `outcome` / `outcome_known` | READ — the terminal bit and its mask; identical to `target` / `target_known` in every file this writer produces (a pre-L2 λ file carries the pre-λ bit here, and the reader still understands it) |
 | `opp_class` | READ — the `opp_class` obs key (bot / pool / stable / exploiter), `null` if absent |
 | `turn` | DERIVED — inverted from the observation's linear deadline-clock channel |
 | `win_margin` | READ — the `win_margin` obs key, `null` when absent |
@@ -69,36 +69,26 @@ the network never reads, and `train()`'s one-ahead intent SHIFT is still gated o
 `opp_intent_coef > 0` **and** runs after every `_on_rollout_end`, so what is read here is the env's
 own per-episode value in both regimes.
 
-⚠️ **`target` IS THE EPISODE'S FINAL OUTCOME, not a per-state quantity — UNLESS `--win-prob-lambda`
-IS LIVE.** `WinProbLabelCallback` back-fills the terminal win/loss to every step of the episode that
-produced it, so `target` is constant within an episode and `target_known` marks exactly the episodes
-that FINISHED inside the buffer. There is no separate outcome column because it would be the same
-number. 🚨 Under `--win-prob-lambda < 1` (`gen3_winprob_lambda_v1`) that same callback then
-OVERWRITES `win_target` with the λ-RETURN — a per-state probability that varies within the episode —
-and, under the default `bootstrap` truncation branch, sets `win_mask = 1` on the trailing in-progress
-episode as well. This callback runs immediately after it and therefore reads the λ-return. The
-header's **`win_prob_lambda`** field says which quantity a file holds; a reader that assumes the
-outcome on a λ file is measuring the critic against a moving target and will not know it.
+⚠️ **`target` IS THE EPISODE'S FINAL OUTCOME, not a per-state quantity.** `WinProbLabelCallback`
+back-fills the terminal win/loss to every step of the episode that produced it, so `target` is
+constant within an episode and `target_known` marks exactly the episodes that FINISHED inside the
+buffer. There is no separate outcome column that differs from it in a file this writer produces.
+🚨 FILES WRITTEN BEFORE deletion pass L2 can differ: under the deleted `--win-prob-lambda < 1` the
+label callback OVERWROTE `win_target` with a λ-return (and, under the default `bootstrap`
+truncation, UNMASKED the trailing in-progress episode), and the header's `win_prob_lambda` /
+`win_prob_rollout_*` fields said so. The READER (`main.ops.value_sidecar_read`) still reads those
+fields from an old file's header and refuses to pool two files whose `target` meant different
+things — the writer no longer emits them, and a header without them reads as the OFF values.
 
-🚨 **SO THE OUTCOME IS WRITTEN AS ITS OWN COLUMN, and it has to be, because it is otherwise gone.**
-`_apply_lambda` overwrites `win_target` IN PLACE; the λ-return carries the outcome at weight `λ^d`
-for a distance `d` nothing records, and `win_margin` is a per-turn MATERIAL margin (a by-product of
-Φ_mat) whose sign is a material lead, not a win. Nothing downstream can invert either. So that
-callback publishes the pre-overwrite `(y, mask)` on the model and this one reads it into
-`outcome` / `outcome_known` — which is what lets the reader score a λ file against BOTH quantities
-and label each. When the stash is absent under λ < 1 the columns are `null`, never inferred.
-
-🚨 **`ep_complete` FOLLOWS THE TERMINAL MASK, NOT `target_known`.** Under the default `bootstrap`
-truncation the λ recursion UNMASKS the trailing in-progress episode, so `win_mask` stops meaning
-"this episode finished inside the buffer". Read through it, a straddling episode would read
-COMPLETE and every length statistic that filters on `ep_complete` would quietly include a
-truncated head.
+🚨 **`ep_complete` FOLLOWS THE TERMINAL MASK, NOT `target_known`** — kept from the λ era: the
+column the length statistics filter on stays the terminal mask, so a reader that compares an old
+λ file with a new one filters both the same way.
 
 🚨 **THE HEADER IS WRITTEN ONCE PER PROCESS, NOT ONCE PER FILE.** It used to be skipped whenever
 the file was non-empty, so a RESUME appended its rows under the first process's header — a run
-resumed across a flag change then held one header saying `win_prob_lambda: 1.0` above a tail of
-λ-returns, with nothing on disk to say so. A header per writer session makes the change visible at
-the exact row it happens, which is what `read_sidecar_segments` refuses by index.
+resumed across a flag change then held one header above rows that meant something else, with
+nothing on disk to say so. A header per writer session makes the change visible at the exact row it
+happens, which is what `read_sidecar_segments` refuses by index.
 
 ⚠️ **`win_logit` IS NOT AN INDEPENDENT MEASUREMENT.** Under `--critic winprob` the head IS the
 critic, so `v = sigmoid(logit)` exactly and the logit is recoverable by inverting it — but it
@@ -145,6 +135,8 @@ SIDECAR_DIRNAME = "value_sidecar"
 SIDECAR_FILENAME = "rows.jsonl"
 #: The header line's schema tag. Bump when a column changes MEANING; a purely additive column does
 #: not, so an older reader keeps working on a newer file (the `trace_selection` convention).
+#: HISTORY (the writer no longer emits any of the λ / rollout header fields — deletion pass L2 — but
+#: the READER still understands them in an old file, and a header without them reads as OFF):
 #: v2 (gen3_winprob_lambda_v1): the header gained `win_prob_lambda` / `win_prob_lambda_truncated`,
 #: and with them the `target` column's meaning became HEADER-DEPENDENT — the episode outcome at
 #: λ = 1.0 (every v1 file), the λ-return below it. That is a meaning change under this file's own
@@ -264,9 +256,9 @@ class ValueSidecarCallback(BaseCallback):
         🚨 **ONCE PER PROCESS, NOT ONCE PER FILE — and the difference is a whole class of silent
         defect.** This used to skip whenever the file was non-empty, so a RESUME appended its rows
         under the FIRST process's header. A run resumed across a flag change then held one header
-        saying `win_prob_lambda: 1.0` above a tail of rows whose `target` is a λ-RETURN, and
-        nothing on disk said so: every consumer would pool a 0/1 outcome with a soft return and
-        report the average as a calibration. A header per session makes the change VISIBLE at the
+        above a tail of rows whose `target` meant something else, and nothing on disk said so:
+        every consumer would pool two quantities and report the average as a calibration. (The
+        case that bit was a λ-RETURN target, a lever since deleted.) A header per session makes the change VISIBLE at the
         exact row it happens, which is what lets `read_sidecar_segments` refuse it by index.
         A restart appends a few hundred bytes; the cost is not a consideration.
         """
@@ -280,24 +272,6 @@ class ValueSidecarCallback(BaseCallback):
             "schema": SIDECAR_SCHEMA,
             "tag": "gen3_value_sidecar_v1",
             "critic_mode": self._critic_mode,
-            # gen3_winprob_lambda_v1: WHICH quantity the `target` column holds. 1.0 = the episode's
-            # terminal outcome (every file before this flag); below 1.0 = the λ-return, which
-            # varies within an episode and covers the truncated rows the bootstrap branch unmasks.
-            # Written from the live model so it cannot disagree with what actually ran.
-            "win_prob_lambda": float(getattr(self.model, "win_prob_lambda", 1.0) or 1.0),
-            "win_prob_lambda_truncated": str(
-                getattr(self.model, "win_prob_lambda_truncated", "bootstrap")),
-            # gen3_winprob_rollout_target_v1: whether SOME of the `target` column is a MEASURED
-            # win fraction rather than the copied bit / λ-return the two fields above describe.
-            # 0.0 = none of it. The per-row flag is deliberately NOT written: the sidecar samples
-            # its own 1/64 of the buffer and the labeller samples its own, so the two rarely
-            # intersect, and a column that is "usually" one quantity is exactly what this header
-            # exists to warn about.
-            "win_prob_rollout_target": float(
-                getattr(self.model, "win_prob_rollout_target", 0.0) or 0.0),
-            "win_prob_rollout_r": int(getattr(self.model, "win_prob_rollout_r", 8) or 8),
-            "win_prob_rollout_mode": str(
-                getattr(self.model, "win_prob_rollout_mode", "replace") or "replace"),
             "v_is_probability": bool(is_winprob(self._critic_mode)),
             "fraction": self._fraction,
             "seed": self._seed,
@@ -350,24 +324,15 @@ class ValueSidecarCallback(BaseCallback):
         opp = (np.asarray(obs["opp_class"])[..., 0] if "opp_class" in obs else None)
         margin = (np.asarray(obs["win_margin"])[..., 0] if "win_margin" in obs else None)
 
-        # 🚨 THE OUTCOME, WHICH UNDER λ < 1 IS NO LONGER `target`. `WinProbLabelCallback` publishes
-        # the PRE-λ terminal bit and its mask before overwriting `win_target` in place; at λ = 1.0
-        # the recursion is skipped whole and `target` IS the outcome, so the two arrays are the
-        # ones already read. When λ < 1 and the stash is absent or the wrong shape (a hand-built
-        # model, a callback-order defect), the columns are `null` — the λ-return carries the
-        # outcome at weight λ^d for a `d` nothing records, so there is nothing to recover and a
-        # guess would be exactly the plausible wrong number this file exists to avoid.
-        y_arr, y_mask = self._terminal_outcome(wt, wm, (n_steps, n_envs))
+        # The outcome IS `target` in every file this writer produces: the λ-return that once
+        # overwrote it (and the pre-overwrite stash this read) were deleted with the lever.
+        y_arr, y_mask = wt, wm
 
         # Per-env episode index within this rollout, and each episode's extent. `cumsum` over the
         # episode-start flags is the same boundary signal the win-target back-fill uses.
         ep_index = np.cumsum(starts >= 0.5, axis=0)       # [n_steps, n_envs]
-        # 🚨 COMPLETENESS IS THE TERMINAL MASK, NEVER THE TARGET MASK. Under
-        # `--win-prob-lambda-truncated bootstrap` the λ recursion UNMASKS the trailing in-progress
-        # episode, so `win_mask` stops meaning "this episode finished inside the buffer" — read
-        # through it, `ep_complete` would call a straddling episode complete and every length
-        # statistic that filters on it would silently include a truncated head.
-        ep_len, ep_complete = _episode_extents(starts, y_mask if y_mask is not None else wm)
+        # COMPLETENESS IS THE TERMINAL MASK: `win_mask` = "this episode finished inside the buffer".
+        ep_len, ep_complete = _episode_extents(starts, y_mask)
 
         rows = self._sample(rollout, n_steps, n_envs)
         if rows[0].size == 0:
@@ -398,10 +363,10 @@ class ValueSidecarCallback(BaseCallback):
                 "win_logit": (float(logits[k]) if winprob else None),
                 "target": float(wt[t, e]),
                 "target_known": bool(wm[t, e] >= 0.5),
-                # The episode's 0/1 OUTCOME, always — identical to `target` at λ = 1.0 and the
-                # only route to it below 1.0. `null` when unrecoverable; never inferred.
-                "outcome": (float(y_arr[t, e]) if y_arr is not None else None),
-                "outcome_known": (bool(y_mask[t, e] >= 0.5) if y_mask is not None else False),
+                # The episode's 0/1 OUTCOME — identical to `target` in every file written since
+                # deletion pass L2; the columns stay so the reader scores old and new files alike.
+                "outcome": float(y_arr[t, e]),
+                "outcome_known": bool(y_mask[t, e] >= 0.5),
                 "opp_class": (int(opp[t, e]) if opp is not None else None),
                 "win_margin": (float(margin[t, e]) if margin is not None else None),
                 "ep_len": int(ep_len[t, e]),
@@ -416,34 +381,6 @@ class ValueSidecarCallback(BaseCallback):
         with open(sidecar_path(self._run_dir), "a") as f:
             f.write("\n".join(out) + "\n")
         self.rows_written += len(out)
-
-    # ── the outcome, under either λ regime ───────────────────────────────────────────────────
-    def _terminal_outcome(self, wt, wm, shape):
-        """``(outcome, outcome_mask)`` as ``[n_steps, n_envs]`` arrays, or ``(None, None)``.
-
-        Three cases, and only the first two produce a number:
-
-        * **λ = 1.0** (every file before `gen3_winprob_lambda_v1`, and every unflagged run since):
-          the back-fill wrote the terminal bit into `win_target` and nothing overwrote it, so the
-          target IS the outcome and the arrays are returned as they are.
-        * **λ < 1.0 with the stash present**: `WinProbLabelCallback._apply_lambda` published the
-          pre-overwrite `(y, mask)` on the model immediately before replacing them.
-        * **λ < 1.0 with no stash**: ``(None, None)``. The λ-return is
-          ``G[t] = (1−λ)·V(s[t+1]) + λ·G[t+1]``, so the outcome enters row `t` at weight `λ^d`
-          for a distance `d` this file does not record, and `win_margin` is a per-turn MATERIAL
-          margin (a by-product of Φ_mat), not an outcome. Nothing here can be inverted.
-        """
-        lam = float(getattr(self.model, "win_prob_lambda", 1.0) or 1.0)
-        stash = getattr(self.model, "_win_prob_terminal_outcome", None)
-        if stash is not None:
-            y, mask = stash
-            y, mask = np.asarray(y), np.asarray(mask)
-            if y.shape == shape and mask.shape == shape:
-                return y, mask
-            return None, None
-        if lam >= 1.0:
-            return wt, wm
-        return None, None
 
     # ── the sampler ──────────────────────────────────────────────────────────────────────────
     def _sample(self, rollout: int, n_steps: int, n_envs: int):

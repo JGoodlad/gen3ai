@@ -18,8 +18,8 @@ methods `train()` calls in place:
                         body is unchanged by their existence.
     metrics_export.py   the ~400-line `self.logger.record` tail — diagnostics, no gradient. One
                         method per TB prefix group, each taking the accumulators this call filled.
-    rollout_probes.py   `collect_rollouts`, the entropy-boost schedule, the episode-start read —
-                        per-ROLLOUT work that is not part of the fold at all.
+    rollout_probes.py   `collect_rollouts` and the episode-start read — per-ROLLOUT work that is
+                        not part of the fold at all.
 
 **A source-level pin that says "in `train()`" should read `train_step_source()`** (below), which is
 `train()` plus those delegates. The fold, its setup and its export are one train step; which of the
@@ -96,7 +96,6 @@ def train_step_source() -> str:
         InstrumentedMaskablePPO.train,
         _ms.micro_step,                       # K8 region R1: fold steps 1-3a (gen3_learner_micro_step_v1)
         _ms.win_prob_terms,
-        _ms._flag_entropy,
         TrainSetup._r1_levers,
         TrainSetup._micro_static,
         TrainSetup._micro_var,
@@ -157,15 +156,15 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         The sequence, per minibatch (1 to 3a inside R1, `micro_step.micro_step`):
 
-          1. `loss = pg_term + ent_coef * ent_loss_used + vf_term`   (the upstream PPO loss;
+          1. `loss = pg_term + ent_coef * entropy_loss + vf_term`   (the upstream PPO loss;
              `pg_term` is the UNSCALED `policy_loss` tensor at `policy_grad_coef == 1.0` — the default,
              byte-identical to upstream — else `policy_grad_coef * policy_loss` (`--policy-grad-coef`; 0.0 removes
              the policy-gradient term alone, the arm-F pure-distill/aux phase — entropy and the
              value term keep their own coefficients))
           2. the BELIEF bank — species/moves aux, opponent-intent (+ the set-valued beta term),
              move belief, spread belief, nature/EV, HP-type, item belief, move-latent
-          3. (3a) the WIN-PROB BCE — the last R1 term — then (3b, the tail's first) the dense aux
-             head and the CF-TWIN on-policy mirror
+          3. (3a) the WIN-PROB BCE — the last R1 term — then (3b, the tail's first) the CF-TWIN
+             on-policy mirror
           5. the DISTILL family — the policy term (full KL, or the top-K/action-CE form with the
              optional advantage gate under `--distill-target action` — gen3_distill_target_gate_v1),
              value MSE, the FitNets value-feature hint
@@ -234,10 +233,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         entropy_losses = []
         pg_losses, value_losses = [], []
-        # gen3_defensive_entropy_v1: per-minibatch diagnostics for the state-conditioned entropy boost.
-        defent_flag_fracs, defent_boost_eff, defent_ent_flagged, defent_ent_unflagged = [], [], [], []
-        # gen3_bait_entropy_v1: the same four, for the bait-opportunity boost.
-        baitent_flag_fracs, baitent_boost_eff, baitent_ent_flagged, baitent_ent_unflagged = [], [], [], []
         clip_fractions = []
         vf_clip_fractions: list[float] = []  # +INSTRUMENTATION
         belief_metrics: dict[str, list[float]] = {}  # +BELIEF: per-minibatch aux diagnostics (dict of lists)
@@ -275,7 +270,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         distill_rows_in_buffer = _f.distill_rows_in_buffer
         td_aux_on, cf_buffer, cf_winprob_on = _f.td_aux_on, _f.cf_buffer, _f.cf_winprob_on
         cf_evid_on, cf_twin_on, cf_shadow_on = _f.cf_evid_on, _f.cf_twin_on, _f.cf_shadow_on
-        dense_aux_on = _f.dense_aux_on
         q_winprob_on, q_onpolicy_on, cf_any_on = _f.q_winprob_on, _f.q_onpolicy_on, _f.cf_any_on
         # +WIN-PROB STRATA (gen3_winprob_strata_weight_v1) — the per-opponent-CLASS weights for the
         # win-prob BCE, computed ONCE here over the WHOLE rollout buffer and held constant for
@@ -299,60 +293,14 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 strata_w, _smetrics = _sout
                 for _sk, _sv in _smetrics.items():
                     win_prob_metrics.setdefault(_sk, []).append(float(_sv))
-        # +WIN-PROB ANCHOR WEIGHT (gen3_winprob_rollout_weight_v1) — the per-ROW weight on the
-        # rollout-ANCHORED rows of the win-prob BCE. The vector itself is built per rollout by
-        # `WinProbLabelCallback._apply_rollout_weight` and rides the buffer's own `win_row_w` obs
-        # key (the only carrier that survives `get()`'s shuffle aligned to its row), so all that is
-        # decided here is WHETHER to read it. Both halves of the predicate: the weight above 1.0,
-        # and the rollout fraction that produces the anchors it weighs — a weight with no anchors
-        # would be a vector of ones, and reading it would cost a gather per minibatch to change
-        # nothing. Under `--critic winprob` only, exactly like the strata weight.
-        # K8 (gen3_r1_declared_levers_v1): BOTH weightings are R1 levers, resolved by ONE predicate
-        # (`TrainSetup._r1_levers`) from the config and the buffer's KEY SET — the same call the
-        # startup declaration makes, so the compiled region's signature is fixed at startup. The
-        # strata lever is declared from its flag, NEVER from whether this rollout's data produced
-        # weights: `strata_w` is None on a one-class rollout (any run before the pool seeds), and
-        # R1 then gets the NEUTRAL weights (ones — `_micro_var`), bit-identical to the unweighted
-        # expression, instead of a second signature.
-        strata_declared, rollout_weight_on = self._r1_levers(_f)
-        # +WIN-PROB λ-RETURN (gen3_winprob_lambda_v1) — the family is COMPUTED in
-        # `WinProbLabelCallback._on_rollout_end` (it needs the buffer's [n_steps, n_envs] shape,
-        # before `get()` shuffles it flat, and the same `model._last_obs` forward SB3's own GAE
-        # bootstrap takes) and stashed on the model. Folded in here so it rides the ordinary
-        # `win_prob/` prefix, and only when the recursion actually RAN: an absent
-        # `win_prob/lambda_*` family means λ = 1.0 (off, and the targets are the terminal bit) and
-        # nothing else. Cleared at every `_on_rollout_start`, so it can never be a stale rollout's.
-        _lam_metrics = getattr(self, "_win_prob_lambda_metrics", None)
-        if _lam_metrics:
-            for _lk, _lv in _lam_metrics.items():
-                # A NaN is what an empty slice reports (no scored rows at all); it is a real state
-                # and it is REPORTED by omitting the tag, never by logging a NaN that TensorBoard
-                # renders as a gap in a series that also has honest gaps.
-                if float(_lv) == float(_lv):
-                    win_prob_metrics.setdefault(_lk, []).append(float(_lv))
-        # +DENSE-AUX (gen3_dense_aux_v1) — the PLUMBING half of the `win_prob/aux_*` family is
-        # COMPUTED in `DenseAuxLabelCallback._on_rollout_end` (it needs the buffer's
-        # [n_steps, n_envs] shape, before `get()` shuffles it flat) and stashed on the model.
-        # Folded in here so it rides the ordinary `win_prob/` prefix. Cleared at every
-        # `_on_rollout_start`, so it can never be a stale rollout's; an absent `win_prob/aux_*`
-        # family means the head is off, and nothing else.
-        _daux_metrics = getattr(self, "_dense_aux_metrics", None)
-        if _daux_metrics:
-            for _dk, _dv in _daux_metrics.items():
-                if float(_dv) == float(_dv):      # a NaN is REPORTED by omission, never logged
-                    win_prob_metrics.setdefault(_dk, []).append(float(_dv))
-        # +WIN-PROB R-ROLLOUT TARGETS (gen3_winprob_rollout_target_v1) — computed in
-        # `WinProbLabelCallback._on_rollout_end` (it needs the buffer's [n_steps, n_envs] shape and
-        # it has to BLOCK on the continuations before the epochs begin) and stashed on the model.
-        # Folded in here so it rides the ordinary `win_prob/` prefix, and only when the labelling
-        # actually RAN: an absent `win_prob/rollout_*` family means the fraction is 0.0 (or the run
-        # has no cf_records ring, which announces itself once) and nothing else. Cleared at every
-        # `_on_rollout_start`, so it can never be a stale rollout's.
-        _roll_metrics = getattr(self, "_win_prob_rollout_metrics", None)
-        if _roll_metrics:
-            for _rk, _rv in _roll_metrics.items():
-                if float(_rv) == float(_rv):      # a NaN is an empty slice; omit, never log it
-                    win_prob_metrics.setdefault(_rk, []).append(float(_rv))
+        # K8 (gen3_r1_declared_levers_v1): the strata weighting is an R1 lever, resolved by ONE
+        # predicate (`TrainSetup._r1_levers`) from the config and the buffer's KEY SET — the same
+        # call the startup declaration makes, so the compiled region's signature is fixed at
+        # startup. The strata lever is declared from its flag, NEVER from whether this rollout's
+        # data produced weights: `strata_w` is None on a one-class rollout (any run before the pool
+        # seeds), and R1 then gets the NEUTRAL weights (ones — `_micro_var`), bit-identical to the
+        # unweighted expression, instead of a second signature.
+        strata_declared = self._r1_levers(_f)
         # +FORK ARM (gen3_fork_v1) — computed in `ForkArmCallback._on_rollout_end` (it needs the
         # buffer's [n_steps, n_envs] shape and it BLOCKS on the branch continuations before the
         # epochs begin) and stashed on the model. Recorded under its OWN `fork/` prefix rather than
@@ -395,7 +343,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
         epoch_clip_fraction: list[float] = []
         # +R1 (gen3_learner_micro_step_v1): the region's static flags + per-update tensors, resolved
         # ONCE, and the per-update lists its diagnostics are routed into (by name).
-        _micro_st = self._micro_static(_f, strata_declared, rollout_weight_on)
+        _micro_st = self._micro_static(_f, strata_declared)
         _micro_var = self._micro_var(_micro_st, strata_w)
         if getattr(self, "_compiled_micro_step", None) is not None:
             # K8: the compiled R1 runs ONLY at its startup declaration; a lever that moved since is
@@ -404,13 +352,7 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
             check_r1_declared(self, _micro_st, _micro_var)
         _ppo_lists = {"pg_losses": pg_losses, "clip_fractions": clip_fractions,
                       "value_losses": value_losses, "entropy_losses": entropy_losses,
-                      "vf_clip_fractions": vf_clip_fractions,
-                      "defent_flag_fracs": defent_flag_fracs, "defent_boost_eff": defent_boost_eff,
-                      "defent_ent_flagged": defent_ent_flagged,
-                      "defent_ent_unflagged": defent_ent_unflagged,
-                      "baitent_flag_fracs": baitent_flag_fracs, "baitent_boost_eff": baitent_boost_eff,
-                      "baitent_ent_flagged": baitent_ent_flagged,
-                      "baitent_ent_unflagged": baitent_ent_unflagged}
+                      "vf_clip_fractions": vf_clip_fractions}
         if _ph is not None: _ph("setup")
         # +K8 (gen3_device_batches_v1 / gen3_device_batch_mode_v1): how the micro-batches reach the
         # device — `--device-batch` (`device_batches.MODES`: one resident copy of the flattened buffer,
@@ -503,38 +445,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                     check_behaviour_first_micro(self, log_prob, rollout_data.old_log_prob,
                                                 actions, rollout_data.action_masks, margins=_bgate_margins)
                     _bgate_pending = False
-
-                # +DENSE-AUX (gen3_dense_aux_v1, v117): the DENSE AUXILIARY loss — per-slot
-                # survival, per-slot final HP and turns-left, all END-OF-BATTLE facts back-filled
-                # to every state the way the win bit is. It is arm 9 of the critic ladder and
-                # KataGo's (Wu 2019) answer to a one-bit terminal signal: ~10% of that bit's
-                # variance lies between opponents, so the head shrinks the weak axes toward the
-                # marginal; 25 per-ENTITY targets put gradient on those axes directly.
-                #
-                # The head is NOT in the forward (the `CfEvidentialHead` contract), so it is
-                # applied here to the `value_pooled` this minibatch's `evaluate_actions` stashed.
-                # 🚨 That tensor is NOT detached, and that is the arm: the aux gradient reaches
-                # the shared trunk exactly as the win-prob loss does under `shaping` (which
-                # `--critic winprob` implies). `pi` is untouched in the only sense that matters
-                # for a readout — the head's OUTPUT never enters the policy path, at any weight.
-                # Folded as an `aux` term at `--win-prob-dense-aux`, never at `vf_coef`: there is
-                # one critic and these are not it.
-                dense_aux_term = None
-                if dense_aux_on:
-                    _fe = self.policy.features_extractor
-                    _pooled = _fe.last_value_pooled
-                    if _pooled is not None:
-                        _da_out = self._dense_aux_loss(
-                            _fe.dense_aux_head(_pooled),
-                            rollout_data.observations.get("aux_target"),
-                            rollout_data.observations.get("aux_mask"),
-                        )
-                        if _da_out is not None:
-                            _da_loss, _da_m = _da_out
-                            dense_aux_term = self.win_prob_dense_aux * _da_loss
-                            loss = loss + _ntg.add("aux", dense_aux_term)
-                            for _dk, _dv in _da_m.items():
-                                win_prob_metrics.setdefault(_dk, []).append(float(_dv))
 
                 # +SCAFFOLDING GAUGE (registered 2026-08-29): the two value readouts this tree
                 # carries answer DIFFERENT questions — the critic estimates the SHAPED return (in
@@ -927,11 +837,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                 opp_intent_term = (_mo.terms["opp_intent"]
                                    if "opp_intent" in _mo.terms and _mpres.get("opp_intent", False)
                                    else None)
-                # gen3_dense_aux_v1: `grad/dense_aux_share` is the VERIFICATION that the dense
-                # targets actually pull the shared trunk — the one number that separates "the arm
-                # ran" from "the arm did what it was built to do". It is a live (un-detached)
-                # readout, so unlike `grad/cf_evidential_share` it must NOT read 0.
-                if dense_aux_term is not None:     aux_probe_terms["dense_aux"] = dense_aux_term
                 if searchteacher_term is not None: aux_probe_terms["searchteacher"] = searchteacher_term
                 # +DISTILL-SHARE (gen3_grad_distill_share_v1): the exploiter-distillation KL's own
                 # shared-trunk pull — `grad/distill_share`, on the SAME policy+value+Σaux
@@ -1179,25 +1084,6 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
 
         # Logs
         self.logger.record("train/entropy_loss", np.mean(entropy_losses))
-        # gen3_defensive_entropy_v1: did the boost fire, and is entropy actually higher on flagged decisions?
-        if defent_flag_fracs:
-            self.logger.record("defent/flagged_frac", float(np.mean(defent_flag_fracs)))
-            self.logger.record("defent/boost_eff", float(np.mean(defent_boost_eff)))
-            if defent_ent_flagged:
-                self.logger.record("defent/entropy_flagged", float(np.mean(defent_ent_flagged)))
-            if defent_ent_unflagged:
-                self.logger.record("defent/entropy_unflagged", float(np.mean(defent_ent_unflagged)))
-        # gen3_bait_entropy_v1: same four for the bait boost. `flagged_frac` is also the probe's EXPOSURE
-        # reading — how much of the rollout is actually a bait board (a boost cannot work on states the
-        # policy never reaches), so a flat behavioural result at a near-zero flagged_frac is a DOSE
-        # finding, not a mechanism finding.
-        if baitent_flag_fracs:
-            self.logger.record("baitent/flagged_frac", float(np.mean(baitent_flag_fracs)))
-            self.logger.record("baitent/boost_eff", float(np.mean(baitent_boost_eff)))
-            if baitent_ent_flagged:
-                self.logger.record("baitent/entropy_flagged", float(np.mean(baitent_ent_flagged)))
-            if baitent_ent_unflagged:
-                self.logger.record("baitent/entropy_unflagged", float(np.mean(baitent_ent_unflagged)))
         self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         self.logger.record("train/value_loss", np.mean(value_losses))
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))

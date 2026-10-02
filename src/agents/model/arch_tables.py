@@ -111,38 +111,14 @@ _COEF_MODULE: Dict[str, Optional[str]] = {
     # than relying on the `*_coef` suffix, which is exactly how `intent_label_bot_weight` above
     # stayed out of every generated table from v97.
     "win_prob_strata_weight": "win_head",
-    # v116 gen3_winprob_lambda_v1 — the λ-RETURN target for the win-prob BCE. Named to `win_head`
-    # for strata's reason: a λ below 1 with no win-prob head re-aims a loss that is not being
-    # computed, which is exactly the INERT the column exists to show. (`win_prob_lambda_truncated`
-    # is a MODE string rather than a coefficient and is deliberately not a row here — it is inert
-    # at the default λ and is reported through `win_prob/lambda_truncated_bootstrap`.)
-    "win_prob_lambda": "win_head",
-    # v118 gen3_winprob_rollout_target_v1 — the R-rollout MC target's FRACTION. Named to `win_head`
-    # for λ's reason: a fraction above 0 with no win-prob head pays for thousands of continuations
-    # and re-aims a loss that is not being computed, which is the most expensive INERT this column
-    # can show. (`win_prob_rollout_r` is a COUNT and `win_prob_rollout_mode` a MODE string; neither
-    # is a coefficient, both are inert at fraction 0, and both are reported through
-    # `win_prob/rollout_r` and `win_prob/rollout_mode_blend`.)
-    "win_prob_rollout_target": "win_head",
-    # v119 gen3_winprob_rollout_weight_v1 — the ANCHOR loss weight. Named to `win_head` for the
-    # same reason as the fraction above it: a weight above 1.0 with no win-prob head re-prices
-    # rows of a loss that is not being computed. It is inert at fraction 0 (there are no anchors
-    # to weigh) and reported through `win_prob/rollout_weight`.
-    "win_prob_rollout_weight": "win_head",
-    # v120 gen3_fork_v1 — the FORK FRACTION. Named to `win_head` for the same reason as the two
-    # above: an injected branch row carries a `win_target` of its own branch's outcome, so with
-    # no win-prob head the arm would pay its whole simulation bill to add rows to a loss that is
+    # v120 gen3_fork_v1 — the FORK FRACTION. Named to `win_head` for strata's reason: an injected
+    # branch row carries a `win_target` of its own branch's outcome, so with no win-prob head the
+    # arm would pay its whole simulation bill to add rows to a loss that is
     # not being computed — the most expensive INERT this column can show. (`fork_branches` and
     # `fork_max_per_battle` are COUNTS, `fork_crn` a MODE string and `fork_contested_gap` /
     # `fork_contested_absv` SELECTOR thresholds; none is a coefficient, all five are inert at
     # fraction 0, and all five are reported through the `fork/` family.)
     "fork_fraction": "win_head",
-    # v117 gen3_dense_aux_v1 — the DENSE AUXILIARY loss's dose. Named to `dense_aux_head` (its
-    # OWN module, not `win_head`): unlike strata and lambda, which re-price and re-aim the win
-    # head's existing BCE, this coefficient supervises a head of its own — and because that head
-    # is BUILT from the same flag, "live coefficient, no module" is reachable only on a
-    # hand-assembled config, which is precisely the state the column exists to name.
-    "win_prob_dense_aux": "dense_aux_head",
     # v100 gen3_cf_coef_provenance_v1 — the counterfactual family's coefficients. Each one IS
     # gated by a module, and naming that module is what lets the table mark it INERT: a live
     # coefficient whose head was never built does nothing, and that is precisely the confusion

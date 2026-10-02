@@ -12,8 +12,8 @@
 //! **What is NOT here.** `TurnDelta` is not a first-class structure: the frozen Python layout
 //! survives only as [`delta::DeltaProjection`], the fields its two live consumers read (the clock,
 //! the label). What happened in a window, in order and with attribution, is the NATIVE record
-//! ([`record`]). The choice-band belief (`ChoiceBandTracker`) is not ported: it has no production
-//! reader (a no-op since it landed, `9a37b712`) — a FINDING, not a gap.
+//! ([`record`]). The choice-band belief (the Python `ChoiceBandTracker`, since deleted) was not ported: it
+//! had no production reader (a no-op since it landed, `9a37b712`) — a FINDING, not a gap.
 
 pub mod clock;
 pub mod delta;

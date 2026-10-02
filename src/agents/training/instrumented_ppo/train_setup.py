@@ -10,7 +10,7 @@ property `instrumented_ppo_hub_contract_test` reads. The two result containers a
 carrying the SAME names the fold uses, so `train()` unpacks them back into the locals the loop was
 written against and the loop body is unchanged.
 """
-from typing import Any, NamedTuple, Tuple
+from typing import Any, NamedTuple
 
 import numpy as np
 import torch as th
@@ -54,7 +54,6 @@ class FoldFlags(NamedTuple):
     q_winprob_on: Any
     q_onpolicy_on: Any
     cf_any_on: Any
-    dense_aux_on: Any
     fork_pg_mask_on: Any
 
 
@@ -245,16 +244,6 @@ class TrainSetup:
             float(getattr(self, "q_winprob_onpolicy_coef", 0.0)) != 0.0
             and cf_buffer is not None and q_head_built
         )
-        # +DENSE-AUX (gen3_dense_aux_v1, v117): the DENSE AUXILIARY head — per-slot survival, per-
-        # slot final HP and turns-left, KataGo's dense-target answer to a one-bit terminal signal.
-        # Needs BOTH the STRUCTURAL head (built when `--win-prob-dense-aux > 0` at launch) and a
-        # live coefficient, so a resume that lowered the coefficient to 0 keeps the head's
-        # parameters in the state_dict and simply stops training it — which is what makes the
-        # coefficient resume-mutable while the BUILD is not.
-        dense_aux_on = (
-            float(getattr(self, "win_prob_dense_aux", 0.0)) > 0.0
-            and getattr(self.policy.features_extractor, "dense_aux_head", None) is not None
-        )
         # +FORK-MASK (gen3_fork_v1): is the fork step's POLICY-TERM mask live for this call? The
         # predicate is the OBS KEY's presence and not the flag's value, deliberately: the key is
         # declared only when `--fork-fraction > 0`, and reading it is what the fold actually
@@ -279,7 +268,7 @@ class TrainSetup:
             policy_grad_coef=policy_grad_coef, td_aux_on=td_aux_on, cf_buffer=cf_buffer,
             cf_winprob_on=cf_winprob_on, cf_evid_on=cf_evid_on, cf_twin_on=cf_twin_on,
             cf_shadow_on=cf_shadow_on, q_winprob_on=q_winprob_on, q_onpolicy_on=q_onpolicy_on,
-            cf_any_on=cf_any_on, dense_aux_on=dense_aux_on, fork_pg_mask_on=fork_pg_mask_on,
+            cf_any_on=cf_any_on, fork_pg_mask_on=fork_pg_mask_on,
         )
 
     def _train_probe_setup(self, distill_metrics: dict) -> ProbeSetup:
@@ -354,45 +343,36 @@ class TrainSetup:
         )
 
     # ------------------------------------------------------------------ K8 region R1's setup
-    def _r1_levers(self, f: FoldFlags) -> Tuple[bool, bool]:
-        """``(strata, rollout_weight)`` — R1's two win-prob ROW-WEIGHT levers, DECLARED
-        (`gen3_r1_declared_levers_v1`): pure functions of the run's config and its rollout
-        buffer's KEY SET, both fixed at startup, and NEVER of a rollout's data. ONE predicate for
-        `train()` and for the compile lifecycle's startup declaration (`compile_regions._r1_static`),
-        so the compiled region's signature is known before the lock.
+    def _r1_levers(self, f: FoldFlags) -> bool:
+        """``strata`` — R1's win-prob ROW-WEIGHT lever, DECLARED (`gen3_r1_declared_levers_v1`): a
+        pure function of the run's config and its rollout buffer's KEY SET, both fixed at startup,
+        and NEVER of a rollout's data. ONE predicate for `train()` and for the compile lifecycle's
+        startup declaration (`compile_regions._r1_static`), so the compiled region's signature is
+        known before the lock.
 
-        * ``strata`` — `--win-prob-strata-weight > 0` under `--critic winprob` with the
-          `opp_class` / `win_mask` keys the weights are computed from. Declared from the FLAG:
-          whether a given rollout yields weights (two or more opponent classes among its labelled
-          rows) is data, and R1 gets the neutral ones when it does not (`_micro_var`).
-        * ``rollout_weight`` — `--win-prob-rollout-weight > 1` with `--win-prob-rollout-target > 0`
-          under `--critic winprob`, and the `win_row_w` key the weights ride.
+        `--win-prob-strata-weight > 0` under `--critic winprob` with the `opp_class` / `win_mask`
+        keys the weights are computed from. Declared from the FLAG: whether a given rollout yields
+        weights (two or more opponent classes among its labelled rows) is data, and R1 gets the
+        neutral ones when it does not (`_micro_var`).
 
-        Before this was declared the startup gate built R1 with both OFF while `train()` turned them
+        Before this was declared the startup gate built R1 with it OFF while `train()` turned it
         on: an undeclared signature at the first update (the K6+K8 FINDING, 2026-10-01)."""
         obs = self.rollout_buffer.observations if isinstance(
             self.rollout_buffer.observations, dict) else {}
         winprob_value = bool(f.win_prob_on and f.critic_winprob)
-        strata = (winprob_value
-                  and float(getattr(self, "win_prob_strata_weight", 0.0) or 0.0) > 0.0
-                  and "opp_class" in obs and "win_mask" in obs)
-        rollout_weight = (winprob_value
-                          and float(getattr(self, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
-                          and float(getattr(self, "win_prob_rollout_target", 0.0) or 0.0) > 0.0
-                          and "win_row_w" in obs)
-        return bool(strata), bool(rollout_weight)
+        return bool(winprob_value
+                    and float(getattr(self, "win_prob_strata_weight", 0.0) or 0.0) > 0.0
+                    and "opp_class" in obs and "win_mask" in obs)
 
-    def _micro_static(self, f: FoldFlags, strata: bool, rollout_weight_on: bool) -> Any:
+    def _micro_static(self, f: FoldFlags, strata: bool) -> Any:
         """The learner micro-step's STATIC flags and coefficients (`micro_step.MicroStatic`) for this
         `train()` call — every value R1 branches on or multiplies by that does not change within a
         run (`gen3_learner_micro_step_v1`). Read from the same attributes and buffer keys the inline
-        fold read, at the same moment (once per call). ``strata`` / ``rollout_weight_on`` are the
-        DECLARED levers (`_r1_levers`)."""
+        fold read, at the same moment (once per call). ``strata`` is the DECLARED lever
+        (`_r1_levers`)."""
         from gymnasium import spaces
 
         from agents.training.instrumented_ppo.micro_step import MicroStatic
-        obs = self.rollout_buffer.observations if isinstance(
-            self.rollout_buffer.observations, dict) else {}
         progress = self._current_progress_remaining
         clip_range = float(self.clip_range(progress))
         clip_vf = (float(self.clip_range_vf(progress)) if self.clip_range_vf is not None else None)
@@ -405,9 +385,6 @@ class TrainSetup:
             vf_coef=float(self.vf_coef), ent_coef=float(self.ent_coef),
             policy_grad_coef=float(f.policy_grad_coef),
             fork_pg_mask=bool(f.fork_pg_mask_on),
-            defensive=(float(self.defensive_entropy_boost) != 1.0
-                       and "defensive_opportunity" in obs),
-            bait=float(self.bait_entropy_boost) != 1.0 and "bait_opportunity" in obs,
             belief_aux_on=bool(f.belief_aux_on), move_belief_on=bool(f.move_belief_on),
             move_latent_on=bool(f.move_latent_on), spread_belief_on=bool(f.spread_belief_on),
             hp_type_belief_on=bool(f.hp_type_belief_on), item_belief_on=bool(f.item_belief_on),
@@ -421,13 +398,12 @@ class TrainSetup:
             setvalued_coef=float(getattr(self, "beta_setvalued_coef", 0.0)),
             bot_label_weight=float(getattr(self, "intent_label_bot_weight", 1.0)),
             win_prob_on=bool(f.win_prob_on),
-            strata=bool(strata), rollout_weight=bool(rollout_weight_on),
+            strata=bool(strata),
         )
 
     def _micro_var(self, st: Any, strata_w: Any) -> dict:
-        """R1's PER-UPDATE tensors: the entropy boosts' annealed factors (they move with progress, so
-        they are tensors — a Python float would be a new compiled signature every update) and, when
-        the strata lever is DECLARED (`st.strata`), the per-class weights and whether they APPLY.
+        """R1's PER-UPDATE tensors: when the strata lever is DECLARED (`st.strata`), the per-class
+        weights and whether they APPLY.
 
         THE NEUTRAL DEFAULT (`gen3_r1_declared_levers_v1`). A rollout whose labelled rows hold fewer
         than two opponent classes yields no weights (`strata_w` None); R1 then gets ones and
@@ -438,10 +414,6 @@ class TrainSetup:
         row-weight diagnostics ABSENT on such an update, as before. Always ``float32`` on the
         learner's device, ``[len(OPP_CLASS_NAMES)]``."""
         out: dict = {}
-        if st.defensive:
-            out["def_eff"] = th.tensor(float(self._defensive_entropy_boost_eff()), device=self.device)
-        if st.bait:
-            out["bait_eff"] = th.tensor(float(self._bait_entropy_boost_eff()), device=self.device)
         if st.strata:
             from agents.model.opp_intent import OPP_CLASS_NAMES
             active = strata_w is not None

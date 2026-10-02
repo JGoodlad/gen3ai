@@ -1,9 +1,8 @@
-"""`RolloutProbes` — rollout collection, the entropy-boost schedule, and the episode-start read.
+"""`RolloutProbes` — rollout collection and the episode-start read.
 
 Everything `InstrumentedMaskablePPO` does per ROLLOUT rather than per minibatch. None of it is
-part of `train()`'s fold sequence: `collect_rollouts` runs before `train()` is called at all, the
-two entropy-boost accessors are a pure schedule the loop reads, and `_winprob_start_metrics` is a
-read-only probe the metrics export publishes. They live here so `ppo.py` holds the fold and its
+part of `train()`'s fold sequence: `collect_rollouts` runs before `train()` is called at all, and
+`_winprob_start_metrics` is a read-only probe the metrics export publishes. They live here so `ppo.py` holds the fold and its
 contract and nothing else.
 """
 import time
@@ -68,28 +67,6 @@ class RolloutProbes:
         if logger is not None:
             logger.record("rollout/collect_ms", 1000.0 * (time.perf_counter() - t0))
             logger.record("rollout/collect_decisions", float(int(self.num_timesteps) - n0))
-
-    def _annealed_entropy_boost(self, B: float, af: float) -> float:
-        """The state-conditioned entropy-boost multiplier at the CURRENT step. Constant `B` if the anneal
-        fraction is 0; else linearly annealed toward 1.0, reaching 1.0 once `af` of training has elapsed
-        (uses SB3's `_current_progress_remaining`, which runs 1.0 at the start → 0.0 at the end). Shared by
-        the defensive (`gen3_defensive_entropy_v1`) and bait (`gen3_bait_entropy_v1`) boosts — ONE schedule,
-        so the two flags can never drift apart. Pure → unit-testable."""
-        B, af = float(B), float(af)
-        if af <= 0.0 or B == 1.0:
-            return B
-        done = 1.0 - float(getattr(self, "_current_progress_remaining", 1.0))   # 0 → 1 over training
-        return 1.0 + (B - 1.0) * max(0.0, 1.0 - done / af)
-
-    def _defensive_entropy_boost_eff(self) -> float:
-        """gen3_defensive_entropy_v1: this run's defensive boost at the current step."""
-        return RolloutProbes._annealed_entropy_boost(
-            self, self.defensive_entropy_boost, self.defensive_entropy_anneal_frac)
-
-    def _bait_entropy_boost_eff(self) -> float:
-        """gen3_bait_entropy_v1: this run's bait boost at the current step (same schedule)."""
-        return RolloutProbes._annealed_entropy_boost(
-            self, self.bait_entropy_boost, self.bait_entropy_anneal_frac)
 
     def _winprob_start_metrics(self, head_on: bool) -> dict:
         """`win_prob/start_*` — the head's P(win) at each EPISODE-START row of this rollout, paired

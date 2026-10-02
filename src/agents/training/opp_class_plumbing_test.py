@@ -263,17 +263,8 @@ class _MergeStub:
     _emit_hp_type_labels = False
     _emit_item_labels = False
     _emit_opp_intent_labels = False
-    _emit_opp_true_team = False
-    _emit_dense_aux = False
-    _emit_defensive_opportunity = False
-    _emit_bait_opportunity = False
     _emit_distill_mask = False
     _emit_win_target = True
-    # gen3_winprob_rollout_weight_v1: the third win-prob label key. False here because this stub
-    # exists to pin the `opp_class` gate, and the weight key rides its own flag — but DECLARED,
-    # because `_merge_training_keys` reads every emit flag as a plain attribute and a stub that
-    # omits one fails with an AttributeError rather than by exercising the branch.
-    _emit_win_row_weight = False
     _emit_fork_pg_mask = False
 
     def __init__(self, cls_code):

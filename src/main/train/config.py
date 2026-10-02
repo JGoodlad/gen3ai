@@ -727,7 +727,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # gen3_policy_gae_lambda_v1: the PPO POLICY's GAE λ. 0.80 is the value both model_build sites
     # hardcoded for every run to date, so an unset flag on a fresh run is byte-identical; a flagless
     # resume inherits the parent's recorded value (a pre-v123 config migrates to 0.80 — the only
-    # possible past). NOT `win_prob_lambda` (the critic's λ-return BCE target, resolved below).
+    # possible past).
     _resolve("policy_gae_lambda", 0.80)
     # gen3_diagnostics_cadence_v1: the optional learner telemetry's cadence. A FRESH run takes the
     # production default; a flagless resume keeps the parent's recorded regime (a pre-v124 parent
@@ -783,25 +783,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # that dropped this would silently return the arm to the un-stratified objective it exists to
     # contest, under the same run name and the same TB series.
     _resolve("win_prob_strata_weight", 0.0)
-    # gen3_winprob_lambda_v1 (v116) training-only, inherited for the same reason: a launcher
-    # RESTART re-invokes the original argv, and a flagless resume that dropped these would silently
-    # return the arm to the terminal-bit target it exists to contest, under the same run name and
-    # the same TB series.
-    _resolve("win_prob_lambda", 1.0)
-    _resolve("win_prob_lambda_truncated", "bootstrap")
-    # gen3_winprob_rollout_target_v1 (v118) training-only, inherited for the same reason: a
-    # launcher RESTART re-invokes the original argv, and a flagless resume that dropped these would
-    # silently return the arm to the copied terminal bit it exists to contest — and would do it
-    # while the run's cost profile silently halved, which reads as a speed-up rather than a lost
-    # treatment.
-    _resolve("win_prob_rollout_target", 0.0)
-    _resolve("win_prob_rollout_r", 8)
-    _resolve("win_prob_rollout_mode", "replace")
-    # gen3_winprob_rollout_weight_v1 (v119) training-only, inherited for a sharper version of the
-    # same reason: a flagless resume that dropped the WEIGHT would keep paying for every
-    # continuation (the fraction is inherited) while delivering ~1/50th of the registered dose —
-    # the arm's cost with none of its treatment, and nothing in the cost profile would show it.
-    _resolve("win_prob_rollout_weight", 1.0)
     # gen3_fork_v1 — the FORK ARM. TRAINING-only and inherited, for the sharpest version of that
     # reason yet: the fraction is what the run COSTS, and a flagless restart that dropped it would
     # halve the run's simulation bill mid-arm while every argv, model_config and ledger line still
@@ -814,11 +795,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("fork_contested_absv", 0.0)
     _resolve("fork_max_per_battle", 1)
     _resolve("fork_crn", "dice_and_draws")
-    # gen3_dense_aux_v1 (v117): the CLI surface of a DERIVED structural toggle, so the resolve line
-    # carries BOTH roles — the dose for the loss, and (through `extractor_arch._DERIVED`) whether
-    # the head is built at all. A flagless resume that dropped it would not merely stop dosing the
-    # arm: it would fail `check_compatible` on `dense_aux`, which is the loud half working.
-    _resolve("win_prob_dense_aux", 0.0)
     # gen3_ridealong_heads_v1 (v126): four STRUCTURAL toggles, so a flagless resume must inherit
     # them — dropping one would fail `check_compatible`, which is the loud half working.
     _resolve("ridealong_ensemble", 0)
@@ -868,7 +844,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     _resolve("q_winprob_mode", "none")         # v107 structural, version-checked
     _resolve("q_winprob_coef", 0.0)            # v107 training-only
     _resolve("q_winprob_onpolicy_coef", 0.0)   # v107 training-only
-    _resolve("value_true_team", False)         # v114 structural, version-checked (arm 5 ceiling probe)
     # gen3_capacity_telemetry_v1 — the live saturation early-warnings. The td_aux_coef class:
     # recorded for provenance, never gated, and read back here so a flagless resume (or a
     # hand-typed one between launcher restarts) keeps logging the run's own `capacity/*` series.
@@ -1026,15 +1001,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         # dominant, i.e. the defect this flag exists to remove.
         parser.error("--win-prob-strata-weight must be in [0, 1] "
                      "(0 = off / episode proportion; 1 = every opponent class weighted equally)")
-    if args.win_prob_lambda is not None and not (0.0 <= args.win_prob_lambda <= 1.0):
-        # A single-value RANGE check, so it stays here rather than in `combination_checks` (which
-        # owns the cross-flag half — `winprob_lambda_needs_the_winprob_critic`). The bounds are the
-        # parameter's meaning: 1 = the terminal outcome at every state (OFF, bit-identical), 0 =
-        # a pure one-step bootstrap on the network's own next value. Outside [0, 1] the backward
-        # recursion is not an average of n-step returns at all — it either diverges (λ > 1) or
-        # alternates sign (λ < 0), and neither is a stronger version of this lever.
-        parser.error("--win-prob-lambda must be in [0, 1] "
-                     "(1 = off / the terminal outcome at every state; 0 = pure one-step bootstrap)")
     if args.diagnostics_every < 1:
         parser.error("--diagnostics-every must be >= 1 (1 = the optional telemetry every update)")
     if not (0.0 <= args.policy_gae_lambda <= 1.0):
@@ -1046,31 +1012,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         _k = getattr(args, _ra, None)
         if _k is not None and not 0 <= int(_k) <= 12:
             parser.error(f"--{_ra.replace('_', '-')} must be in [0, 12] members (0 = off)")
-    if args.win_prob_dense_aux is not None and args.win_prob_dense_aux < 0.0:
-        # A single-value RANGE check, so it stays here rather than in `combination_checks` (which
-        # owns the cross-flag half — `dense_aux_needs_the_winprob_critic`). There is no upper
-        # bound: the three terms are masked-mean BCEs in nats, the same units as the win-prob loss
-        # this arm sits beside, so a dose is read against `vf_coef` rather than against a cap. A
-        # NEGATIVE coefficient would ASCEND the auxiliary loss — the head would be trained to
-        # mispredict every slot — which is not a weaker version of this lever.
-        parser.error("--win-prob-dense-aux must be >= 0 (0 = off; the head is not built)")
-    if args.win_prob_rollout_target is not None and not (0.0 <= args.win_prob_rollout_target <= 1.0):
-        # A single-value RANGE check (the cross-flag half is in `combination_checks`). The bounds
-        # are the parameter's meaning: it is a FRACTION OF THE BUFFER. 1.0 is legal and absurd —
-        # ~832x the run's simulation budget at R = 8 — and the hard per-rollout cap
-        # (`win_prob_rollout.MAX_STATES_PER_ROLLOUT`) is what actually keeps the bill finite.
-        parser.error("--win-prob-rollout-target must be in [0, 1] "
-                     "(0 = off / the terminal bit at every state; it is a fraction of the buffer)")
-    if args.win_prob_rollout_r is not None and args.win_prob_rollout_r < 1:
-        parser.error("--win-prob-rollout-r must be >= 1 (continuations per sampled state)")
-    if args.win_prob_rollout_weight is not None and args.win_prob_rollout_weight < 1.0:
-        # A single-value RANGE check (the cross-flag half is in `combination_checks`). BELOW 1 is
-        # refused rather than clamped because it is a coherent-looking instruction for the opposite
-        # of this lever: it would make the rows that cost thousands of continuations count for LESS
-        # than the copied bits they were bought to replace. If down-weighting a treatment is ever
-        # the experiment, it needs its own flag and its own registered reason.
-        parser.error("--win-prob-rollout-weight must be >= 1.0 "
-                     "(1.0 = off; it MULTIPLIES the rollout-anchored rows' share of the BCE)")
     if args.fork_fraction is not None and not (0.0 <= args.fork_fraction <= 1.0):
         parser.error("--fork-fraction must be in [0, 1] "
                      "(0 = off; it is a fraction of the buffer's decisions)")

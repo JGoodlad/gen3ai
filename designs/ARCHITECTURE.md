@@ -11,7 +11,7 @@ stale twice:
 | | |
 |---|---|
 | Production run | **`ai_v12_02_winprob_critic`** (the WIN-PROB CRITIC era, 2026-09-06) — `config_version` **122** in the mirror this file is gated against (the `gen3_event_record_v2` signature-bump window, row 3: the mirror follows the code, so the obs-architecture batch's surface — 2761-dim obs, the reshaped event rows — and the shaped-reward deletion's field removal are what this file describes); the run's own `model_config.json` records 110, the frozen-phi bump it launched on, and signature `gen3_critic_route_wave_v1`, which HEAD no longer loads. `arch_signature` **`gen3_event_record_v2`** in the mirror. It is gen-17's architecture surface with the CRITIC swapped and nothing else: the substrate cells stay ON in the base (`pair_outcome_cell` / `pair_outcome_switch` / `switch_branch_cell` / `conditional_threat_cell`), `pair_value_route` stays OFF pending the C4 offline gate, and all 17 edge families, the entity seats, the event window and the belief stack are unchanged. The 13 rows that moved are the critic family alone — see §3.4 and §6. Its predecessor `models/ai_v9_21_gen17_pfspoff_0820/` (gen-17, v97) is what every §4/§5 measurement below was taken on |
-| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 125 / `gen3_event_record_v2`) |
+| Code on HEAD | `MODEL_CONFIG_VERSION` / `ARCH_SIGNATURE` — **read them from `agents/model/model_version/constants.py`**, never from prose (at this writing: 132 / `gen3_event_record_v2`) |
 | `designs/production_config.json` | the live run's config **carried forward to HEAD's schema** — a verbatim mirror of the production run's `model_config.json`, refreshed with `python -m agents.model.delivery_graph --sync-config <run>/model_config.json`, never hand-edited, and carrying its provenance in the sibling [`production_config.README.md`](production_config.README.md) (JSON has no comment syntax, so the record cannot live in the file). The `gen3_event_record_v2` **signature-bump window is OPEN** (2026-09-26, the observation-architecture batch): the production run records `gen3_critic_route_wave_v1`, HEAD builds `gen3_event_record_v2`, so the mirror follows the CODE until the first run at the new signature exists — then it closes and the mirror tracks that run. (Inside such a window the two requirements pull in opposite directions — the compile gate needs the mirror to match live code, the drift gate needs it to mirror the newest run, and neither can be relaxed — so `arch_tables_test` DETECTS the window from the run's recorded signature and lets the mirror follow the code until a run at the new signature exists.) It exists so this file, the compile gate, the delivery graph and the viewer all derive from ONE real feature set |
 
 Everything below describes what HEAD builds under `designs/production_config.json`. The
@@ -505,24 +505,7 @@ after 25M steps, while `value_threat_proj` (the one `value_pooled` route) traine
 gradient-connectivity guard (`value_route_gradient_test.py`) backprops the critic through every
 registered route each suite run.
 
-**The seam has TWO members** — `value_entity_pool` (production, below) and, since v114,
-`value_true_team`, the PRIVILEGED route (`gen3_value_true_team_v1`, `--value-true-team`, **OFF in
-production and never in the mirror**). It is the only route in the tree whose input is not the
-shared 2761-dim observation: it reads the opponent's ACTUAL party — species, moves, item, ability,
-derived stats, current HP and status — off a training-and-eval-only Dict key `opp_true_team`,
-encoded in the obs's OWN per-mon layout by the SAME `PokemonEncoder.encode`, and pools six rows
-through a shared per-mon MLP and `TTV_K`=4 learned queries over `TTV_DIM`=64 into a zero-init
-`D_MODEL` injection. It is the critic ladder's **arm-5 CEILING PROBE** — "how much of the win-prob
-critic's residual error is irreducible uncertainty about the opponent's team?" — and deliberately
-not a shippable channel: the critic that ships is the un-privileged one. The key is emitted
-wherever the sim is LOCAL (`Gen3Env` from `battle2.team`; `RLPlayer` from the `_opp_player`
-back-reference that `LocalBattleRunner` sets, which is the transport for bridge training, bridge
-eval and the counterfactual replay driver alike) and is ABSENT at ladder play, where `RLPlayer`
-supplies the all-zero "unknown" block instead and the policy — which never reads the key — runs
-unchanged. `family=CRITIC` in the flag registry, so it is excluded from the ARCH surface by its own
-declaration and turning it on moves no surface key. Offline prober forwards REFUSE on such a
-checkpoint (`ProbeModel._pin`) rather than return a V stripped of the privilege; the arm's V is the
-one the eval traces recorded, which is what `cf_audit` and `main.critic_gate` already read.
+**The seam has ONE member**, `value_entity_pool` (production, below); the PRIVILEGED true-team route that was its second is deleted, so every route on the seam reads the shared observation and none adds information. The seam takes no `obs` argument.
 
 **Four of the seam's five original routes were deleted** (v96 `gen3_critic_route_wave_v1`), on
 measured dependence against a 0.39 dV bar: `intent_value_reduce` 0.3176 and `value_clock` 0.2169
@@ -530,7 +513,7 @@ measured dependence against a 0.39 dV bar: `intent_value_reduce` 0.3176 and `val
 `value_intent` 0.156. `value_intent`'s **re-entry condition survives its deletion**: any future
 α/β-to-critic proposal passes the C4-style offline gate FIRST (ledger C6 — the delivery line is
 EXHAUSTED). The seam is kept generic because its value is covering the NEXT route on the day it is
-written — which is exactly what it did for the privileged route above.
+written — which is the point of keeping it.
 
 **ON in production: `value_entity_pool`** (v80, `UnifiedValueReadout` — Stage-3 T3-DELIVER of
 `design_unified_belief.md` §3). ONE attention pool over the critic's entity-row set (the 12
@@ -902,99 +885,17 @@ weight — no forward pass, no weight shape, no `check_compatible` compare, **no
 `flag_registry.py` row — so it does not appear in §6's flag table until a production config adopts
 it. Mechanics: `designs/training/critic_and_value_losses.md`.
 
-**`--win-prob-lambda` re-aims this BCE's TARGET** (`gen3_winprob_lambda_v1`, config v116, the critic
-ladder's **arm 8**). Default **`1.0` = OFF and the loss is BIT-identical**; `--critic winprob` is
-REQUIRED. Below 1.0 a state's target stops being its episode's terminal bit and becomes the
-λ-return `G[t] = (1−λ)·V(s[t+1]) + λ·G[t+1]`, anchored at `G = y` on the state that ENDS the episode,
-over the collector's **RECORDED** values (`rollout_buffer.values`, which under this critic *is*
-`sigmoid(win logit)`); γ = 1 and the clean-world stream is terminal-only, so an n-step return IS
-`V(s[t+n])`. A state `d` steps from its terminal keeps weight `λ^d` on the outcome. It exists for
-the same measurement the strata weight does — only **10.2 % / 14.4 %** of the terminal label's
-variance lies BETWEEN (cycle, opponent) cells
-([`winprob_head_refit_2026-09-09`](research_state/measurements/winprob_head_refit_2026-09-09/README.md)
-§6) — approached from the other side: **mid- and late-game values already separate opponents
-(~0.5–0.8) where turn-1 values do not (~0.1)**, so the λ-return moves that information backward
-within the episode along a far less noisy channel. **`--win-prob-lambda-truncated
-{bootstrap,mask}`** (default `bootstrap`, INERT at λ = 1.0) picks the buffer-boundary convention for
-an episode with no terminal inside the rollout and is the only part that changes WHICH rows are
-scored. Both are training-only — no forward pass, no weight shape, no `check_compatible` compare,
-**not** a `flag_registry.py` row — so they do not appear in §6's flag table until a production config
-adopts them. Mechanics: `designs/training/critic_and_value_losses.md`.
-
-**`--win-prob-dense-aux` adds 25 DENSE TARGETS BESIDE this BCE** (`gen3_dense_aux_v1`, config v117,
-the critic ladder's **arm 9**). Default **`0.0` = OFF and BIT-identical** — the head is not BUILT, so
-there is no module, no obs key, no callback and no term; `--critic winprob` is REQUIRED and
-`win_prob_mode != none` is a registry `requires` the extractor constructor enforces. The three flags
-above all act on the SAME one-bit loss; this one does not touch it. It builds a small MLP on
-`value_pooled` — the same tensor the win head reads, NOT in the forward, built LAST, zero-init
-output — predicting for every state the episode's END-OF-BATTLE facts, back-filled the way the win
-bit is: **survival of all 12 slots (our 6 then theirs, in the observation's own team order), each
-slot's final HP fraction, and the scaled turns-left** — 25 sigmoid outputs, three masked-mean BCE
-terms averaged. The per-side KO counts are DERIVED from survival and published as meters, never
-predicted. It exists because four 10M levers on the one bit moved nothing at ±0.01 (ledger *THE ARMS
-AT 400 GAMES*) while only ~10 % of that bit's variance lies BETWEEN opponents, and because the
-literature's answer to a one-bit terminal signal is KataGo's (Wu 2019 §3) — dense auxiliary targets
-that share the win's CAUSE. 🚨 Its input is **NOT detached**: the gradient into the shared trunk is
-the arm, and `grad/dense_aux_share` is the verification. An opponent slot never revealed, and any
-slot the state's own observation does not carry, is MASKED rather than fabricated. `--win-prob-lambda`
-does NOT reach these targets — they are terminal FACTS, not returns. `dense_aux` is a STRUCTURAL
-`flag_registry` row (`derived` off the coefficient, `family=CRITIC`, gated by a bool compare in
-`check_compatible`); the COEFFICIENT is training-only and resume-mutable, so a resume may re-dose the
-arm but not add or remove its head. **No `ARCH_SIGNATURE` bump** — the observation vector is
-unchanged, no module moves, the head is built last and the forward never calls it. `family=CRITIC`
-keeps it off the ARCH surface, so it does not appear in §6's flag table. Mechanics:
-`designs/training/critic_and_value_losses.md`.
-
-**`--win-prob-rollout-target` BUYS NEW BITS for this BCE** (`gen3_winprob_rollout_target_v1`, config
-v118, the critic ladder's **arm 10**). Default **`0.0` = OFF and the loss is BIT-identical**;
-`--critic winprob` **and** `--cf-records` are both REQUIRED. Above 0.0 it is the FRACTION of the
-rollout buffer whose states are replayed out of the `cf_records` ring to their own turn, played
-forward `--win-prob-rollout-r` times (default 8) by the CURRENT policy on both sides at temperature
-1.0, and given `wins / R` as their target — the buffer's OWN rows, not the foreign recorded states
-the counterfactual label factory's win-prob term folds. The same measurement as arms 7 and 8, taken to its root: the terminal label
-is **one outcome bit copied to ~30 states**, at most 1 bit about the GAME and none about the
-individual STATE, which is why only **10.2 % / 14.4 %** of its variance lies BETWEEN (cycle,
-opponent) cells
-([`winprob_head_refit_2026-09-09`](research_state/measurements/winprob_head_refit_2026-09-09/README.md)
-§6); R continuations give R bits about THAT state.
-
-🚨 **Its cost is linear in the fraction and it is paid as a STALL on the training loop**:
-`budget / collection = fraction × R × ~104 decisions per continuation`, so `1/32` at R = 8 is ~26× a
-production rollout's entire simulation budget and the fraction that costs 1× is **`1/(R × 104) ≈
-1/832`** — at which the rollout-derived share of the objective is ~0.12 %. `MAX_STATES_PER_ROLLOUT`
-caps the bill regardless. `--win-prob-rollout-mode {replace,blend}` picks whether the target BECOMES
-the win fraction or is averaged with the terminal bit. The three are training-only — no forward
-pass, no weight shape, no `check_compatible` compare, **not** `flag_registry.py` rows — so they do
-not appear in §6's flag table until a production config adopts them. Mechanics:
-`designs/training/critic_and_value_losses.md`.
-
-**`--win-prob-rollout-weight` gives those rows MASS** (`gen3_winprob_rollout_weight_v1`, config
-v119). Default **`1.0` = OFF and the loss is BIT-identical**; requires `--win-prob-rollout-target >
-0`. The fraction above buys high-quality labels for ~0.12 % of the objective's rows, and **a
-treatment carrying 0.12 % of a loss cannot move the head by arithmetic** — so this multiplies the
-ANCHORED rows' per-row BCE by a constant and renormalises the vector to mean 1 over the scored rows
-(the convention `--win-prob-strata-weight` already keeps, and the two MULTIPLY rather than
-overwrite), leaving the loss SCALE unmoved. The anchored share of the weighted mass is
-`f·k / (1 + f·(k−1))`: at `f = 0.0012`, `k = 64` that is **7.1 %**. 🚨 **Only the anchors are
-weighted, never the rows that bootstrap toward them under λ < 1** — those targets are a MIXTURE of
-the anchor, the network's own later values and the copied bit, so weighting them would dose arm 8's
-channel under arm 10's flag and would make the delivered dose a function of the episode-length
-distribution. The λ^k reach is MEASURED (`win_prob/rollout_influence_lambda`) instead of dosed. It
-is a per-row LOSS WEIGHT and changes no row's TARGET, so the value sidecar's schema and its
-`QUANTITY_FIELDS` are deliberately unchanged. Training-only, no forward pass, no weight shape, no
-`check_compatible` compare, not a `flag_registry.py` row.
-
 **`--fork-fraction` FORKS CONTESTED STATES INTO THE BUFFER** (`gen3_fork_v1`, config v120 — THE
 FORK ARM). Default **`0.0` = OFF and BIT-identical**: no module is imported, no obs key is declared,
 no callback is attached, the stock rollout buffer is used and no row is injected. `--critic winprob`
-**and** `--cf-records` are both REQUIRED, and `--value-true-team`, `--win-prob-dense-aux` and
-`--win-prob-strata-weight` are REFUSED alongside it. Above 0.0 it is the FRACTION of the buffer's
+**and** `--cf-records` are both REQUIRED (the second on the Python core only), and
+`--win-prob-strata-weight` is REFUSED alongside it. Above 0.0 it is the FRACTION of the buffer's
 decisions that are FORKED: at a CONTESTED decision (a move round, turn 2-40, ≥3 legal actions, top-2
 masked-logit gap under the `--fork-contested-gap` quantile of this rollout's own candidate pool) the
 episode is replayed out of the `cf_records` ring to that turn and `--fork-branches` continuations —
 the policy's top-2 candidates plus ONE uniformly random legal action — are played to a terminal by
 the CURRENT policy on both sides at temperature 1.0. Their transitions enter the SAME PPO buffer,
-with the branch's own GAE/λ-return and its own outcome as `win_target`. **Plain BCE, no ranking
+with the branch's own GAE and its own outcome as `win_target`. **Plain BCE, no ranking
 term.**
 
 🚨 **The measurement that registers it:** the promoted win-prob critic's held-out PAIRWISE ACCURACY
@@ -1478,8 +1379,7 @@ resume path restores the checkpoint's own γ, so the value in force is visible i
 `cli_args` and in the startup lines — not in the mirror, and therefore not in §6's table.
 
 **The policy's GAE λ is 0.80** (`--policy-gae-lambda`, `gen3_policy_gae_lambda_v1`): the λ of the
-advantages the clipped surrogate trains on — NOT `--win-prob-lambda`, the critic's λ-return BCE
-target (§3.4, *WHICH readout is the critic*; default 1.0 = OFF). It was a hardcoded literal until config v123;
+advantages the clipped surrogate trains on — the critic's BCE target is the terminal outcome (§3.4, *WHICH readout is the critic*). It was a hardcoded literal until config v123;
 from v123 it is a recorded, `_resolve`-inherited training field (`policy_gae_lambda` in
 `model_config.json`). The mirror is at v122 and so does not carry the key; every run this code can
 load (config ≥ v121) trained at the hardcoded 0.80 (older eras ran 0.95 and 0.85 — `eff7ddee` set 0.80).
@@ -1505,13 +1405,8 @@ logit. Declared conditionally, so a key absent from the space is simply not emit
 | `win_target` / `win_mask` / `win_margin` | f32 `[1]` each | the win-prob head's BCE — under `--critic winprob` **the value loss itself** (MC outcome, a **future** label back-filled by `WinProbLabelCallback`) | `win_prob_mode != none` | ✅ **emitted and consumed — this is the critic's target** |
 | `opp_action_kind` / `opp_action_num` / `opp_switch_slot` / `opp_switch_species` | int64 `[1]` each | opponent-intent CE (`gen3_opp_intent_v1`) — what they did at the PREVIOUS decision, shifted one row back in `train()` | `opp_intent_coef > 0` | ✅ emitted and consumed (`opp_intent` true ⇒ `--arch production` sets `opp_intent_coef` 0.05; recorded in `model_config.json` from config v125, so a flagless resume or a launcher restart inherits it) |
 | `opp_class` | int64 `[1]` | **two consumers**: the intent metrics, which it SPLITS (bot / pool / stable / exploiter — one pooled intent accuracy over random bots, heuristics and frozen selves cannot be read); and the training-side value sidecar's per-class calibration slice | `opp_intent_coef > 0` **or** `win_prob_mode != none` | ✅ emitted (both gates hold), read by the intent metrics and the sidecar, not by any loss |
-| `defensive_opportunity` | f32 `[1]` | state-conditioned entropy boost | `--defensive-entropy-boost > 1.0` (default 1.0) | ❌ |
-| `bait_opportunity` | f32 `[1]` | state-conditioned entropy boost (bait) | `--bait-entropy-boost > 1.0` (default 1.0) | ❌ |
 | `distill_mask` | f32 `[1]` | exploiter-distillation KL gate | `--distill-coef > 0` with teacher teams | ❌ |
-| `win_row_w` | f32 `[1]` | the win-prob BCE's per-row WEIGHT (`gen3_winprob_rollout_weight_v1`; placeholder 1.0, overwritten post-collection) | `--win-prob-rollout-weight > 1` **and** `--win-prob-rollout-target > 0` | ❌ |
 | `fork_pg_m` | f32 `[1]` | the policy term's per-row mask (`gen3_fork_v1`; placeholder 1.0) | `--fork-fraction > 0` | ❌ |
-| `opp_true_team` | f32 `[6,122]` | the PRIVILEGED value route (`gen3_value_true_team_v1`) — the one key the forward reads, value side only | `--value-true-team` | ❌ |
-| `aux_target` / `aux_mask` / `aux_turn` | f32 `[25]` / `[25]` / `[1]` | the dense-auxiliary loss (`gen3_dense_aux_v1`; the target a placeholder back-filled by `DenseAuxLabelCallback`) | `--win-prob-dense-aux > 0` | ❌ |
 
 🚨 **In this config a privileged key is no longer merely auxiliary — `win_target` IS the critic's
 training target.** The leak-safety property is unchanged and is exactly what makes that safe: the
@@ -1526,8 +1421,7 @@ Every belief label above is both emitted AND consumed here (all six supervised c
 `agents/training/rust_env_label_inventory_test.py`, which also reads this table's ✅/❌). **Do not infer supervision from emission**, though: the
 emit gates and the loss coefficients are separate conditions, and a config that drops a coefficient
 to 0 keeps paying the buffer cost while training nothing — which reads identically in every metric.
-`--defensive-entropy-boost`, `--bait-entropy-boost`, `--distill-coef`, `--win-prob-rollout-weight`,
-`--fork-fraction`, `--value-true-team` and `--win-prob-dense-aux` are off, so their nine keys are not
+`--distill-coef` and `--fork-fraction` are off, so their two keys (`distill_mask`, `fork_pg_m`) are not
 emitted at all.
 
 🚨 **`opp_class` IS EMITTED UNDER TWO GATES, AND THAT IS DELIBERATE** (`gen3_value_sidecar_v1`,

@@ -294,18 +294,6 @@ def _rust_core(args) -> bool:
 #: What `--env-core rust` does not serve yet, as (dest, predicate, reason). Each is a path the Python
 #: env or a Python-only callback owns today; the collector refuses rather than silently dropping it.
 _ENV_CORE_UNPORTED: Tuple[Tuple[str, Callable[[Any], bool], str], ...] = (
-    ("win_prob_lambda", lambda a: float(_val(a, "win_prob_lambda", 1.0)) < 1.0,
-     "--win-prob-lambda < 1 (the λ-return recursion is WinProbLabelCallback's)"),
-    ("win_prob_rollout_target", lambda a: _positive(_val(a, "win_prob_rollout_target", 0.0)),
-     "--win-prob-rollout-target (R-rollout MC targets replay cf_records)"),
-    ("win_prob_dense_aux", lambda a: _positive(_val(a, "win_prob_dense_aux", 0.0)),
-     "--win-prob-dense-aux (end-of-battle facts from battle1)"),
-    ("value_true_team", lambda a: bool(_val(a, "value_true_team", False)),
-     "--value-true-team (T2 refuses an extractor that reads a Dict key beyond 'observation')"),
-    ("defensive_entropy_boost", lambda a: float(_val(a, "defensive_entropy_boost", 1.0)) > 1.0,
-     "--defensive-entropy-boost (its opportunity key is Python-built)"),
-    ("bait_entropy_boost", lambda a: float(_val(a, "bait_entropy_boost", 1.0)) > 1.0,
-     "--bait-entropy-boost (its opportunity key is Python-built)"),
     ("distill_coef", lambda a: _positive(_val(a, "distill_coef", 0.0)),
      "--distill-coef > 0 (the distill_mask key and the per-team teachers)"),
     ("cf_records", lambda a: bool(_val(a, "cf_records", False)), "--cf-records (a bridge reconstruction tap)"),
@@ -421,40 +409,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "about the value function — and the `opp_class` label key it strata-fies on is declared "
         "under the win-prob label gate. Pass --critic winprob, or drop the flag."),
     CombinationCheck(
-        # The strata check's twin, and refused for the same reason: under `--critic shaped` the
-        # win-prob BCE is an AUXILIARY readout, so a λ-return target there
-        # would re-aim a diagnostic and leave the value function untouched. Worse than for strata,
-        # in fact — the quantity the recursion blends is `rollout_buffer.values`, which under
-        # `shaped` is a shaped return, not a probability, so the blend would be
-        # a category error fed into a BCE.
-        "winprob_lambda_needs_the_winprob_critic",
-        ("win_prob_lambda", "critic"),
-        lambda a: float(_val(a, "win_prob_lambda", 1.0) or 1.0) < 1.0 and not _winprob(a),
-        "--win-prob-lambda < 1 requires --critic winprob. It replaces the win-prob BCE's TARGET "
-        "with a λ-return that blends the critic's own recorded later values backward through the "
-        "episode (the head refit's §6 mechanism: one terminal bit copied to ~30 states is a noisy "
-        "objective whose between-(cycle, opponent) share is only ~10-14%). Under --critic shaped "
-        "that BCE is an auxiliary readout AND `rollout_buffer.values` holds a shaped "
-        "return rather than a probability, so the blend would be a category error. Pass "
-        "--critic winprob, or drop the flag."),
-    CombinationCheck(
-        # The strata/lambda check's third sibling, refused for a reason of its own on top of
-        # theirs. Under `--critic shaped` the win-prob BCE is an AUXILIARY readout, so dense
-        # targets bolted to it would improve a diagnostic's features and leave the value function
-        # — the scalar `value_net`, reading its own shaped return — untouched.
-        # The arm's whole claim is about what the CRITIC's trunk conditions on, and under `shaped`
-        # this term cannot reach that claim at all.
-        "dense_aux_needs_the_winprob_critic",
-        ("win_prob_dense_aux", "critic"),
-        lambda a: float(_val(a, "win_prob_dense_aux", 0.0) or 0.0) > 0.0 and not _winprob(a),
-        "--win-prob-dense-aux > 0 requires --critic winprob. It adds 25 dense END-OF-BATTLE "
-        "targets (per-slot survival, per-slot final HP, turns-left) on the SAME `value_pooled` "
-        "the win head reads, so that the critic's trunk gets gradient along the per-entity axes "
-        "one terminal bit cannot carry (~10%% of that bit's variance lies between opponents; "
-        "KataGo, Wu 2019). Under --critic shaped the win-prob head is an auxiliary readout and "
-        "the value function is the scalar net, so the dense targets would enrich a diagnostic "
-        "and change nothing about V. Pass --critic winprob, or drop the flag."),
-    CombinationCheck(
         # gen3_ridealong_rnd_variants_v1 (v127): the observation variants share base's frozen
         # target and normalisation, and base is the reference every variant is compared with —
         # the extractor raises the same thing (`flag_requires_test` pins it); this is the
@@ -466,34 +420,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "--ridealong-rnd-variants requires --ridealong-rnd: the observation variants share base's "
         "frozen target and normalisation, and base is the reference every variant is compared "
         "with. Pass --ridealong-rnd, or drop the variants."),
-    CombinationCheck(
-        # λ's twin, and refused for λ's reason: under `--critic shaped` the win-prob BCE is an
-        # AUXILIARY readout, so a measured MC target there would re-aim a diagnostic and leave the
-        # value function untouched — while still paying for every continuation.
-        "winprob_rollout_needs_the_winprob_critic",
-        ("win_prob_rollout_target", "critic"),
-        lambda a: float(_val(a, "win_prob_rollout_target", 0.0) or 0.0) > 0.0 and not _winprob(a),
-        "--win-prob-rollout-target > 0 requires --critic winprob. It replaces the win-prob BCE's "
-        "TARGET on a subsample of the buffer with an R-rollout Monte-Carlo win fraction (the head "
-        "refit's §6 mechanism: one terminal bit copied to ~30 states carries one bit about the GAME "
-        "and none about the STATE). Under --critic shaped that BCE is an auxiliary readout, so the "
-        "new labels would re-aim a diagnostic while still paying for every continuation. Pass "
-        "--critic winprob, or drop the flag."),
-    CombinationCheck(
-        # THE EXPENSIVE SILENT NO-OP. Without the ring there is no replayable episode for a sampled
-        # state, so the flag would label ZERO states — and it would do it quietly, on a run whose
-        # whole purpose was the treatment.
-        "winprob_rollout_needs_cf_records",
-        ("win_prob_rollout_target", "cf_records"),
-        lambda a: (float(_val(a, "win_prob_rollout_target", 0.0) or 0.0) > 0.0
-                   and not bool(_val(a, "cf_records", False))),
-        "--win-prob-rollout-target > 0 requires --cf-records. A sampled state is labelled by "
-        "REPLAYING its episode to that turn and playing forward, and the replayable record lives "
-        "in the `<run>/cf_records/` ring that --cf-records switches on; training otherwise keeps a "
-        "single-slot stash it overwrites every episode. Without the ring every sampled state would "
-        "fail to resolve and the arm would train against the terminal bit it exists to replace. "
-        "Pass --cf-records, or drop the flag."),
-    # --- gen3_fork_v1: the FORK ARM's five refusals. ---------------------------------------
+    # --- gen3_fork_v1: the FORK ARM's three refusals. ---------------------------------------
     CombinationCheck(
         # 🚨 THE ONE THAT IS NOT A CONVENTION. Under `winprob` the reward stream is the TERMINAL
         # WIN INDICATOR alone, so a branch's ENTIRE reward sequence is reconstructible from its
@@ -508,7 +435,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "(+V / -V / --draw-penalty), which the branch builder does not reproduce. Pass --critic "
         "winprob, or drop the flag."),
     CombinationCheck(
-        # THE EXPENSIVE SILENT NO-OP, in the shape `winprob_rollout_needs_cf_records` already has.
+        # THE EXPENSIVE SILENT NO-OP: without the ring there is no replayable episode.
         # PYTHON CORE ONLY: on --env-core rust a fork replays the core's own finished input log
         # (`rust_rollout/fork.py`, forks.md §14), and --cf-records is refused there.
         "fork_needs_cf_records", ("fork_fraction", "cf_records"),
@@ -523,26 +450,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "default 512 the forks that DO resolve are the rollout's LATE ones — a selection bias, not "
         "just a shortfall. Pass --cf-records, or drop the flag."),
     CombinationCheck(
-        "fork_refuses_value_true_team", ("fork_fraction", "value_true_team"),
-        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
-                   and bool(_val(a, "value_true_team", False))),
-        "--fork-fraction > 0 is incompatible with --value-true-team. That flag declares the "
-        "`opp_true_team` obs key, which the extractor's value route READS and RAISES on when it is "
-        "missing; a branch is played by two RLPlayers with no env, so there is no `battle2` to "
-        "build the opponent's TRUE party from and a zero block would be a fabricated privileged "
-        "input rather than an absent one. --value-true-team is a ceiling PROBE, not a shippable "
-        "channel. Run one arm or the other."),
-    CombinationCheck(
-        "fork_refuses_dense_aux", ("fork_fraction", "win_prob_dense_aux"),
-        lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
-                   and float(_val(a, "win_prob_dense_aux", 0.0) or 0.0) > 0.0),
-        "--fork-fraction > 0 is incompatible with --win-prob-dense-aux > 0. The dense head's "
-        "targets are the END-OF-BATTLE per-slot facts of the episode, back-filled from `battle1` "
-        "at the terminal — a battle the trainer process never held for a branch. Masking every "
-        "injected row out of the head would make its dose a function of the fork rate; supplying "
-        "one would need the branch's own terminal facts threaded back from the fork worker, which "
-        "is not built. Drop one of the two."),
-    CombinationCheck(
         "fork_refuses_strata_weight", ("fork_fraction", "win_prob_strata_weight"),
         lambda a: (float(_val(a, "fork_fraction", 0.0) or 0.0) > 0.0
                    and float(_val(a, "win_prob_strata_weight", 0.0) or 0.0) != 0.0),
@@ -551,19 +458,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "computes; a branch has no env, so every injected row carries the 0.0 FILL and would land "
         "in one stratum. The delivered strata dose would then be a function of the fork rate "
         "rather than of the flag. Drop one of the two."),
-    CombinationCheck(
-        # THE CHEAP SILENT NO-OP's twin. With no fraction there are no ANCHORED rows, so the weight
-        # has nothing to multiply and the run is the unflagged one — while its argv, its
-        # model_config and its ledger line all say it was the weighted arm.
-        "winprob_rollout_weight_needs_the_rollout_target",
-        ("win_prob_rollout_weight", "win_prob_rollout_target"),
-        lambda a: (float(_val(a, "win_prob_rollout_weight", 1.0) or 1.0) > 1.0
-                   and float(_val(a, "win_prob_rollout_target", 0.0) or 0.0) <= 0.0),
-        "--win-prob-rollout-weight > 1 requires --win-prob-rollout-target > 0. The weight "
-        "multiplies the per-row BCE of the rows the rollout target ANCHORED; with no fraction "
-        "there are no anchored rows, the weight vector would be a vector of ones, and the run "
-        "would be the unflagged one under a flagged name. Pass --win-prob-rollout-target (the "
-        "fraction that costs 1x the run's simulation budget is ~1/(R*104)), or drop the weight."),
     CombinationCheck(
         # See `--terminal-indicator`. A [0,1] critic cannot represent "worse than a loss", so the
         # ordering `--draw-penalty` exists to set is not merely unused here — it is unrepresentable.

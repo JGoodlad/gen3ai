@@ -6,11 +6,11 @@ written against that one-key shape::
 
     obs = {"observation": torch.zeros(1, layout["total_dim"])}
 
-``gen3_value_true_team_v1`` (v114) broke that assumption: the privileged value route reads its own
-training-and-eval-only Dict key, ``opp_true_team``, and RAISES rather than skipping when it is
-missing (a silent skip is the gen-12 dead-tail bug the seam exists to prevent). The two facts were
+``gen3_value_true_team_v1`` (v114, since DELETED — deletion pass L2) broke that assumption: the
+privileged value route read its own training-and-eval-only Dict key, ``opp_true_team``, and RAISED
+rather than skipping when it was missing (a silent skip is the gen-12 dead-tail bug the seam exists to prevent). The two facts were
 independently correct and had never been exercised together, so the FIRST launch that combined
-``--value-true-team`` with the forkserver compile preload
+that flag with the forkserver compile preload
 (``ai_v12_14_ladder_truevalue`` @ 377a5aa1) died two minutes in at env init: the preload's
 one-key trace input hit the seam and killed the forkserver bootstrap.
 
@@ -21,8 +21,7 @@ beside the seam that reads it, and every synthetic-obs caller builds its dict fr
 ``synthetic_obs`` instead of spelling one out.
 
 **The enable condition is the ATTRIBUTE, not the flag.** ``ExtraObsKey.attr`` names the extractor
-attribute whose non-``None``-ness the forward itself tests (``if self.true_team_value is not
-None:``), so the registry and the seam agree by construction rather than by two people reading the
+attribute whose non-``None``-ness the forward itself tests (``if self.<attr> is not None:``), so the registry and the seam agree by construction rather than by two people reading the
 same flag name. A config-derived predicate would drift the moment a flag's build condition grew a
 second term.
 
@@ -42,8 +41,9 @@ dict (``critic_route_audit``, ``edge_ablation_audit``, ``op_block_split_audit``,
 with the seam's own message naming the fix, which costs a retype rather than a GPU-hour — a
 different severity, tracked in ``designs/ops/TECH_DEBT_BACKLOG.md``. When you touch one, route it
 through ``zero_extra_obs`` rather than adding a key by hand. ``prober/model`` is NOT on that
-list: it REFUSES such a checkpoint on purpose, because a V re-forwarded from the recorded
-observation vector alone is V stripped of the privilege — a different quantity.
+list: it would refuse a checkpoint whose V reads a privileged key on purpose, because a V
+re-forwarded from the recorded observation vector alone is V stripped of the privilege — a
+different quantity (no such checkpoint can load today).
 """
 from __future__ import annotations
 
@@ -52,9 +52,6 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
 
-from agents.observation.true_team import (
-    TRUE_TEAM_KEY, TRUE_TEAM_SHAPE, empty_true_team_block,
-)
 
 #: The Dict keys every obs carries, on every path, with no flag. ``action_mask`` is consumed by the
 #: POLICY (the pointer head's mask), not by the extractor forward, so a trace input may omit it —
@@ -84,14 +81,12 @@ class ExtraObsKey:
         return np.zeros(self.shape, dtype=np.dtype(self.dtype))
 
 
-EXTRA_OBS_KEYS: Tuple[ExtraObsKey, ...] = (
-    # gen3_value_true_team_v1 (v114). The all-zero block is not a stand-in invented for the trace:
-    # it is exactly what `Gen3Env` / `RLPlayer` supply when no privileged view exists (ladder play,
-    # a battle with no `_opp_player` handle), so the graph traced against it IS the graph the
-    # workers run.
-    ExtraObsKey(key=TRUE_TEAM_KEY, attr="true_team_value", shape=TRUE_TEAM_SHAPE,
-                flag="value_true_team", build_zeros=empty_true_team_block),
-)
+#: 🚨 **EMPTY TODAY.** The one row this table ever held — `opp_true_team`, the privileged true-team
+#: value route (`gen3_value_true_team_v1`) — was deleted with that lever (deletion pass L2), so the
+#: extractor's forward reads `obs["observation"]` alone. The MECHANISM stays, with every synthetic-obs
+#: caller routed through it, because the next obs-key-adding flag re-arms the same trap at every
+#: hand-built site; `extra_obs_keys_test.py`'s drift gate fails on an undeclared read of any other key.
+EXTRA_OBS_KEYS: Tuple[ExtraObsKey, ...] = ()
 
 BY_KEY: Dict[str, ExtraObsKey] = {e.key: e for e in EXTRA_OBS_KEYS}
 if len(BY_KEY) != len(EXTRA_OBS_KEYS):                # a duplicate would silently shadow a row

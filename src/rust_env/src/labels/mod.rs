@@ -142,7 +142,7 @@ mod tests {
     fn a_declaration_is_refused_by_kind() {
         assert_eq!(declare(&[]).unwrap(), Vec::<&str>::new());
         let e = |n: &str| declare(&[n.to_string()]).unwrap_err();
-        assert!(e("dense_aux").contains("refused"), "{}", e("dense_aux"));
+        assert!(e("distill").contains("refused"), "{}", e("distill"));
         assert!(e("winprob").contains("HOST"), "{}", e("winprob"));
         assert!(e("opp_class").contains("HOST"), "{}", e("opp_class"));
         assert!(e("nope").contains("unknown"));

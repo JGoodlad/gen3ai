@@ -12,14 +12,13 @@ The cf label producer's own guard (`gen3_supply_guard_v1`) is
 The supply inventory of 2026-09-30 looked for one shape across the trainer: **a flag is set, the
 mechanism behind it silently delivers nothing, and the run then reads as a result about that
 lever.** v1 closed the cf label producer (`ai_v12_12_ladder_cflabels`: 10M steps at
-`--cf-winprob-coef 0.5`, zero labels). v2 closes the rest of that inventory:
+`--cf-winprob-coef 0.5`, zero labels). v2 closes the rest of that inventory (the `win_prob_rollout` lever it also covered was deleted with the R-rollout target, deletion pass L2):
 
 | lever (`--supply-starve-cycles` key) | what used to happen silently | declared floor |
 |---|---|---|
 | `self_play_pool` — `--self-play` | a pool that never seeds → every episode falls back to the BOT pool | 3 eval cycles |
 | `pfsp` — `--pfsp-scale` | no measured sentinel win-rate → the pool sample stays uniform (or stale) | 3 eval cycles |
 | `team_pfsp` — `--team-pfsp` | no self-play / exploiter team game → team sampling stays uniform | 5 updates |
-| `win_prob_rollout` — `--win-prob-rollout-target` | workers label nothing → every state keeps its terminal bit; a mis-wired run printed once and labelled nothing | 5 rollouts |
 | `fork` — `--fork-fraction` | the arm DISABLED itself with a print (no fork buffer / missing obs key / no handle / no ring), or every pass failed | 5 rollouts |
 | `search_teacher` — `--search-teacher` | selection returns no candidate (no loss traces) → the AWR / OPD terms fold nothing | 3 teacher cycles |
 
@@ -69,7 +68,6 @@ about that lever.` when a live lever delivered nothing, else its total.
 | `self_play_pool` | one COLLECTED eval cycle (`SelfPlayCallback._collect_pending`), **failed cycles included** | 1 if the pool is non-empty after the cycle | always (`--self-play` is the declaration) |
 | `pfsp` | the same cycle | sentinel win-rates measured | the cycle launched ≥ 1 sentinel (an empty pool is the pool guard's job) |
 | `team_pfsp` | one `TeamPFSPCallback` update (every 3 rollouts) | team games counted on POOL teams | `--exploiter`: always. `--self-play`: the pool is seeded AND the persisted `self_play_fraction` > 0 (`callbacks.team_pfsp_live_probe`) |
-| `win_prob_rollout` | one rollout | labels applied | `--win-prob-rollout-target` > 0 under `--critic winprob` |
 | `fork` | one rollout | fork rows injected (a failed pass = 0) | `--fork-fraction` > 0 |
 | `search_teacher` | one selection (crater / winprob_oneply); one refresh window in `--teacher-persistent` | candidates selected (a failed selection = 0); corrections ingested (persistent) | always |
 
@@ -88,7 +86,7 @@ of 3 could trip. So the self-play / PFSP counters ride the pool's `summary.json`
 `supply_guard`, stamped with THIS run dir — a fork's pool is seeded with its parent's summary, and
 inheriting the parent's streak would judge the fork by cycles it never ran), and the teacher's ride
 `<run>/teacher_cycle/supply_state.json`. Both are written BEFORE the judge raises. The rollout-cycle
-guards (`team_pfsp`, `win_prob_rollout`, `fork`) are per process: their floors are ~0.5–1.5M steps.
+guards (`team_pfsp`, `fork`) are per process: their floors are ~0.5–1.5M steps.
 
 **The FATAL is never raised from a graceful drain.** `SelfPlayCallback._on_training_end` drains the
 in-flight eval cycle with `_draining` set: the cycle is counted and the summary is loud, but a
@@ -97,13 +95,13 @@ completed run is not turned into exit 5 from inside its own shutdown path.
 ## TensorBoard
 
 `supply/selfplay_pool_dry_streak`, `supply/pfsp_dry_streak`, `eval/failed_cycles_total`,
-`supply/team_pfsp_dry_streak`, `supply/win_prob_rollout_dry_streak`, `supply/fork_dry_streak`,
+`supply/team_pfsp_dry_streak`, `supply/fork_dry_streak`,
 `supply/search_teacher_dry_streak`.
 
 ## Honest limits
 
 * **Arrival, not quality.** A guard checks that the lever delivered SOMETHING; a fork arm injecting
-  one row per rollout passes. The levers' own meters (`fork/*`, `win_prob/rollout_*`,
+  one row per rollout passes. The levers' own meters (`fork/*`,
   `teacher/yield`, `eval/pfsp_*`, `team_pfsp/n_measured`) still own quality.
 * **The search teacher guards CANDIDATES, not corrections.** A cycle that selects candidates and
   confirms none is a fact about the policy (the composition test measures ~15–25% per-candidate
@@ -118,8 +116,8 @@ completed run is not turned into exit 5 from inside its own shutdown path.
 `agents/training/lever_supply_test.py` (the guard, the exit mapping, the launcher on 1/3/5, the pool
 and PFSP guards through a real `_collect_pending`, run-level persistence across a simulated restart,
 a fork's inherited counters ignored, failed cycles, the drain, team-PFSP liveness, the teacher on
-empty and failed selections, `--bot-weights`, the warm-start wrap); the fork and rollout guards in
-`fork_callback_test.py` / `winprob_rollout_test.py`; `agents/training/lever_supply_integration_test.py`
+empty and failed selections, `--bot-weights`, the warm-start wrap); the fork guard in
+`fork_callback_test.py`; `agents/training/lever_supply_integration_test.py`
 with REAL processes — the trainer exits 3 on a `--bot-weights` typo (rc 1 on the parent commit) and
 on an illegal teacher team (the real Node validator; rc 0 on the parent commit), and (slow, sim) the
 `--debug` trainer exits 5 on a self-play run that can never seed and on a search teacher with no

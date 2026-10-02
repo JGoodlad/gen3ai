@@ -112,7 +112,6 @@ STEP_MODULES: Dict[str, str] = {
                                                    "per update (a TorchFunctionMode; no learner object)",
     "agents/training/teacher/buffer.py": "the teacher buffer the distill terms sample per minibatch",
     "agents/model/opp_intent.py": "the opponent-intent loss functions + label matching, per minibatch",
-    "agents/model/dense_aux_head.py": "the dense-aux head's loss helpers, per minibatch",
     "agents/model/ridealong_heads.py": "the ride-along heads' forward + loss, per minibatch (epoch 0)",
 }
 

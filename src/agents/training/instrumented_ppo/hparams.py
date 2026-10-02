@@ -109,30 +109,6 @@ class PpoHyperparameters:
     # move_latent arch toggle.
     move_belief_latent_coef: float = 0.0
 
-
-    # Set by train_rl_agent (gen3_defensive_entropy_v1). STATE-CONDITIONED entropy boost: on decisions the env
-    # flags `defensive_opportunity`=1 (a productive recovery/cure move is legal), the per-decision entropy bonus
-    # is multiplied by `defensive_entropy_boost` so the policy keeps EXPLORING defensive moves instead of
-    # collapsing to attacking — WITHOUT touching the reward (no stall incentive; the draw penalty + clock stay
-    # the guardrail). 1.0 = OFF (byte-identical entropy term). Annealed B→1 over `defensive_entropy_anneal_frac`
-    # of training (0 = constant). Training-only (like ent_coef): NOT version-locked, settable on resume.
-    defensive_entropy_boost: float = 1.0
-    defensive_entropy_anneal_frac: float = 0.0
-
-    # Set by train_rl_agent (gen3_bait_entropy_v1). The SECOND state-conditioned entropy boost — same
-    # mechanism, different flag: on decisions the env flags `bait_opportunity`=1 (the attack we would click
-    # is zero-damage against a revealed opponent BENCH mon), the per-decision entropy bonus is multiplied by
-    # `bait_entropy_boost`. This is the PROBE of the bait verdict's stated mechanism — "exploration
-    # starvation at a saturated action" (the whiff sits at p≈0.97, so the alternatives at p≈0.01-0.03 are
-    # never sampled and their advantage is never realized). 1.0 = OFF (byte-identical entropy term).
-    # Annealed B→1 over `bait_entropy_anneal_frac` (0 = constant); the anneal is what makes the probe
-    # two-sided — behaviour that survives the anneal means sampling was the block, behaviour that reverts
-    # convicts CREDIT. COMPOSES with the defensive boost MULTIPLICATIVELY (each factor is 1 off its own
-    # flag, so either boost alone is byte-identical to running it alone). Training-only: NOT version-locked,
-    # settable on resume.
-    bait_entropy_boost: float = 1.0
-    bait_entropy_anneal_frac: float = 0.0
-
     # Set by train_rl_agent. The SEARCH-TEACHER AWR policy-distillation weight:
     # search_teacher_coef * advantage-weighted CE toward the verified-better action A*, over a minibatch
     # sampled from the standalone `_correction_buffer` (NOT the rollout buffer — searched states are
@@ -199,49 +175,6 @@ class PpoHyperparameters:
     # (`winprob_head_refit_2026-09-09`). Requires `--critic winprob` (refused otherwise, never a
     # silent no-op). Training-only, resume-mutable; scales a loss, touches no forward pass.
     win_prob_strata_weight: float = 0.0
-    # gen3_winprob_lambda_v1: λ-RETURN targets for the WIN-PROB BCE, in [0, 1]. 1.0 = OFF and
-    # BIT-identical (the `WinProbLabelCallback` skips the recursion whole, so even the truncation
-    # convention is unchanged); below 1.0 each non-terminal state's target is
-    # `(1-λ)·V(s[t+1]) + λ·G[t+1]` over the collector's RECORDED values, anchored at the outcome on
-    # the state that ends the episode. It exists because one terminal bit copied to ~30 states is a
-    # noisy objective whose between-(cycle, opponent) share is only ~10-14%, so the weak axes
-    # shrink toward the marginal (`winprob_head_refit_2026-09-09`). Requires `--critic winprob`
-    # (refused otherwise, never a silent no-op). `win_prob_lambda_truncated` picks the
-    # buffer-boundary convention ("bootstrap" | "mask"). Training-only, resume-mutable; the targets
-    # are built in a CALLBACK before `train()`, so nothing here touches a forward pass.
-    win_prob_lambda: float = 1.0
-    win_prob_lambda_truncated: str = "bootstrap"
-    # gen3_winprob_rollout_target_v1: R-ROLLOUT MONTE-CARLO targets for the WIN-PROB BCE.
-    # `win_prob_rollout_target` is the FRACTION of the rollout buffer whose states get a measured
-    # `wins / R` target instead of the episode's copied terminal bit; 0.0 = OFF and BIT-identical
-    # (`WinProbLabelCallback` skips the whole path). It exists because one outcome bit copied to
-    # ~30 states carries one bit about the GAME and none about the STATE, while R continuations
-    # from a state carry R bits about that state. Requires `--critic winprob` AND `--cf-records`
-    # (both refused otherwise, never a silent no-op). 🚨 The cost is `fraction x R x ~104` policy
-    # decisions against the trainee's own `n_steps x n_envs`, paid as a STALL between collection
-    # and `train()` — read `win_prob/rollout_budget_multiple` before raising either.
-    # Training-only, resume-mutable; the targets are built in a CALLBACK before `train()`.
-    win_prob_rollout_target: float = 0.0
-    win_prob_rollout_r: int = 8
-    win_prob_rollout_mode: str = "replace"
-    # gen3_winprob_rollout_weight_v1: the per-row LOSS WEIGHT on the rollout-ANCHORED rows, >= 1.0.
-    # 1.0 = OFF and BIT-identical (the obs key is not declared, so the loss takes its unweighted
-    # expression unchanged). It is the ARITHMETIC half of arm 10: at the fraction that costs 1x the
-    # run's own simulation budget the anchored rows are ~0.12%% of the BCE's mass, so the head
-    # cannot move whatever the new labels say — this buys mass at FIXED simulation cost. The
-    # vector is renormalised to mean 1 over the scored rows, so the loss SCALE does not move.
-    # Requires `--win-prob-rollout-target > 0` (refused otherwise, never a silent no-op).
-    # Training-only, resume-inherited; the weights are built in a CALLBACK before `train()`.
-    win_prob_rollout_weight: float = 1.0
-    # gen3_dense_aux_v1: the DENSE AUXILIARY loss's weight, >= 0. 0.0 = OFF and BIT-identical --
-    # the head is not BUILT at all, so there is no module, no obs key, no callback and no term.
-    # Above 0 it folds `coef * mean(survival BCE, final-HP BCE, turns-left BCE)` over the
-    # END-OF-BATTLE facts of all twelve slots, back-filled to every state the way the win bit is.
-    # It exists because one terminal bit carries almost no BETWEEN-opponent variance (~10%), so
-    # the win-prob head shrinks the weak axes toward the marginal; 25 per-entity targets put
-    # gradient on those axes directly (KataGo, Wu 2019 §3). Requires `--critic winprob` (refused
-    # otherwise, never a silent no-op). The DOSE is resume-mutable; the head's EXISTENCE is not.
-    win_prob_dense_aux: float = 0.0
 
     # EXPLOITER DISTILLATION (gen3_exploiter_distill_v1). The ON-POLICY KL that pours a frozen per-team
     # SPECIALIST (an --exploiter checkpoint) into the generalist: for rollout states where the trainee

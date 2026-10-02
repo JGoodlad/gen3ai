@@ -26,7 +26,7 @@ from agents.battle.battle_event import (
 
 # ---------------------------------------------------------------------------
 # from_clause_move_source — the shared move-call wire parser (one source of truth for
-# both Gen3Battle._delegated_from and ChoiceBandTracker._is_delegated)
+# Gen3Battle._delegated_from, and formerly ChoiceBandTracker._is_delegated)
 # ---------------------------------------------------------------------------
 
 def _move_line(*tokens):

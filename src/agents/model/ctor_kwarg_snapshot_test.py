@@ -42,7 +42,8 @@ _NON_FLAG_PARAMS = frozenset({"observation_space", "layout", "mappings", "log_le
 # constructor with the critic routes they built, and each is now a `_DEAD_FEK_JUDGED` entry —
 # refused when a checkpoint recorded it ON, popped when OFF). The four `value_dist_*` kwargs LEFT it at
 # v131 (deletion pass L1, the distributional value head): `value_dist_mode` is `_DEAD_FEK_JUDGED`
-# (refused ON, popped `"none"`), the other three `_DEAD_FEK_INERT`.
+# (refused ON, popped `"none"`), the other three `_DEAD_FEK_INERT`. `value_true_team` and `dense_aux`
+# LEFT it at v132 (deletion pass L2): both are `_DEAD_FEK_JUDGED` (refused ON, popped OFF).
 # Sorted, so a diff reads as one line added or one line removed.
 CTOR_KWARGS_V96 = frozenset({
     "attend_unrevealed_opponents", "belief_grad_mode", "cf_evidential", "cf_shadow_critic",
@@ -59,7 +60,7 @@ CTOR_KWARGS_V96 = frozenset({
     "opp_belief_slots", "opp_intent", "opp_intent_grad_mode", "species_prior_fusion",
     "spread_belief", "spread_belief_nature", "t0_species_prior",
     "value_entity_pool", "value_entity_pool_full", "value_threat_inject",
-    "win_prob_mode", "q_winprob_mode", "value_true_team", "dense_aux",
+    "win_prob_mode", "q_winprob_mode",
     "ridealong_ensemble", "ridealong_rnd", "ridealong_adv", "ridealong_opp",
     "ridealong_rnd_variants",
 })

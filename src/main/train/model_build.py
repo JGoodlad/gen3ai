@@ -136,22 +136,12 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("move_belief_coef",              _PLAIN),   # move-belief reinjection loss (0.0 = off)
     ("move_belief_latent_coef",       _PLAIN),   # move-latent grading loss (0.0 = off)
     ("spread_belief_coef",            _PLAIN),   # spread-belief speed supervision (0.0 = off)
-    ("defensive_entropy_boost",       _PLAIN),   # gen3_defensive_entropy_v1
-    ("defensive_entropy_anneal_frac", _PLAIN),
-    ("bait_entropy_boost",            _PLAIN),   # gen3_bait_entropy_v1
-    ("bait_entropy_anneal_frac",      _PLAIN),
     ("hp_type_belief_coef",           _PLAIN),   # HP-type CE (0.0 = no direct CE)
     ("item_belief_coef",              _PLAIN),   # item CE (0.0 = no direct CE)
     ("td_aux_coef",                   _PLAIN),   # TD-consistency aux (0.0 = byte-identical)
     ("policy_grad_coef",                       _PLAIN),   # policy-gradient term weight (1.0 = upstream)
     ("intent_label_bot_weight",       _PLAIN),   # gen3_intent_label_bot_weight_v1 (1.0 = off)
     ("win_prob_strata_weight",        _PLAIN),   # gen3_winprob_strata_weight_v1 (0.0 = bit-identical)
-    ("win_prob_lambda",               _PLAIN),   # gen3_winprob_lambda_v1 (1.0 = bit-identical)
-    ("win_prob_lambda_truncated",     _PLAIN),   # ...its buffer-boundary convention (inert at 1.0)
-    ("win_prob_rollout_target",       _PLAIN),   # gen3_winprob_rollout_target_v1 (0.0 = bit-identical)
-    ("win_prob_rollout_r",            _PLAIN),   # ...continuations per sampled state (inert at 0.0)
-    ("win_prob_rollout_mode",         _PLAIN),   # ...replace | blend (inert at 0.0)
-    ("win_prob_rollout_weight",       _PLAIN),   # gen3_winprob_rollout_weight_v1 (1.0 = bit-identical)
     # gen3_fork_v1 — the FORK ARM. All six _PLAIN: they are read off the model by
     # `ForkArmCallback` once per rollout and never enter a forward pass or a weight shape.
     ("fork_fraction",                 _PLAIN),   # 0.0 = OFF and bit-identical
@@ -160,7 +150,6 @@ _TRAINING_HPARAMS: "tuple[tuple[str, str | None], ...]" = (
     ("fork_contested_absv",           _PLAIN),   # the |V-0.5| band; 0.0 = off (see the flag)
     ("fork_max_per_battle",           _PLAIN),   # forks per episode slice (inert at 0.0)
     ("fork_crn",                      _PLAIN),   # dice | dice_and_draws (inert at 0.0)
-    ("win_prob_dense_aux",            _PLAIN),   # gen3_dense_aux_v1 (0.0 = head not built)
     # SEARCH-TEACHER (coef 0 / flag absent = byte-identical). The buffer is filled by the
     # SearchTeacherCallback from worker shards; the AWR aux loss in train() samples it.
     ("search_teacher_coef",           _PLAIN),
@@ -417,22 +406,15 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
             win_prob_strata_weight=args.win_prob_strata_weight,
-            win_prob_lambda=args.win_prob_lambda,
             policy_gae_lambda=args.policy_gae_lambda,
             diagnostics_every=args.diagnostics_every,
             opp_intent_coef=float(args.opp_intent_coef or 0.0),
-            win_prob_lambda_truncated=args.win_prob_lambda_truncated,
-            win_prob_rollout_target=args.win_prob_rollout_target,
-            win_prob_rollout_r=args.win_prob_rollout_r,
-            win_prob_rollout_mode=args.win_prob_rollout_mode,
-            win_prob_rollout_weight=args.win_prob_rollout_weight,
             fork_fraction=args.fork_fraction,
             fork_branches=args.fork_branches,
             fork_contested_gap=args.fork_contested_gap,
             fork_contested_absv=args.fork_contested_absv,
             fork_max_per_battle=args.fork_max_per_battle,
             fork_crn=args.fork_crn,
-            win_prob_dense_aux=args.win_prob_dense_aux,
             cf_records=args.cf_records,
             cf_records_keep=args.cf_records_keep,
             cf_winprob_coef=args.cf_winprob_coef,
@@ -797,22 +779,15 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             policy_grad_coef=args.policy_grad_coef,
             intent_label_bot_weight=args.intent_label_bot_weight,
             win_prob_strata_weight=args.win_prob_strata_weight,
-            win_prob_lambda=args.win_prob_lambda,
             policy_gae_lambda=args.policy_gae_lambda,
             diagnostics_every=args.diagnostics_every,
             opp_intent_coef=float(args.opp_intent_coef or 0.0),
-            win_prob_lambda_truncated=args.win_prob_lambda_truncated,
-            win_prob_rollout_target=args.win_prob_rollout_target,
-            win_prob_rollout_r=args.win_prob_rollout_r,
-            win_prob_rollout_mode=args.win_prob_rollout_mode,
-            win_prob_rollout_weight=args.win_prob_rollout_weight,
             fork_fraction=args.fork_fraction,
             fork_branches=args.fork_branches,
             fork_contested_gap=args.fork_contested_gap,
             fork_contested_absv=args.fork_contested_absv,
             fork_max_per_battle=args.fork_max_per_battle,
             fork_crn=args.fork_crn,
-            win_prob_dense_aux=args.win_prob_dense_aux,
             cf_records=args.cf_records,
             cf_records_keep=args.cf_records_keep,
             cf_winprob_coef=args.cf_winprob_coef,

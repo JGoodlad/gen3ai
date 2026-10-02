@@ -22,10 +22,8 @@ from utils.rust_env import label_inventory as LI
 
 _NON_LABEL = {"observation", "action_mask"}
 _OFF = dict(emit_belief_labels=False, move_belief_mode="off", emit_win_target=False,
-            emit_win_row_weight=False, emit_fork_pg_mask=False, emit_spread_labels=False,
-            emit_opp_true_team=False, emit_dense_aux=False, emit_opp_intent_labels=False,
-            emit_hp_type_labels=False, emit_item_labels=False, emit_defensive_opportunity=False,
-            emit_bait_opportunity=False, distill_team_species=None)
+            emit_fork_pg_mask=False, emit_spread_labels=False, emit_opp_intent_labels=False,
+            emit_hp_type_labels=False, emit_item_labels=False, distill_team_species=None)
 _ENVS = {}
 
 

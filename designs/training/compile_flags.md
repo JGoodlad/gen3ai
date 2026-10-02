@@ -1391,23 +1391,21 @@ resolved config and held to that declaration every update:
 | lever | flag | in the batch | how it is declared |
 |---|---|---|---|
 | strata | `--win-prob-strata-weight > 0` (`--critic winprob`) | `var["strata_w"]` `[4]` + `var["strata_active"]` | from the FLAG (`TrainSetup._r1_levers`); a rollout with fewer than two opponent classes among its labelled rows gets the NEUTRAL weights (ones, `strata_active` False) — bit-identical to the unweighted BCE (`x * 1.0 == x`, forward and backward; `r1_declared_levers_test`), its row-weight diagnostics absent as before |
-| rollout weight | `--win-prob-rollout-weight > 1` + `--win-prob-rollout-target > 0` | `win_row_w` (obs key) | from the config + the key (`_r1_levers`, ONE predicate for `train()` and the declaration) |
 | fork mask | `--fork-fraction > 0` | `fork_pg_m` (obs key) | the key is in the env's obs space at startup; injected rows make a RAGGED last micro-batch, which runs eager by declaration |
-| entropy boosts | `--defensive-entropy-boost` / `--bait-entropy-boost` `> 1` | `defensive_opportunity` / `bait_opportunity` + their annealed factors as `var` tensors | static flag + key at startup |
-| label / privileged keys | `--win-prob-dense-aux`, `--value-true-team`, `--distill-*` (`distill_mask`), `--move-belief-mode` | `aux_*`, `opp_true_team`, `distill_mask`, `known_moves` | in the obs space at startup (only `opp_true_team` is read by the forward; the others ride the dict) |
+| label keys | `--distill-*` (`distill_mask`), `--move-belief-mode` | `distill_mask`, `known_moves` | in the obs space at startup (they ride the dict; the forward reads none) |
 
 `compile_regions.install` records the declaration (`R1Declaration`: static flags, obs keys, `var`
 keys); `check_r1_declared` runs at every compiled `train()` and raises a typed `CompileSentinelError`
 (FATAL_CONFIG via `compile_control.attach`) naming the field or key that moved — the dynamo
 sentinel's guard dump stays the backstop. The gate, the prewarm and the canary build R1's arguments
-through the same `_r1_static`. **Before this, the gate built R1 with both row-weight levers OFF**:
-a `--win-prob-rollout-weight` arm died at its first update, and a `--win-prob-strata-weight` arm at
+through the same `_r1_static`. **Before this, the gate built R1 with its row-weight levers OFF**:
+an anchor-weight arm (the lever is deleted) died at its first update, and a `--win-prob-strata-weight` arm at
 the first update after its self-play pool seeded (the strata weights are None on a one-class rollout,
 so the signature flipped on DATA). No recipe (`recipe.fresh`, `recipe.fork`) or registered baseline
-uses either lever. `r1_declared_levers_test` (routine, CPU, dynamo `eager`): per inventory row, the
+uses the strata lever. `r1_declared_levers_test` (routine, CPU, dynamo `eager`): per inventory row, the
 learner built from that config, the real startup lifecycle, two real updates (one opponent class,
-then two) — 0 compiles after the lock; reverting the declaration fails the strata and rollout-weight
-rows with the sentinel's UNDECLARED SIGNATURE FATAL.
+then two) — 0 compiles after the lock; reverting the declaration fails the strata
+row with the sentinel's UNDECLARED SIGNATURE FATAL.
 
 ### Every non-training model can use it
 

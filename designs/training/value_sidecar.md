@@ -59,14 +59,13 @@ bump and cannot make a checkpoint incompatible.
 ## 3. The file
 
 `<run>/value_sidecar/rows.jsonl` — append-only, one JSON object per line, never rotated. A
-`{"kind": "header", …}` row (schema, tag, critic mode, `v_is_probability`, `win_prob_lambda`,
-`win_prob_lambda_truncated`, fraction, seed, `max_turns`, `resumed`) opens each WRITER SESSION, so
+`{"kind": "header", …}` row (schema, tag, critic mode, `v_is_probability`, fraction, seed, `max_turns`, `resumed`; an OLD file's header also carries `win_prob_lambda` / `win_prob_lambda_truncated` / `win_prob_rollout_*`, which the writer no longer emits and the reader still reads) opens each WRITER SESSION, so
 the file stays plain JSONL a consumer can `for line in f` with no special case.
 
 🚨 **ONE HEADER PER PROCESS, NOT PER FILE.** It used to be skipped whenever the file was already
 non-empty, so a RESUME appended its rows under the FIRST process's header. A run resumed across a
 flag change then held one header saying `win_prob_lambda: 1.0` above a tail of rows whose `target`
-is a λ-return, and **nothing on disk said so** — every consumer would pool a 0/1 outcome with a soft
+was a λ-return (levers since deleted, deletion pass L2), and **nothing on disk said so** — every consumer would pool a 0/1 outcome with a soft
 return and report the average as a calibration. A header per session makes the change visible at the
 exact row it happens; `resumed` is `false` on the first and `true` on every later one, and
 `read_sidecar_segments` is what turns that into a refusal by ROW INDEX.
@@ -79,7 +78,7 @@ exact row it happens; `resumed` is `false` on the first and `true` on every late
 | `v` | READ — `rollout_buffer.values`, the value PPO actually used |
 | `win_logit` | DERIVED — the exact inverse link of `v` under winprob, `null` under shaped |
 | `target` / `target_known` | READ — the back-filled `win_target` / `win_mask` obs keys. 🚨 **HEADER-DEPENDENT** — see *What `target` IS* below |
-| `outcome` / `outcome_known` | READ — the PRE-λ terminal bit and its mask. Identical to `target` at λ = 1.0; the only route to the outcome below it; `null` when λ < 1 and the writer's stash is absent |
+| `outcome` / `outcome_known` | READ — the terminal bit and its mask. ALWAYS equal to `target` in a current file (the pre-λ stash is gone); on an OLD λ < 1 file it is the only route to the outcome, `null` when the stash was absent |
 | `opp_class` | READ — the `opp_class` obs key (bot / pool / stable / exploiter) |
 | `win_margin` | READ — the `win_margin` obs key |
 | `ep_len` / `ep_complete` | DERIVED — folded from `episode_starts` WITHIN this rollout |
@@ -94,7 +93,9 @@ file full of `target: 0.0` — which looks exactly like a critic scoring an unbr
 `main.train.callbacks` appends them in that order and the test pins it; at runtime an all-zero mask
 over a whole rollout is **reported** (`labels_unfilled`), never written as data.
 
-### 🚨 What `target` IS — one NAME, two MEANINGS, and only the header says which
+### 🚨 What `target` IS — one NAME, two MEANINGS in OLD files, and only the header says which
+
+**A file written today holds the terminal outcome only** (the λ-return and the R-rollout target are deleted — deletion pass L2). The table below is what an OLD file's header can say; `value_sidecar_read` still reads it.
 
 | header `win_prob_lambda` | `target` holds | `target_known` marks |
 |---|---|---|
@@ -107,8 +108,8 @@ pools schema-1 and schema-2 rows on `target`, or compares two runs' calibration 
 boundary without saying so, has averaged two different quantities under one column name. **Matching
 row counts are not evidence of a matching quantity.**
 
-🚨 **SO THE OUTCOME IS ITS OWN COLUMN, and it has to be.** `WinProbLabelCallback._apply_lambda`
-overwrites `win_target` **in place**, and afterwards the terminal bit exists nowhere else in the
+🚨 **SO THE OUTCOME WAS ITS OWN COLUMN, and an old file still depends on it.** The (deleted) `WinProbLabelCallback._apply_lambda`
+overwrote `win_target` **in place**, and afterwards the terminal bit exists nowhere else in the
 buffer. It is **not** recoverable from the rows:
 
 * the λ-return carries the outcome at weight **λ^d** for a distance `d` to the terminal that no
@@ -118,7 +119,7 @@ buffer. It is **not** recoverable from the rows:
   Reading it as a win is the circular move this project has a standing rule against;
 * `target_known` under `bootstrap` marks rows whose episode never finished at all.
 
-So that callback **publishes the pre-overwrite `(y, mask)` on the model** immediately before
+(Historical — the stash is gone.) That callback **published the pre-overwrite `(y, mask)` on the model** immediately before
 destroying it (cleared at `_on_rollout_start`, so a stale array cannot label the next rollout's
 states), and the sidecar — which runs immediately after — writes it as `outcome` / `outcome_known`.
 At λ = 1.0 no recursion runs and the columns are the target itself. When λ < 1 and the stash is

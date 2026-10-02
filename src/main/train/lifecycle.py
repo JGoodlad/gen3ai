@@ -166,22 +166,15 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         policy_grad_coef=float(getattr(model, "policy_grad_coef", 1.0)),
         intent_label_bot_weight=float(getattr(model, "intent_label_bot_weight", 1.0)),
         win_prob_strata_weight=float(getattr(model, "win_prob_strata_weight", 0.0)),
-        win_prob_lambda=float(getattr(model, "win_prob_lambda", 1.0)),
         policy_gae_lambda=float(model.gae_lambda),
         diagnostics_every=int(getattr(model, "diagnostics_every", 1)),
         opp_intent_coef=float(getattr(model, "opp_intent_coef", 0.0) or 0.0),
-        win_prob_lambda_truncated=str(getattr(model, "win_prob_lambda_truncated", "bootstrap")),
-        win_prob_rollout_target=float(getattr(model, "win_prob_rollout_target", 0.0)),
-        win_prob_rollout_r=int(getattr(model, "win_prob_rollout_r", 8)),
-        win_prob_rollout_mode=str(getattr(model, "win_prob_rollout_mode", "replace")),
-        win_prob_rollout_weight=float(getattr(model, "win_prob_rollout_weight", 1.0)),
         fork_fraction=float(getattr(model, "fork_fraction", 0.0)),
         fork_branches=int(getattr(model, "fork_branches", 3)),
         fork_contested_gap=float(getattr(model, "fork_contested_gap", 0.4)),
         fork_contested_absv=float(getattr(model, "fork_contested_absv", 0.0)),
         fork_max_per_battle=int(getattr(model, "fork_max_per_battle", 1)),
         fork_crn=str(getattr(model, "fork_crn", 'dice_and_draws')),
-        win_prob_dense_aux=float(getattr(model, "win_prob_dense_aux", 0.0)),
         cf_records=bool(getattr(model, "cf_records", False)),
         cf_records_keep=int(getattr(model, "cf_records_keep", 512)),
         cf_winprob_coef=float(getattr(model, "cf_winprob_coef", 0.0)),
@@ -221,8 +214,8 @@ def _run_roundtrip_test(model, layout: dict, policy_kwargs: dict, debug: bool = 
         )
         dev = next(reloaded.policy.parameters()).device
         # The round-trip smoke builds its OWN obs dict, so it owes every flag-gated Dict key this
-        # extractor's forward reads — the privileged value route RAISES on a missing
-        # `opp_true_team` (a silent skip is the gen-12 dead-tail bug). Built from the DECLARED
+        # extractor's forward reads (none today; a missing one RAISES — a silent skip is the
+        # gen-12 dead-tail bug). Built from the DECLARED
         # registry rather than by hand: `agents.model.extra_obs_keys`, whose docstring records the
         # launch the hand-built version cost.
         dummy_obs = synthetic_obs(reloaded.policy.features_extractor, total_dim,

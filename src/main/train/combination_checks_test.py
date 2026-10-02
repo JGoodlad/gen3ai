@@ -215,36 +215,16 @@ ARGVS: dict[str, list[str]] = {
     # REQUIRES winprob"), so it deliberately does NOT carry `_WP`: the default `shaped` critic is
     # exactly the configuration it refuses.
     "winprob_strata_needs_the_winprob_critic": [*_SH, "--win-prob-strata-weight", "1.0"],
-    # gen3_winprob_lambda_v1 — the same shape: the λ-return target only means anything when the
-    # win-prob BCE IS the value loss, and under `shaped` the values it blends are not probabilities.
-    "winprob_lambda_needs_the_winprob_critic": [*_SH, "--win-prob-lambda", "0.9"],
-    # gen3_winprob_rollout_target_v1 — the same shape again: a measured MC target only means
-    # anything when the win-prob BCE IS the value loss.
-    "winprob_rollout_needs_the_winprob_critic": [*_SH, "--win-prob-rollout-target", "0.01"],
-    # ...and the ring is where the replayable episode lives, so `_WP` (which does NOT carry
-    # --cf-records) is exactly the argv this one refuses.
-    "winprob_rollout_needs_cf_records": _WP + ["--win-prob-rollout-target", "0.01"],
-    # gen3_winprob_rollout_weight_v1 — the weight with no fraction has no anchored row to weigh,
-    # so the argv that trips it is the weight ALONE on an otherwise complete win-prob argv.
-    # gen3_fork_v1 — the fork arm's five. The first two are the `winprob_rollout_*` shapes again
-    # (a treatment that means nothing without the critic it re-aims, and one that resolves nothing
-    # without the record ring); the last three are obs keys a branch row cannot honestly fill.
+    # gen3_fork_v1 — the fork arm's three: a treatment that means nothing without the critic it
+    # re-aims, one that resolves nothing without the record ring, and the strata weight (a branch
+    # row has no material margin to stratify on).
     "fork_needs_the_winprob_critic": [*_SH, "--fork-fraction", "0.02"],
     "fork_needs_cf_records": _WP + [*_PY, "--fork-fraction", "0.02"],
     # gen3_supply_guard_v1 — a live cf-buffer coefficient whose (trainer-spawned) producer would
     # have no ring to label: `_WP` does not carry --cf-records.
     "cf_consumer_needs_label_supply": _WP + ["--cf-winprob-coef", "0.5"],
-    "fork_refuses_value_true_team":
-        _WP + ["--cf-records", "--fork-fraction", "0.02", "--value-true-team"],
-    "fork_refuses_dense_aux":
-        _WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-dense-aux", "0.1"],
     "fork_refuses_strata_weight":
         _WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-strata-weight", "0.5"],
-    "winprob_rollout_weight_needs_the_rollout_target":
-        _WP + ["--cf-records", "--win-prob-rollout-weight", "64"],
-    # gen3_dense_aux_v1 — the same shape a third time: dense targets on the win-prob head only
-    # move the value function when that head IS the value function.
-    "dense_aux_needs_the_winprob_critic": [*_SH, "--win-prob-dense-aux", "1.0"],
     "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
     "winprob_critic_refuses_draw_penalty": ["--critic", "winprob",
                                             "--terminal-indicator", "--victory-value", "1.0",

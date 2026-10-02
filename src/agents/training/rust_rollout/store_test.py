@@ -193,8 +193,8 @@ def test_the_arena_refuses_past_its_declared_capacity_and_a_game_past_max_rows()
 
 def test_unfillable_keys_are_refused_by_name():
     sp = spaces.Dict({"observation": spaces.Box(0, 1, (3,), np.float32),
-                      "aux_target": spaces.Box(0, 1, (25,), np.float32)})
-    with pytest.raises(S.UnfillableKey, match="aux_target"):
+                      "some_unported_key": spaces.Box(0, 1, (25,), np.float32)})
+    with pytest.raises(S.UnfillableKey, match="some_unported_key"):
         S.obs_key_sources(sp, ())
 
 

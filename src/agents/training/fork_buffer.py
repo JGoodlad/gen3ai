@@ -35,7 +35,7 @@ The fork step stays FULLY IN the value terms — its return is its own branch's 
 point of playing the branch at all.
 
 The carrier is the ``fork_pg_m`` obs key: a per-row multiplier that survives
-``RolloutBuffer.get()``'s shuffle aligned to its own row, the same mechanism ``win_row_w`` uses.
+``RolloutBuffer.get()``'s shuffle aligned to its own row, the same mechanism ``win_target`` / ``win_mask`` use.
 Collected rows carry the env's 1.0 placeholder, so the term is unchanged wherever the arm did not
 reach.
 
@@ -66,7 +66,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from agents.observation.true_team import TRUE_TEAM_KEY
 from agents.training.fork_arm import PG_MASK_KEY
 from agents.training.opp_intent_labels import KIND_UNKNOWN, SWITCH_SLOT_NONE
 
@@ -108,9 +107,6 @@ FILL: Dict[str, Tuple[Any, str]] = {
     "opp_class": (_const_block(_OPP_CLASS_POOL, (1,), np.int64),
                   "the branch WAS played against a self-like (pool) opponent — the ecology "
                   "approximation, labelled rather than hidden"),
-    "win_row_w": (_const_block(1.0, (1,), np.float32),
-                  "a MULTIPLIER: an injected row is weighed normally. `--win-prob-rollout-weight` "
-                  "doses ROLLOUT ANCHORS, which an injected row is not"),
     # ── not reconstructible outside the env ⇒ NOT SCORED ────────────────────────────────────
     "win_margin": (_const_block(0.0, (1,), np.float32),
                    "Phi_mat lives in the env's reward manager and a branch has none. 0.0 is the "
@@ -141,31 +137,10 @@ FILL: Dict[str, Tuple[Any, str]] = {
 #: Keys whose presence REFUSES the arm rather than being filled, each with the reason. Separated
 #: from "not in the table at all" so the refusal can say *why* instead of only *that*.
 REFUSE_KEYS: Dict[str, str] = {
-    TRUE_TEAM_KEY:
-        "--value-true-team declares `opp_true_team`, which the extractor's value route READS and "
-        "RAISES on when missing. A branch is played by two RLPlayers with no env, so there is no "
-        "`battle2` to build the opponent's TRUE party from, and a zero block would be a fabricated "
-        "privileged input rather than an absent one. --value-true-team is a CEILING PROBE, not a "
-        "shippable channel; run it or the fork arm, not both.",
-    "defensive_opportunity":
-        "--defensive-entropy-boost declares `defensive_opportunity`, a REAL present-state fact "
-        "(is a recovery/cure legal right now) computed inside Gen3Env. A branch has no env, and a "
-        "0.0 fill would tell the state-conditioned entropy boost that every injected row is a "
-        "non-defensive state — a systematic, state-dependent lie to the exploration schedule.",
-    "bait_opportunity":
-        "--bait-* declares `bait_opportunity`, a REAL present-state fact computed inside Gen3Env; "
-        "see `defensive_opportunity`. (The bait hunt is CLOSED, so this should not be on.)",
     "distill_mask":
         "distillation declares `distill_mask`, which gates WHICH rows the teacher KL scores. An "
         "injected row has no teacher decision behind it, and both fills are wrong: 1.0 scores a "
         "row the teacher never saw, 0.0 silently shrinks the distillation dose by the fork rate.",
-    "aux_target":
-        "--win-prob-dense-aux declares `aux_target`/`aux_mask`/`aux_turn`. The targets are the "
-        "END-OF-BATTLE per-slot facts of the episode, back-filled by DenseAuxLabelCallback from "
-        "`battle1` at the terminal — which for a branch is a battle this process never held. "
-        "Masking every injected row out would make the dense head's dose a function of the fork "
-        "rate; supplying one would need the branch's own terminal facts threaded back from the "
-        "worker. Neither is built, so the combination REFUSES rather than reading half a dose.",
 }
 
 

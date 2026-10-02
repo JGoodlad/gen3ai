@@ -38,8 +38,8 @@ forkserver is a fresh interpreter that never parsed argv, which is exactly why
 
 🚨 It was `{"observation": torch.zeros(1, layout["total_dim"])}` — one key — until 2026-09-09, and
 that literal killed `ai_v12_14_ladder_truevalue` (377a5aa1) two minutes into its launch, at env
-init, exit 1. `--value-true-team`'s privileged value route reads its own Dict key `opp_true_team`
-and RAISES rather than skipping when it is absent; inside the forkserver that raise kills the
+init, exit 1. The (since deleted) `--value-true-team` privileged value route read its own Dict key
+`opp_true_team` and RAISED rather than skipping when it was absent; inside the forkserver that raise killed the
 bootstrap, so `SubprocVecEnv` construction fails in the parent. `preload_trace_obs` now builds from
 the DECLARED registry (`agents.model.extra_obs_keys`), which is also what `compile_trainer`,
 `compile_opponents` and `warmstart` use — all three carried the identical defect on the same argv,
@@ -89,10 +89,11 @@ def preload_trace_obs(fe: Any, layout: Dict[str, Any]) -> Dict[str, Any]:
 
     🚨 This used to be a literal one-key dict, and that is exactly how the first
     `--value-true-team` + preload launch died at env init two minutes in: the privileged value
-    route RAISES on a missing `opp_true_team` (a silent skip is the gen-12 dead-tail bug), the
+    route RAISED on a missing `opp_true_team` (a silent skip is the gen-12 dead-tail bug), the
     raise killed the forkserver bootstrap, and `SubprocVecEnv` construction failed in the parent.
-    The all-zero blocks `agents.model.extra_obs_keys` supplies are the same "no privileged view"
-    encoding a real env emits when it has none, so the traced graph IS the workers' graph.
+    The all-zero blocks `agents.model.extra_obs_keys` supplies (none today, the lever is deleted)
+    are the same "no privileged view" encoding a real env emits when it has none, so the traced
+    graph IS the workers' graph.
     """
     from agents.model.extra_obs_keys import synthetic_obs
     return synthetic_obs(fe, int(layout["total_dim"]))

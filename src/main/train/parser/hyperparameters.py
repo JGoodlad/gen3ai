@@ -138,37 +138,6 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                         help="LR floor for annealing (required with --anneal-lr-start-steps). "
                              "Separate from --min-lr used by AdaptivePPO.")
     parser.add_argument("--ent-coef", type=float, default=0.02, help="Entropy coefficient (exploration bonus)")
-    parser.add_argument("--defensive-entropy-boost", "--defensive_entropy_boost", dest="defensive_entropy_boost",
-                        type=float, default=1.0,
-                        help="STATE-CONDITIONED entropy boost (gen3_defensive_entropy_v1): multiply the "
-                             "per-decision entropy bonus by this factor ON decisions where the active mon has a "
-                             "productive defensive move legal (HP-recovery with HP to restore, or a self/team "
-                             "status-cure with a status to clear). Keeps the policy EXPLORING defensive moves "
-                             "(Recover/Soft-Boiled/Wish/Refresh/Heal Bell) instead of collapsing to attacking, "
-                             "WITHOUT touching the reward (no stall incentive — the draw penalty + no-progress "
-                             "clock stay the guardrail; the model only keeps healing if the returns reward it). "
-                             "1.0 = OFF (byte-identical). Try 3.0. TRAINING-only (not version-locked).")
-    parser.add_argument("--defensive-entropy-anneal-frac", "--defensive_entropy_anneal_frac",
-                        dest="defensive_entropy_anneal_frac", type=float, default=0.0,
-                        help="Anneal --defensive-entropy-boost linearly back to 1.0 over this FRACTION of total "
-                             "--steps (e.g. 0.5 = boost fades to off by the halfway point). 0.0 = constant boost "
-                             "(default). Lets exploration fade as the policy learns defensive value.")
-    parser.add_argument("--bait-entropy-boost", "--bait_entropy_boost", dest="bait_entropy_boost",
-                        type=float, default=1.0,
-                        help="STATE-CONDITIONED entropy boost (gen3_bait_entropy_v1): multiply the "
-                             "per-decision entropy bonus by this factor ON bait-opportunity decisions — the "
-                             "attack we would click deals ZERO damage to an alive, revealed opponent BENCH mon "
-                             "(the board the bait loop is fired from). This is the SAMPLING-side probe of the "
-                             "bait verdict: the whiff sits at p~0.97, so the alternatives at p~0.01-0.03 are "
-                             "never sampled and their advantage is never realized. Does NOT touch the reward "
-                             "and does not tell the policy which action to take. 1.0 = OFF (byte-identical). "
-                             "Try 3.0. TRAINING-only (not version-locked, settable on resume).")
-    parser.add_argument("--bait-entropy-anneal-frac", "--bait_entropy_anneal_frac",
-                        dest="bait_entropy_anneal_frac", type=float, default=0.0,
-                        help="Anneal --bait-entropy-boost linearly back to 1.0 over this FRACTION of total "
-                             "--steps. 0.0 = constant boost (default). This is what makes the probe TWO-SIDED: "
-                             "a whiff rate that falls and STAYS down past the anneal means sampling was the "
-                             "block; one that reverts convicts CREDIT (and the off-policy levers inherit).")
     parser.add_argument("--gamma", dest="gamma", type=float, default=None,
                         help="PPO discount factor. UNSET resolves to 0.9999 under --critic shaped "
                              "(the historical hardcoded value, which PBRS_GAMMA must equal for the "
@@ -191,9 +160,7 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "knob of the ADVANTAGES the clipped surrogate is trained on, and of the "
                              "`returns` the scalar value loss regresses toward. UNSET resolves to 0.80, "
                              "the value every run to date trained with (it was hardcoded), so the default "
-                             "is byte-identical. NOT --win-prob-lambda: that is the CRITIC's lambda-RETURN "
-                             "target for the win-prob BCE, computed in a separate post-collection pass; "
-                             "this one never touches the BCE target. Must be in [0, 1]. TRAINING-only: "
+                             "is byte-identical. Must be in [0, 1]. TRAINING-only: "
                              "recorded in model_config.json and INHERITED on a flagless resume "
                              "(name it to change it on a resume/fork). Logged as hparams/gae_lambda.")
     parser.add_argument("--diagnostics-every", "--diagnostics_every", dest="diagnostics_every",

@@ -52,7 +52,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 from utils.bridge.reconstruction import RECON_SUFFIX
 
@@ -188,7 +188,7 @@ class CfRecordRing:
 def safe_tag(battle_tag: Optional[str]) -> str:
     """A filename-safe battle tag. Tags look like ``battle-gen3ou-17``; be defensive anyway.
 
-    PUBLIC because the ring's filename is a JOIN KEY, not just a name: `win_prob_rollout.record_key`
+    PUBLIC because the ring's filename is a JOIN KEY, not just a name: :func:`record_key`
     builds the same ``<pid>_<tag>`` handle in the env worker so a rollout-buffer row can be matched
     back to its record here. Two spellings of the sanitiser would make that join silently miss on
     exactly the tags that needed sanitising.
@@ -200,3 +200,38 @@ def safe_tag(battle_tag: Optional[str]) -> str:
 
 #: The historical private name, kept so nothing that imported it moved.
 _safe_tag = safe_tag
+
+
+def record_key(pid: int, battle_tag: Optional[str]) -> str:
+    """The handle that joins a BUFFER ROW to a reconstruction record on disk.
+
+    `CfRecordRing` names every file ``<ns:019d>_<pid>_<tag>_reconstruction.json``, so
+    ``<pid>_<tag>`` identifies the episode uniquely: the tag counter is per BridgeSession (it
+    repeats across env workers) and the pid disambiguates the workers. Captured in the env worker,
+    where both halves are known, and matched by SUFFIX in :func:`index_records`.
+    """
+    return f"{int(pid)}_{safe_tag(battle_tag)}"
+
+
+def index_records(records_dir) -> Dict[str, str]:
+    """``{record_key: path}`` over a ring directory, NEWEST wins.
+
+    One ``readdir`` per rollout, not one ``stat`` per handle: the ring holds ``--cf-records-keep``
+    files (512 by default) and the filenames sort chronologically by construction, so the newest
+    record for a key is simply the last one seen in sorted order.
+    """
+    out: Dict[str, str] = {}
+    try:
+        names = sorted(os.listdir(str(records_dir)))
+    except OSError:
+        return out
+    for name in names:
+        if not name.endswith(RECON_SUFFIX):
+            continue
+        stem = name[: -len(RECON_SUFFIX)]
+        # `<ns>_<pid>_<tag>` — drop the 19-digit timestamp, keep `<pid>_<tag>`.
+        cut = stem.find("_")
+        if cut < 0:
+            continue
+        out[stem[cut + 1:]] = os.path.join(str(records_dir), name)
+    return out

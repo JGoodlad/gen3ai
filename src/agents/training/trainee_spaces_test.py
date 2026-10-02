@@ -88,10 +88,6 @@ def test_the_bare_argv_carries_only_the_win_prob_labels():
 
 @pytest.mark.parametrize("gate,keys", [
     ("fork_pg_mask", {"fork_pg_m"}),
-    ("dense_aux", {"aux_target", "aux_mask", "aux_turn"}),
-    ("opp_true_team", {"opp_true_team"}),
-    ("defensive_opportunity", {"defensive_opportunity"}),
-    ("bait_opportunity", {"bait_opportunity"}),
     ("distill_mask", {"distill_mask"}),
 ])
 def test_each_gate_opens_exactly_its_keys(gate, keys):
@@ -111,9 +107,8 @@ def test_each_gate_opens_exactly_its_keys(gate, keys):
 def test_the_derived_gates():
     from agents.training.trainee_spaces import label_gates
 
-    g = label_gates(move_belief_mode="both", emit_win_row_weight=True)
-    assert g.belief_labels and g.known_moves and not g.win_row_weight   # no weight without a target
-    assert label_gates(emit_win_target=True, emit_win_row_weight=True).win_row_weight
+    g = label_gates(move_belief_mode="both")
+    assert g.belief_labels and g.known_moves            # the move belief needs the belief labels
     assert not label_gates(move_belief_mode="unrevealed").known_moves
 
 

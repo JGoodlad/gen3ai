@@ -410,7 +410,6 @@ class RustCollector:
         model._rust_row_versions = versions
         model._rust_row_provenance = rep.provenance       # K9(b)'s violation dump (consistency._dump)
         model._rust_version = self.version
-        model._win_prob_terminal_outcome = None
         self._record(model, snap)
         callback.on_rollout_end()
         return True

@@ -238,10 +238,10 @@ def collect_rollouts_async(
             # async collector owns the per-env row, so it records it inline; the WinProbLabelCallback's
             # wave-batched on_step can't recover (env→row). No-op unless the win-prob head is on (the
             # scratch is allocated only then by the callback's on_rollout_start, run just above).
-            # gen3_winprob_rollout_target_v1: the per-decision RECONSTRUCTION HANDLE, recorded on
-            # EVERY row (not only a done one) and inline for the same env→row reason. No-op unless
-            # `--win-prob-rollout-target` is on — the scratch is allocated only then, by
-            # WinProbLabelCallback.on_rollout_start, and the env publishes the key only then.
+            # gen3_fork_v1: the per-decision RECONSTRUCTION HANDLE, recorded on EVERY row (not only
+            # a done one) and inline for the same env→row reason. No-op unless `--fork-fraction` is
+            # on — the scratch is allocated only then, by WinProbLabelCallback.on_rollout_start,
+            # and the env publishes the key only then.
             _wp_keys = getattr(model, "_win_handle_keys", None)
             if _wp_keys is not None and info.get("wp_handle"):
                 _wp_keys[t, i] = str(info["wp_handle"])
@@ -250,12 +250,6 @@ def collect_rollouts_async(
                 _win_scr = getattr(model, "_win_terminal_scratch", None)
                 if _win_scr is not None and "win_outcome" in info:
                     _win_scr[t, i] = float(info["win_outcome"])
-                # gen3_dense_aux_v1: the DENSE AUXILIARY terminal facts, captured at the same
-                # row for the same reason. No-op unless the head is on (the scratch is allocated
-                # only then, by DenseAuxLabelCallback.on_rollout_start, run just above).
-                _daux_scr = getattr(model, "_dense_aux_scratch", None)
-                if _daux_scr is not None:
-                    _daux_scr.record(t, i, info)
 
             # Advance this env's current obs/episode-start for its NEXT action. On a done step the
             # worker auto-reset, so new_obs is already the fresh episode's first obs (mask included).

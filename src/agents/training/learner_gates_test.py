@@ -428,7 +428,10 @@ _PAUSED_ARGVS = ("argv_L95.txt", "scripts/argv_T32_STANDIN.txt", "validation/rer
 def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     """The four paused learner-battery arms (two of them `--matmul-precision high`, none typing
     `--behaviour-check`) must still launch: K9(b) resolves to `fatal` at the TF32 bar, and no K9 rule
-    refuses them. The launcher-only flags are stripped exactly as the launcher strips them."""
+    refuses them. The launcher-only flags are stripped exactly as the launcher strips them, and so
+    are the flags DELETED since the battery was recorded (deletion pass L2: the recorded argvs carry
+    the entropy-boost / true-team defaults; a pinned launch is judged by its OWN commit's parser, so
+    HEAD's parser never sees them — what K9 does with the REST of the argv is what this pins)."""
     import shlex
 
     from main.train.combination_checks import failing_checks
@@ -438,9 +441,15 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
 
     toks = shlex.split(repo_path(*(_BATTERY + name).split("/")).read_text())
     argv, i = [], 0
+    dead_valued = {"--defensive-entropy-boost", "--defensive-entropy-anneal-frac",
+                   "--bait-entropy-boost", "--bait-entropy-anneal-frac"}
+    dead_bool = {"--value-true-team", "--no-value-true-team"}
     while i < len(toks):
-        if toks[i] in ("--restart-interval-hours", "--pin-commit"):     # launcher-only
-            i += 2
+        if toks[i] in ("--restart-interval-hours", "--pin-commit") or toks[i] in dead_valued:
+            i += 2                                                    # launcher-only / deleted
+            continue
+        if toks[i] in dead_bool:
+            i += 1
             continue
         argv.append(toks[i])
         i += 1

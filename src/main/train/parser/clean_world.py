@@ -398,79 +398,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "auxiliary readout under `shaped`, not the objective the measurement "
                              "indicts). Watch win_prob/strata_share_*, strata_w_entropy and "
                              "loss vs loss_unweighted. TRAINING-only, resume-inherited.")
-    # --- gen3_winprob_lambda_v1 (2026-09-09, the critic ladder's arm 8): λ-RETURN targets for the
-    #     win-prob BCE. The third knob on the SAME loss — one scales it, `--win-prob-strata-weight`
-    #     re-prices its MIX, and this one changes what it REGRESSES TOWARD. ---
-    parser.add_argument("--win-prob-lambda", "--win_prob_lambda",
-                        dest="win_prob_lambda", type=float, default=None,
-                        help="λ-RETURN targets for the win-prob BCE, in [0, 1]. 1.0 (the DEFAULT) "
-                             "= OFF and BIT-identical: every state of an episode is trained "
-                             "against the episode's terminal 0/1 outcome, as today. Below 1.0 the "
-                             "target becomes a backward blend of the network's OWN recorded "
-                             "later estimates -- G[t] = (1-lambda)*V(s[t+1]) + lambda*G[t+1], "
-                             "anchored at G = y on the state that ENDS the episode (gamma = 1 and "
-                             "the clean-world stream is terminal-only, so an n-step return IS "
-                             "V(s[t+n])); a state d steps from its terminal keeps weight "
-                             "lambda**d on the outcome. WHY: one bit copied to ~30 states is a "
-                             "very noisy target, and the head refit showed the win-prob critic's "
-                             "conditional miscalibration is a TARGET defect -- only 10-14%% of "
-                             "that label's variance lies BETWEEN (cycle, opponent) cells, so an "
-                             "on-policy learner shrinks the weak axes toward the marginal and the "
-                             "turn-1 value barely separates opponents (spread ratio ~0.1 at turn "
-                             "1 vs ~0.5-0.8 over all states). Later values already separate them, "
-                             "so this moves that information BACKWARD within the episode along a "
-                             "far less noisy channel "
-                             "(designs/research_state/measurements/winprob_head_refit_2026-09-09/). "
-                             "REQUIRES --critic winprob (refused otherwise -- under `shaped` the "
-                             "buffer's values are a shaped return in PopArt units, not a "
-                             "probability). Watch win_prob/lambda_target_shift, "
-                             "lambda_bootstrap_frac and lambda_loss vs lambda_loss_terminal. "
-                             "TRAINING-only, resume-inherited.")
-    parser.add_argument("--win-prob-lambda-truncated", "--win_prob_lambda_truncated",
-                        dest="win_prob_lambda_truncated", choices=("bootstrap", "mask"),
-                        default=None,
-                        help="How a TRUNCATED episode (still running when the rollout buffer "
-                             "filled) is targeted under --win-prob-lambda < 1. `bootstrap` (the "
-                             "DEFAULT) gives its states the bootstrap value V(s_T) from the same "
-                             "post-rollout forward SB3's own GAE bootstrap uses, which UNMASKS "
-                             "rows that carry no target today; `mask` leaves them excluded exactly "
-                             "as they are now. It is a FLAG rather than a constant so a read can "
-                             "attribute an effect to the target change rather than to the extra "
-                             "rows -- win_prob/lambda_unmasked counts them per rollout. INERT at "
-                             "--win-prob-lambda 1.0 (the recursion is skipped whole).")
-    # --- gen3_dense_aux_v1 (2026-09-10, the critic ladder's arm 9): DENSE AUXILIARY targets. The
-    #     fourth knob on the same objective — one scales it, strata re-prices its MIX, lambda
-    #     re-aims it, and this one ADDS 25 dense targets beside it that share the win's cause. ---
-    parser.add_argument("--win-prob-dense-aux", "--win_prob_dense_aux",
-                        dest="win_prob_dense_aux", type=float, default=None,
-                        help="DENSE AUXILIARY targets for the win-prob critic's trunk, coefficient "
-                             ">= 0. 0.0 (the DEFAULT) = OFF and BIT-identical: the head is not "
-                             "BUILT, so there is no module, no obs key, no callback and no loss "
-                             "term. Above 0 it builds a small MLP on `value_pooled` -- the SAME "
-                             "tensor the win head reads -- predicting, for every state, the "
-                             "episode's END-OF-BATTLE facts back-filled the way the win bit is: "
-                             "SURVIVAL of each of the 12 slots (our 6 then theirs, in the "
-                             "observation's own team order), each slot's FINAL HP FRACTION, and "
-                             "the scaled TURNS LEFT -- 25 sigmoid outputs, three masked-mean BCE "
-                             "terms averaged, folded at this coefficient. The per-side KO counts "
-                             "are DERIVED from survival and published as meters, never predicted. "
-                             "WHY: one terminal bit copied to ~30 states carries only ~10%% of its "
-                             "variance BETWEEN opponents, so the head shrinks the weak axes "
-                             "(opponent, own team) toward the marginal although its features "
-                             "carry them, and four 10M levers moved nothing at +-0.01. The "
-                             "literature's answer to a one-bit terminal signal is KataGo's (Wu "
-                             "2019 section 3): dense auxiliary targets that share the win's CAUSE "
-                             "-- ownership of every point and the final score beside the win -- "
-                             "reported as a large gain in learning efficiency. Per-Pokemon "
-                             "end-of-battle outcomes are our analogue, and each one is a fact "
-                             "about a NAMED ENTITY, so its gradient runs along exactly the axes "
-                             "the pooled bit cannot separate. An opponent slot that was never "
-                             "revealed, and any slot the state's own observation does not carry, "
-                             "is MASKED rather than fabricated. REQUIRES --critic winprob "
-                             "(refused otherwise). Watch win_prob/aux_auc_own vs aux_auc_opp, "
-                             "aux_hp_mae, aux_masked_frac and grad/dense_aux_share. STRUCTURAL: "
-                             "the head is fixed for a run's lifetime (a resume may re-dose it, "
-                             "not add or remove it); the dose is resume-inherited.")
     # --- gen3_ridealong_heads_v1 (2026-09-30, owner): the DETACHED RIDE-ALONG baseline heads.
     #     Each OFF by default; the baseline argv turns all four on. None of them can change what the
     #     run learns (detached inputs, their own optimizer, a private init RNG) — they OBSERVE. ---
@@ -512,68 +439,6 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "one; 'off' (default) = none. Each is its own predictor, optimizer and "
                              "statistics; the observation variants share base's target (paired). "
                              "The X26 baseline uses 'all'. Requires --ridealong-rnd." + _ra_common)
-    # --- gen3_winprob_rollout_target_v1 (2026-09-10, the critic ladder's arm 10): R-ROLLOUT
-    #     MONTE-CARLO targets for the win-prob BCE. The fourth knob on the SAME loss — one scales
-    #     it, `--win-prob-strata-weight` re-prices its MIX, `--win-prob-lambda` re-aims it at the
-    #     network's own later estimates, and this one BUYS NEW BITS by playing the state forward. ---
-    parser.add_argument("--win-prob-rollout-target", "--win_prob_rollout_target",
-                        dest="win_prob_rollout_target", type=float, default=None,
-                        help="Fraction of the rollout buffer's states whose win-prob target is "
-                             "replaced by an R-ROLLOUT MONTE-CARLO win fraction, in [0, 1]. 0.0 "
-                             "(the DEFAULT) = OFF and BIT-identical. WHY: the terminal label is ONE "
-                             "outcome bit copied to ~30 states -- one bit about the GAME and none "
-                             "about the STATE -- and the head refit showed that is a TARGET defect "
-                             "(only 10-14%% of the label's variance lies BETWEEN (cycle, opponent) "
-                             "cells). R continuations from a state give R bits about THAT state. "
-                             "Each sampled state is replayed to its own turn from the "
-                             "--cf-records ring and played forward R times by the CURRENT policy on "
-                             "both sides at temperature 1.0; the target becomes wins/R. "
-                             "🚨 COST IS LINEAR AND LARGE: fraction x R x ~104 decisions per "
-                             "continuation, against the n_envs x n_steps decisions the trainee "
-                             "itself makes, so 1/32 at R=8 is ~26x the run's whole simulation "
-                             "budget and the fraction that costs 1x is ~1/(R*104). Watch "
-                             "win_prob/rollout_budget_multiple, rollout_seconds and rollout_mass. "
-                             "REQUIRES --critic winprob AND --cf-records. TRAINING-only, "
-                             "resume-inherited.")
-    parser.add_argument("--win-prob-rollout-r", "--win_prob_rollout_r",
-                        dest="win_prob_rollout_r", type=int, default=None,
-                        help="Continuations per sampled state under --win-prob-rollout-target "
-                             "(default 8). The label's standard error is ~0.5/sqrt(R) at p = 0.5, "
-                             "and the COST is exactly linear in it -- R and the fraction trade "
-                             "against each other at constant budget, so raising R means lowering "
-                             "the fraction. INERT at --win-prob-rollout-target 0.")
-    parser.add_argument("--win-prob-rollout-mode", "--win_prob_rollout_mode",
-                        dest="win_prob_rollout_mode", choices=("replace", "blend"), default=None,
-                        help="What a labelled state's target BECOMES. `replace` (the DEFAULT): the "
-                             "rollout win fraction, full stop. `blend`: the mean of the rollout "
-                             "fraction and the episode's terminal bit -- half the target shift, and "
-                             "it keeps some of the RECORDED ecology, because the terminal bit was "
-                             "played against the real opponent while the continuation was not (the "
-                             "record carries no opponent identity, so every continuation plays a "
-                             "self-like opponent; see win_prob/rollout_bot_share). INERT at "
-                             "--win-prob-rollout-target 0.")
-    parser.add_argument("--win-prob-rollout-weight", "--win_prob_rollout_weight",
-                        dest="win_prob_rollout_weight", type=float, default=None,
-                        help="Per-row LOSS WEIGHT on the rows --win-prob-rollout-target anchored, "
-                             ">= 1.0. 1.0 (the DEFAULT) = OFF and BIT-identical. WHY: the fraction "
-                             "that costs 1x the run's own simulation budget is ~0.0012, so the "
-                             "rollout-labelled rows are ~0.12%% of the win-prob BCE's mass and the "
-                             "head cannot move BY ARITHMETIC, whatever the new labels say. This is "
-                             "the only lever that raises the treatment's share of the objective at "
-                             "FIXED simulation cost -- no extra continuations, no changed labels. "
-                             "The weight vector is renormalised to mean 1 over the scored rows, so "
-                             "the loss SCALE does not move (the same convention "
-                             "--win-prob-strata-weight uses, and it MULTIPLIES with it rather than "
-                             "replacing it). At fraction 0.0012 a weight of 64 puts the anchors at "
-                             "~7.1%% of the weighted mass. 🚨 ONLY THE ANCHOR ROWS are weighted, "
-                             "never the rows that bootstrap toward them under "
-                             "--win-prob-lambda < 1: their target is a MIXTURE of the anchor and "
-                             "the network's own later values, so weighting them would dose arm 8's "
-                             "channel under arm 10's flag. That propagated influence is MEASURED "
-                             "instead -- read win_prob/rollout_mass_weighted (the anchors' share) "
-                             "and win_prob/rollout_influence_lambda (anchors + their lambda^k "
-                             "reach). REQUIRES --win-prob-rollout-target > 0. TRAINING-only, "
-                             "resume-inherited.")
     # --- gen3_fork_v1 (2026-09-14, the FORK ARM): CONTESTED-STATE EXPLORING STARTS. Fork a
     #     contested decision, play the branches to a terminal under common random numbers, and put
     #     their transitions in the SAME PPO buffer. Registered by
@@ -603,8 +468,7 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "is the budget's -- read fork/requested against fork/forks. Watch "
                              "fork/sim_steps_share, fork/branch_share, fork/rate and "
                              "fork/pairwise_acc. REQUIRES --critic winprob AND --cf-records, and "
-                             "REFUSES --value-true-team, --win-prob-dense-aux and "
-                             "--win-prob-strata-weight. TRAINING-only, resume-inherited.")
+                             "REFUSES --win-prob-strata-weight. TRAINING-only, resume-inherited.")
     parser.add_argument("--fork-branches", "--fork_branches", dest="fork_branches",
                         type=int, choices=(2, 3), default=None,
                         help="How many branches a fork plays (default 3). 3 = the policy's top-2 "

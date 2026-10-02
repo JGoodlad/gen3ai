@@ -74,8 +74,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-#: Branch continuations at or above which this worker compiles its extractor. The
-#: `win_prob_rollout_worker` arithmetic, verbatim: a compile costs ~40 s once per process and buys
+#: Branch continuations at or above which this worker compiles its extractor. A compile costs ~40 s once per process and buys
 #: 6.4x on every decision (26.3 ms eager -> 4.1 ms, B=1 CPU, measured 2026-08-23); a continuation
 #: is ~104 decisions, so it pays for itself at ~18 continuations and loses badly below that.
 COMPILE_BREAK_EVEN_BRANCHES = 18
@@ -149,8 +148,8 @@ def _live_decisions(res: Dict[str, Any], divergence_turn: int) -> float:
     """An ESTIMATE of the live policy decisions one branch cost, for the cost meter.
 
     ``(final_turn - divergence_turn + 1) x 2`` — both sides decide once per turn from the handoff.
-    `win_prob_rollout_worker._live_decisions` verbatim, and named an estimate for its reasons:
-    forced switches add rounds and a battle that ends mid-turn subtracts one.
+    Named an estimate for its reasons: forced switches add rounds and a battle that ends mid-turn
+    subtracts one.
     """
     turns = float(res.get("turns") or 0.0)
     return max(0.0, (turns - float(divergence_turn) + 1.0) * 2.0)

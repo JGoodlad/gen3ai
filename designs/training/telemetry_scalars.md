@@ -429,7 +429,7 @@ sites and an `EventAccumulator` walk of a run's `tb/` for the tags.
 | `distill/` | 7 | — | per rollout | KL / MSE / rate | CONDITIONAL — silent, no teacher | `distill_terms`, `distill_anchor*`, `distill_stop_callback` |
 | `cf/` | 5 | — | per rollout | probability + counts | CONDITIONAL — silent, no `--cf-records` | `cf_terms`, `cf_label_buffer` |
 | `teacher/` · `opd/` | 11 | — | per cycle / rollout | CE / KL | CONDITIONAL — silent | `teacher/callback`, `ppo.py` |
-| `team_pfsp/` · `hparams/` · `capacity/` · `defent/` · `baitent/` · `td_aux/` · `q_winprob/` | 19 | — | per rollout | see each section | CONDITIONAL — all silent (flag-off); `popart/` and `value_dist/` were deleted with PopArt / the dist head | their own callbacks |
+| `team_pfsp/` · `hparams/` · `capacity/` · `td_aux/` · `q_winprob/` | 19 | — | per rollout | see each section | CONDITIONAL — all silent (flag-off); `popart/` and `value_dist/` were deleted with PopArt / the dist head | their own callbacks |
 
 **The diagnostics cadence (`gen3_diagnostics_cadence_v1`, config v124):** `grad/*` (with
 `train/cf_grad_share` / `train/cf_evidential_grad_share`), `edge/*`, `cell/*`, the per-term
