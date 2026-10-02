@@ -644,6 +644,91 @@ trainee + opponent per unit → independent measurement) + a per-worker model ca
 `eval_sharding_test.py` (partition + aggregation-exactness property + claim-once + coverage),
 `eval_sharding_fuzz_test.py` (real bridge battles through the real worker → exact pooled result).
 
+### Mirrored team pairs (`--eval-mirrored-pairs`, T17 — `gen3_mirrored_pairs_v1`, DEFAULT OFF)
+
+**What it is.** Every team pairing of the in-loop eval (the bot roster, the pool sentinels and the
+fixed / stable opponents) is played from BOTH sides on ONE battle seed: game `2k` the trainee pilots
+team `A` (its own builder's draw) against the opponent on `B` (the opponent builder's draw); game `2k+1`
+the teams are HANDED OVER — the trainee on `B`, the opponent on `A` — with the same battle seed, the same
+scripted-bot streams and the same sampled-opponent seed. Team-draw luck ("my team happened to counter
+yours") cancels inside the pair instead of riding the win rate as noise. Training games are untouched
+(their diversity is the point). The trainee keeps seat p1 in both games; only the teams change hands.
+
+**One rule, both eval paths** (`rust_eval.seeds.pair_game`): unmirrored, a game's key is its own
+`(cycle seed, opponent, game)`; mirrored, games `2k` and `2k+1` both take the key of game `2k` and the
+second is `swapped`. The Rust eval core (`executor._make_game`) and the Python worker's per-GAME seed
+rule (`eval_worker._per_game_teams` / `_play_per_game`) both call it. On the Python path a mirrored
+cycle therefore plays every game seeded (`seed_rule = "per_game"`, `eval_launch.mirrored_worker_cfg`),
+which needs the in-process bridge and one game in flight — `--use-bridge off` or
+`--eval-concurrency-per-worker` ≠ 1 is REFUSED (`combination_checks`: `mirrored_pairs_need_*`), and a
+worker handed a mirrored plan without the per-game rule raises.
+
+**Counts are even by construction.** An odd `--eval-games` is rounded UP (`mirrored_eval_games`; the
+`--debug` cadence's 3 becomes 4), and the shard split is in PAIRS (`units._split_games(paired=True)`), so
+a pair's two games always sit in ONE unit, played back to back, and the unit can score it. The plan
+carries `"mirrored": true` (absent when off, so an unmirrored `plan.json` is byte-identical).
+
+🚨 **THE PAIR IS THE STATISTICAL UNIT** (`agents.training.mirrored_pairs`). A game is worth 2 / 1 / 0
+HALF-POINTS to the trainee (win / draw / loss — a 250-turn timeout and a sim `|tie|` are DRAWs,
+`trace_result.classify_result`), so a pair is one draw from a five-category PENTANOMIAL. Each shard
+publishes its `pair_counts`; the collect pools them exactly (`merged["pairs"]`). A pair with an
+unfinished game is VOIDED whole, never half-counted. Every interval recorded on mirrored games is the
+pentanomial one over PAIRS — never a per-game binomial interval, which would treat the two games of a
+pair as independent draws: `eval/pair_score_vs_{bots,pool}` (the mean per-game score, a draw = ½,
+Random excluded from bots like `win_rate_vs_bots`), `eval/pair_score_ci_vs_*` (the 95% half-width) and
+`eval/pairs_vs_*` (the pair count). `win_rate_*` keep their meaning (`n_won / n_finished`) and the
+promotion read stays `win_rate_vs_pool > --promote-threshold`; the score and the win rate differ by
+½·draw rate (0 draws in 145k archived eval traces). ⚠️ **`eval/elo`'s CI is still the BT fit's per-game
+one** — the live BT fit consumes game counts; the per-opponent pentanomials ride on the row for a
+pair-level refit.
+
+**THE REGIME, recorded and inherited like `eval_sentinel_greedy`.** `model_config.json`'s
+`eval_mirrored_pairs` (config v128) is read back by `_resolve` on a flagless resume, so a live run
+never crosses the boundary unless the flag is NAMED; the launch prints `⚖️  [EVAL REGIME] in-loop eval
+pairing: …` with its source. Every artifact states it: the cycle manifest's `mirrored_pairs` (always
+written), the `eval_results.jsonl` row's `mirrored_pairs` block (each opponent's pentanomial — bots by
+name, sentinels by STEP, externals by label; ABSENT on an unmirrored row, so those rows stay
+byte-identical), and `latest_eval.mirrored_pairs` / `latest_eval.pool.pairs`.
+
+🚨 **A REGIME BOUNDARY — and the readers refuse to cross it.** Half the mirrored games put the trainee
+on the OPPONENT's builder's team (the flat pool for a bot; a specialist's untaught team), so
+`win_rate_vs_pool` / `eval/elo` / the promotion read are a different population on either side of it
+(the T17 row's own words). `elo.load_rows` REFUSES (`MixedEvalRegimeError`, naming the first mirrored
+step) a run whose rows span it unless the caller picks one regime (`mirrored=True/False`); the live
+callbacks pass THEIR regime, so a run that switched rates each era apart. `snapshot_ladder.
+eval_measured_pairs` skips mirrored rows (not the ladder's protocol). `best_response_gap`'s regime
+tuple carries `eval_mirrored_pairs`, so two exploiters across it are an UNMATCHED comparison.
+
+**The default is OFF on purpose.** The M5 sizing arms (A2, A′, then B and C) are compared now, and B / C
+are pinned at a commit that may carry this code: flipping the in-loop regime under them would confound
+the comparison. The orchestrator flips it ON at the era boundary — the X26 baseline launch — together
+with `--promotion-sprt` (T6), so it is one regime change, not two.
+
+**The offline head-to-heads use the same rule.** `untaught_meter.play_cells(mirrored=True)`
+(`main.untaught_meter --mirrored-pairs`, `main.best_response_gap --play --mirrored-pairs`): pair `j`
+draws ONE pool team `B_j`, the pilot plays its pinned team `T` vs the opponent on `B_j`, then `B_j` vs
+the opponent on `T`, both on battle `j`'s sim seed and policy seeds; `--games-per-team` must be even
+(the gap's `--play` rounds up). Each cell carries its `pairs`; `aggregate` adds a pair-level score per
+level (`levels[*].pairs`) beside the team-cluster bootstrap (whose unit, the TEAM, already nests the
+pairs) and `--play`'s interval becomes the pentanomial one (`ci_unit: pair`). 🚨 Mirroring CHANGES what
+those meters measure — half the games put the pilot on a POOL team, not its pinned one — so a mixed
+set of cells is REFUSED (`cells_regime`, `merge_cells`) and the registered untaught-8 meter switches
+only at the same era start. `main.anchors --mirrored-pairs`: see
+[`EXTERNAL_ANCHORS_SOP.md`](../ops/EXTERNAL_ANCHORS_SOP.md).
+
+Tests: `agents/training/mirrored_pairs_test.py` (the rule on both paths, the split, the pentanomial and
+its interval, every reader's refusal), `main/train/eval_mirrored_pairs_regime_test.py` (resolve /
+inherit / migrate), `main/anchors/mirrored_test.py`. **CPU evidence (2026-10-01)**, read off the traces'
+reconstruction records (`prng_seed` + both players' teams): (1) Python core, `--debug --debug-eval
+--self-play --eval-mirrored-pairs` — 72 traces, every bot's games in pairs sharing one seed with the
+teams swapped between p1 and p2, 16 pairs vs the bots per cycle (`--eval-games 3 → 4`); (2) Rust eval
+core, the same plus `--env-core rust --critic winprob` and a pool forced to seed — the trace's `cycle`
+block reads game 2k `swapped False` / 2k+1 `swapped True` on one seed with the teams handed over, for the
+nine bots AND a pool sentinel (`pairs_vs_pool` 2 at step 12,000); (3) `main.untaught_meter
+--mirrored-pairs` on two current-generation checkpoints, 16 games → 8 pairs, each pair one pool draw;
+(4) `main.anchors --mirrored-pairs` vs `metamon:SmallRL`, 8 games → 4 pairs, all four VERIFIED (teams,
+order, shared seed). ⚠️ **Not yet seen on a GPU run** — one confirmation rides a planned launch.
+
 ### Eval on the Rust env core (`--env-core rust`, M5 Lane H — `agents/training/rust_eval/`)
 
 Under `--env-core rust` an eval cycle is played on the M5 Rust env core, not on `main.eval_worker`

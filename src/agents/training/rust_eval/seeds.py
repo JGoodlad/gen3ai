@@ -67,6 +67,20 @@ def derived_seed(key: Tuple[int, str, int], what: str) -> int:
     return _h(SCHEMA, *key, what)
 
 
+def pair_game(cycle_seed: int, item_key: str, game: int, mirrored: bool) -> Tuple[Tuple[int, str, int], bool]:
+    """``(key, swapped)`` for game ``game`` of an item — THE MIRRORED-PAIR RULE (``gen3_mirrored_pairs_v1``).
+
+    Unmirrored: the game's own key, never swapped (exactly :func:`game_key`). MIRRORED: games ``2k`` and
+    ``2k+1`` are ONE team pairing played from both sides — both take the key of game ``2k`` (so both draw
+    the SAME two teams, the SAME battle seed, the SAME bot streams and the SAME sampled-opponent seed), and
+    game ``2k+1`` is ``swapped``: the trainee pilots the team the opponent drew and the opponent pilots the
+    trainee's. The trainee keeps its seat (p1) in both games; only the TEAMS change hands."""
+    if not mirrored:
+        return game_key(cycle_seed, item_key, game), False
+    first = int(game) - int(game) % 2
+    return game_key(cycle_seed, item_key, first), bool(int(game) % 2)
+
+
 def battle_seed(key: Tuple[int, str, int]) -> List[int]:
     """The game's four 16-bit battle-seed words (never all zero)."""
     h = derived_seed(key, BATTLE)

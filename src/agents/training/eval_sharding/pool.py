@@ -20,7 +20,7 @@ import json
 import os
 
 from agents.training.eval_sharding.units import (
-    EvalItem, ShardUnit, plan_units, shards_per_item,
+    EvalItem, ShardUnit, game_range, plan_units, shards_per_item,
 )
 from agents.training.eval_sharding.results import (
     ShardResult, aggregate, to_merged, write_shard_result,
@@ -34,12 +34,22 @@ class ShardedEvalPool:
     """Coordinates one eval cycle's battle-level work-stealing. Construct from the in-memory items
     (parent) or from the on-disk plan (worker/collect); both yield the identical unit list."""
 
-    def __init__(self, items: list[EvalItem], shard_games: int, step: int | None = None):
+    def __init__(self, items: list[EvalItem], shard_games: int, step: int | None = None,
+                 mirrored: bool = False):
         self.items = list(items)
         self.shard_games = int(shard_games)
         self.step = step
-        self.units: list[ShardUnit] = plan_units(self.items, self.shard_games)
-        self._shards_per_item = shards_per_item(self.items, self.shard_games)
+        # MIRRORED TEAM PAIRS (`gen3_mirrored_pairs_v1`, `--eval-mirrored-pairs`): games 2k and 2k+1
+        # of every item are one team pairing played from both sides on one battle seed, every unit
+        # holds whole pairs, and each unit publishes its pentanomial `pair_counts`. Carried in the
+        # PLAN so the parent, every worker and the Rust eval core read one declaration.
+        self.mirrored = bool(mirrored)
+        self.units: list[ShardUnit] = plan_units(self.items, self.shard_games, self.mirrored)
+        self._shards_per_item = shards_per_item(self.items, self.shard_games, self.mirrored)
+
+    def game_range(self, unit: ShardUnit) -> range:
+        """``unit``'s game indices in plan order, under THIS plan's split (mirrored or not)."""
+        return game_range(unit, self.shard_games, self.mirrored)
 
     # ------------------------------------------------------------------ plan manifest
 
@@ -53,6 +63,8 @@ class ShardedEvalPool:
             "shard_games": self.shard_games,
             "items": [it.to_dict() for it in self.items],
         }
+        if self.mirrored:            # absent = unmirrored, so a default plan stays byte-identical
+            payload["mirrored"] = True
         tmp = path + ".tmp"
         with open(tmp, "w") as f:
             json.dump(payload, f, indent=2)
@@ -65,7 +77,7 @@ class ShardedEvalPool:
         with open(os.path.join(run_dir, PLAN_NAME)) as f:
             d = json.load(f)
         items = [EvalItem.from_dict(x) for x in d["items"]]
-        return cls(items, int(d["shard_games"]), step=d.get("step"))
+        return cls(items, int(d["shard_games"]), step=d.get("step"), mirrored=bool(d.get("mirrored", False)))
 
     # ------------------------------------------------------------------ sizing
 

@@ -38,7 +38,7 @@ def merge_eval_results(run_dir: str, names: list[str]) -> tuple[dict, list]:
     across cycles.)
     """
     empty = {"win_rates": {}, "reward_means": {}, "ep_lens": {},
-             "td_resid_tails": {}, "durations_sec": {}, "counts": {}, "coverage": {}}
+             "td_resid_tails": {}, "durations_sec": {}, "counts": {}, "coverage": {}, "pairs": {}}
     if not os.path.exists(os.path.join(run_dir, PLAN_NAME)):
         return empty, list(names)  # no plan written (shouldn't happen live) → nothing to merge
     merged_all, missing_all = ShardedEvalPool.from_plan(run_dir).collect(run_dir)

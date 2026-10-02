@@ -47,6 +47,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 import numpy as np
 
 from agents.training import keyed_draw as KD
+from agents.training import mirrored_pairs as MP
 from agents.training.eval_sharding import BOT, FIXED, SENTINEL, ShardResult
 from agents.training.eval_sharding.units import game_range
 from agents.training.rust_eval import seeds as SD
@@ -106,6 +107,10 @@ class _Unit:
     n_episodes: int = 0
     sum_ep_len: float = 0.0
     td: List[float] = field(default_factory=list)
+    #: the unit's games in plan order (``games`` is consumed as they are staged) and each ended game's
+    #: half-points to the trainee — a MIRRORED plan scores its pairs from these at publish
+    all_games: List[int] = field(default_factory=list)
+    points: Dict[int, int] = field(default_factory=dict)
     kept: Dict[str, int] = field(default_factory=lambda: {WIN: 0, LOSS: 0, DRAW: 0})
     draws_seen: int = 0
     trace_idx: int = 0
@@ -128,6 +133,8 @@ class _Game:
     key: Tuple[int, str, int] = (0, "", 0)
     route: int = 0
     teams: Tuple[int, int] = (0, 0)
+    #: MIRRORED pairs: the second game of a pair — the trainee pilots the team the opponent drew
+    swapped: bool = False
     seed: Tuple[int, int, int, int] = (1, 2, 3, 4)
     capturing: bool = False
     rows: List[Tuple[np.ndarray, np.ndarray, np.ndarray, float, int]] = field(default_factory=list)
@@ -210,14 +217,17 @@ class RustEvalCore:
         raise EvalCoreError(f"unknown eval item kind {item.kind!r}")
 
     def _make_game(self, u: _Unit, g: int, cycle_seed: int, sentinel_greedy: bool,
-                   sentinel_index: Mapping[str, int]) -> _Game:
+                   sentinel_index: Mapping[str, int], mirrored: bool = False) -> _Game:
         item = u.unit.item
-        key = SD.game_key(cycle_seed, item.key, g)
+        # THE MIRRORED-PAIR RULE (`seeds.pair_game`): a pair's two games share the key of its first game
+        # — the same two teams, battle seed, bot streams and sample seed — and the second is SWAPPED.
+        key, swapped = SD.pair_game(cycle_seed, item.key, g, mirrored)
         t = self.team_table
         p1 = t.index(SD.draw_team(self.trainee_builder, key, SD.TRAINEE), f"eval {item.key} game {g} trainee")
         p2 = t.index(SD.draw_team(self._opp_builder_for(item, sentinel_greedy), key, SD.OPPONENT),
                      f"eval {item.key} game {g} opponent")
-        return _Game(u=u, g=g, key=key, route=self._route_for(item, sentinel_index), teams=(p1, p2),
+        return _Game(u=u, g=g, key=key, route=self._route_for(item, sentinel_index),
+                     teams=(p2, p1) if swapped else (p1, p2), swapped=swapped,
                      seed=tuple(SD.battle_seed(key)), sample_seed=SD.sample_seed(key))  # type: ignore[arg-type]
 
     def _filler(self) -> _Game:
@@ -263,10 +273,12 @@ class RustEvalCore:
 
         # ---- units → envs
         q = ForensicQuota.coerce(quota)
+        mirrored = bool(getattr(pool, "mirrored", False))
         units: List[_Unit] = []
         for unit in pool.units:
             per = q.per_shard(pool.shard_count(unit.item.key))
-            units.append(_Unit(unit=unit, games=list(game_range(unit, pool.shard_games)), quota=per))
+            games = list(game_range(unit, pool.shard_games, mirrored))
+            units.append(_Unit(unit=unit, games=list(games), all_games=games, quota=per))
         queue = list(units)
         env_unit: List[Optional[_Unit]] = [None] * n
         cur: List[_Game] = [self._filler() for _ in range(n)]
@@ -282,7 +294,7 @@ class RustEvalCore:
                 env_unit[e] = u
             if u is None:
                 return self._filler()
-            return self._make_game(u, u.games.pop(0), cycle_seed, sentinel_greedy, sentinel_index)
+            return self._make_game(u, u.games.pop(0), cycle_seed, sentinel_greedy, sentinel_index, mirrored)
 
         def promote(e: int) -> None:
             gm = staged[e]
@@ -382,7 +394,8 @@ class RustEvalCore:
                     continue
                 pending -= self._finish(gm, f, float(c["reward"][e]), step=step, gamma=gamma,
                                         forensic_root=forensic_root, result_dir=result_dir, pool=pool, st=st,
-                                        game_log=game_log, trace_stem=trace_filename_stem, ffi=ffi)
+                                        game_log=game_log, trace_stem=trace_filename_stem, ffi=ffi,
+                                        mirrored=mirrored)
             t5 = time.perf_counter()
             ep = c["episode"].astype(np.int64)
             for e in np.flatnonzero(ep != last_ep).tolist():
@@ -412,7 +425,7 @@ class RustEvalCore:
 
     def _finish(self, gm: _Game, f: Mapping[str, Any], reward: float, *, step: int, gamma: float,
                 forensic_root: Optional[str], result_dir: str, pool: Any, st: CycleStats,
-                game_log: Optional[List[Dict[str, Any]]], trace_stem: Any, ffi: Any) -> int:
+                game_log: Optional[List[Dict[str, Any]]], trace_stem: Any, ffi: Any, mirrored: bool = False) -> int:
         """Book one ended game into its unit; publish the unit when its last game ends (returns 1)."""
         u = gm.u
         assert u is not None
@@ -428,6 +441,7 @@ class RustEvalCore:
         u.sum_ep_len += turn
         if result == DRAW:
             u.draws_seen += 1
+        u.points[gm.g] = MP.result_points(result)
         st.games += 1
         kept_path = None
         if gm.capturing and gm.rows:
@@ -448,7 +462,8 @@ class RustEvalCore:
                                  obs=np.stack([r[0] for r in gm.rows]), logp=np.stack([r[2] for r in gm.rows]),
                                  values=np.asarray(vals, dtype=np.float32),
                                  actions=np.asarray([r[4] for r in gm.rows]), masks=np.stack([r[1] for r in gm.rows]),
-                                 cycle={"key": list(gm.key), "game": gm.g, "seed_rule": SD.SCHEMA},
+                                 cycle={"key": list(gm.key), "game": gm.g, "seed_rule": SD.SCHEMA,
+                                        **({"mirrored_pair": MP.SCHEMA, "swapped": gm.swapped} if mirrored else {})},
                                  turn_limit=self.turn_limit)
                 u.kept[result] += 1
                 st.traces += 1
@@ -459,6 +474,7 @@ class RustEvalCore:
                              "winner": int(f["winner"]), "end_turn": turn, "forfeit": int(f["forfeit"]),
                              "reward": reward, "result": result, "draw_kind": draw_kind, "actions": list(gm.actions),
                              "margins": list(gm.margins), "logp": list(gm.logp), "teams": list(gm.teams), "seed": list(gm.seed),
+                             **({"swapped": gm.swapped} if mirrored else {}),
                              "captured": gm.capturing, "trace": kept_path, "script": f["script"], "opp": list(gm.opp),
                              "turns": list(gm.turns)})
         u.done += 1
@@ -470,7 +486,8 @@ class RustEvalCore:
             sum_reward=u.sum_reward, n_episodes=u.n_episodes, sum_ep_len=u.sum_ep_len,
             duration_sec=float(u.t1 - (u.t0 or u.t1)), td_residuals=list(u.td),
             traces_written=sum(u.kept.values()), traces_won=u.kept[WIN], n_drawn=u.draws_seen,
-            traces_drawn=u.kept[DRAW])
+            traces_drawn=u.kept[DRAW],
+            pair_counts=MP.pair_counts([u.points.get(g) for g in u.all_games]) if mirrored else None)
         pool.publish(result_dir, res)
         return 1
 

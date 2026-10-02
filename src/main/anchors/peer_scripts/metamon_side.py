@@ -139,6 +139,34 @@ def install_seeded_team_draw(seed, draw_log):
     print(f"[peer] team draw seeded with {seed} over a SORTED file list", flush=True)
 
 
+def install_sequence_team_draw(sequence_path, draw_log):
+    """MIRRORED TEAM PAIRS (T17): yield the team FILES listed in ``sequence_path`` (a JSON list), in
+    order, one per battle — the harness wrote them so that battle ``2k+1`` hands this side the team
+    OUR side played in battle ``2k``. Every yielded file is logged (its basename), which is how the
+    harness VERIFIES each pair was in fact swapped. A sequence that runs out, or a team Metamon blocks,
+    RAISES: a silent substitute would be an unmirrored game reported as a mirrored one."""
+    import metamon.env.wrappers as wrappers
+
+    with open(sequence_path) as fh:
+        files = list(json.load(fh))
+
+    def sequence_yield_team(self):
+        i = len(draw_log)
+        if i >= len(files):
+            raise RuntimeError(f"team sequence exhausted after {i} battles ({sequence_path})")
+        path = files[i]
+        self._most_recent_team_file = path
+        with open(path, "r") as fh:
+            candidate = self.join_team(self.parse_showdown_team(fh.read()))
+        if self.block_team(candidate):
+            raise RuntimeError(f"Metamon blocked mirrored-pair team {path}")
+        draw_log.append(os.path.basename(path))
+        return candidate
+
+    wrappers.TeamSet.yield_team = sequence_yield_team
+    print(f"[peer] team draw = the mirrored-pair SEQUENCE {sequence_path} ({len(files)} battles)", flush=True)
+
+
 class RegimeProbe:
     """Per-decision timing + the two regime-verification instruments."""
 
@@ -341,6 +369,9 @@ def build_parser():
     ap.add_argument("--battle-format", default="gen3ou")
     ap.add_argument("--team-set", default="gen3ai_pool")
     ap.add_argument("--team-seed", type=int, default=None)
+    ap.add_argument("--team-sequence", default=None,
+                    help="MIRRORED TEAM PAIRS: a JSON list of team files, one per battle, in order "
+                         "(overrides --team-seed)")
     ap.add_argument("--regime", choices=("greedy", "t1"), required=True,
                     help="greedy = Agent.get_actions(sample=False), i.e. argmax; "
                          "t1 = Metamon's shipped default (sample, action_temperature 1.0)")
@@ -368,7 +399,9 @@ def main(argv=None):
     install_regime(sample)
 
     draw_log = []
-    if args.team_seed is not None:
+    if args.team_sequence is not None:
+        install_sequence_team_draw(args.team_sequence, draw_log)
+    elif args.team_seed is not None:
         install_seeded_team_draw(args.team_seed, draw_log)
 
     model = get_pretrained_model(args.agent)

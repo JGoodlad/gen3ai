@@ -204,6 +204,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--capture-dir", default=None,
                    help="--server rust only: write each battle's repro record (commands + "
                         "per-side chunks) here. Pair with --seed-base or it is NOT replayable.")
+    p.add_argument("--mirrored-pairs", action="store_true",
+                   help="MIRRORED TEAM PAIRS (T17): within each half, battle 2k pits our team A against "
+                        "the peer's team B and battle 2k+1 HANDS THE TEAMS OVER, on ONE seed (the front "
+                        "end keys seeds by the unordered team pair). The PAIR is the unit: the summary's "
+                        "PAIR SCORE carries a pentanomial interval over verified pairs. Needs --server "
+                        "rust (a front end we start), a metamon --opponent, a checkpoint or bot our-side, "
+                        "and --games a multiple of 4. A REGIME: stamped on every row, never pooled with "
+                        "an unmirrored read.")
     p.add_argument("--challenge-mode", dest="challenge_mode", default="serial",
                    choices=("serial", "pipelined"),
                    help="WHEN our side emits the next /challenge in a half we challenge. "
@@ -428,6 +436,22 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         print("⚠️  --capture-dir without --seed-base: each battle's child mints its own seed, so "
               "the records will NOT be replayable.", flush=True)
 
+    mirrored = bool(getattr(args, "mirrored_pairs", False))
+    if mirrored:
+        why = ("a metamon --opponent (its driver plays our team list)" if kind != "metamon" else
+               "our side = a checkpoint or a bot (a peer our-side runs no harness of ours)"
+               if our_side.startswith("metamon:") or our_side == "foulplay" else
+               "--server rust started by this tool (the front end pairs the seeds)"
+               if (args.server_uri or args.server_kind != "rust") else
+               "--games a multiple of 4 (each half a whole number of pairs)" if args.games % 4 else None)
+        if why:
+            raise SystemExit(f"--mirrored-pairs needs {why}.")
+        if args.seed_base is None:
+            # a mirrored pair shares ONE derived seed, so the series is seeded by construction
+            args.seed_base = int(args.team_seed)
+            print(f"[anchors] --mirrored-pairs: seeding the front end with --seed-base {args.seed_base} "
+                  "(= --team-seed)", flush=True)
+
     if args.server_uri:
         uri = args.server_uri
         port = server_mod.port_of(uri)
@@ -490,6 +514,8 @@ def build_plan(args: argparse.Namespace, cfg: config_mod.AnchorsConfig,
         capture_dir=Path(args.capture_dir) if args.capture_dir else None,
         challenge_mode=args.challenge_mode,
         out_dir=out_dir,
+        mirrored_pairs=mirrored,
+        pair_log=(out_dir / "pair_seeds.jsonl") if mirrored else None,
         # A peer our-side is named after ITS OWN agent: Metamon keys its per-battle CSV by the
         # player's username, and "Gen3AIAnchor" on an anchor-vs-anchor row would name a client
         # that is not ours at all. 18 characters is Showdown's ceiling and the suffix costs one.
@@ -528,6 +554,10 @@ def render_plan(plan: runner_mod.SeriesPlan, cfg: config_mod.AnchorsConfig) -> s
            if plan.our_temperature is not None else ""),
         f"  team set          {plan.teamset}  ours={plan.our_team_spec}",
         f"  games             {plan.games}  ->  {plan.half_sizes()}",
+        "  pairing           "
+        + ("MIRRORED TEAM PAIRS (T17): battle 2k+1 hands battle 2k's teams over, one seed per pair "
+           f"(front end --pair-seeds, log {plan.pair_log}); the PAIR is the unit"
+           if plan.mirrored_pairs else "unpaired games"),
         f"  our side          {plan.our_side}"
         + (f"  (loader={plan.model_loader})" if plan.our_side == "model" else ""),
         f"  our model         {plan.model_zip or '(none — our side is not a checkpoint)'}"
@@ -634,7 +664,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             srv = server_mod.build_server(
                 plan.server_impl, plan.server_port, node=cfg.node,
                 battle_format=plan.battle_format, seed_base=plan.seed_base,
-                capture_dir=plan.capture_dir, out_dir=plan.out_dir).start()
+                capture_dir=plan.capture_dir, out_dir=plan.out_dir,
+                pair_log=plan.pair_log).start()
             print(f"[anchors] {srv.label} pid={srv.pid} on {srv.uri} ({plan.server_version})",
                   flush=True)
         rows, report, failure = asyncio.run(runner_mod.run_series(plan, cfg))
@@ -663,6 +694,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         cell, rows, status=status,
         failure=failure.as_dict() if failure is not None else None,
         peer_exit_notes=report.get("peer_exit_notes") or [],
+        mirrored=report.get("mirrored_pairs"),
         provenance={
             "anchors_config": str(cfg.source),
             "peer_report": {k: v for k, v in report.items() if k != "team_draws"},

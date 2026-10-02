@@ -313,13 +313,16 @@ class FrontEndServer(ManagedServer):
     def __init__(self, port: int, python: Optional[str] = None, impl: str = "rust",
                  battle_format: str = "gen3ou", seed_base: Optional[int] = None,
                  capture_dir: Optional[Path] = None, log_path: Optional[Path] = None,
-                 start_timeout_s: float = 180.0) -> None:
+                 start_timeout_s: float = 180.0, pair_log: Optional[Path] = None) -> None:
         super().__init__(port, log_path=log_path, start_timeout_s=start_timeout_s)
         self.python = python or sys.executable
         self.impl = impl
         self.battle_format = battle_format
         self.seed_base = seed_base
         self.capture_dir = Path(capture_dir) if capture_dir is not None else None
+        # MIRRORED TEAM PAIRS (T17): set => the front end keys each battle's seed by its unordered
+        # team pair (`--pair-seeds`) and logs every battle's seed here for the pair verification.
+        self.pair_log = Path(pair_log) if pair_log is not None else None
 
     def argv(self) -> List[str]:
         argv = [self.python, "-m", "utils.bridge.ws_frontend",
@@ -329,6 +332,8 @@ class FrontEndServer(ManagedServer):
             argv += ["--seed-base", str(self.seed_base)]
         if self.capture_dir is not None:
             argv += ["--capture-dir", str(self.capture_dir)]
+        if self.pair_log is not None:
+            argv += ["--pair-seeds", "--pair-log", str(self.pair_log)]
         return argv
 
     def env(self) -> Dict[str, str]:
@@ -380,7 +385,7 @@ def showdown_pin() -> str:
 def build_server(kind: str, port: int, *, node: str = "node", python: Optional[str] = None,
                  battle_format: str = "gen3ou", seed_base: Optional[int] = None,
                  capture_dir: Optional[Path] = None,
-                 out_dir: Optional[Path] = None) -> ManagedServer:
+                 out_dir: Optional[Path] = None, pair_log: Optional[Path] = None) -> ManagedServer:
     """The ONE place ``--server`` turns into a process. The log is named after the server, so a
     read's output directory says which transport served it before anything is parsed."""
     if kind not in SERVER_KINDS:
@@ -392,5 +397,5 @@ def build_server(kind: str, port: int, *, node: str = "node", python: Optional[s
             log_path=(out_dir / cls_log) if out_dir is not None else None)
     return FrontEndServer(
         port, python=python, impl="rust", battle_format=battle_format, seed_base=seed_base,
-        capture_dir=capture_dir,
+        capture_dir=capture_dir, pair_log=pair_log,
         log_path=(out_dir / FrontEndServer.log_name) if out_dir is not None else None)

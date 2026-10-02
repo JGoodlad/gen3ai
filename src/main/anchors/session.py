@@ -92,6 +92,27 @@ def build_team_source(spec: Dict[str, Any], seed: Optional[int], draw_log: List[
     from utils.teambuilder import Gen3Teambuilder
 
     kind = spec.get("kind")
+    if kind == "sequence":
+        # MIRRORED TEAM PAIRS (T17, `main.anchors.mirrored`): the planned (label, text) per battle, IN
+        # ORDER. Every team was validated when the plan was drawn; a builder that still dropped one
+        # would shift every later battle onto the wrong team, so that is REFUSED, not absorbed.
+        items = list(spec["items"])
+        tb = Gen3Teambuilder([text for _, text in items], rng_seed=seed)
+        if len(tb.packed_teams) != len(items):
+            raise SeriesFailure("bad_team_source",
+                                f"the mirrored-pair sequence lost {len(items) - len(tb.packed_teams)} "
+                                "team(s) to the builder's validation — the plan would desync")
+        order = iter(range(len(items)))
+
+        def yield_sequence():
+            i = next(order, None)
+            if i is None:
+                raise SeriesFailure("bad_team_source", "the mirrored-pair team sequence ran out")
+            draw_log.append(items[i][0])
+            return tb.packed_teams[i]
+
+        tb.yield_team = yield_sequence
+        return tb
     if kind == "pool":
         from utils.team_loader import TeamLoader
 

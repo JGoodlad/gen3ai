@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from main.anchors import mirrored as mirrored_mod
 from main.anchors import peers as peers_mod
 from main.anchors.results import CellSpec, GameRow
 from main.anchors.session import (
@@ -127,6 +128,10 @@ class SeriesPlan:
     #: --temperature T``) instead of the regime's own setting. None = the regime decides. A cell
     #: with it set is stamped our_regime='sample:T=<T>' (X22 f).
     our_temperature: Optional[float] = None
+    #: T17 `--mirrored-pairs`: every half plays MIRRORED TEAM PAIRS (`main.anchors.mirrored`) on a
+    #: front end that keys each battle's seed by its unordered team pair and logs it to `pair_log`.
+    mirrored_pairs: bool = False
+    pair_log: Optional[Path] = None
 
     @property
     def our_side_is_bot(self) -> bool:
@@ -176,11 +181,14 @@ def our_argv(plan: SeriesPlan, mode: str, n_games: int, our_name: str = "",
     ]
 
 
-def peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str) -> Any:
+def peer_plan(plan: SeriesPlan, cfg: Any, role: str, n_games: int, half: str,
+              team_sequence: Optional[Path] = None) -> Any:
     our_name, peer_name = half_usernames(plan, half)
     adapter = peers_mod.PEERS[plan.opponent_kind]
     opp_t = plan.opponent_temperature
-    extra = {} if opp_t is None else {"temperature": opp_t}
+    extra: Dict[str, Any] = {} if opp_t is None else {"temperature": opp_t}
+    if team_sequence is not None:
+        extra["team_sequence"] = team_sequence
     return adapter.plan(
         cfg=cfg.opponent(plan.opponent_kind),
         agent=plan.opponent_agent,
@@ -348,13 +356,23 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
     our_name, peer_name = half_usernames(plan, half)
     pplan = peer_plan(plan, cfg, role, n_games, half)
     pplan.log_path.parent.mkdir(parents=True, exist_ok=True)
+    team_spec = plan.our_team_spec
+    mirror = None
+    if plan.mirrored_pairs:
+        # T17: draw this half's pairings, write both sides' team files, and hand the peer its
+        # battle-ordered list; our side plays the mirror-image sequence.
+        mirror = mirrored_mod.plan_half(half, n_games, our_team_items(plan.our_team_spec),
+                                        their_team_items(pplan), seed=plan.team_seed,
+                                        out_dir=plan.out_dir, battle_format=plan.battle_format)
+        team_spec = {"kind": "sequence", "items": mirror.ours}
+        pplan = peer_plan(plan, cfg, role, n_games, half, team_sequence=mirror.sequence_path)
 
     peers_mod.check_username(our_name, "our")
     peers_mod.check_username(peer_name, "peer")
 
     server_config = server_mod_config(plan)
     state = OurSideState()
-    undo = install_our_side(state, plan.our_team_spec, plan.team_seed,
+    undo = install_our_side(state, team_spec, plan.team_seed,
                             plan.forfeit_turn_limit, server_config,
                             our_side=plan.our_side, model_loader=plan.model_loader,
                             challenge_mode=plan.challenge_mode)
@@ -433,6 +451,10 @@ async def run_half(plan: SeriesPlan, cfg: Any, half: str, n_games: int,
         report["regime_verified_decisions"] = False
         report["our_regime_mismatch"] = list(state.stochastic_kwargs)
     finalize_regime_fields(report, peer_rcs=[proc.returncode if proc is not None else None])
+    if mirror is not None:
+        report["mirrored_half"] = mirrored_mod.score_half(
+            mirror, state.records, list(state.draws), list(report.get("team_draws") or []),
+            mirrored_mod.read_pair_log(plan.pair_log))
     note = classify_peer_error(report, half, plan.opponent_kind, len(state.records), n_games)
     if note is not None:
         report["peer_exit_note"] = note
@@ -485,6 +507,7 @@ def cell_spec(plan: SeriesPlan, report: Dict[str, Any], our_team_count: int) -> 
         server_version=plan.server_version,
         our_side=plan.our_side,
         model_loader=str(report.get("model_loader") or ""),
+        mirrored_pairs=bool(plan.mirrored_pairs),
     )
 
 
@@ -654,4 +677,28 @@ async def run_series(plan: SeriesPlan, cfg: Any) -> Tuple[List[GameRow], Dict[st
     last_report["peer_exit_notes"] = [r["peer_exit_note"] for r in half_reports
                                       if r.get("peer_exit_note")]
     last_report["wall_s"] = time.time() - t0
+    if plan.mirrored_pairs:
+        last_report["mirrored_pairs"] = mirrored_mod.summary(
+            [r["mirrored_half"] for r in half_reports if r.get("mirrored_half")])
     return all_rows, last_report, failure
+
+
+def our_team_items(spec: Dict[str, Any]) -> List[Tuple[str, str]]:
+    """``(label, text)`` for every team OUR side can draw — the mirrored planner's ``A`` side."""
+    from main.anchors.session import load_team_texts
+
+    if spec.get("kind") == "pool":
+        from utils.team_loader import TeamLoader
+
+        return [(f"pool{i:03d}", t.strip()) for i, t in enumerate(TeamLoader().get_all_teams())]
+    return load_team_texts(Path(spec["path"]))
+
+
+def their_team_items(pplan: Any) -> List[Tuple[str, str]]:
+    """``(label, text)`` for every team the PEER draws from (its configured team directory)."""
+    from main.anchors.session import load_team_texts
+
+    team_dir = getattr(pplan, "team_dir", None)
+    if not team_dir:
+        raise mirrored_mod.MirrorError("this peer names no team directory — it cannot play a mirrored pair")
+    return load_team_texts(Path(team_dir))

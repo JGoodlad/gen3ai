@@ -379,6 +379,9 @@ ARGVS: dict[str, list[str]] = {
                                               "--rollout-trigger", "window"],
     "rollout_target_on_the_quantum": ["--env-core", "rust", *_WP, "--n-envs", "48", "--batch-size", "2048",
                                       "--rollout-target-samples", "100000"],
+    # T17 mirrored team pairs — the Python eval path's prerequisites
+    "mirrored_pairs_need_the_bridge": ["--eval-mirrored-pairs", "--use-bridge", "off"],
+    "mirrored_pairs_need_one_game_in_flight": ["--eval-mirrored-pairs", "--eval-concurrency-per-worker", "2"],
 }
 
 

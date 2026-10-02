@@ -270,13 +270,19 @@ def _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, 
     per game (winner, end turn, the trainee's actions and top-2 margins) into ``game_log_path``."""
     import random as _random
 
+    from agents.training import mirrored_pairs as MP
     from agents.training.eval_sharding import BOT
-    from agents.training.eval_sharding.units import game_range
+    from agents.training.reward_weights import _TIMEOUT_TURN_CAP
     from agents.training.rust_eval import seeds as SD
+    from agents.training.trace_result import classify_result
 
+    mirrored = bool(getattr(pool, "mirrored", False))
+    points: list = []
     trainee.decision_log = {} if game_log_path else None
-    for g in game_range(unit, pool.shard_games):
-        key = SD.game_key(seed_base, item.key, g)
+    for g in pool.game_range(unit):
+        # THE MIRRORED-PAIR RULE (`seeds.pair_game`): a pair's two games share the key of its first —
+        # the same battle seed, bot streams, choice and sample seeds; `_per_game_teams` swapped the teams.
+        key, _swapped = SD.pair_game(seed_base, item.key, g, mirrored)
         words = SD.battle_seed(key)
         if item.kind == BOT:
             for stream, s in SD.bot_stream_seeds(item.key, words).items():
@@ -290,9 +296,16 @@ def _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, 
             opponent._keyed_log = []
         before = set(trainee._battles)
         asyncio.run(run_local_battles(trainee, opponent, 1, concurrency=1, impl=bridge_impl, seed=list(words)))
+        tag = next((t for t in trainee._battles if t not in before), None)
+        b = trainee._battles[tag] if tag is not None else None
+        if b is not None and b.finished:
+            res, _kind = classify_result(won=b.won, lost=b.lost, finished=True, turn=b.turn,
+                                         turn_cap=_TIMEOUT_TURN_CAP)
+            points.append(MP.result_points(res))
+        else:
+            points.append(None)                      # an unfinished game voids its PAIR, never half of it
         if game_log_path:
-            tag = next(t for t in trainee._battles if t not in before)
-            b = trainee._battles[tag]
+            assert b is not None
             dl = trainee.decision_log.get(tag, [])
             with open(game_log_path, "a") as f:
                 f.write(json.dumps({"item": item.key, "game": g, "shard": unit.shard_index,
@@ -300,18 +313,27 @@ def _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, 
                                     "actions": [d[0] for d in dl], "margins": [d[1] for d in dl],
                                     "logp": [d[2] for d in dl],
                                     "opp": list(opponent._keyed_log) if logged else None,
-                                    "seed": list(words)}) + "\n")
+                                    "seed": list(words),
+                                    **({"swapped": _swapped} if mirrored else {})}) + "\n")
+    return MP.pair_counts(points) if mirrored else None
 
 
 def _per_game_teams(unit, pool, item, seed_base, trainee_tb, opp_builder):
-    """The unit's teams under the per-game seed rule, as two ``SequenceTeambuilder``s (plan order)."""
-    from agents.training.eval_sharding.units import game_range
+    """The unit's teams under the per-game seed rule, as two ``SequenceTeambuilder``s (plan order).
+
+    MIRRORED (``pool.mirrored``): a pair's two games draw the SAME two teams (the key of its first game)
+    and the second game hands them over — the trainee pilots what the opponent drew and vice versa."""
     from agents.training.rust_eval import seeds as SD
     from main.rust_core_cutover.envs import SequenceTeambuilder
 
-    keys = [SD.game_key(seed_base, item.key, g) for g in game_range(unit, pool.shard_games)]
-    return (SequenceTeambuilder([SD.draw_team(trainee_tb, k, SD.TRAINEE) for k in keys]),
-            SequenceTeambuilder([SD.draw_team(opp_builder, k, SD.OPPONENT) for k in keys]))
+    mirrored = bool(getattr(pool, "mirrored", False))
+    ours, theirs = [], []
+    for g in pool.game_range(unit):
+        k, swapped = SD.pair_game(seed_base, item.key, g, mirrored)
+        a, b = SD.draw_team(trainee_tb, k, SD.TRAINEE), SD.draw_team(opp_builder, k, SD.OPPONENT)
+        ours.append(b if swapped else a)
+        theirs.append(a if swapped else b)
+    return SequenceTeambuilder(ours), SequenceTeambuilder(theirs)
 
 
 async def _play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl="node",
@@ -345,6 +367,9 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
     # (a scripted bot's setup, a teambuilder's first pick). Returns None for a live eval, which
     # sets nothing and leaves every stream exactly where it was.
     per_game = seed_rule == "per_game"
+    if getattr(pool, "mirrored", False) and not per_game:
+        raise ValueError("a MIRRORED plan needs seed_rule per_game (a pair shares one battle seed, so every "
+                         "game must be seeded) — the eval callback sets it; refusing to play the pairs unpaired")
     if per_game:
         if seed_base is None or not use_bridge or int(concurrency) != 1:
             raise ValueError("seed_rule per_game needs a seed_base, the in-process bridge and concurrency 1")
@@ -412,8 +437,10 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         win_quota=per_unit.win, loss_quota=per_unit.loss, draw_quota=per_unit.draw)
 
     start = datetime.now()
+    pair_counts = None
     if per_game:
-        _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl, game_log_path=game_log_path)
+        pair_counts = _play_per_game(unit, pool, trainee, opponent, item, seed_base, bridge_impl,
+                                     game_log_path=game_log_path)
     else:
         asyncio.run(_play(trainee, opponent, n_games, use_bridge, concurrency, bridge_impl,
                           seed_base=unit_seed_base))
@@ -432,7 +459,9 @@ def _play_unit(unit, pool, model, opp_model_cache, current_version, trainee_tb, 
         # played count is here and nowhere else — poke-env books a tie as neither a win nor a
         # loss and a 250-turn timeout as our forfeit, so without this the draw rate cannot be
         # recovered from the shard record at all.
-        n_drawn=trainee.draws_seen, traces_drawn=trainee.traces_drawn)
+        n_drawn=trainee.draws_seen, traces_drawn=trainee.traces_drawn,
+        # MIRRORED pairs: the unit's pentanomial (None for an unmirrored plan).
+        pair_counts=pair_counts)
     win_rate = res.n_won / res.n_finished if res.n_finished else 0.0
     print(f"  {unit.unit_id}: {win_rate * 100:.1f}% ({res.n_won}/{res.n_finished})  "
           f"reward_sum={res.sum_reward:.1f}  [{dur:.0f}s]")

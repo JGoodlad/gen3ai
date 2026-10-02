@@ -365,6 +365,11 @@ def _migrate_config(data: dict) -> dict:
     if version < 127:
         data.setdefault("ridealong_rnd_variants", "off")
         data["config_version"] = 127
+    # v128 (gen3_mirrored_pairs_v1) — the in-loop eval's PAIRING REGIME, a RECORD: no run before v128
+    # could play mirrored team pairs, so False is the only possible past.
+    if version < 128:
+        data.setdefault("eval_mirrored_pairs", False)
+        data["config_version"] = 128
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

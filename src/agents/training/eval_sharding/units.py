@@ -125,14 +125,25 @@ class ShardUnit:
         return self.item.kind
 
 
-def _split_games(n_games: int, shard_games: int) -> list[int]:
+def _split_games(n_games: int, shard_games: int, paired: bool = False) -> list[int]:
     """Split ``n_games`` into as-even-as-possible chunks of at most ``shard_games`` each.
 
     ``shard_games >= n_games`` (or <= 0) yields a single chunk == ``n_games`` (the opponent-level
     behaviour: exactly today's one-claim-per-opponent path). Otherwise ``ceil(n_games/shard_games)``
     chunks whose sizes differ by at most 1 and sum to ``n_games`` exactly (so Σshards == n_games,
     the invariant that makes aggregation exact).
+
+    ``paired`` (MIRRORED TEAM PAIRS, ``gen3_mirrored_pairs_v1``): the unit of the split is the PAIR,
+    never the game — ``n_games`` must be even and every chunk is a whole number of pairs (the PAIRS
+    are split as above at ``max(1, shard_games // 2)`` pairs a chunk, then doubled). A pair's two
+    games are therefore always in ONE unit, played back to back on one player, so the unit can score
+    the pair; a pair split across two units could not be scored by either.
     """
+    if paired:
+        if n_games % 2:
+            raise ValueError(f"a mirrored-pair eval item plays an EVEN number of games, got {n_games}")
+        per_pairs = 0 if shard_games <= 0 else max(1, shard_games // 2)
+        return [2 * c for c in _split_games(n_games // 2, per_pairs)]
     if shard_games <= 0 or shard_games >= n_games:
         return [n_games]
     k = math.ceil(n_games / shard_games)
@@ -140,7 +151,7 @@ def _split_games(n_games: int, shard_games: int) -> list[int]:
     return [base + 1 if i < rem else base for i in range(k)]
 
 
-def plan_units(items: list[EvalItem], shard_games: int) -> list[ShardUnit]:
+def plan_units(items: list[EvalItem], shard_games: int, paired: bool = False) -> list[ShardUnit]:
     """Partition every item into shards and return the claim-ordered unit list (pure).
 
     Order = cost-descending items, shards round-robined across items: shard 0 of every item (in
@@ -149,7 +160,7 @@ def plan_units(items: list[EvalItem], shard_games: int) -> list[ShardUnit]:
     """
     by_item: dict[str, list[ShardUnit]] = {}
     for it in items:
-        sizes = _split_games(it.n_games, shard_games)
+        sizes = _split_games(it.n_games, shard_games, paired)
         by_item[it.key] = [ShardUnit(it, i, sz) for i, sz in enumerate(sizes)]
     ordered = sorted(items, key=lambda it: (-it.cost, it.key))
     max_shards = max((len(by_item[it.key]) for it in items), default=0)
@@ -162,14 +173,15 @@ def plan_units(items: list[EvalItem], shard_games: int) -> list[ShardUnit]:
     return units
 
 
-def game_range(unit: ShardUnit, shard_games: int) -> range:
+def game_range(unit: ShardUnit, shard_games: int, paired: bool = False) -> range:
     """The unit's games as indices into its item's games in PLAN order (shard 0's first) — the game
-    index the per-game seed rule keys on (``rust_eval.seeds``), independent of who plays the unit."""
-    sizes = _split_games(unit.item.n_games, shard_games)
+    index the per-game seed rule keys on (``rust_eval.seeds``), independent of who plays the unit.
+    ``paired``: the plan's MIRRORED split (a unit starts on an even index — a pair's first game)."""
+    sizes = _split_games(unit.item.n_games, shard_games, paired)
     lo = sum(sizes[:unit.shard_index])
     return range(lo, lo + unit.n_games)
 
 
-def shards_per_item(items: list[EvalItem], shard_games: int) -> dict[str, int]:
+def shards_per_item(items: list[EvalItem], shard_games: int, paired: bool = False) -> dict[str, int]:
     """How many shards each item splits into (for forensic-quota scaling + coverage)."""
-    return {it.key: len(_split_games(it.n_games, shard_games)) for it in items}
+    return {it.key: len(_split_games(it.n_games, shard_games, paired)) for it in items}

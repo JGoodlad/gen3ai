@@ -69,6 +69,10 @@ from agents.training.eval_callback import (
     launch_rust_eval_cycle,
     opponent_pins_of,
     write_eval_manifest,
+    mirrored_eval_games,
+    mirrored_worker_cfg,
+    mirrored_pairs_block,
+    record_pair_scores,
 )
 from agents.training.artifact_retention import (
     prune_run_artifacts, KEEP_STALLS_DEFAULT, KEEP_CRASHES_DEFAULT,
@@ -186,9 +190,14 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         env_core: str = "python",
         pool_starve_cycles: int = LEVERS["self_play_pool"].default_cycles,
         pfsp_starve_cycles: int = LEVERS["pfsp"].default_cycles,
+        eval_mirrored_pairs: bool = False,
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`, `--eval-mirrored-pairs`, default OFF): the
+        # bot AND pool eval play every team pairing from both sides on one battle seed; even counts; the
+        # PAIR is the unit of every interval. Training games are untouched. A REGIME (recorded per run/row).
+        self._mirrored = bool(eval_mirrored_pairs)
         # M5 Lane H: under --env-core rust the cycle plays IN PROCESS on the declared eval core.
         self._env_core = env_core
         # Per-opponent games per eval cycle (--eval-games; None → EVAL_GAMES). Sentinel cells at
@@ -376,8 +385,14 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
 
     def _schedule(self) -> tuple[int, int]:
         if self._debug:
-            return 4000, 3  # fast cadence for --debug --self-play smoke tests
-        return self._eval_freq, self._eval_games
+            # fast cadence for --debug --self-play smoke tests (mirrored: 4 games = 2 pairs, even)
+            return 4000, mirrored_eval_games(3) if self._is_mirrored else 3
+        return self._eval_freq, mirrored_eval_games(self._eval_games) if self._is_mirrored else self._eval_games
+
+    @property
+    def _is_mirrored(self) -> bool:
+        # read through getattr: a test-built instance (``__new__`` + hand-set attributes) predates the flag
+        return bool(getattr(self, "_mirrored", False))
 
     def _on_step(self) -> bool:
         if self._pending is not None:
@@ -439,7 +454,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         items += [EvalItem(s["label"], SENTINEL, n_games, path=s["path"], step=s["step"])
                   for s in sentinels]
         items += [EvalItem.fixed_from_cfg(f, n_games) for f in fixed_cfgs]
-        pool = ShardedEvalPool(items, self._eval_shard_games, step=step)
+        pool = ShardedEvalPool(items, self._eval_shard_games, step=step, mirrored=self._mirrored)
         pool.write_plan(run_dir)
 
         # Record exactly which model produced this cycle's traces (the prober reads this).
@@ -447,7 +462,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
                             opponents=bot_names + sentinel_labels + fixed_labels, n_games=n_games,
                             trainee_team_str=self._trainee_team_str,
                             opponent_pins=opponent_pins_of(self._fixed_opponents),
-                            quota=self._forensic_quota)
+                            quota=self._forensic_quota, mirrored_pairs=self._mirrored)
         # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
         # the resume re-eval fires at the same step every restart, so a step tag collided
         # across restarts and hung a worker on a lingering challenge (wedging eval forever).
@@ -483,6 +498,8 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
             "arch_toggles": arch_toggles_from_model(self.model),
             # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.
             "trainee_team_str": self._trainee_team_str,
+            # MIRRORED pairs: every game seeded by the per-GAME rule (a pair shares one battle seed).
+            **(mirrored_worker_cfg(self.model, step) if self._mirrored else {}),
         }
         if self._env_core == "rust":
             procs = []
@@ -754,6 +771,18 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
         # these edges when the regime permits (see `_sentinel_regime`), and a rounded game count
         # would quietly become a rounded edge.
         _sent_counts = merged.get("counts", {})
+        # MIRRORED pairs: the PAIR-level score vs the bots (Random excluded) and vs the POOL (every
+        # measured sentinel, pooled) — the interval is over PAIRS, never games — and each opponent's
+        # pentanomial on the row (the regime stamp the live ELO fit filters by).
+        mp_block = pool_pairs = None
+        if self._mirrored:
+            record_pair_scores(self.logger, tui, merged,
+                               [n for n in bot_wr if n != RANDOM_OPPONENT_NAME], "bots")
+            pool_pairs = record_pair_scores(self.logger, tui, merged,
+                                            [lbl for (_e, lbl, _v, _rw, _ep) in kept_sentinels], "pool")
+            mp_block = mirrored_pairs_block(
+                merged, bots=list(bot_wr), externals=list(ext_wr),
+                sentinels=[(lbl, e.step) for (e, lbl, _v, _rw, _ep) in kept_sentinels])
         elo_result = record_elo(
             self._model_dir, step, bot_wr,
             [{"step": e.step, "win_rate": v,
@@ -761,6 +790,7 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
              for e, lbl, v, _rw, _ep in kept_sentinels],
             pending["n_games"], self.logger, tui, bot_td_tails=bot_td, bot_counts=bot_counts,
             externals=ext_block or None, sentinel_regime=self._sentinel_regime(),
+            mirrored_pairs=mp_block,
         )
         # ELO for each stable opponent (display-only, out of the fit) → fills the eval table's elo
         # column for the ext_ rows: its OWN recorded ELO when available, else a trainee-derived ballpark.
@@ -806,6 +836,10 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
             }
             if td_resid_tail_vs_pool is not None:
                 pool_block["td_resid_tail"] = td_resid_tail_vs_pool
+            if pool_pairs is not None:
+                pool_block["pairs"] = pool_pairs            # the PAIR-level pool score + its interval
+            if mp_block is not None:
+                block["mirrored_pairs"] = mp_block
             block["pool"] = pool_block
             if ext_wr:
                 block["externals"] = build_externals_block(

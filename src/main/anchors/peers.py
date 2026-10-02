@@ -143,7 +143,7 @@ class MetamonPeer(Peer):
     def plan(self, *, cfg: Any, agent: str, regime: str, teamset: str, battle_format: str,
              server_uri: str, username: str, opponent_username: str, role: str, n_games: int,
              team_seed: int, out_dir: Path, temperature: Optional[float] = None,
-             **_: Any) -> PeerPlan:
+             team_sequence: Optional[Path] = None, **_: Any) -> PeerPlan:
         cfg.require(agent)
         checkpoint = cfg.agents[agent].get("checkpoint")
         team_set = cfg.team_set(teamset)
@@ -167,6 +167,9 @@ class MetamonPeer(Peer):
         ]
         if checkpoint is not None:
             argv += ["--checkpoint", str(checkpoint)]
+        if team_sequence is not None:
+            # MIRRORED TEAM PAIRS (T17): the peer plays exactly this team list, in order.
+            argv += ["--team-sequence", str(team_sequence)]
         if temperature is not None:
             # Only `t1` samples; the peer IGNORES a temperature under greedy (hazard H7).
             argv += ["--temperature", repr(float(temperature))]
@@ -243,6 +246,10 @@ class MetamonPeer(Peer):
             "peer_games": blob.get("peer_games"),
             "n_decisions": blob.get("n_decisions"),
             "median_decision_s": blob.get("median_s"),
+            # The team file the peer played in each battle, in order — what a MIRRORED read (T17)
+            # verifies its pairs against (`main.anchors.mirrored.score_half`). Absent = [], which
+            # voids every pair rather than trusting the plan.
+            "team_draws": list(blob.get("team_draws") or []),
         })
         out["regime_verified"] = bool(out["regime_verified_decisions"] and out["peer_error_free"])
         return out

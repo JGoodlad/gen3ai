@@ -199,6 +199,20 @@ def add_eval_subprocess_flags(parser: argparse.ArgumentParser) -> None:
                              f"Default None so a FLAGLESS resume INHERITS the regime its checkpoint recorded "
                              f"rather than silently crossing an opponent-regime boundary; a FRESH run with no "
                              f"flag gets {EVAL_SENTINEL_GREEDY_DEFAULT}.")
+    parser.add_argument("--eval-mirrored-pairs", "--eval_mirrored_pairs", dest="eval_mirrored_pairs",
+                        action=BoolFlag, default=None,
+                        help="MIRRORED TEAM PAIRS for the in-loop eval (T17, gen3_mirrored_pairs_v1): every "
+                             "team pairing of the bot AND pool eval is played from BOTH sides on ONE battle "
+                             "seed (game 2k: the trainee pilots team A vs the opponent on B; game 2k+1: the "
+                             "trainee on B vs the opponent on A), so team-draw luck cancels inside the pair. "
+                             "Counts are EVEN (an odd --eval-games is rounded up) and the PAIR is the "
+                             "statistical unit (eval/pair_score_vs_{bots,pool} + a pentanomial interval over "
+                             "pairs). Training games are untouched. OFF by default — it is a REGIME BOUNDARY "
+                             "for win_rate_vs_pool / eval/elo / the promotion read (half the games put the "
+                             "trainee on the opponent's team draw), flipped at an era start, never mid-"
+                             "comparison. Default None so a FLAGLESS resume INHERITS the regime its "
+                             "checkpoint recorded. The Python eval path needs the in-process bridge and "
+                             "--eval-concurrency-per-worker 1 (every game is seeded).")
     parser.add_argument("--self-play-temp", type=float, default=1.0,
                         help="Sampling temperature for self-play TRAINING opponents (they sample, "
                              "not argmax, so the learner faces the policy's full action distribution). "

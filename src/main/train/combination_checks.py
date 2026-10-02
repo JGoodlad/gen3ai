@@ -1391,6 +1391,23 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    "ragged micro-batch may reach the compiled learner graph, and the buffer keeps its "
                    "[n_steps, n_envs] shape"),
         exit_style="fatal_config"),
+
+    # ---- T17 MIRRORED TEAM PAIRS (gen3_mirrored_pairs_v1): the Python eval path's prerequisites -----
+    # A mirrored pair's two games share ONE battle seed, so the Python eval path plays every game under
+    # the per-GAME seed rule — which only the in-process bridge, one game in flight, can honour.
+    CombinationCheck(
+        "mirrored_pairs_need_the_bridge", ("eval_mirrored_pairs", "env_core", "use_bridge"),
+        lambda a: bool(_val(a, "eval_mirrored_pairs", False)) and not _rust_core(a)
+        and _val(a, "use_bridge", "rust") == "off",
+        "--eval-mirrored-pairs needs the in-process bridge (--use-bridge rust|node): a mirrored pair shares "
+        "one battle seed, and a Showdown server mints its own dice"),
+    CombinationCheck(
+        "mirrored_pairs_need_one_game_in_flight",
+        ("eval_mirrored_pairs", "env_core", "eval_concurrency_per_worker"),
+        lambda a: bool(_val(a, "eval_mirrored_pairs", False)) and not _rust_core(a)
+        and int(_val(a, "eval_concurrency_per_worker", 1) or 1) != 1,
+        "--eval-mirrored-pairs needs --eval-concurrency-per-worker 1: every game is seeded, and "
+        "overlapping games would consume the seeded streams out of order"),
 )
 
 

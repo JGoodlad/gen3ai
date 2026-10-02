@@ -552,6 +552,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # an opponent-regime boundary. Both are RESOLVED by `resolve_config`.
             eval_sentinel_greedy=args.eval_sentinel_greedy,
             promote_threshold=args.promote_threshold,
+            eval_mirrored_pairs=args.eval_mirrored_pairs,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,
@@ -947,6 +948,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             # an opponent-regime boundary. Both are RESOLVED by `resolve_config`.
             eval_sentinel_greedy=args.eval_sentinel_greedy,
             promote_threshold=args.promote_threshold,
+            eval_mirrored_pairs=args.eval_mirrored_pairs,
             capacity_telemetry=args.capacity_telemetry,
             canary_reset_steps=args.canary_reset_steps,
             capacity_cosine_every=args.capacity_cosine_every,

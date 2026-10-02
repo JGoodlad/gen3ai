@@ -95,6 +95,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--concurrency", type=int, default=1,
                    help="battles in flight per shard. Values above 1 are REFUSED (unquotable).")
     p.add_argument("--impl", choices=("rust", "node"), default="rust")
+    p.add_argument("--mirrored-pairs", action="store_true",
+                   help="play every pairing (the pinned team vs a pool draw) as a MIRRORED PAIR "
+                        "(T17): both sides, one battle seed; --games-per-team must be EVEN. A REGIME "
+                        "BOUNDARY: half the games put the ref on the POOL team, so a mirrored read is "
+                        "never pooled or compared with an unmirrored one (refused).")
     p.add_argument("--floor", type=float, default=None, metavar="PP",
                    help="the externally-ruled replicate floor for the BASELINE column, in pp "
                         "(e.g. 1.66 frozen / 4.27 controller-live). Regime-specific; never pooled.")
@@ -281,6 +286,7 @@ def _child_argv(args, team_indices: Sequence[int], out_path: str) -> List[str]:
              "--games-per-team", str(args.games_per_team), "--seed", str(args.seed),
              "--impl", args.impl, "--concurrency", str(args.concurrency),
              "--workers", "1",
+             *(["--mirrored-pairs"] if args.mirrored_pairs else []),
              "--shard-teams", ",".join(str(i) for i in team_indices),
              "--shard-out", out_path]
     return argv
@@ -328,7 +334,8 @@ def _play(args, refs, baseline, controls, opponent, teams, log) -> Dict[str, Dic
     cells = engine.play_cells(list(seen.values()), teams, opponent,
                               games_per_team=args.games_per_team, seed=args.seed,
                               impl=args.impl, concurrency=args.concurrency,
-                              progress=None if args.quiet else progress)
+                              progress=None if args.quiet else progress,
+                              mirrored=args.mirrored_pairs)
     log(f"  played in {time.time() - t0:.0f}s")
     return cells
 
@@ -390,6 +397,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     try:
         engine.check_concurrency(args.concurrency)
+        if args.mirrored_pairs and args.games_per_team % 2:
+            raise MeterError(f"--mirrored-pairs plays whole pairs: --games-per-team must be EVEN, "
+                             f"got {args.games_per_team}")
         # The shard child's argv is built from `args`, so the defaults are expanded to SPECS here
         # — before resolution and before any child — and never re-read per process. A shard child
         # would only re-print its parent's lines, so it stays quiet.
@@ -449,6 +459,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             "opponent_policy": "72000 + 1e6*seed + team_index*1000 + battle_index (per battle)",
         },
         "concurrency": args.concurrency,
+        # T17: the PAIRING regime — a read is never compared across it (aggregate refuses a mix)
+        "mirrored_pairs": bool(args.mirrored_pairs),
         "workers": max(1, min(args.workers, len(teams))),
         "impl": args.impl,
         "argv": list(argv if argv is not None else sys.argv[1:]),

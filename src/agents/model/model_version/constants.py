@@ -355,7 +355,13 @@ from typing import Any, Dict
 #   comma-list STRING, STRUCTURAL (the variants' predictors are the state_dict delta, gated in
 #   check_compatible), INERT to training exactly like the four v126 toggles. A pre-v127 config
 #   migrates to "off" (the only possible past). No ARCH_SIGNATURE bump, no MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 127
+# v128 (gen3_mirrored_pairs_v1): `eval_mirrored_pairs` — `--eval-mirrored-pairs` (T17), the in-loop
+#   eval's PAIRING REGIME: every team pairing of the bot and pool eval played from both sides on one
+#   battle seed, the pair the statistical unit. EVAL-only (the v112 `eval_sentinel_greedy` class): never
+#   compared by check_compatible, RECORDED as a regime boundary and read back by `_resolve` on a flagless
+#   resume. A pre-v128 config migrates to False (the only possible past). No ARCH_SIGNATURE bump, no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 128
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

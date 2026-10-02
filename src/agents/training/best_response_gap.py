@@ -461,6 +461,10 @@ def _regime(meta: Dict[str, Any], series: Sequence[SeriesPoint],
     games = sorted({p.games for p in series})
     return {
         "eval_sentinel_greedy": cli.get("eval_sentinel_greedy"),
+        # T17 (gen3_mirrored_pairs_v1): the in-loop eval's PAIRING regime — the vs-target series of a
+        # mirrored run half-plays the exploiter on the target's team draw, a different population. An
+        # unrecorded value (every run before the flag) is the only possible past: unmirrored.
+        "eval_mirrored_pairs": bool(cli.get("eval_mirrored_pairs") or False),
         "exploiter_keep_bots": cli.get("exploiter_keep_bots"),
         "exploiter_bot_fraction": cli.get("exploiter_bot_fraction"),
         "exploiter_temp_mode": cli.get("exploiter_temp_mode"),
@@ -898,7 +902,7 @@ def build_report(runs: Sequence[ExploiterRun], *, stat: str = "pooled",
 
 def play_head_to_head(run: ExploiterRun, *, games: int, seed: int = 0, impl: str = "rust",
                       greedy: bool = False, concurrency: int = 1,
-                      progress=None) -> Dict[str, Any]:
+                      progress=None, mirrored: bool = False) -> Dict[str, Any]:
     """``games`` fresh exploiter-vs-target battles, offline, on the bridge. Writes NOTHING.
 
     It reuses ``agents.training.untaught_meter.play_cells`` — the tool of record for offline
@@ -916,6 +920,13 @@ def play_head_to_head(run: ExploiterRun, *, games: int, seed: int = 0, impl: str
     ``ceil(games / n_teams) * n_teams`` — reported as ``games_played`` rather than silently
     reinterpreting the request. Concurrency above 1 is refused by the engine (the shared streams
     are consumed in a scheduling-dependent order, so a seeded run stops reproducing).
+
+    ``mirrored`` (T17, ``gen3_mirrored_pairs_v1``): every pairing (the exploiter's pinned team vs a
+    pool draw) is played from BOTH sides on one battle seed — the per-team count is rounded UP to an
+    even number — and the interval is the PAIR-level pentanomial one, never the per-game Wilson
+    interval (the two games of a pair share their teams and dice). 🚨 Half the games then put the
+    exploiter on the POOL team and the target on the exploiter's: a different population from the
+    unmirrored read and from the series, stamped on the block.
     """
     from agents.training import untaught_meter as um
 
@@ -936,20 +947,32 @@ def play_head_to_head(run: ExploiterRun, *, games: int, seed: int = 0, impl: str
     exploiter = um.resolve_ref(run.run_dir, label=run.run, role="ref")
     target = um.resolve_ref(run.target_file, label=run.target_run or "target", role="opponent")
     per_team = -(-int(games) // len(teams))
+    if mirrored:
+        per_team += per_team % 2                 # whole pairs: even by construction
 
     cells = um.play_cells([exploiter], teams, target, games_per_team=per_team, seed=seed,
                           impl=impl, concurrency=concurrency, stochastic=not greedy,
-                          progress=progress)
+                          progress=progress, mirrored=mirrored)
     got = cells[exploiter.label]
     wins = sum(c.wins for c in got.values())
     finished = sum(c.finished for c in got.values())
     attempted = sum(c.attempted for c in got.values())
     ties = sum(c.ties for c in got.values())
     lo, hi = wilson_ci(wins, finished)
+    pairs_block = None
+    if mirrored:
+        from agents.training import mirrored_pairs as MP
+        pairs_block = MP.summary(MP.pooled(c.pairs for c in got.values()))
+        # THE PAIR IS THE UNIT: the interval is the pentanomial one over pairs (a SCORE, a draw = ½).
+        ci_pair = (pairs_block or {}).get("score_ci95")
+        lo, hi = (ci_pair[0], ci_pair[1]) if ci_pair else (lo, hi)
     timeouts = attempted - finished
     return {
         "run": run.run, "target": run.target_run, "target_file": run.target_file,
-        "regime": PLAY_REGIME_GREEDY if greedy else PLAY_REGIME_STOCHASTIC,
+        "regime": (PLAY_REGIME_GREEDY if greedy else PLAY_REGIME_STOCHASTIC)
+                  + (" · MIRRORED PAIRS" if mirrored else ""),
+        "mirrored_pairs": bool(mirrored), "pairs": pairs_block,
+        "ci_unit": "pair (pentanomial score interval)" if mirrored else "game (Wilson)",
         "greedy": greedy, "impl": impl, "seed": seed, "concurrency": concurrency,
         "games_requested": int(games), "games_per_team": per_team,
         "games_played": attempted, "finished": finished,

@@ -758,6 +758,16 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     # cadence at a restart unless the flag is NAMED.
     from agents.training.instrumented_ppo.diagnostics_cadence import DIAGNOSTICS_EVERY_DEFAULT
     _resolve("diagnostics_every", DIAGNOSTICS_EVERY_DEFAULT)
+    # T17 (gen3_mirrored_pairs_v1): the in-loop eval's PAIRING REGIME. A fresh run takes OFF (the
+    # orchestrator flips it at an era start); a flagless resume keeps the regime its checkpoint recorded,
+    # so a live run's win_rate_vs_pool / eval/elo never cross the boundary unless the flag is NAMED.
+    _mp_typed = args.eval_mirrored_pairs is not None
+    _mp_inherited = inherit_saved_flag(args, _saved_ver, "eval_mirrored_pairs", False)
+    args.eval_mirrored_pairs = bool(args.eval_mirrored_pairs)
+    args.eval_mirrored_pairs_source = ("argv" if _mp_typed else "inherited" if _mp_inherited else "default")
+    emit(f"⚖️  [EVAL REGIME] in-loop eval pairing: "
+         f"{'MIRRORED TEAM PAIRS (each pairing from both sides, one seed; the pair is the unit)' if args.eval_mirrored_pairs else 'unpaired games'} "
+         f"(--{'' if args.eval_mirrored_pairs else 'no-'}eval-mirrored-pairs, source={args.eval_mirrored_pairs_source})")
     _resolve("use_popart", False)
     _resolve("opp_belief_cls_k", 0)
     _resolve("opp_belief_aux_coef", 0.0)

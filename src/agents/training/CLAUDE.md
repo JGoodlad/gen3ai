@@ -319,6 +319,14 @@ REFUSED rather than coerced. A timeout arrives wearing a LOSS's flags, which is 
 unnoticed for the whole archive. 🚨 **The capture quota PREFERS LOSSES and draws have their OWN
 bucket** — a trace tree is a loss-enriched sample by design, each cycle's manifest states the rule
 in words, and a tree that records none is SELECTION UNKNOWN, never uniform.
+🚨 **MIRRORED TEAM PAIRS are a REGIME (`--eval-mirrored-pairs`, T17, config v128, DEFAULT OFF).** Each
+team pairing is played from both sides on one battle seed (`rust_eval.seeds.pair_game`, both eval
+cores), counts are even, and every interval is the PAIR-level pentanomial one (`mirrored_pairs.py`) —
+never per-game. Recorded in `model_config.json` and `_resolve`-inherited like `eval_sentinel_greedy`;
+the row's `mirrored_pairs` block is the stamp, and `elo.load_rows` REFUSES a run whose rows span it.
+Do not flip the default: the M5 sizing arms are compared across it; the orchestrator flips it at the
+X26 baseline. Eval-only fields like this one are RECORDED, `_resolve`-inherited and never compared by
+`check_compatible` — they are not `flag_registry` rows (that registry declares extractor toggles).
 **Full detail — in [`designs/training/eval_and_rating.md`](../../../designs/training/eval_and_rating.md).**
 
 ## 🚨 Every live lever's SUPPLY is a declared resource (`gen3_supply_guard_v2`, `lever_supply.py`)

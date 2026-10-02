@@ -364,6 +364,13 @@ class Cell:
     finished: int = 0
     attempted: int = 0
     opp_teams: List[int] = field(default_factory=list)
+    #: MIRRORED TEAM PAIRS (`gen3_mirrored_pairs_v1`): the cell's pentanomial over PAIRS (pairs scoring
+    #: 0..4 half-points to the pilot). None = an unmirrored cell; its presence IS the cell's regime.
+    pairs: Optional[List[int]] = None
+
+    @property
+    def mirrored(self) -> bool:
+        return self.pairs is not None
 
     @property
     def timeouts(self) -> int:
@@ -377,7 +384,8 @@ class Cell:
         return {"wins": self.wins, "ties": self.ties, "losses": self.losses,
                 "finished": self.finished, "attempted": self.attempted,
                 "timeouts": self.timeouts, "win_rate": self.win_rate,
-                "opp_teams": self.opp_teams}
+                "opp_teams": self.opp_teams,
+                **({"pairs": list(self.pairs)} if self.pairs is not None else {})}
 
 
 def cell_from_json(d: dict) -> Cell:
@@ -385,8 +393,10 @@ def cell_from_json(d: dict) -> Cell:
     attempted = int(d.get("attempted", finished))
     wins = int(d["wins"])
     ties = int(d.get("ties", 0))
+    pairs = d.get("pairs")
     return Cell(wins=wins, ties=ties, losses=max(0, finished - wins - ties),
-                finished=finished, attempted=attempted, opp_teams=list(d.get("opp_teams", [])))
+                finished=finished, attempted=attempted, opp_teams=list(d.get("opp_teams", [])),
+                pairs=[int(x) for x in pairs] if pairs is not None else None)
 
 
 def cells_from_rows_artifact(path: str) -> Dict[str, Cell]:
@@ -450,6 +460,29 @@ def _teambuilders():
     return PinnedTeam, PairedPool
 
 
+def _fixed_packed_builder():
+    """The mirrored pair's swappable-side builder (built lazily, like ``_teambuilders``; a SEPARATE
+    factory so ``_teambuilders()``'s two-class contract — read by the committed measurement scripts —
+    does not move). It yields whatever PACKED team it was last ``set`` to; the teams it is handed were
+    packed by ``PinnedTeam`` / ``PairedPool`` (``Gen3Teambuilder``: validated, the gen-3 HP IV fix)."""
+    from poke_env.teambuilder import Teambuilder
+
+    class FixedPacked(Teambuilder):
+        def __init__(self):
+            self.current: Optional[str] = None
+
+        def set(self, packed: str) -> "FixedPacked":
+            self.current = packed
+            return self
+
+        def yield_team(self):
+            if self.current is None:
+                raise MeterError("FixedPacked: no team set for this game")
+            return self.current
+
+    return FixedPacked
+
+
 def _reseed_player(player, seed: int) -> None:
     """Reset a player's private sampling generator (the documented per-instance cache,
     ``gen3_policy_sample_rng_v1``) so battle (ti, j) starts identically for every ref."""
@@ -469,6 +502,7 @@ def play_cells(
     concurrency: int = 1,
     stochastic: bool = True,
     progress=None,
+    mirrored: bool = False,
 ) -> Dict[str, Dict[str, Cell]]:
     """Play every (ref × team) cell and return the raw counts. ``concurrency`` must be 1.
 
@@ -477,8 +511,18 @@ def play_cells(
     regime (argmax both sides), the one `main.eval_worker` plays a fixed cross-run opponent in;
     the two are different populations and a number must never leave either without saying which
     it is (`main.best_response_gap` prints the regime on every row).
+
+    ``mirrored`` (T17, ``gen3_mirrored_pairs_v1``): ``games_per_team`` (EVEN — refused otherwise) is
+    played as ``games_per_team // 2`` MIRRORED PAIRS. Pair ``j`` draws ONE pool team ``B_j``
+    (``pool_sequence`` over pairs); game 1 the pilot plays its pinned team ``T`` against the opponent on
+    ``B_j``, game 2 the pilot plays ``B_j`` against the opponent on ``T`` — both with battle ``j``'s sim
+    seed and policy seeds — so the team draw's luck cancels inside the pair. Each cell then carries its
+    pentanomial ``pairs``. 🚨 This CHANGES what the meter measures: half the games put the pilot on a POOL
+    team, not its pinned one — a regime boundary, never pooled with an unmirrored read.
     """
     check_concurrency(concurrency)
+    if mirrored and games_per_team % 2:
+        raise MeterError(f"--mirrored-pairs plays whole pairs: games per team must be EVEN, got {games_per_team}")
     import asyncio
 
     import torch as th
@@ -493,6 +537,8 @@ def play_cells(
 
     th.set_num_threads(1)
     PinnedTeam, PairedPool = _teambuilders()
+    FixedPacked = _fixed_packed_builder()
+    from agents.training import mirrored_pairs as MP
 
     maps = load_mappings()
     cv = current_model_version(maps)
@@ -502,7 +548,8 @@ def play_cells(
 
     pool = PairedPool(TeamLoader().get_all_teams())
     n_pool = len(pool.packed_teams)
-    seqs = {t.index: pool_sequence(seed, t.index, games_per_team, n_pool) for t in teams}
+    n_draws = games_per_team // 2 if mirrored else games_per_team
+    seqs = {t.index: pool_sequence(seed, t.index, n_draws, n_pool) for t in teams}
 
     out: Dict[str, Dict[str, Cell]] = {}
     for ref in refs:
@@ -511,6 +558,13 @@ def play_cells(
         out[ref.label] = {}
         for team in teams:
             ti = team.index
+            if mirrored:
+                cells = _play_mirrored_cell(RLPlayer, model, opp_model, team, pool, seqs[ti], seed, impl,
+                                            maps, stochastic, PinnedTeam, FixedPacked, MP)
+                out[ref.label][team.key] = cells
+                if progress is not None:
+                    progress(ref.label, team.key, cells)
+                continue
             pilot = RLPlayer(model=model, team=PinnedTeam(team.path), battle_format="gen3ou",
                              server_configuration=LocalhostServerConfiguration, mappings=maps,
                              account_configuration=AccountConfiguration(f"UM{ti}a", "pw"),
@@ -542,6 +596,66 @@ def play_cells(
             if progress is not None:
                 progress(ref.label, team.key, cell)
     return out
+
+
+def _play_mirrored_cell(RLPlayer, model, opp_model, team, pool, seq, seed, impl, maps, stochastic,
+                        PinnedTeam, FixedPacked, MP) -> Cell:
+    """One (ref, team) cell as MIRRORED PAIRS — see ``play_cells(mirrored=True)``."""
+    import asyncio
+
+    from poke_env.ps_client import AccountConfiguration
+    from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
+
+    from utils.bridge.local_battle_runner import run_local_battles
+
+    ti = team.index
+    pinned = PinnedTeam(team.path).packed_teams[0]
+    ours, theirs = FixedPacked(), FixedPacked()
+    pilot = RLPlayer(model=model, team=ours, battle_format="gen3ou",
+                     server_configuration=LocalhostServerConfiguration, mappings=maps,
+                     account_configuration=AccountConfiguration(f"UM{ti}a", "pw"),
+                     stochastic=stochastic, start_listening=False)
+    opp = RLPlayer(model=opp_model, team=theirs, battle_format="gen3ou",
+                   server_configuration=LocalhostServerConfiguration, mappings=maps,
+                   account_configuration=AccountConfiguration(f"UM{ti}b", "pw"),
+                   stochastic=stochastic, start_listening=False)
+    cell = Cell()
+    points: List[Optional[int]] = []
+    for j, b_idx in enumerate(seq):
+        pool_team = pool.packed_teams[b_idx]
+        for swapped in (False, True):
+            ours.set(pool_team if swapped else pinned)
+            theirs.set(pinned if swapped else pool_team)
+            ps, os_ = policy_seeds(seed, ti, j)        # the SAME seeds for both games of pair j
+            _reseed_player(pilot, ps)
+            _reseed_player(opp, os_)
+            pilot.reset_battles()
+            opp.reset_battles()
+            asyncio.run(run_local_battles(pilot, opp, 1, concurrency=1, impl=impl,
+                                          seed=sim_seed(seed, ti, j)))
+            cell.attempted += 1
+            cell.opp_teams.append(int(b_idx))
+            if pilot.n_finished_battles != 1:
+                points.append(None)          # the TIMEOUT bucket — and it voids the whole pair
+                continue
+            won, tied = int(pilot.n_won_battles), int(pilot.n_tied_battles)
+            cell.finished += 1
+            cell.wins += won
+            cell.ties += tied
+            cell.losses += 1 - won - tied
+            points.append(MP.WIN_POINTS if won else MP.DRAW_POINTS if tied else MP.LOSS_POINTS)
+    cell.pairs = MP.pair_counts(points)
+    return cell
+
+
+def cells_regime(cells_by_ref: Dict[str, Dict[str, Cell]]) -> bool:
+    """True iff every cell is MIRRORED; False iff none is. A MIX is REFUSED — the two regimes are not
+    one population (a mirrored cell plays half its games on a pool team), so no readout may pool them."""
+    kinds = {c.mirrored for t in cells_by_ref.values() for c in t.values()}
+    if len(kinds) > 1:
+        raise MeterError("these cells mix MIRRORED-PAIR and unmirrored reads (gen3_mirrored_pairs_v1) — "
+                         "different populations; re-read one side under the other's regime")
+    return bool(kinds and kinds.pop())
 
 
 # --------------------------------------------------------------------------------------------
@@ -617,6 +731,7 @@ def aggregate(
     frozen bar / 4.27pp live bar — regime-specific, and they are never pooled). The CONTROL
     column's floor is computed from the control arms themselves.
     """
+    mirrored = cells_regime(cells_by_ref)
     idx = bootstrap_index(len(team_keys), draws, bootstrap_seed)
     all_labels = list(dict.fromkeys(list(ref_labels) + ([baseline_label] if baseline_label else [])
                                     + list(control_labels)))
@@ -645,6 +760,11 @@ def aggregate(
             "timeouts": sum(c.timeouts for c in cells.values()),
             "timeout_fraction": (sum(c.timeouts for c in cells.values()) / att) if att else 0.0,
         }
+        if mirrored:
+            from agents.training import mirrored_pairs as MP
+            # the PAIR-level score over every team's pairs (the cluster CI above is over TEAMS, which
+            # nests the pairs, so both intervals are taken over a unit coarser than the game)
+            levels[lab]["pairs"] = MP.summary(MP.pooled(cells[k].pairs for k in team_keys))
 
     control_rates: Optional[np.ndarray] = None
     control_block: Optional[dict] = None
@@ -686,6 +806,7 @@ def aggregate(
 
     return {
         "teams": list(team_keys),
+        "mirrored_pairs": mirrored,
         "levels": levels,
         "control": control_block,
         "contrasts": contrasts,
@@ -815,4 +936,5 @@ def merge_cells(shards: Iterable[Dict[str, Dict[str, Any]]]) -> Dict[str, Dict[s
                 if key in out[lab]:
                     raise MeterError(f"shard overlap: {lab}/{key} produced twice")
                 out[lab][key] = c if isinstance(c, Cell) else cell_from_json(c)
+    cells_regime(out)            # a shard set that mixes the regimes is refused here, not averaged
     return out

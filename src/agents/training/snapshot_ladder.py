@@ -222,6 +222,10 @@ def eval_measured_pairs(run_dir: str) -> dict[tuple[int, int], list[int]]:
             regime = r.get("sentinel_regime") or {}
             if not (regime.get("greedy") and regime.get("symmetric_teams")):
                 continue
+            # A MIRRORED-PAIR row (`gen3_mirrored_pairs_v1`) half-plays the trainee on the sentinel's
+            # team draw — not the ladder's protocol either, so it is not a same-protocol comparator.
+            if r.get("mirrored_pairs"):
+                continue
             try:
                 trainee = int(r["step"])
                 n_default = int(r.get("n_games", 0))

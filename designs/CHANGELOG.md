@@ -10578,3 +10578,25 @@ if a lazy build is reintroduced.
   2,683 MiB and ran 5 updates / 5 evals / 4 promotions.
 - The promotion's detached ladder updater runs with `CUDA_VISIBLE_DEVICES=""` (`gen3_ladder_off_gpu_v1`):
   it had opened a 330 MiB CUDA context on the training card per updater, several alive at once.
+
+## v128 — MIRRORED TEAM PAIRS for every head-to-head eval, behind `--eval-mirrored-pairs` (T17, `gen3_mirrored_pairs_v1`; config bump, no ARCH_SIGNATURE bump, training games untouched)
+
+- **What:** every team pairing of the in-loop eval (bots, pool sentinels, fixed opponents) is played
+  from BOTH sides on ONE battle seed — game 2k the trainee on A vs the opponent on B, game 2k+1 the
+  teams handed over — so team-draw luck cancels inside the pair. One rule for both eval paths
+  (`rust_eval.seeds.pair_game`: the Rust eval core and the Python worker's per-game seed rule); the
+  shard split is in pairs, counts are even (an odd `--eval-games` rounds up).
+- **The pair is the unit:** each shard publishes a PENTANOMIAL `pair_counts` (pairs scoring 0..4
+  half-points; a timeout or tie is a draw); new tags `eval/pair_score_vs_{bots,pool}`,
+  `eval/pair_score_ci_vs_*` (pentanomial 95% half-width over PAIRS), `eval/pairs_vs_*`.
+- **Config v128:** `eval_mirrored_pairs` recorded, `_resolve`-inherited (a flagless resume keeps the
+  regime), never compared; a pre-v128 config migrates to False. DEFAULT OFF — the M5 sizing arms are
+  compared across this boundary; the orchestrator flips it at the X26 baseline launch.
+- **Regime boundary, refused across:** the `eval_results.jsonl` row carries a `mirrored_pairs` block
+  (absent = unmirrored); `elo.load_rows` refuses a run whose rows span it (`MixedEvalRegimeError`)
+  unless one regime is chosen, and the live fit reads its own; the snapshot ladder skips mirrored rows;
+  `best_response_gap`'s regime tuple carries it.
+- **Offline:** `main.untaught_meter --mirrored-pairs`, `main.best_response_gap --play --mirrored-pairs`
+  (pair-level interval) and `main.anchors --mirrored-pairs` (the front end's `--pair-seeds` keys each
+  battle's seed by its unordered team pair; the Metamon driver plays a planned team sequence; a pair
+  counts only when teams, order and seed are all verified).

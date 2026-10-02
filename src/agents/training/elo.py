@@ -115,6 +115,15 @@ class EvalRow:
     n_games: int
     bots: dict[str, float] = field(default_factory=dict)
     sentinels: list[tuple[int, float]] = field(default_factory=list)
+    #: the row's EVAL REGIME — played as MIRRORED TEAM PAIRS (`gen3_mirrored_pairs_v1`) or not. The two
+    #: regimes are not comparable (a mirrored game can put the trainee on the OPPONENT's builder's team),
+    #: so one fit never mixes them silently — see :class:`MixedEvalRegimeError`.
+    mirrored: bool = False
+
+
+class MixedEvalRegimeError(ValueError):
+    """A run's eval rows span the MIRRORED-PAIR regime boundary (``--eval-mirrored-pairs`` moved on a
+    resume). Refused rather than pooled: fit one regime at a time (``mirrored=True`` / ``False``)."""
 
 
 @dataclass
@@ -195,6 +204,7 @@ def _rows_from_log(run_dir: str) -> list[EvalRow]:
                 n_games=int(r.get("n_games", 100)),
                 bots={k: float(v) for k, v in (r.get("bots") or {}).items()},
                 sentinels=sentinels,
+                mirrored=bool(r.get("mirrored_pairs")),
             )
     return [by_step[s] for s in sorted(by_step)]
 
@@ -344,11 +354,31 @@ def _rows_from_tensorboard(run_dir: str, n_games: int = 100) -> list[EvalRow]:
     return rows
 
 
-def load_rows(run_dir: str, source: str = "auto", n_games: int = 100) -> list[EvalRow]:
+def load_rows(run_dir: str, source: str = "auto", n_games: int = 100,
+              mirrored: "bool | None" = None) -> list[EvalRow]:
     """Load the eval results for a run. ``source``: ``log`` (eval_results.jsonl),
     ``tb`` (TensorBoard backfill), ``meta`` (metadata.json), or ``auto`` (first non-empty
     of log → tb → meta). ``n_games`` is the assumed per-pairing game count for the tb/meta
-    backfills (the jsonl stores its own)."""
+    backfills (the jsonl stores its own).
+
+    ``mirrored`` selects ONE eval regime (``gen3_mirrored_pairs_v1``): ``True`` / ``False`` keeps only
+    the rows played (or not) as mirrored team pairs. ``None`` (the default) keeps every row but REFUSES
+    (:class:`MixedEvalRegimeError`) a run whose rows span the boundary — the two regimes are not one
+    population, and a fit across them would read the boundary as a rating move."""
+    rows = _load_rows(run_dir, source, n_games)
+    if mirrored is not None:
+        return [r for r in rows if r.mirrored == bool(mirrored)]
+    kinds = {r.mirrored for r in rows}
+    if len(kinds) > 1:
+        first = min(r.step for r in rows if r.mirrored)
+        raise MixedEvalRegimeError(
+            f"{run_dir}: its eval rows span the MIRRORED-PAIR regime boundary (mirrored rows from step "
+            f"{first:,}; --eval-mirrored-pairs moved on a resume). The two regimes are different "
+            f"populations — fit ONE (load_rows/fit_from_run mirrored=True or False).")
+    return rows
+
+
+def _load_rows(run_dir: str, source: str, n_games: int) -> list[EvalRow]:
     if source == "log":
         return _rows_from_log(run_dir)
     if source == "tb":
@@ -648,13 +678,14 @@ def elo_from_eval_block(block: dict, anchors_path: str = BOT_ANCHORS_PATH,
 
 
 def fit_from_run(run_dir: str, source: str = "auto",
-                 anchors_path: str = BOT_ANCHORS_PATH) -> EloFit:
+                 anchors_path: str = BOT_ANCHORS_PATH, mirrored: "bool | None" = None) -> EloFit:
     """Convenience: load a run's rows + bot anchors and fit. Used by the live callbacks
-    and the offline CLI so they share one path."""
+    and the offline CLI so they share one path. ``mirrored`` picks one eval regime (``load_rows``);
+    the live callbacks pass THEIR regime, so a run that crossed the boundary rates each era apart."""
     anchors = load_bot_anchors(anchors_path)
     pin = anchors["ratings"] if anchors else None
     base = float(anchors["base"]) if anchors and "base" in anchors else DEFAULT_BASE
-    fit = fit_elo(load_rows(run_dir, source), pin_ratings=pin, base=base)
+    fit = fit_elo(load_rows(run_dir, source, mirrored=mirrored), pin_ratings=pin, base=base)
     # Stamp anchor SEs onto the pinned bots for display, when known.
     if anchors and isinstance(anchors.get("se"), dict):
         for name, s in anchors["se"].items():

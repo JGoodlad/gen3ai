@@ -278,7 +278,8 @@ def _record_opponent_elos(fit, bot_names, sentinels, tui):
 
 
 def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
-               bot_td_tails=None, bot_counts=None, externals=None, sentinel_regime=None):
+               bot_td_tails=None, bot_counts=None, externals=None, sentinel_regime=None,
+               mirrored_pairs=None):
     """Append this cycle's results to ``eval_results.jsonl``, refit anchored Bradley-Terry
     ELO, and record ``eval/elo`` + ``eval/elo_ci`` to the SB3 logger + the TUI dict.
 
@@ -286,7 +287,10 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
     identically. ``sentinels`` is ``[{"step", "win_rate", "counts"}, …]`` (``[]`` on the bot path;
     ``counts`` optional). ``sentinel_regime`` is the cycle's ``{"greedy", "symmetric_teams"}``
     opponent-regime stamp, passed straight through to the row — see ``append_eval_result_row``.
-    Returns ``(elo, ci_halfwidth)`` for the current snapshot, or ``None``. The live number
+    ``mirrored_pairs`` (``None`` = an unmirrored cycle) is the cycle's per-opponent pentanomial block
+    (:func:`mirrored_pairs_block`); it stamps the row's regime, and the live fit then reads ONLY rows
+    of this cycle's regime (``elo.load_rows(mirrored=…)``), so a run that crossed the boundary never
+    rates one era against the other's games. Returns ``(elo, ci_halfwidth)`` for the current snapshot, or ``None``. The live number
     is the best estimate from data SO FAR (batch-BT is global, so early points retro-adjust
     as more cycles land); ``python -m main.elo`` re-fits canonically offline. Best-effort —
     never raises into the eval path. The import is lazy to avoid any import cycle.
@@ -307,10 +311,10 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
         append_eval_result_row(model_dir, step, n_games, bot_win_rates, sentinels,
                                bot_td_tails=bot_td_tails, bot_counts=bot_counts,
                                externals=externals, hodge=hodge_block,
-                               sentinel_regime=sentinel_regime)
+                               sentinel_regime=sentinel_regime, mirrored_pairs=mirrored_pairs)
         # Refits the WHOLE accumulated ladder to read this snapshot's rating. Cheap at the
         # expected scale (tens of snapshots → ms); wrapped best-effort so it can never break eval.
-        fit = elo_mod.fit_from_run(model_dir, source="log")
+        fit = elo_mod.fit_from_run(model_dir, source="log", mirrored=mirrored_pairs is not None)
         rating = fit.rating_for_step(step)
         if rating is None:
             return None
@@ -327,3 +331,41 @@ def record_elo(model_dir, step, bot_win_rates, sentinels, n_games, logger, tui,
     except Exception as e:  # noqa: BLE001 — ELO is telemetry; never break eval
         print(f"⚠️ [ELO] live rating failed at step {step}: {e}")
         return None
+
+
+# ── MIRRORED TEAM PAIRS (`gen3_mirrored_pairs_v1`, `--eval-mirrored-pairs`) ─────────────────────────
+def mirrored_pairs_block(merged: dict, *, bots, sentinels=(), externals=()) -> dict:
+    """The row's ``mirrored_pairs`` block from a cycle's ``merged`` result: each opponent's pentanomial
+    (``merged["pairs"]``), bots by name, sentinels by their TRAINING STEP (a sentinel label is positional
+    and names a different snapshot every cycle), externals by label. ``sentinels`` is
+    ``[(label, step), …]``."""
+    from agents.training.mirrored_pairs import SCHEMA
+
+    pairs = merged.get("pairs") or {}
+    return {"schema": SCHEMA,
+            "bots": {n: pairs[n] for n in bots if n in pairs},
+            "sentinels": {str(st): pairs[lab] for lab, st in sentinels if lab in pairs},
+            "externals": {lab: pairs[lab] for lab in externals if lab in pairs}}
+
+
+def record_pair_scores(logger, tui: dict, merged: dict, keys, tag: str) -> "dict | None":
+    """Record the PAIR-LEVEL score of the opponents ``keys`` pooled — ``eval/pair_score_vs_<tag>`` and its
+    95% half-width ``eval/pair_score_ci_vs_<tag>`` (the pentanomial interval over PAIRS, never games), plus
+    ``eval/pairs_vs_<tag>`` (the pair count). Returns the ``mirrored_pairs.summary`` block, or ``None`` when
+    none of ``keys`` carried pairs (an unmirrored cycle records nothing)."""
+    from agents.training import mirrored_pairs as MP
+
+    pairs = merged.get("pairs") or {}
+    counts = MP.pooled(pairs.get(k) for k in keys)
+    if counts is None:
+        return None
+    block = MP.summary(counts)
+    assert block is not None
+    if block["score"] is not None:
+        half = (block["score_ci95"][1] - block["score_ci95"][0]) / 2.0
+        for key, val in ((f"eval/pair_score_vs_{tag}", block["score"]),
+                         (f"eval/pair_score_ci_vs_{tag}", half),
+                         (f"eval/pairs_vs_{tag}", float(block["n_pairs"]))):
+            logger.record(key, val)
+            tui[key] = val
+    return block

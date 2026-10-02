@@ -733,3 +733,12 @@ class ModelVersionFields:
     # `opp_intent=True` at None rather than invent a dose; `config.inherit_derived_enable_coefs`
     # then takes the run's `metadata.json:cli_args` value, or REFUSES naming the flag.
     opp_intent_coef: Optional[float] = None
+    # ---- gen3_mirrored_pairs_v1 (config v128) — THE IN-LOOP EVAL'S PAIRING REGIME (T17) ----------
+    # `--eval-mirrored-pairs`: the bot and pool eval play every team pairing from BOTH sides on one
+    # battle seed, and the pair is the statistical unit. EVAL-only, the `eval_sentinel_greedy` class
+    # exactly: no forward reads it, no weight shape depends on it, a frozen opponent runs no eval —
+    # never compared by check_compatible. RECORDED because it is a REGIME BOUNDARY for
+    # win_rate_vs_pool / eval/elo / the promotion read (half the games put the trainee on the
+    # opponent's team draw), and a flagless resume must keep the regime its rows were written under
+    # (`_resolve` reads this field). A pre-v128 config migrates to False — the only possible past.
+    eval_mirrored_pairs: bool = False

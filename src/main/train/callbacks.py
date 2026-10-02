@@ -617,6 +617,8 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             # gen3_supply_guard_v2: the pool and PFSP supply floors (lever_supply.LEVERS).
             pool_starve_cycles=starve_cycles_for(args, "self_play_pool"),
             pfsp_starve_cycles=starve_cycles_for(args, "pfsp"),
+            # T17 mirrored team pairs (resolved: argv, else the run's recorded regime, else OFF).
+            eval_mirrored_pairs=bool(getattr(args, "eval_mirrored_pairs", False)),
         )
         callbacks.append(eval_callback)
     elif _run_eval:
@@ -649,6 +651,8 @@ def build_callbacks(*, args, model_dir, server_config, annealing_mode, _pool,
             # --trainee-team pin → eval measures the trainee ON ITS OWN TEAM (None = default pool).
             trainee_team_str=_specialist_team_str,
             env_core=getattr(args, "env_core", "python"),
+            # T17 mirrored team pairs (resolved: argv, else the run's recorded regime, else OFF).
+            eval_mirrored_pairs=bool(getattr(args, "eval_mirrored_pairs", False)),
         )
         callbacks.append(eval_callback)
 

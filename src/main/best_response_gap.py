@@ -78,6 +78,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--greedy", action="store_true",
                    help="--play in the EVAL regime (argmax both sides), which is the regime the "
                         "training-time series was measured in. Default is the TRAINING regime.")
+    p.add_argument("--mirrored-pairs", action="store_true",
+                   help="--play as MIRRORED TEAM PAIRS (T17): each pairing from BOTH sides on one "
+                        "battle seed, an even count, and a PAIR-level interval (never per-game). A "
+                        "different population from an unmirrored --play; stamped on every row.")
     p.add_argument("--play-seed", type=int, default=0)
     p.add_argument("--impl", choices=("rust", "node"), default="rust")
     p.add_argument("--concurrency", type=int, default=1,
@@ -340,7 +344,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             try:
                 played[r.run] = engine.play_head_to_head(
                     r, games=args.play, seed=args.play_seed, impl=args.impl,
-                    greedy=args.greedy, concurrency=args.concurrency)
+                    greedy=args.greedy, concurrency=args.concurrency,
+                    mirrored=args.mirrored_pairs)
             except BestResponseGapError as exc:
                 print(f"\n[best_response_gap] REFUSAL ({type(exc).cause}) — {exc}\n",
                       file=sys.stderr)
@@ -356,7 +361,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "cwd": os.getcwd(),
         "teamsets": str(args.teamsets or engine.DEFAULT_TEAMSETS),
         "play": {"games": args.play, "greedy": args.greedy, "seed": args.play_seed,
-                 "impl": args.impl, "concurrency": args.concurrency} if args.play else None,
+                 "impl": args.impl, "concurrency": args.concurrency,
+                 "mirrored_pairs": args.mirrored_pairs} if args.play else None,
     }
 
     if not args.no_json and args.json_out:

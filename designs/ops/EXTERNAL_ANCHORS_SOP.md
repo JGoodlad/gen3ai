@@ -208,6 +208,26 @@ argmax of that same decision's masked logits — pooled to the summary's `our_ar
 (OUR side of the §0 argmax table). Seed our sampling with `$GEN3AI_POLICY_SEED` for a repeatable
 series. Refused with any other opponent, our-side or `--regime`, and for T ≤ 0.
 
+### `--mirrored-pairs` — MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`)
+
+Within each half, battle `2k` pits our team `A_k` (drawn from OUR team source) against the peer's
+`B_k` (drawn from ITS team set), and battle `2k+1` HANDS THE TEAMS OVER — we pilot `B_k`, the peer
+pilots `A_k` — on ONE seed: the front end (`--pair-seeds`) keys each battle's seed by its UNORDERED,
+canonicalized team pair and that pair's occurrence // 2. Team-draw luck cancels inside the pair.
+**Needs** `--server rust` started by this tool, a `metamon:` opponent (its driver plays a planned
+`--team-sequence`), a checkpoint or `bot:` our-side, and `--games` a multiple of 4; anything else is
+REFUSED. With no `--seed-base` the read is seeded with `--team-seed` (printed).
+
+**Nothing is trusted on faith.** A pair counts only when BOTH sides played the planned teams in the
+planned order (our draw log; the peer's `team_draws`), both battles finished, and the two shared one
+seed (the front end's `pair_seeds.jsonl`); otherwise it is VOIDED with its reason. A battle our side
+forfeits at the turn limit is a DRAW (the trainer's convention). The summary's **PAIR SCORE** carries the
+pentanomial 95% interval over verified PAIRS — the read's headline; the Wilson line is labelled per-game,
+NOT the unit. Every row stamps `mirrored_pairs`: a mirrored cell half-plays our side on the PEER's team
+draw, so it is never quoted beside an unmirrored one. Every team file handed to the peer spells out its
+gen-3 Hidden Power IVs (`mirrored.with_hp_ivs`): the peer's parser does not derive them, and the first
+mirrored read died on exactly that rejection (2026-10-01).
+
 ### `--model-load {auto,bare,foreign}` — HOW the checkpoint is loaded
 
 🚨 **A cross-run frozen snapshot FAILS a bare `MaskablePPO.load`.** The extractor is rebuilt from

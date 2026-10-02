@@ -167,6 +167,36 @@ class _Battle:
         return None
 
 
+def _canon_id(text: str) -> str:
+    return "".join(ch for ch in text.lower() if ch.isalnum())
+
+
+def canonical_team(packed: Optional[str]) -> str:
+    """A PACKED team reduced to what makes it the team — per mon (species, item, ability, sorted
+    moves), mons sorted — so two clients that pack one team differently (nicknames, field order of
+    optional fields, id spelling) produce one key. The species is the packed SPECIES field, or the
+    NAME field when the species is omitted (the packed format's own rule)."""
+    if not packed:
+        return ""
+    mons = []
+    for chunk in packed.split("]"):
+        f = chunk.split("|")
+        if len(f) < 5:
+            continue
+        species = f[1] or f[0]
+        moves = sorted(_canon_id(m) for m in f[4].split(",") if m)
+        mons.append("/".join([_canon_id(species), _canon_id(f[2]), _canon_id(f[3]), ",".join(moves)]))
+    return ";".join(sorted(mons))
+
+
+def team_pair_key(a: Optional[str], b: Optional[str]) -> str:
+    """The UNORDERED team pair's key (hex) — the same for (A, B) and (B, A). See ``pair_seeds``."""
+    import hashlib
+
+    ca, cb = sorted((canonical_team(a), canonical_team(b)))
+    return hashlib.blake2b(f"{ca}\n{cb}".encode(), digest_size=16).hexdigest()
+
+
 # --------------------------------------------------------------------------------------------
 # the server
 # --------------------------------------------------------------------------------------------
@@ -175,8 +205,19 @@ class ShowdownFrontEnd:
 
     def __init__(self, *, impl: str = "rust", battle_format: str = "gen3ou",
                  seed_base: Optional[int] = None, validate_teams: bool = True,
-                 capture: bool = False, capture_dir: Optional[str] = None):
+                 capture: bool = False, capture_dir: Optional[str] = None,
+                 pair_seeds: bool = False, pair_log: Optional[str] = None):
+        if pair_seeds and seed_base is None:
+            raise ValueError("pair_seeds needs a seed_base: a mirrored pair shares ONE derived seed")
         self._spawn_argv = bridge_spawn_argv(impl)
+        # MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`): the seed is keyed by the battle's
+        # UNORDERED TEAM PAIR (canonicalized — the two clients pack the same team differently) and
+        # that pair's occurrence // 2, so the two games of a mirrored pair — the same two teams,
+        # handed over — get the SAME dice whatever ran between them. `pair_log` (JSONL) records every
+        # battle's tag, pair key, occurrence and seed, so a harness can VERIFY each pair shared one.
+        self.pair_seeds = bool(pair_seeds)
+        self._pair_log = pair_log
+        self._pair_seen: Dict[str, int] = {}
         self.impl = impl
         self.battle_format = battle_format
         self.seed_base = seed_base
@@ -452,12 +493,28 @@ class ShowdownFrontEnd:
         # roles on that fact, so getting it backwards would silently flip a measurement's sides.
         await self.start_battle(challenger, conn, fmt, challenger_team, conn.team)
 
+    # -- mirrored pairs ------------------------------------------------------------------
+    def _pair_seed(self, tag: str, p1_team: Optional[str], p2_team: Optional[str]) -> list:
+        """The seed of a battle under ``pair_seeds`` — see ``__init__``. Logged when ``pair_log``."""
+        key = team_pair_key(p1_team, p2_team)
+        occ = self._pair_seen.get(key, 0)
+        self._pair_seen[key] = occ + 1
+        index = int(key[:12], 16) * 1024 + occ // 2
+        seed = derive_seed_from_base(self.seed_base, index)
+        if self._pair_log:
+            with open(self._pair_log, "a") as fh:
+                fh.write(json.dumps({"tag": tag, "pair_key": key, "occurrence": occ,
+                                     "seed": list(seed)}) + "\n")
+        return seed
+
     # -- battles -------------------------------------------------------------------------
     async def start_battle(self, p1: _Conn, p2: _Conn, fmt: str,
                            p1_team: Optional[str], p2_team: Optional[str]) -> _Battle:
         index = next(self._battle_index)
         tag = f"battle-{fmt}-{next(_BATTLE_SEQ)}"
         seed = derive_seed_from_base(self.seed_base, index) if self.seed_base is not None else None
+        if self.pair_seeds and self.seed_base is not None:
+            seed = self._pair_seed(tag, p1_team, p2_team)
         proc = await asyncio.create_subprocess_exec(
             *self._spawn_argv,
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
@@ -709,6 +766,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--capture-dir", default=None,
                    help="write each finished battle's repro record (commands + per-side chunks) "
                         "here; pair with --seed-base to make it replayable")
+    p.add_argument("--pair-seeds", action="store_true",
+                   help="MIRRORED TEAM PAIRS (T17): key each battle's seed by its UNORDERED team pair "
+                        "and that pair's occurrence // 2, so a pairing played from both sides gets ONE "
+                        "seed (needs --seed-base)")
+    p.add_argument("--pair-log", default=None,
+                   help="with --pair-seeds: append one JSON line per battle (tag, pair key, occurrence, "
+                        "seed) here, so the harness can verify every pair shared its seed")
     p.add_argument("--no-validate-teams", dest="validate_teams", action="store_false",
                    help="skip the Node team validator on /utm (faster; loses the loud refusal)")
     p.add_argument("--log-level", default="INFO")
@@ -725,7 +789,8 @@ async def serve_forever(args) -> int:
                        "battle, so the records will NOT be replayable.")
     front = ShowdownFrontEnd(impl=args.impl, battle_format=args.battle_format,
                              seed_base=args.seed_base, validate_teams=args.validate_teams,
-                             capture_dir=args.capture_dir)
+                             capture_dir=args.capture_dir, pair_seeds=args.pair_seeds,
+                             pair_log=args.pair_log)
     async with serve(front.handler, args.host, args.port, max_size=None, ping_interval=None):
         uri = f"ws://{args.host}:{args.port}/showdown/websocket"
         logger.info("ws_frontend listening — %s  (impl=%s, format=%s, seed_base=%s)",

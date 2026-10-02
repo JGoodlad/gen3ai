@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 import torch as th
 
+from agents.model.model_version.constants import MODEL_CONFIG_VERSION
 from agents.model.ridealong_heads import (RND_VARIANTS, RideAlongBatch, RideAlongSpec,
                                           block_chimera, bootstrap_mask, canonical_rnd_variants,
                                           freeze_to_buffers, obs_block_edges, parse_rnd_variants,
@@ -297,7 +298,7 @@ def test_the_version_gate_refuses_a_flip_and_the_migration_defaults_off():
     new = _migrate_config(old)
     assert (new["ridealong_ensemble"], new["ridealong_rnd"], new["ridealong_adv"],
             new["ridealong_opp"], new["ridealong_rnd_variants"],
-            new["config_version"]) == (0, False, 0, 0, "off", 127)
+            new["config_version"]) == (0, False, 0, 0, "off", MODEL_CONFIG_VERSION)   # the migration runs to the CURRENT version
 
 
 # ── the RND variant ensemble (gen3_ridealong_rnd_variants_v1) ────────────────────────────────────

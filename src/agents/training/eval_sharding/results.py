@@ -78,6 +78,11 @@ class ShardResult:
     # only because that build could not persist a draw at all.
     n_drawn: int = 0
     traces_drawn: int = 0
+    # MIRRORED TEAM PAIRS (`gen3_mirrored_pairs_v1`): the pentanomial over this shard's PAIRS —
+    # `pair_counts[c]` = pairs that scored c half-points (0..4) to the trainee (`mirrored_pairs`).
+    # Additive. None = an unmirrored shard (and every shard file written before the field), which a
+    # reader must never mistake for "no pair scored".
+    pair_counts: list[int] | None = None
 
 
 @dataclass
@@ -96,6 +101,7 @@ class OpponentResult:
     traces_won: int = 0
     n_drawn: int = 0
     traces_drawn: int = 0
+    pair_counts: list[int] | None = None
 
     @property
     def coverage(self) -> float:
@@ -144,6 +150,7 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
         n_won = n_finished = n_episodes = 0
         traces_written = traces_won = 0
         n_drawn = traces_drawn = 0
+        pair_counts: list[int] | None = None
         sum_reward = sum_ep_len = duration = 0.0
         pooled_resid: list[float] = []
         done = 0
@@ -162,6 +169,9 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
             traces_won += r.traces_won
             n_drawn += r.n_drawn
             traces_drawn += r.traces_drawn
+            if r.pair_counts is not None:
+                pair_counts = [a + int(b) for a, b in zip(pair_counts or [0] * len(r.pair_counts),
+                                                          r.pair_counts)]
             pooled_resid.extend(r.td_residuals)
         if done == 0:
             continue  # fully missing opponent — caller reports it as missing, exactly as before
@@ -179,6 +189,7 @@ def aggregate(units, result_dir: str) -> dict[str, OpponentResult]:
             traces_won=traces_won,
             n_drawn=n_drawn,
             traces_drawn=traces_drawn,
+            pair_counts=pair_counts,
         )
     return out
 
@@ -194,7 +205,7 @@ def to_merged(per_opponent: dict[str, OpponentResult]) -> dict:
     """
     merged = {"win_rates": {}, "reward_means": {}, "ep_lens": {},
               "td_resid_tails": {}, "durations_sec": {}, "counts": {}, "coverage": {},
-              "traces": {}, "draws": {}}
+              "traces": {}, "draws": {}, "pairs": {}}
     for key, r in per_opponent.items():
         merged["win_rates"][key] = r.win_rate
         merged["reward_means"][key] = r.reward_mean
@@ -213,4 +224,7 @@ def to_merged(per_opponent: dict[str, OpponentResult]) -> dict:
         # than appended to `counts` so every existing `(n_won, n_finished)` unpack keeps working.
         merged["draws"][key] = r.n_drawn
         merged["coverage"][key] = r.coverage
+        # The pentanomial over the opponent's MIRRORED PAIRS — present only for a mirrored plan.
+        if r.pair_counts is not None:
+            merged["pairs"][key] = list(r.pair_counts)
     return merged

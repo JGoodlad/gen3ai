@@ -67,7 +67,8 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
                         snapshot: "str | None" = None,
                         trainee_team_str: "str | list[str] | None" = None,
                         opponent_pins: "dict | None" = None,
-                        quota: "ForensicQuota | dict | None" = None) -> dict:
+                        quota: "ForensicQuota | dict | None" = None,
+                        mirrored_pairs: bool = False) -> dict:
     """Write ``<model_dir>/eval_traces/step_<N>/eval_manifest.json`` — the per-cycle
     record of *exactly which model* produced this cycle's forensic traces.
 
@@ -129,6 +130,9 @@ def write_eval_manifest(model_dir: str, step: int, *, opponents, n_games: int,
         "selection_rule": _rule_for(quota),
         # Filled by record_eval_selection at collect. NULL here on purpose — see the docstring.
         "selection": None,
+        # THE PAIRING REGIME (`gen3_mirrored_pairs_v1`): were this cycle's games MIRRORED TEAM PAIRS
+        # (each team pairing from both sides, one battle seed)? Always written — False is a fact too.
+        "mirrored_pairs": bool(mirrored_pairs),
     }
     with open(os.path.join(d, EVAL_MANIFEST_NAME), "w") as f:
         json.dump(manifest, f, indent=2)
@@ -254,3 +258,28 @@ def spawn_eval_workers(run_dir: str, base_cfg: dict, n_workers: int) -> list[dic
         )
         procs.append({"proc": proc, "log": logf, "log_path": log_path})
     return procs
+
+
+# ── MIRRORED TEAM PAIRS (`gen3_mirrored_pairs_v1`, `--eval-mirrored-pairs`) — the launch side ─────────
+def mirrored_eval_games(n_games: int) -> int:
+    """The per-opponent game count under mirrored pairs: EVEN by construction (an odd request is rounded
+    UP — a pair is two games, and half a pair is not a measurement)."""
+    n = int(n_games)
+    return n + (n % 2)
+
+
+def eval_cycle_seed(model, step: int) -> int:
+    """The Python eval path's per-game seed base for one cycle (``rust_eval.launch.cycle_seed`` over the
+    model's own seed — 0 when SB3 recorded none). The Rust eval core derives its own from the collector's
+    run seed; both are a pure function of (run, step), so a re-eval at a step replays its games."""
+    from agents.training.rust_eval.launch import cycle_seed
+
+    s = getattr(model, "seed", None)
+    return cycle_seed(int(s) if isinstance(s, int) else 0, int(step))
+
+
+def mirrored_worker_cfg(model, step: int) -> dict:
+    """The eval-worker cfg keys a MIRRORED cycle adds on the Python path: the per-GAME seed rule (a pair's
+    two games share one battle seed, so every game is seeded) and the cycle's seed base. The worker refuses
+    a mirrored plan without it."""
+    return {"seed_rule": "per_game", "seed_base": eval_cycle_seed(model, step)}

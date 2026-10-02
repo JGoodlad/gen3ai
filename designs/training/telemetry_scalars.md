@@ -489,6 +489,13 @@ split and the other does not would be worse than either answer alone (a source-r
 the two predicates cannot drift apart). `_CalibrationAccumulator.metrics()` already returned `{}`
 for an unobserved accumulator, so the whole family now disappears rather than duplicating.
 
+🚨 **`eval/pair_score_vs_{bots,pool}` · `eval/pair_score_ci_vs_*` · `eval/pairs_vs_*` exist ONLY under
+`--eval-mirrored-pairs`** (T17, `gen3_mirrored_pairs_v1`, config v128, DEFAULT OFF): the mean per-game
+SCORE over mirrored pairs (a draw = ½; Random excluded from `bots`), its 95% half-width from the
+PENTANOMIAL over PAIRS (never per-game), and the pair count. Absent on an unmirrored run — a gap, not a
+zero. `win_rate_vs_*` keep their meaning, but across the regime boundary they are a different
+population ([`eval_and_rating.md`](eval_and_rating.md) → *Mirrored team pairs*).
+
 🚨 **`eval/duration_sec` is SUMMED UNIT TIME, not wall time; the wall is `eval/wall_sec`**
 (`gen3_eval_wall_sec_v1`, 2026-10-01).
 - **`duration_sec`** adds up every shard's own duration. On the Rust eval core the units play

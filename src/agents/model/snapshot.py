@@ -405,6 +405,7 @@ def append_eval_result_row(
     externals: "dict | None" = None,
     hodge: "dict | None" = None,
     sentinel_regime: "dict | None" = None,
+    mirrored_pairs: "dict | None" = None,
 ) -> None:
     """Append one eval cycle's pairwise win-records to ``<model_dir>/eval_results.jsonl``.
 
@@ -443,6 +444,13 @@ def append_eval_result_row(
     ``recorded: false`` + a reason when the cycle's graph had no testable triangle. Recording
     the OMISSION is the point: a missing TB point and a suppressed one look identical in
     TensorBoard, and only one of them is a fact about the graph.
+
+    ``mirrored_pairs`` (optional) marks a cycle played as MIRRORED TEAM PAIRS
+    (``gen3_mirrored_pairs_v1``) and carries each opponent's PENTANOMIAL — ``{"schema", "bots":
+    {name: [5 counts]}, "sentinels": {str(step): [5]}, "externals": {label: [5]}}`` — the pair-level
+    record every interval on these games must be taken from (the pair, never the game, is the unit).
+    Its PRESENCE is the row's regime stamp (``elo.load_rows`` refuses a fit across it); absent = an
+    unmirrored row, so an unmirrored writer's rows stay byte-identical.
 
     Best-effort: never raise into the eval path — a failed append must not break eval.
     """
@@ -489,6 +497,11 @@ def append_eval_result_row(
                 for k, v in externals.items()}
         if hodge:
             row["hodge"] = hodge
+        if mirrored_pairs is not None:
+            row["mirrored_pairs"] = {
+                "schema": str(mirrored_pairs.get("schema", "gen3_mirrored_pairs_v1")),
+                **{blk: {str(k): [int(c) for c in v] for k, v in (mirrored_pairs.get(blk) or {}).items()}
+                   for blk in ("bots", "sentinels", "externals")}}
         m_hash = _read_matchup_hash(model_dir)
         if m_hash:
             row["matchup_hash"] = m_hash

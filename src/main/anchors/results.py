@@ -114,6 +114,11 @@ class CellSpec:
     #: A cross-run frozen snapshot FAILS a bare load, so which loader ran is part of what the row
     #: says about the policy that played.
     model_loader: str = ""
+    #: T17 (`gen3_mirrored_pairs_v1`): were the battles MIRRORED TEAM PAIRS (each pairing from both
+    #: sides on one seed; the pair the unit)? On the ROW: a mirrored cell half-plays our side on the
+    #: PEER's team draw, so it is a different population from an unmirrored one and is never read beside
+    #: it without this label.
+    mirrored_pairs: bool = False
 
     def stamp(self) -> Dict[str, Any]:
         return asdict(self)
@@ -202,6 +207,7 @@ REQUIRED_ROW_FIELDS = (
     # `regime_verified_decisions` (see peers.REGIME_VERIFIED_DEPRECATION).
     "regime_verified_decisions", "peer_clean", "regime_verified",
     "result", "turns", "half", "index",
+    "mirrored_pairs",
 )
 
 
@@ -218,7 +224,8 @@ def write_games(path: Path, rows: Iterable[GameRow]) -> int:
 def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
               failure: Optional[Dict[str, Any]] = None,
               peer_exit_notes: Optional[List[Dict[str, str]]] = None,
-              provenance: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+              provenance: Optional[Dict[str, Any]] = None,
+              mirrored: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """The cell's one number, its Wilson interval, and every integrity counter beside it.
 
     ``status`` is ``"OK"`` or ``"FAILED"``; a FAILED summary still carries whatever games did
@@ -292,6 +299,10 @@ def summarize(cell: CellSpec, rows: List[GameRow], *, status: str,
         # recursion costs no games, and a reader should not have to re-derive that from an rc.
         "peer_exit_notes": list(peer_exit_notes or []),
     }
+    if cell.mirrored_pairs:
+        # THE PAIR IS THE UNIT (T17): the pentanomial over the verified pairs and ITS interval. The
+        # Wilson line above treats paired games as independent and is kept only as a per-game count.
+        out["mirrored_pairs"] = mirrored
     if failure is not None:
         out["failure"] = failure
     if provenance is not None:
@@ -352,8 +363,17 @@ def render(summary: Dict[str, Any]) -> str:
     lines += [
         f"  status      {summary['status']}",
         f"  WIN RATE    {summary['win_rate']:.3f}   Wilson 95% [{lo:.3f}, {hi:.3f}]   "
-        f"n={n} (W{summary['wins']}/L{summary['losses']}/T{summary['ties']})",
+        f"n={n} (W{summary['wins']}/L{summary['losses']}/T{summary['ties']})"
+        + ("   (per GAME — NOT the unit of a mirrored read)" if cell.get("mirrored_pairs") else ""),
     ]
+    mp = summary.get("mirrored_pairs")
+    if cell.get("mirrored_pairs"):
+        if mp and mp.get("score") is not None:
+            lines.append(f"  PAIR SCORE  {mp['score']:.3f}   pair 95% [{mp['score_ci95'][0]:.3f}, "
+                         f"{mp['score_ci95'][1]:.3f}]   {mp['n_pairs']} verified mirrored pairs"
+                         + (f", {mp['n_voided']} VOIDED {mp['voided']}" if mp.get("n_voided") else ""))
+        else:
+            lines.append("  PAIR SCORE  — no verified mirrored pair (this cell is NOT a measurement)")
     if summary.get("failure"):
         lines.append(f"  FAILURE     {summary['failure'].get('cause')}: "
                      f"{summary['failure'].get('detail')}")

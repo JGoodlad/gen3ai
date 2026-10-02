@@ -46,7 +46,8 @@ from agents.training.eval_player import (  # noqa: F401
 from agents.training.eval_launch import (  # noqa: F401
     EVAL_MANIFEST_NAME, EVAL_SNAPSHOT_NAME, _read_run_identity, opponent_pins_of,
     write_eval_manifest, _EVAL_CYCLE_TIMEOUT_SEC, eval_cycle_timeout, _b36, eval_run_nonce,
-    launch_rust_eval_cycle, kill_eval_workers, spawn_eval_workers,
+    launch_rust_eval_cycle, kill_eval_workers, spawn_eval_workers, mirrored_eval_games,
+    eval_cycle_seed, mirrored_worker_cfg,
 )
 from agents.training.eval_collect import (  # noqa: F401
     merge_eval_results, prune_eval_traces, prune_eval_snapshots, record_eval_selection,
@@ -57,6 +58,7 @@ from agents.training.eval_record import (  # noqa: F401
     read_latest_eval_block, replay_last_eval_to_tui, latest_recorded_eval_step, bot_mean,
     record_per_opponent, external_aggregate, external_elo, record_external_elos,
     build_externals_block, build_bot_eval_block, _record_opponent_elos, record_elo,
+    mirrored_pairs_block, record_pair_scores,
 )
 
 # TD-residual tail metric (#4): the left tail of per-decision critic surprise
@@ -245,9 +247,14 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         fixed_opponents: "list | None" = None,
         trainee_team_str: "str | list[str] | None" = None,
         env_core: str = "python",
+        eval_mirrored_pairs: bool = False,
         verbose: int = 1,
     ):
         super().__init__(verbose)
+        # MIRRORED TEAM PAIRS (T17, `gen3_mirrored_pairs_v1`, `--eval-mirrored-pairs`, default OFF): every
+        # team pairing is played from BOTH sides on ONE battle seed, the per-opponent count is EVEN, and the
+        # PAIR is the statistical unit of every interval recorded. A REGIME — recorded per run and per row.
+        self._mirrored = bool(eval_mirrored_pairs)
         # M5 Lane H: under --env-core rust the cycle plays IN PROCESS on the declared eval core
         # (`rust_eval.launch`), never on Python workers.
         self._env_core = env_core
@@ -255,6 +262,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # n=100 → ±0.098 (95% CI) per cell; n=200 → ±0.069 — the owner opted into 200 (2026-07-21)
         # for tighter sentinel cells at ~2× eval cost (work-stolen, off the training path).
         self._eval_games = int(eval_games) if eval_games else EVAL_GAMES
+        if self._mirrored:
+            self._eval_games = mirrored_eval_games(self._eval_games)
         # gen3_eval_freq_flag_v1: the cadence is a KNOB, not a constant. A short gate arm at the
         # 2M default gets only 1-2 cycles inside a 3M budget, which cannot satisfy a >=4-cycle
         # discipline. None => EVAL_FREQ_STEPS, so every pre-existing command is byte-identical.
@@ -377,7 +386,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         items = [EvalItem(name, BOT, n_games) for name in eval_opponent_names()]
         items += [EvalItem.fixed_from_cfg(f, n_games) for f in fixed_cfgs]
         names = [it.key for it in items]
-        pool = ShardedEvalPool(items, self._eval_shard_games, step=step)
+        pool = ShardedEvalPool(items, self._eval_shard_games, step=step, mirrored=self._mirrored)
         pool.write_plan(run_dir)
         # Record exactly which model produced this cycle's traces (the prober reads
         # this to reload the right model). snapshot=None now; _persist_snapshot patches
@@ -385,7 +394,7 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         write_eval_manifest(self._model_dir, step, opponents=names, n_games=n_games,
                             trainee_team_str=self._trainee_team_str,
                             opponent_pins=opponent_pins_of(self._fixed_opponents),
-                            quota=self._forensic_quota)
+                            quota=self._forensic_quota, mirrored_pairs=self._mirrored)
         # Process-unique account tag (per-process nonce + per-cycle counter), NOT the step:
         # the resume re-eval fires at the same step every restart, so a step tag collided
         # across restarts and hung a worker on a lingering challenge.
@@ -419,6 +428,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
             "arch_toggles": arch_toggles_from_model(self.model),
             # --trainee-team pin (None = default pool): eval measures the trainee ON ITS OWN TEAM.
             "trainee_team_str": self._trainee_team_str,
+            # MIRRORED pairs: every game seeded by the per-GAME rule (a pair shares one battle seed).
+            **(mirrored_worker_cfg(self.model, step) if self._mirrored else {}),
         }
         if self._env_core == "rust":
             procs = []
@@ -549,9 +560,16 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
         # used to live only in the overwritten latest_eval block + TensorBoard.
         ext_block = {k: {"win_rate": v, "counts": merged.get("counts", {}).get(k)}
                      for k, v in ext_wr.items()}
+        # MIRRORED pairs: the PAIR-level score over the bots (Random excluded, like win_rate_vs_bots) and
+        # each opponent's pentanomial on the row — the regime stamp the live ELO fit filters by.
+        mp_block = None
+        if self._mirrored:
+            record_pair_scores(self.logger, tui, merged, [k for k in bot_wr if k != RANDOM_OPPONENT_NAME],
+                               "bots")
+            mp_block = mirrored_pairs_block(merged, bots=list(bot_wr), externals=list(ext_wr))
         elo_result = record_elo(self._model_dir, step, bot_wr, [], n_games,
                                 self.logger, tui, bot_td_tails=bot_td_tails, bot_counts=bot_counts,
-                                externals=ext_block or None)
+                                externals=ext_block or None, mirrored_pairs=mp_block)
         # ELO for each stable opponent (display-only) → fills the eval table's elo column for the
         # ext_ rows: its OWN recorded ELO when available, else a ballpark from the trainee's rating.
         if ext_wr:
@@ -598,6 +616,8 @@ class PerOpponentEvalCallback(_ForcedEvalMixin, BaseCallback):
                 block["externals"] = build_externals_block(ext_wr, win_rates, reward_means, ep_lens)
                 if wr_external is not None:  # only the multi-opponent aggregate
                     block["win_rate_vs_external"] = wr_external
+            if mp_block is not None:
+                block["mirrored_pairs"] = mp_block      # the cycle's regime + per-opponent pentanomials
             record_eval_results(self._model_dir, step, block)
 
     def _maybe_save_best(self, step: int, pending: dict, win_rates: dict) -> None:
