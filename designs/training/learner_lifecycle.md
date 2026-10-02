@@ -229,27 +229,9 @@ The startup steps:
 The regions row's reserved jump is the R1 gate's eager and compiled forward + backward at B = 2048,
 cached by the allocator.
 
-Per update:
-- An update PEAKS at **8.75 GiB allocated** and 9.49 GiB reserved. That is the same on a diagnostics
-  update and a plain one.
-- **1.14 GiB** of that peak is the device-resident batch (K8.6).
-- The quiescent floor is 851–855 MiB.
-
-**The device batch must FIT, checked at startup** (`cuda_ledger.check_device_batch_fits`). After the
-ledger, the K8.6 device-resident batch the buffer DECLARES (`device_batches.planned_bytes`: n_steps ×
-n_envs rows × the obs width) must fit in room = the card's free bytes + the allocator's cached-but-
-unused bytes − one learner step (the peak the regions' gate measured) − 512 MiB. Otherwise it is
-`DeviceBatchWontFit` (FATAL_CONFIG), naming the levers: shrink the rollout (n_steps = D / n_envs), or
-keep the batch on the host. N = 256 at 2,048 steps per env (~5.9 GiB) is refused there, not at the
-first update's OOM. At production N = 48 the measured numbers give 1,167 MiB against a room of
-4,973 MiB. The check is a LOWER bound: a real update peaks above the gate's step (8.75 GiB against a
-4.3 GiB step), so a pass is not a promise; the K6 memory trend watches the run itself.
-
-**NECESSARY, NOT SUFFICIENT.** A pass does not mean the run fits. **A known false pass (2026-10-01).** N = 256 with the X26 ride-along heads ON passed the check
-(1,135 MiB against a room of 4,009 MiB), then ran OUT OF MEMORY in its first update's R1 micro-step:
-10.19 GiB allocated (1.77 GiB of it T2's CUDA-graph pools) on an 11.63 GiB card. The real update needs
-about 6.7 GiB above the floor plus the batch, against the gate's 4.3 GiB step. Making the check predict
-the update peak is open work.
+Per update (the same shape, BEFORE the 2026-10-01 fit levers below): an update PEAKED at 8.75 GiB
+allocated / 9.49 GiB reserved, 1.14 GiB of it the then-resident device batch; the quiescent floor is
+851–855 MiB. What the update peaks at NOW is the next section's table.
 
 **Declared slot loads.** A rust-core pool refresh is a DECLARED LOAD into its T2 slot.
 - The pool loads snapshots on the CPU. On the card, each promotion's snapshot stayed in the pool's
@@ -263,6 +245,81 @@ the update peak is open work.
   missed by the first fix and died on the runtime refusal (fixed in `95af710e`). The one declared
   exception is the python env core's worker pool, which infers on the snapshot itself on the device
   `--self-play-use-cpu` chose.
+
+## The update fit check (`gen3_update_fit_v1`) and fitting N = 256
+
+**The check — MEASURED, not a lower bound** (`agents/training/update_fit.py`; it replaced
+`cuda_ledger.check_device_batch_fits`, whose sum of startup rows passed N = 256 with the X26 heads and
+then OOMed in update 1). At the end of startup, on both paths, after the ledger — with T2, the compiled
+regions and the declared optimizer state all on the card — `dry_update` runs ONE REAL `train()` (one
+epoch: the production code path unchanged, R1's compiled micro-step at the production micro size, the
+eager tail, backward, accumulation, clip and optimizer steps, the micro-batch staging, the first-update
+diagnostics, and K9(b)'s behaviour PROBE under the Rust core) over a FIXTURE rollout of the buffer's full
+declared shape (the K9 learner golden's real labelled rows, tiled; the fixture's stored log-probs are the
+policy's own, so the probe judges it correctly, warn-only, its dump in a temp dir), then restores the
+learner EXACTLY — modules and optimizer state in place, the python / numpy / torch / CUDA RNG streams,
+every instance attribute of the model and its modules, the logger. The run after it is bit-identical to
+one without it (`update_fit_test`, on the golden: weights and logged losses). Verdict, deterministic:
+
+    headroom = (reserved_now + device_free_now) - demand (the dry update's peak reserved) >= 1,024 MiB
+
+1,024 = K6's 512 MiB ceiling margin + the sizing study's D-6 rule (ceiling − demand ≥ 512), so a pass is
+D-6 at the first update. Below it, or an OOM inside the dry update, is `UpdateWontFit` (FATAL_CONFIG),
+naming the levers; `<run_dir>/update_fit.json` keeps the reading and each `train()` segment's peak
+(`phase_peaks`, booked by a `phase_hook`). Cost: one epoch, 13–17 s at startup (measured 12.7–17.4 s,
+N = 48 and 256). `GEN3AI_UPDATE_FIT_SNAPSHOT=<path>` dumps the allocator's history of the dry update.
+
+**PREDICTIVE — measured against the real first update in the same process** (RTX 3080 Ti 12 GiB, torch
+2.8, fp32, rust core, `--arch production`, the X26 heads incl. `--ridealong-rnd-variants all`):
+
+| run | dry: peak alloc / reserved | real first update: peak alloc / reserved |
+|---|---|---|
+| N = 48, resident batch | 7,424 / 8,566 MiB | 7,230 / 8,570 MiB |
+| N = 256, all levers | 6,426 / 7,844 MiB | 6,230 / 7,910 MiB |
+| N = 256, heads OFF, all levers | 6,386 / 7,814 MiB | 6,190 / 7,880 MiB |
+
+Reserved within 70 MiB (the real one also carries the first eval cycles' cache growth, ~+70 MiB each
+at a promotion per rollout), allocated ~+195 MiB conservative. Before the probe was in the dry update it
+UNDER-predicted by 1.37 GiB: the probe WAS the peak (below).
+
+**The old N = 256 shape is refused at startup.** N = 256 + the X26 heads, resident batch, T2 uncapped:
+demand 10,650 MiB against a 10,702 MiB card → headroom 51 MiB → `UpdateWontFit` (exit 3), where the
+2026-10-01 launch had OOMed in update 1.
+
+**The levers that fit N = 256 — all numerically identical** (no learning or recipe change; the trainee's
+T2 rows replay at the same bucket as before, so its log-probs are bitwise unchanged):
+
+| lever | what | measured saving |
+|---|---|---|
+| K9(b) probe keeps NOTHING for backward (`gen3_probe_releases_graph_v1`) | `consistency.behaviour_probe`'s eager grad-mode forward of one micro-batch (2,048 rows) ran BEFORE the epoch loop and its saved activations were the update's PEAK; it now runs under `saved_tensors_hooks` that drop them (grad mode, kernels and values unchanged — bitwise, `update_fit_test`), and the stashes that held its graph are released | N = 48 real first update 8,790 → 7,230 MiB allocated, 9,550 → 8,570 reserved |
+| `--device-batch staged` (DEFAULT, `gen3_device_batch_mode_v1`) | each micro-batch gathered on the host by a prefetch thread, copied on a side stream; the resident K8.6 copy of the whole rollout is gone | −1,088 MiB of update peak (1,135 → 47 MiB on the card) |
+| T2 per-slot bucket caps (`gen3_slot_bucket_caps_v1`, `--t2-opponent-bucket-cap 64`) | each lane's CUDA-graph pool is sized by its largest capture: uncapped at N = 256, 8 lanes × 232 MiB; capped, only the trainee's lane captures 256 (others ≤ 64, a 60 MiB pool) | T2 startup row +1,399 / +3,924 → +850 / +2,112 MiB (alloc / reserved) |
+| T2 slots hold no ride-along heads (`gen3_opponent_inference_load_v1` + `served_replica`) | 18.2 MiB per slot at the X26 surface, never copied | T2 row +1,653 → +1,399 MiB allocated (heads then without RND variants) |
+
+Where the peak lives now (dry update, per segment, N = 48 resident): the per-term noise-scale probe
+7,424 MiB and the once-per-call grad-balance / rank probes 7,382 — first-update DIAGNOSTICS, ~1.4 GiB
+above the micro-step's backward (5,997) and forward (5,476). A plain update peaks ~1.5 GiB lower (N = 256:
+4,730 vs 6,230 MiB allocated).
+
+**The micro-step's activation footprint is the model's real size** (allocator snapshot of a micro-step,
+2,048 rows): ~2.5 GiB of forward activations saved for backward (the entity trunk's 61-token × 128-wide
+tensors, 61 MiB each at 2,048 rows, ~40 of them; SDPA ~0.66 GiB; the damage op's pairwise status /
+paths tensors ~0.34 GiB) and ~1.9 GiB of backward working set (fused reductions, the embedding-backward
+buffers). Nothing found duplicated or held past its use inside R1. Recomputation (activation
+checkpointing) would trade memory for a different compiled program — not a fit lever.
+
+**N = 256 + the X26 heads, fitted** (all levers, `--self-play-start-wr 0 --promote-threshold 0`, an eval
+every rollout, 5 updates, `~/gen3ai_archive/memfit/`): startup headroom 2,683 MiB; 5 evals, 4 promotions
+each loaded into its T2 slot, exit 0; first update 6,230 / 7,910 MiB, the plain ones 4,73x MiB allocated;
+K6's trend `OK @ update 4: demand 7.85 GiB, ceiling 8.80 GiB`; D-6 at update 4: ceiling 9,010 − demand
+8,040 = 970 MiB ≥ 512 — with ~1.3 GiB of the card held by four detached ladder updaters at the time
+(below). gnome-shell's 491 MiB was NOT freed for any of this.
+
+**FINDING — the promotion's ladder updater was on the GPU** (`gen3_ladder_off_gpu_v1`). Each promotion
+spawns `agents.training.snapshot_ladder` detached; it plays on the CPU but its imports opened a CUDA
+context, 330 MiB of the training card each, and each outlived its promotion by 15+ min (four alive at
+once at a promotion per rollout). It is now spawned with `CUDA_VISIBLE_DEVICES=""`. The startup fit
+check cannot see a process spawned later; K6's trend is what watches that.
 
 ## An opponent never trains, so an opponent load acquires nothing (`gen3_opponent_inference_load_v1`)
 

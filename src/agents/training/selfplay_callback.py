@@ -907,7 +907,12 @@ class SelfPlayCallback(SelfPlaySupplyMixin, _ForcedEvalMixin, BaseCallback):
                 [sys.executable, "-m", "agents.training.snapshot_ladder", self._model_dir,
                  "--promote", str(int(step)), "--n-games", str(self._ladder_games),
                  "--impl", self._bridge_impl if self._use_showdown_bridge else "node"],
-                stdout=logf, stderr=subprocess.STDOUT, start_new_session=True)
+                stdout=logf, stderr=subprocess.STDOUT, start_new_session=True,
+                # gen3_ladder_off_gpu_v1: the updater plays on the CPU (`snapshot_ladder` loads with
+                # device="cpu"), but its imports still opened a CUDA context: 330 MiB of the TRAINING
+                # card per live updater, and each outlived its promotion by ~15+ min (4 at once,
+                # 1.3 GiB, measured 2026-10-01 at a promotion per rollout). It never sees the GPU.
+                env={**os.environ, "CUDA_VISIBLE_DEVICES": ""})
             print(f"🪜 [LADDER] spawned round-robin update for promoted snapshot @{step}", flush=True)
         except Exception as e:  # noqa: BLE001 — telemetry, never break training
             print(f"⚠️ [LADDER] spawn failed at step {step}: {e}", flush=True)

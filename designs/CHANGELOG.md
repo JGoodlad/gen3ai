@@ -10555,3 +10555,26 @@ if a lazy build is reintroduced.
   (`env_core_rust_tf32_behaviour_check_fatal`, FATAL_CONFIG). The owner then RETIRED TF32 (it leaves
   with the deletion pass); the refusal guards the window until then. One P3 debt row: the argmax
   payload refinement.
+
+
+## 2026-10-01 — production + the X26 heads FIT at N = 256; the fit check RUNS the first update (`gen3_update_fit_v1`; no model change, numerically identical)
+
+- The first update's PEAK was K9(b)'s behaviour PROBE, not the micro-step: its eager grad-mode forward of
+  2,048 rows kept every saved activation. It now runs under `saved_tensors_hooks` that drop them
+  (`gen3_probe_releases_graph_v1`; values bitwise unchanged) and releases its stashes. N = 48 + heads,
+  real first update: 8,790 → 7,230 MiB allocated, 9,550 → 8,570 reserved.
+- `--device-batch {staged,resident,host}` (`gen3_device_batch_mode_v1`): STAGED is the default — a
+  prefetch thread gathers each micro-batch on the host, a side stream copies it; bit-identical batches.
+  The resident K8.6 copy (1,135 MiB of update peak at 98k rows) is opt-in.
+- T2 per-slot bucket caps (`gen3_slot_bucket_caps_v1`, `--t2-opponent-bucket-cap`, default 64; 64 joins
+  the default buckets when N > 64): only the trainee's lane captures the N-row bucket. N = 256: T2's
+  startup row +1,399 / +3,924 → +850 / +2,112 MiB (allocated / reserved).
+- T2 slots never COPY the ride-along heads (`slots.served_replica`, on top of `served_state_dict`).
+- `agents/training/update_fit.py` replaces `cuda_ledger.check_device_batch_fits` (a measured false
+  pass): at startup ONE real `train()` epoch on a fixture rollout (the probe included), the learner
+  restored bit-identically, then `UpdateWontFit` (FATAL_CONFIG) unless (reserved + free) − peak reserved
+  >= 1,024 MiB. Startup cost 13–17 s. Predicts the real first update's reserved peak within 70 MiB.
+  The old N = 256 + heads shape is refused (headroom 51 MiB); with the levers N = 256 + heads starts at
+  2,683 MiB and ran 5 updates / 5 evals / 4 promotions.
+- The promotion's detached ladder updater runs with `CUDA_VISIBLE_DEVICES=""` (`gen3_ladder_off_gpu_v1`):
+  it had opened a 330 MiB CUDA context on the training card per updater, several alive at once.

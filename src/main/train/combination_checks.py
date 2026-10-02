@@ -329,7 +329,7 @@ _ENV_CORE_UNPORTED_DESTS: Tuple[str, ...] = ("env_core",) + tuple(d for d, _, _ 
 #: Flags that act only under `--env-core rust`.
 _ENV_CORE_ONLY_DESTS: Tuple[str, ...] = (
     "rollout_trigger", "rollout_target_samples", "rollout_target_band", "version_pinning", "trainee_slots",
-    "t2_buckets", "t2_lanes", "t2_backend", "rust_env_front", "rust_env_threads", "rust_env_profile",
+    "t2_buckets", "t2_lanes", "t2_opponent_bucket_cap", "t2_backend", "rust_env_front", "rust_env_threads", "rust_env_profile",
     "rust_env_refusal_budget", "rust_env_respawn_budget", "opponent_sampling", "rust_eval_envs")
 
 

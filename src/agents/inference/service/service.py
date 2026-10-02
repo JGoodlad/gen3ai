@@ -189,7 +189,8 @@ class InferenceService:
                              buckets=self.buckets, backend=self.spec.backend,
                              max_rows=int(self.spec.max_rows_per_flush), lanes=int(self.spec.lanes),
                              obs_dim=self.obs_dim, n_actions=self.n_actions,
-                             artifact_dir=self.spec.artifact_dir)
+                             artifact_dir=self.spec.artifact_dir,
+                             slot_caps=tuple(int(c) for c in self.spec.slot_bucket_caps))
         if self.spec.backend == "aot":
             from agents.inference.service import aot
 
@@ -201,7 +202,7 @@ class InferenceService:
         t2 = time.perf_counter()
         for gi, g in enumerate(self.groups):
             for i in range(g.n_slots):
-                for b in self.buckets:
+                for b in self.engine.slot_buckets[self._slots.index((gi, i))]:
                     self.startup_reports.extend(self._gate(gi, i, b))
         for b in self.buckets:                  # every slot AT ONCE: lanes replay concurrently
             self.startup_reports.extend(self._gate_concurrent(b))
@@ -280,7 +281,8 @@ class InferenceService:
         seed per slot, so concurrent slots compute different functions) up the declared ladder until
         one rung is informative, then once more on the real weights with the vacuity guard waived;
         the real reports come first."""
-        if self.engine.n_lanes < 2 or len(self._slots) < 2:
+        on_b = [s for s in range(len(self._slots)) if b in self.engine.slot_buckets[s]]
+        if self.engine.n_lanes < 2 or len(on_b) < 2 or len({self.engine.lane_of(s) for s in on_b}) < 2:
             return []
         try:
             return self._concurrent_once(b, tag="", allow_vacuous=False, path="real")
@@ -332,7 +334,8 @@ class InferenceService:
                          path: str) -> List[ParityReport]:
         guard = self._frozen_guard if self.state == "FROZEN" else self._startup_guard
         obs, mask = fixture_rows(self.obs_dim, b)
-        plan: List[PlanItem] = [(s, gi, i, obs, mask) for s, (gi, i) in enumerate(self._slots)]
+        plan: List[PlanItem] = [(s, gi, i, obs, mask) for s, (gi, i) in enumerate(self._slots)
+                                if b in self.engine.slot_buckets[s]]   # gen3_slot_bucket_caps_v1
         self._epoch += 1
         with guard(f"concurrent parity bucket={b}"):
             offsets, _ = self.engine.execute(plan)
@@ -444,8 +447,8 @@ class InferenceService:
             out[t.priority.name] += t.n
         return out
 
-    def _chunks(self, n: int) -> List[Tuple[int, int]]:
-        return self.engine.chunks(n)
+    def _chunks(self, n: int, slot: Optional[int] = None) -> List[Tuple[int, int]]:
+        return self.engine.chunks(n, slot)
 
     def flush(self) -> int:
         """Serve every ROLLOUT row, then up to ``filler_batches_per_flush`` batches of the rest."""
@@ -471,7 +474,7 @@ class InferenceService:
         for t in sorted((t for t in self._pending if t.priority != Priority.ROLLOUT),
                         key=lambda t: (t.priority, t.seq)):         # FIFO within a class: stop,
             if filler_budget is not None:                            # never skip ahead
-                need = len(self._chunks(t.n))
+                need = len(self._chunks(t.n, t.slot))
                 if filler_budget == 0 or (used > 0 and used + need > filler_budget):
                     break
                 used += need

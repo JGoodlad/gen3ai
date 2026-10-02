@@ -23,7 +23,8 @@ def resolve_env_core_args(args: Any) -> None:
     defaults = {
         "rollout_trigger": "complete_game", "rollout_target_samples": 0, "rust_env_front": "proc",
         "rust_env_threads": 8, "rust_env_profile": "release", "rust_env_refusal_budget": 64,
-        "rust_env_respawn_budget": 2, "version_pinning": "off", "t2_lanes": 0, "opponent_sampling": "keyed",
+        "rust_env_respawn_budget": 2, "version_pinning": "off", "t2_lanes": 0, "t2_opponent_bucket_cap": 64,
+        "opponent_sampling": "keyed",
         "rust_eval_envs": 64,
     }
     for k, v in defaults.items():
@@ -159,6 +160,7 @@ def build_rust_vec_env(args: Any, *, mappings: Any, trainee_teambuilder: Any, op
             switch_freeze=bool(getattr(args, "progress_switch_freeze", False)),
             refusal_budget=int(args.rust_env_refusal_budget), respawn_budget=int(args.rust_env_respawn_budget),
             device=device, backend=backend, buckets=buckets, lanes=int(args.t2_lanes or 0),
+            opponent_bucket_cap=int(args.t2_opponent_bucket_cap),
             version_pinning=args.version_pinning == "per_game", trainee_slots=int(args.trainee_slots),
             opponent_sampling=args.opponent_sampling, policy_seed=run_seed, fork=fork_decl_from_args(args))
         sources = OpponentSources(self_play_fraction=float(self_play_fraction))

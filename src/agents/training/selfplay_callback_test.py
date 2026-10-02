@@ -841,3 +841,21 @@ def test_a_SPECIALIST_run_is_greedy_but_NOT_ladder_symmetric(tmp_path):
                           showdown_port=9999, eval_sentinel_greedy=True,
                           trainee_team_str="Tyranitar @ Leftovers\n")
     assert cb._sentinel_regime() == {"greedy": True, "symmetric_teams": False}
+
+
+def test_the_detached_ladder_updater_never_sees_the_gpu(tmp_path, monkeypatch):
+    """gen3_ladder_off_gpu_v1: the promotion's round-robin updater plays on the CPU, but it opened a
+    CUDA context anyway (330 MiB of the training card each, several alive at once — measured
+    2026-10-01). It is spawned with no visible CUDA device."""
+    import types
+    from agents.training import selfplay_callback as sc
+    seen = {}
+
+    def fake_popen(argv, **kw):
+        seen.update(kw, argv=argv)
+        return MagicMock()
+    monkeypatch.setattr(sc.subprocess, "Popen", fake_popen)
+    me = types.SimpleNamespace(_model_dir=str(tmp_path), _ladder_games=4, _bridge_impl="rust",
+                               _use_showdown_bridge=True)
+    sc.SelfPlayCallback._spawn_snapshot_ladder_update(me, 1000)
+    assert seen["env"]["CUDA_VISIBLE_DEVICES"] == "" and "--promote" in seen["argv"]

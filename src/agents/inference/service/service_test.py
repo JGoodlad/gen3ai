@@ -350,3 +350,72 @@ def test_host_results_equal_device_results_across_flushes_of_both_buffers(polici
             assert np.array_equal(lp, d.logp.numpy()) and np.array_equal(v, d.value.numpy())
             assert np.array_equal(g, d.greedy.numpy())
             _close(d, _ref(pol, o, m))
+
+
+def test_a_slot_never_holds_the_ride_along_heads(policies):
+    """gen3_slot_served_state_v1: the DETACHED ride-along heads are left out of every replica (never
+    copied, not stacked) — 18.2 MiB per slot at the X26 surface — and a heads-carrying weight set still
+    loads (its heads are not a slot's to hold); what a slot SERVES is unchanged."""
+    from agents.inference.service.slots import served_state_dict
+    from agents.model.ridealong_heads import RideAlongSpec, build_ridealong
+    a, b = policies
+    obs_dim = int(a.observation_space["observation"].shape[0])
+
+    def with_heads(p):
+        q = copy.deepcopy(p)
+        q.ridealong = build_ridealong(q.features_extractor, obs_dim=obs_dim, spec=RideAlongSpec(rnd=True, adv=2))
+        assert q.ridealong is not None
+        return q
+    ha, hb = with_heads(a), with_heads(b)
+    heads_keys = [k for k in ha.state_dict() if k.startswith("ridealong.")]
+    assert heads_keys and not any(k.startswith("ridealong.") for k in served_state_dict(ha))
+    svc = _service(ha, n_slots=2, buckets=(2, 8))
+    group = svc.groups[0]
+    assert all(getattr(r, "ridealong", None) is None for r in group.policies)
+    assert not any(k.startswith("ridealong.") for k in group.stacked)
+    assert ha.ridealong is not None                      # the template itself is untouched
+    plain = _service(a, n_slots=2, buckets=(2, 8)).groups[0]
+    assert group.storage_bytes() == plain.storage_bytes()
+    s1 = svc.slot("pool", 1)
+    svc.load(s1, hb, "heads-B")                          # a heads-carrying load matches the slot
+    obs, mask = fixture_rows(svc.obs_dim, 13)
+    t0, t1 = svc.submit(svc.slot("pool", 0), obs, mask), svc.submit(s1, obs, mask)
+    svc.flush()
+    _close(t0.result(), _ref(a, obs, mask))
+    _close(t1.result(), _ref(b, obs, mask))
+
+
+def test_per_slot_bucket_caps_chunk_rows_beyond_a_slots_largest_bucket(policies):
+    """gen3_slot_bucket_caps_v1: a capped slot captures / gates / serves only its buckets <= the cap, and
+    a request larger than its largest bucket is CHUNKED (served, never refused); the uncapped slot keeps
+    every bucket. A bad declaration is refused."""
+    a, b = policies
+    svc = _service(a, n_slots=2, buckets=(2, 8, 16), slot_bucket_caps=(16, 2))
+    e = svc.engine
+    assert e.slot_buckets == [(2, 8, 16), (2,)]
+    gated = {(r.where.split("slot=")[1].split(" ")[0], r.where.split("bucket=")[1].split(" ")[0])
+             for r in svc.startup_reports if "CONCURRENT" not in r.where}
+    assert ("1", "8") not in gated and ("1", "16") not in gated and ("0", "16") in gated
+    assert e.chunks(13, 1) == [(2, 2)] * 6 + [(2, 1)] and e.chunks(13, 0) == [(16, 13)]
+    svc.load(svc.slot("pool", 1), b, "B")
+    obs, mask = fixture_rows(svc.obs_dim, 13)
+    t0, t1 = svc.submit(svc.slot("pool", 0), obs, mask), svc.submit(svc.slot("pool", 1), obs, mask)
+    svc.flush()
+    _close(t0.result(), _ref(a, obs, mask))
+    _close(t1.result(), _ref(b, obs, mask))
+    for bad in ((16,), (16, 1)):
+        with pytest.raises(ValueError, match="slot_bucket_caps"):
+            _service(a, n_slots=2, buckets=(2, 8, 16), slot_bucket_caps=bad)
+
+
+def test_the_rust_env_declares_caps_on_every_slot_but_the_trainees():
+    from agents.training.rust_rollout.build import RustEnvDecl
+    d = RustEnvDecl(n_envs=256, opponent_bucket_cap=64)
+    assert d.resolved_buckets == (8, 64, 256)
+    assert d.slot_bucket_caps(4, [2]) == (64, 64, 256, 64)
+    assert RustEnvDecl(n_envs=48, opponent_bucket_cap=64).resolved_buckets == (8, 48)
+    assert RustEnvDecl(n_envs=256).opponent_bucket_cap == 64                 # the declared default
+    assert RustEnvDecl(n_envs=256, opponent_bucket_cap=0).slot_bucket_caps(4, [2]) == ()   # 0 = uncapped
+    assert RustEnvDecl(n_envs=256, opponent_bucket_cap=0).resolved_buckets == (8, 256)
+    typed = RustEnvDecl(n_envs=256, buckets=(8, 16, 32, 256), opponent_bucket_cap=64)
+    assert typed.resolved_buckets == (8, 16, 32, 256) and typed.slot_bucket_caps(2, [0]) == (256, 64)

@@ -46,6 +46,17 @@ def served_state_dict(policy: Any) -> Dict[str, torch.Tensor]:
     return without_ridealong_state(policy.state_dict())
 
 
+def served_replica(template: Any) -> Any:
+    """A deep copy of ``template`` WITHOUT its detached ride-along heads (``policy.ridealong``): the
+    heads are memoised to None, so they are never copied — not even transiently onto the template's
+    device while the slots are built (31 slots x 18.2 MiB at the X26 surface with every RND variant)."""
+    memo: Dict[int, Any] = {}
+    heads = getattr(template, "ridealong", None)
+    if isinstance(heads, torch.nn.Module):
+        memo[id(heads)] = None
+    return copy.deepcopy(template, memo)
+
+
 def state_signature(sd: Dict[str, torch.Tensor]) -> Tuple[Tuple[str, Tuple[int, ...], str], ...]:
     return tuple((k, tuple(v.shape), str(v.dtype)) for k, v in sorted(sd.items()))
 
@@ -102,10 +113,8 @@ class SlotGroup:
         self.fingerprint = forward_fingerprint(template)
         replicas: List[Any] = []
         for _ in range(self.n_slots):
-            r = copy.deepcopy(template)
+            r = served_replica(template)
             r.optimizer = None            # a served replica never steps
-            if getattr(r, "ridealong", None) is not None:
-                r.ridealong = None        # ... and never carries the detached heads (F-MEM)
             replicas.append(r.to(device).eval())
         # sb3 registers the shared extractor under three names, so one tensor appears under up to
         # three keys: stack each UNIQUE tensor once and remember every key that aliases it.

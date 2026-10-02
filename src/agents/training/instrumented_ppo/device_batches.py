@@ -83,42 +83,131 @@ class _DeviceGather:
         )
 
 
-def planned_bytes(buffer: Any) -> int:
-    """The device copy `install` WOULD make for this buffer's declared shape (every flattened obs key
-    + the flat arrays), or 0 when the host path is kept. Readable at startup: the buffer's arrays
-    exist at their full declared shape from `_setup_model` on."""
-    dev = torch.device(getattr(buffer, "device", "cpu"))
-    if not (_servable(buffer) and dev.type == "cuda"):
-        return 0
-    return (sum(int(np.asarray(v).nbytes) for v in buffer.observations.values())
-            + sum(int(np.asarray(buffer.__dict__[t]).nbytes) for t in _FLAT))
+class _StagedGather:
+    """Mode ``staged`` (gen3_device_batch_mode_v1): each micro-batch is gathered on the HOST by one
+    prefetch thread (``np.take`` into a pinned block from torch's caching host allocator, ``lookahead``
+    micro-batches ahead) and copied to the device on a side stream when the update asks for it; the
+    compute stream waits on that copy and the tensors are recorded on it. On the card at any moment:
+    the micro-batch in use plus at most the one being copied (~2 x 22 MB at production shape), instead
+    of the whole flattened buffer (~1.1 GB at 98k rows). The rows are the SAME rows from the SAME
+    permutation (the buffer's own ``get`` is run unchanged — its `_get_samples` hands back the index
+    slice, this class gathers it), and a gather is exact, so every micro-batch is BIT-IDENTICAL to the
+    host path's and the resident path's (`instrumented_ppo_device_batches_test`)."""
+
+    def __init__(self, buffer: Any, device: torch.device, lookahead: int = 2) -> None:
+        from concurrent.futures import ThreadPoolExecutor
+
+        self.buffer = buffer
+        self.device = device
+        self.cuda = device.type == "cuda"
+        self.stream = torch.cuda.Stream(device) if self.cuda else None
+        self.lookahead = max(1, int(lookahead))
+        self.pool: Any = ThreadPoolExecutor(1, thread_name_prefix="devb-stage")
+        self.copies = 0                                   # micro-batches staged this update
+        self.nbytes = 0                                   # the most bytes staged on the card at once
+
+    def indices(self, batch_inds: np.ndarray, env: Any = None) -> np.ndarray:
+        """Installed as the buffer's `_get_samples`: its own ``get`` yields the index slices."""
+        return np.array(batch_inds, dtype=np.int64, copy=True)
+
+    def _host(self, inds: np.ndarray) -> Any:
+        b = self.buffer
+
+        def take(a: np.ndarray) -> torch.Tensor:
+            a = np.asarray(a)
+            out = torch.empty((len(inds),) + tuple(a.shape[1:]), dtype=torch.from_numpy(a[:0]).dtype,
+                              pin_memory=self.cuda)
+            np.take(a, inds, axis=0, out=out.numpy())
+            return out
+        return ({k: take(v) for k, v in b.observations.items()}, {t: take(b.__dict__[t]) for t in _FLAT})
+
+    def _serve(self, fut: Any) -> Any:
+        from sb3_contrib.common.maskable.buffers import MaskableDictRolloutBufferSamples
+        obs, f = fut.result()
+        if self.cuda:
+            main = torch.cuda.current_stream(self.device)
+            assert self.stream is not None
+            self.stream.wait_stream(main)
+            with torch.cuda.stream(self.stream):
+                obs = {k: v.to(self.device, non_blocking=True) for k, v in obs.items()}
+                f = {k: v.to(self.device, non_blocking=True) for k, v in f.items()}
+            main.wait_stream(self.stream)
+            for t in list(obs.values()) + list(f.values()):
+                t.record_stream(main)
+        n = (sum(int(v.numel()) * v.element_size() for v in obs.values())
+             + sum(int(v.numel()) * v.element_size() for v in f.values()))
+        self.nbytes = max(self.nbytes, 2 * n)
+        self.copies += 1
+        return MaskableDictRolloutBufferSamples(
+            observations=obs, actions=f["actions"], old_values=f["values"].flatten(),
+            old_log_prob=f["log_probs"].flatten(), advantages=f["advantages"].flatten(),
+            returns=f["returns"].flatten(),
+            action_masks=f["action_masks"].reshape(-1, self.buffer.mask_dims))
+
+    def get(self, batch_size: Optional[int] = None) -> Iterator[Any]:
+        """Installed as the buffer's `get`: the class's own generator (the permutation draw, the
+        flatten, the slicing), its index slices gathered ``lookahead`` ahead."""
+        import collections
+
+        pend: Any = collections.deque()
+        for inds in type(self.buffer).get(self.buffer, batch_size):
+            pend.append(self.pool.submit(self._host, inds))
+            if len(pend) > self.lookahead:
+                yield self._serve(pend.popleft())
+        while pend:
+            yield self._serve(pend.popleft())
+
+    def close(self) -> None:
+        self.pool.shutdown(wait=True)
 
 
-def install(buffer: Any, *, force: bool = False) -> Optional[_DeviceGather]:
-    """Serve ``buffer``'s micro-batches from a copy on the BUFFER's own device (where sb3's
-    `to_torch` puts them) until `uninstall`. Always replaces any previous gather first, so a stale
-    copy can never serve a later update. Returns the gather (None when the host path is kept: not a
-    maskable dict buffer, or a CPU buffer without ``force``)."""
+#: How the update's micro-batches reach the learner's device (gen3_device_batch_mode_v1). Every mode
+#: serves BIT-IDENTICAL micro-batches from the same permutation draw; they differ only in memory and
+#: time. ``resident`` = one device copy of the whole flattened buffer per update (K8.6, +~1.1 GB of
+#: update peak at 98k rows); ``staged`` = a prefetch thread gathers each micro-batch on the host and it
+#: is copied on a side stream (~2 micro-batches on the card); ``host`` = sb3's own per-micro-batch
+#: host gather + blocking copy.
+MODES = ("resident", "staged", "host")
+DEFAULT_MODE = "staged"
+
+
+def install(buffer: Any, *, force: bool = False, mode: str = DEFAULT_MODE) -> Any:
+    """Serve ``buffer``'s micro-batches by ``mode`` (`MODES`) until `uninstall`. Always replaces any
+    previous gather first, so a stale copy can never serve a later update. Returns the gather (None
+    when the host path is kept: mode ``host``, not a maskable dict buffer, or a CPU buffer without
+    ``force``)."""
     uninstall(buffer)
+    if mode not in MODES:
+        raise ValueError(f"device batch mode {mode!r} is not one of {MODES}")
     dev = torch.device(getattr(buffer, "device", "cpu"))
-    if not (_servable(buffer) and (dev.type == "cuda" or force)):
+    if mode == "host" or not (_servable(buffer) and (dev.type == "cuda" or force)):
         return None
+    if mode == "staged":
+        staged = _StagedGather(buffer, dev)
+        buffer._get_samples = staged.indices
+        buffer.get = staged.get
+        buffer.__dict__["_devb_staged"] = staged
+        return staged
     gather = _DeviceGather(buffer, dev)
     buffer._get_samples = gather
     return gather
 
 
 def uninstall(buffer: Any) -> None:
-    """Back to the buffer's own `_get_samples`; the device copy is dropped."""
+    """Back to the buffer's own `get` / `_get_samples`; a device copy is dropped, a stager closed."""
     g = buffer.__dict__.pop("_get_samples", None)
     if isinstance(g, _DeviceGather):
         g.obs, g.flat = None, {}
+    staged = buffer.__dict__.pop("_devb_staged", None)
+    buffer.__dict__.pop("get", None)
+    if staged is not None:
+        staged.close()
 
 
 @contextlib.contextmanager
-def device_samples(buffer: Any, *, force: bool = False) -> Iterator[Optional[_DeviceGather]]:
+def device_samples(buffer: Any, *, force: bool = False, mode: str = "resident") -> Iterator[Any]:
     """`install` for the body of the context, `uninstall` on the way out (the tests' form)."""
-    gather = install(buffer, force=force)
+    gather = install(buffer, force=force, mode=mode)
     try:
         yield gather
     finally:

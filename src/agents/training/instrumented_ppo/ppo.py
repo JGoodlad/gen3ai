@@ -76,6 +76,7 @@ from agents.training.instrumented_ppo.value_terms import ValueTerms
 from agents.training.rank_metrics import rank_probe_from_stash
 from agents.training.instrumented_ppo.device_batches import install as _devb_install
 from agents.training.instrumented_ppo.device_batches import uninstall as _devb_uninstall
+from agents.training.instrumented_ppo.device_batches import DEFAULT_MODE as _DEVB_DEFAULT
 from agents.model.compile_trainer import eager_extractor as _eager_fe  # gen3_compile_sentinel_v1
 
 
@@ -416,10 +417,11 @@ class InstrumentedMaskablePPO(PpoHyperparameters,
                       "baitent_ent_flagged": baitent_ent_flagged,
                       "baitent_ent_unflagged": baitent_ent_unflagged}
         if _ph is not None: _ph("setup")
-        # +K8 (gen3_device_batches_v1): every micro-batch gathered from ONE device copy of the
-        # flattened buffer (made at the first micro-batch) instead of a host gather + H2D copy each
-        # — the same permutation draw, bit-identical batches; removed after the epoch loop.
-        _devb = _devb_install(self.rollout_buffer)
+        # +K8 (gen3_device_batches_v1 / gen3_device_batch_mode_v1): how the micro-batches reach the
+        # device — `--device-batch` (`device_batches.MODES`: one resident copy of the flattened buffer,
+        # or each micro-batch STAGED by a prefetch thread, or sb3's host path); the same permutation
+        # draw and bit-identical batches in every mode; removed after the epoch loop.
+        _devb = _devb_install(self.rollout_buffer, mode=getattr(self, "device_batch_mode", _DEVB_DEFAULT))
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             _epoch_cf_start = len(clip_fractions)   # +PER-EPOCH: this epoch's slice of the running list

@@ -20,6 +20,14 @@ small batches, 1.06 → 1.23 ms from 2 → 8 rows), ``n_envs`` the trainee's bat
 and any opponent slot with more than 8 rows (a small pool early in a run). Lane E's 2 / 4 / 16 are
 dropped: 16 served nothing, and 2 / 4 each cost a compile (~75 s on 2.5.1) and a capture per slot for
 a sub-0.2 ms saving. The SIZING study (order constraint 5) re-reads it at its N.
+
+PER-SLOT CAPS (gen3_slot_bucket_caps_v1, 2026-10-01): every slot but the trainee's captures only the
+buckets <= ``opponent_bucket_cap`` (64; ``--t2-opponent-bucket-cap``), and 64 joins the default set when
+N > 64 — so the default at N = 256 is ``(8, 64, 256)``, the trainee's slot captures all three and every
+other slot ``(8, 64)``. Rows beyond a slot's largest bucket are chunked (a small early pool's 80-240
+rows per slot replay as 64-row chunks). WHY: each lane holds its own CUDA-graph pool sized by its
+largest capture; uncapped at N = 256 that was 8 lanes x 232 MiB (1.81 GiB) of a 12 GiB card, capped it
+is one 232 MiB pool plus seven ~60 MiB. The trainee's rows replay at the same bucket as before.
 """
 from __future__ import annotations
 
@@ -70,6 +78,9 @@ class RustEnvDecl:
     op_timeout: Optional[float] = None
     opponent_sampling: str = "keyed"
     policy_seed: int = 0
+    #: gen3_slot_bucket_caps_v1: the largest bucket a NON-trainee slot (pool / stable / exploiter
+    #: opponents, eval's extra slots) captures; 0 = no caps (every slot captures every bucket).
+    opponent_bucket_cap: int = 64
     #: the fork arm's declaration (``fork.ForkDecl``; ``designs/training/forks.md`` §14). None = OFF —
     #: nothing of the arm is built, and the arena, the obs keys and the FIFO are exactly as without it.
     fork: Any = None
@@ -96,7 +107,23 @@ class RustEnvDecl:
     def resolved_buckets(self) -> Tuple[int, ...]:
         if self.buckets:
             return tuple(sorted(set(int(b) for b in self.buckets)))
-        return tuple(sorted({8, max(8, int(self.n_envs))}))
+        n, cap = max(8, int(self.n_envs)), int(self.opponent_bucket_cap)
+        # the cap is itself a bucket when the trainee's is larger: an opponent slot's 20-80 rows then
+        # replay at the cap, not at 8-row chunks
+        return tuple(sorted({8, n} | ({cap} if 8 < cap < n else set())))
+
+    def slot_bucket_caps(self, n_slots: int, trainee_slots: Sequence[int]) -> Tuple[int, ...]:
+        """gen3_slot_bucket_caps_v1: one cap per global slot — the trainee's slots every bucket, every
+        other slot the buckets <= ``opponent_bucket_cap`` (rows beyond are CHUNKED). Each lane's private
+        graph pool is sized by its largest capture, so only the trainee's lane holds the N-row bucket's
+        (measured 2026-10-01, 31 slots x (8, 256) x 8 lanes: 8 pools x 232 MiB; a 64-row pool is 60).
+        Empty (no caps) when ``opponent_bucket_cap`` is 0."""
+        b = self.resolved_buckets
+        cap = int(self.opponent_bucket_cap)
+        if cap <= 0:
+            return ()
+        tr = {int(s) for s in trainee_slots}
+        return tuple(b[-1] if s in tr else max(b[0], cap) for s in range(int(n_slots)))
 
     @property
     def resolved_max_game_rows(self) -> int:
@@ -296,11 +323,13 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
     svc = svc if shared else InferenceService(ServiceSpec(
         groups=tuple(SlotGroupSpec(name, k, tpl) for name, k, tpl in groups), device=decl.device,
         backend=decl.backend, buckets=buckets, lanes=lanes,
+        slot_bucket_caps=decl.slot_bucket_caps(n_slots, trainee_slots),
         # T2's startup CONCURRENT gate puts one full chunk of the largest bucket per slot into ONE flush,
         # so the declared arena must hold n_slots x the largest bucket (F-LG-4: T2 does not check it).
         max_rows_per_flush=max(1024, 4 * n, buckets[-1] * 4, n_slots * buckets[-1]))).startup()
     emit(f"🦀 [RUST ENV] T2 {'SHARED' if shared else 'up'} in {time.perf_counter() - t0:.1f}s: {len(groups)} slot group(s) "
-         f"{[(g[0], g[1]) for g in groups]}, trainee slot(s) {trainee_slots}, buckets {buckets}, lanes {lanes}, "
+         f"{[(g[0], g[1]) for g in groups]}, trainee slot(s) {trainee_slots}, buckets {buckets} (non-trainee "
+         f"slots <= {decl.opponent_bucket_cap or 'uncapped'}), lanes {lanes}, "
          f"backend {decl.backend} on {decl.device}")
 
     # ---- the opponents (Lane E)

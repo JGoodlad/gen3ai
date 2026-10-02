@@ -78,6 +78,13 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--t2-buckets", "--t2_buckets", dest="t2_buckets", type=str, default=None,
                         help="Inference batch buckets, comma-separated. Default (8, --n-envs): 8 for an opponent "
                              "slot's 1–6 rows, N for the trainee's batch (F-LE-9, decided 2026-09-29).")
+    parser.add_argument("--t2-opponent-bucket-cap", "--t2_opponent_bucket_cap", dest="t2_opponent_bucket_cap",
+                        type=int, default=None,
+                        help="The largest T2 bucket a NON-trainee slot (opponents, eval's slots) captures "
+                             "(gen3_slot_bucket_caps_v1); rows beyond it are chunked. Default 64 (and 64 joins "
+                             "the default buckets when --n-envs > 64): each lane's CUDA-graph pool is sized by its "
+                             "largest capture, so only the trainee's lane holds the N-row bucket's (8 x 232 MiB "
+                             "at N = 256 before). 0 = uncapped (every slot captures every bucket).")
     parser.add_argument("--t2-lanes", "--t2_lanes", dest="t2_lanes", type=int, default=None,
                         help="Inference lanes (CUDA streams); 0 (default) = min(slots, 8) on CUDA, 1 on CPU.")
     parser.add_argument("--t2-backend", "--t2_backend", dest="t2_backend", choices=("graph", "eager", "aot"),

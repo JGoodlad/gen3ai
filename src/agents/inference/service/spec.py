@@ -105,6 +105,13 @@ class ServiceSpec:
     #: Concurrency LANES (CUDA streams, each with its own graph pool and static inputs); slot s
     #: runs on lane s % lanes. 1 on CPU.
     lanes: int = 1
+    #: PER-SLOT bucket caps (gen3_slot_bucket_caps_v1), one per global slot in declaration order, or
+    #: EMPTY = every slot serves every bucket. Slot s captures / serves only the buckets <= its cap
+    #: (always at least the smallest); a request larger than its largest bucket is CHUNKED, never
+    #: refused. Each lane's private graph pool is sized by the largest capture on that lane, so a
+    #: small cap on the opponent slots keeps all but the trainee's lane small (measured 2026-10-01:
+    #: 232 MiB per lane at bucket 256, 60 at 64, 34 at 32).
+    slot_bucket_caps: Tuple[int, ...] = ()
     #: Where backend 'aot' writes its packages (default: a fresh temp dir — never shared).
     artifact_dir: Optional[str] = None
     #: The seeded-perturbation LADDER a vacuous parity comparison climbs (`parity_probe`, module
@@ -148,6 +155,11 @@ class ServiceSpec:
             raise ValueError(f"ServiceSpec: perturb_ladder must be distinct (scale, seed offset) rungs "
                              f"in ascending order, 0 < scale <= {PERTURB_MAX_SCALE} (the bars' "
                              f"calibrated range), offset >= 0 — or empty; got {self.perturb_ladder}")
+        n_slots = sum(int(g.n_slots) for g in self.groups)
+        caps = tuple(int(c) for c in self.slot_bucket_caps)
+        if caps and (len(caps) != n_slots or min(caps) < b[0]):
+            raise ValueError(f"ServiceSpec: slot_bucket_caps must name one cap >= the smallest bucket "
+                             f"{b[0]} per declared slot ({n_slots}), got {self.slot_bucket_caps}")
         if self.verify_bucket is not None and int(self.verify_bucket) not in b:
             raise ValueError(f"ServiceSpec: verify_bucket {self.verify_bucket} is not a declared bucket")
 

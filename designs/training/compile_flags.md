@@ -1220,7 +1220,7 @@ each compiled `fullgraph=True, dynamic=False`, so a graph break INSIDE a region 
 | R1 `learner_micro_step` | `instrumented_ppo.micro_step.micro_step` — `evaluate_actions` + fold steps 1-3a; its backward is AOTAutograd's from the same graph | train / grad / `batch_size` (a RAGGED micro-batch runs the same function eager) | the accumulation group and the optimizer step are per GROUP; the host read follows it |
 | R2 rank probe | NO forward: reads R1's own stashes on the first micro-batch, spectra on the device (`rank_metrics.rank_probe_from_stash`) | — | — |
 | R3 optimizer step | `clip_grad_norm_` + AdamW + `zero_grad`, EAGER by decision | — | 0.04 s per update; the KL->LR controller moves lr every update, so a compiled step keyed on it is a new signature per update |
-| *eager, declared* | the batch build (one device copy of the buffer per update, `instrumented_ppo/device_batches.py`), label alignment, the per-micro host read, the fold's eager tail, every cadence diagnostic, logging | — | host-side or data-dependent by nature |
+| *eager, declared* | the batch build (micro-batches staged to the device by a prefetch thread, or one resident device copy per update — `--device-batch`, `instrumented_ppo/device_batches.py`), label alignment, the per-micro host read, the fold's eager tail, every cadence diagnostic, logging | — | host-side or data-dependent by nature |
 
 The sequence: reset → `install` (removes any instance-level compiled extractor forward, so every
 other caller of the extractor runs eager) → `gate_regions` holds R1 and R0 to eager on REAL rows (R1

@@ -18,7 +18,8 @@ from agents.model.model_version import ModelVersion, ModelVersionError
 from agents.model.policy import Gen3DualHeadMaskablePolicy, POLICY_ACTIVATION_FN
 from agents.model.snapshot import load_model_snapshot, record_checkpoint, save_model_snapshot
 import agents.training.cuda_ledger as _cuda_ledger
-from agents.training.instrumented_ppo.device_batches import planned_bytes as _devb_planned_bytes
+import agents.training.update_fit as _update_fit
+from agents.training.instrumented_ppo.device_batches import DEFAULT_MODE as _devb_default_mode
 from agents.training.distill_anchor_callback import save_anchor_ref_beside
 from agents.observation.state_encoder import Gen3ObservationEncoder
 from agents.training.adaptive_lr_callback import TwoPhaseLRCallback
@@ -245,6 +246,9 @@ def apply_training_hparams(model, args, *, mappings, attach_cf_labels) -> None:
     # (`rust_env_setup.resolve_env_core_args`: fatal on both env cores — M5 Lane K9). A namespace
     # without the dest keeps it off.
     model.behaviour_check = str(getattr(args, "behaviour_check", None) or "off")
+    # gen3_device_batch_mode_v1 (`--device-batch`): how train()'s micro-batches reach the device —
+    # bit-identical in every mode; a namespace without the dest keeps the module default.
+    model.device_batch_mode = str(getattr(args, "device_batch", None) or _devb_default_mode)
     model.rank_probe_every_update = getattr(args, "rank_tripwire", "warn") != "off"
     model.noise_terms_every_update = getattr(args, "adaptive_batch", "off") not in ("off", "total")
     # DERIVED likewise — the PBRS sizing meter's denominator is the TERMINAL magnitude, not a knob
@@ -742,8 +746,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
             _ledger.mark("optimizer state declared (Adam m, v) + lifecycle")
             _ledger.report(model_dir)
-            _fit = _cuda_ledger.check_device_batch_fits(   # refuse at startup, never OOM at update 1
-                _ledger, _devb_planned_bytes(model.rollout_buffer))
+            # gen3_update_fit_v1: RUN one dry update (restored exactly) and refuse a first update that
+            # would not fit with the declared headroom — at startup, never an OOM at update 1.
+            _fit = _update_fit.check_update_fits(model, model_dir)
             if _fit:
                 print(_fit, flush=True)
             model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path
@@ -969,8 +974,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         _arm_learner_lifecycle(model, args)  # K6 gen3_learner_freeze_v1: declare, then freeze guard
         _ledger.mark("optimizer state declared (Adam m, v) + lifecycle")
         _ledger.report(model_dir)
-        _fit = _cuda_ledger.check_device_batch_fits(   # refuse at startup, never OOM at update 1
-            _ledger, _devb_planned_bytes(model.rollout_buffer))
+        # gen3_update_fit_v1: RUN one dry update (restored exactly) and refuse a first update that
+        # would not fit with the declared headroom — at startup, never an OOM at update 1.
+        _fit = _update_fit.check_update_fits(model, model_dir)
         if _fit:
             print(_fit, flush=True)
         model._async_rollout = _async_rollout   # route collect_rollouts to the non-barrier path

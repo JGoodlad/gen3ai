@@ -82,49 +82,6 @@ class CudaLedger:
                     json.dump({"schema": "gen3_cuda_ledger_v1", "rows": self.rows}, f, indent=1)
 
 
-class DeviceBatchWontFit(RuntimeError):
-    """The declared device-resident batch cannot fit next to the learner's measured update step:
-    refused at STARTUP (FATAL_CONFIG), never an OOM at the first update."""
-
-
-#: Kept free on the card beyond the device batch and one learner step (K6's ceiling margin).
-FIT_MARGIN_MIB = 512.0
-
-
-def check_device_batch_fits(led: "CudaLedger", batch_bytes: int,
-                            step_label: str = "compiled regions: gate + prewarm + lock") -> Optional[str]:
-    """At the end of startup: the declared device batch (`device_batches.planned_bytes`) must fit in
-    what the card can still give — its free bytes plus the allocator's cached-but-unused ones — after
-    room for ONE learner step (the peak the regions' gate measured above the bytes allocated before
-    it) and `FIT_MARGIN_MIB`. Raises `DeviceBatchWontFit` naming the levers; returns the log line
-    (None when the ledger is inert or there is no device batch). NECESSARY, NOT SUFFICIENT: the real
-    update peaks above the gate's step (8.75 GiB vs a 4.3 GiB gate step at N = 48), and N = 256 with
-    the X26 heads PASSED this check and then ran out of memory in its first update (10.19 GiB allocated,
-    2026-10-01). It catches a gross misconfiguration (N = 256 x 2,048 steps); a pass is no promise."""
-    if not led.enabled or not led.rows or batch_bytes <= 0:
-        return None
-    last = led.rows[-1]
-    rows = {r["step"]: (i, r) for i, r in enumerate(led.rows)}
-    step = 0.0
-    if step_label in rows:
-        i, r = rows[step_label]
-        before = led.rows[i - 1]["allocated_mib"] if i > 0 else 0.0
-        step = max(0.0, r["peak_allocated_mib"] - before)
-    available = last["device_free_mib"] + (last["reserved_mib"] - last["allocated_mib"])
-    need = batch_bytes / MiB
-    room = available - step - FIT_MARGIN_MIB
-    line = (f"🧮 [CudaLedger] device batch {need:.0f} MiB vs room {room:.0f} MiB (free "
-            f"{last['device_free_mib']:.0f} + cached {last['reserved_mib'] - last['allocated_mib']:.0f} "
-            f"- one learner step {step:.0f} - margin {FIT_MARGIN_MIB:.0f})")
-    if need > room:
-        raise DeviceBatchWontFit(
-            f"{line}: the DEVICE-RESIDENT BATCH cannot fit (gen3_cuda_ledger_v1). Its size is "
-            f"n_steps x n_envs rows x the obs width — shrink the ROLLOUT (n_steps = D / n_envs keeps "
-            f"D ~98k rows), or keep the batch on the host (chunked staging / no device batch — K8.6 "
-            f"`instrumented_ppo/device_batches.py`). Refused at startup rather than OOM at the first update.")
-    return line
-
-
 def start(device: Any, label: str = "weights on the card (policy + ride-along heads)") -> CudaLedger:
     """A ledger for this startup, its first row taken now."""
     led = CudaLedger(device)

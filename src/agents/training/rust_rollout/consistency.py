@@ -600,6 +600,39 @@ def checked_margins(model: Any, rec: Any) -> None:
         print(f"🚨 {exc}", flush=True)
 
 
+def _drop_saved(t: Any) -> None:
+    return None
+
+
+def _never_unpacked(_x: Any) -> Any:
+    raise RuntimeError("the behaviour probe's forward is never backpropagated (gen3_probe_releases_graph_v1)")
+
+
+def release_autograd_stashes(policy: Any) -> int:
+    """Drop the autograd graph an eager grad-mode forward left behind in the policy's STASHES
+    (gen3_probe_releases_graph_v1). `evaluate_actions` stashes its outputs on the policy and its
+    modules for later readers (``_last_pi_distribution``, the extractor's ``last_*``); after the probe's
+    `enable_grad` forward those stashes kept its autograd graph alive into the update's first
+    micro-step, until R1 overwrote them (the saved activations themselves are no longer kept at all —
+    `behaviour_probe`'s `saved_tensors_hooks`). Every tensor stash with a ``grad_fn`` is replaced by its
+    detached value (the value is unchanged; the next forward overwrites it anyway) and the
+    masked-distribution stash is cleared. Returns how many stashes held a graph."""
+    import torch as th
+
+    n = 0
+    if getattr(policy, "_last_pi_distribution", None) is not None:
+        policy._last_pi_distribution = None
+        n += 1
+    for m in policy.modules():
+        for k, v in list(vars(m).items()):
+            if k in ("_parameters", "_buffers", "_modules"):
+                continue
+            if isinstance(v, th.Tensor) and v.grad_fn is not None:
+                setattr(m, k, v.detach())
+                n += 1
+    return n
+
+
 def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
     """Run the probe on ``model.rollout_buffer`` (module docs); record ``behaviour/*`` and ``staleness/*``;
     raise `BehaviourMismatch` under ``fatal``. Returns the metrics (None when off)."""
@@ -637,13 +670,21 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
     rec = TieMargins(int(flat.size)) if tie_eps() > 0 else None
     t_rec = time.perf_counter()
     try:
-        with th.enable_grad(), (rec if rec is not None else contextlib.nullcontext()):
+        # Grad mode ON (the learner's own forward), but NOTHING SAVED for a backward that never runs
+        # (gen3_probe_releases_graph_v1): `saved_tensors_hooks` only changes what autograd keeps, never a
+        # kernel or a value, so the log-probs are bit-identical (`update_fit_test`), while an eager
+        # forward's saved activations at the micro size were the first update's PEAK
+        # (learner_lifecycle.md "The update fit check").
+        with th.enable_grad(), th.autograd.graph.saved_tensors_hooks(_drop_saved, _never_unpacked), \
+                (rec if rec is not None else contextlib.nullcontext()):
             _v, logp, _ent = model.policy.evaluate_actions(obs_as_tensor(obs, model.device), acts,
                                                            action_masks=masks)
         new = logp.detach().float().cpu().numpy().astype(np.float64)
     finally:
         model.policy.set_training_mode(was_training)
     full_new = _stashed_logp(model.policy)        # the SAME forward's full masked log-probs [B, A]
+    del _v, logp, _ent
+    release_autograd_stashes(model.policy)        # gen3_probe_releases_graph_v1 (function docs)
     margins = sites = None
     if rec is not None:
         checked_margins(model, rec)

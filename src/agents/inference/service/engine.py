@@ -47,9 +47,15 @@ def decide(module: torch.nn.Module, obs: torch.Tensor, mask: torch.Tensor
 class Engine:
     def __init__(self, *, groups: List[SlotGroup], slots: List[Tuple[int, int]],
                  device: torch.device, buckets: Tuple[int, ...], backend: str, max_rows: int,
-                 lanes: int, obs_dim: int, n_actions: int, artifact_dir: Optional[str] = None):
+                 lanes: int, obs_dim: int, n_actions: int, artifact_dir: Optional[str] = None,
+                 slot_caps: Sequence[int] = ()):
         self.groups, self.slots, self.device = groups, slots, device
         self.buckets, self.backend, self.R = buckets, backend, int(max_rows)
+        # gen3_slot_bucket_caps_v1: the buckets each slot captures and serves (<= its cap, at least the
+        # smallest); no caps = every bucket for every slot.
+        caps = [int(c) for c in slot_caps] or [int(buckets[-1])] * len(slots)
+        self.slot_buckets: List[Tuple[int, ...]] = [
+            tuple(b for b in buckets if b <= c) or (buckets[0],) for c in caps]
         self.cuda = device.type == "cuda"
         self.n_lanes = int(lanes) if self.cuda else 1
         R, D, A = self.R, int(obs_dim), int(n_actions)
@@ -105,7 +111,7 @@ class Engine:
             for s, (gi, i) in enumerate(self.slots):          # allocator caches per stream)
                 lane = self.lane_of(s)
                 with self._on(lane):
-                    for b in self.buckets:
+                    for b in self.slot_buckets[s]:
                         decide(self.groups[gi].modules[i], *self.static[(lane, b)])
         if self.cuda:
             torch.cuda.synchronize(self.device)
@@ -125,6 +131,8 @@ class Engine:
                 suppress_errors=False, cache_size_limit=limit), torch.no_grad():
             for b in self.buckets:
                 for s, (gi, i) in enumerate(self.slots):
+                    if b not in self.slot_buckets[s]:
+                        continue
                     lane = self.lane_of(s)
                     so, sm = self.static[(lane, b)]
                     mod = self.groups[gi].modules[i]
@@ -164,19 +172,21 @@ class Engine:
         with torch.no_grad():                # warm every slot x bucket on its lane (allocator)
             for s, (gi, i) in enumerate(self.slots):
                 with self._on(self.lane_of(s)):
-                    for b in self.buckets:
+                    for b in self.slot_buckets[s]:
                         self.packages[(gi, b)](*self.static[(self.lane_of(s), b)],
                                                *self.slot_weights[(gi, i)])
         torch.cuda.synchronize(self.device)
 
     # ------------------------------------------------------------------ serve
-    def chunks(self, n: int) -> List[Tuple[int, int]]:
-        """``(bucket, rows)`` chunks for ``n`` rows: largest buckets, then the smallest that fits."""
-        big, out = self.buckets[-1], []
+    def chunks(self, n: int, slot: Optional[int] = None) -> List[Tuple[int, int]]:
+        """``(bucket, rows)`` chunks for ``n`` rows on ``slot``'s buckets (every bucket when None):
+        largest buckets, then the smallest that fits."""
+        bs = self.buckets if slot is None else self.slot_buckets[int(slot)]
+        big, out = bs[-1], []
         while n > big:
             out.append((big, big))
             n -= big
-        out.append((next(b for b in self.buckets if b >= n), n))
+        out.append((next(b for b in bs if b >= n), n))
         return out
 
     def execute(self, plan: Sequence[PlanItem]) -> Tuple[List[int], Dict[int, int]]:
@@ -223,7 +233,7 @@ class Engine:
                 used.add(lane)
             with self._on(lane):
                 a = start
-                for b, n in self.chunks(end - start):
+                for b, n in self.chunks(end - start, s):
                     self._batch(gi, i, lane, b, a, n)
                     per_bucket[b] = per_bucket.get(b, 0) + 1
                     a += n

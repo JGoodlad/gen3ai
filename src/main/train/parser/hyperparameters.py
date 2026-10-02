@@ -211,6 +211,17 @@ def add_hyperparameter_flags(parser: argparse.ArgumentParser) -> None:
                              "(a pre-v124 run inherits 1). --rank-tripwire keeps rank/* every "
                              "update and --adaptive-batch policy keeps the per-term probe every "
                              "update (their readers need every reading).")
+    parser.add_argument("--device-batch", "--device_batch", dest="device_batch",
+                        choices=("resident", "staged", "host"), default=None,
+                        help="How the update's micro-batches reach the learner's CUDA device "
+                             "(gen3_device_batch_mode_v1; agents/training/instrumented_ppo/device_batches.py). "
+                             "'staged' (DEFAULT): a prefetch thread gathers each micro-batch on the host into "
+                             "pinned memory and it is copied on a side stream (~2 micro-batches on the card). "
+                             "'resident': one device copy of the whole flattened rollout per update (K8.6; "
+                             "+~1.1 GiB of update peak at 98k rows). 'host': sb3's own gather + blocking copy. "
+                             "Every mode serves BIT-IDENTICAL micro-batches from the same permutation draw, so "
+                             "learning is identical; only memory and time differ. Runtime-only: not recorded, "
+                             "not inherited.")
     parser.add_argument("--matmul-precision", "--matmul_precision", dest="matmul_precision",
                         choices=("highest", "high"), default="highest",
                         help="torch.set_float32_matmul_precision for the TRAINER process "
