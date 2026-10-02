@@ -431,7 +431,7 @@ wake. Re-create it on the next GO, written to this contract.
 - **🧊 Compile sentinel (`--compile-trainer` runs, `gen3_compile_sentinel_v1`).** Every launch and
   every restart prints `🧊 [COMPILE LOCK] after the first rollout + update: max N cache entries per
   code object (limit 8, headroom H) …` — grep the child log for `COMPILE LOCK`; headroom at the
-  shipped config is 5 at fp32 AND TF32. TB `compile/recompiles_after_lock` and
+  shipped config is 5. TB `compile/recompiles_after_lock` and
   `compile/cache_limit_hits` must read 0 for the life of the process; the child's last word on it is
   `🧊 [COMPILE LOCK] released — learn() returned; 0 compile(s) after the lock` (the final eval runs
   after the release, unlocked, by design). **A `[CompileSentinel] FATAL`

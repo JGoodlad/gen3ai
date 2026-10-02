@@ -17,8 +17,7 @@ pristine pre-`train()` buffer, the RNG seeds), so every repeat is the same work.
   * ABLATIONS, K repeats each: the per-term noise-scale probe OFF; all optional telemetry OFF;
     `diag_skipped` — an update `--diagnostics-every` skips, at the run's own flags (so the
     `--rank-tripwire` exemption still runs `rank/*`: the honest production saving);
-    n_epochs halved; matmul precision 'high' (TF32) in a separate worker — only when the TF32
-    compile-parity gate exists at HEAD (the real startup gate then decides), else SKIPPED + said;
+    n_epochs halved;
   * one `torch.profiler` trace of a single epoch (CUDA + CPU) with GPU busy % (union of device
     intervals / wall), the top 10 kernels, and kernel launches + host syncs per micro-batch.
 
@@ -69,15 +68,13 @@ DEFAULT_CHECKPOINT = "final_model.zip"
 DEFAULT_OUT_ROOT = Path.home() / "gen3ai_archive" / "learner_bench"
 
 #: Flags stripped from the recorded command before it is re-pointed: the launcher's own, the run
-#: identity, and the three this script re-supplies. `--device` appears twice in C's command.
+#: identity, and the three this script re-supplies. `--device` appears twice in C's command. A flag the
+#: TRAINER'S parser no longer knows is stripped too (`_unknown_to_the_trainer`).
 _STRIP_ALWAYS = {"--model", "--run-name", "--run-dir", "--steps", "--eval-freq", "--eval_freq",
-                 "--tb-inherit", "--no-tb-inherit", "--matmul-precision", "--matmul_precision",
-                 "--behaviour-check", "--behaviour_check"}
+                 "--tb-inherit", "--no-tb-inherit", "--behaviour-check", "--behaviour_check"}
 #: K9(b)'s behaviour check WARNS here, never FATALs: the PINNED buffer's stored behaviour log-probs
-#: were written by the rollout that collected it (an older code, torch and matmul precision), so the
-#: check compares the learner with a different program BY CONSTRUCTION (measured 2026-10-01: torch
-#: 2.8 + TF32 vs the 2026-09-28 buffer, p99 |d| 0.0058 > the 0.0036 bar — every CUDA TF32 read died at
-#: its first update). A timing tool measures the update, not the buffer's provenance; the violation
+#: were written by the rollout that collected it (an older code and torch), so the check compares the
+#: learner with a different program BY CONSTRUCTION. A timing tool measures the update, not the buffer's provenance; the violation
 #: rows are still logged.
 _BEHAVIOUR_CHECK = "warn"
 #: An eval cycle must never start inside the measurement (it spawns CPU workers). 1e12 steps.
@@ -112,14 +109,26 @@ def split_flags(tokens: Sequence[str]) -> List[Tuple[str, List[str]]]:
     return out
 
 
+def _unknown_to_the_trainer() -> Callable[[str], bool]:
+    """True for a flag the CURRENT trainer parser does not define. The recorded command is a LAUNCH from
+    when C ran: every deletion unit removes flags it still types (deletion pass: `--matmul-precision`,
+    `--defensive-entropy-boost`, `--no-value-true-team`, ...), and one unknown flag is an argparse exit
+    that kills the worker before it measures anything. Dropping them is the class fix — a deleted lever
+    was OFF in C's run (that is what let it be deleted), so the re-pointed fork trains the same program."""
+    from main.train.parser import build_parser
+
+    known = set(build_parser()._option_string_actions)
+    return lambda flag: flag not in known
+
+
 def build_trainer_argv(original_command: str, *, model_zip: str, run_dir: str, steps: int,
-                       device: str, tiny: bool = False, matmul_precision: str = "highest",
+                       device: str, tiny: bool = False,
                        launcher_only: Iterable[str] = ()) -> List[str]:
     """C's recorded launcher command, re-pointed as a FORK of ``model_zip`` into ``run_dir``.
 
     Keeps every training flag verbatim (so the fold, the arch and the compile are C's), strips the
     launcher-only flags and the run identity, and re-supplies ``--model/--run-dir/--steps``, an
-    eval cadence that cannot fire, ``--no-tb-inherit`` and the matmul precision. ``device='cpu'``
+    eval cadence that cannot fire and ``--no-tb-inherit``. ``device='cpu'``
     swaps both compile flags off (`--compile-trainer` refuses a CPU device by design); ``tiny``
     shrinks ``--n-envs``. The result never contains the trainer's module name.
     """
@@ -135,8 +144,9 @@ def build_trainer_argv(original_command: str, *, model_zip: str, run_dir: str, s
     if tiny:
         drop |= {"--n-envs", "--n_envs"}
     argv: List[str] = []
+    unknown = _unknown_to_the_trainer()
     for flag, vals in split_flags(toks):
-        if flag in drop:
+        if flag in drop or unknown(flag):
             continue
         argv.append(flag)
         argv.extend(vals)
@@ -146,8 +156,7 @@ def build_trainer_argv(original_command: str, *, model_zip: str, run_dir: str, s
     if tiny:
         argv += ["--n-envs", str(TINY["n_envs"])]
     argv += ["--model", model_zip, "--run-dir", run_dir, "--steps", str(int(steps)),
-             "--eval-freq", _NO_EVAL_FREQ, "--no-tb-inherit", "--matmul-precision", matmul_precision,
-             "--behaviour-check", _BEHAVIOUR_CHECK]
+             "--eval-freq", _NO_EVAL_FREQ, "--no-tb-inherit", "--behaviour-check", _BEHAVIOUR_CHECK]
     bad = [t for t in argv if _TRAINER_LITERAL in t]
     if bad:
         raise ValueError(f"trainer argv would carry the trainer's module name: {bad}")
@@ -845,16 +854,6 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def tf32_gate_available() -> Tuple[bool, str]:
-    """Is the reduced-precision compile-parity gate (gen3_tf32_parity_gate_v1) in this tree?"""
-    from agents.model import compile_trainer as ct
-    if hasattr(ct, "fp32_reference") and hasattr(ct, "_TF32_K"):
-        return True, "gen3_tf32_parity_gate_v1 present"
-    return False, ("the TF32 compile-parity gate (gen3_tf32_parity_gate_v1) has NOT landed at this "
-                   "HEAD — the fp32 gate (1e-4) refuses a TF32 compile, as the ai_v14_04_lbat_t32 "
-                   "launch showed; TF32 ablation SKIPPED")
-
-
 def _run_worker(name: str, cfg: Dict[str, Any], out: Path, env: Dict[str, str],
                 timeout_min: float) -> Dict[str, Any]:
     cfg_path = out / f"worker_{name}.json"
@@ -1041,31 +1040,9 @@ def run_main(a: argparse.Namespace) -> int:
     print(f"[learner_bench] main worker: {results['main'].get('status')} "
           f"(exit {results['main'].get('exit_code')})", flush=True)
 
-    tf32: Dict[str, Any] = {"ran": False}
-    ok, why = tf32_gate_available()
-    if device != "cuda":
-        tf32["reason"] = "TF32 is a CUDA matmul mode; not applicable on cpu"
-    elif a.no_ablations or a.skip_tf32:
-        tf32["reason"] = "skipped by flag"
-    elif not ok:
-        tf32["reason"] = why
-    elif not buffer_path.exists():
-        tf32["reason"] = "no saved buffer from the main worker"
-    else:
-        argv_b = build_trainer_argv(original, model_zip=str(model_zip), run_dir=str(out / "run_tf32"),
-                                    steps=steps, device=device, tiny=tiny,
-                                    launcher_only=LAUNCHER_ONLY, matmul_precision="high")
-        cfg_b = {**base_cfg, "name": "tf32", "plan": [("tf32", False)], "trainer_argv": argv_b,
-                 "profile": False, "buffer_in": str(buffer_path), "buffer_out": None}
-        results["tf32"] = _run_worker("tf32", cfg_b, out, env, a.worker_timeout_min)
-        tf32 = {"ran": True, "status": results["tf32"].get("status"),
-                "exit_code": results["tf32"].get("exit_code"), "gate": why}
-        if results["tf32"].get("exit_code") not in (0, None):
-            tf32["reason"] = (f"the TF32 worker exited {results['tf32'].get('exit_code')} — read "
-                              f"worker_tf32.log (a FATAL_CONFIG there is the parity gate refusing)")
     summary = summarise(results)
     report = {**header, "finished": _dt.datetime.now().isoformat(),
-              "contention_at_end": describe_contention(), "tf32": tf32,
+              "contention_at_end": describe_contention(),
               "workers": {n: {k2: r.get(k2) for k2 in ("status", "exit_code", "worker_wall_s",
                                                         "error", "buffer_saved", "geometry")}
                           for n, r in results.items()},
@@ -1086,7 +1063,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
-    r = sub.add_parser("run", help="preflight, the main worker, the TF32 worker, the report")
+    r = sub.add_parser("run", help="preflight, the main worker, the report")
     r.add_argument("--device", choices=("cuda", "cpu"), required=True)
     r.add_argument("--tiny", action="store_true",
                    help=f"CPU code-path exercise: {TINY}")
@@ -1103,7 +1080,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="also time the update with the X26 ride-along heads attached "
                         "(ensemble 5, rnd, adv 5, opp 5 + every RND variant; "
                         "gen3_ridealong_heads_v1 + gen3_ridealong_rnd_variants_v1)")
-    r.add_argument("--skip-tf32", action="store_true")
     r.add_argument("--no-profile", action="store_true")
     r.add_argument("--out-root", default=str(DEFAULT_OUT_ROOT))
     r.add_argument("--publish", default=None,

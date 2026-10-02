@@ -4,32 +4,30 @@ The reference is the policy's OWN sb3 path (``decision.policy_reference``) on th
 device; the rows are the committed REAL-observation fixture (``compile_parity_obs.npz``, never zeros
 — zeros hid a 70%-argmax-agreement miscompile, ledger 2026-09-28). The bars are
 ``compile_trainer.decision_verdicts``'s, imported rather than copied, so the service and the compile
-gate cannot drift apart: legal log-probs 1e-3 and V 1e-4 at fp32 matmul precision ('highest'), the
-TF32 rule against an fp32 eager reference otherwise.
+gate cannot drift apart: legal log-probs 1e-3 and V 1e-4 at fp32 matmul precision ('highest'), the only
+precision (TF32 was retired, deletion pass K2) — a process at any other precision is REFUSED.
 
 Three further checks the compile gate does not need:
 
 * the MASK CONTRACT: every illegal entry is exactly ``-inf`` and every legal one finite;
 * GREEDY: the served argmax equals eager's on every row whose eager top-2 legal margin exceeds the
-  NEAR-TIE BAND — 2x the legal log-prob bar AT THE PRECISION THE GATE RUNS AT
-  (``parity_probe.tie_band``, gen3_precision_keyed_parity_v1: one fp32 / TF32 table). Rows inside
-  the band are NEAR-TIES (real and fresh policies both have EXACT ties, measured; under TF32 a
-  margin of a few 1e-3 flips legitimately) — they are counted and reported, and the served action
-  must still be one of eager's near-top actions, so a tie can never hide a wrong choice. An
-  unmeasured precision is REFUSED;
+  NEAR-TIE BAND — 2x the legal log-prob bar (``parity_probe.NEAR_TIE_BAND``). Rows inside the band are
+  NEAR-TIES (real and fresh policies both have EXACT ties, measured) — they are counted and reported,
+  and the served action must still be one of eager's near-top actions, so a tie can never hide a wrong
+  choice;
 * PADDING: callers run every bucket full AND partially filled (pad rows are discarded).
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Tuple
 
 import numpy as np
 import torch
 
 from agents.inference.service.decision import policy_reference
 from agents.inference.service.spec import ParityFailure, VacuousParity
-from agents.model.parity_probe import tie_band
+from agents.model.parity_probe import NEAR_TIE_BAND, unmeasured_precision
 
 
 
@@ -50,18 +48,6 @@ class ParityReport:
     def line(self) -> str:
         return (f"{self.where}: {self.rows} rows, max|dlogp| {self.legal_logprob_max:.2e}, "
                 f"max|dV| {self.value_max:.2e}, near-ties {self.near_ties} [{self.path}]")
-
-
-class _precision:
-    def __init__(self, value: str):
-        self.value = value
-
-    def __enter__(self) -> None:
-        self.prev = torch.get_float32_matmul_precision()
-        torch.set_float32_matmul_precision(self.value)
-
-    def __exit__(self, *exc: object) -> None:
-        torch.set_float32_matmul_precision(self.prev)
 
 
 def fixture_rows(obs_dim: int, n: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -87,17 +73,11 @@ def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
                                               decision_verdicts)
 
     s_logp, s_value, s_greedy = (t.detach() for t in served)
-    precision = torch.get_float32_matmul_precision()
-    try:
-        band = tie_band(precision)
-    except KeyError as exc:
-        raise ParityFailure(f"{where}: {exc}") from exc
+    refusal = unmeasured_precision()
+    if refusal is not None:
+        raise ParityFailure(f"{where}: {refusal}")
+    band = NEAR_TIE_BAND
     e_logp, e_value = policy_reference(policy, obs, mask)
-    reference: Optional[Dict[str, torch.Tensor]] = None
-    if precision != "highest":
-        with _precision("highest"):
-            r_logp, r_value = policy_reference(policy, obs, mask)
-        reference = {"legal_logprob": _legal(r_logp, mask), "value": r_value}
 
     illegal_ok = bool(torch.isneginf(s_logp[~mask]).all()) if (~mask).any() else True
     legal_ok = bool(torch.isfinite(s_logp[mask]).all())
@@ -107,8 +87,7 @@ def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
     eager = {"legal_logprob": _legal(e_logp, mask), "value": e_value}
     comp = {"legal_logprob": _legal(s_logp, mask), "value": s_value.float()}
     try:
-        lines = decision_verdicts(eager=eager, compiled=comp, reference=reference,
-                                  precision=precision, allow_vacuous=allow_vacuous)
+        lines = decision_verdicts(eager=eager, compiled=comp, allow_vacuous=allow_vacuous)
     except VacuousCompileParityError as exc:
         raise VacuousParity(f"{where}: {exc}") from exc
     except CompileTrainerError as exc:
@@ -122,7 +101,7 @@ def judge(*, where: str, policy: object, obs: torch.Tensor, mask: torch.Tensor,
     bad = decisive & (s_greedy != e_greedy)
     if bool(bad.any()):
         raise ParityFailure(f"{where}: greedy action differs from eager on {int(bad.sum())} "
-                            f"decisive rows (top-2 margin > the {precision!r} near-tie band "
+                            f"decisive rows (top-2 margin > the near-tie band "
                             f"{band:g})")
     chosen = e_logp.gather(1, s_greedy.view(-1, 1)).squeeze(1)
     off_top = (~decisive) & (chosen < top2[:, 0] - band)

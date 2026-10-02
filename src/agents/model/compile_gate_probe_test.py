@@ -31,9 +31,8 @@ def test_per_param_rule_catches_a_small_path_the_global_cosine_cannot():
     def arm(grad):
         return {"features": f, "grad": grad, "grad_sizes": sizes}
     with pytest.raises(CompileTrainerError, match="per-param.*FAILED"):
-        train_verdict(eager=arm(e), compiled=arm(c), precision="highest", param_names=["B", "S"])
-    assert "per-param" in train_verdict(eager=arm(e), compiled=arm(e.clone()),
-                                        precision="highest")
+        train_verdict(eager=arm(e), compiled=arm(c), param_names=["B", "S"])
+    assert "per-param" in train_verdict(eager=arm(e), compiled=arm(e.clone()))
     assert 0 < _PARAM_GRAD_FLOOR < 1 and 0 < _MAX_PARAM_GRAD_REL < 0.1
 
 

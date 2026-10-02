@@ -1089,22 +1089,6 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "(Lane D's decision), and a shaped critic bootstraps a truncation from one (F-LD-2)",
         exit_style="fatal_config"),
     CombinationCheck(
-        # gen3_behaviour_tie_exclusion_v1 (orchestrator, 2026-10-01): K9(b)'s TF32 rule is CHANCE on the
-        # Rust core with trained weights, and the fp32 tie exclusion cannot rescue it — a refusal at launch
-        # is deterministic. `--behaviour-check` unset resolves to `fatal` (rust_env_setup).
-        "env_core_rust_tf32_behaviour_check_fatal", ("env_core", "matmul_precision", "behaviour_check"),
-        lambda a: (_rust_core(a) and _val(a, "matmul_precision", "highest") == "high"
-                   and (_val(a, "behaviour_check", None) or "fatal") == "fatal"),
-        "--env-core rust with --matmul-precision high and a FATAL --behaviour-check (the default) is "
-        "refused: K9(b)'s TF32 gate was measured on the python core with a fresh learner, and on the Rust "
-        "core with trained weights it FAILS BY CHANCE (A2's 4.0M checkpoint, 1.18M healthy rows: the "
-        "single-shot p99 bar 3.6e-3 exceeded on 36 % of 1,024-row probes, the max bar 0.071 on 17 % — ~8 "
-        "false FATALs per 10k updates); excluding rows at a selection tie cannot fix it (TF32's margin "
-        "rounding scale is 9.6e-3, ~700x fp32). Either pass --behaviour-check warn, or re-measure the "
-        "TF32 gate on the Rust core first (designs/training/learner_gates.md, "
-        "measurements/k9_behaviour_exclusion/)",
-        exit_style="fatal_config"),
-    CombinationCheck(
         "env_core_rust_unported_paths", _ENV_CORE_UNPORTED_DESTS,
         lambda a: _rust_core(a) and bool(_env_core_unported(a)),
         lambda a: ("--env-core rust does not serve these paths yet: " + "; ".join(_env_core_unported(a))

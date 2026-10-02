@@ -38,7 +38,7 @@ says which). The pinned BUFFER changes only when the observation layout / label 
 labels, the behaviour log-probs of the seeded learner — sliced to ``N_STEPS`` x ``N_ENVS``).
 
 SCOPE LIMITS (what it does NOT pin): the rollout / GAE (the buffer's advantages and returns are
-inputs), the KL→LR controller and every other callback (outside ``train()``), CUDA / compiled / TF32
+inputs), the KL→LR controller and every other callback (outside ``train()``), CUDA / compiled
 numerics (the compile parity gate and K6's canary own those).
 
 THE RECIPE IS READ, NOT COPIED (`golden_recipe`): the loss knobs the production recipe carries come

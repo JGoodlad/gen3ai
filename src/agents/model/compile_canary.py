@@ -19,10 +19,9 @@ never be an undeclared compile itself):
     eager: region R1's loss and every policy gradient (the per-parameter bar chosen by
     `compile_regions.weights_regime`).
 
-The bars are the startup gate's (`decision_verdicts`, `train_verdict`; the TF32 rule against an EAGER
-fp32 reference under `--matmul-precision high` — the gate's extra "same graph at fp32" arm is NOT
-run, because a compiled call at 'highest' is a separate graph, i.e. an undeclared signature after the
-lock). The weights are the live, trained ones, so vacuity is REPORTED, never a refusal.
+The bars are the startup gate's (`decision_verdicts`, `train_verdict`), at fp32 matmul precision
+'highest' — the one precision. The weights are the live, trained ones, so vacuity is REPORTED, never a
+refusal.
 
 PERSISTENCE, NOT A SINGLE SHOT (owner, 2026-10-01: "implement the consecutive check, up it to 100").
 A real miscompile is deterministic and disagrees every time; a healthy graph's rare exceedance is a
@@ -172,12 +171,11 @@ class CompileCanary:
         `CompileTrainerError` on a disagreement; restores training mode and `.grad` either way."""
         model = self.model
         policy = model.policy
-        precision = torch.get_float32_matmul_precision()
         was_training = bool(policy.training)
         devices = [torch.cuda.current_device()] if torch.cuda.is_available() else []
         try:
             with torch.random.fork_rng(devices=devices):
-                return self._regions(model, precision, grad, out, slice_)
+                return self._regions(model, grad, out, slice_)
         finally:
             policy.set_training_mode(was_training)
             for p in policy.parameters():
@@ -216,7 +214,6 @@ class CompileCanary:
             f"(FATAL_CONFIG). See designs/training/learner_lifecycle.md (the canary).") from first
 
     def run(self, *, grad: bool) -> Dict[str, float]:
-        precision = torch.get_float32_matmul_precision()
         out: Dict[str, float] = {}
         t0 = time.perf_counter()
         try:
@@ -226,7 +223,7 @@ class CompileCanary:
             # independent slice, compiled and eager both re-computed.
             _append(_run_dir(self.model), DISAGREEMENTS_FILE,
                     {"update": self.updates, "num_timesteps": int(getattr(self.model, "num_timesteps", 0) or 0),
-                     "precision": precision, "grad_checked": bool(grad), "verdict": str(first)[:4000]})
+                     "grad_checked": bool(grad), "verdict": str(first)[:4000]})
             self._say(f"⚠️  [CompileCanary] update {self.updates}: compiled DISAGREES with eager — "
                       f"confirming now (the same rows + an independent slice). {str(first)[:300]}")
             again = []
@@ -264,12 +261,11 @@ class CompileCanary:
         out["compile/canary_seconds"] = time.perf_counter() - t0
         self.last = out
         self._say(f"🐤 [CompileCanary] update {self.updates}: compiled == eager on the fixture "
-                  f"({precision}, {out['compile/canary_seconds']:.1f} s) — " + " | ".join(rules))
+                  f"(fp32, {out['compile/canary_seconds']:.1f} s) — " + " | ".join(rules))
         return out
 
     # ------------------------------------------------------------------ the two compiled shapes
-    def _regions(self, model: Any, precision: str, grad: bool, out: Dict[str, float],
-                 slice_: int = 0) -> list:
+    def _regions(self, model: Any, grad: bool, out: Dict[str, float], slice_: int = 0) -> list:
         """K8's declared regions: R0 (compiled rollout core vs eager) on the fixture at n_envs; on a
         gradient canary also R1 (compiled micro-step vs eager: loss + every policy gradient) on the
         same real labelled batch the startup gate uses."""
@@ -285,13 +281,7 @@ class CompileCanary:
                                      ct.resolve_device(policy.features_extractor), slice_)
             c = cr._r0_readout(model, _ROLLOUT_REGIONS[policy], obs, mask)
             e = cr._r0_readout(model, cr._rollout_core, obs, mask)
-            r = None
-            if precision != "highest":
-                with ct._matmul_precision("highest"):
-                    r = cr._r0_readout(model, cr._rollout_core, obs, mask)
-            rules += ["R0 " + x for x in ct.decision_verdicts(eager=e, compiled=c, reference=r,
-                                                              precision=precision,
-                                                              allow_vacuous=True)]
+            rules += ["R0 " + x for x in ct.decision_verdicts(eager=e, compiled=c, allow_vacuous=True)]
             for key in ("legal_logprob", "value"):
                 out[f"compile/canary_max_abs_{key}"] = float((c[key] - e[key]).abs().max())
         if grad:
@@ -299,13 +289,8 @@ class CompileCanary:
             args = cr._r1_args(model, cr.r1_batch(model, self.batch_size, slice_))
             comp = cr._r1_arm(model, model._compiled_micro_step, args)
             eager = cr._r1_arm(model, micro_step, args)
-            ref = None
-            if precision != "highest":
-                with ct._matmul_precision("highest"):
-                    ref = cr._r1_arm(model, micro_step, args)
             names = [n for n, _ in ct.grad_parameters(model, policy.features_extractor)]
-            rules.append("R1 " + cr._r1_verdict(eager, comp, ref, precision, names,
-                                                cr.weights_regime(model)))
+            rules.append("R1 " + cr._r1_verdict(eager, comp, names, cr.weights_regime(model)))
             out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
         return rules
 

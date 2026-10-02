@@ -44,9 +44,10 @@ THE GATE. `gate_regions` holds each compiled region to eager at startup on REAL 
 learner golden's real labelled buffer when the run's observation keys match it — the production
 surface — else on the committed real-obs fixture with zero labels): R1's loss and the gradient over
 every policy parameter (cosine ≥ 0.9999 and the per-parameter rule), R0's decision readout (legal
-log-probs, V; on a seeded perturbation of FRESH weights, whose legal log-probs are constant). Under
-`--matmul-precision high` the TF32 rule against an eager fp32 reference. A disagreement is a
-`CompileTrainerError` (FATAL_CONFIG).
+log-probs, V; on a seeded perturbation of FRESH weights, whose legal log-probs are constant). The
+gate runs at fp32 matmul precision 'highest' only — the one precision (TF32 was retired, deletion pass
+K2); a process at any other precision is refused. A disagreement is a `CompileTrainerError`
+(FATAL_CONFIG).
 """
 from __future__ import annotations
 
@@ -430,9 +431,12 @@ def _fatal_compile_errors() -> Iterator[None]:
 def gate_regions(model: Any, *, n_envs: int, batch_size: int,
                  say: Callable[[str], None] = print) -> List[str]:
     """Hold R1 and R0 to eager at startup (module docstring). Raises `CompileTrainerError`."""
+    from agents.model.parity_probe import unmeasured_precision
+    refusal = unmeasured_precision()
+    if refusal is not None:
+        raise ct.CompileTrainerError(f"--compile-trainer: {refusal}")
     policy = model.policy
     fe = policy.features_extractor
-    precision = torch.get_float32_matmul_precision()
     devices = [torch.cuda.current_device()] if torch.cuda.is_available() else []
     names = [n for n, _ in ct.grad_parameters(model, fe)]
     rules: List[str] = []
@@ -447,22 +451,17 @@ def gate_regions(model: Any, *, n_envs: int, batch_size: int,
             from agents.training.instrumented_ppo.micro_step import micro_step
             comp = _r1_arm(model, model._compiled_micro_step, args)
             eager = _r1_arm(model, micro_step, args)
-            ref = None
-            if precision != "highest":
-                with ct._matmul_precision("highest"):
-                    ref = _r1_arm(model, micro_step, args)
-            rules.append("R1 " + _r1_verdict(eager, comp, ref, precision, names, regime)
-                         + f" [{b.source}]")
+            rules.append("R1 " + _r1_verdict(eager, comp, names, regime) + f" [{b.source}]")
             if regime == "fresh":
-                rules.append("R1 " + _r1_perturbed(model, args, precision, names))
+                rules.append("R1 " + _r1_perturbed(model, args, names))
             # ---- R0: eval / no-grad / n_envs, the decision readout
             if int(n_envs) not in ct.EAGER_BATCHES:
-                rules += ["R0 " + r for r in _r0_verdicts(model, int(n_envs), precision)]
+                rules += ["R0 " + r for r in _r0_verdicts(model, int(n_envs))]
     finally:
         policy.set_training_mode(was)
         for p in policy.parameters():
             p.grad = None
-    line = f"[CompileRegions] parity PASS ({precision}) — " + " | ".join(rules)
+    line = "[CompileRegions] parity PASS (fp32) — " + " | ".join(rules)
     say(line)
     return rules
 
@@ -507,52 +506,38 @@ def weights_regime(model: Any, rows: int = 8) -> str:
     return "fresh" if vacuous_keys({"legal_logprob": e["legal_logprob"]}, bar) else "trained"
 
 
-def _r1_perturbed(model: Any, args: Tuple[Any, ...], precision: str, names: List[str]) -> str:
+def _r1_perturbed(model: Any, args: Tuple[Any, ...], names: List[str]) -> str:
     """FRESH weights only: R1 again on the declared ladder's first rung — a seeded perturbation of
     every policy parameter, in place and restored bit-exactly (`parity_probe.perturbed_parameters`)
     — judged at the TRAINED bar. On fresh weights a few ill-conditioned gradients (the uniform belief
     heads) need the looser fresh bar, under which a backward defect could hide; the perturbed weights
     are trained-like and get the tight one (the extractor gate's and R0's own fresh-weights rule)."""
-    from agents.model.parity_probe import ladder_at, perturbed_parameters, rung_seed
+    from agents.model.parity_probe import PERTURB_LADDER, perturbed_parameters, rung_seed
     from agents.training.instrumented_ppo.micro_step import micro_step
-    scale, k = ladder_at(precision)[0]
+    scale, k = PERTURB_LADDER[0]
     with perturbed_parameters(model.policy, seed=rung_seed(k), scale=scale):
         comp = _r1_arm(model, model._compiled_micro_step, args)
         eager = _r1_arm(model, micro_step, args)
-        ref = None
-        if precision != "highest":
-            with ct._matmul_precision("highest"):
-                ref = _r1_arm(model, micro_step, args)
-    return _r1_verdict(eager, comp, ref, precision, names, "trained",
+    return _r1_verdict(eager, comp, names, "trained",
                        label=f"fresh weights, seeded perturbation scale={scale:g} seed+{k}")
 
 
-def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor],
-                ref: Optional[Dict[str, torch.Tensor]], precision: str, names: List[str],
+def _r1_verdict(eager: Dict[str, torch.Tensor], comp: Dict[str, torch.Tensor], names: List[str],
                 regime: str, label: Optional[str] = None) -> str:
     e_loss, c_loss = float(eager["loss"]), float(comp["loss"])
     if not (np.isfinite(e_loss) and np.isfinite(c_loss)):
         raise ct.CompileTrainerError(f"--compile-trainer region R1: non-finite loss (eager {e_loss}, "
                                      f"compiled {c_loss})")
-    if precision == "highest":
-        rel = abs(c_loss - e_loss) / max(1.0, abs(e_loss))
-        if not rel <= ct._MAX_NUMERIC_DRIFT:
-            raise ct.CompileTrainerError(
-                f"--compile-trainer region R1: the compiled micro-step's LOSS disagrees with eager — "
-                f"{c_loss!r} vs {e_loss!r} (rel {rel:.2e} > {ct._MAX_NUMERIC_DRIFT:g})")
-        loss_rule = f"loss rel {rel:.2e} <= {ct._MAX_NUMERIC_DRIFT:g}"
-    else:
-        assert ref is not None
-        r_loss = float(ref["loss"])
-        loss_rule = ct.check_numerics(abs(c_loss - r_loss), precision=precision,
-                                      eager_err=abs(e_loss - r_loss), what="R1 loss")
+    rel = abs(c_loss - e_loss) / max(1.0, abs(e_loss))
+    if not rel <= ct._MAX_NUMERIC_DRIFT:
+        raise ct.CompileTrainerError(
+            f"--compile-trainer region R1: the compiled micro-step's LOSS disagrees with eager — "
+            f"{c_loss!r} vs {e_loss!r} (rel {rel:.2e} > {ct._MAX_NUMERIC_DRIFT:g})")
+    loss_rule = f"loss rel {rel:.2e} <= {ct._MAX_NUMERIC_DRIFT:g}"
     eager_t = {"features": eager["loss"], "grad": eager["grad"], "grad_sizes": eager["grad_sizes"]}
     comp_t = {"features": comp["loss"], "grad": comp["grad"], "grad_sizes": comp["grad_sizes"]}
-    ref_t = (None if ref is None else
-             {"features": ref["loss"], "grad": ref["grad"], "grad_sizes": ref["grad_sizes"]})
-    grad_rule = ct.train_verdict(eager=eager_t, compiled=comp_t, reference=ref_t,
-                                 precision=precision, allow_vacuous=True, param_names=names,
-                                 param_bar=R1_PARAM_BAR[regime])
+    grad_rule = ct.train_verdict(eager=eager_t, compiled=comp_t, allow_vacuous=True,
+                                 param_names=names, param_bar=R1_PARAM_BAR[regime])
     return f"[{label or regime + ' weights'}] {loss_rule}; {grad_rule}"
 
 
@@ -564,8 +549,8 @@ def _r0_readout(model: Any, fn: Callable[..., Any], obs: Any, mask: Any) -> Dict
                 "legal_logprob": torch.where(legal, logp.float(), torch.zeros_like(logp.float())).clone()}
 
 
-def _r0_verdicts(model: Any, n_envs: int, precision: str) -> List[str]:
-    from agents.model.parity_probe import fresh_reason, ladder_at, perturbed_parameters, rung_seed
+def _r0_verdicts(model: Any, n_envs: int) -> List[str]:
+    from agents.model.parity_probe import PERTURB_LADDER, fresh_reason, perturbed_parameters, rung_seed
     from agents.model.policy import _ROLLOUT_REGIONS
     policy = model.policy
     policy.set_training_mode(False)
@@ -574,27 +559,20 @@ def _r0_verdicts(model: Any, n_envs: int, precision: str) -> List[str]:
         policy.features_extractor))
     comp_fn = _ROLLOUT_REGIONS[policy]
 
-    def arms() -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor], Optional[Dict[str, torch.Tensor]]]:
-        c = _r0_readout(model, comp_fn, obs, mask)
-        e = _r0_readout(model, _rollout_core, obs, mask)
-        r = None
-        if precision != "highest":
-            with ct._matmul_precision("highest"):
-                r = _r0_readout(model, _rollout_core, obs, mask)
-        return c, e, r
+    def arms() -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        return (_r0_readout(model, comp_fn, obs, mask), _r0_readout(model, _rollout_core, obs, mask))
 
-    c, e, r = arms()
+    c, e = arms()
     tol = {k: v for k, v in ct._FP32_TOL.items() if k in e}
     fresh = fresh_reason(e, tol)
     if fresh is None:
-        return ct.decision_verdicts(eager=e, compiled=c, reference=r, precision=precision)
-    for scale, k in ladder_at(precision):
+        return ct.decision_verdicts(eager=e, compiled=c)
+    for scale, k in PERTURB_LADDER:
         with perturbed_parameters(policy, seed=rung_seed(k), scale=scale):
-            c, e, r = arms()
+            c, e = arms()
             if fresh_reason(e, tol) is None:
                 return [f"[fresh weights, perturbation scale={scale:g} seed+{k}] " + x
-                        for x in ct.decision_verdicts(eager=e, compiled=c, reference=r,
-                                                      precision=precision)]
+                        for x in ct.decision_verdicts(eager=e, compiled=c)]
     raise ct.CompileTrainerError(f"--compile-trainer region R0: the decision readout is vacuous on the "
                                  f"weights and on every perturbation rung ({fresh}) — refusing")
 

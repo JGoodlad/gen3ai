@@ -34,7 +34,7 @@ import torch
 from agents.model.compile_gate_probe import per_param_grad_errors
 from agents.model.compile_gate_probe import grad_parameters  # noqa: F401 — read as `ct.grad_parameters`
 from agents.model.compile_parity_fixture import load_parity_rows
-from agents.model.parity_probe import PRECISION_BARS, VacuousParityError, require_informative
+from agents.model.parity_probe import LOGPROB_BAR, VacuousParityError, require_informative
 
 
 class CompileTrainerError(RuntimeError):
@@ -47,29 +47,9 @@ class VacuousCompileParityError(CompileTrainerError, VacuousParityError):
     `CompileTrainerError`, so the launcher treats it as config-fatal like any other gate failure."""
 
 
-# A compiled forward that disagrees with eager by more than this is a wrong kernel, not a speedup.
-# This is THE rule at matmul precision 'highest' (full fp32, the default) and it is unchanged there.
+# A compiled forward that disagrees with eager by more than this is a wrong kernel, not a speedup. fp32
+# matmul precision 'highest' is the ONLY precision (TF32 was retired, deletion pass K2), so this is THE rule.
 _MAX_NUMERIC_DRIFT = 1e-4
-
-# gen3_tf32_parity_gate_v1 — the rule under REDUCED matmul precision (`--matmul-precision high`,
-# TF32 tensor cores). There a fixed 1e-4 is the wrong question: eager and compiled each run their
-# own TF32 kernels (cuBLAS vs Inductor/Triton, different tiling and accumulation order), so the two
-# legitimately differ by TF32 rounding (~10-bit mantissa), which on this extractor is ~1e-2 absolute
-# — the ai_v14_04_lbat_t32 launch died on exactly that (7.62e-03). So at reduced precision BOTH arms
-# are measured against an fp32 EAGER REFERENCE (same weights, same obs, matmul precision temporarily
-# 'highest') and the compiled arm must be no worse than K x what eager TF32 itself pays:
-#
-#     e_eager = max|eager_tf32    - ref_fp32|      (the rounding TF32 costs a CORRECT graph)
-#     e_comp  = max|compiled_tf32 - ref_fp32|
-#     PASS iff e_comp <= _TF32_K * e_eager + _TF32_EPS
-#
-# K is justified by measurement in `designs/training/compile_flags.md` (the ratio
-# e_comp/e_eager on the real production extractor); EPS is the fp32 gate's own tolerance, so a
-# graph that is exact under TF32 (e_eager == 0, e.g. no matmul on the path) is held to the SAME bar
-# as at 'highest', never a looser one. A wrong kernel is a disagreement with the fp32 reference that
-# does not shrink with precision; TF32 rounding cannot hide one larger than K x e_eager.
-_TF32_K = 4.0
-_TF32_EPS = _MAX_NUMERIC_DRIFT
 
 
 def check_shape_stability(*, n_steps: int, n_envs: int, batch_size: int,
@@ -133,92 +113,24 @@ def _largest_divisor_at_most(n: int, cap: int) -> int:
     return 1
 
 
-def check_numerics(err: float, *, precision: str = "highest", eager_err: Optional[float] = None,
-                   what: str = "features", tol: Optional[float] = None) -> str:
+def check_numerics(err: float, *, what: str = "features", tol: Optional[float] = None) -> str:
     """Pure verdict: a compile that changes the numbers is not a speedup. Returns the log line.
 
-    ``precision`` is the RESOLVED `torch.get_float32_matmul_precision()` the arms ran at; ``what``
-    names the quantity (``features``, ``legal_logprob``, ``value``, ``train features``).
+    ``err`` is max|compiled - eager| at fp32 matmul precision 'highest' and must be below ``tol`` (default
+    1e-4, the features bar). Looser than the CPU path's 1e-5 because cuBLAS may pick a different reduction
+    order for the fused kernels; 1e-4 still catches a wrong kernel while tolerating a reordered correct
+    one. ``what`` names the quantity (``features``, ``legal_logprob``, ``value``, ``train features``).
 
-    * ``'highest'`` (full fp32, the default): ``err`` is max|compiled - eager| and must be below
-      ``tol`` (default 1e-4, the features bar, UNCHANGED). Looser than the CPU path's 1e-5 because
-      cuBLAS may pick a different reduction order for the fused kernels; 1e-4 still catches a wrong
-      kernel while tolerating a reordered correct one. ``eager_err`` is ignored.
-    * anything else (``'high'`` = TF32): ``err`` is e_comp = max|compiled - fp32_ref| and
-      ``eager_err`` is e_eager = max|eager - fp32_ref|; PASS iff e_comp <= K*e_eager + EPS. A missing
-      or non-finite ``eager_err`` FAILS: a reduced-precision parity claim without its fp32 reference
-      is no claim at all.
-
-    Every comparison is written ``not (x <= tol)`` so a NaN FAILS rather than sailing through.
+    Written ``not (x < tol)`` so a NaN FAILS rather than sailing through.
     """
-    if precision == "highest":
-        bar = _MAX_NUMERIC_DRIFT if tol is None else float(tol)
-        rule = f"{what}: fp32 max|compiled-eager| {err:.2e} < {bar:g}"
-        if not (err < bar):
-            raise CompileTrainerError(
-                f"--compile-trainer: the compiled extractor DISAGREES with eager on {what} "
-                f"(max|delta| {err:.2e} > {bar:g}, matmul precision 'highest'). A faster wrong "
-                f"model is not a win — investigate before re-enabling.")
-        return rule
-    if eager_err is None or not (eager_err >= 0.0) or eager_err == float("inf"):
+    bar = _MAX_NUMERIC_DRIFT if tol is None else float(tol)
+    rule = f"{what}: fp32 max|compiled-eager| {err:.2e} < {bar:g}"
+    if not (err < bar):
         raise CompileTrainerError(
-            f"--compile-trainer: at matmul precision {precision!r} the parity gate needs the eager "
-            f"arm's own error against an fp32 reference (got {eager_err!r}) for {what}. Refusing "
-            f"to enable the compile unvalidated.")
-    bar = _TF32_K * eager_err + _TF32_EPS
-    rule = (f"{what}: e_comp=max|compiled-fp32ref| {err:.2e} <= {_TF32_K:g} x "
-            f"e_eager=max|eager-fp32ref| {eager_err:.2e} + {_TF32_EPS:g} = {bar:.2e} "
-            f"(matmul precision {precision!r}, TF32)")
-    if not (err <= bar):
-        raise CompileTrainerError(
-            f"--compile-trainer: the compiled extractor DISAGREES with the fp32 reference beyond "
-            f"TF32 rounding — {rule} FAILED (ratio e_comp/e_eager "
-            f"{(err / eager_err) if eager_err > 0 else float('inf'):.2f}). Eager at the same "
-            f"precision stays within e_eager, so this is a wrong kernel, not rounding. A faster "
-            f"wrong model is not a win — investigate before re-enabling.")
+            f"--compile-trainer: the compiled extractor DISAGREES with eager on {what} "
+            f"(max|delta| {err:.2e} > {bar:g}, matmul precision 'highest'). A faster wrong "
+            f"model is not a win — investigate before re-enabling.")
     return rule
-
-
-def _max_abs_delta(a: Tuple["torch.Tensor", "torch.Tensor"],
-                   b: Tuple["torch.Tensor", "torch.Tensor"]) -> float:
-    """max|a - b| over the (pi, vf) pair, computed in fp32."""
-    return max(float((x.float() - y.float()).abs().max()) for x, y in zip(a, b))
-
-
-def fp32_reference(fn: Callable[[Any], Any], obs: Any) -> Tuple["torch.Tensor", "torch.Tensor"]:
-    """One no-grad EAGER forward at matmul precision 'highest', restoring the caller's precision.
-
-    The reference the reduced-precision gate measures both arms against. Restored in ``finally`` so
-    an exception cannot leave the trainer silently running at a precision its argv did not ask for.
-    """
-    prev = torch.get_float32_matmul_precision()
-    try:
-        torch.set_float32_matmul_precision("highest")
-        with torch.no_grad():
-            pi, vf = fn(obs)
-        return pi.clone(), vf.clone()
-    finally:
-        torch.set_float32_matmul_precision(prev)
-
-
-def parity_verdict(*, eager: Tuple["torch.Tensor", "torch.Tensor"],
-                   compiled: Tuple["torch.Tensor", "torch.Tensor"],
-                   reference: Optional[Tuple["torch.Tensor", "torch.Tensor"]] = None,
-                   precision: Optional[str] = None) -> str:
-    """The numerics gate over the arms' OUTPUTS. Raises `CompileTrainerError` or returns the rule line.
-
-    ``precision`` defaults to the process's current `torch.get_float32_matmul_precision()`. At
-    'highest' ``reference`` is not needed (and not read); at any other precision it is REQUIRED.
-    """
-    precision = precision or torch.get_float32_matmul_precision()
-    if precision == "highest":
-        return check_numerics(_max_abs_delta(compiled, eager), precision=precision)
-    if reference is None:
-        raise CompileTrainerError(
-            f"--compile-trainer: matmul precision {precision!r} but no fp32 reference was "
-            f"measured — refusing to validate the compile against a tolerance meant for fp32.")
-    return check_numerics(_max_abs_delta(compiled, reference), precision=precision,
-                          eager_err=_max_abs_delta(eager, reference))
 
 
 # gen3_compile_parity_real_obs_v1 — the DECISION-level tolerances at matmul precision 'highest'.
@@ -226,7 +138,7 @@ def parity_verdict(*, eager: Tuple["torch.Tensor", "torch.Tensor"],
 # final): legal log-prob max|d| 2.7e-05, win-prob |dV| max 1.0e-06, pi_features max 6.9e-05; the
 # broken single graph read 7.39 / 0.33 / 11.8. Each bar sits >= 10x over the healthy maximum and
 # >= 1000x under the defect.
-_FP32_TOL = {"features": _MAX_NUMERIC_DRIFT, "legal_logprob": PRECISION_BARS["highest"][0],
+_FP32_TOL = {"features": _MAX_NUMERIC_DRIFT, "legal_logprob": LOGPROB_BAR,
              "value": 1e-4}
 # The train graph: cosine between the compiled and eager gradients of the gate's own loss over the
 # extractor's parameters. Healthy after the split: 1.000000 (rel err 4.7e-07); the defect: 0.778.
@@ -271,21 +183,6 @@ def _parity_obs(obs_dim: int, batch: int, device: Any,
     rows, mask = load_parity_rows(obs_dim)
     idx = fixture_index(int(batch), len(rows), slice_)
     return ({"observation": torch.as_tensor(rows[idx], device=device)}, mask[idx])
-
-
-class _matmul_precision:
-    """Temporarily set fp32 matmul precision; restored even on an exception."""
-
-    def __init__(self, value: str):
-        self.value = value
-        self.prev = torch.get_float32_matmul_precision()
-
-    def __enter__(self) -> None:
-        self.prev = torch.get_float32_matmul_precision()
-        torch.set_float32_matmul_precision(self.value)
-
-    def __exit__(self, *exc: Any) -> None:
-        torch.set_float32_matmul_precision(self.prev)
 
 
 def _readout(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch.Tensor"]:
@@ -333,40 +230,26 @@ def _require_informative(quantities: Dict[str, "torch.Tensor"], bars: Dict[str, 
 
 
 def decision_verdicts(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
-                      reference: Optional[Dict[str, "torch.Tensor"]] = None,
-                      precision: Optional[str] = None, allow_vacuous: bool = False) -> List[str]:
+                      allow_vacuous: bool = False) -> List[str]:
     """The no-grad parity gate over each readout quantity. Raises `CompileTrainerError` or returns
-    one rule line per quantity. At 'highest' each quantity uses its `_FP32_TOL` bar on
-    max|compiled - eager|; at reduced precision the TF32 rule (`check_numerics`) against the fp32
-    ``reference``, which is then REQUIRED.
+    one rule line per quantity: each quantity uses its `_FP32_TOL` bar on max|compiled - eager|.
 
     FAIL-CLOSED ON A VACUOUS COMPARISON (gen3_fresh_parity_probe_v1): every compared quantity of the
     EAGER arm must vary by more than its own bar (`parity_probe.spread`), else
     `VacuousCompileParityError` — a fresh policy's legal log-probs are constant per row and pass any
     miscompile. ``allow_vacuous=True`` is for a caller that has ALREADY judged the same graph on a
     perturbed, informative copy of the weights (the gate's fresh path) and only it."""
-    precision = precision or torch.get_float32_matmul_precision()
     if not allow_vacuous:
         _require_informative({k: v for k, v in eager.items() if k in _FP32_TOL}, _FP32_TOL,
                              "--compile-trainer parity (decision readout)")
-    if precision != "highest" and reference is None:
-        raise CompileTrainerError(
-            f"--compile-trainer: matmul precision {precision!r} but no fp32 reference was "
-            f"measured — refusing to validate the compile against a tolerance meant for fp32.")
     lines = []
     for key in ("features", "legal_logprob", "value"):
         if key not in eager:
             continue
         if key not in compiled:
             raise CompileTrainerError(f"--compile-trainer: the compiled arm produced no {key!r}")
-        if precision == "highest":
-            err = float((compiled[key] - eager[key]).abs().max())
-            lines.append(check_numerics(err, precision=precision, what=key, tol=_FP32_TOL[key]))
-        else:
-            assert reference is not None
-            lines.append(check_numerics(
-                float((compiled[key] - reference[key]).abs().max()), precision=precision,
-                eager_err=float((eager[key] - reference[key]).abs().max()), what=key))
+        err = float((compiled[key] - eager[key]).abs().max())
+        lines.append(check_numerics(err, what=key, tol=_FP32_TOL[key]))
     return lines
 
 
@@ -405,58 +288,32 @@ def _param_verdict(compiled: Dict[str, "torch.Tensor"], eager: Dict[str, "torch.
 
 
 def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torch.Tensor"],
-                  reference: Optional[Dict[str, "torch.Tensor"]] = None,
-                  precision: Optional[str] = None, allow_vacuous: bool = False,
-                  param_names: Optional[List[str]] = None,
+                  allow_vacuous: bool = False, param_names: Optional[List[str]] = None,
                   param_bar: float = _MAX_PARAM_GRAD_REL) -> str:
-    """The TRAIN-graph parity gate: forward features (the numerics rule) AND the gradient's cosine.
+    """The TRAIN-graph parity gate: forward features (the numerics rule) AND the gradient's cosine:
+    cos(compiled_grad, eager_grad) >= 0.9999. The eager arm's features must vary across rows and its
+    gradient must be non-zero (`VacuousCompileParityError` otherwise; an all-zero gradient has cosine 1.0
+    with anything's zero).
 
-    At 'highest': cos(compiled_grad, eager_grad) >= 0.9999. At reduced precision:
-    (1 - cos(compiled, fp32)) <= K * (1 - cos(eager, fp32)) + 1e-4 — TF32's own angular error on
-    the eager arm, scaled by the same K as the value rule. The eager arm's features must vary
-    across rows and its gradient must be non-zero (`VacuousCompileParityError` otherwise; an
-    all-zero gradient has cosine 1.0 with anything's zero).
-
-    When the arms carry per-parameter sizes (``grad_sizes``, region R1's arms do), at fp32 every
-    parameter above the floor is ALSO held to ``param_bar`` (`_param_verdict`)."""
-    precision = precision or torch.get_float32_matmul_precision()
+    When the arms carry per-parameter sizes (``grad_sizes``, region R1's arms do), every parameter above
+    the floor is ALSO held to ``param_bar`` (`_param_verdict`)."""
     if not allow_vacuous:
         _require_informative({"features": eager["features"], "grad": eager["grad"]},
                              {"features": _MAX_NUMERIC_DRIFT, "grad": 0.0},
                              "--compile-trainer parity (train graph)")
-    if precision == "highest":
-        feat = check_numerics(float((compiled["features"] - eager["features"]).abs().max()),
-                              precision=precision, what="train features")
-        cos = _cos(compiled["grad"], eager["grad"])
-        if not (cos >= _MIN_GRAD_COSINE):
-            raise CompileTrainerError(
-                f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with eager — "
-                f"cosine {cos:.6f} < {_MIN_GRAD_COSINE} on the gate's own loss over the "
-                f"extractor's parameters. PPO would be stepping along the wrong direction. A "
-                f"faster wrong model is not a win — investigate before re-enabling.")
-        per_param = _param_verdict(compiled, eager, param_names, allow_vacuous=allow_vacuous,
-                                   bar=param_bar)
-        return "; ".join(x for x in (feat, f"grad cosine {cos:.6f} >= {_MIN_GRAD_COSINE}",
-                                     per_param) if x)
-    if reference is None:
-        raise CompileTrainerError(
-            f"--compile-trainer: matmul precision {precision!r} but the train graph has no fp32 "
-            f"reference — refusing to validate it against a tolerance meant for fp32.")
-    feat = check_numerics(float((compiled["features"] - reference["features"]).abs().max()),
-                          precision=precision,
-                          eager_err=float((eager["features"] - reference["features"]).abs().max()),
+    feat = check_numerics(float((compiled["features"] - eager["features"]).abs().max()),
                           what="train features")
-    d_comp = 1.0 - _cos(compiled["grad"], reference["grad"])
-    d_eager = 1.0 - _cos(eager["grad"], reference["grad"])
-    bar = _TF32_K * max(d_eager, 0.0) + _TF32_EPS
-    rule = (f"grad 1-cos vs fp32: compiled {d_comp:.2e} <= {_TF32_K:g} x eager {d_eager:.2e} "
-            f"+ {_TF32_EPS:g} = {bar:.2e}")
-    if not (d_comp <= bar):
+    cos = _cos(compiled["grad"], eager["grad"])
+    if not (cos >= _MIN_GRAD_COSINE):
         raise CompileTrainerError(
-            f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with the fp32 "
-            f"reference beyond TF32 rounding at matmul precision {precision!r} — {rule} FAILED. "
-            f"A faster wrong model is not a win — investigate before re-enabling.")
-    return "; ".join(x for x in (feat, rule) if x)
+            f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with eager — "
+            f"cosine {cos:.6f} < {_MIN_GRAD_COSINE} on the gate's own loss over the "
+            f"extractor's parameters. PPO would be stepping along the wrong direction. A "
+            f"faster wrong model is not a win — investigate before re-enabling.")
+    per_param = _param_verdict(compiled, eager, param_names, allow_vacuous=allow_vacuous,
+                               bar=param_bar)
+    return "; ".join(x for x in (feat, f"grad cosine {cos:.6f} >= {_MIN_GRAD_COSINE}",
+                                 per_param) if x)
 
 
 def resolve_device(fe: Any) -> "torch.device":

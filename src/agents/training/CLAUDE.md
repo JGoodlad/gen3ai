@@ -593,7 +593,7 @@ a separate decision. Hazards an agent must know before touching it:
   `win_mask` (the window fill calls the callback's own `backfill_terminal_labels`).
 - **K9(b) `--behaviour-check`** (default `fatal` on BOTH cores): before any optimizer step of every
   update, the learner's log π on rows played at the CURRENT version must equal the stored behaviour
-  log-prob (the precision-keyed gate: at fp32 DETERMINISTIC — a row whose forward has a declared selection / threshold within a relative margin 2e-4 of its cutoff is EXCLUDED (3.7 % of healthy rows; `agents/model/selection_sites.py`, `rust_rollout/tie_margins.py`), every other row's |Δ| < 1e-4 or FATAL at once, the excluded share < 0.15; p99 < 3.6e-3 AND max < 0.071 at TF32, the TF32 max FATAL only on 4 consecutive updates — 🚨 that TF32 gate fails BY CHANCE on the Rust core with trained weights, so `--env-core rust --matmul-precision high` with a FATAL check is REFUSED at launch: pass `--behaviour-check warn` or re-measure it first; TF32 itself is RETIRED by the owner and leaves with the deletion pass). Under `rust` Lane G's pre-loop probe runs its own forward and logs
+  log-prob (ONE gate, at fp32 matmul precision `highest` — the only precision, TF32 was retired: DETERMINISTIC — a row whose forward has a declared selection / threshold within a relative margin 2e-4 of its cutoff is EXCLUDED (3.7 % of healthy rows; `agents/model/selection_sites.py`, `rust_rollout/tie_margins.py`), every other row's |Δ| < 1e-4 or FATAL at once, the excluded share < 0.15; a process at any other precision is refused). Under `rust` Lane G's pre-loop probe runs its own forward and logs
   `staleness/*` (ratio, clip fraction, KL by row AGE) and `behaviour/*`; under `python` (no per-row
   versions) the first micro-batch's own forward is compared in-loop instead (`learner_gates.md`). Per-game version pinning (`--version-pinning per_game`) is the first
   staleness remedy, OFF unless those measurements call for it.
@@ -631,17 +631,14 @@ neither): **`--compile-opponents`** is the CPU/ROLLOUT half — the frozen oppon
 workers, plus BLAS thread pinning. **`--compile-trainer`** is the GPU/LEARNER half (auto-on for
 cuda) — the CUDA forward **and backward** the PPO step runs, and the larger of the two. They are
 orthogonal; a run can take either, both or neither.
-**`--matmul-precision {highest,high}`** (default `highest` = PyTorch's default, no TF32, and the
-code then calls nothing) sets the TRAINER process's fp32 matmul precision; `high` enables TF32. It
-is stamped at launch as `🧮 [MATMUL PRECISION]` and recorded in `metadata.json`
-(`gen3_matmul_precision_v1`); a runtime knob, never inherited. K9(b)'s behaviour gate is KEYED BY it
-(one table, `rust_rollout/consistency.BEHAVIOUR_GATES`): `max` |Δ log π| < 1e-4 at `highest`, judged by
-the fp32 rule, DETERMINISTIC (`gen3_behaviour_tie_exclusion_v1`: the policy forward selects with topk / argmax, and a selection within a rounding error of its cutoff can resolve differently in T2 and in the learner — such rows, 3.7 % at a relative margin 2e-4, are EXCLUDED and every other row is judged single-shot); at `high`
-BOTH the micro-batch's `p99` < 3.6e-3 (global faults — TF32's healthy tail reaches 0.04 on a few rows,
-so no max bar alone separates a one-step-stale rollout) AND its `max` < 0.071 (localized gross faults
-on < 1 % of rows) — the max PERSISTENT: one violation warns and dumps the rows to
-`<run_dir>/behaviour_violations.jsonl`, FATAL only on 4 consecutive updates, k from the measured
-heavy tail (`designs/training/learner_gates.md`).
+**fp32 matmul precision `highest` is the ONLY precision** (TF32 retired, deletion pass K2; `--matmul-precision`
+is DELETED — `designs/deleted_flags.md`). Nothing in the trainer sets it; `metadata.json` still records the
+realized value as `matmul_precision`, and every parity gate (the region gate, the canary, T2's judge, K9(b))
+refuses a process at any other precision. A resume or fork of a run whose `metadata.json` recorded
+`matmul_precision: high` is refused `FATAL_CONFIG` naming the pin (`model_version.retired_levers`,
+`LAST_COMMIT_K2`). K9(b)'s behaviour gate (`rust_rollout/consistency.BEHAVIOUR_GATE`): `max` |Δ log π| < 1e-4,
+DETERMINISTIC (`gen3_behaviour_tie_exclusion_v1`: the policy forward selects with topk / argmax, and a selection within a rounding error of its cutoff can resolve differently in T2 and in the learner — such rows, 3.7 % at a relative margin 2e-4, are EXCLUDED and every other row is judged single-shot; the offending rows are dumped to `<run_dir>/behaviour_violations.jsonl`;
+`designs/training/learner_gates.md`).
 🚨 **`--compile-trainer`'s startup gate (the REGION gate, `compile_regions.gate_regions`) runs on REAL
 obs rows**, never zeros. The rows are the committed fixture `src/agents/model/compile_parity_obs.npz`
 (R1 uses the K9 golden's labelled buffer on the production surface); regenerate the fixture with
@@ -652,9 +649,7 @@ launch: the zero-init pointer head makes every legal log-prob `-log(n_legal)`, s
 fail) it ALSO runs on a seeded, bit-exactly-restored perturbation of the policy
 (`agents.model.parity_probe`, `gen3_fresh_parity_probe_v1`), and a vacuous comparison REFUSES rather
 than passes. The CPU `--compile-opponents` path runs a decision-level parity check once per distinct
-weights (`agents.model.opponent_parity`), which RAISES on a mismatch. Under `--matmul-precision high`
-it switches to the precision-aware TF32 rule (`e_comp ≤ 4·e_eager + 1e-4` against an fp32 eager
-reference). 🚨 **HEAD runs torch >= 2.8 ONLY** (deletion pass K1, 2026-10-02): `utils/torch_floor.py`
+weights (`agents.model.opponent_parity`), which RAISES on a mismatch. 🚨 **HEAD runs torch >= 2.8 ONLY** (deletion pass K1, 2026-10-02): `utils/torch_floor.py`
 exits the trainer `FATAL_CONFIG` on an older torch, because every 2.5.1 path is gone — the
 extractor-only compile and its gate, and the CUDA trunk split (`gen3_inductor_trunk_split_v1`) that
 2.5.1's single Inductor graph needed (it miscompiled on real rows: every default cuda run from

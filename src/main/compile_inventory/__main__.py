@@ -6,7 +6,7 @@ stack-profiled trace OOM-killed the host three times — `memcap.py`), at nice 1
   scripts/ops/mem_cap.sh 12 nice -n 19 python -m main.compile_inventory run --stage trace \
         --device cpu --micro 64 --trace-steps 4                       # (a)(b)(c), both views
   scripts/ops/gpu_lock.sh timeout 1200 scripts/ops/mem_cap.sh 16 python -m main.compile_inventory \
-        run --stage time --device cuda --matmul-precision high --time-epochs 1   # (d), TF32
+        run --stage time --device cuda --time-epochs 1                        # (d)
   scripts/ops/mem_cap.sh 8 python -m main.compile_inventory fullgraph  # fullgraph=True verdicts
   python -m main.compile_inventory analyze <out dir>                  # re-classify (streaming)
   python -m main.compile_inventory report <out dir> [...] --out <tables.md>
@@ -122,8 +122,7 @@ def cmd_run(a: argparse.Namespace) -> int:
     out.mkdir(parents=True, exist_ok=False)
     steps = (lb.recorded_steps(original) or 0) + 10 * 48 * 2048
     argv = lb.build_trainer_argv(original, model_zip=str(model_zip), run_dir=str(out / "run"),
-                                 steps=steps, device=a.device, matmul_precision=a.matmul_precision,
-                                 launcher_only=LAUNCHER_ONLY)
+                                 steps=steps, device=a.device, launcher_only=LAUNCHER_ONLY)
     argv = adjust_argv(argv, compile_trainer=(a.stage == "time"))
     cfg: Dict[str, Any] = {
         "stage": a.stage, "model_zip": str(model_zip), "model_sha256": sha,
@@ -254,7 +253,6 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--model", default=None, help="explicit checkpoint .zip")
     r.add_argument("--buffer", default=str(DEFAULT_BUFFER),
                    help="the pinned rollout buffer (learner_benchmark's rollout_buffer.pkl)")
-    r.add_argument("--matmul-precision", choices=("highest", "high"), default="highest")
     r.add_argument("--backend", choices=("aot_eager", "eager", "inductor"), default="aot_eager",
                    help="trace stage: the backend the capture compiles with")
     r.add_argument("--trace-steps", type=int, default=128,

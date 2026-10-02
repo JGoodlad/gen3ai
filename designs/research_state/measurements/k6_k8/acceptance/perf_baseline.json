@@ -1,15 +1,18 @@
 {
- "schema": "gen3_compiled_perf_baseline_v2",
- "what": "one production PPO update through the compile inventory's time stage (torch 2.8, CUDA, --keep-prewarm --unbracketed) on arm C's final checkpoint (ai_v14_02_lbat_ctrl) and the learner benchmark's pinned buffer (learner_bench/20260928_135948_cuda/rollout_buffer.pkl; 98,304 rows, micro-batch 2048 x accumulation 32, 10 epochs), the K8 regions installed. KEYED BY MATMUL PRECISION: a run is judged only against the baseline banked at ITS precision",
+ "schema": "gen3_compiled_perf_baseline_v3",
+ "what": "one production PPO update through the compile inventory's time stage (torch 2.8, CUDA, fp32 matmul precision 'highest' — the ONLY precision since TF32 was retired, deletion pass K2 — --keep-prewarm --unbracketed) on arm C's final checkpoint (ai_v14_02_lbat_ctrl) and the learner benchmark's pinned buffer (learner_bench/20260928_135948_cuda/rollout_buffer.pkl; 98,304 rows, micro-batch 2048 x accumulation 32, 10 epochs), the K8 regions installed",
  "min_compiled_share": 0.8,
  "min_compiled_share_why": "K8's acceptance criterion (designs/research_state/measurements/k8_inventory/README.md, criterion 3)",
- "by_precision": {
+ "baseline": null,
+ "baseline_unbanked_because": "the K8 acceptance's only banked baseline (36.32 s, `history.high`) was TF32, which deletion pass K2 retired; a live fp32 'highest' update reads ~40-42 s (the old test docstring), but NO fp32 baseline was banked: on 2026-10-02 the time stage, run as this test runs it, did not reuse the pinned buffer under the Rust env core (the worker collected a fresh 4,096-row buffer and timed 0.32 s on it; the worker log has no `reused buffer` line, so `learner_benchmark._bench_collect` was not reached; why is UNVERIFIED), so any number read from it is the wrong update. Bank one once the time stage reuses the pinned buffer again (geometry rows 98,304 / micro-batch 2,048 / accumulation 32 / 10 epochs), as `baseline: {update_wall_s, compiled_share_of_train_wall, wall_tolerance, wall_tolerance_why, source}`, and the guard runs.",
+ "history": {
   "high": {
    "update_wall_s": 36.32,
    "compiled_share_of_train_wall": 0.9,
    "wall_tolerance": 0.15,
    "source": "designs/research_state/measurements/k6_k8/acceptance/README.md (units B1 36.37 s and B2 36.27 s; 2026-10-01; code of f3878594..fce2955a)",
-   "wall_tolerance_why": "2.5x the largest run-to-run spread the acceptance read measured on this box at matched code and precision: arm A 45.28 vs 48.03 s (6.1%, under bystander load); arm B 36.37 vs 36.27 s (0.3%)"
+   "wall_tolerance_why": "2.5x the largest run-to-run spread the acceptance read measured on this box at matched code and precision: arm A 45.28 vs 48.03 s (6.1%, under bystander load); arm B 36.37 vs 36.27 s (0.3%)",
+   "retired": "TF32 ('high') was retired by deletion pass K2; kept as the K8 acceptance's record, never compared against an fp32 run"
   }
  }
 }

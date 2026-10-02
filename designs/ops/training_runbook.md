@@ -492,8 +492,8 @@ extractor is what ships — same win, less graph.
 no metric surfaces (the run trains correctly, just ~38% fewer steps/hour, forever), so a failed,
 slower, or numerically-divergent compile is a hard `FATAL_CONFIG` exit rather than a warning. The
 parity check runs on a committed fixture of REAL obs rows, at the decision level (masked legal
-log-probs, V) and on the train graph's gradient; under `--matmul-precision high` it uses the
-precision-aware TF32 rule. 🚨 **Every cuda run with the default `--compile-trainer` from `28eaef29`
+log-probs, V) and on the train graph's gradient, at fp32 `highest` (the only matmul precision; TF32 was
+retired, deletion pass K2). 🚨 **Every cuda run with the default `--compile-trainer` from `28eaef29`
 (2026-08-17) up to `gen3_inductor_trunk_split_v1` (2026-09-28) trained its LEARNER on a miscompiled
 single CUDA graph** (argmax agreement 70.9%, gradient cosine 0.778 vs eager). Its eval, opponents
 and traces ran the CPU compile and are clean. The split was torch-2.5.1-only: under torch 2.8 the

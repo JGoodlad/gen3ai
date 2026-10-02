@@ -138,8 +138,7 @@ def check_opponent_parity(model: Any, original: Callable[[Any], Any],
                         p_eager = _arm(model, fe, original, x, m)
                         p_comp = _arm(model, fe, compiled, x, m)
                     try:
-                        rules = decision_verdicts(eager=p_eager, compiled=p_comp,
-                                                  precision="highest")
+                        rules = decision_verdicts(eager=p_eager, compiled=p_comp)
                     except VacuousCompileParityError:
                         if n_rung == len(PERTURB_LADDER) - 1:
                             raise
@@ -147,8 +146,7 @@ def check_opponent_parity(model: Any, original: Callable[[Any], Any],
                     lines += [f"[fresh weights, seeded perturbation scale={scale:g} seed+{k}] " + r
                               for r in rules]
                     break
-            lines += decision_verdicts(eager=eager, compiled=comp, precision="highest",
-                                       allow_vacuous=fresh is not None)
+            lines += decision_verdicts(eager=eager, compiled=comp, allow_vacuous=fresh is not None)
         except CompileTrainerError as exc:
             raise type(exc)(f"{where}: {exc}") from exc
     line = f"parity PASS on {len(x)} REAL obs rows at B=1 — " + " | ".join(lines)

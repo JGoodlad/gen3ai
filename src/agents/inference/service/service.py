@@ -26,8 +26,7 @@ import torch
 from agents.inference.service.engine import Engine, PlanItem
 from agents.inference.service.parity import ParityReport, fixture_rows, gate_slot, judge
 from agents.inference.service.slots import SlotGroup
-from agents.model.parity_probe import (PERTURB_SEED, ladder_at, perturbed_parameters, precision_bars,
-                                       rung_seed)
+from agents.model.parity_probe import PERTURB_SEED, perturbed_parameters, rung_seed
 from agents.inference.service.spec import (
     CallerError, LifecycleViolation, ParityFailure, Priority, ServiceError, ServiceSpec,
     VacuousParity,
@@ -306,26 +305,16 @@ class InferenceService:
         `ParityFailure` (a real divergence) raises at once. No informative rung ⇒ `VacuousParity`
         naming every rung's spreads — fail-closed, never a pass."""
         tried = [f"real weights: {_vacuous_detail(vacuous)}"]
-        # gen3_precision_keyed_parity_v1: only the rungs at or under THIS precision's scale cap
-        # (`parity_probe.PRECISION_BARS`); a higher rung would judge a correct graph on states where
-        # the precision's own compiled-vs-eager drift crosses its bars.
-        try:
-            ladder = ladder_at(self._precision, tuple(self.spec.perturb_ladder))
-        except KeyError as exc:
-            raise ParityFailure(f"{where}: {exc}") from vacuous
-        skipped = len(self.spec.perturb_ladder) - len(ladder)
+        # `ServiceSpec.validate` already bounds every rung at `PERTURB_MAX_SCALE` (the bars' calibrated range).
+        ladder = tuple(self.spec.perturb_ladder)
         for scale, k in ladder:
             try:
                 return judge_at(float(scale), int(k))
             except VacuousParity as exc:
                 tried.append(f"scale {float(scale):g} seed+{int(k)}: {_vacuous_detail(exc)}")
-        cap_note = (f"; {skipped} declared rung(s) above matmul precision {self._precision!r}'s "
-                    f"scale cap {precision_bars(self._precision)[1]:g} were not tried"
-                    if skipped else "")
         raise VacuousParity(
             f"{where}: VACUOUS on the real weights and on every rung of the declared perturbation "
-            f"ladder {ladder or '(EMPTY — the perturbed path is disabled)'} (seed {PERTURB_SEED}"
-            f"{cap_note}) — "
+            f"ladder {ladder or '(EMPTY — the perturbed path is disabled)'} (seed {PERTURB_SEED}) — "
             f"{'; '.join(tried)}. A comparison that does not vary cannot tell a miscompile from a "
             f"match, so the slot is REFUSED (not passed). A NaN-free policy whose V / log-probs no "
             f"rung moves is degenerate — inspect its heads before serving it.") from vacuous

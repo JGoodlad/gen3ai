@@ -1354,9 +1354,10 @@ because a frozen forward never reads the reward.
 
 `--use-bridge rust` (serverless) · `--env-core` (**rust** for a fresh `--arch production` launch — `designs/production_config.json` `recipe.sizing`, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch the core the checkpoint RECORDED, so unlike the knobs below it IS inherited — except that a python-era checkpoint (produced on `python`, or before `--env-core` existed) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned; deletion pass D4); and `rust` for a bare non-production argv too — the deletion pass's bare-argv flip, 2026-10-02) · `--compile-opponents` + `--compile-opponents-preload` +
 `--compile-trainer` (all ON by default) · `--grad-accum-steps` at whatever `--batch-size` the run
-uses · `--grad-checkpointing` · `--async-rollout` · `--matmul-precision` (default `highest`: full FP32,
-no TF32 — PyTorch's default; `high` enables TF32 in the trainer process, stamped as
-`🧮 [MATMUL PRECISION]` and recorded in `metadata.json`, never in `model_config.json`). **The CUDA learner
+uses · `--grad-checkpointing` · `--async-rollout`. **Matmul precision is not a knob: fp32 `highest` (full
+FP32, no TF32 — PyTorch's default) is the only precision** (TF32 was retired and `--matmul-precision` deleted,
+deletion pass K2); `metadata.json` records the realized value as provenance, every parity gate refuses any
+other, and a run that recorded `high` resumes pinned or not at all. **The CUDA learner
 compile is the DECLARED REGIONS** — R0 the rollout core and R1 the micro-step, each `fullgraph=True`
 at its declared signature (`agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8
 — DECLARED COMPILE REGIONS"); the startup region gate holds each to eager on real observation rows at
@@ -1369,7 +1370,7 @@ new run, and a run that recorded torch 2.5.1 (or none) resumes PINNED to its own
 unchanged either way. On torch 2.5.1 the whole extractor as one CUDA Inductor graph miscompiled on
 real observations (argmax agreement 70.9%, gradient cosine 0.778 vs eager, measured 2026-09-28 on
 `ai_v14_01_base`; every default cuda run from 2026-08-17, `28eaef29`, to 2026-09-28), which a trunk
-split worked around there; on 2.8 the unsplit graph passed (fp32 and TF32, eval and train) and the
+split worked around there; on 2.8 the unsplit graph passed (eval and train) and the
 split was deleted with HEAD's 2.5.1 support. **UNVERIFIED:** the root-cause op. These do not appear in `model_config.json` and
 are **not** inherited on resume — with the compile flags defaulting ON it is the OPT-OUT that must
 be re-passed each launch, not the flag.

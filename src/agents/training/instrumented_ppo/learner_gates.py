@@ -8,16 +8,13 @@ version record — every python-core rollout — is played entirely by the weigh
 the check needs no forward of its own: it reads the FIRST micro-batch's ``evaluate_actions`` output
 (epoch 0, before any optimizer step can have run) against the rollout's stored ``old_log_prob`` — one
 host read per update — and a failure is a typed `BehaviourMismatch`. The STATISTIC and its bar are
-keyed by the run's float32 matmul precision (``consistency.BEHAVIOUR_GATES``, measured —
-``designs/training/learner_gates.md``): at fp32 DETERMINISTIC — the rows whose forward sits within a
-rounding error of a discrete selection / threshold cutoff are excluded (`behaviour_margins_first_micro`:
-one no-grad eager forward of the micro-batch under `tie_margins.TieMargins`, before its own forward),
-every other row must have ``|Δ|`` < 1e-4 (FATAL at once), and the excluded share must stay under its
-ceiling; under TF32 BOTH the micro-batch's
-``p99`` < 3.6e-3 (global faults) and its ``max`` < 0.071 (localized gross faults) — the TF32 max is
-PERSISTENT: one violation warns loudly and dumps the offending rows (``<run_dir>/behaviour_violations.jsonl``);
-FATAL when it recurs on 4 consecutive updates (``TF32_MAX_PERSISTENCE``, from the measured tail). One table and one enforcement
-(``consistency.enforce_behaviour``), read by both implementations. Which implementation runs is decided
+``consistency.BEHAVIOUR_GATE`` (measured — ``designs/training/learner_gates.md``), at fp32 matmul
+precision 'highest', the only precision: DETERMINISTIC — the rows whose forward sits within a rounding
+error of a discrete selection / threshold cutoff are excluded (`behaviour_margins_first_micro`: one
+no-grad eager forward of the micro-batch under `tie_margins.TieMargins`, before its own forward), every
+other row must have ``|Δ|`` < 1e-4 (FATAL at once; the offending rows are dumped to
+``<run_dir>/behaviour_violations.jsonl``), and the excluded share must stay under its ceiling. One table
+and one enforcement (``consistency.enforce_behaviour``), read by both implementations. Which implementation runs is decided
 ONCE per ``train()`` by `behaviour_gate_mode`, so a buffer never pays both.
 
 **K9(c) FAIL-CLOSED NON-FINITE LOSS / GRADIENT.** Before this, nothing in ``train()`` looked: a NaN
@@ -81,13 +78,10 @@ def behaviour_margins_first_micro(model: Any, observations: Any, actions: Any, m
     """K9(b), python path: the first micro-batch's TIE MARGINS (`tie_margins.selection_gaps`: one no-grad,
     eager, train-mode forward of the learner under the recorder) — called BEFORE that micro-batch's own
     forward, so the stashes the fold reads afterwards are that forward's, and before any optimizer step,
-    so the weights are the ones that played the rows. None when the run's precision judges every row
-    (no tie exclusion: TF32)."""
-    from agents.training.rust_rollout.consistency import checked_margins, tie_eps
+    so the weights are the ones that played the rows."""
+    from agents.training.rust_rollout.consistency import checked_margins
     from agents.training.rust_rollout.tie_margins import TieMargins
 
-    if tie_eps() <= 0:
-        return None
     acts = actions.reshape(-1).long()
     rec = TieMargins(int(acts.shape[0]))
     was = model.policy.training
@@ -104,9 +98,9 @@ def behaviour_margins_first_micro(model: Any, observations: Any, actions: Any, m
 def check_behaviour_first_micro(model: Any, log_prob: th.Tensor, old_log_prob: th.Tensor,
                                 actions: Any = None, masks: Any = None, margins: Any = None) -> float:
     """K9(b), python path (module docs): the first micro-batch's recomputed log-probs vs the stored
-    behaviour log-probs, judged and enforced by the ONE precision-keyed gate
-    (``consistency.enforce_behaviour`` — the tie exclusion, persistence, the row dump, FATAL / warn).
-    ``margins`` is `behaviour_margins_first_micro`'s ``(margin, site)`` — required at fp32. Records
+    behaviour log-probs, judged and enforced by the ONE gate
+    (``consistency.enforce_behaviour`` — the tie exclusion, the row dump, FATAL / warn).
+    ``margins`` is `behaviour_margins_first_micro`'s ``(margin, site)`` — required. Records
     ``behaviour/*``; ``actions`` / ``masks`` (the micro-batch's) are read only for a dump. Returns the max |Δ|."""
     d = (log_prob.detach().reshape(-1).double() - old_log_prob.detach().reshape(-1).double()).abs()
     a = d.cpu().numpy()                                   # the one host read (a micro-batch of floats)

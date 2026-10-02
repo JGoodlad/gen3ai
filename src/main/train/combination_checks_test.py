@@ -332,7 +332,6 @@ ARGVS: dict[str, list[str]] = {
     # M5 Lane G — `--env-core rust`
     "env_core_rust_needs_the_winprob_critic": ["--env-core", "rust", "--critic", "shaped"],
     "env_core_rust_unported_paths": ["--env-core", "rust", *_WP, "--team-pfsp", "var"],
-    "env_core_rust_tf32_behaviour_check_fatal": ["--env-core", "rust", *_WP, "--matmul-precision", "high"],
     "env_core_flags_need_the_rust_core": [*_PY, "--rollout-trigger", "window"],
     # gen3_fork_rust_v1 — the fork arm on the Rust core (forks.md §14.7)
     "fork_rust_needs_keyed_opponent_sampling": ["--env-core", "rust", *_WP, "--fork-fraction", "0.02",
@@ -512,23 +511,10 @@ def test_every_check_refusing_a_resume_declares_what_to_strip():
             f"restart path to strip")
 
 
-def test_a_tf32_rust_run_with_a_fatal_behaviour_check_is_refused_and_both_ways_out_launch():
-    """gen3_behaviour_tie_exclusion_v1 (orchestrator 2026-10-01): on the Rust core K9(b)'s TF32 gate
-    fails by CHANCE on trained weights, so the combination is refused at LAUNCH (FATAL_CONFIG) — the
-    default (unset = fatal) and an explicit `fatal` alike; `--behaviour-check warn` and fp32 both pass
-    this check, and the python core is untouched (it leaves with the deletion pass)."""
-    from main.exit_codes import TrainExitCode
+def test_the_tf32_behaviour_check_refusal_is_deleted_with_tf32():
+    """TF32 was retired (deletion pass K2), so the Rust core's refusal of `--matmul-precision high` + a
+    FATAL `--behaviour-check` has nothing to refuse: the row is gone, and the flag it read no longer
+    parses."""
     from main.train.combination_checks import COMBINATION_CHECKS as CHECKS
 
-    check = next(c for c in CHECKS if c.name == "env_core_rust_tf32_behaviour_check_fatal")
-    base = ["--env-core", "rust", *_WP]
-    for argv in (base + ["--matmul-precision", "high"],
-                 base + ["--matmul-precision", "high", "--behaviour-check", "fatal"]):
-        assert check.predicate(_namespace(argv)), argv
-        code, text = _resolved(argv)
-        assert code == int(TrainExitCode.FATAL_CONFIG)
-        assert "--behaviour-check warn" in text and "re-measure the TF32 gate" in text and "36 %" in text
-    for argv in (base + ["--matmul-precision", "high", "--behaviour-check", "warn"],
-                 base + ["--matmul-precision", "highest"], base,
-                 [*_WP, *_PY, "--matmul-precision", "high"]):                # the python core
-        assert not check.predicate(_namespace(argv)), argv
+    assert not [c for c in CHECKS if "tf32" in c.name or "matmul_precision" in c.dests]

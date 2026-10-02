@@ -67,19 +67,17 @@ def test_decision_verdicts_REFUSES_a_vacuous_comparison_and_allow_vacuous_is_exp
     const = {"features": torch.randn(4, 8, generator=torch.Generator().manual_seed(0)),
              "legal_logprob": _logp(4, vary=False), "value": torch.linspace(0.1, 0.9, 4)}
     with pytest.raises(VacuousCompileParityError, match="VACUOUS.*legal_logprob"):
-        decision_verdicts(eager=const, compiled={k: v.clone() for k, v in const.items()},
-                          precision="highest")
+        decision_verdicts(eager=const, compiled={k: v.clone() for k, v in const.items()})
     assert isinstance(VacuousCompileParityError("x"), CompileTrainerError), \
         "the launcher classifies CompileTrainerError as config-fatal; a vacuous gate must be too"
-    assert len(decision_verdicts(eager=const, compiled=const, precision="highest",
-                                 allow_vacuous=True)) == 3
+    assert len(decision_verdicts(eager=const, compiled=const, allow_vacuous=True)) == 3
 
 
 def test_train_verdict_REFUSES_an_all_zero_gradient():
     f = torch.randn(3, 4, generator=torch.Generator().manual_seed(0))
     with pytest.raises(VacuousCompileParityError, match="grad"):
         train_verdict(eager={"features": f, "grad": torch.zeros(10)},
-                      compiled={"features": f, "grad": torch.zeros(10)}, precision="highest")
+                      compiled={"features": f, "grad": torch.zeros(10)})
 
 
 # --------------------------------------------------------------------------- the perturbation

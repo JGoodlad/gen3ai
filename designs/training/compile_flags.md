@@ -500,25 +500,30 @@ workers read it warm, exactly as with the old box-wide dir — but now once PER 
 box. What K3 changes is only what a FRESH launch pays: the old box-wide cache was usually warm for a
 new run of an unchanged graph; the run's own cache is always cold at a fresh launch, by design.
 
-## FP32 matmul precision (`--matmul-precision {highest,high}`, DEFAULT `highest`)
+## FP32 matmul precision — the ONLY precision (TF32 retired; `--matmul-precision` DELETED)
 
-`gen3_matmul_precision_v1`. **`highest`** is PyTorch's own default — full FP32 matmuls, no TF32 —
-and `main.train.config.apply_matmul_precision` then calls NOTHING, so the default process is
-byte-for-byte what it was before the flag. **`high`** calls
-`torch.set_float32_matmul_precision("high")` in the TRAINER process, letting fp32 matmuls run on
-TF32 tensor cores (Ampere+; ~10-bit mantissa). It does not reach the env/opponent worker processes.
-The resolved value is read back from torch and **stamped at launch** as
-`🧮 [MATMUL PRECISION] <value>` (beside `🔭 [OBS SOURCE]`), and recorded per checkpoint in
-`metadata.json` as `matmul_precision`. A RUNTIME perf knob: not in `model_config.json`, not
-inherited on a resume (a launcher restart re-sends the original argv, so it holds across one
-run's restarts). **UNVERIFIED:** its speed-up and its effect on the trained policy on this box
-have not been measured.
+Every fp32 matmul in the trainer process runs at PyTorch's own default,
+`torch.get_float32_matmul_precision() == "highest"` (full FP32, no TF32). Nothing in the trainer sets
+it and there is no flag. TF32 was retired by the owner (2026-10-01; deletion pass K2): its ~1e-2
+rounding cannot be checked deterministically (the K9(b) exclusion sweep), it had cost a startup crash
+(`ai_v14_04_lbat_t32` died on the fp32 compile gate), a second gate graph and sentinel headroom, and
+the T32b read found it futile (+2.48 % GPU time per step, ledger 2026-10-01). What stays:
 
-**Under `high`, `--compile-trainer`'s startup parity gate switches to a precision-aware rule**
-(`gen3_tf32_parity_gate_v1`): a fixed fp32 tolerance is the wrong question once eager and compiled
-each run their OWN TF32 kernels. The first TF32 launch (`ai_v14_04_lbat_t32`, 2026-09-28) died on
-the fixed 1e-4 at a compiled-vs-eager 7.62e-03 on zero obs. The rule, and the measurement behind
-it, are under "The startup parity gate" below.
+- **The provenance stamp.** `metadata.json` still records `matmul_precision`, read back from torch
+  (always `highest` now; `main.train.run_io._matmul_precision`).
+- **Every parity gate refuses any other precision.** The region gate (`compile_regions.gate_regions`),
+  K9(b) (`consistency.behaviour_gate`, `UndeclaredPrecision`) and T2's parity judge each call
+  `parity_probe.unmeasured_precision()` and raise their own typed error naming the precision, so a
+  process someone set to `high` or `medium` is refused instead of judged at bars measured elsewhere.
+  The inference service's freeze check (a precision change after the freeze is a lifecycle violation)
+  and `torch_state_guard` (a test that leaks the precision or `allow_tf32` FAILS) are unchanged.
+- **A run that recorded TF32 resumes pinned or not at all.** A resume or fork whose `metadata.json`
+  recorded `matmul_precision != "highest"` (one run on record, `ai_v14_04b_lbat_t32`) is refused
+  `FATAL_CONFIG` naming `--matmul-precision` and the pin
+  (`model_version.retired_levers.RETIRED`, `LAST_COMMIT_K2`: any commit at or before it still has the
+  flag). A recorded argv that types the flag fails argparse on HEAD and must run pinned
+  (`designs/deleted_flags.md`); `learner_benchmark.build_trainer_argv` drops flags the trainer's parser
+  no longer knows, so a re-pointed recorded command still runs.
 
 ## Compiled GPU trainer (`--compile-trainer`, DEFAULT ON for cuda)
 
@@ -702,18 +707,16 @@ BOTH torches (15–17 of 232 zero; the real fresh production policy on the pertu
 **Measured, split OFF on 2.8** (RTX 3080 Ti beside a live training run, `ai_v14_06_lbat_ctrl_fix`
 `final_model.zip`):
 
-| check | fp32 (`highest`) | TF32 (`high`) |
-|---|---|---|
-| the real startup gate (64 fixture rows) — eval readout | PASS: features 2.4e-5, legal log-prob 9.5e-6, V 4.2e-7 | PASS (rule: e_comp ≤ 4·e_eager + 1e-4 vs an fp32 reference): features 5.1e-2 ≤ 1.7e-1, legal log-prob 2.1e-2 ≤ 7.3e-2, V 2.0e-3 ≤ 5.2e-3; the same graph re-run at fp32 passes the strict bars |
-| the real startup gate — TRAIN graph gradient cosine | 1.000000 | PASS: 1−cos vs fp32 compiled 6.1e-5 ≤ 4 × eager 4.6e-5 + 1e-4 (cosine 0.99994) |
-| 3,840 rows of its own `eval_traces` (steps 78M/80M/82M) — argmax agreement | 1.0000 | 0.9992 (2.5.1 WITH the split: 0.9992) |
-| same — masked-policy TV p99 / max | 1.6e-6 / 2.7e-6 | 2.5e-3 / 1.8e-2 (2.5.1 split: 2.5e-3 / 1.8e-2) |
-| same — win-prob \|dV\| max | 1.4e-6 | 3.5e-3 (2.5.1 split: 3.5e-3) |
-| train graph, 64 rows, loss = mean pi² + mean vf² — gradient cosine | 1.000000 (rel 7.3e-7) | 0.999977 (rel 6.7e-3) |
+| check | fp32 (`highest`) |
+|---|---|
+| the real startup gate (64 fixture rows) — eval readout | PASS: features 2.4e-5, legal log-prob 9.5e-6, V 4.2e-7 |
+| the real startup gate — TRAIN graph gradient cosine | 1.000000 |
+| 3,840 rows of its own `eval_traces` (steps 78M/80M/82M) — argmax agreement | 1.0000 |
+| same — masked-policy TV p99 / max | 1.6e-6 / 2.7e-6 |
+| same — win-prob \|dV\| max | 1.4e-6 |
+| train graph, 64 rows, loss = mean pi² + mean vf² — gradient cosine | 1.000000 (rel 7.3e-7) |
 
-At TF32 compiled-vs-eager differs by TF32's own rounding, identically on 2.8-unsplit and on
-2.5.1-split — the gate's TF32 rule (vs an fp32 reference, plus the same graph re-run at fp32) is
-what resolves a real defect there. (`compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate`
+(`compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate`
 asserted, per torch, 2.5.1 ⇒ split ON and unsplit FAILS, 2.8 ⇒ split OFF and unsplit PASSES; it was
 deleted with the split, K1 2026-10-02.)
 
@@ -745,7 +748,7 @@ either way.
 
 **Speed A/B (2026-09-29, idle RTX 3080 Ti, the same saved rollout buffer, `learner_benchmark`,
 K=5):** 2.8-unsplit is 1–2% FASTER than 2.5.1-split — baseline 57.21 s vs 58.45 s per update,
-diag_skipped 50.47 vs 51.27, TF32 53.42 vs 54.46, epochs_half 33.08 vs 32.97 — almost all of it in the
+diag_skipped 50.47 vs 51.27, epochs_half 33.08 vs 32.97 — almost all of it in the
 backward (27.31 vs 28.33 s); the loss agrees to 5 decimals. Within ~2× the run-to-run spread, so a
 small effect at most. Table and reports: `designs/research_state/measurements/m5_k1/`.
 
@@ -826,17 +829,18 @@ EVALUATION at batch 1 ran all 18 games (`Final aggregate win rate: 11.1%`), exit
 (`~/gen3ai_archive/k6_k8/smoke28_b1.log`). Before the fix that call was the batch-1 CUDA compile the
 reverted-routing test shows raising.
 
-### The startup parity gate (`gen3_compile_parity_real_obs_v1` + `gen3_tf32_parity_gate_v1`)
+### The startup parity gate (`gen3_compile_parity_real_obs_v1`)
 
 > **Since 2026-10-02 the gate described here — the extractor-only gate — is DELETED** with the
 > extractor-only compile (K1). What still applies, now in the REGION gate (`compile_regions.gate_regions`,
 > K8 below) and the canary: the committed real-obs fixture, the bars and verdicts
 > (`compile_trainer.decision_verdicts` / `train_verdict`, the per-parameter rule), the fail-closed
-> vacuity guard, the fresh-weights perturbation and its LADDER, and the TF32 rule against an fp32
-> eager reference. What went with the gate: its probe loss (`gate_loss`) and the zero-gradient
-> COVERAGE guard (R1 is judged on the production micro-step's own loss), the speed refusal, and the
-> TF32 "same graph at fp32" second arm. The measurements below are that gate's, with their
-> provenance.
+> vacuity guard, the fresh-weights perturbation and its LADDER. What went with the gate: its probe
+> loss (`gate_loss`) and the zero-gradient COVERAGE guard (R1 is judged on the production
+> micro-step's own loss) and the speed refusal. TF32 was retired by deletion pass K2: the gate's
+> TF32 rule (against an fp32 eager reference), its "same graph at fp32" second arm and the
+> `--matmul-precision high` flag it served are gone, and fp32 `highest` is the only precision. The
+> measurements below are that gate's, with their provenance.
 
 The extractor-only gate validated on **REAL observation rows, never zeros**. The rows are a
 committed fixture, `src/agents/model/compile_parity_obs.npz`: 64 decision rows from 8 reproducible
@@ -894,11 +898,10 @@ train-graph coverage fix below closes that). **Measured** (M5 T2,
     decision's noise at 0.1 is measured (above); the backward's is not.
   - The `--compile-opponents` gate (`opponent_parity.py`) and the T2 inference service walk the
     same ladder.
-  - **Precision-keyed (`gen3_precision_keyed_parity_v1`).** The ladder's scale cap is read from
-    `parity_probe.PRECISION_BARS` at the gate's matmul precision: 0.1 at fp32, 0.05 at TF32, where
-    the 0.1 rungs drift past the TF32 log-prob rule on a correct graph (5 of 138 groups, measured on
-    T2's decision). The same table holds T2's greedy near-tie band (2x the precision's log-prob bar)
-    and is where `_FP32_TOL`'s legal log-prob bar is read from.
+  - **One precision.** fp32 `highest` is the only precision, so the ladder's scale cap is the single
+    `PERTURB_MAX_SCALE` = 0.1. `parity_probe` also holds `LOGPROB_BAR` (1e-3, where `_FP32_TOL`'s
+    legal log-prob bar is read from) and T2's greedy near-tie band `NEAR_TIE_BAND` (2x that bar); a
+    process at any other precision is refused (`unmeasured_precision`).
 - **Fail-closed.** `decision_verdicts` / `train_verdict` refuse a vacuous comparison
   (`VacuousCompileParityError`, a `CompileTrainerError`, so it is `FATAL_CONFIG`). Only the gate's
   own real-weights pass waives the check with `allow_vacuous=True`, and only after the perturbed
@@ -950,47 +953,14 @@ parameters)**, so a backward-only miscompile there passed on any weights. Three 
 | FRESH, seeded-perturbation pass (every fresh launch) | 1e-3 | 7.3e-06 over 6 perturbation seeds | move cells ×0.9 → 1.01e-02 REFUSED; dropped → 1.01e-01 REFUSED |
 | REAL (trained) weights | 0.2 | 9.3e-04 on `ai_v14_01_base/final` (and isolated 4.9e-02 alpha seat-scorer outliers on 2 of 6 perturbed trained states) | move cells dropped → 1.00 REFUSED; team tokens ×0.5 → cosine 0.9928 REFUSED; **move cells ×0.9 → 1.0e-01 PASSES** (below the resolution on trained weights) |
 
-  At TF32 the per-parameter rule rides on the "same graph at fp32" check. Measured end to end, the
-  gate PASSES correct compiles on fresh and trained weights at `highest` and at `high`: fresh
+  Measured end to end, the gate PASSES correct compiles on fresh and trained weights: fresh
   per-param max 6.6e-06, trained 9.3e-04, coverage 1/254. It REFUSES every defect in the table
   except the ×0.9 case on trained weights. (The probe loss and the coverage guard were deleted with
   the gate; `compile_gate_probe_test` now pins the per-parameter rule alone.)
 
-**At reduced precision (`--matmul-precision high`, TF32) two checks run.**
-
-1. **The TF32 graph, against an fp32 EAGER REFERENCE.** The reference is the same weights and rows
-   with matmul precision temporarily `highest`, restored even on an exception. For each quantity:
-   `e_eager = max|eager_tf32 − ref|`, `e_comp = max|compiled_tf32 − ref|`, and PASS iff
-   `e_comp ≤ 4·e_eager + 1e-4`. The gradient check is `1−cos(comp, ref) ≤ 4·(1−cos(eager, ref)) + 1e-4`.
-   EPS equals the fp32 bar, so a quantity TF32 does not touch is held to the fp32 bar.
-2. **The SAME compiled callable at `highest`, held to the strict fp32 bars against the fp32
-   reference.** dynamo guards on the TF32 flag, so this is a second graph of the same trace. It
-   exists because the TF32 rule alone cannot resolve a defect smaller than ~4× TF32's own rounding.
-   **Measured:** a DROPPED projection bias and a projection weight scaled by 1.001 both PASS rule 1,
-   and both FAIL rule 2 (3.1e-2 and 2.9e-2 against a 1e-4 bar).
-
-**Why K = 4.** The measured `e_comp/e_eager` ratios at TF32 on the real weights:
-
-| rows | features | legal log-prob | V | train features | grad 1−cos |
-|---|---|---|---|---|---|
-| fixture | 1.33 | 0.87 | 1.27 | 1.14 | 1.24 |
-| zero obs | ≤ 0.92 | | | | |
-
-On a random-init extractor on zero obs the ratio reached ≤ 2.31. K = 4 is about 1.7× above the worst healthy
-ratio. The miscompile read 538, and a 1%-scaled projection weight read 14.7. **The resolution limit
-is honest.** A TF32-ONLY kernel defect smaller than ~4× TF32 rounding passes; for this extractor that
-is about 8e-2 on features (scale ~16), 6e-2 on legal log-probs and 3e-3 on V. A precision-independent
-defect of any size is caught by rule 2.
-
-**Measured TF32 rounding on the real extractor** (fixture rows, `ai_v14_01_base`): `e_eager` is
-2.0e-2 on features, 1.5e-2 on legal log-probs and 7.2e-4 on V, and gradient 1−cos is 3.2e-5.
-On zero obs it is 9.4e-3. The failed T32 launch's 7.62e-03 was this rounding, not a bug; the real
-bug (the miscompile above) was invisible to it.
-
-**Cost.** The gate adds a readout and a train step per arm. At TF32 it adds a second (fp32) graph of
-the same trace. dynamo's `cache_size_limit` (8) holds with room to spare: measured 6 entries per
-code object after the TF32 gate plus alternating rollout (48, no-grad) and train (512, grad) shapes,
-0 cache-limit hits. At `highest` it is 4 entries.
+**Cost.** The gate adds a readout and a train step per arm. dynamo's `cache_size_limit` (8) holds with
+room to spare: measured 4 entries per code object after the gate plus alternating rollout (48,
+no-grad) and train (512, grad) shapes, 0 cache-limit hits.
 
 **Two MORE refusals, decided at startup, and the reasoning behind them is counter-intuitive enough
 to be worth stating.** Recompiles here are NORMAL: `share_features_extractor=True` means one
@@ -1100,8 +1070,7 @@ code object (`Gen3FeaturesExtractor.forward.__code__`, `TeamTransformer.forward.
 trunk split's resume frames …), shared by every instance and every `torch.compile` wrapper of that
 code — so a separate compiled callable for the gate would NOT have isolated it in 2.5.1
 (`compile_control_test::test_contract_cache_is_per_code_object_shared_across_compiled_wrappers`).
-The gate compiles train/grad + train/no-grad at batch 64, and under TF32 the same pair again at
-`highest`; production rolls out in EVAL mode at `n_envs`, so **none of the gate's entries is a
+The gate compiles train/grad + train/no-grad at batch 64; production rolls out in EVAL mode at `n_envs`, so **none of the gate's entries is a
 production signature** (entries at lock = gate's + production's, exactly additive below). MEASURED
 2026-09-28 on the real `ai_v14_01_base/final_model.zip` policy (RTX 3080 Ti, torch 2.5.1+cu121,
 rollout batch 48, train batch 512 as the dynamic-train proxy — the train graph is dynamic in batch
@@ -1110,12 +1079,10 @@ either way, so 2048 lands on the same entry; `~/.claude/jobs/compile_sentinel_20
 | precision | gate entries / code obj | at lock WITHOUT reset | at lock WITH reset (ships) |
 |---|---|---|---|
 | fp32 `highest` | 2 | max **5** (headroom 3), 13 code objects, 39 entries | max **3** (headroom 5), 9 code objects, 23 entries |
-| TF32 `high` | 4 | max **7** (headroom **1**), 13 code objects, 57 entries | max **3** (headroom 5), 9 code objects, 23 entries |
 
-TF32 without the reset sat ONE signature from the silent fallback (a `--critic shaped` batch-1
-truncation value alone would have been the eighth) — the risk to the TF32 arm. **Startup cost of the
-reset: ~0.** At TF32, run concurrently under identical conditions, reset+prewarm took 220.8 s vs
-223.0 s for the prewarm alone on top of the gate's cache: the production graphs are compiled
+**Startup cost of the reset: ~0.** Run concurrently under identical conditions (a TF32 arm, the one
+that sat one signature from the limit without it — TF32 is since retired), reset+prewarm took 220.8 s
+vs 223.0 s for the prewarm alone on top of the gate's cache: the production graphs are compiled
 either way (before `learn()` now, inside iteration 1 before), and the reset re-compiles nothing
 production would have reused. Absolute prewarm times on this box ranged 192–359 s across the four
 measurements (first-ever compile of a graph vs Inductor's on-disk FX-graph-cache hits, a live
@@ -1204,8 +1171,7 @@ typed FATAL at the call site; a SWALLOWED `RecompileError` and a late FIRST comp
 caught; the healthy two-shape alternation locks and runs clean; **the sentinel changes no numerics**
 (outputs + gradients bit-identical on vs off); `attach` locks after the first update and exits
 `FATAL_CONFIG`; `eager_extractor`; the version refusal and the hash tripwire; the contract tests;
-and `test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32` (CUDA, `slow`; skips while
-a trainer holds the card).
+(the CUDA lock-headroom test went with the extractor-only compile, K1).
 
 ### FUNCTIONAL MASKING — the K8 prerequisite (`gen3_functional_masking_v1`, 2026-09-30)
 
@@ -1240,7 +1206,7 @@ other caller of the extractor runs eager) → `gate_regions` holds R1 and R0 to 
 on the K9 golden's labelled buffer when the run's observation keys match it — the production surface
 — else the committed real-obs fixture with zero labels: the loss, the gradient over every policy
 parameter at the cosine and per-parameter bars; R0's decision readout, on a seeded perturbation when
-the weights are fresh; the TF32 rule against an fp32 eager reference under `--matmul-precision high`)
+the weights are fresh; at fp32 `highest`, the only precision, a process at any other is refused)
 → prewarm exactly the declared signatures → LOCK (K6) → the canary every 100 updates (confirmed in the same update before it FATALs — `designs/training/learner_lifecycle.md`)
 (`compile_canary._regions`). The regions are the ONLY compiled learner surface: on torch 2.5.1
 `forward_guard`'s weakref lookup breaks `fullgraph=True`, and HEAD no longer runs 2.5.1 at all (the

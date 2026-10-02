@@ -10802,3 +10802,39 @@ if a lazy build is reintroduced.
 - **Docs.** ARCHITECTURE prose, `flag_registry.md` (generated), `designs/model/*`, `designs/training/*`,
   `designs/ops/training_runbook.md`, `designs/rust_sim/env_labels.md`, the endstate notes, the training / model /
   observation / prober / launcher leaf `CLAUDE.md`s, the manifest.
+
+## 2026-10-02 — TF32 is RETIRED: fp32 `highest` is the only matmul precision; `--matmul-precision` and every TF32 gate path are DELETED (deletion pass K2, manifest R9, `gen3_tf32_retired_v1`; no model change, no config bump, the K9 learner golden unchanged)
+
+- **The flag.** `--matmul-precision {highest,high}` and `main.train.config.apply_matmul_precision` are gone (a
+  recorded argv that types it fails argparse on HEAD and runs pinned; `designs/deleted_flags.md`). Nothing sets the
+  precision, so the trainer runs PyTorch's default `highest`. `metadata.json` still records the realized
+  `matmul_precision` (`run_io`, provenance). A resume or fork of a run that recorded anything but `highest` (one run on
+  record, `ai_v14_04b_lbat_t32`) is refused `FATAL_CONFIG`: a new `RETIRED` row in `model_version/retired_levers.py`
+  (training-only, `LAST_COMMIT_K2 = 615a764f`) — `check_no_retired_levers` overlays `metadata.json`'s
+  `RUNTIME_RECORD_FIELDS` onto the raw config, so `config.enforce_not_shaped_parent` and `checkargs` need no new path.
+- **The gates are fp32-only.** `compile_trainer.check_numerics` / `decision_verdicts` / `train_verdict` lost the TF32
+  rule (`gen3_tf32_parity_gate_v1`: K = 4 against an fp32 eager reference), `fp32_reference`, `parity_verdict` and
+  `_matmul_precision`; `compile_regions.gate_regions`, `_r1_verdict`, `_r0_verdicts` and `compile_canary` lost their
+  reference arms. `parity_probe.PRECISION_BARS` / `precision_bars` / `tie_band` / `ladder_at`
+  (`gen3_precision_keyed_parity_v1`) became `LOGPROB_BAR`, `NEAR_TIE_BAND` and `unmeasured_precision()`; T2's parity
+  judge and ladder lost the TF32 band and the 0.05 scale cap. K9(b) (`consistency.py`): `BEHAVIOUR_GATES` is the single
+  `BEHAVIOUR_GATE`; `TF32_*`, `GateCondition.persistence`, the streaks and `behaviour_gate(precision)` are gone, so the
+  fp32 rule's single-shot nature is the only mode (`behaviour/streak_*` tags are gone; `behaviour/violations_total_*`
+  stays). Each gate REFUSES a process at another precision (`UndeclaredPrecision`, `ParityFailure`,
+  `CompileTrainerError`).
+- **Combination checks.** `env_core_rust_tf32_behaviour_check_fatal` is deleted with its test.
+- **Kept, by design.** `torch_state_guard`'s precision / `allow_tf32` leak guard, the inference service's freeze check, the
+  `policy_spectrum` reader's scoped TF32-off on CUDA, `run_io`'s stamp and `rust_env_opponents_parity`'s declared state.
+- **Tools.** `learner_benchmark` lost its TF32 worker (`--skip-tf32`, `tf32_gate_available`) and its argv builder now drops
+  every flag the trainer's parser no longer knows (arm C's recorded command types flags earlier units deleted);
+  `main.compile_inventory run` lost `--matmul-precision`. `compiled_perf_guard_test`'s only baseline was TF32 (36.32 s): the
+  file is now `gen3_compiled_perf_baseline_v3` with `baseline: null` and the TF32 read kept as history, and the guard skips,
+  naming why, until an fp32 baseline is banked — the time stage did not reuse the pinned buffer under the Rust core when
+  K2 tried (a fresh 4,096-row buffer, 0.32 s), so no honest number exists.
+- **Tests.** Rewritten for fp32-only: `compile_trainer_test`, `precision_band_test`, `learner_gates_test`,
+  `consistency_test`, `combination_checks_test`, `policy_gae_lambda_test`, `learner_benchmark_test`, and the callers that
+  passed `precision=`; new `retired_levers_test` cases (the `metadata.json` overlay, FATAL_CONFIG at launch and in
+  `checkargs`). The K9 learner golden files are untouched and green.
+- **Docs.** `compile_flags.md`, `learner_gates.md`, ARCHITECTURE §6.4, the training leaf `CLAUDE.md`, the runbook / SOP /
+  lifecycle / collector docs, `testing.md`, the endstate Decision records (`program_rust_core.md`,
+  `design_learner_recipe.md`, `design_model_management.md`), TECH_DEBT, `deleted_flags.md`, the manifest.

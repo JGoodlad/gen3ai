@@ -172,11 +172,11 @@ def test_R1s_per_parameter_bar_is_the_REGIMES_measured_bar(regime):
     bar = cr.R1_PARAM_BAR[regime]
     assert bar > ct._MAX_PARAM_GRAD_REL                     # the old bar, which the healthy noise exceeds
     e, c, names = _arms(C_FINAL_HEALTHY_READING)
-    line = cr._r1_verdict(e, c, None, "highest", names, regime)
+    line = cr._r1_verdict(e, c, names, regime)
     assert f"[{regime} weights]" in line and f"<= {bar:g}" in line
     e, c, names = _arms(2.0 * bar)
     with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager on 1 parameter"):
-        cr._r1_verdict(e, c, None, "highest", names, regime)
+        cr._r1_verdict(e, c, names, regime)
 
 
 def _fresh_learner(monkeypatch):

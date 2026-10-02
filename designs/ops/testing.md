@@ -902,9 +902,13 @@ python3 -m agents.training.learner_benchmark run --device cpu --tiny
 
 🚨 **`learner_benchmark` (and `main.compile_inventory`, which reuses its argv builder) runs K9(b)'s
 behaviour check at `--behaviour-check warn`.** A PINNED buffer's stored log-probs come from the
-rollout that collected it — another code, torch and matmul precision — so the check compares the
-learner with a different program by construction; at `fatal` every torch-2.8 TF32 read of the
-2026-09-28 buffer died at its first update (p99 |Δ| 0.0058 > 0.0036, 2026-10-01).
+rollout that collected it — another code and torch — so the check compares the learner with a different
+program by construction.
+
+🚨 **Both tools drop, from C's recorded command, every flag the trainer's parser no longer knows**
+(`learner_benchmark._unknown_to_the_trainer`): each deletion unit removes flags that command still types
+(`--matmul-precision`, the entropy boosts, `--no-value-true-team`, …) and one unknown flag is an argparse
+exit that kills the worker before it measures anything.
 
 🚨 **`learner_benchmark`'s bracketed phases are NOT the un-bracketed update cut into pieces.** Every
 mark adds a `torch.cuda.synchronize()`, which removes exactly the CPU/GPU overlap an update with

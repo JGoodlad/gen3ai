@@ -57,27 +57,21 @@ def test_normal_python_path_passes_the_behaviour_gate_on_the_first_micro_batch()
     assert model.logger.name_to_value["behaviour/rows_judged"] == round((1 - excl) * L.GOLDEN_OVERRIDES["batch_size"])
 
 
-@pytest.mark.parametrize("precision", ["highest", "high"])
-def test_rollout_weights_one_optimizer_step_stale_are_fatal_before_any_step(precision):
+def test_rollout_weights_one_optimizer_step_stale_are_fatal_before_any_step():
     """The fault K9(b) exists for, at its smallest real size: the learner holds weights ONE optimizer step
-    (the recipe lr, 2.8e-5) newer than the rollout's. FATAL under both precision-keyed gates, before any
-    optimizer step of the update. (On CUDA the same fault's smallest micro-batch statistic is 200x the
-    fp32 bar and 3.1x the TF32 p99 bar — `designs/training/learner_gates.md`.)"""
-    prev = th.get_float32_matmul_precision()
-    th.set_float32_matmul_precision(precision)
-    try:
-        model = _learner("off")
-        model.n_epochs, model.batch_size, model.grad_accum_steps = 1, L.N_STEPS * L.N_ENVS, 1
-        _train(model)                                     # exactly ONE optimizer step on the rows
-        L.load_buffer_into(model)                         # the rollout's (now stale) behaviour log-probs
-        model.n_epochs, model.batch_size, model.grad_accum_steps = L.GOLDEN_OVERRIDES["n_epochs"], L.GOLDEN_OVERRIDES["batch_size"], 1
-        model.behaviour_check = "fatal"
-        before = _params(model)
-        with pytest.raises(BehaviourMismatch, match=f"first micro-batch.*{precision}"):
-            _train(model)
-        assert th.equal(before, _params(model)), "the gate must fire before any optimizer step"
-    finally:
-        th.set_float32_matmul_precision(prev)
+    (the recipe lr, 2.8e-5) newer than the rollout's. FATAL before any optimizer step of the update. (On
+    CUDA the same fault's smallest micro-batch statistic is 200x the fp32 bar —
+    `designs/training/learner_gates.md`.)"""
+    model = _learner("off")
+    model.n_epochs, model.batch_size, model.grad_accum_steps = 1, L.N_STEPS * L.N_ENVS, 1
+    _train(model)                                         # exactly ONE optimizer step on the rows
+    L.load_buffer_into(model)                             # the rollout's (now stale) behaviour log-probs
+    model.n_epochs, model.batch_size, model.grad_accum_steps = L.GOLDEN_OVERRIDES["n_epochs"], L.GOLDEN_OVERRIDES["batch_size"], 1
+    model.behaviour_check = "fatal"
+    before = _params(model)
+    with pytest.raises(BehaviourMismatch, match=r"first micro-batch.*fp32"):
+        _train(model)
+    assert th.equal(before, _params(model)), "the gate must fire before any optimizer step"
 
 
 def test_warn_reports_and_off_skips():
@@ -183,29 +177,29 @@ def test_check_loss_finite_names_every_non_finite_term():
         G.check_loss_finite(th.tensor(math.nan), {"policy": good}, epoch=0, micro=0)
 
 
-def test_the_gate_is_keyed_by_the_matmul_precision_the_run_uses():
-    """ONE table (`consistency.BEHAVIOUR_GATES`), ONE enforcement (`enforce_behaviour`), read by BOTH
+def test_the_gate_is_ONE_fp32_table_and_a_process_at_any_other_precision_is_refused():
+    """ONE table (`consistency.BEHAVIOUR_GATE`), ONE enforcement (`enforce_behaviour`), read by BOTH
     implementations: fp32 = DETERMINISTIC — max < 1e-4 over the rows not at a tie, single-shot, and the
-    excluded share under its ceiling; TF32 = p99 < 3.6e-3 single-shot AND max < 0.071,
-    FATAL only on `TF32_MAX_PERSISTENCE` (4) consecutive updates; an undeclared precision is refused."""
+    excluded share under its ceiling. fp32 'highest' is the only precision (TF32 retired, K2): a process
+    at any other — 'high' included — is refused, never judged at a bar measured elsewhere."""
     from agents.training.rust_rollout import consistency as K
 
     C = K.GateCondition
-    assert K.behaviour_gate("highest") == (C("max", 1e-4, 1, K.FP32_TIE_EPS),
-                                           C("excluded_frac", K.FP32_EXCLUDED_CEILING, 1, K.FP32_TIE_EPS))
+    assert K.behaviour_gate() == (C("max", 1e-4, K.FP32_TIE_EPS),
+                                  C("excluded_frac", K.FP32_EXCLUDED_CEILING, K.FP32_TIE_EPS))
     assert K.BEHAVIOUR_BAR == 1e-4
-    assert K.TF32_MAX_PERSISTENCE == 4
-    assert K.behaviour_gate("high") == (C("p99", 3.6e-3, 1), C("max", 0.071, K.TF32_MAX_PERSISTENCE))
-    with pytest.raises(K.UndeclaredPrecision, match="medium"):
-        K.behaviour_gate("medium")
+    for gone in ("BEHAVIOUR_GATES", "TF32_MAX_PERSISTENCE", "TF32_P99_MULTIPLE", "TF32_MAX_MULTIPLE"):
+        assert not hasattr(K, gone), gone
     model = _learner("fatal")
-    mid = th.full((2048,), 1e-3, dtype=th.float64)          # above the fp32 bar, under both TF32 bars
-    with _precision("high"):
-        G.check_behaviour_first_micro(model, mid, th.zeros(2048))
-        assert model.logger.name_to_value["behaviour/bar_p99"] == 3.6e-3
-        assert model.logger.name_to_value["behaviour/bar_max"] == 0.071
-    with pytest.raises(BehaviourMismatch, match="'highest'"):
-        G.check_behaviour_first_micro(model, mid, th.zeros(2048), margins=_no_tie(2048))   # fp32: single-shot
+    mid = th.full((2048,), 1e-3, dtype=th.float64)          # above the fp32 bar
+    for other in ("high", "medium"):
+        with _precision(other):
+            with pytest.raises(K.UndeclaredPrecision, match=f"'{other}'"):
+                K.behaviour_gate()
+            with pytest.raises(K.UndeclaredPrecision, match=f"'{other}'"):
+                G.check_behaviour_first_micro(model, mid, th.zeros(2048), margins=_no_tie(2048))
+    with pytest.raises(BehaviourMismatch, match="fp32"):
+        G.check_behaviour_first_micro(model, mid, th.zeros(2048), margins=_no_tie(2048))   # single-shot
 
 
 class _precision:
@@ -218,16 +212,6 @@ class _precision:
 
     def __exit__(self, *a):
         th.set_float32_matmul_precision(self.prev)
-
-
-def _localized(seed: int, bad_rows: int = 10, value: float = 0.3):
-    """A 2,048-row |Δ| micro-batch: TF32-sized healthy noise, plus ``bad_rows`` localized rows at
-    ``value`` (the measured localized signals: 0.24 – 1e8, `designs/training/learner_gates.md`)."""
-    g = th.Generator().manual_seed(seed)
-    d = th.rand(2048, generator=g, dtype=th.float64) * 1e-3
-    if bad_rows:
-        d[th.randperm(2048, generator=g)[:bad_rows]] = value
-    return d
 
 
 def _fp32(bad_rows: int, value: float = 1e-3):
@@ -251,54 +235,28 @@ def _step(model, d, margins=None):
                                   margins=margins if margins is not None else _no_tie(d.numel()))
 
 
-def test_one_isolated_tf32_max_violation_warns_loudly_dumps_the_rows_and_does_not_fatal(tmp_path, capsys):
+def test_a_violation_is_fatal_at_once_and_dumps_the_offending_rows_first(tmp_path, capsys):
+    """Single-shot: the FIRST violation raises (no persistence, no warning grace), and the rows are
+    dumped BEFORE the raise. Revert the dump-before-raise order ⇒ no `behaviour_violations.jsonl`."""
     from agents.training.rust_rollout import consistency as K
 
     model = _learner("fatal")
     model.behaviour_dump_dir = str(tmp_path)
-    with _precision("high"):
-        _step(model, _localized(1))                                   # ONE violation: no raise
-        assert model.logger.name_to_value["behaviour/streak_max"] == 1.0
-        assert model.logger.name_to_value["behaviour/streak_p99"] == 0.0
+    d = _fp32(bad_rows=10, value=0.3)
+    with pytest.raises(BehaviourMismatch, match=r"max 0\.3 NOT < 0\.0001"):
+        _step(model, d)
     out = capsys.readouterr().out
-    assert "🚨" in out and "max 0.3 NOT < 0.071" in out and "FATAL at 4" in out and "NOT fatal YET" in out
+    assert "🛑" in out and "single-shot, FATAL at once" in out
     import json
     rec = json.loads((tmp_path / K.VIOLATION_DUMP).read_text().splitlines()[0])
-    assert rec["precision"] == "high" and rec["p99"] < 3.6e-3 and rec["rows_judged"] == 2048
+    assert rec["precision"] == "highest" and rec["rows_judged"] == 2048
+    assert [c["statistic"] for c in rec["conditions"]] == ["max", "excluded_frac"]
     top = rec["rows"][:10]
     assert all(r["abs_dlogp"] == 0.3 for r in top) and {"index", "action", "mask"} <= set(top[0])
     assert top[0]["mask"] == "1" * 11
 
 
-def test_a_tf32_max_violation_on_k_consecutive_updates_is_fatal_and_not_before():
-    from agents.training.rust_rollout import consistency as K
-
-    model = _learner("fatal")
-    k = K.TF32_MAX_PERSISTENCE
-    with _precision("high"):
-        for i in range(k - 1):
-            _step(model, _localized(i + 1))                             # warnings, no raise
-        assert model.logger.name_to_value["behaviour/streak_max"] == float(k - 1)
-        with pytest.raises(BehaviourMismatch, match=f"max: violated {k} consecutive update.*FATAL at {k}"):
-            _step(model, _localized(99))
-
-
-def test_a_clean_update_resets_the_streak_so_interleaved_violations_never_fatal():
-    from agents.training.rust_rollout import consistency as K
-
-    model = _learner("fatal")
-    k = K.TF32_MAX_PERSISTENCE
-    with _precision("high"):
-        for rnd in range(3):                                           # (k-1 violations, 1 clean) x 3
-            for i in range(k - 1):
-                _step(model, _localized(10 * rnd + i + 1))
-            _step(model, _localized(10 * rnd + 9, bad_rows=0))         # a clean update resets the streak
-            assert model.logger.name_to_value["behaviour/streak_max"] == 0.0
-        _step(model, _localized(77))                                   # violated again: streak 1, a warning
-        assert model.logger.name_to_value["behaviour/streak_max"] == 1.0
-
-
-def test_the_tf32_p99_is_single_shot_the_fp32_rule_is_deterministic_and_a_nan_is_always_fatal():
+def test_the_fp32_rule_is_deterministic_and_a_nan_is_always_fatal():
     """fp32 on the Python path (`gen3_behaviour_tie_exclusion_v1`): ONE judged row over 1e-4 is FATAL on the
     FIRST update; the same row AT a tie is excluded (no violation); too many tied rows FATAL; a NaN — even
     on an excluded row — is never rounding; and fp32 without margins is refused, never judged blind."""
@@ -306,28 +264,18 @@ def test_the_tf32_p99_is_single_shot_the_fp32_rule_is_deterministic_and_a_nan_is
     from agents.training.rust_rollout.tie_margins import TieMarginError
 
     model = _learner("fatal")
-    with _precision("high"):
-        with pytest.raises(BehaviourMismatch, match="p99: violated 1 consecutive"):
-            _step(model, th.full((2048,), 5e-3, dtype=th.float64))     # a GLOBAL fault: first update
-        model._behaviour_streaks = {}
-        nan = _localized(1, bad_rows=0)
-        nan[7] = float("nan")
-        with pytest.raises(BehaviourMismatch):
-            _step(model, nan)                                          # never rounding: no persistence
-    model._behaviour_streaks = {}
+    with pytest.raises(BehaviourMismatch, match=r"max 0\.005 NOT < 0\.0001"):
+        _step(model, th.full((2048,), 5e-3, dtype=th.float64))         # a GLOBAL fault: first update
     d = _fp32(bad_rows=1)
     bad = int(th.argmax(d))
-    with pytest.raises(BehaviourMismatch, match=r"max 0\.001 NOT < 0\.0001.*FATAL at 1"):
+    with pytest.raises(BehaviourMismatch, match=r"max 0\.001 NOT < 0\.0001"):
         _step(model, d)                                                # not at a tie: FATAL at once
-    model._behaviour_streaks = {}
     _step(model, d, margins=_no_tie(2048, tied=[bad]))                 # the same row AT a tie: excluded
     assert model.logger.name_to_value["behaviour/rows_excluded"] == 1.0
-    assert model.logger.name_to_value["behaviour/streak_max"] == 0.0
     nan = _fp32(bad_rows=0)
     nan[5] = float("nan")
     with pytest.raises(BehaviourMismatch, match="NON-FINITE"):
         _step(model, nan, margins=_no_tie(2048, tied=[5]))             # a NaN on an EXCLUDED row
-    model._behaviour_streaks = {}
     many = list(range(int(K.FP32_EXCLUDED_CEILING * 2048) + 1))
     with pytest.raises(BehaviourMismatch, match="TOO MANY rows sit at a tie"):
         _step(model, _fp32(bad_rows=0), margins=_no_tie(2048, tied=many))
@@ -391,32 +339,25 @@ def _fill(m, rows, corrupt):
     m._current_progress_remaining = 1.0
 
 
-def test_a_persistent_localized_fault_on_the_real_buffer_is_fatal_on_its_kth_update(capsys):
-    """Real rows through the REAL `train()`, TF32 gate: 2 of 256 rows (0.8 %, under the p99's 1 %) point their action at the
-    least likely other legal action on EVERY update (a systematic fault). Updates 1..k-1: the p99 stays
-    clean, the max fires, a loud warning and no FATAL. Update k (the same fault): FATAL, before any step."""
-    from agents.training.rust_rollout import consistency as K
-
+def test_a_localized_fault_on_the_real_buffer_is_fatal_on_the_first_update_before_any_step():
+    """Real rows through the REAL `train()`: 2 of 256 rows (0.8 %) point their action at the least likely
+    other legal action (a wrong action index — the fault a percentile statistic cannot see under 1 %).
+    The fp32 gate is on the max over the judged rows, single-shot: FATAL on the first update, before any
+    optimizer step. The clean buffer (control) trains through the same gate."""
     m, rows = _wide_learner()
     n = 256
     masks = rows["action_masks"].reshape(n, -1)
     corrupt = [i for i in range(0, n, 37) if (masks[i] > 0.5).sum() >= 2][:2]
     assert len(corrupt) == 2
-    k = K.TF32_MAX_PERSISTENCE
-    with _precision("high"):
-        for i in range(k - 1):
-            _fill(m, rows, corrupt)
-            np.random.seed(i)
-            m.train()
-            assert m.logger.name_to_value["behaviour/p99_abs_dlogp_current"] < 3.6e-3      # (a) passes
-            assert m.logger.name_to_value["behaviour/max_abs_dlogp_current"] >= 0.071      # (b) fires
-            assert m.logger.name_to_value["behaviour/streak_max"] == float(i + 1)
-        assert "NOT fatal YET" in capsys.readouterr().out
-        _fill(m, rows, corrupt)
-        before = _params(m)
-        with pytest.raises(BehaviourMismatch, match=f"{k} consecutive"):
-            m.train()
-        assert th.equal(before, _params(m))
+    _fill(m, rows, [])
+    np.random.seed(0)
+    m.train()                                                          # control: no raise
+    assert m.logger.name_to_value["behaviour/max_abs_dlogp_current"] < 1e-4
+    _fill(m, rows, corrupt)
+    before = _params(m)
+    with pytest.raises(BehaviourMismatch, match=r"max .* NOT < 0\.0001"):
+        m.train()
+    assert th.equal(before, _params(m))
 
 
 _BATTERY = "designs/research_state/measurements/learner_battery_2026-09-26/"
@@ -426,12 +367,12 @@ _PAUSED_ARGVS = ("argv_L95.txt", "scripts/argv_T32_STANDIN.txt", "validation/rer
 
 @pytest.mark.parametrize("name", _PAUSED_ARGVS)
 def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
-    """The four paused learner-battery arms (two of them `--matmul-precision high`, none typing
-    `--behaviour-check`) must still launch: K9(b) resolves to `fatal` at the TF32 bar, and no K9 rule
-    refuses them. The launcher-only flags are stripped exactly as the launcher strips them, and so
-    are the flags DELETED since the battery was recorded (deletion pass L2: the recorded argvs carry
-    the entropy-boost / true-team defaults; a pinned launch is judged by its OWN commit's parser, so
-    HEAD's parser never sees them — what K9 does with the REST of the argv is what this pins)."""
+    """The four paused learner-battery arms (none typing `--behaviour-check`) must still launch: K9(b)
+    resolves to `fatal`, and no K9 rule refuses them. The launcher-only flags are stripped exactly as
+    the launcher strips them, and so are the flags DELETED since the battery was recorded (deletion
+    pass L2: the recorded argvs carry the entropy-boost / true-team defaults; deletion pass K2: two of
+    them type `--matmul-precision high`; a pinned launch is judged by its OWN commit's parser, so HEAD's
+    parser never sees them — what K9 does with the REST of the argv is what this pins)."""
     import shlex
 
     from main.train.combination_checks import failing_checks
@@ -442,7 +383,8 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     toks = shlex.split(repo_path(*(_BATTERY + name).split("/")).read_text())
     argv, i = [], 0
     dead_valued = {"--defensive-entropy-boost", "--defensive-entropy-anneal-frac",
-                   "--bait-entropy-boost", "--bait-entropy-anneal-frac"}
+                   "--bait-entropy-boost", "--bait-entropy-anneal-frac",
+                   "--matmul-precision", "--matmul_precision"}
     dead_bool = {"--value-true-team", "--no-value-true-team"}
     while i < len(toks):
         if toks[i] in ("--restart-interval-hours", "--pin-commit") or toks[i] in dead_valued:
@@ -459,12 +401,12 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
     # python at launch (`rust_env_setup.resolve_env_core_default`), not the bare parser's `rust`.
     assert "--model" in argv and "--env-core" not in argv
     args.env_core = "python"
-    k9 = [c.name for c in failing_checks(args) if {"behaviour_check", "matmul_precision"} & set(c.dests)]
+    k9 = [c.name for c in failing_checks(args) if "behaviour_check" in set(c.dests)]
     assert not k9, k9
     resolve_env_core_args(args)
     from agents.training.rust_rollout.consistency import behaviour_gate
 
-    assert args.behaviour_check == "fatal" and behaviour_gate(args.matmul_precision)
+    assert args.behaviour_check == "fatal" and behaviour_gate()
 
 
 def test_every_non_finite_fatal_is_the_launchers_class_and_carries_the_tag():

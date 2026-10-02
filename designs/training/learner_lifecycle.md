@@ -138,9 +138,8 @@ and through DECLARED signatures only. Each run compares compiled against eager o
 The train-graph check now runs at EVERY canary (`GRAD_EVERY` 1). It used to run every 4th. It costs
 0.65–0.71 s at the production shape: arm C's weights, CUDA, `n_envs` 48, B = 2048, R1 through the compiled region and eager. The decision readout alone costs 0.06–0.09 s. Against a 36 s update every 100 updates that is under 0.02% (`~/gen3ai_archive/k6_k8/r1bar/canary_cost.log`, 2026-10-01).
 
-The bars are the startup gate's. Under TF32 that is the TF32 rule against an EAGER fp32 reference; the
-gate's compiled-at-fp32 arm would be a separate graph, i.e. an undeclared signature after the lock.
-Live weights are trained, so vacuity is not a refusal here.
+The bars are the startup gate's, at fp32 `highest` (the only matmul precision; TF32 was retired, deletion
+pass K2). Live weights are trained, so vacuity is not a refusal here.
 
 **Persistence, not a single shot** (owner, 2026-10-01: "implement the consecutive check"). A real
 miscompile is deterministic and disagrees every time. A healthy graph's rare exceedance belongs to one

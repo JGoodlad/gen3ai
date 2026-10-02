@@ -191,8 +191,9 @@ def _model_hparams(model) -> dict:
         "optimizer": type(opt).__name__,
         "weight_decay": opt.param_groups[0].get("weight_decay", 0.0),
         # gen3_matmul_precision_v1: what THIS (the trainer) process's fp32 matmuls actually ran at —
-        # read from torch rather than the argv, so the record is the realized value. `highest` (no
-        # TF32) is PyTorch's default and every run's value before `--matmul-precision` existed.
+        # read from torch rather than the argv, so the record is the realized value. Always `highest`
+        # now (TF32 was retired, deletion pass K2); kept as provenance, and it is what a resume reads to
+        # refuse a run that recorded `high` (`model_version.retired_levers`).
         "matmul_precision": _matmul_precision(),
         # gen3_fork_lr_pin_v1 — THE DOSE. `lr x n_epochs / (batch_size*grad_accum_steps)`, plus the
         # provenance a reader needs to know whether that LR was chosen or inherited. Nested rather

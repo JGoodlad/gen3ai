@@ -187,9 +187,12 @@ def test_trainer_argv_repoints_the_recorded_command_as_a_fork():
     f = _flags(a)
     assert "--restart-interval-hours" not in f and "--pin-commit" not in f
     assert "--run-name" not in f and "--tb-inherit" not in f
-    for flag in ("--model", "--run-dir", "--steps", "--device", "--matmul-precision",
-                 "--eval-freq", "--behaviour-check"):
+    for flag in ("--model", "--run-dir", "--steps", "--device", "--eval-freq", "--behaviour-check"):
         assert f.count(flag) == 1, flag
+    # `--matmul-precision` (typed in C's recorded command) is DELETED with TF32 (deletion pass K2): it
+    # is stripped and never re-supplied, or the trainer's parser would refuse the argv
+    assert "--matmul-precision" not in f and "--matmul_precision" not in f
+    assert "highest" not in a
     # the pinned buffer's behaviour log-probs are another program's: K9(b) warns, never FATALs
     assert a[a.index("--behaviour-check") + 1] == "warn"
     assert a[a.index("--model") + 1] == "/m/final_model.zip"
@@ -204,19 +207,37 @@ def test_trainer_argv_repoints_the_recorded_command_as_a_fork():
     assert not any("train_rl_" + "agent" in t for t in a)
 
 
+def test_trainer_argv_drops_flags_the_trainers_parser_no_longer_knows():
+    """C's recorded command types flags later deleted (TF32's `--matmul-precision`, L2's entropy boosts and
+    true-team toggle): one unknown flag is an argparse exit that kills the worker before it measures.
+    Revert ⇒ the argv carries them and the REAL trainer parser refuses it."""
+    from main.checkargs import LAUNCHER_ONLY
+    from main.train.parser import build_parser
+
+    cmd = _CMD + " --defensive-entropy-boost 1.0 --defensive-entropy-anneal-frac 0.0 --no-value-true-team"
+    a = lb.build_trainer_argv(cmd, model_zip="/m.zip", run_dir="/r", steps=1, device="cuda",
+                              launcher_only=LAUNCHER_ONLY)
+    f = _flags(a)
+    for gone in ("--defensive-entropy-boost", "--defensive-entropy-anneal-frac", "--no-value-true-team",
+                 "--matmul-precision"):
+        assert gone not in f, gone
+    assert "1.0" not in a and "highest" not in a, "a dropped flag's VALUE goes with it"
+    assert a[a.index("--ent-coef") + 1] == "0.05" and "--fork-lr" in f
+    build_parser().parse_args(a)                     # the real parser accepts what is left
+
+
 def test_trainer_argv_cpu_and_tiny_swap_the_compile_and_the_env_count():
     a = lb.build_trainer_argv(_CMD, model_zip="/m.zip", run_dir="/r", steps=1, device="cpu",
-                              tiny=True, matmul_precision="high")
+                              tiny=True)
     f = _flags(a)
     assert "--compile-trainer" not in f and "--compile-opponents" not in f
     assert "--no-compile-trainer" in f and "--no-compile-opponents" in f
     assert a[a.index("--n-envs") + 1] == str(lb.TINY["n_envs"]) and f.count("--n-envs") == 1
-    assert a[a.index("--matmul-precision") + 1] == "high"
 
 
 def test_trainer_argv_refuses_the_trainer_module_name():
     with pytest.raises(ValueError):
-        lb.build_trainer_argv(_CMD + " --note train_rl_" + "agent", model_zip="/m.zip",
+        lb.build_trainer_argv(_CMD + " --obs-source /x/train_rl_" + "agent", model_zip="/m.zip",
                               run_dir="/r", steps=1, device="cuda")
 
 

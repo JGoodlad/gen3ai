@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import contextlib
 import copy
-from typing import Dict, Iterator, Mapping, Optional, Tuple
+from typing import Dict, Iterator, Mapping, Optional
 
 import torch
 
@@ -61,49 +61,29 @@ PERTURB_SCALE = 0.05
 #: ``designs/research_state/measurements/m5_t2/PROGRESS.md`` "Flat weights".
 PERTURB_MAX_SCALE = 0.1
 PERTURB_LADDER = tuple((scale, k) for scale in (0.05, 0.1) for k in range(8))
-#: ONE TABLE, KEYED BY THE FLOAT32 MATMUL PRECISION a gate runs at (``torch.get_float32_matmul_
-#: precision()`` — the trainer's ``--matmul-precision``; gen3_precision_keyed_parity_v1, 2026-09-30).
-#: Per precision: the legal LOG-PROB BAR (a healthy compiled-vs-eager |Δ log π| sits under it; the
-#: greedy check's near-tie band is 2x it — a legitimate flip needs a top-2 margin below
-#: |Δ top-1| + |Δ top-2|) and the ladder's SCALE CAP (rungs above it are skipped at that precision).
-#:
-#: * ``highest`` (fp32): bar 1e-3 — the compile gate's legal log-prob bar (>= 37x the healthy max
-#:   2.7e-5 on 3,840 real rows, ``compile_trainer._FP32_TOL``, which reads it from here); cap 0.1
-#:   (`PERTURB_MAX_SCALE`'s evidence above).
-#: * ``high`` (TF32): bar 0.071 = 1.75 x 0.040, the LARGER of two measured healthy TF32 maxima of
-#:   compiled-vs-eager |Δ log π| on trained weights — 0.040 on the learner forward over 147,456
-#:   rollout rows (Lane K, K9's behaviour-check calibration, 2026-09-30) and 1.4e-2 on T2's served
-#:   decision over the gate's own fixture rows (4 trained checkpoints x buckets 8 / 48 + every 0.05
-#:   rung, 2,072 rows; RTX 3080 Ti, ``designs/research_state/measurements/m5_t2/PROGRESS.md``
-#:   "TF32"). The 1.75x is K9's multiple on the same quantity. Cap 0.05: at the 0.1 rungs TF32's
-#:   compiled graph drifts 6–24x eager's own TF32 error (5 of 138 groups), which the TF32 log-prob
-#:   rule (<= 4x) refuses — a false refusal of a correct graph.
-#:
-#: Any other precision (``medium``) is REFUSED by every consumer: nothing has been measured there.
-PRECISION_BARS: Dict[str, Tuple[float, float]] = {
-    "highest": (1e-3, PERTURB_MAX_SCALE),
-    "high": (0.071, 0.05),
-}
+#: THE LEGAL LOG-PROB BAR (fp32 matmul precision 'highest', the ONLY precision — TF32 was retired, deletion
+#: pass K2): a healthy compiled-vs-eager |Δ log π| sits under it. 1e-3 is the compile gate's legal log-prob
+#: bar (>= 37x the healthy max 2.7e-5 on 3,840 real rows, ``compile_trainer._FP32_TOL``, which reads it from
+#: here). The ladder's scale cap is `PERTURB_MAX_SCALE` (the evidence above).
+LOGPROB_BAR = 1e-3
+#: The greedy check's near-tie band: 2 x the log-prob bar — a legitimate flip needs a top-2 margin below
+#: |Δ top-1| + |Δ top-2|.
+NEAR_TIE_BAND = 2.0 * LOGPROB_BAR
+
+#: The float32 matmul precision every parity gate is measured at. A process at any other precision is
+#: REFUSED by every gate (`unmeasured_precision`): nothing has been measured there.
+MEASURED_PRECISION = "highest"
 
 
-def precision_bars(precision: str) -> Tuple[float, float]:
-    """``(log-prob bar, ladder scale cap)`` at ``precision``; `KeyError` naming the measured ones."""
-    if precision not in PRECISION_BARS:
-        raise KeyError(f"float32 matmul precision {precision!r} has no measured parity bars "
-                       f"(measured: {sorted(PRECISION_BARS)}) — refusing to judge with a guess")
-    return PRECISION_BARS[precision]
-
-
-def tie_band(precision: str) -> float:
-    """The greedy check's near-tie band at ``precision``: 2 x that precision's log-prob bar."""
-    return 2.0 * precision_bars(precision)[0]
-
-
-def ladder_at(precision: str, ladder: "Tuple[Tuple[float, int], ...]" = PERTURB_LADDER
-              ) -> "Tuple[Tuple[float, int], ...]":
-    """``ladder`` without the rungs above ``precision``'s scale cap."""
-    cap = precision_bars(precision)[1]
-    return tuple((float(sc), int(k)) for sc, k in ladder if float(sc) <= cap)
+def unmeasured_precision() -> Optional[str]:
+    """The refusal text when this process's float32 matmul precision is not the one the parity bars were
+    measured at (``None`` = it is). Callers raise their own typed error with it."""
+    prec = torch.get_float32_matmul_precision()
+    if prec == MEASURED_PRECISION:
+        return None
+    return (f"float32 matmul precision {prec!r} has no measured parity bars (measured: "
+            f"{MEASURED_PRECISION!r}, the only supported precision — TF32 was retired) — refusing to judge "
+            "with a guess")
 
 
 #: A rung's seed offset k moves the seed by k x this, so the inference service's CONCURRENT gate

@@ -35,49 +35,21 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 
-#: K9(b)'s GATE, KEYED BY the float32 matmul precision the run actually uses
-#: (``torch.get_float32_matmul_precision()`` — ``--matmul-precision``): one or more (STATISTIC of
-#: |log π − log μ| over the rows played at the CURRENT version, bar) conditions, ALL of which must hold.
-#: ONE table; both implementations (this probe and ``instrumented_ppo/learner_gates``) read it through
-#: `judge_behaviour`. Measured on CUDA (``BAR_MEASUREMENT``: 4 seeds x 3 real updates x 6,144 real rows,
-#: 2,048-row micro-batches, eager and compiled — n = 147,456 rows / 72 micro-batches per precision;
-#: the localized faults in ``BAR_MEASUREMENT_LOCALIZED``):
-#:
-#: * ``highest`` (fp32) — ``max`` < 1e-4 over the rows NOT at a selection tie, single-shot, and the
-#:   excluded share < ``FP32_EXCLUDED_CEILING`` (`FP32_TIE_EPS` and below): healthy per-row max 1.9e-6
-#:   over 147k rows (52x headroom); the smallest one-step-stale fault micro-batch max 0.020 (200x over).
-#: * ``high`` (TF32) — TWO conditions (orchestrator, 2026-09-30):
-#:   - ``p99`` < ``TF32_P99_MULTIPLE`` x the healthy per-row p99.9 (1.17e-3), rounded up = 3.6e-3 — the
-#:     GLOBAL faults (stale weights, a mode or sampling mismatch move EVERY row): healthy micro-batch
-#:     p99 at most 8.5e-4 (4.2x under), one optimizer step stale at least 0.0112 (3.1x over). The max
-#:     cannot do this alone: TF32's healthy tail (0.040, a few numerically sensitive rows) sits above
-#:     the smallest one-step-stale micro-batch max (0.022).
-#:   - ``max`` < ``TF32_MAX_MULTIPLE`` x the healthy per-row max (0.040), rounded up = 0.071 — the
-#:     LOCALIZED gross faults the p99 cannot see when they touch < 1 % of rows (misaligned rows, a
-#:     wrong action index, a mask mismatch: |Δ| of order 0.1–10). PERSISTENT: FATAL only when violated
-#:     on ``TF32_MAX_PERSISTENCE`` consecutive updates (1.8x headroom over a limited sample — a long run
-#:     will draw a rounding outlier above it; a real localized fault recurs every update).
-#:   Residual blind spot: a fault on < 1 % of rows AND smaller than 0.071 (the TF32 noise floor's
-#:   tail) — invisible under TF32 (the fp32 max sees it).
-TF32_P99_MULTIPLE = 3.0
-TF32_MAX_MULTIPLE = 1.75
-#: The TF32 max condition's PERSISTENCE (orchestrator, 2026-09-30; k from data): a single violation is a
-#: LOUD warning with a row dump; FATAL only when it RECURS on this many CONSECUTIVE updates. A real
-#: localized fault (a mis-shuffle, a wrong action index, a mask bug) is systematic and recurs every
-#: update; a rounding outlier is a fresh draw from fresh rows each update. k = 4, not the default 2: the
-#: healthy TF32 max is HEAVY-tailed (``BAR_MEASUREMENT_TAIL``: 96 seeds, 589,824 rows; peaks-over-
-#: threshold ξ = 0.40; a crossing of 0.071 on 1.1 % of updates [95 % 0.28–2.2 %]), so over 10,000 updates
-#: 2 consecutive would false-FATAL with P = 0.72 (POT) and 3 with 0.014 [0.11 at the bootstrap's high
-#: end]; 4 gives 1.6e-4 [2.5e-3; the GEV block-max fit 0.012]. The DECLARED criterion: the smallest k
-#: whose 10k-update false-FATAL rate is < 1 % at the POT bootstrap's upper end.
-TF32_MAX_PERSISTENCE = 4
+#: K9(b)'s GATE at fp32 matmul precision 'highest' — the ONLY precision (TF32 was retired, deletion pass
+#: K2): one or more (STATISTIC of |log π − log μ| over the rows played at the CURRENT version, bar)
+#: conditions, ALL of which must hold. ONE table; both implementations (this probe and
+#: ``instrumented_ppo/learner_gates``) read it through `judge_behaviour`. Measured on CUDA
+#: (``BAR_MEASUREMENT``: 4 seeds x 3 real updates x 6,144 real rows, 2,048-row micro-batches, eager and
+#: compiled — n = 147,456 rows / 72 micro-batches; the localized faults in ``BAR_MEASUREMENT_LOCALIZED``):
+#: ``max`` < 1e-4 over the rows NOT at a selection tie, single-shot, and the excluded share <
+#: ``FP32_EXCLUDED_CEILING`` (`FP32_TIE_EPS` and below): healthy per-row max 1.9e-6 over 147k rows (52x
+#: headroom); the smallest one-step-stale fault micro-batch max 0.020 (200x over).
 
 
 class GateCondition(NamedTuple):
     statistic: str      # "max" | "p99" of |log π − log μ| over the JUDGED current rows | "excluded_frac"
-    bar: float          # the condition holds iff statistic < bar
-    persistence: int    # FATAL once violated on this many CONSECUTIVE updates (1 = single-shot)
-    # The fp32 TIE EXCLUSION (`gen3_behaviour_tie_exclusion_v1`; 0 = off): a current row whose TIE MARGIN
+    bar: float          # the condition holds iff statistic < bar (single-shot: one violation is FATAL)
+    # The TIE EXCLUSION (`gen3_behaviour_tie_exclusion_v1`; 0 = off): a current row whose TIE MARGIN
     # (`tie_margins` — its smallest relative distance from a cutoff over every declared MARGIN site of the
     # forward, `agents/model/selection_sites.py`) is below this is NOT judged; every other row is.
     tie_eps: float = 0.0
@@ -107,12 +79,11 @@ EXCLUSION_MEASUREMENT = "designs/research_state/measurements/k9_behaviour_exclus
 TAIL_MEASUREMENT = "designs/research_state/measurements/k9_behaviour_tail/result.json"
 
 
-BEHAVIOUR_GATES: Dict[str, Tuple[GateCondition, ...]] = {
-    "highest": (GateCondition("max", 1e-4, 1, FP32_TIE_EPS),
-                GateCondition("excluded_frac", FP32_EXCLUDED_CEILING, 1, FP32_TIE_EPS)),
-    "high": (GateCondition("p99", 3.6e-3, 1), GateCondition("max", 0.071, TF32_MAX_PERSISTENCE)),
-}
-BEHAVIOUR_BAR = BEHAVIOUR_GATES["highest"][0].bar
+BEHAVIOUR_GATE: Tuple[GateCondition, ...] = (
+    GateCondition("max", 1e-4, FP32_TIE_EPS),
+    GateCondition("excluded_frac", FP32_EXCLUDED_CEILING, FP32_TIE_EPS),
+)
+BEHAVIOUR_BAR = BEHAVIOUR_GATE[0].bar
 BAR_MEASUREMENT = "designs/research_state/measurements/k9_behaviour_bar_2026-09-30/result.json"
 BAR_MEASUREMENT_LOCALIZED = "designs/research_state/measurements/k9_behaviour_bar_2026-09-30/corrupt_result.json"
 BAR_MEASUREMENT_TAIL = "designs/research_state/measurements/k9_behaviour_bar_2026-09-30/tail_result.json"
@@ -121,9 +92,9 @@ VIOLATION_DUMP = "behaviour_violations.jsonl"
 _DUMP_ROWS_LOG, _DUMP_ROWS_FILE = 10, 200
 
 
-def tie_eps(precision: Optional[str] = None) -> float:
-    """The precision's tie-exclusion margin (0 = this precision judges every current row)."""
-    return max((c.tie_eps for c in behaviour_gate(precision)), default=0.0)
+def tie_eps() -> float:
+    """The gate's tie-exclusion margin (0 = the gate judges every current row)."""
+    return max((c.tie_eps for c in behaviour_gate()), default=0.0)
 
 
 def excluded_rows(margins: Optional[np.ndarray], eps: float, n: int) -> np.ndarray:
@@ -133,7 +104,7 @@ def excluded_rows(margins: Optional[np.ndarray], eps: float, n: int) -> np.ndarr
         return np.zeros(int(n), dtype=bool)
     if margins is None:
         from agents.training.rust_rollout.tie_margins import TieMarginError
-        raise TieMarginError("[K9(b)] this precision's gate excludes rows at a selection tie, but no tie "
+        raise TieMarginError("[K9(b)] the gate excludes rows at a selection tie, but no tie "
                              "margins were computed for the judged rows")
     m = np.asarray(margins, dtype=np.float64).reshape(-1)
     if m.size != int(n):
@@ -142,24 +113,18 @@ def excluded_rows(margins: Optional[np.ndarray], eps: float, n: int) -> np.ndarr
 
 
 class UndeclaredPrecision(RuntimeError):
-    """K9(b): no gate is declared for this float32 matmul precision (none has been measured)."""
+    """K9(b): this process's float32 matmul precision is not the one the gate was measured at."""
 
 
-def _precision() -> str:
-    import torch as th
+def behaviour_gate() -> Tuple[GateCondition, ...]:
+    """The gate's conditions. REFUSES a process whose float32 matmul precision is not 'highest' — the
+    only precision measured (TF32 was retired, deletion pass K2)."""
+    from agents.model.parity_probe import unmeasured_precision
 
-    return th.get_float32_matmul_precision()
-
-
-def behaviour_gate(precision: Optional[str] = None) -> Tuple[GateCondition, ...]:
-    """The conditions for ``precision`` (default: this process's matmul precision NOW)."""
-    precision = _precision() if precision is None else str(precision)
-    gate = BEHAVIOUR_GATES.get(precision)
-    if gate is None:
-        raise UndeclaredPrecision(
-            f"[K9(b)] no behaviour gate is declared for float32 matmul precision {precision!r} (declared: "
-            f"{sorted(BEHAVIOUR_GATES)}); measure its healthy |d log pi| ({BAR_MEASUREMENT}) and add a row")
-    return gate
+    refusal = unmeasured_precision()
+    if refusal is not None:
+        raise UndeclaredPrecision(f"[K9(b)] {refusal}; the gate's healthy |d log pi| is {BAR_MEASUREMENT}")
+    return BEHAVIOUR_GATE
 
 
 class Judged(NamedTuple):
@@ -168,14 +133,13 @@ class Judged(NamedTuple):
     ok: bool
 
 
-def judge_behaviour(abs_d: np.ndarray, precision: Optional[str] = None,
-                    margins: Optional[np.ndarray] = None) -> Tuple[Judged, ...]:
-    """Every condition of the precision's gate on the per-row |Δ| of the current rows (NaN never passes).
+def judge_behaviour(abs_d: np.ndarray, margins: Optional[np.ndarray] = None) -> Tuple[Judged, ...]:
+    """Every condition of the gate on the per-row |Δ| of the current rows (NaN never passes).
     A condition with ``tie_eps`` judges only the rows whose tie margin is at or above it (``margins``,
     aligned to ``abs_d``); ``excluded_frac`` is the share of rows it excludes."""
     a = np.asarray(abs_d, dtype=np.float64).reshape(-1)
     out = []
-    for c in behaviour_gate(precision):
+    for c in behaviour_gate():
         ex = excluded_rows(margins, c.tie_eps, a.size)
         if c.statistic == "excluded_frac":
             v = float(ex.mean()) if a.size else 0.0
@@ -185,13 +149,13 @@ def judge_behaviour(abs_d: np.ndarray, precision: Optional[str] = None,
     return tuple(out)
 
 
-def _describe(judged: Tuple[Judged, ...], precision: str) -> str:
-    return f"matmul precision {precision!r}: " + ", ".join(
+def _describe(judged: Tuple[Judged, ...]) -> str:
+    return "fp32: " + ", ".join(
         f"{j.condition.statistic} {j.value:.3g} {'<' if j.ok else 'NOT <'} {j.condition.bar:g}" for j in judged)
 
 
-def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], precision: str, where: str,
-          streaks: Dict[str, int], actions: Any, masks: Any,
+def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], where: str,
+          actions: Any, masks: Any,
           details: Optional[Dict[str, Any]] = None,
           margins: Optional[np.ndarray] = None, sites: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """The offending rows — the largest |Δ| first — to the log (``_DUMP_ROWS_LOG``) and, when the model
@@ -203,7 +167,7 @@ def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], precision: 
     import os
 
     a = np.asarray(abs_d, dtype=np.float64).reshape(-1)
-    eps = tie_eps(precision)
+    eps = tie_eps()
     ex = excluded_rows(margins, eps, a.size) if margins is not None else np.zeros(a.size, dtype=bool)
     # report ordering: NaN rows FIRST, then the JUDGED rows by |Δ|, then the excluded ones
     key = np.where(np.isnan(a), np.inf, a) + np.where(ex, -1e30, 0.0)
@@ -218,10 +182,9 @@ def _dump(model: Any, abs_d: np.ndarray, judged: Tuple[Judged, ...], precision: 
                                             "excluded": bool(ex[i])}),
              **({} if details is None else row_detail(details, int(i)))} for i in order]
     record = {"where": where, "num_timesteps": int(getattr(model, "num_timesteps", 0) or 0),
-              "n_updates": int(getattr(model, "_n_updates", 0) or 0), "precision": precision,
+              "n_updates": int(getattr(model, "_n_updates", 0) or 0), "precision": "highest",
               "conditions": [{"statistic": j.condition.statistic, "value": j.value, "bar": j.condition.bar,
-                              "ok": j.ok, "persistence": j.condition.persistence,
-                              "streak": streaks.get(f"{precision}:{j.condition.statistic}", 0)} for j in judged],
+                              "ok": j.ok} for j in judged],
               "p99": behaviour_statistic(a, "p99"), "rows_current": int(a.size),
               "rows_judged": int((~ex).sum()), "rows_excluded": int(ex.sum()), "tie_eps": eps, "rows": rows}
     if details is not None:
@@ -353,44 +316,35 @@ def _host(x: Any) -> Any:
 def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any = None,
                       masks: Any = None, details: Optional[Dict[str, Any]] = None,
                       margins: Optional[np.ndarray] = None, sites: Optional[List[str]] = None) -> Dict[str, float]:
-    """Judge, track PERSISTENCE, dump, and act — the ONE enforcement both implementations call.
+    """Judge, dump, and act — the ONE enforcement both implementations call.
 
-    ``margins`` (aligned to ``abs_d``; `tie_margins`) are REQUIRED when the precision's gate excludes rows
-    at a selection tie (fp32): the judged rows are those at or above ``tie_eps``. Per condition a
-    CONSECUTIVE-violation streak lives on the model (``_behaviour_streaks``, keyed by precision and
-    statistic; a clean update resets it). A violation whose streak has reached the condition's
-    ``persistence`` — 1 for every fp32 condition: DETERMINISTIC — or ANY non-finite |Δ| (a NaN is never
-    rounding) is FATAL under ``--behaviour-check fatal``; a violation still short of it (TF32's max) is a
-    LOUD warning; every violation dumps the offending rows. ``warn`` only ever warns. Returns the
-    ``behaviour/*`` bar, streak and exclusion tags."""
-    precision = _precision()
-    judged = judge_behaviour(abs_d, precision, margins)
-    streaks: Dict[str, int] = model.__dict__.setdefault("_behaviour_streaks", {})
+    ``margins`` (aligned to ``abs_d``; `tie_margins`) are REQUIRED: the gate excludes rows at a selection
+    tie, so the judged rows are those at or above ``tie_eps``. DETERMINISTIC: ANY violated condition (or
+    ANY non-finite |Δ| — a NaN is never rounding) is FATAL under ``--behaviour-check fatal``, at once;
+    every violation dumps the offending rows. ``warn`` only ever warns. Returns the ``behaviour/*`` bar,
+    violation-count and exclusion tags."""
+    judged = judge_behaviour(abs_d, margins)
     a = np.asarray(abs_d, dtype=np.float64).reshape(-1)
     nonfinite = not np.isfinite(a).all()
     metrics: Dict[str, float] = {}
-    eps = tie_eps(precision)
+    eps = tie_eps()
     if eps > 0:
         ex = excluded_rows(margins, eps, a.size)
         metrics.update({"behaviour/tie_eps": eps, "behaviour/excluded_frac": float(ex.mean()) if a.size else 0.0,
                         "behaviour/rows_excluded": float(ex.sum()), "behaviour/rows_judged": float((~ex).sum()),
                         "behaviour/max_abs_dlogp_judged": float(np.nanmax(a[~ex])) if (~ex).any() else 0.0,
                         "behaviour/max_abs_dlogp_excluded": float(np.nanmax(a[ex])) if ex.any() else 0.0})
-    failed, fatal = [], []
+    failed = []
     totals: Dict[str, int] = model.__dict__.setdefault("_behaviour_violation_totals", {})
     for j in judged:
-        key = f"{precision}:{j.condition.statistic}"
-        streaks[key] = streaks.get(key, 0) + 1 if not j.ok else 0
-        metrics[f"behaviour/bar_{j.condition.statistic}"] = j.condition.bar
-        metrics[f"behaviour/streak_{j.condition.statistic}"] = float(streaks[key])
+        key = j.condition.statistic
+        metrics[f"behaviour/bar_{key}"] = j.condition.bar
         if not j.ok:
             totals[key] = totals.get(key, 0) + 1
             failed.append(j)
-            if nonfinite or streaks[key] >= j.condition.persistence:
-                fatal.append(j)
-        metrics[f"behaviour/violations_total_{j.condition.statistic}"] = float(totals.get(key, 0))
+        metrics[f"behaviour/violations_total_{key}"] = float(totals.get(key, 0))
     if nonfinite and not failed:      # a NaN on an EXCLUDED row: still never rounding
-        failed = fatal = [j for j in judged if j.condition.statistic != "excluded_frac"][:1]
+        failed = [j for j in judged if j.condition.statistic != "excluded_frac"][:1]
     if not failed:
         return metrics
     worst = float(np.nanmax(a)) if a.size else 0.0
@@ -399,7 +353,7 @@ def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any
                  f"{int(metrics['behaviour/rows_excluded'])} excluded within a relative margin {eps:g} of a "
                  "selection / threshold cutoff")
     msg = (f"[K9(b)] BEHAVIOUR-POLICY MISMATCH: on {where}, the learner's log pi(a|s) differs from the stored "
-           f"behaviour log-prob ({_describe(judged, precision)}{exclusion}; largest |d log pi| over every current "
+           f"behaviour log-prob ({_describe(judged)}{exclusion}; largest |d log pi| over every current "
            f"row {worst:.3g}) before any optimizer step — stale rollout weights, an eval-vs-train-mode difference, "
            "a rollout/learner observation mismatch, or (a localized fault) misaligned rows, a wrong action index "
            "or a mask mismatch")
@@ -408,19 +362,15 @@ def enforce_behaviour(model: Any, abs_d: np.ndarray, *, where: str, actions: Any
                 f"ceiling {FP32_EXCLUDED_CEILING:g}): a fault that moves rows onto ties hides from the judgement, "
                 f"and a policy whose healthy tie share grew past the ceiling must be re-measured "
                 f"({EXCLUSION_MEASUREMENT})")
-    rule = "; ".join(f"{j.condition.statistic}: violated {streaks[f'{precision}:{j.condition.statistic}']} "
-                     f"consecutive update(s), FATAL at {j.condition.persistence}" for j in failed)
+    rule = "; ".join(f"{j.condition.statistic}: violated (single-shot, FATAL at once)" for j in failed)
     if nonfinite:
         rule += " — FATAL: a NON-FINITE |d log pi|"
     mode = str(getattr(model, "behaviour_check", "off") or "off")
-    head = ("🛑 " if (fatal and mode == "fatal") else "🚨 ")
+    head = "🛑 " if mode == "fatal" else "🚨 "
     print(f"{head}{msg} [{rule}]", flush=True)
-    _dump(model, abs_d, judged, precision, where, streaks, actions, masks, details, margins, sites)
-    if fatal and mode == "fatal":
-        raise BehaviourMismatch(f"{msg} [{rule}]")
+    _dump(model, abs_d, judged, where, actions, masks, details, margins, sites)
     if mode == "fatal":
-        print("🚨 [K9(b)] NOT fatal YET: a single violation of a persistence>1 condition (TF32's max) is a "
-              "warning; the SAME condition violated on the next update(s) is FATAL (BEHAVIOUR_GATES)", flush=True)
+        raise BehaviourMismatch(f"{msg} [{rule}]")
     return metrics
 
 
@@ -467,9 +417,9 @@ _SCAN_KEEP = 32
 
 def scan_current(model: Any, ages: np.ndarray) -> Dict[str, Any]:
     """EVERY current-version row of the buffer through the learner's forward (train mode, chunks of
-    ``batch_size`` — the probe's own shape): how many exceed the precision's smallest bar, the max and
+    ``batch_size`` — the probe's own shape): how many exceed the gate's smallest bar, the max and
     the p99, and the worst `_SCAN_KEEP` rows in full (`row_detail` fields; their observations under
-    underscored keys for the ``.npz``). Under a precision that excludes rows at a tie, every chunk runs
+    underscored keys for the ``.npz``). The gate excludes rows at a tie, so every chunk runs
     under `tie_margins.TieMargins`: the scan also counts the rows over the bar that are JUDGED (not at a
     tie) and the excluded share. Per-row arrays (``_absd``, ``_margin``, ``_flat``) are kept for drivers.
     Run on a violation (one row, or many?) — or every update when ``model.behaviour_scan_all`` is set (a
@@ -726,7 +676,7 @@ def behaviour_probe(model: Any) -> Optional[Dict[str, float]]:
                                               else float("nan"))
     logger = getattr(model, "logger", None)
     try:
-        # an update with no current rows judges nothing: every streak stands (neither a violation nor a pass)
+        # an update with no current rows judges nothing (neither a violation nor a pass)
         if cur.any():
             ci = np.flatnonzero(cur)
             details = None

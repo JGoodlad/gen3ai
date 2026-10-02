@@ -54,7 +54,7 @@ interpreter that has an entry. `rebuild-buffer` (needs the `rust_env` self-check
 buffer and invalidates every entry (they were computed on different input).
 
 **Scope limits.** Not pinned: the rollout and GAE (the buffer's advantages / returns are inputs), the
-KL→LR controller and every other callback (outside `train()`), CUDA / compiled / TF32 numerics (the
+KL→LR controller and every other callback (outside `train()`), CUDA / compiled numerics (the
 compile parity gate and K6's canary own those). When K10(a)'s recipe block lands, `RECIPE` should read
 it and the golden be re-recorded.
 
@@ -73,27 +73,25 @@ one bar). WHICH implementation runs is decided once per `train()` by `learner_ga
   Never both.
 
 It logs `behaviour/max_abs_dlogp_current`, `behaviour/p99_abs_dlogp_current`, `rows_current`,
-`rows_probed` and one `behaviour/bar_<statistic>` per condition either way; at fp32 also
+`rows_probed`, one `behaviour/bar_<statistic>` per condition and
 `behaviour/excluded_frac`, `rows_excluded`, `rows_judged`, `max_abs_dlogp_judged`,
 `max_abs_dlogp_excluded` and `tie_eps` (and the Rust probe `probe_forward_ms`).
 
-**The gate is KEYED BY the float32 matmul precision the run uses** (`consistency.BEHAVIOUR_GATES` — ONE
-table, read by Lane G's probe and by the in-loop gate through `judge_behaviour`; an undeclared precision
-is a typed `UndeclaredPrecision`). Every condition must hold on the micro-batch's current rows:
+**The gate is ONE table, at fp32 matmul precision `highest` — the only precision** (`consistency.BEHAVIOUR_GATE`,
+read by Lane G's probe and by the in-loop gate through `judge_behaviour`; TF32 was retired, deletion pass
+K2, and a process at any other precision is refused by `consistency.behaviour_gate()` with a typed
+`UndeclaredPrecision`). Every condition must hold on the micro-batch's current rows:
 
-| precision | condition | catches | bar | FATAL when |
-|---|---|---|---|---|
-| `highest` (fp32, the default) | max \|Δ\| over the rows NOT at a selection tie, + the excluded share | every fault class | 1e-4; excluded share < 0.15 | the FIRST violation — **DETERMINISTIC** (below): a row within a relative margin `FP32_TIE_EPS` = 2e-4 of a discrete cutoff is excluded, every other row is judged |
-| `high` (TF32) | p99 \|Δ\| | GLOBAL faults (every row moves: stale weights, a mode / sampling / temperature mismatch) | 3.6e-3 = 3 x the healthy per-row p99.9, rounded up | the first violation |
-| `high` (TF32) | max \|Δ\| | LOCALIZED gross faults (< 1 % of rows: misaligned rows, a wrong action index, a mask mismatch) | 0.071 = 1.75 x the healthy per-row max, rounded up | **4 CONSECUTIVE updates** (`TF32_MAX_PERSISTENCE`); a single violation is a loud warning |
+| condition | catches | bar | FATAL when |
+|---|---|---|---|
+| max \|Δ\| over the rows NOT at a selection tie, + the excluded share | every fault class | 1e-4; excluded share < 0.15 | the FIRST violation — **DETERMINISTIC** (below): a row within a relative margin `FP32_TIE_EPS` = 2e-4 of a discrete cutoff is excluded, every other row is judged |
 
-**Every violation** prints `🚨` (or `🛑` when fatal) with the condition, its value, its bar and the
-streak, logs the offending rows (index, |Δ|, action, mask — the largest 10; the p99 for context), and
-appends a JSON line with the largest 200 to `<run_dir>/behaviour_violations.jsonl`
-(`consistency.VIOLATION_DUMP`). The streaks live on the model (`_behaviour_streaks`, per precision and
-statistic); a clean update resets a condition's streak; an update with no current rows (Rust path)
-leaves every streak standing; a NaN |Δ| is FATAL at once (never rounding); `--behaviour-check warn`
-only ever warns. `behaviour/streak_<statistic>` is on the dashboard every update.
+**Every violation** prints `🚨` (or `🛑` when fatal) with the condition, its value and its bar, logs the
+offending rows (index, |Δ|, action, mask — the largest 10; the p99 for context), and appends a JSON line
+with the largest 200 to `<run_dir>/behaviour_violations.jsonl` (`consistency.VIOLATION_DUMP`) BEFORE it
+raises. There is no persistence: the first violation is FATAL under `--behaviour-check fatal`; a NaN |Δ| is
+FATAL at once (never rounding); `--behaviour-check warn` only ever warns. `behaviour/violations_total_<statistic>`
+counts them on the dashboard every update (`warn` mode's tally).
 
 **On the Rust path a violation's dump is enough to root-cause the row offline**
 (`gen3_behaviour_provenance_v1`, after sizing arm A2's single-row FATAL, 2026-10-01: one row of 1,024 at
@@ -191,98 +189,38 @@ graph); the sweep's 4 real flips — all ~480× under epsilon — are the end-to
 T2. The excluded share is measured on A2's states; a live run's ecology may differ (the ceiling FATAL
 names the re-measurement).
 
-**TF32 (`high`) is NOT made deterministic, and its rule is unchanged.** The same sweep at TF32 (12
-fills, 1,179,648 rows): the margins' rounding scale is **9.6e-3** relative (~700 × fp32), so epsilon at
-the same safety factor is 0.1 and would exclude **99.6 %** of rows (1e-2 still excludes 51 %); TF32's
-continuous noise on a judged row is itself ~1e-2. 🚨 **FINDING (2026-10-01): on the Rust core with
-TRAINED weights the TF32 gate below FALSE-FATALs.** On A2's 4.0M checkpoint the healthy p99 of a
-1,024-row probe exceeds its single-shot 3.6e-3 bar on **36 %** of probes and the max exceeds 0.071 on
-**17 %** (211 of 1.18M rows, the largest 1.22) — ~8 expected 4-consecutive runs per 10k updates. The
-TF32 bars below were measured on the PYTHON core with a fresh perturbed learner. **TF32 is RETIRED
-(owner, 2026-10-01):** `--matmul-precision high` and every TF32-only gate path leave with the deletion
-pass; until then `--env-core rust --matmul-precision high` with a FATAL `--behaviour-check` is REFUSED at
-launch (`combination_checks.env_core_rust_tf32_behaviour_check_fatal`, FATAL_CONFIG), naming the two
-ways out (`--behaviour-check warn`, or re-measure the gate on the Rust core).
-
-**Why the TF32 max is PERSISTENT, and why k = 4 (orchestrator 2026-09-30; k from data).** Its 1.8x
-headroom over the first pass's healthy max (0.040) came from a small sample, and the max of a noise
-statistic grows with the number of draws. A real localized fault is systematic and recurs every update
-(every corrupted micro-batch was caught — the table above); a rounding outlier is a fresh draw from
-fresh rows. The EXTREME-VALUE read (`tail_result.json`, from `tail.py` + `tail_derive.py`: 96 fresh seeds,
-589,824 healthy TF32 rows, 288 independent 2,048-row micro-batches — the per-update statistic):
-
-| healthy TF32 max per update (one 2,048-row micro-batch) | value |
-|---|---|
-| empirical: n / median / q90 / q99 / largest | 288 / 7.2e-3 / 0.021 / 0.043 / **0.063** (none over 0.071) |
-| per-row: p99.9 / p99.99 / max (n = 589,824) | 1.2e-3 / 0.017 / 0.063 |
-| peaks over threshold (rows above their p99.9; generalized Pareto) | shape ξ = **0.40 — a HEAVY tail** |
-| P(an update's max > 0.071) — POT [95 % seed bootstrap] / GEV on the 288 maxima | **1.1 %** [0.28 %, 2.2 %] / 3.3 % |
-| expected max over 10,000 updates (the 1/10k return level) — POT / GEV | 0.51 / 7.8 (the GEV extrapolates a shape fitted on 288 blocks) |
-| P(≥ 1 crossing in 10,000 updates) | ~1 (every model) |
-| **P(false FATAL in 10,000 updates) at k = 2 / 3 / 4 consecutive** — POT | 0.72 / 0.014 / **1.6e-4** |
-| … at the POT bootstrap's upper end | 0.99 / 0.11 / **2.5e-3** |
-| … GEV | ~1 / 0.31 / 0.012 |
-
-The DECLARED criterion: the smallest k whose 10k-update false-FATAL rate is < 1 % at the POT bootstrap's
-upper end ⇒ **k = 4**. The default 2 would kill most 10k-update runs for nothing. The cost: a real
-localized fault is FATAL on its 4th update instead of its 2nd (it warns loudly from its 1st). The
-single-shot p99 is safe on the same rows: its largest of 288 is 7.8e-4 (4.6x under 3.6e-3) and a GEV fit
-gives ~0 over 10k updates. ASSUMED: rows i.i.d. within a micro-batch, updates independent (each scores
-fresh rollout rows), a fresh perturbed learner standing in for a trained one — **UNVERIFIED** on a
-trained checkpoint and on a live run, where recurring states could correlate consecutive crossings.
-
-
 **The measurement** — `designs/research_state/measurements/k9_behaviour_bar_2026-09-30/`: `result.json`
 (`measure.py`, `derive.py`: the healthy distribution and the stale faults) and `corrupt_result.json`
-(`corrupt.py`: the localized faults) and `tail_result.json` (`tail.py`, `tail_derive.py`: the healthy TF32
-max's extreme-value read, below). RTX 3080 Ti, torch 2.5.1. Rows: per seed a real complete-game
+(`corrupt.py`: the localized faults). RTX 3080 Ti, torch 2.5.1. Rows: per seed a real complete-game
 Rust-collector rollout at the production surface (48 envs x 128 steps = 6,144 rows); the learner is the
 learner golden's production learner with a per-seed perturbation; 4 seeds x 3 REAL updates each, eager
 and `--compile-trainer`. The rollout side is the python core's (eval mode, no grad, 48-row batches), the
-learner side a 2,048-row micro-batch (train mode, grad). Per precision: n = 147,456 rows, 72
-micro-batches (stale faults 72 / 48; localized faults: 4 seeds x 2 states x 3 micro-batches, eager).
+learner side a 2,048-row micro-batch (train mode, grad). n = 147,456 rows, 72 micro-batches (stale faults
+72 / 48; localized faults: 4 seeds x 2 states x 3 micro-batches, eager). (The same files carry a TF32
+column of that first measurement; TF32 was retired and no gate reads it.)
 
 **THE TABLE** — the statistic the gate reads over a 2,048-row micro-batch (per-row figures where noted),
 healthy and under each fault class; margin = the fault's SMALLEST micro-batch value / the bar,
-headroom = the bar / the healthy LARGEST. TF32 is CUDA `high`; fp32 is CUDA `highest` (healthy, stale)
-or CPU fp32 (localized: the fault SIGNAL — the CUDA fp32 localized units were not run).
+headroom = the bar / the healthy LARGEST. fp32 is CUDA `highest` (healthy, stale) or CPU fp32 (localized:
+the fault SIGNAL — the CUDA fp32 localized units were not run).
 
-| | fp32: max (bar 1e-4) | TF32: p99 (bar 3.6e-3) | TF32: max (bar 0.071) |
-|---|---|---|---|
-| healthy per-row p99.9 / max (n = 147,456 rows) | 9.5e-7 / 1.9e-6 | 1.17e-3 / 4.0e-2 | 1.17e-3 / 4.0e-2 |
-| **healthy micro-batch, largest of 72** | 1.9e-6 — **headroom 52x** | 8.5e-4 — **headroom 4.2x** | 4.0e-2 — **headroom 1.8x** |
-| healthy, eval/train MODE alone (per-row max) | 1.8e-6 | 4.4e-3 compiled / 8.1e-4 eager (per row) | — |
-| GLOBAL: rollout ONE optimizer step stale, lr 2.8e-5 (72) | 0.020 — **200x** | 0.0112 — **3.1x** | 0.022 — 0.31x (caught 31 %) |
-| GLOBAL: one optimizer step stale, lr 3e-4 (72) | 0.16 — 1,600x | 0.106 — 30x | 0.166 — 2.3x |
-| GLOBAL: one full update stale (48) | 0.108 — 1,085x | 0.074 — 21x | 0.109 — 1.5x |
-| GLOBAL: eval/train-mode mismatch | VACUOUS (below) | VACUOUS | VACUOUS |
-| LOCALIZED, 0.5 % of rows: wrong action index (24) | 0.244 — 2,440x | 9.9e-4 — **NOT caught (by design)** | 0.239 — **3.4x** |
-| LOCALIZED, 0.5 %: obs swap / rows misaligned (24) | 0.549 — 5,490x | 1.05e-3 — NOT caught | 0.549 — **7.7x** (82 of 256 rows illegal: 1e8) |
-| LOCALIZED, 0.5 %: mask mismatch (24) | 0.457 — 4,570x | 2.5e-3 — NOT caught | 0.457 — **6.4x** |
+| | fp32: max (bar 1e-4) |
+|---|---|
+| healthy per-row p99.9 / max (n = 147,456 rows) | 9.5e-7 / 1.9e-6 |
+| **healthy micro-batch, largest of 72** | 1.9e-6 — **headroom 52x** |
+| healthy, eval/train MODE alone (per-row max) | 1.8e-6 |
+| GLOBAL: rollout ONE optimizer step stale, lr 2.8e-5 (72) | 0.020 — **200x** |
+| GLOBAL: one optimizer step stale, lr 3e-4 (72) | 0.16 — 1,600x |
+| GLOBAL: one full update stale (48) | 0.108 — 1,085x |
+| GLOBAL: eval/train-mode mismatch | VACUOUS (below) |
+| LOCALIZED, 0.5 % of rows: wrong action index (24) | 0.244 — 2,440x |
+| LOCALIZED, 0.5 %: obs swap / rows misaligned (24) | 0.549 — 5,490x |
+| LOCALIZED, 0.5 %: mask mismatch (24) | 0.457 — 4,570x |
 
-Every GLOBAL and every LOCALIZED fault micro-batch is caught by the gate at its precision (TF32: the
-global ones by the p99 — FATAL at once — the localized ones by the max — FATAL on the 4th consecutive
-update); no healthy micro-batch trips any condition. The
-localized rows' OWN |Δ| (TF32): wrong action index median 0.094, **42 % of them below 0.071**, some
-exactly 0 (a tie, or a row with one legal action — nothing to swap to); obs swap median 0.51, 13 % below;
-mask mismatch median 0.42, none below. A micro-batch is caught because its LARGEST corrupted row clears
-the bar — with 10 corrupted rows, all ten below 0.071 is ~0.42^10 ≈ 2e-4 for a wrong action index.
-These are a FRESH (near-uniform) learner's signals; a trained, sharper policy should separate wrong
-actions more (**UNVERIFIED** on a trained checkpoint).
-
-**Why TWO statistics under TF32 — the OVERLAP, reported.** Under TF32 the healthy per-row tail (max
-0.040, a few numerically sensitive rows, batch-shape driven) sits ABOVE the smallest one-step-stale
-fault (micro-batch max 0.022), so no max bar separates a GLOBAL fault from TF32 noise: the max alone at
-0.071 catches only **31 %** of one-step-stale micro-batches at the recipe lr. A stale or mismatched
-policy moves EVERY row; TF32 noise moves a few — the micro-batch's p99 separates them (4.2x healthy
-headroom, 3.1x fault margin). The p99 is blind BY CONSTRUCTION to a fault on < 1 % of the rows (≤ 20 of
-2,048), which the max catches when it is gross. At fp32 the max alone does both (52x headroom).
-
-⚠️ **The residual blind spot under TF32:** a SUBTLE fault — smaller than the TF32 noise floor's tail
-(|Δ| < 0.071) — confined to FEWER than 1 % of a micro-batch's rows passes both conditions; a gross one
-is FATAL on its 4th consecutive update, not its 1st. At fp32 the
-max (bar 1e-4) still sees it. ⚠️ An earlier pass (1,024-row micro-batches, the same design) saw one fp32
-healthy row at 2.6e-5 — 3.9x under 1e-4, the thinnest fp32 headroom observed.
+Every GLOBAL and every LOCALIZED fault micro-batch is caught by the gate; no healthy micro-batch trips
+it. These are a FRESH (near-uniform) learner's signals; a trained, sharper policy should separate wrong
+actions more (**UNVERIFIED** on a trained checkpoint). ⚠️ An earlier pass (1,024-row micro-batches, the
+same design) saw one fp32 healthy row at 2.6e-5 — 3.9x under 1e-4, the thinnest fp32 headroom observed.
 
 **The eval/train-MODE fault is VACUOUS for this policy.** It has no dropout and no batch norm (checked
 on the built module tree), so eval and train mode compute the same FUNCTION; the only mode-dependent
@@ -296,9 +234,9 @@ on update 1 (a fresh pointer head is uniform) and 2.38e-7 after; the learner gol
 eager log-probs vs the learner): 3.6e-7. Lane G's GPU read on the Rust path (compiled learner vs T2
 graph): 1.45e-5.
 
-The four paused learner-battery argvs (L95, T32_STANDIN, Cfix, T32b_sentinel — two of them TF32, none
-typing `--behaviour-check`) parse unchanged and resolve to `fatal` at their precision's bar
-(`learner_gates_test`).
+The four paused learner-battery argvs (L95, T32_STANDIN, Cfix, T32b_sentinel — none typing
+`--behaviour-check`) parse (with the flags deleted since they were recorded stripped, `--matmul-precision`
+among them) and resolve to `fatal` (`learner_gates_test`).
 
 **The other legitimate reasons it could differ, checked:** batch composition — the rollout forwards
 `n_envs` rows, the learner a micro-batch (the healthy rows above); `--compile-trainer` — measured in

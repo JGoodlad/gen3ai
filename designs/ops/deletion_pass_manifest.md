@@ -140,7 +140,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **L4** | cf training half + team-PFSP + exploiter ladder + `REFUSED_WITH_FLAG` (R2) | 0.75 | B | + parser `cf_grounding` / `eval_subprocess`, `rust_vec_env` | L3 |
 | **L5** | the Python fork arm (R3) | 0.5 | B | `combination_checks`, `fork_*` | L4 |
 | **K1** ✅ **SHIPPED 2026-10-02** (`utils/torch_floor.py`; the cache-limit log detector KEPT — §6 finding 10) | torch < 2.8 refusal; 2.5.1 code + legacy compile gate (R7 + R8), the `hooks.py:179` fix | 1.25 | C | `compile_trainer`, `compile_control`, `team_transformer`, `lifecycle.py` | memory fix |
-| **K2** | RETIRE TF32 (R9) | 1.0 | C | parser `hyperparameters` (after L2 hands it off), `consistency.py`, `parity_probe`, one `combination_checks` row | K1, L2 |
+| **K2** ✅ **SHIPPED 2026-10-02** (`gen3_tf32_retired_v1`, no config bump, stamp-less: `matmul_precision` was a `metadata.json` knob; **lines removed: non-test code −604 / +269 (net −335), tests −436 / +352 (net −84)**, docs + data −244 / +186 + this row; 1 flag, 1 `combination_checks` row, 1 `RETIRED` row added for the resume refusal; K9 golden files untouched and green) | RETIRE TF32 (R9) | 1.0 | C | parser `hyperparameters` (after L2 hands it off), `consistency.py`, `parity_probe`, one `combination_checks` row | K1, L2 |
 | **P1, P4, P5, P7** | small fixes | 1.25 | C | disjoint | — (P1 first) |
 | **P2** | value-free opponent slots | 0.75 | C | `inference/service/*` | memory fix |
 | **U3** | DELETE the Python env core + collect + async + compile-opponents trim + harnesses (R1 + R6 + R10) | 1.5 | A | `train_rl_agent`, `env_factory`, `rust_env_setup`, `combination_checks` | U2, L5 |
@@ -268,6 +268,19 @@ calendar days with 3 lanes; 8 is the box**.
     the compiled REGIONS with the donating default forced (the deleted `compiled_train_probes_test` did it for the
     extractor compile); the region gate's collapsed-critic ladder climb has no teeth test (the deleted
     `parity_probe_test` gate tests had one for the extractor gate).
+
+11. **K2 (2026-10-02): the compiled-update PERF GUARD had one baseline and it was TF32.** `compiled_perf_guard_test`'s only
+    banked read (36.32 s, `perf_baseline.json`) was `--matmul-precision high`, which K2 retired, so it could not stand. An fp32
+    baseline could NOT be banked: run as the test runs it (`main.compile_inventory run --stage time --keep-prewarm
+    --unbracketed`, pinned buffer, arm C), the time stage on the Rust env core does not reuse the pinned buffer — the worker
+    log shows a Rust collection of 4,096 fresh rows and no `reused buffer` line, and it timed 0.32 s on them — so the number is
+    the wrong update (why `learner_benchmark._bench_collect` is not reached is UNVERIFIED). `perf_baseline.json` is now v3 with
+    `baseline: null` and the TF32 read as history; the guard skips, naming why, so the slow-tier status reads it as unmeasured.
+    **The learner benchmark and the compile inventory's time stage therefore need a unit of their own** (reuse the pinned buffer
+    under the owned loop's Rust collection, then bank the fp32 baseline: geometry rows 98,304 / micro-batch 2,048 /
+    accumulation 32 / 10 epochs). Also from K2: `learner_benchmark.build_trainer_argv` now drops every flag the trainer's parser
+    no longer knows — arm C's recorded command types flags L1/L2 deleted and crashed the worker on argparse — so L3..L5's
+    deleted flags need no list entry there.
 
 ## 7. Corrections to `program_rust_core.md` §4 (applied by the unit that executes each row)
 

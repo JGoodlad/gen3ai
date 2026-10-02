@@ -1,7 +1,7 @@
-"""LEVERS THAT WERE DELETED WITH THE PYTHON CORE, recognised in a recorded config.
+"""LEVERS THAT WERE DELETED IN THE POST-SWITCH DELETION PASS, recognised in a recorded config.
 
 `designs/ops/deletion_pass_manifest.md` §2 (owner-approved 2026-10-02: delete with the Python core,
-port none). Each lever below left `ModelVersion` — `_migrate_config` POPs its recorded field from any
+port none), plus K2's retired TF32 (R9, owner 2026-10-01). Each lever below left `ModelVersion` — `_migrate_config` POPs its recorded field from any
 config, whatever vintage wrote it (`cls(**data)` TypeErrors on a stale key) — and this module is where
 the deletion is JUDGED, in the shape `shaped_reward.py` set for the deleted shaped reward:
 
@@ -27,6 +27,12 @@ would catch.
 Flag names are stored WITHOUT their `--` and prefixed below: a bare `"--flag"` string constant in a
 production module counts as LIVE CLI surface to `src/claude_md_freshness_gate_test.py`, and these are
 exactly the flags that no longer are. **Later deletion units APPEND their levers to :data:`RETIRED`.**
+
+**TF32 (`matmul_precision`, deletion pass K2) is a RUNTIME knob, so its record is `metadata.json`'s, not
+`model_config.json`'s:** `check_no_retired_levers` overlays that file's `RUNTIME_RECORD_FIELDS` onto the raw
+config before it judges the table, so the one refusal path covers it. It is training-only (no forward pass
+carries it; a frozen load loses nothing), so it refuses a RESUME or FORK only, and no `ModelVersion` field
+or config bump was involved.
 
 **Levers with NO recorded field are not in the table, and cannot be.** `--defensive-entropy-boost` /
 `--bait-entropy-boost` (deletion pass L2) were never written to `model_config.json` (they were
@@ -61,6 +67,15 @@ LAST_COMMIT_L2 = "475bd817bdf1da3d055036641a29fe7540ec090d"
 
 #: The first config version written WITHOUT the L2 fields.
 L2_DELETION_VERSION = 132
+
+#: The last commit whose tree still has TF32 (`--matmul-precision high` and its three parity rules) — the
+#: tip when deletion unit K2 branched, which is the commit that shipped L2 (`615a764f`). Any commit at or
+#: before it can resume a run that recorded `matmul_precision: high` (`--pin-commit <sha>`).
+LAST_COMMIT_K2 = "615a764fdb7e05abfcc1575797e2c83eb61c3ea1"
+
+#: Recorded in `metadata.json` (top level, rewritten on every save), not in `model_config.json`: the
+#: RUNTIME knobs a retired lever may have set. `check_no_retired_levers` overlays them onto the raw config.
+RUNTIME_RECORD_FIELDS: tuple = ("matmul_precision",)
 
 
 class RetiredLever(NamedTuple):
@@ -153,6 +168,12 @@ RETIRED: tuple = (
                  _above_one("win_prob_rollout_weight"), False,
                  "win_prob_rollout_weight > 1.0 (a per-row loss weight on the rollout-anchored rows)",
                  LAST_COMMIT_L2, "L2", L2_DELETION_VERSION),
+    # ---- deletion pass K2 (no config bump: a metadata.json-recorded runtime knob) -----------
+    RetiredLever("matmul_precision", "matmul-precision",
+                 lambda raw: str(raw.get("matmul_precision") or "highest") != "highest", False,
+                 "matmul_precision != 'highest' (TF32 matmuls in the trainer process: the run's numerics "
+                 "were ~1e-2 coarser than fp32, and TF32 was retired)",
+                 LAST_COMMIT_K2, "K2", L2_DELETION_VERSION),
 )
 
 #: Recorded fields that left the config but are INERT without one of the levers above (an atom count,
@@ -210,9 +231,10 @@ def refusal_message(evidence: List[RetiredLever], config_path: Optional[str]) ->
     commits = sorted({e.last_commit[:8] for e in evidence})
     return (
         f"this checkpoint was TRAINED WITH A DELETED LEVER ({where}):\n{lines}\n"
-        "The Python-core levers were DELETED (deletion pass, designs/ops/deletion_pass_manifest.md "
-        "§2). Resuming or forking it on this code would continue it WITHOUT the lever — a different "
-        "objective under the same run name — so it is refused rather than silently switched.\n"
+        "These levers were DELETED (deletion pass, designs/ops/deletion_pass_manifest.md §1-2). "
+        "Resuming or forking it on this code would continue it WITHOUT the lever — a different "
+        "objective or different numerics under the same run name — so it is refused rather than "
+        "silently switched.\n"
         f"Fix: run it pinned to a commit that still has the lever, ≤ {' / '.join(commits)} "
         f"(`--pin-commit {pin[:8]}`, or the checkpoint's own recorded git_hash, which the launcher "
         "pins a restart to by default). A fresh run without the lever is a NEW experiment, not a "
@@ -232,6 +254,14 @@ def check_no_retired_levers(config_path: Optional[str]) -> None:
         return
     if not isinstance(raw, dict):
         return
+    # the runtime knobs live in the run's metadata.json, beside the model_config.json
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(config_path)), "metadata.json")) as f:
+            meta = json.load(f)
+    except (OSError, ValueError):
+        meta = None
+    if isinstance(meta, dict):
+        raw = {**raw, **{k: meta[k] for k in RUNTIME_RECORD_FIELDS if k in meta}}
     evidence = retired_lever_evidence(raw)
     if evidence:
         raise RetiredLeverCheckpointError(

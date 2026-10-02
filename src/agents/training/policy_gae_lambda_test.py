@@ -1,13 +1,13 @@
-"""`--policy-gae-lambda`, `--matmul-precision` and the per-epoch PPO diagnostics.
+"""`--policy-gae-lambda`, the retired `--matmul-precision` and the per-epoch PPO diagnostics.
 
-Three training-side changes, each defaulting to the behaviour every run had before it existed:
+Training-side changes, each defaulting to the behaviour every run had before it existed:
 
 * **`--policy-gae-lambda`** (`gen3_policy_gae_lambda_v1`, config v123) — the PPO policy's GAE λ,
   until now HARDCODED to 0.80 at both `model_build` sites. Default 0.80, so the advantages are
   bit-identical; recorded on `ModelVersion` and inherited on a flagless resume.
-* **`--matmul-precision {highest,high}`** (`gen3_matmul_precision_v1`) — `highest` is PyTorch's own
-  default and calls NOTHING; `high` enables TF32 in the trainer process. Stamped at launch and
-  recorded in `metadata.json`.
+* **`--matmul-precision`** (`gen3_matmul_precision_v1`) — DELETED with TF32 (deletion pass K2): fp32
+  `highest` is the only precision and the flag no longer parses; what survives is the provenance stamp
+  in `metadata.json`.
 * **`train/approx_kl_epoch_<k>` · `train/clip_fraction_epoch_<k>`** (`gen3_ppo_per_epoch_diag_v1`) —
   one pair per epoch the update actually ran, folded from the numbers the loop already computes.
 
@@ -173,51 +173,30 @@ def test_0_95_changes_the_advantages_exactly_as_GAE_says():
     assert moved.tolist() == [True, True, True, False, True, False], (got, base)
 
 
-# ── --matmul-precision ───────────────────────────────────────────────────────────────────────
-@pytest.fixture
-def _restore_precision():
-    before = th.get_float32_matmul_precision()
-    yield
-    th.set_float32_matmul_precision(before)
-
-
-def test_the_precision_flag_parses_refuses_and_defaults_to_highest():
+# ── --matmul-precision (deleted with TF32, deletion pass K2) ─────────────────────────────────
+@pytest.mark.parametrize("value", ["high", "highest", "medium"])
+def test_the_precision_flag_is_deleted_it_no_longer_parses_at_any_value(value):
+    """fp32 `highest` is the ONLY precision, so there is nothing to type. Revert the deletion ⇒ `high`
+    (TF32) parses again. A recorded argv that still carries it runs PINNED (`designs/deleted_flags.md`)."""
     p = build_parser()
-    assert p.parse_args([]).matmul_precision == "highest"
-    assert p.parse_args(["--matmul-precision", "high"]).matmul_precision == "high"
-    with pytest.raises(SystemExit):
-        p.parse_args(["--matmul-precision", "medium"])
+    for form in ("--matmul-precision", "--matmul_precision"):
+        with pytest.raises(SystemExit):
+            p.parse_args([form, value])
+    assert not hasattr(p.parse_args([]), "matmul_precision")
 
 
-def test_highest_calls_nothing_and_stamps_highest(monkeypatch, capsys, _restore_precision):
+def test_no_trainer_path_sets_the_matmul_precision():
+    """Nothing in the config path applies a precision any more — the process runs PyTorch's default
+    ('highest'). Revert ⇒ `apply_matmul_precision` is back and can turn TF32 on."""
     import main.train.config as cfg
-    calls = []
-    monkeypatch.setattr(th, "set_float32_matmul_precision", lambda v: calls.append(v))
-    assert cfg.apply_matmul_precision(build_parser().parse_args([])) == "highest"
-    assert calls == []
-    assert "🧮 [MATMUL PRECISION] highest" in capsys.readouterr().out
+    assert not hasattr(cfg, "apply_matmul_precision")
+    assert "set_float32_matmul_precision" not in inspect.getsource(cfg)
 
 
-def test_high_sets_TF32_in_this_process_and_stamps_it(capsys, _restore_precision):
-    import main.train.config as cfg
-    th.set_float32_matmul_precision("highest")
-    got = cfg.apply_matmul_precision(build_parser().parse_args(["--matmul-precision", "high"]))
-    assert got == "high" == th.get_float32_matmul_precision()
-    assert "🧮 [MATMUL PRECISION] high" in capsys.readouterr().out
-
-
-def test_resolve_config_applies_and_stamps_it(capsys, _restore_precision):
-    th.set_float32_matmul_precision("highest")
-    # the python core, typed: the Rust core refuses TF32 with a fatal K9(b) (bare argv = rust since D2)
-    _resolved(["--env-core", "python", "--matmul-precision", "high"])
-    assert th.get_float32_matmul_precision() == "high"
-    assert "🧮 [MATMUL PRECISION] high" in capsys.readouterr().out
-
-
-def test_metadata_records_the_realized_precision(_restore_precision):
+def test_metadata_records_the_realized_precision():
+    """The provenance stamp stays: a resume reads it to refuse a run that recorded `high`."""
     from main.train import run_io
-    th.set_float32_matmul_precision("high")
-    assert run_io._matmul_precision() == "high"
+    assert run_io._matmul_precision() == th.get_float32_matmul_precision() == "highest"
     assert '"matmul_precision": _matmul_precision()' in inspect.getsource(run_io._model_hparams)
 
 

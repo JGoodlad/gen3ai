@@ -15,7 +15,7 @@ and replaces the first `train()` with one of two stages.
           that triggered them. Plus: the ObservationDebugger micro-check and the static scan of the
           fold loop.
   time    (CUDA only) — the PRODUCTION learner exactly as the trainer built it (the real
-          `--compile-trainer` gate, reset, prewarm), at the requested matmul precision: one warm-up,
+          `--compile-trainer` gate, reset, prewarm), at fp32 matmul precision: one warm-up,
           one bracketed full update (`PhaseTimer`, synchronised — the per-phase wall), then one
           update of ``profile_epochs`` epochs under `torch.profiler` (CPU + CUDA) with phase
           segments as `record_function` ranges; the trace is exported for `trace_classify`.

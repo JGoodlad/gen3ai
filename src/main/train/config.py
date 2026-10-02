@@ -168,26 +168,6 @@ def enforce_not_shaped_parent(model_path: str) -> None:
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
 
 
-def apply_matmul_precision(args) -> str:
-    """gen3_matmul_precision_v1: apply `--matmul-precision` to THIS (the trainer) process and stamp it.
-
-    `highest` is PyTorch's own default (full FP32, no TF32), so the default path CALLS NOTHING — the
-    process is byte-for-byte what it was before the flag existed. `high` enables TF32 for fp32
-    matmuls on Ampere+. Returns the RESOLVED value, read back from torch rather than echoed from the
-    argv, so the stamp states what the process will actually do.
-    """
-    import torch
-    requested = getattr(args, "matmul_precision", None) or "highest"
-    if requested != "highest":
-        torch.set_float32_matmul_precision(requested)
-    resolved = torch.get_float32_matmul_precision()
-    emit(f"🧮 [MATMUL PRECISION] {resolved} — "
-         + ("full FP32 matmuls, no TF32 (PyTorch's default; byte-identical to every run to date)"
-            if resolved == "highest" else
-            "TF32 tensor-core matmuls enabled in the trainer process (Ampere+; ~10-bit mantissa)"))
-    return resolved
-
-
 def inherit_saved_flag(args, saved_ver, name, default) -> bool:
     """THE RESUME INHERITANCE RULE, in one function: `None` on the CLI means INHERIT.
 
@@ -1348,8 +1328,6 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
          + ("the Rust core's row (sim_bridge __OBS__ frames; Python encodes only terminal / "
             "non-decision embeds) — the production default" if args.obs_source == "core"
             else "the Python encoder (the opt-out; the default off the rust bridge)"))
-    apply_matmul_precision(args)
-
     annealing_mode = args.anneal_lr_start_steps is not None
 
     if args.hp_type_belief_coef and args.move_belief_mode == "off":

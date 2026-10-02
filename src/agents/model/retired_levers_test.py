@@ -1,5 +1,6 @@
-"""The RETIRED LEVERS (deletion pass L1, config v131; L2, config v132) — what a recorded config / a
-pickled zip that still names one does on every path that reads it.
+"""The RETIRED LEVERS (deletion pass L1, config v131; L2, config v132; K2, TF32 — a metadata.json
+runtime knob, no config bump) — what a recorded config / a pickled zip that still names one does on
+every path that reads it.
 
 `model_version.retired_levers` is the ONE table; this file drives each consumer of it:
 
@@ -31,6 +32,7 @@ from agents.model.model_version import (
     _migrate_config,
 )
 from agents.model.model_version.retired_levers import (
+    LAST_COMMIT_K2,
     LAST_COMMIT_L1,
     LAST_COMMIT_L2,
     RETIRED,
@@ -50,6 +52,8 @@ _OFF = {
     "win_prob_lambda": 1.0, "win_prob_lambda_truncated": "bootstrap",
     "win_prob_rollout_target": 0.0, "win_prob_rollout_r": 8, "win_prob_rollout_mode": "replace",
     "win_prob_rollout_weight": 1.0,
+    # K2 (a metadata.json runtime knob; popped from a config if one ever carried it)
+    "matmul_precision": "highest",
 }
 
 
@@ -206,6 +210,65 @@ def test_checkargs_reports_the_same_finding_offline(tmp_path):
     assert any("--value-tail-weight" in e for e in f["evidence"])
     assert retired_levers_finding(["--model", str(_write(tmp_path / "ok") / "final_model.zip")]) is None
     assert retired_levers_finding(["--steps", "1"]) is None          # no --model: nothing to read
+
+
+# ----------------------------------------------------------------------------- K2: TF32 (metadata.json)
+
+
+def _record_precision(run, value):
+    """The run's `metadata.json`, beside its model_config.json — where `matmul_precision` is recorded."""
+    (run / "metadata.json").write_text(json.dumps({"saved_at": "x", "matmul_precision": value}))
+
+
+def test_a_run_that_recorded_TF32_refuses_a_resume_naming_flag_and_pin(tmp_path):
+    """The record lives in `metadata.json`, NOT `model_config.json`: `check_no_retired_levers` overlays it,
+    so the one refusal path covers it. Revert the overlay ⇒ the clean model_config reads as an all-OFF
+    parent and a TF32 run resumes silently at fp32."""
+    run = _write(tmp_path)
+    _record_precision(run, "high")
+    assert retired_lever_evidence(json.loads((run / "model_config.json").read_text())) == [], \
+        "precondition: the model_config alone carries no evidence"
+    with pytest.raises(RetiredLeverCheckpointError) as ei:
+        check_no_retired_levers(str(run / "model_config.json"))
+    msg = str(ei.value)
+    assert "--matmul-precision" in msg and LAST_COMMIT_K2[:8] in msg and "--pin-commit" in msg
+    assert ei.value.last_commit == LAST_COMMIT_K2
+    assert [e for e in ei.value.evidence if "matmul_precision" in e]
+
+
+@pytest.mark.parametrize("record", ["highest", None])
+def test_a_run_that_recorded_fp32_or_no_precision_is_not_a_finding(tmp_path, record):
+    run = _write(tmp_path)
+    if record is not None:
+        _record_precision(run, record)
+    check_no_retired_levers(str(run / "model_config.json"))           # must not raise
+    (run / "metadata.json").write_text("{not json")                    # unreadable: not a verdict either
+    check_no_retired_levers(str(run / "model_config.json"))
+
+
+def test_a_TF32_run_is_refused_by_the_launch_path_and_by_checkargs(tmp_path):
+    from main.checkargs import retired_levers_finding
+    from main.exit_codes import TrainExitCode
+    from main.train.config import enforce_not_shaped_parent
+
+    run = _write(tmp_path)
+    _record_precision(run, "high")
+    with pytest.raises(SystemExit) as ei:
+        enforce_not_shaped_parent(str(run))
+    assert ei.value.code == int(TrainExitCode.FATAL_CONFIG)
+    f = retired_levers_finding(["--model", str(run / "final_model.zip")])
+    assert f is not None and f["last_commit"] == LAST_COMMIT_K2
+    assert any("--matmul-precision" in e for e in f["evidence"])
+
+
+def test_the_TF32_row_is_training_only_so_a_frozen_load_of_such_a_run_still_works(tmp_path):
+    """A frozen forward (an eval opponent, a pool snapshot, the prober) never reads the precision, and
+    `matmul_precision` is not a ModelVersion field: only a RESUME / FORK refuses."""
+    row = next(r for r in RETIRED if r.field == "matmul_precision")
+    assert row.structural is False and row.flag == "matmul-precision" and row.unit == "K2"
+    out = _migrate_config({**_current_config(), "matmul_precision": "high"})
+    assert "matmul_precision" not in out
+    ModelVersion(**out)
 
 
 # ----------------------------------------------------------------------------- the pickled zip

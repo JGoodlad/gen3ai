@@ -12,9 +12,9 @@ import torch
 
 import numpy as np
 
-from agents.model.compile_trainer import (_MAX_NUMERIC_DRIFT, _TF32_EPS, _TF32_K, CompileTrainerError,
-                                          check_numerics, check_shape_stability, fp32_reference,
-                                          parity_verdict, preflight_compile_trainer, resolve_device)
+from agents.model.compile_trainer import (_MAX_NUMERIC_DRIFT, CompileTrainerError, check_numerics,
+                                          check_shape_stability, preflight_compile_trainer,
+                                          resolve_device)
 
 
 class _FakeFE(torch.nn.Module):
@@ -65,87 +65,29 @@ def test_numerics_drift_is_refused():
     assert "DISAGREES" in str(e.value)
 
 
-def test_fp32_rule_is_UNCHANGED_by_the_precision_aware_gate():
-    """gen3_tf32_parity_gate_v1 must not weaken the default path: at 'highest' the rule is the same
-    1e-4 on max|compiled - eager|, and a reference — even a wildly wrong one — is never consulted
-    (so it cannot LOOSEN the fp32 bar)."""
+def test_the_fp32_rule_is_one_bar_on_max_compiled_minus_eager_and_a_nan_fails():
+    """fp32 'highest' is the ONLY precision (TF32 retired, K2): the rule is 1e-4 on max|compiled -
+    eager| and there is no second, relative rule and no reference arm to consult."""
     assert _MAX_NUMERIC_DRIFT == 1e-4
-    check_numerics(9e-5, precision="highest")
+    assert "fp32" in check_numerics(9e-5) and "< 0.0001" in check_numerics(9e-5)
     with pytest.raises(CompileTrainerError, match="DISAGREES"):
-        check_numerics(1e-3, precision="highest", eager_err=1.0)   # eager_err is IGNORED at fp32
-    eager = (torch.zeros(4, 8), torch.zeros(4, 3))
-    bogus_ref = (torch.full((4, 8), 5.0), torch.full((4, 3), 5.0))
-    ok = parity_verdict(eager=eager, compiled=(eager[0] + 5e-5, eager[1]), reference=bogus_ref,
-                        precision="highest")
-    assert "fp32" in ok and "< 0.0001" in ok
+        check_numerics(2e-4)
     with pytest.raises(CompileTrainerError, match="DISAGREES"):
-        parity_verdict(eager=eager, compiled=(eager[0] + 2e-4, eager[1]), reference=bogus_ref,
-                       precision="highest")
+        check_numerics(float("nan"))                      # NaN FAILS, never sails through
+    import inspect
+    assert set(inspect.signature(check_numerics).parameters) == {"err", "what", "tol"}
 
 
-def test_tf32_rule_is_relative_to_what_eager_tf32_itself_pays():
-    """At 'high' both arms are measured against an fp32 reference; compiled passes iff
-    e_comp <= K*e_eager + EPS. The T32 launch's 7.62e-03 compiled-vs-eager is the kind of number
-    this admits; a disagreement well past K x eager's own rounding is refused."""
-    ref = (torch.zeros(4, 8), torch.zeros(4, 3))
-    eager = (ref[0] + 3e-3, ref[1])                       # eager TF32 rounding: e_eager = 3e-3
-    ok = parity_verdict(eager=eager, compiled=(ref[0] - 5e-3, ref[1]), reference=ref,
-                        precision="high")                 # |c-e| = 8e-3 > 1e-4, but e_comp 5e-3 ok
-    assert "'high'" in ok and "TF32" in ok and "e_eager" in ok and "e_comp" in ok
-    bar = _TF32_K * 3e-3 + _TF32_EPS
-    with pytest.raises(CompileTrainerError, match="DISAGREES") as e:
-        parity_verdict(eager=eager, compiled=(ref[0], ref[1] + 1.5 * bar), reference=ref,
-                       precision="high")
-    assert "fp32" in str(e.value) and "wrong kernel" in str(e.value)
+def test_no_tf32_machinery_remains_in_the_compile_gate():
+    """The retired TF32 rule's names must be gone, not merely unused: a precision argument or a
+    reference arm left behind would let a TF32 request through the gate again."""
+    import inspect
 
-
-def test_tf32_rule_is_never_looser_than_fp32_when_eager_is_exact():
-    """e_eager == 0 (nothing TF32 touched) collapses the bar to EPS == the fp32 tolerance."""
-    assert _TF32_EPS == _MAX_NUMERIC_DRIFT
-    check_numerics(9e-5, precision="high", eager_err=0.0)
-    with pytest.raises(CompileTrainerError, match="DISAGREES"):
-        check_numerics(2e-4, precision="high", eager_err=0.0)
-
-
-def test_tf32_rule_refuses_without_a_reference_and_on_nan():
-    """No fp32 reference => no claim; NaN anywhere => FAIL, never a pass."""
-    t = (torch.zeros(2, 2), torch.zeros(2, 1))
-    with pytest.raises(CompileTrainerError, match="no fp32 reference"):
-        parity_verdict(eager=t, compiled=t, reference=None, precision="high")
-    for bad_eager in (None, float("nan"), float("inf"), -1.0):
-        with pytest.raises(CompileTrainerError):
-            check_numerics(0.0, precision="high", eager_err=bad_eager)
-    with pytest.raises(CompileTrainerError):
-        check_numerics(float("nan"), precision="high", eager_err=1e-3)
-
-
-@pytest.fixture
-def _restore_matmul_precision():
-    prev = torch.get_float32_matmul_precision()
-    yield
-    torch.set_float32_matmul_precision(prev)
-
-
-def test_fp32_reference_runs_at_highest_and_restores_the_callers_precision(
-        _restore_matmul_precision):
-    """The reference forward must see 'highest', and the trainer's precision must come back —
-    INCLUDING when the forward raises (else a TF32 argv would silently train at fp32, or vice versa)."""
-    torch.set_float32_matmul_precision("high")
-    seen = []
-
-    def fn(obs):
-        seen.append(torch.get_float32_matmul_precision())
-        return obs["observation"], obs["observation"]
-
-    fp32_reference(fn, {"observation": torch.ones(2, 3)})
-    assert seen == ["highest"] and torch.get_float32_matmul_precision() == "high"
-
-    def boom(obs):
-        raise RuntimeError("forward exploded")
-
-    with pytest.raises(RuntimeError):
-        fp32_reference(boom, {"observation": torch.ones(2, 3)})
-    assert torch.get_float32_matmul_precision() == "high"
+    from agents.model import compile_trainer as ct
+    for gone in ("_TF32_K", "_TF32_EPS", "fp32_reference", "parity_verdict", "_matmul_precision"):
+        assert not hasattr(ct, gone), gone
+    for fn in (ct.decision_verdicts, ct.train_verdict):
+        assert not {"precision", "reference", "eager_err"} & set(inspect.signature(fn).parameters), fn
 
 
 # --------------------------------------------------------------------------- the refusals
@@ -277,39 +219,27 @@ def test_decision_level_bars_catch_a_value_or_policy_shift_that_features_alone_m
     lp[:, :3] = torch.log_softmax(torch.randn(4, 3, generator=g), dim=-1)
     base = {"features": torch.randn(4, 8, generator=g), "legal_logprob": lp,
             "value": torch.linspace(0.2, 0.8, 4)}
-    ok = decision_verdicts(eager=base, compiled={k: v.clone() for k, v in base.items()},
-                           precision="highest")
+    ok = decision_verdicts(eager=base, compiled={k: v.clone() for k, v in base.items()})
     assert len(ok) == 3
     bad_v = {k: v.clone() for k, v in base.items()}
     bad_v["value"] += 2 * _FP32_TOL["value"]
     with pytest.raises(CompileTrainerError, match="value"):
-        decision_verdicts(eager=base, compiled=bad_v, precision="highest")
+        decision_verdicts(eager=base, compiled=bad_v)
     bad_p = {k: v.clone() for k, v in base.items()}
     bad_p["legal_logprob"][0, 3] -= 2 * _FP32_TOL["legal_logprob"]
     with pytest.raises(CompileTrainerError, match="legal_logprob"):
-        decision_verdicts(eager=base, compiled=bad_p, precision="highest")
-    with pytest.raises(CompileTrainerError, match="no fp32 reference"):
-        decision_verdicts(eager=base, compiled=base, precision="high")
+        decision_verdicts(eager=base, compiled=bad_p)
 
 
 def test_train_graph_gradient_cosine_is_gated():
     """The single-graph miscompile's gradient had cosine 0.778 to eager's — PPO stepping the wrong
-    way. The train verdict must refuse that at fp32, and apply the relative rule at TF32."""
+    way. The train verdict must refuse that."""
     from agents.model.compile_trainer import _MIN_GRAD_COSINE, train_verdict
     g = torch.randn(1000, generator=torch.Generator().manual_seed(0))
     f = torch.randn(2, 4, generator=torch.Generator().manual_seed(2))   # informative rows
     assert "grad cosine" in train_verdict(eager={"features": f, "grad": g},
-                                          compiled={"features": f, "grad": g.clone()},
-                                          precision="highest")
+                                          compiled={"features": f, "grad": g.clone()})
     skew = g + 0.6 * torch.randn(1000, generator=torch.Generator().manual_seed(1))
     with pytest.raises(CompileTrainerError, match="gradient DISAGREES"):
-        train_verdict(eager={"features": f, "grad": g}, compiled={"features": f, "grad": skew},
-                      precision="highest")
+        train_verdict(eager={"features": f, "grad": g}, compiled={"features": f, "grad": skew})
     assert _MIN_GRAD_COSINE == 0.9999
-    ref = {"features": f, "grad": g}
-    tf32_eager = {"features": f + 1e-3, "grad": g + 1e-3 * torch.randn(1000)}
-    with pytest.raises(CompileTrainerError, match="gradient DISAGREES"):
-        train_verdict(eager=tf32_eager, compiled={"features": f + 1e-3, "grad": skew},
-                      reference=ref, precision="high")
-    assert "1-cos" in train_verdict(eager=tf32_eager, compiled=tf32_eager, reference=ref,
-                                    precision="high")

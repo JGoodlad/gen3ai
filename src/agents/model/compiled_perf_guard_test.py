@@ -11,14 +11,15 @@ everyone's routine gate until fixed.
 
 It runs `python -m main.compile_inventory run --stage time` (torch 2.8, CUDA, the prewarm and the
 lock kept, one un-bracketed update) on arm C's final checkpoint and the learner benchmark's pinned
-buffer — the SAME tool, checkpoint, buffer and shape the baseline was banked on — once per matmul
-precision `perf_baseline.json` holds a baseline for (today only 'high', TF32: the K8 acceptance's
-36.32 s; a live fp32 'highest' run reads ~40-42 s, so the precisions are never compared with each
-other). It asserts the run's recorded precision, rows, micro-batch and epochs equal the baseline's,
-the regions installed, the update wall within the precision's tolerance (+15% for 'high': 2.5x the
-largest run-to-run spread the acceptance read measured at matched code and precision — 6.1% on the
-pre-regions arm under bystander load, 0.3% on the K8 arm), and the compiled share of the update wall
->= 0.80. SKIPS where the box lacks the checkpoint or the buffer."""
+buffer — the SAME tool, checkpoint, buffer and shape the baseline was banked on — against the fp32
+'highest' baseline `perf_baseline.json` holds (fp32 is the ONLY precision: TF32 was retired, deletion
+pass K2, and the K8 acceptance's TF32 36.32 s is kept there as history, never compared against). It
+asserts the run's recorded precision, rows, micro-batch and epochs equal the baseline's, the regions
+installed, the update wall within the baseline's tolerance, and the compiled share of the update wall
+>= 0.80. SKIPS, naming the reason, where the box lacks the checkpoint or the buffer — and while NO fp32
+baseline is banked (`baseline: null`: the time stage did not reuse the pinned buffer under the Rust env
+core when K2 tried to bank one, 2026-10-02; the file says why), so the slow-tier status reads this guard
+as unmeasured, never as a pass."""
 from __future__ import annotations
 
 import glob
@@ -49,7 +50,7 @@ def _checkpoint() -> Optional[Path]:
     return p if p is not None and p.is_file() else None
 
 
-_BANKED = sorted(json.loads(BASELINE.read_text())["by_precision"])
+_BASELINE = json.loads(BASELINE.read_text()).get("baseline")
 #: The shape the baselines were banked at (the pinned buffer under arm C's own flags).
 _SHAPE = {"rows": 98304, "micro_batch": 2048, "grad_accum_steps": 32, "n_epochs": 10}
 
@@ -58,14 +59,16 @@ _SHAPE = {"rows": 98304, "micro_batch": 2048, "grad_accum_steps": 32, "n_epochs"
 @pytest.mark.skipif(not torch.__version__.startswith("2.8"), reason="the K8 regions are torch 2.8")
 @pytest.mark.skipif(_checkpoint() is None or not BUFFER.is_file(),
                     reason="arm C's checkpoint or the pinned learner buffer is not on this box")
+@pytest.mark.skipif(_BASELINE is None, reason="no fp32 'highest' baseline is banked in perf_baseline.json "
+                    "(TF32 retired, K2; the file says why none could be banked) — NO measurement is taken")
 @pytest.mark.slow
-@pytest.mark.parametrize("precision", _BANKED)
-def test_a_production_update_keeps_the_acceptance_speed_and_compiled_share(precision):
+def test_a_production_update_keeps_the_acceptance_speed_and_compiled_share():
+    precision = "highest"
     root = json.loads(BASELINE.read_text())
-    base = root["by_precision"][precision]
+    base = root["baseline"]
     with tempfile.TemporaryDirectory(prefix="perf_guard_") as out:
         cmd = [sys.executable, "-m", "main.compile_inventory", "run", "--stage", "time",
-               "--device", "cuda", "--matmul-precision", precision, "--buffer", str(BUFFER),
+               "--device", "cuda", "--buffer", str(BUFFER),
                "--model", str(_checkpoint()), "--keep-prewarm", "--unbracketed",
                "--worker-timeout-min", "25", "--out-root", out]
         env = {**os.environ, "PYTHONPATH": str(src_path())}

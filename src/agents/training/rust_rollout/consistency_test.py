@@ -123,32 +123,27 @@ def test_the_row_choice_takes_current_rows_first_and_every_present_age():
     assert K.choose_rows(np.zeros(5, int), 32, rng).tolist() == [0, 1, 2, 3, 4]
 
 
-def test_the_probe_reads_the_precision_keyed_gate():
-    """Lane G's probe and the python-core in-loop gate share ONE table (K9, M5 Lane K): fp32 = max < 1e-4;
-    TF32 (`--matmul-precision high`) = the current rows' p99 < 3.6e-3 AND max < 0.071. A uniform shift
-    between the fp32 bar and the TF32 p99 bar FAILS at fp32 and PASSES under TF32; above the p99 bar it
-    fails under both. (The localized half — p99 clean, max fires — is `learner_gates_test`'s, on a
-    production-size micro-batch; this probe's 32 rows make its p99 ~ its max.)"""
-    assert K.BEHAVIOUR_GATES["highest"] == (K.GateCondition("max", 1e-4, 1, K.FP32_TIE_EPS),
-                                            K.GateCondition("excluded_frac", K.FP32_EXCLUDED_CEILING, 1, K.FP32_TIE_EPS))
-    c99, cmax = K.BEHAVIOUR_GATES["high"]
-    (p99_name, p99_bar, p99_k), (max_name, max_bar, max_k) = c99[:3], cmax[:3]
-    assert c99.tie_eps == cmax.tie_eps == 0.0 == K.tie_eps("high")       # the exclusion is fp32's
-    assert (p99_name, max_name, p99_k, max_k) == ("p99", "max", 1, K.TF32_MAX_PERSISTENCE)
-    assert 1e-4 < p99_bar < max_bar
+def test_the_probe_reads_the_one_fp32_gate_and_refuses_any_other_precision():
+    """Lane G's probe and the python-core in-loop gate share ONE table (K9, M5 Lane K): fp32 'highest'
+    (the only precision — TF32 retired, deletion pass K2) = max < 1e-4 over the judged rows. A shift
+    above the bar FAILS; a process at any other precision is REFUSED by the probe (`UndeclaredPrecision`),
+    never judged at a bar measured elsewhere."""
+    assert K.BEHAVIOUR_GATE == (K.GateCondition("max", 1e-4, K.FP32_TIE_EPS),
+                                K.GateCondition("excluded_frac", K.FP32_EXCLUDED_CEILING, K.FP32_TIE_EPS))
+    assert K.behaviour_gate() is K.BEHAVIOUR_GATE
+    m = _model()
+    m.behaviour_check = "fatal"
+    m.rollout_buffer.log_probs += 5e-4                                    # 5x the bar: a uniform shift
+    with pytest.raises(K.BehaviourMismatch, match="fp32"):
+        K.behaviour_probe(m)
     prev = th.get_float32_matmul_precision()
     try:
-        for shift, precision, fails in ((0.5 * p99_bar, "highest", True), (0.5 * p99_bar, "high", False),
-                                        (2.0 * p99_bar, "high", True)):
+        for precision in ("high", "medium"):
             th.set_float32_matmul_precision(precision)
             m = _model()
             m.behaviour_check = "fatal"
-            m.rollout_buffer.log_probs += shift
-            if fails:
-                with pytest.raises(K.BehaviourMismatch, match=precision):
-                    K.behaviour_probe(m)
-            else:
-                assert K.behaviour_probe(m)["behaviour/bar_p99"] == p99_bar
+            with pytest.raises(K.UndeclaredPrecision, match=f"'{precision}'"):
+                K.behaviour_probe(m)
     finally:
         th.set_float32_matmul_precision(prev)
 
@@ -236,7 +231,7 @@ def _probe_margins(m):
 
 def _gate(eps, ceiling=K.FP32_EXCLUDED_CEILING):
     C = K.GateCondition
-    return (C("max", 1e-4, 1, eps), C("excluded_frac", ceiling, 1, eps))
+    return (C("max", 1e-4, eps), C("excluded_frac", ceiling, eps))
 
 
 def test_a_row_near_a_tie_is_excluded_not_judged(monkeypatch):
@@ -250,12 +245,12 @@ def test_a_row_near_a_tie_is_excluded_not_judged(monkeypatch):
     assert nxt.size and np.isfinite(g[i]), "the fixture's probe needs rows with distinct, finite margins"
     eps = float(np.sqrt(max(g[i], 1e-300) * nxt[0]))
     assert (g < eps).sum() == 1
-    monkeypatch.setitem(K.BEHAVIOUR_GATES, "highest", _gate(eps, ceiling=0.5))
+    monkeypatch.setattr(K, "BEHAVIOUR_GATE", _gate(eps, ceiling=0.5))
     m.rollout_buffer.log_probs[t[i], e[i]] += 0.0389
     out = K.behaviour_probe(m)                                          # judged rows clean: no raise
     assert out["behaviour/rows_excluded"] == 1.0 and out["behaviour/excluded_frac"] == pytest.approx(1 / g.size)
     assert out["behaviour/max_abs_dlogp_excluded"] == pytest.approx(0.0389, rel=1e-3)
-    assert out["behaviour/max_abs_dlogp_judged"] < 1e-4 and out["behaviour/streak_max"] == 0.0
+    assert out["behaviour/max_abs_dlogp_judged"] < 1e-4 and out["behaviour/violations_total_max"] == 0.0
 
 
 def test_a_violating_row_NOT_at_a_tie_is_FATAL_on_the_first_update():
@@ -266,7 +261,7 @@ def test_a_violating_row_NOT_at_a_tie_is_FATAL_on_the_first_update():
     i = int(np.argmax(g))
     assert g[i] > 100 * K.FP32_TIE_EPS
     m.rollout_buffer.log_probs[t[i], e[i]] += 3e-4                      # 3x the bar, one row
-    with pytest.raises(K.BehaviourMismatch, match=r"max 0\.0003 NOT < 0\.0001.*judged.*FATAL at 1"):
+    with pytest.raises(K.BehaviourMismatch, match=r"max 0\.0003 NOT < 0\.0001.*judged.*FATAL at once"):
         K.behaviour_probe(m)
 
 
@@ -277,18 +272,17 @@ def test_too_many_rows_at_a_tie_is_FATAL(monkeypatch):
     m.behaviour_check = "fatal"
     _t, _e, g = _probe_margins(m)
     eps = float(np.quantile(g, 0.5)) * (1 + 1e-9)                         # about half the rows excluded
-    monkeypatch.setitem(K.BEHAVIOUR_GATES, "highest", _gate(eps))
+    monkeypatch.setattr(K, "BEHAVIOUR_GATE", _gate(eps))
     with pytest.raises(K.BehaviourMismatch, match=r"excluded_frac 0\.\d+ NOT < 0\.1.*TOO MANY rows sit at a tie"):
         K.behaviour_probe(m)
 
 
-def test_an_exact_tie_is_always_excluded_and_margins_are_required_at_fp32():
+def test_an_exact_tie_is_always_excluded_and_margins_are_required():
     from agents.training.rust_rollout.tie_margins import TieMarginError
 
     assert K.excluded_rows(np.array([0.0, np.nan, 1e-20, 1.0]), 1e-30, 4).tolist() == [True, True, False, False]
     with pytest.raises(TieMarginError, match="no tie margins"):
-        K.judge_behaviour(np.zeros(4), "highest", None)
-    assert K.judge_behaviour(np.full(4, 1e-3), "high", None)[1].ok        # TF32 judges every row, no margins
+        K.judge_behaviour(np.zeros(4), None)
 
 
 def test_the_fp32_rule_numbers_are_derived_from_the_banked_measurement():
