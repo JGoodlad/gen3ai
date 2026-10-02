@@ -10646,3 +10646,26 @@ if a lazy build is reintroduced.
 - `agents/training/global_rng_guard.py`: `isolated_global_rng()` restores torch's CPU generator and any stream seeded inside it. The inference load builds its policy there and no longer seeds. The GUARD (armed by `LearnerFreeze.freeze`, disarmed at release) turns `random.seed` / `numpy.random.seed` / `torch.manual_seed` and kin, called after the freeze outside an isolated scope, into `GlobalReseedError` (FATAL_CONFIG), sticky in the freeze's violations, with no allowlist.
 - `learner_golden.compute(before_train=...)` lets a caller freeze after the harness's pinned update seed.
 - Static gate `src/global_rng_seed_gate_test.py`: no seeding function bound by name or taken as a value in non-test `src/`.
+
+## v130 — 2026-10-02 — THE BARE-ARGV DEFAULT FLIP: a fresh argv is the win-prob critic on the Rust core (`gen3_bare_argv_winprob_v1`; deletion pass D2 / U1; config bump, no ARCH_SIGNATURE bump, no model change)
+
+- **Owner decision D2** (`designs/ops/deletion_pass_manifest.md` §2.1): a fresh argv without `--arch production` now
+  defaults to `--critic winprob`, `--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0.0` and
+  `--env-core rust` — the values `--arch production` already applied. The `--debug` smoke runs on the Rust env core.
+- **Two constants where there was one.** `critic_mode.CRITIC_DEFAULT` (what an UNTYPED `--critic` means on a fresh
+  argv) is now `winprob`; the new `CRITIC_UNRECORDED` (what an ABSENT record means — the policy constructor's
+  default, every `getattr(policy, "_critic_mode", …)` read, `ModelVersion.critic`'s field default) stays `shaped`.
+  `RewardConfig` / `ModelVersion` / `_REWARD_IMMUTABLE_FIELDS` keep the signed ±30 / −35 terminal as the absent-field
+  meaning; only the PARSER defaults moved. So no checkpoint loads differently and a flagless resume reads its recorded
+  critic and terminal — hence no `ARCH_SIGNATURE` bump (the v109 plan to bump at the flip assumed one constant).
+- A flagless resume of a SIGNED-terminal run now meets the winprob parser defaults and is REFUSED by
+  `check_reward_config`, naming the flags (`--no-terminal-indicator --victory-value 30 --draw-penalty -35`); the
+  D4 python-era resume rule (U2) follows.
+- `combination_checks`' `_val` fallbacks mirror the new parser defaults (`env_core` rust, `terminal_indicator`
+  True, `victory_value` 1.0, an unset `win_prob_mode` under winprob = the implied `shaping`).
+- Tests that exercised python-only levers or the shaped critic now TYPE `--env-core python` / `--critic shaped`
+  (they leave with lane B's lever deletions). New: `critic_mode_test` (the two constants; the policy's kwarg default),
+  `critic_mode_config_test` (the bare namespace; a flagless shaped resume — recorded or absent — stays shaped),
+  `reward_defaults_test` (parser vs absent-field meaning; a signed run resumed flaglessly is refused by name).
+- Smoke (`--debug --steps 10000`, CPU, Rust core): Training complete; K9(b)'s excluded share 1.6–4.5 % per 2,048-row
+  update, under the 0.15 ceiling (TECH_DEBT §2(b)'s small-rollout P3 row did not trip and stays open).

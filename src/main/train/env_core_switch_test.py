@@ -102,10 +102,11 @@ def test_a_sizing_block_defect_is_refused_by_name():
 
 
 # --------------------------------------------------------------- an UNTYPED --env-core resolves
-def test_fresh_arch_production_resolves_rust_and_a_bare_argv_keeps_python():
+def test_fresh_arch_production_and_a_bare_argv_both_resolve_rust():
+    """The bare-argv flip (deletion pass D2, 2026-10-02): the parser default is the production core."""
     assert _desugared(["--arch", "production"]).env_core == "rust"
     bare = _desugared([])
-    assert bare.env_core == "python"
+    assert bare.env_core == "rust"
     assert resolve_env_core_default(bare) is None           # nothing to resolve without --model
 
 

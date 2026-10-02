@@ -29,20 +29,20 @@ every term, gate, measurement and hazard — is this file at the last pre-deleti
 > | `reward_manager.py` | `Gen3RewardManager`: the terminal, the `reward/` export, the episode counters, the `win_margin` by-product; re-exports the three below |
 > | `reward_config.py` | `RewardClass` (TERMINAL only), `RewardConfig`, `RewardBreakdown` (one field, `win_loss`) |
 > | `reward_composition.py` | the census + its one-line announcer + `inert_reward_flags` + `reward_config_digest` |
-> | `reward_weights.py` | `VICTORY_VALUE` (30.0, the default), `_TIMEOUT_TURN_CAP` (== the env's forfeit turn), `PBRS_GAMMA` (0.9999, the shaped-critic default discount) |
+> | `reward_weights.py` | `VICTORY_VALUE` (30.0, what an UNRECORDED `victory_value` means; the parser default is 1.0 since the bare-argv flip), `_TIMEOUT_TURN_CAP` (== the env's forfeit turn), `PBRS_GAMMA` (0.9999, the shaped-critic default discount) |
 > | `material_margin.py` | the normalised material margin — the `win_margin` training-only OBS key, **not a reward term** |
 
 **The terminal.** `RewardConfig` carries its three knobs, all resume-immutable (recorded in
 `model_config.json`, value-checked by `ModelVersion.check_reward_config`):
 
-| outcome | `--terminal-indicator` (PRODUCTION) | signed terminal (the default, `--critic shaped`) |
+| outcome | `--terminal-indicator` (PRODUCTION, and the parser default since the bare-argv flip, 2026-10-02) | signed terminal (`--no-terminal-indicator`, `--critic shaped`; what an UNRECORDED field means) |
 |---|---|---|
 | win | `+victory_value` | `+victory_value` |
 | decisive loss | `0.0` | `−victory_value` |
 | pre-cap tie | `0.0` | `−victory_value` (shares the loss branch) |
-| 250-turn TIMEOUT (a forfeit-loss detected by TURN COUNT, `turn >= _TIMEOUT_TURN_CAP`) | `0.0` | `--draw-penalty` (default −35) |
+| 250-turn TIMEOUT (a forfeit-loss detected by TURN COUNT, `turn >= _TIMEOUT_TURN_CAP`) | `0.0` | `--draw-penalty` (−35 historically; the parser default is 0 since the flip, so type it) |
 
-Production is `--critic winprob --terminal-indicator --victory-value 1.0 --draw-penalty 0`, so the
+Production — and, since the deletion pass's bare-argv flip (D2, 2026-10-02), the bare argv — is `--critic winprob --terminal-indicator --victory-value 1.0 --draw-penalty 0`, so the
 undiscounted return is exactly `1{win}` and V(s) == P(win|s). `--critic winprob` REQUIRES the other
 three (`combination_checks`); under the indicator `--draw-penalty` is INERT (named in
 `inert_reward_flags`) and any non-zero value is refused. Every non-terminal turn pays exactly 0.0.

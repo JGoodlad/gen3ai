@@ -36,7 +36,8 @@ _WP = ["--critic", "winprob", "--terminal-indicator", "--victory-value",
 def _resolved(argv):
     from main.train.config import resolve_config
     p = build_parser()
-    args = p.parse_args(argv)
+    # the python env core, typed: the Python fork arm runs only there (bare argv = rust since D2)
+    args = p.parse_args(["--env-core", "python", *argv])
     resolve_config(args, p)
     return args
 
@@ -174,7 +175,7 @@ def test_the_fraction_is_in_the_arch_table_so_a_headless_run_reads_INERT():
 
 # ── the refusals ─────────────────────────────────────────────────────────────────────────────
 @pytest.mark.parametrize("extra,needle", [
-    (["--fork-fraction", "0.02"], "requires --critic winprob"),
+    (["--critic", "shaped", "--steps", "1000", "--fork-fraction", "0.02"], "requires --critic winprob"),
     (_WP + ["--fork-fraction", "0.02"], "requires --cf-records"),
     (_WP + ["--cf-records", "--fork-fraction", "0.02", "--value-true-team"], "value-true-team"),
     (_WP + ["--cf-records", "--fork-fraction", "0.02", "--win-prob-dense-aux", "0.1"],

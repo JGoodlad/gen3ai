@@ -67,6 +67,8 @@ import os
 import shlex
 from typing import Any, Dict, FrozenSet, List, NamedTuple, Optional, Sequence, Tuple
 
+from agents.model.critic_mode import CRITIC_DEFAULT
+
 #: The namespace attribute the recording actions write: the dests the argv TYPED.
 TYPED_ATTR = "_recipe_typed"
 
@@ -153,7 +155,8 @@ FRESH_ROWS: Tuple[RecipeRow, ...] = (
               "(critic_mode.critic_gamma): 1.0 under winprob; a TYPED --critic shaped gets 0.9999"),
     RecipeRow("policy_gae_lambda", "--policy-gae-lambda", 0.80, "§1 row 13"),
     RecipeRow("self_play", "--self-play", PARSER_DEFAULT, "§1 row 22"),
-    RecipeRow("critic", "--critic", "shaped", "§1 row 14 — the win-prob critic"),
+    RecipeRow("critic", "--critic", CRITIC_DEFAULT, "§1 row 14 — the win-prob critic (also the "
+              "bare-argv default since the deletion pass, 2026-10-02)"),
     RecipeRow("terminal_indicator", "--terminal-indicator", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),
     RecipeRow("victory_value", "--victory-value", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),
     RecipeRow("draw_penalty", "--draw-penalty", PARSER_DEFAULT, "§1 row 14 — REQUIRED by winprob"),

@@ -365,7 +365,14 @@ from typing import Any, Dict
 #   per-candidate SPRT on fresh mirrored pairs. The v128 class: never compared, RECORDED as a regime
 #   boundary, read back by `_resolve`. A pre-v129 config migrates to False. No ARCH_SIGNATURE bump, no
 #   MIGRATION_FLOOR change.
-MODEL_CONFIG_VERSION = 129
+# v130 (gen3_bare_argv_winprob_v1, deletion pass D2, owner 2026-10-02): the BARE-ARGV DEFAULT FLIP — a
+#   fresh argv without `--arch production` now defaults to `--critic winprob`, `--terminal-indicator`,
+#   `--victory-value 1.0`, `--draw-penalty 0.0` and `--env-core rust`. A PROVENANCE boundary only: no
+#   field is added, every one of those is recorded explicitly, and an ABSENT record still means the
+#   historical value (`critic_mode.CRITIC_UNRECORDED`, `_REWARD_IMMUTABLE_FIELDS`), so no checkpoint
+#   loads differently. No ARCH_SIGNATURE bump (designs/model/versioning.md says why), no
+#   MIGRATION_FLOOR change.
+MODEL_CONFIG_VERSION = 130
 
 # The one-line effect of each `belief_grad_mode`, for the migration notice. Keyed by the SAME strings
 # as `features_extractor.BELIEF_GRAD_MODES` (which owns the legal set + the ValueError); the two are

@@ -31,6 +31,11 @@ _REPO = repo_root()
 _TRAIN = src_path("main", "train_rl_agent.py")
 
 
+#: The shaped critic on the python core, TYPED — the bare argv has been winprob on the Rust core since
+#: the deletion pass's bare-argv flip (D2, 2026-10-02); the cf family runs only on the python core.
+_SHAPED_PY = ("--critic", "shaped", "--env-core", "python")
+
+
 def _run(*flags):
     proc = subprocess.run(
         [sys.executable, str(_TRAIN), "--steps", "1", *flags],
@@ -147,7 +152,8 @@ def test_the_structural_flag_is_in_the_registry_but_its_coefficients_are_not():
 def test_a_live_coef_without_a_win_prob_head_is_refused():
     """`--win-prob-mode none` does not BUILD a WinProbHead, so a live coefficient would fold
     nothing for a whole run. Refuse at the CLI rather than train a silent no-op."""
-    rc, out = _run("--cf-winprob-coef", "0.5")
+    # a TYPED shaped critic on the python core: the bare argv is winprob since D2, which IMPLIES a head
+    rc, out = _run(*_SHAPED_PY, "--cf-winprob-coef", "0.5")
     assert rc != 0
     assert "--cf-winprob-coef > 0 requires --win-prob-mode" in out
 
@@ -229,7 +235,7 @@ def test_twin_heads_without_a_win_prob_head_is_refused():
     """Heads B and C MIRROR head A's on-policy BCE, and head A is `win_head`. With
     `--win-prob-mode none` there is no head A, so the arm's control arm — the whole point of the
     amendment — would silently not exist."""
-    rc, out = _run("--cf-twin-heads", "--win-prob-mode", "none")
+    rc, out = _run(*_SHAPED_PY, "--cf-twin-heads", "--win-prob-mode", "none")
     assert rc != 0
     assert "--cf-twin-heads requires --win-prob-mode" in out
 
@@ -265,7 +271,8 @@ def test_checkargs_accepts_the_whole_family():
     (K10(a))."""
     proc = subprocess.run(
         [sys.executable, "-m", "main.checkargs", "--argv",
-         "--steps 1 --cf-records --cf-records-keep 8 --cf-winprob-coef 0.5 "
+         "--steps 1 --critic shaped --env-core python "
+         "--cf-records --cf-records-keep 8 --cf-winprob-coef 0.5 "
          "--no-cf-head-only --cf-label-lag-steps 600000 --cf-label-likelihood binomial "
          "--cf-evidential --cf-evidential-coef 0.1 --cf-evidential-reg 0.001 "
          "--win-prob-mode read_only --cf-twin-heads --cf-twin-coef 0.1 "

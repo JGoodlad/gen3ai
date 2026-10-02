@@ -482,7 +482,7 @@ def test_config_refuses_an_anchor_without_a_live_distill():
     from main.train.config import resolve_config
     from main.train_rl_agent import build_parser
     p = build_parser()
-    args = p.parse_args(["--distill-anchor-coef", "0.02", "--steps", "10"])
+    args = p.parse_args(["--env-core", "python", "--distill-anchor-coef", "0.02", "--steps", "10"])
     with pytest.raises(SystemExit):
         resolve_config(args, p)
 
@@ -1090,7 +1090,8 @@ def _resolved(argv):
     from main.train.config import resolve_config
     from main.train_rl_agent import build_parser
     p = build_parser()
-    args = p.parse_args(argv)
+    # the python env core, typed: distillation runs only there (bare argv = rust since D2, 2026-10-02)
+    args = p.parse_args(["--env-core", "python", *argv])
     resolve_config(args, p)
     return args
 

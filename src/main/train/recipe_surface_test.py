@@ -90,7 +90,11 @@ def test_checkargs_refuses_a_fresh_argv_whose_untyped_recipe_differs():
     assert rep.fresh and rep.refuses and rep.kind == "fresh"
     silent = {d.dest for d in rep.silent}
     assert {"n_envs", "batch_size", "grad_accum_steps", "n_epochs", "ent_coef", "clip_range_vf",
-            "self_play", "critic", "opp_intent_coef"} <= silent
+            "self_play", "opp_intent_coef"} <= silent
+    # the bare-argv flip (deletion pass D2): the critic, its three reward values and the env core
+    # now AGREE with the recipe untyped, so none of them is a silent difference any more
+    assert not {"critic", "terminal_indicator", "victory_value", "draw_penalty", "env_core",
+                "gamma"} & silent
     assert any("--ent-coef" in line for line in rs.report_lines(rep))
 
 
@@ -272,9 +276,11 @@ def test_every_tri_state_unset_equals_what_resolve_config_fills():
         elif r.dest == "critic":
             assert r.unset == CRITIC_DEFAULT
         elif r.dest == "gamma":
-            # paired with the critic (critic_mode.critic_gamma), whose shaped value IS PBRS_GAMMA
-            from agents.model.critic_mode import critic_gamma
-            assert r.unset == rs.CRITIC_PAIRED and critic_gamma(CRITIC_DEFAULT) == PBRS_GAMMA
+            # paired with the critic (critic_mode.critic_gamma): the default critic's is WINPROB_GAMMA,
+            # a typed shaped one's PBRS_GAMMA
+            from agents.model.critic_mode import WINPROB_GAMMA, critic_gamma
+            assert r.unset == rs.CRITIC_PAIRED and critic_gamma(CRITIC_DEFAULT) == WINPROB_GAMMA
+            assert critic_gamma("shaped") == PBRS_GAMMA
         elif r.dest in literals:
             assert r.unset == literals[r.dest], r.dest
 

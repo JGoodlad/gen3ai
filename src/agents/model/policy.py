@@ -28,7 +28,7 @@ from sb3_contrib.common.maskable.policies import MaskableMultiInputActorCriticPo
 from agents.model import masked_categorical as _mc
 from agents.model import region_calls as _rc
 from agents.model.arch_constants import D_MODEL
-from agents.model.critic_mode import CRITIC_DEFAULT, CRITIC_MODES, is_winprob
+from agents.model.critic_mode import CRITIC_UNRECORDED, CRITIC_MODES, is_winprob
 from agents.model.popart import PopArtNormalizer
 
 if TYPE_CHECKING:
@@ -147,11 +147,13 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
                                               **self.optimizer_kwargs)
 
     def __init__(self, *args: Any, use_popart: bool = False, value_from_dist: bool = False,
-                 critic: str = CRITIC_DEFAULT, **kwargs: Any) -> None:
+                 critic: str = CRITIC_UNRECORDED, **kwargs: Any) -> None:
         # super().__init__ builds value_net (SB3 _build); the normalizer wraps it afterwards.
         super().__init__(*args, **kwargs)
-        # gen3_winprob_critic_mode_v1: WHICH readout is the value function. 'shaped' (the default)
-        # is every generation through gen-16 — `value_net` / E[Z] in raw shaped-return units.
+        # gen3_winprob_critic_mode_v1: WHICH readout is the value function. 'shaped' is every
+        # generation through gen-16 — `value_net` / E[Z] in raw shaped-return units — and what an
+        # ABSENT kwarg means (`CRITIC_UNRECORDED`: a pre-v109 checkpoint's saved policy_kwargs never
+        # carried the key), NOT the bare-argv `CRITIC_DEFAULT`.
         # 'winprob' routes `_critic_value` to sigmoid(win_head logit) ∈ [0,1]; see critic_mode.py.
         if str(critic) not in CRITIC_MODES:
             raise ValueError(f"unknown critic {critic!r} (want one of {CRITIC_MODES})")
@@ -236,7 +238,7 @@ class Gen3DualHeadMaskablePolicy(MaskableMultiInputActorCriticPolicy):
         # policy-shaped STUBS (`dist_critic_test`) and could be reached on a policy restored
         # from a pre-v109 checkpoint whose saved `policy_kwargs` never carried the key. An
         # absent field means the historical critic — the same read every other consumer does.
-        if is_winprob(getattr(self, "_critic_mode", CRITIC_DEFAULT)):
+        if is_winprob(getattr(self, "_critic_mode", CRITIC_UNRECORDED)):
             fe = cast("Gen3FeaturesExtractor", self.features_extractor)
             logits = getattr(fe, "last_win_prob_logits", None)
             if getattr(fe, "win_head", None) is None or logits is None:

@@ -446,6 +446,10 @@ def test_the_paused_battery_argvs_parse_unchanged_under_k9(name):
         i += 1
     args = build_parser().parse_args(argv)
     assert args.behaviour_check is None
+    # Each arm is a `--model` FORK of a python-era checkpoint, so an untyped `--env-core` INHERITS
+    # python at launch (`rust_env_setup.resolve_env_core_default`), not the bare parser's `rust`.
+    assert "--model" in argv and "--env-core" not in argv
+    args.env_core = "python"
     k9 = [c.name for c in failing_checks(args) if {"behaviour_check", "matmul_precision"} & set(c.dests)]
     assert not k9, k9
     resolve_env_core_args(args)

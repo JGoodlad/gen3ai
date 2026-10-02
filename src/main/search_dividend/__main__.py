@@ -47,7 +47,7 @@ from typing import List, Optional
 
 from main.search_dividend.battery import MIRROR, Cell, ResultsFile, run_cell
 from main.search_dividend.budget import WidthCaps
-from agents.model.critic_mode import CRITIC_DEFAULT
+from agents.model.critic_mode import CRITIC_UNRECORDED
 from main.search_dividend.defensive import LEAVES, DefensiveConfig, resolve_for_critic
 from main.search_dividend.playoff import (DEFAULT_ROLLOUTS, DEFAULT_SCREEN_MARGIN, MIN_PAIRS,
                                           SE_MULTIPLE, PlayoffConfig)
@@ -383,7 +383,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     # would turn every decision into a policy fallback and report the arm's dividend as ~0 with
     # nothing in the log saying the battery never ran. A startup refusal is loud once; a per-decision
     # one is a silent null. `batch_scores`'s own check stays as the library-level backstop.
-    _critic_mode = str(getattr(model.policy, "_critic_mode", CRITIC_DEFAULT))
+    _critic_mode = str(getattr(model.policy, "_critic_mode", CRITIC_UNRECORDED))
     try:
         args.score, args.defensive_leaf, _critic_notes = resolve_for_critic(
             _critic_mode, args.score, args.defensive_leaf)

@@ -32,7 +32,7 @@ from sb3_contrib import MaskablePPO
 
 from agents.action.constants import ACTION_SPACE_SIZE
 from agents.model.critic_mode import (
-    CRITIC_DEFAULT, CRITIC_MODES, CRITIC_SHAPED, CRITIC_WINPROB, is_winprob)
+    CRITIC_DEFAULT, CRITIC_MODES, CRITIC_SHAPED, CRITIC_UNRECORDED, CRITIC_WINPROB, is_winprob)
 from agents.model.features_extractor import Gen3FeaturesExtractor
 from agents.model.policy import Gen3DualHeadMaskablePolicy
 from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
@@ -42,14 +42,27 @@ from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappin
 # the constants
 # --------------------------------------------------------------------------------------------
 
-def test_the_default_is_still_shaped():
-    """The DEFAULT FLIP is a separate commit; this one only makes the mode EXIST.
-
-    Flipping it here would silently change every flagless run's critic, its reward composition and
-    its `check_compatible` verdict — without the `ARCH_SIGNATURE` bump that forces the fresh
-    weights a probability critic cannot be warm-started into."""
-    assert CRITIC_DEFAULT == CRITIC_SHAPED == "shaped"
+def test_the_bare_argv_default_is_winprob_and_an_ABSENT_record_is_still_shaped():
+    """The DEFAULT FLIP (deletion pass D2, 2026-10-02): a fresh argv's untyped critic is `winprob`.
+    An ABSENT record is a different question with a fixed answer — a config / saved policy_kwargs that
+    never carried the key predates `--critic`, when the only critic was the shaped one. Tying the two
+    together would load every pre-v109 checkpoint as a probability critic, silently (both routes
+    return a [B,1] float)."""
+    assert CRITIC_DEFAULT == CRITIC_WINPROB == "winprob"
+    assert CRITIC_UNRECORDED == CRITIC_SHAPED == "shaped"
     assert CRITIC_MODES == ("shaped", "winprob")
+
+
+def test_a_policy_built_without_the_kwarg_is_the_SHAPED_critic():
+    """SB3 rebuilds a loaded policy from its SAVED policy_kwargs: a pre-v109 zip has no `critic` key,
+    so the constructor default is what an old checkpoint's critic becomes. Reverting it to
+    `CRITIC_DEFAULT` would flip every such load to the win-prob route."""
+    import inspect
+
+    from agents.model.policy import Gen3DualHeadMaskablePolicy
+    assert inspect.signature(Gen3DualHeadMaskablePolicy.__init__).parameters["critic"].default == "shaped"
+    from agents.model.model_version import ModelVersion
+    assert ModelVersion.__dataclass_fields__["critic"].default == "shaped"
 
 
 @pytest.mark.parametrize("value,expected", [

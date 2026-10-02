@@ -442,7 +442,8 @@ def test_g_a_refusal_whose_message_is_a_renderer_prints_the_TEXT(isolated, monke
     `combo.text(ns)`, as `main.checkargs` does."""
     _root, (_first, second), _work = isolated
     monkeypatch.setattr(wt, "get_git_hash", lambda *a, **k: second)
-    _dry_run(["--steps", "1000", "--critic", "winprob", *_ARCH_OK], monkeypatch,
+    # a winprob argv with a TYPED signed magnitude (the bare-argv default is the unit terminal, D2)
+    _dry_run(["--steps", "1000", "--critic", "winprob", "--victory-value", "30", *_ARCH_OK], monkeypatch,
              expect=int(TrainExitCode.FATAL_CONFIG))
     out = capsys.readouterr().out
     refused = [ln for ln in out.splitlines() if "(resolve_config):" in ln]

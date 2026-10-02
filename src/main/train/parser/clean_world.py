@@ -31,8 +31,9 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     #     readout is the value function. Declared FIRST in this family because it governs the
     #     reward composition, the PopArt switch and the win-prob head below it. ---
     parser.add_argument("--critic", dest="critic", choices=CRITIC_MODES, default=None,
-                        help="WHICH readout is the critic. 'shaped' (the DEFAULT, and every "
-                             "generation through gen-16) = the scalar value_net (or the "
+                        help="WHICH readout is the critic. 'winprob' is the DEFAULT (the "
+                             "deletion pass's bare-argv flip, 2026-10-02 -- the production critic). "
+                             "'shaped' (every generation through gen-16) = the scalar value_net (or the "
                              "distributional E[Z] under --value-from-dist), de-normalized through "
                              "PopArt into raw SHAPED-RETURN units, with the win-prob head an "
                              "auxiliary BCE at --win-prob-coef. 'winprob' = THE WIN-PROB HEAD IS "
@@ -40,7 +41,8 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
                              "head's BCE against the terminal outcome (weighted by --vf-coef, NOT "
                              "--win-prob-coef -- one critic, one coefficient), the reward stream is "
                              "the TERMINAL WIN INDICATOR (--terminal-indicator and "
-                             "--victory-value 1.0 required, so V(s) == E[return] exactly), PopArt "
+                             "--victory-value 1.0 required -- both the bare-argv defaults -- so "
+                             "V(s) == E[return] exactly), PopArt "
                              "is OFF (a bounded stationary Bernoulli payoff has no scale to track) "
                              "and --gamma defaults to 1.0 (a win on turn 200 is worth a win on turn "
                              "20), which makes V(s) EXACTLY P(win|s) with no approximation term. "
@@ -83,26 +85,29 @@ def add_clean_world_flags(parser: argparse.ArgumentParser) -> None:
     #     `--pbrs-belief` and `--arm-no-progress-tax` were DELETED with the shaped reward path,
     #     gen3_shaped_reward_deletion_v1, 2026-09-26 — the reward is the terminal alone.) ---
     parser.add_argument("--victory-value", "--victory_value", dest="victory_value", type=float,
-                        default=30.0, help="TERMINAL magnitude: a win scores +V, a decisive loss and "
+                        default=1.0, help="TERMINAL magnitude: a win scores +V, a decisive loss and "
                         "a rare pre-cap tie score -V, a 250-turn TIMEOUT scores --draw-penalty. "
-                        "Default 30.0 = the historical reward_weights.VICTORY_VALUE constant. Pass "
-                        "1.0 for the +-1 terminal (production, with --terminal-indicator). Under the "
+                        "Default 1.0 = the win-prob critic's REQUIRED unit terminal (production, with "
+                        "--terminal-indicator; the bare-argv default since 2026-10-02). 30.0 is the "
+                        "historical reward_weights.VICTORY_VALUE constant, still what a config that "
+                        "never recorded the field means. Under the "
                         "SIGNED terminal THE OUTCOME ORDERING IS LOAD-BEARING: --draw-penalty must "
                         "stay <= -V, or a 250-turn stall becomes the best non-winning outcome. "
                         "Resume-immutable, value-checked.")
     parser.add_argument("--terminal-indicator", "--terminal_indicator",
-                        dest="terminal_indicator", action=BoolFlag, default=False,
-                        help="TERMINAL SHAPE: OFF (default, and every generation to date) pays "
-                             "+V on a win, -V on a decisive loss and a pre-cap tie, and "
-                             "--draw-penalty on a 250-turn TIMEOUT. ON pays +V on a WIN and 0.0 on "
-                             "EVERYTHING else, so the undiscounted return is V*1{win} and at "
-                             "--victory-value 1.0 the return IS the win indicator. That is what "
-                             "makes V(s) == P(win|s) exactly under --critic winprob, which IMPLIES "
-                             "this flag; you rarely set it by hand. ⚠️ It makes --draw-penalty and "
-                             "the draw<=loss ORDERING inapplicable, not merely inert -- a [0,1] "
+                        dest="terminal_indicator", action=BoolFlag, default=True,
+                        help="TERMINAL SHAPE: ON (the DEFAULT since the deletion pass, 2026-10-02) "
+                             "pays +V on a WIN and 0.0 on EVERYTHING else, so the undiscounted return "
+                             "is V*1{win} and at --victory-value 1.0 the return IS the win indicator. "
+                             "That is what makes V(s) == P(win|s) exactly under --critic winprob (the "
+                             "default critic), which REQUIRES this flag. ⚠️ It makes --draw-penalty "
+                             "and the draw<=loss ORDERING inapplicable, not merely inert -- a [0,1] "
                              "critic cannot represent 'a timeout is worse than a loss' -- so the "
-                             "anti-stall pressure must come from the obs deadline clock. "
-                             "Resume-immutable, value-checked.")
+                             "anti-stall pressure must come from the obs deadline clock. OFF "
+                             "(--no-terminal-indicator; every generation through gen-16, and what a "
+                             "config that never recorded the field means) pays +V on a win, -V on a "
+                             "decisive loss and a pre-cap tie, and --draw-penalty on a 250-turn "
+                             "TIMEOUT. Resume-immutable, value-checked.")
     parser.add_argument("--progress-decision-tense", "--progress_decision_tense",
                         dest="progress_decision_tense", action=BoolFlag, default=False,
                         help="No-progress clock: read BOTH window gates (the forced-switch sit-out "

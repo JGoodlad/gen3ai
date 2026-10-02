@@ -5,12 +5,14 @@ History (kept because the defaults are a contract): the 2026-08-18 owner decisio
 reward path was then DELETED (`gen3_shaped_reward_deletion_v1`, program_rust_core §4 M3 row); its 14
 flags are in `designs/deleted_flags.md`. What this file pins now:
 
-1. **The terminal defaults, by value** — ±30, draw −35, the signed terminal; the production values
-   are typed, never defaulted.
+1. **The terminal defaults, by value** — since the bare-argv flip (deletion pass D2, 2026-10-02) the
+   PARSER's are the win-prob critic's (+1 indicator, draw 0), while an ABSENT recorded field still
+   means the historical signed terminal (±30, draw −35) — two questions, two answers.
 2. **The deleted flags are GONE from the parser** — a revert that brought one back would be a
    shaped reward reachable by flag again.
 3. **The three declarations agree** — `RewardConfig`, `ModelVersion`'s fields and
-   `_REWARD_IMMUTABLE_FIELDS` decide what an ABSENT field means; a divergence is a silent drift.
+   `_REWARD_IMMUTABLE_FIELDS` decide what an ABSENT field means; a divergence is a silent drift. The
+   parser differs from them on exactly the three winprob-terminal fields, and nowhere else.
 4. **The actionable resume error** — it names the flags to re-pass, and they parse back.
 """
 
@@ -44,12 +46,13 @@ def _version(**reward_fields):
 
 def test_the_terminal_defaults_are_pinned_by_value():
     a = _args([])
-    assert (a.victory_value, a.draw_penalty, a.terminal_indicator) == (30.0, -35.0, False)
+    assert (a.victory_value, a.draw_penalty, a.terminal_indicator) == (1.0, 0.0, True)
     assert (a.progress_decision_tense, a.progress_switch_freeze) == (False, False)
 
 
-def test_draw_penalty_opt_out_is_the_old_number():
-    assert _args(["--draw-penalty", "-30"]).draw_penalty == -30.0
+def test_the_signed_terminal_is_still_reachable_by_typing_it():
+    a = _args(["--no-terminal-indicator", "--victory-value", "30", "--draw-penalty", "-35"])
+    assert (a.victory_value, a.draw_penalty, a.terminal_indicator) == (30.0, -35.0, False)
 
 
 @pytest.mark.parametrize("flag", sorted(set(DELETED_SHAPED_REWARD_FIELDS.values())))
@@ -66,9 +69,17 @@ def test_every_deleted_shaped_flag_is_REFUSED_by_the_parser(flag, capsys):
 
 # --------------------------------------------------- the three declarations agree
 
-def test_reward_config_dataclass_defaults_match_the_parser():
+#: The fields where the bare PARSER (the winprob terminal) and the ABSENT-record meaning (the historical
+#: signed terminal) deliberately differ — and the parser's values.
+_WINPROB_TERMINAL = {"terminal_indicator": True, "victory_value": 1.0, "draw_penalty": 0.0}
+
+
+def test_reward_config_dataclass_defaults_match_the_parser_off_the_winprob_terminal():
     parsed = RewardConfig.from_args(_args([]))
-    assert parsed == dataclasses.replace(RewardConfig(), gamma=parsed.gamma)
+    assert parsed == dataclasses.replace(RewardConfig(), gamma=parsed.gamma, **_WINPROB_TERMINAL)
+    for name, value in _WINPROB_TERMINAL.items():
+        assert _REWARD_IMMUTABLE_FIELDS[name] != value, (
+            f"{name}: an ABSENT record must keep the historical value, not follow the parser")
 
 
 def test_model_version_default_reward_fields_match_reward_config():
@@ -123,9 +134,21 @@ def test_the_re_passed_flags_actually_parse_back_to_the_saved_values():
 def test_a_fresh_default_run_resumes_flaglessly():
     from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
     layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    fresh = RewardConfig.from_args(_args([]))
+    v = ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512]}, reward_config=fresh)
+    v.check_reward_config(RewardConfig.from_args(_args([])))   # must not raise
+
+
+def test_a_SIGNED_terminal_run_resumed_flaglessly_is_REFUSED_by_name():
+    """The other side of the flip: a run recorded on the signed terminal, resumed with no reward
+    flags, now meets the winprob defaults — and must FATAL naming the flags, never train on."""
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
     v = ModelVersion.from_layout_and_policy_kwargs(
         layout, {"net_arch": [512, 512]}, reward_config=RewardConfig())
-    v.check_reward_config(RewardConfig.from_args(_args([])))   # must not raise
+    with pytest.raises(ModelVersionError, match="--no-terminal-indicator"):
+        v.check_reward_config(RewardConfig.from_args(_args([])))
 
 
 def test_frozen_opponents_are_exempt_from_the_reward_check():

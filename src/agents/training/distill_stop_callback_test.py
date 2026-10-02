@@ -571,7 +571,8 @@ def _parsed(*argv):
     from main.train.config import resolve_config
     from main.train_rl_agent import build_parser
     p = build_parser()
-    args = p.parse_args(list(argv))
+    # the python env core, typed: distillation runs only there (bare argv = rust since D2, 2026-10-02)
+    args = p.parse_args(["--env-core", "python", *argv])
     resolve_config(args, p)
     return args, p
 
@@ -742,7 +743,8 @@ def _built(tmp_path, *flags, model="models/parent.zip"):
     from main.train.parser import build_parser
 
     p = build_parser()
-    argv = ["--steps", "1", "--use-bridge", "node", *_TEACHER, "--distill-coef", "0.3", *flags]
+    argv = ["--steps", "1", "--use-bridge", "node", "--env-core", "python", *_TEACHER, "--distill-coef", "0.3",
+            *flags]
     if model:
         argv += ["--model", model]
     args = p.parse_args(argv)

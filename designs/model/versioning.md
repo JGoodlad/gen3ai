@@ -77,7 +77,8 @@ an arch error. To add another such hparam, follow the optional-feature playbook 
 
 The **reward-config** hparams are the same kind, bundled into one check: `victory_value`
 (`--victory-value`), `terminal_indicator` (`--terminal-indicator`), `draw_penalty` (`--draw-penalty`,
-the DRAW/250-turn-timeout score of the SIGNED terminal, **DEFAULT −35.0**), and the no-progress
+the DRAW/250-turn-timeout score of the SIGNED terminal — −35.0 is what an UNRECORDED field means; the
+parser default is 0.0 since the bare-argv flip, with `--terminal-indicator` / `--victory-value 1.0`), and the no-progress
 clock's two OBS switches `progress_decision_tense` / `progress_switch_freeze`. All are recorded on
 `ModelVersion` and enforced on resume by **`check_reward_config`** (FATAL on drift, and the error
 NAMES the flags to re-pass), excluded from `check_compatible` because a frozen eval / pool / distill
@@ -124,11 +125,14 @@ different quantity for the rest of its life. So the string compare in `check_com
 ONLY thing standing between a resume and that, which is the same argument `win_prob_mode` and
 `q_winprob_mode` make and the reason all three are gated identically.
 
-**NO `ARCH_SIGNATURE` bump at v109, and that is the safety rule rather than a convenience.**
-`shaped` is the DEFAULT, so on every run that does not type the flag no module is added or removed,
-no `state_dict` key moves, the constructor's init RNG stream is untouched and the forward is
-byte-identical. The signature bump belongs to the DEFAULT FLIP — where it is *forced*, because a
-critic trained to predict a shaped return cannot be warm-started into predicting a probability.
+**NO `ARCH_SIGNATURE` bump — at v109 (the mode) nor at v130 (the default flip, deletion pass D2,
+2026-10-02).** The flip moved only what an UNTYPED `--critic` means on a FRESH argv
+(`critic_mode.CRITIC_DEFAULT` = `winprob`); what an ABSENT RECORD means is a separate constant that did
+not move (`CRITIC_UNRECORDED` = `shaped`: the policy constructor's default, `ModelVersion.critic`'s field
+default, and every `getattr(policy, "_critic_mode", …)` read). So no checkpoint loads differently, a
+flagless resume inherits its recorded critic, and `check_compatible`'s string compare still refuses a
+critic mismatch — the warm-start hazard the old plan bumped the signature for cannot arise. (The earlier
+plan here — "the signature bump belongs to the DEFAULT FLIP" — assumed the two meanings were one constant.)
 
 `critic` is threaded as a POLICY kwarg (the `use_popart` / `value_from_dist` class), which is why
 it is absent from `agents/model/flag_registry.py`: that registry's declared scope is EXTRACTOR

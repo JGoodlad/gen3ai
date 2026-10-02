@@ -32,12 +32,20 @@ CRITIC_SHAPED = "shaped"
 #: terminal outcome, with a TERMINAL-indicator reward stream and no PopArt.
 CRITIC_WINPROB = "winprob"
 
-#: The legal set, in `--help` order. `shaped` is first because it is the default.
+#: The legal set, in `--help` order.
 CRITIC_MODES = (CRITIC_SHAPED, CRITIC_WINPROB)
 
-#: The default. It stays `shaped` until an arm has run — the switch to `winprob` and the fresh-weights
-#: `ARCH_SIGNATURE` bump land together, in a later commit, per the design's §5.1.
-CRITIC_DEFAULT = CRITIC_SHAPED
+#: The BARE-ARGV default — what a FRESH argv that types no `--critic` resolves to (deletion pass D2,
+#: owner 2026-10-02, `designs/ops/deletion_pass_manifest.md` §2.1). `--arch production` applies the same
+#: value from the recipe; the bare parser now agrees with it, so the `--debug` smoke runs the production
+#: critic on the production env core. Read ONLY where an ARGV is being resolved.
+CRITIC_DEFAULT = CRITIC_WINPROB
+
+#: What an ABSENT record means — a `model_config.json` / saved `policy_kwargs` / policy attribute that
+#: never carried the key was written before `--critic` existed (pre-v109), when the only critic was
+#: the shaped one. This is the only possible past and it does NOT follow `CRITIC_DEFAULT`: reading an
+#: absent record as the new default would load every pre-v109 checkpoint as a probability critic.
+CRITIC_UNRECORDED = CRITIC_SHAPED
 
 
 def is_winprob(mode: object) -> bool:

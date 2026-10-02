@@ -246,7 +246,7 @@ def _replay_env_factory(i: int, script: EnvScript, tag: str) -> Any:
         from poke_env import AccountConfiguration
         from stable_baselines3.common.monitor import Monitor
 
-        from agents.model.critic_mode import CRITIC_DEFAULT  # noqa: F401 — the wrapper's own default
+        from agents.model.critic_mode import CRITIC_UNRECORDED  # noqa: F401 — the wrapper's own default
         from agents.observation.state_encoder import load_mappings
         from agents.training.gen3_env import Gen3Env
         from agents.training.reward_config import RewardConfig

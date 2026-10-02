@@ -375,6 +375,13 @@ def _migrate_config(data: dict) -> dict:
     if version < 129:
         data.setdefault("promotion_sprt", False)
         data["config_version"] = 129
+    # v130 (gen3_bare_argv_winprob_v1) — the BARE-ARGV DEFAULT FLIP (deletion pass D2): no field is added
+    # and no absent field changes meaning — `critic`, `terminal_indicator`, `victory_value` and
+    # `draw_penalty` are recorded explicitly by every config >= v121, and an absent one still means the
+    # historical value (`CRITIC_UNRECORDED` / `_REWARD_IMMUTABLE_FIELDS`). The bump marks the boundary:
+    # a v130+ config was written by a parser whose untyped critic + terminal were the winprob ones.
+    if version < 130:
+        data["config_version"] = 130
     #
     # ---- v97–v120 MIGRATION HISTORY — documentation, not code (floored away at v121) ---------
     # gen3_event_record_v2 (the observation-architecture batch: the E12 event-row reshape, the E4

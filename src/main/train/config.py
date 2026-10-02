@@ -538,8 +538,10 @@ def resolve_critic_mode(args, saved_ver=None) -> None:
     function fills. A checker that skipped it would report a `winprob` command's implied
     `--win-prob-mode shaping` as a missing dependency on a command that launches.
 
-    Under `shaped` (the default) nothing beyond the mode itself is assigned, so a run that does not
-    type the flag is byte-identical.
+    An UNTYPED `--critic` resolves to the checkpoint's recorded critic on a resume (an absent record
+    = `CRITIC_UNRECORDED`, shaped — the `ModelVersion` field default), and to `CRITIC_DEFAULT`
+    (`winprob`, the deletion pass's bare-argv flip, 2026-10-02) on a fresh argv. Under `shaped`
+    nothing beyond the mode itself is assigned.
 
     **IMPLIED under `winprob` — exactly the flags whose "unset" is REPRESENTABLE:**
 
@@ -555,7 +557,9 @@ def resolve_critic_mode(args, saved_ver=None) -> None:
 
     🚨 **NOT IMPLIED, and that is a decision rather than an omission:** `--terminal-indicator`,
     `--victory-value 1.0` and `--draw-penalty 0`. Those three are resume-immutable REWARD fields
-    with concrete argparse defaults (False / 30.0 / −35.0), so "the operator left it alone" and "the
+    with concrete argparse defaults — since the bare-argv flip (2026-10-02) exactly the winprob values
+    (True / 1.0 / 0.0), so a bare argv satisfies the checks below without typing them; a typed
+    `--critic shaped` must type its own signed terminal — so "the operator left it alone" and "the
     operator typed the default" are indistinguishable — an implication there would silently
     overwrite a typed value, and the refusal meant to catch a conflicting one could never fire.
     They are instead REQUIRED, each by its own `combination_checks` entry naming the flag to pass:
@@ -1060,8 +1064,8 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
     if getattr(args, "victory_value", 30.0) is not None and args.victory_value <= 0.0:
         # A non-positive victory value inverts win/loss (or flattens them), which trains correctly
         # toward the wrong objective and no metric names it.
-        parser.error("--victory-value must be > 0 (a win scores +V, a loss -V; 30.0 = the default, "
-                     "1.0 = the clean-world ±1 terminal)")
+        parser.error("--victory-value must be > 0 (a win scores +V, a loss -V; 1.0 = the default, "
+                     "the clean-world ±1 terminal; 30.0 = the historical signed terminal)")
     if (getattr(args, "victory_value", None) is not None
             and not bool(getattr(args, "terminal_indicator", False))   # see _terminal_scale_guards
             and args.draw_penalty is not None and args.draw_penalty > -float(args.victory_value)):

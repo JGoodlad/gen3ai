@@ -261,7 +261,8 @@ def test_the_sidecar_is_ON_BY_DEFAULT_for_a_winprob_run():
 
     p = build_parser()
     assert _value_sidecar_on(p.parse_args(["--critic", "winprob"])) is True
-    assert _value_sidecar_on(p.parse_args([])) is False           # shaped stays byte-identical
+    assert _value_sidecar_on(p.parse_args([])) is True            # the bare argv is winprob (D2)
+    assert _value_sidecar_on(p.parse_args(["--critic", "shaped"])) is False   # shaped: byte-identical
     assert _value_sidecar_on(p.parse_args(["--value-sidecar", "on"])) is True
     assert _value_sidecar_on(
         p.parse_args(["--critic", "winprob", "--value-sidecar", "off"])) is False

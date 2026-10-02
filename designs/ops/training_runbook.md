@@ -276,11 +276,16 @@ async-wave and restart streams).
 | `--diagnostics-every`, compile canary (every 25 updates), `--adaptive-batch-every`, KL lr controller, team PFSP / team win-rate pulls (3 rollouts), exploiter-ladder persist (20), `--distill-anchor-refresh-every`, `--capacity-*-every`, CUDA memory-trend horizon (25 updates) | UPDATES / rollouts | only while the rollout `n_steps × n_envs` is fixed (production 2048 × 48 = 98,304) — a sizing change of N must restate `n_steps` or `--rollout-target-samples`, or every one of these moves |
 | launcher restart, graceful restart, `--log-level periodic` lines | wall clock / episodes | n/a |
 
-### WHICH readout is the critic — `--critic {shaped,winprob}` (default `shaped`)
+### WHICH readout is the critic — `--critic {shaped,winprob}` (default `winprob`)
 
-`policy._critic_value` has a MODE. **`shaped` is the default and every generation to date** — the
-scalar `value_net` (or distributional `E[Z]`) de-normalized through PopArt into raw shaped-return
-units, with the win-prob head an auxiliary BCE. A flagless run is byte-identical.
+`policy._critic_value` has a MODE. **`winprob` is the default** for a fresh argv (the deletion pass's
+bare-argv flip, D2 2026-10-02 — `critic_mode.CRITIC_DEFAULT`), with its three reward values as the
+parser defaults (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`). **`shaped`** —
+every generation through gen-16 — is the scalar `value_net` (or distributional `E[Z]`) de-normalized
+through PopArt into raw shaped-return units, with the win-prob head an auxiliary BCE; it is now TYPED
+(python core only; it leaves with the deletion pass). An ABSENT record (a pre-v109 config / saved
+`policy_kwargs`) still means `shaped` (`critic_mode.CRITIC_UNRECORDED`), so a flagless RESUME reads the
+checkpoint's own critic, never the new default.
 
 **`winprob` promotes the head to BE the critic**: `V(s) = sigmoid(win_head logit)` in [0,1], the
 value loss IS that head's BCE against the terminal outcome (weighted by `--vf-coef`, **not**
@@ -300,7 +305,8 @@ argparse default is a `None` sentinel (the discount is PAIRED with the critic �
 winprob 1.0 / shaped 0.9999; a typed non-1.0 gamma under winprob is REFUSED, and the launch prints
 `[Critic] gamma=… — <source>`); three are REQUIRED and named by their own refusal
 (`--terminal-indicator`, `--victory-value 1.0`, `--draw-penalty 0`) because
-theirs are concrete and an implication could not be told apart from an overwrite. Everything the
+theirs are concrete and an implication could not be told apart from an overwrite — since the bare-argv
+flip those ARE the parser defaults, so the requirement bites only on a typed signed-terminal value. Everything the
 mode SUBSUMES is refused rather than ignored. `python -m main.checkargs` reports every one offline.
 
 **`--win-prob-pbrs-frozen <run|zip>` is the exception and is BUILDABLE here**
@@ -635,7 +641,7 @@ buckets / lanes; `verdict` names the sizing Decision record). An UNTYPED `--env-
 |---|---|
 | fresh `--arch production` | `recipe.sizing.env_core` = **rust** |
 | `--model` — a same-run RESTART or a FORK | INHERITED: the core the checkpoint was PRODUCED on (`metadata.json` / the sidecar's `env_core`; `cli_args` for a restart of an `--arch production` run); recorded before `--env-core` existed → python. A run never changes core because the default moved; a fork of a python-era checkpoint moves to the Rust core only when the argv TYPES `--env-core rust` |
-| a bare non-production fresh argv | **python** (the parser default) — it defaults to `--critic shaped`, which the Rust core refuses; decided in the deletion pass |
+| a bare non-production fresh argv | **rust** (the parser default since the deletion pass's bare-argv flip, D2 2026-10-02 — the bare argv is `--critic winprob` + its three reward values) |
 
 `--env-core python` (TYPED) keeps the Python env reachable until the deletion pass; the recipe
 surface reports it as a TYPED deviation. `--dry-run` and `checkargs` print the resolved core with its

@@ -41,7 +41,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
-from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+from agents.model.critic_mode import CRITIC_UNRECORDED, is_winprob
 from agents.training.lever_supply import (LEVERS, DryStreakGuard, LeverConfigError, loud,
                                           record_scalar)
 from agents.training.fork_arm import (
@@ -92,7 +92,7 @@ class ForkArmCallback(BaseCallback):
         if self._fraction() <= FORK_OFF:
             return False
         if not is_winprob(getattr(getattr(self.model, "policy", None), "_critic_mode",
-                                  CRITIC_DEFAULT)):
+                                  CRITIC_UNRECORDED)):
             # `combination_checks` refuses that argv; this is belt-and-braces for a hand-built
             # model, and the reason is `fork_buffer.branch_rewards`: outside `winprob` a branch's
             # reward stream is not reconstructible without the env that computed it.

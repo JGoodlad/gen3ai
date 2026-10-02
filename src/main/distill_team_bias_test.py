@@ -46,7 +46,9 @@ TEACHER_SPEC = f"{TEACHER_DIR}:{TEACHER_TEAMS[0]},{TEACHER_TEAMS[1]}"
 def _argv(*extra):
     # `--use-bridge node` keeps resolve_config off the rust sim_bridge binary (the
     # checkpoint_cadence_test convention); irrelevant to everything under test here.
-    return ["--steps", "1", "--use-bridge", "node", *extra]
+    # `--env-core python`: distillation runs only on the python core, and the bare argv has defaulted
+    # to the Rust core since the deletion pass (D2, 2026-10-02).
+    return ["--steps", "1", "--use-bridge", "node", "--env-core", "python", *extra]
 
 
 def _resolved(*extra):

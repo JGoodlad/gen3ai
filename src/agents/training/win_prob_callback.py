@@ -53,7 +53,7 @@ from __future__ import annotations
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
-from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+from agents.model.critic_mode import CRITIC_UNRECORDED, is_winprob
 from agents.training.lever_supply import (LEVERS, DryStreakGuard, LeverConfigError, loud,
                                           record_scalar)
 from agents.training.win_prob_rollout import (BANKED_CONTINUATION_DECISIONS, DEFAULT_ROLLOUT_R,
@@ -213,7 +213,7 @@ class WinProbLabelCallback(BaseCallback):
         """`--win-prob-rollout-target` is on AND under the critic it re-aims (`winprob`)."""
         return (float(getattr(self.model, "win_prob_rollout_target", 0.0) or 0.0) > ROLLOUT_OFF
                 and is_winprob(getattr(getattr(self.model, "policy", None), "_critic_mode",
-                                       CRITIC_DEFAULT)))
+                                       CRITIC_UNRECORDED)))
 
     def _on_training_start(self) -> None:
         if self._rollout_live():
@@ -269,7 +269,7 @@ class WinProbLabelCallback(BaseCallback):
         if frac <= ROLLOUT_OFF:
             return None
         if not is_winprob(getattr(getattr(self.model, "policy", None), "_critic_mode",
-                                  CRITIC_DEFAULT)):
+                                  CRITIC_UNRECORDED)):
             return None
         if not self._records_dir:
             # `combination_checks` refuses this argv at launch; reaching it is a mis-wiring every
@@ -441,7 +441,7 @@ class WinProbLabelCallback(BaseCallback):
         if lam >= LAMBDA_OFF:
             return None
         if not is_winprob(getattr(getattr(self.model, "policy", None), "_critic_mode",
-                                  CRITIC_DEFAULT)):
+                                  CRITIC_UNRECORDED)):
             return None
         return lam, str(getattr(self.model, "win_prob_lambda_truncated", "bootstrap"))
 

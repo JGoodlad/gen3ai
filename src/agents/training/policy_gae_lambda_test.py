@@ -209,7 +209,8 @@ def test_high_sets_TF32_in_this_process_and_stamps_it(capsys, _restore_precision
 
 def test_resolve_config_applies_and_stamps_it(capsys, _restore_precision):
     th.set_float32_matmul_precision("highest")
-    _resolved(["--matmul-precision", "high"])
+    # the python core, typed: the Rust core refuses TF32 with a fatal K9(b) (bare argv = rust since D2)
+    _resolved(["--env-core", "python", "--matmul-precision", "high"])
     assert th.get_float32_matmul_precision() == "high"
     assert "🧮 [MATMUL PRECISION] high" in capsys.readouterr().out
 

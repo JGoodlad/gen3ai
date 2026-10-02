@@ -43,7 +43,8 @@ def _resolved(argv, saved=None, monkeypatch=None):
         monkeypatch.setattr(cfg_mod, "_load_saved_version", lambda path: saved)
         argv = ["--model", "models/parent/checkpoints/checkpoint_10_steps.zip"] + argv
     with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
-        args = parser.parse_args(["--steps", "100", "--allow-nonproduction-arch"] + argv)
+        # the python env core, typed: the search teacher runs only there (bare argv = rust since D2)
+        args = parser.parse_args(["--steps", "100", "--allow-nonproduction-arch", "--env-core", "python"] + argv)
         cfg_mod.resolve_config(args, parser)
     return args
 

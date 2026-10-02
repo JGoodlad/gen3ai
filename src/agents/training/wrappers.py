@@ -1,7 +1,7 @@
 import os
 import random
 
-from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+from agents.model.critic_mode import CRITIC_UNRECORDED, is_winprob
 from agents.training.dense_aux import terminal_facts as dense_aux_terminal_facts
 from agents.training.dense_aux_callback import (
     INFO_MASK as DENSE_AUX_INFO_MASK,
@@ -17,7 +17,7 @@ from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
 STABLE_CHALLENGE_SHARE = 0.20
 
 
-def resolve_episode_end(term: bool, trunc: bool, critic: str = CRITIC_DEFAULT):
+def resolve_episode_end(term: bool, trunc: bool, critic: str = CRITIC_UNRECORDED):
     """``(terminated, truncated)`` as the LEARNER should see them (gen3_winprob_critic_mode_v1, B6).
 
     🚨 **THIS ENV NEVER TRUNCATES IN THE SB3 SENSE, AND THAT IS THE WHOLE FINDING.**
@@ -99,7 +99,7 @@ class MaskableAgentWrapper(SingleAgentWrapper):
                  exploiter_keep_bots=False, exploiter_bot_fraction=0.5,
                  stable_teams=None, exploiter_team=None, opponent_pool_team=None,
                  stable_pfsp=False, team_wr_tracking=True, exploiter_rung_loader=None,
-                 critic=CRITIC_DEFAULT):
+                 critic=CRITIC_UNRECORDED):
         # Back-compat: a single positional `opponent` (legacy / tests) becomes a 1-bot roster.
         roster = list(heuristic_opponents) if heuristic_opponents else (
             [opponent] if opponent is not None else [])

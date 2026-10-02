@@ -328,8 +328,9 @@ def test_the_default_argv_selects_the_crater_mode():
 
 @pytest.mark.parametrize("argv,needle", [
     (["--search-teacher-mode", "winprob_oneply"], "requires --search-teacher"),
-    (["--search-teacher-mode", "winprob_oneply", "--search-teacher"],
-     "requires --win-prob-mode read_only|shaping"),
+    # the shaped critic (typed since the bare-argv flip, D2) is the one whose head can be 'none'
+    (["--critic", "shaped", "--env-core", "python", "--search-teacher-mode", "winprob_oneply",
+      "--search-teacher"], "requires --win-prob-mode read_only|shaping"),
     (["--winprob-teacher-band", "0.0"], "must be in (0, 0.5]"),
     (["--winprob-teacher-band", "0.9"], "must be in (0, 0.5]"),
     (["--winprob-teacher-margin", "-0.1"], "must be in [0, 1)"),

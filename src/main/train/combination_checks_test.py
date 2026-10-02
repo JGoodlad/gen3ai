@@ -146,6 +146,12 @@ TEACHER = "models/parent/final_model.zip:data/teams/sample/t1.txt"
 #: ELSE does not also trip the three requirement rules and make its own failure ambiguous.
 _WP = ["--critic", "winprob", "--terminal-indicator",
        "--victory-value", "1.0", "--draw-penalty", "0"]
+#: The python env core, typed — the bare argv has run on the Rust core since the deletion pass's
+#: bare-argv flip (D2, 2026-10-02), so a row about a python-only path must name it.
+_PY = ["--env-core", "python"]
+#: The shaped critic, typed (on the python core — the Rust core refuses it): the configuration the
+#: "X needs the winprob critic" rows refuse, which a bare argv no longer is.
+_SH = ["--critic", "shaped", *_PY]
 
 ARGVS: dict[str, list[str]] = {
     "winprob_critic_needs_unit_gamma": _WP + ["--gamma", "0.99"],
@@ -225,13 +231,13 @@ ARGVS: dict[str, list[str]] = {
     # gen3_winprob_strata_weight_v1 — the one row in this family pointing the OTHER way ("X
     # REQUIRES winprob"), so it deliberately does NOT carry `_WP`: the default `shaped` critic is
     # exactly the configuration it refuses.
-    "winprob_strata_needs_the_winprob_critic": ["--win-prob-strata-weight", "1.0"],
+    "winprob_strata_needs_the_winprob_critic": [*_SH, "--win-prob-strata-weight", "1.0"],
     # gen3_winprob_lambda_v1 — the same shape: the λ-return target only means anything when the
     # win-prob BCE IS the value loss, and under `shaped` the values it blends are not probabilities.
-    "winprob_lambda_needs_the_winprob_critic": ["--win-prob-lambda", "0.9"],
+    "winprob_lambda_needs_the_winprob_critic": [*_SH, "--win-prob-lambda", "0.9"],
     # gen3_winprob_rollout_target_v1 — the same shape again: a measured MC target only means
     # anything when the win-prob BCE IS the value loss.
-    "winprob_rollout_needs_the_winprob_critic": ["--win-prob-rollout-target", "0.01"],
+    "winprob_rollout_needs_the_winprob_critic": [*_SH, "--win-prob-rollout-target", "0.01"],
     # ...and the ring is where the replayable episode lives, so `_WP` (which does NOT carry
     # --cf-records) is exactly the argv this one refuses.
     "winprob_rollout_needs_cf_records": _WP + ["--win-prob-rollout-target", "0.01"],
@@ -240,8 +246,8 @@ ARGVS: dict[str, list[str]] = {
     # gen3_fork_v1 — the fork arm's five. The first two are the `winprob_rollout_*` shapes again
     # (a treatment that means nothing without the critic it re-aims, and one that resolves nothing
     # without the record ring); the last three are obs keys a branch row cannot honestly fill.
-    "fork_needs_the_winprob_critic": ["--fork-fraction", "0.02"],
-    "fork_needs_cf_records": _WP + ["--fork-fraction", "0.02"],
+    "fork_needs_the_winprob_critic": [*_SH, "--fork-fraction", "0.02"],
+    "fork_needs_cf_records": _WP + [*_PY, "--fork-fraction", "0.02"],
     # gen3_supply_guard_v1 — a live cf-buffer coefficient whose (trainer-spawned) producer would
     # have no ring to label: `_WP` does not carry --cf-records.
     "cf_consumer_needs_label_supply": _WP + ["--cf-winprob-coef", "0.5"],
@@ -255,22 +261,22 @@ ARGVS: dict[str, list[str]] = {
         _WP + ["--cf-records", "--win-prob-rollout-weight", "64"],
     # gen3_dense_aux_v1 — the same shape a third time: dense targets on the win-prob head only
     # move the value function when that head IS the value function.
-    "dense_aux_needs_the_winprob_critic": ["--win-prob-dense-aux", "1.0"],
+    "dense_aux_needs_the_winprob_critic": [*_SH, "--win-prob-dense-aux", "1.0"],
     "rnd_variants_need_the_base_rnd_head": ["--ridealong-rnd-variants", "all"],
     "winprob_critic_refuses_self_phi_pbrs": _WP + ["--win-prob-pbrs-coef", "0.5"],
     "winprob_critic_refuses_self_phi_source": _WP + ["--win-prob-pbrs-source", "models/p.zip"],
     "winprob_critic_refuses_draw_penalty": ["--critic", "winprob",
                                             "--terminal-indicator", "--victory-value", "1.0",
                                             "--draw-penalty", "-1.0"],
-    "winprob_critic_needs_the_indicator_terminal": ["--critic", "winprob",
+    "winprob_critic_needs_the_indicator_terminal": ["--critic", "winprob", "--no-terminal-indicator",
                                                     "--victory-value", "1.0",
                                                     "--draw-penalty", "0"],
     "winprob_critic_needs_unit_victory_value": ["--critic", "winprob",
                                                 "--terminal-indicator", "--victory-value", "7.5",
                                                 "--draw-penalty", "0"],
-    # gen3_frozen_phi_actor_only_v1: BUILDABLE under winprob, refused under shaped, so the plain
-    # (shaped-default) argv is the row that fires the routing refusal.
-    "win_prob_pbrs_frozen_needs_the_winprob_critic": ["--win-prob-pbrs-frozen", "models/p.zip"],
+    # gen3_frozen_phi_actor_only_v1: BUILDABLE under winprob, refused under shaped, so a typed
+    # `--critic shaped` (on the python core, the only one serving it) fires the routing refusal.
+    "win_prob_pbrs_frozen_needs_the_winprob_critic": [*_SH, "--win-prob-pbrs-frozen", "models/p.zip"],
     "win_prob_pbrs_frozen_needs_a_head": ["--win-prob-pbrs-frozen", "models/p.zip",
                                           "--win-prob-mode", "none"],
     "cf_records_needs_bridge": ["--cf-records", "--use-bridge", "off"],
@@ -371,7 +377,7 @@ ARGVS: dict[str, list[str]] = {
     "env_core_rust_needs_the_winprob_critic": ["--env-core", "rust", "--critic", "shaped"],
     "env_core_rust_unported_paths": ["--env-core", "rust", *_WP, "--team-pfsp", "var"],
     "env_core_rust_tf32_behaviour_check_fatal": ["--env-core", "rust", *_WP, "--matmul-precision", "high"],
-    "env_core_flags_need_the_rust_core": ["--rollout-trigger", "window"],
+    "env_core_flags_need_the_rust_core": [*_PY, "--rollout-trigger", "window"],
     # gen3_fork_rust_v1 — the fork arm on the Rust core (forks.md §14.7)
     "fork_rust_needs_keyed_opponent_sampling": ["--env-core", "rust", *_WP, "--fork-fraction", "0.02",
                                                 "--opponent-sampling", "generator"],
@@ -379,14 +385,15 @@ ARGVS: dict[str, list[str]] = {
                                               "--rollout-trigger", "window"],
     "rollout_target_on_the_quantum": ["--env-core", "rust", *_WP, "--n-envs", "48", "--batch-size", "2048",
                                       "--rollout-target-samples", "100000"],
-    # T17 mirrored team pairs — the Python eval path's prerequisites
-    "mirrored_pairs_need_the_bridge": ["--eval-mirrored-pairs", "--use-bridge", "off"],
-    "mirrored_pairs_need_one_game_in_flight": ["--eval-mirrored-pairs", "--eval-concurrency-per-worker", "2"],
+    # T17 mirrored team pairs — the Python eval path's prerequisites (the python env core's eval)
+    "mirrored_pairs_need_the_bridge": [*_PY, "--eval-mirrored-pairs", "--use-bridge", "off"],
+    "mirrored_pairs_need_one_game_in_flight": [*_PY, "--eval-mirrored-pairs",
+                                               "--eval-concurrency-per-worker", "2"],
     # T6 SPRT promotion
     "promotion_sprt_needs_self_play": ["--promotion-sprt"],
     "promotion_sprt_ignores_the_threshold": ["--promotion-sprt", "--self-play", "--promote-threshold", "0.6"],
-    "promotion_sprt_needs_the_bridge": ["--promotion-sprt", "--self-play", "--use-bridge", "off"],
-    "promotion_sprt_needs_one_game_in_flight": ["--promotion-sprt", "--self-play",
+    "promotion_sprt_needs_the_bridge": [*_PY, "--promotion-sprt", "--self-play", "--use-bridge", "off"],
+    "promotion_sprt_needs_one_game_in_flight": [*_PY, "--promotion-sprt", "--self-play",
                                                 "--eval-concurrency-per-worker", "2"],
 }
 
@@ -567,5 +574,5 @@ def test_a_tf32_rust_run_with_a_fatal_behaviour_check_is_refused_and_both_ways_o
         assert "--behaviour-check warn" in text and "re-measure the TF32 gate" in text and "36 %" in text
     for argv in (base + ["--matmul-precision", "high", "--behaviour-check", "warn"],
                  base + ["--matmul-precision", "highest"], base,
-                 [*_WP, "--matmul-precision", "high"]):                      # the python core
+                 [*_WP, *_PY, "--matmul-precision", "high"]):                # the python core
         assert not check.predicate(_namespace(argv)), argv

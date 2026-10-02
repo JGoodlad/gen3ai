@@ -53,28 +53,36 @@ def _hits(argv, saved=None):
 # OFF
 # --------------------------------------------------------------------------------------------
 
-def test_the_flagless_namespace_is_unchanged():
-    """A run that does not type `--critic` must be byte-identical at the namespace: same critic,
-    same reward composition, same discount, same PopArt. This is where an implication that leaked
-    out of the `winprob` branch shows up first."""
+def test_the_flagless_namespace_is_the_WINPROB_critic():
+    """THE BARE-ARGV DEFAULT (deletion pass D2, 2026-10-02): a fresh argv that types nothing is the
+    win-prob critic with its three REQUIRED reward values and its three implied tri-states — the
+    production critic, on the production env core."""
     a = _ns([])
-    assert a.critic == "shaped"
+    assert a.critic == "winprob"
     assert not hasattr(a, "hand_shaping")   # deleted with the shaped reward path
-    assert a.terminal_indicator is False
-    assert a.victory_value == 30.0
-    assert a.draw_penalty == -35.0
-    assert a.win_prob_mode is None      # still the sentinel; `_resolve` fills it to 'none'
-    assert a.use_popart is None
-    assert a.gamma is None
+    assert a.terminal_indicator is True
+    assert a.victory_value == 1.0
+    assert a.draw_penalty == 0.0
+    assert a.win_prob_mode == "shaping"
+    assert a.use_popart is False
+    assert a.gamma == 1.0
+    assert a.env_core == "rust"
 
 
-def test_an_explicit_shaped_is_the_same_namespace_as_no_flag():
-    a, b = _ns([]), _ns(["--critic", "shaped"])
+def test_an_explicit_winprob_is_the_same_namespace_as_no_flag():
+    a, b = _ns([]), _ns(["--critic", "winprob"])
     # Both are records of WHAT WAS TYPED (K10(a)'s `_recipe_typed` beside `_explicit_flags`), which
     # is exactly what differs here; the claim is that the resolved VALUES are the same.
     ignore = {"_explicit_flags", "_recipe_typed"}
     assert {k: v for k, v in vars(a).items() if k not in ignore} == \
-           {k: v for k, v in vars(b).items() if k not in ignore | {"critic"}} | {"critic": "shaped"}
+           {k: v for k, v in vars(b).items() if k not in ignore}
+
+
+def test_a_typed_shaped_critic_implies_nothing():
+    """`shaped` assigns nothing beyond the mode: its three tri-states stay the sentinel."""
+    a = _ns(["--critic", "shaped"])
+    assert a.critic == "shaped"
+    assert a.win_prob_mode is None and a.use_popart is None and a.gamma is None
 
 
 def test_a_flagless_run_trips_no_critic_check():
@@ -128,6 +136,29 @@ def test_the_critic_itself_is_INHERITED_on_a_flagless_resume():
     assert a.critic == "winprob"
 
 
+def test_a_flagless_resume_of_a_SHAPED_run_reads_shaped_never_the_new_default(tmp_path):
+    """The bare-argv flip (deletion pass D2) moved only what an UNTYPED critic means on a FRESH argv.
+    A flagless resume reads the CHECKPOINT's record — a real `model_config.json` that says `shaped`,
+    and one written before `--critic` existed (the key absent) — and both stay `shaped`, so the
+    resume meets its refusal (D4) or its pin rather than silently becoming a probability critic."""
+    import json
+
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    data = json.loads(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512], "critic": "shaped"}).to_json())
+    for name, mutate in (("recorded", lambda d: d), ("absent", lambda d: d.pop("critic") and d)):
+        cfg = dict(data)
+        mutate(cfg)
+        path = tmp_path / f"{name}.json"
+        path.write_text(json.dumps(cfg))
+        saved = ModelVersion.from_json_file(str(path))
+        a = _ns(["--model", "x.zip"], saved=saved)
+        assert a.critic == "shaped", name
+        assert a.win_prob_mode is None and a.gamma is None, name   # nothing winprob was implied
+
+
 # --------------------------------------------------------------------------------------------
 # the REQUIRED three, and why they are not implied
 # --------------------------------------------------------------------------------------------
@@ -139,14 +170,22 @@ _REQUIRED = {
 }
 
 
-@pytest.mark.parametrize("check", sorted(_REQUIRED))
-def test_each_required_reward_flag_is_refused_when_missing(check):
-    """These three have CONCRETE argparse defaults, so `resolve_critic_mode` cannot tell "left
-    alone" from "typed the default" and refuses to guess. Each is required by its own check, and
-    each message names the flag to pass — this tree's standing preference for a
-    composition-changing combination (`--use-popart` requires an explicit `--clip-range-vf none`
-    for exactly the same reason)."""
-    assert check in _hits(["--critic", "winprob"])
+#: The SIGNED terminal's values, typed — what each REQUIRED check refuses under winprob.
+_SIGNED = {
+    "winprob_critic_needs_the_indicator_terminal": ["--no-terminal-indicator"],
+    "winprob_critic_needs_unit_victory_value": ["--victory-value", "30"],
+    "winprob_critic_refuses_draw_penalty": ["--no-terminal-indicator", "--draw-penalty", "-35"],
+}
+
+
+@pytest.mark.parametrize("check", sorted(_SIGNED))
+def test_each_required_reward_flag_is_refused_when_the_signed_value_is_typed(check):
+    """These three have CONCRETE argparse defaults — since the bare-argv flip (2026-10-02) exactly
+    winprob's values, so a bare argv passes — and `resolve_critic_mode` cannot tell "left alone" from
+    "typed the default", so it never implies them. A typed signed-terminal value is REFUSED by its own
+    check, whose message names the flag to pass."""
+    assert check in _hits(["--critic", "winprob"] + _SIGNED[check])
+    assert check not in _hits(["--critic", "winprob"])
 
 
 def test_the_full_required_set_launches_clean():
@@ -218,7 +257,7 @@ def test_win_prob_pbrs_frozen_is_REFUSED_under_the_shaped_critic():
     """The surviving refusal is a ROUTING answer, not a deferral: under `shaped` the critic
     predicts a PopArt-normalized shaped return, so phi is in different units and the dose is a real
     question the shaped ladder's own coefficient exists to ask."""
-    hits = _hits(["--win-prob-pbrs-frozen", "models/p.zip"])
+    hits = _hits(["--critic", "shaped", "--env-core", "python", "--win-prob-pbrs-frozen", "models/p.zip"])
     assert "win_prob_pbrs_frozen_needs_the_winprob_critic" in hits
 
 

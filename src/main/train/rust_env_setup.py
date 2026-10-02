@@ -84,9 +84,9 @@ def resolve_env_core_default(args: Any, *, run_dir: Optional[str] = None,
       core because the default moved, a fork of a Rust-era run stays on the Rust core, and a fork of a
       python-era checkpoint stays on python unless the argv TYPES ``--env-core rust``. A restart of an
       ``--arch production`` run already resolved it from ``metadata.json:cli_args`` (``recipe_surface``).
-    * A bare non-production FRESH argv — the parser default, ``python``: such an argv defaults to
-      ``--critic shaped``, which the Rust core refuses (F-LD-2), so the production default lives on the
-      production surface (`--arch production`), not on the bare parser (decided in the deletion pass)."""
+    * A bare non-production FRESH argv — the parser default, ``rust`` (deletion pass D2, 2026-10-02:
+      the bare argv now defaults to ``--critic winprob`` + its three reward values, which the Rust core
+      serves, so the bare parser and the production surface agree)."""
     from main.train.recipe_surface import typed_dests
     if "env_core" in typed_dests(args):
         return None

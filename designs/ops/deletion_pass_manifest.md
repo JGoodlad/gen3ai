@@ -131,7 +131,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | unit | content | agent-days | lane | holds | after |
 |---|---|---|---|---|---|
 | **U0** | owner signs D1–D6 | — | — | — | — |
-| **U1** | bare-argv default (§2.1) | 0.75 | A | parser `clean_world` / `reward` / `env_core`, `critic_mode`, `recipe_surface` | U0, sizing verdict |
+| **U1** ✅ **SHIPPED 2026-10-02** (`gen3_bare_argv_winprob_v1`, config v130) | bare-argv default (§2.1) | 0.75 | A | parser `clean_world` / `reward` / `env_core`, `critic_mode`, `recipe_surface` | U0, sizing verdict |
 | **U2** | extractions: standalone spaces builder (off `Gen3Env`), `OPP_CLASS_*` / `STABLE_CHALLENGE_SHARE` / `resolved_obs_source` / `_build_trainee_tb` re-homed; D4's python-era resume rule; D3's banked last-green run of every env-level gate | 1.0 | A | `rust_rollout/build.py`, `rust_env_setup.py`, `rust_env_opponents.py` | U1 |
 | **L1** | shaped-only levers + self-PBRS + frozen-φ (R2) | 1.0 | B | `combination_checks`, `config`, parser `clean_world` / `distillation` / `value_heads` | U1 |
 | **L2** | λ, rollout target, dense aux, true team, entropy boosts, `choice_band_tracker` (R2) | 1.0 | B | same + `hyperparameters`; `label_inventory` | L1 |
@@ -186,7 +186,12 @@ calendar days with 3 lanes; 8 is the box**.
    steady-state global-RNG consumer is the minibatch permutation, which replayed after every load (no effect on
    which rows train). On the python core every worker's team draws replayed, so its team curriculum was a
    seed-fixed skew (ledger 2026-10-02).
-4. **The root `CLAUDE.md` `--debug` smoke runs the PYTHON core today** (bare argv → `--critic shaped` → python). U1.
+4. ✅ **CLOSED by U1 (2026-10-02):** the root `CLAUDE.md` `--debug` smoke now runs the Rust core (bare argv →
+   `--critic winprob` → rust; Training complete, K9(b)'s excluded share 1.6–4.5 % on its 2,048-row updates, under
+   the 0.15 ceiling — TECH_DEBT §2(b)'s P3 small-rollout row did NOT trip, so it stays open, unfixed). U1 split
+   "the bare-argv default" (`CRITIC_DEFAULT` = winprob) from "what an ABSENT record means" (`CRITIC_UNRECORDED` =
+   shaped, the `_REWARD_IMMUTABLE_FIELDS` signed terminal): no checkpoint loads differently, so no `ARCH_SIGNATURE`
+   bump (`designs/model/versioning.md`).
 5. **`--cf-label-supply external` passes launch checks on Rust and would starve in flight** — unverified at
    runtime; R2/L4 deletes it.
 6. **`rust_core_m5/hooks.py:179` measures the legacy compile on 2.8, not production's R0 region.** K1.

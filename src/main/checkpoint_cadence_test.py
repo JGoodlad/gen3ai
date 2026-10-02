@@ -134,7 +134,8 @@ def _resolve(*flags):
     from main.train.config import resolve_config
 
     p = build_parser()
-    args = p.parse_args(["--steps", "1", *flags])
+    # the python env core, typed: the cf ring runs only there (bare argv = rust since D2, 2026-10-02)
+    args = p.parse_args(["--steps", "1", "--env-core", "python", *flags])
     resolve_config(args, p)
     return args
 

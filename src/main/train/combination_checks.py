@@ -292,7 +292,7 @@ def _cf_duty_cycle_message(args) -> str:
 # ---- `--env-core rust` (M5 Lane G) -------------------------------------------------------------
 
 def _rust_core(args) -> bool:
-    return _val(args, "env_core", "python") == "rust"
+    return _val(args, "env_core", "rust") == "rust"     # the parser default since D2 (2026-10-02)
 
 
 #: What `--env-core rust` does not serve yet, as (dest, predicate, reason). Each is a path the Python
@@ -405,7 +405,8 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
     # them first, so a refusal here means the operator TYPED something incompatible.
     CombinationCheck(
         "winprob_critic_needs_a_head", ("critic", "win_prob_mode"),
-        lambda a: _winprob(a) and _val(a, "win_prob_mode", "none") == "none",
+        # unset resolves to 'shaping' under this critic (`config.resolve_critic_mode`'s implication)
+        lambda a: _winprob(a) and _val(a, "win_prob_mode", "shaping") == "none",
         "--critic winprob requires --win-prob-mode read_only|shaping: the win-prob HEAD is the "
         "critic, and 'none' builds no head at all, so there would be no value function. "
         "(An unset --win-prob-mode is implied to 'shaping' — this fires only on an explicit "
@@ -625,7 +626,7 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
                    "Pass --draw-penalty 0.")),
     CombinationCheck(
         "winprob_critic_needs_the_indicator_terminal", ("critic", "terminal_indicator"),
-        lambda a: _winprob(a) and not bool(_val(a, "terminal_indicator", False)),
+        lambda a: _winprob(a) and not bool(_val(a, "terminal_indicator", True)),
         "--critic winprob requires --terminal-indicator. The critic is sigmoid(logit) in [0,1] "
         "and GAE mixes the REWARD with it, so a +V/-V terminal would put the return and the "
         "critic in different scales and every terminal TD error would carry a systematic, "
@@ -633,9 +634,9 @@ COMBINATION_CHECKS: Tuple[CombinationCheck, ...] = (
         "terminal is what makes V(s) == E[return] hold."),
     CombinationCheck(
         "winprob_critic_needs_unit_victory_value", ("critic", "victory_value"),
-        lambda a: _winprob(a) and float(_val(a, "victory_value", 30.0) or 0.0) != 1.0,
+        lambda a: _winprob(a) and float(_val(a, "victory_value", 1.0) or 0.0) != 1.0,
         lambda a: ("--critic winprob requires --victory-value 1.0 (got "
-                   f"{float(_val(a, 'victory_value', 30.0)):g}). With the indicator terminal the "
+                   f"{float(_val(a, 'victory_value', 1.0)):g}). With the indicator terminal the "
                    "undiscounted return is `victory_value * 1{win}` while the critic is "
                    "sigmoid(logit) in [0,1], so the two agree at exactly one scale. At 1.0 the "
                    "return IS the win indicator and V(s) == P(win|s) with no approximation term "

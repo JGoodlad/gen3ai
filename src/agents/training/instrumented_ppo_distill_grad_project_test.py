@@ -497,7 +497,8 @@ def _resolved(argv):
     from main.train.config import resolve_config
     from main.train_rl_agent import build_parser
     p = build_parser()
-    args = p.parse_args(argv)
+    # the python env core, typed: distillation runs only there (bare argv = rust since D2, 2026-10-02)
+    args = p.parse_args(["--env-core", "python", *argv])
     resolve_config(args, p)
     return args
 

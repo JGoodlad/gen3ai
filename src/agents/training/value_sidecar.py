@@ -133,7 +133,7 @@ from datetime import datetime, timezone
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
 
-from agents.model.critic_mode import CRITIC_DEFAULT, is_winprob
+from agents.model.critic_mode import CRITIC_UNRECORDED, is_winprob
 from agents.observation.constants import (
     CLOCK_OFFSET_IN_GLOBAL, MAX_TURNS, OFFSET_GLOBAL,
 )
@@ -225,7 +225,7 @@ class ValueSidecarCallback(BaseCallback):
     def __init__(self, run_dir: "str | None", *,
                  fraction: float = DEFAULT_SIDECAR_FRACTION,
                  seed: int = 0,
-                 critic_mode: str = CRITIC_DEFAULT,
+                 critic_mode: str = CRITIC_UNRECORDED,
                  verbose: int = 0):
         super().__init__(verbose)
         self._run_dir = run_dir

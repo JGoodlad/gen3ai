@@ -315,8 +315,9 @@ def test_the_launch_path_still_refuses_the_C1_combination():
     assert [c.name for c in failing_checks(broken)] == ["distill_target_needs_coef"]
     # `distill_teacher` is now load-bearing on the OK side: a live coefficient with no teacher is
     # itself one of the migrated refusals, so leaving it out would trip a different rule.
+    # `env_core="python"`: distillation runs only there, and an unset core resolves to rust (D2)
     ok = SimpleNamespace(distill_target="action", distill_coef=0.1, distill_topk=1,
-                         distill_gate="none", distill_gate_tau=0.0,
+                         distill_gate="none", distill_gate_tau=0.0, env_core="python",
                          distill_teacher="models/t:data/teams/sample/a.txt")
     assert failing_checks(ok) == []
 
@@ -338,7 +339,8 @@ def test_the_tri_state_monitor_flag_and_its_negation_both_still_validate():
     a "not typed" state and a `--no-` opt-out. Both spellings have to survive the offline check, or
     every recorded fold command that names one becomes un-validatable."""
     from main.checkargs import check
-    base = ["--distill-teacher", "models/t:data/teams/sample/a.txt", "--distill-coef", "0.1"]
+    base = ["--env-core", "python",           # distillation runs only on the python core (D2)
+            "--distill-teacher", "models/t:data/teams/sample/a.txt", "--distill-coef", "0.1"]
     for flag in ("--distill-anchor-monitor", "--no-distill-anchor-monitor"):
         got = check([*base, flag])
         assert got["unknown"] == [], got["unknown"]

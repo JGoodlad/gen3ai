@@ -210,7 +210,8 @@ def _resolve_argv(*extra):
     from main.train.config import resolve_config
     from main.train_rl_agent import build_parser
     parser = build_parser()
-    args = parser.parse_args(["--steps", "10", "--use-bridge", "node", *extra])
+    # the python env core, typed: distillation runs only there (bare argv = rust since D2, 2026-10-02)
+    args = parser.parse_args(["--steps", "10", "--use-bridge", "node", "--env-core", "python", *extra])
     resolve_config(args, parser)
     return args
 

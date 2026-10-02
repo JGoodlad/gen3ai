@@ -200,7 +200,7 @@ per read, the known hazards (H1–H20), and the standing 2×2. Its box-specific 
 one tech-debt list; nothing on it is dispatched without the owner's word.
 [`ops/deletion_pass_manifest.md`](ops/deletion_pass_manifest.md) — the post-M5-switch DELETION PASS +
 bounded paydown: the owner's six decisions, the deletion rows, the Python-only LEVER list, the plan in lanes
-and the exit criterion (PROPOSED 2026-10-02, awaiting owner approval).
+and the exit criterion (APPROVED by the owner 2026-10-02; each unit is marked SHIPPED in it as it lands).
 
 ## `endstate/` — the END-STATE designs, explicit-only, not scheduled
 

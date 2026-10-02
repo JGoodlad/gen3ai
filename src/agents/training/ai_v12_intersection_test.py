@@ -66,10 +66,17 @@ _SUPPORT = "VALUE-DIST SUPPORT"
 _SCALE = "TERMINAL SCALE"
 
 
+#: The HISTORICAL shaped composition (the bare argv until the deletion pass's flip, D2 2026-10-02):
+#: the shaped critic on the python core with the signed ±30 / −35 terminal. Every guard here is about
+#: that critic, so each argv is typed ON TOP of it (argparse: the later typed value wins).
+HISTORICAL = ["--critic", "shaped", "--env-core", "python", "--no-terminal-indicator",
+              "--victory-value", "30", "--draw-penalty", "-35"]
+
+
 def _resolve(argv):
     from main.train.config import resolve_config
     parser = build_parser()
-    return resolve_config(parser.parse_args(["--steps", "1", "--debug", *argv]), parser)
+    return resolve_config(parser.parse_args(["--steps", "1", "--debug", *HISTORICAL, *argv]), parser)
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -129,7 +136,7 @@ def test_no_value_dist_head_means_no_opinion(capsys):
 # ──────────────────────────────────────────────────────────────────────────────────────────────
 
 def test_a_pm1_terminal_with_the_INHERITED_minus35_draw_penalty_warns(capsys):
-    """`--victory-value 1.0` alone leaves `--draw-penalty` at its −35 default. The wave-A ORDERING
+    """`--victory-value 1.0` alone leaves `--draw-penalty` at the historical −35. The wave-A ORDERING
     guard passes it (−35 IS worse than a loss, which is the ordering it checks), so the launch is
     silent — while the reward stream is dominated 35:1 by an outcome the arm exists to make rare.
     A run in that state is not the clean world; it is a stall-avoidance objective wearing its

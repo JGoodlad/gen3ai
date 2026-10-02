@@ -17,9 +17,9 @@ def _args(*argv):
     return build_parser().parse_args(["--steps", "1", *argv])
 
 
-def test_python_is_the_default_and_every_collector_flag_is_untyped():
+def test_rust_is_the_default_and_every_collector_flag_is_untyped():
     a = _args()
-    assert a.env_core == "python"
+    assert a.env_core == "rust"           # the bare-argv flip (deletion pass D2, 2026-10-02)
     for d in ("rollout_trigger", "rollout_target_samples", "rust_env_front", "version_pinning",
               "opponent_sampling", "behaviour_check", "trainee_slots"):
         assert getattr(a, d) is None, d
