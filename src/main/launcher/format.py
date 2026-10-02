@@ -4,6 +4,7 @@ Framework-agnostic (no Rich, no Textual) — consumed by the Textual dashboard
 (`app.py`). Keep this the single source of truth for how a metric renders so the
 numbers stay consistent everywhere.
 """
+import math
 
 
 def _elapsed_str(seconds: float) -> str:
@@ -23,7 +24,12 @@ def _secs_str(seconds: float) -> str:
 
 
 def _fmt_val(v: float) -> str:
-    """4 significant figures; comma-separated integers for large whole numbers."""
+    """4 significant figures; comma-separated integers for large whole numbers. A NON-FINITE float
+    renders as itself (``nan`` / ``inf`` / ``-inf``): `int(nan)` raised "cannot convert float NaN to
+    integer", which the render guard swallowed — the whole dashboard stopped repainting that tick and
+    the event said only "render error" (the M5 switch report, `app.py`'s `_refresh`)."""
+    if isinstance(v, float) and not math.isfinite(v):
+        return f"{v}"
     if isinstance(v, float) and v == int(v) and abs(v) >= 1000:
         return f"{int(v):,}"
     if isinstance(v, int):

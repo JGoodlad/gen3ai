@@ -189,6 +189,30 @@ async def test_dashboard_metrics_tables_populated():
         assert "vs sentinel_1 (seed)" in ev
 
 
+def test_a_non_finite_metric_renders_as_itself_never_raises():
+    """P4 (deletion pass, the M5 switch report): a NaN metric made `_fmt_val`'s `int(v)` raise
+    "cannot convert float NaN to integer" and blanked the dashboard tick. Fails on revert."""
+    from main.launcher.format import _fmt_metric, _fmt_val
+    assert _fmt_val(float("nan")) == "nan"
+    assert _fmt_val(float("inf")) == "inf" and _fmt_val(float("-inf")) == "-inf"
+    assert _fmt_metric("train/loss", float("nan")) == "nan"
+    assert _fmt_metric("eval/win_rate_vs_pool", float("nan")) == "nan%"
+    assert _fmt_val(12345.0) == "12,345" and _fmt_val(0.123456) == "0.1235"   # unchanged
+
+
+async def test_a_NaN_metric_renders_the_dashboard_without_a_render_error():
+    state = LauncherState(interval_hours=3.0)
+    state.pid = 1
+    state.update_metrics({"_step": 100, "train/loss": float("nan"), "train/approx_kl": float("inf")})
+    app = LauncherApp(state, queue.Queue())
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app._refresh()
+        await pilot.pause()
+        assert not app._render_error_seen
+        assert not any("render error" in e for e in state.snapshot().events)
+
+
 def test_secs_str_switches_to_minutes_past_600s():
     from main.launcher.format import _secs_str
     assert _secs_str(0) == "0s"
