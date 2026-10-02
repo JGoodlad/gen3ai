@@ -86,7 +86,7 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 | Marker | Answers | Values |
 |---|---|---|
 | capability | *can this run here?* | *(unmarked)* · `integration` · `sim` · `browser` · `e2e` |
-| **cost** | *should this run routinely?* | **`slow`** |
+| **cost** | *should this run routinely?* | **`slow`** (the one that deselects) · `static` (a budget tier that deselects NOTHING — below) |
 
 | Tier | Needs | Count (2026-08-23) · duration (2026-08-14) |
 |---|---|---|
@@ -96,6 +96,7 @@ Collapsing those into one axis is what the old single `integration` marker did, 
 | `browser` | headless chrome | 57 tests, **~19 s** (re-measured 2026-09-29, quiet box, 5 runs 18.0–20.3 s; was 1426 s) — NOT `slow` since 2026-09-29: it runs in the ROUTINE gate (a busy box skips a timed-out probe as inconclusive) |
 | `e2e` | a live Showdown server | run directly as scripts |
 | `slow` | *(orthogonal)* minutes, not seconds | 75 tests |
+| `static` | *(orthogonal)* a static gate: ~free warm, a bounded COLD-cache cost — its own 180 s budget, still in every tier | the 13 gates' files (below) |
 
 **Counts are dated on purpose — RECOUNT before quoting one** (`pytest -m <tier> --collect-only -q`);
 this corpus moves faster than the doc describing it. Durations were taken on a quiet box and have
@@ -124,6 +125,19 @@ a busy one it is ADVISORY** — a compile-heavy test slows by multiples of the c
 (measured: 12.3 s idle → 65.9 s at load 22, against a 1.2× scaled budget), so a scaled-only guard
 would go red whenever a run is live. `tier_budget_guard_test.py` pins both halves and that the
 guard may only ever ADD a failure, never clear one.
+
+**The `static` budget tier (deletion pass K1 follow-up, 2026-10-02; owner: "checks that pass or fail
+deterministically").** The 30 s unmarked budget is the wrong yardstick for a STATIC gate: the mypy gate
+is 0.26 s warm and a worktree's first (COLD-cache) run read **32.6 s** (19.6 s on 2026-08-17; 9 s with
+a private `MYPY_CACHE_DIR` on a quiet box), the enum-str gate ~24 s cold — so whether the routine gate
+passed depended on whether a cache happened to be warm. A static gate DECLARES `pytestmark =
+pytest.mark.static` (per file; the declared list is `tier_budget_guard_test._STATIC_GATES`, which fails
+a gate that does not declare it) and is held to **its own base, `conftest._STATIC_BUDGET_BASE_S` =
+180 s** (~5x the worst cold read), scaled by contention and enforced on a quiet box exactly like the
+30 s one. It is a TIER, not an exemption: a gate that grew to minutes still overruns it, and unlike
+`slow` the marker deselects nothing — `-m "not slow and not e2e"` still runs every gate. (The other
+fix considered, exempting the gates from the budget outright, would have let one grow unnoticed.)
+Over-budget lines print each test's own budget.
 
 **The factor the guard reads is the WINDOWED meter, not the load average** (`src/utils/cpu_meter.py`,
 `gen3_contention_meter_v2`, 2026-09-30). The old reading was `load1 / cpus` taken once at session
@@ -339,7 +353,8 @@ eval/replay children), 6 % in production-size policy construction and 4 % in fix
 heavy hitters are the M5 parity gates (`rust_eval/parity*`, `rust_env_opponents_parity`,
 `rust_core_parity`, `bots_gate`), the `cf_producer`/`cf_audit` integration paths, the anchors smoke,
 `extractor_compiles` (compile) and the two mypy-backed static gates on a COLD cache (~45 s on a fresh
-worktree's first gate). The fixes that shipped with this table: `3e766294` (a VACUOUS 30 s watchdog
+worktree's first gate; since 2026-10-02 they sit in the `static` budget tier above, so that cost is
+declared, not a flake). The fixes that shipped with this table: `3e766294` (a VACUOUS 30 s watchdog
 test), `8dcc32ce` (quota_match −20 s), `aff426f0` (the schedule), `2dcf59c3` (the compile pool),
 `a49ddee7` (the anchors smoke), `940ce487` (the Lane H file split). What was profiled and NOT fixed is
 in `TECH_DEBT_BACKLOG.md` §2(b).
@@ -382,11 +397,12 @@ on **`slow`** instead — that is the marker that means "expensive".
 
 Static checking is enforced by **tests**, not by habit, because there is no CI on this box: the
 routine suite is the only thing that runs on every change, so a check outside it is advisory and
-rots. Both are unmarked (they run even in the fast inner loop) and both are ~free:
+rots. Both carry `static` (the budget tier above — they run even in the fast inner loop) and both are
+~free warm:
 
 | Gate | Runs | Scope | Measured |
 |---|---|---|---|
-| `src/agents/model/mypy_gate_test.py` | `python -m mypy` (**no path argument** — the scope comes from `mypy.ini`) | `src/agents/model` **+ `src/agents/observation`**, per `mypy.ini`'s `files =` | **0.28 s warm**, 19.6 s cold |
+| `src/agents/model/mypy_gate_test.py` | `python -m mypy` (**no path argument** — the scope comes from `mypy.ini`) | `src/agents/model` **+ `src/agents/observation`**, per `mypy.ini`'s `files =` | **0.28 s warm**, 19.6 s cold (32.6 s on a loaded box, 2026-10-02) |
 | `src/ruff_gate_test.py` | `ruff check src/agents src/main src/utils --select F,E9 --exclude src/poke_env --exclude src/rust_sim` | `agents/` + `main/` + `utils/` | **0.10 s** |
 
 They are complementary, not overlapping: mypy is deep over a **declared short list** of packages

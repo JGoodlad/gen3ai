@@ -37,6 +37,8 @@ import pytest
 
 from utils.paths import src_root
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 #: module path -> the seeding functions the runtime guard wraps on it.
 SEEDERS: Dict[str, Set[str]] = {
     "random": {"seed"},

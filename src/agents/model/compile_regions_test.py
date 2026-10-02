@@ -263,6 +263,91 @@ def test_a_FRESH_launch_is_ALSO_judged_on_a_perturbation_at_the_TRAINED_bar(monk
         torch._dynamo.reset()
 
 
+# ------------------------------------- a COLLAPSED critic: the gate's perturbation-ladder climb (K1 follow-up)
+#
+# A win-prob head saturated at a logit of about -9 (a trainee losing ~97 %; `~/gen3ai_archive/cutover_prep/
+# fresh3`, 2026-09-30) has a value spread far under V's 1e-4 bar, so R0's decision readout is VACUOUS on
+# its real weights and on the ladder's first rung. The gate must CLIMB `parity_probe.PERTURB_LADDER` to the
+# first rung whose readout is informative and judge there — never refuse a resume onto such a checkpoint,
+# never pass it vacuously. The deleted extractor gate had this under test (`parity_probe_test`); the region
+# gate's was left bare by K1 (deletion manifest §6 finding 10).
+
+@pytest.fixture
+def collapsible(learner):
+    """The golden learner with K8's regions installed (CPU, dynamo `eager` backend, so compiled == eager
+    unless a test plants a fault) and a ``collapse(bias)`` that saturates its win head from the SAME
+    starting weights every time."""
+    cc.control().install()
+    cr.install(learner, backend="eager")
+    fe = learner.policy.features_extractor
+    base = {k: v.clone() for k, v in fe.state_dict().items()}
+
+    def collapse(bias):
+        fe.load_state_dict(base)
+        head = fe.win_head.net[3]
+        with torch.no_grad():
+            head.bias.fill_(bias)
+            head.weight.mul_(0.01)
+    return learner, collapse
+
+
+def _gate(model):
+    return cr.gate_regions(model, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
+
+
+def test_a_COLLAPSED_critic_is_judged_on_a_LATER_rung_of_the_ladder_not_refused(collapsible):
+    """Precondition ASSERTED, not branched on: on the collapsed weights the readout is vacuous at the
+    ladder's FIRST rung. The gate must still PASS, judging on a later rung, and say which. Fails if the
+    gate stops after one rung (it would refuse this resume) or judges the vacuous readout as it is."""
+    from agents.model import parity_probe as pp
+
+    model, collapse = collapsible
+    collapse(-9.0)
+    first_scale, first_k = pp.PERTURB_LADDER[0]
+    obs = ct._prewarm_obs(model, N_ENVS)
+    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), N_ENVS,
+                             ct.resolve_device(model.policy.features_extractor))
+    tol = {k: v for k, v in ct._FP32_TOL.items() if k in ("legal_logprob", "value")}
+    assert pp.fresh_reason(cr._r0_readout(model, cr._rollout_core, obs, mask), tol) is not None, \
+        "precondition: the collapsed critic's real-weights readout is vacuous"
+    with pp.perturbed_parameters(model.policy, seed=pp.rung_seed(first_k), scale=first_scale):
+        assert pp.fresh_reason(cr._r0_readout(model, cr._rollout_core, obs, mask), tol) is not None, \
+            "precondition: the FIRST rung is still vacuous on V"
+    r0 = [r for r in _gate(model) if r.startswith("R0 ")]
+    assert r0 and all("[fresh weights, perturbation scale=" in r for r in r0), r0
+    judged = {(sc, k) for sc, k in pp.PERTURB_LADDER if f"scale={sc:g} seed+{k}]" in r0[0]}
+    assert len(judged) == 1 and judged != {pp.PERTURB_LADDER[0]}, (judged, r0[0])
+
+
+def test_a_SATURATED_critic_that_no_rung_can_move_is_REFUSED_never_passed(collapsible):
+    """A critic saturated beyond what any rung (scale <= 0.1) moves (win logit about -12) stays vacuous on
+    V at every rung: the gate is fail-closed — a typed startup FATAL naming the spread. Fails if a
+    vacuous comparison is ever allowed through."""
+    model, collapse = collapsible
+    collapse(-12.0)
+    with pytest.raises(ct.CompileTrainerError, match="vacuous on the weights and on every perturbation rung"):
+        _gate(model)
+
+
+def test_a_MISCOMPILE_in_R0_is_caught_on_a_collapsed_critic_at_the_climbed_rung(collapsible):
+    """The point of climbing: a collapsed critic is judged on an INFORMATIVE perturbed copy, where a
+    compiled-graph fault (+0.05 on every legal log-prob) shows. Fails if the climb waives the check
+    instead of moving to an informative rung (the vacuous real-weights pass would not see it)."""
+    from agents.model.policy import _ROLLOUT_REGIONS
+
+    model, collapse = collapsible
+    collapse(-9.0)
+    assert _gate(model), "control: the healthy compiled arm passes the collapsed critic"
+    real = _ROLLOUT_REGIONS[model.policy]
+
+    def faulty(pol, obs, masks):
+        values, logp = real(pol, obs, masks)
+        return values, logp + 0.05
+    _ROLLOUT_REGIONS[model.policy] = faulty
+    with pytest.raises(ct.CompileTrainerError, match="DISAGREES with eager on legal_logprob"):
+        _gate(model)
+
+
 # --------------------------------------------- no silent fall-back to eager (gen3_no_silent_eager_v1)
 def _locked(learner):
     ctl = cc.control()

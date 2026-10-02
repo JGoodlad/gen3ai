@@ -83,6 +83,8 @@ import pytest
 
 from utils.paths import src_root
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 #: EMPTY by rule. A late construction is moved to startup; it is never listed here.
 ALLOWLIST: Tuple[str, ...] = ()
 

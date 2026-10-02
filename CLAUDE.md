@@ -184,7 +184,7 @@ The routine gate's `-n 6` is the measured policy (`designs/ops/testing.md` "Rout
 
 **Two axes, and keeping them apart is the point.** A marker says what a test NEEDS (*(unmarked)* · `integration` · `sim` · `browser` · `e2e`); a separate marker says what it COSTS (`slow`). **A tier is DECLARED, never inferred** — cost arrives transitively, so no filename or import graph can classify a test. `conftest.py` reports an unmarked test that overruns 30 s, and **enforces only on a quiet box** (factor < 1.05 over the SESSION *and* that test's own window); on a busy one it is advisory, because a duration measured under starvation is not a measurement.
 
-**Thirteen static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
+**Thirteen static gates, all `static`-tier (they run in every tier — the marker deselects nothing, it only gives them their own 180 s budget, so a COLD cache, mypy 10-33 s, never fails the 30 s unmarked-tier budget), all ~free warm.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|

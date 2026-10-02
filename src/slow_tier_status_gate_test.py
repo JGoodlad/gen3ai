@@ -48,6 +48,8 @@ from utils.slow_tier_status import (
     status_path,
 )
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 _SKIP_ENV = "GEN3AI_SKIP_SLOW_STATUS_GATE"
 
 _MISSING = """\

@@ -68,6 +68,8 @@ import pytest
 from stub_vacuity_scan import Site, consumer_index, scan_tree
 from utils.paths import src_root
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 _SRC_ROOT = src_root()
 
 # ---------------------------------------------------------------------------------------------

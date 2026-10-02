@@ -10838,3 +10838,19 @@ if a lazy build is reintroduced.
 - **Docs.** `compile_flags.md`, `learner_gates.md`, ARCHITECTURE §6.4, the training leaf `CLAUDE.md`, the runbook / SOP /
   lifecycle / collector docs, `testing.md`, the endstate Decision records (`program_rust_core.md`,
   `design_learner_recipe.md`, `design_model_management.md`), TECH_DEBT, `deleted_flags.md`, the manifest.
+
+## 2026-10-02 — K1 follow-ups: a compiled first update through R0/R1 with the donating default, the region gate's collapsed-critic climb, and a declared `static` budget tier (no model change)
+
+- **`compiled_first_update_test.py`** puts one full real `train()` through the compiled regions as the first update of a
+  process, with `torch._functorch.config.donated_buffer` forced to torch's default (True) and every probe on, via the real
+  `arm_compile_sentinel`. It fails if `compile_control`'s `donated_buffer=False` pin is dropped (the probe's
+  `retain_graph` backward raises "modified by an inplace operation", measured on CPU Inductor). CPU (~3 min, the numeric
+  gate skipped: CPU Inductor reads loss rel 1.5e-3 against eager) and CUDA (skips with a named reason; runs under
+  `GEN3AI_TEST_ALLOW_GPU=1`, 117 s). Both `slow`.
+- **`compile_regions_test`** covers the region gate's collapsed-critic handling: a win head saturated at logit -9 passes on a
+  LATER ladder rung, one saturated at -12 is REFUSED (fail-closed), and a miscompile planted in R0 is caught at the climbed
+  rung. Each fails on the revert of what it guards.
+- **A `static` budget tier** (`pytest.ini`, `conftest._STATIC_BUDGET_BASE_S` = 180 s) for the 13 static gates. A fresh
+  worktree's first gate read 32.6 s on the mypy gate against the 30 s unmarked-tier budget (warm 0.26 s); a check must not pass
+  or fail by whether a cache is warm. The tier deselects nothing, is still contention-scaled and enforced on a quiet box, and
+  `tier_budget_guard_test` pins that each gate declares it.

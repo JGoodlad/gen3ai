@@ -74,6 +74,55 @@ def test_the_budget_scales_with_contention(conf, monkeypatch):
     assert busy > idle, f"budget did not scale with contention ({idle}s -> {busy}s)"
 
 
+def test_a_STATIC_gate_gets_its_own_larger_budget_and_an_unmarked_test_does_not(conf, monkeypatch):
+    """The cold-cache fix (owner, 2026-10-02: checks that pass or fail deterministically). A fresh
+    worktree's first mypy-gate run read 32.6 s against the 30 s unmarked budget (warm: 0.26 s), so a
+    static gate declares `static` and is held to its OWN base: the same 33 s is within budget there and
+    over it for an unmarked test. Revert the tier ⇒ the first assertion fails."""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")
+    cold = 32.6
+    assert cold < conf._tier_budget_seconds(base=conf._budget_base({"static": None})), \
+        "the measured cold mypy read must sit inside the static budget"
+    assert cold > conf._tier_budget_seconds(base=conf._budget_base({})), \
+        "precondition: it is OVER the unmarked budget (the failure this tier fixes)"
+    assert conf._STATIC_BUDGET_BASE_S >= 5 * cold, "clearance over the worst measured cold read"
+
+
+def test_a_static_gate_is_still_held_to_a_budget_it_is_not_exempt(conf, monkeypatch):
+    """`static` is a tier, not an exemption: a gate that grew to minutes still overruns it. (An exemption
+    is what `slow` / `e2e` / `benchmark` are — the cost markers.)"""
+    monkeypatch.setenv("GEN3AI_TIMEOUT_SCALE", "1")
+    assert "static" not in conf._COST_MARKERS
+    assert 10 * conf._STATIC_BUDGET_BASE_S > conf._tier_budget_seconds(base=conf._STATIC_BUDGET_BASE_S)
+    assert 1000.0 > conf._tier_budget_seconds(base=conf._STATIC_BUDGET_BASE_S)
+
+
+#: THE DECLARED LIST of static gates (the root CLAUDE.md's table + the RNG-seed gate). A tier is declared,
+#: never inferred, so a gate missing from the tier is a defect this list catches; a new gate is added HERE.
+_STATIC_GATES = (
+    "src/agents/model/mypy_gate_test.py", "src/ruff_gate_test.py", "src/file_size_gate_test.py",
+    "src/claude_md_freshness_gate_test.py", "src/test_stub_vacuity_gate_test.py",
+    "src/slow_tier_status_gate_test.py", "src/mode_flag_doc_gate_test.py", "src/recipe_doc_gate_test.py",
+    "src/ledger_index_gate_test.py", "src/trace_summary_reader_gate_test.py",
+    "src/poke_env_enum_str_compare_gate_test.py", "src/learner_lifecycle_gate_test.py",
+    "src/global_rng_seed_gate_test.py",
+)
+
+
+def test_every_static_gate_declares_the_static_tier_and_the_marker_is_registered():
+    """Revert one file's `pytestmark` ⇒ its cold-cache run is judged against 30 s again (the mypy gate
+    reads 32.6 s cold). The marker must be registered in pytest.ini too, or `--strict-markers` and the
+    reader both lose it."""
+    import ast
+
+    for rel in _STATIC_GATES:
+        tree = ast.parse(repo_path(*rel.split("/")).read_text())
+        marks = [ast.unparse(n.value) for n in tree.body
+                 if isinstance(n, ast.Assign) and any(getattr(t, "id", "") == "pytestmark" for t in n.targets)]
+        assert marks and "pytest.mark.static" in marks[0], f"{rel} does not declare `pytest.mark.static`"
+    assert "    static:" in repo_path("pytest.ini").read_text()
+
+
 def test_only_COST_markers_exempt_a_test(conf):
     """A `sim` test is not excused for being slow — the 6-battle obs-golden linchpin is `sim` and
     runs in ~4s, and it BELONGS in the routine gate. Exempting capability markers would put it back

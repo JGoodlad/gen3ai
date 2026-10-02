@@ -49,6 +49,8 @@ import pytest
 
 from utils.paths import repo_root
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 _REPO_ROOT = repo_root()
 
 # Mirrored from `ruff_gate_test.py::_RUFF_ARGV`. If one gate's scope changes, change both — two

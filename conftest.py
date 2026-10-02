@@ -126,6 +126,15 @@ os.environ["GEN3AI_RUN_ARCHIVE_SEALED"] = "1"
 # A threshold a legitimate test sits on produces flapping, not signal — the same lesson as the
 # 1.25 idle line below, learned twice in one day.
 _TIER_BUDGET_BASE_S = 30.0
+# THE STATIC-GATE TIER (owner, 2026-10-02: "checks that pass or fail deterministically"). A static gate
+# (mypy, ruff, the freshness / stub / doc gates) is ~free WARM and pays a one-time COLD-cache cost: a fresh
+# worktree's first gate run read 32.6 s on the mypy gate against the 30 s budget above (warm: 0.26 s), and
+# the enum-str gate reads ~24 s cold. Whether that fails the run must not depend on whether a cache was
+# warm, so a static gate DECLARES `@pytest.mark.static` and is held to ITS OWN budget — the worst measured
+# cold read with ~5x clearance, still scaled by contention, still a real verdict on a quiet box — rather
+# than being exempted outright (a gate that grew to minutes would still be told). `static` is a COST
+# marker in meaning only: unlike `slow` it deselects nothing, so the gates stay in every tier.
+_STATIC_BUDGET_BASE_S = 180.0
 _COST_MARKERS = ("slow", "e2e", "benchmark")
 # (nodeid, call duration, the contention reading over that call — None when it could not be read)
 _over_budget: "list[tuple]" = []
@@ -373,14 +382,21 @@ def _write_slow_results(nodeids=None):
             "lost, so the routine gate will keep reading the previous verdict.")
 
 
-def _tier_budget_seconds(reading=None):
-    """The budget for one test: the base, stretched by ``reading`` (that test's window) or, with
-    none, by the session reading so far."""
+def _tier_budget_seconds(reading=None, base=None):
+    """The budget for one test: its base (the unmarked 30 s unless the caller names the `static`
+    tier's), stretched by ``reading`` (that test's window) or, with none, by the session reading so
+    far."""
     try:
         factor = (reading or _session_reading()).factor
     except Exception:
         factor = 1.0                    # never let the guard break the run
-    return _TIER_BUDGET_BASE_S * factor
+    return (_TIER_BUDGET_BASE_S if base is None else base) * factor
+
+
+def _budget_base(keywords):
+    """The declared base budget of a test carrying ``keywords``: the `static` tier's own, else the
+    unmarked default-tier's."""
+    return _STATIC_BUDGET_BASE_S if "static" in keywords else _TIER_BUDGET_BASE_S
 
 
 # --- The contention METER: sampled across the session, diffed per window -------------------------
@@ -464,13 +480,14 @@ def pytest_runtest_logreport(report):
         return                          # an xdist worker's copy: the CONTROLLER judges budgets
     if any(m in report.keywords for m in _COST_MARKERS):
         return                          # it declared its cost; that is the whole point of a tier
-    if report.duration <= _TIER_BUDGET_BASE_S:
+    base = _budget_base(report.keywords)
+    if report.duration <= base:
         return                          # the factor is >= 1, so it cannot be over; skip the read
     reading = _window_reading(report)
-    if report.duration > _tier_budget_seconds(reading):
-        _over_budget.append((report.nodeid, report.duration, reading))
+    if report.duration > _tier_budget_seconds(reading, base):
+        _over_budget.append((report.nodeid, report.duration, reading, base))
     else:
-        _within_scaled.append((report.nodeid, report.duration, reading))
+        _within_scaled.append((report.nodeid, report.duration, reading, base))
 
 
 # A duration is only worth FAILING on when the box was genuinely quiet. This bar is deliberately
@@ -531,11 +548,11 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     if _within_scaled:
         top = sorted(_within_scaled, key=lambda x: -x[1])[:3]
         terminalreporter.write_line(
-            f"tier budget: {len(_within_scaled)} unmarked test(s) ran over "
-            f"{_TIER_BUDGET_BASE_S:.0f}s but within their contention-scaled budget (a quiet-box run "
-            "decides): " + ", ".join(
-                f"{n.split('::')[-1]} {d:.1f}s @x{r.factor:.2f}" if r is not None
-                else f"{n.split('::')[-1]} {d:.1f}s" for n, d, r in top))
+            f"tier budget: {len(_within_scaled)} test(s) ran over their base budget "
+            f"({_TIER_BUDGET_BASE_S:.0f}s unmarked, {_STATIC_BUDGET_BASE_S:.0f}s `static`) but within "
+            "their contention-scaled budget (a quiet-box run decides): " + ", ".join(
+                f"{e[0].split('::')[-1]} {e[1]:.1f}s @x{e[2].factor:.2f}" if e[2] is not None
+                else f"{e[0].split('::')[-1]} {e[1]:.1f}s" for e in top))
     if not _over_budget:
         return
     try:
@@ -549,13 +566,15 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     verdict = ("exceeded" if enforced else
                "exceeded (ADVISORY — the box was busy, see below)")
     terminalreporter.write_line(
-        f"{len(_over_budget)} test(s) {verdict} the {_TIER_BUDGET_BASE_S:.0f}s default-tier "
-        f"budget (x each test's own contention factor) while carrying no cost marker:")
+        f"{len(_over_budget)} test(s) {verdict} their tier budget ({_TIER_BUDGET_BASE_S:.0f}s default "
+        f"tier, {_STATIC_BUDGET_BASE_S:.0f}s `static` tier; x each test's own contention factor) while "
+        "carrying no cost marker:")
     for entry in sorted(_over_budget, key=lambda x: -x[1]):
         nodeid, dur = entry[0], entry[1]
         reading = entry[2] if len(entry) > 2 else None
+        base = entry[3] if len(entry) > 3 else _TIER_BUDGET_BASE_S
         tag = "ENFORCED" if entry in enforced else "advisory"
-        terminalreporter.write_line(f"  {dur:7.1f}s  {nodeid}  [{tag}]")
+        terminalreporter.write_line(f"  {dur:7.1f}s  {nodeid}  [{tag}] (budget {base:.0f}s)")
         terminalreporter.write_line(
             "           window: " + (reading.describe() if reading is not None
                                      else "contention UNREADABLE for this window (not quiet)"))

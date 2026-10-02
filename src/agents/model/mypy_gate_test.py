@@ -24,10 +24,11 @@ separately from the exit code — the same principle as the rest of this tree, t
 must not be reachable by doing nothing.
 
 **Cost (measured 2026-08-17, this box, mypy 2.3.1 compiled):** WARM 0.28 s — mypy's incremental
-cache makes a no-change run essentially free. COLD (a fresh worktree, no `.mypy_cache`) 19.6 s,
-paid once; the `observation` widening added 21 source files to a 47-file scope and did not move
-either figure out of its tier. Both sit under the root `conftest.py`'s 30 s unmarked-tier budget,
-so this test takes NO cost marker and stays in the fast inner loop.
+cache makes a no-change run essentially free. COLD (a fresh worktree, no `.mypy_cache`) 19.6 s then,
+32.6 s on 2026-10-02 (a worktree's first gate run, over the root `conftest.py`'s 30 s unmarked-tier
+budget: warm 0.26 s) — paid once per cache. A check must not pass or fail by whether a cache is warm, so
+the gate DECLARES the `static` tier (`pytestmark` below; `conftest._STATIC_BUDGET_BASE_S`, 180 s): it
+stays in the routine gate and the inner loop, under its own budget, with no cost marker that deselects it.
 
 **A missing mypy FAILS rather than skips.** `mypy` is declared in `environment_torch28.yml` precisely so
 that it is present; if it is not, the honest report is "this gate did not run", not a green tick.
@@ -44,6 +45,8 @@ import sys
 import pytest
 
 from utils.paths import repo_root
+
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
 
 _REPO_ROOT = str(repo_root())
 

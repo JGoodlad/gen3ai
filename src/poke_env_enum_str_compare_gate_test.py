@@ -50,8 +50,8 @@ import pytest
 
 from utils.paths import src_root
 
-pytestmark = pytest.mark.skipif(os.environ.get("GEN3AI_SKIP_ENUM_STR_GATE") == "1",
-                                reason="GEN3AI_SKIP_ENUM_STR_GATE=1")
+pytestmark = [pytest.mark.static, pytest.mark.skipif(os.environ.get("GEN3AI_SKIP_ENUM_STR_GATE") == "1",
+                                reason="GEN3AI_SKIP_ENUM_STR_GATE=1")]
 
 _PACKAGES = ("agents", "main", "utils", "poke_env")
 

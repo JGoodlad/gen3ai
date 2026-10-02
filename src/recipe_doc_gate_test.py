@@ -37,6 +37,8 @@ from main.train.recipe_surface import (ALL_ROWS, FORK_OVERRIDES, FORK_ROWS, FRES
                                         KL_KEY, ROWS, SIZING_ROWS, _raw_mirror, recipe_blocks)
 from utils.paths import repo_path
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 _SKIP = pytest.mark.skipif(
     os.environ.get("GEN3AI_SKIP_RECIPE_DOC_GATE") == "1",
     reason="GEN3AI_SKIP_RECIPE_DOC_GATE=1",

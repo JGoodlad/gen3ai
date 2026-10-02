@@ -30,9 +30,9 @@ import pytest
 from main.ledger_index import REGEN_COMMAND, parse_headings, render_index
 from utils.paths import repo_path
 
-pytestmark = pytest.mark.skipif(
+pytestmark = [pytest.mark.static, pytest.mark.skipif(
     os.environ.get("GEN3AI_SKIP_LEDGER_INDEX_GATE") == "1",
-    reason="GEN3AI_SKIP_LEDGER_INDEX_GATE=1")
+    reason="GEN3AI_SKIP_LEDGER_INDEX_GATE=1")]
 
 _LEDGER = repo_path("designs", "research_state", "ledger.md")
 _INDEX = repo_path("designs", "research_state", "ledger_index.md")

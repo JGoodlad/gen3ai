@@ -47,6 +47,8 @@ import pytest
 
 from utils.paths import repo_root
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 _REPO_ROOT = str(repo_root())
 
 # Kept as one list so the docstring, `ruff.toml`'s header and the /gen3ai-ship step can all

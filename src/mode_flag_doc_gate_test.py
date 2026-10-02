@@ -58,6 +58,8 @@ import pytest
 from agents.training.baselines import production_config
 from utils.paths import repo_path
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 _SKIP = pytest.mark.skipif(
     os.environ.get("GEN3AI_SKIP_MODE_FLAG_DOC_GATE") == "1",
     reason="GEN3AI_SKIP_MODE_FLAG_DOC_GATE=1",

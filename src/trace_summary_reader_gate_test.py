@@ -40,6 +40,8 @@ import pytest
 
 from utils.paths import src_root
 
+pytestmark = pytest.mark.static   # the `static` budget tier (conftest._STATIC_BUDGET_BASE_S)
+
 #: The ONE module allowed to open a trace summary: it IS the loader.
 LOADER_MODULE = "main/prober/core_trace.py"
 #: EMPTY by rule. A direct reader is migrated or refuses; it is never listed here.

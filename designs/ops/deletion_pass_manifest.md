@@ -268,6 +268,13 @@ calendar days with 3 lanes; 8 is the box**.
     the compiled REGIONS with the donating default forced (the deleted `compiled_train_probes_test` did it for the
     extractor compile); the region gate's collapsed-critic ladder climb has no teeth test (the deleted
     `parity_probe_test` gate tests had one for the extractor gate).
+    ✅ **BOTH CLOSED by the K1 follow-ups (2026-10-02):** `compiled_first_update_test` puts a full first `train()` through the
+    compiled R0/R1 regions (the real `arm_compile_sentinel`) with `donated_buffer` forced to torch's default and every probe on —
+    it fails if the `compile_control` pin is dropped (CPU cell ~3 min, CUDA cell under `GEN3AI_TEST_ALLOW_GPU=1`, both `slow`);
+    `compile_regions_test` covers the collapsed-critic climb (a later rung passes, a saturated critic is refused, a planted R0
+    miscompile is caught at the climbed rung — each fails on the revert it guards). Also closed: a fresh worktree's first gate read
+    32.6 s on the mypy gate against the 30 s unmarked-tier budget; the 13 static gates now declare a `static` budget tier (180 s,
+    deselects nothing — `designs/ops/testing.md`).
 
 11. **K2 (2026-10-02): the compiled-update PERF GUARD had one baseline and it was TF32.** `compiled_perf_guard_test`'s only
     banked read (36.32 s, `perf_baseline.json`) was `--matmul-precision high`, which K2 retired, so it could not stand. An fp32
