@@ -10616,3 +10616,26 @@ if a lazy build is reintroduced.
   test un-rerunnable.
 - **Config v129:** `promotion_sprt` recorded, `_resolve`-inherited, never compared; a pre-v129 config
   migrates to False. DEFAULT OFF; flipped with `--eval-mirrored-pairs` at the X26 baseline.
+
+## 2026-10-02 — the staged batch copies on the COMPUTE stream; a per-call CUDA stream / graph / pool is lazy acquisition; K6 sees reserved growth after the freeze (`gen3_staged_compute_stream_v1`, `gen3_reserved_after_freeze_v1`; no model change, numerically identical)
+
+- **Finding (sizing arm B, N = 256):** reserved climbed +66 MiB per update, 7,814 → 9,674 MiB over updates
+  1–31, then flat; D-6 failed at steady state (341.5 MiB) while every segment counter read 0. Arm C
+  (5 epochs) climbed identically, so it was per `train()` call. Cause: `device_batches._StagedGather`
+  built a new `torch.cuda.Stream` every update; under the launcher's `expandable_segments:True` each
+  stream keeps its own cache, so each one stranded its in-flight micro-batches until torch's 32-stream
+  pool wrapped (31 updates + the startup dry update).
+- **Fix:** the staged copy runs non-blocking on the compute stream (the side stream bought no overlap).
+  A/B at N = 256 (40 updates): OLD 7,880 → 9,674 MiB; NEW 7,768 MiB flat = the startup fit's prediction.
+  X26 heads ON, production shape, 44 updates: 7,798 MiB flat = the prediction; D-6 2,218 MiB.
+- **Class fix:** `src/learner_lifecycle_gate_test.py`'s `cuda_resource` kind fails a `torch.cuda`
+  stream / CUDA graph / capture / graph pool / `MemPool` built in a training-step path (now also the T2
+  service, the rust collector / eval core / env) outside `@startup_builder` / `_setup_model` / `_build`;
+  a bare `__init__` is not exempt. T2's `Engine.__init__` / `_build_graphs` are declared `@startup_builder`.
+- **K6 counters:** a segment census from `memory_snapshot()` (segments + distinct streams; `memory_stats`
+  reads 0 under expandable segments); `reserved_after_freeze` (WARN > 128 MiB while rising) and
+  `streams_after_freeze` (WARN on any rise), measured from the freeze sample; `segments_after_freeze` now
+  counts from the freeze too. Four tags are written at EVERY sample (`lifecycle/cuda_reserved_mib`,
+  `_device_free_mib`, `_reserved_after_freeze_mib`, `_streams_after_freeze`).
+- Evidence: `designs/training/learner_lifecycle.md` "The staged batch's stream"; runs
+  `~/gen3ai_archive/staged_stream/runs/`.

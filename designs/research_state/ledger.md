@@ -21802,3 +21802,20 @@ Tag: **FINDING + FIX · eval-time logger dump dropped 1 KL reading per eval cycl
 **Next (owner sequence, 2026-10-01):** the SIZING verdict's commit (N\*), then the DELETION PASS + bounded tech-debt paydown (manifest `program_rust_core.md` §4, including the bare-argv default), then the slow tier, then T15, then the X26 baseline.
 
 Tag: **ERA BOUNDARY · M5 SWITCH · env core python → rust (fresh production launches), N = 48 until N\* · `gen3_env_core_switch_v1` · FIX: checkargs critic resolution on a resume**
+
+### 2026-10-02 · FINDING + FIX · THE N = 256 STEADY-STATE CLIMB WAS A PER-UPDATE CUDA STREAM — the staged batch now copies on the compute stream; D-6 holds at N = 256 with the X26 heads (2,218 MiB)
+
+**FINDING.** Sizing arm B (`models/sizing_B_n256_e10_s1001`, N = 256, 10 epochs, heads OFF, pin `7ef99979`) climbed RESERVED +66 MiB per update, 7,814 → 9,674 MiB over updates 1–31, then stayed flat for 51 updates. D-6 failed at steady state (headroom 341.5 MiB). Allocated peak and floor were flat, and `cuda_ooms` = `alloc_retries` = `segments_after_freeze` = 0.
+- **Cause.** `device_batches._StagedGather.__init__` built a NEW `torch.cuda.Stream` every `train()`. Under the launcher's `expandable_segments:True` each stream keeps its own cache, so each new stream stranded its micro-batch blocks until torch's 32-stream pool wrapped (31 updates + the startup dry update = 32). `memory_stats` counts no expandable segments, so every segment counter read 0.
+- **Ruled out by cadence:** evals (every ~20 updates), promotions (first at ~6.0M), the rank probe (every 10th update, same +66), T2 captures (`graphs_total` 5 throughout), ragged micro-batches (98,304 / 2,048 is exact). Arm C (5 epochs) climbed identically to 9.45 GiB at update 32, so it was per call, not per epoch. The switch pre-flight showed the same +66 per update.
+- **Mechanism, pure torch:** a new stream per update adds one segment and one stream to `memory_snapshot()` every update while `memory_stats` reads 0 segments; on the compute stream it holds 1 stream and 62 MiB.
+
+**FIX** (`gen3_staged_compute_stream_v1`): the copy runs non-blocking on the compute stream. The side stream bought no overlap, and the micro-batches are bit-identical. Class fix: the static lifecycle gate's `cuda_resource` kind, in which a bare `__init__` is not exempt. K6 counters (`gen3_reserved_after_freeze_v1`): a segment census from `memory_snapshot()`, `reserved_after_freeze` and `streams_after_freeze`, written at every sample.
+- **A/B** (N = 256, n_steps 48, 40 updates, no evals): OLD (`0aad283f`) 7,880 → 9,674 MiB, B's series to the MiB; NEW 7,768 MiB at every update = the startup fit's prediction (0 MiB error).
+- **Acceptance** (N = 256, X26 heads ON, production shape, 2 evals + 1 promotion, 44 updates): 7,798 MiB at every update = the prediction. D-6 at steady state: 10,016 − 7,798 = **2,218 MiB**. The same climb on this fit is PROJECTED to ~360 MiB (fail). gnome-shell not freed.
+- **Teeth:** the CUDA stranding test FAILS on the old code (streams 3, 4, 5, …) and passes on the fix. The static gate fails on revert at `_StagedGather.__init__`.
+- Runs: `~/gen3ai_archive/staged_stream/runs/`; doc: `designs/training/learner_lifecycle.md` "The staged batch's stream".
+
+**Still blind:** T2's `_frozen_guard` `cuda_segments_after_freeze` under `expandable_segments:True` (TECH-DEBT §2(b)). Note also that the K6 calibration README recommended AGAINST `expandable_segments`, but the launcher sets it for every child.
+
+Tag: **FINDING + FIX · N = 256 reserved climb = per-update side stream × expandable segments (31 + 1 = the 32-stream pool), not evals · fixed: 7,798 MiB flat = the fit check's prediction, D-6 2,218 MiB with the X26 heads · `gen3_staged_compute_stream_v1`**

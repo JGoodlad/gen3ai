@@ -412,3 +412,24 @@ def test_every_update_records_the_updates_and_the_rollouts_peak():
     w.observe("post_update")
     assert m.rec["lifecycle/cuda_update_peak_alloc_mib"] == 5000.0
     assert m.rec["lifecycle/cuda_update_peak_reserved_mib"] == 6000.0
+
+
+def test_every_sample_records_one_stable_tag_set_before_any_window_closes():
+    """gen3_reserved_after_freeze_v1: a 1-update probe already carries reserved, device free and the
+    two after-freeze counters (the switch pre-flight, 3 updates, had no `lifecycle/cuda_reserved_mib`:
+    those were window-close-only), and the counters read the growth since the FREEZE sample."""
+    from agents.training import cuda_memory_trend as cmt
+    m, lines = _MemModel(), []
+
+    def sampler(device, *, update, phase):
+        s = _mem_sample(update, phase, 3000, reserved_mib=7814 + 66 * update)
+        return cmt.MemorySample(**{**s.as_row(), "streams": 11 + update})
+    w = LL.CudaMemoryWatch(m, emit=lines.append, say=lines.append, device="cuda:0", sampler=sampler)
+    w.start()
+    w.observe("post_rollout")                       # the freeze: update 0
+    assert m.rec["lifecycle/cuda_reserved_after_freeze_mib"] == 0.0
+    w.observe("post_update")                        # update 1: +66 MiB, +1 stream
+    assert m.rec["lifecycle/cuda_reserved_mib"] == 7880.0
+    assert m.rec["lifecycle/cuda_reserved_after_freeze_mib"] == 66.0
+    assert m.rec["lifecycle/cuda_streams_after_freeze"] == 1.0
+    assert "lifecycle/cuda_device_free_mib" in m.rec and not w.trend.windows

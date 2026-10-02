@@ -168,7 +168,11 @@ quantity or a skipped step; a new term must reach the assembled loss (or carry i
 
 🚨 **K6 — THE LEARNER FREEZES at the first rollout of `learn()`** (`learner_lifecycle.py`, [`designs/training/learner_lifecycle.md`](../../../designs/training/learner_lifecycle.md)): after it, a NEW optimizer, `nn.Parameter`, module, buffer or optimizer-state entry anywhere in the learner's graph is `LazyAcquisitionError` (`[LearnerLifecycle] FATAL`, exit 3, not restarted) naming the object and its construction site. Build anything the steady state uses at STARTUP — in `_build` / `_setup_model` / an `__init__`, or a function marked `@lifecycle_decl.startup_builder` that the startup path runs — never on the first update. Adam/AdamW state is declared at startup (`declare_optimizer_state`, bit-identical to torch's lazy init). Every run logs a CUDA memory LEDGER by startup step (`cuda_ledger.py`, `<run_dir>/cuda_ledger.json`) and per-update peaks (`lifecycle/cuda_*_peak_*`, `lifecycle/device_batch_mib`); a rust-core pool refresh is a DECLARED LOAD (pool on the CPU; `checked_slot_load` refuses a load that allocates). On CUDA the MEMORY half rides the same attach (`CudaMemoryWatch` over `cuda_memory_trend.py`): a sample after every rollout and update, the OOM projection logged at every window (`[CudaMemTrend]`, TB `lifecycle/cuda_*`), and only a SUSTAINED leak projecting an OOM inside 25 updates stops — `CudaMemoryLeakError`, checkpoint (`final_model_exception.zip`) then exit 6 (`FATAL_CUDA_LEAK`), which the launcher restarts from that checkpoint at most twice per session; a step-up or fragmentation never does. The STATIC twin is `src/learner_lifecycle_gate_test.py` (routine, EMPTY allowlist): a
 construction in a training-step path outside a `@startup_builder` / `__init__` / `_build` / `_setup_model`
-fails the gate before it can fail a run.
+fails the gate before it can fail a run. 🚨 **A CUDA STREAM / GRAPH / GRAPH POOL is a startup acquisition
+too** (the gate's `cuda_resource` kind, `gen3_staged_compute_stream_v1`), and for it a bare `__init__` is
+NOT an exemption — only `@startup_builder` / `_setup_model` / `_build`: the caching allocator keeps a
+cache per stream, so the staged batch's per-update side stream (built in a helper's `__init__`) stranded
++1.86 GiB of reserved over 31 updates of sizing arm B, invisible to every segment counter.
 
 **`train()` carries BENCHMARK-ONLY phase marks** (`gen3_learner_phase_hook_v1`): ~14 lines of
 `if _ph is not None: _ph("<phase>")`, `_ph` read ONCE per call from `instrumented_ppo/phase_hook.py`

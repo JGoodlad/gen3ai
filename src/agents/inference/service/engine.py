@@ -32,6 +32,7 @@ import torch
 
 from agents.inference.service.parity import fixture_rows
 from agents.inference.service.slots import SlotGroup
+from agents.training.lifecycle_decl import startup_builder
 
 # One request's rows, addressed to a slot: (global slot id, group index, slot-in-group, obs, mask).
 PlanItem = Tuple[int, int, int, np.ndarray, np.ndarray]
@@ -45,6 +46,10 @@ def decide(module: torch.nn.Module, obs: torch.Tensor, mask: torch.Tensor
 
 
 class Engine:
+    # @startup_builder: the engine is built ONCE at startup (T2's build) and its lanes' streams are a
+    # declared acquisition — a stream owns allocator cache (`src/learner_lifecycle_gate_test.py`, the
+    # cuda_resource kind, gen3_staged_compute_stream_v1).
+    @startup_builder
     def __init__(self, *, groups: List[SlotGroup], slots: List[Tuple[int, int]],
                  device: torch.device, buckets: Tuple[int, ...], backend: str, max_rows: int,
                  lanes: int, obs_dim: int, n_actions: int, artifact_dir: Optional[str] = None,
@@ -116,6 +121,7 @@ class Engine:
         if self.cuda:
             torch.cuda.synchronize(self.device)
 
+    @startup_builder
     def _build_graphs(self) -> None:
         from agents.model.compile_cache import ensure_hermetic_cache
         ensure_hermetic_cache("T2 graph")         # K3: the run's cache, or a private one — never shared

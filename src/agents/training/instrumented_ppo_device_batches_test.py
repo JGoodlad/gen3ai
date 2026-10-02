@@ -101,13 +101,59 @@ def test_on_cuda_the_device_batches_equal_the_host_batches():
     buf = model.rollout_buffer
     buf.device = torch.device("cuda")
     host, _ = _batches(buf, 16, 2, seed=3)
-    for mode in ("resident", "staged"):          # staged: pinned host gather + side-stream copy
+    for mode in ("resident", "staged"):          # staged: pinned host gather + compute-stream copy
         with DB.device_samples(buf, mode=mode) as g:
             assert g is not None and g.device.type == "cuda"
             dev, _ = _batches(buf, 16, 2, seed=3)
             assert all(x.observations["observation"].is_cuda for e in dev for x in e)
         for eh, ed in zip(host, dev):
             _same(eh, ed)
+
+
+_STRANDING_PROBE = r"""
+import json, sys
+import numpy as np, torch
+import agents.training.instrumented_ppo.device_batches as DB
+from agents.training import learner_golden as LG
+model = LG.build_learner(); LG.load_buffer_into(model)
+buf = model.rollout_buffer; buf.device = torch.device("cuda")
+rows = []
+for u in range(int(sys.argv[1])):
+    with DB.device_samples(buf, mode="staged"):
+        np.random.seed(u)
+        for _ in range(2):
+            for x in buf.get(16):
+                (x.observations["observation"].float().sum() + x.advantages.sum()).item()
+    torch.cuda.synchronize()
+    streams = len({sg.get("stream", 0) for sg in torch.cuda.memory_snapshot()})   # self-contained: runs on old code
+    rows.append([torch.cuda.memory_reserved(), streams])
+print(json.dumps(rows))
+"""
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+def test_on_cuda_staged_updates_strand_no_cache_on_a_new_stream():
+    """gen3_staged_compute_stream_v1: forty staged "updates" under the launcher's allocator mode
+    (`expandable_segments:True`, a fresh process) hold ONE stream's cache and a flat reserved total.
+    The code this replaced built a side stream per update: +1 stream with cache and +its in-flight
+    micro-batches of reserved every update until torch's 32-stream pool wrapped (sizing arm B)."""
+    import json
+    import os
+    import subprocess
+    import sys
+
+    from utils.paths import src_root
+    env = {**os.environ, "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+           "PYTHONPATH": str(src_root()) + os.pathsep + os.environ.get("PYTHONPATH", "")}
+    out = subprocess.run([sys.executable, "-c", _STRANDING_PROBE, "40"], env=env, capture_output=True,
+                         text=True, timeout=600)
+    assert out.returncode == 0, out.stderr[-3000:]
+    rows = json.loads(out.stdout.strip().splitlines()[-1])
+    reserved = [r[0] for r in rows[1:]]
+    streams = [r[1] for r in rows[1:]]
+    assert len(set(streams)) == 1, streams                   # no stream acquired cache after update 1
+    assert max(reserved) == min(reserved), reserved          # reserved flat after update 1
 
 
 def test_the_gather_knows_its_device_copys_size():

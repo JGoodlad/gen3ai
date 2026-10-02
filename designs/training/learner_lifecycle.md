@@ -187,9 +187,14 @@ freeze guard (so every launch that arms the lifecycle has it; inert off CUDA):
 - at every window close (2 updates) the projection is LOGGED to the run's log (stdout) as one
   `[CudaMemTrend] <level> @ update N: floor …, slope …/update, demand …, ceiling …[, projected OOM in
   K updates (horizon 25)]` line and recorded to TB (`lifecycle/cuda_*` — level, floor, demand,
-  ceiling, slope, updates to the ceiling, reserved, device free, segments, retries, OOMs); a WARN
-  that changes between closes is printed when it happens, and a changed WARN or the STOP also goes
-  to the launcher's event channel;
+  ceiling, slope, updates to the ceiling, reserved, device free, segments, streams, retries, OOMs,
+  the after-freeze counters); a WARN that changes between closes is printed when it happens, and a
+  changed WARN or the STOP also goes to the launcher's event channel;
+- at EVERY sample, whatever the window state, one stable tag set: `lifecycle/cuda_reserved_mib`,
+  `lifecycle/cuda_device_free_mib`, `lifecycle/cuda_reserved_after_freeze_mib` and
+  `lifecycle/cuda_streams_after_freeze` (`gen3_reserved_after_freeze_v1`; a 3-update probe has them —
+  the window-close tags need 4 updates). The section "The staged batch's stream" below says what the two
+  after-freeze counters catch;
 - a STOP raises `CudaMemoryLeakError` (`[LearnerLifecycle] STOP — CUDA MEMORY LEAK: …`; NOT a
   configuration error) at the update's end; the trainer's exception handler saves
   `final_model_exception.zip` (the checkpoint) and the process exits `FATAL_CUDA_LEAK` (6). A fresh
@@ -278,8 +283,10 @@ N = 48 and 256). `GEN3AI_UPDATE_FIT_SNAPSHOT=<path>` dumps the allocator's histo
 | N = 256, all levers | 6,426 / 7,844 MiB | 6,230 / 7,910 MiB |
 | N = 256, heads OFF, all levers | 6,386 / 7,814 MiB | 6,190 / 7,880 MiB |
 
-Reserved within 70 MiB (the real one also carries the first eval cycles' cache growth, ~+70 MiB each
-at a promotion per rollout), allocated ~+195 MiB conservative. Before the probe was in the dry update it
+Those reserved gaps (+66 MiB on the real update) were the staged batch's per-update SIDE STREAM, not
+eval cycles: each update's new stream stranded its micro-batch cache (next section). With the copy on the
+compute stream the dry update's demand IS the steady state's — 7,768 MiB predicted, 7,768 MiB at every one
+of 40 real updates (N = 256, heads OFF; below). Allocated ~+195 MiB conservative. Before the probe was in the dry update it
 UNDER-predicted by 1.37 GiB: the probe WAS the peak (below).
 
 **The old N = 256 shape is refused at startup.** N = 256 + the X26 heads, resident batch, T2 uncapped:
@@ -292,7 +299,7 @@ T2 rows replay at the same bucket as before, so its log-probs are bitwise unchan
 | lever | what | measured saving |
 |---|---|---|
 | K9(b) probe keeps NOTHING for backward (`gen3_probe_releases_graph_v1`) | `consistency.behaviour_probe`'s eager grad-mode forward of one micro-batch (2,048 rows) ran BEFORE the epoch loop and its saved activations were the update's PEAK; it now runs under `saved_tensors_hooks` that drop them (grad mode, kernels and values unchanged — bitwise, `update_fit_test`), and the stashes that held its graph are released | N = 48 real first update 8,790 → 7,230 MiB allocated, 9,550 → 8,570 reserved |
-| `--device-batch staged` (DEFAULT, `gen3_device_batch_mode_v1`) | each micro-batch gathered on the host by a prefetch thread, copied on a side stream; the resident K8.6 copy of the whole rollout is gone | −1,088 MiB of update peak (1,135 → 47 MiB on the card) |
+| `--device-batch staged` (DEFAULT, `gen3_device_batch_mode_v1`) | each micro-batch gathered on the host by a prefetch thread, copied non-blocking on the COMPUTE stream (`gen3_staged_compute_stream_v1`; it was a per-update side stream, below); the resident K8.6 copy of the whole rollout is gone | −1,088 MiB of update peak (1,135 → 47 MiB on the card) |
 | T2 per-slot bucket caps (`gen3_slot_bucket_caps_v1`, `--t2-opponent-bucket-cap 64`) | each lane's CUDA-graph pool is sized by its largest capture: uncapped at N = 256, 8 lanes × 232 MiB; capped, only the trainee's lane captures 256 (others ≤ 64, a 60 MiB pool) | T2 startup row +1,399 / +3,924 → +850 / +2,112 MiB (alloc / reserved) |
 | T2 slots hold no ride-along heads (`gen3_opponent_inference_load_v1` + `served_replica`) | 18.2 MiB per slot at the X26 surface, never copied | T2 row +1,653 → +1,399 MiB allocated (heads then without RND variants) |
 
@@ -320,6 +327,77 @@ spawns `agents.training.snapshot_ladder` detached; it plays on the CPU but its i
 context, 330 MiB of the training card each, and each outlived its promotion by 15+ min (four alive at
 once at a promotion per rollout). It is now spawned with `CUDA_VISIBLE_DEVICES=""`. The startup fit
 check cannot see a process spawned later; K6's trend is what watches that.
+
+## The staged batch's stream — the after-startup climb, and the counters that see it (`gen3_staged_compute_stream_v1`, `gen3_reserved_after_freeze_v1`)
+
+**The finding (sizing arm B, 2026-10-01: N = 256, 10 epochs, heads OFF, pin `7ef99979`).** RESERVED
+climbed +66 MiB per update from the startup fit's 7,814 MiB to 9,674 MiB over updates 1–31, then stayed
+flat for the remaining 51 updates; device free fell 2,515 → 854 MiB and D-6 failed at steady state
+(`[CudaMemTrend] WARN` from update 30, headroom 341.5 MiB). The allocated peak (4,724 MiB) and the
+quiescent floor (~980 MiB) never moved, `cuda_ooms` = `alloc_retries` = 0, and `segments_after_freeze`
+read 0 the whole run. Arm C (5 epochs) climbed the same +66 MiB per update to the same 9.45 GiB demand at
+update 32, so the growth was per `train()` call, not per epoch; evals (every ~20 updates), promotions
+(first at ~6.0M steps) and the rank probe (every 10th update) do not line up with it.
+
+**The cause.** `device_batches._StagedGather.__init__` built a NEW `torch.cuda.Stream` for the side-stream
+copy at every `train()` call. torch hands streams out round-robin from a pool of 32 per priority. The
+launcher runs every child under `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`
+(`main/launcher/child.py`), where the caching allocator keeps a segment PER STREAM and a cached block
+serves only its own stream, so each new stream stranded its in-flight micro-batch blocks (+46–66 MiB)
+until the pool wrapped: 31 real updates + the startup dry update = 32. Every segment counter read 0
+because `memory_stats` does not count expandable segments.
+
+**The fix: no side stream.** The copy runs non-blocking on the COMPUTE stream. The side stream bought no
+overlap: it waited on the compute stream before every copy, and the compute stream waited on it after.
+The micro-batches are bit-identical (a gather is exact; `instrumented_ppo_device_batches_test`). The class
+fix is the static gate's `cuda_resource` kind (`src/learner_lifecycle_gate_test.py`): a `torch.cuda`
+stream, CUDA graph, capture, graph pool or `MemPool` built in a training-step path — the learner, the T2
+service, the rust collector / eval core / env — FAILS outside `@startup_builder` / `_setup_model` /
+`_build`. A bare `__init__` does NOT exempt it, because the leak sat in a per-update helper's `__init__`
+(T2's `Engine.__init__` and `_build_graphs` are declared `@startup_builder`).
+
+**Measured, A/B** (RTX 3080 Ti, torch 2.8, fp32, rust core, `--arch production`, N = 256, n_steps 48,
+10 epochs, no evals, 40 updates; run dirs `~/gen3ai_archive/staged_stream/runs/ss_ab_{old,new}_*`):
+
+| arm | startup fit demand | update peak reserved, updates 1 → 40 | device free | streams |
+|---|---|---|---|---|
+| OLD (`0aad283f`, per-update side stream) | 7,814 MiB | 7,880 → 9,674 (+66/update to update 31, then flat) — B's series to the MiB | 2,515 → 854 | not counted |
+| NEW (compute stream) | 7,768 MiB | **7,768 at every update** | 2,760 flat | 9 flat |
+
+The fit check's prediction equals the steady state exactly. D-6 at steady state (heads OFF): ceiling
+10,016 − demand 7,768 = 2,248 MiB, against B's 341.5.
+
+**Acceptance — N = 256 with the X26 heads ON** (`--ridealong-ensemble 5 --ridealong-rnd --ridealong-adv 5
+--ridealong-opp 5 --ridealong-rnd-variants all`), production shape (n_steps 384 = 98,304 rows, 10 epochs,
+the production eval cadence: evals at 2.0M and 4.0M steps, one promotion loaded into its T2 slot),
+44 updates, one process (`~/gen3ai_archive/staged_stream/runs/ss_accept_n256h_1790927726`): the fit
+check predicted 7,798 MiB; the update and rollout peak reserved read **7,798 MiB at every update**
+(1 → 43 dumped; the 44th is the undumped last update, TECH-DEBT §2(b)), device free 2,730 flat,
+`reserved_after_freeze` 0, `streams_after_freeze` 0, 9 streams, no retries or OOMs. **D-6 at steady
+state: 10,016 − 7,798 = 2,218 MiB** (≥ 512). **PROJECTED, not run:** before the fix the same climb
+(+1,860 MiB, measured with the heads OFF) on this fit ends at ~9,660 MiB, ~360 MiB of D-6 headroom — a FAIL. gnome-shell was NOT freed. A pure-torch check (no repo code) shows the
+mechanism alone: one new stream per update adds a segment and a stream to `memory_snapshot()` every update
+while `memory_stats`' segment count reads 0; on the compute stream it holds one stream and 62 MiB.
+
+**The counters (`cuda_memory_trend`, `gen3_reserved_after_freeze_v1`).** Every sample takes a SEGMENT
+CENSUS from `torch.cuda.memory_snapshot()` (`segment_census`: segments, and DISTINCT streams owning one),
+which fills the segment count when `memory_stats` reads none. Measured from the FREEZE sample (the warm-up
+updates included — they are after the freeze too; `segments_after_freeze` used to start at the first
+windowed sample):
+
+- `reserved_after_freeze` — reserved grown since the freeze. Above `RESERVED_AFTER_FREEZE_WARN_BYTES`
+  (128 MiB) while it is still RISING, a WARN: demand the startup fit never measured. The tolerance's
+  cause: the dry update is one epoch and a real update ten; the measured excess after the fix is 0.
+- `streams_after_freeze` — streams holding cache that the freeze did not have. Any rise is a WARN
+  (tolerance 0: every stream is a declared startup acquisition).
+
+Both WARN, never STOP (a bounded growth that stops is not a leak); B's series WARNs at the FIRST window
+(update 4) and on every window until the climb ends (`cuda_memory_trend_test`), where it used to be
+silent until headroom ran out at update 30. Both are written at every sample (the memory half, above).
+
+**What is still not covered.** T2's own `InferenceService._frozen_guard` counts `segment.all.allocated`,
+which is blind under `expandable_segments:True` the same way; it POISONS on a hit, and a snapshot per
+flush is too slow, so its fix is a TECH-DEBT row, not this unit (`designs/ops/TECH_DEBT_BACKLOG.md` §2(b)).
 
 ## An opponent never trains, so an opponent load acquires nothing (`gen3_opponent_inference_load_v1`)
 
@@ -405,6 +483,15 @@ PER-STEP hooks of every SB3 callback under `agents/training` and `main/train` (`
 covers each. Teeth: 24 violating snippets fail, 8 exemptions pass, and each scanner rule's removal
 fails a teeth test. Landed with the ride-along builders marked `@startup_builder` (`_mlp`,
 `build_rnd_variants`, `build_ridealong`, `_adam` — every caller is startup since `8812c565`).
+
+**The `cuda_resource` kind** (`gen3_staged_compute_stream_v1`, 2026-10-01): a `torch.cuda` `Stream` /
+`ExternalStream` / `CUDAGraph` / `graph(...)` capture / `graph_pool_handle` / `MemPool`, however spelled,
+fails in the same scope PLUS `CUDA_SCOPE` (the T2 inference service, the rust rollout collector, the rust
+eval core, the rust env's Python side — scanned for this kind only). Its exemptions are `@startup_builder`,
+`_setup_model` and `_build` — NOT a bare `__init__`, because the per-update side stream that stranded
+1.86 GiB sat in a per-update helper's `__init__`. `torch.cuda.Event` is not in the class (an event owns no
+allocator state; T2 creates one per flush). Teeth: 9 violating snippets (the original leak among them),
+4 exemptions, the CUDA-only scope.
 
 ## The ride-along heads under the guard
 

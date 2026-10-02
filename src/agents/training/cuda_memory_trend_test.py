@@ -24,7 +24,7 @@ FIXTURE = repo_path("designs", "research_state", "measurements", "k6_k8", "memor
 
 def _s(update: int, allocated: float, *, phase: str = "post_update", reserved: Optional[float] = None,
        peak_reserved: Optional[float] = None, segments: int = 40, retries: int = 0,
-       other: float = 0.5 * GiB) -> MemorySample:
+       other: float = 0.5 * GiB, streams: int = -1) -> MemorySample:
     """One sample on a 12 GiB card: the process holds ``reserved``; ``other`` bytes belong to
     other processes / the context; everything else is free."""
     res = int(reserved if reserved is not None else allocated + 3 * GiB)
@@ -33,7 +33,7 @@ def _s(update: int, allocated: float, *, phase: str = "post_update", reserved: O
                         active=int(allocated), inactive_split=int(res - allocated), segments=segments,
                         segments_allocated_total=segments, peak_allocated=int(allocated + 2 * GiB),
                         peak_reserved=pk, alloc_retries=retries, ooms=0,
-                        device_free=int(TOTAL - res - other), device_total=TOTAL)
+                        device_free=int(TOTAL - res - other), device_total=TOTAL, streams=streams)
 
 
 def _run(samples: Iterable[MemorySample], trend: Optional[MemoryTrend] = None) -> List[M.TrendVerdict]:
@@ -53,7 +53,7 @@ def _fixture_units() -> List[List[MemorySample]]:
     data = json.loads(FIXTURE.read_text())
     units = []
     for u in data["units"]:
-        units.append([MemorySample(**{k: r[k] for k in M.MemorySample.__dataclass_fields__})
+        units.append([MemorySample(**{k: r[k] for k in M.MemorySample.__dataclass_fields__ if k in r})
                       for r in u["samples"]])
     return units
 
@@ -111,8 +111,10 @@ def test_fragmentation_growth_then_plateau_never_stops():
     assert not any(v.sustained for v in vs)
     assert any(any(r.startswith("reserved_step") for r in v.reasons) for v in vs)
     assert vs[-1].level == "OK"
-    assert t.segments_after_freeze() == 30 - M.WARMUP_UPDATES
-    assert t.tb_scalars()[M.TB_PREFIX + "segments_after_freeze"] == 30 - M.WARMUP_UPDATES
+    # counted from the FREEZE (the first sample), warm-up updates included — they are after the freeze
+    # too (gen3_reserved_after_freeze_v1; it used to start at the first windowed sample)
+    assert t.segments_after_freeze() == 30
+    assert t.tb_scalars()[M.TB_PREFIX + "segments_after_freeze"] == 30
 
 
 @pytest.mark.parametrize("start", list(range(2, 30, 3)))
@@ -206,7 +208,8 @@ def test_tb_scalars_and_window_cadence():
     assert sc[M.TB_PREFIX + "level"] == 0.0
     assert sc[M.TB_PREFIX + "floor_mib"] == pytest.approx(3 * 1024)
     for k in ("ceiling_mib", "demand_mib", "slope_mib_per_update", "updates_to_ceiling", "segments",
-              "alloc_retries", "reserved_mib", "device_free_mib", "segments_after_freeze", "sustained"):
+              "alloc_retries", "reserved_mib", "device_free_mib", "segments_after_freeze", "sustained",
+              "reserved_after_freeze_mib", "streams_after_freeze", "streams"):
         assert M.TB_PREFIX + k in sc
 
 
@@ -240,3 +243,75 @@ def test_module_imports_no_torch():
     code = ("import sys; import agents.training.cuda_memory_trend as m; "
             "sys.exit(1 if 'torch' in sys.modules else 0)")
     assert subprocess.run([sys.executable, "-c", code]).returncode == 0
+
+
+# ------------------------------------------------------------------------------------------------
+# gen3_reserved_after_freeze_v1: the counters that see a per-update STREAM leak (sizing arm B)
+# ------------------------------------------------------------------------------------------------
+
+def _arm_b(updates: int, *, leak: bool) -> List[MemorySample]:
+    """Sizing arm B's shape (N = 256, `expandable_segments:True`): a flat quiescent floor (987 MiB),
+    reserved 7,814 MiB at the freeze; with ``leak`` every update adds a stream holding +66 MiB of cache
+    until torch's 32-stream pool wraps (31 updates after the startup dry update), as B measured.
+    ``memory_stats``' segment count reads 0 throughout, as it does under expandable segments."""
+    out = []
+    for u in range(updates):
+        k = min(u, 31) if leak else 0
+        res = (7814 + 66 * k) * MiB
+        st = 11 + k
+        for ph in ("post_rollout", "post_update"):
+            out.append(_s(u, 987 * MiB, phase=ph, reserved=res, segments=0, streams=st,
+                          other=12 * GiB - 10528 * MiB))
+    return out
+
+
+def test_a_per_update_stream_leak_warns_at_the_first_window_and_never_stops():
+    vs = _run(_arm_b(82, leak=True))
+    assert "STOP" not in _levels(vs)
+    first = next(v for v in vs if v.window_closed)
+    assert first.level == "WARN", first.message
+    assert any(r.startswith("reserved +") for r in first.reasons), first.reasons
+    assert any(r.startswith("streams +") for r in first.reasons), first.reasons
+    assert first.update <= M.WARMUP_UPDATES + 2 * M.WINDOW_UPDATES
+    # while it climbs every window says so; once the pool wrapped the counters stop rising and clear
+    closes = [v for v in vs if v.window_closed]
+    climbing = [v for v in closes if v.update <= 31]
+    assert all(any(r.startswith("streams +") for r in v.reasons) for v in climbing)
+    assert not any(r.startswith(("reserved +", "streams +")) for r in closes[-1].reasons)
+
+
+def test_the_counters_read_the_leak_where_segments_read_zero():
+    t = MemoryTrend()
+    _run(_arm_b(40, leak=True), t)
+    sc = t.tb_scalars()
+    assert sc[M.TB_PREFIX + "segments_after_freeze"] == 0.0       # what B's TB showed: blind
+    assert sc[M.TB_PREFIX + "reserved_after_freeze_mib"] == pytest.approx(66 * 31)
+    assert sc[M.TB_PREFIX + "streams_after_freeze"] == 31.0
+
+
+def test_a_flat_run_raises_neither_counter():
+    vs = _run(_arm_b(82, leak=False))
+    assert not any(r.startswith(("reserved +", "streams +")) for v in vs for r in v.reasons)
+    # growth AT the declared tolerance is not a warning; one 2 MiB page over it is (deterministic)
+    for grown, warns in ((M.RESERVED_AFTER_FREEZE_WARN_BYTES, False),
+                         (M.RESERVED_AFTER_FREEZE_WARN_BYTES + 2 * MiB, True)):
+        seq = [_s(u, 987 * MiB, reserved=7814 * MiB + (grown if u else 0), streams=11) for u in range(12)]
+        got = any(r.startswith("reserved +") for v in _run(seq) for r in v.reasons)
+        assert got is warns, grown
+
+
+def test_unknown_stream_counts_never_warn():
+    seq = [_s(u, 987 * MiB, reserved=7814 * MiB, streams=-1 if u == 0 else 12) for u in range(12)]
+    assert not any(r.startswith("streams +") for v in _run(seq) for r in v.reasons)
+
+
+def test_the_segment_census_counts_segments_and_distinct_streams():
+    segs = [{"stream": 0}, {"stream": 0}, {"stream": 7}, {"stream": 9}, {}]
+    assert M.segment_census(segs) == (5, 3)
+    stats = {"segment.all.current": 0, "reserved_bytes.all.current": 9}
+    s = M.sample_from_stats(stats, 1, 2, update=0, phase="x", census=(5, 3))
+    assert (s.segments, s.streams) == (5, 3)                     # the census fills the blind count
+    stats["segment.all.current"] = 4
+    s = M.sample_from_stats(stats, 1, 2, update=0, phase="x", census=(5, 3))
+    assert (s.segments, s.streams) == (4, 3)                     # a real count is kept
+    assert M.sample_from_stats(stats, 1, 2, update=0, phase="x").streams == -1

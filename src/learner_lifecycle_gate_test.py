@@ -1,4 +1,5 @@
-"""Does any TRAINING-STEP code path build an optimizer, a Parameter or a Module? The static gate.
+"""Does any TRAINING-STEP code path build an optimizer, a Parameter, a Module or a CUDA stream / graph /
+graph pool? The static gate.
 
 **The rule (the M5 DECLARED LIFECYCLE, `designs/endstate/program_rust_core.md`, "M5 DESIGN PRINCIPLE —
 a DECLARED LIFECYCLE").** A training process acquires everything at STARTUP, then FREEZES; the steady
@@ -14,10 +15,22 @@ FAILS on any of
 * a MODULE construction — any ``torch.nn`` class that subclasses ``nn.Module`` (``nn.Linear(``,
   ``th.nn.LayerNorm(``, ``nn.ModuleList(`` …), and any REPO class that subclasses ``nn.Module``
   directly or transitively;
+* a CUDA RESOURCE construction (``cuda_resource``, `gen3_staged_compute_stream_v1`) — a
+  ``torch.cuda`` STREAM, CUDA GRAPH, graph CAPTURE, graph-pool handle or memory pool
+  (:data:`CUDA_RESOURCES`, however spelled). Each one OWNS caching-allocator state: the allocator
+  keeps a cache per stream (under ``expandable_segments:True`` a whole segment per stream) and a pool
+  per graph, so one acquired per call strands memory the startup fit check never measured. The
+  2026-10-01 instance: `device_batches._StagedGather.__init__` built a new side stream EVERY UPDATE,
+  and sizing arm B's reserved memory climbed +1.86 GiB over 31 updates (+ the startup dry update = 32,
+  the size of torch's per-priority stream pool) before the pool wrapped. ``torch.cuda.Event`` is NOT in the class: an event owns no device memory and no
+  allocator state (T2's per-flush event is a ``cudaEventCreate``, nothing more);
 
 inside a TRAINING-STEP code path, except within a function decorated ``@startup_builder``
 (`agents.training.lifecycle_decl`) or a class's ``__init__`` / ``_build`` / ``_setup_model`` (an
-exemption covers every def / lambda nested inside it). Module-level and class-body code is import
+exemption covers every def / lambda nested inside it). 🚨 For a CUDA RESOURCE the ``__init__``
+exemption does NOT apply: the leak above sat in an ``__init__`` of a helper built once per update, so a
+constructor is no evidence of startup — a startup object's constructor says so with
+``@startup_builder`` (T2's `InferenceEngine.__init__` does). Module-level and class-body code is import
 time, i.e. startup, and is not scanned.
 
 **The allowlist is EMPTY — a new entry is not a legal move.** Move the construction to startup (a
@@ -35,7 +48,11 @@ genuine startup method, fix the SCOPE (and say why in its justification), never 
    constant / mode readers. Each entry carries its reason. A new module the fold starts calling is
    added HERE, in the same change (the coverage test below fails when an ``instrumented_ppo``
    import names an ``agents`` module that is in neither list nor :data:`NOT_STEP_MODULES`).
-3. CALLBACKS: the PER-STEP methods (:data:`CALLBACK_STEP_METHODS`) of every SB3 callback class (a
+3. :data:`CUDA_SCOPE`: the T2 inference service, the rust rollout collector, the rust eval core
+   and the rust env's Python side — every function in them, scanned for the ``cuda_resource`` kind
+   ONLY (they serve every rollout step / eval flush; they build their modules from loaded weights,
+   which the runtime freeze guard and the declared slot loads govern, not this gate).
+4. CALLBACKS: the PER-STEP methods (:data:`CALLBACK_STEP_METHODS`) of every SB3 callback class (a
    class reaching ``BaseCallback`` through its bases, resolved by name) defined under
    ``src/agents/training/`` or ``src/main/train/``. ``_on_training_start`` / ``_init_callback`` run
    before the first rollout and count as startup.
@@ -101,6 +118,23 @@ STEP_MODULES: Dict[str, str] = {
     "agents/model/ridealong_heads.py": "the ride-along heads' forward + loss, per minibatch (epoch 0)",
 }
 
+#: Packages / modules scanned for the ``cuda_resource`` kind only, each with why it is a step path.
+CUDA_SCOPE: Dict[str, str] = {
+    "agents/inference/service": "the T2 inference service: `execute` serves every rollout step's and every "
+                                "eval flush's batch; its lanes' streams and graph pools are startup",
+    "agents/training/rust_rollout": "the rust-core rollout collector, run every rollout",
+    "agents/training/rust_eval": "the rust-core eval cycle, run every eval",
+    "utils/rust_env": "the rust env core's Python side, stepped every rollout step",
+    "agents/training/rust_vec_env.py": "the rust vec env the learner steps every rollout step",
+}
+
+#: The ``torch.cuda`` constructions that own caching-allocator state (module docs). Matched on the
+#: RESOLVED dotted name under ``torch.cuda`` (``torch.cuda.Stream``, ``torch.cuda.streams.Stream``,
+#: ``from torch.cuda import CUDAGraph``, ...). The lowercase ``torch.cuda.stream(s)`` context manager
+#: SELECTS an existing stream and is not in it; ``graph`` (a capture) is.
+CUDA_RESOURCES = frozenset({"Stream", "ExternalStream", "CUDAGraph", "graph", "graph_pool_handle",
+                            "MemPool"})
+
 #: ``agents`` modules ``instrumented_ppo`` imports that are NOT step paths, and why.
 NOT_STEP_MODULES: Dict[str, str] = {
     "agents/model/critic_mode.py": "a pure mode predicate (`is_winprob`) read at setup; builds nothing",
@@ -126,6 +160,8 @@ CALLBACK_SEEDS = frozenset({"BaseCallback", "EventCallback", "CallbackList", "Ev
 
 #: The exemptions: a METHOD with one of these names (its class's startup), and this decorator.
 EXEMPT_METHODS = frozenset({"__init__", "_build", "_setup_model"})
+#: ... and for a CUDA RESOURCE (module docs: a per-call object's ``__init__`` is no evidence of startup).
+CUDA_EXEMPT_METHODS = frozenset({"_build", "_setup_model"})
 STARTUP_DECORATOR = "startup_builder"
 
 
@@ -146,11 +182,16 @@ TORCH_NN_MODULES, TORCH_OPTIMIZERS = _torch_class_names()
 class Hit(NamedTuple):
     path: str
     line: int
-    kind: str          # "optimizer" | "parameter" | "module"
+    kind: str          # "optimizer" | "parameter" | "module" | "cuda_resource"
     construct: str     # the call as spelled
     function: str      # the enclosing function's dotted name
 
     def render(self) -> str:
+        if self.kind == "cuda_resource":
+            return (f"{self.path}:{self.line}: cuda_resource construction `{self.construct}(...)` in "
+                    f"`{self.function}` — a stream / graph / graph pool owns allocator cache; acquire it ONCE "
+                    "in a `@startup_builder` (agents.training.lifecycle_decl) / `_setup_model` and reuse it "
+                    "(an `__init__` is exempt only when decorated `@startup_builder`), i.e. move it to startup")
         return (f"{self.path}:{self.line}: {self.kind} construction `{self.construct}(...)` in "
                 f"`{self.function}` — acquire it in a `@startup_builder` "
                 "(agents.training.lifecycle_decl) / `_setup_model` / an `__init__`, i.e. move it to startup")
@@ -253,6 +294,8 @@ def classify(func: ast.expr, imports: Dict[str, str], uni: Universe) -> Optional
     q = ".".join([root, *parts[1:]]) if root else spelling
     last = q.split(".")[-1]               # the RESOLVED class name (`P` bound to `...Parameter`)
     if q == "torch" or q.startswith("torch."):
+        if q.startswith("torch.cuda.") and last in CUDA_RESOURCES:
+            return "cuda_resource", spelling
         if q.startswith("torch.nn.") and last == "Parameter":
             return "parameter", spelling
         if q.startswith("torch.nn.") and last in TORCH_NN_MODULES:
@@ -278,35 +321,40 @@ def _is_startup_builder(fn: ast.AST) -> bool:
     return False
 
 
-def scan_source(src: str, rel: str, uni: Universe, *, whole_module: bool) -> List[Hit]:
+def scan_source(src: str, rel: str, uni: Universe, *, whole_module: bool,
+                kinds: Optional[Set[str]] = None) -> List[Hit]:
     """Every violation in ``src``. ``whole_module``: every function is a step path; otherwise only
-    the per-step methods of callback classes (``uni.callbacks``) are."""
+    the per-step methods of callback classes (``uni.callbacks``) are. ``kinds`` keeps only those
+    kinds (None = every kind)."""
     tree = ast.parse(src, rel)
     imports = _imports(tree)
     hits: List[Hit] = []
 
     def visit(node: ast.AST, qual: List[str], cls: Optional[ast.ClassDef], in_step: bool,
-              exempt: bool) -> None:
+              exempt: bool, exempt_cuda: bool) -> None:
         # ``cls`` is set only while walking a class BODY (so a def there is a method, even under an
         # ``if``); module-level and class-body statements are import time (startup): ``in_step``
         # starts False and only a step function's body turns it on.
         for child in ast.iter_child_nodes(node):
             if isinstance(child, ast.ClassDef):
-                visit(child, [*qual, child.name], child, in_step, exempt)
+                visit(child, [*qual, child.name], child, in_step, exempt, exempt_cuda)
             elif isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 is_method = cls is not None
-                ex = exempt or _is_startup_builder(child) or (is_method and child.name in EXEMPT_METHODS)
+                builder = _is_startup_builder(child)
+                ex = exempt or builder or (is_method and child.name in EXEMPT_METHODS)
+                ex_cuda = exempt_cuda or builder or (is_method and child.name in CUDA_EXEMPT_METHODS)
                 step = in_step or whole_module or (
                     cls is not None and cls.name in uni.callbacks and child.name in CALLBACK_STEP_METHODS)
-                visit(child, [*qual, child.name], None, step, ex)
+                visit(child, [*qual, child.name], None, step, ex, ex_cuda)
             else:
-                if isinstance(child, ast.Call) and in_step and not exempt:
+                if isinstance(child, ast.Call) and in_step:
                     got = classify(child.func, imports, uni)
-                    if got is not None:
+                    if got is not None and not (exempt_cuda if got[0] == "cuda_resource" else exempt) \
+                            and (kinds is None or got[0] in kinds):
                         hits.append(Hit(rel, child.lineno, got[0], got[1], ".".join(qual) or "<module>"))
-                visit(child, qual, cls, in_step, exempt)
+                visit(child, qual, cls, in_step, exempt, exempt_cuda)
 
-    visit(tree, [], None, False, False)
+    visit(tree, [], None, False, False, False)
     return sorted(set(hits))
 
 
@@ -337,20 +385,29 @@ def step_modules(sources: Dict[str, str]) -> Set[str]:
     return out | set(STEP_MODULES)
 
 
+def cuda_scope_modules(sources: Dict[str, str]) -> Set[str]:
+    """Every source module :data:`CUDA_SCOPE` names (a package entry covers its tree)."""
+    return {r for r in sources for e in CUDA_SCOPE if r == e or r.startswith(e + "/")}
+
+
 def scan_tree(root: Path) -> Tuple[List[Hit], Dict[str, int]]:
     """(every violation, coverage counters) over ``root`` (= ``src/``)."""
     sources = _read_all(root)
     uni = build_universe(sources)
     whole = step_modules(sources)
+    cuda_only = cuda_scope_modules(sources) - whole
     hits: List[Hit] = []
     n_cb_files = 0
     for rel, src in sources.items():
         if rel in whole:
             hits.extend(scan_source(src, rel, uni, whole_module=True))
+        elif rel in cuda_only:
+            hits.extend(scan_source(src, rel, uni, whole_module=True, kinds={"cuda_resource"}))
         elif any(rel.startswith(r + "/") for r in CALLBACK_ROOTS):
             n_cb_files += 1
             hits.extend(scan_source(src, rel, uni, whole_module=False))
     return sorted(set(hits)), {"step_modules": len(whole & set(sources)), "callback_files": n_cb_files,
+                               "cuda_scope_modules": len(cuda_only),
                                "callback_classes": len(uni.callbacks), "repo_modules": len(uni.repo_modules)}
 
 
@@ -387,7 +444,7 @@ def tree_scan() -> Tuple[List[Hit], Dict[str, int]]:
 
 
 @_SKIP
-def test_no_training_step_path_constructs_an_optimizer_parameter_or_module(tree_scan: Tuple[List[Hit], Dict[str, int]]) -> None:
+def test_no_training_step_path_constructs_an_optimizer_parameter_module_or_cuda_resource(tree_scan: Tuple[List[Hit], Dict[str, int]]) -> None:
     hits = [h for h in tree_scan[0] if f"{h.path}:{h.line}" not in ALLOWLIST]
     assert not hits, (
         f"{len(hits)} construction(s) in a TRAINING-STEP code path — the declared lifecycle acquires "
@@ -403,6 +460,7 @@ def test_the_scan_actually_walked_the_tree(tree_scan: Tuple[List[Hit], Dict[str,
     assert c["step_modules"] >= len(STEP_MODULES) + 15, c
     assert c["callback_files"] >= 20 and c["callback_classes"] >= 20, c
     assert c["repo_modules"] >= 20, c
+    assert c["cuda_scope_modules"] >= 15, c          # the T2 service + the rust collector / eval / env
     assert {"Linear", "LayerNorm", "ModuleList", "Sequential"} <= TORCH_NN_MODULES
     assert {"Adam", "AdamW", "SGD"} <= TORCH_OPTIMIZERS
 
@@ -411,8 +469,10 @@ def test_the_scan_actually_walked_the_tree(tree_scan: Tuple[List[Hit], Dict[str,
 def test_every_declared_step_module_exists() -> None:
     root = src_root()
     missing = [m for m in [*STEP_MODULES, *NOT_STEP_MODULES] if not (root / m).is_file()]
+    missing += [m for m in CUDA_SCOPE if not ((root / m).is_file() or (root / m).is_dir())]
     assert not missing, f"declared scope entries that no longer exist (renamed? fix the list): {missing}"
-    assert all(len(why) >= 20 for why in [*STEP_MODULES.values(), *NOT_STEP_MODULES.values()])
+    assert all(len(why) >= 20 for why in [*STEP_MODULES.values(), *NOT_STEP_MODULES.values(),
+                                          *CUDA_SCOPE.values()])
 
 
 @_SKIP
@@ -550,3 +610,49 @@ def test_teeth_the_message_names_file_line_construct_function_and_fix() -> None:
     for part in ("a/b.py:5", "optimizer", "`torch.optim.Adam(...)`", "`L.train`", "@startup_builder",
                  "move it to startup"):
         assert part in msg, (part, msg)
+
+
+# --------------------------------------------------------------------------------------------- #
+# TEETH: the CUDA-resource kind (gen3_staged_compute_stream_v1)
+# --------------------------------------------------------------------------------------------- #
+
+#: The 2026-10-01 leak as it was written (`device_batches._StagedGather`, a helper built per update).
+_PER_UPDATE_STREAM = ("import torch\nclass _StagedGather:\n    def __init__(self, buffer, device):\n"
+                      "        self.stream = torch.cuda.Stream(device) if device.type == 'cuda' else None\n")
+
+
+@pytest.mark.parametrize("src", [
+    _PER_UPDATE_STREAM,
+    "import torch\ndef step(d):\n    return torch.cuda.Stream(d)\n",
+    "import torch as th\ndef step(d):\n    return th.cuda.streams.Stream(d)\n",
+    "from torch.cuda import Stream\ndef step(d):\n    return Stream(d)\n",
+    "import torch\ndef step():\n    return torch.cuda.CUDAGraph()\n",
+    "from torch.cuda import graphs\ndef step():\n    return graphs.CUDAGraph()\n",
+    "import torch\ndef step():\n    return torch.cuda.graph_pool_handle()\n",
+    "import torch\ndef step():\n    return torch.cuda.memory.MemPool()\n",
+    "import torch\ndef step(g, s):\n    with torch.cuda.graph(g, stream=s):\n        pass\n",
+])
+def test_teeth_a_cuda_resource_in_a_step_path_fails_even_in_an_init(src: str) -> None:
+    assert _kinds(src) == ["cuda_resource"], src
+
+
+@pytest.mark.parametrize("src", [
+    # declared startup: the marker (on an __init__ too), _setup_model, _build
+    "import torch\nfrom agents.training.lifecycle_decl import startup_builder\nclass E:\n"
+    "    @startup_builder\n    def __init__(self, d):\n        self.s = [torch.cuda.Stream(d) for _ in range(2)]\n",
+    "import torch\nclass L:\n    def _setup_model(self):\n        self.s = torch.cuda.Stream(self.device)\n",
+    "import torch\nclass L:\n    def _build(self):\n        self.p = torch.cuda.graph_pool_handle()\n",
+    # SELECTING an existing stream, syncing, an event: not acquisitions of allocator state
+    "import torch\ndef step(s, m):\n    with torch.cuda.stream(s):\n        s.wait_stream(m)\n"
+    "    torch.cuda.current_stream().synchronize()\n    ev = torch.cuda.Event()\n    ev.record(m)\n",
+])
+def test_teeth_a_declared_cuda_resource_passes(src: str) -> None:
+    assert _kinds(src) == [], src
+
+
+def test_teeth_the_cuda_scope_scans_only_the_cuda_kind() -> None:
+    src = ("import torch\nimport torch.nn as nn\ndef serve(d):\n    m = nn.Linear(1, 1)\n"
+           "    return m, torch.cuda.Stream(d)\n")
+    hits = scan_source(src, "svc.py", _UNI, whole_module=True, kinds={"cuda_resource"})
+    assert [h.kind for h in hits] == ["cuda_resource"]
+    assert "@startup_builder" in hits[0].render() and "allocator" in hits[0].render()

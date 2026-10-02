@@ -57,8 +57,11 @@ WARN (never STOP) also for: a one-off floor step-up larger than ``STEP_WARN_BYTE
 consecutive windows; a RESERVED step-up above ``RESERVED_STEP_WARN_BYTES`` (a fragmentation step;
 smaller ones, measured at 4-120 MiB on a process's first diagnostics updates, are only counted in
 ``segments_after_freeze`` — the lifecycle's after-freeze counter, a TB scalar, never enforced
-here; it reads 0 under ``expandable_segments:True``, whose segments ``memory_stats`` does not
-count); a new ``num_alloc_retries`` (the allocator hit the ceiling and flushed its cache to satisfy
+here; under ``expandable_segments:True``, whose segments ``memory_stats`` does not count, the count
+comes from ``memory_snapshot()`` via `segment_census`); RESERVED growth since the freeze above
+``RESERVED_AFTER_FREEZE_WARN_BYTES`` and a STREAM holding cache that the freeze did not have
+(`gen3_reserved_after_freeze_v1` — the two counters that see sizing arm B's per-update stream leak at
+its first window, where the old ones read 0 for the whole run); a new ``num_alloc_retries`` (the allocator hit the ceiling and flushed its cache to satisfy
 a request — the OOM precursor); a new ``num_ooms``; and headroom (ceiling - demand) under
 ``CEILING_MARGIN_BYTES`` with no trend.
 
@@ -123,6 +126,18 @@ RESERVED_STEP_WARN_BYTES = 256 * MiB
 HORIZON_UPDATES = 25
 #: Kept free below the device ceiling (the CUDA context, cuBLAS workspaces, a late large block).
 CEILING_MARGIN_BYTES = 512 * MiB
+#: RESERVED bytes grown since the FREEZE (the first sample) above this is a WARN
+#: (`gen3_reserved_after_freeze_v1`): the startup update fit check (`update_fit`) measured the
+#: steady state's demand, so growth past it is demand that check never saw — the K6 counter that
+#: reads it under ``expandable_segments:True``, where ``segments_after_freeze`` used to read 0
+#: (sizing arm B: +1,860 MiB over 31 updates, every count 0). The tolerance's CAUSE: the dry update is
+#: ONE epoch, a real update ten; the real updates' extra cache, measured after the fix at N = 256
+#: (`designs/training/learner_lifecycle.md` "The staged batch's stream"), is far under it.
+RESERVED_AFTER_FREEZE_WARN_BYTES = 128 * MiB
+#: Distinct streams holding cache, beyond the freeze's count, above this is a WARN. 0: every stream
+#: is a declared startup acquisition (the lifecycle gate's ``cuda_resource`` kind), so a NEW stream
+#: with cache after the freeze is exactly the per-update stream leak, at its first update.
+STREAMS_AFTER_FREEZE_WARN = 0
 
 LEVELS = ("OK", "WARN", "STOP")
 TB_PREFIX = "lifecycle/cuda_"
@@ -151,23 +166,43 @@ class MemorySample:
     ooms: int
     device_free: int
     device_total: int
+    #: distinct CUDA streams holding cached segments (the allocator caches per stream); -1 = not read
+    streams: int = -1
 
     def as_row(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
 
 
+def segment_census(segments: Sequence[Mapping[str, Any]]) -> Tuple[int, int]:
+    """``(segments, streams)`` from ``torch.cuda.memory_snapshot()``'s segment list (pure): the
+    segment count and the number of DISTINCT streams owning one. Under ``expandable_segments:True``
+    ``memory_stats``' ``segment.*`` counters read 0 (its segments are mapped, not cudaMalloc'd), so
+    this census is the only count there is; a cached block serves only its own stream, so a stream
+    acquired after the freeze strands its cache — sizing arm B's +1.86 GiB, one new stream per update
+    (`gen3_staged_compute_stream_v1`)."""
+    return len(segments), len({int(sg.get("stream", 0) or 0) for sg in segments})
+
+
 def sample_from_stats(stats: Mapping[str, Any], free: int, total: int, *, update: int, phase: str,
-                      peaks_valid: bool = True) -> MemorySample:
-    """``torch.cuda.memory_stats()`` + ``mem_get_info()`` -> ``MemorySample`` (pure)."""
+                      peaks_valid: bool = True,
+                      census: Optional[Tuple[int, int]] = None) -> MemorySample:
+    """``torch.cuda.memory_stats()`` + ``mem_get_info()`` (+ `segment_census`, which supplies the
+    segment count when the stats read none and the stream count) -> ``MemorySample`` (pure)."""
 
     def g(k: str) -> int:
         return int(stats.get(k, 0) or 0)
 
+    segs = g("segment.all.current")
+    streams = -1
+    if census is not None:
+        streams = int(census[1])
+        if segs == 0:
+            segs = int(census[0])
     return MemorySample(
         update=int(update), phase=str(phase),
         allocated=g("allocated_bytes.all.current"), reserved=g("reserved_bytes.all.current"),
         active=g("active_bytes.all.current"), inactive_split=g("inactive_split_bytes.all.current"),
-        segments=g("segment.all.current"), segments_allocated_total=g("segment.all.allocated"),
+        segments=segs, segments_allocated_total=g("segment.all.allocated"), streams=streams,
         peak_allocated=g("allocated_bytes.all.peak") if peaks_valid else -1,
         peak_reserved=g("reserved_bytes.all.peak") if peaks_valid else -1,
         alloc_retries=g("num_alloc_retries"), ooms=g("num_ooms"),
@@ -184,7 +219,9 @@ def sample_cuda(device: Any, *, update: int, phase: str, reset_peak: bool = True
     dev = torch.device(device)
     stats = torch.cuda.memory_stats(dev)
     free, total = torch.cuda.mem_get_info(dev)
-    s = sample_from_stats(stats, free, total, update=update, phase=phase)
+    idx = dev.index if dev.index is not None else torch.cuda.current_device()
+    census = segment_census([sg for sg in torch.cuda.memory_snapshot() if int(sg.get("device", idx)) == idx])
+    s = sample_from_stats(stats, free, total, update=update, phase=phase, census=census)
     if reset_peak:
         torch.cuda.reset_peak_memory_stats(dev)
     return s
@@ -221,6 +258,7 @@ class _Window:
     reserved_last: int
     device_free_last: int
     segments_max: int
+    streams_max: int
     retries_last: int
     ooms_last: int
     n: int
@@ -276,6 +314,8 @@ class MemoryTrend:
         self._cur: Optional[_Window] = None
         self._first: Optional[MemorySample] = None
         self._segments_at_freeze: Optional[int] = None
+        self._reserved_at_freeze: Optional[int] = None
+        self._streams_at_freeze: Optional[int] = None
         self._last: Optional[TrendVerdict] = None
         self.samples = 0
         self.stops = 0
@@ -292,12 +332,15 @@ class MemoryTrend:
         with ``window_closed=False``)."""
         self.samples += 1
         if self._first is None:
+            # the FREEZE's reading (the integrator's first sample is the freeze): every after-freeze
+            # counter is measured from here, warm-up updates included — they are the steady state too
             self._first = s
+            self._segments_at_freeze = int(s.segments)
+            self._reserved_at_freeze = int(s.reserved)
+            self._streams_at_freeze = int(getattr(s, "streams", -1))
         w = self._window_of(int(s.update))
         closed = False
         if w is not None:
-            if self._segments_at_freeze is None:
-                self._segments_at_freeze = int(s.segments)
             if self._cur is not None and w != self._cur.index:
                 self.windows.append(self._cur)
                 self._cur = None
@@ -306,7 +349,8 @@ class MemoryTrend:
             if self._cur is None:
                 self._cur = _Window(index=w, floor=s.allocated, peak_demand=demand,
                                     reserved_last=s.reserved, device_free_last=s.device_free,
-                                    segments_max=s.segments, retries_last=s.alloc_retries,
+                                    segments_max=s.segments, streams_max=int(getattr(s, "streams", -1)),
+                                    retries_last=s.alloc_retries,
                                     ooms_last=s.ooms, n=1)
             else:
                 c = self._cur
@@ -314,6 +358,7 @@ class MemoryTrend:
                 c.peak_demand = max(c.peak_demand, demand)
                 c.reserved_last, c.device_free_last = s.reserved, s.device_free
                 c.segments_max = max(c.segments_max, s.segments)
+                c.streams_max = max(c.streams_max, int(getattr(s, "streams", -1)))
                 c.retries_last, c.ooms_last = s.alloc_retries, s.ooms
                 c.n += 1
         if closed or self._last is None:
@@ -381,6 +426,18 @@ class MemoryTrend:
             reasons.append(f"reserved_step {_fmt_b(last.reserved_last - ws[-2].reserved_last)} "
                            f"(segments +{last.segments_max - ws[-2].segments_max}, "
                            f"{self.segments_after_freeze()} after freeze)")
+        # while it RISES (this window above the previous one; the first window against the freeze):
+        # a growth that stopped clears, its total stays in TB (`reserved_after_freeze_mib`) and a
+        # steady state too close to the card is the headroom reason below
+        grown = self.reserved_after_freeze()
+        grown_prev = self.reserved_after_freeze(at=-2)
+        if grown > RESERVED_AFTER_FREEZE_WARN_BYTES and grown > grown_prev:
+            reasons.append(f"reserved +{_fmt_b(grown)} since the freeze > {_fmt_b(RESERVED_AFTER_FREEZE_WARN_BYTES)} "
+                           "(demand the startup update fit check never measured)")
+        new_streams = self.streams_after_freeze()
+        if new_streams > STREAMS_AFTER_FREEZE_WARN and new_streams > self.streams_after_freeze(at=-2):
+            reasons.append(f"streams +{new_streams} holding cache since the freeze (a stream acquired after "
+                           "startup strands its own cache; gen3_staged_compute_stream_v1)")
         if ceiling - demand < self.margin:
             reasons.append(f"headroom {_fmt_b(ceiling - demand)} < margin {_fmt_b(self.margin)}")
         if level == "OK" and reasons:
@@ -418,11 +475,43 @@ class MemoryTrend:
         return self._last
 
     def segments_after_freeze(self) -> int:
-        """Segments acquired since the first windowed sample (the lifecycle's after-freeze counter;
-        a fragmentation step-up shows here and is REPORTED, never a stop)."""
+        """Segments acquired since the FREEZE (the first sample; the lifecycle's after-freeze counter —
+        a fragmentation step-up shows here and is REPORTED, never a stop). Under
+        ``expandable_segments:True`` the count is `segment_census`'s (``memory_stats`` reads 0 there)."""
         if self._segments_at_freeze is None or not self.windows:
             return 0
         return max(0, max(w.segments_max for w in self.windows) - self._segments_at_freeze)
+
+    def reserved_after_freeze(self, at: int = -1) -> int:
+        """RESERVED bytes grown since the freeze, at closed window ``at`` (the last by default; 0 when
+        there is no such window). Reserved never shrinks without ``empty_cache``, so this is the
+        demand added after startup."""
+        if self._reserved_at_freeze is None or len(self.windows) < -at:
+            return 0
+        return max(0, self.windows[at].reserved_last - self._reserved_at_freeze)
+
+    def streams_after_freeze(self, at: int = -1) -> int:
+        """Distinct streams holding cache beyond the freeze's count, over the closed windows up to
+        ``at`` (0 when there is none, or either reading is unknown)."""
+        if self._streams_at_freeze is None or self._streams_at_freeze < 0 or len(self.windows) < -at:
+            return 0
+        upto = self.windows[:len(self.windows) + at + 1]
+        top = max(w.streams_max for w in upto)
+        return max(0, top - self._streams_at_freeze) if top >= 0 else 0
+
+    def sample_scalars(self, s: MemorySample) -> Dict[str, float]:
+        """The PER-SAMPLE TB dict — written at EVERY sample, whatever the window state, so a run of
+        any length (a 3-update probe included) carries the same tags: reserved and device free now,
+        and the two after-freeze counters measured on THIS sample (`gen3_reserved_after_freeze_v1`).
+        At a window close the windowed `tb_scalars` writes the same tags with the same values."""
+        out = {TB_PREFIX + "reserved_mib": s.reserved / MiB, TB_PREFIX + "device_free_mib": s.device_free / MiB}
+        if self._reserved_at_freeze is not None:
+            out[TB_PREFIX + "reserved_after_freeze_mib"] = max(0, s.reserved - self._reserved_at_freeze) / MiB
+        sf = self._streams_at_freeze
+        st = int(getattr(s, "streams", -1))
+        out[TB_PREFIX + "streams_after_freeze"] = float(max(0, st - sf)) if (sf is not None and sf >= 0
+                                                                              and st >= 0) else 0.0
+        return out
 
     def tb_scalars(self) -> Dict[str, float]:
         """The per-window TB dict (``lifecycle/cuda_*``). Absent numbers are -1 so a reader can tell
@@ -447,10 +536,13 @@ class MemoryTrend:
                                                  math.isfinite(v.updates_to_ceiling) else 1e9)
         out[TB_PREFIX + "sustained"] = 1.0 if v.sustained else 0.0
         out[TB_PREFIX + "segments_after_freeze"] = float(self.segments_after_freeze())
+        out[TB_PREFIX + "reserved_after_freeze_mib"] = self.reserved_after_freeze() / MiB
+        out[TB_PREFIX + "streams_after_freeze"] = float(self.streams_after_freeze())
         if lw is not None:
             out[TB_PREFIX + "reserved_mib"] = lw.reserved_last / MiB
             out[TB_PREFIX + "device_free_mib"] = lw.device_free_last / MiB
             out[TB_PREFIX + "segments"] = float(lw.segments_max)
+            out[TB_PREFIX + "streams"] = float(lw.streams_max)
             out[TB_PREFIX + "alloc_retries"] = float(lw.retries_last)
             out[TB_PREFIX + "ooms"] = float(lw.ooms_last)
         return out

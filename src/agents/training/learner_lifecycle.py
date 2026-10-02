@@ -529,6 +529,10 @@ class CudaMemoryWatch:
             logger.record(f"lifecycle/cuda_{what}_peak_alloc_mib", sample.peak_allocated / (1 << 20))
             logger.record(f"lifecycle/cuda_{what}_peak_reserved_mib", sample.peak_reserved / (1 << 20))
             logger.record(f"lifecycle/cuda_{what}_end_alloc_mib", sample.allocated / (1 << 20))
+        if logger is not None:
+            # every sample, one stable tag set whatever the window state (gen3_reserved_after_freeze_v1)
+            for k, x in self.trend.sample_scalars(sample).items():
+                logger.record(k, x)
         if v.window_closed:
             logger = getattr(self.model, "_logger", None)
             if logger is not None:
