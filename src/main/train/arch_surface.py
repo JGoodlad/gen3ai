@@ -125,6 +125,10 @@ class ArchReport(NamedTuple):
     #: Is the child pinned to a commit OTHER than this tree's HEAD? Then the comparison is
     #: informational — see `refuses`.
     advisory: bool = False
+    #: `(flag, value, typed)` for every key `--arch production` does NOT apply — the argv's own
+    #: value when it TYPED the flag, else the mirror's (`unapplied_for_argv`). Empty ⇒ the report
+    #: was built without a namespace and `report_lines` lists the mirror's values.
+    unapplied: Tuple[Tuple[str, Any, bool], ...] = ()
 
     @property
     def refuses(self) -> bool:
@@ -302,6 +306,11 @@ def unapplied_production_keys(production: Optional[Dict[str, Any]] = None) -> Li
     Reported on EVERY `--arch` block, never suppressed when short: an operator must be able to see
     the boundary of the umbrella without going to look for it.
     """
+    return [(flag, value) for flag, _dest, value in _unapplied_rows(production)]
+
+
+def _unapplied_rows(production: Optional[Dict[str, Any]] = None) -> List[Tuple[str, str, Any]]:
+    """`(cli flag, namespace dest, mirror value)` — `unapplied_production_keys` with each row's dest."""
     prod = load_production_config() if production is None else production
     surface = {f.name for f in arch_surface_flags()}
     # K10(a): a key the RECIPE surface applies (`main.train.recipe_surface.ROWS` — the critic mode,
@@ -309,12 +318,26 @@ def unapplied_production_keys(production: Optional[Dict[str, Any]] = None) -> Li
     # would tell the operator to type what the umbrella already wrote.
     from main.train.recipe_surface import ROWS as _RECIPE_ROWS
     recipe = {r.dest for r in _RECIPE_ROWS}
-    out = [(f.cli_flag, prod[f.name]) for f in REGISTRY
+    out = [(f.cli_flag, f.arg, prod[f.name]) for f in REGISTRY
            if f.name in prod and f.name not in surface and f.name not in recipe
            and f.tier is Tier.CLI and f.klass is not Klass.RUNTIME]
-    out += [(f"--{f.coef_arg.replace('_', '-')}", prod[f.coef_arg])
+    out += [(f"--{f.coef_arg.replace('_', '-')}", f.coef_arg, prod[f.coef_arg])
             for f in arch_surface_flags()
             if f.coef_arg and f.coef_arg in prod and f.coef_arg not in recipe]
+    return out
+
+
+def unapplied_for_argv(ns: Any, production: Optional[Dict[str, Any]] = None
+                       ) -> List[Tuple[str, Any, bool]]:
+    """`unapplied_production_keys` as THIS argv sees it: `(flag, value, typed)`, where a flag the
+    argv TYPED (`ns._explicit_flags`, the parse-time snapshot) shows the TYPED value — the list used
+    to print the mirror's value for every row, so `--ridealong-ensemble 4` read as `0` in the very
+    block that tells the operator what to type (deletion pass P5)."""
+    explicit = getattr(ns, "_explicit_flags", None) or frozenset()
+    out: List[Tuple[str, Any, bool]] = []
+    for flag, dest, value in _unapplied_rows(production):
+        typed = dest in explicit and getattr(ns, dest, None) is not None
+        out.append((flag, getattr(ns, dest) if typed else value, typed))
     return out
 
 
@@ -381,6 +404,7 @@ def report(ns: Any, *, fresh: bool, allowed: bool = False,
         umbrella=umbrella,
         source_tag=arch_source_tag(),
         advisory=bool(advisory),
+        unapplied=tuple(unapplied_for_argv(ns, production)) if umbrella else (),
     )
 
 
@@ -409,13 +433,14 @@ def report_lines(rep: ArchReport) -> List[str]:
     if rep.umbrella:
         out.append(f"  --arch {rep.umbrella} applied the production surface "
                    f"(explicit flags still win)")
-        skipped = unapplied_production_keys()
+        skipped = list(rep.unapplied) or [(f, v, False) for f, v in unapplied_production_keys()]
         if skipped:
             out.append("  ⚠️  NOT applied — by neither the ARCH surface nor the RECIPE surface "
                        "(the RECIPE block below applies the critic mode and the supervision "
                        "doses). These critic READOUTS are implied by --critic winprob or sit at "
                        "their defaults; type them yourself if you want them pinned:")
-            out.append("      " + "  ".join(f"{f} {v!r}" for f, v in skipped))
+            out.append("      " + "  ".join(f"{f} {v!r}" + (" (typed)" if typed else "")
+                                            for f, v, typed in skipped))
     part = surface_partition()
     scope = (f"{part['arch']} of {part['total']} registry toggles are the ARCH surface; "
              f"{part['critic']} critic readouts + {part['non_structural']} non-structural rows "

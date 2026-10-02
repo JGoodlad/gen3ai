@@ -382,7 +382,15 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
                 inherited[dest] = value
         except UnrecordedEnableCoef as e:
             derived_refusal = str(e)
-        for dest in sorted({a.dest for a in parser._actions} - {"help"}):
+        # Every parser dest, PLUS every registry row's namespace attribute: a row a MODE flag
+        # DESUGARS into has no dest of its own (`--damage-matrices` -> `damage_matrices_outgoing` /
+        # `_incoming`, set to None by `desugar_umbrella_flags` when the mode is untyped) — the
+        # launch's `_resolve` inherits it, so a sweep over parser dests alone left it at None and
+        # the same-run restart's arch report read "False (this argv, default)" against a run that
+        # recorded True (deletion pass P5).
+        from agents.model.flag_registry import REGISTRY as _REG
+        _dests = ({a.dest for a in parser._actions} - {"help"}) | {f.arg for f in _REG}
+        for dest in sorted(_dests):
             if not hasattr(ns, dest):
                 continue
             if inherit_saved_flag(ns, saved, dest, getattr(ns, dest)):

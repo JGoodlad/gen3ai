@@ -694,3 +694,19 @@ def test_a_resume_of_a_winprob_rust_run_inherits_its_critic_and_is_not_refused(t
         assert res["resolution"]["inherited"]["critic"] == "winprob"
         names = [c.name for c, _ in res["combinations"]]
         assert "env_core_rust_needs_the_winprob_critic" not in names, names
+
+
+def test_a_restart_INHERITS_the_desugared_damage_matrices_the_run_recorded(tmp_path):
+    """P5(a) (deletion pass): `damage_matrices_outgoing` / `_incoming` have no parser dest (the
+    `--damage-matrices` MODE flag desugars into them), so the inheritance sweep over parser dests
+    skipped them and a same-run restart's arch report read `False (this argv, default)` against a run
+    that recorded True. Fails on revert of the sweep's registry-attribute half."""
+    ckpt, run = _parent_run(tmp_path, damage_matrices_outgoing=True, damage_matrices_incoming=True)
+    res = check(["--model", ckpt, "--run-dir", run, "--steps", "1000"])
+    ns = res["resolution"]["ns"]
+    assert ns.damage_matrices_outgoing is True and ns.damage_matrices_incoming is True
+    assert {"damage_matrices_outgoing", "damage_matrices_incoming"} <= set(res["resolution"]["inherited"])
+    rep = res["arch"]
+    named = {d.name: d for d in rep.diffs}
+    for k in ("damage_matrices_outgoing", "damage_matrices_incoming"):
+        assert k not in named or named[k].resolved is True, named.get(k)

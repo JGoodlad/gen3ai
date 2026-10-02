@@ -682,3 +682,20 @@ def test_a_derived_row_is_read_from_a_recorded_bool_as_well_as_a_coefficient():
     # neither: the registry default, which is what a fresh run builds
     val, src = arch_surface.resolved_value(row, types.SimpleNamespace())
     assert (val, src) == (False, "default")
+
+
+def test_the_NOT_applied_list_shows_the_TYPED_value_of_a_typed_flag():
+    """P5(b) (deletion pass): `--arch production --ridealong-ensemble 4` printed
+    `--ridealong-ensemble 0` (the mirror's value) in the block that tells the operator what to type.
+    A typed row shows the typed value, marked; an untyped row the mirror's. Fails on revert."""
+    import argparse
+    rows = dict((f, v) for f, v in arch_surface.unapplied_production_keys())
+    assert "--ridealong-ensemble" in rows, rows
+    ns = argparse.Namespace(ridealong_ensemble=4, _explicit_flags=frozenset({"ridealong_ensemble"}))
+    got = {f: (v, typed) for f, v, typed in arch_surface.unapplied_for_argv(ns)}
+    assert got["--ridealong-ensemble"] == (4, True)
+    untyped = next(f for f in rows if f != "--ridealong-ensemble")
+    assert got[untyped] == (rows[untyped], False)
+    rep = arch_surface.report(ns, fresh=True, umbrella="production")
+    text = "\n".join(arch_surface.report_lines(rep))
+    assert "--ridealong-ensemble 4 (typed)" in text and "--ridealong-ensemble 0" not in text
