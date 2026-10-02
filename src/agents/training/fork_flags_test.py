@@ -223,9 +223,12 @@ def test_a_collected_row_carries_the_ONE_placeholder():
 
 
 def test_env_factory_arms_the_obs_key_and_the_handle_from_the_fraction():
+    import agents.training.trainee_spaces as ts
     import main.train.env_factory as ef
     src = inspect.getsource(ef)
-    assert "emit_fork_pg_mask=(float(getattr(args, \"fork_fraction\", 0.0) or 0.0) > 0.0)" in src
+    # the obs-key switch moved with `trainee_env_kwargs` to its env-free home (deletion pass U2)
+    assert ("emit_fork_pg_mask=(float(getattr(args, \"fork_fraction\", 0.0) or 0.0) > 0.0)"
+            in inspect.getsource(ts))
     assert "or float(getattr(args, \"fork_fraction\", 0.0) or 0.0) > 0.0)" in src, \
         "the reconstruction HANDLE must be armed by --fork-fraction too"
 

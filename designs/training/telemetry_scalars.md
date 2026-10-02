@@ -181,7 +181,7 @@ a handful of numpy means per rollout.
 | `signal/adv_raw_abs_mean` | same | `E|Â|` — the outlier-robust companion to std |
 | `signal/adv_kurtosis` | same | EXCESS kurtosis (Fisher; normal = 0), **scale-free** |
 | `signal/outcome_entropy` | `signal_callback.py::SignalMetricsCallback` | `p(1−p)` over a rolling 200-episode window, POOLED |
-| `signal/outcome_entropy_{bots,pool,stable,target}` | same | the same, split by `MaskableAgentWrapper.OPP_CLASS_*` |
+| `signal/outcome_entropy_{bots,pool,stable,target}` | same | the same, split by `agents.training.opponent_classes.OPP_CLASS_*` |
 | `signal/outcome_win_rate`, `signal/outcome_n[_<kind>]` | same | the window's `p` and its depth — so a thin split is visible as thin |
 | `signal/outcome_entropy_rung` | `exploiter_ladder.py::ExploiterLadderCallback._record` | `p(1−p)` of the LIVE `--exploiter-ladder` rung's gate window |
 

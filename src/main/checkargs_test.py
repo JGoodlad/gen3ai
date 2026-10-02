@@ -181,6 +181,7 @@ def _minimal_model_config(**overrides) -> dict:
             out[f.name] = 8
     out["config_version"] = MODEL_CONFIG_VERSION
     out["arch_signature"] = ARCH_SIGNATURE
+    out["critic"] = "winprob"      # a modern parent: a shaped one is REFUSED on resume (deletion pass D4)
     out.update(overrides)
     return out
 
@@ -197,7 +198,8 @@ def _parent_run(tmp_path, name="parent", *, write_config=True, **recorded):
 
 def _c1_argv(ckpt, *extra):
     """C1's shape: fork a parent, turn the distill term OFF, never name the target form."""
-    return ["--model", ckpt, "--run-name", "child_run", "--steps", "1000",
+    # `--env-core python`: the distill flags run only on the python core (else D4 moves the fork to rust)
+    return ["--model", ckpt, "--run-name", "child_run", "--steps", "1000", "--env-core", "python",
             "--distill-coef", "0", *extra]
 
 
@@ -371,7 +373,7 @@ def test_a_fold_argv_and_a_teacherless_argv_both_still_pass(tmp_path):
     """
     from main.checkargs import check
     ckpt, _ = _parent_run(tmp_path)
-    fold = check(["--steps", "10", "--model", ckpt, "--run-name", "child_run",
+    fold = check(["--steps", "10", "--model", ckpt, "--run-name", "child_run", "--env-core", "python",
                   "--distill-teacher", "models/t:data/teams/sample/a.txt",
                   "--distill-coef", "0.3", "--distill-stop", "warn"])
     assert fold["unknown"] == [] and fold["combinations"] == [], fold["combinations"]

@@ -66,19 +66,9 @@ from utils.team_loader import TeamLoader
 from utils.teambuilder import Gen3Teambuilder, _install_team_rng
 
 
-def _build_trainee_tb(cfg: dict, all_teams, sample_teams):
-    """The TRAINEE's eval teambuilder. When the run pins the trainee to one team
-    (``--trainee-team`` → ``cfg['trainee_team_str']``, the raw Showdown export), eval MUST measure
-    the model piloting THAT team — the worker used to hardcode the default full-pool builder here,
-    so every specialist run's eval (win rates, ELO, vs-ext verdicts) measured the model piloting
-    RANDOM teams it never trained on (pure out-of-distribution; the ai_v7_05–08 "plateau" was this
-    gap, not the training). No pin → the default pool builder, byte-identical to the old behavior."""
-    team_str = cfg.get("trainee_team_str")
-    if team_str:
-        # a LIST = the distillation/multi-team case (sample among the taught teams, as training does);
-        # a plain str = the single --trainee-team pin.
-        return Gen3Teambuilder(list(team_str) if isinstance(team_str, (list, tuple)) else [team_str])
-    return Gen3Teambuilder(all_teams, bias_teams=sample_teams, bias_prob=0.1)
+# The trainee's eval teambuilder rule lives in `agents.training.eval_teams` (deletion pass U2), shared
+# with the Rust eval core's table (`rust_eval.build.eval_builders`).
+from agents.training.eval_teams import build_trainee_tb as _build_trainee_tb  # noqa: E402
 
 
 def _sentinel_tb(trainee_tb, opp_tb, sentinel_greedy: bool):

@@ -458,7 +458,7 @@ OFF builds neither head.
 
 Every metric is emitted **pooled AND per opponent class** (`_bot` / `_pool` / `_stable` /
 `_exploiter`, a class appearing only when it holds ≥2 supervised rows in the minibatch —
-`OPP_CLASS_NAMES`, mirroring `MaskableAgentWrapper.OPP_CLASS_*`). **`_pool` — frozen selves — is
+`OPP_CLASS_NAMES`, mirroring `agents.training.opponent_classes`). **`_pool` — frozen selves — is
 the one that measures the thing the head is for.** Against the random bot the optimal prediction is
 uniform and the achievable gain is ~0 BY CONSTRUCTION; against a heuristic it is easy but models a
 decision tree rather than a player. Measured on gen-11: bot info gain **0.124 nats** vs pool

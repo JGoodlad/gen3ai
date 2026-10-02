@@ -11,7 +11,9 @@ THE M5 SWITCH (`gen3_env_core_switch_v1`): ``rust`` is the PRODUCTION env core �
 ``recipe.sizing.env_core`` of ``designs/production_config.json``, applied by ``--arch production``
 like every recipe knob. An UNTYPED ``--env-core`` resolves (``rust_env_setup.resolve_env_core_default``):
 fresh ``--arch production`` → ``recipe.sizing``; ``--model`` (a restart or a fork) → INHERITED, the core the
-checkpoint was produced on (python when recorded before ``--env-core``); a bare non-production fresh argv →
+checkpoint was produced on when that is rust — a python-era checkpoint (python, or recorded before
+``--env-core``) moves onto rust, announced as a core switch, and a shaped-critic one is REFUSED (deletion pass
+D4); a bare non-production fresh argv →
 the parser default ``rust`` (deletion pass D2, 2026-10-02: a bare argv defaults to ``--critic winprob`` and its
 three reward values, which is what the Rust core serves).
 
@@ -31,7 +33,8 @@ def add_env_core_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--env-core", "--env_core", dest="env_core", choices=("python", "rust"), default="rust",
                         help="Which env the rollout runs on (M5). UNTYPED: --arch production takes the PRODUCTION "
                              "core (recipe.sizing.env_core, 'rust'); --model (a restart or a fork) INHERITS the "
-                             "core its checkpoint was produced on; a bare non-production fresh argv takes "
+                             "core its checkpoint was produced on, except that a python-era checkpoint moves "
+                             "onto 'rust' (announced; a shaped-critic one is refused -- deletion pass D4); a bare non-production fresh argv takes "
                              "'rust' too (the parser default since the deletion pass, 2026-10-02). 'python' = "
                              "the SubprocVecEnv of Gen3Env workers. 'rust' = the M5 Rust env core: N envs in one "
                              "core (process front end), trainee + policy opponents through the inference "

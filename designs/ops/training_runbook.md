@@ -643,7 +643,7 @@ buckets / lanes; `verdict` names the sizing Decision record). An UNTYPED `--env-
 | launch | `--env-core` |
 |---|---|
 | fresh `--arch production` | `recipe.sizing.env_core` = **rust** |
-| `--model` — a same-run RESTART or a FORK | INHERITED: the core the checkpoint was PRODUCED on (`metadata.json` / the sidecar's `env_core`; `cli_args` for a restart of an `--arch production` run); recorded before `--env-core` existed → python. A run never changes core because the default moved; a fork of a python-era checkpoint moves to the Rust core only when the argv TYPES `--env-core rust` |
+| `--model` — a same-run RESTART or a FORK | **rust-era** checkpoint: INHERITED (`metadata.json` / the sidecar's `env_core`; `cli_args` for a restart of an `--arch production` run). **Python-era** checkpoint (produced on python, or recorded before `--env-core` existed): **rust**, printed as `🔀 [ENV CORE] CORE SWITCH` — the data stream changes, the weights and recorded config carry across (deletion pass D4). A checkpoint that trained the **SHAPED critic** (or never recorded one) is **REFUSED**, typed core or not (`FATAL_CONFIG`; `--dry-run` reports it advisory when the launch is pinned) — run it PINNED to its own commit |
 | a bare non-production fresh argv | **rust** (the parser default since the deletion pass's bare-argv flip, D2 2026-10-02 — the bare argv is `--critic winprob` + its three reward values) |
 
 `--env-core python` (TYPED) keeps the Python env reachable until the deletion pass; the recipe

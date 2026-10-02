@@ -13,7 +13,7 @@ from agents.training.eval_callback import (
 from agents.training.snapshot_pool import (
     EVAL_SENTINEL_GREEDY_DEFAULT, HEURISTIC_FLOOR, PROMOTE_THRESHOLD_GREEDY,
     PROMOTE_THRESHOLD_STOCHASTIC, SELF_PLAY_FULL, SELF_PLAY_START)
-from agents.training.wrappers import STABLE_CHALLENGE_SHARE
+from agents.training.opponent_classes import STABLE_CHALLENGE_SHARE
 from main.train.parser.base import BoolFlag
 
 

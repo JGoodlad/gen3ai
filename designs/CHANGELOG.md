@@ -10695,3 +10695,27 @@ if a lazy build is reintroduced.
   the canary tests now run on the regions learner with planted faults (incl. a backward-only R1 fault); new
   `utils/torch_floor_test.py`, `compile_trainer_test::test_a_learner_without_the_micro_step_is_REFUSED_not_compiled_another_way`,
   `compile_regions_test::test_install_rollout_region_serves_the_rollout_forward_through_R0`.
+
+## 2026-10-02 — the Python env core loses its PRODUCTION DEPENDENTS; a python-era checkpoint moves onto the Rust core (deletion pass U2 / D4; no model change, no config bump)
+
+- **Spaces without an env.** `agents.training.trainee_spaces` builds `(observation_space, action_space)` from the
+  args alone (`trainee_env_kwargs` / `resolved_obs_source` moved there from `main.train.env_factory`, which
+  re-exports them; `label_gates` + `trainee_observation_space`). `rust_rollout.build.trainee_spaces` no longer
+  constructs a `Gen3Env`, and `Gen3Env` builds its own space through the same function, so the two cores declare
+  one space. Checked before the switch against the old `Gen3Env` space on 13 flag combinations (production, bare,
+  each label family, distillation teachers): identical keys, shapes, dtypes and bounds.
+- **Constants re-homed:** `OPP_CLASS_*`, `N_OPP_CLASSES`, `OPP_CLASS_NAMES`, `STABLE_CHALLENGE_SHARE` →
+  `agents.training.opponent_classes` (the wrapper binds them from there); the eval trainee teambuilder →
+  `agents.training.eval_teams.build_trainee_tb` (`main.eval_worker` imports it). The trainer's `AsyncSubprocVecEnv`
+  / `create_training_env_random` and the rollout probes' async collect import lazily on the python branch.
+- **Proof:** `trainee_spaces_test` — a fresh interpreter resolving a production argv, building its spaces, opponent
+  plan and eval team table and importing the Rust launch's modules never loads `gen3_env`, `wrappers`,
+  `env_factory`, `async_vec_env` or `bridge_session`; and every remaining non-test importer is declared with the
+  deletion unit that removes it (fails on a new one, and on a stale declaration). Both fail on a revert of the
+  `selfplay_callback` import (checked).
+- **D4 (`rust_env_setup.resolve_env_core_default`):** an untyped `--env-core` on a `--model` launch of a
+  PYTHON-ERA checkpoint (produced on python, or before `--env-core` was recorded) resolves `rust`, announced as
+  `🔀 [ENV CORE] CORE SWITCH`; a checkpoint that trained the SHAPED critic (or recorded none — pre-v109) raises
+  `PythonEraShapedCheckpoint` → `FATAL_CONFIG`, typed core or not. `checkargs` reports it; `--dry-run` reports it
+  advisory when the launch is pinned (the way out the refusal names).
+- D3: the Python-env oracle goldens are retired without a banked run (owner) — nothing banked here.

@@ -133,7 +133,7 @@ def test_a_resume_that_switches_env_core_is_announced_never_silent(tmp_path):
     assert resolve_env_core_default(untyped) is not None and untyped.env_core == "rust"
     assert env_core_switch_line(untyped) is None              # inherited: no switch
     line = env_core_switch_line(_args("--model", str(ckpt), "--env-core", "python"))
-    assert line and "--env-core rust" in line and "produced on rust" in line
+    assert line and "--env-core python" in line and "produced on rust" in line
     assert env_core_switch_line(_args("--model", str(ckpt), "--env-core", "rust")) is None
     assert env_core_switch_line(_args()) is None              # a fresh run has nothing to switch from
     (run / "checkpoints" / "checkpoint_512_steps.json").unlink()

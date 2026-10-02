@@ -14,14 +14,11 @@ from agents.observation.constants import (
 )
 from agents.observation.belief_labels import (
     build_belief_labels, build_known_move_labels,
-    zero_belief_labels, zero_known_moves, BELIEF_MOVE_SLOTS,
-    build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, N_SPREAD_STATS,
-    build_known_nature_ev_labels, zero_nature_ev_labels,
-    build_hp_type_labels, zero_hp_type_labels, hp_type_idx_from_move_id, N_HP_TYPES_LABEL,
-    build_item_labels, zero_item_labels,
+    zero_belief_labels, zero_known_moves, build_known_spread_labels, zero_spread_labels, SPREAD_STAT_ORDER, build_known_nature_ev_labels, zero_nature_ev_labels,
+    build_hp_type_labels, zero_hp_type_labels, hp_type_idx_from_move_id, build_item_labels, zero_item_labels,
 )
 from agents.observation.true_team import (
-    TRUE_TEAM_KEY, TRUE_TEAM_SHAPE, build_true_team_block, empty_true_team_block,
+    TRUE_TEAM_KEY, build_true_team_block, empty_true_team_block,
 )
 from agents.model.dense_aux_head import DENSE_AUX_DIM_OUT
 from agents.training.dense_aux import (
@@ -268,144 +265,22 @@ class Gen3Env(SinglesEnv):
         # posterior instead of two heads pulling at the same quantity through different channels. The
         # OBSERVATION still shows the opponent's HP as bare 237 — the model must still guess the type.
         self._move_num = {mid: rec["num"] for mid, rec in mappings.get("moves", {}).items() if "num" in rec}
-        base_obs = {
-            "observation": self.vector_space,
-            "action_mask": spaces.Box(0, 1, shape=(11,), dtype=np.int8),
-        }
-        # The int64 labels' upper bound. Hoisted out of the belief block: the intent keys read it
-        # too, and an intent-only env (no belief labels) raised UnboundLocalError at construction
-        # (found by `rust_env_label_inventory_test`, M5 Lane C, 2026-09-29).
-        _imax = np.iinfo(np.int64).max
-        if self._emit_belief_labels:
-            # low=-1 keeps the PAD / not-scored sentinel in-space; Box(int64) (NOT Discrete, which
-            # rejects -1 and the rollout buffer special-cases it).
-            base_obs["belief_species"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE,), dtype=np.int64)
-            base_obs["belief_moves"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE, BELIEF_MOVE_SLOTS), dtype=np.int64)
-            if self._emit_known_moves:
-                # KNOWN-mode move belief: the revealed mons' FULL privileged movesets, at the revealed
-                # slots (so the move head learns each seen mon's still-UNREVEALED moves). Only declared
-                # when 'known'/'both' so an 'unknown'-only run keeps the buffer minimal.
-                base_obs["known_moves"] = spaces.Box(low=-1, high=_imax, shape=(TEAM_SIZE, BELIEF_MOVE_SLOTS), dtype=np.int64)
-        if self._emit_opp_intent_labels:
-            # OPPONENT-INTENT labels (gen3_opp_intent_v1) — what they DID at the PREVIOUS decision.
-            # Three int64 scalars, not a seat index: the seats are `w.topk(K)` built by the MODEL
-            # mid-forward and they PERMUTE every turn, so the env cannot name them. It emits the
-            # canonical move NUM and the loss locates it among the seats (`match_seats_to_move_num`).
-            # An index-based label would silently point at a different move whenever the belief re-sorted.
-            base_obs["opp_action_kind"] = spaces.Box(low=0, high=2, shape=(1,), dtype=np.int64)
-            base_obs["opp_action_num"] = spaces.Box(low=0, high=_imax, shape=(1,), dtype=np.int64)
-            # beta's target: which of THEIR team slots came in (SWITCH_SLOT_NONE = masked).
-            base_obs["opp_switch_slot"] = spaces.Box(low=-100, high=TEAM_SIZE, shape=(1,), dtype=np.int64)
-            # The CONTENT-ADDRESSED key for a still-HIDDEN switch-in: its species num, resolved at
-            # loss time against the model's own believed-slot posterior (there is no valid slot
-            # index for an anonymous query — see opp_intent_labels).
-            base_obs["opp_switch_species"] = spaces.Box(low=0, high=_imax, shape=(1,), dtype=np.int64)
-        # gen3_opp_class_v1 — WHICH KIND of opponent this episode faces (bot / pool / stable /
-        # exploiter). Declared for TWO consumers, which is why it is not inside either gate:
-        #   * the opponent-intent losses, which it SPLITS (one pooled intent accuracy over random
-        #     bots, heuristics and frozen selves cannot be read — see `_select_episode_opponent`);
-        #   * the training-side value sidecar (`gen3_value_sidecar_v1`), whose by-opponent-class
-        #     calibration slice is otherwise EMPTY on the exact runs it exists for. A win-prob arm
-        #     normally runs with no intent loss at all, so gating this key on the intent labels made
-        #     the sidecar's opponent slice unreachable in practice.
-        # It is a LABEL key: the network never reads it, so widening the gate cannot change a
-        # forward pass. `train()`'s one-ahead intent SHIFT stays gated on `opp_intent_coef > 0` and
-        # runs AFTER every callback's `_on_rollout_end`, so the sidecar reads the env's own
-        # per-episode value, unshifted, either way.
-        if self._emit_opp_intent_labels or self._emit_win_target:
-            base_obs["opp_class"] = spaces.Box(low=0, high=3, shape=(1,), dtype=np.int64)
-        if self._emit_spread_labels:
-            # SPREAD-belief label (gen3_unified_spread_belief_v1): the TRUE derived stats {atk,def,spa,spd,spe}
-            # of each REVEALED opp mon + a per-slot mask (1 = supervised). float32 (real stat VALUES, the same
-            # scale the SpreadBelief head outputs + the op consumes). Only declared when --spread-belief-coef>0.
-            base_obs["belief_spread"] = spaces.Box(
-                low=0.0, high=np.inf, shape=(TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32)
-            base_obs["belief_spread_mask"] = spaces.Box(
-                low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
-            # NATURE/EV labels (gen3_nature_ev_belief_v1) — the generative spread belief's privileged targets,
-            # INVERTED from agent2's known derived stats. belief_nature [6] (nature num 0..24) + belief_ev [6,5]
-            # (EVs in {atk,def,spa,spd,spe} order) + per-slot masks. Ride the SAME _emit_spread_labels gate; read
-            # ONLY by the nature/EV loss (--spread-belief-nature). low=0 keeps the not-scored sentinel in-space.
-            base_obs["belief_nature"] = spaces.Box(low=0, high=24, shape=(TEAM_SIZE,), dtype=np.int64)
-            base_obs["belief_nature_mask"] = spaces.Box(low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
-            base_obs["belief_ev"] = spaces.Box(low=0.0, high=252.0, shape=(TEAM_SIZE, N_SPREAD_STATS), dtype=np.float32)
-            base_obs["belief_ev_mask"] = spaces.Box(low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
-        if self._emit_hp_type_labels:
-            # HP-TYPE-belief label (gen3_opp_hp_type_belief_v1): the TRUE HP type index (0..15) of each
-            # REVEALED opp mon that runs Hidden Power + a per-slot mask (1 = supervised). int64 (a class
-            # index for CE); low=-1 keeps the PAD / not-scored sentinel in-space. Only declared when
-            # --hp-type-belief learned + --hp-type-belief-coef>0.
-            base_obs["hp_type_label"] = spaces.Box(
-                low=-1, high=N_HP_TYPES_LABEL - 1, shape=(TEAM_SIZE,), dtype=np.int64)
-            base_obs["hp_type_mask"] = spaces.Box(
-                low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
-        if self._emit_item_labels:
-            # ITEM-belief label (gen3_item_belief_v1): the TRUE item NUM of each REVEALED opp mon +
-            # a per-slot mask (1 = supervised). int64 class index for CE over the item-num axis
-            # (num 0 = "nothing" IS a class); low=-1 keeps the PAD sentinel in-space. The high bound
-            # is the encoder's item axis (`max_items`), the same axis ItemBelief's logits span.
-            base_obs["item_label"] = spaces.Box(
-                low=-1, high=self.observation_encoder.get_layout()["max_items"] - 1,
-                shape=(TEAM_SIZE,), dtype=np.int64)
-            base_obs["item_mask"] = spaces.Box(
-                low=0.0, high=1.0, shape=(TEAM_SIZE,), dtype=np.float32)
-        if self._emit_win_target:
-            # Win-probability MC label + known-mask (placeholders here; back-filled post-collection).
-            base_obs["win_target"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-            base_obs["win_mask"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-            # Normalized material margin ∈ [−1,1] (Φ_mat-derived) — a REAL per-step value (not a
-            # placeholder), used by the win-prob loss to stratify P(win) skill by how decided the game
-            # is (value lives in close games, |margin|≈0) + a material-baseline skill score.
-            base_obs["win_margin"] = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
-        if self._emit_win_row_weight:
-            # gen3_winprob_rollout_weight_v1: the per-row BCE weight. A PLACEHOLDER of 1.0 (not 0.0
-            # like the two above) because it is a MULTIPLIER, not a label — a path that somehow
-            # reached the loss before `WinProbLabelCallback._on_rollout_end` overwrote it would
-            # zero the entire win-prob term on a zero placeholder, and read as a dead head rather
-            # than as a plumbing break. `high` is unbounded because the ceiling is the flag's own
-            # value divided by a normaliser, and coupling the space to the flag would make an obs
-            # space that a resume at a different weight could not reload.
-            base_obs["win_row_w"] = spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
-        if self._emit_fork_pg_mask:
-            # gen3_fork_v1: 1.0 = this row is in the clipped policy term, 0.0 = it is not.
-            # Bounded in [0, 1] because it is a MASK and not a dose — the fork arm does not
-            # re-weight the policy gradient, it excludes exactly the fork step (see
-            # `agents.training.fork_buffer`, THE MASK RULE).
-            base_obs[FORK_PG_MASK_KEY] = spaces.Box(
-                low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-        if self._emit_opp_true_team:
-            # gen3_value_true_team_v1: the opponent's TRUE party in the obs's own per-mon layout.
-            # The bounds are the per-mon block's own: it carries embedding NUMS (up to the species
-            # axis) alongside normalised scalars, exactly like the opp-team slice of the flat
-            # vector, so the Box is bounded by the widest of those axes rather than by 1.0.
-            base_obs[TRUE_TEAM_KEY] = spaces.Box(
-                low=0.0, high=float(max(self.observation_encoder.get_layout()["max_species"],
-                                        self.observation_encoder.get_layout()["max_moves"])),
-                shape=TRUE_TEAM_SHAPE, dtype=np.float32)
-        if self._emit_dense_aux:
-            # gen3_dense_aux_v1: the DENSE AUXILIARY targets + their two-part mask. `aux_target` is
-            # a placeholder (back-filled post-collection); `aux_mask` and `aux_turn` are REAL
-            # present-state values. All three are LABEL keys — the network never reads them.
-            base_obs[AUX_TARGET_KEY] = spaces.Box(
-                low=0.0, high=1.0, shape=(DENSE_AUX_DIM_OUT,), dtype=np.float32)
-            base_obs[AUX_MASK_KEY] = spaces.Box(
-                low=0.0, high=1.0, shape=(DENSE_AUX_DIM_OUT,), dtype=np.float32)
-            base_obs[AUX_TURN_KEY] = spaces.Box(
-                low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
-        if self._emit_defensive_opportunity:
-            # gen3_defensive_entropy_v1: 1.0 = a productive defensive move (recovery/cure) is legal this
-            # decision. A REAL per-step value; read ONLY by the state-conditioned entropy boost in the PPO loss.
-            base_obs["defensive_opportunity"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-        if self._emit_bait_opportunity:
-            # gen3_bait_entropy_v1: 1.0 = a revealed, alive opponent BENCH mon is immune to the attack we
-            # are most likely to click. A REAL per-step value; read ONLY by the bait entropy boost.
-            base_obs["bait_opportunity"] = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-        if self._emit_distill_mask:
-            # gen3_exploiter_distill_v1: INTEGER team-id (0=none, k=teacher k) of the trainee's current team
-            # among the N distillation-teacher teams. Read ONLY by the exploiter-distillation KL in the PPO
-            # loss (gates which teacher's advice is on-distribution). A REAL per-step value (const per battle).
-            base_obs["distill_mask"] = spaces.Box(
-                low=0.0, high=float(len(self._distill_team_species)), shape=(1,), dtype=np.float32)
+        # The Dict space is DECLARED in `agents.training.trainee_spaces` (deletion pass U2): the Rust env
+        # core's learner builds the SAME space from the args without constructing this env, so one
+        # declaration serves both cores — every key, shape, dtype and bound.
+        from agents.training.trainee_spaces import LabelGates, trainee_observation_space
+        _gates = LabelGates(
+            belief_labels=self._emit_belief_labels, known_moves=self._emit_known_moves,
+            opp_intent_labels=bool(self._emit_opp_intent_labels), win_target=bool(self._emit_win_target),
+            spread_labels=bool(self._emit_spread_labels), hp_type_labels=bool(self._emit_hp_type_labels),
+            item_labels=bool(self._emit_item_labels), win_row_weight=self._emit_win_row_weight,
+            fork_pg_mask=self._emit_fork_pg_mask, opp_true_team=bool(self._emit_opp_true_team),
+            dense_aux=bool(self._emit_dense_aux),
+            defensive_opportunity=bool(self._emit_defensive_opportunity),
+            bait_opportunity=bool(self._emit_bait_opportunity), distill_mask=self._emit_distill_mask)
+        base_obs = dict(trainee_observation_space(
+            self.observation_encoder.get_layout(), self.vector_space, _gates,
+            distill_species=self._distill_team_species).spaces)
         # SB3 reads the SINGULAR observation_space (threaded as the VecEnv space); the PLURAL
         # observation_spaces is intercepted + rewrapped by PokeEnv.__setattr__ (it would drop the
         # belief keys) and is not the SB3-facing space, so it can stay minimal.

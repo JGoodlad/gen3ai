@@ -404,6 +404,12 @@ def dry_run(
             out(f"  {line}")
     if res.get("recipe_refusal"):
         out(f"  ✗ REFUSED (same-run restart): {res['recipe_refusal']}")
+    # Deletion pass D4: a shaped-critic checkpoint. A PINNED child runs its own commit's resolve_config
+    # (which still has the shaped path) — the way out the refusal names — so there it is advisory.
+    _d4_advisory = pinned is not None and pinned.available
+    if res.get("env_core_refusal"):
+        out(("  ℹ️  advisory (CURRENT tree, NOT the pinned one): " if _d4_advisory else "  ✗ REFUSED: ")
+            + res["env_core_refusal"])
 
     # 8. The refusals. Same three families `main.checkargs` reports, on the same resolved namespace
     #    — but read against the CURRENT tree. When the pin names another commit AND we managed to
@@ -439,6 +445,8 @@ def dry_run(
     if arch is not None and arch.refuses:
         failed = True
     if (recipe is not None and recipe.refuses) or res.get("recipe_refusal"):
+        failed = True
+    if res.get("env_core_refusal") and not _d4_advisory:
         failed = True
     if torch_res.refusal:                 # printed with the interpreter line above
         failed = True

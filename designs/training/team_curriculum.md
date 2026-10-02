@@ -124,7 +124,7 @@ read `by_class`: a pre-self-play curriculum phase is ~all `bot` episodes, where 
   (`test_default_uniform_draw_is_rng_identical_with_tracking`). Side effect worth knowing:
   `--team-block-episodes` caches `_last_pool_idx` for the block, which on the default path used to
   be `None`, so a blocked default run can now attribute its whole block to the team it held.
-- **Stratified by opponent class** (`MaskableAgentWrapper.OPP_CLASS_*` / `OPP_CLASS_NAMES`), so a
+- **Stratified by opponent class** (`agents.training.opponent_classes.OPP_CLASS_*` / `OPP_CLASS_NAMES`), so a
   rate can always be split back out by who it was measured against. A bias/distill-pinned yield
   (`_last_pool_idx is None`) is never attributed to a pool team.
 - **NO TensorBoard emission — owner rule** (design_flywheel_tick_tock.md §6b: per-team series

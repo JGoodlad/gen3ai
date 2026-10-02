@@ -18,7 +18,7 @@ collector's own declaration (``rust_rollout.build.RustEnvDecl``):
   by the Lane H fixed-opponent gate row;
 * the eval ROUTE TABLE (``executor.EvalTable``): the nine roster bots in the core with per-episode
   streams, the sentinel and fixed policy routes, the filler route;
-* the eval TEAM TABLE: the eval trainee builder (``eval_worker._build_trainee_tb`` — the specialist
+* the eval TEAM TABLE: the eval trainee builder (``eval_teams.build_trainee_tb`` — the specialist
   pin, else the pool builder with its 10 % sample-team bias), the flat pool builder, each fixed
   opponent's pinned builder — every team validated by use in ``Core::new``.
 
@@ -71,8 +71,9 @@ def eval_table(decl: EvalDecl, extra_ids: Sequence[int], bots: Sequence[str]) ->
 
 def eval_builders(trainee_team_str: Any, fixed_entries: Sequence[Any]) -> Tuple[Any, Any, Dict[str, Any]]:
     """``(trainee builder, flat pool builder, {fixed label: pinned builder})`` — the eval WORKER's own
-    construction (``main.eval_worker``), so both eval paths draw from the same distributions."""
-    from main.eval_worker import _build_trainee_tb
+    construction (``agents.training.eval_teams``, shared with ``main.eval_worker``), so both eval paths
+    draw from the same distributions."""
+    from agents.training.eval_teams import build_trainee_tb as _build_trainee_tb
     from utils.team_loader import TeamLoader
     from utils.teambuilder import Gen3Teambuilder
 

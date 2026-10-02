@@ -66,7 +66,7 @@ from agents.training.value_sidecar import (
     SCHEMA_EQUIVALENCE, describe_target, read_sidecar_segments, same_quantity, sidecar_path,
     target_identity, target_is_outcome,
 )
-from agents.training.wrappers import MaskableAgentWrapper as _W
+from agents.training import opponent_classes as _oc
 from main.ops.run_ref import refuse, resolve_run_dir
 
 TOOL = "value_sidecar_read"
@@ -75,10 +75,10 @@ TOOL_VERSION = 2
 #: The opponent-class codes the env tags rows with, by name. Imported from the wrapper that
 #: DEFINES them rather than re-listed, so a new class cannot leave this reader silently mislabelling.
 OPP_CLASS_NAMES = {
-    _W.OPP_CLASS_BOT: "bot",
-    _W.OPP_CLASS_POOL: "pool",
-    _W.OPP_CLASS_STABLE: "stable",
-    _W.OPP_CLASS_EXPLOITER: "exploiter",
+    _oc.OPP_CLASS_BOT: "bot",
+    _oc.OPP_CLASS_POOL: "pool",
+    _oc.OPP_CLASS_STABLE: "stable",
+    _oc.OPP_CLASS_EXPLOITER: "exploiter",
 }
 
 #: Turn buckets. Coarse and fixed rather than quantile-derived: a quantile bucketing moves with the

@@ -374,8 +374,13 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
     except RecipeRestartError as e:
         recipe_refusal = str(e)
     # THE M5 SWITCH: the launch's own resolution of an UNTYPED --env-core (same order as the child).
-    from main.train.rust_env_setup import resolve_env_core_default
-    resolve_env_core_default(ns, run_dir=run_dir, model=model)
+    # Deletion pass D4: a shaped-critic checkpoint is REFUSED there (FATAL_CONFIG) — reported here.
+    from main.train.rust_env_setup import PythonEraShapedCheckpoint, resolve_env_core_default
+    env_core_refusal = None
+    try:
+        resolve_env_core_default(ns, run_dir=run_dir, model=model, saved_ver=saved)
+    except PythonEraShapedCheckpoint as e:
+        env_core_refusal = str(e)
     # THE CRITIC MODE with the parent's recorded config — the launch's order (`resolve_config`:
     # after the restart route and the env core, before the derived coefs and the sweep).
     _critic_unset = ns.critic is None
@@ -410,7 +415,7 @@ def resolve_against_parent(argv: List[str]) -> dict | None:
                 inherited[dest] = getattr(ns, dest)
     return {"ns": ns, "model": model, "config_path": config_path, "tried": tried,
             "inherited": inherited, "same_run": same_run, "derived_refusal": derived_refusal,
-            "recipe_refusal": recipe_refusal}
+            "recipe_refusal": recipe_refusal, "env_core_refusal": env_core_refusal}
 
 
 def unsatisfiable_from_namespace(ns) -> List[Tuple[str, str, str]]:
@@ -561,7 +566,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
            "accepted": ok, "launcher_only": launcher, "unknown": unknown,
            "unsatisfiable": unsatisfiable_pairs(argv),
            "resolution": None, "combinations": [], "teacher_spec": [], "ns": None,
-           "arch": None, "recipe": None, "recipe_refusal": None,
+           "arch": None, "recipe": None, "recipe_refusal": None, "env_core_refusal": None,
            "shaped_reward": shaped_reward_finding(argv)}
     if unknown:
         # A stale flag makes the effective namespace unbuildable (argparse refuses the argv) and,
@@ -602,6 +607,7 @@ def check(argv: List[str], *, advisory: bool = False) -> dict:
         inherited=frozenset(inherited),
     )
     res["recipe_refusal"] = resolution.get("recipe_refusal")
+    res["env_core_refusal"] = resolution.get("env_core_refusal")
     res["ns"] = ns
     return res
 
@@ -985,6 +991,17 @@ def main(raw: List[str] | None = None) -> int:
         # Same verdict class as the shaped parent: resolve_config exits FATAL_CONFIG on it.
         print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {derived_refusal}")
         return int(TrainExitCode.FATAL_CONFIG)
+    if res.get("env_core_refusal"):
+        # Deletion pass D4: the checkpoint trained the shaped critic — THIS tree's resolve_config exits
+        # FATAL_CONFIG. A child PINNED to another commit runs that commit's (the way out it names).
+        sha, why = resolve_pin_for(argv, a.pin)
+        from main.launcher.pinned_argv import differs_from_head
+        if sha and differs_from_head(sha):
+            print(f"\n  ℹ️  ADVISORY — the child runs PINNED commit {sha[:8]} ({why}); on THIS tree: "
+                  f"{res['env_core_refusal']}")
+        else:
+            print(f"\n  ✗ this command would be REFUSED at launch (FATAL_CONFIG): {res['env_core_refusal']}")
+            return int(TrainExitCode.FATAL_CONFIG)
     if res.get("recipe_refusal"):
         # The child's own same-run-restart refusal (a recipe value missing from its route).
         print(f"\n  ✗ this RESTART would be REFUSED at launch (FATAL_CONFIG): {res['recipe_refusal']}")

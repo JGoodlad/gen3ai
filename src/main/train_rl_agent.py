@@ -75,7 +75,6 @@ from agents.training.snapshot_pool import SnapshotPool, heuristic_fraction
 from agents.training.pool_seed import prepare_pool
 from agents.training.reward_manager import Gen3RewardManager
 from agents.training.stall import StallConfig
-from agents.training.async_vec_env import AsyncSubprocVecEnv
 from agents.training.cf_supply import (CfSupplyConfigError, live_cf_consumers,
                                        preflight_cf_label_supply, start_cf_label_supply)
 from main.exit_codes import TrainExitCode, exit_code_for
@@ -112,7 +111,6 @@ from main.train.lifecycle import (   # noqa: F401 — re-export hub
 )
 from main.train.config import resolve_config
 from main.train.matchup_setup import build_matchup_and_opponents
-from main.train.env_factory import create_training_env_random
 from main.train.callbacks import build_callbacks
 from main.train.fork_lr import enforce_inherited_fork_lr
 from main.train.model_build import attach_cf_labels, build_and_train
@@ -299,6 +297,8 @@ async def main():
     if args.debug:
         EnvClass = DummyVecEnv
     elif _async_rollout:
+        # lazy: the Python env core is imported only on its own path (deletion pass U2)
+        from agents.training.async_vec_env import AsyncSubprocVecEnv
         EnvClass = AsyncSubprocVecEnv
     else:
         EnvClass = SubprocVecEnv
@@ -393,6 +393,8 @@ async def main():
         _opp_version = _current_model_version(mappings, **_run_arch_toggles(args))
 
     def _make_factories():
+        # lazy: the Python env core is imported only on its own path (deletion pass U2)
+        from main.train.env_factory import create_training_env_random
         return [
             create_training_env_random(
                 i, stall_config=stall_cfg, opponent_device=opponent_device,

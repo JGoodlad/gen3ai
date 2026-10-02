@@ -35,7 +35,7 @@ def test_the_flag_turns_it_on():
 
 
 def test_a_flagless_resume_keeps_the_recorded_regime(monkeypatch):
-    saved = SimpleNamespace(eval_mirrored_pairs=True)
+    saved = SimpleNamespace(eval_mirrored_pairs=True, critic="winprob")   # a shaped parent is refused (D4)
     args = _resolved([], saved=saved, monkeypatch=monkeypatch)
     assert args.eval_mirrored_pairs is True and args.eval_mirrored_pairs_source == "inherited"
     args = _resolved(["--no-eval-mirrored-pairs"], saved=saved, monkeypatch=monkeypatch)
@@ -62,7 +62,7 @@ def test_sprt_promotion_is_off_by_default_recorded_and_inherited(monkeypatch):
     assert build_parser().parse_args([]).promotion_sprt is None
     args = _resolved([])
     assert args.promotion_sprt is False and args.promotion_sprt_source == "default"
-    args = _resolved(["--self-play"], saved=SimpleNamespace(promotion_sprt=True), monkeypatch=monkeypatch)
+    args = _resolved(["--self-play"], saved=SimpleNamespace(promotion_sprt=True, critic="winprob"), monkeypatch=monkeypatch)
     assert args.promotion_sprt is True and args.promotion_sprt_source == "inherited"
 
 

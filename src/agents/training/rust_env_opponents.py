@@ -66,16 +66,13 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 import numpy as np
 
 from agents.training.snapshot_pool import DEFAULT_MAX_SNAPSHOTS
-from agents.training.wrappers import STABLE_CHALLENGE_SHARE, MaskableAgentWrapper as _W
+from agents.training.opponent_classes import (  # noqa: F401 — re-exported (collector, tests)
+    OPP_CLASS_BOT, OPP_CLASS_EXPLOITER, OPP_CLASS_POOL, OPP_CLASS_STABLE, STABLE_CHALLENGE_SHARE)
 
 ROUTE_KINDS = ("external", "policy", "bot")
 
-#: The opponent classes (``gen3_opp_class_v1``), the wrapper's own constants — the ``opp_class``
-#: label is the class of the episode's route (``Route.klass``).
-OPP_CLASS_BOT = _W.OPP_CLASS_BOT
-OPP_CLASS_POOL = _W.OPP_CLASS_POOL
-OPP_CLASS_STABLE = _W.OPP_CLASS_STABLE
-OPP_CLASS_EXPLOITER = _W.OPP_CLASS_EXPLOITER
+#: The opponent classes (``gen3_opp_class_v1``, imported above from ``opponent_classes``) — the
+#: ``opp_class`` label is the class of the episode's route (``Route.klass``).
 
 #: Spare pool slots beyond ``max_snapshots``: a snapshot EVICTED at a refresh stays resident until no
 #: current or staged episode names it (at most ~2 episodes); one promotion evicts one snapshot, so a

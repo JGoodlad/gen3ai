@@ -699,11 +699,18 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         sys.exit(int(TrainExitCode.FATAL_CONFIG))
     for _d, _v, _src in _restored:
         emit(f"[Recipe] same-run restart of an --arch production run: {_d}={_v!r} from {_src}")
-    # THE M5 SWITCH (gen3_env_core_switch_v1): an UNTYPED --env-core on a resume — the run's own core
-    # on a same-run restart, the production core (recipe.sizing.env_core) on a fork. Before the
-    # combination sweep, which judges the core's refusals.
-    from main.train.rust_env_setup import resolve_env_core_default
-    _core = resolve_env_core_default(args)
+    # THE M5 SWITCH (gen3_env_core_switch_v1) + deletion pass D4: an UNTYPED --env-core on a resume —
+    # the checkpoint's own core, a python-era one moved onto the Rust core (announced); a checkpoint
+    # that trained the SHAPED critic is REFUSED (run it pinned). Before the combination sweep, which
+    # judges the core's refusals.
+    from main.train.rust_env_setup import PythonEraShapedCheckpoint, resolve_env_core_default
+    try:
+        _core = resolve_env_core_default(args, saved_ver=_saved_ver)
+    except PythonEraShapedCheckpoint as e:
+        from main.exit_codes import TrainExitCode
+        print(f"\n{e}", file=sys.stderr, flush=True)
+        emit(str(e))
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
     if _core:
         emit(f"🦀 [ENV CORE] --env-core {_core[0]} (untyped) — {_core[1]}")
     # ...and the run's PROVENANCE tags with it: `arch_source` (model_config.json) and `recipe_source`
@@ -1473,7 +1480,7 @@ def resolve_config(args, parser) -> ResolvedRunConfig:
         emit(f"🔌 Showdown server: {server_config.websocket_url}")
     # gen3_core_obs_source_v1: resolve the default (core on the rust bridge since the M6 cutover)
     # into the namespace, so every reader and the run's recorded argv see ONE value, and stamp it.
-    from main.train.env_factory import resolved_obs_source
+    from agents.training.trainee_spaces import resolved_obs_source
     args.obs_source = resolved_obs_source(args)
     emit(f"🔭 [OBS SOURCE] {args.obs_source} — "
          + ("the Rust core's row (sim_bridge __OBS__ frames; Python encodes only terminal / "

@@ -239,8 +239,8 @@ def info_gain_nats(logits: torch.Tensor, target: torch.Tensor) -> float:
 
 
 #: `opp_class` code -> the suffix its stratified metrics carry. Mirrors
-#: `MaskableAgentWrapper.OPP_CLASS_*`; kept as a plain table here so the model package does not
-#: import the training package.
+#: `agents.training.opponent_classes`; kept as a plain table here so the model package does not
+#: import the training package (pinned equal by `opponent_classes_test`).
 OPP_CLASS_NAMES = {0: "bot", 1: "pool", 2: "stable", 3: "exploiter"}
 
 #: The one class the label weight below discounts. Named rather than spelled `0` at the use site,

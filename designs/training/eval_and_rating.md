@@ -335,7 +335,7 @@ scheduled step it snapshots the live weights (`model.save`) and spawns `--eval-w
 (default 5) `main.eval_worker` subprocesses that **work-steal at battle granularity** from a
 shared pool, load the **frozen** snapshot, and play against the shared Showdown server (or the
 in-process bridge) **without pausing training**. **The trainee's eval teambuilder follows the
-run's `--trainee-team` pin** (`trainee_team_str` in the worker cfg → `eval_worker._build_trainee_tb`;
+run's `--trainee-team` pin** (`trainee_team_str` in the worker cfg → `agents.training.eval_teams.build_trainee_tb`, shared by the Python eval worker and the Rust eval core;
 threaded by BOTH callbacks): a specialist run is measured piloting ITS OWN team. The worker used to
 hardcode the default full-pool builder, so every specialist eval (win rates / ELO / `vs_ext`
 verdicts) measured the model piloting random teams it never trained on — pure OOD; the

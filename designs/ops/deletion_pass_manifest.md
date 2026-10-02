@@ -133,7 +133,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 |---|---|---|---|---|---|
 | **U0** | owner signs D1–D6 | — | — | — | — |
 | **U1** ✅ **SHIPPED 2026-10-02** (`gen3_bare_argv_winprob_v1`, config v130) | bare-argv default (§2.1) | 0.75 | A | parser `clean_world` / `reward` / `env_core`, `critic_mode`, `recipe_surface` | U0, sizing verdict |
-| **U2** | extractions: standalone spaces builder (off `Gen3Env`), `OPP_CLASS_*` / `STABLE_CHALLENGE_SHARE` / `resolved_obs_source` / `_build_trainee_tb` re-homed; D4's python-era resume rule; D3's banked last-green run of every env-level gate | 1.0 | A | `rust_rollout/build.py`, `rust_env_setup.py`, `rust_env_opponents.py` | U1 |
+| **U2** ✅ **SHIPPED 2026-10-02** (D3: no banked run) | extractions: standalone spaces builder (off `Gen3Env`), `OPP_CLASS_*` / `STABLE_CHALLENGE_SHARE` / `resolved_obs_source` / `_build_trainee_tb` re-homed; D4's python-era resume rule; D3's banked last-green run of every env-level gate | 1.0 | A | `rust_rollout/build.py`, `rust_env_setup.py`, `rust_env_opponents.py` | U1 |
 | **L1** | shaped-only levers + self-PBRS + frozen-φ (R2) | 1.0 | B | `combination_checks`, `config`, parser `clean_world` / `distillation` / `value_heads` | U1 |
 | **L2** | λ, rollout target, dense aux, true team, entropy boosts, `choice_band_tracker` (R2) | 1.0 | B | same + `hyperparameters`; `label_inventory` | L1 |
 | **L3** | distillation + search teacher (R2) | 1.0 | B | + parser `capacity` / `distillation` / `teacher`, `matchup_setup` | L2 |
@@ -180,7 +180,14 @@ calendar days with 3 lanes; 8 is the box**.
 
 ## 6. FINDINGS raised while scoping (each owned by the unit named)
 
-1. 🚨 **Production startup instantiates `Gen3Env`** (`trainee_spaces()`), so R1 cannot go before U2's extraction.
+1. ✅ **CLOSED by U2 (2026-10-02):** production startup no longer instantiates `Gen3Env` — the spaces come from
+   `agents.training.trainee_spaces` (which `Gen3Env` also builds through), the constants from
+   `agents.training.opponent_classes`, the eval trainee builder from `agents.training.eval_teams`; the trainer's and
+   the rollout probes' python branches import the core lazily. `agents/training/trainee_spaces_test.py` proves it at
+   RUNTIME (a fresh interpreter resolving a production argv, building its spaces, opponent plan and eval table, never
+   loads the five core modules) and STATICALLY (every remaining importer is declared with its deletion unit: the
+   two lazy branches → U3/U4, the R10 harnesses and the bridge benchmarks → U3). D4's rule is in
+   `rust_env_setup.resolve_env_core_default`.
 2. 🚨 **Deleting the Python core deletes the Rust env core's ORACLE** (D3): the env-level parity gates are not on
    program §1's survivor list.
 3. ✅ **P1 was a GIGO class — CLOSED 2026-10-02** (`gen3_no_global_reseed_v1`). On the Rust core the only
@@ -224,6 +231,6 @@ calendar days with 3 lanes; 8 is the box**.
 |---|---|---|
 | M5: per-env bridge child | `bridge_session.py` + `battle_stream_client.py` "287 + 810" | `async_vec_env` 287; `bridge_session` 667 goes; **`battle_stream_client` (178) SURVIVES** (eval, ladder, meters, prober) |
 | M5 / T2: compile-opponents | delete `compile_opponents.py`, `compile_preload.py`, `compile_prewarm.py`, the pool cache — 673 | 709; **`compile_opponents.py`'s core and the pool's LRU cache STAY** (offline users, T2 weight loads) — R6 |
-| M5: `gen3_env.py` + `wrappers.py` | "most of 1,711" | 1,779; blocked by `trainee_spaces()` + the constants (U2) |
+| M5: `gen3_env.py` + `wrappers.py` | "most of 1,711" | 1,779; UNBLOCKED by U2 (2026-10-02) — no production dependent left |
 | SKIPPED rows (trackers, assembler, memo) | blocked on training's opponents | the blocker MOVED: training no longer reaches them; `RLPlayer` (offline players) does → still M7. Only `choice_band_tracker.py` is free now |
 | M5 + fork port | the Python fork arm's tests | add `fork_crn_test.py` (138) |

@@ -592,7 +592,9 @@ Detail: `designs/rust_sim/encoder.md`, `designs/endstate/program_rust_core.md` �
 🚨 **THE M5 SWITCH (`gen3_env_core_switch_v1`): `rust` is the PRODUCTION env core**, declared with every
 run SIZE in ONE block, `designs/production_config.json` `recipe.sizing` (the sizing verdict fills it).
 An UNTYPED `--env-core`: fresh `--arch production` → rust; `--model` (a restart or a fork) → INHERITED,
-the core the checkpoint was produced on (python before `--env-core` existed); a bare non-production fresh argv → rust too (the deletion pass's bare-argv flip, D2 2026-10-02: the
+the core the checkpoint was produced on when that is rust — a PYTHON-ERA checkpoint (produced on python,
+or before `--env-core` existed) moves onto rust, announced as a CORE SWITCH, and one that trained the
+SHAPED critic is REFUSED whatever the core (`FATAL_CONFIG`: run it pinned) — deletion pass D4; a bare non-production fresh argv → rust too (the deletion pass's bare-argv flip, D2 2026-10-02: the
 bare argv is `--critic winprob` + its three reward values, which the Rust core serves). `--env-core python`
 (typed) opts out until the deletion pass removes the Python core.
 One resolver: `main.train.rust_env_setup.resolve_env_core_default`, called by `resolve_config` and

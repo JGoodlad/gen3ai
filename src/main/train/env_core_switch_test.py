@@ -5,15 +5,16 @@ Pinned here, each failing on a revert of the piece it names:
 * ``recipe.sizing`` is the ONE place the sizing verdict fills — the env core, N, the n_steps maximum,
   the collector's update size and T2's slots / buckets / lanes — and `--arch production` applies it
   like every recipe knob (a planted N in the block is the N a fresh launch resolves);
-* an UNTYPED `--env-core` resolves: fresh `--arch production` → rust; `--model` (a same-run restart or
-  a fork) → INHERITED, the core the checkpoint recorded (python when it predates the record); a bare
-  non-production fresh argv → python (it defaults to `--critic shaped`, which the Rust core refuses);
+* an UNTYPED `--env-core` resolves: fresh `--arch production` → rust; a bare non-production fresh argv
+  → rust (deletion pass D2); `--model` (a same-run restart or a fork) → the core the checkpoint
+  recorded when that is rust, and a PYTHON-ERA checkpoint (recorded python, or predating the record)
+  → rust, ANNOUNCED as a core switch (deletion pass D4); a checkpoint that trained the SHAPED critic is
+  REFUSED, typed core or not (D4: run it pinned);
 * a TYPED `--env-core python` keeps the Python core reachable, reported as a TYPED deviation;
 * the collector-only sizing rows are applied only on the Rust core, so `--arch production
   --env-core python` is not refused for flags that would be inert there;
-* a same-run restart of an `--arch production` run restores the core from `cli_args`, and one
-  launched before `--env-core` existed restores ``python`` — a run never changes core because the
-  default moved.
+* a same-run restart of an `--arch production` run restores the core from `cli_args` — and a
+  python-era one (cli_args python, or launched before `--env-core` existed) then moves to rust under D4.
 """
 from __future__ import annotations
 
@@ -26,7 +27,8 @@ import pytest
 
 from main.train import recipe_surface as rs
 from main.train.parser import build_parser
-from main.train.rust_env_setup import resolve_env_core_default
+from main.train.rust_env_setup import (D4_CORE_SWITCH, PythonEraShapedCheckpoint, env_core_switch_line,
+                                       resolve_env_core_default)
 
 
 def _desugared(argv, mirror=None):
@@ -117,19 +119,22 @@ def test_a_typed_python_core_is_reachable_and_reported_TYPED():
     assert [d.dest for d in rep.diffs] == ["env_core"] and not rep.refuses
 
 
-@pytest.mark.parametrize("recorded,want", [("rust", "rust"), ("python", "python"), (None, "python")])
-def test_a_fork_INHERITS_its_parents_core_and_a_typed_core_wins(tmp_path, recorded, want):
+@pytest.mark.parametrize("recorded,want", [("rust", "rust"), ("python", "rust"), (None, "rust")])
+def test_a_fork_INHERITS_a_rust_core_and_MOVES_a_python_era_one_and_a_typed_core_wins(tmp_path, recorded,
+                                                                                      want):
     _run_dir, ckpt = _run(tmp_path, env_core=recorded)
     ns = build_parser().parse_args(["--steps", "1", "--model", str(ckpt)])   # no --run-dir: a new run
     core = resolve_env_core_default(ns)
     assert core is not None and core[0] == want and ns.env_core == want
+    assert (core[1] == D4_CORE_SWITCH) is (recorded != "rust")             # D4: announced, never silent
+    assert ("CORE SWITCH" in (env_core_switch_line(ns) or "")) is (recorded != "rust")
     for typed_core in ("python", "rust"):
         typed = build_parser().parse_args(["--steps", "1", "--model", str(ckpt), "--env-core", typed_core])
         assert resolve_env_core_default(typed) is None and typed.env_core == typed_core
 
 
-@pytest.mark.parametrize("recorded,want", [("rust", "rust"), ("python", "python"), (None, "python")])
-def test_a_same_run_restart_keeps_the_core_the_run_recorded(tmp_path, recorded, want):
+@pytest.mark.parametrize("recorded,want", [("rust", "rust"), ("python", "rust"), (None, "rust")])
+def test_a_same_run_restart_keeps_a_rust_core_and_moves_a_python_era_one(tmp_path, recorded, want):
     run, ckpt = _run(tmp_path, env_core=recorded)
     ns = build_parser().parse_args(["--steps", "1", "--model", str(ckpt), "--run-dir", str(run)])
     core = resolve_env_core_default(ns)
@@ -139,6 +144,7 @@ def test_a_same_run_restart_keeps_the_core_the_run_recorded(tmp_path, recorded, 
 @pytest.mark.parametrize("cli,want", [({"env_core": "rust"}, "rust"), ({"env_core": "python"}, "python"),
                                       ({}, "python")])
 def test_a_restart_of_an_arch_production_run_restores_its_core_from_cli_args(tmp_path, cli, want):
+    """The restart route restores what the run RECORDED; a python-era record then moves to rust (D4)."""
     full = dict(_production_cli())
     full.pop("env_core", None)
     full.update(cli)
@@ -146,7 +152,59 @@ def test_a_restart_of_an_arch_production_run_restores_its_core_from_cli_args(tmp
     ns = build_parser().parse_args(["--steps", "1", "--model", str(ckpt), "--run-dir", str(run)])
     got = {d: (v, s) for d, v, s in rs.inherit_on_restart(ns, str(run), _saved())}
     assert ns.env_core == want and got["env_core"][0] == want
-    assert resolve_env_core_default(ns) is None          # resolved by the restart route already
+    if want == "rust":
+        assert resolve_env_core_default(ns) is None      # resolved by the restart route already
+    else:
+        assert resolve_env_core_default(ns) == ("rust", D4_CORE_SWITCH) and ns.env_core == "rust"
+
+
+# ----------------------------------------------------- deletion pass D4: the python-era resume rule
+@pytest.mark.parametrize("cfg", [{"critic": "shaped"}, {}])        # {} = recorded before --critic
+@pytest.mark.parametrize("typed", [[], ["--env-core", "python"], ["--env-core", "rust"]])
+def test_a_SHAPED_critic_checkpoint_is_REFUSED_whatever_the_core(tmp_path, cfg, typed):
+    run, ckpt = _run(tmp_path, env_core="python")
+    (run / "model_config.json").write_text(json.dumps(cfg))
+    ns = build_parser().parse_args(["--steps", "1", "--model", str(ckpt), *typed])
+    with pytest.raises(PythonEraShapedCheckpoint, match="PINNED"):
+        resolve_env_core_default(ns)
+
+
+def test_a_WINPROB_python_era_checkpoint_moves_to_rust_announced(tmp_path):
+    run, ckpt = _run(tmp_path, env_core="python")
+    (run / "model_config.json").write_text(json.dumps({"critic": "winprob"}))
+    ns = build_parser().parse_args(["--steps", "1", "--model", str(ckpt)])
+    assert resolve_env_core_default(ns) == ("rust", D4_CORE_SWITCH)
+    assert env_core_switch_line(ns).startswith("🔀 [ENV CORE] CORE SWITCH")
+
+
+def test_the_launch_path_exits_FATAL_CONFIG_on_a_shaped_parent(monkeypatch, capsys):
+    from types import SimpleNamespace
+
+    from main.exit_codes import TrainExitCode
+    from main.train import config as cfg_mod
+
+    monkeypatch.setattr(cfg_mod, "_load_saved_version", lambda path: SimpleNamespace(critic="shaped"))
+    p = build_parser()
+    args = p.parse_args(["--steps", "1", "--model", "models/parent/checkpoints/c_10_steps.zip"])
+    with pytest.raises(SystemExit) as exc:
+        cfg_mod.resolve_config(args, p)
+    assert exc.value.code == int(TrainExitCode.FATAL_CONFIG)
+    assert "deletion pass D4" in capsys.readouterr().err
+
+
+def test_checkargs_reports_the_shaped_refusal(tmp_path):
+    from main.checkargs import resolve_against_parent
+
+    from agents.model.model_version import ModelVersion
+    from agents.observation.state_encoder import Gen3ObservationEncoder, load_mappings
+
+    run, ckpt = _run(tmp_path, env_core="python")
+    layout = Gen3ObservationEncoder(load_mappings()).get_layout()
+    (run / "model_config.json").write_text(ModelVersion.from_layout_and_policy_kwargs(
+        layout, {"net_arch": [512, 512], "critic": "shaped"}).to_json())
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        res = resolve_against_parent(["--steps", "1", "--model", str(ckpt)])
+    assert "deletion pass D4" in (res.get("env_core_refusal") or ""), res
 
 
 def _production_cli():

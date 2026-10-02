@@ -11,7 +11,6 @@ import time
 import numpy as np
 import torch as th
 
-from agents.training.async_vec_env import AsyncSubprocVecEnv, collect_rollouts_async
 from agents.training import frozen_phi          # gen3_frozen_phi_actor_only_v1 (both seams live there)
 from agents.training.instrumented_ppo.calibration import (   # the MODULE path, never the hub:
     as_numpy as _calib_as_numpy,                              # a submodule importing the package
@@ -41,6 +40,9 @@ class RolloutProbes:
             ok = self._collect_rust(rc, callback, rollout_buffer)
             self._record_collect(_t0, _n0)
             return ok
+        if self._async_rollout:
+            # lazy: the Python env core is imported only on its own path (deletion pass U2)
+            from agents.training.async_vec_env import AsyncSubprocVecEnv, collect_rollouts_async
         if self._async_rollout and isinstance(env, AsyncSubprocVecEnv):
             ok = collect_rollouts_async(
                 self, env, callback, rollout_buffer, n_rollout_steps, use_masking)

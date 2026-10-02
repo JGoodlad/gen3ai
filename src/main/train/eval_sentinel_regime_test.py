@@ -53,7 +53,8 @@ def _resolved(argv, saved=None, monkeypatch=None):
 def _saved(greedy, threshold):
     """A stand-in for the parent's `ModelVersion`. `inherit_saved_flag` reads it by `getattr`, so
     the attribute set is the whole contract — the same duck-typing `checkargs` relies on."""
-    return SimpleNamespace(eval_sentinel_greedy=greedy, promote_threshold=threshold)
+    # `critic`: a modern (win-prob) parent — a shaped one is REFUSED on resume (deletion pass D4)
+    return SimpleNamespace(eval_sentinel_greedy=greedy, promote_threshold=threshold, critic="winprob")
 
 
 # ---------------------------------------------------------------- 1. the fresh-run default
@@ -220,8 +221,10 @@ def _parent_tree(tmp_path, greedy, threshold):
 
     run = tmp_path / "run"
     (run / "checkpoints").mkdir(parents=True)
+    # a modern (win-prob) parent: a shaped one is REFUSED on resume (deletion pass D4)
     ver = ModelVersion.from_layout_and_policy_kwargs(
-        _LAYOUT, _POLICY_KWARGS, eval_sentinel_greedy=greedy, promote_threshold=threshold)
+        _LAYOUT, {**_POLICY_KWARGS, "critic": "winprob"}, eval_sentinel_greedy=greedy,
+        promote_threshold=threshold)
     (run / "model_config.json").write_text(ver.to_json())
     ckpt = run / "checkpoints" / "checkpoint_100_steps.zip"
     ckpt.write_bytes(b"")
@@ -263,6 +266,7 @@ class _ParentStub:
                                            "model_config.json")))
         self.eval_sentinel_greedy = data["eval_sentinel_greedy"]
         self.promote_threshold = data["promote_threshold"]
+        self.critic = data["critic"]
 
 
 class _DirectMonkey:

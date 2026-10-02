@@ -392,22 +392,8 @@ def build_collector(decl: RustEnvDecl, *, obs_space: Any, trainee_policy: Any, p
 
 
 def trainee_spaces(args: Any, mappings: Any = None) -> Tuple[Any, Any]:
-    """``(observation_space, action_space)`` of the trainee ``Gen3Env`` this run's args build — the
-    SAME surface (``env_factory.trainee_env_kwargs``) the Python path's workers declare, so a checkpoint
-    loads identically on either env core. Built from a ``Gen3Env`` that never connects."""
-    from poke_env import AccountConfiguration
-
-    from agents.observation.state_encoder import load_mappings
-    from agents.training.gen3_env import Gen3Env
-    from agents.training.reward_config import RewardConfig
-    from agents.training.reward_manager import Gen3RewardManager
-    from main.train.env_factory import trainee_env_kwargs
-
-    env = Gen3Env(mappings if mappings is not None else load_mappings(), battle_format="gen3ou",
-                  reward_fn=Gen3RewardManager(config=RewardConfig.from_args(args)),
-                  account_configuration1=AccountConfiguration("rgspaces", None), start_listening=False,
-                  **trainee_env_kwargs(args))
-    try:
-        return env.observation_space, env.action_space
-    finally:
-        env.close()
+    """``(observation_space, action_space)`` of the trainee this run's args declare — built by
+    ``agents.training.trainee_spaces`` with NO env constructed (deletion pass U2), the same declaration
+    the Python core's ``Gen3Env`` builds its space through, so a checkpoint loads identically on either."""
+    from agents.training.trainee_spaces import trainee_spaces as _spaces
+    return _spaces(args, mappings)

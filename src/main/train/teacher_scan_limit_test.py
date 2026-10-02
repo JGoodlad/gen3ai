@@ -51,7 +51,8 @@ def _resolved(argv, saved=None, monkeypatch=None):
 
 def _saved(scan_limit):
     from types import SimpleNamespace
-    return SimpleNamespace(teacher_scan_limit=scan_limit)
+    # `critic`: a modern (win-prob) parent — a shaped one is REFUSED on resume (deletion pass D4)
+    return SimpleNamespace(teacher_scan_limit=scan_limit, critic="winprob")
 
 
 def test_the_flags_default_is_the_value_the_callback_hard_coded():

@@ -1467,7 +1467,7 @@ because a frozen forward never reads the reward.
 
 ### 6.4 Runtime knobs (never versioned, must be re-passed on every resume)
 
-`--use-bridge rust` (serverless) · `--env-core` (**rust** for a fresh `--arch production` launch — `designs/production_config.json` `recipe.sizing`, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch the core the checkpoint RECORDED, so unlike the knobs below it IS inherited; and `rust` for a bare non-production argv too — the deletion pass's bare-argv flip, 2026-10-02) · `--compile-opponents` + `--compile-opponents-preload` +
+`--use-bridge rust` (serverless) · `--env-core` (**rust** for a fresh `--arch production` launch — `designs/production_config.json` `recipe.sizing`, the M5 switch `gen3_env_core_switch_v1`; on a `--model` launch the core the checkpoint RECORDED, so unlike the knobs below it IS inherited — except that a python-era checkpoint (produced on `python`, or before `--env-core` existed) moves onto `rust`, announced as a CORE SWITCH, and one that trained the SHAPED critic is REFUSED (`FATAL_CONFIG` — run it pinned; deletion pass D4); and `rust` for a bare non-production argv too — the deletion pass's bare-argv flip, 2026-10-02) · `--compile-opponents` + `--compile-opponents-preload` +
 `--compile-trainer` (all ON by default) · `--grad-accum-steps` at whatever `--batch-size` the run
 uses · `--grad-checkpointing` · `--async-rollout` · `--matmul-precision` (default `highest`: full FP32,
 no TF32 — PyTorch's default; `high` enables TF32 in the trainer process, stamped as

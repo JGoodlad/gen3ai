@@ -82,7 +82,7 @@ from agents.training.eval_sharding import EvalItem, ShardedEvalPool, BOT, SENTIN
 from agents.training.snapshot_pool import (
     SnapshotPool, heuristic_fraction, HEURISTIC_FLOOR, SELF_PLAY_START, SELF_PLAY_FULL,
 )
-from agents.training.wrappers import STABLE_CHALLENGE_SHARE  # default for the reporting-only share
+from agents.training.opponent_classes import STABLE_CHALLENGE_SHARE  # default for the reporting-only share
 from agents.training.lever_supply import LEVERS, loud
 from agents.training.selfplay_supply import SelfPlaySupplyMixin
 from agents.training.sprt_promotion import SprtPromotionMixin
@@ -219,7 +219,7 @@ class SelfPlayCallback(SprtPromotionMixin, SelfPlaySupplyMixin, _ForcedEvalMixin
         self._pool = pool
         # SPECIALIST eval alignment (--trainee-team): the raw Showdown-export team string the trainee
         # is pinned to, threaded into every eval-worker cfg so eval measures the model piloting the
-        # team it actually trains (None = the default pool builder; see eval_worker._build_trainee_tb).
+        # team it actually trains (None = the default pool builder; see eval_teams.build_trainee_tb).
         self._trainee_team_str = trainee_team_str
         # Stable cross-run opponents (FixedOpponentEntry list) — an extra ext_ eval matchup each
         # cycle, kept out of win_rate_vs_bots / win_rate_vs_pool / the ELO fit / promotion. In the

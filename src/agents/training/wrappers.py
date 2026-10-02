@@ -10,11 +10,10 @@ from agents.training.dense_aux_callback import (
 )
 from poke_env.environment.single_agent_wrapper import SingleAgentWrapper
 
-# Stable cross-run opponents are a CAPPED minority of the self-play (challenge) bucket — the pool
-# keeps the bulk, so no single fixed opponent can dominate training. Multiple un-mastered stable
-# opponents SHARE this slice (so the total stable share stays ≤ this regardless of count). Mastered
-# ones leave the challenge bucket entirely for the floor.
-STABLE_CHALLENGE_SHARE = 0.20
+# The opponent-mix constants (STABLE_CHALLENGE_SHARE, the OPP_CLASS_* codes) are declared in
+# `agents.training.opponent_classes` (deletion pass U2) and re-exported here for this module's callers.
+from agents.training import opponent_classes as _oc
+from agents.training.opponent_classes import STABLE_CHALLENGE_SHARE  # noqa: F401 — re-export
 
 
 def resolve_episode_end(term: bool, trunc: bool, critic: str = CRITIC_UNRECORDED):
@@ -486,11 +485,12 @@ class MaskableAgentWrapper(SingleAgentWrapper):
     # against a heuristic it is easy but models a decision tree rather than a player, and only
     # against the pool does it measure the thing we care about. One pooled accuracy averages over
     # all three, so it cannot be read. Tagging the row is what lets the metric be split.
-    OPP_CLASS_BOT = 0          # heuristic / random floor bots — near-deterministic or unpredictable
-    OPP_CLASS_POOL = 1         # frozen selves — the distribution that actually matters
-    OPP_CLASS_STABLE = 2       # cross-run stable opponents
-    OPP_CLASS_EXPLOITER = 3    # the exploiter's target
-    N_OPP_CLASSES = 4          # width of any per-class array keyed on the four above
+    # The codes are declared in `agents.training.opponent_classes`; bound here for `self.OPP_CLASS_*`.
+    OPP_CLASS_BOT = _oc.OPP_CLASS_BOT
+    OPP_CLASS_POOL = _oc.OPP_CLASS_POOL
+    OPP_CLASS_STABLE = _oc.OPP_CLASS_STABLE
+    OPP_CLASS_EXPLOITER = _oc.OPP_CLASS_EXPLOITER
+    N_OPP_CLASSES = _oc.N_OPP_CLASSES
 
     def _select_episode_opponent(self) -> None:
         """Pick this episode's opponent.
