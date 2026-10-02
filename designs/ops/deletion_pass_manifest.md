@@ -1,6 +1,6 @@
 # The post-switch DELETION PASS + bounded tech-debt PAYDOWN — manifest
 
-**Status: PROPOSED 2026-10-02 — awaiting owner approval. Nothing here is deleted until it is.**
+**Status: APPROVED 2026-10-02 (owner: "I am happy just to delete and we don't need to keep the goldens").** Decisions as recorded in §0's APPROVED column. The 8-day box starts 2026-10-02. Model policy (owner): the mechanical DELETION units run on opus-medium; the structural units (U1, U2, U4) on opus-high.
 Scoped at `b2c09132` (THE M5 SWITCH, ledger 2026-10-02). Owner sequence (2026-10-01): validate Rust infra →
 switch (DONE) → **this pass** → slow tier → T15 re-bake → bottleneck profile → the X26 baseline. Reason: *one
 system to reason about.* Parent lists: `designs/endstate/program_rust_core.md` §4 (the per-milestone rows; this
@@ -13,11 +13,11 @@ doc supersedes its figures where they disagree — see §7), `design_own_ppo_loo
 
 ## 0. The owner's decisions
 
-| # | decision | recommendation |
+| # | decision | recommendation (APPROVED 2026-10-02 unless noted) |
 |---|---|---|
 | D1 | The LEVER LIST (§2): per lever, PORT to Rust or DELETE with the Python core | DELETE all 16; port none now. Distillation is the one with a live future user (X15); port it when X15 is scheduled (~1–2 agent-days) |
 | D2 | The BARE-ARGV default (a fresh argv without `--arch production`) | `--critic winprob` + its three reward defaults + `--env-core rust` (§2.1). The `--debug` smoke then runs on the Rust core |
-| D3 | `Gen3Env` as an ORACLE. The Rust env core's env-level parity gates (episode, labels, opponents, `rust_rollout/parity`, the bot-corpus re-record) all replay through `Gen3Env` + `bridge_session`; §1 point 4's named survivors do not include it | RETIRE them: bank one full green run of every env-level gate at the deletion commit's parent (pinned, recorded in the ledger), freeze the bot-corpus bank as a fixture, then delete. A slim `Gen3Env` keeps `wrappers`, `bridge_session` and the reward manager alive — the opposite of one system |
+| D3 | `Gen3Env` as an ORACLE. The Rust env core's env-level parity gates (episode, labels, opponents, `rust_rollout/parity`, the bot-corpus re-record) all replay through `Gen3Env` + `bridge_session`; §1 point 4's named survivors do not include it | RETIRE them: bank one full green run of every env-level gate at the deletion commit's parent (pinned, recorded in the ledger), freeze the bot-corpus bank as a fixture, then delete. A slim `Gen3Env` keeps `wrappers`, `bridge_session` and the reward manager alive — the opposite of one system | **APPROVED AS MODIFIED (owner): retire them WITHOUT banking a last-green run — "we don't need to keep the goldens". This covers ONLY the Python-env ORACLE goldens (the env-level parity gates, the bot-corpus re-record); the production goldens — the K9 learner golden, the obs golden, `reward_golden` — STAY, they guard live code.**
 | D4 | A PYTHON-ERA checkpoint resumed or forked on HEAD (today it inherits `--env-core python`) | winprob checkpoint → onto the Rust core, announced as a core switch (legitimate: the ledger's switch entry carries checkpoints across). Shaped checkpoint → REFUSE loudly, run it pinned (the `e3ef16db` precedent) |
 | D5 | The legacy FINAL EVAL (TECH_DEBT §2(g), OFF since `e6121412`) | delete `final_eval.py` + `--final-eval`; the last periodic Rust eval cycle is the readout (nothing reads the final eval's output) |
 | D6 | The offline cf stack (`cf_producer*`, `cf_audit*`, `harvest`, `critic_read`, the prober's counterfactual) — ~3.9k lines that READ old runs' `cf_records` rings | NOT in this pass. The FLAG CENSUS decides each on its users |
@@ -146,7 +146,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **U4** | PPO stage 3 + SB3 leftovers (R4 + R5) + P3 | 2.5 | A | `loop.py`, `rust_vec_env`, `device_batches`, `run_io`, callbacks | U3, memory fix |
 | **P6** | final-eval deletion | 0.5 | A or B | parser `operational`, `final_eval.py` | U0 (any gap in lane A/B) |
 | **P10** | independent code review | 0.75 | C | read-only → fixes as units | U4 |
-| **P8** | test-speed rows (re-measured first) | 3.0 | C | test files, `utils/bridge/team_validator.py` | U3 |
+| **P8** | **OUT OF THE BOX (orchestrator default 2026-10-02, owner may override): stays in TECH_DEBT_BACKLOG** — test-speed rows (re-measured first) | 3.0 | C | test files, `utils/bridge/team_validator.py` | U3 |
 | **P11** | FLAG CENSUS | 2.0 | A | everything | every unit above |
 | **GATE** | slow tier as the MILESTONE run (`-m slow -n 2`, refreshes `slow_tier_status.json`) | ~1 wall-hour, 0.25 | — | — | P11 |
 
