@@ -17,7 +17,7 @@ KO awareness, Gen-3-ability-aware damage, and opportunistic status/recovery:
 
 NOTE: the V2 classes are defined here but not yet wired into the training/eval
 rotation (OPPONENT_CLASSES / eval lists in train_rl_agent.py). Their display names
-are registered in eval_callback._OPPONENT_NAMES so the TUI/TensorBoard label them
+are registered in eval_roster._OPPONENT_NAMES so the TUI/TensorBoard label them
 correctly once they are added.
 """
 import os

@@ -16,7 +16,7 @@ filename prefixes** — checkpoints, ``eval_traces/``, ``best_model``, ``metadat
 ``snapshots/`` are never matched, never touched.
 
 This is the same *producer-grooms-its-own-data* contract as the eval-trace retention
-(``eval_callback.prune_eval_traces``): the trainer calls :func:`prune_run_artifacts`
+(``eval_collect.prune_eval_traces``): the trainer calls :func:`prune_run_artifacts`
 every eval cycle (grouped next to ``prune_eval_traces`` in both eval callbacks), so a
 live run self-bounds with no external task. The CLI is the manual fallback for a
 finished run, a different retention, or a one-off sweep of every run under ``models/``

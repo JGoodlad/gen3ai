@@ -39,7 +39,7 @@ SITES = {
     "train": "the training floor roster — `main/train/matchup_setup.py` OPPONENT_CLASSES (also the "
              "exploiter --exploiter-keep-bots mix: `env_factory` builds heuristic_opponents from it)",
     "train_bait": "the training roster, ONLY with --bait-bot-share > 0 (`make_baitbot_class(--bait-bot-p)`)",
-    "eval": "the eval roster — `agents/training/eval_callback.py` _EVAL_OPPONENT_SPECS (also "
+    "eval": "the eval roster — `agents/training/eval_roster.py` _EVAL_OPPONENT_SPECS (also "
             "`main.anchors` `bot:<name>` and the prober's replay, both through that table)",
     "final_eval": "the post-training evaluation — `main/train/final_eval.py`",
     "warmstart": "the warm-start smoke — `agents/training/warmstart.py`",

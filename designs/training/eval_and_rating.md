@@ -619,7 +619,7 @@ unit with a narrow interface (4 focused files, no mega-file):
   list — never a reduced ratio) + `aggregate`, which pools an opponent's shards back **exactly**:
   win_rate=Σwon/Σfinished, reward/ep_len count-weighted, and the TD tail by **pooling raw δ then one
   `td_tail`** (a CVaR can't be averaged). `td_tail` + its constants live here (the single source of
-  truth; `eval_callback` re-exports them, so the dependency is one-way `eval_callback → eval_sharding`).
+  truth; `eval_callback` and `eval_player` re-export them, so the dependency is one-way `eval_* → eval_sharding`).
 - **`pool.py`** — `ShardedEvalPool`, the deep coordinator. Parent: `write_plan(run_dir)` →
   `collect(result_dir)`. Worker: `from_plan(run_dir)` → `claim_next(claim_dir)` / `publish(...)`. It
   hides every filesystem mechanic; the worker never touches a lock file, the parent never touches a
@@ -799,7 +799,7 @@ fixed bots.
 - **No new battles.** Every eval cycle already plays the trainee (greedy) vs all 9 bots and vs
   up to `--n-sentinels` (default 5) pool sentinels, `EVAL_GAMES` each — a full tournament-matrix
   row. `record_elo`
-  (`eval_callback.py`, shared by BOTH callbacks) appends that row to an **append-only
+  (`eval_record.py`, shared by BOTH callbacks) appends that row to an **append-only
   `<run>/eval_results.jsonl`** (`snapshot.append_eval_result_row`) — the canonical, restart-safe
   source of truth, distinct from the overwritten `metadata.json:latest_eval`.
 - **The model = anchored Bradley-Terry** (`elo.fit_elo`): `P(i beats j)=σ((Rᵢ−Rⱼ)·ln10/400)`,

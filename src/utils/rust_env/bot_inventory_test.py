@@ -61,7 +61,7 @@ def train_roster() -> set:
 
 
 def eval_roster() -> set:
-    t = _tree("agents/training/eval_callback.py")
+    t = _tree("agents/training/eval_roster.py")
     (lst,) = _list_assign(t, "_EVAL_OPPONENT_SPECS")
     return _classes([tup.elts[1].id for tup in lst.elts], _imports(t))
 
@@ -145,7 +145,7 @@ def test_the_keep_bots_mix_is_the_training_roster():
 
 
 def test_display_names_agree_with_the_eval_table():
-    t = _tree("agents/training/eval_callback.py")
+    t = _tree("agents/training/eval_roster.py")
     (lst,) = _list_assign(t, "_EVAL_OPPONENT_SPECS")
     imports = _imports(t)
     rows = BI.by_class()

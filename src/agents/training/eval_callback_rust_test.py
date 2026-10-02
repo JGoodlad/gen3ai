@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from agents.training import eval_callback as ec
+from agents.training import eval_launch
 from agents.training.eval_callback import PerOpponentEvalCallback, eval_opponent_names
 from agents.training.eval_sharding import ShardResult
 from agents.training.rust_eval.launch import RustEvalUnavailable
@@ -90,7 +91,8 @@ def test_a_failed_rust_cycle_is_logged_as_missing_results_not_raised(tmp_path, m
             raise EvalCoreError("a battle was QUARANTINED")
 
     sent = []
-    monkeypatch.setattr(ec, "send_event", sent.append)
+    monkeypatch.setattr(ec, "send_event", sent.append)        # the collect's "failed (no results)"
+    monkeypatch.setattr(eval_launch, "send_event", sent.append)  # launch_rust_eval_cycle's failure line
     cb = _cb(tmp_path, _Broken())
     cb._on_step()
     assert cb._pending is None

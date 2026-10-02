@@ -9,6 +9,8 @@ import pytest
 from poke_env.player import RandomPlayer, SimpleHeuristicsPlayer
 from agents.opponents import Gen3StallerPlayer
 import agents.training.eval_callback as eval_callback
+import agents.training.eval_player as eval_player
+import agents.training.eval_record as eval_record
 from agents.training.eval_callback import (
     PerOpponentEvalCallback, bot_mean, opponent_name, RANDOM_OPPONENT_NAME,
     external_elo, record_external_elos, request_forced_eval, consume_forced_eval_request,
@@ -645,7 +647,6 @@ def test_resume_restores_eval_step_no_immediate_re_eval(tmp_path):
 def test_replay_last_eval_publishes_to_tui_on_init(tmp_path, monkeypatch):
     """Resume: _init_callback re-publishes the most recent eval to the TUI."""
     import json as _json
-    from agents.training import eval_callback as ec
     meta = {"latest_eval": {
         "step": 200, "win_rate_mean": 0.5, "win_rate_vs_bots": 0.4,
         "mean_reward_vs_bots": -1.0, "mean_ep_len_vs_bots": 30.0,
@@ -654,7 +655,7 @@ def test_replay_last_eval_publishes_to_tui_on_init(tmp_path, monkeypatch):
     (tmp_path / "metadata.json").write_text(_json.dumps(meta))
 
     sent = {}
-    monkeypatch.setattr(ec, "send_metrics", lambda d: sent.update(d))
+    monkeypatch.setattr(eval_record, "send_metrics", lambda d: sent.update(d))
     cb = PerOpponentEvalCallback(model_dir=str(tmp_path), server_config=MagicMock())
     cb._init_callback()
 
@@ -668,7 +669,6 @@ def test_replay_last_eval_republishes_pool_block(tmp_path, monkeypatch):
     so the Pool/sentinel rows aren't blank until the next cycle — parity with the bot rows."""
     import json as _json
     from agents.training.eval_callback import replay_last_eval_to_tui
-    from agents.training import eval_callback as ec
     meta = {"latest_eval": {
         "step": 300, "win_rate_mean": 0.6, "win_rate_vs_bots": 0.55,
         "mean_reward_vs_bots": 5.0, "mean_ep_len_vs_bots": 20.0,
@@ -686,7 +686,7 @@ def test_replay_last_eval_republishes_pool_block(tmp_path, monkeypatch):
     (tmp_path / "metadata.json").write_text(_json.dumps(meta))
 
     sent = {}
-    monkeypatch.setattr(ec, "send_metrics", lambda d: sent.update(d))
+    monkeypatch.setattr(eval_record, "send_metrics", lambda d: sent.update(d))
     replay_last_eval_to_tui(str(tmp_path))
 
     # Pool aggregate — including the reward that used to be missing.
@@ -710,7 +710,6 @@ def test_replay_computes_elo_when_block_predates_field(tmp_path, monkeypatch):
     cadence. (Robust to the anchor file's presence — value just shifts scale.)"""
     import json as _json
     from agents.training.eval_callback import replay_last_eval_to_tui
-    from agents.training import eval_callback as ec
     meta = {"latest_eval": {  # NOTE: no "elo"/"elo_ci" — a pre-feature checkpoint
         "step": 128_000_010, "win_rate_mean": 0.6, "win_rate_vs_bots": 0.55,
         "mean_reward_vs_bots": 5.0, "mean_ep_len_vs_bots": 20.0,
@@ -724,7 +723,7 @@ def test_replay_computes_elo_when_block_predates_field(tmp_path, monkeypatch):
     (tmp_path / "metadata.json").write_text(_json.dumps(meta))
 
     sent = {}
-    monkeypatch.setattr(ec, "send_metrics", lambda d: sent.update(d))
+    monkeypatch.setattr(eval_record, "send_metrics", lambda d: sent.update(d))
     replay_last_eval_to_tui(str(tmp_path))
 
     assert "eval/elo" in sent and math.isfinite(sent["eval/elo"])
@@ -740,7 +739,6 @@ def test_replay_skips_pool_block_when_unseeded(tmp_path, monkeypatch):
     """A pre-seed eval persists an empty sentinels list — don't re-publish a misleading 'vs Pool 0%'."""
     import json as _json
     from agents.training.eval_callback import replay_last_eval_to_tui
-    from agents.training import eval_callback as ec
     meta = {"latest_eval": {
         "step": 100, "win_rate_mean": 0.3, "win_rate_vs_bots": 0.25,
         "mean_reward_vs_bots": -2.0, "mean_ep_len_vs_bots": 18.0,
@@ -751,7 +749,7 @@ def test_replay_skips_pool_block_when_unseeded(tmp_path, monkeypatch):
     (tmp_path / "metadata.json").write_text(_json.dumps(meta))
 
     sent = {}
-    monkeypatch.setattr(ec, "send_metrics", lambda d: sent.update(d))
+    monkeypatch.setattr(eval_record, "send_metrics", lambda d: sent.update(d))
     replay_last_eval_to_tui(str(tmp_path))
 
     assert "eval/win_rate_vs_pool" not in sent
@@ -888,14 +886,13 @@ def _quota_player(monkeypatch, tmp_path, *, draw_quota=5):
     """
     from agents.training.eval_callback import EvalRLPlayer
     from agents.training.reward_tracker import RewardTrackingMixin
-    import agents.training.eval_callback as ec
 
     monkeypatch.setattr(RewardTrackingMixin, "_battle_finished_callback",
                         lambda self, battle: None, raising=False)
     written = []
-    monkeypatch.setattr(ec, "write_battle_record",
+    monkeypatch.setattr(eval_player, "write_battle_record",
                         lambda prefix, rec, battle, step: written.append(prefix))
-    monkeypatch.setattr(ec, "register_trace_prefix", lambda *a, **k: None)
+    monkeypatch.setattr(eval_player, "register_trace_prefix", lambda *a, **k: None)
 
     p = EvalRLPlayer.__new__(EvalRLPlayer)
     p._forensic_dir = str(tmp_path)

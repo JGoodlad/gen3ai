@@ -38,8 +38,8 @@ restart — no manifest). Design lives in `designs/ai_v5/`. Key behaviors:
   the worker processes, and the trainer holds no live eval connections (the worker rebuilds
   opponents/teambuilders/mappings itself). Skip-while-running, worker-crash-logged-and-continued,
   graceful-shutdown `drain()`, and resume-republish all behave exactly as the bot path above. The
-  launch→poll→collect→drain mechanics are the **shared** `eval_callback.spawn_eval_workers` /
-  `merge_eval_results` / `persist_eval_snapshot` / `prune_eval_*` / `replay_last_eval_to_tui`
+  launch→poll→collect→drain mechanics are the **shared** `eval_launch.spawn_eval_workers` /
+  `eval_collect.merge_eval_results` / `persist_eval_snapshot` / `prune_eval_*` / `eval_record.replay_last_eval_to_tui`
   helpers, so the two non-blocking paths can't drift. `--debug --self-play --debug-eval` uses a
   fast eval cadence (every 4k steps, 3 games) so a short CPU smoke exercises seed → pool eval →
   promotion (a plain `--debug` smoke skips all eval by default — see `--debug-eval`).

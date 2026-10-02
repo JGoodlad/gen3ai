@@ -254,7 +254,7 @@ deterministic `_supervise` exit-code/crash-restart/`_reap` suite), plus `launche
   badge-row headline `🏅 ELO 1532 ±40` (`app.py::_elo_badge`, cyan) AND inside the eval panel: the
   table has a dedicated **`elo` column** — the model's own rating (±CI) on the `all` row, and each
   opponent's anchored ELO on its row (bots = their fixed anchor; sentinels = their rating this
-  cycle, from `eval/elo_vs_<opp>` recorded by `eval_callback._record_opponent_elos`). This is the
+  cycle, from `eval/elo_vs_<opp>` recorded by `eval_record._record_opponent_elos`). This is the
   at-a-glance "is it going well?" number during self-play pool play — anchored Bradley-Terry over
   the fixed bots, so it rises with strength even while `win_rate_vs_pool` sits pinned near 50% (see
   `src/agents/training/CLAUDE.md` → ELO / skill rating). *(The per-sentinel ELO is a noisy
