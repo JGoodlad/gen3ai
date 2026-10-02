@@ -10639,3 +10639,10 @@ if a lazy build is reintroduced.
   `_device_free_mib`, `_reserved_after_freeze_mib`, `_streams_after_freeze`).
 - Evidence: `designs/training/learner_lifecycle.md` "The staged batch's stream"; runs
   `~/gen3ai_archive/staged_stream/runs/`.
+
+## 2026-10-02 — no global RNG is SEEDED after the learner freezes; a model load never touches a global stream (`gen3_no_global_reseed_v1`; no model change, the K9 golden unchanged)
+
+- The bug: `InferenceMaskablePPO._setup_model` kept sb3's `set_random_seed(self.seed)`, so every pool / sentinel / rung load re-seeded Python `random`, NumPy and torch to the snapshot's saved seed (the run's `--seed`). On the Rust core the minibatch permutation replayed the run's first updates after every load. On the python core every worker's team draws replayed, which produced a seed-fixed skew in the team curriculum (ledger 2026-10-02).
+- `agents/training/global_rng_guard.py`: `isolated_global_rng()` restores torch's CPU generator and any stream seeded inside it. The inference load builds its policy there and no longer seeds. The GUARD (armed by `LearnerFreeze.freeze`, disarmed at release) turns `random.seed` / `numpy.random.seed` / `torch.manual_seed` and kin, called after the freeze outside an isolated scope, into `GlobalReseedError` (FATAL_CONFIG), sticky in the freeze's violations, with no allowlist.
+- `learner_golden.compute(before_train=...)` lets a caller freeze after the harness's pinned update seed.
+- Static gate `src/global_rng_seed_gate_test.py`: no seeding function bound by name or taken as a value in non-test `src/`.

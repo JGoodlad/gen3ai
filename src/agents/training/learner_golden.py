@@ -56,7 +56,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 
@@ -240,8 +240,13 @@ def _one_thread() -> Iterator[None]:
         th.set_num_threads(prev)
 
 
-def compute(model: Optional[Any] = None) -> Dict[str, Any]:
-    """Build (unless given), load the pinned buffer, run ONE ``train()``; return the fingerprint."""
+def compute(model: Optional[Any] = None,
+            before_train: Optional[Callable[[], Any]] = None) -> Dict[str, Any]:
+    """Build (unless given), load the pinned buffer, run ONE ``train()``; return the fingerprint.
+
+    ``before_train`` runs after the update's pinned seeding and immediately before ``train()`` — where
+    a caller FREEZES the learner (K6): the seeding is the harness's startup, and a global seed after the
+    freeze is a `GlobalReseedError` (`global_rng_guard`, gen3_no_global_reseed_v1)."""
     import torch as th
 
     with _one_thread():
@@ -251,6 +256,8 @@ def compute(model: Optional[Any] = None) -> Dict[str, Any]:
         init = params_sha256(model)
         np.random.seed(UPDATE_SEED)
         th.manual_seed(UPDATE_SEED)
+        if before_train is not None:
+            before_train()
         model.train()
         logged = dict(model.logger.name_to_value)
     losses = {k: float(v) for k, v in sorted(logged.items())

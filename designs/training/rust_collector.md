@@ -173,7 +173,9 @@ opponent episode, re-stages opponents and teams, RESETs and re-stages the next e
 each pinned stable / exploiter route's builder, F-LE-5); a draw is the builder's own `yield_team`, mapped
 into the startup team table. The per-team win-rate record follows the team the episode PLAYED (the
 builder's own `_last_pool_idx` already names the next, staged one). Today's builders draw from each
-worker's unseeded global `random`: a declared change of STREAM, not distribution (like F-LE-3).
+worker's unseeded global `random`: a declared change of STREAM, not distribution (like F-LE-3). On the python
+core that global stream was also RE-SEEDED by every pool load until 2026-10-02, which skewed its team curriculum
+(ledger 2026-10-02, `gen3_no_global_reseed_v1`); the seeded per-env copies here never had it.
 
 ## The env surface
 

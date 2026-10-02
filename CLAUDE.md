@@ -168,7 +168,7 @@ The routine gate's `-n 6` is the measured policy (`designs/ops/testing.md` "Rout
 
 **Two axes, and keeping them apart is the point.** A marker says what a test NEEDS (*(unmarked)* · `integration` · `sim` · `browser` · `e2e`); a separate marker says what it COSTS (`slow`). **A tier is DECLARED, never inferred** — cost arrives transitively, so no filename or import graph can classify a test. `conftest.py` reports an unmarked test that overruns 30 s, and **enforces only on a quiet box** (factor < 1.05 over the SESSION *and* that test's own window); on a busy one it is advisory, because a duration measured under starvation is not a measurement.
 
-**Twelve static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
+**Thirteen static gates, all unmarked (they run in every tier), all ~free.** A missing tool FAILS rather than skips — a linter that silently opts out reads exactly like one that found nothing.
 
 | Gate | Checks | Opt-out |
 |---|---|---|
@@ -184,6 +184,7 @@ The routine gate's `-n 6` is the measured policy (`designs/ops/testing.md` "Rout
 | `src/trace_summary_reader_gate_test.py` | no module but `main/prober/core_trace.py` opens an eval-trace `*_summary.json` — every reader goes through `load_summary` / `load_summary_meta` / `refuse_core_trace`. F-LH-5: a Rust-eval core trace stores `meta` only, so a direct reader read ZERO decisions, silently. **The allowlist is EMPTY** | `GEN3AI_SKIP_SUMMARY_READER_GATE=1` |
 | `src/poke_env_enum_str_compare_gate_test.py` | no poke-env ENUM (`Target`, `Status`, `MoveCategory`, `Weather`, … derived) is compared to a value it can never equal — mypy strict-equality mode over `agents`/`main`/`utils`/`poke_env`, typed, so `live_mon.status == "slp"` (a str) is not flagged. F-LF-1: `move.target == "self"` killed four bots' setup step for their whole life. Cold ~24 s once, warm ~0.3 s | `GEN3AI_SKIP_ENUM_STR_GATE=1` |
 | `src/learner_lifecycle_gate_test.py` | no TRAINING-STEP path (every function in `agents/training/instrumented_ppo/`, the declared loss-term / probe `STEP_MODULES`, the per-step hooks of every SB3 callback under `agents/training` + `main/train`) constructs an optimizer, an `nn.Parameter` or an `nn.Module` (torch or a repo subclass, by name) outside a `@startup_builder` (`agents/training/lifecycle_decl.py`) or a class's `__init__` / `_build` / `_setup_model` — the K6 declared lifecycle's STATIC twin; the runtime freeze guard covers what it cannot see. It also fails a `torch.cuda` STREAM / CUDA GRAPH / graph pool / `MemPool` built there or in the T2 service / rust collector — where a bare `__init__` does NOT exempt (a per-update side stream stranded 1.86 GiB, 2026-10-01). **The allowlist is EMPTY** | `GEN3AI_SKIP_LIFECYCLE_GATE=1` |
+| `src/global_rng_seed_gate_test.py` | no non-test module binds a process-global SEEDING function by name or takes one as a value (`from random import seed`, `f = np.random.seed`, …) — the runtime reseed guard (`agents/training/global_rng_guard.py`, armed at the K6 freeze) wraps them on their modules and cannot see a pre-bound name. **The allowlist is EMPTY** | `GEN3AI_SKIP_GLOBAL_RNG_GATE=1` |
 
 A path or flag named deliberately as HISTORY goes in `designs/deleted_flags.md` with its citation.
 

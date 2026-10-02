@@ -104,7 +104,7 @@ from `model_config.json` (and is then refused, D4), never the new parser default
 
 | # | item | source | size (agent-days) | depends on | lane |
 |---|---|---|---|---|---|
-| P1 | **Opponent loads must not reseed the global RNG.** `InferenceMaskablePPO._setup_model` (`instrumented_ppo/inference.py:63`) calls `set_random_seed(self.seed)`: every pool refresh / sentinel / teacher load re-seeds Python `random`, NumPy and torch to the SNAPSHOT's saved seed mid-run. Any later global-RNG draw (team builders that draw from the global `random`, `rust_collector.md` "Teams, seeds") replays a stream | queued 2026-10-02 | 0.25 (+ a check of which Rust-core draws read the global RNG — GIGO class, so first) | — | C |
+| P1 | **Opponent loads must not reseed the global RNG.** `InferenceMaskablePPO._setup_model` (`instrumented_ppo/inference.py:63`) calls `set_random_seed(self.seed)`: every pool refresh / sentinel / teacher load re-seeds Python `random`, NumPy and torch to the SNAPSHOT's saved seed mid-run. Any later global-RNG draw (team builders that draw from the global `random`, `rust_collector.md` "Teams, seeds") replays a stream | **SHIPPED 2026-10-02** (`gen3_no_global_reseed_v1`): Rust core: only the minibatch permutation replayed; python core: the team curriculum (ledger 2026-10-02). Loads isolated, a global seed after the K6 freeze is FATAL, static gate `src/global_rng_seed_gate_test.py` | 0.25 (+ a check of which Rust-core draws read the global RNG — GIGO class, so first) | — | C |
 | P2 | **Opponent T2 slots compute the value forward they never use** (`inference/service/decision.py` runs `_critic_value` for every slot) — a policy-only forward for non-trainee slots | queued 2026-10-02 | 0.75 (T2 slot identity + parity tests) | GPU memory fix landed | C |
 | P3 | **The last update's scalars are never dumped**: `dump_logs` runs BEFORE each update (the TB step contract), so the final update's `train/*` stay pending at `learn()`'s end (switch report #3) | switch report | 0.25 | — (folds into R4 if R4 is in flight) | A |
 | P4 | **Launcher `render error: cannot convert float NaN to integer`** (`main/launcher/app.py:325`, once, headless) | switch report | 0.25 | — | C |
@@ -182,8 +182,10 @@ calendar days with 3 lanes; 8 is the box**.
 1. 🚨 **Production startup instantiates `Gen3Env`** (`trainee_spaces()`), so R1 cannot go before U2's extraction.
 2. 🚨 **Deleting the Python core deletes the Rust env core's ORACLE** (D3): the env-level parity gates are not on
    program §1's survivor list.
-3. 🚨 **P1 is a possible GIGO class** (a mid-run global-RNG reseed on every pool refresh) — unverified which
-   Rust-core consumers draw from the global RNG; checked first in P1.
+3. ✅ **P1 was a GIGO class — CLOSED 2026-10-02** (`gen3_no_global_reseed_v1`). On the Rust core the only
+   steady-state global-RNG consumer is the minibatch permutation, which replayed after every load (no effect on
+   which rows train). On the python core every worker's team draws replayed, so its team curriculum was a
+   seed-fixed skew (ledger 2026-10-02).
 4. **The root `CLAUDE.md` `--debug` smoke runs the PYTHON core today** (bare argv → `--critic shaped` → python). U1.
 5. **`--cf-label-supply external` passes launch checks on Rust and would starve in flight** — unverified at
    runtime; R2/L4 deletes it.

@@ -273,9 +273,11 @@ def test_a_production_surface_update_acquires_nothing_and_leaves_the_golden_unch
     model = LG.build_learner()
     LL.declare_learner_startup(model)
     fz = LL.LearnerFreeze(model)
-    fz.freeze("test")
     try:
-        got = LG.compute(model)
+        # frozen AFTER the harness pins the update's seed (its startup): a seed after the freeze is a
+        # GlobalReseedError (gen3_no_global_reseed_v1)
+        got = LG.compute(model, before_train=lambda: fz.freeze("test"))
+        assert fz.frozen is not None
         fz.check("update end")
     finally:
         fz.release()

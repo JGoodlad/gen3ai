@@ -418,8 +418,9 @@ eval sentinels (`rust_eval/launch.load_sentinels`, `eval_worker`) went through t
 - no rollout buffer, no loop hooks.
 
 It refuses `learn` / `train` / `collect_rollouts` / `save` (`InferenceOnlyModelError`). The rest is
-`MaskablePPO._setup_model` in its own order, including `set_random_seed(self.seed)`, so the global RNG
-after an opponent load is where the old load left it.
+`MaskablePPO._setup_model` in its own order, except `set_random_seed(self.seed)`: an opponent load does
+not seed, and it builds the policy inside `global_rng_guard.isolated_global_rng()`, so every global RNG
+stream is bit-identical before and after the load ("No global reseed after the freeze" below).
 
 **The routes:**
 - **`snapshot.load_opponent_snapshot`** — the self-play pool (`SnapshotPool.load_model`, and through it
@@ -460,6 +461,70 @@ run dirs + logs in `~/gen3ai_archive/k6_k8/oppload/`):**
 **Tests:** `opponent_inference_load_test`. Each test fails on revert: a pool / sentinel / foreign load
 under a FROZEN trainee builds no optimizer; both F-MEM directions load; a non-ride-along mismatch is
 refused; the trainee resume is strict and acquires at setup; the T2 identity ignores the heads.
+
+## No global reseed after the freeze (`gen3_no_global_reseed_v1`)
+
+**The failure it closes (2026-10-02, the deletion-pass manifest's P1).** sb3's `_setup_model` calls
+`set_random_seed(self.seed)`. So every model load re-seeded Python `random`, NumPy and torch to the
+LOADED checkpoint's saved seed. A snapshot carries its run's `--seed`, so a pool refresh, an eval
+sentinel or an exploiter rung rewound the loading process's global streams to their startup state.
+It was measured with a probe that wrapped every global seed / draw function and hashed the three
+states at every rollout and update boundary (CPU `--debug --arch production`, forced promotions, one
+run per env core):
+
+- **The Rust core (production).** The trainee process's one steady-state global-RNG consumer is the
+  PPO minibatch permutation (`np.random.permutation` in `RolloutBuffer.get`, one per epoch). Python
+  `random` and torch's CPU stream are never read: their hashes are constant for the whole run, and
+  teams come from per-env seeded builders (`rust_rollout/teams.py`). After each pool load
+  (`rust_rollout/build.py`) and each sentinel load (`rust_eval/launch.load_sentinels`), the NumPy state
+  at update entry EQUALED update 1's. Updates 8–15 replayed updates 1–8's permutations, and 16–23 did
+  again. Which rows train, and how often, is unchanged, so the expected effect on learning is nil. The
+  M5 sizing arms (A / A2 / A′ / B / C) had it from their first pool seed on.
+- **The Python core** (every pre-M5 self-play run). Each `SubprocVecEnv` worker loads its pool
+  snapshot once per generation (`MaskableAgentWrapper._ensure_pool_model`). Its teambuilders and the
+  heuristic bots draw from that worker's global `random`. After the load the worker's team draws
+  replayed the run's first draws exactly (25, 281, 142, 104, 558, 89, 32, 30, …), and every worker
+  replayed the same stream. On the real runs, per-team trainee game counts (`metadata.json`
+  `team_win_rates`) are over-dispersed: variance / mean 20–1,264 on the python core against 1.7–2.0 on
+  the Rust sizing arms. N0 (`ai_v14_01_base`) spans 166–5,676 games per team where uniform draws give
+  2,030 ± 45. Which teams are heavy is fixed by the snapshot seed: independent seed-1001 python runs
+  correlate with N0 at Spearman 0.89–0.997, while seed-42 / seed-1002 runs and the Rust arms read
+  about 0. The finding and the claims it may touch are in `designs/research_state/ledger.md`
+  (2026-10-02).
+
+**The fix: a load never touches a global stream.** `InferenceMaskablePPO._setup_model` does not seed.
+It builds the policy inside `global_rng_guard.isolated_global_rng()`. That scope restores torch's CPU
+generator, which a module's construction draws its init from (the loaded weights then overwrite it).
+It also restores any stream SEEDED inside it, CUDA's included when initialized, so the ride-along
+heads' constructor `torch.manual_seed` calls stay local. A stream only drawn from inside the scope is
+left advanced, because restoring it would rewind another thread's draws.
+
+**The guard: a global SEED after the freeze is FATAL.** `LearnerFreeze.freeze()` arms
+`global_rng_guard`, and `release()` disarms it. The guard wraps the seeding functions on their modules:
+`random.seed`, `numpy.random.seed`, `torch.manual_seed` / `torch.random.manual_seed` / `torch.seed`,
+and `torch.cuda.manual_seed[_all]` / `torch.cuda.seed[_all]`. While armed, a call from the armed
+process on a thread outside an isolated scope raises `GlobalReseedError`. That error is a
+`FatalConfigError`, so the run exits FATAL_CONFIG and is not restarted. The error names the call site,
+and the violation is appended to the freeze's sticky list, so a swallowed raise still fails the next
+`check()`. There is no allowlist: a stream that must be reproducible owns its generator (`keyed_draw`,
+a `random.Random`, a `torch.Generator`). The learner golden's harness pins its update seed BEFORE its
+test freezes (`learner_golden.compute(before_train=...)`), and the K9 golden is unchanged.
+
+Its limits are deterministic and stated:
+- A state RESTORE (`setstate` / `set_state` / `set_rng_state`) is not a seed and is not guarded.
+- A name bound before arming bypasses the wrappers, so the static twin
+  `src/global_rng_seed_gate_test.py` (routine, EMPTY allowlist) refuses `from random import seed` and
+  every other seeding function bound by name or taken as a value in non-test `src/`.
+- A forked child inherits the wrappers but not the arming (the PID is checked).
+
+**Tests** (`global_rng_guard_test`, each failing on revert):
+- every seeding spelling refused while armed, with its site, sticky;
+- a seed inside an isolated scope is local, and an unseeded draw stays advanced;
+- the freeze arms the guard;
+- a pool / sentinel / foreign load leaves all three streams bit-identical (heads on and off);
+- the post-load permutation is not the startup permutation;
+- a heads-on pool load under a frozen learner raises nothing;
+- the loaded weights are the saved ones.
 
 ## Smoke
 

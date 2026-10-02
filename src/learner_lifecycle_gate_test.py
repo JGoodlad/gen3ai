@@ -141,6 +141,8 @@ NOT_STEP_MODULES: Dict[str, str] = {
     "agents/model/compile_trainer.py": "the compile wrapper, applied once at startup; the per-step "
                                        "`eager_extractor` is a context manager over existing modules",
     "agents/observation/constants.py": "layout constants only",
+    "agents/training/global_rng_guard.py": "the reseed guard + the isolated-RNG scope an INFERENCE load "
+                                           "builds in; wraps seeding functions, builds no module",
     "agents/model/arch_constants.py": "architecture constants only",
     "agents/training/lifecycle_decl.py": "the `@startup_builder` marker itself; builds nothing",
     "agents/model/compile_regions.py": "the compile regions' install / gate / prewarm run once at startup; "

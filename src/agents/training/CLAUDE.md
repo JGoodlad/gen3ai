@@ -154,6 +154,12 @@ trajectory (`designs/training/step_size_and_batch.md`). A new callback that dump
 mid-rollout MUST use the same decorator. **Seeding is OURS too** (`gen3_owned_seeding_v1`, `OwnedLoop.set_random_seed`):
 sb3's draws in sb3's order and NO cuDNN flag — sb3 set the process-wide `cudnn.deterministic=True` on
 every CUDA construction and load (a nominal regime boundary: 0 cuDNN kernels run in a production update).
+🚨 **No global RNG is SEEDED after the freeze** (`gen3_no_global_reseed_v1`, `global_rng_guard.py`): `LearnerFreeze` arms a guard
+on `random.seed` / `numpy.random.seed` / `torch.manual_seed` and kin, so a seed is `GlobalReseedError` (FATAL_CONFIG) naming its
+site. An opponent / reader load (`InferenceMaskablePPO`) never seeds and builds inside `isolated_global_rng()`. Until 2026-10-02
+every load re-seeded to the snapshot's seed, which replayed the minibatch permutation (rust core) and every worker's team draws
+(python core). A stream that must repeat owns a generator. Static twin: `src/global_rng_seed_gate_test.py`. Detail:
+`designs/training/learner_lifecycle.md` "No global reseed after the freeze".
 
 **K9 — the learner's GIGO gates** ([`designs/training/learner_gates.md`](../../../designs/training/learner_gates.md)).
 🚨 **`learner_golden_test.py` pins what ONE update computes** — exact post-update parameter bytes and

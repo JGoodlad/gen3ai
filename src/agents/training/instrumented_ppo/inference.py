@@ -22,9 +22,16 @@ opponent / reader load builds. Its `_setup_model` builds the POLICY and nothing 
 It refuses to `learn`, `train`, `collect_rollouts` or `save` (`InferenceOnlyModelError`): a model that
 carries no optimizer state must never write a checkpoint a resume would read as a learner's.
 
-Everything else is `MaskablePPO._setup_model` verbatim, in its order — `_setup_lr_schedule` and
-`set_random_seed(self.seed)` included, so an opponent load leaves the global RNG exactly where the old
-load left it (the policy's own construction draws the same numbers).
+Everything else is `MaskablePPO._setup_model` in its order, MINUS `set_random_seed(self.seed)`
+(`gen3_no_global_reseed_v1`): a load must never touch the process's global RNG. sb3's setup re-seeded
+Python `random`, NumPy and torch to the SNAPSHOT's saved seed — the run's own `--seed` — so every pool
+refresh / sentinel / rung load mid-run rewound the trainee's global streams to their startup state,
+and the PPO minibatch permutation (`np.random.permutation` in `RolloutBuffer.get`) replayed the run's
+first updates' sequence after every load (measured, `designs/training/learner_lifecycle.md` "No global
+reseed after the freeze"). The policy is built inside `global_rng_guard.isolated_global_rng()`: its
+init draws (and the ride-along heads' constructor `torch.manual_seed`s) come from torch's CPU
+generator, which the scope restores, so the global streams after a load are exactly where they were
+before it. The weights the construction drew are overwritten by `set_parameters`.
 
 The TRAINEE is unaffected: its resume / fork (`load_model_snapshot` with an env) is an
 `InstrumentedMaskablePPO` that acquires every ride-along optimizer at startup, before the freeze, and is
@@ -34,6 +41,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
+from agents.training.global_rng_guard import isolated_global_rng
 from agents.training.instrumented_ppo.ppo import InstrumentedMaskablePPO
 
 
@@ -60,11 +68,13 @@ class InferenceMaskablePPO(InstrumentedMaskablePPO):
         from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 
         self._setup_lr_schedule()
-        self.set_random_seed(self.seed)
+        # NO `self.set_random_seed(self.seed)` (module docs, gen3_no_global_reseed_v1): an opponent load
+        # never seeds — nor draws from — a process-global RNG stream.
         pk = {**self.policy_kwargs, "optimizer_class": _no_optimizer, "optimizer_kwargs": {}}
-        self.policy = self.policy_class(  # type: ignore[assignment]
-            self.observation_space, self.action_space, self.lr_schedule, **pk)
-        self.policy = self.policy.to(self.device)
+        with isolated_global_rng():
+            self.policy = self.policy_class(  # type: ignore[assignment]
+                self.observation_space, self.action_space, self.lr_schedule, **pk)
+            self.policy = self.policy.to(self.device)
         if not isinstance(self.policy, MaskableActorCriticPolicy):
             raise ValueError("Policy must subclass MaskableActorCriticPolicy")
         # The ride-along heads' optimizer slots exist and are EMPTY: a step refuses

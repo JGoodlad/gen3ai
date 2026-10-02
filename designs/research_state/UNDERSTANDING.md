@@ -1406,6 +1406,15 @@ z=−1.40" rules out >4.5pp, not >0.
     RankTripwire, DistillStop and the anchor dual lost the same readings. After it, every update is
     read. Arms on ONE side that share an eval cadence stay comparable; frozen-LR forks are unaffected
     on the LR axis. [FINDING + FIX · ledger 2026-10-01 · *THE EVAL DUMP DROPPED A KL READING*]
+28. **A python-core self-play run's TEAM CURRICULUM was not uniform, and its skew is fixed by the
+    snapshot SEED** (until 2026-10-02, `gen3_no_global_reseed_v1`). Every pool load re-seeded each env
+    worker's global `random`, and the teambuilders drew from it. Per-team game counts read var/mean
+    20–1,264 (python core, runs with pool loads) against 1.7–2.0 (Rust core); N0 spans 166–5,676 games per team. Seed-1001 runs
+    share ONE skew (Spearman 0.89–0.997 vs N0); seed-42 / 1002 runs have different ones. So a comparison
+    ACROSS seeds (or across a fork whose pool carries another seed) also compares team curricula, and a
+    per-team or per-archetype read on a python run carries the skew. A same-seed arm-vs-arm DIFFERENCE is
+    matched. The Rust core (the M5 sizing arms onward) is clean. [FINDING · ledger 2026-10-02 · *EVERY
+    OPPONENT LOAD RE-SEEDED THE GLOBAL RNG*]
 
 ### 4.x · The search dividend at the win-prob milestone (2026-09-11)
 

@@ -38,6 +38,14 @@ recorded and ignored unless it joins the learner's graph):
     the violation STICKY, so a caller's `except Exception` cannot hide it from the next `check()`.
 A construction with no record (made before the freeze, or outside any registration) says so.
 
+THE RNG HALF (`gen3_no_global_reseed_v1`, `global_rng_guard`): the freeze also ARMS a guard on the
+process-global seeding functions (`random.seed`, `numpy.random.seed`, `torch.manual_seed` and kin).
+A seed after the freeze would rewind every later draw of that stream — sb3's `set_random_seed` in an
+opponent load replayed the PPO minibatch permutation after every pool refresh until 2026-10-02 — so
+it is a typed FATAL (`GlobalReseedError`, a `FatalConfigError`) naming its call site, and sticky in
+`violations` like the step hook's. A model built inside `global_rng_guard.isolated_global_rng()` (the
+inference-only load) seeds locally and is let through. `release()` disarms.
+
 WHAT IT DOES NOT DO: change a number. The snapshot and the checks read identities; the hooks record.
 `declare_optimizer_state` changes the optimizer's state only from "absent" to exactly what torch's
 lazy first step creates (`declare_optimizer_state_test` pins a pre-declared update bit-identical to a
@@ -374,13 +382,17 @@ class LearnerFreeze:
 
         from torch.optim.optimizer import register_optimizer_step_pre_hook
         self._step_hook = register_optimizer_step_pre_hook(step_pre_hook)
+        # The RNG half (gen3_no_global_reseed_v1): a global SEED from here is a typed FATAL, sticky in
+        # `self.violations` like the step hook's (`global_rng_guard`).
+        from agents.training import global_rng_guard
+        global_rng_guard.arm(self.violations)
         fs = self.frozen
         n_state = sum(len(v) for v in fs.state.values())
         line = (f"🧊 [LEARNER FREEZE] {where}: {len(fs.modules)} modules, {len(fs.params)} parameters, "
                 f"{len(fs.buffers)} buffers, {len(fs.optimizers)} optimizer(s) "
                 f"[{', '.join(sorted(fs.optimizers.values()))}] with {n_state} state entries. From "
                 f"here a new optimizer / parameter / module / buffer / optimizer-state entry in the "
-                f"learner stops the run with a typed exit.")
+                f"learner stops the run with a typed exit, and so does a SEED of a process-global RNG.")
         self._say(line)
         return line
 
@@ -390,6 +402,8 @@ class LearnerFreeze:
                 self._step_hook.remove()
             self._step_hook = None
         self.recorder.uninstall()
+        from agents.training import global_rng_guard
+        global_rng_guard.disarm(self.violations)
         if self.frozen is not None and why:
             self._say(f"🧊 [LEARNER FREEZE] released — {why}; {self.checks} checks passed.")
         self.frozen = None

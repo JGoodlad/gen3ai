@@ -21819,3 +21819,30 @@ Tag: **ERA BOUNDARY · M5 SWITCH · env core python → rust (fresh production l
 **Still blind:** T2's `_frozen_guard` `cuda_segments_after_freeze` under `expandable_segments:True` (TECH-DEBT §2(b)). Note also that the K6 calibration README recommended AGAINST `expandable_segments`, but the launcher sets it for every child.
 
 Tag: **FINDING + FIX · N = 256 reserved climb = per-update side stream × expandable segments (31 + 1 = the 32-stream pool), not evals · fixed: 7,798 MiB flat = the fit check's prediction, D-6 2,218 MiB with the X26 heads · `gen3_staged_compute_stream_v1`**
+
+### 2026-10-02 · FINDING + FIX · **EVERY OPPONENT LOAD RE-SEEDED THE GLOBAL RNG — the python core's team curriculum was a fixed, seed-determined skew; the Rust core replayed only the minibatch permutation (`gen3_no_global_reseed_v1`, the commit that adds this entry)**
+
+**The mechanism.** sb3's `_setup_model` calls `set_random_seed(self.seed)`, and `InferenceMaskablePPO` (and every loader before it) kept it. So each model load re-seeded Python `random`, NumPy and torch to the LOADED snapshot's saved seed, which is its run's `--seed`. Every pool refresh, eval sentinel and exploiter rung load rewound the loading process's global streams to their startup state (deletion-pass manifest P1).
+
+**Measured** (a probe wrapping every global seed / draw function and hashing the three states at every rollout / update boundary; CPU `--debug --arch production`, forced promotions, one run per env core; plus `metadata.json` `team_win_rates` of every run in `models/`):
+- **Rust core.** The one steady-state global-RNG consumer in the trainee process is the PPO minibatch permutation (`np.random.permutation`, one per epoch). Python `random` and torch's CPU stream are never read. After each pool or sentinel load, NumPy's state at update entry equalled update 1's, and the permutation stream replayed from the start (updates 8–15 = 1–8, 16–23 = 1–8). Teams come from per-env seeded builders. The sizing arms' per-team counts read var/mean 1.7–2.0 and Spearman vs N0 about 0.03. **Sizing arms A / A2 / A′ / B / C: the permutation replay only, from the first pool seed on. Which rows train and how often is unchanged. Not a GIGO for the sizing verdict.**
+- **Python core** (every pre-M5 self-play run). Each `SubprocVecEnv` worker loads its pool snapshot once per generation (`_ensure_pool_model`). Its teambuilders and heuristic bots draw from that worker's global `random`. After a load, the team draws replayed the run's first draws exactly (25, 281, 142, 104, 558, 89, 32, 30, …), and every worker replayed the SAME stream. Per-team trainee game counts:
+  - variance / mean **20–1,264** across 82 of 84 python-core runs with ≥ 50k games (the other two, v12_26/27, ran no pool loads: 1.5 / 2.3), against **1.7–2.0** on the five Rust arms (uniform multinomial ≈ 1);
+  - **N0 (`ai_v14_01_base`): 166–5,676 games per team** (CV 66 %), where uniform draws give 2,030 ± 45;
+  - which teams are heavy is fixed by the snapshot seed. Independent seed-1001 python runs correlate with N0 at **Spearman 0.89–0.997** (v12_15/25/28/29, v13_01/02/03/09/12/23/28/33, every v14 lbat / g0p arm). Seed-42 and seed-1002 runs read about 0. v13_21_wcont_b (seed 1002, a fork whose pool carries the parent's seed 1001) reads 0.98, which is the mechanism's signature. The fold arms (v13_07/17–20) read about 0.53. v12_26/27 (shaped) read about 0, with var/mean 1.5 / 2.3: no pool loads.
+  - The opponent builder's draws and the bots' random choices were replayed the same way; they are not recorded.
+
+**Claims possibly affected (NOT edited here; whether to audit is the owner's call):**
+- cross-seed replicate comparisons: the v12 ladder `_b` / `_c` arms (seeds 1001 / 1002 vs 42), and every "replicate spread" floor built from arms on different seeds. Their spread includes a team-curriculum difference;
+- per-team or per-archetype reads on python-core runs: the population loop's exploiter gaps by archetype, belief memorization of the pool (X8), untaught-meter per-team breakdowns. Heavy teams were trained up to 34x more than light ones;
+- any comparison of a seed-1001 arm against a seed-42 or seed-1002 arm.
+
+**Unaffected:** a same-seed arm-vs-arm DIFFERENCE (the learner battery, the 2×2 batches, the v14 lbat arms). Every arm there trained on the same skewed curriculum, so the curriculum is matched. Absolute on-pool numbers still carry the skew. The Rust-core sizing arms are clean.
+
+**FIX** (this commit; `designs/training/learner_lifecycle.md` "No global reseed after the freeze"):
+- An inference load never seeds, and builds its policy inside `global_rng_guard.isolated_global_rng()`, so all three streams are bit-identical across a load.
+- `LearnerFreeze` arms a guard: a global SEED after the freeze is `GlobalReseedError` (FATAL_CONFIG) naming its site, sticky, with no allowlist.
+- Static twin: `src/global_rng_seed_gate_test.py`.
+- The K9 learner golden is unchanged. `global_rng_guard_test` fails on revert.
+
+Tag: **FINDING + FIX · python-core team curriculum skewed by a per-load reseed (N0 166–5,676 games per team; var/mean 20–1,264 vs 1.7–2.0; seed-1001 runs Spearman 0.89–0.997) · Rust core: minibatch-permutation replay only · `gen3_no_global_reseed_v1`**
