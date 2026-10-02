@@ -941,6 +941,10 @@ the `--release` build training uses (no symbol, byte-identical output, measured 
 
 Each row names the milestone whose slice made it deletable. LOC from Phase 0 (d).
 
+**The post-switch pass is scoped in [`../ops/deletion_pass_manifest.md`](../ops/deletion_pass_manifest.md)** (PROPOSED
+2026-10-02, awaiting the owner): re-measured LOC, the live dependents, the Python-only lever list, and four
+rows below it corrects (its §7) — read it before executing any M5 row here.
+
 | from | deleted | LOC | notes |
 |---|---|---|---|
 | DONE `43712881` (M1, 2026-09-26) | `agents/battle/event_fold.py` (`ViewEventFolder`) + its unit test and parity fuzz | 494 (−405 module, −~1,000 with tests) | the core's events serve every successor |

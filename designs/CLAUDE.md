@@ -198,6 +198,9 @@ models, so a number never leaves without it — the exact `python -m main.anchor
 per read, the known hazards (H1–H20), and the standing 2×2. Its box-specific paths live beside it in
 [`ops/anchors.json`](ops/anchors.json). [`ops/TECH_DEBT_BACKLOG.md`](ops/TECH_DEBT_BACKLOG.md) — the
 one tech-debt list; nothing on it is dispatched without the owner's word.
+[`ops/deletion_pass_manifest.md`](ops/deletion_pass_manifest.md) — the post-M5-switch DELETION PASS +
+bounded paydown: the owner's six decisions, the deletion rows, the Python-only LEVER list, the plan in lanes
+and the exit criterion (PROPOSED 2026-10-02, awaiting owner approval).
 
 ## `endstate/` — the END-STATE designs, explicit-only, not scheduled
 
