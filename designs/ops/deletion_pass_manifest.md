@@ -138,7 +138,7 @@ edits them; the lane that holds one hands off on ship): `main/train/combination_
 | **L3** | distillation + search teacher (R2) | 1.0 | B | + parser `capacity` / `distillation` / `teacher`, `matchup_setup` | L2 |
 | **L4** | cf training half + team-PFSP + exploiter ladder + `REFUSED_WITH_FLAG` (R2) | 0.75 | B | + parser `cf_grounding` / `eval_subprocess`, `rust_vec_env` | L3 |
 | **L5** | the Python fork arm (R3) | 0.5 | B | `combination_checks`, `fork_*` | L4 |
-| **K1** | torch < 2.8 refusal; 2.5.1 code + legacy compile gate (R7 + R8), the `hooks.py:179` fix | 1.25 | C | `compile_trainer`, `compile_control`, `team_transformer`, `lifecycle.py` | memory fix |
+| **K1** ✅ **SHIPPED 2026-10-02** (`utils/torch_floor.py`; the cache-limit log detector KEPT — §6 finding 10) | torch < 2.8 refusal; 2.5.1 code + legacy compile gate (R7 + R8), the `hooks.py:179` fix | 1.25 | C | `compile_trainer`, `compile_control`, `team_transformer`, `lifecycle.py` | memory fix |
 | **K2** | RETIRE TF32 (R9) | 1.0 | C | parser `hyperparameters` (after L2 hands it off), `consistency.py`, `parity_probe`, one `combination_checks` row | K1, L2 |
 | **P1, P4, P5, P7** | small fixes | 1.25 | C | disjoint | — (P1 first) |
 | **P2** | value-free opponent slots | 0.75 | C | `inference/service/*` | memory fix |
@@ -194,7 +194,8 @@ calendar days with 3 lanes; 8 is the box**.
    bump (`designs/model/versioning.md`).
 5. **`--cf-label-supply external` passes launch checks on Rust and would starve in flight** — unverified at
    runtime; R2/L4 deletes it.
-6. **`rust_core_m5/hooks.py:179` measures the legacy compile on 2.8, not production's R0 region.** K1.
+6. ✅ **`rust_core_m5/hooks.py:179` measured the legacy compile on 2.8, not production's R0 region** — FIXED by K1
+   (`compile_regions.install_rollout_region`).
 7. **Program §4 is wrong in four places** (§7). Not a deletion, a correction; this doc carries them until the
    pass edits §4 row by row.
 8. **184 recorded argvs carry `--compile-opponents`** (and older runs carry other flags this pass deletes): an
@@ -205,6 +206,16 @@ calendar days with 3 lanes; 8 is the box**.
    test-by-test fate in `extractor_compiles_test`, `train_test`, `rust_eval/parity_test`, `eval_sharding_fuzz_test`;
    whether the `--distill-anchor-*` / `--distill-stop` family can run without `--distill-coef > 0` (if so it is
    silently inert on Rust today). The P5 arch-report lines were not located.
+
+10. **K1 (2026-10-02): R7's "replace the cache-limit LOG detector with `fail_on_recompile_limit_hit`" was NOT
+    done — the detector is KEPT.** Dynamo asserts `fail_on_recompile_limit_hit` and `suppress_errors` are never
+    both set, and `main/compile_inventory/capture.py` patches `suppress_errors=True` in the trainer process; the
+    regions compile `fullgraph=True`, where torch 2.8 already raises `FailOnRecompileLimitHit` on a limit hit, so
+    the detector's remaining job is the sticky FATAL_CONFIG. Also from K1: `compile_trainer.eager_extractor` is a
+    no-op on the learner (its callers are L3/L5's to delete); no test now drives a full first `train()` through
+    the compiled REGIONS with the donating default forced (the deleted `compiled_train_probes_test` did it for the
+    extractor compile); the region gate's collapsed-critic ladder climb has no teeth test (the deleted
+    `parity_probe_test` gate tests had one for the extractor gate).
 
 ## 7. Corrections to `program_rust_core.md` §4 (applied by the unit that executes each row)
 

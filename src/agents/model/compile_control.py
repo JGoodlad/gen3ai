@@ -4,59 +4,52 @@
 gen3_compile_sentinel_v1. The owner (2026-09-28): "I just can't stand the idea that that could be
 subtly happening to us. Is there no way to force it to raise or reject?" — and: reach into torch
 internals only BEHIND ONE CLEAN INTERFACE, with explicit phases. This module is that interface.
-**It is the only runtime module that touches `torch._dynamo`** (the lone exception is
-`team_transformer`'s in-graph `graph_break()`, which is model code dynamo traces, not control), and
+**It is the only runtime module that touches `torch._dynamo`**, and
 the only one that sets torch compile config (`_COMPILE_CONFIG`: `donated_buffer=False` and, on 2.8,
 an Inductor cache-key tag — per torch version, at `install()`; Lane K1b, see that row's comment).
 
 THE PHASES (one `CompileControl` per process — `control()`):
 
-  1. `gate()`      — the startup parity gate (`compile_trainer_extractor`) compiles FREELY. The
-                     cache-limit detector is already listening: a limit hit here is fatal too.
+  1. `gate()`      — a startup parity gate compiles FREELY inside it. The cache-limit detector is
+                     already listening: a limit hit here is fatal too.
   2. `reset()`     — `torch._dynamo.reset()` right after the gate, BEFORE production warm-up. WHY
                      (measured, `designs/training/compile_flags.md` "The compile sentinel"): dynamo's
-                     cache is keyed per CODE OBJECT (`Gen3FeaturesExtractor.forward.__code__`, the
-                     trunk-split resume frames, ...), shared by every instance and every
-                     `torch.compile` wrapper of that code. The gate's graphs (train/grad and
-                     train/no-grad at batch 64, and under TF32 the same pair again at 'highest')
-                     therefore spend the SAME `cache_size_limit` slots production needs — a separate
-                     compiled callable would NOT isolate them in torch 2.5.1. Nothing the gate
-                     compiled is a production signature (production rolls out in EVAL mode at
-                     n_envs), so the reset loses nothing.
+                     cache is keyed per CODE OBJECT, shared by every instance and every
+                     `torch.compile` wrapper of that code, so anything compiled before the reset
+                     spends the SAME `cache_size_limit` slots production needs. The reset runs
+                     before the regions are installed, so it loses nothing.
   3. `prewarm(calls)` — run every production signature NOW, so caching happens when WE say, not
                      whenever a late caller first arrives.
-  4. `lock(where)` — after the first real rollout + update: `error_on_recompile = True`; a compile
+  4. `lock(where)` — before the first real iteration: the `fail_on_recompile` stance; a compile
                      START callback counts every frame compile attempted from here on. Any late
                      recompile, first compile or cache-limit hit is a typed FATAL
                      (`CompileSentinelError` -> `os._exit(FATAL_CONFIG)`; the launcher does not
                      restart it).
   5. `stats()`     — graphs total, per-code cache entries, hits, post-lock compiles -> TB scalars.
 
-THE TWO SILENT FAILURES, verified in torch 2.5.1 source:
+THE TWO SILENT FAILURES (first verified in torch 2.5.1 source; re-read on 2.8, below):
   * CACHE-LIMIT FALLBACK — `convert_frame._compile` logs ONE `log.warning("torch._dynamo hit
     config.%s ...")` and raises `CacheLimitExceeded`/`unimplemented`, a SOFT failure
     `ConvertFrame.__call__` swallows: that frame runs EAGER from then on. A logging handler that
     raises is swallowed by `logging`, so `_CacheLimitHandler` records a sticky flag and the trainer
     CHECKS it at every rollout end and update end.
   * LATE RECOMPILES — each costs a stall and spends the cache toward the fallback.
-    `error_on_recompile` raises `RecompileError` at the call site (raised raw, before `_compile`'s
-    own try); the start callback is the backstop for what it cannot see — the FIRST compile of a
-    never-seen code object, and (2.5.1 only) a `RecompileError` a caller's `except Exception`
-    swallowed; `wrap_compiled` covers the swallow on every version.
+    The `fail_on_recompile` stance raises at the call site; the start callback is the backstop for
+    what it cannot see (late compile work it counts after the lock), and `wrap_compiled` records a
+    rejection a caller's `except Exception` would otherwise swallow.
 
 TORCH VERSION GUARD. The internals used here are pinned per version in `_SUPPORTED`; an unknown
 torch REFUSES (typed FATAL) rather than run a sentinel whose semantics may have moved. Each internal
-is exercised on the installed torch by `compile_control_test.py`'s CONTRACT tests, which run on BOTH
-supported versions. 2.5.1+cu121 locks with `error_on_recompile`; 2.8.0+cu126 (Lane K1,
-`designs/endstate/program_rust_core.md`) locks with `torch.compiler.set_stance("fail_on_recompile")`
-(the `"stance"` mode), which rejects ANY cache miss at the call site. On 2.8 the start callback runs
-after the recompile check and so never sees a rejection; `wrap_compiled` (the learner forward is
-installed through it) records rejections so a swallowed one is still fatal at the next check.
-`fullgraph=True` is K6's, not done here.
+is exercised on the installed torch by `compile_control_test.py`'s CONTRACT tests. HEAD supports
+2.8.0+cu126 only (the 2.5.1 rows were deleted 2026-10-02), which locks with
+`torch.compiler.set_stance("fail_on_recompile")` (the `"stance"` mode), rejecting ANY cache miss at
+the call site. The start callback runs after the recompile check and so never sees a rejection;
+`wrap_compiled` (every region is installed through it) records rejections so a swallowed one is
+still fatal at the next check. `fullgraph=True` is K6's, not done here.
 
 What it deliberately does NOT do: change a number (the `donated_buffer` pin included — it changes
-buffer REUSE in the compiled backward, never a value; `compile_control_test` pins the gradient). `error_on_recompile` acts only on the recompile
-path; the handler and the callback only count; `prewarm` runs under `torch.random.fork_rng` and
+buffer REUSE in the compiled backward, never a value; `compile_control_test` pins the gradient). The stance acts only on the
+recompile path; the handler and the callback only count; `prewarm` runs under `torch.random.fork_rng` and
 zeroes the gradients it made. `compile_control_test` pins identical outputs + gradients on vs off.
 """
 from __future__ import annotations
@@ -73,11 +66,12 @@ import torch
 
 from agents.model.compile_trainer import CompileTrainerError
 
-# EXACT torch version (local tag included) -> lock mechanism. "error_on_recompile" = config flag +
-# log-warning detector + compile-start callback (2.5.1, contract-tested). "stance" =
-# `torch.compiler.set_stance("fail_on_recompile")` + the same detector and callback (Lane K1,
-# torch 2.8.0+cu126, contract-tested 2026-09-28 — `compile_control_test` runs on BOTH envs).
-_SUPPORTED: Dict[str, str] = {"2.5.1+cu121": "error_on_recompile", "2.8.0+cu126": "stance"}
+# EXACT torch version (local tag included) -> lock mechanism. "stance" =
+# `torch.compiler.set_stance("fail_on_recompile")` + the log-warning detector + the compile-start
+# callback (Lane K1, torch 2.8.0+cu126, contract-tested 2026-09-28). The 2.5.1 row
+# ("error_on_recompile") was deleted with HEAD's torch-2.5.1 support (2026-10-02): a 2.5.1 run
+# resumes pinned to its own commit, which carries it.
+_SUPPORTED: Dict[str, str] = {"2.8.0+cu126": "stance"}
 
 # What `stance` mode's rejection raises (torch 2.8 `eval_frame._callback_from_stance`): a plain
 # RuntimeError, NOT a `RecompileError` — `find_recompile_error` matches it by this text.
@@ -112,38 +106,6 @@ _STANCE_REJECT_TEXT = "Detected recompile when torch.compile stance is 'fail_on_
 #   NEW: eval_frame._callback_from_stance (the "fail_on_recompile" branch) + eval_frame._set_stance
 #     + decorators.set_stance — what `stance` mode rests on.
 _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
-    "2.5.1+cu121": {
-        "torch._dynamo.cache_size.compute_cache_size":
-            "09c173a0698890766340687e01355f0b4b020770a644a21500e73e7886043482",
-        "torch._dynamo.cache_size.is_recompilation":
-            "b99d3c1f88fa3f80ec61ddcaa3c75d19d780b0a5245a3b9f07e00188799f8842",
-        "torch._dynamo.cache_size.exceeds_cache_size_limit":
-            "f7e81a56003515efd1b184a177eb071b03f88cf9d401dfd286a78da8bf08c532",
-        "torch._dynamo.guards.get_and_maybe_log_recompilation_reason":
-            "d72a0c856834814224f263e33be191d8a2b49450fa6f52d6d1378abb53f7c765",
-        "torch._dynamo.convert_frame._compile":
-            "2daa45669438e5e1653652d41d74458cea0f5dcb75dcf245de0693e582ba0645",
-        "torch._dynamo.convert_frame.ConvertFrame.__call__":
-            "48a63a2d50cb23f02c96ee6b4435ee2250b58c299d2ae040d961fc4954bc67b2",
-        "torch._dynamo.convert_frame.ConvertFrameAssert.__call__":
-            "8f372d0705bd7e49eb94cec4bb286f6392a47f74cdb1bc52c62fff1c946cafa7",
-        "torch._dynamo.convert_frame.Tracker":
-            "b2d821e2a67708098d684c2f17f732db0ba8a4901c063a70142fa972fb06ee29",
-        "torch._dynamo.eval_frame._debug_get_cache_entry_list":
-            "87fbc89bc7caa0f766c40336cbcf9f283205e2d04726e618e44bad268d3e5e0c",
-        "torch._dynamo.callback.CompilationCallbackHandler":
-            "98780974244d341eccf8dd23d656a6b1ae1c68e5475ac9c686992061e6471aa1",
-        "torch._dynamo.output_graph.OutputGraph.compile_and_call_fx_graph":
-            "e88a9e9b8571e12cea33c913712f6258d53cf70874d0dabfe4ccc8822ca9d7ba",
-        "torch._dynamo.reset":
-            "e4997fcbc979934efa007509d39b8913ff4dd0023162de0b0a8c1225d164a7f2",
-        "torch.compiler.reset":
-            "ae358f0c70af992ce82f8b4ea5e25e8800221a841c8078841335f98c34e13092",
-        "torch._functorch._aot_autograd.jit_compile_runtime_wrappers.aot_dispatch_autograd":
-            "e2643523ff8ef0275f91e9d13bd57a87c129c33197d12ad8be6829a08a7d388a",
-        "torch._functorch._aot_autograd.runtime_wrappers.AOTDispatchAutograd.post_compile":
-            "86054f751d5c3d75e0962b96761efb06038960b6739c223395770ca6c5aa4816",
-    },
     "2.8.0+cu126": {
         "torch._dynamo.cache_size.compute_cache_size":
             "8c4f31bf7bfaebb8f69a761d58f96f8fdef06ee3cb860887b5458af2e41b2935",
@@ -221,7 +183,6 @@ _SOURCE_HASHES: Dict[str, Dict[str, str]] = {
 #   version counter — i.e. this could have been SILENT — which is why the tag is not optional.
 #   Both readers are in the hashed row above (`FxGraphHashDetails.__init__` reads the tag).
 _COMPILE_CONFIG: Dict[str, Dict[str, Any]] = {
-    "2.5.1+cu121": {"torch._functorch.config.donated_buffer": False},   # already the 2.5.1 default
     "2.8.0+cu126": {"torch._functorch.config.donated_buffer": False,
                     "torch.compiler.config.cache_key_tag": "gen3_donated_buffer_off_v1"},
 }
@@ -593,7 +554,7 @@ class CompileControl:
 
     def wrap_compiled(self, compiled: Callable[..., Any]) -> Callable[..., Any]:
         """Wrap a compiled callable so a lock rejection raised through it is RECORDED (sticky)
-        before it propagates. `compile_trainer_extractor` installs the learner forward through
+        before it propagates. `compile_regions` installs every region through
         this. Pure pass-through otherwise (no numerics, no extra dynamo frame)."""
         ctl = self
 
@@ -661,12 +622,10 @@ class CompileControl:
         self.graphs_at_lock = dynamo_graphs_total()
         self.entries_at_lock = cache_entries_by_code()
         set_strict_errors()                  # a swallowed RecompileError is still counted, not eaten
-        if self.mode == "error_on_recompile":
-            torch._dynamo.config.error_on_recompile = True
-        else:                                # "stance" (torch >= 2.8, Lane K1): any cache MISS on a
-            # compiled callable raises at the call site — a recompile AND a never-seen frame
-            torch.compiler.set_stance("fail_on_recompile")  # type: ignore[attr-defined, unused-ignore]
-            self._stance_set = True
+        # "stance" (torch >= 2.8, Lane K1): any cache MISS on a compiled callable raises at the call
+        # site — a recompile AND a never-seen frame
+        torch.compiler.set_stance("fail_on_recompile")  # type: ignore[attr-defined, unused-ignore]
+        self._stance_set = True
         self.locked = True
         self.lock_where = where
         self.phase = "locked"
@@ -706,7 +665,7 @@ class CompileControl:
             if torch._dynamo.config.suppress_errors:
                 return ("torch._dynamo.config.suppress_errors is set — a compile error would be "
                         "swallowed into an EAGER run, silently")
-            if self.mode != "error_on_recompile" and current_stance() != "fail_on_recompile":
+            if current_stance() != "fail_on_recompile":
                 return (f"the dynamo stance is '{current_stance()}', not 'fail_on_recompile' — a "
                         f"recompile or a never-seen frame would no longer be refused")
         if self.limit_hits:
@@ -877,7 +836,7 @@ class CompileControl:
 def fatal_text(where: str, detail: str) -> str:
     return (f"{FATAL_TAG} at {where}: {detail}\n"
             "--compile-trainer's contract is ONE fixed set of compiled graphs, every one DECLARED and "
-            "compiled at startup (`compile_trainer.production_prewarm_calls`, K6); the lock is taken "
+            "compiled at startup (`compile_regions.prewarm_calls`, K6); the lock is taken "
             "before the first real iteration. A late recompile or a cache-limit hit means the learner "
             "met an UNDECLARED signature: it is recompiling (a "
             "stall per event) or running EAGER (~1.75x slower), silently. Fatal by design; the "

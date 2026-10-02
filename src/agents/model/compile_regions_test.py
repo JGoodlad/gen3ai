@@ -11,9 +11,8 @@ probes) and a rollout forward. The inventory must EQUAL the declaration table:
     test below proves a break inside R1 is the typed STARTUP FATAL naming dynamo's reason;
   * 0 compiles / rejections after the lock, one cache entry per region code object.
 
-torch 2.5.1 is legacy (regions are not supported there; `--compile-trainer` keeps the extractor-only
-compile — a documented, declared exception): those tests are skipped on it, and one pins the legacy
-routing."""
+The regions are the ONLY compiled learner surface: HEAD runs torch >= 2.8 (the 2.5.1 extractor-only
+compile was deleted, K1 2026-10-02)."""
 from __future__ import annotations
 
 import pytest
@@ -22,8 +21,6 @@ import torch
 from agents.model import compile_control as cc
 from agents.model import compile_regions as cr
 from agents.model import compile_trainer as ct
-
-_28 = pytest.mark.skipif(not cr.regions_supported(), reason="declared regions are a torch 2.8 feature")
 
 N_ENVS, BATCH = 4, 16
 
@@ -60,7 +57,6 @@ def test_the_declaration_table_is_well_formed():
     assert cr.declared_signature_count(1) == 1                  # batch 1 is never compiled
 
 
-@_28
 def test_the_compiled_inventory_EQUALS_the_declaration_table(learner):
     model = learner
     ctl = cc.control()
@@ -97,7 +93,6 @@ def test_the_compiled_inventory_EQUALS_the_declaration_table(learner):
     assert _graphs() - g0 == cr.declared_signature_count(N_ENVS)
 
 
-@_28
 def test_a_graph_break_INSIDE_a_region_is_the_typed_startup_FATAL(learner, monkeypatch):
     """`fullgraph=True` is the mechanism: a host read inside R1 must refuse at startup, naming
     dynamo's reason — never a silent split into two graphs. Fails if the region is compiled without
@@ -116,7 +111,6 @@ def test_a_graph_break_INSIDE_a_region_is_the_typed_startup_FATAL(learner, monke
         cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
 
 
-@_28
 def test_an_UNDECLARED_signature_after_the_lock_names_the_failing_guard(learner):
     ctl = cc.control()
     ctl.install()
@@ -130,7 +124,6 @@ def test_an_UNDECLARED_signature_after_the_lock_names_the_failing_guard(learner)
     assert "size mismatch" in str(ei.value) or "expected 16" in str(ei.value), str(ei.value)[-800:]
 
 
-@_28
 def test_a_RAGGED_micro_batch_takes_the_declared_eager_route(learner):
     """The last micro-batch of an epoch over a rollout that does not divide evenly (fork rows, an
     uneven sizing) has another row count: through R1's dispatcher it runs the SAME function eager —
@@ -148,13 +141,6 @@ def test_a_RAGGED_micro_batch_takes_the_declared_eager_route(learner):
     ctl.check("end")
     assert ctl.compiles_after_lock == 0 and ctl.rejected_after_lock == 0
     assert torch.equal(out.loss.detach(), micro_step(*args).loss.detach())
-
-
-def test_torch_2_5_1_keeps_the_legacy_extractor_compile():
-    """The declared, documented exception: on 2.5.1 (`forward_guard`'s weakref lookup breaks
-    `fullgraph=True` there) the region path is not taken."""
-    assert cr.regions_supported("2.8.0+cu126")
-    assert not cr.regions_supported("2.5.1+cu121")
 
 
 # ------------------------------------------------- R1's per-parameter bar, by weight regime (K8)
@@ -209,7 +195,6 @@ def test_weights_regime_reads_a_fresh_launch_as_fresh_and_moved_weights_as_train
     assert cr.weights_regime(_fresh_learner(monkeypatch)) == "fresh"
 
 
-@_28
 def test_the_GATE_judges_trained_weights_at_the_trained_bar(learner, monkeypatch):
     """Through `gate_regions` (CPU, dynamo `eager` backend, so compiled == eager and the only error is
     the planted one): C's healthy reading planted on one parameter of R1's compiled arm PASSES on
@@ -239,7 +224,6 @@ def test_the_GATE_judges_trained_weights_at_the_trained_bar(learner, monkeypatch
         cr.gate_regions(learner, n_envs=N_ENVS, batch_size=BATCH, say=lambda _m: None)
 
 
-@_28
 def test_a_FRESH_launch_is_ALSO_judged_on_a_perturbation_at_the_TRAINED_bar(monkeypatch):
     """On fresh weights R1 runs twice: on the weights at the fresh bar, and on the declared ladder's
     first perturbation rung at the trained bar — so an error the fresh bar would absorb (between the
@@ -288,7 +272,6 @@ def _locked(learner):
     return ctl
 
 
-@_28
 def test_a_region_that_runs_EAGER_on_its_COMPILED_route_is_FATAL(learner):
     """Owner, 2026-10-01: no silent performance regression from a partly uncompiled learner. Under
     the `force_eager` stance the compiled callable silently runs its Python body; the dispatcher sees
@@ -313,7 +296,6 @@ def test_a_region_that_runs_EAGER_on_its_COMPILED_route_is_FATAL(learner):
         RC.take()
 
 
-@_28
 def test_dynamo_DISABLED_at_startup_is_the_gates_FATAL_not_an_eager_run(learner):
     """TORCHDYNAMO_DISABLE (config.disable) makes `torch.compile` hand back the plain function: the
     regions would 'compile' into eager. The gate's first compiled-route call sees the body run."""
@@ -328,7 +310,6 @@ def test_dynamo_DISABLED_at_startup_is_the_gates_FATAL_not_an_eager_run(learner)
         torch._dynamo.config.disable = prev
 
 
-@_28
 def test_the_lock_refuses_every_switch_that_makes_dynamo_run_eager_silently(learner):
     ctl = _locked(learner)
     ctl.check("healthy")
@@ -349,7 +330,6 @@ def test_the_lock_refuses_every_switch_that_makes_dynamo_run_eager_silently(lear
     ctl.check("restored")
 
 
-@_28
 def test_a_RAGGED_tail_beyond_one_per_epoch_is_FATAL_and_the_window_is_per_update(learner):
     from agents.model import region_calls as RC
     ctl = _locked(learner)
@@ -365,7 +345,6 @@ def test_a_RAGGED_tail_beyond_one_per_epoch_is_FATAL_and_the_window_is_per_updat
     del ctl
 
 
-@_28
 def test_the_run_asserts_the_compiled_inventory_equals_the_declaration(learner):
     _locked(learner)
     assert "inventory == declaration" in cr.assert_inventory(learner, N_ENVS)
@@ -379,7 +358,6 @@ def test_the_run_asserts_the_compiled_inventory_equals_the_declaration(learner):
         cr.assert_inventory(learner, N_ENVS)
 
 
-@_28
 def test_each_update_records_its_compiled_and_eager_region_calls(learner):
     from agents.model import region_calls as RC
     ctl = _locked(learner)
@@ -406,16 +384,16 @@ def test_each_update_records_its_compiled_and_eager_region_calls(learner):
 
 
 # ------------------------------------------------ one startup gate per region (gen3_one_gate_per_region_v1)
-@_28
-def test_on_2_8_the_extractor_only_gate_is_skipped_and_the_sentinel_installs_the_regions(learner, monkeypatch, capsys):
-    """The trainer passes `regions_follow` / `regions_requested` (`main.train.lifecycle._regions_follow`):
-    the extractor-only gate compiles NOTHING (its graph would be uninstalled by the regions — it judged a
-    graph production never runs), and the sentinel proceeds to the regions though no extractor forward
-    is installed. Fails on revert of either half."""
-    from main.train.lifecycle import _regions_follow
-    assert _regions_follow(learner) is True
+
+
+# ------------------------------------------------ one startup gate per region (gen3_one_gate_per_region_v1)
+def test_the_sentinel_installs_the_regions_and_the_preflight_compiles_nothing(learner, monkeypatch, capsys):
+    """The trainer's compile step (`preflight_compile_trainer`) compiles NOTHING and the sentinel goes
+    straight to the regions, having INSTALLED the control first (the compile config pinned — K1b's
+    donated_buffer=False — and the detectors on). Fails if an extractor-level compile comes back
+    (an instance `fe.forward`) or if the sentinel stops installing the control before the regions."""
     monkeypatch.setattr(ct, "resolve_device", lambda fe: torch.device("cuda"))   # the CPU refusal's seam
-    assert ct.compile_trainer_extractor(learner, True, regions_follow=True) is None
+    assert ct.preflight_compile_trainer(learner, True) is None
     assert "forward" not in vars(learner.policy.features_extractor)
     assert "DECLARED REGIONS" in capsys.readouterr().out
     reached = []
@@ -424,22 +402,39 @@ def test_on_2_8_the_extractor_only_gate_is_skipped_and_the_sentinel_installs_the
         pass
 
     def stop(model, **_k):
-        # the sentinel INSTALLED the control before the regions (the gate that used to do it is not
-        # run): the compile config is pinned — K1b's donated_buffer=False — and the detectors are on
         assert cc.control().installed
         assert torch._functorch.config.donated_buffer is False
         reached.append(model)
         raise _Stop
     monkeypatch.setattr(cr, "install", stop)
-    assert ct.arm_compile_sentinel(learner, n_envs=N_ENVS, batch_size=BATCH) is None   # not requested
     with pytest.raises(_Stop):
-        ct.arm_compile_sentinel(learner, n_envs=N_ENVS, batch_size=BATCH, regions_requested=True)
+        ct.arm_compile_sentinel(learner, n_envs=N_ENVS, batch_size=BATCH)
     assert reached == [learner]
 
 
-def test_the_trainer_wires_regions_follow_into_both_compile_steps():
+def test_the_trainer_calls_the_preflight_and_the_sentinel_with_no_fallback_route():
     import inspect
     from main.train import lifecycle
     src = inspect.getsource(lifecycle)
-    assert "regions_follow=_regions_follow(model)" in src
-    assert "regions_requested=_regions_follow(model)" in src
+    assert "preflight_compile_trainer(model" in src and "arm_compile_sentinel(model" in src
+    assert "compile_trainer_extractor" not in src and "regions_follow" not in src
+
+
+def test_install_rollout_region_serves_the_rollout_forward_through_R0(learner):
+    """The R0-alone install (`install_rollout_region`, the throughput A/B's `LearnerSampling`): the
+    policy's rollout forward runs the COMPILED rollout core and equals eager."""
+    from agents.model import region_calls as RC
+    from agents.model.policy import _ROLLOUT_REGIONS
+    obs = ct._prewarm_obs(learner, N_ENVS)
+    _, mask = ct._parity_obs(int(obs["observation"].shape[-1]), N_ENVS, torch.device("cpu"))
+    pol = learner.policy
+    pol.set_training_mode(False)
+    with torch.no_grad():
+        e_values, e_logp = pol.rollout_core(obs, torch.as_tensor(mask))
+    assert cr.install_rollout_region(pol, backend="eager") == "R0_rollout_forward"
+    assert pol in _ROLLOUT_REGIONS
+    RC.take()
+    with torch.no_grad():
+        values, logp = _ROLLOUT_REGIONS[pol](pol, obs, mask)
+    assert RC.peek().get("R0_compiled") == 1
+    assert torch.equal(values, e_values) and torch.equal(logp, e_logp)

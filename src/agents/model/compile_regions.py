@@ -35,10 +35,10 @@ THE TABLE (`REGIONS`):
                            search-teacher, OPD, TD-aux, the counterfactual block — none on the
                            production surface), every diagnostic probe, logging.
 
-TORCH. Regions are a torch 2.8 feature (owner 2026-09-30: 2.8 is the target, 2.5.1 is legacy for
-pinned resumes): on 2.5.1 `forward_guard`'s weakref lookup and other constructs break
-`fullgraph=True`, so `regions_supported()` is False there and `--compile-trainer` keeps the legacy
-extractor-only compile — the pinned commit's behaviour.
+TORCH. Regions are a torch 2.8 feature, and HEAD runs torch >= 2.8 only (`utils.torch_floor`): on
+2.5.1 `forward_guard`'s weakref lookup and other constructs break `fullgraph=True`. The regions are
+the ONLY compiled learner surface (the 2.5.1 extractor-only compile was deleted 2026-10-02); a run
+trained on 2.5.1 resumes pinned to its own commit, which still carries that compile.
 
 THE GATE. `gate_regions` holds each compiled region to eager at startup on REAL rows (R1 on the K9
 learner golden's real labelled buffer when the run's observation keys match it — the production
@@ -102,11 +102,6 @@ def declared_signature_count(n_envs: int) -> int:
     return n
 
 
-def regions_supported(version: Optional[str] = None) -> bool:
-    """Declared regions need torch 2.8 (2.5.1 cannot compile them `fullgraph=True`)."""
-    return str(version or torch.__version__).startswith("2.8")
-
-
 # ------------------------------------------------------------------------------------- install
 def _rollout_core(policy: Any, obs: Any, action_masks: Any) -> Tuple[torch.Tensor, torch.Tensor]:
     out: Tuple[torch.Tensor, torch.Tensor] = policy.rollout_core(obs, action_masks)
@@ -117,8 +112,8 @@ def install(model: Any, *, backend: Optional[str] = None,
             emit: Optional[Callable[[str], None]] = None) -> List[str]:
     """Compile R0 and R1 (`fullgraph=True`, static shapes) and install them: R1 as
     ``model._compiled_micro_step`` (read by `TrainSetup._micro_region`), R0 in the policy module's
-    weak registry (`policy._ROLLOUT_REGIONS`). Any instance-level compiled extractor forward (the
-    startup gate's) is removed first, so the regions trace the extractor's own forward and every
+    weak registry (`policy._ROLLOUT_REGIONS`). Any instance-level extractor forward (none is
+    installed on the learner since the extractor-only compile's deletion) is removed first, so the regions trace the extractor's own forward and every
     other caller runs it eager. Returns the installed region names. Compilation happens LAZILY at
     each region's first call — the gate and the prewarm make that first call at startup."""
     from agents.model.compile_control import control
@@ -161,6 +156,17 @@ def install(model: Any, *, backend: Optional[str] = None,
         RC.count("R1_compiled")
         return out
     r1._gen3_compiled = r1c                              # type: ignore[attr-defined]
+    model._compiled_micro_step = r1
+    # the R1 signature this run DECLARES (its levers from the resolved config) — every update is
+    # held to it (`check_r1_declared`)
+    model._r1_declared = r1_declaration(model)
+    _ROLLOUT_REGIONS[policy] = _make_r0(ctl, kw)
+    return ["R0_rollout_forward", "R1_learner_micro_step"]
+
+
+def _make_r0(ctl: Any, kw: Dict[str, Any]) -> Callable[..., Tuple[torch.Tensor, torch.Tensor]]:
+    """Region R0's dispatcher: the compiled rollout core (`_rollout_core`, ``kw`` = the compile
+    kwargs) for every batch but `EAGER_BATCHES`, which run the eager core."""
     r0c = ctl.wrap_compiled(torch.compile(_rollout_core, **kw))
 
     def r0(pol: Any, obs: Any, action_masks: Any) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -183,13 +189,25 @@ def install(model: Any, *, backend: Optional[str] = None,
             _ran_compiled("R0", before)
             RC.count("R0_compiled")
         return out
+    return r0
 
-    model._compiled_micro_step = r1
-    # the R1 signature this run DECLARES (its levers from the resolved config) — every update is
-    # held to it (`check_r1_declared`)
-    model._r1_declared = r1_declaration(model)
-    _ROLLOUT_REGIONS[policy] = r0
-    return ["R0_rollout_forward", "R1_learner_micro_step"]
+
+def install_rollout_region(policy: Any, *, backend: Optional[str] = None,
+                           emit: Optional[Callable[[str], None]] = None) -> str:
+    """Install region R0 ALONE on ``policy`` — production's rollout compile (`fullgraph=True`, static
+    shapes, the process's compile config) — for a caller that measures the rollout forward outside
+    the trainer (the M5 throughput A/B's `LearnerSampling`). Compiles lazily at the first call; never
+    locked. Returns the region name."""
+    from agents.model.compile_control import control
+    from agents.model.policy import _ROLLOUT_REGIONS
+    from agents.model.compile_cache import ensure_hermetic_cache
+    ensure_hermetic_cache("rollout region compile")
+    ctl = control(emit).install()
+    kw: Dict[str, Any] = {"fullgraph": True, "dynamic": False}
+    if backend is not None:
+        kw["backend"] = backend
+    _ROLLOUT_REGIONS[policy] = _make_r0(ctl, kw)
+    return "R0_rollout_forward"
 
 
 def _ran_compiled(region: str, before: int) -> None:

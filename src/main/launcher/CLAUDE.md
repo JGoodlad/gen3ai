@@ -718,7 +718,12 @@ Versions compare by RELEASE (`2.5.1+cu121` ≡ `2.5.1`). The startup event and `
 interpreter, its torch and the run's recorded torch with its source. The probe reads the env's torch
 METADATA in a subprocess (~50 ms; torch is not imported). Gate: `torch_runtime_test.py` (fake
 interpreters, so it reads the same on any box; reverting the refusal or the `child_env` hold fails
-it). ⚠️ The guard is the LAUNCHER's: a bare `train_rl_agent.py --model …` is not checked.
+it). ⚠️ The guard is the LAUNCHER's: a bare `train_rl_agent.py --model …` is not checked by it.
+🚨 **HEAD's CODE runs torch >= 2.8 only** (deletion pass K1, 2026-10-02): the trainer's `main()` calls
+`utils/torch_floor.py` first and exits `FATAL_CONFIG` on an older torch (HEAD has no 2.5.1 path left).
+So a 2.5.1 run resumes only PINNED (its own commit's `src/`, the selected `gen3ai_stable`): with
+`--no-pin` / `--sync-to-main` the child is HEAD code on 2.5.1 and refuses at startup — drop the flag,
+or switch the run to 2.8 with `--allow-torch-switch`.
 
 Underneath, `child.resolve_child_python()` — the FRESH default — in precedence order:
 

@@ -1,24 +1,22 @@
 """Tests for COMPILE CONTROL — the torch._dynamo adapter + sentinel (`agents.model.compile_control`,
 gen3_compile_sentinel_v1).
 
-The sentinel exists because both of the failures it guards are SILENT in torch 2.5.1: a cache-limit
+The sentinel exists because both of the failures it guards are SILENT in torch: a cache-limit
 hit logs one warning and runs the frame eager forever; a late recompile costs a stall and spends the
 cache. Each test here fails on a revert of the mechanism it names:
 
   (a) >8 guard signatures on one code object trip the cache-limit DETECTOR -> typed FATAL
       (revert: remove the logging handler, and `check()` passes);
   (b) after the lock a new shape raises the typed FATAL at the call site
-      (revert: drop `error_on_recompile` AND the start callback, and the call just recompiles);
+      (revert: drop the `fail_on_recompile` stance AND the start callback, and the call just recompiles);
   (c) the healthy production alternation (rollout batch n_envs / train batch batch_size, eval/no-grad
       vs train/grad) converges, LOCKS, and then runs clean;
   (d) the sentinel changes NO numerics (outputs and gradients bit-identical on vs off).
 
-They run on BOTH supported torch versions (2.5.1: `error_on_recompile`; 2.8: the
-`fail_on_recompile` stance — Lane K1) and assert each version's own semantics where they differ
-(`_MODE` below). They run on CPU with dynamo's `eager` backend: the cache, its guards, its limit and its recompile
+They run on the one supported torch (2.8: the `fail_on_recompile` stance — Lane K1; the 2.5.1
+`error_on_recompile` mode was deleted with HEAD's 2.5.1 support, K1 2026-10-02). They run on CPU with dynamo's `eager` backend: the cache, its guards, its limit and its recompile
 path are dynamo's, independent of the backend, so these are the real mechanism at unit-test cost. The
-production-graph count on the real extractor at fp32 and TF32 is the CUDA test at the bottom
-(skips while a trainer holds the card; run by hand on an idle card).
+production regions' inventory on the real learner is `compile_regions_test`'s.
 """
 import pytest
 import torch
@@ -36,7 +34,7 @@ def is_recompile_error(exc):
 # The installed torch's lock mechanism, and the name its cache-limit warning uses (torch 2.8 renamed
 # `cache_size_limit` to `recompile_limit`, keeping the old name as a config ALIAS).
 _MODE = cc.lock_mode()
-_LIMIT_NAME = "cache_size_limit" if _MODE == "error_on_recompile" else "recompile_limit"
+_LIMIT_NAME = "recompile_limit"
 
 
 def _stance() -> str:
@@ -79,7 +77,7 @@ def _obs(b):
 
 
 def _compile_bound(net, ctl=None):
-    """What `compile_trainer_extractor` does: patch the BOUND forward on the instance (through the
+    """An instance-level compile (what the deleted extractor-only compile did): patch the BOUND forward on the instance (through the
     control's `wrap_compiled` when one is given — production always passes it)."""
     compiled = torch.compile(net.forward, backend="eager")
     net.forward = ctl.wrap_compiled(compiled) if ctl is not None else compiled
@@ -247,10 +245,7 @@ def test_uninstall_restores_error_on_recompile(sentinel):
     net = _compile_bound(_Net(), sentinel)
     _one_iteration(net)
     sentinel.lock("iteration 1")
-    if _MODE == "stance":
-        assert _stance() == "fail_on_recompile"
-    else:
-        assert torch._dynamo.config.error_on_recompile is True
+    assert _stance() == "fail_on_recompile"
     sentinel.uninstall()
     assert torch._dynamo.config.error_on_recompile is False and _stance() == "default"
 
@@ -465,7 +460,8 @@ def test_an_unknown_torch_version_is_REFUSED():
         cc.lock_mode("2.8.0+cu128")
     with pytest.raises(CompileSentinelError, match="no recorded torch-internals row"):
         cc.verify_torch_internals("2.8.0+cu128")
-    assert cc.lock_mode("2.5.1+cu121") == "error_on_recompile"
+    with pytest.raises(CompileSentinelError, match="does not support torch"):
+        cc.lock_mode("2.5.1+cu121")        # HEAD's 2.5.1 support was deleted (K1, 2026-10-02)
     assert cc.lock_mode("2.8.0+cu126") == "stance"
     assert set(cc._SUPPORTED) == set(cc._SOURCE_HASHES)    # a supported torch always has a row
 
@@ -728,54 +724,7 @@ def test_contract_cache_is_per_code_object_shared_across_compiled_wrappers():
         torch._dynamo.reset()
 
 
-# --------------------------------------------------------------------------- the real extractor
-from agents.model.extractor_compiles_test import _cuda_skip_reason  # noqa: E402
-
-_skip_cuda = pytest.mark.skipif(_cuda_skip_reason() is not None, reason=_cuda_skip_reason() or "")
-
-
-@_skip_cuda
-@pytest.mark.slow
-@pytest.mark.parametrize("precision", ["highest", "high"])
-def test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32(precision):
-    """Item 6 on the card: the real production extractor through the real gate, the reset and the
-    production prewarm (rollout batch 48, train batch 256 as the dynamic-train proxy) LOCKS with
-    every code object under `cache_size_limit`, and then runs a steady iteration clean."""
-    from agents.model.compile_trainer import compile_trainer_extractor, production_prewarm_calls
-    from main.fresh_checkpoint import build_fresh_model
-    cc._reset_control_for_tests()
-    torch._dynamo.reset()
-    prev = torch.get_float32_matmul_precision()
-    torch.set_float32_matmul_precision(precision)
-    try:
-        # The REAL production policy, as a fresh launch builds it — NOT a heads-less stand-in. The
-        # gate's grad-COVERAGE guard (gen3_gate_grad_coverage_v1) reaches the per-action move /
-        # switch cell projections only through the POINTER HEAD; a stand-in policy with no heads
-        # left 15-16 of 232 extractor parameters at an exactly zero gradient (6.9% > the 2% bar) on
-        # torch 2.5.1 AND 2.8 alike, so this test raised VacuousCompileParityError for a reason
-        # that is the stand-in's, not production's (the real policy: 1 of 254, c5_map — measured
-        # 2026-09-30, CPU, both torches).
-        m, _, _ = build_fresh_model(0)
-        m.policy.to("cuda")
-        compile_trainer_extractor(m, True, batch=16)
-        ctl = cc.control()
-        ctl.reset()
-        ctl.prewarm(production_prewarm_calls(m, n_envs=48, batch_size=256))
-        ctl.lock("prewarm")
-        ent = cc.cache_entries_by_code()
-        assert ent and max(ent.values()) < cc.cache_size_limit(), ent
-        with ctl.guard("steady iteration"):
-            for label, fn in production_prewarm_calls(m, n_envs=48, batch_size=256):
-                fn()
-        assert ctl.compiles_after_lock == 0
-    finally:
-        torch.set_float32_matmul_precision(prev)
-        cc._reset_control_for_tests()
-        torch._dynamo.config.error_on_recompile = False
-        torch._dynamo.reset()
-    assert _stance() == "default"
-
-
+# --------------------------------------------------------------------------- the trainer wiring
 def test_debug_with_in_process_opponent_compiles_is_refused_at_startup():
     """--debug's DummyVecEnv compiles opponents in the learner process, on the learner's code
     objects, after the lock — refused at startup (FATAL_CONFIG), not discovered at the first

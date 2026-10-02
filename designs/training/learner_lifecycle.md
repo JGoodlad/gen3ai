@@ -103,15 +103,14 @@ name, the freeze guard proves at runtime that it ran before the freeze.
 
 ## The compile half — declared signatures, the lock BEFORE the first iteration, the canary
 
-**The declared table.** `compile_trainer.production_prewarm_calls` IS the declaration: every
-compiled-learner signature (callable × batch × train/eval × grad) the steady state may reach, prewarmed
-at startup (`arm_compile_sentinel`). Batch 1 is never in it: it always runs eager
+**The declared table.** The region table (`compile_regions.REGIONS`, prewarmed through
+`compile_regions.prewarm_calls`) IS the declaration: every compiled-learner signature (region × batch ×
+train/eval × grad) the steady state may reach, prewarmed at startup (`arm_compile_sentinel`). Batch 1 is never in it: it always runs eager
 (`gen3_batch1_eager_v1`, `compile_flags.md`). The compile sentinel then LOCKS right after the prewarm —
 before the first real iteration (was: after the first `train()`, `8fc297a2`'s interim, which absorbed
 whatever iteration 1 compiled). A signature outside the table is a typed FATAL (`[CompileSentinel]
-FATAL`, exit FATAL_CONFIG) that NAMES the failing guard(s): 2.5.1's `RecompileError` lists them; on
-2.8 the `fail_on_recompile` stance's rejection says nothing, so the sentinel replays the call once
-under `error_on_recompile` to read them (`compile_control._diagnose_rejection`).
+FATAL`, exit FATAL_CONFIG) that NAMES the failing guard(s): the `fail_on_recompile` stance's rejection
+says nothing, so the sentinel replays the call once under `error_on_recompile` to read them (`compile_control._diagnose_rejection`).
 
 **The iteration-1 signature `8fc297a2` absorbed — FOUND (2026-09-30).** The real trainer at the
 production surface (`--debug --arch production`, CPU, dynamo `eager` backend — guards are

@@ -47,7 +47,7 @@ def test_each_row_is_the_state_after_the_step_its_delta_and_the_steps_peak(monke
 def test_the_trainer_marks_every_startup_step_on_both_paths():
     from main.train import model_build
     src = inspect.getsource(model_build)
-    for label in ("rust env core", "extractor-only compile gate", "compiled regions: gate + prewarm + lock",
+    for label in ("rust env core", "compiled regions: gate + prewarm + lock",
                   "optimizer state declared"):
         assert src.count(f'_ledger.mark("{label}') == 2, label
     assert src.count("_cuda_ledger.start(model.device)") == 2 and src.count("_ledger.report(model_dir)") == 2

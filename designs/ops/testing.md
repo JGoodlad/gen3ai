@@ -237,19 +237,20 @@ the fresh policy 52 of 232 extractor parameters get zero gradient from a feature
    `compile_trainer.decision_verdicts` / `train_verdict` (and so the inference service's `judge`)
    apply it by default. `allow_vacuous=True` is reserved for a caller that has already judged the
    same graph on perturbed weights.
-4. **Prove the test fails on revert**, as for any edge case. `parity_probe_test` carries a
-   pointer-only miscompile: its features and gradient are exact, but it corrupts the move cells only
-   the pointer head reads. That miscompile PASSES the pre-fix gate on fresh weights.
+4. **Prove the test fails on revert**, as for any edge case. (`parity_probe_test` carried a
+   pointer-only miscompile against the extractor-only gate — exact features and gradient, corrupt
+   move cells only the pointer head reads — until that gate's deletion, K1 2026-10-02; the region
+   gate's fresh-weights pass is pinned by `compile_regions_test`.)
 5. **A GRADIENT parity check must reach every path, and be judged per parameter**
    (`gen3_gate_grad_coverage_v1`). A loss over the extractor's two feature outputs never reaches the
    stash that the pointer and aux heads read. On the perturbed production policy it left **65 of 254**
    policy parameters with zero gradient, so a backward-only miscompile there passed on any weights.
-   Use `agents.model.compile_gate_probe.gate_loss`: features, masked legal log-probs, V, and every
-   graph-carrying stash tensor. It leaves 1 of 254. `coverage_verdict` refuses more than 2%.
-   A single GLOBAL cosine is not enough either: it is dominated by the largest gradients. Dropping
+   The cure is a loss that IS the production loss: region R1's gate differentiates the micro-step's
+   own loss over every policy parameter. (The extractor-only gate's probe loss, `gate_loss`, and its
+   coverage guard were deleted with that gate, K1 2026-10-02.) A single GLOBAL cosine is not enough either: it is dominated by the largest gradients. Dropping
    the whole move-cell gradient left it at 1.0000, while the per-parameter relative error read 0.10.
    `compile_trainer`'s per-parameter rule is the one that bites.
-   `compile_gate_probe_test` carries the backward-only miscompile.
+   `compile_gate_probe_test` pins the per-parameter rule.
 
 ### Test file naming conventions
 

@@ -35,7 +35,6 @@ import torch
 from agents.model import compile_control as cc
 from agents.model import compile_regions as cr
 
-_28 = pytest.mark.skipif(not cr.regions_supported(), reason="declared regions are a torch 2.8 feature")
 
 N_ENVS, BATCH = 4, 16
 
@@ -156,7 +155,6 @@ def _locked_learner(name: str, made: List[Any]) -> Any:
     return model
 
 
-@_28
 @pytest.mark.parametrize("name", list(LEVERS))
 def test_the_startup_declaration_COVERS_every_update_the_lever_reaches(name, lifecycle):
     model = _locked_learner(name, lifecycle)
@@ -184,7 +182,6 @@ def test_the_startup_declaration_COVERS_every_update_the_lever_reaches(name, lif
         assert not tags[0] and tags[1], tags
 
 
-@_28
 def test_an_UNDECLARED_lever_or_key_after_the_lock_is_the_typed_FATAL(lifecycle):
     """A lever turned on after startup, or a key that appears in the buffer, is a typed
     `CompileSentinelError` naming it — never a silent recompile. Fails if `check_r1_declared` is not

@@ -136,7 +136,7 @@ def test_explicit_flag_beats_the_auto_default_in_both_directions():
     assert _args(["--no-compile-trainer"]).compile_trainer is False
     assert _args(["--compile-trainer", "--device", "cpu"]).compile_trainer is True, (
         "an EXPLICIT --compile-trainer on cpu must survive parsing and reach the fail-loud "
-        "refusal in compile_trainer_extractor — the default is conditioned, the contract is not")
+        "refusal in preflight_compile_trainer — the default is conditioned, the contract is not")
 
 
 # ------------------------------------- the auto default YIELDS to a config that cannot take it

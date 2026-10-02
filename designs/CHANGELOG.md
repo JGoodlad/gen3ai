@@ -10669,3 +10669,29 @@ if a lazy build is reintroduced.
   `reward_defaults_test` (parser vs absent-field meaning; a signed run resumed flaglessly is refused by name).
 - Smoke (`--debug --steps 10000`, CPU, Rust core): Training complete; K9(b)'s excluded share 1.6–4.5 % per 2,048-row
   update, under the 0.15 ceiling (TECH_DEBT §2(b)'s small-rollout P3 row did not trip and stays open).
+## 2026-10-02 — HEAD runs torch >= 2.8 only; the torch-2.5.1 code and the extractor-only compile gate are DELETED (deletion pass K1, manifest R7 + R8; no model change, the K9 golden unchanged on 2.8)
+
+- **The floor.** `src/utils/torch_floor.py`, called first in the trainer's `main()`, exits `FATAL_CONFIG` on
+  torch < 2.8 (or an unreadable torch), naming the route: a 2.5.1 run resumes PINNED to its own commit through
+  the launcher (`gen3ai_stable` is still selected for it), never `--no-pin` / `--sync-to-main` / a bare `--model`.
+- **Deleted (2.5.1-only):** the CUDA trunk split (`team_transformer._SPLIT_NOT_NEEDED_ON` / `_CUDA_TRUNK_SPLIT`,
+  `gen3_inductor_trunk_split_v1`), `compile_regions.regions_supported`, `compile_control`'s 2.5.1 rows
+  (`_SUPPORTED` / `_SOURCE_HASHES` / `_COMPILE_CONFIG`, the `error_on_recompile` lock mode), `aot.py`'s < 2.8
+  refusal, the learner golden's `2.5.1+cu121` entry (its history rows stay).
+- **Deleted (the legacy extractor-only compile):** `compile_trainer_extractor` and its startup gate (the speed
+  refusal, the validation-batch timing, the TF32 "same graph at fp32" arm, `route_small_batches_eager`,
+  `production_prewarm_calls`, `_train_step`), `compile_gate_probe.gate_loss` + the coverage guard, the canary's
+  extractor branch, `lifecycle._regions_follow`, the CUDA ledger's "extractor-only compile gate" mark. The
+  learner compiles ONLY as its declared regions: `preflight_compile_trainer` compiles nothing and refuses a
+  learner without the micro-step; `arm_compile_sentinel` always installs R0 + R1.
+- **Fixed:** `rust_core_m5/hooks.py`'s `LearnerSampling(compile=True)` measured the legacy extractor compile on
+  2.8, not production's R0; it now installs R0 alone (`compile_regions.install_rollout_region`).
+- **Kept:** the cache-limit log detector (torch 2.8 still emits the warning; `fail_on_recompile_limit_hit` is
+  incompatible with `compile_inventory`'s `suppress_errors` patch, and the `fullgraph=True` regions already
+  hard-fail a limit hit on 2.8); the launcher's legacy env selection; `compile_trainer.eager_extractor` (a no-op
+  on the learner now; its callers go with the lever deletions).
+- **Tests:** deleted with the code — `compiled_train_probes_test`, `compile_batch1_cuda_test`, the gate-driving
+  tests of `compile_trainer_test` / `parity_probe_test` / `compile_gate_probe_test` / `compile_control_test`;
+  the canary tests now run on the regions learner with planted faults (incl. a backward-only R1 fault); new
+  `utils/torch_floor_test.py`, `compile_trainer_test::test_a_learner_without_the_micro_step_is_REFUSED_not_compiled_another_way`,
+  `compile_regions_test::test_install_rollout_region_serves_the_rollout_forward_through_R0`.

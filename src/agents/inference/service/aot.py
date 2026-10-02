@@ -11,9 +11,8 @@ bucket serves every slot of the group (the slot's stacked-storage views are pass
 the non-persistent construction tables stay constants (56 of them, ~15 MB) — identical for every
 slot of an architecture by construction.
 
-WHEN. torch >= 2.8 only. On 2.5.1 the package is one graph, so the ``6521f420`` trunk split cannot
-exist in it, and the unsplit graph MISCOMPILES there (max|dlogp| 0.68 on the real checkpoint). The
-C++ build needs the CUDA 12.6 headers (CCCL's ``<nv/target>``, ``crt/host_defines.h``), which live
+WHEN. HEAD runs torch >= 2.8 only (`utils.torch_floor`); the unsplit AOT graph miscompiled on 2.5.1
+(max|dlogp| 0.68 on the real checkpoint) and is correct on 2.8. The C++ build needs the CUDA 12.6 headers (CCCL's ``<nv/target>``, ``crt/host_defines.h``), which live
 in the ``gen3ai_torch28`` env only (``environment_torch28.yml``); ``cuda_home()`` finds them there.
 
 WHAT IT BUYS. Not speed: an AOT call is not capturable as a CUDA graph (the model container
@@ -34,15 +33,6 @@ from torch.func import functional_call
 
 from agents.inference.service.spec import ServiceError
 
-#: torch versions the ``aot`` backend is allowed on (the unsplit graph measured correct).
-AOT_MIN_TORCH = (2, 8)
-
-
-def torch_version() -> Tuple[int, int]:
-    major, minor = torch.__version__.split("+")[0].split(".")[:2]
-    return int(major), int(minor)
-
-
 def cuda_home() -> str:
     """``$CUDA_HOME`` if set, else the running env's conda CUDA target dir; refuses (typed) when
     the headers AOTInductor's C++ build includes are absent."""
@@ -58,12 +48,6 @@ def cuda_home() -> str:
 
 
 def check_available() -> None:
-    if torch_version() < AOT_MIN_TORCH:
-        raise ServiceError(
-            f"backend 'aot' needs torch >= {'.'.join(map(str, AOT_MIN_TORCH))} (running "
-            f"{torch.__version__}): an AOT package is ONE graph, so the 2.5.1 trunk split cannot "
-            "exist in it, and the unsplit graph miscompiles on 2.5.1 (max|dlogp| 0.68, measured "
-            "2026-09-29). Use backend 'graph'.")
     cuda_home()
 
 
@@ -102,7 +86,7 @@ def build_package(module: torch.nn.Module, static_obs: torch.Tensor, static_mask
         ep = torch.export.export(wrapped, (static_obs, static_mask,
                                            *weight_tensors(module, names)), strict=False)
     path.parent.mkdir(parents=True, exist_ok=True)
-    inductor: Any = torch._inductor               # 2.8 API; 2.5.1 is refused before this
+    inductor: Any = torch._inductor               # the torch 2.8 API
     # torch 2.8's AOTI codegen writes `metadata["AOTI_DEVICE_KEY"] = device_type` INTO the
     # process-global `torch._inductor.config.aot_inductor.metadata` dict (codecache.py, in place) and
     # never restores it — a leaked global the torch-state guard (rightly) fails. Give this compile its

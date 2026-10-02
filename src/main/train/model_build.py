@@ -737,10 +737,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
                       f"the reward config's copy follows it.")
                 reward_config.gamma = float(model.gamma)
             _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
-            _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer compile patches the extractor
+            _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
             _ledger.mark("rust env core (T2 slots, staging, arena; python core: none)")
             _maybe_compile_trainer(model, args)
-            _ledger.mark("extractor-only compile gate (torch 2.5.1)")
             _run_roundtrip_test(model, _load_extractor_kwargs["layout"], _load_policy_kwargs, debug=args.debug)
             _apply_grad_checkpointing(model, args.grad_checkpointing)
             _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock
@@ -967,10 +966,9 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         # (A `PBRS_GAMMA == model.gamma` assert lived here while the reward folded hand potentials;
         # it went with them in the shaped-reward deletion, 2026-09-26.)
         _ledger = _cuda_ledger.start(model.device)   # gen3_cuda_ledger_v1: where the card goes
-        _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer compile patches the extractor
+        _start_rust_env(env, model)   # M5 Lane G: BEFORE the trainer's compile step
         _ledger.mark("rust env core (T2 slots, staging, arena; python core: none)")
         _maybe_compile_trainer(model, args)
-        _ledger.mark("extractor-only compile gate (torch 2.5.1)")
         _run_roundtrip_test(model, extractor_kwargs["layout"], policy_kwargs, debug=args.debug)
         _apply_grad_checkpointing(model, args.grad_checkpointing)
         _arm_compile_sentinel(model, args)   # gen3_compile_sentinel_v1: reset, prewarm, lock

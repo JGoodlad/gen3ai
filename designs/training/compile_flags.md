@@ -522,8 +522,19 @@ it, are under "The startup parity gate" below.
 
 ## Compiled GPU trainer (`--compile-trainer`, DEFAULT ON for cuda)
 
-`torch.compile`s the LEARNER's feature extractor — the CUDA forward **and backward** the PPO step
-runs. The other half of the pair above, and the larger of the two.
+`torch.compile`s the LEARNER — the CUDA forward **and backward** the PPO step runs. The other half of
+the pair above, and the larger of the two.
+
+> **WHAT SHIPS NOW (2026-10-02, deletion pass K1).** The learner compiles ONLY as its DECLARED
+> REGIONS — R0 the rollout core, R1 the micro-step (K8 below) — installed, gated, prewarmed and
+> locked by `compile_trainer.arm_compile_sentinel`; the trainer's earlier compile step
+> (`preflight_compile_trainer`) compiles nothing and only refuses a learner the regions cannot serve.
+> HEAD runs **torch >= 2.8 only** (`utils/torch_floor.py`: the trainer exits `FATAL_CONFIG` on an
+> older torch). The torch-2.5.1 extractor-only compile, its startup parity gate (speed refusal, probe
+> loss, coverage guard), the CUDA trunk split and `compile_control`'s 2.5.1 rows were DELETED; a run
+> trained on 2.5.1 resumes PINNED to its own commit, which still carries them. The subsections below
+> that describe the extractor-only compile are its HISTORY — measured facts with their provenance,
+> not current mechanism — except where they say they still apply.
 
 🚨 **DEFAULT since 2026-08-17, and it is the one default that could NOT be a flat `True`.** This
 flag REFUSES a non-cuda device (the first row of the refusal table below), so `default=True` would
@@ -587,7 +598,7 @@ there is no fresher figure to substitute and this one has not been re-derived si
 the ~89% at production `n_envs=48 / n_steps=2048 / 10 epochs`. The 1.75x itself is measured; the
 end-to-end number inherits the extrapolation's uncertainty.
 
-**We compile the EXTRACTOR, and the second row is
+**We compiled the EXTRACTOR (until K8), and the second row is
 why**: the two scopes measure the same to within 0.004x — the mlp_extractor, the pointer head and
 the value head contribute nothing — so the whole-policy scope buys nothing for strictly more graph
 (and more surface for SB3's distribution objects and the mask path to break on). Same win, smaller
@@ -599,20 +610,22 @@ warns and falls back to eager (`--compile-opponents-strict` opts into raising) b
 `[CompileExtractor]` line either way. Here there is nothing to notice: a silent fallback trains
 perfectly correctly and just produces ~38% fewer steps/hour forever. So every failure is fatal
 (`CompileTrainerError` -> `TrainExitCode.FATAL_CONFIG`, so the launcher gives up instead of
-restart-looping), and the flag has no `strict` variant because there is nothing to opt into. Four
+restart-looping), and the flag has no `strict` variant because there is nothing to opt into. The
 refusals, each guarding an otherwise-invisible outcome:
 
-| refusal | why |
-|---|---|
-| `--device cpu` | The CPU BACKWARD does not lower — `CppTile2DKernel.store` asserts on the `atomic_add` mode. Pinned by `extractor_compiles_test::test_cpu_backward_still_does_not_compile`, which builds at `belief_grad_mode="shaping"` ON PURPOSE: under `label_only` (production since gen-11) those gather-backwards do not exist and the compile succeeds, so an unpinned test would have gone green while testing nothing. Costs nothing in practice — the compiled backward we run is CUDA, where Triton emits `tl.atomic_add` |
-| compile raised | bisect the op — the whole "torch cannot compile our model" story was ONE op (see `src/agents/model/CLAUDE.md`, the `species_posterior` precedent) |
-| compiled is not faster (< 1.05x) | the graph fragmented or the backend fell back per-frame; the measured figure is ~1.75x, so parity is a defect |
-| compiled disagrees with eager on the committed REAL-obs rows — features, masked legal log-probs, V, or the train graph's gradient (the bars and the TF32 rule: "The startup parity gate" below) | a faster wrong model is not a win |
+| refusal | where | why |
+|---|---|---|
+| `--device cpu` | `preflight_compile_trainer` | the compiled learner is gated and measured on CUDA only. (On torch 2.5.1 the CPU BACKWARD did not even lower — `CppTile2DKernel.store` asserted on the `atomic_add` mode; on 2.8 it lowers, per `extractor_compiles_test::test_cpu_backward_still_does_not_compile`'s per-torch pin, but no CPU compiled learner has ever been gated) |
+| a learner without the micro-step (`_micro_static`) | `preflight_compile_trainer`, `arm_compile_sentinel` | R1 cannot be built, and there is no smaller fallback compile (`compile_trainer_test::test_a_learner_without_the_micro_step_is_REFUSED_not_compiled_another_way`) |
+| a graph break inside a region, a compile error | the region gate | `fullgraph=True`; bisect the op — the whole "torch cannot compile our model" story was ONE op (see `src/agents/model/CLAUDE.md`, the `species_posterior` precedent) |
+| a region disagrees with eager on REAL rows | the region gate (K8 below) | a faster wrong model is not a win |
+| an undeclared signature, a cache-limit hit, a region run eager | the sentinel | a silent stall or a silent ~2x slowdown |
 
-Every rejection **uninstalls** the compiled callable before raising, so the process never keeps
-running something it just declared unacceptable.
+### 🚨 The single-graph CUDA miscompile, and the trunk split (`gen3_inductor_trunk_split_v1`, 2026-09-28) — HISTORY
 
-### 🚨 The single-graph CUDA miscompile, and the trunk split (`gen3_inductor_trunk_split_v1`, 2026-09-28)
+> **The split was DELETED on 2026-10-02 (deletion pass K1)** with HEAD's torch-2.5.1 support: it was
+> OFF on torch 2.8 (Lane K1 below), and a 2.5.1 run resumes pinned to its own commit, which keeps it.
+> This section is why 2.5.1 must never run HEAD code (`utils/torch_floor.py` refuses it).
 
 **Measured** (torch 2.5.1+cu121, RTX 3080 Ti, fp32 `highest`, `ai_v14_01_base` weights on 3,840 REAL
 rows from its own `eval_traces`): with the whole extractor as ONE CUDA Inductor graph, the compiled
@@ -660,17 +673,22 @@ manages, and every gate command, `scripts/land.sh`, `scripts/ops/_common.sh` and
 `gen3ai_stable` (torch 2.5.1+cu121, `environment.yml`) is kept FROZEN — bootstrap no longer reads
 `environment.yml` or touches the env — only so an old run resumes on the torch it trained on.
 **New code targets 2.8 only**; the rule that a compile change also runs its tests under 2.5.1 is
-RETIRED. The 2.5.1-keyed branches that remain (this split, `compile_control`'s 2.5.1 row, the 2.5.1
-learner-golden entry, …) stay until the deletion pass (`designs/endstate/program_rust_core.md` §4).
+RETIRED. The 2.5.1-keyed branches (the split, `compile_control`'s 2.5.1 rows, the 2.5.1
+learner-golden entry, the extractor-only compile, `aot.py`'s < 2.8 refusal) were DELETED by the
+deletion pass on 2026-10-02 (K1, `designs/ops/deletion_pass_manifest.md` R7/R8), behind ONE HEAD-side
+refusal: `src/utils/torch_floor.py`, called first thing in the trainer's `main()`, exits
+`FATAL_CONFIG` on torch < 2.8 (so a 2.5.1 checkpoint under `--no-pin`, `--sync-to-main` or a bare
+`train_rl_agent.py --model` stops with the reason instead of running HEAD code that would miscompile).
 
 **Which torch a run uses is RECORDED and ENFORCED.** Every save writes `metadata.json`'s
 `torch_version` (and a `torch` key per `pin_history` span); a run without one predates the record
 and trained on 2.5.1. The launcher (`src/main/launcher/torch_runtime.py`) resumes or forks a run
 under its recorded torch — it SELECTS `gen3ai_stable` for a 2.5.1 run and refuses a mismatch
 `FATAL_CONFIG` unless `--allow-torch-switch`; `--dry-run` prints the interpreter, its torch and the
-run's record. A bare `train_rl_agent.py --model` is not checked. The split is keyed on the torch
-version: `team_transformer._SPLIT_NOT_NEEDED_ON = {"2.8.0+cu126"}` ⇒ `_CUDA_TRUNK_SPLIT` is OFF on
-2.8 and ON on every other torch, so a legacy resume keeps the split it trained with.
+run's record. A bare `train_rl_agent.py --model` is not checked by the launcher; the torch floor
+above refuses it on 2.5.1. (Until 2026-10-02 the split was keyed on the torch version — OFF on
+2.8.0+cu126, ON elsewhere — so a legacy resume kept the split it trained with; a pinned resume still
+does, from its own commit.)
 
 **The 2.8 sweep before the flip (2026-09-30 / 10-01, `gen3ai_torch28`):** routine gate 12,690 passed —
 its only 2.8-specific red was the mypy gate (torch 2.8's stub types `nn.Module.__getattr__` as
@@ -695,8 +713,9 @@ BOTH torches (15–17 of 232 zero; the real fresh production policy on the pertu
 
 At TF32 compiled-vs-eager differs by TF32's own rounding, identically on 2.8-unsplit and on
 2.5.1-split — the gate's TF32 rule (vs an fp32 reference, plus the same graph re-run at fp32) is
-what resolves a real defect there. `compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate`
-now asserts, per torch: 2.5.1 ⇒ split ON and unsplit FAILS; 2.8 ⇒ split OFF and unsplit PASSES.
+what resolves a real defect there. (`compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate`
+asserted, per torch, 2.5.1 ⇒ split ON and unsplit FAILS, 2.8 ⇒ split OFF and unsplit PASSES; it was
+deleted with the split, K1 2026-10-02.)
 
 **Graph count** (`torch._dynamo.explain`, the extractor's `forward`, 32 rows, CPU): **1 graph /
 0 breaks on both torches, at every `--log-level`** (2026-09-30: 7,062 ops on 2.5.1, 6,870 on 2.8,
@@ -776,38 +795,30 @@ gradient bit-for-bit on vs off — and costs nothing measurable: production extr
 batch 64 ~10.1 ms and batch 2048 ~74.8 ms either way, peak memory +0.3%
 (`designs/research_state/measurements/m5_k1/`).
 
-**Tests.** `compile_control_test` (routine, both torches): install pins the row and uninstall
-restores it; a donating backward REFUSES a retain-graph probe and the pinned row accepts it; the pin
-changes no gradient; on 2.8, the cache key carries the tag and not donation.
-`agents/training/compiled_train_probes_test.py` (`slow`; CPU, plus CUDA under
-`GEN3AI_TEST_ALLOW_GPU=1`): the production policy surface, the
-same signatures compiled first under the donating default, then the real pipeline (compile, reset,
-production prewarm, attach) and ONE full `train()` with every first-update probe, plus a
-repeated-`retain_graph`-backward check (bitwise on CPU; ≤ 1e-5 relative on CUDA, whose scatter-add
-atomics give 2.1e-7). Revert `donated_buffer` ⇒ the probe raises (CPU and CUDA, measured). ⚠️ Reverting
-ONLY the tag passes this toy (2.2e-7, measured) — that half is proven by the real-graph A/B and pinned
-by the cache-key contract test, not by this test.
+**Tests.** `compile_control_test` (routine): install pins the row and uninstall restores it; a
+donating backward REFUSES a retain-graph probe and the pinned row accepts it; the pin changes no
+gradient; the cache key carries the tag and not donation. (`agents/training/compiled_train_probes_test.py`,
+the `slow` end-to-end — the extractor-only pipeline plus ONE full `train()` with every first-update
+probe, revert `donated_buffer` ⇒ the probe raised — was DELETED with that pipeline, K1 2026-10-02.
+⚠️ No test now drives a full first `train()` through the COMPILED REGIONS with the donating default
+forced; the routine `compile_regions_test` runs two real updates through R1 on CPU with the pin in
+force, which is not the same revert-must-fail.)
 
-**Batch 1 never reaches the compiled learner forward (`gen3_batch1_eager_v1`, 2026-09-30, Lane K).**
+**Batch 1 never reaches a compiled learner graph (`gen3_batch1_eager_v1`, 2026-09-30, Lane K).**
 The K1 finding: on torch 2.8.0+cu126 a **batch-1 CUDA eval/no-grad** graph of the production extractor
 fails to LOWER — Triton `CompilationError` (`'constexpr_type' object has no attribute 'is_block'` on a
-fully-constant `tl.broadcast_to` index); batch 2 and 4 compile, and 2.5.1 compiles batch 1. Two
-learner-process paths reach batch 1, both off the hot path: `--critic shaped`'s truncated-episode
-`predict_values`, and the trainer's in-process FINAL EVALUATION (after `learn()` returns). The fix:
-`compile_trainer_extractor` installs `route_small_batches_eager(fe, compiled)` as `fe.forward` — a
-batch in `compile_trainer.EAGER_BATCHES` (= {1}) runs the extractor's own EAGER forward, every other
-batch the compiled one; the batch test is Python, outside the graph. One rule on both torches,
-nothing version-keyed; the declared prewarm (`production_prewarm_calls`) therefore holds NO batch-1
-signature (the old `--critic shaped` batch-1 prewarm row is gone, and a `--debug` single-env rollout
-is not prewarmed either). Rejected: padding batch 1 to 2 (every per-forward extractor stash would
-have to be sliced back to one row). Cost: ~18 ms per batch-1 forward, eager. Pinned by
-`compile_trainer_test` (the routing, CPU) and `compile_batch1_cuda_test` (CUDA, `slow`, GPU tier, run
-on `gen3ai_torch28` under `gpu_lock.sh`): the real production-surface policy through the REAL gate,
-then the final evaluation's call — `policy(obs)` at batch 1, deterministic — succeeds and equals the
-eager forward bit-for-bit, batch 2 still runs compiled; its CONTRACT twin reverts the routing
-(`EAGER_BATCHES = ∅`) and asserts the Triton `CompilationError` (if a torch upgrade fixes the
-lowering, that test fails and the routing can retire). MEASURED 2026-09-30 (RTX 3080 Ti, torch
-2.8.0+cu126): both pass; the reverted arm raises the `CompilationError`. SMOKE (2026-09-30, the same
+fully-constant `tl.broadcast_to` index); batch 2 and 4 compile. Batch 1 reaches the learner process
+only off the hot path (a `--debug` single-env rollout; the in-process final evaluation). The rule
+today: region R0's dispatcher (`compile_regions._make_r0`) runs a batch in
+`compile_trainer.EAGER_BATCHES` (= {1}) through the EAGER rollout core, every other batch through the
+compiled one; the batch test is Python, outside the graph, and the declared signature table
+(`compile_regions.prewarm_calls`) holds NO batch-1 signature. Rejected: padding batch 1 to 2 (every
+per-forward extractor stash would have to be sliced back to one row). Cost: ~18 ms per batch-1
+forward, eager. Pinned by `compile_regions_test` (a batch-1 call compiles nothing after the lock,
+CPU). (Until 2026-10-02 the extractor-only compile routed batch 1 the same way, pinned on CUDA by
+`compile_batch1_cuda_test`, deleted with it; MEASURED 2026-09-30, RTX 3080 Ti, torch 2.8.0+cu126:
+the batch-1 call equalled eager bit-for-bit, and reverting the routing raised the
+`CompilationError`.) SMOKE (2026-09-30, the same
 GPU, torch 2.8.0+cu126, `--device cuda --compile-trainer --arch production --steps 256 --n-envs 2
 --n-steps 64 --batch-size 64 --n-epochs 2 --eval-battles 2`): parity gate PASS → prewarm → lock →
 two iterations with 0 compiles after the lock → `Training complete` → the in-process FINAL
@@ -817,7 +828,17 @@ reverted-routing test shows raising.
 
 ### The startup parity gate (`gen3_compile_parity_real_obs_v1` + `gen3_tf32_parity_gate_v1`)
 
-`compile_trainer_extractor` validates on **REAL observation rows, never zeros**. The rows are a
+> **Since 2026-10-02 the gate described here — the extractor-only gate — is DELETED** with the
+> extractor-only compile (K1). What still applies, now in the REGION gate (`compile_regions.gate_regions`,
+> K8 below) and the canary: the committed real-obs fixture, the bars and verdicts
+> (`compile_trainer.decision_verdicts` / `train_verdict`, the per-parameter rule), the fail-closed
+> vacuity guard, the fresh-weights perturbation and its LADDER, and the TF32 rule against an fp32
+> eager reference. What went with the gate: its probe loss (`gate_loss`) and the zero-gradient
+> COVERAGE guard (R1 is judged on the production micro-step's own loss), the speed refusal, and the
+> TF32 "same graph at fp32" second arm. The measurements below are that gate's, with their
+> provenance.
+
+The extractor-only gate validated on **REAL observation rows, never zeros**. The rows are a
 committed fixture, `src/agents/model/compile_parity_obs.npz`: 64 decision rows from 8 reproducible
 in-process bridge battles, made by `python -m agents.model.compile_parity_fixture --write`. It can be
 regenerated on any box for any layout. A missing fixture, or one of the wrong width, **REFUSES**
@@ -833,9 +854,7 @@ routine gate the moment the layout changes. It checks four things, eager vs comp
 | TRAIN graph: fwd features + gradient cosine on the gate's own loss (since `gen3_gate_grad_coverage_v1`: the probe loss over the whole policy, plus the coverage guard and the per-parameter rule below) | 1e-4 · cos ≥ 0.9999 | 1.9e-05 · 1.000000 | 7.65 · 0.778 |
 
 The healthy column is the gate's own line on `ai_v14_01_base/final_model.zip`.
-`compile_trainer_test::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate` pins that turning
-the split off makes the gate refuse. Measured through the real gate: with the split OFF it FAILS at
-10.7.
+Measured through the real gate on torch 2.5.1: with the split OFF it FAILED at 10.7.
 
 **On FRESH weights the gate ALSO runs on a seeded perturbation (`gen3_fresh_parity_probe_v1`).** A
 fresh launch (`--arch production`, no `--model`) runs the gate on the freshly initialised policy, and
@@ -890,9 +909,8 @@ train-graph coverage fix below closes that). **Measured** (M5 T2,
 pass read 5.96e-07 (features 5.25e-06, V 4.77e-07, grad cosine 1.000000), and the gate PASSED. With
 the trunk split forced OFF (the known torch-2.5.1 miscompile) the gate REFUSED on the perturbed
 arm's features at 3.61. In both cases the weights and the CPU/CUDA RNG states were bit-identical
-afterwards. `parity_probe_test` pins the wiring on CPU. A "compile" whose features and gradient are
-exact but whose per-action move cells (read only by the pointer head) are wrong is REFUSED on fresh
-weights, and PASSES the pre-fix gate.
+afterwards. (`parity_probe_test` pinned that wiring on CPU until the gate's deletion; it now pins the
+premises and the guard, and `compile_regions_test` the region gate's fresh-weights pass.)
 
 The inference service's parity gate (`agents.inference.service`) does the same per slot. A
 `VacuousParity` (a `ParityFailure`) triggers a re-run of the slot on the perturbed weights, in place
@@ -935,10 +953,8 @@ parameters)**, so a backward-only miscompile there passed on any weights. Three 
   At TF32 the per-parameter rule rides on the "same graph at fp32" check. Measured end to end, the
   gate PASSES correct compiles on fresh and trained weights at `highest` and at `high`: fresh
   per-param max 6.6e-06, trained 9.3e-04, coverage 1/254. It REFUSES every defect in the table
-  except the ×0.9 case on trained weights. `compile_gate_probe_test` pins this on CPU with a
-  backward-only fake: identity forward, scaled gradient on a pointer-only stash path. With
-  `compile_trainer.py` reverted to `23f4f85c`, the same fakes (move cells ×0, switch cells ×0.5,
-  move tokens ×0.9) all PASS the gate on fresh weights.
+  except the ×0.9 case on trained weights. (The probe loss and the coverage guard were deleted with
+  the gate; `compile_gate_probe_test` now pins the per-parameter rule alone.)
 
 **At reduced precision (`--matmul-precision high`, TF32) two checks run.**
 
@@ -1016,11 +1032,10 @@ structurally legal, and it is what `snapshot._zero_obs` has always used on the o
 trainer path briefly diverged to `rand` for no reason and that is what disguised the OOM as a CUDA
 config error.
 
-*Where per-shape correctness IS checked.* `torch.compile` compiles lazily PER SHAPE, so the graphs
-production trains with (batch `n_envs` for rollout, batch `batch_size` for train) are never the one
-the startup check compiles. That gap is closed by
-`compile_trainer_test::test_every_production_shape_agrees_with_eager`, which asserts compiled ==
-eager at each shape on a free GPU where memory is not contended. Measured once against the live
+*Where per-shape correctness was checked.* `torch.compile` compiles lazily PER SHAPE, so the graphs
+production trained with were never the one that gate compiled; `compile_trainer_test::test_every_production_shape_agrees_with_eager`
+asserted compiled == eager at each shape on a free GPU (deleted with the extractor-only compile —
+the region gate judges the declared signatures themselves). Measured once against the live
 gen-10 config on REAL observations off the rust bridge: **batch 48 -> 9.5e-07, batch 64 -> 7.2e-07,
 batch 4096 -> 3.6e-06**, against a value scale of 2.111 — float32 rounding, not a wrong kernel.
 
@@ -1029,25 +1044,23 @@ flag**, so it is announced at startup when the auto default resolves to on
 (`⚡ --compile-trainer ON by default (device=cuda)`, naming `--no-compile-trainer`), not
 conditional on a launcher being attached.
 
-**Mechanics.** Patches the BOUND `fe.forward`, never the module: `torch.compile(module)` returns an
-`OptimizedModule` and prefixes every `state_dict` key with `_orig_mod.`, which would land in every
-checkpoint of the run and make them unloadable by anything else. It runs immediately BEFORE
-`_run_roundtrip_test`, which turns that existing save -> reload -> forward gate into a free check on
-exactly that hazard. **Runtime perf knob**: never versioned, never in `check_compatible`, NOT
+**Mechanics.** Never compiles the module: `torch.compile(module)` returns an `OptimizedModule` and
+prefixes every `state_dict` key with `_orig_mod.`, which would land in every checkpoint of the run and
+make them unloadable by anything else. The regions compile FUNCTIONS over the module and are stored
+off it (`model._compiled_micro_step`, the weak `policy._ROLLOUT_REGIONS` registry). **Runtime perf knob**: never versioned, never in `check_compatible`, NOT
 inherited on resume — but with the AUTO default that means a flagless cuda resume gets it ON, so it
 is `--no-compile-trainer` you re-pass each launch, not the flag.
 
-Tests: `agents/model/compile_trainer_test.py` (the verdicts are pure functions so every refusal is
-testable without a GPU — a contract that needs a free card is a contract that gets checked rarely;
-plus a CUDA test that the `state_dict` keys and a save/reload survive) and the compile itself in
-`agents/model/extractor_compiles_test.py`.
+Tests: `agents/model/compile_trainer_test.py` (the verdicts and the preflight are pure functions so
+every refusal is testable without a GPU — a contract that needs a free card is a contract that gets
+checked rarely), `agents/model/compile_regions_test.py` (the regions), and the extractor's own
+compilability in `agents/model/extractor_compiles_test.py`.
 
 ### The compile sentinel (`gen3_compile_sentinel_v1`, 2026-09-28)
 
-The owner's question: *"Is there no way to force it to raise or reject?"* — yes, on torch 2.5.1,
-behind ONE adapter: **`src/agents/model/compile_control.py` is the only runtime module that touches
-`torch._dynamo`** (the one exception is `team_transformer`'s in-graph `graph_break()`, which is model
-code dynamo traces). It is also the only module that sets `torch._functorch.config` — the
+The owner's question: *"Is there no way to force it to raise or reject?"* — yes (first on torch
+2.5.1; now torch 2.8 only), behind ONE adapter: **`src/agents/model/compile_control.py` is the only
+runtime module that touches `torch._dynamo`**. It is also the only module that sets `torch._functorch.config` — the
 per-version `_FUNCTORCH_CONFIG` row (`donated_buffer = False`, Lane K1b below), applied at `install()`.
 Two failures were silent before it:
 
@@ -1061,10 +1074,10 @@ Two failures were silent before it:
 
 | phase | where | what |
 |---|---|---|
-| 1 `gate()` | `compile_trainer_extractor` | the startup parity gate compiles FREELY; the cache-limit detector already listens (a hit here is fatal too) |
-| 2 `reset()` | `_arm_compile_sentinel`, after `_apply_grad_checkpointing` | `torch._dynamo.reset()` — drops every graph the gate compiled |
-| 3 `prewarm(calls)` | same | runs every production signature NOW (`compile_trainer.production_prewarm_calls`), RNG-neutral (`fork_rng`), gradients zeroed |
-| 4 `lock(where)` | **the end of startup** — `arm_compile_sentinel`, right after the prewarm, BEFORE the first real iteration (K6, 2026-09-30; was: the end of the first `train()`, which absorbed whatever iteration 1 compiled — see below) | `error_on_recompile = True` (2.5.1) / the `fail_on_recompile` stance (2.8) + a compile-START callback counting every frame compile. `🧊 [COMPILE LOCK] …` states the per-code-object entry count and the headroom to the limit. A rejection is a typed FATAL that NAMES the failing guard(s) (`UNDECLARED SIGNATURE — the failing guard(s): …`): 2.5.1's `RecompileError` lists them; on 2.8 the stance's rejection says nothing, so the sentinel replays the call ONCE under `error_on_recompile` to read them |
+| 1 `gate()` | (none on the learner since the extractor-only gate's deletion, 2026-10-02) | a startup parity gate compiles FREELY inside it; the cache-limit detector already listens (a hit here is fatal too) |
+| 2 `reset()` | `_arm_compile_sentinel`, after `_apply_grad_checkpointing` | `torch._dynamo.reset()` — drops any graph compiled before the regions |
+| 3 `prewarm(calls)` | same, after the regions' install + gate | runs every DECLARED signature NOW (`compile_regions.prewarm_calls`), RNG-neutral (`fork_rng`), gradients zeroed |
+| 4 `lock(where)` | **the end of startup** — `arm_compile_sentinel`, right after the prewarm, BEFORE the first real iteration (K6, 2026-09-30; was: the end of the first `train()`, which absorbed whatever iteration 1 compiled — see below) | the `fail_on_recompile` stance (torch 2.8; 2.5.1's `error_on_recompile` mode was deleted 2026-10-02) + a compile-START callback counting every frame compile. `🧊 [COMPILE LOCK] …` states the per-code-object entry count and the headroom to the limit. A rejection is a typed FATAL that NAMES the failing guard(s) (`UNDECLARED SIGNATURE — the failing guard(s): …`): 2.5.1's `RecompileError` lists them; on 2.8 the stance's rejection says nothing, so the sentinel replays the call ONCE under `error_on_recompile` to read them |
 | — `release(why)` | when `learn()` returns or raises | the lock's scope is TRAINING: the trainer's FINAL EVALUATION runs in-process on the same model (batch 1 / no-grad — routed EAGER since `gen3_batch1_eager_v1`; a smaller obs key set elsewhere) — new signatures by design. MEASURED on the real trainer (the end-to-end smoke below): a still-locked sentinel broke it with `RecompileError`. Prints `🧊 [COMPILE LOCK] released …` with the post-lock compile count (must be 0) |
 | 5 `stats()` | every update | TB `compile/graphs_total`, `compile/recompiles_after_lock` (**must stay 0**), `compile/cache_limit_hits`, `compile/max_cache_entries_per_code`, `compile/locked`, `compile/regression_flag`, `compile/train_ms_vs_lock_baseline` |
 
@@ -1229,14 +1242,20 @@ on the K9 golden's labelled buffer when the run's observation keys match it — 
 parameter at the cosine and per-parameter bars; R0's decision readout, on a seeded perturbation when
 the weights are fresh; the TF32 rule against an fp32 eager reference under `--matmul-precision high`)
 → prewarm exactly the declared signatures → LOCK (K6) → the canary every 100 updates (confirmed in the same update before it FATALs — `designs/training/learner_lifecycle.md`)
-(`compile_canary._regions`). On torch 2.5.1 (legacy: `forward_guard`'s weakref lookup breaks
-`fullgraph=True` there) the extractor-only compile above is kept — `regions_supported()`.
+(`compile_canary._regions`). The regions are the ONLY compiled learner surface: on torch 2.5.1
+`forward_guard`'s weakref lookup breaks `fullgraph=True`, and HEAD no longer runs 2.5.1 at all (the
+extractor-only compile kept for it was deleted 2026-10-02, K1; `utils/torch_floor.py`).
+`compile_regions.install_rollout_region` installs R0 alone — production's rollout compile — for a
+caller that measures the rollout forward outside the trainer (the M5 throughput A/B's
+`LearnerSampling`, `main/rust_core_m5/hooks.py`, which until K1 measured the extractor-only compile
+instead).
 
-**One startup gate per region** (`gen3_one_gate_per_region_v1`, 2026-10-01). On 2.8 the trainer no
-longer runs the extractor-only gate (`compile_trainer_extractor(..., regions_follow=True)`; the
-sentinel then installs the regions with `regions_requested=True`). That gate compiled the extractor
-alone and judged it, but the regions uninstall that compile, so it was judging a graph production
-never runs. It cost about 2 of the ~5 startup minutes (the R1 bar fix's restart proof, 2026-10-01).
+**One startup gate per region** (`gen3_one_gate_per_region_v1`, 2026-10-01). The trainer runs no
+extractor-only gate: `preflight_compile_trainer` compiles nothing, and the sentinel installs and gates
+the regions (on 2026-10-01 behind `regions_follow` / `regions_requested`, both deleted with the
+2.5.1 path on 2026-10-02). That gate compiled the extractor alone and judged it, but the regions
+uninstall that compile, so it was judging a graph production never runs. It cost about 2 of the ~5
+startup minutes (the R1 bar fix's restart proof, 2026-10-01).
 
 The checks that remain on 2.8, each with its measured bar and the fault it catches:
 
@@ -1248,8 +1267,8 @@ The checks that remain on 2.8, each with its measured bar and the fault it catch
 | the no-silent-eager guards | see above | a partly uncompiled learner |
 | the learner golden (test time) | — | a change in what the update computes |
 
-The extractor gate's speed refusal (`check_speedup`, measured at batch 64) has no 2.8 counterpart at
-startup. The update-wall drift warning and the milestone `compiled_perf_guard_test` cover speed.
+The extractor gate's speed refusal (`check_speedup`, measured at batch 64; deleted 2026-10-02) has
+no counterpart at startup. The update-wall drift warning and the milestone `compiled_perf_guard_test` cover speed.
 
 **Measured** (2026-09-30/10-01): R1 on the production surface traces as ONE graph on 2.8 (CPU,
 `aot_eager`, compiled loss bit-equal to eager); `compile_regions_test` (routine, CPU, dynamo `eager`

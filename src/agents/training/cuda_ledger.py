@@ -4,8 +4,8 @@ The sizing study measured production (N = 48, torch 2.8, fp32, `--env-core rust`
 of the 12 GiB card with 1.2 GiB free — under K6's own ceiling margin — and ~3.9 GiB of it unattributed.
 This ledger attributes it, in EVERY run's log, at the startup steps that acquire device memory:
 
-    weights on the card -> rust env core (T2 slots, staging, arena) -> the extractor gate (2.5.1 only)
-    -> the compiled regions' gate + prewarm -> optimizer state declared
+    weights on the card -> rust env core (T2 slots, staging, arena) -> the compiled regions' gate +
+    prewarm -> optimizer state declared
 
 Each row is the allocator's ALLOCATED and RESERVED bytes after the step, the step's delta, and the
 PEAK allocated during it (the peak counter is reset at each mark). `<run_dir>/cuda_ledger.json`

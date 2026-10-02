@@ -1,43 +1,26 @@
-"""`torch.compile` the LEARNER's feature extractor — the GPU forward AND backward of the PPO step.
+"""`--compile-trainer` — the learner process's compile: its startup preflight, the parity VERDICTS
+every compile gate shares, and the compile SENTINEL that installs, gates, prewarms and locks the
+learner's DECLARED REGIONS (`agents.model.compile_regions`: R0 the rollout core, R1 the micro-step).
 
-WHY THIS IS A SEPARATE MODULE FROM `snapshot.maybe_compile_extractor`, rather than a flag on it.
-The two paths want OPPOSITE things at every decision, and folding them together is how the
-`hide_cuda` bug happened (it used to be INFERRED from `torch.cuda.is_initialized()`, which was
-correct only by accident of the call sites):
+ONE COMPILED SURFACE (gen3_one_gate_per_region_v1; the torch-2.5.1 extractor-only compile and its own
+parity gate were DELETED in the post-switch deletion pass, 2026-10-02). HEAD runs torch >= 2.8 only
+(`utils.torch_floor`): a run trained on 2.5.1 resumes PINNED to its own commit, which still carries
+that compile. Here the learner compiles as its declared regions at `arm_compile_sentinel`, after grad
+checkpointing and before `learn()`; `preflight_compile_trainer` only refuses, at the trainer's compile
+step, a learner the regions cannot serve.
 
-| | frozen OPPONENT (`--compile-opponents`) | LEARNER (`--compile-trainer`) |
-|---|---|---|
-| device | CPU, and it HIDES cuda so 48 workers do not each take ~252 MiB of card | CUDA, and hiding it would defeat the entire point |
-| grad | inference only — grad-enabled calls route to EAGER on purpose | grad-enabled is the ONLY case that matters |
-| on failure | warn and fall back to eager; `--compile-opponents-strict` opts into raising | ALWAYS raise |
-| batch | B=1, launch-bound | the production minibatch (4096) |
+FAIL-LOUD IS THE POINT. A silent eager fallback is a ~1.75-2x throughput regression that no metric
+surfaces: the run trains correctly and simply produces fewer steps per hour, forever. So every failure
+here raises `CompileTrainerError` (FATAL_CONFIG), never warns.
 
-MEASURED (2026-08-14, v76 `gen3_ctx_dedup_v1`, RTX 3080 Ti, the real
-`MaskablePPO -> ActorCriticPolicy._build()` path, gen-9's own `cli_args`: batch 4096, PopArt on;
-`policy.evaluate_actions` forward+backward, arms interleaved, 3 pairs):
+CPU IS REJECTED, not attempted. The compiled learner is gated and measured on CUDA only. (On torch
+2.5.1 the CPU backward did not even lower — Inductor's C++ backend asserted on the damage op's
+`atomic_add` scatter; on 2.8 it lowers, per `extractor_compiles_test`'s per-torch pin, but no CPU
+compiled learner has been gated.)
 
-    eager                  155.1 ms
-    compiled extractor      88.5 ms   1.753x
-    compiled evaluate_actions 88.5 ms 1.757x
-
-At the ~89% train share of production wall at 10 epochs that is **~+62% end-to-end FPS**.
-
-**We compile the EXTRACTOR, not `evaluate_actions`, and the numbers above are why.** The two scopes
-measure the same to within 0.004x — the mlp_extractor, the pointer action head and the value head
-contribute nothing measurable — so the whole-policy scope buys nothing for strictly more graph, and
-more graph means more surface for SB3's distribution objects and the mask path to break on. Take the
-identical win with the smaller blast radius.
-
-FAIL-LOUD IS THE POINT, and it is not symmetric with the opponent path. A silent eager fallback here
-is a 1.75x regression that no metric surfaces: the run trains correctly and simply produces ~38%
-fewer steps per hour, forever. The opponent path can afford `strict` to be opt-in because it prints
-a `[CompileExtractor]` line either way; here there is nothing to notice, so the only safe default is
-to refuse to start.
-
-CPU IS REJECTED, not attempted. `extractor_compiles_test.py` pins the reason as a measured fact: the
-CPU BACKWARD does not lower — Inductor's C++ backend asserts on the damage op's `atomic_add` scatter
-(`codegen/cpp.py: assert mode is None`). So `--compile-trainer --device cpu` cannot work, and saying
-so at startup beats a confusing backend traceback ten minutes in.
+THE COMPILED STATE IS OFF THE MODULE. The regions are stored on the model (`_compiled_micro_step`) and
+in the policy module's weak registry (`policy._ROLLOUT_REGIONS`), never as a patched module or an
+`OptimizedModule` — so `state_dict` keys (and every checkpoint) are unchanged.
 """
 from __future__ import annotations
 
@@ -48,12 +31,10 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 import numpy as np
 import torch
 
-from agents.model.compile_gate_probe import (GradCoverageError, coverage_verdict, gate_loss,
-                                             grad_parameters, per_param_grad_errors)
-from agents.model.compile_parity_fixture import ParityFixtureError, load_parity_rows
-from agents.model.parity_probe import (PERTURB_SEED, PRECISION_BARS, VacuousParityError,
-                                       fresh_reason, ladder_at, perturbed_parameters,
-                                       require_informative, rung_seed)
+from agents.model.compile_gate_probe import per_param_grad_errors
+from agents.model.compile_gate_probe import grad_parameters  # noqa: F401 — read as `ct.grad_parameters`
+from agents.model.compile_parity_fixture import load_parity_rows
+from agents.model.parity_probe import PRECISION_BARS, VacuousParityError, require_informative
 
 
 class CompileTrainerError(RuntimeError):
@@ -65,20 +46,6 @@ class VacuousCompileParityError(CompileTrainerError, VacuousParityError):
     — e.g. a FRESH policy's legal log-probs, constant per row under the zero-init pointer head. A
     `CompileTrainerError`, so the launcher treats it as config-fatal like any other gate failure."""
 
-
-# A compiled learner must beat eager by at least this, or something is wrong with the assumption
-# rather than with the measurement: the arch measured 1.75x, so anything at or below parity means the
-# graph fragmented or the backend fell back per-frame. Deliberately loose — this is a "did it do
-# ANYTHING" tripwire, not a performance assertion, because a busy box can compress the ratio.
-_MIN_SPEEDUP = 1.05
-
-# How many forward+backward passes to time per arm when validating. Small: this runs at startup on
-# the critical path, and the effect it checks for is a ~1.75x, not a 2% one.
-_VALIDATE_REPS = 3
-
-# The batch the startup validation compiles at. Small on purpose: see the note in
-# `compile_trainer_extractor`. NOT the production batch, and the log line says so.
-_VALIDATE_BATCH = 64
 
 # A compiled forward that disagrees with eager by more than this is a wrong kernel, not a speedup.
 # This is THE rule at matmul precision 'highest' (full fp32, the default) and it is unchanged there.
@@ -164,24 +131,6 @@ def _largest_divisor_at_most(n: int, cap: int) -> int:
         if n % d == 0:
             return d
     return 1
-
-
-def check_speedup(eager_ms: float, comp_ms: float) -> float:
-    """Pure verdict: the compiled arm must actually be faster. Returns the speedup or raises.
-
-    Separated out so it is testable without a GPU — the rule is the contract, and a rule that can
-    only be exercised on a box with a free card is a rule that gets exercised rarely.
-    """
-    speedup = eager_ms / comp_ms if comp_ms > 0 else 0.0
-    if speedup < _MIN_SPEEDUP:
-        raise CompileTrainerError(
-            f"--compile-trainer: compiled is NOT faster ({eager_ms:.1f} -> {comp_ms:.1f} ms, "
-            f"{speedup:.2f}x < {_MIN_SPEEDUP}x). That means the graph fragmented or the backend fell "
-            f"back per-frame rather than compiling — the measured figure for this arch is ~1.75x. "
-            f"Failing rather than running a compile that costs startup time and buys nothing. Check "
-            f"for a new graph break (`agents/model/extractor_compiles_test.py` asserts 1 graph / "
-            f"0 breaks).")
-    return speedup
 
 
 def check_numerics(err: float, *, precision: str = "highest", eager_err: Optional[float] = None,
@@ -365,30 +314,6 @@ def _readout(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch
     return out
 
 
-def _train_step(model: Any, fe: Any, obs: Any, legal_mask: Any) -> Dict[str, "torch.Tensor"]:
-    """The TRAIN graph: one forward+backward of the gate's PROBE loss
-    (`compile_gate_probe.gate_loss`: the features, the masked legal log-probs, V and every
-    graph-carrying stash tensor — gen3_gate_grad_coverage_v1), read as the forward features, the
-    flattened gradient over every POLICY parameter (extractor AND heads; `grad_parameters`), each
-    parameter's size (``grad_sizes``, for the per-parameter rule) and its max|grad|
-    (``grad_absmax``, for the coverage guard)."""
-    params = [p for _, p in grad_parameters(model, fe)]
-    for p in params:
-        p.grad = None
-    loss, pi, vf = gate_loss(model, fe, obs, legal_mask)
-    loss.backward()
-    gs = [(p.grad if p.grad is not None else torch.zeros_like(p)).detach().float().flatten()
-          for p in params]
-    grad = torch.cat(gs)
-    feats = torch.cat([pi.detach().flatten(1), vf.detach().flatten(1)], dim=1).float().clone()
-    for p in params:
-        p.grad = None
-    return {"features": feats, "grad": grad,
-            "grad_sizes": torch.tensor([g.numel() for g in gs], dtype=torch.long),
-            "grad_absmax": torch.stack([g.abs().max() if g.numel() else g.new_zeros(())
-                                        for g in gs]).cpu()}
-
-
 def _cos(a: "torch.Tensor", b: "torch.Tensor") -> float:
     """Cosine in FLOAT64: over ~10^7 fp32 entries an fp32 dot/norm reads > 1 (1.0005 measured on
     the production policy's gradient), which would put the 0.9999 bar inside rounding noise."""
@@ -492,22 +417,13 @@ def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torc
     across rows and its gradient must be non-zero (`VacuousCompileParityError` otherwise; an
     all-zero gradient has cosine 1.0 with anything's zero).
 
-    gen3_gate_grad_coverage_v1: when the arms carry the per-parameter reads (`_train_step` always
-    does), the eager arm must ALSO give a non-zero gradient to all but
-    `compile_gate_probe.MAX_ZERO_GRAD_FRACTION` of the parameters (`VacuousCompileParityError`
-    otherwise), and at fp32 every parameter above the floor is held to `_MAX_PARAM_GRAD_REL`."""
+    When the arms carry per-parameter sizes (``grad_sizes``, region R1's arms do), at fp32 every
+    parameter above the floor is ALSO held to ``param_bar`` (`_param_verdict`)."""
     precision = precision or torch.get_float32_matmul_precision()
-    coverage = None
     if not allow_vacuous:
         _require_informative({"features": eager["features"], "grad": eager["grad"]},
                              {"features": _MAX_NUMERIC_DRIFT, "grad": 0.0},
                              "--compile-trainer parity (train graph)")
-        if "grad_absmax" in eager:
-            try:
-                coverage = coverage_verdict(eager["grad_absmax"], param_names,
-                                            where="--compile-trainer parity (train graph)")
-            except GradCoverageError as exc:
-                raise VacuousCompileParityError(str(exc)) from exc
     if precision == "highest":
         feat = check_numerics(float((compiled["features"] - eager["features"]).abs().max()),
                               precision=precision, what="train features")
@@ -521,7 +437,7 @@ def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torc
         per_param = _param_verdict(compiled, eager, param_names, allow_vacuous=allow_vacuous,
                                    bar=param_bar)
         return "; ".join(x for x in (feat, f"grad cosine {cos:.6f} >= {_MIN_GRAD_COSINE}",
-                                     per_param, coverage) if x)
+                                     per_param) if x)
     if reference is None:
         raise CompileTrainerError(
             f"--compile-trainer: matmul precision {precision!r} but the train graph has no fp32 "
@@ -540,7 +456,7 @@ def train_verdict(*, eager: Dict[str, "torch.Tensor"], compiled: Dict[str, "torc
             f"--compile-trainer: the compiled TRAIN graph's gradient DISAGREES with the fp32 "
             f"reference beyond TF32 rounding at matmul precision {precision!r} — {rule} FAILED. "
             f"A faster wrong model is not a win — investigate before re-enabling.")
-    return "; ".join(x for x in (feat, rule, coverage) if x)
+    return "; ".join(x for x in (feat, rule) if x)
 
 
 def resolve_device(fe: Any) -> "torch.device":
@@ -549,93 +465,16 @@ def resolve_device(fe: Any) -> "torch.device":
     return next(fe.parameters()).device  # type: ignore[no-any-return]
 
 
-def _one_step(fe: Any, obs: Any) -> Tuple["torch.Tensor", "torch.Tensor"]:
-    """One forward + backward through the extractor, the shape the PPO step actually runs."""
-    fe.zero_grad(set_to_none=True)
-    pi, vf = fe(obs)
-    (pi.square().mean() + vf.square().mean()).backward()
-    return pi, vf
-
-
-def _time_steps(fe: Any, obs: Any, reps: int) -> float:
-    for _ in range(2):                       # warm: the first call pays tracing + codegen
-        _one_step(fe, obs)
-    if obs["observation"].is_cuda:
-        torch.cuda.synchronize()
-    best = float("inf")
-    for _ in range(reps):
-        t0 = time.perf_counter()
-        _one_step(fe, obs)
-        if obs["observation"].is_cuda:
-            torch.cuda.synchronize()         # async: else we time the LAUNCH, not the work
-        best = min(best, time.perf_counter() - t0)
-    return best * 1000.0
-
-
-_Arm = Tuple[Dict[str, "torch.Tensor"], Dict[str, "torch.Tensor"],
-             Optional[Dict[str, "torch.Tensor"]], Optional[Dict[str, "torch.Tensor"]]]
-
-
-def _gate_arm(model: Any, fe: Any, obs: Any, legal_mask: Any, precision: str) -> _Arm:
-    """One arm of the gate through whatever `fe.forward` is installed: ``(read, train, read32,
-    train32)`` — the decision readout and the train step at the process precision, plus the same
-    two at 'highest' when that precision is reduced (else None). For the EAGER arm the fp32 pair is
-    the reference; for the COMPILED arm it is the same trace's fp32 graph."""
-    read, train = _readout(model, fe, obs, legal_mask), _train_step(model, fe, obs, legal_mask)
-    read32 = train32 = None
-    if precision != "highest":
-        with _matmul_precision("highest"):
-            read32 = _readout(model, fe, obs, legal_mask)
-            train32 = _train_step(model, fe, obs, legal_mask)
-    return read, train, read32, train32
-
-
-def _arm_vacuity(arm: _Arm, precision: str, param_names: Optional[List[str]]) -> Optional[str]:
-    """``None`` when ``arm`` (an EAGER arm) is informative on every rule `_arm_verdicts` applies, else
-    the vacuity refusal's text. Judged by running the rules on the arm against ITSELF: every numeric
-    delta is exactly 0, so the only thing that can raise is a vacuity guard."""
-    try:
-        _arm_verdicts(arm, arm, precision, param_names=param_names, param_bar=_MAX_PARAM_GRAD_REL)
-    except VacuousCompileParityError as exc:
-        return str(exc).split(". A quantity")[0]
-    return None
-
-
-def _arm_verdicts(eager: _Arm, comp: _Arm, precision: str, *,
-                  allow_vacuous: bool = False,
-                  param_names: Optional[List[str]] = None,
-                  param_bar: float = _MAX_PARAM_GRAD_REL_TRAINED) -> List[str]:
-    """Every rule over one (eager, compiled) pair of arms. Raises `CompileTrainerError`."""
-    e_read, e_train, ref_read, ref_train = eager
-    c_read, c_train, c_read32, c_train32 = comp
-    rules = decision_verdicts(eager=e_read, compiled=c_read, reference=ref_read,
-                              precision=precision, allow_vacuous=allow_vacuous)
-    rules.append(train_verdict(eager=e_train, compiled=c_train, reference=ref_train,
-                               precision=precision, allow_vacuous=allow_vacuous,
-                               param_names=param_names, param_bar=param_bar))
-    if c_read32 is not None and ref_read is not None and ref_train is not None \
-            and c_train32 is not None:
-        rules += ["[same graph at fp32] " + r for r in decision_verdicts(
-            eager=ref_read, compiled=c_read32, precision="highest", allow_vacuous=allow_vacuous)]
-        rules.append("[same graph at fp32] " + train_verdict(
-            eager=ref_train, compiled=c_train32, precision="highest",
-            allow_vacuous=allow_vacuous, param_names=param_names, param_bar=param_bar))
-    return rules
-
-
-#: Batch sizes the COMPILED learner forward never serves (`gen3_batch1_eager_v1`, Lane K): a call at
-#: one of these batch sizes runs the extractor's EAGER forward (same parameters, same autograd).
+#: Batch sizes the compiled rollout region R0 never serves (`gen3_batch1_eager_v1`, Lane K): a call at
+#: one of these batch sizes runs the policy's EAGER rollout core (same parameters, same autograd).
 #:
 #: WHY batch 1. On torch 2.8.0+cu126 a batch-1 CUDA eval/no-grad graph of the production extractor
 #: does not LOWER (Triton `CompilationError`, "'constexpr_type' object has no attribute 'is_block'" on
-#: a fully-constant `tl.broadcast_to` index — the K1 finding; batch 2 and 4 compile, and 2.5.1
-#: compiles batch 1). Batch 1 reaches the learner process twice, both OFF the hot path: the
-#: truncated-episode `predict_values` under `--critic shaped` (rare) and the trainer's in-process
-#: FINAL EVALUATION (after `learn()` returns). Eager costs ~18 ms per batch-1 forward and nothing
-#: else; padding to batch 2 would have to slice every per-forward extractor stash back to one row.
-#: So batch 1 is never a compiled signature — on either torch, one rule, nothing version-keyed — and
-#: the declared signature table (the prewarm) contains none. `compile_trainer_test` pins the routing;
-#: the CUDA test `compile_batch1_cuda_test` (2.8, `slow`, GPU tier) fails on its revert.
+#: a fully-constant `tl.broadcast_to` index — the K1 finding; batch 2 and 4 compile). Batch 1 reaches
+#: the learner process only OFF the hot path (a `--debug` single-env rollout; the trainer's in-process
+#: final evaluation). Eager costs ~18 ms per batch-1 forward and nothing else. So batch 1 is never a
+#: compiled signature, and the declared signature table (`compile_regions.prewarm_calls`) contains
+#: none; `compile_regions_test` pins the route.
 EAGER_BATCHES = frozenset({1})
 
 
@@ -646,265 +485,9 @@ def _rows(obs: Any) -> int:
     return int(x.shape[0])
 
 
-def route_small_batches_eager(fe: Any, compiled: Callable[..., Any]) -> Callable[..., Any]:
-    """The callable `compile_trainer_extractor` installs as ``fe.forward``: ``compiled`` for every
-    batch except `EAGER_BATCHES`, which run the class's own (eager) forward. Pure dispatch — no
-    numerics, no extra dynamo frame (the batch-size test runs in Python, outside the graph)."""
-    cls_forward = type(fe).forward
-
-    def forward(obs: Any) -> Any:
-        if _rows(obs) in EAGER_BATCHES:
-            return cls_forward(fe, obs)
-        return compiled(obs)
-    forward._gen3_compiled = compiled                                   # type: ignore[attr-defined]
-    return forward
-
-
-def compile_trainer_extractor(model: Any, enabled: bool, *, batch: Optional[int] = None,
-                              emit: Optional[Callable[[str], None]] = None,
-                              regions_follow: bool = False) -> Optional[float]:
-    """Compile `model.policy.features_extractor.forward` in place. Returns the measured speedup.
-
-    Returns None when `enabled` is False (a true no-op — nothing is touched, so an off run is
-    byte-identical). Raises `CompileTrainerError` on ANY failure, including a compile that does not
-    actually go faster.
-
-    `emit` is an optional one-arg callable for the launcher event stream; stderr is used regardless.
-
-    Patches the BOUND `fe.forward`, never the module. `torch.compile(module)` would wrap it in an
-    `OptimizedModule` and prefix every `state_dict` key with `_orig_mod.`, which would land in the
-    next checkpoint and make it unloadable by anything else — the same reason the opponent path
-    patches the bound method. `save_model_snapshot` -> `model.save()` writes `policy.state_dict()`,
-    so the keys are what ends up on disk; `compile_trainer_test.py` pins that they are unchanged and
-    that a save/reload round-trip still works.
-    """
-    if not enabled:
-        return None
-    # K3 (gen3_hermetic_compile_cache_v1): the learner compiles into the RUN's own cache (declared
-    # by the trainer before this), or a private one — never torch's shared default.
-    from agents.model.compile_cache import ensure_hermetic_cache
-    ensure_hermetic_cache("learner compile")
-
-    # VALIDATE AT A SMALL, SAFE BATCH — and label the number with the shape it was measured at.
-    #
-    # This was `model.batch_size` for exactly one afternoon, and it BROKE STARTUP — a gen-10 launch
-    # that had been running happily at 935 fps refused to start. The cause is now KNOWN and it is not
-    # subtle: **validating at the train batch needs MORE GPU memory than training itself does.**
-    # Validation runs the arm eager AND compiled in one process, with Inductor's compile workspace on
-    # top; training only ever needs one of them. At batch 4096 that exceeds the card and the allocator
-    # fails — surfacing first as a mystifying `CUDA error: invalid configuration argument`, and as a
-    # plain `OutOfMemoryError` once the obs was valid enough to get further. So the small batch is not
-    # a shortcut around an unexplained bug; it is the only shape this check can afford.
-    #
-    # The validation exists to answer "did the compile WORK", not "how fast is it in production", and
-    # a small batch answers that. The cost is one extra graph shape at startup, which is cheap:
-    # dynamo converges over repeated alternation and then stops recompiling (measured — see
-    # `check_shape_stability`). The honesty problem was never the batch; it was reporting a
-    # batch-64 ratio as if it were the production one. So the SHAPE IS NAMED in the log line.
-    if batch is None:
-        batch = _VALIDATE_BATCH
-
-    def _say(msg: str) -> None:
-        print(msg, flush=True)
-        if emit is not None:
-            try:
-                emit(msg)
-            except Exception:
-                pass                          # a diagnostic must never break the run
-
-    policy = getattr(model, "policy", None)
-    fe = getattr(policy, "features_extractor", None)
-    if fe is None:
-        raise CompileTrainerError(
-            "--compile-trainer: this policy has no `features_extractor`. The flag compiles the "
-            "Gen3 extractor specifically; it cannot be used with a stock SB3 policy.")
-
-    device = resolve_device(fe)
-    if device.type != "cuda":
-        raise CompileTrainerError(
-            f"--compile-trainer requires CUDA, but the model is on {device.type!r}.\n"
-            "This is not a conservatism: the CPU BACKWARD provably does not lower — Inductor's C++ "
-            "backend asserts on the damage operator's atomic_add scatter "
-            "(`codegen/cpp.py: assert mode is None`), pinned by "
-            "`agents/model/extractor_compiles_test.py::test_cpu_backward_still_does_not_compile`.\n"
-            "Pass --device cuda, or drop --compile-trainer. (--compile-opponents is the CPU-side "
-            "flag and is unaffected.)")
-
-    if regions_follow:
-        # gen3_one_gate_per_region_v1 (2026-10-01; owner: "adjust the conformance tests as you see
-        # fit"): on torch 2.8 the learner compiles as its DECLARED REGIONS at `arm_compile_sentinel`,
-        # which uninstalls this function's extractor compile — so its gate judged a graph production
-        # never runs, for ~2 of the ~5 startup minutes. The regions' own gate (R1 on the real loss,
-        # R0's decision readout, a perturbed pass for fresh weights) is the one startup check.
-        _say("⚡ [CompileTrainer] ON — the learner compiles as its DECLARED REGIONS (R0, R1; torch "
-             "2.8) at the compile sentinel, gated there; the extractor-only gate is not run "
-             "(gen3_one_gate_per_region_v1)")
-        return None
-    obs_dim = None
-    for attr in ("obs_dim", "observation_dim"):
-        obs_dim = getattr(fe, attr, None)
-        if isinstance(obs_dim, int):
-            break
-    if not isinstance(obs_dim, int):
-        layout = getattr(fe, "layout", None)
-        obs_dim = (layout or {}).get("total_dim") if isinstance(layout, dict) else None
-    if not isinstance(obs_dim, int):
-        raise CompileTrainerError(
-            "--compile-trainer: could not determine the extractor's observation width, so the "
-            "compile could not be validated. Refusing to enable it unvalidated.")
-
-    was_training = fe.training
-    fe.train()                                 # the backward path is what we are compiling
-    # gen3_compile_parity_real_obs_v1: REAL observation rows, never zeros. Until 2026-09-28 this
-    # probe was an all-zero obs, on which the single-graph CUDA compile agreed with eager to 4.8e-7
-    # while it was off by 7.65 on real rows (70.9% argmax agreement, gradient cosine 0.778) — zero
-    # obs exercise no masking, no top-K seat selection and no edge family. The rows are a committed
-    # fixture of reproducible bridge-battle states (`compile_parity_fixture`); a missing or stale
-    # fixture REFUSES rather than falling back to zeros.
-    obs, legal_mask = _parity_obs(obs_dim, batch, device)
-    # …and every FLAG-GATED Dict key this extractor's forward reads, from the declared registry.
-    # dynamo guards on a dict's KEY SET, so an under-built warmup is either a crash (the privileged
-    # value route RAISES on a missing `opp_true_team` — the ai_v12_14_ladder_truevalue launch) or a
-    # full re-trace on the first live batch. Never add a key here by hand.
-    from agents.model.extra_obs_keys import zero_extra_obs
-    obs.update(zero_extra_obs(fe, batch=batch, device=device))
-
-    original = fe.forward
-    precision = torch.get_float32_matmul_precision()
-    # gen3_fresh_parity_probe_v1: the module whose parameters a FRESH-weights pass perturbs — the
-    # whole policy (extractor AND heads) when there is one, else the extractor.
-    probe_module = policy if isinstance(policy, torch.nn.Module) else fe
-    param_names = [n for n, _ in grad_parameters(model, fe)]
-    fresh: Optional[str] = None
-    # gen3_compile_sentinel_v1: phase 1 of `compile_control` — the gate compiles FREELY, with the
-    # cache-limit detector already listening (it also sets suppress_errors=False: a partial compile
-    # must be LOUD). Phase 2 (`reset`, dropping every graph compiled here) and 3-4 (prewarm, lock)
-    # run in `arm_compile_sentinel`, after grad checkpointing is applied and before `learn()`.
-    from agents.model.compile_control import control
-    with control(emit).gate():
-        try:
-            eager_ms = _time_steps(fe, obs, _VALIDATE_REPS)
-            # The EAGER arm: the deployed function's decision readout and its train-step gradient,
-            # plus (reduced precision only) the same two at fp32 — the reference both arms are
-            # measured against. All taken BEFORE the compile is installed (eager by construction).
-            eager_arm = _gate_arm(model, fe, obs, legal_mask, precision)
-            # gen3_fresh_parity_probe_v1: FRESH weights (the zero-init pointer head makes every
-            # legal log-prob -log(n_legal)) cannot judge the decision readout. Detect it on the
-            # eager arm and ALSO run both arms on a seeded perturbation of the SAME parameters —
-            # in place, restored bit-exactly, private RNG — so the graph judged is the one that
-            # ships. `decision_verdicts` refuses a vacuous comparison, so this cannot be skipped.
-            fresh = fresh_reason({k: v for k, v in eager_arm[0].items() if k in _FP32_TOL},
-                                 _FP32_TOL)
-            p_eager_arm = None
-            p_scale: Optional[float] = None
-            p_seed, p_k = PERTURB_SEED, 0
-            if fresh is not None:
-                # gen3_parity_perturb_ladder_v1: climb the DECLARED ladder of (scale, seed) rungs
-                # to the first whose EAGER arm is informative on every rule; a COLLAPSED critic (a
-                # saturated win-prob head) can stay vacuous on V at the first, fresh-weights rung.
-                # None ⇒ refuse: the ladder never licenses a vacuous pass.
-                tried = []
-                try:
-                    ladder = ladder_at(precision)
-                except KeyError as exc:
-                    raise CompileTrainerError(f"--compile-trainer: {exc}") from exc
-                for scale, k in ladder:
-                    with perturbed_parameters(probe_module, seed=rung_seed(k), scale=scale):
-                        arm = _gate_arm(model, fe, obs, legal_mask, precision)
-                    why = _arm_vacuity(arm, precision, param_names)
-                    if why is None:
-                        p_eager_arm, p_scale, p_seed, p_k = arm, float(scale), rung_seed(k), int(k)
-                        break
-                    tried.append(f"scale {scale:g} seed+{k}: {why}")
-                if p_eager_arm is None:
-                    raise VacuousCompileParityError(
-                        f"--compile-trainer parity: VACUOUS on the real weights ({fresh}) and on "
-                        f"every rung of the perturbation ladder {ladder} ((scale, seed offset) "
-                        f"at or under matmul precision {precision!r}'s scale cap; seed "
-                        f"{PERTURB_SEED}) — {'; '.join(tried)}. Refusing: a comparison that does "
-                        f"not vary cannot tell a miscompile from a match.")
-
-            compiled = torch.compile(original)
-            # `wrap_compiled` records a lock rejection raised through the learner forward before it
-            # propagates (sticky: a caller's `except Exception` cannot hide it — torch >= 2.8's
-            # start callback no longer sees a rejected recompile). Pass-through otherwise.
-            fe.forward = route_small_batches_eager(fe, control(emit).wrap_compiled(compiled))
-            comp_ms = _time_steps(fe, obs, _VALIDATE_REPS)
-            # gen3_tf32_parity_gate_v1: under reduced precision the TF32 rule above can only resolve
-            # a defect larger than ~K x TF32's own rounding (measured: a DROPPED projection bias passes
-            # it). So `_gate_arm` ALSO runs the same compiled callable at 'highest' — dynamo guards on
-            # the TF32 flag, so that is a separate fp32 graph of the SAME trace — and it is held to the
-            # strict fp32 bars against the fp32 eager reference. Every precision-independent graph
-            # defect (a wrong fusion, a dropped term, the single-graph miscompile) fails there at
-            # full resolution.
-            comp_arm = _gate_arm(model, fe, obs, legal_mask, precision)
-            p_comp_arm = None
-            if p_scale is not None:                         # same seed + scale -> same weights
-                with perturbed_parameters(probe_module, seed=p_seed, scale=p_scale):
-                    p_comp_arm = _gate_arm(model, fe, obs, legal_mask, precision)
-        except (CompileTrainerError, ParityFixtureError) as exc:
-            fe.forward = original
-            if isinstance(exc, ParityFixtureError):
-                raise CompileTrainerError(f"--compile-trainer: {exc}") from exc
-            raise
-        except Exception as exc:
-            fe.forward = original
-            # Include the TRACEBACK, not just str(exc). "Bisect the op" is useless advice without a
-            # stack, and the one failure this has actually seen in the wild (a CUDA "invalid
-            # configuration argument") carries its whole diagnosis in the frames — `str(exc)` alone
-            # names no op, no shape and no file.
-            import traceback as _tb
-            _stack = "".join(_tb.format_exception(type(exc), exc, exc.__traceback__))[-3000:]
-            raise CompileTrainerError(
-                f"--compile-trainer: the learner's extractor FAILED to compile — "
-                f"{type(exc).__name__}: {exc}\n\n--- traceback (last frames) ---\n{_stack}\n"
-                "This is fatal by design: falling back to eager here is a ~1.75x throughput regression "
-                "that nothing in the run would surface. Either fix the op that will not lower (bisect "
-                "it — see `src/agents/model/CLAUDE.md`, the species_posterior precedent, where the whole "
-                "'torch cannot compile our model' story was ONE op), or drop --compile-trainer."
-            ) from exc
-        finally:
-            fe.zero_grad(set_to_none=True)
-            probe_module.zero_grad(set_to_none=True)   # the probe loss reaches the heads too
-            if not was_training:
-                fe.eval()
-
-    try:
-        if p_eager_arm is not None and p_comp_arm is not None:
-            # The informative verdict FIRST, with the vacuity guard ON: a perturbation that still
-            # left a quantity constant refuses the launch rather than passing it.
-            rules = [f"[fresh weights, seeded perturbation scale={p_scale:g} seed+{p_k}] " + r
-                     for r in _arm_verdicts(p_eager_arm, p_comp_arm, precision,
-                                            param_names=param_names,
-                                            param_bar=_MAX_PARAM_GRAD_REL)]
-            rules += _arm_verdicts(eager_arm, comp_arm, precision, allow_vacuous=True,
-                                   param_names=param_names)
-        else:
-            rules = _arm_verdicts(eager_arm, comp_arm, precision, param_names=param_names)
-        speedup = check_speedup(eager_ms, comp_ms)
-    except CompileTrainerError:
-        fe.forward = original          # never leave a rejected compile installed
-        raise
-    if fresh is not None:
-        _say(f"[CompileTrainer] FRESH weights ({fresh} on the fixture — vacuous on their own): the "
-             f"parity gate ALSO ran on a seeded perturbation of every policy parameter (seed "
-             f"{p_seed}, scale {p_scale:g} — the first informative (scale, seed offset) rung of "
-             f"{ladder_at(precision)}; restored bit-exactly, private RNG)")
-    # Said on EVERY passing launch (a failure says it in the raised message): which rules ran, at
-    # which precision, and the numbers — so a TF32 run records how close to its bar it sat.
-    _say(f"[CompileTrainer] parity PASS on {batch} REAL obs rows — " + " | ".join(rules))
-
-    prod = int(getattr(model, "batch_size", 0) or 0)
-    shape_note = (f" — VALIDATION shape only; the production batch is {prod} and the measured "
-                  f"speedup there is ~1.75x, NOT this number"
-                  if prod and prod != batch else "")
-    _say(f"[CompileTrainer] ON — learner fwd+bwd {eager_ms:.1f} -> {comp_ms:.1f} ms "
-         f"({speedup:.2f}x) at batch {batch} on {device}{shape_note}")
-    return speedup
-
-
 # ------------------------------------------------------------------------------------------------
-# gen3_compile_sentinel_v1 — phases 2-4 of `compile_control`: reset, prewarm, attach (lock later)
+# gen3_compile_sentinel_v1 — `compile_control`'s phases for the declared regions: reset, install +
+# gate, prewarm, lock, attach
 # ------------------------------------------------------------------------------------------------
 
 def _prewarm_obs(model: Any, batch: int, slice_: int = 0) -> Dict[str, "torch.Tensor"]:
@@ -930,83 +513,67 @@ def _prewarm_obs(model: Any, batch: int, slice_: int = 0) -> Dict[str, "torch.Te
     return out
 
 
-def production_prewarm_calls(model: Any, *, n_envs: int,
-                             batch_size: int) -> List[Tuple[str, Callable[[], None]]]:
-    """Every compiled-extractor signature the learner process reaches in production, in the order
-    production first reaches them (rollout first, so its graph specializes on n_envs as it would).
+def preflight_compile_trainer(model: Any, enabled: bool, *,
+                              emit: Optional[Callable[[str], None]] = None) -> None:
+    """The trainer's compile step for `--compile-trainer`: refuse a learner the declared regions
+    cannot serve, and say what will be compiled. Compiles NOTHING — the regions are installed, gated
+    and prewarmed at `arm_compile_sentinel` (after grad checkpointing, the forward reads it).
 
-    Found by reading every learner-process caller (designs/training/compile_flags.md, "The compile
-    sentinel" — the late-shape table):
-      * rollout `policy(obs)` + end-of-rollout `predict_values`: EVAL, no-grad, batch n_envs;
-      * the update's `evaluate_actions`: TRAIN, grad, batch batch_size (fwd + bwd);
-      * `rank_probe` (first minibatch of every update): TRAIN, no-grad, batch batch_size;
-      * a second TRAIN/grad size (batch_size // 2 — the capacity half-batch cosine) so the train
-        graph is dynamic in batch before the lock: variable-size train callers (td-aux, the
-        distill-anchor fallback) then reuse it;
-    A batch in `EAGER_BATCHES` (batch 1: the `--critic shaped` truncation value, the final
-    evaluation, a `--debug` single-env rollout) never reaches the compiled graph, so it is never
-    prewarmed — `gen3_batch1_eager_v1`.
-    """
-    policy = model.policy
-
-    def _eval_nograd(b: int) -> Callable[[], None]:
-        def run() -> None:
-            was = policy.training
-            policy.set_training_mode(False)
-            try:
-                with torch.no_grad():
-                    policy.extract_features(_prewarm_obs(model, b))
-            finally:
-                policy.set_training_mode(was)
-        return run
-
-    def _train(b: int, grad: bool) -> Callable[[], None]:
-        def run() -> None:
-            was = policy.training
-            policy.set_training_mode(True)
-            try:
-                if grad:
-                    pi, vf = policy.extract_features(_prewarm_obs(model, b))
-                    (pi.float().square().mean() + vf.float().square().mean()).backward()
-                else:
-                    with torch.no_grad():
-                        policy.extract_features(_prewarm_obs(model, b))
-            finally:
-                policy.zero_grad(set_to_none=True)
-                policy.set_training_mode(was)
-        return run
-
-    calls: List[Tuple[str, Callable[[], None]]] = [
-        (f"rollout eval/no-grad B={n_envs}", _eval_nograd(n_envs)),
-        (f"update train/grad B={batch_size}", _train(batch_size, True)),
-        (f"rank-probe train/no-grad B={batch_size}", _train(batch_size, False)),
-    ]
-    half = max(2, int(batch_size) // 2)
-    if half != int(batch_size):
-        calls.append((f"capacity train/grad B={half}", _train(half, True)))
-    return [c for c, b in zip(calls, (int(n_envs), int(batch_size), int(batch_size), half))
-            if b not in EAGER_BATCHES]
+    A no-op when `enabled` is False (nothing is touched, so an off run is byte-identical). Raises
+    `CompileTrainerError` on a policy without a features extractor, a non-CUDA learner, or a learner
+    without the micro-step (`_micro_static`: the instrumented PPO's R1 declaration)."""
+    if not enabled:
+        return
+    policy = getattr(model, "policy", None)
+    fe = getattr(policy, "features_extractor", None)
+    if fe is None:
+        raise CompileTrainerError(
+            "--compile-trainer: this policy has no `features_extractor`. The flag compiles the "
+            "Gen3 learner's declared regions; it cannot be used with a stock SB3 policy.")
+    device = resolve_device(fe)
+    if device.type != "cuda":
+        raise CompileTrainerError(
+            f"--compile-trainer requires CUDA, but the model is on {device.type!r}.\n"
+            "The compiled learner (the declared regions, their startup gate, the canary and the "
+            "measured speedup) exists on CUDA only; a CPU compiled learner has never been gated. "
+            "Pass --device cuda, or drop --compile-trainer.")
+    if not hasattr(model, "_micro_static"):
+        raise CompileTrainerError(
+            "--compile-trainer: this learner has no micro-step (`_micro_static`), so its declared "
+            "region R1 cannot be built. The learner compiles ONLY as its declared regions (R0 the "
+            "rollout core, R1 the micro-step; the extractor-only compile was deleted 2026-10-02) — "
+            "use the instrumented learner, or drop --compile-trainer.")
+    msg = ("⚡ [CompileTrainer] ON — the learner compiles as its DECLARED REGIONS (R0, R1) at the "
+           "compile sentinel, gated there (gen3_one_gate_per_region_v1)")
+    print(msg, flush=True)
+    if emit is not None:
+        try:
+            emit(msg)
+        except Exception:
+            pass                          # a diagnostic must never break the run
 
 
 def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
-                         emit: Optional[Callable[[str], None]] = None,
-                         regions_requested: bool = False) -> Optional[str]:
-    """Phases 2-4 for a compiled learner: reset the gate's graphs, prewarm every DECLARED production
-    signature, LOCK (K6: before the first real iteration), and attach the per-rollout / per-update
-    checks. A no-op (returns None) when the learner is not compiled.
+                         emit: Optional[Callable[[str], None]] = None) -> str:
+    """Install, gate, prewarm and LOCK the learner's declared regions, and attach the per-rollout /
+    per-update checks. Called only for a compiled learner (`--compile-trainer`).
 
-    MUST run after `_apply_grad_checkpointing` (the forward reads `grad_checkpointing`, so a graph
-    compiled before it is a stale entry) and before `learn()`. Raises `CompileSentinelError`.
+    K8 (gen3_declared_regions_v1): R0 (the rollout core) and R1 (the micro-step), each
+    `fullgraph=True`, gated against eager on real rows, prewarmed at exactly the declared signatures,
+    then locked (K6: before the first real iteration). MUST run after `_apply_grad_checkpointing`
+    (the forward reads `grad_checkpointing`, so a graph compiled before it is a stale entry) and
+    before `learn()`. Raises `CompileTrainerError` (incl. `CompileSentinelError`).
     """
     fe = getattr(getattr(model, "policy", None), "features_extractor", None)
-    if fe is None or ("forward" not in vars(fe) and not regions_requested):
-        return None
+    if fe is None or not hasattr(model, "_micro_static"):
+        raise CompileTrainerError(
+            "--compile-trainer: the compile sentinel needs the instrumented learner (a features "
+            "extractor and the micro-step `_micro_static`) — the declared regions are the only "
+            "compiled learner surface")
     from agents.model.compile_control import control, set_strict_errors
-    # INSTALL here, not only in the extractor gate: on 2.8 that gate no longer runs
-    # (gen3_one_gate_per_region_v1), and `install` is what pins the compile config (K1b's
-    # `donated_buffer=False` — without it the first retain_graph probe crashes: measured on the
-    # consolidation's launch proof, 2026-10-01) and registers the cache-limit detector and the
-    # after-lock compile counter. Idempotent.
+    # `install` pins the compile config (K1b's `donated_buffer=False` — without it the first
+    # retain_graph probe crashes: measured on the consolidation's launch proof, 2026-10-01) and
+    # registers the cache-limit detector and the after-lock compile counter. Idempotent.
     ctl = control(emit).install()
     set_strict_errors()
 
@@ -1021,35 +588,18 @@ def arm_compile_sentinel(model: Any, *, n_envs: int, batch_size: int,
     t0 = time.perf_counter()
     _say(ctl.reset())
     from agents.model import compile_regions as _cr
-    if _cr.regions_supported() and hasattr(model, "_micro_static"):
-        # K8 (gen3_declared_regions_v1): the learner compiles as its DECLARED REGIONS — R0 (the
-        # rollout core) and R1 (the micro-step), each `fullgraph=True` — gated against eager on real
-        # rows, then prewarmed at exactly the declared signatures.
-        _say(f"[CompileRegions] installing {_cr.install(model, emit=emit)} (fullgraph=True, static "
-             f"shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)")
-        _cr.gate_regions(model, n_envs=int(n_envs), batch_size=int(batch_size), say=_say)
-        calls = _cr.prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
-        regions = True
-    else:
-        # torch 2.5.1 (legacy, pinned resumes) or a policy without the micro-step: the extractor-only
-        # compile and its declared signatures. On 2.8 that is a SMALLER compiled surface than
-        # production's — said loudly, never silently (gen3_no_silent_eager_v1).
-        if _cr.regions_supported():
-            _say("⚠️ [CompileRegions] NOT installed on torch 2.8: this policy has no micro-step "
-                 "(`_micro_static`), so only the extractor is compiled — the loss fold and the heads "
-                 "run EAGER (not the production learner)")
-        calls = production_prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size))
-        regions = False
-    line = ctl.prewarm(calls)
-    if regions:
-        _say(_cr.assert_inventory(model, int(n_envs)))
+    _say(f"[CompileRegions] installing {_cr.install(model, emit=emit)} (fullgraph=True, static "
+         f"shapes; the rank probe reads R1, the optimizer step R3 is EAGER by declaration)")
+    _cr.gate_regions(model, n_envs=int(n_envs), batch_size=int(batch_size), say=_say)
+    line = ctl.prewarm(_cr.prewarm_calls(model, n_envs=int(n_envs), batch_size=int(batch_size)))
+    _say(_cr.assert_inventory(model, int(n_envs)))
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     _say(f"{line} — reset + prewarm took {time.perf_counter() - t0:.1f}s")
     # K6: LOCK NOW — before the first real iteration. Every signature the steady state may reach is
     # in the declared table just prewarmed; anything else is an undeclared signature, a typed FATAL
     # naming its failing guard, never a warm-up iteration's silent absorption.
-    ctl.lock("the end of startup (the parity gate, the reset and the prewarm of every declared "
+    ctl.lock("the end of startup (the region gate, the reset and the prewarm of every declared "
              "signature)")
     # K6's IN-RUN PARITY CANARY: the startup gate proves the graph at t=0, the canary at t=N.
     from agents.model.compile_canary import CANARY_EVERY, CANARY_FIRST, GRAD_EVERY, CompileCanary
@@ -1070,6 +620,10 @@ def eager_extractor(fe: Any) -> Iterator[None]:
     For the learner-process callers whose signature can FIRST appear after the lock and cannot be
     pre-warmed — a different obs KEY SET or a batch that may be 1 (search-teacher/OPD, fork-arm
     scoring, the distill grad-projection). Same parameters, same autograd; eager numerics.
+
+    On the learner this is a NO-OP since the extractor-only compile was deleted (2026-10-02): the
+    declared regions compile functions OVER the module and never patch `fe.forward`, so those callers
+    already run eager. It still routes around an instance forward installed by anything else.
     """
     compiled = vars(fe).get("forward") if fe is not None and hasattr(fe, "__dict__") else None
     if compiled is None:                          # not compiled (or no extractor): nothing to route

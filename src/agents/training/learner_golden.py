@@ -20,8 +20,9 @@ winprob``, every belief / intent / win-prob term the production mirror turns on,
 DETERMINISM. CPU, eager, fp32, ``torch.set_num_threads(1)`` for the update (a CPU matmul's reduction
 order can depend on the thread count), numpy + torch seeded before ``train()`` (the minibatch shuffle
 is ``np.random.permutation``). Exact bytes are only promised WITHIN one torch build, so the golden is
-KEYED BY ``torch.__version__``: each interpreter the tests run under (``gen3ai_stable``,
-``gen3ai_torch28``) has its own recorded entry. A missing key FAILS (never skips, never records).
+KEYED BY ``torch.__version__``: the interpreter the tests run under (``gen3ai_torch28``; HEAD runs
+torch >= 2.8 only, so the 2.5.1 entry was dropped 2026-10-02 — its history rows stay) has its own
+recorded entry. A missing key FAILS (never skips, never records).
 
 RE-RECORDING IS EXPLICIT. The test never writes. A deliberate change to the update is recorded with
 

@@ -159,8 +159,8 @@ def _load_policy(ckpt: Optional[str]) -> Any:
 class LearnerSampling:
     """The LEARNER's own sampling forward (M5 Lane G): ``policy(obs, action_masks)`` under ``no_grad`` on
     the device — the call ``collect_rollouts`` makes for every vec step on today's path (a SAMPLE, not
-    the argmax). ``ckpt`` is a checkpoint ``.zip``; ``compile`` applies ``--compile-trainer``'s extractor
-    compile (CUDA only), as a production rollout forward runs. On the rust arm the same checkpoint's
+    the argmax). ``ckpt`` is a checkpoint ``.zip``; ``compile`` installs ``--compile-trainer``'s rollout
+    region R0 (CUDA only), as a production rollout forward runs. On the rust arm the same checkpoint's
     policy is the T2 trainee slot's template (the collector owns that forward)."""
 
     name = "learner_sampling"
@@ -176,9 +176,11 @@ class LearnerSampling:
         self.policy = self.model.policy.eval()
         self.compiled = False
         if compile and str(device).startswith("cuda"):
-            from agents.model.compile_trainer import compile_trainer_extractor
+            # production's rollout compile: region R0 (the whole rollout core, `fullgraph=True`),
+            # never the deleted extractor-only compile (K1, deletion pass 2026-10-02)
+            from agents.model.compile_regions import install_rollout_region
 
-            compile_trainer_extractor(self.model, True)
+            install_rollout_region(self.policy)
             self.compiled = True
         self.load_s = time.perf_counter() - t0
         self.calls = 0

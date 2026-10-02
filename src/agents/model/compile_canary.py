@@ -1,7 +1,7 @@
 """The IN-RUN PARITY CANARY (K6, `gen3_compile_canary_v1`; persistence `gen3_compile_canary_v2`) — the compiled learner is still the same
 function at update N.
 
-THE GAP IT CLOSES. The startup parity gate (`compile_trainer.compile_trainer_extractor`) proves the
+THE GAP IT CLOSES. The startup region gate (`compile_regions.gate_regions`) proves the
 compiled graph equals eager at t = 0, on the committed real-observation fixture. Nothing proved it
 afterwards: a graph that changes behaviour mid-run (a silent recompile into a miscompiling variant, a
 cache artifact served under a key that omitted a setting — the K1b class — or a kernel that goes bad
@@ -16,8 +16,8 @@ never be an undeclared compile itself):
   * the DECISION readout (masked legal log-probs, V) at the ROLLOUT signature — eval / no-grad /
     batch `n_envs` — compiled vs eager;
   * the TRAIN graph at the UPDATE signature — train / grad / batch `batch_size` — compiled vs
-    eager: region R1's loss and every policy gradient on K8 (the per-parameter bar chosen by
-    `compile_regions.weights_regime`), the gate's probe loss on the legacy extractor compile.
+    eager: region R1's loss and every policy gradient (the per-parameter bar chosen by
+    `compile_regions.weights_regime`).
 
 The bars are the startup gate's (`decision_verdicts`, `train_verdict`; the TF32 rule against an EAGER
 fp32 reference under `--matmul-precision high` — the gate's extra "same graph at fp32" arm is NOT
@@ -45,7 +45,7 @@ is the run's, not the process's).
 
 WHAT IT DOES NOT DO: change training. It runs under `torch.random.fork_rng`, restores the policy's
 training mode, and leaves every `.grad` as it found it (None between updates); the train-graph check
-reads gradients through `.backward()` on the gate's probe loss and clears them. Cost (measured on the
+reads gradients through `.backward()` on R1's micro-step loss and clears them. Cost (measured on the
 production surface by the K6 smoke, see `designs/training/learner_lifecycle.md`): one eager + one
 compiled forward at `n_envs` per canary, plus one eager + one compiled forward+backward at
 `batch_size` every `GRAD_EVERY` canaries.
@@ -84,16 +84,6 @@ FATAL_CHECKPOINT = "final_model_canary_fatal"
 
 class CompileCanaryError(ct.CompileTrainerError):
     """The compiled learner no longer equals eager on the fixture at the startup gate's bars."""
-
-
-def _fixture_obs(model: Any, batch: int, slice_: int = 0) -> Any:
-    """The committed real-obs rows at ``batch`` as the policy's full obs dict (every key of its
-    observation space — the declared signature's key set), plus their legal masks (numpy bool)."""
-    obs = ct._prewarm_obs(model, int(batch), slice_)
-    fe = model.policy.features_extractor
-    obs_dim = int(obs["observation"].shape[-1])
-    _, mask = ct._parity_obs(obs_dim, int(batch), ct.resolve_device(fe), slice_)
-    return obs, mask
 
 
 def _run_dir(model: Any) -> Optional[str]:
@@ -187,10 +177,7 @@ class CompileCanary:
         devices = [torch.cuda.current_device()] if torch.cuda.is_available() else []
         try:
             with torch.random.fork_rng(devices=devices):
-                from agents.model import compile_regions as cr
-                if cr.installed(model):
-                    return self._regions(model, precision, grad, out, slice_)
-                return self._extractor(model, precision, grad, out, slice_)
+                return self._regions(model, precision, grad, out, slice_)
         finally:
             policy.set_training_mode(was_training)
             for p in policy.parameters():
@@ -322,39 +309,3 @@ class CompileCanary:
             out["compile/canary_grad_cosine"] = ct._cos(comp["grad"], eager["grad"])
         return rules
 
-    def _extractor(self, model: Any, precision: str, grad: bool, out: Dict[str, float],
-                   slice_: int = 0) -> list:
-        """The legacy extractor-only compile (torch 2.5.1): the gate's own readout and train step."""
-        policy = model.policy
-        fe = policy.features_extractor
-        rules = []
-        obs, mask = _fixture_obs(model, self.n_envs, slice_)
-        policy.set_training_mode(False)
-        c_read = ct._readout(model, fe, obs, mask)
-        with ct.eager_extractor(fe):
-            e_read = ct._readout(model, fe, obs, mask)
-            ref_read = None
-            if precision != "highest":
-                with ct._matmul_precision("highest"):
-                    ref_read = ct._readout(model, fe, obs, mask)
-        rules += ct.decision_verdicts(eager=e_read, compiled=c_read, reference=ref_read,
-                                      precision=precision, allow_vacuous=True)
-        for key in ("features", "legal_logprob", "value"):
-            if key in e_read and key in c_read:
-                out[f"compile/canary_max_abs_{key}"] = float((c_read[key] - e_read[key]).abs().max())
-        if grad:
-            tobs, tmask = _fixture_obs(model, self.batch_size, slice_)
-            policy.set_training_mode(True)
-            names = [n for n, _ in ct.grad_parameters(model, fe)]
-            c_train = ct._train_step(model, fe, tobs, tmask)
-            with ct.eager_extractor(fe):
-                e_train = ct._train_step(model, fe, tobs, tmask)
-                ref_train = None
-                if precision != "highest":
-                    with ct._matmul_precision("highest"):
-                        ref_train = ct._train_step(model, fe, tobs, tmask)
-            rules.append(ct.train_verdict(eager=e_train, compiled=c_train, reference=ref_train,
-                                          precision=precision, allow_vacuous=True, param_names=names,
-                                          param_bar=ct._MAX_PARAM_GRAD_REL_TRAINED))
-            out["compile/canary_grad_cosine"] = ct._cos(c_train["grad"], e_train["grad"])
-        return rules

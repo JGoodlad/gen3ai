@@ -70,7 +70,7 @@ def _maybe_compile_trainer(model, args) -> None:
     corrupt every checkpoint of the run — a compiled callable leaking into the saved state_dict.
     """
     from agents.model.compile_trainer import (CompileTrainerError, check_shape_stability,
-                                               compile_trainer_extractor)
+                                               preflight_compile_trainer)
     try:
         if getattr(args, "compile_trainer", False):
             # Decidable at startup, so decide it at startup: a config that would feed the compiled
@@ -85,25 +85,17 @@ def _maybe_compile_trainer(model, args) -> None:
         # compile_trainer already prints to stdout — so passing emit duplicated every line in a
         # standalone run. send_event is event-only, so the launcher panel still gets it and a
         # standalone run says it once.
-        compile_trainer_extractor(model, getattr(args, "compile_trainer", False),
-                                  emit=send_event, regions_follow=_regions_follow(model))
+        preflight_compile_trainer(model, getattr(args, "compile_trainer", False), emit=send_event)
     except CompileTrainerError as exc:
         print(f"\n[CompileTrainer] FATAL: {exc}", file=sys.stderr, flush=True)
         send_event(f"[CompileTrainer] FATAL: {exc}")   # stderr above; this is the launcher panel
         sys.exit(TrainExitCode.FATAL_CONFIG)
 
 
-def _regions_follow(model) -> bool:
-    """torch 2.8 + a learner with the micro-step: the learner compiles as its declared REGIONS at
-    the sentinel, so the extractor-only gate is not run (gen3_one_gate_per_region_v1)."""
-    from agents.model import compile_regions as cr
-    return bool(cr.regions_supported() and hasattr(model, "_micro_static"))
-
-
 def _arm_compile_sentinel(model, args) -> None:
-    """gen3_compile_sentinel_v1 — phases 2-4 of `agents.model.compile_control` for a compiled
-    learner: drop the startup gate's graphs (`torch._dynamo.reset()`), prewarm every production
-    signature, and attach the per-rollout / per-update checks + the lock after the first update.
+    """gen3_compile_sentinel_v1 — `agents.model.compile_control`'s phases for a compiled learner:
+    reset dynamo, install + gate the DECLARED REGIONS (R0, R1), prewarm every declared signature,
+    lock, and attach the per-rollout / per-update checks.
 
     Placed AFTER `_apply_grad_checkpointing` (the forward reads that attribute, so anything compiled
     before it is a stale cache entry) and before `learn()`. No-op when the learner is not compiled.
@@ -125,8 +117,7 @@ def _arm_compile_sentinel(model, args) -> None:
         sys.exit(TrainExitCode.FATAL_CONFIG)
     try:
         arm_compile_sentinel(model, n_envs=int(getattr(model, "n_envs", 0) or args.n_envs),
-                             batch_size=int(model.batch_size), emit=send_event,
-                             regions_requested=_regions_follow(model))
+                             batch_size=int(model.batch_size), emit=send_event)
     except CompileTrainerError as exc:
         print(f"\n[CompileSentinel] FATAL: {exc}", file=sys.stderr, flush=True)
         send_event(f"[CompileSentinel] FATAL: {exc}")

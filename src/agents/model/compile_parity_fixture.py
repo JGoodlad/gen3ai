@@ -1,11 +1,11 @@
-"""The REAL observation rows `--compile-trainer`'s startup parity gate runs on (gen3_compile_parity_real_obs_v1).
+"""The REAL observation rows `--compile-trainer`'s compile gates (the region gate, the canary) run on (gen3_compile_parity_real_obs_v1).
 
 WHY REAL ROWS, and why this is a committed file rather than zeros. Until 2026-09-28 the gate probed
 the compiled learner with an ALL-ZERO observation. Zero obs exercise none of the masking, none of the
 top-K seat selection and none of the edge families (no opponent, no moves, no history), and on them
 the compiled extractor agreed with eager to 4.8e-7 — while on REAL rows the same compiled graph was
 off by up to 7.65 on pi_features, 70.9% argmax agreement, gradient cosine 0.778 (CUDA Inductor
-codegen defect; `team_transformer`'s gen3_inductor_trunk_split_v1 note has the measurement). A probe
+codegen defect on torch 2.5.1, worked around there by the since-deleted gen3_inductor_trunk_split_v1). A probe
 that cannot see the failure is not a gate. So the gate runs on rows a real battle produced.
 
 WHERE THE ROWS COME FROM. Reproducible in-process bridge battles (`record_fixture_battle`: pinned
@@ -33,7 +33,7 @@ import numpy as np
 # Ships BESIDE this module (a module locating its own data file, not repo-root discovery).
 FIXTURE_PATH = Path(__file__).with_name("compile_parity_obs.npz")
 
-# How many rows the fixture holds. The gate validates at `_VALIDATE_BATCH` (64) of them.
+# How many rows the fixture holds (a larger batch tiles them, `compile_trainer.fixture_index`).
 N_ROWS = 64
 # The reproducible battles the rows come from (`record_fixture_battle` keys).
 BATTLE_KEYS = (0, 1, 2, 3, 4, 5, 6, 7)

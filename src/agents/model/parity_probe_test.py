@@ -8,13 +8,10 @@ The learner's startup compile gate runs on exactly those weights at every FRESH 
 These tests pin: the premise (a fresh production policy IS vacuous on the committed fixture, and the
 seeded perturbation is NOT); the fail-closed guard (`decision_verdicts` / `train_verdict` refuse a
 vacuous comparison); the perturbation's hygiene (bit-exact restore, the global RNG untouched,
-deterministic); and the WIRING through `compile_trainer_extractor` itself — a miscompile that only
-the pointer head can see (the per-action move cells it reads from the extractor's stash) is REFUSED
-on fresh weights. Reverting the gate's fresh path lets that miscompile through (see the last test).
+deterministic). The WIRING of the fresh path through the startup gate is `compile_regions_test`'s
+(the region gate: R1 on fresh weights is also judged on a perturbation).
 
-CPU, routine tier: the gate is driven with the device, the timings and `torch.compile` stubbed, the
-same seam `compile_trainer_test`'s TF32 wiring test uses (the CPU backward does not lower, so the
-real compile is CUDA-only; this is the control flow + verdicts on the REAL production policy).
+CPU, routine tier, on the REAL production policy.
 """
 from __future__ import annotations
 
@@ -26,8 +23,7 @@ import torch
 
 from agents.model import parity_probe as pp
 from agents.model.compile_trainer import (_FP32_TOL, _readout, CompileTrainerError,
-                                          VacuousCompileParityError, compile_trainer_extractor,
-                                          decision_verdicts, train_verdict)
+                                          VacuousCompileParityError, decision_verdicts, train_verdict)
 from utils.torch_state_guard import torch_globals
 
 _ROWS = 16
@@ -142,78 +138,6 @@ def test_PREMISE_a_fresh_production_policy_is_vacuous_and_its_perturbation_is_no
         assert pp.vacuous_keys(_decision(model, obs, mask), _FP32_TOL) == {}
 
 
-def _drive_gate(monkeypatch, model, compiled_factory, lines):
-    """Run `compile_trainer_extractor` on the real CPU policy with the CUDA-only parts stubbed."""
-    import agents.model.compile_control as cc
-    cc._reset_control_for_tests()
-    fe = model.policy.features_extractor
-    monkeypatch.setattr("agents.model.compile_trainer.resolve_device",
-                        lambda f: torch.device("cuda"))
-    import agents.model.compile_trainer as ct
-    import agents.model.extra_obs_keys as eok
-    cpu = torch.device("cpu")
-    real_obs, real_extra = ct._parity_obs, eok.zero_extra_obs
-    monkeypatch.setattr("agents.model.compile_trainer._parity_obs",
-                        lambda d, b, device: real_obs(d, b, cpu))
-    monkeypatch.setattr("agents.model.extra_obs_keys.zero_extra_obs",
-                        lambda f, batch=1, device=None: real_extra(f, batch=batch, device=cpu))
-    times = iter([20.0, 10.0])
-    monkeypatch.setattr("agents.model.compile_trainer._time_steps", lambda *a, **k: next(times))
-    monkeypatch.setattr("agents.model.compile_trainer.torch.compile",
-                        lambda f, **k: compiled_factory(fe, f))
-    try:
-        return compile_trainer_extractor(model, True, batch=_ROWS, emit=lines.append)
-    finally:
-        if "forward" in vars(fe):
-            del fe.forward
-        cc._reset_control_for_tests()
-
-
-def _pointer_cell_miscompile(fe, original):
-    """A 'compiled' forward whose features and gradient are EXACT but whose per-action move cells
-    — read only by the pointer head, through the extractor's stash — are wrong. On fresh weights
-    the zero-init scorers multiply them by 0, so only a perturbed pass can see it."""
-    def fwd(obs):
-        out = original(obs)
-        pin = fe.stash.pointer_inputs
-        fe.stash.pointer_inputs = pin._replace(move_cells=pin.move_cells * 1.5 + 0.25)
-        return out
-    return fwd
-
-
-def test_the_GATE_refuses_a_pointer_only_miscompile_on_FRESH_weights(monkeypatch, fresh):
-    model, _obs, _mask = fresh
-    before = {k: v.clone() for k, v in model.policy.state_dict().items()}
-    rng = torch.get_rng_state().clone()
-    lines: list = []
-    with pytest.raises(CompileTrainerError, match="DISAGREES.*legal_logprob"):
-        _drive_gate(monkeypatch, model, _pointer_cell_miscompile, lines)
-    assert all(torch.equal(before[k], v) for k, v in model.policy.state_dict().items()), \
-        "the gate's perturbed pass must leave the run's weights bit-identical"
-    assert torch.equal(torch.get_rng_state(), rng), "the gate advanced training's RNG stream"
-
-
-def test_the_GATE_passes_a_correct_compile_on_FRESH_weights_and_says_so(monkeypatch, fresh):
-    model, _obs, _mask = fresh
-    before = {k: v.clone() for k, v in model.policy.state_dict().items()}
-    lines: list = []
-    assert _drive_gate(monkeypatch, model, lambda fe, f: f, lines) == 2.0
-    assert any("FRESH weights" in ln and "legal_logprob" in ln for ln in lines), lines
-    assert any("parity PASS" in ln and "[fresh weights, seeded perturbation scale=0.05 seed+0]" in ln
-               for ln in lines), lines
-    assert all(torch.equal(before[k], v) for k, v in model.policy.state_dict().items())
-
-
-def test_on_INFORMATIVE_weights_the_gate_takes_no_fresh_path(monkeypatch, fresh):
-    model, _obs, _mask = fresh
-    with pp.perturbed_parameters(model.policy, seed=7):    # a stand-in for TRAINED weights
-        lines: list = []
-        assert _drive_gate(monkeypatch, model, lambda fe, f: f, lines) == 2.0
-        assert not any("FRESH weights" in ln for ln in lines), lines
-        with pytest.raises(CompileTrainerError, match="DISAGREES.*legal_logprob"):
-            _drive_gate(monkeypatch, model, _pointer_cell_miscompile, [])
-
-
 def test_the_fixture_rows_carry_multi_action_rows(fresh):
     """The within-row spread needs rows with >= 2 legal actions; the fixture has them."""
     _model, _obs, mask = fresh
@@ -230,7 +154,7 @@ def test_a_single_row_is_judged_on_its_logprobs_only():
 # --------------------------------------------------------------------------- a COLLAPSED critic
 # gen3_parity_perturb_ladder_v1 — a win-prob critic saturated at logit ≈ −9 (the fresh3 shape,
 # `agents.inference.service.flat_weights_test` has the story) stays VACUOUS on V at the fresh-weights
-# scale even over the gate's 16 rows; the gate climbs the declared ladder instead of refusing.
+# scale even over 16 rows: the premise for climbing the declared ladder instead of refusing.
 
 @contextlib.contextmanager
 def _collapsed(model, bias: float = -9.0, gain: float = 0.01):
@@ -245,46 +169,8 @@ def _collapsed(model, bias: float = -9.0, gain: float = 0.01):
         head.load_state_dict(saved)
 
 
-def _win_logit_miscompile(fe, original):
-    """A 'compiled' forward whose win-prob logit is DOUBLED: V' = sigmoid(2·logit). On the collapsed
-    critic (V ≈ 6e-6) it moves V by < 1e-4 — invisible on the real weights — and by ~1e-3 on any
-    informative perturbation."""
-    def fwd(obs):
-        out = original(obs)
-        fe.stash.win_prob_logits = fe.stash.win_prob_logits * 2.0
-        return out
-    return fwd
-
-
 def test_PREMISE_the_collapsed_critic_is_vacuous_on_V_at_the_first_rung(fresh):
     model, obs, mask = fresh
     with _collapsed(model), pp.perturbed_parameters(model.policy, scale=pp.PERTURB_SCALE):
         assert "value" in pp.vacuous_keys(_decision(model, obs, mask), _FP32_TOL)
 
-
-def test_the_GATE_passes_a_correct_compile_on_a_COLLAPSED_critic_above_the_first_rung(
-        monkeypatch, fresh):
-    """Revert the ladder to the single fresh-weights rung ⇒ `VacuousCompileParityError` (a
-    FATAL_CONFIG refusal of a checkpoint whose critic collapsed)."""
-    model, _obs, _mask = fresh
-    with _collapsed(model):
-        before = {k: v.clone() for k, v in model.policy.state_dict().items()}
-        lines: list = []
-        assert _drive_gate(monkeypatch, model, lambda fe, f: f, lines) == 2.0
-        assert all(torch.equal(before[k], v) for k, v in model.policy.state_dict().items())
-    passed = [ln for ln in lines if "parity PASS" in ln]
-    assert passed and "seeded perturbation scale=" in passed[0], lines
-    assert f"seeded perturbation scale={pp.PERTURB_SCALE:g} seed+0]" not in passed[0], \
-        f"the collapsed critic must be judged above the first rung: {passed[0][:200]}"
-
-
-def test_the_GATE_refuses_a_win_logit_miscompile_on_a_COLLAPSED_critic_and_not_as_vacuous(
-        monkeypatch, fresh):
-    """TEETH on flat weights: the doubled win logit is caught on the informative rung as a real
-    divergence. Revert the ladder ⇒ a VACUITY refusal instead (the defect is never judged)."""
-    model, _obs, _mask = fresh
-    with _collapsed(model):
-        with pytest.raises(CompileTrainerError) as ei:
-            _drive_gate(monkeypatch, model, _win_logit_miscompile, [])
-    assert not isinstance(ei.value, VacuousCompileParityError), f"judged vacuous: {ei.value}"
-    assert "DISAGREES" in str(ei.value), ei.value

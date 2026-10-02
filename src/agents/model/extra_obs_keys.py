@@ -31,8 +31,9 @@ second term.
 flag therefore cannot reach a launch without a row in this table.
 
 ⚠️ **ADOPTION IS PARTIAL, and the boundary is deliberate.** Every site a TRAINING RUN reaches now
-builds through this module — the forkserver preload, the round-trip smoke, ``compile_trainer``,
-``compile_opponents`` and ``warmstart``. The OFFLINE audit / probe CLIs still hand-build a one-key
+builds through this module — the forkserver preload, the round-trip smoke, ``compile_opponents``
+and ``warmstart`` (the learner compile's gate and prewarm build every key of the policy's
+observation SPACE, ``compile_trainer._prewarm_obs``). The OFFLINE audit / probe CLIs still hand-build a one-key
 dict (``critic_route_audit``, ``edge_ablation_audit``, ``op_block_split_audit``,
 ``capacity_probes``, ``concat_readout_probe``, ``feature_coverage/_support``, ``cf_terms``,
 ``cf_producer_snapshot``, ``capacity_telemetry``, ``instrumented_ppo/rollout_probes``,

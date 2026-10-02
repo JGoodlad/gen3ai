@@ -20,18 +20,6 @@ from agents.model.arch_constants import (
     TRANSFORMER_FFN_DIM,
 )
 
-# gen3_inductor_trunk_split_v1: split the CUDA-compiled extractor into two graphs at the attention
-# trunk (see the note in `TeamTransformer.forward`) — KEYED ON THE TORCH VERSION (Lane K1). The split
-# works around a torch 2.5.1 CUDA Inductor miscompile of the single fused graph. On a torch listed in
-# `_SPLIT_NOT_NEEDED_ON` the UNSPLIT graph was measured correct on the real-obs parity gate (fp32 and
-# TF32, eval AND train graphs — designs/training/compile_flags.md, "Lane K1") and the split is OFF;
-# on every other torch (2.5.1 included) it stays ON. Still a module-level switch so the
-# revert-must-fail test (`compile_trainer_test`) can flip it.
-_SPLIT_NOT_NEEDED_ON = frozenset({"2.8.0+cu126"})
-_CUDA_TRUNK_SPLIT = torch.__version__ not in _SPLIT_NOT_NEEDED_ON
-
-
-
 
 class BiasedEncoderLayer(torch.nn.Module):
     """gen3_edge_bias_trunk_v1 (v56, Stage 2 of the entity generation): a TransformerEncoderLayer
@@ -376,23 +364,6 @@ class TeamTransformer(torch.nn.Module):
             batch_size, TRANSFORMER_N_HEADS, n_tok, n_tok).contiguous()
         if edge_bias_fn is not None:
             attn_bias = edge_bias_fn(attn_bias)
-
-        # gen3_inductor_trunk_split_v1 — a DELIBERATE graph break, CUDA + compile only. MEASURED
-        # 2026-09-28 (torch 2.5.1+cu121, RTX 3080 Ti, ai_v14_01_base @72M on 3,840 REAL eval-trace
-        # rows, fp32): with the whole extractor as ONE Inductor/Triton graph, the compiled forward
-        # disagreed with eager by up to 7.65 on pi_features (argmax agreement 70.9%, |dV| median
-        # 0.024) — while dynamo backend='eager' and 'aot_eager' matched EXACTLY and CPU Inductor
-        # matched to 3e-5. So it is a CUDA Inductor codegen defect in the single fused graph, and
-        # all-zero obs (the old startup probe) hid it (4.8e-7). A break here — or at the
-        # transformer's start or end — restores parity (1.35e-05); a break after the entity seats,
-        # after unpack or before the projection does NOT. The root-cause op is NOT yet named
-        # (designs/training/compile_flags.md). Eager never reaches this line's effect
-        # (`is_compiling()` is False), so the deployed function is bit-identical; the CPU opponent
-        # compile keeps its one graph. The standing guard is `compile_trainer`'s REAL-obs,
-        # decision-level parity gate, which fails the launch if the split stops being enough.
-        # Lane K1: OFF on torch 2.8.0+cu126 (`_SPLIT_NOT_NEEDED_ON`), where the unsplit graph passed.
-        if _CUDA_TRUNK_SPLIT and attn_bias.is_cuda and torch.compiler.is_compiling():
-            torch._dynamo.graph_break()
 
         # Gradient checkpointing only helps when a graph is being built for backward
         # (the PPO update); under inference's no_grad it would be pure overhead, so gate on

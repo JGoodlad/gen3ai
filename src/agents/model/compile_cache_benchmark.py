@@ -7,9 +7,10 @@
 What a run's STARTUP compiles, each part timed in a FRESH child process (a restart is a new process:
 dynamo's in-memory caches never carry over, only the on-disk cache does):
 
-  * ``learner``  — `compile_trainer_extractor` (the real-obs parity gate: eager vs compiled train /
-                   eval graphs) + `arm_compile_sentinel`'s prewarm of every production signature
-                   (rollout n_envs, the update's micro-batch, the half-batch), CUDA;
+  * ``learner``  — `arm_compile_sentinel`: install the declared regions (R0, R1), their startup
+                   gate against eager, and the prewarm of every declared signature, CUDA, on the K9
+                   golden's production-surface learner (the instrumented PPO — the regions need its
+                   micro-step);
   * ``t2``       — `InferenceService.startup()` at the training shape (a trainee slot + a 20-slot
                    pool group, buckets (8, 48), 8 lanes, backend graph): compile + CUDA-graph capture
                    per slot x bucket + the startup parity gate;
@@ -46,20 +47,17 @@ def _worker(part: str, root: str, device: str) -> Dict[str, Any]:
     from agents.inference.service.fixtures import perturbed_fresh_policy
     out: Dict[str, Any] = {"part": part, "torch": torch.__version__}
     if part == "learner":
-        from agents.model.compile_trainer import arm_compile_sentinel, compile_trainer_extractor
+        from agents.model.compile_trainer import arm_compile_sentinel, preflight_compile_trainer
         from agents.model.parity_probe import perturb_
-        from main.fresh_checkpoint import build_fresh_model
-        model, _, _ = build_fresh_model(0)
+        from agents.training import learner_golden as LG
+        model = LG.build_learner()
         perturb_(model.policy, seed=1000, scale=0.05)
         model.policy.to(device)
         model.device = torch.device(device)
+        preflight_compile_trainer(model, True, emit=None)
         t0 = time.perf_counter()
-        compile_trainer_extractor(model, True, emit=None)
-        out["gate_s"] = time.perf_counter() - t0
-        t1 = time.perf_counter()
-        arm_compile_sentinel(model, n_envs=48, batch_size=2048, emit=None)
-        out["prewarm_s"] = time.perf_counter() - t1
-        out["startup_s"] = out["gate_s"] + out["prewarm_s"]
+        arm_compile_sentinel(model, n_envs=48, batch_size=int(model.batch_size), emit=None)
+        out["startup_s"] = time.perf_counter() - t0
     elif part == "t2":
         from agents.inference.service import InferenceService, ServiceSpec, SlotGroupSpec
         policy = perturbed_fresh_policy(0)
@@ -132,7 +130,7 @@ def run(parts: Sequence[str], rounds: int, device: str, timeout_s: float,
                                contention_before=before)
                     rows.append(res)
                     print(json.dumps({k: res.get(k) for k in ("round", "part", "phase", "base_fs", "startup_s",
-                                                              "gate_s", "prewarm_s", "process_s", "wall_s",
+                                                              "process_s", "wall_s",
                                                               "cache_bytes", "error")}), flush=True)
             finally:
                 for root in roots:

@@ -193,38 +193,6 @@
    "contention": 1.0,
    "detail": ""
   },
-  "src/agents/model/compile_batch1_cuda_test.py::test_batch_1_through_the_compiled_learner_forward_runs_eager_on_cuda": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T10:43:43Z",
-   "duration_s": 65.75,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/compile_batch1_cuda_test.py::test_contract_torch_2_8_cannot_lower_the_batch_1_cuda_graph": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T10:44:46Z",
-   "duration_s": 62.85,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[high]": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T10:42:37Z",
-   "duration_s": 407.74,
-   "contention": 1.08,
-   "detail": ""
-  },
-  "src/agents/model/compile_control_test.py::test_the_production_extractor_locks_with_headroom_at_fp32_and_tf32[highest]": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T10:35:50Z",
-   "duration_s": 382.69,
-   "contention": 1.15,
-   "detail": ""
-  },
   "src/agents/model/compile_prewarm_test.py::test_preload_compiles_single_threaded_end_to_end": {
    "status": "pass",
    "commit": "f5f9225e662becda6462d0d4eaf087820b6014e3",
@@ -238,38 +206,6 @@
    "commit": "ee6a9e6b65672469cc86fe76d9583eacf694e030",
    "at": "2026-10-01T14:27:34Z",
    "duration_s": 43.98,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/compile_trainer_test.py::test_REVERTING_the_trunk_split_FAILS_the_real_obs_gate": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T11:10:45Z",
-   "duration_s": 102.31,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/compile_trainer_test.py::test_compiled_learner_leaves_the_state_dict_and_a_save_reload_intact": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T10:46:28Z",
-   "duration_s": 101.52,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/compile_trainer_test.py::test_every_production_shape_agrees_with_eager": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T10:47:50Z",
-   "duration_s": 82.55,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/model/compile_trainer_test.py::test_tf32_gate_passes_the_real_extractor_and_refuses_a_broken_graph": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T11:08:50Z",
-   "duration_s": 338.22,
    "contention": 1.0,
    "detail": ""
   },
@@ -311,22 +247,6 @@
    "at": "2026-10-01T05:50:52Z",
    "duration_s": 38.5,
    "contention": 1.41,
-   "detail": ""
-  },
-  "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cpu": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T11:02:12Z",
-   "duration_s": 377.53,
-   "contention": 1.0,
-   "detail": ""
-  },
-  "src/agents/training/compiled_train_probes_test.py::test_a_compiled_first_update_with_every_probe_runs_on_cuda": {
-   "status": "pass",
-   "commit": "dcb2d3cad8e3e3b5d25bd879d6b38ed3a0ff98f6",
-   "at": "2026-10-01T11:02:12Z",
-   "duration_s": 386.43,
-   "contention": 1.0,
    "detail": ""
   },
   "src/agents/training/instrumented_ppo_device_batches_test.py::test_on_cuda_the_device_batches_equal_the_host_batches": {

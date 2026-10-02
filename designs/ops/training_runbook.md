@@ -581,14 +581,15 @@ log-probs, V) and on the train graph's gradient; under `--matmul-precision high`
 precision-aware TF32 rule. 🚨 **Every cuda run with the default `--compile-trainer` from `28eaef29`
 (2026-08-17) up to `gen3_inductor_trunk_split_v1` (2026-09-28) trained its LEARNER on a miscompiled
 single CUDA graph** (argmax agreement 70.9%, gradient cosine 0.778 vs eager). Its eval, opponents
-and traces ran the CPU compile and are clean. The split is torch-2.5.1-only: under the
-`gen3ai_torch28` interpreter (torch 2.8, Lane K1) the unsplit graph passed the gate and the split is
-OFF. torch 2.8 is the DEFAULT interpreter since 2026-09-30 (owner); a resume or fork runs on the torch
-its run recorded — the launcher selects `gen3ai_stable` for a 2.5.1 (or unrecorded) run and refuses a
-mismatch `FATAL_CONFIG` unless `--allow-torch-switch` (`src/main/launcher/CLAUDE.md`).
-Detail: `designs/training/compile_flags.md` → "The single-graph CUDA miscompile". And
-`--device cpu` is refused up front, because the CPU backward provably does not lower (Inductor's C++
-backend refuses the damage op's `atomic_add` scatter).
+and traces ran the CPU compile and are clean. The split was torch-2.5.1-only: under torch 2.8 the
+unsplit graph passed the gate, and on 2026-10-02 (deletion pass K1) HEAD dropped torch 2.5.1
+altogether — the split, the extractor-only compile and every 2.5.1 branch are gone, the learner
+compiles only as its declared regions, and the trainer REFUSES torch < 2.8 (`src/utils/torch_floor.py`).
+A resume or fork runs on the torch its run recorded — the launcher selects `gen3ai_stable` for a 2.5.1
+(or unrecorded) run, which therefore resumes only PINNED to its own commit, and refuses a mismatch
+`FATAL_CONFIG` unless `--allow-torch-switch` (`src/main/launcher/CLAUDE.md`). Detail:
+`designs/training/compile_flags.md` → "The single-graph CUDA miscompile". And `--device cpu` is
+refused up front: the compiled learner is gated on CUDA only.
 
 **The DEFAULT yields; the REFUSAL does not.** `auto`/`cuda` with a card ⇒ on; `cpu`, any other
 explicit device, or `--debug` ⇒ off. The auto path *also* runs `check_shape_stability` and stays

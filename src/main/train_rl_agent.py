@@ -121,6 +121,13 @@ from main.train.final_eval import evaluate_model_random
 
 async def main():
     # --- Pre-flight Checks ---
+    # THE TORCH FLOOR (deletion pass K1): HEAD has no torch-2.5.1 code path left; a 2.5.1 run resumes
+    # pinned to its own commit. Refused FIRST, before anything is parsed or created.
+    from utils.torch_floor import refusal as _torch_floor_refusal
+    _why = _torch_floor_refusal()
+    if _why is not None:
+        print(f"\n🛑 [TorchFloor] FATAL: {_why}", file=sys.stderr, flush=True)
+        sys.exit(int(TrainExitCode.FATAL_CONFIG))
     try:
         import tensorboard  # noqa: F401 — imported for its SIDE EFFECT of raising ImportError;
         # this is an availability probe, not a use. The name is deliberately never referenced.

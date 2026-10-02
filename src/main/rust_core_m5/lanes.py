@@ -135,7 +135,7 @@ LANES: Tuple[LaneGate, ...] = (
         "K", "the learner pipeline — torch 2.8 env, diagnostics cadence, compile lifecycle (K1–K10)",
         "K1: the real-obs compile parity gate; K2: learning bit-identical with diagnostics on vs skipped",
         built=True, m5_gate=False,
-        tests=("src/agents/model/compile_control_test.py", "src/agents/training/compiled_train_probes_test.py",
+        tests=("src/agents/model/compile_control_test.py", "src/agents/model/compile_regions_test.py",
                "src/agents/training/diagnostics_cadence_test.py"),
         doc_note="K1 and K2 are BUILT (their paragraphs); K3–K10 are not — the learner benchmark is K's gate"),
 )

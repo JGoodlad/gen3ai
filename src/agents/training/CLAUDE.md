@@ -668,34 +668,30 @@ so no max bar alone separates a one-step-stale rollout) AND its `max` < 0.071 (l
 on < 1 % of rows) — the max PERSISTENT: one violation warns and dumps the rows to
 `<run_dir>/behaviour_violations.jsonl`, FATAL only on 4 consecutive updates, k from the measured
 heavy tail (`designs/training/learner_gates.md`).
-🚨 **`--compile-trainer`'s startup parity gate runs on REAL obs rows**, never zeros. The rows are the
-committed fixture `src/agents/model/compile_parity_obs.npz`; regenerate it with
+🚨 **`--compile-trainer`'s startup gate (the REGION gate, `compile_regions.gate_regions`) runs on REAL
+obs rows**, never zeros. The rows are the committed fixture `src/agents/model/compile_parity_obs.npz`
+(R1 uses the K9 golden's labelled buffer on the production surface); regenerate the fixture with
 `python -m agents.model.compile_parity_fixture --write` after an obs-layout change, and a stale
-fixture REFUSES. It checks four things: features, MASKED legal log-probs, V, and the train graph's
-gradient cosine (≥ 0.9999). **On FRESH weights** (a fresh launch: the zero-init pointer head makes
-every legal log-prob `-log(n_legal)`, so that check cannot fail) it ALSO runs both arms on a seeded,
-bit-exactly-restored perturbation of the policy (`agents.model.parity_probe`,
-`gen3_fresh_parity_probe_v1`), and a vacuous comparison REFUSES rather than passes. The train
-graph's loss reaches the pointer head and every stash readout (`agents.model.compile_gate_probe`,
-`gen3_gate_grad_coverage_v1`). It refuses more than 2% zero-gradient parameters and judges every
-parameter's gradient, not only the global cosine. The CPU `--compile-opponents` path now runs a
-decision-level parity check once per distinct weights (`agents.model.opponent_parity`), which RAISES
-on a mismatch. Under `--matmul-precision high` it switches to the precision-aware TF32
-rule (`e_comp ≤ 4·e_eager + 1e-4` against an fp32 eager reference), plus the same compiled graph
-at fp32 held to the strict bars. **On torch 2.5.1 the GPU learner compile needs its trunk split**
-(`gen3_inductor_trunk_split_v1`): as ONE CUDA Inductor graph it miscompiled on real rows. That
-affected every default cuda run from `28eaef29` (2026-08-17) to 2026-09-28: argmax agreement 70.9%,
-gradient cosine 0.778. The CPU compile (eval, opponents, traces) is clean. **On torch 2.8.0+cu126
-(`gen3ai_torch28`, Lane K1) the split is OFF** — keyed on the torch version, after the unsplit graph
-passed the real-obs gate at fp32 and TF32 on the eval and train graphs. torch 2.8 is the DEFAULT
-interpreter since 2026-09-30 (owner); a resume runs on the torch its run recorded, so a 2.5.1 run
-keeps the split (`designs/training/compile_flags.md` "Lane K1").
+fixture REFUSES. It holds R0's decision readout (MASKED legal log-probs, V) and R1's loss and every
+policy gradient (cosine ≥ 0.9999 plus the per-parameter rule) to eager. **On FRESH weights** (a fresh
+launch: the zero-init pointer head makes every legal log-prob `-log(n_legal)`, so that check cannot
+fail) it ALSO runs on a seeded, bit-exactly-restored perturbation of the policy
+(`agents.model.parity_probe`, `gen3_fresh_parity_probe_v1`), and a vacuous comparison REFUSES rather
+than passes. The CPU `--compile-opponents` path runs a decision-level parity check once per distinct
+weights (`agents.model.opponent_parity`), which RAISES on a mismatch. Under `--matmul-precision high`
+it switches to the precision-aware TF32 rule (`e_comp ≤ 4·e_eager + 1e-4` against an fp32 eager
+reference). 🚨 **HEAD runs torch >= 2.8 ONLY** (deletion pass K1, 2026-10-02): `utils/torch_floor.py`
+exits the trainer `FATAL_CONFIG` on an older torch, because every 2.5.1 path is gone — the
+extractor-only compile and its gate, and the CUDA trunk split (`gen3_inductor_trunk_split_v1`) that
+2.5.1's single Inductor graph needed (it miscompiled on real rows: every default cuda run from
+`28eaef29`, 2026-08-17, to 2026-09-28 — argmax agreement 70.9%, gradient cosine 0.778). A 2.5.1 run
+resumes PINNED to its own commit through the launcher, which selects `gen3ai_stable`
+(`designs/training/compile_flags.md` "Lane K1").
 🚨 **THE COMPILE SENTINEL (`gen3_compile_sentinel_v1`) makes a silent recompile / eager fallback
 FATAL.** `src/agents/model/compile_control.py` is the ONLY runtime module that touches
-`torch._dynamo` — add nothing that does elsewhere. Phases: the gate compiles freely →
-`torch._dynamo.reset()` (the gate's graphs share production's per-code-object `cache_size_limit`
-(2.8: `recompile_limit`) slots: at TF32 they left headroom 1 of 8) → prewarm every DECLARED signature
-(`production_prewarm_calls` is the declaration) → LOCK at the END OF STARTUP, before the first real
+`torch._dynamo` — add nothing that does elsewhere. Phases: `torch._dynamo.reset()` → install + gate
+the DECLARED REGIONS → prewarm every DECLARED signature (`compile_regions.prewarm_calls` is the
+declaration) → LOCK at the END OF STARTUP, before the first real
 iteration (K6; `🧊 [COMPILE LOCK]`) → RELEASE when `learn()` returns (the final eval runs in-process).
 While locked, any recompile, late first compile or cache-limit hit exits `[CompileSentinel] FATAL` /
 `FATAL_CONFIG` (not restarted), and the message NAMES the failing guard (`UNDECLARED SIGNATURE — the
@@ -704,9 +700,10 @@ the compiled learner to eager on the real-obs fixture at the startup gate's bars
 the train graph's gradient). A disagreement is CONFIRMED in the same update (the same rows + an
 independent slice, eager recomputed): confirmed ⇒ checkpoint + `[CompileCanary] FATAL` naming the safe
 rollback point (`<run_dir>/canary_verdicts.jsonl`); unconfirmed ⇒ counted, and two consecutive ⇒ FATAL. The rank probe is HOOK-FREE (a forward
-hook on a compiled module is a guard — the iteration-1 signature `8fc297a2` used to absorb). 🚨 **On torch 2.8 the learner compiles as DECLARED REGIONS** (K8, `agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"): R0 the rollout core and R1 the micro-step, each `fullgraph=True` at ONE declared signature (a ragged micro-batch and batch 1 take the declared eager route); the rank probe reads R1's stashes (no second forward, the spectra on the device); on a CUDA buffer every micro-batch is STAGED to the device by a prefetch thread (`--device-batch staged`, the default since 2026-10-01; `resident` = one device copy of the whole flattened buffer per update, +~1.1 GB of update peak; `instrumented_ppo/device_batches.py`, bit-identical batches in every mode, the same permutation). 🚨 **Startup RUNS one dry update** (`agents/training/update_fit.py`, `gen3_update_fit_v1`): one real `train()` epoch on a fixture rollout of the buffer's full shape, the learner restored bit-identically, and a first update that would not leave 1,024 MiB of device headroom (or OOMs) is `UpdateWontFit` (FATAL_CONFIG) — `designs/training/learner_lifecycle.md` "The update fit check". On 2.8 the extractor-only startup gate is not run — ONE startup gate per region (`gen3_one_gate_per_region_v1`). 🚨 **No region runs eager silently** (`gen3_no_silent_eager_v1`): a compiled-route call whose Python body executes, a ragged tail past one per epoch, or dynamo disabled / errors suppressed / the stance moved under the lock is a typed FATAL; every update logs `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`, `lifecycle/eager_share`, `lifecycle/update_wall_s` (`designs/training/compile_flags.md`). R1's startup gate and the canary judge its per-parameter gradient by WEIGHT REGIME (`compile_regions.weights_regime`: fresh vs trained, measured bars — `designs/training/compile_flags.md`). Code inside R1 must stay a static-shape program (the fold contract above). 🚨 **Every lever R1 reads is DECLARED at startup from the resolved config** (`gen3_r1_declared_levers_v1`): `TrainSetup._r1_levers` is the ONE predicate for the strata and rollout-weight levers (never a rollout's data — an idle strata lever gets neutral ones, bit-identical), and every compiled update is held to the declaration (`compile_regions.check_r1_declared`, a typed FATAL naming the field or key). A new R1 lever is declared there, never by relaxing the lock (`compile_flags.md` "R1's DECLARED LEVERS"). 2.5.1 keeps the extractor-only compile. A learner-process
-forward with a NEW signature (a different obs key set, an undeclared batch size) must run under
-`compile_trainer.eager_extractor(fe)` or be added to `production_prewarm_calls`; batch 1 is ALWAYS
+hook on a compiled module is a guard — the iteration-1 signature `8fc297a2` used to absorb). 🚨 **The learner compiles ONLY as DECLARED REGIONS** (K8, `agents/model/compile_regions.py`, `designs/training/compile_flags.md` "K8 — DECLARED COMPILE REGIONS"): R0 the rollout core and R1 the micro-step, each `fullgraph=True` at ONE declared signature (a ragged micro-batch and batch 1 take the declared eager route); the rank probe reads R1's stashes (no second forward, the spectra on the device); on a CUDA buffer every micro-batch is STAGED to the device by a prefetch thread (`--device-batch staged`, the default since 2026-10-01; `resident` = one device copy of the whole flattened buffer per update, +~1.1 GB of update peak; `instrumented_ppo/device_batches.py`, bit-identical batches in every mode, the same permutation). 🚨 **Startup RUNS one dry update** (`agents/training/update_fit.py`, `gen3_update_fit_v1`): one real `train()` epoch on a fixture rollout of the buffer's full shape, the learner restored bit-identically, and a first update that would not leave 1,024 MiB of device headroom (or OOMs) is `UpdateWontFit` (FATAL_CONFIG) — `designs/training/learner_lifecycle.md` "The update fit check". ONE startup gate per region (`gen3_one_gate_per_region_v1`); the trainer's compile step (`compile_trainer.preflight_compile_trainer`) compiles nothing and refuses a learner without the micro-step. 🚨 **No region runs eager silently** (`gen3_no_silent_eager_v1`): a compiled-route call whose Python body executes, a ragged tail past one per epoch, or dynamo disabled / errors suppressed / the stance moved under the lock is a typed FATAL; every update logs `lifecycle/compiled_region_calls`, `lifecycle/eager_fallback_calls`, `lifecycle/eager_share`, `lifecycle/update_wall_s` (`designs/training/compile_flags.md`). R1's startup gate and the canary judge its per-parameter gradient by WEIGHT REGIME (`compile_regions.weights_regime`: fresh vs trained, measured bars — `designs/training/compile_flags.md`). Code inside R1 must stay a static-shape program (the fold contract above). 🚨 **Every lever R1 reads is DECLARED at startup from the resolved config** (`gen3_r1_declared_levers_v1`): `TrainSetup._r1_levers` is the ONE predicate for the strata and rollout-weight levers (never a rollout's data — an idle strata lever gets neutral ones, bit-identical), and every compiled update is held to the declaration (`compile_regions.check_r1_declared`, a typed FATAL naming the field or key). A new R1 lever is declared there, never by relaxing the lock (`compile_flags.md` "R1's DECLARED LEVERS"). A NEW compiled signature is added to the region table (`compile_regions.REGIONS`)
+and its prewarm, never absorbed after the lock; a learner-process caller OUTSIDE the regions runs the
+extractor eager already (the regions compile functions over the module and never patch `fe.forward`,
+so `compile_trainer.eager_extractor(fe)` is now a no-op on the learner); batch 1 is ALWAYS
 eager (`compile_trainer.EAGER_BATCHES`, `gen3_batch1_eager_v1` — torch 2.8 cannot lower a batch-1 CUDA graph) — the late-shape
 table in the doc lists every caller. An unknown torch or a drifted torch internal
 (`_SOURCE_HASHES`) REFUSES. TB: `compile/recompiles_after_lock` must stay 0.
