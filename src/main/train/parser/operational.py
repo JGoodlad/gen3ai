@@ -87,6 +87,15 @@ def add_operational_flags(parser: argparse.ArgumentParser) -> None:
              "which would otherwise OOM the GPU at high --n-envs. Opponent inference is batch-1 "
              "no_grad, so CPU is plenty fast. Pass --no-self-play-use-cpu to load them on --device.",
     )
+    parser.add_argument(
+        "--final-eval",
+        action=BoolFlag,
+        default=False,
+        help="Run the legacy POST-TRAINING evaluation (main/train/final_eval.py: 9 bots x "
+             "--eval-battles, greedy, batch-1 through the per-game path; ~20 min) after `Training "
+             "complete`. Default OFF (owner 2026-10-01): it dates from the project's first day, nothing "
+             "reads its output, and the in-run eval cycles already measure the same bots. "
+             "`--eval-only` still runs it. A robust replacement is a TECH_DEBT row.")
     parser.add_argument("--eval-battles", type=int, default=None,
                         help="Battles per FINAL-evaluation opponent. Default 100, but AUTO-SCALED "
                              f"down to {SMOKE_EVAL_BATTLES} when --steps < {SMOKE_STEPS:,} (a smoke "

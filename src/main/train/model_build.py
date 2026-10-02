@@ -827,7 +827,7 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
             if os.path.isdir(best_model_dir):
                 save_model_snapshot(best_model_dir, current_version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
-            if _run_eval:
+            if _run_eval and getattr(args, "final_eval", False):
                 await evaluate_model_random(model)
     else:
         print(f"Starting NEW Training (Parallel x{n_envs}, Batch: {args.batch_size}, Epochs: {args.n_epochs})")
@@ -1038,5 +1038,5 @@ async def build_and_train(*, args, env, mappings, model_dir, cli_args, log_level
         if os.path.isdir(best_model_dir):
             save_model_snapshot(best_model_dir, version, hparams=_model_hparams(model), cli_args=cli_args,
                                 reward_composition=reward_composition, lineage=_lineage)
-        if _run_eval:
+        if _run_eval and getattr(args, "final_eval", False):
             await evaluate_model_random(model)
